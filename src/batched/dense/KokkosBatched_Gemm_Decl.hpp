@@ -120,6 +120,7 @@ struct Gemm {
 
 /********************* BEGIN non-functor-level routines *********************/
 
+namespace Impl {
 /********************* BEGIN forward declarations *********************/
 // clang-format off
 /// \brief Non-blocking solve of general matrix multiply on a batch of
@@ -253,6 +254,7 @@ template <class ArgTransA, class ArgTransB, class ArgBatchSzDim,
           int tile_k>
 class BatchedDblBufGemm;
 /********************* END forward declarations *********************/
+}  // namespace Impl
 
 // clang-format off
 /// \brief Non-blocking solve of general matrix multiply on a batch of
@@ -413,11 +415,12 @@ int BatchedGemm(BatchedGemmHandleType *const handle, const ScalarType alpha,
 
   switch (handle->get_kernel_algo_type()) {
     case BaseKokkosBatchedAlgos::KK_SERIAL:
-      ret = BatchedSerialGemm<ArgTransA, ArgTransB, Algo::Gemm::Unblocked,
-                              ArgBatchSzDim, ResultsPerThread::Rank2,
-                              ScalarType, AViewType, BViewType, CViewType>(
-                alpha, A, B, beta, C)
-                .invoke();
+      ret =
+          Impl::BatchedSerialGemm<ArgTransA, ArgTransB, Algo::Gemm::Unblocked,
+                                  ArgBatchSzDim, ResultsPerThread::Rank2,
+                                  ScalarType, AViewType, BViewType, CViewType>(
+              alpha, A, B, beta, C)
+              .invoke();
       break;
 
     ////////////// HEURISTIC ALGOS //////////////
@@ -457,23 +460,25 @@ int BatchedGemm(BatchedGemmHandleType *const handle, const ScalarType alpha,
         // constexpr int tile_m = 32, tile_n = 32, tile_k = 8;
         constexpr int tile_m = 32, tile_n = 32, tile_k = 8;
         if (c_m % 32 == 0)  // No bounds checking
-          ret = BatchedDblBufGemm<ArgTransA, ArgTransB, ArgBatchSzDim,
-                                  BatchedGemmHandleType, ScalarType, AViewType,
-                                  BViewType, CViewType, BoundsCheck::No, tile_m,
-                                  tile_n, tile_k>(handle, alpha, A, B, beta, C)
-                    .invoke();
+          ret =
+              Impl::BatchedDblBufGemm<ArgTransA, ArgTransB, ArgBatchSzDim,
+                                      BatchedGemmHandleType, ScalarType,
+                                      AViewType, BViewType, CViewType,
+                                      BoundsCheck::No, tile_m, tile_n, tile_k>(
+                  handle, alpha, A, B, beta, C)
+                  .invoke();
         else
           ret =
-              BatchedDblBufGemm<ArgTransA, ArgTransB, ArgBatchSzDim,
-                                BatchedGemmHandleType, ScalarType, AViewType,
-                                BViewType, CViewType, BoundsCheck::Yes, tile_m,
-                                tile_n, tile_k>(handle, alpha, A, B, beta, C)
+              Impl::BatchedDblBufGemm<ArgTransA, ArgTransB, ArgBatchSzDim,
+                                      BatchedGemmHandleType, ScalarType,
+                                      AViewType, BViewType, CViewType,
+                                      BoundsCheck::Yes, tile_m, tile_n, tile_k>(handle, alpha, A, B, beta, C)
                   .invoke();
       } else {
-        ret =
-            BatchedSerialGemm<ArgTransA, ArgTransB, bsgModeType, ArgBatchSzDim,
-                              bsgResultsPerThread, ScalarType, AViewType,
-                              BViewType, CViewType>(alpha, A, B, beta, C)
+        ret = Impl::BatchedSerialGemm<ArgTransA, ArgTransB, bsgModeType,
+                                      ArgBatchSzDim, bsgResultsPerThread,
+                                      ScalarType, AViewType, BViewType,
+                                      CViewType>(alpha, A, B, beta, C)
                 .invoke();
       }
       break;
@@ -485,11 +490,12 @@ int BatchedGemm(BatchedGemmHandleType *const handle, const ScalarType alpha,
       // follow an approach similar to KK_SQUARE above for best performance.
 
       // TODO: Add auto-selection of tile size based on inputs and device type
-      ret = BatchedDblBufGemm<ArgTransA, ArgTransB, ArgBatchSzDim,
-                              BatchedGemmHandleType, ScalarType, AViewType,
-                              BViewType, CViewType, BoundsCheck::Yes, 1, 1, 1>(
-                handle, alpha, A, B, beta, C)
-                .invoke();
+      ret =
+          Impl::BatchedDblBufGemm<ArgTransA, ArgTransB, ArgBatchSzDim,
+                                  BatchedGemmHandleType, ScalarType, AViewType,
+                                  BViewType, CViewType, BoundsCheck::Yes, 1, 1,
+                                  1>(handle, alpha, A, B, beta, C)
+              .invoke();
       break;
 
     case BaseHeuristicAlgos::TALL:

@@ -43,7 +43,6 @@
 #define __KOKKOSBATCHED_GEMM_DBLBUF_IMPL_HPP__
 
 #include "KokkosBatched_Util.hpp"
-// TODO: #include "KokkosBatched_Gemm_DblBuf_Internal.hpp"
 
 namespace KokkosBatched {
 /********************* BEGIN functor-level routines *********************/
@@ -62,6 +61,7 @@ namespace KokkosBatched {
 /********************* BEGIN functor-level routines *********************/
 /********************* END   functor-level routines *********************/
 
+namespace Impl {
 /********************* BEGIN non-functor-level routines *********************/
 template <class ArgTransA, class ArgTransB, class ArgBatchSzDim,
           class HandleType, class ScalarType, class AViewType, class BViewType,
@@ -209,8 +209,7 @@ class BatchedDblBufGemm {
       // To handle truncation of tiles per row/col, round up to one extra tile
       // with '!!'. This extra tile will hang off the edge of the 2-rank matrix.
       // For cases where tiles hang off the edge, we over-compute 0s within
-      // registers and shmem via a conditional bounds check (selected at
-      // compile-time).
+      // registers via a conditional bounds check selected at compile-time.
       __tiles_per_row = ei.__c_m / __tile_m + !!((unsigned)ei.__c_m % __tile_m);
       __tiles_per_col = ei.__c_n / __tile_n + !!((unsigned)ei.__c_n % __tile_n);
 
@@ -248,7 +247,7 @@ class BatchedDblBufGemm {
       view_type_2d_scratch svA_scr(member.team_scratch(0), __tile_k, __tile_m);
       view_type_2d_scratch svB_scr(member.team_scratch(0), __tile_k, __tile_n);
 
-      // Here we populate scratch memory with one or more __tile_k for every
+      // Here we populate scratch memory with one or more "k" tiles for every
       // thread of the team!
       Kokkos::parallel_for(
           Kokkos::TeamThreadRange(member, 0, __tile_n / REG_N),
@@ -257,7 +256,7 @@ class BatchedDblBufGemm {
             Kokkos::parallel_for(
                 Kokkos::ThreadVectorRange(member, 0, __tile_k),
                 [&](const int &vlane_id) {
-#pragma unroll
+                  KOKKOSKERNELS_PRAGMA_UNROLL
                   for (int i = 0; i < REG_N * STRIDE_N; i += STRIDE_N)
                     svB_scr(vlane_id, thread_id + i) =
                         access_view_bounds_check<view_value_type>(
@@ -273,7 +272,7 @@ class BatchedDblBufGemm {
             Kokkos::parallel_for(
                 Kokkos::ThreadVectorRange(member, 0, __tile_k),
                 [&](const int &vlane_id) {
-#pragma unroll
+                  KOKKOSKERNELS_PRAGMA_UNROLL
                   for (int i = 0; i < REG_M * STRIDE_M; i += STRIDE_M)
                     svA_scr(vlane_id, thread_id + i) =
                         access_view_bounds_check<view_value_type>(
@@ -290,7 +289,7 @@ class BatchedDblBufGemm {
       member.team_barrier();
 
       // Each thread calculates a single dot product in chunks of size __tile_k
-#pragma unroll
+      KOKKOSKERNELS_PRAGMA_UNROLL
       for (unsigned k = 1; k < __n_tile_k_tiles + partial_tile; ++k) {
         auto k_tile_offset = k * __tile_k;
 
@@ -304,7 +303,7 @@ class BatchedDblBufGemm {
               Kokkos::parallel_for(
                   Kokkos::ThreadVectorRange(member, 0, __tile_k),
                   [&](const int &vlane_id) {
-#pragma unroll
+                    KOKKOSKERNELS_PRAGMA_UNROLL
                     for (int i = 0; i < REG_N; ++i)
                       prefetch_reg_b[i] =
                           access_view_bounds_check<view_value_type>(
@@ -324,7 +323,7 @@ class BatchedDblBufGemm {
               Kokkos::parallel_for(
                   Kokkos::ThreadVectorRange(member, 0, __tile_k),
                   [&](const int &vlane_id) {
-#pragma unroll
+                    KOKKOSKERNELS_PRAGMA_UNROLL
                     for (int i = 0; i < REG_M; ++i)
                       prefetch_reg_a[i] =
                           access_view_bounds_check<view_value_type>(
@@ -341,21 +340,21 @@ class BatchedDblBufGemm {
               Kokkos::parallel_for(
                   Kokkos::ThreadVectorRange(member, 0, __tile_n / REG_N),
                   [&](const int &vlane_id) {
-#pragma unroll
+                    KOKKOSKERNELS_PRAGMA_UNROLL
                     for (unsigned k = 0; k < __tile_k; ++k) {
-#pragma unroll
+                      KOKKOSKERNELS_PRAGMA_UNROLL
                       for (int m = 0; m < REG_M; ++m) {
                         reg_a[m] = svA_scr(k, thread_id + m * STRIDE_M);
                       }
 
-#pragma unroll
+                      KOKKOSKERNELS_PRAGMA_UNROLL
                       for (int n = 0; n < REG_N; ++n) {
                         reg_b[n] = svB_scr(k, vlane_id + n * STRIDE_N);
                       }
 
-#pragma unroll
+                      KOKKOSKERNELS_PRAGMA_UNROLL
                       for (int m = 0; m < REG_M; ++m) {
-#pragma unroll
+                        KOKKOSKERNELS_PRAGMA_UNROLL
                         for (int n = 0; n < REG_N; ++n) {
                           reg_c[m][n] += reg_a[m] * reg_b[n] * __ei.__alpha;
                         }
@@ -377,7 +376,7 @@ class BatchedDblBufGemm {
               Kokkos::parallel_for(
                   Kokkos::ThreadVectorRange(member, 0, __tile_k),
                   [&](const int &vlane_id) {
-#pragma unroll
+                    KOKKOSKERNELS_PRAGMA_UNROLL
                     for (int i = 0; i < REG_N; ++i) {
                       svB_scr(vlane_id, thread_offset + i * STRIDE_N) =
                           prefetch_reg_b[i];
@@ -394,7 +393,7 @@ class BatchedDblBufGemm {
               Kokkos::parallel_for(
                   Kokkos::ThreadVectorRange(member, 0, __tile_k),
                   [&](const int &vlane_id) {
-#pragma unroll
+                    KOKKOSKERNELS_PRAGMA_UNROLL
                     for (int i = 0; i < REG_M; ++i)
                       svA_scr(vlane_id, thread_offset + i * STRIDE_M) =
                           prefetch_reg_a[i];
@@ -415,21 +414,21 @@ class BatchedDblBufGemm {
             Kokkos::parallel_for(
                 Kokkos::ThreadVectorRange(member, 0, __tile_n / REG_N),
                 [&](const int &vlane_id) {
-#pragma unroll
+                  KOKKOSKERNELS_PRAGMA_UNROLL
                   for (unsigned k = 0; k < partial_tile_k; ++k) {
-#pragma unroll
+                    KOKKOSKERNELS_PRAGMA_UNROLL
                     for (int m = 0; m < REG_M; ++m) {
                       reg_a[m] = svA_scr(k, thread_id + m * STRIDE_M);
                     }
 
-#pragma unroll
+                    KOKKOSKERNELS_PRAGMA_UNROLL
                     for (int n = 0; n < REG_N; ++n) {
                       reg_b[n] = svB_scr(k, vlane_id + n * STRIDE_N);
                     }
 
-#pragma unroll
+                    KOKKOSKERNELS_PRAGMA_UNROLL
                     for (int m = 0; m < REG_M; ++m) {
-#pragma unroll
+                      KOKKOSKERNELS_PRAGMA_UNROLL
                       for (int n = 0; n < REG_N; ++n) {
                         reg_c[m][n] += reg_a[m] * reg_b[n] * __ei.__alpha;
                       }
@@ -448,10 +447,10 @@ class BatchedDblBufGemm {
                   Kokkos::ThreadVectorRange(member, 0, __tile_n / REG_N),
                   [&](const int &vlane_id) {
                     auto thread_n_offset = vlane_id + start_n;
-#pragma unroll
+                    KOKKOSKERNELS_PRAGMA_UNROLL
                     for (int m = 0; m < REG_M; ++m) {
                       int cm = thread_m_offset + m * STRIDE_M;
-#pragma unroll
+                      KOKKOSKERNELS_PRAGMA_UNROLL
                       for (int n = 0; n < REG_N; ++n) {
                         int cn = thread_n_offset + n * STRIDE_N;
                         fma_bounds_check(svC, cm, cn, reg_c[m][n],
@@ -470,10 +469,10 @@ class BatchedDblBufGemm {
                   Kokkos::ThreadVectorRange(member, 0, __tile_n / REG_N),
                   [&](const int &vlane_id) {
                     auto thread_n_offset = vlane_id + start_n;
-#pragma unroll
+                    KOKKOSKERNELS_PRAGMA_UNROLL
                     for (int m = 0; m < REG_M; ++m) {
                       int cm = thread_m_offset + m * STRIDE_M;
-#pragma unroll
+                      KOKKOSKERNELS_PRAGMA_UNROLL
                       for (int n = 0; n < REG_N; ++n) {
                         int cn = thread_n_offset + n * STRIDE_N;
                         fma_bounds_check(svC, cm, cn, reg_c[m][n], __ei.__beta,
@@ -487,6 +486,8 @@ class BatchedDblBufGemm {
   };
 };
 /********************* END non-functor-level routines *********************/
+}  // namespace Impl
+
 }  // namespace KokkosBatched
 
 #endif

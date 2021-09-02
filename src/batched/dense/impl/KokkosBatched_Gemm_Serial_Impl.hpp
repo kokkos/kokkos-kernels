@@ -380,6 +380,7 @@ SerialGemm<Trans::Transpose, Trans::Transpose, Algo::Gemm::Blocked>::invoke(
 }
 /********************* END functor-level routines *********************/
 
+namespace Impl {
 /********************* BEGIN non-functor-level routines *********************/
 template <class ArgTransA, class ArgTransB, class ArgMode, class ArgBatchSzDim,
           class ArgResultsPerThread, class ScalarType, class AViewType,
@@ -485,6 +486,8 @@ class BatchedSerialGemm {
   }
 };
 /********************* END non-functor-level routines *********************/
+}  // namespace Impl
+
 }  // namespace KokkosBatched
 
 #endif

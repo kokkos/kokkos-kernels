@@ -773,4 +773,9 @@ namespace KokkosBatched {
 
   }  // namespace KokkosBatched
 
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#define KOKKOSKERNELS_PRAGMA_UNROLL #pragma unroll
+#else
+#define KOKKOSKERNELS_PRAGMA_UNROLL
+#endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
 #endif
