@@ -1504,6 +1504,12 @@ template <class dstViewType>
 static inline void __gemm_copy_simd_view_to_3d_view(gemm_simd_args_t src,
                                                     dstViewType dst,
                                                     options_t options) {
+  // clang-format off
+  // Related issue: https://github.com/kokkos/kokkos-kernels/issues/998
+  //   CUDA VERSION 10.2.2 generates a compiler error:
+  //     KokkosBlas3_gemm_perf_test.hpp: error: ‘h_subview_type_2d’ was not declared in this scope
+  // clang-format on
+#if (CUDA_VERSION != 10020)
   using dst_scalar_type = typename dstViewType::value_type;
   using src_scalar_type = typename view_type_5d::value_type;
   size_t remainder, vector_batch_size, simd_batch_size, last_batch;
@@ -1631,6 +1637,10 @@ static inline void __gemm_copy_simd_view_to_3d_view(gemm_simd_args_t src,
 out:
   Kokkos::deep_copy(dst, h_dst);
   Kokkos::fence();
+#else
+  Kokkos::abort(
+      "Cannot perform simd verification with cuda/10.2.2, rerun with -v 0");
+#endif  // #if (CUDA_VERSION != 10020)
 }
 
 /**
