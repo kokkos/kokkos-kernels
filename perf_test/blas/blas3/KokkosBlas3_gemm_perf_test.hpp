@@ -76,6 +76,7 @@ void do_gemm_serial_batched_blocked(options_t options);
 // void do_gemm_serial_blas_parallel(options_t options);
 // Not valid! The KokkosBlas::gemm function may take the entire device per
 // invocation!
+void do_batchedGemm_parallel(options_t options);
 void do_gemm_serial_batched_parallel(options_t options);
 void do_gemm_serial_batched_blocked_parallel(options_t options);
 void do_gemm_serial_simd_batched_parallel(options_t options);
@@ -114,7 +115,8 @@ void (*do_gemm_invoke[LOOP_N][TEST_N])(options_t) = {
         NULL,  // Serial Experiment
     },
     {
-        NULL,                             // BLAS
+        NULL,  // BLAS
+        do_batchedGemm_parallel,
         do_gemm_serial_batched_parallel,  // Serial
         do_gemm_serial_batched_blocked_parallel,
         do_gemm_serial_simd_batched_parallel,
@@ -463,6 +465,89 @@ void __do_gemm_serial_batched(options_t options, gemm_args_t gemm_args) {
     FATAL_ERROR("Bad gemm_args TransA or TransB value");
   }
   return;
+}
+
+template <class algo_tag, class blocking_type, class device_type,
+          class algo_mode = void>
+void __do_batchedGemm_parallel(options_t options, gemm_args_t gemm_args) {
+  BatchedGemmHandle batchedGemmHandle(BaseHeuristicAlgos::SQUARE);
+  char a  = toupper(gemm_args.transA);
+  char b  = toupper(gemm_args.transB);
+  using N = Trans::NoTranspose;
+  using T = Trans::Transpose;
+  // using C = Trans::ConjTranspose;
+
+  STATUS;
+
+  if (a == 'N' && b == 'N') {
+    if (options.blas_args.batch_size_last_dim)
+      KokkosBatched::BatchedGemm<N, N, BatchLayout::Right>(
+          &batchedGemmHandle, gemm_args.alpha, gemm_args.A, gemm_args.B,
+          gemm_args.beta, gemm_args.C);
+    else
+      KokkosBatched::BatchedGemm<N, N, BatchLayout::Left>(
+          &batchedGemmHandle, gemm_args.alpha, gemm_args.A, gemm_args.B,
+          gemm_args.beta, gemm_args.C);
+  } else if (a == 'N' && b == 'T') {
+    if (options.blas_args.batch_size_last_dim)
+      KokkosBatched::BatchedGemm<N, T, BatchLayout::Right>(
+          &batchedGemmHandle, gemm_args.alpha, gemm_args.A, gemm_args.B,
+          gemm_args.beta, gemm_args.C);
+    else
+      KokkosBatched::BatchedGemm<N, T, BatchLayout::Left>(
+          &batchedGemmHandle, gemm_args.alpha, gemm_args.A, gemm_args.B,
+          gemm_args.beta, gemm_args.C);
+    //} else if (a == 'N' && b == 'C') {
+    //  __do_gemm_serial_batched_template<N, C, algo_type>(options, gemm_args);
+  } else if (a == 'T' && b == 'N') {
+    if (options.blas_args.batch_size_last_dim)
+      KokkosBatched::BatchedGemm<T, N, BatchLayout::Right>(
+          &batchedGemmHandle, gemm_args.alpha, gemm_args.A, gemm_args.B,
+          gemm_args.beta, gemm_args.C);
+    else
+      KokkosBatched::BatchedGemm<T, N, BatchLayout::Left>(
+          &batchedGemmHandle, gemm_args.alpha, gemm_args.A, gemm_args.B,
+          gemm_args.beta, gemm_args.C);
+  } else if (a == 'T' && b == 'T') {
+    if (options.blas_args.batch_size_last_dim)
+      KokkosBatched::BatchedGemm<T, T, BatchLayout::Right>(
+          &batchedGemmHandle, gemm_args.alpha, gemm_args.A, gemm_args.B,
+          gemm_args.beta, gemm_args.C);
+    else
+      KokkosBatched::BatchedGemm<T, T, BatchLayout::Left>(
+          &batchedGemmHandle, gemm_args.alpha, gemm_args.A, gemm_args.B,
+          gemm_args.beta, gemm_args.C);
+    //} else if (a == 'T' && b == 'C') {
+    //  __do_gemm_serial_batched_template<T, C, algo_type>(options, gemm_args);
+    //} else if (a == 'C' && b == 'N') {
+    //  __do_gemm_serial_batched_template<C, N, algo_type>(options, gemm_args);
+    //} else if (a == 'C' && b == 'T') {
+    //  __do_gemm_serial_batched_template<C, T, algo_type>(options, gemm_args);
+    //} else if (a == 'C' && b == 'C') {
+    //  __do_gemm_serial_batched_template<C, C, algo_type>(options, gemm_args);
+  } else {
+    FATAL_ERROR("Bad gemm_args TransA or TransB value");
+  }
+}
+
+template <class algo_tag, class blocking_type, class device_type,
+          class algo_mode = void>
+void __do_batchedGemm_parallel_wrapper(options_t options,
+                                       gemm_args_t gemm_args) {
+  Kokkos::Timer timer;
+
+  for (uint32_t i = 0; i < options.warm_up_n; ++i)
+    __do_batchedGemm_parallel<algo_tag, blocking_type, device_type, algo_mode>(
+        options, gemm_args);
+  Kokkos::fence();
+
+  timer.reset();
+  for (uint32_t i = 0; i < options.n; ++i)
+    __do_batchedGemm_parallel<algo_tag, blocking_type, device_type, algo_mode>(
+        options, gemm_args);
+  Kokkos::fence();
+
+  __gemm_output_csv_row(options, gemm_args, timer.seconds());
 }
 
 template <class TransAType, class TransBType, class BlockingType>
@@ -2112,6 +2197,13 @@ void do_gemm_serial_batched_blocked(options_t options) {
       options, __do_gemm_serial_batched<default_scalar, view_type_3d,
                                         view_type_3d, view_type_3d,
                                         default_device, Algo::Gemm::Blocked>);
+  return;
+}
+
+void do_batchedGemm_parallel(options_t options) {
+  STATUS;
+  __do_loop_and_invoke(
+      options, __do_batchedGemm_parallel_wrapper<void, void, default_device>);
   return;
 }
 
