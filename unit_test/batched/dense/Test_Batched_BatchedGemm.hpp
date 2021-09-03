@@ -151,6 +151,9 @@ void impl_test_batched_gemm_with_handle(BatchedGemmHandle* batchedGemmHandle,
     }
   }
   // std::cout << "algo_type:" << algo_type << std::endl;
+  // std::cout << "C0:" << matCdim1 << ", C1:" << matCdim2 << std::endl;
+  // std::cout << "A0:" << matAdim1 << ", A1:" << matAdim2 << std::endl;
+  // std::cout << "B0:" << matBdim1 << ", B1:" << matBdim2 << std::endl;
   EXPECT_NEAR_KK(diff / sum, 0, eps);
 }
 
@@ -246,7 +249,6 @@ void impl_test_batched_gemm(const int N, const int matAdim1, const int matAdim2,
 template <typename ViewType, typename DeviceType, typename ValueType,
           typename ScalarType, typename ParamTagType>
 void test_batched_gemm_with_layout() {
-#if 1
   // Square cases
   for (int i = 0; i < 5; ++i) {
     Test::impl_test_batched_gemm<DeviceType, ViewType, ScalarType,
@@ -266,7 +268,6 @@ void test_batched_gemm_with_layout() {
     Test::impl_test_batched_gemm<DeviceType, ViewType, ScalarType,
                                  ParamTagType>(8, i, i, i, i, i, i);
   }
-#endif
 
   // Non-square cases
   for (int i = 0; i < 5; ++i) {

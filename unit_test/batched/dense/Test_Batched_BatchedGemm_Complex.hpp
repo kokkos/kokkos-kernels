@@ -1,4 +1,4 @@
-#if 0 && defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)
+#if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)
 /********************* BatchLayout::Left *********************/
 TEST_F(TestCategory, batched_scalar_batched_gemm_nt_nt_scomplex_scomplex_left) {
   typedef ::Test::SharedParamTag<Trans::NoTranspose, Trans::NoTranspose,
@@ -84,7 +84,7 @@ TEST_F(TestCategory, batched_scalar_batched_gemm_t_t_scomplex_scomplex_right) {
 }
 #endif
 
-#if 0 && defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
+#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
 /********************* BatchLayout::Left *********************/
 TEST_F(TestCategory, batched_scalar_batched_gemm_nt_nt_dcomplex_dcomplex_left) {
   typedef ::Test::SharedParamTag<Trans::NoTranspose, Trans::NoTranspose,

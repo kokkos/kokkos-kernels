@@ -269,52 +269,7 @@ class BatchedDblBufGemm {
                                  __ei.__batch_layout_tag, __ei.__transB_tag);
       auto svC = subview_wrapper(__C, batch_idx, Kokkos::ALL(), Kokkos::ALL(),
                                  __ei.__batch_layout_tag);
-#if 0
-      {
-        Trans::Transpose trans_tag;
-        auto svB_t =
-            subview_wrapper(__B, batch_idx, Kokkos::ALL(), Kokkos::ALL(),
-                            __ei.__batch_layout_tag, trans_tag);
-        printf("\n\n-- %d %d, %d %d\n\n", svB.extent_int(0), svB.extent_int(1), svB_t.extent_int(0), svB_t.extent_int(1));
 
-        for (int i = 0; i < svB.extent_int(0); i++) {
-          printf("\n");
-          for (int j = 0; j < svB.extent_int(1); j++) {
-            printf("svB(%d,%d): %g, ", i, j, svB(i, j));
-          }
-        }
-        printf("--\n");
-        for (int i = 0; i < svB_t.extent_int(0); i++) {
-          printf("\n");
-          for (int j = 0; j < svB_t.extent_int(1); j++) {
-            printf("svB_t(%d,%d): %g, ", i, j, svB_t(i, j));
-          }
-        }
-        printf("\n");
-        
-        
-        auto svA_t =
-            subview_wrapper(__A, batch_idx, Kokkos::ALL(), Kokkos::ALL(),
-                            __ei.__batch_layout_tag, trans_tag);
-        printf("\n\n-- %d %d, %d %d\n\n", svA.extent_int(0), svA.extent_int(1), svA_t.extent_int(0), svA_t.extent_int(1));
-
-        for (int i = 0; i < svA.extent_int(0); i++) {
-          printf("\n");
-          for (int j = 0; j < svA.extent_int(1); j++) {
-            printf("svA(%d,%d): %g, ", i, j, svA(i, j));
-          }
-        }
-        printf("--\n");
-        for (int i = 0; i < svA_t.extent_int(0); i++) {
-          printf("\n");
-          for (int j = 0; j < svA_t.extent_int(1); j++) {
-            printf("svA_t(%d,%d): %g, ", i, j, svA_t(i, j));
-          }
-        }
-        printf("\n");
-      }
-      Kokkos::abort("testing...");
-#endif
       // Allocate scratch memory buffers used for prefetching
       view_type_2d_scratch svA_scr(member.team_scratch(0), __tile_k, __tile_m);
       view_type_2d_scratch svB_scr(member.team_scratch(0), __tile_k, __tile_n);
