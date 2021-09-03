@@ -316,7 +316,7 @@ int BatchedGemm(BatchedGemmHandleType *const handle, const ScalarType alpha,
                 const AViewType &A, const BViewType &B, const ScalarType beta,
                 const CViewType &C) {
   int ret = 0;
-  size_t c_m, c_n, c_b;
+  size_t c_m, c_n;
   using ViewValueType = typename CViewType::value_type;
   // Check for valid input views
   static_assert(Kokkos::Impl::is_view<AViewType>::value,
@@ -382,11 +382,11 @@ int BatchedGemm(BatchedGemmHandleType *const handle, const ScalarType alpha,
   }
 
   if (std::is_same<ArgBatchSzDim, BatchLayout::Left>::value) {
-    c_b = C.extent(0);
+    // c_b = C.extent(0);
     c_m = C.extent(1);
     c_n = C.extent(2);
   } else {
-    c_b = C.extent(2);
+    // c_b = C.extent(2);
     c_m = C.extent(0);
     c_n = C.extent(1);
   }

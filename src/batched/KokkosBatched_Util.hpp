@@ -667,9 +667,8 @@ namespace KokkosBatched {
   };
 
   template <class ViewType>
-  KOKKOS_INLINE_FUNCTION auto transpose_2d_view(ViewType v) {
+  KOKKOS_INLINE_FUNCTION auto transpose_2d_view(ViewType v, const int *order) {
     const int rank             = 2;
-    const int order[]          = {1, 0};
     const int dim[]            = {v.extent_int(1), v.extent_int(0)};
     using view_value_type      = typename ViewType::value_type;
     using execution_space_type = typename ViewType::execution_space;
@@ -679,6 +678,20 @@ namespace KokkosBatched {
         Kokkos::LayoutStride::order_dimensions(rank, order, dim);
 
     return view_type(v.data(), stride);
+  }
+
+  template <class ViewType>
+  KOKKOS_INLINE_FUNCTION auto transpose_2d_view(ViewType v,
+                                                const BatchLayout::Left &) {
+    const int order[] = {0, 1};  // v is LayoutRight
+    return transpose_2d_view(v, order);
+  }
+
+  template <class ViewType>
+  KOKKOS_INLINE_FUNCTION auto transpose_2d_view(ViewType v,
+                                                const BatchLayout::Right &) {
+    const int order[] = {1, 0};  // v is LayoutLeft
+    return transpose_2d_view(v, order);
   }
 
   ///// subview_wrapper overloads for handling 3-rank BatchLayout::Left views
@@ -700,7 +713,7 @@ namespace KokkosBatched {
       const BatchLayout::Left &layout_tag, const Trans::Transpose) {
     auto sv_nt = subview_wrapper(v, i1, i3, i2, layout_tag);
 
-    return transpose_2d_view(sv_nt);
+    return transpose_2d_view(sv_nt, layout_tag);
   }
 
   //// subview_wrapper overloads for handling 3-rank BatchLayout::Right views
@@ -722,7 +735,7 @@ namespace KokkosBatched {
       const BatchLayout::Right &layout_tag, const Trans::Transpose &) {
     auto sv_nt = subview_wrapper(v, i1, i3, i2, layout_tag);
 
-    return transpose_2d_view(sv_nt);
+    return transpose_2d_view(sv_nt, layout_tag);
   }
 
   template <class ViewValueType, class ViewType>

@@ -56,7 +56,36 @@ void impl_test_batched_gemm_with_handle(BatchedGemmHandle* batchedGemmHandle,
   Kokkos::deep_copy(b_actual, b_expected);
   Kokkos::deep_copy(c_actual, c_expected);
 
-  // Check for expected runtime errors due to non-optimal BatchedGemm invocation
+  // Check for expected BatchedDblBufGemm runtime errors
+  if (algo_type == GemmKokkosBatchedAlgos::KK_DBLBUF) {
+    // Check for DblBuf runtime errors related to team_size
+    try {
+      Impl::BatchedDblBufGemm<transA, transB, batchLayout, BatchedGemmHandle,
+                              ScalarType, decltype(a_actual),
+                              decltype(b_actual), decltype(c_actual),
+                              BoundsCheck::Yes, 65536, 1, 65536>(
+          batchedGemmHandle, alpha, a_actual, b_actual, beta, c_actual)
+          .invoke();
+      FAIL();
+    } catch (const std::runtime_error& error) {
+      ;
+    }
+
+    // Check for DblBuf runtime errors related to vector_len
+    try {
+      Impl::BatchedDblBufGemm<transA, transB, batchLayout, BatchedGemmHandle,
+                              ScalarType, decltype(a_actual),
+                              decltype(b_actual), decltype(c_actual),
+                              BoundsCheck::No, 65536, 65536 * 2, 65536>(
+          batchedGemmHandle, alpha, a_actual, b_actual, beta, c_actual)
+          .invoke();
+      FAIL();
+    } catch (const std::runtime_error& error) {
+      ;
+    }
+  }
+
+  // Check for expected BatchedGemm runtime errors
   try {
     ret = BatchedGemm<transA, transB, batchLayout>(
         batchedGemmHandle, alpha, a_actual, b_actual, beta,
@@ -121,6 +150,7 @@ void impl_test_batched_gemm_with_handle(BatchedGemmHandle* batchedGemmHandle,
       }
     }
   }
+  // std::cout << "algo_type:" << algo_type << std::endl;
   EXPECT_NEAR_KK(diff / sum, 0, eps);
 }
 
@@ -163,10 +193,11 @@ void impl_test_batched_gemm(const int N, const int matAdim1, const int matAdim2,
   for (int algo_type = BaseHeuristicAlgos::SQUARE;
        algo_type < GemmKokkosBatchedAlgos::N; ++algo_type) {
     {
-      // std::cout << "Testing algo_type = " << algo_type << "/" <<
-      // GemmKokkosBatchedAlgos::N << std::endl;
-
       BatchedGemmHandle batchedGemmHandle(algo_type);
+
+      // batchedGemmHandle.enableDebug = true;
+      //      std::cout << "Testing algo_type = " << algo_type << "/" <<
+      //      GemmKokkosBatchedAlgos::N << std::endl;
 
       ASSERT_EQ(batchedGemmHandle.get_kernel_algo_type(), algo_type);
 
@@ -191,8 +222,6 @@ void impl_test_batched_gemm(const int N, const int matAdim1, const int matAdim2,
             &batchedGemmHandle, N, matAdim1, matAdim2, matBdim1, matBdim2,
             matCdim1, matCdim2, 1.5, 3.0);
       } else {
-        // TODO: Check for DblBuf runtime errors related to team_size and
-        //       vector_len limits
         try {
           // Allocate these views to invoke BatchedGemm with an unsupported algo
           // type
@@ -217,6 +246,7 @@ void impl_test_batched_gemm(const int N, const int matAdim1, const int matAdim2,
 template <typename ViewType, typename DeviceType, typename ValueType,
           typename ScalarType, typename ParamTagType>
 void test_batched_gemm_with_layout() {
+#if 1
   // Square cases
   for (int i = 0; i < 5; ++i) {
     Test::impl_test_batched_gemm<DeviceType, ViewType, ScalarType,
@@ -236,6 +266,7 @@ void test_batched_gemm_with_layout() {
     Test::impl_test_batched_gemm<DeviceType, ViewType, ScalarType,
                                  ParamTagType>(8, i, i, i, i, i, i);
   }
+#endif
 
   // Non-square cases
   for (int i = 0; i < 5; ++i) {
