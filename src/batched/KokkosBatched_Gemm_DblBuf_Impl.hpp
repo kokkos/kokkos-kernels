@@ -137,7 +137,7 @@ class BatchedDblBufGemm {
 
     // Each team solves a single tile. Within each tile, the team solves
     // all __n_tile_k_tiles one at a time.
-    size_t league_size = __c_batch_size * functor.n_sub_tiles;
+    size_t league_size = __c_batch_size * functor.get_n_sub_tiles();
     int team_size      = stride_m;
     int vector_len     = stride_n;
 
@@ -196,11 +196,11 @@ class BatchedDblBufGemm {
     CViewType __C;
     ScalarType __alpha, __beta;
     int __k;
-    size_t __n_tile_k_tiles;
+    size_t __n_tile_k_tiles, __n_sub_tiles;
     unsigned __tile_m, __tile_n, __tile_k, __tiles_per_col, __tiles_per_row;
 
    public:
-    size_t n_sub_tiles;
+    size_t get_n_sub_tiles() { return __n_sub_tiles; }
 
     // NOTE: We cannot use __ei.{__A,__B,__C,__beta,__alpha,__k} in the operator
     // below. If those are used, we  get an invalid memory error from cuda. I
@@ -244,21 +244,67 @@ class BatchedDblBufGemm {
       // To handle truncation of __n_tile_k_tile, we have logic within the
       // operator for handling a partial __tile_k tile.
       __n_tile_k_tiles = __k / __tile_k;
-      n_sub_tiles      = __tiles_per_row * __tiles_per_col;
+      __n_sub_tiles    = __tiles_per_row * __tiles_per_col;
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void __rshmem_and_mult(const MemberType &member, const unsigned &nk,
+                           const unsigned &tile_m, const unsigned &tile_n,
+                           view_value_type reg_a[REG_M],
+                           view_value_type reg_b[REG_N],
+                           view_value_type reg_c[REG_M][REG_N],
+                           view_type_2d_scratch &svA_scr,
+                           view_type_2d_scratch &svB_scr) const {
+      Kokkos::parallel_for(
+          Kokkos::TeamThreadRange(member, 0, tile_m / REG_M),
+          [&](const int &thread_id) {
+            Kokkos::parallel_for(
+                Kokkos::ThreadVectorRange(member, 0, tile_n / REG_N),
+                [&](const int &vlane_id) {
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
+                  for (unsigned k = 0; k < nk; ++k) {
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
+                    for (int m = 0; m < REG_M; ++m)
+                      reg_a[m] = svA_scr(k, thread_id + m * STRIDE_M);
+
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
+                    for (int n = 0; n < REG_N; ++n)
+                      reg_b[n] = svB_scr(k, vlane_id + n * STRIDE_N);
+
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
+                    for (int m = 0; m < REG_M; ++m) {
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
+                      for (int n = 0; n < REG_N; ++n)
+                        reg_c[m][n] += reg_a[m] * reg_b[n] * __alpha;
+                    }
+                  }
+                });
+          });
     }
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const MemberType &member) const {
       // Allocate registers used for prefetching
-      view_value_type prefetch_reg_a[REG_M], prefetch_reg_b[REG_N];
+      view_value_type prefetch_reg_a[REG_M] = {0}, prefetch_reg_b[REG_N] = {0};
 
       // Allocate registers used for FMAs
-      view_value_type reg_a[REG_M], reg_b[REG_N], reg_c[REG_M][REG_N] = {{0}};
+      view_value_type reg_a[REG_M] = {0}, reg_b[REG_N] = {0},
+                      reg_c[REG_M][REG_N] = {{0}};
 
-      unsigned batch_idx = member.league_rank() / n_sub_tiles;
+      unsigned batch_idx = member.league_rank() / __n_sub_tiles;
 
       // Compute starting tile offsets for each team into svA, svB, svC
-      unsigned local_team_idx = member.league_rank() % n_sub_tiles;
+      unsigned local_team_idx = member.league_rank() % __n_sub_tiles;
       unsigned start_m        = (local_team_idx / __tiles_per_col) * __tile_m;
       unsigned start_n        = (local_team_idx % __tiles_per_col) * __tile_n;
 
@@ -283,7 +329,9 @@ class BatchedDblBufGemm {
             Kokkos::parallel_for(
                 Kokkos::ThreadVectorRange(member, 0, __tile_k),
                 [&](const int &vlane_id) {
-                  KOKKOSKERNELS_PRAGMA_UNROLL
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
                   for (int i = 0; i < REG_N * STRIDE_N; i += STRIDE_N)
                     svB_scr(vlane_id, thread_id + i) =
                         access_view_bounds_check<view_value_type>(
@@ -298,7 +346,9 @@ class BatchedDblBufGemm {
             Kokkos::parallel_for(
                 Kokkos::ThreadVectorRange(member, 0, __tile_k),
                 [&](const int &vlane_id) {
-                  KOKKOSKERNELS_PRAGMA_UNROLL
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
                   for (int i = 0; i < REG_M * STRIDE_M; i += STRIDE_M)
                     svA_scr(vlane_id, thread_id + i) =
                         access_view_bounds_check<view_value_type>(
@@ -315,9 +365,12 @@ class BatchedDblBufGemm {
       member.team_barrier();
 
       // Each thread calculates a single dot product in chunks of size __tile_k
-      KOKKOSKERNELS_PRAGMA_UNROLL
-      for (unsigned k = 1; k < __n_tile_k_tiles + partial_tile; ++k) {
-        auto k_tile_offset = k * __tile_k;
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
+      for (unsigned k_tile_idx = 1;
+           k_tile_idx < __n_tile_k_tiles + partial_tile; ++k_tile_idx) {
+        auto k_tile_offset = k_tile_idx * __tile_k;
 
         // Get this threads next __tile_k entries from global memory
         // Each thread has its own copy of prefetch_reg_b. TeamThreadRange runs
@@ -329,7 +382,9 @@ class BatchedDblBufGemm {
               Kokkos::parallel_for(
                   Kokkos::ThreadVectorRange(member, 0, __tile_k),
                   [&](const int &vlane_id) {
-                    KOKKOSKERNELS_PRAGMA_UNROLL
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
                     for (int i = 0; i < REG_N; ++i)
                       prefetch_reg_b[i] =
                           access_view_bounds_check<view_value_type>(
@@ -349,7 +404,9 @@ class BatchedDblBufGemm {
               Kokkos::parallel_for(
                   Kokkos::ThreadVectorRange(member, 0, __tile_k),
                   [&](const int &vlane_id) {
-                    KOKKOSKERNELS_PRAGMA_UNROLL
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
                     for (int i = 0; i < REG_M; ++i)
                       prefetch_reg_a[i] =
                           access_view_bounds_check<view_value_type>(
@@ -360,34 +417,8 @@ class BatchedDblBufGemm {
             });
 
         // Multiply
-        Kokkos::parallel_for(
-            Kokkos::TeamThreadRange(member, 0, __tile_m / REG_M),
-            [&](const int &thread_id) {
-              Kokkos::parallel_for(
-                  Kokkos::ThreadVectorRange(member, 0, __tile_n / REG_N),
-                  [&](const int &vlane_id) {
-                    KOKKOSKERNELS_PRAGMA_UNROLL
-                    for (unsigned k = 0; k < __tile_k; ++k) {
-                      KOKKOSKERNELS_PRAGMA_UNROLL
-                      for (int m = 0; m < REG_M; ++m) {
-                        reg_a[m] = svA_scr(k, thread_id + m * STRIDE_M);
-                      }
-
-                      KOKKOSKERNELS_PRAGMA_UNROLL
-                      for (int n = 0; n < REG_N; ++n) {
-                        reg_b[n] = svB_scr(k, vlane_id + n * STRIDE_N);
-                      }
-
-                      KOKKOSKERNELS_PRAGMA_UNROLL
-                      for (int m = 0; m < REG_M; ++m) {
-                        KOKKOSKERNELS_PRAGMA_UNROLL
-                        for (int n = 0; n < REG_N; ++n) {
-                          reg_c[m][n] += reg_a[m] * reg_b[n] * __alpha;
-                        }
-                      }
-                    }
-                  });
-            });
+        __rshmem_and_mult(member, __tile_k, __tile_m, __tile_n, reg_a, reg_b,
+                          reg_c, svA_scr, svB_scr);
         // Wait for:
         //   1. prefetch_regs to be populated
         //   2. for shmem to no longer be read from
@@ -402,11 +433,12 @@ class BatchedDblBufGemm {
               Kokkos::parallel_for(
                   Kokkos::ThreadVectorRange(member, 0, __tile_k),
                   [&](const int &vlane_id) {
-                    KOKKOSKERNELS_PRAGMA_UNROLL
-                    for (int i = 0; i < REG_N; ++i) {
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
+                    for (int i = 0; i < REG_N; ++i)
                       svB_scr(vlane_id, thread_offset + i * STRIDE_N) =
                           prefetch_reg_b[i];
-                    }
                   });
             });
 
@@ -419,7 +451,9 @@ class BatchedDblBufGemm {
               Kokkos::parallel_for(
                   Kokkos::ThreadVectorRange(member, 0, __tile_k),
                   [&](const int &vlane_id) {
-                    KOKKOSKERNELS_PRAGMA_UNROLL
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
                     for (int i = 0; i < REG_M; ++i)
                       svA_scr(vlane_id, thread_offset + i * STRIDE_M) =
                           prefetch_reg_a[i];
@@ -434,34 +468,8 @@ class BatchedDblBufGemm {
 
       // Multiply last tile, may be a partial tile
       partial_tile_k = partial_tile ? partial_tile_k : __tile_k;
-      Kokkos::parallel_for(
-          Kokkos::TeamThreadRange(member, 0, __tile_m / REG_M),
-          [&](const int &thread_id) {
-            Kokkos::parallel_for(
-                Kokkos::ThreadVectorRange(member, 0, __tile_n / REG_N),
-                [&](const int &vlane_id) {
-                  KOKKOSKERNELS_PRAGMA_UNROLL
-                  for (unsigned k = 0; k < partial_tile_k; ++k) {
-                    KOKKOSKERNELS_PRAGMA_UNROLL
-                    for (int m = 0; m < REG_M; ++m) {
-                      reg_a[m] = svA_scr(k, thread_id + m * STRIDE_M);
-                    }
-
-                    KOKKOSKERNELS_PRAGMA_UNROLL
-                    for (int n = 0; n < REG_N; ++n) {
-                      reg_b[n] = svB_scr(k, vlane_id + n * STRIDE_N);
-                    }
-
-                    KOKKOSKERNELS_PRAGMA_UNROLL
-                    for (int m = 0; m < REG_M; ++m) {
-                      KOKKOSKERNELS_PRAGMA_UNROLL
-                      for (int n = 0; n < REG_N; ++n) {
-                        reg_c[m][n] += reg_a[m] * reg_b[n] * __alpha;
-                      }
-                    }
-                  }
-                });
-          });
+      __rshmem_and_mult(member, partial_tile_k, __tile_m, __tile_n, reg_a,
+                        reg_b, reg_c, svA_scr, svB_scr);
 
       if (__beta == 0.0F) {
         // store results back to global memory
@@ -473,10 +481,14 @@ class BatchedDblBufGemm {
                   Kokkos::ThreadVectorRange(member, 0, __tile_n / REG_N),
                   [&](const int &vlane_id) {
                     auto thread_n_offset = vlane_id + start_n;
-                    KOKKOSKERNELS_PRAGMA_UNROLL
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
                     for (int m = 0; m < REG_M; ++m) {
                       int cm = thread_m_offset + m * STRIDE_M;
-                      KOKKOSKERNELS_PRAGMA_UNROLL
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
                       for (int n = 0; n < REG_N; ++n) {
                         int cn = thread_n_offset + n * STRIDE_N;
                         fma_bounds_check(svC, cm, cn, reg_c[m][n],
@@ -495,10 +507,14 @@ class BatchedDblBufGemm {
                   Kokkos::ThreadVectorRange(member, 0, __tile_n / REG_N),
                   [&](const int &vlane_id) {
                     auto thread_n_offset = vlane_id + start_n;
-                    KOKKOSKERNELS_PRAGMA_UNROLL
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
                     for (int m = 0; m < REG_M; ++m) {
                       int cm = thread_m_offset + m * STRIDE_M;
-                      KOKKOSKERNELS_PRAGMA_UNROLL
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
                       for (int n = 0; n < REG_N; ++n) {
                         int cn = thread_n_offset + n * STRIDE_N;
                         fma_bounds_check(svC, cm, cn, reg_c[m][n], __beta,
