@@ -393,6 +393,7 @@ int BatchedGemm(BatchedGemmHandleType *const handle, const ScalarType alpha,
 
   // Begin checking conditions for optimal BatchedGemm invocation.
   using view_scalar_type   = typename CViewType::value_type;
+  using layout_type        = typename CViewType::array_layout;
   constexpr bool is_vector = KokkosBatched::is_vector<view_scalar_type>::value;
   constexpr bool on_gpu    = KokkosKernels::Impl::kk_is_gpu_exec_space<
       typename CViewType::execution_space>();
@@ -455,7 +456,10 @@ int BatchedGemm(BatchedGemmHandleType *const handle, const ScalarType alpha,
       //     (alpha == 1.0F && beta == 0.0F) ? c_m <= 24 : c_m <= 21) {
       //   // TODO: invoke TeamShmem
       // } else
-      if (on_gpu && ((c_m >= 24 && c_m <= 32) || (c_m >= 45 && c_m <= 64))) {
+      if (on_gpu &&
+          ((std::is_same<layout_type, Kokkos::LayoutLeft>::value)
+               ? (c_m >= 16)
+               : (c_m >= 24 && c_m <= 32) || (c_m >= 45 && c_m <= 64))) {
         handle->teamSz = handle->vecLen = 8;
         // constexpr int tile_m = 32, tile_n = 32, tile_k = 8;
         constexpr int tile_m = 32, tile_n = 32, tile_k = 8;

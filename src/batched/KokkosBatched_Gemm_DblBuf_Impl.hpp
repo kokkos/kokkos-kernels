@@ -87,7 +87,7 @@ class BatchedDblBufGemm {
   using scratch_space_type =
       typename execution_space_type::scratch_memory_space;
   using view_type_2d_scratch =
-      Kokkos::View<view_value_type **, layout_type, scratch_space_type>;
+      Kokkos::View<view_value_type **, Kokkos::LayoutRight, scratch_space_type>;
 
  public:
   BatchedDblBufGemm(HandleType *const handle, ScalarType alpha, AViewType A,
