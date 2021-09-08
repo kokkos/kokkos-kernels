@@ -88,15 +88,26 @@ namespace KokkosBatched {
 /// No nested parallel_for is used inside of the function.
 ///
 
-template <typename ArgTrans>
+template <typename ArgTrans = Trans::NoTranspose>
 struct SerialSpmv {
   template <typename ValuesViewType, typename IntView, typename xViewType,
             typename yViewType, typename alphaViewType, typename betaViewType,
             int dobeta>
   KOKKOS_INLINE_FUNCTION static int invoke(
       const alphaViewType &alpha, const ValuesViewType &values,
-      const IntView &row_ptr, const IntView &colIndices, const xViewType &X,
+      const IntView &row_ptr, const IntView &colIndices, const xViewType &x,
       const betaViewType &beta, const yViewType &Y);
+
+  template <typename ValuesViewType, typename IntView, typename xViewType,
+            typename yViewType, int dobeta>
+  KOKKOS_INLINE_FUNCTION static int invoke(
+      const typename Kokkos::Details::ArithTraits<
+          typename ValuesViewType::non_const_value_type>::mag_type &alpha,
+      const ValuesViewType &values, const IntView &row_ptr,
+      const IntView &colIndices, const xViewType &X,
+      const typename Kokkos::Details::ArithTraits<
+          typename ValuesViewType::non_const_value_type>::mag_type &beta,
+      const yViewType &Y);
 };
 
 /// \brief Team Batched SPMV:
@@ -139,7 +150,7 @@ struct SerialSpmv {
 /// A nested parallel_for with TeamThreadRange is used.
 ///
 
-template <typename MemberType, typename ArgTrans>
+template <typename MemberType, typename ArgTrans = Trans::NoTranspose>
 struct TeamSpmv {
   template <typename ValuesViewType, typename IntView, typename xViewType,
             typename yViewType, typename alphaViewType, typename betaViewType,
@@ -148,6 +159,18 @@ struct TeamSpmv {
       const MemberType &member, const alphaViewType &alpha,
       const ValuesViewType &values, const IntView &row_ptr,
       const IntView &colIndices, const xViewType &x, const betaViewType &beta,
+      const yViewType &y);
+
+  template <typename ValuesViewType, typename IntView, typename xViewType,
+            typename yViewType, int dobeta>
+  KOKKOS_INLINE_FUNCTION static int invoke(
+      const MemberType &member,
+      const typename Kokkos::Details::ArithTraits<
+          typename ValuesViewType::non_const_value_type>::mag_type &alpha,
+      const ValuesViewType &values, const IntView &row_ptr,
+      const IntView &colIndices, const xViewType &x,
+      const typename Kokkos::Details::ArithTraits<
+          typename ValuesViewType::non_const_value_type>::mag_type &beta,
       const yViewType &y);
 };
 
@@ -192,7 +215,7 @@ struct TeamSpmv {
 /// (or one with TeamVectorRange) are used inside.
 ///
 
-template <typename MemberType, typename ArgTrans>
+template <typename MemberType, typename ArgTrans = Trans::NoTranspose>
 struct TeamVectorSpmv {
   template <typename ValuesViewType, typename IntView, typename xViewType,
             typename yViewType, typename alphaViewType, typename betaViewType,
@@ -201,6 +224,18 @@ struct TeamVectorSpmv {
       const MemberType &member, const alphaViewType &alpha,
       const ValuesViewType &values, const IntView &row_ptr,
       const IntView &colIndices, const xViewType &x, const betaViewType &beta,
+      const yViewType &y);
+
+  template <typename ValuesViewType, typename IntView, typename xViewType,
+            typename yViewType, int dobeta>
+  KOKKOS_INLINE_FUNCTION static int invoke(
+      const MemberType &member,
+      const typename Kokkos::Details::ArithTraits<
+          typename ValuesViewType::non_const_value_type>::mag_type &alpha,
+      const ValuesViewType &values, const IntView &row_ptr,
+      const IntView &colIndices, const xViewType &x,
+      const typename Kokkos::Details::ArithTraits<
+          typename ValuesViewType::non_const_value_type>::mag_type &beta,
       const yViewType &y);
 };
 
@@ -261,8 +296,36 @@ struct Spmv {
     }
     return r_val;
   }
-};
 
+  template <typename ValuesViewType, typename IntView, typename xViewType,
+            typename yViewType, int dobeta>
+  KOKKOS_INLINE_FUNCTION static int invoke(
+      const MemberType &member,
+      const typename Kokkos::Details::ArithTraits<
+          typename ValuesViewType::non_const_value_type>::mag_type &alpha,
+      const ValuesViewType &values, const IntView &row_ptr,
+      const IntView &colIndices, const xViewType &x,
+      const typename Kokkos::Details::ArithTraits<
+          typename ValuesViewType::non_const_value_type>::mag_type &beta,
+      const yViewType &y) {
+    int r_val = 0;
+    if (std::is_same<ArgMode, Mode::Serial>::value) {
+      r_val =
+          SerialSpmv<ArgTrans>::template invoke<ValuesViewType, IntView,
+                                                xViewType, yViewType, dobeta>(
+              alpha, values, row_ptr, colIndices, x, beta, y);
+    } else if (std::is_same<ArgMode, Mode::Team>::value) {
+      r_val = TeamSpmv<MemberType, ArgTrans>::template invoke<
+          ValuesViewType, IntView, xViewType, yViewType, dobeta>(
+          member, alpha, values, row_ptr, colIndices, x, beta, y);
+    } else if (std::is_same<ArgMode, Mode::TeamVector>::value) {
+      r_val = TeamVectorSpmv<MemberType, ArgTrans>::template invoke<
+          ValuesViewType, IntView, xViewType, yViewType, dobeta>(
+          member, alpha, values, row_ptr, colIndices, x, beta, y);
+    }
+    return r_val;
+  }
+};
 }  // namespace KokkosBatched
 
 #include "KokkosBatched_Spmv_Serial_Impl.hpp"

@@ -42,9 +42,7 @@ struct Functor_TestBatchedTeamVectorAxpy {
     auto y = Kokkos::subview(_Y, Kokkos::make_pair(first_matrix, last_matrix),
                              Kokkos::ALL);
 
-    KokkosBatched::TeamVectorAxpy<MemberType>::template invoke<ViewType,
-                                                               alphaViewType>(
-        member, alpha, x, y);
+    KokkosBatched::TeamVectorAxpy<MemberType>::invoke(member, alpha, x, y);
   }
 
   inline void run() {
@@ -135,7 +133,7 @@ int test_batched_teamvector_axpy() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
   {
     typedef Kokkos::View<ValueType **, Kokkos::LayoutLeft, DeviceType> ViewType;
-    typedef Kokkos::View<ValueType *, Kokkos::LayoutLeft, DeviceType>
+    typedef Kokkos::View<ScalarType *, Kokkos::LayoutLeft, DeviceType>
         alphaViewType;
 
     for (int i = 3; i < 10; ++i) {
@@ -148,7 +146,7 @@ int test_batched_teamvector_axpy() {
   {
     typedef Kokkos::View<ValueType **, Kokkos::LayoutRight, DeviceType>
         ViewType;
-    typedef Kokkos::View<ValueType *, Kokkos::LayoutRight, DeviceType>
+    typedef Kokkos::View<ScalarType *, Kokkos::LayoutRight, DeviceType>
         alphaViewType;
 
     for (int i = 3; i < 10; ++i) {

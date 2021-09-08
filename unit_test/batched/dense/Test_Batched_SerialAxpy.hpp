@@ -30,8 +30,7 @@ struct Functor_TestBatchedSerialAxpy {
     auto x     = Kokkos::subview(_X, Kokkos::make_pair(k, k + 1), Kokkos::ALL);
     auto y     = Kokkos::subview(_Y, Kokkos::make_pair(k, k + 1), Kokkos::ALL);
 
-    KokkosBatched::SerialAxpy::template invoke<ViewType, alphaViewType>(alpha,
-                                                                        x, y);
+    KokkosBatched::SerialAxpy::invoke(alpha, x, y);
   }
 
   inline void run() {
@@ -121,7 +120,7 @@ int test_batched_axpy() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
   {
     typedef Kokkos::View<ValueType **, Kokkos::LayoutLeft, DeviceType> ViewType;
-    typedef Kokkos::View<ValueType *, Kokkos::LayoutLeft, DeviceType>
+    typedef Kokkos::View<ScalarType *, Kokkos::LayoutLeft, DeviceType>
         alphaViewType;
 
     for (int i = 3; i < 10; ++i) {
@@ -134,7 +133,7 @@ int test_batched_axpy() {
   {
     typedef Kokkos::View<ValueType **, Kokkos::LayoutRight, DeviceType>
         ViewType;
-    typedef Kokkos::View<ValueType *, Kokkos::LayoutRight, DeviceType>
+    typedef Kokkos::View<ScalarType *, Kokkos::LayoutRight, DeviceType>
         alphaViewType;
 
     for (int i = 3; i < 10; ++i) {
