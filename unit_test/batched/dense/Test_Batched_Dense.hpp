@@ -1,5 +1,5 @@
-#ifndef TEST_BATCHED_HPP
-#define TEST_BATCHED_HPP
+#ifndef TEST_BATCHED_DENSE_HPP
+#define TEST_BATCHED_DENSE_HPP
 
 // Serial kernels
 #include "Test_Batched_SerialEigendecomposition.hpp"
@@ -90,4 +90,4 @@
 #include "Test_Batched_VectorRelation.hpp"
 #include "Test_Batched_VectorView.hpp"
 
-#endif // TEST_BATCHED_HPP
+#endif // TEST_BATCHED_DENSE_HPP
