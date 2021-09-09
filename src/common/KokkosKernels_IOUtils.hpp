@@ -1234,7 +1234,7 @@ int read_mtx (
   {
     numEdges = 2 * nnz;
   }
-  //numEdges is only an upper bound (diagonal entries may be removed)
+  //numEdges is only an upper bound (diagonal entries may be removed and explicit zeros will be ignored)
   std::vector <struct Edge<lno_t, scalar_t> > edges (numEdges);
   size_type nE = 0;
   lno_t numDiagonal = 0;
@@ -1262,6 +1262,9 @@ int read_mtx (
       w = 1;
     else
       w = readScalar<scalar_t>(ss2);
+      if (scalar_t(0) == w) {
+        continue; // skip explicit zero
+      }
     if (!transpose){
       tmp.src = s - 1;
       tmp.dst = d - 1;
