@@ -1163,7 +1163,9 @@ int read_mtx (
       mtx_field = COMPLEX;
   }
   else if (fline.find("integer") != std::string::npos){
-    if(std::is_integral<scalar_t>::value)
+    if(std::is_integral<scalar_t>::value 
+       || std::is_floating_point<scalar_t>::value
+       || std::is_same<scalar_t,Kokkos::Experimental::half_t>::value)
       mtx_field = INTEGER;
     else
       throw std::runtime_error("scalar_t in read_mtx() incompatible with integer-typed MatrixMarket file.");
