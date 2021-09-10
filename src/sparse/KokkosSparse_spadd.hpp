@@ -934,15 +934,12 @@ void spadd_symbolic(KernelHandle* handle, const AMatrix& A, const BMatrix& B,
   auto addHandle = handle->get_spadd_handle();
   entries_type entriesC(Kokkos::view_alloc(Kokkos::WithoutInitializing, "entries"),
                         addHandle->get_c_nnz());
-  graph_type graphC(entriesC, row_mapC);
-  C = CMatrix("matrix", graphC);
-
   // Finally since we already have the number of nnz handy
   // we can go ahead and allocate C's values and set them.
   values_type valuesC(Kokkos::view_alloc(Kokkos::WithoutInitializing, "values"),
                       addHandle->get_c_nnz());
 
-  C.values = valuesC;
+  C = CMatrix("matrix", A.numRows(), A.numCols(), addHandle->get_c_nnz(), valuesC, row_mapC, entriesC);
 }
 
 // Symbolic: count entries in each row in C to produce rowmap
