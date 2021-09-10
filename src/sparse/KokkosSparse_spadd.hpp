@@ -912,7 +912,6 @@ template <typename KernelHandle, typename AMatrix, typename BMatrix,
           typename CMatrix>
 void spadd_symbolic(KernelHandle* handle, const AMatrix& A, const BMatrix& B,
                     CMatrix& C) {
-  using graph_type   = typename CMatrix::staticcrsgraph_type;
   using row_map_type = typename CMatrix::row_map_type::non_const_type;
   using entries_type = typename CMatrix::index_type::non_const_type;
   using values_type  = typename CMatrix::values_type::non_const_type;
