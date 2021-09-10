@@ -105,17 +105,14 @@ namespace Test {
     uint64_t seed = Kokkos::Impl::clock_tic();
     Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(seed);
 
-    // (SA 11 Dec 2019) Max (previously: 10) increased to detect the bug in Trilinos issue #6418 
+    // (SA 11 Dec 2019) Max (previously: 10) increased to detect the bug in Trilinos issue #6418
     Kokkos::fill_random(A,rand_pool, Kokkos::rand<typename Kokkos::Random_XorShift64_Pool<execution_space>::generator_type,ScalarA>::max());
     Kokkos::fill_random(B,rand_pool, Kokkos::rand<typename Kokkos::Random_XorShift64_Pool<execution_space>::generator_type,ScalarB>::max());
     Kokkos::fill_random(C,rand_pool, Kokkos::rand<typename Kokkos::Random_XorShift64_Pool<execution_space>::generator_type,ScalarC>::max());
-    // Kokkos::fill_random(A,rand_pool,ScalarA(10));
-    // Kokkos::fill_random(B,rand_pool,ScalarB(10));
-    // Kokkos::fill_random(C,rand_pool,ScalarC(10));
-    
+
     Kokkos::deep_copy(C2,C);
     Kokkos::fence();
- 
+
     struct gemm_VanillaGEMM<ViewTypeA,ViewTypeB,ViewTypeC,execution_space> vgemm;
     vgemm.A_t = A_t; vgemm.B_t = B_t;
     vgemm.A_c = A_c; vgemm.B_c = B_c;
@@ -137,12 +134,13 @@ namespace Test {
 
     Kokkos::parallel_reduce("KokkosBlas::Test::DiffGEMM", Kokkos::TeamPolicy<execution_space>(M,Kokkos::AUTO,16), diffgemm, diff_C);
 
-    if( N!=0 && M!=0 && K!=0 ) {
+    if( N!=0 && M!=0) {
+      int K_eff = (K == 0) ? 1 : K;
       double diff_C_average = diff_C/(N*M);
       // Expected Result: Random Walk in the least significant bit (i.e. ~ sqrt(K)*eps
       // eps scales with the total sum and has a factor in it for the accuracy of the operations ->
       // eps = K * 75 * machine_eps * 7
-      double diff_C_expected = 1.0*sqrt(K)*K*75*machine_eps*7;
+      double diff_C_expected = 1.0*sqrt(K_eff)*K_eff*75*machine_eps*7;
 
       if ( (diff_C_average >= 1.05*diff_C_expected ) ) {
         printf("Result: %e %e\n",diff_C_average,diff_C_expected);
@@ -172,6 +170,8 @@ void test_gemm()
         Test::impl_test_gemm<view_type_a, view_type_b, view_type_c, TestExecSpace>(amode,bmode,0,0,0,alpha,beta);
         //BMK: N = 1 exercises the special GEMV code path in GEMM (currently, only for modes N/N)
         Test::impl_test_gemm<view_type_a, view_type_b, view_type_c, TestExecSpace>(amode,bmode,50,1,40,alpha,beta);
+        //LBV: K = 0 exercise the quick return code path in GEMM
+        Test::impl_test_gemm<view_type_a, view_type_b, view_type_c, TestExecSpace>(amode,bmode,20,14,0,alpha,beta);
         Test::impl_test_gemm<view_type_a, view_type_b, view_type_c, TestExecSpace>(amode,bmode,13,15,17,alpha,beta);
         Test::impl_test_gemm<view_type_a, view_type_b, view_type_c, TestExecSpace>(amode,bmode,179,15,211,alpha,beta);
         Test::impl_test_gemm<view_type_a, view_type_b, view_type_c, TestExecSpace>(amode,bmode,12,3071,517,alpha,beta);

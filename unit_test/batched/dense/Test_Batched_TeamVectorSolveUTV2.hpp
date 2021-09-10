@@ -89,6 +89,7 @@ namespace Test {
 	       xx(i,j) = (i+1);
           });
       }
+      member.team_barrier();  //finish writing aa, xx
       
       /// copy for verification
       TeamVectorCopy<MemberType,Trans::NoTranspose>
