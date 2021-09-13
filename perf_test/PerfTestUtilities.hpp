@@ -25,6 +25,17 @@ template <class Scalar, class Ordinal, class ExecutionSpace, class,
           class Offset>
 class CrsMatrix;
 }
+
+// helper function for get_directories
+inline bool isDirectory(std::string path) {
+  DIR *dirp;  // Pointer to a directory
+  dirp = opendir(path.c_str());
+  // bool var indicating that dirp is not NULL, i.e., a true statement
+  bool isDir = dirp != NULL;
+  if (dirp != NULL) closedir(dirp);
+  return isDir;
+}
+
 /** TODO: fix in C++17 */
 inline std::vector<std::string> get_directories(std::string path) {
   DIR *d;
@@ -34,10 +45,11 @@ inline std::vector<std::string> get_directories(std::string path) {
   if (d) {
     while ((dir = readdir(d)) != NULL) {
       std::string nname = std::string(dir->d_name);
-      if (nname.find(".") != std::string::npos) {
-        continue;
-      }
-      paths.emplace_back(dir->d_name);
+      // Check to see if item is a directory
+      //if (isDirectory(path + '/' + nname))
+      if(nname != "." && nname != ".." && isDirectory(path + '/' + dir->d_name))
+        // std::vector::emplace_back: insert a new element to the end of vector
+        paths.emplace_back(dir->d_name);
     }
     closedir(d);
   }
