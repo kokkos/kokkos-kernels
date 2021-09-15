@@ -7,8 +7,8 @@
 //       backends unit-test
 
 
-#if !defined(TEST_CUDA_BATCHED_CPP) && !defined(TEST_HIP_BATCHED_CPP) && \
-  !defined(TEST_SYCL_BATCHED_CPP) && !defined(TEST_OPENMPTARGET_BATCHED_CPP)
+#if !defined(TEST_CUDA_BATCHED_DENSE_CPP) && !defined(TEST_HIP_BATCHED_DENSE_CPP) && \
+  !defined(TEST_SYCL_BATCHED_DENSE_CPP) && !defined(TEST_OPENMPTARGET_BATCHED_DENSE_CPP)
 
 #include "gtest/gtest.h"
 #include "Kokkos_Core.hpp"

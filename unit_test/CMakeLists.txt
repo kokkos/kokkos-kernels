@@ -14,8 +14,18 @@ KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_C
 KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/graph)
 KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/graph)
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/batched)
-INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/batched)
+KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/batched)
+KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/batched)
+
+KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/batched/dense)
+KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/batched/dense)
+KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/batched/dense/impl)
+KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/batched/dense/impl)
+
+KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/batched/sparse)
+KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/batched/sparse)
+KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/batched/sparse/impl)
+KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/batched/sparse/impl)
 
 KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/common)
 KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/common)
@@ -58,7 +68,15 @@ IF (KOKKOS_ENABLE_CUDA)
     batched_dla_cuda
     SOURCES
       Test_Main.cpp
-      cuda/Test_Cuda_Batched.cpp
+      cuda/Test_Cuda_Batched_Dense.cpp
+    COMPONENTS batched
+  )
+
+  KOKKOSKERNELS_ADD_UNIT_TEST(
+    batched_sla_cuda
+    SOURCES
+      Test_Main.cpp
+      cuda/Test_Cuda_Batched_Sparse.cpp
     COMPONENTS batched
   )
 
@@ -103,7 +121,15 @@ IF (KOKKOS_ENABLE_SYCL)
     batched_dla_sycl
     SOURCES
       Test_Main.cpp
-      sycl/Test_SYCL_Batched.cpp
+      sycl/Test_SYCL_Batched_Dense.cpp
+    COMPONENTS batched
+  )
+
+  KOKKOSKERNELS_ADD_UNIT_TEST(
+    batched_sla_sycl
+    SOURCES
+      Test_Main.cpp
+      sycl/Test_SYCL_Batched_Sparse.cpp
     COMPONENTS batched
   )
 
@@ -149,7 +175,15 @@ IF (KOKKOS_ENABLE_HIP)
     batched_dla_hip
     SOURCES
       Test_Main.cpp
-      hip/Test_HIP_Batched.cpp
+      hip/Test_HIP_Batched_Dense.cpp
+    COMPONENTS batched
+  )
+
+  KOKKOSKERNELS_ADD_UNIT_TEST(
+    batched_sla_hip
+    SOURCES
+      Test_Main.cpp
+      hip/Test_HIP_Batched_Sparse.cpp
     COMPONENTS batched
   )
 
@@ -194,7 +228,7 @@ IF (KOKKOS_ENABLE_OPENMPTARGET)
   #   batched_dla_openmptarget
   #   SOURCES
   #     Test_Main.cpp
-  #     openmptarget/Test_OpenMPTarget_Batched.cpp
+  #     openmptarget/Test_OpenMPTarget_Batched_Dense.cpp
   #   COMPONENTS batched
   # )
 
@@ -239,7 +273,15 @@ IF (KOKKOS_ENABLE_OPENMP)
     batched_dla_openmp
     SOURCES
       Test_Main.cpp
-      openmp/Test_OpenMP_Batched.cpp
+      openmp/Test_OpenMP_Batched_Dense.cpp
+    COMPONENTS batched
+  )
+
+  KOKKOSKERNELS_ADD_UNIT_TEST(
+    batched_sla_openmp
+    SOURCES
+      Test_Main.cpp
+      openmp/Test_OpenMP_Batched_Sparse.cpp
     COMPONENTS batched
   )
 
@@ -288,7 +330,15 @@ IF (KOKKOS_ENABLE_SERIAL)
     batched_dla_serial
     SOURCES
       Test_Main.cpp
-      serial/Test_Serial_Batched.cpp
+      serial/Test_Serial_Batched_Dense.cpp
+    COMPONENTS batched
+  )
+
+  KOKKOSKERNELS_ADD_UNIT_TEST(
+    batched_sla_serial
+    SOURCES
+      Test_Main.cpp
+      serial/Test_Serial_Batched_Sparse.cpp
     COMPONENTS batched
   )
 
@@ -333,7 +383,15 @@ IF (KOKKOS_ENABLE_PTHREAD)
     batched_dla_threads
     SOURCES
       Test_Main.cpp
-      threads/Test_Threads_Batched.cpp
+      threads/Test_Threads_Batched_Dense.cpp
+    COMPONENTS batched
+  )
+
+  KOKKOSKERNELS_ADD_UNIT_TEST(
+    batched_sla_threads
+    SOURCES
+      Test_Main.cpp
+      threads/Test_Threads_Batched_Sparse.cpp
     COMPONENTS batched
   )
 
