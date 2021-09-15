@@ -125,11 +125,9 @@ void run(int m, int repeat) {
   // Declare type aliases
   using Scalar   = double;
   using MemSpace = typename ExecSpace::memory_space;
-  using Device   = Kokkos::Device<ExecSpace, MemSpace>;
 
   // For the Team implementation of dot; ExecSpace is implicit;
   using policy      = Kokkos::TeamPolicy<ExecSpace>;
-  using member_type = typename policy::member_type;
 
   // Create 1D view w/ Device as the ExecSpace; this is an input vector
   Kokkos::View<Scalar*, MemSpace> x("X", m);

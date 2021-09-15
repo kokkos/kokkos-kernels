@@ -87,7 +87,7 @@ struct SPMVTestData {
   double ave_time;
   double max_time;
   double min_time;
-  inline void check_errors(h_mv_type h_y) {
+  inline void check_errors() {
     double error = 0.0;
     double sum   = 0.0;
 

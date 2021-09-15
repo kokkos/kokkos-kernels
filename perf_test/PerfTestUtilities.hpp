@@ -74,7 +74,7 @@ struct test_reader<matrix_type<Scalar, Ordinal, ExecutionSpace, Offset>> {
   }
 };
 
-};  // namespace readers
+}  // namespace readers
 template <class... SubComponents>
 struct data_retriever {
   std::string root_path;

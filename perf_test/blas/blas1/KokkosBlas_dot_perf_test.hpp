@@ -43,10 +43,10 @@ struct testData {
   // A function with no return type whose name is the name of the class is a
   // constructor or a destructor;
   // Constructor -- create function:
-  testData(int m) : m(m) {
-    Kokkos::View<Scalar*, Device> x(
+  testData(int m_in) : m(m_in) {
+    x = Kokkos::View<Scalar*, Device> (
         Kokkos::view_alloc(Kokkos::WithoutInitializing, "x"), m);
-    Kokkos::View<Scalar*, Device> y(
+    y = Kokkos::View<Scalar*, Device> (
         Kokkos::view_alloc(Kokkos::WithoutInitializing, "y"), m);
 
     Kokkos::Random_XorShift64_Pool<ExecSpace> pool(123);

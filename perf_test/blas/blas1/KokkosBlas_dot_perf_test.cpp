@@ -163,7 +163,7 @@ void run(int m, int repeat) {
   Kokkos::Timer timer;
 
   for (int i = 0; i < repeat; i++) {
-    double result = KokkosBlas::dot(x, y);
+    KokkosBlas::dot(x, y);
     ExecSpace().fence();
   }
 
