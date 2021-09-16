@@ -51,10 +51,8 @@
 #include <PerfTestUtilities.hpp>
 #endif  // KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
 
-
 template <class ExecSpace, class Layout>
 testData_rps_team_dot<ExecSpace, Layout> setup_test(int m, int repeat,
-                                                    bool layoutLeft,
                                                     const int numberOfTeams) {
   // use constructor to generate testData_object
   testData_rps_team_dot<ExecSpace, Layout> testData_rps_team_dot_obj(m);
@@ -79,7 +77,7 @@ test_list construct_team_dot_kernel_base(const rajaperf::RunParams& run_params)
 
   using test_data_type = decltype(
       setup_test<Kokkos::DefaultExecutionSpace,
-                 Kokkos::DefaultExecutionSpace::array_layout>(1, 1, true, 1));
+                 Kokkos::DefaultExecutionSpace::array_layout>(1, 1, 1));
 
   kernel_base_vector.push_back(rajaperf::make_kernel_base(
       "BLAS_TEAM_DOT ", run_params,
@@ -89,16 +87,14 @@ test_list construct_team_dot_kernel_base(const rajaperf::RunParams& run_params)
             // TODO: Discuss decltype
             // TODO: Ask KK what values they want tested?
             setup_test<Kokkos::DefaultExecutionSpace,
-                       Kokkos::DefaultExecutionSpace::array_layout>(m, repeat,
-                                                                    true, 1));
+                       Kokkos::DefaultExecutionSpace::array_layout>(m, repeat, 1));
       },
-      [&](const int iteration, const int runsize, test_data_type& data) {
+      [&](const int , const int , test_data_type& data) {
         Kokkos::parallel_for(
             "TeamDotUsage_RPS",
             test_data_type::policy(data.numberOfTeams, Kokkos::AUTO),
             KOKKOS_LAMBDA(const test_data_type::member_type& team) {
-              // body
-              double result =
+              // loop body
                   KokkosBlas::Experimental::dot(team, data.x, data.y);
             });
       }));

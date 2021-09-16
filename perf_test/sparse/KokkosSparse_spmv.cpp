@@ -81,8 +81,6 @@
 
 int test_crs_matrix_singlevec(Ordinal numRows, Ordinal numCols, int test, const char* filename, Ordinal rows_per_thread, int team_size, int vector_length, int schedule, int loop) {
   typedef KokkosSparse::CrsMatrix<Scalar, Ordinal, Kokkos::DefaultExecutionSpace, void, Offset> matrix_type;
-  typedef typename Kokkos::View<Scalar*, Layout> mv_type;
-  typedef typename mv_type::HostMirror h_mv_type;
 
   spmv_additional_data data(test);
 

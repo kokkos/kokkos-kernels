@@ -35,7 +35,7 @@ struct testData_rps_team_dot {
   // Create 1D view w/ Device as the ExecSpace; this is the output vector
   Kokkos::View<Scalar*, MemSpace> y;
 
-  testData_rps_team_dot(int m) : m(m) {
+  testData_rps_team_dot(int m_in) : m(m_in) {
     x = Kokkos::View<Scalar*, MemSpace>(
         Kokkos::ViewAllocateWithoutInitializing("x"), m);
     y = Kokkos::View<Scalar*, MemSpace>(

@@ -77,11 +77,10 @@ test_list construct_dot_kernel_base(const rajaperf::RunParams& run_params)
         return std::make_tuple(
             setup_test<Kokkos::DefaultExecutionSpace>(m, repeat));
       },
-      [&](const int iteration, const int runsize, auto& data) {
+      [&](const int , const int , auto& data) {
         KokkosBlas::dot(data.x, data.y);
       }));
 
-  // return a vector of kernel base objects
-  // of type test_list
+  // return a vector of kernel base objects of type test_list
   return kernel_base_vector;
 }

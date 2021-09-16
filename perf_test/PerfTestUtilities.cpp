@@ -10,6 +10,6 @@ std::string inputDataPath;
 
 void set_input_data_path(const std::string& path_to_data) {
   inputDataPath = path_to_data;
-};
-std::string get_input_data_path() { return inputDataPath; };
+}
+std::string get_input_data_path() { return inputDataPath; }
 }  // namespace test

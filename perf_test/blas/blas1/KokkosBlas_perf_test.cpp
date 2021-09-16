@@ -138,8 +138,7 @@ static void __print_help_blas_perf_test() {
 
   printf("\t-k, --batch_size=LEN\n");
   printf("\t\tBatch size. Adds third dimension to matrices A and B.\n");
-  printf("\t\t\tThe value of LEN as an integer. (default: %d)\n",
-         DEFAULT_K);
+  printf("\t\t\tThe value of LEN as an integer. (default: %d)\n", DEFAULT_K);
 
   printf("\t-c, --csv=/path/to/file.csv\n");
   printf("\t\tCsv output file selection.\n");
@@ -266,9 +265,8 @@ int main(int argc, char **argv) {
       case 'w': options.warm_up_n = atoi(optarg); break;
       case 'i': options.n = atoi(optarg); break;
       case 'k':
-        options.start.a.k = options.stop.a.k = 
-        options.start.b.k = options.stop.b.k =
-          atoi(optarg);
+        options.start.a.k = options.stop.a.k = options.start.b.k =
+            options.stop.b.k                 = atoi(optarg);
         break;
       case 'c':
         out_file         = optarg;

@@ -78,11 +78,9 @@
 
 SPMVTestData setup_test(spmv_additional_data* data, SPMVTestData::matrix_type A,
                         Ordinal rows_per_thread, int team_size,
-                        int vector_length, int schedule, int loop) {
+                        int vector_length, int schedule, int ) {
   SPMVTestData test_data;
-  using matrix_type   = SPMVTestData::matrix_type;
   using mv_type       = SPMVTestData::mv_type;
-  using h_mv_type     = SPMVTestData::h_mv_type;
   using h_graph_type  = SPMVTestData::h_graph_type;
   using h_values_type = SPMVTestData::h_values_type;
   test_data.A         = A;
@@ -124,10 +122,7 @@ SPMVTestData setup_test(spmv_additional_data* data, SPMVTestData::matrix_type A,
   // Error Check
   Kokkos::deep_copy(test_data.h_y, test_data.y1);
 
-  test_data.check_errors(test_data.h_y);
-  double min_time           = 1.0e32;
-  double max_time           = 0.0;
-  double ave_time           = 0.0;
+  test_data.check_errors();
   test_data.min_time        = 1.0e32;
   test_data.ave_time        = 0.0;
   test_data.max_time        = 0.0;
@@ -176,8 +171,6 @@ struct test_reader<SPMVConfiguration> {
 }  // namespace readers
 test_list construct_kernel_base(const rajaperf::RunParams& run_params) {
   using matrix_type = SPMVTestData::matrix_type;
-  typedef typename Kokkos::View<Scalar*, Layout> mv_type;
-  typedef typename mv_type::HostMirror h_mv_type;
   srand(17312837);
   data_retriever<matrix_type, SPMVConfiguration> reader(
       "sparse/spmv/", "sample.mtx", "config.cfg");
@@ -186,14 +179,14 @@ test_list construct_kernel_base(const rajaperf::RunParams& run_params) {
     auto& config = std::get<1>(test_case.test_data);
     test_cases.push_back(rajaperf::make_kernel_base(
         "Sparse_SPMV:" + test_case.filename, run_params,
-        [=](const int iterations, const int runsize) {
+        [=](const int , const int ) {
           spmv_additional_data data(config.test);
           return std::make_tuple(
               setup_test(&data, std::get<0>(test_case.test_data),
                          config.rows_per_thread, config.team_size,
                          config.vector_length, config.schedule, config.loop));
         },
-        [&](const int iteration, const int runsize, SPMVTestData& data) {
+        [&](const int , const int , SPMVTestData& data) {
           run_benchmark(data);
         }));
   }
@@ -202,14 +195,7 @@ test_list construct_kernel_base(const rajaperf::RunParams& run_params) {
 
 std::vector<rajaperf::KernelBase*> make_spmv_kernel_base(
     const rajaperf::RunParams& params) {
-  long long int size = 110503;  // a prime number
-  int test           = KOKKOS;
 
-  int rows_per_thread = -1;
-  int vector_length   = -1;
-  int team_size       = -1;
-  int schedule        = AUTO;
-  int loop            = 100;
 
   return construct_kernel_base(params);
 }

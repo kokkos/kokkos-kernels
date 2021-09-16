@@ -26,6 +26,7 @@ template <class Scalar, class Ordinal, class ExecutionSpace, class,
 class CrsMatrix;
 }
 
+// helper function for get_directories
 inline bool isDirectory(std::string path) {
   DIR *dirp;  // Pointer to a directory
   dirp = opendir(path.c_str());
@@ -45,9 +46,10 @@ inline std::vector<std::string> get_directories(std::string path) {
     while ((dir = readdir(d)) != NULL) {
       std::string nname = std::string(dir->d_name);
       // Check to see if item is a directory
-      if (isDirectory(path + '/' + nname))
+      //if (isDirectory(path + '/' + nname))
+      if(nname != "." && nname != ".." && isDirectory(path + '/' + dir->d_name))
         // std::vector::emplace_back: insert a new element to the end of vector
-        paths.emplace_back(dir->d_name + nname);
+        paths.emplace_back(dir->d_name);
     }
     closedir(d);
   }
@@ -72,7 +74,7 @@ struct test_reader<matrix_type<Scalar, Ordinal, ExecutionSpace, Offset>> {
   }
 };
 
-};  // namespace readers
+}  // namespace readers
 template <class... SubComponents>
 struct data_retriever {
   std::string root_path;

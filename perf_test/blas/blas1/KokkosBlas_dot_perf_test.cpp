@@ -46,6 +46,9 @@
 #include <blas/KokkosBlas1_dot.hpp>
 #include <Kokkos_Random.hpp>
 
+// For RPS implementation
+#include "KokkosBlas_dot_perf_test.hpp"
+
 struct Params {
   int use_cuda    = 0;
   int use_openmp  = 0;
@@ -161,7 +164,7 @@ void run(int m, int repeat) {
 
   double result;
   for (int i = 0; i < repeat; i++) {
-    result = KokkosBlas::dot(x, y);
+    KokkosBlas::dot(x, y);
     ExecSpace().fence();
   }
 
