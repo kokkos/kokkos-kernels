@@ -286,16 +286,16 @@ static void __gemm_output_csv_row(options_t options, gemm_args_t gemm_args,
                                   double time_in_seconds,
                                   const char *experiment_name = nullptr,
                                   const char *team_size       = nullptr,
-                                  const char *vector_len      = nullptr,
-                                  const char *vector_type     = nullptr) {
+                                  const char *vec_len         = nullptr,
+                                  const char *vec_type        = nullptr) {
   std::string algo_name = !experiment_name ? test_e_str[options.test]
                                            : std::string(experiment_name);
   std::string ts        = !team_size ? std::to_string(gemm_args.bp.team_size)
                                      : std::string(team_size);
-  std::string vlen      = !vector_len ? std::to_string(gemm_args.bp.vector_len)
-                                      : std::string(vector_len);
+  std::string vlen =
+      !vec_len ? std::to_string(gemm_args.bp.vector_len) : std::string(vec_len);
   std::string vtype =
-      !vector_type ? internal_vector_type::label() : std::string(vector_type);
+      !vec_type ? internal_vector_type::label() : std::string(vec_type);
   if (options.blas_args.use_auto) ts = vlen = "Kokkos::AUTO";
 
   double flops;
