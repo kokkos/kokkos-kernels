@@ -12,8 +12,7 @@
 namespace test {
 namespace blas2 {
 
-// Register kernels per test
-
+// Register kernels for a specific test
 void build_gemv_executor(rajaperf::Executor& exec,
                          int argc,
                          char* argv[],
@@ -23,39 +22,12 @@ void build_gemv_executor(rajaperf::Executor& exec,
         }
 }
 
-
-/*
-void build_dot_executor(rajaperf::Executor& exec,
-                    int argc,
-                    char* argv[],
-                    const rajaperf::RunParams& params) {
-        for(auto* kernel : construct_dot_kernel_base(params)) {
-                exec.registerKernel("BLAS", kernel);
-        }
-}
-
-*/
-
-//Team Dot build_executor
-/*
-void build_team_dot_executor(rajaperf::Executor& exec,
-                    int argc,
-                    char* argv[],
-                    const rajaperf::RunParams& params) {
-        for(auto* kernel : construct_team_dot_kernel_base(params)) {
-                exec.registerKernel("BLAS", kernel);
-        }
-}
-
-*/
-
 void build_blas2_executor(rajaperf::Executor& exec,
                           int argc,
                           char* argv[],
                           const rajaperf::RunParams& params){
         exec.registerGroup("BLAS2");
         build_gemv_executor(exec, argc, argv, params);
-        //build_team_dot_executor(exec, argc, argv, params);
 }
 
 

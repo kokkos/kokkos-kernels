@@ -14,8 +14,7 @@
 //
 #ifdef KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
 #include <PerfTestUtilities.hpp>
-// The line below may not be necessary ???
-//test_list make_gemv_kernel_base(const rajaperf::RunParams& params);
+
 test_list construct_gemv_kernel_base(const rajaperf::RunParams& run_params);
 
 #endif //KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
@@ -63,17 +62,6 @@ struct testData_gemv {
   }
 };
 
-// DANGER - POTENTIAL MERGE ISSUES IN COMMENT!!
-////////////////////////////////////////////////////////////////////////////////////////////////
-/* Taking in by reference avoids making a copy of the data in memory, whereas
- * taking in by value would make a copy in memory.  Copying operations do not
- * enhance performance.
- *  A function takes data as a pointer when you're dealing with a collection of
- *  things, such as 8 test datasets
- */
-////////////////////////////////////////////////////////////////////////////////////////////////
-
-// Templated function 
 template<typename ExecSpace, typename Layout>
 testData_gemv<ExecSpace, Layout> setup_test(int m,
                                             int n,
