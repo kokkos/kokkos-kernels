@@ -139,7 +139,7 @@ static std::string loop_e_str[LOOP_N] = {"serial", "parallel"};
  */
 typedef enum TEST {
   BLAS,
-  BATCHED,
+  BATCHED_HEURISTIC,
   BATCHED_SERIAL,
   BATCHED_SERIAL_BLOCKED,
   BATCHED_SERIAL_SIMD,
@@ -157,7 +157,7 @@ typedef enum TEST {
 } test_e;
 
 static std::string test_e_str[TEST_N]{
-    "blas", "batched", "batched_serial", "batched_serial_blocked",
+    "blas", "batched_heuristic", "batched_serial", "batched_serial_blocked",
     "batched_serial_simd", "batched_serial_simd_blocked",
     "batched_serial_compact_mkl", "batched_team", "batched_team_blocked",
     "batched_team_vector", "batched_team_vector_blocked", "batched_team_simd",

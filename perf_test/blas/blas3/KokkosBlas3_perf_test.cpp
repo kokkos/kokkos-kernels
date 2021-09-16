@@ -52,22 +52,23 @@
 static struct option long_options[] = {
     {"help", no_argument, 0, 'h'},
     {"test", required_argument, 0, 't'},
-    {"loop_type", required_argument, 0, 'l'},
-    {"matrix_size_start", required_argument, 0, 'b'},
-    {"matrix_size_stop", required_argument, 0, 'e'},
-    {"matrix_size_step", required_argument, 0, 's'},
     {"warm_up_loop", required_argument, 0, 'w'},
-    {"iter", required_argument, 0, 'i'},
-    {"csv", required_argument, 0, 'c'},
-    {"routines", required_argument, 0, 'r'},
     {"trmm_options", required_argument, 0, 'o'},
     {"trmm_alpha", required_argument, 0, 'a'},
     {"gemm_options", required_argument, 0, 'g'},
     {"gemm_scalars", required_argument, 0, 'p'},
     {"team_size", required_argument, 0, 'z'},
     {"vector_len", required_argument, 0, 'n'},
+    {"use_auto", required_argument, 0, 'u'},
     {"batch_size", required_argument, 0, 'k'},
     {"batch_size_last_dim", required_argument, 0, 'd'},
+    {"loop_type", required_argument, 0, 'l'},
+    {"matrix_size_start", required_argument, 0, 'b'},
+    {"matrix_size_stop", required_argument, 0, 'e'},
+    {"matrix_size_step", required_argument, 0, 's'},
+    {"iter", required_argument, 0, 'i'},
+    {"csv", required_argument, 0, 'c'},
+    {"routines", required_argument, 0, 'r'},
     {"verify", required_argument, 0, 'v'},
     {"ninter", required_argument, 0, 'j'},
     {0, 0, 0, 0}};
@@ -439,6 +440,7 @@ int main(int argc, char **argv) {
   }
 
   Kokkos::initialize(argc, argv);
+  atexit(Kokkos::finalize);
 
   int err = 0;
   for (i = 0; i < BLAS_ROUTINES_N; i++) {
@@ -464,8 +466,6 @@ int main(int argc, char **argv) {
   }
 
   if (out_file != nullptr) fb.close();
-
-  Kokkos::finalize();
 
   return 0;
 }

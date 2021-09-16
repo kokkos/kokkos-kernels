@@ -46,10 +46,10 @@
 
 namespace KokkosBatched {
 /********************* BEGIN functor-level routines *********************/
-///
-/// Serial Impl
-/// ===========
+/********************* END   functor-level routines *********************/
 
+namespace Impl {
+/********************* BEGIN non-functor-level routines *********************/
 ///
 /// Implemented:
 /// NT/NT, T/NT, NT/T, T/T
@@ -58,11 +58,6 @@ namespace KokkosBatched {
 /// CT/NT, NT/CT, CT/CT
 ///
 
-/********************* BEGIN functor-level routines *********************/
-/********************* END   functor-level routines *********************/
-
-namespace Impl {
-/********************* BEGIN non-functor-level routines *********************/
 template <class ArgTransA, class ArgTransB, class ArgBatchSzDim,
           class HandleType, class ScalarType, class AViewType, class BViewType,
           class CViewType, class ArgBoundsCheck, int TILE_M, int TILE_N,
