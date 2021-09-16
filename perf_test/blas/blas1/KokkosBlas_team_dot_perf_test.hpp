@@ -86,9 +86,7 @@ void run(int m, int repeat) {
         KokkosBlas::Experimental::dot(team, testMatrices.x, testMatrices.y);
       });
 
-  // The livepo/git_submodules_rps_PR
   Kokkos::fence();
-  Kokkos::Timer timer;
 
   for (int i = 0; i < testMatrices.repeat; i++) {
     Kokkos::parallel_for(
