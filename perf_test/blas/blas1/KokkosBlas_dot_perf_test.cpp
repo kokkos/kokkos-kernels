@@ -192,7 +192,7 @@ int main(int argc, char** argv) {
   bool useOMP     = params.use_openmp != 0;
   bool useCUDA    = params.use_cuda != 0;
 
-  bool useSerial = !useOMP && !useCUDA;
+  bool useSerial = !useThreads && !useOMP && !useCUDA;
 
   if (useThreads) {
 #if defined(KOKKOS_ENABLE_THREADS)
