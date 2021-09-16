@@ -132,7 +132,7 @@ void run(int m, int repeat) {
   using MemSpace = typename ExecSpace::memory_space;
   using Device   = Kokkos::Device<ExecSpace, MemSpace>;
 
-  std::cout << "Running BLAS Level 1 DOT perfomrance experiment ("
+  std::cout << "Running BLAS Level 1 DOT performance experiment ("
             << ExecSpace::name() << ")\n";
 
   std::cout << "Each test input vector has a length of " << m << std::endl;
