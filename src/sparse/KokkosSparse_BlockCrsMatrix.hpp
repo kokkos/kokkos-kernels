@@ -936,5 +936,14 @@ ctor_impl (const std::string &/*label*/,
   graph = staticcrsgraph_type( tmp_entries, tmp_row_map );
 }
 
+/// \class is_block_crs_matrix
+/// \brief is_block_crs_matrix<T>::value is true if T is a BlockCrsMatrix<...>, false oterhwise
+template <typename>
+struct is_block_crs_matrix : public std::false_type {};
+template <typename... P>
+struct is_block_crs_matrix<BlockCrsMatrix<P...>> : public std::true_type {};
+template <typename... P>
+struct is_block_crs_matrix<const BlockCrsMatrix<P...>> : public std::true_type {};
+
 }} // namespace KokkosSparse::Experimental
 #endif

@@ -57,6 +57,11 @@
 #include "KokkosBlas1_scal.hpp"
 #include "KokkosKernels_Utils.hpp"
 
+#include "KokkosSparse_BlockCrsMatrix.hpp"
+#include "KokkosSparse_spmv_impl_blockcrs.hpp"
+#include "KokkosSparse_BsrMatrix.hpp"
+#include "KokkosSparse_spmv_impl_bsr.hpp"
+
 namespace KokkosSparse {
 
 namespace {
@@ -425,6 +430,78 @@ spmv (KokkosKernels::Experimental::Controls /*controls*/,
   }
 }
 
+template <class AlphaType, class AMatrix, class XVector, class BetaType, class YVector>
+void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
+                  const AlphaType& alpha, const AMatrix& A, const XVector& x,
+                  const BetaType& beta, const YVector& y);
+
+namespace Experimental {
+
+template <class AMatrix, class Enable = void>
+struct call_spmv {
+  template <class AlphaType, class XVector, class BetaType, class YVector>
+  static void execute(KokkosKernels::Experimental::Controls controls,
+                      const char mode[], const AlphaType& alpha,
+                      const AMatrix& A, const XVector& x, const BetaType& beta,
+                      const YVector& y) {
+    using RANK_SPECIALISED =
+        typename std::conditional<static_cast<int>(XVector::rank) == 2,
+                                  RANK_TWO, RANK_ONE>::type;
+    KokkosSparse::spmv(controls, mode, alpha, A, x, beta, y, RANK_SPECIALISED());
+  }
+};
+
+template <class AMatrix>
+struct call_spmv<AMatrix,
+                 typename std::enable_if<
+                     Experimental::is_block_crs_matrix<AMatrix>::value>::type> {
+  template <class AlphaType, class XVector, class BetaType, class YVector>
+  static void execute(KokkosKernels::Experimental::Controls controls,
+                      const char mode[], const AlphaType& alpha,
+                      const AMatrix& A, const XVector& x, const BetaType& beta,
+                      const YVector& y) {
+    //
+    if (A.blockDim() == 1) {
+      KokkosSparse::CrsMatrix<typename AMatrix::value_type,
+      typename AMatrix::ordinal_type,
+      typename AMatrix::device_type,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+      typename AMatrix::size_type>
+          A1("crs_convert", A.numCols(), A.values, A.graph);
+      KokkosSparse::spmv(controls, mode, alpha, A1, x, beta, y);
+      return;
+    }
+    //
+    KokkosSparse::Impl::BlockCrs::spmv(controls, mode, alpha, A, x, beta, y);
+  }
+};
+
+template <class AMatrix>
+struct call_spmv<AMatrix, typename std::enable_if<Experimental::is_bsr_matrix<
+                              AMatrix>::value>::type> {
+  template <class AlphaType, class XVector, class BetaType, class YVector>
+  static void execute(KokkosKernels::Experimental::Controls controls,
+                      const char mode[], const AlphaType& alpha,
+                      const AMatrix& A, const XVector& x, const BetaType& beta,
+                      const YVector& y) {
+#ifdef KOKKOS_USE_CUSPARSE
+    if (A.blockDim() == 1) {
+      KokkosSparse::CrsMatrix<
+          typename AMatrix::value_type, typename AMatrix::ordinal_type,
+          typename AMatrix::device_type,
+          Kokkos::MemoryTraits<Kokkos::Unmanaged>, typename AMatrix::size_type>
+          A1("crs_convert", A.numCols(), A.values, A.graph);
+      KokkosSparse::spmv(controls, mode, alpha, A1, X, beta, Y);
+      return;
+    }
+#endif  // KOKKOS_USE_CUSPARSE
+    //
+    KokkosSparse::Impl::Bsr::spmv(controls, mode, alpha, A, x, beta, y);
+  }
+};
+
+}  // namespace Experimental
+
 /// \brief Public interface to local sparse matrix-vector multiply.
 ///
 /// Compute y = beta*y + alpha*Op(A)*x, where x and y are either both
@@ -452,10 +529,7 @@ void spmv(KokkosKernels::Experimental::Controls controls,
 	  const XVector& x,
 	  const BetaType& beta,
 	  const YVector& y) {
-  using RANK_SPECIALISE =
-    typename std::conditional<static_cast<int> (XVector::rank) == 2,
-                              RANK_TWO, RANK_ONE>::type;
-  spmv (controls, mode, alpha, A, x, beta, y, RANK_SPECIALISE ());
+   Experimental::call_spmv< AMatrix >::execute(controls, mode, alpha, A, x, beta, y);
 }
 
 // Overload for backward compatibility and also just simpler

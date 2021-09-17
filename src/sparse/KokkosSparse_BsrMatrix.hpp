@@ -435,7 +435,8 @@ class BsrMatrix {
   //! Copy constructor (shallow copy).
   template <typename SType, typename OType, class DType, class MTType,
             typename IType>
-  explicit BsrMatrix(const BsrMatrix<SType, OType, DType, MTType, IType>& B)
+  KOKKOS_INLINE_FUNCTION
+  BsrMatrix(const BsrMatrix<SType, OType, DType, MTType, IType>& B)
       : graph(B.graph.entries, B.graph.row_map),
         values(B.values),
         dev_config(B.dev_config),
@@ -446,6 +447,26 @@ class BsrMatrix {
     // as the constructor of StaticCrsGraph does not allow copy from non const
     // version.
   }
+
+  /// \brief Deep copy constructor
+  template <typename SType, typename OType, class DType, class MTType,
+            typename IType>
+  KOKKOS_INLINE_FUNCTION
+  BsrMatrix(const std::string&, const BsrMatrix<SType, OType, DType, MTType, IType>& B)
+  {
+    typename row_map_type::non_const_type rowmap(Kokkos::view_alloc(Kokkos::WithoutInitializing, "rowmap"), B.graph.row_map.extent(0));
+    index_type cols(Kokkos::view_alloc(Kokkos::WithoutInitializing, "cols"), B.nnz());
+    values = values_type(Kokkos::view_alloc(Kokkos::WithoutInitializing, "values"), B.values.extent(0));
+    Kokkos::deep_copy(rowmap, B.graph.row_map);
+    Kokkos::deep_copy(cols, B.graph.entries);
+    Kokkos::deep_copy(values, B.values);
+
+    numCols_ = B.numCols();
+    graph = StaticCrsGraphType(cols, rowmap); 
+
+    blockDim_ = B.blockDim();
+  }
+
 
   /// \brief Construct with a graph that will be shared.
   ///
@@ -491,9 +512,9 @@ class BsrMatrix {
 
     if ((ncols % blockDim_ != 0) || (nrows % blockDim_ != 0)) {
       assert((ncols % blockDim_ == 0) &&
-          "BsrMatrix: input CrsMatrix columns is not a multiple of block size");
+          "BsrMatrix: input columns is not a multiple of block size");
       assert((nrows % blockDim_ == 0) &&
-      "BsrMatrix: input CrsMatrix rows is not a multiple of block size");
+      "BsrMatrix: input rows is not a multiple of block size");
     }
 
     numCols_  = ncols / blockDim_;
@@ -649,8 +670,7 @@ class BsrMatrix {
   ///        assuming the provided CrsMatrix has appropriate block structure.
   template <typename SType, typename OType, class DType, class MTType,
             typename IType>
-  BsrMatrix(const KokkosSparse::CrsMatrix<SType, OType, DType, MTType, IType>&
-                crs_mtx,
+  BsrMatrix(const KokkosSparse::CrsMatrix<SType, OType, DType, MTType, IType>& crs_mtx,
             const OrdinalType blockDimIn) {
     typedef typename KokkosSparse::CrsMatrix<SType, OType, DType, MTType, IType>
         crs_matrix_type;
@@ -658,13 +678,14 @@ class BsrMatrix {
     typedef typename crs_graph_type::entries_type crs_graph_entries_type;
     typedef typename crs_graph_type::row_map_type crs_graph_row_map_type;
 
+    blockDim_ = blockDimIn;
+
     assert(
         (crs_mtx.numCols() % blockDim_ == 0) &&
         "BsrMatrix: input CrsMatrix columns is not a multiple of block size");
     assert((crs_mtx.numRows() % blockDim_ == 0) &&
            "BsrMatrix: input CrsMatrix rows is not a multiple of block size");
 
-    blockDim_ = blockDimIn;
     numCols_  = crs_mtx.numCols() / blockDim_;
 
     OrdinalType nbrows =
@@ -673,7 +694,7 @@ class BsrMatrix {
 
     // block_rows will accumulate the number of blocks per row - this is NOT the
     // row_map with cum sum!!
-    std::vector<OrdinalType> block_rows(nbrows, 0);
+    std::vector< IType > block_rows(nbrows, 0);
 
     typename crs_graph_row_map_type::HostMirror h_crs_row_map =
         Kokkos::create_mirror_view(crs_mtx.graph.row_map);
@@ -686,9 +707,9 @@ class BsrMatrix {
     // i.e. nnz for the block CRS graph
     OrdinalType numBlocks = 0;
     for (OrdinalType i = 0; i < crs_mtx.numRows(); i += blockDim_) {
-      std::set<OrdinalType> col_set;
+      std::set< OType > col_set;
       for (OrdinalType ie = h_crs_row_map(i); ie < h_crs_row_map(i + blockDim_); ++ie) {
-        col_set.insert(h_crs_entries(ie) / blockDim_);
+        col_set.insert( h_crs_entries(ie) / blockDim_);
       }
       numBlocks += col_set.size();                 // cum sum
       block_rows[i / blockDim_] = col_set.size();  // frequency counts
@@ -699,7 +720,7 @@ class BsrMatrix {
     // numBlocks in the final entry
     graph = Kokkos::create_staticcrsgraph<staticcrsgraph_type>("blockgraph",
                                                                block_rows);
-    typename index_type::HostMirror h_row_map =
+    typename row_map_type::HostMirror h_row_map =
         Kokkos::create_mirror_view(graph.row_map);
     Kokkos::deep_copy(h_row_map, graph.row_map);
 
@@ -710,9 +731,9 @@ class BsrMatrix {
     for (OrdinalType ib = 0; ib < nbrows; ++ib) {
       auto ir_start = ib * blockDim_;
       auto ir_stop  = (ib + 1) * blockDim_;
-      std::set<OrdinalType> col_set;
+      std::set< OType > col_set;
       for (OrdinalType jk = h_crs_row_map(ir_start); jk < h_crs_row_map(ir_stop); ++jk) {
-        col_set.insert(h_crs_entries(jk) / blockDim_);
+        col_set.insert( h_crs_entries(jk) / blockDim_ );
       }
       for (auto col_block : col_set)  {
         h_entries(ientry++) = col_block;
@@ -799,7 +820,6 @@ class BsrMatrix {
   }
 
   //! Attempt to assign the input matrix to \c *this.
-  // Are the CUDA sparse handles needed to be copied here??
   template <typename aScalarType, typename aOrdinalType, class aDevice,
             class aMemoryTraits, typename aSizeType>
   BsrMatrix& operator=(const BsrMatrix<aScalarType, aOrdinalType, aDevice,
@@ -989,7 +1009,8 @@ class BsrMatrix {
 
  private:
   ordinal_type numCols_;
-  ordinal_type blockDim_;  // TODO Assuming square blocks for now
+  ordinal_type blockDim_;  // TODO Assuming square blocks for now - add
+                           // blockRowDim, blockColDim
 };
 
 //----------------------------------------------------------------------------
