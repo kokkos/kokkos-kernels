@@ -243,6 +243,31 @@ struct Functor_BatchedVanillaGEMM {
   }
 };
 
+//Compute C := alpha * AB + beta * C
+template <class ViewTypeA, class ViewTypeB, class ViewTypeC>
+void vanillaGEMM(typename ViewTypeC::non_const_value_type alpha,
+                 const ViewTypeA& A, const ViewTypeB& B,
+                 typename ViewTypeC::non_const_value_type beta,
+                 const ViewTypeC& C) {
+  using value_type = typename ViewTypeC::non_const_value_type;
+  using KAT = Kokkos::ArithTraits<value_type>;
+  int m = A.extent(0);
+  int k = A.extent(1);
+  int n = B.extent(1);
+  for(int i = 0; i < m; i++)
+  {
+    for(int j = 0; j < n; j++)
+    {
+      value_type sum = KAT::zero();
+      for(int ii = 0; ii < k; ii++)
+      {
+        sum += A(i, ii) * B(ii, j);
+      }
+      C(i, j) = alpha * sum + beta * C(i, j);
+    }
+  }
+}
+
 template <class ViewTypeA, class ViewTypeX, class ViewTypeY>
 void vanillaGEMV(char mode, typename ViewTypeA::non_const_value_type alpha,
                  const ViewTypeA& A, const ViewTypeX& x,
