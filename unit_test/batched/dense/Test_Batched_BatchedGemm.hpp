@@ -206,7 +206,8 @@ void impl_test_batched_gemm(const int N, const int matAdim1, const int matAdim2,
 
       if (algo_type == BaseKokkosBatchedAlgos::KK_SERIAL ||
           algo_type == BaseHeuristicAlgos::SQUARE ||
-          algo_type == GemmKokkosBatchedAlgos::KK_DBLBUF) {
+          algo_type == GemmKokkosBatchedAlgos::KK_DBLBUF ||
+          algo_type == GemmKokkosBatchedAlgos::KK_SERIAL_RANK0) {
         // Invoke 4 times to ensure we cover all paths for alpha and beta
         impl_test_batched_gemm_with_handle<DeviceType, ViewType, ScalarType,
                                            ParamTagType>(
