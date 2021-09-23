@@ -271,6 +271,7 @@ int64_t spmv_launch_parameters(int64_t numRows, int64_t nnz, int64_t rows_per_th
     while(vector_length < max_vector_length && vector_length * 6 < nnz_per_row)
       vector_length*=2;
   }
+  vector_length=8;
 
   // Determine rows per thread
   if(rows_per_thread < 1) {
@@ -301,6 +302,12 @@ int64_t spmv_launch_parameters(int64_t numRows, int64_t nnz, int64_t rows_per_th
     rows_per_team = (nnz_per_team+nnz_per_row - 1)/nnz_per_row;
   }
 
+#ifdef KOKKOS_ENABLE_HIP
+  if(std::is_same<execution_space, Kokkos::Experimental::HIP>::value) {
+    team_size *= 4;
+    rows_per_team *= 4;
+  }
+#endif
 
   return rows_per_team;
 }
