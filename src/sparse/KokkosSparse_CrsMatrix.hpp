@@ -534,8 +534,8 @@ public:
   /// \param ncols [in] The number of columns.
   template<typename InOrdinal, typename InLayout, typename InDevice, typename InMemTraits, typename InSizeType>
   CrsMatrix (const std::string& label,
-             const OrdinalType& ncols,
-             const Kokkos::StaticCrsGraph<InOrdinal, InLayout, InDevice, InMemTraits, InSizeType>& graph_) :
+             const Kokkos::StaticCrsGraph<InOrdinal, InLayout, InDevice, InMemTraits, InSizeType>& graph_,
+             const OrdinalType& ncols) :
     graph (graph_.entries, graph_.row_map),
     values (label, graph_.entries.extent(0)),
     numCols_ (ncols)
