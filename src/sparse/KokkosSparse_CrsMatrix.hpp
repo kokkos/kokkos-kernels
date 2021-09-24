@@ -441,6 +441,17 @@ public:
   values_type values;
   //@}
 
+private:
+  /// \brief The number of distinct column indices used by the matrix
+  ///
+  /// This value might not be exact but rather an upper bound of the
+  /// number of distinct column indices used by the matrix.
+  /// It provides multiple sparse algorithms to allocate appropriate
+  /// amount of temporary work space or to allocate memory for the
+  /// output of the kernel.
+  ordinal_type numCols_;
+
+public:
   /// \brief Launch configuration that can be used by
   ///   overloads/specializations of MV_multiply().
   ///
@@ -468,12 +479,13 @@ public:
   CrsMatrix (const CrsMatrix<InScalar,InOrdinal,InDevice,InMemTraits,InSizeType> & B) :
     graph (B.graph.entries, B.graph.row_map),
     values (B.values),
-    dev_config (B.dev_config),
+    numCols_ (B.numCols ()),
+    dev_config (B.dev_config)
 #ifdef KOKKOS_USE_CUSPARSE
+    ,
     cusparse_handle (B.cusparse_handle),
-    cusparse_descr (B.cusparse_descr),
+    cusparse_descr (B.cusparse_descr)
 #endif // KOKKOS_USE_CUSPARSE
-    numCols_ (B.numCols ())
   {
     graph.row_block_offsets = B.graph.row_block_offsets;
     //TODO: MD 07/2017: Changed the copy constructor of graph
@@ -505,12 +517,62 @@ public:
   ///
   /// Allocate the values array for subsquent fill.
   template<typename InOrdinal, typename InLayout, typename InDevice, typename InMemTraits, typename InSizeType>
+  [[deprecated("Use the constructor that accepts ncols as input instead.")]]
   CrsMatrix (const std::string& label,
              const Kokkos::StaticCrsGraph<InOrdinal, InLayout, InDevice, InMemTraits, InSizeType>& graph_) :
     graph (graph_.entries, graph_.row_map),
     values (label, graph_.entries.extent(0)),
     numCols_ (maximum_entry (graph_) + 1)
   {}
+
+  /// \brief Constructor that accepts a a static graph, and numCols.
+  ///
+  /// The matrix will store and use the row map, indices
+  /// (by view, not by deep copy) and allocate the values view.
+  ///
+  /// \param label [in] The sparse matrix's label.
+  /// \param ncols [in] The number of columns.
+  template<typename InOrdinal, typename InLayout, typename InDevice, typename InMemTraits, typename InSizeType>
+  CrsMatrix (const std::string& label,
+             const Kokkos::StaticCrsGraph<InOrdinal, InLayout, InDevice, InMemTraits, InSizeType>& graph_,
+             const OrdinalType& ncols) :
+    graph (graph_.entries, graph_.row_map),
+    values (label, graph_.entries.extent(0)),
+    numCols_ (ncols)
+  {
+#ifdef KOKKOS_USE_CUSPARSE
+    cusparseCreate (&cusparse_handle);
+    cusparseCreateMatDescr (&cusparse_descr);
+#endif // KOKKOS_USE_CUSPARSE
+  }
+
+  /// \brief Constructor that accepts a a static graph, and values.
+  ///
+  /// The matrix will store and use the row map, indices, and values
+  /// directly (by view, not by deep copy).
+  ///
+  /// \param label [in] The sparse matrix's label.
+  /// \param nrows [in] The number of rows.
+  /// \param ncols [in] The number of columns.
+  /// \param annz [in] The number of entries.
+  /// \param vals [in/out] The entries.
+  /// \param rows [in/out] The row map (containing the offsets to the
+  ///   data in each row).
+  /// \param cols [in/out] The column indices.
+  template<typename InOrdinal, typename InLayout, typename InDevice, typename InMemTraits, typename InSizeType>
+  CrsMatrix (const std::string&,
+             const OrdinalType& ncols,
+             const values_type& vals,
+             const Kokkos::StaticCrsGraph<InOrdinal, InLayout, InDevice, InMemTraits, InSizeType>& graph_) :
+    graph (graph_.entries, graph_.row_map),
+    values (vals),
+    numCols_ (ncols)
+  {
+#ifdef KOKKOS_USE_CUSPARSE
+    cusparseCreate (&cusparse_handle);
+    cusparseCreateMatDescr (&cusparse_descr);
+#endif // KOKKOS_USE_CUSPARSE
+  }
 
   /// \brief Constructor that copies raw arrays of host data in
   ///   3-array CRS (compresed row storage) format.
@@ -628,34 +690,6 @@ public:
       throw std::invalid_argument (os.str ());
     }
 
-#ifdef KOKKOS_USE_CUSPARSE
-    cusparseCreate (&cusparse_handle);
-    cusparseCreateMatDescr (&cusparse_descr);
-#endif // KOKKOS_USE_CUSPARSE
-  }
-
-  /// \brief Constructor that accepts a a static graph, and values.
-  ///
-  /// The matrix will store and use the row map, indices, and values
-  /// directly (by view, not by deep copy).
-  ///
-  /// \param label [in] The sparse matrix's label.
-  /// \param nrows [in] The number of rows.
-  /// \param ncols [in] The number of columns.
-  /// \param annz [in] The number of entries.
-  /// \param vals [in/out] The entries.
-  /// \param rows [in/out] The row map (containing the offsets to the
-  ///   data in each row).
-  /// \param cols [in/out] The column indices.
-  template<typename InOrdinal, typename InLayout, typename InDevice, typename InMemTraits, typename InSizeType>
-  CrsMatrix (const std::string&,
-             const OrdinalType& ncols,
-             const values_type& vals,
-             const Kokkos::StaticCrsGraph<InOrdinal, InLayout, InDevice, InMemTraits, InSizeType>& graph_) :
-    graph (graph_.entries, graph_.row_map),
-    values (vals),
-    numCols_ (ncols)
-  {
 #ifdef KOKKOS_USE_CUSPARSE
     cusparseCreate (&cusparse_handle);
     cusparseCreateMatDescr (&cusparse_descr);
@@ -885,9 +919,6 @@ public:
       return SparseRowViewConst<CrsMatrix> (values, graph.entries, 1, count, start);
     }
   }
-
-private:
-  ordinal_type numCols_;
 };
 
 }
