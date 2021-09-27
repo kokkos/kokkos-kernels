@@ -24,3 +24,9 @@ Docs
 
 .. doxygennamespace:: Kokkos
    :members:
+.. doxygennamespace:: KokkosBlas
+   :members:
+.. doxygennamespace:: KokkosSparse
+   :members:
+.. doxygennamespace:: KokkosBatched
+   :members:
