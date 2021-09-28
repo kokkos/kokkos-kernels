@@ -54,19 +54,26 @@ IF (NOT KOKKOSKERNELS_HAS_TRILINOS)
   KOKKOSKERNELS_ADD_OPTION(
     "ENABLE_EXAMPLES"
     OFF
-    BOOL
-    "Whether to build examples. Default: OFF"
+          BOOL
+          "Whether to build examples. Default: OFF"
   )
   KOKKOSKERNELS_ADD_OPTION(
-    "ENABLE_TESTS"
-    OFF
-    BOOL
-    "Whether to build tests. Default: OFF"
+          "ENABLE_TESTS"
+          OFF
+          BOOL
+          "Whether to build tests. Default: OFF"
   )
-ENDIF()
+ENDIF ()
+
+KOKKOSKERNELS_ADD_OPTION(
+        "ENABLE_DOCS"
+        OFF
+        BOOL
+        "Whether to build docs. Default: OFF"
+)
 
 SET(KokkosKernels_INSTALL_TESTING OFF CACHE INTERNAL
-    "Whether to build tests and examples against installation")
+        "Whether to build tests and examples against installation")
 IF (KokkosKernels_INSTALL_TESTING)
   # Force testing on if we are doing intall testing
   SET(KOKKOSKERNELS_ENABLE_TESTS ON)
@@ -195,14 +202,16 @@ ELSE()
   MESSAGE("")
   # Skip building Kokkos Kernels if we are doing an installation test
   ADD_SUBDIRECTORY(src)
-  IF(KokkosKernels_ENABLE_INSTALL_TEST)
+  IF (KokkosKernels_ENABLE_INSTALL_TEST)
     ADD_SUBDIRECTORY(install_test)
     MESSAGE("The install test has been enabled, you will need to peform: make install before running the tests otherwise install_test will fail")
-  ENDIF()
+  ENDIF ()
   KOKKOSKERNELS_ADD_TEST_DIRECTORIES(perf_test)
   KOKKOSKERNELS_ADD_TEST_DIRECTORIES(unit_test)
   KOKKOSKERNELS_ADD_EXAMPLE_DIRECTORIES(example)
 
   KOKKOSKERNELS_PACKAGE_POSTPROCESS()
-  ADD_SUBDIRECTORY(docs)
+  IF (KokkosKernels_ENABLE_DOCS)
+    ADD_SUBDIRECTORY(docs)
+  ENDIF ()
 ENDIF()
