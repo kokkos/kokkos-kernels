@@ -149,8 +149,8 @@ void run(int m, int repeat) {
   std::cout << "Each test input vector has a length of " << m << std::endl;
 
   // Warm up run of dot:
-  teamDotFunctor<Kokkos::View<Scalar*>, ExecSpace> teamDotFunctorWarmUpInstance(
-      x, y);
+  teamDotFunctor<Kokkos::View<Scalar*, MemSpace>, ExecSpace>
+      teamDotFunctorWarmUpInstance(x, y);
 
   Kokkos::parallel_for("TeamDotUsage -- Warm Up Run", policy(1, Kokkos::AUTO),
                        teamDotFunctorWarmUpInstance);
@@ -160,7 +160,7 @@ void run(int m, int repeat) {
 
   // Live test of dot:
 
-  teamDotFunctor<Kokkos::View<Scalar*>, ExecSpace>
+  teamDotFunctor<Kokkos::View<Scalar*, MemSpace>, ExecSpace>
       teamDotFunctorLiveTestInstance(x, y);
   Kokkos::parallel_for("TeamDotUsage -- Live Test", policy(1, Kokkos::AUTO),
                        teamDotFunctorLiveTestInstance);
