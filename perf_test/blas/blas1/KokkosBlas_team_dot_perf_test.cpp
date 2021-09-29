@@ -93,16 +93,17 @@ int parse_inputs(Params& params, int argc, char** argv) {
   }
   return 0;
 }
-
-template <class Vector>
+// Functor to handle the case of a "without Cuda" build
+template <class Vector, class ExecSpace>
 struct teamDotFunctor {
   // Compile - time check to see if your data type is a Kokkos::View:
   static_assert(Kokkos::Impl::is_view<Vector>::value,
                 "Vector is not a "
                 "Kokkos::View.");
 
-  using Scalar          = typename Vector::non_const_value_type;
-  using execution_space = typename Vector::execution_space;
+  using Scalar = typename Vector::non_const_value_type;
+  // Vector is templated on memory space
+  using execution_space = ExecSpace;  // Kokkos Execution Space
   typedef typename Kokkos::TeamPolicy<execution_space> team_policy;
   typedef typename team_policy::member_type team_member;
 
@@ -116,7 +117,7 @@ struct teamDotFunctor {
     KokkosBlas::Experimental::dot(team, x, y);
   }
   // Constructor
-  teamDotFunctor<Vector>(Vector X_, Vector Y_) {
+  teamDotFunctor(Vector X_, Vector Y_) {
     x = X_;
     y = Y_;
   }
@@ -129,7 +130,7 @@ void run(int m, int repeat) {
   using MemSpace = typename ExecSpace::memory_space;
 
   // For the Team implementation of dot; ExecSpace is implicit;
-  using policy      = Kokkos::TeamPolicy<ExecSpace>;
+  using policy = Kokkos::TeamPolicy<ExecSpace>;
 
   // Create 1D view w/ Device as the ExecSpace; this is an input vector
   Kokkos::View<Scalar*, MemSpace> x("X", m);
@@ -148,20 +149,20 @@ void run(int m, int repeat) {
   std::cout << "Each test input vector has a length of " << m << std::endl;
 
   // Warm up run of dot:
-  teamDotFunctor<Kokkos::View<Scalar*, MemSpace>> teamDotFunctorWarmUpInstance(
-      x, y);
+  teamDotFunctor<Kokkos::View<Scalar*, MemSpace>, ExecSpace>
+      teamDotFunctorWarmUpInstance(x, y);
 
-  Kokkos::parallel_for("TeamDotDemoUsage -- Warm Up Run",
-                       policy(1, Kokkos::AUTO), teamDotFunctorWarmUpInstance);
+  Kokkos::parallel_for("TeamDotUsage -- Warm Up Run", policy(1, Kokkos::AUTO),
+                       teamDotFunctorWarmUpInstance);
 
   Kokkos::fence();
   Kokkos::Timer timer;
 
   // Live test of dot:
 
-  teamDotFunctor<Kokkos::View<Scalar*, MemSpace>>
+  teamDotFunctor<Kokkos::View<Scalar*, MemSpace>, ExecSpace>
       teamDotFunctorLiveTestInstance(x, y);
-  Kokkos::parallel_for("TeamDotDemoUsage -- Live Test", policy(1, Kokkos::AUTO),
+  Kokkos::parallel_for("TeamDotUsage -- Live Test", policy(1, Kokkos::AUTO),
                        teamDotFunctorLiveTestInstance);
 
   ExecSpace().fence();
@@ -191,7 +192,7 @@ int main(int argc, char** argv) {
   bool useThreads = params.use_threads != 0;
   bool useOMP     = params.use_openmp != 0;
   bool useCUDA    = params.use_cuda != 0;
-  bool useSerial = !useThreads && !useOMP && !useCUDA;
+  bool useSerial  = !useThreads && !useOMP && !useCUDA;
 
   if (useThreads) {
 #if defined(KOKKOS_ENABLE_THREADS)

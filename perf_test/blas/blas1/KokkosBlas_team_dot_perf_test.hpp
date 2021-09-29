@@ -20,7 +20,7 @@ struct testData_rps_team_dot {
   using MemSpace = typename ExecSpace::memory_space;
   using Device   = Kokkos::Device<ExecSpace, MemSpace>;
 
-  using policy      = Kokkos::TeamPolicy<>;
+  using policy      = Kokkos::TeamPolicy<ExecSpace>;
   using member_type = typename policy::member_type;
   int numberOfTeams = 1;  // This will be passed to the TeamPolicy
   // Test Matrices x and y, View declaration
