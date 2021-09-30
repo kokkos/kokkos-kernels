@@ -4,10 +4,7 @@
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Random.hpp"
 
-//#include "KokkosBatched_Vector.hpp"
-
 #include "KokkosBatched_Axpy.hpp"
-#include "KokkosBatched_Axpy_Impl.hpp"
 
 #include "KokkosKernels_TestUtils.hpp"
 
@@ -132,7 +129,6 @@ int test_batched_team_axpy() {
     typedef Kokkos::View<ValueType**,Kokkos::LayoutLeft,DeviceType> ViewType;
     typedef Kokkos::View<ValueType*,Kokkos::LayoutLeft,DeviceType> alphaViewType;
     
-    Test::TeamAxpy::impl_test_batched_axpy<DeviceType,ViewType,alphaViewType>( 0, 10, 2);
     for (int i=3;i<10;++i) {                                                                                        
       Test::TeamAxpy::impl_test_batched_axpy<DeviceType,ViewType,alphaViewType>(1024,  i, 2);
     }
@@ -143,7 +139,6 @@ int test_batched_team_axpy() {
     typedef Kokkos::View<ValueType**,Kokkos::LayoutRight,DeviceType> ViewType;
     typedef Kokkos::View<ValueType*,Kokkos::LayoutRight,DeviceType> alphaViewType;
 
-    Test::TeamAxpy::impl_test_batched_axpy<DeviceType,ViewType,alphaViewType>( 0, 10, 2);
     for (int i=3;i<10;++i) {                                                                                        
       Test::TeamAxpy::impl_test_batched_axpy<DeviceType,ViewType,alphaViewType>(1024,  i, 2);
     }

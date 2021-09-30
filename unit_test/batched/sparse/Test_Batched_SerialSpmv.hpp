@@ -23,7 +23,7 @@ namespace Spmv {
  
   template<typename DeviceType,
            typename ParamTagType,
-           typename DViewType,
+           typename ValuesViewType,
            typename IntView,
            typename xViewType,
            typename yViewType,
@@ -32,7 +32,7 @@ namespace Spmv {
            int dobeta>
   struct Functor_TestBatchedSerialSpmv {
     const alphaViewType _alpha;
-    const DViewType _D;
+    const ValuesViewType _D;
     const IntView _r;
     const IntView _c;
     const xViewType _X;
@@ -41,7 +41,7 @@ namespace Spmv {
     
     KOKKOS_INLINE_FUNCTION
     Functor_TestBatchedSerialSpmv(const alphaViewType &alpha,
-      const DViewType &D,
+      const ValuesViewType &D,
       const IntView &r,
       const IntView &c,
       const xViewType &X,
@@ -57,13 +57,13 @@ namespace Spmv {
       auto beta = Kokkos::subview(_beta,Kokkos::make_pair(k,k+1));
       auto y = Kokkos::subview(_Y,Kokkos::make_pair(k,k+1),Kokkos::ALL);
       
-      KokkosBatched::SerialSpmv<typename ParamTagType::trans>::template invoke<DViewType, IntView, xViewType, yViewType, alphaViewType, betaViewType, dobeta>
+      KokkosBatched::SerialSpmv<typename ParamTagType::trans>::template invoke<ValuesViewType, IntView, xViewType, yViewType, alphaViewType, betaViewType, dobeta>
           (alpha, d, _r, _c, x, beta, y);
     }
     
     inline
     void run() {
-      typedef typename DViewType::value_type value_type;
+      typedef typename ValuesViewType::value_type value_type;
       std::string name_region("KokkosBatched::Test::SerialSpmv");
       std::string name_value_type = ( std::is_same<value_type,float>::value ? "::Float" : 
                                       std::is_same<value_type,double>::value ? "::Double" :
@@ -79,7 +79,7 @@ namespace Spmv {
     
   template<typename DeviceType,
            typename ParamTagType,
-           typename DViewType,
+           typename ValuesViewType,
            typename IntView,
            typename xViewType,
            typename yViewType,
@@ -87,14 +87,14 @@ namespace Spmv {
            typename betaViewType,
            int dobeta>
   void impl_test_batched_spmv(const int N, const int BlkSize) {
-    typedef typename DViewType::value_type value_type;
+    typedef typename ValuesViewType::value_type value_type;
     typedef Kokkos::Details::ArithTraits<value_type> ats;
 
     const int nnz = (BlkSize-2) * 3 + 2 * 2;
 
     xViewType  X0("x0", N, BlkSize), X1("x1", N, BlkSize);
     yViewType  Y0("y0", N, BlkSize), Y1("y1", N, BlkSize);
-    DViewType  D("D", N, nnz);
+    ValuesViewType  D("D", N, nnz);
     IntView    r("r", BlkSize+1);
     IntView    c("c", nnz);
 
@@ -173,7 +173,7 @@ namespace Spmv {
           Y0_host(l,i) += alpha_host(l)*(X0_host(l,i) + 0.5*X0_host(l,i-1));
       }
 
-    Functor_TestBatchedSerialSpmv<DeviceType,ParamTagType,DViewType,IntView,xViewType,yViewType,alphaViewType,betaViewType,dobeta>
+    Functor_TestBatchedSerialSpmv<DeviceType,ParamTagType,ValuesViewType,IntView,xViewType,yViewType,alphaViewType,betaViewType,dobeta>
     (alpha, D, r, c, X1, beta, Y1).run();
 
     Kokkos::fence();

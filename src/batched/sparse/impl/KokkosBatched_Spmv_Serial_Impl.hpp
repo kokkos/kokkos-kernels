@@ -1,3 +1,44 @@
+//@HEADER
+// ************************************************************************
+//
+//                        Kokkos v. 3.4
+//       Copyright (2021) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
+//
+// Under the terms of Contract DE-NA0003525 with NTESS,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
+//
+// ************************************************************************
+//@HEADER
 #ifndef __KOKKOSBATCHED_SPMV_SERIAL_IMPL_HPP__
 #define __KOKKOSBATCHED_SPMV_SERIAL_IMPL_HPP__
 
@@ -19,26 +60,26 @@ namespace KokkosBatched {
               int dobeta>
     KOKKOS_INLINE_FUNCTION
     static int
-    invoke(const OrdinalType m, const OrdinalType nrows, 
-           const ScalarType *__restrict__ alpha, const OrdinalType alphas0,
-           const ValueType *__restrict__ D, const OrdinalType ds0, const OrdinalType ds1,
-           const OrdinalType *__restrict__ r, const OrdinalType rs0,
-           const OrdinalType *__restrict__ c, const OrdinalType cs0,
-           const ValueType *__restrict__ X, const OrdinalType xs0, const OrdinalType xs1, 
-           const ScalarType *__restrict__ beta, const OrdinalType betas0,
-           /**/  ValueType *__restrict__ Y, const OrdinalType ys0, const OrdinalType ys1) {
+    invoke(const OrdinalType numMatrices, const OrdinalType numRows, 
+           const ScalarType* KOKKOS_RESTRICT alpha, const OrdinalType alphas0,
+           const ValueType* KOKKOS_RESTRICT values, const OrdinalType valuess0, const OrdinalType valuess1,
+           const OrdinalType* KOKKOS_RESTRICT row_ptr, const OrdinalType row_ptrs0,
+           const OrdinalType* KOKKOS_RESTRICT colIndices, const OrdinalType colIndicess0,
+           const ValueType* KOKKOS_RESTRICT X, const OrdinalType xs0, const OrdinalType xs1, 
+           const ScalarType* KOKKOS_RESTRICT beta, const OrdinalType betas0,
+           /**/  ValueType* KOKKOS_RESTRICT Y, const OrdinalType ys0, const OrdinalType ys1) {
 
-      for (OrdinalType iMatrix = 0; iMatrix < m; ++iMatrix) {
-        for (OrdinalType iRow = 0; iRow < nrows; ++iRow) {
-            const OrdinalType row_length =
-                r[(iRow+1)*rs0] - r[iRow*rs0];
+      for (OrdinalType iMatrix = 0; iMatrix < numMatrices; ++iMatrix) {
+        for (OrdinalType iRow = 0; iRow < numRows; ++iRow) {
+            const OrdinalType rowLength =
+                row_ptr[(iRow+1)*row_ptrs0] - row_ptr[iRow*row_ptrs0];
             ValueType sum = 0;
   #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
   #pragma unroll
   #endif
-            for (OrdinalType iEntry = 0; iEntry < row_length; ++iEntry) {
-              sum += D[iMatrix*ds0+(r[iRow*rs0]+iEntry)*ds1]
-                      * X[iMatrix*xs0+c[(r[iRow*rs0]+iEntry)*cs0]*xs1];
+            for (OrdinalType iEntry = 0; iEntry < rowLength; ++iEntry) {
+              sum += values[iMatrix*valuess0+(row_ptr[iRow*row_ptrs0]+iEntry)*valuess1]
+                      * X[iMatrix*xs0+colIndices[(row_ptr[iRow*row_ptrs0]+iEntry)*colIndicess0]*xs1];
             }
 
             sum *= alpha[iMatrix*alphas0];
@@ -59,7 +100,7 @@ namespace KokkosBatched {
   template<>
   struct SerialSpmv<Trans::NoTranspose> {
           
-    template<typename DViewType,
+    template<typename ValuesViewType,
              typename IntView,
              typename xViewType,
              typename yViewType,
@@ -69,23 +110,23 @@ namespace KokkosBatched {
     KOKKOS_INLINE_FUNCTION
     static int
     invoke(const alphaViewType &alpha,
-           const DViewType &D,
-           const IntView &r,
-           const IntView &c,
+           const ValuesViewType &values,
+           const IntView &row_ptr,
+           const IntView &colIndices,
            const xViewType &X,
            const betaViewType &beta,
            const yViewType &Y) {
       return SerialSpmvInternal::template
         invoke<typename alphaViewType::non_const_value_type, 
-               typename DViewType::non_const_value_type, 
+               typename ValuesViewType::non_const_value_type, 
                typename IntView::non_const_value_type, 
-               typename DViewType::array_layout, 
+               typename ValuesViewType::array_layout, 
                dobeta>
                (X.extent(0), X.extent(1),
                 alpha.data(), alpha.stride_0(),
-                D.data(), D.stride_0(), D.stride_1(),
-                r.data(), r.stride_0(),
-                c.data(), c.stride_0(),
+                values.data(), values.stride_0(), values.stride_1(),
+                row_ptr.data(), row_ptr.stride_0(),
+                colIndices.data(), colIndices.stride_0(),
                 X.data(), X.stride_0(), X.stride_1(),
                 beta.data(), beta.stride_0(),
                 Y.data(), Y.stride_0(), Y.stride_1());
