@@ -120,6 +120,7 @@ struct Gemm {
 
 /********************* BEGIN non-functor-level routines *********************/
 
+namespace Impl {
 /********************* BEGIN forward declarations *********************/
 // clang-format off
 /// \brief Non-blocking solve of general matrix multiply on a batch of
@@ -182,7 +183,78 @@ template <class ArgTransA, class ArgTransB, class ArgMode, class ArgBatchSzDim,
           class ArgResultsPerThread, class ScalarType, class AViewType,
           class BViewType, class CViewType>
 class BatchedSerialGemm;
+
+// clang-format off
+/// \brief Non-blocking solve of general matrix multiply on a batch of
+/// uniform matrices with an algorithm based on:
+///   B. P. D. J. Kunkel, Julian, “Performance, design, and autotuning of batched gemm for GPUs,”
+///   in Lecture Notes in Computer Science, ser. ISC High Performance Computing ’16, vol. 9697, 06 2016.
+///
+///
+///        C = alpha * op(A) * op(B) + beta * C
+///
+/// \tparam ArgTransA           Specifies what op does to A:
+///                             Trans::NoTranspose   for non-transpose
+///                             Trans::Transpose     for transpose
+///                             Trans::ConjTranspose for conjugate transpose (unsupported)
+/// \tparam ArgTransB           Specifies what op does to B:
+///                             Trans::NoTranspose   for non-transpose
+///                             Trans::Transpose     for transpose
+///                             Trans::ConjTranspose for conjugate transpose (unsupported)
+/// \tparam ArgBatchSzDim       Specifies where the batch dimension is allocated in
+///                             AViewType, BViewType, and CViewType:
+///                             BatchSzDim::Left  Batch dimension is leftmost
+///                             BatchSzDim::Right Batch dimension is rightmost
+/// \tparam ArgResultsPerThread Specifies how to divide work among threads. For
+///                             this serial interface, each rank specifies how
+///                             much work to assign a single thread.
+///                             ResultsPerThread::Rank0 Each thread computes a scalar of C
+///                             ResultsPerThread::Rank1 Each thread computes a 1-rank chunk of C
+///                             ResultsPerThread::Rank2 Each thread computes a 2-rank chunk of C
+/// \tparam ScalarType          Specifies the scalar type of alpha and beta
+/// \tparam AViewType           Input matrix, as either a 3-rank Kokkos::View or a
+///                             4-rank Kokkos::View for SIMD operations.
+/// \tparam BViewType           Input matrix, as either a 3-rank Kokkos::View or a
+///                             4-rank Kokkos::View for SIMD operations.
+/// \tparam CViewType           Input(RHS)/Output(LHS) matrix, as either a 3-rank
+///                             Kokkos::View or a 4-rank Kokkos::View for SIMD
+///                             operations.
+/// \tparam ArgBoundsCheck      Specifies whether to perform global memory access
+///                             bounds checks within the functor. Bounds checks
+///                             are required when matrix sizes are not evenly divisible
+///                             by tile sizes.
+///                             BoundsCheck::Yes The functor will     perform bound checks (recommended)
+///                             BoundsCheck::No  The functor will NOT perform bound checks
+/// \tparam TILE_M              Specifies the number of rows in each tile.
+/// \tparam TILE_N              Specifies the number of cols in each tile.
+/// \tparam TILE_K              Specifies the number of cols or rows in a tile of A or tile of B, respectively.
+///
+///                             See struct BatchedGemmHandle for details.
+/// \param alpha [in]           Input coefficient used for multiplication with A
+/// \param A [in]               Input matrix, as a 3-rank Kokkos::View
+///                             If ArgBatchSzDim == "BatchSzDim::Right", matrix A is MxKxB
+///                             If ArgBatchSzDim == "BatchSzDim::Left",  matrix A is BxMxK
+/// \param B [in]               Input matrix, as a 3-rank Kokkos::View
+///                             If ArgBatchSzDim == "BatchSzDim::Right", matrix B is KxNxB
+///                             If ArgBatchSzDim == "BatchSzDim::Left",  matrix B is BxKxN
+/// \param beta [in]            Input coefficient used for multiplication with C
+/// \param C [in/out]           Input/Output matrix, as a 3-rank Kokkos::View
+///                             If ArgBatchSzDim == "BatchSzDim::Right", matrix C is MxNxB
+///                             If ArgBatchSzDim == "BatchSzDim::Left",  matrix C is BxMxN
+/// \return 0 upon success, non-zero otherwise
+///
+/// Usage Example:
+///   BatchedSerialGemm<ArgTransA, ArgTransB, ArgMode, ArgBatchSzDim,
+///                     ScalarType, AViewType, BViewType, CViewType
+///                     ArgBoundsCheck, tile_m, tile_n, tile_k>(alpha, A, B, beta, C).invoke();
+// clang-format on
+template <class ArgTransA, class ArgTransB, class ArgBatchSzDim,
+          class HandleType, class ScalarType, class AViewType, class BViewType,
+          class CViewType, class ArgBoundsCheck, int tile_m, int tile_n,
+          int tile_k>
+class BatchedDblBufGemm;
 /********************* END forward declarations *********************/
+}  // namespace Impl
 
 // clang-format off
 /// \brief Non-blocking solve of general matrix multiply on a batch of
@@ -240,10 +312,11 @@ class BatchedSerialGemm;
 template <typename ArgTransA, typename ArgTransB, typename ArgBatchSzDim,
           typename BatchedGemmHandleType, typename ScalarType,
           typename AViewType, typename BViewType, typename CViewType>
-int BatchedGemm(const BatchedGemmHandleType *handle, const ScalarType alpha,
+int BatchedGemm(BatchedGemmHandleType *const handle, const ScalarType alpha,
                 const AViewType &A, const BViewType &B, const ScalarType beta,
                 const CViewType &C) {
-  int ret             = 0;
+  int ret = 0;
+  size_t c_m, c_n;
   using ViewValueType = typename CViewType::value_type;
   // Check for valid input views
   static_assert(Kokkos::Impl::is_view<AViewType>::value,
@@ -308,8 +381,19 @@ int BatchedGemm(const BatchedGemmHandleType *handle, const ScalarType alpha,
         "Error: LayoutRight views require BatchLayout::Left");
   }
 
+  if (std::is_same<ArgBatchSzDim, BatchLayout::Left>::value) {
+    // c_b = C.extent(0);
+    c_m = C.extent(1);
+    c_n = C.extent(2);
+  } else {
+    // c_b = C.extent(2);
+    c_m = C.extent(0);
+    c_n = C.extent(1);
+  }
+
   // Begin checking conditions for optimal BatchedGemm invocation.
   using view_scalar_type   = typename CViewType::value_type;
+  using layout_type        = typename CViewType::array_layout;
   constexpr bool is_vector = KokkosBatched::is_vector<view_scalar_type>::value;
   constexpr bool on_gpu    = KokkosKernels::Impl::kk_is_gpu_exec_space<
       typename CViewType::execution_space>();
@@ -332,15 +416,25 @@ int BatchedGemm(const BatchedGemmHandleType *handle, const ScalarType alpha,
 
   switch (handle->get_kernel_algo_type()) {
     case BaseKokkosBatchedAlgos::KK_SERIAL:
-      ret = BatchedSerialGemm<ArgTransA, ArgTransB, Algo::Gemm::Unblocked,
-                              ArgBatchSzDim, ResultsPerThread::Rank2,
-                              ScalarType, AViewType, BViewType, CViewType>(
-                alpha, A, B, beta, C)
-                .invoke();
+      ret =
+          Impl::BatchedSerialGemm<ArgTransA, ArgTransB, Algo::Gemm::Unblocked,
+                                  ArgBatchSzDim, ResultsPerThread::Rank2,
+                                  ScalarType, AViewType, BViewType, CViewType>(
+              alpha, A, B, beta, C)
+              .invoke();
       break;
 
     ////////////// HEURISTIC ALGOS //////////////
     case BaseHeuristicAlgos::SQUARE:
+      if (c_m != c_n) {
+        std::ostringstream os;
+        os << "KokkosBatched::BatchedGemm does not support kernelAlgoType = "
+           << std::to_string(handle->get_kernel_algo_type()) << " when c_m("
+           << std::to_string(c_m) << ") != c_n(" << std::to_string(c_n) << ")"
+           << std::endl;
+        Kokkos::Impl::throw_runtime_exception(os.str());
+      }
+
       // Select optimal resultsPerThread param for BatchedSerialGemm
       using bsgResultsPerThread =
           typename std::conditional<!is_vector && on_gpu,
@@ -358,13 +452,63 @@ int BatchedGemm(const BatchedGemmHandleType *handle, const ScalarType alpha,
                                         Algo::Gemm::Blocked>::type>::type>::
           type;
 
-      // TODO: Add additional heuristic conditionals that look at M,N to
-      // determine
-      //       whether to invoke BatchedSerialGemm, BatchedDblBuf, etc.
-      ret = BatchedSerialGemm<ArgTransA, ArgTransB, bsgModeType, ArgBatchSzDim,
-                              bsgResultsPerThread, ScalarType, AViewType,
-                              BViewType, CViewType>(alpha, A, B, beta, C)
+      // if (on_gpu && c_m >= 20 &&
+      //     (alpha == 1.0F && beta == 0.0F) ? c_m <= 24 : c_m <= 21) {
+      //   // TODO: invoke TeamShmem
+      // } else
+      if (on_gpu &&
+          ((std::is_same<layout_type, Kokkos::LayoutLeft>::value)
+               ? (c_m >= 16)
+               : (c_m >= 24 && c_m <= 32) || (c_m >= 45 && c_m <= 64))) {
+        handle->teamSz = handle->vecLen = 8;
+        // constexpr int tile_m = 32, tile_n = 32, tile_k = 8;
+        constexpr int tile_m = 32, tile_n = 32, tile_k = 8;
+        if (c_m % 32 == 0)  // No bounds checking
+          ret =
+              Impl::BatchedDblBufGemm<ArgTransA, ArgTransB, ArgBatchSzDim,
+                                      BatchedGemmHandleType, ScalarType,
+                                      AViewType, BViewType, CViewType,
+                                      BoundsCheck::No, tile_m, tile_n, tile_k>(
+                  handle, alpha, A, B, beta, C)
+                  .invoke();
+        else
+          ret =
+              Impl::BatchedDblBufGemm<ArgTransA, ArgTransB, ArgBatchSzDim,
+                                      BatchedGemmHandleType, ScalarType,
+                                      AViewType, BViewType, CViewType,
+                                      BoundsCheck::Yes, tile_m, tile_n, tile_k>(handle, alpha, A, B, beta, C)
+                  .invoke();
+      } else {
+        ret = Impl::BatchedSerialGemm<ArgTransA, ArgTransB, bsgModeType,
+                                      ArgBatchSzDim, bsgResultsPerThread,
+                                      ScalarType, AViewType, BViewType,
+                                      CViewType>(alpha, A, B, beta, C)
                 .invoke();
+      }
+      break;
+
+    case GemmKokkosBatchedAlgos::KK_DBLBUF:
+      // Note: The tile sizes of 1x1x1 here will not perform well but must be
+      // selected in order to function on all devices since the serial execution
+      // space has a max team size of 1. KokkosKernels API users will need to
+      // follow an approach similar to KK_SQUARE above for best performance.
+
+      // TODO: Add auto-selection of tile size based on inputs and device type
+      ret =
+          Impl::BatchedDblBufGemm<ArgTransA, ArgTransB, ArgBatchSzDim,
+                                  BatchedGemmHandleType, ScalarType, AViewType,
+                                  BViewType, CViewType, BoundsCheck::Yes, 1, 1,
+                                  1>(handle, alpha, A, B, beta, C)
+              .invoke();
+      break;
+
+    case GemmKokkosBatchedAlgos::KK_SERIAL_RANK0:
+      ret =
+          Impl::BatchedSerialGemm<ArgTransA, ArgTransB, Algo::Gemm::Unblocked,
+                                  ArgBatchSzDim, ResultsPerThread::Rank0,
+                                  ScalarType, AViewType, BViewType, CViewType>(
+              alpha, A, B, beta, C)
+              .invoke();
       break;
 
     case BaseHeuristicAlgos::TALL:
@@ -390,11 +534,7 @@ int BatchedGemm(const BatchedGemmHandleType *handle, const ScalarType alpha,
 
     case GemmKokkosBatchedAlgos::KK_TEAMSIMD:
 
-    case GemmKokkosBatchedAlgos::KK_SERIAL_RANK0:
-
     case GemmKokkosBatchedAlgos::KK_SERIAL_SHMEM:
-
-    case GemmKokkosBatchedAlgos::KK_DBLBUF:
 
     default:
       std::ostringstream os;
@@ -411,5 +551,6 @@ int BatchedGemm(const BatchedGemmHandleType *handle, const ScalarType alpha,
 #include "KokkosBatched_Gemm_Serial_Impl.hpp"
 #include "KokkosBatched_Gemm_Team_Impl.hpp"
 #include "KokkosBatched_Gemm_TeamVector_Impl.hpp"
+#include "KokkosBatched_Gemm_DblBuf_Impl.hpp"
 
 #endif
