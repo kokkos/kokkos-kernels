@@ -50,11 +50,16 @@ export KOKKOS_SRC_DIR=$(realpath $KOKKOS_SRC_DIR)
 export KOKKOS_SHA=${KOKKOS_SHA:-"2fc1050"} # Tip of develop as of 09-30-21
 export KOKKOSKERNELS_SRC_DIR=${KOKKOSKERNELS_SRC_DIR:-"$HOME/KOKKOS.base/kokkos-kernels"}
 export KOKKOSKERNELS_SRC_DIR=$(realpath $KOKKOSKERNELS_SRC_DIR)
-export KOKKOSKERNELS_SHA=${KOKKOSKERNELS_SHA:-"3d2992f"} # Tip of e10harvey/issue1045 as of 09-30-21
+export KOKKOSKERNELS_SHA=${KOKKOSKERNELS_SHA:-"issue933"} # Tip of e10harvey/issue933 as of 10-01-21
 envprint KOKKOS_SRC_DIR KOKKOS_SHA KOKKOSKERNELS_SRC_DIR KOKKOSKERNELS_SHA
 
+dry_run="off"
+precision="$1"
+arch_names="$2 $3"
+echo "PRECISION=\"$1\", HOST_ARCH=\"$2\", ACCELERATOR_ARCH=\"$3\""
+
 # Create benchmark directory
-benchmark_dir=$PWD/$0_$(date +"%Y-%m-%d_%H.%M.%S")
+benchmark_dir=$precision_$PWD/$0_$(date +"%Y-%m-%d_%H.%M.%S")
 mkdir -p $benchmark_dir/kokkos-{build,instal}
 mkdir -p $benchmark_dir/kokkos-kernels-{build,install}
 export KOKKOS_BUILD_DIR=$(realpath $benchmark_dir/kokkos-build)
@@ -62,11 +67,6 @@ export KOKKOS_INSTALL_DIR=$(realpath $benchmark_dir/kokkos-install)
 export KOKKOSKERNELS_BUILD_DIR=$(realpath $benchmark_dir/kokkos-kernels-build)
 export KOKKOSKERNELS_INSTALL_DIR=$(realpath $benchmark_dir/kokkos-kernels-install)
 envprint KOKKOS_INSTALL_DIR KOKKOS_BUILD_DIR KOKKOSKERNELS_BUILD_DIR KOKKOSKERNELS_INSTALL_DIR
-
-dry_run="off"
-precision="$1"
-arch_names="$2 $3"
-echo "PRECISION=\"$1\", HOST_ARCH=\"$2\", ACCELERATOR_ARCH=\"$3\""
 
 # Setup arch specific cmake configurations and job submission commands
 if [[ "$arch_names" == " " || -z $precision ]]; then
