@@ -672,11 +672,16 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string &filenam
 
 void print_help_sptrsv() {
   printf("Options:\n");
-  printf("  --test [OPTION] : Use different kernel implementations\n");
-  printf("                    Options:\n");
-  printf("                    superlu-naive, superlu-etree, superlu-dag\n\n");
-  printf("  -f [file]       : Read in Matrix Market formatted text file 'file'.\n");
-  printf("  --loop [LOOP]   : How many spmv to run to aggregate average time. \n");
+  printf("  --test [OPTION]         : Use different kernel implementations\n");
+  printf("                            Options:\n");
+  printf("                            superlu-naive, superlu-etree, superlu-dag\n\n");
+  printf("  -f [file]               : Read in Matrix Market formatted text file 'file'.\n");
+  printf("  --loop [LOOP]           : How many spmv to run to aggregate average time. \n");
+  printf("  --u-in-csc              : To store U-factor in CSC, needed for invert.\n");
+  printf("  --invert-diag           : To invert diagonal blocks.\n");
+  printf("  --invert-offdiag        : To apply inverse to off-diagonal blocks.\n");
+  printf("  --block-size [SIZE]     : To specify the threshold to switch device and bached kernel.\n");
+  printf("  --scalar-type [s,d,c,z] :\n");
 }
 
 
@@ -855,18 +860,22 @@ int main(int argc, char **argv) {
 }
 #else // defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
 int main() {
-  std::cout << std::endl << " ** SUPERLU NOT ENABLED **" << std::endl << std::endl;
-  exit(0);
-  return 0;
+  std::cout << std::endl;
+  #if !defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
+  std::cout << " ** SUPERLU NOT ENABLED **" << std::endl;
+  #endif
+  #if !defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
+  std::cout << " ** SUPERNODAL SPTRSV NOT ENABLED **" << std::endl;
+  #endif
+  std::cout << std::endl;
+
+  return 1;
 }
 #endif
 
 #else // defined( KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA ) && (!defined(KOKKOS_ENABLE_CUDA) || ( 8000 <= CUDA_VERSION ))
 
 int main() {
-#if !defined(KOKKOSKERNELS_INST_DOUBLE)
-  std::cout << " Only supported with double precision" << std::endl;
-#endif
 #if !defined( KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA )
   std::cout << " KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA **not** defined" << std::endl;
 #endif
@@ -877,6 +886,6 @@ int main() {
   #endif
   std::cout << " CUDA_VERSION = " << CUDA_VERSION << std::endl;
 #endif
-  return 0;
+  return 1;
 }
 #endif

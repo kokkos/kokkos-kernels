@@ -27,6 +27,7 @@ The gmres function takes the following input paramters:
 **B:** A Kokkos::View that is the system right-hand side. Must have B.extent(1)=1. (Currently only one right-hand side is supported.)   
 **X:** A Kokkos::View that is used as both the initial vector for the GMRES iteration and the output for the solution vector.  (Must have X.extent(1)=1.)   
 **opts:** A 'GmresOpts' struct as described below.   
+**M:** A pointer to a KokkosSparse::Experimental::Preconditioner. Only right preconditioning is supported at this time.  
 
 The solver has a 'GmresOpts' struct to pass in solver options.  Available options are:   
 **tol:** The convergence tolerance for GMRES.  Based upon the relative residual. The solver will terminate when norm(b-Ax)/norm(b) <= tol. (Default: 1e-8)   
@@ -54,12 +55,12 @@ The real-valued test uses a matrix generated directly by Kokkos Kernels.
 These measurements were taken on 7/23/21, running on an NVIDIA V100 GPU on Weaver7.  
 (Timings based upon the GMRES::TotalTime profiling region.)
 
-**ex\_real\_A:** Converges in 2270 iterations and 0.9629 seconds.
+**ex\_real\_A:** Converges in 2271 iterations and 0.9629 seconds.
 
 (The two following timings total the time for the CGS2 and MGS tests.)   
-**test\_real\_A:** Converges in 29 iterations (with a restart size of 15) and 0.2536 seconds.
+**test\_real\_A:** Converges in 30 iterations (with a restart size of 15) and 0.2536 seconds.
 
-**test\_cmplx\_A:** Converges in 651 iterations (to a tolerance of 1e-5) in 2.822 seconds.  
+**test\_cmplx\_A:** Converges in 652 iterations (to a tolerance of 1e-5) in 2.822 seconds.  
 
 ### Concerns, enhancements, or bug reporting:
 If you wish to suggest an enhancement or make a bug report for this solver code, please post an issue at https://github.com/kokkos/kokkos-kernels/issues or email jloe@sandia.gov.

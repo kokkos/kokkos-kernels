@@ -331,6 +331,7 @@ spmv_beta_no_transpose (const KokkosKernels::Experimental::Controls& controls,
     /// serial impl                                                                                         
     typedef typename AMatrix::non_const_value_type value_type;
     typedef typename AMatrix::non_const_size_type size_type;
+    typedef Kokkos::ArithTraits<value_type> ATV;
 
     const size_type *__restrict__ row_map_ptr = A.graph.row_map.data();
     const ordinal_type *__restrict__ col_idx_ptr = A.graph.entries.data();
@@ -363,10 +364,10 @@ spmv_beta_no_transpose (const KokkosKernels::Experimental::Controls& controls,
 	  const int jdist = (jend-jbeg)/4;
 	  typename YVector::non_const_value_type tmp1(0), tmp2(0), tmp3(0), tmp4(0);
 	  for (int jj=0;jj<jdist;++jj) {
-	    const value_type value1 = values_ptr[j];
-	    const value_type value2 = values_ptr[j+1];
-	    const value_type value3 = values_ptr[j+2];
-	    const value_type value4 = values_ptr[j+3];
+            const value_type value1 = conjugate ? ATV::conj(values_ptr[j]) : values_ptr[j];
+            const value_type value2 = conjugate ? ATV::conj(values_ptr[j+1]) : values_ptr[j+1];
+            const value_type value3 = conjugate ? ATV::conj(values_ptr[j+2]) : values_ptr[j+2];
+            const value_type value4 = conjugate ? ATV::conj(values_ptr[j+3]) : values_ptr[j+3];
 	    const int col_idx1 = col_idx_ptr[j];
 	    const int col_idx2 = col_idx_ptr[j+1];
 	    const int col_idx3 = col_idx_ptr[j+2];
@@ -382,7 +383,7 @@ spmv_beta_no_transpose (const KokkosKernels::Experimental::Controls& controls,
 	    j += 4;
 	  }
 	  for (;j<jend;++j) {
-	    const value_type value = values_ptr[j];
+            const value_type value = conjugate ? ATV::conj(values_ptr[j]) : values_ptr[j];
 	    const int col_idx = col_idx_ptr[j];
 	    tmp1 += value*x_ptr[col_idx];
 	  }
@@ -398,7 +399,7 @@ spmv_beta_no_transpose (const KokkosKernels::Experimental::Controls& controls,
       }
     }
     return;
-  }  
+  }
   #endif
 
   #ifdef KOKKOS_ENABLE_OPENMP
@@ -408,6 +409,7 @@ spmv_beta_no_transpose (const KokkosKernels::Experimental::Controls& controls,
      (std::is_same<typename YVector::non_const_value_type,double>::value) &&
      ((int) A.graph.row_block_offsets.extent(0) == (int) omp_get_max_threads()+1) &&
      (((uintptr_t)(const void*)(x.data())%64)==0) && (((uintptr_t)(const void*)(y.data())%64)==0)
+     && !conjugate
      ) {
     //Note BMK: this case is typically not called in practice even for OpenMP, since
     //it requires row_block_offsets to have been computed in the graph.
