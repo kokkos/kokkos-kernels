@@ -1903,11 +1903,7 @@ gemm_args_t __do_setup(options_t options, matrix_dims_t dims) {
   gemm_args.dims     = dims;
   gemm_args.transA   = options.blas_args.gemm.gemm_args.c_str()[0];
   gemm_args.transB   = options.blas_args.gemm.gemm_args.c_str()[1];
-  if (options.test == BATCHED_TEAM_SIMD ||
-      options.test == BATCHED_TEAM_SIMD_BLOCKED ||
-      options.test == BATCHED_SERIAL_SIMD ||
-      options.test == BATCHED_SERIAL_SIMD_BLOCKED ||
-      options.test == BATCHED_SERIAL_COMPACT_MKL) {
+  if (options.use_simd) {
     // Calculate the batch size for simd views
     auto a_simd_batch_size =
         dims.a.k / simd_vector_size + (dims.a.k % simd_vector_size > 0);
@@ -2256,6 +2252,7 @@ void do_gemm_serial_simd_batched_parallel(options_t options) {
   STATUS;
   // SerialBatchDim3Tag
   // SerialSimdTag
+  options.use_simd = true;
   if (options.blas_args.batch_size_last_dim)
     __do_loop_and_invoke(
         options,
@@ -2272,6 +2269,7 @@ void do_gemm_serial_simd_batched_blocked_parallel(options_t options) {
   STATUS;
   // SerialBatchDim3Tag
   // SerialSimdTag
+  options.use_simd = true;
   if (options.blas_args.batch_size_last_dim)
     __do_loop_and_invoke(
         options,
@@ -2302,8 +2300,9 @@ void do_gemm_serial_batched_compact_mkl_parallel(options_t options) {
   return;
 }
 #else
-void do_gemm_serial_batched_compact_mkl_parallel(options_t /*options*/) {
+void do_gemm_serial_batched_compact_mkl_parallel(options_t options) {
   STATUS;
+  options.use_simd = true;
 #if !defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL__)
   std::cerr
       << std::string(__func__)
@@ -2370,6 +2369,7 @@ void do_gemm_team_vector_batched_parallel(options_t options) {
 
 void do_gemm_team_simd_batched_parallel(options_t options) {
   STATUS;
+  options.use_simd = true;
   if (options.blas_args.batch_size_last_dim)
     __do_loop_and_invoke(
         options,
@@ -2384,6 +2384,7 @@ void do_gemm_team_simd_batched_parallel(options_t options) {
 
 void do_gemm_team_simd_batched_blocked_parallel(options_t options) {
   STATUS;
+  options.use_simd = true;
   if (options.blas_args.batch_size_last_dim)
     __do_loop_and_invoke(
         options,

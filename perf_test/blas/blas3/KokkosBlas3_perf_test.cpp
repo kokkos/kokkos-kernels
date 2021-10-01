@@ -72,6 +72,7 @@ static struct option long_options[] = {
     {"routines", required_argument, 0, 'r'},
     {"verify", required_argument, 0, 'v'},
     {"ninter", required_argument, 0, 'j'},
+    {"use_simd", required_argument, 0, 'f'},
     {0, 0, 0, 0}};
 
 static void __print_help_blas3_perf_test() {
@@ -229,6 +230,14 @@ static void __print_help_blas3_perf_test() {
     "that evenly divides the batch size. "
     "(default: %d)\n",
     DEFAULT_NINTER);
+
+  printf("\t-u, --use_simd=SIMD\n");
+  printf(
+      "\t\tWhether to use SIMD views.\n");
+  printf(
+      "\t\t\tValid values for SIMD are 1 to use SIMD views and 0 to use non-SIMD"
+      "views instead. (default: %d)\n",
+      DEFAULT_USE_SIMD);
 }
 
 static void __blas3_perf_test_input_error(char ** /*argv*/, char short_opt,
@@ -283,6 +292,7 @@ int main(int argc, char **argv) {
   options.blas_args.batch_size_last_dim = DEFAULT_BATCH_SIZE_LAST_DIM;
   options.verify                        = DEFAULT_VERIFY;
   options.ninter                        = DEFAULT_NINTER;
+  options.use_simd = DEFAULT_USE_SIMD;
 
   options.blas_args.trmm.trmm_args = DEFAULT_TRMM_ARGS;
   options.blas_args.trmm.alpha     = DEFAULT_TRMM_ALPHA;
@@ -292,7 +302,7 @@ int main(int argc, char **argv) {
   options.blas_args.gemm.beta      = DEFAULT_GEMM_BETA;
 
   while (
-      (ret = getopt_long(argc, argv, "ht:l:b:e:s:w:i:o:a:c:r:g:z:n:k:u:p:d:v:j:",
+      (ret = getopt_long(argc, argv, "ht:l:b:e:s:w:i:o:a:c:r:g:z:n:k:u:p:d:v:j:f:",
                          long_options, &option_idx)) != -1) {
     switch (ret) {
       case 'h': __print_help_blas3_perf_test(); return 0;
@@ -419,6 +429,7 @@ int main(int argc, char **argv) {
       case 'z': options.blas_args.team_size = atoi(optarg); break;
       case 'n': options.blas_args.vector_len = atoi(optarg); break;
       case 'u': options.blas_args.use_auto = atoi(optarg); break;
+      case 'f': options.use_simd = atoi(optarg); break;
       case 'c':
         out_file         = optarg;
         options.out_file = std::string(out_file);

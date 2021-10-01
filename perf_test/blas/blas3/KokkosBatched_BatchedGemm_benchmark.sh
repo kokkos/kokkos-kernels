@@ -59,9 +59,9 @@ arch_names="$2 $3"
 echo "PRECISION=\"$1\", HOST_ARCH=\"$2\", ACCELERATOR_ARCH=\"$3\""
 
 # Create benchmark directory
-benchmark_dir=$precision_$PWD/$0_$(date +"%Y-%m-%d_%H.%M.%S")
-mkdir -p $benchmark_dir/kokkos-{build,instal}
-mkdir -p $benchmark_dir/kokkos-kernels-{build,install}
+benchmark_dir=$PWD/$0_$(date +"%Y-%m-%d_%H.%M.%S")
+beval mkdir -p $benchmark_dir/kokkos-{build,install}
+beval mkdir -p $benchmark_dir/kokkos-kernels-{build,install}
 export KOKKOS_BUILD_DIR=$(realpath $benchmark_dir/kokkos-build)
 export KOKKOS_INSTALL_DIR=$(realpath $benchmark_dir/kokkos-install)
 export KOKKOSKERNELS_BUILD_DIR=$(realpath $benchmark_dir/kokkos-kernels-build)
@@ -72,17 +72,17 @@ envprint KOKKOS_INSTALL_DIR KOKKOS_BUILD_DIR KOKKOSKERNELS_BUILD_DIR KOKKOSKERNE
 if [[ "$arch_names" == " " || -z $precision ]]; then
     printhelp; earlyexit 1
 elif [ "$arch_names" == "POWER9 VOLTA70" ]; then
+  module purge
   module load cmake/3.18.0 gcc/7.2.0 cuda/10.2.2
-  kokkos_config_cmd="cd $KOKKOS_BUILD_DIR && $KOKKOS_SRC_DIR/generate_makefile.bash --cxxflags='-O3' --arch=Power9,Volta70 \
-                     --with-cuda=$CUDA_PATH --compiler=$KOKKOS_SRC_DIR/bin/nvcc_wrapper --kokkos-path=$KOKKOS_SRC_DIR \
-                     --prefix=$KOKKOS_INSTALL_DIR 2>&1 | tee kokkos_config_cmd.out"
+  kokkos_config_cmd="cd $KOKKOS_BUILD_DIR && $KOKKOS_SRC_DIR/generate_makefile.bash --cxxflags='-O3' \
+                     --arch=Power9,Volta70 --with-cuda=$CUDA_PATH --compiler=$KOKKOS_SRC_DIR/bin/nvcc_wrapper \
+                     --kokkos-path=$KOKKOS_SRC_DIR --prefix=$KOKKOS_INSTALL_DIR 2>&1 | tee kokkos_config_cmd.out"
   kokkos_config_defaults_cmd="cd $KOKKOS_BUILD_DIR && cmake -DKokkos_ENABLE_TESTS:BOOL=OFF $KOKKOS_SRC_DIR 2>&1 \
                               | tee -a kokkos_config_cmd.out"
 
   kokkoskernels_config_cmd="cd $KOKKOSKERNELS_BUILD_DIR && $KOKKOSKERNELS_SRC_DIR/cm_generate_makefile.bash \
-                            --cxxflags='-O3' --arch=Power9,Volta70 \
-                            --with-scalars="$precision" \
-                            --with-cuda=$CUDA_PATH --compiler=$KOKKOS_INSTALL_DIR/bin/nvcc_wrapper \
+                            --arch=Power9,Volta70 --with-cuda=$CUDA_PATH --compiler=$KOKKOS_INSTALL_DIR/bin/nvcc_wrapper \
+                            --cxxflags='-O3' --with-scalars=$precision \
                             --kokkos-path=$KOKKOS_SRC_DIR --kokkoskernels-path=$KOKKOSKERNELS_SRC_DIR \
                             --kokkos-prefix=$KOKKOS_INSTALL_DIR --prefix=$KOKKOSKERNELS_INSTALL_DIR 2>&1 | \
                             tee kokkoskernels_config_cmd.out"
@@ -94,9 +94,54 @@ elif [ "$arch_names" == "POWER9 VOLTA70" ]; then
   kokkoskernels_build_cmd="bsub -q rhel7W -W 2:00 -Is $KOKKOSKERNELS_BUILD_DIR/build.sh"
   benchmark_cmd="bsub -q rhel7W -W 2:00 -Is $KOKKOSKERNELS_BUILD_DIR/bench.sh"
 elif [ "$arch_names" == "A64FX " ]; then
-  earlyexit 0
+  export OMP_PROC_BIND=close
+  export OMP_PLACES=cores
+  export OMP_NUM_THREADS=48
+  module purge
+  module load gcc/10.2.0 cmake/3.17.0
+  kokkos_config_cmd="cd $KOKKOS_BUILD_DIR && $KOKKOS_SRC_DIR/generate_makefile.bash --cxxflags='-O3' \
+                     --arch=A64FX \
+                     --kokkos-path=$KOKKOS_SRC_DIR --prefix=$KOKKOS_INSTALL_DIR 2>&1 | tee kokkos_config_cmd.out"
+  kokkos_config_defaults_cmd="cd $KOKKOS_BUILD_DIR && cmake -DKokkos_ENABLE_TESTS:BOOL=OFF $KOKKOS_SRC_DIR 2>&1 \
+                              | tee -a kokkos_config_cmd.out"
+
+  kokkoskernels_config_cmd="cd $KOKKOSKERNELS_BUILD_DIR && $KOKKOSKERNELS_SRC_DIR/cm_generate_makefile.bash \
+                            --cxxflags='-msve-vector-bits=512 -Ofast' --arch=A64FX --with-scalars=$precision --with-openmp \
+                            --kokkos-path=$KOKKOS_SRC_DIR --kokkoskernels-path=$KOKKOSKERNELS_SRC_DIR \
+                            --kokkos-prefix=$KOKKOS_INSTALL_DIR --prefix=$KOKKOSKERNELS_INSTALL_DIR 2>&1 | \
+                            tee kokkoskernels_config_cmd.out"
+  kokkoskernels_config_defaults_cmd="cd $KOKKOSKERNELS_BUILD_DIR && cmake -DKokkosKernels_INST_LAYOUTLEFT:BOOL=OFF \
+                                   -DKokkosKernels_INST_LAYOUTRIGHT:BOOL=ON -DKokkosKernels_INST_DOUBLE:BOOL=OFF \
+                                   $KOKKOSKERNELS_SRC_DIR 2>&1 | tee -a kokkoskernels_config_cmd.out"
+
+  kokkos_build_cmd="salloc --time=2:00:00 -N1 $KOKKOS_BUILD_DIR/build.sh"
+  kokkoskernels_build_cmd="salloc --time=2:00:00 -N1 $KOKKOSKERNELS_BUILD_DIR/build.sh"
+  benchmark_cmd="salloc --time=2:00:00 -N1 $KOKKOSKERNELS_BUILD_DIR/bench.sh"
 elif [ "$arch_names" == "SKX " ]; then
-  earlyexit 0
+    export OMP_PROC_BIND=close
+    export OMP_PLACES=cores
+    export OMP_NUM_THREADS=96
+    module purge
+    module load gcc/7.2.0 cmake/3.19.3
+    kokkos_config_cmd="cd $KOKKOS_BUILD_DIR && $KOKKOS_SRC_DIR/generate_makefile.bash --cxxflags='-O3' \
+                       --arch=SKX \
+                       --kokkos-path=$KOKKOS_SRC_DIR --prefix=$KOKKOS_INSTALL_DIR 2>&1 | tee kokkos_config_cmd.out"
+    kokkos_config_defaults_cmd="cd $KOKKOS_BUILD_DIR && cmake -DKokkos_ENABLE_TESTS:BOOL=OFF $KOKKOS_SRC_DIR 2>&1 \
+                                | tee -a kokkos_config_cmd.out"
+  
+    kokkoskernels_config_cmd="cd $KOKKOSKERNELS_BUILD_DIR && $KOKKOSKERNELS_SRC_DIR/cm_generate_makefile.bash \
+                              --cxxflags='-O3' --arch=SKX --with-scalars=$precision --with-openmp \
+                              --kokkos-path=$KOKKOS_SRC_DIR --kokkoskernels-path=$KOKKOSKERNELS_SRC_DIR \
+                              --kokkos-prefix=$KOKKOS_INSTALL_DIR --prefix=$KOKKOSKERNELS_INSTALL_DIR 2>&1 | \
+                              tee kokkoskernels_config_cmd.out"
+    kokkoskernels_config_defaults_cmd="cd $KOKKOSKERNELS_BUILD_DIR && cmake -DKokkosKernels_INST_LAYOUTLEFT:BOOL=OFF \
+                                     -DKokkosKernels_INST_LAYOUTRIGHT:BOOL=ON -DKokkosKernels_INST_DOUBLE:BOOL=OFF \
+                                     $KOKKOSKERNELS_SRC_DIR 2>&1 | tee -a kokkoskernels_config_cmd.out"
+  
+    kokkos_build_cmd="salloc --time=2:00:00 -N1 $KOKKOS_BUILD_DIR/build.sh"
+    kokkoskernels_build_cmd="salloc --time=2:00:00 -N1 $KOKKOSKERNELS_BUILD_DIR/build.sh"
+    benchmark_cmd="salloc --time=2:00:00 -N1 $KOKKOSKERNELS_BUILD_DIR/bench.sh"
+    use_simd="--use_simd=1"
 else
   echo "Invalid arch: $arch_names"
   printhelp; earlyexit 1
@@ -111,19 +156,19 @@ chmod +x $KOKKOS_BUILD_DIR/build.sh
 # Write the arch agnostic kokkos-kernels build script
 echo "#!/bin/bash" > $KOKKOSKERNELS_BUILD_DIR/build.sh
 echo "cd $KOKKOSKERNELS_BUILD_DIR/perf_test/blas/blas3" >> $KOKKOSKERNELS_BUILD_DIR/build.sh
-echo "make -j40" >> $KOKKOSKERNELS_BUILD_DIR/build.sh
+echo "make -j40 KokkosBlas3_perf_test" >> $KOKKOSKERNELS_BUILD_DIR/build.sh
 chmod +x $KOKKOSKERNELS_BUILD_DIR/build.sh
 
 # Write the arch agnostic kokkos-kernels benchmark script
 echo "#!/bin/bash" > $KOKKOSKERNELS_BUILD_DIR/bench.sh
 echo "cd $benchmark_dir" >> $KOKKOSKERNELS_BUILD_DIR/bench.sh
-echo "echo \"Writing output to: $benchmark_dir/bench.csv...\"" >> $KOKKOSKERNELS_BUILD_DIR/bench.sh
 echo "$KOKKOSKERNELS_BUILD_DIR/perf_test/blas/blas3/KokkosBlas3_perf_test \
       --test=batched_heuristic --routines=gemm --loop_type=parallel --batch_size_last_dim=0 \
       --matrix_size_start=2x2,2x2,2x2 --matrix_size_stop=64x64,64x64,64x64 \
       --matrix_size_step=2 --batch_size=1024 \
-      --warm_up_loop=10 --iter=20 --verify=0 \
-      --csv=$benchmark_dir/bench.csv" \
+      --warm_up_loop=10 --iter=20 --verify=1 \
+      ${use_simd} \
+      --csv=${benchmark_dir}/${precision}_bench.csv" \
        >> $KOKKOSKERNELS_BUILD_DIR/bench.sh
 chmod +x $KOKKOSKERNELS_BUILD_DIR/bench.sh
 
@@ -137,7 +182,7 @@ beval $kokkos_config_defaults_cmd
 beval $kokkos_build_cmd
 
 # Wait for the file system on the head node to catch up
-while [ ! -e $KOKKOS_INSTALL_DIR/bin/nvcc_wrapper ]; do
+while [[ "$arch_names" == "POWER9 VOLTA70" && ! -e $KOKKOS_INSTALL_DIR/bin/nvcc_wrapper ]]; do
   sleep 3s
 done
 
@@ -148,3 +193,4 @@ beval $kokkoskernels_build_cmd
 
 # Run the benchmark
 beval $benchmark_cmd
+beval "cat ${benchmark_dir}/${precision}_bench.csv"
