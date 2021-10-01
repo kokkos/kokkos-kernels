@@ -46,6 +46,7 @@
 #include "KokkosBlas3_gemm_perf_test.hpp"
 
 #include <cstdlib>
+#include <memory>
 #include <unistd.h>
 #include <getopt.h>
 
@@ -242,6 +243,7 @@ int main(int argc, char **argv) {
   int option_idx = 0, ret, i;
   char *n_str = nullptr, *adim = nullptr, *bdim = nullptr, *cdim = nullptr;
   std::filebuf fb;
+  std::ostream out(&fb);
   char *out_file                          = nullptr;
   using rt_type                           = decltype(do_trmm_invoke);
   rt_type *routine_table[BLAS_ROUTINES_N] = {
@@ -429,7 +431,6 @@ int main(int argc, char **argv) {
 
   if (out_file != nullptr) {
     fb.open(out_file, std::ios::out);
-    std::ostream out(&fb);
     options.out = &out;
   }
 
