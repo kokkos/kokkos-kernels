@@ -150,10 +150,6 @@ void impl_test_batched_gemm_with_handle(BatchedGemmHandle* batchedGemmHandle,
       }
     }
   }
-  // std::cout << "algo_type:" << algo_type << std::endl;
-  // std::cout << "C0:" << matCdim1 << ", C1:" << matCdim2 << std::endl;
-  // std::cout << "A0:" << matAdim1 << ", A1:" << matAdim2 << std::endl;
-  // std::cout << "B0:" << matBdim1 << ", B1:" << matBdim2 << std::endl;
   EXPECT_NEAR_KK(diff / sum, 0, eps);
 }
 
@@ -197,10 +193,6 @@ void impl_test_batched_gemm(const int N, const int matAdim1, const int matAdim2,
        algo_type < GemmKokkosBatchedAlgos::N; ++algo_type) {
     {
       BatchedGemmHandle batchedGemmHandle(algo_type);
-
-      // batchedGemmHandle.enableDebug = true;
-      //      std::cout << "Testing algo_type = " << algo_type << "/" <<
-      //      GemmKokkosBatchedAlgos::N << std::endl;
 
       ASSERT_EQ(batchedGemmHandle.get_kernel_algo_type(), algo_type);
 
