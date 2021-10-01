@@ -59,7 +59,7 @@ Kokkos::Experimental::half_t abs(Kokkos::Experimental::half_t arg) {
   return arg < 0.0 ? -arg : arg;
 }
 
-Kokkos::complex<Kokkos::Experimental::half_t> abs(Kokkos::complex<Kokkos::Experimental::half_t> arg) {
+Kokkos::complex<Kokkos::Experimental::half_t> abs(Kokkos::complex<Kokkos::Experimental::half_t> arg) noexcept {
   return Kokkos::complex<Kokkos::Experimental::half_t>(abs(Kokkos::complex<double>((double) arg.real(), (double) arg.imag())));
 }
 #endif  // KOKKOS_HALF_T_IS_FLOAT
