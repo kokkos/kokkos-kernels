@@ -115,8 +115,7 @@ class BatchedDblBufGemm {
     constexpr int reg_n    = TILE_N / TILE_K + 2 * !!(TILE_N % TILE_K);
     constexpr int stride_m = TILE_K;
     constexpr int stride_n = TILE_N / reg_n;
-    using functor_type =
-        __Functor<member_type, reg_m, reg_n, stride_m, stride_n>;
+    using functor_type = Functor<member_type, reg_m, reg_n, stride_m, stride_n>;
 
     functor_type functor(*this, __A, __B, __C, TILE_M, TILE_N, TILE_K);
 
@@ -182,8 +181,11 @@ class BatchedDblBufGemm {
     Kokkos::parallel_for("BatchedDblBufGemm", team_policy, functor);
   }
 
+ public:
+  // Make Functor public for cuda 9.
+  // See https://github.com/kokkos/kokkos-kernels/issues/1121.
   template <class MemberType, int REG_M, int REG_N, int STRIDE_M, int STRIDE_N>
-  class __Functor {
+  class Functor {
    private:
     BatchedDblBufGemm &__ei;
     AViewType __A;
@@ -201,7 +203,7 @@ class BatchedDblBufGemm {
     // below. If those are used, we  get an invalid memory error from cuda. I
     // suspect this is due the values not being copied to device and then
     // runtime resolution of the host address &__ei.
-    __Functor(BatchedDblBufGemm &ei, AViewType A, BViewType B, CViewType C,
+    Functor(BatchedDblBufGemm &ei, AViewType A, BViewType B, CViewType C,
               unsigned tile_m = 1, unsigned tile_n = 1, unsigned tile_k = 1)
         : __ei(ei),
           __A(A),

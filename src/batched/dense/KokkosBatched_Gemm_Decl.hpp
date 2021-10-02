@@ -461,7 +461,6 @@ int BatchedGemm(BatchedGemmHandleType *const handle, const ScalarType alpha,
                ? (c_m >= 16)
                : (c_m >= 24 && c_m <= 32) || (c_m >= 45 && c_m <= 64))) {
         handle->teamSz = handle->vecLen = 8;
-        // constexpr int tile_m = 32, tile_n = 32, tile_k = 8;
         constexpr int tile_m = 32, tile_n = 32, tile_k = 8;
         if (c_m % 32 == 0)  // No bounds checking
           ret =

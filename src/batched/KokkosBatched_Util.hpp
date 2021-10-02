@@ -265,7 +265,7 @@ namespace KokkosBatched {
     struct Rank2 {};
   };
 
-  /// \brief BoundsCheck class used to specific whether to check view bounds in
+  /// \brief BoundsCheck class used to specify whether to check view bounds in
   ///        BLAS/LAPACK DblBuf algorithms.
   /// /var Yes Use functor with    bounds check
   /// /var No  Use functor without bound checks
@@ -668,7 +668,7 @@ namespace KokkosBatched {
 
   template <class ViewType>
   KOKKOS_INLINE_FUNCTION auto transpose_2d_view(ViewType v, const int *order) {
-    const int rank             = 2;
+    constexpr int rank             = 2;
     const int dim[]            = {v.extent_int(1), v.extent_int(0)};
     using view_value_type      = typename ViewType::value_type;
     using execution_space_type = typename ViewType::execution_space;
