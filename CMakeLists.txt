@@ -69,7 +69,6 @@ IF (NOT KOKKOSKERNELS_HAS_TRILINOS)
           BOOL
           "Whether to build tests including Perfsuite. Default: OFF"
   )
-  ENDIF()
   IF(KokkosKernels_ENABLE_TESTS_AND_PERFSUITE)
     set(BLT_CODE_CHECK_TARGET_NAME "fix-for-blt" CACHE STRING "Docstring")
     set(INFRASTRUCTURE_ONLY ON CACHE BOOL "Only build the RAJAPerf infrastructure, no builtin kernels")
