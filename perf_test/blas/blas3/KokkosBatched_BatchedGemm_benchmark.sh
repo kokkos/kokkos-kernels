@@ -114,9 +114,9 @@ elif [ "$arch_names" == "A64FX " ]; then
                                    -DKokkosKernels_INST_LAYOUTRIGHT:BOOL=ON -DKokkosKernels_INST_DOUBLE:BOOL=OFF \
                                    $KOKKOSKERNELS_SRC_DIR 2>&1 | tee -a kokkoskernels_config_cmd.out"
 
-  kokkos_build_cmd="salloc --time=2:00:00 -N1 $KOKKOS_BUILD_DIR/build.sh"
-  kokkoskernels_build_cmd="salloc --time=2:00:00 -N1 $KOKKOSKERNELS_BUILD_DIR/build.sh"
-  benchmark_cmd="salloc --time=2:00:00 -N1 $KOKKOSKERNELS_BUILD_DIR/bench.sh"
+  kokkos_build_cmd="srun --time=2:00:00 -N1 $KOKKOS_BUILD_DIR/build.sh"
+  kokkoskernels_build_cmd="srun --time=2:00:00 -N1 $KOKKOSKERNELS_BUILD_DIR/build.sh"
+  benchmark_cmd="srun --time=2:00:00 -N1 $KOKKOSKERNELS_BUILD_DIR/bench.sh"
 elif [ "$arch_names" == "SKX " ]; then
     export OMP_PROC_BIND=close
     export OMP_PLACES=cores
@@ -138,9 +138,9 @@ elif [ "$arch_names" == "SKX " ]; then
                                      -DKokkosKernels_INST_LAYOUTRIGHT:BOOL=ON -DKokkosKernels_INST_DOUBLE:BOOL=OFF \
                                      $KOKKOSKERNELS_SRC_DIR 2>&1 | tee -a kokkoskernels_config_cmd.out"
   
-    kokkos_build_cmd="salloc --time=2:00:00 -N1 $KOKKOS_BUILD_DIR/build.sh"
-    kokkoskernels_build_cmd="salloc --time=2:00:00 -N1 $KOKKOSKERNELS_BUILD_DIR/build.sh"
-    benchmark_cmd="salloc --time=2:00:00 -N1 $KOKKOSKERNELS_BUILD_DIR/bench.sh"
+    kokkos_build_cmd="srun --time=2:00:00 -N1 $KOKKOS_BUILD_DIR/build.sh"
+    kokkoskernels_build_cmd="srun --time=2:00:00 -N1 $KOKKOSKERNELS_BUILD_DIR/build.sh"
+    benchmark_cmd="srun --time=2:00:00 -N1 $KOKKOSKERNELS_BUILD_DIR/bench.sh"
     use_simd="--use_simd=1"
 else
   echo "Invalid arch: $arch_names"

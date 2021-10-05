@@ -453,6 +453,13 @@ int BatchedGemm(BatchedGemmHandleType *const handle, const ScalarType alpha,
                                         Algo::Gemm::Blocked>::type>::type>::
           type;
 
+      if (handle->enableDebug) {
+        std::cout << "bsgResultsPerThread: "
+                  << typeid(bsgResultsPerThread).name() << std::endl
+                  << "bsgModeType: "
+                  << typeid(bsgModeType).name() << std::endl;
+      }
+
       // if (on_gpu && c_m >= 20 &&
       //     (alpha == 1.0F && beta == 0.0F) ? c_m <= 24 : c_m <= 21) {
       //   // TODO: invoke TeamShmem
