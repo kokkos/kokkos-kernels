@@ -45,8 +45,11 @@
 #define KOKKOSBLAS3_GEMM_PERF_TEST_H_
 
 //#include <complex.h>
-#include "KokkosBlas3_common.hpp"
 
+
+#include "Kokkos_MathematicalFunctions.hpp"
+
+#include "KokkosBlas3_common.hpp"
 #include <Kokkos_Random.hpp>
 
 #include <KokkosBlas3_gemm.hpp>
