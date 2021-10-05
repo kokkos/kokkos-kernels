@@ -214,13 +214,11 @@ int test_batched_teamvector_spmv() {
   {
     typedef Kokkos::View<ValueType**,Kokkos::LayoutLeft,DeviceType> ViewType;
     typedef Kokkos::View<int*,Kokkos::LayoutLeft,DeviceType> IntView;
-    typedef Kokkos::View<ValueType*,Kokkos::LayoutLeft,DeviceType> alphaViewType;
+    typedef Kokkos::View<ScalarType*,Kokkos::LayoutLeft,DeviceType> alphaViewType;
     
-    Test::TeamVectorSpmv::impl_test_batched_spmv<DeviceType,ParamTagType,ViewType,IntView,ViewType,ViewType,alphaViewType,alphaViewType,0>( 0, 10, 1);
     for (int i=3;i<10;++i) {                                                                                        
       Test::TeamVectorSpmv::impl_test_batched_spmv<DeviceType,ParamTagType,ViewType,IntView,ViewType,ViewType,alphaViewType,alphaViewType,0>(1024,  i, 2);
     }
-    Test::TeamVectorSpmv::impl_test_batched_spmv<DeviceType,ParamTagType,ViewType,IntView,ViewType,ViewType,alphaViewType,alphaViewType,1>( 0, 10, 1);
     for (int i=3;i<10;++i) {                                                                                        
       Test::TeamVectorSpmv::impl_test_batched_spmv<DeviceType,ParamTagType,ViewType,IntView,ViewType,ViewType,alphaViewType,alphaViewType,1>(1024,  i, 2);
     }
@@ -230,14 +228,11 @@ int test_batched_teamvector_spmv() {
   {
     typedef Kokkos::View<ValueType**,Kokkos::LayoutRight,DeviceType> ViewType;
     typedef Kokkos::View<int*,Kokkos::LayoutRight,DeviceType> IntView;
-    typedef Kokkos::View<ValueType*,Kokkos::LayoutRight,DeviceType> alphaViewType;
+    typedef Kokkos::View<ScalarType*,Kokkos::LayoutRight,DeviceType> alphaViewType;
 
-    Test::TeamVectorSpmv::impl_test_batched_spmv<DeviceType,ParamTagType,ViewType,IntView,ViewType,ViewType,alphaViewType,alphaViewType,0>( 0, 10, 1);
     for (int i=3;i<10;++i) {                                                                                        
       Test::TeamVectorSpmv::impl_test_batched_spmv<DeviceType,ParamTagType,ViewType,IntView,ViewType,ViewType,alphaViewType,alphaViewType,0>(1024,  i, 2);
     }
-
-    Test::TeamVectorSpmv::impl_test_batched_spmv<DeviceType,ParamTagType,ViewType,IntView,ViewType,ViewType,alphaViewType,alphaViewType,1>( 0, 10, 1);
     for (int i=3;i<10;++i) {                                                                                         
       Test::TeamVectorSpmv::impl_test_batched_spmv<DeviceType,ParamTagType,ViewType,IntView,ViewType,ViewType,alphaViewType,alphaViewType,1>(1024,  i, 2);
     }
