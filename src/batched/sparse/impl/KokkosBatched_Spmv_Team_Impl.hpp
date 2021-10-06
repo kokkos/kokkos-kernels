@@ -45,7 +45,7 @@
 
 /// \author Kim Liegeois (knliege@sandia.gov)
 
-#include "KokkosBatched_Sparse_Util.hpp"
+#include "KokkosBatched_Util.hpp"
 
 namespace KokkosBatched {
 

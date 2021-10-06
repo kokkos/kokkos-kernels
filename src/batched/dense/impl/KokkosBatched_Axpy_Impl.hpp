@@ -225,24 +225,6 @@ namespace KokkosBatched {
       return 0;
     }
 
-    template<typename layout>
-    KOKKOS_INLINE_FUNCTION
-    static void
-    getIndices(const int iTemp,
-               const int n_rows,
-               const int n_matrices,
-               int &iRow,
-               int &iMatrix) {
-      if (std::is_same<layout, Kokkos::LayoutLeft>::value) {
-        iRow    = iTemp / n_matrices;
-        iMatrix = iTemp % n_matrices;
-      }
-      else {
-        iRow    = iTemp % n_rows;
-        iMatrix = iTemp / n_rows;
-      }
-    }
-
     template<typename MemberType,
              typename ScalarType,
              typename ValueType,
@@ -258,7 +240,7 @@ namespace KokkosBatched {
           Kokkos::TeamVectorRange(member, 0, m * n),
           [&](const int& iTemp) {
             int i, j;
-            getIndices<layout>(iTemp, n, m, j, i);
+            getIndices<int,layout>(iTemp, n, m, j, i);
             Y[i*ys0+j*ys1] += alpha[i*alphas0] * X[i*xs0+j*xs1];
           });
       //member.team_barrier();
