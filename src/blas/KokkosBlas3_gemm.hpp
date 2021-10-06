@@ -121,6 +121,7 @@ bool gemv_based_gemm(
 /// \tparam BViewType Input matrix, as a 2-D Kokkos::View
 /// \tparam CViewType Output matrix, as a nonconst 2-D Kokkos::View
 ///
+/// \param space [in] an execution space instance
 /// \param transA [in] "N" for non-transpose, "T" for transpose, "C"
 ///   for conjugate transpose.  All characters after the first are
 ///   ignored.  This works just like the BLAS routines.
