@@ -50,12 +50,22 @@
 
 namespace KokkosBatched {
 
+  /// \brief Serial Batched AXPY:
+  ///   y_l <- alpha_l * x_l + y_l for all l = 1, ..., N
+  /// where:
+  ///   * N is the number of vectors, 
+  ///   * x_1, ..., x_N are the N input vectors,
+  ///   * y_1, ..., y_N are the N output vectors,
+  ///   * alpha_1, ..., alpha_N are N scaling factors for x_1, ..., x_N.
   ///
-  /// Serial AXPY
+  /// \tparam ViewType: Input type for X and Y, needs to be a 2D view
+  /// \tparam alphaViewType: Input type for alpha, needs to be a 1D view
   ///
+  /// \param alpha [in]: input coefficient for X, a rank 1 view
+  /// \param X [in]: Input vector X, a rank 2 view
+  /// \param Y [in/out]: Output vector Y, a rank 2 view
   ///
-  /// y <- alpha * x + y
-  ///
+  /// No nested parallel_for is used inside of the function.
   ///
 
   struct SerialAxpy {
@@ -68,8 +78,23 @@ namespace KokkosBatched {
            const ViewType &Y);
   };
 
+  /// \brief Team Batched AXPY:
+  ///   y_l <- alpha_l * x_l + y_l for all l = 1, ..., N
+  /// where:
+  ///   * N is the number of vectors, 
+  ///   * x_1, ..., x_N are the N input vectors,
+  ///   * y_1, ..., y_N are the N output vectors,
+  ///   * alpha_1, ..., alpha_N are N scaling factors for x_1, ..., x_N.
   ///
-  /// Team AXPY
+  /// \tparam ViewType: Input type for X and Y, needs to be a 2D view
+  /// \tparam alphaViewType: Input type for alpha, needs to be a 1D view
+  ///
+  /// \param member [in]: TeamPolicy member
+  /// \param alpha [in]: input coefficient for X, a rank 1 view
+  /// \param X [in]: Input vector X, a rank 2 view
+  /// \param Y [in/out]: Output vector Y, a rank 2 view
+  ///
+  /// A nested parallel_for with TeamThreadRange is used.
   ///
 
   template<typename MemberType>
@@ -84,8 +109,24 @@ namespace KokkosBatched {
            const ViewType &Y);
   };
 
+  /// \brief TeamVector Batched AXPY:
+  ///   y_l <- alpha_l * x_l + y_l for all l = 1, ..., N
+  /// where:
+  ///   * N is the number of vectors, 
+  ///   * x_1, ..., x_N are the N input vectors,
+  ///   * y_1, ..., y_N are the N output vectors,
+  ///   * alpha_1, ..., alpha_N are N scaling factors for x_1, ..., x_N.
   ///
-  /// TeamVector AXPY
+  /// \tparam ViewType: Input type for X and Y, needs to be a 2D view
+  /// \tparam alphaViewType: Input type for alpha, needs to be a 1D view
+  ///
+  /// \param member [in]: TeamPolicy member
+  /// \param alpha [in]: input coefficient for X, a rank 1 view
+  /// \param X [in]: Input vector X, a rank 2 view
+  /// \param Y [in/out]: Output vector Y, a rank 2 view
+  ///
+  /// Two nested parallel_for with both TeamThreadRange and ThreadVectorRange 
+  /// (or one with TeamVectorRange) are used inside.  
   ///
 
   template<typename MemberType>
