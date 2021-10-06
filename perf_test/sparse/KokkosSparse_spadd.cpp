@@ -284,7 +284,7 @@ void run_experiment(const Params& params)
           B.values.data(), B.graph.row_map.data(), B.graph.entries.data(),
           C_cusparse, NULL, row_mapC.data(), NULL, &bufferSize));
       //Allocate work buffer
-      CUDA_SAFE_CALL(cudaMalloc((void**) &cusparseBuffer, bufferSize));
+      KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc((void**) &cusparseBuffer, bufferSize));
       KOKKOS_CUSPARSE_SAFE_CALL(cusparseXcsrgeam2Nnz(cusparseHandle, m, n,
           A_cusparse, A.nnz(), A.graph.row_map.data(), A.graph.entries.data(),
           B_cusparse, B.nnz(), B.graph.row_map.data(), B.graph.entries.data(),
@@ -334,7 +334,7 @@ void run_experiment(const Params& params)
     numericTime += timer.seconds();
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
     if(params.use_cusparse)
-      CUDA_SAFE_CALL(cudaFree(cusparseBuffer));
+      KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(cusparseBuffer));
 #endif
   }
 

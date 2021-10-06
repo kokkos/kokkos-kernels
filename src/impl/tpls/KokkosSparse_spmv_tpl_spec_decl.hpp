@@ -149,14 +149,14 @@ namespace Impl {
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpMV_bufferSize(cusparseHandle, myCusparseOperation,
 						      &alpha, A_cusparse, vecX, &beta, vecY, myCudaDataType,
 						      alg, &bufferSize));
-    CUDA_SAFE_CALL(cudaMalloc(&dBuffer, bufferSize));
+    KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc(&dBuffer, bufferSize));
 
     /* perform SpMV */
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpMV(cusparseHandle, myCusparseOperation,
 					   &alpha, A_cusparse, vecX, &beta, vecY, myCudaDataType,
 					   alg, dBuffer));
 
-    CUDA_SAFE_CALL(cudaFree(dBuffer));
+    KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(dBuffer));
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecX));
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecY));
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(A_cusparse));
