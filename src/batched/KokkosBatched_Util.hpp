@@ -671,7 +671,7 @@ namespace KokkosBatched {
   KOKKOS_INLINE_FUNCTION
   typename std::enable_if<std::is_same<layout, Kokkos::LayoutLeft>::value, void>::type
   getIndices(const OrdinalType iTemp,
-             const OrdinalType numRows,
+             const OrdinalType /*numRows*/,
              const OrdinalType numMatrices,
              OrdinalType &iRow,
              OrdinalType &iMatrix) {
@@ -685,7 +685,7 @@ namespace KokkosBatched {
   typename std::enable_if<std::is_same<layout, Kokkos::LayoutRight>::value, void>::type
   getIndices(const OrdinalType iTemp,
              const OrdinalType numRows,
-             const OrdinalType numMatrices,
+             const OrdinalType /*numMatrices*/,
              OrdinalType &iRow,
              OrdinalType &iMatrix) {
     iRow    = iTemp % numRows;
