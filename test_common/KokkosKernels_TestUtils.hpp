@@ -93,10 +93,11 @@ struct multivector_layout_adapter<ViewType, false> {
 };
 
 template <class Scalar1, class Scalar2, class Scalar3>
-void EXPECT_NEAR_KK(Scalar1 val1, Scalar2 val2, Scalar3 tol) {
+void EXPECT_NEAR_KK(Scalar1 val1, Scalar2 val2, Scalar3 tol,
+                    std::string msg = "") {
   typedef Kokkos::Details::ArithTraits<Scalar1> AT1;
   typedef Kokkos::Details::ArithTraits<Scalar3> AT3;
-  EXPECT_LE((double)AT1::abs(val1 - val2), (double)AT3::abs(tol));
+  EXPECT_LE((double)AT1::abs(val1 - val2), (double)AT3::abs(tol)) << msg;
 }
 
 template <class ViewType1, class ViewType2, class Scalar>
@@ -114,6 +115,19 @@ void EXPECT_NEAR_KK_1DVIEW(ViewType1 v1, ViewType2 v2, Scalar tol) {
   for (size_t i = 0; i < v1_size; ++i) {
     EXPECT_NEAR_KK(h_v1(i), h_v2(i), tol);
   }
+}
+
+/// This function returns a descriptive user defined failure string for
+/// insertion into gtest macros such as FAIL() and EXPECT_LE(). \param file The
+/// filename where the failure originated \param func The function where the
+/// failure originated \param line The line number where the failure originated
+/// \return a new string containing: "  > from file:func:line\n    > "
+static inline const std::string kk_failure_str(std::string file,
+                                               std::string func,
+                                               const int line) {
+  std::string failure_msg = "  > from ";
+  failure_msg += (file + ":" + func + ":" + std::to_string(line) + "\n    > ");
+  return std::string(failure_msg);
 }
 
 #if defined(KOKKOS_HALF_T_IS_FLOAT)
