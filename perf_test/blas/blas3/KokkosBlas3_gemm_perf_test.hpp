@@ -79,6 +79,7 @@ void do_gemm_serial_batched_blocked(options_t options);
 // void do_gemm_serial_blas_parallel(options_t options);
 // Not valid! The KokkosBlas::gemm function may take the entire device per
 // invocation!
+void do_gemm_heuristic_batched_parallel(options_t options);
 void do_gemm_serial_batched_parallel(options_t options);
 void do_gemm_serial_batched_blocked_parallel(options_t options);
 void do_gemm_serial_simd_batched_parallel(options_t options);
@@ -117,7 +118,8 @@ void (*do_gemm_invoke[LOOP_N][TEST_N])(options_t) = {
         NULL,  // Serial Experiment
     },
     {
-        NULL,                             // BLAS
+        NULL,  // BLAS
+        do_gemm_heuristic_batched_parallel,
         do_gemm_serial_batched_parallel,  // Serial
         do_gemm_serial_batched_blocked_parallel,
         do_gemm_serial_simd_batched_parallel,
@@ -285,12 +287,18 @@ static inline std::string __gemm_output_dim_string(options_t options,
 
 static void __gemm_output_csv_row(options_t options, gemm_args_t gemm_args,
                                   double time_in_seconds,
-                                  const char *experiment_name = nullptr) {
-  std::string algo_name = test_e_str[options.test];
-  std::string ts        = std::to_string(gemm_args.bp.team_size);
-  std::string vlen      = std::to_string(gemm_args.bp.vector_len);
-  std::string vtype     = internal_vector_type::label();
-  if (experiment_name) algo_name = std::string(experiment_name);
+                                  const char *experiment_name = nullptr,
+                                  const char *team_size       = nullptr,
+                                  const char *vec_len         = nullptr,
+                                  const char *vec_type        = nullptr) {
+  std::string algo_name = !experiment_name ? test_e_str[options.test]
+                                           : std::string(experiment_name);
+  std::string ts        = !team_size ? std::to_string(gemm_args.bp.team_size)
+                                     : std::string(team_size);
+  std::string vlen =
+      !vec_len ? std::to_string(gemm_args.bp.vector_len) : std::string(vec_len);
+  std::string vtype =
+      !vec_type ? internal_vector_type::label() : std::string(vec_type);
   if (options.blas_args.use_auto) ts = vlen = "Kokkos::AUTO";
 
   double flops;
@@ -466,6 +474,93 @@ void __do_gemm_serial_batched(options_t options, gemm_args_t gemm_args) {
     FATAL_ERROR("Bad gemm_args TransA or TransB value");
   }
   return;
+}
+
+template <class algo_tag, class blocking_type, class device_type,
+          class algo_mode = void>
+void __do_gemm_parallel_batched_heuristic_template(options_t options,
+                                                   gemm_args_t gemm_args) {
+  BatchedGemmHandle batchedGemmHandle(BaseHeuristicAlgos::SQUARE);
+  char a  = toupper(gemm_args.transA);
+  char b  = toupper(gemm_args.transB);
+  using N = Trans::NoTranspose;
+  using T = Trans::Transpose;
+  // using C = Trans::ConjTranspose;
+
+  STATUS;
+
+  if (a == 'N' && b == 'N') {
+    if (options.blas_args.batch_size_last_dim)
+      KokkosBatched::BatchedGemm<N, N, BatchLayout::Right>(
+          &batchedGemmHandle, gemm_args.alpha, gemm_args.A, gemm_args.B,
+          gemm_args.beta, gemm_args.C);
+    else
+      KokkosBatched::BatchedGemm<N, N, BatchLayout::Left>(
+          &batchedGemmHandle, gemm_args.alpha, gemm_args.A, gemm_args.B,
+          gemm_args.beta, gemm_args.C);
+  } else if (a == 'N' && b == 'T') {
+    if (options.blas_args.batch_size_last_dim)
+      KokkosBatched::BatchedGemm<N, T, BatchLayout::Right>(
+          &batchedGemmHandle, gemm_args.alpha, gemm_args.A, gemm_args.B,
+          gemm_args.beta, gemm_args.C);
+    else
+      KokkosBatched::BatchedGemm<N, T, BatchLayout::Left>(
+          &batchedGemmHandle, gemm_args.alpha, gemm_args.A, gemm_args.B,
+          gemm_args.beta, gemm_args.C);
+    //} else if (a == 'N' && b == 'C') {
+    //  __do_gemm_serial_batched_template<N, C, algo_type>(options, gemm_args);
+  } else if (a == 'T' && b == 'N') {
+    if (options.blas_args.batch_size_last_dim)
+      KokkosBatched::BatchedGemm<T, N, BatchLayout::Right>(
+          &batchedGemmHandle, gemm_args.alpha, gemm_args.A, gemm_args.B,
+          gemm_args.beta, gemm_args.C);
+    else
+      KokkosBatched::BatchedGemm<T, N, BatchLayout::Left>(
+          &batchedGemmHandle, gemm_args.alpha, gemm_args.A, gemm_args.B,
+          gemm_args.beta, gemm_args.C);
+  } else if (a == 'T' && b == 'T') {
+    if (options.blas_args.batch_size_last_dim)
+      KokkosBatched::BatchedGemm<T, T, BatchLayout::Right>(
+          &batchedGemmHandle, gemm_args.alpha, gemm_args.A, gemm_args.B,
+          gemm_args.beta, gemm_args.C);
+    else
+      KokkosBatched::BatchedGemm<T, T, BatchLayout::Left>(
+          &batchedGemmHandle, gemm_args.alpha, gemm_args.A, gemm_args.B,
+          gemm_args.beta, gemm_args.C);
+    //} else if (a == 'T' && b == 'C') {
+    //  __do_gemm_serial_batched_template<T, C, algo_type>(options, gemm_args);
+    //} else if (a == 'C' && b == 'N') {
+    //  __do_gemm_serial_batched_template<C, N, algo_type>(options, gemm_args);
+    //} else if (a == 'C' && b == 'T') {
+    //  __do_gemm_serial_batched_template<C, T, algo_type>(options, gemm_args);
+    //} else if (a == 'C' && b == 'C') {
+    //  __do_gemm_serial_batched_template<C, C, algo_type>(options, gemm_args);
+  } else {
+    FATAL_ERROR("Bad gemm_args TransA or TransB value");
+  }
+}
+
+template <class algo_tag, class blocking_type, class device_type,
+          class algo_mode = void>
+void __do_gemm_parallel_batched_heuristic(options_t options,
+                                          gemm_args_t gemm_args) {
+  Kokkos::Timer timer;
+
+  for (uint32_t i = 0; i < options.warm_up_n; ++i)
+    __do_gemm_parallel_batched_heuristic_template<algo_tag, blocking_type,
+                                                  device_type, algo_mode>(
+        options, gemm_args);
+  Kokkos::fence();
+
+  timer.reset();
+  for (uint32_t i = 0; i < options.n; ++i)
+    __do_gemm_parallel_batched_heuristic_template<algo_tag, blocking_type,
+                                                  device_type, algo_mode>(
+        options, gemm_args);
+  Kokkos::fence();
+
+  __gemm_output_csv_row(options, gemm_args, timer.seconds(), nullptr, "-", "-",
+                        "-");
 }
 
 template <class TransAType, class TransBType, class BlockingType>
@@ -1507,6 +1602,12 @@ template <class dstViewType>
 static inline void __gemm_copy_simd_view_to_3d_view(gemm_simd_args_t src,
                                                     dstViewType dst,
                                                     options_t options) {
+  // clang-format off
+  // Related issue: https://github.com/kokkos/kokkos-kernels/issues/998
+  //   CUDA VERSION 10.2.2 generates a compiler error:
+  //     KokkosBlas3_gemm_perf_test.hpp: error: ‘h_subview_type_2d’ was not declared in this scope
+  // clang-format on
+#if (CUDA_VERSION != 10020)
   using dst_scalar_type = typename dstViewType::value_type;
   using src_scalar_type = typename view_type_5d::value_type;
   size_t remainder, vector_batch_size, simd_batch_size, last_batch;
@@ -1634,6 +1735,10 @@ static inline void __gemm_copy_simd_view_to_3d_view(gemm_simd_args_t src,
 out:
   Kokkos::deep_copy(dst, h_dst);
   Kokkos::fence();
+#else
+  Kokkos::abort(
+      "Cannot perform simd verification with cuda/10.2.2, rerun with -v 0");
+#endif  // #if (CUDA_VERSION != 10020)
 }
 
 /**
@@ -2105,6 +2210,20 @@ void do_gemm_serial_batched_blocked(options_t options) {
       options, __do_gemm_serial_batched<default_scalar, view_type_3d,
                                         view_type_3d, view_type_3d,
                                         default_device, Algo::Gemm::Blocked>);
+  return;
+}
+
+void do_gemm_heuristic_batched_parallel(options_t options) {
+  STATUS;
+  if (options.blas_args.use_auto) {
+    fprintf(stderr, "ERROR: --test=%s does not support --use_auto=%d\n",
+            test_e_str[options.test].c_str(), (int)options.blas_args.use_auto);
+    exit(-EINVAL);
+  }
+
+  __do_loop_and_invoke(
+      options,
+      __do_gemm_parallel_batched_heuristic<void, void, default_device>);
   return;
 }
 
