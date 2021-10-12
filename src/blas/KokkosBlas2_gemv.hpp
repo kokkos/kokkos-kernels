@@ -63,6 +63,9 @@ namespace KokkosBlas {
 /// \tparam AlphaCoeffType Type of input coefficient alpha
 /// \tparam BetaCoeffType Type of input coefficient beta
 ///
+/// \param space [in] execution space instance on which to run the
+///   kernel. This may contain information about which stream to
+///   run on.
 /// \param trans [in] "N" for non-transpose, "T" for transpose, "C"
 ///   for conjugate transpose.  All characters after the first are
 ///   ignored.  This works just like the BLAS routines.
