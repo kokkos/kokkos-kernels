@@ -330,6 +330,7 @@ int BatchedGemm(BatchedGemmHandleType *const handle, const ScalarType alpha,
     // For SIMD views, we can have either 3-rank or 4-ranks inputs.
     switch (handle->get_kernel_algo_type()) {
       case BaseKokkosBatchedAlgos::KK_SERIAL:
+      case BaseHeuristicAlgos::SQUARE:
         static_assert(static_cast<int>(AViewType::rank) == 3,
                       "AViewType must have rank 3.");
         static_assert(static_cast<int>(BViewType::rank) == 3,
@@ -451,6 +452,13 @@ int BatchedGemm(BatchedGemmHandleType *const handle, const ScalarType alpha,
               typename std::conditional<on_a64fx, Algo::Gemm::Unblocked,
                                         Algo::Gemm::Blocked>::type>::type>::
           type;
+
+      if (handle->enableDebug) {
+        std::cout << "bsgResultsPerThread: "
+                  << typeid(bsgResultsPerThread).name() << std::endl
+                  << "bsgModeType: "
+                  << typeid(bsgModeType).name() << std::endl;
+      }
 
       // if (on_gpu && c_m >= 20 &&
       //     (alpha == 1.0F && beta == 0.0F) ? c_m <= 24 : c_m <= 21) {
