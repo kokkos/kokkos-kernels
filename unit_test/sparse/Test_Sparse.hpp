@@ -19,4 +19,4 @@
 
 #include "Test_Sparse_Utils_cusparse.hpp"
 
-#endif // TEST_SPARSE_HPP
+#endif  // TEST_SPARSE_HPP

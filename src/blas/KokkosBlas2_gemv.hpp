@@ -51,7 +51,7 @@
 #include <KokkosBlas2_gemv_spec.hpp>
 #include <KokkosKernels_helpers.hpp>
 #include <sstream>
-#include <type_traits> // requires C++11, but so does Kokkos
+#include <type_traits>  // requires C++11, but so does Kokkos
 
 namespace KokkosBlas {
 
@@ -71,29 +71,22 @@ namespace KokkosBlas {
 /// \param x [in] Input vector, as a 1-D Kokkos::View
 /// \param beta [in] Input coefficient of y
 /// \param y [in/out] Output vector, as a nonconst 1-D Kokkos::View
-template<class AViewType,
-         class XViewType,
-         class YViewType>
-void
-gemv (const char trans[],
-      typename AViewType::const_value_type& alpha,
-      const AViewType& A,
-      const XViewType& x,
-      typename YViewType::const_value_type& beta,
-      const YViewType& y)
-{
-  static_assert (Kokkos::Impl::is_view<AViewType>::value,
-                 "AViewType must be a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_view<XViewType>::value,
-                 "XViewType must be a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_view<YViewType>::value,
-                 "YViewType must be a Kokkos::View.");
-  static_assert (static_cast<int> (AViewType::rank) == 2,
-                 "AViewType must have rank 2.");
-  static_assert (static_cast<int> (XViewType::rank) == 1,
-                 "XViewType must have rank 1.");
-  static_assert (static_cast<int> (YViewType::rank) == 1,
-                 "YViewType must have rank 1.");
+template <class AViewType, class XViewType, class YViewType>
+void gemv(const char trans[], typename AViewType::const_value_type& alpha,
+          const AViewType& A, const XViewType& x,
+          typename YViewType::const_value_type& beta, const YViewType& y) {
+  static_assert(Kokkos::Impl::is_view<AViewType>::value,
+                "AViewType must be a Kokkos::View.");
+  static_assert(Kokkos::Impl::is_view<XViewType>::value,
+                "XViewType must be a Kokkos::View.");
+  static_assert(Kokkos::Impl::is_view<YViewType>::value,
+                "YViewType must be a Kokkos::View.");
+  static_assert(static_cast<int>(AViewType::rank) == 2,
+                "AViewType must have rank 2.");
+  static_assert(static_cast<int>(XViewType::rank) == 1,
+                "XViewType must have rank 1.");
+  static_assert(static_cast<int>(YViewType::rank) == 1,
+                "YViewType must have rank 1.");
 
   // Check compatibility of dimensions at run time.
   if (trans[0] == 'N' || trans[0] == 'n') {
@@ -102,26 +95,24 @@ gemv (const char trans[],
       os << "KokkosBlas::gemv: Dimensions of A, x, and y do not match: "
          << "A: " << A.extent(0) << " x " << A.extent(1)
          << ", x: " << x.extent(0) << ", y: " << y.extent(0);
-      Kokkos::Impl::throw_runtime_exception (os.str ());
+      Kokkos::Impl::throw_runtime_exception(os.str());
     }
-  }
-  else if (trans[0] == 'T' || trans[0] == 't' ||
-           trans[0] == 'C' || trans[0] == 'c' ||
-           trans[0] == 'H' || trans[0] == 'h') {
+  } else if (trans[0] == 'T' || trans[0] == 't' || trans[0] == 'C' ||
+             trans[0] == 'c' || trans[0] == 'H' || trans[0] == 'h') {
     if (A.extent(1) != y.extent(0) || A.extent(0) != x.extent(0)) {
       std::ostringstream os;
       os << "KokkosBlas::dot: Dimensions of A, x, and y do not match: "
          << "A: " << A.extent(0) << " x " << A.extent(1)
          << ", x: " << x.extent(0) << ", y: " << y.extent(0);
-      Kokkos::Impl::throw_runtime_exception (os.str ());
+      Kokkos::Impl::throw_runtime_exception(os.str());
     }
-  }
-  else {
+  } else {
     std::ostringstream os;
-    os << "KokkosBlas::gemv: trans[0] = '" << trans[0] << "'.  Valid values "
-      "include 'N' (No transpose), 'T' (Transpose), and 'C' (Conjugate "
-      "transpose).";
-    Kokkos::Impl::throw_runtime_exception (os.str ());
+    os << "KokkosBlas::gemv: trans[0] = '" << trans[0]
+       << "'.  Valid values "
+          "include 'N' (No transpose), 'T' (Transpose), and 'C' (Conjugate "
+          "transpose).";
+    Kokkos::Impl::throw_runtime_exception(os.str());
   }
 
   using ALayout = typename AViewType::array_layout;
@@ -129,35 +120,37 @@ gemv (const char trans[],
   // Minimize the number of Impl::GEMV instantiations, by
   // standardizing on particular View specializations for its template
   // parameters.
-  typedef Kokkos::View<typename AViewType::const_value_type**,
-    ALayout,
-    typename AViewType::device_type,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged> > AVT;
+  typedef Kokkos::View<typename AViewType::const_value_type**, ALayout,
+                       typename AViewType::device_type,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+      AVT;
   typedef Kokkos::View<typename XViewType::const_value_type*,
-    typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<XViewType, ALayout>::array_layout,
-    typename XViewType::device_type,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged> > XVT;
+                       typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<
+                           XViewType, ALayout>::array_layout,
+                       typename XViewType::device_type,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+      XVT;
   typedef Kokkos::View<typename YViewType::non_const_value_type*,
-    typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<YViewType, ALayout>::array_layout,
-    typename YViewType::device_type,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged> > YVT;
+                       typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<
+                           YViewType, ALayout>::array_layout,
+                       typename YViewType::device_type,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+      YVT;
 
-  // Degenerate case is essentially same as scal - use fallback impl 
-  // to avoid potential (unlikely?) circular dependence issues by including other KokkosBlas headers
-  if (A.extent(0) == 0 || A.extent(1) == 0)
-  {
-    const bool eti_spec_avail = KokkosBlas::Impl::gemv_eti_spec_avail<AVT, XVT, YVT>::value;
+  // Degenerate case is essentially same as scal - use fallback impl
+  // to avoid potential (unlikely?) circular dependence issues by including
+  // other KokkosBlas headers
+  if (A.extent(0) == 0 || A.extent(1) == 0) {
+    const bool eti_spec_avail =
+        KokkosBlas::Impl::gemv_eti_spec_avail<AVT, XVT, YVT>::value;
     typedef Impl::GEMV<AVT, XVT, YVT, false, eti_spec_avail> fallback_impl_type;
-    fallback_impl_type::gemv (trans, alpha, A, x, beta, y);
-  }
-  else 
-  {
+    fallback_impl_type::gemv(trans, alpha, A, x, beta, y);
+  } else {
     typedef Impl::GEMV<AVT, XVT, YVT> impl_type;
-    impl_type::gemv (trans, alpha, A, x, beta, y);
+    impl_type::gemv(trans, alpha, A, x, beta, y);
   }
-
 }
 
-} // namespace KokkosBlas
+}  // namespace KokkosBlas
 
-#endif // KOKKOS_BLAS2_MV_HPP_
+#endif  // KOKKOS_BLAS2_MV_HPP_

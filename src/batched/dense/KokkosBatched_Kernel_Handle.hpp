@@ -88,8 +88,9 @@ enum BASE_KOKKOS_BATCHED_ALGOS : int { KK_SERIAL = BaseTplAlgos::N, N };
 struct TplParams {
   union {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
-    //queue mkl_queue;
-    // TODO: Add queue header? Cannot find any declarations in intel-18, let alone oneAPI 2021
+    // queue mkl_queue;
+    // TODO: Add queue header? Cannot find any declarations in intel-18, let
+    // alone oneAPI 2021
 #endif  // KOKKOSKERNELS_ENABLE_TPL_MKL
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)

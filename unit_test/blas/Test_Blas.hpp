@@ -42,4 +42,4 @@
 #include "Test_Blas3_trmm.hpp"
 #include "Test_Blas3_trsm.hpp"
 
-#endif // TEST_BLAS_HPP
+#endif  // TEST_BLAS_HPP

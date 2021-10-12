@@ -204,7 +204,7 @@ class BatchedDblBufGemm {
     // suspect this is due the values not being copied to device and then
     // runtime resolution of the host address &__ei.
     Functor(BatchedDblBufGemm &ei, AViewType A, BViewType B, CViewType C,
-              unsigned tile_m = 1, unsigned tile_n = 1, unsigned tile_k = 1)
+            unsigned tile_m = 1, unsigned tile_n = 1, unsigned tile_k = 1)
         : __ei(ei),
           __A(A),
           __B(B),

@@ -456,8 +456,7 @@ int BatchedGemm(BatchedGemmHandleType *const handle, const ScalarType alpha,
       if (handle->enableDebug) {
         std::cout << "bsgResultsPerThread: "
                   << typeid(bsgResultsPerThread).name() << std::endl
-                  << "bsgModeType: "
-                  << typeid(bsgModeType).name() << std::endl;
+                  << "bsgModeType: " << typeid(bsgModeType).name() << std::endl;
       }
 
       // if (on_gpu && c_m >= 20 &&
@@ -483,14 +482,15 @@ int BatchedGemm(BatchedGemmHandleType *const handle, const ScalarType alpha,
               Impl::BatchedDblBufGemm<ArgTransA, ArgTransB, ArgBatchSzDim,
                                       BatchedGemmHandleType, ScalarType,
                                       AViewType, BViewType, CViewType,
-                                      BoundsCheck::Yes, tile_m, tile_n, tile_k>(handle, alpha, A, B, beta, C)
+                                      BoundsCheck::Yes, tile_m, tile_n, tile_k>(
+                  handle, alpha, A, B, beta, C)
                   .invoke();
       } else {
         ret = Impl::BatchedSerialGemm<ArgTransA, ArgTransB, bsgModeType,
                                       ArgBatchSzDim, bsgResultsPerThread,
                                       ScalarType, AViewType, BViewType,
                                       CViewType>(alpha, A, B, beta, C)
-                .invoke();
+                  .invoke();
       }
       break;
 
