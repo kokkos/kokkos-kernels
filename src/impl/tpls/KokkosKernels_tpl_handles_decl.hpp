@@ -50,19 +50,19 @@
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 #include "KokkosKernels_SparseUtils_cusparse.hpp"
 
-namespace KokkosKernels{
-namespace Impl{
+namespace KokkosKernels {
+namespace Impl {
 
 struct CusparseSingleton {
   cusparseHandle_t cusparseHandle;
 
   CusparseSingleton();
 
-  static CusparseSingleton & singleton();
+  static CusparseSingleton& singleton();
 };
 
-} // namespace Impl
-} // namespace KokkosKernels
+}  // namespace Impl
+}  // namespace KokkosKernels
 #endif
 
-#endif // KOKKOSKERNELS_TPL_HANDLES_DECL_HPP_
+#endif  // KOKKOSKERNELS_TPL_HANDLES_DECL_HPP_

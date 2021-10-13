@@ -49,24 +49,22 @@
 #include "cusparse.h"
 #include "KokkosKernels_tpl_handles_decl.hpp"
 
-namespace KokkosKernels{
-namespace Impl{
+namespace KokkosKernels {
+namespace Impl {
 
 CusparseSingleton::CusparseSingleton() {
   KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreate(&cusparseHandle));
 
-  Kokkos::push_finalize_hook ([&] () { 
-      cusparseDestroy(cusparseHandle);
-  });
+  Kokkos::push_finalize_hook([&]() { cusparseDestroy(cusparseHandle); });
 }
 
-CusparseSingleton & CusparseSingleton::singleton() {
-  static CusparseSingleton s ;
-  return s ;
+CusparseSingleton& CusparseSingleton::singleton() {
+  static CusparseSingleton s;
+  return s;
 }
 
-} // namespace Impl
-} // namespace KokkosKernels
+}  // namespace Impl
+}  // namespace KokkosKernels
 #endif
 
-#endif // KOKKOSKERNELS_TPL_HANDLES_DEF_HPP_
+#endif  // KOKKOSKERNELS_TPL_HANDLES_DEF_HPP_

@@ -15,4 +15,4 @@
 
 // Vector Kernels
 
-#endif // TEST_BATCHED_SPARSE_HPP
+#endif  // TEST_BATCHED_SPARSE_HPP

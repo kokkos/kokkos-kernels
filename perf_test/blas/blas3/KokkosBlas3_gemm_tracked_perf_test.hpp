@@ -42,7 +42,6 @@
 //@HEADER
 */
 
-
 // This file is for the "tracked test" version of
 // a Kokkos Kernels performance test.
 // Created by David Poliakoff and Amy Powell on 9/22/2021

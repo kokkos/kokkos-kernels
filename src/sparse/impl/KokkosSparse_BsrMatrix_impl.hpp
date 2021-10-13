@@ -55,4 +55,4 @@
 #include "Kokkos_ArithTraits.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 
-#endif // KOKKOS_SPARSE_BSRMATRIX_IMPL_HPP_
+#endif  // KOKKOS_SPARSE_BSRMATRIX_IMPL_HPP_

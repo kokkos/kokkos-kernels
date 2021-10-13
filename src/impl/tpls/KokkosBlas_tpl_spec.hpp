@@ -57,12 +57,12 @@ struct CudaBlasSingleton {
 
   CudaBlasSingleton();
 
-  static CudaBlasSingleton & singleton();
+  static CudaBlasSingleton& singleton();
 };
 
-}
-}
-#endif // KOKKOSKERNELS_ENABLE_TPL_CUBLAS
+}  // namespace Impl
+}  // namespace KokkosBlas
+#endif  // KOKKOSKERNELS_ENABLE_TPL_CUBLAS
 
 // If LAPACK TPL is enabled, it is preferred over magma's LAPACK
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
@@ -72,14 +72,13 @@ namespace KokkosBlas {
 namespace Impl {
 
 struct MagmaSingleton {
-
   MagmaSingleton();
 
-  static MagmaSingleton & singleton();
+  static MagmaSingleton& singleton();
 };
 
-}
-}
-#endif // KOKKOSKERNELS_ENABLE_TPL_MAGMA
+}  // namespace Impl
+}  // namespace KokkosBlas
+#endif  // KOKKOSKERNELS_ENABLE_TPL_MAGMA
 
-#endif // KOKKOSBLAS_TPL_SPEC_HPP_
+#endif  // KOKKOSBLAS_TPL_SPEC_HPP_

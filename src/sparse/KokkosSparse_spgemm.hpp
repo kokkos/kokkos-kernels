@@ -70,13 +70,15 @@ void spgemm_symbolic(KernelHandle& kh, const AMatrix& A, const bool Amode,
 
   const size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
   if (c_nnz_size) {
-    entriesC = entries_type(Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC"),
-                            c_nnz_size);
-    valuesC  = values_type(Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC"),
-                          c_nnz_size);
+    entriesC = entries_type(
+        Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC"),
+        c_nnz_size);
+    valuesC = values_type(
+        Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC"), c_nnz_size);
   }
 
-  C = CMatrix("C=AB", A.numRows(), B.numCols(), c_nnz_size, valuesC, row_mapC, entriesC);
+  C = CMatrix("C=AB", A.numRows(), B.numCols(), c_nnz_size, valuesC, row_mapC,
+              entriesC);
 }
 
 template <class KernelHandle, class AMatrix, class BMatrix, class CMatrix>

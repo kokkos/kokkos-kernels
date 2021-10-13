@@ -60,60 +60,51 @@ namespace Impl {
 /// \tparam RV 0-D output View
 /// \tparam XV 1-D input View
 /// \tparam SizeType Index type.  Use int (32 bits) if possible.
-template<class RV, class XV, class SizeType = typename XV::size_type>
-struct V_Nrm1_Functor
-{
-  typedef typename XV::execution_space      execution_space;
-  typedef SizeType                          size_type;
+template <class RV, class XV, class SizeType = typename XV::size_type>
+struct V_Nrm1_Functor {
+  typedef typename XV::execution_space execution_space;
+  typedef SizeType size_type;
   typedef typename XV::non_const_value_type xvalue_type;
-  typedef Kokkos::ArithTraits<xvalue_type>  XAT;
-  typedef typename XAT::mag_type            value_type;
-  typedef Kokkos::ArithTraits<value_type>   MAT;
+  typedef Kokkos::ArithTraits<xvalue_type> XAT;
+  typedef typename XAT::mag_type value_type;
+  typedef Kokkos::ArithTraits<value_type> MAT;
 
   typename XV::const_type m_x;
 
-  V_Nrm1_Functor (const XV& x) :
-    m_x (x)
-  {
-    static_assert (Kokkos::Impl::is_view<RV>::value,
-                   "KokkosBlas::Impl::V_Nrm1_Functor: "
-                   "R is not a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<XV>::value,
-                   "KokkosBlas::Impl::V_Nrm1_Functor: "
-                   "X is not a Kokkos::View.");
-    static_assert (std::is_same<typename RV::value_type,
-                   typename RV::non_const_value_type>::value,
-                   "KokkosBlas::Impl::V_Nrm1_Functor: R is const.  "
-                   "It must be nonconst, because it is an output argument "
-                   "(we have to be able to write to its entries).");
-    static_assert (RV::rank == 0 && XV::rank == 1,
-                   "KokkosBlas::Impl::V_Nrm1_Functor: "
-                   "RV must have rank 0 and XV must have rank 1.");
+  V_Nrm1_Functor(const XV& x) : m_x(x) {
+    static_assert(Kokkos::Impl::is_view<RV>::value,
+                  "KokkosBlas::Impl::V_Nrm1_Functor: "
+                  "R is not a Kokkos::View.");
+    static_assert(Kokkos::Impl::is_view<XV>::value,
+                  "KokkosBlas::Impl::V_Nrm1_Functor: "
+                  "X is not a Kokkos::View.");
+    static_assert(std::is_same<typename RV::value_type,
+                               typename RV::non_const_value_type>::value,
+                  "KokkosBlas::Impl::V_Nrm1_Functor: R is const.  "
+                  "It must be nonconst, because it is an output argument "
+                  "(we have to be able to write to its entries).");
+    static_assert(RV::rank == 0 && XV::rank == 1,
+                  "KokkosBlas::Impl::V_Nrm1_Functor: "
+                  "RV must have rank 0 and XV must have rank 1.");
   }
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (const size_type& i, value_type& sum) const
-  {
+  void operator()(const size_type& i, value_type& sum) const {
     xvalue_type val = m_x(i);
     sum += MAT::abs(XAT::real(val)) + MAT::abs(XAT::imag(val));
   }
 
-  KOKKOS_INLINE_FUNCTION void init (value_type& update) const
-  {
-    update = MAT::zero ();
+  KOKKOS_INLINE_FUNCTION void init(value_type& update) const {
+    update = MAT::zero();
   }
 
-  KOKKOS_INLINE_FUNCTION void
-  join (value_type& update,
-        const value_type& source) const
-  {
+  KOKKOS_INLINE_FUNCTION void join(value_type& update,
+                                   const value_type& source) const {
     update += source;
   }
 
-  KOKKOS_INLINE_FUNCTION void
-  join (volatile value_type& update,
-        const volatile value_type& source) const
-  {
+  KOKKOS_INLINE_FUNCTION void join(volatile value_type& update,
+                                   const volatile value_type& source) const {
     update += source;
   }
 };
@@ -124,41 +115,37 @@ struct V_Nrm1_Functor
 /// \tparam RV 1-D output View
 /// \tparam XMV 2-D input View
 /// \tparam SizeType Index type.  Use int (32 bits) if possible.
-template<class RV, class XMV, class SizeType = typename XMV::size_type>
-struct MV_Nrm1_Right_FunctorVector
-{
-  typedef typename XMV::execution_space               execution_space;
-  typedef SizeType                                    size_type;
-  typedef typename XMV::non_const_value_type          xvalue_type;
-  typedef Kokkos::ArithTraits<xvalue_type>            XAT;
+template <class RV, class XMV, class SizeType = typename XMV::size_type>
+struct MV_Nrm1_Right_FunctorVector {
+  typedef typename XMV::execution_space execution_space;
+  typedef SizeType size_type;
+  typedef typename XMV::non_const_value_type xvalue_type;
+  typedef Kokkos::ArithTraits<xvalue_type> XAT;
   typedef Kokkos::ArithTraits<typename XAT::mag_type> MAT;
-  typedef typename XAT::mag_type                      value_type[];
+  typedef typename XAT::mag_type value_type[];
 
   size_type value_count;
   typename XMV::const_type m_x;
 
-  MV_Nrm1_Right_FunctorVector (const XMV& x) :
-    value_count (x.extent(1)), m_x (x)
-  {
-    static_assert (Kokkos::Impl::is_view<RV>::value,
-                   "KokkosBlas::Impl::MV_Nrm1_Right_FunctorVector: "
-                   "R is not a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<XMV>::value,
-                   "KokkosBlas::Impl::MV_Nrm1_Right_FunctorVector: "
-                   "X is not a Kokkos::View.");
-    static_assert (std::is_same<typename RV::value_type,
-                   typename RV::non_const_value_type>::value,
-                   "KokkosBlas::Impl::MV_Nrm1_Right_FunctorVector: "
-                   "R is const.  It must be nonconst, because it is an output "
-                   "argument (we must be able to write to its entries).");
-    static_assert (RV::rank == 1 && XMV::rank == 2,
-                   "KokkosBlas::Impl::MV_Nrm1_Right_FunctorVector: "
-                   "RV must have rank 1 and XMV must have rank 2.");
+  MV_Nrm1_Right_FunctorVector(const XMV& x) : value_count(x.extent(1)), m_x(x) {
+    static_assert(Kokkos::Impl::is_view<RV>::value,
+                  "KokkosBlas::Impl::MV_Nrm1_Right_FunctorVector: "
+                  "R is not a Kokkos::View.");
+    static_assert(Kokkos::Impl::is_view<XMV>::value,
+                  "KokkosBlas::Impl::MV_Nrm1_Right_FunctorVector: "
+                  "X is not a Kokkos::View.");
+    static_assert(std::is_same<typename RV::value_type,
+                               typename RV::non_const_value_type>::value,
+                  "KokkosBlas::Impl::MV_Nrm1_Right_FunctorVector: "
+                  "R is const.  It must be nonconst, because it is an output "
+                  "argument (we must be able to write to its entries).");
+    static_assert(RV::rank == 1 && XMV::rank == 2,
+                  "KokkosBlas::Impl::MV_Nrm1_Right_FunctorVector: "
+                  "RV must have rank 1 and XMV must have rank 2.");
   }
 
-  KOKKOS_INLINE_FUNCTION void
-  operator() (const size_type i, value_type sum) const
-  {
+  KOKKOS_INLINE_FUNCTION void operator()(const size_type i,
+                                         value_type sum) const {
     const size_type numVecs = value_count;
 #ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
@@ -172,9 +159,7 @@ struct MV_Nrm1_Right_FunctorVector
     }
   }
 
-  KOKKOS_INLINE_FUNCTION void
-  init (value_type update) const
-  {
+  KOKKOS_INLINE_FUNCTION void init(value_type update) const {
     const size_type numVecs = value_count;
 #ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
@@ -183,14 +168,12 @@ struct MV_Nrm1_Right_FunctorVector
 #pragma vector always
 #endif
     for (size_type j = 0; j < numVecs; ++j) {
-      update[j] = MAT::zero ();
+      update[j] = MAT::zero();
     }
   }
 
-  KOKKOS_INLINE_FUNCTION void
-  join (volatile value_type update,
-        const volatile value_type source) const
-  {
+  KOKKOS_INLINE_FUNCTION void join(volatile value_type update,
+                                   const volatile value_type source) const {
     const size_type numVecs = value_count;
 #ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
@@ -203,10 +186,8 @@ struct MV_Nrm1_Right_FunctorVector
     }
   }
 
-  KOKKOS_INLINE_FUNCTION void
-  join (value_type update,
-        const value_type source) const
-  {
+  KOKKOS_INLINE_FUNCTION void join(value_type update,
+                                   const value_type source) const {
     const size_type numVecs = value_count;
 #ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
@@ -220,50 +201,43 @@ struct MV_Nrm1_Right_FunctorVector
   }
 };
 
-
 /// \brief Compute the 2-norm (or its square) of the single vector (1-D
 ///   View) X, and store the result in the 0-D View r.
-template<class RV, class XV, class SizeType>
-void
-V_Nrm1_Invoke (const RV& r, const XV& X)
-{
+template <class RV, class XV, class SizeType>
+void V_Nrm1_Invoke(const RV& r, const XV& X) {
   typedef typename XV::execution_space execution_space;
-  const SizeType numRows = static_cast<SizeType> (X.extent(0));
-  Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+  const SizeType numRows = static_cast<SizeType>(X.extent(0));
+  Kokkos::RangePolicy<execution_space, SizeType> policy(0, numRows);
 
   typedef V_Nrm1_Functor<RV, XV, SizeType> functor_type;
-  functor_type op (X);
-  Kokkos::parallel_reduce ("KokkosBlas1::Nrm1::S0", policy, op, r);
+  functor_type op(X);
+  Kokkos::parallel_reduce("KokkosBlas1::Nrm1::S0", policy, op, r);
 }
-
 
 /// \brief Compute the 2-norms (or their square) of the columns of the
 ///   multivector (2-D View) X, and store result(s) in the 1-D View r.
-template<class RV, class XMV, class SizeType>
-void
-MV_Nrm1_Invoke (const RV& r, const XMV& X)
-{
+template <class RV, class XMV, class SizeType>
+void MV_Nrm1_Invoke(const RV& r, const XMV& X) {
   typedef typename XMV::execution_space execution_space;
-  const SizeType numRows = static_cast<SizeType> (X.extent(0));
-  Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
+  const SizeType numRows = static_cast<SizeType>(X.extent(0));
+  Kokkos::RangePolicy<execution_space, SizeType> policy(0, numRows);
 
   // If the input multivector (2-D View) has only one column, invoke
   // the single-vector version of the kernel.
   if (X.extent(1) == 1) {
-    auto r_0 = Kokkos::subview (r, 0);
-    auto X_0 = Kokkos::subview (X, Kokkos::ALL (), 0);
-    typedef decltype (r_0) RV0D;
-    typedef decltype (X_0) XV1D;
-    V_Nrm1_Invoke<RV0D, XV1D, SizeType> (r_0, X_0);
-  }
-  else {
+    auto r_0 = Kokkos::subview(r, 0);
+    auto X_0 = Kokkos::subview(X, Kokkos::ALL(), 0);
+    typedef decltype(r_0) RV0D;
+    typedef decltype(X_0) XV1D;
+    V_Nrm1_Invoke<RV0D, XV1D, SizeType>(r_0, X_0);
+  } else {
     typedef MV_Nrm1_Right_FunctorVector<RV, XMV, SizeType> functor_type;
-    functor_type op (X);
-    Kokkos::parallel_reduce ("KokkosBlas1::Nrm1::S1", policy, op, r);
+    functor_type op(X);
+    Kokkos::parallel_reduce("KokkosBlas1::Nrm1::S1", policy, op, r);
   }
 }
 
-} // namespace Impl
-} // namespace KokkosBlas
+}  // namespace Impl
+}  // namespace KokkosBlas
 
-#endif // KOKKOSBLAS1_NRM1_IMPL_HPP_
+#endif  // KOKKOSBLAS1_NRM1_IMPL_HPP_
