@@ -1869,10 +1869,7 @@ static inline void __gemm_do_verify(options_t options, gemm_args_t gemm_args,
   vgemm.run();  // Compute C_expected
 
   // Run routine with warm_up_n = 1 and n = 0.
-  auto warm_up_n_bak = options.warm_up_n;
-  options.warm_up_n  = 1;
-  auto n_bak         = options.n;
-  options.n          = 0;
+  auto warm_up_n_bak = options.warm_up_n;options.warm_up_n  = 1;auto n_bak         = options.n;options.n          = 0;
   fn(options, gemm_args);
 
   Kokkos::fence();  // Redundant fence.
