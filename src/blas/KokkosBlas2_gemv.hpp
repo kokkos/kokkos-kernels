@@ -75,9 +75,10 @@ namespace KokkosBlas {
 /// \param beta [in] Input coefficient of y
 /// \param y [in/out] Output vector, as a nonconst 1-D Kokkos::View
 template <class AViewType, class XViewType, class YViewType>
-void gemv(const char trans[], typename AViewType::const_value_type& alpha,
-          const AViewType& A, const XViewType& x,
-          typename YViewType::const_value_type& beta, const YViewType& y) {
+void gemv(const typename AViewType::execution_space& space, const char trans[],
+          typename AViewType::const_value_type& alpha, const AViewType& A,
+          const XViewType& x, typename YViewType::const_value_type& beta,
+          const YViewType& y) {
   static_assert(Kokkos::Impl::is_view<AViewType>::value,
                 "AViewType must be a Kokkos::View.");
   static_assert(Kokkos::Impl::is_view<XViewType>::value,
@@ -147,11 +148,36 @@ void gemv(const char trans[], typename AViewType::const_value_type& alpha,
     const bool eti_spec_avail =
         KokkosBlas::Impl::gemv_eti_spec_avail<AVT, XVT, YVT>::value;
     typedef Impl::GEMV<AVT, XVT, YVT, false, eti_spec_avail> fallback_impl_type;
-    fallback_impl_type::gemv(trans, alpha, A, x, beta, y);
+    fallback_impl_type::gemv(space, trans, alpha, A, x, beta, y);
   } else {
     typedef Impl::GEMV<AVT, XVT, YVT> impl_type;
-    impl_type::gemv(trans, alpha, A, x, beta, y);
+    impl_type::gemv(space, trans, alpha, A, x, beta, y);
   }
+}
+
+/// \brief Dense matrix-vector multiply: y = beta*y + alpha*A*x.
+///
+/// \tparam AViewType Input matrix, as a 2-D Kokkos::View
+/// \tparam XViewType Input vector, as a 1-D Kokkos::View
+/// \tparam YViewType Output vector, as a nonconst 1-D Kokkos::View
+/// \tparam AlphaCoeffType Type of input coefficient alpha
+/// \tparam BetaCoeffType Type of input coefficient beta
+///
+/// \param trans [in] "N" for non-transpose, "T" for transpose, "C"
+///   for conjugate transpose.  All characters after the first are
+///   ignored.  This works just like the BLAS routines.
+/// \param alpha [in] Input coefficient of A*x
+/// \param A [in] Input matrix, as a 2-D Kokkos::View
+/// \param x [in] Input vector, as a 1-D Kokkos::View
+/// \param beta [in] Input coefficient of y
+/// \param y [in/out] Output vector, as a nonconst 1-D Kokkos::View
+template <class AViewType, class XViewType, class YViewType>
+void gemv(const char trans[], typename AViewType::const_value_type& alpha,
+          const AViewType& A, const XViewType& x,
+          typename YViewType::const_value_type& beta, const YViewType& y) {
+  const typename AViewType::execution_space space =
+      typename AViewType::execution_space();
+  gemv(space, trans, alpha, A, x, beta, y);
 }
 
 }  // namespace KokkosBlas

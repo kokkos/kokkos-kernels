@@ -118,7 +118,8 @@ template <class AViewType, class BViewType, class CViewType,
           bool eti_spec_avail =
               gemm_eti_spec_avail<AViewType, BViewType, CViewType>::value>
 struct GEMM {
-  static void gemm(const char transA[], const char transB[],
+  static void gemm(const typename CViewType::execution_space& space,
+                   const char transA[], const char transB[],
                    typename AViewType::const_value_type& alpha,
                    const AViewType& A, const BViewType& B,
                    typename CViewType::const_value_type& beta,
@@ -174,7 +175,7 @@ struct GEMM {
       bool A_is_conj = ((transA[0] == 'C') || (transA[0] == 'c'));
       DotBasedGEMM<ExecSpace, AViewType, BViewType, CViewType> dotBasedGemm(
           alpha, A, B, beta, C);
-      dotBasedGemm.run(A_is_conj);
+      dotBasedGemm.run(space, A_is_conj);
 
     } else {
       // Define Blocking sizes (this will be used for scratch spaces)
@@ -233,7 +234,7 @@ struct GEMM {
                                    AViewType, BViewType, CViewType, blockA0,
                                    blockA1, blockB1, 0, 0>
             gemm(alpha, A, B, beta, C);
-        gemm.run(team_size, vector_length, scratch_level);
+        gemm.run(space, team_size, vector_length, scratch_level);
       }
       if ((transA[0] == 'T' || transA[0] == 't') &&
           (transB[0] == 'N' || transB[0] == 'n')) {
@@ -241,7 +242,7 @@ struct GEMM {
                                    AViewType, BViewType, CViewType, blockA0,
                                    blockA1, blockB1, 1, 0>
             gemm(alpha, A, B, beta, C);
-        gemm.run(team_size, vector_length, scratch_level);
+        gemm.run(space, team_size, vector_length, scratch_level);
       }
       if ((transA[0] == 'C' || transA[0] == 'c') &&
           (transB[0] == 'N' || transB[0] == 'n')) {
@@ -249,7 +250,7 @@ struct GEMM {
                                    AViewType, BViewType, CViewType, blockA0,
                                    blockA1, blockB1, 2, 0>
             gemm(alpha, A, B, beta, C);
-        gemm.run(team_size, vector_length, scratch_level);
+        gemm.run(space, team_size, vector_length, scratch_level);
       }
       if ((transA[0] == 'N' || transA[0] == 'n') &&
           (transB[0] == 'T' || transB[0] == 't')) {
@@ -257,7 +258,7 @@ struct GEMM {
                                    AViewType, BViewType, CViewType, blockA0,
                                    blockA1, blockB1, 0, 1>
             gemm(alpha, A, B, beta, C);
-        gemm.run(team_size, vector_length, scratch_level);
+        gemm.run(space, team_size, vector_length, scratch_level);
       }
       if ((transA[0] == 'T' || transA[0] == 't') &&
           (transB[0] == 'T' || transB[0] == 't')) {
@@ -265,7 +266,7 @@ struct GEMM {
                                    AViewType, BViewType, CViewType, blockA0,
                                    blockA1, blockB1, 1, 1>
             gemm(alpha, A, B, beta, C);
-        gemm.run(team_size, vector_length, scratch_level);
+        gemm.run(space, team_size, vector_length, scratch_level);
       }
       if ((transA[0] == 'C' || transA[0] == 'c') &&
           (transB[0] == 'T' || transB[0] == 't')) {
@@ -273,7 +274,7 @@ struct GEMM {
                                    AViewType, BViewType, CViewType, blockA0,
                                    blockA1, blockB1, 2, 1>
             gemm(alpha, A, B, beta, C);
-        gemm.run(team_size, vector_length, scratch_level);
+        gemm.run(space, team_size, vector_length, scratch_level);
       }
       if ((transA[0] == 'N' || transA[0] == 'n') &&
           (transB[0] == 'C' || transB[0] == 'c')) {
@@ -281,7 +282,7 @@ struct GEMM {
                                    AViewType, BViewType, CViewType, blockA0,
                                    blockA1, blockB1, 0, 2>
             gemm(alpha, A, B, beta, C);
-        gemm.run(team_size, vector_length, scratch_level);
+        gemm.run(space, team_size, vector_length, scratch_level);
       }
       if ((transA[0] == 'T' || transA[0] == 't') &&
           (transB[0] == 'C' || transB[0] == 'c')) {
@@ -289,7 +290,7 @@ struct GEMM {
                                    AViewType, BViewType, CViewType, blockA0,
                                    blockA1, blockB1, 1, 2>
             gemm(alpha, A, B, beta, C);
-        gemm.run(team_size, vector_length, scratch_level);
+        gemm.run(space, team_size, vector_length, scratch_level);
       }
       if ((transA[0] == 'C' || transA[0] == 'c') &&
           (transB[0] == 'C' || transB[0] == 'c')) {
@@ -297,7 +298,7 @@ struct GEMM {
                                    AViewType, BViewType, CViewType, blockA0,
                                    blockA1, blockB1, 2, 2>
             gemm(alpha, A, B, beta, C);
-        gemm.run(team_size, vector_length, scratch_level);
+        gemm.run(space, team_size, vector_length, scratch_level);
       }
     }
     Kokkos::Profiling::popRegion();

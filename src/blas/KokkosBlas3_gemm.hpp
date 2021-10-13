@@ -67,10 +67,10 @@ namespace Impl {
 // cuBLAS.
 template <class AViewType, class BViewType, class CViewType>
 bool gemv_based_gemm(
-    const char transA[], const char transB[],
-    typename AViewType::const_value_type& alpha, const AViewType& A,
-    const BViewType& B, typename CViewType::const_value_type& beta,
-    const CViewType& C,
+    const typename CViewType::execution_space& space, const char transA[],
+    const char transB[], typename AViewType::const_value_type& alpha,
+    const AViewType& A, const BViewType& B,
+    typename CViewType::const_value_type& beta, const CViewType& C,
     typename std::enable_if<!std::is_same<typename BViewType::array_layout,
                                           Kokkos::LayoutStride>::value &&
                             !std::is_same<typename CViewType::array_layout,
@@ -91,7 +91,7 @@ bool gemv_based_gemm(
                  typename CViewType::device_type,
                  Kokkos::MemoryTraits<Kokkos::Unmanaged>>
         Cvec(C.data(), C.extent(0));
-    KokkosBlas::gemv("N", alpha, A, Bvec, beta, Cvec);
+    KokkosBlas::gemv(space, "N", alpha, A, Bvec, beta, Cvec);
     return true;
   }
   return false;
@@ -102,6 +102,7 @@ bool gemv_based_gemm(
 // tests.
 template <class AViewType, class BViewType, class CViewType>
 bool gemv_based_gemm(
+    const typename CViewType::execution_space& /*space*/,
     const char /*transA*/[], const char /*transB*/[],
     typename AViewType::const_value_type& /*alpha*/, const AViewType& /*A*/,
     const BViewType& /*B*/, typename CViewType::const_value_type& /*beta*/,
@@ -134,10 +135,10 @@ bool gemv_based_gemm(
 /// \param beta [in] Input coefficient of C
 /// \param C [in/out] Output vector, as a nonconst 2-D Kokkos::View
 template <class AViewType, class BViewType, class CViewType>
-void gemm(const char transA[], const char transB[],
-          typename AViewType::const_value_type& alpha, const AViewType& A,
-          const BViewType& B, typename CViewType::const_value_type& beta,
-          const CViewType& C) {
+void gemm(const typename CViewType::execution_space& space, const char transA[],
+          const char transB[], typename AViewType::const_value_type& alpha,
+          const AViewType& A, const BViewType& B,
+          typename CViewType::const_value_type& beta, const CViewType& C) {
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
   static_assert(Kokkos::Impl::is_view<AViewType>::value,
                 "AViewType must be a Kokkos::View.");
@@ -204,7 +205,8 @@ void gemm(const char transA[], const char transB[],
   }
 
   // Check if gemv code path is allowed and profitable, and if so run it.
-  if (Impl::gemv_based_gemm(transA, transB, alpha, A, B, beta, C)) return;
+  if (Impl::gemv_based_gemm(space, transA, transB, alpha, A, B, beta, C))
+    return;
 
   // Minimize the number of Impl::GEMM instantiations, by
   // standardizing on particular View specializations for its template
@@ -223,7 +225,34 @@ void gemm(const char transA[], const char transB[],
                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>
       CVT;
   typedef Impl::GEMM<AVT, BVT, CVT> impl_type;
-  impl_type::gemm(transA, transB, alpha, A, B, beta, C);
+  impl_type::gemm(space, transA, transB, alpha, A, B, beta, C);
+}
+
+/// \brief Dense matrix-matrix multiply: C = beta*C + alpha*op(A)*op(B).
+///
+/// \tparam AViewType Input matrix, as a 2-D Kokkos::View
+/// \tparam BViewType Input matrix, as a 2-D Kokkos::View
+/// \tparam CViewType Output matrix, as a nonconst 2-D Kokkos::View
+///
+/// \param transA [in] "N" for non-transpose, "T" for transpose, "C"
+///   for conjugate transpose.  All characters after the first are
+///   ignored.  This works just like the BLAS routines.
+/// \param transB [in] "N" for non-transpose, "T" for transpose, "C"
+///   for conjugate transpose.  All characters after the first are
+///   ignored.  This works just like the BLAS routines.
+/// \param alpha [in] Input coefficient of A*x
+/// \param A [in] Input matrix, as a 2-D Kokkos::View
+/// \param B [in] Input matrix, as a 2-D Kokkos::View
+/// \param beta [in] Input coefficient of C
+/// \param C [in/out] Output vector, as a nonconst 2-D Kokkos::View
+template <class AViewType, class BViewType, class CViewType>
+void gemm(const char transA[], const char transB[],
+          typename AViewType::const_value_type& alpha, const AViewType& A,
+          const BViewType& B, typename CViewType::const_value_type& beta,
+          const CViewType& C) {
+  const typename CViewType::execution_space space =
+      typename CViewType::execution_space();
+  gemm(space, transA, transB, alpha, A, B, beta, C);
 }
 
 }  // namespace KokkosBlas

@@ -22,7 +22,7 @@ CudaBlasSingleton& CudaBlasSingleton::singleton() {
 
 }  // namespace Impl
 }  // namespace KokkosBlas
-#endif
+#endif  // defined (KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA)
 #include <KokkosBlas_tpl_spec.hpp>
@@ -44,6 +44,6 @@ MagmaSingleton& MagmaSingleton::singleton() {
 
 }  // namespace Impl
 }  // namespace KokkosBlas
-#endif
+#endif  // defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA)
 
-#endif
+#endif  // KOKKOSBLAS_CUDA_TPL_HPP_

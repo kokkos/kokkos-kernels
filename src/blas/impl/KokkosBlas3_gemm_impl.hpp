@@ -631,7 +631,8 @@ struct GEMMImpl {
     beta          = beta_;
   }
 
-  void run(int team_size, int vector_length, int scr_level) {
+  void run(const ExecSpace& space, int team_size, int vector_length,
+           int scr_level) {
     scratch_level           = scr_level;
     int scratch_memory_size = ViewTypeAScratch::shmem_size() +
                               ViewTypeBScratch::shmem_size() +
@@ -645,10 +646,10 @@ struct GEMMImpl {
     // that problem but I'm not sure if that it a good perf
     // parameter or why it is set to 2 for Cuda?
     Kokkos::TeamPolicy<ExecSpace, Kokkos::LaunchBounds<384, 0>> policy(
-        num_blocks_0 * num_blocks_1, team_size, vector_length);
+        space, num_blocks_0 * num_blocks_1, team_size, vector_length);
 #else
     Kokkos::TeamPolicy<ExecSpace, Kokkos::LaunchBounds<384, 2>> policy(
-        num_blocks_0 * num_blocks_1, team_size, vector_length);
+        space, num_blocks_0 * num_blocks_1, team_size, vector_length);
 #endif
 
     Kokkos::parallel_for(
