@@ -308,40 +308,36 @@ void test_spgemm(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_v
 #if !defined(KERNELS_HAVE_CUSPARSE) && !defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
       is_expected_to_fail = true;
 #endif
-      break;
+        break;
 
-    case SPGEMM_MKL:
-      algo = "SPGEMM_MKL";
-      //MKL requires scalar to be either float or double
-      if (!(std::is_same<float,scalar_t>::value || std::is_same<double,scalar_t>::value)){
-        is_expected_to_fail = true;
-      }
-      //mkl requires local ordinals to be int.
-      if (!(std::is_same<int,lno_t>::value)){
-        is_expected_to_fail = true;
-      }
-      //if size_type is larger than int, mkl casts it to int.
-      //it will fail if casting cause overflow.
-      if (input_mat.values.extent(0) > max_integer){
-        is_expected_to_fail = true;
-      }
+      case SPGEMM_MKL:
+        algo = "SPGEMM_MKL";
+        // MKL requires scalar to be either float or double
+        if (!(std::is_same<float, scalar_t>::value ||
+              std::is_same<double, scalar_t>::value)) {
+          is_expected_to_fail = true;
+        }
+        // mkl requires local ordinals to be int.
+        if (!(std::is_same<int, lno_t>::value)) {
+          is_expected_to_fail = true;
+        }
+        // if size_type is larger than int, mkl casts it to int.
+        // it will fail if casting cause overflow.
+        if (input_mat.values.extent(0) > max_integer) {
+          is_expected_to_fail = true;
+        }
 
-      if (!(Kokkos::Impl::SpaceAccessibility<typename Kokkos::HostSpace::execution_space, typename device::memory_space>::accessible)){
-        is_expected_to_fail = true;
-      }
-      break;
+        if (!(Kokkos::SpaceAccessibility<
+                typename Kokkos::HostSpace::execution_space,
+                typename device::memory_space>::accessible)) {
+          is_expected_to_fail = true;
+        }
+        break;
 
-    case SPGEMM_KK_MEMSPEED:
-      algo = "SPGEMM_KK_MEMSPEED";
-      break;
-    case SPGEMM_KK_SPEED:
-      algo = "SPGEMM_KK_SPEED";
-      break;
-    case SPGEMM_KK_MEMORY:
-      algo = "SPGEMM_KK_MEMORY";
-      break;
-    default:
-      algo = "!!! UNKNOWN ALGO !!!";
+      case SPGEMM_KK_MEMSPEED: algo = "SPGEMM_KK_MEMSPEED"; break;
+      case SPGEMM_KK_SPEED: algo = "SPGEMM_KK_SPEED"; break;
+      case SPGEMM_KK_MEMORY: algo = "SPGEMM_KK_MEMORY"; break;
+      default: algo = "!!! UNKNOWN ALGO !!!";
     }
 
     Kokkos::Timer timer1;

@@ -100,18 +100,23 @@ void mkl_symbolic(
 
 
   typedef typename KernelHandle::HandleExecSpace MyExecSpace;
-/*
-  if (!(
-      (Kokkos::Impl::SpaceAccessibility<typename Kokkos::HostSpace::execution_space, typename device1::memory_space>::accessible) &&
-      (Kokkos::Impl::SpaceAccessibility<typename Kokkos::HostSpace::execution_space, typename device2::memory_space>::accessible) &&
-      (Kokkos::Impl::SpaceAccessibility<typename Kokkos::HostSpace::execution_space, typename device3::memory_space>::accessible) )
-      ){
-    throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN HOST DEVICE for MKL\n");
-    return;
-  }
-*/
-  if (std::is_same<idx, int>::value){
-
+  /*
+    if (!(
+        (Kokkos::SpaceAccessibility<typename
+    Kokkos::HostSpace::execution_space, typename
+    device1::memory_space>::accessible) &&
+        (Kokkos::SpaceAccessibility<typename
+    Kokkos::HostSpace::execution_space, typename
+    device2::memory_space>::accessible) &&
+        (Kokkos::SpaceAccessibility<typename
+    Kokkos::HostSpace::execution_space, typename
+    device3::memory_space>::accessible) )
+        ){
+      throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN HOST DEVICE for
+    MKL\n"); return;
+    }
+  */
+  if (std::is_same<idx, int>::value) {
     int *a_xadj = NULL;
     int *b_xadj = NULL;
     int_temp_work_view_t a_xadj_v, b_xadj_v;
@@ -403,6 +408,27 @@ void mkl_symbolic(
     typedef typename KernelHandle::HandleTempMemorySpace HandleTempMemorySpace;
     typedef typename Kokkos::View<int *, HandleTempMemorySpace> int_temp_work_view_t;
 
+  typedef typename KernelHandle::HandleExecSpace MyExecSpace;
+  /*
+      if (!(
+          (Kokkos::SpaceAccessibility<typename
+     Kokkos::HostSpace::execution_space, typename
+     device1::memory_space>::accessible) &&
+          (Kokkos::SpaceAccessibility<typename
+     Kokkos::HostSpace::execution_space, typename
+     device2::memory_space>::accessible) &&
+          (Kokkos::SpaceAccessibility<typename
+     Kokkos::HostSpace::execution_space, typename
+     device3::memory_space>::accessible) )
+          ){
+        throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN HOST DEVICE for
+     MKL\n"); return;
+      }
+  */
+  if (std::is_same<idx, int>::value) {
+    int *a_xadj = NULL;
+    int *b_xadj = NULL;
+    int_temp_work_view_t a_xadj_v, b_xadj_v;
 
 
     typedef typename KernelHandle::nnz_scalar_t value_type;
@@ -414,9 +440,9 @@ void mkl_symbolic(
     typedef typename KernelHandle::HandleExecSpace MyExecSpace;
 /*
     if (!(
-        (Kokkos::Impl::SpaceAccessibility<typename Kokkos::HostSpace::execution_space, typename device1::memory_space>::accessible) &&
-        (Kokkos::Impl::SpaceAccessibility<typename Kokkos::HostSpace::execution_space, typename device2::memory_space>::accessible) &&
-        (Kokkos::Impl::SpaceAccessibility<typename Kokkos::HostSpace::execution_space, typename device3::memory_space>::accessible) )
+        (Kokkos::SpaceAccessibility<typename Kokkos::HostSpace::execution_space, typename device1::memory_space>::accessible) &&
+        (Kokkos::SpaceAccessibility<typename Kokkos::HostSpace::execution_space, typename device2::memory_space>::accessible) &&
+        (Kokkos::SpaceAccessibility<typename Kokkos::HostSpace::execution_space, typename device3::memory_space>::accessible) )
         ){
       throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN HOST DEVICE for MKL\n");
       return;

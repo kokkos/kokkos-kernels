@@ -97,10 +97,11 @@ namespace Test {
 
 template<typename DeviceType,typename VectorTagType,int VectorLength>
 int test_batched_vector_relation() {
-  static_assert(Kokkos::Impl::SpaceAccessibility<DeviceType,Kokkos::HostSpace >::accessible,
-                "vector datatype is only tested on host space");
-  Test::impl_test_batched_vector_relation<VectorTagType,VectorLength>();
-  
+  static_assert(
+      Kokkos::SpaceAccessibility<DeviceType, Kokkos::HostSpace>::accessible,
+      "vector datatype is only tested on host space");
+  Test::impl_test_batched_vector_relation<VectorTagType, VectorLength>();
+
   return 0;
 }
 

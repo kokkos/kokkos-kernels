@@ -204,17 +204,19 @@ namespace Test {
 
 template<typename DeviceType,typename VectorTagType,int VectorLength>
 int test_batched_vector_arithmatic() {
-  static_assert(Kokkos::Impl::SpaceAccessibility<DeviceType,Kokkos::HostSpace >::accessible,
-                "vector datatype is only tested on host space");
-  Test::impl_test_batched_vector_arithmatic<VectorTagType,VectorLength>();
-  
+  static_assert(
+      Kokkos::SpaceAccessibility<DeviceType, Kokkos::HostSpace>::accessible,
+      "vector datatype is only tested on host space");
+  Test::impl_test_batched_vector_arithmatic<VectorTagType, VectorLength>();
+
   return 0;
 }
 template<typename DeviceType,typename VectorTagType,int VectorLength>
 int test_batched_complex_real_imag_value() {
-  static_assert(Kokkos::Impl::SpaceAccessibility<DeviceType,Kokkos::HostSpace >::accessible,
-                "vector datatype is only tested on host space");
-  Test::impl_test_complex_real_imag_value<VectorTagType,VectorLength>();
+  static_assert(
+      Kokkos::SpaceAccessibility<DeviceType, Kokkos::HostSpace>::accessible,
+      "vector datatype is only tested on host space");
+  Test::impl_test_complex_real_imag_value<VectorTagType, VectorLength>();
 
   return 0;
 }
