@@ -111,9 +111,9 @@ void impl_test_batched_vector_math() {
 
 template <typename DeviceType, typename VectorTagType, int VectorLength>
 int test_batched_vector_math() {
-  static_assert(Kokkos::Impl::SpaceAccessibility<DeviceType,
-                                                 Kokkos::HostSpace>::accessible,
-                "vector datatype is only tested on host space");
+  static_assert(
+      Kokkos::SpaceAccessibility<DeviceType, Kokkos::HostSpace>::accessible,
+      "vector datatype is only tested on host space");
   Test::impl_test_batched_vector_math<VectorTagType, VectorLength>();
 
   return 0;

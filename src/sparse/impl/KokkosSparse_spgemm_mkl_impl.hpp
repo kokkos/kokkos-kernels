@@ -84,13 +84,13 @@ void mkl_symbolic(KernelHandle *handle, typename KernelHandle::nnz_lno_t m,
   typedef typename KernelHandle::HandleExecSpace MyExecSpace;
   /*
     if (!(
-        (Kokkos::Impl::SpaceAccessibility<typename
+        (Kokkos::SpaceAccessibility<typename
     Kokkos::HostSpace::execution_space, typename
     device1::memory_space>::accessible) &&
-        (Kokkos::Impl::SpaceAccessibility<typename
+        (Kokkos::SpaceAccessibility<typename
     Kokkos::HostSpace::execution_space, typename
     device2::memory_space>::accessible) &&
-        (Kokkos::Impl::SpaceAccessibility<typename
+        (Kokkos::SpaceAccessibility<typename
     Kokkos::HostSpace::execution_space, typename
     device3::memory_space>::accessible) )
         ){
@@ -386,13 +386,13 @@ void mkl_apply(KernelHandle *handle, typename KernelHandle::nnz_lno_t m,
   typedef typename KernelHandle::HandleExecSpace MyExecSpace;
   /*
       if (!(
-          (Kokkos::Impl::SpaceAccessibility<typename
+          (Kokkos::SpaceAccessibility<typename
      Kokkos::HostSpace::execution_space, typename
      device1::memory_space>::accessible) &&
-          (Kokkos::Impl::SpaceAccessibility<typename
+          (Kokkos::SpaceAccessibility<typename
      Kokkos::HostSpace::execution_space, typename
      device2::memory_space>::accessible) &&
-          (Kokkos::Impl::SpaceAccessibility<typename
+          (Kokkos::SpaceAccessibility<typename
      Kokkos::HostSpace::execution_space, typename
      device3::memory_space>::accessible) )
           ){
