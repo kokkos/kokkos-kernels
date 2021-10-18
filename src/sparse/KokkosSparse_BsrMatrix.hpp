@@ -693,7 +693,7 @@ class BsrMatrix {
     // numBlocks in the final entry
     graph = Kokkos::create_staticcrsgraph<staticcrsgraph_type>("blockgraph",
                                                                block_rows);
-    typename index_type::HostMirror h_row_map =
+    typename row_map_type::HostMirror h_row_map =
         Kokkos::create_mirror_view(graph.row_map);
     Kokkos::deep_copy(h_row_map, graph.row_map);
 
