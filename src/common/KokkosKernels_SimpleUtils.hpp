@@ -374,6 +374,40 @@ void kk_view_reduce_max(
       ReduceMaxFunctor<view_type>(view_to_reduce), max_reduction);
 }
 
+// xorshift hash/pseudorandom function (supported for 32- and 64-bit integer
+// types only)
+template <typename Value>
+KOKKOS_FORCEINLINE_FUNCTION Value xorshiftHash(Value v) {
+  static_assert(std::is_unsigned<Value>::value,
+                "xorshiftHash: value must be an unsigned integer type");
+  uint64_t x = v;
+  x ^= x >> 12;
+  x ^= x << 25;
+  x ^= x >> 27;
+  return std::is_same<Value, uint32_t>::value
+             ? static_cast<Value>((x * 2685821657736338717ULL - 1) >> 16)
+             : static_cast<Value>(x * 2685821657736338717ULL - 1);
+}
+
+template <typename V>
+struct SequentialFillFunctor {
+  using size_type = typename V::size_type;
+  using val_type  = typename V::non_const_value_type;
+  SequentialFillFunctor(const V &v_, val_type start_) : v(v_), start(start_) {}
+  KOKKOS_INLINE_FUNCTION void operator()(size_type i) const {
+    v(i) = start + (val_type)i;
+  }
+  V v;
+  val_type start;
+};
+
+template <typename V>
+void sequential_fill(const V &v, typename V::non_const_value_type start = 0) {
+  Kokkos::parallel_for(
+      Kokkos::RangePolicy<typename V::execution_space>(0, v.extent(0)),
+      SequentialFillFunctor<V>(v, start));
+}
+
 }  // namespace Impl
 }  // namespace KokkosKernels
 

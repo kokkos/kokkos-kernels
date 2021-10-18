@@ -60,6 +60,8 @@ using namespace KokkosKernels::Experimental;
 using namespace KokkosGraph;
 using namespace KokkosGraph::Experimental;
 
+enum CoarseningType { PHASE2, NO_PHASE2 };
+
 namespace Test {
 
 template <typename lno_t, typename size_type, typename rowmap_t,
@@ -163,6 +165,7 @@ void test_mis2_coarsening(lno_t numVerts, size_type nnz, lno_t bandwidth,
   using c_entries_t = typename graph_type::entries_type;
   using rowmap_t    = typename c_rowmap_t::non_const_type;
   using entries_t   = typename c_entries_t::non_const_type;
+  using labels_t    = entries_t;
   // Generate graph, and add some out-of-bounds columns
   crsMat A = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat>(
       numVerts, numVerts, nnz, row_size_variance, bandwidth);
@@ -178,11 +181,19 @@ void test_mis2_coarsening(lno_t numVerts, size_type nnz, lno_t bandwidth,
   auto entriesHost =
       Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), symEntries);
   // For each algorithm, compute and verify the MIS
-  std::vector<MIS2_Algorithm> algos = {MIS2_FAST, MIS2_QUALITY};
+  std::vector<CoarseningType> algos = {PHASE2, NO_PHASE2};
   for (auto algo : algos) {
     lno_t numClusters = 0;
-    auto labels       = graph_mis2_coarsen<device, rowmap_t, entries_t>(
-        symRowmap, symEntries, numClusters, algo);
+    labels_t labels;
+    switch (algo) {
+      case NO_PHASE2:
+        labels = graph_mis2_coarsen<device, rowmap_t, entries_t>(
+            symRowmap, symEntries, numClusters);
+        break;
+      case PHASE2:
+        labels = graph_mis2_aggregate<device, rowmap_t, entries_t>(
+            symRowmap, symEntries, numClusters);
+    }
     auto labelsHost =
         Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), labels);
     // Not a strong test, but sanity check the number of clusters returned
@@ -250,7 +261,7 @@ void test_mis2_coarsening_zero_rows() {
   // the zero-row case for MIS2 alone.
   lno_t numClusters;
   auto labels = graph_mis2_coarsen<device, rowmap_t, entries_t>(
-      fineRowmap, fineEntries, numClusters, KokkosGraph::MIS2_FAST);
+      fineRowmap, fineEntries, numClusters);
   EXPECT_EQ(numClusters, 0);
   EXPECT_EQ(labels.extent(0), 0);
   // coarsen, should also produce a graph with 0 rows/entries

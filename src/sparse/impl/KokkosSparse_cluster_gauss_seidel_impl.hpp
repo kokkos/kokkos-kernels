@@ -588,9 +588,9 @@ class ClusterGaussSeidel {
     if (clusterAlgo == CLUSTER_DEFAULT) clusterAlgo = CLUSTER_MIS2;
     switch (clusterAlgo) {
       case CLUSTER_MIS2: {
-        vertClusters = KokkosGraph::Experimental::graph_mis2_coarsen<
+        vertClusters = KokkosGraph::Experimental::graph_mis2_aggregate<
             MyExecSpace, raw_rowmap_t, raw_colinds_t, nnz_view_t>(
-            raw_sym_xadj, raw_sym_adj, numClusters, KokkosGraph::MIS2_FAST);
+            raw_sym_xadj, raw_sym_adj, numClusters);
         break;
       }
       case CLUSTER_BALLOON: {
