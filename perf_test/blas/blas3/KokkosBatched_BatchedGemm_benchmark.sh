@@ -47,10 +47,10 @@ function beval() {
 # Handle input args
 export KOKKOS_SRC_DIR=${KOKKOS_SRC_DIR:-"$HOME/KOKKOS.base/kokkos"}
 export KOKKOS_SRC_DIR=$(realpath $KOKKOS_SRC_DIR)
-export KOKKOS_SHA=${KOKKOS_SHA:-"2fc1050"} # Tip of develop as of 09-30-21
+export KOKKOS_SHA=${KOKKOS_SHA:-"b9f15a4"} # Tip of develop as of 10-14-21
 export KOKKOSKERNELS_SRC_DIR=${KOKKOSKERNELS_SRC_DIR:-"$HOME/KOKKOS.base/kokkos-kernels"}
 export KOKKOSKERNELS_SRC_DIR=$(realpath $KOKKOSKERNELS_SRC_DIR)
-export KOKKOSKERNELS_SHA=${KOKKOSKERNELS_SHA:-"issue933"} # Tip of e10harvey/issue933 as of 10-01-21
+export KOKKOSKERNELS_SHA=${KOKKOSKERNELS_SHA:-"a2fff48"} # Tip of developer as of 10-14-21
 envprint KOKKOS_SRC_DIR KOKKOS_SHA KOKKOSKERNELS_SRC_DIR KOKKOSKERNELS_SHA
 
 dry_run="off"
