@@ -85,9 +85,9 @@ void impl_test_batched_vector_logical() {
 
 template <typename DeviceType, typename ValueType, int VectorLength>
 int test_batched_vector_logical() {
-  static_assert(Kokkos::Impl::SpaceAccessibility<DeviceType,
-                                                 Kokkos::HostSpace>::accessible,
-                "vector datatype is only tested on host space");
+  static_assert(
+      Kokkos::SpaceAccessibility<DeviceType, Kokkos::HostSpace>::accessible,
+      "vector datatype is only tested on host space");
   Test::impl_test_batched_vector_logical<ValueType, VectorLength>();
 
   return 0;

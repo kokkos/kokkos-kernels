@@ -313,7 +313,7 @@ void test_spgemm(lno_t numRows, size_type nnz, lno_t bandwidth,
           is_expected_to_fail = true;
         }
 
-        if (!(Kokkos::Impl::SpaceAccessibility<
+        if (!(Kokkos::SpaceAccessibility<
                 typename Kokkos::HostSpace::execution_space,
                 typename device::memory_space>::accessible)) {
           is_expected_to_fail = true;
