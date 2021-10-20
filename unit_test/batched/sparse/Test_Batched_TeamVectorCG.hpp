@@ -14,6 +14,8 @@
 
 #include "KokkosBatched_CrsMatrix.hpp"
 
+#include "Test_Batched_SparseUtils.hpp"
+
 using namespace KokkosBatched;
 
 namespace Test {
@@ -117,48 +119,7 @@ void impl_test_batched_CG(const int N, const int BlkSize, const int N_team) {
   NormViewType sqr_norm_0("sqr_norm_0", N);
   NormViewType sqr_norm_j("sqr_norm_j", N);
 
-  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(
-      13718);
-  Kokkos::fill_random(X, random, value_type(1.0));
-  Kokkos::fill_random(B, random, value_type(1.0));
-
-  auto D_host = Kokkos::create_mirror_view(D);
-  auto r_host = Kokkos::create_mirror_view(r);
-  auto c_host = Kokkos::create_mirror_view(c);
-
-  r_host(0) = 0;
-
-  int current_col = 0;
-
-  for (int i = 0; i < BlkSize; ++i) {
-    r_host(i + 1) = r_host(i) + (i == 0 || i == (BlkSize - 1) ? 2 : 3);
-  }
-  for (int i = 0; i < nnz; ++i) {
-    if (i % 3 == 0) {
-      for (int l = 0; l < N; ++l) {
-        D_host(l, i) = value_type(2.0);
-      }
-      c_host(i) = current_col;
-      ++current_col;
-    } else {
-      for (int l = 0; l < N; ++l) {
-        D_host(l, i) = value_type(-1.0);
-      }
-      c_host(i) = current_col;
-      if (i % 3 == 1)
-        --current_col;
-      else
-        ++current_col;
-    }
-  }
-
-  Kokkos::fence();
-
-  Kokkos::deep_copy(D, D_host);
-  Kokkos::deep_copy(r, r_host);
-  Kokkos::deep_copy(c, c_host);
-
-  Kokkos::fence();
+  create_tridiagonal_batched_matrices(nnz, BlkSize, N, r, c, D, X, B);
 
   // Compute initial norm
 
@@ -168,16 +129,24 @@ void impl_test_batched_CG(const int N, const int BlkSize, const int N_team) {
   auto sqr_norm_j_host = Kokkos::create_mirror_view(sqr_norm_j);
   auto R_host          = Kokkos::create_mirror_view(R);
   auto X_host          = Kokkos::create_mirror_view(X);
+  auto D_host          = Kokkos::create_mirror_view(D);
+  auto r_host          = Kokkos::create_mirror_view(r);
+  auto c_host          = Kokkos::create_mirror_view(c);
 
   Kokkos::deep_copy(R, B);
   Kokkos::deep_copy(R_host, R);
   Kokkos::deep_copy(X_host, X);
 
+  Kokkos::deep_copy(c_host, c);
+  Kokkos::deep_copy(r_host, r);
+  Kokkos::deep_copy(D_host, D);
+
   KokkosBatched::SerialSpmv<Trans::NoTranspose>::template invoke<
       typename ValuesViewType::HostMirror, typename IntView::HostMirror,
       typename VectorViewType::HostMirror, typename VectorViewType::HostMirror,
       1>(-1, D_host, r_host, c_host, X_host, 1, R_host);
-  KokkosBatched::SerialDot<Trans::NoTranspose>::invoke(R_host, R_host, sqr_norm_0_host);
+  KokkosBatched::SerialDot<Trans::NoTranspose>::invoke(R_host, R_host,
+                                                       sqr_norm_0_host);
   Functor_TestBatchedTeamVectorCG<DeviceType, ValuesViewType, IntView,
                                   VectorViewType>(D, r, c, X, B, N_team)
       .run();
@@ -192,7 +161,8 @@ void impl_test_batched_CG(const int N, const int BlkSize, const int N_team) {
       typename ValuesViewType::HostMirror, typename IntView::HostMirror,
       typename VectorViewType::HostMirror, typename VectorViewType::HostMirror,
       1>(-1, D_host, r_host, c_host, X_host, 1, R_host);
-  KokkosBatched::SerialDot<Trans::NoTranspose>::invoke(R_host, R_host, sqr_norm_j_host);
+  KokkosBatched::SerialDot<Trans::NoTranspose>::invoke(R_host, R_host,
+                                                       sqr_norm_j_host);
 
   const MagnitudeType eps = 1.0e3 * ats::epsilon();
 

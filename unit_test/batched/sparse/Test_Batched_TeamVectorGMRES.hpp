@@ -6,11 +6,11 @@
 
 //#include "KokkosBatched_Vector.hpp"
 
-#include "KokkosBatched_CG.hpp"
+#include "KokkosBatched_GMRES.hpp"
 
 #include "KokkosKernels_TestUtils.hpp"
 
-#include "KokkosBatched_CG.hpp"
+#include "KokkosBatched_GMRES.hpp"
 
 #include "KokkosBatched_CrsMatrix.hpp"
 
@@ -19,11 +19,11 @@
 using namespace KokkosBatched;
 
 namespace Test {
-namespace TeamCG {
+namespace TeamVectorGMRES {
 
 template <typename DeviceType, typename ValuesViewType, typename IntView,
           typename VectorViewType>
-struct Functor_TestBatchedTeamCG {
+struct Functor_TestBatchedTeamVectorGMRES {
   const ValuesViewType _D;
   const IntView _r;
   const IntView _c;
@@ -33,9 +33,9 @@ struct Functor_TestBatchedTeamCG {
   KrylovHandle<typename ValuesViewType::value_type> *handle;
 
   KOKKOS_INLINE_FUNCTION
-  Functor_TestBatchedTeamCG(const ValuesViewType &D, const IntView &r,
-                            const IntView &c, const VectorViewType &X,
-                            const VectorViewType &B, const int N_team)
+  Functor_TestBatchedTeamVectorGMRES(const ValuesViewType &D, const IntView &r,
+                                     const IntView &c, const VectorViewType &X,
+                                     const VectorViewType &B, const int N_team)
       : _D(D), _r(r), _c(c), _X(X), _B(B), _N_team(N_team) {
     handle = new KrylovHandle<typename ValuesViewType::value_type>;
   }
@@ -60,14 +60,14 @@ struct Functor_TestBatchedTeamCG {
 
     Operator A(d, _r, _c);
 
-    KokkosBatched::TeamCG<MemberType>::template invoke<Operator,
-                                                       VectorViewType>(
+    KokkosBatched::TeamVectorGMRES<MemberType>::template invoke<Operator,
+                                                                VectorViewType>(
         member, A, b, x, handle);
   }
 
   inline void run() {
     typedef typename ValuesViewType::value_type value_type;
-    std::string name_region("KokkosBatched::Test::TeamCG");
+    std::string name_region("KokkosBatched::Test::TeamVectorGMRES");
     std::string name_value_type =
         (std::is_same<value_type, float>::value
              ? "::Float"
@@ -86,7 +86,16 @@ struct Functor_TestBatchedTeamCG {
 
     size_t bytes_0 = ValuesViewType::shmem_size(_N_team, _D.extent(1));
     size_t bytes_1 = ValuesViewType::shmem_size(_N_team, 1);
-    policy.set_scratch_size(0, Kokkos::PerTeam(4 * bytes_0 + 5 * bytes_1));
+
+    handle->set_max_iteration(10);
+
+    int maximum_iteration = handle->get_max_iteration();
+
+    policy.set_scratch_size(0, Kokkos::PerTeam(5 * bytes_0 + 5 * bytes_1));
+    policy.set_scratch_size(
+        1, Kokkos::PerTeam(maximum_iteration * bytes_0 +
+                           ((maximum_iteration + 3) * maximum_iteration) *
+                               bytes_1));
 
     Kokkos::parallel_for(name.c_str(), policy, *this);
     Kokkos::Profiling::popRegion();
@@ -95,7 +104,7 @@ struct Functor_TestBatchedTeamCG {
 
 template <typename DeviceType, typename ValuesViewType, typename IntView,
           typename VectorViewType>
-void impl_test_batched_CG(const int N, const int BlkSize, const int N_team) {
+void impl_test_batched_GMRES(const int N, const int BlkSize, const int N_team) {
   typedef typename ValuesViewType::value_type value_type;
   typedef Kokkos::Details::ArithTraits<value_type> ats;
 
@@ -145,10 +154,11 @@ void impl_test_batched_CG(const int N, const int BlkSize, const int N_team) {
       typename ValuesViewType::HostMirror, typename IntView::HostMirror,
       typename VectorViewType::HostMirror, typename VectorViewType::HostMirror,
       1>(-1, D_host, r_host, c_host, X_host, 1, R_host);
-  KokkosBatched::SerialDot<Trans::NoTranspose>::invoke(R_host, R_host,
-                                                       sqr_norm_0_host);
-  Functor_TestBatchedTeamCG<DeviceType, ValuesViewType, IntView,
-                            VectorViewType>(D, r, c, X, B, N_team)
+  KokkosBatched::SerialDot<Trans::NoTranspose>::template invoke<
+      typename VectorViewType::HostMirror, typename VectorViewType::HostMirror,
+      typename NormViewType::HostMirror>(R_host, R_host, sqr_norm_0_host);
+  Functor_TestBatchedTeamVectorGMRES<DeviceType, ValuesViewType, IntView,
+                                     VectorViewType>(D, r, c, X, B, N_team)
       .run();
 
   Kokkos::fence();
@@ -161,19 +171,21 @@ void impl_test_batched_CG(const int N, const int BlkSize, const int N_team) {
       typename ValuesViewType::HostMirror, typename IntView::HostMirror,
       typename VectorViewType::HostMirror, typename VectorViewType::HostMirror,
       1>(-1, D_host, r_host, c_host, X_host, 1, R_host);
-  KokkosBatched::SerialDot<Trans::NoTranspose>::invoke(R_host, R_host,
-                                                       sqr_norm_j_host);
+  KokkosBatched::SerialDot<Trans::NoTranspose>::template invoke<
+      typename VectorViewType::HostMirror, typename VectorViewType::HostMirror,
+      typename NormViewType::HostMirror>(R_host, R_host, sqr_norm_j_host);
 
-  const MagnitudeType eps = 1.0e3 * ats::epsilon();
+  const MagnitudeType eps = 1.0e5 * ats::epsilon();
 
   for (int l = 0; l < N; ++l)
-    EXPECT_NEAR_KK(sqr_norm_j_host(l) / sqr_norm_0_host(l), 0, eps);
+    EXPECT_NEAR_KK(
+        std::sqrt(sqr_norm_j_host(l)) / std::sqrt(sqr_norm_0_host(l)), 0, eps);
 }
-}  // namespace TeamCG
+}  // namespace TeamVectorGMRES
 }  // namespace Test
 
 template <typename DeviceType, typename ValueType>
-int test_batched_team_CG() {
+int test_batched_teamvector_GMRES() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
   {
     typedef Kokkos::View<ValueType **, Kokkos::LayoutLeft, DeviceType> ViewType;
@@ -182,8 +194,9 @@ int test_batched_team_CG() {
         VectorViewType;
 
     for (int i = 3; i < 10; ++i) {
-      Test::TeamCG::impl_test_batched_CG<DeviceType, ViewType, IntView,
-                                         VectorViewType>(1024, i, 2);
+      Test::TeamVectorGMRES::impl_test_batched_GMRES<DeviceType, ViewType,
+                                                     IntView, VectorViewType>(
+          1024, i, 2);
     }
   }
 #endif
@@ -196,8 +209,9 @@ int test_batched_team_CG() {
         VectorViewType;
 
     for (int i = 3; i < 10; ++i) {
-      Test::TeamCG::impl_test_batched_CG<DeviceType, ViewType, IntView,
-                                         VectorViewType>(1024, i, 2);
+      Test::TeamVectorGMRES::impl_test_batched_GMRES<DeviceType, ViewType,
+                                                     IntView, VectorViewType>(
+          1024, i, 2);
     }
   }
 #endif

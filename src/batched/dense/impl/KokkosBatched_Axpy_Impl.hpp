@@ -335,10 +335,11 @@ KOKKOS_INLINE_FUNCTION int TeamVectorAxpy<MemberType>::invoke(
 
   return TeamVectorAxpyInternal::invoke<
       MemberType, typename alphaViewType::non_const_value_type,
-      typename XViewType::non_const_value_type, typename XViewType::array_layout>(
-      member, X.extent(0), X.extent(1), alpha.data(), alpha.stride_0(),
-      X.data(), X.stride_0(), X.stride_1(), Y.data(), Y.stride_0(),
-      Y.stride_1());
+      typename XViewType::non_const_value_type,
+      typename XViewType::array_layout>(member, X.extent(0), X.extent(1),
+                                        alpha.data(), alpha.stride_0(),
+                                        X.data(), X.stride_0(), X.stride_1(),
+                                        Y.data(), Y.stride_0(), Y.stride_1());
 }
 
 }  // namespace KokkosBatched

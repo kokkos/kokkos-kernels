@@ -46,6 +46,12 @@
 
 namespace KokkosBatched {
 
+/// \brief Batched CrsMatrix:
+///
+/// \tparam ValuesViewType: Input type for the values of the batched crs matrix,
+/// needs to be a 2D view \tparam IntView: Input type for row offset array and
+/// column-index array, needs to be a 1D view
+
 template <class ValuesViewType, class IntViewType>
 class CrsMatrix {
  public:
@@ -69,6 +75,29 @@ class CrsMatrix {
   KOKKOS_INLINE_FUNCTION
   ~CrsMatrix() {}
 
+  /// \brief apply
+  ///   y_l <- alpha * A_l * x_l + beta * y_l for all l = 1, ..., N
+  /// where:
+  ///   * N is the number of matrices,
+  ///   * A_1, ..., A_N are N sparse matrices which share the same sparsity
+  ///   pattern,
+  ///   * x_1, ..., x_N are the N input vectors,
+  ///   * y_1, ..., y_N are the N output vectors,
+  ///   * alpha is a scaling factor for x_1, ..., x_N,
+  ///   * beta is a scaling factor for y_1, ..., y_N.
+  ///
+  /// \tparam MemberType: Input type for the TeamPolicy member
+  /// \tparam XViewType: Input type for X, needs to be a 2D view
+  /// \tparam YViewType: Input type for Y, needs to be a 2D view
+  /// \tparam ArgTrans: Argument for transpose or notranspose
+  /// \tparam ArgMode: Argument for the parallelism used in the apply
+  ///
+  /// \param member [in]: TeamPolicy member
+  /// \param alpha [in]: input coefficient for X (default value 1.)
+  /// \param X [in]: Input vector X, a rank 2 view
+  /// \param beta [in]: input coefficient for Y (default value 0.)
+  /// \param Y [in/out]: Output vector Y, a rank 2 view
+
   template <typename MemberType, typename XViewType, typename YViewType,
             typename ArgTrans, typename ArgMode>
   KOKKOS_INLINE_FUNCTION void apply(
@@ -86,6 +115,27 @@ class CrsMatrix {
           member, alpha, values, row_ptr, colIndices, X, beta, Y);
   }
 
+  /// \brief apply
+  ///   y_l <- alpha_l * A_l * x_l  for all l = 1, ..., N
+  /// where:
+  ///   * N is the number of matrices,
+  ///   * A_1, ..., A_N are N sparse matrices which share the same sparsity
+  ///   pattern,
+  ///   * x_1, ..., x_N are the N input vectors,
+  ///   * y_1, ..., y_N are the N output vectors,
+  ///   * alpha_1, ..., alpha_N are N scaling factors for x_1, ..., x_N.
+  ///
+  /// \tparam MemberType: Input type for the TeamPolicy member
+  /// \tparam XViewType: Input type for X, needs to be a 2D view
+  /// \tparam YViewType: Input type for Y, needs to be a 2D view
+  /// \tparam ArgTrans: Argument for transpose or notranspose
+  /// \tparam ArgMode: Argument for the parallelism used in the apply
+  ///
+  /// \param member [in]: TeamPolicy member
+  /// \param alpha [in]: input coefficient for X, a rank 1 view
+  /// \param X [in]: Input vector X, a rank 2 view
+  /// \param Y [out]: Output vector Y, a rank 2 view
+
   template <typename MemberType, typename XViewType, typename YViewType,
             typename NormViewType, typename ArgTrans, typename ArgMode>
   KOKKOS_INLINE_FUNCTION void apply(const MemberType &member,
@@ -96,6 +146,30 @@ class CrsMatrix {
         NormViewType, 0>(member, alpha, values, row_ptr, colIndices, X, alpha,
                          Y);
   }
+
+  /// \brief apply
+  ///   y_l <- alpha_l * A_l * x_l + beta_l * y_l for all l = 1, ..., N
+  /// where:
+  ///   * N is the number of matrices,
+  ///   * A_1, ..., A_N are N sparse matrices which share the same sparsity
+  ///   pattern,
+  ///   * x_1, ..., x_N are the N input vectors,
+  ///   * y_1, ..., y_N are the N output vectors,
+  ///   * alpha_1, ..., alpha_N are N scaling factors for x_1, ..., x_N,
+  ///   * beta_1, ..., beta_N are N scaling factors for y_1, ..., y_N.
+  ///
+  /// \tparam MemberType: Input type for the TeamPolicy member
+  /// \tparam XViewType: Input type for X, needs to be a 2D view
+  /// \tparam YViewType: Input type for Y, needs to be a 2D view
+  /// \tparam NormViewType: Input type for alpha and beta, needs to be a 1D view
+  /// \tparam ArgTrans: Argument for transpose or notranspose
+  /// \tparam ArgMode: Argument for the parallelism used in the apply
+  ///
+  /// \param member [in]: TeamPolicy member
+  /// \param alpha [in]: input coefficient for X, a rank 1 view
+  /// \param X [in]: Input vector X, a rank 2 view
+  /// \param beta [in]: input coefficient for Y, a rank 1 view
+  /// \param Y [in/out]: Output vector Y, a rank 2 view
 
   template <typename MemberType, typename XViewType, typename YViewType,
             typename NormViewType, typename ArgTrans, typename ArgMode>

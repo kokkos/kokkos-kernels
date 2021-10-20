@@ -57,7 +57,8 @@ namespace KokkosBatched {
 ///   * y_1, ..., y_N are the N output vectors,
 ///   * alpha_1, ..., alpha_N are N scaling factors for x_1, ..., x_N.
 ///
-/// \tparam ViewType: Input type for X and Y, needs to be a 2D view
+/// \tparam XViewType: Input type for X, needs to be a 2D view
+/// \tparam YViewType: Input type for Y, needs to be a 2D view
 /// \tparam alphaViewType: Input type for alpha, needs to be a 1D view
 ///
 /// \param alpha [in]: input coefficient for X, a rank 1 view
@@ -82,7 +83,8 @@ struct SerialAxpy {
 ///   * y_1, ..., y_N are the N output vectors,
 ///   * alpha_1, ..., alpha_N are N scaling factors for x_1, ..., x_N.
 ///
-/// \tparam ViewType: Input type for X and Y, needs to be a 2D view
+/// \tparam XViewType: Input type for X, needs to be a 2D view
+/// \tparam YViewType: Input type for Y, needs to be a 2D view
 /// \tparam alphaViewType: Input type for alpha, needs to be a 1D view
 ///
 /// \param member [in]: TeamPolicy member
@@ -110,7 +112,8 @@ struct TeamAxpy {
 ///   * y_1, ..., y_N are the N output vectors,
 ///   * alpha_1, ..., alpha_N are N scaling factors for x_1, ..., x_N.
 ///
-/// \tparam ViewType: Input type for X and Y, needs to be a 2D view
+/// \tparam XViewType: Input type for X, needs to be a 2D view
+/// \tparam YViewType: Input type for Y, needs to be a 2D view
 /// \tparam alphaViewType: Input type for alpha, needs to be a 1D view
 ///
 /// \param member [in]: TeamPolicy member

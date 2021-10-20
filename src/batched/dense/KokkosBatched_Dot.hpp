@@ -64,7 +64,8 @@ namespace KokkosBatched {
 ///   * n is the second dimension of X.
 ///
 /// \tparam ArgTrans: type of dot product (Trans::NoTranspose by default)
-/// \tparam ViewType: Input type for X and Y, needs to be a 2D view
+/// \tparam XViewType: Input type for X, needs to be a 2D view
+/// \tparam YViewType: Input type for Y, needs to be a 2D view
 /// \tparam alphaViewType: Input type for alpha, needs to be a 1D view
 ///
 /// \param X [in]: Input vector X, a rank 2 view
@@ -97,7 +98,8 @@ struct SerialDot {
 ///   * n is the second dimension of X.
 ///
 /// \tparam ArgTrans: type of dot product (Trans::NoTranspose by default)
-/// \tparam ViewType: Input type for X and Y, needs to be a 2D view
+/// \tparam XViewType: Input type for X, needs to be a 2D view
+/// \tparam YViewType: Input type for Y, needs to be a 2D view
 /// \tparam alphaViewType: Input type for alpha, needs to be a 1D view
 ///
 /// \param X [in]: Input vector X, a rank 2 view
@@ -131,7 +133,8 @@ struct TeamDot {
 ///   * n is the second dimension of X.
 ///
 /// \tparam ArgTrans: type of dot product (Trans::NoTranspose by default)
-/// \tparam ViewType: Input type for X and Y, needs to be a 2D view
+/// \tparam XViewType: Input type for X, needs to be a 2D view
+/// \tparam YViewType: Input type for Y, needs to be a 2D view
 /// \tparam alphaViewType: Input type for alpha, needs to be a 1D view
 ///
 /// \param X [in]: Input vector X, a rank 2 view

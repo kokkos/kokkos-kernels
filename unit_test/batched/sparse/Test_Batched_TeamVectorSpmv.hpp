@@ -11,6 +11,8 @@
 
 #include "KokkosKernels_TestUtils.hpp"
 
+#include "Test_Batched_SparseUtils.hpp"
+
 using namespace KokkosBatched;
 
 namespace Test {
@@ -120,46 +122,7 @@ void impl_test_batched_spmv(const int N, const int BlkSize, const int N_team) {
   Kokkos::deep_copy(alpha, value_type(1.0));
   Kokkos::deep_copy(beta, value_type(1.0));
 
-  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(
-      13718);
-  Kokkos::fill_random(X0, random, value_type(1.0));
-  Kokkos::fill_random(Y0, random, value_type(1.0));
-
-  auto D_host = Kokkos::create_mirror_view(D);
-  auto r_host = Kokkos::create_mirror_view(r);
-  auto c_host = Kokkos::create_mirror_view(c);
-
-  r_host(0) = 0;
-
-  int current_col = 0;
-
-  for (int i = 0; i < BlkSize; ++i) {
-    r_host(i + 1) = r_host(i) + (i == 0 || i == (BlkSize - 1) ? 2 : 3);
-  }
-  for (int i = 0; i < nnz; ++i) {
-    if (i % 3 == 0) {
-      for (int l = 0; l < N; ++l) {
-        D_host(l, i) = value_type(1.0);
-      }
-      c_host(i) = current_col;
-      ++current_col;
-    } else {
-      for (int l = 0; l < N; ++l) {
-        D_host(l, i) = value_type(0.5);
-      }
-      c_host(i) = current_col;
-      if (i % 3 == 1)
-        --current_col;
-      else
-        ++current_col;
-    }
-  }
-
-  Kokkos::fence();
-
-  Kokkos::deep_copy(D, D_host);
-  Kokkos::deep_copy(r, r_host);
-  Kokkos::deep_copy(c, c_host);
+  create_tridiagonal_batched_matrices(nnz, BlkSize, N, r, c, D, X0, Y0);
 
   Kokkos::deep_copy(X1, X0);
   Kokkos::deep_copy(Y1, Y0);
@@ -184,13 +147,13 @@ void impl_test_batched_spmv(const int N, const int BlkSize, const int N_team) {
       if (i != 0 && i != (BlkSize - 1))
         Y0_host(l, i) +=
             alpha_host(l) *
-            (X0_host(l, i) + 0.5 * X0_host(l, i - 1) + 0.5 * X0_host(l, i + 1));
+            (2 * X0_host(l, i) - X0_host(l, i - 1) - X0_host(l, i + 1));
       else if (i == 0)
         Y0_host(l, i) +=
-            alpha_host(l) * (X0_host(l, i) + 0.5 * X0_host(l, i + 1));
+            alpha_host(l) * (2 * X0_host(l, i) - X0_host(l, i + 1));
       else
         Y0_host(l, i) +=
-            alpha_host(l) * (X0_host(l, i) + 0.5 * X0_host(l, i - 1));
+            alpha_host(l) * (2 * X0_host(l, i) - X0_host(l, i - 1));
     }
 
   Functor_TestBatchedTeamVectorSpmv<DeviceType, ParamTagType, ValuesViewType,

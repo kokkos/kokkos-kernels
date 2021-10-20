@@ -53,6 +53,10 @@
 
 namespace KokkosBatched {
 
+/// \brief KrylovHandle
+///
+/// \tparam scalar_type: Scalar type of the linear solver
+
 template <class scalar_type>
 class KrylovHandle {
  public:
@@ -70,16 +74,32 @@ class KrylovHandle {
     max_iteration = 200;
   }
 
+  /// \brief set_tolerance
+  ///   Set the tolerance of the batched Krylov solver
+  ///
+  /// \param _tolerance [in]: New tolerance
+
   KOKKOS_INLINE_FUNCTION
   void set_tolerance(norm_type _tolerance) { tolerance = _tolerance; }
 
+  /// \brief get_tolerance
+  ///   Get the tolerance of the batched Krylov solver
+
   KOKKOS_INLINE_FUNCTION
   norm_type get_tolerance() const { return tolerance; }
+
+  /// \brief set_max_iteration
+  ///   Set the maximum number of iterations of the batched Krylov solver
+  ///
+  /// \param _max_iteration [in]: New maximum number of iterations
 
   KOKKOS_INLINE_FUNCTION
   void set_max_iteration(norm_type _max_iteration) {
     max_iteration = _max_iteration;
   }
+
+  /// \brief get_max_iteration
+  ///   Get the maximum number of iterations of the batched Krylov solver
 
   KOKKOS_INLINE_FUNCTION
   int get_max_iteration() const { return max_iteration; }
