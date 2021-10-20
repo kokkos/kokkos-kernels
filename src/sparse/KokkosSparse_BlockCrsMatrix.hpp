@@ -519,7 +519,8 @@ class BlockCrsMatrix {
                  const staticcrsgraph_type& arg_graph,
                  const OrdinalType& blockDimIn)
       : graph(arg_graph),
-        values(arg_label, arg_graph.entries.extent(0) * blockDimIn * blockDimIn),
+        values(arg_label,
+               arg_graph.entries.extent(0) * blockDimIn * blockDimIn),
         numCols_(maximum_entry(arg_graph) + 1),
         blockDim_(blockDimIn) {}
 
