@@ -447,7 +447,7 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
 /// precision is mixed-precision fp32 accumulator from fp16 inputs. On
 /// Ampere-architecture GPUs (cc >= 80), mixed precision is used when A is fp16,
 /// x is fp16, and y is fp32. Otherwise, double-precision is used. The caller
-/// may override this by setting the "precision" parameter to "mixed" or
+/// may override this by setting the "tc_precision" parameter to "mixed" or
 /// "double" as desired.
 ///
 /// For mixed precision, performance will degrade for blockDim < 16.

@@ -187,9 +187,17 @@ struct SPMV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
                                                                    beta, y);
     (void)requestMixed;  // unused
 #else
-    static_assert(false, "need KOKKOS_ARCH_VOLTA or KOKKOS_ARCH_AMPERE");
-    (void)requestMixed;   // unused
-    (void)requestDouble;  // unused
+
+    Kokkos::Impl::throw_runtime_exception(
+        "KOKKOS_ARCH_VOLTA or KOKKOS_ARCH_AMPERE not defined");
+    (void)requestMixed;
+    (void)requestDouble;
+    (void)controls;
+    (void)alpha;
+    (void)A;
+    (void)x;
+    (void)beta;
+    (void)y;
 #endif  // KOKKOS_ARCH
   }
 };

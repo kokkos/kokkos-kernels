@@ -1338,7 +1338,7 @@ void test_spmv_bsrmatrix_pattern(const std::vector<Coordinate> &pattern,
   {
     KokkosKernels::Experimental::Controls controls;
     controls.setParameter("algorithm", "experimental_bsr_tc");
-    controls.setParameter("precision", "double");
+    controls.setParameter("tc_precision", "double");
     test_spmv_bsrmatrix_controls_pattern<a_scalar_t, x_scalar_t, y_scalar_t,
                                          lno_t, size_type, Layout, Device>(
         controls, pattern, m, n, blockSize, k, alpha, beta);

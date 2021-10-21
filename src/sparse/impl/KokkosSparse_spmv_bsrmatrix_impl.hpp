@@ -48,6 +48,7 @@
 #if defined(KOKKOS_ENABLE_CUDA) && \
     (defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_AMPERE))
 
+#include <type_traits>
 #include <mma.h>
 
 namespace KokkosSparse {
@@ -98,25 +99,27 @@ struct BsrMatrixSpMVTensorCoreFunctor {
   typedef typename AMatrix::value_type AScalar;
   typedef typename YMatrix::value_type YScalar;
   typedef typename XMatrix::value_type XScalar;
+  typedef typename AMatrix::non_const_ordinal_type AOrdinal;
+  typedef typename AMatrix::non_const_size_type AOffset;
 
   // views of the shared memory used in the functor to cast types to the CUDA
   // wmma types A matrix is MxK X matrix is KxN Y matrix is MxN
   typedef typename Kokkos::View<
-      AFragScalar *[FRAG_M][FRAG_K],  // one fragment per warp in the team (2D
-                                      // grid of warps in team)
+      AFragScalar * [FRAG_M][FRAG_K],  // one fragment per warp in the team (2D
+                                       // grid of warps in team)
       Kokkos::LayoutRight,
       typename Device::execution_space::scratch_memory_space,
       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       AScratchView;
   typedef typename Kokkos::View<
-      XFragScalar *[FRAG_K][FRAG_N],
+      XFragScalar * [FRAG_K][FRAG_N],
       typename Kokkos::LayoutRight,  // so that [FRAG_K][FRAG_N] part is
                                      // contiguous in memory
       typename Device::execution_space::scratch_memory_space,
       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       XScratchView;
   typedef typename Kokkos::View<
-      YFragScalar **[FRAG_M][FRAG_N],
+      YFragScalar * * [FRAG_M][FRAG_N],
       typename Kokkos::LayoutRight,  // so that [FRAG_M][FRAG_N] part is
                                      // contiguous in memory
       typename Device::execution_space::scratch_memory_space,
@@ -270,15 +273,16 @@ struct BsrMatrixSpMVTensorCoreFunctor {
     const int lx = mbr.team_rank() % THREADS_PER_WARP;
 
     // which row of a/y the fragment this warp contributes to starts at
-    const int ay_i =
+    const AOrdinal ay_i =
         blockIdx_i * a.blockDim()                // offset due to block
         + teamIdx_i * WARPS_PER_TEAM_Y * FRAG_M  // offset of team within block
         + warpIdx_y * FRAG_M;                    // offset of warp within team
 
     // which column of x/y the fragments warp will read from/contribute to
     // starts at
-    const int xy_j = blockIdx_j * a.blockDim() +
-                     teamIdx_j * WARPS_PER_TEAM_X * FRAG_N + warpIdx_x * FRAG_N;
+    const AOrdinal xy_j = blockIdx_j * a.blockDim() +
+                          teamIdx_j * WARPS_PER_TEAM_X * FRAG_N +
+                          warpIdx_x * FRAG_N;
 
     AFragScalar *_sa =
         (AFragScalar *)mbr.team_shmem().get_shmem(a_scratch_size());
@@ -297,12 +301,13 @@ struct BsrMatrixSpMVTensorCoreFunctor {
 
     // no need for a team barrier because each warp uses an individual part of
     // shared memory
-    for (int i = lx; i < FRAG_M * FRAG_N; i += THREADS_PER_WARP) {
-      int fi = i / FRAG_N;  // position in fragment of Y
-      int fj = i % FRAG_N;
-      int bi = teamIdx_i * WARPS_PER_TEAM_Y * FRAG_M + warpIdx_y * FRAG_M +
-               fi;  // position in block of Y
-      int bj = teamIdx_j * WARPS_PER_TEAM_X * FRAG_N + warpIdx_x * FRAG_N + fj;
+    for (unsigned i = lx; i < FRAG_M * FRAG_N; i += THREADS_PER_WARP) {
+      const unsigned fi = i / FRAG_N;  // position in fragment of Y
+      const unsigned fj = i % FRAG_N;
+      const AOrdinal bi = teamIdx_i * WARPS_PER_TEAM_Y * FRAG_M +
+                          warpIdx_y * FRAG_M + fi;  // position in block of Y
+      const AOrdinal bj =
+          teamIdx_j * WARPS_PER_TEAM_X * FRAG_N + warpIdx_x * FRAG_N + fj;
 
       // load 0 outside of the block boundary and y vector boundary
       // load 0 outside of the vector boundary
@@ -323,9 +328,9 @@ struct BsrMatrixSpMVTensorCoreFunctor {
     auto rowView = a.block_row_Const(blockIdx_i);
 
     // team loops through all blocks in the row
-    for (int ci = a.graph.row_map(blockIdx_i);
+    for (AOffset ci = a.graph.row_map(blockIdx_i);
          ci < a.graph.row_map(blockIdx_i + 1); ++ci) {
-      int j = a.graph.entries(ci);
+      AOrdinal j = a.graph.entries(ci);
 
       // pointer to the beginning of the block
       const AScalar *ap = nullptr;
@@ -345,17 +350,17 @@ struct BsrMatrixSpMVTensorCoreFunctor {
       // fragments from A and n cols of fragments from X. only hold part of a
       // single column of fragments (from A) or part of a single row (from X) at
       // once
-      for (int bk = 0; bk < a.blockDim(); bk += FRAG_K /*M*/) {
+      for (AOrdinal bk = 0; bk < a.blockDim(); bk += FRAG_K /*M*/) {
         // team collaborative load of A
         // the footprint is one fragment wide in K direction
         mbr.team_barrier();
-        for (int i = mbr.team_rank(); i < WARPS_PER_TEAM_Y * FRAG_M * FRAG_K;
-             i += mbr.team_size()) {
-          const int ti = i / FRAG_K;  // offset inside the fragments
-          const int tj = i % FRAG_K;
+        for (unsigned i = mbr.team_rank();
+             i < WARPS_PER_TEAM_Y * FRAG_M * FRAG_K; i += mbr.team_size()) {
+          const unsigned ti = i / FRAG_K;  // offset inside the fragments
+          const unsigned tj = i % FRAG_K;
           // add in offset within block
-          const int bi = teamIdx_i * WARPS_PER_TEAM_Y * FRAG_M + ti;
-          const int bj = bk + tj;
+          const AOrdinal bi = teamIdx_i * WARPS_PER_TEAM_Y * FRAG_M + ti;
+          const AOrdinal bj = bk + tj;
 
           // fill shmem with 0 outside of the block boundary
           if (bi < a.blockDim() && bj < a.blockDim()) {
@@ -368,21 +373,21 @@ struct BsrMatrixSpMVTensorCoreFunctor {
 
         // collaborative load of X fragments into shared memory
         // entire team loads fragment footprint
-        for (int i = mbr.team_rank(); i < WARPS_PER_TEAM_X * FRAG_N * FRAG_K;
-             i += mbr.team_size()) {
-          const int ti =
+        for (unsigned i = mbr.team_rank();
+             i < WARPS_PER_TEAM_X * FRAG_N * FRAG_K; i += mbr.team_size()) {
+          const unsigned ti =
               i / (WARPS_PER_TEAM_X * FRAG_N);  // position in combined tiles
-          const int tj = i % (WARPS_PER_TEAM_X * FRAG_N);
+          const unsigned tj = i % (WARPS_PER_TEAM_X * FRAG_N);
 
           // add in offset within block
-          const int bi = bk + ti;
-          const int bj = teamIdx_j * WARPS_PER_TEAM_X * FRAG_N + tj;
+          const AOrdinal bi = bk + ti;
+          const AOrdinal bj = teamIdx_j * WARPS_PER_TEAM_X * FRAG_N + tj;
 
           // load 0 outside of the block boundary
           // x is not necessarily a multiple of block size, so make sure access
           // is in bounds
           if (bi < a.blockDim() && bj < a.blockDim() &&
-              blockIdx_j * a.blockDim() + bj < x.extent(1)) {
+              unsigned(blockIdx_j * a.blockDim() + bj) < x.extent(1)) {
             // tile is some fragments in the j/n direction that are frag_n wide
             sx(tj / FRAG_N, ti, tj % FRAG_N) = XFragScalar(
                 x(j * a.blockDim() + bi, blockIdx_j * a.blockDim() + bj));
@@ -413,12 +418,13 @@ struct BsrMatrixSpMVTensorCoreFunctor {
     // it's responsible for. each warp loads the part corresponding to its y
     // fragment
     mbr.team_barrier();
-    for (int i = lx; i < FRAG_M * FRAG_N; i += THREADS_PER_WARP) {
-      int fi = i / FRAG_N;  // position in fragment of Y
-      int fj = i % FRAG_N;
-      int bi = teamIdx_i * WARPS_PER_TEAM_Y * FRAG_M + warpIdx_y * FRAG_M +
-               fi;  // position in block of Y
-      int bj = teamIdx_j * WARPS_PER_TEAM_X * FRAG_N + warpIdx_x * FRAG_N + fj;
+    for (unsigned i = lx; i < FRAG_M * FRAG_N; i += THREADS_PER_WARP) {
+      const unsigned fi = i / FRAG_N;  // position in fragment of Y
+      const unsigned fj = i % FRAG_N;
+      const AOrdinal bi = teamIdx_i * WARPS_PER_TEAM_Y * FRAG_M +
+                          warpIdx_y * FRAG_M + fi;  // position in block of Y
+      const AOrdinal bj =
+          teamIdx_j * WARPS_PER_TEAM_X * FRAG_N + warpIdx_x * FRAG_N + fj;
 
       // only store inside the block boundary
       // FIXME: what if Y is not wide enough? check y(_, j)
@@ -433,23 +439,27 @@ struct BsrMatrixSpMVTensorCoreFunctor {
 /* Instantiate some common template parameter values
    for BsrMatrixSpMVTensorCoreFunctor.
    This is a struct instead of a function for template...using shorthand
+   Discriminates between complex (supported) and non-complex (unsupported)
+   scalar types, and throws a runtime error for unsupported types
 */
 template <typename AMatrix,
           typename AFragScalar,  // input matrix type and fragment scalar type
           typename XMatrix, typename XFragScalar, typename YMatrix,
           typename YFragScalar, unsigned FRAG_M, unsigned FRAG_N,
-          unsigned FRAG_K  // fragment sizes
-          >
+          unsigned FRAG_K>
 struct BsrMatrixSpMVTensorCoreDispatcher {
+  typedef typename AMatrix::value_type AScalar;
   typedef typename YMatrix::value_type YScalar;
+  typedef typename XMatrix::value_type XScalar;
 
   template <unsigned X, unsigned Y, unsigned Z>
   using Dyn = BsrMatrixSpMVTensorCoreFunctor<AMatrix, AFragScalar, XMatrix,
                                              XFragScalar, YMatrix, YFragScalar,
                                              FRAG_M, FRAG_N, FRAG_K, X, Y, Z>;
 
-  static void dispatch(YScalar alpha, AMatrix a, XMatrix x, YScalar beta,
-                       YMatrix y) {
+  // to be used when the various matrix types are supported
+  static void tag_dispatch(std::true_type, YScalar alpha, AMatrix a, XMatrix x,
+                           YScalar beta, YMatrix y) {
     BsrMatrixSpMVTensorCoreFunctorParams params =
         Dyn<0, 0, 0>::launch_parameters(alpha, a, x, beta, y);
 
@@ -481,6 +491,28 @@ struct BsrMatrixSpMVTensorCoreDispatcher {
     } else {
       Dyn<0, 0, 0>(alpha, a, x, beta, y, params).dispatch();
     }
+  }
+
+  // to be used to avoid instantiating on unsupported types
+  static void tag_dispatch(std::false_type, YScalar, AMatrix, XMatrix, YScalar,
+                           YMatrix) {
+    Kokkos::Impl::throw_runtime_exception("unsupported for complex types");
+  }
+
+  /*true if T1, T2, or T3 are complex*/
+  template <typename T1, typename T2, typename T3>
+  struct none_complex {
+    const static bool value = !Kokkos::ArithTraits<T1>::is_complex &&
+                              !Kokkos::ArithTraits<T2>::is_complex &&
+                              !Kokkos::ArithTraits<T3>::is_complex;
+  };
+
+  static void dispatch(YScalar alpha, AMatrix a, XMatrix x, YScalar beta,
+                       YMatrix y) {
+    using tag =
+        std::integral_constant<bool,
+                               none_complex<AScalar, XScalar, YScalar>::value>;
+    tag_dispatch(tag{}, alpha, a, x, beta, y);
   }
 };
 
