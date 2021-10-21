@@ -83,6 +83,7 @@ class BatchedDblBufGemm {
       typename execution_space_type::scratch_memory_space;
   using view_type_2d_scratch =
       Kokkos::View<view_value_type **, Kokkos::LayoutRight, scratch_space_type>;
+  // TODO: add compile-time extents
 
  public:
   BatchedDblBufGemm(HandleType *const handle, ScalarType alpha, AViewType A,
@@ -261,12 +262,16 @@ class BatchedDblBufGemm {
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
-                  for (unsigned k = 0; k < nk; ++k) {
+                  for (unsigned k = 0; k < nk;
+                       ++k) {  // TODO: would have to invert this for
+                               // threadVectorRange copy TODOs below
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
-                    for (int m = 0; m < REG_M; ++m)
+                    for (int m = 0; m < REG_M;
+                         ++m)  // TODO: this could be a threadVectorRange copy
                       reg_a[m] = svA_scr(k, thread_id + m * STRIDE_M);
+              // TODO: reg_a could be a thread shared buffer
 
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
@@ -297,6 +302,9 @@ class BatchedDblBufGemm {
       // Allocate registers used for FMAs
       view_value_type reg_a[REG_M] = {0}, reg_b[REG_N] = {0},
                       reg_c[REG_M][REG_N] = {{0}};
+      // TODO: look at local loads and stores via nvprof
+      // TODO: look at GPU trace in nvprof to find out how many registers are
+      // used.
 
       unsigned batch_idx = member.league_rank() / __n_sub_tiles;
 
@@ -334,6 +342,13 @@ class BatchedDblBufGemm {
                         access_view_bounds_check<view_value_type>(
                             svB, vlane_id, thread_offset + i,
                             __ei.__bounds_check_tag);
+                  // TODO: Use LayoutLeft here for contiguous access across
+                  // vlanes??
+                  //   or change indexing like this:
+                  //   access_view_bounds_check<view_value_type>(
+                  //                            svB, i, thread_offset +
+                  //                            vlane_id,
+                  //                            __ei.__bounds_check_tag);
                 });
           });
       Kokkos::parallel_for(
@@ -351,6 +366,7 @@ class BatchedDblBufGemm {
                         access_view_bounds_check<view_value_type>(
                             svA, thread_offset + i, vlane_id,
                             __ei.__bounds_check_tag);
+                  // TODO: might be able to use local deep copy here.
                 });
           });
 
