@@ -463,9 +463,10 @@ int BatchedGemm(BatchedGemmHandleType *const handle, const ScalarType alpha,
       //     (alpha == 1.0F && beta == 0.0F) ? c_m <= 24 : c_m <= 21) {
       //   // TODO: invoke TeamShmem
       // } else
-      if (on_gpu && ((std::is_same<layout_type, Kokkos::LayoutLeft>::value)
-                         ? (c_m >= 16)
-                         : (c_m >= 24))) {
+      if (on_gpu &&
+          ((std::is_same<layout_type, Kokkos::LayoutLeft>::value)
+               ? (c_m >= 16)
+               : (c_m >= 24 && c_m <= 32) || (c_m >= 45 && c_m <= 64))) {
         handle->teamSz = handle->vecLen = 8;
         constexpr int tile_m = 32, tile_n = 32, tile_k = 8;
         if (c_m % 32 == 0)  // No bounds checking
