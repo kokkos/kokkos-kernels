@@ -6,7 +6,6 @@
 #include <Kokkos_UniqueToken.hpp>
 #include <Kokkos_Functional.hpp>
 #include "KokkosSparse_CrsMatrix.hpp"
-#include "KokkosSparse_spmv.hpp"
 #include "KokkosSparse_spgemm.hpp"
 #include "KokkosKernels_Sorting.hpp"
 #include "KokkosKernels_HashmapAccumulator.hpp"
@@ -77,7 +76,7 @@ public:
     unsigned int max_levels = 200;
 
 //determine if dynamic scheduling should be used
-bool should_use_dyn(const ordinal_t n, const Kokkos::View<const edge_offset_t*> work, int t_count){
+bool should_use_dyn(const ordinal_t n, const Kokkos::View<const edge_offset_t*, Device> work, int t_count){
     bool use_dyn = false;
     edge_offset_t max = 0;
     edge_offset_t min = std::numeric_limits<edge_offset_t>::max();
@@ -332,7 +331,10 @@ coarse_level_triple build_coarse_graph_spgemm(const coarse_level_triple level,
     matrix_t gc("gc", nc, values_nonloop, gc_graph);
 
     vtx_view_t c_vtx_w("coarse vtx weights", interp_mtx.numCols());
-    KokkosSparse::spmv("N", 1.0, interp_transpose, f_vtx_w, 0.0, c_vtx_w);
+    Kokkos::parallel_for("compute coarse vtx wgts", policy_t(0, n), KOKKOS_LAMBDA(const ordinal_t i){
+        ordinal_t u = interp_mtx.graph.entries(i);
+        Kokkos::atomic_add(&c_vtx_w(u), f_vtx_w(i));
+    });
 
     coarse_level_triple next_level;
     next_level.mtx = gc;
@@ -578,7 +580,7 @@ struct functorHashmapAccumulator
     edge_view_t row_map;
     vtx_view_t entries_in, entries_out;
     wgt_view_t wgts_in, wgts_out;
-    edge_view_t dedupe_edge_count;
+    vtx_view_t dedupe_edge_count;
     uniform_memory_pool_t _memory_pool;
     const ordinal_t _hash_size;
     const ordinal_t _max_hash_entries;
@@ -586,7 +588,7 @@ struct functorHashmapAccumulator
     functorHashmapAccumulator(edge_view_t row_map,
         vtx_view_t entries_in, vtx_view_t entries_out,
         wgt_view_t wgts_in, wgt_view_t wgts_out,
-        edge_view_t dedupe_edge_count,
+        vtx_view_t dedupe_edge_count,
         uniform_memory_pool_t memory_pool,
         const ordinal_t hash_size,
         const ordinal_t max_hash_entries,
