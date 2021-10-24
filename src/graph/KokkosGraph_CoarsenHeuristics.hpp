@@ -37,7 +37,14 @@ public:
     using pool_t = Kokkos::Random_XorShift64_Pool<Device>;
     using gen_t = typename pool_t::generator_type;
     using hasher_t = Kokkos::pod_hash<ordinal_t>;
-    static constexpr ordinal_t ORD_MAX = std::numeric_limits<ordinal_t>::max();
+    static constexpr ordinal_t get_null_val(){
+        if(std::is_signed<ordinal_t>::value){
+            return -1;
+        } else {
+            return std::numeric_limits<ordinal_t>::max();
+        }
+    }
+    static constexpr ordinal_t ORD_MAX = get_null_val();
 
     template <class in, class out>
     Kokkos::View<out*, Device> sort_order(Kokkos::View<in*, Device> array, in max, in min) {
@@ -129,7 +136,7 @@ public:
                             vcmap(v) = cv;
                         }
                         else {
-                            if (vcmap(v) < n) {
+                            if (vcmap(v) != ORD_MAX) {
                                 vcmap(u) = vcmap(v);
                             }
                             else {
@@ -144,12 +151,9 @@ public:
             //maybe count these then create next_perm to save memory?
             Kokkos::parallel_for(policy_t(0, perm_length), KOKKOS_LAMBDA(ordinal_t i) {
                 ordinal_t u = curr_perm(i);
-                if (vcmap(u) >= n) {
+                if (vcmap(u) == ORD_MAX) {
                     ordinal_t add_next = Kokkos::atomic_fetch_add(&next_length(), 1);
                     next_perm(add_next) = u;
-                    //been noticing some memory errors on my machine, probably from memory overclock
-                    //this fixes the problem, and is lightweight
-                    match(u) = ORD_MAX;
                 }
             });
             Kokkos::fence();
@@ -195,7 +199,7 @@ public:
                             vcmap(v) = cv;
                         }
                         else {
-                            if (vcmap(v) < n) {
+                            if (vcmap(v) != ORD_MAX) {
                                 vcmap(u) = vcmap(v);
                             }
                             else {
@@ -210,12 +214,9 @@ public:
             //maybe count these then create next_perm to save memory?
             Kokkos::parallel_scan(policy_t(0, perm_length), KOKKOS_LAMBDA(const ordinal_t i, ordinal_t& update, const bool final) {
                 ordinal_t u = curr_perm(i);
-                if (vcmap(u) >= n) {
+                if (vcmap(u) == ORD_MAX) {
                     if(final){
                         next_perm(update) = u;
-                        //been noticing some memory erros on my machine, probably from memory overclock
-                        //this fixes the problem, and is lightweight
-                        match(u) = ORD_MAX;
                     }
                     update++;
                 }

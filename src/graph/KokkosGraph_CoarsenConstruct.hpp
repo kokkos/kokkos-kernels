@@ -40,13 +40,21 @@ public:
     using dyn_team_policy_t = Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Dynamic>, exec_space>;
     using member = typename team_policy_t::member_type;
     using spgemm_kernel_handle = KokkosKernels::Experimental::KokkosKernelsHandle<edge_offset_t, ordinal_t, scalar_t, exec_space, mem_space, mem_space>;
-    static constexpr ordinal_t ORD_MAX = std::numeric_limits<ordinal_t>::max();
+    static constexpr ordinal_t get_null_val(){
+        //this value must line up with the null value used by the hashmap accumulator
+        if(std::is_signed<ordinal_t>::value){
+            return -1;
+        } else {
+            return std::numeric_limits<ordinal_t>::max();
+        }
+    }
+    static constexpr ordinal_t ORD_MAX = get_null_val();
     static constexpr bool is_host_space = std::is_same<typename exec_space::memory_space, typename Kokkos::DefaultHostExecutionSpace::memory_space>::value;
     // contains matrix and vertex weights corresponding to current level
     // interp matrix maps previous level to this level
     struct coarse_level_triple {
-        matrix_t coarse_mtx;
-        vtx_view_t coarse_vtx_wgts;
+        matrix_t mtx;
+        vtx_view_t vtx_wgts;
         matrix_t interp_mtx;
         int level;
         bool uniform_weights;
@@ -59,8 +67,8 @@ public:
     // internal parameters and data
     // default heuristic is HEC
     Heuristic h = HECv1;
-    // default builder is sort
-    Builder b = Sort;
+    // default builder is Hybrid
+    Builder b = Hybrid;
     coarsen_heuristics<matrix_t> mapper;
     //when the results are fetched, this list is implicitly copied
     std::list<coarse_level_triple> results;
@@ -100,8 +108,8 @@ bool should_use_dyn(const ordinal_t n, const Kokkos::View<const edge_offset_t*> 
 coarse_level_triple build_coarse_graph_spgemm(const coarse_level_triple level,
     const matrix_t interp_mtx) {
     
-    vtx_view_t f_vtx_w = level.coarse_vtx_wgts;
-    matrix_t g = level.coarse_mtx;
+    vtx_view_t f_vtx_w = level.vtx_wgts;
+    matrix_t g = level.mtx;
 
     ordinal_t n = g.numRows();
     ordinal_t nc = interp_mtx.numCols();
@@ -327,8 +335,8 @@ coarse_level_triple build_coarse_graph_spgemm(const coarse_level_triple level,
     KokkosSparse::spmv("N", 1.0, interp_transpose, f_vtx_w, 0.0, c_vtx_w);
 
     coarse_level_triple next_level;
-    next_level.coarse_mtx = gc;
-    next_level.coarse_vtx_wgts = c_vtx_w;
+    next_level.mtx = gc;
+    next_level.vtx_wgts = c_vtx_w;
     next_level.level = level.level + 1;
     next_level.interp_mtx = interp_mtx;
     next_level.uniform_weights = false;
@@ -1228,7 +1236,7 @@ coarse_level_triple build_nonskew(const matrix_t g,
     matrix_t gc("gc", nc, wgts, gc_graph);
 
     coarse_level_triple next_level;
-    next_level.coarse_mtx = gc;
+    next_level.mtx = gc;
     return next_level;
 }
 
@@ -1346,7 +1354,7 @@ coarse_level_triple build_skew(const matrix_t g,
     matrix_t gc = collapse_directed_to_undirected(nc, edges_per_source, source_bucket_offset, dest_by_source, wgt_by_source);
 
     coarse_level_triple next_level;
-    next_level.coarse_mtx = gc;
+    next_level.mtx = gc;
     return next_level;
 }
 
@@ -1470,7 +1478,7 @@ coarse_level_triple build_high_duplicity(const matrix_t g,
     matrix_t gc = collapse_directed_to_undirected(nc, edges_per_source, source_bucket_offset, dest_by_source, wgt_by_source);
 
     coarse_level_triple next_level;
-    next_level.coarse_mtx = gc;
+    next_level.mtx = gc;
     return next_level;
 }
 
@@ -1546,14 +1554,14 @@ coarse_level_triple build_coarse_graph(const coarse_level_triple level,
         return build_coarse_graph_spgemm(level, vcmap);
     }
 
-    matrix_t g = level.coarse_mtx;
+    matrix_t g = level.mtx;
     ordinal_t n = g.numRows();
     ordinal_t nc = vcmap.numCols();
 
     vtx_view_t mapped_edges("mapped edges", g.nnz());
 
     vtx_view_t degree_initial("edges_per_source", nc);
-    vtx_view_t f_vtx_w = level.coarse_vtx_wgts;
+    vtx_view_t f_vtx_w = level.vtx_wgts;
     vtx_view_t c_vtx_w = vtx_view_t("coarse vertex weights", nc);
 
     //count non-self loop edges per coarse vertex
@@ -1595,7 +1603,7 @@ coarse_level_triple build_coarse_graph(const coarse_level_triple level,
         next_level = build_nonskew(g, vcmap, mapped_edges, degree_initial);
     }
 
-    next_level.coarse_vtx_wgts = c_vtx_w;
+    next_level.vtx_wgts = c_vtx_w;
     next_level.level = level.level + 1;
     next_level.interp_mtx = vcmap;
     next_level.uniform_weights = false;
@@ -1647,19 +1655,19 @@ void generate_coarse_graphs(const matrix_t fine_g, bool uniform_weights = false)
     std::list<coarse_level_triple>& levels = results;
     levels.clear();
     coarse_level_triple finest;
-    finest.coarse_mtx = fine_g;
+    finest.mtx = fine_g;
     //1-indexed, not zero indexed
     finest.level = 1;
     finest.uniform_weights = uniform_weights;
     vtx_view_t vtx_weights("vertex weights", fine_n);
     Kokkos::deep_copy(vtx_weights, static_cast<ordinal_t>(1));
-    finest.coarse_vtx_wgts = vtx_weights;
+    finest.vtx_wgts = vtx_weights;
     levels.push_back(finest);
-    while (levels.rbegin()->coarse_mtx.numRows() > coarse_vtx_cutoff) {
+    while (levels.rbegin()->mtx.numRows() > coarse_vtx_cutoff) {
 
         coarse_level_triple current_level = *levels.rbegin();
 
-        matrix_t interp_graph = generate_coarse_mapping(current_level.coarse_mtx, current_level.uniform_weights);
+        matrix_t interp_graph = generate_coarse_mapping(current_level.mtx, current_level.uniform_weights);
 
         if (interp_graph.numCols() < min_allowed_vtx) {
             break;

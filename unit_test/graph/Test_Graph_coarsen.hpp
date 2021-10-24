@@ -76,16 +76,16 @@ bool verify_coarsening(typename coarsener_t::coarse_level_triple fine_l, typenam
 
     
     bool correct = true;
-    crsMat A = fine_l.coarse_mtx;
-    crsMat coarse_A = coarse_l.coarse_mtx;
+    crsMat A = fine_l.mtx;
+    crsMat coarse_A = coarse_l.mtx;
     typename c_rowmap_t::HostMirror f_rowmap = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.graph.row_map);
     typename c_rowmap_t::HostMirror c_rowmap = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), coarse_A.graph.row_map);
     typename c_entries_t::HostMirror f_entries = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.graph.entries);
     typename c_entries_t::HostMirror vcmap = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), coarse_l.interp_mtx.graph.entries);
     typename svt::HostMirror few = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.values);
     typename svt::HostMirror cew = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), coarse_A.values);
-    typename entries_t::HostMirror fvw = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), fine_l.coarse_vtx_wgts);
-    typename entries_t::HostMirror cvw = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), coarse_l.coarse_vtx_wgts);
+    typename entries_t::HostMirror fvw = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), fine_l.vtx_wgts);
+    typename entries_t::HostMirror cvw = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), coarse_l.vtx_wgts);
     ordinal_t f_size = 0;
     ordinal_t c_size = 0;
     for(ordinal_t i = 0; i < fvw.extent(0); i++){
@@ -95,12 +95,14 @@ bool verify_coarsening(typename coarsener_t::coarse_level_triple fine_l, typenam
         c_size += cvw(i);
     }
     //number of columns in interpolation matrix should give number of rows in coarse matrix
-    if(coarse_l.interp_mtx.numCols() != coarse_l.coarse_mtx.numRows()){
+    if(coarse_l.interp_mtx.numCols() != coarse_l.mtx.numRows()){
         correct = false;
+        printf("Incorrect number of rows in coarse graph\n");
     }
     //sum of vertex weights in each graph should be equal
     if(f_size != c_size){
         correct = false;
+        printf("Vertex weight sums don't match: %u vs %u\n", f_size, c_size);
     }
     typename svt::value_type f_edges = 0, c_edges = 0;
     for(ordinal_t i = 0; i < A.numRows(); i++){
@@ -119,6 +121,7 @@ bool verify_coarsening(typename coarsener_t::coarse_level_triple fine_l, typenam
     //sum of inter-aggregate edges in fine graph should be sum of all edges in coarse graph
     if(f_edges != c_edges){
         correct = false;
+        printf("Inter aggregate edges don't match: %u vs %u\n", f_edges, c_edges);
     }
     return correct;
 }
@@ -143,10 +146,12 @@ bool verify_is_graph(crsMat A){
             //A should not contain out-of-bounds columns
             if(v >= A.numRows()){
                 correct = false;
+                printf("out of bounds column!\n");
             }
             //Each row should not contain duplicate columns
             if(adjset.find(v) != adjset.end()){
                 correct = false;
+                printf("Duplicate entry in row %u; entry is %u!\n", i, v);
             }
             adjset.insert(v);
         }
@@ -197,6 +202,162 @@ bool verify_aggregator(crsMat A, crsMat agg){
     return correct;
 }
 
+template <class crsMat>
+crsMat gen_grid(){
+    using graph_type  = typename crsMat::StaticCrsGraphType;
+    using c_rowmap_t  = typename graph_type::row_map_type;
+    using c_entries_t = typename graph_type::entries_type;
+    using rowmap_t    = typename c_rowmap_t::non_const_type;
+    using entries_t   = typename c_entries_t::non_const_type;
+    using svt = typename crsMat::values_type;
+    using lno_t = typename crsMat::ordinal_type;
+    using scalar = typename crsMat::value_type;
+    lno_t rows = 200;
+    lno_t cols = 300;
+    lno_t total_vtx = rows*cols;
+
+    //create a 2D-mesh
+    rowmap_t row_map("rowmap", total_vtx + 1);
+    auto rm = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), row_map);
+    rm(0) = 0;
+    for(lno_t i = 0; i < rows; i++){
+        for(lno_t j = 0; j < cols; j++){
+            lno_t vtx_id = i*cols + j;
+            lno_t edge_count = 0;
+            if(i > 0) edge_count++;
+            if(i + 1 < rows) edge_count++;
+            if(j > 0) edge_count++;
+            if(j + 1 < cols) edge_count++;
+            rm(vtx_id + 1) = rm(vtx_id) + edge_count;
+        }
+    }
+    lno_t total_edges = rm(total_vtx);
+    Kokkos::deep_copy(row_map, rm);
+    entries_t entries("entries", total_edges);
+    auto e = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), entries);
+    
+    for(lno_t i = 0; i < rows; i++){
+        for(lno_t j = 0; j < cols; j++){
+            lno_t vtx_id = i*cols + j;
+            lno_t write_offset = rm(vtx_id);
+            if(i > 0){
+                e(write_offset) = vtx_id - cols;
+                write_offset++;
+            }
+            if(i + 1 < rows){
+                e(write_offset) = vtx_id + cols;
+                write_offset++;
+            }
+            if(j > 0){
+                e(write_offset) = vtx_id - 1;
+                write_offset++;
+            }
+            if(j + 1 < cols){
+                e(write_offset) = vtx_id + 1;
+            }
+        }
+    }
+    Kokkos::deep_copy(entries, e);
+    graph_type g(entries, row_map);
+    svt values("values", total_edges);
+    Kokkos::deep_copy(values, static_cast<scalar>(1));
+    crsMat A("A", total_vtx, values, g);
+    return A;
+}
+
+template <typename scalar, typename lno_t, typename size_type,
+          typename device>
+void test_multilevel_coarsen_grid(){
+    using execution_space = typename device::execution_space;
+    using crsMat =
+        KokkosSparse::CrsMatrix<scalar, lno_t, device, void, size_type>;
+    using graph_type  = typename crsMat::StaticCrsGraphType;
+    using c_rowmap_t  = typename graph_type::row_map_type;
+    using c_entries_t = typename graph_type::entries_type;
+    using rowmap_t    = typename c_rowmap_t::non_const_type;
+    using entries_t   = typename c_entries_t::non_const_type;
+    using svt = typename crsMat::values_type;
+    crsMat A = gen_grid<crsMat>();
+    using coarsener_t = coarse_builder<crsMat>;
+    coarsener_t coarsener;
+    using clt = typename coarsener_t::coarse_level_triple;
+    coarsener.set_heuristic(coarsener_t::HECv1);
+    coarsener.set_deduplication_method(coarsener_t::Hybrid);
+    coarsener.generate_coarse_graphs(A, true);
+    std::list<clt> levels = coarsener.get_levels();
+    auto fine = levels.begin();
+    auto coarse = fine;
+    coarse++;
+    while(coarse != levels.end()){
+        bool correct_aggregator = verify_aggregator(fine->mtx, coarse->interp_mtx);
+        if(!correct_aggregator){
+            printf("Aggregator is invalid\n");
+        }
+        bool correct_graph = verify_is_graph<crsMat>(coarse->mtx);
+        bool correct_coarsening = verify_coarsening<coarsener_t>(*fine, *coarse);
+        if(!correct_graph){
+            printf("Coarse graph is invalid!\n");
+        }
+        if(!correct_coarsening){
+            printf("Coarsening is incorrect\n");
+        }
+        fine++;
+        coarse++;
+    }
+}
+
+template <typename scalar, typename lno_t, typename size_type,
+          typename device>
+void test_coarsen_grid(){
+    using execution_space = typename device::execution_space;
+    using crsMat =
+        KokkosSparse::CrsMatrix<scalar, lno_t, device, void, size_type>;
+    using graph_type  = typename crsMat::StaticCrsGraphType;
+    using c_rowmap_t  = typename graph_type::row_map_type;
+    using c_entries_t = typename graph_type::entries_type;
+    using rowmap_t    = typename c_rowmap_t::non_const_type;
+    using entries_t   = typename c_entries_t::non_const_type;
+    using svt = typename crsMat::values_type;
+    crsMat A = gen_grid<crsMat>();
+    entries_t vWgts("vertex weights", A.numRows());
+    Kokkos::deep_copy(vWgts, static_cast<typename entries_t::value_type>(1));
+    using coarsener_t = coarse_builder<crsMat>;
+    coarsener_t coarsener;
+    using clt = typename coarsener_t::coarse_level_triple;
+    clt fine_A;
+    fine_A.mtx = A;
+    fine_A.vtx_wgts = vWgts;
+    fine_A.level = 0;
+    fine_A.uniform_weights = true;
+    std::vector<typename coarsener_t::Heuristic> heuristics = { coarsener_t::HECv1, coarsener_t::Match, 
+        coarsener_t::MtMetis, coarsener_t::MIS2, 
+        coarsener_t::GOSHv1, coarsener_t::GOSHv2 };
+    std::vector<typename coarsener_t::Builder> builders = { coarsener_t::Sort, coarsener_t::Hashmap,
+        coarsener_t::Hybrid/*, coarsener_t::Spgemm, coarsener_t::Spgemm_transpose_first*/ };
+    for(auto h : heuristics){
+      coarsener.set_heuristic(h);
+      printf("testing heuristic: %i\n", static_cast<int>(h));
+      crsMat aggregator = coarsener.generate_coarse_mapping(fine_A.mtx, true);
+      bool correct_aggregator = verify_aggregator(fine_A.mtx, aggregator);
+      if(!correct_aggregator){
+          printf("Aggregator is invalid\n");
+      }
+      for(auto b : builders){
+          coarsener.set_deduplication_method(b);
+          printf("testing dedupe method: %i\n", static_cast<int>(b));
+          clt coarse_A = coarsener.build_coarse_graph(fine_A, aggregator);
+          bool correct_graph = verify_is_graph<crsMat>(coarse_A.mtx);
+          bool correct_coarsening = verify_coarsening<coarsener_t>(fine_A, coarse_A);
+          if(!correct_graph){
+              printf("Coarse graph is invalid!\n");
+          }
+          if(!correct_coarsening){
+              printf("Coarsening is incorrect\n");
+          }
+      }
+    }
+}
+
 template <typename scalar, typename lno_t, typename size_type,
           typename device>
 void test_coarsen(lno_t numVerts, size_type nnz, lno_t bandwidth,
@@ -209,7 +370,7 @@ void test_coarsen(lno_t numVerts, size_type nnz, lno_t bandwidth,
   using c_entries_t = typename graph_type::entries_type;
   using rowmap_t    = typename c_rowmap_t::non_const_type;
   using entries_t   = typename c_entries_t::non_const_type;
-  using svt = Kokkos::View<scalar*>;
+  using svt = typename crsMat::values_type;
   // Generate graph, and add some out-of-bounds columns
   crsMat A = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat>(
       numVerts, numVerts, nnz, row_size_variance, bandwidth);
@@ -226,34 +387,39 @@ void test_coarsen(lno_t numVerts, size_type nnz, lno_t bandwidth,
   Kokkos::deep_copy(symValues, static_cast<scalar>(2.5));
   Kokkos::deep_copy(vWgts, static_cast<typename entries_t::value_type>(1));
   crsMat AS("A symmetric", numVerts, symValues, GS);
-  using coarsener_t = coarse_builder<typename entries_t::value_type, typename rowmap_t::value_type, scalar, device>;
+  using coarsener_t = coarse_builder<crsMat>;
   coarsener_t coarsener;
   using clt = typename coarsener_t::coarse_level_triple;
   clt fine_A;
-  fine_A.coarse_mtx = AS;
-  fine_A.coarse_vtx_wgts = vWgts;
+  fine_A.mtx = AS;
+  fine_A.vtx_wgts = vWgts;
   fine_A.level = 0;
   fine_A.uniform_weights = true;
-  std::vector<typename coarsener_t::Heuristic> heuristics = { coarsener_t::HECv1, /*coarsener_t::HECv2,*/ 
-      coarsener_t::HECv3, coarsener_t::Match, 
+  std::vector<typename coarsener_t::Heuristic> heuristics = { coarsener_t::HECv1, coarsener_t::Match, 
       coarsener_t::MtMetis, coarsener_t::MIS2, 
       coarsener_t::GOSHv1, coarsener_t::GOSHv2 };
+  std::vector<typename coarsener_t::Builder> builders = { coarsener_t::Sort, coarsener_t::Hashmap,
+      coarsener_t::Hybrid/*, coarsener_t::Spgemm, coarsener_t::Spgemm_transpose_first*/ };
   for(auto h : heuristics){
     coarsener.set_heuristic(h);
     printf("testing heuristic: %i\n", static_cast<int>(h));
-    crsMat aggregator = coarsener.generate_coarse_mapping(AS, true);
-    bool correct_aggregator = verify_aggregator(A, aggregator);
-    clt coarse_A = coarsener.build_coarse_graph(fine_A, aggregator);
-    bool correct_graph = verify_is_graph<crsMat>(coarse_A.coarse_mtx);
-    bool correct_coarsening = verify_coarsening<coarsener_t>(fine_A, coarse_A);
+    crsMat aggregator = coarsener.generate_coarse_mapping(fine_A.mtx, true);
+    bool correct_aggregator = verify_aggregator(fine_A.mtx, aggregator);
     if(!correct_aggregator){
         printf("Aggregator is invalid\n");
     }
-    if(!correct_graph){
-        printf("Coarse graph is invalid!\n");
-    }
-    if(!correct_coarsening){
-        printf("Coarsening is incorrect\n");
+    for(auto b : builders){
+        coarsener.set_deduplication_method(b);
+        printf("testing dedupe method: %i\n", static_cast<int>(b));
+        clt coarse_A = coarsener.build_coarse_graph(fine_A, aggregator);
+        bool correct_graph = verify_is_graph<crsMat>(coarse_A.mtx);
+        bool correct_coarsening = verify_coarsening<coarsener_t>(fine_A, coarse_A);
+        if(!correct_graph){
+            printf("Coarse graph is invalid!\n");
+        }
+        if(!correct_coarsening){
+            printf("Coarsening is incorrect\n");
+        }
     }
   }
   //bool success = Test::verifyD2MIS<lno_t, size_type, decltype(rowmapHost),
