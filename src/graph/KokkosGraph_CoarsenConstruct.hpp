@@ -8,7 +8,7 @@
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosSparse_spmv.hpp"
 #include "KokkosSparse_spgemm.hpp"
-#include "KokkosKernels_SparseUtils.hpp"
+#include "KokkosKernels_Sorting.hpp"
 #include "KokkosKernels_HashmapAccumulator.hpp"
 #include "KokkosKernels_Uniform_Initialized_MemoryPool.hpp"
 #include "KokkosGraph_CoarsenHeuristics.hpp"
@@ -53,7 +53,7 @@ public:
     };
 
     // define behavior-controlling enums
-    enum Heuristic { HECv1, HECv2, HECv3, Match, MtMetis, MIS2, GOSHv1, GOSHv2 };
+    enum Heuristic { HECv1, Match, MtMetis, MIS2, GOSHv1, GOSHv2 };
     enum Builder { Sort, Hashmap, Hybrid, Spgemm, Spgemm_transpose_first };
 
     // internal parameters and data
@@ -983,7 +983,7 @@ void deduplicate_graph(const ordinal_t n, const bool use_team,
     else if (b == Sort) {
 
         // sort the (implicit) crs matrix
-        KokkosKernels::Impl::sort_crs_matrix<exec_space, edge_view_t, vtx_view_t, wgt_view_t>(source_bucket_offset, dest_by_source, wgt_by_source);
+        KokkosKernels::sort_crs_matrix<exec_space, edge_view_t, vtx_view_t, wgt_view_t>(source_bucket_offset, dest_by_source, wgt_by_source);
 
         // combine adjacent entries that are equal
         if (use_team) {
@@ -1004,7 +1004,7 @@ void deduplicate_graph(const ordinal_t n, const bool use_team,
     } else if (b == Hybrid) {
         ordinal_t limit = 128;
         // sort the (implicit) crs matrix, but only the low degree rows
-        ordinal_t remaining_count = KokkosKernels::Impl::sort_low_degree_crs_matrix<exec_space, edge_view_t, vtx_view_t, wgt_view_t>(source_bucket_offset, dest_by_source, wgt_by_source, limit);
+        ordinal_t remaining_count = KokkosKernels::sort_low_degree_rows_crs_matrix<exec_space, edge_view_t, vtx_view_t, wgt_view_t>(source_bucket_offset, dest_by_source, wgt_by_source, limit);
         // combine adjacent entries that are equal
         {
             // no thread team version
@@ -1609,15 +1609,6 @@ matrix_t generate_coarse_mapping(const matrix_t g,
     int choice = 0;
 
     switch (h) {
-        case HECv1:
-            choice = 0;
-            break;
-        case HECv2:
-            choice = 1;
-            break;
-        case HECv3:
-            choice = 2;
-            break;
         case Match:
             choice = 0;
             break;
@@ -1628,9 +1619,7 @@ matrix_t generate_coarse_mapping(const matrix_t g,
 
     switch (h) {
         case HECv1:
-        case HECv2:
-        case HECv3:
-            interpolation_graph = mapper.coarsen_HEC(g, uniform_weights, choice);
+            interpolation_graph = mapper.coarsen_HEC(g, uniform_weights);
             break;
         case Match:
         case MtMetis:

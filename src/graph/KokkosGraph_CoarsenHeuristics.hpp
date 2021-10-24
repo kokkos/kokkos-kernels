@@ -91,7 +91,6 @@ public:
             }
         });
 
-        t.reset();
         return permute;
     }
 
@@ -837,7 +836,8 @@ public:
                 //need to enforce an ordering condition to allow hard-stall conditions to be broken
                 if (condition ^ swap) {
                     if (Kokkos::atomic_compare_exchange_strong(&match(u), ORD_MAX, v)) {
-                        if (Kokkos::atomic_compare_exchange_strong(&match(v), ORD_MAX, u)) {
+                        if (u == v || Kokkos::atomic_compare_exchange_strong(&match(v), ORD_MAX, u)) {
+                            //u == v avoids problems if there is a self-loop edge
                             ordinal_t cv = Kokkos::atomic_fetch_add(&nvertices_coarse(), 1);
                             vcmap(u) = cv;
                             vcmap(v) = cv;
