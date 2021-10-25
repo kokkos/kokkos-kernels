@@ -323,7 +323,7 @@ void test_coarsen_grid(){
         coarsener_t::MtMetis, coarsener_t::MIS2, 
         coarsener_t::GOSHv1, coarsener_t::GOSHv2 };
     std::vector<typename coarsener_t::Builder> builders = { coarsener_t::Sort, coarsener_t::Hashmap,
-        coarsener_t::Hybrid/*, coarsener_t::Spgemm, coarsener_t::Spgemm_transpose_first*/ };
+        coarsener_t::Hybrid, coarsener_t::Spgemm, coarsener_t::Spgemm_transpose_first };
     for(auto h : heuristics){
       coarsener.set_heuristic(h);
       crsMat aggregator = coarsener.generate_coarse_mapping(fine_A.mtx, true);
@@ -384,7 +384,7 @@ void test_coarsen_random(lno_t numVerts, size_type nnz, lno_t bandwidth,
       coarsener_t::MtMetis, coarsener_t::MIS2, 
       coarsener_t::GOSHv1, coarsener_t::GOSHv2 };
   std::vector<typename coarsener_t::Builder> builders = { coarsener_t::Sort, coarsener_t::Hashmap,
-      coarsener_t::Hybrid/*, coarsener_t::Spgemm, coarsener_t::Spgemm_transpose_first*/ };
+      coarsener_t::Hybrid, coarsener_t::Spgemm, coarsener_t::Spgemm_transpose_first };
   for(auto h : heuristics){
     coarsener.set_heuristic(h);
     crsMat aggregator = coarsener.generate_coarse_mapping(fine_A.mtx, true);
