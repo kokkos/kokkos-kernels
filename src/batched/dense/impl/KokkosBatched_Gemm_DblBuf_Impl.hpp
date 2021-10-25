@@ -58,6 +58,15 @@ namespace Impl {
 /// CT/NT, NT/CT, CT/CT
 ///
 
+// TODO - scaling between (32x32, 64x64)
+//   Option 0: Increase number of tiles and figure out how to map kokkos teams
+//             into cuda grid. Keep team size and vector lanes constant.
+//             TODO: write up small example and ask Christian. [DONE,
+//             MdRangePolicy not applicable here]
+//   Option 1: Increase register sizes to handle rows/cols past tile size
+//   Option 2: Fix league_size and have single team solve full tile followed
+//   by same team solving extra rows/cols (without multiplying by the
+//   zero rows/cols)
 template <class ArgTransA, class ArgTransB, class ArgBatchSzDim,
           class HandleType, class ScalarType, class AViewType, class BViewType,
           class CViewType, class ArgBoundsCheck, int TILE_M, int TILE_N,
