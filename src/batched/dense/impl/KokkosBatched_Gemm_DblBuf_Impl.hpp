@@ -296,6 +296,8 @@ class BatchedDblBufGemm {
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const MemberType &member) const {
+      // TODO: use Kokkos view with compile-time size to allocating register??
+      //  Then we can use local deep copy for prefetch_reg population.
       // Allocate registers used for prefetching
       view_value_type prefetch_reg_a[REG_M] = {0}, prefetch_reg_b[REG_N] = {0};
 
@@ -365,6 +367,7 @@ class BatchedDblBufGemm {
                     svA_scr(vlane_id, thread_id + i) =
                         access_view_bounds_check<view_value_type>(
                             svA, thread_offset + i, vlane_id,
+                            // svB, vlane_id, thread_offset + i,
                             __ei.__bounds_check_tag);
                   // TODO: might be able to use local deep copy here.
                 });
