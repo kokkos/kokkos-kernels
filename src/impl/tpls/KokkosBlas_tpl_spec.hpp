@@ -124,6 +124,100 @@ inline void cublas_internal_safe_call(cublasStatus_t cublasState,
 }  // namespace KokkosBlas
 #endif  // KOKKOSKERNELS_ENABLE_TPL_CUBLAS
 
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
+#include <rocblas.h>
+
+namespace KokkosBlas {
+namespace Impl {
+
+struct RocBlasSingleton {
+  rocblas_handle handle;
+
+  RocBlasSingleton();
+
+  static RocBlasSingleton& singleton();
+};
+
+inline void rocblas_internal_error_throw(rocblas_status rocblasState,
+                                         const char* name, const char* file,
+                                         const int line) {
+  std::ostringstream out;
+  out << name << " error( ";
+  switch (rocblasState) {
+    case rocblas_status_invalid_handle:
+      out << "rocblas_status_invalid_handle): handle not initialized, invalid "
+             "or null.";
+      break;
+    case rocblas_status_not_implemented:
+      out << "rocblas_status_not_implemented): function is not implemented.";
+      break;
+    case rocblas_status_invalid_pointer:
+      out << "rocblas_status_invalid_pointer): invalid pointer argument.";
+      break;
+    case rocblas_status_invalid_size:
+      out << "rocblas_status_invalid_size): invalid size argument.";
+      break;
+    case rocblas_status_memory_error:
+      out << "rocblas_status_memory_error): failed internal memory allocation, "
+             "copy or dealloc.";
+      break;
+    case rocblas_status_internal_error:
+      out << "rocblas_status_internal_error): other internal library failure.";
+      break;
+    case rocblas_status_perf_degraded:
+      out << "rocblas_status_perf_degraded): performance degraded due to low "
+             "device memory.";
+      break;
+    case rocblas_status_size_query_mismatch:
+      out << "unmatched start/stop size query): .";
+      break;
+    case rocblas_status_size_increased:
+      out << "rocblas_status_size_increased): queried device memory size "
+             "increased.";
+      break;
+    case rocblas_status_size_unchanged:
+      out << "rocblas_status_size_unchanged): queried device memory size "
+             "unchanged.";
+      break;
+    case rocblas_status_invalid_value:
+      out << "rocblas_status_invalid_value): passed argument not valid.";
+      break;
+    case rocblas_status_continue:
+      out << "rocblas_status_continue): nothing preventing function to "
+             "proceed.";
+      break;
+    case rocblas_status_check_numerics_fail:
+      out << "rocblas_status_check_numerics_fail): will be set if the "
+             "vector/matrix has a NaN or an Infinity.";
+      break;
+    default: out << "unrecognized error code): this is bad!"; break;
+  }
+  if (file) {
+    out << " " << file << ":" << line;
+  }
+  throw std::runtime_error(out.str());
+}
+
+inline void rocblas_internal_safe_call(rocblas_status rocblasState,
+                                       const char* name,
+                                       const char* file = nullptr,
+                                       const int line   = 0) {
+  if (rocblas_status_success != rocblasState) {
+    rocblas_internal_error_throw(rocblasState, name, file, line);
+  }
+}
+
+// The macro below defines the interface for the safe rocblas calls.
+// The functions themselves are protected by impl namespace and this
+// is not meant to be used by external application or libraries.
+#define KOKKOS_ROCBLAS_SAFE_CALL_IMPL(call) \
+  KokkosBlas::Impl::rocblas_internal_safe_call(call, #call, __FILE__, __LINE__)
+
+}  // namespace Impl
+}  // namespace KokkosBlas
+
+#endif  // KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
+
 // If LAPACK TPL is enabled, it is preferred over magma's LAPACK
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
 #include "magma_v2.h"
