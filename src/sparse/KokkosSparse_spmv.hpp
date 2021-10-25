@@ -271,7 +271,7 @@ struct SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector,
 #endif
 };
 
-#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || !defined(KOKKOSKERNELS_ETI_ONLY)
+#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || !defined(KOKKOSKERNELS_ETI_ONLY)
 template <class AlphaType, class AMatrix, class XVector, class BetaType,
           class YVector>
 struct SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector,
@@ -605,7 +605,7 @@ struct SPMV2D1D_STRUCT<AlphaType, AMatrix, XVector, BetaType, YVector,
 #endif
 };
 
-#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || !defined(KOKKOSKERNELS_ETI_ONLY)
+#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || !defined(KOKKOSKERNELS_ETI_ONLY)
 template <class AlphaType, class AMatrix, class XVector, class BetaType,
           class YVector>
 struct SPMV2D1D_STRUCT<AlphaType, AMatrix, XVector, BetaType, YVector,
