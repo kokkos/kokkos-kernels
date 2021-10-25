@@ -606,6 +606,23 @@ struct functorHashmapAccumulator
         , _max_hash_entries(max_hash_entries)
         , remaining(remaining)
         , use_out(use_out) {}
+
+    KOKKOS_INLINE_FUNCTION
+  ordinal_t get_thread_id(const ordinal_t row_index) const{
+#if defined( KOKKOS_ENABLE_SERIAL )
+    if(std::is_same<exec_space, Kokkos::Serial>::value)
+      return 0;
+#endif
+#if defined( KOKKOS_ENABLE_OPENMP )
+    if(std::is_same<exec_space, Kokkos::OpenMP>::value)
+      return Kokkos::OpenMP::impl_hardware_thread_id();
+#endif
+#if defined( KOKKOS_ENABLE_THREADS )
+    if(std::is_same<exec_space, Kokkos::Threads>::value)
+      return Kokkos::Threads::impl_hardware_thread_id();
+#endif
+    return row_index;
+  }
     
     //reduces to find total number of rows that were too large
     KOKKOS_INLINE_FUNCTION
@@ -625,11 +642,7 @@ struct functorHashmapAccumulator
         volatile ordinal_t* ptr_temp = nullptr;
         ordinal_t t_id = rem_idx;
         //need to use the hardware thread id if the pool type is OneThread2OneChunk
-        if(std::is_same<exec_space, Kokkos::OpenMP>::value){
-            t_id = Kokkos::OpenMP::impl_hardware_thread_id();
-        } else if(std::is_same<exec_space, Kokkos::Serial>::value){
-            t_id = 0;
-        }
+        t_id = get_thread_id(t_id);
         while (nullptr == ptr_temp)
         {
             ptr_temp = (volatile ordinal_t*)(_memory_pool.allocate_chunk(t_id));
