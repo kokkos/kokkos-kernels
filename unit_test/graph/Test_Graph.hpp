@@ -5,6 +5,7 @@
 #include "Test_Graph_graph_color_distance2.hpp"
 #include "Test_Graph_graph_color.hpp"
 #include "Test_Graph_mis2.hpp"
+#include "Test_Graph_coarsen.hpp"
 #include "Test_Graph_rcm.hpp"
 
 #endif  // TEST_GRAPH_HPP

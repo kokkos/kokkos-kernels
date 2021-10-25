@@ -42,9 +42,10 @@
 //@HEADER
 */
 
-//#include <gtest/gtest.h>
+#include <gtest/gtest.h>
 #include <random>
 #include <set>
+#include <list>
 #include <Kokkos_Core.hpp>
 
 #include "KokkosGraph_CoarsenConstruct.hpp"
@@ -78,8 +79,8 @@ bool verify_coarsening(typename coarsener_t::coarse_level_triple fine_l, typenam
     bool correct = true;
     crsMat A = fine_l.mtx;
     crsMat coarse_A = coarse_l.mtx;
-    typename c_rowmap_t::HostMirror f_rowmap = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.graph.row_map);
-    typename c_rowmap_t::HostMirror c_rowmap = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), coarse_A.graph.row_map);
+    auto f_rowmap = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.graph.row_map);
+    auto c_rowmap = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), coarse_A.graph.row_map);
     typename c_entries_t::HostMirror f_entries = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.graph.entries);
     typename c_entries_t::HostMirror vcmap = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), coarse_l.interp_mtx.graph.entries);
     typename svt::HostMirror few = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.values);
@@ -97,12 +98,10 @@ bool verify_coarsening(typename coarsener_t::coarse_level_triple fine_l, typenam
     //number of columns in interpolation matrix should give number of rows in coarse matrix
     if(coarse_l.interp_mtx.numCols() != coarse_l.mtx.numRows()){
         correct = false;
-        printf("Incorrect number of rows in coarse graph\n");
     }
     //sum of vertex weights in each graph should be equal
     if(f_size != c_size){
         correct = false;
-        printf("Vertex weight sums don't match: %u vs %u\n", f_size, c_size);
     }
     typename svt::value_type f_edges = 0, c_edges = 0;
     for(ordinal_t i = 0; i < A.numRows(); i++){
@@ -121,7 +120,6 @@ bool verify_coarsening(typename coarsener_t::coarse_level_triple fine_l, typenam
     //sum of inter-aggregate edges in fine graph should be sum of all edges in coarse graph
     if(f_edges != c_edges){
         correct = false;
-        printf("Inter aggregate edges don't match: %u vs %u\n", f_edges, c_edges);
     }
     return correct;
 }
@@ -135,7 +133,7 @@ bool verify_is_graph(crsMat A){
     using entries_t   = typename c_entries_t::non_const_type;
     using ordinal_t = typename entries_t::value_type;
     using edge_t = typename rowmap_t::value_type;
-    typename c_rowmap_t::HostMirror rowmap = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.graph.row_map);
+    auto rowmap = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.graph.row_map);
     typename c_entries_t::HostMirror entries = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.graph.entries);
     
     bool correct = true;
@@ -146,12 +144,10 @@ bool verify_is_graph(crsMat A){
             //A should not contain out-of-bounds columns
             if(v >= A.numRows()){
                 correct = false;
-                printf("out of bounds column!\n");
             }
             //Each row should not contain duplicate columns
             if(adjset.find(v) != adjset.end()){
                 correct = false;
-                printf("Duplicate entry in row %u; entry is %u!\n", i, v);
             }
             adjset.insert(v);
         }
@@ -290,17 +286,11 @@ void test_multilevel_coarsen_grid(){
     coarse++;
     while(coarse != levels.end()){
         bool correct_aggregator = verify_aggregator(fine->mtx, coarse->interp_mtx);
-        if(!correct_aggregator){
-            printf("Aggregator is invalid\n");
-        }
+        EXPECT_TRUE(correct_aggregator) << "Multilevel coarsening produced invalid aggregator on level " << coarse->level - 1;
         bool correct_graph = verify_is_graph<crsMat>(coarse->mtx);
         bool correct_coarsening = verify_coarsening<coarsener_t>(*fine, *coarse);
-        if(!correct_graph){
-            printf("Coarse graph is invalid!\n");
-        }
-        if(!correct_coarsening){
-            printf("Coarsening is incorrect\n");
-        }
+        EXPECT_TRUE(correct_aggregator) << "Multilevel coarsening produced invalid graph on level " << coarse->level;
+        EXPECT_TRUE(correct_aggregator) << "Multilevel coarsening produced invalid coarsening on level " << coarse->level;
         fine++;
         coarse++;
     }
@@ -336,31 +326,26 @@ void test_coarsen_grid(){
         coarsener_t::Hybrid/*, coarsener_t::Spgemm, coarsener_t::Spgemm_transpose_first*/ };
     for(auto h : heuristics){
       coarsener.set_heuristic(h);
-      printf("testing heuristic: %i\n", static_cast<int>(h));
       crsMat aggregator = coarsener.generate_coarse_mapping(fine_A.mtx, true);
       bool correct_aggregator = verify_aggregator(fine_A.mtx, aggregator);
-      if(!correct_aggregator){
-          printf("Aggregator is invalid\n");
-      }
+      EXPECT_TRUE(correct_aggregator) << "Aggregation heuristic " << static_cast<int>(h)
+          << " produced invalid aggregator.";
       for(auto b : builders){
           coarsener.set_deduplication_method(b);
-          printf("testing dedupe method: %i\n", static_cast<int>(b));
           clt coarse_A = coarsener.build_coarse_graph(fine_A, aggregator);
           bool correct_graph = verify_is_graph<crsMat>(coarse_A.mtx);
           bool correct_coarsening = verify_coarsening<coarsener_t>(fine_A, coarse_A);
-          if(!correct_graph){
-              printf("Coarse graph is invalid!\n");
-          }
-          if(!correct_coarsening){
-              printf("Coarsening is incorrect\n");
-          }
+          EXPECT_TRUE(correct_graph) << "Coarsening with dedupe method " << static_cast<int>(b)
+              << " produced invalid graph with aggregation heuristic " << static_cast<int>(h) << ".";
+          EXPECT_TRUE(correct_coarsening) << "Coarsening with dedupe method " << static_cast<int>(b)
+              << " produced invalid coarsening with aggregation heuristic " << static_cast<int>(h) << ".";
       }
     }
 }
 
 template <typename scalar, typename lno_t, typename size_type,
           typename device>
-void test_coarsen(lno_t numVerts, size_type nnz, lno_t bandwidth,
+void test_coarsen_random(lno_t numVerts, size_type nnz, lno_t bandwidth,
                lno_t row_size_variance) {
   using execution_space = typename device::execution_space;
   using crsMat =
@@ -402,84 +387,72 @@ void test_coarsen(lno_t numVerts, size_type nnz, lno_t bandwidth,
       coarsener_t::Hybrid/*, coarsener_t::Spgemm, coarsener_t::Spgemm_transpose_first*/ };
   for(auto h : heuristics){
     coarsener.set_heuristic(h);
-    printf("testing heuristic: %i\n", static_cast<int>(h));
     crsMat aggregator = coarsener.generate_coarse_mapping(fine_A.mtx, true);
     bool correct_aggregator = verify_aggregator(fine_A.mtx, aggregator);
-    if(!correct_aggregator){
-        printf("Aggregator is invalid\n");
-    }
+    EXPECT_TRUE(correct_aggregator) << "Aggregation heuristic " << static_cast<int>(h)
+        << " produced invalid aggregator.";
     for(auto b : builders){
         coarsener.set_deduplication_method(b);
-        printf("testing dedupe method: %i\n", static_cast<int>(b));
         clt coarse_A = coarsener.build_coarse_graph(fine_A, aggregator);
         bool correct_graph = verify_is_graph<crsMat>(coarse_A.mtx);
         bool correct_coarsening = verify_coarsening<coarsener_t>(fine_A, coarse_A);
-        if(!correct_graph){
-            printf("Coarse graph is invalid!\n");
-        }
-        if(!correct_coarsening){
-            printf("Coarsening is incorrect\n");
-        }
+        EXPECT_TRUE(correct_graph) << "Coarsening with dedupe method " << static_cast<int>(b)
+            << " produced invalid graph with aggregation heuristic " << static_cast<int>(h) << ".";
+        EXPECT_TRUE(correct_coarsening) << "Coarsening with dedupe method " << static_cast<int>(b)
+            << " produced invalid coarsening with aggregation heuristic " << static_cast<int>(h) << ".";
     }
   }
-  //bool success = Test::verifyD2MIS<lno_t, size_type, decltype(rowmapHost),
-  //                                 decltype(entriesHost), decltype(misHost)>(
-  //    numVerts, rowmapHost, entriesHost, misHost);
-  //EXPECT_TRUE(success) << "Dist-2 MIS (algo " << (int)algo
-  //                     << ") produced invalid set.";
 }
 
-//#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                                 \
-//  TEST_F(TestCategory,                                                                \
-//         graph##_##graph_mis2##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {         \
-//    test_mis2<SCALAR, ORDINAL, OFFSET, DEVICE>(5000, 5000 * 20, 1000, 10);            \
-//    test_mis2<SCALAR, ORDINAL, OFFSET, DEVICE>(50, 50 * 10, 40, 10);                  \
-//    test_mis2<SCALAR, ORDINAL, OFFSET, DEVICE>(5, 5 * 3, 5, 0);                       \
-//  }                                                                                   \
-//  TEST_F(                                                                             \
-//      TestCategory,                                                                   \
-//      graph##_##graph_mis2_coarsening##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
-//    test_mis2_coarsening<SCALAR, ORDINAL, OFFSET, DEVICE>(5000, 5000 * 200,           \
-//                                                          2000, 10);                  \
-//    test_mis2_coarsening<SCALAR, ORDINAL, OFFSET, DEVICE>(5000, 5000 * 20,            \
-//                                                          1000, 10);                  \
-//    test_mis2_coarsening<SCALAR, ORDINAL, OFFSET, DEVICE>(50, 50 * 10, 40,            \
-//                                                          10);                        \
-//    test_mis2_coarsening<SCALAR, ORDINAL, OFFSET, DEVICE>(5, 5 * 3, 5, 0);            \
-//    test_mis2_coarsening_zero_rows<SCALAR, ORDINAL, OFFSET, DEVICE>();                \
-//  }
-//
-//// FIXME_SYCL
-//#ifndef KOKKOS_ENABLE_SYCL
-//#if defined(KOKKOSKERNELS_INST_DOUBLE)
-//#if (defined(KOKKOSKERNELS_INST_ORDINAL_INT) && \
-//     defined(KOKKOSKERNELS_INST_OFFSET_INT)) || \
-//    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
-//     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-//EXECUTE_TEST(double, int, int, TestExecSpace)
-//#endif
-//#endif
-//
-//#if (defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
-//     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||     \
-//    (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
-//     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-//EXECUTE_TEST(double, int64_t, int, TestExecSpace)
-//#endif
-//
-//#if (defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&    \
-//     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) || \
-//    (!defined(KOKKOSKERNELS_ETI_ONLY) &&           \
-//     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-//EXECUTE_TEST(double, int, size_t, TestExecSpace)
-//#endif
-//
-//#if (defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
-//     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||  \
-//    (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
-//     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-//EXECUTE_TEST(double, int64_t, size_t, TestExecSpace)
-//#endif
-//#endif
+#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                                 \
+  TEST_F(TestCategory,                                                                \
+         graph##_##random_graph_coarsen##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {         \
+    test_coarsen_random<SCALAR, ORDINAL, OFFSET, DEVICE>(5000, 5000 * 20, 1000, 10);            \
+    test_coarsen_random<SCALAR, ORDINAL, OFFSET, DEVICE>(50, 50 * 10, 40, 10);                  \
+    test_coarsen_random<SCALAR, ORDINAL, OFFSET, DEVICE>(5, 5 * 3, 5, 0);                       \
+  }                                                                                   \
+  TEST_F(                                                                             \
+      TestCategory,                                                                   \
+      graph##_##grid_graph_coarsen##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
+    test_coarsen_grid<SCALAR, ORDINAL, OFFSET, DEVICE>();                  \
+  } \
+  TEST_F(                                                                             \
+      TestCategory,                                                                   \
+      graph##_##grid_graph_multilevel_coarsen##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
+    test_multilevel_coarsen_grid<SCALAR, ORDINAL, OFFSET, DEVICE>();                  \
+  }
 
-//#undef EXECUTE_TEST
+// FIXME_SYCL
+#ifndef KOKKOS_ENABLE_SYCL
+#if defined(KOKKOSKERNELS_INST_DOUBLE)
+#if (defined(KOKKOSKERNELS_INST_ORDINAL_INT) && \
+     defined(KOKKOSKERNELS_INST_OFFSET_INT)) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+EXECUTE_TEST(double, int, int, TestExecSpace)
+#endif
+#endif
+
+#if (defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
+     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||     \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+EXECUTE_TEST(double, int64_t, int, TestExecSpace)
+#endif
+
+#if (defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&    \
+     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&           \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+EXECUTE_TEST(double, int, size_t, TestExecSpace)
+#endif
+
+#if (defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
+     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||  \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+EXECUTE_TEST(double, int64_t, size_t, TestExecSpace)
+#endif
+#endif
+
+#undef EXECUTE_TEST

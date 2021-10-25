@@ -49,6 +49,7 @@ public:
     }
     static constexpr ordinal_t ORD_MAX = get_null_val();
     static constexpr bool is_host_space = std::is_same<typename exec_space::memory_space, typename Kokkos::DefaultHostExecutionSpace::memory_space>::value;
+    static constexpr bool scal_eq_ord = std::is_same<ordinal_t, scalar_t>::value;
     // contains matrix and vertex weights corresponding to current level
     // interp matrix maps previous level to this level
     struct coarse_level_triple {
@@ -95,7 +96,6 @@ bool should_use_dyn(const ordinal_t n, const Kokkos::View<const edge_offset_t*, 
                 min = size;
             }
         }
-        printf("min size: %i, max size: %i\n", min, max);
         if(n > 500000 && max > 5*min){
             use_dyn = true;
         }
@@ -584,6 +584,7 @@ struct functorHashmapAccumulator
     uniform_memory_pool_t _memory_pool;
     const ordinal_t _hash_size;
     const ordinal_t _max_hash_entries;
+    bool use_out;
 
     functorHashmapAccumulator(edge_view_t row_map,
         vtx_view_t entries_in, vtx_view_t entries_out,
@@ -592,7 +593,8 @@ struct functorHashmapAccumulator
         uniform_memory_pool_t memory_pool,
         const ordinal_t hash_size,
         const ordinal_t max_hash_entries,
-        vtx_view_t remaining)
+        vtx_view_t remaining,
+        bool use_out)
         : row_map(row_map)
         , entries_in(entries_in)
         , entries_out(entries_out)
@@ -602,7 +604,8 @@ struct functorHashmapAccumulator
         , _memory_pool(memory_pool)
         , _hash_size(hash_size)
         , _max_hash_entries(max_hash_entries)
-        , remaining(remaining){}
+        , remaining(remaining)
+        , use_out(use_out) {}
     
     //reduces to find total number of rows that were too large
     KOKKOS_INLINE_FUNCTION
@@ -768,7 +771,12 @@ struct functorHashmapAccumulator
         ptr_temp += _max_hash_entries;
 
         // Set pointer to hash values
-        scalar_t* values = (scalar_t*) (ptr_temp);
+        scalar_t* values;
+        if(use_out){
+            values = (scalar_t*) wgts_out.data() + row_map(idx);
+        } else {
+            values = (scalar_t*) (ptr_temp);
+        }
         
         KokkosKernels::Experimental::HashmapAccumulator<hash_size_type, hash_key_type, hash_value_type, KokkosKernels::Experimental::HashOpType::bitwiseAnd> 
             hash_map(_hash_size, hash_func_pow2, hash_begins, hash_nexts, keys, values);
@@ -841,7 +849,12 @@ struct functorHashmapAccumulator
                 } else {
                     ordinal_t write_at = row_map(idx) + Kokkos::atomic_fetch_add(write_idx, 1);
                     entries_out(write_at) = key;
-                    wgts_out(write_at) = val;
+                    if(use_out){
+                        //reuse wgts_in as scratch space because we are overwriting working memory if we use wgts_out
+                        wgts_in(write_at) = val;
+                    } else {
+                        wgts_out(write_at) = val;
+                    }
                     key = keys[j];
                     val = values[j];
                 }
@@ -852,11 +865,21 @@ struct functorHashmapAccumulator
             //write out the final entry in linked list
             ordinal_t write_at = row_map(idx) + Kokkos::atomic_fetch_add(write_idx, 1);
             entries_out(write_at) = key;
-            wgts_out(write_at) = val;
+            if(use_out){
+                //reuse wgts_in as scratch space because we are overwriting working memory if we use wgts_out
+                wgts_in(write_at) = val;
+            } else {
+                wgts_out(write_at) = val;
+            }
             hash_begins[dirty_hash] = ORD_MAX;
         });
         thread.team_barrier();
-
+        //need to copy from wgts_in to wgts_out if we used wgts_in as scratch space
+        if(use_out){
+            Kokkos::parallel_for(Kokkos::ThreadVectorRange(thread, (ordinal_t) 0, *write_idx), [&] (const ordinal_t& i) {
+                wgts_out(row_map(idx) + i) = wgts_in(row_map(idx) + i);
+            });
+        }
 
         Kokkos::single(Kokkos::PerTeam(thread), [&]() {
         //used_hash_size gives the number of entries, used_hash_count gives the number of dirty hash values (I think)
@@ -904,7 +927,7 @@ void getHashmapSizeAndCount(const ordinal_t n, const ordinal_t remaining_count, 
     // Determine memory chunk size for UniformMemoryPool
     mem_chunk_size = hash_size;      // for hash indices
     mem_chunk_size += hash_size;            // for hash begins
-    mem_chunk_size += 3*max_entries;     // for hash nexts, keys, and values
+    mem_chunk_size += 3*max_entries;     // for hash nexts, keys, and values (unless scalar_t != ordinal_t, in which case memory is unused)
     mem_chunk_size += 10; // for metadata
     mem_chunk_count = exec_space::concurrency();
     if(mem_chunk_count > remaining_count){
@@ -940,6 +963,11 @@ void deduplicate_graph(const ordinal_t n, const bool use_team,
         });
         //deduplicate rows in phases starting with the small degree rows so we can use small hashmaps
         //increase the hashmap size each phase to the necessary size for twice the average of remaining rows
+        wgt_view_t wgt_out = wgt_by_source;
+        if(!scal_eq_ord && !is_host_space){
+            //only necessary if teams might be used
+            wgt_out = wgt_view_t("wgts out", wgt_by_source.extent(0));
+        }
         do {
             //determine size for hashmap
             ordinal_t hash_size, max_entries, mem_chunk_size, mem_chunk_count;
@@ -956,8 +984,9 @@ void deduplicate_graph(const ordinal_t n, const bool use_team,
             typedef typename KokkosKernels::Impl::UniformMemoryPool<exec_space, ordinal_t> uniform_memory_pool_t;
             uniform_memory_pool_t memory_pool(mem_chunk_count, mem_chunk_size, ORD_MAX, pool_type);
 
+
             functorHashmapAccumulator<uniform_memory_pool_t>
-                hashmapAccumulator(source_bucket_offset, dest_by_source, dest_by_source, wgt_by_source, wgt_by_source, edges_per_source, memory_pool, hash_size, max_entries, remaining);
+                hashmapAccumulator(source_bucket_offset, dest_by_source, dest_by_source, wgt_by_source, wgt_out, edges_per_source, memory_pool, hash_size, max_entries, remaining, !scal_eq_ord);
 
             ordinal_t old_remaining_count = remaining_count;
             if(!is_host_space && max_entries >= 128){
@@ -989,6 +1018,9 @@ void deduplicate_graph(const ordinal_t n, const bool use_team,
         Kokkos::parallel_reduce(policy_t(0, n), KOKKOS_LAMBDA(const ordinal_t i, edge_offset_t & sum){
             sum += edges_per_source(i);
         }, gc_nedges);
+        if(!scal_eq_ord && !is_host_space){
+            Kokkos::deep_copy(wgt_by_source, wgt_out);
+        }
     }
     else if (b == Sort) {
 
@@ -1012,13 +1044,18 @@ void deduplicate_graph(const ordinal_t n, const bool use_team,
         }
 
     } else if (b == Hybrid) {
+        wgt_view_t wgt_out = wgt_by_source;
+        if(!scal_eq_ord && !is_host_space){
+            //only necessary if teams might be used
+            wgt_out = wgt_view_t("wgts out", wgt_by_source.extent(0));
+        }
         ordinal_t limit = 128;
         // sort the (implicit) crs matrix, but only the low degree rows
         ordinal_t remaining_count = KokkosKernels::sort_low_degree_rows_crs_matrix<exec_space, edge_view_t, vtx_view_t, wgt_view_t>(source_bucket_offset, dest_by_source, wgt_by_source, limit);
         // combine adjacent entries that are equal
         {
             // no thread team version
-            functorDedupeLowDegreeAfterSort deduper(source_bucket_offset, dest_by_source, dest_by_source, wgt_by_source, wgt_by_source, edges_per_source, limit);
+            functorDedupeLowDegreeAfterSort deduper(source_bucket_offset, dest_by_source, dest_by_source, wgt_by_source, wgt_out, edges_per_source, limit);
             Kokkos::parallel_reduce("deduplicated sorted", policy_t(0, n), deduper, gc_nedges);
         }
         vtx_view_t remaining("remaining vtx", remaining_count);
@@ -1047,7 +1084,7 @@ void deduplicate_graph(const ordinal_t n, const bool use_team,
             uniform_memory_pool_t memory_pool(mem_chunk_count, mem_chunk_size, ORD_MAX, pool_type);
 
             functorHashmapAccumulator<uniform_memory_pool_t>
-                hashmapAccumulator(source_bucket_offset, dest_by_source, dest_by_source, wgt_by_source, wgt_by_source, edges_per_source, memory_pool, hash_size, max_entries, remaining);
+                hashmapAccumulator(source_bucket_offset, dest_by_source, dest_by_source, wgt_by_source, wgt_out, edges_per_source, memory_pool, hash_size, max_entries, remaining, !scal_eq_ord);
 
             ordinal_t old_remaining_count = remaining_count;
             if(!is_host_space && max_entries >= 128){
@@ -1076,6 +1113,9 @@ void deduplicate_graph(const ordinal_t n, const bool use_team,
         Kokkos::parallel_reduce(policy_t(0, n), KOKKOS_LAMBDA(const ordinal_t i, edge_offset_t & sum){
             sum += edges_per_source(i);
         }, gc_nedges);
+        if(!scal_eq_ord && !is_host_space){
+            Kokkos::deep_copy(wgt_by_source, wgt_out);
+        }
     }
 
 }
