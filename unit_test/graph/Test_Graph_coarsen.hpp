@@ -36,7 +36,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Brian Kelley (bmkelle@sandia.gov)
+// Questions? Contact Mike Gilbert (msg5334@psu.edu)
 //
 // ************************************************************************
 //@HEADER
