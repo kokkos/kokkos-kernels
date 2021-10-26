@@ -443,15 +443,15 @@ struct HashmapAccumulator {
 #if defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_TURING75) || \
     defined(KOKKOS_ARCH_AMPERE)
       // this is an issue on VOLTA because warps do not go in SIMD fashion
-      // anymore. while some thread might insert my_write_index into linked list,
-      // another thread in the warp might be reading keys in above loop. before
-      // inserting the new value in liked list -- which is done with atomic
-      // exchange below, we make sure that the linked is is complete my assigning
-      // the hash_next to current head. the head might be different when we do
-      // the atomic exchange. this would cause temporarily skipping a key in the
-      // linkedlist until hash_nexts is updated second time as below. but this is
-      // okay for spgemm, because no two keys will be inserted into hashmap at
-      // the same time, as rows have unique columns.
+      // anymore. while some thread might insert my_write_index into linked
+      // list, another thread in the warp might be reading keys in above loop.
+      // before inserting the new value in liked list -- which is done with
+      // atomic exchange below, we make sure that the linked is is complete my
+      // assigning the hash_next to current head. the head might be different
+      // when we do the atomic exchange. this would cause temporarily skipping a
+      // key in the linkedlist until hash_nexts is updated second time as below.
+      // but this is okay for spgemm, because no two keys will be inserted into
+      // hashmap at the same time, as rows have unique columns.
 
       // Neither the compiler nor the execution unit can re-order the line
       // directly below with the next line performing the atomic_exchange as the

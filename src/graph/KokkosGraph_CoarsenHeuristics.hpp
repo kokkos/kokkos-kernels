@@ -277,8 +277,8 @@ class coarsen_heuristics {
   part_view_t GOSH_clusters(const matrix_t& g) {
     // finds the central vertices for GOSH clusters
     // approximately this is a maximal independent set (if you pretend edges
-    // whose endpoints both exceed degree thresholds don't exist) IS vertices are
-    // preferred to be vertices with high degree, so it should be small
+    // whose endpoints both exceed degree thresholds don't exist) IS vertices
+    // are preferred to be vertices with high degree, so it should be small
 
     ordinal_t n = g.numRows();
 
@@ -925,8 +925,8 @@ class coarsen_heuristics {
                 ordinal_t max_ewt = 0;
                 // we have to iterate over the edges anyways because we need to
                 // check if any are unmatched! so instead of randomly choosing a
-                // heaviest edge, we instead use the reverse permutation order as
-                // the weight
+                // heaviest edge, we instead use the reverse permutation order
+                // as the weight
                 for (edge_offset_t j = g.graph.row_map(u);
                      j < g.graph.row_map(u + 1); j++) {
                   ordinal_t v = g.graph.entries(j);
