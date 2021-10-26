@@ -7,6 +7,7 @@
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 #include <rocsparse.h>
+#include "KokkosKernels_SparseUtils_rocsparse.hpp"
 
 void test_rocsparse_version() {
   // Print version
@@ -25,6 +26,35 @@ void test_rocsparse_version() {
   rocsparse_destroy_handle(handle);
 }
 
+// Check that the wrapper macro
+// detects error status correctly
+void test_rocsparse_safe_call() {
+  bool caught_exception = false;
+
+  rocsparse_status myStatus = rocsparse_status_success;
+  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(myStatus);
+
+  try {
+    myStatus = rocsparse_status_internal_error;
+    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(myStatus);
+  } catch (std::runtime_error& e) {
+    caught_exception = true;
+  }
+
+  EXPECT_TRUE(caught_exception == true);
+}
+
+// Check that we can create a handle
+// using the singleton class if it
+// fails it throws an error with the
+// KOKKOS_ROCBLAS_SAFE_CALL_IMPL macro
+void test_rocsparse_singleton() {
+  KokkosKernels::Impl::RocsparseSingleton& s =
+      KokkosKernels::Impl::RocsparseSingleton::singleton();
+}
+
 TEST_F(TestCategory, sparse_rocsparse_version) { test_rocsparse_version(); }
+TEST_F(TestCategory, sparse_rocsparse_safe_call) { test_rocsparse_safe_call(); }
+TEST_F(TestCategory, sparse_rocsparse_singleton) { test_rocsparse_singleton(); }
 
 #endif  // check for HIP and rocSPARSE
