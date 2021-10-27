@@ -1,11 +1,12 @@
 #ifndef KOKKOSKERNELS_CONFIG_H
 #define KOKKOSKERNELS_CONFIG_H
 
-
 /* Define Fortran mangle from Trilinos macro definition */
-#ifndef F77_BLAS_MANGLE                                                                                       
-# define F77_BLAS_MANGLE@F77_BLAS_MANGLE@                                                                     
-#endif 
+// clang-format off
+#ifndef F77_BLAS_MANGLE
+#define F77_BLAS_MANGLE@F77_BLAS_MANGLE@
+#endif
+// clang-format on
 
 /* Define if fortran blas 1 function can return complex type */
 #cmakedefine KOKKOSKERNELS_TPL_BLAS_RETURN_COMPLEX
@@ -21,7 +22,6 @@
    requires (a) header file(s) as well, and may use functions other
    than just BLAS and LAPACK functions.  */
 #cmakedefine HAVE_KOKKOSKERNELS_MKL
-
 
 #cmakedefine KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
 
@@ -60,7 +60,6 @@
 
 /* Whether to build kernels for memory space Kokkos::HostSpace */
 #cmakedefine KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE
-
 
 /* Whether to build kernels for scalar type double */
 #cmakedefine KOKKOSKERNELS_INST_DOUBLE
@@ -129,20 +128,17 @@
 #cmakedefine KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
 
 /* if MKL or ARMPL, BLAS is also defined */
-#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) ||\
+#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) || \
     defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
 #if !defined(KOKKOSKERNELS_ENABLE_TPL_BLAS)
 #define KOKKOSKERNELS_ENABLE_TPL_BLAS
 #endif
 #endif
 
-#if !defined(KOKKOS_ENABLE_CUDA) \
-  && !defined(KOKKOS_ENABLE_HIP) \
-  && !defined(KOKKOS_ENABLE_SYCL) \
-  && !defined(KOKKOS_ENABLE_OPENMPTARGET)
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && \
+    !defined(KOKKOS_ENABLE_SYCL) && !defined(KOKKOS_ENABLE_OPENMPTARGET)
 #define KOKKOSKERNELS_ENABLE_HOST_ONLY
 #endif
-
 
 /*
  * "Optimization level" for computational kernels in this subpackage.
@@ -151,11 +147,10 @@
  * mean both better performance overall, and more uniform performance
  * for corner cases.
  */
-#define KOKKOSLINALG_OPT_LEVEL @KokkosLinAlg_Opt_Level@
+#define KOKKOSLINALG_OPT_LEVEL @KokkosLinAlg_Opt_Level @
 
 #ifndef KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 #define KOKKOSKERNELS_IMPL_COMPILE_LIBRARY false
 #endif
 
-
-#endif // KOKKOSKERNELS_CONFIG_H
+#endif  // KOKKOSKERNELS_CONFIG_H
