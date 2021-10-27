@@ -79,8 +79,8 @@ struct RocsparseSingleton {
   static RocsparseSingleton& singleton();
 };
 
-} // namespace Impl
-} // namespace KokkosKernels
+}  // namespace Impl
+}  // namespace KokkosKernels
 #endif
 
 #endif  // KOKKOSKERNELS_TPL_HANDLES_DECL_HPP_

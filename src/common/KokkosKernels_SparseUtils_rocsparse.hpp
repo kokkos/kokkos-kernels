@@ -52,13 +52,14 @@ namespace KokkosSparse {
 namespace Impl {
 
 inline void rocsparse_internal_error_throw(rocsparse_status rocsparseStatus,
-                                          const char* name, const char* file,
-                                          const int line) {
+                                           const char* name, const char* file,
+                                           const int line) {
   std::ostringstream out;
   out << name << " error( ";
   switch (rocsparseStatus) {
     case rocsparse_status_invalid_handle:
-      out << "rocsparse_status_invalid_handle): handle not initialized, invalid or null.";
+      out << "rocsparse_status_invalid_handle): handle not initialized, "
+             "invalid or null.";
       break;
     case rocsparse_status_not_implemented:
       out << "rocsparse_status_not_implemented): function is not implemented.";
@@ -70,10 +71,12 @@ inline void rocsparse_internal_error_throw(rocsparse_status rocsparseStatus,
       out << "rocsparse_status_invalid_size): invalid size parameter.";
       break;
     case rocsparse_status_memory_error:
-      out << "rocsparse_status_memory_error): failed memory allocation, copy, dealloc.";
+      out << "rocsparse_status_memory_error): failed memory allocation, copy, "
+             "dealloc.";
       break;
     case rocsparse_status_internal_error:
-      out << "rocsparse_status_internal_error): other internal library failure.";
+      out << "rocsparse_status_internal_error): other internal library "
+             "failure.";
       break;
     case rocsparse_status_invalid_value:
       out << "rocsparse_status_invalid_value): invalid value parameter.";
@@ -85,7 +88,8 @@ inline void rocsparse_internal_error_throw(rocsparse_status rocsparseStatus,
       out << "rocsparse_status_zero_pivot): encountered zero pivot.";
       break;
     case rocsparse_status_not_initialized:
-      out << "rocsparse_status_not_initialized): descriptor has not been initialized.";
+      out << "rocsparse_status_not_initialized): descriptor has not been "
+             "initialized.";
       break;
     case rocsparse_status_type_mismatch:
       out << "rocsparse_status_type_mismatch): index types do not match.";
@@ -99,9 +103,9 @@ inline void rocsparse_internal_error_throw(rocsparse_status rocsparseStatus,
 }
 
 inline void rocsparse_internal_safe_call(rocsparse_status rocsparseStatus,
-                                        const char* name,
-                                        const char* file = nullptr,
-                                        const int line   = 0) {
+                                         const char* name,
+                                         const char* file = nullptr,
+                                         const int line   = 0) {
   if (rocsparse_status_success != rocsparseStatus) {
     rocsparse_internal_error_throw(rocsparseStatus, name, file, line);
   }
@@ -109,9 +113,9 @@ inline void rocsparse_internal_safe_call(rocsparse_status rocsparseStatus,
 
 // The macro below defines is the public interface for the safe cusparse calls.
 // The functions themselves are protected by impl namespace.
-#define KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(call)				\
+#define KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(call)                             \
   KokkosSparse::Impl::rocsparse_internal_safe_call(call, #call, __FILE__, \
-						   __LINE__)
+                                                   __LINE__)
 
 }  // namespace Impl
 

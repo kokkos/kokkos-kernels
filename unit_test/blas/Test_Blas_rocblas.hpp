@@ -45,7 +45,7 @@ void test_rocblas_safe_call() {
 void test_rocblas_singleton() {
   KokkosBlas::Impl::RocBlasSingleton& s =
       KokkosBlas::Impl::RocBlasSingleton::singleton();
-  (void) s;
+  (void)s;
 }
 
 TEST_F(TestCategory, blas_rocblas_version) { test_rocblas_version(); }

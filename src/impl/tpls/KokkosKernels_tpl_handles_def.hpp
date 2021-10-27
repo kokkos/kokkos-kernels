@@ -77,7 +77,9 @@ namespace Impl {
 RocsparseSingleton::RocsparseSingleton() {
   KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_handle(&rocsparseHandle));
 
-  Kokkos::push_finalize_hook([&]() { KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_destroy_handle(rocsparseHandle)); });
+  Kokkos::push_finalize_hook([&]() {
+    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_destroy_handle(rocsparseHandle));
+  });
 }
 
 RocsparseSingleton& RocsparseSingleton::singleton() {
@@ -85,8 +87,8 @@ RocsparseSingleton& RocsparseSingleton::singleton() {
   return s;
 }
 
-}
-}
-#endif // KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+}  // namespace Impl
+}  // namespace KokkosKernels
+#endif  // KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
 
 #endif  // KOKKOSKERNELS_TPL_HANDLES_DEF_HPP_
