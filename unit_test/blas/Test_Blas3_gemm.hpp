@@ -59,6 +59,62 @@ struct gemm_VanillaGEMM {
   }
 };
 
+template <class ViewTypeA, class ViewTypeB, class ViewTypeC>
+void build_matrices(const int M, const int N, const int K,
+                    const typename ViewTypeA::value_type alpha, ViewTypeA& A,
+                    ViewTypeB& B, const typename ViewTypeA::value_type beta,
+                    ViewTypeC& C, ViewTypeC& Cref) {
+  using execution_space = TestExecSpace;
+  using ScalarA         = typename ViewTypeA::non_const_value_type;
+  using ScalarB         = typename ViewTypeB::non_const_value_type;
+  using ScalarC         = typename ViewTypeC::non_const_value_type;
+
+  A    = ViewTypeA("A", M, K);
+  B    = ViewTypeB("B", K, N);
+  C    = ViewTypeC("C", M, N);
+  Cref = ViewTypeC("Cref", M, N);
+
+  // (SA 11 Dec 2019) Max (previously: 10) increased to detect the bug in
+  // Trilinos issue #6418
+  const uint64_t seed = Kokkos::Impl::clock_tic();
+  Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(seed);
+  Kokkos::fill_random(A, rand_pool,
+                      Kokkos::rand<typename Kokkos::Random_XorShift64_Pool<
+                                       execution_space>::generator_type,
+                                   ScalarA>::max());
+  Kokkos::fill_random(B, rand_pool,
+                      Kokkos::rand<typename Kokkos::Random_XorShift64_Pool<
+                                       execution_space>::generator_type,
+                                   ScalarB>::max());
+  Kokkos::fill_random(C, rand_pool,
+                      Kokkos::rand<typename Kokkos::Random_XorShift64_Pool<
+                                       execution_space>::generator_type,
+                                   ScalarC>::max());
+
+  Kokkos::deep_copy(Cref, C);
+  Kokkos::fence();
+
+  struct Test::gemm_VanillaGEMM<ViewTypeA, ViewTypeB, ViewTypeC,
+                                execution_space>
+      vgemm;
+  vgemm.A_t   = false;
+  vgemm.B_t   = false;
+  vgemm.A_c   = false;
+  vgemm.B_c   = false;
+  vgemm.N     = N;
+  vgemm.K     = K;
+  vgemm.A     = A;
+  vgemm.B     = B;
+  vgemm.C     = Cref;
+  vgemm.alpha = alpha;
+  vgemm.beta  = beta;
+
+  Kokkos::parallel_for("KokkosBlas::Test::gemm_VanillaGEMM",
+                       Kokkos::TeamPolicy<execution_space>(M, Kokkos::AUTO, 16),
+                       vgemm);
+  Kokkos::fence();
+}
+
 template <class ViewTypeC, class ExecutionSpace>
 struct DiffGEMM {
   int N;
@@ -110,7 +166,7 @@ void impl_test_gemm(const char* TA, const char* TB, int M, int N, int K,
   ViewTypeC C("C", M, N);
   ViewTypeC C2("C", M, N);
 
-  uint64_t seed = Kokkos::Impl::clock_tic();
+  const uint64_t seed = Kokkos::Impl::clock_tic();
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(seed);
 
   // (SA 11 Dec 2019) Max (previously: 10) increased to detect the bug in
@@ -176,6 +232,79 @@ void impl_test_gemm(const char* TA, const char* TB, int M, int N, int K,
     EXPECT_TRUE((diff_C_average < 1.05 * diff_C_expected));
   }
 }
+
+template <typename Scalar, typename Layout>
+void impl_test_stream_gemm(const int M, const int N, const int K,
+                           const Scalar alpha, const Scalar beta) {
+  using execution_space = TestExecSpace;
+  using ViewTypeA       = Kokkos::View<Scalar**, Layout, TestExecSpace>;
+  using ViewTypeB       = Kokkos::View<Scalar**, Layout, TestExecSpace>;
+  using ViewTypeC       = Kokkos::View<Scalar**, Layout, TestExecSpace>;
+  using ScalarC         = typename ViewTypeC::value_type;
+  using APT             = Kokkos::Details::ArithTraits<ScalarC>;
+  using mag_type        = typename APT::mag_type;
+
+  const char tA[]          = {"N"};
+  const char tB[]          = {"N"};
+  const double machine_eps = APT::epsilon();
+
+  ViewTypeA A1, A2;
+  ViewTypeB B1, B2;
+  ViewTypeC C1, C1ref, C2, C2ref;
+
+  Test::build_matrices(M, N, K, alpha, A1, B1, beta, C1, C1ref);
+  Test::build_matrices(N, M, K, alpha, A2, B2, beta, C2, C2ref);
+
+  auto instances =
+      Kokkos::Experimental::partition_space(execution_space(), 1, 1);
+  KokkosBlas::gemm(instances[0], tA, tB, alpha, A1, B1, beta, C1);
+  KokkosBlas::gemm(instances[1], tA, tB, alpha, A2, B2, beta, C2);
+  Kokkos::fence();
+
+  mag_type diff_C1 = 0;
+  struct Test::DiffGEMM<ViewTypeC, execution_space> diffgemm1;
+  diffgemm1.N  = N;
+  diffgemm1.C  = C1;
+  diffgemm1.C2 = C1ref;
+
+  Kokkos::parallel_reduce(
+      "KokkosBlas::Test::DiffGEMM1",
+      Kokkos::TeamPolicy<execution_space>(M, Kokkos::AUTO, 16), diffgemm1,
+      diff_C1);
+
+  mag_type diff_C2 = 0;
+  struct Test::DiffGEMM<ViewTypeC, execution_space> diffgemm2;
+  diffgemm2.N  = M;
+  diffgemm2.C  = C2;
+  diffgemm2.C2 = C2ref;
+
+  Kokkos::parallel_reduce(
+      "KokkosBlas::Test::DiffGEMM2",
+      Kokkos::TeamPolicy<execution_space>(N, Kokkos::AUTO, 16), diffgemm2,
+      diff_C2);
+  Kokkos::fence();
+
+  if (N != 0 && M != 0) {
+    int K_eff = (K == 0) ? 1 : K;
+    // Expected Result: Random Walk in the least significant bit (i.e. ~
+    // sqrt(K)*eps eps scales with the total sum and has a factor in it for the
+    // accuracy of the operations -> eps = K * 75 * machine_eps * 7
+    const double diff_C_expected =
+        1.0 * sqrt(K_eff) * K_eff * 75 * machine_eps * 7;
+
+    const double diff_C1_average = diff_C1 / (N * M);
+    if ((diff_C1_average >= 1.05 * diff_C_expected)) {
+      printf("Result: %e %e\n", diff_C1_average, diff_C_expected);
+    }
+    EXPECT_TRUE((diff_C1_average < 1.05 * diff_C_expected));
+
+    const double diff_C2_average = diff_C2 / (N * M);
+    if ((diff_C2_average >= 1.05 * diff_C_expected)) {
+      printf("Result: %e %e\n", diff_C2_average, diff_C_expected);
+    }
+    EXPECT_TRUE((diff_C2_average < 1.05 * diff_C_expected));
+  }
+}
 }  // namespace Test
 
 template <typename Scalar, typename Layout>
@@ -215,6 +344,12 @@ void test_gemm() {
       }
     }
   }
+  Test::impl_test_stream_gemm<Scalar, Layout>(53, 42, 17, 4.5,
+                                              3.0);  // General code path
+  Test::impl_test_stream_gemm<Scalar, Layout>(
+      13, 1, 17, 4.5, 3.0);  // gemv based gemm code path
+  Test::impl_test_stream_gemm<Scalar, Layout>(7, 13, 17, 4.5,
+                                              3.0);  // dot based gemm code path
 }
 
 template <typename Scalar>

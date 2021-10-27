@@ -101,7 +101,8 @@ template <class AViewType, class XViewType, class YViewType,
           bool eti_spec_avail =
               gemv_eti_spec_avail<AViewType, XViewType, YViewType>::value>
 struct GEMV {
-  static void gemv(const char trans[],
+  static void gemv(const typename AViewType::execution_space& space,
+                   const char trans[],
                    typename AViewType::const_value_type& alpha,
                    const AViewType& A, const XViewType& x,
                    typename YViewType::const_value_type& beta,
@@ -130,11 +131,11 @@ struct GEMV {
     // Prefer int as the index type, but use a larger type if needed.
     if (numRows < static_cast<size_type>(INT_MAX) &&
         numCols < static_cast<size_type>(INT_MAX)) {
-      generalGemvImpl<AViewType, XViewType, YViewType, int>(trans, alpha, A, x,
-                                                            beta, y);
+      generalGemvImpl<AViewType, XViewType, YViewType, int>(space, trans, alpha,
+                                                            A, x, beta, y);
     } else {
-      generalGemvImpl<AViewType, XViewType, YViewType, int64_t>(trans, alpha, A,
-                                                                x, beta, y);
+      generalGemvImpl<AViewType, XViewType, YViewType, int64_t>(
+          space, trans, alpha, A, x, beta, y);
     }
     Kokkos::Profiling::popRegion();
   }
