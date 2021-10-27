@@ -246,11 +246,12 @@ bool is_same_matrix(crsMat_t output_mat_actual, crsMat_t output_mat_reference) {
 }
 }  // namespace Test
 
+// Generate matrices and test all supported spgemm algorithms.
+// C := AB, where A is m*k, B is k*n, and C is m*n.
 template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
-void test_spgemm(lno_t numRows, lno_t aCols, lno_t numCols, size_type nnz,
-                 lno_t bandwidth, lno_t row_size_variance,
-                 bool oldInterface = false) {
+void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth,
+                 lno_t row_size_variance, bool oldInterface = false) {
   using namespace Test;
   // device::execution_space::initialize();
   // device::execution_space::print_configuration(std::cout);
@@ -264,9 +265,9 @@ void test_spgemm(lno_t numRows, lno_t aCols, lno_t numCols, size_type nnz,
   // Generate random compressed sparse row matrix. Randomly generated (non-zero)
   // values are stored in a 1-D (1 rank) array.
   crsMat_t A = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(
-      numRows, aCols, nnz, row_size_variance, bandwidth);
+      m, k, nnz, row_size_variance, bandwidth);
   crsMat_t B = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(
-      aCols, numCols, nnz, row_size_variance, bandwidth);
+      k, n, nnz, row_size_variance, bandwidth);
 
   crsMat_t output_mat2;
   if (oldInterface)
