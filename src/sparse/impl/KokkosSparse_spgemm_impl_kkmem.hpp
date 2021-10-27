@@ -1364,8 +1364,12 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
     if (KokkosKernels::Impl::kk_is_gpu_exec_space<
             typename HandleType::HandleExecSpace>()) {
       // then chose the best method and parameters.
-      size_type average_row_nnz = overall_nnz / this->a_row_cnt;
-      size_t average_row_flops  = original_overall_flops / this->a_row_cnt;
+      size_type average_row_nnz = 0;
+      size_t average_row_flops  = 0;
+      if (this->a_row_cnt > 0) {
+        average_row_nnz   = overall_nnz / this->a_row_cnt;
+        average_row_flops = original_overall_flops / this->a_row_cnt;
+      }
       // if we have very low flops per row, or our maximum number of nnz is
       // prett small, then we do row-base algorithm.
       if (SPGEMM_KK_LP != this->spgemm_algorithm &&

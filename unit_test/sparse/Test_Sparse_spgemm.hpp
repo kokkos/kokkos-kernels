@@ -248,8 +248,9 @@ bool is_same_matrix(crsMat_t output_mat_actual, crsMat_t output_mat_reference) {
 
 template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
-void test_spgemm(lno_t numRows, size_type nnz, lno_t bandwidth,
-                 lno_t row_size_variance, bool oldInterface = false) {
+void test_spgemm(lno_t numRows, lno_t aCols, lno_t numCols, size_type nnz,
+                 lno_t bandwidth, lno_t row_size_variance,
+                 bool oldInterface = false) {
   using namespace Test;
   // device::execution_space::initialize();
   // device::execution_space::print_configuration(std::cout);
@@ -260,22 +261,21 @@ void test_spgemm(lno_t numRows, size_type nnz, lno_t bandwidth,
   // typedef typename graph_t::entries_type::non_const_type   lno_nnz_view_t;
   // typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
 
-  lno_t numCols = numRows;
   // Generate random compressed sparse row matrix. Randomly generated (non-zero)
   // values are stored in a 1-D (1 rank) array.
-  crsMat_t input_mat = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(
-      numRows, numCols, nnz, row_size_variance, bandwidth);
+  crsMat_t A = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(
+      numRows, aCols, nnz, row_size_variance, bandwidth);
+  crsMat_t B = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(
+      aCols, numCols, nnz, row_size_variance, bandwidth);
 
   crsMat_t output_mat2;
   if (oldInterface)
-    run_spgemm_old_interface<crsMat_t, device>(input_mat, input_mat,
-                                               SPGEMM_DEBUG, output_mat2);
+    run_spgemm_old_interface<crsMat_t, device>(A, B, SPGEMM_DEBUG, output_mat2);
   else
-    run_spgemm<crsMat_t, device>(input_mat, input_mat, SPGEMM_DEBUG,
-                                 output_mat2);
+    run_spgemm<crsMat_t, device>(A, B, SPGEMM_DEBUG, output_mat2);
 
-  std::vector<SPGEMMAlgorithm> algorithms = {SPGEMM_KK_MEMORY, SPGEMM_KK_SPEED,
-                                             SPGEMM_KK_MEMSPEED};
+  std::vector<SPGEMMAlgorithm> algorithms = {
+      SPGEMM_KK, SPGEMM_KK_MEMORY, SPGEMM_KK_SPEED, SPGEMM_KK_MEMSPEED};
 
 #ifdef HAVE_KOKKOSKERNELS_MKL
   algorithms.push_back(SPGEMM_MKL);
@@ -309,7 +309,7 @@ void test_spgemm(lno_t numRows, size_type nnz, lno_t bandwidth,
         }
         // if size_type is larger than int, mkl casts it to int.
         // it will fail if casting cause overflow.
-        if (input_mat.values.extent(0) > max_integer) {
+        if (A.values.extent(0) > max_integer) {
           is_expected_to_fail = true;
         }
 
@@ -333,11 +333,10 @@ void test_spgemm(lno_t numRows, size_type nnz, lno_t bandwidth,
     int res     = 0;
     try {
       if (oldInterface)
-        res = run_spgemm_old_interface<crsMat_t, device>(
-            input_mat, input_mat, spgemm_algorithm, output_mat);
+        res = run_spgemm_old_interface<crsMat_t, device>(A, B, spgemm_algorithm,
+                                                         output_mat);
       else
-        res = run_spgemm<crsMat_t, device>(input_mat, input_mat,
-                                           spgemm_algorithm, output_mat);
+        res = run_spgemm<crsMat_t, device>(A, B, spgemm_algorithm, output_mat);
     } catch (const char *message) {
       EXPECT_TRUE(is_expected_to_fail) << algo;
       failed = true;
@@ -433,14 +432,20 @@ void test_issue402() {
       << "KKMEM still has issue 402 bug; C=AA' is incorrect!\n";
 }
 
-#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                         \
-  TEST_F(TestCategory,                                                        \
-         sparse##_##spgemm##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {    \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10000, 10000 * 20, 500, 10); \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 0, 10, 10);               \
-    test_issue402<SCALAR, ORDINAL, OFFSET, DEVICE>();                         \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10000, 10000 * 20, 500, 10,  \
-                                                 true);                       \
+#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                          \
+  TEST_F(TestCategory,                                                         \
+         sparse##_##spgemm##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {     \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10000, 10000, 10000,          \
+                                                 10000 * 20, 500, 10, false);  \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10000, 10000, 10000,          \
+                                                 10000 * 20, 500, 10, true);   \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 0, 0, 0, 10, 10, false);   \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 0, 0, 0, 10, 10, true);    \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 12, 5, 0, 10, 0, false);   \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 12, 5, 0, 10, 0, true);    \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 0, 0, 10, 10, false); \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 0, 0, 10, 10, true);  \
+    test_issue402<SCALAR, ORDINAL, OFFSET, DEVICE>();                          \
   }
 
 // test_spgemm<SCALAR,ORDINAL,OFFSET,DEVICE>(50000, 50000 * 30, 100, 10);
