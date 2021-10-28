@@ -123,8 +123,8 @@ class BatchedDblBufGemm {
     // TODO: check these expressions for all tile_m, tile_n, tile_k in Z+.
     constexpr int reg_m    = TILE_M / TILE_K;
     constexpr int reg_n    = TILE_N / TILE_K + 2 * !!(TILE_N % TILE_K);
-    constexpr int stride_m = TILE_K;
-    constexpr int stride_n = TILE_N / reg_n;
+    constexpr int stride_m = 1;
+    constexpr int stride_n = 1;
     using functor_type = Functor<member_type, reg_m, reg_n, stride_m, stride_n>;
 
     functor_type functor(*this, __A, __B, __C, TILE_M, TILE_N, TILE_K);
@@ -142,8 +142,8 @@ class BatchedDblBufGemm {
     // Each team solves a single tile. Within each tile, the team solves
     // all __n_tile_k_tiles one at a time.
     size_t league_size = __c_batch_size * functor.get_n_sub_tiles();
-    int team_size      = stride_m;
-    int vector_len     = stride_n;
+    int team_size      = TILE_K;
+    int vector_len     = TILE_N / reg_n;
 
     const int max_team_size =
         policy_type(league_size, Kokkos::AUTO, vector_len)
