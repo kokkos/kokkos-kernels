@@ -333,7 +333,7 @@ class BatchedDblBufGemm {
                                  __ei.__batch_layout_tag);
 
       // Allocate scratch memory buffers used for prefetching
-      view_type_2d_scratch svA_scr(member.team_scratch(0), __tile_k, __tile_m);
+      view_type_2d_scratch svA_scr(member.team_scratch(0), __tile_m, __tile_k);
       view_type_2d_scratch svB_scr(member.team_scratch(0), __tile_k, __tile_n);
 
       // Here we populate scratch memory with one or more "k" tiles for every
@@ -368,14 +368,25 @@ class BatchedDblBufGemm {
 #pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
                   for (int i = 0; i < REG_M * STRIDE_M; i += STRIDE_M)
-                    svA_scr(vlane_id, thread_id + i) =
+                    svA_scr(thread_id EXPR, (vlane_id % 2) * REG_M + i) =
                         access_view_bounds_check<view_value_type>(
-                            svA, thread_offset + i, vlane_id,
-                            // svB, vlane_id, thread_offset + i,
+                            svA, thread_offset EXPR, (vlane_id % 2) * REG_M + i,
                             __ei.__bounds_check_tag);
                   // TODO: might be able to use local deep copy here.
                 });
           });
+      //      Kokkos::parallel_for(
+      //          Kokkos::TeamVectorRange(member, 0, (__tile_m / REG_M) *
+      //          __tile_k),
+      //          [&](const int vlane_id) {
+      //            for (int i = 0; i < REG_M * STRIDE_M; i += STRIDE_M) {
+      //              svA_scr(vlane_id / __tile_k, vlane_id / REG_M + i) =
+      //                  access_view_bounds_check<view_value_type>(
+      //                      svA, vlane_id / __tile_m + start_m, vlane_id /
+      //                      REG_M + i,
+      //                      __ei.__bounds_check_tag);
+      //            }
+      //          });
 
       // Check whether we have a partial tile
       unsigned partial_tile_k = __k - (__n_tile_k_tiles * __tile_k);
