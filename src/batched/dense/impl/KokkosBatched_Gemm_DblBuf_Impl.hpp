@@ -339,27 +339,22 @@ class BatchedDblBufGemm {
       // Here we populate scratch memory with one or more "k" tiles for every
       // thread of the team!
       Kokkos::parallel_for(
-          Kokkos::TeamThreadRange(member, 0, __tile_n / REG_N),
+          Kokkos::TeamThreadRange(member, 0, __tile_k),
           [&](const int &thread_id) {
             auto thread_offset = thread_id + start_n;
             Kokkos::parallel_for(
-                Kokkos::ThreadVectorRange(member, 0, __tile_k),
+                Kokkos::ThreadVectorRange(member, 0, __tile_n / REG_N),
                 [&](const int &vlane_id) {
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
                   for (int i = 0; i < REG_N * STRIDE_N; i += STRIDE_N)
-                    svB_scr(vlane_id, thread_id + i) =
+                    svB_scr(thread_id, vlane_id * REG_N + i) =
                         access_view_bounds_check<view_value_type>(
-                            svB, vlane_id, thread_offset + i,
+                            svB, thread_offset, vlane_id * REG_N + i,
                             __ei.__bounds_check_tag);
-                  // TODO: Use LayoutLeft here for contiguous access across
-                  // vlanes??
-                  //   or change indexing like this:
-                  //   access_view_bounds_check<view_value_type>(
-                  //                            svB, i, thread_offset +
-                  //                            vlane_id,
-                  //                            __ei.__bounds_check_tag);
+                  // TODO: use svB_scr(thread_id + i, vlane_id) to stride
+                  // accesses to shared memory
                 });
           });
       Kokkos::parallel_for(
