@@ -262,31 +262,35 @@ class BatchedDblBufGemm {
                            view_value_type reg_c[REG_M][REG_N],
                            view_type_2d_scratch &svA_scr,
                            view_type_2d_scratch &svB_scr) const {
+      // view_type_2d_scratch svA_scr(member.team_scratch(0), __tile_m,
+      // __tile_k); view_type_2d_scratch svB_scr(member.team_scratch(0),
+      // __tile_k, __tile_n);
       Kokkos::parallel_for(
           Kokkos::TeamThreadRange(member, 0, tile_m / REG_M),
           [&](const int &thread_id) {
+            auto thread_offset = thread_id * REG_M;
             Kokkos::parallel_for(
                 Kokkos::ThreadVectorRange(member, 0, tile_n / REG_N),
                 [&](const int &vlane_id) {
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
-                  for (unsigned k = 0; k < nk;
-                       ++k) {  // TODO: would have to invert this for
-                               // threadVectorRange copy TODOs below
+        // TODO: would have to invert this for
+        // threadVectorRange copy TODOs below
+                  for (unsigned k = 0; k < nk; ++k) {
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
-                    for (int m = 0; m < REG_M;
-                         ++m)  // TODO: this could be a threadVectorRange copy
-                      reg_a[m] = svA_scr(k, thread_id + m * STRIDE_M);
+                    for (int m = 0; m < REG_M; ++m)
+                      // TODO: this could be a threadVectorRange copy
+                      reg_a[m] = svA_scr(thread_offset + m * STRIDE_M, k);
               // TODO: reg_a could be a thread shared buffer
 
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
                     for (int n = 0; n < REG_N; ++n)
-                      reg_b[n] = svB_scr(k, vlane_id + n * STRIDE_N);
+                      reg_b[n] = svB_scr(k, vlane_id * REG_N + n * STRIDE_N);
 
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
@@ -349,7 +353,7 @@ class BatchedDblBufGemm {
 #pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
                   for (int i = 0; i < REG_N * STRIDE_N; i += STRIDE_N)
-                    svB_scr(thread_id, vlane_id * REG_N + i) =
+                    svB_scr(thread_id + i, vlane_id * REG_N + i) =
                         access_view_bounds_check<view_value_type>(
                             svB, thread_offset, vlane_id * REG_N + i,
                             __ei.__bounds_check_tag);
@@ -360,7 +364,7 @@ class BatchedDblBufGemm {
       Kokkos::parallel_for(
           Kokkos::TeamThreadRange(member, 0, __tile_m / REG_M),
           [&](const int &thread_id) {
-            auto thread_offset = thread_id + start_m;
+            auto thread_offset = thread_id * REG_M + start_m;
             Kokkos::parallel_for(
                 Kokkos::ThreadVectorRange(member, 0, __tile_k),
                 [&](const int &vlane_id) {
@@ -368,25 +372,21 @@ class BatchedDblBufGemm {
 #pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
                   for (int i = 0; i < REG_M * STRIDE_M; i += STRIDE_M)
-                    svA_scr(thread_id EXPR, (vlane_id % 2) * REG_M + i) =
+                    svA_scr(thread_id * REG_M + (vlane_id / 2),
+                            (vlane_id % 2) * REG_M + i) =
                         access_view_bounds_check<view_value_type>(
-                            svA, thread_offset EXPR, (vlane_id % 2) * REG_M + i,
+                            svA, thread_offset + (vlane_id / 2),
+                            (vlane_id % 2) * REG_M + i,
                             __ei.__bounds_check_tag);
+                  //                    svA_scr(thread_id, (vlane_id % 2) *
+                  //                    REG_M + i) =
+                  //                        access_view_bounds_check<view_value_type>(
+                  //                            svA, thread_offset, (vlane_id %
+                  //                            2) * REG_M + i,
+                  //                            __ei.__bounds_check_tag);
                   // TODO: might be able to use local deep copy here.
                 });
           });
-      //      Kokkos::parallel_for(
-      //          Kokkos::TeamVectorRange(member, 0, (__tile_m / REG_M) *
-      //          __tile_k),
-      //          [&](const int vlane_id) {
-      //            for (int i = 0; i < REG_M * STRIDE_M; i += STRIDE_M) {
-      //              svA_scr(vlane_id / __tile_k, vlane_id / REG_M + i) =
-      //                  access_view_bounds_check<view_value_type>(
-      //                      svA, vlane_id / __tile_m + start_m, vlane_id /
-      //                      REG_M + i,
-      //                      __ei.__bounds_check_tag);
-      //            }
-      //          });
 
       // Check whether we have a partial tile
       unsigned partial_tile_k = __k - (__n_tile_k_tiles * __tile_k);
@@ -407,11 +407,11 @@ class BatchedDblBufGemm {
         // Each thread has its own copy of prefetch_reg_b. TeamThreadRange runs
         // over all threads in the team.
         Kokkos::parallel_for(
-            Kokkos::TeamThreadRange(member, 0, __tile_n / REG_N),
+            Kokkos::TeamThreadRange(member, 0, __tile_k),
             [&](const int &thread_id) {
               auto thread_offset = thread_id + start_n;
               Kokkos::parallel_for(
-                  Kokkos::ThreadVectorRange(member, 0, __tile_k),
+                  Kokkos::ThreadVectorRange(member, 0, __tile_n / REG_N),
                   [&](const int &vlane_id) {
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
@@ -419,9 +419,9 @@ class BatchedDblBufGemm {
                     for (int i = 0; i < REG_N; ++i)
                       prefetch_reg_b[i] =
                           access_view_bounds_check<view_value_type>(
-                              svB, vlane_id + k_tile_offset,
-                              thread_offset + i * STRIDE_N,
-                              __ei.__bounds_check_tag);
+                              svB, thread_offset + k_tile_offset,
+                              vlane_id * REG_N + i, __ei.__bounds_check_tag);
+                    // TODO: use svB_scr(thread_id + i, vlane_id) to stride
                   });
             });
 
@@ -431,7 +431,7 @@ class BatchedDblBufGemm {
         Kokkos::parallel_for(
             Kokkos::TeamThreadRange(member, 0, __tile_m / REG_M),
             [&](const int &thread_id) {
-              auto thread_offset = thread_id + start_m;
+              auto thread_offset = thread_id * REG_M + start_m;
               Kokkos::parallel_for(
                   Kokkos::ThreadVectorRange(member, 0, __tile_k),
                   [&](const int &vlane_id) {
@@ -441,8 +441,8 @@ class BatchedDblBufGemm {
                     for (int i = 0; i < REG_M; ++i)
                       prefetch_reg_a[i] =
                           access_view_bounds_check<view_value_type>(
-                              svA, thread_offset + i * STRIDE_M,
-                              vlane_id + k_tile_offset,
+                              svA, thread_offset + (vlane_id / 2),
+                              (vlane_id % 2) * REG_M + i + k_tile_offset,
                               __ei.__bounds_check_tag);
                   });
             });
@@ -458,17 +458,17 @@ class BatchedDblBufGemm {
         // populate shmem from prefetch registers. Each thread has its own copy
         // of prefetch_reg_a.
         Kokkos::parallel_for(
-            Kokkos::TeamThreadRange(member, 0, __tile_n / REG_N),
+            Kokkos::TeamThreadRange(member, 0, __tile_k),
             [&](const int &thread_id) {
               auto thread_offset = thread_id;
               Kokkos::parallel_for(
-                  Kokkos::ThreadVectorRange(member, 0, __tile_k),
+                  Kokkos::ThreadVectorRange(member, 0, __tile_n / REG_N),
                   [&](const int &vlane_id) {
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
                     for (int i = 0; i < REG_N; ++i)
-                      svB_scr(vlane_id, thread_offset + i * STRIDE_N) =
+                      svB_scr(thread_id, vlane_id * REG_N + i) =
                           prefetch_reg_b[i];
                   });
             });
@@ -478,7 +478,7 @@ class BatchedDblBufGemm {
         Kokkos::parallel_for(
             Kokkos::TeamThreadRange(member, 0, __tile_m / REG_M),
             [&](const int &thread_id) {
-              auto thread_offset = thread_id;
+              auto thread_offset = thread_id * REG_M;
               Kokkos::parallel_for(
                   Kokkos::ThreadVectorRange(member, 0, __tile_k),
                   [&](const int &vlane_id) {
@@ -486,8 +486,8 @@ class BatchedDblBufGemm {
 #pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
                     for (int i = 0; i < REG_M; ++i)
-                      svA_scr(vlane_id, thread_offset + i * STRIDE_M) =
-                          prefetch_reg_a[i];
+                      svA_scr(thread_offset + (vlane_id / 2),
+                              (vlane_id % 2) * REG_M + i) = prefetch_reg_a[i];
                   });
             });
 
@@ -507,11 +507,11 @@ class BatchedDblBufGemm {
         Kokkos::parallel_for(
             Kokkos::TeamThreadRange(member, 0, __tile_m / REG_M),
             [&](const int &thread_id) {
-              auto thread_m_offset = thread_id + start_m;
+              auto thread_m_offset = thread_id * REG_M + start_m;
               Kokkos::parallel_for(
                   Kokkos::ThreadVectorRange(member, 0, __tile_n / REG_N),
                   [&](const int &vlane_id) {
-                    auto thread_n_offset = vlane_id + start_n;
+                    auto thread_n_offset = vlane_id * REG_N + start_n;
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
@@ -533,11 +533,11 @@ class BatchedDblBufGemm {
         Kokkos::parallel_for(
             Kokkos::TeamThreadRange(member, 0, __tile_m / REG_M),
             [&](const int &thread_id) {
-              auto thread_m_offset = thread_id + start_m;
+              auto thread_m_offset = thread_id * REG_M + start_m;
               Kokkos::parallel_for(
                   Kokkos::ThreadVectorRange(member, 0, __tile_n / REG_N),
                   [&](const int &vlane_id) {
-                    auto thread_n_offset = vlane_id + start_n;
+                    auto thread_n_offset = vlane_id * REG_N + start_n;
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
