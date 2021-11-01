@@ -547,7 +547,11 @@ class SPGEMMHandle {
 
 #if defined(KOKKOS_ENABLE_CUDA)
     if (std::is_same<Kokkos::Cuda, ExecutionSpace>::value) {
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
       this->algorithm_type = SPGEMM_CUSPARSE;
+#else
+      this->algorithm_type = SPGEMM_KK;
+#endif
 #ifdef VERBOSE
       std::cout << "Cuda Execution Space, Default Algorithm: SPGEMM_CUSPARSE"
                 << std::endl;

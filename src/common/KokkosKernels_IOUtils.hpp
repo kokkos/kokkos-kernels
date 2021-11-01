@@ -103,6 +103,12 @@ void kk_sparseMatrix_generate(OrdinalType nrows, OrdinalType ncols,
     int varianz       = (1.0 * rand() / RAND_MAX - 0.5) * row_size_variance;
     int numRowEntries = elements_per_row + varianz;
     if (numRowEntries < 0) numRowEntries = 0;
+    // Clamping numRowEntries above accomplishes 2 things:
+    //  - If ncols is 0, numRowEntries will also be 0
+    //  - With numRowEntries at most 2/3 the number of columns, in the worst
+    //  case
+    //    90% of insertions will succeed after 6 tries
+    if (numRowEntries > 0.66 * ncols) numRowEntries = 0.66 * ncols;
     rowPtr[row + 1] = rowPtr[row] + numRowEntries;
   }
   nnz    = rowPtr[nrows];

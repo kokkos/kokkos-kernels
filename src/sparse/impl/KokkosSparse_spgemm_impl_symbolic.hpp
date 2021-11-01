@@ -1804,9 +1804,11 @@ void KokkosSPGEMM<
 #else
       size_t original_overall_flops =
           this->handle->get_spgemm_handle()->compressed_overall_flops;
-      size_t estimate_max_nnz =
-          (sqrt(maxNumRoughNonzeros) * sqrt(original_overall_flops / m)) /
-          estimate_compress;
+      size_t estimate_max_nnz = 0;
+      if (m > 0)
+        estimate_max_nnz =
+            (sqrt(maxNumRoughNonzeros) * sqrt(original_overall_flops / m)) /
+            estimate_compress;
       if (KOKKOSKERNELS_VERBOSE) {
         std::cout << "\t\t\testimate_max_nnz:" << estimate_max_nnz
                   << " maxNumRoughNonzeros:" << maxNumRoughNonzeros

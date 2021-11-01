@@ -92,7 +92,6 @@ void spgemm_numeric(KernelHandle& kh, const AMatrix& A, const bool Amode,
       &kh, A.numRows(), B.numRows(), B.numCols(), A.graph.row_map,
       A.graph.entries, A.values, Amode, B.graph.row_map, B.graph.entries,
       B.values, Bmode, C.graph.row_map, C.graph.entries, C.values);
-  kh.destroy_spgemm_handle();
 }
 
 }  // namespace KokkosSparse
