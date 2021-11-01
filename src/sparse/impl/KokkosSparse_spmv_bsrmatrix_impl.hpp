@@ -134,7 +134,6 @@ struct BsrMatrixSpMVTensorCoreFunctor {
 
   BsrMatrixSpMVTensorCoreFunctorParams params;
 
- public:
   // a team is a 2D grid of warps
   static constexpr int WARPS_PER_TEAM_X = 2;
   static constexpr int WARPS_PER_TEAM_Y = 2;
