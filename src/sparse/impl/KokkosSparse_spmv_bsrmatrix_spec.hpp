@@ -125,10 +125,6 @@ struct SPMV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
       const KokkosKernels::Experimental::Controls &controls,
       const char /*mode*/[], const YScalar &alpha, const AMatrix &A,
       const XVector &x, const YScalar &beta, const YVector &y) {
-    typedef Kokkos::Experimental::half_t Half;
-    typedef typename XVector::non_const_value_type XScalar;
-    typedef typename AMatrix::non_const_value_type AScalar;
-
     // user explicitly requests a particular precision
     bool requestMixed  = false;
     bool requestDouble = false;
@@ -141,6 +137,10 @@ struct SPMV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
     }
 
 #if defined(KOKKOS_ARCH_AMPERE)
+    typedef typename XVector::non_const_value_type XScalar;
+    typedef typename AMatrix::non_const_value_type AScalar;
+    typedef Kokkos::Experimental::half_t Half;
+
     /* Ampere has double += double * double and float += half * half
 
     use whichever is requested.
