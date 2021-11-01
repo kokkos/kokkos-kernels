@@ -166,6 +166,7 @@ get_kernels_tpls_list() {
   KOKKOSKERNELS_USER_TPL_PATH_CMD=
   KOKKOSKERNELS_USER_TPL_LIBNAME_CMD=
   CUBLAS_DEFAULT=OFF
+  CUSOLVER_DEFAULT=OFF
   CUSPARSE_DEFAULT=OFF
   PARSE_TPLS_LIST=$(echo $KOKKOSKERNELS_TPLS | tr "," "\n")
   for TPLS_ in $PARSE_TPLS_LIST
@@ -177,6 +178,9 @@ get_kernels_tpls_list() {
     fi
     if [ "$UC_TPLS" == "CUSPARSE" ]; then
       CUSPARSE_DEFAULT=ON
+    fi
+    if [ "$UC_TPLS" == "CUSOLVER" ]; then
+      CUSOLVER_DEFAULT=ON
     fi
     if [ "$UC_TPLS" == "BLAS" ]; then
       if [ "$BLAS_PATH" != "" ]; then
@@ -201,6 +205,9 @@ get_kernels_tpls_list() {
   done
   if [ "$CUBLAS_DEFAULT" == "OFF" ]; then
     KOKKOSKERNELS_TPLS_CMD="-DKokkosKernels_ENABLE_TPL_CUBLAS=OFF ${KOKKOSKERNELS_TPLS_CMD}"
+  fi
+  if [ "$CUSOLVER_DEFAULT" == "OFF" ]; then
+    KOKKOSKERNELS_TPLS_CMD="-DKokkosKernels_ENABLE_TPL_CUSOLVER=OFF ${KOKKOSKERNELS_TPLS_CMD}"
   fi
   if [ "$CUSPARSE_DEFAULT" == "OFF" ]; then
     KOKKOSKERNELS_TPLS_CMD="-DKokkosKernels_ENABLE_TPL_CUSPARSE=OFF ${KOKKOSKERNELS_TPLS_CMD}"

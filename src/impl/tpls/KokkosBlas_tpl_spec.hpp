@@ -218,6 +218,74 @@ inline void rocblas_internal_safe_call(rocblas_status rocblasState,
 
 #endif  // KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
 
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSOLVER)
+#include "cuda_runtime.h"
+#include "cublas_v2.h"
+#include "cusolverDn.h"
+#include "cusolver_common.h"
+
+namespace KokkosBlas {
+namespace Impl {
+
+struct CudaSolverSingleton {
+  cusolverDnHandle_t handle;
+
+  CudaSolverSingleton();
+
+  static CudaSolverSingleton& singleton();
+};
+
+inline void cusolver_internal_error_throw(cusolverStatus_t cublasState,
+                                          const char* name, const char* file,
+                                          const int line) {
+  std::ostringstream out;
+  // out << name << " error( " << cublasGetStatusName(cublasState)
+  //     << "): " << cublasGetStatusString(cublasState);
+  out << name << " error( ";
+  switch (cublasState) {
+    case CUSOLVER_STATUS_NOT_INITIALIZED:
+      out << "CUBLAS_STATUS_NOT_INITIALIZED): the library was not initialized.";
+      break;
+    case CUSOLVER_STATUS_ALLOC_FAILED:
+      out << "CUBLAS_STATUS_ALLOC_FAILED): the resource allocation failed.";
+      break;
+    case CUSOLVER_STATUS_INVALID_VALUE:
+      out << "CUBLAS_STATUS_INVALID_VALUE): an invalid numerical value was "
+             "used as an argument.";
+      break;
+    case CUSOLVER_STATUS_ARCH_MISMATCH:
+      out << "CUBLAS_STATUS_ARCH_MISMATCH): an absent device architectural "
+             "feature is required.";
+      break;
+    case CUSOLVER_STATUS_EXECUTION_FAILED:
+      out << "CUBLAS_STATUS_EXECUTION_FAILED): the GPU program failed to "
+             "execute.";
+      break;
+    case CUSOLVER_STATUS_INTERNAL_ERROR:
+      out << "CUBLAS_STATUS_INTERNAL_ERROR): an internal operation failed.";
+      break;
+    case CUSOLVER_STATUS_MATRIX_TYPE_NOT_SUPPORTED:
+      out << "CUBLAS_STATUS_NOT_SUPPORTED): the feature required is not "
+             "supported.";
+      break;
+    default: out << "unrecognized error code): this is bad!"; break;
+  }
+  if (file) {
+    out << " " << file << ":" << line;
+  }
+  throw std::runtime_error(out.str());
+}
+
+// The macro below defines the interface for the safe cusolver calls.
+// The functions themselves are protected by impl namespace and this
+// is not meant to be used by external application or libraries.
+#define KOKKOS_CUSOLVER_SAFE_CALL_IMPL(call) \
+  KokkosBlas::Impl::cusolver_internal_safe_call(call, #call, __FILE__, __LINE__)
+
+}  // namespace Impl
+}  // namespace KokkosBlas
+#endif  // KOKKOSKERNELS_ENABLE_TPL_CUSOLVER
+
 // If LAPACK TPL is enabled, it is preferred over magma's LAPACK
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
 #include "magma_v2.h"
