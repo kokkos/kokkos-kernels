@@ -56,6 +56,7 @@
 #include "KokkosSparse_BlockCrsMatrix.hpp"
 #include "KokkosBlas1_scal.hpp"
 #include "KokkosKernels_Utils.hpp"
+#include "KokkosKernels_MemSpaceUtils.hpp"
 
 namespace KokkosSparse {
 
@@ -477,23 +478,16 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
   static_assert(YVector::rank == 2,
                 "KokkosSparse::spmv on a BsrMatrix requires Y with rank 2");
 
-  constexpr bool xIsCuda =
-      std::is_same<typename XVector::memory_space, Kokkos::CudaSpace>::value ||
-      std::is_same<typename XVector::memory_space, Kokkos::CudaUVMSpace>::value;
-  constexpr bool yIsCuda =
-      std::is_same<typename YVector::memory_space, Kokkos::CudaSpace>::value ||
-      std::is_same<typename YVector::memory_space, Kokkos::CudaUVMSpace>::value;
-  constexpr bool aIsCuda =
-      std::is_same<typename AMatrix::memory_space, Kokkos::CudaSpace>::value ||
-      std::is_same<typename AMatrix::memory_space, Kokkos::CudaUVMSpace>::value;
-
-  static_assert(xIsCuda,
+  static_assert(KokkosKernels::Impl::kk_is_gpu_mem_space<
+                    typename XVector::memory_space>(),
                 "KokkosSparse::spmv on a BsrMatrix requires X be in a "
                 "CUDA-accessible space");
-  static_assert(yIsCuda,
+  static_assert(KokkosKernels::Impl::kk_is_gpu_mem_space<
+                    typename YVector::memory_space>(),
                 "KokkosSparse::spmv on a BsrMatrix requires Y be in a "
                 "CUDA-accessible space");
-  static_assert(aIsCuda,
+  static_assert(KokkosKernels::Impl::kk_is_gpu_mem_space<
+                    typename AMatrix::memory_space>(),
                 "KokkosSparse::spmv on a BsrMatrix requires A be in a "
                 "CUDA-accessible space");
 
