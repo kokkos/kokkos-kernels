@@ -395,6 +395,7 @@ LIST(APPEND SOURCES
  batched/KokkosBatched_Util.cpp
  impl/tpls/KokkosBlas_Host_tpl.cpp
  impl/tpls/KokkosBlas_Cuda_tpl.cpp
+ impl/tpls/KokkosBlas_Rocm_tpl.cpp
  impl/tpls/KokkosKernels_tpl_handles.cpp
 )
 
@@ -440,6 +441,8 @@ KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC CHOLMOD)
 KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC MKL)
 KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC CUBLAS)
 KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC CUSPARSE)
+KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC ROCBLAS)
+KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC ROCSPARSE)
 KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC METIS)
 KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC ARMPL)
 KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC MAGMA)

@@ -65,4 +65,22 @@ struct CusparseSingleton {
 }  // namespace KokkosKernels
 #endif
 
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+#include <rocsparse.h>
+
+namespace KokkosKernels {
+namespace Impl {
+
+struct RocsparseSingleton {
+  rocsparse_handle rocsparseHandle;
+
+  RocsparseSingleton();
+
+  static RocsparseSingleton& singleton();
+};
+
+}  // namespace Impl
+}  // namespace KokkosKernels
+#endif
+
 #endif  // KOKKOSKERNELS_TPL_HANDLES_DECL_HPP_
