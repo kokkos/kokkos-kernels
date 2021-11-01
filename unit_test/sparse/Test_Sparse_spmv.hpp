@@ -994,11 +994,6 @@ CrsMat make_block_matrix(typename CrsMat::ordinal_type &numRows,
       auto it = std::unique(bjs.begin(), bjs.end());
       bjs.resize(it - bjs.begin());
     }
-    // std::cerr << "bi=" << bi << ":";
-    // for (auto e : bjs) {
-    //   std::cerr << " " << e;
-    // }
-    // std::cerr << "\n";
 
     for (lno_t i = bi; i < bi + blockSize; ++i) {
       rowmap.push_back(entries.size());  // where this row starts
@@ -1018,9 +1013,6 @@ CrsMat make_block_matrix(typename CrsMat::ordinal_type &numRows,
   while (rowmap.size() < numRows + 1) {
     rowmap.push_back(entries.size());
   }
-
-  // std::cerr << "rowmap size = " << rowmap.size() << "\n";
-  // std::cerr << "values size = " << values.size() << "\n";
 
   return CrsMat("", numRows, numCols, values.size(), values.data(),
                 rowmap.data(), entries.data());
