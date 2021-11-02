@@ -1220,8 +1220,8 @@ void test_spmv_bsrmatrix_controls_pattern(
   // get the widest passed scalar type
   typedef typename std::conditional<sizeof(a_scalar_t) >= sizeof(x_scalar_t),
                                     a_scalar_t, x_scalar_t>::type wider_t;
-  typedef typename std::conditional<sizeof(wider_t) >= sizeof(y_scalar_t),
-                                    wider_t, y_scalar_t>::type widest_t;
+  // typedef typename std::conditional<sizeof(wider_t) >= sizeof(y_scalar_t),
+  //                                   wider_t, y_scalar_t>::type widest_t;
 
   typedef typename KokkosSparse::CrsMatrix<a_scalar_t, lno_t, Device, void,
                                            size_type>
