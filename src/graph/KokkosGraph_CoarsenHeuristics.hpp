@@ -46,19 +46,7 @@ class coarsen_heuristics {
   }
   static constexpr ordinal_t ORD_MAX = get_null_val();
 
-  template <class in, class out>
-  Kokkos::View<out*, Device> sort_order(Kokkos::View<in*, Device> array, in max,
-                                        in min) {
-    typedef Kokkos::BinOp1D<Kokkos::View<in*, Device> > BinOp;
-    BinOp bin_op(array.extent(0), min, max);
-    // VERY important that final parameter is true
-    Kokkos::BinSort<Kokkos::View<in*, Device>, BinOp, exec_space, out> sorter(
-        array, bin_op, true);
-    sorter.create_permute_vector();
-    return sorter.get_permute_vector();
-  }
-
-  vtx_view_t generate_permutation(ordinal_t n, pool_t rand_pool) {
+  static vtx_view_t generate_permutation(ordinal_t n, pool_t rand_pool) {
     rand_view_t randoms("randoms", n);
 
     Kokkos::parallel_for(
@@ -110,7 +98,7 @@ class coarsen_heuristics {
   // create a mapping when some vertices are already mapped
   // hn is a list of vertices such that vertex i wants to aggregate with vertex
   // hn(i)
-  ordinal_t parallel_map_construct_prefilled(
+  static ordinal_t parallel_map_construct_prefilled(
       vtx_view_t vcmap, const ordinal_t n, const vtx_view_t vperm,
       const vtx_view_t hn, Kokkos::View<ordinal_t, Device> nvertices_coarse) {
     vtx_view_t match("match", n);
@@ -180,7 +168,7 @@ class coarsen_heuristics {
 
   // hn is a list of vertices such that vertex i wants to aggregate with vertex
   // hn(i)
-  ordinal_t parallel_map_construct(vtx_view_t vcmap, const ordinal_t n,
+  static ordinal_t parallel_map_construct(vtx_view_t vcmap, const ordinal_t n,
                                    const vtx_view_t vperm, const vtx_view_t hn,
                                    const vtx_view_t ordering) {
     vtx_view_t match("match", n);
@@ -274,7 +262,7 @@ class coarsen_heuristics {
     return nc;
   }
 
-  part_view_t GOSH_clusters(const matrix_t& g) {
+  static part_view_t GOSH_clusters(const matrix_t& g) {
     // finds the central vertices for GOSH clusters
     // approximately this is a maximal independent set (if you pretend edges
     // whose endpoints both exceed degree thresholds don't exist) IS vertices
@@ -401,7 +389,7 @@ class coarsen_heuristics {
     return state;
   }
 
-  matrix_t coarsen_mis_2(const matrix_t& g) {
+  static matrix_t coarsen_mis_2(const matrix_t& g) {
     ordinal_t n = g.numRows();
 
     typename matrix_t::staticcrsgraph_type::entries_type::non_const_value_type
@@ -431,7 +419,7 @@ class coarsen_heuristics {
     return interp;
   }
 
-  matrix_t coarsen_GOSH(const matrix_t& g) {
+  static matrix_t coarsen_GOSH(const matrix_t& g) {
     ordinal_t n = g.numRows();
 
     part_view_t colors = GOSH_clusters(g);
@@ -493,7 +481,7 @@ class coarsen_heuristics {
     return interp;
   }
 
-  matrix_t coarsen_GOSH_v2(const matrix_t& g) {
+  static matrix_t coarsen_GOSH_v2(const matrix_t& g) {
     ordinal_t n = g.numRows();
 
     Kokkos::View<ordinal_t, Device> nvc("nvertices_coarse");
@@ -659,7 +647,7 @@ class coarsen_heuristics {
     return interp;
   }
 
-  matrix_t coarsen_HEC(const matrix_t& g, bool uniform_weights) {
+  static matrix_t coarsen_HEC(const matrix_t& g, bool uniform_weights) {
     ordinal_t n = g.numRows();
 
     vtx_view_t hn("heavies", n);
@@ -749,7 +737,7 @@ class coarsen_heuristics {
     return interp;
   }
 
-  ordinal_t countInf(vtx_view_t target) {
+  static ordinal_t countInf(vtx_view_t target) {
     ordinal_t totalInf = 0;
 
     Kokkos::parallel_reduce(
@@ -820,7 +808,7 @@ class coarsen_heuristics {
     }
   };
 
-  matrix_t coarsen_match(const matrix_t& g, bool uniform_weights,
+  static matrix_t coarsen_match(const matrix_t& g, bool uniform_weights,
                          int match_choice) {
     ordinal_t n = g.numRows();
 

@@ -288,12 +288,12 @@ void test_multilevel_coarsen_grid() {
   using svt         = typename crsMat::values_type;
   crsMat A          = gen_grid<crsMat>();
   using coarsener_t = coarse_builder<crsMat>;
-  coarsener_t coarsener;
+  typename coarsener_t::coarsen_handle handle;
   using clt = typename coarsener_t::coarse_level_triple;
-  coarsener.set_heuristic(coarsener_t::HECv1);
-  coarsener.set_deduplication_method(coarsener_t::Hybrid);
-  coarsener.generate_coarse_graphs(A, true);
-  std::list<clt> levels = coarsener.get_levels();
+  handle.h = coarsener_t::HECv1;
+  handle.b = coarsener_t::Hybrid;
+  coarsener_t::generate_coarse_graphs(handle, A, true);
+  std::list<clt> levels = handle.results;
   auto fine             = levels.begin();
   auto coarse           = fine;
   coarse++;
@@ -330,7 +330,7 @@ void test_coarsen_grid() {
   entries_t vWgts("vertex weights", A.numRows());
   Kokkos::deep_copy(vWgts, static_cast<typename entries_t::value_type>(1));
   using coarsener_t = coarse_builder<crsMat>;
-  coarsener_t coarsener;
+  typename coarsener_t::coarsen_handle handle;
   using clt = typename coarsener_t::coarse_level_triple;
   clt fine_A;
   fine_A.mtx                                              = A;
@@ -344,15 +344,15 @@ void test_coarsen_grid() {
       coarsener_t::Sort, coarsener_t::Hashmap, coarsener_t::Hybrid,
       coarsener_t::Spgemm, coarsener_t::Spgemm_transpose_first};
   for (auto h : heuristics) {
-    coarsener.set_heuristic(h);
-    crsMat aggregator = coarsener.generate_coarse_mapping(fine_A.mtx, true);
+    handle.h = h;
+    crsMat aggregator = coarsener_t::generate_coarse_mapping(handle, fine_A.mtx, true);
     bool correct_aggregator = verify_aggregator(fine_A.mtx, aggregator);
     EXPECT_TRUE(correct_aggregator)
         << "Aggregation heuristic " << static_cast<int>(h)
         << " produced invalid aggregator.";
     for (auto b : builders) {
-      coarsener.set_deduplication_method(b);
-      clt coarse_A       = coarsener.build_coarse_graph(fine_A, aggregator);
+      handle.b = b;
+      clt coarse_A       = coarsener_t::build_coarse_graph(handle, fine_A, aggregator);
       bool correct_graph = verify_is_graph<crsMat>(coarse_A.mtx);
       bool correct_coarsening =
           verify_coarsening<coarsener_t>(fine_A, coarse_A);
@@ -397,7 +397,7 @@ void test_coarsen_random(lno_t numVerts, size_type nnz, lno_t bandwidth,
   Kokkos::deep_copy(vWgts, static_cast<typename entries_t::value_type>(1));
   crsMat AS("A symmetric", numVerts, symValues, GS);
   using coarsener_t = coarse_builder<crsMat>;
-  coarsener_t coarsener;
+  typename coarsener_t::coarsen_handle handle;
   using clt = typename coarsener_t::coarse_level_triple;
   clt fine_A;
   fine_A.mtx                                              = AS;
@@ -411,15 +411,15 @@ void test_coarsen_random(lno_t numVerts, size_type nnz, lno_t bandwidth,
       coarsener_t::Sort, coarsener_t::Hashmap, coarsener_t::Hybrid,
       coarsener_t::Spgemm, coarsener_t::Spgemm_transpose_first};
   for (auto h : heuristics) {
-    coarsener.set_heuristic(h);
-    crsMat aggregator = coarsener.generate_coarse_mapping(fine_A.mtx, true);
+    handle.h = h;
+    crsMat aggregator = coarsener_t::generate_coarse_mapping(handle, fine_A.mtx, true);
     bool correct_aggregator = verify_aggregator(fine_A.mtx, aggregator);
     EXPECT_TRUE(correct_aggregator)
         << "Aggregation heuristic " << static_cast<int>(h)
         << " produced invalid aggregator.";
     for (auto b : builders) {
-      coarsener.set_deduplication_method(b);
-      clt coarse_A       = coarsener.build_coarse_graph(fine_A, aggregator);
+      handle.b = b;
+      clt coarse_A       = coarsener_t::build_coarse_graph(handle, fine_A, aggregator);
       bool correct_graph = verify_is_graph<crsMat>(coarse_A.mtx);
       bool correct_coarsening =
           verify_coarsening<coarsener_t>(fine_A, coarse_A);

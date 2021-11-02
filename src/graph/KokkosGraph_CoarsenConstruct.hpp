@@ -16,6 +16,8 @@ namespace KokkosGraph {
 
 namespace Experimental {
 
+//this class is not meant to be instantiated
+//think of it like a templated namespace
 template <class crsMat>
 class coarse_builder {
  public:
@@ -41,6 +43,9 @@ class coarse_builder {
   using member               = typename team_policy_t::member_type;
   using spgemm_kernel_handle = KokkosKernels::Experimental::KokkosKernelsHandle<
       edge_offset_t, ordinal_t, scalar_t, exec_space, mem_space, mem_space>;
+  using uniform_memory_pool_t = KokkosKernels::Impl::UniformMemoryPool<exec_space,
+                                                                ordinal_t>;
+  using mapper_t = coarsen_heuristics<crsMat>;
   static constexpr ordinal_t get_null_val() {
     // this value must line up with the null value used by the hashmap
     // accumulator
@@ -69,20 +74,21 @@ class coarse_builder {
   enum Heuristic { HECv1, Match, MtMetis, MIS2, GOSHv1, GOSHv2 };
   enum Builder { Sort, Hashmap, Hybrid, Spgemm, Spgemm_transpose_first };
 
-  // internal parameters and data
-  // default heuristic is HEC
-  Heuristic h = HECv1;
-  // default builder is Hybrid
-  Builder b = Hybrid;
-  coarsen_heuristics<matrix_t> mapper;
-  // when the results are fetched, this list is implicitly copied
-  std::list<coarse_level_triple> results;
-  ordinal_t coarse_vtx_cutoff = 50;
-  ordinal_t min_allowed_vtx   = 10;
-  unsigned int max_levels     = 200;
+  struct coarsen_handle {
+    // internal parameters and data
+    // default heuristic is HEC
+    Heuristic h = HECv1;
+    // default builder is Hybrid
+    Builder b = Hybrid;
+    std::list<coarse_level_triple> results;
+    ordinal_t coarse_vtx_cutoff = 50;
+    ordinal_t min_allowed_vtx   = 10;
+    unsigned int max_levels     = 200;
+    size_t max_mem_allowed = 536870912;
+  };
 
   // determine if dynamic scheduling should be used
-  bool should_use_dyn(const ordinal_t n,
+  static bool should_use_dyn(const ordinal_t n,
                       const Kokkos::View<const edge_offset_t*, Device> work,
                       int t_count) {
     bool use_dyn      = false;
@@ -112,7 +118,7 @@ class coarse_builder {
 
   // build the course graph according to ((B^T A) B) or (B^T (A B)), where B is
   // aggregator matrix
-  coarse_level_triple build_coarse_graph_spgemm(const coarse_level_triple level,
+  static coarse_level_triple build_coarse_graph_spgemm(coarsen_handle& handle, const coarse_level_triple level,
                                                 const matrix_t interp_mtx) {
     vtx_view_t f_vtx_w = level.vtx_wgts;
     matrix_t g         = level.mtx;
@@ -134,7 +140,7 @@ class coarse_builder {
     wgt_view_t wgt_coarse;
     edge_view_t row_map_coarse;
 
-    if (b == Spgemm_transpose_first) {
+    if (handle.b == Spgemm_transpose_first) {
       edge_view_t row_map_p1("rows_partial", nc + 1);
       KokkosSparse::Experimental::spgemm_symbolic(
           &kh, nc, n, n, interp_transpose.graph.row_map,
@@ -490,7 +496,6 @@ class coarse_builder {
     }
   };
 
-  template <typename uniform_memory_pool_t>
   struct functorHashmapAccumulator {
     // compiler may get confused what the reduction type is without this
     typedef ordinal_t value_type;
@@ -829,7 +834,7 @@ class coarse_builder {
 
   };  // functorHashmapAccumulator
 
-  void getHashmapSizeAndCount(const ordinal_t n,
+  static void getHashmapSizeAndCount(coarsen_handle& handle, const ordinal_t n,
                               const ordinal_t remaining_count,
                               vtx_view_t remaining, vtx_view_t edges_per_source,
                               ordinal_t& hash_size, ordinal_t& max_entries,
@@ -892,11 +897,8 @@ class coarse_builder {
       size_t mem_needed = static_cast<size_t>(mem_chunk_count) *
                           static_cast<size_t>(mem_chunk_size) *
                           sizeof(ordinal_t);
-      // this should be a parameter for this class
-      // size_t max_mem_allowed = 1073741824;
       //~500MB
-      size_t max_mem_allowed = 536870912;
-      // size_t max_mem_allowed = 268435456;
+      size_t max_mem_allowed = handle.max_mem_allowed;
       if (mem_needed > max_mem_allowed) {
         size_t chunk_dif = mem_needed - max_mem_allowed;
         chunk_dif        = chunk_dif /
@@ -907,12 +909,12 @@ class coarse_builder {
     }
   }
 
-  void deduplicate_graph(const ordinal_t n, const bool use_team,
+  static void deduplicate_graph(coarsen_handle& handle, const ordinal_t n, const bool use_team,
                          vtx_view_t edges_per_source, vtx_view_t dest_by_source,
                          wgt_view_t wgt_by_source,
                          const edge_view_t source_bucket_offset,
                          edge_offset_t& gc_nedges) {
-    if (b == Hashmap || is_host_space) {
+    if (handle.b == Hashmap || is_host_space) {
       ordinal_t remaining_count = n;
       vtx_view_t remaining("remaining vtx", n);
       Kokkos::parallel_for(
@@ -929,7 +931,7 @@ class coarse_builder {
       do {
         // determine size for hashmap
         ordinal_t hash_size, max_entries, mem_chunk_size, mem_chunk_count;
-        getHashmapSizeAndCount(n, remaining_count, remaining, edges_per_source,
+        getHashmapSizeAndCount(handle, n, remaining_count, remaining, edges_per_source,
                                hash_size, max_entries, mem_chunk_size,
                                mem_chunk_count);
         // Create Uniform Initialized Memory Pool
@@ -942,13 +944,10 @@ class coarse_builder {
 
         bool use_dyn = should_use_dyn(n, source_bucket_offset, mem_chunk_count);
 
-        typedef typename KokkosKernels::Impl::UniformMemoryPool<exec_space,
-                                                                ordinal_t>
-            uniform_memory_pool_t;
         uniform_memory_pool_t memory_pool(mem_chunk_count, mem_chunk_size,
                                           ORD_MAX, pool_type);
 
-        functorHashmapAccumulator<uniform_memory_pool_t> hashmapAccumulator(
+        functorHashmapAccumulator hashmapAccumulator(
             source_bucket_offset, dest_by_source, dest_by_source, wgt_by_source,
             wgt_out, edges_per_source, memory_pool, hash_size, max_entries,
             remaining, !scal_eq_ord);
@@ -999,7 +998,7 @@ class coarse_builder {
       if (!scal_eq_ord && !is_host_space) {
         Kokkos::deep_copy(wgt_by_source, wgt_out);
       }
-    } else if (b == Sort) {
+    } else if (handle.b == Sort) {
       // sort the (implicit) crs matrix
       KokkosKernels::sort_crs_matrix<exec_space, edge_view_t, vtx_view_t,
                                      wgt_view_t>(source_bucket_offset,
@@ -1026,7 +1025,7 @@ class coarse_builder {
                                 gc_nedges);
       }
 
-    } else if (b == Hybrid) {
+    } else if (handle.b == Hybrid) {
       wgt_view_t wgt_out = wgt_by_source;
       if (!scal_eq_ord && !is_host_space) {
         // only necessary if teams might be used
@@ -1065,7 +1064,7 @@ class coarse_builder {
       while (remaining_count > 0) {
         // determine size for hashmap
         ordinal_t hash_size, max_entries, mem_chunk_size, mem_chunk_count;
-        getHashmapSizeAndCount(n, remaining_count, remaining, edges_per_source,
+        getHashmapSizeAndCount(handle, n, remaining_count, remaining, edges_per_source,
                                hash_size, max_entries, mem_chunk_size,
                                mem_chunk_count);
         // Create Uniform Initialized Memory Pool
@@ -1076,13 +1075,10 @@ class coarse_builder {
           pool_type = KokkosKernels::Impl::OneThread2OneChunk;
         }
 
-        typedef typename KokkosKernels::Impl::UniformMemoryPool<exec_space,
-                                                                ordinal_t>
-            uniform_memory_pool_t;
         uniform_memory_pool_t memory_pool(mem_chunk_count, mem_chunk_size,
                                           ORD_MAX, pool_type);
 
-        functorHashmapAccumulator<uniform_memory_pool_t> hashmapAccumulator(
+        functorHashmapAccumulator hashmapAccumulator(
             source_bucket_offset, dest_by_source, dest_by_source, wgt_by_source,
             wgt_out, edges_per_source, memory_pool, hash_size, max_entries,
             remaining, !scal_eq_ord);
@@ -1196,7 +1192,7 @@ class coarse_builder {
   };
 
   // optimized for regular distribution low degree rows
-  coarse_level_triple build_nonskew(const matrix_t g, const matrix_t vcmap,
+  static coarse_level_triple build_nonskew(coarsen_handle& handle, const matrix_t g, const matrix_t vcmap,
                                     vtx_view_t mapped_edges,
                                     vtx_view_t edges_per_source) {
     ordinal_t n  = g.numRows();
@@ -1243,7 +1239,7 @@ class coarse_builder {
           translateF);
     }
 
-    deduplicate_graph(nc, false, edges_per_source, dest_by_source,
+    deduplicate_graph(handle, nc, false, edges_per_source, dest_by_source,
                       wgt_by_source, source_bucket_offset, gc_nedges);
 
     edge_view_t source_offsets("source_offsets", nc + 1);
@@ -1309,7 +1305,7 @@ class coarse_builder {
   }
 
   // forms the explicit matrix created by symmetrizing the implicit matrix
-  matrix_t collapse_directed_to_undirected(const ordinal_t nc,
+  static matrix_t collapse_directed_to_undirected(const ordinal_t nc,
                                            const vtx_view_t source_edge_counts,
                                            const edge_view_t source_row_map,
                                            const vtx_view_t source_destinations,
@@ -1358,7 +1354,7 @@ class coarse_builder {
   }
 
   // optimized for skewed degree distributions
-  coarse_level_triple build_skew(const matrix_t g, const matrix_t vcmap,
+  static coarse_level_triple build_skew(coarsen_handle& handle, const matrix_t g, const matrix_t vcmap,
                                  vtx_view_t mapped_edges,
                                  vtx_view_t degree_initial) {
     ordinal_t n             = g.numRows();
@@ -1430,7 +1426,7 @@ class coarse_builder {
         });
     gc_nedges = 0;
 
-    deduplicate_graph(nc, true, edges_per_source, dest_by_source, wgt_by_source,
+    deduplicate_graph(handle, nc, true, edges_per_source, dest_by_source, wgt_by_source,
                       source_bucket_offset, gc_nedges);
 
     // form the final coarse graph, which requires symmetrizing the matrix
@@ -1448,7 +1444,7 @@ class coarse_builder {
   // deduplicates within each fine row
   // combines fine rows into coarse rows
   // deduplicates within each coarse row
-  coarse_level_triple build_high_duplicity(const matrix_t g,
+  static coarse_level_triple build_high_duplicity(coarsen_handle& handle, const matrix_t g,
                                            const matrix_t vcmap,
                                            vtx_view_t mapped_edges,
                                            vtx_view_t degree_initial) {
@@ -1526,7 +1522,7 @@ class coarse_builder {
     Kokkos::resize(mapped_edges, 0);
 
     // deduplicate coarse adjacencies within each fine row
-    deduplicate_graph(n, true, dedupe_count, dest_fine, wgt_fine, row_map_copy,
+    deduplicate_graph(handle, n, true, dedupe_count, dest_fine, wgt_fine, row_map_copy,
                       gc_nedges);
 
     edge_view_t source_bucket_offset("source_bucket_offsets", nc + 1);
@@ -1570,7 +1566,7 @@ class coarse_builder {
     Kokkos::resize(dest_fine, 0);
     Kokkos::resize(wgt_fine, 0);
 
-    deduplicate_graph(nc, true, edges_per_source, dest_by_source, wgt_by_source,
+    deduplicate_graph(handle, nc, true, edges_per_source, dest_by_source, wgt_by_source,
                       source_bucket_offset, gc_nedges);
 
     // form the final coarse graph, which requires symmetrizing the matrix
@@ -1644,10 +1640,10 @@ class coarse_builder {
     }
   };
 
-  coarse_level_triple build_coarse_graph(const coarse_level_triple level,
+  static coarse_level_triple build_coarse_graph(coarsen_handle& handle, const coarse_level_triple level,
                                          const matrix_t vcmap) {
-    if (b == Spgemm || b == Spgemm_transpose_first) {
-      return build_coarse_graph_spgemm(level, vcmap);
+    if (handle.b == Spgemm || handle.b == Spgemm_transpose_first) {
+      return build_coarse_graph_spgemm(handle, level, vcmap);
     }
 
     matrix_t g   = level.mtx;
@@ -1708,12 +1704,12 @@ class coarse_builder {
     // adjacency rows don't do optimizations if running on CPU (the default host
     // space)
     if (avg_unduped > (nc / 4) && !is_host_space) {
-      next_level = build_high_duplicity(g, vcmap, mapped_edges, degree_initial);
+      next_level = build_high_duplicity(handle, g, vcmap, mapped_edges, degree_initial);
     } else if (avg_unduped > 50 && (max_unduped / 10) > avg_unduped &&
                !is_host_space) {
-      next_level = build_skew(g, vcmap, mapped_edges, degree_initial);
+      next_level = build_skew(handle, g, vcmap, mapped_edges, degree_initial);
     } else {
-      next_level = build_nonskew(g, vcmap, mapped_edges, degree_initial);
+      next_level = build_nonskew(handle, g, vcmap, mapped_edges, degree_initial);
     }
 
     next_level.vtx_wgts        = c_vtx_w;
@@ -1723,26 +1719,26 @@ class coarse_builder {
     return next_level;
   }
 
-  matrix_t generate_coarse_mapping(const matrix_t g, bool uniform_weights) {
+  static matrix_t generate_coarse_mapping(coarsen_handle& handle, const matrix_t g, bool uniform_weights) {
     matrix_t interpolation_graph;
     int choice = 0;
 
-    switch (h) {
+    switch (handle.h) {
       case Match: choice = 0; break;
       case MtMetis: choice = 1; break;
     }
 
-    switch (h) {
+    switch (handle.h) {
       case HECv1:
-        interpolation_graph = mapper.coarsen_HEC(g, uniform_weights);
+        interpolation_graph = mapper_t::coarsen_HEC(g, uniform_weights);
         break;
       case Match:
       case MtMetis:
-        interpolation_graph = mapper.coarsen_match(g, uniform_weights, choice);
+        interpolation_graph = mapper_t::coarsen_match(g, uniform_weights, choice);
         break;
-      case MIS2: interpolation_graph = mapper.coarsen_mis_2(g); break;
-      case GOSHv2: interpolation_graph = mapper.coarsen_GOSH_v2(g); break;
-      case GOSHv1: interpolation_graph = mapper.coarsen_GOSH(g); break;
+      case MIS2: interpolation_graph = mapper_t::coarsen_mis_2(g); break;
+      case GOSHv2: interpolation_graph = mapper_t::coarsen_GOSH_v2(g); break;
+      case GOSHv1: interpolation_graph = mapper_t::coarsen_GOSH(g); break;
     }
     return interpolation_graph;
   }
@@ -1751,10 +1747,10 @@ class coarse_builder {
   // this function can't return the generated list directly because of an NVCC
   // compiler bug caller must use the get_levels() method after calling this
   // function
-  void generate_coarse_graphs(const matrix_t fine_g,
+  static void generate_coarse_graphs(coarsen_handle& handle, const matrix_t fine_g,
                               bool uniform_weights = false) {
     ordinal_t fine_n                       = fine_g.numRows();
-    std::list<coarse_level_triple>& levels = results;
+    std::list<coarse_level_triple>& levels = handle.results;
     levels.clear();
     coarse_level_triple finest;
     finest.mtx = fine_g;
@@ -1765,45 +1761,23 @@ class coarse_builder {
     Kokkos::deep_copy(vtx_weights, static_cast<ordinal_t>(1));
     finest.vtx_wgts = vtx_weights;
     levels.push_back(finest);
-    while (levels.rbegin()->mtx.numRows() > coarse_vtx_cutoff) {
+    while (levels.rbegin()->mtx.numRows() > handle.coarse_vtx_cutoff) {
       coarse_level_triple current_level = *levels.rbegin();
 
-      matrix_t interp_graph = generate_coarse_mapping(
+      matrix_t interp_graph = generate_coarse_mapping(handle,
           current_level.mtx, current_level.uniform_weights);
 
-      if (interp_graph.numCols() < min_allowed_vtx) {
+      if (interp_graph.numCols() < handle.min_allowed_vtx) {
         break;
       }
 
       coarse_level_triple next_level =
-          build_coarse_graph(current_level, interp_graph);
+          build_coarse_graph(handle, current_level, interp_graph);
 
       levels.push_back(next_level);
 
-      if (levels.size() > max_levels) break;
+      if (levels.size() > handle.max_levels) break;
     }
-  }
-
-  std::list<coarse_level_triple> get_levels() {
-    //"results" is copied, therefore the list received by the caller is
-    // independent of the internal list of this class
-    return results;
-  }
-
-  void set_heuristic(Heuristic h) { this->h = h; }
-
-  void set_deduplication_method(Builder b) { this->b = b; }
-
-  void set_coarse_vtx_cutoff(ordinal_t coarse_vtx_cutoff) {
-    this->coarse_vtx_cutoff = coarse_vtx_cutoff;
-  }
-
-  void set_min_allowed_vtx(ordinal_t min_allowed_vtx) {
-    this->min_allowed_vtx = min_allowed_vtx;
-  }
-
-  void set_max_levels(unsigned int max_levels) {
-    this->max_levels = max_levels;
   }
 };
 
