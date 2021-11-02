@@ -62,17 +62,7 @@ struct Functor_TestBatchedSerialMatUtil {
   inline int run() {
     typedef typename ViewType::value_type value_type;
     std::string name_region("KokkosBatched::Test::SerialMatUtil");
-    std::string name_value_type =
-        (std::is_same<value_type, float>::value
-             ? "::Float"
-             : std::is_same<value_type, double>::value
-                   ? "::Double"
-                   : std::is_same<value_type, Kokkos::complex<float> >::value
-                         ? "::ComplexFloat"
-                         : std::is_same<value_type,
-                                        Kokkos::complex<double> >::value
-                               ? "::ComplexDouble"
-                               : "::UnknownValueType");
+    const std::string name_value_type = Test::value_type_name<value_type>();
     std::string name_work_tag =
         (std::is_same<AlgoTagType, KokkosKernelTag>::value
              ? "::KokkosBatched"

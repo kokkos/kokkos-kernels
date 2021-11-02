@@ -70,9 +70,6 @@ struct TeamVectorCG {
     typedef int OrdinalType;
     typedef typename Kokkos::Details::ArithTraits<
         typename VectorViewType::non_const_value_type>::mag_type MagnitudeType;
-    typedef Kokkos::View<MagnitudeType*, Kokkos::LayoutLeft,
-                         typename VectorViewType::device_type>
-        NormViewType;
 
     const size_t maximum_iteration = handle->get_max_iteration();
     const MagnitudeType tolerance  = handle->get_tolerance();
@@ -104,9 +101,6 @@ struct TeamVectorCG {
     // Deep copy of b into r_0:
     TeamVectorCopy<MemberType>::invoke(member, _B, R);
 
-    Kokkos::parallel_for(Kokkos::TeamVectorRange(member, 0, numMatrices),
-                         [&](const OrdinalType& i) { mask(i) = 1.; });
-
     // r_0 := b - A x_0
     member.team_barrier();
     A.template apply<MemberType, ScratchPadVectorViewType,
@@ -119,6 +113,12 @@ struct TeamVectorCG {
 
     TeamVectorDot<MemberType>::invoke(member, R, R, sqr_norm_0);
     member.team_barrier();
+
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(member, 0, numMatrices),
+                         [&](const OrdinalType& i) {
+                           mask(i) =
+                               sqr_norm_0(i) > tolerance * tolerance ? 1. : 0;
+                         });
 
     TeamVectorCopy1D::invoke(member, sqr_norm_0, sqr_norm_j);
 

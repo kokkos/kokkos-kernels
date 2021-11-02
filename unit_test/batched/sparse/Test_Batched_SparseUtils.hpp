@@ -12,8 +12,12 @@ void create_tridiagonal_batched_matrices(const int nnz, const int BlkSize,
   Kokkos::Random_XorShift64_Pool<
       typename VectorViewType::device_type::execution_space>
       random(13718);
-  Kokkos::fill_random(X, random, typename VectorViewType::value_type(1.0));
-  Kokkos::fill_random(B, random, typename VectorViewType::value_type(1.0));
+  Kokkos::fill_random(
+      X, random,
+      Kokkos::reduction_identity<typename VectorViewType::value_type>::prod());
+  Kokkos::fill_random(
+      B, random,
+      Kokkos::reduction_identity<typename VectorViewType::value_type>::prod());
 
   auto D_host = Kokkos::create_mirror_view(D);
   auto r_host = Kokkos::create_mirror_view(r);

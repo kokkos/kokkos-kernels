@@ -64,6 +64,8 @@ class CrsMatrix {
   IntViewType row_ptr;
   IntViewType colIndices;
   int n_operators;
+  int n_rows;
+  int n_colums;
 
  public:
   KOKKOS_INLINE_FUNCTION
@@ -71,11 +73,15 @@ class CrsMatrix {
             const IntViewType &_colIndices)
       : values(_values), row_ptr(_row_ptr), colIndices(_colIndices) {
     n_operators = _values.extent(0);
+    n_rows      = _row_ptr.extent(0) - 1;
+    n_colums    = n_rows;
   }
+
   KOKKOS_INLINE_FUNCTION
   ~CrsMatrix() {}
 
-  /// \brief apply
+  /// \brief apply version that uses constant coefficients alpha and beta
+  ///
   ///   y_l <- alpha * A_l * x_l + beta * y_l for all l = 1, ..., N
   /// where:
   ///   * N is the number of matrices,
@@ -115,7 +121,7 @@ class CrsMatrix {
           member, alpha, values, row_ptr, colIndices, X, beta, Y);
   }
 
-  /// \brief apply
+  /// \brief apply version that uses variable coefficient alpha and no beta
   ///   y_l <- alpha_l * A_l * x_l  for all l = 1, ..., N
   /// where:
   ///   * N is the number of matrices,
@@ -147,7 +153,7 @@ class CrsMatrix {
                          Y);
   }
 
-  /// \brief apply
+  /// \brief apply version that uses variable coefficients alpha and beta
   ///   y_l <- alpha_l * A_l * x_l + beta_l * y_l for all l = 1, ..., N
   /// where:
   ///   * N is the number of matrices,

@@ -34,11 +34,13 @@ struct SerialDotInternal {
   // j \in [0,n), i \in [0,m)
   // C(j) = conj(A(:,j))*B(:,j)
   template <typename ValueType, typename MagnitudeType>
-  KOKKOS_FORCEINLINE_FUNCTION static int invoke(
-      const int m, const int n, const ValueType *__restrict__ A, const int as0,
-      const int as1, const ValueType *__restrict__ B, const int bs0,
-      const int bs1,
-      /* */ MagnitudeType *__restrict__ C, const int cs) {
+  KOKKOS_INLINE_FUNCTION static int invoke(const int m, const int n,
+                                           const ValueType *__restrict__ A,
+                                           const int as0, const int as1,
+                                           const ValueType *__restrict__ B,
+                                           const int bs0, const int bs1,
+                                           /* */ MagnitudeType *__restrict__ C,
+                                           const int cs) {
     for (int j = 0; j < n; ++j)
       invoke(m, A + j * as1, as0, B + j * bs1, bs0, C + j * cs);
     return 0;

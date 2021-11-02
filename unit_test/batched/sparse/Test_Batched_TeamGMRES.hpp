@@ -3,17 +3,9 @@
 #include "gtest/gtest.h"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Random.hpp"
-
-//#include "KokkosBatched_Vector.hpp"
-
 #include "KokkosBatched_GMRES.hpp"
-
 #include "KokkosKernels_TestUtils.hpp"
-
-#include "KokkosBatched_GMRES.hpp"
-
 #include "KokkosBatched_CrsMatrix.hpp"
-
 #include "Test_Batched_SparseUtils.hpp"
 
 using namespace KokkosBatched;
@@ -68,18 +60,8 @@ struct Functor_TestBatchedTeamGMRES {
   inline void run() {
     typedef typename ValuesViewType::value_type value_type;
     std::string name_region("KokkosBatched::Test::TeamGMRES");
-    std::string name_value_type =
-        (std::is_same<value_type, float>::value
-             ? "::Float"
-             : std::is_same<value_type, double>::value
-                   ? "::Double"
-                   : std::is_same<value_type, Kokkos::complex<float> >::value
-                         ? "::ComplexFloat"
-                         : std::is_same<value_type,
-                                        Kokkos::complex<double> >::value
-                               ? "::ComplexDouble"
-                               : "::UnknownValueType");
-    std::string name = name_region + name_value_type;
+    const std::string name_value_type = Test::value_type_name<value_type>();
+    std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
     Kokkos::TeamPolicy<DeviceType> policy(_D.extent(0) / _N_team,
                                           Kokkos::AUTO(), Kokkos::AUTO());
@@ -154,9 +136,8 @@ void impl_test_batched_GMRES(const int N, const int BlkSize, const int N_team) {
       typename ValuesViewType::HostMirror, typename IntView::HostMirror,
       typename VectorViewType::HostMirror, typename VectorViewType::HostMirror,
       1>(-1, D_host, r_host, c_host, X_host, 1, R_host);
-  KokkosBatched::SerialDot<Trans::NoTranspose>::template invoke<
-      typename VectorViewType::HostMirror, typename VectorViewType::HostMirror,
-      typename NormViewType::HostMirror>(R_host, R_host, sqr_norm_0_host);
+  KokkosBatched::SerialDot<Trans::NoTranspose>::invoke(R_host, R_host,
+                                                       sqr_norm_0_host);
   Functor_TestBatchedTeamGMRES<DeviceType, ValuesViewType, IntView,
                                VectorViewType>(D, r, c, X, B, N_team)
       .run();
@@ -171,9 +152,8 @@ void impl_test_batched_GMRES(const int N, const int BlkSize, const int N_team) {
       typename ValuesViewType::HostMirror, typename IntView::HostMirror,
       typename VectorViewType::HostMirror, typename VectorViewType::HostMirror,
       1>(-1, D_host, r_host, c_host, X_host, 1, R_host);
-  KokkosBatched::SerialDot<Trans::NoTranspose>::template invoke<
-      typename VectorViewType::HostMirror, typename VectorViewType::HostMirror,
-      typename NormViewType::HostMirror>(R_host, R_host, sqr_norm_j_host);
+  KokkosBatched::SerialDot<Trans::NoTranspose>::invoke(R_host, R_host,
+                                                       sqr_norm_j_host);
 
   const MagnitudeType eps = 1.0e5 * ats::epsilon();
 

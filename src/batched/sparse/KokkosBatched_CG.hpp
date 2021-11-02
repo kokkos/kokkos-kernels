@@ -49,14 +49,14 @@
 
 /// \brief Batched CG: Selective Interface
 ///
-/// \tparam OperatorType: The type of the opertator of the system
+/// \tparam OperatorType: The type of the operator of the system
 /// \tparam VectorViewType: Input type for the right-hand side and the solution,
 /// needs to be a 2D view
 ///
 /// \param member [in]: TeamPolicy member
 /// \param A [in]: batched operator (can be a batched matrix or a (left or right
 /// or both) preconditioned batched matrix) \param B [in]: right-hand side, a
-/// rank 2 view \param X [in/out]: initial guess and solutin, a rank 2 view
+/// rank 2 view \param X [in/out]: initial guess and solution, a rank 2 view
 /// \param handle [in]: a handle which provides different information such as
 /// the tolerance or the maximal number of iterations of the solver.
 

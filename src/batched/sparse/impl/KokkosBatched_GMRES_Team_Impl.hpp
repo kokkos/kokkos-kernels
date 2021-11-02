@@ -72,12 +72,6 @@ struct TeamGMRES {
     typedef typename Kokkos::Details::ArithTraits<
         typename VectorViewType::non_const_value_type>::mag_type MagnitudeType;
     typedef Kokkos::Details::ArithTraits<MagnitudeType> ATM;
-    typedef Kokkos::View<MagnitudeType*, Kokkos::LayoutLeft,
-                         typename VectorViewType::device_type>
-        NormViewType;
-
-    int maximum_iteration         = handle->get_max_iteration();
-    const MagnitudeType tolerance = handle->get_tolerance();
 
     using ScratchPadNormViewType = Kokkos::View<
         MagnitudeType*,
@@ -95,6 +89,12 @@ struct TeamGMRES {
     const OrdinalType numMatrices = _X.extent(0);
     const OrdinalType numRows     = _X.extent(1);
 
+    size_t maximum_iteration = handle->get_max_iteration() < numRows
+                                   ? handle->get_max_iteration()
+                                   : numRows;
+    const MagnitudeType tolerance     = handle->get_tolerance();
+    const MagnitudeType max_tolerance = 0.;
+
     ScratchPadMultiVectorViewType V(member.team_scratch(1), numMatrices,
                                     maximum_iteration + 1, numRows);
     ScratchPadMultiVectorViewType H(member.team_scratch(1), numMatrices,
@@ -102,7 +102,7 @@ struct TeamGMRES {
     ScratchPadMultiVectorViewType Givens(member.team_scratch(1), numMatrices,
                                          maximum_iteration, 2);
     ScratchPadVectorViewType G(member.team_scratch(1), numMatrices,
-                               maximum_iteration);
+                               maximum_iteration + 1);
 
     ScratchPadVectorViewType W(member.team_scratch(0), numMatrices, numRows);
     ScratchPadVectorViewType Q(member.team_scratch(0), numMatrices, numRows);
@@ -133,8 +133,8 @@ struct TeamGMRES {
     Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, numMatrices),
                          [&](const OrdinalType& i) {
                            beta(i) = ATM::sqrt(beta(i));
-                           G(i, 0) = beta(i);
-                           tmp(i)  = 1. / beta(i);
+                           G(i, 0) = beta(i) > max_tolerance ? beta(i) : 0.;
+                           tmp(i) = beta(i) > max_tolerance ? 1. / beta(i) : 0.;
                          });
 
     Kokkos::parallel_for(
@@ -161,22 +161,25 @@ struct TeamGMRES {
       for (size_t i = 0; i < j + 1; ++i) {
         auto V_i = Kokkos::subview(V, Kokkos::ALL, i, Kokkos::ALL);
         TeamDot<MemberType>::invoke(member, W, V_i, tmp);
+        member.team_barrier();
         TeamCopy1D::invoke(member, tmp, Kokkos::subview(H, Kokkos::ALL, i, j));
 
-        Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, numMatrices),
-                             [&](const OrdinalType& i) { tmp(i) = -tmp(i); });
+        Kokkos::parallel_for(
+            Kokkos::TeamThreadRange(member, 0, numMatrices),
+            [&](const OrdinalType& ii) { tmp(ii) = -tmp(ii); });
 
         TeamAxpy<MemberType>::invoke(member, tmp, V_i, W);
       }
 
       TeamDot<MemberType>::invoke(member, W, W, tmp);
+      member.team_barrier();
       Kokkos::parallel_for(
           Kokkos::TeamThreadRange(member, 0, numMatrices),
-          [&](const OrdinalType& i) { tmp(i) = ATM::sqrt(tmp(i)); });
-      TeamCopy1D::invoke(member, tmp,
-                         Kokkos::subview(H, Kokkos::ALL, j + 1, j));
-      Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, numMatrices),
-                           [&](const OrdinalType& i) { tmp(i) = 1. / tmp(i); });
+          [&](const OrdinalType& i) {
+            H(i, j + 1, j) = ATM::sqrt(tmp(i));
+            tmp(i) = H(i, j + 1, j) > max_tolerance ? 1. / H(i, j + 1, j) : 0.;
+          });
+      member.team_barrier();
       Kokkos::parallel_for(
           Kokkos::TeamThreadRange(member, 0, numMatrices * numRows),
           [&](const OrdinalType& iTemp) {
@@ -192,38 +195,39 @@ struct TeamGMRES {
             // Apply the previous Givens rotations:
             auto H_j = Kokkos::subview(H, l, Kokkos::ALL, j);
 
-            for (size_t i = 0; i < j; ++i) {
+            if (mask(l) == 1.) {
+              for (size_t i = 0; i < j; ++i) {
+                auto tmp1 =
+                    Givens(l, i, 0) * H_j(i) + Givens(l, i, 1) * H_j(i + 1);
+                auto tmp2 =
+                    -Givens(l, i, 1) * H_j(i) + Givens(l, i, 0) * H_j(i + 1);
+                H_j(i)     = tmp1;
+                H_j(i + 1) = tmp2;
+              }
+
+              // Compute the new Givens rotation:
+              Kokkos::pair<typename VectorViewType::non_const_value_type,
+                           typename VectorViewType::non_const_value_type>
+                  G_new;
+              typename VectorViewType::non_const_value_type alpha;
+              SerialGivensInternal::invoke(H_j(j), H_j(j + 1), &G_new, &alpha);
+
+              Givens(l, j, 0) = G_new.first;
+              Givens(l, j, 1) = G_new.second;
+
+              // Apply the new Givens rotation:
               auto tmp1 =
-                  Givens(l, i, 0) * H_j(i) + Givens(l, i, 1) * H_j(i + 1);
+                  Givens(l, j, 0) * H_j(j) + Givens(l, j, 1) * H_j(j + 1);
               auto tmp2 =
-                  -Givens(l, i, 1) * H_j(i) + Givens(l, i, 0) * H_j(i + 1);
-              H_j(i)     = tmp1;
-              H_j(i + 1) = tmp2;
-            }
+                  -Givens(l, j, 1) * H_j(j) + Givens(l, j, 0) * H_j(j + 1);
+              H_j(j)     = tmp1;
+              H_j(j + 1) = tmp2;
 
-            // Compute the new Givens rotation:
-            Kokkos::pair<typename VectorViewType::non_const_value_type,
-                         typename VectorViewType::non_const_value_type>
-                G_new;
-            typename VectorViewType::non_const_value_type alpha;
-            SerialGivensInternal::invoke(H_j(j), H_j(j + 1), &G_new, &alpha);
-
-            Givens(l, j, 0) = G_new.first;
-            Givens(l, j, 1) = G_new.second;
-
-            // Apply the new Givens rotation:
-            auto tmp1 = Givens(l, j, 0) * H_j(j) + Givens(l, j, 1) * H_j(j + 1);
-            auto tmp2 =
-                -Givens(l, j, 1) * H_j(j) + Givens(l, j, 0) * H_j(j + 1);
-            H_j(j)     = tmp1;
-            H_j(j + 1) = tmp2;
-
-            G(l, j + 1) = -Givens(l, j, 1) * G(l, j);
-            G(l, j) *= Givens(l, j, 0);
-
-            if (mask(l) == 0.) {
-              H_j(j)  = 1.;
-              G(l, j) = 0.;
+              G(l, j + 1) = -Givens(l, j, 1) * G(l, j);
+              G(l, j) *= Givens(l, j, 0);
+            } else {
+              H_j(j)      = 1.;
+              G(l, j + 1) = 0.;
             }
 
             if (mask(l) == 1. && std::abs(G(l, j + 1)) / beta(l) < tolerance) {

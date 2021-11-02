@@ -62,18 +62,8 @@ struct Functor_BatchedTeamGemm {
   inline void run() {
     typedef typename ViewType::value_type value_type;
     std::string name_region("KokkosBatched::Test::TeamSolveLU");
-    std::string name_value_type =
-        (std::is_same<value_type, float>::value
-             ? "::Float"
-             : std::is_same<value_type, double>::value
-                   ? "::Double"
-                   : std::is_same<value_type, Kokkos::complex<float> >::value
-                         ? "::ComplexFloat"
-                         : std::is_same<value_type,
-                                        Kokkos::complex<double> >::value
-                               ? "::ComplexDouble"
-                               : "::UnknownValueType");
-    std::string name = name_region + name_value_type;
+    const std::string name_value_type = Test::value_type_name<value_type>();
+    std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
     const int league_size = _c.extent(0);
     Kokkos::TeamPolicy<DeviceType, ParamTagType> policy(league_size,
@@ -104,18 +94,8 @@ struct Functor_BatchedTeamLU {
   inline void run() {
     typedef typename ViewType::value_type value_type;
     std::string name_region("KokkosBatched::Test::TeamSolveLU");
-    std::string name_value_type =
-        (std::is_same<value_type, float>::value
-             ? "::Float"
-             : std::is_same<value_type, double>::value
-                   ? "::Double"
-                   : std::is_same<value_type, Kokkos::complex<float> >::value
-                         ? "::ComplexFloat"
-                         : std::is_same<value_type,
-                                        Kokkos::complex<double> >::value
-                               ? "::ComplexDouble"
-                               : "::UnknownValueType");
-    std::string name = name_region + name_value_type;
+    const std::string name_value_type = Test::value_type_name<value_type>();
+    std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
     const int league_size = _a.extent(0);
     Kokkos::TeamPolicy<DeviceType> policy(league_size, Kokkos::AUTO);
@@ -146,18 +126,8 @@ struct Functor_TestBatchedTeamSolveLU {
   inline void run() {
     typedef typename ViewType::value_type value_type;
     std::string name_region("KokkosBatched::Test::TeamSolveLU");
-    std::string name_value_type =
-        (std::is_same<value_type, float>::value
-             ? "::Float"
-             : std::is_same<value_type, double>::value
-                   ? "::Double"
-                   : std::is_same<value_type, Kokkos::complex<float> >::value
-                         ? "::ComplexFloat"
-                         : std::is_same<value_type,
-                                        Kokkos::complex<double> >::value
-                               ? "::ComplexDouble"
-                               : "::UnknownValueType");
-    std::string name = name_region + name_value_type;
+    const std::string name_value_type = Test::value_type_name<value_type>();
+    std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
 
     const int league_size = _a.extent(0);

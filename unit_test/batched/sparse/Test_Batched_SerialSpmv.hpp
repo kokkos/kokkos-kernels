@@ -57,18 +57,8 @@ struct Functor_TestBatchedSerialSpmv {
   inline void run() {
     typedef typename ValuesViewType::value_type value_type;
     std::string name_region("KokkosBatched::Test::SerialSpmv");
-    std::string name_value_type =
-        (std::is_same<value_type, float>::value
-             ? "::Float"
-             : std::is_same<value_type, double>::value
-                   ? "::Double"
-                   : std::is_same<value_type, Kokkos::complex<float> >::value
-                         ? "::ComplexFloat"
-                         : std::is_same<value_type,
-                                        Kokkos::complex<double> >::value
-                               ? "::ComplexDouble"
-                               : "::UnknownValueType");
-    std::string name = name_region + name_value_type;
+    const std::string name_value_type = Test::value_type_name<value_type>();
+    std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
     Kokkos::RangePolicy<DeviceType, ParamTagType> policy(0, _D.extent(0));
     Kokkos::parallel_for(name.c_str(), policy, *this);
