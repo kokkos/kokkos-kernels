@@ -1218,8 +1218,8 @@ void test_spmv_bsrmatrix_controls_pattern(
     const std::vector<Coordinate> &pattern, const int m, const int n,
     lno_t blockSize, lno_t k, y_scalar_t alpha, y_scalar_t beta) {
   // get the widest passed scalar type
-  typedef typename std::conditional<sizeof(a_scalar_t) >= sizeof(x_scalar_t),
-                                    a_scalar_t, x_scalar_t>::type wider_t;
+  // typedef typename std::conditional<sizeof(a_scalar_t) >= sizeof(x_scalar_t),
+  //                                   a_scalar_t, x_scalar_t>::type wider_t;
   // typedef typename std::conditional<sizeof(wider_t) >= sizeof(y_scalar_t),
   //                                   wider_t, y_scalar_t>::type widest_t;
 
