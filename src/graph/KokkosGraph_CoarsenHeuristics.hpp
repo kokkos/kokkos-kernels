@@ -169,8 +169,9 @@ class coarsen_heuristics {
   // hn is a list of vertices such that vertex i wants to aggregate with vertex
   // hn(i)
   static ordinal_t parallel_map_construct(vtx_view_t vcmap, const ordinal_t n,
-                                   const vtx_view_t vperm, const vtx_view_t hn,
-                                   const vtx_view_t ordering) {
+                                          const vtx_view_t vperm,
+                                          const vtx_view_t hn,
+                                          const vtx_view_t ordering) {
     vtx_view_t match("match", n);
     Kokkos::parallel_for(
         policy_t(0, n), KOKKOS_LAMBDA(ordinal_t i) { match(i) = ORD_MAX; });
@@ -809,7 +810,7 @@ class coarsen_heuristics {
   };
 
   static matrix_t coarsen_match(const matrix_t& g, bool uniform_weights,
-                         int match_choice) {
+                                int match_choice) {
     ordinal_t n = g.numRows();
 
     vtx_view_t hn("heavies", n);

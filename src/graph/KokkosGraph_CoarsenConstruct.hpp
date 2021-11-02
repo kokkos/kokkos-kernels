@@ -16,8 +16,8 @@ namespace KokkosGraph {
 
 namespace Experimental {
 
-//this class is not meant to be instantiated
-//think of it like a templated namespace
+// this class is not meant to be instantiated
+// think of it like a templated namespace
 template <class crsMat>
 class coarse_builder {
  public:
@@ -43,8 +43,8 @@ class coarse_builder {
   using member               = typename team_policy_t::member_type;
   using spgemm_kernel_handle = KokkosKernels::Experimental::KokkosKernelsHandle<
       edge_offset_t, ordinal_t, scalar_t, exec_space, mem_space, mem_space>;
-  using uniform_memory_pool_t = KokkosKernels::Impl::UniformMemoryPool<exec_space,
-                                                                ordinal_t>;
+  using uniform_memory_pool_t =
+      KokkosKernels::Impl::UniformMemoryPool<exec_space, ordinal_t>;
   using mapper_t = coarsen_heuristics<crsMat>;
   static constexpr ordinal_t get_null_val() {
     // this value must line up with the null value used by the hashmap
@@ -84,13 +84,13 @@ class coarse_builder {
     ordinal_t coarse_vtx_cutoff = 50;
     ordinal_t min_allowed_vtx   = 10;
     unsigned int max_levels     = 200;
-    size_t max_mem_allowed = 536870912;
+    size_t max_mem_allowed      = 536870912;
   };
 
   // determine if dynamic scheduling should be used
-  static bool should_use_dyn(const ordinal_t n,
-                      const Kokkos::View<const edge_offset_t*, Device> work,
-                      int t_count) {
+  static bool should_use_dyn(
+      const ordinal_t n, const Kokkos::View<const edge_offset_t*, Device> work,
+      int t_count) {
     bool use_dyn      = false;
     edge_offset_t max = 0;
     edge_offset_t min = std::numeric_limits<edge_offset_t>::max();
@@ -118,8 +118,9 @@ class coarse_builder {
 
   // build the course graph according to ((B^T A) B) or (B^T (A B)), where B is
   // aggregator matrix
-  static coarse_level_triple build_coarse_graph_spgemm(coarsen_handle& handle, const coarse_level_triple level,
-                                                const matrix_t interp_mtx) {
+  static coarse_level_triple build_coarse_graph_spgemm(
+      coarsen_handle& handle, const coarse_level_triple level,
+      const matrix_t interp_mtx) {
     vtx_view_t f_vtx_w = level.vtx_wgts;
     matrix_t g         = level.mtx;
 
@@ -834,12 +835,11 @@ class coarse_builder {
 
   };  // functorHashmapAccumulator
 
-  static void getHashmapSizeAndCount(coarsen_handle& handle, const ordinal_t n,
-                              const ordinal_t remaining_count,
-                              vtx_view_t remaining, vtx_view_t edges_per_source,
-                              ordinal_t& hash_size, ordinal_t& max_entries,
-                              ordinal_t& mem_chunk_size,
-                              ordinal_t& mem_chunk_count) {
+  static void getHashmapSizeAndCount(
+      coarsen_handle& handle, const ordinal_t n,
+      const ordinal_t remaining_count, vtx_view_t remaining,
+      vtx_view_t edges_per_source, ordinal_t& hash_size, ordinal_t& max_entries,
+      ordinal_t& mem_chunk_size, ordinal_t& mem_chunk_count) {
     ordinal_t avg_entries = 0;
     if (!is_host_space &&
         static_cast<double>(remaining_count) / static_cast<double>(n) > 0.01) {
@@ -909,11 +909,13 @@ class coarse_builder {
     }
   }
 
-  static void deduplicate_graph(coarsen_handle& handle, const ordinal_t n, const bool use_team,
-                         vtx_view_t edges_per_source, vtx_view_t dest_by_source,
-                         wgt_view_t wgt_by_source,
-                         const edge_view_t source_bucket_offset,
-                         edge_offset_t& gc_nedges) {
+  static void deduplicate_graph(coarsen_handle& handle, const ordinal_t n,
+                                const bool use_team,
+                                vtx_view_t edges_per_source,
+                                vtx_view_t dest_by_source,
+                                wgt_view_t wgt_by_source,
+                                const edge_view_t source_bucket_offset,
+                                edge_offset_t& gc_nedges) {
     if (handle.b == Hashmap || is_host_space) {
       ordinal_t remaining_count = n;
       vtx_view_t remaining("remaining vtx", n);
@@ -931,9 +933,9 @@ class coarse_builder {
       do {
         // determine size for hashmap
         ordinal_t hash_size, max_entries, mem_chunk_size, mem_chunk_count;
-        getHashmapSizeAndCount(handle, n, remaining_count, remaining, edges_per_source,
-                               hash_size, max_entries, mem_chunk_size,
-                               mem_chunk_count);
+        getHashmapSizeAndCount(handle, n, remaining_count, remaining,
+                               edges_per_source, hash_size, max_entries,
+                               mem_chunk_size, mem_chunk_count);
         // Create Uniform Initialized Memory Pool
         KokkosKernels::Impl::PoolType pool_type =
             KokkosKernels::Impl::ManyThread2OneChunk;
@@ -1064,9 +1066,9 @@ class coarse_builder {
       while (remaining_count > 0) {
         // determine size for hashmap
         ordinal_t hash_size, max_entries, mem_chunk_size, mem_chunk_count;
-        getHashmapSizeAndCount(handle, n, remaining_count, remaining, edges_per_source,
-                               hash_size, max_entries, mem_chunk_size,
-                               mem_chunk_count);
+        getHashmapSizeAndCount(handle, n, remaining_count, remaining,
+                               edges_per_source, hash_size, max_entries,
+                               mem_chunk_size, mem_chunk_count);
         // Create Uniform Initialized Memory Pool
         KokkosKernels::Impl::PoolType pool_type =
             KokkosKernels::Impl::ManyThread2OneChunk;
@@ -1192,9 +1194,11 @@ class coarse_builder {
   };
 
   // optimized for regular distribution low degree rows
-  static coarse_level_triple build_nonskew(coarsen_handle& handle, const matrix_t g, const matrix_t vcmap,
-                                    vtx_view_t mapped_edges,
-                                    vtx_view_t edges_per_source) {
+  static coarse_level_triple build_nonskew(coarsen_handle& handle,
+                                           const matrix_t g,
+                                           const matrix_t vcmap,
+                                           vtx_view_t mapped_edges,
+                                           vtx_view_t edges_per_source) {
     ordinal_t n  = g.numRows();
     ordinal_t nc = vcmap.numCols();
     edge_view_t source_bucket_offset("source_bucket_offsets", nc + 1);
@@ -1305,11 +1309,10 @@ class coarse_builder {
   }
 
   // forms the explicit matrix created by symmetrizing the implicit matrix
-  static matrix_t collapse_directed_to_undirected(const ordinal_t nc,
-                                           const vtx_view_t source_edge_counts,
-                                           const edge_view_t source_row_map,
-                                           const vtx_view_t source_destinations,
-                                           const wgt_view_t source_wgts) {
+  static matrix_t collapse_directed_to_undirected(
+      const ordinal_t nc, const vtx_view_t source_edge_counts,
+      const edge_view_t source_row_map, const vtx_view_t source_destinations,
+      const wgt_view_t source_wgts) {
     vtx_view_t coarse_degree("coarse degree", nc);
     Kokkos::deep_copy(coarse_degree, source_edge_counts);
 
@@ -1354,9 +1357,10 @@ class coarse_builder {
   }
 
   // optimized for skewed degree distributions
-  static coarse_level_triple build_skew(coarsen_handle& handle, const matrix_t g, const matrix_t vcmap,
-                                 vtx_view_t mapped_edges,
-                                 vtx_view_t degree_initial) {
+  static coarse_level_triple build_skew(coarsen_handle& handle,
+                                        const matrix_t g, const matrix_t vcmap,
+                                        vtx_view_t mapped_edges,
+                                        vtx_view_t degree_initial) {
     ordinal_t n             = g.numRows();
     ordinal_t nc            = vcmap.numCols();
     edge_offset_t gc_nedges = 0;
@@ -1426,8 +1430,8 @@ class coarse_builder {
         });
     gc_nedges = 0;
 
-    deduplicate_graph(handle, nc, true, edges_per_source, dest_by_source, wgt_by_source,
-                      source_bucket_offset, gc_nedges);
+    deduplicate_graph(handle, nc, true, edges_per_source, dest_by_source,
+                      wgt_by_source, source_bucket_offset, gc_nedges);
 
     // form the final coarse graph, which requires symmetrizing the matrix
     matrix_t gc = collapse_directed_to_undirected(
@@ -1444,10 +1448,11 @@ class coarse_builder {
   // deduplicates within each fine row
   // combines fine rows into coarse rows
   // deduplicates within each coarse row
-  static coarse_level_triple build_high_duplicity(coarsen_handle& handle, const matrix_t g,
-                                           const matrix_t vcmap,
-                                           vtx_view_t mapped_edges,
-                                           vtx_view_t degree_initial) {
+  static coarse_level_triple build_high_duplicity(coarsen_handle& handle,
+                                                  const matrix_t g,
+                                                  const matrix_t vcmap,
+                                                  vtx_view_t mapped_edges,
+                                                  vtx_view_t degree_initial) {
     ordinal_t n             = g.numRows();
     ordinal_t nc            = vcmap.numCols();
     edge_offset_t gc_nedges = 0;
@@ -1522,8 +1527,8 @@ class coarse_builder {
     Kokkos::resize(mapped_edges, 0);
 
     // deduplicate coarse adjacencies within each fine row
-    deduplicate_graph(handle, n, true, dedupe_count, dest_fine, wgt_fine, row_map_copy,
-                      gc_nedges);
+    deduplicate_graph(handle, n, true, dedupe_count, dest_fine, wgt_fine,
+                      row_map_copy, gc_nedges);
 
     edge_view_t source_bucket_offset("source_bucket_offsets", nc + 1);
     vtx_view_t edges_per_source("edges_per_source", nc);
@@ -1566,8 +1571,8 @@ class coarse_builder {
     Kokkos::resize(dest_fine, 0);
     Kokkos::resize(wgt_fine, 0);
 
-    deduplicate_graph(handle, nc, true, edges_per_source, dest_by_source, wgt_by_source,
-                      source_bucket_offset, gc_nedges);
+    deduplicate_graph(handle, nc, true, edges_per_source, dest_by_source,
+                      wgt_by_source, source_bucket_offset, gc_nedges);
 
     // form the final coarse graph, which requires symmetrizing the matrix
     matrix_t gc = collapse_directed_to_undirected(
@@ -1640,8 +1645,9 @@ class coarse_builder {
     }
   };
 
-  static coarse_level_triple build_coarse_graph(coarsen_handle& handle, const coarse_level_triple level,
-                                         const matrix_t vcmap) {
+  static coarse_level_triple build_coarse_graph(coarsen_handle& handle,
+                                                const coarse_level_triple level,
+                                                const matrix_t vcmap) {
     if (handle.b == Spgemm || handle.b == Spgemm_transpose_first) {
       return build_coarse_graph_spgemm(handle, level, vcmap);
     }
@@ -1704,12 +1710,14 @@ class coarse_builder {
     // adjacency rows don't do optimizations if running on CPU (the default host
     // space)
     if (avg_unduped > (nc / 4) && !is_host_space) {
-      next_level = build_high_duplicity(handle, g, vcmap, mapped_edges, degree_initial);
+      next_level =
+          build_high_duplicity(handle, g, vcmap, mapped_edges, degree_initial);
     } else if (avg_unduped > 50 && (max_unduped / 10) > avg_unduped &&
                !is_host_space) {
       next_level = build_skew(handle, g, vcmap, mapped_edges, degree_initial);
     } else {
-      next_level = build_nonskew(handle, g, vcmap, mapped_edges, degree_initial);
+      next_level =
+          build_nonskew(handle, g, vcmap, mapped_edges, degree_initial);
     }
 
     next_level.vtx_wgts        = c_vtx_w;
@@ -1719,7 +1727,9 @@ class coarse_builder {
     return next_level;
   }
 
-  static matrix_t generate_coarse_mapping(coarsen_handle& handle, const matrix_t g, bool uniform_weights) {
+  static matrix_t generate_coarse_mapping(coarsen_handle& handle,
+                                          const matrix_t g,
+                                          bool uniform_weights) {
     matrix_t interpolation_graph;
     int choice = 0;
 
@@ -1734,7 +1744,8 @@ class coarse_builder {
         break;
       case Match:
       case MtMetis:
-        interpolation_graph = mapper_t::coarsen_match(g, uniform_weights, choice);
+        interpolation_graph =
+            mapper_t::coarsen_match(g, uniform_weights, choice);
         break;
       case MIS2: interpolation_graph = mapper_t::coarsen_mis_2(g); break;
       case GOSHv2: interpolation_graph = mapper_t::coarsen_GOSH_v2(g); break;
@@ -1747,8 +1758,9 @@ class coarse_builder {
   // this function can't return the generated list directly because of an NVCC
   // compiler bug caller must use the get_levels() method after calling this
   // function
-  static void generate_coarse_graphs(coarsen_handle& handle, const matrix_t fine_g,
-                              bool uniform_weights = false) {
+  static void generate_coarse_graphs(coarsen_handle& handle,
+                                     const matrix_t fine_g,
+                                     bool uniform_weights = false) {
     ordinal_t fine_n                       = fine_g.numRows();
     std::list<coarse_level_triple>& levels = handle.results;
     levels.clear();
@@ -1764,8 +1776,8 @@ class coarse_builder {
     while (levels.rbegin()->mtx.numRows() > handle.coarse_vtx_cutoff) {
       coarse_level_triple current_level = *levels.rbegin();
 
-      matrix_t interp_graph = generate_coarse_mapping(handle,
-          current_level.mtx, current_level.uniform_weights);
+      matrix_t interp_graph = generate_coarse_mapping(
+          handle, current_level.mtx, current_level.uniform_weights);
 
       if (interp_graph.numCols() < handle.min_allowed_vtx) {
         break;

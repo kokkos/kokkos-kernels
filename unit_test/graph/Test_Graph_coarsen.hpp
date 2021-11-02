@@ -290,8 +290,8 @@ void test_multilevel_coarsen_grid() {
   using coarsener_t = coarse_builder<crsMat>;
   typename coarsener_t::coarsen_handle handle;
   using clt = typename coarsener_t::coarse_level_triple;
-  handle.h = coarsener_t::HECv1;
-  handle.b = coarsener_t::Hybrid;
+  handle.h  = coarsener_t::HECv1;
+  handle.b  = coarsener_t::Hybrid;
   coarsener_t::generate_coarse_graphs(handle, A, true);
   std::list<clt> levels = handle.results;
   auto fine             = levels.begin();
@@ -345,14 +345,16 @@ void test_coarsen_grid() {
       coarsener_t::Spgemm, coarsener_t::Spgemm_transpose_first};
   for (auto h : heuristics) {
     handle.h = h;
-    crsMat aggregator = coarsener_t::generate_coarse_mapping(handle, fine_A.mtx, true);
+    crsMat aggregator =
+        coarsener_t::generate_coarse_mapping(handle, fine_A.mtx, true);
     bool correct_aggregator = verify_aggregator(fine_A.mtx, aggregator);
     EXPECT_TRUE(correct_aggregator)
         << "Aggregation heuristic " << static_cast<int>(h)
         << " produced invalid aggregator.";
     for (auto b : builders) {
       handle.b = b;
-      clt coarse_A       = coarsener_t::build_coarse_graph(handle, fine_A, aggregator);
+      clt coarse_A =
+          coarsener_t::build_coarse_graph(handle, fine_A, aggregator);
       bool correct_graph = verify_is_graph<crsMat>(coarse_A.mtx);
       bool correct_coarsening =
           verify_coarsening<coarsener_t>(fine_A, coarse_A);
@@ -412,14 +414,16 @@ void test_coarsen_random(lno_t numVerts, size_type nnz, lno_t bandwidth,
       coarsener_t::Spgemm, coarsener_t::Spgemm_transpose_first};
   for (auto h : heuristics) {
     handle.h = h;
-    crsMat aggregator = coarsener_t::generate_coarse_mapping(handle, fine_A.mtx, true);
+    crsMat aggregator =
+        coarsener_t::generate_coarse_mapping(handle, fine_A.mtx, true);
     bool correct_aggregator = verify_aggregator(fine_A.mtx, aggregator);
     EXPECT_TRUE(correct_aggregator)
         << "Aggregation heuristic " << static_cast<int>(h)
         << " produced invalid aggregator.";
     for (auto b : builders) {
       handle.b = b;
-      clt coarse_A       = coarsener_t::build_coarse_graph(handle, fine_A, aggregator);
+      clt coarse_A =
+          coarsener_t::build_coarse_graph(handle, fine_A, aggregator);
       bool correct_graph = verify_is_graph<crsMat>(coarse_A.mtx);
       bool correct_coarsening =
           verify_coarsening<coarsener_t>(fine_A, coarse_A);
