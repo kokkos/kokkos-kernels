@@ -55,14 +55,17 @@
 #include "KokkosBatched_Trtri_Decl.hpp"
 #include "KokkosBatched_Trtri_Serial_Impl.hpp"
 
-using namespace KokkosBatched;
-
 namespace KokkosBlas {
 namespace Impl {
 
 template <class RViewType, class AViewType>
 void SerialTrtri_Invoke(const RViewType &R, const char uplo[],
                         const char diag[], const AViewType &A) {
+  using KokkosBatched::Algo;
+  using KokkosBatched::Diag;
+  using KokkosBatched::SerialTrtriInternalLower;
+  using KokkosBatched::SerialTrtriInternalUpper;
+
   char __uplo = tolower(uplo[0]), __diag = tolower(diag[0]);
 
   //// Lower ////
