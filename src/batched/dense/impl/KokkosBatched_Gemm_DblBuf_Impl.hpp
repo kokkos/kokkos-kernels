@@ -123,8 +123,8 @@ class BatchedDblBufGemm {
     // TODO: check these expressions for all tile_m, tile_n, tile_k in Z+.
     constexpr int reg_m    = TILE_M / TILE_K;
     constexpr int reg_n    = TILE_N / TILE_K + 2 * !!(TILE_N % TILE_K);
-    constexpr int stride_m = 1;
-    constexpr int stride_n = 1;
+    constexpr int stride_m = TILE_K;
+    constexpr int stride_n = TILE_N / reg_n;
     using functor_type = Functor<member_type, reg_m, reg_n, stride_m, stride_n>;
 
     functor_type functor(*this, __A, __B, __C, TILE_M, TILE_N, TILE_K);
@@ -142,8 +142,8 @@ class BatchedDblBufGemm {
     // Each team solves a single tile. Within each tile, the team solves
     // all __n_tile_k_tiles one at a time.
     size_t league_size = __c_batch_size * functor.get_n_sub_tiles();
-    int team_size      = TILE_K;
-    int vector_len     = TILE_N / reg_n;
+    int team_size      = stride_m;
+    int vector_len     = stride_n;
 
     const int max_team_size =
         policy_type(league_size, Kokkos::AUTO, vector_len)
@@ -348,12 +348,12 @@ class BatchedDblBufGemm {
             Kokkos::parallel_for(
                 Kokkos::ThreadVectorRange(member, 0, __tile_n / REG_N),
                 [&](const int &vlane_id) {
-                  auto vlane_offset = vlane_id * REG_N + start_n;
+                  auto vlane_offset = vlane_id + start_n;
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
                   for (int i = 0; i < REG_N * STRIDE_N; i += STRIDE_N)
-                    svB_scr(thread_id, vlane_id * REG_N + i) =
+                    svB_scr(thread_id, vlane_id + i) =
                         access_view_bounds_check<view_value_type>(
                             svB, thread_id, vlane_offset + i,
                             __ei.__bounds_check_tag);
@@ -366,16 +366,13 @@ class BatchedDblBufGemm {
             Kokkos::parallel_for(
                 Kokkos::ThreadVectorRange(member, 0, __tile_k),
                 [&](const int &vlane_id) {
-                  auto vld          = (vlane_id / 2);
-                  auto vlane_offset = (vlane_id % 2) * REG_M;
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
-                  for (int i = 0; i < REG_M * STRIDE_M; i += STRIDE_M)
-                    svA_scr(thread_id * REG_M + (vlane_id / 2),
-                            (vlane_id % 2) * REG_M + i) =
+                  for (int i = 0; i < REG_M; i++)
+                    svA_scr(thread_id * REG_M + i, vlane_id) =
                         access_view_bounds_check<view_value_type>(
-                            svA, thread_offset + vld, vlane_offset + i,
+                            svA, thread_offset + i, vlane_id,
                             __ei.__bounds_check_tag);
                   // TODO: might be able to use local deep copy here.
                 });
@@ -413,7 +410,7 @@ class BatchedDblBufGemm {
                     for (int i = 0; i < REG_N; ++i)
                       prefetch_reg_b[i] =
                           access_view_bounds_check<view_value_type>(
-                              svB, thread_offset, vlane_offset + i,
+                              svB, thread_offset, vlane_offset + i * STRIDE_N,
                               __ei.__bounds_check_tag);
                   });
             });
@@ -436,7 +433,8 @@ class BatchedDblBufGemm {
                     for (int i = 0; i < REG_M; ++i)
                       prefetch_reg_a[i] =
                           access_view_bounds_check<view_value_type>(
-                              svA, thread_offset + vld, vlane_offset + i,
+                              svA, thread_offset + vld,
+                              vlane_offset + i * STRIDE_N,
                               __ei.__bounds_check_tag);
                   });
             });
@@ -461,7 +459,7 @@ class BatchedDblBufGemm {
 #pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
                     for (int i = 0; i < REG_N; ++i)
-                      svB_scr(thread_id, vlane_id * REG_N + i) =
+                      svB_scr(thread_id, vlane_id * REG_N + i * STRIDE_N) =
                           prefetch_reg_b[i];
                   });
             });
@@ -480,7 +478,8 @@ class BatchedDblBufGemm {
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
                     for (int i = 0; i < REG_M; ++i)
                       svA_scr(thread_offset + (vlane_id / 2),
-                              (vlane_id % 2) * REG_M + i) = prefetch_reg_a[i];
+                              (vlane_id % 2) * REG_M + i * STRIDE_M) =
+                          prefetch_reg_a[i];
                   });
             });
 
