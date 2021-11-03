@@ -345,17 +345,17 @@ class BatchedDblBufGemm {
       Kokkos::parallel_for(
           Kokkos::TeamThreadRange(member, 0, __tile_k),
           [&](const int &thread_id) {
-            auto thread_offset = thread_id + start_n;
             Kokkos::parallel_for(
                 Kokkos::ThreadVectorRange(member, 0, __tile_n / REG_N),
                 [&](const int &vlane_id) {
+                  auto vlane_offset = vlane_id * REG_N + start_n;
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
                   for (int i = 0; i < REG_N * STRIDE_N; i += STRIDE_N)
                     svB_scr(thread_id, vlane_id * REG_N + i) =
                         access_view_bounds_check<view_value_type>(
-                            svB, thread_offset, vlane_id * REG_N + i,
+                            svB, thread_id, vlane_offset + i,
                             __ei.__bounds_check_tag);
                 });
           });
@@ -366,6 +366,8 @@ class BatchedDblBufGemm {
             Kokkos::parallel_for(
                 Kokkos::ThreadVectorRange(member, 0, __tile_k),
                 [&](const int &vlane_id) {
+                  auto vld          = (vlane_id / 2);
+                  auto vlane_offset = (vlane_id % 2) * REG_M;
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
@@ -373,8 +375,7 @@ class BatchedDblBufGemm {
                     svA_scr(thread_id * REG_M + (vlane_id / 2),
                             (vlane_id % 2) * REG_M + i) =
                         access_view_bounds_check<view_value_type>(
-                            svA, thread_offset + (vlane_id / 2),
-                            (vlane_id % 2) * REG_M + i,
+                            svA, thread_offset + vld, vlane_offset + i,
                             __ei.__bounds_check_tag);
                   // TODO: might be able to use local deep copy here.
                 });
@@ -399,20 +400,21 @@ class BatchedDblBufGemm {
         // Each thread has its own copy of prefetch_reg_b. TeamThreadRange runs
         // over all threads in the team.
         Kokkos::parallel_for(
-            Kokkos::TeamThreadRange(member, 0, __tile_k),
-            [&](const int &thread_id) {
-              auto thread_offset = thread_id + start_n;
+            Kokkos::TeamThreadRange(member, k_tile_offset,
+                                    k_tile_offset + __tile_k),
+            [&](const int &thread_offset) {
               Kokkos::parallel_for(
                   Kokkos::ThreadVectorRange(member, 0, __tile_n / REG_N),
                   [&](const int &vlane_id) {
+                    auto vlane_offset = vlane_id * REG_N + start_n;
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
                     for (int i = 0; i < REG_N; ++i)
                       prefetch_reg_b[i] =
                           access_view_bounds_check<view_value_type>(
-                              svB, thread_offset + k_tile_offset,
-                              vlane_id * REG_N + i, __ei.__bounds_check_tag);
+                              svB, thread_offset, vlane_offset + i,
+                              __ei.__bounds_check_tag);
                   });
             });
 
@@ -426,14 +428,15 @@ class BatchedDblBufGemm {
               Kokkos::parallel_for(
                   Kokkos::ThreadVectorRange(member, 0, __tile_k),
                   [&](const int &vlane_id) {
+                    auto vld          = (vlane_id / 2);
+                    auto vlane_offset = (vlane_id % 2) * REG_M + k_tile_offset;
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
                     for (int i = 0; i < REG_M; ++i)
                       prefetch_reg_a[i] =
                           access_view_bounds_check<view_value_type>(
-                              svA, thread_offset + (vlane_id / 2),
-                              (vlane_id % 2) * REG_M + i + k_tile_offset,
+                              svA, thread_offset + vld, vlane_offset + i,
                               __ei.__bounds_check_tag);
                   });
             });
