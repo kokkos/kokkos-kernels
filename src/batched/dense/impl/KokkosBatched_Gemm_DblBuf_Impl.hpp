@@ -283,14 +283,14 @@ class BatchedDblBufGemm {
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
                     for (int m = 0; m < REG_M; ++m)
                       // TODO: this could be a threadVectorRange copy
-                      reg_a[m] = svA_scr(thread_offset + m * STRIDE_M, k);
+                      reg_a[m] = svA_scr(thread_offset + m, k);
               // TODO: reg_a could be a thread shared buffer
 
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
                     for (int n = 0; n < REG_N; ++n)
-                      reg_b[n] = svB_scr(k, vlane_id * REG_N + n * STRIDE_N);
+                      reg_b[n] = svB_scr(k, vlane_id + n * STRIDE_N);
 
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
@@ -423,18 +423,16 @@ class BatchedDblBufGemm {
             [&](const int &thread_id) {
               auto thread_offset = thread_id * REG_M + start_m;
               Kokkos::parallel_for(
-                  Kokkos::ThreadVectorRange(member, 0, __tile_k),
+                  Kokkos::ThreadVectorRange(member, k_tile_offset,
+                                            k_tile_offset + __tile_k),
                   [&](const int &vlane_id) {
-                    auto vld          = (vlane_id / 2);
-                    auto vlane_offset = (vlane_id % 2) * REG_M + k_tile_offset;
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
                     for (int i = 0; i < REG_M; ++i)
                       prefetch_reg_a[i] =
                           access_view_bounds_check<view_value_type>(
-                              svA, thread_offset + vld,
-                              vlane_offset + i * STRIDE_N,
+                              svA, thread_offset + i, vlane_id,
                               __ei.__bounds_check_tag);
                   });
             });
@@ -459,7 +457,7 @@ class BatchedDblBufGemm {
 #pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
                     for (int i = 0; i < REG_N; ++i)
-                      svB_scr(thread_id, vlane_id * REG_N + i * STRIDE_N) =
+                      svB_scr(thread_id, vlane_id + i * STRIDE_N) =
                           prefetch_reg_b[i];
                   });
             });
@@ -477,9 +475,7 @@ class BatchedDblBufGemm {
 #pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
                     for (int i = 0; i < REG_M; ++i)
-                      svA_scr(thread_offset + (vlane_id / 2),
-                              (vlane_id % 2) * REG_M + i * STRIDE_M) =
-                          prefetch_reg_a[i];
+                      svA_scr(thread_offset + i, vlane_id) = prefetch_reg_a[i];
                   });
             });
 
