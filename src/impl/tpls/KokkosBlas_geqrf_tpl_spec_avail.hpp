@@ -134,6 +134,7 @@ KOKKOSBLAS_GEQRF_TPL_SPEC_AVAIL_LAPACK(Kokkos::complex<float>,
     enum : bool { value = true };                                           \
   };
 
+// CUDA Space
 KOKKOSBLAS_GEQRF_WORKSPACE_TPL_SPEC_AVAIL_CUSOLVER(double, Kokkos::LayoutLeft,
                                                    Kokkos::CudaSpace)
 KOKKOSBLAS_GEQRF_TPL_SPEC_AVAIL_CUSOLVER(double, Kokkos::LayoutLeft,
@@ -155,6 +156,31 @@ KOKKOSBLAS_GEQRF_WORKSPACE_TPL_SPEC_AVAIL_CUSOLVER(Kokkos::complex<float>,
                                                    Kokkos::CudaSpace)
 KOKKOSBLAS_GEQRF_TPL_SPEC_AVAIL_CUSOLVER(Kokkos::complex<float>,
                                          Kokkos::LayoutLeft, Kokkos::CudaSpace)
+
+// Cuda UVM Space
+KOKKOSBLAS_GEQRF_WORKSPACE_TPL_SPEC_AVAIL_CUSOLVER(double, Kokkos::LayoutLeft,
+                                                   Kokkos::CudaUVMSpace)
+KOKKOSBLAS_GEQRF_TPL_SPEC_AVAIL_CUSOLVER(double, Kokkos::LayoutLeft,
+                                         Kokkos::CudaUVMSpace)
+
+KOKKOSBLAS_GEQRF_WORKSPACE_TPL_SPEC_AVAIL_CUSOLVER(float, Kokkos::LayoutLeft,
+                                                   Kokkos::CudaUVMSpace)
+KOKKOSBLAS_GEQRF_TPL_SPEC_AVAIL_CUSOLVER(float, Kokkos::LayoutLeft,
+                                         Kokkos::CudaUVMSpace)
+
+KOKKOSBLAS_GEQRF_WORKSPACE_TPL_SPEC_AVAIL_CUSOLVER(Kokkos::complex<double>,
+                                                   Kokkos::LayoutLeft,
+                                                   Kokkos::CudaUVMSpace)
+KOKKOSBLAS_GEQRF_TPL_SPEC_AVAIL_CUSOLVER(Kokkos::complex<double>,
+                                         Kokkos::LayoutLeft,
+                                         Kokkos::CudaUVMSpace)
+
+KOKKOSBLAS_GEQRF_WORKSPACE_TPL_SPEC_AVAIL_CUSOLVER(Kokkos::complex<float>,
+                                                   Kokkos::LayoutLeft,
+                                                   Kokkos::CudaUVMSpace)
+KOKKOSBLAS_GEQRF_TPL_SPEC_AVAIL_CUSOLVER(Kokkos::complex<float>,
+                                         Kokkos::LayoutLeft,
+                                         Kokkos::CudaUVMSpace)
 
 #endif  // if CUBLAS && CUSOLVER
 

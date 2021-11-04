@@ -730,6 +730,7 @@ namespace Impl {
     }                                                                          \
   };
 
+// CUDA Space
 KOKKOSBLAS_DGEQRF_CUSOLVER(Kokkos::LayoutLeft, Kokkos::CudaSpace, true)
 KOKKOSBLAS_DGEQRF_CUSOLVER(Kokkos::LayoutLeft, Kokkos::CudaSpace, false)
 
@@ -760,6 +761,39 @@ KOKKOSBLAS_ZGEQRF_WORKSPACE_CUSOLVER(Kokkos::LayoutLeft, Kokkos::CudaSpace,
 KOKKOSBLAS_CGEQRF_WORKSPACE_CUSOLVER(Kokkos::LayoutLeft, Kokkos::CudaSpace,
                                      true)
 KOKKOSBLAS_CGEQRF_WORKSPACE_CUSOLVER(Kokkos::LayoutLeft, Kokkos::CudaSpace,
+                                     false)
+
+// CUDA UVM Space
+KOKKOSBLAS_DGEQRF_CUSOLVER(Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS_DGEQRF_CUSOLVER(Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, false)
+
+KOKKOSBLAS_SGEQRF_CUSOLVER(Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS_SGEQRF_CUSOLVER(Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, false)
+
+KOKKOSBLAS_ZGEQRF_CUSOLVER(Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS_ZGEQRF_CUSOLVER(Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, false)
+
+KOKKOSBLAS_CGEQRF_CUSOLVER(Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS_CGEQRF_CUSOLVER(Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, false)
+
+KOKKOSBLAS_DGEQRF_WORKSPACE_CUSOLVER(Kokkos::LayoutLeft, Kokkos::CudaUVMSpace,
+                                     true)
+KOKKOSBLAS_DGEQRF_WORKSPACE_CUSOLVER(Kokkos::LayoutLeft, Kokkos::CudaUVMSpace,
+                                     false)
+
+KOKKOSBLAS_SGEQRF_WORKSPACE_CUSOLVER(Kokkos::LayoutLeft, Kokkos::CudaUVMSpace,
+                                     true)
+KOKKOSBLAS_SGEQRF_WORKSPACE_CUSOLVER(Kokkos::LayoutLeft, Kokkos::CudaUVMSpace,
+                                     false)
+
+KOKKOSBLAS_ZGEQRF_WORKSPACE_CUSOLVER(Kokkos::LayoutLeft, Kokkos::CudaUVMSpace,
+                                     true)
+KOKKOSBLAS_ZGEQRF_WORKSPACE_CUSOLVER(Kokkos::LayoutLeft, Kokkos::CudaUVMSpace,
+                                     false)
+
+KOKKOSBLAS_CGEQRF_WORKSPACE_CUSOLVER(Kokkos::LayoutLeft, Kokkos::CudaUVMSpace,
+                                     true)
+KOKKOSBLAS_CGEQRF_WORKSPACE_CUSOLVER(Kokkos::LayoutLeft, Kokkos::CudaUVMSpace,
                                      false)
 
 }  // namespace Impl

@@ -1033,6 +1033,7 @@ namespace Impl {
     }                                                                          \
   };
 
+// CudaSpace
 KOKKOSBLAS_DUNMQR_CUSOLVER(Kokkos::LayoutLeft, Kokkos::LayoutLeft,
                            Kokkos::LayoutLeft, Kokkos::CudaSpace, true)
 KOKKOSBLAS_DUNMQR_CUSOLVER(Kokkos::LayoutLeft, Kokkos::LayoutLeft,
@@ -1079,6 +1080,55 @@ KOKKOSBLAS_CUNMQR_WORKSPACE_CUSOLVER(Kokkos::LayoutLeft, Kokkos::LayoutLeft,
                                      true)
 KOKKOSBLAS_CUNMQR_WORKSPACE_CUSOLVER(Kokkos::LayoutLeft, Kokkos::LayoutLeft,
                                      Kokkos::LayoutLeft, Kokkos::CudaSpace,
+                                     false)
+
+// CUDA UVM Space
+KOKKOSBLAS_DUNMQR_CUSOLVER(Kokkos::LayoutLeft, Kokkos::LayoutLeft,
+                           Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS_DUNMQR_CUSOLVER(Kokkos::LayoutLeft, Kokkos::LayoutLeft,
+                           Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, false)
+
+KOKKOSBLAS_SUNMQR_CUSOLVER(Kokkos::LayoutLeft, Kokkos::LayoutLeft,
+                           Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS_SUNMQR_CUSOLVER(Kokkos::LayoutLeft, Kokkos::LayoutLeft,
+                           Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, false)
+
+KOKKOSBLAS_ZUNMQR_CUSOLVER(Kokkos::LayoutLeft, Kokkos::LayoutLeft,
+                           Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS_ZUNMQR_CUSOLVER(Kokkos::LayoutLeft, Kokkos::LayoutLeft,
+                           Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, false)
+
+KOKKOSBLAS_CUNMQR_CUSOLVER(Kokkos::LayoutLeft, Kokkos::LayoutLeft,
+                           Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS_CUNMQR_CUSOLVER(Kokkos::LayoutLeft, Kokkos::LayoutLeft,
+                           Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, false)
+
+KOKKOSBLAS_DUNMQR_WORKSPACE_CUSOLVER(Kokkos::LayoutLeft, Kokkos::LayoutLeft,
+                                     Kokkos::LayoutLeft, Kokkos::CudaUVMSpace,
+                                     true)
+KOKKOSBLAS_DUNMQR_WORKSPACE_CUSOLVER(Kokkos::LayoutLeft, Kokkos::LayoutLeft,
+                                     Kokkos::LayoutLeft,
+                                     Kokkos::CudCudaUVMSpaceaSpace, false)
+
+KOKKOSBLAS_SUNMQR_WORKSPACE_CUSOLVER(Kokkos::LayoutLeft, Kokkos::LayoutLeft,
+                                     Kokkos::LayoutLeft, Kokkos::CudaUVMSpace,
+                                     true)
+KOKKOSBLAS_SUNMQR_WORKSPACE_CUSOLVER(Kokkos::LayoutLeft, Kokkos::LayoutLeft,
+                                     Kokkos::LayoutLeft, Kokkos::CudaUVMSpace,
+                                     false)
+
+KOKKOSBLAS_ZUNMQR_WORKSPACE_CUSOLVER(Kokkos::LayoutLeft, Kokkos::LayoutLeft,
+                                     Kokkos::LayoutLeft, Kokkos::CudaUVMSpace,
+                                     true)
+KOKKOSBLAS_ZUNMQR_WORKSPACE_CUSOLVER(Kokkos::LayoutLeft, Kokkos::LayoutLeft,
+                                     Kokkos::LayoutLeft, Kokkos::CudaUVMSpace,
+                                     false)
+
+KOKKOSBLAS_CUNMQR_WORKSPACE_CUSOLVER(Kokkos::LayoutLeft, Kokkos::LayoutLeft,
+                                     Kokkos::LayoutLeft, Kokkos::CudaUVMSpace,
+                                     true)
+KOKKOSBLAS_CUNMQR_WORKSPACE_CUSOLVER(Kokkos::LayoutLeft, Kokkos::LayoutLeft,
+                                     Kokkos::LayoutLeft, Kokkos::CudaUVMSpace,
                                      false)
 
 }  // namespace Impl
