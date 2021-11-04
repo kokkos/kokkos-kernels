@@ -70,8 +70,10 @@ namespace KokkosBlas {
 //                    "T" or "t" for transpose
 /// \param k [in]     Number of elementary reflectors that define Q
 /// \param A [in]     Input matrix, as a 2-D Kokkos::View, output of geqrf or
-/// geqp3. \param tau [in] Input vector, as a 1-D Kokkos::View. Scalar factors
-/// of reflectors. \param C [in,out] Input/Output matrix, as a 2-D Kokkos::View
+/// geqp3.
+/// \param tau [in] Input vector, as a 1-D Kokkos::View. Scalar factors
+/// of reflectors.
+/// \param C [in,out] Input/Output matrix, as a 2-D Kokkos::View
 ///                   On entry, M-by-N matrix
 ///                   On exit, overwritten with the solution.
 /// \param workspace [in] Input vector, as a 1-D Kokkos::View. Scratchspace for
@@ -209,6 +211,29 @@ void unmqr(const char side[], const char trans[], int k, AViewType& A,
 
 }  // function unmqr
 
+/// \brief Returns the length of workspace needed for unmqr (Multiply
+/// rectangular matrix C by Q or Q^H (where Q is the unitary output of QR by
+/// geqrf or geqp3)).
+
+/// \tparam AViewType Input matrix M-by-k matrix       , as a 2-D Kokkos::View
+/// \tparam CViewType Input (RHS)/Output (Solution) M-by-N matrix, as a 2-D
+/// Kokkos::View \tparam TauViewType Input k vector     , as a 1-D Kokkos::View
+
+/// \return int64_t length of required workspace
+/// \param side [in] "L" or "l" indicates matrix Q is applied on the left of C
+///                   "R" or "r" indicates matrix Q is applied on the right of C
+/// \param transpose [in] Specifies what op does to Q:
+//                    "N" or "n" for non-transpose,
+//                    "T" or "t" for transpose
+/// \param k [in]     Number of elementary reflectors that define Q
+/// \param A [in]     Input matrix, as a 2-D Kokkos::View, output of geqrf or
+/// geqp3. Can be empty for workspace queries, just needs to be the correct
+/// size.
+///\param tau [in] Input vector, as a 1-D Kokkos::View. Scalar factors
+/// of reflectors. Can be empty for workspace queries.
+/// \param C [in] Input/Output unmqr matrix, as a 2-D Kokkos::View. Can be empty
+/// for workspace queries, just needs to be the correct size.
+
 template <class AViewType, class TauViewType, class CViewType>
 int64_t unmqr_workspace(const char side[], const char trans[], int k,
                         AViewType& A, TauViewType& tau, CViewType& C) {
@@ -243,6 +268,25 @@ int64_t unmqr_workspace(const char side[], const char trans[], int k,
   return impl_type::unmqr_workspace(side[0], trans[0], k, A_i, tau_i, C_i);
 
 }  // function unmqr_workspace
+
+/// \brief Multiply rectangular matrix C by Q or Q^H (where Q is the unitary
+/// output of QR by geqrf or geqp3). Allocates a workspace internally.
+
+/// \tparam AViewType Input matrix M-by-k matrix       , as a 2-D Kokkos::View
+/// \tparam CViewType Input (RHS)/Output (Solution) M-by-N matrix, as a 2-D
+/// Kokkos::View \tparam TauViewType Input k vector     , as a 1-D Kokkos::View
+///
+/// \param side [in] "L" or "l" indicates matrix Q is applied on the left of C
+///                   "R" or "r" indicates matrix Q is applied on the right of C
+/// \param transpose [in] Specifies what op does to Q:
+//                    "N" or "n" for non-transpose,
+//                    "T" or "t" for transpose
+/// \param k [in]     Number of elementary reflectors that define Q
+/// \param A [in]     Input matrix, as a 2-D Kokkos::View, output of geqrf or
+/// geqp3. \param tau [in] Input vector, as a 1-D Kokkos::View. Scalar factors
+/// of reflectors. \param C [in,out] Input/Output matrix, as a 2-D Kokkos::View
+///                   On entry, M-by-N matrix
+///                   On exit, overwritten with the solution.
 
 template <class AViewType, class TauViewType, class CViewType>
 void unmqr(const char side[], const char trans[], int k, AViewType& A,

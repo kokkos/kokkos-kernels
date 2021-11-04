@@ -65,7 +65,8 @@ namespace KokkosBlas {
 ///                   On entry, M-by-N matrix
 ///                   On exit, overwritten with the solution.
 /// \param tau [in] Input vector, as a 1-D Kokkos::View. Scalar factors of
-/// reflectors. \param workspace [in] Input vector, as a 1-D Kokkos::View.
+/// reflectors.
+/// \param workspace [in] Input vector, as a 1-D Kokkos::View.
 /// Scratchspace for calculations.
 
 template <class AViewType, class TauViewType, class WViewType>
@@ -134,6 +135,19 @@ void geqrf(AViewType& A, TauViewType& tau, WViewType& workspace) {
 
 }  // function geqrf
 
+/// \brief Returns the required workspace of geqrf. ( Compute the QR
+/// factorization of M x N matrix A. (geqrf) )
+///
+/// \return int64_t length of the required workspace
+/// \tparam AViewType Input(A) / Output (Solution) M x N matrix       , as a 2-D
+/// Kokkos::View \tparam TauViewType Input k vector     , as a 1-D Kokkos::View
+/// \tparam WViewType Input Workspace, as a 1-D Kokkos::View
+///
+/// \param A [in]     Input matrix, as a 2-D Kokkos::View. Can be
+/// uninitialized for workspace queries just needs to be the correct size.
+/// \param tau [in] Input vector, as a 1-D Kokkos::View. Scalar factors of
+/// reflectors. Can be empty for workspace queries.
+
 template <class AViewType, class TauViewType>
 int64_t geqrf_workspace(AViewType& A, TauViewType& tau) {
   // return if degenerate matrix provided
@@ -159,6 +173,18 @@ int64_t geqrf_workspace(AViewType& A, TauViewType& tau) {
   return impl_type::geqrf_workspace(A_i, tau_i);
 
 }  // function geqrf_workspace
+
+/// \brief Compute the QR factorization of M x N matrix A. (geqrf). Allocates an
+/// internal workspace.
+
+/// \tparam AViewType Input(A) / Output (Solution) M x N matrix       , as a 2-D
+/// Kokkos::View \tparam TauViewType Input k vector     , as a 1-D Kokkos::View
+///
+/// \param A [in, out]     Input matrix, as a 2-D Kokkos::View
+///                   On entry, M-by-N matrix
+///                   On exit, overwritten with the solution.
+/// \param tau [in] Input vector, as a 1-D Kokkos::View. Scalar factors of
+/// reflectors.
 
 template <class AViewType, class TauViewType>
 void geqrf(AViewType& A, TauViewType& tau) {
