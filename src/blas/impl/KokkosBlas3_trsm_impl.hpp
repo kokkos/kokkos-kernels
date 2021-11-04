@@ -57,8 +57,6 @@
 #include "KokkosBatched_Trsm_Decl.hpp"
 #include "KokkosBatched_Trsm_Serial_Impl.hpp"
 
-using namespace KokkosBatched;
-
 namespace KokkosBlas {
 namespace Impl {
 
@@ -74,10 +72,12 @@ SerialTrsmInternalLeftLowerConj(const bool use_unit_diag,
   typedef Kokkos::Details::ArithTraits<ValueType> AT;
   
   const ScalarType one(1.0), zero(0.0);
-      
-  if (alpha == zero)   SerialSetInternal  ::invoke(m, n, zero,  B, bs0, bs1);
+
+  if (alpha == zero)
+    KokkosBatched::SerialSetInternal ::invoke(m, n, zero, B, bs0, bs1);
   else {
-    if (alpha != one)  SerialScaleInternal::invoke(m, n, alpha, B, bs0, bs1);
+    if (alpha != one)
+      KokkosBatched::SerialScaleInternal::invoke(m, n, alpha, B, bs0, bs1);
     if (m <= 0 || n <= 0) return 0;
 
     for (int p=0;p<m;++p) {
@@ -116,9 +116,11 @@ SerialTrsmInternalLeftUpperConj(const bool use_unit_diag,
 
   const ScalarType one(1.0), zero(0.0);
 
-  if (alpha == zero)  SerialSetInternal  ::invoke(m, n, zero,  B, bs0, bs1);
+  if (alpha == zero)
+    KokkosBatched::SerialSetInternal ::invoke(m, n, zero, B, bs0, bs1);
   else {
-    if (alpha != one) SerialScaleInternal::invoke(m, n, alpha, B, bs0, bs1);
+    if (alpha != one)
+      KokkosBatched::SerialScaleInternal::invoke(m, n, alpha, B, bs0, bs1);
     if (m <= 0 || n <= 0) return 0;
       
     ValueType *KOKKOS_RESTRICT B0 = B;
@@ -144,183 +146,189 @@ SerialTrsmInternalLeftUpperConj(const bool use_unit_diag,
   return 0;
 }
 
+template <class AViewType, class BViewType>
+void SerialTrsm_Invoke(const char side[], const char uplo[], const char trans[],
+                       const char diag[],
+                       typename BViewType::const_value_type& alpha,
+                       const AViewType& A, const BViewType& B) {
+  using KokkosBatched::Algo;
+  using KokkosBatched::Diag;
 
-template<class AViewType, class BViewType>
-void SerialTrsm_Invoke (const char side[],
-                  const char uplo[],
-                  const char trans[],
-                  const char diag[],
-                  typename BViewType::const_value_type& alpha,
-                  const AViewType& A,
-                  const BViewType& B)
-{
-  //Side::Left, Uplo::Lower, Trans::NoTranspose
-  if (((side[0]=='L')||(side[0]=='l'))&&((uplo[0]=='L')||(uplo[0]=='l'))&&((trans[0]=='N')||(trans[0]=='n'))&&((diag[0]=='U')||(diag[0]=='u')))
-    SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(Diag::Unit::use_unit_diag,
-                                                               B.extent(0), B.extent(1),
-                                                               alpha,
-                                                               A.data(), A.stride(0), A.stride(1),
-                                                               B.data(), B.stride(0), B.stride(1));
-  if (((side[0]=='L')||(side[0]=='l'))&&((uplo[0]=='L')||(uplo[0]=='l'))&&((trans[0]=='N')||(trans[0]=='n'))&&((diag[0]=='N')||(diag[0]=='n')))
-    SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(Diag::NonUnit::use_unit_diag,
-                                                               B.extent(0), B.extent(1),
-                                                               alpha,
-                                                               A.data(), A.stride(0), A.stride(1),
-                                                               B.data(), B.stride(0), B.stride(1));
+  // Side::Left, Uplo::Lower, Trans::NoTranspose
+  if (((side[0] == 'L') || (side[0] == 'l')) &&
+      ((uplo[0] == 'L') || (uplo[0] == 'l')) &&
+      ((trans[0] == 'N') || (trans[0] == 'n')) &&
+      ((diag[0] == 'U') || (diag[0] == 'u')))
+    KokkosBatched::SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(
+        Diag::Unit::use_unit_diag, B.extent(0), B.extent(1), alpha, A.data(),
+        A.stride(0), A.stride(1), B.data(), B.stride(0), B.stride(1));
+  if (((side[0] == 'L') || (side[0] == 'l')) &&
+      ((uplo[0] == 'L') || (uplo[0] == 'l')) &&
+      ((trans[0] == 'N') || (trans[0] == 'n')) &&
+      ((diag[0] == 'N') || (diag[0] == 'n')))
+    KokkosBatched::SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(
+        Diag::NonUnit::use_unit_diag, B.extent(0), B.extent(1), alpha, A.data(),
+        A.stride(0), A.stride(1), B.data(), B.stride(0), B.stride(1));
 
-  //Side::Left, Uplo::Lower, Trans::Transpose
-  if (((side[0]=='L')||(side[0]=='l'))&&((uplo[0]=='L')||(uplo[0]=='l'))&&((trans[0]=='T')||(trans[0]=='t'))&&((diag[0]=='U')||(diag[0]=='u')))
-    SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(Diag::Unit::use_unit_diag,
-                                                               B.extent(0), B.extent(1),
-                                                               alpha,
-                                                               A.data(), A.stride(1), A.stride(0),
-                                                               B.data(), B.stride(0), B.stride(1));
-  if (((side[0]=='L')||(side[0]=='l'))&&((uplo[0]=='L')||(uplo[0]=='l'))&&((trans[0]=='T')||(trans[0]=='t'))&&((diag[0]=='N')||(diag[0]=='n')))
-    SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(Diag::NonUnit::use_unit_diag,
-                                                               B.extent(0), B.extent(1),
-                                                               alpha,
-                                                               A.data(), A.stride(1), A.stride(0),
-                                                               B.data(), B.stride(0), B.stride(1));
+  // Side::Left, Uplo::Lower, Trans::Transpose
+  if (((side[0] == 'L') || (side[0] == 'l')) &&
+      ((uplo[0] == 'L') || (uplo[0] == 'l')) &&
+      ((trans[0] == 'T') || (trans[0] == 't')) &&
+      ((diag[0] == 'U') || (diag[0] == 'u')))
+    KokkosBatched::SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(
+        Diag::Unit::use_unit_diag, B.extent(0), B.extent(1), alpha, A.data(),
+        A.stride(1), A.stride(0), B.data(), B.stride(0), B.stride(1));
+  if (((side[0] == 'L') || (side[0] == 'l')) &&
+      ((uplo[0] == 'L') || (uplo[0] == 'l')) &&
+      ((trans[0] == 'T') || (trans[0] == 't')) &&
+      ((diag[0] == 'N') || (diag[0] == 'n')))
+    KokkosBatched::SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(
+        Diag::NonUnit::use_unit_diag, B.extent(0), B.extent(1), alpha, A.data(),
+        A.stride(1), A.stride(0), B.data(), B.stride(0), B.stride(1));
 
-  //Side::Left, Uplo::Lower, Trans::ConjTranspose
-  if (((side[0]=='L')||(side[0]=='l'))&&((uplo[0]=='L')||(uplo[0]=='l'))&&((trans[0]=='C')||(trans[0]=='c'))&&((diag[0]=='U')||(diag[0]=='u')))
-    SerialTrsmInternalLeftUpperConj(Diag::Unit::use_unit_diag,
-                                    B.extent(0), B.extent(1),
-                                    alpha,
-                                    A.data(), A.stride(1), A.stride(0),
-                                    B.data(), B.stride(0), B.stride(1));
-  if (((side[0]=='L')||(side[0]=='l'))&&((uplo[0]=='L')||(uplo[0]=='l'))&&((trans[0]=='C')||(trans[0]=='c'))&&((diag[0]=='N')||(diag[0]=='n')))
-    SerialTrsmInternalLeftUpperConj(Diag::NonUnit::use_unit_diag,
-                                    B.extent(0), B.extent(1),
-                                    alpha,
-                                    A.data(), A.stride(1), A.stride(0),
-                                    B.data(), B.stride(0), B.stride(1));
+  // Side::Left, Uplo::Lower, Trans::ConjTranspose
+  if (((side[0] == 'L') || (side[0] == 'l')) &&
+      ((uplo[0] == 'L') || (uplo[0] == 'l')) &&
+      ((trans[0] == 'C') || (trans[0] == 'c')) &&
+      ((diag[0] == 'U') || (diag[0] == 'u')))
+    SerialTrsmInternalLeftUpperConj(
+        Diag::Unit::use_unit_diag, B.extent(0), B.extent(1), alpha, A.data(),
+        A.stride(1), A.stride(0), B.data(), B.stride(0), B.stride(1));
+  if (((side[0] == 'L') || (side[0] == 'l')) &&
+      ((uplo[0] == 'L') || (uplo[0] == 'l')) &&
+      ((trans[0] == 'C') || (trans[0] == 'c')) &&
+      ((diag[0] == 'N') || (diag[0] == 'n')))
+    SerialTrsmInternalLeftUpperConj(
+        Diag::NonUnit::use_unit_diag, B.extent(0), B.extent(1), alpha, A.data(),
+        A.stride(1), A.stride(0), B.data(), B.stride(0), B.stride(1));
 
-  //Side::Left, Uplo::Upper, Trans::NoTranspose
-  if (((side[0]=='L')||(side[0]=='l'))&&((uplo[0]=='U')||(uplo[0]=='u'))&&((trans[0]=='N')||(trans[0]=='n'))&&((diag[0]=='U')||(diag[0]=='u')))
-    SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(Diag::Unit::use_unit_diag,
-                                                               B.extent(0), B.extent(1),
-                                                               alpha,
-                                                               A.data(), A.stride(0), A.stride(1),
-                                                               B.data(), B.stride(0), B.stride(1));
-  if (((side[0]=='L')||(side[0]=='l'))&&((uplo[0]=='U')||(uplo[0]=='u'))&&((trans[0]=='N')||(trans[0]=='n'))&&((diag[0]=='N')||(diag[0]=='n')))
-    SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(Diag::NonUnit::use_unit_diag,
-                                                               B.extent(0), B.extent(1),
-                                                               alpha,
-                                                               A.data(), A.stride(0), A.stride(1),
-                                                               B.data(), B.stride(0), B.stride(1));
+  // Side::Left, Uplo::Upper, Trans::NoTranspose
+  if (((side[0] == 'L') || (side[0] == 'l')) &&
+      ((uplo[0] == 'U') || (uplo[0] == 'u')) &&
+      ((trans[0] == 'N') || (trans[0] == 'n')) &&
+      ((diag[0] == 'U') || (diag[0] == 'u')))
+    KokkosBatched::SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(
+        Diag::Unit::use_unit_diag, B.extent(0), B.extent(1), alpha, A.data(),
+        A.stride(0), A.stride(1), B.data(), B.stride(0), B.stride(1));
+  if (((side[0] == 'L') || (side[0] == 'l')) &&
+      ((uplo[0] == 'U') || (uplo[0] == 'u')) &&
+      ((trans[0] == 'N') || (trans[0] == 'n')) &&
+      ((diag[0] == 'N') || (diag[0] == 'n')))
+    KokkosBatched::SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(
+        Diag::NonUnit::use_unit_diag, B.extent(0), B.extent(1), alpha, A.data(),
+        A.stride(0), A.stride(1), B.data(), B.stride(0), B.stride(1));
 
-  //Side::Left, Uplo::Upper, Trans::Transpose
-  if (((side[0]=='L')||(side[0]=='l'))&&((uplo[0]=='U')||(uplo[0]=='u'))&&((trans[0]=='T')||(trans[0]=='t'))&&((diag[0]=='U')||(diag[0]=='u')))
-    SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(Diag::Unit::use_unit_diag,
-                                                               B.extent(0), B.extent(1),
-                                                               alpha,
-                                                               A.data(), A.stride(1), A.stride(0),
-                                                               B.data(), B.stride(0), B.stride(1));
-  if (((side[0]=='L')||(side[0]=='l'))&&((uplo[0]=='U')||(uplo[0]=='u'))&&((trans[0]=='T')||(trans[0]=='t'))&&((diag[0]=='N')||(diag[0]=='n')))
-    SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(Diag::NonUnit::use_unit_diag,
-                                                               B.extent(0), B.extent(1),
-                                                               alpha,
-                                                               A.data(), A.stride(1), A.stride(0),
-                                                               B.data(), B.stride(0), B.stride(1));
+  // Side::Left, Uplo::Upper, Trans::Transpose
+  if (((side[0] == 'L') || (side[0] == 'l')) &&
+      ((uplo[0] == 'U') || (uplo[0] == 'u')) &&
+      ((trans[0] == 'T') || (trans[0] == 't')) &&
+      ((diag[0] == 'U') || (diag[0] == 'u')))
+    KokkosBatched::SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(
+        Diag::Unit::use_unit_diag, B.extent(0), B.extent(1), alpha, A.data(),
+        A.stride(1), A.stride(0), B.data(), B.stride(0), B.stride(1));
+  if (((side[0] == 'L') || (side[0] == 'l')) &&
+      ((uplo[0] == 'U') || (uplo[0] == 'u')) &&
+      ((trans[0] == 'T') || (trans[0] == 't')) &&
+      ((diag[0] == 'N') || (diag[0] == 'n')))
+    KokkosBatched::SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(
+        Diag::NonUnit::use_unit_diag, B.extent(0), B.extent(1), alpha, A.data(),
+        A.stride(1), A.stride(0), B.data(), B.stride(0), B.stride(1));
 
-  //Side::Left, Uplo::Upper, Trans::ConjTranspose
-  if (((side[0]=='L')||(side[0]=='l'))&&((uplo[0]=='U')||(uplo[0]=='u'))&&((trans[0]=='C')||(trans[0]=='c'))&&((diag[0]=='U')||(diag[0]=='u')))
-    SerialTrsmInternalLeftLowerConj(Diag::Unit::use_unit_diag,
-                                    B.extent(0), B.extent(1),
-                                    alpha,
-                                    A.data(), A.stride(1), A.stride(0),
-                                    B.data(), B.stride(0), B.stride(1));
-  if (((side[0]=='L')||(side[0]=='l'))&&((uplo[0]=='U')||(uplo[0]=='u'))&&((trans[0]=='C')||(trans[0]=='c'))&&((diag[0]=='N')||(diag[0]=='n')))
-    SerialTrsmInternalLeftLowerConj(Diag::NonUnit::use_unit_diag,
-                                    B.extent(0), B.extent(1),
-                                    alpha,
-                                    A.data(), A.stride(1), A.stride(0),
-                                    B.data(), B.stride(0), B.stride(1));
-  ////
-  //Side::Right, Uplo::Lower, Trans::NoTranspose
-  if (((side[0]=='R')||(side[0]=='r'))&&((uplo[0]=='L')||(uplo[0]=='l'))&&((trans[0]=='N')||(trans[0]=='n'))&&((diag[0]=='U')||(diag[0]=='u')))
-    SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(Diag::Unit::use_unit_diag,
-                                                               B.extent(1), B.extent(0),
-                                                               alpha,
-                                                               A.data(), A.stride(1), A.stride(0),
-                                                               B.data(), B.stride(1), B.stride(0));
-  if (((side[0]=='R')||(side[0]=='r'))&&((uplo[0]=='L')||(uplo[0]=='l'))&&((trans[0]=='N')||(trans[0]=='n'))&&((diag[0]=='N')||(diag[0]=='n')))
-    SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(Diag::NonUnit::use_unit_diag,
-                                                               B.extent(1), B.extent(0),
-                                                               alpha,
-                                                               A.data(), A.stride(1), A.stride(0),
-                                                               B.data(), B.stride(1), B.stride(0));
+  // Side::Right, Uplo::Lower, Trans::NoTranspose
+  if (((side[0] == 'R') || (side[0] == 'r')) &&
+      ((uplo[0] == 'L') || (uplo[0] == 'l')) &&
+      ((trans[0] == 'N') || (trans[0] == 'n')) &&
+      ((diag[0] == 'U') || (diag[0] == 'u')))
+    KokkosBatched::SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(
+        Diag::Unit::use_unit_diag, B.extent(1), B.extent(0), alpha, A.data(),
+        A.stride(1), A.stride(0), B.data(), B.stride(1), B.stride(0));
+  if (((side[0] == 'R') || (side[0] == 'r')) &&
+      ((uplo[0] == 'L') || (uplo[0] == 'l')) &&
+      ((trans[0] == 'N') || (trans[0] == 'n')) &&
+      ((diag[0] == 'N') || (diag[0] == 'n')))
+    KokkosBatched::SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(
+        Diag::NonUnit::use_unit_diag, B.extent(1), B.extent(0), alpha, A.data(),
+        A.stride(1), A.stride(0), B.data(), B.stride(1), B.stride(0));
 
-  //Side::Right, Uplo::Lower, Trans::Transpose
-  if (((side[0]=='R')||(side[0]=='r'))&&((uplo[0]=='L')||(uplo[0]=='l'))&&((trans[0]=='T')||(trans[0]=='t'))&&((diag[0]=='U')||(diag[0]=='u')))
-    SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(Diag::Unit::use_unit_diag,
-                                                               B.extent(1), B.extent(0),
-                                                               alpha,
-                                                               A.data(), A.stride(0), A.stride(1),
-                                                               B.data(), B.stride(1), B.stride(0));
-  if (((side[0]=='R')||(side[0]=='r'))&&((uplo[0]=='L')||(uplo[0]=='l'))&&((trans[0]=='T')||(trans[0]=='t'))&&((diag[0]=='N')||(diag[0]=='n')))
-    SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(Diag::NonUnit::use_unit_diag,
-                                                               B.extent(1), B.extent(0),
-                                                               alpha,
-                                                               A.data(), A.stride(0), A.stride(1),
-                                                               B.data(), B.stride(1), B.stride(0));
+  // Side::Right, Uplo::Lower, Trans::Transpose
+  if (((side[0] == 'R') || (side[0] == 'r')) &&
+      ((uplo[0] == 'L') || (uplo[0] == 'l')) &&
+      ((trans[0] == 'T') || (trans[0] == 't')) &&
+      ((diag[0] == 'U') || (diag[0] == 'u')))
+    KokkosBatched::SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(
+        Diag::Unit::use_unit_diag, B.extent(1), B.extent(0), alpha, A.data(),
+        A.stride(0), A.stride(1), B.data(), B.stride(1), B.stride(0));
+  if (((side[0] == 'R') || (side[0] == 'r')) &&
+      ((uplo[0] == 'L') || (uplo[0] == 'l')) &&
+      ((trans[0] == 'T') || (trans[0] == 't')) &&
+      ((diag[0] == 'N') || (diag[0] == 'n')))
+    KokkosBatched::SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(
+        Diag::NonUnit::use_unit_diag, B.extent(1), B.extent(0), alpha, A.data(),
+        A.stride(0), A.stride(1), B.data(), B.stride(1), B.stride(0));
 
-  //Side::Right, Uplo::Lower, Trans::ConjTranspose
-  if (((side[0]=='R')||(side[0]=='r'))&&((uplo[0]=='L')||(uplo[0]=='l'))&&((trans[0]=='C')||(trans[0]=='c'))&&((diag[0]=='U')||(diag[0]=='u')))
-    SerialTrsmInternalLeftLowerConj(Diag::Unit::use_unit_diag,
-                                    B.extent(1), B.extent(0),
-                                    alpha,
-                                    A.data(), A.stride(0), A.stride(1),
-                                    B.data(), B.stride(1), B.stride(0));
-  if (((side[0]=='R')||(side[0]=='r'))&&((uplo[0]=='L')||(uplo[0]=='l'))&&((trans[0]=='C')||(trans[0]=='c'))&&((diag[0]=='N')||(diag[0]=='n')))
-    SerialTrsmInternalLeftLowerConj(Diag::NonUnit::use_unit_diag,
-                                    B.extent(1), B.extent(0),
-                                    alpha,
-                                    A.data(), A.stride(0), A.stride(1),
-                                    B.data(), B.stride(1), B.stride(0));
+  // Side::Right, Uplo::Lower, Trans::ConjTranspose
+  if (((side[0] == 'R') || (side[0] == 'r')) &&
+      ((uplo[0] == 'L') || (uplo[0] == 'l')) &&
+      ((trans[0] == 'C') || (trans[0] == 'c')) &&
+      ((diag[0] == 'U') || (diag[0] == 'u')))
+    SerialTrsmInternalLeftLowerConj(
+        Diag::Unit::use_unit_diag, B.extent(1), B.extent(0), alpha, A.data(),
+        A.stride(0), A.stride(1), B.data(), B.stride(1), B.stride(0));
+  if (((side[0] == 'R') || (side[0] == 'r')) &&
+      ((uplo[0] == 'L') || (uplo[0] == 'l')) &&
+      ((trans[0] == 'C') || (trans[0] == 'c')) &&
+      ((diag[0] == 'N') || (diag[0] == 'n')))
+    SerialTrsmInternalLeftLowerConj(
+        Diag::NonUnit::use_unit_diag, B.extent(1), B.extent(0), alpha, A.data(),
+        A.stride(0), A.stride(1), B.data(), B.stride(1), B.stride(0));
 
-  //Side::Right, Uplo::Upper, Trans::NoTranspose
-  if (((side[0]=='R')||(side[0]=='r'))&&((uplo[0]=='U')||(uplo[0]=='u'))&&((trans[0]=='N')||(trans[0]=='n'))&&((diag[0]=='U')||(diag[0]=='u')))
-    SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(Diag::Unit::use_unit_diag,
-                                                               B.extent(1), B.extent(0),
-                                                               alpha,
-                                                               A.data(), A.stride(1), A.stride(0),
-                                                               B.data(), B.stride(1), B.stride(0));
-  if (((side[0]=='R')||(side[0]=='r'))&&((uplo[0]=='U')||(uplo[0]=='u'))&&((trans[0]=='N')||(trans[0]=='n'))&&((diag[0]=='N')||(diag[0]=='n')))
-    SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(Diag::NonUnit::use_unit_diag,
-                                                               B.extent(1), B.extent(0),
-                                                               alpha,
-                                                               A.data(), A.stride(1), A.stride(0),
-                                                               B.data(), B.stride(1), B.stride(0));
+  // Side::Right, Uplo::Upper, Trans::NoTranspose
+  if (((side[0] == 'R') || (side[0] == 'r')) &&
+      ((uplo[0] == 'U') || (uplo[0] == 'u')) &&
+      ((trans[0] == 'N') || (trans[0] == 'n')) &&
+      ((diag[0] == 'U') || (diag[0] == 'u')))
+    KokkosBatched::SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(
+        Diag::Unit::use_unit_diag, B.extent(1), B.extent(0), alpha, A.data(),
+        A.stride(1), A.stride(0), B.data(), B.stride(1), B.stride(0));
+  if (((side[0] == 'R') || (side[0] == 'r')) &&
+      ((uplo[0] == 'U') || (uplo[0] == 'u')) &&
+      ((trans[0] == 'N') || (trans[0] == 'n')) &&
+      ((diag[0] == 'N') || (diag[0] == 'n')))
+    KokkosBatched::SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(
+        Diag::NonUnit::use_unit_diag, B.extent(1), B.extent(0), alpha, A.data(),
+        A.stride(1), A.stride(0), B.data(), B.stride(1), B.stride(0));
 
-  //Side::Right, Uplo::Upper, Trans::Transpose
-  if (((side[0]=='R')||(side[0]=='r'))&&((uplo[0]=='U')||(uplo[0]=='u'))&&((trans[0]=='T')||(trans[0]=='t'))&&((diag[0]=='U')||(diag[0]=='u')))
-    SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(Diag::Unit::use_unit_diag,
-                                                               B.extent(1), B.extent(0),
-                                                               alpha,
-                                                               A.data(), A.stride(0), A.stride(1),
-                                                               B.data(), B.stride(1), B.stride(0));
-  if (((side[0]=='R')||(side[0]=='r'))&&((uplo[0]=='U')||(uplo[0]=='u'))&&((trans[0]=='T')||(trans[0]=='t'))&&((diag[0]=='N')||(diag[0]=='n')))
-    SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(Diag::NonUnit::use_unit_diag,
-                                                               B.extent(1), B.extent(0),
-                                                               alpha,
-                                                               A.data(), A.stride(0), A.stride(1),
-                                                               B.data(), B.stride(1), B.stride(0));
-															   
-  //Side::Right, Uplo::Upper, Trans::ConjTranspose
-  if (((side[0]=='R')||(side[0]=='r'))&&((uplo[0]=='U')||(uplo[0]=='u'))&&((trans[0]=='C')||(trans[0]=='c'))&&((diag[0]=='U')||(diag[0]=='u')))
-    SerialTrsmInternalLeftUpperConj(Diag::Unit::use_unit_diag,
-                                    B.extent(1), B.extent(0),
-                                    alpha,
-                                    A.data(), A.stride(0), A.stride(1),
-                                    B.data(), B.stride(1), B.stride(0));
-  if (((side[0]=='R')||(side[0]=='r'))&&((uplo[0]=='U')||(uplo[0]=='u'))&&((trans[0]=='C')||(trans[0]=='c'))&&((diag[0]=='N')||(diag[0]=='n')))
-    SerialTrsmInternalLeftUpperConj(Diag::NonUnit::use_unit_diag,
-                                    B.extent(1), B.extent(0),
-                                    alpha,
-                                    A.data(), A.stride(0), A.stride(1),
-                                    B.data(), B.stride(1), B.stride(0));
+  // Side::Right, Uplo::Upper, Trans::Transpose
+  if (((side[0] == 'R') || (side[0] == 'r')) &&
+      ((uplo[0] == 'U') || (uplo[0] == 'u')) &&
+      ((trans[0] == 'T') || (trans[0] == 't')) &&
+      ((diag[0] == 'U') || (diag[0] == 'u')))
+    KokkosBatched::SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(
+        Diag::Unit::use_unit_diag, B.extent(1), B.extent(0), alpha, A.data(),
+        A.stride(0), A.stride(1), B.data(), B.stride(1), B.stride(0));
+  if (((side[0] == 'R') || (side[0] == 'r')) &&
+      ((uplo[0] == 'U') || (uplo[0] == 'u')) &&
+      ((trans[0] == 'T') || (trans[0] == 't')) &&
+      ((diag[0] == 'N') || (diag[0] == 'n')))
+    KokkosBatched::SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(
+        Diag::NonUnit::use_unit_diag, B.extent(1), B.extent(0), alpha, A.data(),
+        A.stride(0), A.stride(1), B.data(), B.stride(1), B.stride(0));
+
+  // Side::Right, Uplo::Upper, Trans::ConjTranspose
+  if (((side[0] == 'R') || (side[0] == 'r')) &&
+      ((uplo[0] == 'U') || (uplo[0] == 'u')) &&
+      ((trans[0] == 'C') || (trans[0] == 'c')) &&
+      ((diag[0] == 'U') || (diag[0] == 'u')))
+    SerialTrsmInternalLeftUpperConj(
+        Diag::Unit::use_unit_diag, B.extent(1), B.extent(0), alpha, A.data(),
+        A.stride(0), A.stride(1), B.data(), B.stride(1), B.stride(0));
+  if (((side[0] == 'R') || (side[0] == 'r')) &&
+      ((uplo[0] == 'U') || (uplo[0] == 'u')) &&
+      ((trans[0] == 'C') || (trans[0] == 'c')) &&
+      ((diag[0] == 'N') || (diag[0] == 'n')))
+    SerialTrsmInternalLeftUpperConj(
+        Diag::NonUnit::use_unit_diag, B.extent(1), B.extent(0), alpha, A.data(),
+        A.stride(0), A.stride(1), B.data(), B.stride(1), B.stride(0));
 }
 
 }// namespace Impl
