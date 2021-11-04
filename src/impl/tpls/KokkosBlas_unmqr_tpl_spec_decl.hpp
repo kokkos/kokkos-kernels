@@ -590,9 +590,9 @@ namespace Impl {
       const int lwork = workspace.extent(0);                                   \
       KokkosBlas::Impl::CudaSolverSingleton& s =                               \
           KokkosBlas::Impl::CudaSolverSingleton::singleton();                  \
-      cusolverDnDormqr(s.handle, m_side, m_trans, M, N, k, A.data(), LDA,      \
-                       tau.data(), C.data(), LDC, workspace.data(), lwork,     \
-                       &devinfo);                                              \
+      KOKKOS_CUSOLVER_SAFE_CALL_IMPL(cusolverDnDormqr(                         \
+          s.handle, m_side, m_trans, M, N, k, A.data(), LDA, tau.data(),       \
+          C.data(), LDC, workspace.data(), lwork, &devinfo));                  \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };
@@ -652,9 +652,9 @@ namespace Impl {
       const int lwork = workspace.extent(0);                                   \
       KokkosBlas::Impl::CudaSolverSingleton& s =                               \
           KokkosBlas::Impl::CudaSolverSingleton::singleton();                  \
-      cusolverDnSormqr(s.handle, m_side, m_trans, M, N, k, A.data(), LDA,      \
-                       tau.data(), C.data(), LDC, workspace.data(), lwork,     \
-                       &devinfo);                                              \
+      KOKKOS_CUSOLVER_SAFE_CALL_IMPL(cusolverDnSormqr(                         \
+          s.handle, m_side, m_trans, M, N, k, A.data(), LDA, tau.data(),       \
+          C.data(), LDC, workspace.data(), lwork, &devinfo));                  \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };
@@ -717,13 +717,13 @@ namespace Impl {
       const int lwork = workspace.extent(0);                                   \
       KokkosBlas::Impl::CudaSolverSingleton& s =                               \
           KokkosBlas::Impl::CudaSolverSingleton::singleton();                  \
-      cusolverDnZunmqr(s.handle, m_side, m_trans, M, N, k,                     \
-                       reinterpret_cast<const cuDoubleComplex*>(A.data()),     \
-                       LDA,                                                    \
-                       reinterpret_cast<const cuDoubleComplex*>(tau.data()),   \
-                       reinterpret_cast<cuDoubleComplex*>(C.data()), LDC,      \
-                       reinterpret_cast<cuDoubleComplex*>(workspace.data()),   \
-                       lwork, &devinfo);                                       \
+      KOKKOS_CUSOLVER_SAFE_CALL_IMPL(cusolverDnZunmqr(                         \
+          s.handle, m_side, m_trans, M, N, k,                                  \
+          reinterpret_cast<const cuDoubleComplex*>(A.data()), LDA,             \
+          reinterpret_cast<const cuDoubleComplex*>(tau.data()),                \
+          reinterpret_cast<cuDoubleComplex*>(C.data()), LDC,                   \
+          reinterpret_cast<cuDoubleComplex*>(workspace.data()), lwork,         \
+          &devinfo));                                                          \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };
@@ -786,12 +786,12 @@ namespace Impl {
       const int lwork = workspace.extent(0);                                   \
       KokkosBlas::Impl::CudaSolverSingleton& s =                               \
           KokkosBlas::Impl::CudaSolverSingleton::singleton();                  \
-      cusolverDnCunmqr(s.handle, m_side, m_trans, M, N, k,                     \
-                       reinterpret_cast<const cuComplex*>(A.data()), LDA,      \
-                       reinterpret_cast<const cuComplex*>(tau.data()),         \
-                       reinterpret_cast<cuComplex*>(C.data()), LDC,            \
-                       reinterpret_cast<cuComplex*>(workspace.data()), lwork,  \
-                       &devinfo);                                              \
+      KOKKOS_CUSOLVER_SAFE_CALL_IMPL(cusolverDnCunmqr(                         \
+          s.handle, m_side, m_trans, M, N, k,                                  \
+          reinterpret_cast<const cuComplex*>(A.data()), LDA,                   \
+          reinterpret_cast<const cuComplex*>(tau.data()),                      \
+          reinterpret_cast<cuComplex*>(C.data()), LDC,                         \
+          reinterpret_cast<cuComplex*>(workspace.data()), lwork, &devinfo));   \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };
@@ -847,9 +847,9 @@ namespace Impl {
       int lwork = 0;                                                           \
       KokkosBlas::Impl::CudaSolverSingleton& s =                               \
           KokkosBlas::Impl::CudaSolverSingleton::singleton();                  \
-      cusolverDnDormqr_bufferSize(s.handle, m_side, m_trans, M, N, k,          \
-                                  A.data(), LDA, tau.data(), C.data(), LDC,    \
-                                  &lwork);                                     \
+      KOKKOS_CUSOLVER_SAFE_CALL_IMPL(cusolverDnDormqr_bufferSize(              \
+          s.handle, m_side, m_trans, M, N, k, A.data(), LDA, tau.data(),       \
+          C.data(), LDC, &lwork));                                             \
       Kokkos::Profiling::popRegion();                                          \
       return (int64_t)lwork;                                                   \
     }                                                                          \
@@ -903,9 +903,9 @@ namespace Impl {
       int lwork = 0;                                                           \
       KokkosBlas::Impl::CudaSolverSingleton& s =                               \
           KokkosBlas::Impl::CudaSolverSingleton::singleton();                  \
-      cusolverDnSormqr_bufferSize(s.handle, m_side, m_trans, M, N, k,          \
-                                  A.data(), LDA, tau.data(), C.data(), LDC,    \
-                                  &lwork);                                     \
+      KOKKOS_CUSOLVER_SAFE_CALL_IMPL(cusolverDnSormqr_bufferSize(              \
+          s.handle, m_side, m_trans, M, N, k, A.data(), LDA, tau.data(),       \
+          C.data(), LDC, &lwork));                                             \
       Kokkos::Profiling::popRegion();                                          \
       return (int64_t)lwork;                                                   \
     }                                                                          \
@@ -962,11 +962,11 @@ namespace Impl {
       int lwork = 0;                                                           \
       KokkosBlas::Impl::CudaSolverSingleton& s =                               \
           KokkosBlas::Impl::CudaSolverSingleton::singleton();                  \
-      cusolverDnZunmqr_bufferSize(                                             \
+      KOKKOS_CUSOLVER_SAFE_CALL_IMPL(cusolverDnZunmqr_bufferSize(              \
           s.handle, m_side, m_trans, M, N, k,                                  \
           reinterpret_cast<const cuDoubleComplex*>(A.data()), LDA,             \
           reinterpret_cast<const cuDoubleComplex*>(tau.data()),                \
-          reinterpret_cast<cuDoubleComplex*>(C.data()), LDC, &lwork);          \
+          reinterpret_cast<cuDoubleComplex*>(C.data()), LDC, &lwork));         \
       Kokkos::Profiling::popRegion();                                          \
       return (int64_t)lwork;                                                   \
     }                                                                          \
@@ -1023,11 +1023,11 @@ namespace Impl {
       int lwork = 0;                                                           \
       KokkosBlas::Impl::CudaSolverSingleton& s =                               \
           KokkosBlas::Impl::CudaSolverSingleton::singleton();                  \
-      cusolverDnCunmqr_bufferSize(                                             \
+      KOKKOS_CUSOLVER_SAFE_CALL_IMPL(cusolverDnCunmqr_bufferSize(              \
           s.handle, m_side, m_trans, M, N, k,                                  \
           reinterpret_cast<const cuComplex*>(A.data()), LDA,                   \
           reinterpret_cast<const cuComplex*>(tau.data()),                      \
-          reinterpret_cast<cuComplex*>(C.data()), LDC, &lwork);                \
+          reinterpret_cast<cuComplex*>(C.data()), LDC, &lwork));               \
       Kokkos::Profiling::popRegion();                                          \
       return (int64_t)lwork;                                                   \
     }                                                                          \
