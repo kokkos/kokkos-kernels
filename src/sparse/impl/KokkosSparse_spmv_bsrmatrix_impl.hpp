@@ -239,8 +239,6 @@ struct BsrMatrixSpMVTensorCoreFunctor {
     using nvcuda::wmma::mma_sync;
     using nvcuda::wmma::store_matrix_sync;
 
-    typedef typename AMatrix::ordinal_type Ordinal;
-
     FragA fa;
     FragX fx;
     FragY fy;
