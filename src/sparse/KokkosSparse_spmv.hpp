@@ -540,9 +540,9 @@ template <class AlphaType, class AMatrix, class XVector, class BetaType,
           typename std::enable_if<
               !KokkosSparse::Experimental::is_bsr_matrix<AMatrix>::value &&
               !KokkosSparse::is_crs_matrix<AMatrix>::value>::type* = nullptr>
-void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
-          const AlphaType& alpha, const AMatrix& A, const XVector& x,
-          const BetaType& beta, const YVector& y) {
+void spmv(KokkosKernels::Experimental::Controls /*controls*/, const char[] /*mode*/,
+          const AlphaType& /*alpha*/, const AMatrix& /*A*/, const XVector& /*x*/,
+          const BetaType& /*beta*/, const YVector& /*y*/) {
   // have to arrange this so that the compiler can't tell this is false until
   // instantiation
   static_assert(KokkosSparse::is_crs_matrix<AMatrix>::value ||
