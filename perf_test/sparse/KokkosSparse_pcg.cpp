@@ -378,7 +378,8 @@ int main(int argc, char **argv) {
         std::max(cmdline[CMD_USE_THREADS], cmdline[CMD_USE_OPENMP]);
     init_args.num_numa = cmdline[CMD_USE_NUMA];
   } else {
-    init_args.num_threads = cmdline[CMD_USE_THREADS];
+    init_args.num_threads =
+        std::max(cmdline[CMD_USE_THREADS], cmdline[CMD_USE_OPENMP]);
   }
 
   Kokkos::initialize(init_args);
