@@ -1,5 +1,6 @@
-#if !defined(TEST_HIP_SPARSE_CPP) &&   \
-    (!defined(TEST_CUDA_SPARSE_CPP) || \
+#if !defined(TEST_HIP_SPARSE_CPP) && !defined(TEST_SYCL_SPARSE_CPP) && \
+    !defined(TEST_OPENMPTARGET_BATCHED_DENSE_CPP) &&                   \
+    (!defined(TEST_CUDA_SPARSE_CPP) ||                                 \
      (defined(TEST_CUDA_SPARSE_CPP) && defined(KOKKOS_ENABLE_CUDA_UVM)))
 
 #include <gtest/gtest.h>
