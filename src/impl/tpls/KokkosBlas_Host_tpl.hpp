@@ -62,6 +62,8 @@ struct HostBlas {
   typedef Kokkos::ArithTraits<T> ats;
   typedef typename ats::mag_type mag_type;
 
+  static void rotg(T& a, T& b, T& c, T& s);
+
   static void scal(int n, const T alpha,
                    /* */ T *x, int x_inc);
 

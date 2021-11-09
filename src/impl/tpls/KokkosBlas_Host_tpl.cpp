@@ -11,6 +11,16 @@
 extern "C" {
 
 ///
+/// rotg
+///
+void F77_BLAS_MANGLE(srotg, SROTG)(float* a, float* b, float* c, float* s);
+void F77_BLAS_MANGLE(drotg, DROTG)(double* a, double* b, double* c, double* s);
+void F77_BLAS_MANGLE(crotg, CROTG)(std::complex<float>* a, std::complex<float>* b,
+				   std::complex<float>* c, std::complex<float>* s);
+void F77_BLAS_MANGLE(zrotg, ZROTG)(std::complex<double>* a, std::complex<double>* b,
+				   std::complex<double>* c, std::complex<double>* s);
+
+///
 /// scal
 ///
 void F77_BLAS_MANGLE(sscal, SSCAL)(const int* N, const float* alpha,

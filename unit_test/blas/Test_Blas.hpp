@@ -17,6 +17,7 @@
 #include "Test_Blas1_nrm2.hpp"
 #include "Test_Blas1_nrminf.hpp"
 #include "Test_Blas1_reciprocal.hpp"
+#include "Test_Blas1_rotg.hpp"
 #include "Test_Blas1_scal.hpp"
 #include "Test_Blas1_sum.hpp"
 #include "Test_Blas1_update.hpp"
