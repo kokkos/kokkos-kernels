@@ -1157,13 +1157,9 @@ Matrix expand_matrix(std::vector<Coordinate> pattern, const int m, const int k,
   std::sort(pattern.begin(), pattern.end(), Coordinate::by_ij);
 
   // create values in order of the blocks (storage order for BSR)
-  std::vector<Scalar> val;
-  for (const Coordinate &c : pattern) {
-    for (int i = 0; i < blockSize; ++i) {
-      for (int j = 0; j < blockSize; ++j) {
-        val.push_back(gen_rand());
-      }
-    }
+  std::vector<Scalar> val(c.size() * blockSize * blockSize);
+  for (std::vector<Scalar>::size_type idx = 0; idx < val.size(); ++idx) {
+    val[idx] = gen_rand();
   }
 
   /* create the BsrMatrix adjacency info
