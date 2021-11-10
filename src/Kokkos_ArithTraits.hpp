@@ -748,7 +748,12 @@ class ArithTraits<Kokkos::Experimental::half_t> {
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type tan(const val_type x) {
     return Kokkos::Experimental::cast_to_half(
-        ::tan(Kokkos::Experimental::cast_from_half<float>(x)));
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+        sycl::tan(Kokkos::Experimental::cast_from_half<float>(x))
+#else
+        ::tan(Kokkos::Experimental::cast_from_half<float>(x))
+#endif
+    );
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type sinh(const val_type x) {
     return Kokkos::Experimental::cast_to_half(
@@ -928,7 +933,12 @@ class ArithTraits<float> {
     return ::cos(x);
   }
   static KOKKOS_FORCEINLINE_FUNCTION float tan(const float x) {
-    return ::tan(x);
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+    using sycl::tan;
+#else
+    using std::tan;
+#endif
+    return tan(x);
   }
   static KOKKOS_FORCEINLINE_FUNCTION float sinh(const float x) {
     return ::sinh(x);
@@ -1158,7 +1168,12 @@ class ArithTraits<std::complex<RealFloatType> > {
     return std::cos(x);
   }
   static std::complex<RealFloatType> tan(const std::complex<RealFloatType>& x) {
-    return std::tan(x);
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+    using sycl::tan;
+#else
+    using std::tan;
+#endif
+    return tan(x);
   }
   static std::complex<RealFloatType> sinh(
       const std::complex<RealFloatType>& x) {
@@ -1316,7 +1331,12 @@ class ArithTraits<double> {
     return ::cos(x);
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type tan(const val_type x) {
-    return ::tan(x);
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+    using sycl::tan;
+#else
+    using std::tan;
+#endif
+    return tan(x);
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type sinh(const val_type x) {
     return ::sinh(x);
@@ -3505,7 +3525,12 @@ struct ArithTraits<dd_real> {
     return ::cos(x);
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type tan(const val_type x) {
-    return ::tan(x);
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+    using sycl::tan;
+#else
+    using std::tan;
+#endif
+    return tan(x);
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type sinh(const val_type x) {
     return ::sinh(x);
@@ -3619,7 +3644,12 @@ struct ArithTraits<qd_real> {
     return ::cos(x);
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type tan(const val_type x) {
-    return ::tan(x);
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+    using sycl::tan;
+#else
+    using std::tan;
+#endif
+    return tan(x);
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type sinh(const val_type x) {
     return ::sinh(x);
