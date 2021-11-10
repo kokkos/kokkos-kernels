@@ -653,14 +653,15 @@ class BsrMatrix {
     typedef typename crs_graph_type::entries_type crs_graph_entries_type;
     typedef typename crs_graph_type::row_map_type crs_graph_row_map_type;
 
+    blockDim_ = blockDimIn;
+
     assert(
         (crs_mtx.numCols() % blockDim_ == 0) &&
         "BsrMatrix: input CrsMatrix columns is not a multiple of block size");
     assert((crs_mtx.numRows() % blockDim_ == 0) &&
            "BsrMatrix: input CrsMatrix rows is not a multiple of block size");
 
-    blockDim_ = blockDimIn;
-    numCols_  = crs_mtx.numCols() / blockDim_;
+    numCols_ = crs_mtx.numCols() / blockDim_;
 
     OrdinalType nbrows =
         crs_mtx.numRows() /
