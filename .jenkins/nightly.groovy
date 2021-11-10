@@ -9,7 +9,7 @@ pipeline {
 			dockerfile {
 			    filename 'Dockerfile.sycl'
 			    dir 'scripts/docker'
-			    label 'docker'
+			    label 'nvidia-docker && volta'
 			    args '-v /tmp/ccache.kokkos:/tmp/ccache'
 			}
 		    }
