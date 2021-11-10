@@ -1157,8 +1157,9 @@ Matrix expand_matrix(std::vector<Coordinate> pattern, const int m, const int k,
   std::sort(pattern.begin(), pattern.end(), Coordinate::by_ij);
 
   // create values in order of the blocks (storage order for BSR)
-  std::vector<Scalar> val(c.size() * blockSize * blockSize);
-  for (std::vector<Scalar>::size_type idx = 0; idx < val.size(); ++idx) {
+  std::vector<Scalar> val(pattern.size() * blockSize * blockSize);
+  for (typename std::vector<Scalar>::size_type idx = 0; idx < val.size();
+       ++idx) {
     val[idx] = gen_rand();
   }
 
