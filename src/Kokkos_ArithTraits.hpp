@@ -934,11 +934,10 @@ class ArithTraits<float> {
   }
   static KOKKOS_FORCEINLINE_FUNCTION float tan(const float x) {
 #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
-    using sycl::tan;
+    return sycl::tan(x);
 #else
-    using std::tan;
+    return std::tan(x);
 #endif
-    return tan(x);
   }
   static KOKKOS_FORCEINLINE_FUNCTION float sinh(const float x) {
     return ::sinh(x);
@@ -1169,11 +1168,10 @@ class ArithTraits<std::complex<RealFloatType> > {
   }
   static std::complex<RealFloatType> tan(const std::complex<RealFloatType>& x) {
 #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
-    using sycl::tan;
+    return sycl::tan(x);
 #else
-    using std::tan;
+    return std::tan(x);
 #endif
-    return tan(x);
   }
   static std::complex<RealFloatType> sinh(
       const std::complex<RealFloatType>& x) {
@@ -1332,11 +1330,10 @@ class ArithTraits<double> {
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type tan(const val_type x) {
 #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
-    using sycl::tan;
+    return sycl::tan(x);
 #else
-    using std::tan;
+    return std::tan(x);
 #endif
-    return tan(x);
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type sinh(const val_type x) {
     return ::sinh(x);
@@ -3526,11 +3523,10 @@ struct ArithTraits<dd_real> {
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type tan(const val_type x) {
 #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
-    using sycl::tan;
+    return sycl::tan(x);
 #else
-    using std::tan;
+    return std::tan(x);
 #endif
-    return tan(x);
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type sinh(const val_type x) {
     return ::sinh(x);
@@ -3645,11 +3641,10 @@ struct ArithTraits<qd_real> {
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type tan(const val_type x) {
 #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
-    using sycl::tan;
+    return sycl::tan(x);
 #else
-    using std::tan;
+    return std::tan(x);
 #endif
-    return tan(x);
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type sinh(const val_type x) {
     return ::sinh(x);
