@@ -399,7 +399,8 @@ struct BsrMatrixSpMVTensorCoreFunctor {
 
         // only need to do any math if our fragment will write a result back to
         // Y
-        if (ay_i < y.extent(0) && xy_j < y.extent(1)) {
+        if (ay_i < static_cast<AOrdinal>(y.extent(0)) &&
+            xy_j < static_cast<AOrdinal>(y.extent(1))) {
           load_matrix_sync(fa, &sa(warpIdx_y, 0, 0), FRAG_K);
           load_matrix_sync(fx, &sx(warpIdx_x, 0, 0), FRAG_N);
           mma_sync(fy, fa, fx, fy);
