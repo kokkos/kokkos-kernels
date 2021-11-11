@@ -25,10 +25,13 @@ KOKKOSKERNELS_ADD_EXECUTABLE_AND_TEST(
   SOURCES KokkosSparse_wiki_spadd.cpp
   )
 
+# FIXME_SYCL SYCL does not support querying free/total memory
+IF (NOT KOKKOS_ENABLE_SYCL)
 KOKKOSKERNELS_ADD_EXECUTABLE_AND_TEST(
   wiki_spgemm
   SOURCES KokkosSparse_wiki_spgemm.cpp
   )
+ENDIF()
 
 KOKKOSKERNELS_ADD_EXECUTABLE_AND_TEST(
   wiki_gauss_seidel

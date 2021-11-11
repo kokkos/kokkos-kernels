@@ -376,6 +376,8 @@ TEST_F(TestCategory, gemm_float) {
 }
 #endif
 
+// FIXME_SYCL CUDA_ERROR_INVALID_ADDRESS_SPACE
+#ifndef KOKKOS_ENABLE_SYCL
 #if defined(KOKKOSKERNELS_INST_DOUBLE) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&  \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -384,6 +386,7 @@ TEST_F(TestCategory, gemm_double) {
   test_gemm_enabled_layouts<double>();
   Kokkos::Profiling::popRegion();
 }
+#endif
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || \
