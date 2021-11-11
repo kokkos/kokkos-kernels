@@ -61,6 +61,10 @@ namespace Experimental {
 template <class size_type_, class lno_t_, class scalar_t_, class ExecutionSpace,
           class TemporaryMemorySpace, class PersistentMemorySpace>
 class KokkosKernelsHandle {
+  static_assert(std::is_signed<lno_t_>::value,
+                "KokkosKernelsHandle requires that lno_t_ (ordinal) is a "
+                "signed integer type.");
+
  public:
   typedef typename ExecutionSpace::execution_space HandleExecSpace;
   typedef typename TemporaryMemorySpace::memory_space HandleTempMemorySpace;

@@ -410,6 +410,10 @@ template <class ScalarType, class OrdinalType, class Device,
           class SizeType     = typename Kokkos::ViewTraits<OrdinalType*, Device,
                                                        void, void>::size_type>
 class BlockCrsMatrix {
+  static_assert(
+      std::is_signed<OrdinalType>::value,
+      "BlockCrsMatrix requires that OrdinalType is a signed integer type.");
+
  private:
   typedef
       typename Kokkos::ViewTraits<ScalarType*, Device, void,
