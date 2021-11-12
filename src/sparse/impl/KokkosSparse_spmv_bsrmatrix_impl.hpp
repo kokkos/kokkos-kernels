@@ -239,9 +239,11 @@ struct BsrMatrixSpMVTensorCoreFunctor {
     using nvcuda::wmma::mma_sync;
     using nvcuda::wmma::store_matrix_sync;
 
+#ifdef __CUDA_ARCH__
     FragA fa;
     FragX fx;
     FragY fy;
+#endif
 
     // override with template params if given
     const int ld_x = LEAGUE_DIM_X > 0 ? LEAGUE_DIM_X : params.leagueDim_x;
