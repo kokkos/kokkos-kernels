@@ -1,6 +1,10 @@
 pipeline {
     agent none
 
+    options {
+        timeout(time: 3, unit: 'HOURS')
+    }
+
     stages {
         stage('Build & Run') {
             parallel {
