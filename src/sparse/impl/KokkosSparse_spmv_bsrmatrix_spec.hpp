@@ -50,7 +50,8 @@
 
 #include "KokkosSparse_BsrMatrix.hpp"
 #include "KokkosKernels_Controls.hpp"
-#if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY && defined(__CUDA_ARCH__)
+#if !defined(KOKKOSKERNELS_ETI_ONLY) || \
+    KOKKOSKERNELS_IMPL_COMPILE_LIBRARY && defined(__CUDA_ARCH__)
 #include <KokkosSparse_spmv_bsrmatrix_impl.hpp>
 #endif
 

@@ -45,7 +45,7 @@
 #ifndef KOKKOSSPARSE_IMPL_SPMV_TENSOR_CORE_DEF_HPP_
 #define KOKKOSSPARSE_IMPL_SPMV_TENSOR_CORE_DEF_HPP_
 
-#if defined(KOKKOS_ENABLE_CUDA) && defined(__CUDA_ARCH__) &&	\
+#if defined(KOKKOS_ENABLE_CUDA) && defined(__CUDA_ARCH__) && \
     (defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_AMPERE))
 
 #include <type_traits>
