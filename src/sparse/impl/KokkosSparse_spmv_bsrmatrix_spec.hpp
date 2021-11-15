@@ -50,7 +50,7 @@
 
 #include "KokkosSparse_BsrMatrix.hpp"
 #include "KokkosKernels_Controls.hpp"
-#if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
+#if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY && defined(__CUDA_ARCH__)
 #include <KokkosSparse_spmv_bsrmatrix_impl.hpp>
 #endif
 
@@ -136,7 +136,9 @@ struct SPMV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
       }
     }
 
-#if defined(KOKKOS_ARCH_AMPERE)
+    // If not compiling with the cuda compiler, no need to try
+    // to compile the wmma functions...
+#if defined(KOKKOS_ARCH_AMPERE) && defined(__CUDA_ARCH__)
     typedef typename XVector::non_const_value_type XScalar;
     typedef typename AMatrix::non_const_value_type AScalar;
     typedef Kokkos::Experimental::half_t Half;
@@ -173,7 +175,7 @@ struct SPMV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
                                         4>::dispatch(alpha, A, x, beta, y);
     }
 
-#elif defined(KOKKOS_ARCH_VOLTA)
+#elif defined(KOKKOS_ARCH_VOLTA) && defined(__CUDA_ARCH__)
     /* Volta has float += half * half
        use it for all matrices
     */
