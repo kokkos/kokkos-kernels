@@ -42,7 +42,7 @@ pipeline {
                                 -DKokkosKernels_INST_ORDINAL_INT=ON \
                                 -DKokkosKernels_INST_OFFSET_INT=ON \
                               .. && \
-                              make -j8 && ctest --verbose'''
+                              make -j8'''
                     }
                 }
 
