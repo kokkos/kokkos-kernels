@@ -544,7 +544,7 @@ int main(int argc, char **argv) {
   // The mat_structure view is used to generate a matrix using
   // finite difference (FD) or finite element (FE) discretization
   // on a cartesian grid.
-  Kokkos::View<details::Ordinal *[3], Kokkos::HostSpace> mat_structure(
+  Kokkos::View<details::Ordinal * [3], Kokkos::HostSpace> mat_structure(
       "Matrix Structure", 3);
   mat_structure(0, 0) = nx;      // Request 8 grid point in 'x' direction
   mat_structure(0, 1) = 0;       // Add BC to the left
