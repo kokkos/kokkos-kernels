@@ -105,21 +105,21 @@ struct BsrMatrixSpMVTensorCoreFunctor {
   // views of the shared memory used in the functor to cast types to the CUDA
   // wmma types A matrix is MxK X matrix is KxN Y matrix is MxN
   typedef typename Kokkos::View<
-      AFragScalar *[FRAG_M][FRAG_K],  // one fragment per warp in the team (2D
-                                      // grid of warps in team)
+      AFragScalar * [FRAG_M][FRAG_K],  // one fragment per warp in the team (2D
+                                       // grid of warps in team)
       Kokkos::LayoutRight,
       typename Device::execution_space::scratch_memory_space,
       Kokkos::MemoryTraits<Kokkos::Unmanaged>>
       AScratchView;
   typedef typename Kokkos::View<
-      XFragScalar *[FRAG_K][FRAG_N],
+      XFragScalar * [FRAG_K][FRAG_N],
       typename Kokkos::LayoutRight,  // so that [FRAG_K][FRAG_N] part is
                                      // contiguous in memory
       typename Device::execution_space::scratch_memory_space,
       Kokkos::MemoryTraits<Kokkos::Unmanaged>>
       XScratchView;
   typedef typename Kokkos::View<
-      YFragScalar **[FRAG_M][FRAG_N],
+      YFragScalar * * [FRAG_M][FRAG_N],
       typename Kokkos::LayoutRight,  // so that [FRAG_M][FRAG_N] part is
                                      // contiguous in memory
       typename Device::execution_space::scratch_memory_space,
@@ -2003,7 +2003,7 @@ struct BSR_GEMM_Transpose_Functor {
                                    ? Kokkos::ArithTraits<value_type>::conj(
                                          Aval_ptr[jr + ir * block_size])
                                    : Aval_ptr[jr + ir * block_size];
-            value_type tmp   = aval0 * xval0;
+            value_type tmp = aval0 * xval0;
             Kokkos::atomic_add(&m_y(jr + col_block * block_size, ic), tmp);
           }
         }
