@@ -163,9 +163,9 @@ struct SPMV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
   typedef typename YVector::non_const_value_type YScalar;
 
   static void spmv_bsrmatrix(
-      const KokkosKernels::Experimental::Controls &controls,
-      const char mode[], const YScalar &alpha, const AMatrix &A,
-      const XVector &X, const YScalar &beta, const YVector &Y) {
+      const KokkosKernels::Experimental::Controls &controls, const char mode[],
+      const YScalar &alpha, const AMatrix &A, const XVector &X,
+      const YScalar &beta, const YVector &Y) {
     //
     // Whether to call KokkosKernel's native implementation, even if a TPL impl
     // is available
@@ -280,9 +280,9 @@ struct SPMV_MV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
   typedef typename YVector::non_const_value_type YScalar;
 
   static void spmv_mv_bsrmatrix(
-      const KokkosKernels::Experimental::Controls &controls,
-      const char mode[], const YScalar &alpha, const AMatrix &A,
-      const XVector &X, const YScalar &beta, const YVector &Y) {
+      const KokkosKernels::Experimental::Controls &controls, const char mode[],
+      const YScalar &alpha, const AMatrix &A, const XVector &X,
+      const YScalar &beta, const YVector &Y) {
     // user explicitly requests a particular precision
     bool requestMixed  = false;
     bool requestDouble = false;
