@@ -242,44 +242,46 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
   }
   //
   typedef KokkosSparse::Experimental::BlockCrsMatrix<
-  typename AMatrix::const_value_type, typename AMatrix::const_ordinal_type,
-  typename AMatrix::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-  typename AMatrix::const_size_type>
-  AMatrix_Internal;
+      typename AMatrix::const_value_type, typename AMatrix::const_ordinal_type,
+      typename AMatrix::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+      typename AMatrix::const_size_type>
+      AMatrix_Internal;
 
   typedef Kokkos::View<
-  typename XVector::const_value_type*,
-  typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
-  typename XVector::device_type,
-  Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >
-  XVector_Internal;
+      typename XVector::const_value_type*,
+      typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
+      typename XVector::device_type,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >
+      XVector_Internal;
 
   typedef Kokkos::View<
-  typename YVector::non_const_value_type*,
-  typename KokkosKernels::Impl::GetUnifiedLayout<YVector>::array_layout,
-  typename YVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-  YVector_Internal;
+      typename YVector::non_const_value_type*,
+      typename KokkosKernels::Impl::GetUnifiedLayout<YVector>::array_layout,
+      typename YVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+      YVector_Internal;
 
   AMatrix_Internal A_i(A);
   XVector_Internal x_i(x);
   YVector_Internal y_i(y);
 
   return Experimental::Impl::SPMV_BLOCKCRSMATRIX<
-  typename AMatrix_Internal::value_type,
-  typename AMatrix_Internal::ordinal_type,
-  typename AMatrix_Internal::device_type,
-  typename AMatrix_Internal::memory_traits,
-  typename AMatrix_Internal::size_type,
-  typename XVector_Internal::value_type*,
-  typename XVector_Internal::array_layout,
-  typename XVector_Internal::device_type,
-  typename XVector_Internal::memory_traits,
-  typename YVector_Internal::value_type*,
-  typename YVector_Internal::array_layout,
-  typename YVector_Internal::device_type,
-  typename YVector_Internal::memory_traits>::spmv_blockcrsmatrix(controls, mode,
-                                                            alpha, A_i, x_i,
-                                                            beta, y_i);
+      typename AMatrix_Internal::value_type,
+      typename AMatrix_Internal::ordinal_type,
+      typename AMatrix_Internal::device_type,
+      typename AMatrix_Internal::memory_traits,
+      typename AMatrix_Internal::size_type,
+      typename XVector_Internal::value_type*,
+      typename XVector_Internal::array_layout,
+      typename XVector_Internal::device_type,
+      typename XVector_Internal::memory_traits,
+      typename YVector_Internal::value_type*,
+      typename YVector_Internal::array_layout,
+      typename YVector_Internal::device_type,
+      typename YVector_Internal::memory_traits>::spmv_blockcrsmatrix(controls,
+                                                                     mode,
+                                                                     alpha, A_i,
+                                                                     x_i, beta,
+                                                                     y_i);
 }
 
 template <class AlphaType, class AMatrix, class XVector, class BetaType,
@@ -621,45 +623,43 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
   }
   //
   typedef KokkosSparse::Experimental::BlockCrsMatrix<
-  typename AMatrix::const_value_type, typename AMatrix::const_ordinal_type,
-  typename AMatrix::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-  typename AMatrix::const_size_type>
-  AMatrix_Internal;
+      typename AMatrix::const_value_type, typename AMatrix::const_ordinal_type,
+      typename AMatrix::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+      typename AMatrix::const_size_type>
+      AMatrix_Internal;
 
   typedef Kokkos::View<
-  typename XVector::const_value_type**,
-  typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
-  typename XVector::device_type,
-  Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >
-  XVector_Internal;
+      typename XVector::const_value_type**,
+      typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
+      typename XVector::device_type,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >
+      XVector_Internal;
 
   typedef Kokkos::View<
-  typename YVector::non_const_value_type**,
-  typename KokkosKernels::Impl::GetUnifiedLayout<YVector>::array_layout,
-  typename YVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-  YVector_Internal;
+      typename YVector::non_const_value_type**,
+      typename KokkosKernels::Impl::GetUnifiedLayout<YVector>::array_layout,
+      typename YVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+      YVector_Internal;
 
   AMatrix_Internal A_i(A);
   XVector_Internal x_i(x);
   YVector_Internal y_i(y);
 
   return Experimental::Impl::SPMV_MV_BLOCKCRSMATRIX<
-  typename AMatrix_Internal::value_type,
-  typename AMatrix_Internal::ordinal_type,
-  typename AMatrix_Internal::device_type,
-  typename AMatrix_Internal::memory_traits,
-  typename AMatrix_Internal::size_type,
-  typename XVector_Internal::value_type**,
-  typename XVector_Internal::array_layout,
-  typename XVector_Internal::device_type,
-  typename XVector_Internal::memory_traits,
-  typename YVector_Internal::value_type**,
-  typename YVector_Internal::array_layout,
-  typename YVector_Internal::device_type,
-  typename YVector_Internal::memory_traits>::spmv_mv_blockcrsmatrix(controls,
-                                                               mode, alpha,
-                                                               A_i, x_i,
-                                                               beta, y_i);
+      typename AMatrix_Internal::value_type,
+      typename AMatrix_Internal::ordinal_type,
+      typename AMatrix_Internal::device_type,
+      typename AMatrix_Internal::memory_traits,
+      typename AMatrix_Internal::size_type,
+      typename XVector_Internal::value_type**,
+      typename XVector_Internal::array_layout,
+      typename XVector_Internal::device_type,
+      typename XVector_Internal::memory_traits,
+      typename YVector_Internal::value_type**,
+      typename YVector_Internal::array_layout,
+      typename YVector_Internal::device_type,
+      typename YVector_Internal::memory_traits>::
+      spmv_mv_blockcrsmatrix(controls, mode, alpha, A_i, x_i, beta, y_i);
 }
 
 /// \brief Public interface to local sparse matrix-vector multiply.
