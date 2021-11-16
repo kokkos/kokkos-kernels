@@ -431,6 +431,12 @@ struct BsrMatrixSpMVTensorCoreFunctor {
       }
     }
     mbr.team_barrier();
+
+    // Suppress unused var warnings
+    // TODO (@cwpeason): Should this functor only compile on device?
+    (void)fx;
+    (void)fa;
+    (void)fy;
   }
 };
 
