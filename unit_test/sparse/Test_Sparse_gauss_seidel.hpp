@@ -131,7 +131,9 @@ void run_gauss_seidel(
     int cluster_size = 1,
     bool classic =
         false,  // only with two-stage, true for sptrsv instead of richardson
-    ClusteringAlgorithm clusterAlgo = CLUSTER_DEFAULT) {
+    ClusteringAlgorithm clusterAlgo = CLUSTER_DEFAULT,
+    KokkosGraph::ColoringAlgorithm coloringAlgo =
+        KokkosGraph::COLORING_DEFAULT) {
   using size_type = typename crsMat_t::size_type;
   using lno_t     = typename crsMat_t::ordinal_type;
   using scalar_t  = typename crsMat_t::value_type;
@@ -146,7 +148,7 @@ void run_gauss_seidel(
 
   KernelHandle kh;
   if (gs_algorithm == GS_CLUSTER)
-    kh.create_gs_handle(clusterAlgo, cluster_size);
+    kh.create_gs_handle(clusterAlgo, cluster_size, coloringAlgo);
   else if (gs_algorithm == GS_TWOSTAGE) {
     // test for two-stage/classical gs
     kh.create_gs_handle(gs_algorithm);
@@ -155,8 +157,9 @@ void run_gauss_seidel(
       // two-stage with SpTRSV supports only omega = one
       omega = Kokkos::ArithTraits<scalar_t>::one();
     }
-  } else
-    kh.create_gs_handle(GS_DEFAULT);
+  } else {
+    kh.create_gs_handle(GS_DEFAULT, coloringAlgo);
+  }
 
   run_gauss_seidel(kh, input_mat, x_vector, y_vector, is_symmetric_graph, omega,
                    apply_type);
@@ -641,6 +644,47 @@ void test_gauss_seidel_long_rows(lno_t numRows, lno_t numLongRows,
   }
 }
 
+template <typename scalar_t, typename lno_t, typename size_type,
+          typename device>
+void test_gauss_seidel_custom_coloring(lno_t numRows, lno_t nnzPerRow) {
+  using namespace Test;
+  typedef
+      typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>
+          crsMat_t;
+  typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
+  typedef typename Kokkos::Details::ArithTraits<scalar_t>::mag_type mag_t;
+  const scalar_t one = Kokkos::ArithTraits<scalar_t>::one();
+  size_type nnz      = nnzPerRow * numRows;
+  crsMat_t input_mat =
+      KokkosKernels::Impl::kk_generate_diagonally_dominant_sparse_matrix<
+          crsMat_t>(numRows, numRows, nnz, 0, numRows / 10, 2.0 * one);
+  input_mat =
+      Test::symmetrize<scalar_t, lno_t, size_type, device, crsMat_t>(input_mat);
+  input_mat = KokkosKernels::sort_and_merge_matrix(input_mat);
+  scalar_view_t solution_x(
+      Kokkos::view_alloc(Kokkos::WithoutInitializing, "X (correct)"), numRows);
+  create_random_x_vector(solution_x);
+  mag_t initial_norm_res = KokkosBlas::nrm2(solution_x);
+  scalar_view_t y_vector = create_random_y_vector(input_mat, solution_x);
+  scalar_view_t x_vector(
+      Kokkos::view_alloc(Kokkos::WithoutInitializing, "x vector"), numRows);
+  typedef KokkosKernelsHandle<
+      size_type, lno_t, scalar_t, typename device::execution_space,
+      typename device::memory_space, typename device::memory_space>
+      KernelHandle;
+
+  KernelHandle kh;
+  kh.create_gs_handle(GS_DEFAULT, KokkosGraph::COLORING_VBBIT);
+  EXPECT_EQ(kh.get_point_gs_handle()->get_coloring_algorithm(),
+            KokkosGraph::COLORING_VBBIT);
+  // Reset x vector to 0
+  Kokkos::deep_copy(x_vector, scalar_t());
+  run_gauss_seidel(kh, input_mat, x_vector, y_vector, true, 0.9, 0);
+  KokkosBlas::axpby(one, solution_x, -one, x_vector);
+  mag_t result_norm_res = KokkosBlas::nrm2(x_vector);
+  EXPECT_LT(result_norm_res, 0.25 * initial_norm_res);
+}
+
 #define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                                          \
   TEST_F(                                                                                      \
       TestCategory,                                                                            \
@@ -687,6 +731,12 @@ void test_gauss_seidel_long_rows(lno_t numRows, lno_t numLongRows,
       sparse##_##gauss_seidel_long_rows##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {        \
     test_gauss_seidel_long_rows<SCALAR, ORDINAL, OFFSET, DEVICE>(500, 10, 20,                  \
                                                                  true);                        \
+  }                                                                                            \
+  TEST_F(                                                                                      \
+      TestCategory,                                                                            \
+      sparse##_##gauss_seidel_custom_coloring##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {  \
+    test_gauss_seidel_custom_coloring<SCALAR, ORDINAL, OFFSET, DEVICE>(500,                    \
+                                                                       10);                    \
   }
 
 #if (defined(KOKKOSKERNELS_INST_DOUBLE) &&      \

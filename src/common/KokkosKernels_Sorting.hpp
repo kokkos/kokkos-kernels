@@ -1063,7 +1063,7 @@ template <typename exec_space, typename rowmap_t, typename entries_t>
 
 template <typename crsMat_t>
 [[deprecated]] crsMat_t sort_and_merge_matrix(const crsMat_t& A) {
-  KokkosKernels::sort_and_merge_matrix(A);
+  return KokkosKernels::sort_and_merge_matrix(A);
 }
 
 template <
