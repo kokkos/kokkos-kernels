@@ -2367,4 +2367,4 @@ void spMatMultiVec_transpose(
 }  // namespace Experimental
 }  // namespace KokkosSparse
 
-#endif  // KOKKOSSPARSE_IMPL_SPMV_TENSOR_CORE_DEF_HPP_
+#endif  // KOKKOSSPARSE_IMPL_SPMV_BSRMATRIX_IMPL_HPP_
