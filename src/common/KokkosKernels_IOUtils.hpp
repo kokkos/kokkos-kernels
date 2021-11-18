@@ -188,7 +188,7 @@ void kk_diagonally_dominant_sparseMatrix_generate(
   rowPtr[0] = 0;
   for (int row = 0; row < nrows; row++) {
     int varianz = (1.0 * rand() / RAND_MAX - 0.5) * row_size_variance;
-    if (varianz < 0) varianz = 0;
+    if (varianz < 1) varianz = 1;
     if (varianz > 0.75 * ncols) varianz = 0.75 * ncols;
     rowPtr[row + 1] = rowPtr[row] + elements_per_row + varianz;
     if (rowPtr[row + 1] <= rowPtr[row])   // This makes sure that there is
