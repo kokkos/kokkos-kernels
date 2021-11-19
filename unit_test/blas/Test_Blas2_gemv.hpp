@@ -11,7 +11,6 @@ void impl_test_gemv(const char* mode, int M, int N) {
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeX::value_type ScalarX;
   typedef typename ViewTypeY::value_type ScalarY;
-  using LayoutAType = typename ViewTypeA::array_layout;
   typedef Kokkos::ArithTraits<ScalarY> KAT_Y;
 
   typedef multivector_layout_adapter<ViewTypeA> vfA_type;
@@ -78,17 +77,7 @@ void impl_test_gemv(const char* mode, int M, int N) {
   Kokkos::deep_copy(expected, h_org_y);
   vanillaGEMV(mode[0], alpha, h_A, h_x, beta, expected);
 
-  // Cublas does not support row-major (LayoutRight) + conjugate transpose
-  // We throw a runtime error in the wrapper for cublasGemv if the user attempts
-  // this, therefore we must test this code path via the try-catch below.
-  try {
-    KokkosBlas::gemv(mode, alpha, A, x, beta, y);
-  } catch (const std::runtime_error& error) {
-    if ((mode[0] == 'c' || mode[0] == 'C') &&
-        std::is_same<LayoutAType, Kokkos::LayoutRight>::value)
-      return;  // Pass since we caught the runtime error
-    FAIL();
-  }
+  KokkosBlas::gemv(mode, alpha, A, x, beta, y);
   Kokkos::deep_copy(h_y, y);
   int numErrors = 0;
   for (int i = 0; i < ldy; i++) {

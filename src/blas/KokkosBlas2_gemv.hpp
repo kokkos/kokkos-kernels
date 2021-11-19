@@ -144,7 +144,25 @@ void gemv(const typename AViewType::execution_space& space, const char trans[],
   // Degenerate case is essentially same as scal - use fallback impl
   // to avoid potential (unlikely?) circular dependence issues by including
   // other KokkosBlas headers
-  if (A.extent(0) == 0 || A.extent(1) == 0) {
+  bool useFallback = A.extent(0) == 0 || A.extent(1) == 0;
+  // If A is LayoutRight and we have the cuBLAS or rocBLAS TPL, use fallback
+  // because those only support LayoutLeft
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
+  useFallback = useFallback || (tolower(*trans) == 'c' &&
+                                std::is_same<typename AViewType::array_layout,
+                                             Kokkos::LayoutRight>::value &&
+                                std::is_same<typename AViewType::memory_space,
+                                             Kokkos::CudaSpace>::value);
+#endif
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
+  useFallback =
+      useFallback || (tolower(*trans) == 'c' &&
+                      std::is_same<typename AViewType::array_layout,
+                                   Kokkos::LayoutRight>::value &&
+                      std::is_same<typename AViewType::memory_space,
+                                   Kokkos::Experimental::HIPSpace>::value);
+#endif
+  if (useFallback) {
     const bool eti_spec_avail =
         KokkosBlas::Impl::gemv_eti_spec_avail<AVT, XVT, YVT>::value;
     typedef Impl::GEMV<AVT, XVT, YVT, false, eti_spec_avail> fallback_impl_type;
