@@ -145,8 +145,8 @@ void gemv(const typename AViewType::execution_space& space, const char trans[],
   // to avoid potential (unlikely?) circular dependence issues by including
   // other KokkosBlas headers
   bool useFallback = A.extent(0) == 0 || A.extent(1) == 0;
-  // If A is LayoutRight and we have the cuBLAS or rocBLAS TPL, use fallback
-  // because those only support LayoutLeft
+  // If A is LayoutRight and we have the BLAS, cuBLAS or rocBLAS TPL, use
+  // fallback because those only support LayoutLeft
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
   useFallback = useFallback || (tolower(*trans) == 'c' &&
                                 std::is_same<typename AViewType::array_layout,
@@ -161,6 +161,13 @@ void gemv(const typename AViewType::execution_space& space, const char trans[],
                                    Kokkos::LayoutRight>::value &&
                       std::is_same<typename AViewType::memory_space,
                                    Kokkos::Experimental::HIPSpace>::value);
+#endif
+#ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
+  useFallback = useFallback || (tolower(*trans) == 'c' &&
+                                std::is_same<typename AViewType::array_layout,
+                                             Kokkos::LayoutRight>::value &&
+                                std::is_same<typename AViewType::memory_space,
+                                             Kokkos::HostSpace>::value);
 #endif
   if (useFallback) {
     const bool eti_spec_avail =
