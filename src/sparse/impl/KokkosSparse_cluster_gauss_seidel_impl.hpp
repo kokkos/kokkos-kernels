@@ -660,7 +660,7 @@ class ClusterGaussSeidel {
     // Create a handle that uses nnz_lno_t as the size_type, since the cluster
     // graph should never be larger than 2^31 entries.
     HandleType kh;
-    kh.create_graph_coloring_handle(KokkosGraph::COLORING_DEFAULT);
+    kh.create_graph_coloring_handle(gsHandle->get_coloring_algorithm());
     KokkosGraph::Experimental::graph_color_symbolic(
         &kh, numClusters, numClusters, clusterRowmap, clusterEntries);
     // retrieve colors
