@@ -188,12 +188,12 @@ int main(int argc, char** argv) {
   bool useHIP     = params.use_hip != 0;
 
   // Create boolean to handle serial setting if not using open and cuda
-  bool useSerial = !useOMP && !useCUDA;
+  bool useSerial = !useThreads && !useOMP && !useCUDA && !useHIP;
 
   // Logic for runtime with PThreads
   if (useThreads) {
 #if defined(KOKKOS_ENABLE_THREADS)
-    if (params.use_threads)
+    if (params.layoutLeft)
       run<Kokkos::Threads, Kokkos::LayoutLeft>(params.m, params.n,
                                                params.repeat);
     else
