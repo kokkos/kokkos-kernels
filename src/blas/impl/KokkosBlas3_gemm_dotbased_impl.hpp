@@ -45,6 +45,8 @@
 #ifndef KOKKOS_BLAS3_GEMM_DOTBASED_IMPL_HPP_
 #define KOKKOS_BLAS3_GEMM_DOTBASED_IMPL_HPP_
 
+#include "KokkosBlas_util.hpp"
+
 namespace KokkosBlas {
 namespace Impl {
 
@@ -82,7 +84,7 @@ struct DotBasedGEMM {
   size_C numTeams;      // total number of teams
 
   const size_A dotSize;  // the length of the vectors in the dot products
-  size_A chunkSize;  // the local length of each team's share on the dot product
+  size_C chunkSize;  // the local length of each team's share on the dot product
 
   DotBasedGEMM(const scalar_A& alpha_, const AV& A_, const BV& B_,
                const scalar_C& beta_, const CV& C_)
@@ -96,37 +98,10 @@ struct DotBasedGEMM {
         dotSize(A.extent(0)) {}
 
   void run(const typename CV::execution_space& space, bool conjugateTranspose) {
-    // NOTE: these workPerTeam and approxNumTeams were used for TPL CUBLAS,
-    //       and may need to be retuned for other architectures
-    constexpr size_C workPerTeam = 4096;       // Amount of work per team
+    multipleReductionWorkDistribution<ExecSpace, size_C>(
+        dotSize, numCrows * numCcols, numDivPerDot, chunkSize);
     const size_C ndots = numCrows * numCcols;  // Number of dot products
-    size_C appxNumTeams =
-        (dotSize * ndots) / workPerTeam;  // Estimation for appxNumTeams
-
-    // Adjust appxNumTeams in case it is too small or too large
-    if (appxNumTeams < 1) appxNumTeams = 1;
-    if (appxNumTeams > 1024) appxNumTeams = 1024;
-
-    // If there are more dot products than the number of teams,
-    // then set the number of teams to be number of dot products
-    // and each team will perform only one dot product.
-    // We don't want a team to perform more than one dot product.
-    if (ndots >= appxNumTeams) {
-      numTeams     = ndots;
-      numDivPerDot = 1;
-    }
-    // If there are more teams than dot products, each dot product can
-    // potentially be performed by multiple teams. First, compute
-    // numDivPerDot as an integer (take the floor, not ceiling), then,
-    // compute actual number of teams by using this factor.
-    else {
-      numDivPerDot = appxNumTeams / ndots;
-      numTeams     = ndots * numDivPerDot;
-    }
-
-    // Determine the local length for the dot product
-    chunkSize = dotSize / numDivPerDot;
-    if (numDivPerDot > 1) chunkSize++;
+    numTeams           = ndots * numDivPerDot;
 
     // Initialize C matrix if beta != 1
     if (beta == CVT::zero()) {

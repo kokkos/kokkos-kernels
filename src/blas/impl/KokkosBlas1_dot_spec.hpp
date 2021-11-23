@@ -396,10 +396,10 @@ struct Dot<RV, XV, YV, X_Rank, Y_Rank, false,
     if (numRows < static_cast<size_type>(INT_MAX) &&
         numRows * numCols < static_cast<size_type>(INT_MAX)) {
       typedef int index_type;
-      Dot_MV<RV, XV, YV, index_type>::dot(R, X, Y);
+      MV_Dot_Invoke<RV, XV, YV, index_type>(R, X, Y);
     } else {
       typedef std::int64_t index_type;
-      Dot_MV<RV, XV, YV, index_type>::dot(R, X, Y);
+      MV_Dot_Invoke<RV, XV, YV, index_type>(R, X, Y);
     }
     Kokkos::Profiling::popRegion();
   }
