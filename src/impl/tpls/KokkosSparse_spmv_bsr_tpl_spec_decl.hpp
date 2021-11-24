@@ -263,7 +263,8 @@ void spmv_block_impl_cusparse(
   cusparseDirection_t dirA = CUSPARSE_DIRECTION_ROW;
 
   /* perform the actual SpMV operation */
-  if (std::is_same<int, offset_type>::value) {
+  if ((std::is_same<int, offset_type>::value) &&
+      (std::is_same<int, entry_type>::value)) {
     if (std::is_same<value_type, float>::value) {
       KOKKOS_CUSPARSE_SAFE_CALL(cusparseSbsrmv(
           cusparseHandle, dirA, myCusparseOperation, A.numRows(), A.numCols(),
@@ -308,8 +309,8 @@ void spmv_block_impl_cusparse(
     }
   } else {
     throw std::logic_error(
-        "With cuSPARSE pre-10.0, offset type must be int. Something wrong with "
-        "TPL avail logic.");
+        "With cuSPARSE pre-10.0, offset and entry types must be int. "
+        "Something wrong with TPL avail logic.");
   }
 
   KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyMatDescr(descrA));
