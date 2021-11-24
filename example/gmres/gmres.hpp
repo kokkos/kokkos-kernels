@@ -118,6 +118,7 @@ GmresStats gmres(
     const KokkosSparse::Experimental::Preconditioner<
         ScalarType, Layout, EXSP, OrdinalType> *const M = NULL) {
   using namespace Kokkos::Experimental;  // For 'fabs' wrappers above
+  using namespace std;                   // For 'fabs' from std
   Kokkos::Profiling::pushRegion("GMRES::TotalTime:");
   typedef Kokkos::Details::ArithTraits<ScalarType> AT;
   typedef typename AT::val_type
