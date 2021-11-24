@@ -62,7 +62,6 @@
 //#include <spmv/Kokkos_SPMV.hpp>
 //#include <spmv/Kokkos_SPMV_Inspector.hpp>
 #include <KokkosKernels_Test_Structured_Matrix.hpp>
-#include "KokkosSparse_spmv_tpl_spec_decl.hpp"
 
 #ifdef HAVE_CUSPARSE
 #include <CuSparse_SPMV.hpp>
@@ -438,7 +437,7 @@ int test_bsr_matrix_single_vec(
   }
 
   void print_help() {
-    printf("SPMV benchmark code \n");
+    printf("BsrMatrix SPMV benchmark code \n");
     printf("Options:\n");
     printf(
         "  -bs             : Maximum blocksize for the sparse matrix (default "
