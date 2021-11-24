@@ -75,8 +75,8 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
           const BetaType& beta, const YVector& y, const RANK_ONE) {
   // Make sure that x and y have the same rank.
   static_assert(
-       static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
-       "KokkosSparse::spmv: Vector ranks do not match.");
+      static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
+      "KokkosSparse::spmv: Vector ranks do not match.");
   // Make sure that x (and therefore y) is rank 1.
   static_assert(static_cast<int>(XVector::rank) == 1,
                 "KokkosSparse::spmv: Both Vector inputs must have rank 1 "
@@ -239,8 +239,8 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
           const BetaType& beta, const YVector& y, const RANK_ONE) {
   // Make sure that x and y have the same rank.
   static_assert(
-       static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
-       "KokkosSparse::spmv: Vector ranks do not match.");
+      static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
+      "KokkosSparse::spmv: Vector ranks do not match.");
   // Make sure that x (and therefore y) is rank 1.
   static_assert(static_cast<int>(XVector::rank) == 1,
                 "KokkosSparse::spmv: Both Vector inputs must have rank 1 "
@@ -313,8 +313,8 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
           const BetaType& beta, const YVector& y, const RANK_ONE) {
   // Make sure that x and y have the same rank.
   static_assert(
-       static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
-       "KokkosSparse::spmv: Vector ranks do not match.");
+      static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
+      "KokkosSparse::spmv: Vector ranks do not match.");
   // Make sure that x (and therefore y) is rank 1.
   static_assert(static_cast<int>(XVector::rank) == 1,
                 "KokkosSparse::spmv: Both Vector inputs must have rank 1 "
@@ -465,8 +465,8 @@ void spmv(KokkosKernels::Experimental::Controls /*controls*/, const char mode[],
           const BetaType& beta, const YVector& y, const RANK_TWO) {
   // Make sure that x and y have the same rank.
   static_assert(
-       static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
-       "KokkosSparse::spmv: Vector ranks do not match.");
+      static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
+      "KokkosSparse::spmv: Vector ranks do not match.");
   // Make sure that x (and therefore y) is rank 2.
   static_assert(static_cast<int>(XVector::rank) == 2,
                 "KokkosSparse::spmv: Both Vector inputs must have rank 2 "
@@ -475,7 +475,6 @@ void spmv(KokkosKernels::Experimental::Controls /*controls*/, const char mode[],
   static_assert(std::is_same<typename YVector::value_type,
                              typename YVector::non_const_value_type>::value,
                 "KokkosSparse::spmv: Output Vector must be non-const.");
-
 
   // Check compatibility of dimensions at run time.
   if ((mode[0] == NoTranspose[0]) || (mode[0] == Conjugate[0])) {
@@ -578,8 +577,8 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
           const BetaType& beta, const YVector& y, const RANK_TWO) {
   // Make sure that x and y have the same rank.
   static_assert(
-       static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
-       "KokkosSparse::spmv: Vector ranks do not match.");
+      static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
+      "KokkosSparse::spmv: Vector ranks do not match.");
   // Make sure that x (and therefore y) is rank 2.
   static_assert(static_cast<int>(XVector::rank) == 2,
                 "KokkosSparse::spmv: Both Vector inputs must have rank 2 "
@@ -652,8 +651,8 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
           const BetaType& beta, const YVector& y, const RANK_TWO) {
   // Make sure that x and y have the same rank.
   static_assert(
-       static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
-       "KokkosSparse::spmv: Vector ranks do not match.");
+      static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
+      "KokkosSparse::spmv: Vector ranks do not match.");
   // Make sure that x (and therefore y) is rank 2.
   static_assert(static_cast<int>(XVector::rank) == 2,
                 "KokkosSparse::spmv: Both Vector inputs must have rank 2 "
