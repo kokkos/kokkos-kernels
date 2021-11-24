@@ -246,7 +246,7 @@ void spmv_block_impl_cusparse(
   switch (toupper(mode[0])) {
     case 'N': myCusparseOperation = CUSPARSE_OPERATION_NON_TRANSPOSE; break;
     default: {
-      std::cerr << "Mode " << mode << " invalid for cuSPARSE SpMV.\n";
+      std::cerr << "Mode " << mode << " invalid for cusparse[*]bsrmv.\n";
       throw std::invalid_argument("Invalid mode");
     } break;
   }
@@ -302,7 +302,8 @@ void spmv_block_impl_cusparse(
           reinterpret_cast<cuDoubleComplex*>(y.data())));
     } else {
       throw std::logic_error(
-          "Trying to call cusparse SpMV with a scalar type not float/double, "
+          "Trying to call cusparse[*]bsrmv with a scalar type not "
+          "float/double, "
           "nor complex of either!");
     }
   } else {
