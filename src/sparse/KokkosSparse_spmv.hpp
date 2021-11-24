@@ -73,6 +73,10 @@ template <class AlphaType, class AMatrix, class XVector, class BetaType,
 void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
           const BetaType& beta, const YVector& y, const RANK_ONE) {
+  // Make sure that x and y have the same rank.
+  static_assert(
+       static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
+       "KokkosSparse::spmv: Vector ranks do not match.");
   // Make sure that x (and therefore y) is rank 1.
   static_assert(static_cast<int>(XVector::rank) == 1,
                 "KokkosSparse::spmv: Both Vector inputs must have rank 1 "
@@ -226,10 +230,19 @@ template <
 void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
           const BetaType& beta, const YVector& y, const RANK_ONE) {
-  // Make sure that both x and y have the same rank.
+  // Make sure that x and y have the same rank.
   static_assert(
-      static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
-      "KokkosSparse::spmv: Vector ranks do not match.");
+       static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
+       "KokkosSparse::spmv: Vector ranks do not match.");
+  // Make sure that x (and therefore y) is rank 1.
+  static_assert(static_cast<int>(XVector::rank) == 1,
+                "KokkosSparse::spmv: Both Vector inputs must have rank 1 "
+                "in order to call this specialization of spmv.");
+  // Make sure that y is non-const.
+  static_assert(std::is_same<typename YVector::value_type,
+                             typename YVector::non_const_value_type>::value,
+                "KokkosSparse::spmv: Output Vector must be non-const.");
+
   //
   if (A.blockDim() == 1) {
     KokkosSparse::CrsMatrix<
@@ -291,10 +304,19 @@ template <class AlphaType, class AMatrix, class XVector, class BetaType,
 void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
           const BetaType& beta, const YVector& y, const RANK_ONE) {
-  // Make sure that both x and y have the same rank.
+  // Make sure that x and y have the same rank.
   static_assert(
-      static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
-      "KokkosSparse::spmv: Vector ranks do not match.");
+       static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
+       "KokkosSparse::spmv: Vector ranks do not match.");
+  // Make sure that x (and therefore y) is rank 1.
+  static_assert(static_cast<int>(XVector::rank) == 1,
+                "KokkosSparse::spmv: Both Vector inputs must have rank 1 "
+                "in order to call this specialization of spmv.");
+  // Make sure that y is non-const.
+  static_assert(std::is_same<typename YVector::value_type,
+                             typename YVector::non_const_value_type>::value,
+                "KokkosSparse::spmv: Output Vector must be non-const.");
+
   //
   if (A.blockDim() == 1) {
     KokkosSparse::CrsMatrix<
@@ -434,14 +456,19 @@ template <class AlphaType, class AMatrix, class XVector, class BetaType,
 void spmv(KokkosKernels::Experimental::Controls /*controls*/, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
           const BetaType& beta, const YVector& y, const RANK_TWO) {
-  // Make sure that both x and y have the same rank.
+  // Make sure that x and y have the same rank.
   static_assert(
-      static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
-      "KokkosBlas::spmv: Vector ranks do not match.");
+       static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
+       "KokkosSparse::spmv: Vector ranks do not match.");
+  // Make sure that x (and therefore y) is rank 2.
+  static_assert(static_cast<int>(XVector::rank) == 2,
+                "KokkosSparse::spmv: Both Vector inputs must have rank 2 "
+                "in order to call this specialization of spmv.");
   // Make sure that y is non-const.
   static_assert(std::is_same<typename YVector::value_type,
                              typename YVector::non_const_value_type>::value,
-                "KokkosBlas::spmv: Output Vector must be non-const.");
+                "KokkosSparse::spmv: Output Vector must be non-const.");
+
 
   // Check compatibility of dimensions at run time.
   if ((mode[0] == NoTranspose[0]) || (mode[0] == Conjugate[0])) {
@@ -542,10 +569,19 @@ template <class AlphaType, class AMatrix, class XVector, class BetaType,
 void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
           const BetaType& beta, const YVector& y, const RANK_TWO) {
-  // Make sure that both x and y have the same rank.
+  // Make sure that x and y have the same rank.
   static_assert(
-      static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
-      "KokkosSparse::spmv: Vector ranks do not match.");
+       static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
+       "KokkosSparse::spmv: Vector ranks do not match.");
+  // Make sure that x (and therefore y) is rank 2.
+  static_assert(static_cast<int>(XVector::rank) == 2,
+                "KokkosSparse::spmv: Both Vector inputs must have rank 2 "
+                "in order to call this specialization of spmv.");
+  // Make sure that y is non-const.
+  static_assert(std::is_same<typename YVector::value_type,
+                             typename YVector::non_const_value_type>::value,
+                "KokkosSparse::spmv: Output Vector must be non-const.");
+
   //
   if (A.blockDim() == 1) {
     KokkosSparse::CrsMatrix<
@@ -607,10 +643,19 @@ template <
 void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
           const BetaType& beta, const YVector& y, const RANK_TWO) {
-  // Make sure that both x and y have the same rank.
+  // Make sure that x and y have the same rank.
   static_assert(
-      static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
-      "KokkosSparse::spmv: Vector ranks do not match.");
+       static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
+       "KokkosSparse::spmv: Vector ranks do not match.");
+  // Make sure that x (and therefore y) is rank 2.
+  static_assert(static_cast<int>(XVector::rank) == 2,
+                "KokkosSparse::spmv: Both Vector inputs must have rank 2 "
+                "in order to call this specialization of spmv.");
+  // Make sure that y is non-const.
+  static_assert(std::is_same<typename YVector::value_type,
+                             typename YVector::non_const_value_type>::value,
+                "KokkosSparse::spmv: Output Vector must be non-const.");
+
   //
   if (A.blockDim() == 1) {
     KokkosSparse::CrsMatrix<
@@ -690,6 +735,11 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
   static_assert(
       static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
       "KokkosSparse::spmv: Vector ranks do not match.");
+  // Make sure that y is non-const.
+  static_assert(std::is_same<typename YVector::value_type,
+                             typename YVector::non_const_value_type>::value,
+                "KokkosSparse::spmv: Output Vector must be non-const.");
+
   //
   if (alpha == Kokkos::ArithTraits<AlphaType>::zero() || A.numRows() == 0 ||
       A.numCols() == 0 || A.nnz() == 0) {
