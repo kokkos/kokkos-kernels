@@ -117,6 +117,11 @@ KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>,
     enum : bool { value = true };                                         \
   };
 
+// Note BMK: We use the same layout for A, X and Y because the GEMV
+// interface will switch the layouts of X and Y to that of A.
+// So this TPL version will match any layout combination, as long
+// as none are LayoutStride.
+
 KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_CUBLAS(double, Kokkos::LayoutLeft,
                                        Kokkos::LayoutLeft, Kokkos::LayoutLeft,
                                        Kokkos::CudaSpace)
@@ -142,6 +147,43 @@ KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>,
 KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>,
                                        Kokkos::LayoutRight, Kokkos::LayoutRight,
                                        Kokkos::LayoutRight, Kokkos::CudaSpace)
+
+#endif
+
+// rocBLAS
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
+
+#define KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ROCBLAS(SCALAR, LAYOUT)    \
+  template <>                                                      \
+  struct gemv_tpl_spec_avail<                                      \
+      Kokkos::View<const SCALAR**, LAYOUT,                         \
+                   Kokkos::Device<Kokkos::Experimental::HIP,       \
+                                  Kokkos::Experimental::HIPSpace>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,      \
+      Kokkos::View<const SCALAR*, LAYOUT,                          \
+                   Kokkos::Device<Kokkos::Experimental::HIP,       \
+                                  Kokkos::Experimental::HIPSpace>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,      \
+      Kokkos::View<SCALAR*, LAYOUT,                                \
+                   Kokkos::Device<Kokkos::Experimental::HIP,       \
+                                  Kokkos::Experimental::HIPSpace>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {   \
+    enum : bool { value = true };                                  \
+  };
+
+KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ROCBLAS(double, Kokkos::LayoutLeft)
+KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ROCBLAS(float, Kokkos::LayoutLeft)
+KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<double>,
+                                        Kokkos::LayoutLeft)
+KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<float>,
+                                        Kokkos::LayoutLeft)
+
+KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ROCBLAS(double, Kokkos::LayoutRight)
+KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ROCBLAS(float, Kokkos::LayoutRight)
+KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<double>,
+                                        Kokkos::LayoutRight)
+KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<float>,
+                                        Kokkos::LayoutRight)
 
 #endif
 }  // namespace Impl

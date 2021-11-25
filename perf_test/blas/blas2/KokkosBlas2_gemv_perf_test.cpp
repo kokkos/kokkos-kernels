@@ -47,6 +47,7 @@
 
 struct Params {
   int use_cuda    = 0;
+  int use_hip     = 0;
   int use_openmp  = 0;
   int use_threads = 0;
   int m           = 5000;
@@ -85,6 +86,8 @@ int parse_inputs(Params& params, int argc, char** argv) {
       params.use_openmp = atoi(argv[++i]);
     } else if (0 == strcasecmp(argv[i], "--cuda")) {
       params.use_cuda = atoi(argv[++i]) + 1;
+    } else if (0 == strcasecmp(argv[i], "--hip")) {
+      params.use_hip = atoi(argv[++i]) + 1;
     } else if (0 == strcasecmp(argv[i], "--layout")) {
       i++;
       if (0 == strcasecmp(argv[i], "left"))
@@ -174,8 +177,7 @@ int main(int argc, char** argv) {
   // const int num_threads = params.use_openmp;
   const int num_threads = std::max(params.use_openmp, params.use_threads);
 
-  const int device_id = params.use_cuda - 1;
-
+  const int device_id = std::max(params.use_cuda, params.use_hip) - 1;
   Kokkos::initialize(Kokkos::InitArguments(num_threads, -1, device_id));
 
   // Create booleans to handle pthreads, openmp and cuda params and initialize
@@ -183,14 +185,15 @@ int main(int argc, char** argv) {
   bool useThreads = params.use_threads != 0;
   bool useOMP     = params.use_openmp != 0;
   bool useCUDA    = params.use_cuda != 0;
+  bool useHIP     = params.use_hip != 0;
 
   // Create boolean to handle serial setting if not using open and cuda
-  bool useSerial = !useOMP && !useCUDA;
+  bool useSerial = !useThreads && !useOMP && !useCUDA && !useHIP;
 
   // Logic for runtime with PThreads
   if (useThreads) {
 #if defined(KOKKOS_ENABLE_THREADS)
-    if (params.use_threads)
+    if (params.layoutLeft)
       run<Kokkos::Threads, Kokkos::LayoutLeft>(params.m, params.n,
                                                params.repeat);
     else
@@ -226,6 +229,19 @@ int main(int argc, char** argv) {
       run<Kokkos::Cuda, Kokkos::LayoutRight>(params.m, params.n, params.repeat);
 #else
     std::cout << "ERROR: CUDA requested, but not available.\n";
+    return 1;
+#endif
+  }
+  if (useHIP) {
+#if defined(KOKKOS_ENABLE_HIP)
+    if (params.layoutLeft)
+      run<Kokkos::Experimental::HIP, Kokkos::LayoutLeft>(params.m, params.n,
+                                                         params.repeat);
+    else
+      run<Kokkos::Experimental::HIP, Kokkos::LayoutRight>(params.m, params.n,
+                                                          params.repeat);
+#else
+    std::cout << "ERROR: HIP requested, but not available.\n";
     return 1;
 #endif
   }
