@@ -56,7 +56,7 @@
 // libstdc++ half_t overloads
 ////////////////////////////////////////////////////////////////////////////////
 namespace Kokkos {
-namespace Experimental {
+namespace Issue1172WorkAround {
 #if !KOKKOS_HALF_T_IS_FLOAT
 Kokkos::Experimental::half_t fabs(Kokkos::Experimental::half_t arg) {
   using AT = Kokkos::Details::ArithTraits<half_t>;
@@ -76,7 +76,7 @@ template <class T>
 KOKKOS_INLINE_FUNCTION T fabs(const Kokkos::complex<T> &x) {
   return Kokkos::abs(x);
 }
-}  // namespace Experimental
+}  // namespace Issue1172WorkAround
 }  // namespace Kokkos
 
 // This struct is returned to the user to give solver
@@ -117,8 +117,7 @@ GmresStats gmres(
     const GmresOpts<ScalarType> &opts,
     const KokkosSparse::Experimental::Preconditioner<
         ScalarType, Layout, EXSP, OrdinalType> *const M = NULL) {
-  using namespace Kokkos::Experimental;  // For 'fabs' wrappers above
-  using namespace std;                   // For 'fabs' from std
+  using namespace Kokkos::Issue1172WorkAround;  // For 'fabs' wrappers above
   Kokkos::Profiling::pushRegion("GMRES::TotalTime:");
   typedef Kokkos::Details::ArithTraits<ScalarType> AT;
   typedef typename AT::val_type
