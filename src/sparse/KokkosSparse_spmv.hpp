@@ -164,6 +164,13 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
   }
 #endif
 
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+  if (std::is_same<typename AMatrix_Internal::memory_space,
+      Kokkos::Experimental::HIPSpace>::value) {
+    useFallback = useFallback || (mode[0] != NoTranspose[0]);
+  }
+#endif
+
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
   if (std::is_same<typename AMatrix_Internal::memory_space,
                    Kokkos::HostSpace>::value) {
