@@ -276,9 +276,9 @@ void run_mis2(const MIS2Parameters& params) {
 
   t.reset();
   for (int rep = 0; rep < params.repeat; rep++) {
-    mis = KokkosGraph::Experimental::graph_d2_mis<device_t, decltype(rowmap),
-                                                  decltype(entries)>(
-        rowmap, entries, params.algo);
+    mis = KokkosGraph::graph_d2_mis<device_t, decltype(rowmap),
+                                    decltype(entries)>(rowmap, entries,
+                                                       params.algo);
     exec_space().fence();
   }
   double totalTime = t.seconds();

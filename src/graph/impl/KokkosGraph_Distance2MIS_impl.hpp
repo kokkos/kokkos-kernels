@@ -51,7 +51,6 @@
 #include <cstdint>
 
 namespace KokkosGraph {
-namespace Experimental {
 namespace Impl {
 
 template <typename device_t, typename rowmap_t, typename entries_t,
@@ -971,7 +970,7 @@ struct D2_MIS_Aggregation {
     char_view_t roots_;
   };
 
-  void phase1() {
+  void createPrimaryAggregates() {
     // Compute an MIS-2
     D2_MIS_RandomPriority<device_t, rowmap_t, entries_t, mis2_view> d2mis(
         rowmap, entries);
@@ -1064,7 +1063,7 @@ struct D2_MIS_Aggregation {
     char_view_t roots_;
   };
 
-  void phase2() {
+  void createSecondaryAggregates() {
     labels_t candAggSizes(
         Kokkos::ViewAllocateWithoutInitializing("Phase2 Candidate Agg Sizes"),
         numVerts);
@@ -1217,7 +1216,7 @@ struct D2_MIS_Aggregation {
     char_view_t roots_;
   };
 
-  void phase3() {
+  void aggregateLeftovers() {
     // Phase3 is cleanup. All aggregates have already been created, but some
     // vertices might be unaggregated. Compute the current size of each
     // aggregate, and then join each unaggregated node to the smallest
@@ -1240,23 +1239,24 @@ struct D2_MIS_Aggregation {
 
   // phase 2 creates new aggregates in between the initial MIS-2 neighborhoods.
   // Effectively slows coarsening rate by adding new aggregates.
-  void compute(bool enablePhase2) {
-    // Pseudocode:
-    //
-    //  -Phase 1: compute MIS-2, construct an aggregate from each in-set point
-    //  and its neighbors -Phase 2: Until no new aggregates can be formed this
-    //  way:
-    //    -Compute an MIS-2 that excludes all aggregated nodes
-    //    -For each in-set point:
-    //      -Count unaggregated neighbors.
-    //      -If total agg size would be >= 3, make the aggregate.
-    //  -Phase 3: join still unaggregated nodes to a neighboring aggregate
-    //    -Ideally, the smallest neighboring aggregate.
-    //    -To remain deterministic, could simply use the agg sizes from end of
-    //    phase 2 and not update them during phase 3.
-    phase1();
-    if (enablePhase2) phase2();
-    phase3();
+  void compute(bool enableSecondaryAggregates) {
+    //  * Phase 1: compute MIS-2, construct a 'primary' aggregate from each
+    //  in-set point and its neighbors
+    createPrimaryAggregates();
+    //  * Phase 2:
+    //    - Compute an MIS-2 on subgraph of unaggregated nodes
+    //    - For each in-set point:
+    //      - Count unaggregated neighbors.
+    //      - If total agg size would be >= 3, create the new aggregate.
+    //    - This is optional: enabling this phase slows coarsening rate (i.e.
+    //    coarse graph is larger)
+    if (enableSecondaryAggregates) createSecondaryAggregates();
+    //  * Phase 3: join still unaggregated (leftover) vertices to a neighboring
+    //  aggregate
+    //    - Ideally, the smallest neighboring aggregate.
+    //    - To remain deterministic, we use the agg sizes from end of
+    //    phase 2 and hold those constant during phase 3.
+    aggregateLeftovers();
   }
 
   rowmap_t rowmap;
@@ -1268,7 +1268,6 @@ struct D2_MIS_Aggregation {
 };
 
 }  // namespace Impl
-}  // namespace Experimental
 }  // namespace KokkosGraph
 
 #endif

@@ -57,9 +57,6 @@
 using namespace KokkosKernels;
 using namespace KokkosKernels::Experimental;
 
-using namespace KokkosGraph;
-using namespace KokkosGraph::Experimental;
-
 enum CoarseningType { PHASE2, NO_PHASE2 };
 
 namespace Test {
@@ -141,8 +138,8 @@ void test_mis2(lno_t numVerts, size_type nnz, lno_t bandwidth,
   // For each algorithm, compute and verify the MIS
   std::vector<MIS2_Algorithm> algos = {MIS2_FAST, MIS2_QUALITY};
   for (auto algo : algos) {
-    auto mis =
-        graph_d2_mis<device, rowmap_t, entries_t>(symRowmap, symEntries, algo);
+    auto mis = KokkosGraph::graph_d2_mis<device, rowmap_t, entries_t>(
+        symRowmap, symEntries, algo);
     auto misHost =
         Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), mis);
     bool success = Test::verifyD2MIS<lno_t, size_type, decltype(rowmapHost),
@@ -187,11 +184,11 @@ void test_mis2_coarsening(lno_t numVerts, size_type nnz, lno_t bandwidth,
     labels_t labels;
     switch (algo) {
       case NO_PHASE2:
-        labels = graph_mis2_coarsen<device, rowmap_t, entries_t>(
+        labels = KokkosGraph::graph_mis2_coarsen<device, rowmap_t, entries_t>(
             symRowmap, symEntries, numClusters);
         break;
       case PHASE2:
-        labels = graph_mis2_aggregate<device, rowmap_t, entries_t>(
+        labels = KokkosGraph::graph_mis2_aggregate<device, rowmap_t, entries_t>(
             symRowmap, symEntries, numClusters);
     }
     auto labelsHost =
@@ -260,7 +257,7 @@ void test_mis2_coarsening_zero_rows() {
   // note: MIS2 coarsening first calls MIS2 on the fine graph, so this covers
   // the zero-row case for MIS2 alone.
   lno_t numClusters;
-  auto labels = graph_mis2_coarsen<device, rowmap_t, entries_t>(
+  auto labels = KokkosGraph::graph_mis2_coarsen<device, rowmap_t, entries_t>(
       fineRowmap, fineEntries, numClusters);
   EXPECT_EQ(numClusters, 0);
   EXPECT_EQ(labels.extent(0), 0);
