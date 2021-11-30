@@ -247,230 +247,271 @@ int test_bsr_matrix_single_vec(
           for (Ordinal ir = 0; ir < nRow; ++ir) h_ybsr(ir) = h_y0(ir);
           Kokkos::deep_copy(ybsr, h_ybsr);
           Kokkos::Timer timer;
-          KokkosSparse::Impl::spmv_block_impl_cusparse(controls, fOp, alpha,
-                                                       Absr, xref, beta, ybsr);
+          KokkosSparse::Impl::spmv_block_cusparse(controls, fOp, alpha, Absr,
+                                                  xref, beta, ybsr);
           time_bsr += timer.seconds();
         }
-        break;
+      } break;
 #endif
 #ifdef HAVE_MKL
-        case Implementation::MKL: {
-          // Time a series of multiplications with the BsrMatrix
-          KokkosKernels::Experimental::Controls controls;
-          for (int jr = 0; jr < loop; ++jr) {
-            for (Ordinal ir = 0; ir < nRow; ++ir) h_ybsr(ir) = h_y0(ir);
-            Kokkos::deep_copy(ybsr, h_ybsr);
-            Kokkos::Timer timer;
-            KokkosSparse::Impl::spmv_block_mkl(controls, fOp, alpha, Absr, xref,
-                                               beta, ybsr);
-            time_bsr += timer.seconds();
-          }
-        } break;
+      case Implementation::MKL: {
+        // Time a series of multiplications with the BsrMatrix
+        KokkosKernels::Experimental::Controls controls;
+        for (int jr = 0; jr < loop; ++jr) {
+          for (Ordinal ir = 0; ir < nRow; ++ir) h_ybsr(ir) = h_y0(ir);
+          Kokkos::deep_copy(ybsr, h_ybsr);
+          Kokkos::Timer timer;
+          KokkosSparse::Impl::spmv_block_mkl(controls, fOp, alpha, Absr, xref,
+                                             beta, ybsr);
+          time_bsr += timer.seconds();
+        }
+      } break;
 #endif
-      }
-
-        // Check that the numerical result is matching
-        Kokkos::deep_copy(h_ycrs, ycrs);
-        Kokkos::deep_copy(h_ybsr, ybsr);
-        double error = 0.0, maxNorm = 0.0;
-        for (int ir = 0; ir < h_ycrs.extent(0); ++ir) {
-          maxNorm = std::max<double>(
-              maxNorm, std::abs<double>(static_cast<double>(h_ycrs(ir))));
-          error = std::max<double>(
-              error,
-              std::abs<double>(static_cast<double>(h_ycrs(ir) - h_ybsr(ir))));
-        }
-
-        double tol =
-            (mat_val.size() / nRow) * std::numeric_limits<double>::epsilon();
-        if (error > tol * maxNorm) {
-          num_errors += 1;
-          std::cout << static_cast<int>(test) << " ";
-          std::cout << fOp << ", " << blockSize << " : "
-                    << " error " << error << " maxNorm " << maxNorm << " tol "
-                    << tol << " tol * maxNorm " << tol * maxNorm << "\n";
-        }
-
-        //-- Print the number of Gflops for both products
-        if (blockSize == 1) {
-          printf("Op, blockSize: AvgGFlop(CrsMatrix) AvgGFlop(BsrMatrix) \n");
-        }
-        double num_flops = mat_val.size() * 2 * loop;
-        double crs_flop  = (num_flops / time_crs) * 1.0e-09;
-        double bsr_flop  = (num_flops / time_bsr) * 1.0e-09;
-        std::cout << fOp << ", " << blockSize << "         : ";
-        if (crs_flop < bsr_flop) {
-          std::cout << crs_flop << "        <" << bsr_flop << ">";
-        } else {
-          std::cout << "<" << crs_flop << ">         " << bsr_flop;
-        }
-        std::cout << std::endl;
-
-    }  // for (Ordinal blockSize = 1; blockSize < bMax; ++blockSize)
-
-    return int(num_errors);
-  }
-
-  template <typename scalar_t>
-  int test_bsr_matrix_vec(
-      const char fOp[],
-      KokkosSparse::CrsMatrix<Scalar, Ordinal, Kokkos::HostSpace, void, size_t>
-          mat_b1,
-      int nvec, int test, const char *filename, int rows_per_thread,
-      int team_size, int vector_length, int schedule, int loop,
-      const scalar_t alpha, const scalar_t beta, const int bMax) {
-    typedef typename KokkosSparse::CrsMatrix<
-        scalar_t, Ordinal, Kokkos::DefaultExecutionSpace, void, size_t>
-        crsMat_type;
-
-    typedef Kokkos::View<scalar_t **, Kokkos::LayoutLeft,
-                         Kokkos::DefaultExecutionSpace>
-        block_vector_t;
-
-    srand(17312837);
-
-    int num_errors    = 0;
-    const auto bMax_o = static_cast<Ordinal>(bMax);
-    for (Ordinal blockSize = 1; blockSize <= bMax_o; ++blockSize) {
-      Ordinal nRow = blockSize * mat_b1.numRows();
-      Ordinal nCol = nRow;
-      std::vector<Ordinal> mat_rowmap;
-      std::vector<Ordinal> mat_colidx;
-      std::vector<scalar_t> mat_val;
-
-      make_block_entries<scalar_t>(mat_b1, blockSize, mat_rowmap, mat_colidx,
-                                   mat_val);
-
-      // Create the CrsMatrix for the reference computation
-      crsMat_type Acrs("new_crs_matr", nRow, nCol, mat_val.size(), &mat_val[0],
-                       &mat_rowmap[0], &mat_colidx[0]);
-
-      block_vector_t xref("new_right_hand_side", nRow, nvec);
-      auto h_xref = Kokkos::create_mirror_view(xref);
-      for (Ordinal jc = 0; jc < nvec; ++jc) {
-        for (Ordinal ir = 0; ir < nRow; ++ir) {
-          set_random_value(h_xref(ir, jc));
-        }
-      }
-      Kokkos::deep_copy(xref, h_xref);
-
-      block_vector_t y0("y_init", nRow, nvec);
-      auto h_y0 = Kokkos::create_mirror_view(y0);
-      for (Ordinal jc = 0; jc < nvec; ++jc)
-        for (Ordinal ir = 0; ir < nRow; ++ir) set_random_value(h_y0(ir, jc));
-      Kokkos::deep_copy(y0, h_y0);
-
-      block_vector_t ycrs("crs_product_result", nRow, nvec);
-      auto h_ycrs = Kokkos::create_mirror_view(ycrs);
-
-      // Time a series of multiplications with the CrsMatrix format
-      double time_crs = 0.0;
-      for (int jr = 0; jr < loop; ++jr) {
-        for (Ordinal jc = 0; jc < nvec; ++jc)
-          for (Ordinal ir = 0; ir < nRow; ++ir) h_ycrs(ir, jc) = h_y0(ir, jc);
-        Kokkos::deep_copy(ycrs, h_ycrs);
-        Kokkos::Timer timer;
-        KokkosSparse::spmv(fOp, alpha, Acrs, xref, beta, ycrs);
-        time_crs += timer.seconds();
-      }
-
-      // Create the BsrMatrix variable
-      KokkosSparse::Experimental::BsrMatrix<
-          scalar_t, Ordinal, Kokkos::DefaultExecutionSpace, void, size_t>
-          Absr(Acrs, blockSize);
-
-      block_vector_t ybsr("bsr_product_result", nRow, nvec);
-      auto h_ybsr = Kokkos::create_mirror_view(ybsr);
-
-      // Time a series of multiplications with the BsrMatrix
-      double time_bsr = 0.0;
-      for (int jr = 0; jr < loop; ++jr) {
-        for (Ordinal jc = 0; jc < nvec; ++jc)
-          for (Ordinal ir = 0; ir < nRow; ++ir) h_ybsr(ir, jc) = h_y0(ir, jc);
-        Kokkos::deep_copy(ybsr, h_ybsr);
-        Kokkos::Timer timer;
-        KokkosSparse::spmv(fOp, alpha, Absr, xref, beta, ybsr);
-        time_bsr += timer.seconds();
-      }
-
-      // Check that the result is matching
-      Kokkos::deep_copy(h_ycrs, ycrs);
-      Kokkos::deep_copy(h_ybsr, ybsr);
-      double tol =
-          (mat_val.size() / nRow) * std::numeric_limits<double>::epsilon();
-      for (int jc = 0; jc < nvec; ++jc) {
-        double error = 0.0, maxNorm = 0.0;
-        for (int ir = 0; ir < h_ycrs.extent(0); ++ir) {
-          maxNorm = std::max<double>(
-              maxNorm, std::abs<double>(static_cast<double>(h_ycrs(ir, jc))));
-          error = std::max<double>(
-              error, std::abs<double>(
-                         static_cast<double>(h_ycrs(ir, jc) - h_ybsr(ir, jc))));
-        }
-        if (error > tol * maxNorm) {
-          num_errors += 1;
-          std::cout << fOp << ", " << blockSize << " : rhs " << jc << " error "
-                    << error << " maxNorm " << maxNorm << " tol " << tol
-                    << " tol * maxNorm " << tol * maxNorm << "\n";
-        }
-      }
-
-      // Print the number of Gflops
-      if (blockSize == 1) {
-        printf("Op, blockSize: AvgGFlop(CrsMatrix) AvgGFlop(BsrMatrix) \n");
-      }
-      double num_flops = mat_val.size() * 2 * loop * nvec;
-      double crs_flop  = (num_flops / time_crs) * 1.0e-09;
-      double bsr_flop  = (num_flops / time_bsr) * 1.0e-09;
-      std::cout << fOp << ", " << blockSize << "         ";
-      if (crs_flop < bsr_flop) {
-        // std::cout << crs_flop << "        <" << bsr_flop << ">";
-        std::cout << crs_flop << "        " << bsr_flop << " ";
-      } else {
-        // std::cout << "<" << crs_flop << ">         " << bsr_flop;
-        std::cout << " " << crs_flop << "         " << bsr_flop;
-      }
-      std::cout << std::endl;
     }
 
-    return int(num_errors);
+    // Check that the numerical result is matching
+    Kokkos::deep_copy(h_ycrs, ycrs);
+    Kokkos::deep_copy(h_ybsr, ybsr);
+    double error = 0.0, maxNorm = 0.0;
+    for (int ir = 0; ir < h_ycrs.extent(0); ++ir) {
+      maxNorm = std::max<double>(
+          maxNorm, std::abs<double>(static_cast<double>(h_ycrs(ir))));
+      error = std::max<double>(
+          error,
+          std::abs<double>(static_cast<double>(h_ycrs(ir) - h_ybsr(ir))));
+    }
+
+    double tol =
+        (mat_val.size() / nRow) * std::numeric_limits<double>::epsilon();
+    if (error > tol * maxNorm) {
+      num_errors += 1;
+      std::cout << static_cast<int>(test) << " ";
+      std::cout << fOp << ", " << blockSize << " : "
+                << " error " << error << " maxNorm " << maxNorm << " tol "
+                << tol << " tol * maxNorm " << tol * maxNorm << "\n";
+    }
+
+    //-- Print the number of Gflops for both products
+    if (blockSize == 1) {
+      printf("Op, blockSize: AvgGFlop(CrsMatrix) AvgGFlop(BsrMatrix) \n");
+    }
+    double num_flops = mat_val.size() * 2 * loop;
+    double crs_flop  = (num_flops / time_crs) * 1.0e-09;
+    double bsr_flop  = (num_flops / time_bsr) * 1.0e-09;
+    std::cout << fOp << ", " << blockSize << "         : ";
+    if (crs_flop < bsr_flop) {
+      std::cout << crs_flop << "        <" << bsr_flop << ">";
+    } else {
+      std::cout << "<" << crs_flop << ">         " << bsr_flop;
+    }
+    std::cout << std::endl;
+
+  }  // for (Ordinal blockSize = 1; blockSize < bMax; ++blockSize)
+
+  return int(num_errors);
+}
+
+template <typename scalar_t>
+int test_bsr_matrix_vec(
+    const char fOp[],
+    KokkosSparse::CrsMatrix<Scalar, Ordinal, Kokkos::HostSpace, void, size_t>
+        mat_b1,
+    int nvec, int test, const char *filename, int rows_per_thread,
+    int team_size, int vector_length, int schedule, int loop,
+    const scalar_t alpha, const scalar_t beta, const int bMax) {
+  typedef typename KokkosSparse::CrsMatrix<
+      scalar_t, Ordinal, Kokkos::DefaultExecutionSpace, void, size_t>
+      crsMat_type;
+
+  typedef Kokkos::View<scalar_t **, Kokkos::LayoutLeft,
+                       Kokkos::DefaultExecutionSpace>
+      block_vector_t;
+
+  srand(17312837);
+
+  int num_errors    = 0;
+  const auto bMax_o = static_cast<Ordinal>(bMax);
+  for (Ordinal blockSize = 1; blockSize <= bMax_o; ++blockSize) {
+    Ordinal nRow = blockSize * mat_b1.numRows();
+    Ordinal nCol = nRow;
+    std::vector<Ordinal> mat_rowmap;
+    std::vector<Ordinal> mat_colidx;
+    std::vector<scalar_t> mat_val;
+
+    make_block_entries<scalar_t>(mat_b1, blockSize, mat_rowmap, mat_colidx,
+                                 mat_val);
+
+    // Create the CrsMatrix for the reference computation
+    crsMat_type Acrs("new_crs_matr", nRow, nCol, mat_val.size(), &mat_val[0],
+                     &mat_rowmap[0], &mat_colidx[0]);
+
+    block_vector_t xref("new_right_hand_side", nRow, nvec);
+    auto h_xref = Kokkos::create_mirror_view(xref);
+    for (Ordinal jc = 0; jc < nvec; ++jc) {
+      for (Ordinal ir = 0; ir < nRow; ++ir) {
+        set_random_value(h_xref(ir, jc));
+      }
+    }
+    Kokkos::deep_copy(xref, h_xref);
+
+    block_vector_t y0("y_init", nRow, nvec);
+    auto h_y0 = Kokkos::create_mirror_view(y0);
+    for (Ordinal jc = 0; jc < nvec; ++jc)
+      for (Ordinal ir = 0; ir < nRow; ++ir) set_random_value(h_y0(ir, jc));
+    Kokkos::deep_copy(y0, h_y0);
+
+    block_vector_t ycrs("crs_product_result", nRow, nvec);
+    auto h_ycrs = Kokkos::create_mirror_view(ycrs);
+
+    // Time a series of multiplications with the CrsMatrix format
+    double time_crs = 0.0;
+    for (int jr = 0; jr < loop; ++jr) {
+      for (Ordinal jc = 0; jc < nvec; ++jc)
+        for (Ordinal ir = 0; ir < nRow; ++ir) h_ycrs(ir, jc) = h_y0(ir, jc);
+      Kokkos::deep_copy(ycrs, h_ycrs);
+      Kokkos::Timer timer;
+      KokkosSparse::spmv(fOp, alpha, Acrs, xref, beta, ycrs);
+      time_crs += timer.seconds();
+    }
+
+    // Create the BsrMatrix variable
+    KokkosSparse::Experimental::BsrMatrix<
+        scalar_t, Ordinal, Kokkos::DefaultExecutionSpace, void, size_t>
+        Absr(Acrs, blockSize);
+
+    block_vector_t ybsr("bsr_product_result", nRow, nvec);
+    auto h_ybsr = Kokkos::create_mirror_view(ybsr);
+
+    // Time a series of multiplications with the BsrMatrix
+    double time_bsr = 0.0;
+    switch (static_cast<details::Implementation>(test)) {
+      default:
+      case Implementation::KokkosKernels: {
+        // Time a series of multiplications with the BsrMatrix
+        for (int jr = 0; jr < loop; ++jr) {
+          for (Ordinal ir = 0; ir < nRow; ++ir) h_ybsr(ir) = h_y0(ir);
+          Kokkos::deep_copy(ybsr, h_ybsr);
+          Kokkos::Timer timer;
+          KokkosSparse::spmv(fOp, alpha, Absr, xref, beta, ybsr);
+          time_bsr += timer.seconds();
+        }
+      } break;
+#ifdef HAVE_CUSPARSE
+      case Implementation::Cuda: {
+        // Time a series of multiplications with the BsrMatrix
+        KokkosKernels::Experimental::Controls controls;
+        for (int jr = 0; jr < loop; ++jr) {
+          for (Ordinal ir = 0; ir < nRow; ++ir) h_ybsr(ir) = h_y0(ir);
+          Kokkos::deep_copy(ybsr, h_ybsr);
+          Kokkos::Timer timer;
+          KokkosSparse::Impl::spmv_block_cusparse(controls, fOp, alpha, Absr,
+                                                  xref, beta, ybsr);
+          time_bsr += timer.seconds();
+        }
+      } break;
+#endif
+#ifdef HAVE_MKL
+      case Implementation::MKL: {
+        // Time a series of multiplications with the BsrMatrix
+        KokkosKernels::Experimental::Controls controls;
+        for (int jr = 0; jr < loop; ++jr) {
+          for (Ordinal ir = 0; ir < nRow; ++ir) h_ybsr(ir) = h_y0(ir);
+          Kokkos::deep_copy(ybsr, h_ybsr);
+          Kokkos::Timer timer;
+          KokkosSparse::Impl::spmv_block_mkl(controls, fOp, alpha, Absr, xref,
+                                             beta, ybsr);
+          time_bsr += timer.seconds();
+        }
+      } break;
+#endif
+    }
+
+    for (int jr = 0; jr < loop; ++jr) {
+      for (Ordinal jc = 0; jc < nvec; ++jc)
+        for (Ordinal ir = 0; ir < nRow; ++ir) h_ybsr(ir, jc) = h_y0(ir, jc);
+      Kokkos::deep_copy(ybsr, h_ybsr);
+      Kokkos::Timer timer;
+      KokkosSparse::spmv(fOp, alpha, Absr, xref, beta, ybsr);
+      time_bsr += timer.seconds();
+    }
+
+    // Check that the result is matching
+    Kokkos::deep_copy(h_ycrs, ycrs);
+    Kokkos::deep_copy(h_ybsr, ybsr);
+    double tol =
+        (mat_val.size() / nRow) * std::numeric_limits<double>::epsilon();
+    for (int jc = 0; jc < nvec; ++jc) {
+      double error = 0.0, maxNorm = 0.0;
+      for (int ir = 0; ir < h_ycrs.extent(0); ++ir) {
+        maxNorm = std::max<double>(
+            maxNorm, std::abs<double>(static_cast<double>(h_ycrs(ir, jc))));
+        error = std::max<double>(error, std::abs<double>(static_cast<double>(
+                                            h_ycrs(ir, jc) - h_ybsr(ir, jc))));
+      }
+      if (error > tol * maxNorm) {
+        num_errors += 1;
+        std::cout << fOp << ", " << blockSize << " : rhs " << jc << " error "
+                  << error << " maxNorm " << maxNorm << " tol " << tol
+                  << " tol * maxNorm " << tol * maxNorm << "\n";
+      }
+    }
+
+    // Print the number of Gflops
+    if (blockSize == 1) {
+      printf("Op, blockSize: AvgGFlop(CrsMatrix) AvgGFlop(BsrMatrix) \n");
+      switch (static_cast<details::Implementation>(test))
+    }
+    double num_flops = mat_val.size() * 2 * loop * nvec;
+    double crs_flop  = (num_flops / time_crs) * 1.0e-09;
+    double bsr_flop  = (num_flops / time_bsr) * 1.0e-09;
+    std::cout << fOp << ", " << blockSize << "         ";
+    if (crs_flop < bsr_flop) {
+      // std::cout << crs_flop << "        <" << bsr_flop << ">";
+      std::cout << crs_flop << "        " << bsr_flop << " ";
+    } else {
+      // std::cout << "<" << crs_flop << ">         " << bsr_flop;
+      std::cout << " " << crs_flop << "         " << bsr_flop;
+    }
+    std::cout << std::endl;
   }
 
-  void print_help() {
-    printf("BsrMatrix SPMV benchmark code \n");
-    printf("Options:\n");
-    printf(
-        "  -bs             : Maximum blocksize for the sparse matrix (default "
-        "= "
-        "16). \n");
-    printf("  -h              : Help. \n");
-    printf(
-        "  -l [LOOP]       : How many spmv to run to aggregate average time "
-        "(default = 512). \n");
-    printf(
-        "  -nx             : Number of points in the x-direction (default = "
-        "32).\n");
-    printf(
-        "                    The matrix will be of dimension nx (nx - 1) (nx + "
-        "1).\n");
-    printf(
-        "  -nv             : Number of vectors to multiply with (default = 1). "
-        "\n");
-    printf("  --op            : Use different operation \n");
-    printf("                    Options: \n");
-    printf(
-        "                    N = normal (default)  y <- alpha A x + beta y\n");
-    printf(
-        "                    C = conjugate         y <- alpha conj(A) x + beta "
-        "y\n");
-    printf(
-        "                    T = transpose         y <- alpha A^T x + beta "
-        "y\n");
-    printf(
-        "                    H = hermitian         y <- alpha A^H x + beta "
-        "y\n");
-  }
+  return int(num_errors);
 }
+
+void print_help() {
+  printf("BsrMatrix SPMV benchmark code \n");
+  printf("Options:\n");
+  printf(
+      "  -bs             : Maximum blocksize for the sparse matrix (default "
+      "= "
+      "16). \n");
+  printf("  -h              : Help. \n");
+  printf(
+      "  -l [LOOP]       : How many spmv to run to aggregate average time "
+      "(default = 512). \n");
+  printf(
+      "  -nx             : Number of points in the x-direction (default = "
+      "32).\n");
+  printf(
+      "                    The matrix will be of dimension nx (nx - 1) (nx + "
+      "1).\n");
+  printf(
+      "  -nv             : Number of vectors to multiply with (default = 1). "
+      "\n");
+  printf("  --op            : Use different operation \n");
+  printf("                    Options: \n");
+  printf("                    N = normal (default)  y <- alpha A x + beta y\n");
+  printf(
+      "                    C = conjugate         y <- alpha conj(A) x + beta "
+      "y\n");
+  printf(
+      "                    T = transpose         y <- alpha A^T x + beta "
+      "y\n");
+  printf(
+      "                    H = hermitian         y <- alpha A^H x + beta "
+      "y\n");
+}
+}  // namespace details
 
 int main(int argc, char **argv) {
   int loop = 512;
@@ -496,10 +537,14 @@ int main(int argc, char **argv) {
 
     if ((strcmp(argv[i], "--tpl") == 0)) {
       i++;
+#ifdef HAVE_CUSPARSE
       if ((strcmp(argv[i], "cuda") == 0))
         test = static_cast<int>(details::Implementation::Cuda);
+#endif
+#ifdef HAVE_MKL
       if ((strcmp(argv[i], "mkl") == 0))
         test = static_cast<int>(details::Implementation::MKL);
+#endif
       continue;
     }
 
