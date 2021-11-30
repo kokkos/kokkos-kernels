@@ -46,6 +46,7 @@
 #define KOKKOSKERNELS_KOKKOSSPARSE_SPMV_IMPL_UTIL_HPP
 
 #include "Kokkos_Core.hpp"
+#include "KokkosSparse_CrsMatrix.hpp"
 
 namespace KokkosSparse {
 namespace Experimental {
