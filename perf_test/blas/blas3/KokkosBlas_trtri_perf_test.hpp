@@ -155,8 +155,9 @@ static std::string trtri_csv_header_str =
     "total_time(s),average_time(s),FLOPS,GFLOP/average_time(s)";
 
 /*************************** Internal helper fns **************************/
-static void __trtri_output_csv_row(options_t options, trtri_args_t trtri_args,
-                                   double time_in_seconds) {
+static inline void __trtri_output_csv_row(options_t options,
+                                          trtri_args_t trtri_args,
+                                          double time_in_seconds) {
   double flops =
       trtri_args.A.extent(0) *
       __trtri_flop_count(trtri_args.A.extent(1), trtri_args.A.extent(2));
@@ -392,9 +393,11 @@ struct parallel_batched_trtri {
 template <class uplo, class diag, class device_type>
 void __do_trtri_parallel_batched_template(options_t options,
                                           trtri_args_t trtri_args) {
-  uint32_t warm_up_n = options.warm_up_n;
-  uint32_t n         = options.n;
   Kokkos::Timer timer;
+// FIXME_OPENMPTARGET
+#if !defined(KOKKOS_ENABLE_OPENMPTARGET)
+  uint32_t warm_up_n    = options.warm_up_n;
+  uint32_t n            = options.n;
   using tag             = KokkosBatched::Algo::Trtri::Unblocked;
   using execution_space = typename device_type::execution_space;
   using functor_type = parallel_batched_trtri<uplo, diag, tag, execution_space>;
@@ -421,6 +424,9 @@ void __do_trtri_parallel_batched_template(options_t options,
     // Fence after each batch operation
     Kokkos::fence();
   }
+#else
+  timer.reset();
+#endif
   __trtri_output_csv_row(options, trtri_args, timer.seconds());
 
   return;
@@ -546,34 +552,54 @@ void __do_loop_and_invoke(options_t options,
 
 /*************************** External fns **************************/
 void do_trtri_serial_blas(options_t options) {
+// FIXME_OPENMPTARGET
+#if !defined(KOKKOS_ENABLE_OPENMPTARGET)
   STATUS;
   __do_loop_and_invoke(
       options,
       __do_trtri_serial_blas<default_scalar, view_type_3d, default_device>);
+#else
+  (void)options;
+#endif
   return;
 }
 
 void do_trtri_serial_batched(options_t options) {
+// FIXME_OPENMPTARGET
+#if !defined(KOKKOS_ENABLE_OPENMPTARGET)
   STATUS;
   __do_loop_and_invoke(
       options,
       __do_trtri_serial_batched<default_scalar, view_type_3d, default_device>);
+#else
+  (void)options;
+#endif
   return;
 }
 
 void do_trtri_parallel_blas(options_t options) {
+// FIXME_OPENMPTARGET
+#if !defined(KOKKOS_ENABLE_OPENMPTARGET)
   STATUS;
   __do_loop_and_invoke(
       options,
       __do_trtri_parallel_blas<default_scalar, view_type_3d, default_device>);
+#else
+  (void)options;
+#endif
   return;
 }
 
 void do_trtri_parallel_batched(options_t options) {
+// FIXME_OPENMPTARGET
+#if !defined(KOKKOS_ENABLE_OPENMPTARGET)
   STATUS;
   __do_loop_and_invoke(options,
                        __do_trtri_parallel_batched<default_scalar, view_type_3d,
                                                    default_device>);
+#else
+  (void)options;
+#endif
   return;
 }
 

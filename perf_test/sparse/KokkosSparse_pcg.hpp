@@ -259,7 +259,8 @@ void block_pcgsolve(
 
 #endif
 
-    norm_res         = sqrt(old_rdot = r_dot);
+    old_rdot         = r_dot;
+    norm_res         = sqrt(r_dot);
     precond_old_rdot = precond_r_dot;
 
 #ifdef KK_TICTOCPRINT
@@ -507,7 +508,8 @@ void pcgsolve(KernelHandle_t &kh, const crsMatrix_t &crsMat,
 
 #endif
 
-    norm_res         = sqrt(old_rdot = r_dot);
+    old_rdot         = r_dot;
+    norm_res         = sqrt(r_dot);
     precond_old_rdot = precond_r_dot;
 
 #ifdef KK_TICTOCPRINT

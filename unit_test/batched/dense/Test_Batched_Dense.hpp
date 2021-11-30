@@ -7,6 +7,8 @@
 #include "Test_Batched_SerialAxpy_Complex.hpp"
 #include "Test_Batched_SerialEigendecomposition.hpp"
 #include "Test_Batched_SerialEigendecomposition_Real.hpp"
+// FIXME_OPENMPTARGET
+#if !defined(KOKKOS_ENABLE_OPENMPTARGET)
 #include "Test_Batched_SerialGemm.hpp"
 #include "Test_Batched_SerialGemm_Real.hpp"
 #include "Test_Batched_SerialGemm_Complex.hpp"
@@ -31,6 +33,8 @@
 #include "Test_Batched_SerialTrmm.hpp"
 #include "Test_Batched_SerialTrmm_Real.hpp"
 #include "Test_Batched_SerialTrmm_Complex.hpp"
+// Note: lucbv on Nov 30th 2021
+// Trsm needs Trmm to compile correctly
 #include "Test_Batched_SerialTrsm.hpp"
 #include "Test_Batched_SerialTrsm_Real.hpp"
 #include "Test_Batched_SerialTrsm_Complex.hpp"
@@ -42,10 +46,14 @@
 #include "Test_Batched_SerialTrtri_Complex.hpp"
 #include "Test_Batched_SerialSVD.hpp"
 
+#endif
+
 // Team Kernels
 #include "Test_Batched_TeamAxpy.hpp"
 #include "Test_Batched_TeamAxpy_Real.hpp"
 #include "Test_Batched_TeamAxpy_Complex.hpp"
+// FIXME_OPENMPTARGET
+#if !defined(KOKKOS_ENABLE_OPENMPTARGET)
 #include "Test_Batched_TeamGemm.hpp"
 #include "Test_Batched_TeamGemm_Real.hpp"
 #include "Test_Batched_TeamGemm_Complex.hpp"
@@ -67,6 +75,7 @@
 #include "Test_Batched_TeamTrsm.hpp"
 #include "Test_Batched_TeamTrsm_Real.hpp"
 #include "Test_Batched_TeamTrsm_Complex.hpp"
+#endif
 #include "Test_Batched_TeamTrsv.hpp"
 #include "Test_Batched_TeamTrsv_Real.hpp"
 #include "Test_Batched_TeamTrsv_Complex.hpp"
@@ -77,6 +86,8 @@
 #include "Test_Batched_TeamVectorAxpy_Complex.hpp"
 #include "Test_Batched_TeamVectorEigendecomposition.hpp"
 #include "Test_Batched_TeamVectorEigendecomposition_Real.hpp"
+// FIXME_OPENMPTARGET
+#if !defined(KOKKOS_ENABLE_OPENMPTARGET)
 #include "Test_Batched_TeamVectorGemm.hpp"
 #include "Test_Batched_TeamVectorGemm_Real.hpp"
 #include "Test_Batched_TeamVectorGemm_Complex.hpp"
@@ -90,6 +101,7 @@
 #include "Test_Batched_TeamVectorSolveUTV2_Real.hpp"
 #include "Test_Batched_TeamVectorUTV.hpp"
 #include "Test_Batched_TeamVectorUTV_Real.hpp"
+#endif
 
 // Vector Kernels
 #include "Test_Batched_VectorArithmatic.hpp"

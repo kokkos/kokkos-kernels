@@ -1,9 +1,6 @@
 #ifndef TEST_BLAS_HPP
 #define TEST_BLAS_HPP
 
-#include "Test_Blas_gesv.hpp"
-#include "Test_Blas_trtri.hpp"
-
 // Blas 1
 #include "Test_Blas1_abs.hpp"
 #include "Test_Blas1_asum.hpp"
@@ -21,6 +18,18 @@
 #include "Test_Blas1_sum.hpp"
 #include "Test_Blas1_update.hpp"
 
+// Blas 2
+#include "Test_Blas2_gemv.hpp"
+
+// Blas 3
+#include "Test_Blas3_gemm.hpp"
+#include "Test_Blas3_trmm.hpp"
+#include "Test_Blas3_trsm.hpp"
+
+#if !defined(KOKKOS_ENABLE_OPENMPTARGET)
+// FIXME_OPENMPTARGET: issue with Kokkos::ALL()
+// at link time with nvlink.
+
 // Team Blas 1
 #include "Test_Blas1_team_abs.hpp"
 #include "Test_Blas1_team_axpby.hpp"
@@ -31,16 +40,14 @@
 #include "Test_Blas1_team_scal.hpp"
 #include "Test_Blas1_team_update.hpp"
 
-// Blas 2
-#include "Test_Blas2_gemv.hpp"
-
 // Team Blas 2
 #include "Test_Blas2_team_gemv.hpp"
 
-// Blas 3
-#include "Test_Blas3_gemm.hpp"
-#include "Test_Blas3_trmm.hpp"
-#include "Test_Blas3_trsm.hpp"
+#endif  // OPENMPTARGET
+
+// LAPACK
+#include "Test_Blas_gesv.hpp"
+#include "Test_Blas_trtri.hpp"
 
 // TPLs
 #include "Test_Blas_rocblas.hpp"

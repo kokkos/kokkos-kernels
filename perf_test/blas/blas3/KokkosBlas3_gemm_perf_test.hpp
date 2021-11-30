@@ -292,8 +292,8 @@ static void __gemm_output_csv_row(options_t options, gemm_args_t gemm_args,
                                   const char *vec_type        = nullptr) {
   std::string algo_name = !experiment_name ? test_e_str[options.test]
                                            : std::string(experiment_name);
-  std::string ts = !team_size ? std::to_string(gemm_args.bp.team_size)
-                              : std::string(team_size);
+  std::string ts        = !team_size ? std::to_string(gemm_args.bp.team_size)
+                                     : std::string(team_size);
   std::string vlen =
       !vec_len ? std::to_string(gemm_args.bp.vector_len) : std::string(vec_len);
   std::string vtype =
@@ -350,7 +350,8 @@ static void __print_gemm_perf_test_options(options_t /*options*/) { return; }
 #endif  // PERF_TEST_DEBUG
 
 /*************************** Internal templated fns **************************/
-#if !defined(KOKKOS_ENABLE_CUDA)
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && \
+    !defined(KOKKOS_ENABLE_OPENMPTARGET)
 template <class scalar_type, class vta, class vtb, class device_type>
 void __do_gemm_serial_blas(options_t options, gemm_args_t gemm_args) {
   // Need to take subviews on the device
@@ -396,7 +397,8 @@ void __do_gemm_serial_blas(options_t /*options*/, gemm_args_t /*gemm_args*/) {
 }
 #endif  // !KOKKOS_ENABLE_CUDA
 
-#if !defined(KOKKOS_ENABLE_CUDA)
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && \
+    !defined(KOKKOS_ENABLE_OPENMPTARGET)
 template <class TransAType, class TransBType, class AlgoType>
 void __do_gemm_serial_batched_template(options_t options,
                                        gemm_args_t gemm_args) {
@@ -902,7 +904,7 @@ void __do_gemm_parallel_batched_template(options_t options,
     league_size = options.blas_args.batch_size_last_dim
                       ? gemm_args.Cv.ivec_4d.extent(3)
                       : gemm_args.Cv.ivec_4d.extent(0);
-    vector_len = simd_vector_size /
+    vector_len  = simd_vector_size /
                  simd_internal_vector_size;  // TODO: use bp.vector_len?
   }
 
@@ -1326,7 +1328,8 @@ class parallel_batched_gemm_experiment5 {
  *
  * Not portable to GPU
  */
-#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && \
+    !defined(KOKKOS_ENABLE_OPENMPTARGET)
 template <class TransAType, class TransBType, class BlockingType,
           class device_type>
 void __do_gemm_parallel_experiment5(options_t options, gemm_args_t gemm_args) {
