@@ -300,9 +300,7 @@ struct BsrRowViewConst {
   /// \param K [in] must be the LOCAL block index within this block-row
   /// \return Block column index for "uncompressed" block row
   KOKKOS_INLINE_FUNCTION
-  ordinal_type block_colidx(const ordinal_type K) const {
-    return colidx_[K];
-  }
+  ordinal_type block_colidx(const ordinal_type K) const { return colidx_[K]; }
 
   /// \brief Return unmanaged 2D strided View wrapping local block K from this
   /// block-row \param K [in] must be the LOCAL block index within this
