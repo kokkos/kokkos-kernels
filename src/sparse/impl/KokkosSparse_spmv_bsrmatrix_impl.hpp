@@ -814,9 +814,19 @@ struct BSR_GEMV_Functor {
           const auto start = m_A.graph.row_map(iBlock);
           const ordinal_type count =
               static_cast<ordinal_type>(m_A.graph.row_map(iBlock + 1) - start);
-          const KokkosSparse::Experimental::BsrRowViewConst<AMatrix> row(
-              m_A.values, m_A.graph.entries, block_size, count, start);
-
+          const auto row = m_A.block_row_Const(iBlock);
+          const auto beta1 = static_cast<y_value_type>(1);
+          //
+          auto yview = Kokkos::subview(m_y, make_pair (iBlock * block_size, iBlock * block_size + block_size));
+          //
+          for (ordinal_type ic = 0; ic < count; ++ic) {
+            const auto Aview = row.block(ic);
+            const auto xstart = row.block_colidx(ic) * block_size;
+            const auto xview = Kokkos::subview(m_x, make_pair (xstart, xstart + block_size));
+            KokkosBlas::gemv("N", alpha, Aview, xview, beta1, yview);
+          }
+          /*
+          //
           for (ordinal_type ir = 0; ir < block_size; ++ir) {
             y_value_type sum = 0;
 
@@ -839,6 +849,7 @@ struct BSR_GEMV_Functor {
               m_y(iBlock * block_size + ir) += sum;
             });
           }
+           */
         });
   }
 };
@@ -1244,9 +1255,8 @@ struct BSR_GEMV_Transpose_Functor {
           const auto start = m_A.graph.row_map(iBlock);
           const ordinal_type count =
               static_cast<ordinal_type>(m_A.graph.row_map(iBlock + 1) - start);
-          const KokkosSparse::Experimental::BsrRowViewConst<AMatrix> row(
-              m_A.values, m_A.graph.entries, block_size, count, start);
-
+          const auto row = m_A.block_row_Const(iBlock);
+          //
           for (ordinal_type ir = 0; ir < block_size; ++ir) {
             Kokkos::parallel_for(
                 Kokkos::ThreadVectorRange(dev, count),
