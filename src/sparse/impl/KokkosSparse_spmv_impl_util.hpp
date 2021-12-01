@@ -116,8 +116,9 @@ constexpr int b_times_r = bmax * rmax;
 /// \param[in,out] y  Output vector y  (passed as a raw pointer)
 ///
 template <int M, typename Scalar>
-inline void raw_axpy(const Scalar &alpha,
-                     const std::array<Scalar, Impl::bmax> &x, Scalar *y_ptr) {
+KOKKOS_INLINE_FUNCTION void raw_axpy(const Scalar &alpha,
+                                     const std::array<Scalar, Impl::bmax> &x,
+                                     Scalar *y_ptr) {
   for (int ic = 0; ic < M; ++ic) y_ptr[ic] = y_ptr[ic] + alpha * x[ic];
 }
 
@@ -132,8 +133,9 @@ inline void raw_axpy(const Scalar &alpha,
 ///               X is assumed to be stored in a column-major fashion
 /// \param Ax  Left-hand side array  (size M x k)
 template <int M, typename Scalar, int K = Impl::rmax>
-inline void raw_gemm_n(const Scalar *Aval, int lda, const Scalar *x_ptr,
-                       int ldx, std::array<Scalar, Impl::b_times_r> &Ax) {
+KOKKOS_INLINE_FUNCTION void raw_gemm_n(
+    const Scalar *Aval, int lda, const Scalar *x_ptr, int ldx,
+    std::array<Scalar, Impl::b_times_r> &Ax) {
   static_assert(K <= Impl::rmax, "Number of right hand sides too large!");
   for (int ik = 0; ik < K; ++ik) {
     for (int ic = 0; ic < M; ++ic) {
@@ -156,8 +158,9 @@ inline void raw_gemm_n(const Scalar *Aval, int lda, const Scalar *x_ptr,
 ///               X is assumed to be stored in a column-major fashion
 /// \param Ax  Left-hand side array  (size M x k)
 template <int M, typename Scalar, int K = Impl::rmax>
-inline void raw_gemm_c(const Scalar *Aval, int lda, const Scalar *x_ptr,
-                       int ldx, std::array<Scalar, Impl::b_times_r> &Ax) {
+KOKKOS_INLINE_FUNCTION void raw_gemm_c(
+    const Scalar *Aval, int lda, const Scalar *x_ptr, int ldx,
+    std::array<Scalar, Impl::b_times_r> &Ax) {
   for (int ik = 0; ik < K; ++ik) {
     for (int ic = 0; ic < M; ++ic) {
       const auto xvalue = x_ptr[ic + ik * ldx];
@@ -180,8 +183,9 @@ inline void raw_gemm_c(const Scalar *Aval, int lda, const Scalar *x_ptr,
 ///               X is assumed to be stored in a column-major fashion
 /// \param Ax  Left-hand side array  (size M x k)
 template <int M, typename Scalar, int K = Impl::rmax>
-inline void raw_gemm_t(const Scalar *Aval, int lda, const Scalar *x_ptr,
-                       int ldx, std::array<Scalar, Impl::b_times_r> &Ax) {
+KOKKOS_INLINE_FUNCTION void raw_gemm_t(
+    const Scalar *Aval, int lda, const Scalar *x_ptr, int ldx,
+    std::array<Scalar, Impl::b_times_r> &Ax) {
   for (int ik = 0; ik < K; ++ik) {
     for (int ic = 0; ic < M; ++ic) {
       const auto xvalue = x_ptr[ic + ik * ldx];
@@ -203,8 +207,9 @@ inline void raw_gemm_t(const Scalar *Aval, int lda, const Scalar *x_ptr,
 ///               X is assumed to be stored in a column-major fashion
 /// \param Ax  Left-hand side array  (size M x k)
 template <int M, typename Scalar, int K = Impl::rmax>
-inline void raw_gemm_h(const Scalar *Aval, int lda, const Scalar *x_ptr,
-                       int ldx, std::array<Scalar, Impl::b_times_r> &Ax) {
+KOKKOS_INLINE_FUNCTION void raw_gemm_h(
+    const Scalar *Aval, int lda, const Scalar *x_ptr, int ldx,
+    std::array<Scalar, Impl::b_times_r> &Ax) {
   for (int ik = 0; ik < K; ++ik) {
     for (int ic = 0; ic < M; ++ic) {
       const auto xvalue = x_ptr[ic + ik * ldx];
@@ -226,8 +231,9 @@ inline void raw_gemm_h(const Scalar *Aval, int lda, const Scalar *x_ptr,
 /// \param[in] x_ptr  Right-hand side pointer (size Mx x 1)
 /// \param[out] Ax  Left-hand side array  (size M x 1)
 template <int M, typename Scalar, int Mx = M>
-inline void raw_gemv_n(const Scalar *Aval, int lda, const Scalar *x_ptr,
-                       std::array<Scalar, Impl::bmax> &Ax) {
+KOKKOS_INLINE_FUNCTION void raw_gemv_n(const Scalar *Aval, int lda,
+                                       const Scalar *x_ptr,
+                                       std::array<Scalar, Impl::bmax> &Ax) {
   for (int ic = 0; ic < Mx; ++ic) {
     const auto xvalue = x_ptr[ic];
     for (int kr = 0; kr < M; ++kr) {
@@ -251,8 +257,9 @@ template void raw_gemv_n<Impl::bmax, std::complex<double> >(
 /// \param[in] x_ptr  Right-hand side pointer (size Mx x 1)
 /// \param[out] Ax  Left-hand side array  (size M x 1)
 template <int M, typename Scalar, int Mx = M>
-inline void raw_gemv_c(const Scalar *Aval, int lda, const Scalar *x_ptr,
-                       std::array<Scalar, Impl::bmax> &Ax) {
+KOKKOS_INLINE_FUNCTION void raw_gemv_c(const Scalar *Aval, int lda,
+                                       const Scalar *x_ptr,
+                                       std::array<Scalar, Impl::bmax> &Ax) {
   for (int ic = 0; ic < Mx; ++ic) {
     const auto xvalue = x_ptr[ic];
     for (int kr = 0; kr < M; ++kr) {
@@ -271,8 +278,9 @@ inline void raw_gemv_c(const Scalar *Aval, int lda, const Scalar *x_ptr,
 /// \param[in] x_ptr  Right-hand side pointer (size Mx x 1)
 /// \param[out] Ax  Left-hand side array  (size M x 1)
 template <int M, typename Scalar, int Mx = M>
-inline void raw_gemv_t(const Scalar *Aval, int lda, const Scalar *x_ptr,
-                       std::array<Scalar, Impl::bmax> &Ax) {
+KOKKOS_INLINE_FUNCTION void raw_gemv_t(const Scalar *Aval, int lda,
+                                       const Scalar *x_ptr,
+                                       std::array<Scalar, Impl::bmax> &Ax) {
   for (int ic = 0; ic < Mx; ++ic) {
     const auto xvalue = x_ptr[ic];
     for (int kr = 0; kr < M; ++kr) {
@@ -291,8 +299,9 @@ inline void raw_gemv_t(const Scalar *Aval, int lda, const Scalar *x_ptr,
 /// \param[in] x_ptr  Right-hand side pointer (size Mx x 1)
 /// \param[out] Ax  Left-hand side array  (size M x 1)
 template <int M, typename Scalar, int Mx = M>
-inline void raw_gemv_h(const Scalar *Aval, int lda, const Scalar *x_ptr,
-                       std::array<Scalar, Impl::bmax> &Ax) {
+KOKKOS_INLINE_FUNCTION void raw_gemv_h(const Scalar *Aval, int lda,
+                                       const Scalar *x_ptr,
+                                       std::array<Scalar, Impl::bmax> &Ax) {
   for (int ic = 0; ic < Mx; ++ic) {
     const auto xvalue = x_ptr[ic];
     for (int kr = 0; kr < M; ++kr) {
