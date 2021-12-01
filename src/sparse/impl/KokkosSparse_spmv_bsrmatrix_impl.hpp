@@ -581,10 +581,12 @@ struct BSR_GEMV_Functor {
                   "YVector must be a rank 1 View.");
   }
 
-  inline void gemv_default(const value_type *Avalues, const size_type *row_map,
-                           size_t numBlockRows, const ordinal_type *entries,
-                           const value_type *x, value_type *y,
-                           const int bs) const {
+  KOKKOS_INLINE_FUNCTION void gemv_default(const value_type *Avalues,
+                                           const size_type *row_map,
+                                           size_t numBlockRows,
+                                           const ordinal_type *entries,
+                                           const value_type *x, value_type *y,
+                                           const int bs) const {
     // "Unrolling" constant for large block sizes
     constexpr int unroll = 4;
     static_assert(unroll <= Impl::bmax, "Too large unrolling constant");
@@ -683,9 +685,11 @@ struct BSR_GEMV_Functor {
   }
 
   template <int blockSize>
-  inline void gemv(const value_type *Avalues, const size_type *row_map,
-                   size_t numBlockRows, const ordinal_type *entries,
-                   const value_type *x, value_type *y) const {
+  KOKKOS_INLINE_FUNCTION void gemv(const value_type *Avalues,
+                                   const size_type *row_map,
+                                   size_t numBlockRows,
+                                   const ordinal_type *entries,
+                                   const value_type *x, value_type *y) const {
     static_assert(((blockSize >= 1) && (blockSize <= Impl::bmax)),
                   " Error when specifying the blocksize ");
     std::array<value_type, Impl::bmax> tmp;
@@ -814,15 +818,18 @@ struct BSR_GEMV_Functor {
           const auto start = m_A.graph.row_map(iBlock);
           const ordinal_type count =
               static_cast<ordinal_type>(m_A.graph.row_map(iBlock + 1) - start);
-          const auto row = m_A.block_row_Const(iBlock);
+          const auto row   = m_A.block_row_Const(iBlock);
           const auto beta1 = static_cast<y_value_type>(1);
           //
-          auto yview = Kokkos::subview(m_y, make_pair (iBlock * block_size, iBlock * block_size + block_size));
+          auto yview = Kokkos::subview(
+              m_y,
+              make_pair(iBlock * block_size, iBlock * block_size + block_size));
           //
           for (ordinal_type ic = 0; ic < count; ++ic) {
-            const auto Aview = row.block(ic);
+            const auto Aview  = row.block(ic);
             const auto xstart = row.block_colidx(ic) * block_size;
-            const auto xview = Kokkos::subview(m_x, make_pair (xstart, xstart + block_size));
+            const auto xview =
+                Kokkos::subview(m_x, make_pair(xstart, xstart + block_size));
             KokkosBlas::gemv("N", alpha, Aview, xview, beta1, yview);
           }
           /*
@@ -1060,9 +1067,11 @@ struct BSR_GEMV_Transpose_Functor {
                   "YVector must be a rank 1 View.");
   }
 
-  inline void gemv_default(const value_type *Avalues, const size_type *row_map,
-                           size_t numBlockRows, const ordinal_type *entries,
-                           const value_type *x) const {
+  KOKKOS_INLINE_FUNCTION void gemv_default(const value_type *Avalues,
+                                           const size_type *row_map,
+                                           size_t numBlockRows,
+                                           const ordinal_type *entries,
+                                           const value_type *x) const {
     for (size_t iblock = 0; iblock < numBlockRows; ++iblock) {
       const auto jbeg = row_map[iblock];
       const auto jend = row_map[iblock + 1];
@@ -1123,9 +1132,11 @@ struct BSR_GEMV_Transpose_Functor {
   }
 
   template <int blockSize>
-  inline void gemv(const value_type *Avalues, const size_type *row_map,
-                   size_t numBlockRows, const ordinal_type *entries,
-                   const value_type *x) const {
+  KOKKOS_INLINE_FUNCTION void gemv(const value_type *Avalues,
+                                   const size_type *row_map,
+                                   size_t numBlockRows,
+                                   const ordinal_type *entries,
+                                   const value_type *x) const {
     static_assert(((blockSize >= 1) && (blockSize <= Impl::bmax)),
                   " Error when specifying the blocksize ");
     std::array<value_type, Impl::bmax> tmp;
@@ -1475,7 +1486,7 @@ struct BSR_GEMM_Functor {
   }
 
   template <int blockSize, int nrhs = Impl::rmax>
-  inline void gemm_row_product(
+  KOKKOS_INLINE_FUNCTION void gemm_row_product(
       size_type jbeg, size_type jend, const value_type *Avalues,
       const ordinal_type *entries, const int blockSize2, const value_type *x,
       int ldx, std::array<value_type, Impl::b_times_r> &tmp) const {
@@ -1494,7 +1505,7 @@ struct BSR_GEMM_Functor {
   }
 
   /// \brief Do the Mat-Mat operation for one specific "row" block
-  inline void gemm_default(const ordinal_type iBlock) const {
+  KOKKOS_INLINE_FUNCTION void gemm_default(const ordinal_type iBlock) const {
     const int bs_square = block_size * block_size;
     const auto jbeg     = m_A.graph.row_map(iBlock);
     const auto jend     = m_A.graph.row_map(iBlock + 1);
@@ -1556,9 +1567,12 @@ struct BSR_GEMM_Functor {
   }
 
   template <int blockSize>
-  inline void gemm(const value_type *Avalues, const size_type *row_map,
-                   size_t numBlockRows, const ordinal_type *entries, int xrhs,
-                   const value_type *x, int ldx, value_type *y, int ldy) const {
+  KOKKOS_INLINE_FUNCTION void gemm(const value_type *Avalues,
+                                   const size_type *row_map,
+                                   size_t numBlockRows,
+                                   const ordinal_type *entries, int xrhs,
+                                   const value_type *x, int ldx, value_type *y,
+                                   int ldy) const {
     static_assert(((blockSize >= 1) && (blockSize <= Impl::bmax)),
                   " Error when specifying the blocksize ");
     std::array<value_type, Impl::b_times_r> tmp_2;
@@ -1970,7 +1984,7 @@ struct BSR_GEMM_Transpose_Functor {
                   "YVector must be a rank 2 View.");
   }
 
-  inline void gemm_default(ordinal_type iBlock) const {
+  KOKKOS_INLINE_FUNCTION void gemm_default(ordinal_type iBlock) const {
     const size_type jbeg = m_A.graph.row_map(iBlock);
     const size_type jend = m_A.graph.row_map(iBlock + 1);
     for (size_type jb = jbeg; jb < jend; ++jb) {
@@ -2022,7 +2036,7 @@ struct BSR_GEMM_Transpose_Functor {
   }
 
   template <int blockSize, int nrhs = Impl::rmax>
-  inline void gemm_row_product(
+  KOKKOS_INLINE_FUNCTION void gemm_row_product(
       size_type jbeg, size_type jend, const value_type *Avalues,
       const ordinal_type *entries, const value_type *x, int ldx, int start_rhs,
       std::array<value_type, Impl::b_times_r> &tmp) const {
@@ -2051,9 +2065,11 @@ struct BSR_GEMM_Transpose_Functor {
   }
 
   template <int blockSize>
-  inline void gemm(const value_type *Avalues, const size_type *row_map,
-                   size_t numBlockRows, const ordinal_type *entries, int xrhs,
-                   int ldx, int startBlock) const {
+  KOKKOS_INLINE_FUNCTION void gemm(const value_type *Avalues,
+                                   const size_type *row_map,
+                                   size_t numBlockRows,
+                                   const ordinal_type *entries, int xrhs,
+                                   int ldx, int startBlock) const {
     static_assert(((blockSize >= 1) && (blockSize <= Impl::bmax)),
                   " Error when specifying the blocksize ");
     std::array<value_type, Impl::b_times_r> tmp_2;
