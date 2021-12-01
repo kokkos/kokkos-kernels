@@ -389,7 +389,8 @@ int test_bsr_matrix_vec(
       case Implementation::KokkosKernels: {
         // Time a series of multiplications with the BsrMatrix
         for (int jr = 0; jr < loop; ++jr) {
-          for (Ordinal ir = 0; ir < nRow; ++ir) h_ybsr(ir) = h_y0(ir);
+          for (Ordinal jc = 0; jc < nvec; ++jc)
+            for (Ordinal ir = 0; ir < nRow; ++ir) h_ybrs(ir, jc) = h_y0(ir, jc);
           Kokkos::deep_copy(ybsr, h_ybsr);
           Kokkos::Timer timer;
           KokkosSparse::spmv(fOp, alpha, Absr, xref, beta, ybsr);
@@ -401,7 +402,8 @@ int test_bsr_matrix_vec(
         // Time a series of multiplications with the BsrMatrix
         KokkosKernels::Experimental::Controls controls;
         for (int jr = 0; jr < loop; ++jr) {
-          for (Ordinal ir = 0; ir < nRow; ++ir) h_ybsr(ir) = h_y0(ir);
+          for (Ordinal jc = 0; jc < nvec; ++jc)
+            for (Ordinal ir = 0; ir < nRow; ++ir) h_ybrs(ir, jc) = h_y0(ir, jc);
           Kokkos::deep_copy(ybsr, h_ybsr);
           Kokkos::Timer timer;
           KokkosSparse::Impl::spmv_block_cusparse(controls, fOp, alpha, Absr,
@@ -415,7 +417,8 @@ int test_bsr_matrix_vec(
         // Time a series of multiplications with the BsrMatrix
         KokkosKernels::Experimental::Controls controls;
         for (int jr = 0; jr < loop; ++jr) {
-          for (Ordinal ir = 0; ir < nRow; ++ir) h_ybsr(ir) = h_y0(ir);
+          for (Ordinal jc = 0; jc < nvec; ++jc)
+            for (Ordinal ir = 0; ir < nRow; ++ir) h_ybrs(ir, jc) = h_y0(ir, jc);
           Kokkos::deep_copy(ybsr, h_ybsr);
           Kokkos::Timer timer;
           KokkosSparse::Impl::spmv_block_mkl(controls, fOp, alpha, Absr, xref,
@@ -424,15 +427,6 @@ int test_bsr_matrix_vec(
         }
       } break;
 #endif
-    }
-
-    for (int jr = 0; jr < loop; ++jr) {
-      for (Ordinal jc = 0; jc < nvec; ++jc)
-        for (Ordinal ir = 0; ir < nRow; ++ir) h_ybsr(ir, jc) = h_y0(ir, jc);
-      Kokkos::deep_copy(ybsr, h_ybsr);
-      Kokkos::Timer timer;
-      KokkosSparse::spmv(fOp, alpha, Absr, xref, beta, ybsr);
-      time_bsr += timer.seconds();
     }
 
     // Check that the result is matching
@@ -458,8 +452,23 @@ int test_bsr_matrix_vec(
 
     // Print the number of Gflops
     if (blockSize == 1) {
-      printf("Op, blockSize: AvgGFlop(CrsMatrix) AvgGFlop(BsrMatrix) \n");
-      switch (static_cast<details::Implementation>(test))
+      printf("Op, blockSize: AvgGFlop(CrsMatrix) ");
+      switch (static_cast<details::Implementation>(test)) {
+        default:
+        case Implementation::KokkosKernels:
+          printf(" AvgGFlop(BsrMatrix - KokkosKernels) \n");
+          break;
+#ifdef HAVE_CUSPARSE
+        case Implementation::Cuda:
+          printf(" AvgGFlop(BsrMatrix - CUSPARSE) \n");
+          break;
+#endif
+#ifdef HAVE_MKL
+        case Implementation::MKL:
+          printf(" AvgGFlop(BsrMatrix - MKL) \n");
+          break;
+#endif
+      }
     }
     double num_flops = mat_val.size() * 2 * loop * nvec;
     double crs_flop  = (num_flops / time_crs) * 1.0e-09;
