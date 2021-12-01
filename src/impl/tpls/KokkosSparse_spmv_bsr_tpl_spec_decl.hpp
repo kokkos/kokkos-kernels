@@ -517,7 +517,7 @@ void spm_mv_block_impl_cusparse(
                          A.graph.row_map.data(), A.graph.entries.data(),
                          A.blockDim(), reinterpret_cast<float const*>(x.data()),
                          ldx, reinterpret_cast<float const*>(&beta),
-                         reinterpret_cast<float*>(y.data()), ldy);
+                         reinterpret_cast<float*>(y.data()), ldy));
     } else if (std::is_same<value_type, double>::value) {
       KOKKOS_CUSPARSE_SAFE_CALL(
           cusparseDbsrmm(
@@ -528,7 +528,7 @@ void spm_mv_block_impl_cusparse(
               A.graph.row_map.data(), A.graph.entries.data(), A.blockDim(),
               reinterpret_cast<double const*>(x.data()), ldx,
               reinterpret_cast<double const*>(&beta),
-              reinterpret_cast<double*>(y.data()), ldy);
+              reinterpret_cast<double*>(y.data()), ldy));
     } else if (std::is_same<value_type, Kokkos::complex<float> >::value) {
       KOKKOS_CUSPARSE_SAFE_CALL(
           cusparseCbsrmm(
@@ -539,7 +539,7 @@ void spm_mv_block_impl_cusparse(
               A.graph.row_map.data(), A.graph.entries.data(), A.blockDim(),
               reinterpret_cast<cuComplex const*>(x.data()), ldx,
               reinterpret_cast<cuComplex const*>(&beta),
-              reinterpret_cast<cuComplex*>(y.data()), ldy);
+              reinterpret_cast<cuComplex*>(y.data()), ldy));
     } else if (std::is_same<value_type, Kokkos::complex<double> >::value) {
       KOKKOS_CUSPARSE_SAFE_CALL(
           cusparseZbsrmm(
@@ -550,7 +550,7 @@ void spm_mv_block_impl_cusparse(
               A.graph.row_map.data(), A.graph.entries.data(), A.blockDim(),
               reinterpret_cast<cuDoubleComplex const*>(x.data()), ldx,
               reinterpret_cast<cuDoubleComplex const*>(&beta),
-              reinterpret_cast<cuDoubleComplex*>(y.data()), ldy);
+              reinterpret_cast<cuDoubleComplex*>(y.data()), ldy));
     } else {
       throw std::logic_error(
           "Trying to call cusparse[*]bsrmm with a scalar type not "
