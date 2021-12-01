@@ -525,7 +525,7 @@ struct BsrMatrixSpMVTensorCoreDispatcher {
 //
 
 #include "KokkosSparse_spmv_impl_util.hpp"
-#include "KokkosBlas1_scal.hpp"
+#include "KokkosBlas.hpp"
 #include "KokkosKernels_ExecSpaceUtils.hpp"
 #include "KokkosSparse_spmv_impl.hpp"
 
