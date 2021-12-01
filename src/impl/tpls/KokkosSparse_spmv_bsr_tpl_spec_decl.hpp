@@ -491,7 +491,7 @@ void spm_mv_block_impl_cusparse(
 
   int colx = static_cast<int>(x.extent(1));
   int ldx  = static_cast<int>(x.stride_1());
-  int ldy = = static_cast<int>(y.stride_1());
+  int ldy  = static_cast<int>(y.stride_1());
 
 #if (9000 <= CUDA_VERSION)
 
