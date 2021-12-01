@@ -159,7 +159,7 @@ inline void spm_mv_block_impl_mkl(sparse_operation_t op, double alpha,
                                   const double* Avalues, const double* x,
                                   int colx, int ldx, double* y, int ldy) {
   sparse_matrix_t A_mkl;
-  mkl_safe_call(mkl_sparse_s_create_bsr(
+  mkl_safe_call(mkl_sparse_d_create_bsr(
       &A_mkl, SPARSE_INDEX_BASE_ZERO, SPARSE_LAYOUT_ROW_MAJOR, m, n, b,
       const_cast<int*>(Arowptrs), const_cast<int*>(Arowptrs + 1),
       const_cast<int*>(Aentries), const_cast<double*>(Avalues)));
@@ -189,9 +189,8 @@ inline void spm_mv_block_impl_mkl(sparse_operation_t op,
   matrix_descr A_descr    = getDescription();
   mkl_safe_call(
       mkl_sparse_c_mm(op, alpha_mkl, A_mkl, A_descr, SPARSE_LAYOUT_ROW_MAJOR,
-                      reinterpret_cast<const MKL_Complex8*>(x), int colx,
-                      int ldx, beta_mkl, reinterpret_cast<MKL_Complex8*>(y)),
-      int ldy);
+                      reinterpret_cast<const MKL_Complex8*>(x), colx, ldx,
+                      beta_mkl, reinterpret_cast<MKL_Complex8*>(y), ldy));
 }
 
 inline void spm_mv_block_impl_mkl(
@@ -211,9 +210,8 @@ inline void spm_mv_block_impl_mkl(
   MKL_Complex16& beta_mkl  = reinterpret_cast<MKL_Complex16&>(beta);
   mkl_safe_call(
       mkl_sparse_z_mm(op, alpha_mkl, A_mkl, A_descr, SPARSE_LAYOUT_ROW_MAJOR,
-                      reinterpret_cast<const MKL_Complex16*>(x), int colx,
-                      int ldx, beta_mkl, reinterpret_cast<MKL_Complex16*>(y)),
-      int ldy);
+                      reinterpret_cast<const MKL_Complex16*>(x), colx, ldx,
+                      beta_mkl, reinterpret_cast<MKL_Complex16*>(y), ldy));
 }
 
 #endif
