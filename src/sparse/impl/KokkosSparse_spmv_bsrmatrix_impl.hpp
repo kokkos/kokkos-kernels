@@ -816,14 +816,14 @@ struct BSR_GEMV_Functor {
           const auto beta1 = static_cast<y_value_type>(1);
           //
           auto yview = Kokkos::subview(
-              m_y,
-              make_pair(iBlock * block_size, iBlock * block_size + block_size));
+              m_y, Kokkos::make_pair(iBlock * block_size,
+                                     iBlock * block_size + block_size));
           //
           for (ordinal_type ic = 0; ic < count; ++ic) {
             const auto Aview  = row.block(ic);
             const auto xstart = row.block_colidx(ic) * block_size;
-            const auto xview =
-                Kokkos::subview(m_x, make_pair(xstart, xstart + block_size));
+            const auto xview  = Kokkos::subview(
+                m_x, Kokkos::make_pair(xstart, xstart + block_size));
             KokkosBlas::gemv("N", alpha, Aview, xview, beta1, yview);
           }
           /*
