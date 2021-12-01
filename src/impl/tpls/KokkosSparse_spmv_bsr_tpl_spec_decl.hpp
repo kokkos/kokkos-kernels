@@ -340,7 +340,7 @@ void spmv_block_mkl(const KokkosKernels::Experimental::Controls& controls,
   } else {
     int colx = static_cast<int>(x.extent(1));
     int ldx  = static_cast<int>(x.stride_1());
-    int ldy = static_cast<int>(y.stride_1());
+    int ldy  = static_cast<int>(y.stride_1());
     spm_mv_block_impl_mkl(mode_kk_to_mkl(mode[0]), alpha, beta, A.numRows(),
                           A.numCols(), A.blockDim(), A.graph.row_map.data(),
                           A.graph.entries.data(), A.values.data(), x.data(),
@@ -508,49 +508,45 @@ void spm_mv_block_impl_cusparse(
   if ((std::is_same<int, offset_type>::value) &&
       (std::is_same<int, entry_type>::value)) {
     if (std::is_same<value_type, float>::value) {
-      KOKKOS_CUSPARSE_SAFE_CALL(
-          cusparseSbsrmm(cusparseHandle, dirA, myCusparseOperation,
-                         CUSPARSE_OPERATION_NON_TRANSPOSE, A.numRows(),
-                         A.numCols(), colx, A.nnz(),
-                         reinterpret_cast<float const*>(&alpha), descrA,
-                         reinterpret_cast<float const*>(A.values.data()),
-                         A.graph.row_map.data(), A.graph.entries.data(),
-                         A.blockDim(), reinterpret_cast<float const*>(x.data()),
-                         ldx, reinterpret_cast<float const*>(&beta),
-                         reinterpret_cast<float*>(y.data()), ldy));
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseSbsrmm(
+          cusparseHandle, dirA, myCusparseOperation,
+          CUSPARSE_OPERATION_NON_TRANSPOSE, A.numRows(), A.numCols(), colx,
+          A.nnz(), reinterpret_cast<float const*>(&alpha), descrA,
+          reinterpret_cast<float const*>(A.values.data()),
+          A.graph.row_map.data(), A.graph.entries.data(), A.blockDim(),
+          reinterpret_cast<float const*>(x.data()), ldx,
+          reinterpret_cast<float const*>(&beta),
+          reinterpret_cast<float*>(y.data()), ldy));
     } else if (std::is_same<value_type, double>::value) {
-      KOKKOS_CUSPARSE_SAFE_CALL(
-          cusparseDbsrmm(
-              cusparseHandle, dirA, myCusparseOperation,
-              CUSPARSE_OPERATION_NON_TRANSPOSE, A.numRows(), A.numCols(), colx,
-              A.nnz(), reinterpret_cast<double const*>(&alpha), descrA,
-              reinterpret_cast<double const*>(A.values.data()),
-              A.graph.row_map.data(), A.graph.entries.data(), A.blockDim(),
-              reinterpret_cast<double const*>(x.data()), ldx,
-              reinterpret_cast<double const*>(&beta),
-              reinterpret_cast<double*>(y.data()), ldy));
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDbsrmm(
+          cusparseHandle, dirA, myCusparseOperation,
+          CUSPARSE_OPERATION_NON_TRANSPOSE, A.numRows(), A.numCols(), colx,
+          A.nnz(), reinterpret_cast<double const*>(&alpha), descrA,
+          reinterpret_cast<double const*>(A.values.data()),
+          A.graph.row_map.data(), A.graph.entries.data(), A.blockDim(),
+          reinterpret_cast<double const*>(x.data()), ldx,
+          reinterpret_cast<double const*>(&beta),
+          reinterpret_cast<double*>(y.data()), ldy));
     } else if (std::is_same<value_type, Kokkos::complex<float> >::value) {
-      KOKKOS_CUSPARSE_SAFE_CALL(
-          cusparseCbsrmm(
-              cusparseHandle, dirA, myCusparseOperation,
-              CUSPARSE_OPERATION_NON_TRANSPOSE, A.numRows(), A.numCols(), colx,
-              A.nnz(), reinterpret_cast<cuComplex const*>(&alpha), descrA,
-              reinterpret_cast<cuComplex const*>(A.values.data()),
-              A.graph.row_map.data(), A.graph.entries.data(), A.blockDim(),
-              reinterpret_cast<cuComplex const*>(x.data()), ldx,
-              reinterpret_cast<cuComplex const*>(&beta),
-              reinterpret_cast<cuComplex*>(y.data()), ldy));
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseCbsrmm(
+          cusparseHandle, dirA, myCusparseOperation,
+          CUSPARSE_OPERATION_NON_TRANSPOSE, A.numRows(), A.numCols(), colx,
+          A.nnz(), reinterpret_cast<cuComplex const*>(&alpha), descrA,
+          reinterpret_cast<cuComplex const*>(A.values.data()),
+          A.graph.row_map.data(), A.graph.entries.data(), A.blockDim(),
+          reinterpret_cast<cuComplex const*>(x.data()), ldx,
+          reinterpret_cast<cuComplex const*>(&beta),
+          reinterpret_cast<cuComplex*>(y.data()), ldy));
     } else if (std::is_same<value_type, Kokkos::complex<double> >::value) {
-      KOKKOS_CUSPARSE_SAFE_CALL(
-          cusparseZbsrmm(
-              cusparseHandle, dirA, myCusparseOperation,
-              CUSPARSE_OPERATION_NON_TRANSPOSE, A.numRows(), A.numCols(), colx,
-              A.nnz(), reinterpret_cast<cuDoubleComplex const*>(&alpha), descrA,
-              reinterpret_cast<cuDoubleComplex const*>(A.values.data()),
-              A.graph.row_map.data(), A.graph.entries.data(), A.blockDim(),
-              reinterpret_cast<cuDoubleComplex const*>(x.data()), ldx,
-              reinterpret_cast<cuDoubleComplex const*>(&beta),
-              reinterpret_cast<cuDoubleComplex*>(y.data()), ldy));
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseZbsrmm(
+          cusparseHandle, dirA, myCusparseOperation,
+          CUSPARSE_OPERATION_NON_TRANSPOSE, A.numRows(), A.numCols(), colx,
+          A.nnz(), reinterpret_cast<cuDoubleComplex const*>(&alpha), descrA,
+          reinterpret_cast<cuDoubleComplex const*>(A.values.data()),
+          A.graph.row_map.data(), A.graph.entries.data(), A.blockDim(),
+          reinterpret_cast<cuDoubleComplex const*>(x.data()), ldx,
+          reinterpret_cast<cuDoubleComplex const*>(&beta),
+          reinterpret_cast<cuDoubleComplex*>(y.data()), ldy));
     } else {
       throw std::logic_error(
           "Trying to call cusparse[*]bsrmm with a scalar type not "
