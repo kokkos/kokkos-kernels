@@ -340,7 +340,7 @@ void spmv_block_mkl(const KokkosKernels::Experimental::Controls& controls,
   } else {
     int colx = static_cast<int>(x.extent(1));
     int ldx  = static_cast<int>(x.stride_1());
-    int ldy = = static_cast<int>(y.stride_1());
+    int ldy = static_cast<int>(y.stride_1());
     spm_mv_block_impl_mkl(mode_kk_to_mkl(mode[0]), alpha, beta, A.numRows(),
                           A.numCols(), A.blockDim(), A.graph.row_map.data(),
                           A.graph.entries.data(), A.values.data(), x.data(),
