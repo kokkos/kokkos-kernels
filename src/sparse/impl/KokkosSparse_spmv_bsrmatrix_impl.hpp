@@ -641,12 +641,13 @@ struct BSR_GEMV_Functor {
               m_y, Kokkos::make_pair(iBlock * block_dim,
                                      iBlock * block_dim + block_dim));
           //
+          auto space = execution_space();
           for (ordinal_type ic = 0; ic < count; ++ic) {
             const auto Aview  = row.block(ic);
             const auto xstart = row.block_colidx(ic) * block_dim;
             const auto xview  = Kokkos::subview(
                 m_x, Kokkos::make_pair(xstart, xstart + block_dim));
-            KokkosBlas::gemv("N", alpha, Aview, xview, beta1, yview);
+            twoLevelGemv(space, "N", alpha, Aview, xview, beta1, yview);
           }
           /*
           //
@@ -1221,13 +1222,12 @@ struct BSR_GEMM_Functor {
             return;
           }
           //
-          //
           const auto start = m_A.graph.row_map(iBlock);
           const ordinal_type count =
               static_cast<ordinal_type>(m_A.graph.row_map(iBlock + 1) - start);
           const KokkosSparse::Experimental::BsrRowViewConst<AMatrix> row(
               m_A.values, m_A.graph.entries, block_dim, count, start);
-          const auto nrhs = m_x.extent(1);
+          const auto nrhs = num_rhs;
           //
           for (ordinal_type ic = 0; ic < nrhs; ++ic) {
             for (ordinal_type ir = 0; ir < block_dim; ++ir) {
@@ -1281,11 +1281,9 @@ void spMatMultiVec_no_transpose(
     Kokkos::deep_copy(y, Kokkos::ArithTraits<BetaType>::zero());
   else
     KokkosBlas::scal(y, beta, y);
-
   //
   // Treat the case y <- alpha * A * x + beta * y
   //
-
   typedef KokkosSparse::Experimental::BsrMatrix<
       AT, AO, AD, Kokkos::MemoryTraits<Kokkos::Unmanaged>, AS>
       AMatrix_Internal;
@@ -1584,11 +1582,9 @@ void spMatMultiVec_transpose(
     Kokkos::deep_copy(y, Kokkos::ArithTraits<BetaType>::zero());
   else
     KokkosBlas::scal(y, beta, y);
-
   //
   // Treat the case y <- alpha * A^T * x + beta * y
   //
-
   typedef KokkosSparse::Experimental::BsrMatrix<
       AT, AO, AD, Kokkos::MemoryTraits<Kokkos::Unmanaged>, AS>
       AMatrix_Internal;
