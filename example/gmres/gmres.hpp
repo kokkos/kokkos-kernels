@@ -59,7 +59,7 @@ namespace Kokkos {
 namespace Issue1172WorkAround {
 #if !KOKKOS_HALF_T_IS_FLOAT
 Kokkos::Experimental::half_t fabs(Kokkos::Experimental::half_t arg) {
-  using AT = Kokkos::Details::ArithTraits<half_t>;
+  using AT = Kokkos::Details::ArithTraits<Kokkos::Experimental::half_t>;
   return AT::abs(arg);
 }
 
