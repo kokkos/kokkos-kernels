@@ -595,18 +595,20 @@ struct BSR_GEMV_Functor {
         //
         const auto xstart = row.block_colidx(ic) * block_dim;
         KokkosBatched::SerialGemvInternal<KokkosBatched::Algo::Gemv::Blocked>::
-            invoke<value_type, value_type>(
-                block_dim, block_dim, alpha, conjA.data(), block_dim, 1,
-                &m_x(xstart), 1, beta1, &m_y(ystart), 1);
+            invoke<value_type, value_type>(block_dim, block_dim, alpha,
+                                           conjA.data(), block_dim, 1,
+                                           &m_x(xstart), m_x.stride_0(), beta1,
+                                           &m_y(ystart), m_y.stride_0());
       }
     } else {
       for (ordinal_type ic = 0; ic < count; ++ic) {
         const auto Aview  = row.block(ic);
         const auto xstart = row.block_colidx(ic) * block_dim;
         KokkosBatched::SerialGemvInternal<KokkosBatched::Algo::Gemv::Blocked>::
-            invoke<value_type, value_type>(
-                block_dim, block_dim, alpha, Aview.data(), block_dim, 1,
-                &m_x(xstart), 1, beta1, &m_y(ystart), 1);
+            invoke<value_type, value_type>(block_dim, block_dim, alpha,
+                                           Aview.data(), block_dim, 1,
+                                           &m_x(xstart), m_x.stride_0(), beta1,
+                                           &m_y(ystart), m_y.stride_0());
       }
     }
   }
@@ -902,7 +904,7 @@ struct BSR_GEMV_Transpose_Functor {
         KokkosBatched::SerialGemvInternal<KokkosBatched::Algo::Gemv::Blocked>::
             invoke<value_type, value_type>(
                 block_dim, block_dim, alpha, conjA.data(), 1, block_dim,
-                xview.data(), 1, beta1, ytmp.data(), 1);
+                xview.data(), xview.stride_0(), beta1, ytmp.data(), 1);
         //
         const auto ystart = row.block_colidx(ic) * block_dim;
         for (ordinal_type ir = 0; ir < block_dim; ++ir)
@@ -916,7 +918,7 @@ struct BSR_GEMV_Transpose_Functor {
         KokkosBatched::SerialGemvInternal<KokkosBatched::Algo::Gemv::Blocked>::
             invoke<value_type, value_type>(
                 block_dim, block_dim, alpha, Aview.data(), 1, block_dim,
-                xview.data(), 1, beta1, ytmp.data(), 1);
+                xview.data(), xview.stride_0(), beta1, ytmp.data(), 1);
         //
         const auto ystart = row.block_colidx(ic) * block_dim;
         for (ordinal_type ir = 0; ir < block_dim; ++ir)
@@ -1184,7 +1186,8 @@ struct BSR_GEMM_Functor {
         KokkosBatched::SerialGemmInternal<KokkosBatched::Algo::Gemm::Blocked>::
             invoke<value_type, value_type>(
                 block_dim, num_rhs, block_dim, alpha, conjA.data(), block_dim,
-                1, &m_x(xstart, 0), 1, ldx, beta1, &m_y(ystart, 0), 1, ldy);
+                1, &m_x(xstart, 0), m_x.stride_0(), ldx, beta1, &m_y(ystart, 0),
+                m_y.stride_0(), ldy);
       }
     } else {
       for (ordinal_type ic = 0; ic < count; ++ic) {
@@ -1193,7 +1196,8 @@ struct BSR_GEMM_Functor {
         KokkosBatched::SerialGemmInternal<KokkosBatched::Algo::Gemm::Blocked>::
             invoke<value_type, value_type>(
                 block_dim, num_rhs, block_dim, alpha, Aview.data(), block_dim,
-                1, &m_x(xstart, 0), 1, ldx, beta1, &m_y(ystart, 0), 1, ldy);
+                1, &m_x(xstart, 0), m_x.stride_0(), ldx, beta1, &m_y(ystart, 0),
+                m_y.stride_0(), ldy);
       }
     }
   }
@@ -1281,13 +1285,6 @@ void spMatMultiVec_no_transpose(
       AMatrix_Internal;
   typedef typename AMatrix_Internal::non_const_ordinal_type ordinal_type;
   typedef typename AMatrix_Internal::execution_space execution_space;
-
-  const auto ldx   = x.stride_1();
-  const auto xrhs  = x.extent(1);
-  const auto x_ptr = &x(0, 0);
-
-  const auto ldy = y.stride_1();
-  auto y_ptr     = &y(0, 0);
 
   bool use_dynamic_schedule = false;  // Forces the use of a dynamic schedule
   bool use_static_schedule  = false;  // Forces the use of a static schedule
@@ -1485,8 +1482,8 @@ struct BSR_GEMM_Transpose_Functor {
         KokkosBatched::SerialGemmInternal<KokkosBatched::Algo::Gemm::Blocked>::
             invoke<value_type, value_type>(block_dim, num_rhs, block_dim, alpha,
                                            conjA.data(), 1, block_dim,
-                                           &m_x(xstart, 0), 1, ldx, beta1,
-                                           ytmp.data(), 1, block_dim);
+                                           &m_x(xstart, 0), m_x.stride_0(), ldx,
+                                           beta1, ytmp.data(), 1, block_dim);
         //
         const auto ystart = row.block_colidx(ic) * block_dim;
         for (ordinal_type jr = 0; jr < num_rhs; ++jr) {
@@ -1503,8 +1500,8 @@ struct BSR_GEMM_Transpose_Functor {
         KokkosBatched::SerialGemmInternal<KokkosBatched::Algo::Gemm::Blocked>::
             invoke<value_type, value_type>(block_dim, num_rhs, block_dim, alpha,
                                            Aview.data(), 1, block_dim,
-                                           &m_x(xstart, 0), 1, ldx, beta1,
-                                           ytmp.data(), 1, block_dim);
+                                           &m_x(xstart, 0), m_x.stride_0(), ldx,
+                                           beta1, ytmp.data(), 1, block_dim);
         //
         const auto ystart = row.block_colidx(ic) * block_dim;
         for (ordinal_type jr = 0; jr < num_rhs; ++jr) {
