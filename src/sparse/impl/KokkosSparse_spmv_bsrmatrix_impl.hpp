@@ -530,7 +530,6 @@ struct BsrMatrixSpMVTensorCoreDispatcher {
 //
 //
 
-#include "KokkosSparse_spmv_impl_util.hpp"
 #include "KokkosBlas.hpp"
 #include "KokkosBatched_Gemv_Serial_Internal.hpp"
 #include "KokkosBatched_Gemm_Serial_Internal.hpp"
@@ -691,8 +690,7 @@ void spMatVec_no_transpose(
     const AlphaType &alpha,
     const KokkosSparse::Experimental::BsrMatrix<
         AT, AO, AD, Kokkos::MemoryTraits<Kokkos::Unmanaged>, AS> &A,
-    const XVector &x, const BetaType &beta, YVector &y, bool useFallback,
-    bool useConjugate) {
+    const XVector &x, const BetaType &beta, YVector &y, bool useConjugate) {
   // This is required to maintain semantics of KokkosKernels native SpMV:
   // if y contains NaN but beta = 0, the result y should be filled with 0.
   // For example, this is useful for passing in uninitialized y and beta=0.
@@ -754,8 +752,7 @@ void spMatVec_no_transpose(
     const AlphaType &alpha,
     const KokkosSparse::Experimental::BsrMatrix<
         AT, AO, AD, Kokkos::MemoryTraits<Kokkos::Unmanaged>, AS> &A,
-    const XVector &x, const BetaType &beta, YVector &y, bool useFallback,
-    bool useConjugate) {
+    const XVector &x, const BetaType &beta, YVector &y, bool useConjugate) {
   if (A.numRows() <= static_cast<AO>(0)) {
     return;
   }
@@ -985,8 +982,7 @@ void spMatVec_transpose(
     const AlphaType &alpha,
     const KokkosSparse::Experimental::BsrMatrix<
         AT, AO, AD, Kokkos::MemoryTraits<Kokkos::Unmanaged>, AS> &A,
-    const XVector &x, const BetaType &beta, YVector &y, bool useFallback,
-    bool useConjugate) {
+    const XVector &x, const BetaType &beta, YVector &y, bool useConjugate) {
   // This is required to maintain semantics of KokkosKernels native SpMV:
   // if y contains NaN but beta = 0, the result y should be filled with 0.
   // For example, this is useful for passing in uninitialized y and beta=0.
@@ -1048,7 +1044,7 @@ template <class AMatrix, class AlphaType, class XVector, class BetaType,
 void spMatVec_transpose(const KokkosKernels::Experimental::Controls &controls,
                         const AlphaType &alpha, const AMatrix &A,
                         const XVector &x, const BetaType &beta, YVector &y,
-                        bool useFallback, bool useConjugate) {
+                        bool useConjugate) {
   if (A.numRows() <= 0) {
     return;
   }
@@ -1273,8 +1269,7 @@ void spMatMultiVec_no_transpose(
     const AlphaType &alpha,
     const KokkosSparse::Experimental::BsrMatrix<
         AT, AO, AD, Kokkos::MemoryTraits<Kokkos::Unmanaged>, AS> &A,
-    const XVector &x, const BetaType &beta, YVector &y, bool useFallback,
-    bool useConjugate) {
+    const XVector &x, const BetaType &beta, YVector &y, bool useConjugate) {
   // This is required to maintain semantics of KokkosKernels native SpMV:
   // if y contains NaN but beta = 0, the result y should be filled with 0.
   // For example, this is useful for passing in uninitialized y and beta=0.
@@ -1344,8 +1339,7 @@ void spMatMultiVec_no_transpose(
     const AlphaType &alpha,
     const KokkosSparse::Experimental::BsrMatrix<
         AT, AO, AD, Kokkos::MemoryTraits<Kokkos::Unmanaged>, AS> &A,
-    const XVector &x, const BetaType &beta, YVector &y, bool useFallback,
-    bool useConjugate) {
+    const XVector &x, const BetaType &beta, YVector &y, bool useConjugate) {
   if (A.numRows() <= static_cast<AO>(0)) {
     return;
   }
@@ -1585,8 +1579,7 @@ void spMatMultiVec_transpose(
     const AlphaType &alpha,
     const KokkosSparse::Experimental::BsrMatrix<
         AT, AO, AD, Kokkos::MemoryTraits<Kokkos::Unmanaged>, AS> &A,
-    const XVector &x, const BetaType &beta, YVector &y, bool useFallback,
-    bool useConjugate) {
+    const XVector &x, const BetaType &beta, YVector &y, bool useConjugate) {
   // This is required to maintain semantics of KokkosKernels native SpMV:
   // if y contains NaN but beta = 0, the result y should be filled with 0.
   // For example, this is useful for passing in uninitialized y and beta=0.
@@ -1644,7 +1637,7 @@ template <class AMatrix, class AlphaType, class XVector, class BetaType,
 void spMatMultiVec_transpose(
     const KokkosKernels::Experimental::Controls &controls,
     const AlphaType &alpha, const AMatrix &A, const XVector &x,
-    const BetaType &beta, YVector &y, bool useFallback, bool useConjugate) {
+    const BetaType &beta, YVector &y, bool useConjugate) {
   if (A.numRows() <= 0) {
     return;
   }
