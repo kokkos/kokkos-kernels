@@ -65,7 +65,7 @@ struct BsrRowView {
   //! The type of the column indices in the row.
   typedef typename MatrixType::ordinal_type ordinal_type;
   //! The type for returned block of values.
-  typedef Kokkos::View<value_type**, Kokkos::LayoutStride,
+  typedef Kokkos::View<value_type**, Kokkos::LayoutRight,
                        typename MatrixType::device_type,
                        Kokkos::MemoryUnmanaged>
       block_values_type;
@@ -170,9 +170,8 @@ struct BsrRowView {
   /// block-row
   KOKKOS_INLINE_FUNCTION
   block_values_type block(const ordinal_type& K) const {
-    return block_values_type(
-        &(values_[K * blockDim_ * blockDim_]),
-        Kokkos::LayoutStride(blockDim_, blockDim_, blockDim_, 1));
+    return block_values_type(&(values_[K * blockDim_ * blockDim_]),
+                             Kokkos::LayoutRight(blockDim_, blockDim_));
   }
 
   /// \brief Return offset into colidx_ for the requested block idx
@@ -201,7 +200,7 @@ struct BsrRowViewConst {
   //! The type of the column indices in the row.
   typedef const typename MatrixType::non_const_ordinal_type ordinal_type;
   //! The type for returned block of values.
-  typedef Kokkos::View<value_type**, Kokkos::LayoutStride,
+  typedef Kokkos::View<value_type**, Kokkos::LayoutRight,
                        typename MatrixType::device_type,
                        Kokkos::MemoryUnmanaged>
       block_values_type;
@@ -307,9 +306,8 @@ struct BsrRowViewConst {
   /// block-row
   KOKKOS_INLINE_FUNCTION
   block_values_type block(const ordinal_type& K) const {
-    return block_values_type(
-        &(values_[K * blockDim_ * blockDim_]),
-        Kokkos::LayoutStride(blockDim_, blockDim_, blockDim_, 1));
+    return block_values_type(&(values_[K * blockDim_ * blockDim_]),
+                             Kokkos::LayoutRight(blockDim_, blockDim_));
   }
 
   /// \brief Return offset into colidx_ for the requested block idx

@@ -526,6 +526,8 @@ struct BsrMatrixSpMVTensorCoreDispatcher {
 
 #include "KokkosSparse_spmv_impl_util.hpp"
 #include "KokkosBlas.hpp"
+#include "KokkosBatched_Gemv_Serial_Internal.hpp"
+#include "KokkosBatched_Gemm_Serial_Internal.hpp"
 #include "KokkosKernels_ExecSpaceUtils.hpp"
 #include "KokkosSparse_spmv_impl.hpp"
 
@@ -552,8 +554,7 @@ struct BSR_GEMV_Functor {
   XVector m_x;
   YVector m_y;
 
-  const ordinal_type block_size;
-  const ordinal_type block_size_2;
+  const ordinal_type block_dim;
   const ordinal_type blocks_per_team;
 
   bool conjugate = false;
@@ -565,8 +566,7 @@ struct BSR_GEMV_Functor {
         m_A(m_A_),
         m_x(m_x_),
         m_y(m_y_),
-        block_size(m_A_.blockDim()),
-        block_size_2(block_size * block_size),
+        block_dim(m_A_.blockDim()),
         blocks_per_team(blocks_per_team_),
         conjugate(conj_) {
     static_assert(static_cast<int>(XVector::rank) == 1,
@@ -575,225 +575,40 @@ struct BSR_GEMV_Functor {
                   "YVector must be a rank 1 View.");
   }
 
-  KOKKOS_INLINE_FUNCTION void gemv_default(const value_type *Avalues,
-                                           const size_type *row_map,
-                                           size_t numBlockRows,
-                                           const ordinal_type *entries,
-                                           const value_type *x, value_type *y,
-                                           const int bs) const {
-    // "Unrolling" constant for large block sizes
-    constexpr int unroll = 4;
-    static_assert(unroll <= Impl::bmax, "Too large unrolling constant");
-    //
-    const int bs_squared = bs * bs;
-    auto yvec            = &y[0];
-    //
-    std::array<value_type, Impl::bmax> tmp;
-    const auto lda = bs;
-    //
-    for (size_t iblock = 0; iblock < numBlockRows; ++iblock) {
-      //
-      const auto jbeg = row_map[iblock];
-      const auto jend = row_map[iblock + 1];
-      //
-      for (auto jb = jbeg; jb < jend; ++jb) {
-        const auto col_block = entries[jb];
-        const auto xval_ptr  = &x[0] + bs * col_block;
-        const auto Aentries  = Avalues + jb * bs_squared;
-        int krow             = 0;
-        for (; krow + unroll <= bs; krow += unroll) {
-          for (int ic = 0; ic < unroll; ++ic) tmp[ic] = 0;
-          if (conjugate) {
-            int ic = 0;
-            for (; ic + unroll <= bs; ic += unroll)
-              raw_gemv_c<unroll, value_type, unroll>(Aentries + ic + krow * lda,
-                                                     lda, xval_ptr + ic, tmp);
-            for (; ic + 2 <= bs; ic += 2)
-              raw_gemv_c<unroll, value_type, 2>(Aentries + ic + krow * lda, lda,
-                                                xval_ptr + ic, tmp);
-            for (; ic < bs; ++ic)
-              raw_gemv_c<unroll, value_type, 1>(Aentries + ic + krow * lda, lda,
-                                                xval_ptr + ic, tmp);
-          } else {
-            int ic = 0;
-            for (; ic + unroll <= bs; ic += unroll)
-              raw_gemv_n<unroll, value_type, unroll>(Aentries + ic + krow * lda,
-                                                     lda, xval_ptr + ic, tmp);
-            for (; ic + 2 <= bs; ic += 2)
-              raw_gemv_n<unroll, value_type, 2>(Aentries + ic + krow * lda, lda,
-                                                xval_ptr + ic, tmp);
-            for (; ic < bs; ++ic)
-              raw_gemv_n<unroll, value_type, 1>(Aentries + ic + krow * lda, lda,
-                                                xval_ptr + ic, tmp);
-          }
-          //
-          raw_axpy<unroll, value_type>(alpha, tmp, yvec + krow);
-        }
-        //
-        for (; krow + 2 <= bs; krow += 2) {
-          tmp[0] = 0;
-          tmp[1] = 0;
-          if (conjugate) {
-            int ic = 0;
-            for (; ic + unroll <= bs; ic += unroll)
-              raw_gemv_c<unroll, value_type, unroll>(Aentries + ic + krow * lda,
-                                                     lda, xval_ptr + ic, tmp);
-            for (; ic + 2 <= bs; ic += 2)
-              raw_gemv_c<unroll, value_type, 2>(Aentries + ic + krow * lda, lda,
-                                                xval_ptr + ic, tmp);
-            for (; ic < bs; ++ic)
-              raw_gemv_c<unroll, value_type, 1>(Aentries + ic + krow * lda, lda,
-                                                xval_ptr + ic, tmp);
-          } else {
-            int ic = 0;
-            for (; ic + unroll <= bs; ic += unroll)
-              raw_gemv_n<unroll, value_type, unroll>(Aentries + ic + krow * lda,
-                                                     lda, xval_ptr + ic, tmp);
-            for (; ic + 2 <= bs; ic += 2)
-              raw_gemv_n<unroll, value_type, 2>(Aentries + ic + krow * lda, lda,
-                                                xval_ptr + ic, tmp);
-            for (; ic < bs; ++ic)
-              raw_gemv_n<unroll, value_type, 1>(Aentries + ic + krow * lda, lda,
-                                                xval_ptr + ic, tmp);
-          }
-          raw_axpy<2, value_type>(alpha, tmp, yvec + krow);
-        }
-        //
-        for (; krow < bs; ++krow) {
-          value_type s_tmp = 0;
-          if (conjugate) {
-            for (int ic = 0; ic < bs; ++ic)
-              s_tmp += Kokkos::ArithTraits<value_type>::conj(
-                           Aentries[ic + krow * lda]) *
-                       xval_ptr[ic];
-          } else {
-            for (int ic = 0; ic < bs; ++ic)
-              s_tmp += Aentries[ic + krow * lda] * xval_ptr[ic];
-          }
-          yvec[krow] = yvec[krow] + alpha * s_tmp;
-        }
-      }
-      //
-      yvec = yvec + bs;
-    }
-  }
-
-  template <int blockSize>
-  KOKKOS_INLINE_FUNCTION void gemv(const value_type *Avalues,
-                                   const size_type *row_map,
-                                   size_t numBlockRows,
-                                   const ordinal_type *entries,
-                                   const value_type *x, value_type *y) const {
-    static_assert(((blockSize >= 1) && (blockSize <= Impl::bmax)),
-                  " Error when specifying the blocksize ");
-    std::array<value_type, Impl::bmax> tmp;
-    const auto blockSize2 = blockSize * blockSize;
-    //
-    if (conjugate) {
-      for (size_t iblock = 0; iblock < numBlockRows; ++iblock) {
-        const auto jbeg = row_map[iblock];
-        const auto jend = row_map[iblock + 1];
-        for (int ic = 0; ic < blockSize; ++ic) tmp[ic] = 0;
-        for (auto jb = jbeg; jb < jend; ++jb) {
-          const auto col_block = entries[jb];
-          const auto xval_ptr  = x + blockSize * col_block;
-          auto Aval_ptr        = Avalues + jb * blockSize2;
-          raw_gemv_c<blockSize, value_type>(Aval_ptr, blockSize, xval_ptr, tmp);
-        }
-        //
-        auto yvec = &y[iblock * blockSize];
-        raw_axpy<blockSize, value_type>(alpha, tmp, yvec);
-      }
-    } else {
-      for (size_t iblock = 0; iblock < numBlockRows; ++iblock) {
-        const auto jbeg = row_map[iblock];
-        const auto jend = row_map[iblock + 1];
-        for (int ic = 0; ic < blockSize; ++ic) tmp[ic] = 0;
-        for (auto jb = jbeg; jb < jend; ++jb) {
-          const auto col_block = entries[jb];
-          const auto xval_ptr  = x + blockSize * col_block;
-          auto Aval_ptr        = Avalues + jb * blockSize2;
-          raw_gemv_n<blockSize, value_type>(Aval_ptr, blockSize, xval_ptr, tmp);
-        }
-        //
-        auto yvec = &y[iblock * blockSize];
-        raw_axpy<blockSize, value_type>(alpha, tmp, yvec);
-      }
-    }
-  }
-
   KOKKOS_INLINE_FUNCTION
   void operator()(const ordinal_type iBlock) const {
+    const auto ystart = iBlock * block_dim;
+    const auto start  = m_A.graph.row_map(iBlock);
+    const ordinal_type count =
+        static_cast<ordinal_type>(m_A.graph.row_map(iBlock + 1) - start);
+    const auto row   = m_A.block_row_Const(iBlock);
+    const auto beta1 = static_cast<value_type>(1);
     //
-    constexpr ordinal_type numBlocks = 1;
-    ///
-    auto yvec                 = &m_y[iBlock * block_size];
-    const auto *local_row_map = &m_A.graph.row_map(iBlock);
-    const auto *entries       = &m_A.graph.entries(0);
-    switch (block_size) {
-      default:
-        gemv_default(&m_A.values(0), local_row_map, numBlocks, entries, &m_x[0],
-                     yvec, block_size);
-        break;
-      case 1:
-        gemv<1>(&m_A.values(0), local_row_map, numBlocks, entries, &m_x[0],
-                yvec);
-        break;
-      case 2:
-        gemv<2>(&m_A.values(0), local_row_map, numBlocks, entries, &m_x[0],
-                yvec);
-        break;
-      case 3:
-        gemv<3>(&m_A.values(0), local_row_map, numBlocks, entries, &m_x[0],
-                yvec);
-        break;
-      case 4:
-        gemv<4>(&m_A.values(0), local_row_map, numBlocks, entries, &m_x[0],
-                yvec);
-        break;
-      case 5:
-        gemv<5>(&m_A.values(0), local_row_map, numBlocks, entries, &m_x[0],
-                yvec);
-        break;
-      case 6:
-        gemv<6>(&m_A.values(0), local_row_map, numBlocks, entries, &m_x[0],
-                yvec);
-        break;
-      case 7: {
-        static_assert(Impl::bmax >= 7, " Check the largest  block size ");
-        gemv<7>(&m_A.values(0), local_row_map, numBlocks, entries, &m_x[0],
-                yvec);
-      } break;
-      case 8: {
-        static_assert(Impl::bmax >= 8, " Check the largest  block size ");
-        gemv<8>(&m_A.values(0), local_row_map, numBlocks, entries, &m_x[0],
-                yvec);
-      } break;
-      case 9: {
-        static_assert(Impl::bmax >= 9, " Check the largest  block size ");
-        gemv<9>(&m_A.values(0), local_row_map, numBlocks, entries, &m_x[0],
-                yvec);
-      } break;
-      case 10: {
-        static_assert(Impl::bmax >= 10, " Check the largest  block size ");
-        gemv<10>(&m_A.values(0), local_row_map, numBlocks, entries, &m_x[0],
-                 yvec);
-      } break;
-      case 11: {
-        static_assert(Impl::bmax >= 11, " Check the largest  block size ");
-        gemv<11>(&m_A.values(0), local_row_map, numBlocks, entries, &m_x[0],
-                 yvec);
-      } break;
-      case 12: {
-        static_assert(Impl::bmax >= 12, " Check the largest  block size ");
-        gemv<12>(&m_A.values(0), local_row_map, numBlocks, entries, &m_x[0],
-                 yvec);
-      } break;
-      case 13: {
-        static_assert(Impl::bmax >= 13, " Check the largest  block size ");
-        gemv<13>(&m_A.values(0), local_row_map, numBlocks, entries, &m_x[0],
-                 yvec);
-      } break;
+    if (conjugate) {
+      std::vector<value_type> conjA(block_dim * block_dim);
+      for (ordinal_type ic = 0; ic < count; ++ic) {
+        const auto Aview = row.block(ic);
+        for (ordinal_type ii = 0; ii < block_dim; ++ii) {
+          for (ordinal_type jj = 0; jj < block_dim; ++jj)
+            conjA[jj + ii * block_dim] =
+                Kokkos::ArithTraits<value_type>::conj(Aview(ii, jj));
+        }
+        //
+        const auto xstart = row.block_colidx(ic) * block_dim;
+        KokkosBatched::SerialGemvInternal<KokkosBatched::Algo::Gemv::Blocked>::
+            invoke<value_type, value_type>(
+                block_dim, block_dim, alpha, conjA.data(), block_dim, 1,
+                &m_x(xstart), 1, beta1, &m_y(ystart), 1);
+      }
+    } else {
+      for (ordinal_type ic = 0; ic < count; ++ic) {
+        const auto Aview  = row.block(ic);
+        const auto xstart = row.block_colidx(ic) * block_dim;
+        KokkosBatched::SerialGemvInternal<KokkosBatched::Algo::Gemv::Blocked>::
+            invoke<value_type, value_type>(
+                block_dim, block_dim, alpha, Aview.data(), block_dim, 1,
+                &m_x(xstart), 1, beta1, &m_y(ystart), 1);
+      }
     }
   }
 
@@ -816,26 +631,26 @@ struct BSR_GEMV_Functor {
           const auto beta1 = static_cast<y_value_type>(1);
           //
           auto yview = Kokkos::subview(
-              m_y, Kokkos::make_pair(iBlock * block_size,
-                                     iBlock * block_size + block_size));
+              m_y, Kokkos::make_pair(iBlock * block_dim,
+                                     iBlock * block_dim + block_dim));
           //
           for (ordinal_type ic = 0; ic < count; ++ic) {
             const auto Aview  = row.block(ic);
-            const auto xstart = row.block_colidx(ic) * block_size;
+            const auto xstart = row.block_colidx(ic) * block_dim;
             const auto xview  = Kokkos::subview(
-                m_x, Kokkos::make_pair(xstart, xstart + block_size));
+                m_x, Kokkos::make_pair(xstart, xstart + block_dim));
             KokkosBlas::gemv("N", alpha, Aview, xview, beta1, yview);
           }
           /*
           //
-          for (ordinal_type ir = 0; ir < block_size; ++ir) {
+          for (ordinal_type ir = 0; ir < block_dim; ++ir) {
             y_value_type sum = 0;
 
             Kokkos::parallel_reduce(
                 Kokkos::ThreadVectorRange(dev, count),
                 [&](const ordinal_type &iEntry, y_value_type &lsum) {
-                  const auto start_col = row.block_colidx(iEntry) * block_size;
-                  for (ordinal_type jr = 0; jr < block_size; ++jr) {
+                  const auto start_col = row.block_colidx(iEntry) * block_dim;
+                  for (ordinal_type jr = 0; jr < block_dim; ++jr) {
                     const value_type val =
                         conjugate
                             ? ATV::conj(row.local_block_value(iEntry, ir, jr))
@@ -847,7 +662,7 @@ struct BSR_GEMV_Functor {
 
             Kokkos::single(Kokkos::PerThread(dev), [&]() {
               sum *= alpha;
-              m_y(iBlock * block_size + ir) += sum;
+              m_y(iBlock * block_dim + ir) += sum;
             });
           }
            */
@@ -1038,8 +853,7 @@ struct BSR_GEMV_Transpose_Functor {
   XVector m_x;
   YVector m_y;
 
-  const ordinal_type block_size;
-  const ordinal_type block_size_2;
+  const ordinal_type block_dim;
   const ordinal_type blocks_per_team;
 
   bool conjugate = false;
@@ -1051,8 +865,7 @@ struct BSR_GEMV_Transpose_Functor {
         m_A(m_A_),
         m_x(m_x_),
         m_y(m_y_),
-        block_size(m_A_.blockDim()),
-        block_size_2(block_size * block_size),
+        block_dim(m_A_.blockDim()),
         blocks_per_team(blocks_per_team_),
         conjugate(conj_) {
     static_assert(static_cast<int>(XVector::rank) == 1,
@@ -1061,187 +874,57 @@ struct BSR_GEMV_Transpose_Functor {
                   "YVector must be a rank 1 View.");
   }
 
-  KOKKOS_INLINE_FUNCTION void gemv_default(const value_type *Avalues,
-                                           const size_type *row_map,
-                                           size_t numBlockRows,
-                                           const ordinal_type *entries,
-                                           const value_type *x) const {
-    for (size_t iblock = 0; iblock < numBlockRows; ++iblock) {
-      const auto jbeg = row_map[iblock];
-      const auto jend = row_map[iblock + 1];
-      for (auto jb = jbeg; jb < jend; ++jb) {
-        const auto col_block = entries[jb];
-        auto Aval_ptr        = Avalues + jb * block_size_2;
-        ordinal_type ir      = 0;
-        for (; ir + 4 <= block_size; ir += 4) {
-          const auto alpha_x0 = alpha * x[ir + iblock * block_size];
-          const auto Aval_0   = &Aval_ptr[ir * block_size];
-          const auto alpha_x1 = alpha * x[ir + 1 + iblock * block_size];
-          const auto Aval_1   = &Aval_ptr[(ir + 1) * block_size];
-          const auto alpha_x2 = alpha * x[ir + 2 + iblock * block_size];
-          const auto Aval_2   = &Aval_ptr[(ir + 2) * block_size];
-          const auto alpha_x3 = alpha * x[ir + 3 + iblock * block_size];
-          const auto Aval_3   = &Aval_ptr[(ir + 3) * block_size];
-          if (conjugate) {
-            for (ordinal_type jr = 0; jr < block_size; jr += 1) {
-              const value_type tmp_res =
-                  Kokkos::ArithTraits<value_type>::conj(Aval_0[jr]) * alpha_x0 +
-                  Kokkos::ArithTraits<value_type>::conj(Aval_1[jr]) * alpha_x1 +
-                  Kokkos::ArithTraits<value_type>::conj(Aval_2[jr]) * alpha_x2 +
-                  Kokkos::ArithTraits<value_type>::conj(Aval_3[jr]) * alpha_x3;
-              Kokkos::atomic_add(&m_y(jr + col_block * block_size),
-                                 static_cast<value_type>(tmp_res));
-            }
-          } else {
-            for (ordinal_type jr = 0; jr < block_size; jr += 1) {
-              const value_type tmp_res =
-                  Aval_0[jr] * alpha_x0 + Aval_1[jr] * alpha_x1 +
-                  Aval_2[jr] * alpha_x2 + Aval_3[jr] * alpha_x3;
-              Kokkos::atomic_add(&m_y(jr + col_block * block_size),
-                                 static_cast<value_type>(tmp_res));
-            }
-          }
-        }
-        //
-        for (; ir < block_size; ++ir) {
-          const auto alpha_x = alpha * x[ir + iblock * block_size];
-          if (conjugate) {
-            for (ordinal_type jr = 0; jr < block_size; jr += 1) {
-              Kokkos::atomic_add(
-                  &m_y(jr + col_block * block_size),
-                  static_cast<value_type>(Kokkos::ArithTraits<value_type>::conj(
-                                              Aval_ptr[jr + ir * block_size]) *
-                                          alpha_x));
-            }
-          } else {
-            for (ordinal_type jr = 0; jr < block_size; jr += 1) {
-              Kokkos::atomic_add(&m_y(jr + col_block * block_size),
-                                 static_cast<value_type>(
-                                     Aval_ptr[jr + ir * block_size] * alpha_x));
-            }
-          }
-        }
-      }  // for (auto jb = jbeg; jb < jend; ++jb)
-    }    // for (size_t iblock = 0; iblock < numBlockRows; ++iblock)
-  }
-
-  template <int blockSize>
-  KOKKOS_INLINE_FUNCTION void gemv(const value_type *Avalues,
-                                   const size_type *row_map,
-                                   size_t numBlockRows,
-                                   const ordinal_type *entries,
-                                   const value_type *x) const {
-    static_assert(((blockSize >= 1) && (blockSize <= Impl::bmax)),
-                  " Error when specifying the blocksize ");
-    std::array<value_type, Impl::bmax> tmp;
-    const auto blockSize2 = blockSize * blockSize;
-    //
-    if (conjugate) {
-      for (size_t iblock = 0; iblock < numBlockRows; ++iblock) {
-        const auto jbeg = row_map[iblock];
-        const auto jend = row_map[iblock + 1];
-        for (auto jb = jbeg; jb < jend; ++jb) {
-          const auto col_block = entries[jb];
-          auto Aval_ptr        = Avalues + jb * blockSize2;
-          for (int ic = 0; ic < blockSize; ++ic) tmp[ic] = 0;
-          raw_gemv_h<blockSize, value_type>(Aval_ptr, blockSize, x, tmp);
-          for (int ic = 0; ic < blockSize; ++ic) {
-            Kokkos::atomic_add(&m_y(col_block * blockSize + ic),
-                               static_cast<value_type>(alpha * tmp[ic]));
-          }
-        }
-        //
-      }
-    } else {
-      for (size_t iblock = 0; iblock < numBlockRows; ++iblock) {
-        const auto jbeg = row_map[iblock];
-        const auto jend = row_map[iblock + 1];
-        for (auto jb = jbeg; jb < jend; ++jb) {
-          const auto col_block = entries[jb];
-          auto Aval_ptr        = Avalues + jb * blockSize2;
-          for (int ic = 0; ic < blockSize; ++ic) tmp[ic] = 0;
-          raw_gemv_t<blockSize, value_type>(Aval_ptr, blockSize, x, tmp);
-          for (int ic = 0; ic < blockSize; ++ic) {
-            Kokkos::atomic_add(&m_y(col_block * blockSize + ic),
-                               static_cast<value_type>(alpha * tmp[ic]));
-          }
-        }
-        //
-      }
-    }
-  }
-
   KOKKOS_INLINE_FUNCTION
   void operator()(const ordinal_type iBlock) const {
     //
+    // Assume that alpha is not zero
+    //
     constexpr ordinal_type numBlocks = 1;
     //
-    const auto *local_row_map = &m_A.graph.row_map(iBlock);
-    const auto *entries       = &m_A.graph.entries(0);
-    switch (block_size) {
-      default:
-        gemv_default(&m_A.values(0), local_row_map, numBlocks, entries,
-                     &m_x[iBlock * block_size]);
-        break;
-      case 1:
-        gemv<1>(&m_A.values(0), local_row_map, numBlocks, entries,
-                &m_x[iBlock * block_size]);
-        break;
-      case 2:
-        gemv<2>(&m_A.values(0), local_row_map, numBlocks, entries,
-                &m_x[iBlock * block_size]);
-        break;
-      case 3:
-        gemv<3>(&m_A.values(0), local_row_map, numBlocks, entries,
-                &m_x[iBlock * block_size]);
-        break;
-      case 4:
-        gemv<4>(&m_A.values(0), local_row_map, numBlocks, entries,
-                &m_x[iBlock * block_size]);
-        break;
-      case 5:
-        gemv<5>(&m_A.values(0), local_row_map, numBlocks, entries,
-                &m_x[iBlock * block_size]);
-        break;
-      case 6:
-        gemv<6>(&m_A.values(0), local_row_map, numBlocks, entries,
-                &m_x[iBlock * block_size]);
-        break;
-      case 7: {
-        static_assert(Impl::bmax >= 7, " Check the largest  block size ");
-        gemv<7>(&m_A.values(0), local_row_map, numBlocks, entries,
-                &m_x[iBlock * block_size]);
-      } break;
-      case 8: {
-        static_assert(Impl::bmax >= 8, " Check the largest  block size ");
-        gemv<8>(&m_A.values(0), local_row_map, numBlocks, entries,
-                &m_x[iBlock * block_size]);
-      } break;
-      case 9: {
-        static_assert(Impl::bmax >= 9, " Check the largest  block size ");
-        gemv<9>(&m_A.values(0), local_row_map, numBlocks, entries,
-                &m_x[iBlock * block_size]);
-      } break;
-      case 10: {
-        static_assert(Impl::bmax >= 10, " Check the largest  block size ");
-        gemv<10>(&m_A.values(0), local_row_map, numBlocks, entries,
-                 &m_x[iBlock * block_size]);
-      } break;
-      case 11: {
-        static_assert(Impl::bmax >= 11, " Check the largest  block size ");
-        gemv<11>(&m_A.values(0), local_row_map, numBlocks, entries,
-                 &m_x[iBlock * block_size]);
-      } break;
-      case 12: {
-        static_assert(Impl::bmax >= 12, " Check the largest  block size ");
-        gemv<12>(&m_A.values(0), local_row_map, numBlocks, entries,
-                 &m_x[iBlock * block_size]);
-      } break;
-      case 13: {
-        static_assert(Impl::bmax >= 13, " Check the largest  block size ");
-        gemv<13>(&m_A.values(0), local_row_map, numBlocks, entries,
-                 &m_x[iBlock * block_size]);
-      } break;
+    const auto xstart = iBlock * block_dim;
+    const auto xview =
+        Kokkos::subview(m_x, Kokkos::make_pair(xstart, xstart + block_dim));
+    const auto start = m_A.graph.row_map(iBlock);
+    const ordinal_type count =
+        static_cast<ordinal_type>(m_A.graph.row_map(iBlock + 1) - start);
+    const auto row   = m_A.block_row_Const(iBlock);
+    const auto beta1 = static_cast<value_type>(1);
+    std::vector<value_type> ytmp(block_dim);
+    if (conjugate) {
+      std::vector<value_type> conjA(block_dim * block_dim);
+      for (ordinal_type ic = 0; ic < count; ++ic) {
+        const auto Aview = row.block(ic);
+        for (ordinal_type ii = 0; ii < block_dim; ++ii) {
+          for (ordinal_type jj = 0; jj < block_dim; ++jj)
+            conjA[jj + ii * block_dim] =
+                Kokkos::ArithTraits<value_type>::conj(Aview(ii, jj));
+        }
+        //
+        for (ordinal_type ii = 0; ii < block_dim; ++ii)
+          ytmp[ii] = static_cast<value_type>(0);
+        KokkosBatched::SerialGemvInternal<KokkosBatched::Algo::Gemv::Blocked>::
+            invoke<value_type, value_type>(
+                block_dim, block_dim, alpha, conjA.data(), 1, block_dim,
+                xview.data(), 1, beta1, ytmp.data(), 1);
+        //
+        const auto ystart = row.block_colidx(ic) * block_dim;
+        for (ordinal_type ir = 0; ir < block_dim; ++ir)
+          Kokkos::atomic_add(&m_y(ystart + ir), ytmp[ir]);
+      }
+    } else {
+      for (ordinal_type ic = 0; ic < count; ++ic) {
+        const auto Aview = row.block(ic);
+        for (ordinal_type ii = 0; ii < block_dim; ++ii)
+          ytmp[ii] = static_cast<value_type>(0);
+        KokkosBatched::SerialGemvInternal<KokkosBatched::Algo::Gemv::Blocked>::
+            invoke<value_type, value_type>(
+                block_dim, block_dim, alpha, Aview.data(), 1, block_dim,
+                xview.data(), 1, beta1, ytmp.data(), 1);
+        //
+        const auto ystart = row.block_colidx(ic) * block_dim;
+        for (ordinal_type ir = 0; ir < block_dim; ++ir)
+          Kokkos::atomic_add(&m_y(ystart + ir), ytmp[ir]);
+      }
     }
   }
 
@@ -1262,20 +945,20 @@ struct BSR_GEMV_Transpose_Functor {
               static_cast<ordinal_type>(m_A.graph.row_map(iBlock + 1) - start);
           const auto row = m_A.block_row_Const(iBlock);
           //
-          for (ordinal_type ir = 0; ir < block_size; ++ir) {
+          for (ordinal_type ir = 0; ir < block_dim; ++ir) {
             Kokkos::parallel_for(
                 Kokkos::ThreadVectorRange(dev, count),
                 [&](const ordinal_type &iEntry) {
-                  for (ordinal_type jr = 0; jr < block_size; ++jr) {
+                  for (ordinal_type jr = 0; jr < block_dim; ++jr) {
                     const value_type val =
                         conjugate
                             ? ATV::conj(row.local_block_value(iEntry, jr, ir))
                             : row.local_block_value(iEntry, jr, ir);
                     const ordinal_type ind = row.block_colidx(iEntry);
                     Kokkos::atomic_add(
-                        &m_y(block_size * ind + ir),
+                        &m_y(block_dim * ind + ir),
                         static_cast<y_value_type>(
-                            alpha * val * m_x(block_size * iBlock + jr)));
+                            alpha * val * m_x(block_dim * iBlock + jr)));
                   }
                 });
           }
@@ -1305,6 +988,8 @@ void spMatVec_transpose(
     Kokkos::deep_copy(y, Kokkos::ArithTraits<BetaType>::zero());
   else
     KokkosBlas::scal(y, beta, y);
+
+  if (alpha == Kokkos::ArithTraits<AlphaType>::zero()) return;
 
   //
   // Treat the case y <- alpha * A^T * x + beta * y
@@ -1453,8 +1138,7 @@ struct BSR_GEMM_Functor {
   AMatrix m_A;
   XVector m_x;
   YVector m_y;
-  const ordinal_type block_size;
-  const ordinal_type block_size_2;
+  const ordinal_type block_dim;
   const ordinal_type num_rhs;
 
   const ordinal_type blocks_per_team;
@@ -1468,8 +1152,7 @@ struct BSR_GEMM_Functor {
         m_A(m_A_),
         m_x(m_x_),
         m_y(m_y_),
-        block_size(m_A_.blockDim()),
-        block_size_2(block_size * block_size),
+        block_dim(m_A_.blockDim()),
         num_rhs(m_x_.extent(1)),
         blocks_per_team(blocks_per_team_),
         conjugate(conj_) {
@@ -1479,239 +1162,43 @@ struct BSR_GEMM_Functor {
                   "YVector must be a rank 2 View.");
   }
 
-  template <int blockSize, int nrhs = Impl::rmax>
-  KOKKOS_INLINE_FUNCTION void gemm_row_product(
-      size_type jbeg, size_type jend, const value_type *Avalues,
-      const ordinal_type *entries, const int blockSize2, const value_type *x,
-      int ldx, std::array<value_type, Impl::b_times_r> &tmp) const {
-    for (auto jb = jbeg; jb < jend; ++jb) {
-      const auto col_block = entries[jb];
-      auto Aval_ptr        = Avalues + jb * blockSize2;
-      const auto xval_ptr  = &x[col_block * blockSize];
-      if (conjugate) {
-        raw_gemm_c<blockSize, value_type, nrhs>(Aval_ptr, blockSize, xval_ptr,
-                                                ldx, tmp);
-      } else {
-        raw_gemm_n<blockSize, value_type, nrhs>(Aval_ptr, blockSize, xval_ptr,
-                                                ldx, tmp);
-      }
-    }
-  }
-
-  /// \brief Do the Mat-Mat operation for one specific "row" block
-  KOKKOS_INLINE_FUNCTION void gemm_default(const ordinal_type iBlock) const {
-    const int bs_square = block_size * block_size;
-    const auto jbeg     = m_A.graph.row_map(iBlock);
-    const auto jend     = m_A.graph.row_map(iBlock + 1);
-    const auto ystart   = iBlock * block_size;
-    //
-    for (size_type jb = jbeg; jb < jend; ++jb) {
-      const auto col_block = m_A.graph.entries(jb);
-      const auto Aval_ptr  = &m_A.values(jb * bs_square);
-      const auto xstart    = col_block * block_size;
-      for (ordinal_type irhs = 0; irhs < m_x.extent(1); ++irhs) {
-        ordinal_type jc = 0;
-        for (; jc + 4 <= block_size; jc += 4) {
-          const auto xval0 = alpha * m_x(xstart + jc, irhs);
-          const auto xval1 = alpha * m_x(xstart + jc + 1, irhs);
-          const auto xval2 = alpha * m_x(xstart + jc + 2, irhs);
-          const auto xval3 = alpha * m_x(xstart + jc + 3, irhs);
-          for (ordinal_type ir = 0; ir < block_size; ir += 1) {
-            if (conjugate) {
-              m_y(ystart + ir, irhs) += Kokkos::ArithTraits<value_type>::conj(
-                                            Aval_ptr[jc + ir * block_size]) *
-                                        xval0;
-              m_y(ystart + ir, irhs) +=
-                  Kokkos::ArithTraits<value_type>::conj(
-                      Aval_ptr[jc + 1 + ir * block_size]) *
-                  xval1;
-              m_y(ystart + ir, irhs) +=
-                  Kokkos::ArithTraits<value_type>::conj(
-                      Aval_ptr[jc + 2 + ir * block_size]) *
-                  xval2;
-              m_y(ystart + ir, irhs) +=
-                  Kokkos::ArithTraits<value_type>::conj(
-                      Aval_ptr[jc + 3 + ir * block_size]) *
-                  xval3;
-            } else {
-              m_y(ystart + ir, irhs) += Aval_ptr[jc + ir * block_size] * xval0;
-              m_y(ystart + ir, irhs) +=
-                  Aval_ptr[jc + 1 + ir * block_size] * xval1;
-              m_y(ystart + ir, irhs) +=
-                  Aval_ptr[jc + 2 + ir * block_size] * xval2;
-              m_y(ystart + ir, irhs) +=
-                  Aval_ptr[jc + 3 + ir * block_size] * xval3;
-            }
-          }
-        }
-        for (; jc < block_size; jc += 1) {
-          const auto xval0 = alpha * m_x(xstart + jc, irhs);
-          for (ordinal_type ir = 0; ir < block_size; ir += 1) {
-            if (conjugate) {
-              m_y(ystart + ir, irhs) += Kokkos::ArithTraits<value_type>::conj(
-                                            Aval_ptr[jc + ir * block_size]) *
-                                        xval0;
-            } else {
-              m_y(ystart + ir, irhs) += Aval_ptr[jc + ir * block_size] * xval0;
-            }
-          }
-        }
-      }
-    }
-  }
-
-  template <int blockSize>
-  KOKKOS_INLINE_FUNCTION void gemm(const value_type *Avalues,
-                                   const size_type *row_map,
-                                   size_t numBlockRows,
-                                   const ordinal_type *entries, int xrhs,
-                                   const value_type *x, int ldx, value_type *y,
-                                   int ldy) const {
-    static_assert(((blockSize >= 1) && (blockSize <= Impl::bmax)),
-                  " Error when specifying the blocksize ");
-    std::array<value_type, Impl::b_times_r> tmp_2;
-    const int blockSize2 = blockSize * blockSize;
-    //
-    for (size_t iblock = 0; iblock < numBlockRows; ++iblock) {
-      const auto jbeg = row_map[iblock];
-      const auto jend = row_map[iblock + 1];
-      int irhs        = 0;
-      for (; irhs + Impl::rmax <= xrhs; irhs += Impl::rmax) {
-        for (int ic = 0; ic < blockSize * Impl::rmax; ++ic) tmp_2[ic] = 0;
-        gemm_row_product<blockSize, Impl::rmax>(jbeg, jend, Avalues, entries,
-                                                blockSize2, &x[irhs * ldx], ldx,
-                                                tmp_2);
-        //
-        for (int ic = 0; ic < Impl::rmax; ++ic) {
-          auto yvec = &y[iblock * blockSize + (irhs + ic) * ldy];
-          auto tvec = &tmp_2[blockSize * ic];
-          for (int jr = 0; jr < blockSize; ++jr)
-            yvec[jr] = yvec[jr] + alpha * tvec[jr];
-        }
-      }
-      //
-      if (irhs == xrhs) continue;
-      //
-      const int leftover = xrhs - irhs;
-      for (int ic = 0; ic < leftover * blockSize; ++ic) tmp_2[ic] = 0;
-      //
-      switch (leftover) {
-        case 1:
-          gemm_row_product<blockSize, 1>(jbeg, jend, Avalues, entries,
-                                         blockSize2, &x[irhs * ldx], ldx,
-                                         tmp_2);
-          break;
-        case 2:
-          gemm_row_product<blockSize, 2>(jbeg, jend, Avalues, entries,
-                                         blockSize2, &x[irhs * ldx], ldx,
-                                         tmp_2);
-          break;
-        case 3:
-          gemm_row_product<blockSize, 3>(jbeg, jend, Avalues, entries,
-                                         blockSize2, &x[irhs * ldx], ldx,
-                                         tmp_2);
-          break;
-        case 4:
-          gemm_row_product<blockSize, 4>(jbeg, jend, Avalues, entries,
-                                         blockSize2, &x[irhs * ldx], ldx,
-                                         tmp_2);
-          break;
-        case 5:
-          gemm_row_product<blockSize, 5>(jbeg, jend, Avalues, entries,
-                                         blockSize2, &x[irhs * ldx], ldx,
-                                         tmp_2);
-          break;
-        case 6:
-          gemm_row_product<blockSize, 6>(jbeg, jend, Avalues, entries,
-                                         blockSize2, &x[irhs * ldx], ldx,
-                                         tmp_2);
-          break;
-        case 7:
-          gemm_row_product<blockSize, 7>(jbeg, jend, Avalues, entries,
-                                         blockSize2, &x[irhs * ldx], ldx,
-                                         tmp_2);
-          break;
-        default: static_assert(Impl::rmax == 8, "  \n"); break;
-      }  // switch (leftover)
-      for (int ir = 0; ir < leftover; ir += 1) {
-        auto yvec = &y[iblock * blockSize + (ir + irhs) * ldy];
-        auto tvec = &tmp_2[blockSize * ir];
-        for (int jr = 0; jr < blockSize; ++jr)
-          yvec[jr] = yvec[jr] + alpha * tvec[jr];
-      }
-    }
-  }
-
   KOKKOS_INLINE_FUNCTION
   void operator()(const ordinal_type iBlock) const {
     //
-    constexpr int numBlocks = 1;
-    //
+    const auto ystart = iBlock * block_dim;
+    const auto start  = m_A.graph.row_map(iBlock);
+    const ordinal_type count =
+        static_cast<ordinal_type>(m_A.graph.row_map(iBlock + 1) - start);
+    const auto row   = m_A.block_row_Const(iBlock);
+    const auto beta1 = static_cast<value_type>(1);
     const auto ldx   = m_x.stride_1();
-    const auto x_ptr = &m_x(0, 0);
+    const auto ldy   = m_y.stride_1();
     //
-    const auto ldy = m_y.stride_1();
-    auto yvec      = &m_y(iBlock * block_size, 0);
-    //
-    const auto *local_row_map = &m_A.graph.row_map(iBlock);
-    const auto *entries       = &m_A.graph.entries(0);
-    //
-    switch (block_size) {
-      default: gemm_default(iBlock); break;
-      case 1:
-        gemm<1>(&m_A.values(0), local_row_map, numBlocks, entries, num_rhs,
-                x_ptr, ldx, yvec, ldy);
-        break;
-      case 2:
-        gemm<2>(&m_A.values(0), local_row_map, numBlocks, entries, num_rhs,
-                x_ptr, ldx, yvec, ldy);
-        break;
-      case 3:
-        gemm<3>(&m_A.values(0), local_row_map, numBlocks, entries, num_rhs,
-                x_ptr, ldx, yvec, ldy);
-        break;
-      case 4:
-        gemm<4>(&m_A.values(0), local_row_map, numBlocks, entries, num_rhs,
-                x_ptr, ldx, yvec, ldy);
-        break;
-      case 5:
-        gemm<5>(&m_A.values(0), local_row_map, numBlocks, entries, num_rhs,
-                x_ptr, ldx, yvec, ldy);
-        break;
-      case 6:
-        gemm<6>(&m_A.values(0), local_row_map, numBlocks, entries, num_rhs,
-                x_ptr, ldx, yvec, ldy);
-        break;
-      case 7: {
-        static_assert(Impl::bmax >= 7, " Check the largest  block size ");
-        gemm<7>(&m_A.values(0), local_row_map, numBlocks, entries, num_rhs,
-                x_ptr, ldx, yvec, ldy);
-      } break;
-      case 8: {
-        static_assert(Impl::bmax >= 8, " Check the largest  block size ");
-        gemm<8>(&m_A.values(0), local_row_map, numBlocks, entries, num_rhs,
-                x_ptr, ldx, yvec, ldy);
-      } break;
-      case 9: {
-        static_assert(Impl::bmax >= 9, " Check the largest  block size ");
-        gemm<9>(&m_A.values(0), local_row_map, numBlocks, entries, num_rhs,
-                x_ptr, ldx, yvec, ldy);
-      } break;
-      case 10: {
-        static_assert(Impl::bmax >= 10, " Check the largest  block size ");
-        gemm<10>(&m_A.values(0), local_row_map, numBlocks, entries, num_rhs,
-                 x_ptr, ldx, yvec, ldy);
-      } break;
-      case 11: {
-        static_assert(Impl::bmax >= 11, " Check the largest  block size ");
-        gemm<11>(&m_A.values(0), local_row_map, numBlocks, entries, num_rhs,
-                 x_ptr, ldx, yvec, ldy);
-      } break;
-      case 12: {
-        static_assert(Impl::bmax >= 12, " Check the largest  block size ");
-        gemm<12>(&m_A.values(0), local_row_map, numBlocks, entries, num_rhs,
-                 x_ptr, ldx, yvec, ldy);
-      } break;
+    if (conjugate) {
+      std::vector<value_type> conjA(block_dim * block_dim);
+      for (ordinal_type ic = 0; ic < count; ++ic) {
+        const auto Aview = row.block(ic);
+        for (ordinal_type ii = 0; ii < block_dim; ++ii) {
+          for (ordinal_type jj = 0; jj < block_dim; ++jj)
+            conjA[jj + ii * block_dim] =
+                Kokkos::ArithTraits<value_type>::conj(Aview(ii, jj));
+        }
+        //
+        const auto xstart = row.block_colidx(ic) * block_dim;
+        KokkosBatched::SerialGemmInternal<KokkosBatched::Algo::Gemm::Blocked>::
+            invoke<value_type, value_type>(
+                block_dim, num_rhs, block_dim, alpha, conjA.data(), block_dim,
+                1, &m_x(xstart, 0), 1, ldx, beta1, &m_y(ystart, 0), 1, ldy);
+      }
+    } else {
+      for (ordinal_type ic = 0; ic < count; ++ic) {
+        const auto Aview  = row.block(ic);
+        const auto xstart = row.block_colidx(ic) * block_dim;
+        KokkosBatched::SerialGemmInternal<KokkosBatched::Algo::Gemm::Blocked>::
+            invoke<value_type, value_type>(
+                block_dim, num_rhs, block_dim, alpha, Aview.data(), block_dim,
+                1, &m_x(xstart, 0), 1, ldx, beta1, &m_y(ystart, 0), 1, ldy);
+      }
     }
   }
 
@@ -1733,19 +1220,18 @@ struct BSR_GEMM_Functor {
           const ordinal_type count =
               static_cast<ordinal_type>(m_A.graph.row_map(iBlock + 1) - start);
           const KokkosSparse::Experimental::BsrRowViewConst<AMatrix> row(
-              m_A.values, m_A.graph.entries, block_size, count, start);
+              m_A.values, m_A.graph.entries, block_dim, count, start);
           const auto nrhs = m_x.extent(1);
           //
           for (ordinal_type ic = 0; ic < nrhs; ++ic) {
-            for (ordinal_type ir = 0; ir < block_size; ++ir) {
+            for (ordinal_type ir = 0; ir < block_dim; ++ir) {
               y_value_type sum = 0;
 
               Kokkos::parallel_reduce(
                   Kokkos::ThreadVectorRange(dev, count),
                   [&](const ordinal_type &iEntry, y_value_type &lsum) {
-                    const auto start_col =
-                        row.block_colidx(iEntry) * block_size;
-                    for (ordinal_type jr = 0; jr < block_size; ++jr) {
+                    const auto start_col = row.block_colidx(iEntry) * block_dim;
+                    for (ordinal_type jr = 0; jr < block_dim; ++jr) {
                       const value_type val =
                           conjugate
                               ? ATV::conj(row.local_block_value(iEntry, ir, jr))
@@ -1757,7 +1243,7 @@ struct BSR_GEMM_Functor {
 
               Kokkos::single(Kokkos::PerThread(dev), [&]() {
                 sum *= alpha;
-                m_y(iBlock * block_size + ir, ic) += sum;
+                m_y(iBlock * block_dim + ir, ic) += sum;
               });
             }
           }
@@ -1952,8 +1438,7 @@ struct BSR_GEMM_Transpose_Functor {
   AMatrix m_A;
   XVector m_x;
   YVector m_y;
-  const ordinal_type block_size;
-  const ordinal_type block_size_2;
+  const ordinal_type block_dim;
   const ordinal_type num_rhs;
 
   const ordinal_type blocks_per_team;
@@ -1967,8 +1452,7 @@ struct BSR_GEMM_Transpose_Functor {
         m_A(m_A_),
         m_x(m_x_),
         m_y(m_y_),
-        block_size(m_A_.blockDim()),
-        block_size_2(block_size * block_size),
+        block_dim(m_A_.blockDim()),
         num_rhs(m_x_.extent(1)),
         blocks_per_team(blocks_per_team_),
         conjugate(conj_) {
@@ -1978,217 +1462,63 @@ struct BSR_GEMM_Transpose_Functor {
                   "YVector must be a rank 2 View.");
   }
 
-  KOKKOS_INLINE_FUNCTION void gemm_default(ordinal_type iBlock) const {
-    const size_type jbeg = m_A.graph.row_map(iBlock);
-    const size_type jend = m_A.graph.row_map(iBlock + 1);
-    for (size_type jb = jbeg; jb < jend; ++jb) {
-      const auto col_block = m_A.graph.entries(jb);
-      auto Aval_ptr        = &m_A.values(jb * block_size_2);
-      for (int ic = 0; ic < m_x.extent(1); ++ic) {
-        ordinal_type ir = 0;
-        for (; ir + 4 <= block_size; ir += 4) {
-          const auto xval0 = alpha * m_x(ir + iBlock * block_size, ic);
-          const auto xval1 = alpha * m_x(ir + 1 + iBlock * block_size, ic);
-          const auto xval2 = alpha * m_x(ir + 2 + iBlock * block_size, ic);
-          const auto xval3 = alpha * m_x(ir + 3 + iBlock * block_size, ic);
-          for (ordinal_type jr = 0; jr < block_size; ++jr) {
-            const auto aval0 = (conjugate)
-                                   ? Kokkos::ArithTraits<value_type>::conj(
-                                         Aval_ptr[jr + ir * block_size])
-                                   : Aval_ptr[jr + ir * block_size];
-            const auto aval1 = (conjugate)
-                                   ? Kokkos::ArithTraits<value_type>::conj(
-                                         Aval_ptr[jr + (ir + 1) * block_size])
-                                   : Aval_ptr[jr + (ir + 1) * block_size];
-            const auto aval2 = (conjugate)
-                                   ? Kokkos::ArithTraits<value_type>::conj(
-                                         Aval_ptr[jr + (ir + 2) * block_size])
-                                   : Aval_ptr[jr + (ir + 2) * block_size];
-            const auto aval3 = (conjugate)
-                                   ? Kokkos::ArithTraits<value_type>::conj(
-                                         Aval_ptr[jr + (ir + 3) * block_size])
-                                   : Aval_ptr[jr + (ir + 3) * block_size];
-            value_type tmp =
-                aval0 * xval0 + aval1 * xval1 + aval2 * xval2 + aval3 * xval3;
-            Kokkos::atomic_add(&m_y(jr + col_block * block_size, ic), tmp);
-          }
-        }
-        //
-        for (; ir < block_size; ir += 1) {
-          const auto xval0 = alpha * m_x(ir + iBlock * block_size, ic);
-          for (ordinal_type jr = 0; jr < block_size; ++jr) {
-            const auto aval0 = (conjugate)
-                                   ? Kokkos::ArithTraits<value_type>::conj(
-                                         Aval_ptr[jr + ir * block_size])
-                                   : Aval_ptr[jr + ir * block_size];
-            value_type tmp = aval0 * xval0;
-            Kokkos::atomic_add(&m_y(jr + col_block * block_size, ic), tmp);
-          }
-        }
-      }
-    }
-  }
-
-  template <int blockSize, int nrhs = Impl::rmax>
-  KOKKOS_INLINE_FUNCTION void gemm_row_product(
-      size_type jbeg, size_type jend, const value_type *Avalues,
-      const ordinal_type *entries, const value_type *x, int ldx, int start_rhs,
-      std::array<value_type, Impl::b_times_r> &tmp) const {
-    static_assert(nrhs <= Impl::rmax);
-    const int blockSize2 = blockSize * blockSize;
-    for (auto jb = jbeg; jb < jend; ++jb) {
-      const auto col_block = entries[jb];
-      auto Aval_ptr        = Avalues + jb * blockSize2;
-      for (int ic = 0; ic < blockSize * nrhs; ++ic) tmp[ic] = 0;
-      if (conjugate) {
-        raw_gemm_h<blockSize, value_type, nrhs>(Aval_ptr, blockSize, x, ldx,
-                                                tmp);
-      } else {
-        raw_gemm_t<blockSize, value_type, nrhs>(Aval_ptr, blockSize, x, ldx,
-                                                tmp);
-      }
-      //
-      for (int irhs = 0; irhs < nrhs; ++irhs) {
-        for (int ic = 0; ic < blockSize; ++ic) {
-          Kokkos::atomic_add(
-              &m_y(col_block * blockSize + ic, start_rhs + irhs),
-              static_cast<value_type>(alpha * tmp[ic + irhs * blockSize]));
-        }
-      }
-    }  // for (auto jb = jbeg; jb < jend; ++jb)
-  }
-
-  template <int blockSize>
-  KOKKOS_INLINE_FUNCTION void gemm(const value_type *Avalues,
-                                   const size_type *row_map,
-                                   size_t numBlockRows,
-                                   const ordinal_type *entries, int xrhs,
-                                   int ldx, int startBlock) const {
-    static_assert(((blockSize >= 1) && (blockSize <= Impl::bmax)),
-                  " Error when specifying the blocksize ");
-    std::array<value_type, Impl::b_times_r> tmp_2;
-    //
-    for (size_t iblock = 0; iblock < numBlockRows; ++iblock) {
-      const auto jbeg = row_map[iblock];
-      const auto jend = row_map[iblock + 1];
-      int irhs        = 0;
-      for (; irhs + Impl::rmax <= num_rhs; irhs += Impl::rmax) {
-        gemm_row_product<blockSize, Impl::rmax>(
-            jbeg, jend, Avalues, entries, &m_x(startBlock * blockSize, irhs),
-            ldx, irhs, tmp_2);
-      }
-      //
-      if (irhs == num_rhs) continue;
-      //
-      const int leftover = num_rhs - irhs;
-      //
-      switch (leftover) {
-        case 1:
-          gemm_row_product<blockSize, 1>(jbeg, jend, Avalues, entries,
-                                         &m_x(startBlock * blockSize, irhs),
-                                         ldx, irhs, tmp_2);
-          break;
-        case 2:
-          gemm_row_product<blockSize, 2>(jbeg, jend, Avalues, entries,
-                                         &m_x(startBlock * blockSize, irhs),
-                                         ldx, irhs, tmp_2);
-          break;
-        case 3:
-          gemm_row_product<blockSize, 3>(jbeg, jend, Avalues, entries,
-                                         &m_x(startBlock * blockSize, irhs),
-                                         ldx, irhs, tmp_2);
-          break;
-        case 4:
-          gemm_row_product<blockSize, 4>(jbeg, jend, Avalues, entries,
-                                         &m_x(startBlock * blockSize, irhs),
-                                         ldx, irhs, tmp_2);
-          break;
-        case 5:
-          gemm_row_product<blockSize, 5>(jbeg, jend, Avalues, entries,
-                                         &m_x(startBlock * blockSize, irhs),
-                                         ldx, irhs, tmp_2);
-          break;
-        case 6:
-          gemm_row_product<blockSize, 6>(jbeg, jend, Avalues, entries,
-                                         &m_x(startBlock * blockSize, irhs),
-                                         ldx, irhs, tmp_2);
-          break;
-        case 7:
-          gemm_row_product<blockSize, 7>(jbeg, jend, Avalues, entries,
-                                         &m_x(startBlock * blockSize, irhs),
-                                         ldx, irhs, tmp_2);
-          break;
-        default: static_assert(Impl::rmax == 8, "  \n"); break;
-      }  // switch (leftover)
-    }
-  }
-
   KOKKOS_INLINE_FUNCTION
   void operator()(const ordinal_type iBlock) const {
     //
-    constexpr int numBlocks = 1;
+    const auto xstart = iBlock * block_dim;
+    const auto start  = m_A.graph.row_map(iBlock);
+    const ordinal_type count =
+        static_cast<ordinal_type>(m_A.graph.row_map(iBlock + 1) - start);
+    const auto row   = m_A.block_row_Const(iBlock);
+    const auto beta1 = static_cast<value_type>(1);
+    const auto ldx   = m_x.stride_1();
+    const auto ldy   = m_y.stride_1();
     //
-    const auto ldx = m_x.stride_1();
-    //
-    const auto *local_row_map = &m_A.graph.row_map(iBlock);
-    const auto *entries       = &m_A.graph.entries(0);
-    //
-    switch (block_size) {
-      default: gemm_default(iBlock); break;
-      case 1:
-        gemm<1>(&m_A.values(0), local_row_map, numBlocks, entries, num_rhs, ldx,
-                iBlock);
-        break;
-      case 2:
-        gemm<2>(&m_A.values(0), local_row_map, numBlocks, entries, num_rhs, ldx,
-                iBlock);
-        break;
-      case 3:
-        gemm<3>(&m_A.values(0), local_row_map, numBlocks, entries, num_rhs, ldx,
-                iBlock);
-        break;
-      case 4:
-        gemm<4>(&m_A.values(0), local_row_map, numBlocks, entries, num_rhs, ldx,
-                iBlock);
-        break;
-      case 5:
-        gemm<5>(&m_A.values(0), local_row_map, numBlocks, entries, num_rhs, ldx,
-                iBlock);
-        break;
-      case 6:
-        gemm<6>(&m_A.values(0), local_row_map, numBlocks, entries, num_rhs, ldx,
-                iBlock);
-        break;
-      case 7: {
-        static_assert(Impl::bmax >= 7, " Check the largest  block size ");
-        gemm<7>(&m_A.values(0), local_row_map, numBlocks, entries, num_rhs, ldx,
-                iBlock);
-      } break;
-      case 8: {
-        static_assert(Impl::bmax >= 8, " Check the largest  block size ");
-        gemm<8>(&m_A.values(0), local_row_map, numBlocks, entries, num_rhs, ldx,
-                iBlock);
-      } break;
-      case 9: {
-        static_assert(Impl::bmax >= 9, " Check the largest  block size ");
-        gemm<9>(&m_A.values(0), local_row_map, numBlocks, entries, num_rhs, ldx,
-                iBlock);
-      } break;
-      case 10: {
-        static_assert(Impl::bmax >= 10, " Check the largest  block size ");
-        gemm<10>(&m_A.values(0), local_row_map, numBlocks, entries, num_rhs,
-                 ldx, iBlock);
-      } break;
-      case 11: {
-        static_assert(Impl::bmax >= 11, " Check the largest  block size ");
-        gemm<11>(&m_A.values(0), local_row_map, numBlocks, entries, num_rhs,
-                 ldx, iBlock);
-      } break;
-      case 12: {
-        static_assert(Impl::bmax >= 12, " Check the largest  block size ");
-        gemm<12>(&m_A.values(0), local_row_map, numBlocks, entries, num_rhs,
-                 ldx, iBlock);
-      } break;
+    std::vector<value_type> ytmp(block_dim * num_rhs);
+    if (conjugate) {
+      std::vector<value_type> conjA(block_dim * block_dim);
+      for (ordinal_type ic = 0; ic < count; ++ic) {
+        const auto Aview = row.block(ic);
+        for (ordinal_type ii = 0; ii < block_dim; ++ii) {
+          for (ordinal_type jj = 0; jj < block_dim; ++jj)
+            conjA[jj + ii * block_dim] =
+                Kokkos::ArithTraits<value_type>::conj(Aview(ii, jj));
+        }
+        //
+        for (size_t ijk = 0; ijk < ytmp.size(); ++ijk)
+          ytmp[ijk] = static_cast<value_type>(0);
+        //
+        KokkosBatched::SerialGemmInternal<KokkosBatched::Algo::Gemm::Blocked>::
+            invoke<value_type, value_type>(block_dim, num_rhs, block_dim, alpha,
+                                           conjA.data(), 1, block_dim,
+                                           &m_x(xstart, 0), 1, ldx, beta1,
+                                           ytmp.data(), 1, block_dim);
+        //
+        const auto ystart = row.block_colidx(ic) * block_dim;
+        for (ordinal_type jr = 0; jr < num_rhs; ++jr) {
+          for (ordinal_type ir = 0; ir < block_dim; ++ir)
+            Kokkos::atomic_add(&m_y(ystart + ir, jr),
+                               ytmp[ir + jr * block_dim]);
+        }
+      }
+    } else {
+      for (ordinal_type ic = 0; ic < count; ++ic) {
+        const auto Aview = row.block(ic);
+        for (size_t ijk = 0; ijk < ytmp.size(); ++ijk)
+          ytmp[ijk] = static_cast<value_type>(0);
+        KokkosBatched::SerialGemmInternal<KokkosBatched::Algo::Gemm::Blocked>::
+            invoke<value_type, value_type>(block_dim, num_rhs, block_dim, alpha,
+                                           Aview.data(), 1, block_dim,
+                                           &m_x(xstart, 0), 1, ldx, beta1,
+                                           ytmp.data(), 1, block_dim);
+        //
+        const auto ystart = row.block_colidx(ic) * block_dim;
+        for (ordinal_type jr = 0; jr < num_rhs; ++jr) {
+          for (ordinal_type ir = 0; ir < block_dim; ++ir)
+            Kokkos::atomic_add(&m_y(ystart + ir, jr),
+                               ytmp[ir + jr * block_dim]);
+        }
+      }
     }
   }
 
@@ -2209,24 +1539,24 @@ struct BSR_GEMM_Transpose_Functor {
           const ordinal_type count =
               static_cast<ordinal_type>(m_A.graph.row_map(iBlock + 1) - start);
           const KokkosSparse::Experimental::BsrRowViewConst<AMatrix> row(
-              m_A.values, m_A.graph.entries, block_size, count, start);
+              m_A.values, m_A.graph.entries, block_dim, count, start);
           const auto nrhs = m_x.extent(1);
           //
           for (ordinal_type ic = 0; ic < nrhs; ++ic) {
-            for (ordinal_type ir = 0; ir < block_size; ++ir) {
+            for (ordinal_type ir = 0; ir < block_dim; ++ir) {
               Kokkos::parallel_for(
                   Kokkos::ThreadVectorRange(dev, count),
                   [&](const ordinal_type &iEntry) {
-                    for (ordinal_type jr = 0; jr < block_size; ++jr) {
+                    for (ordinal_type jr = 0; jr < block_dim; ++jr) {
                       const value_type val =
                           conjugate
                               ? ATV::conj(row.local_block_value(iEntry, jr, ir))
                               : row.local_block_value(iEntry, jr, ir);
                       const ordinal_type ind = row.block_colidx(iEntry);
                       Kokkos::atomic_add(
-                          &m_y(block_size * ind + ir, ic),
+                          &m_y(block_dim * ind + ir, ic),
                           static_cast<y_value_type>(
-                              alpha * val * m_x(block_size * iBlock + jr, ic)));
+                              alpha * val * m_x(block_dim * iBlock + jr, ic)));
                     }
                   });
             }
