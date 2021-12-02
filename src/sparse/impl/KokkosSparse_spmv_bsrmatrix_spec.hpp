@@ -167,46 +167,17 @@ struct SPMV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
       const YScalar &alpha, const AMatrix &A, const XVector &X,
       const YScalar &beta, const YVector &Y) {
     //
-    // Whether to call KokkosKernel's native implementation, even if a TPL impl
-    // is available
-    //
-    bool useFallback = controls.isParameter("algorithm") &&
-                       controls.getParameter("algorithm") == "native";
-    //
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-    // cuSPARSE does not support the conjugate mode (C), and cuSPARSE 9 only
-    // supports the normal (N) mode.
-    if (std::is_same<typename AMatrix::device_type::memory_space,
-                     Kokkos::CudaSpace>::value ||
-        std::is_same<typename AMatrix::device_type::memory_space,
-                     Kokkos::CudaUVMSpace>::value) {
-#if (9000 <= CUDA_VERSION)
-      useFallback = useFallback || (mode[0] != NoTranspose[0]);
-#endif
-#if defined(CUSPARSE_VERSION) && (10300 <= CUSPARSE_VERSION)
-      useFallback = useFallback || (mode[0] == Conjugate[0]);
-#endif
-    }
-#endif
-
-#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
-    if (std::is_same<typename AMatrix::device_type::memory_space,
-                     Kokkos::HostSpace>::value) {
-      useFallback = useFallback || (mode[0] == Conjugate[0]);
-    }
-#endif
-
     if ((X.stride_0() == 1) && (Y.stride_0() == 1)) {
       if ((mode[0] == KokkosSparse::NoTranspose[0]) ||
           (mode[0] == KokkosSparse::Conjugate[0])) {
         bool useConjugate = (mode[0] == KokkosSparse::Conjugate[0]);
         return Bsr::spMatVec_no_transpose(controls, alpha, A, X, beta, Y,
-                                          useFallback, useConjugate);
+                                          useConjugate);
       } else if ((mode[0] == KokkosSparse::Transpose[0]) ||
                  (mode[0] == KokkosSparse::ConjugateTranspose[0])) {
         bool useConjugate = (mode[0] == KokkosSparse::ConjugateTranspose[0]);
         return Bsr::spMatVec_transpose(controls, alpha, A, X, beta, Y,
-                                       useFallback, useConjugate);
+                                       useConjugate);
       }
     }
 
@@ -294,17 +265,6 @@ struct SPMV_MV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
       }
     }
 
-    /*
-  #if defined(KOKKOS_ENABLE_CUDA) && \
-    (defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_AMPERE))
-    if ((mode[0] == NoTranspose[0]) &&
-  (KokkosKernels::Impl::kk_is_gpu_mem_space< typename AMatrix::memory_space>())
-  && (KokkosKernels::Impl::kk_is_gpu_mem_space< typename
-  XVector::memory_space>()) && (KokkosKernels::Impl::kk_is_gpu_mem_space<
-    typename yVector::memory_space>()))
-  #endif
-  */
-
 #if defined(KOKKOS_ARCH_AMPERE)
     typedef typename XVector::non_const_value_type XScalar;
     typedef typename AMatrix::non_const_value_type AScalar;
@@ -341,7 +301,6 @@ struct SPMV_MV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
                                         YVector, double, 8, 8,
                                         4>::dispatch(alpha, A, x, beta, y);
     }
-
 #elif defined(KOKKOS_ARCH_VOLTA)
     /* Volta has float += half * half
        use it for all matrices
@@ -357,36 +316,6 @@ struct SPMV_MV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
     (void)requestMixed;  // unused
 #endif  // KOKKOS_ARCH
 
-    //
-    // Whether to call KokkosKernel's native implementation, even if a TPL impl
-    // is available
-    //
-    bool useFallback = controls.isParameter("algorithm") &&
-                       controls.getParameter("algorithm") == "native";
-    //
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-    // cuSPARSE does not support the conjugate mode (C), and cuSPARSE 9 only
-    // supports the normal (N) mode.
-    if (std::is_same<typename AMatrix::device_type::memory_space,
-                     Kokkos::CudaSpace>::value ||
-        std::is_same<typename AMatrix::device_type::memory_space,
-                     Kokkos::CudaUVMSpace>::value) {
-#if (9000 <= CUDA_VERSION)
-      useFallback = useFallback || (mode[0] != NoTranspose[0]);
-#endif
-#if defined(CUSPARSE_VERSION) && (10300 <= CUSPARSE_VERSION)
-      useFallback = useFallback || (mode[0] == Conjugate[0]);
-#endif
-    }
-#endif
-
-#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
-    if (std::is_same<typename AMatrix::device_type::memory_space,
-                     Kokkos::HostSpace>::value) {
-      useFallback = useFallback || (mode[0] == Conjugate[0]);
-    }
-#endif
-
     if ((X.stride_0() == 1) && (Y.stride_0() == 1)) {
       if ((mode[0] == KokkosSparse::NoTranspose[0]) ||
           (mode[0] == KokkosSparse::Conjugate[0])) {
@@ -395,10 +324,10 @@ struct SPMV_MV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
           const auto x0 = Kokkos::subview(X, Kokkos::ALL(), 0);
           auto y0       = Kokkos::subview(Y, Kokkos::ALL(), 0);
           return Bsr::spMatVec_no_transpose(controls, alpha, A, x0, beta, y0,
-                                            useFallback, useConjugate);
+                                            useConjugate);
         } else {
           return Bsr::spMatMultiVec_no_transpose(controls, alpha, A, X, beta, Y,
-                                                 useFallback, useConjugate);
+                                                 useConjugate);
         }
       } else if ((mode[0] == KokkosSparse::Transpose[0]) ||
                  (mode[0] == KokkosSparse::ConjugateTranspose[0])) {
@@ -407,10 +336,10 @@ struct SPMV_MV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
           const auto x0 = Kokkos::subview(X, Kokkos::ALL(), 0);
           auto y0       = Kokkos::subview(Y, Kokkos::ALL(), 0);
           return Bsr::spMatVec_transpose(controls, alpha, A, x0, beta, y0,
-                                         useFallback, useConjugate);
+                                         useConjugate);
         } else {
           return Bsr::spMatMultiVec_transpose(controls, alpha, A, X, beta, Y,
-                                              useFallback, useConjugate);
+                                              useConjugate);
         }
       }
     }
