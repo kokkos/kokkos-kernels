@@ -167,76 +167,16 @@ struct SPMV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
       const YScalar &alpha, const AMatrix &A, const XVector &X,
       const YScalar &beta, const YVector &Y) {
     //
-    if ((X.stride_0() == 1) && (Y.stride_0() == 1)) {
-      if ((mode[0] == KokkosSparse::NoTranspose[0]) ||
-          (mode[0] == KokkosSparse::Conjugate[0])) {
-        bool useConjugate = (mode[0] == KokkosSparse::Conjugate[0]);
-        return Bsr::spMatVec_no_transpose(controls, alpha, A, X, beta, Y,
-                                          useConjugate);
-      } else if ((mode[0] == KokkosSparse::Transpose[0]) ||
-                 (mode[0] == KokkosSparse::ConjugateTranspose[0])) {
-        bool useConjugate = (mode[0] == KokkosSparse::ConjugateTranspose[0]);
-        return Bsr::spMatVec_transpose(controls, alpha, A, X, beta, Y,
-                                       useConjugate);
-      }
-    }
-
-    //
-    // Fall-back un-optimized implementation
-    // This implementation is independent of the layout for the vectors X and Y
-    //
-    const auto numBlockRows = A.numRows();
-    const auto blockSize    = A.blockDim();
-    const auto blockSize2   = blockSize * blockSize;
-    using ordinal_type      = typename AMatrix::non_const_ordinal_type;
-    using ScalarType        = typename AMatrix::non_const_value_type;
-    for (ordinal_type ii = 0; ii < numBlockRows * blockSize; ++ii)
-      Y(ii) = beta * Y(ii);
-    //
     if ((mode[0] == KokkosSparse::NoTranspose[0]) ||
         (mode[0] == KokkosSparse::Conjugate[0])) {
       bool useConjugate = (mode[0] == KokkosSparse::Conjugate[0]);
-      for (ordinal_type iblock = 0; iblock < numBlockRows; ++iblock) {
-        const auto jbeg = A.graph.row_map(iblock);
-        const auto jend = A.graph.row_map(iblock + 1);
-        for (auto jb = jbeg; jb < jend; ++jb) {
-          const auto col_block = A.graph.entries(jb);
-          for (ordinal_type ir = 0; ir < blockSize; ++ir) {
-            for (ordinal_type jr = 0; jr < blockSize; ++jr) {
-              const auto avalue =
-                  (useConjugate)
-                      ? Kokkos::ArithTraits<ScalarType>::conj(
-                            A.values(jr + ir * blockSize + jb * blockSize2))
-                      : A.values(jr + ir * blockSize + jb * blockSize2);
-              Y(ir + iblock * blockSize) +=
-                  alpha * avalue * X(jr + col_block * blockSize);
-            }
-          }
-        }
-      }
-      return;
+      return Bsr::spMatVec_no_transpose(controls, alpha, A, X, beta, Y,
+                                        useConjugate);
     } else if ((mode[0] == KokkosSparse::Transpose[0]) ||
                (mode[0] == KokkosSparse::ConjugateTranspose[0])) {
       bool useConjugate = (mode[0] == KokkosSparse::ConjugateTranspose[0]);
-      for (ordinal_type iblock = 0; iblock < numBlockRows; ++iblock) {
-        const auto jbeg = A.graph.row_map(iblock);
-        const auto jend = A.graph.row_map(iblock + 1);
-        for (auto jb = jbeg; jb < jend; ++jb) {
-          const auto col_block = A.graph.entries(jb);
-          for (ordinal_type ir = 0; ir < blockSize; ++ir) {
-            for (ordinal_type jr = 0; jr < blockSize; ++jr) {
-              const auto avalue =
-                  (useConjugate)
-                      ? Kokkos::ArithTraits<ScalarType>::conj(
-                            A.values(ir + jr * blockSize + jb * blockSize2))
-                      : A.values(ir + jr * blockSize + jb * blockSize2);
-              Y(ir + col_block * blockSize) +=
-                  alpha * avalue * X(jr + iblock * blockSize);
-            }
-          }
-        }
-      }
-      return;
+      return Bsr::spMatVec_transpose(controls, alpha, A, X, beta, Y,
+                                     useConjugate);
     }
   }
 };
@@ -316,93 +256,30 @@ struct SPMV_MV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
     (void)requestMixed;  // unused
 #endif  // KOKKOS_ARCH
 
-    if ((X.stride_0() == 1) && (Y.stride_0() == 1)) {
-      if ((mode[0] == KokkosSparse::NoTranspose[0]) ||
-          (mode[0] == KokkosSparse::Conjugate[0])) {
-        bool useConjugate = (mode[0] == KokkosSparse::Conjugate[0]);
-        if (X.extent(1) == 1) {
-          const auto x0 = Kokkos::subview(X, Kokkos::ALL(), 0);
-          auto y0       = Kokkos::subview(Y, Kokkos::ALL(), 0);
-          return Bsr::spMatVec_no_transpose(controls, alpha, A, x0, beta, y0,
-                                            useConjugate);
-        } else {
-          return Bsr::spMatMultiVec_no_transpose(controls, alpha, A, X, beta, Y,
-                                                 useConjugate);
-        }
-      } else if ((mode[0] == KokkosSparse::Transpose[0]) ||
-                 (mode[0] == KokkosSparse::ConjugateTranspose[0])) {
-        bool useConjugate = (mode[0] == KokkosSparse::ConjugateTranspose[0]);
-        if (X.extent(1) == 1) {
-          const auto x0 = Kokkos::subview(X, Kokkos::ALL(), 0);
-          auto y0       = Kokkos::subview(Y, Kokkos::ALL(), 0);
-          return Bsr::spMatVec_transpose(controls, alpha, A, x0, beta, y0,
-                                         useConjugate);
-        } else {
-          return Bsr::spMatMultiVec_transpose(controls, alpha, A, X, beta, Y,
-                                              useConjugate);
-        }
-      }
-    }
-
-    //
-    // Fall-back un-optimized implementation
-    // This implementation is independent of the layout for the vectors X and Y
-    //
-    const auto numBlockRows = A.numRows();
-    const auto blockSize    = A.blockDim();
-    const auto blockSize2   = blockSize * blockSize;
-    using ordinal_type      = typename AMatrix::non_const_ordinal_type;
-    using ScalarType        = typename AMatrix::non_const_value_type;
-    for (ordinal_type jc = 0; jc < X.extent(1); ++jc)
-      for (ordinal_type ii = 0; ii < numBlockRows * blockSize; ++ii)
-        Y(ii, jc) = beta * Y(ii, jc);
-    //
     if ((mode[0] == KokkosSparse::NoTranspose[0]) ||
         (mode[0] == KokkosSparse::Conjugate[0])) {
       bool useConjugate = (mode[0] == KokkosSparse::Conjugate[0]);
-      for (ordinal_type iblock = 0; iblock < numBlockRows; ++iblock) {
-        const auto jbeg = A.graph.row_map(iblock);
-        const auto jend = A.graph.row_map(iblock + 1);
-        for (auto jb = jbeg; jb < jend; ++jb) {
-          const auto col_block = A.graph.entries(jb);
-          for (ordinal_type ir = 0; ir < blockSize; ++ir) {
-            for (ordinal_type jr = 0; jr < blockSize; ++jr) {
-              const auto avalue =
-                  (useConjugate)
-                      ? Kokkos::ArithTraits<ScalarType>::conj(
-                            A.values(jr + ir * blockSize + jb * blockSize2))
-                      : A.values(jr + ir * blockSize + jb * blockSize2);
-              for (ordinal_type jc = 0; jc < X.extent(1); ++jc)
-                Y(ir + iblock * blockSize, jc) +=
-                    alpha * avalue * X(jr + col_block * blockSize, jc);
-            }
-          }
-        }
+      if (X.extent(1) == 1) {
+        const auto x0 = Kokkos::subview(X, Kokkos::ALL(), 0);
+        auto y0       = Kokkos::subview(Y, Kokkos::ALL(), 0);
+        return Bsr::spMatVec_no_transpose(controls, alpha, A, x0, beta, y0,
+                                          useConjugate);
+      } else {
+        return Bsr::spMatMultiVec_no_transpose(controls, alpha, A, X, beta, Y,
+                                               useConjugate);
       }
-      return;
     } else if ((mode[0] == KokkosSparse::Transpose[0]) ||
                (mode[0] == KokkosSparse::ConjugateTranspose[0])) {
       bool useConjugate = (mode[0] == KokkosSparse::ConjugateTranspose[0]);
-      for (ordinal_type iblock = 0; iblock < numBlockRows; ++iblock) {
-        const auto jbeg = A.graph.row_map(iblock);
-        const auto jend = A.graph.row_map(iblock + 1);
-        for (auto jb = jbeg; jb < jend; ++jb) {
-          const auto col_block = A.graph.entries(jb);
-          for (ordinal_type ir = 0; ir < blockSize; ++ir) {
-            for (ordinal_type jr = 0; jr < blockSize; ++jr) {
-              const auto avalue =
-                  (useConjugate)
-                      ? Kokkos::ArithTraits<ScalarType>::conj(
-                            A.values(ir + jr * blockSize + jb * blockSize2))
-                      : A.values(ir + jr * blockSize + jb * blockSize2);
-              for (ordinal_type jc = 0; jc < X.extent(1); ++jc)
-                Y(ir + col_block * blockSize, jc) +=
-                    alpha * avalue * X(jr + iblock * blockSize, jc);
-            }
-          }
-        }
+      if (X.extent(1) == 1) {
+        const auto x0 = Kokkos::subview(X, Kokkos::ALL(), 0);
+        auto y0       = Kokkos::subview(Y, Kokkos::ALL(), 0);
+        return Bsr::spMatVec_transpose(controls, alpha, A, x0, beta, y0,
+                                       useConjugate);
+      } else {
+        return Bsr::spMatMultiVec_transpose(controls, alpha, A, X, beta, Y,
+                                            useConjugate);
       }
-      return;
     }
   }
 };
