@@ -58,28 +58,7 @@
 #include <KokkosKernels_IOUtils.hpp>
 #include <KokkosSparse_spmv.hpp>
 #include "KokkosKernels_default_types.hpp"
-//#include <spmv/KokkosKernels_spmv_data.hpp>
-//#include <spmv/Kokkos_SPMV.hpp>
-//#include <spmv/Kokkos_SPMV_Inspector.hpp>
 #include <KokkosKernels_Test_Structured_Matrix.hpp>
-
-#ifdef HAVE_CUSPARSE
-#include <CuSparse_SPMV.hpp>
-#endif
-
-#ifdef HAVE_MKL
-#include <MKL_SPMV.hpp>
-#endif
-
-#ifdef KOKKOS_ENABLE_OPENMP
-#include <OpenMPStatic_SPMV.hpp>
-#include <OpenMPDynamic_SPMV.hpp>
-#include <OpenMPSmartStatic_SPMV.hpp>
-#endif
-
-#ifdef KOKKOSKERNELS_ENABLE_TPL_ARMPL
-#include <spmv/ArmPL_SPMV.hpp>
-#endif
 
 namespace details {
 

@@ -52,7 +52,15 @@
 #ifndef KOKKOS_SPARSE_BSRMATRIX_HPP_
 #define KOKKOS_SPARSE_BSRMATRIX_HPP_
 
-#include "impl/KokkosSparse_BsrMatrix_impl.hpp"
+#include <set>
+#include <sstream>
+#include <stdexcept>
+#include <type_traits>
+
+#include "Kokkos_Core.hpp"
+#include "Kokkos_StaticCrsGraph.hpp"
+#include "Kokkos_ArithTraits.hpp"
+#include "KokkosSparse_CrsMatrix.hpp"
 
 namespace KokkosSparse {
 

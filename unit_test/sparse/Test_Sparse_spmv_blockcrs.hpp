@@ -207,7 +207,7 @@ void check_blockcrs_times_v(const char fOp[], scalar_t alpha, scalar_t beta,
         static_cast<double>(Kokkos::ArithTraits<scalar_t>::abs(alpha)) +
         static_cast<double>(Kokkos::ArithTraits<scalar_t>::abs(beta));
     if ((tmps > 0.0) && (maxNorm == 0)) {
-      std::cout << " BCRS - SpMV times V >> blockSize " << blockSize
+      std::cout << " BlockCRSMatrix - SpMV times V >> blockSize " << blockSize
                 << " maxNorm " << maxNorm << " error " << error << " alpha "
                 << alpha << " beta " << beta << "\n";
       num_errors += 1;
@@ -220,7 +220,7 @@ void check_blockcrs_times_v(const char fOp[], scalar_t alpha, scalar_t beta,
                      static_cast<double>(Kokkos::ArithTraits<scalar_t>::abs(
                          Kokkos::ArithTraits<scalar_t>::epsilon()));
     if (error > tol * maxNorm) {
-      std::cout << " BCRS - SpMV times V >> blockSize " << blockSize
+      std::cout << " BlockCRSMatrix - SpMV times V >> blockSize " << blockSize
                 << " ratio " << error / maxNorm << " tol " << tol << " maxNorm "
                 << maxNorm << " alpha " << alpha << " beta " << beta << "\n";
       num_errors += 1;
@@ -364,14 +364,14 @@ void check_blockcrs_times_mv(const char fOp[], scalar_t alpha, scalar_t beta,
         static_cast<double>(Kokkos::ArithTraits<scalar_t>::abs(alpha)) +
         static_cast<double>(Kokkos::ArithTraits<scalar_t>::abs(beta));
     if ((tmps > 0.0) && (maxNorm == 0)) {
-      std::cout << " BCRS - SpMV times MV >> blockSize " << blockSize
+      std::cout << " BlockCRSMatrix - SpMV times MV >> blockSize " << blockSize
                 << " maxNorm " << maxNorm << " error " << error << " alpha "
                 << alpha << " beta " << beta << "\n";
       num_errors += 1;
     }
 
     if (error > tol * maxNorm) {
-      std::cout << " BCRS - SpMV times MV >> blockSize " << blockSize
+      std::cout << " BlockCRSMatrix - SpMV times MV >> blockSize " << blockSize
                 << " ratio " << error / maxNorm << " tol " << tol << " maxNorm "
                 << maxNorm << " alpha " << alpha << " beta " << beta << "\n";
       num_errors += 1;

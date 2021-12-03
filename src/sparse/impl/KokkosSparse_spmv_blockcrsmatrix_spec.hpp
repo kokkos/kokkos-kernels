@@ -111,8 +111,9 @@ struct spmv_mv_blockcrsmatrix_eti_spec_avail {
   };
 
 // Include which ETIs are available
-//#include
-//<generated_specializations_hpp/KokkosSparse_spmv_blockcrsmatrix_eti_spec_avail.hpp>
+#include <KokkosSparse_spmv_blockcrsmatrix_tpl_spec_avail.hpp>
+#include <generated_specializations_hpp/KokkosSparse_spmv_blockcrsmatrix_eti_spec_avail.hpp>
+#include <generated_specializations_hpp/KokkosSparse_spmv_mv_blockcrsmatrix_eti_spec_avail.hpp>
 
 namespace KokkosSparse {
 namespace Experimental {
@@ -413,7 +414,8 @@ struct SPMV_MV_BLOCKCRSMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD,
       Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                    \
       Kokkos::MemoryTraits<Kokkos::Unmanaged>, true>;
 
-//#include
-//<generated_specializations_hpp/KokkosSparse_spmv_blockcrsmatrix_eti_spec_decl.hpp>
+#include <KokkosSparse_spmv_blockcrsmatrix_tpl_spec_decl.hpp>
+#include <generated_specializations_hpp/KokkosSparse_spmv_blockcrsmatrix_eti_spec_decl.hpp>
+#include <generated_specializations_hpp/KokkosSparse_spmv_mv_blockcrsmatrix_eti_spec_decl.hpp>
 
 #endif  // KOKKOSSPARSE_IMPL_SPMV_BLOCKCRSMATRIX_SPEC_HPP_

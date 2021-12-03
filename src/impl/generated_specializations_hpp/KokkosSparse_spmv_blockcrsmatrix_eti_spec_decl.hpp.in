@@ -1,5 +1,3 @@
-#ifndef KOKKOSSPARSE_SPMV_BLOCKCRSMATRIX_ETI_SPEC_DECL_HPP_
-#define KOKKOSSPARSE_SPMV_BLOCKCRSMATRIX_ETI_SPEC_DECL_HPP_
 /*
 //@HEADER
 // ************************************************************************
@@ -42,6 +40,9 @@
 // ************************************************************************
 //@HEADER
 */
+
+#ifndef KOKKOSSPARSE_SPMV_BLOCKCRSMATRIX_ETI_SPEC_DECL_HPP_
+#define KOKKOSSPARSE_SPMV_BLOCKCRSMATRIX_ETI_SPEC_DECL_HPP_
 
 namespace KokkosSparse {
 namespace Experimental {

@@ -41,16 +41,16 @@
 //@HEADER
 */
 
-#ifndef KOKKOSSPARSE_SPMV_BLOCKCRSMATRIX_ETI_SPEC_AVAIL_HPP_
-#define KOKKOSSPARSE_SPMV_BLOCKCRSMATRIX_ETI_SPEC_AVAIL_HPP_
+#define KOKKOSKERNELS_IMPL_COMPILE_LIBRARY true
+#include "KokkosKernels_config.h"
+#include "KokkosSparse_spmv_blockcrsmatrix_spec.hpp"
 
 namespace KokkosSparse {
 namespace Experimental {
 namespace Impl {
 // clang-format off
-@SPARSE_SPMV_BLOCKCRSMATRIX_ETI_AVAIL_BLOCK@
+@SPARSE_SPMV_MV_BLOCKCRSMATRIX_ETI_INST_BLOCK@
 // clang-format on
 }  // namespace Impl
 }  // namespace Experimental
 }  // namespace KokkosSparse
-#endif
