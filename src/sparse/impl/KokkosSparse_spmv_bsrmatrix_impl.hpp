@@ -709,8 +709,6 @@ void spMatVec_no_transpose(
   typedef KokkosSparse::Experimental::BsrMatrix<
       AT, AO, AD, Kokkos::MemoryTraits<Kokkos::Unmanaged>, AS>
       AMatrix_Internal;
-  typedef typename AMatrix_Internal::non_const_ordinal_type ordinal_type;
-  typedef typename AMatrix_Internal::execution_space execution_space;
 
   bool use_dynamic_schedule = false;  // Forces the use of a dynamic schedule
   bool use_static_schedule  = false;  // Forces the use of a static schedule
@@ -767,7 +765,6 @@ void spMatVec_no_transpose(
   typedef KokkosSparse::Experimental::BsrMatrix<
       AT, AO, AD, Kokkos::MemoryTraits<Kokkos::Unmanaged>, AS>
       AMatrix_Internal;
-  typedef typename AMatrix_Internal::non_const_ordinal_type ordinal_type;
   typedef typename AMatrix_Internal::execution_space execution_space;
 
   bool use_dynamic_schedule = false;  // Forces the use of a dynamic schedule
@@ -1003,8 +1000,6 @@ void spMatVec_transpose(
   typedef KokkosSparse::Experimental::BsrMatrix<
       AT, AO, AD, Kokkos::MemoryTraits<Kokkos::Unmanaged>, AS>
       AMatrix_Internal;
-  typedef typename AMatrix_Internal::non_const_ordinal_type ordinal_type;
-  typedef typename AMatrix_Internal::execution_space execution_space;
 
   AMatrix_Internal A_internal = A;
 
@@ -1287,8 +1282,6 @@ void spMatMultiVec_no_transpose(
   typedef KokkosSparse::Experimental::BsrMatrix<
       AT, AO, AD, Kokkos::MemoryTraits<Kokkos::Unmanaged>, AS>
       AMatrix_Internal;
-  typedef typename AMatrix_Internal::non_const_ordinal_type ordinal_type;
-  typedef typename AMatrix_Internal::execution_space execution_space;
 
   bool use_dynamic_schedule = false;  // Forces the use of a dynamic schedule
   bool use_static_schedule  = false;  // Forces the use of a static schedule
@@ -1344,7 +1337,6 @@ void spMatMultiVec_no_transpose(
   typedef KokkosSparse::Experimental::BsrMatrix<
       AT, AO, AD, Kokkos::MemoryTraits<Kokkos::Unmanaged>, AS>
       AMatrix_Internal;
-  typedef typename AMatrix_Internal::non_const_ordinal_type ordinal_type;
   typedef typename AMatrix_Internal::execution_space execution_space;
 
   bool use_dynamic_schedule = false;  // Forces the use of a dynamic schedule
@@ -1588,7 +1580,6 @@ void spMatMultiVec_transpose(
   typedef KokkosSparse::Experimental::BsrMatrix<
       AT, AO, AD, Kokkos::MemoryTraits<Kokkos::Unmanaged>, AS>
       AMatrix_Internal;
-  typedef typename AMatrix_Internal::non_const_ordinal_type ordinal_type;
   typedef typename AMatrix_Internal::execution_space execution_space;
 
   AMatrix_Internal A_internal = A;
@@ -1637,7 +1628,6 @@ void spMatMultiVec_transpose(
 
   KokkosBlas::scal(y, beta, y);
 
-  typedef typename AMatrix::non_const_ordinal_type ordinal_type;
   typedef typename AMatrix::execution_space execution_space;
 
   bool use_dynamic_schedule = false;  // Forces the use of a dynamic schedule
