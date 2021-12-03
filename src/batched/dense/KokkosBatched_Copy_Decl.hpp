@@ -11,7 +11,7 @@ namespace KokkosBatched {
 /// Serial Copy
 ///
 
-template <typename ArgTrans>
+template <typename ArgTrans, int rank = 2>
 struct SerialCopy {
   template <typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A,
@@ -22,7 +22,8 @@ struct SerialCopy {
 /// Team Copy
 ///
 
-template <typename MemberType, typename ArgTrans>
+template <typename MemberType, typename ArgTrans = Trans::NoTranspose,
+          int rank = 2>
 struct TeamCopy {
   template <typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
@@ -34,7 +35,8 @@ struct TeamCopy {
 /// TeamVector Copy
 ///
 
-template <typename MemberType, typename ArgTrans>
+template <typename MemberType, typename ArgTrans = Trans::NoTranspose,
+          int rank = 2>
 struct TeamVectorCopy {
   template <typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
@@ -45,7 +47,8 @@ struct TeamVectorCopy {
 ///
 /// Selective Interface
 ///
-template <typename MemberType, typename ArgTrans, typename ArgMode>
+template <typename MemberType, typename ArgTrans, typename ArgMode,
+          int rank = 2>
 struct Copy {
   template <typename AViewType, typename BViewType>
   KOKKOS_FORCEINLINE_FUNCTION static int invoke(const MemberType &member,
@@ -53,11 +56,11 @@ struct Copy {
                                                 const BViewType &B) {
     int r_val = 0;
     if (std::is_same<ArgMode, Mode::Serial>::value) {
-      r_val = SerialCopy<ArgTrans>::invoke(A, B);
+      r_val = SerialCopy<ArgTrans, rank>::invoke(A, B);
     } else if (std::is_same<ArgMode, Mode::Team>::value) {
-      r_val = TeamCopy<MemberType, ArgTrans>::invoke(member, A, B);
+      r_val = TeamCopy<MemberType, ArgTrans, rank>::invoke(member, A, B);
     } else if (std::is_same<ArgMode, Mode::TeamVector>::value) {
-      r_val = TeamVectorCopy<MemberType, ArgTrans>::invoke(member, A, B);
+      r_val = TeamVectorCopy<MemberType, ArgTrans, rank>::invoke(member, A, B);
     }
     return r_val;
   }

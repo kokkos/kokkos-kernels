@@ -6,7 +6,7 @@
 #include "KokkosBatched_Util.hpp"
 
 #include "KokkosBatched_FindAmax_Internal.hpp"
-#include "KokkosBatched_Dot_Internal.hpp"
+#include "KokkosBatched_Dot.hpp"
 #include "KokkosBatched_ApplyPivot_Internal.hpp"
 
 #include "KokkosBatched_Householder_TeamVector_Internal.hpp"

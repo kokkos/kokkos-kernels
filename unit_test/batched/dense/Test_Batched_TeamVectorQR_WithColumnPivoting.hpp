@@ -89,18 +89,8 @@ struct Functor_TestBatchedTeamVectorQR_WithColumnPivoting {
     typedef typename MatrixViewType::non_const_value_type value_type;
     std::string name_region(
         "KokkosBatched::Test::TeamVectorQR_WithColumnPivoting");
-    std::string name_value_type =
-        (std::is_same<value_type, float>::value
-             ? "::Float"
-             : std::is_same<value_type, double>::value
-                   ? "::Double"
-                   : std::is_same<value_type, Kokkos::complex<float> >::value
-                         ? "::ComplexFloat"
-                         : std::is_same<value_type,
-                                        Kokkos::complex<double> >::value
-                               ? "::ComplexDouble"
-                               : "::UnknownValueType");
-    std::string name = name_region + name_value_type;
+    const std::string name_value_type = Test::value_type_name<value_type>();
+    std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
 
     const int league_size = _a.extent(0);

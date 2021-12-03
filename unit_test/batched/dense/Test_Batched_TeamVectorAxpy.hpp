@@ -42,26 +42,14 @@ struct Functor_TestBatchedTeamVectorAxpy {
     auto y = Kokkos::subview(_Y, Kokkos::make_pair(first_matrix, last_matrix),
                              Kokkos::ALL);
 
-    KokkosBatched::TeamVectorAxpy<MemberType>::template invoke<ViewType,
-                                                               alphaViewType>(
-        member, alpha, x, y);
+    KokkosBatched::TeamVectorAxpy<MemberType>::invoke(member, alpha, x, y);
   }
 
   inline void run() {
     typedef typename ViewType::value_type value_type;
     std::string name_region("KokkosBatched::Test::TeamVectorAxpy");
-    std::string name_value_type =
-        (std::is_same<value_type, float>::value
-             ? "::Float"
-             : std::is_same<value_type, double>::value
-                   ? "::Double"
-                   : std::is_same<value_type, Kokkos::complex<float> >::value
-                         ? "::ComplexFloat"
-                         : std::is_same<value_type,
-                                        Kokkos::complex<double> >::value
-                               ? "::ComplexDouble"
-                               : "::UnknownValueType");
-    std::string name = name_region + name_value_type;
+    const std::string name_value_type = Test::value_type_name<value_type>();
+    std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
     Kokkos::TeamPolicy<DeviceType> policy(_X.extent(0) / _N_team,
                                           Kokkos::AUTO(), Kokkos::AUTO());
@@ -73,6 +61,8 @@ struct Functor_TestBatchedTeamVectorAxpy {
 template <typename DeviceType, typename ViewType, typename alphaViewType>
 void impl_test_batched_axpy(const int N, const int BlkSize, const int N_team) {
   typedef typename ViewType::value_type value_type;
+  typedef typename ViewType::const_value_type const_value_type;
+  typedef typename alphaViewType::const_value_type alpha_const_value_type;
   typedef Kokkos::Details::ArithTraits<value_type> ats;
 
   ViewType X0("x0", N, BlkSize), X1("x1", N, BlkSize), Y0("y0", N, BlkSize),
@@ -82,9 +72,9 @@ void impl_test_batched_axpy(const int N, const int BlkSize, const int N_team) {
 
   Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(
       13718);
-  Kokkos::fill_random(X0, random, value_type(1.0));
-  Kokkos::fill_random(Y0, random, value_type(1.0));
-  Kokkos::fill_random(alpha, random, value_type(1.0));
+  Kokkos::fill_random(X0, random, const_value_type(1.0));
+  Kokkos::fill_random(Y0, random, const_value_type(1.0));
+  Kokkos::fill_random(alpha, random, alpha_const_value_type(1.0));
 
   Kokkos::fence();
 
@@ -135,7 +125,7 @@ int test_batched_teamvector_axpy() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
   {
     typedef Kokkos::View<ValueType **, Kokkos::LayoutLeft, DeviceType> ViewType;
-    typedef Kokkos::View<ValueType *, Kokkos::LayoutLeft, DeviceType>
+    typedef Kokkos::View<ScalarType *, Kokkos::LayoutLeft, DeviceType>
         alphaViewType;
 
     for (int i = 3; i < 10; ++i) {
@@ -148,7 +138,7 @@ int test_batched_teamvector_axpy() {
   {
     typedef Kokkos::View<ValueType **, Kokkos::LayoutRight, DeviceType>
         ViewType;
-    typedef Kokkos::View<ValueType *, Kokkos::LayoutRight, DeviceType>
+    typedef Kokkos::View<ScalarType *, Kokkos::LayoutRight, DeviceType>
         alphaViewType;
 
     for (int i = 3; i < 10; ++i) {
