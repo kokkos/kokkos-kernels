@@ -182,9 +182,7 @@ KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_AVAIL_MKL(Kokkos::complex<double>,
 
 // Specialization struct which defines whether a specialization exists
 template <class AT, class AO, class AD, class AM, class AS, class XT, class XL,
-          class XD, class XM, class YT, class YL, class YD, class YM,
-          const bool integerScalarType =
-              std::is_integral<typename std::decay<AT>::type>::value>
+          class XD, class XM, class YT, class YL, class YD, class YM>
 struct spmv_mv_bsrmatrix_tpl_spec_avail {
   enum : bool { value = false };
 };
@@ -198,7 +196,7 @@ struct spmv_mv_bsrmatrix_tpl_spec_avail {
 #define KOKKOSSPARSE_SPMV_MV_BSRMATRIX_TPL_SPEC_AVAIL_CUSPARSE(                \
     SCALAR, ORDINAL, OFFSET, XL, YL, MEMSPACE)                                 \
   template <>                                                                  \
-  struct spmv_bsrmatrix_tpl_spec_avail<                                        \
+  struct spmv_mv_bsrmatrix_tpl_spec_avail<                                     \
       const SCALAR, const ORDINAL, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,     \
       Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET, const SCALAR*,    \
       XL, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,                              \
