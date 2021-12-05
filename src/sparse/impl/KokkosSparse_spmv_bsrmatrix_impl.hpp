@@ -628,22 +628,22 @@ struct BSR_GEMV_Functor {
           const auto start = m_A.graph.row_map(iBlock);
           const ordinal_type count =
               static_cast<ordinal_type>(m_A.graph.row_map(iBlock + 1) - start);
-          const auto row   = m_A.block_row_Const(iBlock);
-          const auto beta1 = static_cast<y_value_type>(1);
+          const auto row = m_A.block_row_Const(iBlock);
           //
           auto yview = Kokkos::subview(
               m_y, Kokkos::make_pair(iBlock * block_dim,
                                      iBlock * block_dim + block_dim));
           //
-          auto space = execution_space();
+          /*
+          const auto beta1 = static_cast<y_value_type>(1);
           for (ordinal_type ic = 0; ic < count; ++ic) {
             const auto Aview  = row.block(ic);
             const auto xstart = row.block_colidx(ic) * block_dim;
             const auto xview  = Kokkos::subview(
                 m_x, Kokkos::make_pair(xstart, xstart + block_dim));
-            twoLevelGemv(space, "N", alpha, Aview, xview, beta1, yview);
+            KokkosBlas::gemv("N", alpha, Aview, xview, beta1, yview);
           }
-          /*
+           */
           //
           for (ordinal_type ir = 0; ir < block_dim; ++ir) {
             y_value_type sum = 0;
@@ -664,10 +664,9 @@ struct BSR_GEMV_Functor {
 
             Kokkos::single(Kokkos::PerThread(dev), [&]() {
               sum *= alpha;
-              m_y(iBlock * block_dim + ir) += sum;
+              yview(ir) += sum;
             });
           }
-           */
         });
   }
 };

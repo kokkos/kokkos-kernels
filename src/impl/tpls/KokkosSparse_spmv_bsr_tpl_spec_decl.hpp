@@ -57,6 +57,27 @@ namespace Impl {
 #if (__INTEL_MKL__ > 2017)
 // MKL 2018 and above: use new interface: sparse_matrix_t and mkl_sparse_?_mv()
 
+namespace BSR {
+inline void mkl_safe_call(int errcode) {
+  if (errcode != SPARSE_STATUS_SUCCESS)
+    throw std::runtime_error("MKL returned non-success error code");
+}
+
+inline sparse_operation_t mode_kk_to_mkl(char mode_kk) {
+  switch (toupper(mode_kk)) {
+    case 'N': return SPARSE_OPERATION_NON_TRANSPOSE;
+    case 'T': return SPARSE_OPERATION_TRANSPOSE;
+    case 'H': return SPARSE_OPERATION_CONJUGATE_TRANSPOSE;
+    default:;
+  }
+  throw std::invalid_argument(
+      "Invalid mode for MKL (should be one of N, T, H)");
+}
+}  // namespace BSR
+
+using BSR::mkl_safe_call;
+using BSR::mode_kk_to_mkl;
+
 inline matrix_descr getDescription() {
   matrix_descr A_descr;
   A_descr.type = SPARSE_MATRIX_TYPE_GENERAL;
@@ -508,7 +529,7 @@ void spm_mv_block_impl_cusparse(
     if (std::is_same<value_type, float>::value) {
       KOKKOS_CUSPARSE_SAFE_CALL(cusparseSbsrmm(
           cusparseHandle, dirA, myCusparseOperation,
-          CUSPARSE_OPERATION_NON_TRANSPOSE, A.numRows(), A.numCols(), colx,
+          CUSPARSE_OPERATION_NON_TRANSPOSE, A.numRows(), colx, A.numCols(),
           A.nnz(), reinterpret_cast<float const*>(&alpha), descrA,
           reinterpret_cast<float const*>(A.values.data()),
           A.graph.row_map.data(), A.graph.entries.data(), A.blockDim(),
@@ -518,7 +539,7 @@ void spm_mv_block_impl_cusparse(
     } else if (std::is_same<value_type, double>::value) {
       KOKKOS_CUSPARSE_SAFE_CALL(cusparseDbsrmm(
           cusparseHandle, dirA, myCusparseOperation,
-          CUSPARSE_OPERATION_NON_TRANSPOSE, A.numRows(), A.numCols(), colx,
+          CUSPARSE_OPERATION_NON_TRANSPOSE, A.numRows(), colx, A.numCols(),
           A.nnz(), reinterpret_cast<double const*>(&alpha), descrA,
           reinterpret_cast<double const*>(A.values.data()),
           A.graph.row_map.data(), A.graph.entries.data(), A.blockDim(),
@@ -528,7 +549,7 @@ void spm_mv_block_impl_cusparse(
     } else if (std::is_same<value_type, Kokkos::complex<float> >::value) {
       KOKKOS_CUSPARSE_SAFE_CALL(cusparseCbsrmm(
           cusparseHandle, dirA, myCusparseOperation,
-          CUSPARSE_OPERATION_NON_TRANSPOSE, A.numRows(), A.numCols(), colx,
+          CUSPARSE_OPERATION_NON_TRANSPOSE, A.numRows(), colx, A.numCols(),
           A.nnz(), reinterpret_cast<cuComplex const*>(&alpha), descrA,
           reinterpret_cast<cuComplex const*>(A.values.data()),
           A.graph.row_map.data(), A.graph.entries.data(), A.blockDim(),
@@ -538,7 +559,7 @@ void spm_mv_block_impl_cusparse(
     } else if (std::is_same<value_type, Kokkos::complex<double> >::value) {
       KOKKOS_CUSPARSE_SAFE_CALL(cusparseZbsrmm(
           cusparseHandle, dirA, myCusparseOperation,
-          CUSPARSE_OPERATION_NON_TRANSPOSE, A.numRows(), A.numCols(), colx,
+          CUSPARSE_OPERATION_NON_TRANSPOSE, A.numRows(), colx, A.numCols(),
           A.nnz(), reinterpret_cast<cuDoubleComplex const*>(&alpha), descrA,
           reinterpret_cast<cuDoubleComplex const*>(A.values.data()),
           A.graph.row_map.data(), A.graph.entries.data(), A.blockDim(),
