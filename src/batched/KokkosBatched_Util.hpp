@@ -826,6 +826,10 @@ KOKKOS_INLINE_FUNCTION ViewValueType
 access_view_bounds_check(ViewType v, int m, int n, const BoundsCheck::Yes &) {
   if (m < v.extent_int(0) && n < v.extent_int(1)) return v(m, n);
   return (ViewValueType)0.0F;
+  // TODO: use compile-time extents
+  //  if (m > scr.extent(0) || n > scr.extent(1))
+  //    return 0;
+  //  return v(m, n);
 }
 
 template <class ViewValueType, class ViewType>
