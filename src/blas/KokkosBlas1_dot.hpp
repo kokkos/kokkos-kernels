@@ -220,22 +220,21 @@ void dot(
       typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<
           RV, UnifiedXLayout>::array_layout;
 
-  typedef Kokkos::View<typename Kokkos::Impl::if_c<
+  typedef Kokkos::View<typename std::conditional<
                            RV::rank == 0, typename RV::non_const_value_type,
                            typename RV::non_const_value_type*>::type,
                        UnifiedRVLayout, typename RV::device_type,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>
       RV_Internal;
-  typedef Kokkos::View<typename Kokkos::Impl::if_c<
-                           XMV::rank == 1, typename XMV::const_value_type*,
-                           typename XMV::const_value_type**>::type,
-                       UnifiedXLayout, typename XMV::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>
+  typedef Kokkos::View<
+      typename std::conditional<XMV::rank == 1, typename XMV::const_value_type*,
+                                typename XMV::const_value_type**>::type,
+      UnifiedXLayout, typename XMV::device_type,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged>>
       XMV_Internal;
   typedef Kokkos::View<
-      typename Kokkos::Impl::if_c<YMV::rank == 1,
-                                  typename YMV::const_value_type*,
-                                  typename YMV::const_value_type**>::type,
+      typename std::conditional<YMV::rank == 1, typename YMV::const_value_type*,
+                                typename YMV::const_value_type**>::type,
       typename KokkosKernels::Impl::GetUnifiedLayout<YMV>::array_layout,
       typename YMV::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>
       YMV_Internal;

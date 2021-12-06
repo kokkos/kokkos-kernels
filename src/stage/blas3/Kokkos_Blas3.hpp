@@ -217,7 +217,7 @@ void gemm(const char transA, const char transB, AMat::const_value_type alpha,
     Kokkos::Impl::throw_runtime_exception(os.str());
   }
 
-  typedef Kokkos::View<typename Kokkos::Impl::if_c<
+  typedef Kokkos::View<typename std::conditional<
                            AMat::rank == 2, typename AMat::const_value_type**,
                            typename AMat::const_value_type***>::type,
                        typename AMat::array_layout, typename AMat::device_type,
@@ -225,7 +225,7 @@ void gemm(const char transA, const char transB, AMat::const_value_type alpha,
                        typename AMat::specialize>
       AMat_Internal;
 
-  typedef Kokkos::View<typename Kokkos::Impl::if_c<
+  typedef Kokkos::View<typename std::conditional<
                            BMat::rank == 2, typename BMat::const_value_type**,
                            typename BMat::const_value_type***>::type,
                        typename BMat::array_layout, typename BMat::device_type,
@@ -233,7 +233,7 @@ void gemm(const char transA, const char transB, AMat::const_value_type alpha,
                        typename BMat::specialize>
       BMat_Internal;
 
-  typedef Kokkos::View<typename Kokkos::Impl::if_c<
+  typedef Kokkos::View<typename std::conditional<
                            CMat::rank == 2, typename CMat::const_value_type**,
                            typename CMat::const_value_type***>::type,
                        typename CMat::array_layout, typename CMat::device_type,
