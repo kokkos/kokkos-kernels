@@ -69,12 +69,9 @@ struct Dot_MV_Functor {
 
   size_type
       teamsPerDot;  // number of teams collectively performing a dot product
-  size_type
-      chunkSize;  // the local length of each team's share on the dot product
 
-  Dot_MV_Functor(const RV& r_, const XV& x_, const YV& y_, int teamsPerDot_,
-                 int chunkSize_)
-      : r(r_), x(x_), y(y_), teamsPerDot(teamsPerDot_), chunkSize(chunkSize_) {}
+  Dot_MV_Functor(const RV& r_, const XV& x_, const YV& y_, int teamsPerDot_)
+      : r(r_), x(x_), y(y_), teamsPerDot(teamsPerDot_) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const TeamMem& t) const {
@@ -83,17 +80,16 @@ struct Dot_MV_Functor {
     size_type i          = globalRank / teamsPerDot;
     size_type xcol       = x.extent(1) == 1 ? 0 : i;
     size_type ycol       = y.extent(1) == 1 ? 0 : i;
-    size_type length     = x.extent(0);
 
     dot_type localResult = KAT::zero();
-    size_type baseInd    = chunkSize * localRank;
+    size_type begin      = localRank * (x.extent(0) / teamsPerDot);
+    size_type end        = (localRank + 1) * (x.extent(0) / teamsPerDot);
+    if (localRank == teamsPerDot - 1) end = x.extent(0);
     Kokkos::parallel_reduce(
-        Kokkos::TeamThreadRange(t, chunkSize),
+        Kokkos::TeamThreadRange(t, begin, end),
         [&](size_type k, dot_type& update) {
-          if (baseInd + k < length) {
-            Kokkos::Details::updateDot(update, x.access(baseInd + k, xcol),
-                                       y.access(baseInd + k, ycol));
-          }
+          Kokkos::Details::updateDot(update, x.access(k, xcol),
+                                     y.access(k, ycol));
         },
         localResult);
 
@@ -136,15 +132,15 @@ void MV_Dot_Invoke(
   // Zero out the result vector
   Kokkos::deep_copy(
       r, Kokkos::ArithTraits<typename RV::non_const_value_type>::zero());
-  size_type teamsPerDot, chunkSize;
+  size_type teamsPerDot;
   KokkosBlas::Impl::multipleReductionWorkDistribution<execution_space,
                                                       size_type>(
-      x.extent(0), numDots, teamsPerDot, chunkSize);
+      x.extent(0), numDots, teamsPerDot);
   size_type numTeams = numDots * teamsPerDot;
   Kokkos::TeamPolicy<execution_space> pol(numTeams, Kokkos::AUTO);
   Kokkos::parallel_for("Dot_MV", pol,
                        Dot_MV_Functor<execution_space, RV, XV, YV, size_type>(
-                           r, x, y, teamsPerDot, chunkSize));
+                           r, x, y, teamsPerDot));
 }
 
 // Version for when a temporary result view is needed (implemented in terms of

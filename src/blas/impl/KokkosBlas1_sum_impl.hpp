@@ -106,27 +106,23 @@ struct Sum_MV_Functor {
 
   size_type
       teamsPerVec;  // number of teams collectively performing a dot product
-  size_type
-      chunkSize;  // the local length of each team's share on the dot product
 
-  Sum_MV_Functor(const RV& r_, const XV& x_, int teamsPerVec_, int chunkSize_)
-      : r(r_), x(x_), teamsPerVec(teamsPerVec_), chunkSize(chunkSize_) {}
+  Sum_MV_Functor(const RV& r_, const XV& x_, int teamsPerVec_)
+      : r(r_), x(x_), teamsPerVec(teamsPerVec_) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const TeamMem& t) const {
     size_type globalRank = t.league_rank();
     size_type localRank  = globalRank % teamsPerVec;
     size_type i          = globalRank / teamsPerVec;
+    size_type begin      = localRank * (x.extent(0) / teamsPerVec);
+    size_type end        = (localRank + 1) * (x.extent(0) / teamsPerVec);
+    if (localRank == teamsPerVec - 1) end = x.extent(0);
 
     value_type localResult = AT::zero();
-    size_type baseInd      = chunkSize * localRank;
     Kokkos::parallel_reduce(
-        Kokkos::TeamThreadRange(t, chunkSize),
-        [&](size_type k, value_type& update) {
-          if (baseInd + k < size_type(x.extent(0))) {
-            update += x(baseInd + k, i);
-          }
-        },
+        Kokkos::TeamThreadRange(t, begin, end),
+        [&](size_type k, value_type& update) { update += x(k, i); },
         localResult);
 
     Kokkos::single(Kokkos::PerTeam(t),
@@ -167,15 +163,15 @@ void MV_Sum_Invoke(
   // Zero out the result vector
   Kokkos::deep_copy(
       r, Kokkos::ArithTraits<typename RV::non_const_value_type>::zero());
-  size_type teamsPerVec, chunkSize;
+  size_type teamsPerVec;
   KokkosBlas::Impl::multipleReductionWorkDistribution<execution_space,
                                                       size_type>(
-      x.extent(0), x.extent(1), teamsPerVec, chunkSize);
+      x.extent(0), x.extent(1), teamsPerVec);
   size_type numTeams = x.extent(1) * teamsPerVec;
   Kokkos::TeamPolicy<execution_space> pol(numTeams, Kokkos::AUTO);
-  Kokkos::parallel_for("KokkosBlas1::Sum::S1", pol,
-                       Sum_MV_Functor<execution_space, RV, XV, size_type>(
-                           r, x, teamsPerVec, chunkSize));
+  Kokkos::parallel_for(
+      "KokkosBlas1::Sum::S1", pol,
+      Sum_MV_Functor<execution_space, RV, XV, size_type>(r, x, teamsPerVec));
 }
 
 // Version for when a temporary result view is needed (implemented in terms of

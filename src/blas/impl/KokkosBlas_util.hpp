@@ -60,12 +60,10 @@ namespace Impl {
 //  * numReductions: number of reductions to compute
 // Output params:
 //  * teamsPerReduction: number of teams to use for each reduction
-//  * chunkSize: length of each team's local reduction
 template <typename ExecSpace, typename size_type>
 void multipleReductionWorkDistribution(size_type length,
                                        size_type numReductions,
-                                       size_type& teamsPerDot,
-                                       size_type& chunkSize) {
+                                       size_type& teamsPerDot) {
   constexpr size_type workPerTeam = 4096;  // Amount of work per team
   size_type appxNumTeams =
       (length * numReductions) / workPerTeam;  // Estimation for appxNumTeams
@@ -87,10 +85,6 @@ void multipleReductionWorkDistribution(size_type length,
   else {
     teamsPerDot = appxNumTeams / numReductions;
   }
-
-  // Determine the local length for the dot product
-  chunkSize = length / teamsPerDot;
-  if (teamsPerDot > 1) chunkSize++;
 }
 
 // Functor to apply sqrt() to each element of a 1D view.
