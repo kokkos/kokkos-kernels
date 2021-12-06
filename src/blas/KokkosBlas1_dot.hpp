@@ -226,15 +226,14 @@ void dot(
                        UnifiedRVLayout, typename RV::device_type,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>
       RV_Internal;
-  typedef Kokkos::View<typename std::conditional<
-                           XMV::rank == 1, typename XMV::const_value_type*,
-                           typename XMV::const_value_type**>::type,
-                       UnifiedXLayout, typename XMV::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>
+  typedef Kokkos::View<
+      typename std::conditional<XMV::rank == 1, typename XMV::const_value_type*,
+                                typename XMV::const_value_type**>::type,
+      UnifiedXLayout, typename XMV::device_type,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged>>
       XMV_Internal;
   typedef Kokkos::View<
-      typename std::conditional<YMV::rank == 1,
-                                typename YMV::const_value_type*,
+      typename std::conditional<YMV::rank == 1, typename YMV::const_value_type*,
                                 typename YMV::const_value_type**>::type,
       typename KokkosKernels::Impl::GetUnifiedLayout<YMV>::array_layout,
       typename YMV::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>

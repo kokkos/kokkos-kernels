@@ -148,11 +148,11 @@ void nrminf(
                        UnifiedRVLayout, typename RV::device_type,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       RV_Internal;
-  typedef Kokkos::View<typename std::conditional<
-                           XMV::rank == 1, typename XMV::const_value_type*,
-                           typename XMV::const_value_type**>::type,
-                       UnifiedXLayout, typename XMV::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+  typedef Kokkos::View<
+      typename std::conditional<XMV::rank == 1, typename XMV::const_value_type*,
+                                typename XMV::const_value_type**>::type,
+      UnifiedXLayout, typename XMV::device_type,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       XMV_Internal;
 
   RV_Internal R_internal  = R;

@@ -98,8 +98,7 @@ void reciprocal(const RMV& R, const XMV& X) {
       typename RMV::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       RMV_Internal;
   typedef Kokkos::View<
-      typename std::conditional<XMV::rank == 1,
-                                typename XMV::const_value_type*,
+      typename std::conditional<XMV::rank == 1, typename XMV::const_value_type*,
                                 typename XMV::const_value_type**>::type,
       typename KokkosKernels::Impl::GetUnifiedLayout<XMV>::array_layout,
       typename XMV::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
