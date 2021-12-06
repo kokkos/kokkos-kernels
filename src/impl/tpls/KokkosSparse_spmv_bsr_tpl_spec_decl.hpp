@@ -46,7 +46,6 @@
 #define KOKKOSKERNELS_KOKKOSSPARSE_SPMV_BSR_TPL_SPEC_DECL_HPP
 
 #include "KokkosKernels_Controls.hpp"
-#include "KokkosSparse_spmv_tpl_spec_decl.hpp"
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
 #include <mkl.h>
