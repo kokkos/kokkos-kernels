@@ -139,11 +139,9 @@ struct Nrm2_MV_Functor {
 
   size_type
       teamsPerVec;  // number of teams collectively performing a dot product
-  size_type
-      chunkSize;  // the local length of each team's share on the dot product
 
-  Nrm2_MV_Functor(const RV& r_, const XV& x_, int teamsPerVec_, int chunkSize_)
-      : r(r_), x(x_), teamsPerVec(teamsPerVec_), chunkSize(chunkSize_) {}
+  Nrm2_MV_Functor(const RV& r_, const XV& x_, int teamsPerVec_)
+      : r(r_), x(x_), teamsPerVec(teamsPerVec_) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const TeamMem& t) const {
@@ -152,14 +150,15 @@ struct Nrm2_MV_Functor {
     size_type i          = globalRank / teamsPerVec;
 
     value_type localResult = AT::zero();
-    size_type baseInd      = chunkSize * localRank;
+    size_type begin        = localRank * (x.extent(0) / teamsPerVec);
+    size_type end          = (localRank + 1) * (x.extent(0) / teamsPerVec);
+    if (localRank == teamsPerVec - 1) end = x.extent(0);
+
     Kokkos::parallel_reduce(
-        Kokkos::TeamThreadRange(t, chunkSize),
+        Kokkos::TeamThreadRange(t, begin, end),
         [&](size_type k, value_type& update) {
-          if (baseInd + k < size_type(x.extent(0))) {
-            value_type tmp = IPT::norm(x(baseInd + k, i));
-            update += tmp * tmp;
-          }
+          value_type tmp = IPT::norm(x(k, i));
+          update += tmp * tmp;
         },
         localResult);
 
@@ -202,15 +201,15 @@ void MV_Nrm2_Invoke(
   // Zero out the result vector
   Kokkos::deep_copy(
       r, Kokkos::ArithTraits<typename RV::non_const_value_type>::zero());
-  size_type teamsPerVec, chunkSize;
+  size_type teamsPerVec;
   KokkosBlas::Impl::multipleReductionWorkDistribution<execution_space,
                                                       size_type>(
-      x.extent(0), x.extent(1), teamsPerVec, chunkSize);
+      x.extent(0), x.extent(1), teamsPerVec);
   size_type numTeams = x.extent(1) * teamsPerVec;
   Kokkos::TeamPolicy<execution_space> pol(numTeams, Kokkos::AUTO);
-  Kokkos::parallel_for("KokkosBlas1::Nrm2::S1", pol,
-                       Nrm2_MV_Functor<execution_space, RV, XV, size_type>(
-                           r, x, teamsPerVec, chunkSize));
+  Kokkos::parallel_for(
+      "KokkosBlas1::Nrm2::S1", pol,
+      Nrm2_MV_Functor<execution_space, RV, XV, size_type>(r, x, teamsPerVec));
   if (take_sqrt) {
     Kokkos::parallel_for("KokkosBlas1::Nrm2::Sqrt",
                          Kokkos::RangePolicy<execution_space>(0, r.extent(0)),

@@ -84,7 +84,6 @@ struct DotBasedGEMM {
   size_C numTeams;      // total number of teams
 
   const size_A dotSize;  // the length of the vectors in the dot products
-  size_C chunkSize;  // the local length of each team's share on the dot product
 
   DotBasedGEMM(const scalar_A& alpha_, const AV& A_, const BV& B_,
                const scalar_C& beta_, const CV& C_)
@@ -99,7 +98,7 @@ struct DotBasedGEMM {
 
   void run(const typename CV::execution_space& space, bool conjugateTranspose) {
     multipleReductionWorkDistribution<ExecSpace, size_C>(
-        dotSize, numCrows * numCcols, numDivPerDot, chunkSize);
+        dotSize, numCrows * numCcols, numDivPerDot);
     const size_C ndots = numCrows * numCcols;  // Number of dot products
     numTeams           = ndots * numDivPerDot;
 
@@ -150,13 +149,14 @@ struct DotBasedGEMM {
     const size_C rowId      = i / numCcols;
     const size_C colId      = i % numCcols;
 
-    scalar_C result      = CVT::zero();
-    const size_A baseInd = chunkSize * localRank;
+    scalar_C result = CVT::zero();
+    size_A begin    = localRank * (dotSize / numDivPerDot);
+    size_A end      = (localRank + 1) * (dotSize / numDivPerDot);
+    if (localRank == numDivPerDot - 1) end = dotSize;
     Kokkos::parallel_reduce(
-        Kokkos::TeamThreadRange(teamMember, chunkSize),
+        Kokkos::TeamThreadRange(teamMember, begin, end),
         [&](const size_A k, scalar_C& update) {
-          if (baseInd + k < dotSize)
-            update += alpha * A(baseInd + k, rowId) * B(baseInd + k, colId);
+          update += alpha * A(k, rowId) * B(k, colId);
         },
         result);
 
@@ -174,14 +174,14 @@ struct DotBasedGEMM {
     const size_C rowId      = i / numCcols;
     const size_C colId      = i % numCcols;
 
-    scalar_C result      = CVT::zero();
-    const size_A baseInd = chunkSize * localRank;
+    scalar_C result = CVT::zero();
+    size_A begin    = localRank * (dotSize / numDivPerDot);
+    size_A end      = (localRank + 1) * (dotSize / numDivPerDot);
+    if (localRank == numDivPerDot - 1) end = dotSize;
     Kokkos::parallel_reduce(
-        Kokkos::TeamThreadRange(teamMember, chunkSize),
+        Kokkos::TeamThreadRange(teamMember, begin, end),
         [&](const size_A k, scalar_C& update) {
-          if (baseInd + k < dotSize)
-            update += alpha * AVT::conj(A(baseInd + k, rowId)) *
-                      B(baseInd + k, colId);
+          update += alpha * AVT::conj(A(k, rowId)) * B(k, colId);
         },
         result);
 
