@@ -189,17 +189,17 @@ struct TeamSpmv<MemberType, Trans::NoTranspose> {
       const IntView& colIndices, const xViewType& X, const betaViewType& beta,
       const yViewType& Y) {
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
-    static_assert(Kokkos::Impl::is_view<ValuesViewType>::value,
+    static_assert(Kokkos::is_view<ValuesViewType>::value,
                   "KokkosBatched::spmv: ValuesViewType is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<IntView>::value,
+    static_assert(Kokkos::is_view<IntView>::value,
                   "KokkosBatched::spmv: IntView is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<xViewType>::value,
+    static_assert(Kokkos::is_view<xViewType>::value,
                   "KokkosBatched::spmv: xViewType is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<yViewType>::value,
+    static_assert(Kokkos::is_view<yViewType>::value,
                   "KokkosBatched::spmv: yViewType is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<alphaViewType>::value,
+    static_assert(Kokkos::is_view<alphaViewType>::value,
                   "KokkosBatched::spmv: alphaViewType is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<betaViewType>::value,
+    static_assert(Kokkos::is_view<betaViewType>::value,
                   "KokkosBatched::spmv: betaViewType is not a Kokkos::View.");
 
     static_assert(ValuesViewType::Rank == 2,
@@ -288,13 +288,13 @@ struct TeamSpmv<MemberType, Trans::NoTranspose> {
           typename ValuesViewType::non_const_value_type>::mag_type& beta,
       const yViewType& Y) {
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
-    static_assert(Kokkos::Impl::is_view<ValuesViewType>::value,
+    static_assert(Kokkos::is_view<ValuesViewType>::value,
                   "KokkosBatched::spmv: ValuesViewType is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<IntView>::value,
+    static_assert(Kokkos::is_view<IntView>::value,
                   "KokkosBatched::spmv: IntView is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<xViewType>::value,
+    static_assert(Kokkos::is_view<xViewType>::value,
                   "KokkosBatched::spmv: xViewType is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<yViewType>::value,
+    static_assert(Kokkos::is_view<yViewType>::value,
                   "KokkosBatched::spmv: yViewType is not a Kokkos::View.");
 
     static_assert(ValuesViewType::Rank == 2,

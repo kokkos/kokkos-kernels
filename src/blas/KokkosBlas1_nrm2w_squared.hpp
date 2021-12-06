@@ -61,7 +61,7 @@ template <class XVector>
 typename Kokkos::Details::InnerProductSpaceTraits<
     typename XVector::non_const_value_type>::mag_type
 nrm2w_squared(const XVector& x, const XVector& w) {
-  static_assert(Kokkos::Impl::is_view<XVector>::value,
+  static_assert(Kokkos::is_view<XVector>::value,
                 "KokkosBlas::nrm2w_squared: XVector must be a Kokkos::View.");
   static_assert(XVector::rank == 1,
                 "KokkosBlas::nrm2w_squared: "
@@ -102,11 +102,11 @@ nrm2w_squared(const XVector& x, const XVector& w) {
 template <class RV, class XMV>
 void nrm2w_squared(
     const RV& R, const XMV& X, const XMV& W,
-    typename std::enable_if<Kokkos::Impl::is_view<RV>::value, int>::type = 0) {
-  static_assert(Kokkos::Impl::is_view<RV>::value,
+    typename std::enable_if<Kokkos::is_view<RV>::value, int>::type = 0) {
+  static_assert(Kokkos::is_view<RV>::value,
                 "KokkosBlas::nrm2w_squared: "
                 "R is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<XMV>::value,
+  static_assert(Kokkos::is_view<XMV>::value,
                 "KokkosBlas::nrm2w_squared: "
                 "X is not a Kokkos::View.");
   static_assert(std::is_same<typename RV::value_type,

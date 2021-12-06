@@ -243,9 +243,9 @@ void sptrsv_solve(KernelHandle *handle, lno_row_view_t_ rowmap,
                 "sptrsv_solve: A scalar type must match KernelHandle entry "
                 "type (aka nnz_lno_t, and const doesn't matter)");
 
-  static_assert(Kokkos::Impl::is_view<BType>::value,
+  static_assert(Kokkos::is_view<BType>::value,
                 "sptrsv: b is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<XType>::value,
+  static_assert(Kokkos::is_view<XType>::value,
                 "sptrsv: x is not a Kokkos::View.");
   static_assert((int)BType::rank == (int)XType::rank,
                 "sptrsv: The ranks of b and x do not match.");

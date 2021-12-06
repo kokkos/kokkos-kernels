@@ -52,10 +52,10 @@ namespace KokkosBlas {
 
 template <class RMV, class AV, class XMV>
 void scal(const RMV& R, const AV& a, const XMV& X) {
-  static_assert(Kokkos::Impl::is_view<RMV>::value,
+  static_assert(Kokkos::is_view<RMV>::value,
                 "KokkosBlas::scal: "
                 "R is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<XMV>::value,
+  static_assert(Kokkos::is_view<XMV>::value,
                 "KokkosBlas::scal: "
                 "X is not a Kokkos::View.");
   static_assert(std::is_same<typename RMV::value_type,

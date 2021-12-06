@@ -74,10 +74,10 @@ struct V_Nrm2_Functor {
   bool m_take_sqrt;
 
   V_Nrm2_Functor(const XV& x, bool take_sqrt) : m_x(x), m_take_sqrt(take_sqrt) {
-    static_assert(Kokkos::Impl::is_view<RV>::value,
+    static_assert(Kokkos::is_view<RV>::value,
                   "KokkosBlas::Impl::V_Nrm2_Functor: "
                   "R is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<XV>::value,
+    static_assert(Kokkos::is_view<XV>::value,
                   "KokkosBlas::Impl::V_Nrm2_Functor: "
                   "X is not a Kokkos::View.");
     static_assert(std::is_same<typename RV::value_type,

@@ -319,11 +319,11 @@ int BatchedGemm(BatchedGemmHandleType *const handle, const ScalarType alpha,
   size_t c_m, c_n;
   using ViewValueType = typename CViewType::value_type;
   // Check for valid input views
-  static_assert(Kokkos::Impl::is_view<AViewType>::value,
+  static_assert(Kokkos::is_view<AViewType>::value,
                 "AViewType must be a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<BViewType>::value,
+  static_assert(Kokkos::is_view<BViewType>::value,
                 "BViewType must be a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<CViewType>::value,
+  static_assert(Kokkos::is_view<CViewType>::value,
                 "CViewType must be a Kokkos::View.");
   if (is_vector<ViewValueType>::value) {
     // Check ranks of view with underlying SIMD value types

@@ -68,10 +68,10 @@ struct MV_Reciprocal_Functor {
 
   MV_Reciprocal_Functor(const RMV& R, const XMV& X)
       : numCols(X.extent(1)), R_(R), X_(X) {
-    static_assert(Kokkos::Impl::is_view<RMV>::value,
+    static_assert(Kokkos::is_view<RMV>::value,
                   "KokkosBlas::Impl::"
                   "MV_Reciprocal_Functor: RMV is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<XMV>::value,
+    static_assert(Kokkos::is_view<XMV>::value,
                   "KokkosBlas::Impl::"
                   "MV_Reciprocal_Functor: XMV is not a Kokkos::View.");
     static_assert(RMV::rank == 2,
@@ -105,7 +105,7 @@ struct MV_ReciprocalSelf_Functor {
   RMV R_;
 
   MV_ReciprocalSelf_Functor(const RMV& R) : numCols(R.extent(1)), R_(R) {
-    static_assert(Kokkos::Impl::is_view<RMV>::value,
+    static_assert(Kokkos::is_view<RMV>::value,
                   "KokkosBlas::Impl::"
                   "MV_Reciprocal_Functor: RMV is not a Kokkos::View.");
     static_assert(RMV::rank == 2,
@@ -136,10 +136,10 @@ struct V_Reciprocal_Functor {
   XV X_;
 
   V_Reciprocal_Functor(const RV& R, const XV& X) : R_(R), X_(X) {
-    static_assert(Kokkos::Impl::is_view<RV>::value,
+    static_assert(Kokkos::is_view<RV>::value,
                   "KokkosBlas::Impl::"
                   "V_Reciprocal_Functor: RV is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<XV>::value,
+    static_assert(Kokkos::is_view<XV>::value,
                   "KokkosBlas::Impl::"
                   "V_Reciprocal_Functor: XV is not a Kokkos::View.");
     static_assert(RV::rank == 1,
@@ -165,7 +165,7 @@ struct V_ReciprocalSelf_Functor {
   RV R_;
 
   V_ReciprocalSelf_Functor(const RV& R) : R_(R) {
-    static_assert(Kokkos::Impl::is_view<RV>::value,
+    static_assert(Kokkos::is_view<RV>::value,
                   "KokkosBlas::Impl::"
                   "V_Reciprocal_Functor: RV is not a Kokkos::View.");
     static_assert(RV::rank == 1,
@@ -181,10 +181,10 @@ struct V_ReciprocalSelf_Functor {
 // computes entry-wise reciprocalolute value.
 template <class RMV, class XMV, class SizeType>
 void MV_Reciprocal_Generic(const RMV& R, const XMV& X) {
-  static_assert(Kokkos::Impl::is_view<RMV>::value,
+  static_assert(Kokkos::is_view<RMV>::value,
                 "KokkosBlas::Impl::"
                 "MV_Reciprocal_Generic: RMV is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<XMV>::value,
+  static_assert(Kokkos::is_view<XMV>::value,
                 "KokkosBlas::Impl::"
                 "MV_Reciprocal_Generic: XMV is not a Kokkos::View.");
   static_assert(RMV::rank == 2,
@@ -210,10 +210,10 @@ void MV_Reciprocal_Generic(const RMV& R, const XMV& X) {
 // Variant of MV_Reciprocal_Generic for single vectors (1-D Views) R and X.
 template <class RV, class XV, class SizeType>
 void V_Reciprocal_Generic(const RV& R, const XV& X) {
-  static_assert(Kokkos::Impl::is_view<RV>::value,
+  static_assert(Kokkos::is_view<RV>::value,
                 "KokkosBlas::Impl::"
                 "V_Reciprocal_Generic: RV is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<XV>::value,
+  static_assert(Kokkos::is_view<XV>::value,
                 "KokkosBlas::Impl::"
                 "V_Reciprocal_Generic: XV is not a Kokkos::View.");
   static_assert(RV::rank == 1,

@@ -219,9 +219,9 @@ KOKKOS_INLINE_FUNCTION int SerialXpay::invoke(const alphaViewType& alpha,
                                               const ViewType& X,
                                               const ViewType& Y) {
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
-  static_assert(Kokkos::Impl::is_view<ViewType>::value,
+  static_assert(Kokkos::is_view<ViewType>::value,
                 "KokkosBatched::xpay: ViewType is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<alphaViewType>::value,
+  static_assert(Kokkos::is_view<alphaViewType>::value,
                 "KokkosBatched::xpay: alphaViewType is not a Kokkos::View.");
   static_assert(ViewType::Rank == 2,
                 "KokkosBatched::xpay: ViewType must have rank 2.");
@@ -262,9 +262,9 @@ KOKKOS_INLINE_FUNCTION int TeamXpay<MemberType>::invoke(
     const MemberType& member, const alphaViewType& alpha, const ViewType& X,
     const ViewType& Y) {
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
-  static_assert(Kokkos::Impl::is_view<ViewType>::value,
+  static_assert(Kokkos::is_view<ViewType>::value,
                 "KokkosBatched::xpay: ViewType is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<alphaViewType>::value,
+  static_assert(Kokkos::is_view<alphaViewType>::value,
                 "KokkosBatched::xpay: alphaViewType is not a Kokkos::View.");
   static_assert(ViewType::Rank == 2,
                 "KokkosBatched::xpay: ViewType must have rank 2.");
@@ -306,9 +306,9 @@ KOKKOS_INLINE_FUNCTION int TeamVectorXpay<MemberType>::invoke(
     const MemberType& member, const alphaViewType& alpha, const ViewType& X,
     const ViewType& Y) {
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
-  static_assert(Kokkos::Impl::is_view<ViewType>::value,
+  static_assert(Kokkos::is_view<ViewType>::value,
                 "KokkosBatched::xpay: ViewType is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<alphaViewType>::value,
+  static_assert(Kokkos::is_view<alphaViewType>::value,
                 "KokkosBatched::xpay: alphaViewType is not a Kokkos::View.");
   static_assert(ViewType::Rank == 2,
                 "KokkosBatched::xpay: ViewType must have rank 2.");

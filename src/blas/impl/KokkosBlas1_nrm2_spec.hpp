@@ -132,10 +132,10 @@ struct Nrm2<RMV, XMV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef typename XMV::size_type size_type;
 
   static void nrm2(const RMV& R, const XMV& X, const bool& take_sqrt) {
-    static_assert(Kokkos::Impl::is_view<RMV>::value,
+    static_assert(Kokkos::is_view<RMV>::value,
                   "KokkosBlas::Impl::"
                   "Nrm2<1-D>: RMV is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<XMV>::value,
+    static_assert(Kokkos::is_view<XMV>::value,
                   "KokkosBlas::Impl::"
                   "Nrm2<1-D>: XMV is not a Kokkos::View.");
     static_assert(RMV::rank == 0,
@@ -173,10 +173,10 @@ struct Nrm2<RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef typename XMV::size_type size_type;
 
   static void nrm2(const RV& R, const XMV& X, const bool& take_sqrt) {
-    static_assert(Kokkos::Impl::is_view<RV>::value,
+    static_assert(Kokkos::is_view<RV>::value,
                   "KokkosBlas::Impl::"
                   "Nrm2<2-D>: RV is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<XMV>::value,
+    static_assert(Kokkos::is_view<XMV>::value,
                   "KokkosBlas::Impl::"
                   "Nrm2<2-D>: XMV is not a Kokkos::View.");
     static_assert(RV::rank == 1,

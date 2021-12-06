@@ -61,10 +61,10 @@ namespace KokkosBlas {
 ///   those of RMV.
 template <class RMV, class XMV>
 void reciprocal(const RMV& R, const XMV& X) {
-  static_assert(Kokkos::Impl::is_view<RMV>::value,
+  static_assert(Kokkos::is_view<RMV>::value,
                 "KokkosBlas::reciprocal: "
                 "R is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<XMV>::value,
+  static_assert(Kokkos::is_view<XMV>::value,
                 "KokkosBlas::reciprocal: "
                 "X is not a Kokkos::View.");
   static_assert(std::is_same<typename RMV::value_type,

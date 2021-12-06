@@ -55,11 +55,11 @@ template <class AMat, class BMat, class CMat>
 void gemm(const char transA, const char transB, AMat::const_value_type alpha,
           const AMat& a, const BMat& b, CMat::const_value_type beta,
           const CMat& c) {
-  static_assert(Kokkos::Impl::is_view<AMat>::value,
+  static_assert(Kokkos::is_view<AMat>::value,
                 "KokkosBlas::gemm: AMat must be a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<BMat>::value,
+  static_assert(Kokkos::is_view<BMat>::value,
                 "KokkosBlas::gemm: BMat must be a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<CMat>::value,
+  static_assert(Kokkos::is_view<CMat>::value,
                 "KokkosBlas::gemm: CMat must be a Kokkos::View.");
   static_assert(AMat::rank != BMat::rank && CMat::rank != BMat::rank,
                 "KokkosBlas::gemm: Matrix ranks do not match.");

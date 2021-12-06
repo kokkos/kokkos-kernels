@@ -68,10 +68,10 @@ struct MV_Abs_Functor {
 
   MV_Abs_Functor(const RMV& R, const XMV& X)
       : numCols(X.extent(1)), R_(R), X_(X) {
-    static_assert(Kokkos::Impl::is_view<RMV>::value,
+    static_assert(Kokkos::is_view<RMV>::value,
                   "KokkosBlas::Impl::"
                   "MV_Abs_Functor: RMV is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<XMV>::value,
+    static_assert(Kokkos::is_view<XMV>::value,
                   "KokkosBlas::Impl::"
                   "MV_Abs_Functor: XMV is not a Kokkos::View.");
     static_assert(RMV::rank == 2,
@@ -104,7 +104,7 @@ struct MV_AbsSelf_Functor {
   RMV R_;
 
   MV_AbsSelf_Functor(const RMV& R) : numCols(R.extent(1)), R_(R) {
-    static_assert(Kokkos::Impl::is_view<RMV>::value,
+    static_assert(Kokkos::is_view<RMV>::value,
                   "KokkosBlas::Impl::"
                   "MV_Abs_Functor: RMV is not a Kokkos::View.");
     static_assert(RMV::rank == 2,
@@ -134,10 +134,10 @@ struct V_Abs_Functor {
   XV X_;
 
   V_Abs_Functor(const RV& R, const XV& X) : R_(R), X_(X) {
-    static_assert(Kokkos::Impl::is_view<RV>::value,
+    static_assert(Kokkos::is_view<RV>::value,
                   "KokkosBlas::Impl::"
                   "V_Abs_Functor: RV is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<XV>::value,
+    static_assert(Kokkos::is_view<XV>::value,
                   "KokkosBlas::Impl::"
                   "V_Abs_Functor: XV is not a Kokkos::View.");
     static_assert(RV::rank == 1,
@@ -163,7 +163,7 @@ struct V_AbsSelf_Functor {
   RV R_;
 
   V_AbsSelf_Functor(const RV& R) : R_(R) {
-    static_assert(Kokkos::Impl::is_view<RV>::value,
+    static_assert(Kokkos::is_view<RV>::value,
                   "KokkosBlas::Impl::"
                   "V_Abs_Functor: RV is not a Kokkos::View.");
     static_assert(RV::rank == 1,
@@ -179,10 +179,10 @@ struct V_AbsSelf_Functor {
 // computes entry-wise absolute value.
 template <class RMV, class XMV, class SizeType>
 void MV_Abs_Generic(const RMV& R, const XMV& X) {
-  static_assert(Kokkos::Impl::is_view<RMV>::value,
+  static_assert(Kokkos::is_view<RMV>::value,
                 "KokkosBlas::Impl::"
                 "MV_Abs_Generic: RMV is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<XMV>::value,
+  static_assert(Kokkos::is_view<XMV>::value,
                 "KokkosBlas::Impl::"
                 "MV_Abs_Generic: XMV is not a Kokkos::View.");
   static_assert(RMV::rank == 2,
@@ -209,10 +209,10 @@ void MV_Abs_Generic(const RMV& R, const XMV& X) {
 // Variant of MV_Abs_Generic for single vectors (1-D Views) R and X.
 template <class RV, class XV, class SizeType>
 void V_Abs_Generic(const RV& R, const XV& X) {
-  static_assert(Kokkos::Impl::is_view<RV>::value,
+  static_assert(Kokkos::is_view<RV>::value,
                 "KokkosBlas::Impl::"
                 "V_Abs_Generic: RV is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<XV>::value,
+  static_assert(Kokkos::is_view<XV>::value,
                 "KokkosBlas::Impl::"
                 "V_Abs_Generic: XV is not a Kokkos::View.");
   static_assert(RV::rank == 1,

@@ -67,7 +67,7 @@ struct CGSolve ;
 template< class ImportType , class SparseMatrixType , class VectorType >
 struct CGSolve< ImportType , SparseMatrixType , VectorType ,
   typename std::enable_if<(
-    Kokkos::Impl::is_view< VectorType >::value &&
+    Kokkos::is_view< VectorType >::value &&
     VectorType::rank == 1
   )>::type >
 {

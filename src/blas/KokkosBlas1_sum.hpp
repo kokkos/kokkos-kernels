@@ -59,7 +59,7 @@ namespace KokkosBlas {
 /// \return The sum product result; a single value.
 template <class XVector>
 typename XVector::non_const_value_type sum(const XVector& x) {
-  static_assert(Kokkos::Impl::is_view<XVector>::value,
+  static_assert(Kokkos::is_view<XVector>::value,
                 "KokkosBlas::sum: XVector must be a Kokkos::View.");
   static_assert(XVector::rank == 1,
                 "KokkosBlas::sum: "
@@ -96,13 +96,12 @@ typename XVector::non_const_value_type sum(const XVector& x) {
 ///   the same rank as RMV, and its entries must be assignable to
 ///   those of RMV.
 template <class RV, class XMV>
-void sum(
-    const RV& R, const XMV& X,
-    typename std::enable_if<Kokkos::Impl::is_view<RV>::value, int>::type = 0) {
-  static_assert(Kokkos::Impl::is_view<RV>::value,
+void sum(const RV& R, const XMV& X,
+         typename std::enable_if<Kokkos::is_view<RV>::value, int>::type = 0) {
+  static_assert(Kokkos::is_view<RV>::value,
                 "KokkosBlas::sum: "
                 "R is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<XMV>::value,
+  static_assert(Kokkos::is_view<XMV>::value,
                 "KokkosBlas::sum: "
                 "X is not a Kokkos::View.");
   static_assert(std::is_same<typename RV::value_type,

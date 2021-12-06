@@ -56,14 +56,14 @@ namespace KokkosSparse {
 template <class DiagType, class OffsetsType, class CrsMatrixType>
 void getDiagCopy(const DiagType& D, const OffsetsType& offsets,
                  const CrsMatrixType& A) {
-  static_assert(Kokkos::Impl::is_view<DiagType>::value,
+  static_assert(Kokkos::is_view<DiagType>::value,
                 "The DiagType template parameter must be a Kokkos::View.");
   static_assert(static_cast<int>(DiagType::rank) == 1,
                 "The DiagType template parameter must be a 1-D Kokkos::View.");
   static_assert(
       std::is_same<DiagType, typename DiagType::non_const_type>::value,
       "The DiagType template parameter must be a nonconst Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<OffsetsType>::value,
+  static_assert(Kokkos::is_view<OffsetsType>::value,
                 "The OffsetsType template parameter must be a Kokkos::View.");
   static_assert(
       static_cast<int>(OffsetsType::rank) == 1,

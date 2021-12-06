@@ -96,13 +96,13 @@ struct MV_Update_Functor {
         Y_(Y),
         gamma_(gamma),
         Z_(Z) {
-    static_assert(Kokkos::Impl::is_view<XMV>::value,
+    static_assert(Kokkos::is_view<XMV>::value,
                   "KokkosBlas::Impl::"
                   "MV_Update_Functor: X is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<YMV>::value,
+    static_assert(Kokkos::is_view<YMV>::value,
                   "KokkosBlas::Impl::"
                   "MV_Update_Functor: Y is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<ZMV>::value,
+    static_assert(Kokkos::is_view<ZMV>::value,
                   "KokkosBlas::Impl::"
                   "MV_Update_Functor: Z is not a Kokkos::View.");
     static_assert(std::is_same<typename ZMV::value_type,
@@ -263,13 +263,13 @@ struct V_Update_Functor {
         Y_(Y),
         gamma_(gamma),
         Z_(Z) {
-    static_assert(Kokkos::Impl::is_view<XV>::value,
+    static_assert(Kokkos::is_view<XV>::value,
                   "KokkosBlas::Impl::"
                   "V_Update_Functor: X is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<YV>::value,
+    static_assert(Kokkos::is_view<YV>::value,
                   "KokkosBlas::Impl::"
                   "V_Update_Functor: Y is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<ZV>::value,
+    static_assert(Kokkos::is_view<ZV>::value,
                   "KokkosBlas::Impl::"
                   "V_Update_Functor: Z is not a Kokkos::View.");
     static_assert(std::is_same<typename ZV::value_type,
@@ -351,13 +351,13 @@ void MV_Update_Generic(const typename XMV::non_const_value_type& alpha,
                        const YMV& Y,
                        const typename ZMV::non_const_value_type& gamma,
                        const ZMV& Z, int a = 2, int b = 2, int c = 2) {
-  static_assert(Kokkos::Impl::is_view<XMV>::value,
+  static_assert(Kokkos::is_view<XMV>::value,
                 "KokkosBlas::Impl::"
                 "MV_Update_Generic: X is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<YMV>::value,
+  static_assert(Kokkos::is_view<YMV>::value,
                 "KokkosBlas::Impl::"
                 "MV_Update_Generic: Y is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<ZMV>::value,
+  static_assert(Kokkos::is_view<ZMV>::value,
                 "KokkosBlas::Impl::"
                 "MV_Update_Generic: Z is not a Kokkos::View.");
   static_assert(std::is_same<typename ZMV::value_type,
@@ -452,13 +452,13 @@ void V_Update_Generic(const typename XV::non_const_value_type& alpha,
                       const YV& Y,
                       const typename ZV::non_const_value_type& gamma,
                       const ZV& Z, int a = 2, int b = 2, int c = 2) {
-  static_assert(Kokkos::Impl::is_view<XV>::value,
+  static_assert(Kokkos::is_view<XV>::value,
                 "KokkosBlas::Impl::"
                 "V_Update_Generic: X is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<YV>::value,
+  static_assert(Kokkos::is_view<YV>::value,
                 "KokkosBlas::Impl::"
                 "V_Update_Generic: Y is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<ZV>::value,
+  static_assert(Kokkos::is_view<ZV>::value,
                 "KokkosBlas::Impl::"
                 "V_Update_Generic: Z is not a Kokkos::View.");
   static_assert(std::is_same<typename ZV::value_type,

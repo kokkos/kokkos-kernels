@@ -92,10 +92,10 @@ struct Axpby_Functor {
   Axpby_Functor(const XV& x, const YV& y, const AV& a, const BV& b,
                 const SizeType startingColumn)
       : m_x(x), m_y(y), m_a(a), m_b(b) {
-    static_assert(Kokkos::Impl::is_view<XV>::value,
+    static_assert(Kokkos::is_view<XV>::value,
                   "KokkosBlas::Impl::"
                   "Axpby_Functor: X is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<YV>::value,
+    static_assert(Kokkos::is_view<YV>::value,
                   "KokkosBlas::Impl::"
                   "Axpby_Functor: Y is not a Kokkos::View.");
     static_assert(std::is_same<typename YV::value_type,
@@ -228,10 +228,10 @@ struct Axpby_Functor<typename XV::non_const_value_type, XV,
                 const typename YV::non_const_value_type& b,
                 const SizeType /* startingColumn */)
       : m_x(x), m_y(y), m_a(a), m_b(b) {
-    static_assert(Kokkos::Impl::is_view<XV>::value,
+    static_assert(Kokkos::is_view<XV>::value,
                   "KokkosBlas::Impl::"
                   "Axpby_Functor: X is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<YV>::value,
+    static_assert(Kokkos::is_view<YV>::value,
                   "KokkosBlas::Impl::"
                   "Axpby_Functor: Y is not a Kokkos::View.");
     static_assert(std::is_same<typename YV::value_type,
@@ -333,10 +333,10 @@ struct Axpby_Functor<typename XV::non_const_value_type, XV,
 template <class AV, class XV, class BV, class YV, class SizeType>
 void Axpby_Generic(const AV& av, const XV& x, const BV& bv, const YV& y,
                    const SizeType startingColumn, int a = 2, int b = 2) {
-  static_assert(Kokkos::Impl::is_view<XV>::value,
+  static_assert(Kokkos::is_view<XV>::value,
                 "KokkosBlas::Impl::"
                 "Axpby_Generic: X is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<YV>::value,
+  static_assert(Kokkos::is_view<YV>::value,
                 "KokkosBlas::Impl::"
                 "Axpby_Generic: Y is not a Kokkos::View.");
   static_assert(std::is_same<typename YV::value_type,

@@ -71,11 +71,11 @@ struct SingleLevelNontransposeGEMV {
                               const XViewType& x, const BetaCoeffType& beta,
                               const YViewType& y)
       : alpha_(alpha), A_(A), x_(x), beta_(beta), y_(y) {
-    static_assert(Kokkos::Impl::is_view<AViewType>::value,
+    static_assert(Kokkos::is_view<AViewType>::value,
                   "AViewType must be a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<XViewType>::value,
+    static_assert(Kokkos::is_view<XViewType>::value,
                   "XViewType must be a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<YViewType>::value,
+    static_assert(Kokkos::is_view<YViewType>::value,
                   "YViewType must be a Kokkos::View.");
     static_assert(static_cast<int>(AViewType::rank) == 2,
                   "AViewType must have rank 2.");
@@ -161,11 +161,11 @@ struct SingleLevelTransposeGEMV {
         x_(x),
         beta_(beta),
         y_(y) {
-    static_assert(Kokkos::Impl::is_view<AViewType>::value,
+    static_assert(Kokkos::is_view<AViewType>::value,
                   "AViewType must be a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<XViewType>::value,
+    static_assert(Kokkos::is_view<XViewType>::value,
                   "XViewType must be a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<YViewType>::value,
+    static_assert(Kokkos::is_view<YViewType>::value,
                   "YViewType must be a Kokkos::View.");
     static_assert(static_cast<int>(AViewType::rank) == 2,
                   "AViewType must have rank 2.");
@@ -234,11 +234,11 @@ void singleLevelGemv(const typename AViewType::execution_space& space,
                      const AViewType& A, const XViewType& x,
                      typename YViewType::const_value_type& beta,
                      const YViewType& y) {
-  static_assert(Kokkos::Impl::is_view<AViewType>::value,
+  static_assert(Kokkos::is_view<AViewType>::value,
                 "AViewType must be a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<XViewType>::value,
+  static_assert(Kokkos::is_view<XViewType>::value,
                 "XViewType must be a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<YViewType>::value,
+  static_assert(Kokkos::is_view<YViewType>::value,
                 "YViewType must be a Kokkos::View.");
   static_assert(static_cast<int>(AViewType::rank) == 2,
                 "AViewType must have rank 2.");
@@ -490,11 +490,11 @@ struct TwoLevelGEMV {
                const XViewType& x, const BetaCoeffType& beta,
                const YViewType& y)
       : alpha_(alpha), A_(A), x_(x), beta_(beta), y_(y) {
-    static_assert(Kokkos::Impl::is_view<AViewType>::value,
+    static_assert(Kokkos::is_view<AViewType>::value,
                   "AViewType must be a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<XViewType>::value,
+    static_assert(Kokkos::is_view<XViewType>::value,
                   "XViewType must be a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<YViewType>::value,
+    static_assert(Kokkos::is_view<YViewType>::value,
                   "YViewType must be a Kokkos::View.");
     static_assert(static_cast<int>(AViewType::rank) == 2,
                   "AViewType must have rank 2.");
@@ -611,11 +611,11 @@ struct TwoLevelTransposeGEMV {
                         const XViewType& x, const BetaCoeffType& beta,
                         const YViewType& y)
       : alpha_(alpha), A_(A), x_(x), beta_(beta), y_(y) {
-    static_assert(Kokkos::Impl::is_view<AViewType>::value,
+    static_assert(Kokkos::is_view<AViewType>::value,
                   "AViewType must be a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<XViewType>::value,
+    static_assert(Kokkos::is_view<XViewType>::value,
                   "XViewType must be a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<YViewType>::value,
+    static_assert(Kokkos::is_view<YViewType>::value,
                   "YViewType must be a Kokkos::View.");
     static_assert(static_cast<int>(AViewType::rank) == 2,
                   "AViewType must have rank 2.");
@@ -673,11 +673,11 @@ void twoLevelGemv(const typename AViewType::execution_space& space,
                   const AViewType& A, const XViewType& x,
                   typename YViewType::const_value_type& beta,
                   const YViewType& y) {
-  static_assert(Kokkos::Impl::is_view<AViewType>::value,
+  static_assert(Kokkos::is_view<AViewType>::value,
                 "AViewType must be a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<XViewType>::value,
+  static_assert(Kokkos::is_view<XViewType>::value,
                 "XViewType must be a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<YViewType>::value,
+  static_assert(Kokkos::is_view<YViewType>::value,
                 "YViewType must be a Kokkos::View.");
   static_assert(static_cast<int>(AViewType::rank) == 2,
                 "AViewType must have rank 2.");

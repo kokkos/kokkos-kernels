@@ -155,13 +155,13 @@ struct Update<XMV, YMV, ZMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
                      const YMV& Y,
                      const typename ZMV::non_const_value_type& gamma,
                      const ZMV& Z) {
-    static_assert(Kokkos::Impl::is_view<XMV>::value,
+    static_assert(Kokkos::is_view<XMV>::value,
                   "KokkosBlas::Impl::"
                   "Update<rank 2>::update: X is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<YMV>::value,
+    static_assert(Kokkos::is_view<YMV>::value,
                   "KokkosBlas::Impl::"
                   "Update<rank 2>::update: Y is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<ZMV>::value,
+    static_assert(Kokkos::is_view<ZMV>::value,
                   "KokkosBlas::Impl::"
                   "Update<rank 2>::update: Z is not a Kokkos::View.");
     static_assert(std::is_same<typename ZMV::value_type,
@@ -260,13 +260,13 @@ struct Update<XV, YV, ZV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
                      const typename ZV::non_const_value_type& gamma,
                      const ZV& Z) {
     // XV, YV, and ZV must be Kokkos::View specializations.
-    static_assert(Kokkos::Impl::is_view<XV>::value,
+    static_assert(Kokkos::is_view<XV>::value,
                   "KokkosBlas::Impl::"
                   "Update<rank 1>::update: X is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<YV>::value,
+    static_assert(Kokkos::is_view<YV>::value,
                   "KokkosBlas::Impl::"
                   "Update<rank 1>::update: Y is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<ZV>::value,
+    static_assert(Kokkos::is_view<ZV>::value,
                   "KokkosBlas::Impl::"
                   "Update<rank 1>::update: Z is not a Kokkos::View.");
     // ZV must be nonconst (else it can't be an output argument).

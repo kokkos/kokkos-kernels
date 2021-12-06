@@ -140,11 +140,11 @@ void gemm(const typename CViewType::execution_space& space, const char transA[],
           const AViewType& A, const BViewType& B,
           typename CViewType::const_value_type& beta, const CViewType& C) {
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
-  static_assert(Kokkos::Impl::is_view<AViewType>::value,
+  static_assert(Kokkos::is_view<AViewType>::value,
                 "AViewType must be a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<BViewType>::value,
+  static_assert(Kokkos::is_view<BViewType>::value,
                 "BViewType must be a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<CViewType>::value,
+  static_assert(Kokkos::is_view<CViewType>::value,
                 "CViewType must be a Kokkos::View.");
   static_assert(static_cast<int>(AViewType::rank) == 2,
                 "AViewType must have rank 2.");

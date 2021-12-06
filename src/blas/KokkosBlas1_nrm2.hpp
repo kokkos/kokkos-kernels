@@ -61,7 +61,7 @@ template <class XVector>
 typename Kokkos::Details::InnerProductSpaceTraits<
     typename XVector::non_const_value_type>::mag_type
 nrm2(const XVector& x) {
-  static_assert(Kokkos::Impl::is_view<XVector>::value,
+  static_assert(Kokkos::is_view<XVector>::value,
                 "KokkosBlas::nrm2: XVector must be a Kokkos::View.");
   static_assert(XVector::rank == 1,
                 "KokkosBlas::nrm2: "
@@ -99,13 +99,12 @@ nrm2(const XVector& x) {
 ///   the same rank as RMV, and its entries must be assignable to
 ///   those of RMV.
 template <class RV, class XMV>
-void nrm2(
-    const RV& R, const XMV& X,
-    typename std::enable_if<Kokkos::Impl::is_view<RV>::value, int>::type = 0) {
-  static_assert(Kokkos::Impl::is_view<RV>::value,
+void nrm2(const RV& R, const XMV& X,
+          typename std::enable_if<Kokkos::is_view<RV>::value, int>::type = 0) {
+  static_assert(Kokkos::is_view<RV>::value,
                 "KokkosBlas::nrm2: "
                 "R is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<XMV>::value,
+  static_assert(Kokkos::is_view<XMV>::value,
                 "KokkosBlas::nrm2: "
                 "X is not a Kokkos::View.");
   static_assert(std::is_same<typename RV::value_type,
