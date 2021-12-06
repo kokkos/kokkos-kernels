@@ -582,42 +582,45 @@ int main(int argc, char **argv) {
 
   Kokkos::initialize(argc, argv);
 
-  // The mat_structure view is used to generate a matrix using
-  // finite difference (FD) or finite element (FE) discretization
-  // on a cartesian grid.
-  Kokkos::View<details::Ordinal * [3], Kokkos::HostSpace> mat_structure(
-      "Matrix Structure", 3);
-  mat_structure(0, 0) = nx;      // Request 8 grid point in 'x' direction
-  mat_structure(0, 1) = 0;       // Add BC to the left
-  mat_structure(0, 2) = 0;       // Add BC to the right
-  mat_structure(1, 0) = nx - 1;  // Request 7 grid point in 'y' direction
-  mat_structure(1, 1) = 0;       // Add BC to the bottom
-  mat_structure(1, 2) = 0;       // Add BC to the top
-  mat_structure(2, 0) = nx + 1;  // Request 9 grid point in 'z' direction
-  mat_structure(2, 1) = 0;       // Add BC to the bottom
-  mat_structure(2, 2) = 0;       // Add BC to the top
+  {
+    // The mat_structure view is used to generate a matrix using
+    // finite difference (FD) or finite element (FE) discretization
+    // on a cartesian grid.
+    Kokkos::View<details::Ordinal * [3], Kokkos::HostSpace> mat_structure(
+        "Matrix Structure", 3);
+    mat_structure(0, 0) = nx;      // Request 8 grid point in 'x' direction
+    mat_structure(0, 1) = 0;       // Add BC to the left
+    mat_structure(0, 2) = 0;       // Add BC to the right
+    mat_structure(1, 0) = nx - 1;  // Request 7 grid point in 'y' direction
+    mat_structure(1, 1) = 0;       // Add BC to the bottom
+    mat_structure(1, 2) = 0;       // Add BC to the top
+    mat_structure(2, 0) = nx + 1;  // Request 9 grid point in 'z' direction
+    mat_structure(2, 1) = 0;       // Add BC to the bottom
+    mat_structure(2, 2) = 0;       // Add BC to the top
 
-  typedef typename KokkosSparse::CrsMatrix<details::Scalar, details::Ordinal,
-                                           Kokkos::HostSpace, void, int>
-      h_crsMat_type;
+    typedef typename KokkosSparse::CrsMatrix<details::Scalar, details::Ordinal,
+                                             Kokkos::HostSpace, void, int>
+        h_crsMat_type;
 
-  h_crsMat_type mat_b1 =
-      Test::generate_structured_matrix3D<h_crsMat_type>("FD", mat_structure);
+    h_crsMat_type mat_b1 =
+        Test::generate_structured_matrix3D<h_crsMat_type>("FD", mat_structure);
 
-  int total_errors = 0;
+    int total_errors = 0;
 
-  if (nvec == 1)
-    total_errors = details::test_bsr_matrix_single_vec(
-        fOp, mat_b1, test, filename, rows_per_thread, team_size, vector_length,
-        schedule, loop, details::Scalar(3.1), details::Scalar(-2.4), bMax);
-  else
-    total_errors = details::test_bsr_matrix_vec(
-        fOp, mat_b1, nvec, test, filename, rows_per_thread, team_size,
-        vector_length, schedule, loop, details::Scalar(3.1),
-        details::Scalar(-2.4), bMax);
+    if (nvec == 1)
+      total_errors = details::test_bsr_matrix_single_vec(
+          fOp, mat_b1, test, filename, rows_per_thread, team_size,
+          vector_length, schedule, loop, details::Scalar(3.1),
+          details::Scalar(-2.4), bMax);
+    else
+      total_errors = details::test_bsr_matrix_vec(
+          fOp, mat_b1, nvec, test, filename, rows_per_thread, team_size,
+          vector_length, schedule, loop, details::Scalar(3.1),
+          details::Scalar(-2.4), bMax);
 
-  if (total_errors != 0) {
-    printf("Kokkos::BsrMatrix SpMV Test: Failed\n");
+    if (total_errors != 0) {
+      printf("Kokkos::BsrMatrix SpMV Test: Failed\n");
+    }
   }
 
   Kokkos::finalize();
