@@ -894,7 +894,7 @@ void spmv_struct(const char mode[], const int stencil_type,
                  const AlphaType& alpha, const AMatrix& A, const XVector& x,
                  const BetaType& beta, const YVector& y) {
   typedef
-      typename Kokkos::Impl::if_c<XVector::rank == 2, RANK_TWO, RANK_ONE>::type
+      typename std::conditional<XVector::rank == 2, RANK_TWO, RANK_ONE>::type
           RANK_SPECIALISE;
   spmv_struct(mode, stencil_type, structure, alpha, A, x, beta, y,
               RANK_SPECIALISE());

@@ -91,16 +91,16 @@ void abs(const RMV& R, const XMV& X) {
   // Create unmanaged versions of the input Views.  RMV and XMV may be
   // rank 1 or rank 2.
   typedef Kokkos::View<
-      typename Kokkos::Impl::if_c<RMV::rank == 1,
-                                  typename RMV::non_const_value_type*,
-                                  typename RMV::non_const_value_type**>::type,
+      typename std::conditional<RMV::rank == 1,
+                                typename RMV::non_const_value_type*,
+                                typename RMV::non_const_value_type**>::type,
       typename KokkosKernels::Impl::GetUnifiedLayout<RMV>::array_layout,
       typename RMV::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       RMV_Internal;
   typedef Kokkos::View<
-      typename Kokkos::Impl::if_c<XMV::rank == 1,
-                                  typename XMV::const_value_type*,
-                                  typename XMV::const_value_type**>::type,
+      typename std::conditional<XMV::rank == 1,
+                                typename XMV::const_value_type*,
+                                typename XMV::const_value_type**>::type,
       typename KokkosKernels::Impl::GetUnifiedLayout<XMV>::array_layout,
       typename XMV::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       XMV_Internal;

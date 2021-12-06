@@ -137,16 +137,16 @@ void nrm2w(
   // Create unmanaged versions of the input Views.  RV and XMV may be
   // rank 1 or rank 2.
   typedef Kokkos::View<
-      typename Kokkos::Impl::if_c<RV::rank == 0,
-                                  typename RV::non_const_value_type,
-                                  typename RV::non_const_value_type*>::type,
+      typename std::conditional<RV::rank == 0,
+                                typename RV::non_const_value_type,
+                                typename RV::non_const_value_type*>::type,
       typename KokkosKernels::Impl::GetUnifiedLayout<RV>::array_layout,
       typename RV::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       RV_Internal;
   typedef Kokkos::View<
-      typename Kokkos::Impl::if_c<XMV::rank == 1,
-                                  typename XMV::const_value_type*,
-                                  typename XMV::const_value_type**>::type,
+      typename std::conditional<XMV::rank == 1,
+                                typename XMV::const_value_type*,
+                                typename XMV::const_value_type**>::type,
       typename KokkosKernels::Impl::GetUnifiedLayout<XMV>::array_layout,
       typename XMV::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       XMV_Internal;

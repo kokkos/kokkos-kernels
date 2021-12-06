@@ -102,25 +102,25 @@ void update(const typename XMV::non_const_value_type& alpha, const XMV& X,
   // may be rank 1 or rank 2, but they must all have the same rank.
 
   typedef Kokkos::View<
-      typename Kokkos::Impl::if_c<XMV::rank == 1,
-                                  typename XMV::const_value_type*,
-                                  typename XMV::const_value_type**>::type,
+      typename std::conditional<XMV::rank == 1,
+                                typename XMV::const_value_type*,
+                                typename XMV::const_value_type**>::type,
       typename KokkosKernels::Impl::GetUnifiedLayout<XMV>::array_layout,
       typename XMV::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       XMV_Internal;
 
   typedef Kokkos::View<
-      typename Kokkos::Impl::if_c<YMV::rank == 1,
-                                  typename YMV::const_value_type*,
-                                  typename YMV::const_value_type**>::type,
+      typename std::conditional<YMV::rank == 1,
+                                typename YMV::const_value_type*,
+                                typename YMV::const_value_type**>::type,
       typename KokkosKernels::Impl::GetUnifiedLayout<YMV>::array_layout,
       typename YMV::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       YMV_Internal;
 
   typedef Kokkos::View<
-      typename Kokkos::Impl::if_c<ZMV::rank == 1,
-                                  typename ZMV::non_const_value_type*,
-                                  typename ZMV::non_const_value_type**>::type,
+      typename std::conditional<ZMV::rank == 1,
+                                typename ZMV::non_const_value_type*,
+                                typename ZMV::non_const_value_type**>::type,
       typename KokkosKernels::Impl::GetUnifiedLayout<ZMV>::array_layout,
       typename ZMV::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       ZMV_Internal;
