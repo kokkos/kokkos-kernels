@@ -23,6 +23,7 @@
 #include "Kokkos_Timer.hpp"
 
 #include "KokkosKernels_config.h"
+#include "KokkosKernels_Utils.hpp"
 
 // TPL macros
 #if defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
@@ -824,12 +825,11 @@ KOKKOS_INLINE_FUNCTION auto subview_wrapper(
 template <class ViewValueType, class ViewType>
 KOKKOS_INLINE_FUNCTION ViewValueType
 access_view_bounds_check(ViewType v, int m, int n, const BoundsCheck::Yes &) {
-  if (m < v.extent_int(0) && n < v.extent_int(1)) return v(m, n);
-  return (ViewValueType)0.0F;
-  // TODO: use compile-time extents
-  //  if (m > scr.extent(0) || n > scr.extent(1))
-  //    return 0;
-  //  return v(m, n);
+  return v(KOKKOSKERNELS_MACRO_MIN(m,v.extent_int(0)), KOKKOSKERNELS_MACRO_MIN(n,v.extent_int(1)));
+  //// TODO: use compile-time extents
+  ////  if (m > scr.extent(0) || n > scr.extent(1))
+  ////    return 0;
+  ////  return v(m, n);
 }
 
 template <class ViewValueType, class ViewType>

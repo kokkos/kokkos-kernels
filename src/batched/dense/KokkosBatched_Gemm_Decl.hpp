@@ -465,11 +465,10 @@ int BatchedGemm(BatchedGemmHandleType *const handle, const ScalarType alpha,
       // } else
       if (on_gpu &&
           ((std::is_same<layout_type, Kokkos::LayoutLeft>::value)
-               ? (c_m >= 16)
-               : (c_m >= 24 && c_m <= 32) || (c_m >= 45 && c_m <= 64))) {
+               ? (c_m >= 16) : (c_m >= 24))) {//Vinh's note: use this condition for now, might need to revisit
         handle->teamSz = handle->vecLen = 8;
         constexpr int tile_m = 32, tile_n = 32, tile_k = 8;
-        if (c_m % 32 == 0)  // No bounds checking
+        if (c_m % 32 == 0) {  // No bounds checking
           ret =
               Impl::BatchedDblBufGemm<ArgTransA, ArgTransB, ArgBatchSzDim,
                                       BatchedGemmHandleType, ScalarType,
@@ -477,7 +476,8 @@ int BatchedGemm(BatchedGemmHandleType *const handle, const ScalarType alpha,
                                       BoundsCheck::No, tile_m, tile_n, tile_k>(
                   handle, alpha, A, B, beta, C)
                   .invoke();
-        else
+        }
+        else {
           ret =
               Impl::BatchedDblBufGemm<ArgTransA, ArgTransB, ArgBatchSzDim,
                                       BatchedGemmHandleType, ScalarType,
@@ -485,6 +485,7 @@ int BatchedGemm(BatchedGemmHandleType *const handle, const ScalarType alpha,
                                       BoundsCheck::Yes, tile_m, tile_n, tile_k>(
                   handle, alpha, A, B, beta, C)
                   .invoke();
+        }
       } else {
         ret = Impl::BatchedSerialGemm<ArgTransA, ArgTransB, bsgModeType,
                                       ArgBatchSzDim, bsgResultsPerThread,
