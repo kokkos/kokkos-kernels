@@ -218,10 +218,7 @@ class BatchedDblBufGemm {
     // runtime resolution of the host address &__ei.
     Functor(BatchedDblBufGemm &ei, AViewType A, BViewType B, CViewType C,
             unsigned tile_m = 1, unsigned tile_n = 1, unsigned tile_k = 1)
-        : __ei(ei),
-          __A(A),
-          __B(B),
-          __C(C) {
+        : __ei(ei), __A(A), __B(B), __C(C) {
       if (std::is_same<ArgBatchSzDim, BatchLayout::Left>::value) {
         ei.__c_batch_size = ei.__C.extent_int(0);
         ei.__c_m          = ei.__C.extent_int(1);
@@ -585,161 +582,188 @@ class BatchedDblBufGemm {
       view_type_2d_scratch svA_scr(member.team_scratch(0), __tile_m, __tile_k);
       view_type_2d_scratch svB_scr(member.team_scratch(0), __tile_k, __tile_n);
 
-      Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, STRIDE_M), [&](const int &thread_id) {
-          int thread_offset = thread_id + start_m;
+      Kokkos::parallel_for(
+          Kokkos::TeamThreadRange(member, 0, STRIDE_M),
+          [&](const int &thread_id) {
+            int thread_offset = thread_id + start_m;
 
-          Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, 0, STRIDE_N), [&](const int &vlane_id) {
-              int vlane_offset = vlane_id + start_n;
+            Kokkos::parallel_for(
+                Kokkos::ThreadVectorRange(member, 0, STRIDE_N),
+                [&](const int &vlane_id) {
+                  int vlane_offset = vlane_id + start_n;
 
-              // Here we populate scratch memory with one or more "k" tiles for every thread of the team!
+          // Here we populate scratch memory with one or more "k" tiles for
+          // every thread of the team!
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-              #pragma unroll
+#pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
-              for (int i = 0; i < REG_N * STRIDE_N; i += STRIDE_N)
-                svB_scr(thread_id, vlane_id + i) = access_view_bounds_check<view_value_type>(svB, thread_id, vlane_offset + i, __ei.__bounds_check_tag);
+                  for (int i = 0; i < REG_N * STRIDE_N; i += STRIDE_N)
+                    svB_scr(thread_id, vlane_id + i) =
+                        access_view_bounds_check<view_value_type>(
+                            svB, thread_id, vlane_offset + i,
+                            __ei.__bounds_check_tag);
 
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-              #pragma unroll
+#pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
-              for (int i = 0; i < REG_M * STRIDE_M; i += STRIDE_M)
-                svA_scr(thread_id + i, vlane_id) = access_view_bounds_check<view_value_type>(svA, thread_offset + i, vlane_id, __ei.__bounds_check_tag);
+                  for (int i = 0; i < REG_M * STRIDE_M; i += STRIDE_M)
+                    svA_scr(thread_id + i, vlane_id) =
+                        access_view_bounds_check<view_value_type>(
+                            svA, thread_offset + i, vlane_id,
+                            __ei.__bounds_check_tag);
 
-              // Wait for A, B to reside in scratch memory
-              member.team_barrier();
+                  // Wait for A, B to reside in scratch memory
+                  member.team_barrier();
 
-              // Each thread calculates a single dot product in chunks of size __tile_k
-              for (kk = 0; kk < __k - __tile_k; kk += __tile_k) {
-                int k_tile_offset = kk + __tile_k;
+                  // Each thread calculates a single dot product in chunks of
+                  // size __tile_k
+                  for (kk = 0; kk < __k - __tile_k; kk += __tile_k) {
+                    int k_tile_offset = kk + __tile_k;
 
-                // Get this threads next __tile_k entries from global memory
-                // Each thread has its own copy of prefetch_reg_b.
+            // Get this threads next __tile_k entries from global memory
+            // Each thread has its own copy of prefetch_reg_b.
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-                #pragma unroll
+#pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
-                for (int i = 0; i < REG_N; ++i)
-                  prefetch_reg_b[i] = access_view_bounds_check<view_value_type>(svB, thread_id + k_tile_offset, vlane_offset + i * STRIDE_N, __ei.__bounds_check_tag);
+                    for (int i = 0; i < REG_N; ++i)
+                      prefetch_reg_b[i] =
+                          access_view_bounds_check<view_value_type>(
+                              svB, thread_id + k_tile_offset,
+                              vlane_offset + i * STRIDE_N,
+                              __ei.__bounds_check_tag);
 
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-                #pragma unroll
+#pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
-                for (int i = 0; i < REG_M; ++i)
-                  prefetch_reg_a[i] = access_view_bounds_check<view_value_type>(svA, thread_offset + i * STRIDE_M, vlane_id + k_tile_offset, __ei.__bounds_check_tag);
+                    for (int i = 0; i < REG_M; ++i)
+                      prefetch_reg_a[i] =
+                          access_view_bounds_check<view_value_type>(
+                              svA, thread_offset + i * STRIDE_M,
+                              vlane_id + k_tile_offset,
+                              __ei.__bounds_check_tag);
 
-                // Multiply
+              // Multiply
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-                #pragma unroll
+#pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
-                for (unsigned k = 0; k < __tile_k; ++k) {
-
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-                  #pragma unroll
-#endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
-                  for (int m = 0; m < REG_M; ++m)
-                    reg_a[m] = svA_scr(thread_id + m * STRIDE_M, k);
+                    for (unsigned k = 0; k < __tile_k; ++k) {
 
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-                  #pragma unroll
+#pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
-                  for (int n = 0; n < REG_N; ++n)
-                    reg_b[n] = svB_scr(k, vlane_id + n * STRIDE_N);
+                      for (int m = 0; m < REG_M; ++m)
+                        reg_a[m] = svA_scr(thread_id + m * STRIDE_M, k);
 
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-                  #pragma unroll
+#pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
-                  for (int m = 0; m < REG_M; ++m) {
+                      for (int n = 0; n < REG_N; ++n)
+                        reg_b[n] = svB_scr(k, vlane_id + n * STRIDE_N);
+
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-                    #pragma unroll
+#pragma unroll
+#endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
+                      for (int m = 0; m < REG_M; ++m) {
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
+                        for (int n = 0; n < REG_N; ++n)
+                          reg_c[m][n] += reg_a[m] * reg_b[n] * __alpha;
+                      }
+                    }
+
+                    // Wait for:
+                    //   1. prefetch_regs to be populated
+                    //   2. for shmem to no longer be read from
+                    member.team_barrier();
+
+            // populate shmem from prefetch registers. Each thread has its own
+            // copy of prefetch_reg_b.
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
+                    for (int i = 0; i < REG_N; ++i)
+                      svB_scr(thread_id, vlane_id + i * STRIDE_N) =
+                          prefetch_reg_b[i];
+
+              // populate shmem from prefetch registers. Each thread has its own
+              // copy of prefetch_reg_a.
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
+                    for (int i = 0; i < REG_M; ++i)
+                      svA_scr(thread_id + i * STRIDE_M, vlane_id) =
+                          prefetch_reg_a[i];
+
+                    // Wait for shmem stores to land before performing next
+                    // __tile_k multiply
+                    member.team_barrier();
+                  }  // end n_tile_k_tiles loop
+
+          // Multiply last tile, may be a partial tile
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
+                  for (unsigned k = 0; k < __k - kk; ++k) {
+
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
+                    for (int m = 0; m < REG_M; ++m)
+                      reg_a[m] = svA_scr(thread_id + m * STRIDE_M, k);
+
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
                     for (int n = 0; n < REG_N; ++n)
-                      reg_c[m][n] += reg_a[m] * reg_b[n] * __alpha;
+                      reg_b[n] = svB_scr(k, vlane_id + n * STRIDE_N);
+
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
+                    for (int m = 0; m < REG_M; ++m) {
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
+                      for (int n = 0; n < REG_N; ++n)
+                        reg_c[m][n] += reg_a[m] * reg_b[n] * __alpha;
+                    }
                   }
-                }
 
-                // Wait for:
-                //   1. prefetch_regs to be populated
-                //   2. for shmem to no longer be read from
-                member.team_barrier();
-
-                // populate shmem from prefetch registers. Each thread has its own copy of prefetch_reg_b.     
+                  // store results back to global memory
+                  if (__beta == 0.0F) {
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-                #pragma unroll
+#pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
-                for (int i = 0; i < REG_N; ++i)
-                  svB_scr(thread_id, vlane_id + i * STRIDE_N) = prefetch_reg_b[i];
-
-                // populate shmem from prefetch registers. Each thread has its own copy of prefetch_reg_a.
+                    for (int m = 0; m < REG_M; ++m) {
+                      int cm = thread_offset + m * STRIDE_M;
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-                #pragma unroll
+#pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
-                for (int i = 0; i < REG_M; ++i)
-                  svA_scr(thread_id + i * STRIDE_M, vlane_id) = prefetch_reg_a[i];
-
-                // Wait for shmem stores to land before performing next __tile_k multiply
-                member.team_barrier();
-              }  // end n_tile_k_tiles loop
-
-              // Multiply last tile, may be a partial tile
+                      for (int n = 0; n < REG_N; ++n) {
+                        int cn = vlane_offset + n * STRIDE_N;
+                        fma_bounds_check(svC, cm, cn, reg_c[m][n],
+                                         __ei.__bounds_check_tag);
+                      }
+                    }
+                  } else {
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-              #pragma unroll
+#pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
-              for (unsigned k = 0; k < __k - kk; ++k) {
-
+                    for (int m = 0; m < REG_M; ++m) {
+                      int cm = thread_offset + m * STRIDE_M;
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-                #pragma unroll
+#pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
-                for (int m = 0; m < REG_M; ++m)
-                  reg_a[m] = svA_scr(thread_id + m * STRIDE_M, k);
-
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-                #pragma unroll
-#endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
-                for (int n = 0; n < REG_N; ++n)
-                  reg_b[n] = svB_scr(k, vlane_id + n * STRIDE_N);
-
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-                #pragma unroll
-#endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
-                for (int m = 0; m < REG_M; ++m) {
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-                  #pragma unroll
-#endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
-                  for (int n = 0; n < REG_N; ++n)
-                    reg_c[m][n] += reg_a[m] * reg_b[n] * __alpha;
-                }
-              }
-
-              // store results back to global memory
-              if (__beta == 0.0F) {
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-                #pragma unroll
-#endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
-                for (int m = 0; m < REG_M; ++m) {
-                  int cm = thread_offset + m * STRIDE_M;
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-                  #pragma unroll
-#endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
-                  for (int n = 0; n < REG_N; ++n) {
-                    int cn = vlane_offset + n * STRIDE_N;
-                    fma_bounds_check(svC, cm, cn, reg_c[m][n], __ei.__bounds_check_tag);
+                      for (int n = 0; n < REG_N; ++n) {
+                        int cn = vlane_offset + n * STRIDE_N;
+                        fma_bounds_check(svC, cm, cn, reg_c[m][n], __beta,
+                                         __ei.__bounds_check_tag);
+                      }
+                    }
                   }
-                }
-              } else {
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-                #pragma unroll
-#endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
-                for (int m = 0; m < REG_M; ++m) {
-                  int cm = thread_offset + m * STRIDE_M;
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-                  #pragma unroll
-#endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
-                  for (int n = 0; n < REG_N; ++n) {
-                    int cn = vlane_offset + n * STRIDE_N;
-                    fma_bounds_check(svC, cm, cn, reg_c[m][n], __beta, __ei.__bounds_check_tag);
-                  }
-                }
-              }
+                });
           });
-      });
     }
 #endif
   };
