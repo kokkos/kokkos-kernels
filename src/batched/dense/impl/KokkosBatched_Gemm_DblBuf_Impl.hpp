@@ -216,8 +216,7 @@ class BatchedDblBufGemm {
     // below. If those are used, we  get an invalid memory error from cuda. I
     // suspect this is due the values not being copied to device and then
     // runtime resolution of the host address &__ei.
-    Functor(BatchedDblBufGemm &ei, AViewType A, BViewType B, CViewType C,
-            unsigned tile_m = 1, unsigned tile_n = 1, unsigned tile_k = 1)
+    Functor(BatchedDblBufGemm &ei, AViewType A, BViewType B, CViewType C)
         : __ei(ei), __A(A), __B(B), __C(C) {
       if (std::is_same<ArgBatchSzDim, BatchLayout::Left>::value) {
         ei.__c_batch_size = ei.__C.extent_int(0);
