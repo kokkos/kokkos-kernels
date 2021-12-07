@@ -66,13 +66,14 @@ struct TeamVectorCG {
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType& member, const OperatorType& A, const VectorViewType& _B,
       const VectorViewType& _X,
-      KrylovHandle<typename VectorViewType::non_const_value_type>* handle) {
+      const KrylovHandle<typename VectorViewType::non_const_value_type>&
+          handle) {
     typedef int OrdinalType;
     typedef typename Kokkos::Details::ArithTraits<
         typename VectorViewType::non_const_value_type>::mag_type MagnitudeType;
 
-    const size_t maximum_iteration = handle->get_max_iteration();
-    const MagnitudeType tolerance  = handle->get_tolerance();
+    const size_t maximum_iteration = handle.get_max_iteration();
+    const MagnitudeType tolerance  = handle.get_tolerance();
 
     using ScratchPadNormViewType = Kokkos::View<
         MagnitudeType*,

@@ -67,7 +67,8 @@ struct TeamGMRES {
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType& member, const OperatorType& A, const VectorViewType& _B,
       const VectorViewType& _X,
-      KrylovHandle<typename VectorViewType::non_const_value_type>* handle) {
+      const KrylovHandle<typename VectorViewType::non_const_value_type>&
+          handle) {
     typedef int OrdinalType;
     typedef typename Kokkos::Details::ArithTraits<
         typename VectorViewType::non_const_value_type>::mag_type MagnitudeType;
@@ -89,10 +90,10 @@ struct TeamGMRES {
     const OrdinalType numMatrices = _X.extent(0);
     const OrdinalType numRows     = _X.extent(1);
 
-    size_t maximum_iteration = handle->get_max_iteration() < numRows
-                                   ? handle->get_max_iteration()
+    size_t maximum_iteration = handle.get_max_iteration() < numRows
+                                   ? handle.get_max_iteration()
                                    : numRows;
-    const MagnitudeType tolerance     = handle->get_tolerance();
+    const MagnitudeType tolerance     = handle.get_tolerance();
     const MagnitudeType max_tolerance = 0.;
 
     ScratchPadMultiVectorViewType V(member.team_scratch(1), numMatrices,
@@ -208,8 +209,8 @@ struct TeamGMRES {
               // Compute the new Givens rotation:
               Kokkos::pair<typename VectorViewType::non_const_value_type,
                            typename VectorViewType::non_const_value_type>
-                  G_new;
-              typename VectorViewType::non_const_value_type alpha;
+                  G_new(1, 0);
+              typename VectorViewType::non_const_value_type alpha = 0;
               SerialGivensInternal::invoke(H_j(j), H_j(j + 1), &G_new, &alpha);
 
               Givens(l, j, 0) = G_new.first;
