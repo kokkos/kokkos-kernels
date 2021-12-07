@@ -127,7 +127,7 @@ class BatchedDblBufGemm {
     constexpr int stride_n = TILE_N / reg_n;
     using functor_type = Functor<member_type, reg_m, reg_n, stride_m, stride_n>;
 
-    functor_type functor(*this, __A, __B, __C, TILE_M, TILE_N, TILE_K);
+    functor_type functor(*this, __A, __B, __C);
 
     if (__handle->enableDebug) {
       std::cout << "algo_type:" << __handle->get_kernel_algo_type() << std::endl
@@ -204,7 +204,10 @@ class BatchedDblBufGemm {
     ScalarType __alpha, __beta;
     int __k;
     size_t __n_tile_k_tiles, __n_sub_tiles;
-    unsigned __tile_m, __tile_n, __tile_k, __tiles_per_col, __tiles_per_row;
+    static constexpr unsigned __tile_m = TILE_M;
+    static constexpr unsigned __tile_n = TILE_M;
+    static constexpr unsigned __tile_k = TILE_K;
+    unsigned __tiles_per_col, __tiles_per_row;
 
    public:
     size_t get_n_sub_tiles() { return __n_sub_tiles; }
@@ -218,10 +221,7 @@ class BatchedDblBufGemm {
         : __ei(ei),
           __A(A),
           __B(B),
-          __C(C),
-          __tile_m(tile_m),
-          __tile_n(tile_n),
-          __tile_k(tile_k) {
+          __C(C) {
       if (std::is_same<ArgBatchSzDim, BatchLayout::Left>::value) {
         ei.__c_batch_size = ei.__C.extent_int(0);
         ei.__c_m          = ei.__C.extent_int(1);
