@@ -640,17 +640,6 @@ struct BSR_GEMV_Functor {
               m_y, Kokkos::make_pair(iBlock * block_dim,
                                      iBlock * block_dim + block_dim));
           //
-          /*
-          const auto beta1 = static_cast<y_value_type>(1);
-          for (ordinal_type ic = 0; ic < count; ++ic) {
-            const auto Aview  = row.block(ic);
-            const auto xstart = row.block_colidx(ic) * block_dim;
-            const auto xview  = Kokkos::subview(
-                m_x, Kokkos::make_pair(xstart, xstart + block_dim));
-            KokkosBlas::gemv("N", alpha, Aview, xview, beta1, yview);
-          }
-           */
-          //
           for (ordinal_type ir = 0; ir < block_dim; ++ir) {
             y_value_type sum = 0;
 
@@ -758,7 +747,7 @@ void spMatVec_no_transpose(
   }
 
   // We need to scale y first ("scaling" by zero just means filling
-  // with zeros), since the functor works by atomic-adding into y.
+  // with zeros), since the functor updates y (by adding alpha Op(A) x).
   KokkosBlas::scal(y, beta, y);
 
   typedef KokkosSparse::Experimental::BsrMatrix<
