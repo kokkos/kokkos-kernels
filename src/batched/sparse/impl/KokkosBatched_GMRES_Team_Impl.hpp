@@ -68,9 +68,9 @@ struct TeamGMRES {
             typename PrecOperatorType>
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType& member, const OperatorType& A, const VectorViewType& _B,
-      const VectorViewType& _X,
-      const KrylovHandle<typename VectorViewType::non_const_value_type>& handle,
-      const PrecOperatorType& P) {
+      const VectorViewType& _X, const PrecOperatorType& P,
+      const KrylovHandle<typename VectorViewType::non_const_value_type>&
+          handle) {
     typedef int OrdinalType;
     typedef typename Kokkos::Details::ArithTraits<
         typename VectorViewType::non_const_value_type>::mag_type MagnitudeType;
@@ -279,8 +279,8 @@ struct TeamGMRES {
       const KrylovHandle<typename VectorViewType::non_const_value_type>&
           handle) {
     Identity P;
-    return invoke<OperatorType, VectorViewType, Identity>(member, A, _B, _X,
-                                                          handle, P);
+    return invoke<OperatorType, VectorViewType, Identity>(member, A, _B, _X, P,
+                                                          handle);
   }
 };
 }  // namespace KokkosBatched
