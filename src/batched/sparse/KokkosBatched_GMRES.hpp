@@ -73,7 +73,7 @@ struct GMRES {
       const MemberType &member, const OperatorType &A, const VectorViewType &B,
       const VectorViewType &X,
       const KrylovHandle<typename VectorViewType::non_const_value_type>
-          handle) {
+          &handle) {
     int status = 0;
     if (std::is_same<ArgMode, Mode::Team>::value) {
       status =
