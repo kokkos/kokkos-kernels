@@ -18,11 +18,11 @@ template <typename DeviceType, typename ValuesViewType, typename IntView,
           typename VectorViewType>
 struct Functor_TestBatchedTeamVectorGMRES {
   const ValuesViewType _D;
-  const ValuesViewType _Diag;
   const IntView _r;
   const IntView _c;
   const VectorViewType _X;
   const VectorViewType _B;
+  const ValuesViewType _Diag;
   const int _N_team;
   KrylovHandle<typename ValuesViewType::value_type> handle;
 
@@ -32,7 +32,7 @@ struct Functor_TestBatchedTeamVectorGMRES {
                                      const VectorViewType &B,
                                      const VectorViewType &diag,
                                      const int N_team)
-      : _D(D), _r(r), _c(c), _X(X), _B(B), _N_team(N_team), _Diag(diag) {}
+      : _D(D), _r(r), _c(c), _X(X), _B(B), _Diag(diag), _N_team(N_team) {}
 
   template <typename MemberType>
   KOKKOS_INLINE_FUNCTION void operator()(const MemberType &member) const {
