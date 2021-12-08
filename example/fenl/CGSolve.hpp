@@ -148,4 +148,3 @@ struct CGSolve<ImportType, SparseMatrixType, VectorType,
 //----------------------------------------------------------------------------
 
 #endif /* #ifndef KOKKOS_EXAMPLE_CG_SOLVE */
-
