@@ -48,6 +48,7 @@
 
 struct Params {
   int use_cuda    = 0;
+  int use_hip     = 0;
   int use_openmp  = 0;
   int use_threads = 0;
   // m is vector length
@@ -61,7 +62,7 @@ void print_options() {
   std::cerr << "Options:\n" << std::endl;
 
   std::cerr << "\tBACKEND: '--threads[numThreads]' | '--openmp [numThreads]' | "
-               "'--cuda [cudaDeviceIndex]'"
+               "'--cuda [cudaDeviceIndex]' | '--hip [hipDeviceIndex]'"
             << std::endl;
   std::cerr << "\tIf no BACKEND selected, serial is the default." << std::endl;
   std::cerr << "\t[Optional] --repeat :: how many times to repeat overall "
@@ -85,6 +86,8 @@ int parse_inputs(Params& params, int argc, char** argv) {
       params.use_openmp = atoi(argv[++i]);
     } else if (0 == strcasecmp(argv[i], "--cuda")) {
       params.use_cuda = atoi(argv[++i]) + 1;
+    } else if (0 == strcasecmp(argv[i], "--hip")) {
+      params.use_hip = atoi(argv[++i]) + 1;
     } else if (0 == strcasecmp(argv[i], "--m")) {
       params.m = atoi(argv[++i]);
     } else if (0 == strcasecmp(argv[i], "--n")) {
@@ -135,7 +138,7 @@ void run(int m, int n, int repeat) {
   using MemSpace = typename ExecSpace::memory_space;
   using Device   = Kokkos::Device<ExecSpace, MemSpace>;
 
-  std::cout << "Running BLAS Level 1 DOT perfomrance experiment ("
+  std::cout << "Running BLAS Level 1 DOT performance experiment ("
             << ExecSpace::name() << ")\n";
 
   std::cout << "Each test input vector has a length of " << m << std::endl;
@@ -185,7 +188,7 @@ int main(int argc, char** argv) {
   if (parse_inputs(params, argc, argv)) {
     return 1;
   }
-  const int device_id = params.use_cuda - 1;
+  const int device_id = std::max(params.use_cuda, params.use_hip) - 1;
 
   const int num_threads = std::max(params.use_openmp, params.use_threads);
 
@@ -194,7 +197,8 @@ int main(int argc, char** argv) {
   bool useThreads = params.use_threads != 0;
   bool useOMP     = params.use_openmp != 0;
   bool useCUDA    = params.use_cuda != 0;
-  bool useSerial  = !useThreads && !useOMP && !useCUDA;
+  bool useHIP     = params.use_hip != 0;
+  bool useSerial  = !useThreads && !useOMP && !useCUDA && !useHIP;
 
   if (useThreads) {
 #if defined(KOKKOS_ENABLE_THREADS)
@@ -219,6 +223,14 @@ int main(int argc, char** argv) {
     run<Kokkos::Cuda>(params.m, params.n, params.repeat);
 #else
     std::cout << "ERROR: CUDA requested, but not available.\n";
+    return 1;
+#endif
+  }
+  if (useHIP) {
+#if defined(KOKKOS_ENABLE_HIP)
+    run<Kokkos::Experimental::HIP>(params.m, params.n, params.repeat);
+#else
+    std::cout << "ERROR: HIP requested, but not available.\n";
     return 1;
 #endif
   }
