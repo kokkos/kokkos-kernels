@@ -406,6 +406,91 @@ template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
 void testSpMVBsrMatrix() {
   //
+  // Check a few corner cases
+  //
+
+  // 0 x 0 case
+  {
+    typedef
+        typename KokkosSparse::Experimental::BsrMatrix<scalar_t, lno_t, device,
+                                                       void, size_type>
+            bsrMat_t;
+    bsrMat_t Absr("empty", 0, 0, 0, nullptr, nullptr, nullptr, 1);
+    typedef typename bsrMat_t::values_type::non_const_type scalar_view_t;
+    typedef scalar_view_t x_vector_type;
+    typedef scalar_view_t y_vector_type;
+    x_vector_type x("corner-case-x", Absr.numCols());
+    y_vector_type y("corner-case-y", Absr.numRows());
+    Kokkos::deep_copy(y, static_cast<scalar_t>(0));
+    scalar_t alpha = static_cast<scalar_t>(1);
+    scalar_t beta  = static_cast<scalar_t>(1);
+    const char fOp = 'N';
+    int num_errors = 0;
+    try {
+      KokkosSparse::spmv(&fOp, alpha, Absr, x, beta, y);
+      Kokkos::fence();
+    } catch (std::exception &e) {
+      num_errors += 1;
+      std::cout << e.what();
+    }
+    EXPECT_TRUE(num_errors == 0);
+  }
+
+  // 0 x 1 case
+  {
+    typedef
+        typename KokkosSparse::Experimental::BsrMatrix<scalar_t, lno_t, device,
+                                                       void, size_type>
+            bsrMat_t;
+    bsrMat_t Absr("empty", 0, 1, 0, nullptr, nullptr, nullptr, 1);
+    typedef typename bsrMat_t::values_type::non_const_type scalar_view_t;
+    typedef scalar_view_t x_vector_type;
+    typedef scalar_view_t y_vector_type;
+    x_vector_type x("corner-case-x", Absr.numCols());
+    y_vector_type y("corner-case-y", Absr.numRows());
+    Kokkos::deep_copy(y, static_cast<scalar_t>(0));
+    scalar_t alpha = static_cast<scalar_t>(1);
+    scalar_t beta  = static_cast<scalar_t>(1);
+    const char fOp = 'N';
+    int num_errors = 0;
+    try {
+      KokkosSparse::spmv(&fOp, alpha, Absr, x, beta, y);
+      Kokkos::fence();
+    } catch (std::exception &e) {
+      num_errors += 1;
+      std::cout << e.what();
+    }
+    EXPECT_TRUE(num_errors == 0);
+  }
+
+  // 1 x 0 case
+  {
+    typedef
+        typename KokkosSparse::Experimental::BsrMatrix<scalar_t, lno_t, device,
+                                                       void, size_type>
+            bsrMat_t;
+    bsrMat_t Absr("empty", 1, 0, 0, nullptr, nullptr, nullptr, 1);
+    typedef typename bsrMat_t::values_type::non_const_type scalar_view_t;
+    typedef scalar_view_t x_vector_type;
+    typedef scalar_view_t y_vector_type;
+    x_vector_type x("corner-case-x", Absr.numCols());
+    y_vector_type y("corner-case-y", Absr.numRows());
+    Kokkos::deep_copy(y, static_cast<scalar_t>(0));
+    scalar_t alpha = static_cast<scalar_t>(1);
+    scalar_t beta  = static_cast<scalar_t>(1);
+    const char fOp = 'N';
+    int num_errors = 0;
+    try {
+      KokkosSparse::spmv(&fOp, alpha, Absr, x, beta, y);
+      Kokkos::fence();
+    } catch (std::exception &e) {
+      num_errors += 1;
+      std::cout << e.what();
+    }
+    EXPECT_TRUE(num_errors == 0);
+  }
+
+  //
   // Test for the operation y <- alpha * Op(A) * x + beta * y
   //
 
@@ -421,7 +506,7 @@ void testSpMVBsrMatrix() {
   // Set the largest block size for the block matrix
   // The code will create matrices with block sizes 1, .., bMax
   //
-  const lno_t bMax = 13;
+  constexpr lno_t bMax = 13;
 
   //
   //--- Test single vector case
