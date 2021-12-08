@@ -139,6 +139,8 @@ void spgemm_numeric(KernelHandle *handle,
         "If you need this case please let kokkos-kernels developers know.\n");
   }
 
+  if (m < 1 || n < 1 || k < 1) return;
+
   typedef typename KernelHandle::const_size_type c_size_t;
   typedef typename KernelHandle::const_nnz_lno_t c_lno_t;
   typedef typename KernelHandle::const_nnz_scalar_t c_scalar_t;
