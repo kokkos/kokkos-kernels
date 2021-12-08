@@ -60,7 +60,7 @@ struct Functor_TestBatchedTeamVectorGMRES {
 
     KokkosBatched::TeamVectorGMRES<MemberType>::template invoke<Operator,
                                                                 VectorViewType>(
-        member, A, b, x, handle, P);
+        member, A, b, x, P, handle);
   }
 
   inline void run() {
