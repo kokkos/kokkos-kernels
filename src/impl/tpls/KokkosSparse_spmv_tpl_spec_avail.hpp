@@ -207,28 +207,34 @@ KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(Kokkos::complex<double>, int64_t,
   template <>                                                                  \
   struct spmv_tpl_spec_avail<                                                  \
       const SCALAR, const rocsparse_int,                                       \
-      Kokkos::Device<Kokkos::Experimental::HIP, Kokkos::Experimental::HIPSpace>, \
-      Kokkos::MemoryTraits<Kokkos::Unmanaged>,                                 \
-      const rocsparse_int, const SCALAR*, LAYOUT,                              \
-      Kokkos::Device<Kokkos::Experimental::HIP, Kokkos::Experimental::HIPSpace>, \
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>,          \
-      SCALAR*, LAYOUT,                                                         \
-      Kokkos::Device<Kokkos::Experimental::HIP, Kokkos::Experimental::HIPSpace>, \
+      Kokkos::Device<Kokkos::Experimental::HIP,                                \
+                     Kokkos::Experimental::HIPSpace>,                          \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged>, const rocsparse_int,            \
+      const SCALAR*, LAYOUT,                                                   \
+      Kokkos::Device<Kokkos::Experimental::HIP,                                \
+                     Kokkos::Experimental::HIPSpace>,                          \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>, SCALAR*, \
+      LAYOUT,                                                                  \
+      Kokkos::Device<Kokkos::Experimental::HIP,                                \
+                     Kokkos::Experimental::HIPSpace>,                          \
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > {                              \
     enum : bool { value = true };                                              \
   };
 
 KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_ROCSPARSE(double, Kokkos::LayoutLeft)
 KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_ROCSPARSE(float, Kokkos::LayoutLeft)
-KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_ROCSPARSE(Kokkos::complex<double>, Kokkos::LayoutLeft)
-KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_ROCSPARSE(Kokkos::complex<float>, Kokkos::LayoutLeft)
+KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_ROCSPARSE(Kokkos::complex<double>,
+                                           Kokkos::LayoutLeft)
+KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_ROCSPARSE(Kokkos::complex<float>,
+                                           Kokkos::LayoutLeft)
 KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_ROCSPARSE(double, Kokkos::LayoutRight)
 KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_ROCSPARSE(float, Kokkos::LayoutRight)
-KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_ROCSPARSE(Kokkos::complex<double>, Kokkos::LayoutRight)
-KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_ROCSPARSE(Kokkos::complex<float>, Kokkos::LayoutRight)
+KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_ROCSPARSE(Kokkos::complex<double>,
+                                           Kokkos::LayoutRight)
+KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_ROCSPARSE(Kokkos::complex<float>,
+                                           Kokkos::LayoutRight)
 
-
-#endif // KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+#endif  // KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
 #define KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_MKL(SCALAR, EXECSPACE)                \
@@ -257,7 +263,7 @@ KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_MKL(Kokkos::complex<float>, Kokkos::OpenMP)
 KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_MKL(Kokkos::complex<double>, Kokkos::OpenMP)
 #endif
 
-#endif // KOKKOSKERNELS_ENABLE_TPL_MKL
+#endif  // KOKKOSKERNELS_ENABLE_TPL_MKL
 
 // Specialization struct which defines whether a specialization exists
 template <class AT, class AO, class AD, class AM, class AS, class XT, class XL,

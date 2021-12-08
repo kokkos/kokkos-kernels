@@ -135,15 +135,16 @@ inline rocsparse_operation mode_kk_to_rocsparse(const char kk_mode[]) {
 
 template <typename index_type>
 inline rocsparse_indextype rocsparse_index_type() {
-  if(std::is_same<index_type, uint16_t>::value) {
+  if (std::is_same<index_type, uint16_t>::value) {
     return rocsparse_indextype_u16;
-  } else if(std::is_same<index_type, int32_t>::value) {
+  } else if (std::is_same<index_type, int32_t>::value) {
     return rocsparse_indextype_i32;
-  } else if(std::is_same<index_type, int64_t>::value) {
+  } else if (std::is_same<index_type, int64_t>::value) {
     return rocsparse_indextype_i64;
   } else {
     std::ostringstream out;
-    out << "Trying to call rocSPARSE SpMV with unsupported index type: " << typeid(index_type).name();
+    out << "Trying to call rocSPARSE SpMV with unsupported index type: "
+        << typeid(index_type).name();
     throw std::logic_error(out.str());
   }
 }
@@ -151,7 +152,8 @@ inline rocsparse_indextype rocsparse_index_type() {
 template <typename data_type>
 inline rocsparse_datatype rocsparse_compute_type() {
   std::ostringstream out;
-  out << "Trying to call rocSPARSE SpMV with unsupported compute type: " << typeid(data_type).name();
+  out << "Trying to call rocSPARSE SpMV with unsupported compute type: "
+      << typeid(data_type).name();
   throw std::logic_error(out.str());
 }
 
