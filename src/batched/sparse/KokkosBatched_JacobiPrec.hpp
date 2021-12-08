@@ -79,11 +79,20 @@ class JacobiPrec {
 
   template <typename MemberType, typename ArgMode>
   KOKKOS_INLINE_FUNCTION void computeInverse(const MemberType &member) const {
-    auto one = Kokkos::Details::ArithTraits<MagnitudeType>::one();
+    auto one     = Kokkos::Details::ArithTraits<MagnitudeType>::one();
+    auto epsilon = Kokkos::Details::ArithTraits<MagnitudeType>::epsilon();
     if (std::is_same<ArgMode, Mode::Serial>::value) {
       for (int i = 0; i < n_operators; ++i)
-        for (int j = 0; j < n_colums; ++j)
+        for (int j = 0; j < n_colums; ++j) {
+          if (Kokkos::abs<ScalarType>(diag_values(i, j)) <= epsilon) {
+            KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+                "KokkosBatched::JacobiPrec: the magnitude of the diagonal "
+                "entry: diag(%d,%d) is too small, \n",
+                (int)i, (int)j);
+            return;
+          }
           diag_values(i, j) = one / diag_values(i, j);
+        }
     } else if (std::is_same<ArgMode, Mode::Team>::value) {
       auto diag_values_array = diag_values.data();
       auto vs0               = diag_values.stride_0();
@@ -118,7 +127,7 @@ class JacobiPrec {
   }
 
   template <typename MemberType, typename XViewType, typename YViewType,
-            typename ArgTrans, typename ArgMode>
+            typename ArgTrans, typename ArgMode, int sameXY>
   KOKKOS_INLINE_FUNCTION void apply(const MemberType &member,
                                     const XViewType &X,
                                     const YViewType &Y) const {

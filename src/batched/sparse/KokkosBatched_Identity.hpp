@@ -61,16 +61,19 @@ class Identity {
   ~Identity() {}
 
   template <typename MemberType, typename XViewType, typename YViewType,
-            typename ArgTrans, typename ArgMode>
+            typename ArgTrans, typename ArgMode, int sameXY>
   KOKKOS_INLINE_FUNCTION void apply(const MemberType &member,
                                     const XViewType &X,
                                     const YViewType &Y) const {
-    if (std::is_same<ArgMode, KokkosBatched::Mode::Serial>::value) {
-      SerialCopy<Trans::NoTranspose>::invoke(X, Y);
-    } else if (std::is_same<ArgMode, KokkosBatched::Mode::Team>::value) {
-      TeamCopy<MemberType>::invoke(member, X, Y);
-    } else if (std::is_same<ArgMode, KokkosBatched::Mode::TeamVector>::value) {
-      TeamVectorCopy<MemberType>::invoke(member, X, Y);
+    if (sameXY == 0) {
+      if (std::is_same<ArgMode, KokkosBatched::Mode::Serial>::value) {
+        SerialCopy<Trans::NoTranspose>::invoke(X, Y);
+      } else if (std::is_same<ArgMode, KokkosBatched::Mode::Team>::value) {
+        TeamCopy<MemberType>::invoke(member, X, Y);
+      } else if (std::is_same<ArgMode,
+                              KokkosBatched::Mode::TeamVector>::value) {
+        TeamVectorCopy<MemberType>::invoke(member, X, Y);
+      }
     }
   }
 };
