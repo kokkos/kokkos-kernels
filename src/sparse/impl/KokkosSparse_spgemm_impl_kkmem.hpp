@@ -691,6 +691,8 @@ struct KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
 
     for (nnz_lno_t row_index = team_row_begin; row_index < team_row_end;
          ++row_index) {
+      if (row_mapA[row_index] == row_mapA[row_index + 1])  // skip empty A rows
+        continue;
 #if 1
       teamMember.team_barrier();
 #endif
@@ -1019,6 +1021,8 @@ struct KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
     int vector_shift = thread_rank * vector_size + vector_rank;
     for (nnz_lno_t row_index = team_row_begin; row_index < team_row_end;
          ++row_index) {
+      if (row_mapA[row_index] == row_mapA[row_index + 1])  // skip empty A rows
+        continue;
 #if 1
       teamMember.team_barrier();
 #endif
