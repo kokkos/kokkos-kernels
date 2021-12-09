@@ -53,6 +53,7 @@
 #include "KokkosBatched_Xpay.hpp"
 #include "KokkosBatched_Givens_Serial_Internal.hpp"
 #include "KokkosBatched_Trsm_Decl.hpp"
+#include "KokkosBatched_Identity.hpp"
 
 namespace KokkosBatched {
 
@@ -63,10 +64,11 @@ namespace KokkosBatched {
 
 template <typename MemberType>
 struct TeamGMRES {
-  template <typename OperatorType, typename VectorViewType>
+  template <typename OperatorType, typename VectorViewType,
+            typename PrecOperatorType>
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType& member, const OperatorType& A, const VectorViewType& _B,
-      const VectorViewType& _X,
+      const VectorViewType& _X, const PrecOperatorType& P,
       const KrylovHandle<typename VectorViewType::non_const_value_type>&
           handle) {
     typedef int OrdinalType;
@@ -128,6 +130,11 @@ struct TeamGMRES {
         member, X, R, -1, 1);
     member.team_barrier();
 
+    P.template apply<MemberType, ScratchPadVectorViewType,
+                     ScratchPadVectorViewType, Trans::NoTranspose, Mode::Team,
+                     1>(member, R, R);
+    member.team_barrier();
+
     TeamDot<MemberType>::invoke(member, R, R, beta);
     member.team_barrier();
 
@@ -157,6 +164,10 @@ struct TeamGMRES {
       A.template apply<MemberType, ScratchPadVectorViewType,
                        ScratchPadVectorViewType, Trans::NoTranspose,
                        Mode::Team>(member, V_j, W);
+      member.team_barrier();
+      P.template apply<MemberType, ScratchPadVectorViewType,
+                       ScratchPadVectorViewType, Trans::NoTranspose, Mode::Team,
+                       1>(member, W, W);
       member.team_barrier();
 
       for (size_t i = 0; i < j + 1; ++i) {
@@ -259,6 +270,17 @@ struct TeamGMRES {
 
     TeamCopy<MemberType>::invoke(member, X, _X);
     return status;
+  }
+
+  template <typename OperatorType, typename VectorViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(
+      const MemberType& member, const OperatorType& A, const VectorViewType& _B,
+      const VectorViewType& _X,
+      const KrylovHandle<typename VectorViewType::non_const_value_type>&
+          handle) {
+    Identity P;
+    return invoke<OperatorType, VectorViewType, Identity>(member, A, _B, _X, P,
+                                                          handle);
   }
 };
 }  // namespace KokkosBatched

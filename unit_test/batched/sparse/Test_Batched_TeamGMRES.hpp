@@ -7,6 +7,7 @@
 #include "KokkosKernels_TestUtils.hpp"
 #include "KokkosBatched_CrsMatrix.hpp"
 #include "Test_Batched_SparseUtils.hpp"
+#include "KokkosBatched_JacobiPrec.hpp"
 
 using namespace KokkosBatched;
 

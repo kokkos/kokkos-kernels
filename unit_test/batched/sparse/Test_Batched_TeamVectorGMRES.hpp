@@ -7,6 +7,7 @@
 #include "KokkosKernels_TestUtils.hpp"
 #include "KokkosBatched_CrsMatrix.hpp"
 #include "Test_Batched_SparseUtils.hpp"
+#include "KokkosBatched_JacobiPrec.hpp"
 
 using namespace KokkosBatched;
 
@@ -21,14 +22,17 @@ struct Functor_TestBatchedTeamVectorGMRES {
   const IntView _c;
   const VectorViewType _X;
   const VectorViewType _B;
+  const ValuesViewType _Diag;
   const int _N_team;
   KrylovHandle<typename ValuesViewType::value_type> handle;
 
   KOKKOS_INLINE_FUNCTION
   Functor_TestBatchedTeamVectorGMRES(const ValuesViewType &D, const IntView &r,
                                      const IntView &c, const VectorViewType &X,
-                                     const VectorViewType &B, const int N_team)
-      : _D(D), _r(r), _c(c), _X(X), _B(B), _N_team(N_team) {}
+                                     const VectorViewType &B,
+                                     const VectorViewType &diag,
+                                     const int N_team)
+      : _D(D), _r(r), _c(c), _X(X), _B(B), _Diag(diag), _N_team(N_team) {}
 
   template <typename MemberType>
   KOKKOS_INLINE_FUNCTION void operator()(const MemberType &member) const {
@@ -41,18 +45,22 @@ struct Functor_TestBatchedTeamVectorGMRES {
 
     auto d = Kokkos::subview(_D, Kokkos::make_pair(first_matrix, last_matrix),
                              Kokkos::ALL);
+    auto diag = Kokkos::subview(
+        _Diag, Kokkos::make_pair(first_matrix, last_matrix), Kokkos::ALL);
     auto x = Kokkos::subview(_X, Kokkos::make_pair(first_matrix, last_matrix),
                              Kokkos::ALL);
     auto b = Kokkos::subview(_B, Kokkos::make_pair(first_matrix, last_matrix),
                              Kokkos::ALL);
 
-    using Operator = KokkosBatched::CrsMatrix<ValuesViewType, IntView>;
+    using Operator     = KokkosBatched::CrsMatrix<ValuesViewType, IntView>;
+    using PrecOperator = KokkosBatched::JacobiPrec<ValuesViewType>;
 
     Operator A(d, _r, _c);
+    PrecOperator P(diag);
 
     KokkosBatched::TeamVectorGMRES<MemberType>::template invoke<Operator,
                                                                 VectorViewType>(
-        member, A, b, x, handle);
+        member, A, b, x, P, handle);
   }
 
   inline void run() {
@@ -94,6 +102,7 @@ void impl_test_batched_GMRES(const int N, const int BlkSize, const int N_team) {
   VectorViewType R("r0", N, BlkSize);
   VectorViewType B("b", N, BlkSize);
   ValuesViewType D("D", N, nnz);
+  ValuesViewType Diag("Diag", N, BlkSize);
   IntView r("r", BlkSize + 1);
   IntView c("c", nnz);
 
@@ -109,6 +118,29 @@ void impl_test_batched_GMRES(const int N, const int BlkSize, const int N_team) {
   NormViewType sqr_norm_j("sqr_norm_j", N);
 
   create_tridiagonal_batched_matrices(nnz, BlkSize, N, r, c, D, X, B);
+
+  {
+    auto diag_values_host = Kokkos::create_mirror_view(Diag);
+    auto values_host      = Kokkos::create_mirror_view(D);
+    auto row_ptr_host     = Kokkos::create_mirror_view(r);
+    auto colIndices_host  = Kokkos::create_mirror_view(c);
+
+    Kokkos::deep_copy(values_host, D);
+    Kokkos::deep_copy(row_ptr_host, r);
+    Kokkos::deep_copy(colIndices_host, c);
+
+    int current_index;
+    for (int i = 0; i < BlkSize; ++i) {
+      for (current_index = row_ptr_host(i); current_index < row_ptr_host(i + 1);
+           ++current_index) {
+        if (colIndices_host(current_index) == i) break;
+      }
+      for (int j = 0; j < N; ++j)
+        diag_values_host(j, i) = values_host(j, current_index);
+    }
+
+    Kokkos::deep_copy(Diag, diag_values_host);
+  }
 
   // Compute initial norm
 
@@ -137,7 +169,8 @@ void impl_test_batched_GMRES(const int N, const int BlkSize, const int N_team) {
   KokkosBatched::SerialDot<Trans::NoTranspose>::invoke(R_host, R_host,
                                                        sqr_norm_0_host);
   Functor_TestBatchedTeamVectorGMRES<DeviceType, ValuesViewType, IntView,
-                                     VectorViewType>(D, r, c, X, B, N_team)
+                                     VectorViewType>(D, r, c, X, B, Diag,
+                                                     N_team)
       .run();
 
   Kokkos::fence();
