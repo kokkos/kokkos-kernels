@@ -219,10 +219,10 @@ int test_qr() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA**, Kokkos::LayoutRight, Device> view_type_a_lr;
   typedef Kokkos::View<ScalarA*, Kokkos::LayoutRight, Device> view_type_b_lr;
-  Test::impl_test_qr<view_type_a_ll, view_type_b_ll, Device>(0,0);
-  Test::impl_test_qr<view_type_a_ll, view_type_b_ll, Device>(13,15);
-  Test::impl_test_qr<view_type_a_ll, view_type_b_ll, Device>(179,15);
-  Test::impl_test_qr<view_type_a_ll, view_type_b_ll, Device>(12,323);
+  Test::impl_test_qr<view_type_a_lr, view_type_b_lr, Device>(0,0);
+  Test::impl_test_qr<view_type_a_lr, view_type_b_lr, Device>(13,15);
+  Test::impl_test_qr<view_type_a_lr, view_type_b_lr, Device>(179,15);
+  Test::impl_test_qr<view_type_a_lr, view_type_b_lr, Device>(12,323);
 #endif
 
   return 1;
