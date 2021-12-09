@@ -84,16 +84,16 @@ struct Axpby_MV_Functor {
   Axpby_MV_Functor(const XMV& X, const YMV& Y, const AV& a, const BV& b)
       : numCols(X.extent(1)), m_x(X), m_y(Y), m_a(a), m_b(b) {
     // XMV and YMV must be Kokkos::View specializations.
-    static_assert(Kokkos::Impl::is_view<AV>::value,
+    static_assert(Kokkos::is_view<AV>::value,
                   "KokkosBlas::Impl::"
                   "Axpby_MV_Functor: a is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<XMV>::value,
+    static_assert(Kokkos::is_view<XMV>::value,
                   "KokkosBlas::Impl::"
                   "Axpby_MV_Functor: X is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<BV>::value,
+    static_assert(Kokkos::is_view<BV>::value,
                   "KokkosBlas::Impl::"
                   "Axpby_MV_Functor: b is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<YMV>::value,
+    static_assert(Kokkos::is_view<YMV>::value,
                   "KokkosBlas::Impl::"
                   "Axpby_MV_Functor: Y is not a Kokkos::View.");
     // YMV must be nonconst (else it can't be an output argument).
@@ -328,10 +328,10 @@ struct Axpby_MV_Functor<typename XMV::non_const_value_type, XMV,
                    const typename XMV::non_const_value_type& a,
                    const typename YMV::non_const_value_type& b)
       : numCols(X.extent(1)), m_x(X), m_y(Y), m_a(a), m_b(b) {
-    static_assert(Kokkos::Impl::is_view<XMV>::value,
+    static_assert(Kokkos::is_view<XMV>::value,
                   "KokkosBlas::Impl::"
                   "Axpby_MV_Functor: X is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<YMV>::value,
+    static_assert(Kokkos::is_view<YMV>::value,
                   "KokkosBlas::Impl::"
                   "Axpby_MV_Functor: Y is not a Kokkos::View.");
     static_assert(std::is_same<typename YMV::value_type,
@@ -540,16 +540,16 @@ struct Axpby_MV_Unroll_Functor {
   Axpby_MV_Unroll_Functor(const XMV& x, const YMV& y, const AV& a, const BV& b,
                           const SizeType startingColumn)
       : m_x(x), m_y(y), m_a(a), m_b(b) {
-    static_assert(Kokkos::Impl::is_view<AV>::value,
+    static_assert(Kokkos::is_view<AV>::value,
                   "KokkosBlas::Impl::"
                   "Axpby_MV_Unroll_Functor: a is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<XMV>::value,
+    static_assert(Kokkos::is_view<XMV>::value,
                   "KokkosBlas::Impl::"
                   "Axpby_MV_Unroll_Functor: X is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<BV>::value,
+    static_assert(Kokkos::is_view<BV>::value,
                   "KokkosBlas::Impl::"
                   "Axpby_MV_Unroll_Functor: b is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<YMV>::value,
+    static_assert(Kokkos::is_view<YMV>::value,
                   "KokkosBlas::Impl::"
                   "Axpby_MV_Unroll_Functor: Y is not a Kokkos::View.");
     static_assert(std::is_same<typename YMV::value_type,
@@ -770,10 +770,10 @@ struct Axpby_MV_Unroll_Functor<typename XMV::non_const_value_type, XMV,
                           const typename YMV::non_const_value_type& b,
                           const SizeType /* startingColumn */)
       : m_x(X), m_y(Y), m_a(a), m_b(b) {
-    static_assert(Kokkos::Impl::is_view<XMV>::value,
+    static_assert(Kokkos::is_view<XMV>::value,
                   "KokkosBlas::Impl::"
                   "Axpby_MV_Unroll_Functor: X is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<YMV>::value,
+    static_assert(Kokkos::is_view<YMV>::value,
                   "KokkosBlas::Impl::"
                   "Axpby_MV_Unroll_Functor: Y is not a Kokkos::View.");
     static_assert(std::is_same<typename YMV::value_type,
@@ -982,10 +982,10 @@ struct Axpby_MV_Unroll_Functor<typename XMV::non_const_value_type, XMV,
 template <class AV, class XMV, class BV, class YMV, int UNROLL, class SizeType>
 void Axpby_MV_Unrolled(const AV& av, const XMV& x, const BV& bv, const YMV& y,
                        const SizeType startingColumn, int a = 2, int b = 2) {
-  static_assert(Kokkos::Impl::is_view<XMV>::value,
+  static_assert(Kokkos::is_view<XMV>::value,
                 "KokkosBlas::Impl::"
                 "Axpby_MV_Unrolled: X is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<YMV>::value,
+  static_assert(Kokkos::is_view<YMV>::value,
                 "KokkosBlas::Impl::"
                 "Axpby_MV_Unrolled: Y is not a Kokkos::View.");
   static_assert(std::is_same<typename YMV::value_type,
@@ -1137,10 +1137,10 @@ void Axpby_MV_Unrolled(const AV& av, const XMV& x, const BV& bv, const YMV& y,
 template <class AV, class XMV, class BV, class YMV, class SizeType>
 void Axpby_MV_Generic(const AV& av, const XMV& x, const BV& bv, const YMV& y,
                       int a = 2, int b = 2) {
-  static_assert(Kokkos::Impl::is_view<XMV>::value,
+  static_assert(Kokkos::is_view<XMV>::value,
                 "KokkosBlas::Impl::"
                 "Axpby_MV_Generic: X is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<YMV>::value,
+  static_assert(Kokkos::is_view<YMV>::value,
                 "KokkosBlas::Impl::"
                 "Axpby_MV_Generic: Y is not a Kokkos::View.");
   static_assert(std::is_same<typename YMV::value_type,
@@ -1277,10 +1277,10 @@ template <class AV, class XMV, class BV, class YMV, class SizeType>
 struct Axpby_MV_Invoke_Left {
   static void run(const AV& av, const XMV& x, const BV& bv, const YMV& y,
                   int a = 2, int b = 2) {
-    static_assert(Kokkos::Impl::is_view<XMV>::value,
+    static_assert(Kokkos::is_view<XMV>::value,
                   "KokkosBlas::Impl::"
                   "Axpby_MV_Invoke_Left: X is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<YMV>::value,
+    static_assert(Kokkos::is_view<YMV>::value,
                   "KokkosBlas::Impl::"
                   "Axpby_MV_Invoke_Left: Y is not a Kokkos::View.");
     static_assert(std::is_same<typename YMV::value_type,
@@ -1358,10 +1358,10 @@ template <class AV, class XMV, class BV, class YMV, class SizeType>
 struct Axpby_MV_Invoke_Right {
   static void run(const AV& av, const XMV& x, const BV& bv, const YMV& y,
                   int a = 2, int b = 2) {
-    static_assert(Kokkos::Impl::is_view<XMV>::value,
+    static_assert(Kokkos::is_view<XMV>::value,
                   "KokkosBlas::Impl::"
                   "Axpby_MV_Invoke_Right: X is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<YMV>::value,
+    static_assert(Kokkos::is_view<YMV>::value,
                   "KokkosBlas::Impl::"
                   "Axpby_MV_Invoke_Right: Y is not a Kokkos::View.");
     static_assert(std::is_same<typename YMV::value_type,

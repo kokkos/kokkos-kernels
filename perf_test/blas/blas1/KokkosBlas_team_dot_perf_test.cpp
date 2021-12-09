@@ -97,9 +97,8 @@ int parse_inputs(Params& params, int argc, char** argv) {
 template <class Vector, class ExecSpace>
 struct teamDotFunctor {
   // Compile - time check to see if your data type is a Kokkos::View:
-  static_assert(Kokkos::Impl::is_view<Vector>::value,
-                "Vector is not a "
-                "Kokkos::View.");
+  static_assert(Kokkos::is_view<Vector>::value,
+                "Vector is not a Kokkos::View.");
 
   using Scalar = typename Vector::non_const_value_type;
   // Vector is templated on memory space

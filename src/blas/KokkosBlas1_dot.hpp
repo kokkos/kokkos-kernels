@@ -63,9 +63,9 @@ template <class XVector, class YVector>
 typename Kokkos::Details::InnerProductSpaceTraits<
     typename XVector::non_const_value_type>::dot_type
 dot(const XVector& x, const YVector& y) {
-  static_assert(Kokkos::Impl::is_view<XVector>::value,
+  static_assert(Kokkos::is_view<XVector>::value,
                 "KokkosBlas::dot: XVector must be a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<YVector>::value,
+  static_assert(Kokkos::is_view<YVector>::value,
                 "KokkosBlas::dot: YVector must be a Kokkos::View.");
   static_assert((int)XVector::rank == (int)YVector::rank,
                 "KokkosBlas::dot: Vector ranks do not match.");
@@ -155,16 +155,15 @@ dot(const XVector& x, const YVector& y) {
 ///   doesn't confuse this version of dot() with the three-argument
 ///   version of dot() in Kokkos_Blas1.hpp.
 template <class RV, class XMV, class YMV>
-void dot(
-    const RV& R, const XMV& X, const YMV& Y,
-    typename std::enable_if<Kokkos::Impl::is_view<RV>::value, int>::type = 0) {
-  static_assert(Kokkos::Impl::is_view<RV>::value,
+void dot(const RV& R, const XMV& X, const YMV& Y,
+         typename std::enable_if<Kokkos::is_view<RV>::value, int>::type = 0) {
+  static_assert(Kokkos::is_view<RV>::value,
                 "KokkosBlas::dot: "
                 "R is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<XMV>::value,
+  static_assert(Kokkos::is_view<XMV>::value,
                 "KokkosBlas::dot: "
                 "X is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<YMV>::value,
+  static_assert(Kokkos::is_view<YMV>::value,
                 "KokkosBlas::dot: "
                 "Y is not a Kokkos::View.");
   static_assert(std::is_same<typename RV::value_type,

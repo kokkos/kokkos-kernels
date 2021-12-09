@@ -63,13 +63,13 @@ template <class XMV, class YMV, class ZMV>
 void update(const typename XMV::non_const_value_type& alpha, const XMV& X,
             const typename YMV::non_const_value_type& beta, const YMV& Y,
             const typename ZMV::non_const_value_type& gamma, const ZMV& Z) {
-  static_assert(Kokkos::Impl::is_view<XMV>::value,
+  static_assert(Kokkos::is_view<XMV>::value,
                 "KokkosBlas::update: "
                 "X is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<YMV>::value,
+  static_assert(Kokkos::is_view<YMV>::value,
                 "KokkosBlas::update: "
                 "Y is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<ZMV>::value,
+  static_assert(Kokkos::is_view<ZMV>::value,
                 "KokkosBlas::update: "
                 "Z is not a Kokkos::View.");
   static_assert(std::is_same<typename ZMV::value_type,

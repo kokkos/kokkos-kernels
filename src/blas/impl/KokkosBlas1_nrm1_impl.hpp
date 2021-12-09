@@ -73,10 +73,10 @@ struct V_Nrm1_Functor {
   typename XV::const_type m_x;
 
   V_Nrm1_Functor(const XV& x) : m_x(x) {
-    static_assert(Kokkos::Impl::is_view<RV>::value,
+    static_assert(Kokkos::is_view<RV>::value,
                   "KokkosBlas::Impl::V_Nrm1_Functor: "
                   "R is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<XV>::value,
+    static_assert(Kokkos::is_view<XV>::value,
                   "KokkosBlas::Impl::V_Nrm1_Functor: "
                   "X is not a Kokkos::View.");
     static_assert(std::is_same<typename RV::value_type,

@@ -61,7 +61,7 @@ template <class XVector>
 typename Kokkos::Details::InnerProductSpaceTraits<
     typename XVector::non_const_value_type>::mag_type
 nrminf(const XVector& x) {
-  static_assert(Kokkos::Impl::is_view<XVector>::value,
+  static_assert(Kokkos::is_view<XVector>::value,
                 "KokkosBlas::nrminf: XVector must be a Kokkos::View.");
   static_assert(XVector::rank == 1,
                 "KokkosBlas::nrminf: "
@@ -101,11 +101,11 @@ nrminf(const XVector& x) {
 template <class RV, class XMV>
 void nrminf(
     const RV& R, const XMV& X,
-    typename std::enable_if<Kokkos::Impl::is_view<RV>::value, int>::type = 0) {
-  static_assert(Kokkos::Impl::is_view<RV>::value,
+    typename std::enable_if<Kokkos::is_view<RV>::value, int>::type = 0) {
+  static_assert(Kokkos::is_view<RV>::value,
                 "KokkosBlas::nrminf: "
                 "R is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<XMV>::value,
+  static_assert(Kokkos::is_view<XMV>::value,
                 "KokkosBlas::nrminf: "
                 "X is not a Kokkos::View.");
   static_assert(std::is_same<typename RV::value_type,

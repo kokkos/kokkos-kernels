@@ -146,13 +146,13 @@ struct Mult<YMV, AV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 
   static void mult(const YMV_scalar& gamma, const YMV& Y,
                    const XMV_scalar& alpha, const AV& A, const XMV& X) {
-    static_assert(Kokkos::Impl::is_view<YMV>::value,
+    static_assert(Kokkos::is_view<YMV>::value,
                   "KokkosBlas::Impl::"
                   "Mult<rank 2>::mult: Y is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<AV>::value,
+    static_assert(Kokkos::is_view<AV>::value,
                   "KokkosBlas::Impl::"
                   "Mult<rank 2>::mult: A is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<XMV>::value,
+    static_assert(Kokkos::is_view<XMV>::value,
                   "KokkosBlas::Impl::"
                   "Mult<rank 2>::mult: X is not a Kokkos::View.");
     static_assert(std::is_same<typename YMV::value_type,
@@ -206,13 +206,13 @@ struct Mult<YV, AV, XV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   static void mult(const YV_scalar& gamma, const YV& Y, const XV_scalar& alpha,
                    const AV& A, const XV& X) {
     // YV, AV, and XV must be Kokkos::View specializations.
-    static_assert(Kokkos::Impl::is_view<YV>::value,
+    static_assert(Kokkos::is_view<YV>::value,
                   "KokkosBlas::Impl::"
                   "Mult<rank 1>::mult: Y is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<AV>::value,
+    static_assert(Kokkos::is_view<AV>::value,
                   "KokkosBlas::Impl::"
                   "Mult<rank 1>::mult: A is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<XV>::value,
+    static_assert(Kokkos::is_view<XV>::value,
                   "KokkosBlas::Impl::"
                   "Mult<rank 1>::mult: X is not a Kokkos::View.");
     // XV must be nonconst (else it can't be an output argument).

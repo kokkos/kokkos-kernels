@@ -101,8 +101,7 @@ template <class RVIT, class AVIT>
 struct TRTRI<RVIT, AVIT, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   static void trtri(const RVIT& R, const char uplo[], const char diag[],
                     const AVIT& A) {
-    static_assert(Kokkos::Impl::is_view<AVIT>::value,
-                  "AVIT must be a Kokkos::View.");
+    static_assert(Kokkos::is_view<AVIT>::value, "AVIT must be a Kokkos::View.");
     static_assert(static_cast<int>(AVIT::rank) == 2, "AVIT must have rank 2.");
 
     Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY

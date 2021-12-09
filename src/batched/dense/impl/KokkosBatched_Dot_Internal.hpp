@@ -156,11 +156,11 @@ struct SerialDot<Trans::Transpose> {
                                            const YViewType &Y,
                                            const NormViewType &dot) {
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
-    static_assert(Kokkos::Impl::is_view<XViewType>::value,
+    static_assert(Kokkos::is_view<XViewType>::value,
                   "KokkosBatched::dot: XViewType is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<YViewType>::value,
+    static_assert(Kokkos::is_view<YViewType>::value,
                   "KokkosBatched::dot: YViewType is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<NormViewType>::value,
+    static_assert(Kokkos::is_view<NormViewType>::value,
                   "KokkosBatched::dot: NormViewType is not a Kokkos::View.");
     static_assert(XViewType::Rank == 2,
                   "KokkosBatched::dot: XViewType must have rank 2.");
@@ -202,11 +202,11 @@ struct SerialDot<Trans::NoTranspose> {
                                            const YViewType &Y,
                                            const NormViewType &dot) {
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
-    static_assert(Kokkos::Impl::is_view<XViewType>::value,
+    static_assert(Kokkos::is_view<XViewType>::value,
                   "KokkosBatched::dot: XViewType is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<YViewType>::value,
+    static_assert(Kokkos::is_view<YViewType>::value,
                   "KokkosBatched::dot: YViewType is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<NormViewType>::value,
+    static_assert(Kokkos::is_view<NormViewType>::value,
                   "KokkosBatched::dot: NormViewType is not a Kokkos::View.");
     static_assert(XViewType::Rank == 2,
                   "KokkosBatched::dot: XViewType must have rank 2.");
@@ -251,11 +251,11 @@ struct TeamDot<MemberType, Trans::Transpose> {
                                            const YViewType &Y,
                                            const NormViewType &dot) {
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
-    static_assert(Kokkos::Impl::is_view<XViewType>::value,
+    static_assert(Kokkos::is_view<XViewType>::value,
                   "KokkosBatched::dot: XViewType is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<YViewType>::value,
+    static_assert(Kokkos::is_view<YViewType>::value,
                   "KokkosBatched::dot: YViewType is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<NormViewType>::value,
+    static_assert(Kokkos::is_view<NormViewType>::value,
                   "KokkosBatched::dot: NormViewType is not a Kokkos::View.");
     static_assert(XViewType::Rank == 2,
                   "KokkosBatched::dot: XViewType must have rank 2.");
@@ -298,11 +298,11 @@ struct TeamDot<MemberType, Trans::NoTranspose> {
                                            const YViewType &Y,
                                            const NormViewType &dot) {
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
-    static_assert(Kokkos::Impl::is_view<XViewType>::value,
+    static_assert(Kokkos::is_view<XViewType>::value,
                   "KokkosBatched::dot: XViewType is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<YViewType>::value,
+    static_assert(Kokkos::is_view<YViewType>::value,
                   "KokkosBatched::dot: YViewType is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<NormViewType>::value,
+    static_assert(Kokkos::is_view<NormViewType>::value,
                   "KokkosBatched::dot: NormViewType is not a Kokkos::View.");
     static_assert(XViewType::Rank == 2,
                   "KokkosBatched::dot: XViewType must have rank 2.");
@@ -347,11 +347,11 @@ struct TeamVectorDot<MemberType, Trans::Transpose> {
                                            const YViewType &Y,
                                            const NormViewType &dot) {
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
-    static_assert(Kokkos::Impl::is_view<XViewType>::value,
+    static_assert(Kokkos::is_view<XViewType>::value,
                   "KokkosBatched::dot: XViewType is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<YViewType>::value,
+    static_assert(Kokkos::is_view<YViewType>::value,
                   "KokkosBatched::dot: YViewType is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<NormViewType>::value,
+    static_assert(Kokkos::is_view<NormViewType>::value,
                   "KokkosBatched::dot: NormViewType is not a Kokkos::View.");
     static_assert(XViewType::Rank == 2,
                   "KokkosBatched::dot: XViewType must have rank 2.");
@@ -394,11 +394,11 @@ struct TeamVectorDot<MemberType, Trans::NoTranspose> {
                                            const YViewType &Y,
                                            const NormViewType &dot) {
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
-    static_assert(Kokkos::Impl::is_view<XViewType>::value,
+    static_assert(Kokkos::is_view<XViewType>::value,
                   "KokkosBatched::dot: XViewType is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<YViewType>::value,
+    static_assert(Kokkos::is_view<YViewType>::value,
                   "KokkosBatched::dot: YViewType is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<NormViewType>::value,
+    static_assert(Kokkos::is_view<NormViewType>::value,
                   "KokkosBatched::dot: NormViewType is not a Kokkos::View.");
     static_assert(XViewType::Rank == 2,
                   "KokkosBatched::dot: XViewType must have rank 2.");

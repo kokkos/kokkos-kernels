@@ -82,11 +82,11 @@ void gesv(const AMatrix& A, const BXMV& B, const IPIVV& IPIV) {
   //       device views BLAS TPL should be enabled to call the BLAS interface
   //       for host views
 
-  static_assert(Kokkos::Impl::is_view<AMatrix>::value,
+  static_assert(Kokkos::is_view<AMatrix>::value,
                 "KokkosBlas::gesv: A must be a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<BXMV>::value,
+  static_assert(Kokkos::is_view<BXMV>::value,
                 "KokkosBlas::gesv: B must be a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<IPIVV>::value,
+  static_assert(Kokkos::is_view<IPIVV>::value,
                 "KokkosBlas::gesv: IPIV must be a Kokkos::View.");
   static_assert(static_cast<int>(AMatrix::rank) == 2,
                 "KokkosBlas::gesv: A must have rank 2.");

@@ -177,10 +177,10 @@ struct Axpby<AV, XMV, BV, YMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef typename YMV::size_type size_type;
 
   static void axpby(const AV& av, const XMV& X, const BV& bv, const YMV& Y) {
-    static_assert(Kokkos::Impl::is_view<XMV>::value,
+    static_assert(Kokkos::is_view<XMV>::value,
                   "KokkosBlas::Impl::"
                   "Axpby<rank-2>::axpby: X is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<YMV>::value,
+    static_assert(Kokkos::is_view<YMV>::value,
                   "KokkosBlas::Impl::"
                   "Axpby<rank-2>::axpby: Y is not a Kokkos::View.");
     static_assert(std::is_same<typename YMV::value_type,
@@ -258,10 +258,10 @@ struct Axpby<typename XMV::non_const_value_type, XMV,
 
   static void axpby(const AV& alpha, const XMV& X, const BV& beta,
                     const YMV& Y) {
-    static_assert(Kokkos::Impl::is_view<XMV>::value,
+    static_assert(Kokkos::is_view<XMV>::value,
                   "KokkosBlas::Impl::Axpby::axpby (MV): "
                   "X is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<YMV>::value,
+    static_assert(Kokkos::is_view<YMV>::value,
                   "KokkosBlas::Impl::Axpby::axpby (MV): "
                   "Y is not a Kokkos::View.");
     static_assert(std::is_same<typename YMV::value_type,
@@ -359,10 +359,10 @@ struct Axpby<typename XV::non_const_value_type, XV,
   typedef Kokkos::Details::ArithTraits<typename YV::non_const_value_type> ATB;
 
   static void axpby(const AV& alpha, const XV& X, const BV& beta, const YV& Y) {
-    static_assert(Kokkos::Impl::is_view<XV>::value,
+    static_assert(Kokkos::is_view<XV>::value,
                   "KokkosBlas::Impl::"
                   "Axpby<rank-1>::axpby: X is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<YV>::value,
+    static_assert(Kokkos::is_view<YV>::value,
                   "KokkosBlas::Impl::"
                   "Axpby<rank-1>::axpby: Y is not a Kokkos::View.");
     static_assert(std::is_same<typename YV::value_type,

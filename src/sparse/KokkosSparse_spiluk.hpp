@@ -104,17 +104,17 @@ void spiluk_symbolic(KernelHandle* handle,
                 "spiluk_symbolic: U entry type must match KernelHandle entry "
                 "type (aka nnz_lno_t, and const doesn't matter)");
 
-  static_assert(Kokkos::Impl::is_view<ARowMapType>::value,
+  static_assert(Kokkos::is_view<ARowMapType>::value,
                 "spiluk_symbolic: A_rowmap is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<AEntriesType>::value,
+  static_assert(Kokkos::is_view<AEntriesType>::value,
                 "spiluk_symbolic: A_entries is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<LRowMapType>::value,
+  static_assert(Kokkos::is_view<LRowMapType>::value,
                 "spiluk_symbolic: L_rowmap is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<LEntriesType>::value,
+  static_assert(Kokkos::is_view<LEntriesType>::value,
                 "spiluk_symbolic: L_entries is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<URowMapType>::value,
+  static_assert(Kokkos::is_view<URowMapType>::value,
                 "spiluk_symbolic: U_rowmap is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<UEntriesType>::value,
+  static_assert(Kokkos::is_view<UEntriesType>::value,
                 "spiluk_symbolic: U_entries is not a Kokkos::View.");
 
   static_assert(
@@ -325,23 +325,23 @@ void spiluk_numeric(KernelHandle* handle,
                 "spiluk_numeric: U scalar type must match KernelHandle entry "
                 "type (aka nnz_lno_t, and const doesn't matter)");
 
-  static_assert(Kokkos::Impl::is_view<ARowMapType>::value,
+  static_assert(Kokkos::is_view<ARowMapType>::value,
                 "spiluk_numeric: A_rowmap is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<AEntriesType>::value,
+  static_assert(Kokkos::is_view<AEntriesType>::value,
                 "spiluk_numeric: A_entries is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<AValuesType>::value,
+  static_assert(Kokkos::is_view<AValuesType>::value,
                 "spiluk_numeric: A_values is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<LRowMapType>::value,
+  static_assert(Kokkos::is_view<LRowMapType>::value,
                 "spiluk_numeric: L_rowmap is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<LEntriesType>::value,
+  static_assert(Kokkos::is_view<LEntriesType>::value,
                 "spiluk_numeric: L_entries is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<LValuesType>::value,
+  static_assert(Kokkos::is_view<LValuesType>::value,
                 "spiluk_numeric: L_values is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<URowMapType>::value,
+  static_assert(Kokkos::is_view<URowMapType>::value,
                 "spiluk_numeric: U_rowmap is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<UEntriesType>::value,
+  static_assert(Kokkos::is_view<UEntriesType>::value,
                 "spiluk_numeric: U_entries is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<UValuesType>::value,
+  static_assert(Kokkos::is_view<UValuesType>::value,
                 "spiluk_numeric: U_values is not a Kokkos::View.");
 
   static_assert(

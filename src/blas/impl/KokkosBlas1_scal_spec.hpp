@@ -144,10 +144,10 @@ struct Scal<RV, typename XV::non_const_value_type, XV, 1, false,
   typedef Kokkos::Details::ArithTraits<typename XV::non_const_value_type> ATA;
 
   static void scal(const RV& R, const AV& alpha, const XV& X) {
-    static_assert(Kokkos::Impl::is_view<RV>::value,
+    static_assert(Kokkos::is_view<RV>::value,
                   "KokkosBlas::Impl::"
                   "Scal<1-D>: RV is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<XV>::value,
+    static_assert(Kokkos::is_view<XV>::value,
                   "KokkosBlas::Impl::"
                   "Scal<1-D>: XV is not a Kokkos::View.");
     static_assert(RV::rank == 1,
@@ -203,13 +203,13 @@ struct Scal<RMV, AV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef Kokkos::Details::ArithTraits<typename XMV::non_const_value_type> ATA;
 
   static void scal(const RMV& R, const AV& av, const XMV& X) {
-    static_assert(Kokkos::Impl::is_view<RMV>::value,
+    static_assert(Kokkos::is_view<RMV>::value,
                   "KokkosBlas::Impl::"
                   "Scal<2-D>: RMV is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<AV>::value,
+    static_assert(Kokkos::is_view<AV>::value,
                   "KokkosBlas::Impl::"
                   "Scal<2-D>: AV is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<XMV>::value,
+    static_assert(Kokkos::is_view<XMV>::value,
                   "KokkosBlas::Impl::"
                   "Scal<2-D>: XMV is not a Kokkos::View.");
     static_assert(RMV::rank == 2,
@@ -263,10 +263,10 @@ struct Scal<RMV, typename XMV::non_const_value_type, XMV, 2, false,
   typedef Kokkos::Details::ArithTraits<typename XMV::non_const_value_type> ATA;
 
   static void scal(const RMV& R, const AV& alpha, const XMV& X) {
-    static_assert(Kokkos::Impl::is_view<RMV>::value,
+    static_assert(Kokkos::is_view<RMV>::value,
                   "KokkosBlas::Impl::"
                   "Scal<2-D, AV=scalar>: RMV is not a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<XMV>::value,
+    static_assert(Kokkos::is_view<XMV>::value,
                   "KokkosBlas::Impl::"
                   "Scal<2-D, AV=scalar>: XMV is not a Kokkos::View.");
     static_assert(RMV::rank == 2,

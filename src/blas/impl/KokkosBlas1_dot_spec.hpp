@@ -230,13 +230,13 @@ template <class RV, class XV, class YV>
 struct Dot<RV, XV, YV, 1, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   // Check some things about the template parameters at compile time to get nice
   // error messages, before using them under the assumption they are valid.
-  static_assert(Kokkos::Impl::is_view<XV>::value,
+  static_assert(Kokkos::is_view<XV>::value,
                 "KokkosBlas::Impl::"
                 "Dot<1-D>: XV is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<YV>::value,
+  static_assert(Kokkos::is_view<YV>::value,
                 "KokkosBlas::Impl::"
                 "Dot<1-D>: YV is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<RV>::value,
+  static_assert(Kokkos::is_view<RV>::value,
                 "KokkosBlas::Impl::"
                 "Dot<1-D>: RV is not a Kokkos::View.");
   static_assert(RV::rank == 0,
@@ -299,10 +299,10 @@ struct Dot<RV, XV, YV, 1, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 // Is never supported by TPLs, but uses the same dot_eti_spec_avail::value.
 template <class RV, class XV, class YV>
 struct DotSpecialAccumulator<RV, XV, YV, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
-  static_assert(Kokkos::Impl::is_view<XV>::value,
+  static_assert(Kokkos::is_view<XV>::value,
                 "KokkosBlas::Impl::"
                 "DotSpecialAccumulator: XV is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<YV>::value,
+  static_assert(Kokkos::is_view<YV>::value,
                 "KokkosBlas::Impl::"
                 "DotSpecialAccumulator: YV is not a Kokkos::View.");
   static_assert(XV::rank == YV::rank,
@@ -311,7 +311,7 @@ struct DotSpecialAccumulator<RV, XV, YV, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   static_assert(XV::rank == 1,
                 "KokkosBlas::Impl::"
                 "DotSpecialAccumulator: X and Y are not rank-1 Views.");
-  static_assert(Kokkos::Impl::is_view<RV>::value,
+  static_assert(Kokkos::is_view<RV>::value,
                 "KokkosBlas::Impl::"
                 "DotSpecialAccumulator: RV is not a Kokkos::View.");
   static_assert(std::is_same<typename XV::non_const_value_type,
@@ -365,10 +365,10 @@ struct DotSpecialAccumulator<RV, XV, YV, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 template <class RV, class XV, class YV, int X_Rank, int Y_Rank>
 struct Dot<RV, XV, YV, X_Rank, Y_Rank, false,
            KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
-  static_assert(Kokkos::Impl::is_view<XV>::value,
+  static_assert(Kokkos::is_view<XV>::value,
                 "KokkosBlas::Impl::"
                 "Dot<2-D>: XV is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<YV>::value,
+  static_assert(Kokkos::is_view<YV>::value,
                 "KokkosBlas::Impl::"
                 "Dot<2-D>: YV is not a Kokkos::View.");
   static_assert(RV::rank == 1,

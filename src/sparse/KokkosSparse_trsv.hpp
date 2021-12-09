@@ -82,9 +82,9 @@ void trsv(const char uplo[], const char trans[], const char diag[],
                 "KokkosBlas::trsv: Rank-1 version of this "
                 "function has not yet been implemented.");
 
-  static_assert(Kokkos::Impl::is_view<BMV>::value,
+  static_assert(Kokkos::is_view<BMV>::value,
                 "KokkosBlas::trsv: b is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<XMV>::value,
+  static_assert(Kokkos::is_view<XMV>::value,
                 "KokkosBlas::trsv: x is not a Kokkos::View.");
   static_assert((int)BMV::rank == (int)XMV::rank,
                 "KokkosBlas::trsv: The ranks of b and x do not match.");

@@ -62,7 +62,7 @@ namespace KokkosBlas {
 ///         Note: Returned index is 1-based for compatibility with Fortran.
 template <class XVector>
 typename XVector::size_type iamax(const XVector& x) {
-  static_assert(Kokkos::Impl::is_view<XVector>::value,
+  static_assert(Kokkos::is_view<XVector>::value,
                 "KokkosBlas::iamax: XVector must be a Kokkos::View.");
   static_assert(XVector::rank == 1,
                 "KokkosBlas::iamax: "
@@ -101,13 +101,12 @@ typename XVector::size_type iamax(const XVector& x) {
 /// Note for TPL cuBLAS: When TPL cuBLAS iamax is used and returns result to a
 /// view, RMV must be 0-D view and XMV must be 1-D view.
 template <class RV, class XMV>
-void iamax(
-    const RV& R, const XMV& X,
-    typename std::enable_if<Kokkos::Impl::is_view<RV>::value, int>::type = 0) {
-  static_assert(Kokkos::Impl::is_view<RV>::value,
+void iamax(const RV& R, const XMV& X,
+           typename std::enable_if<Kokkos::is_view<RV>::value, int>::type = 0) {
+  static_assert(Kokkos::is_view<RV>::value,
                 "KokkosBlas::iamax: "
                 "R is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<XMV>::value,
+  static_assert(Kokkos::is_view<XMV>::value,
                 "KokkosBlas::iamax: "
                 "X is not a Kokkos::View.");
   static_assert(std::is_same<typename RV::value_type,

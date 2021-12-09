@@ -53,10 +53,10 @@ namespace KokkosBlas {
 template <class YMV, class AV, class XMV>
 void mult(typename YMV::const_value_type& gamma, const YMV& Y,
           typename AV::const_value_type& alpha, const AV& A, const XMV& X) {
-  static_assert(Kokkos::Impl::is_view<YMV>::value,
+  static_assert(Kokkos::is_view<YMV>::value,
                 "KokkosBlas::mult: "
                 "Y is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<AV>::value,
+  static_assert(Kokkos::is_view<AV>::value,
                 "KokkosBlas::mult: "
                 "A is not a Kokkos::View.");
   static_assert(std::is_same<typename YMV::value_type,

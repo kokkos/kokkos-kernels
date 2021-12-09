@@ -58,10 +58,10 @@ namespace KokkosBlas {
 
 template <class AV, class XMV, class BV, class YMV>
 void axpby(const AV& a, const XMV& X, const BV& b, const YMV& Y) {
-  static_assert(Kokkos::Impl::is_view<XMV>::value,
+  static_assert(Kokkos::is_view<XMV>::value,
                 "KokkosBlas::axpby: "
                 "X is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<YMV>::value,
+  static_assert(Kokkos::is_view<YMV>::value,
                 "KokkosBlas::axpby: "
                 "Y is not a Kokkos::View.");
   static_assert(std::is_same<typename YMV::value_type,

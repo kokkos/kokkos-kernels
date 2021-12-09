@@ -117,9 +117,9 @@ struct TRSM<AViewType, BViewType, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
                    const char diag[],
                    typename BViewType::const_value_type& alpha,
                    const AViewType& A, const BViewType& B) {
-    static_assert(Kokkos::Impl::is_view<AViewType>::value,
+    static_assert(Kokkos::is_view<AViewType>::value,
                   "AViewType must be a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<BViewType>::value,
+    static_assert(Kokkos::is_view<BViewType>::value,
                   "BViewType must be a Kokkos::View.");
     static_assert(static_cast<int>(AViewType::rank) == 2,
                   "AViewType must have rank 2.");

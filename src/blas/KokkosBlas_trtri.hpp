@@ -75,7 +75,7 @@ namespace KokkosBlas {
 // source: https://software.intel.com/en-us/mkl-developer-reference-c-trtri
 template <class AViewType>
 int trtri(const char uplo[], const char diag[], const AViewType& A) {
-  static_assert(Kokkos::Impl::is_view<AViewType>::value,
+  static_assert(Kokkos::is_view<AViewType>::value,
                 "AViewType must be a Kokkos::View.");
   static_assert(static_cast<int>(AViewType::rank) == 2,
                 "AViewType must have rank 2.");

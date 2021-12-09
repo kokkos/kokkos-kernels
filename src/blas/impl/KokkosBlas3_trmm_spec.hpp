@@ -110,10 +110,8 @@ struct TRMM<AVIT, BVIT, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   static void trmm(const char side[], const char uplo[], const char trans[],
                    const char diag[], typename BVIT::const_value_type& alpha,
                    const AVIT& A, const BVIT& B) {
-    static_assert(Kokkos::Impl::is_view<AVIT>::value,
-                  "AVIT must be a Kokkos::View.");
-    static_assert(Kokkos::Impl::is_view<BVIT>::value,
-                  "BVIT must be a Kokkos::View.");
+    static_assert(Kokkos::is_view<AVIT>::value, "AVIT must be a Kokkos::View.");
+    static_assert(Kokkos::is_view<BVIT>::value, "BVIT must be a Kokkos::View.");
     static_assert(static_cast<int>(AVIT::rank) == 2, "AVIT must have rank 2.");
     static_assert(static_cast<int>(BVIT::rank) == 2, "BVIT must have rank 2.");
 

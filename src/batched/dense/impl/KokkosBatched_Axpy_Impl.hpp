@@ -208,11 +208,11 @@ KOKKOS_INLINE_FUNCTION int SerialAxpy::invoke(const alphaViewType& alpha,
                                               const XViewType& X,
                                               const YViewType& Y) {
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
-  static_assert(Kokkos::Impl::is_view<XViewType>::value,
+  static_assert(Kokkos::is_view<XViewType>::value,
                 "KokkosBatched::axpy: XViewType is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<YViewType>::value,
+  static_assert(Kokkos::is_view<YViewType>::value,
                 "KokkosBatched::axpy: YViewType is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<alphaViewType>::value,
+  static_assert(Kokkos::is_view<alphaViewType>::value,
                 "KokkosBatched::axpy: alphaViewType is not a Kokkos::View.");
   static_assert(XViewType::Rank == 2,
                 "KokkosBatched::axpy: XViewType must have rank 2.");
@@ -255,11 +255,11 @@ KOKKOS_INLINE_FUNCTION int TeamAxpy<MemberType>::invoke(
     const MemberType& member, const alphaViewType& alpha, const XViewType& X,
     const YViewType& Y) {
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
-  static_assert(Kokkos::Impl::is_view<XViewType>::value,
+  static_assert(Kokkos::is_view<XViewType>::value,
                 "KokkosBatched::axpy: XViewType is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<YViewType>::value,
+  static_assert(Kokkos::is_view<YViewType>::value,
                 "KokkosBatched::axpy: YViewType is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<alphaViewType>::value,
+  static_assert(Kokkos::is_view<alphaViewType>::value,
                 "KokkosBatched::axpy: alphaViewType is not a Kokkos::View.");
   static_assert(XViewType::Rank == 2,
                 "KokkosBatched::axpy: XViewType must have rank 2.");
@@ -303,11 +303,11 @@ KOKKOS_INLINE_FUNCTION int TeamVectorAxpy<MemberType>::invoke(
     const MemberType& member, const alphaViewType& alpha, const XViewType& X,
     const YViewType& Y) {
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
-  static_assert(Kokkos::Impl::is_view<XViewType>::value,
+  static_assert(Kokkos::is_view<XViewType>::value,
                 "KokkosBatched::axpy: XViewType is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<YViewType>::value,
+  static_assert(Kokkos::is_view<YViewType>::value,
                 "KokkosBatched::axpy: YViewType is not a Kokkos::View.");
-  static_assert(Kokkos::Impl::is_view<alphaViewType>::value,
+  static_assert(Kokkos::is_view<alphaViewType>::value,
                 "KokkosBatched::axpy: alphaViewType is not a Kokkos::View.");
   static_assert(XViewType::Rank == 2,
                 "KokkosBatched::axpy: XViewType must have rank 2.");
