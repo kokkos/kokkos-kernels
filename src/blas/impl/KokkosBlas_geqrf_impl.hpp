@@ -55,7 +55,7 @@ namespace Impl {
 // Put non TPL implementation here
 
 template <class AVT, class TVT, class WVT>
-void execute_geqrf(AVT& A, TVT& tau, WVT& C) {
+void execute_geqrf(AVT& /*A*/, TVT& /*tau*/, WVT& /*C*/) {
   std::ostringstream os;
   os << "There is no ETI implementation of GEQRF. Compile with TPL (LAPACKE or "
         "CUSOLVER).\n";
@@ -63,7 +63,7 @@ void execute_geqrf(AVT& A, TVT& tau, WVT& C) {
 }
 
 template <class AVT, class TVT>
-int64_t execute_geqrf_workspace(AVT& A, TVT& tau) {
+int64_t execute_geqrf_workspace(AVT& /*A*/, TVT& /*tau*/) {
   std::ostringstream os;
   os << "There is no ETI implementation of GEQRF (Workspace Query). Compile "
         "with TPL (LAPACKE or CUSOLVER).\n";

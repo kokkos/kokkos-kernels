@@ -284,6 +284,7 @@ inline void cusolver_internal_error_throw(cusolverStatus_t cublasState,
 
 }  // namespace Impl
 }  // namespace KokkosBlas
+
 #endif  // KOKKOSKERNELS_ENABLE_TPL_CUSOLVER
 
 // If LAPACK TPL is enabled, it is preferred over magma's LAPACK
