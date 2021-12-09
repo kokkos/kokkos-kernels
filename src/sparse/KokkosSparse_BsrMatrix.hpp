@@ -52,7 +52,7 @@
 #ifndef KOKKOS_SPARSE_BSRMATRIX_HPP_
 #define KOKKOS_SPARSE_BSRMATRIX_HPP_
 
-#include "impl/KokkosSparse_BsrMatrix_impl.hpp"
+#include "KokkosSparse_BsrMatrix_impl.hpp"
 
 namespace KokkosSparse {
 
