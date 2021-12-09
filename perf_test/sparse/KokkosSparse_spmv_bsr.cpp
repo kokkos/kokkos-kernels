@@ -57,10 +57,6 @@
 #include <KokkosSparse_CrsMatrix.hpp>
 #include <KokkosKernels_IOUtils.hpp>
 #include <KokkosSparse_spmv.hpp>
-#include "KokkosKernels_default_types.hpp"
-//#include <spmv/KokkosKernels_spmv_data.hpp>
-//#include <spmv/Kokkos_SPMV.hpp>
-//#include <spmv/Kokkos_SPMV_Inspector.hpp>
 #include <KokkosKernels_Test_Structured_Matrix.hpp>
 #include "KokkosSparse_spmv_bsr_tpl_spec_decl.hpp"
 
