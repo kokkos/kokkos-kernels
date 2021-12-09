@@ -691,6 +691,44 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
     }
   }
   //
+  // Call single-vector version if appropriate
+  //
+  if (x.extent(1) == 1) {
+    typedef Kokkos::View<
+        typename XVector::const_value_type*,
+        typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
+        typename XVector::device_type,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >
+        XVector_SubInternal;
+    typedef Kokkos::View<
+        typename YVector::non_const_value_type*,
+        typename KokkosKernels::Impl::GetUnifiedLayout<YVector>::array_layout,
+        typename YVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+        YVector_SubInternal;
+
+    XVector_SubInternal x_i = Kokkos::subview(x, Kokkos::ALL(), 0);
+    YVector_SubInternal y_i = Kokkos::subview(y, Kokkos::ALL(), 0);
+
+    // spmv (mode, alpha, A, x_i, beta, y_i);
+    return Experimental::Impl::SPMV_BSRMATRIX<
+        typename AMatrix_Internal::value_type,
+        typename AMatrix_Internal::ordinal_type,
+        typename AMatrix_Internal::device_type,
+        typename AMatrix_Internal::memory_traits,
+        typename AMatrix_Internal::size_type,
+        typename XVector_Internal::value_type**,
+        typename XVector_Internal::array_layout,
+        typename XVector_Internal::device_type,
+        typename XVector_Internal::memory_traits,
+        typename YVector_Internal::value_type**,
+        typename YVector_Internal::array_layout,
+        typename YVector_Internal::device_type,
+        typename YVector_Internal::memory_traits>::spmv_bsrmatrix(controls,
+                                                                  mode, alpha,
+                                                                  A_i, x_i,
+                                                                  beta, y_i);
+  }
+  //
   typedef KokkosSparse::Experimental::BsrMatrix<
       typename AMatrix::const_value_type, typename AMatrix::const_ordinal_type,
       typename AMatrix::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>,
@@ -796,6 +834,45 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
     }
   }
   //
+  //
+  // Call single-vector version if appropriate
+  //
+  if (x.extent(1) == 1) {
+    typedef Kokkos::View<
+        typename XVector::const_value_type*,
+        typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
+        typename XVector::device_type,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >
+        XVector_SubInternal;
+    typedef Kokkos::View<
+        typename YVector::non_const_value_type*,
+        typename KokkosKernels::Impl::GetUnifiedLayout<YVector>::array_layout,
+        typename YVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+        YVector_SubInternal;
+
+    XVector_SubInternal x_i = Kokkos::subview(x, Kokkos::ALL(), 0);
+    YVector_SubInternal y_i = Kokkos::subview(y, Kokkos::ALL(), 0);
+
+    // spmv (mode, alpha, A, x_i, beta, y_i);
+    return Experimental::Impl::SPMV_BSRMATRIX<
+        typename AMatrix_Internal::value_type,
+        typename AMatrix_Internal::ordinal_type,
+        typename AMatrix_Internal::device_type,
+        typename AMatrix_Internal::memory_traits,
+        typename AMatrix_Internal::size_type,
+        typename XVector_Internal::value_type**,
+        typename XVector_Internal::array_layout,
+        typename XVector_Internal::device_type,
+        typename XVector_Internal::memory_traits,
+        typename YVector_Internal::value_type**,
+        typename YVector_Internal::array_layout,
+        typename YVector_Internal::device_type,
+        typename YVector_Internal::memory_traits>::spmv_bsrmatrix(controls,
+                                                                  mode, alpha,
+                                                                  A_i, x_i,
+                                                                  beta, y_i);
+  }
+  //
   typedef KokkosSparse::Experimental::BlockCrsMatrix<
       typename AMatrix::const_value_type, typename AMatrix::const_ordinal_type,
       typename AMatrix::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>,
@@ -870,8 +947,6 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
                 "KokkosSparse::spmv: Output Vector must be non-const.");
 
   //
-  std::cout << " 862 " << A.numRows() << " " << A.numCols() << " " << A.nnz()
-            << "\n";
   if (alpha == Kokkos::ArithTraits<AlphaType>::zero() || A.numRows() == 0 ||
       A.numCols() == 0 || A.nnz() == 0) {
     // This is required to maintain semantics of KokkosKernels native SpMV:
