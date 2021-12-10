@@ -182,7 +182,9 @@ KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_AVAIL_MKL(Kokkos::complex<double>,
 
 // Specialization struct which defines whether a specialization exists
 template <class AT, class AO, class AD, class AM, class AS, class XT, class XL,
-          class XD, class XM, class YT, class YL, class YD, class YM>
+          class XD, class XM, class YT, class YL, class YD, class YM,
+          const bool integerScalarType =
+              std::is_integral<typename std::decay<AT>::type>::value>
 struct spmv_mv_bsrmatrix_tpl_spec_avail {
   enum : bool { value = false };
 };
@@ -202,7 +204,7 @@ struct spmv_mv_bsrmatrix_tpl_spec_avail {
       XL, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,                              \
       Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>, SCALAR*, \
       YL, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,                              \
-      Kokkos::MemoryTraits<Kokkos::Unmanaged> > {                              \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged>, true> {                         \
     enum : bool { value = true };                                              \
   };
 
@@ -293,7 +295,7 @@ KOKKOSSPARSE_SPMV_MV_BSRMATRIX_TPL_SPEC_AVAIL_CUSPARSE(Kokkos::complex<double>,
       Kokkos::LayoutLeft, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,        \
       Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>, SCALAR*, \
       Kokkos::LayoutLeft, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,        \
-      Kokkos::MemoryTraits<Kokkos::Unmanaged> > {                              \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged>, true> {                         \
     enum : bool { value = true };                                              \
   };
 
