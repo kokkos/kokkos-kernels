@@ -66,7 +66,9 @@ struct spmv_bsrmatrix_eti_spec_avail {
 };
 
 template <class AT, class AO, class AD, class AM, class AS, class XT, class XL,
-          class XD, class XM, class YT, class YL, class YD, class YM>
+          class XD, class XM, class YT, class YL, class YD, class YM,
+          const bool integerScalarType =
+              std::is_integral<typename std::decay<AT>::type>::value>
 struct spmv_mv_bsrmatrix_eti_spec_avail {
   enum : bool { value = false };
 };
@@ -121,6 +123,9 @@ namespace Impl {
 // declaration
 template <class AT, class AO, class AD, class AM, class AS, class XT, class XL,
           class XD, class XM, class YT, class YL, class YD, class YM,
+          bool tpl_spec_avail =
+              KokkosSparse::Impl::spmv_bsrmatrix_tpl_spec_avail<
+                  AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM>::value,
           bool eti_spec_avail = spmv_bsrmatrix_eti_spec_avail<
               AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM>::value>
 struct SPMV_BSRMATRIX {
@@ -138,6 +143,11 @@ struct SPMV_BSRMATRIX {
 // declaration
 template <class AT, class AO, class AD, class AM, class AS, class XT, class XL,
           class XD, class XM, class YT, class YL, class YD, class YM,
+          const bool integerScalarType =
+              std::is_integral<typename std::decay<AT>::type>::value,
+          bool tpl_spec_avail =
+              KokkosSparse::Impl::spmv_mv_bsrmatrix_tpl_spec_avail<
+                  AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM>::value,
           bool eti_spec_avail = spmv_mv_bsrmatrix_eti_spec_avail<
               AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM>::value>
 struct SPMV_MV_BSRMATRIX {
@@ -157,7 +167,7 @@ struct SPMV_MV_BSRMATRIX {
 
 template <class AT, class AO, class AD, class AM, class AS, class XT, class XL,
           class XD, class XM, class YT, class YL, class YD, class YM>
-struct SPMV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
+struct SPMV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM, false,
                       KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef BsrMatrix<AT, AO, AD, AM, AS> AMatrix;
   typedef Kokkos::View<XT, XL, XD, XM> XVector;
@@ -186,7 +196,7 @@ struct SPMV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
 template <class AT, class AO, class AD, class AM, class AS, class XT, class XL,
           class XD, class XM, class YT, class YL, class YD, class YM>
 struct SPMV_MV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
-                         KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+                         false, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef BsrMatrix<AT, AO, AD, AM, AS> AMatrix;
   typedef Kokkos::View<XT, XL, XD, XM> XVector;
   typedef Kokkos::View<YT, YL, YD, YM> YVector;
@@ -286,6 +296,34 @@ struct SPMV_MV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
   }
 };
 
+template <class AT, class AO, class AD, class AM, class AS, class XT, class XL,
+          class XD, class XM, class YT, class YL, class YD, class YM>
+struct SPMV_MV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
+                         true, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+  typedef BsrMatrix<AT, AO, AD, AM, AS> AMatrix;
+  typedef Kokkos::View<XT, XL, XD, XM> XVector;
+  typedef Kokkos::View<YT, YL, YD, YM> YVector;
+  typedef typename YVector::non_const_value_type YScalar;
+
+  static void spmv_mv_bsrmatrix(
+      const KokkosKernels::Experimental::Controls &controls, const char mode[],
+      const YScalar &alpha, const AMatrix &A, const XVector &X,
+      const YScalar &beta, const YVector &Y) {
+    static_assert(std::is_integral<AT>::value,
+                  "This implementation is only for integer Scalar types.");
+    typedef SPMV_BSRMATRIX<AT, AO, AD, AM, AS, typename XVector::value_type *,
+                           XL, XD, XM, typename YVector::value_type *, YL, YD,
+                           YM>
+        impl_type;
+    KokkosKernels::Experimental::Controls defaultControls;
+    for (typename AMatrix::non_const_size_type j = 0; j < X.extent(1); ++j) {
+      auto x_j = Kokkos::subview(X, Kokkos::ALL(), j);
+      auto y_j = Kokkos::subview(Y, Kokkos::ALL(), j);
+      impl_type::spmv_bsrmatrix(defaultControls, mode, alpha, A, x_j, beta,
+                                y_j);
+    }
+  }
+};
 #endif  // !defined(KOKKOSKERNELS_ETI_ONLY) ||
         // KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 }  // namespace Impl
@@ -307,7 +345,7 @@ struct SPMV_MV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
       Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>,     \
       SCALAR_TYPE *, LAYOUT_TYPE,                                         \
       Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                    \
-      Kokkos::MemoryTraits<Kokkos::Unmanaged>, true>;
+      Kokkos::MemoryTraits<Kokkos::Unmanaged>, false, true>;
 
 #define KOKKOSSPARSE_SPMV_BSRMATRIX_ETI_SPEC_INST(                        \
     SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, \
@@ -321,38 +359,42 @@ struct SPMV_MV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
       Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>,     \
       SCALAR_TYPE *, LAYOUT_TYPE,                                         \
       Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                    \
-      Kokkos::MemoryTraits<Kokkos::Unmanaged>, true>;
+      Kokkos::MemoryTraits<Kokkos::Unmanaged>, false, true>;
 
 // declare / instantiate the 2D MV version
 // Instantiate with A,x,y are all the requested Scalar type (no instantiation of
 // mixed-precision operands)
-#define KOKKOSSPARSE_SPMV_MV_BSRMATRIX_ETI_SPEC_DECL(                     \
-    SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, \
-    MEM_SPACE_TYPE)                                                       \
-  extern template struct SPMV_MV_BSRMATRIX<                               \
-      const SCALAR_TYPE, const ORDINAL_TYPE,                              \
-      Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                    \
-      Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET_TYPE,         \
-      SCALAR_TYPE const **, LAYOUT_TYPE,                                  \
-      Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                    \
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>,     \
-      SCALAR_TYPE **, LAYOUT_TYPE,                                        \
-      Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                    \
-      Kokkos::MemoryTraits<Kokkos::Unmanaged>, true>;
+#define KOKKOSSPARSE_SPMV_MV_BSRMATRIX_ETI_SPEC_DECL(                         \
+    SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE,     \
+    MEM_SPACE_TYPE)                                                           \
+  extern template struct SPMV_MV_BSRMATRIX<                                   \
+      const SCALAR_TYPE, const ORDINAL_TYPE,                                  \
+      Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                        \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET_TYPE,             \
+      SCALAR_TYPE const **, LAYOUT_TYPE,                                      \
+      Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                        \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>,         \
+      SCALAR_TYPE **, LAYOUT_TYPE,                                            \
+      Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                        \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged>,                                \
+      std::is_integral<typename std::decay<SCALAR_TYPE>::type>::value, false, \
+      true>;
 
-#define KOKKOSSPARSE_SPMV_MV_BSRMATRIX_ETI_SPEC_INST(                     \
-    SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, \
-    MEM_SPACE_TYPE)                                                       \
-  template struct SPMV_MV_BSRMATRIX<                                      \
-      const SCALAR_TYPE, const ORDINAL_TYPE,                              \
-      Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                    \
-      Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET_TYPE,         \
-      SCALAR_TYPE const **, LAYOUT_TYPE,                                  \
-      Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                    \
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>,     \
-      SCALAR_TYPE **, LAYOUT_TYPE,                                        \
-      Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                    \
-      Kokkos::MemoryTraits<Kokkos::Unmanaged>, true>;
+#define KOKKOSSPARSE_SPMV_MV_BSRMATRIX_ETI_SPEC_INST(                         \
+    SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE,     \
+    MEM_SPACE_TYPE)                                                           \
+  template struct SPMV_MV_BSRMATRIX<                                          \
+      const SCALAR_TYPE, const ORDINAL_TYPE,                                  \
+      Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                        \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET_TYPE,             \
+      SCALAR_TYPE const **, LAYOUT_TYPE,                                      \
+      Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                        \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>,         \
+      SCALAR_TYPE **, LAYOUT_TYPE,                                            \
+      Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                        \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged>,                                \
+      std::is_integral<typename std::decay<SCALAR_TYPE>::type>::value, false, \
+      true>;
 
 #include <KokkosSparse_spmv_bsr_tpl_spec_decl.hpp>
 #include <generated_specializations_hpp/KokkosSparse_spmv_bsrmatrix_eti_spec_decl.hpp>
