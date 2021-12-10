@@ -375,7 +375,6 @@ inline void spm_mv_block_impl_mkl(
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };
-#endif
 
 #ifdef KOKKOS_ENABLE_SERIAL
 KOKKOSSPARSE_SPMV_MKL(float, Kokkos::Serial, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
@@ -438,7 +437,6 @@ KOKKOSSPARSE_SPMV_MKL(Kokkos::complex<double>, Kokkos::OpenMP,
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };
-#endif
 
 #ifdef KOKKOS_ENABLE_SERIAL
 KOKKOSSPARSE_SPMV_MV_MKL(float, Kokkos::Serial,
@@ -713,7 +711,6 @@ void spm_mv_block_impl_cusparse(
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };
-#endif
 
 #if (9000 <= CUDA_VERSION)
 KOKKOSSPARSE_SPMV_CUSPARSE(double, int, int, Kokkos::LayoutLeft,
@@ -803,7 +800,6 @@ KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int, int,
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };
-#endif
 
 #if (9000 <= CUDA_VERSION)
 KOKKOSSPARSE_SPMV_MV_CUSPARSE(double, int, int, Kokkos::LayoutLeft,
