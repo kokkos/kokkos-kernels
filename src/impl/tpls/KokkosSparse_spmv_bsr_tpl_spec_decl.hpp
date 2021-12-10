@@ -768,7 +768,8 @@ KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int, int,
 
 #undef KOKKOSSPARSE_SPMV_CUSPARSE
 
-#define KOKKOSSPARSE_SPMV_MV_CUSPARSE(SCALAR, EXECSPACE, COMPILE_LIBRARY)      \
+#define KOKKOSSPARSE_SPMV_MV_CUSPARSE(SCALAR, ORDINAL, OFFSET, LAYOUT, SPACE,  \
+                                      COMPILE_LIBRARY)                         \
   template <>                                                                  \
   struct SPMV_MV_BSRMATRIX<                                                    \
       SCALAR const, ORDINAL const, Kokkos::Device<Kokkos::Cuda, SPACE>,        \
