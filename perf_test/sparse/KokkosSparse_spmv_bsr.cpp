@@ -58,7 +58,6 @@
 #include <KokkosKernels_IOUtils.hpp>
 #include <KokkosSparse_spmv.hpp>
 #include <KokkosKernels_Test_Structured_Matrix.hpp>
-#include "KokkosSparse_spmv_bsr_tpl_spec_decl.hpp"
 
 namespace details {
 
@@ -207,46 +206,21 @@ int test_bsr_matrix_single_vec(
         scalar_t, Ordinal, Kokkos::DefaultExecutionSpace, void, int>
         Absr(Acrs, blockSize);
 
+    KokkosKernels::Experimental::Controls controls;
     switch (static_cast<details::Implementation>(test)) {
-      default:
       case Implementation::KokkosKernels: {
-        // Time a series of multiplications with the BsrMatrix
-        for (int jr = 0; jr < loop; ++jr) {
-          for (Ordinal ir = 0; ir < nRow; ++ir) h_ybsr(ir) = h_y0(ir);
-          Kokkos::deep_copy(ybsr, h_ybsr);
-          Kokkos::Timer timer;
-          KokkosSparse::spmv(fOp, alpha, Absr, xref, beta, ybsr);
-          time_bsr += timer.seconds();
-        }
+        controls.setParameter("algorithm", "native");
       } break;
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-      case Implementation::Cuda: {
-        // Time a series of multiplications with the BsrMatrix
-        KokkosKernels::Experimental::Controls controls;
-        for (int jr = 0; jr < loop; ++jr) {
-          for (Ordinal ir = 0; ir < nRow; ++ir) h_ybsr(ir) = h_y0(ir);
-          Kokkos::deep_copy(ybsr, h_ybsr);
-          Kokkos::Timer timer;
-          KokkosSparse::Impl::spmv_block_cusparse(controls, fOp, alpha, Absr,
-                                                  xref, beta, ybsr);
-          time_bsr += timer.seconds();
-        }
-      } break;
-#endif
-#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
-      case Implementation::MKL: {
-        // Time a series of multiplications with the BsrMatrix
-        KokkosKernels::Experimental::Controls controls;
-        for (int jr = 0; jr < loop; ++jr) {
-          for (Ordinal ir = 0; ir < nRow; ++ir) h_ybsr(ir) = h_y0(ir);
-          Kokkos::deep_copy(ybsr, h_ybsr);
-          Kokkos::Timer timer;
-          KokkosSparse::Impl::spmv_block_mkl(controls, fOp, alpha, Absr, xref,
-                                             beta, ybsr);
-          time_bsr += timer.seconds();
-        }
-      } break;
-#endif
+      default: break;
+    }
+
+    // Time a series of multiplications with the BsrMatrix
+    for (int jr = 0; jr < loop; ++jr) {
+      for (Ordinal ir = 0; ir < nRow; ++ir) h_ybsr(ir) = h_y0(ir);
+      Kokkos::deep_copy(ybsr, h_ybsr);
+      Kokkos::Timer timer;
+      KokkosSparse::spmv(controls, fOp, alpha, Absr, xref, beta, ybsr);
+      time_bsr += timer.seconds();
     }
 
     // Check that the numerical result is matching
@@ -365,49 +339,22 @@ int test_bsr_matrix_vec(
 
     // Time a series of multiplications with the BsrMatrix
     double time_bsr = 0.0;
+    KokkosKernels::Experimental::Controls controls;
     switch (static_cast<details::Implementation>(test)) {
-      default:
       case Implementation::KokkosKernels: {
-        // Time a series of multiplications with the BsrMatrix
-        for (int jr = 0; jr < loop; ++jr) {
-          for (Ordinal jc = 0; jc < nvec; ++jc)
-            for (Ordinal ir = 0; ir < nRow; ++ir) h_ybsr(ir, jc) = h_y0(ir, jc);
-          Kokkos::deep_copy(ybsr, h_ybsr);
-          Kokkos::Timer timer;
-          KokkosSparse::spmv(fOp, alpha, Absr, xref, beta, ybsr);
-          time_bsr += timer.seconds();
-        }
+        controls.setParameter("algorithm", "native");
       } break;
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-      case Implementation::Cuda: {
-        // Time a series of multiplications with the BsrMatrix
-        KokkosKernels::Experimental::Controls controls;
-        for (int jr = 0; jr < loop; ++jr) {
-          for (Ordinal jc = 0; jc < nvec; ++jc)
-            for (Ordinal ir = 0; ir < nRow; ++ir) h_ybsr(ir, jc) = h_y0(ir, jc);
-          Kokkos::deep_copy(ybsr, h_ybsr);
-          Kokkos::Timer timer;
-          KokkosSparse::Impl::spmv_block_cusparse(controls, fOp, alpha, Absr,
-                                                  xref, beta, ybsr);
-          time_bsr += timer.seconds();
-        }
-      } break;
-#endif
-#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
-      case Implementation::MKL: {
-        // Time a series of multiplications with the BsrMatrix
-        KokkosKernels::Experimental::Controls controls;
-        for (int jr = 0; jr < loop; ++jr) {
-          for (Ordinal jc = 0; jc < nvec; ++jc)
-            for (Ordinal ir = 0; ir < nRow; ++ir) h_ybsr(ir, jc) = h_y0(ir, jc);
-          Kokkos::deep_copy(ybsr, h_ybsr);
-          Kokkos::Timer timer;
-          KokkosSparse::Impl::spmv_block_mkl(controls, fOp, alpha, Absr, xref,
-                                             beta, ybsr);
-          time_bsr += timer.seconds();
-        }
-      } break;
-#endif
+      default: break;
+    }
+
+    // Time a series of multiplications with the BsrMatrix
+    for (int jr = 0; jr < loop; ++jr) {
+      for (Ordinal jc = 0; jc < nvec; ++jc)
+        for (Ordinal ir = 0; ir < nRow; ++ir) h_ybsr(ir, jc) = h_y0(ir, jc);
+      Kokkos::deep_copy(ybsr, h_ybsr);
+      Kokkos::Timer timer;
+      KokkosSparse::spmv(controls, fOp, alpha, Absr, xref, beta, ybsr);
+      time_bsr += timer.seconds();
     }
 
     // Check that the result is matching
