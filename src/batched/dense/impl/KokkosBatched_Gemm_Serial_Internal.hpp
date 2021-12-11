@@ -21,20 +21,20 @@ struct SerialGemmInternal {
   template <typename ScalarType, typename ValueType>
   KOKKOS_INLINE_FUNCTION static int invoke(
       const int m, const int n, const int k, const ScalarType alpha,
-      const ValueType *__restrict__ A, const int as0, const int as1,
-      const ValueType *__restrict__ B, const int bs0, const int bs1,
+      const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
+      const ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1,
       const ScalarType beta,
-      /**/ ValueType *__restrict__ C, const int cs0, const int cs1);
+      /**/ ValueType *KOKKOS_RESTRICT C, const int cs0, const int cs1);
 };
 
 template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int SerialGemmInternal<Algo::Gemm::Unblocked>::invoke(
     const int m, const int n, const int k, const ScalarType alpha,
-    const ValueType *__restrict__ A, const int as0, const int as1,
-    const ValueType *__restrict__ B, const int bs0, const int bs1,
+    const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
+    const ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1,
     const ScalarType beta,
-    /**/ ValueType *__restrict__ C, const int cs0, const int cs1) {
+    /**/ ValueType *KOKKOS_RESTRICT C, const int cs0, const int cs1) {
   // C = beta C + alpha A B
   // C (m x n), A(m x k), B(k x n)
 
@@ -48,10 +48,10 @@ KOKKOS_INLINE_FUNCTION int SerialGemmInternal<Algo::Gemm::Unblocked>::invoke(
   if (alpha != zero) {
     if (m <= 0 || n <= 0 || k <= 0) return 0;
 
-    ValueType *__restrict__ pC = C;
+    ValueType *KOKKOS_RESTRICT pC = C;
     for (int p = 0; p < k; ++p) {
-      const ValueType *__restrict__ pA               = A + p * as1,
-                                    *__restrict__ pB = B + p * bs0;
+      const ValueType *KOKKOS_RESTRICT pA                  = A + p * as1,
+                                       *KOKKOS_RESTRICT pB = B + p * bs0;
       for (int i = 0; i < m; ++i) {
         const ValueType tA(alpha * pA[i * as0]);
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
@@ -68,10 +68,10 @@ template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int SerialGemmInternal<Algo::Gemm::Blocked>::invoke(
     const int m, const int n, const int k, const ScalarType alpha,
-    const ValueType *__restrict__ A, const int as0, const int as1,
-    const ValueType *__restrict__ B, const int bs0, const int bs1,
+    const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
+    const ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1,
     const ScalarType beta,
-    /**/ ValueType *__restrict__ C, const int cs0, const int cs1) {
+    /**/ ValueType *KOKKOS_RESTRICT C, const int cs0, const int cs1) {
   // C = beta C + alpha A B
   // C (m x n), A(m x k), B(k x n)
 
@@ -94,9 +94,9 @@ KOKKOS_INLINE_FUNCTION int SerialGemmInternal<Algo::Gemm::Blocked>::invoke(
 
     InnerGemmFixC<mbAlgo, nbAlgo> inner(as0, as1, bs0, bs1, cs0, cs1);
     auto gemm = [&](const int ib, const int jb, const int pb,
-                    const ValueType *__restrict__ AA,
-                    const ValueType *__restrict__ BB,
-                    /**/ ValueType *__restrict__ CC) {
+                    const ValueType *KOKKOS_RESTRICT AA,
+                    const ValueType *KOKKOS_RESTRICT BB,
+                    /**/ ValueType *KOKKOS_RESTRICT CC) {
       const int mb = mbAlgo, nb = nbAlgo;
       for (int i = 0; i < ib; i += mb)
         for (int j = 0; j < jb; j += nb)
@@ -122,9 +122,9 @@ KOKKOS_INLINE_FUNCTION int SerialGemmInternal<Algo::Gemm::Blocked>::invoke(
       //     for (int ii=0;ii<m;ii+=mc) {
       //       const int ti = m-ii, ib = (ti < mc ? ti : mc);
 
-      //       const ValueType *__restrict__ AA = A+ii*as0+pp*as1;
-      //       const ValueType *__restrict__ BB = B+pp*bs0+jj*bs1;
-      //       /**/  ValueType *__restrict__ CC = C+ii*cs0+jj*cs1;
+      //       const ValueType *KOKKOS_RESTRICT AA = A+ii*as0+pp*as1;
+      //       const ValueType *KOKKOS_RESTRICT BB = B+pp*bs0+jj*bs1;
+      //       /**/  ValueType *KOKKOS_RESTRICT CC = C+ii*cs0+jj*cs1;
 
       //       gemm(ib, jb, pb, AA, BB, CC);
       //     } // for ii

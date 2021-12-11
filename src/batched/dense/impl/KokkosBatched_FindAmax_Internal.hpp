@@ -13,9 +13,9 @@ namespace KokkosBatched {
 struct SerialFindAmaxInternal {
   template <typename ValueType, typename IntType>
   KOKKOS_INLINE_FUNCTION static int invoke(const int m,
-                                           const ValueType *__restrict__ A,
+                                           const ValueType *KOKKOS_RESTRICT A,
                                            const int as0,
-                                           /**/ IntType *__restrict__ idx) {
+                                           /**/ IntType *KOKKOS_RESTRICT idx) {
     ValueType max_val(A[0]);
     IntType val_loc(0);
     for (int i = 1; i < m; ++i) {
@@ -37,9 +37,9 @@ struct TeamVectorFindAmaxInternal {
   template <typename MemberType, typename ValueType, typename IntType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
                                            const int m,
-                                           const ValueType *__restrict__ A,
+                                           const ValueType *KOKKOS_RESTRICT A,
                                            const int as0,
-                                           /**/ IntType *__restrict__ idx) {
+                                           /**/ IntType *KOKKOS_RESTRICT idx) {
     if (m > 0) {
       using reducer_value_type =
           typename Kokkos::MaxLoc<ValueType, IntType>::value_type;

@@ -15,9 +15,9 @@ namespace KokkosBatched {
 template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerMultipleDotProduct<5>::serial_invoke(
-    const ScalarType alpha, const ValueType *__restrict__ A,
-    const ValueType *__restrict__ x, const int n,
-    /**/ ValueType *__restrict__ y) {
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
+    const ValueType *KOKKOS_RESTRICT x, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT y) {
   if (n <= 0) return 0;
 
   const int i0 = 0 * _as0, i1 = 1 * _as0, i2 = 2 * _as0, i3 = 3 * _as0,
@@ -52,9 +52,9 @@ KOKKOS_INLINE_FUNCTION int InnerMultipleDotProduct<5>::serial_invoke(
 template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerMultipleDotProduct<4>::serial_invoke(
-    const ScalarType alpha, const ValueType *__restrict__ A,
-    const ValueType *__restrict__ x, const int n,
-    /**/ ValueType *__restrict__ y) {
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
+    const ValueType *KOKKOS_RESTRICT x, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT y) {
   if (!n) return 0;
 
   const int i0 = 0 * _as0, i1 = 1 * _as0, i2 = 2 * _as0, i3 = 3 * _as0;
@@ -86,9 +86,9 @@ KOKKOS_INLINE_FUNCTION int InnerMultipleDotProduct<4>::serial_invoke(
 template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerMultipleDotProduct<3>::serial_invoke(
-    const ScalarType alpha, const ValueType *__restrict__ A,
-    const ValueType *__restrict__ x, const int n,
-    /**/ ValueType *__restrict__ y) {
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
+    const ValueType *KOKKOS_RESTRICT x, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT y) {
   if (n <= 0) return 0;
 
   const int i0 = 0 * _as0, i1 = 1 * _as0, i2 = 2 * _as0;
@@ -118,9 +118,9 @@ KOKKOS_INLINE_FUNCTION int InnerMultipleDotProduct<3>::serial_invoke(
 template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerMultipleDotProduct<2>::serial_invoke(
-    const ScalarType alpha, const ValueType *__restrict__ A,
-    const ValueType *__restrict__ x, const int n,
-    /**/ ValueType *__restrict__ y) {
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
+    const ValueType *KOKKOS_RESTRICT x, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT y) {
   if (n <= 0) return 0;
 
   const int i0 = 0 * _as0, i1 = 1 * _as0;
@@ -148,9 +148,9 @@ KOKKOS_INLINE_FUNCTION int InnerMultipleDotProduct<2>::serial_invoke(
 template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerMultipleDotProduct<1>::serial_invoke(
-    const ScalarType alpha, const ValueType *__restrict__ A,
-    const ValueType *__restrict__ x, const int n,
-    /**/ ValueType *__restrict__ y) {
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
+    const ValueType *KOKKOS_RESTRICT x, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT y) {
   if (n <= 0) return 0;
 
   // unroll by rows
@@ -169,9 +169,9 @@ KOKKOS_INLINE_FUNCTION int InnerMultipleDotProduct<1>::serial_invoke(
 template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerMultipleDotProduct<5>::serial_invoke(
-    const ScalarType alpha, const ValueType *__restrict__ A,
-    const ValueType *__restrict__ x, const int m, const int n,
-    /**/ ValueType *__restrict__ y) {
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
+    const ValueType *KOKKOS_RESTRICT x, const int m, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT y) {
   if (m <= 0 || n <= 0) return 0;
   switch (m) {
     case 5: {
@@ -206,9 +206,9 @@ KOKKOS_INLINE_FUNCTION int InnerMultipleDotProduct<5>::serial_invoke(
 template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerMultipleDotProduct<4>::serial_invoke(
-    const ScalarType alpha, const ValueType *__restrict__ A,
-    const ValueType *__restrict__ x, const int m, const int n,
-    /**/ ValueType *__restrict__ y) {
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
+    const ValueType *KOKKOS_RESTRICT x, const int m, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT y) {
   if (m <= 0 || n <= 0) return 0;
   switch (m) {
     case 4: {
@@ -238,9 +238,9 @@ KOKKOS_INLINE_FUNCTION int InnerMultipleDotProduct<4>::serial_invoke(
 template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerMultipleDotProduct<3>::serial_invoke(
-    const ScalarType alpha, const ValueType *__restrict__ A,
-    const ValueType *__restrict__ x, const int m, const int n,
-    /**/ ValueType *__restrict__ y) {
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
+    const ValueType *KOKKOS_RESTRICT x, const int m, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT y) {
   if (m <= 0 || n <= 0) return 0;
   switch (m) {
     case 3: {
@@ -265,9 +265,9 @@ KOKKOS_INLINE_FUNCTION int InnerMultipleDotProduct<3>::serial_invoke(
 template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerMultipleDotProduct<2>::serial_invoke(
-    const ScalarType alpha, const ValueType *__restrict__ A,
-    const ValueType *__restrict__ x, const int m, const int n,
-    /**/ ValueType *__restrict__ y) {
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
+    const ValueType *KOKKOS_RESTRICT x, const int m, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT y) {
   if (m <= 0 || n <= 0) return 0;
   switch (m) {
     case 2: {
@@ -287,9 +287,9 @@ KOKKOS_INLINE_FUNCTION int InnerMultipleDotProduct<2>::serial_invoke(
 template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerMultipleDotProduct<1>::serial_invoke(
-    const ScalarType alpha, const ValueType *__restrict__ A,
-    const ValueType *__restrict__ x, const int m, const int n,
-    /**/ ValueType *__restrict__ y) {
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
+    const ValueType *KOKKOS_RESTRICT x, const int m, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT y) {
   if (m <= 0 || n <= 0) return 0;
   switch (m) {
     case 1: {

@@ -16,17 +16,17 @@ struct InnerMultipleDotProduct {
 
   template <typename ScalarType, typename ValueType>
   KOKKOS_INLINE_FUNCTION int serial_invoke(const ScalarType alpha,
-                                           const ValueType *__restrict__ A,
-                                           const ValueType *__restrict__ x,
+                                           const ValueType *KOKKOS_RESTRICT A,
+                                           const ValueType *KOKKOS_RESTRICT x,
                                            const int n,
-                                           /**/ ValueType *__restrict__ y);
+                                           /**/ ValueType *KOKKOS_RESTRICT y);
 
   template <typename ScalarType, typename ValueType>
   KOKKOS_INLINE_FUNCTION int serial_invoke(const ScalarType alpha,
-                                           const ValueType *__restrict__ A,
-                                           const ValueType *__restrict__ x,
+                                           const ValueType *KOKKOS_RESTRICT A,
+                                           const ValueType *KOKKOS_RESTRICT x,
                                            const int m, const int n,
-                                           /**/ ValueType *__restrict__ y);
+                                           /**/ ValueType *KOKKOS_RESTRICT y);
 };
 }  // namespace KokkosBatched
 

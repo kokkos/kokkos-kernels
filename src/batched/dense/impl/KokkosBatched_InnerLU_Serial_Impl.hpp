@@ -15,7 +15,7 @@ namespace KokkosBatched {
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerLU<5>::serial_invoke(
-    ValueType *__restrict__ A) {
+    ValueType *KOKKOS_RESTRICT A) {
   // load
   ValueType a_00 = A[0 * _as0 + 0 * _as1], a_01 = A[0 * _as0 + 1 * _as1],
             a_02 = A[0 * _as0 + 2 * _as1], a_03 = A[0 * _as0 + 3 * _as1],
@@ -107,7 +107,7 @@ KOKKOS_INLINE_FUNCTION int InnerLU<5>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerLU<4>::serial_invoke(
-    ValueType *__restrict__ A) {
+    ValueType *KOKKOS_RESTRICT A) {
   // load
   ValueType a_00 = A[0 * _as0 + 0 * _as1], a_01 = A[0 * _as0 + 1 * _as1],
             a_02 = A[0 * _as0 + 2 * _as1], a_03 = A[0 * _as0 + 3 * _as1],
@@ -164,7 +164,7 @@ KOKKOS_INLINE_FUNCTION int InnerLU<4>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerLU<3>::serial_invoke(
-    ValueType *__restrict__ A) {
+    ValueType *KOKKOS_RESTRICT A) {
   // load
   ValueType a_00 = A[0 * _as0 + 0 * _as1], a_01 = A[0 * _as0 + 1 * _as1],
             a_02 = A[0 * _as0 + 2 * _as1], a_10 = A[1 * _as0 + 0 * _as1],
@@ -198,7 +198,7 @@ KOKKOS_INLINE_FUNCTION int InnerLU<3>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerLU<2>::serial_invoke(
-    ValueType *__restrict__ A) {
+    ValueType *KOKKOS_RESTRICT A) {
   // load
   ValueType a_00 = A[0 * _as0 + 0 * _as1], a_01 = A[0 * _as0 + 1 * _as1],
             a_10 = A[1 * _as0 + 0 * _as1], a_11 = A[1 * _as0 + 1 * _as1];
@@ -217,14 +217,14 @@ KOKKOS_INLINE_FUNCTION int InnerLU<2>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerLU<1>::serial_invoke(
-    ValueType *__restrict__ /* A */) {
+    ValueType *KOKKOS_RESTRICT /* A */) {
   return 0;
 }
 
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerLU<5>::serial_invoke(
-    const int m, ValueType *__restrict__ A) {
+    const int m, ValueType *KOKKOS_RESTRICT A) {
   if (m > 5) Kokkos::abort("InnerLU<5>::serial_invoke, assert failure (m<=5)");
   if (m <= 0) return 0;
 
@@ -261,7 +261,7 @@ KOKKOS_INLINE_FUNCTION int InnerLU<5>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerLU<4>::serial_invoke(
-    const int m, ValueType *__restrict__ A) {
+    const int m, ValueType *KOKKOS_RESTRICT A) {
   if (m > 4) Kokkos::abort("InnerLU<4>::serial_invoke, assert failure (m<=4)");
   if (m <= 0) return 0;
 
@@ -293,7 +293,7 @@ KOKKOS_INLINE_FUNCTION int InnerLU<4>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerLU<3>::serial_invoke(
-    const int m, ValueType *__restrict__ A) {
+    const int m, ValueType *KOKKOS_RESTRICT A) {
   if (m > 3) Kokkos::abort("InnerLU<3>::serial_invoke, assert failure (m<=3)");
   if (m <= 0) return 0;
 
@@ -320,7 +320,7 @@ KOKKOS_INLINE_FUNCTION int InnerLU<3>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerLU<2>::serial_invoke(
-    const int m, ValueType *__restrict__ A) {
+    const int m, ValueType *KOKKOS_RESTRICT A) {
   if (m > 2) Kokkos::abort("InnerLU<2>::serial_invoke, assert failure (m<=2)");
   if (m <= 0) return 0;
 
@@ -342,7 +342,7 @@ KOKKOS_INLINE_FUNCTION int InnerLU<2>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerLU<1>::serial_invoke(
-    const int m, ValueType *__restrict__ A) {
+    const int m, ValueType *KOKKOS_RESTRICT A) {
   if (m > 1) Kokkos::abort("InnerLU<1>::serial_invoke, assert failure (m<=1)");
   if (m <= 0) return 0;
 
@@ -362,18 +362,18 @@ KOKKOS_INLINE_FUNCTION int InnerLU<1>::serial_invoke(
 // int
 // InnerLU<bmn>::
 // serial_invoke(const int m, const int n,
-//               ValueType *__restrict__ A) {
+//               ValueType *KOKKOS_RESTRICT A) {
 //   if (m <= 0 || n <= 0) return 0;
 //   const int k = m < n ? m : n;
 //   for (int p=0;p<k;++p) {
 //     const ValueType
 //       // inv_alpha11 = 1.0/A[p*_as0+p*_as1],
 //       alpha11 = A[p*_as0+p*_as1],
-//       *__restrict__ a12t = A + (p  )*_as0 + (p+1)*_as1;
+//       *KOKKOS_RESTRICT a12t = A + (p  )*_as0 + (p+1)*_as1;
 
 //     ValueType
-//       *__restrict__ a21  = A + (p+1)*_as0 + (p  )*_as1,
-//       *__restrict__ A22  = A + (p+1)*_as0 + (p+1)*_as1;
+//       *KOKKOS_RESTRICT a21  = A + (p+1)*_as0 + (p  )*_as1,
+//       *KOKKOS_RESTRICT A22  = A + (p+1)*_as0 + (p+1)*_as1;
 
 //     const int
 //       iend = m-p-1,

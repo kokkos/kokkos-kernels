@@ -23,9 +23,9 @@ struct TeamTrsmInternalLeftLower {
   template <typename MemberType, typename ScalarType, typename ValueType>
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType &member, const bool use_unit_diag, const int m,
-      const int n, const ScalarType alpha, const ValueType *__restrict__ A,
+      const int n, const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
       const int as0, const int as1,
-      /**/ ValueType *__restrict__ B, const int bs0, const int bs1);
+      /**/ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1);
 };
 
 template <>
@@ -33,9 +33,9 @@ template <typename MemberType, typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int
 TeamTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(
     const MemberType &member, const bool use_unit_diag, const int m,
-    const int n, const ScalarType alpha, const ValueType *__restrict__ A,
+    const int n, const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
     const int as0, const int as1,
-    /**/ ValueType *__restrict__ B, const int bs0, const int bs1) {
+    /**/ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
   const ScalarType one(1.0), zero(0.0);
 
   if (alpha == zero)
@@ -50,12 +50,12 @@ TeamTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(
       int iend = m - p - 1;
       int jend = n;
 
-      const ValueType *__restrict__ a21 =
+      const ValueType *KOKKOS_RESTRICT a21 =
           iend ? A + (p + 1) * as0 + p * as1 : NULL;
 
-      ValueType *__restrict__ b1t = B + p * bs0,
-                              *__restrict__ B2 =
-                                  iend ? B + (p + 1) * bs0 : NULL;
+      ValueType *KOKKOS_RESTRICT b1t = B + p * bs0,
+                                 *KOKKOS_RESTRICT B2 =
+                                     iend ? B + (p + 1) * bs0 : NULL;
 
       member.team_barrier();
       if (!use_unit_diag) {
@@ -81,9 +81,9 @@ template <typename MemberType, typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int
 TeamTrsmInternalLeftLower<Algo::Trsm::Blocked>::invoke(
     const MemberType &member, const bool use_unit_diag, const int m,
-    const int n, const ScalarType alpha, const ValueType *__restrict__ A,
+    const int n, const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
     const int as0, const int as1,
-    /**/ ValueType *__restrict__ B, const int bs0, const int bs1) {
+    /**/ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
   enum : int {
     mbAlgo = Algo::Trsm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
   };
@@ -107,8 +107,8 @@ TeamTrsmInternalLeftLower<Algo::Trsm::Blocked>::invoke(
     InnerTrsmLeftLowerNonUnitDiag<mbAlgo> trsm_n(as0, as1, bs0, bs1);
 
     auto trsm = [&](const int ib, const int jb,
-                    const ValueType *__restrict__ AA,
-                    /**/ ValueType *__restrict__ BB) {
+                    const ValueType *KOKKOS_RESTRICT AA,
+                    /**/ ValueType *KOKKOS_RESTRICT BB) {
       const int mb    = mbAlgo;
       const int tsize = member.team_size();
       // Made this non-const in order to WORKAROUND issue #349
@@ -119,8 +119,8 @@ TeamTrsmInternalLeftLower<Algo::Trsm::Blocked>::invoke(
         int pb = ((p + mb) > ib ? (ib - p) : mb);
 
         // trsm update
-        const ValueType *__restrict__ Ap = AA + p * as0 + p * as1;
-        /**/ ValueType *__restrict__ Bp    = BB + p * bs0;
+        const ValueType *KOKKOS_RESTRICT Ap = AA + p * as0 + p * as1;
+        /**/ ValueType *KOKKOS_RESTRICT Bp    = BB + p * bs0;
 
         member.team_barrier();
         Kokkos::parallel_for(
@@ -158,9 +158,9 @@ struct TeamTrsmInternalLeftUpper {
   template <typename MemberType, typename ScalarType, typename ValueType>
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType &member, const bool use_unit_diag, const int m,
-      const int n, const ScalarType alpha, const ValueType *__restrict__ A,
+      const int n, const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
       const int as0, const int as1,
-      /**/ ValueType *__restrict__ B, const int bs0, const int bs1);
+      /**/ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1);
 };
 
 template <>
@@ -168,9 +168,9 @@ template <typename MemberType, typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int
 TeamTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(
     const MemberType &member, const bool use_unit_diag, const int m,
-    const int n, const ScalarType alpha, const ValueType *__restrict__ A,
+    const int n, const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
     const int as0, const int as1,
-    /**/ ValueType *__restrict__ B, const int bs0, const int bs1) {
+    /**/ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
   const ScalarType one(1.0), zero(0.0);
 
   // note that parallel range is different ( m*n vs m-1*n);
@@ -181,14 +181,14 @@ TeamTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(
       TeamScaleInternal::invoke(member, m, n, alpha, B, bs0, bs1);
     if (m <= 0 || n <= 0) return 0;
 
-    ValueType *__restrict__ B0 = B;
+    ValueType *KOKKOS_RESTRICT B0 = B;
     for (int p = (m - 1); p >= 0; --p) {
       // Made this non-const in order to WORKAROUND issue #349
       int iend = p;
       int jend = n;
 
-      const ValueType *__restrict__ a01 = A + p * as1;
-      /**/ ValueType *__restrict__ b1t    = B + p * bs0;
+      const ValueType *KOKKOS_RESTRICT a01 = A + p * as1;
+      /**/ ValueType *KOKKOS_RESTRICT b1t    = B + p * bs0;
 
       member.team_barrier();
       if (!use_unit_diag) {
@@ -222,9 +222,9 @@ template <typename MemberType, typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int
 TeamTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invoke(
     const MemberType &member, const bool use_unit_diag, const int m,
-    const int n, const ScalarType alpha, const ValueType *__restrict__ A,
+    const int n, const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
     const int as0, const int as1,
-    /**/ ValueType *__restrict__ B, const int bs0, const int bs1) {
+    /**/ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
   enum : int {
     mbAlgo = Algo::Trsm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
   };
@@ -243,8 +243,8 @@ TeamTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invoke(
     InnerTrsmLeftUpperNonUnitDiag<mbAlgo> trsm_n(as0, as1, bs0, bs1);
 
     auto trsm = [&](const int ib, const int jb,
-                    const ValueType *__restrict__ AA,
-                    /**/ ValueType *__restrict__ BB) {
+                    const ValueType *KOKKOS_RESTRICT AA,
+                    /**/ ValueType *KOKKOS_RESTRICT BB) {
       const int mb    = mbAlgo;  //(ib <=5 ? ib : mbAlgo);
       const int tsize = member.team_size();
       // Made this non-const in order to WORKAROUND issue #349
@@ -255,8 +255,8 @@ TeamTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invoke(
                   pb = (mb + (ptmp < 0) * ptmp);
 
         // trsm update
-        const ValueType *__restrict__ Ap = AA + p * as0 + p * as1;
-        /**/ ValueType *__restrict__ Bp    = BB + p * bs0;
+        const ValueType *KOKKOS_RESTRICT Ap = AA + p * as0 + p * as1;
+        /**/ ValueType *KOKKOS_RESTRICT Bp    = BB + p * bs0;
 
         member.team_barrier();
         Kokkos::parallel_for(

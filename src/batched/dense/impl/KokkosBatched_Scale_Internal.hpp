@@ -13,7 +13,7 @@ namespace KokkosBatched {
 struct SerialScaleInternal {
   template <typename ScalarType, typename ValueType>
   KOKKOS_INLINE_FUNCTION static int invoke(const int m, const ScalarType alpha,
-                                           /* */ ValueType *__restrict__ A,
+                                           /* */ ValueType *KOKKOS_RESTRICT A,
                                            const int as0) {
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
@@ -26,7 +26,7 @@ struct SerialScaleInternal {
   template <typename ScalarType, typename ValueType>
   KOKKOS_INLINE_FUNCTION static int invoke(const int m, const int n,
                                            const ScalarType alpha,
-                                           /* */ ValueType *__restrict__ A,
+                                           /* */ ValueType *KOKKOS_RESTRICT A,
                                            const int as0, const int as1) {
     if (as0 > as1)
       for (int i = 0; i < m; ++i) invoke(n, alpha, A + i * as0, as1);
@@ -44,7 +44,7 @@ struct TeamScaleInternal {
   template <typename MemberType, typename ScalarType, typename ValueType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
                                            const int m, const ScalarType alpha,
-                                           /* */ ValueType *__restrict__ A,
+                                           /* */ ValueType *KOKKOS_RESTRICT A,
                                            const int as0) {
     Kokkos::parallel_for(Kokkos::TeamThreadRange(member, m),
                          [&](const int &i) { A[i * as0] *= alpha; });
@@ -56,7 +56,7 @@ struct TeamScaleInternal {
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
                                            const int m, const int n,
                                            const ScalarType alpha,
-                                           /* */ ValueType *__restrict__ A,
+                                           /* */ ValueType *KOKKOS_RESTRICT A,
                                            const int as0, const int as1) {
     if (m > n) {
       Kokkos::parallel_for(
@@ -81,7 +81,7 @@ struct TeamVectorScaleInternal {
   template <typename MemberType, typename ScalarType, typename ValueType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
                                            const int m, const ScalarType alpha,
-                                           /* */ ValueType *__restrict__ A,
+                                           /* */ ValueType *KOKKOS_RESTRICT A,
                                            const int as0) {
     Kokkos::parallel_for(Kokkos::TeamVectorRange(member, m),
                          [&](const int &i) { A[i * as0] *= alpha; });
@@ -93,7 +93,7 @@ struct TeamVectorScaleInternal {
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
                                            const int m, const int n,
                                            const ScalarType alpha,
-                                           /* */ ValueType *__restrict__ A,
+                                           /* */ ValueType *KOKKOS_RESTRICT A,
                                            const int as0, const int as1) {
     if (as0 > as1) {
       Kokkos::parallel_for(

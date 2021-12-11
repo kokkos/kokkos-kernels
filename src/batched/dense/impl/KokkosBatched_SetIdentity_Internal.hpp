@@ -13,7 +13,7 @@ namespace KokkosBatched {
 struct SerialSetIdentityInternal {
   template <typename ValueType>
   KOKKOS_INLINE_FUNCTION static int invoke(const int m, const int n,
-                                           /* */ ValueType *__restrict__ A,
+                                           /* */ ValueType *KOKKOS_RESTRICT A,
                                            const int as0, const int as1) {
     const ValueType one(1), zero(0);
     for (int j = 0; j < n; ++j) {
@@ -36,7 +36,7 @@ struct TeamSetIdentityInternal {
   template <typename MemberType, typename ValueType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
                                            const int m, const int n,
-                                           /* */ ValueType *__restrict__ A,
+                                           /* */ ValueType *KOKKOS_RESTRICT A,
                                            const int as0, const int as1) {
     const ValueType one(1), zero(0);
     Kokkos::parallel_for(Kokkos::TeamThreadRange(member, m), [&](const int &i) {
@@ -57,7 +57,7 @@ struct TeamVectorSetIdentityInternal {
   template <typename MemberType, typename ValueType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
                                            const int m, const int n,
-                                           /* */ ValueType *__restrict__ A,
+                                           /* */ ValueType *KOKKOS_RESTRICT A,
                                            const int as0, const int as1) {
     const ValueType one(1), zero(0);
     Kokkos::parallel_for(Kokkos::TeamThreadRange(member, m), [&](const int &i) {

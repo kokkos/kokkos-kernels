@@ -16,8 +16,8 @@ namespace KokkosBatched {
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerUnitDiag<5>::serial_invoke(
-    const ValueType *__restrict__ A, const int n,
-    /**/ ValueType *__restrict__ B) {
+    const ValueType *KOKKOS_RESTRICT A, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT B) {
   if (n <= 0) return 0;
 
   const ValueType a_10 = A[1 * _as0 + 0 * _as1], a_20 = A[2 * _as0 + 0 * _as1],
@@ -73,8 +73,8 @@ KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerUnitDiag<5>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerUnitDiag<4>::serial_invoke(
-    const ValueType *__restrict__ A, const int n,
-    /**/ ValueType *__restrict__ B) {
+    const ValueType *KOKKOS_RESTRICT A, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT B) {
   if (n <= 0) return 0;
 
   const ValueType a_10 = A[1 * _as0 + 0 * _as1], a_20 = A[2 * _as0 + 0 * _as1],
@@ -120,8 +120,8 @@ KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerUnitDiag<4>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerUnitDiag<3>::serial_invoke(
-    const ValueType *__restrict__ A, const int n,
-    /**/ ValueType *__restrict__ B) {
+    const ValueType *KOKKOS_RESTRICT A, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT B) {
   if (n <= 0) return 0;
 
   const ValueType a_10 = A[1 * _as0 + 0 * _as1], a_20 = A[2 * _as0 + 0 * _as1],
@@ -159,8 +159,8 @@ KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerUnitDiag<3>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerUnitDiag<2>::serial_invoke(
-    const ValueType *__restrict__ A, const int n,
-    /**/ ValueType *__restrict__ B) {
+    const ValueType *KOKKOS_RESTRICT A, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT B) {
   if (n <= 0) return 0;
 
   const ValueType a_10 = A[1 * _as0 + 0 * _as1];
@@ -191,8 +191,8 @@ KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerUnitDiag<2>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerUnitDiag<1>::serial_invoke(
-    const ValueType *__restrict__ /* A */, const int /* n */,
-    /**/ ValueType *__restrict__ /* B */) {
+    const ValueType *KOKKOS_RESTRICT /* A */, const int /* n */,
+    /**/ ValueType *KOKKOS_RESTRICT /* B */) {
   return 0;
 }
 
@@ -204,8 +204,8 @@ KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerUnitDiag<1>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerUnitDiag<5>::serial_invoke(
-    const ValueType *__restrict__ A, const int m, const int n,
-    /**/ ValueType *__restrict__ B) {
+    const ValueType *KOKKOS_RESTRICT A, const int m, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT B) {
   if (m > 5)
     Kokkos::abort(
         "InnerTrsmLeftLowerUnitDiag<5>::serial_invoke, assert failure (m<=5)");
@@ -242,8 +242,8 @@ KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerUnitDiag<5>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerUnitDiag<4>::serial_invoke(
-    const ValueType *__restrict__ A, const int m, const int n,
-    /**/ ValueType *__restrict__ B) {
+    const ValueType *KOKKOS_RESTRICT A, const int m, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT B) {
   if (m > 4)
     Kokkos::abort(
         "InnerTrsmLeftLowerUnitDiag<4>::serial_invoke, assert failure (m<=4)");
@@ -275,8 +275,8 @@ KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerUnitDiag<4>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerUnitDiag<3>::serial_invoke(
-    const ValueType *__restrict__ A, const int m, const int n,
-    /**/ ValueType *__restrict__ B) {
+    const ValueType *KOKKOS_RESTRICT A, const int m, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT B) {
   if (m > 3)
     Kokkos::abort(
         "InnerTrsmLeftLowerUnitDiag<3>::serial_invoke, assert failure (m<=3)");
@@ -303,8 +303,8 @@ KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerUnitDiag<3>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerUnitDiag<2>::serial_invoke(
-    const ValueType *__restrict__ A, const int m, const int n,
-    /**/ ValueType *__restrict__ B) {
+    const ValueType *KOKKOS_RESTRICT A, const int m, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT B) {
   if (m > 2)
     Kokkos::abort(
         "InnerTrsmLeftLowerUnitDiag<2>::serial_invoke, assert failure (m<=2)");
@@ -326,8 +326,8 @@ KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerUnitDiag<2>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerUnitDiag<1>::serial_invoke(
-    const ValueType *__restrict__ A, const int m, const int n,
-    /**/ ValueType *__restrict__ B) {
+    const ValueType *KOKKOS_RESTRICT A, const int m, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT B) {
   if (m > 1)
     Kokkos::abort(
         "InnerTrsmLeftLowerUnitDiag<1>::serial_invoke, assert failure (m<=1)");
@@ -350,8 +350,8 @@ KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerUnitDiag<1>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerNonUnitDiag<5>::serial_invoke(
-    const ValueType *__restrict__ A, const int n,
-    /**/ ValueType *__restrict__ B) {
+    const ValueType *KOKKOS_RESTRICT A, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT B) {
   if (n <= 0) return 0;
 
   const ValueType a_10 = A[1 * _as0 + 0 * _as1], a_20 = A[2 * _as0 + 0 * _as1],
@@ -434,8 +434,8 @@ KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerNonUnitDiag<5>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerNonUnitDiag<4>::serial_invoke(
-    const ValueType *__restrict__ A, const int n,
-    /**/ ValueType *__restrict__ B) {
+    const ValueType *KOKKOS_RESTRICT A, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT B) {
   if (n <= 0) return 0;
 
   const ValueType a_10 = A[1 * _as0 + 0 * _as1], a_20 = A[2 * _as0 + 0 * _as1],
@@ -504,8 +504,8 @@ KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerNonUnitDiag<4>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerNonUnitDiag<3>::serial_invoke(
-    const ValueType *__restrict__ A, const int n,
-    /**/ ValueType *__restrict__ B) {
+    const ValueType *KOKKOS_RESTRICT A, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT B) {
   if (n <= 0) return 0;
 
   const ValueType a_10 = A[1 * _as0 + 0 * _as1], a_20 = A[2 * _as0 + 0 * _as1],
@@ -562,8 +562,8 @@ KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerNonUnitDiag<3>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerNonUnitDiag<2>::serial_invoke(
-    const ValueType *__restrict__ A, const int n,
-    /**/ ValueType *__restrict__ B) {
+    const ValueType *KOKKOS_RESTRICT A, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT B) {
   if (n <= 0) return 0;
 
   const ValueType a_10 = A[1 * _as0 + 0 * _as1];
@@ -608,8 +608,8 @@ KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerNonUnitDiag<2>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerNonUnitDiag<1>::serial_invoke(
-    const ValueType *__restrict__ A, const int n,
-    /**/ ValueType *__restrict__ B) {
+    const ValueType *KOKKOS_RESTRICT A, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT B) {
   if (n <= 0) return 0;
 
   // const ValueType
@@ -641,8 +641,8 @@ KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerNonUnitDiag<1>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerNonUnitDiag<5>::serial_invoke(
-    const ValueType *__restrict__ A, const int m, const int n,
-    /**/ ValueType *__restrict__ B) {
+    const ValueType *KOKKOS_RESTRICT A, const int m, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT B) {
   if (m > 5)
     Kokkos::abort(
         "InnerTrsmLeftLowerNonUnitDiag<5>::serial_invoke, assert failure "
@@ -680,8 +680,8 @@ KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerNonUnitDiag<5>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerNonUnitDiag<4>::serial_invoke(
-    const ValueType *__restrict__ A, const int m, const int n,
-    /**/ ValueType *__restrict__ B) {
+    const ValueType *KOKKOS_RESTRICT A, const int m, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT B) {
   if (m > 4)
     Kokkos::abort(
         "InnerTrsmLeftLowerNonUnitDiag<4>::serial_invoke, assert failure "
@@ -714,8 +714,8 @@ KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerNonUnitDiag<4>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerNonUnitDiag<3>::serial_invoke(
-    const ValueType *__restrict__ A, const int m, const int n,
-    /**/ ValueType *__restrict__ B) {
+    const ValueType *KOKKOS_RESTRICT A, const int m, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT B) {
   if (m > 3)
     Kokkos::abort(
         "InnerTrsmLeftLowerNonUnitDiag<3>::serial_invoke, assert failure "
@@ -743,8 +743,8 @@ KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerNonUnitDiag<3>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerNonUnitDiag<2>::serial_invoke(
-    const ValueType *__restrict__ A, const int m, const int n,
-    /**/ ValueType *__restrict__ B) {
+    const ValueType *KOKKOS_RESTRICT A, const int m, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT B) {
   if (m > 2)
     Kokkos::abort(
         "InnerTrsmLeftLowerNonUnitDiag<2>::serial_invoke, assert failure "
@@ -767,8 +767,8 @@ KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerNonUnitDiag<2>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerNonUnitDiag<1>::serial_invoke(
-    const ValueType *__restrict__ A, const int m, const int n,
-    /**/ ValueType *__restrict__ B) {
+    const ValueType *KOKKOS_RESTRICT A, const int m, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT B) {
   if (m > 1)
     Kokkos::abort(
         "InnerTrsmLeftLowerNonUnitDiag<1>::serial_invoke, assert failure "
@@ -792,8 +792,8 @@ KOKKOS_INLINE_FUNCTION int InnerTrsmLeftLowerNonUnitDiag<1>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerTrsmLeftUpperUnitDiag<5>::serial_invoke(
-    const ValueType *__restrict__ A, const int n,
-    /**/ ValueType *__restrict__ B) {
+    const ValueType *KOKKOS_RESTRICT A, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT B) {
   if (n <= 0) return 0;
 
   const ValueType a_01 = A[0 * _as0 + 1 * _as1], a_02 = A[0 * _as0 + 2 * _as1],
@@ -852,8 +852,8 @@ KOKKOS_INLINE_FUNCTION int InnerTrsmLeftUpperUnitDiag<5>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerTrsmLeftUpperUnitDiag<4>::serial_invoke(
-    const ValueType *__restrict__ A, const int n,
-    /**/ ValueType *__restrict__ B) {
+    const ValueType *KOKKOS_RESTRICT A, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT B) {
   if (n <= 0) return 0;
 
   const ValueType a_01 = A[0 * _as0 + 1 * _as1], a_02 = A[0 * _as0 + 2 * _as1],
@@ -902,8 +902,8 @@ KOKKOS_INLINE_FUNCTION int InnerTrsmLeftUpperUnitDiag<4>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerTrsmLeftUpperUnitDiag<3>::serial_invoke(
-    const ValueType *__restrict__ A, const int n,
-    /**/ ValueType *__restrict__ B) {
+    const ValueType *KOKKOS_RESTRICT A, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT B) {
   if (n <= 0) return 0;
 
   const ValueType a_01 = A[0 * _as0 + 1 * _as1], a_02 = A[0 * _as0 + 2 * _as1],
@@ -942,8 +942,8 @@ KOKKOS_INLINE_FUNCTION int InnerTrsmLeftUpperUnitDiag<3>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerTrsmLeftUpperUnitDiag<2>::serial_invoke(
-    const ValueType *__restrict__ A, const int n,
-    /**/ ValueType *__restrict__ B) {
+    const ValueType *KOKKOS_RESTRICT A, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT B) {
   if (n <= 0) return 0;
 
   const ValueType a_01 = A[0 * _as0 + 1 * _as1];
@@ -974,8 +974,8 @@ KOKKOS_INLINE_FUNCTION int InnerTrsmLeftUpperUnitDiag<2>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerTrsmLeftUpperUnitDiag<1>::serial_invoke(
-    const ValueType *__restrict__ /* A */, const int /* n */,
-    /**/ ValueType *__restrict__ /* B */) {
+    const ValueType *KOKKOS_RESTRICT /* A */, const int /* n */,
+    /**/ ValueType *KOKKOS_RESTRICT /* B */) {
   return 0;
 }
 
@@ -987,8 +987,8 @@ KOKKOS_INLINE_FUNCTION int InnerTrsmLeftUpperUnitDiag<1>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerTrsmLeftUpperUnitDiag<5>::serial_invoke(
-    const ValueType *__restrict__ A, const int m, const int n,
-    /**/ ValueType *__restrict__ B) {
+    const ValueType *KOKKOS_RESTRICT A, const int m, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT B) {
   if (m > 5)
     Kokkos::abort(
         "InnerTrsmLeftUpperUnitDiag<5>::serial_invoke, assert failure (m<=5)");
@@ -1025,8 +1025,8 @@ KOKKOS_INLINE_FUNCTION int InnerTrsmLeftUpperUnitDiag<5>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerTrsmLeftUpperUnitDiag<4>::serial_invoke(
-    const ValueType *__restrict__ A, const int m, const int n,
-    /**/ ValueType *__restrict__ B) {
+    const ValueType *KOKKOS_RESTRICT A, const int m, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT B) {
   if (m > 4)
     Kokkos::abort(
         "InnerTrsmLeftUpperUnitDiag<4>::serial_invoke, assert failure (m<=4)");
@@ -1058,8 +1058,8 @@ KOKKOS_INLINE_FUNCTION int InnerTrsmLeftUpperUnitDiag<4>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerTrsmLeftUpperUnitDiag<3>::serial_invoke(
-    const ValueType *__restrict__ A, const int m, const int n,
-    /**/ ValueType *__restrict__ B) {
+    const ValueType *KOKKOS_RESTRICT A, const int m, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT B) {
   if (m > 3)
     Kokkos::abort(
         "InnerTrsmLeftUpperUnitDiag<3>::serial_invoke, assert failure (m<=3)");
@@ -1086,8 +1086,8 @@ KOKKOS_INLINE_FUNCTION int InnerTrsmLeftUpperUnitDiag<3>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerTrsmLeftUpperUnitDiag<2>::serial_invoke(
-    const ValueType *__restrict__ A, const int m, const int n,
-    /**/ ValueType *__restrict__ B) {
+    const ValueType *KOKKOS_RESTRICT A, const int m, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT B) {
   if (m > 2)
     Kokkos::abort(
         "InnerTrsmLeftUpperUnitDiag<2>::serial_invoke, assert failure (m<=2)");
@@ -1109,8 +1109,8 @@ KOKKOS_INLINE_FUNCTION int InnerTrsmLeftUpperUnitDiag<2>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerTrsmLeftUpperUnitDiag<1>::serial_invoke(
-    const ValueType *__restrict__ A, const int m, const int n,
-    /**/ ValueType *__restrict__ B) {
+    const ValueType *KOKKOS_RESTRICT A, const int m, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT B) {
   if (m > 1)
     Kokkos::abort(
         "InnerTrsmLeftUpperUnitDiag<1>::serial_invoke, assert failure (m<=1)");
@@ -1133,8 +1133,8 @@ KOKKOS_INLINE_FUNCTION int InnerTrsmLeftUpperUnitDiag<1>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerTrsmLeftUpperNonUnitDiag<5>::serial_invoke(
-    const ValueType *__restrict__ A, const int n,
-    /**/ ValueType *__restrict__ B) {
+    const ValueType *KOKKOS_RESTRICT A, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT B) {
   if (n <= 0) return 0;
 
   const ValueType a_01 = A[0 * _as0 + 1 * _as1], a_02 = A[0 * _as0 + 2 * _as1],
@@ -1219,8 +1219,8 @@ KOKKOS_INLINE_FUNCTION int InnerTrsmLeftUpperNonUnitDiag<5>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerTrsmLeftUpperNonUnitDiag<4>::serial_invoke(
-    const ValueType *__restrict__ A, const int n,
-    /**/ ValueType *__restrict__ B) {
+    const ValueType *KOKKOS_RESTRICT A, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT B) {
   if (n <= 0) return 0;
 
   const ValueType a_01 = A[0 * _as0 + 1 * _as1], a_02 = A[0 * _as0 + 2 * _as1],
@@ -1291,8 +1291,8 @@ KOKKOS_INLINE_FUNCTION int InnerTrsmLeftUpperNonUnitDiag<4>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerTrsmLeftUpperNonUnitDiag<3>::serial_invoke(
-    const ValueType *__restrict__ A, const int n,
-    /**/ ValueType *__restrict__ B) {
+    const ValueType *KOKKOS_RESTRICT A, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT B) {
   if (n <= 0) return 0;
 
   const ValueType a_01 = A[0 * _as0 + 1 * _as1], a_02 = A[0 * _as0 + 2 * _as1],
@@ -1349,8 +1349,8 @@ KOKKOS_INLINE_FUNCTION int InnerTrsmLeftUpperNonUnitDiag<3>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerTrsmLeftUpperNonUnitDiag<2>::serial_invoke(
-    const ValueType *__restrict__ A, const int n,
-    /**/ ValueType *__restrict__ B) {
+    const ValueType *KOKKOS_RESTRICT A, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT B) {
   if (n <= 0) return 0;
 
   const ValueType a_01 = A[0 * _as0 + 1 * _as1];
@@ -1395,8 +1395,8 @@ KOKKOS_INLINE_FUNCTION int InnerTrsmLeftUpperNonUnitDiag<2>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerTrsmLeftUpperNonUnitDiag<1>::serial_invoke(
-    const ValueType *__restrict__ A, const int n,
-    /**/ ValueType *__restrict__ B) {
+    const ValueType *KOKKOS_RESTRICT A, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT B) {
   if (n <= 0) return 0;
 
   // const ValueType
@@ -1429,8 +1429,8 @@ KOKKOS_INLINE_FUNCTION int InnerTrsmLeftUpperNonUnitDiag<1>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerTrsmLeftUpperNonUnitDiag<5>::serial_invoke(
-    const ValueType *__restrict__ A, const int m, const int n,
-    /**/ ValueType *__restrict__ B) {
+    const ValueType *KOKKOS_RESTRICT A, const int m, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT B) {
   if (m > 5)
     Kokkos::abort(
         "InnerTrsmLeftUpperNonUnitDiag<5>::serial_invoke, assert failure "
@@ -1468,8 +1468,8 @@ KOKKOS_INLINE_FUNCTION int InnerTrsmLeftUpperNonUnitDiag<5>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerTrsmLeftUpperNonUnitDiag<4>::serial_invoke(
-    const ValueType *__restrict__ A, const int m, const int n,
-    /**/ ValueType *__restrict__ B) {
+    const ValueType *KOKKOS_RESTRICT A, const int m, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT B) {
   if (m > 4)
     Kokkos::abort(
         "InnerTrsmLeftUpperNonUnitDiag<4>::serial_invoke, assert failure "
@@ -1502,8 +1502,8 @@ KOKKOS_INLINE_FUNCTION int InnerTrsmLeftUpperNonUnitDiag<4>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerTrsmLeftUpperNonUnitDiag<3>::serial_invoke(
-    const ValueType *__restrict__ A, const int m, const int n,
-    /**/ ValueType *__restrict__ B) {
+    const ValueType *KOKKOS_RESTRICT A, const int m, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT B) {
   if (m > 3)
     Kokkos::abort(
         "InnerTrsmLeftUpperNonUnitDiag<3>::serial_invoke, assert failure "
@@ -1531,8 +1531,8 @@ KOKKOS_INLINE_FUNCTION int InnerTrsmLeftUpperNonUnitDiag<3>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerTrsmLeftUpperNonUnitDiag<2>::serial_invoke(
-    const ValueType *__restrict__ A, const int m, const int n,
-    /**/ ValueType *__restrict__ B) {
+    const ValueType *KOKKOS_RESTRICT A, const int m, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT B) {
   if (m > 2)
     Kokkos::abort(
         "InnerTrsmLeftUpperNonUnitDiag<2>::serial_invoke, assert failure "
@@ -1555,8 +1555,8 @@ KOKKOS_INLINE_FUNCTION int InnerTrsmLeftUpperNonUnitDiag<2>::serial_invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerTrsmLeftUpperNonUnitDiag<1>::serial_invoke(
-    const ValueType *__restrict__ A, const int m, const int n,
-    /**/ ValueType *__restrict__ B) {
+    const ValueType *KOKKOS_RESTRICT A, const int m, const int n,
+    /**/ ValueType *KOKKOS_RESTRICT B) {
   if (m > 1)
     Kokkos::abort(
         "InnerTrsmLeftUpperNonUnitDiag<1>::serial_invoke, assert failure "

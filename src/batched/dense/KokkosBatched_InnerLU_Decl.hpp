@@ -14,17 +14,17 @@ struct InnerLU {
 
   // lu
   template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION int serial_invoke(ValueType *__restrict__ A);
+  KOKKOS_INLINE_FUNCTION int serial_invoke(ValueType *KOKKOS_RESTRICT A);
 
   // for remainder square
   template <typename ValueType>
   KOKKOS_INLINE_FUNCTION int serial_invoke(const int m,
-                                           ValueType *__restrict__ A);
+                                           ValueType *KOKKOS_RESTRICT A);
 
   // for remainder
   template <typename ValueType>
   KOKKOS_INLINE_FUNCTION int serial_invoke(const int m, const int n,
-                                           ValueType *__restrict__ A);
+                                           ValueType *KOKKOS_RESTRICT A);
 };
 }  // namespace KokkosBatched
 
