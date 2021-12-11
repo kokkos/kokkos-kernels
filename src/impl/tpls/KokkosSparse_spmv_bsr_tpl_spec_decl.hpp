@@ -51,6 +51,7 @@
 #include <mkl.h>
 
 namespace KokkosSparse {
+namespace Experimental {
 namespace Impl {
 
 #if (__INTEL_MKL__ > 2017)
@@ -463,7 +464,7 @@ KOKKOSSPARSE_SPMV_MKL(Kokkos::complex<double>, Kokkos::OpenMP,
 #undef KOKKOSSPARSE_SPMV_MV_MKL
 
 }  // namespace Impl
-
+}  // namespace Experimental
 }  // namespace KokkosSparse
 
 #endif
@@ -481,6 +482,7 @@ KOKKOSSPARSE_SPMV_MKL(Kokkos::complex<double>, Kokkos::OpenMP,
 // - Only CUSPARSE_MATRIX_TYPE_GENERAL is supported.
 //
 namespace KokkosSparse {
+namespace Experimental {
 namespace Impl {
 
 template <class AMatrix, class XVector, class YVector>
@@ -688,7 +690,7 @@ void spm_mv_block_impl_cusparse(
       Kokkos::MemoryTraits<Kokkos::Unmanaged>, true, COMPILE_LIBRARY> {        \
     using device_type       = Kokkos::Device<Kokkos::Cuda, SPACE>;             \
     using memory_trait_type = Kokkos::MemoryTraits<Kokkos::Unmanaged>;         \
-    using AMatrix = CrsMatrix<SCALAR const, ORDINAL const, device_type,        \
+    using AMatrix = BsrMatrix<SCALAR const, ORDINAL const, device_type,        \
                               memory_trait_type, OFFSET const>;                \
     using XVector = Kokkos::View<                                              \
         SCALAR const*, LAYOUT, device_type,                                    \
@@ -707,7 +709,7 @@ void spm_mv_block_impl_cusparse(
       std::string label = "KokkosSparse::spmv[TPL_CUSPARSE,BSRMATRIX" +        \
                           Kokkos::ArithTraits<SCALAR>::name() + "]";           \
       Kokkos::Profiling::pushRegion(label);                                    \
-      spm_block_impl_cusparse(controls, mode, alpha, A, x, beta, y);           \
+      spmv_block_impl_cusparse(controls, mode, alpha, A, x, beta, y);          \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };
@@ -777,7 +779,7 @@ KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int, int,
       Kokkos::MemoryTraits<Kokkos::Unmanaged>, true, true, COMPILE_LIBRARY> {  \
     using device_type       = Kokkos::Device<Kokkos::Cuda, SPACE>;             \
     using memory_trait_type = Kokkos::MemoryTraits<Kokkos::Unmanaged>;         \
-    using AMatrix = CrsMatrix<SCALAR const, ORDINAL const, device_type,        \
+    using AMatrix = BsrMatrix<SCALAR const, ORDINAL const, device_type,        \
                               memory_trait_type, OFFSET const>;                \
     using XVector = Kokkos::View<                                              \
         SCALAR const**, LAYOUT, device_type,                                   \
@@ -855,6 +857,7 @@ KOKKOSSPARSE_SPMV_MV_CUSPARSE(Kokkos::complex<float>, int, int,
 #undef KOKKOSSPARSE_SPMV_MV_CUSPARSE
 
 }  // namespace Impl
+}  // namespace Experimental
 }  // namespace KokkosSparse
 
 #endif
