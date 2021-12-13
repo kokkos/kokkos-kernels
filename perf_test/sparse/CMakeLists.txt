@@ -66,13 +66,11 @@ ENDIF ()
 KOKKOSKERNELS_ADD_EXECUTABLE(
         sparse_spmv_blockcrs
         SOURCES KokkosSparse_spmv_blockcrs.cpp
-        ${utilities_list}
 )
 
 KOKKOSKERNELS_ADD_EXECUTABLE(
         sparse_spmv_bsr
         SOURCES KokkosSparse_spmv_bsr.cpp
-        ${utilities_list}
 )
 
 KOKKOSKERNELS_ADD_EXECUTABLE(

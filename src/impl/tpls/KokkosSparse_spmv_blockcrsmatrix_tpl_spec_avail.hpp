@@ -46,6 +46,7 @@
 #define KOKKOSPARSE_SPMV_BLOCKCRSMATRIX_TPL_SPEC_AVAIL_HPP_
 
 namespace KokkosSparse {
+namespace Experimental {
 namespace Impl {
 
 // Specialization struct which defines whether a specialization exists
@@ -63,6 +64,7 @@ struct spmv_mv_blockcrsmatrix_tpl_spec_avail {
 };
 
 }  // namespace Impl
+}  // namespace Experimental
 }  // namespace KokkosSparse
 
 #endif  // KOKKOSPARSE_SPMV_BLOCKCRSMATRIX_TPL_SPEC_AVAIL_HPP_

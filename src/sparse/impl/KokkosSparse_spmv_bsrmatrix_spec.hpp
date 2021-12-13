@@ -123,9 +123,8 @@ namespace Impl {
 // declaration
 template <class AT, class AO, class AD, class AM, class AS, class XT, class XL,
           class XD, class XM, class YT, class YL, class YD, class YM,
-          bool tpl_spec_avail =
-              KokkosSparse::Impl::spmv_bsrmatrix_tpl_spec_avail<
-                  AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM>::value,
+          bool tpl_spec_avail = spmv_bsrmatrix_tpl_spec_avail<
+              AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM>::value,
           bool eti_spec_avail = spmv_bsrmatrix_eti_spec_avail<
               AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM>::value>
 struct SPMV_BSRMATRIX {
@@ -145,9 +144,8 @@ template <class AT, class AO, class AD, class AM, class AS, class XT, class XL,
           class XD, class XM, class YT, class YL, class YD, class YM,
           const bool integerScalarType =
               std::is_integral<typename std::decay<AT>::type>::value,
-          bool tpl_spec_avail =
-              KokkosSparse::Impl::spmv_mv_bsrmatrix_tpl_spec_avail<
-                  AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM>::value,
+          bool tpl_spec_avail = spmv_mv_bsrmatrix_tpl_spec_avail<
+              AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM>::value,
           bool eti_spec_avail = spmv_mv_bsrmatrix_eti_spec_avail<
               AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM>::value>
 struct SPMV_MV_BSRMATRIX {
