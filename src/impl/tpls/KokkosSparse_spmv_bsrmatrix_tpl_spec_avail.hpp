@@ -46,6 +46,7 @@
 #define KOKKOSPARSE_SPMV_BSRMATRIX_TPL_SPEC_AVAIL_HPP_
 
 namespace KokkosSparse {
+namespace Experimental {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
 template <class AT, class AO, class AD, class AM, class AS, class XT, class XL,
@@ -320,6 +321,7 @@ KOKKOSSPARSE_SPMV_MV_BSRMATRIX_TPL_SPEC_AVAIL_MKL(Kokkos::complex<double>,
 #endif
 
 }  // namespace Impl
+}  // namespace Experimental
 }  // namespace KokkosSparse
 
 #endif  // KOKKOSPARSE_SPMV_BSRMATRIX_TPL_SPEC_AVAIL_HPP_

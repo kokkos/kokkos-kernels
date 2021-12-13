@@ -148,9 +148,12 @@ int test_bsr_matrix_single_vec(
                                        Kokkos::DefaultExecutionSpace, void, int>
           crsMat_type;
 
-  typedef typename crsMat_type::values_type::non_const_type scalar_view_t;
-  typedef scalar_view_t x_vector_type;
-  typedef scalar_view_t y_vector_type;
+  typedef Kokkos::View<scalar_t *, Kokkos::LayoutLeft,
+                       Kokkos::DefaultExecutionSpace>
+      x_vector_type;
+  typedef Kokkos::View<scalar_t *, Kokkos::LayoutLeft,
+                       Kokkos::DefaultExecutionSpace>
+      y_vector_type;
 
   srand(17312837);
 
