@@ -21,20 +21,20 @@ struct TeamGemmInternal {
   template <typename MemberType, typename ScalarType, typename ValueType>
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType &member, const int m, const int n, const int k,
-      const ScalarType alpha, const ValueType *__restrict__ A, const int as0,
-      const int as1, const ValueType *__restrict__ B, const int bs0,
+      const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A, const int as0,
+      const int as1, const ValueType *KOKKOS_RESTRICT B, const int bs0,
       const int bs1, const ScalarType beta,
-      /**/ ValueType *__restrict__ C, const int cs0, const int cs1);
+      /**/ ValueType *KOKKOS_RESTRICT C, const int cs0, const int cs1);
 };
 
 template <>
 template <typename MemberType, typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int TeamGemmInternal<Algo::Gemm::Unblocked>::invoke(
     const MemberType &member, const int m, const int n, const int k,
-    const ScalarType alpha, const ValueType *__restrict__ A, const int as0,
-    const int as1, const ValueType *__restrict__ B, const int bs0,
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A, const int as0,
+    const int as1, const ValueType *KOKKOS_RESTRICT B, const int bs0,
     const int bs1, const ScalarType beta,
-    /**/ ValueType *__restrict__ C, const int cs0, const int cs1) {
+    /**/ ValueType *KOKKOS_RESTRICT C, const int cs0, const int cs1) {
   // C = beta C + alpha A B
   // C (m x n), A(m x k), B(k x n)
 
@@ -54,8 +54,8 @@ KOKKOS_INLINE_FUNCTION int TeamGemmInternal<Algo::Gemm::Unblocked>::invoke(
         Kokkos::TeamThreadRange(member, 0, m * n), [&](const int &ij) {
           // assume layout right for batched computation
           const int i = ij / n, j = ij % n;
-          const ValueType *__restrict__ pA               = A + i * as0,
-                                        *__restrict__ pB = B + j * bs1;
+          const ValueType *KOKKOS_RESTRICT pA                  = A + i * as0,
+                                           *KOKKOS_RESTRICT pB = B + j * bs1;
 
           ValueType c = ValueType(0);
           for (int p = 0; p < k; ++p) c += pA[p * as1] * pB[p * bs0];
@@ -69,10 +69,10 @@ template <>
 template <typename MemberType, typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int TeamGemmInternal<Algo::Gemm::Blocked>::invoke(
     const MemberType &member, const int m, const int n, const int k,
-    const ScalarType alpha, const ValueType *__restrict__ A, const int as0,
-    const int as1, const ValueType *__restrict__ B, const int bs0,
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A, const int as0,
+    const int as1, const ValueType *KOKKOS_RESTRICT B, const int bs0,
     const int bs1, const ScalarType beta,
-    /**/ ValueType *__restrict__ C, const int cs0, const int cs1) {
+    /**/ ValueType *KOKKOS_RESTRICT C, const int cs0, const int cs1) {
   // C = beta C + alpha A B
   // C (m x n), A(m x k), B(k x n)
 
@@ -98,9 +98,9 @@ KOKKOS_INLINE_FUNCTION int TeamGemmInternal<Algo::Gemm::Blocked>::invoke(
     /// GPU case: team size is large and blocksize (mb,nb) is small
     InnerGemmFixC<mbAlgo, nbAlgo> inner(as0, as1, bs0, bs1, cs0, cs1);
     auto gemm = [&](const int ib, const int jb, const int pb,
-                    const ValueType *__restrict__ AA,
-                    const ValueType *__restrict__ BB,
-                    /**/ ValueType *__restrict__ CC) {
+                    const ValueType *KOKKOS_RESTRICT AA,
+                    const ValueType *KOKKOS_RESTRICT BB,
+                    /**/ ValueType *KOKKOS_RESTRICT CC) {
       // Made this non-const in order to WORKAROUND issue #349
       int mb = mbAlgo, mp = (ib % mb), mq = (ib / mb) + (mp > 0), nb = nbAlgo,
           np = (jb % nb), nq = (jb / nb) + (np > 0);
@@ -140,9 +140,9 @@ KOKKOS_INLINE_FUNCTION int TeamGemmInternal<Algo::Gemm::Blocked>::invoke(
       //     for (int ii=0;ii<m;ii+=mc) {
       //       const int ti = m-ii, ib = (ti < mc ? ti : mc);
 
-      //       const ValueType *__restrict__ AA = A+ii*as0+pp*as1;
-      //       const ValueType *__restrict__ BB = B+pp*bs0+jj*bs1;
-      //       /**/  ValueType *__restrict__ CC = C+ii*cs0+jj*cs1;
+      //       const ValueType *KOKKOS_RESTRICT AA = A+ii*as0+pp*as1;
+      //       const ValueType *KOKKOS_RESTRICT BB = B+pp*bs0+jj*bs1;
+      //       /**/  ValueType *KOKKOS_RESTRICT CC = C+ii*cs0+jj*cs1;
 
       //       gemm(ib, jb, pb, AA, BB, CC);
       //     } // for ii

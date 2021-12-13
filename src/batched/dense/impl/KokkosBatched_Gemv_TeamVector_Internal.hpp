@@ -20,10 +20,11 @@ struct TeamVectorGemvInternal {
   template <typename MemberType, typename ScalarType, typename ValueType>
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType & /*member*/, const int /*m*/, const int /*n*/,
-      const ScalarType /*alpha*/, const ValueType *__restrict__ /*A*/,
-      const int /*as0*/, const int /*as1*/, const ValueType *__restrict__ /*x*/,
-      const int /*xs0*/, const ScalarType /*beta*/,
-      /**/ ValueType *__restrict__ /*y*/, const int /*ys0*/) {
+      const ScalarType /*alpha*/, const ValueType *KOKKOS_RESTRICT /*A*/,
+      const int /*as0*/, const int /*as1*/,
+      const ValueType *KOKKOS_RESTRICT /*x*/, const int /*xs0*/,
+      const ScalarType /*beta*/,
+      /**/ ValueType *KOKKOS_RESTRICT /*y*/, const int /*ys0*/) {
     assert(false && "Error: encounter dummy impl");
     return 0;
   }
@@ -34,9 +35,9 @@ template <typename MemberType, typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int
 TeamVectorGemvInternal<Algo::Gemv::Unblocked>::invoke(
     const MemberType &member, const int m, const int n, const ScalarType alpha,
-    const ValueType *__restrict__ A, const int as0, const int as1,
-    const ValueType *__restrict__ x, const int xs0, const ScalarType beta,
-    /**/ ValueType *__restrict__ y, const int ys0) {
+    const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
+    const ValueType *KOKKOS_RESTRICT x, const int xs0, const ScalarType beta,
+    /**/ ValueType *KOKKOS_RESTRICT y, const int ys0) {
   const ScalarType one(1.0), zero(0.0);
 
   // y = beta y + alpha A x
@@ -54,7 +55,7 @@ TeamVectorGemvInternal<Algo::Gemv::Unblocked>::invoke(
 
     Kokkos::parallel_for(Kokkos::TeamThreadRange(member, m), [&](const int &i) {
       ValueType t(0);
-      const ValueType *__restrict__ tA = (A + i * as0);
+      const ValueType *KOKKOS_RESTRICT tA = (A + i * as0);
       Kokkos::parallel_reduce(
           Kokkos::ThreadVectorRange(member, n),
           [&](const int &j, ValueType &update) {

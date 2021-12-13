@@ -22,7 +22,7 @@ struct TeamLU_Internal {
   template <typename MemberType, typename ValueType>
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType &member, const int m, const int n,
-      ValueType *__restrict__ A, const int as0, const int as1,
+      ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
       const typename MagnitudeScalarType<ValueType>::type tiny);
 };
 
@@ -30,7 +30,7 @@ template <>
 template <typename MemberType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int TeamLU_Internal<Algo::LU::Unblocked>::invoke(
     const MemberType &member, const int m, const int n,
-    ValueType *__restrict__ A, const int as0, const int as1,
+    ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
     const typename MagnitudeScalarType<ValueType>::type tiny) {
   const int k = (m < n ? m : n);
   if (k <= 0) return 0;
@@ -43,11 +43,11 @@ KOKKOS_INLINE_FUNCTION int TeamLU_Internal<Algo::LU::Unblocked>::invoke(
     int iend = m - p - 1;
     int jend = n - p - 1;
 
-    const ValueType *__restrict__ a12t = A + (p)*as0 + (p + 1) * as1;
+    const ValueType *KOKKOS_RESTRICT a12t = A + (p)*as0 + (p + 1) * as1;
 
-    ValueType *__restrict__ a21 = A + (p + 1) * as0 + (p)*as1,
-                            *__restrict__ A22 =
-                                A + (p + 1) * as0 + (p + 1) * as1;
+    ValueType *KOKKOS_RESTRICT a21 = A + (p + 1) * as0 + (p)*as1,
+                               *KOKKOS_RESTRICT A22 =
+                                   A + (p + 1) * as0 + (p + 1) * as1;
 
     if (tiny != 0) {
       if (member.team_rank() == 0) {
@@ -82,7 +82,7 @@ template <>
 template <typename MemberType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int TeamLU_Internal<Algo::LU::Blocked>::invoke(
     const MemberType &member, const int m, const int n,
-    ValueType *__restrict__ A, const int as0, const int as1,
+    ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
     const typename MagnitudeScalarType<ValueType>::type /*tiny*/) {
   enum : int {
     mbAlgo = Algo::LU::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
@@ -98,7 +98,7 @@ KOKKOS_INLINE_FUNCTION int TeamLU_Internal<Algo::LU::Blocked>::invoke(
   InnerTrsmLeftLowerUnitDiag<mbAlgo> trsm_llu(as0, as1, as0, as1);
   InnerTrsmLeftLowerNonUnitDiag<mbAlgo> trsm_run(as1, as0, as1, as0);
   auto lu_factorize = [&](const int ib, const int jb,
-                          ValueType *__restrict__ AA) {
+                          ValueType *KOKKOS_RESTRICT AA) {
     const int tsize = member.team_size();
     // Made this non-const in order to WORKAROUND issue #349
     int mb = mbAlgo;
@@ -112,7 +112,7 @@ KOKKOS_INLINE_FUNCTION int TeamLU_Internal<Algo::LU::Blocked>::invoke(
       const int pb = (p + mb) > kb ? (kb - p) : mb;
 
       // diagonal block
-      ValueType *__restrict__ Ap = AA + p * as0 + p * as1;
+      ValueType *KOKKOS_RESTRICT Ap = AA + p * as0 + p * as1;
 
       // lu on a block
       member.team_barrier();

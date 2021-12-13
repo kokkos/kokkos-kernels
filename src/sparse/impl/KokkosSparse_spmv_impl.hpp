@@ -317,12 +317,12 @@ static void spmv_beta_no_transpose(
     typedef typename AMatrix::non_const_size_type size_type;
     typedef Kokkos::ArithTraits<value_type> ATV;
 
-    const size_type* __restrict__ row_map_ptr    = A.graph.row_map.data();
-    const ordinal_type* __restrict__ col_idx_ptr = A.graph.entries.data();
-    const value_type* __restrict__ values_ptr    = A.values.data();
+    const size_type* KOKKOS_RESTRICT row_map_ptr    = A.graph.row_map.data();
+    const ordinal_type* KOKKOS_RESTRICT col_idx_ptr = A.graph.entries.data();
+    const value_type* KOKKOS_RESTRICT values_ptr    = A.values.data();
 
-    typename YVector::non_const_value_type* __restrict__ y_ptr = y.data();
-    typename XVector::const_value_type* __restrict__ x_ptr     = x.data();
+    typename YVector::non_const_value_type* KOKKOS_RESTRICT y_ptr = y.data();
+    typename XVector::const_value_type* KOKKOS_RESTRICT x_ptr     = x.data();
 
     const typename YVector::non_const_value_type zero(0);
     const ordinal_type nrow = A.numRows();
@@ -557,12 +557,12 @@ static void spmv_beta_transpose(typename YVector::const_value_type& alpha,
       /// serial impl
       typedef typename AMatrix::non_const_value_type value_type;
       typedef Kokkos::Details::ArithTraits<value_type> ATV;
-      const size_type* __restrict__ row_map_ptr    = A.graph.row_map.data();
-      const ordinal_type* __restrict__ col_idx_ptr = A.graph.entries.data();
-      const value_type* __restrict__ values_ptr    = A.values.data();
+      const size_type* KOKKOS_RESTRICT row_map_ptr    = A.graph.row_map.data();
+      const ordinal_type* KOKKOS_RESTRICT col_idx_ptr = A.graph.entries.data();
+      const value_type* KOKKOS_RESTRICT values_ptr    = A.values.data();
 
-      typename YVector::value_type* __restrict__ y_ptr = y.data();
-      typename XVector::value_type* __restrict__ x_ptr = x.data();
+      typename YVector::value_type* KOKKOS_RESTRICT y_ptr = y.data();
+      typename XVector::value_type* KOKKOS_RESTRICT x_ptr = x.data();
 
       const typename YVector::non_const_value_type zero(0);
       const ordinal_type nrow = A.numRows();

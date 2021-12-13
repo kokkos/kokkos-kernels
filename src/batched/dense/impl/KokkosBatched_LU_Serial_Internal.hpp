@@ -19,14 +19,14 @@ template <typename AlgoType>
 struct SerialLU_Internal {
   template <typename ValueType>
   KOKKOS_INLINE_FUNCTION static int invoke(
-      const int m, const int n, ValueType *__restrict__ A, const int as0,
+      const int m, const int n, ValueType *KOKKOS_RESTRICT A, const int as0,
       const int as1, const typename MagnitudeScalarType<ValueType>::type tiny);
 };
 
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int SerialLU_Internal<Algo::LU::Unblocked>::invoke(
-    const int m, const int n, ValueType *__restrict__ A, const int as0,
+    const int m, const int n, ValueType *KOKKOS_RESTRICT A, const int as0,
     const int as1, const typename MagnitudeScalarType<ValueType>::type tiny) {
   const int k = (m < n ? m : n);
   if (k <= 0) return 0;
@@ -38,11 +38,11 @@ KOKKOS_INLINE_FUNCTION int SerialLU_Internal<Algo::LU::Unblocked>::invoke(
   for (int p = 0; p < k; ++p) {
     const int iend = m - p - 1, jend = n - p - 1;
 
-    const ValueType *__restrict__ a12t = A + (p)*as0 + (p + 1) * as1;
+    const ValueType *KOKKOS_RESTRICT a12t = A + (p)*as0 + (p + 1) * as1;
 
-    ValueType *__restrict__ a21 = A + (p + 1) * as0 + (p)*as1,
-                            *__restrict__ A22 =
-                                A + (p + 1) * as0 + (p + 1) * as1;
+    ValueType *KOKKOS_RESTRICT a21 = A + (p + 1) * as0 + (p)*as1,
+                               *KOKKOS_RESTRICT A22 =
+                                   A + (p + 1) * as0 + (p + 1) * as1;
 
     if (tiny != 0) {
       ValueType &alpha11_reference = A[p * as0 + p * as1];
@@ -71,7 +71,7 @@ KOKKOS_INLINE_FUNCTION int SerialLU_Internal<Algo::LU::Unblocked>::invoke(
 template <>
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int SerialLU_Internal<Algo::LU::Blocked>::invoke(
-    const int m, const int n, ValueType *__restrict__ A, const int as0,
+    const int m, const int n, ValueType *KOKKOS_RESTRICT A, const int as0,
     const int as1,
     const typename MagnitudeScalarType<ValueType>::type /*tiny*/) {
   enum : int {
@@ -88,14 +88,14 @@ KOKKOS_INLINE_FUNCTION int SerialLU_Internal<Algo::LU::Blocked>::invoke(
   InnerTrsmLeftLowerNonUnitDiag<mbAlgo> trsm_run(as1, as0, as1, as0);
 
   auto lu_factorize = [&](const int ib, const int jb,
-                          ValueType *__restrict__ AA) {
+                          ValueType *KOKKOS_RESTRICT AA) {
     const int mb = mbAlgo;
     const int kb = ib < jb ? ib : jb;
     for (int p = 0; p < kb; p += mb) {
       const int pb = (p + mb) > kb ? (kb - p) : mb;
 
       // diagonal block
-      ValueType *__restrict__ Ap = AA + p * as0 + p * as1;
+      ValueType *KOKKOS_RESTRICT Ap = AA + p * as0 + p * as1;
 
       // lu on a block
       lu.serial_invoke(pb, Ap);

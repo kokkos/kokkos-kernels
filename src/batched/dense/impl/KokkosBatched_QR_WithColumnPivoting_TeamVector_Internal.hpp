@@ -22,12 +22,10 @@ namespace KokkosBatched {
 ///
 struct TeamVectorUpdateColumnNormsInternal {
   template <typename MemberType, typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
-                                           const int n,
-                                           const ValueType *__restrict__ a,
-                                           const int as0,
-                                           /* */ ValueType *__restrict__ norm,
-                                           const int ns0) {
+  KOKKOS_INLINE_FUNCTION static int invoke(
+      const MemberType &member, const int n, const ValueType *KOKKOS_RESTRICT a,
+      const int as0,
+      /* */ ValueType *KOKKOS_RESTRICT norm, const int ns0) {
     using ats = Kokkos::ArithTraits<ValueType>;
     Kokkos::parallel_for(Kokkos::TeamVectorRange(member, n), [&](const int &j) {
       const int idx_a = j * as0, idx_n = j * ns0;

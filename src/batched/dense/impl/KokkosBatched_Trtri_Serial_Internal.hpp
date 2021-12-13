@@ -55,7 +55,7 @@ struct SerialTrtriInternalLower {
   template <typename ValueType>
   KOKKOS_INLINE_FUNCTION static int invoke(const bool use_unit_diag,
                                            const int am, const int an,
-                                           ValueType *__restrict__ A,
+                                           ValueType *KOKKOS_RESTRICT A,
                                            const int as0, const int as1);
 };
 
@@ -64,7 +64,7 @@ struct SerialTrtriInternalUpper {
   template <typename ValueType>
   KOKKOS_INLINE_FUNCTION static int invoke(const bool use_unit_diag,
                                            const int am, const int an,
-                                           ValueType *__restrict__ A,
+                                           ValueType *KOKKOS_RESTRICT A,
                                            const int as0, const int as1);
 };
 
@@ -73,7 +73,7 @@ template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int
 SerialTrtriInternalLower<Algo::Trtri::Unblocked>::invoke(
     const bool use_unit_diag, const int am, const int /*an*/,
-    ValueType *__restrict__ A, const int as0, const int as1) {
+    ValueType *KOKKOS_RESTRICT A, const int as0, const int as1) {
   ValueType one(1.0), zero(0.0), A_ii;
   if (!use_unit_diag) {
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
@@ -96,9 +96,9 @@ SerialTrtriInternalLower<Algo::Trtri::Unblocked>::invoke(
       else
         A_ii = -A[i * as0 + i * as1];
 
-      ValueType *__restrict__ A_subblock = &A[(i + 1) * as0 + (i + 1) * as1];
+      ValueType *KOKKOS_RESTRICT A_subblock = &A[(i + 1) * as0 + (i + 1) * as1];
       int A_subblock_m = am - i - 1, A_subblock_n = am - i - 1;
-      ValueType *__restrict__ A_col_vec = &A[(i + 1) * as0 + i * as1];
+      ValueType *KOKKOS_RESTRICT A_col_vec = &A[(i + 1) * as0 + i * as1];
       int A_col_vec_m = am - i - 1, A_col_vec_n = 1;
       // TRMV/TRMM −− x=Ax
       // A((j+1):n,j) = A((j+1):n,(j+1):n) ∗ A((j+1):n,j) ;
@@ -120,7 +120,7 @@ template <typename ValueType>
 KOKKOS_INLINE_FUNCTION int
 SerialTrtriInternalUpper<Algo::Trtri::Unblocked>::invoke(
     const bool use_unit_diag, const int am, const int /*an*/,
-    ValueType *__restrict__ A, const int as0, const int as1) {
+    ValueType *KOKKOS_RESTRICT A, const int as0, const int as1) {
   ValueType one(1.0), zero(0.0), A_ii;
 
   if (!use_unit_diag) {
@@ -144,9 +144,9 @@ SerialTrtriInternalUpper<Algo::Trtri::Unblocked>::invoke(
       else
         A_ii = -A[i * as0 + i * as1];
 
-      ValueType *__restrict__ A_subblock = &A[0 * as0 + 0 * as1];
+      ValueType *KOKKOS_RESTRICT A_subblock = &A[0 * as0 + 0 * as1];
       int A_subblock_m = i, A_subblock_n = i;
-      ValueType *__restrict__ A_col_vec = &A[0 * as0 + i * as1];
+      ValueType *KOKKOS_RESTRICT A_col_vec = &A[0 * as0 + i * as1];
       int A_col_vec_m = i, A_col_vec_n = 1;
       // TRMV/TRMM −− x=Ax
       // A(1:(j-1),j) = A(1:(j-1),1:(j-1)) ∗ A(1:(j-1),j) ;

@@ -18,7 +18,7 @@ struct TeamVectorApplyPivotVectorForwardInternal {
   template <typename MemberType, typename ValueType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
                                            const int piv,
-                                           /* */ ValueType *__restrict__ A,
+                                           /* */ ValueType *KOKKOS_RESTRICT A,
                                            const int as0) {
     if (piv != 0) {
       Kokkos::single(Kokkos::PerTeam(member), [&]() {
@@ -34,9 +34,9 @@ struct TeamVectorApplyPivotVectorForwardInternal {
   template <typename MemberType, typename IntType, typename ValueType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
                                            const int plen,
-                                           const IntType *__restrict__ p,
+                                           const IntType *KOKKOS_RESTRICT p,
                                            const int ps0,
-                                           /* */ ValueType *__restrict__ A,
+                                           /* */ ValueType *KOKKOS_RESTRICT A,
                                            const int as0) {
     Kokkos::single(Kokkos::PerTeam(member), [&]() {
       for (int i = 0; i < plen; ++i) {
@@ -58,16 +58,16 @@ struct TeamVectorApplyPivotMatrixForwardInternal {
   template <typename MemberType, typename ValueType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
                                            const int n, const int piv,
-                                           /* */ ValueType *__restrict__ A,
+                                           /* */ ValueType *KOKKOS_RESTRICT A,
                                            const int as0, const int as1) {
     if (piv != 0) {
       Kokkos::parallel_for(Kokkos::TeamVectorRange(member, n),
                            [&](const int &j) {
-                             ValueType *__restrict__ A_at_j = A + j * as1;
-                             const int idx_p                = piv * as0;
-                             const ValueType tmp            = A_at_j[0];
-                             A_at_j[0]                      = A_at_j[idx_p];
-                             A_at_j[idx_p]                  = tmp;
+                             ValueType *KOKKOS_RESTRICT A_at_j = A + j * as1;
+                             const int idx_p                   = piv * as0;
+                             const ValueType tmp               = A_at_j[0];
+                             A_at_j[0]                         = A_at_j[idx_p];
+                             A_at_j[idx_p]                     = tmp;
                            });
     }
     return 0;
@@ -76,12 +76,12 @@ struct TeamVectorApplyPivotMatrixForwardInternal {
   template <typename MemberType, typename IntType, typename ValueType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
                                            const int n, const int plen,
-                                           const IntType *__restrict__ p,
+                                           const IntType *KOKKOS_RESTRICT p,
                                            const int ps0,
-                                           /* */ ValueType *__restrict__ A,
+                                           /* */ ValueType *KOKKOS_RESTRICT A,
                                            const int as0, const int as1) {
     Kokkos::parallel_for(Kokkos::TeamVectorRange(member, n), [&](const int &j) {
-      ValueType *__restrict__ A_at_j = A + j * as1;
+      ValueType *KOKKOS_RESTRICT A_at_j = A + j * as1;
       for (int i = 0; i < plen; ++i) {
         const int piv = p[i * ps0];
         if (piv != 0) {
@@ -103,7 +103,7 @@ struct TeamVectorApplyPivotVectorBackwardInternal {
   template <typename MemberType, typename ValueType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
                                            const int piv,
-                                           /* */ ValueType *__restrict__ A,
+                                           /* */ ValueType *KOKKOS_RESTRICT A,
                                            const int as0) {
     if (piv != 0) {
       Kokkos::single(Kokkos::PerTeam(member), [&]() {
@@ -119,9 +119,9 @@ struct TeamVectorApplyPivotVectorBackwardInternal {
   template <typename MemberType, typename IntType, typename ValueType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
                                            const int plen,
-                                           const IntType *__restrict__ p,
+                                           const IntType *KOKKOS_RESTRICT p,
                                            const int ps0,
-                                           /* */ ValueType *__restrict__ A,
+                                           /* */ ValueType *KOKKOS_RESTRICT A,
                                            const int as0) {
     Kokkos::single(Kokkos::PerTeam(member), [&]() {
       for (int i = (plen - 1); i >= 0; --i) {
@@ -143,16 +143,16 @@ struct TeamVectorApplyPivotMatrixBackwardInternal {
   template <typename MemberType, typename ValueType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
                                            const int n, const int piv,
-                                           /* */ ValueType *__restrict__ A,
+                                           /* */ ValueType *KOKKOS_RESTRICT A,
                                            const int as0, const int as1) {
     if (piv != 0) {
       Kokkos::parallel_for(Kokkos::TeamVectorRange(member, n),
                            [&](const int &j) {
-                             ValueType *__restrict__ A_at_j = A + j * as1;
-                             const int idx_p                = piv * as0;
-                             const ValueType tmp            = A_at_j[0];
-                             A_at_j[0]                      = A_at_j[idx_p];
-                             A_at_j[idx_p]                  = tmp;
+                             ValueType *KOKKOS_RESTRICT A_at_j = A + j * as1;
+                             const int idx_p                   = piv * as0;
+                             const ValueType tmp               = A_at_j[0];
+                             A_at_j[0]                         = A_at_j[idx_p];
+                             A_at_j[idx_p]                     = tmp;
                            });
     }
     return 0;
@@ -161,12 +161,12 @@ struct TeamVectorApplyPivotMatrixBackwardInternal {
   template <typename MemberType, typename IntType, typename ValueType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
                                            const int n, const int plen,
-                                           const IntType *__restrict__ p,
+                                           const IntType *KOKKOS_RESTRICT p,
                                            const int ps0,
-                                           /* */ ValueType *__restrict__ A,
+                                           /* */ ValueType *KOKKOS_RESTRICT A,
                                            const int as0, const int as1) {
     Kokkos::parallel_for(Kokkos::TeamVectorRange(member, n), [&](const int &j) {
-      ValueType *__restrict__ A_at_j = A + j * as1;
+      ValueType *KOKKOS_RESTRICT A_at_j = A + j * as1;
       for (int i = (plen - 1); i >= 0; --i) {
         const int piv = p[i * ps0];
         if (piv != 0) {

@@ -15,9 +15,9 @@ namespace KokkosBatched {
 template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<5, 5>::serial_invoke(
-    const ScalarType alpha, const ValueType *__restrict__ A,
-    const ValueType *__restrict__ B, const int k,
-    /**/ ValueType *__restrict__ C) {
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
+    const ValueType *KOKKOS_RESTRICT B, const int k,
+    /**/ ValueType *KOKKOS_RESTRICT C) {
   if (k <= 0) return 0;
 
   ValueType a_0p, b_p0,
@@ -105,9 +105,9 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<5, 5>::serial_invoke(
 template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<5, 4>::serial_invoke(
-    const ScalarType alpha, const ValueType *__restrict__ A,
-    const ValueType *__restrict__ B, const int k,
-    /**/ ValueType *__restrict__ C) {
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
+    const ValueType *KOKKOS_RESTRICT B, const int k,
+    /**/ ValueType *KOKKOS_RESTRICT C) {
   if (k <= 0) return 0;
 
   ValueType a_0p, b_p0, c_00 = 0, c_01 = 0, c_02 = 0, c_03 = 0, a_1p, b_p1,
@@ -183,9 +183,9 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<5, 4>::serial_invoke(
 template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<5, 3>::serial_invoke(
-    const ScalarType alpha, const ValueType *__restrict__ A,
-    const ValueType *__restrict__ B, const int k,
-    /**/ ValueType *__restrict__ C) {
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
+    const ValueType *KOKKOS_RESTRICT B, const int k,
+    /**/ ValueType *KOKKOS_RESTRICT C) {
   if (k <= 0) return 0;
 
   ValueType a_0p, b_p0, c_00 = 0, c_01 = 0, c_02 = 0, a_1p, b_p1, c_10 = 0,
@@ -248,9 +248,9 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<5, 3>::serial_invoke(
 template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<5, 2>::serial_invoke(
-    const ScalarType alpha, const ValueType *__restrict__ A,
-    const ValueType *__restrict__ B, const int k,
-    /**/ ValueType *__restrict__ C) {
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
+    const ValueType *KOKKOS_RESTRICT B, const int k,
+    /**/ ValueType *KOKKOS_RESTRICT C) {
   if (k <= 0) return 0;
 
   ValueType a_0p, b_p0, c_00 = 0, c_01 = 0, a_1p, b_p1, c_10 = 0, c_11 = 0,
@@ -301,9 +301,9 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<5, 2>::serial_invoke(
 template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<5, 1>::serial_invoke(
-    const ScalarType alpha, const ValueType *__restrict__ A,
-    const ValueType *__restrict__ B, const int k,
-    /**/ ValueType *__restrict__ C) {
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
+    const ValueType *KOKKOS_RESTRICT B, const int k,
+    /**/ ValueType *KOKKOS_RESTRICT C) {
   if (k <= 0) return 0;
 
   ValueType a_0p, b_p0, c_00 = 0, a_1p, c_10 = 0, a_2p, c_20 = 0, a_3p,
@@ -342,9 +342,9 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<5, 1>::serial_invoke(
 template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<4, 5>::serial_invoke(
-    const ScalarType alpha, const ValueType *__restrict__ A,
-    const ValueType *__restrict__ B, const int k,
-    /**/ ValueType *__restrict__ C) {
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
+    const ValueType *KOKKOS_RESTRICT B, const int k,
+    /**/ ValueType *KOKKOS_RESTRICT C) {
   if (k <= 0) return 0;
 
   ValueType a_0p, b_p0, c_00 = 0, c_01 = 0, c_02 = 0, c_03 = 0, c_04 = 0, a_1p,
@@ -421,9 +421,9 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<4, 5>::serial_invoke(
 template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<3, 5>::serial_invoke(
-    const ScalarType alpha, const ValueType *__restrict__ A,
-    const ValueType *__restrict__ B, const int k,
-    /**/ ValueType *__restrict__ C) {
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
+    const ValueType *KOKKOS_RESTRICT B, const int k,
+    /**/ ValueType *KOKKOS_RESTRICT C) {
   if (k <= 0) return 0;
 
   ValueType a_0p, b_p0, c_00 = 0, c_01 = 0, c_02 = 0, c_03 = 0, c_04 = 0, a_1p,
@@ -488,9 +488,9 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<3, 5>::serial_invoke(
 template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<2, 5>::serial_invoke(
-    const ScalarType alpha, const ValueType *__restrict__ A,
-    const ValueType *__restrict__ B, const int k,
-    /**/ ValueType *__restrict__ C) {
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
+    const ValueType *KOKKOS_RESTRICT B, const int k,
+    /**/ ValueType *KOKKOS_RESTRICT C) {
   if (k <= 0) return 0;
 
   ValueType a_0p, b_p0, c_00 = 0, c_01 = 0, c_02 = 0, c_03 = 0, c_04 = 0, a_1p,
@@ -543,9 +543,9 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<2, 5>::serial_invoke(
 template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<1, 5>::serial_invoke(
-    const ScalarType alpha, const ValueType *__restrict__ A,
-    const ValueType *__restrict__ B, const int k,
-    /**/ ValueType *__restrict__ C) {
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
+    const ValueType *KOKKOS_RESTRICT B, const int k,
+    /**/ ValueType *KOKKOS_RESTRICT C) {
   if (k <= 0) return 0;
 
   ValueType a_0p, b_p0, c_00 = 0, c_01 = 0, c_02 = 0, c_03 = 0, c_04 = 0,
@@ -590,9 +590,9 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<1, 5>::serial_invoke(
 template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<4, 4>::serial_invoke(
-    const ScalarType alpha, const ValueType *__restrict__ A,
-    const ValueType *__restrict__ B, const int k,
-    /**/ ValueType *__restrict__ C) {
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
+    const ValueType *KOKKOS_RESTRICT B, const int k,
+    /**/ ValueType *KOKKOS_RESTRICT C) {
   if (k <= 0) return 0;
 
   ValueType a_0p, b_p0,
@@ -660,9 +660,9 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<4, 4>::serial_invoke(
 template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<4, 3>::serial_invoke(
-    const ScalarType alpha, const ValueType *__restrict__ A,
-    const ValueType *__restrict__ B, const int k,
-    /**/ ValueType *__restrict__ C) {
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
+    const ValueType *KOKKOS_RESTRICT B, const int k,
+    /**/ ValueType *KOKKOS_RESTRICT C) {
   if (k <= 0) return 0;
 
   ValueType a_0p, b_p0,
@@ -719,9 +719,9 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<4, 3>::serial_invoke(
 template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<4, 2>::serial_invoke(
-    const ScalarType alpha, const ValueType *__restrict__ A,
-    const ValueType *__restrict__ B, const int k,
-    /**/ ValueType *__restrict__ C) {
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
+    const ValueType *KOKKOS_RESTRICT B, const int k,
+    /**/ ValueType *KOKKOS_RESTRICT C) {
   if (k <= 0) return 0;
 
   ValueType a_0p, b_p0, c_00 = ValueType(0), c_01 = ValueType(0), a_1p, b_p1,
@@ -768,9 +768,9 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<4, 2>::serial_invoke(
 template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<4, 1>::serial_invoke(
-    const ScalarType alpha, const ValueType *__restrict__ A,
-    const ValueType *__restrict__ B, const int k,
-    /**/ ValueType *__restrict__ C) {
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
+    const ValueType *KOKKOS_RESTRICT B, const int k,
+    /**/ ValueType *KOKKOS_RESTRICT C) {
   if (k <= 0) return 0;
 
   ValueType a_0p, b_p0, c_00 = ValueType(0), a_1p, c_10 = ValueType(0), a_2p,
@@ -806,9 +806,9 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<4, 1>::serial_invoke(
 template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<3, 4>::serial_invoke(
-    const ScalarType alpha, const ValueType *__restrict__ A,
-    const ValueType *__restrict__ B, const int k,
-    /**/ ValueType *__restrict__ C) {
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
+    const ValueType *KOKKOS_RESTRICT B, const int k,
+    /**/ ValueType *KOKKOS_RESTRICT C) {
   if (k <= 0) return 0;
 
   ValueType a_0p, b_p0,
@@ -866,9 +866,9 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<3, 4>::serial_invoke(
 template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<2, 4>::serial_invoke(
-    const ScalarType alpha, const ValueType *__restrict__ A,
-    const ValueType *__restrict__ B, const int k,
-    /**/ ValueType *__restrict__ C) {
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
+    const ValueType *KOKKOS_RESTRICT B, const int k,
+    /**/ ValueType *KOKKOS_RESTRICT C) {
   if (k <= 0) return 0;
 
   ValueType a_0p, b_p0, c_00 = ValueType(0), c_01 = ValueType(0),
@@ -917,9 +917,9 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<2, 4>::serial_invoke(
 template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<1, 4>::serial_invoke(
-    const ScalarType alpha, const ValueType *__restrict__ A,
-    const ValueType *__restrict__ B, const int k,
-    /**/ ValueType *__restrict__ C) {
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
+    const ValueType *KOKKOS_RESTRICT B, const int k,
+    /**/ ValueType *KOKKOS_RESTRICT C) {
   if (k <= 0) return 0;
 
   ValueType a_0p, b_p0, c_00 = ValueType(0), c_01 = ValueType(0),
@@ -962,9 +962,9 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<1, 4>::serial_invoke(
 template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<3, 3>::serial_invoke(
-    const ScalarType alpha, const ValueType *__restrict__ A,
-    const ValueType *__restrict__ B, const int k,
-    /**/ ValueType *__restrict__ C) {
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
+    const ValueType *KOKKOS_RESTRICT B, const int k,
+    /**/ ValueType *KOKKOS_RESTRICT C) {
   if (k <= 0) return 0;
 
   ValueType a_0p, b_p0,
@@ -1013,9 +1013,9 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<3, 3>::serial_invoke(
 template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<3, 2>::serial_invoke(
-    const ScalarType alpha, const ValueType *__restrict__ A,
-    const ValueType *__restrict__ B, const int k,
-    /**/ ValueType *__restrict__ C) {
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
+    const ValueType *KOKKOS_RESTRICT B, const int k,
+    /**/ ValueType *KOKKOS_RESTRICT C) {
   if (k <= 0) return 0;
 
   ValueType a_0p, b_p0, c_00 = ValueType(0), c_01 = ValueType(0), a_1p, b_p1,
@@ -1056,9 +1056,9 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<3, 2>::serial_invoke(
 template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<3, 1>::serial_invoke(
-    const ScalarType alpha, const ValueType *__restrict__ A,
-    const ValueType *__restrict__ B, const int k,
-    /**/ ValueType *__restrict__ C) {
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
+    const ValueType *KOKKOS_RESTRICT B, const int k,
+    /**/ ValueType *KOKKOS_RESTRICT C) {
   if (k <= 0) return 0;
 
   ValueType a_0p, b_p0, c_00 = ValueType(0), a_1p, c_10 = ValueType(0), a_2p,
@@ -1090,9 +1090,9 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<3, 1>::serial_invoke(
 template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<2, 3>::serial_invoke(
-    const ScalarType alpha, const ValueType *__restrict__ A,
-    const ValueType *__restrict__ B, const int k,
-    /**/ ValueType *__restrict__ C) {
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
+    const ValueType *KOKKOS_RESTRICT B, const int k,
+    /**/ ValueType *KOKKOS_RESTRICT C) {
   if (k <= 0) return 0;
 
   ValueType a_0p, b_p0, c_00 = ValueType(0), c_01 = ValueType(0),
@@ -1133,9 +1133,9 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<2, 3>::serial_invoke(
 template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<1, 3>::serial_invoke(
-    const ScalarType alpha, const ValueType *__restrict__ A,
-    const ValueType *__restrict__ B, const int k,
-    /**/ ValueType *__restrict__ C) {
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
+    const ValueType *KOKKOS_RESTRICT B, const int k,
+    /**/ ValueType *KOKKOS_RESTRICT C) {
   if (k <= 0) return 0;
 
   ValueType a_0p, b_p0, c_00 = ValueType(0), c_01 = ValueType(0),
@@ -1173,9 +1173,9 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<1, 3>::serial_invoke(
 template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<2, 2>::serial_invoke(
-    const ScalarType alpha, const ValueType *__restrict__ A,
-    const ValueType *__restrict__ B, const int k,
-    /**/ ValueType *__restrict__ C) {
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
+    const ValueType *KOKKOS_RESTRICT B, const int k,
+    /**/ ValueType *KOKKOS_RESTRICT C) {
   if (k <= 0) return 0;
 
   ValueType a_0p, b_p0, c_00 = ValueType(0), c_01 = ValueType(0), a_1p, b_p1,
@@ -1209,9 +1209,9 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<2, 2>::serial_invoke(
 template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<2, 1>::serial_invoke(
-    const ScalarType alpha, const ValueType *__restrict__ A,
-    const ValueType *__restrict__ B, const int k,
-    /**/ ValueType *__restrict__ C) {
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
+    const ValueType *KOKKOS_RESTRICT B, const int k,
+    /**/ ValueType *KOKKOS_RESTRICT C) {
   if (k <= 0) return 0;
 
   ValueType a_0p, b_p0, c_00 = ValueType(0), a_1p, c_10 = ValueType(0);
@@ -1239,9 +1239,9 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<2, 1>::serial_invoke(
 template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<1, 2>::serial_invoke(
-    const ScalarType alpha, const ValueType *__restrict__ A,
-    const ValueType *__restrict__ B, const int k,
-    /**/ ValueType *__restrict__ C) {
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
+    const ValueType *KOKKOS_RESTRICT B, const int k,
+    /**/ ValueType *KOKKOS_RESTRICT C) {
   if (k <= 0) return 0;
 
   ValueType a_0p, b_p0, c_00 = ValueType(0), c_01 = ValueType(0),
@@ -1272,9 +1272,9 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<1, 2>::serial_invoke(
 template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<1, 1>::serial_invoke(
-    const ScalarType alpha, const ValueType *__restrict__ A,
-    const ValueType *__restrict__ B, const int k,
-    /**/ ValueType *__restrict__ C) {
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
+    const ValueType *KOKKOS_RESTRICT B, const int k,
+    /**/ ValueType *KOKKOS_RESTRICT C) {
   if (k <= 0) return 0;
 
   ValueType a_0p, b_p0, c_00 = ValueType(0);
@@ -1297,9 +1297,9 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<1, 1>::serial_invoke(
 template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<0, 1>::serial_invoke(
-    const ScalarType alpha, const ValueType *__restrict__ A,
-    const ValueType *__restrict__ B, const int m, const int k,
-    /**/ ValueType *__restrict__ C) {
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
+    const ValueType *KOKKOS_RESTRICT B, const int m, const int k,
+    /**/ ValueType *KOKKOS_RESTRICT C) {
   if (m <= 0 || k <= 0) return 0;
 
   switch (m) {
@@ -1339,9 +1339,9 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<0, 1>::serial_invoke(
 template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<5, 5>::serial_invoke(
-    const ScalarType alpha, const ValueType *__restrict__ A,
-    const ValueType *__restrict__ B, const int m, const int n, const int k,
-    /**/ ValueType *__restrict__ C) {
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
+    const ValueType *KOKKOS_RESTRICT B, const int m, const int n, const int k,
+    /**/ ValueType *KOKKOS_RESTRICT C) {
   if (m <= 0 || n <= 0 || k <= 0) return 0;
   if (!(m <= 5 && n <= 5))
     Kokkos::abort(
@@ -1405,9 +1405,9 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<5, 5>::serial_invoke(
 template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<4, 4>::serial_invoke(
-    const ScalarType alpha, const ValueType *__restrict__ A,
-    const ValueType *__restrict__ B, const int m, const int n, const int k,
-    /**/ ValueType *__restrict__ C) {
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
+    const ValueType *KOKKOS_RESTRICT B, const int m, const int n, const int k,
+    /**/ ValueType *KOKKOS_RESTRICT C) {
   if (m <= 0 || n <= 0 || k <= 0) return 0;
   if (!(m <= 4 && n <= 4))
     Kokkos::abort(
@@ -1461,9 +1461,9 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<4, 4>::serial_invoke(
 template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<3, 3>::serial_invoke(
-    const ScalarType alpha, const ValueType *__restrict__ A,
-    const ValueType *__restrict__ B, const int m, const int n, const int k,
-    /**/ ValueType *__restrict__ C) {
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
+    const ValueType *KOKKOS_RESTRICT B, const int m, const int n, const int k,
+    /**/ ValueType *KOKKOS_RESTRICT C) {
   if (m <= 0 || n <= 0 || k <= 0) return 0;
   if (!(m <= 3 && n <= 3))
     Kokkos::abort(
@@ -1507,9 +1507,9 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<3, 3>::serial_invoke(
 template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<2, 2>::serial_invoke(
-    const ScalarType alpha, const ValueType *__restrict__ A,
-    const ValueType *__restrict__ B, const int m, const int n, const int k,
-    /**/ ValueType *__restrict__ C) {
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
+    const ValueType *KOKKOS_RESTRICT B, const int m, const int n, const int k,
+    /**/ ValueType *KOKKOS_RESTRICT C) {
   if (m <= 0 || n <= 0 || k <= 0) return 0;
   if (!(m <= 2 && n <= 2))
     Kokkos::abort(
@@ -1543,9 +1543,9 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<2, 2>::serial_invoke(
 template <>
 template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<1, 1>::serial_invoke(
-    const ScalarType alpha, const ValueType *__restrict__ A,
-    const ValueType *__restrict__ B, const int m, const int n, const int k,
-    /**/ ValueType *__restrict__ C) {
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
+    const ValueType *KOKKOS_RESTRICT B, const int m, const int n, const int k,
+    /**/ ValueType *KOKKOS_RESTRICT C) {
   if (m <= 0 || n <= 0 || k <= 0) return 0;
   if (!(m <= 1 && n <= 1))
     Kokkos::abort(

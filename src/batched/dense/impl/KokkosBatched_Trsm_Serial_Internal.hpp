@@ -23,9 +23,9 @@ struct SerialTrsmInternalLeftLower {
   KOKKOS_INLINE_FUNCTION static int invoke(const bool use_unit_diag,
                                            const int m, const int n,
                                            const ScalarType alpha,
-                                           const ValueType *__restrict__ A,
+                                           const ValueType *KOKKOS_RESTRICT A,
                                            const int as0, const int as1,
-                                           /**/ ValueType *__restrict__ B,
+                                           /**/ ValueType *KOKKOS_RESTRICT B,
                                            const int bs0, const int bs1);
 };
 
@@ -34,8 +34,8 @@ template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int
 SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(
     const bool use_unit_diag, const int m, const int n, const ScalarType alpha,
-    const ValueType *__restrict__ A, const int as0, const int as1,
-    /**/ ValueType *__restrict__ B, const int bs0, const int bs1) {
+    const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
+    /**/ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
   const ScalarType one(1.0), zero(0.0);
 
   if (alpha == zero)
@@ -47,12 +47,12 @@ SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(
     for (int p = 0; p < m; ++p) {
       const int iend = m - p - 1, jend = n;
 
-      const ValueType *__restrict__ a21 =
+      const ValueType *KOKKOS_RESTRICT a21 =
           iend ? A + (p + 1) * as0 + p * as1 : NULL;
 
-      ValueType *__restrict__ b1t = B + p * bs0,
-                              *__restrict__ B2 =
-                                  iend ? B + (p + 1) * bs0 : NULL;
+      ValueType *KOKKOS_RESTRICT b1t = B + p * bs0,
+                                 *KOKKOS_RESTRICT B2 =
+                                     iend ? B + (p + 1) * bs0 : NULL;
 
       if (!use_unit_diag) {
         const ValueType alpha11 = A[p * as0 + p * as1];
@@ -80,8 +80,8 @@ template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int
 SerialTrsmInternalLeftLower<Algo::Trsm::Blocked>::invoke(
     const bool use_unit_diag, const int m, const int n, const ScalarType alpha,
-    const ValueType *__restrict__ A, const int as0, const int as1,
-    /**/ ValueType *__restrict__ B, const int bs0, const int bs1) {
+    const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
+    /**/ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
   enum : int {
     mbAlgo = Algo::Trsm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
   };
@@ -99,15 +99,15 @@ SerialTrsmInternalLeftLower<Algo::Trsm::Blocked>::invoke(
 
     InnerGemmFixA<mbAlgo, mbAlgo> gemm(as0, as1, bs0, bs1, bs0, bs1);
     auto trsm = [&](const int ib, const int jb,
-                    const ValueType *__restrict__ AA,
-                    /**/ ValueType *__restrict__ BB) {
+                    const ValueType *KOKKOS_RESTRICT AA,
+                    /**/ ValueType *KOKKOS_RESTRICT BB) {
       const int mb = mbAlgo;
       for (int p = 0; p < ib; p += mb) {
         const int pb = (p + mb) > ib ? (ib - p) : mb;
 
         // trsm update
-        const ValueType *__restrict__ Ap = AA + p * as0 + p * as1;
-        /**/ ValueType *__restrict__ Bp    = BB + p * bs0;
+        const ValueType *KOKKOS_RESTRICT Ap = AA + p * as0 + p * as1;
+        /**/ ValueType *KOKKOS_RESTRICT Bp    = BB + p * bs0;
 
         if (use_unit_diag)
           trsm_u.serial_invoke(Ap, pb, jb, Bp);
@@ -140,9 +140,9 @@ struct SerialTrsmInternalLeftUpper {
   KOKKOS_INLINE_FUNCTION static int invoke(const bool use_unit_diag,
                                            const int m, const int n,
                                            const ScalarType alpha,
-                                           const ValueType *__restrict__ A,
+                                           const ValueType *KOKKOS_RESTRICT A,
                                            const int as0, const int as1,
-                                           /**/ ValueType *__restrict__ B,
+                                           /**/ ValueType *KOKKOS_RESTRICT B,
                                            const int bs0, const int bs1);
 };
 
@@ -151,8 +151,8 @@ template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int
 SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(
     const bool use_unit_diag, const int m, const int n, const ScalarType alpha,
-    const ValueType *__restrict__ A, const int as0, const int as1,
-    /**/ ValueType *__restrict__ B, const int bs0, const int bs1) {
+    const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
+    /**/ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
   const ScalarType one(1.0), zero(0.0);
 
   if (alpha == zero)
@@ -161,12 +161,12 @@ SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(
     if (alpha != one) SerialScaleInternal::invoke(m, n, alpha, B, bs0, bs1);
     if (m <= 0 || n <= 0) return 0;
 
-    ValueType *__restrict__ B0 = B;
+    ValueType *KOKKOS_RESTRICT B0 = B;
     for (int p = (m - 1); p >= 0; --p) {
       const int iend = p, jend = n;
 
-      const ValueType *__restrict__ a01 = A + p * as1;
-      ValueType *__restrict__ b1t       = B + p * bs0;
+      const ValueType *KOKKOS_RESTRICT a01 = A + p * as1;
+      ValueType *KOKKOS_RESTRICT b1t       = B + p * bs0;
 
       if (!use_unit_diag) {
         const ValueType alpha11 = A[p * as0 + p * as1];
@@ -197,8 +197,8 @@ template <typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int
 SerialTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invoke(
     const bool use_unit_diag, const int m, const int n, const ScalarType alpha,
-    const ValueType *__restrict__ A, const int as0, const int as1,
-    /**/ ValueType *__restrict__ B, const int bs0, const int bs1) {
+    const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
+    /**/ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
   const ScalarType one(1.0), zero(0.0), minus_one(-1.0);
 
   enum : int {
@@ -217,16 +217,16 @@ SerialTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invoke(
     InnerGemmFixA<mbAlgo, mbAlgo> gemm(as0, as1, bs0, bs1, bs0, bs1);
 
     auto trsm = [&](const int ib, const int jb,
-                    const ValueType *__restrict__ AA,
-                    /**/ ValueType *__restrict__ BB) {
+                    const ValueType *KOKKOS_RESTRICT AA,
+                    /**/ ValueType *KOKKOS_RESTRICT BB) {
       const int mb = mbAlgo;
       for (int pp = 0; pp < ib; pp += mb) {
         const int ptmp = ib - pp - mb, p = ptmp < 0 ? 0 : ptmp,
                   pb = mb + (ptmp < 0) * ptmp;
 
         // trsm update
-        const ValueType *__restrict__ Ap = AA + p * as0 + p * as1;
-        /**/ ValueType *__restrict__ Bp    = BB + p * bs0;
+        const ValueType *KOKKOS_RESTRICT Ap = AA + p * as0 + p * as1;
+        /**/ ValueType *KOKKOS_RESTRICT Bp    = BB + p * bs0;
 
         if (use_unit_diag)
           trsm_u.serial_invoke(Ap, pb, jb, Bp);

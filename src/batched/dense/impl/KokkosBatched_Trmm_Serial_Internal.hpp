@@ -58,8 +58,8 @@ struct SerialTrmmInternalLeftLower {
   KOKKOS_INLINE_FUNCTION static int invoke(
       const bool use_unit_diag, const bool do_conj, const int am, const int an,
       const int bm, const int bn, const ScalarType alpha,
-      const ValueType *__restrict__ A, const int as0, const int as1,
-      /**/ ValueType *__restrict__ B, const int bs0, const int bs1);
+      const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
+      /**/ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1);
 };
 
 template <typename AlgoType>
@@ -68,8 +68,8 @@ struct SerialTrmmInternalLeftUpper {
   KOKKOS_INLINE_FUNCTION static int invoke(
       const bool use_unit_diag, const bool do_conj, const int am, const int an,
       const int bm, const int bn, const ScalarType alpha,
-      const ValueType *__restrict__ A, const int as0, const int as1,
-      /**/ ValueType *__restrict__ B, const int bs0, const int bs1);
+      const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
+      /**/ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1);
 };
 
 template <typename AlgoType>
@@ -78,8 +78,8 @@ struct SerialTrmmInternalRightLower {
   KOKKOS_INLINE_FUNCTION static int invoke(
       const bool use_unit_diag, const bool do_conj, const int am, const int an,
       const int bm, const int bn, const ScalarType alpha,
-      const ValueType *__restrict__ A, const int as0, const int as1,
-      /**/ ValueType *__restrict__ B, const int bs0, const int bs1);
+      const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
+      /**/ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1);
 };
 
 template <typename AlgoType>
@@ -88,8 +88,8 @@ struct SerialTrmmInternalRightUpper {
   KOKKOS_INLINE_FUNCTION static int invoke(
       const bool use_unit_diag, const bool do_conj, const int am, const int an,
       const int bm, const int bn, const ScalarType alpha,
-      const ValueType *__restrict__ A, const int as0, const int as1,
-      /**/ ValueType *__restrict__ B, const int bs0, const int bs1);
+      const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
+      /**/ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1);
 };
 
 // ech-note: use_unit_diag intentionally ignored for now. Compiler can optimize
@@ -102,8 +102,8 @@ KOKKOS_INLINE_FUNCTION int
 SerialTrmmInternalLeftLower<Algo::Trmm::Unblocked>::invoke(
     const bool /*use_unit_diag*/, const bool do_conj, const int am,
     const int an, const int bm, const int bn, const ScalarType alpha,
-    const ValueType *__restrict__ A, const int as0, const int as1,
-    /**/ ValueType *__restrict__ B, const int bs0, const int bs1) {
+    const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
+    /**/ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
   const ScalarType one(1.0), zero(0.0);
   typedef Kokkos::Details::ArithTraits<ValueType> AT;
   int left_m  = am;
@@ -116,9 +116,9 @@ SerialTrmmInternalLeftLower<Algo::Trmm::Unblocked>::invoke(
   // printf("SerialTrmmInternalLeftLower\n");
 
   auto dotLowerLeftConj =
-      [&](const ValueType *__restrict__ __A, const int __as0, const int __as1,
-          const int __left_row, ValueType *__restrict__ __B, const int __bs0,
-          const int __bs1, const int __right_col) {
+      [&](const ValueType *KOKKOS_RESTRICT __A, const int __as0,
+          const int __as1, const int __left_row, ValueType *KOKKOS_RESTRICT __B,
+          const int __bs0, const int __bs1, const int __right_col) {
         auto B_elems   = __left_row;
         ScalarType sum = 0;
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
@@ -132,9 +132,9 @@ SerialTrmmInternalLeftLower<Algo::Trmm::Unblocked>::invoke(
         return sum;
       };
 
-  auto dotLowerLeft = [&](const ValueType *__restrict__ __A, const int __as0,
+  auto dotLowerLeft = [&](const ValueType *KOKKOS_RESTRICT __A, const int __as0,
                           const int __as1, const int __left_row,
-                          ValueType *__restrict__ __B, const int __bs0,
+                          ValueType *KOKKOS_RESTRICT __B, const int __bs0,
                           const int __bs1, const int __right_col) {
     auto B_elems   = __left_row;
     ScalarType sum = 0;
@@ -186,8 +186,8 @@ KOKKOS_INLINE_FUNCTION int
 SerialTrmmInternalRightLower<Algo::Trmm::Unblocked>::invoke(
     const bool /*use_unit_diag*/, const bool do_conj, const int am,
     const int an, const int bm, const int bn, const ScalarType alpha,
-    const ValueType *__restrict__ A, const int as0, const int as1,
-    /**/ ValueType *__restrict__ B, const int bs0, const int bs1) {
+    const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
+    /**/ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
   const ScalarType one(1.0), zero(0.0);
   typedef Kokkos::Details::ArithTraits<ValueType> AT;
   int left_m  = bm;
@@ -201,39 +201,41 @@ SerialTrmmInternalRightLower<Algo::Trmm::Unblocked>::invoke(
   // Lower triangular matrix is on RHS with the base facing down.
   // Everytime we compute a new output row of B, we must shift over to the
   // right by one in A's column to ensure we skip the 0's.
-  auto dotLowerRightConj =
-      [&](const ValueType *__restrict__ __A, const int __as0, const int __as1,
-          const int __am, const int __left_row, ValueType *__restrict__ __B,
-          const int __bs0, const int __bs1, const int __right_col) {
-        auto B_elems   = __am - 1;
-        ScalarType sum = 0;
+  auto dotLowerRightConj = [&](const ValueType *KOKKOS_RESTRICT __A,
+                               const int __as0, const int __as1, const int __am,
+                               const int __left_row,
+                               ValueType *KOKKOS_RESTRICT __B, const int __bs0,
+                               const int __bs1, const int __right_col) {
+    auto B_elems   = __am - 1;
+    ScalarType sum = 0;
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
-        for (int i = __right_col; i <= B_elems; i++) {
-          // sum += B[left_row, i] * A[i, right_col]
-          sum += __B[__bs0 * __left_row + i * __bs1] *
-                 AT::conj(__A[i * __as0 + __right_col * __as1]);
-        }
-        return sum;
-      };
+    for (int i = __right_col; i <= B_elems; i++) {
+      // sum += B[left_row, i] * A[i, right_col]
+      sum += __B[__bs0 * __left_row + i * __bs1] *
+             AT::conj(__A[i * __as0 + __right_col * __as1]);
+    }
+    return sum;
+  };
 
-  auto dotLowerRight =
-      [&](const ValueType *__restrict__ __A, const int __as0, const int __as1,
-          const int __am, const int __left_row, ValueType *__restrict__ __B,
-          const int __bs0, const int __bs1, const int __right_col) {
-        auto B_elems   = __am - 1;
-        ScalarType sum = 0;
+  auto dotLowerRight = [&](const ValueType *KOKKOS_RESTRICT __A,
+                           const int __as0, const int __as1, const int __am,
+                           const int __left_row, ValueType *KOKKOS_RESTRICT __B,
+                           const int __bs0, const int __bs1,
+                           const int __right_col) {
+    auto B_elems   = __am - 1;
+    ScalarType sum = 0;
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
-        for (int i = __right_col; i <= B_elems; i++) {
-          // sum += B[left_row, i] * A[i, right_col]
-          sum += __B[__bs0 * __left_row + i * __bs1] *
-                 __A[i * __as0 + __right_col * __as1];
-        }
-        return sum;
-      };
+    for (int i = __right_col; i <= B_elems; i++) {
+      // sum += B[left_row, i] * A[i, right_col]
+      sum += __B[__bs0 * __left_row + i * __bs1] *
+             __A[i * __as0 + __right_col * __as1];
+    }
+    return sum;
+  };
 
   if (bm <= 0 || bn <= 0 || am <= 0 || an <= 0) return 0;
 
@@ -269,8 +271,8 @@ KOKKOS_INLINE_FUNCTION int
 SerialTrmmInternalLeftUpper<Algo::Trmm::Unblocked>::invoke(
     const bool /*use_unit_diag*/, const bool do_conj, const int am,
     const int an, const int bm, const int bn, const ScalarType alpha,
-    const ValueType *__restrict__ A, const int as0, const int as1,
-    /**/ ValueType *__restrict__ B, const int bs0, const int bs1) {
+    const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
+    /**/ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
   const ScalarType one(1.0), zero(0.0);
   typedef Kokkos::Details::ArithTraits<ValueType> AT;
   int left_m  = am;
@@ -281,26 +283,27 @@ SerialTrmmInternalLeftUpper<Algo::Trmm::Unblocked>::invoke(
   //  conjOp = AT::conj;
   //}
 
-  auto dotUpperLeftConj =
-      [&](const ValueType *__restrict__ __A, const int __as0, const int __as1,
-          const int __an, const int __left_row, ValueType *__restrict__ __B,
-          const int __bs0, const int __bs1, const int __right_col) {
-        auto B_elems   = __an - __left_row - 1;
-        ScalarType sum = 0;
+  auto dotUpperLeftConj = [&](const ValueType *KOKKOS_RESTRICT __A,
+                              const int __as0, const int __as1, const int __an,
+                              const int __left_row,
+                              ValueType *KOKKOS_RESTRICT __B, const int __bs0,
+                              const int __bs1, const int __right_col) {
+    auto B_elems   = __an - __left_row - 1;
+    ScalarType sum = 0;
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
-        for (int i = 0; i <= B_elems; i++) {
-          // sum += A[left_row, i+left_row] * B[i+left_row, right_col]
-          sum += AT::conj(__A[__left_row * __as0 + (i + __left_row) * __as1]) *
-                 __B[(i + __left_row) * __bs0 + __bs1 * __right_col];
-        }
-        return sum;
-      };
+    for (int i = 0; i <= B_elems; i++) {
+      // sum += A[left_row, i+left_row] * B[i+left_row, right_col]
+      sum += AT::conj(__A[__left_row * __as0 + (i + __left_row) * __as1]) *
+             __B[(i + __left_row) * __bs0 + __bs1 * __right_col];
+    }
+    return sum;
+  };
 
-  auto dotUpperLeft = [&](const ValueType *__restrict__ __A, const int __as0,
+  auto dotUpperLeft = [&](const ValueType *KOKKOS_RESTRICT __A, const int __as0,
                           const int __as1, const int __an, const int __left_row,
-                          ValueType *__restrict__ __B, const int __bs0,
+                          ValueType *KOKKOS_RESTRICT __B, const int __bs0,
                           const int __bs1, const int __right_col) {
     auto B_elems   = __an - __left_row - 1;
     ScalarType sum = 0;
@@ -349,8 +352,8 @@ KOKKOS_INLINE_FUNCTION int
 SerialTrmmInternalRightUpper<Algo::Trmm::Unblocked>::invoke(
     const bool /*use_unit_diag*/, const bool do_conj, const int am,
     const int an, const int bm, const int bn, const ScalarType alpha,
-    const ValueType *__restrict__ A, const int as0, const int as1,
-    /**/ ValueType *__restrict__ B, const int bs0, const int bs1) {
+    const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
+    /**/ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
   const ScalarType one(1.0), zero(0.0);
   typedef Kokkos::Details::ArithTraits<ValueType> AT;
   int left_m  = bm;
@@ -362,9 +365,9 @@ SerialTrmmInternalRightUpper<Algo::Trmm::Unblocked>::invoke(
   //}
 
   auto dotUpperRightConj =
-      [&](const ValueType *__restrict__ __A, const int __as0, const int __as1,
-          const int __left_row, ValueType *__restrict__ __B, const int __bs0,
-          const int __bs1, const int __right_col) {
+      [&](const ValueType *KOKKOS_RESTRICT __A, const int __as0,
+          const int __as1, const int __left_row, ValueType *KOKKOS_RESTRICT __B,
+          const int __bs0, const int __bs1, const int __right_col) {
         auto B_elems   = __right_col;
         ScalarType sum = 0;
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
@@ -378,22 +381,22 @@ SerialTrmmInternalRightUpper<Algo::Trmm::Unblocked>::invoke(
         return sum;
       };
 
-  auto dotUpperRight = [&](const ValueType *__restrict__ __A, const int __as0,
-                           const int __as1, const int __left_row,
-                           ValueType *__restrict__ __B, const int __bs0,
-                           const int __bs1, const int __right_col) {
-    auto B_elems   = __right_col;
-    ScalarType sum = 0;
+  auto dotUpperRight =
+      [&](const ValueType *KOKKOS_RESTRICT __A, const int __as0,
+          const int __as1, const int __left_row, ValueType *KOKKOS_RESTRICT __B,
+          const int __bs0, const int __bs1, const int __right_col) {
+        auto B_elems   = __right_col;
+        ScalarType sum = 0;
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
-    for (int i = 0; i <= B_elems; i++) {
-      // sum += B[left_row, i] * A[i, right_col]
-      sum += __B[__left_row * __bs0 + i * __bs1] *
-             __A[i * __as0 + __right_col * __as1];
-    }
-    return sum;
-  };
+        for (int i = 0; i <= B_elems; i++) {
+          // sum += B[left_row, i] * A[i, right_col]
+          sum += __B[__left_row * __bs0 + i * __bs1] *
+                 __A[i * __as0 + __right_col * __as1];
+        }
+        return sum;
+      };
 
   if (bm <= 0 || bn <= 0 || am <= 0 || an <= 0) return 0;
 

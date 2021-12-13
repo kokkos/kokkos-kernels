@@ -18,15 +18,15 @@ struct InnerTrsmLeftLowerUnitDiag {
 
   // trisolve
   template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION int serial_invoke(const ValueType *__restrict__ A,
+  KOKKOS_INLINE_FUNCTION int serial_invoke(const ValueType *KOKKOS_RESTRICT A,
                                            const int n,
-                                           /**/ ValueType *__restrict__ B);
+                                           /**/ ValueType *KOKKOS_RESTRICT B);
 
   // for remainder
   template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION int serial_invoke(const ValueType *__restrict__ A,
+  KOKKOS_INLINE_FUNCTION int serial_invoke(const ValueType *KOKKOS_RESTRICT A,
                                            const int m, const int n,
-                                           /**/ ValueType *__restrict__ B);
+                                           /**/ ValueType *KOKKOS_RESTRICT B);
 };
 
 // specialized for different m and n
@@ -42,15 +42,15 @@ struct InnerTrsmLeftLowerNonUnitDiag {
 
   // trisolve
   template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION int serial_invoke(const ValueType *__restrict__ A,
+  KOKKOS_INLINE_FUNCTION int serial_invoke(const ValueType *KOKKOS_RESTRICT A,
                                            const int n,
-                                           /**/ ValueType *__restrict__ B);
+                                           /**/ ValueType *KOKKOS_RESTRICT B);
 
   // for remainder
   template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION int serial_invoke(const ValueType *__restrict__ A,
+  KOKKOS_INLINE_FUNCTION int serial_invoke(const ValueType *KOKKOS_RESTRICT A,
                                            const int m, const int n,
-                                           /**/ ValueType *__restrict__ B);
+                                           /**/ ValueType *KOKKOS_RESTRICT B);
 };
 
 // specialized for different m and n
@@ -66,15 +66,15 @@ struct InnerTrsmLeftUpperUnitDiag {
 
   // trisolve
   template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION int serial_invoke(const ValueType *__restrict__ A,
+  KOKKOS_INLINE_FUNCTION int serial_invoke(const ValueType *KOKKOS_RESTRICT A,
                                            const int n,
-                                           /**/ ValueType *__restrict__ B);
+                                           /**/ ValueType *KOKKOS_RESTRICT B);
 
   // for remainder
   template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION int serial_invoke(const ValueType *__restrict__ A,
+  KOKKOS_INLINE_FUNCTION int serial_invoke(const ValueType *KOKKOS_RESTRICT A,
                                            const int m, const int n,
-                                           /**/ ValueType *__restrict__ B);
+                                           /**/ ValueType *KOKKOS_RESTRICT B);
 };
 
 // specialized for different m and n
@@ -90,15 +90,15 @@ struct InnerTrsmLeftUpperNonUnitDiag {
 
   // trisolve
   template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION int serial_invoke(const ValueType *__restrict__ A,
+  KOKKOS_INLINE_FUNCTION int serial_invoke(const ValueType *KOKKOS_RESTRICT A,
                                            const int n,
-                                           /**/ ValueType *__restrict__ B);
+                                           /**/ ValueType *KOKKOS_RESTRICT B);
 
   // for remainder
   template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION int serial_invoke(const ValueType *__restrict__ A,
+  KOKKOS_INLINE_FUNCTION int serial_invoke(const ValueType *KOKKOS_RESTRICT A,
                                            const int m, const int n,
-                                           /**/ ValueType *__restrict__ B);
+                                           /**/ ValueType *KOKKOS_RESTRICT B);
 };
 
 }  // namespace KokkosBatched

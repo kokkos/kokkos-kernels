@@ -18,10 +18,10 @@ struct TeamVectorGemmInternal {
   template <typename MemberType, typename ScalarType, typename ValueType>
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType &member, const int m, const int n, const int k,
-      const ScalarType alpha, const ValueType *__restrict__ A, const int as0,
-      const int as1, const ValueType *__restrict__ B, const int bs0,
+      const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A, const int as0,
+      const int as1, const ValueType *KOKKOS_RESTRICT B, const int bs0,
       const int bs1, const ScalarType beta,
-      /**/ ValueType *__restrict__ C, const int cs0, const int cs1);
+      /**/ ValueType *KOKKOS_RESTRICT C, const int cs0, const int cs1);
 };
 
 template <>
@@ -29,10 +29,10 @@ template <typename MemberType, typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int
 TeamVectorGemmInternal<Algo::Gemm::Unblocked>::invoke(
     const MemberType &member, const int m, const int n, const int k,
-    const ScalarType alpha, const ValueType *__restrict__ A, const int as0,
-    const int as1, const ValueType *__restrict__ B, const int bs0,
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A, const int as0,
+    const int as1, const ValueType *KOKKOS_RESTRICT B, const int bs0,
     const int bs1, const ScalarType beta,
-    /**/ ValueType *__restrict__ C, const int cs0, const int cs1) {
+    /**/ ValueType *KOKKOS_RESTRICT C, const int cs0, const int cs1) {
   // C = beta C + alpha A B
   // C (m x n), A(m x k), B(k x n)
 
@@ -49,10 +49,10 @@ TeamVectorGemmInternal<Algo::Gemm::Unblocked>::invoke(
     if (beta != one) member.team_barrier();
 
     Kokkos::parallel_for(Kokkos::TeamThreadRange(member, m), [&](const int &i) {
-      const ValueType *__restrict__ pA = A + i * as0;
+      const ValueType *KOKKOS_RESTRICT pA = A + i * as0;
       Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, n),
                            [&](const int &j) {
-                             const ValueType *__restrict__ pB = B + j * bs1;
+                             const ValueType *KOKKOS_RESTRICT pB = B + j * bs1;
 
                              ValueType c = ValueType(0);
                              for (int p = 0; p < k; ++p)

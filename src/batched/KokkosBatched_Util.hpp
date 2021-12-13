@@ -462,16 +462,16 @@ struct Algo {
 struct Util {
   template <typename ValueType>
   KOKKOS_INLINE_FUNCTION static void packColMajor(
-      ValueType *__restrict__ A, const int m, const int n,
-      const ValueType *__restrict__ B, const int bs0, const int bs1) {
+      ValueType *KOKKOS_RESTRICT A, const int m, const int n,
+      const ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
     for (int j = 0; j < n; ++j)
       for (int i = 0; i < m; ++i) A[i + j * m] = B[i * bs0 + j * bs1];
   }
 
   template <typename ValueType>
   KOKKOS_INLINE_FUNCTION static void packRowMajor(
-      ValueType *__restrict__ A, const int m, const int n,
-      const ValueType *__restrict__ B, const int bs0, const int bs1) {
+      ValueType *KOKKOS_RESTRICT A, const int m, const int n,
+      const ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
     for (int i = 0; i < m; ++i)
       for (int j = 0; j < n; ++j) A[i * n + j] = B[i * bs0 + j * bs1];
   }
