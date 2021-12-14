@@ -45,6 +45,11 @@
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Atomic.hpp"
 
+#if defined(KOKKOS_ENABLE_SYCL) && defined(KOKKOS_ARCH_INTEL_GPU)
+#include <level_zero/zes_api.h>
+#include <CL/sycl/backend/level_zero.hpp>
+#endif
+
 #ifndef _KOKKOSKERNELSUTILSEXECSPACEUTILS_HPP
 #define _KOKKOSKERNELSUTILSEXECSPACEUTILS_HPP
 
@@ -202,6 +207,56 @@ template <>
 inline void kk_get_free_total_memory<Kokkos::Experimental::HIPSpace>(
     size_t& free_mem, size_t& total_mem) {
   hipMemGetInfo(&free_mem, &total_mem);
+}
+#endif
+
+// FIXME_SYCL Use compiler extension instead of low level interface when
+// available. Also, we assume to query memory associated with the default queue.
+#if defined(KOKKOS_ENABLE_SYCL) && defined(KOKKOS_ARCH_INTEL_GPU)
+template <>
+inline void kk_get_free_total_memory<Kokkos::Experimental::SYCLDeviceUSMSpace>(
+    size_t& free_mem, size_t& total_mem) {
+  sycl::queue queue;
+  sycl::device device = queue.get_device();
+  auto level_zero_handle =
+      sycl::get_native<sycl::backend::ext_oneapi_level_zero>(device);
+
+  uint32_t n_memory_modules = 0;
+  zesDeviceEnumMemoryModules(level_zero_handle, &n_memory_modules, nullptr);
+
+  if (n_memory_modules != 1) {
+    std::ostringstream oss;
+    oss << "Error: number of memory modules for the SYCL backend: "
+        << n_memory_modules
+        << ". We only support querying free/total memory if exactly one memory "
+           "module was found. Make sure that ZES_ENABLE_SYSMAN=1 is set at run "
+           "time if no memeory modules were found!";
+    throw std::runtime_error(oss.str());
+  }
+
+  zes_mem_handle_t memory_module_handle;
+  zesDeviceEnumMemoryModules(level_zero_handle, &n_memory_modules,
+                             &memory_module_handle);
+  zes_mem_state_t memory_properties{
+      ZES_STRUCTURE_TYPE_MEM_PROPERTIES,
+  };
+  zesMemoryGetState(memory_module_handle, &memory_properties);
+  total_mem = memory_properties.size;
+  free_mem  = memory_properties.free;
+}
+
+template <>
+inline void kk_get_free_total_memory<Kokkos::Experimental::SYCLHostUSMSpace>(
+    size_t& free_mem, size_t& total_mem) {
+  kk_get_free_total_memory<Kokkos::Experimental::SYCLDeviceUSMSpace>(free_mem,
+                                                                     total_mem);
+}
+
+template <>
+inline void kk_get_free_total_memory<Kokkos::Experimental::SYCLSharedUSMSpace>(
+    size_t& free_mem, size_t& total_mem) {
+  kk_get_free_total_memory<Kokkos::Experimental::SYCLDeviceUSMSpace>(free_mem,
+                                                                     total_mem);
 }
 #endif
 
