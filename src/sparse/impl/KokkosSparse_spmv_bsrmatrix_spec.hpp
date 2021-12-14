@@ -394,7 +394,7 @@ struct SPMV_MV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
       std::is_integral<typename std::decay<SCALAR_TYPE>::type>::value, false, \
       true>;
 
-#include <KokkosSparse_spmv_bsr_tpl_spec_decl.hpp>
+#include <KokkosSparse_spmv_bsrmatrix_tpl_spec_decl.hpp>
 #include <generated_specializations_hpp/KokkosSparse_spmv_bsrmatrix_eti_spec_decl.hpp>
 #include <generated_specializations_hpp/KokkosSparse_spmv_mv_bsrmatrix_eti_spec_decl.hpp>
 
