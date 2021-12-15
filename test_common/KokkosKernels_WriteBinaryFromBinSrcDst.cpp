@@ -61,10 +61,10 @@ int main (int argc, char ** argv){
 
   char *in_src = NULL, *in_dst = NULL;
   for ( int i = 1 ; i < argc ; ++i ) {
-    if ( 0 == strcasecmp( argv[i] , "in_src" ) ) {
+    if ( 0 == Test::string_compare_no_case( argv[i] , "in_src" ) ) {
       in_src = argv[++i];
     }
-    else if ( 0 == strcasecmp( argv[i] , "in_dst" ) ) {
+    else if ( 0 == Test::string_compare_no_case( argv[i] , "in_dst" ) ) {
       in_dst = argv[++i];
     }
     else {

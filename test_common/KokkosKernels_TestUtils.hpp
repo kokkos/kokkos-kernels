@@ -48,7 +48,8 @@
 #include "KokkosKernels_Utils.hpp"
 #include "Kokkos_ArithTraits.hpp"
 #include "KokkosSparse_spmv.hpp"
-#include "gtest/gtest.h"  //for EXPECT_**
+// Make this include-able from all subdirectories
+#include "../tpls/gtest/gtest/gtest.h"  //for EXPECT_**
 
 namespace Test {
 template <class ViewType,
@@ -457,5 +458,14 @@ template <>
 KOKKOS_INLINE_FUNCTION std::string value_type_name<Kokkos::complex<double>>() {
   return "::ComplexDouble";
 }
+
+int string_compare_no_case(const char* str1, const char* str2) {
+  std::string str1_s(str1);
+  std::string str2_s(str2);
+  for(int i=0; i<str1_s.size(); i++) str1_s[i] = std::tolower(str1_s[i]);
+  for(int i=0; i<str2_s.size(); i++) str2_s[i] = std::tolower(str2_s[i]);
+  return strcmp(str1_s.c_str(),str2_s.c_str());
+}
+
 }  // namespace Test
 #endif

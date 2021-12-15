@@ -65,6 +65,7 @@
 #include "KokkosSparse_spadd.hpp"
 #include "KokkosGraph_MIS2.hpp"
 #include "KokkosKernels_default_types.hpp"
+#include "KokkosKernels_TestUtils.hpp"
 
 using namespace KokkosGraph;
 
@@ -183,38 +184,38 @@ static char* getNextArg(int& i, int argc, char** argv) {
 int parse_inputs(MIS2Parameters& params, int argc, char** argv) {
   bool got_required_param_amtx = false;
   for (int i = 1; i < argc; ++i) {
-    if (0 == strcasecmp(argv[i], "--threads")) {
+    if (0 == Test::string_compare_no_case(argv[i], "--threads")) {
       params.use_threads = 1;
-    } else if (0 == strcasecmp(argv[i], "--serial")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--serial")) {
       params.use_serial = 1;
-    } else if (0 == strcasecmp(argv[i], "--openmp")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--openmp")) {
       params.use_openmp = 1;
-    } else if (0 == strcasecmp(argv[i], "--cuda")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--cuda")) {
       params.use_cuda = 1;
-    } else if (0 == strcasecmp(argv[i], "--hip")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--hip")) {
       params.use_hip = 1;
-    } else if (0 == strcasecmp(argv[i], "--repeat")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--repeat")) {
       params.repeat = atoi(getNextArg(i, argc, argv));
       if (params.repeat <= 0) {
         std::cout << "*** Repeat count must be positive, defaulting to 1.\n";
         params.repeat = 1;
       }
-    } else if (0 == strcasecmp(argv[i], "--amtx")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--amtx")) {
       got_required_param_amtx = true;
       params.mtx_file         = getNextArg(i, argc, argv);
-    } else if (0 == strcasecmp(argv[i], "--algo")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--algo")) {
       const char* algName = getNextArg(i, argc, argv);
-      if (!strcasecmp(algName, "fast"))
+      if (!Test::string_compare_no_case(algName, "fast"))
         params.algo = MIS2_FAST;
-      else if (!strcasecmp(algName, "quality"))
+      else if (!Test::string_compare_no_case(algName, "quality"))
         params.algo = MIS2_QUALITY;
       else
         throw std::invalid_argument(
             "Algorithm not valid: must be 'fast' or 'quality'");
-    } else if (0 == strcasecmp(argv[i], "--verbose")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--verbose")) {
       params.verbose = true;
-    } else if (0 == strcasecmp(argv[i], "--help") ||
-               0 == strcasecmp(argv[i], "-h")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--help") ||
+               0 == Test::string_compare_no_case(argv[i], "-h")) {
       print_options(std::cout, argv[0]);
       return 1;
     } else {

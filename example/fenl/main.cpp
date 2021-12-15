@@ -278,51 +278,51 @@ int main( int argc , char ** argv )
 
   if ( 0 == comm_rank ) {
     for ( int i = 1 ; i < argc ; ++i ) {
-      if ( 0 == strcasecmp( argv[i] , "threads" ) ) {
+      if ( 0 == Test::string_compare_no_case( argv[i] , "threads" ) ) {
         cmdline[ CMD_USE_THREADS ] = atoi( argv[++i] );
       }
-      else if ( 0 == strcasecmp( argv[i] , "openmp" ) ) {
+      else if ( 0 == Test::string_compare_no_case( argv[i] , "openmp" ) ) {
         cmdline[ CMD_USE_OPENMP ] = atoi( argv[++i] );
       }
-      else if ( 0 == strcasecmp( argv[i] , "cores" ) ) {
+      else if ( 0 == Test::string_compare_no_case( argv[i] , "cores" ) ) {
         sscanf( argv[++i] , "%dx%d" ,
                 cmdline + CMD_USE_NUMA ,
                 cmdline + CMD_USE_CORE_PER_NUMA );
       }
-      else if ( 0 == strcasecmp( argv[i] , "cuda" ) ) {
+      else if ( 0 == Test::string_compare_no_case( argv[i] , "cuda" ) ) {
         cmdline[ CMD_USE_CUDA ] = 1 ;
       }
-      else if ( 0 == strcasecmp( argv[i] , "cuda-dev" ) ) {
+      else if ( 0 == Test::string_compare_no_case( argv[i] , "cuda-dev" ) ) {
         cmdline[ CMD_USE_CUDA ] = 1 ;
         cmdline[ CMD_USE_CUDA_DEV ] = atoi( argv[++i] ) ;
       }
-      else if ( 0 == strcasecmp( argv[i] , "fixture" ) ) {
+      else if ( 0 == Test::string_compare_no_case( argv[i] , "fixture" ) ) {
         sscanf( argv[++i] , "%dx%dx%d" ,
                 cmdline + CMD_USE_FIXTURE_X ,
                 cmdline + CMD_USE_FIXTURE_Y ,
                 cmdline + CMD_USE_FIXTURE_Z );
       }
-      else if ( 0 == strcasecmp( argv[i] , "fixture-range" ) ) {
+      else if ( 0 == Test::string_compare_no_case( argv[i] , "fixture-range" ) ) {
         sscanf( argv[++i] , "%d..%d" ,
                 cmdline + CMD_USE_FIXTURE_BEGIN ,
                 cmdline + CMD_USE_FIXTURE_END );
       }
-      else if ( 0 == strcasecmp( argv[i] , "fixture-quadratic" ) ) {
+      else if ( 0 == Test::string_compare_no_case( argv[i] , "fixture-quadratic" ) ) {
         cmdline[ CMD_USE_FIXTURE_QUADRATIC ] = 1 ;
       }
-      else if ( 0 == strcasecmp( argv[i] , "atomic" ) ) {
+      else if ( 0 == Test::string_compare_no_case( argv[i] , "atomic" ) ) {
         cmdline[ CMD_USE_ATOMIC ] = 1 ;
       }
-      else if ( 0 == strcasecmp( argv[i] , "trials" ) ) {
+      else if ( 0 == Test::string_compare_no_case( argv[i] , "trials" ) ) {
         cmdline[ CMD_USE_TRIALS ] = atoi( argv[++i] ) ;
       }
-      else if ( 0 == strcasecmp( argv[i] , "vtune" ) ) {
+      else if ( 0 == Test::string_compare_no_case( argv[i] , "vtune" ) ) {
         cmdline[ CMD_VTUNE ] = 1 ;
       }
-      else if ( 0 == strcasecmp( argv[i] , "print" ) ) {
+      else if ( 0 == Test::string_compare_no_case( argv[i] , "print" ) ) {
         cmdline[ CMD_PRINT ] = 1 ;
       }
-      else if ( 0 == strcasecmp( argv[i] , "echo" ) ) {
+      else if ( 0 == Test::string_compare_no_case( argv[i] , "echo" ) ) {
         cmdline[ CMD_ECHO ] = 1 ;
       }
       else {

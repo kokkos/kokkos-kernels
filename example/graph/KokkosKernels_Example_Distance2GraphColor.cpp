@@ -184,77 +184,77 @@ parse_inputs(KokkosKernels::Example::Parameters& params, int argc, char** argv)
 
     for(int i = 1; i < argc; ++i)
     {
-        if(0 == strcasecmp(argv[ i ], "--threads"))
+        if(0 == Test::string_compare_no_case(argv[ i ], "--threads"))
         {
             params.use_threads = atoi(argv[ ++i ]);
             //std::cout << "use_threads = " << params.use_threads << std::endl;
         }
-        else if(0 == strcasecmp(argv[ i ], "--serial"))
+        else if(0 == Test::string_compare_no_case(argv[ i ], "--serial"))
         {
             params.use_serial = atoi(argv[ ++i ]);
             //std::cout << "use_serial = " << params.use_serial << std::endl;
         }
-        else if(0 == strcasecmp(argv[ i ], "--openmp"))
+        else if(0 == Test::string_compare_no_case(argv[ i ], "--openmp"))
         {
             params.use_openmp = atoi(argv[ ++i ]);
             //std::cout << "use_openmp = " << params.use_openmp << std::endl;
         }
-        else if(0 == strcasecmp(argv[ i ], "--cuda"))
+        else if(0 == Test::string_compare_no_case(argv[ i ], "--cuda"))
         {
             params.use_cuda = 1;
             //std::cout << "use_cuda = " << params.use_cuda << std::endl;
         }
-        else if(0 == strcasecmp(argv[ i ], "--amtx"))
+        else if(0 == Test::string_compare_no_case(argv[ i ], "--amtx"))
         {
             got_required_param_amtx = true;
             params.mtx_bin_file     = argv[ ++i ];
         }
-        else if(0 == strcasecmp(argv[ i ], "--validate"))
+        else if(0 == Test::string_compare_no_case(argv[ i ], "--validate"))
         {
             params.validate = 1;
         }
-        else if(0 == strcasecmp(argv[ i ], "--verbose-level"))
+        else if(0 == Test::string_compare_no_case(argv[ i ], "--verbose-level"))
         {
             params.verbose_level = atoi( argv[++i] );
             params.verbose_level = std::min(5, params.verbose_level);
             params.verbose_level = std::max(0, params.verbose_level);
         }
-        else if(0 == strcasecmp(argv[ i ], "--output-histogram"))
+        else if(0 == Test::string_compare_no_case(argv[ i ], "--output-histogram"))
         {
             params.output_histogram = 1;
         }
-        else if(0 == strcasecmp(argv[ i ], "--output-graphviz"))
+        else if(0 == Test::string_compare_no_case(argv[ i ], "--output-graphviz"))
         {
             params.output_graphviz = 1;
         }
-        else if(0 == strcasecmp(argv[ i ], "--output-graphviz-vert-max"))
+        else if(0 == Test::string_compare_no_case(argv[ i ], "--output-graphviz-vert-max"))
         {
             params.output_graphviz_vert_max = atoi( argv[++i] );
         }
-        else if(0 == strcasecmp(argv[ i ], "--algorithm"))
+        else if(0 == Test::string_compare_no_case(argv[ i ], "--algorithm"))
         {
             ++i;
-            if(0 == strcasecmp(argv[ i ], "COLORING_D2_MATRIX_SQUARED"))
+            if(0 == Test::string_compare_no_case(argv[ i ], "COLORING_D2_MATRIX_SQUARED"))
             {
                 params.algorithm             = 1;
                 got_required_param_algorithm = true;
             }
-            else if(0 == strcasecmp(argv[ i ], "COLORING_D2_SERIAL"))
+            else if(0 == Test::string_compare_no_case(argv[ i ], "COLORING_D2_SERIAL"))
             {
                 params.algorithm             = 2;
                 got_required_param_algorithm = true;
             }
-            else if(0 == strcasecmp(argv[ i ], "COLORING_D2_VB") || 0 == strcasecmp(argv[ i ], "COLORING_D2"))
+            else if(0 == Test::string_compare_no_case(argv[ i ], "COLORING_D2_VB") || 0 == Test::string_compare_no_case(argv[ i ], "COLORING_D2"))
             {
                 params.algorithm             = 3;
                 got_required_param_algorithm = true;
             }
-            else if(0 == strcasecmp(argv[ i ], "COLORING_D2_VB_BIT"))
+            else if(0 == Test::string_compare_no_case(argv[ i ], "COLORING_D2_VB_BIT"))
             {
                 params.algorithm             = 4;
                 got_required_param_algorithm = true;
             }
-            else if(0 == strcasecmp(argv[ i ], "COLORING_D2_VB_BIT_EF"))
+            else if(0 == Test::string_compare_no_case(argv[ i ], "COLORING_D2_VB_BIT_EF"))
             {
                 params.algorithm             = 5;
                 got_required_param_algorithm = true;
@@ -266,7 +266,7 @@ parse_inputs(KokkosKernels::Example::Parameters& params, int argc, char** argv)
                 return 1;
             }
         }
-        else if(0 == strcasecmp(argv[ i ], "--help") || 0 == strcasecmp(argv[ i ], "-h"))
+        else if(0 == Test::string_compare_no_case(argv[ i ], "--help") || 0 == Test::string_compare_no_case(argv[ i ], "-h"))
         {
             print_options(std::cout, argv[ 0 ]);
             return 1;

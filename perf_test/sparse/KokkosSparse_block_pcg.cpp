@@ -52,6 +52,8 @@
 #include "KokkosKernels_Utils.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 
+#include "KokkosKernels_TestUtils.hpp"
+
 #define MAXVAL 1
 
 #define SIZE_TYPE int
@@ -384,23 +386,23 @@ int main(int argc, char **argv) {
   for (int i = 0; i < CMD_COUNT; ++i) cmdline[i] = 0;
 
   for (int i = 1; i < argc; ++i) {
-    if (0 == strcasecmp(argv[i], "--serial")) {
+    if (0 == Test::string_compare_no_case(argv[i], "--serial")) {
       cmdline[CMD_USE_SERIAL] = 1;
-    } else if (0 == strcasecmp(argv[i], "--threads")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--threads")) {
       kargs.num_threads = cmdline[CMD_USE_THREADS] = atoi(argv[++i]);
-    } else if (0 == strcasecmp(argv[i], "--openmp")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--openmp")) {
       kargs.num_threads = cmdline[CMD_USE_OPENMP] = atoi(argv[++i]);
-    } else if (0 == strcasecmp(argv[i], "--cuda")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--cuda")) {
       cmdline[CMD_USE_CUDA] = 1;
-    } else if (0 == strcasecmp(argv[i], "--mtx")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--mtx")) {
       mtx_bin_file = argv[++i];
     }
 
-    else if (0 == strcasecmp(argv[i], "--block_size")) {
+    else if (0 == Test::string_compare_no_case(argv[i], "--block_size")) {
       block_size = atoi(argv[++i]);
     }
 
-    else if (0 == strcasecmp(argv[i], "--iteration")) {
+    else if (0 == Test::string_compare_no_case(argv[i], "--iteration")) {
       cg_iteration_limit = atoi(argv[++i]);
     } else {
       cmdline[CMD_ERROR] = 1;

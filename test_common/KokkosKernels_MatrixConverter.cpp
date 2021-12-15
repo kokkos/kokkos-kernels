@@ -59,19 +59,19 @@ int main (int argc, char* argv[]){
   char *in_mtx = NULL, *out_bin = NULL;
   //bool create_incidence = false;
   for ( int i = 1 ; i < argc ; ++i ) {
-    if ( 0 == strcasecmp( argv[i] , "--symmetrize" ) ) {
+    if ( 0 == Test::string_compare_no_case( argv[i] , "--symmetrize" ) ) {
       symmetrize = true;
     }
-    else if ( 0 == strcasecmp( argv[i] , "--remove_diagonal" ) ) {
+    else if ( 0 == Test::string_compare_no_case( argv[i] , "--remove_diagonal" ) ) {
       remove_diagonal = true;
     }
-    else if ( 0 == strcasecmp( argv[i] , "--transpose" ) ) {
+    else if ( 0 == Test::string_compare_no_case( argv[i] , "--transpose" ) ) {
       transpose = true;
     }
-    else if ( 0 == strcasecmp( argv[i] , "--in_mtx" ) ) {
+    else if ( 0 == Test::string_compare_no_case( argv[i] , "--in_mtx" ) ) {
       in_mtx = argv[++i];
     }
-    else if ( 0 == strcasecmp( argv[i] , "--out_mtx" ) ) {
+    else if ( 0 == Test::string_compare_no_case( argv[i] , "--out_mtx" ) ) {
       out_bin = argv[++i];
     }
     else {

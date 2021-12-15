@@ -48,6 +48,7 @@
 #include "KokkosKernels_Utils.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosKernels_default_types.hpp"
+#include "KokkosKernels_TestUtils.hpp"
 #include <iostream>
 
 #define MAXVAL 1
@@ -317,32 +318,32 @@ int main(int argc, char **argv) {
   for (int i = 0; i < CMD_COUNT; ++i) cmdline[i] = 0;
 
   for (int i = 1; i < argc; ++i) {
-    if (0 == strcasecmp(argv[i], "--threads")) {
+    if (0 == Test::string_compare_no_case(argv[i], "--threads")) {
       cmdline[CMD_USE_THREADS] = atoi(argv[++i]);
-    } else if (0 == strcasecmp(argv[i], "--openmp")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--openmp")) {
       cmdline[CMD_USE_OPENMP] = atoi(argv[++i]);
     }
     /*
-    else if ( 0 == strcasecmp( argv[i] , "--cores" ) ) {
+    else if ( 0 == Test::string_compare_no_case( argv[i] , "--cores" ) ) {
       //Note BMK: specifying #NUMA regions isn't supported by initialize
       sscanf( argv[++i] , "%dx%d" ,
               cmdline + CMD_USE_NUMA ,
               cmdline + CMD_USE_CORE_PER_NUMA );
     }
     */
-    else if (0 == strcasecmp(argv[i], "--cuda")) {
+    else if (0 == Test::string_compare_no_case(argv[i], "--cuda")) {
       cmdline[CMD_USE_CUDA] = 1;
-    } else if (0 == strcasecmp(argv[i], "--hip")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--hip")) {
       cmdline[CMD_USE_HIP] = 1;
-    } else if (0 == strcasecmp(argv[i], "--device-id")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--device-id")) {
       cmdline[CMD_DEVICE] = atoi(argv[++i]);
-    } else if (0 == strcasecmp(argv[i], "--cluster-size")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--cluster-size")) {
       cmdline[CMD_CLUSTER_SIZE] = atoi(argv[++i]);
-    } else if (0 == strcasecmp(argv[i], "--seq-gs")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--seq-gs")) {
       cmdline[CMD_USE_SEQUENTIAL_SGS] = 1;
     }
 
-    else if (0 == strcasecmp(argv[i], "--mtx")) {
+    else if (0 == Test::string_compare_no_case(argv[i], "--mtx")) {
       mtx_file = argv[++i];
     } else {
       cmdline[CMD_ERROR] = 1;
