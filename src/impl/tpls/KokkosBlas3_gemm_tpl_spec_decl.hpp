@@ -872,7 +872,8 @@ struct GEMM< \
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > CViewType; \
  \
   static void \
-  gemm (const char transA[], \
+  gemm (const typename CViewType::execution_space& space, \
+        const char transA[], \
         const char transB[], \
         typename AViewType::const_value_type& alpha, \
         const AViewType& A, \
@@ -887,14 +888,16 @@ struct GEMM< \
     if(   (!A_is_lr && transa != rocblas_operation_none && transb == rocblas_operation_none && M*N < numDotsLayoutLeftThreshold) \
        || ( A_is_lr && transa != rocblas_operation_none && transb == rocblas_operation_none && M*N < numDotsLayoutRightThreshold)) { \
       DotBasedGEMM<ExecSpace,AViewType,BViewType,CViewType> gemm(alpha,A,B,beta,C); \
-      gemm.run(false); \
+      gemm.run(space, false); \
     } \
     else { \
       KokkosBlas::Impl::RocBlasSingleton & s = KokkosBlas::Impl::RocBlasSingleton::singleton(); \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, space.hip_stream())); \
       if(!A_is_lr && !B_is_lr && !C_is_lr )                             \
         KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_dgemm(s.handle, transa, transb, M, N, K, &alpha, A.data(), LDA, B.data(), LDB, &beta, C.data(), LDC)); \
       if(A_is_lr && B_is_lr && C_is_lr )                                \
         KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_dgemm(s.handle, transb, transa, N, M, K, &alpha, B.data(), LDB, A.data(), LDA, &beta, C.data(), LDC)); \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL)); \
     } \
     Kokkos::Profiling::popRegion(); \
   } \
@@ -919,7 +922,8 @@ struct GEMM< \
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > CViewType; \
       \
   static void \
-  gemm (const char transA[], \
+  gemm (const typename CViewType::execution_space& space, \
+        const char transA[], \
         const char transB[], \
         typename AViewType::const_value_type& alpha, \
         const AViewType& A, \
@@ -934,14 +938,16 @@ struct GEMM< \
     if(   (!A_is_lr && transa != rocblas_operation_none && transb == rocblas_operation_none && M*N < numDotsLayoutLeftThreshold) \
        || ( A_is_lr && transa != rocblas_operation_none && transb == rocblas_operation_none && M*N < numDotsLayoutRightThreshold)) { \
       DotBasedGEMM<ExecSpace,AViewType,BViewType,CViewType> gemm(alpha,A,B,beta,C); \
-      gemm.run(false); \
+      gemm.run(space, false); \
     } \
     else { \
       KokkosBlas::Impl::RocBlasSingleton & s = KokkosBlas::Impl::RocBlasSingleton::singleton(); \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, space.hip_stream())); \
       if(!A_is_lr && !B_is_lr && !C_is_lr ) \
         KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_sgemm(s.handle, transa, transb, M, N, K, &alpha, A.data(), LDA, B.data(), LDB, &beta, C.data(), LDC)); \
       if(A_is_lr && B_is_lr && C_is_lr ) \
         KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_sgemm(s.handle, transb, transa, N, M, K, &alpha, B.data(), LDB, A.data(), LDA, &beta, C.data(), LDC)); \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL)); \
     } \
     Kokkos::Profiling::popRegion(); \
   } \
@@ -966,7 +972,8 @@ struct GEMM< \
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > CViewType; \
       \
   static void \
-  gemm (const char transA[], \
+  gemm (const typename CViewType::execution_space& space, \
+        const char transA[], \
         const char transB[], \
         typename AViewType::const_value_type& alpha, \
         const AViewType& A, \
@@ -981,14 +988,16 @@ struct GEMM< \
     if(   (!A_is_lr && transa != rocblas_operation_none && transb == rocblas_operation_none && M*N < numDotsLayoutLeftThreshold) \
        || ( A_is_lr && transa != rocblas_operation_none && transb == rocblas_operation_none && M*N < numDotsLayoutRightThreshold)) { \
       DotBasedGEMM<ExecSpace,AViewType,BViewType,CViewType> gemm(alpha,A,B,beta,C); \
-      gemm.run(transa == rocblas_operation_conjugate_transpose ? true : false);  \
+      gemm.run(space, transa == rocblas_operation_conjugate_transpose ? true : false);  \
     } \
     else { \
       KokkosBlas::Impl::RocBlasSingleton & s = KokkosBlas::Impl::RocBlasSingleton::singleton(); \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, space.hip_stream())); \
       if(!A_is_lr && !B_is_lr && !C_is_lr ) \
         KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_zgemm(s.handle, transa, transb, M, N, K, reinterpret_cast<const rocblas_double_complex*>(&alpha), reinterpret_cast<const rocblas_double_complex*>(A.data()), LDA, reinterpret_cast<const rocblas_double_complex*>(B.data()), LDB, reinterpret_cast<const rocblas_double_complex*>(&beta), reinterpret_cast<rocblas_double_complex*>(C.data()), LDC)); \
       if(A_is_lr && B_is_lr && C_is_lr ) \
         KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_zgemm(s.handle, transb, transa, N, M, K, reinterpret_cast<const rocblas_double_complex*>(&alpha), reinterpret_cast<const rocblas_double_complex*>(B.data()), LDB, reinterpret_cast<const rocblas_double_complex*>(A.data()), LDA, reinterpret_cast<const rocblas_double_complex*>(&beta), reinterpret_cast<rocblas_double_complex*>(C.data()), LDC)); \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL)); \
     } \
     Kokkos::Profiling::popRegion(); \
   } \
@@ -1013,7 +1022,8 @@ struct GEMM< \
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > CViewType; \
       \
   static void \
-  gemm (const char transA[], \
+  gemm (const typename CViewType::execution_space& space, \
+        const char transA[], \
         const char transB[], \
         typename AViewType::const_value_type& alpha, \
         const AViewType& A, \
@@ -1028,14 +1038,16 @@ struct GEMM< \
     if(   (!A_is_lr && transa != rocblas_operation_none && transb == rocblas_operation_none && M*N < numDotsLayoutLeftThreshold) \
        || ( A_is_lr && transa != rocblas_operation_none && transb == rocblas_operation_none && M*N < numDotsLayoutRightThreshold)) { \
       DotBasedGEMM<ExecSpace,AViewType,BViewType,CViewType> gemm(alpha,A,B,beta,C); \
-      gemm.run(transa == rocblas_operation_conjugate_transpose ? true : false);  \
+      gemm.run(space, transa == rocblas_operation_conjugate_transpose ? true : false);  \
     } \
     else { \
       KokkosBlas::Impl::RocBlasSingleton & s = KokkosBlas::Impl::RocBlasSingleton::singleton(); \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, space.hip_stream())); \
       if(!A_is_lr && !B_is_lr && !C_is_lr ) \
         KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_cgemm(s.handle, transa, transb, M, N, K, reinterpret_cast<const rocblas_float_complex*>(&alpha), reinterpret_cast<const rocblas_float_complex*>(A.data()), LDA, reinterpret_cast<const rocblas_float_complex*>(B.data()), LDB, reinterpret_cast<const rocblas_float_complex*>(&beta), reinterpret_cast<rocblas_float_complex*>(C.data()), LDC)); \
       if(A_is_lr && B_is_lr && C_is_lr ) \
         KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_cgemm(s.handle, transb, transa, N, M, K, reinterpret_cast<const rocblas_float_complex*>(&alpha), reinterpret_cast<const rocblas_float_complex*>(B.data()), LDB, reinterpret_cast<const rocblas_float_complex*>(A.data()), LDA, reinterpret_cast<const rocblas_float_complex*>(&beta), reinterpret_cast<rocblas_float_complex*>(C.data()), LDC)); \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL)); \
     } \
     Kokkos::Profiling::popRegion(); \
   } \

@@ -493,7 +493,7 @@ Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
       const int N = static_cast<int> (numElems); \
       constexpr int one = 1; \
       KokkosBlas::Impl::RocBlasSingleton & s = KokkosBlas::Impl::RocBlasSingleton::singleton(); \
-      rocblas_dscal(s.handle, N, &alpha, R.data(), one); \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_dscal(s.handle, N, &alpha, R.data(), one)); \
     } else { \
       Scal<RV,AV,XV,1,false,ETI_SPEC_AVAIL>::scal(R,alpha,X); \
     } \
@@ -527,7 +527,7 @@ Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
       const int N = static_cast<int> (numElems); \
       constexpr int one = 1; \
       KokkosBlas::Impl::RocBlasSingleton & s = KokkosBlas::Impl::RocBlasSingleton::singleton(); \
-      rocblas_sscal(s.handle, N, &alpha, R.data(), one); \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_sscal(s.handle, N, &alpha, R.data(), one)); \
     } else { \
       Scal<RV,AV,XV,1,false,ETI_SPEC_AVAIL>::scal(R,alpha,X); \
     } \
@@ -561,7 +561,7 @@ Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, M
       const int N = static_cast<int> (numElems); \
       constexpr int one = 1; \
       KokkosBlas::Impl::RocBlasSingleton & s = KokkosBlas::Impl::RocBlasSingleton::singleton(); \
-      rocblas_zscal(s.handle, N, reinterpret_cast<const rocblas_double_complex*>(&alpha), reinterpret_cast<rocblas_double_complex*>(R.data()), one); \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_zscal(s.handle, N, reinterpret_cast<const rocblas_double_complex*>(&alpha), reinterpret_cast<rocblas_double_complex*>(R.data()), one)); \
     } else { \
       Scal<RV,AV,XV,1,false,ETI_SPEC_AVAIL>::scal(R,alpha,X); \
     } \
@@ -595,7 +595,7 @@ Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, ME
       const int N = static_cast<int> (numElems); \
       constexpr int one = 1; \
       KokkosBlas::Impl::RocBlasSingleton & s = KokkosBlas::Impl::RocBlasSingleton::singleton(); \
-      rocblas_cscal(s.handle, N, reinterpret_cast<const rocblas_float_complex*>(&alpha), reinterpret_cast<rocblas_float_complex*>(R.data()), one); \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_cscal(s.handle, N, reinterpret_cast<const rocblas_float_complex*>(&alpha), reinterpret_cast<rocblas_float_complex*>(R.data()), one)); \
     } else { \
       Scal<RV,AV,XV,1,false,ETI_SPEC_AVAIL>::scal(R,alpha,X); \
     } \
