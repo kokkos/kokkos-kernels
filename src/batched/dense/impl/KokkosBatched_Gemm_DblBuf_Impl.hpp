@@ -205,7 +205,7 @@ class BatchedDblBufGemm {
     int __k;
     size_t __n_tile_k_tiles, __n_sub_tiles;
     static constexpr unsigned __tile_m = TILE_M;
-    static constexpr unsigned __tile_n = TILE_M;
+    static constexpr unsigned __tile_n = TILE_N;
     static constexpr unsigned __tile_k = TILE_K;
     unsigned __tiles_per_col, __tiles_per_row;
 
