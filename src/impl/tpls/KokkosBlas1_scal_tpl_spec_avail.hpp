@@ -119,6 +119,26 @@ KOKKOSBLAS1_SCAL_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>,
 
 #endif
 
+// rocBLAS
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
+
+#define KOKKOSBLAS1_SCAL_TPL_SPEC_AVAIL_ROCBLAS( SCALAR, LAYOUT, MEMSPACE ) \
+template<class ExecSpace> \
+struct scal_tpl_spec_avail< \
+Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+             Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+SCALAR, \
+Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+             Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+1> { enum : bool { value = true }; };
+
+KOKKOSBLAS1_SCAL_TPL_SPEC_AVAIL_ROCBLAS( double,                  Kokkos::LayoutLeft, Kokkos::Experimental::HIPSpace)
+KOKKOSBLAS1_SCAL_TPL_SPEC_AVAIL_ROCBLAS( float,                   Kokkos::LayoutLeft, Kokkos::Experimental::HIPSpace)
+KOKKOSBLAS1_SCAL_TPL_SPEC_AVAIL_ROCBLAS( Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::Experimental::HIPSpace)
+KOKKOSBLAS1_SCAL_TPL_SPEC_AVAIL_ROCBLAS( Kokkos::complex<float>,  Kokkos::LayoutLeft, Kokkos::Experimental::HIPSpace)
+
+#endif
+
 }  // namespace Impl
 }  // namespace KokkosBlas
 #endif
