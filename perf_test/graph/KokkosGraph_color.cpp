@@ -154,7 +154,7 @@ int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc,
     if (0 == strcasecmp(argv[i], "--threads")) {
       params.use_threads = atoi(getNextArg(i, argc, argv));
     } else if (0 == strcasecmp(argv[i], "--serial")) {
-      params.use_serial = atoi(getNextArg(i, argc, argv));
+      params.use_serial = 1;
     } else if (0 == strcasecmp(argv[i], "--openmp")) {
       params.use_openmp = atoi(getNextArg(i, argc, argv));
     } else if (0 == strcasecmp(argv[i], "--cuda")) {
@@ -285,6 +285,7 @@ void run_experiment(crsGraph_t crsGraph, int num_cols, Parameters params) {
 
   std::cout << "algorithm: " << algorithm << std::endl;
 
+  double totalTime = 0.0;
   for (int i = 0; i < repeat; ++i) {
     switch (algorithm) {
       case 1: kh.create_graph_coloring_handle(COLORING_DEFAULT); break;
@@ -322,7 +323,10 @@ void run_experiment(crsGraph_t crsGraph, int num_cols, Parameters params) {
       KokkosKernels::Impl::print_1Dview(
           os, kh.get_graph_coloring_handle()->get_vertex_colors(), true, "\n");
     }
+    totalTime += kh.get_graph_coloring_handle()->get_overall_coloring_time();
   }
+  std::cout << "Average time over " << repeat
+            << " trials: " << totalTime / repeat << '\n';
 }
 
 template <typename size_type, typename lno_t, typename exec_space,
