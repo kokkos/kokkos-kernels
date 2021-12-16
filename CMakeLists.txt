@@ -47,6 +47,8 @@ ENDIF()
 INCLUDE(cmake/fake_tribits.cmake)
 INCLUDE(cmake/kokkoskernels_tribits.cmake)
 
+OPTION(BUILD_SHARED_LIBS "Build shared libraries" OFF)
+
 KOKKOSKERNELS_PACKAGE()
 
 IF (NOT KOKKOSKERNELS_HAS_TRILINOS)
