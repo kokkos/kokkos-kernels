@@ -825,12 +825,10 @@ KOKKOS_INLINE_FUNCTION auto subview_wrapper(
 template <class ViewValueType, class ViewType>
 KOKKOS_INLINE_FUNCTION ViewValueType
 access_view_bounds_check(ViewType v, int m, int n, const BoundsCheck::Yes &) {
-  return v(KOKKOSKERNELS_MACRO_MIN(m, v.extent_int(0)),
-           KOKKOSKERNELS_MACRO_MIN(n, v.extent_int(1)));
-  //// TODO: use compile-time extents
-  ////  if (m > scr.extent(0) || n > scr.extent(1))
-  ////    return 0;
-  ////  return v(m, n);
+  if (m < v.extent_int(0) && n < v.extent_int(1))
+    return v(m, n);
+  else
+    return (ViewValueType)0.0F;
 }
 
 template <class ViewValueType, class ViewType>
