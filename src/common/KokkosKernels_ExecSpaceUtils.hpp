@@ -56,7 +56,6 @@ enum ExecSpaceType {
   Exec_SERIAL,
   Exec_OMP,
   Exec_PTHREADS,
-  Exec_QTHREADS,
   Exec_CUDA,
   Exec_HIP,
   Exec_SYCL
@@ -100,11 +99,6 @@ KOKKOS_FORCEINLINE_FUNCTION ExecSpaceType kk_get_exec_space_type() {
   }
 #endif
 
-#if defined(KOKKOS_ENABLE_QTHREAD)
-  if (std::is_same<Kokkos::Qthread, ExecutionSpace>::value) {
-    exec_space = Exec_QTHREADS;
-  }
-#endif
   return exec_space;
 }
 
@@ -218,8 +212,7 @@ inline int kk_get_suggested_vector_size(const size_t nr, const size_t nnz,
     default: break;
     case Exec_SERIAL:
     case Exec_OMP:
-    case Exec_PTHREADS:
-    case Exec_QTHREADS: break;
+    case Exec_PTHREADS: break;
     case Exec_CUDA:
     case Exec_HIP:
       if (nr > 0) suggested_vector_size_ = nnz / double(nr) + 0.5;
