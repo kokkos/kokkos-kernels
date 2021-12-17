@@ -119,13 +119,13 @@ KOKKOS_INLINE_FUNCTION int SerialHadamardProduct::invoke(const XViewType& X,
                                                          const VViewType& V) {
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
   static_assert(
-      Kokkos::Impl::is_view<XViewType>::value,
+      Kokkos::is_view<XViewType>::value,
       "KokkosBatched::HadamardProduct: XViewType is not a Kokkos::View.");
   static_assert(
-      Kokkos::Impl::is_view<YViewType>::value,
+      Kokkos::is_view<YViewType>::value,
       "KokkosBatched::HadamardProduct: YViewType is not a Kokkos::View.");
   static_assert(
-      Kokkos::Impl::is_view<VViewType>::value,
+      Kokkos::is_view<VViewType>::value,
       "KokkosBatched::HadamardProduct: VViewType is not a Kokkos::View.");
   static_assert(XViewType::Rank == 2,
                 "KokkosBatched::HadamardProduct: XViewType must have rank 2.");
@@ -170,13 +170,13 @@ KOKKOS_INLINE_FUNCTION int TeamHadamardProduct<MemberType>::invoke(
     const VViewType& V) {
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
   static_assert(
-      Kokkos::Impl::is_view<XViewType>::value,
+      Kokkos::is_view<XViewType>::value,
       "KokkosBatched::HadamardProduct: XViewType is not a Kokkos::View.");
   static_assert(
-      Kokkos::Impl::is_view<YViewType>::value,
+      Kokkos::is_view<YViewType>::value,
       "KokkosBatched::HadamardProduct: YViewType is not a Kokkos::View.");
   static_assert(
-      Kokkos::Impl::is_view<VViewType>::value,
+      Kokkos::is_view<VViewType>::value,
       "KokkosBatched::HadamardProduct: VViewType is not a Kokkos::View.");
   static_assert(XViewType::Rank == 2,
                 "KokkosBatched::HadamardProduct: XViewType must have rank 2.");
@@ -223,13 +223,13 @@ KOKKOS_INLINE_FUNCTION int TeamVectorHadamardProduct<MemberType>::invoke(
     const VViewType& V) {
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
   static_assert(
-      Kokkos::Impl::is_view<XViewType>::value,
+      Kokkos::is_view<XViewType>::value,
       "KokkosBatched::HadamardProduct: XViewType is not a Kokkos::View.");
   static_assert(
-      Kokkos::Impl::is_view<YViewType>::value,
+      Kokkos::is_view<YViewType>::value,
       "KokkosBatched::HadamardProduct: YViewType is not a Kokkos::View.");
   static_assert(
-      Kokkos::Impl::is_view<VViewType>::value,
+      Kokkos::is_view<VViewType>::value,
       "KokkosBatched::HadamardProduct: VViewType is not a Kokkos::View.");
   static_assert(XViewType::Rank == 2,
                 "KokkosBatched::HadamardProduct: XViewType must have rank 2.");
