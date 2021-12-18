@@ -464,24 +464,6 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
             typename AMatrix_Internal::non_const_value_type>::name() +
         "]";
     Kokkos::Profiling::pushRegion(label);
-    Experimental::Impl::SPMV_BSRMATRIX<typename AMatrix_Internal::value_type,
-                                       typename AMatrix_Internal::ordinal_type,
-                                       typename AMatrix_Internal::device_type,
-                                       typename AMatrix_Internal::memory_traits,
-                                       typename AMatrix_Internal::size_type,
-                                       typename XVector_Internal::value_type*,
-                                       typename XVector_Internal::array_layout,
-                                       typename XVector_Internal::device_type,
-                                       typename XVector_Internal::memory_traits,
-                                       typename YVector_Internal::value_type*,
-                                       typename YVector_Internal::array_layout,
-                                       typename YVector_Internal::device_type,
-                                       typename YVector_Internal::memory_traits,
-                                       false>::spmv_bsrmatrix(controls, mode,
-                                                              alpha, A_i, x_i,
-                                                              beta, y_i);
-    Kokkos::Profiling::popRegion();
-  } else {
     Experimental::Impl::SPMV_BSRMATRIX<
         typename AMatrix_Internal::const_value_type,
         typename AMatrix_Internal::const_ordinal_type,
@@ -492,13 +474,47 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
         typename XVector_Internal::array_layout,
         typename XVector_Internal::device_type,
         typename XVector_Internal::memory_traits,
-        typename YVector_Internal::value_type*,
+        typename YVector_Internal::const_value_type*,
         typename YVector_Internal::array_layout,
         typename YVector_Internal::device_type,
-        typename YVector_Internal::memory_traits>::spmv_bsrmatrix(controls,
-                                                                  mode, alpha,
-                                                                  A_i, x_i,
-                                                                  beta, y_i);
+        typename YVector_Internal::memory_traits,
+        false>::spmv_bsrmatrix(controls, mode, alpha, A_i, x_i, beta, y_i);
+    Kokkos::Profiling::popRegion();
+  } else {
+#define __SPMV_TYPES__                               \
+  typename AMatrix_Internal::const_value_type,       \
+      typename AMatrix_Internal::const_ordinal_type, \
+      typename AMatrix_Internal::device_type,        \
+      typename AMatrix_Internal::memory_traits,      \
+      typename AMatrix_Internal::const_size_type,    \
+      typename XVector_Internal::const_value_type*,  \
+      typename XVector_Internal::array_layout,       \
+      typename XVector_Internal::device_type,        \
+      typename XVector_Internal::memory_traits,      \
+      typename YVector_Internal::value_type*,        \
+      typename YVector_Internal::array_layout,       \
+      typename YVector_Internal::device_type,        \
+      typename YVector_Internal::memory_traits
+
+    constexpr bool tpl_spec_avail =
+        KokkosSparse::Experimental::Impl::spmv_bsrmatrix_tpl_spec_avail<
+            __SPMV_TYPES__>::value;
+
+    constexpr bool eti_spec_avail =
+        tpl_spec_avail
+            ? KOKKOSKERNELS_IMPL_COMPILE_LIBRARY /* force FALSE in app/test */
+            : KokkosSparse::Experimental::Impl::spmv_bsrmatrix_eti_spec_avail<
+                  __SPMV_TYPES__>::value;
+
+    Experimental::Impl::SPMV_BSRMATRIX<__SPMV_TYPES__, tpl_spec_avail,
+                                       eti_spec_avail>::spmv_bsrmatrix(controls,
+                                                                       mode,
+                                                                       alpha,
+                                                                       A_i, x_i,
+                                                                       beta,
+                                                                       y_i);
+
+#undef __SPMV_TYPES__
   }
 }
 
