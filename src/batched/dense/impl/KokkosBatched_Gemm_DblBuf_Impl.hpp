@@ -756,8 +756,8 @@ class BatchedDblBufGemm {
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
                       for (int n = 0; n < REG_N; ++n) {
                         int cn = vlane_offset + n * STRIDE_N;
-                        fma_bounds_check(svC, cm, cn, reg_c[m][n], __alpha, __beta,
-                                         __ei.__bounds_check_tag);
+                        fma_bounds_check(svC, cm, cn, reg_c[m][n], __alpha,
+                                         __beta, __ei.__bounds_check_tag);
                       }
                     }
                   }

@@ -840,8 +840,7 @@ access_view_bounds_check(ViewType v, int m, int n, const BoundsCheck::No &) {
 template <class ViewType, class SizeType, class ViewValueType, class ScalarType>
 KOKKOS_INLINE_FUNCTION void fma_bounds_check(ViewType v, SizeType m, SizeType n,
                                              ViewValueType reg_c,
-                                             ScalarType alpha,
-                                             ScalarType beta,
+                                             ScalarType alpha, ScalarType beta,
                                              const BoundsCheck::Yes &) {
   if (m < v.extent_int(0) && n < v.extent_int(1))
     v(m, n) = reg_c * alpha + v(m, n) * beta;
@@ -850,24 +849,21 @@ KOKKOS_INLINE_FUNCTION void fma_bounds_check(ViewType v, SizeType m, SizeType n,
 template <class ViewType, class SizeType, class ViewValueType, class ScalarType>
 KOKKOS_INLINE_FUNCTION void fma_bounds_check(ViewType v, SizeType m, SizeType n,
                                              ViewValueType reg_c,
-                                             ScalarType alpha,
-                                             ScalarType beta,
+                                             ScalarType alpha, ScalarType beta,
                                              const BoundsCheck::No &) {
   v(m, n) = reg_c * alpha + v(m, n) * beta;
 }
 
 template <class ViewType, class SizeType, class ScalarType>
 KOKKOS_INLINE_FUNCTION void fma_bounds_check(ViewType v, SizeType m, SizeType n,
-                                             ScalarType reg_c,
-                                             ScalarType alpha,
+                                             ScalarType reg_c, ScalarType alpha,
                                              const BoundsCheck::Yes &) {
   if (m < v.extent_int(0) && n < v.extent_int(1)) v(m, n) = reg_c * alpha;
 }
 
 template <class ViewType, class SizeType, class ScalarType>
 KOKKOS_INLINE_FUNCTION void fma_bounds_check(ViewType v, SizeType m, SizeType n,
-                                             ScalarType reg_c,
-                                             ScalarType alpha,
+                                             ScalarType reg_c, ScalarType alpha,
                                              const BoundsCheck::No &) {
   v(m, n) = reg_c * alpha;
 }
