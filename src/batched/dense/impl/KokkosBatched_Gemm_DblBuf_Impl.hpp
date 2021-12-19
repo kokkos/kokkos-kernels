@@ -667,7 +667,7 @@ class BatchedDblBufGemm {
 #pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
                         for (int n = 0; n < REG_N; ++n)
-                          reg_c[m][n] += reg_a[m] * reg_b[n] * __alpha;
+                          reg_c[m][n] += reg_a[m] * reg_b[n];
                       }
                     }
 
@@ -725,7 +725,7 @@ class BatchedDblBufGemm {
 #pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
                       for (int n = 0; n < REG_N; ++n)
-                        reg_c[m][n] += reg_a[m] * reg_b[n] * __alpha;
+                        reg_c[m][n] += reg_a[m] * reg_b[n];
                     }
                   }
 
@@ -741,7 +741,7 @@ class BatchedDblBufGemm {
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
                       for (int n = 0; n < REG_N; ++n) {
                         int cn = vlane_offset + n * STRIDE_N;
-                        fma_bounds_check(svC, cm, cn, reg_c[m][n],
+                        fma_bounds_check(svC, cm, cn, reg_c[m][n], __alpha,
                                          __ei.__bounds_check_tag);
                       }
                     }
@@ -756,7 +756,7 @@ class BatchedDblBufGemm {
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
                       for (int n = 0; n < REG_N; ++n) {
                         int cn = vlane_offset + n * STRIDE_N;
-                        fma_bounds_check(svC, cm, cn, reg_c[m][n], __beta,
+                        fma_bounds_check(svC, cm, cn, reg_c[m][n], __alpha, __beta,
                                          __ei.__bounds_check_tag);
                       }
                     }
