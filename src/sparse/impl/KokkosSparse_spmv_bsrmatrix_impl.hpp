@@ -590,21 +590,18 @@ struct BSR_GEMV_Functor {
     const auto beta1 = static_cast<value_type>(1);
     //
     if (conjugate) {
-      std::vector<value_type> conjA(block_dim * block_dim);
       for (ordinal_type ic = 0; ic < count; ++ic) {
         const auto Aview = row.block(ic);
         for (ordinal_type ii = 0; ii < block_dim; ++ii) {
-          for (ordinal_type jj = 0; jj < block_dim; ++jj)
-            conjA[jj + ii * block_dim] =
+          value_type t(0);
+          const auto xstart = row.block_colidx(ic) * block_dim;
+          for (ordinal_type jj = 0; jj < block_dim; ++jj) {
+            const auto aval =
                 Kokkos::ArithTraits<value_type>::conj(Aview(ii, jj));
+            t += aval * m_x(xstart + jj);
+          }
+          m_y(ystart + ii) += alpha * t;
         }
-        //
-        const auto xstart = row.block_colidx(ic) * block_dim;
-        KokkosBatched::SerialGemvInternal<KokkosBatched::Algo::Gemv::Blocked>::
-            invoke<value_type, value_type>(block_dim, block_dim, alpha,
-                                           conjA.data(), block_dim, 1,
-                                           &m_x(xstart), m_x.stride_0(), beta1,
-                                           &m_y(ystart), m_y.stride_0());
       }
     } else {
       for (ordinal_type ic = 0; ic < count; ++ic) {
@@ -880,8 +877,23 @@ struct BSR_GEMV_Transpose_Functor {
         static_cast<ordinal_type>(m_A.graph.row_map(iBlock + 1) - start);
     const auto row   = m_A.block_row_Const(iBlock);
     const auto beta1 = static_cast<value_type>(1);
-    std::vector<value_type> ytmp(block_dim);
     if (conjugate) {
+      for (ordinal_type ic = 0; ic < count; ++ic) {
+        const auto Aview  = row.block(ic);
+        const auto ystart = row.block_colidx(ic) * block_dim;
+        for (ordinal_type jj = 0; jj < block_dim; ++jj) {
+          value_type t(0);
+          for (ordinal_type ii = 0; ii < block_dim; ++ii) {
+            const auto aval =
+                Kokkos::ArithTraits<value_type>::conj(Aview(ii, jj));
+            t += aval * xview(ii);
+          }
+          t *= alpha;
+          Kokkos::atomic_add(&m_y(ystart + jj), t);
+        }
+      }
+      //
+      /*
       std::vector<value_type> conjA(block_dim * block_dim);
       for (ordinal_type ic = 0; ic < count; ++ic) {
         const auto Aview = row.block(ic);
@@ -902,7 +914,9 @@ struct BSR_GEMV_Transpose_Functor {
         for (ordinal_type ir = 0; ir < block_dim; ++ir)
           Kokkos::atomic_add(&m_y(ystart + ir), ytmp[ir]);
       }
+      */
     } else {
+      std::vector<value_type> ytmp(block_dim);
       for (ordinal_type ic = 0; ic < count; ++ic) {
         const auto Aview = row.block(ic);
         for (ordinal_type ii = 0; ii < block_dim; ++ii)
@@ -1163,6 +1177,22 @@ struct BSR_GEMM_Functor {
     const auto ldy   = m_y.stride_1();
     //
     if (conjugate) {
+      for (ordinal_type ic = 0; ic < count; ++ic) {
+        const auto Aview  = row.block(ic);
+        const auto xstart = row.block_colidx(ic) * block_dim;
+        for (ordinal_type jr = 0; jr < num_rhs; ++jr) {
+          for (ordinal_type ii = 0; ii < block_dim; ++ii) {
+            value_type t(0);
+            for (ordinal_type jj = 0; jj < block_dim; ++jj) {
+              const auto aval =
+                  Kokkos::ArithTraits<value_type>::conj(Aview(ii, jj));
+              t += aval * m_x(xstart + jj, jr);
+            }
+            m_y(ystart + ii, jr) += alpha * t;
+          }
+        }
+      }
+      /*
       std::vector<value_type> conjA(block_dim * block_dim);
       for (ordinal_type ic = 0; ic < count; ++ic) {
         const auto Aview = row.block(ic);
@@ -1179,6 +1209,7 @@ struct BSR_GEMM_Functor {
                 1, &m_x(xstart, 0), m_x.stride_0(), ldx, beta1, &m_y(ystart, 0),
                 m_y.stride_0(), ldy);
       }
+       */
     } else {
       for (ordinal_type ic = 0; ic < count; ++ic) {
         const auto Aview  = row.block(ic);
