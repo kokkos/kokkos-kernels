@@ -1424,13 +1424,16 @@ struct BSR_GEMM_Transpose_Functor {
   void operator()(const ordinal_type iBlock) const {
     //
     const auto xstart = iBlock * block_dim;
-    const auto start  = m_A.graph.row_map(iBlock);
+    const auto xview  = Kokkos::subview(
+        m_x, Kokkos::make_pair(xstart, xstart + block_dim), Kokkos::ALL());
+    const auto start = m_A.graph.row_map(iBlock);
     const ordinal_type count =
         static_cast<ordinal_type>(m_A.graph.row_map(iBlock + 1) - start);
-    const auto row   = m_A.block_row_Const(iBlock);
-    const auto beta1 = static_cast<value_type>(1);
-    const auto ldx   = m_x.stride_1();
-    const auto ldy   = m_y.stride_1();
+    const auto row    = m_A.block_row_Const(iBlock);
+    const auto beta1  = static_cast<value_type>(1);
+    const auto alpha1 = beta1;
+    const auto ldx    = m_x.stride_1();
+    const auto ldy    = m_y.stride_1();
     //
     if (conjugate) {
       for (ordinal_type ic = 0; ic < count; ++ic) {
