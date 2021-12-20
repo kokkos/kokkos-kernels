@@ -204,7 +204,6 @@ struct SPMV_MV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
       const KokkosKernels::Experimental::Controls &controls, const char mode[],
       const YScalar &alpha, const AMatrix &A, const XVector &X,
       const YScalar &beta, const YVector &Y) {
-
 #if defined(KOKKOS_ARCH_AMPERE) || defined(KOKKOS_ARCH_VOLTA)
     // user explicitly requests a particular precision
     bool requestMixed  = false;
