@@ -59,7 +59,7 @@
 #cmakedefine KOKKOSKERNELS_INST_EXECSPACE_SERIAL
 
 /* Whether to build kernels for memory space Kokkos::HostSpace */
-#cmakedefine KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE
+#cmakedefine KOKKOSKERNELS_INST_HOSTSP
 
 /* Whether to build kernels for scalar type double */
 #cmakedefine KOKKOSKERNELS_INST_DOUBLE
