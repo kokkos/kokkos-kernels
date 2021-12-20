@@ -873,8 +873,9 @@ struct BSR_GEMV_Transpose_Functor {
     const auto start = m_A.graph.row_map(iBlock);
     const ordinal_type count =
         static_cast<ordinal_type>(m_A.graph.row_map(iBlock + 1) - start);
-    const auto row   = m_A.block_row_Const(iBlock);
-    const auto beta1 = static_cast<value_type>(1);
+    const auto row    = m_A.block_row_Const(iBlock);
+    const auto beta1  = static_cast<value_type>(1);
+    const auto alpha1 = beta1;
     if (conjugate) {
       for (ordinal_type ic = 0; ic < count; ++ic) {
         const auto Aview  = row.block(ic);
@@ -891,19 +892,19 @@ struct BSR_GEMV_Transpose_Functor {
         }
       }
     } else {
-      std::vector<value_type> ytmp(block_dim);
       for (ordinal_type ic = 0; ic < count; ++ic) {
-        const auto Aview = row.block(ic);
-        for (ordinal_type ii = 0; ii < block_dim; ++ii)
-          ytmp[ii] = static_cast<value_type>(0);
-        KokkosBatched::SerialGemvInternal<KokkosBatched::Algo::Gemv::Blocked>::
-            invoke<value_type, value_type>(
-                block_dim, block_dim, alpha, Aview.data(), 1, block_dim,
-                xview.data(), xview.stride_0(), beta1, ytmp.data(), 1);
-        //
+        const auto Aview  = row.block(ic);
         const auto ystart = row.block_colidx(ic) * block_dim;
-        for (ordinal_type ir = 0; ir < block_dim; ++ir)
-          Kokkos::atomic_add(&m_y(ystart + ir), ytmp[ir]);
+        for (ordinal_type jj = 0; jj < block_dim; ++jj) {
+          value_type t(0);
+          KokkosBatched::SerialGemvInternal<
+              KokkosBatched::Algo::Gemv::Blocked>::invoke<value_type,
+                                                          value_type>(
+              1, block_dim, alpha1, Aview.data() + jj, Aview.stride_1(),
+              Aview.stride_0(), xview.data(), xview.stride_0(), beta1, &t, 1);
+          t *= alpha;
+          Kokkos::atomic_add(&m_y(ystart + jj), t);
+        }
       }
     }
   }
@@ -1438,49 +1439,38 @@ struct BSR_GEMM_Transpose_Functor {
     const auto ldy   = m_y.stride_1();
     //
     if (conjugate) {
-      std::vector<value_type> ytmp(block_dim * num_rhs);
-      std::vector<value_type> conjA(block_dim * block_dim);
       for (ordinal_type ic = 0; ic < count; ++ic) {
-        const auto Aview = row.block(ic);
-        for (ordinal_type ii = 0; ii < block_dim; ++ii) {
-          for (ordinal_type jj = 0; jj < block_dim; ++jj)
-            conjA[jj + ii * block_dim] =
-                Kokkos::ArithTraits<value_type>::conj(Aview(ii, jj));
-        }
-        //
-        for (size_t ijk = 0; ijk < ytmp.size(); ++ijk)
-          ytmp[ijk] = static_cast<value_type>(0);
-        //
-        KokkosBatched::SerialGemmInternal<KokkosBatched::Algo::Gemm::Blocked>::
-            invoke<value_type, value_type>(block_dim, num_rhs, block_dim, alpha,
-                                           conjA.data(), 1, block_dim,
-                                           &m_x(xstart, 0), m_x.stride_0(), ldx,
-                                           beta1, ytmp.data(), 1, block_dim);
-        //
+        const auto Aview  = row.block(ic);
         const auto ystart = row.block_colidx(ic) * block_dim;
         for (ordinal_type jr = 0; jr < num_rhs; ++jr) {
-          for (ordinal_type ir = 0; ir < block_dim; ++ir)
-            Kokkos::atomic_add(&m_y(ystart + ir, jr),
-                               ytmp[ir + jr * block_dim]);
+          for (ordinal_type jj = 0; jj < block_dim; ++jj) {
+            value_type t(0);
+            for (ordinal_type ii = 0; ii < block_dim; ++ii) {
+              const auto aval =
+                  Kokkos::ArithTraits<value_type>::conj(Aview(ii, jj));
+              t += aval * xview(ii, jr);
+            }
+            t *= alpha;
+            Kokkos::atomic_add(&m_y(ystart + jj, jr), t);
+          }
         }
       }
     } else {
-      std::vector<value_type> ytmp(block_dim * num_rhs);
       for (ordinal_type ic = 0; ic < count; ++ic) {
-        const auto Aview = row.block(ic);
-        for (size_t ijk = 0; ijk < ytmp.size(); ++ijk)
-          ytmp[ijk] = static_cast<value_type>(0);
-        KokkosBatched::SerialGemmInternal<KokkosBatched::Algo::Gemm::Blocked>::
-            invoke<value_type, value_type>(block_dim, num_rhs, block_dim, alpha,
-                                           Aview.data(), 1, block_dim,
-                                           &m_x(xstart, 0), m_x.stride_0(), ldx,
-                                           beta1, ytmp.data(), 1, block_dim);
-        //
+        const auto Aview  = row.block(ic);
         const auto ystart = row.block_colidx(ic) * block_dim;
         for (ordinal_type jr = 0; jr < num_rhs; ++jr) {
-          for (ordinal_type ir = 0; ir < block_dim; ++ir)
-            Kokkos::atomic_add(&m_y(ystart + ir, jr),
-                               ytmp[ir + jr * block_dim]);
+          for (ordinal_type jj = 0; jj < block_dim; ++jj) {
+            value_type t(0);
+            KokkosBatched::SerialGemvInternal<
+                KokkosBatched::Algo::Gemv::Blocked>::invoke<value_type,
+                                                            value_type>(
+                1, block_dim, alpha1, Aview.data() + jj, Aview.stride_1(),
+                Aview.stride_0(), xview.data() + jr * ldx, xview.stride_0(),
+                beta1, &t, 1);
+            t *= alpha;
+            Kokkos::atomic_add(&m_y(ystart + jj, jr), t);
+          }
         }
       }
     }
