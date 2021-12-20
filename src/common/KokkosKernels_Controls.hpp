@@ -61,6 +61,10 @@
 #include "cusparse.h"
 #endif
 
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+#include "rocsparse.h"
+#endif
+
 namespace KokkosKernels {
 namespace Experimental {
 
@@ -132,6 +136,23 @@ class Controls {
 
   void setCusparseHandle(const cusparseHandle_t userCusparseHandle) {
     cusparseHandle = userCusparseHandle;
+  }
+#endif
+
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+  mutable rocsparse_handle rocsparseHandle = 0;
+
+  rocsparse_handle getRocsparseHandle() const {
+    if (rocsparseHandle == 0) {
+      KokkosKernels::Impl::RocsparseSingleton& s =
+          KokkosKernels::Impl::RocsparseSingleton::singleton();
+      rocsparseHandle = s.rocsparseHandle;
+    }
+    return rocsparseHandle;
+  }
+
+  void setRocsparseHandle(const rocsparse_handle userRocsparseHandle) {
+    rocsparseHandle = userRocsparseHandle;
   }
 #endif
 
