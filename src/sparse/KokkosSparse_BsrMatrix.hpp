@@ -52,7 +52,15 @@
 #ifndef KOKKOS_SPARSE_BSRMATRIX_HPP_
 #define KOKKOS_SPARSE_BSRMATRIX_HPP_
 
-#include "KokkosSparse_BsrMatrix_impl.hpp"
+#include <set>
+#include <sstream>
+#include <stdexcept>
+#include <type_traits>
+
+#include "Kokkos_Core.hpp"
+#include "Kokkos_StaticCrsGraph.hpp"
+#include "Kokkos_ArithTraits.hpp"
+#include "KokkosSparse_CrsMatrix.hpp"
 
 namespace KokkosSparse {
 
@@ -65,7 +73,7 @@ struct BsrRowView {
   //! The type of the column indices in the row.
   typedef typename MatrixType::ordinal_type ordinal_type;
   //! The type for returned block of values.
-  typedef Kokkos::View<value_type**, Kokkos::LayoutStride,
+  typedef Kokkos::View<value_type**, Kokkos::LayoutRight,
                        typename MatrixType::device_type,
                        Kokkos::MemoryUnmanaged>
       block_values_type;
@@ -170,9 +178,8 @@ struct BsrRowView {
   /// block-row
   KOKKOS_INLINE_FUNCTION
   block_values_type block(const ordinal_type& K) const {
-    return block_values_type(
-        &(values_[K * blockDim_ * blockDim_]),
-        Kokkos::LayoutStride(blockDim_, blockDim_, blockDim_, 1));
+    return block_values_type(&(values_[K * blockDim_ * blockDim_]),
+                             Kokkos::LayoutRight(blockDim_, blockDim_));
   }
 
   /// \brief Return offset into colidx_ for the requested block idx
@@ -201,7 +208,7 @@ struct BsrRowViewConst {
   //! The type of the column indices in the row.
   typedef const typename MatrixType::non_const_ordinal_type ordinal_type;
   //! The type for returned block of values.
-  typedef Kokkos::View<value_type**, Kokkos::LayoutStride,
+  typedef Kokkos::View<value_type**, Kokkos::LayoutRight,
                        typename MatrixType::device_type,
                        Kokkos::MemoryUnmanaged>
       block_values_type;
@@ -295,14 +302,20 @@ struct BsrRowViewConst {
     return values_[K * blockDim_ * blockDim_ + i * blockDim_ + j];
   }
 
+  /// \brief Return the block column index for a specified block K
+  ///
+  /// \param K [in] must be the LOCAL block index within this block-row
+  /// \return Block column index for "uncompressed" block row
+  KOKKOS_INLINE_FUNCTION
+  ordinal_type block_colidx(const ordinal_type K) const { return colidx_[K]; }
+
   /// \brief Return unmanaged 2D strided View wrapping local block K from this
   /// block-row \param K [in] must be the LOCAL block index within this
   /// block-row
   KOKKOS_INLINE_FUNCTION
   block_values_type block(const ordinal_type& K) const {
-    return block_values_type(
-        &(values_[K * blockDim_ * blockDim_]),
-        Kokkos::LayoutStride(blockDim_, blockDim_, blockDim_, 1));
+    return block_values_type(&(values_[K * blockDim_ * blockDim_]),
+                             Kokkos::LayoutRight(blockDim_, blockDim_));
   }
 
   /// \brief Return offset into colidx_ for the requested block idx
@@ -428,7 +441,7 @@ class BsrMatrix {
   ///
   /// mfh: numCols and nnz should be properties of the graph, not the matrix.
   /// Then BsrMatrix needs methods to get these from the graph.
-  BsrMatrix() : numCols_(0), blockDim_(0) {}
+  BsrMatrix() : graph(), values(), dev_config(), numCols_(0), blockDim_(1) {}
 
   //! Copy constructor (shallow copy).
   template <typename SType, typename OType, class DType, class MTType,
@@ -458,7 +471,13 @@ class BsrMatrix {
         values(arg_label,
                arg_graph.entries.extent(0) * blockDimIn * blockDimIn),
         numCols_(maximum_entry(arg_graph) + 1),
-        blockDim_(blockDimIn) {}
+        blockDim_(blockDimIn) {
+    if (blockDim_ < 1) {
+      std::ostringstream os;
+      os << "KokkosSparse::BsrMatrix: Inappropriate block size: " << blockDim_;
+      Kokkos::Impl::throw_runtime_exception(os.str());
+    }
+  }
 
   /// \brief Constructor that copies raw arrays of host data in
   ///   coordinate format.
@@ -491,6 +510,12 @@ class BsrMatrix {
     (void)pad;
     blockDim_ = blockdim;
 
+    if (blockDim_ < 1) {
+      std::ostringstream os;
+      os << "KokkosSparse::BsrMatrix: Inappropriate block size: " << blockDim_;
+      Kokkos::Impl::throw_runtime_exception(os.str());
+    }
+
     if ((ncols % blockDim_ != 0) || (nrows % blockDim_ != 0)) {
       assert(
           (ncols % blockDim_ == 0) &&
@@ -504,12 +529,16 @@ class BsrMatrix {
 
     //
     // Wrap the raw pointers in unmanaged host Views
+    // Note that the inputs are in coordinate format.
+    // So unman_rows and unman_cols have the same type.
     //
     typename values_type::HostMirror unman_val(val, annz);
-    typename row_map_type::HostMirror unman_rows(rows, annz);
+    typename index_type::HostMirror unman_rows(rows, annz);
     typename index_type::HostMirror unman_cols(cols, annz);
 
-    row_map_type tmp_row_map("tmp_row_map", tmp_num_rows + 1);
+    typename row_map_type::non_const_type tmp_row_map(
+        Kokkos::view_alloc(Kokkos::WithoutInitializing, "rowmap"),
+        tmp_num_rows + 1);
     auto row_map_host = Kokkos::create_mirror_view(tmp_row_map);
     Kokkos::deep_copy(row_map_host, 0);
 
@@ -561,10 +590,10 @@ class BsrMatrix {
       }
       //--- Fill numerical values
       for (ordinal_type ii = 0; ii < annz; ++ii) {
-        ordinal_type iblock = rows(ii) / blockDim_;
-        ordinal_type ilocal = rows(ii) % blockDim_;
-        ordinal_type jblock = cols(ii) / blockDim_;
-        ordinal_type jlocal = cols(ii) % blockDim_;
+        ordinal_type iblock = unman_rows(ii) / blockDim_;
+        ordinal_type ilocal = unman_rows(ii) % blockDim_;
+        ordinal_type jblock = unman_cols(ii) / blockDim_;
+        ordinal_type jlocal = unman_cols(ii) % blockDim_;
         for (auto jj = row_map_host(jblock); jj < row_map_host(jblock + 1);
              ++jj) {
           if (tmp_entries_host(jj) == jblock) {
@@ -606,6 +635,12 @@ class BsrMatrix {
         values(vals),
         numCols_(ncols),
         blockDim_(blockDimIn) {
+    if (blockDim_ < 1) {
+      std::ostringstream os;
+      os << "KokkosSparse::BsrMatrix: Inappropriate block size: " << blockDim_;
+      Kokkos::Impl::throw_runtime_exception(os.str());
+    }
+
     const ordinal_type actualNumRows =
         (rows.extent(0) != 0) ? static_cast<ordinal_type>(
                                     rows.extent(0) - static_cast<size_type>(1))
@@ -642,7 +677,13 @@ class BsrMatrix {
   BsrMatrix(const std::string& /*label*/, const OrdinalType& ncols,
             const values_type& vals, const staticcrsgraph_type& graph_,
             const OrdinalType& blockDimIn)
-      : graph(graph_), values(vals), numCols_(ncols), blockDim_(blockDimIn) {}
+      : graph(graph_), values(vals), numCols_(ncols), blockDim_(blockDimIn) {
+    if (blockDim_ < 1) {
+      std::ostringstream os;
+      os << "KokkosSparse::BsrMatrix: Inappropriate block size: " << blockDim_;
+      Kokkos::Impl::throw_runtime_exception(os.str());
+    }
+  }
 
   /// \brief Constructor that accepts a CrsMatrix and block dimension,
   ///        assuming the provided CrsMatrix has appropriate block structure.
@@ -658,6 +699,11 @@ class BsrMatrix {
     typedef typename crs_graph_type::row_map_type crs_graph_row_map_type;
 
     blockDim_ = blockDimIn;
+    if (blockDim_ < 1) {
+      std::ostringstream os;
+      os << "KokkosSparse::BsrMatrix: Inappropriate block size: " << blockDim_;
+      Kokkos::Impl::throw_runtime_exception(os.str());
+    }
 
     assert(
         (crs_mtx.numCols() % blockDim_ == 0) &&
@@ -987,8 +1033,8 @@ class BsrMatrix {
   }
 
  private:
-  ordinal_type numCols_;
-  ordinal_type blockDim_;  // TODO Assuming square blocks for now
+  ordinal_type numCols_  = 0;
+  ordinal_type blockDim_ = 1;  // TODO Assuming square blocks for now
 };
 
 //----------------------------------------------------------------------------
