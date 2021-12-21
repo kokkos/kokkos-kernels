@@ -244,6 +244,15 @@ struct SPMV_MV_BLOCKCRSMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD,
       const YScalar &alpha, const AMatrix &A, const XVector &X,
       const YScalar &beta, const YVector &Y) {
     //
+    if ((mode[0] == KokkosSparse::NoTranspose[0]) ||
+        (mode[0] == KokkosSparse::Conjugate[0])) {
+      bool useConjugate = (mode[0] == KokkosSparse::Conjugate[0]);
+      return BCRS::spMatMultiVec_no_transpose(controls, alpha, A, X, beta, Y,
+                                              useConjugate);
+    }
+    //
+    // Naive implementation
+    //
     auto h_a_row_map = Kokkos::create_mirror_view(A.graph.row_map);
     Kokkos::deep_copy(h_a_row_map, A.graph.row_map);
     //
