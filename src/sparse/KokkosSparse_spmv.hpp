@@ -314,24 +314,30 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
   XVector_Internal x_i(x);
   YVector_Internal y_i(y);
 
-  return Experimental::Impl::SPMV_BLOCKCRSMATRIX<
-      typename AMatrix_Internal::value_type,
-      typename AMatrix_Internal::ordinal_type,
-      typename AMatrix_Internal::device_type,
-      typename AMatrix_Internal::memory_traits,
-      typename AMatrix_Internal::size_type,
-      typename XVector_Internal::value_type*,
-      typename XVector_Internal::array_layout,
-      typename XVector_Internal::device_type,
-      typename XVector_Internal::memory_traits,
-      typename YVector_Internal::value_type*,
-      typename YVector_Internal::array_layout,
-      typename YVector_Internal::device_type,
-      typename YVector_Internal::memory_traits>::spmv_blockcrsmatrix(controls,
-                                                                     mode,
-                                                                     alpha, A_i,
-                                                                     x_i, beta,
-                                                                     y_i);
+#define __SPMV_TYPES__                               \
+  typename AMatrix_Internal::const_value_type,       \
+      typename AMatrix_Internal::const_ordinal_type, \
+      typename AMatrix_Internal::device_type,        \
+      typename AMatrix_Internal::memory_traits,      \
+      typename AMatrix_Internal::const_size_type,    \
+      typename XVector_Internal::const_value_type*,  \
+      typename XVector_Internal::array_layout,       \
+      typename XVector_Internal::device_type,        \
+      typename XVector_Internal::memory_traits,      \
+      typename YVector_Internal::value_type*,        \
+      typename YVector_Internal::array_layout,       \
+      typename YVector_Internal::device_type,        \
+      typename YVector_Internal::memory_traits
+
+  constexpr bool eti_spec_avail =
+      KokkosSparse::Experimental::Impl::spmv_blockcrsmatrix_eti_spec_avail<
+          __SPMV_TYPES__>::value;
+
+  Experimental::Impl::SPMV_BLOCKCRSMATRIX<
+      __SPMV_TYPES__, eti_spec_avail>::spmv_blockcrsmatrix(controls, mode,
+                                                           alpha, A_i, x_i,
+                                                           beta, y_i);
+#undef __SPMV_TYPES__
 }
 
 template <class AlphaType, class AMatrix, class XVector, class BetaType,
