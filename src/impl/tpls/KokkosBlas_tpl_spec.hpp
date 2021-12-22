@@ -213,6 +213,18 @@ inline void rocblas_internal_safe_call(rocblas_status rocblasState,
 #define KOKKOS_ROCBLAS_SAFE_CALL_IMPL(call) \
   KokkosBlas::Impl::rocblas_internal_safe_call(call, #call, __FILE__, __LINE__)
 
+// This function converts KK transpose mode to rocBLAS transpose mode
+inline rocblas_operation trans_mode_kk_to_rocblas(const char kkMode[]) {
+  rocblas_operation trans;
+  if ((kkMode[0] == 'N') || (kkMode[0] == 'n'))
+    trans = rocblas_operation_none;
+  else if ((kkMode[0] == 'T') || (kkMode[0] == 't'))
+    trans = rocblas_operation_transpose;
+  else
+    trans = rocblas_operation_conjugate_transpose;
+  return trans;
+}
+
 }  // namespace Impl
 }  // namespace KokkosBlas
 
