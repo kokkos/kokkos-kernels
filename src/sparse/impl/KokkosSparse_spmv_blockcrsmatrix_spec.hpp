@@ -174,59 +174,11 @@ struct SPMV_BLOCKCRSMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
       bool useConjugate = (mode[0] == KokkosSparse::Conjugate[0]);
       return BCRS::spMatVec_no_transpose(controls, alpha, A, X, beta, Y,
                                          useConjugate);
+    } else {
+      bool useConjugate = (mode[0] == KokkosSparse::ConjugateTranspose[0]);
+      return BCRS::spMatVec_transpose(controls, alpha, A, X, beta, Y,
+                                      useConjugate);
     }
-    //
-    // Naive implementation
-    //
-    auto h_a_row_map = Kokkos::create_mirror_view(A.graph.row_map);
-    Kokkos::deep_copy(h_a_row_map, A.graph.row_map);
-    //
-    auto h_a_entries = Kokkos::create_mirror_view(A.graph.entries);
-    Kokkos::deep_copy(h_a_entries, A.graph.entries);
-    //
-    auto h_a_values = Kokkos::create_mirror_view(A.values);
-    Kokkos::deep_copy(h_a_values, A.values);
-    //
-    auto h_x = Kokkos::create_mirror_view(X);
-    Kokkos::deep_copy(h_x, X);
-    //
-    auto h_y = Kokkos::create_mirror_view(Y);
-    Kokkos::deep_copy(h_y, Y);
-    //
-    const auto numBlockRows = A.numRows();
-    const auto blockSize    = A.blockDim();
-    const auto blockSize2   = blockSize * blockSize;
-    using ordinal_type      = typename AMatrix::non_const_ordinal_type;
-    using size_type         = typename AMatrix::non_const_size_type;
-    using value_type        = typename AMatrix::non_const_value_type;
-    //
-    for (ordinal_type ii = 0; ii < numBlockRows * blockSize; ++ii)
-      h_y(ii) = beta * h_y(ii);
-    //
-    bool useConjugate = (mode[0] == KokkosSparse::ConjugateTranspose[0]);
-    for (ordinal_type iblock = 0; iblock < numBlockRows; ++iblock) {
-      const auto jbeg = h_a_row_map(iblock);
-      const auto jend = h_a_row_map(iblock + 1);
-      for (ordinal_type ir = 0; ir < blockSize; ++ir) {
-        for (auto jb = jbeg; jb < jend; ++jb) {
-          const auto col_block = h_a_entries(jb);
-          for (ordinal_type jr = 0; jr < blockSize; ++jr) {
-            const size_type index = jbeg * blockSize2 + ir +
-                                    (jb - jbeg) * blockSize +
-                                    jr * blockSize * (jend - jbeg);
-            const auto avalue =
-                (useConjugate)
-                    ? Kokkos::ArithTraits<value_type>::conj(h_a_values(index))
-                    : h_a_values(index);
-            h_y(ir + col_block * blockSize) +=
-                alpha * avalue * h_x(jr + iblock * blockSize);
-          }
-        }
-      }
-    }
-    //
-    Kokkos::deep_copy(Y, h_y);
-    //
   }
 };
 
@@ -249,92 +201,11 @@ struct SPMV_MV_BLOCKCRSMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD,
       bool useConjugate = (mode[0] == KokkosSparse::Conjugate[0]);
       return BCRS::spMatMultiVec_no_transpose(controls, alpha, A, X, beta, Y,
                                               useConjugate);
+    } else {
+      bool useConjugate = (mode[0] == KokkosSparse::ConjugateTranspose[0]);
+      return BCRS::spMatMultiVec_transpose(controls, alpha, A, X, beta, Y,
+                                           useConjugate);
     }
-    //
-    // Naive implementation
-    //
-    auto h_a_row_map = Kokkos::create_mirror_view(A.graph.row_map);
-    Kokkos::deep_copy(h_a_row_map, A.graph.row_map);
-    //
-    auto h_a_entries = Kokkos::create_mirror_view(A.graph.entries);
-    Kokkos::deep_copy(h_a_entries, A.graph.entries);
-    //
-    auto h_a_values = Kokkos::create_mirror_view(A.values);
-    Kokkos::deep_copy(h_a_values, A.values);
-    //
-    auto h_x = Kokkos::create_mirror_view(X);
-    Kokkos::deep_copy(h_x, X);
-    //
-    auto h_y = Kokkos::create_mirror_view(Y);
-    Kokkos::deep_copy(h_y, Y);
-    //
-    const auto numRhs       = X.extent(1);
-    const auto numBlockRows = A.numRows();
-    const auto blockSize    = A.blockDim();
-    const auto blockSize2   = blockSize * blockSize;
-    using ordinal_type      = typename AMatrix::non_const_ordinal_type;
-    using size_type         = typename AMatrix::non_const_size_type;
-    using value_type        = typename AMatrix::non_const_value_type;
-    //
-    for (ordinal_type jj = 0; jj < numRhs; ++jj) {
-      for (ordinal_type ii = 0; ii < numBlockRows * blockSize; ++ii)
-        h_y(ii, jj) = beta * h_y(ii, jj);
-    }
-    //
-    if ((mode[0] == KokkosSparse::NoTranspose[0]) ||
-        (mode[0] == KokkosSparse::Conjugate[0])) {
-      bool useConjugate = (mode[0] == KokkosSparse::Conjugate[0]);
-      for (ordinal_type iblock = 0; iblock < numBlockRows; ++iblock) {
-        const auto jbeg = h_a_row_map(iblock);
-        const auto jend = h_a_row_map(iblock + 1);
-        for (auto jb = jbeg; jb < jend; ++jb) {
-          const auto col_block = h_a_entries(jb);
-          for (ordinal_type jj = 0; jj < numRhs; ++jj) {
-            for (ordinal_type jr = 0; jr < blockSize; ++jr) {
-              const auto alpha_x = alpha * h_x(jr + col_block * blockSize, jj);
-              for (ordinal_type ir = 0; ir < blockSize; ++ir) {
-                const size_type index = jbeg * blockSize2 + jr +
-                                        (jb - jbeg) * blockSize +
-                                        ir * (jend - jbeg) * blockSize;
-                const auto avalue = (useConjugate)
-                                        ? Kokkos::ArithTraits<value_type>::conj(
-                                              h_a_values(index))
-                                        : h_a_values(index);
-                h_y(ir + iblock * blockSize, jj) += avalue * alpha_x;
-              }
-            }
-          }
-        }
-      }
-    } else if ((mode[0] == KokkosSparse::Transpose[0]) ||
-               (mode[0] == KokkosSparse::ConjugateTranspose[0])) {
-      bool useConjugate = (mode[0] == KokkosSparse::Conjugate[0]);
-      for (ordinal_type iblock = 0; iblock < numBlockRows; ++iblock) {
-        const auto jbeg = h_a_row_map(iblock);
-        const auto jend = h_a_row_map(iblock + 1);
-        for (auto jb = jbeg; jb < jend; ++jb) {
-          const auto col_block = h_a_entries(jb);
-          for (ordinal_type jj = 0; jj < numRhs; ++jj) {
-            for (ordinal_type ir = 0; ir < blockSize; ++ir) {
-              for (ordinal_type jr = 0; jr < blockSize; ++jr) {
-                const size_type index = jbeg * blockSize2 + ir +
-                                        (jb - jbeg) * blockSize +
-                                        jr * blockSize * (jend - jbeg);
-                const auto avalue = (useConjugate)
-                                        ? Kokkos::ArithTraits<value_type>::conj(
-                                              h_a_values(index))
-                                        : h_a_values(index);
-                h_y(ir + col_block * blockSize, jj) +=
-                    alpha * avalue * h_x(jr + iblock * blockSize, jj);
-              }
-            }
-          }
-        }
-      }
-    }
-    //
-    Kokkos::deep_copy(Y, h_y);
-    //
   }
 };
 
