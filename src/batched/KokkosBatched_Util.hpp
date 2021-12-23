@@ -880,20 +880,22 @@ KOKKOS_INLINE_FUNCTION void fma_bounds_check(ViewType v, SizeType m, SizeType n,
   v(m, n) = fma_alpha(reg_c, alpha, alpha_tag) + v(m, n) * beta;
 }
 
-template <class ViewType, class SizeType, class ScalarType,
+template <class ViewType, class SizeType, class ViewValueType, class ScalarType,
           class ArgAlphaFmaTag>
 KOKKOS_INLINE_FUNCTION void fma_bounds_check(ViewType v, SizeType m, SizeType n,
-                                             ScalarType reg_c, ScalarType alpha,
+                                             ViewValueType reg_c,
+                                             ScalarType alpha,
                                              const ArgAlphaFmaTag &alpha_tag,
                                              const BoundsCheck::Yes &) {
   if (m < v.extent_int(0) && n < v.extent_int(1))
     v(m, n) = fma_alpha(reg_c, alpha, alpha_tag);
 }
 
-template <class ViewType, class SizeType, class ScalarType,
+template <class ViewType, class SizeType, class ViewValueType, class ScalarType,
           class ArgAlphaFmaTag>
 KOKKOS_INLINE_FUNCTION void fma_bounds_check(ViewType v, SizeType m, SizeType n,
-                                             ScalarType reg_c, ScalarType alpha,
+                                             ViewValueType reg_c,
+                                             ScalarType alpha,
                                              const ArgAlphaFmaTag &alpha_tag,
                                              const BoundsCheck::No &) {
   v(m, n) = fma_alpha(reg_c, alpha, alpha_tag);
