@@ -245,6 +245,13 @@ class BatchedDblBufGemm {
     }
 
     KOKKOS_INLINE_FUNCTION
+    void __mult(const int m, const int n, view_value_type reg_a[REG_M],
+                view_value_type reg_b[REG_N],
+                view_value_type reg_c[REG_M][REG_N]) const {
+      reg_c[m][n] += reg_a[m] * reg_b[n];
+    }
+
+    KOKKOS_INLINE_FUNCTION
     void __rshmem_and_mult(const int &thread_id, const int &vlane_id,
                            const unsigned &nk, view_value_type reg_a[REG_M],
                            view_value_type reg_b[REG_N],
@@ -274,7 +281,7 @@ class BatchedDblBufGemm {
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
-          for (int n = 0; n < REG_N; ++n) reg_c[m][n] += reg_a[m] * reg_b[n];
+          for (int n = 0; n < REG_N; ++n) __mult(m, n, reg_a, reg_b, reg_c);
         }
       }
     }
