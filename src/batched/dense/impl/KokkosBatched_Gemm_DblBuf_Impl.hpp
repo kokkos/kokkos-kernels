@@ -69,8 +69,8 @@ namespace Impl {
 //   zero rows/cols)
 template <class ArgTransA, class ArgTransB, class ArgBatchSzDim,
           class HandleType, class ScalarType, class AViewType, class BViewType,
-          class CViewType, class ArgBoundsCheck, int TILE_M, int TILE_N,
-          int TILE_K>
+          class CViewType, class ArgBoundsCheck, class ArgAlphaFmaTag,
+          class ArgAlphaMulTag, int TILE_M, int TILE_N, int TILE_K>
 class BatchedDblBufGemm {
  private:
   HandleType *const __handle;
@@ -82,6 +82,8 @@ class BatchedDblBufGemm {
   ArgTransB __transB_tag;
   ArgBatchSzDim __batch_layout_tag;
   ArgBoundsCheck __bounds_check_tag;
+  ArgAlphaFmaTag __alpha_fma_tag;
+  ArgAlphaMulTag __alpha_mul_tag;
   int __c_batch_size, __c_m, __c_n;
 
   using view_value_type      = typename CViewType::value_type;
@@ -245,19 +247,28 @@ class BatchedDblBufGemm {
     }
 
     KOKKOS_INLINE_FUNCTION
-    void __mult(const int m, const int n, view_value_type reg_a[REG_M],
-                view_value_type reg_b[REG_N],
-                view_value_type reg_c[REG_M][REG_N]) const {
+    void __mul(const int m, const int n, view_value_type reg_a[REG_M],
+               view_value_type reg_b[REG_N],
+               view_value_type reg_c[REG_M][REG_N],
+               const AlphaTag::No &) const {
       reg_c[m][n] += reg_a[m] * reg_b[n];
     }
 
     KOKKOS_INLINE_FUNCTION
-    void __rshmem_and_mult(const int &thread_id, const int &vlane_id,
-                           const unsigned &nk, view_value_type reg_a[REG_M],
-                           view_value_type reg_b[REG_N],
-                           view_value_type reg_c[REG_M][REG_N],
-                           view_type_2d_scratch &svA_scr,
-                           view_type_2d_scratch &svB_scr) const {
+    void __mul(const int m, const int n, view_value_type reg_a[REG_M],
+               view_value_type reg_b[REG_N],
+               view_value_type reg_c[REG_M][REG_N],
+               const AlphaTag::Yes &) const {
+      reg_c[m][n] += reg_a[m] * reg_b[n] * __alpha;
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void __rshmem_and_mul(const int &thread_id, const int &vlane_id,
+                          const unsigned &nk, view_value_type reg_a[REG_M],
+                          view_value_type reg_b[REG_N],
+                          view_value_type reg_c[REG_M][REG_N],
+                          view_type_2d_scratch &svA_scr,
+                          view_type_2d_scratch &svB_scr) const {
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
@@ -281,7 +292,8 @@ class BatchedDblBufGemm {
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
-          for (int n = 0; n < REG_N; ++n) __mult(m, n, reg_a, reg_b, reg_c);
+          for (int n = 0; n < REG_N; ++n)
+            __mul(m, n, reg_a, reg_b, reg_c, __ei.__alpha_mul_tag);
         }
       }
     }
@@ -381,8 +393,8 @@ class BatchedDblBufGemm {
                               vlane_id + k_tile_offset,
                               __ei.__bounds_check_tag);
 
-                    __rshmem_and_mult(thread_id, vlane_id, TILE_K, reg_a, reg_b,
-                                      reg_c, svA_scr, svB_scr);
+                    __rshmem_and_mul(thread_id, vlane_id, TILE_K, reg_a, reg_b,
+                                     reg_c, svA_scr, svB_scr);
 
                     // Wait for:
                     //   1. prefetch_regs to be populated
@@ -413,8 +425,8 @@ class BatchedDblBufGemm {
                   }  // end n_tile_k_tiles loop
 
                   // Multiply last tile, may be a partial tile
-                  __rshmem_and_mult(thread_id, vlane_id, __k - kk, reg_a, reg_b,
-                                    reg_c, svA_scr, svB_scr);
+                  __rshmem_and_mul(thread_id, vlane_id, __k - kk, reg_a, reg_b,
+                                   reg_c, svA_scr, svB_scr);
 
                   // store results back to global memory
                   if (__beta == 0.0F) {
@@ -429,6 +441,7 @@ class BatchedDblBufGemm {
                       for (int n = 0; n < REG_N; ++n) {
                         int cn = vlane_offset + n * STRIDE_N;
                         fma_bounds_check(svC, cm, cn, reg_c[m][n], __alpha,
+                                         __ei.__alpha_fma_tag,
                                          __ei.__bounds_check_tag);
                       }
                     }
@@ -444,7 +457,8 @@ class BatchedDblBufGemm {
                       for (int n = 0; n < REG_N; ++n) {
                         int cn = vlane_offset + n * STRIDE_N;
                         fma_bounds_check(svC, cm, cn, reg_c[m][n], __alpha,
-                                         __beta, __ei.__bounds_check_tag);
+                                         __beta, __ei.__alpha_fma_tag,
+                                         __ei.__bounds_check_tag);
                       }
                     }
                   }
