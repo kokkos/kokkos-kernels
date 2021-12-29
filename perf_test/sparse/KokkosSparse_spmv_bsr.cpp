@@ -469,7 +469,6 @@ int main(int argc, char **argv) {
   int schedule = 0;
 
   for (int i = 0; i < argc; i++) {
-
     if ((strcmp(argv[i], "-bs") == 0)) {
       int tmp = atoi(argv[++i]);
       bMax    = (tmp > 0) ? tmp : bMax;
