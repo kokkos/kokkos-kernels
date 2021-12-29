@@ -469,7 +469,6 @@ int main(int argc, char **argv) {
   int schedule = 0;
 
   for (int i = 0; i < argc; i++) {
-    std::cout << " i " << i << " argv " << argv[i] << "\n";
 
     if ((strcmp(argv[i], "-bs") == 0)) {
       int tmp = atoi(argv[++i]);
@@ -478,9 +477,7 @@ int main(int argc, char **argv) {
     }
 
     if ((strcmp(argv[i], "--tpl") == 0)) {
-      std::cout << argv[i] << "\n";
       i++;
-      std::cout << argv[i] << "\n";
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
       if ((strcmp(argv[i], "cuda") == 0))
         test = static_cast<int>(details::Implementation::Cuda);
@@ -489,7 +486,6 @@ int main(int argc, char **argv) {
       if ((strcmp(argv[i], "mkl") == 0))
         test = static_cast<int>(details::Implementation::MKL);
 #endif
-      std::cout << test << "\n";
       continue;
     }
 
