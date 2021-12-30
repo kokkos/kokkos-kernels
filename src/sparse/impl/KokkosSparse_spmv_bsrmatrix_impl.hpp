@@ -761,9 +761,9 @@ void spMatVec_no_transpose(
       use_static_schedule = true;
     }
   }
-  int team_size             = -1;
-  int vector_length         = -1;
-  int64_t blocks_per_thread = -1;
+  int team_size           = -1;
+  int vector_length       = -1;
+  int64_t rows_per_thread = -1;
 
   //
   // Use the controls to allow the user to pass in some tuning parameters.
@@ -775,15 +775,19 @@ void spMatVec_no_transpose(
     vector_length = std::stoi(controls.getParameter("vector length"));
   }
   if (controls.isParameter("rows per thread")) {
-    blocks_per_thread = std::stoll(controls.getParameter("rows per thread"));
+    rows_per_thread = std::stoll(controls.getParameter("rows per thread"));
   }
 
   //
   // Use the existing launch parameters routine from SPMV
   //
-  int64_t blocks_per_team =
+  const auto block_dim = A.blockDim();
+  int64_t rows_per_team =
       KokkosSparse::Impl::spmv_launch_parameters<execution_space>(
-          A.numRows(), A.nnz(), blocks_per_thread, team_size, vector_length);
+          A.numRows() * block_dim, A.nnz() * block_dim * block_dim,
+          rows_per_thread, team_size, vector_length);
+  int64_t blocks_per_team = (rows_per_team + block_dim - 1) / block_dim;
+  blocks_per_team         = (blocks_per_team < 1) ? 1 : blocks_per_team;
   int64_t worksets = (A.numRows() + blocks_per_team - 1) / blocks_per_team;
 
   AMatrix_Internal A_internal = A;
@@ -1040,9 +1044,9 @@ void spMatVec_transpose(const KokkosKernels::Experimental::Controls &controls,
       use_static_schedule = true;
     }
   }
-  int team_size             = -1;
-  int vector_length         = -1;
-  int64_t blocks_per_thread = -1;
+  int team_size           = -1;
+  int vector_length       = -1;
+  int64_t rows_per_thread = -1;
 
   //
   // Use the controls to allow the user to pass in some tuning parameters.
@@ -1054,15 +1058,19 @@ void spMatVec_transpose(const KokkosKernels::Experimental::Controls &controls,
     vector_length = std::stoi(controls.getParameter("vector length"));
   }
   if (controls.isParameter("rows per thread")) {
-    blocks_per_thread = std::stoll(controls.getParameter("rows per thread"));
+    rows_per_thread = std::stoll(controls.getParameter("rows per thread"));
   }
 
   //
   // Use the existing launch parameters routine from SPMV
   //
-  int64_t blocks_per_team =
+  const auto block_dim = A.blockDim();
+  int64_t rows_per_team =
       KokkosSparse::Impl::spmv_launch_parameters<execution_space>(
-          A.numRows(), A.nnz(), blocks_per_thread, team_size, vector_length);
+          A.numRows() * block_dim, A.nnz() * block_dim * block_dim,
+          rows_per_thread, team_size, vector_length);
+  int64_t blocks_per_team = (rows_per_team + block_dim - 1) / block_dim;
+  blocks_per_team         = (blocks_per_team < 1) ? 1 : blocks_per_team;
   int64_t worksets = (A.numRows() + blocks_per_team - 1) / blocks_per_team;
 
   BSR_GEMV_Transpose_Functor<AMatrix, XVector, YVector> func(
@@ -1325,9 +1333,9 @@ void spMatMultiVec_no_transpose(
       use_static_schedule = true;
     }
   }
-  int team_size             = -1;
-  int vector_length         = -1;
-  int64_t blocks_per_thread = -1;
+  int team_size           = -1;
+  int vector_length       = -1;
+  int64_t rows_per_thread = -1;
 
   //
   // Use the controls to allow the user to pass in some tuning parameters.
@@ -1339,15 +1347,19 @@ void spMatMultiVec_no_transpose(
     vector_length = std::stoi(controls.getParameter("vector length"));
   }
   if (controls.isParameter("rows per thread")) {
-    blocks_per_thread = std::stoll(controls.getParameter("rows per thread"));
+    rows_per_thread = std::stoll(controls.getParameter("rows per thread"));
   }
 
   //
   // Use the existing launch parameters routine from SPMV
   //
-  int64_t blocks_per_team =
+  const auto block_dim = A.blockDim();
+  int64_t rows_per_team =
       KokkosSparse::Impl::spmv_launch_parameters<execution_space>(
-          A.numRows(), A.nnz(), blocks_per_thread, team_size, vector_length);
+          A.numRows() * block_dim, A.nnz() * block_dim * block_dim,
+          rows_per_thread, team_size, vector_length);
+  int64_t blocks_per_team = (rows_per_team + block_dim - 1) / block_dim;
+  blocks_per_team         = (blocks_per_team < 1) ? 1 : blocks_per_team;
   int64_t worksets = (A.numRows() + blocks_per_team - 1) / blocks_per_team;
 
   AMatrix_Internal A_internal = A;
@@ -1609,9 +1621,9 @@ void spMatMultiVec_transpose(
       use_static_schedule = true;
     }
   }
-  int team_size             = -1;
-  int vector_length         = -1;
-  int64_t blocks_per_thread = -1;
+  int team_size           = -1;
+  int vector_length       = -1;
+  int64_t rows_per_thread = -1;
 
   //
   // Use the controls to allow the user to pass in some tuning
@@ -1624,15 +1636,19 @@ void spMatMultiVec_transpose(
     vector_length = std::stoi(controls.getParameter("vector length"));
   }
   if (controls.isParameter("rows per thread")) {
-    blocks_per_thread = std::stoll(controls.getParameter("rows per thread"));
+    rows_per_thread = std::stoll(controls.getParameter("rows per thread"));
   }
 
   //
   // Use the existing launch parameters routine from SPMV
   //
-  int64_t blocks_per_team =
+  const auto block_dim = A.blockDim();
+  int64_t rows_per_team =
       KokkosSparse::Impl::spmv_launch_parameters<execution_space>(
-          A.numRows(), A.nnz(), blocks_per_thread, team_size, vector_length);
+          A.numRows() * block_dim, A.nnz() * block_dim * block_dim,
+          rows_per_thread, team_size, vector_length);
+  int64_t blocks_per_team = (rows_per_team + block_dim - 1) / block_dim;
+  blocks_per_team         = (blocks_per_team < 1) ? 1 : blocks_per_team;
   int64_t worksets = (A.numRows() + blocks_per_team - 1) / blocks_per_team;
 
   BSR_GEMM_Transpose_Functor<AMatrix, XVector, YVector> func(
