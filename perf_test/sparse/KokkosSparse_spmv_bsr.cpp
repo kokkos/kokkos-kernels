@@ -189,13 +189,21 @@ int test_bsr_matrix_single_vec(
     y_vector_type ycrs("crs_product_result", nRow);
     auto h_ycrs = Kokkos::create_mirror_view(ycrs);
 
+    KokkosKernels::Experimental::Controls controls;
+    switch (static_cast<details::Implementation>(test)) {
+      case Implementation::KokkosKernels: {
+        controls.setParameter("algorithm", "native");
+      } break;
+      default: break;
+    }
+
     // Time a series of multiplications with the CrsMatrix
     double time_crs = 0.0;
     for (int jr = 0; jr < loop; ++jr) {
       for (Ordinal ir = 0; ir < nRow; ++ir) h_ycrs(ir) = h_y0(ir);
       Kokkos::deep_copy(ycrs, h_ycrs);
       Kokkos::Timer timer;
-      KokkosSparse::spmv(fOp, alpha, Acrs, xref, beta, ycrs);
+      KokkosSparse::spmv(controls, fOp, alpha, Acrs, xref, beta, ycrs);
       time_crs += timer.seconds();
     }
 
@@ -208,14 +216,6 @@ int test_bsr_matrix_single_vec(
     KokkosSparse::Experimental::BsrMatrix<
         scalar_t, Ordinal, Kokkos::DefaultExecutionSpace, void, int>
         Absr(Acrs, blockSize);
-
-    KokkosKernels::Experimental::Controls controls;
-    switch (static_cast<details::Implementation>(test)) {
-      case Implementation::KokkosKernels: {
-        controls.setParameter("algorithm", "native");
-      } break;
-      default: break;
-    }
 
     // Time a series of multiplications with the BsrMatrix
     for (int jr = 0; jr < loop; ++jr) {
@@ -250,7 +250,23 @@ int test_bsr_matrix_single_vec(
 
     //-- Print the number of Gflops for both products
     if (blockSize == 1) {
-      printf("Op, blockSize: AvgGFlop(CrsMatrix) AvgGFlop(BsrMatrix) \n");
+      printf("Op, blockSize: AvgGFlop(CrsMatrix) ");
+      switch (static_cast<details::Implementation>(test)) {
+        default:
+        case Implementation::KokkosKernels:
+          printf(" AvgGFlop(BsrMatrix - KokkosKernels) \n");
+          break;
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+        case Implementation::Cuda:
+          printf(" AvgGFlop(BsrMatrix - CUSPARSE) \n");
+          break;
+#endif
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
+        case Implementation::MKL:
+          printf(" AvgGFlop(BsrMatrix - MKL) \n");
+          break;
+#endif
+      }
     }
     double num_flops = mat_val.size() * 2 * loop;
     double crs_flop  = (num_flops / time_crs) * 1.0e-09;
@@ -321,6 +337,14 @@ int test_bsr_matrix_vec(
     block_vector_t ycrs("crs_product_result", nRow, nvec);
     auto h_ycrs = Kokkos::create_mirror_view(ycrs);
 
+    KokkosKernels::Experimental::Controls controls;
+    switch (static_cast<details::Implementation>(test)) {
+      case Implementation::KokkosKernels: {
+        controls.setParameter("algorithm", "native");
+      } break;
+      default: break;
+    }
+
     // Time a series of multiplications with the CrsMatrix format
     double time_crs = 0.0;
     for (int jr = 0; jr < loop; ++jr) {
@@ -328,7 +352,7 @@ int test_bsr_matrix_vec(
         for (Ordinal ir = 0; ir < nRow; ++ir) h_ycrs(ir, jc) = h_y0(ir, jc);
       Kokkos::deep_copy(ycrs, h_ycrs);
       Kokkos::Timer timer;
-      KokkosSparse::spmv(fOp, alpha, Acrs, xref, beta, ycrs);
+      KokkosSparse::spmv(controls, fOp, alpha, Acrs, xref, beta, ycrs);
       time_crs += timer.seconds();
     }
 
@@ -342,15 +366,6 @@ int test_bsr_matrix_vec(
 
     // Time a series of multiplications with the BsrMatrix
     double time_bsr = 0.0;
-    KokkosKernels::Experimental::Controls controls;
-    switch (static_cast<details::Implementation>(test)) {
-      case Implementation::KokkosKernels: {
-        controls.setParameter("algorithm", "native");
-      } break;
-      default: break;
-    }
-
-    // Time a series of multiplications with the BsrMatrix
     for (int jr = 0; jr < loop; ++jr) {
       for (Ordinal jc = 0; jc < nvec; ++jc)
         for (Ordinal ir = 0; ir < nRow; ++ir) h_ybsr(ir, jc) = h_y0(ir, jc);
