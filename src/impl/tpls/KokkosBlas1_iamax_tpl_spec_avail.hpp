@@ -59,7 +59,7 @@ namespace KokkosBlas {
 namespace Impl {
 
 // Generic Host side BLAS (could be MKL or whatever)
-#ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
+#if defined(KOKKOSKERNELS_ENABLE_TPL_BLAS)
 // double
 #define KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_BLAS(INDEX_TYPE, SCALAR, LAYOUT,      \
                                               MEMSPACE)                        \
@@ -85,7 +85,7 @@ KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_BLAS(unsigned long, Kokkos::complex<float>,
 #endif
 
 // cuBLAS
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
 // double
 #define KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_CUBLAS(INDEX_TYPE, SCALAR, LAYOUT,    \
                                                 MEMSPACE)                      \
@@ -152,7 +152,7 @@ KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_CUBLAS(unsigned int, Kokkos::complex<float>,
 #endif
 
 // rocBLAS
-#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ROCBLAS)
 
 #define KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_ROCBLAS(INDEX_TYPE, SCALAR, LAYOUT,   \
                                                  MEMSPACE)                     \

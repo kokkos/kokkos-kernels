@@ -54,7 +54,7 @@ struct gemm_tpl_spec_avail {
 };
 
 // Generic Host side BLAS (could be MKL or whatever)
-#ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
+#if defined(KOKKOSKERNELS_ENABLE_TPL_BLAS)
 
 #define KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_BLAS(SCALAR, LAYOUTA, LAYOUTB,     \
                                              LAYOUTC, MEMSPACE)            \
@@ -100,7 +100,7 @@ KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>,
 #endif
 
 // cuBLAS
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
 
 #define KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_CUBLAS(SCALAR, LAYOUTA, LAYOUTB,   \
                                                LAYOUTC, MEMSPACE)          \
@@ -172,7 +172,7 @@ KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>,
 #endif
 
 // rocBLAS
-#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ROCBLAS)
 
 #define KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_ROCBLAS(SCALAR, LAYOUT, MEMSPACE) \
   template <class ExecSpace>                                              \

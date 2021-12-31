@@ -45,214 +45,26 @@
 #ifndef KOKKOSBLAS3_GEMM_TPL_SPEC_DECL_HPP_
 #define KOKKOSBLAS3_GEMM_TPL_SPEC_DECL_HPP_
 
-#ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
+#if defined(KOKKOSKERNELS_ENABLE_TPL_BLAS)
 #include "KokkosBlas_Host_tpl.hpp"
 
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS3_DGEMM_BLAS(LAYOUTA, LAYOUTB, LAYOUTC, MEM_SPACE,           \
-                               ETI_SPEC_AVAIL)                                 \
-  template <class ExecSpace>                                                   \
-  struct GEMM<                                                                 \
-      Kokkos::View<const double**, LAYOUTA,                                    \
-                   Kokkos::Device<ExecSpace, MEM_SPACE>,                       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      Kokkos::View<const double**, LAYOUTB,                                    \
-                   Kokkos::Device<ExecSpace, MEM_SPACE>,                       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      Kokkos::View<double**, LAYOUTC, Kokkos::Device<ExecSpace, MEM_SPACE>,    \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      true, ETI_SPEC_AVAIL> {                                                  \
-    typedef double SCALAR;                                                     \
-    typedef Kokkos::View<const SCALAR**, LAYOUTA,                              \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,                 \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
-        AViewType;                                                             \
-    typedef Kokkos::View<const SCALAR**, LAYOUTB,                              \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,                 \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
-        BViewType;                                                             \
-    typedef Kokkos::View<SCALAR**, LAYOUTC,                                    \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,                 \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
-        CViewType;                                                             \
-                                                                               \
-    static void gemm(const typename CViewType::execution_space& /* space*/,    \
-                     const char transA[], const char transB[],                 \
-                     typename AViewType::const_value_type& alpha,              \
-                     const AViewType& A, const BViewType& B,                   \
-                     typename CViewType::const_value_type& beta,               \
-                     const CViewType& C) {                                     \
-      Kokkos::Profiling::pushRegion("KokkosBlas::gemm[TPL_BLAS,double]");      \
-      const bool A_t = (transA[0] != 'N') && (transA[0] != 'n');               \
-      const int M    = C.extent(0);                                            \
-      const int N    = C.extent(1);                                            \
-      const int K    = A.extent(A_t ? 0 : 1);                                  \
-                                                                               \
-      bool A_is_lr = std::is_same<Kokkos::LayoutRight, LAYOUTA>::value;        \
-      bool B_is_lr = std::is_same<Kokkos::LayoutRight, LAYOUTB>::value;        \
-      bool C_is_lr = std::is_same<Kokkos::LayoutRight, LAYOUTC>::value;        \
-                                                                               \
-      const int AST = A_is_lr ? A.stride(0) : A.stride(1),                     \
-                LDA = AST == 0 ? 1 : AST;                                      \
-      const int BST = B_is_lr ? B.stride(0) : B.stride(1),                     \
-                LDB = BST == 0 ? 1 : BST;                                      \
-      const int CST = C_is_lr ? C.stride(0) : C.stride(1),                     \
-                LDC = CST == 0 ? 1 : CST;                                      \
-                                                                               \
-      if (!A_is_lr && !B_is_lr && !C_is_lr)                                    \
-        HostBlas<double>::gemm(transA[0], transB[0], M, N, K, alpha, A.data(), \
-                               LDA, B.data(), LDB, beta, C.data(), LDC);       \
-      if (A_is_lr && B_is_lr && C_is_lr)                                       \
-        HostBlas<double>::gemm(transB[0], transA[0], N, M, K, alpha, B.data(), \
-                               LDB, A.data(), LDA, beta, C.data(), LDC);       \
-      Kokkos::Profiling::popRegion();                                          \
-    }                                                                          \
-  };
-
-#define KOKKOSBLAS3_SGEMM_BLAS(LAYOUTA, LAYOUTB, LAYOUTC, MEM_SPACE,          \
-                               ETI_SPEC_AVAIL)                                \
+#define KOKKOSBLAS3_XGEMM_BLAS(SCALAR_TYPE, BASE_SCALAR_TYPE, LAYOUTA,        \
+                               LAYOUTB, LAYOUTC, MEM_SPACE, ETI_SPEC_AVAIL)   \
   template <class ExecSpace>                                                  \
-  struct GEMM<                                                                \
-      Kokkos::View<const float**, LAYOUTA,                                    \
-                   Kokkos::Device<ExecSpace, MEM_SPACE>,                      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
-      Kokkos::View<const float**, LAYOUTB,                                    \
-                   Kokkos::Device<ExecSpace, MEM_SPACE>,                      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
-      Kokkos::View<float**, LAYOUTC, Kokkos::Device<ExecSpace, MEM_SPACE>,    \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
-      true, ETI_SPEC_AVAIL> {                                                 \
-    typedef float SCALAR;                                                     \
-    typedef Kokkos::View<const SCALAR**, LAYOUTA,                             \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,                \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >            \
-        AViewType;                                                            \
-    typedef Kokkos::View<const SCALAR**, LAYOUTB,                             \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,                \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >            \
-        BViewType;                                                            \
-    typedef Kokkos::View<SCALAR**, LAYOUTC,                                   \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,                \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >            \
-        CViewType;                                                            \
-                                                                              \
-    static void gemm(const typename CViewType::execution_space& /* space*/,   \
-                     const char transA[], const char transB[],                \
-                     typename AViewType::const_value_type& alpha,             \
-                     const AViewType& A, const BViewType& B,                  \
-                     typename CViewType::const_value_type& beta,              \
-                     const CViewType& C) {                                    \
-      Kokkos::Profiling::pushRegion("KokkosBlas::gemm[TPL_BLAS,float]");      \
-      const bool A_t = (transA[0] != 'N') && (transA[0] != 'n');              \
-      const int M    = C.extent(0);                                           \
-      const int N    = C.extent(1);                                           \
-      const int K    = A.extent(A_t ? 0 : 1);                                 \
-                                                                              \
-      bool A_is_lr = std::is_same<Kokkos::LayoutRight, LAYOUTA>::value;       \
-      bool B_is_lr = std::is_same<Kokkos::LayoutRight, LAYOUTB>::value;       \
-      bool C_is_lr = std::is_same<Kokkos::LayoutRight, LAYOUTC>::value;       \
-                                                                              \
-      const int AST = A_is_lr ? A.stride(0) : A.stride(1),                    \
-                LDA = AST == 0 ? 1 : AST;                                     \
-      const int BST = B_is_lr ? B.stride(0) : B.stride(1),                    \
-                LDB = BST == 0 ? 1 : BST;                                     \
-      const int CST = C_is_lr ? C.stride(0) : C.stride(1),                    \
-                LDC = CST == 0 ? 1 : CST;                                     \
-                                                                              \
-      if (!A_is_lr && !B_is_lr && !C_is_lr)                                   \
-        HostBlas<float>::gemm(transA[0], transB[0], M, N, K, alpha, A.data(), \
-                              LDA, B.data(), LDB, beta, C.data(), LDC);       \
-      if (A_is_lr && B_is_lr && C_is_lr)                                      \
-        HostBlas<float>::gemm(transB[0], transA[0], N, M, K, alpha, B.data(), \
-                              LDB, A.data(), LDA, beta, C.data(), LDC);       \
-      Kokkos::Profiling::popRegion();                                         \
-    }                                                                         \
-  };
-
-#define KOKKOSBLAS3_ZGEMM_BLAS(LAYOUTA, LAYOUTB, LAYOUTC, MEM_SPACE,           \
-                               ETI_SPEC_AVAIL)                                 \
-  template <class ExecSpace>                                                   \
-  struct GEMM<Kokkos::View<const Kokkos::complex<double>**, LAYOUTA,           \
-                           Kokkos::Device<ExecSpace, MEM_SPACE>,               \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,          \
-              Kokkos::View<const Kokkos::complex<double>**, LAYOUTB,           \
-                           Kokkos::Device<ExecSpace, MEM_SPACE>,               \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,          \
-              Kokkos::View<Kokkos::complex<double>**, LAYOUTC,                 \
-                           Kokkos::Device<ExecSpace, MEM_SPACE>,               \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,          \
-              true, ETI_SPEC_AVAIL> {                                          \
-    typedef Kokkos::complex<double> SCALAR;                                    \
-    typedef Kokkos::View<const SCALAR**, LAYOUTA,                              \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,                 \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
-        AViewType;                                                             \
-    typedef Kokkos::View<const SCALAR**, LAYOUTB,                              \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,                 \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
-        BViewType;                                                             \
-    typedef Kokkos::View<SCALAR**, LAYOUTC,                                    \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,                 \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
-        CViewType;                                                             \
-                                                                               \
-    static void gemm(const typename CViewType::execution_space& /* space*/,    \
-                     const char transA[], const char transB[],                 \
-                     typename AViewType::const_value_type& alpha,              \
-                     const AViewType& A, const BViewType& B,                   \
-                     typename CViewType::const_value_type& beta,               \
-                     const CViewType& C) {                                     \
-      Kokkos::Profiling::pushRegion(                                           \
-          "KokkosBlas::gemm[TPL_BLAS,complex<double>]");                       \
-      const bool A_t = (transA[0] != 'N') && (transA[0] != 'n');               \
-      const int M    = C.extent(0);                                            \
-      const int N    = C.extent(1);                                            \
-      const int K    = A.extent(A_t ? 0 : 1);                                  \
-                                                                               \
-      bool A_is_lr = std::is_same<Kokkos::LayoutRight, LAYOUTA>::value;        \
-      bool B_is_lr = std::is_same<Kokkos::LayoutRight, LAYOUTB>::value;        \
-      bool C_is_lr = std::is_same<Kokkos::LayoutRight, LAYOUTC>::value;        \
-                                                                               \
-      const int AST = A_is_lr ? A.stride(0) : A.stride(1),                     \
-                LDA = AST == 0 ? 1 : AST;                                      \
-      const int BST = B_is_lr ? B.stride(0) : B.stride(1),                     \
-                LDB = BST == 0 ? 1 : BST;                                      \
-      const int CST = C_is_lr ? C.stride(0) : C.stride(1),                     \
-                LDC = CST == 0 ? 1 : CST;                                      \
-                                                                               \
-      const std::complex<double> alpha_val = alpha, beta_val = beta;           \
-      if (!A_is_lr && !B_is_lr && !C_is_lr)                                    \
-        HostBlas<std::complex<double> >::gemm(                                 \
-            transA[0], transB[0], M, N, K, alpha_val,                          \
-            reinterpret_cast<const std::complex<double>*>(A.data()), LDA,      \
-            reinterpret_cast<const std::complex<double>*>(B.data()), LDB,      \
-            beta_val, reinterpret_cast<std::complex<double>*>(C.data()), LDC); \
-      if (A_is_lr && B_is_lr && C_is_lr)                                       \
-        HostBlas<std::complex<double> >::gemm(                                 \
-            transB[0], transA[0], N, M, K, alpha_val,                          \
-            reinterpret_cast<const std::complex<double>*>(B.data()), LDB,      \
-            reinterpret_cast<const std::complex<double>*>(A.data()), LDA,      \
-            beta_val, reinterpret_cast<std::complex<double>*>(C.data()), LDC); \
-      Kokkos::Profiling::popRegion();                                          \
-    }                                                                          \
-  };
-
-#define KOKKOSBLAS3_CGEMM_BLAS(LAYOUTA, LAYOUTB, LAYOUTC, MEM_SPACE,          \
-                               ETI_SPEC_AVAIL)                                \
-  template <class ExecSpace>                                                  \
-  struct GEMM<Kokkos::View<const Kokkos::complex<float>**, LAYOUTA,           \
+  struct GEMM<Kokkos::View<const SCALAR_TYPE**, LAYOUTA,                      \
                            Kokkos::Device<ExecSpace, MEM_SPACE>,              \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,         \
-              Kokkos::View<const Kokkos::complex<float>**, LAYOUTB,           \
+              Kokkos::View<const SCALAR_TYPE**, LAYOUTB,                      \
                            Kokkos::Device<ExecSpace, MEM_SPACE>,              \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,         \
-              Kokkos::View<Kokkos::complex<float>**, LAYOUTC,                 \
+              Kokkos::View<SCALAR_TYPE**, LAYOUTC,                            \
                            Kokkos::Device<ExecSpace, MEM_SPACE>,              \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,         \
               true, ETI_SPEC_AVAIL> {                                         \
-    typedef Kokkos::complex<float> SCALAR;                                    \
+    typedef SCALAR_TYPE SCALAR;                                               \
     typedef Kokkos::View<const SCALAR**, LAYOUTA,                             \
                          Kokkos::Device<ExecSpace, MEM_SPACE>,                \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >            \
@@ -272,8 +84,8 @@ namespace Impl {
                      const AViewType& A, const BViewType& B,                  \
                      typename CViewType::const_value_type& beta,              \
                      const CViewType& C) {                                    \
-      Kokkos::Profiling::pushRegion(                                          \
-          "KokkosBlas::gemm[TPL_BLAS,complex<float>]");                       \
+      Kokkos::Profiling::pushRegion("KokkosBlas::gemm[TPL_BLAS," #SCALAR_TYPE \
+                                    "]");                                     \
       const bool A_t = (transA[0] != 'N') && (transA[0] != 'n');              \
       const int M    = C.extent(0);                                           \
       const int N    = C.extent(1);                                           \
@@ -290,22 +102,42 @@ namespace Impl {
       const int CST = C_is_lr ? C.stride(0) : C.stride(1),                    \
                 LDC = CST == 0 ? 1 : CST;                                     \
                                                                               \
-      const std::complex<float> alpha_val = alpha, beta_val = beta;           \
+      const BASE_SCALAR_TYPE alpha_val = alpha, beta_val = beta;              \
       if (!A_is_lr && !B_is_lr && !C_is_lr)                                   \
-        HostBlas<std::complex<float> >::gemm(                                 \
+        HostBlas<BASE_SCALAR_TYPE>::gemm(                                     \
             transA[0], transB[0], M, N, K, alpha_val,                         \
-            reinterpret_cast<const std::complex<float>*>(A.data()), LDA,      \
-            reinterpret_cast<const std::complex<float>*>(B.data()), LDB,      \
-            beta_val, reinterpret_cast<std::complex<float>*>(C.data()), LDC); \
+            reinterpret_cast<const BASE_SCALAR_TYPE*>(A.data()), LDA,         \
+            reinterpret_cast<const BASE_SCALAR_TYPE*>(B.data()), LDB,         \
+            beta_val, reinterpret_cast<BASE_SCALAR_TYPE*>(C.data()), LDC);    \
       if (A_is_lr && B_is_lr && C_is_lr)                                      \
-        HostBlas<std::complex<float> >::gemm(                                 \
+        HostBlas<BASE_SCALAR_TYPE>::gemm(                                     \
             transB[0], transA[0], N, M, K, alpha_val,                         \
-            reinterpret_cast<const std::complex<float>*>(B.data()), LDB,      \
-            reinterpret_cast<const std::complex<float>*>(A.data()), LDA,      \
-            beta_val, reinterpret_cast<std::complex<float>*>(C.data()), LDC); \
+            reinterpret_cast<const BASE_SCALAR_TYPE*>(B.data()), LDB,         \
+            reinterpret_cast<const BASE_SCALAR_TYPE*>(A.data()), LDA,         \
+            beta_val, reinterpret_cast<BASE_SCALAR_TYPE*>(C.data()), LDC);    \
       Kokkos::Profiling::popRegion();                                         \
     }                                                                         \
   };
+
+#define KOKKOSBLAS3_DGEMM_BLAS(LAYOUTA, LAYOUTB, LAYOUTC, MEM_SPACE,           \
+                               ETI_SPEC_AVAIL)                                 \
+  KOKKOSBLAS3_XGEMM_BLAS(double, double, LAYOUTA, LAYOUTB, LAYOUTC, MEM_SPACE, \
+                         ETI_SPEC_AVAIL)
+
+#define KOKKOSBLAS3_SGEMM_BLAS(LAYOUTA, LAYOUTB, LAYOUTC, MEM_SPACE,         \
+                               ETI_SPEC_AVAIL)                               \
+  KOKKOSBLAS3_XGEMM_BLAS(float, float, LAYOUTA, LAYOUTB, LAYOUTC, MEM_SPACE, \
+                         ETI_SPEC_AVAIL)
+
+#define KOKKOSBLAS3_ZGEMM_BLAS(LAYOUTA, LAYOUTB, LAYOUTC, MEM_SPACE,    \
+                               ETI_SPEC_AVAIL)                          \
+  KOKKOSBLAS3_XGEMM_BLAS(Kokkos::complex<double>, std::complex<double>, \
+                         LAYOUTA, LAYOUTB, LAYOUTC, MEM_SPACE, ETI_SPEC_AVAIL)
+
+#define KOKKOSBLAS3_CGEMM_BLAS(LAYOUTA, LAYOUTB, LAYOUTC, MEM_SPACE,           \
+                               ETI_SPEC_AVAIL)                                 \
+  KOKKOSBLAS3_XGEMM_BLAS(Kokkos::complex<float>, std::complex<float>, LAYOUTA, \
+                         LAYOUTB, LAYOUTC, MEM_SPACE, ETI_SPEC_AVAIL)
 
 KOKKOSBLAS3_DGEMM_BLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft,
                        Kokkos::LayoutLeft, Kokkos::HostSpace, true)
@@ -348,398 +180,129 @@ KOKKOSBLAS3_CGEMM_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight,
 #endif  // KOKKOSKERNELS_ENABLE_TPL_BLAS
 
 // cuBLAS
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
 #include <KokkosBlas_tpl_spec.hpp>
 #include <KokkosBlas3_gemm_dotbased_impl.hpp>
 
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS3_DGEMM_CUBLAS(LAYOUTA, LAYOUTB, LAYOUTC, MEM_SPACE,         \
-                                 ETI_SPEC_AVAIL)                               \
-  template <class ExecSpace>                                                   \
-  struct GEMM<                                                                 \
-      Kokkos::View<const double**, LAYOUTA,                                    \
-                   Kokkos::Device<ExecSpace, MEM_SPACE>,                       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      Kokkos::View<const double**, LAYOUTB,                                    \
-                   Kokkos::Device<ExecSpace, MEM_SPACE>,                       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      Kokkos::View<double**, LAYOUTC, Kokkos::Device<ExecSpace, MEM_SPACE>,    \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      true, ETI_SPEC_AVAIL> {                                                  \
-    typedef double SCALAR;                                                     \
-    typedef Kokkos::View<const SCALAR**, LAYOUTA,                              \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,                 \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
-        AViewType;                                                             \
-    typedef Kokkos::View<const SCALAR**, LAYOUTB,                              \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,                 \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
-        BViewType;                                                             \
-    typedef Kokkos::View<SCALAR**, LAYOUTC,                                    \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,                 \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
-        CViewType;                                                             \
-                                                                               \
-    static void gemm(const typename CViewType::execution_space& space,         \
-                     const char transA[], const char transB[],                 \
-                     typename AViewType::const_value_type& alpha,              \
-                     const AViewType& A, const BViewType& B,                   \
-                     typename CViewType::const_value_type& beta,               \
-                     const CViewType& C) {                                     \
-      Kokkos::Profiling::pushRegion("KokkosBlas::gemm[TPL_BLAS,double]");      \
-      const bool A_t = (transA[0] != 'N') && (transA[0] != 'n');               \
-      const int M    = static_cast<int>(C.extent(0));                          \
-      const int N    = static_cast<int>(C.extent(1));                          \
-      const int K    = static_cast<int>(A.extent(A_t ? 0 : 1));                \
-                                                                               \
-      bool A_is_lr = std::is_same<Kokkos::LayoutRight, LAYOUTA>::value;        \
-      bool B_is_lr = std::is_same<Kokkos::LayoutRight, LAYOUTB>::value;        \
-      bool C_is_lr = std::is_same<Kokkos::LayoutRight, LAYOUTC>::value;        \
-                                                                               \
-      const int AST = A_is_lr ? A.stride(0) : A.stride(1),                     \
-                LDA = AST == 0 ? 1 : AST;                                      \
-      const int BST = B_is_lr ? B.stride(0) : B.stride(1),                     \
-                LDB = BST == 0 ? 1 : BST;                                      \
-      const int CST = C_is_lr ? C.stride(0) : C.stride(1),                     \
-                LDC = CST == 0 ? 1 : CST;                                      \
-                                                                               \
-      cublasOperation_t transa, transb;                                        \
-      if ((transA[0] == 'N') || (transA[0] == 'n'))                            \
-        transa = CUBLAS_OP_N;                                                  \
-      else if ((transA[0] == 'T') || (transA[0] == 't'))                       \
-        transa = CUBLAS_OP_T;                                                  \
-      else                                                                     \
-        transa = CUBLAS_OP_C;                                                  \
-      if ((transB[0] == 'N') || (transB[0] == 'n'))                            \
-        transb = CUBLAS_OP_N;                                                  \
-      else if ((transB[0] == 'T') || (transB[0] == 't'))                       \
-        transb = CUBLAS_OP_T;                                                  \
-      else                                                                     \
-        transb = CUBLAS_OP_C;                                                  \
-                                                                               \
-      constexpr int numDotsLayoutLeftThreshold  = 1600;                        \
-      constexpr int numDotsLayoutRightThreshold = 100;                         \
-      if ((!A_is_lr && transa != CUBLAS_OP_N && transb == CUBLAS_OP_N &&       \
-           M * N < numDotsLayoutLeftThreshold) ||                              \
-          (A_is_lr && transa != CUBLAS_OP_N && transb == CUBLAS_OP_N &&        \
-           M * N < numDotsLayoutRightThreshold)) {                             \
-        DotBasedGEMM<ExecSpace, AViewType, BViewType, CViewType> gemm(         \
-            alpha, A, B, beta, C);                                             \
-        gemm.run(space, false);                                                \
-      } else {                                                                 \
-        KokkosBlas::Impl::CudaBlasSingleton& s =                               \
-            KokkosBlas::Impl::CudaBlasSingleton::singleton();                  \
-        KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                          \
-            cublasSetStream(s.handle, space.cuda_stream()));                   \
-        if (!A_is_lr && !B_is_lr && !C_is_lr)                                  \
-          KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                        \
-              cublasDgemm(s.handle, transa, transb, M, N, K, &alpha, A.data(), \
-                          LDA, B.data(), LDB, &beta, C.data(), LDC));          \
-        if (A_is_lr && B_is_lr && C_is_lr)                                     \
-          KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                        \
-              cublasDgemm(s.handle, transb, transa, N, M, K, &alpha, B.data(), \
-                          LDB, A.data(), LDA, &beta, C.data(), LDC));          \
-        KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(s.handle, NULL));         \
-      }                                                                        \
-      Kokkos::Profiling::popRegion();                                          \
-    }                                                                          \
+#define KOKKOSBLAS3_XGEMM_CUBLAS(SCALAR_TYPE, CUDA_SCALAR_TYPE, CUBLAS_FN, \
+                                 LAYOUTA, LAYOUTB, LAYOUTC, MEM_SPACE,     \
+                                 ETI_SPEC_AVAIL)                           \
+  template <class ExecSpace>                                               \
+  struct GEMM<Kokkos::View<const SCALAR_TYPE**, LAYOUTA,                   \
+                           Kokkos::Device<ExecSpace, MEM_SPACE>,           \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,      \
+              Kokkos::View<const SCALAR_TYPE**, LAYOUTB,                   \
+                           Kokkos::Device<ExecSpace, MEM_SPACE>,           \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,      \
+              Kokkos::View<SCALAR_TYPE**, LAYOUTC,                         \
+                           Kokkos::Device<ExecSpace, MEM_SPACE>,           \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,      \
+              true, ETI_SPEC_AVAIL> {                                      \
+    typedef SCALAR_TYPE SCALAR;                                            \
+    typedef Kokkos::View<const SCALAR**, LAYOUTA,                          \
+                         Kokkos::Device<ExecSpace, MEM_SPACE>,             \
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >         \
+        AViewType;                                                         \
+    typedef Kokkos::View<const SCALAR**, LAYOUTB,                          \
+                         Kokkos::Device<ExecSpace, MEM_SPACE>,             \
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >         \
+        BViewType;                                                         \
+    typedef Kokkos::View<SCALAR**, LAYOUTC,                                \
+                         Kokkos::Device<ExecSpace, MEM_SPACE>,             \
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >         \
+        CViewType;                                                         \
+                                                                           \
+    static void gemm(const typename CViewType::execution_space& space,     \
+                     const char transA[], const char transB[],             \
+                     typename AViewType::const_value_type& alpha,          \
+                     const AViewType& A, const BViewType& B,               \
+                     typename CViewType::const_value_type& beta,           \
+                     const CViewType& C) {                                 \
+      Kokkos::Profiling::pushRegion(                                       \
+          "KokkosBlas::gemm[TPL_CUBLAS," #SCALAR_TYPE "]");                \
+      const bool A_t = (transA[0] != 'N') && (transA[0] != 'n');           \
+      const int M    = static_cast<int>(C.extent(0));                      \
+      const int N    = static_cast<int>(C.extent(1));                      \
+      const int K    = static_cast<int>(A.extent(A_t ? 0 : 1));            \
+                                                                           \
+      bool A_is_lr = std::is_same<Kokkos::LayoutRight, LAYOUTA>::value;    \
+      bool B_is_lr = std::is_same<Kokkos::LayoutRight, LAYOUTB>::value;    \
+      bool C_is_lr = std::is_same<Kokkos::LayoutRight, LAYOUTC>::value;    \
+                                                                           \
+      const int AST = A_is_lr ? A.stride(0) : A.stride(1),                 \
+                LDA = AST == 0 ? 1 : AST;                                  \
+      const int BST = B_is_lr ? B.stride(0) : B.stride(1),                 \
+                LDB = BST == 0 ? 1 : BST;                                  \
+      const int CST = C_is_lr ? C.stride(0) : C.stride(1),                 \
+                LDC = CST == 0 ? 1 : CST;                                  \
+                                                                           \
+      cublasOperation_t transa = trans_mode_kk_to_cublas(transA);          \
+      cublasOperation_t transb = trans_mode_kk_to_cublas(transB);          \
+                                                                           \
+      constexpr int numDotsLayoutLeftThreshold  = 1600;                    \
+      constexpr int numDotsLayoutRightThreshold = 100;                     \
+      if ((!A_is_lr && transa != CUBLAS_OP_N && transb == CUBLAS_OP_N &&   \
+           M * N < numDotsLayoutLeftThreshold) ||                          \
+          (A_is_lr && transa != CUBLAS_OP_N && transb == CUBLAS_OP_N &&    \
+           M * N < numDotsLayoutRightThreshold)) {                         \
+        DotBasedGEMM<ExecSpace, AViewType, BViewType, CViewType> gemm(     \
+            alpha, A, B, beta, C);                                         \
+        bool conjT = (std::is_same<SCALAR, double>::value ||               \
+                      std::is_same<SCALAR, float>::value)                  \
+                         ? false                                           \
+                         : (transa == CUBLAS_OP_C ? true : false);         \
+        gemm.run(space, conjT);                                            \
+      } else {                                                             \
+        KokkosBlas::Impl::CudaBlasSingleton& s =                           \
+            KokkosBlas::Impl::CudaBlasSingleton::singleton();              \
+        KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                      \
+            cublasSetStream(s.handle, space.cuda_stream()));               \
+        if (!A_is_lr && !B_is_lr && !C_is_lr)                              \
+          KOKKOS_CUBLAS_SAFE_CALL_IMPL(CUBLAS_FN(                          \
+              s.handle, transa, transb, M, N, K,                           \
+              reinterpret_cast<const CUDA_SCALAR_TYPE*>(&alpha),           \
+              reinterpret_cast<const CUDA_SCALAR_TYPE*>(A.data()), LDA,    \
+              reinterpret_cast<const CUDA_SCALAR_TYPE*>(B.data()), LDB,    \
+              reinterpret_cast<const CUDA_SCALAR_TYPE*>(&beta),            \
+              reinterpret_cast<CUDA_SCALAR_TYPE*>(C.data()), LDC));        \
+        if (A_is_lr && B_is_lr && C_is_lr)                                 \
+          KOKKOS_CUBLAS_SAFE_CALL_IMPL(CUBLAS_FN(                          \
+              s.handle, transb, transa, N, M, K,                           \
+              reinterpret_cast<const CUDA_SCALAR_TYPE*>(&alpha),           \
+              reinterpret_cast<const CUDA_SCALAR_TYPE*>(B.data()), LDB,    \
+              reinterpret_cast<const CUDA_SCALAR_TYPE*>(A.data()), LDA,    \
+              reinterpret_cast<const CUDA_SCALAR_TYPE*>(&beta),            \
+              reinterpret_cast<CUDA_SCALAR_TYPE*>(C.data()), LDC));        \
+        KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(s.handle, NULL));     \
+      }                                                                    \
+      Kokkos::Profiling::popRegion();                                      \
+    }                                                                      \
   };
 
-#define KOKKOSBLAS3_SGEMM_CUBLAS(LAYOUTA, LAYOUTB, LAYOUTC, MEM_SPACE,         \
-                                 ETI_SPEC_AVAIL)                               \
-  template <class ExecSpace>                                                   \
-  struct GEMM<                                                                 \
-      Kokkos::View<const float**, LAYOUTA,                                     \
-                   Kokkos::Device<ExecSpace, MEM_SPACE>,                       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      Kokkos::View<const float**, LAYOUTB,                                     \
-                   Kokkos::Device<ExecSpace, MEM_SPACE>,                       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      Kokkos::View<float**, LAYOUTC, Kokkos::Device<ExecSpace, MEM_SPACE>,     \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      true, ETI_SPEC_AVAIL> {                                                  \
-    typedef float SCALAR;                                                      \
-    typedef Kokkos::View<const SCALAR**, LAYOUTA,                              \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,                 \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
-        AViewType;                                                             \
-    typedef Kokkos::View<const SCALAR**, LAYOUTB,                              \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,                 \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
-        BViewType;                                                             \
-    typedef Kokkos::View<SCALAR**, LAYOUTC,                                    \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,                 \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
-        CViewType;                                                             \
-                                                                               \
-    static void gemm(const typename CViewType::execution_space& space,         \
-                     const char transA[], const char transB[],                 \
-                     typename AViewType::const_value_type& alpha,              \
-                     const AViewType& A, const BViewType& B,                   \
-                     typename CViewType::const_value_type& beta,               \
-                     const CViewType& C) {                                     \
-      Kokkos::Profiling::pushRegion("KokkosBlas::gemm[TPL_BLAS,float]");       \
-      const bool A_t = (transA[0] != 'N') && (transA[0] != 'n');               \
-      const int M    = static_cast<int>(C.extent(0));                          \
-      const int N    = static_cast<int>(C.extent(1));                          \
-      const int K    = static_cast<int>(A.extent(A_t ? 0 : 1));                \
-                                                                               \
-      bool A_is_lr = std::is_same<Kokkos::LayoutRight, LAYOUTA>::value;        \
-      bool B_is_lr = std::is_same<Kokkos::LayoutRight, LAYOUTB>::value;        \
-      bool C_is_lr = std::is_same<Kokkos::LayoutRight, LAYOUTC>::value;        \
-                                                                               \
-      const int AST = A_is_lr ? A.stride(0) : A.stride(1),                     \
-                LDA = AST == 0 ? 1 : AST;                                      \
-      const int BST = B_is_lr ? B.stride(0) : B.stride(1),                     \
-                LDB = BST == 0 ? 1 : BST;                                      \
-      const int CST = C_is_lr ? C.stride(0) : C.stride(1),                     \
-                LDC = CST == 0 ? 1 : CST;                                      \
-                                                                               \
-      cublasOperation_t transa, transb;                                        \
-      if ((transA[0] == 'N') || (transA[0] == 'n'))                            \
-        transa = CUBLAS_OP_N;                                                  \
-      else if ((transA[0] == 'T') || (transA[0] == 't'))                       \
-        transa = CUBLAS_OP_T;                                                  \
-      else                                                                     \
-        transa = CUBLAS_OP_C;                                                  \
-      if ((transB[0] == 'N') || (transB[0] == 'n'))                            \
-        transb = CUBLAS_OP_N;                                                  \
-      else if ((transB[0] == 'T') || (transB[0] == 't'))                       \
-        transb = CUBLAS_OP_T;                                                  \
-      else                                                                     \
-        transb = CUBLAS_OP_C;                                                  \
-                                                                               \
-      constexpr int numDotsLayoutLeftThreshold  = 1600;                        \
-      constexpr int numDotsLayoutRightThreshold = 100;                         \
-      if ((!A_is_lr && transa != CUBLAS_OP_N && transb == CUBLAS_OP_N &&       \
-           M * N < numDotsLayoutLeftThreshold) ||                              \
-          (A_is_lr && transa != CUBLAS_OP_N && transb == CUBLAS_OP_N &&        \
-           M * N < numDotsLayoutRightThreshold)) {                             \
-        DotBasedGEMM<ExecSpace, AViewType, BViewType, CViewType> gemm(         \
-            alpha, A, B, beta, C);                                             \
-        gemm.run(space, false);                                                \
-      } else {                                                                 \
-        KokkosBlas::Impl::CudaBlasSingleton& s =                               \
-            KokkosBlas::Impl::CudaBlasSingleton::singleton();                  \
-        KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                          \
-            cublasSetStream(s.handle, space.cuda_stream()));                   \
-        if (!A_is_lr && !B_is_lr && !C_is_lr)                                  \
-          KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                        \
-              cublasSgemm(s.handle, transa, transb, M, N, K, &alpha, A.data(), \
-                          LDA, B.data(), LDB, &beta, C.data(), LDC));          \
-        if (A_is_lr && B_is_lr && C_is_lr)                                     \
-          KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                        \
-              cublasSgemm(s.handle, transb, transa, N, M, K, &alpha, B.data(), \
-                          LDB, A.data(), LDA, &beta, C.data(), LDC));          \
-        KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(s.handle, NULL));         \
-      }                                                                        \
-      Kokkos::Profiling::popRegion();                                          \
-    }                                                                          \
-  };
+#define KOKKOSBLAS3_DGEMM_CUBLAS(LAYOUTA, LAYOUTB, LAYOUTC, MEM_SPACE,    \
+                                 ETI_SPEC_AVAIL)                          \
+  KOKKOSBLAS3_XGEMM_CUBLAS(double, double, cublasDgemm, LAYOUTA, LAYOUTB, \
+                           LAYOUTC, MEM_SPACE, ETI_SPEC_AVAIL)
 
-#define KOKKOSBLAS3_ZGEMM_CUBLAS(LAYOUTA, LAYOUTB, LAYOUTC, MEM_SPACE,   \
-                                 ETI_SPEC_AVAIL)                         \
-  template <class ExecSpace>                                             \
-  struct GEMM<Kokkos::View<const Kokkos::complex<double>**, LAYOUTA,     \
-                           Kokkos::Device<ExecSpace, MEM_SPACE>,         \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,    \
-              Kokkos::View<const Kokkos::complex<double>**, LAYOUTB,     \
-                           Kokkos::Device<ExecSpace, MEM_SPACE>,         \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,    \
-              Kokkos::View<Kokkos::complex<double>**, LAYOUTC,           \
-                           Kokkos::Device<ExecSpace, MEM_SPACE>,         \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,    \
-              true, ETI_SPEC_AVAIL> {                                    \
-    typedef Kokkos::complex<double> SCALAR;                              \
-    typedef Kokkos::View<const SCALAR**, LAYOUTA,                        \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,           \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >       \
-        AViewType;                                                       \
-    typedef Kokkos::View<const SCALAR**, LAYOUTB,                        \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,           \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >       \
-        BViewType;                                                       \
-    typedef Kokkos::View<SCALAR**, LAYOUTC,                              \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,           \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >       \
-        CViewType;                                                       \
-                                                                         \
-    static void gemm(const typename CViewType::execution_space& space,   \
-                     const char transA[], const char transB[],           \
-                     typename AViewType::const_value_type& alpha,        \
-                     const AViewType& A, const BViewType& B,             \
-                     typename CViewType::const_value_type& beta,         \
-                     const CViewType& C) {                               \
-      Kokkos::Profiling::pushRegion(                                     \
-          "KokkosBlas::gemm[TPL_BLAS,complex<double>]");                 \
-      const bool A_t = (transA[0] != 'N') && (transA[0] != 'n');         \
-      const int M    = static_cast<int>(C.extent(0));                    \
-      const int N    = static_cast<int>(C.extent(1));                    \
-      const int K    = static_cast<int>(A.extent(A_t ? 0 : 1));          \
-                                                                         \
-      bool A_is_lr = std::is_same<Kokkos::LayoutRight, LAYOUTA>::value;  \
-      bool B_is_lr = std::is_same<Kokkos::LayoutRight, LAYOUTB>::value;  \
-      bool C_is_lr = std::is_same<Kokkos::LayoutRight, LAYOUTC>::value;  \
-                                                                         \
-      const int AST = A_is_lr ? A.stride(0) : A.stride(1),               \
-                LDA = AST == 0 ? 1 : AST;                                \
-      const int BST = B_is_lr ? B.stride(0) : B.stride(1),               \
-                LDB = BST == 0 ? 1 : BST;                                \
-      const int CST = C_is_lr ? C.stride(0) : C.stride(1),               \
-                LDC = CST == 0 ? 1 : CST;                                \
-                                                                         \
-      cublasOperation_t transa, transb;                                  \
-      if ((transA[0] == 'N') || (transA[0] == 'n'))                      \
-        transa = CUBLAS_OP_N;                                            \
-      else if ((transA[0] == 'T') || (transA[0] == 't'))                 \
-        transa = CUBLAS_OP_T;                                            \
-      else                                                               \
-        transa = CUBLAS_OP_C;                                            \
-      if ((transB[0] == 'N') || (transB[0] == 'n'))                      \
-        transb = CUBLAS_OP_N;                                            \
-      else if ((transB[0] == 'T') || (transB[0] == 't'))                 \
-        transb = CUBLAS_OP_T;                                            \
-      else                                                               \
-        transb = CUBLAS_OP_C;                                            \
-                                                                         \
-      constexpr int numDotsLayoutLeftThreshold  = 1600;                  \
-      constexpr int numDotsLayoutRightThreshold = 100;                   \
-      if ((!A_is_lr && transa != CUBLAS_OP_N && transb == CUBLAS_OP_N && \
-           M * N < numDotsLayoutLeftThreshold) ||                        \
-          (A_is_lr && transa != CUBLAS_OP_N && transb == CUBLAS_OP_N &&  \
-           M * N < numDotsLayoutRightThreshold)) {                       \
-        DotBasedGEMM<ExecSpace, AViewType, BViewType, CViewType> gemm(   \
-            alpha, A, B, beta, C);                                       \
-        gemm.run(space, transa == CUBLAS_OP_C ? true : false);           \
-      } else {                                                           \
-        KokkosBlas::Impl::CudaBlasSingleton& s =                         \
-            KokkosBlas::Impl::CudaBlasSingleton::singleton();            \
-        KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                    \
-            cublasSetStream(s.handle, space.cuda_stream()));             \
-        if (!A_is_lr && !B_is_lr && !C_is_lr)                            \
-          KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasZgemm(                      \
-              s.handle, transa, transb, M, N, K,                         \
-              reinterpret_cast<const cuDoubleComplex*>(&alpha),          \
-              reinterpret_cast<const cuDoubleComplex*>(A.data()), LDA,   \
-              reinterpret_cast<const cuDoubleComplex*>(B.data()), LDB,   \
-              reinterpret_cast<const cuDoubleComplex*>(&beta),           \
-              reinterpret_cast<cuDoubleComplex*>(C.data()), LDC));       \
-        if (A_is_lr && B_is_lr && C_is_lr)                               \
-          KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasZgemm(                      \
-              s.handle, transb, transa, N, M, K,                         \
-              reinterpret_cast<const cuDoubleComplex*>(&alpha),          \
-              reinterpret_cast<const cuDoubleComplex*>(B.data()), LDB,   \
-              reinterpret_cast<const cuDoubleComplex*>(A.data()), LDA,   \
-              reinterpret_cast<const cuDoubleComplex*>(&beta),           \
-              reinterpret_cast<cuDoubleComplex*>(C.data()), LDC));       \
-        KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(s.handle, NULL));   \
-      }                                                                  \
-      Kokkos::Profiling::popRegion();                                    \
-    }                                                                    \
-  };
+#define KOKKOSBLAS3_SGEMM_CUBLAS(LAYOUTA, LAYOUTB, LAYOUTC, MEM_SPACE,  \
+                                 ETI_SPEC_AVAIL)                        \
+  KOKKOSBLAS3_XGEMM_CUBLAS(float, float, cublasSgemm, LAYOUTA, LAYOUTB, \
+                           LAYOUTC, MEM_SPACE, ETI_SPEC_AVAIL)
 
-#define KOKKOSBLAS3_CGEMM_CUBLAS(LAYOUTA, LAYOUTB, LAYOUTC, MEM_SPACE,       \
-                                 ETI_SPEC_AVAIL)                             \
-  template <class ExecSpace>                                                 \
-  struct GEMM<Kokkos::View<const Kokkos::complex<float>**, LAYOUTA,          \
-                           Kokkos::Device<ExecSpace, MEM_SPACE>,             \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,        \
-              Kokkos::View<const Kokkos::complex<float>**, LAYOUTB,          \
-                           Kokkos::Device<ExecSpace, MEM_SPACE>,             \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,        \
-              Kokkos::View<Kokkos::complex<float>**, LAYOUTC,                \
-                           Kokkos::Device<ExecSpace, MEM_SPACE>,             \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,        \
-              true, ETI_SPEC_AVAIL> {                                        \
-    typedef Kokkos::complex<float> SCALAR;                                   \
-    typedef Kokkos::View<const SCALAR**, LAYOUTA,                            \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,               \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >           \
-        AViewType;                                                           \
-    typedef Kokkos::View<const SCALAR**, LAYOUTB,                            \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,               \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >           \
-        BViewType;                                                           \
-    typedef Kokkos::View<SCALAR**, LAYOUTC,                                  \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,               \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >           \
-        CViewType;                                                           \
-                                                                             \
-    static void gemm(const typename CViewType::execution_space& space,       \
-                     const char transA[], const char transB[],               \
-                     typename AViewType::const_value_type& alpha,            \
-                     const AViewType& A, const BViewType& B,                 \
-                     typename CViewType::const_value_type& beta,             \
-                     const CViewType& C) {                                   \
-      Kokkos::Profiling::pushRegion(                                         \
-          "KokkosBlas::gemm[TPL_BLAS,complex<float>]");                      \
-      const bool A_t = (transA[0] != 'N') && (transA[0] != 'n');             \
-      const int M    = static_cast<int>(C.extent(0));                        \
-      const int N    = static_cast<int>(C.extent(1));                        \
-      const int K    = static_cast<int>(A.extent(A_t ? 0 : 1));              \
-                                                                             \
-      bool A_is_lr = std::is_same<Kokkos::LayoutRight, LAYOUTA>::value;      \
-      bool B_is_lr = std::is_same<Kokkos::LayoutRight, LAYOUTB>::value;      \
-      bool C_is_lr = std::is_same<Kokkos::LayoutRight, LAYOUTC>::value;      \
-                                                                             \
-      const int AST = A_is_lr ? A.stride(0) : A.stride(1),                   \
-                LDA = AST == 0 ? 1 : AST;                                    \
-      const int BST = B_is_lr ? B.stride(0) : B.stride(1),                   \
-                LDB = BST == 0 ? 1 : BST;                                    \
-      const int CST = C_is_lr ? C.stride(0) : C.stride(1),                   \
-                LDC = CST == 0 ? 1 : CST;                                    \
-                                                                             \
-      cublasOperation_t transa, transb;                                      \
-      if ((transA[0] == 'N') || (transA[0] == 'n'))                          \
-        transa = CUBLAS_OP_N;                                                \
-      else if ((transA[0] == 'T') || (transA[0] == 't'))                     \
-        transa = CUBLAS_OP_T;                                                \
-      else                                                                   \
-        transa = CUBLAS_OP_C;                                                \
-      if ((transB[0] == 'N') || (transB[0] == 'n'))                          \
-        transb = CUBLAS_OP_N;                                                \
-      else if ((transB[0] == 'T') || (transB[0] == 't'))                     \
-        transb = CUBLAS_OP_T;                                                \
-      else                                                                   \
-        transb = CUBLAS_OP_C;                                                \
-                                                                             \
-      constexpr int numDotsLayoutLeftThreshold  = 1600;                      \
-      constexpr int numDotsLayoutRightThreshold = 100;                       \
-      if ((!A_is_lr && transa != CUBLAS_OP_N && transb == CUBLAS_OP_N &&     \
-           M * N < numDotsLayoutLeftThreshold) ||                            \
-          (A_is_lr && transa != CUBLAS_OP_N && transb == CUBLAS_OP_N &&      \
-           M * N < numDotsLayoutRightThreshold)) {                           \
-        DotBasedGEMM<ExecSpace, AViewType, BViewType, CViewType> gemm(       \
-            alpha, A, B, beta, C);                                           \
-        gemm.run(space, transa == CUBLAS_OP_C ? true : false);               \
-      } else {                                                               \
-        KokkosBlas::Impl::CudaBlasSingleton& s =                             \
-            KokkosBlas::Impl::CudaBlasSingleton::singleton();                \
-        KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                        \
-            cublasSetStream(s.handle, space.cuda_stream()));                 \
-        if (!A_is_lr && !B_is_lr && !C_is_lr)                                \
-          KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                      \
-              cublasCgemm(s.handle, transa, transb, M, N, K,                 \
-                          reinterpret_cast<const cuComplex*>(&alpha),        \
-                          reinterpret_cast<const cuComplex*>(A.data()), LDA, \
-                          reinterpret_cast<const cuComplex*>(B.data()), LDB, \
-                          reinterpret_cast<const cuComplex*>(&beta),         \
-                          reinterpret_cast<cuComplex*>(C.data()), LDC));     \
-        if (A_is_lr && B_is_lr && C_is_lr)                                   \
-          KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                      \
-              cublasCgemm(s.handle, transb, transa, N, M, K,                 \
-                          reinterpret_cast<const cuComplex*>(&alpha),        \
-                          reinterpret_cast<const cuComplex*>(B.data()), LDB, \
-                          reinterpret_cast<const cuComplex*>(A.data()), LDA, \
-                          reinterpret_cast<const cuComplex*>(&beta),         \
-                          reinterpret_cast<cuComplex*>(C.data()), LDC));     \
-        KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(s.handle, NULL));       \
-      }                                                                      \
-      Kokkos::Profiling::popRegion();                                        \
-    }                                                                        \
-  };
+#define KOKKOSBLAS3_ZGEMM_CUBLAS(LAYOUTA, LAYOUTB, LAYOUTC, MEM_SPACE,        \
+                                 ETI_SPEC_AVAIL)                              \
+  KOKKOSBLAS3_XGEMM_CUBLAS(Kokkos::complex<double>, cuDoubleComplex,          \
+                           cublasZgemm, LAYOUTA, LAYOUTB, LAYOUTC, MEM_SPACE, \
+                           ETI_SPEC_AVAIL)
+
+#define KOKKOSBLAS3_CGEMM_CUBLAS(LAYOUTA, LAYOUTB, LAYOUTC, MEM_SPACE,     \
+                                 ETI_SPEC_AVAIL)                           \
+  KOKKOSBLAS3_XGEMM_CUBLAS(Kokkos::complex<float>, cuComplex, cublasCgemm, \
+                           LAYOUTA, LAYOUTB, LAYOUTC, MEM_SPACE,           \
+                           ETI_SPEC_AVAIL)
 
 KOKKOSBLAS3_DGEMM_CUBLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft,
                          Kokkos::LayoutLeft, Kokkos::CudaSpace, true)
@@ -818,7 +381,7 @@ KOKKOSBLAS3_CGEMM_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight,
 #endif  // KOKKOSKERNELS_ENABLE_TPL_CUBLAS
 
 // rocBLAS
-#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ROCBLAS)
 #include <KokkosBlas_tpl_spec.hpp>
 #include <KokkosBlas3_gemm_dotbased_impl.hpp>
 
@@ -840,222 +403,21 @@ namespace Impl {
   rocblas_operation transa = trans_mode_kk_to_rocblas(transA);                 \
   rocblas_operation transb = trans_mode_kk_to_rocblas(transB);
 
-#define KOKKOSBLAS3_DGEMM_ROCBLAS(LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)         \
+#define KOKKOSBLAS3_XGEMM_ROCBLAS(SCALAR_TYPE, ROCBLAS_SCALAR_TYPE,          \
+                                  ROCBLAS_FN, LAYOUT, MEM_SPACE,             \
+                                  ETI_SPEC_AVAIL)                            \
   template <class ExecSpace>                                                 \
-  struct GEMM<                                                               \
-      Kokkos::View<const double**, LAYOUT,                                   \
-                   Kokkos::Device<ExecSpace, MEM_SPACE>,                     \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
-      Kokkos::View<const double**, LAYOUT,                                   \
-                   Kokkos::Device<ExecSpace, MEM_SPACE>,                     \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
-      Kokkos::View<double**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>,   \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
-      true, ETI_SPEC_AVAIL> {                                                \
-    typedef double SCALAR;                                                   \
-    typedef Kokkos::View<const SCALAR**, LAYOUT,                             \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,               \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >           \
-        AViewType;                                                           \
-    typedef Kokkos::View<const SCALAR**, LAYOUT,                             \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,               \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >           \
-        BViewType;                                                           \
-    typedef Kokkos::View<SCALAR**, LAYOUT,                                   \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,               \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >           \
-        CViewType;                                                           \
-                                                                             \
-    static void gemm(const typename CViewType::execution_space& space,       \
-                     const char transA[], const char transB[],               \
-                     typename AViewType::const_value_type& alpha,            \
-                     const AViewType& A, const BViewType& B,                 \
-                     typename CViewType::const_value_type& beta,             \
-                     const CViewType& C) {                                   \
-      Kokkos::Profiling::pushRegion("KokkosBlas::gemm[TPL_ROCBLAS,double]"); \
-      KOKKOSBLAS3_GEMM_ROCBLAS_DETERMINE_ARGS(LAYOUT)                        \
-      constexpr int numDotsLayoutLeftThreshold  = 1600;                      \
-      constexpr int numDotsLayoutRightThreshold = 100;                       \
-      if ((!is_lr && transa != rocblas_operation_none &&                     \
-           transb == rocblas_operation_none &&                               \
-           M * N < numDotsLayoutLeftThreshold) ||                            \
-          (is_lr && transa != rocblas_operation_none &&                      \
-           transb == rocblas_operation_none &&                               \
-           M * N < numDotsLayoutRightThreshold)) {                           \
-        DotBasedGEMM<ExecSpace, AViewType, BViewType, CViewType> gemm(       \
-            alpha, A, B, beta, C);                                           \
-        gemm.run(space, false);                                              \
-      } else {                                                               \
-        KokkosBlas::Impl::RocBlasSingleton& s =                              \
-            KokkosBlas::Impl::RocBlasSingleton::singleton();                 \
-        KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                       \
-            rocblas_set_stream(s.handle, space.hip_stream()));               \
-        if (!is_lr)                                                          \
-          KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_dgemm(                       \
-              s.handle, transa, transb, M, N, K, &alpha, A.data(), LDA,      \
-              B.data(), LDB, &beta, C.data(), LDC));                         \
-        else                                                                 \
-          KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_dgemm(                       \
-              s.handle, transb, transa, N, M, K, &alpha, B.data(), LDB,      \
-              A.data(), LDA, &beta, C.data(), LDC));                         \
-        KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));   \
-      }                                                                      \
-      Kokkos::Profiling::popRegion();                                        \
-    }                                                                        \
-  };
-
-#define KOKKOSBLAS3_SGEMM_ROCBLAS(LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)        \
-  template <class ExecSpace>                                                \
-  struct GEMM<                                                              \
-      Kokkos::View<const float**, LAYOUT,                                   \
-                   Kokkos::Device<ExecSpace, MEM_SPACE>,                    \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,               \
-      Kokkos::View<const float**, LAYOUT,                                   \
-                   Kokkos::Device<ExecSpace, MEM_SPACE>,                    \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,               \
-      Kokkos::View<float**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>,   \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,               \
-      true, ETI_SPEC_AVAIL> {                                               \
-    typedef float SCALAR;                                                   \
-    typedef Kokkos::View<const SCALAR**, LAYOUT,                            \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,              \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >          \
-        AViewType;                                                          \
-    typedef Kokkos::View<const SCALAR**, LAYOUT,                            \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,              \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >          \
-        BViewType;                                                          \
-    typedef Kokkos::View<SCALAR**, LAYOUT,                                  \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,              \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >          \
-        CViewType;                                                          \
-                                                                            \
-    static void gemm(const typename CViewType::execution_space& space,      \
-                     const char transA[], const char transB[],              \
-                     typename AViewType::const_value_type& alpha,           \
-                     const AViewType& A, const BViewType& B,                \
-                     typename CViewType::const_value_type& beta,            \
-                     const CViewType& C) {                                  \
-      Kokkos::Profiling::pushRegion("KokkosBlas::gemm[TPL_ROCBLAS,float]"); \
-      KOKKOSBLAS3_GEMM_ROCBLAS_DETERMINE_ARGS(LAYOUT)                       \
-      constexpr int numDotsLayoutLeftThreshold  = 1600;                     \
-      constexpr int numDotsLayoutRightThreshold = 100;                      \
-      if ((!is_lr && transa != rocblas_operation_none &&                    \
-           transb == rocblas_operation_none &&                              \
-           M * N < numDotsLayoutLeftThreshold) ||                           \
-          (is_lr && transa != rocblas_operation_none &&                     \
-           transb == rocblas_operation_none &&                              \
-           M * N < numDotsLayoutRightThreshold)) {                          \
-        DotBasedGEMM<ExecSpace, AViewType, BViewType, CViewType> gemm(      \
-            alpha, A, B, beta, C);                                          \
-        gemm.run(space, false);                                             \
-      } else {                                                              \
-        KokkosBlas::Impl::RocBlasSingleton& s =                             \
-            KokkosBlas::Impl::RocBlasSingleton::singleton();                \
-        KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                      \
-            rocblas_set_stream(s.handle, space.hip_stream()));              \
-        if (!is_lr)                                                         \
-          KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_sgemm(                      \
-              s.handle, transa, transb, M, N, K, &alpha, A.data(), LDA,     \
-              B.data(), LDB, &beta, C.data(), LDC));                        \
-        else                                                                \
-          KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_sgemm(                      \
-              s.handle, transb, transa, N, M, K, &alpha, B.data(), LDB,     \
-              A.data(), LDA, &beta, C.data(), LDC));                        \
-        KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));  \
-      }                                                                     \
-      Kokkos::Profiling::popRegion();                                       \
-    }                                                                       \
-  };
-
-#define KOKKOSBLAS3_ZGEMM_ROCBLAS(LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)          \
-  template <class ExecSpace>                                                  \
-  struct GEMM<Kokkos::View<const Kokkos::complex<double>**, LAYOUT,           \
-                           Kokkos::Device<ExecSpace, MEM_SPACE>,              \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,         \
-              Kokkos::View<const Kokkos::complex<double>**, LAYOUT,           \
-                           Kokkos::Device<ExecSpace, MEM_SPACE>,              \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,         \
-              Kokkos::View<Kokkos::complex<double>**, LAYOUT,                 \
-                           Kokkos::Device<ExecSpace, MEM_SPACE>,              \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,         \
-              true, ETI_SPEC_AVAIL> {                                         \
-    typedef Kokkos::complex<double> SCALAR;                                   \
-    typedef Kokkos::View<const SCALAR**, LAYOUT,                              \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,                \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >            \
-        AViewType;                                                            \
-    typedef Kokkos::View<const SCALAR**, LAYOUT,                              \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,                \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >            \
-        BViewType;                                                            \
-    typedef Kokkos::View<SCALAR**, LAYOUT,                                    \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,                \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >            \
-        CViewType;                                                            \
-                                                                              \
-    static void gemm(const typename CViewType::execution_space& space,        \
-                     const char transA[], const char transB[],                \
-                     typename AViewType::const_value_type& alpha,             \
-                     const AViewType& A, const BViewType& B,                  \
-                     typename CViewType::const_value_type& beta,              \
-                     const CViewType& C) {                                    \
-      Kokkos::Profiling::pushRegion(                                          \
-          "KokkosBlas::gemm[TPL_ROCBLAS,complex<double>]");                   \
-      KOKKOSBLAS3_GEMM_ROCBLAS_DETERMINE_ARGS(LAYOUT)                         \
-      constexpr int numDotsLayoutLeftThreshold  = 1600;                       \
-      constexpr int numDotsLayoutRightThreshold = 100;                        \
-      if ((!is_lr && transa != rocblas_operation_none &&                      \
-           transb == rocblas_operation_none &&                                \
-           M * N < numDotsLayoutLeftThreshold) ||                             \
-          (is_lr && transa != rocblas_operation_none &&                       \
-           transb == rocblas_operation_none &&                                \
-           M * N < numDotsLayoutRightThreshold)) {                            \
-        DotBasedGEMM<ExecSpace, AViewType, BViewType, CViewType> gemm(        \
-            alpha, A, B, beta, C);                                            \
-        gemm.run(space, transa == rocblas_operation_conjugate_transpose       \
-                            ? true                                            \
-                            : false);                                         \
-      } else {                                                                \
-        KokkosBlas::Impl::RocBlasSingleton& s =                               \
-            KokkosBlas::Impl::RocBlasSingleton::singleton();                  \
-        KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                        \
-            rocblas_set_stream(s.handle, space.hip_stream()));                \
-        if (!is_lr)                                                           \
-          KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_zgemm(                        \
-              s.handle, transa, transb, M, N, K,                              \
-              reinterpret_cast<const rocblas_double_complex*>(&alpha),        \
-              reinterpret_cast<const rocblas_double_complex*>(A.data()), LDA, \
-              reinterpret_cast<const rocblas_double_complex*>(B.data()), LDB, \
-              reinterpret_cast<const rocblas_double_complex*>(&beta),         \
-              reinterpret_cast<rocblas_double_complex*>(C.data()), LDC));     \
-        else                                                                  \
-          KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_zgemm(                        \
-              s.handle, transb, transa, N, M, K,                              \
-              reinterpret_cast<const rocblas_double_complex*>(&alpha),        \
-              reinterpret_cast<const rocblas_double_complex*>(B.data()), LDB, \
-              reinterpret_cast<const rocblas_double_complex*>(A.data()), LDA, \
-              reinterpret_cast<const rocblas_double_complex*>(&beta),         \
-              reinterpret_cast<rocblas_double_complex*>(C.data()), LDC));     \
-        KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));    \
-      }                                                                       \
-      Kokkos::Profiling::popRegion();                                         \
-    }                                                                         \
-  };
-
-#define KOKKOSBLAS3_CGEMM_ROCBLAS(LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)         \
-  template <class ExecSpace>                                                 \
-  struct GEMM<Kokkos::View<const Kokkos::complex<float>**, LAYOUT,           \
+  struct GEMM<Kokkos::View<const SCALAR_TYPE**, LAYOUT,                      \
                            Kokkos::Device<ExecSpace, MEM_SPACE>,             \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,        \
-              Kokkos::View<const Kokkos::complex<float>**, LAYOUT,           \
+              Kokkos::View<const SCALAR_TYPE**, LAYOUT,                      \
                            Kokkos::Device<ExecSpace, MEM_SPACE>,             \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,        \
-              Kokkos::View<Kokkos::complex<float>**, LAYOUT,                 \
+              Kokkos::View<SCALAR_TYPE**, LAYOUT,                            \
                            Kokkos::Device<ExecSpace, MEM_SPACE>,             \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,        \
               true, ETI_SPEC_AVAIL> {                                        \
-    typedef Kokkos::complex<float> SCALAR;                                   \
+    typedef SCALAR_TYPE SCALAR;                                              \
     typedef Kokkos::View<const SCALAR**, LAYOUT,                             \
                          Kokkos::Device<ExecSpace, MEM_SPACE>,               \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >           \
@@ -1076,8 +438,10 @@ namespace Impl {
                      typename CViewType::const_value_type& beta,             \
                      const CViewType& C) {                                   \
       Kokkos::Profiling::pushRegion(                                         \
-          "KokkosBlas::gemm[TPL_ROCBLAS,complex<float>]");                   \
+          "KokkosBlas::gemm[TPL_ROCBLAS," #SCALAR_TYPE "]");                 \
+                                                                             \
       KOKKOSBLAS3_GEMM_ROCBLAS_DETERMINE_ARGS(LAYOUT)                        \
+                                                                             \
       constexpr int numDotsLayoutLeftThreshold  = 1600;                      \
       constexpr int numDotsLayoutRightThreshold = 100;                       \
       if ((!is_lr && transa != rocblas_operation_none &&                     \
@@ -1088,35 +452,55 @@ namespace Impl {
            M * N < numDotsLayoutRightThreshold)) {                           \
         DotBasedGEMM<ExecSpace, AViewType, BViewType, CViewType> gemm(       \
             alpha, A, B, beta, C);                                           \
-        gemm.run(space, transa == rocblas_operation_conjugate_transpose      \
-                            ? true                                           \
-                            : false);                                        \
+        bool conjT =                                                         \
+            (std::is_same<SCALAR, double>::value ||                          \
+             std::is_same<SCALAR, float>::value)                             \
+                ? false                                                      \
+                : (transa == rocblas_operation_conjugate_transpose ? true    \
+                                                                   : false); \
+        gemm.run(space, conjT);                                              \
       } else {                                                               \
         KokkosBlas::Impl::RocBlasSingleton& s =                              \
             KokkosBlas::Impl::RocBlasSingleton::singleton();                 \
         KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                       \
             rocblas_set_stream(s.handle, space.hip_stream()));               \
         if (!is_lr)                                                          \
-          KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_cgemm(                       \
+          KOKKOS_ROCBLAS_SAFE_CALL_IMPL(ROCBLAS_FN(                          \
               s.handle, transa, transb, M, N, K,                             \
-              reinterpret_cast<const rocblas_float_complex*>(&alpha),        \
-              reinterpret_cast<const rocblas_float_complex*>(A.data()), LDA, \
-              reinterpret_cast<const rocblas_float_complex*>(B.data()), LDB, \
-              reinterpret_cast<const rocblas_float_complex*>(&beta),         \
-              reinterpret_cast<rocblas_float_complex*>(C.data()), LDC));     \
+              reinterpret_cast<const ROCBLAS_SCALAR_TYPE*>(&alpha),          \
+              reinterpret_cast<const ROCBLAS_SCALAR_TYPE*>(A.data()), LDA,   \
+              reinterpret_cast<const ROCBLAS_SCALAR_TYPE*>(B.data()), LDB,   \
+              reinterpret_cast<const ROCBLAS_SCALAR_TYPE*>(&beta),           \
+              reinterpret_cast<ROCBLAS_SCALAR_TYPE*>(C.data()), LDC));       \
         else                                                                 \
-          KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_cgemm(                       \
+          KOKKOS_ROCBLAS_SAFE_CALL_IMPL(ROCBLAS_FN(                          \
               s.handle, transb, transa, N, M, K,                             \
-              reinterpret_cast<const rocblas_float_complex*>(&alpha),        \
-              reinterpret_cast<const rocblas_float_complex*>(B.data()), LDB, \
-              reinterpret_cast<const rocblas_float_complex*>(A.data()), LDA, \
-              reinterpret_cast<const rocblas_float_complex*>(&beta),         \
-              reinterpret_cast<rocblas_float_complex*>(C.data()), LDC));     \
+              reinterpret_cast<const ROCBLAS_SCALAR_TYPE*>(&alpha),          \
+              reinterpret_cast<const ROCBLAS_SCALAR_TYPE*>(B.data()), LDB,   \
+              reinterpret_cast<const ROCBLAS_SCALAR_TYPE*>(A.data()), LDA,   \
+              reinterpret_cast<const ROCBLAS_SCALAR_TYPE*>(&beta),           \
+              reinterpret_cast<ROCBLAS_SCALAR_TYPE*>(C.data()), LDC));       \
         KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));   \
       }                                                                      \
       Kokkos::Profiling::popRegion();                                        \
     }                                                                        \
   };
+
+#define KOKKOSBLAS3_DGEMM_ROCBLAS(LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)          \
+  KOKKOSBLAS3_XGEMM_ROCBLAS(double, double, rocblas_dgemm, LAYOUT, MEM_SPACE, \
+                            ETI_SPEC_AVAIL)
+
+#define KOKKOSBLAS3_SGEMM_ROCBLAS(LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)        \
+  KOKKOSBLAS3_XGEMM_ROCBLAS(float, float, rocblas_sgemm, LAYOUT, MEM_SPACE, \
+                            ETI_SPEC_AVAIL)
+
+#define KOKKOSBLAS3_ZGEMM_ROCBLAS(LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)         \
+  KOKKOSBLAS3_XGEMM_ROCBLAS(Kokkos::complex<double>, rocblas_double_complex, \
+                            rocblas_zgemm, LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)
+
+#define KOKKOSBLAS3_CGEMM_ROCBLAS(LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)       \
+  KOKKOSBLAS3_XGEMM_ROCBLAS(Kokkos::complex<float>, rocblas_float_complex, \
+                            rocblas_cgemm, LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)
 
 KOKKOSBLAS3_DGEMM_ROCBLAS(Kokkos::LayoutLeft, Kokkos::Experimental::HIPSpace,
                           true)

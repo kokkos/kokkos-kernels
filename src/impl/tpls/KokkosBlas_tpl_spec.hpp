@@ -120,6 +120,18 @@ inline void cublas_internal_safe_call(cublasStatus_t cublasState,
 #define KOKKOS_CUBLAS_SAFE_CALL_IMPL(call) \
   KokkosBlas::Impl::cublas_internal_safe_call(call, #call, __FILE__, __LINE__)
 
+// This function converts KK transpose mode to cuBLAS transpose mode
+inline cublasOperation_t trans_mode_kk_to_cublas(const char kkMode[]) {
+  cublasOperation_t trans;
+  if ((kkMode[0] == 'N') || (kkMode[0] == 'n'))
+    trans = CUBLAS_OP_N;
+  else if ((kkMode[0] == 'T') || (kkMode[0] == 't'))
+    trans = CUBLAS_OP_T;
+  else
+    trans = CUBLAS_OP_C;
+  return trans;
+}
+
 }  // namespace Impl
 }  // namespace KokkosBlas
 #endif  // KOKKOSKERNELS_ENABLE_TPL_CUBLAS

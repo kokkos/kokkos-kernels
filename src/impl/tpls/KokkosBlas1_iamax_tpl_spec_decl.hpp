@@ -49,7 +49,7 @@ namespace KokkosBlas {
 namespace Impl {
 template <class RV, class XV>
 inline void iamax_print_specialization() {
-#ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
+#if defined(KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION)
 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
   printf("KokkosBlas1::iamax<> TPL cuBLAS specialization for < %s , %s >\n",
          typeid(RV).name(), typeid(XV).name());
@@ -68,171 +68,74 @@ inline void iamax_print_specialization() {
 }  // namespace KokkosBlas
 
 // Generic Host side BLAS (could be MKL or whatever)
-#ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
+#if defined(KOKKOSKERNELS_ENABLE_TPL_BLAS)
 #include "KokkosBlas_Host_tpl.hpp"
 
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS1_DIAMAX_TPL_SPEC_DECL_BLAS(LAYOUT, MEMSPACE,                \
+#define KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_BLAS(                                  \
+    SCALAR_TYPE, BASE_SCALAR_TYPE, LAYOUT, MEMSPACE, ETI_SPEC_AVAIL)            \
+  template <class ExecSpace>                                                    \
+  struct Iamax<Kokkos::View<unsigned long, LAYOUT, Kokkos::HostSpace,           \
+                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,          \
+               Kokkos::View<const SCALAR_TYPE*, LAYOUT,                         \
+                            Kokkos::Device<ExecSpace, MEMSPACE>,                \
+                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,          \
+               1, true, ETI_SPEC_AVAIL> {                                       \
+    typedef Kokkos::View<unsigned long, LAYOUT, Kokkos::HostSpace,              \
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >              \
+        RV;                                                                     \
+    typedef Kokkos::View<const SCALAR_TYPE*, LAYOUT,                            \
+                         Kokkos::Device<ExecSpace, MEMSPACE>,                   \
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >              \
+        XV;                                                                     \
+    typedef typename XV::size_type size_type;                                   \
+                                                                                \
+    static void iamax(RV& R, const XV& X) {                                     \
+      Kokkos::Profiling::pushRegion("KokkosBlas::iamax[TPL_BLAS," #SCALAR_TYPE  \
+                                    "]");                                       \
+      const size_type numElems = X.extent(0);                                   \
+      if (numElems == 0) {                                                      \
+        R() = 0;                                                                \
+        return;                                                                 \
+      }                                                                         \
+      if (numElems < static_cast<size_type>(INT_MAX)) {                         \
+        iamax_print_specialization<RV, XV>();                                   \
+        int N         = static_cast<int>(numElems);                             \
+        const int XST = X.stride(0);                                            \
+        const int LDX = (XST == 0) ? 1 : XST;                                   \
+        int idx       = HostBlas<BASE_SCALAR_TYPE>::iamax(                      \
+            N, reinterpret_cast<const BASE_SCALAR_TYPE*>(X.data()), LDX); \
+        R() = static_cast<size_type>(idx);                                      \
+      } else {                                                                  \
+        Iamax<RV, XV, 1, false, ETI_SPEC_AVAIL>::iamax(R, X);                   \
+      }                                                                         \
+      Kokkos::Profiling::popRegion();                                           \
+    }                                                                           \
+  };
+
+#define KOKKOSBLAS1_DIAMAX_TPL_SPEC_DECL_BLAS(LAYOUT, MEMSPACE,           \
+                                              ETI_SPEC_AVAIL)             \
+  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_BLAS(double, double, LAYOUT, MEMSPACE, \
+                                        ETI_SPEC_AVAIL)
+
+#define KOKKOSBLAS1_SIAMAX_TPL_SPEC_DECL_BLAS(LAYOUT, MEMSPACE,         \
+                                              ETI_SPEC_AVAIL)           \
+  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_BLAS(float, float, LAYOUT, MEMSPACE, \
+                                        ETI_SPEC_AVAIL)
+
+#define KOKKOSBLAS1_ZIAMAX_TPL_SPEC_DECL_BLAS(LAYOUT, MEMSPACE,       \
+                                              ETI_SPEC_AVAIL)         \
+  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_BLAS(Kokkos::complex<double>,      \
+                                        std::complex<double>, LAYOUT, \
+                                        MEMSPACE, ETI_SPEC_AVAIL)
+
+#define KOKKOSBLAS1_CIAMAX_TPL_SPEC_DECL_BLAS(LAYOUT, MEMSPACE,                \
                                               ETI_SPEC_AVAIL)                  \
-  template <class ExecSpace>                                                   \
-  struct Iamax<                                                                \
-      Kokkos::View<unsigned long, LAYOUT, Kokkos::HostSpace,                   \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      1, true, ETI_SPEC_AVAIL> {                                               \
-    typedef Kokkos::View<unsigned long, LAYOUT, Kokkos::HostSpace,             \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
-        RV;                                                                    \
-    typedef Kokkos::View<const double*, LAYOUT,                                \
-                         Kokkos::Device<ExecSpace, MEMSPACE>,                  \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
-        XV;                                                                    \
-    typedef typename XV::size_type size_type;                                  \
-                                                                               \
-    static void iamax(RV& R, const XV& X) {                                    \
-      Kokkos::Profiling::pushRegion("KokkosBlas::iamax[TPL_BLAS,double]");     \
-      const size_type numElems = X.extent(0);                                  \
-      if (numElems == 0) {                                                     \
-        R() = 0;                                                               \
-        return;                                                                \
-      }                                                                        \
-      if (numElems < static_cast<size_type>(INT_MAX)) {                        \
-        iamax_print_specialization<RV, XV>();                                  \
-        int N         = static_cast<int>(numElems);                            \
-        const int XST = X.stride(0);                                           \
-        const int LDX = (XST == 0) ? 1 : XST;                                  \
-        int idx       = HostBlas<double>::iamax(N, X.data(), LDX);             \
-        R()           = static_cast<size_type>(idx);                           \
-      } else {                                                                 \
-        Iamax<RV, XV, 1, false, ETI_SPEC_AVAIL>::iamax(R, X);                  \
-      }                                                                        \
-      Kokkos::Profiling::popRegion();                                          \
-    }                                                                          \
-  };
-
-#define KOKKOSBLAS1_SIAMAX_TPL_SPEC_DECL_BLAS(LAYOUT, MEMSPACE,               \
-                                              ETI_SPEC_AVAIL)                 \
-  template <class ExecSpace>                                                  \
-  struct Iamax<                                                               \
-      Kokkos::View<unsigned long, LAYOUT, Kokkos::HostSpace,                  \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
-      Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
-      1, true, ETI_SPEC_AVAIL> {                                              \
-    typedef Kokkos::View<unsigned long, LAYOUT, Kokkos::HostSpace,            \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >            \
-        RV;                                                                   \
-    typedef Kokkos::View<const float*, LAYOUT,                                \
-                         Kokkos::Device<ExecSpace, MEMSPACE>,                 \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >            \
-        XV;                                                                   \
-    typedef typename XV::size_type size_type;                                 \
-                                                                              \
-    static void iamax(RV& R, const XV& X) {                                   \
-      Kokkos::Profiling::pushRegion("KokkosBlas::iamax[TPL_BLAS,float]");     \
-      const size_type numElems = X.extent(0);                                 \
-      if (numElems == 0) {                                                    \
-        R() = 0;                                                              \
-        return;                                                               \
-      }                                                                       \
-      if (numElems < static_cast<size_type>(INT_MAX)) {                       \
-        iamax_print_specialization<RV, XV>();                                 \
-        int N         = static_cast<int>(numElems);                           \
-        const int XST = X.stride(0);                                          \
-        const int LDX = (XST == 0) ? 1 : XST;                                 \
-        int idx       = HostBlas<float>::iamax(N, X.data(), LDX);             \
-        R()           = static_cast<size_type>(idx);                          \
-      } else {                                                                \
-        Iamax<RV, XV, 1, false, ETI_SPEC_AVAIL>::iamax(R, X);                 \
-      }                                                                       \
-      Kokkos::Profiling::popRegion();                                         \
-    }                                                                         \
-  };
-
-#define KOKKOSBLAS1_ZIAMAX_TPL_SPEC_DECL_BLAS(LAYOUT, MEMSPACE,                     \
-                                              ETI_SPEC_AVAIL)                       \
-  template <class ExecSpace>                                                        \
-  struct Iamax<Kokkos::View<unsigned long, LAYOUT, Kokkos::HostSpace,               \
-                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,              \
-               Kokkos::View<const Kokkos::complex<double>*, LAYOUT,                 \
-                            Kokkos::Device<ExecSpace, MEMSPACE>,                    \
-                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,              \
-               1, true, ETI_SPEC_AVAIL> {                                           \
-    typedef Kokkos::View<unsigned long, LAYOUT, Kokkos::HostSpace,                  \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >                  \
-        RV;                                                                         \
-    typedef Kokkos::View<const Kokkos::complex<double>*, LAYOUT,                    \
-                         Kokkos::Device<ExecSpace, MEMSPACE>,                       \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >                  \
-        XV;                                                                         \
-    typedef typename XV::size_type size_type;                                       \
-                                                                                    \
-    static void iamax(RV& R, const XV& X) {                                         \
-      Kokkos::Profiling::pushRegion(                                                \
-          "KokkosBlas::iamax[TPL_BLAS,complex<double>]");                           \
-      const size_type numElems = X.extent(0);                                       \
-      if (numElems == 0) {                                                          \
-        R() = 0;                                                                    \
-        return;                                                                     \
-      }                                                                             \
-      if (numElems < static_cast<size_type>(INT_MAX)) {                             \
-        iamax_print_specialization<RV, XV>();                                       \
-        int N         = static_cast<int>(numElems);                                 \
-        const int XST = X.stride(0);                                                \
-        const int LDX = (XST == 0) ? 1 : XST;                                       \
-        int idx       = HostBlas<std::complex<double> >::iamax(                     \
-            N, reinterpret_cast<const std::complex<double>*>(X.data()), LDX); \
-        R() = static_cast<size_type>(idx);                                          \
-      } else {                                                                      \
-        Iamax<RV, XV, 1, false, ETI_SPEC_AVAIL>::iamax(R, X);                       \
-      }                                                                             \
-      Kokkos::Profiling::popRegion();                                               \
-    }                                                                               \
-  };
-
-#define KOKKOSBLAS1_CIAMAX_TPL_SPEC_DECL_BLAS(LAYOUT, MEMSPACE,                    \
-                                              ETI_SPEC_AVAIL)                      \
-  template <class ExecSpace>                                                       \
-  struct Iamax<Kokkos::View<unsigned long, LAYOUT, Kokkos::HostSpace,              \
-                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
-               Kokkos::View<const Kokkos::complex<float>*, LAYOUT,                 \
-                            Kokkos::Device<ExecSpace, MEMSPACE>,                   \
-                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
-               1, true, ETI_SPEC_AVAIL> {                                          \
-    typedef Kokkos::View<unsigned long, LAYOUT, Kokkos::HostSpace,                 \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >                 \
-        RV;                                                                        \
-    typedef Kokkos::View<const Kokkos::complex<float>*, LAYOUT,                    \
-                         Kokkos::Device<ExecSpace, MEMSPACE>,                      \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >                 \
-        XV;                                                                        \
-    typedef typename XV::size_type size_type;                                      \
-                                                                                   \
-    static void iamax(RV& R, const XV& X) {                                        \
-      Kokkos::Profiling::pushRegion(                                               \
-          "KokkosBlas::iamax[TPL_BLAS,complex<float>]");                           \
-      const size_type numElems = X.extent(0);                                      \
-      if (numElems == 0) {                                                         \
-        R() = 0;                                                                   \
-        return;                                                                    \
-      }                                                                            \
-      if (numElems < static_cast<size_type>(INT_MAX)) {                            \
-        iamax_print_specialization<RV, XV>();                                      \
-        int N         = static_cast<int>(numElems);                                \
-        const int XST = X.stride(0);                                               \
-        const int LDX = (XST == 0) ? 1 : XST;                                      \
-        int idx       = HostBlas<std::complex<float> >::iamax(                     \
-            N, reinterpret_cast<const std::complex<float>*>(X.data()), LDX); \
-        R() = static_cast<size_type>(idx);                                         \
-      } else {                                                                     \
-        Iamax<RV, XV, 1, false, ETI_SPEC_AVAIL>::iamax(R, X);                      \
-      }                                                                            \
-      Kokkos::Profiling::popRegion();                                              \
-    }                                                                              \
-  };
+  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_BLAS(Kokkos::complex<float>,                \
+                                        std::complex<float>, LAYOUT, MEMSPACE, \
+                                        ETI_SPEC_AVAIL)
 
 KOKKOSBLAS1_DIAMAX_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::HostSpace,
                                       true)
@@ -260,32 +163,34 @@ KOKKOSBLAS1_CIAMAX_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::HostSpace,
 #endif
 
 // cuBLAS
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
 #include <KokkosBlas_tpl_spec.hpp>
 
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS1_DIAMAX_TPL_SPEC_DECL_CUBLAS(INDEX_TYPE, LAYOUT, MEMSPACE,  \
-                                                ETI_SPEC_AVAIL)                \
+#define KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS(SCALAR_TYPE, CUDA_SCALAR_TYPE, \
+                                                CUBLAS_FN, INDEX_TYPE, LAYOUT, \
+                                                MEMSPACE, ETI_SPEC_AVAIL)      \
   template <class ExecSpace>                                                   \
-  struct Iamax<                                                                \
-      Kokkos::View<INDEX_TYPE, LAYOUT, Kokkos::HostSpace,                      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      1, true, ETI_SPEC_AVAIL> {                                               \
+  struct Iamax<Kokkos::View<INDEX_TYPE, LAYOUT, Kokkos::HostSpace,             \
+                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,         \
+               Kokkos::View<const SCALAR_TYPE*, LAYOUT,                        \
+                            Kokkos::Device<ExecSpace, MEMSPACE>,               \
+                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,         \
+               1, true, ETI_SPEC_AVAIL> {                                      \
     typedef Kokkos::View<INDEX_TYPE, LAYOUT, Kokkos::HostSpace,                \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
         RV;                                                                    \
-    typedef Kokkos::View<const double*, LAYOUT,                                \
+    typedef Kokkos::View<const SCALAR_TYPE*, LAYOUT,                           \
                          Kokkos::Device<ExecSpace, MEMSPACE>,                  \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
         XV;                                                                    \
     typedef typename XV::size_type size_type;                                  \
                                                                                \
     static void iamax(RV& R, const XV& X) {                                    \
-      Kokkos::Profiling::pushRegion("KokkosBlas::iamax[TPL_CUBLAS,double]");   \
+      Kokkos::Profiling::pushRegion(                                           \
+          "KokkosBlas::iamax[TPL_CUBLAS," #SCALAR_TYPE "]");                   \
       const size_type numElems = X.extent(0);                                  \
       if (numElems == 0) {                                                     \
         Kokkos::deep_copy(R, 0);                                               \
@@ -299,9 +204,21 @@ namespace Impl {
         int idx;                                                               \
         KokkosBlas::Impl::CudaBlasSingleton& s =                               \
             KokkosBlas::Impl::CudaBlasSingleton::singleton();                  \
+        cublasPointerMode_t prevPtrMode;                                       \
         KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                          \
-            cublasIdamax(s.handle, N, X.data(), LDX, &idx));                   \
+            cublasGetPointerMode(s.handle, &prevPtrMode));                     \
+        if (prevPtrMode == CUBLAS_POINTER_MODE_DEVICE) {                       \
+          KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                        \
+              cublasSetPointerMode(s.handle, CUBLAS_POINTER_MODE_HOST));       \
+        }                                                                      \
+        KOKKOS_CUBLAS_SAFE_CALL_IMPL(CUBLAS_FN(                                \
+            s.handle, N, reinterpret_cast<const CUDA_SCALAR_TYPE*>(X.data()),  \
+            LDX, &idx));                                                       \
         R() = static_cast<size_type>(idx);                                     \
+        if (prevPtrMode == CUBLAS_POINTER_MODE_DEVICE) {                       \
+          KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                        \
+              cublasSetPointerMode(s.handle, CUBLAS_POINTER_MODE_DEVICE));     \
+        }                                                                      \
       } else {                                                                 \
         Iamax<RV, XV, 1, false, ETI_SPEC_AVAIL>::iamax(R, X);                  \
       }                                                                        \
@@ -312,21 +229,23 @@ namespace Impl {
   struct Iamax<                                                                \
       Kokkos::View<INDEX_TYPE, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,    \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+      Kokkos::View<const SCALAR_TYPE*, LAYOUT,                                 \
+                   Kokkos::Device<ExecSpace, MEMSPACE>,                        \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
       1, true, ETI_SPEC_AVAIL> {                                               \
     typedef Kokkos::View<INDEX_TYPE, LAYOUT,                                   \
                          Kokkos::Device<ExecSpace, MEMSPACE>,                  \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
         RV;                                                                    \
-    typedef Kokkos::View<const double*, LAYOUT,                                \
+    typedef Kokkos::View<const SCALAR_TYPE*, LAYOUT,                           \
                          Kokkos::Device<ExecSpace, MEMSPACE>,                  \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
         XV;                                                                    \
     typedef typename XV::size_type size_type;                                  \
                                                                                \
     static void iamax(RV& R, const XV& X) {                                    \
-      Kokkos::Profiling::pushRegion("KokkosBlas::iamax[TPL_CUBLAS,double]");   \
+      Kokkos::Profiling::pushRegion(                                           \
+          "KokkosBlas::iamax[TPL_CUBLAS," #SCALAR_TYPE "]");                   \
       const size_type numElems = X.extent(0);                                  \
       if (numElems == 0) {                                                     \
         Kokkos::deep_copy(R, 0);                                               \
@@ -346,12 +265,13 @@ namespace Impl {
           KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                        \
               cublasSetPointerMode(s.handle, CUBLAS_POINTER_MODE_DEVICE));     \
         }                                                                      \
-        KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasIdamax(                             \
-            s.handle, N, X.data(), LDX, reinterpret_cast<int*>(R.data())));    \
+        KOKKOS_CUBLAS_SAFE_CALL_IMPL(CUBLAS_FN(                                \
+            s.handle, N, reinterpret_cast<const CUDA_SCALAR_TYPE*>(X.data()),  \
+            LDX, reinterpret_cast<int*>(R.data())));                           \
         Kokkos::fence();                                                       \
         if (prevPtrMode == CUBLAS_POINTER_MODE_HOST) {                         \
           KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                        \
-              cublasSetPointerMode(s.handle, prevPtrMode));                    \
+              cublasSetPointerMode(s.handle, CUBLAS_POINTER_MODE_HOST));       \
         }                                                                      \
       } else {                                                                 \
         Iamax<RV, XV, 1, false, ETI_SPEC_AVAIL>::iamax(R, X);                  \
@@ -360,299 +280,29 @@ namespace Impl {
     }                                                                          \
   };
 
+#define KOKKOSBLAS1_DIAMAX_TPL_SPEC_DECL_CUBLAS(INDEX_TYPE, LAYOUT, MEMSPACE, \
+                                                ETI_SPEC_AVAIL)               \
+  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS(double, double, cublasIdamax,       \
+                                          INDEX_TYPE, LAYOUT, MEMSPACE,       \
+                                          ETI_SPEC_AVAIL)
+
 #define KOKKOSBLAS1_SIAMAX_TPL_SPEC_DECL_CUBLAS(INDEX_TYPE, LAYOUT, MEMSPACE, \
                                                 ETI_SPEC_AVAIL)               \
-  template <class ExecSpace>                                                  \
-  struct Iamax<                                                               \
-      Kokkos::View<INDEX_TYPE, LAYOUT, Kokkos::HostSpace,                     \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
-      Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
-      1, true, ETI_SPEC_AVAIL> {                                              \
-    typedef Kokkos::View<INDEX_TYPE, LAYOUT, Kokkos::HostSpace,               \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >            \
-        RV;                                                                   \
-    typedef Kokkos::View<const float*, LAYOUT,                                \
-                         Kokkos::Device<ExecSpace, MEMSPACE>,                 \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >            \
-        XV;                                                                   \
-    typedef typename XV::size_type size_type;                                 \
-                                                                              \
-    static void iamax(RV& R, const XV& X) {                                   \
-      Kokkos::Profiling::pushRegion("KokkosBlas::iamax[TPL_CUBLAS,float]");   \
-      const size_type numElems = X.extent(0);                                 \
-      if (numElems == 0) {                                                    \
-        Kokkos::deep_copy(R, 0);                                              \
-        ;                                                                     \
-        return;                                                               \
-      }                                                                       \
-      if (numElems < static_cast<size_type>(INT_MAX)) {                       \
-        iamax_print_specialization<RV, XV>();                                 \
-        const int N   = static_cast<int>(numElems);                           \
-        const int XST = X.stride(0);                                          \
-        const int LDX = (XST == 0) ? 1 : XST;                                 \
-        int idx;                                                              \
-        KokkosBlas::Impl::CudaBlasSingleton& s =                              \
-            KokkosBlas::Impl::CudaBlasSingleton::singleton();                 \
-        KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                         \
-            cublasIsamax(s.handle, N, X.data(), LDX, &idx));                  \
-        R() = static_cast<size_type>(idx);                                    \
-      } else {                                                                \
-        Iamax<RV, XV, 1, false, ETI_SPEC_AVAIL>::iamax(R, X);                 \
-      }                                                                       \
-      Kokkos::Profiling::popRegion();                                         \
-    }                                                                         \
-  };                                                                          \
-  template <class ExecSpace>                                                  \
-  struct Iamax<                                                               \
-      Kokkos::View<INDEX_TYPE, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,   \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
-      Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
-      1, true, ETI_SPEC_AVAIL> {                                              \
-    typedef Kokkos::View<INDEX_TYPE, LAYOUT,                                  \
-                         Kokkos::Device<ExecSpace, MEMSPACE>,                 \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >            \
-        RV;                                                                   \
-    typedef Kokkos::View<const float*, LAYOUT,                                \
-                         Kokkos::Device<ExecSpace, MEMSPACE>,                 \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >            \
-        XV;                                                                   \
-    typedef typename XV::size_type size_type;                                 \
-                                                                              \
-    static void iamax(RV& R, const XV& X) {                                   \
-      Kokkos::Profiling::pushRegion("KokkosBlas::iamax[TPL_CUBLAS,float]");   \
-      const size_type numElems = X.extent(0);                                 \
-      if (numElems == 0) {                                                    \
-        Kokkos::deep_copy(R, 0);                                              \
-        ;                                                                     \
-        return;                                                               \
-      }                                                                       \
-      if (numElems < static_cast<size_type>(INT_MAX)) {                       \
-        iamax_print_specialization<RV, XV>();                                 \
-        const int N   = static_cast<int>(numElems);                           \
-        const int XST = X.stride(0);                                          \
-        const int LDX = (XST == 0) ? 1 : XST;                                 \
-        KokkosBlas::Impl::CudaBlasSingleton& s =                              \
-            KokkosBlas::Impl::CudaBlasSingleton::singleton();                 \
-        cublasPointerMode_t prevPtrMode;                                      \
-        KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                         \
-            cublasGetPointerMode(s.handle, &prevPtrMode));                    \
-        if (prevPtrMode == CUBLAS_POINTER_MODE_HOST) {                        \
-          KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                       \
-              cublasSetPointerMode(s.handle, CUBLAS_POINTER_MODE_DEVICE));    \
-        }                                                                     \
-        KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasIsamax(                            \
-            s.handle, N, X.data(), LDX, reinterpret_cast<int*>(R.data())));   \
-        Kokkos::fence();                                                      \
-        if (prevPtrMode == CUBLAS_POINTER_MODE_HOST) {                        \
-          KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                       \
-              cublasSetPointerMode(s.handle, prevPtrMode));                   \
-        }                                                                     \
-      } else {                                                                \
-        Iamax<RV, XV, 1, false, ETI_SPEC_AVAIL>::iamax(R, X);                 \
-      }                                                                       \
-      Kokkos::Profiling::popRegion();                                         \
-    }                                                                         \
-  };
+  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS(float, float, cublasIsamax,         \
+                                          INDEX_TYPE, LAYOUT, MEMSPACE,       \
+                                          ETI_SPEC_AVAIL)
 
 #define KOKKOSBLAS1_ZIAMAX_TPL_SPEC_DECL_CUBLAS(INDEX_TYPE, LAYOUT, MEMSPACE, \
                                                 ETI_SPEC_AVAIL)               \
-  template <class ExecSpace>                                                  \
-  struct Iamax<Kokkos::View<INDEX_TYPE, LAYOUT, Kokkos::HostSpace,            \
-                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,        \
-               Kokkos::View<const Kokkos::complex<double>*, LAYOUT,           \
-                            Kokkos::Device<ExecSpace, MEMSPACE>,              \
-                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,        \
-               1, true, ETI_SPEC_AVAIL> {                                     \
-    typedef Kokkos::View<INDEX_TYPE, LAYOUT, Kokkos::HostSpace,               \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >            \
-        RV;                                                                   \
-    typedef Kokkos::View<const Kokkos::complex<double>*, LAYOUT,              \
-                         Kokkos::Device<ExecSpace, MEMSPACE>,                 \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >            \
-        XV;                                                                   \
-    typedef typename XV::size_type size_type;                                 \
-                                                                              \
-    static void iamax(RV& R, const XV& X) {                                   \
-      Kokkos::Profiling::pushRegion(                                          \
-          "KokkosBlas::iamax[TPL_CUBLAS,complex<double>]");                   \
-      const size_type numElems = X.extent(0);                                 \
-      if (numElems == 0) {                                                    \
-        Kokkos::deep_copy(R, 0);                                              \
-        return;                                                               \
-      }                                                                       \
-      if (numElems < static_cast<size_type>(INT_MAX)) {                       \
-        iamax_print_specialization<RV, XV>();                                 \
-        const int N   = static_cast<int>(numElems);                           \
-        const int XST = X.stride(0);                                          \
-        const int LDX = (XST == 0) ? 1 : XST;                                 \
-        int idx;                                                              \
-        KokkosBlas::Impl::CudaBlasSingleton& s =                              \
-            KokkosBlas::Impl::CudaBlasSingleton::singleton();                 \
-        KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasIzamax(                            \
-            s.handle, N, reinterpret_cast<const cuDoubleComplex*>(X.data()),  \
-            LDX, &idx));                                                      \
-        R() = static_cast<size_type>(idx);                                    \
-      } else {                                                                \
-        Iamax<RV, XV, 1, false, ETI_SPEC_AVAIL>::iamax(R, X);                 \
-      }                                                                       \
-      Kokkos::Profiling::popRegion();                                         \
-    }                                                                         \
-  };                                                                          \
-  template <class ExecSpace>                                                  \
-  struct Iamax<                                                               \
-      Kokkos::View<INDEX_TYPE, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,   \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
-      Kokkos::View<const Kokkos::complex<double>*, LAYOUT,                    \
-                   Kokkos::Device<ExecSpace, MEMSPACE>,                       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
-      1, true, ETI_SPEC_AVAIL> {                                              \
-    typedef Kokkos::View<INDEX_TYPE, LAYOUT,                                  \
-                         Kokkos::Device<ExecSpace, MEMSPACE>,                 \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >            \
-        RV;                                                                   \
-    typedef Kokkos::View<const Kokkos::complex<double>*, LAYOUT,              \
-                         Kokkos::Device<ExecSpace, MEMSPACE>,                 \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >            \
-        XV;                                                                   \
-    typedef typename XV::size_type size_type;                                 \
-                                                                              \
-    static void iamax(RV& R, const XV& X) {                                   \
-      Kokkos::Profiling::pushRegion(                                          \
-          "KokkosBlas::iamax[TPL_CUBLAS,complex<double>]");                   \
-      const size_type numElems = X.extent(0);                                 \
-      if (numElems == 0) {                                                    \
-        Kokkos::deep_copy(R, 0);                                              \
-        return;                                                               \
-      }                                                                       \
-      if (numElems < static_cast<size_type>(INT_MAX)) {                       \
-        iamax_print_specialization<RV, XV>();                                 \
-        const int N   = static_cast<int>(numElems);                           \
-        const int XST = X.stride(0);                                          \
-        const int LDX = (XST == 0) ? 1 : XST;                                 \
-        KokkosBlas::Impl::CudaBlasSingleton& s =                              \
-            KokkosBlas::Impl::CudaBlasSingleton::singleton();                 \
-        cublasPointerMode_t prevPtrMode;                                      \
-        KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                         \
-            cublasGetPointerMode(s.handle, &prevPtrMode));                    \
-        if (prevPtrMode == CUBLAS_POINTER_MODE_HOST) {                        \
-          KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                       \
-              cublasSetPointerMode(s.handle, CUBLAS_POINTER_MODE_DEVICE));    \
-        }                                                                     \
-        KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasIzamax(                            \
-            s.handle, N, reinterpret_cast<const cuDoubleComplex*>(X.data()),  \
-            LDX, reinterpret_cast<int*>(R.data())));                          \
-        Kokkos::fence();                                                      \
-        if (prevPtrMode == CUBLAS_POINTER_MODE_HOST) {                        \
-          KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                       \
-              cublasSetPointerMode(s.handle, prevPtrMode));                   \
-        }                                                                     \
-      } else {                                                                \
-        Iamax<RV, XV, 1, false, ETI_SPEC_AVAIL>::iamax(R, X);                 \
-      }                                                                       \
-      Kokkos::Profiling::popRegion();                                         \
-    }                                                                         \
-  };
+  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS(                                    \
+      Kokkos::complex<double>, cuDoubleComplex, cublasIzamax, INDEX_TYPE,     \
+      LAYOUT, MEMSPACE, ETI_SPEC_AVAIL)
 
 #define KOKKOSBLAS1_CIAMAX_TPL_SPEC_DECL_CUBLAS(INDEX_TYPE, LAYOUT, MEMSPACE, \
                                                 ETI_SPEC_AVAIL)               \
-  template <class ExecSpace>                                                  \
-  struct Iamax<Kokkos::View<INDEX_TYPE, LAYOUT, Kokkos::HostSpace,            \
-                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,        \
-               Kokkos::View<const Kokkos::complex<float>*, LAYOUT,            \
-                            Kokkos::Device<ExecSpace, MEMSPACE>,              \
-                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,        \
-               1, true, ETI_SPEC_AVAIL> {                                     \
-    typedef Kokkos::View<INDEX_TYPE, LAYOUT, Kokkos::HostSpace,               \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >            \
-        RV;                                                                   \
-    typedef Kokkos::View<const Kokkos::complex<float>*, LAYOUT,               \
-                         Kokkos::Device<ExecSpace, MEMSPACE>,                 \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >            \
-        XV;                                                                   \
-    typedef typename XV::size_type size_type;                                 \
-                                                                              \
-    static void iamax(RV& R, const XV& X) {                                   \
-      Kokkos::Profiling::pushRegion(                                          \
-          "KokkosBlas::iamax[TPL_CUBLAS,complex<float>]");                    \
-      const size_type numElems = X.extent(0);                                 \
-      if (numElems == 0) {                                                    \
-        Kokkos::deep_copy(R, 0);                                              \
-        return;                                                               \
-      }                                                                       \
-      if (numElems < static_cast<size_type>(INT_MAX)) {                       \
-        iamax_print_specialization<RV, XV>();                                 \
-        const int N   = static_cast<int>(numElems);                           \
-        const int XST = X.stride(0);                                          \
-        const int LDX = (XST == 0) ? 1 : XST;                                 \
-        int idx;                                                              \
-        KokkosBlas::Impl::CudaBlasSingleton& s =                              \
-            KokkosBlas::Impl::CudaBlasSingleton::singleton();                 \
-        KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasIcamax(                            \
-            s.handle, N, reinterpret_cast<const cuComplex*>(X.data()), LDX,   \
-            &idx));                                                           \
-        R() = static_cast<size_type>(idx);                                    \
-      } else {                                                                \
-        Iamax<RV, XV, 1, false, ETI_SPEC_AVAIL>::iamax(R, X);                 \
-      }                                                                       \
-      Kokkos::Profiling::popRegion();                                         \
-    }                                                                         \
-  };                                                                          \
-  template <class ExecSpace>                                                  \
-  struct Iamax<                                                               \
-      Kokkos::View<INDEX_TYPE, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,   \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
-      Kokkos::View<const Kokkos::complex<float>*, LAYOUT,                     \
-                   Kokkos::Device<ExecSpace, MEMSPACE>,                       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
-      1, true, ETI_SPEC_AVAIL> {                                              \
-    typedef Kokkos::View<INDEX_TYPE, LAYOUT,                                  \
-                         Kokkos::Device<ExecSpace, MEMSPACE>,                 \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >            \
-        RV;                                                                   \
-    typedef Kokkos::View<const Kokkos::complex<float>*, LAYOUT,               \
-                         Kokkos::Device<ExecSpace, MEMSPACE>,                 \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >            \
-        XV;                                                                   \
-    typedef typename XV::size_type size_type;                                 \
-                                                                              \
-    static void iamax(RV& R, const XV& X) {                                   \
-      Kokkos::Profiling::pushRegion(                                          \
-          "KokkosBlas::iamax[TPL_CUBLAS,complex<float>]");                    \
-      const size_type numElems = X.extent(0);                                 \
-      if (numElems == 0) {                                                    \
-        Kokkos::deep_copy(R, 0);                                              \
-        return;                                                               \
-      }                                                                       \
-      if (numElems < static_cast<size_type>(INT_MAX)) {                       \
-        iamax_print_specialization<RV, XV>();                                 \
-        const int N   = static_cast<int>(numElems);                           \
-        const int XST = X.stride(0);                                          \
-        const int LDX = (XST == 0) ? 1 : XST;                                 \
-        KokkosBlas::Impl::CudaBlasSingleton& s =                              \
-            KokkosBlas::Impl::CudaBlasSingleton::singleton();                 \
-        cublasPointerMode_t prevPtrMode;                                      \
-        KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                         \
-            cublasGetPointerMode(s.handle, &prevPtrMode));                    \
-        if (prevPtrMode == CUBLAS_POINTER_MODE_HOST) {                        \
-          KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                       \
-              cublasSetPointerMode(s.handle, CUBLAS_POINTER_MODE_DEVICE));    \
-        }                                                                     \
-        KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasIcamax(                            \
-            s.handle, N, reinterpret_cast<const cuComplex*>(X.data()), LDX,   \
-            reinterpret_cast<int*>(R.data())));                               \
-        Kokkos::fence();                                                      \
-        if (prevPtrMode == CUBLAS_POINTER_MODE_HOST) {                        \
-          KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                       \
-              cublasSetPointerMode(s.handle, prevPtrMode));                   \
-        }                                                                     \
-      } else {                                                                \
-        Iamax<RV, XV, 1, false, ETI_SPEC_AVAIL>::iamax(R, X);                 \
-      }                                                                       \
-      Kokkos::Profiling::popRegion();                                         \
-    }                                                                         \
-  };
+  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS(Kokkos::complex<float>, cuComplex,  \
+                                          cublasIcamax, INDEX_TYPE, LAYOUT,   \
+                                          MEMSPACE, ETI_SPEC_AVAIL)
 
 KOKKOSBLAS1_DIAMAX_TPL_SPEC_DECL_CUBLAS(unsigned long, Kokkos::LayoutLeft,
                                         Kokkos::CudaSpace, true)
@@ -742,32 +392,34 @@ KOKKOSBLAS1_CIAMAX_TPL_SPEC_DECL_CUBLAS(unsigned int, Kokkos::LayoutLeft,
 #endif
 
 // rocBLAS
-#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ROCBLAS)
 #include <KokkosBlas_tpl_spec.hpp>
 
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS1_DIAMAX_TPL_SPEC_DECL_ROCBLAS(INDEX_TYPE, LAYOUT, MEMSPACE, \
-                                                 ETI_SPEC_AVAIL)               \
+#define KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_ROCBLAS(                              \
+    SCALAR_TYPE, ROCBLAS_SCALAR_TYPE, ROCBLAS_FN, INDEX_TYPE, LAYOUT,          \
+    MEMSPACE, ETI_SPEC_AVAIL)                                                  \
   template <class ExecSpace>                                                   \
-  struct Iamax<                                                                \
-      Kokkos::View<INDEX_TYPE, LAYOUT, Kokkos::HostSpace,                      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      1, true, ETI_SPEC_AVAIL> {                                               \
+  struct Iamax<Kokkos::View<INDEX_TYPE, LAYOUT, Kokkos::HostSpace,             \
+                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,         \
+               Kokkos::View<const SCALAR_TYPE*, LAYOUT,                        \
+                            Kokkos::Device<ExecSpace, MEMSPACE>,               \
+                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,         \
+               1, true, ETI_SPEC_AVAIL> {                                      \
     typedef Kokkos::View<INDEX_TYPE, LAYOUT, Kokkos::HostSpace,                \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
         RV;                                                                    \
-    typedef Kokkos::View<const double*, LAYOUT,                                \
+    typedef Kokkos::View<const SCALAR_TYPE*, LAYOUT,                           \
                          Kokkos::Device<ExecSpace, MEMSPACE>,                  \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
         XV;                                                                    \
     typedef typename XV::size_type size_type;                                  \
                                                                                \
     static void iamax(RV& R, const XV& X) {                                    \
-      Kokkos::Profiling::pushRegion("KokkosBlas::iamax[TPL_ROCBLAS,double]");  \
+      Kokkos::Profiling::pushRegion(                                           \
+          "KokkosBlas::iamax[TPL_ROCBLAS," #SCALAR_TYPE "]");                  \
       const size_type numElems = X.extent(0);                                  \
       if (numElems == 0) {                                                     \
         Kokkos::deep_copy(R, 0);                                               \
@@ -781,9 +433,22 @@ namespace Impl {
         int idx;                                                               \
         KokkosBlas::Impl::RocBlasSingleton& s =                                \
             KokkosBlas::Impl::RocBlasSingleton::singleton();                   \
+        rocblas_pointer_mode prevPtrMode;                                      \
         KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                         \
-            rocblas_idamax(s.handle, N, X.data(), LDX, &idx));                 \
+            rocblas_get_pointer_mode(s.handle, &prevPtrMode));                 \
+        if (prevPtrMode == rocblas_pointer_mode_device) {                      \
+          KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                       \
+              rocblas_set_pointer_mode(s.handle, rocblas_pointer_mode_host));  \
+        }                                                                      \
+        KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                         \
+            ROCBLAS_FN(s.handle, N,                                            \
+                       reinterpret_cast<const ROCBLAS_SCALAR_TYPE*>(X.data()), \
+                       LDX, &idx));                                            \
         R() = static_cast<size_type>(idx);                                     \
+        if (prevPtrMode == rocblas_pointer_mode_device) {                      \
+          KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_pointer_mode(              \
+              s.handle, rocblas_pointer_mode_device));                         \
+        }                                                                      \
       } else {                                                                 \
         Iamax<RV, XV, 1, false, ETI_SPEC_AVAIL>::iamax(R, X);                  \
       }                                                                        \
@@ -794,21 +459,23 @@ namespace Impl {
   struct Iamax<                                                                \
       Kokkos::View<INDEX_TYPE, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,    \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+      Kokkos::View<const SCALAR_TYPE*, LAYOUT,                                 \
+                   Kokkos::Device<ExecSpace, MEMSPACE>,                        \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
       1, true, ETI_SPEC_AVAIL> {                                               \
     typedef Kokkos::View<INDEX_TYPE, LAYOUT,                                   \
                          Kokkos::Device<ExecSpace, MEMSPACE>,                  \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
         RV;                                                                    \
-    typedef Kokkos::View<const double*, LAYOUT,                                \
+    typedef Kokkos::View<const SCALAR_TYPE*, LAYOUT,                           \
                          Kokkos::Device<ExecSpace, MEMSPACE>,                  \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
         XV;                                                                    \
     typedef typename XV::size_type size_type;                                  \
                                                                                \
     static void iamax(RV& R, const XV& X) {                                    \
-      Kokkos::Profiling::pushRegion("KokkosBlas::iamax[TPL_ROCBLAS,double]");  \
+      Kokkos::Profiling::pushRegion(                                           \
+          "KokkosBlas::iamax[TPL_ROCBLAS," #SCALAR_TYPE "]");                  \
       const size_type numElems = X.extent(0);                                  \
       if (numElems == 0) {                                                     \
         Kokkos::deep_copy(R, 0);                                               \
@@ -828,12 +495,14 @@ namespace Impl {
           KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_pointer_mode(              \
               s.handle, rocblas_pointer_mode_device));                         \
         }                                                                      \
-        KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_idamax(                          \
-            s.handle, N, X.data(), LDX, reinterpret_cast<int*>(R.data())));    \
+        KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                         \
+            ROCBLAS_FN(s.handle, N,                                            \
+                       reinterpret_cast<const ROCBLAS_SCALAR_TYPE*>(X.data()), \
+                       LDX, reinterpret_cast<int*>(R.data())));                \
         Kokkos::fence();                                                       \
         if (prevPtrMode == rocblas_pointer_mode_host) {                        \
           KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                       \
-              rocblas_set_pointer_mode(s.handle, prevPtrMode));                \
+              rocblas_set_pointer_mode(s.handle, rocblas_pointer_mode_host));  \
         }                                                                      \
       } else {                                                                 \
         Iamax<RV, XV, 1, false, ETI_SPEC_AVAIL>::iamax(R, X);                  \
@@ -841,304 +510,30 @@ namespace Impl {
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };
+
+#define KOKKOSBLAS1_DIAMAX_TPL_SPEC_DECL_ROCBLAS(INDEX_TYPE, LAYOUT, MEMSPACE, \
+                                                 ETI_SPEC_AVAIL)               \
+  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_ROCBLAS(double, double, rocblas_idamax,     \
+                                           INDEX_TYPE, LAYOUT, MEMSPACE,       \
+                                           ETI_SPEC_AVAIL)
 
 #define KOKKOSBLAS1_SIAMAX_TPL_SPEC_DECL_ROCBLAS(INDEX_TYPE, LAYOUT, MEMSPACE, \
                                                  ETI_SPEC_AVAIL)               \
-  template <class ExecSpace>                                                   \
-  struct Iamax<                                                                \
-      Kokkos::View<INDEX_TYPE, LAYOUT, Kokkos::HostSpace,                      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,  \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      1, true, ETI_SPEC_AVAIL> {                                               \
-    typedef Kokkos::View<INDEX_TYPE, LAYOUT, Kokkos::HostSpace,                \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
-        RV;                                                                    \
-    typedef Kokkos::View<const float*, LAYOUT,                                 \
-                         Kokkos::Device<ExecSpace, MEMSPACE>,                  \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
-        XV;                                                                    \
-    typedef typename XV::size_type size_type;                                  \
-                                                                               \
-    static void iamax(RV& R, const XV& X) {                                    \
-      Kokkos::Profiling::pushRegion("KokkosBlas::iamax[TPL_ROCBLAS,float]");   \
-      const size_type numElems = X.extent(0);                                  \
-      if (numElems == 0) {                                                     \
-        Kokkos::deep_copy(R, 0);                                               \
-        ;                                                                      \
-        return;                                                                \
-      }                                                                        \
-      if (numElems < static_cast<size_type>(INT_MAX)) {                        \
-        iamax_print_specialization<RV, XV>();                                  \
-        const int N   = static_cast<int>(numElems);                            \
-        const int XST = X.stride(0);                                           \
-        const int LDX = (XST == 0) ? 1 : XST;                                  \
-        int idx;                                                               \
-        KokkosBlas::Impl::RocBlasSingleton& s =                                \
-            KokkosBlas::Impl::RocBlasSingleton::singleton();                   \
-        KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                         \
-            rocblas_isamax(s.handle, N, X.data(), LDX, &idx));                 \
-        R() = static_cast<size_type>(idx);                                     \
-      } else {                                                                 \
-        Iamax<RV, XV, 1, false, ETI_SPEC_AVAIL>::iamax(R, X);                  \
-      }                                                                        \
-      Kokkos::Profiling::popRegion();                                          \
-    }                                                                          \
-  };                                                                           \
-  template <class ExecSpace>                                                   \
-  struct Iamax<                                                                \
-      Kokkos::View<INDEX_TYPE, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,    \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,  \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      1, true, ETI_SPEC_AVAIL> {                                               \
-    typedef Kokkos::View<INDEX_TYPE, LAYOUT,                                   \
-                         Kokkos::Device<ExecSpace, MEMSPACE>,                  \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
-        RV;                                                                    \
-    typedef Kokkos::View<const float*, LAYOUT,                                 \
-                         Kokkos::Device<ExecSpace, MEMSPACE>,                  \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
-        XV;                                                                    \
-    typedef typename XV::size_type size_type;                                  \
-                                                                               \
-    static void iamax(RV& R, const XV& X) {                                    \
-      Kokkos::Profiling::pushRegion("KokkosBlas::iamax[TPL_ROCBLAS,float]");   \
-      const size_type numElems = X.extent(0);                                  \
-      if (numElems == 0) {                                                     \
-        Kokkos::deep_copy(R, 0);                                               \
-        ;                                                                      \
-        return;                                                                \
-      }                                                                        \
-      if (numElems < static_cast<size_type>(INT_MAX)) {                        \
-        iamax_print_specialization<RV, XV>();                                  \
-        const int N   = static_cast<int>(numElems);                            \
-        const int XST = X.stride(0);                                           \
-        const int LDX = (XST == 0) ? 1 : XST;                                  \
-        KokkosBlas::Impl::RocBlasSingleton& s =                                \
-            KokkosBlas::Impl::RocBlasSingleton::singleton();                   \
-        rocblas_pointer_mode prevPtrMode;                                      \
-        KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                         \
-            rocblas_get_pointer_mode(s.handle, &prevPtrMode));                 \
-        if (prevPtrMode == rocblas_pointer_mode_host) {                        \
-          KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_pointer_mode(              \
-              s.handle, rocblas_pointer_mode_device));                         \
-        }                                                                      \
-        KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_isamax(                          \
-            s.handle, N, X.data(), LDX, reinterpret_cast<int*>(R.data())));    \
-        Kokkos::fence();                                                       \
-        if (prevPtrMode == rocblas_pointer_mode_host) {                        \
-          KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                       \
-              rocblas_set_pointer_mode(s.handle, prevPtrMode));                \
-        }                                                                      \
-      } else {                                                                 \
-        Iamax<RV, XV, 1, false, ETI_SPEC_AVAIL>::iamax(R, X);                  \
-      }                                                                        \
-      Kokkos::Profiling::popRegion();                                          \
-    }                                                                          \
-  };
+  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_ROCBLAS(float, float, rocblas_isamax,       \
+                                           INDEX_TYPE, LAYOUT, MEMSPACE,       \
+                                           ETI_SPEC_AVAIL)
 
 #define KOKKOSBLAS1_ZIAMAX_TPL_SPEC_DECL_ROCBLAS(INDEX_TYPE, LAYOUT, MEMSPACE, \
                                                  ETI_SPEC_AVAIL)               \
-  template <class ExecSpace>                                                   \
-  struct Iamax<Kokkos::View<INDEX_TYPE, LAYOUT, Kokkos::HostSpace,             \
-                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,         \
-               Kokkos::View<const Kokkos::complex<double>*, LAYOUT,            \
-                            Kokkos::Device<ExecSpace, MEMSPACE>,               \
-                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,         \
-               1, true, ETI_SPEC_AVAIL> {                                      \
-    typedef Kokkos::View<INDEX_TYPE, LAYOUT, Kokkos::HostSpace,                \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
-        RV;                                                                    \
-    typedef Kokkos::View<const Kokkos::complex<double>*, LAYOUT,               \
-                         Kokkos::Device<ExecSpace, MEMSPACE>,                  \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
-        XV;                                                                    \
-    typedef typename XV::size_type size_type;                                  \
-                                                                               \
-    static void iamax(RV& R, const XV& X) {                                    \
-      Kokkos::Profiling::pushRegion(                                           \
-          "KokkosBlas::iamax[TPL_ROCBLAS,complex<double>]");                   \
-      const size_type numElems = X.extent(0);                                  \
-      if (numElems == 0) {                                                     \
-        Kokkos::deep_copy(R, 0);                                               \
-        return;                                                                \
-      }                                                                        \
-      if (numElems < static_cast<size_type>(INT_MAX)) {                        \
-        iamax_print_specialization<RV, XV>();                                  \
-        const int N   = static_cast<int>(numElems);                            \
-        const int XST = X.stride(0);                                           \
-        const int LDX = (XST == 0) ? 1 : XST;                                  \
-        int idx;                                                               \
-        KokkosBlas::Impl::RocBlasSingleton& s =                                \
-            KokkosBlas::Impl::RocBlasSingleton::singleton();                   \
-        KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_izamax(                          \
-            s.handle, N,                                                       \
-            reinterpret_cast<const rocblas_double_complex*>(X.data()), LDX,    \
-            &idx));                                                            \
-        R() = static_cast<size_type>(idx);                                     \
-      } else {                                                                 \
-        Iamax<RV, XV, 1, false, ETI_SPEC_AVAIL>::iamax(R, X);                  \
-      }                                                                        \
-      Kokkos::Profiling::popRegion();                                          \
-    }                                                                          \
-  };                                                                           \
-  template <class ExecSpace>                                                   \
-  struct Iamax<                                                                \
-      Kokkos::View<INDEX_TYPE, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,    \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      Kokkos::View<const Kokkos::complex<double>*, LAYOUT,                     \
-                   Kokkos::Device<ExecSpace, MEMSPACE>,                        \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      1, true, ETI_SPEC_AVAIL> {                                               \
-    typedef Kokkos::View<INDEX_TYPE, LAYOUT,                                   \
-                         Kokkos::Device<ExecSpace, MEMSPACE>,                  \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
-        RV;                                                                    \
-    typedef Kokkos::View<const Kokkos::complex<double>*, LAYOUT,               \
-                         Kokkos::Device<ExecSpace, MEMSPACE>,                  \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
-        XV;                                                                    \
-    typedef typename XV::size_type size_type;                                  \
-                                                                               \
-    static void iamax(RV& R, const XV& X) {                                    \
-      Kokkos::Profiling::pushRegion(                                           \
-          "KokkosBlas::iamax[TPL_ROCBLAS,complex<double>]");                   \
-      const size_type numElems = X.extent(0);                                  \
-      if (numElems == 0) {                                                     \
-        Kokkos::deep_copy(R, 0);                                               \
-        return;                                                                \
-      }                                                                        \
-      if (numElems < static_cast<size_type>(INT_MAX)) {                        \
-        iamax_print_specialization<RV, XV>();                                  \
-        const int N   = static_cast<int>(numElems);                            \
-        const int XST = X.stride(0);                                           \
-        const int LDX = (XST == 0) ? 1 : XST;                                  \
-        KokkosBlas::Impl::RocBlasSingleton& s =                                \
-            KokkosBlas::Impl::RocBlasSingleton::singleton();                   \
-        rocblas_pointer_mode prevPtrMode;                                      \
-        KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                         \
-            rocblas_get_pointer_mode(s.handle, &prevPtrMode));                 \
-        if (prevPtrMode == rocblas_pointer_mode_host) {                        \
-          KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_pointer_mode(              \
-              s.handle, rocblas_pointer_mode_device));                         \
-        }                                                                      \
-        KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_izamax(                          \
-            s.handle, N,                                                       \
-            reinterpret_cast<const rocblas_double_complex*>(X.data()), LDX,    \
-            reinterpret_cast<int*>(R.data())));                                \
-        Kokkos::fence();                                                       \
-        if (prevPtrMode == rocblas_pointer_mode_host) {                        \
-          KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                       \
-              rocblas_set_pointer_mode(s.handle, prevPtrMode));                \
-        }                                                                      \
-      } else {                                                                 \
-        Iamax<RV, XV, 1, false, ETI_SPEC_AVAIL>::iamax(R, X);                  \
-      }                                                                        \
-      Kokkos::Profiling::popRegion();                                          \
-    }                                                                          \
-  };
+  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_ROCBLAS(                                    \
+      Kokkos::complex<double>, rocblas_double_complex, rocblas_izamax,         \
+      INDEX_TYPE, LAYOUT, MEMSPACE, ETI_SPEC_AVAIL)
 
 #define KOKKOSBLAS1_CIAMAX_TPL_SPEC_DECL_ROCBLAS(INDEX_TYPE, LAYOUT, MEMSPACE, \
                                                  ETI_SPEC_AVAIL)               \
-  template <class ExecSpace>                                                   \
-  struct Iamax<Kokkos::View<INDEX_TYPE, LAYOUT, Kokkos::HostSpace,             \
-                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,         \
-               Kokkos::View<const Kokkos::complex<float>*, LAYOUT,             \
-                            Kokkos::Device<ExecSpace, MEMSPACE>,               \
-                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,         \
-               1, true, ETI_SPEC_AVAIL> {                                      \
-    typedef Kokkos::View<INDEX_TYPE, LAYOUT, Kokkos::HostSpace,                \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
-        RV;                                                                    \
-    typedef Kokkos::View<const Kokkos::complex<float>*, LAYOUT,                \
-                         Kokkos::Device<ExecSpace, MEMSPACE>,                  \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
-        XV;                                                                    \
-    typedef typename XV::size_type size_type;                                  \
-                                                                               \
-    static void iamax(RV& R, const XV& X) {                                    \
-      Kokkos::Profiling::pushRegion(                                           \
-          "KokkosBlas::iamax[TPL_ROCBLAS,complex<float>]");                    \
-      const size_type numElems = X.extent(0);                                  \
-      if (numElems == 0) {                                                     \
-        Kokkos::deep_copy(R, 0);                                               \
-        return;                                                                \
-      }                                                                        \
-      if (numElems < static_cast<size_type>(INT_MAX)) {                        \
-        iamax_print_specialization<RV, XV>();                                  \
-        const int N   = static_cast<int>(numElems);                            \
-        const int XST = X.stride(0);                                           \
-        const int LDX = (XST == 0) ? 1 : XST;                                  \
-        int idx;                                                               \
-        KokkosBlas::Impl::RocBlasSingleton& s =                                \
-            KokkosBlas::Impl::RocBlasSingleton::singleton();                   \
-        KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_icamax(                          \
-            s.handle, N,                                                       \
-            reinterpret_cast<const rocblas_float_complex*>(X.data()), LDX,     \
-            &idx));                                                            \
-        R() = static_cast<size_type>(idx);                                     \
-      } else {                                                                 \
-        Iamax<RV, XV, 1, false, ETI_SPEC_AVAIL>::iamax(R, X);                  \
-      }                                                                        \
-      Kokkos::Profiling::popRegion();                                          \
-    }                                                                          \
-  };                                                                           \
-  template <class ExecSpace>                                                   \
-  struct Iamax<                                                                \
-      Kokkos::View<INDEX_TYPE, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,    \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      Kokkos::View<const Kokkos::complex<float>*, LAYOUT,                      \
-                   Kokkos::Device<ExecSpace, MEMSPACE>,                        \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      1, true, ETI_SPEC_AVAIL> {                                               \
-    typedef Kokkos::View<INDEX_TYPE, LAYOUT,                                   \
-                         Kokkos::Device<ExecSpace, MEMSPACE>,                  \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
-        RV;                                                                    \
-    typedef Kokkos::View<const Kokkos::complex<float>*, LAYOUT,                \
-                         Kokkos::Device<ExecSpace, MEMSPACE>,                  \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
-        XV;                                                                    \
-    typedef typename XV::size_type size_type;                                  \
-                                                                               \
-    static void iamax(RV& R, const XV& X) {                                    \
-      Kokkos::Profiling::pushRegion(                                           \
-          "KokkosBlas::iamax[TPL_ROCBLAS,complex<float>]");                    \
-      const size_type numElems = X.extent(0);                                  \
-      if (numElems == 0) {                                                     \
-        Kokkos::deep_copy(R, 0);                                               \
-        return;                                                                \
-      }                                                                        \
-      if (numElems < static_cast<size_type>(INT_MAX)) {                        \
-        iamax_print_specialization<RV, XV>();                                  \
-        const int N   = static_cast<int>(numElems);                            \
-        const int XST = X.stride(0);                                           \
-        const int LDX = (XST == 0) ? 1 : XST;                                  \
-        KokkosBlas::Impl::RocBlasSingleton& s =                                \
-            KokkosBlas::Impl::RocBlasSingleton::singleton();                   \
-        rocblas_pointer_mode prevPtrMode;                                      \
-        KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                         \
-            rocblas_get_pointer_mode(s.handle, &prevPtrMode));                 \
-        if (prevPtrMode == rocblas_pointer_mode_host) {                        \
-          KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_pointer_mode(              \
-              s.handle, rocblas_pointer_mode_device));                         \
-        }                                                                      \
-        KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_icamax(                          \
-            s.handle, N,                                                       \
-            reinterpret_cast<const rocblas_float_complex*>(X.data()), LDX,     \
-            reinterpret_cast<int*>(R.data())));                                \
-        Kokkos::fence();                                                       \
-        if (prevPtrMode == rocblas_pointer_mode_host) {                        \
-          KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                       \
-              rocblas_set_pointer_mode(s.handle, prevPtrMode));                \
-        }                                                                      \
-      } else {                                                                 \
-        Iamax<RV, XV, 1, false, ETI_SPEC_AVAIL>::iamax(R, X);                  \
-      }                                                                        \
-      Kokkos::Profiling::popRegion();                                          \
-    }                                                                          \
-  };
+  KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_ROCBLAS(                                    \
+      Kokkos::complex<float>, rocblas_float_complex, rocblas_icamax,           \
+      INDEX_TYPE, LAYOUT, MEMSPACE, ETI_SPEC_AVAIL)
 
 KOKKOSBLAS1_DIAMAX_TPL_SPEC_DECL_ROCBLAS(unsigned long, Kokkos::LayoutLeft,
                                          Kokkos::Experimental::HIPSpace, true)
