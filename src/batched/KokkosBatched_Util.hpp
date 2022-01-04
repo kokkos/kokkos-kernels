@@ -831,6 +831,16 @@ KOKKOS_INLINE_FUNCTION auto subview_wrapper(
   return sv_nt;
 }
 
+/**
+ *
+ * @tparam ViewValueType The value type (Scalar or Vector) of each view element
+ * @tparam ViewType The view type
+ * @param v The view handle
+ * @param m The requested row index of v
+ * @param n The requested col index of v
+ * @return If m and n are within the extents of v, a valid element of v;
+ *         otherwise, the last element of v.
+ */
 template <class ViewValueType, class ViewType>
 KOKKOS_INLINE_FUNCTION ViewValueType
 access_view_bounds_check(ViewType v, int m, int n, const BoundsCheck::Yes &) {
