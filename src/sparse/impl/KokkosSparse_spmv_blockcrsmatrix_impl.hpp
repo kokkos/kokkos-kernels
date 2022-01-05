@@ -941,7 +941,6 @@ struct BCRS_GEMM_Transpose_Functor {
     const auto beta1  = static_cast<value_type>(1);
     const auto alpha1 = beta1;
     const auto ldx    = m_x.stride_1();
-    const auto ldy    = m_y.stride_1();
     //
     if (conjugate) {
       for (ordinal_type ic = 0; ic < count; ++ic) {
