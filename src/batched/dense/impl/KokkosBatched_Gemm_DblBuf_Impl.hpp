@@ -94,7 +94,8 @@ class BatchedDblBufGemm {
       typename execution_space_type::scratch_memory_space;
   using view_type_2d_scratch =
       Kokkos::View<view_value_type **, Kokkos::LayoutRight, scratch_space_type>;
-  // TODO: add compile-time extents
+  static_assert(!std::is_same<ArgAlphaFmaTag, ArgAlphaMulTag>::value,
+                "ArgAlphaFmaTag is the same as ArgAlphaMulTag");
 
  public:
   BatchedDblBufGemm(HandleType *const handle, ScalarType alpha, AViewType A,
