@@ -388,21 +388,6 @@ KOKKOSBLAS3_CGEMM_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight,
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS3_GEMM_ROCBLAS_DETERMINE_ARGS(LAYOUT)                        \
-  const bool A_t = (transA[0] != 'N') && (transA[0] != 'n');                   \
-  const int M    = static_cast<int>(C.extent(0));                              \
-  const int N    = static_cast<int>(C.extent(1));                              \
-  const int K    = static_cast<int>(A.extent(A_t ? 0 : 1));                    \
-                                                                               \
-  bool is_lr = std::is_same<Kokkos::LayoutRight, LAYOUT>::value;               \
-                                                                               \
-  const int AST = is_lr ? A.stride(0) : A.stride(1), LDA = AST == 0 ? 1 : AST; \
-  const int BST = is_lr ? B.stride(0) : B.stride(1), LDB = BST == 0 ? 1 : BST; \
-  const int CST = is_lr ? C.stride(0) : C.stride(1), LDC = CST == 0 ? 1 : CST; \
-                                                                               \
-  rocblas_operation transa = trans_mode_kk_to_rocblas(transA);                 \
-  rocblas_operation transb = trans_mode_kk_to_rocblas(transB);
-
 #define KOKKOSBLAS3_XGEMM_ROCBLAS(SCALAR_TYPE, ROCBLAS_SCALAR_TYPE,          \
                                   ROCBLAS_FN, LAYOUT, MEM_SPACE,             \
                                   ETI_SPEC_AVAIL)                            \
@@ -440,7 +425,22 @@ namespace Impl {
       Kokkos::Profiling::pushRegion(                                         \
           "KokkosBlas::gemm[TPL_ROCBLAS," #SCALAR_TYPE "]");                 \
                                                                              \
-      KOKKOSBLAS3_GEMM_ROCBLAS_DETERMINE_ARGS(LAYOUT)                        \
+      const bool A_t = (transA[0] != 'N') && (transA[0] != 'n');             \
+      const int M    = static_cast<int>(C.extent(0));                        \
+      const int N    = static_cast<int>(C.extent(1));                        \
+      const int K    = static_cast<int>(A.extent(A_t ? 0 : 1));              \
+                                                                             \
+      bool is_lr = std::is_same<Kokkos::LayoutRight, LAYOUT>::value;         \
+                                                                             \
+      const int AST = is_lr ? A.stride(0) : A.stride(1),                     \
+                LDA = AST == 0 ? 1 : AST;                                    \
+      const int BST = is_lr ? B.stride(0) : B.stride(1),                     \
+                LDB = BST == 0 ? 1 : BST;                                    \
+      const int CST = is_lr ? C.stride(0) : C.stride(1),                     \
+                LDC = CST == 0 ? 1 : CST;                                    \
+                                                                             \
+      rocblas_operation transa = trans_mode_kk_to_rocblas(transA);           \
+      rocblas_operation transb = trans_mode_kk_to_rocblas(transB);           \
                                                                              \
       constexpr int numDotsLayoutLeftThreshold  = 1600;                      \
       constexpr int numDotsLayoutRightThreshold = 100;                       \

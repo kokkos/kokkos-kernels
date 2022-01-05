@@ -49,11 +49,11 @@ namespace KokkosBlas {
 namespace Impl {
 
 namespace {
-template <class RV, class AV, class XV>
+template <class RV, class AS, class XV>
 inline void scal_print_specialization() {
 #if defined(KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION)
   printf("KokkosBlas1::scal<> TPL Blas specialization for < %s , %s , %s >\n",
-         typeid(RV).name(), typeid(AV).name(), typeid(XV).name());
+         typeid(RV).name(), typeid(AS).name(), typeid(XV).name());
 #endif
 }
 }  // namespace
@@ -81,27 +81,27 @@ namespace Impl {
                          Kokkos::Device<ExecSpace, MEMSPACE>,                  \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
         RV;                                                                    \
-    typedef SCALAR_TYPE AV;                                                    \
+    typedef SCALAR_TYPE AS;                                                    \
     typedef Kokkos::View<const SCALAR_TYPE*, LAYOUT,                           \
                          Kokkos::Device<ExecSpace, MEMSPACE>,                  \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
         XV;                                                                    \
     typedef typename XV::size_type size_type;                                  \
                                                                                \
-    static void scal(const RV& R, const AV& alpha, const XV& X) {              \
+    static void scal(const RV& R, const AS& alpha, const XV& X) {              \
       Kokkos::Profiling::pushRegion("KokkosBlas::scal[TPL_BLAS," #SCALAR_TYPE  \
                                     "]");                                      \
       const size_type numElems = X.extent(0);                                  \
       if ((numElems < static_cast<size_type>(INT_MAX)) &&                      \
           (R.data() == X.data())) {                                            \
-        scal_print_specialization<RV, AV, XV>();                               \
-        int N                            = numElems;                           \
-        int one                          = 1;                                  \
-        const BASE_SCALAR_TYPE alpha_val = alpha;                              \
+        scal_print_specialization<RV, AS, XV>();                               \
+        int N                          = numElems;                             \
+        int one                        = 1;                                    \
+        const BASE_SCALAR_TYPE alpha_b = static_cast<BASE_SCALAR_TYPE>(alpha); \
         HostBlas<BASE_SCALAR_TYPE>::scal(                                      \
-            N, alpha_val, reinterpret_cast<BASE_SCALAR_TYPE*>(R.data()), one); \
+            N, alpha_b, reinterpret_cast<BASE_SCALAR_TYPE*>(R.data()), one);   \
       } else {                                                                 \
-        Scal<RV, AV, XV, 1, false, ETI_SPEC_AVAIL>::scal(R, alpha, X);         \
+        Scal<RV, AS, XV, 1, false, ETI_SPEC_AVAIL>::scal(R, alpha, X);         \
       }                                                                        \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
@@ -173,20 +173,20 @@ namespace Impl {
                          Kokkos::Device<ExecSpace, MEMSPACE>,                 \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >            \
         RV;                                                                   \
-    typedef SCALAR_TYPE AV;                                                   \
+    typedef SCALAR_TYPE AS;                                                   \
     typedef Kokkos::View<const SCALAR_TYPE*, LAYOUT,                          \
                          Kokkos::Device<ExecSpace, MEMSPACE>,                 \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >            \
         XV;                                                                   \
     typedef typename XV::size_type size_type;                                 \
                                                                               \
-    static void scal(const RV& R, const AV& alpha, const XV& X) {             \
+    static void scal(const RV& R, const AS& alpha, const XV& X) {             \
       Kokkos::Profiling::pushRegion(                                          \
           "KokkosBlas::scal[TPL_CUBLAS," #SCALAR_TYPE "]");                   \
       const size_type numElems = X.extent(0);                                 \
       if ((numElems < static_cast<size_type>(INT_MAX)) &&                     \
           (R.data() == X.data())) {                                           \
-        scal_print_specialization<RV, AV, XV>();                              \
+        scal_print_specialization<RV, AS, XV>();                              \
         const int N       = static_cast<int>(numElems);                       \
         constexpr int one = 1;                                                \
         KokkosBlas::Impl::CudaBlasSingleton& s =                              \
@@ -195,7 +195,7 @@ namespace Impl {
             s.handle, N, reinterpret_cast<const CUDA_SCALAR_TYPE*>(&alpha),   \
             reinterpret_cast<CUDA_SCALAR_TYPE*>(R.data()), one));             \
       } else {                                                                \
-        Scal<RV, AV, XV, 1, false, ETI_SPEC_AVAIL>::scal(R, alpha, X);        \
+        Scal<RV, AS, XV, 1, false, ETI_SPEC_AVAIL>::scal(R, alpha, X);        \
       }                                                                       \
       Kokkos::Profiling::popRegion();                                         \
     }                                                                         \
@@ -291,20 +291,20 @@ namespace Impl {
                          Kokkos::Device<ExecSpace, MEMSPACE>,                  \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
         RV;                                                                    \
-    typedef SCALAR_TYPE AV;                                                    \
+    typedef SCALAR_TYPE AS;                                                    \
     typedef Kokkos::View<const SCALAR_TYPE*, LAYOUT,                           \
                          Kokkos::Device<ExecSpace, MEMSPACE>,                  \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
         XV;                                                                    \
     typedef typename XV::size_type size_type;                                  \
                                                                                \
-    static void scal(const RV& R, const AV& alpha, const XV& X) {              \
+    static void scal(const RV& R, const AS& alpha, const XV& X) {              \
       Kokkos::Profiling::pushRegion(                                           \
           "KokkosBlas::scal[TPL_ROCBLAS," #SCALAR_TYPE "]");                   \
       const size_type numElems = X.extent(0);                                  \
       if ((numElems < static_cast<size_type>(INT_MAX)) &&                      \
           (R.data() == X.data())) {                                            \
-        scal_print_specialization<RV, AV, XV>();                               \
+        scal_print_specialization<RV, AS, XV>();                               \
         const int N       = static_cast<int>(numElems);                        \
         constexpr int one = 1;                                                 \
         KokkosBlas::Impl::RocBlasSingleton& s =                                \
@@ -313,7 +313,7 @@ namespace Impl {
             s.handle, N, reinterpret_cast<const ROCBLAS_SCALAR_TYPE*>(&alpha), \
             reinterpret_cast<ROCBLAS_SCALAR_TYPE*>(R.data()), one));           \
       } else {                                                                 \
-        Scal<RV, AV, XV, 1, false, ETI_SPEC_AVAIL>::scal(R, alpha, X);         \
+        Scal<RV, AS, XV, 1, false, ETI_SPEC_AVAIL>::scal(R, alpha, X);         \
       }                                                                        \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
