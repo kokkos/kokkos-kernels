@@ -545,7 +545,7 @@ class BsrMatrix {
     if (annz > 0) {
       ordinal_type iblock = 0;
       std::set<ordinal_type> set_blocks;
-      for (ordinal_type ii = 0; ii <= annz; ++ii) {
+      for (size_type ii = 0; ii <= annz; ++ii) {
         if ((ii == annz) || ((unman_rows(ii) / blockDim_) > iblock)) {
           // Flush the stored entries
           row_map_host(iblock + 1) = set_blocks.size();
@@ -558,7 +558,7 @@ class BsrMatrix {
       }
     }
 
-    for (ordinal_type ii = 0; ii < annz; ++ii)
+    for (size_type ii = 0; ii < annz; ++ii)
       row_map_host(ii + 1) += row_map_host(ii);
 
     Kokkos::deep_copy(tmp_row_map, row_map_host);
@@ -576,7 +576,7 @@ class BsrMatrix {
       //--- Fill tmp_entries
       ordinal_type cur_block = 0;
       std::set<ordinal_type> set_blocks;
-      for (ordinal_type ii = 0; ii <= annz; ++ii) {
+      for (size_type ii = 0; ii <= annz; ++ii) {
         if ((ii == annz) || ((unman_rows(ii) / blockDim_) > cur_block)) {
           // Flush the stored entries
           ordinal_type ipos = row_map_host(cur_block);
@@ -589,11 +589,10 @@ class BsrMatrix {
         set_blocks.insert(tmp_jblock);
       }
       //--- Fill numerical values
-      for (ordinal_type ii = 0; ii < annz; ++ii) {
-        ordinal_type iblock = unman_rows(ii) / blockDim_;
-        ordinal_type ilocal = unman_rows(ii) % blockDim_;
-        ordinal_type jblock = unman_cols(ii) / blockDim_;
-        ordinal_type jlocal = unman_cols(ii) % blockDim_;
+      for (size_type ii = 0; ii < annz; ++ii) {
+        const auto ilocal = unman_rows(ii) % blockDim_;
+        const auto jblock = unman_cols(ii) / blockDim_;
+        const auto jlocal = unman_cols(ii) % blockDim_;
         for (auto jj = row_map_host(jblock); jj < row_map_host(jblock + 1);
              ++jj) {
           if (tmp_entries_host(jj) == jblock) {
@@ -733,7 +732,7 @@ class BsrMatrix {
     OrdinalType numBlocks = 0;
     for (OrdinalType i = 0; i < crs_mtx.numRows(); i += blockDim_) {
       std::set<OrdinalType> col_set;
-      for (OrdinalType ie = h_crs_row_map(i); ie < h_crs_row_map(i + blockDim_);
+      for (auto ie = h_crs_row_map(i); ie < h_crs_row_map(i + blockDim_);
            ++ie) {
         col_set.insert(h_crs_entries(ie) / blockDim_);
       }
@@ -758,8 +757,8 @@ class BsrMatrix {
       auto ir_start = ib * blockDim_;
       auto ir_stop  = (ib + 1) * blockDim_;
       std::set<OrdinalType> col_set;
-      for (OrdinalType jk = h_crs_row_map(ir_start);
-           jk < h_crs_row_map(ir_stop); ++jk) {
+      for (auto jk = h_crs_row_map(ir_start); jk < h_crs_row_map(ir_stop);
+           ++jk) {
         col_set.insert(h_crs_entries(jk) / blockDim_);
       }
       for (auto col_block : col_set) {
@@ -776,7 +775,7 @@ class BsrMatrix {
 
     typename values_type::HostMirror h_values =
         Kokkos::create_mirror_view(values);
-    if (h_values.extent(0) < numBlocks * blockDim_ * blockDim_) {
+    if (h_values.extent(0) < size_t(numBlocks * blockDim_ * blockDim_)) {
       Kokkos::resize(h_values, numBlocks * blockDim_ * blockDim_);
       Kokkos::resize(values, numBlocks * blockDim_ * blockDim_);
     }
@@ -785,13 +784,11 @@ class BsrMatrix {
     for (OrdinalType ir = 0; ir < crs_mtx.numRows(); ++ir) {
       const auto iblock = ir / blockDim_;
       const auto ilocal = ir % blockDim_;
-      for (OrdinalType jk = h_crs_row_map(ir); jk < h_crs_row_map(ir + 1);
-           ++jk) {
+      for (auto jk = h_crs_row_map(ir); jk < h_crs_row_map(ir + 1); ++jk) {
         const auto jc     = h_crs_entries(jk);
         const auto jblock = jc / blockDim_;
         const auto jlocal = jc % blockDim_;
-        for (OrdinalType jkb = h_row_map(iblock); jkb < h_row_map(iblock + 1);
-             ++jkb) {
+        for (auto jkb = h_row_map(iblock); jkb < h_row_map(iblock + 1); ++jkb) {
           if (h_entries(jkb) == jblock) {
             OrdinalType shift = jkb * blockDim_ * blockDim_;
             h_values(shift + ilocal * blockDim_ + jlocal) = h_crs_values(jk);
