@@ -103,7 +103,6 @@ void make_block_entries(
     int blockSize, std::vector<lno_t> &mat_rowmap,
     std::vector<lno_t> &mat_colidx, std::vector<scalar_t> &mat_val) {
   lno_t nRow = blockSize * mat_b1.numRows();
-  lno_t nCol = blockSize * mat_b1.numCols();
   size_t nnz = static_cast<size_t>(blockSize) * static_cast<size_t>(blockSize) *
                mat_b1.nnz();
 
@@ -123,7 +122,7 @@ void make_block_entries(
     for (lno_t ib = 0; ib < blockSize; ++ib) {
       const lno_t my_row     = ir * blockSize + ib;
       mat_rowmap[my_row + 1] = mat_rowmap[my_row] + (jend - jbeg) * blockSize;
-      for (lno_t ijk = jbeg; ijk < jend; ++ijk) {
+      for (auto ijk = jbeg; ijk < jend; ++ijk) {
         const auto col0 = mat_b1.graph.entries(ijk);
         for (lno_t jb = 0; jb < blockSize; ++jb) {
           mat_colidx[mat_rowmap[my_row] + (ijk - jbeg) * blockSize + jb] =

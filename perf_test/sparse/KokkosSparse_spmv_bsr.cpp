@@ -104,7 +104,6 @@ void make_block_entries(
     int blockSize, std::vector<Ordinal> &mat_rowmap,
     std::vector<Ordinal> &mat_colidx, std::vector<scalar_t> &mat_val) {
   Ordinal nRow = blockSize * mat_b1.numRows();
-  Ordinal nCol = blockSize * mat_b1.numCols();
   size_t nnz = static_cast<size_t>(blockSize) * static_cast<size_t>(blockSize) *
                mat_b1.nnz();
 
@@ -140,9 +139,8 @@ int test_bsr_matrix_single_vec(
     const char fOp[],
     KokkosSparse::CrsMatrix<Scalar, Ordinal, Kokkos::HostSpace, void, int>
         mat_b1,
-    int test, const char *filename, int rows_per_thread, int team_size,
-    int vector_length, int schedule, int loop, const scalar_t alpha,
-    const scalar_t beta, const int bMax) {
+    int test, int loop, const scalar_t alpha, const scalar_t beta,
+    const int bMax) {
   typedef
       typename KokkosSparse::CrsMatrix<scalar_t, Ordinal,
                                        Kokkos::DefaultExecutionSpace, void, int>
@@ -230,7 +228,7 @@ int test_bsr_matrix_single_vec(
     Kokkos::deep_copy(h_ycrs, ycrs);
     Kokkos::deep_copy(h_ybsr, ybsr);
     double error = 0.0, maxNorm = 0.0;
-    for (int ir = 0; ir < h_ycrs.extent(0); ++ir) {
+    for (size_t ir = 0; ir < h_ycrs.extent(0); ++ir) {
       maxNorm = std::max<double>(
           maxNorm, std::abs<double>(static_cast<double>(h_ycrs(ir))));
       error = std::max<double>(
@@ -289,9 +287,8 @@ int test_bsr_matrix_vec(
     const char fOp[],
     KokkosSparse::CrsMatrix<Scalar, Ordinal, Kokkos::HostSpace, void, int>
         mat_b1,
-    int nvec, int test, const char *filename, int rows_per_thread,
-    int team_size, int vector_length, int schedule, int loop,
-    const scalar_t alpha, const scalar_t beta, const int bMax) {
+    int nvec, int test, int loop, const scalar_t alpha, const scalar_t beta,
+    const int bMax) {
   typedef
       typename KokkosSparse::CrsMatrix<scalar_t, Ordinal,
                                        Kokkos::DefaultExecutionSpace, void, int>
@@ -382,7 +379,7 @@ int test_bsr_matrix_vec(
         (mat_val.size() / nRow) * std::numeric_limits<double>::epsilon();
     for (int jc = 0; jc < nvec; ++jc) {
       double error = 0.0, maxNorm = 0.0;
-      for (int ir = 0; ir < h_ycrs.extent(0); ++ir) {
+      for (size_t ir = 0; ir < h_ycrs.extent(0); ++ir) {
         maxNorm = std::max<double>(
             maxNorm, std::abs<double>(static_cast<double>(h_ycrs(ir, jc))));
         error = std::max<double>(error, std::abs<double>(static_cast<double>(
@@ -476,12 +473,7 @@ int main(int argc, char **argv) {
 
   char fOp[] = "N";
 
-  char *filename      = nullptr;
-  int rows_per_thread = -1;
-  int vector_length   = -1;
-  int team_size       = -1;
-  int test     = static_cast<int>(details::Implementation::KokkosKernels);
-  int schedule = 0;
+  int test = static_cast<int>(details::Implementation::KokkosKernels);
 
   for (int i = 0; i < argc; i++) {
     if ((strcmp(argv[i], "-bs") == 0)) {
@@ -565,14 +557,12 @@ int main(int argc, char **argv) {
 
     if (nvec == 1)
       total_errors = details::test_bsr_matrix_single_vec(
-          fOp, mat_b1, test, filename, rows_per_thread, team_size,
-          vector_length, schedule, loop, details::Scalar(3.1),
-          details::Scalar(-2.4), bMax);
+          fOp, mat_b1, test, loop, details::Scalar(3.1), details::Scalar(-2.4),
+          bMax);
     else
-      total_errors = details::test_bsr_matrix_vec(
-          fOp, mat_b1, nvec, test, filename, rows_per_thread, team_size,
-          vector_length, schedule, loop, details::Scalar(3.1),
-          details::Scalar(-2.4), bMax);
+      total_errors = details::test_bsr_matrix_vec(fOp, mat_b1, nvec, test, loop,
+                                                  details::Scalar(3.1),
+                                                  details::Scalar(-2.4), bMax);
 
     if (total_errors != 0) {
       printf("Kokkos::BsrMatrix SpMV Test: Failed\n");
