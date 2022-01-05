@@ -476,7 +476,7 @@ int BatchedGemm(BatchedGemmHandleType *const handle, const ScalarType alpha,
         handle->teamSz = handle->vecLen = 8;
         constexpr int tile_m = 32, tile_n = 32, tile_k = 8;
 #ifdef __CUDACC_RDC__
-        constexpr size_t alpha_in_fma_thresh = 32;
+        constexpr size_t alpha_in_fma_thresh = 24;
 #else
         constexpr size_t alpha_in_fma_thresh = 64;
 #endif  // __CUDAACC_RDC__
