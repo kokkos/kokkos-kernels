@@ -475,9 +475,14 @@ int BatchedGemm(BatchedGemmHandleType *const handle, const ScalarType alpha,
                                             // for now, might need to revisit
         handle->teamSz = handle->vecLen = 8;
         constexpr int tile_m = 32, tile_n = 32, tile_k = 8;
+#ifdef __CUDACC_RDC__
+        constexpr size_t alpha_in_fma_thresh = 32;
+#else
+        constexpr size_t alpha_in_fma_thresh = 64;
+#endif  // __CUDAACC_RDC__
 
-        if (c_m % 32 == 0) {  // No bounds checking
-          if (c_m > 64) {     // apply alpha in fma
+        if (c_m % 32 == 0) {                 // No bounds checking
+          if (c_m >= alpha_in_fma_thresh) {  // apply alpha in fma
             ret = Impl::BatchedDblBufGemm<ArgTransA, ArgTransB, ArgBatchSzDim,
                                           BatchedGemmHandleType, ScalarType,
                                           AViewType, BViewType, CViewType,
@@ -495,8 +500,8 @@ int BatchedGemm(BatchedGemmHandleType *const handle, const ScalarType alpha,
                     handle, alpha, A, B, beta, C)
                     .invoke();
           }
-        } else {           // bounds checking
-          if (c_m > 64) {  // apply alpha in fma
+        } else {                             // bounds checking
+          if (c_m >= alpha_in_fma_thresh) {  // apply alpha in fma
             ret = Impl::BatchedDblBufGemm<ArgTransA, ArgTransB, ArgBatchSzDim,
                                           BatchedGemmHandleType, ScalarType,
                                           AViewType, BViewType, CViewType,
