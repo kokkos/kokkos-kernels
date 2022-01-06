@@ -169,10 +169,10 @@ KOKKOSBLAS1_CIAMAX_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::HostSpace,
 namespace KokkosBlas {
 namespace Impl {
 
-typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace> CUBLAS_DEVICE_TYPE;
+using CUBLAS_DEVICE_TYPE = Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>;
 #if defined(KOKKOS_ENABLE_CUDA_UVM)
-typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>
-    CUBLASUVM_DEVICE_TYPE;
+using CUBLASUVM_DEVICE_TYPE =
+    Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>;
 #endif
 
 #define KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_CUBLAS_WRAPPER(                      \
@@ -400,9 +400,8 @@ KOKKOSBLAS1_CIAMAX_TPL_SPEC_DECL_CUBLAS_UVM(unsigned int, Kokkos::LayoutLeft,
 namespace KokkosBlas {
 namespace Impl {
 
-typedef Kokkos::Device<Kokkos::Experimental::HIP,
-                       Kokkos::Experimental::HIPSpace>
-    ROCBLAS_DEVICE_TYPE;
+using ROCBLAS_DEVICE_TYPE =
+    Kokkos::Device<Kokkos::Experimental::HIP, Kokkos::Experimental::HIPSpace>;
 
 #define KOKKOSBLAS1_XIAMAX_TPL_SPEC_DECL_ROCBLAS_WRAPPER(                      \
     SCALAR_TYPE, ROCBLAS_SCALAR_TYPE, ROCBLAS_FN, INDEX_TYPE, LAYOUT,          \
