@@ -70,9 +70,13 @@ namespace Impl {
 template <class ArgTransA, class ArgTransB, class ArgBatchSzDim,
           class HandleType, class ScalarType, class AViewType, class BViewType,
           class CViewType, class ArgBoundsCheck, class ArgAlphaFmaTag,
-          class ArgAlphaMulTag, int TILE_M, int TILE_N, int TILE_K>
+          int TILE_M, int TILE_N, int TILE_K>
 class BatchedDblBufGemm {
  private:
+  using AlphaMulTag =
+      std::conditional_t<std::is_same<ArgAlphaFmaTag, AlphaTag::Yes>::value,
+                         AlphaTag::No, AlphaTag::Yes>;
+
   HandleType *const __handle;
   AViewType __A;
   BViewType __B;
@@ -83,7 +87,7 @@ class BatchedDblBufGemm {
   ArgBatchSzDim __batch_layout_tag;
   ArgBoundsCheck __bounds_check_tag;
   ArgAlphaFmaTag __alpha_fma_tag;
-  ArgAlphaMulTag __alpha_mul_tag;
+  AlphaMulTag __alpha_mul_tag;
   int __c_batch_size, __c_m, __c_n;
 
   using view_value_type      = typename CViewType::value_type;
@@ -94,8 +98,6 @@ class BatchedDblBufGemm {
       typename execution_space_type::scratch_memory_space;
   using view_type_2d_scratch =
       Kokkos::View<view_value_type **, Kokkos::LayoutRight, scratch_space_type>;
-  static_assert(!std::is_same<ArgAlphaFmaTag, ArgAlphaMulTag>::value,
-                "ArgAlphaFmaTag is the same as ArgAlphaMulTag");
 
  public:
   BatchedDblBufGemm(HandleType *const handle, ScalarType alpha, AViewType A,
@@ -248,19 +250,15 @@ class BatchedDblBufGemm {
     }
 
     KOKKOS_INLINE_FUNCTION
-    void __mul(const int m, const int n, view_value_type reg_a[REG_M],
-               view_value_type reg_b[REG_N],
-               view_value_type reg_c[REG_M][REG_N],
+    void __mul(view_value_type a, view_value_type b, view_value_type &c,
                const AlphaTag::No &) const {
-      reg_c[m][n] += reg_a[m] * reg_b[n];
+      c += a * b;
     }
 
     KOKKOS_INLINE_FUNCTION
-    void __mul(const int m, const int n, view_value_type reg_a[REG_M],
-               view_value_type reg_b[REG_N],
-               view_value_type reg_c[REG_M][REG_N],
+    void __mul(view_value_type a, view_value_type b, view_value_type &c,
                const AlphaTag::Yes &) const {
-      reg_c[m][n] += reg_a[m] * reg_b[n] * __alpha;
+      c += a * b * __alpha;
     }
 
     KOKKOS_INLINE_FUNCTION
@@ -294,7 +292,7 @@ class BatchedDblBufGemm {
 #pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
           for (int n = 0; n < REG_N; ++n)
-            __mul(m, n, reg_a, reg_b, reg_c, __ei.__alpha_mul_tag);
+            __mul(reg_a[m], reg_b[n], reg_c[m][n], __ei.__alpha_mul_tag);
         }
       }
     }

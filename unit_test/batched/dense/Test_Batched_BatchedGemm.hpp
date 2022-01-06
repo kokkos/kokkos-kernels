@@ -60,10 +60,10 @@ void impl_test_batched_gemm_with_handle(BatchedGemmHandle* batchedGemmHandle,
   if (algo_type == GemmKokkosBatchedAlgos::KK_DBLBUF) {
     // Check for DblBuf runtime errors related to team_size
     try {
-      Impl::BatchedDblBufGemm<
-          transA, transB, batchLayout, BatchedGemmHandle, ScalarType,
-          decltype(a_actual), decltype(b_actual), decltype(c_actual),
-          BoundsCheck::Yes, AlphaTag::No, AlphaTag::Yes, 65536, 1, 65536>(
+      Impl::BatchedDblBufGemm<transA, transB, batchLayout, BatchedGemmHandle,
+                              ScalarType, decltype(a_actual),
+                              decltype(b_actual), decltype(c_actual),
+                              BoundsCheck::Yes, AlphaTag::No, 65536, 1, 65536>(
           batchedGemmHandle, alpha, a_actual, b_actual, beta, c_actual)
           .invoke();
       FAIL();
@@ -73,11 +73,10 @@ void impl_test_batched_gemm_with_handle(BatchedGemmHandle* batchedGemmHandle,
 
     // Check for DblBuf runtime errors related to vector_len
     try {
-      Impl::BatchedDblBufGemm<transA, transB, batchLayout, BatchedGemmHandle,
-                              ScalarType, decltype(a_actual),
-                              decltype(b_actual), decltype(c_actual),
-                              BoundsCheck::No, AlphaTag::No, AlphaTag::Yes,
-                              65536, 65536 * 2, 65536>(
+      Impl::BatchedDblBufGemm<
+          transA, transB, batchLayout, BatchedGemmHandle, ScalarType,
+          decltype(a_actual), decltype(b_actual), decltype(c_actual),
+          BoundsCheck::No, AlphaTag::No, 65536, 65536 * 2, 65536>(
           batchedGemmHandle, alpha, a_actual, b_actual, beta, c_actual)
           .invoke();
       FAIL();
