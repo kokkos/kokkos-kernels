@@ -117,6 +117,66 @@ inline void rocsparse_internal_safe_call(rocsparse_status rocsparseStatus,
   KokkosSparse::Impl::rocsparse_internal_safe_call(call, #call, __FILE__, \
                                                    __LINE__)
 
+inline rocsparse_operation mode_kk_to_rocsparse(const char kk_mode[]) {
+  rocsparse_operation myRocsparseOperation;
+  switch (toupper(kk_mode[0])) {
+    case 'N': myRocsparseOperation = rocsparse_operation_none; break;
+    case 'T': myRocsparseOperation = rocsparse_operation_transpose; break;
+    case 'H':
+      myRocsparseOperation = rocsparse_operation_conjugate_transpose;
+      break;
+    default: {
+      std::cerr << "Mode " << kk_mode[0] << " invalid for rocSPARSE SpMV.\n";
+      throw std::invalid_argument("Invalid mode");
+    }
+  }
+  return myRocsparseOperation;
+}
+
+template <typename index_type>
+inline rocsparse_indextype rocsparse_index_type() {
+  if (std::is_same<index_type, uint16_t>::value) {
+    return rocsparse_indextype_u16;
+  } else if (std::is_same<index_type, int32_t>::value) {
+    return rocsparse_indextype_i32;
+  } else if (std::is_same<index_type, int64_t>::value) {
+    return rocsparse_indextype_i64;
+  } else {
+    std::ostringstream out;
+    out << "Trying to call rocSPARSE SpMV with unsupported index type: "
+        << typeid(index_type).name();
+    throw std::logic_error(out.str());
+  }
+}
+
+template <typename data_type>
+inline rocsparse_datatype rocsparse_compute_type() {
+  std::ostringstream out;
+  out << "Trying to call rocSPARSE SpMV with unsupported compute type: "
+      << typeid(data_type).name();
+  throw std::logic_error(out.str());
+}
+
+template <>
+inline rocsparse_datatype rocsparse_compute_type<float>() {
+  return rocsparse_datatype_f32_r;
+}
+
+template <>
+inline rocsparse_datatype rocsparse_compute_type<double>() {
+  return rocsparse_datatype_f64_r;
+}
+
+template <>
+inline rocsparse_datatype rocsparse_compute_type<Kokkos::complex<float>>() {
+  return rocsparse_datatype_f32_c;
+}
+
+template <>
+inline rocsparse_datatype rocsparse_compute_type<Kokkos::complex<double>>() {
+  return rocsparse_datatype_f64_c;
+}
+
 }  // namespace Impl
 
 }  // namespace KokkosSparse

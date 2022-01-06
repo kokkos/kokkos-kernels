@@ -132,7 +132,7 @@ class JacobiPrec {
     }
 
     if (tooSmall > 0)
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+      printf(
           "KokkosBatched::JacobiPrec: %d entrie(s) has/have a too small "
           "magnitude and have been replaced by one, \n",
           (int)tooSmall);
