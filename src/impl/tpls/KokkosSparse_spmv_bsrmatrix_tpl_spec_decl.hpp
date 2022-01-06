@@ -364,15 +364,15 @@ inline void spm_mv_block_impl_mkl(
                                                                                \
     static void spmv_bsrmatrix(                                                \
         const KokkosKernels::Experimental::Controls& controls,                 \
-        const char mode[], const YScalar& alpha, const AMatrix& A,             \
-        const XVector& X, const YScalar& beta, const YVector& Y) {             \
+        const char mode[], const coefficient_type& alpha, const AMatrix& A,    \
+        const XVector& X, const coefficient_type& beta, const YVector& Y) {    \
       std::string label = "KokkosSparse::spmv[TPL_MKL,BSRMATRIX" +             \
                           Kokkos::ArithTraits<SCALAR>::name() + "]";           \
       Kokkos::Profiling::pushRegion(label);                                    \
       spmv_block_impl_mkl(mode_kk_to_mkl(mode[0]), alpha, beta, A.numRows(),   \
                           A.numCols(), A.blockDim(), A.graph.row_map.data(),   \
-                          A.graph.entries.data(), A.values.data(), x.data(),   \
-                          y.data());                                           \
+                          A.graph.entries.data(), A.values.data(), X.data(),   \
+                          Y.data());                                           \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };
@@ -423,18 +423,18 @@ KOKKOSSPARSE_SPMV_MKL(Kokkos::complex<double>, Kokkos::OpenMP,
                                                                                \
     static void spmv_mv_bsrmatrix(                                             \
         const KokkosKernels::Experimental::Controls& controls,                 \
-        const char mode[], const YScalar& alpha, const AMatrix& A,             \
-        const XVector& X, const YScalar& beta, const YVector& Y) {             \
+        const char mode[], const coefficient_type& alpha, const AMatrix& A,    \
+        const XVector& X, const coefficient_type& beta, const YVector& Y) {    \
       std::string label = "KokkosSparse::spmv[TPL_MKL,BSRMATRIX" +             \
                           Kokkos::ArithTraits<SCALAR>::name() + "]";           \
       Kokkos::Profiling::pushRegion(label);                                    \
-      int colx = static_cast<int>(x.extent(1));                                \
-      int ldx  = static_cast<int>(x.stride_1());                               \
-      int ldy  = static_cast<int>(y.stride_1());                               \
+      int colx = static_cast<int>(X.extent(1));                                \
+      int ldx  = static_cast<int>(X.stride_1());                               \
+      int ldy  = static_cast<int>(Y.stride_1());                               \
       spm_mv_block_impl_mkl(mode_kk_to_mkl(mode[0]), alpha, beta, A.numRows(), \
                             A.numCols(), A.blockDim(), A.graph.row_map.data(), \
-                            A.graph.entries.data(), A.values.data(), x.data(), \
-                            colx, ldx, y.data(), ldy);                         \
+                            A.graph.entries.data(), A.values.data(), X.data(), \
+                            colx, ldx, Y.data(), ldy);                         \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };
@@ -444,10 +444,10 @@ KOKKOSSPARSE_SPMV_MV_MKL(float, Kokkos::Serial,
                          KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
 KOKKOSSPARSE_SPMV_MV_MKL(double, Kokkos::Serial,
                          KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-KOKKOSSPARSE_SPMV_MKL(Kokkos::complex<float>, Kokkos::Serial,
-                      KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-KOKKOSSPARSE_SPMV_MKL(Kokkos::complex<double>, Kokkos::Serial,
-                      KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+KOKKOSSPARSE_SPMV_MV_MKL(Kokkos::complex<float>, Kokkos::Serial,
+                         KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+KOKKOSSPARSE_SPMV_MV_MKL(Kokkos::complex<double>, Kokkos::Serial,
+                         KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
 #endif
 
 #ifdef KOKKOS_ENABLE_OPENMP
@@ -455,10 +455,10 @@ KOKKOSSPARSE_SPMV_MV_MKL(float, Kokkos::OpenMP,
                          KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
 KOKKOSSPARSE_SPMV_MV_MKL(double, Kokkos::OpenMP,
                          KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-KOKKOSSPARSE_SPMV_MKL(Kokkos::complex<float>, Kokkos::OpenMP,
-                      KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-KOKKOSSPARSE_SPMV_MKL(Kokkos::complex<double>, Kokkos::OpenMP,
-                      KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+KOKKOSSPARSE_SPMV_MV_MKL(Kokkos::complex<float>, Kokkos::OpenMP,
+                         KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+KOKKOSSPARSE_SPMV_MV_MKL(Kokkos::complex<double>, Kokkos::OpenMP,
+                         KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
 #endif
 
 #undef KOKKOSSPARSE_SPMV_MV_MKL
