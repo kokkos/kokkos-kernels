@@ -120,6 +120,10 @@ void EXPECT_NEAR_KK_1DVIEW(ViewType1 v1, ViewType2 v2, Scalar tol) {
 using halfScalarType = Kokkos::Experimental::half_t;
 #endif  // KOKKOS_HALF_T_IS_FLOAT
 
+#if defined(KOKKOS_BHALF_T_IS_FLOAT)
+using bhalfScalarType = Kokkos::Experimental::bhalf_t;
+#endif  // KOKKOS_BHALF_T_IS_FLOAT
+
 template <class ViewTypeA, class ViewTypeB, class ViewTypeC,
           class ExecutionSpace>
 struct SharedVanillaGEMM {
