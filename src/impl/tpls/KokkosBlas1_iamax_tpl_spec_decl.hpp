@@ -207,7 +207,6 @@ typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>
         const int N   = static_cast<int>(numElems);                           \
         const int XST = X.stride(0);                                          \
         const int LDX = (XST == 0) ? 1 : XST;                                 \
-        int idx;                                                              \
         KokkosBlas::Impl::CudaBlasSingleton& s =                              \
             KokkosBlas::Impl::CudaBlasSingleton::singleton();                 \
         cublasPointerMode_t prevPtrMode;                                      \
