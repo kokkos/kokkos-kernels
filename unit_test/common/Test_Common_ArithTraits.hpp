@@ -1044,9 +1044,9 @@ class ArithTraitsTesterComplexBase<ScalarType, DeviceType, 0>
     }
 #endif  // KOKKOS_HALF_T_IS_FLOAT
 
-      if (AT::is_complex) {
-        FAILURE();
-      }
+        if (AT::is_complex) {
+      FAILURE();
+    }
 
     // Call the base class' implementation.  Every subclass'
     // implementation of operator() must do this, in order to include
