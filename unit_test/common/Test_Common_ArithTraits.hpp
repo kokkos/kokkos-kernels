@@ -63,17 +63,14 @@
 #include <typeinfo>  // typeid (T)
 #include <cstdio>
 
-#define FAILURE()                                                            \
-  {                                                                          \
-    printf("%s:%s:%d: Failure\n", __FILE__, __func__, \
-                                  __LINE__);                                 \
-    success = 0;                                                             \
+#define FAILURE()                                                \
+  {                                                              \
+    printf("%s:%s:%d: Failure\n", __FILE__, __func__, __LINE__); \
+    success = 0;                                                 \
   }
 
 #if 0
-#define TRACE()                                                          \
-  printf("%s:%s:%d: Trace\n", __FILE__, __func__, \
-                                __LINE__);
+#define TRACE() printf("%s:%s:%d: Trace\n", __FILE__, __func__, __LINE__);
 #else
 #define TRACE()
 #endif
@@ -217,13 +214,11 @@ class ArithTraitsTesterBase {
     // function, just not to its class methods (which are not marked
     // as device functions).
     if (AT::is_integer != std::numeric_limits<ScalarType>::is_integer) {
-      printf(
-          "AT::is_integer not same as numeric_limits\n");
+      printf("AT::is_integer not same as numeric_limits\n");
       FAILURE();
     }
     if (AT::is_exact != std::numeric_limits<ScalarType>::is_exact) {
-      printf(
-          "AT::is_exact not same as numeric_limits\n");
+      printf("AT::is_exact not same as numeric_limits\n");
       FAILURE();
     }
 
@@ -691,8 +686,7 @@ class ArithTraitsTesterTranscendentalBase<ScalarType, DeviceType, 1>
     if (AT::is_complex) {
       const ScalarType val = two;  //(two.real(), two.real());
       if (!equal(AT::conj(AT::exp(val)), AT::exp(AT::conj(val)))) {
-        printf(
-            "AT::conj(exp(complex(2,2))) != AT::exp(conj(complex(2,2)))\n");
+        printf("AT::conj(exp(complex(2,2))) != AT::exp(conj(complex(2,2)))\n");
         FAILURE();
       }
     }
@@ -710,13 +704,11 @@ class ArithTraitsTesterTranscendentalBase<ScalarType, DeviceType, 1>
       const auto val_sin = AT::sin(val);
       const auto val_cos = AT::cos(val);
       if (!equal(val_sin * val_sin + val_cos * val_cos, one)) {
-        printf(
-            "AT(complex):: sin(val)*sin(val) + cos(val)*cos(val) != 1\n");
+        printf("AT(complex):: sin(val)*sin(val) + cos(val)*cos(val) != 1\n");
         FAILURE();
       }
       if (!equal(val_sin / val_cos, AT::tan(val))) {
-        printf(
-            "AT(complex):: sin(val)/cos(val) != AT(real)::tan(val)\n");
+        printf("AT(complex):: sin(val)/cos(val) != AT(real)::tan(val)\n");
         FAILURE();
       }
     } else {
@@ -724,13 +716,11 @@ class ArithTraitsTesterTranscendentalBase<ScalarType, DeviceType, 1>
       const auto val_sin = AT::sin(val);
       const auto val_cos = AT::cos(val);
       if (!equal(val_sin * val_sin + val_cos * val_cos, one)) {
-        printf(
-            "AT(real):: sin(val)*sin(val) + cos(a)*cos(a) != 1\n");
+        printf("AT(real):: sin(val)*sin(val) + cos(a)*cos(a) != 1\n");
         FAILURE();
       }
       if (!equal(val_sin / val_cos, AT::tan(val))) {
-        printf(
-            "AT(real):: sin(val)/cos(val) != AT(real)::tan(val)\n");
+        printf("AT(real):: sin(val)/cos(val) != AT(real)::tan(val)\n");
         FAILURE();
       }
     }
@@ -904,8 +894,7 @@ class ArithTraitsTesterTranscendentalBase<ScalarType, DeviceType, 1>
     if (AT::is_complex) {
       const ScalarType val = two;  //(two.real(), two.real());
       if (!equal(AT::conj(AT::exp(val)), AT::exp(AT::conj(val)))) {
-        printf(
-            "AT::conj(exp(complex(2,0))) != AT::exp(conj(complex(2,0)))\n");
+        printf("AT::conj(exp(complex(2,0))) != AT::exp(conj(complex(2,0)))\n");
         FAILURE();
       }
     }
@@ -923,13 +912,11 @@ class ArithTraitsTesterTranscendentalBase<ScalarType, DeviceType, 1>
       const auto val_sin   = AT::sin(val);
       const auto val_cos   = AT::cos(val);
       if (!equal(val_sin * val_sin + val_cos * val_cos, one)) {
-        printf(
-            "AT(complex):: sin(val)*sin(val) + cos(val)*cos(val) != 1\n");
+        printf("AT(complex):: sin(val)*sin(val) + cos(val)*cos(val) != 1\n");
         FAILURE();
       }
       if (!equal(val_sin / val_cos, AT::tan(val))) {
-        printf(
-            "AT(complex):: sin(val)/cos(val) != AT(real)::tan(val)\n");
+        printf("AT(complex):: sin(val)/cos(val) != AT(real)::tan(val)\n");
         FAILURE();
       }
     } else {
@@ -937,13 +924,11 @@ class ArithTraitsTesterTranscendentalBase<ScalarType, DeviceType, 1>
       const auto val_sin   = AT::sin(val);
       const auto val_cos   = AT::cos(val);
       if (!equal(val_sin * val_sin + val_cos * val_cos, one)) {
-        printf(
-            "AT(real):: sin(val)*sin(val) + cos(a)*cos(a) != 1\n");
+        printf("AT(real):: sin(val)*sin(val) + cos(a)*cos(a) != 1\n");
         FAILURE();
       }
       if (!equal(val_sin / val_cos, AT::tan(val))) {
-        printf(
-            "AT(real):: sin(val)/cos(val) != AT(real)::tan(val)\n");
+        printf("AT(real):: sin(val)/cos(val) != AT(real)::tan(val)\n");
         FAILURE();
       }
     }
@@ -1059,9 +1044,9 @@ class ArithTraitsTesterComplexBase<ScalarType, DeviceType, 0>
     }
 #endif  // KOKKOS_HALF_T_IS_FLOAT
 
-        if (AT::is_complex) {
-      FAILURE();
-    }
+      if (AT::is_complex) {
+        FAILURE();
+      }
 
     // Call the base class' implementation.  Every subclass'
     // implementation of operator() must do this, in order to include
