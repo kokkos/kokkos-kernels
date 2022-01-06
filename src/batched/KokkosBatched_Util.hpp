@@ -277,6 +277,15 @@ struct BoundsCheck {
   struct No {};
 };
 
+/// \brief AlphaTag class used to specify where to apply alpha in
+///        BLAS/LAPACK DblBuf algorithms.
+/// /var Yes Use function with    alpha factor
+/// /var No  Use function without alpha factor
+struct AlphaTag {
+  struct Yes {};
+  struct No {};
+};
+
 struct Direct {
   struct Forward {};
   struct Backward {};
@@ -822,13 +831,21 @@ KOKKOS_INLINE_FUNCTION auto subview_wrapper(
   return sv_nt;
 }
 
+/**
+ *
+ * @tparam ViewValueType The value type (Scalar or Vector) of each view element
+ * @tparam ViewType The view type
+ * @param v The view handle
+ * @param m The requested row index of v
+ * @param n The requested col index of v
+ * @return If m and n are within the extents of v, a valid element of v;
+ *         otherwise, the last element of v.
+ */
 template <class ViewValueType, class ViewType>
 KOKKOS_INLINE_FUNCTION ViewValueType
 access_view_bounds_check(ViewType v, int m, int n, const BoundsCheck::Yes &) {
-  if (m < v.extent_int(0) && n < v.extent_int(1))
-    return v(m, n);
-  else
-    return (ViewValueType)0.0F;
+  return v(KOKKOSKERNELS_MACRO_MIN(m, v.extent_int(0) - 1),
+           KOKKOSKERNELS_MACRO_MIN(n, v.extent_int(1) - 1));
 }
 
 template <class ViewValueType, class ViewType>
@@ -837,35 +854,61 @@ access_view_bounds_check(ViewType v, int m, int n, const BoundsCheck::No &) {
   return v(m, n);
 }
 
-template <class ViewType, class SizeType, class ViewValueType, class ScalarType>
+template <class ViewValueType, class ScalarType>
+KOKKOS_INLINE_FUNCTION ViewValueType fma_alpha(ViewValueType reg_c,
+                                               ScalarType alpha,
+                                               const AlphaTag::Yes &) {
+  return reg_c * alpha;
+}
+
+template <class ViewValueType, class ScalarType>
+KOKKOS_INLINE_FUNCTION ViewValueType fma_alpha(ViewValueType reg_c,
+                                               ScalarType alpha,
+                                               const AlphaTag::No &) {
+  return reg_c;
+  (void)alpha;
+}
+
+template <class ViewType, class SizeType, class ViewValueType, class ScalarType,
+          class ArgAlphaFmaTag>
 KOKKOS_INLINE_FUNCTION void fma_bounds_check(ViewType v, SizeType m, SizeType n,
                                              ViewValueType reg_c,
                                              ScalarType alpha, ScalarType beta,
+                                             const ArgAlphaFmaTag &alpha_tag,
                                              const BoundsCheck::Yes &) {
   if (m < v.extent_int(0) && n < v.extent_int(1))
-    v(m, n) = reg_c * alpha + v(m, n) * beta;
+    v(m, n) = fma_alpha(reg_c, alpha, alpha_tag) + v(m, n) * beta;
 }
 
-template <class ViewType, class SizeType, class ViewValueType, class ScalarType>
+template <class ViewType, class SizeType, class ViewValueType, class ScalarType,
+          class ArgAlphaFmaTag>
 KOKKOS_INLINE_FUNCTION void fma_bounds_check(ViewType v, SizeType m, SizeType n,
                                              ViewValueType reg_c,
                                              ScalarType alpha, ScalarType beta,
+                                             const ArgAlphaFmaTag &alpha_tag,
                                              const BoundsCheck::No &) {
-  v(m, n) = reg_c * alpha + v(m, n) * beta;
+  v(m, n) = fma_alpha(reg_c, alpha, alpha_tag) + v(m, n) * beta;
 }
 
-template <class ViewType, class SizeType, class ScalarType>
+template <class ViewType, class SizeType, class ViewValueType, class ScalarType,
+          class ArgAlphaFmaTag>
 KOKKOS_INLINE_FUNCTION void fma_bounds_check(ViewType v, SizeType m, SizeType n,
-                                             ScalarType reg_c, ScalarType alpha,
+                                             ViewValueType reg_c,
+                                             ScalarType alpha,
+                                             const ArgAlphaFmaTag &alpha_tag,
                                              const BoundsCheck::Yes &) {
-  if (m < v.extent_int(0) && n < v.extent_int(1)) v(m, n) = reg_c * alpha;
+  if (m < v.extent_int(0) && n < v.extent_int(1))
+    v(m, n) = fma_alpha(reg_c, alpha, alpha_tag);
 }
 
-template <class ViewType, class SizeType, class ScalarType>
+template <class ViewType, class SizeType, class ViewValueType, class ScalarType,
+          class ArgAlphaFmaTag>
 KOKKOS_INLINE_FUNCTION void fma_bounds_check(ViewType v, SizeType m, SizeType n,
-                                             ScalarType reg_c, ScalarType alpha,
+                                             ViewValueType reg_c,
+                                             ScalarType alpha,
+                                             const ArgAlphaFmaTag &alpha_tag,
                                              const BoundsCheck::No &) {
-  v(m, n) = reg_c * alpha;
+  v(m, n) = fma_alpha(reg_c, alpha, alpha_tag);
 }
 
 }  // namespace KokkosBatched
