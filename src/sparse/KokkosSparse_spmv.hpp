@@ -449,9 +449,7 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
                    Kokkos::CudaSpace>::value ||
       std::is_same<typename AMatrix_Internal::memory_space,
                    Kokkos::CudaUVMSpace>::value) {
-#if defined(CUSPARSE_VERSION)
     useFallback = useFallback || (mode[0] != NoTranspose[0]);
-#endif
   }
 #endif
 
@@ -465,7 +463,7 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
   if (useFallback) {
     // Explicitly call the non-TPL SPMV_BSRMATRIX implementation
     std::string label =
-        "KokkosSparse::spmv[NATIVE,BSMATRIX," +
+        "KokkosSparse::spmv[NATIVE,BSRMATRIX," +
         Kokkos::ArithTraits<
             typename AMatrix_Internal::non_const_value_type>::name() +
         "]";
@@ -844,9 +842,7 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
                    Kokkos::CudaSpace>::value ||
       std::is_same<typename AMatrix_Internal::memory_space,
                    Kokkos::CudaUVMSpace>::value) {
-#if defined(CUSPARSE_VERSION)
     useFallback = useFallback || (mode[0] != NoTranspose[0]);
-#endif
   }
 #endif
 
