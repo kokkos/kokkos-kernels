@@ -229,7 +229,6 @@ void test_bspgemm(lno_t blkDim, lno_t m, lno_t k, lno_t n, size_type nnz,
 
       case SPGEMM_MKL:
         algo                = "SPGEMM_MKL";
-        is_expected_to_fail = !is_empy_case;  // TODO: add block MKL impl
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
         if (!KokkosSparse::Impl::mkl_is_supported_value_type<scalar_t>::value) {
           is_expected_to_fail = true;

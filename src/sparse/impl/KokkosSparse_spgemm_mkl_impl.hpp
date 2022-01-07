@@ -61,7 +61,7 @@ inline static MKLSparseMatrix<value_type> mkl_spmm(
     const MKLSparseMatrix<value_type> &B) {
   sparse_matrix_t C;
   KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_spmm(operation, A, B, &C));
-  return MKLSparseMatrix<value_type>(C);
+  return MKLSparseMatrix<value_type>(C, A.matrix_format());
 }
 
 template <typename KernelHandle, typename a_rowmap_view_type,
@@ -95,8 +95,8 @@ class MKL_SPGEMM {
     Kokkos::Timer timer;
     using scalar_t = typename KernelHandle::nnz_scalar_t;
 
-    const auto export_rowmap = [&](MKL_INT num_rows, MKL_INT *rows_start,
-                                   MKL_INT * /*columns*/,
+    const auto export_rowmap = [&](MKL_INT block_size, MKL_INT num_rows,
+                                   MKL_INT *rows_start, MKL_INT * /*columns*/,
                                    scalar_t * /*values*/) {
       if (handle->mkl_keep_output) {
         Kokkos::Timer copy_time;
@@ -134,13 +134,14 @@ class MKL_SPGEMM {
     Kokkos::Timer timer;
 
     const auto export_values =
-        [&](MKL_INT num_rows, MKL_INT *rows_start, MKL_INT *columns,
-            typename KernelHandle::nnz_scalar_t *values) {
+        [&](MKL_INT block_size, MKL_INT num_rows, MKL_INT *rows_start,
+            MKL_INT *columns, typename KernelHandle::nnz_scalar_t *values) {
           if (handle->mkl_keep_output) {
             Kokkos::Timer copy_time;
             const nnz_lno_t nnz = rows_start[num_rows];
             copy(make_host_view(columns, nnz), entriesC);
-            copy(make_host_view(values, nnz), valuesC);
+            copy(make_host_view(values, nnz * block_size * block_size),
+                 valuesC);
             if (verbose)
               std::cout << "\tMKL values export time:" << copy_time.seconds()
                         << std::endl;
@@ -215,11 +216,16 @@ class MKL_SPGEMM {
     const value_type *a_ew = h_valsA.data();
     const value_type *b_ew = h_valsB.data();
 
+    const int block_size =
+        entriesA.extent(0) > 0
+            ? (int)sqrt(valuesA.extent(0) / entriesA.extent(0))
+            : 1;
+
     // Hack: we discard const with pointer casts here to work around MKL
     // requiring mutable input and our symbolic interface not providing it
     using Matrix = MKLSparseMatrix<value_type>;
-    Matrix A(m, n, (int *)a_xadj, (int *)a_adj, (value_type *)a_ew);
-    Matrix B(n, k, (int *)b_xadj, (int *)b_adj, (value_type *)b_ew);
+    Matrix A(block_size, m, n, (int *)a_xadj, (int *)a_adj, (value_type *)a_ew);
+    Matrix B(block_size, n, k, (int *)b_xadj, (int *)b_adj, (value_type *)b_ew);
 
     sparse_operation_t operation;
     if (transposeA && transposeB) {
@@ -244,10 +250,12 @@ class MKL_SPGEMM {
       std::cout << ") time:" << timer1.seconds() << std::endl;
     }
 
-    MKL_INT num_rows, num_cols, *rows_start, *columns;
+    MKL_INT num_rows, num_cols, bsize, *rows_start, *columns;
     value_type *values;
-    C.export_data(num_rows, num_cols, rows_start, columns, values);
-    callback(m, rows_start, columns, values);
+    C.export_data(bsize, num_rows, num_cols, rows_start, columns, values);
+    assert(bsize == block_size);
+    assert(num_rows == m);
+    callback(bsize, num_rows, rows_start, columns, values);
 
     A.destroy();
     B.destroy();

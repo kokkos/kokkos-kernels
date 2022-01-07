@@ -230,6 +230,14 @@ struct BSPGEMM_NUMERIC<
         throw std::runtime_error(
             "CUSP implementation for block SpGEMM is not available");
       case SPGEMM_MKL:
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
+        mkl_numeric(sh, m, n, k, row_mapA, entriesA, valuesA, transposeA,
+                    row_mapB, entriesB, valuesB, transposeB, row_mapC, entriesC,
+                    valuesC, handle->get_verbose());
+#else
+        throw std::runtime_error("MKL was not enabled in this build!");
+#endif
+        break;
       case SPGEMM_MKL2PHASE:
         throw std::runtime_error(
             "MKL implementation available for block SpGEMM is not available");
