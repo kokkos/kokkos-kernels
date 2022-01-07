@@ -53,8 +53,11 @@ namespace KokkosSparse {
 namespace Experimental {
 
 //
-// NOTE: block_dim = 1 for CRS-formated views
+// NOTE: block_dim = 0 for CRS-formated views
 //       block_dim >= 1 for BSR-formatted views (bs=1 BSR is CRS)
+//                      (allow explicit request for block mode with block_dim=1
+//                       so that performance tests can compare block and
+//                       non-block variants)
 //
 // NOTE: Block CRS format is not yet supported !
 //
@@ -75,7 +78,7 @@ void spgemm_numeric(KernelHandle *handle,
                     bool transposeB, clno_row_view_t_ row_mapC,
                     clno_nnz_view_t_ &entriesC, cscalar_nnz_view_t_ &valuesC,
 
-                    typename KernelHandle::const_nnz_lno_t block_dim = 1) {
+                    typename KernelHandle::const_nnz_lno_t block_dim = 0) {
   static_assert(
       std::is_same<typename clno_nnz_view_t_::value_type,
                    typename clno_nnz_view_t_::non_const_value_type>::value,
@@ -251,7 +254,7 @@ void spgemm_numeric(KernelHandle *handle,
   Internal_clno_nnz_view_t_ nonconst_c_l(entriesC.data(), entriesC.extent(0));
   Internal_cscalar_nnz_view_t_ nonconst_c_s(valuesC.data(), valuesC.extent(0));
 
-  if (block_dim > 1) {
+  if (block_dim > 0) {
     KokkosSparse::Impl::BSPGEMM_NUMERIC<
         const_handle_type, Internal_alno_row_view_t_, Internal_alno_nnz_view_t_,
         Internal_ascalar_nnz_view_t_, Internal_blno_row_view_t_,

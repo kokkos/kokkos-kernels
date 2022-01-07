@@ -187,8 +187,7 @@ class MKL_SPMM {
     int_tmp_view_t a_xadj_v, b_xadj_v;
 
     if (!std::is_same<size_type, int>::value) {
-      if (entriesA.extent(0) > max_integer ||
-          entriesB.extent(0) > max_integer) {
+      if (valuesA.extent(0) > max_integer || valuesB.extent(0) > max_integer) {
         throw std::runtime_error(
             "MKL requires integer values for size type for SPGEMM. Copying "
             "to "

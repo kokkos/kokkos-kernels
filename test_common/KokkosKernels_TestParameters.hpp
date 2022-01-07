@@ -53,6 +53,7 @@ struct Parameters{
   int algorithm;
   int accumulator;
   int repeat;
+  int block_size;
   int chunk_size;
   int multi_color_scale;
   int shmemsize;
@@ -101,6 +102,7 @@ struct Parameters{
     algorithm = 0;
     accumulator = 0;
     repeat = 6;
+    block_size = 0;  // 0 -> use non-block version
     chunk_size = -1;
     multi_color_scale = 1;
     shmemsize = 16128;

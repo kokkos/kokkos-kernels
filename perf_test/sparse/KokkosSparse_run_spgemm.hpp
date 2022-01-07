@@ -132,6 +132,43 @@ bool is_same_matrix(crsMat_t output_mat1, crsMat_t output_mat2) {
   return true;
 }
 
+template <typename scalar_t, typename lno_t, typename size_type,
+          typename device_type, typename values_type, typename row_map_type,
+          typename entries_type>
+void init_matrix(
+    KokkosSparse::CrsMatrix<scalar_t, lno_t, device_type, void, size_type> &mtx,
+    lno_t m, lno_t k, lno_t block_size, values_type values,
+    row_map_type row_map, entries_type entries) {
+  if (block_size != 1) {
+    throw std::runtime_error("Can't initialize CRS matrix with block_size > 1");
+  }
+  mtx = KokkosSparse::CrsMatrix<scalar_t, lno_t, device_type, void, size_type>(
+      "CrsMatrixC", m, k, values.extent(0), values, row_map, entries);
+}
+
+template <typename scalar_t, typename lno_t, typename size_type,
+          typename device_type, typename values_type, typename row_map_type,
+          typename entries_type>
+void init_matrix(KokkosSparse::Experimental::BsrMatrix<
+                     scalar_t, lno_t, device_type, void, size_type> &mtx,
+                 lno_t m, lno_t k, lno_t block_size, values_type values,
+                 row_map_type row_map, entries_type entries) {
+  mtx = KokkosSparse::Experimental::BsrMatrix<scalar_t, lno_t, device_type,
+                                              void, size_type>(
+      "BsrMatrixC", m, k, values.extent(0), values, row_map, entries,
+      block_size);
+}
+
+template <typename size_type, typename lno_nnz_view_t, typename scalar_view_t>
+void allocate_c_matrix(size_type c_nnz_size, int block_size,
+                       lno_nnz_view_t &entries, scalar_view_t &values) {
+  const size_type c_vals_size = c_nnz_size * block_size * block_size;
+  entries                     = lno_nnz_view_t(
+      Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC"), c_nnz_size);
+  values = scalar_view_t(
+      Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC"), c_vals_size);
+}
+
 template <typename ExecSpace, typename crsMat_t, typename crsMat_t2,
           typename crsMat_t3, typename TempMemSpace,
           typename PersistentMemSpace>
@@ -153,6 +190,7 @@ crsMat_t3 run_experiment(crsMat_t crsMat, crsMat_t2 crsMat2,
   int vector_size     = params.vector_size;
   int check_output    = params.check_output;
   int mkl_keep_output = params.mkl_keep_output;
+  int block_size      = std::max(1, params.block_size);
   // spgemm_step++;
   typedef typename crsMat_t3::values_type::non_const_type scalar_view_t;
   typedef typename crsMat_t3::row_map_type::non_const_type lno_view_t;
@@ -224,21 +262,20 @@ crsMat_t3 run_experiment(crsMat_t crsMat, crsMat_t2 crsMat2,
     ExecSpace().fence();
 
     size_type c_nnz_size = sequential_kh.get_spgemm_handle()->get_c_nnz();
-    entriesC_ref         = lno_nnz_view_t(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC"),
-        c_nnz_size);
-    valuesC_ref = scalar_view_t(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC"), c_nnz_size);
+    if (c_nnz_size > 0) {
+      allocate_c_matrix(c_nnz_size, block_size, entriesC_ref, valuesC_ref);
+    }
 
     spgemm_numeric(&sequential_kh, m, n, k, crsMat.graph.row_map,
                    crsMat.graph.entries, crsMat.values, TRANPOSEFIRST,
 
                    crsMat2.graph.row_map, crsMat2.graph.entries, crsMat2.values,
-                   TRANPOSESECOND, row_mapC_ref, entriesC_ref, valuesC_ref);
+                   TRANPOSESECOND, row_mapC_ref, entriesC_ref, valuesC_ref,
+                   params.block_size);
     ExecSpace().fence();
 
-    Ccrsmat_ref = crsMat_t3("CorrectC", m, k, valuesC_ref.extent(0),
-                            valuesC_ref, row_mapC_ref, entriesC_ref);
+    init_matrix(Ccrsmat_ref, m, k, block_size, valuesC_ref, row_mapC_ref,
+                entriesC_ref);
   }
 
   for (int i = 0; i < repeat; ++i) {
@@ -282,19 +319,13 @@ crsMat_t3 run_experiment(crsMat_t crsMat, crsMat_t2 crsMat2,
     Kokkos::Timer timer3;
     size_type c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
     if (verbose) std::cout << "C SIZE:" << c_nnz_size << std::endl;
-    if (c_nnz_size) {
-      entriesC = lno_nnz_view_t(
-          Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC"),
-          c_nnz_size);
-      valuesC = scalar_view_t(
-          Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC"),
-          c_nnz_size);
+    if (c_nnz_size > 0) {
+      allocate_c_matrix(c_nnz_size, block_size, entriesC, valuesC);
     }
     spgemm_numeric(&kh, m, n, k, crsMat.graph.row_map, crsMat.graph.entries,
-                   crsMat.values, TRANPOSEFIRST,
-
-                   crsMat2.graph.row_map, crsMat2.graph.entries, crsMat2.values,
-                   TRANPOSESECOND, row_mapC, entriesC, valuesC);
+                   crsMat.values, TRANPOSEFIRST, crsMat2.graph.row_map,
+                   crsMat2.graph.entries, crsMat2.values, TRANPOSESECOND,
+                   row_mapC, entriesC, valuesC, params.block_size);
     ExecSpace().fence();
     double numeric_time = timer3.seconds();
 
@@ -310,8 +341,8 @@ crsMat_t3 run_experiment(crsMat_t crsMat, crsMat_t2 crsMat2,
     KokkosKernels::Impl::print_1Dview(entriesC);
     KokkosKernels::Impl::print_1Dview(row_mapC);
   }
-  crsMat_t3 Ccrsmat_result("CrsMatrixC", m, k, valuesC.extent(0), valuesC,
-                           row_mapC, entriesC);
+  crsMat_t3 Ccrsmat_result;
+  init_matrix(Ccrsmat_result, m, k, block_size, valuesC, row_mapC, entriesC);
   if (check_output) {
     bool is_identical =
         is_same_matrix<crsMat_t3, device_t>(Ccrsmat_result, Ccrsmat_ref);
