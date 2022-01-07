@@ -1,4 +1,4 @@
-name: CI
+name: github-FORMAT
 
 on:
   pull_request:
