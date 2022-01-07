@@ -318,7 +318,7 @@ class BatchedDblBufGemm {
       unsigned start_m        = (local_team_idx / __tiles_per_col) * TILE_M;
       unsigned start_n        = (local_team_idx % __tiles_per_col) * TILE_N;
 
-      unsigned kk;
+      int kk;
 
       // Fetch entire 2-rank sub-matrix
       auto svA = subview_wrapper(__A, batch_idx, Kokkos::ALL(), Kokkos::ALL(),
