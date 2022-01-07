@@ -280,7 +280,7 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth,
       SPGEMM_KK_SPEED /* alias SPGEMM_KK_DENSE */
   };
 
-#ifdef HAVE_KOKKOSKERNELS_MKL
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
   algorithms.push_back(SPGEMM_MKL);
 #endif
 
