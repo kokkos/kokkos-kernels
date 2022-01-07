@@ -54,8 +54,7 @@ namespace Impl {
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
 
-KOKKOS_INLINE_FUNCTION
-void mkl_call(sparse_status_t result, const char *err_msg) {
+inline void mkl_call(sparse_status_t result, const char *err_msg) {
   if (SPARSE_STATUS_SUCCESS != result) {
     throw std::runtime_error(err_msg);
   }
@@ -66,12 +65,10 @@ class MKLSparseMatrix {
   sparse_matrix_t mtx;
 
  public:
-  KOKKOS_INLINE_FUNCTION
-  MKLSparseMatrix(const MKL_INT m, const MKL_INT n, MKL_INT *xadj, MKL_INT *adj,
-                  value_type *values);
+  inline MKLSparseMatrix(const MKL_INT m, const MKL_INT n, MKL_INT *xadj,
+                         MKL_INT *adj, value_type *values);
 
-  KOKKOS_INLINE_FUNCTION
-  static MKLSparseMatrix<value_type> spmm(
+  inline static MKLSparseMatrix<value_type> spmm(
       sparse_operation_t operation, const MKLSparseMatrix<value_type> &A,
       const MKLSparseMatrix<value_type> &B) {
     sparse_matrix_t c;
@@ -80,44 +77,41 @@ class MKLSparseMatrix {
     return MKLSparseMatrix<value_type>(c);
   }
 
-  KOKKOS_INLINE_FUNCTION
-  void get(MKL_INT &rows, MKL_INT &cols, MKL_INT *&rows_start,
-           MKL_INT *&columns, value_type *&values);
+  inline void get(MKL_INT &rows, MKL_INT &cols, MKL_INT *&rows_start,
+                  MKL_INT *&columns, value_type *&values);
 
-  KOKKOS_INLINE_FUNCTION
-  void destroy() {
+  inline void destroy() {
     mkl_call(mkl_sparse_destroy(mtx), "mkl_sparse_destroy() failed!");
   }
 
  private:
-  KOKKOS_INLINE_FUNCTION
-  MKLSparseMatrix(sparse_matrix_t mtx_) : mtx(mtx_) {}
+  inline MKLSparseMatrix(sparse_matrix_t mtx_) : mtx(mtx_) {}
 };
 
 template <>
-KOKKOS_INLINE_FUNCTION MKLSparseMatrix<float>::MKLSparseMatrix(
-    const MKL_INT rows, const MKL_INT cols, MKL_INT *xadj, MKL_INT *adj,
-    float *values) {
+inline MKLSparseMatrix<float>::MKLSparseMatrix(const MKL_INT rows,
+                                               const MKL_INT cols,
+                                               MKL_INT *xadj, MKL_INT *adj,
+                                               float *values) {
   mkl_call(mkl_sparse_s_create_csr(&mtx, SPARSE_INDEX_BASE_ZERO, rows, cols,
                                    xadj, xadj + 1, adj, values),
            "mkl_sparse_s_create_csr() failed!");
 }
 
 template <>
-KOKKOS_INLINE_FUNCTION MKLSparseMatrix<double>::MKLSparseMatrix(
-    const MKL_INT rows, const MKL_INT cols, MKL_INT *xadj, MKL_INT *adj,
-    double *values) {
+inline MKLSparseMatrix<double>::MKLSparseMatrix(const MKL_INT rows,
+                                                const MKL_INT cols,
+                                                MKL_INT *xadj, MKL_INT *adj,
+                                                double *values) {
   mkl_call(mkl_sparse_d_create_csr(&mtx, SPARSE_INDEX_BASE_ZERO, rows, cols,
                                    xadj, xadj + 1, adj, values),
            "mkl_sparse_d_create_csr() failed!");
 }
 
 template <>
-KOKKOS_INLINE_FUNCTION void MKLSparseMatrix<float>::get(MKL_INT &rows,
-                                                        MKL_INT &cols,
-                                                        MKL_INT *&rows_start,
-                                                        MKL_INT *&columns,
-                                                        float *&values) {
+inline void MKLSparseMatrix<float>::get(MKL_INT &rows, MKL_INT &cols,
+                                        MKL_INT *&rows_start, MKL_INT *&columns,
+                                        float *&values) {
   sparse_index_base_t indexing;
   MKL_INT *rows_end;
   mkl_call(mkl_sparse_s_export_csr(mtx, &indexing, &rows, &cols, &rows_start,
@@ -131,11 +125,9 @@ KOKKOS_INLINE_FUNCTION void MKLSparseMatrix<float>::get(MKL_INT &rows,
 }
 
 template <>
-KOKKOS_INLINE_FUNCTION void MKLSparseMatrix<double>::get(MKL_INT &rows,
-                                                         MKL_INT &cols,
-                                                         MKL_INT *&rows_start,
-                                                         MKL_INT *&columns,
-                                                         double *&values) {
+inline void MKLSparseMatrix<double>::get(MKL_INT &rows, MKL_INT &cols,
+                                         MKL_INT *&rows_start,
+                                         MKL_INT *&columns, double *&values) {
   sparse_index_base_t indexing;
   MKL_INT *rows_end;
   mkl_call(mkl_sparse_d_export_csr(mtx, &indexing, &rows, &cols, &rows_start,
@@ -326,8 +318,7 @@ class MKLApply {
   }
 
   template <typename from_type, typename to_type>
-  KOKKOS_INLINE_FUNCTION static void copy(size_t num_elems, from_type from,
-                                          to_type to) {
+  inline static void copy(size_t num_elems, from_type from, to_type to) {
     KokkosKernels::Impl::copy_vector<from_type, to_type, MyExecSpace>(num_elems,
                                                                       from, to);
   }
