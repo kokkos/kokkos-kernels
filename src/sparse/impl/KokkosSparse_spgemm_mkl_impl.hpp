@@ -150,9 +150,8 @@ class MKLApply {
   typedef typename KernelHandle::nnz_lno_t nnz_lno_t;
   typedef typename KernelHandle::size_type size_type;
   typedef typename KernelHandle::nnz_scalar_t value_type;
-  typedef typename KernelHandle::HandleTempMemorySpace HandleTempMemorySpace;
   typedef typename KernelHandle::HandleExecSpace MyExecSpace;
-  typedef typename Kokkos::View<int *, HandleTempMemorySpace> int_tmp_view_t;
+  typedef typename Kokkos::View<int *, Kokkos::HostSpace> int_tmp_view_t;
 
  public:
   static void mkl_symbolic(KernelHandle *handle, nnz_lno_t m, nnz_lno_t n,
@@ -161,7 +160,8 @@ class MKLApply {
                            b_rowmap_view_type row_mapB,
                            b_index_view_type entriesB, bool transposeB,
                            c_rowmap_view_type row_mapC, bool verbose = false) {
-    if (m < 1 || n < 1 || k < 1 || row_mapA(m) < 1 || row_mapB(n) < 1) {
+    if (m < 1 || n < 1 || k < 1 || entriesA.extent(0) < 1 ||
+        entriesB.extent(0) < 1) {
       // set correct values in non-empty 0-nnz corner case
       handle->set_c_nnz(0);
       Kokkos::deep_copy(row_mapC, 0);
@@ -170,8 +170,6 @@ class MKLApply {
 
     Kokkos::Timer timer;
     using scalar_t = typename KernelHandle::nnz_scalar_t;
-    using tmp_values_type =
-        Kokkos::View<scalar_t *, typename KernelHandle::HandleTempMemorySpace>;
 
     const auto export_rowmap = [&](MKL_INT m, MKL_INT *rows_start,
                                    MKL_INT *columns, scalar_t *values) {
@@ -179,7 +177,7 @@ class MKLApply {
         Kokkos::Timer copy_time;
         const nnz_lno_t nnz = rows_start[m];
         handle->set_c_nnz(nnz);
-        copy(m + 1, rows_start, row_mapC);
+        copy(make_host_view(rows_start, m + 1), row_mapC);
         if (verbose)
           std::cout << "\tMKL rowmap export time:" << copy_time.seconds()
                     << std::endl;
@@ -187,12 +185,15 @@ class MKLApply {
     };
 
     // use dummy values for A and B inputs
-    tmp_values_type tmp_values(
-        Kokkos::ViewAllocateWithoutInitializing("tmp_values"),
-        KOKKOSKERNELS_MACRO_MAX(entriesA.extent(0), entriesB.extent(0)));
+    a_values_view_type tmp_valsA(
+        Kokkos::ViewAllocateWithoutInitializing("tmp_valuesA"),
+        entriesA.extent(0));
+    b_values_view_type tmp_valsB(
+        Kokkos::ViewAllocateWithoutInitializing("tmp_valuesB"),
+        entriesB.extent(0));
 
-    apply(handle, m, n, k, row_mapA, entriesA, tmp_values, transposeA, row_mapB,
-          entriesB, tmp_values, transposeB, verbose, export_rowmap);
+    apply(handle, m, n, k, row_mapA, entriesA, tmp_valsA, transposeA, row_mapB,
+          entriesB, tmp_valsB, transposeB, verbose, export_rowmap);
 
     if (verbose)
       std::cout << "MKL symbolic time:" << timer.seconds() << std::endl;
@@ -213,8 +214,8 @@ class MKLApply {
           if (handle->mkl_keep_output) {
             Kokkos::Timer copy_time;
             const nnz_lno_t nnz = rows_start[m];
-            copy(nnz, columns, entriesC);
-            copy(nnz, values, valuesC);
+            copy(make_host_view(columns, nnz), entriesC);
+            copy(make_host_view(values, nnz), valuesC);
             if (verbose)
               std::cout << "\tMKL values export time:" << copy_time.seconds()
                         << std::endl;
@@ -244,12 +245,19 @@ class MKLApply {
       throw std::runtime_error("MKL requires local ordinals to be integer.\n");
     }
 
-    if (m < 1 || n < 1 || k < 1 || row_mapA(m) < 1 || row_mapB(n) < 1) {
+    if (m < 1 || n < 1 || k < 1 || entriesA.extent(0) < 1 ||
+        entriesB.extent(0) < 1) {
       return;
     }
 
-    int *a_xadj = (int *)row_mapA.data();
-    int *b_xadj = (int *)row_mapB.data();
+    const auto create_mirror = [](auto view) {
+      return Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), view);
+    };
+
+    auto h_rowsA      = create_mirror(row_mapA);
+    auto h_rowsB      = create_mirror(row_mapB);
+    const int *a_xadj = reinterpret_cast<const int *>(h_rowsA.data());
+    const int *b_xadj = reinterpret_cast<const int *>(h_rowsB.data());
     int_tmp_view_t a_xadj_v, b_xadj_v;
 
     if (!std::is_same<size_type, int>::value) {
@@ -268,8 +276,8 @@ class MKLApply {
       Kokkos::Timer copy_time;
       a_xadj_v = int_tmp_view_t("tmpa", m + 1);
       b_xadj_v = int_tmp_view_t("tmpb", n + 1);
-      Kokkos::deep_copy(a_xadj_v, row_mapA);
-      Kokkos::deep_copy(b_xadj_v, row_mapB);
+      Kokkos::deep_copy(a_xadj_v, h_rowsA);
+      Kokkos::deep_copy(b_xadj_v, h_rowsB);
       a_xadj = (int *)a_xadj_v.data();
       b_xadj = (int *)b_xadj_v.data();
       if (verbose)
@@ -277,12 +285,20 @@ class MKLApply {
                   << copy_time.seconds() << std::endl;
     }
 
-    value_type *a_ew = (value_type *)valuesA.data();
-    value_type *b_ew = (value_type *)valuesB.data();
+    auto h_valsA           = create_mirror(valuesA);
+    auto h_valsB           = create_mirror(valuesB);
+    auto h_entriesA        = create_mirror(entriesA);
+    auto h_entriesB        = create_mirror(entriesB);
+    const int *a_adj       = h_entriesA.data();
+    const int *b_adj       = h_entriesB.data();
+    const value_type *a_ew = h_valsA.data();
+    const value_type *b_ew = h_valsB.data();
 
+    // Hack: we discard const with pointer casts here to work around MKL
+    // requiring mutable input and our symbolic interface not providing it
     using Matrix = MKLSparseMatrix<value_type>;
-    Matrix A(m, n, a_xadj, (int *)(entriesA.data()), a_ew);
-    Matrix B(n, k, b_xadj, (int *)entriesB.data(), b_ew);
+    Matrix A(m, n, (int *)a_xadj, (int *)a_adj, (value_type *)a_ew);
+    Matrix B(n, k, (int *)b_xadj, (int *)b_adj, (value_type *)b_ew);
 
     sparse_operation_t operation;
     if (transposeA && transposeB) {
@@ -317,10 +333,21 @@ class MKLApply {
     C.destroy();
   }
 
-  template <typename from_type, typename to_type>
-  inline static void copy(size_t num_elems, from_type from, to_type to) {
-    KokkosKernels::Impl::copy_vector<from_type, to_type, MyExecSpace>(num_elems,
-                                                                      from, to);
+  template <typename from_view_type, typename dst_view_type>
+  inline static void copy(from_view_type from, dst_view_type to) {
+    auto h_from =
+        Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), from);
+    auto h_to = Kokkos::create_mirror_view(Kokkos::HostSpace(), to);
+    Kokkos::deep_copy(h_to, h_from);  // view copy (for different element types)
+    Kokkos::deep_copy(to, h_to);
+    Kokkos::fence();
+  }
+
+  template <typename T>
+  inline static decltype(auto) make_host_view(const T *data, size_t num_elems) {
+    using device_type =
+        Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>;
+    return Kokkos::View<const T *, Kokkos::HostSpace>(data, num_elems);
   }
 };
 #endif  // KOKKOSKERNELS_ENABLE_TPL_MKL

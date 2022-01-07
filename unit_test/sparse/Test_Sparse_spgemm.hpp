@@ -315,12 +315,6 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth,
         if (A.values.extent(0) > max_integer) {
           is_expected_to_fail = true;
         }
-
-        if (!(Kokkos::SpaceAccessibility<
-                typename Kokkos::HostSpace::execution_space,
-                typename device::memory_space>::accessible)) {
-          is_expected_to_fail = true;
-        }
         break;
 
       case SPGEMM_KK: algo = "SPGEMM_KK"; break;
