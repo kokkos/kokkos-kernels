@@ -568,16 +568,6 @@ class SPGEMMHandle {
 #endif
     }
 #endif
-
-#if defined(KOKKOS_ENABLE_QTHREAD)
-    if (std::is_same<Kokkos::Qthread, ExecutionSpace>::value) {
-      this->algorithm_type = SPGEMM_SERIAL;
-#ifdef VERBOSE
-      std::cout << "Qthread Execution Space, Default Algorithm: SPGEMM_SERIAL"
-                << std::endl;
-#endif
-    }
-#endif
   }
 
   void set_compression(bool compress_second_matrix_) {
