@@ -435,7 +435,7 @@ struct SharedParamTag {
 /// \brief value_type_name returns a string with the value type name
 template <typename T>
 KOKKOS_INLINE_FUNCTION std::string value_type_name() {
-  return "::UnknowValueType";
+  return "::UnknownValueType";
 }
 
 template <>
