@@ -51,22 +51,34 @@
 #include <Kokkos_Core.hpp>
 #include <KokkosKernels_PrintUtils.hpp>
 
+template <typename OutStream, typename ExecSpace>
+class ViewPrintHelper {
+ public:
+  ViewPrintHelper(OutStream &out_, const char *sep_) : out(out_), sep(sep_) {}
+
+  template <typename T>
+  void operator()(T view, int limit = 0) {
+    const auto v = Kokkos::create_mirror_view_and_copy(space, view);
+    kk_print_1Dview(out, v, limit < 1, sep, limit);
+  }
+
+ private:
+  OutStream &out;
+  ExecSpace space;
+  const char *sep;
+};
+
 template <typename exec_space>
 void testPrintView() {
   using scalar_t   = default_scalar;
   using Unmanaged  = Kokkos::MemoryTraits<Kokkos::Unmanaged>;
   using rank0_view = Kokkos::View<scalar_t, Kokkos::HostSpace, Unmanaged>;
-  using rank1_view = Kokkos::View<scalar_t*, Kokkos::HostSpace, Unmanaged>;
-  using rank2_view = Kokkos::View<scalar_t**, Kokkos::HostSpace, Unmanaged>;
+  using rank1_view = Kokkos::View<scalar_t *, Kokkos::HostSpace, Unmanaged>;
+  using rank2_view = Kokkos::View<scalar_t **, Kokkos::HostSpace, Unmanaged>;
 
-  constexpr auto sep = "|";  // test something else than space
-
+  // Note: try custom separator
   std::stringstream out;
-
-  const auto test = [&](auto hv, int limit = 0) {
-    const auto v = Kokkos::create_mirror_view_and_copy(exec_space(), hv);
-    kk_print_1Dview(out, v, limit < 1, sep, limit);
-  };
+  auto test = ViewPrintHelper<decltype(out), exec_space>(out, "|");
 
   std::vector<scalar_t> vals = {4, 5, 6, 7};
   const rank1_view hv1(vals.data(), vals.size());
