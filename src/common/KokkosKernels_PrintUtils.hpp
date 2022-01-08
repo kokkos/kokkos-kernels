@@ -98,38 +98,26 @@ inline void kk_get_histogram(
  * pritned. This parameter is not used if print_all is set to true.
  */
 template <typename idx_array_type>
-inline std::enable_if_t<idx_array_type::rank == 1> kk_print_1Dview(
+inline std::enable_if_t<idx_array_type::rank <= 1> kk_print_1Dview(
     std::ostream& os, idx_array_type view, bool print_all = false,
     const char* sep = " ", size_t print_size = 40) {
   typedef typename idx_array_type::HostMirror host_type;
   typedef typename idx_array_type::size_type idx;
   host_type host_view = Kokkos::create_mirror_view(view);
   Kokkos::deep_copy(host_view, view);
+  const auto print_range = [&](idx begin, idx end) {
+    for (idx i = begin; i < end; ++i) os << host_view.access(i) << sep;
+  };
   idx nr = host_view.extent(0);
-  if (!print_all) {
-    if (nr > print_size) {
-      idx n = print_size / 2;
-      for (idx i = 0; i < n; ++i) {
-        os << host_view(i) << sep;
-      }
-      os << "... ... ..." << sep;
-
-      for (idx i = nr - n; i < nr; ++i) {
-        os << host_view(i) << sep;
-      }
-      os << std::endl;
-    } else {
-      for (idx i = 0; i < nr; ++i) {
-        os << host_view(i) << sep;
-      }
-      os << std::endl;
-    }
+  if (print_all || nr <= print_size) {
+    print_range(0, nr);
   } else {
-    for (idx i = 0; i < nr; ++i) {
-      os << host_view(i) << sep;
-    }
-    os << std::endl;
+    idx n = print_size / 2;
+    print_range(0, n);
+    os << "... ... ..." << sep;
+    print_range(nr - n, nr);
   }
+  os << std::endl;
 }
 
 /**
@@ -137,17 +125,12 @@ inline std::enable_if_t<idx_array_type::rank == 1> kk_print_1Dview(
  * rank-2 vectors same like rank-1 vectors and prints multi-vector dimensions.
  */
 template <typename idx_array_type>
-inline std::enable_if_t<idx_array_type::rank != 1> kk_print_1Dview(
+inline std::enable_if_t<idx_array_type::rank >= 2> kk_print_1Dview(
     std::ostream& os, idx_array_type view, bool print_all = false,
     const char* sep = " ", size_t print_size = 40) {
-  if ((idx_array_type::rank == 2 && view.extent(1) == 1) ||
-      idx_array_type::rank == 0) {
-    const auto n     = idx_array_type::rank == 0 ? 1 : view.extent(0);
-    using rank1_view = Kokkos::View<decltype(view.data()),
-                                    typename idx_array_type::array_layout,
-                                    typename idx_array_type::memory_space,
-                                    typename idx_array_type::memory_traits>;
-    kk_print_1Dview(os, rank1_view(view.data(), n), print_all, sep, print_size);
+  if (idx_array_type::rank == 2 && view.extent(1) == 1) {
+    kk_print_1Dview(os, subview(view, Kokkos::ALL, 0), print_all, sep,
+                    print_size);
     return;
   }
   os << "[" << view.extent(0);
