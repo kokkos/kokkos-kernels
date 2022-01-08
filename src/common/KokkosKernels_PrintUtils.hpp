@@ -140,9 +140,14 @@ template <typename idx_array_type>
 inline std::enable_if_t<idx_array_type::rank != 1> kk_print_1Dview(
     std::ostream& os, idx_array_type view, bool print_all = false,
     const char* sep = " ", size_t print_size = 40) {
-  if (idx_array_type::rank == 2 && view.extent(1) == 1) {
-    kk_print_1Dview(os, subview(view, Kokkos::ALL, 0), print_all, sep,
-                    print_size);
+  if ((idx_array_type::rank == 2 && view.extent(1) == 1) ||
+      idx_array_type::rank == 0) {
+    const auto n     = idx_array_type::rank == 0 ? 1 : view.extent(0);
+    using rank1_view = Kokkos::View<decltype(view.data()),
+                                    typename idx_array_type::array_layout,
+                                    typename idx_array_type::memory_space,
+                                    typename idx_array_type::memory_traits>;
+    kk_print_1Dview(os, rank1_view(view.data(), n), print_all, sep, print_size);
     return;
   }
   os << "[" << view.extent(0);
