@@ -9,5 +9,6 @@
 #include <Test_Common_set_bit_count.hpp>
 #include <Test_Common_Sorting.hpp>
 #include <Test_Common_Transpose.hpp>
+#include <Test_Common_IOUtils.hpp>
 
 #endif  // TEST_COMMON_HPP
