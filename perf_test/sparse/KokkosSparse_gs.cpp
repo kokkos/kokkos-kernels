@@ -135,7 +135,8 @@ crsMat_t generateLongRowMatrix(const GS_Parameters& params) {
     shortRowEntries.clear();
     bool rowIsLong = rowLengths[i] > params.nnzPerRow;
     if (rowIsLong)
-      std::random_shuffle(longRowEntries.begin(), longRowEntries.end());
+      std::shuffle(longRowEntries.begin(), longRowEntries.end(),
+                   std::mt19937(std::random_device()()));
     for (lno_t ent = 0; ent < rowLengths[i]; ent++) {
       if (ent == 0) {
         entries.push_back(i);
