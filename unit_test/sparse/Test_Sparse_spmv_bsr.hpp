@@ -96,10 +96,10 @@ inline void set_random_value(std::complex<Scalar> &v) {
 /// \param mat_rowmap[out]  CRS-style row map for the block matrix
 /// \param mat_colidx[out]  CRS-style column entries for the block matrix
 /// \param mat_val[out]  Numerical (random) values
-template <typename scalar_t, typename lno_t>
+template <typename scalar_t, typename lno_t, typename size_type>
 void make_block_entries(
     const KokkosSparse::CrsMatrix<scalar_t, lno_t, Kokkos::HostSpace, void,
-                                  size_t> &mat_b1,
+                                  size_type> &mat_b1,
     int blockSize, std::vector<lno_t> &mat_rowmap,
     std::vector<lno_t> &mat_colidx, std::vector<scalar_t> &mat_val) {
   lno_t nRow = blockSize * mat_b1.numRows();
@@ -157,7 +157,7 @@ void check_bsrm_times_v(const char fOp[], scalar_t alpha, scalar_t beta,
       typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>
           crsMat_t;
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, Kokkos::HostSpace,
-                                           void, size_t>
+                                           void, size_type>
       h_crsMat_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
   typedef scalar_view_t x_vector_type;
@@ -286,7 +286,7 @@ void check_bsrm_times_mv(const char fOp[], scalar_t alpha, scalar_t beta,
   mat_structure(2, 2) = 0;  // Add BC to the top
 
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, Kokkos::HostSpace,
-                                           void, size_t>
+                                           void, size_type>
       h_crsMat_t;
   typedef
       typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>
