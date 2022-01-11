@@ -53,6 +53,7 @@
 #include <KokkosKernels_config.h>
 #include "KokkosKernels_default_types.hpp"
 #include <iostream>
+#include <random>
 #include <vector>
 #include <string>
 #include <unordered_set>
@@ -119,7 +120,8 @@ crsMat_t generateLongRowMatrix(const GS_Parameters& params) {
     } else
       rowLengths.push_back(params.nnzPerRow);
   }
-  std::random_shuffle(rowLengths.begin(), rowLengths.end());
+  std::shuffle(rowLengths.begin(), rowLengths.end(),
+               std::mt19937(std::random_device()()));
   size_type totalEntries = 0;
   int randSteps          = 1000000;
   // Set of columns inserted so far into current short row
