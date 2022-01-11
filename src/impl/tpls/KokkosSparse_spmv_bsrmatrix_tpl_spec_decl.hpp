@@ -360,10 +360,9 @@ inline void spm_mv_block_impl_mkl(
     using YVector = Kokkos::View<SCALAR*, Kokkos::LayoutLeft, device_type,     \
                                  Kokkos::MemoryTraits<Kokkos::Unmanaged>>;     \
     using coefficient_type = typename YVector::non_const_value_type;           \
-    using Controls         = KokkosKernels::Experimental::Controls;            \
                                                                                \
     static void spmv_bsrmatrix(                                                \
-        const KokkosKernels::Experimental::Controls& controls,                 \
+        const KokkosKernels::Experimental::Controls& /*controls*/,             \
         const char mode[], const coefficient_type& alpha, const AMatrix& A,    \
         const XVector& X, const coefficient_type& beta, const YVector& Y) {    \
       std::string label = "KokkosSparse::spmv[TPL_MKL,BSRMATRIX" +             \
@@ -419,10 +418,9 @@ KOKKOSSPARSE_SPMV_MKL(Kokkos::complex<double>, Kokkos::OpenMP,
     using YVector = Kokkos::View<SCALAR**, Kokkos::LayoutLeft, device_type,    \
                                  Kokkos::MemoryTraits<Kokkos::Unmanaged>>;     \
     using coefficient_type = typename YVector::non_const_value_type;           \
-    using Controls         = KokkosKernels::Experimental::Controls;            \
                                                                                \
     static void spmv_mv_bsrmatrix(                                             \
-        const KokkosKernels::Experimental::Controls& controls,                 \
+        const KokkosKernels::Experimental::Controls& /*controls*/,             \
         const char mode[], const coefficient_type& alpha, const AMatrix& A,    \
         const XVector& X, const coefficient_type& beta, const YVector& Y) {    \
       std::string label = "KokkosSparse::spmv[TPL_MKL,BSRMATRIX" +             \
