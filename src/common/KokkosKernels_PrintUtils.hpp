@@ -98,38 +98,46 @@ inline void kk_get_histogram(
  * pritned. This parameter is not used if print_all is set to true.
  */
 template <typename idx_array_type>
-inline void kk_print_1Dview(std::ostream& os, idx_array_type view,
-                            bool print_all = false, const char* sep = " ",
-                            size_t print_size = 40) {
+inline std::enable_if_t<idx_array_type::rank <= 1> kk_print_1Dview(
+    std::ostream& os, idx_array_type view, bool print_all = false,
+    const char* sep = " ", size_t print_size = 40) {
   typedef typename idx_array_type::HostMirror host_type;
   typedef typename idx_array_type::size_type idx;
   host_type host_view = Kokkos::create_mirror_view(view);
   Kokkos::deep_copy(host_view, view);
+  const auto print_range = [&](idx begin, idx end) {
+    for (idx i = begin; i < end; ++i) os << host_view.access(i) << sep;
+  };
   idx nr = host_view.extent(0);
-  if (!print_all) {
-    if (nr > print_size) {
-      idx n = print_size / 2;
-      for (idx i = 0; i < n; ++i) {
-        os << host_view(i) << sep;
-      }
-      os << "... ... ..." << sep;
-
-      for (idx i = nr - n; i < nr; ++i) {
-        os << host_view(i) << sep;
-      }
-      os << std::endl;
-    } else {
-      for (idx i = 0; i < nr; ++i) {
-        os << host_view(i) << sep;
-      }
-      os << std::endl;
-    }
+  if (print_all || nr <= print_size) {
+    print_range(0, nr);
   } else {
-    for (idx i = 0; i < nr; ++i) {
-      os << host_view(i) << sep;
-    }
-    os << std::endl;
+    idx n = print_size / 2;
+    print_range(0, n);
+    os << "... ... ..." << sep;
+    print_range(nr - n, nr);
   }
+  os << std::endl;
+}
+
+/**
+ * \brief Multi-vector variant (see rank-1 for param description). Prints Nx1
+ * rank-2 vectors same like rank-1 vectors and prints multi-vector dimensions.
+ */
+template <typename idx_array_type>
+inline std::enable_if_t<idx_array_type::rank >= 2> kk_print_1Dview(
+    std::ostream& os, idx_array_type view, bool print_all = false,
+    const char* sep = " ", size_t print_size = 40) {
+  if (idx_array_type::rank == 2 && view.extent(1) == 1) {
+    kk_print_1Dview(os, subview(view, Kokkos::ALL, 0), print_all, sep,
+                    print_size);
+    return;
+  }
+  os << "[" << view.extent(0);
+  for (int i = 1; i < idx_array_type::rank; ++i) {
+    os << "x" << view.extent(i);
+  }
+  os << " multi-vector]" << std::endl;
 }
 
 /**
