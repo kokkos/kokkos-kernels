@@ -54,7 +54,7 @@ struct gemm_tpl_spec_avail {
 };
 
 // Generic Host side BLAS (could be MKL or whatever)
-#ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
+#if defined(KOKKOSKERNELS_ENABLE_TPL_BLAS)
 
 #define KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_BLAS(SCALAR, LAYOUTA, LAYOUTB,     \
                                              LAYOUTC, MEMSPACE)            \
@@ -100,7 +100,7 @@ KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>,
 #endif
 
 // cuBLAS
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
 
 #define KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_CUBLAS(SCALAR, LAYOUTA, LAYOUTB,   \
                                                LAYOUTC, MEMSPACE)          \
@@ -168,6 +168,47 @@ KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>,
                                        Kokkos::LayoutRight, Kokkos::LayoutRight,
                                        Kokkos::LayoutRight,
                                        Kokkos::CudaUVMSpace)
+
+#endif
+
+// rocBLAS
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ROCBLAS)
+
+#define KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_ROCBLAS(SCALAR, LAYOUT, MEMSPACE) \
+  template <class ExecSpace>                                              \
+  struct gemm_tpl_spec_avail<                                             \
+      Kokkos::View<const SCALAR**, LAYOUT,                                \
+                   Kokkos::Device<ExecSpace, MEMSPACE>,                   \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
+      Kokkos::View<const SCALAR**, LAYOUT,                                \
+                   Kokkos::Device<ExecSpace, MEMSPACE>,                   \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {          \
+    enum : bool { value = true };                                         \
+  };
+
+KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_ROCBLAS(double, Kokkos::LayoutLeft,
+                                        Kokkos::Experimental::HIPSpace)
+KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_ROCBLAS(float, Kokkos::LayoutLeft,
+                                        Kokkos::Experimental::HIPSpace)
+KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<double>,
+                                        Kokkos::LayoutLeft,
+                                        Kokkos::Experimental::HIPSpace)
+KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<float>,
+                                        Kokkos::LayoutLeft,
+                                        Kokkos::Experimental::HIPSpace)
+
+KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_ROCBLAS(double, Kokkos::LayoutRight,
+                                        Kokkos::Experimental::HIPSpace)
+KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_ROCBLAS(float, Kokkos::LayoutRight,
+                                        Kokkos::Experimental::HIPSpace)
+KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<double>,
+                                        Kokkos::LayoutRight,
+                                        Kokkos::Experimental::HIPSpace)
+KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<float>,
+                                        Kokkos::LayoutRight,
+                                        Kokkos::Experimental::HIPSpace)
 
 #endif
 }  // namespace Impl
