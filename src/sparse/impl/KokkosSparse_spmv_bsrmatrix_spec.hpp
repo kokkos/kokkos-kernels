@@ -288,27 +288,13 @@ struct SPMV_MV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
     if ((mode[0] == KokkosSparse::NoTranspose[0]) ||
         (mode[0] == KokkosSparse::Conjugate[0])) {
       bool useConjugate = (mode[0] == KokkosSparse::Conjugate[0]);
-      if (X.extent(1) == 1) {
-        const auto x0 = Kokkos::subview(X, Kokkos::ALL(), 0);
-        auto y0       = Kokkos::subview(Y, Kokkos::ALL(), 0);
-        return Bsr::spMatVec_no_transpose(controls, alpha, A, x0, beta, y0,
-                                          useConjugate);
-      } else {
-        return Bsr::spMatMultiVec_no_transpose(controls, alpha, A, X, beta, Y,
-                                               useConjugate);
-      }
+      return Bsr::spMatMultiVec_no_transpose(controls, alpha, A, X, beta, Y,
+                                             useConjugate);
     } else if ((mode[0] == KokkosSparse::Transpose[0]) ||
                (mode[0] == KokkosSparse::ConjugateTranspose[0])) {
       bool useConjugate = (mode[0] == KokkosSparse::ConjugateTranspose[0]);
-      if (X.extent(1) == 1) {
-        const auto x0 = Kokkos::subview(X, Kokkos::ALL(), 0);
-        auto y0       = Kokkos::subview(Y, Kokkos::ALL(), 0);
-        return Bsr::spMatVec_transpose(controls, alpha, A, x0, beta, y0,
-                                       useConjugate);
-      } else {
-        return Bsr::spMatMultiVec_transpose(controls, alpha, A, X, beta, Y,
-                                            useConjugate);
-      }
+      return Bsr::spMatMultiVec_transpose(controls, alpha, A, X, beta, Y,
+                                          useConjugate);
     }
   }
 };
@@ -333,8 +319,8 @@ struct SPMV_MV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
                            YM>
         impl_type;
     for (typename AMatrix::non_const_size_type j = 0; j < X.extent(1); ++j) {
-      auto x_j = Kokkos::subview(X, Kokkos::ALL(), j);
-      auto y_j = Kokkos::subview(Y, Kokkos::ALL(), j);
+      const auto x_j = Kokkos::subview(X, Kokkos::ALL(), j);
+      auto y_j       = Kokkos::subview(Y, Kokkos::ALL(), j);
       impl_type::spmv_bsrmatrix(controls, mode, alpha, A, x_j, beta, y_j);
     }
   }
