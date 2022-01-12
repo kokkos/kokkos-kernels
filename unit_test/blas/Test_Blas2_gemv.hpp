@@ -18,7 +18,7 @@ void impl_test_gemv(const char* mode, int M, int N) {
   ScalarA alpha = 3;
   ScalarY beta  = 5;
   double eps =
-      (std::is_same<typename KAT_Y::mag_type, float>::value ? 1e-3 : 5e-10);
+      (std::is_same<typename KAT_Y::mag_type, float>::value ? 1e-2 : 5e-10);
 
   int ldx;
   int ldy;
@@ -51,17 +51,17 @@ void impl_test_gemv(const char* mode, int M, int N) {
 
   {
     ScalarX randStart, randEnd;
-    Test::getRandomBounds(1.0, randStart, randEnd);
+    Test::getRandomBounds(10.0, randStart, randEnd);
     Kokkos::fill_random(x, rand_pool, randStart, randEnd);
   }
   {
     ScalarY randStart, randEnd;
-    Test::getRandomBounds(1.0, randStart, randEnd);
+    Test::getRandomBounds(10.0, randStart, randEnd);
     Kokkos::fill_random(y, rand_pool, randStart, randEnd);
   }
   {
     ScalarA randStart, randEnd;
-    Test::getRandomBounds(1.0, randStart, randEnd);
+    Test::getRandomBounds(10.0, randStart, randEnd);
     Kokkos::fill_random(b_A, rand_pool, randStart, randEnd);
   }
 
