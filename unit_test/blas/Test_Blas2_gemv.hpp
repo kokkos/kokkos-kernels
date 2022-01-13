@@ -18,7 +18,7 @@ void impl_test_gemv(const char* mode, int M, int N) {
   ScalarA alpha = 3;
   ScalarY beta  = 5;
   double eps =
-      (std::is_same<typename KAT_Y::mag_type, float>::value ? 1e-3 : 5e-10);
+      (std::is_same<typename KAT_Y::mag_type, float>::value ? 1e-2 : 5e-10);
 
   int ldx;
   int ldy;
@@ -51,17 +51,17 @@ void impl_test_gemv(const char* mode, int M, int N) {
 
   {
     ScalarX randStart, randEnd;
-    Test::getRandomBounds(10.0, randStart, randEnd);
+    Test::getRandomBounds(1.0, randStart, randEnd);
     Kokkos::fill_random(x, rand_pool, randStart, randEnd);
   }
   {
     ScalarY randStart, randEnd;
-    Test::getRandomBounds(10.0, randStart, randEnd);
+    Test::getRandomBounds(1.0, randStart, randEnd);
     Kokkos::fill_random(y, rand_pool, randStart, randEnd);
   }
   {
     ScalarA randStart, randEnd;
-    Test::getRandomBounds(10.0, randStart, randEnd);
+    Test::getRandomBounds(1.0, randStart, randEnd);
     Kokkos::fill_random(b_A, rand_pool, randStart, randEnd);
   }
 
@@ -159,7 +159,7 @@ int test_gemv(const char* mode) {
   Test::impl_test_gemv<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(
       mode, 1024, 1024);
   Test::impl_test_gemv<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(
-      mode, 4321, 4321);
+      mode, 2131, 2131);
   // Test::impl_test_gemv<view_type_a_ll, view_type_b_ll, view_type_c_ll,
   // Device>(mode,132231,1024);
 #endif
@@ -183,7 +183,7 @@ int test_gemv(const char* mode) {
   Test::impl_test_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(
       mode, 1024, 1024);
   Test::impl_test_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(
-      mode, 4321, 4321);
+      mode, 2131, 2131);
   // Test::impl_test_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr,
   // Device>(mode,132231,1024);
 #endif
@@ -207,7 +207,7 @@ int test_gemv(const char* mode) {
   Test::impl_test_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(
       mode, 1024, 1024);
   Test::impl_test_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(
-      mode, 4321, 4321);
+      mode, 2131, 2131);
   // Test::impl_test_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls,
   // Device>(mode,132231,1024);
 #endif
