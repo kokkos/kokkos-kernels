@@ -468,8 +468,7 @@ int BatchedGemm(BatchedGemmHandleType *const handle, const ScalarType alpha,
       // } else
       if (on_gpu && ((std::is_same<layout_type, Kokkos::LayoutLeft>::value)
                          ? (c_m >= 16)
-                         : (c_m >= 24))) {  // Vinh's note: use this condition
-                                            // for now, might need to revisit
+                         : (c_m >= 24 && c_m <= 32) || c_m >= 40)) {
         handle->teamSz = handle->vecLen = 8;
         constexpr int tile_m = 32, tile_n = 32, tile_k = 8;
 #ifdef __CUDACC_RDC__
