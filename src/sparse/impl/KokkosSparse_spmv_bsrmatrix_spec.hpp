@@ -224,7 +224,7 @@ struct SPMV_MV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
     }
 #endif
 
-#if defined(KOKKOS_ARCH_AMPERE)
+#if defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOS_ARCH_AMPERE)
     typedef typename XVector::non_const_value_type XScalar;
     typedef typename AMatrix::non_const_value_type AScalar;
     typedef Kokkos::Experimental::half_t Half;
@@ -266,7 +266,7 @@ struct SPMV_MV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
         return;
       }
     }
-#elif defined(KOKKOS_ARCH_VOLTA)
+#elif defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOS_ARCH_VOLTA)
     /* Volta has float += half * half
        use it for all matrices
     */
