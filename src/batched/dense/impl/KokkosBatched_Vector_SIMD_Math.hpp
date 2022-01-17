@@ -7,9 +7,6 @@
 
 namespace KokkosBatched {
 
-//#define KOKKOSKERNELS_SIMD_MATH_RETURN_TYPE typename
-// std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,Vector<SIMD<T>,l>
-//>::type
 #define KOKKOSKERNELS_SIMD_MATH_RETURN_TYPE(T, l) Vector<SIMD<T>, l>
 #define KOKKOSKERNELS_SIMD_MATH_RETURN_FLOAT_TYPE(T, l) \
   typename std::enable_if<!std::is_integral<T>::value,  \
