@@ -1,15 +1,17 @@
 KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-KOKKOSKERNELS_ADD_EXECUTABLE(
-        sparse_pcg
-        SOURCES KokkosSparse_pcg.cpp
-)
+IF(KOKKOSKERNELS_INST_DOUBLE)
+  KOKKOSKERNELS_ADD_EXECUTABLE(
+          sparse_pcg
+          SOURCES KokkosSparse_pcg.cpp
+  )
 
-KOKKOSKERNELS_ADD_EXECUTABLE(
-        sparse_block_pcg
-        SOURCES KokkosSparse_block_pcg.cpp
-)
+  KOKKOSKERNELS_ADD_EXECUTABLE(
+          sparse_block_pcg
+          SOURCES KokkosSparse_block_pcg.cpp
+  )
+ENDIF()
 
 KOKKOSKERNELS_ADD_EXECUTABLE(
         sparse_spgemm
