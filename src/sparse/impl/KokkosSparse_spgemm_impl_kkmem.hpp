@@ -1361,8 +1361,7 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
   // choose parameters
   if (this->spgemm_algorithm == SPGEMM_KK ||
       SPGEMM_KK_LP == this->spgemm_algorithm) {
-    if (KokkosKernels::Impl::kk_is_gpu_exec_space<
-            typename HandleType::HandleExecSpace>()) {
+    if (KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>()) {
       // then chose the best method and parameters.
       size_type average_row_nnz = 0;
       size_t average_row_flops  = 0;
@@ -1370,17 +1369,19 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
         average_row_nnz   = overall_nnz / this->a_row_cnt;
         average_row_flops = original_overall_flops / this->a_row_cnt;
       }
+      int vector_length_max =
+          KokkosKernels::Impl::kk_get_max_vector_size<MyExecSpace>();
       // if we have very low flops per row, or our maximum number of nnz is
       // prett small, then we do row-base algorithm.
       if (SPGEMM_KK_LP != this->spgemm_algorithm &&
-          (average_row_nnz < 32 || average_row_flops < 256)) {
+          (average_row_nnz < vector_length_max || average_row_flops < 256)) {
         algorithm_to_run = SPGEMM_KK_MEMORY;
         // if (average_row_nnz / double (thread_shmem_key_size) > 1.5)
         while (average_row_nnz > size_type(thread_shmem_key_size) &&
-               suggested_vector_size < 32) {
+               suggested_vector_size < vector_length_max) {
           suggested_vector_size = suggested_vector_size * 2;
           suggested_vector_size =
-              KOKKOSKERNELS_MACRO_MIN(32, suggested_vector_size);
+              KOKKOSKERNELS_MACRO_MIN(vector_length_max, suggested_vector_size);
           suggested_team_size =
               this->handle->get_suggested_team_size(suggested_vector_size);
           thread_memory = (shmem_size_to_use / 8 / suggested_team_size) * 8;
@@ -1412,7 +1413,7 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
         int team_cuckoo_key_size = 1;
         while (team_cuckoo_key_size * 2 < tmp_team_cuckoo_key_size)
           team_cuckoo_key_size = team_cuckoo_key_size * 2;
-        suggested_vector_size = 32;
+        suggested_vector_size = vector_length_max;
         suggested_team_size =
             this->handle->get_suggested_team_size(suggested_vector_size);
         algorithm_to_run = SPGEMM_KK_MEMORY_BIGSPREADTEAM;
