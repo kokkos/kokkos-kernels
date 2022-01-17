@@ -3,11 +3,9 @@
 #include "Kokkos_Timer.hpp"
 #include "Kokkos_Random.hpp"
 
-#if defined(KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA)
 #if !defined(KOKKOS_ENABLE_CUDA) || (8000 <= CUDA_VERSION)
 #if defined(KOKKOS_ENABLE_CUDA_LAMBDA)
 #define KOKKOSBATCHED_TEST_BLOCKTRIDIAGDIRECT
-#endif
 #endif
 #endif
 
