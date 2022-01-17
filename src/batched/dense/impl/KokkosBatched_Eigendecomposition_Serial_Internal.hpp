@@ -82,6 +82,22 @@ struct SerialEigendecompositionInternal {
 
     //       /// step 1: Hessenberg reduction A = Q H Q^H
     //       ///         Q is stored in QZ
+    //
+    ////////////////////////////////////////////////////////////////////////////
+    // DO NOT USE
+    //
+    //     #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
+    //     <host code>
+    //     #else
+    //     <device code>
+    //     #endif
+    //
+    // DO THIS INSTEAD
+    //
+    //     KOKKOS_IF_HOST((<host code>))
+    //     KOKKOS_IF_DEVICE((<device code>))
+    //
+    ////////////////////////////////////////////////////////////////////////////
     // #if (defined(KOKKOSKERNELS_ENABLE_TPL_MKL) && (__INTEL_MKL__ >= 2018)) &&
     // defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
     //       {
