@@ -9,7 +9,7 @@
 #include <KokkosKernels_IOUtils.hpp>
 #include <KokkosKernels_Utils.hpp>
 
-#include <algorithm>    //for std::random_shuffle
+#include <algorithm>    //for std::shuffle
 #include <random>       // for std::default_random_engine
 #include <cstdlib>      //for rand
 #include <type_traits>  //for std::is_same

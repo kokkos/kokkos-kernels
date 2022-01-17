@@ -119,7 +119,8 @@ crsMat_t generateLongRowMatrix(const GS_Parameters& params) {
     } else
       rowLengths.push_back(params.nnzPerRow);
   }
-  std::random_shuffle(rowLengths.begin(), rowLengths.end());
+  std::default_random_engine generator;
+  std::shuffle(rowLengths.begin(), rowLengths.end(), generator);
   size_type totalEntries = 0;
   int randSteps          = 1000000;
   // Set of columns inserted so far into current short row
@@ -133,7 +134,7 @@ crsMat_t generateLongRowMatrix(const GS_Parameters& params) {
     shortRowEntries.clear();
     bool rowIsLong = rowLengths[i] > params.nnzPerRow;
     if (rowIsLong)
-      std::random_shuffle(longRowEntries.begin(), longRowEntries.end());
+      std::shuffle(longRowEntries.begin(), longRowEntries.end(), generator);
     for (lno_t ent = 0; ent < rowLengths[i]; ent++) {
       if (ent == 0) {
         entries.push_back(i);

@@ -57,6 +57,7 @@
 #include <complex>
 #include <map>
 #include <vector>
+#include <random>
 #include "KokkosSparse_gauss_seidel.hpp"
 #include "KokkosSparse_partitioning_impl.hpp"
 #include "KokkosSparse_sor_sequential_impl.hpp"
@@ -569,7 +570,8 @@ void test_gauss_seidel_long_rows(lno_t numRows, lno_t numLongRows,
     else
       rowLengths.push_back(nnzPerShortRow);
   }
-  std::random_shuffle(rowLengths.begin(), rowLengths.end());
+  std::default_random_engine generator;
+  std::shuffle(rowLengths.begin(), rowLengths.end(), generator);
   size_type totalEntries = 0;
   int randSteps          = 1000000;
   scalar_t offDiagBase;
