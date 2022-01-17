@@ -316,42 +316,35 @@ struct Algo {
       // - team policy (smaller) or range policy (bigger)
       // - space (gpu vs host)
       // - blocksize input (blk <= 4 mb = 2, otherwise mb = 4), etc.
-#if defined(KOKKOS_ENABLE_CUDA)
-      template <typename ActiveMemorySpaceType>
-      KOKKOS_INLINE_FUNCTION static constexpr typename std::enable_if<
-          std::is_same<ActiveMemorySpaceType, Kokkos::CudaSpace>::value,
-          int>::type
-      mb() {
-        return 2;
+      static constexpr int mb() {
+        return mb_impl<Kokkos::Impl::ActiveExecutionMemorySpace>::value;
       }
+
+     private:
+      template <class>
+      struct mb_impl;
+      template <>
+      struct mb_impl<Kokkos::HostSpace> {
+        static constexpr int value = 4;
+      };
+#if defined(KOKKOS_ENABLE_CUDA)
+      template <>
+      struct mb_impl<Kokkos::CudaSpace> {
+        static constexpr int value = 2;
+      };
 #endif
 #if defined(KOKKOS_ENABLE_HIP)
-      template <typename ActiveMemorySpaceType>
-      KOKKOS_INLINE_FUNCTION static constexpr typename std::enable_if<
-          std::is_same<ActiveMemorySpaceType,
-                       Kokkos::Experimental::HIPSpace>::value,
-          int>::type
-      mb() {
-        return 2;
-      }
+      template <>
+      struct mb_impl<Kokkos::Experimental::HIPSpace> {
+        static constexpr int value = 2;
+      };
 #endif
 #if defined(KOKKOS_ENABLE_SYCL)
-      template <typename ActiveMemorySpaceType>
-      KOKKOS_INLINE_FUNCTION static constexpr typename std::enable_if<
-          std::is_same<ActiveMemorySpaceType,
-                       Kokkos::Experimental::SYCLDeviceUSMSpace>::value,
-          int>::type
-      mb() {
-        return 2;
-      }
+      template <>
+      struct mb_impl<Kokkos::Experimental::SYCLDeviceUSMSpace> {
+        static constexpr int value = 2;
+      };
 #endif
-      template <typename ActiveMemorySpaceType>
-      KOKKOS_INLINE_FUNCTION static constexpr typename std::enable_if<
-          std::is_same<ActiveMemorySpaceType, Kokkos::HostSpace>::value,
-          int>::type
-      mb() {
-        return 4;
-      }
     };
     struct MKL {
       static const char *name() { return "MKL"; }
@@ -389,42 +382,35 @@ struct Algo {
       // - team policy (smaller) or range policy (bigger)
       // - space (cuda vs host)
       // - blocksize input (blk <= 4 mb = 2, otherwise mb = 4), etc.
-#if defined(KOKKOS_ENABLE_CUDA)
-      template <typename ActiveMemorySpaceType>
-      KOKKOS_INLINE_FUNCTION static constexpr typename std::enable_if<
-          std::is_same<ActiveMemorySpaceType, Kokkos::CudaSpace>::value,
-          int>::type
-      mb() {
-        return 1;
+      static constexpr int mb() {
+        return mb_impl<Kokkos::Impl::ActiveExecutionMemorySpace>::value;
       }
+
+     private:
+      template <class>
+      struct mb_impl;
+      template <>
+      struct mb_impl<Kokkos::HostSpace> {
+        static constexpr int value = 4;
+      };
+#if defined(KOKKOS_ENABLE_CUDA)
+      template <>
+      struct mb_impl<Kokkos::CudaSpace> {
+        static constexpr int value = 1;
+      };
 #endif
 #if defined(KOKKOS_ENABLE_HIP)
-      template <typename ActiveMemorySpaceType>
-      KOKKOS_INLINE_FUNCTION static constexpr typename std::enable_if<
-          std::is_same<ActiveMemorySpaceType,
-                       Kokkos::Experimental::HIPSpace>::value,
-          int>::type
-      mb() {
-        return 1;
-      }
+      template <>
+      struct mb_impl<Kokkos::Experimental::HIPSpace> {
+        static constexpr int value = 1;
+      };
 #endif
 #if defined(KOKKOS_ENABLE_SYCL)
-      template <typename ActiveMemorySpaceType>
-      KOKKOS_INLINE_FUNCTION static constexpr typename std::enable_if<
-          std::is_same<ActiveMemorySpaceType,
-                       Kokkos::Experimental::SYCLDeviceUSMSpace>::value,
-          int>::type
-      mb() {
-        return 1;
-      }
+      template <>
+      struct mb_impl<Kokkos::Experimental::SYCLDeviceUSMSpace> {
+        static constexpr int value = 1;
+      };
 #endif
-      template <typename ActiveMemorySpaceType>
-      KOKKOS_INLINE_FUNCTION static constexpr typename std::enable_if<
-          std::is_same<ActiveMemorySpaceType, Kokkos::HostSpace>::value,
-          int>::type
-      mb() {
-        return 4;
-      }
     };
     struct MKL {};
     struct CompactMKL {};

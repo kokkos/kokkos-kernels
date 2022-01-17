@@ -75,11 +75,8 @@ KOKKOS_INLINE_FUNCTION int SerialGemmInternal<Algo::Gemm::Blocked>::invoke(
   // C = beta C + alpha A B
   // C (m x n), A(m x k), B(k x n)
 
-  enum : int {
-    mbAlgo =
-        Algo::Gemm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>(),
-    nbAlgo = Algo::Gemm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
-  };
+  constexpr int mbAlgo = Algo::Gemm::Blocked::mb();
+  constexpr int nbAlgo = Algo::Gemm::Blocked::mb();
 
   const ScalarType one(1.0), zero(0.0);
 

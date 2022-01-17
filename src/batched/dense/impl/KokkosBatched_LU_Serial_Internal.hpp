@@ -74,9 +74,7 @@ KOKKOS_INLINE_FUNCTION int SerialLU_Internal<Algo::LU::Blocked>::invoke(
     const int m, const int n, ValueType *KOKKOS_RESTRICT A, const int as0,
     const int as1,
     const typename MagnitudeScalarType<ValueType>::type /*tiny*/) {
-  enum : int {
-    mbAlgo = Algo::LU::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
-  };
+  constexpr int mbAlgo = Algo::LU::Blocked::mb();
   const typename MagnitudeScalarType<ValueType>::type one(1.0), minus_one(-1.0);
 
   const int k = (m < n ? m : n);
