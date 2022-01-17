@@ -245,9 +245,8 @@ void run_mis2(const MIS2Parameters& params) {
   using lno_t      = default_lno_t;
   using exec_space = typename device_t::execution_space;
   using mem_space  = typename device_t::memory_space;
-  using crsMat_t =
-      typename KokkosSparse::CrsMatrix<default_scalar, lno_t, device_t,
-                                       void, size_type>;
+  using crsMat_t   = typename KokkosSparse::CrsMatrix<default_scalar, lno_t,
+                                                    device_t, void, size_type>;
   using lno_view_t = typename crsMat_t::index_type::non_const_type;
   using KKH        = KokkosKernels::Experimental::KokkosKernelsHandle<
       size_type, lno_t, default_scalar, exec_space, mem_space, mem_space>;
