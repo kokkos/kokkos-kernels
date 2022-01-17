@@ -316,6 +316,13 @@ struct Algo {
       // - team policy (smaller) or range policy (bigger)
       // - space (gpu vs host)
       // - blocksize input (blk <= 4 mb = 2, otherwise mb = 4), etc.
+#if defined(KOKKOS_IF_HOST)
+      static constexpr int mb() {
+        KOKKOS_IF_HOST((return 4;))
+        KOKKOS_IF_DEVICE((return 2;))
+      }
+
+#else  // FIXME remove when requiring minimum version of Kokkos 3.6
       static constexpr int mb() {
         return mb_impl<Kokkos::Impl::ActiveExecutionMemorySpace>::value;
       }
@@ -344,6 +351,7 @@ struct Algo {
       struct mb_impl<Kokkos::Experimental::SYCLDeviceUSMSpace> {
         static constexpr int value = 2;
       };
+#endif
 #endif
     };
     struct MKL {
@@ -382,6 +390,13 @@ struct Algo {
       // - team policy (smaller) or range policy (bigger)
       // - space (cuda vs host)
       // - blocksize input (blk <= 4 mb = 2, otherwise mb = 4), etc.
+#if defined(KOKKOS_IF_HOST)
+      static constexpr int mb() {
+        KOKKOS_IF_HOST((return 4;))
+        KOKKOS_IF_DEVICE((return 1;))
+      }
+
+#else  // FIXME remove when requiring minimum version of Kokkos 3.6
       static constexpr int mb() {
         return mb_impl<Kokkos::Impl::ActiveExecutionMemorySpace>::value;
       }
@@ -410,6 +425,7 @@ struct Algo {
       struct mb_impl<Kokkos::Experimental::SYCLDeviceUSMSpace> {
         static constexpr int value = 1;
       };
+#endif
 #endif
     };
     struct MKL {};
