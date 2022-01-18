@@ -71,38 +71,82 @@ typedef Vector<SIMD<value_type>, internal_vector_length> internal_vector_type;
 typedef value_type internal_vector_type;
 #endif
 
-template <typename ActiveMemorySpace>
+template <typename ExecutionSpace>
 struct FactorizeModeAndAlgo;
 
-template <>
-struct FactorizeModeAndAlgo<Kokkos::HostSpace> {
+struct FactorizeModeAndAlgoHostImpl {
   typedef Mode::Serial mode_type;
   typedef Algo::Level3::Blocked algo_type;
 };
 
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_SERIAL)
 template <>
-struct FactorizeModeAndAlgo<Kokkos::CudaSpace> {
+struct FactorizeModeAndAlgo<Kokkos::Serial> : FactorizeModeAndAlgoHostImpl {};
+#endif
+
+#if defined(KOKKOS_ENABLE_THREADS)
+template <>
+struct FactorizeModeAndAlgo<Kokkos::Threads> : FactorizeModeAndAlgoHostImpl {};
+#endif
+
+#if defined(KOKKOS_ENABLE_OPENMP)
+template <>
+struct FactorizeModeAndAlgo<Kokkos::OpenMP> : FactorizeModeAndAlgoHostImpl {};
+#endif
+
+struct FactorizeModeAndAlgoDeviceImpl {
   typedef Mode::Team mode_type;
   typedef Algo::Level3::Unblocked algo_type;
 };
+
+#if defined(KOKKOS_ENABLE_CUDA)
+template <>
+struct FactorizeModeAndAlgo<Kokkos::Cuda> : FactorizeModeAndAlgoDeviceImpl {};
 #endif
 
-template <typename ActiveMemorySpace>
+#if defined(KOKKOS_ENABLE_HIP)
+template <>
+struct FactorizeModeAndAlgo<Kokkos::Experimental::HIP>
+    : FactorizeModeAndAlgoDeviceImpl {};
+#endif
+
+template <typename ExecutionSpace>
 struct SolveModeAndAlgo;
 
-template <>
-struct SolveModeAndAlgo<Kokkos::HostSpace> {
+struct SolveModeAndAlgoHostImpl {
   typedef Mode::Serial mode_type;
   typedef Algo::Level2::Blocked algo_type;
 };
 
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_SERIAL)
 template <>
-struct SolveModeAndAlgo<Kokkos::CudaSpace> {
+struct SolveModeAndAlgo<Kokkos::Serial> : SolveModeAndAlgoHostImpl {};
+#endif
+
+#if defined(KOKKOS_ENABLE_THREADS)
+template <>
+struct SolveModeAndAlgo<Kokkos::Threads> : SolveModeAndAlgoHostImpl {};
+#endif
+
+#if defined(KOKKOS_ENABLE_OPENMP)
+template <>
+struct SolveModeAndAlgo<Kokkos::OpenMP> : SolveModeAndAlgoHostImpl {};
+#endif
+
+struct SolveModeAndAlgoDeviceImpl {
   typedef Mode::Team mode_type;
   typedef Algo::Level2::Unblocked algo_type;
 };
+
+#if defined(KOKKOS_ENABLE_CUDA)
+template <>
+struct SolveModeAndAlgo<Kokkos::Cuda> : SolveModeAndAlgoDeviceImpl {};
+#endif
+
+#if defined(KOKKOS_ENABLE_HIP)
+template <>
+struct SolveModeAndAlgo<Kokkos::Experimental::HIP>
+    : SolveModeAndAlgoDeviceImpl {};
 #endif
 
 int main(int argc, char *argv[]) {
@@ -272,8 +316,7 @@ int main(int argc, char *argv[]) {
       Kokkos::parallel_for(
           "factorize", policy.set_scratch_size(0, Kokkos::PerTeam(S)),
           KOKKOS_LAMBDA(const member_type &member) {
-            typedef FactorizeModeAndAlgo<
-                Kokkos::Impl::ActiveExecutionMemorySpace>
+            typedef FactorizeModeAndAlgo<Kokkos::DefaultExecutionSpace>
                 default_mode_and_algo_type;
             typedef default_mode_and_algo_type::mode_type mode_type;
             typedef default_mode_and_algo_type::algo_type algo_type;
@@ -355,7 +398,7 @@ int main(int argc, char *argv[]) {
         Kokkos::parallel_for(
             "solve", policy.set_scratch_size(0, Kokkos::PerTeam(S)),
             KOKKOS_LAMBDA(const member_type &member) {
-              typedef SolveModeAndAlgo<Kokkos::Impl::ActiveExecutionMemorySpace>
+              typedef SolveModeAndAlgo<Kokkos::DefaultExecutionSpace>
                   default_mode_and_algo_type;
               typedef default_mode_and_algo_type::mode_type mode_type;
               typedef default_mode_and_algo_type::algo_type algo_type;
