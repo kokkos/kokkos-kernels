@@ -393,10 +393,10 @@ void test_spmv(lno_t numRows, size_type nnz, lno_t bandwidth,
   typedef typename x_vector_type::value_type ScalarX;
   typedef typename y_vector_type::value_type ScalarY;
 
-  Kokkos::fill_random(input_x, rand_pool, randomUpperBound<ScalarX>(10));
-  Kokkos::fill_random(output_y, rand_pool, randomUpperBound<ScalarY>(10));
-  Kokkos::fill_random(input_xt, rand_pool, randomUpperBound<ScalarX>(10));
-  Kokkos::fill_random(output_yt, rand_pool, randomUpperBound<ScalarY>(10));
+  Kokkos::fill_random(input_x, rand_pool, randomUpperBound<ScalarX>(1));
+  Kokkos::fill_random(output_y, rand_pool, randomUpperBound<ScalarY>(1));
+  Kokkos::fill_random(input_xt, rand_pool, randomUpperBound<ScalarX>(1));
+  Kokkos::fill_random(output_yt, rand_pool, randomUpperBound<ScalarY>(1));
 
   std::vector<char> nonTransModes   = {'N'};
   std::vector<char> transModes      = {'T'};
@@ -446,10 +446,10 @@ void test_spmv_mv(lno_t numRows, size_type nnz, lno_t bandwidth,
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
       13718);
-  Kokkos::fill_random(b_x, rand_pool, randomUpperBound<scalar_t>(10));
-  Kokkos::fill_random(b_y, rand_pool, randomUpperBound<scalar_t>(10));
-  Kokkos::fill_random(b_xt, rand_pool, randomUpperBound<scalar_t>(10));
-  Kokkos::fill_random(b_yt, rand_pool, randomUpperBound<scalar_t>(10));
+  Kokkos::fill_random(b_x, rand_pool, randomUpperBound<scalar_t>(1));
+  Kokkos::fill_random(b_y, rand_pool, randomUpperBound<scalar_t>(1));
+  Kokkos::fill_random(b_xt, rand_pool, randomUpperBound<scalar_t>(1));
+  Kokkos::fill_random(b_yt, rand_pool, randomUpperBound<scalar_t>(1));
 
   crsMat_t input_mat = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(
       numRows, numCols, nnz, row_size_variance, bandwidth);
@@ -564,8 +564,8 @@ void test_spmv_struct_1D(lno_t nx, lno_t leftBC, lno_t rightBC) {
   typedef typename x_vector_type::value_type ScalarX;
   typedef typename y_vector_type::value_type ScalarY;
 
-  Kokkos::fill_random(input_x, rand_pool, ScalarX(10));
-  Kokkos::fill_random(output_y, rand_pool, ScalarY(10));
+  Kokkos::fill_random(input_x, rand_pool, ScalarX(1));
+  Kokkos::fill_random(output_y, rand_pool, ScalarY(1));
 
   Test::check_spmv_struct(input_mat, 1, structure, input_x, output_y, 1.0, 0.0);
   Test::check_spmv_struct(input_mat, 1, structure, input_x, output_y, 0.0, 1.0);
@@ -619,8 +619,8 @@ void test_spmv_struct_2D(lno_t nx, lno_t ny, lno_t horizontalBC,
   typedef typename x_vector_type::value_type ScalarX;
   typedef typename y_vector_type::value_type ScalarY;
 
-  Kokkos::fill_random(input_x, rand_pool, ScalarX(10));
-  Kokkos::fill_random(output_y, rand_pool, ScalarY(10));
+  Kokkos::fill_random(input_x, rand_pool, ScalarX(1));
+  Kokkos::fill_random(output_y, rand_pool, ScalarY(1));
 
   Test::check_spmv_struct(input_mat_FD, 1, structure, input_x, output_y, 1.0,
                           0.0);
@@ -692,8 +692,8 @@ void test_spmv_struct_3D(lno_t nx, lno_t ny, lno_t nz, lno_t horizontal1BC,
   typedef typename x_vector_type::value_type ScalarX;
   typedef typename y_vector_type::value_type ScalarY;
 
-  Kokkos::fill_random(input_x, rand_pool, ScalarX(10));
-  Kokkos::fill_random(output_y, rand_pool, ScalarY(10));
+  Kokkos::fill_random(input_x, rand_pool, ScalarX(1));
+  Kokkos::fill_random(output_y, rand_pool, ScalarY(1));
 
   Test::check_spmv_struct(input_mat_FD, 1, structure, input_x, output_y, 1.0,
                           0.0);
@@ -1427,16 +1427,14 @@ void test_spmv_bsrmatrix(lno_t blockSize, lno_t k, y_scalar_t alpha,
 #define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                          \
   TEST_F(TestCategory,                                                         \
          sparse##_##spmv##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {       \
-    test_spmv<SCALAR, ORDINAL, OFFSET, DEVICE>(1000, 1000 * 30, 200, 10,       \
-                                               true);                          \
-    test_spmv<SCALAR, ORDINAL, OFFSET, DEVICE>(1000, 1000 * 30, 100, 10,       \
-                                               true);                          \
+    test_spmv<SCALAR, ORDINAL, OFFSET, DEVICE>(1000, 1000 * 3, 200, 10, true); \
+    test_spmv<SCALAR, ORDINAL, OFFSET, DEVICE>(1000, 1000 * 3, 100, 10, true); \
     test_spmv<SCALAR, ORDINAL, OFFSET, DEVICE>(1000, 1000 * 20, 100, 5, true); \
-    test_spmv<SCALAR, ORDINAL, OFFSET, DEVICE>(50000, 50000 * 30, 200, 10,     \
+    test_spmv<SCALAR, ORDINAL, OFFSET, DEVICE>(50000, 50000 * 3, 20, 10,       \
                                                false);                         \
-    test_spmv<SCALAR, ORDINAL, OFFSET, DEVICE>(50000, 50000 * 30, 100, 10,     \
+    test_spmv<SCALAR, ORDINAL, OFFSET, DEVICE>(50000, 50000 * 3, 100, 10,      \
                                                false);                         \
-    test_spmv<SCALAR, ORDINAL, OFFSET, DEVICE>(10000, 10000 * 20, 100, 5,      \
+    test_spmv<SCALAR, ORDINAL, OFFSET, DEVICE>(10000, 10000 * 2, 100, 5,       \
                                                false);                         \
     test_spmv_controls<SCALAR, ORDINAL, OFFSET, DEVICE>(10000, 10000 * 20,     \
                                                         100, 5);               \
@@ -1447,17 +1445,17 @@ void test_spmv_bsrmatrix(lno_t blockSize, lno_t k, y_scalar_t alpha,
       TestCategory,                                                                 \
       sparse##_##spmv_mv##_##SCALAR##_##ORDINAL##_##OFFSET##_##LAYOUT##_##DEVICE) { \
     test_spmv_mv<SCALAR, ORDINAL, OFFSET, Kokkos::LAYOUT, DEVICE>(                  \
-        1000, 1000 * 30, 200, 10, true, 1);                                         \
+        1000, 1000 * 3, 200, 10, true, 1);                                          \
     test_spmv_mv<SCALAR, ORDINAL, OFFSET, Kokkos::LAYOUT, DEVICE>(                  \
-        1000, 1000 * 30, 100, 10, true, 5);                                         \
+        1000, 1000 * 3, 100, 10, true, 5);                                          \
     test_spmv_mv<SCALAR, ORDINAL, OFFSET, Kokkos::LAYOUT, DEVICE>(                  \
-        1000, 1000 * 20, 100, 5, true, 10);                                         \
+        1000, 1000 * 2, 100, 5, true, 10);                                          \
     test_spmv_mv<SCALAR, ORDINAL, OFFSET, Kokkos::LAYOUT, DEVICE>(                  \
-        50000, 50000 * 30, 200, 10, false, 1);                                      \
+        50000, 50000 * 3, 20, 10, false, 1);                                        \
     test_spmv_mv<SCALAR, ORDINAL, OFFSET, Kokkos::LAYOUT, DEVICE>(                  \
-        50000, 50000 * 30, 100, 10, false, 5);                                      \
+        50000, 50000 * 3, 100, 10, false, 1);                                       \
     test_spmv_mv<SCALAR, ORDINAL, OFFSET, Kokkos::LAYOUT, DEVICE>(                  \
-        10000, 10000 * 20, 100, 5, false, 10);                                      \
+        10000, 10000 * 2, 100, 5, false, 5);                                        \
     test_spmv_mv_heavy<SCALAR, ORDINAL, OFFSET, Kokkos::LAYOUT, DEVICE>(            \
         200, 200 * 10, 60, 4, 30);                                                  \
   }
@@ -1467,14 +1465,14 @@ void test_spmv_bsrmatrix(lno_t blockSize, lno_t k, y_scalar_t alpha,
       TestCategory,                                                            \
       sparse##_##spmv_struct##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {   \
     test_spmv_struct_1D<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 1, 1);            \
-    test_spmv_struct_2D<SCALAR, ORDINAL, OFFSET, DEVICE>(250, 201, 3, 3);      \
-    test_spmv_struct_2D<SCALAR, ORDINAL, OFFSET, DEVICE>(200, 250, 3, 3);      \
-    test_spmv_struct_2D<SCALAR, ORDINAL, OFFSET, DEVICE>(251, 251, 3, 3);      \
-    test_spmv_struct_3D<SCALAR, ORDINAL, OFFSET, DEVICE>(30, 30, 30, 3, 3, 3); \
-    test_spmv_struct_3D<SCALAR, ORDINAL, OFFSET, DEVICE>(40, 40, 40, 3, 3, 3); \
-    test_spmv_struct_3D<SCALAR, ORDINAL, OFFSET, DEVICE>(25, 40, 50, 3, 3, 3); \
-    test_spmv_struct_3D<SCALAR, ORDINAL, OFFSET, DEVICE>(40, 50, 25, 3, 3, 3); \
-    test_spmv_struct_3D<SCALAR, ORDINAL, OFFSET, DEVICE>(50, 24, 40, 3, 3, 3); \
+    test_spmv_struct_2D<SCALAR, ORDINAL, OFFSET, DEVICE>(25, 21, 3, 3);        \
+    test_spmv_struct_2D<SCALAR, ORDINAL, OFFSET, DEVICE>(20, 25, 3, 3);        \
+    test_spmv_struct_2D<SCALAR, ORDINAL, OFFSET, DEVICE>(22, 22, 3, 3);        \
+    test_spmv_struct_3D<SCALAR, ORDINAL, OFFSET, DEVICE>(20, 20, 20, 3, 3, 3); \
+    test_spmv_struct_3D<SCALAR, ORDINAL, OFFSET, DEVICE>(22, 22, 22, 3, 3, 3); \
+    test_spmv_struct_3D<SCALAR, ORDINAL, OFFSET, DEVICE>(25, 10, 20, 3, 3, 3); \
+    test_spmv_struct_3D<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 20, 25, 3, 3, 3); \
+    test_spmv_struct_3D<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 24, 20, 3, 3, 3); \
   }
 
 #define EXECUTE_TEST_MV_STRUCT(SCALAR, ORDINAL, OFFSET, LAYOUT, DEVICE)                    \
