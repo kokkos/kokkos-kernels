@@ -1,11 +1,10 @@
 name: github-OSX
 
-on: [push, pull_request]
-#on:
-#  pull_request:
-#    branches:
-#      - master
-#      - develop
+on:
+  pull_request:
+    branches:
+      - master
+      - develop
 
 jobs:
   osxci:

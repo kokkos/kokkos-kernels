@@ -53,7 +53,7 @@ crsMat_t randomMatrix(ordinal_type nrows, ordinal_type ncols,
       Kokkos::create_mirror_view(values);
   for (size_type i = 0; i < nnz; i++) {
     h_values(i) = KAT::one() * (((typename KAT::mag_type)rand()) /
-                                static_cast<float>(RAND_MAX));
+                                static_cast<typename KAT::mag_type>(RAND_MAX));
   }
   Kokkos::deep_copy(values, h_values);
   // populate entries (make sure no entry is repeated within a row)
