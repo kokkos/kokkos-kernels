@@ -82,6 +82,22 @@ struct SerialEigendecompositionInternal {
 
     //       /// step 1: Hessenberg reduction A = Q H Q^H
     //       ///         Q is stored in QZ
+    //
+    ////////////////////////////////////////////////////////////////////////////
+    // DO NOT USE
+    //
+    //     #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
+    //     <host code>
+    //     #else
+    //     <device code>
+    //     #endif
+    //
+    // DO THIS INSTEAD
+    //
+    //     KOKKOS_IF_HOST((<host code>))
+    //     KOKKOS_IF_DEVICE((<device code>))
+    //
+    ////////////////////////////////////////////////////////////////////////////
     // #if (defined(KOKKOSKERNELS_ENABLE_TPL_MKL) && (__INTEL_MKL__ >= 2018)) &&
     // defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
     //       {
@@ -357,7 +373,15 @@ struct SerialEigendecompositionInternal {
       const int ers, RealType* ei, const int eis, RealType* UL, const int uls0,
       const int uls1, RealType* UR, const int urs0, const int urs1, RealType* w,
       const int wlen) {
-#if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
+#if defined(KOKKOS_IF_HOST)
+    KOKKOS_IF_HOST((host_invoke(m, A, as0, as1, er, ers, ei, eis, UL, uls0,
+                                uls1, UR, urs0, urs1, w, wlen);))
+    KOKKOS_IF_DEVICE((device_invoke(m, A, as0, as1, er, ers, ei, eis, UL, uls0,
+                                    uls1, UR, urs0, urs1, w, wlen);))
+#elif defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)  // FIXME remove when
+                                                          // requiring minimum
+                                                          // version of
+                                                          // Kokkos 3.6
     // if (as0 == 1 || as1 == 1) {
     /// column major or row major and it runs on host
     /// potentially it can run tpls internally
