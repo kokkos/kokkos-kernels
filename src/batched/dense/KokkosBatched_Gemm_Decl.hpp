@@ -392,6 +392,7 @@ int BatchedGemm(BatchedGemmHandleType *const handle, const ScalarType alpha,
     switch (handle->get_kernel_algo_type()) {
       case BaseKokkosBatchedAlgos::KK_SERIAL:
       case BaseHeuristicAlgos::SQUARE:
+      case BaseTplAlgos::ARMPL:
         static_assert(static_cast<int>(AViewType::rank) == 3,
                       "AViewType must have rank 3.");
         static_assert(static_cast<int>(BViewType::rank) == 3,
@@ -576,7 +577,7 @@ int BatchedGemm(BatchedGemmHandleType *const handle, const ScalarType alpha,
       //
       //    case BaseHeuristicAlgos::WIDE:
       ////////////// TPL ALGOS //////////////
-
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
     case BaseTplAlgos::ARMPL:
       ret = Impl::BatchedArmplGemm<ArgTransA, ArgTransB, ArgBatchSzDim,
                                    BatchedGemmHandleType, ScalarType, AViewType,
@@ -584,6 +585,7 @@ int BatchedGemm(BatchedGemmHandleType *const handle, const ScalarType alpha,
                                                          beta, C)
                 .invoke();
       break;
+#endif  // KOKKOSKERNELS_ENABLE_TPL_ARMPL
       //    case BaseTplAlgos::MKL:
       //
       //    case GemmTplAlgos::CUBLAS:

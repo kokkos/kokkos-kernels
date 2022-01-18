@@ -174,7 +174,17 @@ class BatchedKernelHandle {
 
   BatchedKernelHandle(int kernelAlgoType = BaseHeuristicAlgos::SQUARE,
                       int teamSize = 0, int vecLength = 0)
-      : teamSz(teamSize), vecLen(vecLength), _kernelAlgoType(kernelAlgoType){};
+      : teamSz(teamSize), vecLen(vecLength), _kernelAlgoType(kernelAlgoType) {
+#if !defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
+    if (_kernelAlgoType == BaseTplAlgos::ARMPL) {
+      std::ostringstream os;
+      os << "KokkosBatched::BatchedKernelHandle requires "
+            "KOKKOSKERNELS_ENABLE_TPL_ARMPL"
+         << std::endl;
+      Kokkos::Impl::throw_runtime_exception(os.str());
+    }
+#endif  // !defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
+  };
 
   int get_kernel_algo_type() const { return _kernelAlgoType; }
 

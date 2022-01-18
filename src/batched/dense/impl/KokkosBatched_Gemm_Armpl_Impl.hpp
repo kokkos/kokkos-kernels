@@ -45,15 +45,8 @@
 #include "KokkosBatched_Util.hpp"
 
 namespace KokkosBatched {
-/********************* BEGIN functor-level routines *********************/
-///
-/// Serial Impl
-/// ===========
-/********************* END functor-level routines *********************/
-
 namespace Impl {
 /********************* BEGIN non-functor-level routines *********************/
-// TODO: wrap this class in a macro for permutations of supported scalars.
 template <class ArgTransA, class ArgTransB, class ArgBatchSzDim,
           class HandleType, class ScalarType, class AViewType, class BViewType,
           class CViewType>
@@ -156,7 +149,6 @@ class BatchedArmplGemm {
         }
       }
     }
-    delete __Cdp;
   }
 
   void __run() {
@@ -172,8 +164,6 @@ class BatchedArmplGemm {
       os << "armpl_dgemm_interleave_batch returned :" << info << std::endl;
       Kokkos::Impl::throw_runtime_exception(os.str());
     }
-    delete __Adp;
-    delete __Bdp;
   }
 
  public:
@@ -249,51 +239,45 @@ class BatchedArmplGemm {
       // Calculate internal batch size for interleaving
       __nbatch /= __ninter;
 
-      // Allocate space for interleaving
-      //   __Adp and __Bdp are deleted in __run()
-      //   __Cdp is deleted in __repack_view()
-      __Adp = new avt[__Abstrd * __nbatch];
-      __Bdp = new bvt[__Bbstrd * __nbatch];
-      __Cdp = new cvt[__Cbstrd * __nbatch];
+      //      Kokkos::Timer timer;
 
-      __unpack_views();
+      // Assume that matrices are interleaved properly if the ViewValueType is
+      // SIMD
+      using ViewValueType = typename CViewType::value_type;
+      if (is_vector<ViewValueType>::value || __ninter == 1) {
+        __Adp = __A.data();
+        __Bdp = __B.data();
+        __Cdp = __C.data();
+      } else {
+        // Allocate space for interleaving
+        __Adp = new avt[__Abstrd * __nbatch];
+        __Bdp = new bvt[__Bbstrd * __nbatch];
+        __Cdp = new cvt[__Cbstrd * __nbatch];
+
+        //        timer.reset();
+        __unpack_views();
+        // std::cout << "TIME(s): __unpack_views: " << timer.seconds() <<
+        // std::endl;
+      }
+
+      //      timer.reset();
       __run();
-      __repack_view();
+      //      std::cout << "TIME(s): __run: " << timer.seconds() << std::endl;
+
+      if (!(is_vector<ViewValueType>::value || __ninter == 1)) {
+        delete __Adp;
+        delete __Bdp;
+        //        timer.reset();
+        __repack_view();
+        //        std::cout << "TIME(s): __repack_view: " << timer.seconds() <<
+        //        std::endl;
+        delete __Cdp;
+      }
     }
     return 0;
   }
 };
 /********************* END non-functor-level routines *********************/
-}  // namespace Impl
-}  // namespace KokkosBatched
-#else   // KOKKOSKERNELS_ENABLE_TPL_ARMPL
-namespace KokkosBatched {
-namespace Impl {
-/********************* BEGIN non-functor-level routines *********************/
-// TODO: wrap this class in a macro for permutations of supported scalars.
-template <class ArgTransA, class ArgTransB, class ArgBatchSzDim,
-          class HandleType, class ScalarType, class AViewType, class BViewType,
-          class CViewType>
-class BatchedArmplGemm {
- public:
-  BatchedArmplGemm(HandleType *const handle, ScalarType alpha, AViewType A,
-                   BViewType B, ScalarType beta, CViewType C) {
-    (void)handle;
-    (void)alpha;
-    (void)A;
-    (void)B;
-    (void)beta;
-    (void)C;
-  }
-
-  int invoke() {
-    std::ostringstream os;
-    os << "KokkosBatched::Impl::BatchedArmplGemm requires the ARMPL TPL"
-       << std::endl;
-    Kokkos::Impl::throw_runtime_exception(os.str());
-    return 1;
-  }
-};
 }  // namespace Impl
 }  // namespace KokkosBatched
 #endif  // KOKKOSKERNELS_ENABLE_TPL_ARMPL
