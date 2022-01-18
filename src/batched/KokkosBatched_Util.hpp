@@ -317,13 +317,13 @@ struct Algo {
       // - space (gpu vs host)
       // - blocksize input (blk <= 4 mb = 2, otherwise mb = 4), etc.
 #if defined(KOKKOS_IF_HOST)
-      static constexpr int mb() {
+      static constexpr KOKKKOS_FUNCTION int mb() {
         KOKKOS_IF_HOST((return 4;))
         KOKKOS_IF_DEVICE((return 2;))
       }
 
 #else  // FIXME remove when requiring minimum version of Kokkos 3.6
-      static constexpr int mb() {
+      static constexpr KOKKOS_FUNCTION int mb() {
         return mb_impl<Kokkos::Impl::ActiveExecutionMemorySpace>::value;
       }
 
@@ -391,13 +391,13 @@ struct Algo {
       // - space (cuda vs host)
       // - blocksize input (blk <= 4 mb = 2, otherwise mb = 4), etc.
 #if defined(KOKKOS_IF_HOST)
-      static constexpr int mb() {
+      static constexpr KOKKKOS_FUNCTION int mb() {
         KOKKOS_IF_HOST((return 4;))
         KOKKOS_IF_DEVICE((return 1;))
       }
 
 #else  // FIXME remove when requiring minimum version of Kokkos 3.6
-      static constexpr int mb() {
+      static constexpr KOKKOS_FUNCTION int mb() {
         return mb_impl<Kokkos::Impl::ActiveExecutionMemorySpace>::value;
       }
 
