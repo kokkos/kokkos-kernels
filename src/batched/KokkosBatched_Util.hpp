@@ -303,6 +303,60 @@ struct Mode {
   };
 };
 
+#if !defined(KOKKOS_IF_HOST)
+
+template <class>
+struct algo_level3_blocked_mb_impl;
+template <>
+struct algo_level3_blocked_mb_impl<Kokkos::HostSpace> {
+  static constexpr int value = 4;
+};
+#if defined(KOKKOS_ENABLE_CUDA)
+template <>
+struct algo_level3_blocked_mb_impl<Kokkos::CudaSpace> {
+  static constexpr int value = 2;
+};
+#endif
+#if defined(KOKKOS_ENABLE_HIP)
+template <>
+struct algo_level3_blocked_mb_impl<Kokkos::Experimental::HIPSpace> {
+  static constexpr int value = 2;
+};
+#endif
+#if defined(KOKKOS_ENABLE_SYCL)
+template <>
+struct algo_level3_blocked_mb_impl<Kokkos::Experimental::SYCLDeviceUSMSpace> {
+  static constexpr int value = 2;
+};
+#endif
+
+template <class>
+struct algo_level2_blocked_mb_impl;
+template <>
+struct algo_level2_blocked_mb_impl<Kokkos::HostSpace> {
+  static constexpr int value = 4;
+};
+#if defined(KOKKOS_ENABLE_CUDA)
+template <>
+struct algo_level2_blocked_mb_impl<Kokkos::CudaSpace> {
+  static constexpr int value = 1;
+};
+#endif
+#if defined(KOKKOS_ENABLE_HIP)
+template <>
+struct algo_level2_blocked_mb_impl<Kokkos::Experimental::HIPSpace> {
+  static constexpr int value = 1;
+};
+#endif
+#if defined(KOKKOS_ENABLE_SYCL)
+template <>
+struct algo_level2_blocked_mb_impl<Kokkos::Experimental::SYCLDeviceUSMSpace> {
+  static constexpr int value = 1;
+};
+#endif
+
+#endif
+
 struct Algo {
   struct Level3 {
     struct Unblocked {
@@ -324,34 +378,10 @@ struct Algo {
 
 #else  // FIXME remove when requiring minimum version of Kokkos 3.6
       static constexpr KOKKOS_FUNCTION int mb() {
-        return mb_impl<Kokkos::Impl::ActiveExecutionMemorySpace>::value;
+        return algo_level3_blocked_mb_impl<
+            Kokkos::Impl::ActiveExecutionMemorySpace>::value;
       }
 
-     private:
-      template <class>
-      struct mb_impl;
-      template <>
-      struct mb_impl<Kokkos::HostSpace> {
-        static constexpr int value = 4;
-      };
-#if defined(KOKKOS_ENABLE_CUDA)
-      template <>
-      struct mb_impl<Kokkos::CudaSpace> {
-        static constexpr int value = 2;
-      };
-#endif
-#if defined(KOKKOS_ENABLE_HIP)
-      template <>
-      struct mb_impl<Kokkos::Experimental::HIPSpace> {
-        static constexpr int value = 2;
-      };
-#endif
-#if defined(KOKKOS_ENABLE_SYCL)
-      template <>
-      struct mb_impl<Kokkos::Experimental::SYCLDeviceUSMSpace> {
-        static constexpr int value = 2;
-      };
-#endif
 #endif
     };
     struct MKL {
@@ -398,34 +428,10 @@ struct Algo {
 
 #else  // FIXME remove when requiring minimum version of Kokkos 3.6
       static constexpr KOKKOS_FUNCTION int mb() {
-        return mb_impl<Kokkos::Impl::ActiveExecutionMemorySpace>::value;
+        return algo_level2_blocked_mb_impl<
+            Kokkos::Impl::ActiveExecutionMemorySpace>::value;
       }
 
-     private:
-      template <class>
-      struct mb_impl;
-      template <>
-      struct mb_impl<Kokkos::HostSpace> {
-        static constexpr int value = 4;
-      };
-#if defined(KOKKOS_ENABLE_CUDA)
-      template <>
-      struct mb_impl<Kokkos::CudaSpace> {
-        static constexpr int value = 1;
-      };
-#endif
-#if defined(KOKKOS_ENABLE_HIP)
-      template <>
-      struct mb_impl<Kokkos::Experimental::HIPSpace> {
-        static constexpr int value = 1;
-      };
-#endif
-#if defined(KOKKOS_ENABLE_SYCL)
-      template <>
-      struct mb_impl<Kokkos::Experimental::SYCLDeviceUSMSpace> {
-        static constexpr int value = 1;
-      };
-#endif
 #endif
     };
     struct MKL {};
