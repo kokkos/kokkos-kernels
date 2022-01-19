@@ -47,65 +47,47 @@
 
 #include "KokkosKernels_SparseUtils.hpp"
 #include "KokkosKernels_Sorting.hpp"
-#include <Kokkos_Concepts.hpp>
-#include <string>
-#include <stdexcept>
-
 #include "KokkosSparse_spgemm.hpp"
-#include "KokkosSparse_CrsMatrix.hpp"
+#include "KokkosSparse_BsrMatrix.hpp"
 
-#include <gtest/gtest.h>
-#include <Kokkos_Core.hpp>
-
-#include <KokkosKernels_IOUtils.hpp>
-
-// This file contains the matrix for test_issue402
-#include "matrixIssue402.hpp"
-
-// const char *input_filename = "sherman1.mtx";
-// const char *input_filename = "Si2.mtx";
-// const char *input_filename = "wathen_30_30.mtx";
-// const size_t expected_num_cols = 9906;
 using namespace KokkosSparse;
-using namespace KokkosSparse::Experimental;
-using namespace KokkosKernels;
-using namespace KokkosKernels::Experimental;
-
-// #ifndef kokkos_complex_double
-// #define kokkos_complex_double Kokkos::complex<double>
-// #define kokkos_complex_float Kokkos::complex<float>
-// #endif
-
-typedef Kokkos::complex<double> kokkos_complex_double;
-typedef Kokkos::complex<float> kokkos_complex_float;
 
 namespace Test {
 
-template <typename crsMat_t, typename device>
-int run_spgemm(crsMat_t A, crsMat_t B,
-               KokkosSparse::SPGEMMAlgorithm spgemm_algorithm, crsMat_t &C) {
-  typedef typename crsMat_t::size_type size_type;
-  typedef typename crsMat_t::ordinal_type lno_t;
-  typedef typename crsMat_t::value_type scalar_t;
+template <typename bsrMat_t>
+int run_block_spgemm(const bsrMat_t A, const bsrMat_t B, bsrMat_t &C,
+                     // parameters
+                     KokkosSparse::SPGEMMAlgorithm spgemm_algorithm,
+                     bool use_dynamic_scheduling = true,
+                     size_t shmem_size           = 0) {
+  typedef typename bsrMat_t::size_type size_type;
+  typedef typename bsrMat_t::ordinal_type lno_t;
+  typedef typename bsrMat_t::value_type scalar_t;
+  typedef typename bsrMat_t::device_type device;
+  typedef typename bsrMat_t::memory_space memory_space;
 
   typedef KokkosKernels::Experimental::KokkosKernelsHandle<
       size_type, lno_t, scalar_t, typename device::execution_space,
-      typename device::memory_space, typename device::memory_space>
+      memory_space, memory_space>
       KernelHandle;
 
   KernelHandle kh;
   kh.set_team_work_size(16);
-  kh.set_dynamic_scheduling(true);
+  kh.set_dynamic_scheduling(use_dynamic_scheduling);
 
   kh.create_spgemm_handle(spgemm_algorithm);
 
-  KokkosSparse::spgemm_symbolic(kh, A, false, B, false, C);
-  KokkosSparse::spgemm_numeric(kh, A, false, B, false, C);
+  if (shmem_size > 0) {
+    kh.set_shmem_size(shmem_size);
+  }
+  KokkosSparse::block_spgemm_symbolic(kh, A, false, B, false, C);
+  KokkosSparse::block_spgemm_numeric(kh, A, false, B, false, C);
   kh.destroy_spgemm_handle();
 
   return 0;
 }
 
+#if 0  // not used in block SPGEMM
 template <typename crsMat_t, typename device>
 int run_spgemm_old_interface(crsMat_t input_mat, crsMat_t input_mat2,
                              KokkosSparse::SPGEMMAlgorithm spgemm_algorithm,
@@ -166,12 +148,16 @@ int run_spgemm_old_interface(crsMat_t input_mat, crsMat_t input_mat2,
 
   return 0;
 }
-template <typename crsMat_t, typename device>
-bool is_same_matrix(crsMat_t output_mat_actual, crsMat_t output_mat_reference) {
-  typedef typename crsMat_t::StaticCrsGraphType graph_t;
-  typedef typename graph_t::row_map_type::non_const_type lno_view_t;
-  typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
-  typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
+#endif
+
+template <typename bsrMat_t>
+bool is_same_block_matrix(bsrMat_t output_mat_actual,
+                          bsrMat_t output_mat_reference) {
+  using device         = typename bsrMat_t::device_type;
+  using graph_t        = typename bsrMat_t::StaticCrsGraphType;
+  using lno_view_t     = typename graph_t::row_map_type::non_const_type;
+  using lno_nnz_view_t = typename graph_t::entries_type::non_const_type;
+  using scalar_view_t  = typename bsrMat_t::values_type::non_const_type;
 
   size_t nrows_actual    = output_mat_actual.numRows();
   size_t nentries_actual = output_mat_actual.graph.entries.extent(0);
@@ -197,8 +183,8 @@ bool is_same_matrix(crsMat_t output_mat_actual, crsMat_t output_mat_reference) {
     return false;
   }
 
-  KokkosKernels::sort_crs_matrix(output_mat_actual);
-  KokkosKernels::sort_crs_matrix(output_mat_reference);
+  KokkosKernels::sort_bsr_matrix(output_mat_actual);
+  KokkosKernels::sort_bsr_matrix(output_mat_reference);
 
   bool is_identical = true;
   is_identical      = KokkosKernels::Impl::kk_is_identical_view<
@@ -250,37 +236,42 @@ bool is_same_matrix(crsMat_t output_mat_actual, crsMat_t output_mat_reference) {
 // C := AB, where A is m*k, B is k*n, and C is m*n.
 template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
-void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth,
-                 lno_t row_size_variance, bool oldInterface = false) {
+void test_bspgemm(lno_t blockDim, lno_t m, lno_t k, lno_t n, size_type nnz,
+                  lno_t bandwidth, lno_t row_size_variance,
+                  const bool use_dynamic_scheduling = true,
+                  const size_t shared_memory_size   = 0) {
   using namespace Test;
   // device::execution_space::initialize();
   // device::execution_space::print_configuration(std::cout);
 
-  typedef CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
-  // typedef typename crsMat_t::StaticCrsGraphType graph_t;
-  // typedef typename graph_t::row_map_type::non_const_type lno_view_t;
-  // typedef typename graph_t::entries_type::non_const_type   lno_nnz_view_t;
-  // typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
+  using bsrMat_t =
+      KokkosSparse::Experimental::BsrMatrix<scalar_t, lno_t, device, void,
+                                            size_type>;
 
   // Generate random compressed sparse row matrix. Randomly generated (non-zero)
   // values are stored in a 1-D (1 rank) array.
-  crsMat_t A = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(
-      m, k, nnz, row_size_variance, bandwidth);
-  crsMat_t B = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(
-      k, n, nnz, row_size_variance, bandwidth);
+  bsrMat_t A = KokkosKernels::Impl::kk_generate_sparse_matrix<bsrMat_t>(
+      blockDim, m, k, nnz, row_size_variance, bandwidth);
+  bsrMat_t B = KokkosKernels::Impl::kk_generate_sparse_matrix<bsrMat_t>(
+      blockDim, k, n, nnz, row_size_variance, bandwidth);
 
   const bool is_empy_case = m < 1 || n < 1 || k < 1 || nnz < 1;
 
-  crsMat_t output_mat2;
-  if (oldInterface)
-    run_spgemm_old_interface<crsMat_t, device>(A, B, SPGEMM_DEBUG, output_mat2);
-  else
-    run_spgemm<crsMat_t, device>(A, B, SPGEMM_DEBUG, output_mat2);
+  bsrMat_t output_mat2;
+  run_block_spgemm(A, B, output_mat2, SPGEMM_DEBUG, use_dynamic_scheduling,
+                   shared_memory_size);
 
   std::vector<SPGEMMAlgorithm> algorithms = {
-      SPGEMM_KK, SPGEMM_KK_LP, SPGEMM_KK_MEMORY /* alias SPGEMM_KK_MEMSPEED */,
+      SPGEMM_KK, SPGEMM_KK_MEMORY /* alias SPGEMM_KK_MEMSPEED */,
       SPGEMM_KK_SPEED /* alias SPGEMM_KK_DENSE */
   };
+
+  if (!KokkosKernels::Impl::kk_is_gpu_exec_space<
+          typename device::execution_space>()) {
+    // SPGEMM_KK_LP is useful on CPU to cover MultiCoreTag4 functor
+    // (otherwise skipped) but on GPU it's same as SPGEMM_KK, so we can skip it.
+    algorithms.push_back(SPGEMM_KK_LP);
+  }
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
   algorithms.push_back(SPGEMM_MKL);
@@ -295,8 +286,7 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth,
       case SPGEMM_CUSPARSE:
         // TODO: add these test failure cases for cusparse too.
         algo = "SPGEMM_CUSPARSE";
-#if !defined(KERNELS_HAVE_CUSPARSE) && \
-    !defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
+#ifndef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
         is_expected_to_fail = true;
 #endif
         break;
@@ -328,16 +318,13 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth,
     }
 
     Kokkos::Timer timer1;
-    crsMat_t output_mat;
+    bsrMat_t output_mat;
 
     bool failed = false;
     int res     = 0;
     try {
-      if (oldInterface)
-        res = run_spgemm_old_interface<crsMat_t, device>(A, B, spgemm_algorithm,
-                                                         output_mat);
-      else
-        res = run_spgemm<crsMat_t, device>(A, B, spgemm_algorithm, output_mat);
+      res = run_block_spgemm(A, B, output_mat, spgemm_algorithm,
+                             use_dynamic_scheduling, shared_memory_size);
     } catch (const char *message) {
       EXPECT_TRUE(is_expected_to_fail) << algo << ": " << message;
       failed = true;
@@ -355,8 +342,7 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth,
     timer1.reset();
     if (!is_expected_to_fail) {
       EXPECT_TRUE((res == 0)) << algo;
-      bool is_identical =
-          is_same_matrix<crsMat_t, device>(output_mat, output_mat2);
+      bool is_identical = is_same_block_matrix(output_mat, output_mat2);
       EXPECT_TRUE(is_identical) << algo;
       // EXPECT_TRUE( equal) << algo;
     }
@@ -366,6 +352,7 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth,
   // device::execution_space::finalize();
 }
 
+#if 0  // TODO: specific SpGEMM case, not applicable in block version
 template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
 void test_issue402() {
@@ -432,27 +419,28 @@ void test_issue402() {
   EXPECT_TRUE(correctResult)
       << "KKMEM still has issue 402 bug; C=AA' is incorrect!\n";
 }
+#endif
 
-#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)            \
-  TEST_F(TestCategory,                                                         \
-         sparse##_##spgemm##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {     \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10000, 10000, 10000,          \
-                                                 10000 * 20, 500, 10, false);  \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10000, 10000, 10000,          \
-                                                 10000 * 20, 500, 10, true);   \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 0, 0, 0, 10, 10, false);   \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 0, 0, 0, 10, 10, true);    \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 12, 5, 0, 10, 0, false);   \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 12, 5, 0, 10, 0, true);    \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 0, 0, 10, 10, false); \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 0, 0, 10, 10, true);  \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 10, 0, 0, 0, false);  \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 10, 0, 0, 0, true);   \
-    test_issue402<SCALAR, ORDINAL, OFFSET, DEVICE>();                          \
+// Note: Tests with shared memory specified aim to trigger specific GPU functors
+//       dispatched by matrix size and the available shared memory.
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)        \
+  TEST_F(TestCategory,                                                     \
+         sparse_block_spgemm_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
+    auto const SHMEM_AUTO = 0;                                             \
+    auto test_case        = test_bspgemm<SCALAR, ORDINAL, OFFSET, DEVICE>; \
+    /* Trigger SPGEMM_KK_MEMORY_SPREADTEAM on GPU */                       \
+    test_case(2, 50, 50, 50, 2000, 50, 5, true, 16 * 1024);                \
+    /* Trigger SPGEMM_KK -> SPGEMM_KK_MEMORY on GPU */                     \
+    test_case(2, 50, 50, 50, 1000, 50, 5, false, 16 * 1024);               \
+    /* Trigger SPGEMM_KK_MEMORY_BIGSPREADTEAM on GPU */                    \
+    test_case(2, 500, 500, 500, 32000, 500, 500, true, 16 * 1024);         \
+    /* trigger dense dispatch in hash method */                            \
+    test_case(2, 2, 3, 4, 2, 2, 0, true, 16 * 1024);                       \
+    /* zero-size handling */                                               \
+    test_case(2, 0, 0, 0, 0, 10, 10, true, SHMEM_AUTO);                    \
+    test_case(2, 0, 12, 5, 0, 10, 0, true, SHMEM_AUTO);                    \
+    test_case(2, 10, 10, 0, 0, 10, 10, true, SHMEM_AUTO);                  \
   }
-
-// test_spgemm<SCALAR,ORDINAL,OFFSET,DEVICE>(50000, 50000 * 30, 100, 10);
-// test_spgemm<SCALAR,ORDINAL,OFFSET,DEVICE>(50000, 50000 * 30, 200, 10);
 
 #include <Test_Common_Test_All_Type_Combos.hpp>
 
