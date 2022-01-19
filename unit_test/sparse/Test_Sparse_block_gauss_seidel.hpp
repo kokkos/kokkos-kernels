@@ -80,13 +80,13 @@ enum GSApplyType {
   backward_sweep,
 };
 
-template <typename lno_t, typename scalar_t>
+template <typename lno_t, typename scalar_t, typename mag_t>
 struct GSTestParams {
   // Intentionally testing block_size that's not a multiple of #rows.
-  lno_t block_size   = 7;
-  lno_t numVecs      = 2;  // how many columns X/Y have
-  scalar_t omega     = 0.9;
-  scalar_t tolerance = 1e-15;  // relative error for solution x vector
+  lno_t block_size = 7;
+  lno_t numVecs    = 2;  // how many columns X/Y have
+  scalar_t omega   = 0.9;
+  mag_t tolerance  = 1e-15;  // relative error for solution x vector
 
   // variants to cover
   std::vector<GSAlgorithm> gs_algorithms = {
@@ -200,7 +200,7 @@ void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz,
 
   lno_t numCols = numRows;
 
-  const GSTestParams<lno_t, scalar_t> params;
+  const GSTestParams<lno_t, scalar_t, mag_t> params;
   lno_t block_size = params.block_size;
 
   crsMat_t crsmat =
@@ -287,7 +287,7 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz,
 
   lno_t numCols = numRows;
 
-  const GSTestParams<lno_t, scalar_t> params;
+  const GSTestParams<lno_t, scalar_t, mag_t> params;
   lno_t block_size = params.block_size;
 
   crsMat_t crsmat =
