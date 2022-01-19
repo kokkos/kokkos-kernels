@@ -846,7 +846,7 @@ inline size_t kk_is_d1_coloring_valid(
   ;
   typename in_nnz_view_t::non_const_value_type team_work_chunk_size =
       suggested_team_size;
-  typedef Kokkos::TeamPolicy<MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> >
+  typedef Kokkos::TeamPolicy<MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic>>
       dynamic_team_policy;
   typedef typename dynamic_team_policy::member_type team_member_t;
 
@@ -1115,10 +1115,10 @@ struct LowerTriangularMatrix {
   typedef Kokkos::TeamPolicy<FillTag, ExecutionSpace> team_fill_policy_t;
 
   typedef Kokkos::TeamPolicy<CountTag, ExecutionSpace,
-                             Kokkos::Schedule<Kokkos::Dynamic> >
+                             Kokkos::Schedule<Kokkos::Dynamic>>
       dynamic_team_count_policy_t;
   typedef Kokkos::TeamPolicy<FillTag, ExecutionSpace,
-                             Kokkos::Schedule<Kokkos::Dynamic> >
+                             Kokkos::Schedule<Kokkos::Dynamic>>
       dynamic_team_fill_policy_t;
 
   typedef typename team_count_policy_t::member_type team_count_member_t;
