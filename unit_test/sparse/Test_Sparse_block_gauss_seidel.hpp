@@ -102,8 +102,8 @@ struct GSTestParams {
       2008  // make the shmem small on gpus so that it will test 2 level
             // algorithm.
   };
-  std::vector<GSApplyType> apply_types = {
-      symmetric /* , forward_sweep, backward_sweep */};
+  std::vector<GSApplyType> apply_types = {symmetric, forward_sweep,
+                                          backward_sweep};
 };
 
 template <typename mtx_t, typename vector_t, typename const_vector_t>
