@@ -172,7 +172,8 @@ class MKLApply {
     using scalar_t = typename KernelHandle::nnz_scalar_t;
 
     const auto export_rowmap = [&](MKL_INT m, MKL_INT *rows_start,
-                                   MKL_INT *columns, scalar_t *values) {
+                                   MKL_INT * /*columns*/,
+                                   scalar_t * /*values*/) {
       if (handle->mkl_keep_output) {
         Kokkos::Timer copy_time;
         const nnz_lno_t nnz = rows_start[m];
@@ -204,7 +205,7 @@ class MKLApply {
       a_rowmap_view_type row_mapA, a_index_view_type entriesA,
       a_values_view_type valuesA, bool transposeA, b_rowmap_view_type row_mapB,
       b_index_view_type entriesB, b_values_view_type valuesB, bool transposeB,
-      c_rowmap_view_type row_mapC, c_index_view_type entriesC,
+      c_rowmap_view_type /* row_mapC */, c_index_view_type entriesC,
       c_values_view_type valuesC, bool verbose = false) {
     Kokkos::Timer timer;
 
@@ -234,9 +235,9 @@ class MKLApply {
 
  private:
   template <typename CB>
-  static void apply(KernelHandle *handle, nnz_lno_t m, nnz_lno_t n, nnz_lno_t k,
-                    a_rowmap_view_type row_mapA, a_index_view_type entriesA,
-                    a_values_view_type valuesA,
+  static void apply(KernelHandle * /* handle */, nnz_lno_t m, nnz_lno_t n,
+                    nnz_lno_t k, a_rowmap_view_type row_mapA,
+                    a_index_view_type entriesA, a_values_view_type valuesA,
 
                     bool transposeA, b_rowmap_view_type row_mapB,
                     b_index_view_type entriesB, b_values_view_type valuesB,
@@ -362,6 +363,18 @@ void mkl_symbolic(KernelHandle *handle, nnz_lno_t m, nnz_lno_t n, nnz_lno_t k,
                   c_rowmap_type row_mapC, bool verbose = false) {
 #ifndef KOKKOSKERNELS_ENABLE_TPL_MKL
   throw std::runtime_error("MKL was not enabled in this build!");
+  (void)handle;
+  (void)m;
+  (void)n;
+  (void)k;
+  (void)row_mapA;
+  (void)entriesA;
+  (void)transposeA;
+  (void)row_mapB;
+  (void)entriesB;
+  (void)transposeB;
+  (void)row_mapC;
+  (void)verbose;
 #else
   using values_type  = typename KernelHandle::scalar_temp_work_view_t;
   using c_index_type = b_index_type;
@@ -386,6 +399,22 @@ void mkl_apply(KernelHandle *handle, nnz_lno_t m, nnz_lno_t n, nnz_lno_t k,
                c_values_type valuesC, bool verbose = false) {
 #ifndef KOKKOSKERNELS_ENABLE_TPL_MKL
   throw std::runtime_error("MKL was not enabled in this build!");
+  (void)handle;
+  (void)m;
+  (void)n;
+  (void)k;
+  (void)row_mapA;
+  (void)entriesA;
+  (void)valuesA;
+  (void)transposeA;
+  (void)row_mapB;
+  (void)entriesB;
+  (void)valuesB;
+  (void)transposeB;
+  (void)row_mapC;
+  (void)entriesC;
+  (void)valuesC;
+  (void)verbose;
 #else
   using mkl = MKLApply<KernelHandle, a_rowmap_type, a_index_type, a_values_type,
                        b_rowmap_type, b_index_type, b_values_type,
