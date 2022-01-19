@@ -86,7 +86,7 @@ struct GSTestParams {
   lno_t block_size = 7;
   lno_t numVecs    = 2;  // how many columns X/Y have
   scalar_t omega   = 0.9;
-  mag_t tolerance  = 1e-15;  // relative error for solution x vector
+  mag_t tolerance  = 1e-7;  // relative error for solution x vector
 
   // variants to cover
   std::vector<GSAlgorithm> gs_algorithms = {
