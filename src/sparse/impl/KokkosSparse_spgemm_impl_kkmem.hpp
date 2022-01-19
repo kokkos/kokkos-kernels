@@ -1374,7 +1374,8 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
       // if we have very low flops per row, or our maximum number of nnz is
       // prett small, then we do row-base algorithm.
       if (SPGEMM_KK_LP != this->spgemm_algorithm &&
-          (average_row_nnz < vector_length_max || average_row_flops < 256)) {
+          (average_row_nnz < (size_type)vector_length_max ||
+           average_row_flops < 256)) {
         algorithm_to_run = SPGEMM_KK_MEMORY;
         // if (average_row_nnz / double (thread_shmem_key_size) > 1.5)
         while (average_row_nnz > size_type(thread_shmem_key_size) &&

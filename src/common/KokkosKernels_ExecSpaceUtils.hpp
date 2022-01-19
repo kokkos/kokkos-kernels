@@ -257,6 +257,9 @@ inline void kk_get_free_total_memory<Kokkos::Experimental::SYCLSharedUSMSpace>(
     size_t& free_mem, size_t& total_mem) {
   kk_get_free_total_memory<Kokkos::Experimental::SYCLDeviceUSMSpace>(free_mem,
                                                                      total_mem);
+}
+#endif
+
 template <typename ExecSpace>
 inline int kk_get_max_vector_size() {
   return Kokkos::TeamPolicy<ExecSpace>::vector_length_max();
@@ -267,7 +270,8 @@ template <>
 inline int kk_get_max_vector_size<Kokkos::Experimental::SYCL>() {
   // FIXME SYCL: hardcoding to 8 is a workaround that seems to work for all
   // kernels. Wait for max subgroup size query to be fixed in SYCL and/or
-  // Kokkos. Then TeamPolicy::vector_length_max() can be used for all backends.
+  // Kokkos. Then TeamPolicy::vector_length_max() can be used for all
+  // backends.
   return 8;
 }
 #endif
