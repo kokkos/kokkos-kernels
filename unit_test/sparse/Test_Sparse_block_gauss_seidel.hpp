@@ -48,7 +48,7 @@
 #include "KokkosKernels_TestUtils.hpp"
 #include "KokkosKernels_Handle.hpp"
 #include "KokkosKernels_IOUtils.hpp"
-//#include <Kokkos_Sparse_CrsMatrix.hpp>
+#include "KokkosKernels_SparseUtils.hpp"
 #include <KokkosSparse_spmv.hpp>
 #include <KokkosBlas1_dot.hpp>
 #include <KokkosBlas1_axpby.hpp>
@@ -67,34 +67,36 @@ typedef Kokkos::complex<double> kokkos_complex_double;
 typedef Kokkos::complex<float> kokkos_complex_float;
 
 using namespace KokkosKernels;
+using namespace KokkosKernels::Impl;
 using namespace KokkosKernels::Experimental;
 using namespace KokkosSparse;
 using namespace KokkosSparse::Experimental;
 
 namespace Test {
 
-template <typename crsMat_t, typename vector_t, typename const_vector_t,
-          typename device>
+template <typename mtx_t, typename vector_t, typename const_vector_t>
 int run_block_gauss_seidel_1(
-    crsMat_t input_mat, int block_size, KokkosSparse::GSAlgorithm gs_algorithm,
+    mtx_t input_mat, int block_size, KokkosSparse::GSAlgorithm gs_algorithm,
     vector_t x_vector, const_vector_t y_vector, bool is_symmetric_graph,
     int apply_type     = 0,  // 0 for symmetric, 1 for forward, 2 for backward.
     bool skip_symbolic = false, bool skip_numeric = false,
     size_t shmem_size = 32128,
-    typename crsMat_t::value_type omega =
-        Kokkos::Details::ArithTraits<typename crsMat_t::value_type>::one()) {
-  typedef typename crsMat_t::StaticCrsGraphType graph_t;
+    typename mtx_t::value_type omega =
+        Kokkos::Details::ArithTraits<typename mtx_t::value_type>::one()) {
+  typedef typename mtx_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type lno_view_t;
   typedef typename graph_t::entries_type lno_nnz_view_t;
-  typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
+  typedef typename mtx_t::values_type::non_const_type scalar_view_t;
 
   typedef typename lno_view_t::value_type size_type;
   typedef typename lno_nnz_view_t::value_type lno_t;
   typedef typename scalar_view_t::value_type scalar_t;
 
+  constexpr auto format = MatrixTraits<mtx_t>::format;
+
   typedef KokkosKernelsHandle<
-      size_type, lno_t, scalar_t, typename device::execution_space,
-      typename device::memory_space, typename device::memory_space>
+      size_type, lno_t, scalar_t, typename mtx_t::execution_space,
+      typename mtx_t::memory_space, typename mtx_t::memory_space>
       KernelHandle;
   KernelHandle kh;
   kh.set_team_work_size(16);
@@ -113,32 +115,32 @@ int run_block_gauss_seidel_1(
   }
 
   if (!skip_numeric) {
-    block_gauss_seidel_numeric(&kh, num_rows_1, num_cols_1, block_size,
-                               input_mat.graph.row_map, input_mat.graph.entries,
-                               input_mat.values, is_symmetric_graph);
+    block_gauss_seidel_numeric<format>(
+        &kh, num_rows_1, num_cols_1, block_size, input_mat.graph.row_map,
+        input_mat.graph.entries, input_mat.values, is_symmetric_graph);
   }
 
   switch (apply_type) {
     case 0:
-      symmetric_block_gauss_seidel_apply(
+      symmetric_block_gauss_seidel_apply<format>(
           &kh, num_rows_1, num_cols_1, block_size, input_mat.graph.row_map,
           input_mat.graph.entries, input_mat.values, x_vector, y_vector, false,
           true, omega, apply_count);
       break;
     case 1:
-      forward_sweep_block_gauss_seidel_apply(
+      forward_sweep_block_gauss_seidel_apply<format>(
           &kh, num_rows_1, num_cols_1, block_size, input_mat.graph.row_map,
           input_mat.graph.entries, input_mat.values, x_vector, y_vector, false,
           true, omega, apply_count);
       break;
     case 2:
-      backward_sweep_block_gauss_seidel_apply(
+      backward_sweep_block_gauss_seidel_apply<format>(
           &kh, num_rows_1, num_cols_1, block_size, input_mat.graph.row_map,
           input_mat.graph.entries, input_mat.values, x_vector, y_vector, false,
           true, omega, apply_count);
       break;
     default:
-      symmetric_block_gauss_seidel_apply(
+      symmetric_block_gauss_seidel_apply<format>(
           &kh, num_rows_1, num_cols_1, block_size, input_mat.graph.row_map,
           input_mat.graph.entries, input_mat.values, x_vector, y_vector, false,
           true, omega, apply_count);
@@ -151,8 +153,8 @@ int run_block_gauss_seidel_1(
 
 }  // namespace Test
 
-template <typename scalar_t, typename lno_t, typename size_type,
-          typename device>
+template <SparseMatrixFormat mtx_format, typename scalar_t, typename lno_t,
+          typename size_type, typename device>
 void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz,
                                    lno_t bandwidth, lno_t row_size_variance) {
   using namespace Test;
@@ -193,17 +195,9 @@ void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz,
   graph_t static_graph2(pf_e, pf_rm);
   crsMat_t crsmat2("CrsMatrix2", out_c, pf_v, static_graph2);
 
-  lno_view_t bf_rm;
-  lno_nnz_view_t bf_e;
-  scalar_view_t bf_v;
-  size_t but_r, but_c;
-
-  // this converts the previous generated matrix to block crs matrix.
-  KokkosKernels::Impl::kk_create_blockcrs_from_blockcrs_formatted_point_crs(
-      block_size, out_r, out_c, pf_rm, pf_e, pf_v, but_r, but_c, bf_rm, bf_e,
-      bf_v);
-  graph_t static_graph(bf_e, bf_rm);
-  crsMat_t input_mat("CrsMatrix", but_c, bf_v, static_graph);
+  // this converts the previous generated matrix to block matrix.
+  auto input_mat =
+      MatrixConverter<mtx_format>::from_crs("BlockMatrix", crsmat2, block_size);
 
   lno_t nv = ((crsmat2.numRows() + block_size - 1) / block_size) * block_size;
 
@@ -246,12 +240,10 @@ void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz,
           for (int skip_numeric = 0; skip_numeric < 2; ++skip_numeric) {
             Kokkos::Timer timer1;
             // int res =
-            run_block_gauss_seidel_1<crsMat_t, scalar_view_t,
-                                     typename scalar_view_t::const_type,
-                                     device>(
-                input_mat, block_size, gs_algorithm, x_vector, y_vector,
-                is_symmetric_graph, apply_type, skip_symbolic, skip_numeric,
-                shmem_size, omega);
+            run_block_gauss_seidel_1(input_mat, block_size, gs_algorithm,
+                                     x_vector, y_vector, is_symmetric_graph,
+                                     apply_type, skip_symbolic, skip_numeric,
+                                     shmem_size, omega);
             // double gs = timer1.seconds();
             // KokkosKernels::Impl::print_1Dview(x_vector);
             KokkosBlas::axpby(alpha, solution_x, -alpha, x_vector);
@@ -265,8 +257,8 @@ void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz,
   // device::execution_space::finalize();
 }
 
-template <typename scalar_t, typename lno_t, typename size_type,
-          typename device>
+template <SparseMatrixFormat mtx_format, typename scalar_t, typename lno_t,
+          typename size_type, typename device>
 void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz,
                                    lno_t bandwidth, lno_t row_size_variance) {
   using namespace Test;
@@ -308,17 +300,8 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz,
   graph_t static_graph2(pf_e, pf_rm);
   crsMat_t crsmat2("CrsMatrix2", out_c, pf_v, static_graph2);
 
-  lno_view_t bf_rm;
-  lno_nnz_view_t bf_e;
-  scalar_view_t bf_v;
-  size_t but_r, but_c;
-
-  // this converts the previous generated matrix to block crs matrix.
-  KokkosKernels::Impl::kk_create_blockcrs_from_blockcrs_formatted_point_crs(
-      block_size, out_r, out_c, pf_rm, pf_e, pf_v, but_r, but_c, bf_rm, bf_e,
-      bf_v);
-  graph_t static_graph(bf_e, bf_rm);
-  crsMat_t input_mat("CrsMatrix", but_c, bf_v, static_graph);
+  auto input_mat =
+      MatrixConverter<mtx_format>::from_crs("BlockMatrix", crsmat2, block_size);
 
   lno_t nv = ((crsmat2.numRows() + block_size - 1) / block_size) * block_size;
 
@@ -376,12 +359,10 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz,
           for (int skip_numeric = 0; skip_numeric < 2; ++skip_numeric) {
             Kokkos::Timer timer1;
             // int res =
-            run_block_gauss_seidel_1<crsMat_t, scalar_view2d_t,
-                                     typename scalar_view2d_t::const_type,
-                                     device>(
-                input_mat, block_size, gs_algorithm, x_vector, y_vector,
-                is_symmetric_graph, apply_type, skip_symbolic, skip_numeric,
-                shmem_size, omega);
+            run_block_gauss_seidel_1(input_mat, block_size, gs_algorithm,
+                                     x_vector, y_vector, is_symmetric_graph,
+                                     apply_type, skip_symbolic, skip_numeric,
+                                     shmem_size, omega);
             // double gs = timer1.seconds();
             // KokkosKernels::Impl::print_1Dview(x_vector);
             Kokkos::deep_copy(x_host, x_vector);
@@ -404,18 +385,30 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz,
   // device::execution_space::finalize();
 }
 
-#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                                     \
-  TEST_F(                                                                                 \
-      TestCategory,                                                                       \
-      sparse##_##block_gauss_seidel_rank1##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
-    test_block_gauss_seidel_rank1<SCALAR, ORDINAL, OFFSET, DEVICE>(                       \
-        500, 500 * 10, 70, 3);                                                            \
-  }                                                                                       \
-  TEST_F(                                                                                 \
-      TestCategory,                                                                       \
-      sparse##_##block_gauss_seidel_rank2##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
-    test_block_gauss_seidel_rank2<SCALAR, ORDINAL, OFFSET, DEVICE>(                       \
-        500, 500 * 10, 70, 3);                                                            \
+#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                                    \
+  TEST_F(                                                                                \
+      TestCategory,                                                                      \
+      sparse_blockcrs_gauss_seidel_rank1##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
+    test_block_gauss_seidel_rank1<BlockCRS, SCALAR, ORDINAL, OFFSET, DEVICE>(            \
+        500, 500 * 10, 70, 3);                                                           \
+  }                                                                                      \
+  TEST_F(                                                                                \
+      TestCategory,                                                                      \
+      sparse_blockcrs_gauss_seidel_rank2_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {   \
+    test_block_gauss_seidel_rank2<BlockCRS, SCALAR, ORDINAL, OFFSET, DEVICE>(            \
+        500, 500 * 10, 70, 3);                                                           \
+  }                                                                                      \
+  TEST_F(                                                                                \
+      TestCategory,                                                                      \
+      sparse_bsr_gauss_seidel_rank1_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {        \
+    test_block_gauss_seidel_rank1<BSR, SCALAR, ORDINAL, OFFSET, DEVICE>(                 \
+        500, 500 * 10, 70, 3);                                                           \
+  }                                                                                      \
+  TEST_F(                                                                                \
+      TestCategory,                                                                      \
+      sparse_bsr_gauss_seidel_rank2_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {        \
+    test_block_gauss_seidel_rank2<BSR, SCALAR, ORDINAL, OFFSET, DEVICE>(                 \
+        500, 500 * 10, 70, 3);                                                           \
   }
 
 #if (defined(KOKKOSKERNELS_INST_DOUBLE) &&      \
