@@ -42,8 +42,8 @@
 //@HEADER
 */
 
-#ifndef _KOKKOSSPGEMMIMPL_HPP
-#define _KOKKOSSPGEMMIMPL_HPP
+#ifndef _KOKKOSBSPGEMMIMPL_HPP
+#define _KOKKOSBSPGEMMIMPL_HPP
 
 //#define KOKKOSKERNELS_ANALYZE_COMPRESSION
 //#define KOKKOSKERNELS_ANALYZE_MEMORYACCESS
@@ -53,19 +53,8 @@
 //#define GPU_EXPERIMENTAL
 //#define NUMERIC_USE_STATICMEM
 //#define twostep
-#include <KokkosKernels_Utils.hpp>
-#include <KokkosKernels_SimpleUtils.hpp>
-#include <KokkosKernels_SparseUtils.hpp>
-#include <KokkosKernels_VectorUtils.hpp>
-#include <fstream>
-#include <sstream>
-#include <string>
-#include <vector>
 
-#include "KokkosKernels_HashmapAccumulator.hpp"
-#include "KokkosKernels_Uniform_Initialized_MemoryPool.hpp"
-#include "KokkosSparse_spgemm_handle.hpp"
-#include "KokkosGraph_Distance1Color.hpp"
+#include "KokkosSparse_spgemm_impl.hpp"
 
 namespace KokkosSparse {
 
@@ -75,213 +64,46 @@ template <typename HandleType, typename a_row_view_t_,
           typename a_lno_nnz_view_t_, typename a_scalar_nnz_view_t_,
           typename b_lno_row_view_t_, typename b_lno_nnz_view_t_,
           typename b_scalar_nnz_view_t_>
-class KokkosSPGEMM {
+class KokkosBSPGEMM
+    : public KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
+                          a_scalar_nnz_view_t_, b_lno_row_view_t_,
+                          b_lno_nnz_view_t_, b_scalar_nnz_view_t_> {
  public:
-  typedef a_row_view_t_ a_row_view_t;
-  typedef a_lno_nnz_view_t_ a_in_lno_nnz_view_t;
-  typedef a_scalar_nnz_view_t_ a_in_scalar_nnz_view_t;
+  using Base = KokkosSparse::Impl::KokkosSPGEMM<
+      HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_view_t_,
+      b_lno_row_view_t_, b_lno_nnz_view_t_, b_scalar_nnz_view_t_>;
 
-  typedef b_lno_row_view_t_ b_in_lno_row_view_t;
-  typedef b_lno_nnz_view_t_ b_in_lno_nnz_view_t;
-  typedef b_scalar_nnz_view_t_ b_in_scalar_nnz_view_t;
+#define USE_BASE_TYPE(type) using type = typename Base::type;
 
-  typedef typename a_row_view_t::non_const_value_type size_type;
-  typedef typename a_row_view_t::const_value_type const_size_type;
+  USE_BASE_TYPE(nnz_lno_t)
+  USE_BASE_TYPE(scalar_t)
+  USE_BASE_TYPE(size_type)
+  USE_BASE_TYPE(const_a_lno_row_view_t)
+  USE_BASE_TYPE(const_a_lno_nnz_view_t)
+  USE_BASE_TYPE(const_a_scalar_nnz_view_t)
+  USE_BASE_TYPE(const_b_lno_row_view_t)
+  USE_BASE_TYPE(const_b_lno_nnz_view_t)
+  USE_BASE_TYPE(const_b_scalar_nnz_view_t)
+  USE_BASE_TYPE(row_lno_persistent_work_view_t)
+  USE_BASE_TYPE(nnz_lno_temp_work_view_t)
+  USE_BASE_TYPE(team_member_t)
 
-  typedef typename a_in_lno_nnz_view_t::non_const_value_type nnz_lno_t;
-  typedef typename a_in_lno_nnz_view_t::const_value_type const_nnz_lno_t;
+  USE_BASE_TYPE(MyExecSpace)
+  USE_BASE_TYPE(MyTempMemorySpace)
+  USE_BASE_TYPE(MultiCoreTag)
+  USE_BASE_TYPE(MultiCoreTag4)
+  USE_BASE_TYPE(GPUTag)
+  USE_BASE_TYPE(GPUTag4)
+  USE_BASE_TYPE(GPUTag6)
+  USE_BASE_TYPE(gpu_team_policy_t)
+  USE_BASE_TYPE(gpu_team_policy4_t)
+  USE_BASE_TYPE(gpu_team_policy6_t)
+  USE_BASE_TYPE(dynamic_multicore_team_policy_t)
+  USE_BASE_TYPE(dynamic_multicore_team_policy4_t)
+  USE_BASE_TYPE(multicore_team_policy_t)
+  USE_BASE_TYPE(multicore_team_policy4_t)
 
-  typedef typename a_in_scalar_nnz_view_t::non_const_value_type scalar_t;
-  typedef typename a_in_scalar_nnz_view_t::const_value_type const_scalar_t;
-
-  typedef typename a_row_view_t::const_type const_a_lno_row_view_t;
-  typedef typename a_row_view_t::non_const_type non_const_a_lno_row_view_t;
-
-  typedef typename a_in_lno_nnz_view_t::const_type const_a_lno_nnz_view_t;
-  typedef
-      typename a_in_lno_nnz_view_t::non_const_type non_const_a_lno_nnz_view_t;
-
-  typedef typename a_in_scalar_nnz_view_t::const_type const_a_scalar_nnz_view_t;
-  typedef typename a_in_scalar_nnz_view_t::non_const_type
-      non_const_a_scalar_nnz_view_t;
-
-  typedef typename b_in_lno_row_view_t::const_type const_b_lno_row_view_t;
-  typedef
-      typename b_in_lno_row_view_t::non_const_type non_const_b_lno_row_view_t;
-
-  typedef typename b_in_lno_nnz_view_t::const_type const_b_lno_nnz_view_t;
-  typedef
-      typename b_in_lno_nnz_view_t::non_const_type non_const_b_lno_nnz_view_t;
-
-  typedef typename b_in_scalar_nnz_view_t::const_type const_b_scalar_nnz_view_t;
-  typedef typename b_in_scalar_nnz_view_t::non_const_type
-      non_const_b_scalar_nnz_view_t;
-
-  typedef typename HandleType::HandleExecSpace MyExecSpace;
-  typedef typename HandleType::HandleTempMemorySpace MyTempMemorySpace;
-  typedef
-      typename HandleType::HandlePersistentMemorySpace MyPersistentMemorySpace;
-
-  typedef
-      typename HandleType::row_lno_temp_work_view_t row_lno_temp_work_view_t;
-  typedef typename HandleType::row_lno_persistent_work_view_t
-      row_lno_persistent_work_view_t;
-  typedef typename HandleType::row_lno_persistent_work_host_view_t
-      row_lno_persistent_work_host_view_t;  // Host view type
-
-  typedef
-      typename HandleType::nnz_lno_temp_work_view_t nnz_lno_temp_work_view_t;
-  typedef typename HandleType::nnz_lno_persistent_work_view_t
-      nnz_lno_persistent_work_view_t;
-  typedef typename HandleType::nnz_lno_persistent_work_host_view_t
-      nnz_lno_persistent_work_host_view_t;  // Host view type
-
-  typedef typename HandleType::scalar_temp_work_view_t scalar_temp_work_view_t;
-  typedef typename HandleType::scalar_persistent_work_view_t
-      scalar_persistent_work_view_t;
-
-  typedef typename HandleType::bool_persistent_view_t bool_persistent_view_t;
-  typedef typename HandleType::bool_temp_view_t bool_temp_view_t;
-
-  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
-  typedef Kokkos::TeamPolicy<MyExecSpace> team_policy_t;
-  typedef typename team_policy_t::member_type team_member_t;
-
-  struct CountTag {};
-  struct GPUCountTag {};
-  struct CountTag2 {};
-
-  struct FillTag {};
-  struct FillTag2 {};
-  struct MultiCoreDenseAccumulatorTag {};
-  struct MultiCoreDenseAccumulatorTag2 {};
-  struct MultiCoreDenseAccumulatorTag3 {};
-  struct NoCompressMultiCoreDenseAccumulatorTag {};
-  struct NoCompressMultiCoreDenseAccumulatorTag2 {};
-  struct NoCompressMultiCoreDenseAccumulatorTag3 {};
-  struct MultiCoreTag {};
-  struct MultiCoreTag2 {};
-  struct MultiCoreTag3 {};
-  struct MultiCoreTag4 {};
-  struct MultiCoreTag5 {};
-  struct MultiCoreTag6 {};
-  struct GPUTag {};
-  struct GPUTag2 {};
-  struct GPUTag3 {};
-  struct GPUTag4 {};
-  struct GPUTag5 {};
-  struct GPUTag6 {};
-
-  struct Numeric1Tag {};
-  struct Numeric2Tag {};
-  struct Numeric3Tag {};
-
-  typedef Kokkos::TeamPolicy<MultiCoreDenseAccumulatorTag, MyExecSpace>
-      multicore_dense_team_count_policy_t;
-  typedef Kokkos::TeamPolicy<MultiCoreDenseAccumulatorTag2, MyExecSpace>
-      multicore_dense_team2_count_policy_t;
-  typedef Kokkos::TeamPolicy<MultiCoreDenseAccumulatorTag3, MyExecSpace>
-      multicore_dense_team3_count_policy_t;
-
-  typedef Kokkos::TeamPolicy<NoCompressMultiCoreDenseAccumulatorTag,
-                             MyExecSpace>
-      nc_multicore_dense_team_count_policy_t;
-  typedef Kokkos::TeamPolicy<NoCompressMultiCoreDenseAccumulatorTag2,
-                             MyExecSpace>
-      nc_multicore_dense_team2_count_policy_t;
-  typedef Kokkos::TeamPolicy<NoCompressMultiCoreDenseAccumulatorTag3,
-                             MyExecSpace>
-      nc_multicore_dense_team3_count_policy_t;
-
-  typedef Kokkos::TeamPolicy<NoCompressMultiCoreDenseAccumulatorTag,
-                             MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> >
-      nc_dynamic_multicore_dense_team_count_policy_t;
-  typedef Kokkos::TeamPolicy<NoCompressMultiCoreDenseAccumulatorTag2,
-                             MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> >
-      nc_dynamic_multicore_dense_team2_count_policy_t;
-  typedef Kokkos::TeamPolicy<NoCompressMultiCoreDenseAccumulatorTag3,
-                             MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> >
-      nc_dynamic_multicore_dense_team3_count_policy_t;
-
-  typedef Kokkos::TeamPolicy<MultiCoreTag, MyExecSpace> multicore_team_policy_t;
-  typedef Kokkos::TeamPolicy<MultiCoreTag2, MyExecSpace>
-      multicore_team_policy2_t;
-  typedef Kokkos::TeamPolicy<MultiCoreTag3, MyExecSpace>
-      multicore_team_policy3_t;
-  typedef Kokkos::TeamPolicy<MultiCoreTag4, MyExecSpace>
-      multicore_team_policy4_t;
-  typedef Kokkos::TeamPolicy<MultiCoreTag5, MyExecSpace>
-      multicore_team_policy5_t;
-  typedef Kokkos::TeamPolicy<MultiCoreTag6, MyExecSpace>
-      multicore_team_policy6_t;
-
-  typedef Kokkos::TeamPolicy<GPUTag, MyExecSpace> gpu_team_policy_t;
-  typedef Kokkos::TeamPolicy<GPUTag2, MyExecSpace> gpu_team_policy2_t;
-  typedef Kokkos::TeamPolicy<GPUTag3, MyExecSpace> gpu_team_policy3_t;
-  typedef Kokkos::TeamPolicy<GPUTag4, MyExecSpace> gpu_team_policy4_t;
-  typedef Kokkos::TeamPolicy<GPUTag5, MyExecSpace> gpu_team_policy5_t;
-  typedef Kokkos::TeamPolicy<GPUTag6, MyExecSpace> gpu_team_policy6_t;
-
-  typedef Kokkos::TeamPolicy<CountTag, MyExecSpace> team_count_policy_t;
-  typedef Kokkos::TeamPolicy<CountTag2, MyExecSpace> team_count2_policy_t;
-
-  typedef Kokkos::TeamPolicy<GPUCountTag, MyExecSpace> team_gpucount_policy_t;
-
-  typedef Kokkos::TeamPolicy<FillTag, MyExecSpace> team_fill_policy_t;
-  typedef Kokkos::TeamPolicy<FillTag2, MyExecSpace> team_fill2_policy_t;
-
-  typedef Kokkos::TeamPolicy<Numeric1Tag, MyExecSpace> team_numeric1_policy_t;
-  typedef Kokkos::TeamPolicy<Numeric2Tag, MyExecSpace> team_numeric2_policy_t;
-  typedef Kokkos::TeamPolicy<Numeric3Tag, MyExecSpace> team_numeric3_policy_t;
-
-  typedef Kokkos::TeamPolicy<MultiCoreDenseAccumulatorTag, MyExecSpace,
-                             Kokkos::Schedule<Kokkos::Dynamic> >
-      dynamic_multicore_dense_team_count_policy_t;
-  typedef Kokkos::TeamPolicy<MultiCoreDenseAccumulatorTag2, MyExecSpace,
-                             Kokkos::Schedule<Kokkos::Dynamic> >
-      dynamic_multicore_dense_team2_count_policy_t;
-  typedef Kokkos::TeamPolicy<MultiCoreDenseAccumulatorTag3, MyExecSpace,
-                             Kokkos::Schedule<Kokkos::Dynamic> >
-      dynamic_multicore_dense_team3_count_policy_t;
-
-  typedef Kokkos::TeamPolicy<MultiCoreTag, MyExecSpace,
-                             Kokkos::Schedule<Kokkos::Dynamic> >
-      dynamic_multicore_team_policy_t;
-  typedef Kokkos::TeamPolicy<MultiCoreTag2, MyExecSpace,
-                             Kokkos::Schedule<Kokkos::Dynamic> >
-      dynamic_multicore_team_policy2_t;
-  typedef Kokkos::TeamPolicy<MultiCoreTag3, MyExecSpace,
-                             Kokkos::Schedule<Kokkos::Dynamic> >
-      dynamic_multicore_team_policy3_t;
-  typedef Kokkos::TeamPolicy<MultiCoreTag4, MyExecSpace,
-                             Kokkos::Schedule<Kokkos::Dynamic> >
-      dynamic_multicore_team_policy4_t;
-  typedef Kokkos::TeamPolicy<MultiCoreTag5, MyExecSpace,
-                             Kokkos::Schedule<Kokkos::Dynamic> >
-      dynamic_multicore_team_policy5_t;
-  typedef Kokkos::TeamPolicy<MultiCoreTag6, MyExecSpace,
-                             Kokkos::Schedule<Kokkos::Dynamic> >
-      dynamic_multicore_team_policy6_t;
-
-  typedef Kokkos::TeamPolicy<CountTag, MyExecSpace,
-                             Kokkos::Schedule<Kokkos::Dynamic> >
-      dynamic_team_count_policy_t;
-  typedef Kokkos::TeamPolicy<FillTag, MyExecSpace,
-                             Kokkos::Schedule<Kokkos::Dynamic> >
-      dynamic_team_fill_policy_t;
-  typedef Kokkos::TeamPolicy<Numeric1Tag, MyExecSpace,
-                             Kokkos::Schedule<Kokkos::Dynamic> >
-      dynamic_team_numeric1_policy_t;
-  typedef Kokkos::TeamPolicy<Numeric2Tag, MyExecSpace,
-                             Kokkos::Schedule<Kokkos::Dynamic> >
-      dynamic_team_numeric2_policy_t;
-  typedef Kokkos::TeamPolicy<Numeric3Tag, MyExecSpace,
-                             Kokkos::Schedule<Kokkos::Dynamic> >
-      dynamic_team_numeric3_policy_t;
-
-  typedef Kokkos::TeamPolicy<MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> >
-      dynamic_team_policy_t;
-
+#if 0  // defined in base class (clean up or implement block version)
  private:
   HandleType *handle;
   nnz_lno_t a_row_cnt;
@@ -391,6 +213,7 @@ class KokkosSPGEMM {
   template <typename c_row_view_t, typename c_lno_nnz_view_t>
   void KokkosSPGEMM_numeric_triangle_ai(c_row_view_t rowmapC_,
                                         c_lno_nnz_view_t entriesC_);
+#endif
 
  public:
   //////////////////////////////////////////////////////////////////////////
@@ -417,11 +240,12 @@ class KokkosSPGEMM {
    */
   template <typename c_row_view_t, typename c_lno_nnz_view_t,
             typename c_scalar_nnz_view_t>
-  void KokkosSPGEMM_numeric_speed(
+  void KokkosBSPGEMM_numeric_speed(
       c_row_view_t rowmapC_, c_lno_nnz_view_t entriesC_,
       c_scalar_nnz_view_t valuesC_,
       KokkosKernels::Impl::ExecSpaceType my_exec_space);
 
+#if 0
  public:
   /*
     //////////////////////////////////////////////////////////////////////////
@@ -458,6 +282,22 @@ class KokkosSPGEMM {
         nnz_lno_t &num_multi_color_steps,
         SPGEMMAlgorithm spgemm_algorithm);
   */
+#endif
+ private:
+  // How many extra bytes are needed to align a scalar_t after an array of
+  // nnz_lno_t, in the worst case? Incurred once per hashmap, which may be per
+  // team or per thread depending on algorithm
+  static constexpr size_t scalarAlignPad =
+      (alignof(scalar_t) > alignof(nnz_lno_t))
+          ? (alignof(scalar_t) - alignof(nnz_lno_t))
+          : 0;
+
+  static constexpr bool exec_gpu =
+      KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>();
+
+ private:
+  nnz_lno_t block_dim;
+
  public:
   //////////////////////////////////////////////////////////////////////////
   /////BELOW CODE IS TO for kkmem SPGEMM
@@ -470,16 +310,14 @@ class KokkosSPGEMM {
             typename c_scalar_view_t, typename pool_memory_type>
   struct PortableNumericCHASH;
 
- private:
-  // KKMEM only difference is work memory does not use output memory for 2nd
-  // level accumulator.
   template <typename c_row_view_t, typename c_lno_nnz_view_t,
             typename c_scalar_nnz_view_t>
-  void KokkosSPGEMM_numeric_hash2(
+  void KokkosBSPGEMM_numeric_hash(
       c_row_view_t rowmapC_, c_lno_nnz_view_t entriesC_,
       c_scalar_nnz_view_t valuesC_,
       KokkosKernels::Impl::ExecSpaceType my_exec_space);
 
+#if 0  // defined in base class (clean up or implement block version)
   template <typename c_row_view_t, typename c_lno_nnz_view_t,
             typename c_scalar_nnz_view_t>
   void KokkosSPGEMM_numeric_hash(
@@ -587,6 +425,7 @@ class KokkosSPGEMM {
   );
 
 #endif
+#endif
 
  public:
   //////////////////////////////////////////////////////////////////////////
@@ -595,11 +434,13 @@ class KokkosSPGEMM {
   //////////////////////////////////////////////////////////////////////////
   template <typename c_row_view_t, typename c_lno_nnz_view_t,
             typename c_scalar_nnz_view_t>
-  void KokkosSPGEMM_numeric(c_row_view_t &rowmapC_, c_lno_nnz_view_t &entriesC_,
-                            c_scalar_nnz_view_t &valuesC_);
+  void KokkosBSPGEMM_numeric(c_row_view_t &rowmapC_,
+                             c_lno_nnz_view_t &entriesC_,
+                             c_scalar_nnz_view_t &valuesC_);
   // TODO: These are references only for outer product algorithm.
   // If the algorithm is removed, then remove the references.
 
+#if 0
   /**
    * \brief Symbolic phase of the SPGEMM.
    * \param rowmapC_: row pointers for the result matrix. Allocated before the
@@ -614,67 +455,29 @@ class KokkosSPGEMM {
                             nnz_lno_persistent_work_view_t &color_adj,
                             c_row_view_t &rowmapC,
                             c_nnz_view_t &entryIndicesC_);
+#endif
 
-  KokkosSPGEMM(HandleType *handle_, nnz_lno_t m_, nnz_lno_t n_, nnz_lno_t k_,
-               const_a_lno_row_view_t row_mapA_,
-               const_a_lno_nnz_view_t entriesA_, bool transposeA_,
-               const_b_lno_row_view_t row_mapB_,
-               const_b_lno_nnz_view_t entriesB_, bool transposeB_)
-      : handle(handle_),
-        a_row_cnt(m_),
-        b_row_cnt(n_),
-        b_col_cnt(k_),
-        row_mapA(row_mapA_),
-        entriesA(entriesA_),
-        valsA(),
-        transposeA(transposeA_),
-        row_mapB(row_mapB_),
-        entriesB(entriesB_),
-        valsB(),
-        transposeB(transposeB_),
-        shmem_size(handle_->get_shmem_size()),
-        concurrency(MyExecSpace::concurrency()),
-        use_dynamic_schedule(handle_->is_dynamic_scheduling()),
-        KOKKOSKERNELS_VERBOSE(handle_->get_verbose()),
-        MyEnumExecSpace(this->handle->get_handle_exec_space()),
-        spgemm_algorithm(
-            this->handle->get_spgemm_handle()->get_algorithm_type()),
-        spgemm_accumulator(
-            this->handle->get_spgemm_handle()->get_accumulator_type())
-  //,row_mapC(), entriesC(), valsC()
-  {}
+  KokkosBSPGEMM(HandleType *handle_, nnz_lno_t m_, nnz_lno_t n_, nnz_lno_t k_,
+                nnz_lno_t block_dim_, const_a_lno_row_view_t row_mapA_,
+                const_a_lno_nnz_view_t entriesA_, bool transposeA_,
+                const_b_lno_row_view_t row_mapB_,
+                const_b_lno_nnz_view_t entriesB_, bool transposeB_)
+      : Base(handle_, m_, n_, k_, row_mapA_, entriesA_, transposeA_, row_mapB_,
+             entriesB_, transposeB_),
+        block_dim(block_dim_) {}
 
-  KokkosSPGEMM(HandleType *handle_, nnz_lno_t m_, nnz_lno_t n_, nnz_lno_t k_,
-               const_a_lno_row_view_t row_mapA_,
-               const_a_lno_nnz_view_t entriesA_,
-               const_a_scalar_nnz_view_t valsA_, bool transposeA_,
-               const_b_lno_row_view_t row_mapB_,
-               const_b_lno_nnz_view_t entriesB_,
-               const_b_scalar_nnz_view_t valsB_, bool transposeB_)
-      : handle(handle_),
-        a_row_cnt(m_),
-        b_row_cnt(n_),
-        b_col_cnt(k_),
-        row_mapA(row_mapA_),
-        entriesA(entriesA_),
-        valsA(valsA_),
-        transposeA(transposeA_),
-        row_mapB(row_mapB_),
-        entriesB(entriesB_),
-        valsB(valsB_),
-        transposeB(transposeB_),
-        shmem_size(handle_->get_shmem_size()),
-        concurrency(MyExecSpace::concurrency()),
-        use_dynamic_schedule(handle_->is_dynamic_scheduling()),
-        KOKKOSKERNELS_VERBOSE(handle_->get_verbose()),
-        MyEnumExecSpace(this->handle->get_handle_exec_space()),
-        spgemm_algorithm(
-            this->handle->get_spgemm_handle()->get_algorithm_type()),
-        spgemm_accumulator(
-            this->handle->get_spgemm_handle()->get_accumulator_type())
-  //,row_mapB(), entriesC(), valsC()
-  {}
+  KokkosBSPGEMM(HandleType *handle_, nnz_lno_t m_, nnz_lno_t n_, nnz_lno_t k_,
+                nnz_lno_t block_dim_, const_a_lno_row_view_t row_mapA_,
+                const_a_lno_nnz_view_t entriesA_,
+                const_a_scalar_nnz_view_t valsA_, bool transposeA_,
+                const_b_lno_row_view_t row_mapB_,
+                const_b_lno_nnz_view_t entriesB_,
+                const_b_scalar_nnz_view_t valsB_, bool transposeB_)
+      : Base(handle_, m_, n_, k_, row_mapA_, entriesA_, valsA_, transposeA_,
+             row_mapB_, entriesB_, valsB_, transposeB_),
+        block_dim(block_dim_) {}
 
+#if 0  // defined in base class (clean up or implement block version)
   //////////////////////////////////////////////////////////////////////////
   /////BELOW CODE IS for symbolic phase
   ////DECL IS AT _symbolic.hpp
@@ -837,16 +640,12 @@ class KokkosSPGEMM {
     }
     return po2_num_chunks;
   }
+#endif
 };
 
 }  // namespace Impl
 }  // namespace KokkosSparse
-#include "KokkosSparse_spgemm_imp_outer.hpp"
-#include "KokkosSparse_spgemm_impl_memaccess.hpp"
-#include "KokkosSparse_spgemm_impl_kkmem.hpp"
-#include "KokkosSparse_spgemm_impl_speed.hpp"
-#include "KokkosSparse_spgemm_impl_compression.hpp"
-#include "KokkosSparse_spgemm_impl_def.hpp"
-#include "KokkosSparse_spgemm_impl_symbolic.hpp"
-#include "KokkosSparse_spgemm_impl_triangle.hpp"
+#include "KokkosSparse_bspgemm_impl_kkmem.hpp"
+#include "KokkosSparse_bspgemm_impl_speed.hpp"
+#include "KokkosSparse_bspgemm_impl_def.hpp"
 #endif

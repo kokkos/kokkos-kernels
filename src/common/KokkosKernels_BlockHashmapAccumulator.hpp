@@ -41,10 +41,11 @@
 // ************************************************************************
 //@HEADER
 */
-#ifndef _KOKKOSKERNELS_HASHMAPACCUMULATOR_HPP
-#define _KOKKOSKERNELS_HASHMAPACCUMULATOR_HPP
+#ifndef _KOKKOSKERNELS_BLOCKHASHMAPACCUMULATOR_HPP
+#define _KOKKOSKERNELS_BLOCKHASHMAPACCUMULATOR_HPP
 #include <Kokkos_Atomic.hpp>
 #include <atomic>
+#include "KokkosKernels_BlockUtils.hpp"
 
 //#define HASHMAPACCUMULATOR_ASSERT_ENABLED
 
@@ -52,6 +53,7 @@ namespace KokkosKernels {
 
 namespace Experimental {
 
+#if 0  // defined in HashmapAccumulator header - include if needed or drop
 /**
  * @brief types of hash operations supported by HashmapAccumulator.
  *
@@ -64,11 +66,12 @@ struct HashOpType {
   struct modulo {};
   struct pow2Modulo {};
 };
+#endif
 
 template <typename size_type, typename key_type, typename value_type,
           typename hash_type>
 /**
- * \brief HashmapAccumulator class
+ * \brief BlockHashmapAccumulator class
  * The use of this is described in the paper:
  *   "Performance-portable sparse matrix-matrix multiplication for many-core
  * architectures" ( https://ieeexplore.ieee.org/abstract/document/7965111/ ) in
@@ -88,14 +91,14 @@ template <typename size_type, typename key_type, typename value_type,
  * \var __insert_success: Value to return upon insertion success.
  * \var __insert_full:    Value to return upon insertion failure.
  */
-struct HashmapAccumulator {
+struct BlockHashmapAccumulator {
   // begin public members
   // issue-508, TODO: It's best for used_size to be an internal member of this
   // class but the current use-cases rely on used_size to be a parameter to the
   // below insertion routines. One way to remove used_size as a parameter to the
-  // insertion routines is to instantiate multiple HashmapAccumulator objects
-  // (one hashmap for each team of threads) instead of using a single
-  // HashmapAccumulator object for multiple teams of threads; this entails
+  // insertion routines is to instantiate multiple BlockHashmapAccumulator
+  // objects (one hashmap for each team of threads) instead of using a single
+  // BlockHashmapAccumulator object for multiple teams of threads; this entails
   // major refactoring throughout the kokkos-kernels code base.
   // Making used_size a pointer and private member of this
   // class still exposes access to this member outside of the class and is
@@ -104,11 +107,12 @@ struct HashmapAccumulator {
 
   // issue-508, TODO: The hash_begins, hash_nexts, keys, values,
   // __insert_success, and __insert_full members should all be private as well.
-  // They should be managed solely by this HashmapAccumulator class: initialized
-  // in the constructor(s) and only managed by HashmapAccumulator insertion
-  // routines. Making these members private requires major refactoring
-  // throughout the kokkos-kernels code base. If allocations for these members
-  // must really live outside this class, we need new members that break
+  // They should be managed solely by this BlockHashmapAccumulator class:
+  // initialized in the constructor(s) and only managed by
+  // BlockHashmapAccumulator insertion routines. Making these members private
+  // requires major refactoring throughout the kokkos-kernels code base. If
+  // allocations for these members must really live outside this class, we need
+  // new members that break
   // __max_value_size into: hash_begins_len, hash_nexts_len, keys_len, and
   // values_len...!
 
@@ -116,16 +120,18 @@ struct HashmapAccumulator {
   size_type *hash_nexts;
   key_type *keys;
   value_type *values;
+  const size_type block_dim;
+  const size_type block_size;
 
   /**
-   * \brief default constructor HashmapAccumulator
+   * \brief default constructor BlockHashmapAccumulator
    * Sets used_size to 0, __insert_success to 0, __insert_full to 1, and
    * __hashOpRHS to 0.
    *
    * Assumption: hash_begins_ are all initialized to -1.
    */
   KOKKOS_INLINE_FUNCTION
-  HashmapAccumulator()
+  BlockHashmapAccumulator()
       : hash_begins(),
         hash_nexts(),
         keys(),
@@ -134,7 +140,7 @@ struct HashmapAccumulator {
         __hashOpRHS(0) {}
 
   /**
-   * \brief parameterized constructor HashmapAccumulator
+   * \brief parameterized constructor BlockHashmapAccumulator
    * Sets used_size to 0, __insert_success to 0, and __insert_full to 1.
    *
    * \param max_value_size_: The length of the two arrays (keys and hash_nexts)
@@ -149,13 +155,16 @@ struct HashmapAccumulator {
    * Assumption: hash_begins_ are all initialized to -1.
    */
   KOKKOS_INLINE_FUNCTION
-  HashmapAccumulator(const size_type max_value_size_, const size_type hashOpRHS,
-                     size_type *hash_begins_, size_type *hash_nexts_,
-                     key_type *keys_, value_type *values_)
+  BlockHashmapAccumulator(size_type block_dim_, const size_type max_value_size_,
+                          const size_type hashOpRHS, size_type *hash_begins_,
+                          size_type *hash_nexts_, key_type *keys_,
+                          value_type *values_)
       : hash_begins(hash_begins_),
         hash_nexts(hash_nexts_),
         keys(keys_),
         values(values_),
+        block_dim(block_dim_),
+        block_size(block_dim_ * block_dim_),
         __max_value_size(max_value_size_),
         __hashOpRHS(hashOpRHS) {
     // Substract 1 and use the bitwiseAnd __compute_hash member.
@@ -164,6 +173,7 @@ struct HashmapAccumulator {
     }
   }
 
+#if 0  // not used in block SPGEMM
   // function to be called from device.
   // Accumulation is OR operation.
   // Insertion is sequential, no race condition for the insertion.
@@ -340,13 +350,17 @@ struct HashmapAccumulator {
     return __insert_success;
   }
 
-  // function to be called from device.
+#endif
+
+  // Performs C[hash] += A * B (for existing entry)
+  //       or C[hash]  = A * B (for new entry)
   // Insertion is sequential, no race condition for the insertion.
   // the mergeadd used in the numeric of KKMEM.
   KOKKOS_INLINE_FUNCTION
   int sequential_insert_into_hash_mergeAdd_TrackHashes(
-      key_type key, value_type value, size_type *used_size_,
-      size_type *used_hash_size, size_type *used_hashes) {
+      key_type key, const value_type *valueA, const value_type *valueB,
+      size_type *used_size_, size_type *used_hash_size,
+      size_type *used_hashes) {
     size_type hash, i, my_index;
 
     if (key == -1) return __insert_success;
@@ -356,7 +370,8 @@ struct HashmapAccumulator {
     hash = __compute_hash(key, __hashOpRHS);
     for (i = hash_begins[hash]; i != -1; i = hash_nexts[i]) {
       if (keys[i] == key) {
-        values[i] = values[i] + value;
+        KokkosSparse::Impl::kk_block_add_mul(block_dim, values + i * block_size,
+                                             valueA, valueB);
         return __insert_success;
       }
     }
@@ -370,10 +385,54 @@ struct HashmapAccumulator {
 
     hash_begins[hash] = my_index;
     keys[my_index]    = key;
-    values[my_index]  = value;
+    KokkosSparse::Impl::kk_block_set_mul(
+        block_dim, values + my_index * block_size, valueA, valueB);
     return __insert_success;
   }
 
+  // Performs C[hash] += A * B (for existing entry)
+  //       or C[hash]  = A * B (for new entry)
+  // Insertion is sequential, no race condition for the insertion.
+  // the mergeadd used in the numeric of KKMEM.
+  KOKKOS_INLINE_FUNCTION
+  void sequential_insert_into_hash_simple(key_type key, const value_type *a_val,
+                                          const value_type *b_val,
+                                          size_type &used_size,
+                                          size_type *used_hashes) {
+    for (size_type hash = (key * HASHSCALAR) & __hashOpRHS;;
+         hash           = (hash + 1) & __hashOpRHS) {
+      if (keys[hash] == -1) {
+        used_hashes[used_size++] = hash;
+        keys[hash]               = key;
+        KokkosSparse::Impl::kk_block_set_mul(
+            block_dim, values + hash * block_size, a_val, b_val);
+        break;
+      } else if (keys[hash] == key) {
+        KokkosSparse::Impl::kk_block_add_mul(
+            block_dim, values + hash * block_size, a_val, b_val);
+        break;
+      }
+    }
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void sequential_export_values_simple(const size_type used_size,
+                                       const size_type *used_hashes,
+                                       key_type *out_keys,
+                                       value_type *out_values,
+                                       const bool clear = true) {
+    for (size_type i = 0; i < used_size; ++i) {
+      const auto hash = used_hashes[i];
+      out_keys[i]     = keys[hash];
+      KokkosSparse::Impl::kk_block_set(block_dim, out_values + i * block_size,
+                                       values + hash * block_size);
+      if (clear) {
+        keys[hash] = -1;
+      }
+    }
+  }
+
+#if 0
   // no values. simply adds to the keys.
   // used in the compression to count the sets.
   // also used in the symbolic of spgemm if no compression is applied.
@@ -404,6 +463,7 @@ struct HashmapAccumulator {
     keys[my_index]    = key;
     return __insert_success;
   }
+#endif
 
   // used in the kkmem's numeric phase for second level hashmaps.
   // function to be called from device.
@@ -414,7 +474,7 @@ struct HashmapAccumulator {
   // used_size should be a shared pointer among the thread vectors
   KOKKOS_INLINE_FUNCTION
   int vector_atomic_insert_into_hash_mergeAdd_TrackHashes(
-      const key_type key, const value_type value,
+      const key_type key, const value_type *valA, const value_type *valB,
       volatile size_type *used_size_, size_type *used_hash_size,
       size_type *used_hashes) {
     size_type hash, i, my_write_index, hashbeginning;
@@ -427,7 +487,8 @@ struct HashmapAccumulator {
 
       for (; i != -1; i = hash_nexts[i]) {
         if (keys[i] == key) {
-          values[i] = values[i] + value;
+          KokkosSparse::Impl::kk_block_add_mul(
+              block_dim, values + i * block_size, valA, valB);
           return __insert_success;
         }
       }
@@ -440,8 +501,9 @@ struct HashmapAccumulator {
     if (my_write_index >= __max_value_size) {
       return __insert_full;
     } else {
-      keys[my_write_index]   = key;
-      values[my_write_index] = value;
+      keys[my_write_index] = key;
+      KokkosSparse::Impl::kk_block_set_mul(
+          block_dim, values + my_write_index * block_size, valA, valB);
 
 #if defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_TURING75) || \
     defined(KOKKOS_ARCH_AMPERE)
@@ -487,8 +549,9 @@ struct HashmapAccumulator {
   KOKKOS_INLINE_FUNCTION int
   vector_atomic_insert_into_hash_mergeAdd_with_team_level_list_length(
       const team_member_t & /* teamMember */, const int /* vector_size */,
-      size_type hash, const key_type key, const value_type value,
-      volatile size_type *used_size_, const size_type max_value_size_) {
+      size_type hash, const key_type key, const value_type *valA,
+      const value_type *valB, volatile size_type *used_size_,
+      const size_type max_value_size_) {
     // Cannot compute hash here due to impl_speed use-case
     // hash = __compute_hash(key, __hashOpRHS);
     if (key == -1) return __insert_success;
@@ -497,7 +560,8 @@ struct HashmapAccumulator {
       size_type i = hash_begins[hash];
       for (; i != -1; i = hash_nexts[i]) {
         if (keys[i] == key) {
-          values[i] = values[i] + value;
+          KokkosSparse::Impl::kk_block_add_mul(
+              block_dim, values + i * block_size, valA, valB);
           return __insert_success;
         }
       }
@@ -516,8 +580,9 @@ struct HashmapAccumulator {
     if (my_write_index >= max_value_size_) {
       return __insert_full;
     } else {
-      keys[my_write_index]   = key;
-      values[my_write_index] = value;
+      keys[my_write_index] = key;
+      KokkosSparse::Impl::kk_block_set_mul(
+          block_dim, values + my_write_index * block_size, valA, valB);
 
 #if defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_TURING75) || \
     defined(KOKKOS_ARCH_AMPERE)
@@ -566,15 +631,17 @@ struct HashmapAccumulator {
   // used_size should be a shared pointer among the thread vectors
   KOKKOS_INLINE_FUNCTION
   int vector_atomic_insert_into_hash_mergeAdd(const key_type key,
-                                              const value_type value,
+                                              const value_type *valA,
+                                              const value_type *valB,
                                               volatile size_type *used_size_) {
     if (key == -1) return __insert_success;
 
     return vector_atomic_insert_into_hash_mergeAdd_with_team_level_list_length(
-        nullptr, 0, __compute_hash(key, __hashOpRHS), key, value, used_size_,
-        __max_value_size);
+        nullptr, 0, __compute_hash(key, __hashOpRHS), key, valA, valB,
+        used_size_, __max_value_size);
   }
 
+#if 0
   // used in symbolic of kkmem if the compression is not applied.
   KOKKOS_INLINE_FUNCTION
   int vector_atomic_insert_into_hash(const key_type &key,
@@ -780,6 +847,7 @@ struct HashmapAccumulator {
       return __insert_success;
     }
   }
+#endif
   // end public members
  private:
   size_type __max_value_size;
@@ -813,7 +881,7 @@ struct HashmapAccumulator {
     return hash;
   }
   // private
-};  // struct HashmapAccumulator
+};  // struct BlockHashmapAccumulator
 
 }  // namespace Experimental
 }  // namespace KokkosKernels
