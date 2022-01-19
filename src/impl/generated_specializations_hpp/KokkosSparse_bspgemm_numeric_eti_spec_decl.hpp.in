@@ -1,5 +1,5 @@
-#ifndef KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_DECL_HPP_
-#define KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_DECL_HPP_
+#ifndef KOKKOSSPARSE_BSPGEMM_NUMERIC_ETI_SPEC_DECL_HPP_
+#define KOKKOSSPARSE_BSPGEMM_NUMERIC_ETI_SPEC_DECL_HPP_
 /*
 //@HEADER
 // ************************************************************************
@@ -45,7 +45,7 @@
 
 namespace KokkosSparse {
 namespace Impl {
-@SPARSE_SPGEMM_NUMERIC_ETI_DECL_BLOCK@
-  } //IMPL 
+@SPARSE_BSPGEMM_NUMERIC_ETI_DECL_BLOCK@
+  } //IMPL
 } //Kokkos
 #endif
