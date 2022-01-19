@@ -74,13 +74,44 @@ using namespace KokkosSparse::Experimental;
 
 namespace Test {
 
+enum GSApplyType {
+  symmetric,
+  forward_sweep,
+  backward_sweep,
+};
+
+template <typename lno_t, typename scalar_t>
+struct GSTestParams {
+  // Intentionally testing block_size that's not a multiple of #rows.
+  lno_t block_size   = 7;
+  lno_t numVecs      = 2;  // how many columns X/Y have
+  scalar_t omega     = 0.9;
+  scalar_t tolerance = 1.0;  // relative error for solution x vector
+
+  // variants to cover
+  std::vector<GSAlgorithm> gs_algorithms = {
+      GS_DEFAULT,  // == GS_TEAM
+#if 0
+      GS_PERMUTED, // == GS_DEFAULT for blocks
+      GS_TWOSTAGE, // blocks not supported (yet?)
+      GS_CLUSTER,  // not compatible with blocks
+#endif
+  };
+  std::vector<size_t> shmem_sizes = {
+      32128,
+      2008  // make the shmem small on gpus so that it will test 2 level
+            // algorithm.
+  };
+  std::vector<GSApplyType> apply_types = {
+      symmetric /* , forward_sweep, backward_sweep */};
+};
+
 template <typename mtx_t, typename vector_t, typename const_vector_t>
 int run_block_gauss_seidel_1(
     mtx_t input_mat, int block_size, KokkosSparse::GSAlgorithm gs_algorithm,
     vector_t x_vector, const_vector_t y_vector, bool is_symmetric_graph,
-    int apply_type     = 0,  // 0 for symmetric, 1 for forward, 2 for backward.
-    bool skip_symbolic = false, bool skip_numeric = false,
-    size_t shmem_size = 32128,
+    GSApplyType apply_type = Test::symmetric, bool skip_symbolic = false,
+    bool skip_numeric = false, size_t shmem_size = 32128,
     typename mtx_t::value_type omega =
         Kokkos::Details::ArithTraits<typename mtx_t::value_type>::one()) {
   typedef typename mtx_t::StaticCrsGraphType graph_t;
@@ -121,24 +152,19 @@ int run_block_gauss_seidel_1(
   }
 
   switch (apply_type) {
-    case 0:
-      symmetric_block_gauss_seidel_apply<format>(
-          &kh, num_rows_1, num_cols_1, block_size, input_mat.graph.row_map,
-          input_mat.graph.entries, input_mat.values, x_vector, y_vector, false,
-          true, omega, apply_count);
-      break;
-    case 1:
+    case Test::forward_sweep:
       forward_sweep_block_gauss_seidel_apply<format>(
           &kh, num_rows_1, num_cols_1, block_size, input_mat.graph.row_map,
           input_mat.graph.entries, input_mat.values, x_vector, y_vector, false,
           true, omega, apply_count);
       break;
-    case 2:
+    case Test::backward_sweep:
       backward_sweep_block_gauss_seidel_apply<format>(
           &kh, num_rows_1, num_cols_1, block_size, input_mat.graph.row_map,
           input_mat.graph.entries, input_mat.values, x_vector, y_vector, false,
           true, omega, apply_count);
       break;
+    case Test::symmetric:
     default:
       symmetric_block_gauss_seidel_apply<format>(
           &kh, num_rows_1, num_cols_1, block_size, input_mat.graph.row_map,
@@ -174,8 +200,8 @@ void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz,
 
   lno_t numCols = numRows;
 
-  // Intentionally testing block_size that's not a multiple of #rows.
-  lno_t block_size = 7;
+  const GSTestParams<lno_t, scalar_t> params;
+  lno_t block_size = params.block_size;
 
   crsMat_t crsmat =
       KokkosKernels::Impl::kk_generate_diagonally_dominant_sparse_matrix<
@@ -209,46 +235,28 @@ void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz,
   exec_space().fence();
   scalar_view_t y_vector = create_random_y_vector(crsmat2, solution_x);
   mag_t initial_norm_res = KokkosBlas::nrm2(solution_x);
-#ifdef gauss_seidel_testmore
-  GSAlgorithm gs_algorithms[] = {GS_DEFAULT, GS_TEAM, GS_PERMUTED};
-  int apply_count             = 3;
-  for (int ii = 0; ii < 3; ++ii) {
-#else
-  int apply_count             = 1;
-  GSAlgorithm gs_algorithms[] = {GS_DEFAULT};
-  for (int ii = 0; ii < 1; ++ii) {
-#endif
-    GSAlgorithm gs_algorithm = gs_algorithms[ii];
+
+  for (const auto gs_algorithm : params.gs_algorithms) {
     scalar_view_t x_vector("x vector", nv);
     const scalar_t alpha = 1.0;
 
-    // bool is_symmetric_graph = false;
-    // int apply_type = 0;
-    // bool skip_symbolic = false;
-    // bool skip_numeric = false;
-    scalar_t omega = 0.9;
-
     bool is_symmetric_graph = true;
-    size_t shmem_size       = 32128;
 
-    for (int i = 0; i < 2; ++i) {
-      if (i == 1)
-        shmem_size = 2008;  // make the shmem small on gpus so that it will test
-                            // 2 level algorithm.
-      for (int apply_type = 0; apply_type < apply_count; ++apply_type) {
-        for (int skip_symbolic = 0; skip_symbolic < 2; ++skip_symbolic) {
-          for (int skip_numeric = 0; skip_numeric < 2; ++skip_numeric) {
+    for (const auto shmem_size : params.shmem_sizes) {
+      for (const auto apply_type : params.apply_types) {
+        for (const auto skip_symbolic : {false, true}) {
+          for (const auto skip_numeric : {false, true}) {
             Kokkos::Timer timer1;
             // int res =
             run_block_gauss_seidel_1(input_mat, block_size, gs_algorithm,
                                      x_vector, y_vector, is_symmetric_graph,
                                      apply_type, skip_symbolic, skip_numeric,
-                                     shmem_size, omega);
+                                     shmem_size, params.omega);
             // double gs = timer1.seconds();
             // KokkosKernels::Impl::print_1Dview(x_vector);
             KokkosBlas::axpby(alpha, solution_x, -alpha, x_vector);
             mag_t result_norm_res = KokkosBlas::nrm2(x_vector);
-            EXPECT_TRUE((result_norm_res < initial_norm_res));
+            EXPECT_LT(result_norm_res, params.tolerance * initial_norm_res);
           }
         }
       }
@@ -279,8 +287,8 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz,
 
   lno_t numCols = numRows;
 
-  // Intentionally testing block_size that's not a multiple of #rows.
-  lno_t block_size = 7;
+  const GSTestParams<lno_t, scalar_t> params;
+  lno_t block_size = params.block_size;
 
   crsMat_t crsmat =
       KokkosKernels::Impl::kk_generate_diagonally_dominant_sparse_matrix<
@@ -305,11 +313,10 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz,
 
   lno_t nv = ((crsmat2.numRows() + block_size - 1) / block_size) * block_size;
 
-  // how many columns X/Y have
-  constexpr lno_t numVecs = 2;
+  const lno_t numVecs = params.numVecs;
 
   scalar_view2d_t solution_x(
-      Kokkos::view_alloc(Kokkos::WithoutInitializing, "X"), nv, numVecs);
+      Kokkos::view_alloc(Kokkos::WithoutInitializing, "X"), nv, params.numVecs);
   create_random_x_vector(solution_x);
   scalar_view2d_t y_vector = create_random_y_vector_mv(crsmat2, solution_x);
   exec_space().fence();
@@ -325,44 +332,26 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz,
     initial_norms[i] = Kokkos::Details::ArithTraits<mag_t>::sqrt(
         Kokkos::Details::ArithTraits<scalar_t>::abs(sum));
   }
-#ifdef gauss_seidel_testmore
-  GSAlgorithm gs_algorithms[] = {GS_DEFAULT, GS_TEAM, GS_PERMUTED};
-  int apply_count             = 3;
-  for (int ii = 0; ii < 3; ++ii) {
-#else
-  int apply_count             = 1;
-  GSAlgorithm gs_algorithms[] = {GS_DEFAULT};
-  for (int ii = 0; ii < 1; ++ii) {
-#endif
-    GSAlgorithm gs_algorithm = gs_algorithms[ii];
+
+  for (const auto gs_algorithm : params.gs_algorithms) {
     scalar_view2d_t x_vector("x vector", nv, numVecs);
     auto x_host = Kokkos::create_mirror_view(x_vector);
 
-    // bool is_symmetric_graph = false;
-    // int apply_type = 0;
-    // bool skip_symbolic = false;
-    // bool skip_numeric = false;
-    scalar_t omega = 0.9;
-
     bool is_symmetric_graph = true;
-    size_t shmem_size       = 32128;
 
     scalar_view_t res_norms("Residuals", numVecs);
     auto h_res_norms = Kokkos::create_mirror_view(res_norms);
 
-    for (int i = 0; i < 2; ++i) {
-      if (i == 1)
-        shmem_size = 2008;  // make the shmem small on gpus so that it will test
-                            // 2 level algorithm.
-      for (int apply_type = 0; apply_type < apply_count; ++apply_type) {
-        for (int skip_symbolic = 0; skip_symbolic < 2; ++skip_symbolic) {
-          for (int skip_numeric = 0; skip_numeric < 2; ++skip_numeric) {
+    for (const auto shmem_size : params.shmem_sizes) {
+      for (const auto apply_type : params.apply_types) {
+        for (const auto skip_symbolic : {false, true}) {
+          for (const auto skip_numeric : {false, true}) {
             Kokkos::Timer timer1;
             // int res =
             run_block_gauss_seidel_1(input_mat, block_size, gs_algorithm,
                                      x_vector, y_vector, is_symmetric_graph,
                                      apply_type, skip_symbolic, skip_numeric,
-                                     shmem_size, omega);
+                                     shmem_size, params.omega);
             // double gs = timer1.seconds();
             // KokkosKernels::Impl::print_1Dview(x_vector);
             Kokkos::deep_copy(x_host, x_vector);
@@ -375,7 +364,7 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz,
               }
               mag_t result_res = Kokkos::Details::ArithTraits<mag_t>::sqrt(
                   Kokkos::Details::ArithTraits<scalar_t>::abs(sum));
-              EXPECT_TRUE(result_res < initial_norms[c]);
+              EXPECT_LT(result_res, params.tolerance * initial_norms[c]);
             }
           }
         }
