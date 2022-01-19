@@ -59,6 +59,7 @@
 #include <Kokkos_Core.hpp>
 #include "Kokkos_Random.hpp"
 #include "KokkosKernels_SimpleUtils.hpp"
+#include "KokkosSparse_CrsMatrix.hpp"
 #include <sys/stat.h>
 
 namespace KokkosKernels {
@@ -94,7 +95,8 @@ template <typename ScalarType, typename OrdinalType, typename SizeType>
 void kk_sparseMatrix_generate(OrdinalType nrows, OrdinalType ncols,
                               SizeType &nnz, OrdinalType row_size_variance,
                               OrdinalType bandwidth, ScalarType *&values,
-                              SizeType *&rowPtr, OrdinalType *&colInd) {
+                              SizeType *&rowPtr, OrdinalType *&colInd,
+                              OrdinalType block_elem_count = 1) {
   rowPtr = new SizeType[nrows + 1];
 
   OrdinalType elements_per_row = nrows ? nnz / nrows : 0;
@@ -138,7 +140,8 @@ void kk_sparseMatrix_generate(OrdinalType nrows, OrdinalType ncols,
   }
   // Sample each value from uniform (-50, 50) for real types, or (-50 - 50i, 50
   // + 50i) for complex types.
-  Kokkos::View<ScalarType *, Kokkos::HostSpace> valuesView(values, nnz);
+  Kokkos::View<ScalarType *, Kokkos::HostSpace> valuesView(
+      values, nnz * block_elem_count);
   ScalarType randStart, randEnd;
   getRandomBounds(50.0, randStart, randEnd);
   Kokkos::Random_XorShift64_Pool<Kokkos::DefaultHostExecutionSpace> pool(13718);
@@ -443,6 +446,25 @@ crsMat_t kk_generate_sparse_matrix(
   return crsmat;
 }
 
+template <typename bsrMat_t>
+bsrMat_t kk_generate_sparse_matrix(
+    typename bsrMat_t::const_ordinal_type block_dim,
+    typename bsrMat_t::const_ordinal_type nrows,
+    typename bsrMat_t::const_ordinal_type ncols,
+    typename bsrMat_t::non_const_size_type &nnz,
+    typename bsrMat_t::const_ordinal_type row_size_variance,
+    typename bsrMat_t::const_ordinal_type bandwidth) {
+  typedef KokkosSparse::CrsMatrix<
+      typename bsrMat_t::value_type, typename bsrMat_t::ordinal_type,
+      typename bsrMat_t::device_type, typename bsrMat_t::memory_traits,
+      typename bsrMat_t::size_type>
+      crsMat_t;
+
+  const auto crs_mtx = kk_generate_sparse_matrix<crsMat_t>(
+      nrows * block_dim, ncols * block_dim, nnz, row_size_variance, bandwidth);
+  bsrMat_t bsrmat(crs_mtx, block_dim);
+  return bsrmat;
+}
 // TODO: need to fix the size_type. All over the reading inputs are lno_t.
 
 template <typename stype>
