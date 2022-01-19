@@ -146,7 +146,7 @@ class JacobiPrec {
                                     const YViewType &Y) const {
     if (!computed_inverse) this->computeInverse<MemberType, ArgMode>(member);
 
-    KokkosBatched::HadamardProduct<MemberType, ArgTrans>::template invoke<
+    KokkosBatched::HadamardProduct<MemberType, ArgMode>::template invoke<
         ValuesViewType, XViewType, YViewType>(member, diag_values, X, Y);
   }
 };
