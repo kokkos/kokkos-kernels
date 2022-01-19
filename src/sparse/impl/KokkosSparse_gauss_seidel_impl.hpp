@@ -61,7 +61,8 @@ namespace KokkosSparse {
 namespace Impl {
 
 template <typename HandleType, typename lno_row_view_t_,
-          typename lno_nnz_view_t_, typename scalar_nnz_view_t_>
+          typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
+          KokkosKernels::SparseMatrixFormat format = KokkosKernels::BlockCRS>
 class PointGaussSeidel {
  public:
   typedef lno_row_view_t_ in_lno_row_view_t;
@@ -133,6 +134,10 @@ class PointGaussSeidel {
   typedef KokkosKernels::Impl::UniformMemoryPool<MyTempMemorySpace,
                                                  nnz_scalar_t>
       pool_memory_space;
+
+  typedef
+      typename KokkosKernels::Impl::MatrixRowIndex<format, nnz_lno_t, size_type>
+          RowIndex;
 
  private:
   HandleType* handle;
@@ -408,15 +413,11 @@ class PointGaussSeidel {
                 Kokkos::ThreadVectorRange(teamMember, block_size),
                 [&](nnz_lno_t i) { diagonal_positions[i] = -1; });
 
-            size_type row_begin        = _xadj(ii);
-            size_type row_end          = _xadj(ii + 1);
-            nnz_lno_t row_size         = row_end - row_begin;
-            nnz_lno_t scalar_row_begin = row_begin * block_size * block_size;
-
-            nnz_lno_t l1_val_size = row_size * block_size, l2_val_size = 0;
+            RowIndex row(block_size, _xadj(ii), _xadj(ii + 1));
+            nnz_lno_t l1_val_size = row.size() * block_size, l2_val_size = 0;
             // if the current row size is larger than shared memory size,
             // than allocate l2 vector.
-            if (row_size > num_max_vals_in_l1) {
+            if (row.size() > num_max_vals_in_l1) {
               volatile nnz_scalar_t* tmp = NULL;
               while (tmp == NULL) {
                 Kokkos::single(
@@ -429,7 +430,7 @@ class PointGaussSeidel {
               }
               all_global_memory = (nnz_scalar_t*)tmp;
               l1_val_size       = num_max_vals_in_l1 * block_size;
-              l2_val_size       = (row_size * block_size - l1_val_size);
+              l2_val_size       = (row.size() * block_size - l1_val_size);
             }
             for (nnz_lno_t vec = 0; vec < (nnz_lno_t)_Xvector.extent(1);
                  vec++) {
@@ -437,7 +438,7 @@ class PointGaussSeidel {
               Kokkos::parallel_for(
                   Kokkos::ThreadVectorRange(teamMember, l1_val_size),
                   [&](nnz_lno_t i) {
-                    size_type adjind   = i / block_size + row_begin;
+                    size_type adjind   = i / block_size + row.begin();
                     nnz_lno_t colIndex = _adj(adjind);
 
                     if (colIndex == ii) {
@@ -452,7 +453,7 @@ class PointGaussSeidel {
                   [&](nnz_lno_t k) {
                     nnz_lno_t i = l1_val_size + k;
 
-                    size_type adjind   = i / block_size + row_begin;
+                    size_type adjind   = i / block_size + row.begin();
                     nnz_lno_t colIndex = _adj(adjind);
 
                     if (colIndex == ii) {
@@ -467,8 +468,6 @@ class PointGaussSeidel {
               for (int m = 0; m < block_size; ++m) {
                 int i = m;
                 if (is_backward) i = block_size - m - 1;
-                size_type current_row_begin =
-                    scalar_row_begin + i * row_size * block_size;
                 // first reduce l1 dot product.
                 // MD: TODO: if thread dot product is implemented it should be
                 // called here.
@@ -476,8 +475,10 @@ class PointGaussSeidel {
                 Kokkos::parallel_reduce(
                     Kokkos::ThreadVectorRange(teamMember, l1_val_size),
                     [&](nnz_lno_t colind, nnz_scalar_t& valueToUpdate) {
-                      valueToUpdate += all_shared_memory[colind] *
-                                       _adj_vals(current_row_begin + colind);
+                      const size_type val_idx = row.value(
+                          colind / block_size, i, colind % block_size);
+                      valueToUpdate +=
+                          all_shared_memory[colind] * _adj_vals(val_idx);
                     },
                     product);
                 // l2 dot product.
@@ -487,9 +488,11 @@ class PointGaussSeidel {
                 Kokkos::parallel_reduce(
                     Kokkos::ThreadVectorRange(teamMember, l2_val_size),
                     [&](nnz_lno_t colind2, nnz_scalar_t& valueToUpdate) {
-                      nnz_lno_t colind = colind2 + l1_val_size;
-                      valueToUpdate += all_global_memory[colind2] *
-                                       _adj_vals(current_row_begin + colind);
+                      nnz_lno_t colind        = colind2 + l1_val_size;
+                      const size_type val_idx = row.value(
+                          colind / block_size, i, colind % block_size);
+                      valueToUpdate +=
+                          all_global_memory[colind2] * _adj_vals(val_idx);
                     },
                     product2);
 
@@ -543,7 +546,7 @@ class PointGaussSeidel {
               }
 #endif
             }
-            if (row_size > num_max_vals_in_l1) {
+            if (row.size() > num_max_vals_in_l1) {
               Kokkos::single(Kokkos::PerThread(teamMember),
                              [&]() { pool.release_chunk(all_global_memory); });
             }
@@ -583,19 +586,15 @@ class PointGaussSeidel {
                 Kokkos::ThreadVectorRange(teamMember, block_size),
                 [&](nnz_lno_t i) { diagonal_positions[i] = -1; });
 
-            size_type block_row_begin = _xadj(ii);
-            size_type block_row_end   = _xadj(ii + 1);
-            nnz_lno_t block_row_size  = block_row_end - block_row_begin;
+            RowIndex row(block_size, _xadj(ii), _xadj(ii + 1));
             // offset in adj_vals of the first row in this block
-            nnz_lno_t scalar_row_begin =
-                block_row_begin * block_size * block_size;
             // number of scalars in each row of this block
-            nnz_lno_t scalar_row_size = block_row_size * block_size;
+            nnz_lno_t scalar_row_size = row.size() * block_size;
 
             Kokkos::parallel_for(
                 Kokkos::ThreadVectorRange(teamMember, scalar_row_size),
                 [&](nnz_lno_t i) {
-                  size_type adjind   = i / block_size + block_row_begin;
+                  size_type adjind   = i / block_size + row.begin();
                   nnz_lno_t colIndex = _adj(adjind);
                   if (colIndex == ii) {
                     diagonal_positions[i % block_size] = i;
@@ -607,7 +606,7 @@ class PointGaussSeidel {
               Kokkos::parallel_for(
                   Kokkos::ThreadVectorRange(teamMember, scalar_row_size),
                   [&](nnz_lno_t i) {
-                    size_type adjind   = i / block_size + block_row_begin;
+                    size_type adjind   = i / block_size + row.begin();
                     nnz_lno_t colIndex = _adj(adjind);
                     all_shared_memory[i] =
                         _Xvector(colIndex * block_size + i % block_size, vec);
@@ -618,14 +617,15 @@ class PointGaussSeidel {
                 if (is_backward) {
                   i = block_size - m - 1;
                 }
-                size_type current_row_begin =
-                    scalar_row_begin + i * scalar_row_size;
                 nnz_scalar_t product = 0;
                 Kokkos::parallel_reduce(
                     Kokkos::ThreadVectorRange(teamMember, scalar_row_size),
                     [&](nnz_lno_t colind, nnz_scalar_t& valueToUpdate) {
-                      valueToUpdate += all_shared_memory[colind] *
-                                       _adj_vals(current_row_begin + colind);
+                      const size_type val_idx = row.value(
+                          colind / block_size, i, colind % block_size);
+
+                      valueToUpdate +=
+                          all_shared_memory[colind] * _adj_vals(val_idx);
                     },
                     product);
 
@@ -672,7 +672,6 @@ class PointGaussSeidel {
                             << std::endl;
                 }
 #endif
-                // row_begin += row_size * block_size;
               }
             }
           });
@@ -1314,18 +1313,15 @@ class PointGaussSeidel {
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const nnz_lno_t& row_id) const {
-      size_type row_begin = _xadj[row_id];
-      size_type row_end   = _xadj[row_id + 1];
-      nnz_lno_t row_size  = row_end - row_begin;
-      for (nnz_lno_t col_ind = 0; col_ind < row_size; ++col_ind) {
-        size_type nnz_ind   = col_ind + row_begin;
-        nnz_lno_t column_id = _adj[nnz_ind];
+      RowIndex row(block_size, _xadj[row_id], _xadj[row_id + 1]);
+      for (nnz_lno_t col_ind = 0; col_ind < row.size(); ++col_ind) {
+        const nnz_lno_t column_id = _adj[row.begin() + col_ind];
         if (column_id == row_id) {
-          size_type val_index = row_begin * block_matrix_size + col_ind;
+          size_type val_index = row.block(col_ind);
           for (nnz_lno_t r = 0; r < block_size; ++r) {
             nnz_scalar_t val                    = _adj_vals[val_index];
             _diagonals[row_id * block_size + r] = one / val;
-            val_index += row_size + 1;
+            val_index += row.block_stride() + 1;
           }
           break;
         }
@@ -1341,22 +1337,19 @@ class PointGaussSeidel {
       Kokkos::parallel_for(
           Kokkos::TeamThreadRange(team, i_begin, i_end),
           [&](const nnz_lno_t& row_id) {
-            size_type row_begin = _xadj[row_id];
-            size_type row_end   = _xadj[row_id + 1];
-            nnz_lno_t row_size  = row_end - row_begin;
+            RowIndex row(block_size, _xadj[row_id], _xadj[row_id + 1]);
 
             Kokkos::parallel_for(
-                Kokkos::ThreadVectorRange(team, row_size),
+                Kokkos::ThreadVectorRange(team, row.size()),
                 [&](const nnz_lno_t& col_ind) {
-                  size_type val_index = col_ind + row_begin;
+                  size_type val_index = col_ind + row.begin();
                   nnz_lno_t column_id = _adj[val_index];
                   if (column_id == row_id) {
-                    size_type _val_index =
-                        row_begin * block_matrix_size + col_ind * block_size;
+                    size_type _val_index = row.block(col_ind);
                     for (nnz_lno_t r = 0; r < block_size; ++r) {
                       nnz_scalar_t val = _adj_vals[_val_index];
                       _diagonals[row_id * block_size + r] = one / val;
-                      _val_index += row_size * block_size + 1;
+                      _val_index += row.block_stride() + 1;
                     }
                   }
                 });
