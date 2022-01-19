@@ -44,10 +44,26 @@
 #ifndef KOKKOSSPARSE_SPGEMM_DEBUG_HPP_
 #define KOKKOSSPARSE_SPGEMM_DEBUG_HPP_
 #include "KokkosKernels_helpers.hpp"
+#include "KokkosBatched_Gemm_Serial_Internal.hpp"
+#include <cstring>
+
 namespace KokkosSparse {
 
 namespace Impl {
 
+template <typename data_view_t>
+using kk_subview1d =
+    decltype(Kokkos::subview(data_view_t(), Kokkos::make_pair(0, 0)));
+
+// Returns subview
+template <typename data_view_t, typename size_type, typename lno_t>
+KOKKOS_INLINE_FUNCTION kk_subview1d<data_view_t> get_block(
+    data_view_t data, size_type block_index, lno_t block_size) {
+  const auto i = block_index * block_size;
+  return Kokkos::subview(data, Kokkos::make_pair(i, i + block_size));
+}
+
+#if 0  // not used in block version
 template <typename KernelHandle, typename alno_row_view_t_,
           typename alno_nnz_view_t_, typename blno_row_view_t_,
           typename blno_nnz_view_t_, typename clno_row_view_t_>
@@ -129,24 +145,26 @@ void spgemm_debug_symbolic(KernelHandle *handle,
   Kokkos::deep_copy(row_mapC, h_rmc);
   Kokkos::fence();
 }
+#endif
 
 template <typename KernelHandle, typename alno_row_view_t_,
           typename alno_nnz_view_t_, typename ascalar_nnz_view_t_,
           typename blno_row_view_t_, typename blno_nnz_view_t_,
           typename bscalar_nnz_view_t_, typename clno_row_view_t_,
           typename clno_nnz_view_t_, typename cscalar_nnz_view_t_>
-void spgemm_debug_numeric(KernelHandle * /* handle */,
-                          typename KernelHandle::nnz_lno_t m,
-                          typename KernelHandle::nnz_lno_t /* n */,
-                          typename KernelHandle::nnz_lno_t k,
-                          alno_row_view_t_ row_mapA, alno_nnz_view_t_ entriesA,
-                          ascalar_nnz_view_t_ valuesA,
+void bspgemm_debug_numeric(KernelHandle* /* handle */,
+                           typename KernelHandle::nnz_lno_t m,
+                           typename KernelHandle::nnz_lno_t /* n */,
+                           typename KernelHandle::nnz_lno_t k,
+                           typename KernelHandle::nnz_lno_t block_dim,
+                           alno_row_view_t_ row_mapA, alno_nnz_view_t_ entriesA,
+                           ascalar_nnz_view_t_ valuesA,
 
-                          bool /* transposeA */, blno_row_view_t_ row_mapB,
-                          blno_nnz_view_t_ entriesB,
-                          bscalar_nnz_view_t_ valuesB, bool /* transposeB */,
-                          clno_row_view_t_ row_mapC, clno_nnz_view_t_ entriesC,
-                          cscalar_nnz_view_t_ valuesC) {
+                           bool /* transposeA */, blno_row_view_t_ row_mapB,
+                           blno_nnz_view_t_ entriesB,
+                           bscalar_nnz_view_t_ valuesB, bool /* transposeB */,
+                           clno_row_view_t_ row_mapC, clno_nnz_view_t_ entriesC,
+                           cscalar_nnz_view_t_ valuesC) {
   typename alno_row_view_t_::HostMirror h_rma =
       Kokkos::create_mirror_view(row_mapA);
   Kokkos::deep_copy(h_rma, row_mapA);
@@ -179,8 +197,17 @@ void spgemm_debug_numeric(KernelHandle * /* handle */,
   typedef typename KernelHandle::nnz_lno_t lno_t;
   typedef typename KernelHandle::size_type size_type;
   typedef typename KernelHandle::nnz_scalar_t scalar_t;
+  typedef KokkosBatched::SerialGemmInternal<
+      KokkosBatched::Algo::Gemm::Unblocked>
+      GEMM;
 
-  std::vector<scalar_t> accumulator(k, 0);
+  const auto block_size = block_dim * block_dim;
+  const auto ZERO       = static_cast<scalar_t>(0);
+  const auto ONE        = static_cast<scalar_t>(1);
+
+  typename cscalar_nnz_view_t_::HostMirror accumulator("acc", k * block_size);
+  Kokkos::deep_copy(accumulator, ZERO);
+  Kokkos::fence();
   std::vector<bool> acc_flag(k, false);
 
   h_rmc(0) = 0;
@@ -194,33 +221,38 @@ void spgemm_debug_numeric(KernelHandle * /* handle */,
     lno_t c_row_size_counter = 0;
 
     for (lno_t j = 0; j < a_row_size; ++j) {
-      size_type ind               = a_row_begin + j;
-      lno_t col                   = h_enta(ind);
-      scalar_t val                = h_vala(ind);
+      size_type ind = a_row_begin + j;
+      lno_t col     = h_enta(ind);
+      auto a_val    = h_vala.data() + ind * block_size;  // valuesA(i, col)
       const size_type b_row_begin = h_rmb(col);
       const size_type b_row_end   = h_rmb(col + 1);
       lno_t b_row_size            = b_row_end - b_row_begin;
       for (lno_t z = 0; z < b_row_size; ++z) {
         size_type ind_ = b_row_begin + z;
         lno_t b_col    = h_entb(ind_);
-        scalar_t b_val = h_valb(ind_);
+        auto b_val = h_valb.data() + ind_ * block_size;  // valuesB(col, b_col)
 
         if (acc_flag[b_col] == false) {
           acc_flag[b_col]                            = true;
           h_entc(c_row_begin + c_row_size_counter++) = b_col;
         }
-        accumulator[b_col] += b_val * val;
+        // accumulator(b_col) += a_val * b_val
+        auto acc = get_block(accumulator, b_col, block_size);
+        GEMM::invoke(block_dim, block_dim, block_dim, ONE, a_val, block_dim, 1,
+                     b_val, block_dim, 1, ONE, acc.data(), block_dim, 1);
       }
     }
 
     // if (i == 0) std::cout << "result_cols" << std::endl;
 
     for (lno_t j = 0; j < c_row_size; ++j) {
-      size_type ind           = c_row_begin + j;
-      lno_t result_col        = h_entc(ind);
-      h_valc(ind)             = accumulator[result_col];
-      accumulator[result_col] = 0;
-      acc_flag[result_col]    = false;
+      size_type ind    = c_row_begin + j;
+      lno_t result_col = h_entc(ind);
+      auto acc         = get_block(accumulator, result_col, block_size);
+      Kokkos::deep_copy(get_block(h_valc, ind, block_size), acc);
+      Kokkos::deep_copy(acc, ZERO);
+      Kokkos::fence();
+      acc_flag[result_col] = false;
     }
   }
 

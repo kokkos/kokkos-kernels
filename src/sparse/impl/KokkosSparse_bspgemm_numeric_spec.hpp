@@ -55,7 +55,7 @@
 #include "KokkosSparse_spgemm_cuSPARSE_impl.hpp"
 #include "KokkosSparse_spgemm_CUSP_impl.hpp"
 #include "KokkosSparse_spgemm_impl.hpp"
-#include "KokkosSparse_spgemm_impl_seq.hpp"
+#include "KokkosSparse_bspgemm_impl_seq.hpp"
 #include "KokkosSparse_spgemm_mkl_impl.hpp"
 #include "KokkosSparse_spgemm_mkl2phase_impl.hpp"
 #include "KokkosSparse_spgemm_viennaCL_impl.hpp"
@@ -283,10 +283,9 @@ struct BSPGEMM_NUMERIC<
       } break;
       case SPGEMM_SERIAL:
       case SPGEMM_DEBUG:
-        spgemm_debug_numeric(handle, m, n, k, row_mapA, entriesA, valuesA,
-
-                             transposeA, row_mapB, entriesB, valuesB,
-                             transposeB, row_mapC, entriesC, valuesC);
+        bspgemm_debug_numeric(handle, m, n, k, blockDim, row_mapA, entriesA,
+                              valuesA, transposeA, row_mapB, entriesB, valuesB,
+                              transposeB, row_mapC, entriesC, valuesC);
         break;
     }
   }
