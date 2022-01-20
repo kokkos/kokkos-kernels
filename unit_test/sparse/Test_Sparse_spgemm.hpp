@@ -343,13 +343,13 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth,
       else
         res = run_spgemm<crsMat_t, device>(A, B, spgemm_algorithm, output_mat);
     } catch (const char *message) {
-      EXPECT_TRUE(is_expected_to_fail) << algo;
+      EXPECT_TRUE(is_expected_to_fail) << algo << ": " << message;
       failed = true;
     } catch (std::string message) {
-      EXPECT_TRUE(is_expected_to_fail) << algo;
+      EXPECT_TRUE(is_expected_to_fail) << algo << ": " << message;
       failed = true;
     } catch (std::exception &e) {
-      EXPECT_TRUE(is_expected_to_fail) << algo;
+      EXPECT_TRUE(is_expected_to_fail) << algo << ": " << e.what();
       failed = true;
     }
     EXPECT_TRUE((failed == is_expected_to_fail));

@@ -260,9 +260,35 @@ inline void kk_get_free_total_memory<Kokkos::Experimental::SYCLSharedUSMSpace>(
 }
 #endif
 
+template <typename ExecSpace>
+inline int kk_get_max_vector_size() {
+  return Kokkos::TeamPolicy<ExecSpace>::vector_length_max();
+}
+
+#ifdef KOKKOS_ENABLE_SYCL
+template <>
+inline int kk_get_max_vector_size<Kokkos::Experimental::SYCL>() {
+  // FIXME SYCL: hardcoding to 8 is a workaround that seems to work for all
+  // kernels. Wait for max subgroup size query to be fixed in SYCL and/or
+  // Kokkos. Then TeamPolicy::vector_length_max() can be used for all
+  // backends.
+  return 8;
+}
+#endif
+
 inline int kk_get_suggested_vector_size(const size_t nr, const size_t nnz,
                                         const ExecSpaceType exec_space) {
   int suggested_vector_size_ = 1;
+  int max_vector_size        = 1;
+  switch (exec_space) {
+    case Exec_CUDA: max_vector_size = 32; break;
+    case Exec_HIP: max_vector_size = 64; break;
+    case Exec_SYCL:
+      // FIXME SYCL: same as above - 8 is a workaround
+      max_vector_size = 8;
+      break;
+    default:;
+  }
   switch (exec_space) {
     default: break;
     case Exec_SERIAL:
@@ -270,6 +296,7 @@ inline int kk_get_suggested_vector_size(const size_t nr, const size_t nnz,
     case Exec_THREADS: break;
     case Exec_CUDA:
     case Exec_HIP:
+    case Exec_SYCL:
       if (nr > 0) suggested_vector_size_ = nnz / double(nr) + 0.5;
       if (suggested_vector_size_ < 3) {
         suggested_vector_size_ = 2;
@@ -279,15 +306,13 @@ inline int kk_get_suggested_vector_size(const size_t nr, const size_t nnz,
         suggested_vector_size_ = 8;
       } else if (suggested_vector_size_ <= 24) {
         suggested_vector_size_ = 16;
+      } else if (suggested_vector_size_ <= 48) {
+        suggested_vector_size_ = 32;
       } else {
-        if (exec_space == Exec_CUDA || suggested_vector_size_ <= 48) {
-          // use full CUDA warp, or half a HIP wavefront
-          suggested_vector_size_ = 32;
-        } else {
-          // use full HIP wavefront
-          suggested_vector_size_ = 64;
-        }
+        suggested_vector_size_ = 64;
       }
+      if (suggested_vector_size_ > max_vector_size)
+        suggested_vector_size_ = max_vector_size;
       break;
   }
   return suggested_vector_size_;
@@ -295,7 +320,8 @@ inline int kk_get_suggested_vector_size(const size_t nr, const size_t nnz,
 
 inline int kk_get_suggested_team_size(const int vector_size,
                                       const ExecSpaceType exec_space) {
-  if (exec_space == Exec_CUDA || exec_space == Exec_HIP) {
+  if (exec_space == Exec_CUDA || exec_space == Exec_HIP ||
+      exec_space == Exec_SYCL) {
     // TODO: where this is used, tune the target value for
     // threads per block (but 256 is probably OK for CUDA and HIP)
     return 256 / vector_size;
