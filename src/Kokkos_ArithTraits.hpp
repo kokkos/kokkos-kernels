@@ -1450,7 +1450,6 @@ class ArithTraits<double> {
 // CUDA and HIP do not support long double in device functions,
 // so none of the class methods in this specialization are marked
 // as device functions.
-#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
 template <>
 class ArithTraits<long double> {
  public:
@@ -1532,8 +1531,7 @@ class ArithTraits<long double> {
   static mag_type rmin() { return LDBL_MIN; }
   static int emax() { return LDBL_MAX_EXP; }
   static mag_type rmax() { return LDBL_MAX; }
-};      // long double specialization
-#endif  // KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
+};  // long double specialization
 
 #ifdef HAVE_KOKKOSKERNELS_QUADMATH
 

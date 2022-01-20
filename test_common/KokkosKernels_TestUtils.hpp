@@ -435,27 +435,27 @@ struct SharedParamTag {
 
 /// \brief value_type_name returns a string with the value type name
 template <typename T>
-KOKKOS_INLINE_FUNCTION std::string value_type_name() {
+std::string value_type_name() {
   return "::UnknownValueType";
 }
 
 template <>
-KOKKOS_INLINE_FUNCTION std::string value_type_name<float>() {
+std::string value_type_name<float>() {
   return "::Float";
 }
 
 template <>
-KOKKOS_INLINE_FUNCTION std::string value_type_name<double>() {
+std::string value_type_name<double>() {
   return "::Double";
 }
 
 template <>
-KOKKOS_INLINE_FUNCTION std::string value_type_name<Kokkos::complex<float>>() {
+std::string value_type_name<Kokkos::complex<float>>() {
   return "::ComplexFloat";
 }
 
 template <>
-KOKKOS_INLINE_FUNCTION std::string value_type_name<Kokkos::complex<double>>() {
+std::string value_type_name<Kokkos::complex<double>>() {
   return "::ComplexDouble";
 }
 }  // namespace Test
