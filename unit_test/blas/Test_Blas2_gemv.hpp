@@ -237,8 +237,6 @@ TEST_F(TestCategory, gemv_float) {
 }
 #endif
 
-// FIXME_SYCL Warp Invalid Address Space.
-#ifndef KOKKOS_ENABLE_SYCL
 #if defined(KOKKOSKERNELS_INST_DOUBLE) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&  \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -251,7 +249,6 @@ TEST_F(TestCategory, gemv_double) {
   test_gemv<double, double, double, TestExecSpace>("T");
   Kokkos::Profiling::popRegion();
 }
-#endif
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || \
