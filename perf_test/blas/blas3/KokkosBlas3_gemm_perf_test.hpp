@@ -2353,9 +2353,8 @@ void do_gemm_serial_batched_compact_mkl_parallel(options_t options) {
   return;
 }
 #else
-void do_gemm_serial_batched_compact_mkl_parallel(options_t options) {
+void do_gemm_serial_batched_compact_mkl_parallel(options_t) {
   STATUS;
-  options.use_simd = true;
 #if !defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL__)
   std::cerr
       << std::string(__func__)
