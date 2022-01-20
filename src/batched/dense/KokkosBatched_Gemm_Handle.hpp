@@ -172,9 +172,7 @@ class BatchedGemmHandle : public BatchedKernelHandle {
 #endif  // MAGMA
 
   decltype(auto) get_tpl_params() {
-#if _kernelAlgoType == ARMPL && defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
-    return &_tplParamsSingleton.ninter;
-#elif _kernelAlgoType == CUBLAS && defined(KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
+#if _kernelAlgoType == CUBLAS && defined(KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
     return _tplParamsSingleton.cublas_handle;
 #elif _kernelAlgoType == MAGMA && defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA)
     return _tplParamsSingleton.magma_queue;

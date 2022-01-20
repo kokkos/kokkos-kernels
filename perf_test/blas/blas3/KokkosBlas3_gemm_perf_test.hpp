@@ -1511,9 +1511,7 @@ void __do_gemm_parallel_experiment6(options_t /*options*/,
 template <class TransAType, class TransBType, class BlockingType,
           class device_type>
 void __do_gemm_armpl(options_t options, gemm_args_t gemm_args) {
-#if defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
-  using execution_space = typename device_type::execution_space;
-
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL) && ARMPL_BUILD >= 1058
   uint32_t warm_up_n = options.warm_up_n;
   uint32_t n         = options.n;
   Kokkos::Timer timer;

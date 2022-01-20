@@ -175,11 +175,11 @@ class BatchedKernelHandle {
   BatchedKernelHandle(int kernelAlgoType = BaseHeuristicAlgos::SQUARE,
                       int teamSize = 0, int vecLength = 0)
       : teamSz(teamSize), vecLen(vecLength), _kernelAlgoType(kernelAlgoType) {
-#if !defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
+#if !defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL) || ARMPL_BUILD < 1058
     if (_kernelAlgoType == BaseTplAlgos::ARMPL) {
       std::ostringstream os;
       os << "KokkosBatched::BatchedKernelHandle requires "
-            "KOKKOSKERNELS_ENABLE_TPL_ARMPL"
+            "KOKKOSKERNELS_ENABLE_TPL_ARMPL and armpl version 21.0.0+"
          << std::endl;
       Kokkos::Impl::throw_runtime_exception(os.str());
     }
@@ -194,7 +194,7 @@ class BatchedKernelHandle {
 
   decltype(auto) get_tpl_params() const {
 #if _kernelAlgoType == ARMPL && defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
-    return "BaseTplAlgos::ARMPL does not support any tpl parameters";
+    return &_tplParamsSingleton.ninter;
 #elif _kernelAlgoType == MKL && defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
     return "BaseTplAlgos::MKL does not support any tpl parameters";
 #else

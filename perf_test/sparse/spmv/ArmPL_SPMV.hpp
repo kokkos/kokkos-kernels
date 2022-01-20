@@ -71,7 +71,7 @@ void armpl_matvec_wrapper(armpl_spmat_t A, double* x, double* y) {
 
 template <typename AType, typename XType, typename YType>
 void armpl_matvec(AType /*A*/, XType x, YType y, spmv_additional_data* data) {
-  using Scalar = typename AType::non_const_value_type;
+  // using Scalar = typename AType::non_const_value_type;
   // Run armpl spmv corresponding to scalar type
   armpl_matvec_wrapper(data->A, x.data(), y.data());
 }

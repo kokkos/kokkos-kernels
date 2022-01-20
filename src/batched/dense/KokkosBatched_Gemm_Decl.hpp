@@ -577,7 +577,7 @@ int BatchedGemm(BatchedGemmHandleType *const handle, const ScalarType alpha,
       //
       //    case BaseHeuristicAlgos::WIDE:
       ////////////// TPL ALGOS //////////////
-#if defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL) && ARMPL_BUILD >= 1058
     case BaseTplAlgos::ARMPL:
       ret = Impl::BatchedArmplGemm<ArgTransA, ArgTransB, ArgBatchSzDim,
                                    BatchedGemmHandleType, ScalarType, AViewType,

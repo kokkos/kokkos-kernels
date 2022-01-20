@@ -121,10 +121,13 @@ void impl_test_batched_gemm_with_handle(BatchedGemmHandle* batchedGemmHandle,
     if (algo_type == BaseHeuristicAlgos::SQUARE && matCdim1 != matCdim2) {
       ;
     } else if (algo_type == BaseTplAlgos::ARMPL) {
-#if defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
-      // No runtime errors expected since double is a supported type.
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL) && ARMPL_BUILD >= 1058
+      auto ninter = batchedGemmHandle->get_tpl_params()[0];
+      // No runtime errors expected since layout is valid, double is a supported
+      // type, and ninter != 0
       if (!is_invalid_layout &&
-          std::is_same<typename ViewType::value_type, double>::value) {
+          std::is_same<typename ViewType::value_type, double>::value &&
+          ninter != 0) {
         FAIL() << (error_msg + fmsg + fmsg_rhs);
       }
 #else
@@ -280,7 +283,7 @@ void impl_test_batched_gemm(const int N, const int matAdim1, const int matAdim2,
           }
         }
       } catch (const std::runtime_error& error) {
-#if !defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
+#if !defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL) || (ARMPL_BUILD < 1058)
         if (algo_type == BaseTplAlgos::ARMPL) {
           ;
         } else {
