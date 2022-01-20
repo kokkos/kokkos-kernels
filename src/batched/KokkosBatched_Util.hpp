@@ -17,13 +17,10 @@
 
 #include <complex>
 
-#include "Kokkos_Core.hpp"
 #include "Kokkos_Complex.hpp"
-#include "Kokkos_ArithTraits.hpp"
-#include "Kokkos_Timer.hpp"
 
 #include "KokkosKernels_config.h"
-#include "KokkosKernels_Utils.hpp"
+#include "KokkosKernels_SimpleUtils.hpp"
 
 // TPL macros
 #if defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
