@@ -75,9 +75,7 @@ KOKKOS_INLINE_FUNCTION int SerialGemvInternal<Algo::Gemv::Blocked>::invoke(
   // y = beta y + alpha A x
   // y (m), A(m x n), B(n)
 
-  enum : int {
-    mbAlgo = Algo::Gemv::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
-  };
+  constexpr int mbAlgo = Algo::Gemv::Blocked::mb();
 
   if (beta == zero)
     SerialSetInternal ::invoke(m, zero, y, ys0);

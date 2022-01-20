@@ -37,8 +37,7 @@ class Vector<SIMD<T>, l> {
 
  public:
   KOKKOS_INLINE_FUNCTION Vector() {
-    // static_assert(std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-    //              "Vector SIMD should not be instanciated in CudaSpace");
+    // NOTE Not meant to be instantiated for CUDA
 #if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
 #pragma ivdep
 #endif

@@ -8,9 +8,6 @@
 
 namespace KokkosBatched {
 
-//#define KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(A) typename
-// std::enable_if<std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,A
-//>::type
 #define KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(T, l) Vector<SIMD<T>, l>
 #define KOKKOSKERNELS_SIMD_ARITH_RETURN_REFERENCE_TYPE(T, l) \
   Vector<SIMD<T>, l> &

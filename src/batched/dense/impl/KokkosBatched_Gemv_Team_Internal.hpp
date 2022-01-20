@@ -75,9 +75,7 @@ KOKKOS_INLINE_FUNCTION int TeamGemvInternal<Algo::Gemv::Blocked>::invoke(
   // y = beta y + alpha A x
   // y (m), A(m x n), B(n)
 
-  enum : int {
-    mbAlgo = Algo::Gemv::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
-  };
+  constexpr int mbAlgo = Algo::Gemv::Blocked::mb();
 
   if (beta == zero)
     TeamSetInternal ::invoke(member, m, zero, y, ys0);
