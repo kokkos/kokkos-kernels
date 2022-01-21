@@ -196,7 +196,10 @@ struct GEMM {
                        24000)
                           ? 4
                           : 16;
-      static constexpr int vector_length = blockB1 / 4;
+      int vector_length     = blockB1 / 4;
+      int max_vector_length = KokkosKernels::Impl::kk_get_max_vector_size<
+          typename CViewType::execution_space>();
+      if (vector_length > max_vector_length) vector_length = max_vector_length;
 
       // Compute scratch space size
       typedef KokkosBlas::Impl::GEMMImpl<typename CViewType::execution_space,
@@ -224,6 +227,11 @@ struct GEMM {
 #if defined(KOKKOS_ENABLE_ROCM)
       if (std::is_same<typename CViewType::execution_space,
                        Kokkos::ROCm>::value)
+        team_size = blockA0;
+#endif
+#if defined(KOKKOS_ENABLE_SYCL)
+      if (std::is_same<typename CViewType::execution_space,
+                       Kokkos::Experimental::SYCL>::value)
         team_size = blockA0;
 #endif
 

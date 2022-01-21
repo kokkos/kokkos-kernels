@@ -238,7 +238,8 @@ struct Functor_BatchedVanillaGEMM {
     Kokkos::parallel_for(
         "Test::VanillaGEMM",
         Kokkos::TeamPolicy<ExecutionSpace>(
-            batch_size_last_dim ? C.extent(2) : C.extent(0), Kokkos::AUTO, 16),
+            batch_size_last_dim ? C.extent(2) : C.extent(0), Kokkos::AUTO,
+            KokkosKernels::Impl::kk_get_max_vector_size<ExecutionSpace>()),
         *this);
   }
 };
