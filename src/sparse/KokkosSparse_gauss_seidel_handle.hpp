@@ -42,7 +42,6 @@
 //@HEADER
 */
 
-#include <Kokkos_MemoryTraits.hpp>
 #include <Kokkos_Core.hpp>
 #include <KokkosKernels_Utils.hpp>
 // needed for two-stage/classical GS

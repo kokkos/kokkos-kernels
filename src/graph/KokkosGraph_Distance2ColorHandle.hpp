@@ -47,8 +47,6 @@
 
 #include <KokkosKernels_Utils.hpp>
 #include <Kokkos_Core.hpp>
-#include <Kokkos_MemoryTraits.hpp>
-#include <KokkosKernels_Error.hpp>
 
 #ifndef _GRAPHCOLORDISTANCE2HANDLE_HPP
 #define _GRAPHCOLORDISTANCE2HANDLE_HPP

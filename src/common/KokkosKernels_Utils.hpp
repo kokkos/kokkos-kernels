@@ -42,9 +42,6 @@
 //@HEADER
 */
 #include "Kokkos_Core.hpp"
-#include "Kokkos_Atomic.hpp"
-#include "Kokkos_Timer.hpp"
-#include "Kokkos_MemoryTraits.hpp"
 #include "Kokkos_ArithTraits.hpp"
 #include "Kokkos_UnorderedMap.hpp"
 #include <iostream>

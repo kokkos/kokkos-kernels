@@ -50,17 +50,13 @@
 #include <vector>
 #include <type_traits>
 
-#include <Kokkos_Atomic.hpp>
 #include <Kokkos_Core.hpp>
-#include <Kokkos_MemoryTraits.hpp>
 #include <Kokkos_UniqueToken.hpp>
 
 #include <KokkosKernels_Uniform_Initialized_MemoryPool.hpp>
 #include <KokkosKernels_HashmapAccumulator.hpp>
 #include <KokkosSparse_spgemm.hpp>
 #include <KokkosKernels_BitUtils.hpp>
-
-#include <Kokkos_Timer.hpp>
 
 #include "KokkosGraph_Distance1Color.hpp"
 #include "KokkosGraph_Distance1ColorHandle.hpp"  // todo: remove this  (SCAFFOLDING - WCMCLEN)
