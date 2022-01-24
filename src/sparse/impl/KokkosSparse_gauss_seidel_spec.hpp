@@ -44,8 +44,6 @@
 #ifndef KOKKOSSPARSE_IMPL_GAUSS_SEIDEL_SPEC_HPP_
 #define KOKKOSSPARSE_IMPL_GAUSS_SEIDEL_SPEC_HPP_
 
-// #define KOKKOSSPARSE_IMPL_PRINTDEBUG true
-
 #include <KokkosKernels_config.h>
 
 #include <Kokkos_Core.hpp>
