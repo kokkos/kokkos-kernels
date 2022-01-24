@@ -88,16 +88,10 @@ struct GSTestParams {
   scalar_t omega   = 0.9;
   mag_t tolerance  = 1e-7;  // relative error for solution x vector
 
-  // variants to cover
-  std::vector<GSAlgorithm> gs_algorithms = {
-      GS_DEFAULT,  // == GS_TEAM
-#if 0
-      GS_PERMUTED, // == GS_DEFAULT for blocks
-      GS_TWOSTAGE, // blocks not supported (yet?)
-      GS_CLUSTER,  // not compatible with blocks
-#endif
-  };
-  std::vector<size_t> shmem_sizes = {
+  // Note: GS_DEFAULT is same as GS_TEAM and - for blocks - as GS_PERMUTED
+  // Note: GS_TWOSTAGE and GS_CLUSTER are not supported for blocks
+  std::vector<GSAlgorithm> gs_algorithms = {GS_DEFAULT};
+  std::vector<size_t> shmem_sizes        = {
       32128,
       2008  // make the shmem small on gpus so that it will test 2 level
             // algorithm.
