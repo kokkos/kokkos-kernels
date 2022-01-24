@@ -368,6 +368,49 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz,
   // device::execution_space::finalize();
 }
 
+template <SparseMatrixFormat mtx_format, typename scalar_t, typename lno_t,
+          typename size_type, typename device>
+void test_sgs_zero_rows() {
+  using namespace Test;
+  typedef
+      typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>
+          crsMat_t;
+  typedef typename crsMat_t::StaticCrsGraphType graph_t;
+  typedef typename graph_t::row_map_type::non_const_type row_map_type;
+  typedef typename graph_t::entries_type::non_const_type entries_type;
+  typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
+  typedef KokkosKernelsHandle<
+      size_type, lno_t, scalar_t, typename device::execution_space,
+      typename device::memory_space, typename device::memory_space>
+      KernelHandle;
+  // The rowmap of a zero-row matrix can be length 0 or 1, so Gauss-Seidel
+  // should work with both (the setup and apply are essentially no-ops but they
+  // shouldn't crash or throw exceptions) For this test, create size-0 and
+  // size-1
+  // rowmaps separately, and make sure each work with both point and cluster
+  for (int rowmapLen = 0; rowmapLen < 2; rowmapLen++) {
+    KernelHandle kh;
+    kh.create_gs_handle(GS_DEFAULT);
+    const lno_t block_size = 1;  // irrelevant (no values here)
+    // initialized to 0
+    row_map_type rowmap("Rowmap", rowmapLen);
+    entries_type entries("Entries", 0);
+    scalar_view_t values("Values", 0);
+    // also, make sure graph symmetrization doesn't crash on zero rows
+    block_gauss_seidel_symbolic(&kh, 0, 0, block_size, rowmap,
+                                entries, false);
+    block_gauss_seidel_numeric<mtx_format>(&kh, 0, 0, block_size,
+                                           rowmap, entries, values, false);
+    scalar_view_t x("X", 0);
+    scalar_view_t y("Y", 0);
+    scalar_t omega(0.9);
+    symmetric_block_gauss_seidel_apply<mtx_format>(
+        &kh, 0, 0, block_size, rowmap, entries, values, x, y,
+        false, true, omega, 3);
+    kh.destroy_gs_handle();
+  }
+}
+
 #define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                                    \
   TEST_F(                                                                                \
       TestCategory,                                                                      \
@@ -383,6 +426,11 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz,
   }                                                                                      \
   TEST_F(                                                                                \
       TestCategory,                                                                      \
+      sparse_blockcrs_gauss_seidel_zero_rows_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {   \
+    test_sgs_zero_rows<BlockCRS, SCALAR, ORDINAL, OFFSET, DEVICE>();                \
+  }                                                                                      \
+  TEST_F(                                                                                \
+      TestCategory,                                                                      \
       sparse_bsr_gauss_seidel_rank1_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {        \
     test_block_gauss_seidel_rank1<BSR, SCALAR, ORDINAL, OFFSET, DEVICE>(                 \
         500, 500 * 10, 70, 3);                                                           \
@@ -392,6 +440,11 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz,
       sparse_bsr_gauss_seidel_rank2_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {        \
     test_block_gauss_seidel_rank2<BSR, SCALAR, ORDINAL, OFFSET, DEVICE>(                 \
         500, 500 * 10, 70, 3);                                                           \
+  }                                                                                      \
+  TEST_F(                                                                                \
+      TestCategory,                                                                      \
+      sparse_bsr_gauss_seidel_zero_rows_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {        \
+    test_sgs_zero_rows<BSR, SCALAR, ORDINAL, OFFSET, DEVICE>();                     \
   }
 
 #if (defined(KOKKOSKERNELS_INST_DOUBLE) &&      \
