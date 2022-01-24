@@ -370,7 +370,7 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz,
 
 template <SparseMatrixFormat mtx_format, typename scalar_t, typename lno_t,
           typename size_type, typename device>
-void test_sgs_zero_rows() {
+void test_block_gauss_seidel_empty() {
   using namespace Test;
   typedef
       typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>
@@ -386,26 +386,27 @@ void test_sgs_zero_rows() {
   // The rowmap of a zero-row matrix can be length 0 or 1, so Gauss-Seidel
   // should work with both (the setup and apply are essentially no-ops but they
   // shouldn't crash or throw exceptions) For this test, create size-0 and
-  // size-1
-  // rowmaps separately, and make sure each work with both point and cluster
-  for (int rowmapLen = 0; rowmapLen < 2; rowmapLen++) {
+  // size-1 rowmaps separately. Check also 5x5 matrix with empty rows (0-nnz),
+  // which can trigger different bugs.
+  for (const int rowmapLen : {0, 1, 5}) {
     KernelHandle kh;
     kh.create_gs_handle(GS_DEFAULT);
+    const auto num_rows    = KOKKOSKERNELS_MACRO_MAX(0, rowmapLen - 1);
     const lno_t block_size = 1;  // irrelevant (no values here)
     // initialized to 0
     row_map_type rowmap("Rowmap", rowmapLen);
     entries_type entries("Entries", 0);
     scalar_view_t values("Values", 0);
     // also, make sure graph symmetrization doesn't crash on zero rows
-    block_gauss_seidel_symbolic(&kh, 0, 0, block_size, rowmap,
+    block_gauss_seidel_symbolic(&kh, num_rows, num_rows, block_size, rowmap,
                                 entries, false);
-    block_gauss_seidel_numeric<mtx_format>(&kh, 0, 0, block_size,
+    block_gauss_seidel_numeric<mtx_format>(&kh, num_rows, num_rows, block_size,
                                            rowmap, entries, values, false);
-    scalar_view_t x("X", 0);
-    scalar_view_t y("Y", 0);
+    scalar_view_t x("X", num_rows);
+    scalar_view_t y("Y", num_rows);
     scalar_t omega(0.9);
     symmetric_block_gauss_seidel_apply<mtx_format>(
-        &kh, 0, 0, block_size, rowmap, entries, values, x, y,
+        &kh, num_rows, num_rows, block_size, rowmap, entries, values, x, y,
         false, true, omega, 3);
     kh.destroy_gs_handle();
   }
@@ -426,8 +427,9 @@ void test_sgs_zero_rows() {
   }                                                                                      \
   TEST_F(                                                                                \
       TestCategory,                                                                      \
-      sparse_blockcrs_gauss_seidel_zero_rows_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {   \
-    test_sgs_zero_rows<BlockCRS, SCALAR, ORDINAL, OFFSET, DEVICE>();                \
+      sparse_blockcrs_gauss_seidel_empty_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {   \
+    test_block_gauss_seidel_empty<BlockCRS, SCALAR, ORDINAL, OFFSET,                     \
+                                  DEVICE>();                                             \
   }                                                                                      \
   TEST_F(                                                                                \
       TestCategory,                                                                      \
@@ -443,8 +445,8 @@ void test_sgs_zero_rows() {
   }                                                                                      \
   TEST_F(                                                                                \
       TestCategory,                                                                      \
-      sparse_bsr_gauss_seidel_zero_rows_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {        \
-    test_sgs_zero_rows<BSR, SCALAR, ORDINAL, OFFSET, DEVICE>();                     \
+      sparse_bsr_gauss_seidel_empty_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {        \
+    test_block_gauss_seidel_empty<BSR, SCALAR, ORDINAL, OFFSET, DEVICE>();               \
   }
 
 #if (defined(KOKKOSKERNELS_INST_DOUBLE) &&      \
