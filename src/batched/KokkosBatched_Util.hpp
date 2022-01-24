@@ -368,7 +368,7 @@ struct Algo {
       // - space (gpu vs host)
       // - blocksize input (blk <= 4 mb = 2, otherwise mb = 4), etc.
 #if defined(KOKKOS_IF_ON_HOST)
-      static constexpr KOKKKOS_FUNCTION int mb() {
+      static constexpr KOKKOS_FUNCTION int mb() {
         KOKKOS_IF_ON_HOST((return 4;))
         KOKKOS_IF_ON_DEVICE((return 2;))
       }
@@ -418,7 +418,7 @@ struct Algo {
       // - space (cuda vs host)
       // - blocksize input (blk <= 4 mb = 2, otherwise mb = 4), etc.
 #if defined(KOKKOS_IF_ON_HOST)
-      static constexpr KOKKKOS_FUNCTION int mb() {
+      static constexpr KOKKOS_FUNCTION int mb() {
         KOKKOS_IF_ON_HOST((return 4;))
         KOKKOS_IF_ON_DEVICE((return 1;))
       }
