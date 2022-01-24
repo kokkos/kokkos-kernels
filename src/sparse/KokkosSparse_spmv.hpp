@@ -57,7 +57,6 @@
 #include "KokkosSparse_BlockCrsMatrix.hpp"
 #include "KokkosBlas1_scal.hpp"
 #include "KokkosKernels_Utils.hpp"
-#include "KokkosKernels_MemSpaceUtils.hpp"
 #include "KokkosKernels_Error.hpp"
 
 namespace KokkosSparse {
