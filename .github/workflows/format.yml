@@ -22,8 +22,10 @@ jobs:
 
           # For every file changed, apply clang-format
           for file in $(git diff --name-only origin/$GITHUB_BASE_REF | egrep '.*\.cpp$|.*\.hpp$|.*\.h$'); do
-            clang-format-8 -i -style=file $file
-            git add $file
+            if [ -e $file ]; then
+              clang-format-8 -i -style=file $file
+              git add $file
+            fi
           done
 
           # If any diffs exist, error out
