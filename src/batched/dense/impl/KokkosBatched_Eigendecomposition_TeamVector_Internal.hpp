@@ -77,8 +77,8 @@ struct TeamVectorEigendecompositionInternal {
     //
     // DO THIS INSTEAD
     //
-    //     KOKKOS_IF_HOST((<host code>))
-    //     KOKKOS_IF_DEVICE((<device code>))
+    //     KOKKOS_IF_ON_HOST((<host code>))
+    //     KOKKOS_IF_ON_DEVICE((<device code>))
     //
 #if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
     if (as0 == 1 || as1 == 1) {
