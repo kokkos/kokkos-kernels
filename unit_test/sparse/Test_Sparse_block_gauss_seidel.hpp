@@ -98,6 +98,8 @@ struct GSTestParams {
   };
   std::vector<GSApplyType> apply_types = {symmetric, forward_sweep,
                                           backward_sweep};
+
+  GSTestParams() = default;
 };
 
 template <typename mtx_t, typename vector_t, typename const_vector_t>
