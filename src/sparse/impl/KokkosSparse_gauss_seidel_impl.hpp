@@ -62,7 +62,7 @@ namespace Impl {
 
 template <typename HandleType, typename lno_row_view_t_,
           typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
-          KokkosKernels::SparseMatrixFormat format = KokkosKernels::BlockCRS>
+          KokkosKernels::SparseMatrixFormat format = KokkosKernels::CRS>
 class PointGaussSeidel {
  public:
   typedef lno_row_view_t_ in_lno_row_view_t;

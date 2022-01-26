@@ -59,9 +59,11 @@
 namespace KokkosKernels {
 
 enum SparseMatrixFormat {
-  /* CRS, */
   BlockCRS,
   BSR,
+  CRS = BlockCRS,  // convenience alias: for block_size=1 or no-blocks there is
+                   // no difference in value ordering (so the format tag becomes
+                   // irrelevant)
 };
 
 namespace Impl {
@@ -2066,7 +2068,7 @@ template <typename scalar_t, typename lno_t, typename device,
           typename mem_traits, typename size_type>
 struct MatrixTraits<
     KokkosSparse::CrsMatrix<scalar_t, lno_t, device, mem_traits, size_type>> {
-  static constexpr auto format = KokkosKernels::BlockCRS;
+  static constexpr auto format = KokkosKernels::CRS;
 };
 
 template <typename scalar_t, typename lno_t, typename device,
