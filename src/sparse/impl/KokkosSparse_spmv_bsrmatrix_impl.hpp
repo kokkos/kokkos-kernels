@@ -1510,7 +1510,7 @@ struct BSR_GEMM_Transpose_Functor {
               m_A.values, m_A.graph.entries, block_dim, count, start);
           const auto nrhs = m_x.extent(1);
           //
-          for (ordinal_type ic = 0; ic < nrhs; ++ic) {
+          for (size_t ic = 0; ic < nrhs; ++ic) {
             for (ordinal_type ir = 0; ir < block_dim; ++ir) {
               Kokkos::parallel_for(
                   Kokkos::ThreadVectorRange(dev, count),
