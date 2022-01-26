@@ -50,6 +50,7 @@
 #include <vector>
 #include "KokkosKernels_PrintUtils.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
+#include "KokkosSparse_BlockCrsMatrix.hpp"
 #include "KokkosSparse_BsrMatrix.hpp"
 
 #ifdef KOKKOSKERNELS_HAVE_PARALLEL_GNUSORT
@@ -2073,6 +2074,13 @@ struct MatrixTraits<
 
 template <typename scalar_t, typename lno_t, typename device,
           typename mem_traits, typename size_type>
+struct MatrixTraits<KokkosSparse::Experimental::BlockCrsMatrix<
+    scalar_t, lno_t, device, mem_traits, size_type>> {
+  static constexpr auto format = KokkosKernels::BlockCRS;
+};
+
+template <typename scalar_t, typename lno_t, typename device,
+          typename mem_traits, typename size_type>
 struct MatrixTraits<KokkosSparse::Experimental::BsrMatrix<
     scalar_t, lno_t, device, mem_traits, size_type>> {
   static constexpr auto format = KokkosKernels::BSR;
@@ -2086,26 +2094,14 @@ struct MatrixConverter<BlockCRS> {
   template <
       typename scalar_t, typename lno_t, typename device, typename size_type,
       typename crsMat_t =
-          KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>>
-  static crsMat_t from_crs(
-      const std::string &label,
+          KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>,
+      typename blockCrsMat_t = KokkosSparse::Experimental::BlockCrsMatrix<
+          scalar_t, lno_t, device, void, size_type>>
+  static blockCrsMat_t from_crs(
       const KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>
           &mtx,
       lno_t block_size) {
-    using graph_t        = typename crsMat_t::StaticCrsGraphType;
-    using lno_view_t     = typename graph_t::row_map_type::non_const_type;
-    using lno_nnz_view_t = typename graph_t::entries_type::non_const_type;
-    using scalar_view_t  = typename crsMat_t::values_type::non_const_type;
-    lno_view_t rows;
-    lno_nnz_view_t entries;
-    scalar_view_t vals;
-    size_t num_rows, num_cols;
-
-    KokkosKernels::Impl::kk_create_blockcrs_from_blockcrs_formatted_point_crs(
-        block_size, mtx.numRows(), mtx.numCols(), mtx.graph.row_map,
-        mtx.graph.entries, mtx.values, num_rows, num_cols, rows, entries, vals);
-
-    return crsMat_t(label, num_cols, vals, graph_t(entries, rows));
+    return blockCrsMat_t(mtx, block_size);
   }
 };
 
@@ -2116,7 +2112,6 @@ struct MatrixConverter<BSR> {
             typename bsrMtx_t = KokkosSparse::Experimental::BsrMatrix<
                 scalar_t, lno_t, device, void, size_type>>
   static bsrMtx_t from_crs(
-      const std::string & /* label */,
       const KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>
           &mtx,
       lno_t block_size) {
