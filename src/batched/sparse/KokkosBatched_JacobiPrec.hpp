@@ -146,7 +146,10 @@ class JacobiPrec {
   KOKKOS_INLINE_FUNCTION void apply(const MemberType &member,
                                     const XViewType &X,
                                     const YViewType &Y) const {
-    if (!computed_inverse) this->computeInverse<MemberType, ArgMode>(member);
+    if (!computed_inverse) {
+      this->computeInverse<MemberType, ArgMode>(member);
+      member.team_barrier();  // Finish writing to this->diag_values
+    }
 
     KokkosBatched::HadamardProduct<MemberType, ArgMode>::template invoke<
         ValuesViewType, XViewType, YViewType>(member, diag_values, X, Y);
