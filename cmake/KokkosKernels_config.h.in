@@ -8,6 +8,9 @@
 #endif
 // clang-format on
 
+/* Define the current version of Kokkos Kernels */
+#cmakedefine KOKKOSKERNELS_VERSION @KOKKOSKERNELS_VERSION@
+
 /* Define if fortran blas 1 function can return complex type */
 #cmakedefine KOKKOSKERNELS_TPL_BLAS_RETURN_COMPLEX
 
