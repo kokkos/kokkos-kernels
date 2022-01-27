@@ -48,21 +48,12 @@
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ARMPL
 #include <armpl.h>
 
-// template <typename Scalar>
-// void armpl_matvec_wrapper(armpl_spmat_t A, Scalar* x, Scalar* y) {
-//  throw std::runtime_error(
-//      "Can't use ArmPL mat-vec for scalar types other than double and
-//      float.");
-//}
-
-// template <>
 void armpl_matvec_wrapper(armpl_spmat_t A, float* x, float* y) {
   const float alpha = 1.0;
   const float beta  = 0.0;
   armpl_spmv_exec_s(ARMPL_SPARSE_OPERATION_NOTRANS, alpha, A, x, beta, y);
 }
 
-// template <>
 void armpl_matvec_wrapper(armpl_spmat_t A, double* x, double* y) {
   const double alpha = 1.0;
   const double beta  = 0.0;
