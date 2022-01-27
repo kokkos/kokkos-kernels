@@ -49,6 +49,7 @@
 #include "KokkosKernels_Macros.hpp"
 #include "KokkosBlas3_trsm_spec.hpp"
 #include "KokkosKernels_helpers.hpp"
+#include "KokkosKernels_Error.hpp"
 #include <sstream>
 #include <type_traits>
 
@@ -108,14 +109,14 @@ void trsm(const char side[], const char uplo[], const char trans[],
     os << "KokkosBlas::trsm: side = '" << side[0] << "'. "
        << "Valid values include 'L' or 'l' (A is on the left of X), "
           "'R' or 'r' (A is on the right of X).";
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
   if (!valid_uplo) {
     std::ostringstream os;
     os << "KokkosBlas::trsm: uplo = '" << uplo[0] << "'. "
        << "Valid values include 'U' or 'u' (A is upper triangular), "
           "'L' or 'l' (A is lower triangular).";
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
   if (!valid_trans) {
     std::ostringstream os;
@@ -123,7 +124,7 @@ void trsm(const char side[], const char uplo[], const char trans[],
        << "Valid values include 'N' or 'n' (No transpose), 'T' or 't' "
           "(Transpose), "
           "and 'C' or 'c' (Conjugate transpose).";
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
   if (!valid_diag) {
     std::ostringstream os;
@@ -131,7 +132,7 @@ void trsm(const char side[], const char uplo[], const char trans[],
        << "Valid values include 'U' or 'u' (the diagonal of A is assumed to be "
           "unit), "
           "'N' or 'n' (the diagonal of A is assumed to be non-unit).";
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
   // Check compatibility of dimensions at run time.
@@ -147,7 +148,7 @@ void trsm(const char side[], const char uplo[], const char trans[],
     os << "KokkosBlas::trsm: Dimensions of A and B do not match: "
        << "side: " << side[0] << " A: " << A.extent(0) << " x " << A.extent(1)
        << " B: " << B.extent(0) << " x " << B.extent(1);
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
   // Return if degenerated matrices are provided

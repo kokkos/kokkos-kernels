@@ -47,6 +47,7 @@
 
 #include <KokkosBlas1_nrminf_spec.hpp>
 #include <KokkosKernels_helpers.hpp>
+#include <KokkosKernels_Error.hpp>
 
 namespace KokkosBlas {
 
@@ -131,7 +132,7 @@ void nrminf(
     os << "KokkosBlas::nrminf (MV): Dimensions of R and X do not match: "
        << "R: " << R.extent(0) << ", X: " << X.extent(0) << " x "
        << X.extent(1);
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
   using UnifiedXLayout =

@@ -58,6 +58,7 @@
 #include "KokkosBlas1_scal.hpp"
 #include "KokkosKernels_Utils.hpp"
 #include "KokkosKernels_MemSpaceUtils.hpp"
+#include "KokkosKernels_Error.hpp"
 
 namespace KokkosSparse {
 
@@ -96,7 +97,7 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
          << ", A: " << A.numRows() << " x " << A.numCols()
          << ", x: " << x.extent(0) << " x " << x.extent(1)
          << ", y: " << y.extent(0) << " x " << y.extent(1);
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   } else {
     if ((x.extent(1) != y.extent(1)) ||
@@ -107,7 +108,7 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
          << ", A: " << A.numRows() << " x " << A.numCols()
          << ", x: " << x.extent(0) << " x " << x.extent(1)
          << ", y: " << y.extent(0) << " x " << y.extent(1);
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   }
 
@@ -272,7 +273,7 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
          << A.numCols() * A.blockDim() << ", x: " << x.extent(0) << " x "
          << x.extent(1) << ", y: " << y.extent(0) << " x " << y.extent(1);
 
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   } else {
     if ((x.extent(1) != y.extent(1)) ||
@@ -287,7 +288,7 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
          << A.numCols() * A.blockDim() << ", x: " << x.extent(0) << " x "
          << x.extent(1) << ", y: " << y.extent(0) << " x " << y.extent(1);
 
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   }
   //
@@ -383,7 +384,7 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
          << A.numCols() * A.blockDim() << ", x: " << x.extent(0) << " x "
          << x.extent(1) << ", y: " << y.extent(0) << " x " << y.extent(1);
 
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   } else {
     if ((x.extent(1) != y.extent(1)) ||
@@ -398,7 +399,7 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
          << A.numCols() * A.blockDim() << ", x: " << x.extent(0) << " x "
          << x.extent(1) << ", y: " << y.extent(0) << " x " << y.extent(1);
 
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   }
   //
@@ -632,7 +633,7 @@ void spmv(KokkosKernels::Experimental::Controls /*controls*/, const char mode[],
          << ", A: " << A.numRows() << " x " << A.numCols()
          << ", x: " << x.extent(0) << " x " << x.extent(1)
          << ", y: " << y.extent(0) << " x " << y.extent(1);
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   } else {
     if ((x.extent(1) != y.extent(1)) ||
@@ -643,7 +644,7 @@ void spmv(KokkosKernels::Experimental::Controls /*controls*/, const char mode[],
          << ", A: " << A.numRows() << " x " << A.numCols()
          << ", x: " << x.extent(0) << " x " << x.extent(1)
          << ", y: " << y.extent(0) << " x " << y.extent(1);
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   }
 
@@ -757,7 +758,7 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
          << A.numCols() * A.blockDim() << ", x: " << x.extent(0) << " x "
          << x.extent(1) << ", y: " << y.extent(0) << " x " << y.extent(1);
 
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   } else {
     if ((x.extent(1) != y.extent(1)) ||
@@ -772,7 +773,7 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
          << A.numCols() * A.blockDim() << ", x: " << x.extent(0) << " x "
          << x.extent(1) << ", y: " << y.extent(0) << " x " << y.extent(1);
 
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   }
   //
@@ -943,7 +944,7 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
          << A.numCols() * A.blockDim() << ", x: " << x.extent(0) << " x "
          << x.extent(1) << ", y: " << y.extent(0) << " x " << y.extent(1);
 
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   } else {
     if ((x.extent(1) != y.extent(1)) ||
@@ -958,7 +959,7 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
          << A.numCols() * A.blockDim() << ", x: " << x.extent(0) << " x "
          << x.extent(1) << ", y: " << y.extent(0) << " x " << y.extent(1);
 
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   }
   //
@@ -1166,7 +1167,7 @@ void spmv_struct(const char mode[], const int stencil_type,
          << ", x: " << x.extent(0) << " x " << x.extent(1)
          << ", y: " << y.extent(0) << " x " << y.extent(1);
 
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   } else {
     if ((x.extent(1) != y.extent(1)) ||
@@ -1178,7 +1179,7 @@ void spmv_struct(const char mode[], const int stencil_type,
          << ", x: " << x.extent(0) << " x " << x.extent(1)
          << ", y: " << y.extent(0) << " x " << y.extent(1);
 
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   }
 
@@ -1356,7 +1357,7 @@ void spmv_struct(const char mode[], const int stencil_type,
          << ", A: " << A.numRows() << " x " << A.numCols()
          << ", x: " << x.extent(0) << " x " << x.extent(1)
          << ", y: " << y.extent(0) << " x " << y.extent(1);
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   } else {
     if ((x.extent(1) != y.extent(1)) ||
@@ -1367,7 +1368,7 @@ void spmv_struct(const char mode[], const int stencil_type,
          << ", A: " << A.numRows() << " x " << A.numCols()
          << ", x: " << x.extent(0) << " x " << x.extent(1)
          << ", y: " << y.extent(0) << " x " << y.extent(1);
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   }
 

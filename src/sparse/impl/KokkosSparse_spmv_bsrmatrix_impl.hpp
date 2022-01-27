@@ -45,6 +45,8 @@
 #ifndef KOKKOSSPARSE_IMPL_SPMV_BSRMATRIX_IMPL_HPP_
 #define KOKKOSSPARSE_IMPL_SPMV_BSRMATRIX_IMPL_HPP_
 
+#include "KokkosKernels_Error.hpp"
+
 #if defined(KOKKOS_ENABLE_CUDA) && \
     (defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_AMPERE))
 
@@ -500,7 +502,8 @@ struct BsrMatrixSpMVTensorCoreDispatcher {
   // to be used to avoid instantiating on unsupported types
   static void tag_dispatch(std::false_type, YScalar, AMatrix, XMatrix, YScalar,
                            YMatrix) {
-    Kokkos::Impl::throw_runtime_exception("unsupported for complex types");
+    KokkosKernels::Impl::throw_runtime_exception(
+        "unsupported for complex types");
   }
 
   /*true if T1, T2, or T3 are complex*/

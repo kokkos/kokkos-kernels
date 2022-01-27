@@ -43,6 +43,7 @@
 #define __KOKKOSBATCHED_GEMM_DBLBUF_IMPL_HPP__
 
 #include "KokkosBatched_Util.hpp"
+#include "KokkosKernels_Error.hpp"
 
 namespace KokkosBatched {
 /********************* BEGIN functor-level routines *********************/
@@ -160,7 +161,7 @@ class BatchedDblBufGemm {
          << " does not support team_size > " << std::to_string(max_team_size)
          << "." << std::endl
          << " The tile dimensions must be adjusted." << std::endl;
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
 
     const int max_vector_len =
@@ -172,7 +173,7 @@ class BatchedDblBufGemm {
          << " does not support vector_len > " << std::to_string(max_vector_len)
          << "." << std::endl
          << " The tile dimensions must be adjusted." << std::endl;
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
 
     if (__handle->enableDebug) {

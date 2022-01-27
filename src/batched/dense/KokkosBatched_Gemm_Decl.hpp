@@ -48,6 +48,7 @@
 // Includes for non-functor-level routines
 #include <KokkosBatched_Gemm_Handle.hpp>
 #include <KokkosKernels_ExecSpaceUtils.hpp>
+#include <KokkosKernels_Error.hpp>
 
 namespace KokkosBatched {
 /********************* BEGIN functor-level routines *********************/
@@ -357,7 +358,7 @@ int BatchedGemm(BatchedGemmHandleType *const handle, const ScalarType alpha,
         os << "KokkosBatched::BatchedGemm does not support kernelAlgoType = "
            << std::to_string(handle->get_kernel_algo_type())
            << " with SIMD views." << std::endl;
-        Kokkos::Impl::throw_runtime_exception(os.str());
+        KokkosKernels::Impl::throw_runtime_exception(os.str());
         break;
     }
   } else {
@@ -436,7 +437,7 @@ int BatchedGemm(BatchedGemmHandleType *const handle, const ScalarType alpha,
            << std::to_string(handle->get_kernel_algo_type()) << " when c_m("
            << std::to_string(c_m) << ") != c_n(" << std::to_string(c_n) << ")"
            << std::endl;
-        Kokkos::Impl::throw_runtime_exception(os.str());
+        KokkosKernels::Impl::throw_runtime_exception(os.str());
       }
 
       // Select optimal resultsPerThread param for BatchedSerialGemm
@@ -576,7 +577,7 @@ int BatchedGemm(BatchedGemmHandleType *const handle, const ScalarType alpha,
       std::ostringstream os;
       os << "KokkosBatched::BatchedGemm does not support kernelAlgoType = "
          << std::to_string(handle->get_kernel_algo_type()) << "." << std::endl;
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
       break;
   }
   return ret;

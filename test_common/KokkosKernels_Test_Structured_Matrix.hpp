@@ -46,6 +46,7 @@
 #define KOKKOSKERNELS_TEST_STRUCTURE_MATRIX_HPP
 
 #include "KokkosKernels_Utils.hpp"
+#include "KokkosKernels_Error.hpp"
 namespace Test {
 
 enum { FD, FE };
