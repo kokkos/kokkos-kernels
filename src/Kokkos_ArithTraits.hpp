@@ -864,6 +864,220 @@ class ArithTraits<Kokkos::Experimental::half_t> {
 };
 #endif  // KOKKOS_HALF_T_IS_FLOAT && KOKKOS_ENABLE_CUDA_HALF
 
+// Since Kokkos::Experimental::bhalf_t falls back to float, only define
+// ArithTraits if bhalf_t is a backend specialization
+#if defined(KOKKOS_BHALF_T_IS_FLOAT) && !KOKKOS_BHALF_T_IS_FLOAT
+template <>
+class ArithTraits<Kokkos::Experimental::bhalf_t> {
+ public:
+  typedef Kokkos::Experimental::bhalf_t val_type;
+  typedef val_type mag_type;
+
+  static const bool is_specialized = true;
+  static const bool is_signed      = true;
+  static const bool is_integer     = false;
+  static const bool is_exact       = false;
+  static const bool is_complex     = false;
+
+  static constexpr bool has_infinity = true;
+  static KOKKOS_FORCEINLINE_FUNCTION val_type infinity() {
+    return Kokkos::Experimental::cast_to_bhalf(HUGE_VALF);
+  }
+
+  static KOKKOS_FORCEINLINE_FUNCTION bool isInf(const val_type x) {
+#ifndef __CUDA_ARCH__
+    using std::isinf;
+#endif
+    return isinf(Kokkos::Experimental::cast_from_bhalf<float>(x));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION bool isNan(const val_type x) {
+#ifndef __CUDA_ARCH__
+    using std::isnan;
+#endif
+    return isnan(Kokkos::Experimental::cast_from_bhalf<float>(x));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type abs(const val_type x) {
+    return Kokkos::Experimental::cast_to_bhalf(
+        fabs(Kokkos::Experimental::cast_from_bhalf<float>(x)));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type zero() {
+    return Kokkos::Experimental::cast_to_bhalf(0.0F);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type one() {
+    return Kokkos::Experimental::cast_to_bhalf(1.0F);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type min() {
+    return Kokkos::Experimental::cast_to_bhalf(-KOKKOSKERNELS_IMPL_BF16_MAX);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type max() {
+    return Kokkos::Experimental::cast_to_bhalf(KOKKOSKERNELS_IMPL_BF16_MAX);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type real(const val_type x) {
+    return x;
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type imag(const val_type) {
+    return Kokkos::Experimental::cast_to_bhalf(0.0F);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type conj(const val_type x) {
+    return x;
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type pow(const val_type x,
+                                                  const val_type y) {
+    return Kokkos::Experimental::cast_to_bhalf(
+        ::pow(Kokkos::Experimental::cast_from_bhalf<float>(x),
+              Kokkos::Experimental::cast_from_bhalf<float>(y)));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt(const val_type x) {
+    return Kokkos::Experimental::cast_to_bhalf(
+        ::sqrt(Kokkos::Experimental::cast_from_bhalf<float>(x)));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type cbrt(const val_type x) {
+    return Kokkos::Experimental::cast_to_bhalf(
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+        sycl::cbrt(Kokkos::Experimental::cast_from_bhalf<float>(x))
+#else
+        ::cbrt(Kokkos::Experimental::cast_from_bhalf<float>(x))
+#endif
+    );
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type exp(const val_type x) {
+    return Kokkos::Experimental::cast_to_bhalf(
+        ::exp(Kokkos::Experimental::cast_from_bhalf<float>(x)));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type log(const val_type x) {
+    return Kokkos::Experimental::cast_to_bhalf(
+        ::log(Kokkos::Experimental::cast_from_bhalf<float>(x)));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type log10(const val_type x) {
+    return Kokkos::Experimental::cast_to_bhalf(
+        ::log10(Kokkos::Experimental::cast_from_bhalf<float>(x)));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type sin(const val_type x) {
+    return Kokkos::Experimental::cast_to_bhalf(
+        ::sin(Kokkos::Experimental::cast_from_bhalf<float>(x)));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type cos(const val_type x) {
+    return Kokkos::Experimental::cast_to_bhalf(
+        ::cos(Kokkos::Experimental::cast_from_bhalf<float>(x)));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type tan(const val_type x) {
+    return Kokkos::Experimental::cast_to_bhalf(
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+        sycl::tan(Kokkos::Experimental::cast_from_bhalf<float>(x))
+#else
+        ::tan(Kokkos::Experimental::cast_from_bhalf<float>(x))
+#endif
+    );
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type sinh(const val_type x) {
+    return Kokkos::Experimental::cast_to_bhalf(
+        ::sinh(Kokkos::Experimental::cast_from_bhalf<float>(x)));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type cosh(const val_type x) {
+    return Kokkos::Experimental::cast_to_bhalf(
+        ::cosh(Kokkos::Experimental::cast_from_bhalf<float>(x)));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type tanh(const val_type x) {
+    return Kokkos::Experimental::cast_to_bhalf(
+        ::tanh(Kokkos::Experimental::cast_from_bhalf<float>(x)));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type asin(const val_type x) {
+    return Kokkos::Experimental::cast_to_bhalf(
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+        sycl::asin(Kokkos::Experimental::cast_from_bhalf<float>(x))
+#else
+        ::asin(Kokkos::Experimental::cast_from_bhalf<float>(x))
+#endif
+    );
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type acos(const val_type x) {
+    return Kokkos::Experimental::cast_to_bhalf(
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+        sycl::acos(Kokkos::Experimental::cast_from_bhalf<float>(x))
+#else
+        ::acos(Kokkos::Experimental::cast_from_bhalf<float>(x))
+#endif
+    );
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type atan(const val_type x) {
+    return Kokkos::Experimental::cast_to_bhalf(
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+        sycl::atan(Kokkos::Experimental::cast_from_bhalf<float>(x))
+#else
+        ::atan(Kokkos::Experimental::cast_from_bhalf<float>(x))
+#endif
+    );
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon() {
+    // return ::pow(2, -KOKKOSKERNELS_IMPL_BF16_SIGNIFICAND_BITS);
+    return Kokkos::Experimental::cast_to_bhalf(KOKKOSKERNELS_IMPL_BF16_EPSILON);
+  }
+  // Backwards compatibility with Teuchos::ScalarTraits.
+  typedef mag_type magnitudeType;
+  // C++ doesn't have a standard "bhalf-float" type.
+  typedef val_type bhalfPrecision;
+  typedef double doublePrecision;
+
+  static const bool isComplex            = false;
+  static const bool isOrdinal            = false;
+  static const bool isComparable         = true;
+  static const bool hasMachineParameters = true;
+  static KOKKOS_FORCEINLINE_FUNCTION bool isnaninf(const val_type x) {
+    return isNan(x) || isInf(x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION magnitudeType magnitude(const val_type x) {
+    return abs(x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type conjugate(const val_type x) {
+    return conj(x);
+  }
+  static std::string name() { return "bhalf"; }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type squareroot(const val_type x) {
+    return sqrt(x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type nan() {
+#ifdef __CUDA_ARCH__
+    return Kokkos::Experimental::cast_to_bhalf(CUDART_NAN_F);
+#else
+    return Kokkos::Experimental::cast_to_bhalf(
+        std::numeric_limits<float>::quiet_NaN());
+#endif  // __CUDA_ARCH__
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type eps() { return epsilon(); }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type sfmin() {
+    return Kokkos::Experimental::cast_to_bhalf(KOKKOSKERNELS_IMPL_BF16_MIN);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION int base() {
+    return KOKKOSKERNELS_IMPL_BF16_RADIX;
+  }
+  // Use float to allow running on both host and device
+  static KOKKOS_FORCEINLINE_FUNCTION float prec() {
+    float e = KOKKOSKERNELS_IMPL_BF16_EPSILON;
+    float b = (float)base();
+    float r = e * b;
+    return r;
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION int t() {
+    return KOKKOSKERNELS_IMPL_BF16_MANT_DIG;
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type rnd() {
+    return Kokkos::Experimental::cast_to_bhalf(1.0);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION int emin() {
+    return KOKKOSKERNELS_IMPL_BF16_MIN_EXP;
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type rmin() {
+    return Kokkos::Experimental::cast_to_bhalf(KOKKOSKERNELS_IMPL_BF16_MIN);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION int emax() {
+    return KOKKOSKERNELS_IMPL_BF16_MAX_EXP;
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type rmax() {
+    return Kokkos::Experimental::cast_to_bhalf(KOKKOSKERNELS_IMPL_BF16_MAX);
+  }
+};
+#endif  // KOKKOS_BHALF_T_IS_FLOAT
+
 template <>
 class ArithTraits<float> {
  public:

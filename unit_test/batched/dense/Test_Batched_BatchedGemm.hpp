@@ -135,7 +135,12 @@ void impl_test_batched_gemm_with_handle(BatchedGemmHandle* batchedGemmHandle,
   using mag_type = float;
   mag_type sum(1), diff(0);
 
-  mag_type eps = (mag_type)(1 << 1) * KOKKOSKERNELS_IMPL_FP16_EPSILON;
+  auto eps = static_cast<mag_type>(ats::epsilon());
+
+  eps *= std::is_same<ScalarType, Kokkos::Experimental::half_t>::value ||
+                 std::is_same<ScalarType, Kokkos::Experimental::bhalf_t>::value
+             ? 4
+             : 1e3;
 
   for (int k = 0; k < N; ++k) {
     for (int i = 0; i < matCdim1; ++i) {
