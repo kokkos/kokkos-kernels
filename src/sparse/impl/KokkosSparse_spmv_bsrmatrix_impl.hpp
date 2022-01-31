@@ -565,13 +565,12 @@ struct BSR_GEMV_Functor {
   XVector m_x;
   YVector m_y;
 
-  const ordinal_type block_dim;
-
-  bool conjugate = false;
+  const int block_dim;
+  const bool conjugate;
 
   BSR_GEMV_Functor(const value_type alpha_, const AMatrix &m_A_,
-                   const XVector &m_x_, value_type beta_, YVector &m_y_,
-                   const int block_dim_, bool conj_)
+                   const XVector &m_x_, const value_type beta_, YVector &m_y_,
+                   const int block_dim_, const bool conj_)
       : alpha(alpha_),
         beta(beta_),
         m_A(m_A_),
@@ -614,10 +613,9 @@ struct BSR_GEMV_Functor {
         const auto xstart = row.block_colidx(ic) * block_dim;
         KokkosBatched::SerialGemvInternal<KokkosBatched::Algo::Gemv::Blocked>::
             invoke<value_type, value_type>(
-                static_cast<int>(block_dim), static_cast<int>(block_dim), alpha,
-                Aview.data(), static_cast<int>(block_dim), 1, &m_x(xstart),
-                static_cast<int>(m_x.stride_0()), beta1, &m_y(ystart),
-                static_cast<int>(m_y.stride_0()));
+                block_dim, block_dim, alpha, Aview.data(), block_dim, 1,
+                &m_x(xstart), static_cast<int>(m_x.stride_0()), beta1,
+                &m_y(ystart), static_cast<int>(m_y.stride_0()));
       }
     }
   }
@@ -631,7 +629,8 @@ struct BSR_GEMV_Functor {
     const size_type Y_ptEnd = Y_ptBeg + block_dim;
     auto Y_cur = Kokkos::subview(m_y, ::Kokkos::make_pair(Y_ptBeg, Y_ptEnd));
 
-    const y_value_type val_one = 1;
+    const y_value_type val_one = Kokkos::ArithTraits<y_value_type>::one();
+    ;
     if (beta != val_one) {
       KokkosBatched::TeamVectorScaleInternal::invoke(
           dev, block_dim, beta, Y_cur.data(),
@@ -668,8 +667,7 @@ struct BSR_GEMV_Functor {
             m_x, ::Kokkos::make_pair(X_ptBeg, X_ptBeg + block_dim));
         KokkosBatched::TeamVectorGemvInternal<
             KokkosBatched::Algo::Gemv::Unblocked>::
-            invoke(dev, static_cast<int>(block_dim),
-                   static_cast<int>(block_dim), alpha, A_cur.data(),
+            invoke(dev, block_dim, block_dim, alpha, A_cur.data(),
                    static_cast<int>(A_cur.stride_0()),
                    static_cast<int>(A_cur.stride_1()), X_cur.data(),
                    static_cast<int>(X_cur.stride_0()), val_one, Y_cur.data(),
@@ -856,18 +854,17 @@ struct BSR_GEMV_Transpose_Functor {
   XVector m_x;
   YVector m_y;
 
-  const ordinal_type block_dim;
-
-  bool conjugate = false;
+  const int block_dim;
+  const bool conjugate;
 
   BSR_GEMV_Transpose_Functor(const value_type alpha_, const AMatrix &m_A_,
                              const XVector &m_x_, const YVector &m_y_,
-                             bool conj_)
+                             const bool conj_)
       : alpha(alpha_),
         m_A(m_A_),
         m_x(m_x_),
         m_y(m_y_),
-        block_dim(m_A_.blockDim()),
+        block_dim(static_cast<int>(m_A_.blockDim())),
         conjugate(conj_) {
     static_assert(static_cast<int>(XVector::rank) == 1,
                   "XVector must be a rank 1 View.");
@@ -935,7 +932,7 @@ struct BSR_GEMV_Transpose_Functor {
     const auto myRow = m_A.block_row_Const(iBlock);
     const auto count = myRow.length;
 
-    const y_value_type val_zero = 0;
+    const y_value_type val_zero = Kokkos::ArithTraits<y_value_type>::zero();
     y_value_type *shared_y      = (y_value_type *)dev.team_shmem().get_shmem(
         block_dim * sizeof(y_value_type));
 
@@ -1190,21 +1187,21 @@ struct BSR_GEMM_Functor {
   AMatrix m_A;
   XVector m_x;
   YVector m_y;
-  const ordinal_type block_dim;
-  const ordinal_type num_rhs;
 
-  bool conjugate = false;
+  const int block_dim;
+  const int num_rhs;
+  const bool conjugate;
 
   BSR_GEMM_Functor(const value_type alpha_, const AMatrix m_A_,
-                   const XVector m_x_, value_type beta_, const YVector m_y_,
-                   bool conj_)
+                   const XVector m_x_, const value_type beta_,
+                   const YVector m_y_, const bool conj_)
       : alpha(alpha_),
         beta(beta_),
         m_A(m_A_),
         m_x(m_x_),
         m_y(m_y_),
-        block_dim(m_A_.blockDim()),
-        num_rhs(m_x_.extent(1)),
+        block_dim(static_cast<int>(m_A_.blockDim())),
+        num_rhs(static_cast<int>(m_x_.extent(1))),
         conjugate(conj_) {
     static_assert(static_cast<int>(XVector::rank) == 2,
                   "XVector must be a rank 2 View.");
@@ -1246,7 +1243,9 @@ struct BSR_GEMM_Functor {
         const auto xstart = row.block_colidx(ic) * block_dim;
         KokkosBatched::SerialGemmInternal<KokkosBatched::Algo::Gemm::Blocked>::
             invoke<value_type, value_type>(
-                block_dim, num_rhs, block_dim, alpha, Aview.data(),
+                static_cast<ordinal_type>(block_dim),
+                static_cast<ordinal_type>(num_rhs),
+                static_cast<ordinal_type>(block_dim), alpha, Aview.data(),
                 Aview.stride_0(), Aview.stride_1(), &m_x(xstart, 0),
                 m_x.stride_0(), ldx, beta1, &m_y(ystart, 0), m_y.stride_0(),
                 ldy);
@@ -1264,7 +1263,7 @@ struct BSR_GEMM_Functor {
     auto Y_cur = Kokkos::subview(m_y, ::Kokkos::make_pair(Y_ptBeg, Y_ptEnd),
                                  Kokkos::ALL());
 
-    const y_value_type val_one = 1;
+    const y_value_type val_one = Kokkos::ArithTraits<y_value_type>::one();
     if (beta != val_one) {
       KokkosBatched::TeamVectorScaleInternal::invoke(
           dev, block_dim, num_rhs, beta, Y_cur.data(),
@@ -1307,10 +1306,8 @@ struct BSR_GEMM_Functor {
             Kokkos::ALL());
         KokkosBatched::TeamVectorGemmInternal<
             KokkosBatched::Algo::Gemm::Unblocked,
-            false>::invoke(dev, static_cast<int>(block_dim),
-                           static_cast<int>(num_rhs),
-                           static_cast<int>(block_dim), alpha, A_cur.data(),
-                           static_cast<int>(A_cur.stride_0()),
+            false>::invoke(dev, block_dim, num_rhs, block_dim, alpha,
+                           A_cur.data(), static_cast<int>(A_cur.stride_0()),
                            static_cast<int>(A_cur.stride_1()), X_cur.data(),
                            static_cast<int>(X_cur.stride_0()),
                            static_cast<int>(X_cur.stride_1()), val_one,
@@ -1494,19 +1491,20 @@ struct BSR_GEMM_Transpose_Functor {
   AMatrix m_A;
   XVector m_x;
   YVector m_y;
-  const ordinal_type block_dim;
-  const ordinal_type num_rhs;
 
-  bool conjugate = false;
+  const int block_dim;
+  const int num_rhs;
+  const bool conjugate;
 
   BSR_GEMM_Transpose_Functor(const value_type alpha_, const AMatrix &m_A_,
-                             const XVector &m_x_, YVector &m_y_, bool conj_)
+                             const XVector &m_x_, YVector &m_y_,
+                             const bool conj_)
       : alpha(alpha_),
         m_A(m_A_),
         m_x(m_x_),
         m_y(m_y_),
-        block_dim(m_A_.blockDim()),
-        num_rhs(m_x_.extent(1)),
+        block_dim(static_cast<int>(m_A_.blockDim())),
+        num_rhs(static_cast<int>(m_x_.extent(1))),
         conjugate(conj_) {
     static_assert(static_cast<int>(XVector::rank) == 2,
                   "XVector must be a rank 2 View.");
@@ -1579,7 +1577,7 @@ struct BSR_GEMM_Transpose_Functor {
     const auto myRow = m_A.block_row_Const(iBlock);
     const auto count = myRow.length;
 
-    const y_value_type val_zero = 0;
+    const y_value_type val_zero = Kokkos::ArithTraits<y_value_type>::zero();
     y_value_type *shared_y      = (y_value_type *)dev.team_shmem().get_shmem(
         block_dim * num_rhs * sizeof(y_value_type));
 
