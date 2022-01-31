@@ -660,11 +660,6 @@ struct BSR_GEMV_Functor {
             false>::team_gemv(dev, alpha, A_cur, X_cur, val_one, Y_cur);
       }
     } else {
-      typedef Kokkos::View<const y_value_type **, Kokkos::LayoutRight,
-                           typename AMatrix::device_type,
-                           Kokkos::MemoryUnmanaged>
-          block_values_type;
-
       for (ordinal_type jBlock = 0; jBlock < count; ++jBlock) {
         const auto A_cur    = myRow.block(jBlock);
         const auto X_blkCol = myRow.block_colidx(jBlock);
