@@ -2097,7 +2097,7 @@ struct MatrixConverter<BlockCRS> {
           KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>,
       typename blockCrsMat_t = KokkosSparse::Experimental::BlockCrsMatrix<
           scalar_t, lno_t, device, void, size_type>>
-  static blockCrsMat_t from_crs(
+  static blockCrsMat_t from_blockcrs_formated_point_crsmatrix(
       const KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>
           &mtx,
       lno_t block_size) {
@@ -2111,7 +2111,7 @@ struct MatrixConverter<BSR> {
             typename device,
             typename bsrMtx_t = KokkosSparse::Experimental::BsrMatrix<
                 scalar_t, lno_t, device, void, size_type>>
-  static bsrMtx_t from_crs(
+  static bsrMtx_t from_blockcrs_formated_point_crsmatrix(
       const KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>
           &mtx,
       lno_t block_size) {

@@ -218,7 +218,9 @@ void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz,
   crsMat_t crsmat2("CrsMatrix2", out_c, pf_v, static_graph2);
 
   // this converts the previous generated matrix to block matrix.
-  auto input_mat = MatrixConverter<mtx_format>::from_crs(crsmat2, block_size);
+  auto input_mat =
+      MatrixConverter<mtx_format>::from_blockcrs_formated_point_crsmatrix(
+          crsmat2, block_size);
 
   lno_t nv = ((crsmat2.numRows() + block_size - 1) / block_size) * block_size;
 
@@ -303,7 +305,9 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz,
   graph_t static_graph2(pf_e, pf_rm);
   crsMat_t crsmat2("CrsMatrix2", out_c, pf_v, static_graph2);
 
-  auto input_mat = MatrixConverter<mtx_format>::from_crs(crsmat2, block_size);
+  auto input_mat =
+      MatrixConverter<mtx_format>::from_blockcrs_formated_point_crsmatrix(
+          crsmat2, block_size);
 
   lno_t nv = ((crsmat2.numRows() + block_size - 1) / block_size) * block_size;
 
