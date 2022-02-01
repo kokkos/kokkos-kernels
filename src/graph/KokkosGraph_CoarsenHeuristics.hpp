@@ -395,7 +395,7 @@ class coarsen_heuristics {
 
     typename matrix_t::staticcrsgraph_type::entries_type::non_const_value_type
         nc           = 0;
-    vtx_view_t vcmap = KokkosGraph::Experimental::graph_mis2_coarsen<
+    vtx_view_t vcmap = KokkosGraph::Experimental::graph_mis2_aggregate<
         Device, typename matrix_t::staticcrsgraph_type::row_map_type,
         typename matrix_t::staticcrsgraph_type::entries_type, vtx_view_t>(
         g.graph.row_map, g.graph.entries, nc);

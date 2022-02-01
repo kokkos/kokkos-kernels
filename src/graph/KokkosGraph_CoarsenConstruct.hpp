@@ -12,6 +12,125 @@
 #include "KokkosKernels_Uniform_Initialized_MemoryPool.hpp"
 #include "KokkosGraph_CoarsenHeuristics.hpp"
 
+namespace KokkosKernels {
+
+namespace Impl {
+
+template <typename execution_space, typename rowmap_t, typename entries_t,
+          typename values_t>
+struct SortLowDegreeCrsMatrixFunctor {
+  using size_type  = typename rowmap_t::non_const_value_type;
+  using lno_t      = typename entries_t::non_const_value_type;
+  using scalar_t   = typename values_t::non_const_value_type;
+  using team_mem   = typename Kokkos::TeamPolicy<execution_space>::member_type;
+  using value_type = lno_t;
+
+  SortLowDegreeCrsMatrixFunctor(bool usingRangePol, const rowmap_t& rowmap_,
+                                const entries_t& entries_,
+                                const values_t& values_,
+                                const lno_t degreeLimit_)
+      : rowmap(rowmap_),
+        entries(entries_),
+        values(values_),
+        degreeLimit(degreeLimit_) {
+    if (usingRangePol) {
+      entriesAux =
+          entries_t(Kokkos::ViewAllocateWithoutInitializing("Entries aux"),
+                    entries.extent(0));
+      valuesAux =
+          values_t(Kokkos::ViewAllocateWithoutInitializing("Values aux"),
+                   values.extent(0));
+    }
+    // otherwise, aux arrays won't be allocated (sorting in place)
+  }
+
+  KOKKOS_INLINE_FUNCTION void operator()(const lno_t i,
+                                         value_type& reducer) const {
+    size_type rowStart = rowmap(i);
+    size_type rowEnd   = rowmap(i + 1);
+    lno_t rowNum       = rowEnd - rowStart;
+    if (rowNum > degreeLimit) {
+      reducer++;
+      return;
+    }
+    // Radix sort requires unsigned keys for comparison
+    using unsigned_lno_t = typename std::make_unsigned<lno_t>::type;
+    KokkosKernels::SerialRadixSort2<lno_t, unsigned_lno_t, scalar_t>(
+        (unsigned_lno_t*)entries.data() + rowStart,
+        (unsigned_lno_t*)entriesAux.data() + rowStart, values.data() + rowStart,
+        valuesAux.data() + rowStart, rowNum);
+  }
+
+  KOKKOS_INLINE_FUNCTION void operator()(const team_mem t,
+                                         value_type& reducer) const {
+    size_type i        = t.league_rank();
+    size_type rowStart = rowmap(i);
+    size_type rowEnd   = rowmap(i + 1);
+    lno_t rowNum       = rowEnd - rowStart;
+    if (rowNum > degreeLimit) {
+      Kokkos::single(Kokkos::PerTeam(t), [&]() { reducer++; });
+      return;
+    }
+    KokkosKernels::TeamBitonicSort2<lno_t, lno_t, scalar_t, team_mem>(
+        entries.data() + rowStart, values.data() + rowStart, rowNum, t);
+  }
+
+  rowmap_t rowmap;
+  entries_t entries;
+  entries_t entriesAux;
+  values_t values;
+  values_t valuesAux;
+  lno_t degreeLimit;
+};
+
+}  // namespace Impl
+
+// Sort a CRS matrix: within each row, sort entries ascending by column.
+// At the same time, permute the values.
+// Only modifies rows below the degreeLimit
+template <typename execution_space, typename rowmap_t, typename entries_t,
+          typename values_t>
+typename entries_t::non_const_value_type sort_low_degree_rows_crs_matrix(
+    const rowmap_t& rowmap, const entries_t& entries, const values_t& values,
+    const typename entries_t::non_const_value_type degreeLimit) {
+  using lno_t    = typename entries_t::non_const_value_type;
+  using team_pol = Kokkos::TeamPolicy<execution_space>;
+  bool useRadix  = !Impl::kk_is_gpu_exec_space<execution_space>();
+  Impl::SortLowDegreeCrsMatrixFunctor<execution_space, rowmap_t, entries_t,
+                                      values_t>
+      funct(useRadix, rowmap, entries, values, degreeLimit);
+  lno_t numRows   = rowmap.extent(0) ? rowmap.extent(0) - 1 : 0;
+  lno_t notSorted = 0;
+  if (useRadix) {
+    Kokkos::parallel_reduce("sort_crs_matrix",
+                            Kokkos::RangePolicy<execution_space>(0, numRows),
+                            funct, notSorted);
+  } else {
+    // Try to get teamsize to be largest power of 2 not greater than avg entries
+    // per row
+    // TODO (probably important for performnce): add thread-level sort also, and
+    // use that for small avg degree. But this works for now. probably important
+    // for this particular use case of only low-degree rows
+    int teamSize = 1;
+    lno_t avgDeg = 0;
+    if (numRows) avgDeg = (entries.extent(0) + numRows - 1) / numRows;
+    if (avgDeg > degreeLimit) {
+      avgDeg = degreeLimit;
+    }
+    while (teamSize * 2 * 2 <= avgDeg) {
+      teamSize *= 2;
+    }
+    team_pol temp(numRows, teamSize);
+    teamSize = std::min(teamSize,
+                        temp.team_size_max(funct, Kokkos::ParallelReduceTag()));
+    Kokkos::parallel_reduce("sort_crs_matrix", team_pol(numRows, teamSize),
+                            funct, notSorted);
+  }
+  return notSorted;
+}
+
+}  // namespace KokkosKernels
+
 namespace KokkosGraph {
 
 namespace Experimental {
