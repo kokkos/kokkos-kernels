@@ -341,7 +341,6 @@ class MKLApply {
     auto h_to = Kokkos::create_mirror_view(Kokkos::HostSpace(), to);
     Kokkos::deep_copy(h_to, h_from);  // view copy (for different element types)
     Kokkos::deep_copy(to, h_to);
-    Kokkos::fence();
   }
 
   template <typename T>
