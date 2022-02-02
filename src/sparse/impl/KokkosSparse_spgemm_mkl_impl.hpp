@@ -171,14 +171,14 @@ class MKLApply {
     Kokkos::Timer timer;
     using scalar_t = typename KernelHandle::nnz_scalar_t;
 
-    const auto export_rowmap = [&](MKL_INT m, MKL_INT *rows_start,
+    const auto export_rowmap = [&](MKL_INT num_rows, MKL_INT *rows_start,
                                    MKL_INT * /*columns*/,
                                    scalar_t * /*values*/) {
       if (handle->mkl_keep_output) {
         Kokkos::Timer copy_time;
-        const nnz_lno_t nnz = rows_start[m];
+        const nnz_lno_t nnz = rows_start[num_rows];
         handle->set_c_nnz(nnz);
-        copy(make_host_view(rows_start, m + 1), row_mapC);
+        copy(make_host_view(rows_start, num_rows + 1), row_mapC);
         if (verbose)
           std::cout << "\tMKL rowmap export time:" << copy_time.seconds()
                     << std::endl;
@@ -210,11 +210,11 @@ class MKLApply {
     Kokkos::Timer timer;
 
     const auto export_values =
-        [&](MKL_INT m, MKL_INT *rows_start, MKL_INT *columns,
+        [&](MKL_INT num_rows, MKL_INT *rows_start, MKL_INT *columns,
             typename KernelHandle::nnz_scalar_t *values) {
           if (handle->mkl_keep_output) {
             Kokkos::Timer copy_time;
-            const nnz_lno_t nnz = rows_start[m];
+            const nnz_lno_t nnz = rows_start[num_rows];
             copy(make_host_view(columns, nnz), entriesC);
             copy(make_host_view(values, nnz), valuesC);
             if (verbose)
