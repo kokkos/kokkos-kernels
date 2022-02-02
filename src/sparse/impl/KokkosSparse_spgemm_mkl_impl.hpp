@@ -77,8 +77,9 @@ class MKLSparseMatrix {
     return MKLSparseMatrix<value_type>(c);
   }
 
-  inline void get(MKL_INT &rows, MKL_INT &cols, MKL_INT *&rows_start,
-                  MKL_INT *&columns, value_type *&values);
+  inline void export_data(MKL_INT &num_rows, MKL_INT &num_cols,
+                          MKL_INT *&rows_start, MKL_INT *&columns,
+                          value_type *&values);
 
   inline void destroy() {
     mkl_call(mkl_sparse_destroy(mtx), "mkl_sparse_destroy() failed!");
@@ -109,13 +110,15 @@ inline MKLSparseMatrix<double>::MKLSparseMatrix(const MKL_INT rows,
 }
 
 template <>
-inline void MKLSparseMatrix<float>::get(MKL_INT &rows, MKL_INT &cols,
-                                        MKL_INT *&rows_start, MKL_INT *&columns,
-                                        float *&values) {
+inline void MKLSparseMatrix<float>::export_data(MKL_INT &num_rows,
+                                                MKL_INT &num_cols,
+                                                MKL_INT *&rows_start,
+                                                MKL_INT *&columns,
+                                                float *&values) {
   sparse_index_base_t indexing;
   MKL_INT *rows_end;
-  mkl_call(mkl_sparse_s_export_csr(mtx, &indexing, &rows, &cols, &rows_start,
-                                   &rows_end, &columns, &values),
+  mkl_call(mkl_sparse_s_export_csr(mtx, &indexing, &num_rows, &num_cols,
+                                   &rows_start, &rows_end, &columns, &values),
            "Failed to export matrix with mkl_sparse_s_export_csr()!");
   if (SPARSE_INDEX_BASE_ZERO != indexing) {
     throw std::runtime_error(
@@ -125,13 +128,15 @@ inline void MKLSparseMatrix<float>::get(MKL_INT &rows, MKL_INT &cols,
 }
 
 template <>
-inline void MKLSparseMatrix<double>::get(MKL_INT &rows, MKL_INT &cols,
-                                         MKL_INT *&rows_start,
-                                         MKL_INT *&columns, double *&values) {
+inline void MKLSparseMatrix<double>::export_data(MKL_INT &num_rows,
+                                                 MKL_INT &num_cols,
+                                                 MKL_INT *&rows_start,
+                                                 MKL_INT *&columns,
+                                                 double *&values) {
   sparse_index_base_t indexing;
   MKL_INT *rows_end;
-  mkl_call(mkl_sparse_d_export_csr(mtx, &indexing, &rows, &cols, &rows_start,
-                                   &rows_end, &columns, &values),
+  mkl_call(mkl_sparse_d_export_csr(mtx, &indexing, &num_rows, &num_cols,
+                                   &rows_start, &rows_end, &columns, &values),
            "Failed to export matrix with mkl_sparse_s_export_csr()!");
   if (SPARSE_INDEX_BASE_ZERO != indexing) {
     throw std::runtime_error(
@@ -324,9 +329,9 @@ class MKLApply {
       std::cout << ") time:" << timer1.seconds() << std::endl;
     }
 
-    MKL_INT c_rows, c_cols, *rows_start, *columns;
+    MKL_INT num_rows, num_cols, *rows_start, *columns;
     value_type *values;
-    C.get(c_rows, c_cols, rows_start, columns, values);
+    C.export_data(num_rows, num_cols, rows_start, columns, values);
     callback(m, rows_start, columns, values);
 
     A.destroy();
