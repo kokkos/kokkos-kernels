@@ -343,11 +343,10 @@ class MKLApply {
     Kokkos::deep_copy(to, h_to);
   }
 
-  template <typename T>
-  inline static decltype(auto) make_host_view(const T *data, size_t num_elems) {
-    using device_type =
-        Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>;
-    return Kokkos::View<const T *, Kokkos::HostSpace>(data, num_elems);
+  template <typename T,
+            typename view_type = Kokkos::View<const T *, Kokkos::HostSpace>>
+  inline static view_type make_host_view(const T *data, size_t num_elems) {
+    return view_type(data, num_elems);
   }
 };
 #endif  // KOKKOSKERNELS_ENABLE_TPL_MKL
