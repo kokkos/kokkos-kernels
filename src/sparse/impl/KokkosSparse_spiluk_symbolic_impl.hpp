@@ -52,6 +52,7 @@
 #include <Kokkos_ArithTraits.hpp>
 #include <KokkosSparse_spiluk_handle.hpp>
 #include <Kokkos_Sort.hpp>
+#include <KokkosKernels_Error.hpp>
 
 //#define SYMBOLIC_OUTPUT_INFO
 
@@ -308,7 +309,7 @@ void iluk_symbolic(IlukHandle& thandle,
         os << "KokkosSparse::Experimental::spiluk_symbolic: U_entries's extent "
               "must be larger than "
            << U_entries_d.extent(0);
-        Kokkos::Impl::throw_runtime_exception(os.str());
+        KokkosKernels::Impl::throw_runtime_exception(os.str());
       }
       // U diag entry
       U_entries(cntU) = i;
@@ -334,7 +335,7 @@ void iluk_symbolic(IlukHandle& thandle,
         os << "KokkosSparse::Experimental::spiluk_symbolic: L_entries's extent "
               "must be larger than "
            << L_entries_d.extent(0);
-        Kokkos::Impl::throw_runtime_exception(os.str());
+        KokkosKernels::Impl::throw_runtime_exception(os.str());
       }
       for (size_type k = 0; k < lenl; ++k) {
         L_entries(cntL) = h_iL(k);

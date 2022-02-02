@@ -56,6 +56,7 @@
 
 //#include "KokkosSparse_spiluk_handle.hpp"
 #include "KokkosKernels_helpers.hpp"
+#include "KokkosKernels_Error.hpp"
 #include "KokkosSparse_spiluk_symbolic_spec.hpp"
 #include "KokkosSparse_spiluk_numeric_spec.hpp"
 
@@ -194,7 +195,7 @@ void spiluk_symbolic(KernelHandle* handle,
     std::ostringstream os;
     os << "KokkosSparse::Experimental::spiluk_symbolic: fill_lev: " << fill_lev
        << ". Valid value is >= 0.";
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
   typedef typename KernelHandle::const_size_type c_size_t;
@@ -448,7 +449,7 @@ void spiluk_numeric(KernelHandle* handle,
     std::ostringstream os;
     os << "KokkosSparse::Experimental::spiluk_numeric: fill_lev: " << fill_lev
        << ". Valid value is >= 0.";
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
   // Check if symbolic has been called
@@ -456,7 +457,7 @@ void spiluk_numeric(KernelHandle* handle,
     std::ostringstream os;
     os << "KokkosSparse::Experimental::spiluk_numeric: spiluk_symbolic must be "
           "called before spiluk_numeric.";
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
   typedef typename KernelHandle::const_size_type c_size_t;

@@ -49,6 +49,7 @@
 #include "KokkosKernels_ExecSpaceUtils.hpp"
 #include "KokkosBlas1_scal.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
+#include "KokkosKernels_Error.hpp"
 
 namespace KokkosSparse {
 namespace Impl {
@@ -964,7 +965,7 @@ static void spmv_struct_beta(
     spmv_struct_beta_transpose<AMatrix, XVector, YVector, dobeta, true>(
         stencil_type, structure, alpha, A, x, beta, y);
   } else {
-    Kokkos::Impl::throw_runtime_exception(
+    KokkosKernels::Impl::throw_runtime_exception(
         "Invalid Transpose Mode for KokkosSparse::spmv_struct()");
   }
 }
@@ -1498,7 +1499,7 @@ static void spmv_alpha_beta_mv_struct(
     spmv_alpha_beta_mv_struct_transpose<AMatrix, XVector, YVector, doalpha,
                                         dobeta, true>(alpha, A, x, beta, y);
   } else {
-    Kokkos::Impl::throw_runtime_exception(
+    KokkosKernels::Impl::throw_runtime_exception(
         "Invalid Transpose Mode for KokkosSparse::spmv()");
   }
 }
