@@ -803,6 +803,14 @@ class CrsMatrix {
   //! The number of columns in the sparse matrix.
   KOKKOS_INLINE_FUNCTION ordinal_type numCols() const { return numCols_; }
 
+  //! The number of "point" (non-block) rows in the matrix. Since Crs is not
+  //! blocked, this is just the number of regular rows.
+  KOKKOS_INLINE_FUNCTION ordinal_type numPointRows() const { return numRows(); }
+
+  //! The number of "point" (non-block) columns in the matrix. Since Crs is not
+  //! blocked, this is just the number of regular columns.
+  KOKKOS_INLINE_FUNCTION ordinal_type numPointCols() const { return numCols(); }
+
   //! The number of stored entries in the sparse matrix.
   KOKKOS_INLINE_FUNCTION size_type nnz() const {
     return graph.entries.extent(0);
