@@ -586,13 +586,15 @@ elif [ "$MACHINE" = "inouye" ]; then
     # Format: (compiler module-list build-list exe-name warning-flag)
     COMPILERS=("armpl/20.3.0 $ARMPL_MODULE_TPL_LIST "OpenMP,Serial" g++ $GCC_WARNING_FLAGS"
                "armpl/21.0.0 $ARMPL_MODULE_TPL_LIST "OpenMP,Serial" g++ $GCC_WARNING_FLAGS"
+               "armpl/21.1.0 $ARMPL_MODULE_TPL_LIST "OpenMP,Serial" g++ $GCC_WARNING_FLAGS"
     )
   else
     # Format: (compiler module-list build-list exe-name warning-flag)
     COMPILERS=("gcc/10.2.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
-               "armpl/21.0.0 $ARMPL_MODULE_TPL_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
-               #"arm/20.3 $BASE_MODULE_LIST $ARM_GCC_BUILD_LIST armclang++ $ARMCLANG_WARNING_FLAGS"
                "armpl/20.3.0 $ARMPL_MODULE_TPL_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+               "armpl/21.0.0 $ARMPL_MODULE_TPL_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+               "armpl/21.1.0 $ARMPL_MODULE_TPL_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+               #"arm/20.3 $BASE_MODULE_LIST $ARM_GCC_BUILD_LIST armclang++ $ARMCLANG_WARNING_FLAGS"
     )
   fi
 
