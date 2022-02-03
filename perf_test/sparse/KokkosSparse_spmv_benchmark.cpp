@@ -42,36 +42,17 @@
 //@HEADER
 */
 
-#include<iostream>
 #include <vector>
-#include<string>
-
-#include <filesystem> // For use with C++ 17
+#include <string>
+#include <filesystem>  // For use with C++ 17
 #include <fstream>
 
-#include <cstdio>
-
-#include <ctime>
-#include <cstring>
-#include <cstdlib>
-#include <limits>
-#include <limits.h>
-#include <cmath>
-#include <unordered_map>
-#include <KokkosSparse_spmv_test.hpp>
 #include <Kokkos_Core.hpp>
-#include <KokkosSparse_CrsMatrix.hpp>
-#include <KokkosKernels_IOUtils.hpp>
-#include <KokkosSparse_spmv.hpp>
-#include "KokkosKernels_default_types.hpp"
-#include <spmv/Kokkos_SPMV.hpp>
-#include <spmv/Kokkos_SPMV_Inspector.hpp>
 
-#include <spmv/KokkosKernels_spmv_data.hpp>
-
+#include <KokkosSparse_spmv_test.hpp>
 
 // Function to set up SPMV test
-
+//
 SPMVTestData setup_test(spmv_additional_data* data, SPMVTestData::matrix_type A,
                         Ordinal rows_per_thread, int team_size,
                         int vector_length, int schedule, int) {
@@ -131,7 +112,7 @@ SPMVTestData setup_test(spmv_additional_data* data, SPMVTestData::matrix_type A,
   return test_data;
 }
 
-// Nota bene: `test` controls the number of test replicates 
+// Nota bene: `test` controls the number of test replicates
 
 struct SPMVConfiguration {
   int test;
@@ -145,21 +126,19 @@ struct SPMVConfiguration {
 
 // CSV report generated for every run
 
-inline void write_results_to_csv(std::string outfile_name, double seconds, std::string const & input_matrix){
+inline void write_results_to_csv(std::string outfile_name, double seconds,
+                                 std::string const& input_matrix) {
+  std::fstream file;
 
-    std::fstream file;
-
-    file.open(outfile_name, std::ios_base::app | std::ios_base::in);
-    if (file.is_open())
-        file << input_matrix << "," << seconds << std::endl;
-    std::cout << "Calling CSV writer for these input matrices:  " << input_matrix << std::endl;
-
+  file.open(outfile_name, std::ios_base::app | std::ios_base::in);
+  if (file.is_open()) file << input_matrix << "," << seconds << std::endl;
+  std::cout << "Calling CSV writer for these input matrices:  " << input_matrix
+            << std::endl;
 }
 
 // Uniqify csv reports with timestamp
 
 inline std::string timestamp_now() {
-
   std::chrono::system_clock::time_point tp{std::chrono::system_clock::now()};
   std::time_t timeT{std::chrono::system_clock::to_time_t(tp)};
 
@@ -171,36 +150,33 @@ inline std::string timestamp_now() {
   strftime(formatted.data(), formatted.size(), "%FT%T", &tm);
   formatted.pop_back();
   return formatted;
-  }
+}
 
-void benchmark_spmv_kernel(std::string matrix_file_name, std::string output_filename) {
-
+void benchmark_spmv_kernel(std::string matrix_file_name,
+                           std::string output_filename) {
   spmv_additional_data data(KOKKOS);
   using matrix_type = typename SPMVTestData::matrix_type;
 
-   matrix_type A = KokkosKernels::Impl::read_kokkos_crst_matrix<matrix_type>(matrix_file_name.c_str());
+  matrix_type A = KokkosKernels::Impl::read_kokkos_crst_matrix<matrix_type>(
+      matrix_file_name.c_str());
 
-//
-// Instantiate struct with configuration data
-//
-SPMVConfiguration config;
+  //
+  // Instantiate struct with configuration data
+  //
+  SPMVConfiguration config;
 
-config.test = 100;
-config.rows_per_thread = 1;
-config.team_size = 1;
-// SPMV uses 3 levels of parallelism;
-// Vectorization you'll get at the innermost level
-config.vector_length = 100;
-config.schedule = 1;
-config.loop = 10;
+  config.test            = 100;
+  config.rows_per_thread = 1;
+  config.team_size       = 1;
+  // SPMV uses 3 levels of parallelism;
+  // Vectorization you'll get at the innermost level
+  config.vector_length = 100;
+  config.schedule      = 1;
+  config.loop          = 10;
 
-              auto test_data = setup_test(&data,
-                         A,
-                         config.rows_per_thread,
-                         config.team_size,	
-                         config.vector_length,
-                         config.schedule,
-                         config.loop);
+  auto test_data =
+      setup_test(&data, A, config.rows_per_thread, config.team_size,
+                 config.vector_length, config.schedule, config.loop);
   // From run_benchmark
   Kokkos::Timer timer;
 
@@ -211,37 +187,36 @@ config.loop = 10;
 
   // Write results to file
   write_results_to_csv(output_filename, time, matrix_file_name);
-
 }
 
-int main(int argc , char** argv){
-
+int main(int argc, char** argv) {
   Kokkos::initialize();
 
   std::string timestamp = timestamp_now();
 
   std::string output_filename = "spmv_benchmark_" + timestamp + ".csv";
 
-  // Input data directory / repo; matrices in the `SuiteSparseMatrix` are from 
+  // Input data directory / repo; matrices in the `SuiteSparseMatrix` are from
   // https://sparse.tamu.edu/
   std::string path = "/ascldap/users/ajpowel/SuiteSparseMatrix/";
 
   const std::string my_vect_mtx = ".mtx";
   std::vector<std::string> matrices_vect;
 
-   // Recurse directories for matrix inputs
-   for (const std::filesystem::directory_entry& dir_entry :
-     std::filesystem::recursive_directory_iterator(path)){
-       if (dir_entry.path().extension().string() == my_vect_mtx) {
-         std::cout << "Sparse matrices to be benchmarked: " << dir_entry.path().string() << std::endl;
-         matrices_vect.push_back(dir_entry.path().string());
-       }
-     }
-  
-  // Call benchmarking function
-  for (auto item: matrices_vect){
-    benchmark_spmv_kernel(item, output_filename);
+  // Recurse directories for matrix inputs
+  for (const std::filesystem::directory_entry& dir_entry :
+       std::filesystem::recursive_directory_iterator(path)) {
+    if (dir_entry.path().extension().string() == my_vect_mtx) {
+      std::cout << "Sparse matrices to be benchmarked: "
+                << dir_entry.path().string() << std::endl;
+      matrices_vect.push_back(dir_entry.path().string());
     }
+  }
+
+  // Call benchmarking function
+  for (auto item : matrices_vect) {
+    benchmark_spmv_kernel(item, output_filename);
+  }
 
   Kokkos::finalize();
   return 0;
