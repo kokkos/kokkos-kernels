@@ -10,7 +10,6 @@
 
 #include "KokkosKernels_Controls.hpp"
 #include "KokkosKernels_default_types.hpp"
-#include "Cuda/Kokkos_Cuda_Half.hpp"
 
 // #ifndef kokkos_complex_double
 // #define kokkos_complex_double Kokkos::complex<double>
