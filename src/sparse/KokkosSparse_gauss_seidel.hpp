@@ -47,6 +47,7 @@
 #include "KokkosSparse_gauss_seidel_spec.hpp"
 #include "KokkosKernels_Handle.hpp"
 #include "KokkosKernels_helpers.hpp"
+#include "KokkosKernels_Error.hpp"
 
 namespace KokkosSparse {
 
@@ -357,7 +358,7 @@ void symmetric_gauss_seidel_apply(
     os << "KokkosSparse::symmetric_gauss_seidel_apply: "
        << "X has " << x_lhs_output_vec.extent(1) << "columns, Y has "
        << y_rhs_input_vec.extent(1) << " columns.";
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
   typedef typename KernelHandle::const_size_type c_size_t;
@@ -452,7 +453,7 @@ void symmetric_block_gauss_seidel_apply(
           "and Y do not match: "
        << "X has " << x_lhs_output_vec.extent(1) << "columns, Y has "
        << y_rhs_input_vec.extent(1) << " columns.";
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
   auto gsHandle = handle->get_point_gs_handle();
   if (gsHandle->get_algorithm_type() == GS_CLUSTER) {
@@ -523,7 +524,7 @@ void forward_sweep_gauss_seidel_apply(
           "Y do not match: "
        << "X has " << x_lhs_output_vec.extent(1) << "columns, Y has "
        << y_rhs_input_vec.extent(1) << " columns.";
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
   typedef typename KernelHandle::const_size_type c_size_t;
@@ -619,7 +620,7 @@ void forward_sweep_block_gauss_seidel_apply(
           "X and Y do not match: "
        << "X has " << x_lhs_output_vec.extent(1) << "columns, Y has "
        << y_rhs_input_vec.extent(1) << " columns.";
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
   auto gsHandle = handle->get_point_gs_handle();
@@ -690,7 +691,7 @@ void backward_sweep_gauss_seidel_apply(
           "and Y do not match: "
        << "X has " << x_lhs_output_vec.extent(1) << "columns, Y has "
        << y_rhs_input_vec.extent(1) << " columns.";
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
   typedef typename KernelHandle::const_size_type c_size_t;
@@ -786,7 +787,7 @@ void backward_sweep_block_gauss_seidel_apply(
           "of X and Y do not match: "
        << "X has " << x_lhs_output_vec.extent(1) << "columns, Y has "
        << y_rhs_input_vec.extent(1) << " columns.";
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
   auto gsHandle = handle->get_point_gs_handle();
   if (gsHandle->get_algorithm_type() == GS_CLUSTER) {

@@ -48,6 +48,7 @@
 
 #include <Kokkos_Blas3_impl.hpp>
 #include <type_traits>  // requires C++11
+#include "KokkosKernels_Error.hpp"
 
 namespace KokkosBlas {
 
@@ -79,7 +80,7 @@ void gemm(const char transA, const char transB, AMat::const_value_type alpha,
            << "(" << b.extent(0) << "," << b.extent(1) << ")"
            << ", C: "
            << "(" << c.extent(0) << "," << c.extent(1) << ")";
-        Kokkos::Impl::throw_runtime_exception(os.str());
+        KokkosKernels::Impl::throw_runtime_exception(os.str());
       }
     } else if (rank == 3) {
       if (a.extent(1) != c.extent(1) || a.extent(2) != b.extent(1) ||
@@ -97,7 +98,7 @@ void gemm(const char transA, const char transB, AMat::const_value_type alpha,
            << ", C: "
            << "(" << c.extent(0) << "," << c.extent(1) << "," << c.extent(2)
            << ")";
-        Kokkos::Impl::throw_runtime_exception(os.str());
+        KokkosKernels::Impl::throw_runtime_exception(os.str());
       }
     }
 
@@ -115,7 +116,7 @@ void gemm(const char transA, const char transB, AMat::const_value_type alpha,
            << "(" << b.extent(0) << "," << b.extent(1) << ")"
            << ", C: "
            << "(" << c.extent(0) << "," << c.extent(1) << ")";
-        Kokkos::Impl::throw_runtime_exception(os.str());
+        KokkosKernels::Impl::throw_runtime_exception(os.str());
       }
     } else if (rank == 3) {
       if (a.extent(1) != c.extent(1) || a.extent(2) != b.extent(2) ||
@@ -133,7 +134,7 @@ void gemm(const char transA, const char transB, AMat::const_value_type alpha,
            << ", C: "
            << "(" << c.extent(0) << "," << c.extent(1) << "," << c.extent(2)
            << ")";
-        Kokkos::Impl::throw_runtime_exception(os.str());
+        KokkosKernels::Impl::throw_runtime_exception(os.str());
       }
     }
 
@@ -151,7 +152,7 @@ void gemm(const char transA, const char transB, AMat::const_value_type alpha,
            << "(" << b.extent(0) << "," << b.extent(1) << ")"
            << ", C: "
            << "(" << c.extent(0) << "," << c.extent(1) << ")";
-        Kokkos::Impl::throw_runtime_exception(os.str());
+        KokkosKernels::Impl::throw_runtime_exception(os.str());
       }
     } else if (rank == 3) {
       if (a.extent(2) != c.extent(1) || a.extent(1) != b.extent(1) ||
@@ -169,7 +170,7 @@ void gemm(const char transA, const char transB, AMat::const_value_type alpha,
            << ", C: "
            << "(" << c.extent(0) << "," << c.extent(1) << "," << c.extent(2)
            << ")";
-        Kokkos::Impl::throw_runtime_exception(os.str());
+        KokkosKernels::Impl::throw_runtime_exception(os.str());
       }
     }
 
@@ -187,7 +188,7 @@ void gemm(const char transA, const char transB, AMat::const_value_type alpha,
            << "(" << b.extent(0) << "," << b.extent(1) << ")"
            << ", C: "
            << "(" << c.extent(0) << "," << c.extent(1) << ")";
-        Kokkos::Impl::throw_runtime_exception(os.str());
+        KokkosKernels::Impl::throw_runtime_exception(os.str());
       }
     } else if (rank == 3) {
       if (a.extent(2) != c.extent(1) || a.extent(1) != b.extent(2) ||
@@ -205,7 +206,7 @@ void gemm(const char transA, const char transB, AMat::const_value_type alpha,
            << ", C: "
            << "(" << c.extent(0) << "," << c.extent(1) << "," << c.extent(2)
            << ")";
-        Kokkos::Impl::throw_runtime_exception(os.str());
+        KokkosKernels::Impl::throw_runtime_exception(os.str());
       }
     }
 
@@ -214,7 +215,7 @@ void gemm(const char transA, const char transB, AMat::const_value_type alpha,
     os << "KokkosBlas::gemm: values for transA or transB should be T t or N n "
           "you have input: "
        << "TransA:" << transA << " TransB:" << transB;
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
   typedef Kokkos::View<typename std::conditional<

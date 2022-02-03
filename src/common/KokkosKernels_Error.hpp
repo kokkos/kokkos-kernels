@@ -36,36 +36,25 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Luc Berger-Vergiat (lberge@sandia.gov)
+// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
 */
 
-#ifndef ARMPL_SPMV_HPP_
-#define ARMPL_SPMV_HPP_
+#ifndef KOKKOSKERNELS_ERROR_HPP
+#define KOKKOSKERNELS_ERROR_HPP
 
-#ifdef KOKKOSKERNELS_ENABLE_TPL_ARMPL
-#include <armpl.h>
+#include <stdexcept>
 
-void armpl_matvec_wrapper(armpl_spmat_t A, float* x, float* y) {
-  const float alpha = 1.0;
-  const float beta  = 0.0;
-  armpl_spmv_exec_s(ARMPL_SPARSE_OPERATION_NOTRANS, alpha, A, x, beta, y);
+namespace KokkosKernels {
+namespace Impl {
+
+inline void throw_runtime_exception(const std::string &msg) {
+  throw std::runtime_error(msg);
 }
 
-void armpl_matvec_wrapper(armpl_spmat_t A, double* x, double* y) {
-  const double alpha = 1.0;
-  const double beta  = 0.0;
-  armpl_spmv_exec_d(ARMPL_SPARSE_OPERATION_NOTRANS, alpha, A, x, beta, y);
-}
+}  // namespace Impl
+}  // namespace KokkosKernels
 
-template <typename AType, typename XType, typename YType>
-void armpl_matvec(AType /*A*/, XType x, YType y, spmv_additional_data* data) {
-  // using Scalar = typename AType::non_const_value_type;
-  // Run armpl spmv corresponding to scalar type
-  armpl_matvec_wrapper(data->A, x.data(), y.data());
-}
-
-#endif  // KOKKOSKERNELS_ENABLE_TPL_ARMPL
-#endif  // ARMPL_SPMV_HPP_
+#endif  // KOKKOSKERNELS_ERROR_HPP

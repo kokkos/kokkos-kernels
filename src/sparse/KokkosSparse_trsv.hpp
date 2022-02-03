@@ -55,6 +55,7 @@
 #include <type_traits>
 
 #include "KokkosSparse_trsv_spec.hpp"
+#include "KokkosKernels_Error.hpp"
 
 namespace KokkosSparse {
 
@@ -106,20 +107,20 @@ void trsv(const char uplo[], const char trans[], const char diag[],
       uplo[0] != 'l') {
     std::ostringstream os;
     os << "Invalid uplo[0] = \'" << uplo << "\'";
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
   if (zero != numRows && trans[0] != 'C' && trans[0] != 'c' &&
       trans[0] != 'T' && trans[0] != 't' && trans[0] != 'N' &&
       trans[0] != 'n') {
     std::ostringstream os;
     os << "Invalid trans[0] = \'" << trans << "\'";
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
   if (zero != numRows && diag[0] != 'U' && diag[0] != 'u' && diag[0] != 'N' &&
       diag[0] != 'n') {
     std::ostringstream os;
     os << "Invalid diag[0] = \'" << diag << "\'";
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
   /*  typedef typename BMV::size_type size_type;
@@ -133,7 +134,7 @@ void trsv(const char uplo[], const char trans[], const char diag[],
        << "A is " << numRows << " x " << numCols << ", x is " << x.extent(0)
        << " x " << x.extent(1) << ", and b is " << b.extent(0) << " x "
        << b.extent(1);
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
   if (transpose && (numRows != x.extent(0) || numCols != b.extent(0))) {
     std::ostringstream os;
@@ -141,7 +142,7 @@ void trsv(const char uplo[], const char trans[], const char diag[],
        << "A is " << numRows << " x " << numCols << ", x is " << x.extent(0)
        << " x " << x.extent(1) << ", and b is " << b.extent(0) << " x "
        << b.extent(1);
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
   typedef KokkosSparse::CrsMatrix<

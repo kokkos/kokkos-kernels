@@ -50,6 +50,7 @@
 
 #include "KokkosSparse_BsrMatrix.hpp"
 #include "KokkosKernels_Controls.hpp"
+#include "KokkosKernels_Error.hpp"
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 #include <KokkosSparse_spmv_bsrmatrix_impl.hpp>
 #endif
@@ -272,7 +273,7 @@ struct SPMV_MV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
     */
     if (use_tc) {
       if (requestDouble) {
-        Kokkos::Impl::throw_runtime_exception(
+        KokkosKernels::Impl::throw_runtime_exception(
             "KokkosSparse::spmv[algorithm=experimental_bsr_tc] "
             "tc_precision=double unsupported KOKKOS_ARCH_VOLTA");
       }

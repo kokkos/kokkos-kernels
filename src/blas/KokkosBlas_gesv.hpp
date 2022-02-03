@@ -56,6 +56,7 @@
 #include <type_traits>
 
 #include "KokkosBlas_gesv_spec.hpp"
+#include "KokkosKernels_Error.hpp"
 
 namespace KokkosBlas {
 
@@ -110,7 +111,7 @@ void gesv(const AMatrix& A, const BXMV& B, const IPIVV& IPIV) {
        << "Valid options include zero-extent 1-D view (no pivoting), or 1-D "
           "View with size of "
        << A0 << " (partial pivoting).";
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
   // Check for no pivoting case. Only MAGMA supports no pivoting interface
@@ -122,7 +123,7 @@ void gesv(const AMatrix& A, const BXMV& B, const IPIVV& IPIV) {
     std::ostringstream os;
     os << "KokkosBlas::gesv: IPIV: " << IPIV0 << ". "
        << "BLAS TPL does not support no pivoting.";
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 #endif
 #else                                 // not have MAGMA TPL
@@ -131,7 +132,7 @@ void gesv(const AMatrix& A, const BXMV& B, const IPIVV& IPIV) {
     std::ostringstream os;
     os << "KokkosBlas::gesv: IPIV: " << IPIV0 << ". "
        << "BLAS TPL does not support no pivoting.";
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 #endif
 #endif
@@ -142,7 +143,7 @@ void gesv(const AMatrix& A, const BXMV& B, const IPIVV& IPIV) {
     os << "KokkosBlas::gesv: Dimensions of A, and B do not match: "
        << " A: " << A.extent(0) << " x " << A.extent(1) << " B: " << B.extent(0)
        << " x " << B.extent(1);
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
   typedef Kokkos::View<

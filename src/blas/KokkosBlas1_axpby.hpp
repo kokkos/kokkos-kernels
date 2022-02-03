@@ -47,6 +47,7 @@
 
 #include <KokkosBlas1_axpby_spec.hpp>
 #include <KokkosKernels_helpers.hpp>
+#include <KokkosKernels_Error.hpp>
 
 // axpby() accepts both scalar coefficients a and b, and vector
 // coefficients (apply one for each column of the input multivectors).
@@ -82,7 +83,7 @@ void axpby(const AV& a, const XMV& X, const BV& b, const YMV& Y) {
     os << "KokkosBlas::axpby: Dimensions of X and Y do not match: "
        << "X: " << X.extent(0) << " x " << X.extent(1) << ", Y: " << Y.extent(0)
        << " x " << Y.extent(1);
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
   using UnifiedXLayout =
