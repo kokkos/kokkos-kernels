@@ -46,6 +46,8 @@
 #include <string>
 #include <filesystem>  // For use with C++ 17
 #include <fstream>
+// Needed for `strftime` in timestamping function
+#include <time.h>
 
 #include <Kokkos_Core.hpp>
 
