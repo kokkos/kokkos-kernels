@@ -311,9 +311,10 @@ struct BsrMatrixSpMVTensorCoreFunctor {
       // load 0 outside of the block boundary and y vector boundary
       // load 0 outside of the vector boundary
       if (bi < a.blockDim() && bj < a.blockDim() && xy_j + fj < y.extent(1)) {
-        sy(warpIdx_y, warpIdx_x, fi, fj) = beta * y(ay_i + fi, xy_j + fj);
+        sy(warpIdx_y, warpIdx_x, fi, fj) =
+            YFragScalar(beta * y(ay_i + fi, xy_j + fj));
       } else {
-        sy(warpIdx_y, warpIdx_x, fi, fj) = 0;
+        sy(warpIdx_y, warpIdx_x, fi, fj) = YFragScalar(0);
       }
     }
     // no barrier - each warp uses independent shared memory
@@ -364,9 +365,9 @@ struct BsrMatrixSpMVTensorCoreFunctor {
           // fill shmem with 0 outside of the block boundary
           if (bi < a.blockDim() && bj < a.blockDim()) {
             sa(ti / FRAG_M, ti % FRAG_M, tj) =
-                alpha * ap[bi * a.blockDim() + bj];
+                AFragScalar(alpha * ap[bi * a.blockDim() + bj]);
           } else {
-            sa(ti / FRAG_M, ti % FRAG_M, tj) = 0;
+            sa(ti / FRAG_M, ti % FRAG_M, tj) = AFragScalar(0);
           }
         }
 
@@ -391,7 +392,7 @@ struct BsrMatrixSpMVTensorCoreFunctor {
             sx(tj / FRAG_N, ti, tj % FRAG_N) = XFragScalar(
                 x(j * a.blockDim() + bi, blockIdx_j * a.blockDim() + bj));
           } else {
-            sx(tj / FRAG_N, ti, tj % FRAG_N) = 0;
+            sx(tj / FRAG_N, ti, tj % FRAG_N) = XFragScalar(0);
           }
         }
         mbr.team_barrier();
