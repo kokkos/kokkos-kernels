@@ -50,6 +50,7 @@
 
 #include <KokkosBlas2_gemv_spec.hpp>
 #include <KokkosKernels_helpers.hpp>
+#include <KokkosKernels_Error.hpp>
 #include <sstream>
 #include <type_traits>  // requires C++11, but so does Kokkos
 
@@ -99,7 +100,7 @@ void gemv(const typename AViewType::execution_space& space, const char trans[],
       os << "KokkosBlas::gemv: Dimensions of A, x, and y do not match: "
          << "A: " << A.extent(0) << " x " << A.extent(1)
          << ", x: " << x.extent(0) << ", y: " << y.extent(0);
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   } else if (trans[0] == 'T' || trans[0] == 't' || trans[0] == 'C' ||
              trans[0] == 'c' || trans[0] == 'H' || trans[0] == 'h') {
@@ -108,7 +109,7 @@ void gemv(const typename AViewType::execution_space& space, const char trans[],
       os << "KokkosBlas::dot: Dimensions of A, x, and y do not match: "
          << "A: " << A.extent(0) << " x " << A.extent(1)
          << ", x: " << x.extent(0) << ", y: " << y.extent(0);
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   } else {
     std::ostringstream os;
@@ -116,7 +117,7 @@ void gemv(const typename AViewType::execution_space& space, const char trans[],
        << "'.  Valid values "
           "include 'N' (No transpose), 'T' (Transpose), and 'C' (Conjugate "
           "transpose).";
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
   using ALayout = typename AViewType::array_layout;

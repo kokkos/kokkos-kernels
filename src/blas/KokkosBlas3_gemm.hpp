@@ -51,6 +51,7 @@
 #include <KokkosBlas2_gemv.hpp>
 #include <KokkosBlas1_scal.hpp>
 #include <KokkosKernels_helpers.hpp>
+#include <KokkosKernels_Error.hpp>
 #include <sstream>
 #include <type_traits>
 
@@ -167,7 +168,7 @@ void gemm(const typename CViewType::execution_space& space, const char transA[],
        << "Valid values include 'N' or 'n' (No transpose), 'T' or 't' "
           "(Transpose), "
           "and 'C' or 'c' (Conjugate transpose).";
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
   // Check compatibility of dimensions at run time.
@@ -189,7 +190,7 @@ void gemm(const typename CViewType::execution_space& space, const char transA[],
        << "transA: " << transA[0] << " transB: " << transB[0]
        << " A: " << A.extent(0) << " x " << A.extent(1) << " B: " << B.extent(0)
        << " x " << B.extent(1) << " C: " << C.extent(0) << " x " << C.extent(1);
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 #endif  // KOKKOSKERNELS_DEBUG_LEVEL > 0
 

@@ -36,36 +36,26 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Luc Berger-Vergiat (lberge@sandia.gov)
+// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
 */
 
-#ifndef ARMPL_SPMV_HPP_
-#define ARMPL_SPMV_HPP_
+#ifndef TEST_COMMON_ERROR_HPP
+#define TEST_COMMON_ERROR_HPP
 
-#ifdef KOKKOSKERNELS_ENABLE_TPL_ARMPL
-#include <armpl.h>
+#include "KokkosKernels_Error.hpp"
 
-void armpl_matvec_wrapper(armpl_spmat_t A, float* x, float* y) {
-  const float alpha = 1.0;
-  const float beta  = 0.0;
-  armpl_spmv_exec_s(ARMPL_SPARSE_OPERATION_NOTRANS, alpha, A, x, beta, y);
+void test_kokkoskernels_throw() {
+  const std::string my_throw_msg =
+      "Testing Kokkos Kernels' throw_runtime_exception.";
+  try {
+    KokkosKernels::Impl::throw_runtime_exception(my_throw_msg);
+  } catch (const std::runtime_error& e) {
+  }
 }
 
-void armpl_matvec_wrapper(armpl_spmat_t A, double* x, double* y) {
-  const double alpha = 1.0;
-  const double beta  = 0.0;
-  armpl_spmv_exec_d(ARMPL_SPARSE_OPERATION_NOTRANS, alpha, A, x, beta, y);
-}
+TEST_F(TestCategory, common_throw) { test_kokkoskernels_throw(); }
 
-template <typename AType, typename XType, typename YType>
-void armpl_matvec(AType /*A*/, XType x, YType y, spmv_additional_data* data) {
-  // using Scalar = typename AType::non_const_value_type;
-  // Run armpl spmv corresponding to scalar type
-  armpl_matvec_wrapper(data->A, x.data(), y.data());
-}
-
-#endif  // KOKKOSKERNELS_ENABLE_TPL_ARMPL
-#endif  // ARMPL_SPMV_HPP_
+#endif  // TEST_COMMON_ERROR_HPP

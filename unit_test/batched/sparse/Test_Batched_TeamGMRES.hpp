@@ -63,9 +63,9 @@ struct Functor_TestBatchedTeamGMRES {
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
     Kokkos::TeamPolicy<DeviceType> policy(_D.extent(0) / _N_team,
-                                          Kokkos::AUTO(), Kokkos::AUTO());
+                                          Kokkos::AUTO());
 
-    size_t bytes_0 = ValuesViewType::shmem_size(_N_team, _D.extent(1));
+    size_t bytes_0 = ValuesViewType::shmem_size(_N_team, _X.extent(1));
     size_t bytes_1 = ValuesViewType::shmem_size(_N_team, 1);
 
     handle.set_max_iteration(10);

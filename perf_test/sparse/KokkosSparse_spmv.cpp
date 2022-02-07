@@ -75,10 +75,6 @@
 #include <OpenMPSmartStatic_SPMV.hpp>
 #endif
 
-#ifdef KOKKOSKERNELS_ENABLE_TPL_ARMPL
-#include <spmv/ArmPL_SPMV.hpp>
-#endif
-
 int test_crs_matrix_singlevec(Ordinal numRows, Ordinal numCols, int test,
                               const char* filename, Ordinal rows_per_thread,
                               int team_size, int vector_length, int schedule,

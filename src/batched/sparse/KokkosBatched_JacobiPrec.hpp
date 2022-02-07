@@ -60,7 +60,7 @@ class JacobiPrec {
       typename Kokkos::Details::ArithTraits<ScalarType>::mag_type;
 
  private:
-  mutable ValuesViewType diag_values;
+  ValuesViewType diag_values;
   int n_operators;
   int n_rows;
   int n_colums;
@@ -96,43 +96,45 @@ class JacobiPrec {
       auto vs0               = diag_values.stride_0();
       auto vs1               = diag_values.stride_1();
 
-      Kokkos::parallel_for(
+      Kokkos::parallel_reduce(
           Kokkos::TeamThreadRange(member, 0, n_operators * n_rows),
-          [&](const int &iTemp) {
+          [&](const int &iTemp, int &ltooSmall) {
             int i, j;
             getIndices<int, typename ValuesViewType::array_layout>(
                 iTemp, n_rows, n_operators, j, i);
             if (Kokkos::abs<ScalarType>(diag_values_array[i * vs0 + j * vs1]) <=
                 epsilon) {
-              Kokkos::atomic_fetch_add(&tooSmall, 1);
+              ltooSmall++;
               diag_values_array[i * vs0 + j * vs1] = one;
             } else
               diag_values_array[i * vs0 + j * vs1] =
                   one / diag_values_array[i * vs0 + j * vs1];
-          });
+          },
+          tooSmall);
     } else if (std::is_same<ArgMode, Mode::TeamVector>::value) {
       auto diag_values_array = diag_values.data();
       auto vs0               = diag_values.stride_0();
       auto vs1               = diag_values.stride_1();
 
-      Kokkos::parallel_for(
+      Kokkos::parallel_reduce(
           Kokkos::TeamVectorRange(member, 0, n_operators * n_rows),
-          [&](const int &iTemp) {
+          [&](const int &iTemp, int &ltooSmall) {
             int i, j;
             getIndices<int, typename ValuesViewType::array_layout>(
                 iTemp, n_rows, n_operators, j, i);
             if (Kokkos::abs<ScalarType>(diag_values_array[i * vs0 + j * vs1]) <=
                 epsilon) {
-              Kokkos::atomic_fetch_add(&tooSmall, 1);
+              ltooSmall++;
               diag_values_array[i * vs0 + j * vs1] = one;
             } else
               diag_values_array[i * vs0 + j * vs1] =
                   one / diag_values_array[i * vs0 + j * vs1];
-          });
+          },
+          tooSmall);
     }
 
     if (tooSmall > 0)
-      printf(
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
           "KokkosBatched::JacobiPrec: %d entrie(s) has/have a too small "
           "magnitude and have been replaced by one, \n",
           (int)tooSmall);
@@ -144,9 +146,12 @@ class JacobiPrec {
   KOKKOS_INLINE_FUNCTION void apply(const MemberType &member,
                                     const XViewType &X,
                                     const YViewType &Y) const {
-    if (!computed_inverse) this->computeInverse<MemberType, ArgMode>(member);
+    if (!computed_inverse) {
+      this->computeInverse<MemberType, ArgMode>(member);
+      member.team_barrier();  // Finish writing to this->diag_values
+    }
 
-    KokkosBatched::HadamardProduct<MemberType, ArgTrans>::template invoke<
+    KokkosBatched::HadamardProduct<MemberType, ArgMode>::template invoke<
         ValuesViewType, XViewType, YViewType>(member, diag_values, X, Y);
   }
 };

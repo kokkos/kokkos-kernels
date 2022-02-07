@@ -93,10 +93,11 @@ struct multivector_layout_adapter<ViewType, false> {
 };
 
 template <class Scalar1, class Scalar2, class Scalar3>
-void EXPECT_NEAR_KK(Scalar1 val1, Scalar2 val2, Scalar3 tol) {
+void EXPECT_NEAR_KK(Scalar1 val1, Scalar2 val2, Scalar3 tol,
+                    std::string msg = "") {
   typedef Kokkos::Details::ArithTraits<Scalar1> AT1;
   typedef Kokkos::Details::ArithTraits<Scalar3> AT3;
-  EXPECT_LE((double)AT1::abs(val1 - val2), (double)AT3::abs(tol));
+  EXPECT_LE((double)AT1::abs(val1 - val2), (double)AT3::abs(tol)) << msg;
 }
 
 template <class ViewType1, class ViewType2, class Scalar>
@@ -116,9 +117,26 @@ void EXPECT_NEAR_KK_1DVIEW(ViewType1 v1, ViewType2 v2, Scalar tol) {
   }
 }
 
+/// This function returns a descriptive user defined failure string for
+/// insertion into gtest macros such as FAIL() and EXPECT_LE(). \param file The
+/// filename where the failure originated \param func The function where the
+/// failure originated \param line The line number where the failure originated
+/// \return a new string containing: "  > from file:func:line\n    > "
+static inline const std::string kk_failure_str(std::string file,
+                                               std::string func,
+                                               const int line) {
+  std::string failure_msg = "  > from ";
+  failure_msg += (file + ":" + func + ":" + std::to_string(line) + "\n    > ");
+  return std::string(failure_msg);
+}
+
 #if defined(KOKKOS_HALF_T_IS_FLOAT)
 using halfScalarType = Kokkos::Experimental::half_t;
 #endif  // KOKKOS_HALF_T_IS_FLOAT
+
+#if defined(KOKKOS_BHALF_T_IS_FLOAT)
+using bhalfScalarType = Kokkos::Experimental::bhalf_t;
+#endif  // KOKKOS_BHALF_T_IS_FLOAT
 
 template <class ViewTypeA, class ViewTypeB, class ViewTypeC,
           class ExecutionSpace>
@@ -238,7 +256,8 @@ struct Functor_BatchedVanillaGEMM {
     Kokkos::parallel_for(
         "Test::VanillaGEMM",
         Kokkos::TeamPolicy<ExecutionSpace>(
-            batch_size_last_dim ? C.extent(2) : C.extent(0), Kokkos::AUTO, 16),
+            batch_size_last_dim ? C.extent(2) : C.extent(0), Kokkos::AUTO,
+            KokkosKernels::Impl::kk_get_max_vector_size<ExecutionSpace>()),
         *this);
   }
 };
@@ -434,27 +453,27 @@ struct SharedParamTag {
 
 /// \brief value_type_name returns a string with the value type name
 template <typename T>
-KOKKOS_INLINE_FUNCTION std::string value_type_name() {
+std::string value_type_name() {
   return "::UnknownValueType";
 }
 
 template <>
-KOKKOS_INLINE_FUNCTION std::string value_type_name<float>() {
+std::string value_type_name<float>() {
   return "::Float";
 }
 
 template <>
-KOKKOS_INLINE_FUNCTION std::string value_type_name<double>() {
+std::string value_type_name<double>() {
   return "::Double";
 }
 
 template <>
-KOKKOS_INLINE_FUNCTION std::string value_type_name<Kokkos::complex<float>>() {
+std::string value_type_name<Kokkos::complex<float>>() {
   return "::ComplexFloat";
 }
 
 template <>
-KOKKOS_INLINE_FUNCTION std::string value_type_name<Kokkos::complex<double>>() {
+std::string value_type_name<Kokkos::complex<double>>() {
   return "::ComplexDouble";
 }
 }  // namespace Test

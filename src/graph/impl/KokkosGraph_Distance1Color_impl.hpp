@@ -2198,6 +2198,7 @@ template <typename HandleType, typename in_row_index_view_type_,
           typename in_nonzero_index_view_type_>
 class GraphColor_EB : public GraphColor<HandleType, in_row_index_view_type_,
                                         in_nonzero_index_view_type_> {
+  // FIXME SYCL: This does not work, returns colors with conflicts.
  public:
   typedef long long int ban_type;
 

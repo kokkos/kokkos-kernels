@@ -125,8 +125,10 @@ void impl_test_batched_gemm(const int N, const int matAdim1, const int matAdim2,
 
   mag_type eps = ats::epsilon();
 
-  eps *=
-      std::is_same<value_type, Kokkos::Experimental::half_t>::value ? 4 : 1e3;
+  eps *= std::is_same<value_type, Kokkos::Experimental::half_t>::value ||
+                 std::is_same<value_type, Kokkos::Experimental::bhalf_t>::value
+             ? 4
+             : 1e3;
 
   for (int k = 0; k < N; ++k)
     for (int i = 0; i < matCdim1; ++i)

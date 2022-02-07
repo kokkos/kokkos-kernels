@@ -132,8 +132,8 @@ struct TeamVectorGMRES {
     member.team_barrier();
 
     P.template apply<MemberType, ScratchPadVectorViewType,
-                     ScratchPadVectorViewType, Trans::NoTranspose, Mode::Team,
-                     1>(member, R, R);
+                     ScratchPadVectorViewType, Trans::NoTranspose,
+                     Mode::TeamVector, 1>(member, R, R);
     member.team_barrier();
 
     TeamVectorDot<MemberType>::invoke(member, R, R, beta);
@@ -145,6 +145,8 @@ struct TeamVectorGMRES {
                            G(i, 0) = beta(i) > max_tolerance ? beta(i) : 0.;
                            tmp(i) = beta(i) > max_tolerance ? 1. / beta(i) : 0.;
                          });
+
+    member.team_barrier();  // Finish writing to tmp
 
     Kokkos::parallel_for(
         Kokkos::TeamVectorRange(member, 0, numMatrices * numRows),
@@ -159,31 +161,38 @@ struct TeamVectorGMRES {
     // int number_not_converged = 0;
 
     for (size_t j = 0; j < maximum_iteration; ++j) {
+      member.team_barrier();  // Finish writing to V
       // q := A p_j
       auto V_j = Kokkos::subview(V, Kokkos::ALL, j, Kokkos::ALL);
 
       A.template apply<MemberType, ScratchPadVectorViewType,
                        ScratchPadVectorViewType, Trans::NoTranspose,
                        Mode::TeamVector>(member, V_j, W);
+      member.team_barrier();
       P.template apply<MemberType, ScratchPadVectorViewType,
                        ScratchPadVectorViewType, Trans::NoTranspose,
                        Mode::TeamVector, 1>(member, W, W);
-      member.team_barrier();
 
       for (size_t i = 0; i < j + 1; ++i) {
+        member.team_barrier();  // Finish writing to W
         auto V_i = Kokkos::subview(V, Kokkos::ALL, i, Kokkos::ALL);
         TeamVectorDot<MemberType>::invoke(member, W, V_i, tmp);
         member.team_barrier();
         TeamVectorCopy1D::invoke(member, tmp,
                                  Kokkos::subview(H, Kokkos::ALL, i, j));
 
+        member.team_barrier();  // Don't start modifying tmp until copy above
+                                // finishes
         Kokkos::parallel_for(
             Kokkos::TeamVectorRange(member, 0, numMatrices),
             [&](const OrdinalType& ii) { tmp(ii) = -tmp(ii); });
 
+        member.team_barrier();  // Finish writing to tmp
+
         TeamVectorAxpy<MemberType>::invoke(member, tmp, V_i, W);
       }
 
+      member.team_barrier();  // Finish writing to W
       TeamVectorDot<MemberType>::invoke(member, W, W, tmp);
       member.team_barrier();
       Kokkos::parallel_for(
@@ -250,6 +259,8 @@ struct TeamVectorGMRES {
           });
     }
 
+    member.team_barrier();  // Finish writing to G
+
     Kokkos::parallel_for(
         Kokkos::TeamVectorRange(member, 0, numMatrices),
         [&](const OrdinalType& l) {
@@ -264,10 +275,14 @@ struct TeamVectorGMRES {
                                                                  Kokkos::ALL));
         });
 
-    for (size_t j = 0; j < maximum_iteration; ++j)
+    member.team_barrier();  // Finish writing to G
+
+    for (size_t j = 0; j < maximum_iteration; ++j) {
       TeamVectorAxpy<MemberType>::invoke(
           member, Kokkos::subview(G, Kokkos::ALL, j),
           Kokkos::subview(V, Kokkos::ALL, j, Kokkos::ALL), X);
+      member.team_barrier();  // Finish writing to X
+    }
 
     TeamVectorCopy<MemberType>::invoke(member, X, _X);
     return status;

@@ -10,5 +10,6 @@
 #include <Test_Common_Sorting.hpp>
 #include <Test_Common_Transpose.hpp>
 #include <Test_Common_IOUtils.hpp>
+#include <Test_Common_Error.hpp>
 
 #endif  // TEST_COMMON_HPP

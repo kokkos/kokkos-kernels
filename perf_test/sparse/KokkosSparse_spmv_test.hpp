@@ -33,6 +33,9 @@
 #include <spmv/MKL_SPMV.hpp>
 #endif
 
+template <typename AType, typename XType, typename YType>
+void armpl_matvec(AType /*A*/, XType x, YType y, spmv_additional_data* data);
+
 enum {
   KOKKOS,
   MKL,

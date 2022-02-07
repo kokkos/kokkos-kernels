@@ -26,6 +26,8 @@ IF(NOT KOKKOSKERNELS_HAS_TRILINOS)
   SET(KokkosKernels_VERSION_MAJOR 3)
   SET(KokkosKernels_VERSION_MINOR 5)
   SET(KokkosKernels_VERSION_PATCH 99)
+  SET(KokkosKernels_VERSION "${KokkosKernels_VERSION_MAJOR}.${KokkosKernels_VERSION_MINOR}.${KokkosKernels_VERSION_PATCH}")
+  MATH(EXPR KOKKOSKERNELS_VERSION "${KokkosKernels_VERSION_MAJOR} * 10000 + ${KokkosKernels_VERSION_MINOR} * 100 + ${KokkosKernels_VERSION_PATCH}")
 ENDIF()
 
 IF(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0")
@@ -46,6 +48,8 @@ ELSE()
 ENDIF()
 INCLUDE(cmake/fake_tribits.cmake)
 INCLUDE(cmake/kokkoskernels_tribits.cmake)
+
+OPTION(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 
 KOKKOSKERNELS_PACKAGE()
 

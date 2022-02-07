@@ -170,9 +170,12 @@ void impl_test_trmm(const char* side, const char* uplo, const char* trans,
   vgemm.C     = B_expected;  // out
   vgemm.alpha = alpha;
   vgemm.beta  = beta;
-  Kokkos::parallel_for("KokkosBlas::Test::trmm_VanillaGEMM",
-                       Kokkos::TeamPolicy<execution_space>(M, Kokkos::AUTO, 16),
-                       vgemm);
+  Kokkos::parallel_for(
+      "KokkosBlas::Test::trmm_VanillaGEMM",
+      Kokkos::TeamPolicy<execution_space>(
+          M, Kokkos::AUTO,
+          KokkosKernels::Impl::kk_get_max_vector_size<execution_space>()),
+      vgemm);
   Kokkos::fence();
   Kokkos::deep_copy(host_B_expected, B_expected);
 

@@ -568,6 +568,16 @@ class SPGEMMHandle {
 #endif
     }
 #endif
+
+#if defined(KOKKOS_ENABLE_SYCL)
+    if (std::is_same<Kokkos::Experimental::SYCL, ExecutionSpace>::value) {
+      this->algorithm_type = SPGEMM_KK;
+#ifdef VERBOSE
+      std::cout << "SYCL Execution Space, Default Algorithm: SPGEMM_KK"
+                << std::endl;
+#endif
+    }
+#endif
   }
 
   void set_compression(bool compress_second_matrix_) {

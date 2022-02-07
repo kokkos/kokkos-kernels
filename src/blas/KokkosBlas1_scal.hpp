@@ -47,6 +47,7 @@
 
 #include <KokkosBlas1_scal_spec.hpp>
 #include <KokkosKernels_helpers.hpp>
+#include <KokkosKernels_Error.hpp>
 
 namespace KokkosBlas {
 
@@ -76,7 +77,7 @@ void scal(const RMV& R, const AV& a, const XMV& X) {
     os << "KokkosBlas::scal: Dimensions of R and X do not match: "
        << "R: " << R.extent(0) << " x " << R.extent(1) << ", X: " << X.extent(0)
        << " x " << X.extent(1);
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
   using UnifiedRLayout =

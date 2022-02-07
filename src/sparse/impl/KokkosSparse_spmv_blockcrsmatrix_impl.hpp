@@ -999,7 +999,7 @@ struct BCRS_GEMM_Transpose_Functor {
           const auto row  = m_A.block_row_Const(iBlock);
           const auto nrhs = m_x.extent(1);
           //
-          for (ordinal_type ic = 0; ic < nrhs; ++ic) {
+          for (size_t ic = 0; ic < nrhs; ++ic) {
             for (ordinal_type ir = 0; ir < block_dim; ++ir) {
               Kokkos::parallel_for(
                   Kokkos::ThreadVectorRange(dev, count),

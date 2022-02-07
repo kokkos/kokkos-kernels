@@ -133,14 +133,13 @@ IF (KOKKOS_ENABLE_SYCL)
     COMPONENTS batched
   )
 
-  # FIXME_SYCL
-  #KOKKOSKERNELS_ADD_UNIT_TEST(
-  #  sparse_sycl
-  #  SOURCES
-  #    Test_Main.cpp
-  #    sycl/Test_SYCL_Sparse.cpp
-  #  COMPONENTS sparse
-  #)
+  KOKKOSKERNELS_ADD_UNIT_TEST(
+    sparse_sycl
+    SOURCES
+      Test_Main.cpp
+      sycl/Test_SYCL_Sparse.cpp
+    COMPONENTS sparse
+  )
 
   KOKKOSKERNELS_ADD_UNIT_TEST(
     graph_sycl

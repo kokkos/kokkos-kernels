@@ -51,6 +51,7 @@
 #include <KokkosBlas3_trsm.hpp>
 #include <KokkosSparse_spmv.hpp>
 #include <KokkosSparse_Preconditioner.hpp>
+#include "KokkosKernels_Error.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 // libstdc++ half_t overloads
@@ -141,7 +142,7 @@ GmresStats gmres(
     std::ostringstream os;
     os << "gmres: A must be a square matrix: "
        << "numRows: " << n << "  numCols: " << A.numCols();
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
   if (X.extent(0) != B.extent(0) || X.extent(0) != n) {
@@ -149,7 +150,7 @@ GmresStats gmres(
     os << "gmres: Dimensions of A, X, and B do not match: "
        << "A: " << n << " x " << n << ", X: " << X.extent(0)
        << "x 1, B: " << B.extent(0) << " x 1";
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
   // Check parameter validity:
   if (m <= 0) {

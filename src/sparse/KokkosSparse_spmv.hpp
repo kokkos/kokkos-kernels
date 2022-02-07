@@ -58,6 +58,7 @@
 #include "KokkosBlas1_scal.hpp"
 #include "KokkosKernels_Utils.hpp"
 #include "KokkosKernels_MemSpaceUtils.hpp"
+#include "KokkosKernels_Error.hpp"
 
 namespace KokkosSparse {
 
@@ -96,7 +97,7 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
          << ", A: " << A.numRows() << " x " << A.numCols()
          << ", x: " << x.extent(0) << " x " << x.extent(1)
          << ", y: " << y.extent(0) << " x " << y.extent(1);
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   } else {
     if ((x.extent(1) != y.extent(1)) ||
@@ -107,7 +108,7 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
          << ", A: " << A.numRows() << " x " << A.numCols()
          << ", x: " << x.extent(0) << " x " << x.extent(1)
          << ", y: " << y.extent(0) << " x " << y.extent(1);
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   }
 
@@ -272,7 +273,7 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
          << A.numCols() * A.blockDim() << ", x: " << x.extent(0) << " x "
          << x.extent(1) << ", y: " << y.extent(0) << " x " << y.extent(1);
 
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   } else {
     if ((x.extent(1) != y.extent(1)) ||
@@ -287,7 +288,7 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
          << A.numCols() * A.blockDim() << ", x: " << x.extent(0) << " x "
          << x.extent(1) << ", y: " << y.extent(0) << " x " << y.extent(1);
 
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   }
   //
@@ -383,7 +384,7 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
          << A.numCols() * A.blockDim() << ", x: " << x.extent(0) << " x "
          << x.extent(1) << ", y: " << y.extent(0) << " x " << y.extent(1);
 
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   } else {
     if ((x.extent(1) != y.extent(1)) ||
@@ -398,7 +399,7 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
          << A.numCols() * A.blockDim() << ", x: " << x.extent(0) << " x "
          << x.extent(1) << ", y: " << y.extent(0) << " x " << y.extent(1);
 
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   }
   //
@@ -632,7 +633,7 @@ void spmv(KokkosKernels::Experimental::Controls /*controls*/, const char mode[],
          << ", A: " << A.numRows() << " x " << A.numCols()
          << ", x: " << x.extent(0) << " x " << x.extent(1)
          << ", y: " << y.extent(0) << " x " << y.extent(1);
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   } else {
     if ((x.extent(1) != y.extent(1)) ||
@@ -643,7 +644,7 @@ void spmv(KokkosKernels::Experimental::Controls /*controls*/, const char mode[],
          << ", A: " << A.numRows() << " x " << A.numCols()
          << ", x: " << x.extent(0) << " x " << x.extent(1)
          << ", y: " << y.extent(0) << " x " << y.extent(1);
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   }
 
@@ -757,7 +758,7 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
          << A.numCols() * A.blockDim() << ", x: " << x.extent(0) << " x "
          << x.extent(1) << ", y: " << y.extent(0) << " x " << y.extent(1);
 
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   } else {
     if ((x.extent(1) != y.extent(1)) ||
@@ -772,7 +773,7 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
          << A.numCols() * A.blockDim() << ", x: " << x.extent(0) << " x "
          << x.extent(1) << ", y: " << y.extent(0) << " x " << y.extent(1);
 
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   }
   //
@@ -943,7 +944,7 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
          << A.numCols() * A.blockDim() << ", x: " << x.extent(0) << " x "
          << x.extent(1) << ", y: " << y.extent(0) << " x " << y.extent(1);
 
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   } else {
     if ((x.extent(1) != y.extent(1)) ||
@@ -958,7 +959,7 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
          << A.numCols() * A.blockDim() << ", x: " << x.extent(0) << " x "
          << x.extent(1) << ", y: " << y.extent(0) << " x " << y.extent(1);
 
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   }
   //
@@ -1056,7 +1057,38 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
                              typename YVector::non_const_value_type>::value,
                 "KokkosSparse::spmv: Output Vector must be non-const.");
 
-  //
+  // Check compatibility of dimensions at run time.
+  if ((mode[0] == NoTranspose[0]) || (mode[0] == Conjugate[0])) {
+    if ((x.extent(1) != y.extent(1)) ||
+        (static_cast<size_t>(A.numPointCols()) !=
+         static_cast<size_t>(x.extent(0))) ||
+        (static_cast<size_t>(A.numPointRows()) !=
+         static_cast<size_t>(y.extent(0)))) {
+      std::ostringstream os;
+      os << "KokkosSparse::spmv (Generic): Dimensions do not match: "
+         << ", A: " << A.numPointRows() << " x " << A.numPointCols()
+         << ", x: " << x.extent(0) << " x " << x.extent(1)
+         << ", y: " << y.extent(0) << " x " << y.extent(1);
+
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
+    }
+  } else {
+    if ((x.extent(1) != y.extent(1)) ||
+        (static_cast<size_t>(A.numPointCols()) !=
+         static_cast<size_t>(y.extent(0))) ||
+        (static_cast<size_t>(A.numPointRows()) !=
+         static_cast<size_t>(x.extent(0)))) {
+      std::ostringstream os;
+      os << "KokkosSparse::spmv (Generic): Dimensions do not match "
+            "(transpose): "
+         << ", A: " << A.numPointRows() << " x " << A.numPointCols()
+         << ", x: " << x.extent(0) << " x " << x.extent(1)
+         << ", y: " << y.extent(0) << " x " << y.extent(1);
+
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
+    }
+  }
+
   if (alpha == Kokkos::ArithTraits<AlphaType>::zero() || A.numRows() == 0 ||
       A.numCols() == 0 || A.nnz() == 0) {
     // This is required to maintain semantics of KokkosKernels native SpMV:
@@ -1166,7 +1198,7 @@ void spmv_struct(const char mode[], const int stencil_type,
          << ", x: " << x.extent(0) << " x " << x.extent(1)
          << ", y: " << y.extent(0) << " x " << y.extent(1);
 
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   } else {
     if ((x.extent(1) != y.extent(1)) ||
@@ -1178,7 +1210,7 @@ void spmv_struct(const char mode[], const int stencil_type,
          << ", x: " << x.extent(0) << " x " << x.extent(1)
          << ", y: " << y.extent(0) << " x " << y.extent(1);
 
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   }
 
@@ -1356,7 +1388,7 @@ void spmv_struct(const char mode[], const int stencil_type,
          << ", A: " << A.numRows() << " x " << A.numCols()
          << ", x: " << x.extent(0) << " x " << x.extent(1)
          << ", y: " << y.extent(0) << " x " << y.extent(1);
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   } else {
     if ((x.extent(1) != y.extent(1)) ||
@@ -1367,7 +1399,7 @@ void spmv_struct(const char mode[], const int stencil_type,
          << ", A: " << A.numRows() << " x " << A.numCols()
          << ", x: " << x.extent(0) << " x " << x.extent(1)
          << ", y: " << y.extent(0) << " x " << y.extent(1);
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   }
 
