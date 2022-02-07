@@ -223,14 +223,14 @@ KOKKOS_INLINE_FUNCTION int SerialAxpy::invoke(const alphaViewType& alpha,
 
   // Check compatibility of dimensions at run time.
   if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
-    printf(
+    KOKKOS_IMPL_DO_NOT_USE_PRINTF(
         "KokkosBatched::axpy: Dimensions of X and Y do not match: X: %d x %d, "
         "Y: %d x %d\n",
         (int)X.extent(0), (int)X.extent(1), (int)Y.extent(0), (int)Y.extent(1));
     return 1;
   }
   if (X.extent(0) != alpha.extent(0)) {
-    printf(
+    KOKKOS_IMPL_DO_NOT_USE_PRINTF(
         "KokkosBatched::axpy: First dimension of X and alpha do not match: X: "
         "%d x %d, alpha: %d\n",
         (int)X.extent(0), (int)X.extent(1), (int)alpha.extent(0));
@@ -270,14 +270,14 @@ KOKKOS_INLINE_FUNCTION int TeamAxpy<MemberType>::invoke(
 
   // Check compatibility of dimensions at run time.
   if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
-    printf(
+    KOKKOS_IMPL_DO_NOT_USE_PRINTF(
         "KokkosBatched::axpy: Dimensions of X and Y do not match: X: %d x %d, "
         "Y: %d x %d\n",
         (int)X.extent(0), (int)X.extent(1), (int)Y.extent(0), (int)Y.extent(1));
     return 1;
   }
   if (X.extent(0) != alpha.extent(0)) {
-    printf(
+    KOKKOS_IMPL_DO_NOT_USE_PRINTF(
         "KokkosBatched::axpy: First dimension of X and alpha do not match: X: "
         "%d x %d, alpha: %d\n",
         (int)X.extent(0), (int)X.extent(1), (int)alpha.extent(0));
@@ -318,14 +318,14 @@ KOKKOS_INLINE_FUNCTION int TeamVectorAxpy<MemberType>::invoke(
 
   // Check compatibility of dimensions at run time.
   if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
-    printf(
+    KOKKOS_IMPL_DO_NOT_USE_PRINTF(
         "KokkosBatched::axpy: Dimensions of X and Y do not match: X: %d x %d, "
         "Y: %d x %d\n",
         (int)X.extent(0), (int)X.extent(1), (int)Y.extent(0), (int)Y.extent(1));
     return 1;
   }
   if (X.extent(0) != alpha.extent(0)) {
-    printf(
+    KOKKOS_IMPL_DO_NOT_USE_PRINTF(
         "KokkosBatched::axpy: First dimension of X and alpha do not match: X: "
         "%d x %d, alpha: %d\n",
         (int)X.extent(0), (int)X.extent(1), (int)alpha.extent(0));
