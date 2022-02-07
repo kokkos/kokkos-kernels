@@ -45,6 +45,8 @@
 #include <vector>
 #include <string>
 #include <fstream>
+// Needed for `strftime` in timestamping function
+#include <time.h>
 
 #if ! defined(KOKKOS_COMPILER_APPLECC)
 // Needed for `strftime` in timestamping function
