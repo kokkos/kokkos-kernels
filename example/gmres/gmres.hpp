@@ -71,6 +71,19 @@ Kokkos::Experimental::half_t fabs(
 }
 #endif  // KOKKOS_HALF_T_IS_FLOAT
 
+#if !KOKKOS_BHALF_T_IS_FLOAT
+Kokkos::Experimental::bhalf_t fabs(Kokkos::Experimental::bhalf_t arg) {
+  using AT = Kokkos::Details::ArithTraits<Kokkos::Experimental::bhalf_t>;
+  return AT::abs(arg);
+}
+
+Kokkos::Experimental::bhalf_t fabs(
+    Kokkos::complex<Kokkos::Experimental::bhalf_t> arg) noexcept {
+  return Kokkos::Experimental::bhalf_t(Kokkos::abs(
+      Kokkos::complex<double>((double)arg.real(), (double)arg.imag())));
+}
+#endif  // KOKKOS_BHALF_T_IS_FLOAT
+
 // This fabs wrapper was added to resolve:
 // https://github.com/kokkos/kokkos-kernels/issues/1172
 template <class T>
