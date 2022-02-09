@@ -54,6 +54,7 @@
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosKernels_TestParameters.hpp"
 #include "KokkosGraph_Distance1Color.hpp"
+#include "KokkosKernels_TestUtils.hpp"
 
 void print_options(std::ostream &os, const char *app_name,
                    unsigned int indent = 0) {
@@ -151,55 +152,57 @@ int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc,
   bool got_required_param_algorithm = false;
 
   for (int i = 1; i < argc; ++i) {
-    if (0 == strcasecmp(argv[i], "--threads")) {
+    if (0 == Test::string_compare_no_case(argv[i], "--threads")) {
       params.use_threads = atoi(getNextArg(i, argc, argv));
-    } else if (0 == strcasecmp(argv[i], "--serial")) {
-      params.use_serial = 1;
-    } else if (0 == strcasecmp(argv[i], "--openmp")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--serial")) {
+      params.use_serial = atoi(getNextArg(i, argc, argv));
+    } else if (0 == Test::string_compare_no_case(argv[i], "--openmp")) {
       params.use_openmp = atoi(getNextArg(i, argc, argv));
-    } else if (0 == strcasecmp(argv[i], "--cuda")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--cuda")) {
       params.use_cuda = 1 + atoi(getNextArg(i, argc, argv));
-    } else if (0 == strcasecmp(argv[i], "--hip")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--hip")) {
       params.use_hip = 1 + atoi(getNextArg(i, argc, argv));
-    } else if (0 == strcasecmp(argv[i], "--repeat")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--repeat")) {
       params.repeat = atoi(getNextArg(i, argc, argv));
-    } else if (0 == strcasecmp(argv[i], "--chunksize")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--chunksize")) {
       params.chunk_size = atoi(getNextArg(i, argc, argv));
-    } else if (0 == strcasecmp(argv[i], "--teamsize")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--teamsize")) {
       params.team_size = atoi(getNextArg(i, argc, argv));
-    } else if (0 == strcasecmp(argv[i], "--vectorsize")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--vectorsize")) {
       params.vector_size = atoi(getNextArg(i, argc, argv));
-    } else if (0 == strcasecmp(argv[i], "--amtx")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--amtx")) {
       got_required_param_amtx = true;
       params.a_mtx_bin_file   = getNextArg(i, argc, argv);
-    } else if (0 == strcasecmp(argv[i], "--dynamic")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--dynamic")) {
       params.use_dynamic_scheduling = 1;
-    } else if (0 == strcasecmp(argv[i], "--verbose")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--verbose")) {
       params.verbose = 1;
-    } else if (0 == strcasecmp(argv[i], "--outputfile") ||
-               0 == strcasecmp(argv[i], "-o")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--outputfile") ||
+               0 == Test::string_compare_no_case(argv[i], "-o")) {
       params.coloring_output_file = getNextArg(i, argc, argv);
-    } else if (0 == strcasecmp(argv[i], "--algorithm")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--algorithm")) {
       got_required_param_algorithm = true;
       ++i;
-      if (0 == strcasecmp(argv[i], "COLORING_DEFAULT")) {
+      if (0 == Test::string_compare_no_case(argv[i], "COLORING_DEFAULT")) {
         params.algorithm = 1;
-      } else if (0 == strcasecmp(argv[i], "COLORING_SERIAL")) {
+      } else if (0 ==
+                 Test::string_compare_no_case(argv[i], "COLORING_SERIAL")) {
         params.algorithm = 2;
-      } else if (0 == strcasecmp(argv[i], "COLORING_VB")) {
+      } else if (0 == Test::string_compare_no_case(argv[i], "COLORING_VB")) {
         params.algorithm = 3;
-      } else if (0 == strcasecmp(argv[i], "COLORING_VBBIT")) {
+      } else if (0 == Test::string_compare_no_case(argv[i], "COLORING_VBBIT")) {
         params.algorithm = 4;
-      } else if (0 == strcasecmp(argv[i], "COLORING_VBCS")) {
+      } else if (0 == Test::string_compare_no_case(argv[i], "COLORING_VBCS")) {
         params.algorithm = 5;
-      } else if (0 == strcasecmp(argv[i], "COLORING_EB")) {
+      } else if (0 == Test::string_compare_no_case(argv[i], "COLORING_EB")) {
         params.algorithm = 6;
-      } else if (0 == strcasecmp(argv[i], "COLORING_VBD")) {
+      } else if (0 == Test::string_compare_no_case(argv[i], "COLORING_VBD")) {
         params.algorithm = 7;
-      } else if (0 == strcasecmp(argv[i], "COLORING_VBDBIT")) {
+      } else if (0 ==
+                 Test::string_compare_no_case(argv[i], "COLORING_VBDBIT")) {
         params.algorithm = 8;
-      } else if (0 == strcasecmp(argv[i], "--help") ||
-                 0 == strcasecmp(argv[i], "-h")) {
+      } else if (0 == Test::string_compare_no_case(argv[i], "--help") ||
+                 0 == Test::string_compare_no_case(argv[i], "-h")) {
         print_options(std::cout, argv[0]);
         return 1;
       } else {

@@ -64,6 +64,7 @@
 #include <KokkosKernels_TestParameters.hpp>
 #include <KokkosGraph_Distance2Color.hpp>
 #include "KokkosKernels_default_types.hpp"
+#include "KokkosKernels_TestUtils.hpp"
 
 using namespace KokkosGraph;
 
@@ -198,34 +199,37 @@ static char* getNextArg(int& i, int argc, char** argv) {
 int parse_inputs(D2Parameters& params, int argc, char** argv) {
   bool got_required_param_amtx = false;
   for (int i = 1; i < argc; ++i) {
-    if (0 == strcasecmp(argv[i], "--threads")) {
+    if (0 == Test::string_compare_no_case(argv[i], "--threads")) {
       params.use_threads = atoi(getNextArg(i, argc, argv));
-    } else if (0 == strcasecmp(argv[i], "--serial")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--serial")) {
       params.use_serial = 1;
-    } else if (0 == strcasecmp(argv[i], "--openmp")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--openmp")) {
       params.use_openmp = atoi(getNextArg(i, argc, argv));
-    } else if (0 == strcasecmp(argv[i], "--cuda")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--cuda")) {
       params.use_cuda = 1 + atoi(getNextArg(i, argc, argv));
-    } else if (0 == strcasecmp(argv[i], "--hip")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--hip")) {
       params.use_hip = 1 + atoi(getNextArg(i, argc, argv));
-    } else if (0 == strcasecmp(argv[i], "--repeat")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--repeat")) {
       params.repeat = atoi(getNextArg(i, argc, argv));
-    } else if (0 == strcasecmp(argv[i], "--amtx")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--amtx")) {
       got_required_param_amtx = true;
       params.mtx_file         = getNextArg(i, argc, argv);
-    } else if (0 == strcasecmp(argv[i], "--verbose")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--verbose")) {
       params.verbose = 1;
-    } else if (0 == strcasecmp(argv[i], "--algorithm")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--algorithm")) {
       ++i;
-      if (0 == strcasecmp(argv[i], "COLORING_D2_SERIAL")) {
+      if (0 == Test::string_compare_no_case(argv[i], "COLORING_D2_SERIAL")) {
         params.algorithm = COLORING_D2_SERIAL;
-      } else if (0 == strcasecmp(argv[i], "COLORING_D2_VB")) {
+      } else if (0 == Test::string_compare_no_case(argv[i], "COLORING_D2_VB")) {
         params.algorithm = COLORING_D2_VB;
-      } else if (0 == strcasecmp(argv[i], "COLORING_D2_VB_BIT")) {
+      } else if (0 ==
+                 Test::string_compare_no_case(argv[i], "COLORING_D2_VB_BIT")) {
         params.algorithm = COLORING_D2_VB_BIT;
-      } else if (0 == strcasecmp(argv[i], "COLORING_D2_VB_BIT_EF")) {
+      } else if (0 == Test::string_compare_no_case(argv[i],
+                                                   "COLORING_D2_VB_BIT_EF")) {
         params.algorithm = COLORING_D2_VB_BIT_EF;
-      } else if (0 == strcasecmp(argv[i], "COLORING_D2_NB_BIT")) {
+      } else if (0 ==
+                 Test::string_compare_no_case(argv[i], "COLORING_D2_NB_BIT")) {
         params.algorithm = COLORING_D2_NB_BIT;
       } else {
         std::cerr << "2-Unrecognized command line argument #" << i << ": "
@@ -233,14 +237,14 @@ int parse_inputs(D2Parameters& params, int argc, char** argv) {
         print_options(std::cout, argv[0]);
         return 1;
       }
-    } else if (0 == strcasecmp(argv[i], "--symmetric_d2")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--symmetric_d2")) {
       params.d2_color_type = MODE_D2_SYMMETRIC;
-    } else if (0 == strcasecmp(argv[i], "--bipartite_rows")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--bipartite_rows")) {
       params.d2_color_type = MODE_BIPARTITE_ROWS;
-    } else if (0 == strcasecmp(argv[i], "--bipartite_cols")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--bipartite_cols")) {
       params.d2_color_type = MODE_BIPARTITE_COLS;
-    } else if (0 == strcasecmp(argv[i], "--help") ||
-               0 == strcasecmp(argv[i], "-h")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--help") ||
+               0 == Test::string_compare_no_case(argv[i], "-h")) {
       print_options(std::cout, argv[0]);
       return 1;
     } else {
