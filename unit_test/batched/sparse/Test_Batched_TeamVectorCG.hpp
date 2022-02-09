@@ -64,7 +64,7 @@ struct Functor_TestBatchedTeamVectorCG {
     Kokkos::TeamPolicy<DeviceType> policy(_D.extent(0) / _N_team,
                                           Kokkos::AUTO(), Kokkos::AUTO());
 
-    size_t bytes_0 = ValuesViewType::shmem_size(_N_team, _D.extent(1));
+    size_t bytes_0 = ValuesViewType::shmem_size(_N_team, _X.extent(1));
     size_t bytes_1 = ValuesViewType::shmem_size(_N_team, 1);
     policy.set_scratch_size(0, Kokkos::PerTeam(4 * bytes_0 + 5 * bytes_1));
 

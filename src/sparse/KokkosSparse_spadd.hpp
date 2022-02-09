@@ -461,8 +461,9 @@ void runSortedCountEntries(
     size_type pot_est_nnz = 1;
     while (pot_est_nnz < c_est_nnz) pot_est_nnz *= 2;
     // Estimate max number of uncompressed entries in each row of C
-    int vector_length     = 1;
-    int vector_length_max = TeamPol::vector_length_max();
+    int vector_length = 1;
+    int vector_length_max =
+        KokkosKernels::Impl::kk_get_max_vector_size<execution_space>();
     while (vector_length * 2 <= vector_length_max &&
            (size_type)vector_length * 2 <= pot_est_nnz) {
       vector_length *= 2;

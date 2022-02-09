@@ -192,12 +192,8 @@ struct KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
         return Kokkos::OpenMP::impl_hardware_thread_id();
 #endif
 #if defined(KOKKOS_ENABLE_THREADS)
-      case KokkosKernels::Impl::Exec_PTHREADS:
+      case KokkosKernels::Impl::Exec_THREADS:
         return Kokkos::Threads::impl_hardware_thread_id();
-#endif
-#if defined(KOKKOS_ENABLE_QTHREAD)
-      case KokkosKernels::Impl::Exec_QTHREADS:
-        return 0;  // Kokkos does not have a thread_id API for Qthreads
 #endif
 #if defined(KOKKOS_ENABLE_CUDA)
       case KokkosKernels::Impl::Exec_CUDA: return row_index;

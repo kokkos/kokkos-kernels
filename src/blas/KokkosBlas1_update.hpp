@@ -47,6 +47,7 @@
 
 #include <KokkosBlas1_update_spec.hpp>
 #include <KokkosKernels_helpers.hpp>
+#include <KokkosKernels_Error.hpp>
 
 namespace KokkosBlas {
 
@@ -95,7 +96,7 @@ void update(const typename XMV::non_const_value_type& alpha, const XMV& X,
        << "Z: " << Z.extent(0) << " x " << Z.extent(1) << ", X: " << X.extent(0)
        << " x " << X.extent(1) << ", Y: " << Y.extent(0) << " x "
        << Y.extent(1);
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
   // Create unmanaged versions of the input Views.  XMV, YMV, and ZMV

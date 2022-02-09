@@ -22,7 +22,7 @@ struct Functor_TestBatchedTeamVectorGMRES {
   const IntView _c;
   const VectorViewType _X;
   const VectorViewType _B;
-  const ValuesViewType _Diag;
+  const VectorViewType _Diag;
   const int _N_team;
   KrylovHandle<typename ValuesViewType::value_type> handle;
 
@@ -72,7 +72,7 @@ struct Functor_TestBatchedTeamVectorGMRES {
     Kokkos::TeamPolicy<DeviceType> policy(_D.extent(0) / _N_team,
                                           Kokkos::AUTO(), Kokkos::AUTO());
 
-    size_t bytes_0 = ValuesViewType::shmem_size(_N_team, _D.extent(1));
+    size_t bytes_0 = ValuesViewType::shmem_size(_N_team, _X.extent(1));
     size_t bytes_1 = ValuesViewType::shmem_size(_N_team, 1);
 
     handle.set_max_iteration(10);

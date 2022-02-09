@@ -36,23 +36,26 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Luc Berger-Vergiat (lberge@sandia.gov)
+// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
 */
 
-#ifndef KOKKOS_SPARSE_BSRMATRIX_IMPL_HPP_
-#define KOKKOS_SPARSE_BSRMATRIX_IMPL_HPP_
+#ifndef TEST_COMMON_ERROR_HPP
+#define TEST_COMMON_ERROR_HPP
 
-#include <set>
-#include <sstream>
-#include <stdexcept>
-#include <type_traits>
+#include "KokkosKernels_Error.hpp"
 
-#include "Kokkos_Core.hpp"
-#include "Kokkos_StaticCrsGraph.hpp"
-#include "Kokkos_ArithTraits.hpp"
-#include "KokkosSparse_CrsMatrix.hpp"
+void test_kokkoskernels_throw() {
+  const std::string my_throw_msg =
+      "Testing Kokkos Kernels' throw_runtime_exception.";
+  try {
+    KokkosKernels::Impl::throw_runtime_exception(my_throw_msg);
+  } catch (const std::runtime_error& e) {
+  }
+}
 
-#endif  // KOKKOS_SPARSE_BSRMATRIX_IMPL_HPP_
+TEST_F(TestCategory, common_throw) { test_kokkoskernels_throw(); }
+
+#endif  // TEST_COMMON_ERROR_HPP

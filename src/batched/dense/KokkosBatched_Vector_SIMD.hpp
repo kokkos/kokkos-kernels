@@ -5,6 +5,7 @@
 
 #include <Kokkos_Complex.hpp>
 #include <KokkosBatched_Vector.hpp>
+#include "KokkosKernels_Macros.hpp"
 
 #if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
 #undef __KOKKOSBATCHED_ENABLE_AVX__
@@ -37,58 +38,25 @@ class Vector<SIMD<T>, l> {
 
  public:
   KOKKOS_INLINE_FUNCTION Vector() {
-    // static_assert(std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-    //              "Vector SIMD should not be instanciated in CudaSpace");
-#if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
-#pragma ivdep
-#endif
-#if defined(KOKKOS_ENABLE_PRAGMA_VECTOR)
-#pragma vector always
-#endif
-#ifdef KOKKOSKERNELS_ENABLE_OMP_SIMD
-#pragma omp simd
-#endif
+    // NOTE Not meant to be instantiated for CUDA
+    KOKKOSKERNELS_FORCE_SIMD
     for (int i = 0; i < vector_length; ++i) _data[i] = 0;
   }
   template <typename ArgValueType>
   KOKKOS_INLINE_FUNCTION Vector(const ArgValueType &val) {
-#if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
-#pragma ivdep
-#endif
-#if defined(KOKKOS_ENABLE_PRAGMA_VECTOR)
-#pragma vector always
-#endif
-#ifdef KOKKOSKERNELS_ENABLE_OMP_SIMD
-#pragma omp simd
-#endif
+    KOKKOSKERNELS_FORCE_SIMD
     for (int i = 0; i < vector_length; ++i) _data[i] = val;
   }
   template <typename ArgValueType>
   KOKKOS_INLINE_FUNCTION Vector(
       const Vector<SIMD<ArgValueType>, vector_length> &b) {
-#if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
-#pragma ivdep
-#endif
-#if defined(KOKKOS_ENABLE_PRAGMA_VECTOR)
-#pragma vector always
-#endif
-#ifdef KOKKOSKERNELS_ENABLE_OMP_SIMD
-#pragma omp simd
-#endif
+    KOKKOSKERNELS_FORCE_SIMD
     for (int i = 0; i < vector_length; ++i) _data[i] = b[i];
   }
 
   KOKKOS_INLINE_FUNCTION
   type &loadAligned(const value_type *p) {
-#if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
-#pragma ivdep
-#endif
-#if defined(KOKKOS_ENABLE_PRAGMA_VECTOR)
-#pragma vector always
-#endif
-#ifdef KOKKOSKERNELS_ENABLE_OMP_SIMD
-#pragma omp simd
-#endif
+    KOKKOSKERNELS_FORCE_SIMD
     for (int i = 0; i < vector_length; ++i) _data[i] = p[i];
     return *this;
   }
@@ -98,15 +66,7 @@ class Vector<SIMD<T>, l> {
 
   KOKKOS_INLINE_FUNCTION
   void storeAligned(value_type *p) const {
-#if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
-#pragma ivdep
-#endif
-#if defined(KOKKOS_ENABLE_PRAGMA_VECTOR)
-#pragma vector always
-#endif
-#ifdef KOKKOSKERNELS_ENABLE_OMP_SIMD
-#pragma omp simd
-#endif
+    KOKKOSKERNELS_FORCE_SIMD
     for (int i = 0; i < vector_length; ++i) p[i] = _data[i];
   }
 
@@ -569,15 +529,7 @@ class Vector<SIMD<double>, 4> {
   template <typename ArgValueType>
   inline Vector(const ArgValueType &val) {
     auto d = reinterpret_cast<value_type *>(&_data);
-#if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
-#pragma ivdep
-#endif
-#if defined(KOKKOS_ENABLE_PRAGMA_VECTOR)
-#pragma vector always
-#endif
-#ifdef KOKKOSKERNELS_ENABLE_OMP_SIMD
-#pragma omp simd
-#endif
+    KOKKOSKERNELS_FORCE_SIMD
     for (int i = 0; i < vector_length; ++i) d[i] = val;
   }
 
@@ -585,15 +537,7 @@ class Vector<SIMD<double>, 4> {
   inline Vector(const Vector<SIMD<ArgValueType>, vector_length> &b) {
     auto dd = reinterpret_cast<value_type *>(&_data);
     auto bb = reinterpret_cast<ArgValueType *>(&b._data);
-#if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
-#pragma ivdep
-#endif
-#if defined(KOKKOS_ENABLE_PRAGMA_VECTOR)
-#pragma vector always
-#endif
-#ifdef KOKKOSKERNELS_ENABLE_OMP_SIMD
-#pragma omp simd
-#endif
+    KOKKOSKERNELS_FORCE_SIMD
     for (int i = 0; i < vector_length; ++i) dd[i] = bb[i];
   }
 
@@ -670,15 +614,7 @@ class Vector<SIMD<Kokkos::complex<double> >, 2> {
   inline Vector(const Vector<SIMD<ArgValueType>, vector_length> &b) {
     auto dd = reinterpret_cast<value_type *>(&_data);
     auto bb = reinterpret_cast<ArgValueType *>(&b._data);
-#if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
-#pragma ivdep
-#endif
-#if defined(KOKKOS_ENABLE_PRAGMA_VECTOR)
-#pragma vector always
-#endif
-#ifdef KOKKOSKERNELS_ENABLE_OMP_SIMD
-#pragma omp simd
-#endif
+    KOKKOSKERNELS_FORCE_SIMD
     for (int i = 0; i < vector_length; ++i) dd[i] = bb[i];
   }
 
@@ -746,30 +682,14 @@ class Vector<SIMD<double>, 8> {
   template <typename ArgValueType>
   inline Vector(const ArgValueType &val) {
     auto d = reinterpret_cast<value_type *>(&_data);
-#if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
-#pragma ivdep
-#endif
-#if defined(KOKKOS_ENABLE_PRAGMA_VECTOR)
-#pragma vector always
-#endif
-#ifdef KOKKOSKERNELS_ENABLE_OMP_SIMD
-#pragma omp simd
-#endif
+    KOKKOSKERNELS_FORCE_SIMD
     for (int i = 0; i < vector_length; ++i) d[i] = val;
   }
   template <typename ArgValueType>
   inline Vector(const Vector<SIMD<ArgValueType>, vector_length> &b) {
     auto dd = reinterpret_cast<value_type *>(&_data);
     auto bb = reinterpret_cast<ArgValueType *>(&b._data);
-#if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
-#pragma ivdep
-#endif
-#if defined(KOKKOS_ENABLE_PRAGMA_VECTOR)
-#pragma vector always
-#endif
-#ifdef KOKKOSKERNELS_ENABLE_OMP_SIMD
-#pragma omp simd
-#endif
+    KOKKOSKERNELS_FORCE_SIMD
     for (int i = 0; i < vector_length; ++i) dd[i] = bb[i];
   }
 
@@ -835,30 +755,14 @@ class Vector<SIMD<Kokkos::complex<double> >, 4> {
   template <typename ArgValueType>
   inline Vector(const ArgValueType &val) {
     auto d = reinterpret_cast<value_type *>(&_data);
-#if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
-#pragma ivdep
-#endif
-#if defined(KOKKOS_ENABLE_PRAGMA_VECTOR)
-#pragma vector always
-#endif
-#ifdef KOKKOSKERNELS_ENABLE_OMP_SIMD
-#pragma omp simd
-#endif
+    KOKKOSKERNELS_FORCE_SIMD
     for (int i = 0; i < vector_length; ++i) d[i] = val;
   }
   template <typename ArgValueType>
   inline Vector(const Vector<SIMD<ArgValueType>, vector_length> &b) {
     auto dd = reinterpret_cast<value_type *>(&_data);
     auto bb = reinterpret_cast<value_type *>(&b._data);
-#if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
-#pragma ivdep
-#endif
-#if defined(KOKKOS_ENABLE_PRAGMA_VECTOR)
-#pragma vector always
-#endif
-#ifdef KOKKOSKERNELS_ENABLE_OMP_SIMD
-#pragma omp simd
-#endif
+    KOKKOSKERNELS_FORCE_SIMD
     for (int i = 0; i < vector_length; ++i) dd[i] = bb[i];
   }
 

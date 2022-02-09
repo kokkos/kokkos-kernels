@@ -916,8 +916,8 @@ class TwostageGaussSeidel {
         gsHandle->getUa();  // complement of U+D (used only for compact form)
 
     // wratp A into crsmat
-    input_graph_t graphA(column_view, rowmap_view);
-    input_crsmat_t crsmatA("A", num_rows, values_view, graphA);
+    input_crsmat_t crsmatA("A", num_rows, num_cols, values_view.extent(0),
+                           values_view, rowmap_view, column_view);
 #ifdef KOKKOSSPARSE_IMPL_TIME_TWOSTAGE_GS
     Kokkos::fence();
     tic = timer.seconds();

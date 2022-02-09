@@ -66,6 +66,10 @@
 #include <PerfTestUtilities.hpp>
 #endif
 
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ARMPL
+#include <spmv/ArmPL_SPMV.hpp>
+#endif
+
 // return std::make_tuple(newnumRows, newnumCols, A, x1, y1,
 //    rows_per_thread, team_size, vector_length,
 //    test, schedule, ave_time, max_time, min_time);

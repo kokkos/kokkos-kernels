@@ -288,6 +288,7 @@ void run_experiment(crsGraph_t crsGraph, int num_cols, Parameters params) {
 
   std::cout << "algorithm: " << algorithm << std::endl;
 
+  double totalTime = 0.0;
   for (int i = 0; i < repeat; ++i) {
     switch (algorithm) {
       case 1: kh.create_graph_coloring_handle(COLORING_DEFAULT); break;
@@ -310,7 +311,7 @@ void run_experiment(crsGraph_t crsGraph, int num_cols, Parameters params) {
     std::cout << std::endl
               << "Time:"
               << kh.get_graph_coloring_handle()->get_overall_coloring_time()
-              << " "
+              << " sec. "
                  "Num colors:"
               << kh.get_graph_coloring_handle()->get_num_colors()
               << " "
@@ -325,7 +326,10 @@ void run_experiment(crsGraph_t crsGraph, int num_cols, Parameters params) {
       KokkosKernels::Impl::print_1Dview(
           os, kh.get_graph_coloring_handle()->get_vertex_colors(), true, "\n");
     }
+    totalTime += kh.get_graph_coloring_handle()->get_overall_coloring_time();
   }
+  std::cout << "Average time over " << repeat
+            << " trials: " << totalTime / repeat << " sec.\n";
 }
 
 template <typename size_type, typename lno_t, typename exec_space,

@@ -42,8 +42,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOSBLAS1_TEAM_GEMV_SPEC_HPP_
-#define KOKKOSBLAS1_TEAM_GEMV_SPEC_HPP_
+#ifndef KOKKOSBLAS2_TEAM_GEMV_SPEC_HPP_
+#define KOKKOSBLAS2_TEAM_GEMV_SPEC_HPP_
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
@@ -74,7 +74,6 @@ template <class TeamType, class MatrixType, class XVector, class YVector>
 struct TeamGEMV<TeamType, MatrixType, XVector, YVector, 0, false> {
   typedef typename Kokkos::Details::InnerProductSpaceTraits<
       typename MatrixType::non_const_value_type>::dot_type dot_type;
-  typedef typename XVector::non_const_value_type x_value_type;
   static KOKKOS_INLINE_FUNCTION void team_gemv(
       const TeamType& team, const typename XVector::non_const_value_type& alpha,
       const MatrixType& A, const XVector& x,
@@ -87,6 +86,31 @@ struct TeamGEMV<TeamType, MatrixType, XVector, YVector, 0, false> {
       Kokkos::parallel_reduce(
           Kokkos::ThreadVectorRange(team, M),
           [&](const int& j, dot_type& val) { val += A(i, j) * x(j); }, Ax_i);
+      y(i) = beta * y(i) + alpha * Ax_i;
+    });
+  }
+};
+
+template <class TeamType, class MatrixType, class XVector, class YVector>
+struct TeamGEMV<TeamType, MatrixType, XVector, YVector, -1, false> {
+  typedef typename MatrixType::non_const_value_type value_type;
+  typedef typename Kokkos::Details::InnerProductSpaceTraits<
+      typename MatrixType::non_const_value_type>::dot_type dot_type;
+  static KOKKOS_INLINE_FUNCTION void team_gemv(
+      const TeamType& team, const typename XVector::non_const_value_type& alpha,
+      const MatrixType& A, const XVector& x,
+      const typename YVector::non_const_value_type& beta, const YVector& y) {
+    const int N = A.extent(0);
+    const int M = A.extent(1);
+
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, N), [&](const int& i) {
+      dot_type Ax_i;
+      Kokkos::parallel_reduce(
+          Kokkos::ThreadVectorRange(team, M),
+          [&](const int& j, dot_type& val) {
+            val += Kokkos::ArithTraits<value_type>::conj(A(i, j)) * x(j);
+          },
+          Ax_i);
       y(i) = beta * y(i) + alpha * Ax_i;
     });
   }

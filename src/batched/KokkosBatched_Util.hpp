@@ -17,13 +17,10 @@
 
 #include <complex>
 
-#include "Kokkos_Core.hpp"
 #include "Kokkos_Complex.hpp"
-#include "Kokkos_ArithTraits.hpp"
-#include "Kokkos_Timer.hpp"
 
 #include "KokkosKernels_config.h"
-#include "KokkosKernels_Utils.hpp"
+#include "KokkosKernels_SimpleUtils.hpp"
 
 // TPL macros
 #if defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
@@ -277,6 +274,15 @@ struct BoundsCheck {
   struct No {};
 };
 
+/// \brief AlphaTag class used to specify where to apply alpha in
+///        BLAS/LAPACK DblBuf algorithms.
+/// /var Yes Use function with    alpha factor
+/// /var No  Use function without alpha factor
+struct AlphaTag {
+  struct Yes {};
+  struct No {};
+};
+
 struct Direct {
   struct Forward {};
   struct Backward {};
@@ -294,6 +300,60 @@ struct Mode {
   };
 };
 
+#if !defined(KOKKOS_IF_ON_HOST)
+
+template <class>
+struct algo_level3_blocked_mb_impl;
+template <>
+struct algo_level3_blocked_mb_impl<Kokkos::HostSpace> {
+  static constexpr int value = 4;
+};
+#if defined(KOKKOS_ENABLE_CUDA)
+template <>
+struct algo_level3_blocked_mb_impl<Kokkos::CudaSpace> {
+  static constexpr int value = 2;
+};
+#endif
+#if defined(KOKKOS_ENABLE_HIP)
+template <>
+struct algo_level3_blocked_mb_impl<Kokkos::Experimental::HIPSpace> {
+  static constexpr int value = 2;
+};
+#endif
+#if defined(KOKKOS_ENABLE_SYCL)
+template <>
+struct algo_level3_blocked_mb_impl<Kokkos::Experimental::SYCLDeviceUSMSpace> {
+  static constexpr int value = 2;
+};
+#endif
+
+template <class>
+struct algo_level2_blocked_mb_impl;
+template <>
+struct algo_level2_blocked_mb_impl<Kokkos::HostSpace> {
+  static constexpr int value = 4;
+};
+#if defined(KOKKOS_ENABLE_CUDA)
+template <>
+struct algo_level2_blocked_mb_impl<Kokkos::CudaSpace> {
+  static constexpr int value = 1;
+};
+#endif
+#if defined(KOKKOS_ENABLE_HIP)
+template <>
+struct algo_level2_blocked_mb_impl<Kokkos::Experimental::HIPSpace> {
+  static constexpr int value = 1;
+};
+#endif
+#if defined(KOKKOS_ENABLE_SYCL)
+template <>
+struct algo_level2_blocked_mb_impl<Kokkos::Experimental::SYCLDeviceUSMSpace> {
+  static constexpr int value = 1;
+};
+#endif
+
+#endif
+
 struct Algo {
   struct Level3 {
     struct Unblocked {
@@ -307,42 +367,19 @@ struct Algo {
       // - team policy (smaller) or range policy (bigger)
       // - space (gpu vs host)
       // - blocksize input (blk <= 4 mb = 2, otherwise mb = 4), etc.
-#if defined(KOKKOS_ENABLE_CUDA)
-      template <typename ActiveMemorySpaceType>
-      KOKKOS_INLINE_FUNCTION static constexpr typename std::enable_if<
-          std::is_same<ActiveMemorySpaceType, Kokkos::CudaSpace>::value,
-          int>::type
-      mb() {
-        return 2;
+#if defined(KOKKOS_IF_ON_HOST)
+      static constexpr KOKKOS_FUNCTION int mb() {
+        KOKKOS_IF_ON_HOST((return 4;))
+        KOKKOS_IF_ON_DEVICE((return 2;))
       }
+
+#else  // FIXME remove when requiring minimum version of Kokkos 3.6
+      static constexpr KOKKOS_FUNCTION int mb() {
+        return algo_level3_blocked_mb_impl<
+            Kokkos::Impl::ActiveExecutionMemorySpace>::value;
+      }
+
 #endif
-#if defined(KOKKOS_ENABLE_HIP)
-      template <typename ActiveMemorySpaceType>
-      KOKKOS_INLINE_FUNCTION static constexpr typename std::enable_if<
-          std::is_same<ActiveMemorySpaceType,
-                       Kokkos::Experimental::HIPSpace>::value,
-          int>::type
-      mb() {
-        return 2;
-      }
-#endif
-#if defined(KOKKOS_ENABLE_SYCL)
-      template <typename ActiveMemorySpaceType>
-      KOKKOS_INLINE_FUNCTION static constexpr typename std::enable_if<
-          std::is_same<ActiveMemorySpaceType,
-                       Kokkos::Experimental::SYCLDeviceUSMSpace>::value,
-          int>::type
-      mb() {
-        return 2;
-      }
-#endif
-      template <typename ActiveMemorySpaceType>
-      KOKKOS_INLINE_FUNCTION static constexpr typename std::enable_if<
-          std::is_same<ActiveMemorySpaceType, Kokkos::HostSpace>::value,
-          int>::type
-      mb() {
-        return 4;
-      }
     };
     struct MKL {
       static const char *name() { return "MKL"; }
@@ -380,42 +417,19 @@ struct Algo {
       // - team policy (smaller) or range policy (bigger)
       // - space (cuda vs host)
       // - blocksize input (blk <= 4 mb = 2, otherwise mb = 4), etc.
-#if defined(KOKKOS_ENABLE_CUDA)
-      template <typename ActiveMemorySpaceType>
-      KOKKOS_INLINE_FUNCTION static constexpr typename std::enable_if<
-          std::is_same<ActiveMemorySpaceType, Kokkos::CudaSpace>::value,
-          int>::type
-      mb() {
-        return 1;
+#if defined(KOKKOS_IF_ON_HOST)
+      static constexpr KOKKOS_FUNCTION int mb() {
+        KOKKOS_IF_ON_HOST((return 4;))
+        KOKKOS_IF_ON_DEVICE((return 1;))
       }
+
+#else  // FIXME remove when requiring minimum version of Kokkos 3.6
+      static constexpr KOKKOS_FUNCTION int mb() {
+        return algo_level2_blocked_mb_impl<
+            Kokkos::Impl::ActiveExecutionMemorySpace>::value;
+      }
+
 #endif
-#if defined(KOKKOS_ENABLE_HIP)
-      template <typename ActiveMemorySpaceType>
-      KOKKOS_INLINE_FUNCTION static constexpr typename std::enable_if<
-          std::is_same<ActiveMemorySpaceType,
-                       Kokkos::Experimental::HIPSpace>::value,
-          int>::type
-      mb() {
-        return 1;
-      }
-#endif
-#if defined(KOKKOS_ENABLE_SYCL)
-      template <typename ActiveMemorySpaceType>
-      KOKKOS_INLINE_FUNCTION static constexpr typename std::enable_if<
-          std::is_same<ActiveMemorySpaceType,
-                       Kokkos::Experimental::SYCLDeviceUSMSpace>::value,
-          int>::type
-      mb() {
-        return 1;
-      }
-#endif
-      template <typename ActiveMemorySpaceType>
-      KOKKOS_INLINE_FUNCTION static constexpr typename std::enable_if<
-          std::is_same<ActiveMemorySpaceType, Kokkos::HostSpace>::value,
-          int>::type
-      mb() {
-        return 4;
-      }
     };
     struct MKL {};
     struct CompactMKL {};
@@ -433,30 +447,6 @@ struct Algo {
   using Gemv   = Level2;
   using Trsv   = Level2;
   using ApplyQ = Level2;
-
-  //         struct Level1 {
-  //           struct Unblocked {};
-  //           struct Blocked {
-  //             // TODO:: for now harwire the blocksizes; this should reflect
-  //             // regieter blocking (not about team parallelism).
-  //             // this mb should vary according to
-  //             // - team policy (smaller) or range policy (bigger)
-  //             // - space (cuda vs host)
-  //             // - blocksize input (blk <= 4 mb = 2, otherwise mb = 4), etc.
-  // #if defined(KOKKOS_ENABLE_CUDA)
-  //             template<typename ActiveMemorySpaceType> KOKKOS_INLINE_FUNCTION
-  //             static constexpr typename
-  //             std::enable_if<std::is_same<ActiveMemorySpaceType,Kokkos::CudaSpace>::value,int>
-  //             ::type mb() { return 4; }
-  // #endif
-  //             template<typename ActiveMemorySpaceType> KOKKOS_INLINE_FUNCTION
-  //             static constexpr typename
-  //             std::enable_if<std::is_same<ActiveMemorySpaceType,Kokkos::HostSpace>::value,int>
-  //             ::type mb() { return 4; }
-  //           };
-  //           //struct MKL {};
-  //           //struct CompactMKL {};
-  //         };
 };
 
 struct Util {
@@ -822,15 +812,21 @@ KOKKOS_INLINE_FUNCTION auto subview_wrapper(
   return sv_nt;
 }
 
+/**
+ *
+ * @tparam ViewValueType The value type (Scalar or Vector) of each view element
+ * @tparam ViewType The view type
+ * @param v The view handle
+ * @param m The requested row index of v
+ * @param n The requested col index of v
+ * @return If m and n are within the extents of v, a valid element of v;
+ *         otherwise, the last element of v.
+ */
 template <class ViewValueType, class ViewType>
 KOKKOS_INLINE_FUNCTION ViewValueType
 access_view_bounds_check(ViewType v, int m, int n, const BoundsCheck::Yes &) {
-  return v(KOKKOSKERNELS_MACRO_MIN(m, v.extent_int(0)),
-           KOKKOSKERNELS_MACRO_MIN(n, v.extent_int(1)));
-  //// TODO: use compile-time extents
-  ////  if (m > scr.extent(0) || n > scr.extent(1))
-  ////    return 0;
-  ////  return v(m, n);
+  return v(KOKKOSKERNELS_MACRO_MIN(m, v.extent_int(0) - 1),
+           KOKKOSKERNELS_MACRO_MIN(n, v.extent_int(1) - 1));
 }
 
 template <class ViewValueType, class ViewType>
@@ -839,35 +835,61 @@ access_view_bounds_check(ViewType v, int m, int n, const BoundsCheck::No &) {
   return v(m, n);
 }
 
-template <class ViewType, class SizeType, class ViewValueType, class ScalarType>
+template <class ViewValueType, class ScalarType>
+KOKKOS_INLINE_FUNCTION ViewValueType fma_alpha(ViewValueType reg_c,
+                                               ScalarType alpha,
+                                               const AlphaTag::Yes &) {
+  return reg_c * alpha;
+}
+
+template <class ViewValueType, class ScalarType>
+KOKKOS_INLINE_FUNCTION ViewValueType fma_alpha(ViewValueType reg_c,
+                                               ScalarType alpha,
+                                               const AlphaTag::No &) {
+  return reg_c;
+  (void)alpha;
+}
+
+template <class ViewType, class SizeType, class ViewValueType, class ScalarType,
+          class ArgAlphaFmaTag>
 KOKKOS_INLINE_FUNCTION void fma_bounds_check(ViewType v, SizeType m, SizeType n,
                                              ViewValueType reg_c,
-                                             ScalarType beta,
+                                             ScalarType alpha, ScalarType beta,
+                                             const ArgAlphaFmaTag &alpha_tag,
                                              const BoundsCheck::Yes &) {
   if (m < v.extent_int(0) && n < v.extent_int(1))
-    v(m, n) = reg_c + v(m, n) * beta;
+    v(m, n) = fma_alpha(reg_c, alpha, alpha_tag) + v(m, n) * beta;
 }
 
-template <class ViewType, class SizeType, class ViewValueType, class ScalarType>
+template <class ViewType, class SizeType, class ViewValueType, class ScalarType,
+          class ArgAlphaFmaTag>
 KOKKOS_INLINE_FUNCTION void fma_bounds_check(ViewType v, SizeType m, SizeType n,
                                              ViewValueType reg_c,
-                                             ScalarType beta,
+                                             ScalarType alpha, ScalarType beta,
+                                             const ArgAlphaFmaTag &alpha_tag,
                                              const BoundsCheck::No &) {
-  v(m, n) = reg_c + v(m, n) * beta;
+  v(m, n) = fma_alpha(reg_c, alpha, alpha_tag) + v(m, n) * beta;
 }
 
-template <class ViewType, class SizeType, class ScalarType>
+template <class ViewType, class SizeType, class ViewValueType, class ScalarType,
+          class ArgAlphaFmaTag>
 KOKKOS_INLINE_FUNCTION void fma_bounds_check(ViewType v, SizeType m, SizeType n,
-                                             ScalarType reg_c,
+                                             ViewValueType reg_c,
+                                             ScalarType alpha,
+                                             const ArgAlphaFmaTag &alpha_tag,
                                              const BoundsCheck::Yes &) {
-  if (m < v.extent_int(0) && n < v.extent_int(1)) v(m, n) = reg_c;
+  if (m < v.extent_int(0) && n < v.extent_int(1))
+    v(m, n) = fma_alpha(reg_c, alpha, alpha_tag);
 }
 
-template <class ViewType, class SizeType, class ScalarType>
+template <class ViewType, class SizeType, class ViewValueType, class ScalarType,
+          class ArgAlphaFmaTag>
 KOKKOS_INLINE_FUNCTION void fma_bounds_check(ViewType v, SizeType m, SizeType n,
-                                             ScalarType reg_c,
+                                             ViewValueType reg_c,
+                                             ScalarType alpha,
+                                             const ArgAlphaFmaTag &alpha_tag,
                                              const BoundsCheck::No &) {
-  v(m, n) = reg_c;
+  v(m, n) = fma_alpha(reg_c, alpha, alpha_tag);
 }
 
 }  // namespace KokkosBatched

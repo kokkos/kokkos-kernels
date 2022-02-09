@@ -202,6 +202,13 @@ struct SparseBlockRowView {
     return values_[K * blockDim_ + i * length * blockDim_ + j];
   }
 
+  /// \brief Return the block column index for a specified block K
+  ///
+  /// \param K [in] must be the LOCAL block index within this block-row
+  /// \return Block column index for "uncompressed" block row
+  KOKKOS_INLINE_FUNCTION
+  ordinal_type block_colidx(const ordinal_type K) const { return colidx_[K]; }
+
   /// \brief Return unmanaged 2D strided View wrapping local block K from this
   /// block-row \param K [in] must be the LOCAL block index within this
   /// block-row
@@ -360,6 +367,13 @@ struct SparseBlockRowViewConst {
                                 const ordinal_type& j) const {
     return values_[K * blockDim_ + i * length * blockDim_ + j];
   }
+
+  /// \brief Return the block column index for a specified block K
+  ///
+  /// \param K [in] must be the LOCAL block index within this block-row
+  /// \return Block column index for "uncompressed" block row
+  KOKKOS_INLINE_FUNCTION
+  ordinal_type block_colidx(const ordinal_type K) const { return colidx_[K]; }
 
   /// \brief Return unmanaged 2D strided View wrapping local block K from this
   /// block-row \param K [in] must be the LOCAL block index within this
@@ -833,6 +847,18 @@ class BlockCrsMatrix {
 
   //! The block dimension in the sparse block matrix.
   KOKKOS_INLINE_FUNCTION ordinal_type blockDim() const { return blockDim_; }
+
+  //! The number of "point" (non-block) rows in the matrix.
+  //  This is the dimension of the range of this matrix as a linear operator.
+  KOKKOS_INLINE_FUNCTION ordinal_type numPointRows() const {
+    return numRows() * blockDim();
+  }
+
+  //! The number of "point" (non-block) columns in the matrix.
+  //  This is the dimension of the domain of this matrix as a linear operator.
+  KOKKOS_INLINE_FUNCTION ordinal_type numPointCols() const {
+    return numCols() * blockDim();
+  }
 
   //! The number of stored entries in the sparse matrix.
   KOKKOS_INLINE_FUNCTION size_type nnz() const {

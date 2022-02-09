@@ -569,11 +569,11 @@ class SPGEMMHandle {
     }
 #endif
 
-#if defined(KOKKOS_ENABLE_QTHREAD)
-    if (std::is_same<Kokkos::Qthread, ExecutionSpace>::value) {
-      this->algorithm_type = SPGEMM_SERIAL;
+#if defined(KOKKOS_ENABLE_SYCL)
+    if (std::is_same<Kokkos::Experimental::SYCL, ExecutionSpace>::value) {
+      this->algorithm_type = SPGEMM_KK;
 #ifdef VERBOSE
-      std::cout << "Qthread Execution Space, Default Algorithm: SPGEMM_SERIAL"
+      std::cout << "SYCL Execution Space, Default Algorithm: SPGEMM_KK"
                 << std::endl;
 #endif
     }

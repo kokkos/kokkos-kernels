@@ -82,9 +82,7 @@ SerialTrsmInternalLeftLower<Algo::Trsm::Blocked>::invoke(
     const bool use_unit_diag, const int m, const int n, const ScalarType alpha,
     const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
     /**/ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
-  enum : int {
-    mbAlgo = Algo::Trsm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
-  };
+  constexpr int mbAlgo = Algo::Trsm::Blocked::mb();
 
   const ScalarType one(1.0), zero(0.0), minus_one(-1.0);
 
@@ -201,9 +199,7 @@ SerialTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invoke(
     /**/ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
   const ScalarType one(1.0), zero(0.0), minus_one(-1.0);
 
-  enum : int {
-    mbAlgo = Algo::Trsm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
-  };
+  constexpr int mbAlgo = Algo::Trsm::Blocked::mb();
 
   if (alpha == zero)
     SerialSetInternal ::invoke(m, n, zero, B, bs0, bs1);

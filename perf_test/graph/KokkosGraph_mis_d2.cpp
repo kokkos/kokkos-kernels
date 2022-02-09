@@ -245,12 +245,11 @@ void run_mis2(const MIS2Parameters& params) {
   using lno_t      = default_lno_t;
   using exec_space = typename device_t::execution_space;
   using mem_space  = typename device_t::memory_space;
-  using crsMat_t =
-      typename KokkosSparse::CrsMatrix<default_scalar, default_lno_t, device_t,
-                                       void, default_size_type>;
+  using crsMat_t   = typename KokkosSparse::CrsMatrix<default_scalar, lno_t,
+                                                    device_t, void, size_type>;
   using lno_view_t = typename crsMat_t::index_type::non_const_type;
   using KKH        = KokkosKernels::Experimental::KokkosKernelsHandle<
-      size_type, lno_t, double, exec_space, mem_space, mem_space>;
+      size_type, lno_t, default_scalar, exec_space, mem_space, mem_space>;
 
   Kokkos::Timer t;
   crsMat_t A_in =
@@ -261,9 +260,10 @@ void run_mis2(const MIS2Parameters& params) {
   crsMat_t At_in = KokkosKernels::Impl::transpose_matrix(A_in);
   crsMat_t A;
   KKH kkh;
+  const default_scalar one = Kokkos::ArithTraits<default_scalar>::one();
   kkh.create_spadd_handle(false);
   KokkosSparse::spadd_symbolic(&kkh, A_in, At_in, A);
-  KokkosSparse::spadd_numeric(&kkh, 1.0, A_in, 1.0, At_in, A);
+  KokkosSparse::spadd_numeric(&kkh, one, A_in, one, At_in, A);
   kkh.destroy_spadd_handle();
   std::cout << "Time to symmetrize: " << t.seconds() << " s\n";
   auto rowmap    = A.graph.row_map;

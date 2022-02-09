@@ -42,8 +42,10 @@
 //@HEADER
 */
 
-#ifndef KOKKOSSPARSE_IMPL_SPMV_TENSOR_CORE_DEF_HPP_
-#define KOKKOSSPARSE_IMPL_SPMV_TENSOR_CORE_DEF_HPP_
+#ifndef KOKKOSSPARSE_IMPL_SPMV_BSRMATRIX_IMPL_HPP_
+#define KOKKOSSPARSE_IMPL_SPMV_BSRMATRIX_IMPL_HPP_
+
+#include "KokkosKernels_Error.hpp"
 
 #if defined(KOKKOS_ENABLE_CUDA) && \
     (defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_AMPERE))
@@ -109,21 +111,21 @@ struct BsrMatrixSpMVTensorCoreFunctor {
                                        // grid of warps in team)
       Kokkos::LayoutRight,
       typename Device::execution_space::scratch_memory_space,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+      Kokkos::MemoryTraits<Kokkos::Unmanaged>>
       AScratchView;
   typedef typename Kokkos::View<
       XFragScalar * [FRAG_K][FRAG_N],
       typename Kokkos::LayoutRight,  // so that [FRAG_K][FRAG_N] part is
                                      // contiguous in memory
       typename Device::execution_space::scratch_memory_space,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+      Kokkos::MemoryTraits<Kokkos::Unmanaged>>
       XScratchView;
   typedef typename Kokkos::View<
       YFragScalar * * [FRAG_M][FRAG_N],
       typename Kokkos::LayoutRight,  // so that [FRAG_M][FRAG_N] part is
                                      // contiguous in memory
       typename Device::execution_space::scratch_memory_space,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+      Kokkos::MemoryTraits<Kokkos::Unmanaged>>
       YScratchView;
 
   YScalar alpha;
@@ -500,7 +502,8 @@ struct BsrMatrixSpMVTensorCoreDispatcher {
   // to be used to avoid instantiating on unsupported types
   static void tag_dispatch(std::false_type, YScalar, AMatrix, XMatrix, YScalar,
                            YMatrix) {
-    Kokkos::Impl::throw_runtime_exception("unsupported for complex types");
+    KokkosKernels::Impl::throw_runtime_exception(
+        "unsupported for complex types");
   }
 
   /*true if T1, T2, or T3 are complex*/
@@ -526,4 +529,1297 @@ struct BsrMatrixSpMVTensorCoreDispatcher {
 
 #endif  // #if CUDA && (VOLTA || AMPERE)
 
-#endif  // KOKKOSSPARSE_IMPL_SPMV_TENSOR_CORE_DEF_HPP_
+//
+//
+//
+
+#include "KokkosBlas.hpp"
+#include "KokkosBatched_Gemv_Serial_Internal.hpp"
+#include "KokkosBatched_Gemv_TeamVector_Internal.hpp"
+#include "KokkosBatched_Gemm_Serial_Internal.hpp"
+#include "KokkosBatched_Gemm_TeamVector_Internal.hpp"
+#include "KokkosBatched_Scale_Internal.hpp"
+#include "KokkosKernels_ExecSpaceUtils.hpp"
+
+#include "KokkosBlas2_team_gemv_spec.hpp"
+
+namespace KokkosSparse {
+namespace Experimental {
+namespace Impl {
+namespace Bsr {
+
+template <class AMatrix, class XVector, class YVector>
+struct BSR_GEMV_Functor {
+  typedef typename AMatrix::execution_space execution_space;
+  typedef typename AMatrix::non_const_value_type value_type;
+  typedef typename Kokkos::TeamPolicy<execution_space> team_policy;
+  typedef typename team_policy::member_type team_member;
+  typedef Kokkos::Details::ArithTraits<value_type> ATV;
+
+  //! Nonconst version of the type of column indices in the sparse matrix.
+  typedef typename AMatrix::non_const_ordinal_type ordinal_type;
+  //! Nonconst version of the type of row offsets in the sparse matrix.
+  typedef typename AMatrix::non_const_size_type size_type;
+
+  const value_type alpha;
+  const value_type beta;
+
+  AMatrix m_A;
+  XVector m_x;
+  YVector m_y;
+
+  const int block_dim;
+  const bool conjugate;
+
+  BSR_GEMV_Functor(const value_type alpha_, const AMatrix &m_A_,
+                   const XVector &m_x_, const value_type beta_, YVector &m_y_,
+                   const int block_dim_, const bool conj_)
+      : alpha(alpha_),
+        beta(beta_),
+        m_A(m_A_),
+        m_x(m_x_),
+        m_y(m_y_),
+        block_dim(block_dim_),
+        conjugate(conj_) {
+    static_assert(static_cast<int>(XVector::rank) == 1,
+                  "XVector must be a rank 1 View.");
+    static_assert(static_cast<int>(YVector::rank) == 1,
+                  "YVector must be a rank 1 View.");
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const ordinal_type iBlock) const {
+    const auto ystart = iBlock * block_dim;
+    const auto start  = m_A.graph.row_map(iBlock);
+    const ordinal_type count =
+        static_cast<ordinal_type>(m_A.graph.row_map(iBlock + 1) - start);
+    const auto row   = m_A.block_row_Const(iBlock);
+    const auto beta1 = static_cast<value_type>(1);
+    //
+    if (conjugate) {
+      for (ordinal_type ic = 0; ic < count; ++ic) {
+        const auto Aview  = row.block(ic);
+        const auto xstart = row.block_colidx(ic) * block_dim;
+        for (ordinal_type ii = 0; ii < block_dim; ++ii) {
+          value_type t(0);
+          for (ordinal_type jj = 0; jj < block_dim; ++jj) {
+            const auto aval =
+                Kokkos::ArithTraits<value_type>::conj(Aview(ii, jj));
+            t += aval * m_x(xstart + jj);
+          }
+          m_y(ystart + ii) += alpha * t;
+        }
+      }
+    } else {
+      for (ordinal_type ic = 0; ic < count; ++ic) {
+        const auto Aview  = row.block(ic);
+        const auto xstart = row.block_colidx(ic) * block_dim;
+        KokkosBatched::SerialGemvInternal<KokkosBatched::Algo::Gemv::Blocked>::
+            invoke<value_type, value_type>(
+                block_dim, block_dim, alpha, Aview.data(), block_dim, 1,
+                &m_x(xstart), static_cast<int>(m_x.stride_0()), beta1,
+                &m_y(ystart), static_cast<int>(m_y.stride_0()));
+      }
+    }
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const team_member &dev) const {
+    using y_value_type        = typename YVector::non_const_value_type;
+    const ordinal_type iBlock = static_cast<ordinal_type>(dev.league_rank());
+
+    const size_type Y_ptBeg = iBlock * block_dim;
+    const size_type Y_ptEnd = Y_ptBeg + block_dim;
+    auto Y_cur = Kokkos::subview(m_y, ::Kokkos::make_pair(Y_ptBeg, Y_ptEnd));
+
+    const y_value_type val_one = Kokkos::ArithTraits<y_value_type>::one();
+    ;
+    if (beta != val_one) {
+      KokkosBatched::TeamVectorScaleInternal::invoke(
+          dev, block_dim, beta, Y_cur.data(),
+          static_cast<int>(Y_cur.stride_0()));
+    }
+
+    dev.team_barrier();
+
+    const auto myRow = m_A.block_row_Const(iBlock);
+    const auto count = myRow.length;
+
+    if (conjugate) {
+      typedef Kokkos::View<const y_value_type **, Kokkos::LayoutRight,
+                           typename AMatrix::device_type,
+                           Kokkos::MemoryUnmanaged>
+          block_values_type;
+
+      for (ordinal_type jBlock = 0; jBlock < count; ++jBlock) {
+        const auto A_cur    = myRow.block(jBlock);
+        const auto X_blkCol = myRow.block_colidx(jBlock);
+        const auto X_ptBeg  = X_blkCol * block_dim;
+        const auto X_cur    = Kokkos::subview(
+            m_x, ::Kokkos::make_pair(X_ptBeg, X_ptBeg + block_dim));
+        KokkosBlas::Experimental::Impl::TeamGEMV<
+            team_member, block_values_type, XVector, YVector, -1,
+            false>::team_gemv(dev, alpha, A_cur, X_cur, val_one, Y_cur);
+      }
+    } else {
+      for (ordinal_type jBlock = 0; jBlock < count; ++jBlock) {
+        const auto A_cur    = myRow.block(jBlock);
+        const auto X_blkCol = myRow.block_colidx(jBlock);
+        const auto X_ptBeg  = X_blkCol * block_dim;
+        const auto X_cur    = Kokkos::subview(
+            m_x, ::Kokkos::make_pair(X_ptBeg, X_ptBeg + block_dim));
+        KokkosBatched::TeamVectorGemvInternal<
+            KokkosBatched::Algo::Gemv::Unblocked>::
+            invoke(dev, block_dim, block_dim, alpha, A_cur.data(),
+                   static_cast<int>(A_cur.stride_0()),
+                   static_cast<int>(A_cur.stride_1()), X_cur.data(),
+                   static_cast<int>(X_cur.stride_0()), val_one, Y_cur.data(),
+                   static_cast<int>(Y_cur.stride_0()));
+      }
+    }
+  }
+};
+
+/* ******************* */
+
+//
+// spMatVec_no_transpose: version for CPU execution spaces
+// (RangePolicy or trivial serial impl used)
+//
+template <class AT, class AO, class AD, class AS, class AlphaType,
+          class XVector, class BetaType, class YVector,
+          typename std::enable_if<!KokkosKernels::Impl::kk_is_gpu_exec_space<
+              typename YVector::execution_space>()>::type * = nullptr>
+void spMatVec_no_transpose(
+    const KokkosKernels::Experimental::Controls &controls,
+    const AlphaType &alpha,
+    const KokkosSparse::Experimental::BsrMatrix<
+        AT, AO, AD, Kokkos::MemoryTraits<Kokkos::Unmanaged>, AS> &A,
+    const XVector &x, const BetaType &beta, YVector &y, bool useConjugate) {
+  // This is required to maintain semantics of KokkosKernels native SpMV:
+  // if y contains NaN but beta = 0, the result y should be filled with 0.
+  // For example, this is useful for passing in uninitialized y and beta=0.
+  if (beta == Kokkos::ArithTraits<BetaType>::zero())
+    Kokkos::deep_copy(y, Kokkos::ArithTraits<BetaType>::zero());
+  else
+    KokkosBlas::scal(y, beta, y);
+
+  //
+  // Treat the case y <- alpha * A * x + beta * y
+  //
+
+  typedef KokkosSparse::Experimental::BsrMatrix<
+      AT, AO, AD, Kokkos::MemoryTraits<Kokkos::Unmanaged>, AS>
+      AMatrix_Internal;
+
+  bool use_dynamic_schedule = false;  // Forces the use of a dynamic schedule
+  bool use_static_schedule  = false;  // Forces the use of a static schedule
+  if (controls.isParameter("schedule")) {
+    if (controls.getParameter("schedule") == "dynamic") {
+      use_dynamic_schedule = true;
+    } else if (controls.getParameter("schedule") == "static") {
+      use_static_schedule = true;
+    }
+  }
+
+  BSR_GEMV_Functor<AMatrix_Internal, XVector, YVector> func(
+      alpha, A, x, beta, y, A.blockDim(), useConjugate);
+  if (((A.nnz() > 10000000) || use_dynamic_schedule) && !use_static_schedule) {
+    Kokkos::parallel_for(
+        "KokkosSparse::bspmv<NoTranspose,Dynamic>",
+        Kokkos::RangePolicy<
+            typename AMatrix_Internal::device_type::execution_space,
+            Kokkos::Schedule<Kokkos::Dynamic>>(0, A.numRows()),
+        func);
+  } else {
+    Kokkos::parallel_for(
+        "KokkosSparse::bspmv<NoTranspose,Static>",
+        Kokkos::RangePolicy<
+            typename AMatrix_Internal::device_type::execution_space,
+            Kokkos::Schedule<Kokkos::Static>>(0, A.numRows()),
+        func);
+  }
+}
+
+/* ******************* */
+
+//
+// spMatVec_no_transpose: version for GPU execution spaces (TeamPolicy used)
+//
+template <class AT, class AO, class AD, class AS, class AlphaType,
+          class XVector, class BetaType, class YVector,
+          typename std::enable_if<KokkosKernels::Impl::kk_is_gpu_exec_space<
+              typename YVector::execution_space>()>::type * = nullptr>
+void spMatVec_no_transpose(
+    const KokkosKernels::Experimental::Controls &controls,
+    const AlphaType &alpha,
+    const KokkosSparse::Experimental::BsrMatrix<
+        AT, AO, AD, Kokkos::MemoryTraits<Kokkos::Unmanaged>, AS> &A,
+    const XVector &x, const BetaType &beta, YVector &y, bool useConjugate) {
+  if (A.numRows() <= static_cast<AO>(0)) {
+    return;
+  }
+
+  typedef KokkosSparse::Experimental::BsrMatrix<
+      AT, AO, AD, Kokkos::MemoryTraits<Kokkos::Unmanaged>, AS>
+      AMatrix_Internal;
+  typedef typename AMatrix_Internal::execution_space execution_space;
+
+  bool use_dynamic_schedule = false;  // Forces the use of a dynamic schedule
+  bool use_static_schedule  = false;  // Forces the use of a static schedule
+  if (controls.isParameter("schedule")) {
+    if (controls.getParameter("schedule") == "dynamic") {
+      use_dynamic_schedule = true;
+    } else if (controls.getParameter("schedule") == "static") {
+      use_static_schedule = true;
+    }
+  }
+  int team_size        = -1;
+  int vector_length    = -1;
+  const auto block_dim = A.blockDim();
+
+  team_size = 8;
+  if (block_dim <= 4) {
+    vector_length = 4;
+    team_size     = 64;
+  } else if (block_dim <= 8) {
+    vector_length = 8;
+    team_size     = 32;
+  } else if (block_dim <= 16) {
+    vector_length = 16;
+    team_size     = 16;
+  } else {
+    vector_length = 32;
+    team_size     = 8;
+  }
+  int64_t worksets = A.numRows();
+
+  //
+  // Use the controls to allow the user to pass in some tuning parameters.
+  //
+  if (controls.isParameter("team size")) {
+    team_size = std::stoi(controls.getParameter("team size"));
+  }
+  if (controls.isParameter("vector length")) {
+    vector_length = std::stoi(controls.getParameter("vector length"));
+  }
+
+  BSR_GEMV_Functor<AMatrix_Internal, XVector, YVector> func(
+      alpha, A, x, beta, y, block_dim, useConjugate);
+
+  if (((A.nnz() > 10000000) || use_dynamic_schedule) && !use_static_schedule) {
+    Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>>
+        policy(1, 1);
+    if (team_size < 0)
+      policy = Kokkos::TeamPolicy<execution_space,
+                                  Kokkos::Schedule<Kokkos::Dynamic>>(
+          worksets, Kokkos::AUTO, vector_length);
+    else
+      policy = Kokkos::TeamPolicy<execution_space,
+                                  Kokkos::Schedule<Kokkos::Dynamic>>(
+          worksets, team_size, vector_length);
+    Kokkos::parallel_for("KokkosSparse::bspmv<NoTranspose,Dynamic>", policy,
+                         func);
+  } else {
+    Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>>
+        policy(1, 1);
+    if (team_size < 0)
+      policy =
+          Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>>(
+              worksets, Kokkos::AUTO, vector_length);
+    else
+      policy =
+          Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>>(
+              worksets, team_size, vector_length);
+    Kokkos::parallel_for("KokkosSparse::bspmv<NoTranspose, Static>", policy,
+                         func);
+  }
+}
+
+/* ******************* */
+
+template <class AMatrix, class XVector, class YVector>
+struct BSR_GEMV_Transpose_Functor {
+  typedef typename AMatrix::execution_space execution_space;
+  typedef typename AMatrix::non_const_value_type value_type;
+  typedef typename Kokkos::TeamPolicy<execution_space> team_policy;
+  typedef typename team_policy::member_type team_member;
+  typedef Kokkos::Details::ArithTraits<value_type> ATV;
+
+  //! Nonconst version of the type of column indices in the sparse matrix.
+  typedef typename AMatrix::non_const_ordinal_type ordinal_type;
+  //! Nonconst version of the type of row offsets in the sparse matrix.
+  typedef typename AMatrix::non_const_size_type size_type;
+
+  const value_type alpha;
+
+  AMatrix m_A;
+  XVector m_x;
+  YVector m_y;
+
+  const int block_dim;
+  const bool conjugate;
+
+  BSR_GEMV_Transpose_Functor(const value_type alpha_, const AMatrix &m_A_,
+                             const XVector &m_x_, const YVector &m_y_,
+                             const bool conj_)
+      : alpha(alpha_),
+        m_A(m_A_),
+        m_x(m_x_),
+        m_y(m_y_),
+        block_dim(static_cast<int>(m_A_.blockDim())),
+        conjugate(conj_) {
+    static_assert(static_cast<int>(XVector::rank) == 1,
+                  "XVector must be a rank 1 View.");
+    static_assert(static_cast<int>(YVector::rank) == 1,
+                  "YVector must be a rank 1 View.");
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const ordinal_type iBlock) const {
+    //
+    // Assume that alpha is not zero
+    //
+    const auto xstart = iBlock * block_dim;
+    const auto xview =
+        Kokkos::subview(m_x, Kokkos::make_pair(xstart, xstart + block_dim));
+    const auto start = m_A.graph.row_map(iBlock);
+    const ordinal_type count =
+        static_cast<ordinal_type>(m_A.graph.row_map(iBlock + 1) - start);
+    const auto row    = m_A.block_row_Const(iBlock);
+    const auto beta1  = static_cast<value_type>(1);
+    const auto alpha1 = beta1;
+    if (conjugate) {
+      for (ordinal_type ic = 0; ic < count; ++ic) {
+        const auto Aview  = row.block(ic);
+        const auto ystart = row.block_colidx(ic) * block_dim;
+        for (ordinal_type jj = 0; jj < block_dim; ++jj) {
+          value_type t(0);
+          for (ordinal_type ii = 0; ii < block_dim; ++ii) {
+            const auto aval =
+                Kokkos::ArithTraits<value_type>::conj(Aview(ii, jj));
+            t += aval * xview(ii);
+          }
+          t *= alpha;
+          Kokkos::atomic_add(&m_y(ystart + jj), t);
+        }
+      }
+    } else {
+      for (ordinal_type ic = 0; ic < count; ++ic) {
+        const auto Aview  = row.block(ic);
+        const auto ystart = row.block_colidx(ic) * block_dim;
+        for (ordinal_type jj = 0; jj < block_dim; ++jj) {
+          value_type t(0);
+          KokkosBatched::SerialGemvInternal<
+              KokkosBatched::Algo::Gemv::Blocked>::invoke<value_type,
+                                                          value_type>(
+              1, block_dim, alpha1, Aview.data() + jj, Aview.stride_1(),
+              Aview.stride_0(), xview.data(), xview.stride_0(), beta1, &t, 1);
+          t *= alpha;
+          Kokkos::atomic_add(&m_y(ystart + jj), t);
+        }
+      }
+    }
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const team_member &dev) const {
+    using y_value_type        = typename YVector::non_const_value_type;
+    const ordinal_type iBlock = static_cast<ordinal_type>(dev.league_rank());
+
+    const size_type X_ptBeg = iBlock * block_dim;
+    const size_type X_ptEnd = X_ptBeg + block_dim;
+    const auto X_cur =
+        Kokkos::subview(m_x, ::Kokkos::make_pair(X_ptBeg, X_ptEnd));
+
+    const auto myRow = m_A.block_row_Const(iBlock);
+    const auto count = myRow.length;
+
+    const y_value_type val_zero = Kokkos::ArithTraits<y_value_type>::zero();
+    y_value_type *shared_y      = (y_value_type *)dev.team_shmem().get_shmem(
+        block_dim * sizeof(y_value_type));
+
+    if (conjugate) {
+      typedef Kokkos::View<const y_value_type **, Kokkos::LayoutRight,
+                           typename AMatrix::device_type,
+                           Kokkos::MemoryUnmanaged>
+          block_values_type;
+      Kokkos::View<y_value_type *, typename AMatrix::device_type,
+                   Kokkos::MemoryUnmanaged>
+          shared_view(shared_y, block_dim);
+      for (ordinal_type jBlock = 0; jBlock < count; ++jBlock) {
+        const auto A_cur = myRow.block(jBlock);
+        //
+        KokkosBlas::Experimental::Impl::TeamGEMV<
+            team_member, block_values_type, XVector, YVector, 2,
+            false>::team_gemv(dev, alpha, A_cur, X_cur, val_zero, shared_view);
+        //
+        dev.team_barrier();
+        //
+        const auto Y_blkCol = myRow.block_colidx(jBlock);
+        const auto Y_ptBeg  = Y_blkCol * block_dim;
+        auto Y_cur          = Kokkos::subview(
+            m_y, ::Kokkos::make_pair(Y_ptBeg, Y_ptBeg + block_dim));
+        Kokkos::parallel_for(Kokkos::TeamVectorRange(dev, 0, block_dim),
+                             [&](const ordinal_type &ijk) {
+                               Kokkos::atomic_add(&Y_cur(ijk),
+                                                  shared_view(ijk));
+                             });
+      }
+    } else {
+      for (ordinal_type jBlock = 0; jBlock < count; ++jBlock) {
+        const auto A_cur = myRow.block(jBlock);
+        //
+        KokkosBatched::TeamVectorGemvInternal<
+            KokkosBatched::Algo::Gemv::Unblocked>::invoke(dev, block_dim,
+                                                          block_dim, alpha,
+                                                          A_cur.data(),
+                                                          static_cast<int>(
+                                                              A_cur.stride_1()),
+                                                          static_cast<int>(
+                                                              A_cur.stride_0()),
+                                                          X_cur.data(),
+                                                          static_cast<int>(
+                                                              X_cur.stride_0()),
+                                                          val_zero, shared_y,
+                                                          1);
+        //
+        dev.team_barrier();
+        //
+        const auto Y_blkCol = myRow.block_colidx(jBlock);
+        const auto Y_ptBeg  = Y_blkCol * block_dim;
+        auto Y_cur          = Kokkos::subview(
+            m_y, ::Kokkos::make_pair(Y_ptBeg, Y_ptBeg + block_dim));
+        Kokkos::parallel_for(Kokkos::TeamVectorRange(dev, 0, block_dim),
+                             [&](const ordinal_type &ijk) {
+                               Kokkos::atomic_add(&Y_cur(ijk), shared_y[ijk]);
+                             });
+      }
+    }
+  }
+};
+
+/* ******************* */
+
+/// \brief  spMatVec_transpose: version for CPU execution spaces (RangePolicy or
+/// trivial serial impl used)
+template <class AT, class AO, class AD, class AS, class AlphaType,
+          class XVector, class BetaType, class YVector,
+          typename std::enable_if<!KokkosKernels::Impl::kk_is_gpu_exec_space<
+              typename YVector::execution_space>()>::type * = nullptr>
+void spMatVec_transpose(
+    const KokkosKernels::Experimental::Controls &controls,
+    const AlphaType &alpha,
+    const KokkosSparse::Experimental::BsrMatrix<
+        AT, AO, AD, Kokkos::MemoryTraits<Kokkos::Unmanaged>, AS> &A,
+    const XVector &x, const BetaType &beta, YVector &y, bool useConjugate) {
+  // This is required to maintain semantics of KokkosKernels native SpMV:
+  // if y contains NaN but beta = 0, the result y should be filled with 0.
+  // For example, this is useful for passing in uninitialized y and beta=0.
+  if (beta == Kokkos::ArithTraits<BetaType>::zero())
+    Kokkos::deep_copy(y, Kokkos::ArithTraits<BetaType>::zero());
+  else
+    KokkosBlas::scal(y, beta, y);
+
+  if (alpha == Kokkos::ArithTraits<AlphaType>::zero()) return;
+
+  //
+  // Treat the case y <- alpha * A^T * x + beta * y
+  //
+
+  typedef KokkosSparse::Experimental::BsrMatrix<
+      AT, AO, AD, Kokkos::MemoryTraits<Kokkos::Unmanaged>, AS>
+      AMatrix_Internal;
+
+  bool use_dynamic_schedule = false;  // Forces the use of a dynamic schedule
+  bool use_static_schedule  = false;  // Forces the use of a static schedule
+  if (controls.isParameter("schedule")) {
+    if (controls.getParameter("schedule") == "dynamic") {
+      use_dynamic_schedule = true;
+    } else if (controls.getParameter("schedule") == "static") {
+      use_static_schedule = true;
+    }
+  }
+
+  BSR_GEMV_Transpose_Functor<AMatrix_Internal, XVector, YVector> func(
+      alpha, A, x, y, useConjugate);
+  if (((A.nnz() > 10000000) || use_dynamic_schedule) && !use_static_schedule) {
+    Kokkos::parallel_for(
+        "KokkosSparse::bspmv<Transpose,Dynamic>",
+        Kokkos::RangePolicy<
+            typename AMatrix_Internal::device_type::execution_space,
+            Kokkos::Schedule<Kokkos::Dynamic>>(0, A.numRows()),
+        func);
+  } else {
+    Kokkos::parallel_for(
+        "KokkosSparse::bspmv<Transpose,Static>",
+        Kokkos::RangePolicy<
+            typename AMatrix_Internal::device_type::execution_space,
+            Kokkos::Schedule<Kokkos::Static>>(0, A.numRows()),
+        func);
+  }
+}
+
+//
+// spMatVec_transpose: version for GPU execution spaces (TeamPolicy used)
+//
+template <class AMatrix, class AlphaType, class XVector, class BetaType,
+          class YVector,
+          typename std::enable_if<KokkosKernels::Impl::kk_is_gpu_exec_space<
+              typename YVector::execution_space>()>::type * = nullptr>
+void spMatVec_transpose(const KokkosKernels::Experimental::Controls &controls,
+                        const AlphaType &alpha, const AMatrix &A,
+                        const XVector &x, const BetaType &beta, YVector &y,
+                        bool useConjugate) {
+  if (A.numRows() <= 0) {
+    return;
+  }
+
+  typedef typename AMatrix::execution_space execution_space;
+
+  const auto block_dim = A.blockDim();
+
+  KokkosBlas::scal(y, beta, y);
+
+  bool use_dynamic_schedule = false;  // Forces the use of a dynamic schedule
+  bool use_static_schedule  = false;  // Forces the use of a static schedule
+  if (controls.isParameter("schedule")) {
+    if (controls.getParameter("schedule") == "dynamic") {
+      use_dynamic_schedule = true;
+    } else if (controls.getParameter("schedule") == "static") {
+      use_static_schedule = true;
+    }
+  }
+  int team_size     = -1;
+  int vector_length = -1;
+
+  int64_t worksets = A.numRows();
+
+  if (block_dim <= 4) {
+    vector_length = 4;
+    team_size     = 64;
+  }
+  if (block_dim <= 8) {
+    vector_length = 8;
+    team_size     = 32;
+  }
+  if (block_dim <= 16) {
+    vector_length = 16;
+    team_size     = 16;
+  } else {
+    vector_length = 32;
+    team_size     = 8;
+  }
+
+  //
+  // Use the controls to allow the user to pass in some tuning parameters.
+  //
+  if (controls.isParameter("team size")) {
+    team_size = std::stoi(controls.getParameter("team size"));
+  }
+  if (controls.isParameter("vector length")) {
+    vector_length = std::stoi(controls.getParameter("vector length"));
+  }
+
+  BSR_GEMV_Transpose_Functor<AMatrix, XVector, YVector> func(alpha, A, x, y,
+                                                             useConjugate);
+
+  if (((A.nnz() > 10000000) || use_dynamic_schedule) && !use_static_schedule) {
+    Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>>
+        policy(1, 1);
+    if (team_size < 0)
+      policy = Kokkos::TeamPolicy<execution_space,
+                                  Kokkos::Schedule<Kokkos::Dynamic>>(
+                   worksets, Kokkos::AUTO, vector_length)
+                   .set_scratch_size(
+                       0, Kokkos::PerTeam(
+                              block_dim *
+                              sizeof(typename YVector::non_const_value_type)));
+    else
+      policy = Kokkos::TeamPolicy<execution_space,
+                                  Kokkos::Schedule<Kokkos::Dynamic>>(
+                   worksets, team_size, vector_length)
+                   .set_scratch_size(
+                       0, Kokkos::PerTeam(
+                              block_dim *
+                              sizeof(typename YVector::non_const_value_type)));
+    Kokkos::parallel_for("KokkosSparse::bspmv<Transpose,Dynamic>", policy,
+                         func);
+  } else {
+    Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>>
+        policy(1, 1);
+    if (team_size < 0)
+      policy =
+          Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>>(
+              worksets, Kokkos::AUTO, vector_length)
+              .set_scratch_size(
+                  0, Kokkos::PerTeam(
+                         block_dim *
+                         sizeof(typename YVector::non_const_value_type)));
+    else
+      policy =
+          Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>>(
+              worksets, team_size, vector_length)
+              .set_scratch_size(
+                  0, Kokkos::PerTeam(
+                         block_dim *
+                         sizeof(typename YVector::non_const_value_type)));
+    Kokkos::parallel_for("KokkosSparse::bspmv<Transpose, Static>", policy,
+                         func);
+  }
+}
+
+/* ******************* */
+
+template <class AMatrix, class XVector, class YVector>
+struct BSR_GEMM_Functor {
+  typedef typename AMatrix::execution_space execution_space;
+  typedef typename AMatrix::non_const_value_type value_type;
+  typedef typename Kokkos::TeamPolicy<execution_space> team_policy;
+  typedef typename team_policy::member_type team_member;
+  typedef Kokkos::Details::ArithTraits<value_type> ATV;
+
+  //! Nonconst version of the type of column indices in the sparse matrix.
+  typedef typename AMatrix::non_const_ordinal_type ordinal_type;
+  //! Nonconst version of the type of row offsets in the sparse matrix.
+  typedef typename AMatrix::non_const_size_type size_type;
+
+  const value_type alpha;
+  const value_type beta;
+
+  AMatrix m_A;
+  XVector m_x;
+  YVector m_y;
+
+  const int block_dim;
+  const int num_rhs;
+  const bool conjugate;
+
+  BSR_GEMM_Functor(const value_type alpha_, const AMatrix m_A_,
+                   const XVector m_x_, const value_type beta_,
+                   const YVector m_y_, const bool conj_)
+      : alpha(alpha_),
+        beta(beta_),
+        m_A(m_A_),
+        m_x(m_x_),
+        m_y(m_y_),
+        block_dim(static_cast<int>(m_A_.blockDim())),
+        num_rhs(static_cast<int>(m_x_.extent(1))),
+        conjugate(conj_) {
+    static_assert(static_cast<int>(XVector::rank) == 2,
+                  "XVector must be a rank 2 View.");
+    static_assert(static_cast<int>(YVector::rank) == 2,
+                  "YVector must be a rank 2 View.");
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const ordinal_type iBlock) const {
+    //
+    const auto ystart = iBlock * block_dim;
+    const auto start  = m_A.graph.row_map(iBlock);
+    const ordinal_type count =
+        static_cast<ordinal_type>(m_A.graph.row_map(iBlock + 1) - start);
+    const auto row   = m_A.block_row_Const(iBlock);
+    const auto beta1 = static_cast<value_type>(1);
+    const auto ldx   = m_x.stride_1();
+    const auto ldy   = m_y.stride_1();
+    //
+    if (conjugate) {
+      for (ordinal_type ic = 0; ic < count; ++ic) {
+        const auto Aview  = row.block(ic);
+        const auto xstart = row.block_colidx(ic) * block_dim;
+        for (ordinal_type jr = 0; jr < num_rhs; ++jr) {
+          for (ordinal_type ii = 0; ii < block_dim; ++ii) {
+            value_type t(0);
+            for (ordinal_type jj = 0; jj < block_dim; ++jj) {
+              const auto aval =
+                  Kokkos::ArithTraits<value_type>::conj(Aview(ii, jj));
+              t += aval * m_x(xstart + jj, jr);
+            }
+            m_y(ystart + ii, jr) += alpha * t;
+          }
+        }
+      }
+    } else {
+      for (ordinal_type ic = 0; ic < count; ++ic) {
+        const auto Aview  = row.block(ic);
+        const auto xstart = row.block_colidx(ic) * block_dim;
+        KokkosBatched::SerialGemmInternal<KokkosBatched::Algo::Gemm::Blocked>::
+            invoke<value_type, value_type>(
+                static_cast<ordinal_type>(block_dim),
+                static_cast<ordinal_type>(num_rhs),
+                static_cast<ordinal_type>(block_dim), alpha, Aview.data(),
+                Aview.stride_0(), Aview.stride_1(), &m_x(xstart, 0),
+                m_x.stride_0(), ldx, beta1, &m_y(ystart, 0), m_y.stride_0(),
+                ldy);
+      }
+    }
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const team_member &dev) const {
+    using y_value_type        = typename YVector::non_const_value_type;
+    const ordinal_type iBlock = static_cast<ordinal_type>(dev.league_rank());
+
+    const size_type Y_ptBeg = iBlock * block_dim;
+    const size_type Y_ptEnd = Y_ptBeg + block_dim;
+    auto Y_cur = Kokkos::subview(m_y, ::Kokkos::make_pair(Y_ptBeg, Y_ptEnd),
+                                 Kokkos::ALL());
+
+    const y_value_type val_one = Kokkos::ArithTraits<y_value_type>::one();
+    if (beta != val_one) {
+      KokkosBatched::TeamVectorScaleInternal::invoke(
+          dev, block_dim, num_rhs, beta, Y_cur.data(),
+          static_cast<int>(Y_cur.stride_0()),
+          static_cast<int>(Y_cur.stride_1()));
+    }
+
+    dev.team_barrier();
+
+    const auto myRow = m_A.block_row_Const(iBlock);
+    const auto count = myRow.length;
+
+    if (conjugate) {
+      for (ordinal_type jBlock = 0; jBlock < count; ++jBlock) {
+        const auto A_cur    = myRow.block(jBlock);
+        const auto X_blkCol = myRow.block_colidx(jBlock);
+        const auto X_ptBeg  = X_blkCol * block_dim;
+        const auto X_cur    = Kokkos::subview(
+            m_x, ::Kokkos::make_pair(X_ptBeg, X_ptBeg + block_dim),
+            Kokkos::ALL());
+        KokkosBatched::TeamVectorGemmInternal<
+            KokkosBatched::Algo::Gemm::Unblocked,
+            true>::invoke(dev, static_cast<int>(block_dim),
+                          static_cast<int>(num_rhs),
+                          static_cast<int>(block_dim), alpha, A_cur.data(),
+                          static_cast<int>(A_cur.stride_0()),
+                          static_cast<int>(A_cur.stride_1()), X_cur.data(),
+                          static_cast<int>(X_cur.stride_0()),
+                          static_cast<int>(X_cur.stride_1()), val_one,
+                          Y_cur.data(), static_cast<int>(Y_cur.stride_0()),
+                          static_cast<int>(Y_cur.stride_1()));
+      }
+    } else {
+      for (ordinal_type jBlock = 0; jBlock < count; ++jBlock) {
+        const auto A_cur    = myRow.block(jBlock);
+        const auto X_blkCol = myRow.block_colidx(jBlock);
+        const auto X_ptBeg  = X_blkCol * block_dim;
+        const auto X_cur    = Kokkos::subview(
+            m_x, ::Kokkos::make_pair(X_ptBeg, X_ptBeg + block_dim),
+            Kokkos::ALL());
+        KokkosBatched::TeamVectorGemmInternal<
+            KokkosBatched::Algo::Gemm::Unblocked,
+            false>::invoke(dev, block_dim, num_rhs, block_dim, alpha,
+                           A_cur.data(), static_cast<int>(A_cur.stride_0()),
+                           static_cast<int>(A_cur.stride_1()), X_cur.data(),
+                           static_cast<int>(X_cur.stride_0()),
+                           static_cast<int>(X_cur.stride_1()), val_one,
+                           Y_cur.data(), static_cast<int>(Y_cur.stride_0()),
+                           static_cast<int>(Y_cur.stride_1()));
+      }
+    }
+  }
+};
+
+/* ******************* */
+
+//
+// spMatMultiVec_no_transpose: version for CPU execution spaces
+// (RangePolicy or trivial serial impl used)
+//
+template <class AT, class AO, class AD, class AS, class AlphaType,
+          class XVector, class BetaType, class YVector,
+          typename std::enable_if<!KokkosKernels::Impl::kk_is_gpu_exec_space<
+              typename YVector::execution_space>()>::type * = nullptr>
+void spMatMultiVec_no_transpose(
+    const KokkosKernels::Experimental::Controls &controls,
+    const AlphaType &alpha,
+    const KokkosSparse::Experimental::BsrMatrix<
+        AT, AO, AD, Kokkos::MemoryTraits<Kokkos::Unmanaged>, AS> &A,
+    const XVector &x, const BetaType &beta, YVector &y, bool useConjugate) {
+  // This is required to maintain semantics of KokkosKernels native SpMV:
+  // if y contains NaN but beta = 0, the result y should be filled with 0.
+  // For example, this is useful for passing in uninitialized y and beta=0.
+  if (beta == Kokkos::ArithTraits<BetaType>::zero())
+    Kokkos::deep_copy(y, Kokkos::ArithTraits<BetaType>::zero());
+  else
+    KokkosBlas::scal(y, beta, y);
+  //
+  // Treat the case y <- alpha * A * x + beta * y
+  //
+  typedef KokkosSparse::Experimental::BsrMatrix<
+      AT, AO, AD, Kokkos::MemoryTraits<Kokkos::Unmanaged>, AS>
+      AMatrix_Internal;
+
+  bool use_dynamic_schedule = false;  // Forces the use of a dynamic schedule
+  bool use_static_schedule  = false;  // Forces the use of a static schedule
+  if (controls.isParameter("schedule")) {
+    if (controls.getParameter("schedule") == "dynamic") {
+      use_dynamic_schedule = true;
+    } else if (controls.getParameter("schedule") == "static") {
+      use_static_schedule = true;
+    }
+  }
+
+  BSR_GEMM_Functor<AMatrix_Internal, XVector, YVector> func(alpha, A, x, beta,
+                                                            y, useConjugate);
+  if (((A.nnz() > 10000000) || use_dynamic_schedule) && !use_static_schedule) {
+    Kokkos::parallel_for(
+        "KokkosSparse::bsr_spm_mv<NoTranspose,Dynamic>",
+        Kokkos::RangePolicy<
+            typename AMatrix_Internal::device_type::execution_space,
+            Kokkos::Schedule<Kokkos::Dynamic>>(0, A.numRows()),
+        func);
+  } else {
+    Kokkos::parallel_for(
+        "KokkosSparse::bsr_spm_mv<NoTranspose,Static>",
+        Kokkos::RangePolicy<
+            typename AMatrix_Internal::device_type::execution_space,
+            Kokkos::Schedule<Kokkos::Static>>(0, A.numRows()),
+        func);
+  }
+}
+
+/* ******************* */
+
+//
+// spMatMultiVec_no_transpose: version for GPU execution spaces (TeamPolicy
+// used)
+//
+template <class AT, class AO, class AD, class AS, class AlphaType,
+          class XVector, class BetaType, class YVector,
+          typename std::enable_if<KokkosKernels::Impl::kk_is_gpu_exec_space<
+              typename YVector::execution_space>()>::type * = nullptr>
+void spMatMultiVec_no_transpose(
+    const KokkosKernels::Experimental::Controls &controls,
+    const AlphaType &alpha,
+    const KokkosSparse::Experimental::BsrMatrix<
+        AT, AO, AD, Kokkos::MemoryTraits<Kokkos::Unmanaged>, AS> &A,
+    const XVector &x, const BetaType &beta, YVector &y, bool useConjugate) {
+  if (A.numRows() <= static_cast<AO>(0)) {
+    return;
+  }
+
+  typedef KokkosSparse::Experimental::BsrMatrix<
+      AT, AO, AD, Kokkos::MemoryTraits<Kokkos::Unmanaged>, AS>
+      AMatrix_Internal;
+  typedef typename AMatrix_Internal::execution_space execution_space;
+
+  bool use_dynamic_schedule = false;  // Forces the use of a dynamic schedule
+  bool use_static_schedule  = false;  // Forces the use of a static schedule
+  if (controls.isParameter("schedule")) {
+    if (controls.getParameter("schedule") == "dynamic") {
+      use_dynamic_schedule = true;
+    } else if (controls.getParameter("schedule") == "static") {
+      use_static_schedule = true;
+    }
+  }
+
+  int team_size     = -1;
+  int vector_length = -1;
+  int64_t worksets  = A.numRows();
+
+  const auto block_dim = A.blockDim();
+  if (block_dim <= 4) {
+    vector_length = 4;
+    team_size     = 64;
+  } else if (block_dim <= 8) {
+    vector_length = 8;
+    team_size     = 32;
+  } else if (block_dim <= 16) {
+    vector_length = 16;
+    team_size     = 16;
+  } else {
+    vector_length = 32;
+    team_size     = 8;
+  }
+
+  //
+  // Use the controls to allow the user to pass in some tuning parameters.
+  //
+  if (controls.isParameter("team size")) {
+    team_size = std::stoi(controls.getParameter("team size"));
+  }
+  if (controls.isParameter("vector length")) {
+    vector_length = std::stoi(controls.getParameter("vector length"));
+  }
+
+  BSR_GEMM_Functor<AMatrix_Internal, XVector, YVector> func(alpha, A, x, beta,
+                                                            y, useConjugate);
+
+  if (((A.nnz() > 10000000) || use_dynamic_schedule) && !use_static_schedule) {
+    Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>>
+        policy(1, 1);
+    if (team_size < 0)
+      policy = Kokkos::TeamPolicy<execution_space,
+                                  Kokkos::Schedule<Kokkos::Dynamic>>(
+          worksets, Kokkos::AUTO, vector_length);
+    else
+      policy = Kokkos::TeamPolicy<execution_space,
+                                  Kokkos::Schedule<Kokkos::Dynamic>>(
+          worksets, team_size, vector_length);
+    Kokkos::parallel_for("KokkosSparse::bsr_spm_mv<NoTranspose,Dynamic>",
+                         policy, func);
+  } else {
+    Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>>
+        policy(1, 1);
+    if (team_size < 0)
+      policy =
+          Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>>(
+              worksets, Kokkos::AUTO, vector_length);
+    else
+      policy =
+          Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>>(
+              worksets, team_size, vector_length);
+    Kokkos::parallel_for("KokkosSparse::bsr_spm_mv<NoTranspose, Static>",
+                         policy, func);
+  }
+}
+
+/* ******************* */
+template <class AMatrix, class XVector, class YVector>
+struct BSR_GEMM_Transpose_Functor {
+  typedef typename AMatrix::execution_space execution_space;
+  typedef typename AMatrix::non_const_value_type value_type;
+  typedef typename Kokkos::TeamPolicy<execution_space> team_policy;
+  typedef typename team_policy::member_type team_member;
+  typedef Kokkos::Details::ArithTraits<value_type> ATV;
+
+  //! Nonconst version of the type of column indices in the sparse matrix.
+  typedef typename AMatrix::non_const_ordinal_type ordinal_type;
+  //! Nonconst version of the type of row offsets in the sparse matrix.
+  typedef typename AMatrix::non_const_size_type size_type;
+
+  const value_type alpha;
+  AMatrix m_A;
+  XVector m_x;
+  YVector m_y;
+
+  const int block_dim;
+  const int num_rhs;
+  const bool conjugate;
+
+  BSR_GEMM_Transpose_Functor(const value_type alpha_, const AMatrix &m_A_,
+                             const XVector &m_x_, YVector &m_y_,
+                             const bool conj_)
+      : alpha(alpha_),
+        m_A(m_A_),
+        m_x(m_x_),
+        m_y(m_y_),
+        block_dim(static_cast<int>(m_A_.blockDim())),
+        num_rhs(static_cast<int>(m_x_.extent(1))),
+        conjugate(conj_) {
+    static_assert(static_cast<int>(XVector::rank) == 2,
+                  "XVector must be a rank 2 View.");
+    static_assert(static_cast<int>(YVector::rank) == 2,
+                  "YVector must be a rank 2 View.");
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const ordinal_type iBlock) const {
+    //
+    const auto xstart = iBlock * block_dim;
+    const auto xview  = Kokkos::subview(
+        m_x, Kokkos::make_pair(xstart, xstart + block_dim), Kokkos::ALL());
+    const auto start = m_A.graph.row_map(iBlock);
+    const ordinal_type count =
+        static_cast<ordinal_type>(m_A.graph.row_map(iBlock + 1) - start);
+    const auto row    = m_A.block_row_Const(iBlock);
+    const auto beta1  = static_cast<value_type>(1);
+    const auto alpha1 = beta1;
+    const auto ldx    = m_x.stride_1();
+    //
+    if (conjugate) {
+      for (ordinal_type ic = 0; ic < count; ++ic) {
+        const auto Aview  = row.block(ic);
+        const auto ystart = row.block_colidx(ic) * block_dim;
+        for (ordinal_type jr = 0; jr < num_rhs; ++jr) {
+          for (ordinal_type jj = 0; jj < block_dim; ++jj) {
+            value_type t(0);
+            for (ordinal_type ii = 0; ii < block_dim; ++ii) {
+              const auto aval =
+                  Kokkos::ArithTraits<value_type>::conj(Aview(ii, jj));
+              t += aval * xview(ii, jr);
+            }
+            t *= alpha;
+            Kokkos::atomic_add(&m_y(ystart + jj, jr), t);
+          }
+        }
+      }
+    } else {
+      for (ordinal_type ic = 0; ic < count; ++ic) {
+        const auto Aview  = row.block(ic);
+        const auto ystart = row.block_colidx(ic) * block_dim;
+        for (ordinal_type jr = 0; jr < num_rhs; ++jr) {
+          for (ordinal_type jj = 0; jj < block_dim; ++jj) {
+            value_type t(0);
+            KokkosBatched::SerialGemvInternal<
+                KokkosBatched::Algo::Gemv::Blocked>::invoke<value_type,
+                                                            value_type>(
+                1, block_dim, alpha1, Aview.data() + jj, Aview.stride_1(),
+                Aview.stride_0(), xview.data() + jr * ldx, xview.stride_0(),
+                beta1, &t, 1);
+            t *= alpha;
+            Kokkos::atomic_add(&m_y(ystart + jj, jr), t);
+          }
+        }
+      }
+    }
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const team_member &dev) const {
+    using y_value_type        = typename YVector::non_const_value_type;
+    const ordinal_type iBlock = static_cast<ordinal_type>(dev.league_rank());
+
+    const size_type X_ptBeg = iBlock * block_dim;
+    const size_type X_ptEnd = X_ptBeg + block_dim;
+    const auto X_cur        = Kokkos::subview(
+        m_x, ::Kokkos::make_pair(X_ptBeg, X_ptEnd), Kokkos::ALL());
+
+    const auto myRow = m_A.block_row_Const(iBlock);
+    const auto count = myRow.length;
+
+    const y_value_type val_zero = Kokkos::ArithTraits<y_value_type>::zero();
+    y_value_type *shared_y      = (y_value_type *)dev.team_shmem().get_shmem(
+        block_dim * num_rhs * sizeof(y_value_type));
+
+    if (conjugate) {
+      for (ordinal_type jBlock = 0; jBlock < count; ++jBlock) {
+        const auto A_cur = myRow.block(jBlock);
+        //
+        KokkosBatched::TeamVectorGemmInternal<
+            KokkosBatched::Algo::Gemm::Unblocked,
+            true>::invoke(dev, block_dim, num_rhs, block_dim, alpha,
+                          A_cur.data(), static_cast<int>(A_cur.stride_1()),
+                          static_cast<int>(A_cur.stride_0()), X_cur.data(),
+                          static_cast<int>(X_cur.stride_0()),
+                          static_cast<int>(X_cur.stride_1()), val_zero,
+                          shared_y, 1, block_dim);
+        //
+        dev.team_barrier();
+        //
+        const auto Y_blkCol = myRow.block_colidx(jBlock);
+        const auto Y_ptBeg  = Y_blkCol * block_dim;
+        auto Y_cur          = Kokkos::subview(
+            m_y, ::Kokkos::make_pair(Y_ptBeg, Y_ptBeg + block_dim),
+            Kokkos::ALL());
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(dev, 0, num_rhs),
+                             [&](const ordinal_type &kc) {
+                               Kokkos::parallel_for(
+                                   Kokkos::ThreadVectorRange(dev, 0, block_dim),
+                                   [&](const ordinal_type &kr) {
+                                     Kokkos::atomic_add(
+                                         &Y_cur(kr, kc),
+                                         shared_y[kr + kc * block_dim]);
+                                   });
+                             });
+        dev.team_barrier();
+      }
+    } else {
+      for (ordinal_type jBlock = 0; jBlock < count; ++jBlock) {
+        const auto A_cur = myRow.block(jBlock);
+        //
+        KokkosBatched::TeamVectorGemmInternal<
+            KokkosBatched::Algo::Gemm::Unblocked,
+            false>::invoke(dev, block_dim, num_rhs, block_dim, alpha,
+                           A_cur.data(), static_cast<int>(A_cur.stride_1()),
+                           static_cast<int>(A_cur.stride_0()), X_cur.data(),
+                           static_cast<int>(X_cur.stride_0()),
+                           static_cast<int>(X_cur.stride_1()), val_zero,
+                           shared_y, 1, block_dim);
+        //
+        dev.team_barrier();
+        //
+        const auto Y_blkCol = myRow.block_colidx(jBlock);
+        const auto Y_ptBeg  = Y_blkCol * block_dim;
+        auto Y_cur          = Kokkos::subview(
+            m_y, ::Kokkos::make_pair(Y_ptBeg, Y_ptBeg + block_dim),
+            Kokkos::ALL());
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(dev, 0, num_rhs),
+                             [&](const ordinal_type &kc) {
+                               Kokkos::parallel_for(
+                                   Kokkos::ThreadVectorRange(dev, 0, block_dim),
+                                   [&](const ordinal_type &kr) {
+                                     Kokkos::atomic_add(
+                                         &Y_cur(kr, kc),
+                                         shared_y[kr + kc * block_dim]);
+                                   });
+                             });
+        dev.team_barrier();
+      }
+    }
+  }
+};
+
+/* ******************* */
+
+/// \brief  spMatMultiVec_transpose: version for CPU execution spaces
+/// (RangePolicy or trivial serial impl used)
+template <class AT, class AO, class AD, class AS, class AlphaType,
+          class XVector, class BetaType, class YVector,
+          typename std::enable_if<!KokkosKernels::Impl::kk_is_gpu_exec_space<
+              typename YVector::execution_space>()>::type * = nullptr>
+void spMatMultiVec_transpose(
+    const KokkosKernels::Experimental::Controls &controls,
+    const AlphaType &alpha,
+    const KokkosSparse::Experimental::BsrMatrix<
+        AT, AO, AD, Kokkos::MemoryTraits<Kokkos::Unmanaged>, AS> &A,
+    const XVector &x, const BetaType &beta, YVector &y, bool useConjugate) {
+  // This is required to maintain semantics of KokkosKernels native SpMV:
+  // if y contains NaN but beta = 0, the result y should be filled with 0.
+  // For example, this is useful for passing in uninitialized y and beta=0.
+  if (beta == Kokkos::ArithTraits<BetaType>::zero())
+    Kokkos::deep_copy(y, Kokkos::ArithTraits<BetaType>::zero());
+  else
+    KokkosBlas::scal(y, beta, y);
+  //
+  // Treat the case y <- alpha * A^T * x + beta * y
+  //
+  typedef KokkosSparse::Experimental::BsrMatrix<
+      AT, AO, AD, Kokkos::MemoryTraits<Kokkos::Unmanaged>, AS>
+      AMatrix_Internal;
+  typedef typename AMatrix_Internal::execution_space execution_space;
+
+  bool use_dynamic_schedule = false;  // Forces the use of a dynamic schedule
+  bool use_static_schedule  = false;  // Forces the use of a static schedule
+  if (controls.isParameter("schedule")) {
+    if (controls.getParameter("schedule") == "dynamic") {
+      use_dynamic_schedule = true;
+    } else if (controls.getParameter("schedule") == "static") {
+      use_static_schedule = true;
+    }
+  }
+
+  BSR_GEMM_Transpose_Functor<AMatrix_Internal, XVector, YVector> func(
+      alpha, A, x, y, useConjugate);
+  if (((A.nnz() > 10000000) || use_dynamic_schedule) && !use_static_schedule) {
+    Kokkos::parallel_for(
+        "KokkosSparse::bsr_spm_mv<Transpose,Dynamic>",
+        Kokkos::RangePolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>>(
+            0, A.numRows()),
+        func);
+  } else {
+    Kokkos::parallel_for(
+        "KokkosSparse::bsr_spm_mv<Transpose,Static>",
+        Kokkos::RangePolicy<execution_space, Kokkos::Schedule<Kokkos::Static>>(
+            0, A.numRows()),
+        func);
+  }
+}
+
+//
+// spMatMultiVec_transpose: version for GPU execution spaces (TeamPolicy used)
+//
+template <class AMatrix, class AlphaType, class XVector, class BetaType,
+          class YVector,
+          typename std::enable_if<KokkosKernels::Impl::kk_is_gpu_exec_space<
+              typename YVector::execution_space>()>::type * = nullptr>
+void spMatMultiVec_transpose(
+    const KokkosKernels::Experimental::Controls &controls,
+    const AlphaType &alpha, const AMatrix &A, const XVector &x,
+    const BetaType &beta, YVector &y, bool useConjugate) {
+  if (A.numRows() <= 0) {
+    return;
+  }
+
+  KokkosBlas::scal(y, beta, y);
+
+  typedef typename AMatrix::execution_space execution_space;
+
+  bool use_dynamic_schedule = false;  // Forces the use of a dynamic schedule
+  bool use_static_schedule  = false;  // Forces the use of a static schedule
+  if (controls.isParameter("schedule")) {
+    if (controls.getParameter("schedule") == "dynamic") {
+      use_dynamic_schedule = true;
+    } else if (controls.getParameter("schedule") == "static") {
+      use_static_schedule = true;
+    }
+  }
+  int team_size     = -1;
+  int vector_length = -1;
+  int64_t worksets  = A.numRows();
+
+  const auto block_dim = A.blockDim();
+  if (block_dim <= 4) {
+    vector_length = 4;
+    team_size     = 64;
+  } else if (block_dim <= 8) {
+    vector_length = 8;
+    team_size     = 32;
+  } else if (block_dim <= 8) {
+    vector_length = 16;
+    team_size     = 16;
+  } else {
+    vector_length = 32;
+    team_size     = 8;
+  }
+
+  //
+  // Use the controls to allow the user to pass in some tuning
+  // parameters.
+  //
+  if (controls.isParameter("team size")) {
+    team_size = std::stoi(controls.getParameter("team size"));
+  }
+  if (controls.isParameter("vector length")) {
+    vector_length = std::stoi(controls.getParameter("vector length"));
+  }
+
+  BSR_GEMM_Transpose_Functor<AMatrix, XVector, YVector> func(alpha, A, x, y,
+                                                             useConjugate);
+
+  if (((A.nnz() > 10000000) || use_dynamic_schedule) && !use_static_schedule) {
+    Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>>
+        policy(1, 1);
+    if (team_size < 0)
+      policy = Kokkos::TeamPolicy<execution_space,
+                                  Kokkos::Schedule<Kokkos::Dynamic>>(
+                   worksets, Kokkos::AUTO, vector_length)
+                   .set_scratch_size(
+                       0, Kokkos::PerTeam(
+                              block_dim * x.extent(1) *
+                              sizeof(typename YVector::non_const_value_type)));
+    else
+      policy = Kokkos::TeamPolicy<execution_space,
+                                  Kokkos::Schedule<Kokkos::Dynamic>>(
+                   worksets, team_size, vector_length)
+                   .set_scratch_size(
+                       0, Kokkos::PerTeam(
+                              block_dim * x.extent(1) *
+                              sizeof(typename YVector::non_const_value_type)));
+    Kokkos::parallel_for("KokkosSparse::bsr_spm_mv<Transpose,Dynamic>", policy,
+                         func);
+  } else {
+    Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>>
+        policy(1, 1);
+    if (team_size < 0)
+      policy =
+          Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>>(
+              worksets, Kokkos::AUTO, vector_length)
+              .set_scratch_size(
+                  0, Kokkos::PerTeam(
+                         block_dim * x.extent(1) *
+                         sizeof(typename YVector::non_const_value_type)));
+    else
+      policy =
+          Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>>(
+              worksets, team_size, vector_length)
+              .set_scratch_size(
+                  0, Kokkos::PerTeam(
+                         block_dim * x.extent(1) *
+                         sizeof(typename YVector::non_const_value_type)));
+    Kokkos::parallel_for("KokkosSparse::bsr_spm_mv<Transpose, Static>", policy,
+                         func);
+  }
+}
+
+/* ******************* */
+
+}  // namespace Bsr
+
+}  // namespace Impl
+}  // namespace Experimental
+}  // namespace KokkosSparse
+
+#endif  // KOKKOSSPARSE_IMPL_SPMV_BSRMATRIX_IMPL_HPP_

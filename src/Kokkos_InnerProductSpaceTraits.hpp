@@ -171,7 +171,6 @@ class InnerProductSpaceTraits {
 /// \brief Partial specialization for long double.
 ///
 /// \warning CUDA does not support long double in device functions.
-#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
 template <>
 struct InnerProductSpaceTraits<long double> {
   typedef long double val_type;
@@ -183,7 +182,6 @@ struct InnerProductSpaceTraits<long double> {
   }
   static dot_type dot(const val_type& x, const val_type& y) { return x * y; }
 };
-#endif
 
 //! Partial specialization for Kokkos::complex<T>.
 template <class T>

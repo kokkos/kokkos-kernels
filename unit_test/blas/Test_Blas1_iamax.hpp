@@ -288,8 +288,6 @@ TEST_F(TestCategory, iamax_mv_float) {
 #if defined(KOKKOSKERNELS_INST_DOUBLE) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&  \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-// FIXME_SYCL
-#ifndef KOKKOS_ENABLE_SYCL
 TEST_F(TestCategory, iamax_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::iamax_double");
   test_iamax<double, TestExecSpace>();
@@ -300,7 +298,6 @@ TEST_F(TestCategory, iamax_mv_double) {
   test_iamax_mv<double, TestExecSpace>();
   Kokkos::Profiling::popRegion();
 }
-#endif
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || \

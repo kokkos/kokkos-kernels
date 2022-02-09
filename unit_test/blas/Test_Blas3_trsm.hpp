@@ -169,9 +169,12 @@ void impl_test_trsm(const char* side, const char* uplo, const char* trans,
   vgemm.C     = B;
   vgemm.alpha = alpha_trmm;
   vgemm.beta  = beta;
-  Kokkos::parallel_for("KokkosBlas::Test::trsm_VanillaGEMM",
-                       Kokkos::TeamPolicy<execution_space>(M, Kokkos::AUTO, 16),
-                       vgemm);
+  Kokkos::parallel_for(
+      "KokkosBlas::Test::trsm_VanillaGEMM",
+      Kokkos::TeamPolicy<execution_space>(
+          M, Kokkos::AUTO,
+          KokkosKernels::Impl::kk_get_max_vector_size<execution_space>()),
+      vgemm);
   Kokkos::fence();
 
   KokkosBlas::trsm(side, uplo, trans, diag, alpha, A, B);

@@ -67,6 +67,19 @@ struct TeamVectorEigendecompositionInternal {
     static_assert(false,
                   "TeamVector eigendecomposition is not implemented yet.");
     /*
+    // DO NOT USE
+    //
+    //     #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
+    //     <host code>
+    //     #else
+    //     <device code>
+    //     #endif
+    //
+    // DO THIS INSTEAD
+    //
+    //     KOKKOS_IF_ON_HOST((<host code>))
+    //     KOKKOS_IF_ON_DEVICE((<device code>))
+    //
 #if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
     if (as0 == 1 || as1 == 1) {
       /// column major or row major and it runs on host

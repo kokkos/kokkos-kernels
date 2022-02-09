@@ -48,6 +48,7 @@
 #include <KokkosKernels_Utils.hpp>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_MemoryTraits.hpp>
+#include <KokkosKernels_Error.hpp>
 
 #ifndef _GRAPHCOLORDISTANCE2HANDLE_HPP
 #define _GRAPHCOLORDISTANCE2HANDLE_HPP
@@ -167,7 +168,7 @@ class GraphColorDistance2Handle {
       std::string message =
           "Distance-2 Graph Coloring Handle does not currently support "
           "different mem spaces";
-      Kokkos::Impl::throw_runtime_exception(message);
+      KokkosKernels::Impl::throw_runtime_exception(message);
     }
   }
 
