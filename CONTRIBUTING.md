@@ -6,8 +6,10 @@ We follow google's c++ coding style. See https://google.github.io/styleguide/cpp
 cat kokkos-kernels/.git/hooks/pre-commit
 for FILE in $(git diff --cached --name-only | egrep '.*\.cpp$|.*\.hpp$|.*\.h$')
 do
-        clang-format-8 -i -style=file $FILE
-        git add $FILE
+  if [ -e $file ]; then
+    clang-format-8 -i -style=file $FILE
+    git add $FILEA
+   fi
 done
 chmod +x kokkos-kernels/.git/hooks/pre-commit
 ```
@@ -50,6 +52,9 @@ access_view_bounds_check(ViewType v, int m, int n, const BoundsCheck::Yes &);
 ```
 
 # Library policies
+
+## System-specific functions
+For portability, any system-specific function that is not in the C++ standard should not be invoked from kokkos-kernels.
 
 ## Upcasting and downcasting
 TODO
