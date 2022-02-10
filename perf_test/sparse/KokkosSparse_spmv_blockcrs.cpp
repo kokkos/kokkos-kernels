@@ -223,9 +223,9 @@ int test_blockcrs_matrix_single_vec(
     Kokkos::deep_copy(h_yblockcrs, yblockcrs);
     double error = 0.0, maxNorm = 0.0;
     for (size_t ir = 0; ir < h_ycrs.extent(0); ++ir) {
-      maxNorm = std::max(maxNorm, std::abs(static_cast<double>(h_ycrs(ir))));
-      error   = std::max(
-          error, std::abs(static_cast<double>(h_ycrs(ir) - h_yblockcrs(ir))));
+      maxNorm = std::max(maxNorm, Kokkos::ArithTraits<Scalar>::abs(h_ycrs(ir)));
+      error   = std::max(error, Kokkos::ArithTraits<Scalar>::abs(
+                                  h_ycrs(ir) - h_yblockcrs(ir)));
     }
 
     double tol =
@@ -356,9 +356,9 @@ int test_blockcrs_matrix_vec(
       double error = 0.0, maxNorm = 0.0;
       for (size_t ir = 0; ir < h_ycrs.extent(0); ++ir) {
         maxNorm =
-            std::max(maxNorm, std::abs(static_cast<double>(h_ycrs(ir, jc))));
-        error = std::max(error, std::abs(static_cast<double>(
-                                    h_ycrs(ir, jc) - h_yblockcrs(ir, jc))));
+            std::max(maxNorm, Kokkos::ArithTraits<Scalar>::abs(h_ycrs(ir, jc)));
+        error = std::max(error, Kokkos::ArithTraits<Scalar>::abs(
+                                    h_ycrs(ir, jc) - h_yblockcrs(ir, jc)));
       }
       if (error > tol * maxNorm) {
         num_errors += 1;

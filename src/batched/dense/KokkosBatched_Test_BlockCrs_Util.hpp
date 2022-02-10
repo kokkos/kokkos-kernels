@@ -805,7 +805,8 @@ class ExtractBlockTridiagMatrices {
     const auto eps = 1e2 * std::numeric_limits<scalar_type>::epsilon();
     for (ordinal_type ii = 0; ii < blocksize; ++ii)
       for (ordinal_type jj = 0; jj < blocksize; ++jj)
-        if (std::abs(tdiag_val(T, ij, k, ii, jj) - A(c, ii, jj)) >= eps)
+        if (Kokkos::ArithTraits<scalar_type>::abs(tdiag_val(T, ij, k, ii, jj) -
+                                                  A(c, ii, jj)) >= eps)
           return false;
     return true;
   }

@@ -497,18 +497,26 @@ class FactorizeBlockTridiagMatrices {
     for (ordinal_type t = 0; t < _ntridiag; ++t) {
       for (ordinal_type ii = 0; ii < _blocksize; ++ii)
         for (ordinal_type jj = 0; jj < _blocksize; ++jj) {
-          norm += std::abs(tdiag_val(A, t, 0, ii, jj));
-          diff += std::abs(tdiag_val(AA, t, 0, ii, jj));
+          norm +=
+              Kokkos::ArithTraits<value_type>::abs(tdiag_val(A, t, 0, ii, jj));
+          diff +=
+              Kokkos::ArithTraits<value_type>::abs(tdiag_val(AA, t, 0, ii, jj));
         }
       for (ordinal_type i = 1; i < _m; ++i)
         for (ordinal_type ii = 0; ii < _blocksize; ++ii)
           for (ordinal_type jj = 0; jj < _blocksize; ++jj) {
-            norm += std::abs(tdiag_val(A, t, i, ii, jj));
-            diff += std::abs(tdiag_val(AA, t, i, ii, jj));
-            norm += std::abs(tdiag_val(B, t, i - 1, ii, jj));
-            diff += std::abs(tdiag_val(BB, t, i - 1, ii, jj));
-            norm += std::abs(tdiag_val(C, t, i - 1, ii, jj));
-            diff += std::abs(tdiag_val(CC, t, i - 1, ii, jj));
+            norm += Kokkos::ArithTraits<value_type>::abs(
+                tdiag_val(A, t, i, ii, jj));
+            diff += Kokkos::ArithTraits<value_type>::abs(
+                tdiag_val(AA, t, i, ii, jj));
+            norm += Kokkos::ArithTraits<value_type>::abs(
+                tdiag_val(B, t, i - 1, ii, jj));
+            diff += Kokkos::ArithTraits<value_type>::abs(
+                tdiag_val(BB, t, i - 1, ii, jj));
+            norm += Kokkos::ArithTraits<value_type>::abs(
+                tdiag_val(C, t, i - 1, ii, jj));
+            diff += Kokkos::ArithTraits<value_type>::abs(
+                tdiag_val(CC, t, i - 1, ii, jj));
           }
     }
     // std::cout << "tridiag factor check  norm = " << norm << "  diff = " <<
@@ -1046,8 +1054,10 @@ class SolveBlockTridiagMatrices {
       for (ordinal_type jvec = 0; jvec < _nvectors; ++jvec)
         for (ordinal_type i = 0; i < _m; ++i)
           for (ordinal_type ii = 0; ii < _blocksize; ++ii) {
-            norm += std::abs(tdiag_val(bb, t, jvec, i, ii));
-            diff += std::abs(tdiag_val(rr, t, jvec, i, ii));
+            norm += Kokkos::ArithTraits<value_type>::abs(
+                tdiag_val(bb, t, jvec, i, ii));
+            diff += Kokkos::ArithTraits<value_type>::abs(
+                tdiag_val(rr, t, jvec, i, ii));
           }
 
     // std::cout << "tridiag solve check  norm = " << norm << "  diff = " <<
