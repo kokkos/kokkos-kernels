@@ -44,10 +44,13 @@
 
 #include <vector>
 #include <string>
-#include <filesystem>  // For use with C++ 17
 #include <fstream>
+
+#if ! defined(KOKKOS_COMPILER_APPLECC)
 // Needed for `strftime` in timestamping function
 #include <time.h>
+#include <filesystem>  // For use with C++ 17
+#include <ctime>
 
 #include <Kokkos_Core.hpp>
 
@@ -149,7 +152,10 @@ inline std::string timestamp_now() {
 
   // Allocation for timestamp format listed below
   std::string formatted(sizeof "2022-01-26T13:30:26", '\0');
-  strftime(formatted.data(), formatted.size(), "%FT%T", &tm);
+  // const_cast needed for the first arg, as a non-const pointer to string needed; 
+  // char*, the expected first arg, must be non-const
+  strftime(const_cast<char*>(formatted.data()), formatted.size(), "%FT%T", &tm);
+  //std::cout << "formatted.data(): "  << formatted.data() << std::endl;
   formatted.pop_back();
   return formatted;
 }
@@ -227,3 +233,4 @@ int main() {
   Kokkos::finalize();
   return 0;
 }
+#endif // KOKKOS_COMPILER_APPLECC
