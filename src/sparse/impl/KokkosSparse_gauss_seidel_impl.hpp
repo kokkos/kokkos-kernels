@@ -47,10 +47,7 @@
 
 #include "KokkosKernels_Utils.hpp"
 #include <Kokkos_Core.hpp>
-#include <Kokkos_Atomic.hpp>
-#include <Kokkos_Timer.hpp>
 #include <Kokkos_Bitset.hpp>
-#include <Kokkos_MemoryTraits.hpp>
 #include "KokkosGraph_Distance1Color.hpp"
 #include "KokkosKernels_Uniform_Initialized_MemoryPool.hpp"
 #include "KokkosKernels_BitUtils.hpp"

@@ -44,8 +44,6 @@
 #ifndef _KOKKOSKERNELS_SPARSEUTILS_HPP
 #define _KOKKOSKERNELS_SPARSEUTILS_HPP
 #include "Kokkos_Core.hpp"
-#include "Kokkos_Atomic.hpp"
-#include "Kokkos_Timer.hpp"
 #include "KokkosKernels_SimpleUtils.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosKernels_ExecSpaceUtils.hpp"

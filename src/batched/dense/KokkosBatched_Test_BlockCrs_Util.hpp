@@ -5,7 +5,6 @@
 #include <stdexcept>
 
 #include "Kokkos_Core.hpp"
-#include "Kokkos_Timer.hpp"
 
 #include "KokkosBatched_Util.hpp"
 

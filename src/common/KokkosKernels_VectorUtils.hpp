@@ -43,8 +43,6 @@
 */
 
 #include "Kokkos_Core.hpp"
-#include "Kokkos_Atomic.hpp"
-#include "Kokkos_Timer.hpp"
 #ifndef _KOKKOSKERNELS_VECTORUTILS_HPP
 #define _KOKKOSKERNELS_VECTORUTILS_HPP
 
