@@ -211,6 +211,8 @@ int main(int argc, char** argv) {
   const std::string my_vect_mtx = ".mtx";
   std::vector<std::string> matrices_vect;
 
+// Use Kokkos Macro? KOKKOS_COMPILER_APPLECC
+
   // Recurse directories for matrix inputs
   for (const std::__fs::filesystem::directory_entry& dir_entry :
        std::__fs::filesystem::recursive_directory_iterator(path)) {
