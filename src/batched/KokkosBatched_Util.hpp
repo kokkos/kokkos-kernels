@@ -65,7 +65,6 @@ struct is_same_mag_type {
 };
 
 // to use double, std::complex<double>, Kokkos::complex<double>
-using std::abs;
 using std::max;
 using std::min;
 

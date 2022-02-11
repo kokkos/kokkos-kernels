@@ -328,7 +328,8 @@ void Gemm(const int NN, const int BlkSize) {
       for (int i = 0, iend = cref.extent(0); i < iend; ++i)
         for (int j = 0, jend = cref.extent(1); j < jend; ++j)
           for (int k = 0, kend = cref.extent(2); k < kend; ++k)
-            diff += std::abs(cref(i, j, k) - csol(i, j, k));
+            diff += Kokkos::ArithTraits<value_type>::abs(cref(i, j, k) -
+                                                         csol(i, j, k));
 
       std::cout << std::setw(8) << "Kokkos" << std::setw(8) << "Range"
                 << " BlkSize = " << std::setw(3) << BlkSize << " TeamSize = N/A"
@@ -396,7 +397,8 @@ void Gemm(const int NN, const int BlkSize) {
       for (int i = 0, iend = cref.extent(0); i < iend; ++i)
         for (int j = 0, jend = cref.extent(1); j < jend; ++j)
           for (int k = 0, kend = cref.extent(2); k < kend; ++k)
-            diff += std::abs(cref(i, j, k) - csol(i, j, k));
+            diff += Kokkos::ArithTraits<value_type>::abs(cref(i, j, k) -
+                                                         csol(i, j, k));
 
       std::cout << std::setw(8) << "Kokkos" << std::setw(8) << "Team V1"
                 << " BlkSize = " << std::setw(3) << BlkSize
@@ -470,7 +472,8 @@ void Gemm(const int NN, const int BlkSize) {
       for (int i = 0, iend = cref.extent(0); i < iend; ++i)
         for (int j = 0, jend = cref.extent(1); j < jend; ++j)
           for (int k = 0, kend = cref.extent(2); k < kend; ++k)
-            diff += std::abs(cref(i, j, k) - csol(i, j, k));
+            diff += Kokkos::ArithTraits<value_type>::abs(cref(i, j, k) -
+                                                         csol(i, j, k));
 
       std::cout << std::setw(8) << "Kokkos" << std::setw(8) << "Team V2"
                 << " BlkSize = " << std::setw(3) << BlkSize
@@ -553,7 +556,8 @@ void Gemm(const int NN, const int BlkSize) {
         for (int i = 0, iend = cref.extent(0); i < iend; ++i)
           for (int j = 0, jend = cref.extent(1); j < jend; ++j)
             for (int k = 0, kend = cref.extent(2); k < kend; ++k)
-              diff += std::abs(cref(i, j, k) - csol(i, j, k));
+              diff += Kokkos::ArithTraits<value_type>::abs(cref(i, j, k) -
+                                                           csol(i, j, k));
 
         std::cout << std::setw(8) << "Kokkos" << std::setw(8) << "Team V3"
                   << " BlkSize = " << std::setw(3) << BlkSize
@@ -627,7 +631,8 @@ void Gemm(const int NN, const int BlkSize) {
       for (int i = 0, iend = cref.extent(0); i < iend; ++i)
         for (int j = 0, jend = cref.extent(1); j < jend; ++j)
           for (int k = 0, kend = cref.extent(2); k < kend; ++k)
-            diff += std::abs(cref(i, j, k) - csol(i, j, k));
+            diff += Kokkos::ArithTraits<value_type>::abs(cref(i, j, k) -
+                                                         csol(i, j, k));
 
       std::cout << std::setw(8) << "Kokkos" << std::setw(8) << "Team HM"
                 << " BlkSize = " << std::setw(3) << BlkSize
