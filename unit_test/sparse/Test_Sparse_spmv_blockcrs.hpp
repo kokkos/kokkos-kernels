@@ -145,7 +145,7 @@ void check_blockcrs_times_v(const char fOp[], scalar_t alpha, scalar_t beta,
       for (lno_t ib = 0; ib < blockSize; ++ib) {
         const lno_t my_row     = ir * blockSize + ib;
         mat_rowmap[my_row + 1] = mat_rowmap[my_row] + (jend - jbeg) * blockSize;
-        for (lno_t ijk = jbeg; ijk < jend; ++ijk) {
+        for (auto ijk = jbeg; ijk < jend; ++ijk) {
           const auto col0 = mat_b1.graph.entries(ijk);
           for (lno_t jb = 0; jb < blockSize; ++jb) {
             mat_colidx[mat_rowmap[my_row] + (ijk - jbeg) * blockSize + jb] =
@@ -179,7 +179,7 @@ void check_blockcrs_times_v(const char fOp[], scalar_t alpha, scalar_t beta,
     // Compute the reference product
     KokkosSparse::spmv(fOp, alpha, Acrs, xref, beta, ycrs);
 
-    y_vector_type ybcrs("bsr_product_result", nRow);
+    y_vector_type ybcrs("bcrs_product_result", nRow);
     auto h_ybcrs = Kokkos::create_mirror_view(ybcrs);
     for (lno_t ir = 0; ir < nRow; ++ir) h_ybcrs(ir) = h_y0(ir);
     Kokkos::deep_copy(ybcrs, h_ybcrs);
@@ -187,10 +187,10 @@ void check_blockcrs_times_v(const char fOp[], scalar_t alpha, scalar_t beta,
     // Create the BlockCrsMatrix
     KokkosSparse::Experimental::BlockCrsMatrix<scalar_t, lno_t, device, void,
                                                size_type>
-        Absr(Acrs, blockSize);
+        Abcrs(Acrs, blockSize);
 
     // Compute the product with the BlockCrsMatrix format
-    KokkosSparse::spmv(fOp, alpha, Absr, xref, beta, ybcrs);
+    KokkosSparse::spmv(fOp, alpha, Abcrs, xref, beta, ybcrs);
 
     // Compare the two products
     double error = 0.0, maxNorm = 0.0;
@@ -296,7 +296,7 @@ void check_blockcrs_times_mv(const char fOp[], scalar_t alpha, scalar_t beta,
       for (lno_t ib = 0; ib < blockSize; ++ib) {
         const lno_t my_row = ir * blockSize + ib;
         rowmap[my_row + 1] = rowmap[my_row] + (jend - jbeg) * blockSize;
-        for (lno_t ijk = jbeg; ijk < jend; ++ijk) {
+        for (auto ijk = jbeg; ijk < jend; ++ijk) {
           const auto col0 = mat_b1.graph.entries(ijk);
           for (lno_t jb = 0; jb < blockSize; ++jb) {
             cols[rowmap[my_row] + (ijk - jbeg) * blockSize + jb] =
@@ -329,7 +329,7 @@ void check_blockcrs_times_mv(const char fOp[], scalar_t alpha, scalar_t beta,
 
     KokkosSparse::spmv(fOp, alpha, Acrs, xref, beta, ycrs);
 
-    block_vector_t ybcrs("bsr_product_result", nRow, nrhs);
+    block_vector_t ybcrs("bcrs_product_result", nRow, nrhs);
     auto h_ybcrs = Kokkos::create_mirror_view(ybcrs);
     for (int jc = 0; jc < nrhs; ++jc)
       for (lno_t ir = 0; ir < nRow; ++ir) h_ybcrs(ir, jc) = h_y0(ir, jc);
@@ -338,10 +338,10 @@ void check_blockcrs_times_mv(const char fOp[], scalar_t alpha, scalar_t beta,
     // Create the BlockCrsMatrix
     KokkosSparse::Experimental::BlockCrsMatrix<scalar_t, lno_t, device, void,
                                                size_type>
-        Absr(Acrs, blockSize);
+        Abcrs(Acrs, blockSize);
 
     // Compute the product for the BlockCrsMatrix format
-    KokkosSparse::spmv(fOp, alpha, Absr, xref, beta, ybcrs);
+    KokkosSparse::spmv(fOp, alpha, Abcrs, xref, beta, ybcrs);
 
     Kokkos::deep_copy(h_ycrs, ycrs);
     Kokkos::deep_copy(h_ybcrs, ybcrs);
