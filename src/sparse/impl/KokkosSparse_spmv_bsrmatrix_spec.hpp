@@ -263,7 +263,7 @@ struct SPMV_MV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
       } else {
         BsrMatrixSpMVTensorCoreDispatcher<AMatrix, double, XVector, double,
                                           YVector, double, 8, 8,
-                                          4>::dispatch(alpha, A, x, beta, y);
+                                          4>::dispatch(alpha, A, X, beta, Y);
         return;
       }
     }
