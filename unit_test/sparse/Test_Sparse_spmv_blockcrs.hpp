@@ -129,41 +129,44 @@ void check_blockcrs_times_v(const char fOp[], scalar_t alpha, scalar_t beta,
     size_type nnz = static_cast<size_type>(blockSize) *
                     static_cast<size_type>(blockSize) * mat_b1.nnz();
 
-    // Fill block with random values
-    std::vector<scalar_t> mat_val(nnz);
-    for (size_type ii = 0; ii < nnz; ++ii) set_random_value(mat_val[ii]);
-
     //
     // Create graph for CrsMatrix
     //
 
-    std::vector<size_type> mat_rowmap(nRow + 1, 0);
-    std::vector<lno_t> mat_colidx(nnz, 0);
+    Kokkos::View<size_type *> d_rowmap("crsmatrix", nRow + 1);
+    auto h_rowmap = Kokkos::create_mirror_view(d_rowmap);
+
+    Kokkos::View<lno_t *> d_colidx("crsmatrix", nnz);
+    auto h_colidx = Kokkos::create_mirror_view(d_colidx);
+
+    Kokkos::View<scalar_t *> d_matval("crsmatrix", nnz);
+    auto h_matval = Kokkos::create_mirror_view(d_matval);
+
+    for (size_type ii = 0; ii < nnz; ++ii) set_random_value(h_matval[ii]);
 
     for (lno_t ir = 0; ir < mat_b1.numRows(); ++ir) {
       const size_type jbeg = mat_b1.graph.row_map(ir);
       const size_type jend = mat_b1.graph.row_map(ir + 1);
       for (lno_t ib = 0; ib < blockSize; ++ib) {
-        const lno_t my_row     = ir * blockSize + ib;
-        mat_rowmap[my_row + 1] = mat_rowmap[my_row] + (jend - jbeg) * blockSize;
+        const lno_t my_row   = ir * blockSize + ib;
+        h_rowmap[my_row + 1] = h_rowmap[my_row] + (jend - jbeg) * blockSize;
         for (size_type ijk = jbeg; ijk < jend; ++ijk) {
           const auto col0 = mat_b1.graph.entries(ijk);
           for (lno_t jb = 0; jb < blockSize; ++jb) {
-            mat_colidx[mat_rowmap[my_row] + (ijk - jbeg) * blockSize + jb] =
+            h_colidx[h_rowmap[my_row] + (ijk - jbeg) * blockSize + jb] =
                 col0 * blockSize + jb;
           }
         }
       }
     }  // for (lno_t ir = 0; ir < mat_b1.numRows(); ++ir)
 
+    Kokkos::deep_copy(d_matval, h_matval);
+    Kokkos::deep_copy(d_colidx, h_colidx);
+    Kokkos::deep_copy(d_rowmap, h_rowmap);
+
     // Create the CrsMatrix for the reference computation
-    //////
-    std::vector<lno_t> lno_rowmap(nRow + 1);
-    for (size_t ijk = 0; ijk < mat_rowmap.size(); ++ijk)
-      lno_rowmap[ijk] = static_cast<lno_t>(mat_rowmap[ijk]);
-    //////
-    crsMat_t Acrs("new_crs_matr", nRow, nCol, nnz, mat_val.data(),
-                  lno_rowmap.data(), mat_colidx.data());
+    crsMat_t Acrs("new_crs_matr", nRow, nCol, nnz, d_matval, d_rowmap,
+                  d_colidx);
 
     x_vector_type xref("new_right_hand_side", nRow);
     auto h_xref = Kokkos::create_mirror_view(xref);
@@ -279,47 +282,40 @@ void check_blockcrs_times_mv(const char fOp[], scalar_t alpha, scalar_t beta,
     size_type nnz = static_cast<size_type>(blockSize) *
                     static_cast<size_type>(blockSize) * mat_b1.nnz();
 
-    std::vector<scalar_t> mat_val(nnz);
-    for (size_type ii = 0; ii < nnz; ++ii) set_random_value(mat_val[ii]);
+    Kokkos::View<size_type *> d_rowmap("crsmatrix", nRow + 1);
+    auto h_rowmap = Kokkos::create_mirror_view(d_rowmap);
 
-    //
-    // Create graph for CrsMatrix
-    //
+    Kokkos::View<lno_t *> d_colidx("crsmatrix", nnz);
+    auto h_colidx = Kokkos::create_mirror_view(d_colidx);
 
-    std::vector<size_type> mat_rowmap(nRow + 1);
-    std::vector<lno_t> mat_colidx(nnz);
+    Kokkos::View<scalar_t *> d_matval("crsmatrix", nnz);
+    auto h_matval = Kokkos::create_mirror_view(d_matval);
 
-    mat_rowmap.resize(nRow + 1);
-    auto *rowmap = &mat_rowmap[0];
-    rowmap[0]    = 0;
-
-    mat_colidx.resize(nnz);
-    auto *cols = &mat_colidx[0];
+    for (size_type ii = 0; ii < nnz; ++ii) set_random_value(h_matval[ii]);
 
     for (lno_t ir = 0; ir < mat_b1.numRows(); ++ir) {
       const size_type jbeg = mat_b1.graph.row_map(ir);
       const size_type jend = mat_b1.graph.row_map(ir + 1);
       for (lno_t ib = 0; ib < blockSize; ++ib) {
-        const lno_t my_row = ir * blockSize + ib;
-        rowmap[my_row + 1] = rowmap[my_row] + (jend - jbeg) * blockSize;
+        const lno_t my_row   = ir * blockSize + ib;
+        h_rowmap[my_row + 1] = h_rowmap[my_row] + (jend - jbeg) * blockSize;
         for (size_type ijk = jbeg; ijk < jend; ++ijk) {
           const auto col0 = mat_b1.graph.entries(ijk);
           for (lno_t jb = 0; jb < blockSize; ++jb) {
-            cols[rowmap[my_row] + (ijk - jbeg) * blockSize + jb] =
+            h_colidx[h_rowmap[my_row] + (ijk - jbeg) * blockSize + jb] =
                 col0 * blockSize + jb;
           }
         }
       }
     }  // for (lno_t ir = 0; ir < mat_b1.numRows(); ++ir)
 
+    Kokkos::deep_copy(d_matval, h_matval);
+    Kokkos::deep_copy(d_colidx, h_colidx);
+    Kokkos::deep_copy(d_rowmap, h_rowmap);
+
     // Create the CrsMatrix for the reference computation
-    //////
-    std::vector<lno_t> lno_rowmap(nRow + 1);
-    for (size_t ijk = 0; ijk < mat_rowmap.size(); ++ijk)
-      lno_rowmap[ijk] = static_cast<lno_t>(mat_rowmap[ijk]);
-    //////
-    crsMat_t Acrs("new_crs_matr", nRow, nCol, nnz, mat_val.data(),
-                  lno_rowmap.data(), mat_colidx.data());
+    crsMat_t Acrs("new_crs_matr", nRow, nCol, nnz, d_matval, d_rowmap,
+                  d_colidx);
 
     block_vector_t xref("new_right_hand_side", nRow, nrhs);
     auto h_xref = Kokkos::create_mirror_view(xref);
