@@ -101,7 +101,7 @@ template <typename scalar_t, typename lno_t, typename size_type>
 void make_block_entries(
     const KokkosSparse::CrsMatrix<scalar_t, lno_t, Kokkos::HostSpace, void,
                                   size_type> &mat_b1,
-    int blockSize, std::vector<lno_t> &mat_rowmap,
+    int blockSize, std::vector<size_type> &mat_rowmap,
     std::vector<lno_t> &mat_colidx, std::vector<scalar_t> &mat_val) {
   lno_t nRow = blockSize * mat_b1.numRows();
   size_t nnz = static_cast<size_t>(blockSize) * static_cast<size_t>(blockSize) *
@@ -118,12 +118,12 @@ void make_block_entries(
   mat_colidx.assign(nnz, 0);
 
   for (lno_t ir = 0; ir < mat_b1.numRows(); ++ir) {
-    const auto jbeg = mat_b1.graph.row_map(ir);
-    const auto jend = mat_b1.graph.row_map(ir + 1);
+    const size_type jbeg = mat_b1.graph.row_map(ir);
+    const size_type jend = mat_b1.graph.row_map(ir + 1);
     for (lno_t ib = 0; ib < blockSize; ++ib) {
       const lno_t my_row     = ir * blockSize + ib;
       mat_rowmap[my_row + 1] = mat_rowmap[my_row] + (jend - jbeg) * blockSize;
-      for (auto ijk = jbeg; ijk < jend; ++ijk) {
+      for (size_type ijk = jbeg; ijk < jend; ++ijk) {
         const auto col0 = mat_b1.graph.entries(ijk);
         for (lno_t jb = 0; jb < blockSize; ++jb) {
           mat_colidx[mat_rowmap[my_row] + (ijk - jbeg) * blockSize + jb] =
@@ -178,7 +178,7 @@ void check_bsrm_times_v(const char fOp[], scalar_t alpha, scalar_t beta,
     size_type nnz = static_cast<size_type>(blockSize) *
                     static_cast<size_type>(blockSize) * mat_b1.nnz();
 
-    std::vector<lno_t> mat_rowmap(nRow + 1, 0);
+    std::vector<size_type> mat_rowmap(nRow + 1, 0);
     std::vector<lno_t> mat_colidx(nnz, 0);
     std::vector<scalar_t> mat_val(nnz);
 
@@ -254,7 +254,7 @@ void check_bsrm_times_v(const char fOp[], scalar_t alpha, scalar_t beta,
     //
     // --- Factor ((nnz / nRow) + 1) = Average number of non-zeros per row
     //
-    const auto tol = ((nnz / nRow) + 1) *
+    const auto tol = ((static_cast<double>(nnz) / nRow) + 1.0) *
                      static_cast<double>(Kokkos::ArithTraits<scalar_t>::abs(
                          Kokkos::ArithTraits<scalar_t>::epsilon()));
     if (error > tol * maxNorm) {
@@ -390,7 +390,7 @@ void check_bsrm_times_mv(const char fOp[], scalar_t alpha, scalar_t beta,
       num_errors += 1;
     }
 
-    auto tol = ((nnz / nRow) + 1) *
+    auto tol = ((static_cast<double>(nnz) / nRow) + 1.0) *
                static_cast<double>(Kokkos::ArithTraits<scalar_t>::abs(
                    Kokkos::ArithTraits<scalar_t>::epsilon()));
     if (error > tol * maxNorm) {
