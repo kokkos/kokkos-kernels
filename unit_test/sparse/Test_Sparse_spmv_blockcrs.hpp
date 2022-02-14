@@ -42,6 +42,7 @@
 //@HEADER
 */
 
+#include <algorithm>
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 #include <stdexcept>
@@ -197,10 +198,11 @@ void check_blockcrs_times_v(const char fOp[], scalar_t alpha, scalar_t beta,
     Kokkos::deep_copy(h_ycrs, ycrs);
     Kokkos::deep_copy(h_ybcrs, ybcrs);
     for (lno_t ir = 0; ir < nRow; ++ir) {
-      error = std::max(
-          error, Kokkos::ArithTraits<scalar_t>::abs(h_ycrs(ir) - h_ybcrs(ir)));
-      maxNorm =
-          std::max(maxNorm, Kokkos::ArithTraits<scalar_t>::abs(h_ycrs(ir)));
+      error = std::max<double>(
+          error,
+          double(Kokkos::ArithTraits<scalar_t>::abs(h_ycrs(ir) - h_ybcrs(ir))));
+      maxNorm = std::max<double>(
+          maxNorm, double(Kokkos::ArithTraits<scalar_t>::abs(h_ycrs(ir))));
     }
 
     double tmps =
@@ -350,10 +352,12 @@ void check_blockcrs_times_mv(const char fOp[], scalar_t alpha, scalar_t beta,
     double error = 0.0, maxNorm = 0.0;
     for (int jc = 0; jc < nrhs; ++jc) {
       for (int ir = 0; ir < nRow; ++ir) {
-        error   = std::max(error, Kokkos::ArithTraits<scalar_t>::abs(
-                                    h_ycrs(ir, jc) - h_ybcrs(ir, jc)));
-        maxNorm = std::max(maxNorm,
-                           Kokkos::ArithTraits<scalar_t>::abs(h_ycrs(ir, jc)));
+        error =
+            std::max<double>(error, double(Kokkos::ArithTraits<scalar_t>::abs(
+                                        h_ycrs(ir, jc) - h_ybcrs(ir, jc))));
+        maxNorm = std::max<double>(
+            maxNorm,
+            double(Kokkos::ArithTraits<scalar_t>::abs(h_ycrs(ir, jc))));
       }
     }
     auto tol = ((nnz / nRow) + 1) *
