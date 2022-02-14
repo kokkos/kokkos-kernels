@@ -157,8 +157,13 @@ void check_blockcrs_times_v(const char fOp[], scalar_t alpha, scalar_t beta,
     }  // for (lno_t ir = 0; ir < mat_b1.numRows(); ++ir)
 
     // Create the CrsMatrix for the reference computation
-    crsMat_t Acrs("new_crs_matr", nRow, nCol, nnz, mat_val, mat_rowmap,
-                  mat_colidx);
+    //////
+    std::vector<lno_t> lno_rowmap(nRow + 1);
+    for (size_t ijk = 0; ijk < mat_rowmap.size(); ++ijk)
+      lno_rowmap[ijk] = static_cast<lno_t>(mat_rowmap[ijk]);
+    //////
+    crsMat_t Acrs("new_crs_matr", nRow, nCol, nnz, mat_val.data(),
+                  lno_rowmap.data(), mat_colidx.data());
 
     x_vector_type xref("new_right_hand_side", nRow);
     auto h_xref = Kokkos::create_mirror_view(xref);
@@ -194,21 +199,21 @@ void check_blockcrs_times_v(const char fOp[], scalar_t alpha, scalar_t beta,
     KokkosSparse::spmv(fOp, alpha, Abcrs, xref, beta, ybcrs);
 
     // Compare the two products
-    double error = 0.0, maxNorm = 0.0;
+    using KATS     = Kokkos::ArithTraits<scalar_t>;
+    using mag_type = typename KATS::mag_type;
+
+    const mag_type zero_mag = Kokkos::ArithTraits<mag_type>::zero();
+    mag_type error = zero_mag, maxNorm = zero_mag;
+
     Kokkos::deep_copy(h_ycrs, ycrs);
     Kokkos::deep_copy(h_ybcrs, ybcrs);
     for (lno_t ir = 0; ir < nRow; ++ir) {
-      error = std::max<double>(
-          error,
-          double(Kokkos::ArithTraits<scalar_t>::abs(h_ycrs(ir) - h_ybcrs(ir))));
-      maxNorm = std::max<double>(
-          maxNorm, double(Kokkos::ArithTraits<scalar_t>::abs(h_ycrs(ir))));
+      error   = std::max<mag_type>(error, KATS::abs(h_ycrs(ir) - h_ybcrs(ir)));
+      maxNorm = std::max<mag_type>(maxNorm, KATS::abs(h_ycrs(ir)));
     }
 
-    double tmps =
-        static_cast<double>(Kokkos::ArithTraits<scalar_t>::abs(alpha)) +
-        static_cast<double>(Kokkos::ArithTraits<scalar_t>::abs(beta));
-    if ((tmps > 0.0) && (maxNorm == 0)) {
+    mag_type tmps = KATS::abs(alpha) + KATS::abs(beta);
+    if ((tmps > zero_mag) && (maxNorm == zero_mag)) {
       std::cout << " BlockCRSMatrix - SpMV times V >> blockSize " << blockSize
                 << " maxNorm " << maxNorm << " error " << error << " alpha "
                 << alpha << " beta " << beta << "\n";
@@ -218,9 +223,8 @@ void check_blockcrs_times_v(const char fOp[], scalar_t alpha, scalar_t beta,
     //
     // --- Factor ((nnz / nRow) + 1) = Average number of non-zeros per row
     //
-    const auto tol = ((nnz / nRow) + 1) *
-                     static_cast<double>(Kokkos::ArithTraits<scalar_t>::abs(
-                         Kokkos::ArithTraits<scalar_t>::epsilon()));
+    const mag_type tol = ((static_cast<mag_type>(nnz) / nRow) + 1) *
+                         Kokkos::ArithTraits<mag_type>::epsilon();
     if (error > tol * maxNorm) {
       std::cout << " BlockCRSMatrix - SpMV times V >> blockSize " << blockSize
                 << " ratio " << error / maxNorm << " tol " << tol << " maxNorm "
@@ -309,8 +313,13 @@ void check_blockcrs_times_mv(const char fOp[], scalar_t alpha, scalar_t beta,
     }  // for (lno_t ir = 0; ir < mat_b1.numRows(); ++ir)
 
     // Create the CrsMatrix for the reference computation
-    crsMat_t Acrs("new_crs_matr", nRow, nCol, nnz, mat_val, mat_rowmap,
-                  mat_colidx);
+    //////
+    std::vector<lno_t> lno_rowmap(nRow + 1);
+    for (size_t ijk = 0; ijk < mat_rowmap.size(); ++ijk)
+      lno_rowmap[ijk] = static_cast<lno_t>(mat_rowmap[ijk]);
+    //////
+    crsMat_t Acrs("new_crs_matr", nRow, nCol, nnz, mat_val.data(),
+                  lno_rowmap.data(), mat_colidx.data());
 
     block_vector_t xref("new_right_hand_side", nRow, nrhs);
     auto h_xref = Kokkos::create_mirror_view(xref);
@@ -350,30 +359,30 @@ void check_blockcrs_times_mv(const char fOp[], scalar_t alpha, scalar_t beta,
     Kokkos::deep_copy(h_ybcrs, ybcrs);
 
     // Compare the two products
-    double error = 0.0, maxNorm = 0.0;
+    using KATS     = Kokkos::ArithTraits<scalar_t>;
+    using mag_type = typename KATS::mag_type;
+
+    const mag_type zero_mag = Kokkos::ArithTraits<mag_type>::zero();
+    mag_type error = zero_mag, maxNorm = zero_mag;
+
     for (int jc = 0; jc < nrhs; ++jc) {
       for (int ir = 0; ir < nRow; ++ir) {
-        error =
-            std::max<double>(error, double(Kokkos::ArithTraits<scalar_t>::abs(
-                                        h_ycrs(ir, jc) - h_ybcrs(ir, jc))));
-        maxNorm = std::max<double>(
-            maxNorm,
-            double(Kokkos::ArithTraits<scalar_t>::abs(h_ycrs(ir, jc))));
+        error   = std::max<mag_type>(error,
+                                   KATS::abs(h_ycrs(ir, jc) - h_ybcrs(ir, jc)));
+        maxNorm = std::max<mag_type>(maxNorm, KATS::abs(h_ycrs(ir, jc)));
       }
     }
-    auto tol = ((nnz / nRow) + 1) *
-               static_cast<double>(Kokkos::ArithTraits<scalar_t>::abs(
-                   Kokkos::ArithTraits<scalar_t>::epsilon()));
 
-    double tmps =
-        static_cast<double>(Kokkos::ArithTraits<scalar_t>::abs(alpha)) +
-        static_cast<double>(Kokkos::ArithTraits<scalar_t>::abs(beta));
-    if ((tmps > 0.0) && (maxNorm == 0)) {
+    const mag_type tmps = KATS::abs(alpha) + KATS::abs(beta);
+    if ((tmps > zero_mag) && (maxNorm == zero_mag)) {
       std::cout << " BlockCRSMatrix - SpMV times MV >> blockSize " << blockSize
                 << " maxNorm " << maxNorm << " error " << error << " alpha "
                 << alpha << " beta " << beta << "\n";
       num_errors += 1;
     }
+
+    const mag_type tol = ((static_cast<mag_type>(nnz) / nRow) + 1) *
+                         Kokkos::ArithTraits<mag_type>::epsilon();
 
     if (error > tol * maxNorm) {
       std::cout << " BlockCRSMatrix - SpMV times MV >> blockSize " << blockSize
