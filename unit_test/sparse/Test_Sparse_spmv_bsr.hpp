@@ -183,8 +183,8 @@ void check_bsrm_times_v(const char fOp[], scalar_t alpha, scalar_t beta,
     std::vector<scalar_t> mat_val(nnz);
 
     // Create the entries
-    make_block_entries<scalar_t, lno_t>(mat_b1, blockSize, mat_rowmap,
-                                        mat_colidx, mat_val);
+    make_block_entries<scalar_t, lno_t, size_type>(
+        mat_b1, blockSize, mat_rowmap, mat_colidx, mat_val);
 
     // Create the CrsMatrix for the reference computation
     crsMat_t Acrs("new_crs_matr", nRow, nCol, nnz, mat_val, mat_rowmap,
@@ -311,13 +311,13 @@ void check_bsrm_times_mv(const char fOp[], scalar_t alpha, scalar_t beta,
     size_type nnz = static_cast<size_type>(blockSize) *
                     static_cast<size_type>(blockSize) * mat_b1.nnz();
 
-    std::vector<lno_t> mat_rowmap(nRow + 1, 0);
+    std::vector<size_type> mat_rowmap(nRow + 1, 0);
     std::vector<lno_t> mat_colidx(nnz, 0);
     std::vector<scalar_t> mat_val(nnz);
 
     // Create the entries
-    make_block_entries<scalar_t, lno_t>(mat_b1, static_cast<int>(blockSize),
-                                        mat_rowmap, mat_colidx, mat_val);
+    make_block_entries<scalar_t, lno_t, size_type>(
+        mat_b1, static_cast<int>(blockSize), mat_rowmap, mat_colidx, mat_val);
 
     // Create the CrsMatrix for the reference computation
     crsMat_t Acrs("new_crs_matr", nRow, nCol, nnz, mat_val, mat_rowmap,
