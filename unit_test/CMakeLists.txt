@@ -27,6 +27,11 @@ KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_C
 KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/batched/sparse/impl)
 KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/batched/sparse/impl)
 
+KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/batched/ode)
+KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/batched/ode)
+KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/batched/ode/impl)
+KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/batched/ode/impl)
+
 KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/common)
 KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/common)
 
@@ -77,6 +82,14 @@ IF (KOKKOS_ENABLE_CUDA)
     SOURCES
       Test_Main.cpp
       cuda/Test_Cuda_Batched_Sparse.cpp
+    COMPONENTS batched
+  )
+
+  KOKKOSKERNELS_ADD_UNIT_TEST(
+    batched_ode_cuda
+    SOURCES
+      Test_Main.cpp
+      cuda/Test_Cuda_Batched_ODE.cpp
     COMPONENTS batched
   )
 
@@ -134,6 +147,14 @@ IF (KOKKOS_ENABLE_SYCL)
   )
 
   KOKKOSKERNELS_ADD_UNIT_TEST(
+    batched_ode_sycl
+    SOURCES
+      Test_Main.cpp
+      sycl/Test_SYCL_Batched_ODE.cpp
+    COMPONENTS batched
+  )
+
+  KOKKOSKERNELS_ADD_UNIT_TEST(
     sparse_sycl
     SOURCES
       Test_Main.cpp
@@ -187,6 +208,14 @@ IF (KOKKOS_ENABLE_HIP)
   )
 
   KOKKOSKERNELS_ADD_UNIT_TEST(
+    batched_ode_hip
+    SOURCES
+      Test_Main.cpp
+      hip/Test_HIP_Batched_ODE.cpp
+    COMPONENTS batched
+  )
+
+  KOKKOSKERNELS_ADD_UNIT_TEST(
     sparse_hip
     SOURCES
       Test_Main.cpp
@@ -228,6 +257,22 @@ IF (KOKKOS_ENABLE_OPENMPTARGET)
   #   SOURCES
   #     Test_Main.cpp
   #     openmptarget/Test_OpenMPTarget_Batched_Dense.cpp
+  #   COMPONENTS batched
+  # )
+
+  # KOKKOSKERNELS_ADD_UNIT_TEST(
+  #   batched_sla_openmptarget
+  #   SOURCES
+  #     Test_Main.cpp
+  #     openmptarget/Test_OpenMPTarget_Batched_Sparse.cpp
+  #   COMPONENTS batched
+  # )
+
+  # KOKKOSKERNELS_ADD_UNIT_TEST(
+  #   batched_ode_openmptarget
+  #   SOURCES
+  #     Test_Main.cpp
+  #     openmptarget/Test_OpenMPTarget_Batched_ODE.cpp
   #   COMPONENTS batched
   # )
 
@@ -281,6 +326,14 @@ IF (KOKKOS_ENABLE_OPENMP)
     SOURCES
       Test_Main.cpp
       openmp/Test_OpenMP_Batched_Sparse.cpp
+    COMPONENTS batched
+  )
+
+  KOKKOSKERNELS_ADD_UNIT_TEST(
+    batched_ode_openmp
+    SOURCES
+      Test_Main.cpp
+      openmp/Test_OpenMP_Batched_ODE.cpp
     COMPONENTS batched
   )
 
@@ -342,6 +395,14 @@ IF (KOKKOS_ENABLE_SERIAL)
   )
 
   KOKKOSKERNELS_ADD_UNIT_TEST(
+    batched_ode_serial
+    SOURCES
+      Test_Main.cpp
+      serial/Test_Serial_Batched_ODE.cpp
+    COMPONENTS batched
+  )
+
+  KOKKOSKERNELS_ADD_UNIT_TEST(
     sparse_serial
     SOURCES
       Test_Main.cpp
@@ -391,6 +452,14 @@ IF (KOKKOS_ENABLE_THREADS)
     SOURCES
       Test_Main.cpp
       threads/Test_Threads_Batched_Sparse.cpp
+    COMPONENTS batched
+  )
+
+  KOKKOSKERNELS_ADD_UNIT_TEST(
+    batched_ode_threads
+    SOURCES
+      Test_Main.cpp
+      threads/Test_Threads_Batched_ODE.cpp
     COMPONENTS batched
   )
 
