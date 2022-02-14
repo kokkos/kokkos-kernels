@@ -187,8 +187,8 @@ void check_bsrm_times_v(const char fOp[], scalar_t alpha, scalar_t beta,
                                         mat_colidx, mat_val);
 
     // Create the CrsMatrix for the reference computation
-    crsMat_t Acrs("new_crs_matr", nRow, nCol, nnz, &mat_val[0], &mat_rowmap[0],
-                  &mat_colidx[0]);
+    crsMat_t Acrs("new_crs_matr", nRow, nCol, nnz, mat_val, mat_rowmap,
+                  mat_colidx);
 
     x_vector_type xref("new_right_hand_side", nRow);
     auto h_xref = Kokkos::create_mirror_view(xref);
@@ -320,8 +320,8 @@ void check_bsrm_times_mv(const char fOp[], scalar_t alpha, scalar_t beta,
                                         mat_rowmap, mat_colidx, mat_val);
 
     // Create the CrsMatrix for the reference computation
-    crsMat_t Acrs("new_crs_matr", nRow, nCol, nnz, &mat_val[0], &mat_rowmap[0],
-                  &mat_colidx[0]);
+    crsMat_t Acrs("new_crs_matr", nRow, nCol, nnz, mat_val, mat_rowmap,
+                  mat_colidx);
 
     block_vector_t xref("new_right_hand_side", nRow, nrhs);
     auto h_xref = Kokkos::create_mirror_view(xref);
