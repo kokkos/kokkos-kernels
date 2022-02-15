@@ -1068,7 +1068,8 @@ int read_mtx(const char *fileName, lno_t *nrows, lno_t *ncols, size_type *ne,
 
   if (fline.find("real") != std::string::npos ||
       fline.find("double") != std::string::npos) {
-    if (std::is_same<scalar_t, Kokkos::Experimental::half_t>::value)
+    if (std::is_same<scalar_t, Kokkos::Experimental::half_t>::value ||
+        std::is_same<scalar_t, Kokkos::Experimental::bhalf_t>::value)
       mtx_field = REAL;
     else {
       if (!std::is_floating_point<scalar_t>::value)
@@ -1089,7 +1090,8 @@ int read_mtx(const char *fileName, lno_t *nrows, lno_t *ncols, size_type *ne,
   } else if (fline.find("integer") != std::string::npos) {
     if (std::is_integral<scalar_t>::value ||
         std::is_floating_point<scalar_t>::value ||
-        std::is_same<scalar_t, Kokkos::Experimental::half_t>::value)
+        std::is_same<scalar_t, Kokkos::Experimental::half_t>::value ||
+        std::is_same<scalar_t, Kokkos::Experimental::bhalf_t>::value)
       mtx_field = INTEGER;
     else
       throw std::runtime_error(
