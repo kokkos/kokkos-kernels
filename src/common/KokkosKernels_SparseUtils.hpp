@@ -49,12 +49,23 @@
 #include "KokkosKernels_ExecSpaceUtils.hpp"
 #include <vector>
 #include "KokkosKernels_PrintUtils.hpp"
+#include "KokkosSparse_CrsMatrix.hpp"
+#include "KokkosSparse_BlockCrsMatrix.hpp"
+#include "KokkosSparse_BsrMatrix.hpp"
 
 #ifdef KOKKOSKERNELS_HAVE_PARALLEL_GNUSORT
 #include <parallel/algorithm>
 #endif
 
 namespace KokkosKernels {
+
+enum SparseMatrixFormat {
+  BlockCRS,
+  BSR,
+  CRS = BlockCRS,  // convenience alias: for block_size=1 or no-blocks there is
+                   // no difference in value ordering (so the format tag becomes
+                   // irrelevant)
+};
 
 namespace Impl {
 
@@ -840,7 +851,7 @@ inline size_t kk_is_d1_coloring_valid(
   ;
   typename in_nnz_view_t::non_const_value_type team_work_chunk_size =
       suggested_team_size;
-  typedef Kokkos::TeamPolicy<MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> >
+  typedef Kokkos::TeamPolicy<MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic>>
       dynamic_team_policy;
   typedef typename dynamic_team_policy::member_type team_member_t;
 
@@ -1109,10 +1120,10 @@ struct LowerTriangularMatrix {
   typedef Kokkos::TeamPolicy<FillTag, ExecutionSpace> team_fill_policy_t;
 
   typedef Kokkos::TeamPolicy<CountTag, ExecutionSpace,
-                             Kokkos::Schedule<Kokkos::Dynamic> >
+                             Kokkos::Schedule<Kokkos::Dynamic>>
       dynamic_team_count_policy_t;
   typedef Kokkos::TeamPolicy<FillTag, ExecutionSpace,
-                             Kokkos::Schedule<Kokkos::Dynamic> >
+                             Kokkos::Schedule<Kokkos::Dynamic>>
       dynamic_team_fill_policy_t;
 
   typedef typename team_count_policy_t::member_type team_count_member_t;
@@ -1952,6 +1963,161 @@ void kk_reduce_numrows_larger_than_threshold(
       ReduceLargerRowCount<view_type>(view_to_reduce, threshold),
       sum_reduction);
 }
+
+// Note: "block" in property name means it's block internal - otherwise it
+// addresses sparse rows/columns (whole blocks) within whole matrix.
+template <typename lno_t, typename size_type>
+class RowIndexBase {
+ public:
+  KOKKOS_INLINE_FUNCTION
+  RowIndexBase(const lno_t block_size_, const lno_t row_begin_,
+               const lno_t row_end_)
+      : block_size(block_size_),
+        row_begin(row_begin_),
+        row_end(row_end_),
+        row_size(row_end_ - row_begin_) {
+    row_off = row_begin_ * block_mtx_size();
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  lno_t begin() { return row_begin; }
+
+  KOKKOS_INLINE_FUNCTION
+  lno_t end() { return row_end; }
+
+  KOKKOS_INLINE_FUNCTION
+  lno_t size() { return row_size; }
+
+  KOKKOS_INLINE_FUNCTION
+  size_type block_mtx_size() {
+    return static_cast<size_type>(block_size) *
+           static_cast<size_type>(block_size);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  size_type row_offset() { return row_off; }
+
+ protected:
+  lno_t block_size;  // = num_block_cols = num_block_rows
+  lno_t row_begin;
+  lno_t row_end;
+
+ private:  // cache
+  size_type row_off;
+  lno_t row_size;
+};
+
+template <SparseMatrixFormat /* format */, typename lno_t, typename size_type>
+class MatrixRowIndex;
+
+template <typename lno_t, typename size_type>
+class MatrixRowIndex<BlockCRS, lno_t, size_type>
+    : public RowIndexBase<lno_t, size_type> {
+ public:
+  using Base = RowIndexBase<lno_t, size_type>;
+
+  KOKKOS_INLINE_FUNCTION
+  MatrixRowIndex(const lno_t block_size_, const lno_t row_begin_,
+                 const lno_t row_end_)
+      : Base(block_size_, row_begin_, row_end_) {}
+
+  KOKKOS_INLINE_FUNCTION
+  size_type block(const lno_t col_idx) {
+    return Base::row_offset() + col_idx * Base::block_size;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  size_type block_stride() { return Base::size() * Base::block_size; }
+
+  KOKKOS_INLINE_FUNCTION
+  size_type value(const lno_t col_idx, const lno_t block_row,
+                  const lno_t block_col) {
+    return block(col_idx) + block_row * block_stride() + block_col;
+  }
+};
+
+template <typename lno_t, typename size_type>
+class MatrixRowIndex<BSR, lno_t, size_type>
+    : public RowIndexBase<lno_t, size_type> {
+ public:
+  using Base = RowIndexBase<lno_t, size_type>;
+
+  KOKKOS_INLINE_FUNCTION
+  MatrixRowIndex(const lno_t block_size_, const lno_t row_begin_,
+                 const lno_t row_end_)
+      : Base(block_size_, row_begin_, row_end_) {}
+
+  KOKKOS_INLINE_FUNCTION
+  size_type block(const lno_t col_idx) {
+    return Base::row_offset() + col_idx * Base::block_mtx_size();
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  size_type block_stride() { return Base::block_size; }
+
+  KOKKOS_INLINE_FUNCTION
+  size_type value(const lno_t col_idx, const lno_t block_row,
+                  const lno_t block_col) {
+    return block(col_idx) + block_row * block_stride() + block_col;
+  }
+};
+
+template <typename mtx_t>
+struct MatrixTraits;
+
+template <typename scalar_t, typename lno_t, typename device,
+          typename mem_traits, typename size_type>
+struct MatrixTraits<
+    KokkosSparse::CrsMatrix<scalar_t, lno_t, device, mem_traits, size_type>> {
+  static constexpr auto format = KokkosKernels::CRS;
+};
+
+template <typename scalar_t, typename lno_t, typename device,
+          typename mem_traits, typename size_type>
+struct MatrixTraits<KokkosSparse::Experimental::BlockCrsMatrix<
+    scalar_t, lno_t, device, mem_traits, size_type>> {
+  static constexpr auto format = KokkosKernels::BlockCRS;
+};
+
+template <typename scalar_t, typename lno_t, typename device,
+          typename mem_traits, typename size_type>
+struct MatrixTraits<KokkosSparse::Experimental::BsrMatrix<
+    scalar_t, lno_t, device, mem_traits, size_type>> {
+  static constexpr auto format = KokkosKernels::BSR;
+};
+
+template <SparseMatrixFormat /* outFormat */>
+struct MatrixConverter;
+
+template <>
+struct MatrixConverter<BlockCRS> {
+  template <
+      typename scalar_t, typename lno_t, typename device, typename size_type,
+      typename crsMat_t =
+          KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>,
+      typename blockCrsMat_t = KokkosSparse::Experimental::BlockCrsMatrix<
+          scalar_t, lno_t, device, void, size_type>>
+  static blockCrsMat_t from_blockcrs_formated_point_crsmatrix(
+      const KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>
+          &mtx,
+      lno_t block_size) {
+    return blockCrsMat_t(mtx, block_size);
+  }
+};
+
+template <>
+struct MatrixConverter<BSR> {
+  template <typename scalar_t, typename lno_t, typename size_type,
+            typename device,
+            typename bsrMtx_t = KokkosSparse::Experimental::BsrMatrix<
+                scalar_t, lno_t, device, void, size_type>>
+  static bsrMtx_t from_blockcrs_formated_point_crsmatrix(
+      const KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>
+          &mtx,
+      lno_t block_size) {
+    return bsrMtx_t(mtx, block_size);
+  }
+};
 
 }  // namespace Impl
 }  // namespace KokkosKernels
