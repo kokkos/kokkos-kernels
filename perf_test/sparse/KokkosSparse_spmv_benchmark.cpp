@@ -191,7 +191,7 @@ void benchmark_spmv_kernel(std::string matrix_file_name,
   write_results_to_csv(output_filename, time, matrix_file_name);
 }
 
-int main(int argc, char** argv) {
+int main() {
   Kokkos::initialize();
 
   std::string timestamp = timestamp_now();
@@ -205,9 +205,13 @@ int main(int argc, char** argv) {
   const std::string my_vect_mtx = ".mtx";
   std::vector<std::string> matrices_vect;
 
+  // Here, more logic may be needed to control the use of filesystem
+  // Specifically, a compiler macro, such as KOKKOS_COMPILER_APPLECC
+  // in core/src/impl/Kokkos_Core.cpp and core/src/Kokkos_Macros.hpp
+
   // Recurse directories for matrix inputs
-  for (const std::filesystem::directory_entry& dir_entry :
-       std::filesystem::recursive_directory_iterator(path)) {
+  for (const std::__fs::filesystem::directory_entry& dir_entry :
+       std::__fs::filesystem::recursive_directory_iterator(path)) {
     if (dir_entry.path().extension().string() == my_vect_mtx) {
       std::cout << "Sparse matrices to be benchmarked: "
                 << dir_entry.path().string() << std::endl;
