@@ -363,12 +363,17 @@ struct BsrMatrixSpMVTensorCoreFunctor {
           const AOrdinal bj = bk + tj;
 
           // fill shmem with 0 outside of the block boundary
+#ifdef __CUDA_ARCH__
           if (bi < a.blockDim() && bj < a.blockDim()) {
             sa(ti / FRAG_M, ti % FRAG_M, tj) =
                 AFragScalar(alpha * ap[bi * a.blockDim() + bj]);
           } else {
             sa(ti / FRAG_M, ti % FRAG_M, tj) = AFragScalar(0);
           }
+#else
+          (void)bi;
+          (void)bj;
+#endif
         }
 
         // collaborative load of X fragments into shared memory
@@ -386,6 +391,7 @@ struct BsrMatrixSpMVTensorCoreFunctor {
           // load 0 outside of the block boundary
           // x is not necessarily a multiple of block size, so make sure access
           // is in bounds
+#ifdef __CUDA_ARCH__
           if (bi < a.blockDim() && bj < a.blockDim() &&
               unsigned(blockIdx_j * a.blockDim() + bj) < x.extent(1)) {
             // tile is some fragments in the j/n direction that are frag_n wide
@@ -394,12 +400,15 @@ struct BsrMatrixSpMVTensorCoreFunctor {
           } else {
             sx(tj / FRAG_N, ti, tj % FRAG_N) = XFragScalar(0);
           }
+#else
+          (void)bi;
+          (void)bj;
+#endif
         }
         mbr.team_barrier();
 
         // load correct fragment from shared memory and accumulate
 #ifdef __CUDA_ARCH__
-
         // only need to do any math if our fragment will write a result back to
         // Y
         if (ay_i < static_cast<AOrdinal>(y.extent(0)) &&
@@ -410,11 +419,14 @@ struct BsrMatrixSpMVTensorCoreFunctor {
         }
 #endif
       }
+      (void)j;
     }  // loop through blocks in row of A
 
+#ifdef __CUDA_ARCH__
     // store Y fragments into shared memory
     store_matrix_sync(&sy(warpIdx_y, warpIdx_x, 0, 0), fy, FRAG_N,
                       nvcuda::wmma::mem_row_major);
+#endif
     // team loads its fragments of Y that make up part or all of the block of Y
     // it's responsible for. each warp loads the part corresponding to its y
     // fragment
@@ -436,7 +448,7 @@ struct BsrMatrixSpMVTensorCoreFunctor {
     mbr.team_barrier();
 
     // Suppress unused var warnings
-    // TODO (@cwpeason): Should this functor only compile on device?
+    // TODO (@cwpearson): Should this functor only compile on device?
     (void)fx;
     (void)fa;
     (void)fy;
