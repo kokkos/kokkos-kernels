@@ -43,6 +43,7 @@
 #define __KOKKOSBATCHED_GEMM_ARMPL_IMPL_HPP__
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL) && ARMPL_BUILD >= 1058
 #include "KokkosBatched_Util.hpp"
+#include "KokkosKernels_Error.hpp"
 
 namespace KokkosBatched {
 namespace Impl {
@@ -102,7 +103,7 @@ class BatchedArmplGemm {
         if (info != ARMPL_STATUS_SUCCESS) {
           std::ostringstream os;
           os << "armpl_dge_interleave(A) returned:" << info << std::endl;
-          Kokkos::Impl::throw_runtime_exception(os.str());
+          KokkosKernels::Impl::throw_runtime_exception(os.str());
         }
 
         info = armpl_dge_interleave(__ninter, i, __Bm, __Bn, svB.data(),
@@ -111,7 +112,7 @@ class BatchedArmplGemm {
         if (info != ARMPL_STATUS_SUCCESS) {
           std::ostringstream os;
           os << "armpl_dge_interleave(B) returned:" << info << std::endl;
-          Kokkos::Impl::throw_runtime_exception(os.str());
+          KokkosKernels::Impl::throw_runtime_exception(os.str());
         }
 
         info = armpl_dge_interleave(__ninter, i, __Cm, __Cn, svC.data(),
@@ -120,7 +121,7 @@ class BatchedArmplGemm {
         if (info != ARMPL_STATUS_SUCCESS) {
           std::ostringstream os;
           os << "armpl_dge_interleave(C) returned:" << info << std::endl;
-          Kokkos::Impl::throw_runtime_exception(os.str());
+          KokkosKernels::Impl::throw_runtime_exception(os.str());
         }
       }
     }
@@ -141,7 +142,7 @@ class BatchedArmplGemm {
         if (info != ARMPL_STATUS_SUCCESS) {
           std::ostringstream os;
           os << "armpl_dge_deinterleave returned:" << info << std::endl;
-          Kokkos::Impl::throw_runtime_exception(os.str());
+          KokkosKernels::Impl::throw_runtime_exception(os.str());
         }
       }
     }
@@ -158,7 +159,7 @@ class BatchedArmplGemm {
     if (info != ARMPL_STATUS_SUCCESS) {
       std::ostringstream os;
       os << "armpl_dgemm_interleave_batch returned :" << info << std::endl;
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
     return;
   }
@@ -228,7 +229,7 @@ class BatchedArmplGemm {
       os << "KokkosBatched::Impl::BatchedArmplGemm only supports 'double' "
             "scalar types."
          << std::endl;
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
 
     if (__nbatch != 0) {
@@ -237,7 +238,7 @@ class BatchedArmplGemm {
         os << "batch size must be evenly divisible by ninter. __nbatch: "
            << std::to_string(__nbatch)
            << ", __ninter: " << std::to_string(__ninter) << std::endl;
-        Kokkos::Impl::throw_runtime_exception(os.str());
+        KokkosKernels::Impl::throw_runtime_exception(os.str());
       }
 
       // Calculate internal batch size for interleaving

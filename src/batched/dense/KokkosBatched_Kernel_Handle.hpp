@@ -47,6 +47,8 @@
 #ifndef KOKKOSKERNELS_KOKKOSBATCHED_KERNEL_HEADER_HPP
 #define KOKKOSKERNELS_KOKKOSBATCHED_KERNEL_HEADER_HPP
 
+#include "KokkosKernels_Error.hpp"
+
 #if defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
 #include <mkl.h>
 #endif  // KOKKOSKERNELS_ENABLE_TPL_MKL
@@ -181,7 +183,7 @@ class BatchedKernelHandle {
       os << "KokkosBatched::BatchedKernelHandle requires "
             "KOKKOSKERNELS_ENABLE_TPL_ARMPL and armpl version 21.0.0+"
          << std::endl;
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
 #endif  // !defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
   };
