@@ -104,7 +104,6 @@ void make_block_entries(
                                   size_type> &mat_b1,
     int blockSize, rowmap_type &mat_rowmap, colidx_type &mat_colidx,
     values_type &mat_val) {
-  lno_t nRow = blockSize * mat_b1.numRows();
   size_t nnz = static_cast<size_t>(blockSize) * static_cast<size_t>(blockSize) *
                mat_b1.nnz();
 
