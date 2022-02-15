@@ -332,8 +332,8 @@ class BatchedArmplGemm;
 ///                        Trans::ConjTranspose for conjugate transpose
 /// \tparam ArgBatchSzDim  Specifies where the batch dimension is allocated in
 ///                        AViewType, BViewType, and CViewType:
-///                        BatchSzDim::Left  Batch dimension is leftmost
-///                        BatchSzDim::Right Batch dimension is rightmost
+///                        BatchLayout::Left  Batch dimension is leftmost
+///                        BatchLayout::Right Batch dimension is rightmost
 /// \tparam ScalarType     Specifies the scalar type of alpha and beta
 /// \tparam AViewType      Input matrix, as either a 3-rank Kokkos::View or a
 ///                        4-rank Kokkos::View for SIMD operations.
@@ -348,15 +348,15 @@ class BatchedArmplGemm;
 ///                        See struct BatchedGemmHandle for details.
 /// \param alpha [in]      Input coefficient used for multiplication with A
 /// \param A [in]          Input matrix, as a 3-rank Kokkos::View
-///                        If ArgBatchSzDim == "BatchSzDim::Right", matrix A is MxKxB
-///                        If ArgBatchSzDim == "BatchSzDim::Left",  matrix A is BxMxK
+///                        If ArgBatchSzDim == "BatchLayout::Right", matrix A is MxKxB
+///                        If ArgBatchSzDim == "BatchLayout::Left",  matrix A is BxMxK
 /// \param B [in]          Input matrix, as a 3-rank Kokkos::View
-///                        If ArgBatchSzDim == "BatchSzDim::Right", matrix B is KxNxB
-///                        If ArgBatchSzDim == "BatchSzDim::Left",  matrix B is BxKxN
+///                        If ArgBatchSzDim == "BatchLayout::Right", matrix B is KxNxB
+///                        If ArgBatchSzDim == "BatchLayout::Left",  matrix B is BxKxN
 /// \param beta [in]       Input coefficient used for multiplication with C
 /// \param C [in/out]      Input/Output matrix, as a 3-rank Kokkos::View
-///                        If ArgBatchSzDim == "BatchSzDim::Right", matrix C is MxNxB
-///                        If ArgBatchSzDim == "BatchSzDim::Left",  matrix C is BxMxN
+///                        If ArgBatchSzDim == "BatchLayout::Right", matrix C is MxNxB
+///                        If ArgBatchSzDim == "BatchLayout::Left",  matrix C is BxMxN
 /// \return 0 upon success, non-zero otherwise
 ///
 /// Usage Example:

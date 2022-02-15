@@ -1079,7 +1079,7 @@ struct D2_MIS_Aggregation {
     // Now, filter out the candidate aggs which are big enough, and create those
     // aggregates. Using a scan for this assigns IDs deterministically (unlike
     // an atomic counter).
-    lno_t numNewAggs;
+    lno_t numNewAggs = 0;
     Kokkos::parallel_scan(
         range_pol(0, numCandRoots),
         ChoosePhase2AggsFunctor(numVerts, numAggs, m2, rowmap, entries, labels,
