@@ -149,7 +149,8 @@ inline std::string timestamp_now() {
 
   // Allocation for timestamp format listed below
   std::string formatted(sizeof "2022-01-26T13:30:26", '\0');
-  strftime(formatted.data(), formatted.size(), "%FT%T", &tm);
+  // ATTN: strftime expects a pointer to a string as the first arg
+  strftime(const_cast<char*>(formatted.data()), formatted.size(), "%FT%T", &tm);
   formatted.pop_back();
   return formatted;
 }
