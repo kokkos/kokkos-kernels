@@ -45,8 +45,8 @@ struct fSPMV {
 
     if (error > eps) {
       err++;
-      // printf("expected_y(%d)=%f, y(%d)=%f\n", i, AT::abs(expected_y(i)), i,
-      // AT::abs(y(i)));
+      // printf("expected_y(%d)=%f, y(%d)=%f err=%f, eps=%f\n", i,
+      //        AT::abs(expected_y(i)), i, AT::abs(y(i)), error, eps);
     }
   }
 };
@@ -1287,7 +1287,12 @@ void test_spmv_bsrmatrix_controls_pattern(
 
     // count errors
     int num_errors = 0;
-    double eps     = Kokkos::ArithTraits<kokkos_half>::prec();
+    // Kokkos::ArithTraits<half> in CUDA 9 is float on the host
+    // for CUDA 9, Kokkos half is actually float. However, the tensor core SpMV
+    // uses CUDA's half type, not Kokkos, so we still need a reduced precision
+    // test.
+    double eps =
+        KOKKOSKERNELS_IMPL_FP16_EPSILON * KOKKOSKERNELS_IMPL_FP16_RADIX;
     Kokkos::parallel_reduce("KokkosSparse::Test::spmv_tc",
                             DeviceRangePolicy(0, exp_y_i.extent(0)),
                             Test::fSPMV<decltype(exp_y_i), decltype(test_y_i)>(
