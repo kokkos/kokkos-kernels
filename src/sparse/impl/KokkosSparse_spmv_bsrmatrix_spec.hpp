@@ -217,9 +217,8 @@ struct SPMV_MV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
       const KokkosKernels::Experimental::Controls &controls, const char mode[],
       const YScalar &alpha, const AMatrix &A, const XVector &X,
       const YScalar &beta, const YVector &Y) {
-    Method method = Method::Fallback;
-
 #if defined(KOKKOS_ARCH_AMPERE) || defined(KOKKOS_ARCH_VOLTA)
+    Method method = Method::Fallback;
     {
       typedef typename AMatrix::non_const_value_type AScalar;
       typedef typename XVector::non_const_value_type XScalar;
@@ -248,9 +247,9 @@ struct SPMV_MV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
 #if KOKKOS_HALF_T_IS_FLOAT
       // disable tensor cores when Kokkos half is actually a float
       method = Method::Fallback;
-#endif
+#endif  // KOKKOS_HALF_T_IS_FLOAT
     }
-#endif
+#endif  // AMPERE || VOLTA
 
 #if defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOS_ARCH_AMPERE)
     {
