@@ -13,7 +13,6 @@
 #include "Test_Sparse_spgemm_jacobi.hpp"
 #include "Test_Sparse_spgemm.hpp"
 #include "Test_Sparse_spiluk.hpp"
-#include "Test_Sparse_spmv.hpp"
 //#include "Test_Sparse_spmv_blockcrs.hpp"
 //#include "Test_Sparse_spmv_bsr.hpp"
 #include "Test_Sparse_sptrsv.hpp"

@@ -1043,7 +1043,7 @@ struct Entry {
 
 // expand a pattern into a blocked CrsMatrix
 template <typename Matrix,
-          std::enable_if_t<is_crs_matrix<Matrix>::value, bool> = true>
+          std::enable_if_t<KokkosSparse::is_crs_matrix<Matrix>::value, bool> = true>
 Matrix expand_matrix(std::vector<Coordinate> pattern, const int m, const int k,
                      const int blockSize, const int seed = 0) {
   typedef typename Matrix::value_type Scalar;
@@ -1293,6 +1293,7 @@ void test_spmv_bsrmatrix_controls_pattern(
     // test.
     double eps =
         KOKKOSKERNELS_IMPL_FP16_EPSILON * KOKKOSKERNELS_IMPL_FP16_RADIX;
+    eps = Kokkos::ArithTraits<kokkos_half>::prec();
     Kokkos::parallel_reduce("KokkosSparse::Test::spmv_tc",
                             DeviceRangePolicy(0, exp_y_i.extent(0)),
                             Test::fSPMV<decltype(exp_y_i), decltype(test_y_i)>(
@@ -1548,7 +1549,8 @@ void test_spmv_bsrmatrix(lno_t blockSize, lno_t k, y_scalar_t alpha,
 
 // minimal conditions for tensor core SpMV test
 // BsrMatrix spmv is only supported on CUDA for the time being
-#if defined(KOKKOS_ENABLE_CUDA) && defined(TEST_CUDA_SPARSE_CPP) && \
+// && defined(TEST_CUDA_SPARSE_SPMV_CPP)
+#if defined(KOKKOS_ENABLE_CUDA) && \
     (defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_AMPERE))
 
 #if defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&       \

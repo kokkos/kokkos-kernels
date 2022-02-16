@@ -89,6 +89,14 @@ IF (KOKKOS_ENABLE_CUDA)
   )
 
   KOKKOSKERNELS_ADD_UNIT_TEST(
+    sparse_spmv_cuda
+    SOURCES
+      Test_Main.cpp
+      cuda/Test_Cuda_Sparse_Spmv.cpp
+    COMPONENTS sparse
+  )
+
+  KOKKOSKERNELS_ADD_UNIT_TEST(
     graph_cuda
     SOURCES
       Test_Main.cpp
@@ -142,6 +150,14 @@ IF (KOKKOS_ENABLE_SYCL)
   )
 
   KOKKOSKERNELS_ADD_UNIT_TEST(
+    sparse_spmv_sycl
+    SOURCES
+      Test_Main.cpp
+      sycl/Test_SYCL_Sparse_Spmv.cpp
+    COMPONENTS sparse
+  )
+
+  KOKKOSKERNELS_ADD_UNIT_TEST(
     graph_sycl
     SOURCES
       Test_Main.cpp
@@ -191,6 +207,14 @@ IF (KOKKOS_ENABLE_HIP)
     SOURCES
       Test_Main.cpp
       hip/Test_HIP_Sparse.cpp
+    COMPONENTS sparse
+  )
+
+  KOKKOSKERNELS_ADD_UNIT_TEST(
+    sparse_hip_spmv
+    SOURCES
+      Test_Main.cpp
+      hip/Test_HIP_Sparse_Spmv.cpp
     COMPONENTS sparse
   )
 
@@ -293,6 +317,14 @@ IF (KOKKOS_ENABLE_OPENMP)
   )
 
   KOKKOSKERNELS_ADD_UNIT_TEST(
+    sparse_spmv_openmp
+    SOURCES
+      Test_Main.cpp
+      openmp/Test_OpenMP_Sparse_Spmv.cpp
+    COMPONENTS sparse
+  )
+
+  KOKKOSKERNELS_ADD_UNIT_TEST(
     graph_openmp
     SOURCES
       Test_Main.cpp
@@ -350,6 +382,14 @@ IF (KOKKOS_ENABLE_SERIAL)
   )
 
   KOKKOSKERNELS_ADD_UNIT_TEST(
+    sparse_spmv_serial
+    SOURCES
+      Test_Main.cpp
+      serial/Test_Serial_Sparse_Spmv.cpp
+    COMPONENTS sparse
+  )
+
+  KOKKOSKERNELS_ADD_UNIT_TEST(
     graph_serial
     SOURCES
       Test_Main.cpp
@@ -399,6 +439,14 @@ IF (KOKKOS_ENABLE_THREADS)
     SOURCES
       Test_Main.cpp
       threads/Test_Threads_Sparse.cpp
+    COMPONENTS sparse
+  )
+
+  KOKKOSKERNELS_ADD_UNIT_TEST(
+    sparse_threads_spmv
+    SOURCES
+      Test_Main.cpp
+      threads/Test_Threads_Sparse_Spmv.cpp
     COMPONENTS sparse
   )
 
