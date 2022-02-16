@@ -174,13 +174,13 @@ void check_bsrm_times_v(const char fOp[], scalar_t alpha, scalar_t beta,
     size_type nnz = static_cast<size_type>(blockSize) *
                     static_cast<size_type>(blockSize) * mat_b1.nnz();
 
-    Kokkos::View<size_type *> d_rowmap("crsmatrix", nRow + 1);
+    Kokkos::View<size_type *, device> d_rowmap("crsmatrix", nRow + 1);
     auto h_rowmap = Kokkos::create_mirror_view(d_rowmap);
 
-    Kokkos::View<lno_t *> d_colidx("crsmatrix", nnz);
+    Kokkos::View<lno_t *, device> d_colidx("crsmatrix", nnz);
     auto h_colidx = Kokkos::create_mirror_view(d_colidx);
 
-    Kokkos::View<scalar_t *> d_matval("crsmatrix", nnz);
+    Kokkos::View<scalar_t *, device> d_matval("crsmatrix", nnz);
     auto h_matval = Kokkos::create_mirror_view(d_matval);
 
     // Create the entries
@@ -315,13 +315,13 @@ void check_bsrm_times_mv(const char fOp[], scalar_t alpha, scalar_t beta,
     size_type nnz = static_cast<size_type>(blockSize) *
                     static_cast<size_type>(blockSize) * mat_b1.nnz();
 
-    Kokkos::View<size_type *> d_rowmap("crsmatrix", nRow + 1);
+    Kokkos::View<size_type *, device> d_rowmap("crsmatrix", nRow + 1);
     auto h_rowmap = Kokkos::create_mirror_view(d_rowmap);
 
-    Kokkos::View<lno_t *> d_colidx("crsmatrix", nnz);
+    Kokkos::View<lno_t *, device> d_colidx("crsmatrix", nnz);
     auto h_colidx = Kokkos::create_mirror_view(d_colidx);
 
-    Kokkos::View<scalar_t *> d_matval("crsmatrix", nnz);
+    Kokkos::View<scalar_t *, device> d_matval("crsmatrix", nnz);
     auto h_matval = Kokkos::create_mirror_view(d_matval);
 
     // Create the entries
