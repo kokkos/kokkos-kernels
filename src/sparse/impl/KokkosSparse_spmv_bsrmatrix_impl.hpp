@@ -420,6 +420,7 @@ struct BsrMatrixSpMVTensorCoreFunctor {
 #endif
       }
       (void)j;
+      (void)ap;
     }  // loop through blocks in row of A
 
 #ifdef __CUDA_ARCH__
