@@ -494,7 +494,9 @@ struct BsrMatrixSpMVTensorCoreDispatcher {
   // to be used to avoid instantiating on unsupported types
   static void tag_dispatch(std::false_type, YScalar, AMatrix, XMatrix, YScalar,
                            YMatrix) {
-    KokkosKernels::Impl::throw_runtime_exception("unsupported for arguments");
+    KokkosKernels::Impl::throw_runtime_exception(
+        "Tensor core SpMV is only supported for non-complex types in GPU "
+        "execution spaces");
   }
 
   /*true if none of T1, T2, or T3 are complex*/
