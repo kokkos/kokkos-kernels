@@ -1,48 +1,13 @@
-#ifndef TEST_BATCHED_DENSE_HPP
-#define TEST_BATCHED_DENSE_HPP
+#ifndef TEST_BATCHED_DENSE_TEAM_TEAMVECTOR_VECTOR_HPP
+#define TEST_BATCHED_DENSE_TEAM_TEAMVECTOR_VECTOR_HPP
 
-// Serial kernels
-#include "Test_Batched_SerialAxpy.hpp"
-#include "Test_Batched_SerialAxpy_Real.hpp"
-#include "Test_Batched_SerialAxpy_Complex.hpp"
-#include "Test_Batched_SerialEigendecomposition.hpp"
-#include "Test_Batched_SerialEigendecomposition_Real.hpp"
-#include "Test_Batched_SerialGemm.hpp"
-#include "Test_Batched_SerialGemm_Real.hpp"
-#include "Test_Batched_SerialGemm_Complex.hpp"
-#include "Test_Batched_BatchedGemm.hpp"
-#include "Test_Batched_BatchedGemm_Real.hpp"
-#include "Test_Batched_BatchedGemm_Complex.hpp"
-#include "Test_Batched_SerialGemv.hpp"
-#include "Test_Batched_SerialGemv_Real.hpp"
-#include "Test_Batched_SerialGemv_Complex.hpp"
-#include "Test_Batched_SerialGesv.hpp"
-#include "Test_Batched_SerialGesv_Real.hpp"
-#include "Test_Batched_SerialInverseLU.hpp"
-#include "Test_Batched_SerialInverseLU_Real.hpp"
-#include "Test_Batched_SerialInverseLU_Complex.hpp"
-#include "Test_Batched_SerialLU.hpp"
-#include "Test_Batched_SerialLU_Real.hpp"
-#include "Test_Batched_SerialLU_Complex.hpp"
-#include "Test_Batched_SerialMatUtil.hpp"
-#include "Test_Batched_SerialMatUtil_Real.hpp"
-#include "Test_Batched_SerialMatUtil_Complex.hpp"
-#include "Test_Batched_SerialSolveLU.hpp"
-#include "Test_Batched_SerialSolveLU_Real.hpp"
-#include "Test_Batched_SerialSolveLU_Complex.hpp"
-#include "Test_Batched_SerialTrmm.hpp"
-#include "Test_Batched_SerialTrmm_Real.hpp"
-#include "Test_Batched_SerialTrmm_Complex.hpp"
-#include "Test_Batched_SerialTrsm.hpp"
-#include "Test_Batched_SerialTrsm_Real.hpp"
-#include "Test_Batched_SerialTrsm_Complex.hpp"
-#include "Test_Batched_SerialTrsv.hpp"
-#include "Test_Batched_SerialTrsv_Real.hpp"
-#include "Test_Batched_SerialTrsv_Complex.hpp"
-#include "Test_Batched_SerialTrtri.hpp"
-#include "Test_Batched_SerialTrtri_Real.hpp"
-#include "Test_Batched_SerialTrtri_Complex.hpp"
-#include "Test_Batched_SerialSVD.hpp"
+// for CUDA backend the batched dense tests are split into multiple TUs, and
+// this file may be used alone to define a set of tests need to bring some
+// definitions in
+#include "Test_Batched_SerialGemv.hpp"       // test_batched_gemv
+#include "Test_Batched_SerialInverseLU.hpp"  // test_batched_inverselu
+#include "Test_Batched_SerialLU.hpp"         // test_batched_lu
+#include "Test_Batched_SerialMatUtil.hpp"    // BatchedSet
 
 // Team Kernels
 #include "Test_Batched_TeamAxpy.hpp"
@@ -105,4 +70,4 @@
 #include "Test_Batched_VectorRelation.hpp"
 #include "Test_Batched_VectorView.hpp"
 
-#endif  // TEST_BATCHED_DENSE_HPP
+#endif  // TEST_BATCHED_DENSE_TEAM_TEAMVECTOR_VECTOR_HPP

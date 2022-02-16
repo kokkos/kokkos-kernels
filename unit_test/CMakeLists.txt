@@ -68,7 +68,9 @@ IF (KOKKOS_ENABLE_CUDA)
     batched_dla_cuda
     SOURCES
       Test_Main.cpp
-      cuda/Test_Cuda_Batched_Dense.cpp
+      cuda/Test_Cuda_Batched_Dense_Serial_Other.cpp
+      cuda/Test_Cuda_Batched_Dense_Serial_BatchedGemm.cpp
+      cuda/Test_Cuda_Batched_Dense_Team_TeamVector_Vector.cpp
     COMPONENTS batched
   )
 
@@ -85,6 +87,9 @@ IF (KOKKOS_ENABLE_CUDA)
     SOURCES
       Test_Main.cpp
       cuda/Test_Cuda_Sparse.cpp
+      cuda/Test_Cuda_Sparse_Gauss_Seidel.cpp
+      cuda/Test_Cuda_Sparse_Spgemm.cpp
+      cuda/Test_Cuda_Sparse_Spmv.cpp
     COMPONENTS sparse
   )
 
@@ -121,7 +126,9 @@ IF (KOKKOS_ENABLE_SYCL)
     batched_dla_sycl
     SOURCES
       Test_Main.cpp
-      sycl/Test_SYCL_Batched_Dense.cpp
+      syncl/Test_SYCL_Batched_Dense_Serial_Other.cpp
+      syncl/Test_SYCL_Batched_Dense_Serial_BatchedGemm.cpp
+      syncl/Test_SYCL_Batched_Dense_Team_TeamVector_Vector.cpp
     COMPONENTS batched
   )
 
@@ -138,6 +145,9 @@ IF (KOKKOS_ENABLE_SYCL)
     SOURCES
       Test_Main.cpp
       sycl/Test_SYCL_Sparse.cpp
+      sycl/Test_SYCL_Sparse_Gauss_Seidel.cpp
+      sycl/Test_SYCL_Sparse_Spgemm.cpp
+      sycl/Test_SYCL_Sparse_Spmv.cpp
     COMPONENTS sparse
   )
 
@@ -174,7 +184,9 @@ IF (KOKKOS_ENABLE_HIP)
     batched_dla_hip
     SOURCES
       Test_Main.cpp
-      hip/Test_HIP_Batched_Dense.cpp
+      hip/Test_HIP_Batched_Dense_Serial_Other.cpp
+      hip/Test_HIP_Batched_Dense_Serial_BatchedGemm.cpp
+      hip/Test_HIP_Batched_Dense_Team_TeamVector_Vector.cpp
     COMPONENTS batched
   )
 
@@ -191,6 +203,9 @@ IF (KOKKOS_ENABLE_HIP)
     SOURCES
       Test_Main.cpp
       hip/Test_HIP_Sparse.cpp
+      hip/Test_HIP_Sparse_Gauss_Seidel.cpp
+      hip/Test_HIP_Sparse_Spgemm.cpp
+      hip/Test_HIP_Sparse_Spmv.cpp
     COMPONENTS sparse
   )
 
@@ -227,7 +242,9 @@ IF (KOKKOS_ENABLE_OPENMPTARGET)
   #   batched_dla_openmptarget
   #   SOURCES
   #     Test_Main.cpp
-  #     openmptarget/Test_OpenMPTarget_Batched_Dense.cpp
+  #     openmptarget/Test_OpenMPTarget_Batched_Dense_Serial_Other.cpp
+  #     openmptarget/Test_OpenMPTarget_Batched_Dense_Serial_BatchedGemm.cpp
+  #     openmptarget/Test_OpenMPTarget_Batched_Dense_Team_TeamVector_Vector.cpp
   #   COMPONENTS batched
   # )
 
@@ -236,6 +253,9 @@ IF (KOKKOS_ENABLE_OPENMPTARGET)
   #   SOURCES
   #     Test_Main.cpp
   #     openmptarget/Test_OpenMPTarget_Sparse.cpp
+  #     openmptarget/Test_OpenMPTarget_Sparse_Gauss_Seidel.cpp
+  #     openmptarget/Test_OpenMPTarget_Sparse_Spgemm.cpp
+  #     openmptarget/Test_OpenMPTarget_Sparse_Spmv.cpp
   #   COMPONENTS sparse
   # )
 
@@ -272,7 +292,9 @@ IF (KOKKOS_ENABLE_OPENMP)
     batched_dla_openmp
     SOURCES
       Test_Main.cpp
-      openmp/Test_OpenMP_Batched_Dense.cpp
+      openmp/Test_OpenMP_Batched_Dense_Serial_Other.cpp
+      openmp/Test_OpenMP_Batched_Dense_Serial_BatchedGemm.cpp
+      openmp/Test_OpenMP_Batched_Dense_Team_TeamVector_Vector.cpp
     COMPONENTS batched
   )
 
@@ -289,6 +311,9 @@ IF (KOKKOS_ENABLE_OPENMP)
     SOURCES
       Test_Main.cpp
       openmp/Test_OpenMP_Sparse.cpp
+      openmp/Test_OpenMP_Sparse_Gauss_Seidel.cpp
+      openmp/Test_OpenMP_Sparse_Spgemm.cpp
+      openmp/Test_OpenMP_Sparse_Spmv.cpp
     COMPONENTS sparse
   )
 
@@ -329,7 +354,9 @@ IF (KOKKOS_ENABLE_SERIAL)
     batched_dla_serial
     SOURCES
       Test_Main.cpp
-      serial/Test_Serial_Batched_Dense.cpp
+      serial/Test_Serial_Batched_Dense_Serial_Other.cpp
+      serial/Test_Serial_Batched_Dense_Serial_BatchedGemm.cpp
+      serial/Test_Serial_Batched_Dense_Team_TeamVector_Vector.cpp
     COMPONENTS batched
   )
 
@@ -346,6 +373,9 @@ IF (KOKKOS_ENABLE_SERIAL)
     SOURCES
       Test_Main.cpp
       serial/Test_Serial_Sparse.cpp
+      serial/Test_Serial_Sparse_Gauss_Seidel.cpp
+      serial/Test_Serial_Sparse_Spgemm.cpp
+      serial/Test_Serial_Sparse_Spmv.cpp
     COMPONENTS sparse
   )
 
@@ -382,7 +412,9 @@ IF (KOKKOS_ENABLE_THREADS)
     batched_dla_threads
     SOURCES
       Test_Main.cpp
-      threads/Test_Threads_Batched_Dense.cpp
+      threads/Test_Threads_Batched_Dense_Serial_Other.cpp
+      threads/Test_Threads_Batched_Dense_Serial_BatchedGemm.cpp
+      threads/Test_Threads_Batched_Dense_Team_TeamVector_Vector.cpp
     COMPONENTS batched
   )
 
@@ -399,6 +431,9 @@ IF (KOKKOS_ENABLE_THREADS)
     SOURCES
       Test_Main.cpp
       threads/Test_Threads_Sparse.cpp
+      threads/Test_Threads_Sparse_Gauss_Seidel.cpp
+      threads/Test_Threads_Sparse_Spgemm.cpp
+      threads/Test_Threads_Sparse_Spmv.cpp
     COMPONENTS sparse
   )
 

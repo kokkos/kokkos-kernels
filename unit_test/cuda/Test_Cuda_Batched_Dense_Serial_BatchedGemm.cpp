@@ -1,0 +1,7 @@
+#ifndef TEST_CUDA_BATCHED_DENSE_SERIAL_BATCHEDGEMM_CPP
+#define TEST_CUDA_BATCHED_DENSE_SERIAL_BATCHEDGEMM_CPP
+
+#include <Test_Cuda.hpp>
+#include <Test_Batched_Dense_Serial_BatchedGemm.hpp>
+
+#endif  // TEST_CUDA_BATCHED_DENSE_SERIAL_BATCHEDGEMM_CPP

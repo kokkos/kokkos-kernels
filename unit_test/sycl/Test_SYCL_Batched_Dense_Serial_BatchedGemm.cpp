@@ -1,0 +1,7 @@
+#ifndef TEST_SYCL_BATCHED_DENSE_SERIAL_BATCHEDGEMM_CPP
+#define TEST_SYCL_BATCHED_DENSE_SERIAL_BATCHEDGEMM_CPP
+
+#include <Test_SYCL.hpp>
+#include <Test_Batched_Dense_Serial_BatchedGemm.hpp>
+
+#endif  // TEST_SYCL_BATCHED_DENSE_SERIAL_BATCHEDGEMM_CPP

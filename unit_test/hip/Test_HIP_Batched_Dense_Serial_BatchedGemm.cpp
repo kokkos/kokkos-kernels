@@ -1,0 +1,7 @@
+#ifndef TEST_HIP_BATCHED_DENSE_SERIAL_BATCHEDGEMM_CPP
+#define TEST_HIP_BATCHED_DENSE_SERIAL_BATCHEDGEMM_CPP
+
+#include <Test_HIP.hpp>
+#include <Test_Batched_Dense_Serial_BatchedGemm.hpp>
+
+#endif  // TEST_HIP_BATCHED_DENSE_SERIAL_BATCHEDGEMM_CPP

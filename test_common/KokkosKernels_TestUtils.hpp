@@ -470,26 +470,26 @@ std::string value_type_name() {
 }
 
 template <>
-std::string value_type_name<float>() {
+inline std::string value_type_name<float>() {
   return "::Float";
 }
 
 template <>
-std::string value_type_name<double>() {
+inline std::string value_type_name<double>() {
   return "::Double";
 }
 
 template <>
-std::string value_type_name<Kokkos::complex<float>>() {
+inline std::string value_type_name<Kokkos::complex<float>>() {
   return "::ComplexFloat";
 }
 
 template <>
-std::string value_type_name<Kokkos::complex<double>>() {
+inline std::string value_type_name<Kokkos::complex<double>>() {
   return "::ComplexDouble";
 }
 
-int string_compare_no_case(const char* str1, const char* str2) {
+inline int string_compare_no_case(const char* str1, const char* str2) {
   std::string str1_s(str1);
   std::string str2_s(str2);
   for (size_t i = 0; i < str1_s.size(); i++)
