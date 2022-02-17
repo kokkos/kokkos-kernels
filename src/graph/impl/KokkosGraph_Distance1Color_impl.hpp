@@ -417,6 +417,7 @@ class GraphColor_VB
     double total_time_serial_conflict_resolution = 0.0;
     Kokkos::Timer timer;
     timer.reset();
+    (void)total;
 
     int iter = 0;
     for (; (iter < this->_max_num_iterations) && (numUncolored > 0); iter++) {

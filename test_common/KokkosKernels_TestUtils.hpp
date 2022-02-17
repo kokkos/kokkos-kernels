@@ -45,6 +45,8 @@
 #ifndef KOKKOSKERNELS_TEST_UTILS_HPP
 #define KOKKOSKERNELS_TEST_UTILS_HPP
 
+#include <random>
+
 #include "KokkosKernels_Utils.hpp"
 #include "Kokkos_ArithTraits.hpp"
 #include "KokkosSparse_spmv.hpp"
@@ -127,6 +129,8 @@ static inline const std::string kk_failure_str(std::string file,
                                                std::string func,
                                                const int line) {
   std::string failure_msg = "  > from ";
+  // std::string test =
+  // ::testing::UnitTest::GetInstance()->current_test_info()->name();
   failure_msg += (file + ":" + func + ":" + std::to_string(line) + "\n    > ");
   return std::string(failure_msg);
 }
@@ -487,6 +491,110 @@ int string_compare_no_case(const char* str1, const char* str2) {
     str2_s[i] = std::tolower(str2_s[i]);
   return strcmp(str1_s.c_str(), str2_s.c_str());
 }
+
+/// /brief Csc matrix class for testing purposes.
+/// \tparam ScalarType
+/// \tparam LayoutType
+/// \tparam ExeSpaceType
+template <class ScalarType, class LayoutType, class ExeSpaceType>
+class RandCscMat {
+ private:
+  using ValViewType    = Kokkos::View<ScalarType*, LayoutType, ExeSpaceType>;
+  using RowIdViewType  = Kokkos::View<size_t*, LayoutType, ExeSpaceType>;
+  using ColMapViewType = Kokkos::View<size_t*, LayoutType, ExeSpaceType>;
+  size_t __nrows;
+  size_t __ncols;
+  size_t __nnz = 0;
+  ColMapViewType __col_map;
+  RowIdViewType __row_ids;
+  ValViewType __vals;
+
+  /// Generates a random column map where:
+  ///  1. __col_map(i) is in [__row_ids.data(), &row_ids.data()[nnz - 1]
+  ///  2. __col_map(i) > col_map(i - 1) for i > 1
+  ///  3. __col_map(i) == col_map(j) iff __col_map(i) == col_map(j) == nullptr
+  ///  4. __col_map(i) - col_map(i - 1) is in [0, m]
+  void __populate_random_csc_mat(uint64_t ticks) {
+    std::srand(ticks);
+    for (size_t col_idx = 0; col_idx < __ncols; col_idx++) {
+      size_t r = std::rand() % (__nrows + 1);
+      if (r == 0) {  // 100% sparse column
+        __col_map(col_idx) = __nnz;
+      } else {  // sparse column with r elements
+        // Populate r row ids
+        std::vector<size_t> v(r);
+
+        for (size_t i = 0; i < r; i++) v.at(i) = i;
+
+        std::shuffle(v.begin(), v.end(), std::mt19937(std::random_device()()));
+
+        for (size_t i = 0; i < r; i++) __row_ids(i + __nnz) = v.at(i);
+
+        // Point to new column and accumulate number of non zeros
+        __col_map(col_idx) = __nnz;
+        __nnz += r;
+      }
+    }
+
+    // last entry in map points to end of row id list
+    __col_map(__ncols) = __nnz;
+  }
+
+  template <class T>
+  T __getter_copy_helper(T src) {
+    T dst(std::string("RandCscMat.") + typeid(T).name() + " copy",
+          src.extent(0));
+    Kokkos::deep_copy(dst, src);
+    ExeSpaceType().fence();
+    return dst;
+  }
+
+ public:
+  std::string info;
+  /// Constructs a random csc matrix.
+  /// \param m The number of rows.
+  /// \param n The number of columns.
+  /// \param min_val The minimum scalar value in the matrix.
+  /// \param max_val The maximum scalar value in the matrix.
+  RandCscMat(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
+    __ncols   = n;
+    __nrows   = m;
+    __col_map = ColMapViewType("RandCscMat.ColMapViewType", __ncols + 1);
+    __row_ids =
+        RowIdViewType("RandCscMat.RowIdViewType", m * n + 1);  // over-allocated
+
+    uint64_t ticks =
+        std::chrono::high_resolution_clock::now().time_since_epoch().count() %
+        UINT32_MAX;
+
+    info = std::string(std::string("RandCscMat<") + typeid(ScalarType).name() +
+                       ", " + typeid(LayoutType).name() + ", " +
+                       typeid(ExeSpaceType).name() + ">(" + std::to_string(m) +
+                       ", " + std::to_string(n) +
+                       "...): rand seed: " + std::to_string(ticks) + "\n");
+    Kokkos::Random_XorShift64_Pool<ExeSpaceType> random(ticks);
+    __populate_random_csc_mat(ticks);
+
+    __vals = ValViewType("RandCscMat.ValViewType", __nnz + 1);
+    Kokkos::fill_random(__vals, random, min_val, max_val);  // random scalars
+    ExeSpaceType().fence();
+    __vals(__nnz) = ScalarType(0);
+  }
+
+  // O(c), where c is a constant.
+  ScalarType operator()(size_t idx) { return __vals(idx); }
+
+  size_t get_nnz() { return __nnz; }
+  size_t get_m() { return __nrows; }
+  size_t get_n() { return __ncols; }
+  size_t get_col_len(size_t j) {
+    return j < __ncols ? (__col_map(j + 1) - __col_map(j)) : 0;
+  }
+  size_t get_col_start(size_t j) { return j < __ncols ? __col_map(j) : 0; }
+  ValViewType get_vals() { return __getter_copy_helper(__vals); }
+  RowIdViewType get_row_ids() { return __getter_copy_helper(__row_ids); }
+  ColMapViewType get_col_map() { return __getter_copy_helper(__col_map); }
+};
 
 }  // namespace Test
 #endif
