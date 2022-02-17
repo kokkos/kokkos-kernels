@@ -50,12 +50,9 @@
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
 #include "mkl_spblas.h"
-#endif
 
 namespace KokkosSparse {
 namespace Impl {
-
-#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
 
 // multiplies two sparse MKL matrices and returns sparse MKL matrix
 template <typename value_type>
@@ -276,7 +273,6 @@ class MKL_SPMM {
     return view_type(data, num_elems);
   }
 };
-#endif  // KOKKOSKERNELS_ENABLE_TPL_MKL
 
 template <typename KernelHandle, typename a_rowmap_type, typename a_index_type,
           typename b_rowmap_type, typename b_index_type, typename c_rowmap_type,
@@ -286,21 +282,6 @@ void mkl_symbolic(KernelHandle *handle, nnz_lno_t m, nnz_lno_t n, nnz_lno_t k,
                   bool transposeA, b_rowmap_type row_mapB,
                   b_index_type entriesB, bool transposeB,
                   c_rowmap_type row_mapC, bool verbose = false) {
-#ifndef KOKKOSKERNELS_ENABLE_TPL_MKL
-  throw std::runtime_error("MKL was not enabled in this build!");
-  (void)handle;
-  (void)m;
-  (void)n;
-  (void)k;
-  (void)row_mapA;
-  (void)entriesA;
-  (void)transposeA;
-  (void)row_mapB;
-  (void)entriesB;
-  (void)transposeB;
-  (void)row_mapC;
-  (void)verbose;
-#else
   using values_type  = typename KernelHandle::scalar_temp_work_view_t;
   using c_index_type = b_index_type;
   using mkl = MKL_SPMM<KernelHandle, a_rowmap_type, a_index_type, values_type,
@@ -308,7 +289,6 @@ void mkl_symbolic(KernelHandle *handle, nnz_lno_t m, nnz_lno_t n, nnz_lno_t k,
                        c_index_type, values_type>;
   mkl::mkl_symbolic(handle, m, n, k, row_mapA, entriesA, transposeA, row_mapB,
                     entriesB, transposeB, row_mapC, verbose);
-#endif
 }
 
 template <typename KernelHandle, typename a_rowmap_type, typename a_index_type,
@@ -322,35 +302,16 @@ void mkl_apply(KernelHandle *handle, nnz_lno_t m, nnz_lno_t n, nnz_lno_t k,
                b_index_type entriesB, b_values_type valuesB, bool transposeB,
                c_rowmap_type row_mapC, c_index_type entriesC,
                c_values_type valuesC, bool verbose = false) {
-#ifndef KOKKOSKERNELS_ENABLE_TPL_MKL
-  throw std::runtime_error("MKL was not enabled in this build!");
-  (void)handle;
-  (void)m;
-  (void)n;
-  (void)k;
-  (void)row_mapA;
-  (void)entriesA;
-  (void)valuesA;
-  (void)transposeA;
-  (void)row_mapB;
-  (void)entriesB;
-  (void)valuesB;
-  (void)transposeB;
-  (void)row_mapC;
-  (void)entriesC;
-  (void)valuesC;
-  (void)verbose;
-#else
   using mkl = MKL_SPMM<KernelHandle, a_rowmap_type, a_index_type, a_values_type,
                        b_rowmap_type, b_index_type, b_values_type,
                        c_rowmap_type, c_index_type, c_values_type>;
   mkl::mkl_numeric(handle, m, n, k, row_mapA, entriesA, valuesA, transposeA,
                    row_mapB, entriesB, valuesB, transposeB, row_mapC, entriesC,
                    valuesC, verbose);
-#endif
 }
 
 }  // namespace Impl
 }  // namespace KokkosSparse
 
-#endif
+#endif  // KOKKOSKERNELS_ENABLE_TPL_MKL
+#endif  // _KOKKOSSPGEMMMKL_HPP
