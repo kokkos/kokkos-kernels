@@ -45,6 +45,9 @@
 #ifndef _KOKKOSSPGEMMMKL_HPP
 #define _KOKKOSSPGEMMMKL_HPP
 
+#include "KokkosKernels_config.h"
+#include "KokkosKernels_SparseUtils_mkl.hpp"
+
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
 #include "mkl_spblas.h"
 #endif
@@ -53,12 +56,6 @@ namespace KokkosSparse {
 namespace Impl {
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
-
-inline void mkl_call(sparse_status_t result, const char *err_msg) {
-  if (SPARSE_STATUS_SUCCESS != result) {
-    throw std::runtime_error(err_msg);
-  }
-}
 
 template <typename value_type>
 class MKLSparseMatrix {
@@ -72,8 +69,7 @@ class MKLSparseMatrix {
       sparse_operation_t operation, const MKLSparseMatrix<value_type> &A,
       const MKLSparseMatrix<value_type> &B) {
     sparse_matrix_t c;
-    mkl_call(mkl_sparse_spmm(operation, A.mtx, B.mtx, &c),
-             "mkl_sparse_spmm() failed!");
+    MKL_SAFE_CALL(mkl_sparse_spmm(operation, A.mtx, B.mtx, &c));
     return MKLSparseMatrix<value_type>(c);
   }
 
@@ -81,9 +77,7 @@ class MKLSparseMatrix {
                           MKL_INT *&rows_start, MKL_INT *&columns,
                           value_type *&values);
 
-  inline void destroy() {
-    mkl_call(mkl_sparse_destroy(mtx), "mkl_sparse_destroy() failed!");
-  }
+  inline void destroy() { MKL_SAFE_CALL(mkl_sparse_destroy(mtx)); }
 
  private:
   inline MKLSparseMatrix(sparse_matrix_t mtx_) : mtx(mtx_) {}
@@ -94,9 +88,8 @@ inline MKLSparseMatrix<float>::MKLSparseMatrix(const MKL_INT rows,
                                                const MKL_INT cols,
                                                MKL_INT *xadj, MKL_INT *adj,
                                                float *values) {
-  mkl_call(mkl_sparse_s_create_csr(&mtx, SPARSE_INDEX_BASE_ZERO, rows, cols,
-                                   xadj, xadj + 1, adj, values),
-           "mkl_sparse_s_create_csr() failed!");
+  MKL_SAFE_CALL(mkl_sparse_s_create_csr(&mtx, SPARSE_INDEX_BASE_ZERO, rows,
+                                        cols, xadj, xadj + 1, adj, values));
 }
 
 template <>
@@ -104,9 +97,8 @@ inline MKLSparseMatrix<double>::MKLSparseMatrix(const MKL_INT rows,
                                                 const MKL_INT cols,
                                                 MKL_INT *xadj, MKL_INT *adj,
                                                 double *values) {
-  mkl_call(mkl_sparse_d_create_csr(&mtx, SPARSE_INDEX_BASE_ZERO, rows, cols,
-                                   xadj, xadj + 1, adj, values),
-           "mkl_sparse_d_create_csr() failed!");
+  MKL_SAFE_CALL(mkl_sparse_d_create_csr(&mtx, SPARSE_INDEX_BASE_ZERO, rows,
+                                        cols, xadj, xadj + 1, adj, values));
 }
 
 template <>
@@ -117,9 +109,9 @@ inline void MKLSparseMatrix<float>::export_data(MKL_INT &num_rows,
                                                 float *&values) {
   sparse_index_base_t indexing;
   MKL_INT *rows_end;
-  mkl_call(mkl_sparse_s_export_csr(mtx, &indexing, &num_rows, &num_cols,
-                                   &rows_start, &rows_end, &columns, &values),
-           "Failed to export matrix with mkl_sparse_s_export_csr()!");
+  MKL_SAFE_CALL(mkl_sparse_s_export_csr(mtx, &indexing, &num_rows, &num_cols,
+                                        &rows_start, &rows_end, &columns,
+                                        &values));
   if (SPARSE_INDEX_BASE_ZERO != indexing) {
     throw std::runtime_error(
         "Expected zero based indexing in exported MKL sparse matrix\n");
@@ -135,9 +127,9 @@ inline void MKLSparseMatrix<double>::export_data(MKL_INT &num_rows,
                                                  double *&values) {
   sparse_index_base_t indexing;
   MKL_INT *rows_end;
-  mkl_call(mkl_sparse_d_export_csr(mtx, &indexing, &num_rows, &num_cols,
-                                   &rows_start, &rows_end, &columns, &values),
-           "Failed to export matrix with mkl_sparse_s_export_csr()!");
+  MKL_SAFE_CALL(mkl_sparse_d_export_csr(mtx, &indexing, &num_rows, &num_cols,
+                                        &rows_start, &rows_end, &columns,
+                                        &values));
   if (SPARSE_INDEX_BASE_ZERO != indexing) {
     throw std::runtime_error(
         "Expected zero based indexing in exported MKL sparse matrix\n");
