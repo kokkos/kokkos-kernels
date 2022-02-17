@@ -45,6 +45,7 @@
 //#include "KokkosKernels_ETIHelperMacros.h"
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
+#include <Kokkos_ArithTraits.hpp>
 #include <stdexcept>
 #include "KokkosSparse_CrsMatrix.hpp"
 

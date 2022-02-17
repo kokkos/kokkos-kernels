@@ -1042,8 +1042,9 @@ struct Entry {
 };
 
 // expand a pattern into a blocked CrsMatrix
-template <typename Matrix,
-          std::enable_if_t<KokkosSparse::is_crs_matrix<Matrix>::value, bool> = true>
+template <
+    typename Matrix,
+    std::enable_if_t<KokkosSparse::is_crs_matrix<Matrix>::value, bool> = true>
 Matrix expand_matrix(std::vector<Coordinate> pattern, const int m, const int k,
                      const int blockSize, const int seed = 0) {
   typedef typename Matrix::value_type Scalar;

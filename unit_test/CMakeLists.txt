@@ -85,6 +85,8 @@ IF (KOKKOS_ENABLE_CUDA)
     SOURCES
       Test_Main.cpp
       cuda/Test_Cuda_Sparse.cpp
+      cuda/Test_Cuda_Sparse_Gauss_Seidel.cpp
+      cuda/Test_Cuda_Sparse_Spgemm.cpp
       cuda/Test_Cuda_Sparse_Spmv.cpp
     COMPONENTS sparse
   )
@@ -139,6 +141,8 @@ IF (KOKKOS_ENABLE_SYCL)
     SOURCES
       Test_Main.cpp
       sycl/Test_SYCL_Sparse.cpp
+      sycl/Test_SYCL_Sparse_Gauss_Seidel.cpp
+      sycl/Test_SYCL_Sparse_Spgemm.cpp
       sycl/Test_SYCL_Sparse_Spmv.cpp
     COMPONENTS sparse
   )
@@ -193,6 +197,8 @@ IF (KOKKOS_ENABLE_HIP)
     SOURCES
       Test_Main.cpp
       hip/Test_HIP_Sparse.cpp
+      hip/Test_HIP_Sparse_Gauss_Seidel.cpp
+      hip/Test_HIP_Sparse_Spgemm.cpp
       hip/Test_HIP_Sparse_Spmv.cpp
     COMPONENTS sparse
   )
@@ -292,6 +298,8 @@ IF (KOKKOS_ENABLE_OPENMP)
     SOURCES
       Test_Main.cpp
       openmp/Test_OpenMP_Sparse.cpp
+      openmp/Test_OpenMP_Sparse_Gauss_Seidel.cpp
+      openmp/Test_OpenMP_Sparse_Spgemm.cpp
       openmp/Test_OpenMP_Sparse_Spmv.cpp
     COMPONENTS sparse
   )
@@ -350,6 +358,8 @@ IF (KOKKOS_ENABLE_SERIAL)
     SOURCES
       Test_Main.cpp
       serial/Test_Serial_Sparse.cpp
+      serial/Test_Serial_Sparse_Gauss_Seidel.cpp
+      serial/Test_Serial_Sparse_Spgemm.cpp
       serial/Test_Serial_Sparse_Spmv.cpp
     COMPONENTS sparse
   )
@@ -404,6 +414,8 @@ IF (KOKKOS_ENABLE_THREADS)
     SOURCES
       Test_Main.cpp
       threads/Test_Threads_Sparse.cpp
+      threads/Test_Threads_Sparse_Gauss_Seidel.cpp
+      threads/Test_Threads_Sparse_Spgemm.cpp
       threads/Test_Threads_Sparse_Spmv.cpp
     COMPONENTS sparse
   )
