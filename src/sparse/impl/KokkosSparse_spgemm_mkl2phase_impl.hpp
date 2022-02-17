@@ -302,6 +302,11 @@ void mkl2phase_symbolic(
     (void)transposeA;
     (void)transposeB;
     (void)verbose;
+    (void)a_xadj;
+    (void)b_xadj;
+    (void)c_xadj;
+    (void)a_adj;
+    (void)b_adj;
 #endif
 
   } else {
@@ -351,9 +356,7 @@ void mkl2phase_apply(
       typename KernelHandle::HandlePersistentMemorySpace;
   using int_persistent_work_view_t =
       typename Kokkos::View<int *, HandlePersistentMemorySpace>;
-  using MyExecSpace = typename KernelHandle::HandleExecSpace;
-  using value_type  = typename KernelHandle::nnz_scalar_t;
-  using idx         = typename KernelHandle::nnz_lno_t;
+  using idx = typename KernelHandle::nnz_lno_t;
 
   if (std::is_same<idx, int>::value) {
     int *a_xadj = (int *)row_mapA.data();
@@ -639,6 +642,11 @@ void mkl2phase_apply(
     (void)transposeA;
     (void)transposeB;
     (void)verbose;
+    (void)a_xadj;
+    (void)b_xadj;
+    (void)c_xadj;
+    (void)a_adj;
+    (void)b_adj;
 #endif  // __INTEL_MKL__ == 2018 && __INTEL_MKL_UPDATE__ >= 2
   } else {
     (void)m;
