@@ -72,7 +72,7 @@ template <typename KernelHandle, typename a_rowmap_view_type,
           typename b_rowmap_view_type, typename b_index_view_type,
           typename b_values_view_type, typename c_rowmap_view_type,
           typename c_index_view_type, typename c_values_view_type>
-class MKLApply {
+class MKL_SPMM {
  public:
   typedef typename KernelHandle::nnz_lno_t nnz_lno_t;
   typedef typename KernelHandle::size_type size_type;
@@ -120,8 +120,8 @@ class MKLApply {
         Kokkos::ViewAllocateWithoutInitializing("tmp_valuesB"),
         entriesB.extent(0));
 
-    apply(handle, m, n, k, row_mapA, entriesA, tmp_valsA, transposeA, row_mapB,
-          entriesB, tmp_valsB, transposeB, verbose, export_rowmap);
+    spmm(handle, m, n, k, row_mapA, entriesA, tmp_valsA, transposeA, row_mapB,
+         entriesB, tmp_valsB, transposeB, verbose, export_rowmap);
 
     if (verbose)
       std::cout << "MKL symbolic time:" << timer.seconds() << std::endl;
@@ -150,8 +150,8 @@ class MKLApply {
           }
         };
 
-    apply(handle, m, n, k, row_mapA, entriesA, valuesA, transposeA, row_mapB,
-          entriesB, valuesB, transposeB, verbose, export_values);
+    spmm(handle, m, n, k, row_mapA, entriesA, valuesA, transposeA, row_mapB,
+         entriesB, valuesB, transposeB, verbose, export_values);
 
     if (verbose)
       std::cout << "MKL numeric time:" << timer.seconds() << std::endl;
@@ -162,13 +162,13 @@ class MKLApply {
 
  private:
   template <typename CB>
-  static void apply(KernelHandle * /* handle */, nnz_lno_t m, nnz_lno_t n,
-                    nnz_lno_t k, a_rowmap_view_type row_mapA,
-                    a_index_view_type entriesA, a_values_view_type valuesA,
+  static void spmm(KernelHandle * /* handle */, nnz_lno_t m, nnz_lno_t n,
+                   nnz_lno_t k, a_rowmap_view_type row_mapA,
+                   a_index_view_type entriesA, a_values_view_type valuesA,
 
-                    bool transposeA, b_rowmap_view_type row_mapB,
-                    b_index_view_type entriesB, b_values_view_type valuesB,
-                    bool transposeB, bool verbose, const CB &callback) {
+                   bool transposeA, b_rowmap_view_type row_mapB,
+                   b_index_view_type entriesB, b_values_view_type valuesB,
+                   bool transposeB, bool verbose, const CB &callback) {
     if (!std::is_same<nnz_lno_t, int>::value) {
       throw std::runtime_error("MKL requires local ordinals to be integer.\n");
     }
@@ -303,7 +303,7 @@ void mkl_symbolic(KernelHandle *handle, nnz_lno_t m, nnz_lno_t n, nnz_lno_t k,
 #else
   using values_type  = typename KernelHandle::scalar_temp_work_view_t;
   using c_index_type = b_index_type;
-  using mkl = MKLApply<KernelHandle, a_rowmap_type, a_index_type, values_type,
+  using mkl = MKL_SPMM<KernelHandle, a_rowmap_type, a_index_type, values_type,
                        b_rowmap_type, b_index_type, values_type, c_rowmap_type,
                        c_index_type, values_type>;
   mkl::mkl_symbolic(handle, m, n, k, row_mapA, entriesA, transposeA, row_mapB,
@@ -341,7 +341,7 @@ void mkl_apply(KernelHandle *handle, nnz_lno_t m, nnz_lno_t n, nnz_lno_t k,
   (void)valuesC;
   (void)verbose;
 #else
-  using mkl = MKLApply<KernelHandle, a_rowmap_type, a_index_type, a_values_type,
+  using mkl = MKL_SPMM<KernelHandle, a_rowmap_type, a_index_type, a_values_type,
                        b_rowmap_type, b_index_type, b_values_type,
                        c_rowmap_type, c_index_type, c_values_type>;
   mkl::mkl_numeric(handle, m, n, k, row_mapA, entriesA, valuesA, transposeA,
