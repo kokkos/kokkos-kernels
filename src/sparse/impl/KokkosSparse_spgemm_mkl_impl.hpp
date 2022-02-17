@@ -57,84 +57,14 @@ namespace Impl {
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
 
+// multiplies two sparse MKL matrices and returns sparse MKL matrix
 template <typename value_type>
-class MKLSparseMatrix {
-  sparse_matrix_t mtx;
-
- public:
-  inline MKLSparseMatrix(const MKL_INT m, const MKL_INT n, MKL_INT *xadj,
-                         MKL_INT *adj, value_type *values);
-
-  inline static MKLSparseMatrix<value_type> spmm(
-      sparse_operation_t operation, const MKLSparseMatrix<value_type> &A,
-      const MKLSparseMatrix<value_type> &B) {
-    sparse_matrix_t c;
-    MKL_SAFE_CALL(mkl_sparse_spmm(operation, A.mtx, B.mtx, &c));
-    return MKLSparseMatrix<value_type>(c);
-  }
-
-  inline void export_data(MKL_INT &num_rows, MKL_INT &num_cols,
-                          MKL_INT *&rows_start, MKL_INT *&columns,
-                          value_type *&values);
-
-  inline void destroy() { MKL_SAFE_CALL(mkl_sparse_destroy(mtx)); }
-
- private:
-  inline MKLSparseMatrix(sparse_matrix_t mtx_) : mtx(mtx_) {}
-};
-
-template <>
-inline MKLSparseMatrix<float>::MKLSparseMatrix(const MKL_INT rows,
-                                               const MKL_INT cols,
-                                               MKL_INT *xadj, MKL_INT *adj,
-                                               float *values) {
-  MKL_SAFE_CALL(mkl_sparse_s_create_csr(&mtx, SPARSE_INDEX_BASE_ZERO, rows,
-                                        cols, xadj, xadj + 1, adj, values));
-}
-
-template <>
-inline MKLSparseMatrix<double>::MKLSparseMatrix(const MKL_INT rows,
-                                                const MKL_INT cols,
-                                                MKL_INT *xadj, MKL_INT *adj,
-                                                double *values) {
-  MKL_SAFE_CALL(mkl_sparse_d_create_csr(&mtx, SPARSE_INDEX_BASE_ZERO, rows,
-                                        cols, xadj, xadj + 1, adj, values));
-}
-
-template <>
-inline void MKLSparseMatrix<float>::export_data(MKL_INT &num_rows,
-                                                MKL_INT &num_cols,
-                                                MKL_INT *&rows_start,
-                                                MKL_INT *&columns,
-                                                float *&values) {
-  sparse_index_base_t indexing;
-  MKL_INT *rows_end;
-  MKL_SAFE_CALL(mkl_sparse_s_export_csr(mtx, &indexing, &num_rows, &num_cols,
-                                        &rows_start, &rows_end, &columns,
-                                        &values));
-  if (SPARSE_INDEX_BASE_ZERO != indexing) {
-    throw std::runtime_error(
-        "Expected zero based indexing in exported MKL sparse matrix\n");
-    return;
-  }
-}
-
-template <>
-inline void MKLSparseMatrix<double>::export_data(MKL_INT &num_rows,
-                                                 MKL_INT &num_cols,
-                                                 MKL_INT *&rows_start,
-                                                 MKL_INT *&columns,
-                                                 double *&values) {
-  sparse_index_base_t indexing;
-  MKL_INT *rows_end;
-  MKL_SAFE_CALL(mkl_sparse_d_export_csr(mtx, &indexing, &num_rows, &num_cols,
-                                        &rows_start, &rows_end, &columns,
-                                        &values));
-  if (SPARSE_INDEX_BASE_ZERO != indexing) {
-    throw std::runtime_error(
-        "Expected zero based indexing in exported MKL sparse matrix\n");
-    return;
-  }
+inline static MKLSparseMatrix<value_type> mkl_spmm(
+    sparse_operation_t operation, const MKLSparseMatrix<value_type> &A,
+    const MKLSparseMatrix<value_type> &B) {
+  sparse_matrix_t C;
+  MKL_SAFE_CALL(mkl_sparse_spmm(operation, A, B, &C));
+  return MKLSparseMatrix<value_type>(C);
 }
 
 template <typename KernelHandle, typename a_rowmap_view_type,
@@ -309,7 +239,7 @@ class MKLApply {
     }
 
     Kokkos::Timer timer1;
-    Matrix C = Matrix::spmm(operation, A, B);
+    Matrix C = mkl_spmm(operation, A, B);
     if (verbose) {
       std::cout << "\tMKL spmm (";
       if (std::is_same<float, value_type>::value)
