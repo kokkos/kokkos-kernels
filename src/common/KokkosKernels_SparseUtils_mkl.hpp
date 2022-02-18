@@ -79,12 +79,24 @@ inline sparse_operation_t mode_kk_to_mkl(char mode_kk) {
       "Invalid mode for MKL (should be one of N, T, H)");
 }
 
+template <typename value_type>
+struct mkl_is_supported_value_type : std::false_type {};
+
+template <>
+struct mkl_is_supported_value_type<float> : std::true_type {};
+template <>
+struct mkl_is_supported_value_type<double> : std::true_type {};
+
 // MKLSparseMatrix provides thin wrapper around MKL matrix handle
 // (sparse_matrix_t) and encapsulates MKL call dispatches related to details
 // like value_type, allowing simple client code in kernels.
 template <typename value_type>
 class MKLSparseMatrix {
   sparse_matrix_t mtx;
+
+  static_assert(mkl_is_supported_value_type<value_type>::value,
+                "Scalar type used in MKLSparseMatrix<value_type> is NOT "
+                "supported by MKL");
 
  public:
   inline MKLSparseMatrix(sparse_matrix_t mtx_) : mtx(mtx_) {}
