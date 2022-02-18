@@ -214,8 +214,8 @@ class MKL_SPMM {
     auto h_valsB           = create_mirror(valuesB);
     auto h_entriesA        = create_mirror(entriesA);
     auto h_entriesB        = create_mirror(entriesB);
-    const int *a_adj       = h_entriesA.data();
-    const int *b_adj       = h_entriesB.data();
+    const int *a_adj       = reinterpret_cast<const int *>(h_entriesA.data());
+    const int *b_adj       = reinterpret_cast<const int *>(h_entriesB.data());
     const value_type *a_ew = h_valsA.data();
     const value_type *b_ew = h_valsB.data();
 
