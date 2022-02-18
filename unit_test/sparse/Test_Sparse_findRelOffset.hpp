@@ -455,6 +455,8 @@ void test_findRelOffset() {
     test_findRelOffset<ORDINAL, DEVICE>();                                     \
   }
 
+// JGF TODO?
+
 #if (defined(KOKKOSKERNELS_INST_ORDINAL_INT)) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&         \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
