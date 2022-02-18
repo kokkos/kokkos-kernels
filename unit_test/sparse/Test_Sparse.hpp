@@ -18,6 +18,7 @@
 #include "Test_Sparse_spmv_bsr.hpp"
 #include "Test_Sparse_sptrsv.hpp"
 #include "Test_Sparse_trsv.hpp"
+#include "Test_Sparse_par_ilut.hpp"
 
 // TPL specific tests, these require
 // particular pairs of backend and TPL

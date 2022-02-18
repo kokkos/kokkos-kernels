@@ -49,6 +49,7 @@
 #include "KokkosSparse_spadd_handle.hpp"
 #include "KokkosSparse_sptrsv_handle.hpp"
 #include "KokkosSparse_spiluk_handle.hpp"
+#include "KokkosSparse_par_ilut_handle.hpp"
 #include "KokkosKernels_default_types.hpp"
 
 #ifndef _KOKKOSKERNELHANDLE_HPP
@@ -184,6 +185,7 @@ class KokkosKernelsHandle {
 
     this->sptrsvHandle = right_side_handle.get_sptrsv_handle();
     this->spilukHandle = right_side_handle.get_spiluk_handle();
+    this->par_ilutHandle = right_side_handle.get_par_ilut_handle();
 
     this->team_work_size      = right_side_handle.get_set_team_work_size();
     this->shared_memory_size  = right_side_handle.get_shmem_size();
@@ -200,12 +202,13 @@ class KokkosKernelsHandle {
     is_owner_of_the_gs_sptrsvL_handle = false;
     is_owner_of_the_gs_sptrsvU_handle = false;
     // ---------------------------------------- //
-    is_owner_of_the_d2_gc_handle  = false;
-    is_owner_of_the_gs_handle     = false;
-    is_owner_of_the_spgemm_handle = false;
-    is_owner_of_the_spadd_handle  = false;
-    is_owner_of_the_sptrsv_handle = false;
-    is_owner_of_the_spiluk_handle = false;
+    is_owner_of_the_d2_gc_handle    = false;
+    is_owner_of_the_gs_handle       = false;
+    is_owner_of_the_spgemm_handle   = false;
+    is_owner_of_the_spadd_handle    = false;
+    is_owner_of_the_sptrsv_handle   = false;
+    is_owner_of_the_spiluk_handle   = false;
+    is_owner_of_the_par_ilut_handle = false;
     // return *this;
   }
 
@@ -300,6 +303,11 @@ class KokkosKernelsHandle {
       HandleTempMemorySpace, HandlePersistentMemorySpace>
       SPILUKHandleType;
 
+  typedef typename KokkosSparse::Experimental::PAR_ILUTHandle<
+      const_size_type, const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace,
+      HandleTempMemorySpace, HandlePersistentMemorySpace>
+      PAR_ILUTHandleType;
+
  private:
   GraphColoringHandleType *gcHandle;
   GraphColorDistance2HandleType *gcHandle_d2;
@@ -315,6 +323,7 @@ class KokkosKernelsHandle {
   SPADDHandleType *spaddHandle;
   SPTRSVHandleType *sptrsvHandle;
   SPILUKHandleType *spilukHandle;
+  PAR_ILUTHandleType *par_ilutHandle;
 
   int team_work_size;
   size_t shared_memory_size;
@@ -337,6 +346,7 @@ class KokkosKernelsHandle {
   bool is_owner_of_the_spadd_handle;
   bool is_owner_of_the_sptrsv_handle;
   bool is_owner_of_the_spiluk_handle;
+  bool is_owner_of_the_par_ilut_handle;
 
  public:
   KokkosKernelsHandle()
@@ -353,6 +363,7 @@ class KokkosKernelsHandle {
         spaddHandle(NULL),
         sptrsvHandle(NULL),
         spilukHandle(NULL),
+        par_ilutHandle(NULL),
         team_work_size(-1),
         shared_memory_size(16128),
         suggested_team_size(-1),
@@ -373,7 +384,8 @@ class KokkosKernelsHandle {
         is_owner_of_the_spgemm_handle(true),
         is_owner_of_the_spadd_handle(true),
         is_owner_of_the_sptrsv_handle(true),
-        is_owner_of_the_spiluk_handle(true) {}
+        is_owner_of_the_spiluk_handle(true),
+        is_owner_of_the_par_ilut_handle(true) {}
 
   ~KokkosKernelsHandle() {
     this->destroy_gs_handle();
@@ -388,6 +400,7 @@ class KokkosKernelsHandle {
     this->destroy_spadd_handle();
     this->destroy_sptrsv_handle();
     this->destroy_spiluk_handle();
+    this->destroy_par_ilut_handle();
   }
 
   void set_verbose(bool verbose_) { this->KKVERBOSE = verbose_; }
@@ -849,6 +862,24 @@ class KokkosKernelsHandle {
       this->spilukHandle = nullptr;
     }
   }
+
+  PAR_ILUTHandleType *get_par_ilut_handle() { return this->par_ilutHandle; }
+  void create_par_ilut_handle(KokkosSparse::Experimental::PAR_ILUTAlgorithm algm,
+                            size_type nrows, size_type nnzL, size_type nnzU) {
+    this->destroy_par_ilut_handle();
+    this->is_owner_of_the_par_ilut_handle = true;
+    this->par_ilutHandle = new PAR_ILUTHandleType(algm, nrows, nnzL, nnzU);
+    this->par_ilutHandle->reset_handle(nrows, nnzL, nnzU);
+    this->par_ilutHandle->set_team_size(this->team_work_size);
+    this->par_ilutHandle->set_vector_size(this->vector_size);
+  }
+  void destroy_par_ilut_handle() {
+    if (is_owner_of_the_par_ilut_handle && this->par_ilutHandle != nullptr) {
+      delete this->par_ilutHandle;
+      this->par_ilutHandle = nullptr;
+    }
+  }
+
 
 };  // end class KokkosKernelsHandle
 
