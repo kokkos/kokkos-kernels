@@ -269,6 +269,8 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth,
   crsMat_t B = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(
       k, n, nnz, row_size_variance, bandwidth);
 
+  const bool is_empy_case = m < 1 || n < 1 || k < 1 || nnz < 1;
+
   crsMat_t output_mat2;
   if (oldInterface)
     run_spgemm_old_interface<crsMat_t, device>(A, B, SPGEMM_DEBUG, output_mat2);
@@ -305,8 +307,9 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth,
           is_expected_to_fail = true;
         }
 #endif
-        // mkl requires local ordinals to be int.
-        if (!(std::is_same<int, lno_t>::value)) {
+        // MKL requires local ordinals to be int.
+        // Note: empty-array special case will NOT fail on this.
+        if (!std::is_same<int, lno_t>::value && !is_empy_case) {
           is_expected_to_fail = true;
         }
         // if size_type is larger than int, mkl casts it to int.
@@ -345,7 +348,7 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth,
       EXPECT_TRUE(is_expected_to_fail) << algo << ": " << e.what();
       failed = true;
     }
-    EXPECT_TRUE((failed == is_expected_to_fail));
+    EXPECT_EQ(is_expected_to_fail, failed);
 
     // double spgemm_time = timer1.seconds();
 
