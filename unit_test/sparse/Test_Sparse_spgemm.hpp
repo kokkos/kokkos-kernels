@@ -299,13 +299,12 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth,
 #endif
         break;
 
-      case SPGEMM_MKL:
-        algo = "SPGEMM_MKL";
-        // MKL requires scalar to be either float or double
-        if (!(std::is_same<float, scalar_t>::value ||
-              std::is_same<double, scalar_t>::value)) {
+      case SPGEMM_MKL: algo = "SPGEMM_MKL";
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
+        if (!KokkosSparse::Impl::mkl_is_supported_value_type<scalar_t>::value) {
           is_expected_to_fail = true;
         }
+#endif
         // mkl requires local ordinals to be int.
         if (!(std::is_same<int, lno_t>::value)) {
           is_expected_to_fail = true;

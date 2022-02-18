@@ -86,6 +86,10 @@ template <>
 struct mkl_is_supported_value_type<float> : std::true_type {};
 template <>
 struct mkl_is_supported_value_type<double> : std::true_type {};
+template <>
+struct mkl_is_supported_value_type<Kokkos::complex<float>> : std::true_type {};
+template <>
+struct mkl_is_supported_value_type<Kokkos::complex<double>> : std::true_type {};
 
 // MKLSparseMatrix provides thin wrapper around MKL matrix handle
 // (sparse_matrix_t) and encapsulates MKL call dispatches related to details
@@ -135,6 +139,24 @@ inline MKLSparseMatrix<double>::MKLSparseMatrix(const MKL_INT rows,
 }
 
 template <>
+inline MKLSparseMatrix<Kokkos::complex<float>>::MKLSparseMatrix(
+    const MKL_INT rows, const MKL_INT cols, MKL_INT *xadj, MKL_INT *adj,
+    Kokkos::complex<float> *values) {
+  MKL_SAFE_CALL(mkl_sparse_c_create_csr(
+      &mtx, SPARSE_INDEX_BASE_ZERO, rows, cols, xadj, xadj + 1, adj,
+      reinterpret_cast<MKL_Complex8 *>(values)));
+}
+
+template <>
+inline MKLSparseMatrix<Kokkos::complex<double>>::MKLSparseMatrix(
+    const MKL_INT rows, const MKL_INT cols, MKL_INT *xadj, MKL_INT *adj,
+    Kokkos::complex<double> *values) {
+  MKL_SAFE_CALL(mkl_sparse_z_create_csr(
+      &mtx, SPARSE_INDEX_BASE_ZERO, rows, cols, xadj, xadj + 1, adj,
+      reinterpret_cast<MKL_Complex16 *>(values)));
+}
+
+template <>
 inline void MKLSparseMatrix<float>::export_data(MKL_INT &num_rows,
                                                 MKL_INT &num_cols,
                                                 MKL_INT *&rows_start,
@@ -163,6 +185,38 @@ inline void MKLSparseMatrix<double>::export_data(MKL_INT &num_rows,
   MKL_SAFE_CALL(mkl_sparse_d_export_csr(mtx, &indexing, &num_rows, &num_cols,
                                         &rows_start, &rows_end, &columns,
                                         &values));
+  if (SPARSE_INDEX_BASE_ZERO != indexing) {
+    throw std::runtime_error(
+        "Expected zero based indexing in exported MKL sparse matrix\n");
+    return;
+  }
+}
+
+template <>
+inline void MKLSparseMatrix<Kokkos::complex<float>>::export_data(
+    MKL_INT &num_rows, MKL_INT &num_cols, MKL_INT *&rows_start,
+    MKL_INT *&columns, Kokkos::complex<float> *&values) {
+  sparse_index_base_t indexing;
+  MKL_INT *rows_end;
+  MKL_SAFE_CALL(mkl_sparse_c_export_csr(
+      mtx, &indexing, &num_rows, &num_cols, &rows_start, &rows_end, &columns,
+      reinterpret_cast<MKL_Complex8 **>(&values)));
+  if (SPARSE_INDEX_BASE_ZERO != indexing) {
+    throw std::runtime_error(
+        "Expected zero based indexing in exported MKL sparse matrix\n");
+    return;
+  }
+}
+
+template <>
+inline void MKLSparseMatrix<Kokkos::complex<double>>::export_data(
+    MKL_INT &num_rows, MKL_INT &num_cols, MKL_INT *&rows_start,
+    MKL_INT *&columns, Kokkos::complex<double> *&values) {
+  sparse_index_base_t indexing;
+  MKL_INT *rows_end;
+  MKL_SAFE_CALL(mkl_sparse_z_export_csr(
+      mtx, &indexing, &num_rows, &num_cols, &rows_start, &rows_end, &columns,
+      reinterpret_cast<MKL_Complex16 **>(&values)));
   if (SPARSE_INDEX_BASE_ZERO != indexing) {
     throw std::runtime_error(
         "Expected zero based indexing in exported MKL sparse matrix\n");
