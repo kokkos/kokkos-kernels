@@ -1549,8 +1549,10 @@ void test_spmv_bsrmatrix(lno_t blockSize, lno_t k, y_scalar_t alpha,
   }
 
 // minimal conditions for tensor core SpMV test
-// BsrMatrix spmv is only supported on CUDA for the time being
-// && defined(TEST_CUDA_SPARSE_SPMV_CPP)
+// BsrMatrix spmv is only supported on CUDA for the time being, could also
+// require defined(TEST_CUDA_SPARSE_SPMV_CPP) we'll instantiate the SpMV tests
+// on other execution environments to ensure that it doesn't disrupt their
+// behavior.
 #if defined(KOKKOS_ENABLE_CUDA) && \
     (defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_AMPERE))
 
