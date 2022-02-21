@@ -893,7 +893,6 @@ EXECUTE_BSR_TIMES_MVEC_TEST(kokkos_complex_double, int64_t, size_t, LayoutRight,
      defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||           \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BSR_TIMES_MVEC_TEST(kokkos_complex_float, int, int, TestExecSpace)
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
 EXECUTE_BSR_TIMES_MVEC_TEST(kokkos_complex_float, int, int, LayoutLeft,
                             TestExecSpace)

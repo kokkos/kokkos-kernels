@@ -240,7 +240,7 @@ void check_blockcrs_times_v(const char fOp[], scalar_t alpha, scalar_t beta,
 
 /// \brief Driver routine for checking BlockCrsMatrix times multiple vector
 template <typename scalar_t, typename lno_t, typename size_type,
-          typename device>
+          typename layout, typename device>
 void check_blockcrs_times_mv(const char fOp[], scalar_t alpha, scalar_t beta,
                              const lno_t bMax, int &num_errors) {
   // The mat_structure view is used to generate a matrix using
@@ -264,7 +264,7 @@ void check_blockcrs_times_mv(const char fOp[], scalar_t alpha, scalar_t beta,
   typedef
       typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>
           crsMat_t;
-  typedef Kokkos::View<scalar_t **, Kokkos::LayoutLeft, device> block_vector_t;
+  typedef Kokkos::View<scalar_t **, layout, device> block_vector_t;
 
   h_crsMat_t mat_b1 =
       Test::generate_structured_matrix3D<h_crsMat_t>("FD", mat_structure);
@@ -435,7 +435,7 @@ void testSpMVBlockCrsMatrix() {
 }
 
 template <typename scalar_t, typename lno_t, typename size_type,
-          typename device>
+          typename layout, typename device>
 void testBlockCrsMatrix_SpM_MV() {
   //
   // Test for the operation Y <- alpha * Op(A) * X + beta * Y
@@ -462,7 +462,7 @@ void testBlockCrsMatrix_SpM_MV() {
       auto alpha_s = static_cast<scalar_t>(testAlphaBeta[ii]);
       auto beta_s  = static_cast<scalar_t>(testAlphaBeta[ii + 1]);
       num_errors   = 0;
-      Test_BlockCrs::check_blockcrs_times_mv<scalar_t, lno_t, size_type,
+      Test_BlockCrs::check_blockcrs_times_mv<scalar_t, lno_t, size_type, layout,
                                              device>(&mode, alpha_s, beta_s,
                                                      bMax, num_errors);
       if (num_errors > 0) {
@@ -620,11 +620,12 @@ EXECUTE_BCRS_TIMES_VEC_TEST(kokkos_complex_float, int64_t, size_t,
 
 //////////////////////////
 
-#define EXECUTE_BCRS_TIMES_MVEC_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                \
-  TEST_F(                                                                            \
-      TestCategory,                                                                  \
-      sparse##_##bcrs_times_multivec##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
-    testBlockCrsMatrix_SpM_MV<SCALAR, ORDINAL, OFFSET, DEVICE>();                    \
+#define EXECUTE_BCRS_TIMES_MVEC_TEST(SCALAR, ORDINAL, OFFSET, LAYOUT, DEVICE)                   \
+  TEST_F(                                                                                       \
+      TestCategory,                                                                             \
+      sparse##_##bcrs_times_multivec##_##SCALAR##_##ORDINAL##_##OFFSET##_##LAYOUT##_##DEVICE) { \
+    testBlockCrsMatrix_SpM_MV<SCALAR, ORDINAL, OFFSET, Kokkos::LAYOUT,                          \
+                              DEVICE>();                                                        \
   }
 
 #if (defined(KOKKOSKERNELS_INST_DOUBLE) &&      \
@@ -632,7 +633,11 @@ EXECUTE_BCRS_TIMES_VEC_TEST(kokkos_complex_float, int64_t, size_t,
      defined(KOKKOSKERNELS_INST_OFFSET_INT)) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_MVEC_TEST(double, int, int, TestExecSpace)
+#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
+EXECUTE_BCRS_TIMES_MVEC_TEST(double, int, int, LayoutLeft, TestExecSpace)
+#elif defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
+EXECUTE_BCRS_TIMES_MVEC_TEST(double, int, int, LayoutRight, TestExecSpace)
+#endif
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_DOUBLE) &&          \
@@ -640,7 +645,11 @@ EXECUTE_BCRS_TIMES_MVEC_TEST(double, int, int, TestExecSpace)
      defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||     \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_MVEC_TEST(double, int64_t, int, TestExecSpace)
+#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
+EXECUTE_BCRS_TIMES_MVEC_TEST(double, int64_t, int, LayoutLeft, TestExecSpace)
+#elif defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
+EXECUTE_BCRS_TIMES_MVEC_TEST(double, int64_t, int, LayoutRight, TestExecSpace)
+#endif
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_DOUBLE) &&         \
@@ -648,7 +657,11 @@ EXECUTE_BCRS_TIMES_MVEC_TEST(double, int64_t, int, TestExecSpace)
      defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&           \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_MVEC_TEST(double, int, size_t, TestExecSpace)
+#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
+EXECUTE_BCRS_TIMES_MVEC_TEST(double, int, size_t, LayoutLeft, TestExecSpace)
+#elif defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
+EXECUTE_BCRS_TIMES_MVEC_TEST(double, int, size_t, LayoutRight, TestExecSpace)
+#endif
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_DOUBLE) &&          \
@@ -656,7 +669,12 @@ EXECUTE_BCRS_TIMES_MVEC_TEST(double, int, size_t, TestExecSpace)
      defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||  \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_MVEC_TEST(double, int64_t, size_t, TestExecSpace)
+#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
+EXECUTE_BCRS_TIMES_MVEC_TEST(double, int64_t, size_t, LayoutLeft, TestExecSpace)
+#elif defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
+EXECUTE_BCRS_TIMES_MVEC_TEST(double, int64_t, size_t, LayoutRight,
+                             TestExecSpace)
+#endif
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_FLOAT) &&       \
@@ -664,7 +682,11 @@ EXECUTE_BCRS_TIMES_MVEC_TEST(double, int64_t, size_t, TestExecSpace)
      defined(KOKKOSKERNELS_INST_OFFSET_INT)) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_MVEC_TEST(float, int, int, TestExecSpace)
+#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
+EXECUTE_BCRS_TIMES_MVEC_TEST(float, int, int, LayoutLeft, TestExecSpace)
+#elif defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
+EXECUTE_BCRS_TIMES_MVEC_TEST(float, int, int, LayoutRight, TestExecSpace)
+#endif
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_FLOAT) &&           \
@@ -672,7 +694,11 @@ EXECUTE_BCRS_TIMES_MVEC_TEST(float, int, int, TestExecSpace)
      defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||     \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_MVEC_TEST(float, int64_t, int, TestExecSpace)
+#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
+EXECUTE_BCRS_TIMES_MVEC_TEST(float, int64_t, int, LayoutLeft, TestExecSpace)
+#elif defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
+EXECUTE_BCRS_TIMES_MVEC_TEST(float, int64_t, int, LayoutRight, TestExecSpace)
+#endif
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_FLOAT) &&          \
@@ -680,7 +706,11 @@ EXECUTE_BCRS_TIMES_MVEC_TEST(float, int64_t, int, TestExecSpace)
      defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&           \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_MVEC_TEST(float, int, size_t, TestExecSpace)
+#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
+EXECUTE_BCRS_TIMES_MVEC_TEST(float, int, size_t, LayoutLeft, TestExecSpace)
+#elif defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
+EXECUTE_BCRS_TIMES_MVEC_TEST(float, int, size_t, LayoutRight, TestExecSpace)
+#endif
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_FLOAT) &&           \
@@ -688,7 +718,11 @@ EXECUTE_BCRS_TIMES_MVEC_TEST(float, int, size_t, TestExecSpace)
      defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||  \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_MVEC_TEST(float, int64_t, size_t, TestExecSpace)
+#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
+EXECUTE_BCRS_TIMES_MVEC_TEST(float, int64_t, size_t, LayoutLeft, TestExecSpace)
+#elif defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
+EXECUTE_BCRS_TIMES_MVEC_TEST(float, int64_t, size_t, LayoutRight, TestExecSpace)
+#endif
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
@@ -696,7 +730,13 @@ EXECUTE_BCRS_TIMES_MVEC_TEST(float, int64_t, size_t, TestExecSpace)
      defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||            \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&                   \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_double, int, int, TestExecSpace)
+#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
+EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_double, int, int, LayoutLeft,
+                             TestExecSpace)
+#elif defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
+EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_double, int, int, LayoutRight,
+                             TestExecSpace)
+#endif
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
@@ -704,7 +744,13 @@ EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_double, int, int, TestExecSpace)
      defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||            \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&                   \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_double, int64_t, int, TestExecSpace)
+#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
+EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_double, int64_t, int, LayoutLeft,
+                             TestExecSpace)
+#elif defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
+EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_double, int64_t, int, LayoutRight,
+                             TestExecSpace)
+#endif
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
@@ -712,7 +758,13 @@ EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_double, int64_t, int, TestExecSpace)
      defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||         \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&                   \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_double, int, size_t, TestExecSpace)
+#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
+EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_double, int, size_t, LayoutLeft,
+                             TestExecSpace)
+#elif defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
+EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_double, int, size_t, LayoutRight,
+                             TestExecSpace)
+#endif
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
@@ -720,8 +772,13 @@ EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_double, int, size_t, TestExecSpace)
      defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||         \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&                   \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
+EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_double, int64_t, size_t, LayoutLeft,
+                             TestExecSpace)
+#elif defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
 EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_double, int64_t, size_t,
-                             TestExecSpace)
+                             LayoutRight, TestExecSpace)
+#endif
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
@@ -729,7 +786,13 @@ EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_double, int64_t, size_t,
      defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||           \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_float, int, int, TestExecSpace)
+#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
+EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_float, int, int, LayoutLeft,
+                             TestExecSpace)
+#elif defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
+EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_float, int, int, LayoutRight,
+                             TestExecSpace)
+#endif
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
@@ -737,7 +800,13 @@ EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_float, int, int, TestExecSpace)
      defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||           \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_float, int64_t, int, TestExecSpace)
+#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
+EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_float, int64_t, int, LayoutLeft,
+                             TestExecSpace)
+#elif defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
+EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_float, int64_t, int, LayoutRight,
+                             TestExecSpace)
+#endif
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
@@ -745,7 +814,13 @@ EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_float, int64_t, int, TestExecSpace)
      defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||        \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_float, int, size_t, TestExecSpace)
+#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
+EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_float, int, size_t, LayoutLeft,
+                             TestExecSpace)
+#elif defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
+EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_float, int, size_t, LayoutRight,
+                             TestExecSpace)
+#endif
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
@@ -753,8 +828,13 @@ EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_float, int, size_t, TestExecSpace)
      defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||        \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_float, int64_t, size_t,
+#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
+EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_float, int64_t, size_t, LayoutLeft,
                              TestExecSpace)
+#elif defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
+EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_float, int64_t, size_t, LayoutRight,
+                             TestExecSpace)
+#endif
 #endif
 
 #undef EXECUTE_BCRS_TIMES_MVEC_TEST
