@@ -635,7 +635,8 @@ EXECUTE_BCRS_TIMES_VEC_TEST(kokkos_complex_float, int64_t, size_t,
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
 EXECUTE_BCRS_TIMES_MVEC_TEST(double, int, int, LayoutLeft, TestExecSpace)
-#elif defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
+#endif
+#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
 EXECUTE_BCRS_TIMES_MVEC_TEST(double, int, int, LayoutRight, TestExecSpace)
 #endif
 #endif
@@ -647,7 +648,8 @@ EXECUTE_BCRS_TIMES_MVEC_TEST(double, int, int, LayoutRight, TestExecSpace)
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
 EXECUTE_BCRS_TIMES_MVEC_TEST(double, int64_t, int, LayoutLeft, TestExecSpace)
-#elif defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
+#endif
+#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
 EXECUTE_BCRS_TIMES_MVEC_TEST(double, int64_t, int, LayoutRight, TestExecSpace)
 #endif
 #endif
@@ -659,7 +661,8 @@ EXECUTE_BCRS_TIMES_MVEC_TEST(double, int64_t, int, LayoutRight, TestExecSpace)
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
 EXECUTE_BCRS_TIMES_MVEC_TEST(double, int, size_t, LayoutLeft, TestExecSpace)
-#elif defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
+#endif
+#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
 EXECUTE_BCRS_TIMES_MVEC_TEST(double, int, size_t, LayoutRight, TestExecSpace)
 #endif
 #endif
@@ -671,7 +674,8 @@ EXECUTE_BCRS_TIMES_MVEC_TEST(double, int, size_t, LayoutRight, TestExecSpace)
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
 EXECUTE_BCRS_TIMES_MVEC_TEST(double, int64_t, size_t, LayoutLeft, TestExecSpace)
-#elif defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
+#endif
+#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
 EXECUTE_BCRS_TIMES_MVEC_TEST(double, int64_t, size_t, LayoutRight,
                              TestExecSpace)
 #endif
@@ -684,7 +688,8 @@ EXECUTE_BCRS_TIMES_MVEC_TEST(double, int64_t, size_t, LayoutRight,
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
 EXECUTE_BCRS_TIMES_MVEC_TEST(float, int, int, LayoutLeft, TestExecSpace)
-#elif defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
+#endif
+#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
 EXECUTE_BCRS_TIMES_MVEC_TEST(float, int, int, LayoutRight, TestExecSpace)
 #endif
 #endif
@@ -696,7 +701,8 @@ EXECUTE_BCRS_TIMES_MVEC_TEST(float, int, int, LayoutRight, TestExecSpace)
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
 EXECUTE_BCRS_TIMES_MVEC_TEST(float, int64_t, int, LayoutLeft, TestExecSpace)
-#elif defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
+#endif
+#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
 EXECUTE_BCRS_TIMES_MVEC_TEST(float, int64_t, int, LayoutRight, TestExecSpace)
 #endif
 #endif
@@ -708,7 +714,8 @@ EXECUTE_BCRS_TIMES_MVEC_TEST(float, int64_t, int, LayoutRight, TestExecSpace)
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
 EXECUTE_BCRS_TIMES_MVEC_TEST(float, int, size_t, LayoutLeft, TestExecSpace)
-#elif defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
+#endif
+#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
 EXECUTE_BCRS_TIMES_MVEC_TEST(float, int, size_t, LayoutRight, TestExecSpace)
 #endif
 #endif
@@ -720,7 +727,8 @@ EXECUTE_BCRS_TIMES_MVEC_TEST(float, int, size_t, LayoutRight, TestExecSpace)
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
 EXECUTE_BCRS_TIMES_MVEC_TEST(float, int64_t, size_t, LayoutLeft, TestExecSpace)
-#elif defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
+#endif
+#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
 EXECUTE_BCRS_TIMES_MVEC_TEST(float, int64_t, size_t, LayoutRight, TestExecSpace)
 #endif
 #endif
@@ -733,7 +741,8 @@ EXECUTE_BCRS_TIMES_MVEC_TEST(float, int64_t, size_t, LayoutRight, TestExecSpace)
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
 EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_double, int, int, LayoutLeft,
                              TestExecSpace)
-#elif defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
+#endif
+#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
 EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_double, int, int, LayoutRight,
                              TestExecSpace)
 #endif
@@ -747,7 +756,8 @@ EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_double, int, int, LayoutRight,
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
 EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_double, int64_t, int, LayoutLeft,
                              TestExecSpace)
-#elif defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
+#endif
+#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
 EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_double, int64_t, int, LayoutRight,
                              TestExecSpace)
 #endif
@@ -761,7 +771,8 @@ EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_double, int64_t, int, LayoutRight,
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
 EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_double, int, size_t, LayoutLeft,
                              TestExecSpace)
-#elif defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
+#endif
+#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
 EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_double, int, size_t, LayoutRight,
                              TestExecSpace)
 #endif
@@ -775,7 +786,8 @@ EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_double, int, size_t, LayoutRight,
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
 EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_double, int64_t, size_t, LayoutLeft,
                              TestExecSpace)
-#elif defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
+#endif
+#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
 EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_double, int64_t, size_t,
                              LayoutRight, TestExecSpace)
 #endif
@@ -789,7 +801,8 @@ EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_double, int64_t, size_t,
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
 EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_float, int, int, LayoutLeft,
                              TestExecSpace)
-#elif defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
+#endif
+#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
 EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_float, int, int, LayoutRight,
                              TestExecSpace)
 #endif
@@ -803,7 +816,8 @@ EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_float, int, int, LayoutRight,
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
 EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_float, int64_t, int, LayoutLeft,
                              TestExecSpace)
-#elif defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
+#endif
+#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
 EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_float, int64_t, int, LayoutRight,
                              TestExecSpace)
 #endif
@@ -817,7 +831,8 @@ EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_float, int64_t, int, LayoutRight,
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
 EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_float, int, size_t, LayoutLeft,
                              TestExecSpace)
-#elif defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
+#endif
+#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
 EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_float, int, size_t, LayoutRight,
                              TestExecSpace)
 #endif
@@ -831,7 +846,8 @@ EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_float, int, size_t, LayoutRight,
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
 EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_float, int64_t, size_t, LayoutLeft,
                              TestExecSpace)
-#elif defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
+#endif
+#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
 EXECUTE_BCRS_TIMES_MVEC_TEST(kokkos_complex_float, int64_t, size_t, LayoutRight,
                              TestExecSpace)
 #endif
