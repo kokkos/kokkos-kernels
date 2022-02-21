@@ -42,6 +42,9 @@
 //@HEADER
 */
 
+#if defined(KOKKOS_ENABLE_CXX17) || defined(KOKKOS_ENABLE_CXX20)
+
+
 #include <vector>
 #include <string>
 #include <filesystem>  // For use with C++ 17
@@ -193,6 +196,7 @@ void benchmark_spmv_kernel(std::string matrix_file_name,
 }
 
 int main() {
+
   Kokkos::initialize();
 
   std::string timestamp = timestamp_now();
@@ -228,3 +232,4 @@ int main() {
   Kokkos::finalize();
   return 0;
 }
+#endif // #if defined(KOKKOS_ENABLE_CXX17) || defined(KOKKOS_ENABLE_CXX20)

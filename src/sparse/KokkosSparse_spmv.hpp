@@ -42,6 +42,10 @@
 //@HEADER
 */
 
+/// \file
+/// \brief Interfaces for the Kokkos sparse-matrix-vector multiply
+///
+
 #ifndef KOKKOSSPARSE_SPMV_HPP_
 #define KOKKOSSPARSE_SPMV_HPP_
 
@@ -66,13 +70,35 @@ struct RANK_ONE {};
 struct RANK_TWO {};
 }  // namespace
 
+/// \brief Tag-dispatch for \c Kokkos sparse matrix-vector multiply on single
+/// vector
+///
+///
+/// \tparam AMatrix  A KokkosSparse::CrsMatrix, KokkosSparse::BlockCrsMatrix or
+/// KokkosSparse::BsrMatrix
+///
+/// \param controls [in] kokkos-kernels control structure.
+/// \param mode [in]
+/// \param alpha [in] Scalar multiplier for the matrix A.
+/// \param A [in] The sparse matrix A.
+/// \param x [in] A vector.
+/// \param beta [in] Scalar multiplier for the multivector y.
+/// \param y [in/out] vector.
+/// \param RANK_ONE tag dispatch
+///
+#ifdef DOXY  // documentation version
+template <class AlphaType, class AMatrix, class XVector, class BetaType,
+          class YVector>
+#else
 template <class AlphaType, class AMatrix, class XVector, class BetaType,
           class YVector,
           typename std::enable_if<
               KokkosSparse::is_crs_matrix<AMatrix>::value>::type* = nullptr>
+#endif
 void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
           const BetaType& beta, const YVector& y, const RANK_ONE) {
+
   // Make sure that x and y have the same rank.
   static_assert(
       static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
@@ -229,11 +255,16 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
   }
 }
 
+#ifdef DOXY  // hide SFINAE from documentation
+template <class AlphaType, class AMatrix, class XVector, class BetaType,
+          class YVector>
+#else
 template <
     class AlphaType, class AMatrix, class XVector, class BetaType,
     class YVector,
     typename std::enable_if<KokkosSparse::Experimental::is_block_crs_matrix<
         AMatrix>::value>::type* = nullptr>
+#endif
 void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
           const BetaType& beta, const YVector& y, const RANK_ONE) {
@@ -340,10 +371,15 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
 #undef __SPMV_TYPES__
 }
 
+#ifdef DOXY  // hide SFINAE
+template <class AlphaType, class AMatrix, class XVector, class BetaType,
+          class YVector>
+#else
 template <class AlphaType, class AMatrix, class XVector, class BetaType,
           class YVector,
           typename std::enable_if<KokkosSparse::Experimental::is_bsr_matrix<
               AMatrix>::value>::type* = nullptr>
+#endif
 void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
           const BetaType& beta, const YVector& y, const RANK_ONE) {
@@ -602,10 +638,30 @@ struct SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector,
 #endif
 };
 
+/// \brief Tag-dispatch sparse matrix-vector multiply on multivectors
+///
+/// \tparam AMatrix A KokkosSparse::CrsMatrix,
+/// KokkosSparse::Experimental::BsrMatrix, or
+/// KokkosSparse::Experimental::BlockCrsMatrix
+///
+/// \param controls [in] kokkos-kernels control structure.
+/// \param mode [in] \c "N" for no transpose
+/// \param alpha [in] Scalar multiplier for the matrix A.
+/// \param A [in] The sparse matrix A.
+/// \param x [in] A multivector (rank-2 Kokkos::View).
+/// \param beta [in] Scalar multiplier for the multivector y.
+/// \param y [in/out] multivector (rank-2 Kokkos::View).
+/// \param RANK_TWO tag-dispatch
+///
+#ifdef DOXY
+template <class AlphaType, class AMatrix, class XVector, class BetaType,
+          class YVector>
+#else
 template <class AlphaType, class AMatrix, class XVector, class BetaType,
           class YVector,
           typename std::enable_if<
               KokkosSparse::is_crs_matrix<AMatrix>::value>::type* = nullptr>
+#endif
 void spmv(KokkosKernels::Experimental::Controls /*controls*/, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
           const BetaType& beta, const YVector& y, const RANK_TWO) {
@@ -714,10 +770,15 @@ void spmv(KokkosKernels::Experimental::Controls /*controls*/, const char mode[],
   }
 }
 
+#ifdef DOXY  // hide SFINAE
+template <class AlphaType, class AMatrix, class XVector, class BetaType,
+          class YVector>
+#else
 template <class AlphaType, class AMatrix, class XVector, class BetaType,
           class YVector,
           typename std::enable_if<KokkosSparse::Experimental::is_bsr_matrix<
               AMatrix>::value>::type* = nullptr>
+#endif
 void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
           const BetaType& beta, const YVector& y, const RANK_TWO) {
@@ -899,11 +960,16 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
   }
 }
 
+#ifdef DOXY  // hide SFINAE
+template <class AlphaType, class AMatrix, class XVector, class BetaType,
+          class YVector>
+#else
 template <
     class AlphaType, class AMatrix, class XVector, class BetaType,
     class YVector,
     typename std::enable_if<KokkosSparse::Experimental::is_block_crs_matrix<
         AMatrix>::value>::type* = nullptr>
+#endif
 void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
           const BetaType& beta, const YVector& y, const RANK_TWO) {
@@ -920,7 +986,6 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
                              typename YVector::non_const_value_type>::value,
                 "KokkosSparse::spmv: Output Vector must be non-const.");
 
-  //
   if (A.blockDim() == 1) {
     KokkosSparse::CrsMatrix<
         typename AMatrix::value_type, typename AMatrix::ordinal_type,
@@ -1027,21 +1092,43 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
 ///
 /// Compute y = beta*y + alpha*Op(A)*x, where x and y are either both
 /// rank 1 (single vectors) or rank 2 (multivectors) Kokkos::View
-/// instances, A is a KokkosSparse::CrsMatrix, and Op(A) is determined
+/// instances, and Op(A) is determined
 /// by \c mode.  If beta == 0, ignore and overwrite the initial
 /// entries of y; if alpha == 0, ignore the entries of A and x.
+///
+/// If \c AMatrix is a KokkosSparse::Experimental::BsrMatrix, controls may have
+/// \c "algorithm" = \c "experimental_tc_bsr" to use Nvidia tensor cores on
+/// Volta or Ampere architectures. On Volta-architecture GPUs the only available
+/// precision is mixed-precision fp32 accumulator from fp16 inputs. On
+/// Ampere-architecture GPUs (cc >= 80), mixed precision is used when A is fp16,
+/// x is fp16, and y is fp32. Otherwise, double-precision is used. The caller
+/// may override this by setting the \c "tc_precision" = \c "mixed" or
+/// \c "double" as desired.
+///
+/// For mixed precision, performance will degrade for blockDim < 16.
+/// For double precision, for blockDim < 8.
+/// For such cases, consider an alternate SpMV algorithm.
+///
+/// May have \c "algorithm" set to \c "native" to bypass TPLs if they are
+/// enabled for Kokkos::CrsMatrix and Kokkos::Experimental::BsrMatrix on a
+/// single vector, or for Kokkos::Experimental::BsrMatrix with a multivector.
+///
+/// \tparam AMatrix KokkosSparse::CrsMatrix,
+/// KokkosSparse::Experimental::BlockCrsMatrix, or
+/// KokkosSparse::Experimental::BsrMatrix
 ///
 /// \param controls [in] kokkos-kernels control structure
 /// \param mode [in] "N" for no transpose, "T" for transpose, or "C"
 ///   for conjugate transpose.
 /// \param alpha [in] Scalar multiplier for the matrix A.
-/// \param A [in] The sparse matrix; KokkosSparse::CrsMatrix instance.
+/// \param A [in] The sparse matrix A.
 /// \param x [in] Either a single vector (rank-1 Kokkos::View) or
 ///   multivector (rank-2 Kokkos::View).
 /// \param beta [in] Scalar multiplier for the (multi)vector y.
 /// \param y [in/out] Either a single vector (rank-1 Kokkos::View) or
 ///   multivector (rank-2 Kokkos::View).  It must have the same number
 ///   of columns as x.
+///
 template <class AlphaType, class AMatrix, class XVector, class BetaType,
           class YVector>
 void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
@@ -1106,34 +1193,12 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
   spmv(controls, mode, alpha, A, x, beta, y, RANK_SPECIALISE());
 }
 
-/// \brief Public interface to local sparse matrix-vector multiply.
+/// \brief Catch-all public interface to error on invalid Kokkos::Sparse spmv
+/// argument types
 ///
-/// Compute y = beta*y + alpha*Op(A)*x, where x and y are both
-/// rank 2 (multivectors) Kokkos::View
-/// instances, A is a KokkosSparse::BsrMatrix, and Op(A) is determined
-/// by \c mode.
-/// The \c controls structure can be used to modify behavior of the tensor core
-/// implementation. On Volta-architecture GPUs (cc >= 70), the only available
-/// precision is mixed-precision fp32 accumulator from fp16 inputs. On
-/// Ampere-architecture GPUs (cc >= 80), mixed precision is used when A is fp16,
-/// x is fp16, and y is fp32. Otherwise, double-precision is used. The caller
-/// may override this by setting the "tc_precision" parameter to "mixed" or
-/// "double" as desired.
+/// This is a catch-all interfaceace that throws a compile-time error if \c
+/// AMatrix is not a CrsMatrix, BsrMatrix, or BlockCrsMatrix
 ///
-/// For mixed precision, performance will degrade for blockDim < 16.
-/// For double precision, for blockDim < 8.
-/// For such cases, consider an alternate SpMV algorithm.
-///
-/// \param controls [in] kokkos-kernels control structure. "algorithm" must be
-/// set to "experimental_bsr_tc". \param mode [in] "N" for no transpose \param
-/// alpha [in] Scalar multiplier for the matrix A. \param A [in] The sparse
-/// matrix; KokkosSparse::BsrMatrix instance. \param x [in] A multivector
-/// (rank-2 Kokkos::View). \param beta [in] Scalar multiplier for the
-/// (multivector y. \param y [in/out] multivector (rank-2 Kokkos::View).
-
-/* Catch-all spmv interface that throws a compile-time error if
-KokkosSparse::spmv is call on a non-BsrMatrix or non-CrsMatrix.
-*/
 template <
     class AlphaType, class AMatrix, class XVector, class BetaType,
     class YVector,
