@@ -149,7 +149,7 @@ inline std::string timestamp_now() {
 
   // Allocation for timestamp format listed below
   std::string formatted(sizeof "2022-01-26T13:30:26", '\0');
-  strftime(formatted.data(), formatted.size(), "%FT%T", &tm);
+  strftime(const_cast<char*>(formatted.data()), formatted.size(), "%FT%T", &tm);
   formatted.pop_back();
   return formatted;
 }
@@ -192,6 +192,7 @@ void benchmark_spmv_kernel(std::string matrix_file_name,
 }
 
 int main() {
+
   Kokkos::initialize();
 
   std::string timestamp = timestamp_now();
