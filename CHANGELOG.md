@@ -3,21 +3,44 @@
 ## [3.6.00](https://github.com/kokkos/kokkos-kernels/tree/3.6.00) (2022-02-18)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/3.5.00...3.6.00)
 
-### Features:
-Add BLAS to SpMV operations for BsrMatrix [\#1297](https://github.com/kokkos/kokkos-kernels/pull/1297)
-Batched: Add armpl dgemm support [\#1256](https://github.com/kokkos/kokkos-kernels/pull/1256)
+### Features: 
+
+#### Batched Sparse Linear algebra
+Kokkos Kernels is adding a new component to the library: batched sparse linear algebra.
+Similarly to the current dense batched algorithms, the new algorithms are called from
+the GPU and provide Team and TeamVector level of parallelism, SpMV also provides a Serial
+call on GPU.
+
+Add Batched CG and Batched GMRES [\#1155](https://github.com/kokkos/kokkos-kernels/pull/1155)
+Add Jacobi Batched preconditioner [\#1219](https://github.com/kokkos/kokkos-kernels/pull/1219)
+
+#### Bsr and Tensor core algorithm for sparse linear algebra
+After introducing the BsrMatrix in release 3.5.0 new algorithms are now supporting this format.
+For release 3.6.0 we are adding matrix-vector (matvec) multiplication and Gauss-Seidel as well as an
+implementation of matvec that leverages tensor cores on Nvidia GPUs. More kernels are expected to
+support the Bsr format in future releases.
+
 Add Spmv for BsrMatrix [\#1255](https://github.com/kokkos/kokkos-kernels/pull/1255)
+Add BLAS to SpMV operations for BsrMatrix [\#1297](https://github.com/kokkos/kokkos-kernels/pull/1297)
 BSR format support in block Gauss-Seidel [\#1232](https://github.com/kokkos/kokkos-kernels/pull/1232)
+Experimental tensor-core SpMV for BsrMatrix [\#1090](https://github.com/kokkos/kokkos-kernels/pull/1090)
+
+#### Improved AMD math libraries support
+rocBLAS and rocSPARSE TPLs are now officially supported, they can be enabled at configure time.
+Initial kernels that can call rocBLAS are GEMV, GEMM, IAMAX and SCAL, while rocSPARSE can be
+called for matrix-vector multiplication. Further support for TPL calls can be requested on slack
+and by GitHub issues.
+
+Tpl rocBLAS and rocSPARSE [\#1153](https://github.com/kokkos/kokkos-kernels/pull/1153)
+Add rocBLAS GEMV wrapper [\#1201](https://github.com/kokkos/kokkos-kernels/pull/1201)
 Add rocBLAS wrappers for GEMM, IAMAX, and SCAL [\#1230](https://github.com/kokkos/kokkos-kernels/pull/1230)
 SpMV: adding support for rocSPARSE TPL [\#1221](https://github.com/kokkos/kokkos-kernels/pull/1221)
-Add Jacobi Batched preconditioner [\#1219](https://github.com/kokkos/kokkos-kernels/pull/1219)
-Improve double buffering batched gemm performance [\#1217](https://github.com/kokkos/kokkos-kernels/pull/1217)
-Add rocBLAS GEMV wrapper [\#1201](https://github.com/kokkos/kokkos-kernels/pull/1201)
-Allow choosing coloring algorithm in multicolor GS [\#1199](https://github.com/kokkos/kokkos-kernels/pull/1199)
-Add Batched CG and Batched GMRES [\#1155](https://github.com/kokkos/kokkos-kernels/pull/1155)
-Tpl rocblas and rocsparse [\#1153](https://github.com/kokkos/kokkos-kernels/pull/1153)
+
+#### Additional new features
 Stream interface: adding stream support in GEMV and GEMM [\#1131](https://github.com/kokkos/kokkos-kernels/pull/1131)
-Experimental tensor-core SpMV for BsrMatrix [\#1090](https://github.com/kokkos/kokkos-kernels/pull/1090)
+Improve double buffering batched gemm performance [\#1217](https://github.com/kokkos/kokkos-kernels/pull/1217)
+Allow choosing coloring algorithm in multicolor GS [\#1199](https://github.com/kokkos/kokkos-kernels/pull/1199)
+Batched: Add armpl dgemm support [\#1256](https://github.com/kokkos/kokkos-kernels/pull/1256)
 
 ### Deprecations:
 Deprecation warning: SpaceAccessibility move out of impl, see #1140 [\#1141](https://github.com/kokkos/kokkos-kernels/pull/1141)
