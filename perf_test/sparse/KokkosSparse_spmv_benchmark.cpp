@@ -51,7 +51,6 @@
 #include <time.h>
 
 #if defined(KOKKOS_ENABLE_CXX17) || defined(KOKKOS_ENABLE_CXX20)
-//#error "In C++17 branch"
 
 #include <filesystem>  // For use with C++ 17
 
@@ -257,6 +256,7 @@ if (count_matrices == 0){
 int main(){
 
   throw std::runtime_error("Too bad, no CXX_17");
+  return 1;
 }
 
 #endif // #if defined(KOKKOS_ENABLE_CXX17) || defined(KOKKOS_ENABLE_CXX20)
