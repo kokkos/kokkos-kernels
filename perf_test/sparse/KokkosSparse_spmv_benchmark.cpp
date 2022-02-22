@@ -54,8 +54,6 @@
 
 #include <filesystem>  // For use with C++ 17
 
-
-
 // Function to set up SPMV test
 //
 SPMVTestData setup_test(spmv_additional_data* data, SPMVTestData::matrix_type A,
@@ -195,23 +193,22 @@ void benchmark_spmv_kernel(std::string matrix_file_name,
   write_results_to_csv(output_filename, time, matrix_file_name);
 }
 
-int main(){
+int main() {
   Kokkos::initialize();
 
   std::string timestamp = timestamp_now();
 
   std::string output_filename = "spmv_benchmark_" + timestamp + ".csv";
 
-
   // TODO:
   // Make input data directory optional behavior
   // Input data directory / repo; matrices in the `SuiteSparseMatrix` are from
   // https://sparse.tamu.edu/
-  
+
   // Path for Linux systems
   std::string path = "/ascldap/users/ajpowel/SuiteSparseMatrix/";
   // Path on MacBook
-  //std::string path = "/Users/ajpowel/SuiteSparseMatrix/";
+  // std::string path = "/Users/ajpowel/SuiteSparseMatrix/";
   //
 
   const std::string my_vect_mtx = ".mtx";
@@ -221,47 +218,44 @@ int main(){
   // Specifically, a compiler macro, such as KOKKOS_COMPILER_APPLECC
   // in core/src/impl/Kokkos_Core.cpp and core/src/Kokkos_Macros.hpp
 
-  int count_matrices =0;
+  int count_matrices = 0;
 
   // Recurse directories for matrix inputs
-  
 
 #if KOKKOS_COMPILER_APPLECC
 
-	for (const std::__fs::filesystem::directory_entry& dir_entry :
+  for (const std::__fs::filesystem::directory_entry& dir_entry :
        std::__fs::filesystem::recursive_directory_iterator(path)) {
 #else
-	for (const std::filesystem::directory_entry& dir_entry :
+  for (const std::filesystem::directory_entry& dir_entry :
        std::filesystem::recursive_directory_iterator(path)) {
 #endif
-	if (dir_entry.path().extension().string() == my_vect_mtx) {
+    if (dir_entry.path().extension().string() == my_vect_mtx) {
       std::cout << "Sparse matrices to be benchmarked: "
                 << dir_entry.path().string() << std::endl;
       matrices_vect.push_back(dir_entry.path().string());
       ++count_matrices;
-		
     }
   }
 
-if (count_matrices == 0){
-  std::cout << "No input matrices found." << std::endl;
-  return 1;
-}
+  if (count_matrices == 0) {
+    std::cout << "No input matrices found." << std::endl;
+    return 1;
+  }
 
   // Call benchmarking function
-  
-	for (auto item : matrices_vect) {
+
+  for (auto item : matrices_vect) {
     benchmark_spmv_kernel(item, output_filename);
   }
 
   Kokkos::finalize();
   return 0;
 }
-#else 
-int main(){
-
+#else
+int main() {
   throw std::runtime_error("Too bad, no CXX_17");
   return 1;
 }
 
-#endif // #if defined(KOKKOS_ENABLE_CXX17) || defined(KOKKOS_ENABLE_CXX20)
+#endif  // #if defined(KOKKOS_ENABLE_CXX17) || defined(KOKKOS_ENABLE_CXX20)
