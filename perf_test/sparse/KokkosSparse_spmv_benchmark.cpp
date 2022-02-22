@@ -202,11 +202,16 @@ int main(){
 
   std::string output_filename = "spmv_benchmark_" + timestamp + ".csv";
 
+
+  // TODO:
+  // Make input data directory optional behavior
   // Input data directory / repo; matrices in the `SuiteSparseMatrix` are from
   // https://sparse.tamu.edu/
   
-  //std::string path = "/ascldap/users/ajpowel/SuiteSparseMatrix/";
-  std::string path = "/Users/ajpowel/SuiteSparseMatrix/";
+  // Path for Linux systems
+  std::string path = "/ascldap/users/ajpowel/SuiteSparseMatrix/";
+  // Path on MacBook
+  //std::string path = "/Users/ajpowel/SuiteSparseMatrix/";
   //
 
   const std::string my_vect_mtx = ".mtx";
