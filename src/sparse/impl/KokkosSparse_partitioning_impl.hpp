@@ -44,12 +44,8 @@
 
 #include "KokkosKernels_Utils.hpp"
 #include <Kokkos_Core.hpp>
-#include <Kokkos_Atomic.hpp>
-#include <Kokkos_Timer.hpp>
 #include <Kokkos_Sort.hpp>
 #include <Kokkos_Random.hpp>
-#include <Kokkos_MemoryTraits.hpp>
-#include <Kokkos_Parallel_Reduce.hpp>
 #include "KokkosBlas1_fill.hpp"
 #include "KokkosGraph_Distance1Color.hpp"
 #include "KokkosKernels_Uniform_Initialized_MemoryPool.hpp"

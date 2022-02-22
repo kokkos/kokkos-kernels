@@ -42,37 +42,31 @@
 //@HEADER
 */
 
-#ifndef _KOKKOSKERNELSUTILSMEMSPACEUTILS_HPP
-#define _KOKKOSKERNELSUTILSMEMSPACEUTILS_HPP
+#ifndef TEST_COMMON_CONTROLS_HPP
+#define TEST_COMMON_CONTROLS_HPP
 
-#include "Kokkos_Cuda.hpp"
+#include "KokkosKernels_Controls.hpp"
 
-namespace KokkosKernels {
-namespace Impl {
-
-template <typename MemorySpace>
-constexpr KOKKOS_INLINE_FUNCTION bool kk_is_gpu_mem_space() {
-  return false;
+void test_controls_empty() {
+  KokkosKernels::Experimental::Controls c;
+  EXPECT_EQ(c.isParameter(""), false);
+  EXPECT_EQ(c.getParameter(""), "");
+  EXPECT_EQ(c.getParameter("", "default"), "default");
 }
 
-#ifdef KOKKOS_ENABLE_CUDA
-template <>
-constexpr KOKKOS_INLINE_FUNCTION bool kk_is_gpu_mem_space<Kokkos::CudaSpace>() {
-  return true;
-}
-template <>
-constexpr KOKKOS_INLINE_FUNCTION bool
-kk_is_gpu_mem_space<Kokkos::CudaUVMSpace>() {
-  return true;
-}
-template <>
-constexpr KOKKOS_INLINE_FUNCTION bool
-kk_is_gpu_mem_space<Kokkos::CudaHostPinnedSpace>() {
-  return true;
-}
-#endif
+void test_controls_set() {
+  KokkosKernels::Experimental::Controls c;
+  c.setParameter("key", "value");
+  EXPECT_EQ(c.isParameter("key"), true);
+  EXPECT_EQ(c.getParameter("key"), "value");
+  EXPECT_EQ(c.getParameter("key", "default"), "value");
 
-}  // namespace Impl
-}  // namespace KokkosKernels
+  EXPECT_EQ(c.isParameter(""), false);
+  EXPECT_EQ(c.getParameter(""), "");
+  EXPECT_EQ(c.getParameter("", "default"), "default");
+}
 
-#endif
+TEST_F(TestCategory, controls_empty) { test_controls_empty(); }
+TEST_F(TestCategory, controls_set) { test_controls_set(); }
+
+#endif  // TEST_COMMON_CONTROLS_HPP

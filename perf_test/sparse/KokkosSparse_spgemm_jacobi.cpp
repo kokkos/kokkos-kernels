@@ -46,6 +46,7 @@
 #include "KokkosKernels_default_types.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosSparse_run_spgemm_jacobi.hpp"
+#include "KokkosKernels_TestUtils.hpp"
 
 void print_options() {
   std::cerr << "Options\n" << std::endl;
@@ -92,27 +93,28 @@ static char* getNextArg(int& i, int argc, char** argv) {
 int parse_inputs(KokkosKernels::Experiment::Parameters& params, int argc,
                  char** argv) {
   for (int i = 1; i < argc; ++i) {
-    if (0 == strcasecmp(argv[i], "--threads")) {
+    if (0 == Test::string_compare_no_case(argv[i], "--threads")) {
       params.use_threads = atoi(getNextArg(i, argc, argv));
-    } else if (0 == strcasecmp(argv[i], "--openmp")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--openmp")) {
       params.use_openmp = atoi(getNextArg(i, argc, argv));
-    } else if (0 == strcasecmp(argv[i], "--cuda")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--cuda")) {
       params.use_cuda = atoi(getNextArg(i, argc, argv)) + 1;
-    } else if (0 == strcasecmp(argv[i], "--repeat")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--repeat")) {
       params.repeat = atoi(getNextArg(i, argc, argv));
-    } else if (0 == strcasecmp(argv[i], "--hashscale")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--hashscale")) {
       params.minhashscale = atoi(getNextArg(i, argc, argv));
-    } else if (0 == strcasecmp(argv[i], "--chunksize")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--chunksize")) {
       params.chunk_size = atoi(getNextArg(i, argc, argv));
-    } else if (0 == strcasecmp(argv[i], "--teamsize")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--teamsize")) {
       params.team_size = atoi(getNextArg(i, argc, argv));
-    } else if (0 == strcasecmp(argv[i], "--vectorsize")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--vectorsize")) {
       params.vector_size = atoi(getNextArg(i, argc, argv));
-    } else if (0 == strcasecmp(argv[i], "--compression2step")) {
+    } else if (0 ==
+               Test::string_compare_no_case(argv[i], "--compression2step")) {
       params.compression2step = true;
-    } else if (0 == strcasecmp(argv[i], "--shmem")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--shmem")) {
       params.shmemsize = atoi(getNextArg(i, argc, argv));
-    } else if (0 == strcasecmp(argv[i], "--memspaces")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--memspaces")) {
       int memspaces    = atoi(getNextArg(i, argc, argv));
       int memspaceinfo = memspaces;
       std::cout << "memspaceinfo:" << memspaceinfo << std::endl;
@@ -148,50 +150,50 @@ int parse_inputs(KokkosKernels::Experiment::Parameters& params, int argc,
         std::cout << "Using DDR4 for work memory space" << std::endl;
       }
       memspaceinfo = memspaceinfo >> 1;
-    } else if (0 == strcasecmp(argv[i], "--CRWC")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--CRWC")) {
       params.calculate_read_write_cost = 1;
-    } else if (0 == strcasecmp(argv[i], "--CIF")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--CIF")) {
       params.coloring_input_file = getNextArg(i, argc, argv);
-    } else if (0 == strcasecmp(argv[i], "--COF")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--COF")) {
       params.coloring_output_file = getNextArg(i, argc, argv);
-    } else if (0 == strcasecmp(argv[i], "--CCO")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--CCO")) {
       // if 0.85 set, if compression does not reduce flops by at least 15%
       // symbolic will run on original matrix. otherwise, it will compress the
       // graph and run symbolic on compressed one.
       params.compression_cut_off = atof(getNextArg(i, argc, argv));
-    } else if (0 == strcasecmp(argv[i], "--FLHCO")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--FLHCO")) {
       // if linear probing is used as hash, what is the max occupancy percantage
       // we allow in the hash.
       params.first_level_hash_cut_off = atof(getNextArg(i, argc, argv));
     }
 
-    else if (0 == strcasecmp(argv[i], "--flop")) {
+    else if (0 == Test::string_compare_no_case(argv[i], "--flop")) {
       // print flop statistics. only for the first repeat.
       params.calculate_read_write_cost = 1;
     }
 
-    else if (0 == strcasecmp(argv[i], "--checkoutput")) {
+    else if (0 == Test::string_compare_no_case(argv[i], "--checkoutput")) {
       // check correctness
       params.check_output = 1;
-    } else if (0 == strcasecmp(argv[i], "--amtx")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--amtx")) {
       // A at C=AxB
       params.a_mtx_bin_file = getNextArg(i, argc, argv);
     }
 
-    else if (0 == strcasecmp(argv[i], "--bmtx")) {
+    else if (0 == Test::string_compare_no_case(argv[i], "--bmtx")) {
       // B at C=AxB.
       // if not provided, C = AxA will be performed.
       params.b_mtx_bin_file = getNextArg(i, argc, argv);
-    } else if (0 == strcasecmp(argv[i], "--cmtx")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--cmtx")) {
       // if provided, C will be written to given file.
       // has to have ".bin", or ".crs" extension.
       params.c_mtx_bin_file = getNextArg(i, argc, argv);
-    } else if (0 == strcasecmp(argv[i], "--dynamic")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--dynamic")) {
       // dynamic scheduling will be used for loops.
       // currently it is default already.
       // so has to use the dynamic schedulin.
       params.use_dynamic_scheduling = 1;
-    } else if (0 == strcasecmp(argv[i], "--DENSEACCMAX")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--DENSEACCMAX")) {
       // on CPUs and KNLs if DEFAULT algorithm or KKSPGEMM is chosen,
       // it uses dense accumulators for smaller matrices based on the size of
       // column (k) in B. Max column size is 250,000 for k to use dense
@@ -199,25 +201,25 @@ int parse_inputs(KokkosKernels::Experiment::Parameters& params, int argc,
       // with smaller thread count, where memory bandwidth is not an issue, this
       // cut-off can be increased to be more than 250,000
       params.MaxColDenseAcc = atoi(getNextArg(i, argc, argv));
-    } else if (0 == strcasecmp(argv[i], "--verbose")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--verbose")) {
       // print the timing and information about the inner steps.
       params.verbose = 1;
-    } else if (0 == strcasecmp(argv[i], "--algorithm")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--algorithm")) {
       char* algoStr = getNextArg(i, argc, argv);
 
-      if (0 == strcasecmp(algoStr, "DEFAULT")) {
+      if (0 == Test::string_compare_no_case(algoStr, "DEFAULT")) {
         params.algorithm = KokkosSparse::SPGEMM_KK;
-      } else if (0 == strcasecmp(algoStr, "KKDEFAULT")) {
+      } else if (0 == Test::string_compare_no_case(algoStr, "KKDEFAULT")) {
         params.algorithm = KokkosSparse::SPGEMM_KK;
-      } else if (0 == strcasecmp(algoStr, "KKSPGEMM")) {
+      } else if (0 == Test::string_compare_no_case(algoStr, "KKSPGEMM")) {
         params.algorithm = KokkosSparse::SPGEMM_KK;
-      } else if (0 == strcasecmp(algoStr, "KKMEM")) {
+      } else if (0 == Test::string_compare_no_case(algoStr, "KKMEM")) {
         params.algorithm = KokkosSparse::SPGEMM_KK_MEMORY;
-      } else if (0 == strcasecmp(algoStr, "KKDENSE")) {
+      } else if (0 == Test::string_compare_no_case(algoStr, "KKDENSE")) {
         params.algorithm = KokkosSparse::SPGEMM_KK_DENSE;
-      } else if (0 == strcasecmp(algoStr, "KKLP")) {
+      } else if (0 == Test::string_compare_no_case(algoStr, "KKLP")) {
         params.algorithm = KokkosSparse::SPGEMM_KK_LP;
-      } else if (0 == strcasecmp(algoStr, "KKDEBUG")) {
+      } else if (0 == Test::string_compare_no_case(algoStr, "KKDEBUG")) {
         params.algorithm = KokkosSparse::SPGEMM_KK_LP;
       } else {
         std::cerr << "Unrecognized command line argument #" << i << ": "

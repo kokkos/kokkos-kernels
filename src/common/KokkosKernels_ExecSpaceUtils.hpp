@@ -43,7 +43,6 @@
 */
 
 #include "Kokkos_Core.hpp"
-#include "Kokkos_Atomic.hpp"
 
 #if defined(KOKKOS_ENABLE_SYCL) && defined(KOKKOS_ARCH_INTEL_GPU)
 #include <level_zero/zes_api.h>

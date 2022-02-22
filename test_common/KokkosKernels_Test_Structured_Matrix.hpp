@@ -854,7 +854,7 @@ CrsMatrix_t generate_structured_matrix2D(const std::string stencil,
     os << "Test::generate_structured_matrix2D only accepts stencil: FD and "
           "FEM, you passed: "
        << stencil << " !" << std::endl;
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
   // Extract geometric data
@@ -3496,7 +3496,7 @@ CrsMatrix_t generate_structured_matrix3D(const std::string stencil,
     os << "Test::generate_structured_matrix3D only accepts stencil: FD and "
           "FEM, you passed: "
        << stencil << " !" << std::endl;
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
   // Extract geometric data

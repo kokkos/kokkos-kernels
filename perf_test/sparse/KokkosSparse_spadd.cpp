@@ -48,6 +48,7 @@
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosKernels_SparseUtils_cusparse.hpp"
 #include "KokkosSparse_spadd.hpp"
+#include "KokkosKernels_TestUtils.hpp"
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 #include <cusparse.h>
@@ -426,47 +427,47 @@ void print_options() {
 
 int parse_inputs(Params& params, int argc, char** argv) {
   for (int i = 1; i < argc; ++i) {
-    if (0 == strcasecmp(argv[i], "--threads")) {
+    if (0 == Test::string_compare_no_case(argv[i], "--threads")) {
       params.use_threads = atoi(argv[++i]);
-    } else if (0 == strcasecmp(argv[i], "--openmp")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--openmp")) {
       params.use_openmp = atoi(argv[++i]);
-    } else if (0 == strcasecmp(argv[i], "--cuda")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--cuda")) {
       params.use_cuda = atoi(argv[++i]) + 1;
-    } else if (0 == strcasecmp(argv[i], "--mkl")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--mkl")) {
       params.use_mkl = 1;
-    } else if (0 == strcasecmp(argv[i], "--cusparse")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--cusparse")) {
       params.use_cusparse = 1;
-    } else if (0 == strcasecmp(argv[i], "--sorted")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--sorted")) {
       params.sorted = true;
-    } else if (0 == strcasecmp(argv[i], "--unsorted")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--unsorted")) {
       params.sorted = false;
-    } else if (0 == strcasecmp(argv[i], "--amtx")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--amtx")) {
       // A at C=AxB
       params.amtx = argv[++i];
-    } else if (0 == strcasecmp(argv[i], "--bmtx")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--bmtx")) {
       // B at C=AxB.
       // if not provided, C = AxA will be performed.
       params.bmtx = argv[++i];
-    } else if (0 == strcasecmp(argv[i], "--cmtx")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--cmtx")) {
       // if provided, C will be written to given file.
       // has to have ".bin", or ".crs" extension.
       params.cmtx = argv[++i];
-    } else if (0 == strcasecmp(argv[i], "--m")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--m")) {
       params.m = atoi(argv[++i]);
-    } else if (0 == strcasecmp(argv[i], "--n")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--n")) {
       params.n = atoi(argv[++i]);
-    } else if (0 == strcasecmp(argv[i], "--nnz")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--nnz")) {
       params.nnzPerRow = atoi(argv[++i]);
-    } else if (0 == strcasecmp(argv[i], "--bdiag")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--bdiag")) {
       params.bDiag = true;
-    } else if (0 == strcasecmp(argv[i], "--repeat")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--repeat")) {
       // if provided, C will be written to given file.
       // has to have ".bin", or ".crs" extension.
       params.repeat = atoi(argv[++i]);
-    } else if (0 == strcasecmp(argv[i], "--numeric-repeat")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--numeric-repeat")) {
       // Reuse the symbolic step this many times.
       params.numericRepeat = atoi(argv[++i]);
-    } else if (0 == strcasecmp(argv[i], "--verbose")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--verbose")) {
       params.verbose = true;
     } else {
       std::cerr << "Unrecognized command line argument #" << i << ": "

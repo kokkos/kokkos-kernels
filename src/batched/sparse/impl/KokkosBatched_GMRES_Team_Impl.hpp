@@ -249,7 +249,9 @@ struct TeamGMRES {
               G(l, j + 1) = 0.;
             }
 
-            if (mask(l) == 1. && std::abs(G(l, j + 1)) / beta(l) < tolerance) {
+            if (mask(l) == 1. &&
+                Kokkos::ArithTraits<double>::abs(G(l, j + 1)) / beta(l) <
+                    tolerance) {
               mask(l)     = 0.;
               G(l, j + 1) = 0.;
             }
