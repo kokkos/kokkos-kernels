@@ -538,8 +538,8 @@ void test_spmv_struct_1D(lno_t nx, lno_t leftBC, lno_t rightBC) {
 
   Kokkos::View<lno_t *, Kokkos::HostSpace> structure("Spmv Structure", 1);
   structure(0) = nx;
-  Kokkos::View<lno_t *[3], Kokkos::HostSpace> mat_structure("Matrix Structure",
-                                                            1);
+  Kokkos::View<lno_t * [3], Kokkos::HostSpace> mat_structure("Matrix Structure",
+                                                             1);
   mat_structure(0, 0) = nx;
   if (leftBC == 1) {
     mat_structure(0, 1) = 1;
@@ -584,8 +584,8 @@ void test_spmv_struct_2D(lno_t nx, lno_t ny, lno_t horizontalBC,
   Kokkos::View<lno_t *, Kokkos::HostSpace> structure("Spmv Structure", 2);
   structure(0) = nx;
   structure(1) = ny;
-  Kokkos::View<lno_t *[3], Kokkos::HostSpace> mat_structure("Matrix Structure",
-                                                            2);
+  Kokkos::View<lno_t * [3], Kokkos::HostSpace> mat_structure("Matrix Structure",
+                                                             2);
   mat_structure(0, 0) = nx;
   if (horizontalBC == 1 || horizontalBC == 3) {
     mat_structure(0, 1) = 1;
@@ -650,8 +650,8 @@ void test_spmv_struct_3D(lno_t nx, lno_t ny, lno_t nz, lno_t horizontal1BC,
   structure(0) = nx;
   structure(1) = ny;
   structure(2) = nz;
-  Kokkos::View<lno_t *[3], Kokkos::HostSpace> mat_structure("Matrix Structure",
-                                                            3);
+  Kokkos::View<lno_t * [3], Kokkos::HostSpace> mat_structure("Matrix Structure",
+                                                             3);
   mat_structure(0, 0) = nx;
   if (horizontal1BC == 1 || horizontal1BC == 3) {
     mat_structure(0, 1) = 1;
@@ -720,8 +720,8 @@ void test_spmv_mv_struct_1D(lno_t nx, int numMV) {
 
   Kokkos::View<lno_t *, Kokkos::HostSpace> structure("Spmv Structure", 1);
   structure(0) = nx;
-  Kokkos::View<lno_t *[3], Kokkos::HostSpace> mat_structure("Matrix Structure",
-                                                            1);
+  Kokkos::View<lno_t * [3], Kokkos::HostSpace> mat_structure("Matrix Structure",
+                                                             1);
   mat_structure(0, 0) = nx;
   mat_structure(0, 1) = 1;
   mat_structure(0, 2) = 1;
@@ -1612,8 +1612,8 @@ EXECUTE_TEST_TC(double, double, double, int, size_t, LayoutRight, TestExecSpace)
 EXECUTE_TEST_ISSUE_101(TestExecSpace)
 #endif
 
-#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)     \
-  EXECUTE_TEST_FN(SCALAR, ORDINAL, OFFSET, TestExecSpace)               \
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
+  EXECUTE_TEST_FN(SCALAR, ORDINAL, OFFSET, TestExecSpace)           \
   EXECUTE_TEST_STRUCT(SCALAR, ORDINAL, OFFSET, TestExecSpace)
 
 #include <Test_Common_Test_All_Type_Combos.hpp>

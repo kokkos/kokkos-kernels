@@ -250,7 +250,7 @@ void test_spadd_known_columns() {
   ASSERT_EQ(A.nnz(), C.nnz());
 }
 
-#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                                 \
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                   \
   TEST_F(                                                                             \
       TestCategory,                                                                   \
       sparse##_##spadd_sorted_input##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {   \

@@ -96,8 +96,8 @@ void check_blockcrs_times_v(const char fOp[], scalar_t alpha, scalar_t beta,
   // The mat_structure view is used to generate a matrix using
   // finite difference (FD) or finite element (FE) discretization
   // on a cartesian grid.
-  Kokkos::View<lno_t *[3], Kokkos::HostSpace> mat_structure("Matrix Structure",
-                                                            3);
+  Kokkos::View<lno_t * [3], Kokkos::HostSpace> mat_structure("Matrix Structure",
+                                                             3);
   mat_structure(0, 0) = 8;  // Request 8 grid point in 'x' direction
   mat_structure(0, 1) = 0;  // Add BC to the left
   mat_structure(0, 2) = 0;  // Add BC to the right
@@ -237,8 +237,8 @@ void check_blockcrs_times_mv(const char fOp[], scalar_t alpha, scalar_t beta,
   // The mat_structure view is used to generate a matrix using
   // finite difference (FD) or finite element (FE) discretization
   // on a cartesian grid.
-  Kokkos::View<lno_t *[3], Kokkos::HostSpace> mat_structure("Matrix Structure",
-                                                            3);
+  Kokkos::View<lno_t * [3], Kokkos::HostSpace> mat_structure("Matrix Structure",
+                                                             3);
   mat_structure(0, 0) = 7;  // Request 7 grid point in 'x' direction
   mat_structure(0, 1) = 0;  // Add BC to the left
   mat_structure(0, 2) = 0;  // Add BC to the right
