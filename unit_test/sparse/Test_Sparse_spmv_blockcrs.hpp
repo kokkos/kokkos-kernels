@@ -469,7 +469,7 @@ void testBlockCrsMatrix_SpM_MV() {
 
 //////////////////////////
 
-#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                           \
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)             \
   TEST_F(                                                                       \
       TestCategory,                                                             \
       sparse##_##bcrs_times_vec##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
@@ -478,11 +478,11 @@ void testBlockCrsMatrix_SpM_MV() {
 
 #include <Test_Common_Test_All_Type_Combos.hpp>
 
-#undef EXECUTE_TEST
+#undef KOKKOSKERNELS_EXECUTE_TEST
 
 //////////////////////////
 
-#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                                \
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                  \
   TEST_F(                                                                            \
       TestCategory,                                                                  \
       sparse##_##bcrs_times_multivec##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
@@ -491,4 +491,4 @@ void testBlockCrsMatrix_SpM_MV() {
 
 #include <Test_Common_Test_All_Type_Combos.hpp>
 
-#undef EXECUTE_TEST
+#undef KOKKOSKERNELS_EXECUTE_TEST

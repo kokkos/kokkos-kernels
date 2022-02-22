@@ -404,7 +404,7 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz,
   // device::execution_space::finalize();
 }
 
-#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                                     \
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                       \
   TEST_F(                                                                                 \
       TestCategory,                                                                       \
       sparse##_##block_gauss_seidel_rank1##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
@@ -420,4 +420,4 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz,
 
 #include <Test_Common_Test_All_Type_Combos.hpp>
 
-#undef EXECUTE_TEST
+#undef KOKKOSKERNELS_EXECUTE_TEST

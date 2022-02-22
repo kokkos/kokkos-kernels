@@ -299,7 +299,7 @@ void test_spiluk() {
   Test::run_test_spiluk<scalar_t, lno_t, size_type, device>();
 }
 
-#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                      \
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)        \
   TEST_F(TestCategory,                                                     \
          sparse##_##spiluk##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
     test_spiluk<SCALAR, ORDINAL, OFFSET, DEVICE>();                        \
@@ -309,5 +309,5 @@ void test_spiluk() {
 
 #include <Test_Common_Test_All_Type_Combos.hpp>
 
-#undef EXECUTE_TEST
+#undef KOKKOSKERNELS_EXECUTE_TEST
 #undef NO_TEST_COMPLEX

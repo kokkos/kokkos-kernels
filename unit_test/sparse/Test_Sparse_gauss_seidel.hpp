@@ -687,7 +687,7 @@ void test_gauss_seidel_custom_coloring(lno_t numRows, lno_t nnzPerRow) {
   EXPECT_LT(result_norm_res, 0.25 * initial_norm_res);
 }
 
-#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                                          \
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                            \
   TEST_F(                                                                                      \
       TestCategory,                                                                            \
       sparse##_##gauss_seidel_asymmetric_rank1##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
@@ -743,4 +743,4 @@ void test_gauss_seidel_custom_coloring(lno_t numRows, lno_t nnzPerRow) {
 
 #include <Test_Common_Test_All_Type_Combos.hpp>
 
-#undef EXECUTE_TEST
+#undef KOKKOSKERNELS_EXECUTE_TEST

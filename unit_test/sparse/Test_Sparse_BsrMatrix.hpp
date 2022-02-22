@@ -374,7 +374,7 @@ void testBsrMatrix() {
   }
 }
 
-#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                         \
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)           \
   TEST_F(TestCategory,                                                        \
          sparse##_##bsrmatrix##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
     testBsrMatrix<SCALAR, ORDINAL, OFFSET, DEVICE>();                         \
@@ -382,4 +382,4 @@ void testBsrMatrix() {
 
 #include <Test_Common_Test_All_Type_Combos.hpp>
 
-#undef EXECUTE_TEST
+#undef KOKKOSKERNELS_EXECUTE_TEST

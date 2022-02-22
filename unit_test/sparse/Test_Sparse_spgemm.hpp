@@ -437,7 +437,7 @@ void test_issue402() {
       << "KKMEM still has issue 402 bug; C=AA' is incorrect!\n";
 }
 
-#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                          \
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)            \
   TEST_F(TestCategory,                                                         \
          sparse##_##spgemm##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {     \
     test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10000, 10000, 10000,          \
@@ -460,4 +460,4 @@ void test_issue402() {
 
 #include <Test_Common_Test_All_Type_Combos.hpp>
 
-#undef EXECUTE_TEST
+#undef KOKKOSKERNELS_EXECUTE_TEST

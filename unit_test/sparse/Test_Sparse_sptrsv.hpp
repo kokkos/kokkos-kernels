@@ -1087,7 +1087,7 @@ void test_sptrsv() {
   //  Test::run_test_sptrsv_mtx<scalar_t, lno_t, size_type, device>();
 }
 
-#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                      \
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)        \
   TEST_F(TestCategory,                                                     \
          sparse##_##sptrsv##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
     test_sptrsv<SCALAR, ORDINAL, OFFSET, DEVICE>();                        \
@@ -1095,4 +1095,4 @@ void test_sptrsv() {
 
 #include <Test_Common_Test_All_Type_Combos.hpp>
 
-#undef EXECUTE_TEST
+#undef KOKKOSKERNELS_EXECUTE_TEST

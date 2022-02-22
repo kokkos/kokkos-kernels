@@ -110,12 +110,12 @@ void test_trsv_mv(lno_t numRows, size_type nnz, lno_t bandwidth,
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&      \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 
-#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
   EXECUTE_TEST_MV(SCALAR, ORDINAL, OFFSET, LayoutLeft, TestExecSpace)
 
 #include <Test_Common_Test_All_Type_Combos.hpp>
 
-#undef EXECUTE_TEST
+#undef KOKKOSKERNELS_EXECUTE_TEST
 
 #endif  // KOKKOSKERNELS_INST_LAYOUTLEFT
 
@@ -123,12 +123,12 @@ void test_trsv_mv(lno_t numRows, size_type nnz, lno_t bandwidth,
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&       \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 
-#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
   EXECUTE_TEST_MV(SCALAR, ORDINAL, OFFSET, LayoutRight, TestExecSpace)
 
 #include <Test_Common_Test_All_Type_Combos.hpp>
 
-#undef EXECUTE_TEST
+#undef KOKKOSKERNELS_EXECUTE_TEST
 
 #endif  // KOKKOSKERNELS_INST_LAYOUTRIGHT
 

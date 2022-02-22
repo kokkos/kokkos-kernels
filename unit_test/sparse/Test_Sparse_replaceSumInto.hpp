@@ -266,7 +266,7 @@ void test_replaceSumInto() {
   EXPECT_TRUE(success);
 }
 
-#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                           \
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)             \
   TEST_F(                                                                       \
       TestCategory,                                                             \
       sparse##_##replaceSumInto##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
@@ -275,4 +275,4 @@ void test_replaceSumInto() {
 
 #include <Test_Common_Test_All_Type_Combos.hpp>
 
-#undef EXECUTE_TEST
+#undef KOKKOSKERNELS_EXECUTE_TEST

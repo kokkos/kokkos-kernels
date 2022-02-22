@@ -1607,25 +1607,25 @@ EXECUTE_TEST_TC(double, double, double, int, size_t, LayoutRight, TestExecSpace)
 EXECUTE_TEST_ISSUE_101(TestExecSpace)
 #endif
 
-#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)     \
-  EXECUTE_TEST_FN(SCALAR, ORDINAL, OFFSET, TestExecSpace) \
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)     \
+  EXECUTE_TEST_FN(SCALAR, ORDINAL, OFFSET, TestExecSpace)               \
   EXECUTE_TEST_STRUCT(SCALAR, ORDINAL, OFFSET, TestExecSpace)
 
 #include <Test_Common_Test_All_Type_Combos.hpp>
 
-#undef EXECUTE_TEST
+#undef KOKKOSKERNELS_EXECUTE_TEST
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&      \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 
-#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                 \
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)   \
   EXECUTE_TEST_MV(SCALAR, ORDINAL, OFFSET, LayoutLeft, TestExecSpace) \
   EXECUTE_TEST_MV_STRUCT(SCALAR, ORDINAL, OFFSET, LayoutLeft, TestExecSpace)
 
 #include <Test_Common_Test_All_Type_Combos.hpp>
 
-#undef EXECUTE_TEST
+#undef KOKKOSKERNELS_EXECUTE_TEST
 
 #endif  // defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
 
@@ -1633,12 +1633,12 @@ EXECUTE_TEST_ISSUE_101(TestExecSpace)
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&       \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 
-#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
   EXECUTE_TEST_MV(SCALAR, ORDINAL, OFFSET, LayoutRight, TestExecSpace)
 
 #include <Test_Common_Test_All_Type_Combos.hpp>
 
-#undef EXECUTE_TEST
+#undef KOKKOSKERNELS_EXECUTE_TEST
 
 #endif  // defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
 
