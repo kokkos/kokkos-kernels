@@ -374,7 +374,7 @@ void testBsrMatrix() {
   }
 }
 
-#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                     \
+#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                         \
   TEST_F(TestCategory,                                                        \
          sparse##_##bsrmatrix##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
     testBsrMatrix<SCALAR, ORDINAL, OFFSET, DEVICE>();                         \

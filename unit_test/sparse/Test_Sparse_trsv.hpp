@@ -28,12 +28,11 @@ void check_trsv_mv(crsMat_t input_mat, x_vector_type x, y_vector_type b,
   // typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
   typedef typename scalar_view_t::value_type ScalarA;
-  double eps = (std::is_same<ScalarA, float>::value
-                    ? 2 * 1e-2
-                    : (std::is_same<ScalarA, std::complex<float>>::value ||
-                       std::is_same<ScalarA, Kokkos::complex<float>>::value)
-                          ? 2 * 1e-1
-                          : 1e-7);
+  double eps = (std::is_same<ScalarA, float>::value ? 2 * 1e-2
+                : (std::is_same<ScalarA, std::complex<float>>::value ||
+                   std::is_same<ScalarA, Kokkos::complex<float>>::value)
+                    ? 2 * 1e-1
+                    : 1e-7);
 
   Kokkos::fence();
   KokkosSparse::trsv(uplo, trans, "N", input_mat, b, x);
@@ -107,31 +106,31 @@ void test_trsv_mv(lno_t numRows, size_type nnz, lno_t bandwidth,
         1000, 1000 * 20, 100, 5, 10);                                               \
   }
 
-#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) ||           \
-  (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
-   !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&      \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 
-#  define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                   \
+#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
   EXECUTE_TEST_MV(SCALAR, ORDINAL, OFFSET, LayoutLeft, TestExecSpace)
 
-#  include <Test_Common_Test_All_Type_Combos.hpp>
+#include <Test_Common_Test_All_Type_Combos.hpp>
 
-#  undef EXECUTE_TEST
+#undef EXECUTE_TEST
 
-#endif // KOKKOSKERNELS_INST_LAYOUTLEFT
+#endif  // KOKKOSKERNELS_INST_LAYOUTLEFT
 
-#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) ||          \
-  (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
-   !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&       \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 
-#  define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                   \
+#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
   EXECUTE_TEST_MV(SCALAR, ORDINAL, OFFSET, LayoutRight, TestExecSpace)
 
-#  include <Test_Common_Test_All_Type_Combos.hpp>
+#include <Test_Common_Test_All_Type_Combos.hpp>
 
-#  undef EXECUTE_TEST
+#undef EXECUTE_TEST
 
-#endif // KOKKOSKERNELS_INST_LAYOUTRIGHT
+#endif  // KOKKOSKERNELS_INST_LAYOUTRIGHT
 
 #undef EXECUTE_TEST_MV
 

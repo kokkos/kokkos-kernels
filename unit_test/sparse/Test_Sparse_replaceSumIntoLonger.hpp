@@ -523,4 +523,4 @@ void test_replaceSumIntoLonger() {
 
 #undef EXECUTE_TEST
 
-#endif // KOKKOS_ENABLE_SYCL
+#endif  // KOKKOS_ENABLE_SYCL
