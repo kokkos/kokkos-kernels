@@ -42,21 +42,17 @@
 //@HEADER
 */
 
+#include <Kokkos_Core.hpp>
+#include <KokkosSparse_spmv_test.hpp>
 #include <vector>
 #include <string>
 #include <fstream>
 // Needed for `strftime` in timestamping function
 #include <time.h>
 
-#if ! defined(KOKKOS_COMPILER_APPLECC)
-// Needed for `strftime` in timestamping function
-#include <time.h>
+#if defined(KOKKOS_ENABLE_CXX17) || defined(KOKKOS_ENABLE_CXX20)
+
 #include <filesystem>  // For use with C++ 17
-#include <ctime>
-
-#include <Kokkos_Core.hpp>
-
-#include <KokkosSparse_spmv_test.hpp>
 
 // Function to set up SPMV test
 //
@@ -157,7 +153,6 @@ inline std::string timestamp_now() {
   // const_cast needed for the first arg, as a non-const pointer to string needed; 
   // char*, the expected first arg, must be non-const
   strftime(const_cast<char*>(formatted.data()), formatted.size(), "%FT%T", &tm);
-  //std::cout << "formatted.data(): "  << formatted.data() << std::endl;
   formatted.pop_back();
   return formatted;
 }
@@ -206,9 +201,17 @@ int main() {
 
   std::string output_filename = "spmv_benchmark_" + timestamp + ".csv";
 
+  // TODO:
+  // Make input data directory optional behavior
   // Input data directory / repo; matrices in the `SuiteSparseMatrix` are from
   // https://sparse.tamu.edu/
+
+  // Path for Linux
   std::string path = "/ascldap/users/ajpowel/SuiteSparseMatrix/";
+
+  // Path for OSX
+  // std::string path = "/Users/ajpowel/SuiteSparseMatrix/";
+  //
 
   const std::string my_vect_mtx = ".mtx";
   std::vector<std::string> matrices_vect;
@@ -217,9 +220,18 @@ int main() {
   // Specifically, a compiler macro, such as KOKKOS_COMPILER_APPLECC
   // in core/src/impl/Kokkos_Core.cpp and core/src/Kokkos_Macros.hpp
 
+  int count_matrices = 0;
+
   // Recurse directories for matrix inputs
+
+#if KOKKOS_COMPILER_APPLECC
+
   for (const std::__fs::filesystem::directory_entry& dir_entry :
        std::__fs::filesystem::recursive_directory_iterator(path)) {
+#else
+  for (const std::filesystem::directory_entry& dir_entry :
+       std::filesystem::recursive_directory_iterator(path)) {
+#endif // KOKKOS_COMPILER_APPLECC
     if (dir_entry.path().extension().string() == my_vect_mtx) {
       std::cout << "Sparse matrices to be benchmarked: "
                 << dir_entry.path().string() << std::endl;
@@ -228,6 +240,18 @@ int main() {
   }
 
   // Call benchmarking function
+
+      ++count_matrices;
+    }
+  }
+
+  if (count_matrices == 0) {
+    std::cout << "No input matrices found." << std::endl;
+    return 1;
+  }
+
+  // Call benchmarking function
+
   for (auto item : matrices_vect) {
     benchmark_spmv_kernel(item, output_filename);
   }
@@ -235,4 +259,10 @@ int main() {
   Kokkos::finalize();
   return 0;
 }
-#endif // KOKKOS_COMPILER_APPLECC
+#else
+int main() {
+  throw std::runtime_error("Too bad -- this tool requires CXX_17");
+  return 1;
+}
+
+#endif  // #if defined(KOKKOS_ENABLE_CXX17) || defined(KOKKOS_ENABLE_CXX20)
