@@ -150,8 +150,8 @@ inline std::string timestamp_now() {
 
   // Allocation for timestamp format listed below
   std::string formatted(sizeof "2022-01-26T13:30:26", '\0');
-  // const_cast needed for the first arg, as a non-const pointer to string needed; 
-  // char*, the expected first arg, must be non-const
+  // const_cast needed for the first arg, as a non-const pointer to string
+  // needed; char*, the expected first arg, must be non-const
   strftime(const_cast<char*>(formatted.data()), formatted.size(), "%FT%T", &tm);
   formatted.pop_back();
   return formatted;
@@ -231,7 +231,7 @@ int main() {
 #else
   for (const std::filesystem::directory_entry& dir_entry :
        std::filesystem::recursive_directory_iterator(path)) {
-#endif // KOKKOS_COMPILER_APPLECC
+#endif  // KOKKOS_COMPILER_APPLECC
     if (dir_entry.path().extension().string() == my_vect_mtx) {
       std::cout << "Sparse matrices to be benchmarked: "
                 << dir_entry.path().string() << std::endl;
@@ -241,23 +241,23 @@ int main() {
 
   // Call benchmarking function
 
-      ++count_matrices;
-    }
-  }
+  ++count_matrices;
+}
+}
 
-  if (count_matrices == 0) {
-    std::cout << "No input matrices found." << std::endl;
-    return 1;
-  }
+if (count_matrices == 0) {
+  std::cout << "No input matrices found." << std::endl;
+  return 1;
+}
 
-  // Call benchmarking function
+// Call benchmarking function
 
-  for (auto item : matrices_vect) {
-    benchmark_spmv_kernel(item, output_filename);
-  }
+for (auto item : matrices_vect) {
+  benchmark_spmv_kernel(item, output_filename);
+}
 
-  Kokkos::finalize();
-  return 0;
+Kokkos::finalize();
+return 0;
 }
 #else
 int main() {
