@@ -68,7 +68,11 @@ IF (KOKKOS_ENABLE_CUDA)
     batched_dla_cuda
     SOURCES
       Test_Main.cpp
-      cuda/Test_Cuda_Batched_Dense.cpp
+      cuda/Test_Cuda_Batched_Dense_Serial_Other.cpp
+      cuda/Test_Cuda_Batched_Dense_Serial_BatchedGemm.cpp
+      cuda/Test_Cuda_Batched_Dense_Team.cpp
+      cuda/Test_Cuda_Batched_Dense_TeamVector.cpp
+      cuda/Test_Cuda_Batched_Dense_Vector.cpp
     COMPONENTS batched
   )
 

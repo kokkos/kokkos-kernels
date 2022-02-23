@@ -6,7 +6,10 @@
 //       to ensure it is not included in these
 //       backends unit-test
 
-#if !defined(TEST_CUDA_BATCHED_DENSE_CPP) && \
+#if !defined(TEST_CUDA_BATCHED_DENSE_SERIAL_CPP) && \
+    !defined(TEST_CUDA_BATCHED_DENSE_TEAM_CPP) && \
+    !defined(TEST_CUDA_BATCHED_DENSE_TEAMVECTOR_CPP) && \
+    !defined(TEST_CUDA_BATCHED_DENSE_VECTOR_CPP) && \
     !defined(TEST_HIP_BATCHED_DENSE_CPP) &&  \
     !defined(TEST_SYCL_BATCHED_DENSE_CPP) && \
     !defined(TEST_OPENMPTARGET_BATCHED_DENSE_CPP)
