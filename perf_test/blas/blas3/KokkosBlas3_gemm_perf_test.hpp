@@ -1574,8 +1574,8 @@ static inline bool __gemm_print_compare_failure(ViewType h_expected,
                                                 ViewType h_actual, int i, int j,
                                                 int k, double epsilon) {
   STATUS;
-  auto diff = static_cast<double>(Kokkos::Experimental::fabs(
-      static_cast<double>(h_expected(i, j, k) - h_actual(i, j, k))));
+  auto diff =
+      std::fabs(static_cast<double>(h_expected(i, j, k) - h_actual(i, j, k)));
 
   if (diff > epsilon) {
     printf(
