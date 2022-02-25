@@ -969,6 +969,8 @@ struct BSR_GEMV_Transpose_Functor {
                                Kokkos::atomic_add(&Y_cur(ijk),
                                                   shared_view(ijk));
                              });
+        //
+        dev.team_barrier();
       }
     } else {
       for (ordinal_type jBlock = 0; jBlock < count; ++jBlock) {
@@ -998,6 +1000,8 @@ struct BSR_GEMV_Transpose_Functor {
                              [&](const ordinal_type &ijk) {
                                Kokkos::atomic_add(&Y_cur(ijk), shared_y[ijk]);
                              });
+        //
+        dev.team_barrier();
       }
     }
   }
