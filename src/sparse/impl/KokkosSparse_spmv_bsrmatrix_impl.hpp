@@ -604,15 +604,12 @@ struct BSR_GEMV_Functor {
       for (ordinal_type ic = 0; ic < count; ++ic) {
         const auto Aview  = row.block(ic);
         const auto xstart = row.block_colidx(ic) * block_dim;
-        for (ordinal_type ii = 0; ii < block_dim; ++ii) {
-          value_type t(0);
-          for (ordinal_type jj = 0; jj < block_dim; ++jj) {
-            const auto aval =
-                Kokkos::ArithTraits<value_type>::conj(Aview(ii, jj));
-            t += aval * m_x(xstart + jj);
-          }
-          m_y(ystart + ii) += alpha * t;
-        }
+        KokkosBatched::SerialConjGemvInternal<
+            KokkosBatched::Algo::Gemv::Blocked>::invoke<value_type,
+                                                        value_type>(
+            block_dim, block_dim, alpha, Aview.data(), block_dim, 1,
+            &m_x(xstart), static_cast<int>(m_x.stride_0()), beta1, &m_y(ystart),
+            static_cast<int>(m_y.stride_0()));
       }
     } else {
       for (ordinal_type ic = 0; ic < count; ++ic) {
@@ -899,11 +896,11 @@ struct BSR_GEMV_Transpose_Functor {
         const auto ystart = row.block_colidx(ic) * block_dim;
         for (ordinal_type jj = 0; jj < block_dim; ++jj) {
           value_type t(0);
-          for (ordinal_type ii = 0; ii < block_dim; ++ii) {
-            const auto aval =
-                Kokkos::ArithTraits<value_type>::conj(Aview(ii, jj));
-            t += aval * xview(ii);
-          }
+          KokkosBatched::SerialConjGemvInternal<
+              KokkosBatched::Algo::Gemv::Blocked>::invoke<value_type,
+                                                          value_type>(
+              1, block_dim, alpha1, Aview.data() + jj, Aview.stride_1(),
+              Aview.stride_0(), xview.data(), xview.stride_0(), beta1, &t, 1);
           t *= alpha;
           Kokkos::atomic_add(&m_y(ystart + jj), t);
         }
