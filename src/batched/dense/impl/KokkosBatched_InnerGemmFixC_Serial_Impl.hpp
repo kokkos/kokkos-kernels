@@ -1,3 +1,44 @@
+//@HEADER
+// ************************************************************************
+//
+//                        Kokkos v. 3.4
+//       Copyright (2021) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
+//
+// Under the terms of Contract DE-NA0003525 with NTESS,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
+//
+// ************************************************************************
+//@HEADER
 #ifndef __KOKKOSBATCHED_INNER_GEMM_FIX_C_SERIAL_IMPL_HPP__
 #define __KOKKOSBATCHED_INNER_GEMM_FIX_C_SERIAL_IMPL_HPP__
 
@@ -13,7 +54,7 @@ namespace KokkosBatched {
 /// ==================
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueType, ValueType (*opA)(ValueType)>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<5, 5>::serial_invoke(
     const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
     const ValueType *KOKKOS_RESTRICT B, const int k,
@@ -35,15 +76,15 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<5, 5>::serial_invoke(
 #pragma unroll
 #endif
   for (int p = 0; p < k; ++p) {
-    a_0p = A[i0 + p * _as1];
+    a_0p = opA(A[i0 + p * _as1]);
     b_p0 = B[p * _bs0 + j0];
-    a_1p = A[i1 + p * _as1];
+    a_1p = opA(A[i1 + p * _as1]);
     b_p1 = B[p * _bs0 + j1];
-    a_2p = A[i2 + p * _as1];
+    a_2p = opA(A[i2 + p * _as1]);
     b_p2 = B[p * _bs0 + j2];
-    a_3p = A[i3 + p * _as1];
+    a_3p = opA(A[i3 + p * _as1]);
     b_p3 = B[p * _bs0 + j3];
-    a_4p = A[i4 + p * _as1];
+    a_4p = opA(A[i4 + p * _as1]);
     b_p4 = B[p * _bs0 + j4];
 
     c_00 += a_0p * b_p0;
@@ -103,7 +144,7 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<5, 5>::serial_invoke(
 }
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueType, ValueType (*opA)(ValueType)>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<5, 4>::serial_invoke(
     const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
     const ValueType *KOKKOS_RESTRICT B, const int k,
@@ -124,15 +165,15 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<5, 4>::serial_invoke(
 #pragma unroll
 #endif
   for (int p = 0; p < k; ++p) {
-    a_0p = A[i0 + p * _as1];
+    a_0p = opA(A[i0 + p * _as1]);
     b_p0 = B[p * _bs0 + j0];
-    a_1p = A[i1 + p * _as1];
+    a_1p = opA(A[i1 + p * _as1]);
     b_p1 = B[p * _bs0 + j1];
-    a_2p = A[i2 + p * _as1];
+    a_2p = opA(A[i2 + p * _as1]);
     b_p2 = B[p * _bs0 + j2];
-    a_3p = A[i3 + p * _as1];
+    a_3p = opA(A[i3 + p * _as1]);
     b_p3 = B[p * _bs0 + j3];
-    a_4p = A[i4 + p * _as1];
+    a_4p = opA(A[i4 + p * _as1]);
 
     c_00 += a_0p * b_p0;
     c_01 += a_0p * b_p1;
@@ -181,7 +222,7 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<5, 4>::serial_invoke(
 }
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueType, ValueType (*opA)(ValueType)>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<5, 3>::serial_invoke(
     const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
     const ValueType *KOKKOS_RESTRICT B, const int k,
@@ -200,14 +241,14 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<5, 3>::serial_invoke(
 #pragma unroll
 #endif
   for (int p = 0; p < k; ++p) {
-    a_0p = A[i0 + p * _as1];
+    a_0p = opA(A[i0 + p * _as1]);
     b_p0 = B[p * _bs0 + j0];
-    a_1p = A[i1 + p * _as1];
+    a_1p = opA(A[i1 + p * _as1]);
     b_p1 = B[p * _bs0 + j1];
-    a_2p = A[i2 + p * _as1];
+    a_2p = opA(A[i2 + p * _as1]);
     b_p2 = B[p * _bs0 + j2];
-    a_3p = A[i3 + p * _as1];
-    a_4p = A[i4 + p * _as1];
+    a_3p = opA(A[i3 + p * _as1]);
+    a_4p = opA(A[i4 + p * _as1]);
 
     c_00 += a_0p * b_p0;
     c_01 += a_0p * b_p1;
@@ -246,7 +287,7 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<5, 3>::serial_invoke(
 }
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueType, ValueType (*opA)(ValueType)>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<5, 2>::serial_invoke(
     const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
     const ValueType *KOKKOS_RESTRICT B, const int k,
@@ -264,13 +305,13 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<5, 2>::serial_invoke(
 #pragma unroll
 #endif
   for (int p = 0; p < k; ++p) {
-    a_0p = A[i0 + p * _as1];
+    a_0p = opA(A[i0 + p * _as1]);
     b_p0 = B[p * _bs0 + j0];
-    a_1p = A[i1 + p * _as1];
+    a_1p = opA(A[i1 + p * _as1]);
     b_p1 = B[p * _bs0 + j1];
-    a_2p = A[i2 + p * _as1];
-    a_3p = A[i3 + p * _as1];
-    a_4p = A[i4 + p * _as1];
+    a_2p = opA(A[i2 + p * _as1]);
+    a_3p = opA(A[i3 + p * _as1]);
+    a_4p = opA(A[i4 + p * _as1]);
 
     c_00 += a_0p * b_p0;
     c_01 += a_0p * b_p1;
@@ -299,7 +340,7 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<5, 2>::serial_invoke(
 }
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueType, ValueType (*opA)(ValueType)>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<5, 1>::serial_invoke(
     const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
     const ValueType *KOKKOS_RESTRICT B, const int k,
@@ -316,12 +357,12 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<5, 1>::serial_invoke(
 #pragma unroll
 #endif
   for (int p = 0; p < k; ++p) {
-    a_0p = A[i0 + p * _as1];
+    a_0p = opA(A[i0 + p * _as1]);
     b_p0 = B[p * _bs0 + j0];
-    a_1p = A[i1 + p * _as1];
-    a_2p = A[i2 + p * _as1];
-    a_3p = A[i3 + p * _as1];
-    a_4p = A[i4 + p * _as1];
+    a_1p = opA(A[i1 + p * _as1]);
+    a_2p = opA(A[i2 + p * _as1]);
+    a_3p = opA(A[i3 + p * _as1]);
+    a_4p = opA(A[i4 + p * _as1]);
 
     c_00 += a_0p * b_p0;
     c_10 += a_1p * b_p0;
@@ -340,7 +381,7 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<5, 1>::serial_invoke(
 }
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueType, ValueType (*opA)(ValueType)>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<4, 5>::serial_invoke(
     const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
     const ValueType *KOKKOS_RESTRICT B, const int k,
@@ -362,13 +403,13 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<4, 5>::serial_invoke(
 #pragma unroll
 #endif
   for (int p = 0; p < k; ++p) {
-    a_0p    = A[i0 + p * _as1];
+    a_0p    = opA(A[i0 + p * _as1]);
     b_p0    = B[p * _bs0 + j0];
-    a_1p    = A[i1 + p * _as1];
+    a_1p    = opA(A[i1 + p * _as1]);
     b_p1    = B[p * _bs0 + j1];
-    a_2p    = A[i2 + p * _as1];
+    a_2p    = opA(A[i2 + p * _as1]);
     b_p2    = B[p * _bs0 + j2];
-    a_3p    = A[i3 + p * _as1];
+    a_3p    = opA(A[i3 + p * _as1]);
     b_p3    = B[p * _bs0 + j3];
     /**/ b_p4 = B[p * _bs0 + j4];
 
@@ -419,7 +460,7 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<4, 5>::serial_invoke(
 }
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueType, ValueType (*opA)(ValueType)>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<3, 5>::serial_invoke(
     const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
     const ValueType *KOKKOS_RESTRICT B, const int k,
@@ -440,11 +481,11 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<3, 5>::serial_invoke(
 #pragma unroll
 #endif
   for (int p = 0; p < k; ++p) {
-    a_0p    = A[i0 + p * _as1];
+    a_0p    = opA(A[i0 + p * _as1]);
     b_p0    = B[p * _bs0 + j0];
-    a_1p    = A[i1 + p * _as1];
+    a_1p    = opA(A[i1 + p * _as1]);
     b_p1    = B[p * _bs0 + j1];
-    a_2p    = A[i2 + p * _as1];
+    a_2p    = opA(A[i2 + p * _as1]);
     b_p2    = B[p * _bs0 + j2];
     /**/ b_p3 = B[p * _bs0 + j3];
     /**/ b_p4 = B[p * _bs0 + j4];
@@ -486,7 +527,7 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<3, 5>::serial_invoke(
 }
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueType, ValueType (*opA)(ValueType)>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<2, 5>::serial_invoke(
     const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
     const ValueType *KOKKOS_RESTRICT B, const int k,
@@ -506,9 +547,9 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<2, 5>::serial_invoke(
 #pragma unroll
 #endif
   for (int p = 0; p < k; ++p) {
-    a_0p    = A[i0 + p * _as1];
+    a_0p    = opA(A[i0 + p * _as1]);
     b_p0    = B[p * _bs0 + j0];
-    a_1p    = A[i1 + p * _as1];
+    a_1p    = opA(A[i1 + p * _as1]);
     b_p1    = B[p * _bs0 + j1];
     /**/ b_p2 = B[p * _bs0 + j2];
     /**/ b_p3 = B[p * _bs0 + j3];
@@ -541,7 +582,7 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<2, 5>::serial_invoke(
 }
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueType, ValueType (*opA)(ValueType)>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<1, 5>::serial_invoke(
     const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
     const ValueType *KOKKOS_RESTRICT B, const int k,
@@ -561,7 +602,7 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<1, 5>::serial_invoke(
 #pragma unroll
 #endif
   for (int p = 0; p < k; ++p) {
-    a_0p    = A[i0 + p * _as1];
+    a_0p    = opA(A[i0 + p * _as1]);
     b_p0    = B[p * _bs0 + j0];
     /**/ b_p1 = B[p * _bs0 + j1];
     /**/ b_p2 = B[p * _bs0 + j2];
@@ -588,7 +629,7 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<1, 5>::serial_invoke(
 /// ==================
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueType, ValueType (*opA)(ValueType)>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<4, 4>::serial_invoke(
     const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
     const ValueType *KOKKOS_RESTRICT B, const int k,
@@ -610,13 +651,13 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<4, 4>::serial_invoke(
 #pragma unroll
 #endif
   for (int p = 0; p < k; ++p) {
-    a_0p = A[i0 + p * _as1];
+    a_0p = opA(A[i0 + p * _as1]);
     b_p0 = B[p * _bs0 + j0];
-    a_1p = A[i1 + p * _as1];
+    a_1p = opA(A[i1 + p * _as1]);
     b_p1 = B[p * _bs0 + j1];
-    a_2p = A[i2 + p * _as1];
+    a_2p = opA(A[i2 + p * _as1]);
     b_p2 = B[p * _bs0 + j2];
-    a_3p = A[i3 + p * _as1];
+    a_3p = opA(A[i3 + p * _as1]);
     b_p3 = B[p * _bs0 + j3];
 
     c_00 += a_0p * b_p0;
@@ -658,7 +699,7 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<4, 4>::serial_invoke(
 }
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueType, ValueType (*opA)(ValueType)>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<4, 3>::serial_invoke(
     const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
     const ValueType *KOKKOS_RESTRICT B, const int k,
@@ -678,13 +719,13 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<4, 3>::serial_invoke(
 #pragma unroll
 #endif
   for (int p = 0; p < k; ++p) {
-    a_0p = A[i0 + p * _as1];
+    a_0p = opA(A[i0 + p * _as1]);
     b_p0 = B[p * _bs0 + j0];
-    a_1p = A[i1 + p * _as1];
+    a_1p = opA(A[i1 + p * _as1]);
     b_p1 = B[p * _bs0 + j1];
-    a_2p = A[i2 + p * _as1];
+    a_2p = opA(A[i2 + p * _as1]);
     b_p2 = B[p * _bs0 + j2];
-    a_3p = A[i3 + p * _as1];
+    a_3p = opA(A[i3 + p * _as1]);
 
     c_00 += a_0p * b_p0;
     c_01 += a_0p * b_p1;
@@ -717,7 +758,7 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<4, 3>::serial_invoke(
 }
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueType, ValueType (*opA)(ValueType)>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<4, 2>::serial_invoke(
     const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
     const ValueType *KOKKOS_RESTRICT B, const int k,
@@ -736,12 +777,12 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<4, 2>::serial_invoke(
 #pragma unroll
 #endif
   for (int p = 0; p < k; ++p) {
-    a_0p = A[i0 + p * _as1];
+    a_0p = opA(A[i0 + p * _as1]);
     b_p0 = B[p * _bs0 + j0];
-    a_1p = A[i1 + p * _as1];
+    a_1p = opA(A[i1 + p * _as1]);
     b_p1 = B[p * _bs0 + j1];
-    a_2p = A[i2 + p * _as1];
-    a_3p = A[i3 + p * _as1];
+    a_2p = opA(A[i2 + p * _as1]);
+    a_3p = opA(A[i3 + p * _as1]);
 
     c_00 += a_0p * b_p0;
     c_01 += a_0p * b_p1;
@@ -766,7 +807,7 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<4, 2>::serial_invoke(
 }
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueType, ValueType (*opA)(ValueType)>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<4, 1>::serial_invoke(
     const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
     const ValueType *KOKKOS_RESTRICT B, const int k,
@@ -783,11 +824,11 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<4, 1>::serial_invoke(
 #pragma unroll
 #endif
   for (int p = 0; p < k; ++p) {
-    a_0p = A[i0 + p * _as1];
+    a_0p = opA(A[i0 + p * _as1]);
     b_p0 = B[p * _bs0 + j0];
-    a_1p = A[i1 + p * _as1];
-    a_2p = A[i2 + p * _as1];
-    a_3p = A[i3 + p * _as1];
+    a_1p = opA(A[i1 + p * _as1]);
+    a_2p = opA(A[i2 + p * _as1]);
+    a_3p = opA(A[i3 + p * _as1]);
 
     c_00 += a_0p * b_p0;
     c_10 += a_1p * b_p0;
@@ -804,7 +845,7 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<4, 1>::serial_invoke(
 }
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueType, ValueType (*opA)(ValueType)>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<3, 4>::serial_invoke(
     const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
     const ValueType *KOKKOS_RESTRICT B, const int k,
@@ -825,11 +866,11 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<3, 4>::serial_invoke(
 #pragma unroll
 #endif
   for (int p = 0; p < k; ++p) {
-    a_0p    = A[i0 + p * _as1];
+    a_0p    = opA(A[i0 + p * _as1]);
     b_p0    = B[p * _bs0 + j0];
-    a_1p    = A[i1 + p * _as1];
+    a_1p    = opA(A[i1 + p * _as1]);
     b_p1    = B[p * _bs0 + j1];
-    a_2p    = A[i2 + p * _as1];
+    a_2p    = opA(A[i2 + p * _as1]);
     b_p2    = B[p * _bs0 + j2];
     /**/ b_p3 = B[p * _bs0 + j3];
 
@@ -864,7 +905,7 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<3, 4>::serial_invoke(
 }
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueType, ValueType (*opA)(ValueType)>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<2, 4>::serial_invoke(
     const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
     const ValueType *KOKKOS_RESTRICT B, const int k,
@@ -885,9 +926,9 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<2, 4>::serial_invoke(
 #pragma unroll
 #endif
   for (int p = 0; p < k; ++p) {
-    a_0p    = A[i0 + p * _as1];
+    a_0p    = opA(A[i0 + p * _as1]);
     b_p0    = B[p * _bs0 + j0];
-    a_1p    = A[i1 + p * _as1];
+    a_1p    = opA(A[i1 + p * _as1]);
     b_p1    = B[p * _bs0 + j1];
     /**/ b_p2 = B[p * _bs0 + j2];
     /**/ b_p3 = B[p * _bs0 + j3];
@@ -915,7 +956,7 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<2, 4>::serial_invoke(
 }
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueType, ValueType (*opA)(ValueType)>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<1, 4>::serial_invoke(
     const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
     const ValueType *KOKKOS_RESTRICT B, const int k,
@@ -935,7 +976,7 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<1, 4>::serial_invoke(
 #pragma unroll
 #endif
   for (int p = 0; p < k; ++p) {
-    a_0p    = A[i0 + p * _as1];
+    a_0p    = opA(A[i0 + p * _as1]);
     b_p0    = B[p * _bs0 + j0];
     /**/ b_p1 = B[p * _bs0 + j1];
     /**/ b_p2 = B[p * _bs0 + j2];
@@ -960,7 +1001,7 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<1, 4>::serial_invoke(
 /// ==================
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueType, ValueType (*opA)(ValueType)>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<3, 3>::serial_invoke(
     const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
     const ValueType *KOKKOS_RESTRICT B, const int k,
@@ -979,11 +1020,11 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<3, 3>::serial_invoke(
 #pragma unroll
 #endif
   for (int p = 0; p < k; ++p) {
-    a_0p = A[i0 + p * _as1];
+    a_0p = opA(A[i0 + p * _as1]);
     b_p0 = B[p * _bs0 + j0];
-    a_1p = A[i1 + p * _as1];
+    a_1p = opA(A[i1 + p * _as1]);
     b_p1 = B[p * _bs0 + j1];
-    a_2p = A[i2 + p * _as1];
+    a_2p = opA(A[i2 + p * _as1]);
     b_p2 = B[p * _bs0 + j2];
 
     c_00 += a_0p * b_p0;
@@ -1011,7 +1052,7 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<3, 3>::serial_invoke(
 }
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueType, ValueType (*opA)(ValueType)>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<3, 2>::serial_invoke(
     const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
     const ValueType *KOKKOS_RESTRICT B, const int k,
@@ -1029,11 +1070,11 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<3, 2>::serial_invoke(
 #pragma unroll
 #endif
   for (int p = 0; p < k; ++p) {
-    a_0p = A[i0 + p * _as1];
+    a_0p = opA(A[i0 + p * _as1]);
     b_p0 = B[p * _bs0 + j0];
-    a_1p = A[i1 + p * _as1];
+    a_1p = opA(A[i1 + p * _as1]);
     b_p1 = B[p * _bs0 + j1];
-    a_2p = A[i2 + p * _as1];
+    a_2p = opA(A[i2 + p * _as1]);
 
     c_00 += a_0p * b_p0;
     c_01 += a_0p * b_p1;
@@ -1054,7 +1095,7 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<3, 2>::serial_invoke(
 }
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueType, ValueType (*opA)(ValueType)>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<3, 1>::serial_invoke(
     const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
     const ValueType *KOKKOS_RESTRICT B, const int k,
@@ -1070,10 +1111,10 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<3, 1>::serial_invoke(
 #pragma unroll
 #endif
   for (int p = 0; p < k; ++p) {
-    a_0p = A[i0 + p * _as1];
+    a_0p = opA(A[i0 + p * _as1]);
     b_p0 = B[p * _bs0 + j0];
-    a_1p = A[i1 + p * _as1];
-    a_2p = A[i2 + p * _as1];
+    a_1p = opA(A[i1 + p * _as1]);
+    a_2p = opA(A[i2 + p * _as1]);
 
     c_00 += a_0p * b_p0;
     c_10 += a_1p * b_p0;
@@ -1088,7 +1129,7 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<3, 1>::serial_invoke(
 }
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueType, ValueType (*opA)(ValueType)>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<2, 3>::serial_invoke(
     const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
     const ValueType *KOKKOS_RESTRICT B, const int k,
@@ -1107,9 +1148,9 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<2, 3>::serial_invoke(
 #pragma unroll
 #endif
   for (int p = 0; p < k; ++p) {
-    a_0p    = A[i0 + p * _as1];
+    a_0p    = opA(A[i0 + p * _as1]);
     b_p0    = B[p * _bs0 + j0];
-    a_1p    = A[i1 + p * _as1];
+    a_1p    = opA(A[i1 + p * _as1]);
     b_p1    = B[p * _bs0 + j1];
     /**/ b_p2 = B[p * _bs0 + j2];
 
@@ -1131,7 +1172,7 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<2, 3>::serial_invoke(
   return 0;
 }
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueType, ValueType (*opA)(ValueType)>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<1, 3>::serial_invoke(
     const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
     const ValueType *KOKKOS_RESTRICT B, const int k,
@@ -1149,7 +1190,7 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<1, 3>::serial_invoke(
 #pragma unroll
 #endif
   for (int p = 0; p < k; ++p) {
-    a_0p    = A[i0 + p * _as1];
+    a_0p    = opA(A[i0 + p * _as1]);
     b_p0    = B[p * _bs0 + j0];
     /**/ b_p1 = B[p * _bs0 + j1];
     /**/ b_p2 = B[p * _bs0 + j2];
@@ -1171,7 +1212,7 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<1, 3>::serial_invoke(
 /// ==================
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueType, ValueType (*opA)(ValueType)>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<2, 2>::serial_invoke(
     const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
     const ValueType *KOKKOS_RESTRICT B, const int k,
@@ -1187,9 +1228,9 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<2, 2>::serial_invoke(
 #pragma unroll
 #endif
   for (int p = 0; p < k; ++p) {
-    a_0p = A[i0 + p * _as1];
+    a_0p = opA(A[i0 + p * _as1]);
     b_p0 = B[p * _bs0 + j0];
-    a_1p = A[i1 + p * _as1];
+    a_1p = opA(A[i1 + p * _as1]);
     b_p1 = B[p * _bs0 + j1];
 
     c_00 += a_0p * b_p0;
@@ -1207,7 +1248,7 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<2, 2>::serial_invoke(
 }
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueType, ValueType (*opA)(ValueType)>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<2, 1>::serial_invoke(
     const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
     const ValueType *KOKKOS_RESTRICT B, const int k,
@@ -1222,9 +1263,9 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<2, 1>::serial_invoke(
 #pragma unroll
 #endif
   for (int p = 0; p < k; ++p) {
-    a_0p = A[i0 + p * _as1];
+    a_0p = opA(A[i0 + p * _as1]);
     b_p0 = B[p * _bs0 + j0];
-    a_1p = A[i1 + p * _as1];
+    a_1p = opA(A[i1 + p * _as1]);
 
     c_00 += a_0p * b_p0;
     c_10 += a_1p * b_p0;
@@ -1237,7 +1278,7 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<2, 1>::serial_invoke(
 }
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueType, ValueType (*opA)(ValueType)>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<1, 2>::serial_invoke(
     const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
     const ValueType *KOKKOS_RESTRICT B, const int k,
@@ -1252,7 +1293,7 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<1, 2>::serial_invoke(
 #pragma unroll
 #endif
   for (int p = 0; p < k; ++p) {
-    a_0p       = A[i0 + p * _as1];
+    a_0p       = opA(A[i0 + p * _as1]);
     b_p0       = B[p * _bs0 + j0];
     /* */ b_p1 = B[p * _bs0 + j1];
     c_00 += a_0p * b_p0;
@@ -1270,7 +1311,7 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<1, 2>::serial_invoke(
 /// ==================
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueType, ValueType (*opA)(ValueType)>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<1, 1>::serial_invoke(
     const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
     const ValueType *KOKKOS_RESTRICT B, const int k,
@@ -1285,7 +1326,7 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<1, 1>::serial_invoke(
 #pragma unroll
 #endif
   for (int p = 0; p < k; ++p) {
-    a_0p = A[i0 + p * _as1];
+    a_0p = opA(A[i0 + p * _as1]);
     b_p0 = B[p * _bs0 + j0];
     c_00 += a_0p * b_p0;
   }
@@ -1295,7 +1336,7 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<1, 1>::serial_invoke(
 }
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueType, ValueType (*opA)(ValueType)>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<0, 1>::serial_invoke(
     const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
     const ValueType *KOKKOS_RESTRICT B, const int m, const int k,
@@ -1305,27 +1346,27 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<0, 1>::serial_invoke(
   switch (m) {
     case 5: {
       InnerGemmFixC<5, 1> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1);
-      inner.serial_invoke(alpha, A, B, k, C);
+      inner.serial_invoke<ScalarType, ValueType, opA>(alpha, A, B, k, C);
       break;
     }
     case 4: {
       InnerGemmFixC<4, 1> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1);
-      inner.serial_invoke(alpha, A, B, k, C);
+      inner.serial_invoke<ScalarType, ValueType, opA>(alpha, A, B, k, C);
       break;
     }
     case 3: {
       InnerGemmFixC<3, 1> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1);
-      inner.serial_invoke(alpha, A, B, k, C);
+      inner.serial_invoke<ScalarType, ValueType, opA>(alpha, A, B, k, C);
       break;
     }
     case 2: {
       InnerGemmFixC<2, 1> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1);
-      inner.serial_invoke(alpha, A, B, k, C);
+      inner.serial_invoke<ScalarType, ValueType, opA>(alpha, A, B, k, C);
       break;
     }
     case 1: {
       InnerGemmFixC<1, 1> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1);
-      inner.serial_invoke(alpha, A, B, k, C);
+      inner.serial_invoke<ScalarType, ValueType, opA>(alpha, A, B, k, C);
       break;
     }
     default: {
@@ -1337,7 +1378,7 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<0, 1>::serial_invoke(
 }
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueType, ValueType (*opA)(ValueType)>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<5, 5>::serial_invoke(
     const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
     const ValueType *KOKKOS_RESTRICT B, const int m, const int n, const int k,
@@ -1350,52 +1391,52 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<5, 5>::serial_invoke(
   switch (m * 10 + n) {
     case 55: {
       InnerGemmFixC<5, 5> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1);
-      inner.serial_invoke(alpha, A, B, k, C);
+      inner.serial_invoke<ScalarType, ValueType, opA>(alpha, A, B, k, C);
       break;
     }
     case 54: {
       InnerGemmFixC<5, 4> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1);
-      inner.serial_invoke(alpha, A, B, k, C);
+      inner.serial_invoke<ScalarType, ValueType, opA>(alpha, A, B, k, C);
       break;
     }
     case 53: {
       InnerGemmFixC<5, 3> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1);
-      inner.serial_invoke(alpha, A, B, k, C);
+      inner.serial_invoke<ScalarType, ValueType, opA>(alpha, A, B, k, C);
       break;
     }
     case 52: {
       InnerGemmFixC<5, 2> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1);
-      inner.serial_invoke(alpha, A, B, k, C);
+      inner.serial_invoke<ScalarType, ValueType, opA>(alpha, A, B, k, C);
       break;
     }
     case 51: {
       InnerGemmFixC<5, 1> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1);
-      inner.serial_invoke(alpha, A, B, k, C);
+      inner.serial_invoke<ScalarType, ValueType, opA>(alpha, A, B, k, C);
       break;
     }
     case 45: {
       InnerGemmFixC<4, 5> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1);
-      inner.serial_invoke(alpha, A, B, k, C);
+      inner.serial_invoke<ScalarType, ValueType, opA>(alpha, A, B, k, C);
       break;
     }
     case 35: {
       InnerGemmFixC<3, 5> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1);
-      inner.serial_invoke(alpha, A, B, k, C);
+      inner.serial_invoke<ScalarType, ValueType, opA>(alpha, A, B, k, C);
       break;
     }
     case 25: {
       InnerGemmFixC<2, 5> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1);
-      inner.serial_invoke(alpha, A, B, k, C);
+      inner.serial_invoke<ScalarType, ValueType, opA>(alpha, A, B, k, C);
       break;
     }
     case 15: {
       InnerGemmFixC<1, 5> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1);
-      inner.serial_invoke(alpha, A, B, k, C);
+      inner.serial_invoke<ScalarType, ValueType, opA>(alpha, A, B, k, C);
       break;
     }
     default: {
       InnerGemmFixC<4, 4> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1);
-      inner.serial_invoke(alpha, A, B, m, n, k, C);
+      inner.serial_invoke<ScalarType, ValueType, opA>(alpha, A, B, m, n, k, C);
       break;
     }
   }
@@ -1403,7 +1444,7 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<5, 5>::serial_invoke(
 }
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueType, ValueType (*opA)(ValueType)>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<4, 4>::serial_invoke(
     const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
     const ValueType *KOKKOS_RESTRICT B, const int m, const int n, const int k,
@@ -1416,42 +1457,42 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<4, 4>::serial_invoke(
   switch (m * 10 + n) {
     case 44: {
       InnerGemmFixC<4, 4> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1);
-      inner.serial_invoke(alpha, A, B, k, C);
+      inner.serial_invoke<ScalarType, ValueType, opA>(alpha, A, B, k, C);
       break;
     }
     case 43: {
       InnerGemmFixC<4, 3> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1);
-      inner.serial_invoke(alpha, A, B, k, C);
+      inner.serial_invoke<ScalarType, ValueType, opA>(alpha, A, B, k, C);
       break;
     }
     case 42: {
       InnerGemmFixC<4, 2> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1);
-      inner.serial_invoke(alpha, A, B, k, C);
+      inner.serial_invoke<ScalarType, ValueType, opA>(alpha, A, B, k, C);
       break;
     }
     case 41: {
       InnerGemmFixC<4, 1> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1);
-      inner.serial_invoke(alpha, A, B, k, C);
+      inner.serial_invoke<ScalarType, ValueType, opA>(alpha, A, B, k, C);
       break;
     }
     case 34: {
       InnerGemmFixC<3, 4> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1);
-      inner.serial_invoke(alpha, A, B, k, C);
+      inner.serial_invoke<ScalarType, ValueType, opA>(alpha, A, B, k, C);
       break;
     }
     case 24: {
       InnerGemmFixC<2, 4> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1);
-      inner.serial_invoke(alpha, A, B, k, C);
+      inner.serial_invoke<ScalarType, ValueType, opA>(alpha, A, B, k, C);
       break;
     }
     case 14: {
       InnerGemmFixC<1, 4> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1);
-      inner.serial_invoke(alpha, A, B, k, C);
+      inner.serial_invoke<ScalarType, ValueType, opA>(alpha, A, B, k, C);
       break;
     }
     default: {
       InnerGemmFixC<3, 3> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1);
-      inner.serial_invoke(alpha, A, B, m, n, k, C);
+      inner.serial_invoke<ScalarType, ValueType, opA>(alpha, A, B, m, n, k, C);
       break;
     }
   }
@@ -1459,7 +1500,7 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<4, 4>::serial_invoke(
 }
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueType, ValueType (*opA)(ValueType)>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<3, 3>::serial_invoke(
     const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
     const ValueType *KOKKOS_RESTRICT B, const int m, const int n, const int k,
@@ -1472,32 +1513,32 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<3, 3>::serial_invoke(
   switch (m * 10 + n) {
     case 33: {
       InnerGemmFixC<3, 3> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1);
-      inner.serial_invoke(alpha, A, B, k, C);
+      inner.serial_invoke<ScalarType, ValueType, opA>(alpha, A, B, k, C);
       break;
     }
     case 32: {
       InnerGemmFixC<3, 2> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1);
-      inner.serial_invoke(alpha, A, B, k, C);
+      inner.serial_invoke<ScalarType, ValueType, opA>(alpha, A, B, k, C);
       break;
     }
     case 31: {
       InnerGemmFixC<3, 1> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1);
-      inner.serial_invoke(alpha, A, B, k, C);
+      inner.serial_invoke<ScalarType, ValueType, opA>(alpha, A, B, k, C);
       break;
     }
     case 23: {
       InnerGemmFixC<2, 3> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1);
-      inner.serial_invoke(alpha, A, B, k, C);
+      inner.serial_invoke<ScalarType, ValueType, opA>(alpha, A, B, k, C);
       break;
     }
     case 13: {
       InnerGemmFixC<1, 3> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1);
-      inner.serial_invoke(alpha, A, B, k, C);
+      inner.serial_invoke<ScalarType, ValueType, opA>(alpha, A, B, k, C);
       break;
     }
     default: {
       InnerGemmFixC<2, 2> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1);
-      inner.serial_invoke(alpha, A, B, m, n, k, C);
+      inner.serial_invoke<ScalarType, ValueType, opA>(alpha, A, B, m, n, k, C);
       break;
     }
   }
@@ -1505,7 +1546,7 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<3, 3>::serial_invoke(
 }
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueType, ValueType (*opA)(ValueType)>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<2, 2>::serial_invoke(
     const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
     const ValueType *KOKKOS_RESTRICT B, const int m, const int n, const int k,
@@ -1518,22 +1559,22 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<2, 2>::serial_invoke(
   switch (m * 10 + n) {
     case 22: {
       InnerGemmFixC<2, 2> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1);
-      inner.serial_invoke(alpha, A, B, k, C);
+      inner.serial_invoke<ScalarType, ValueType, opA>(alpha, A, B, k, C);
       break;
     }
     case 21: {
       InnerGemmFixC<2, 1> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1);
-      inner.serial_invoke(alpha, A, B, k, C);
+      inner.serial_invoke<ScalarType, ValueType, opA>(alpha, A, B, k, C);
       break;
     }
     case 12: {
       InnerGemmFixC<1, 2> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1);
-      inner.serial_invoke(alpha, A, B, k, C);
+      inner.serial_invoke<ScalarType, ValueType, opA>(alpha, A, B, k, C);
       break;
     }
     case 11: {
       InnerGemmFixC<1, 1> inner(_as0, _as1, _bs0, _bs1, _cs0, _cs1);
-      inner.serial_invoke(alpha, A, B, k, C);
+      inner.serial_invoke<ScalarType, ValueType, opA>(alpha, A, B, k, C);
       break;
     }
   }
@@ -1541,7 +1582,7 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<2, 2>::serial_invoke(
 }
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueType, ValueType (*opA)(ValueType)>
 KOKKOS_INLINE_FUNCTION int InnerGemmFixC<1, 1>::serial_invoke(
     const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
     const ValueType *KOKKOS_RESTRICT B, const int m, const int n, const int k,
@@ -1551,8 +1592,7 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<1, 1>::serial_invoke(
     Kokkos::abort(
         "InnerGemmFixC<1,1>::serial_invoke, assert failure (m<=1 && n<=1)");
 
-  return serial_invoke(alpha, A, B, k, C);
-  ;
+  return serial_invoke<ScalarType, ValueType, opA>(alpha, A, B, k, C);
 }
 
 }  // namespace KokkosBatched

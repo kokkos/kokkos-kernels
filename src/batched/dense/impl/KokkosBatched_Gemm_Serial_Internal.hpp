@@ -18,7 +18,8 @@ namespace KokkosBatched {
 
 template <typename ArgAlgo>
 struct SerialGemmInternal {
-  template <typename ScalarType, typename ValueType>
+  template <typename ScalarType, typename ValueType,
+            ValueType (*opA)(ValueType) = details::identity<ValueType> >
   KOKKOS_INLINE_FUNCTION static int invoke(
       const int m, const int n, const int k, const ScalarType alpha,
       const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
@@ -28,7 +29,7 @@ struct SerialGemmInternal {
 };
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueType, ValueType (*opA)(ValueType)>
 KOKKOS_INLINE_FUNCTION int SerialGemmInternal<Algo::Gemm::Unblocked>::invoke(
     const int m, const int n, const int k, const ScalarType alpha,
     const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
@@ -53,7 +54,7 @@ KOKKOS_INLINE_FUNCTION int SerialGemmInternal<Algo::Gemm::Unblocked>::invoke(
       const ValueType *KOKKOS_RESTRICT pA                  = A + p * as1,
                                        *KOKKOS_RESTRICT pB = B + p * bs0;
       for (int i = 0; i < m; ++i) {
-        const ValueType tA(alpha * pA[i * as0]);
+        const ValueType tA(alpha * opA(pA[i * as0]));
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
@@ -65,7 +66,7 @@ KOKKOS_INLINE_FUNCTION int SerialGemmInternal<Algo::Gemm::Unblocked>::invoke(
 }
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueType, ValueType (*opA)(ValueType)>
 KOKKOS_INLINE_FUNCTION int SerialGemmInternal<Algo::Gemm::Blocked>::invoke(
     const int m, const int n, const int k, const ScalarType alpha,
     const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
@@ -97,10 +98,10 @@ KOKKOS_INLINE_FUNCTION int SerialGemmInternal<Algo::Gemm::Blocked>::invoke(
       const int mb = mbAlgo, nb = nbAlgo;
       for (int i = 0; i < ib; i += mb)
         for (int j = 0; j < jb; j += nb)
-          inner.serial_invoke(alpha_value, AA + i * as0, BB + j * bs1,
-                              (i + mb) > ib ? (ib - i) : mb,
-                              (j + nb) > jb ? (jb - j) : nb, pb,
-                              CC + i * cs0 + j * cs1);
+          inner.serial_invoke<ValueType, ValueType, opA>(
+              alpha_value, AA + i * as0, BB + j * bs1,
+              (i + mb) > ib ? (ib - i) : mb, (j + nb) > jb ? (jb - j) : nb, pb,
+              CC + i * cs0 + j * cs1);
     };
 
     const bool is_small = true;  //(m*n*k <= 64*64*64);
