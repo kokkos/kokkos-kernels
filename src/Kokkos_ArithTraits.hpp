@@ -1083,6 +1083,8 @@ public:
   static bool isInf(const std::complex<RealFloatType>& x) {
 #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
     using std::isinf;
+#elif __HIP_DEVICE_COMPILE__
+    using std::isinf;
 #endif
     return isinf (real (x)) || isinf (imag (x));
   }
@@ -1105,6 +1107,8 @@ public:
 #else
   static bool isNan(const std::complex<RealFloatType>& x) {
 #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
+    using std::isnan;
+#elif __HIP_DEVICE_COMPILE__
     using std::isnan;
 #endif
     return isnan (real (x)) || isnan (imag (x));
