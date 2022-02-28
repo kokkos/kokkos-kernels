@@ -1098,6 +1098,8 @@ class ArithTraits<float> {
     using std::isinf;
 #elif defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL)
     using sycl::isinf;
+#elif __HIP_DEVICE_COMPILE__
+    using std::isinf;
 #endif
     return isinf(x);
   }
@@ -1106,6 +1108,8 @@ class ArithTraits<float> {
     using std::isnan;
 #elif defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL)
     using sycl::isnan;
+#elif __HIP_DEVICE_COMPILE__
+    using std::isnan;
 #endif
     return isnan(x);
   }
