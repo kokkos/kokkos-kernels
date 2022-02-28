@@ -503,7 +503,7 @@ void spmv_block_impl_cusparse(
     default: {
       std::cerr << "Mode " << mode << " invalid for cusparse[*]bsrmv.\n";
       throw std::invalid_argument("Invalid mode");
-    } break;
+    }
   }
 
 #if (9000 <= CUDA_VERSION)
@@ -599,7 +599,7 @@ void spm_mv_block_impl_cusparse(
     default: {
       std::cerr << "Mode " << mode << " invalid for cusparse[*]bsrmv.\n";
       throw std::invalid_argument("Invalid mode");
-    } break;
+    }
   }
 
   int colx = static_cast<int>(x.extent(1));

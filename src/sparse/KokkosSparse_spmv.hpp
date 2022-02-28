@@ -1072,12 +1072,12 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
   }
   //
   return Experimental::Impl::SPMV_MV_BLOCKCRSMATRIX<
-      typename AMatrix_Internal::value_type,
-      typename AMatrix_Internal::ordinal_type,
+      typename AMatrix_Internal::const_value_type,
+      typename AMatrix_Internal::const_ordinal_type,
       typename AMatrix_Internal::device_type,
       typename AMatrix_Internal::memory_traits,
-      typename AMatrix_Internal::size_type,
-      typename XVector_Internal::value_type**,
+      typename AMatrix_Internal::const_size_type,
+      typename XVector_Internal::const_value_type**,
       typename XVector_Internal::array_layout,
       typename XVector_Internal::device_type,
       typename XVector_Internal::memory_traits,
