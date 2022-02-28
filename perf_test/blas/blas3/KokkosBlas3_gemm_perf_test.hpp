@@ -1883,7 +1883,7 @@ static inline void __gemm_do_verify(options_t options, gemm_args_t gemm_args,
 
   // Check the result
   if (gemm_args.C.data() != nullptr) {
-#if defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL) && ARMPL_BUILD >= 1058
     if (options.test == EXPERIMENT) {
       using view_type_2d =
           Kokkos::View<default_scalar **, Kokkos::LayoutStride, default_device>;
@@ -1908,7 +1908,7 @@ static inline void __gemm_do_verify(options_t options, gemm_args_t gemm_args,
         }
       }
     }
-#endif  // KOKKOSKERNELS_ENABLE_TPL_ARMPL
+#endif  // KOKKOSKERNELS_ENABLE_TPL_ARMPL && ARMPL_BUILD >= 1058
     if (__gemm_do_compare<ScalarType, LayoutType>(C_expected, gemm_args.C))
       FATAL_ERROR("Result value mismatch!");
   }
@@ -2078,7 +2078,7 @@ gemm_args_t __do_setup(options_t options, matrix_dims_t dims) {
     Kokkos::fence();
   }
 
-#if defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL) && ARMPL_BUILD >= 1058
   if (options.test == EXPERIMENT) {
     armpl_int_t bstrd_A, istrd_A, jstrd_A, bstrd_B, istrd_B, jstrd_B, bstrd_C,
         istrd_C, jstrd_C;
@@ -2168,7 +2168,7 @@ gemm_args_t __do_setup(options_t options, matrix_dims_t dims) {
     gemm_args.B_pl.mat = B_p;
     gemm_args.C_pl.mat = C_p;
   }
-#endif  // KOKKOSKERNELS_ENABLE_TPL_ARMPL
+#endif  // KOKKOSKERNELS_ENABLE_TPL_ARMPL && ARMPL_BUILD >= 1058
 
   gemm_args.alpha         = options.blas_args.gemm.alpha;
   gemm_args.beta          = options.blas_args.gemm.beta;
