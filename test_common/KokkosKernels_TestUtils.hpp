@@ -500,11 +500,11 @@ template <class ScalarType, class LayoutType, class ExeSpaceType>
 class RandCscMat {
  private:
   using ValViewType    = Kokkos::View<ScalarType*, LayoutType, ExeSpaceType>;
-  using RowIdViewType  = Kokkos::View<size_t*, LayoutType, ExeSpaceType>;
-  using ColMapViewType = Kokkos::View<size_t*, LayoutType, ExeSpaceType>;
-  size_t __nrows;
-  size_t __ncols;
-  size_t __nnz = 0;
+  using RowIdViewType  = Kokkos::View<int64_t*, LayoutType, ExeSpaceType>;
+  using ColMapViewType = Kokkos::View<int64_t*, LayoutType, ExeSpaceType>;
+  int64_t __nrows;
+  int64_t __ncols;
+  int64_t __nnz = 0;
   ColMapViewType __col_map;
   RowIdViewType __row_ids;
   ValViewType __vals;
@@ -516,19 +516,19 @@ class RandCscMat {
   ///  4. __col_map(i) - col_map(i - 1) is in [0, m]
   void __populate_random_csc_mat(uint64_t ticks) {
     std::srand(ticks);
-    for (size_t col_idx = 0; col_idx < __ncols; col_idx++) {
-      size_t r = std::rand() % (__nrows + 1);
+    for (int64_t col_idx = 0; col_idx < __ncols; col_idx++) {
+      int64_t r = std::rand() % (__nrows + 1);
       if (r == 0) {  // 100% sparse column
         __col_map(col_idx) = __nnz;
       } else {  // sparse column with r elements
         // Populate r row ids
-        std::vector<size_t> v(r);
+        std::vector<int64_t> v(r);
 
-        for (size_t i = 0; i < r; i++) v.at(i) = i;
+        for (int64_t i = 0; i < r; i++) v.at(i) = i;
 
         std::shuffle(v.begin(), v.end(), std::mt19937(std::random_device()()));
 
-        for (size_t i = 0; i < r; i++) __row_ids(i + __nnz) = v.at(i);
+        for (int64_t i = 0; i < r; i++) __row_ids(i + __nnz) = v.at(i);
 
         // Point to new column and accumulate number of non zeros
         __col_map(col_idx) = __nnz;
@@ -556,7 +556,7 @@ class RandCscMat {
   /// \param n The number of columns.
   /// \param min_val The minimum scalar value in the matrix.
   /// \param max_val The maximum scalar value in the matrix.
-  RandCscMat(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
+  RandCscMat(int64_t m, int64_t n, ScalarType min_val, ScalarType max_val) {
     __ncols   = n;
     __nrows   = m;
     __col_map = ColMapViewType("RandCscMat.ColMapViewType", __ncols + 1);
@@ -582,15 +582,15 @@ class RandCscMat {
   }
 
   // O(c), where c is a constant.
-  ScalarType operator()(size_t idx) { return __vals(idx); }
+  ScalarType operator()(int64_t idx) { return __vals(idx); }
 
-  size_t get_nnz() { return __nnz; }
-  size_t get_m() { return __nrows; }
-  size_t get_n() { return __ncols; }
-  size_t get_col_len(size_t j) {
+  int64_t get_nnz() { return __nnz; }
+  int64_t get_m() { return __nrows; }
+  int64_t get_n() { return __ncols; }
+  int64_t get_col_len(int64_t j) {
     return j < __ncols ? (__col_map(j + 1) - __col_map(j)) : 0;
   }
-  size_t get_col_start(size_t j) { return j < __ncols ? __col_map(j) : 0; }
+  int64_t get_col_start(int64_t j) { return j < __ncols ? __col_map(j) : 0; }
   ValViewType get_vals() { return __getter_copy_helper(__vals); }
   RowIdViewType get_row_ids() { return __getter_copy_helper(__row_ids); }
   ColMapViewType get_col_map() { return __getter_copy_helper(__col_map); }

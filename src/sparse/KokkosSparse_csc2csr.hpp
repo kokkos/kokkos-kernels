@@ -44,5 +44,33 @@
 
 #ifndef _KOKKOSSPARSE_CSC2CSR_HPP
 #define _KOKKOSSPARSE_CSC2CSR_HPP
-// TODO
+namespace KokkosSparse {
+template <class OrdinalType, class SizeType, class ValViewType,
+          class RowIdViewType, class ColMapViewType>
+auto csc2csr(OrdinalType nrows, OrdinalType ncols, SizeType nnz,
+             ValViewType vals, RowIdViewType row_ids, ColMapViewType col_map) {
+  using CrsST             = typename ValViewType::value_type;
+  using CrsOT             = OrdinalType;
+  using CrsDT             = typename ValViewType::execution_space;
+  using CrsMT             = void;
+  using CrsSzT            = SizeType;
+  using CrsType           = CrsMatrix<CrsST, CrsOT, CrsDT, CrsMT, CrsSzT>;
+  using CrsValsViewType   = typename CrsType::values_type;
+  using CrsRowMapViewType = typename CrsType::row_map_type::non_const_type;
+  using CrsColIdViewType  = typename CrsType::index_type;
+
+  CrsValsViewType crs_vals(
+      Kokkos::view_alloc(Kokkos::WithoutInitializing, "csc2csr vals"), nnz);
+  CrsRowMapViewType crs_row_map(
+      Kokkos::view_alloc(Kokkos::WithoutInitializing, "csc2csr row_map"),
+      nrows + 1);
+  CrsColIdViewType crs_col_ids(
+      Kokkos::view_alloc(Kokkos::WithoutInitializing, "csc2csr col_ids"), nnz);
+
+  // TODO: populate crs views
+
+  return CrsType("csc2csr", nrows, ncols, nnz, crs_vals, crs_row_map,
+                 crs_col_ids);
+}
+}  // namespace KokkosSparse
 #endif  //  _KOKKOSSPARSE_CSC2CSR_HPP

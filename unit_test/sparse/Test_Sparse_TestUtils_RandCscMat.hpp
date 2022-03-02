@@ -47,16 +47,16 @@
 namespace Test {
 template <class ScalarType, class LayoutType, class ExeSpaceType>
 void doCscMat(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
-  auto expected_min   = ScalarType(1.0);
-  size_t expected_nnz = 0;
+  auto expected_min    = ScalarType(1.0);
+  int64_t expected_nnz = 0;
   RandCscMat<ScalarType, LayoutType, ExeSpaceType> cm(m, n, min_val, max_val);
 
   std::string fmsg = kk_failure_str(__FILE__, __FUNCTION__, __LINE__);
-  for (size_t i = 0; i < cm.get_nnz(); ++i)
+  for (int64_t i = 0; i < cm.get_nnz(); ++i)
     ASSERT_GE(cm(i), expected_min) << cm.info;
 
-  for (size_t j = 0; j < cm.get_n(); ++j) {
-    for (size_t i = 0; i < cm.get_col_len(j); ++i)
+  for (int64_t j = 0; j < cm.get_n(); ++j) {
+    for (int64_t i = 0; i < cm.get_col_len(j); ++i)
       ASSERT_FLOAT_EQ(cm(cm.get_col_start(j) + i), cm(expected_nnz + i))
           << cm.info;
     expected_nnz += cm.get_col_len(j);

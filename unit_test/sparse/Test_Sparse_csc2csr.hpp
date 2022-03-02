@@ -46,8 +46,47 @@
 #include "KokkosKernels_TestUtils.hpp"
 
 namespace Test {
-// template <class ScalarType, class LayoutType, class ExeSpaceType>
-// void doCsc2Csr() {
-// TODO
-// }
+template <class ScalarType, class LayoutType, class ExeSpaceType>
+void doCsc2Csr(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
+  RandCscMat<ScalarType, LayoutType, ExeSpaceType> cscMat(m, n, min_val,
+                                                          max_val);
+
+  auto csrMat = KokkosSparse::csc2csr(
+      cscMat.get_m(), cscMat.get_n(), cscMat.get_nnz(), cscMat.get_vals(),
+      cscMat.get_row_ids(), cscMat.get_col_map());
+
+  // TODO check csrMat against cscMat
+}
+
+template <class LayoutType, class ExeSpaceType>
+void doAllScalarsCsc2Csr(size_t m, size_t n, int min, int max) {
+  doCsc2Csr<float, LayoutType, ExeSpaceType>(m, n, min, max);
+  doCsc2Csr<double, LayoutType, ExeSpaceType>(m, n, min, max);
+  doCsc2Csr<Kokkos::complex<float>, LayoutType, ExeSpaceType>(m, n, min, max);
+  doCsc2Csr<Kokkos::complex<double>, LayoutType, ExeSpaceType>(m, n, min, max);
+}
+
+template <class ExeSpaceType>
+void doAllLayoutsCsc2Csr(size_t m, size_t n, int min, int max) {
+  doAllScalarsCsc2Csr<Kokkos::LayoutLeft, ExeSpaceType>(m, n, min, max);
+  doAllScalarsCsc2Csr<Kokkos::LayoutRight, ExeSpaceType>(m, n, min, max);
+}
+
+template <class ExeSpaceType>
+void doAllCsc2csr(size_t m, size_t n) {
+  int min = 1, max = 10;
+  doAllLayoutsCsc2Csr<ExeSpaceType>(m, n, min, max);
+}
+
+TEST_F(TestCategory, sparse_csc2csr) {
+  // Square cases
+  for (size_t dim = 1; dim < 1024; dim *= 4)
+    doAllCsc2csr<TestExecSpace>(dim, dim);
+
+  // Non-square cases
+  for (size_t dim = 1; dim < 1024; dim *= 4) {
+    doAllCsc2csr<TestExecSpace>(dim * 3, dim);
+    doAllCsc2csr<TestExecSpace>(dim, dim * 3);
+  }
+}
 }  // namespace Test
