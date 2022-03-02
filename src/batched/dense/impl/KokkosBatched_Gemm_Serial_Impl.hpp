@@ -378,6 +378,93 @@ SerialGemm<Trans::Transpose, Trans::Transpose, Algo::Gemm::Blocked>::invoke(
       A.stride_0(), B.data(), B.stride_1(), B.stride_0(), beta, C.data(),
       C.stride_0(), C.stride_1());
 }
+
+///
+/// CNT / NT
+///
+
+template <>
+template <typename ScalarType, typename AViewType, typename BViewType,
+          typename CViewType>
+KOKKOS_INLINE_FUNCTION int
+SerialGemm<Trans::ConjNoTranspose, Trans::NoTranspose,
+           Algo::Gemm::Unblocked>::invoke(const ScalarType alpha,
+                                          const AViewType &A,
+                                          const BViewType &B,
+                                          const ScalarType beta,
+                                          const CViewType &C) {
+  // C = beta C + alpha conj(A) B
+  // C (m x n), A(m x k), B(k x n)
+  using ValueType = typename AViewType::non_const_value_type;
+  return SerialGemmInternal<Algo::Gemm::Unblocked>::invoke<
+      ScalarType, ValueType, &Kokkos::ArithTraits<ValueType>::conj>(
+      C.extent(0), C.extent(1), A.extent(1), alpha, A.data(), A.stride_0(),
+      A.stride_1(), B.data(), B.stride_0(), B.stride_1(), beta, C.data(),
+      C.stride_0(), C.stride_1());
+}
+
+template <>
+template <typename ScalarType, typename AViewType, typename BViewType,
+          typename CViewType>
+KOKKOS_INLINE_FUNCTION int
+SerialGemm<Trans::ConjNoTranspose, Trans::NoTranspose,
+           Algo::Gemm::Blocked>::invoke(const ScalarType alpha,
+                                        const AViewType &A, const BViewType &B,
+                                        const ScalarType beta,
+                                        const CViewType &C) {
+  // C = beta C + alpha conj(A) B
+  // C (m x n), A(m x k), B(k x n)
+  using ValueType = typename AViewType::non_const_value_type;
+  return SerialGemmInternal<Algo::Gemm::Blocked>::invoke<
+      ScalarType, ValueType, &Kokkos::ArithTraits<ValueType>::conj>(
+      C.extent(0), C.extent(1), A.extent(1), alpha, A.data(), A.stride_0(),
+      A.stride_1(), B.data(), B.stride_0(), B.stride_1(), beta, C.data(),
+      C.stride_0(), C.stride_1());
+}
+
+///
+/// CT / NT
+///
+
+template <>
+template <typename ScalarType, typename AViewType, typename BViewType,
+          typename CViewType>
+KOKKOS_INLINE_FUNCTION int
+SerialGemm<Trans::ConjTranspose, Trans::NoTranspose,
+           Algo::Gemm::Unblocked>::invoke(const ScalarType alpha,
+                                          const AViewType &A,
+                                          const BViewType &B,
+                                          const ScalarType beta,
+                                          const CViewType &C) {
+  // C = beta C + alpha conj(A)^T B
+  // C (m x n), A(k x m), B(k x n)
+  using ValueType = typename AViewType::non_const_value_type;
+  return SerialGemmInternal<Algo::Gemm::Unblocked>::invoke<
+      ScalarType, ValueType, &Kokkos::ArithTraits<ValueType>::conj>(
+      C.extent(0), C.extent(1), A.extent(0), alpha, A.data(), A.stride_1(),
+      A.stride_0(), B.data(), B.stride_0(), B.stride_1(), beta, C.data(),
+      C.stride_0(), C.stride_1());
+}
+
+template <>
+template <typename ScalarType, typename AViewType, typename BViewType,
+          typename CViewType>
+KOKKOS_INLINE_FUNCTION int
+SerialGemm<Trans::ConjTranspose, Trans::NoTranspose,
+           Algo::Gemm::Blocked>::invoke(const ScalarType alpha,
+                                        const AViewType &A, const BViewType &B,
+                                        const ScalarType beta,
+                                        const CViewType &C) {
+  // C = beta C + alpha conj(A)^T B
+  // C (m x n), A(k x m), B(k x n)
+  using ValueType = typename AViewType::non_const_value_type;
+  return SerialGemmInternal<Algo::Gemm::Blocked>::invoke<
+      ScalarType, ValueType, &Kokkos::ArithTraits<ValueType>::conj>(
+      C.extent(0), C.extent(1), A.extent(0), alpha, A.data(), A.stride_1(),
+      A.stride_0(), B.data(), B.stride_0(), B.stride_1(), beta, C.data(),
+      C.stride_0(), C.stride_1());
+}
+
 /********************* END functor-level routines *********************/
 
 namespace Impl {

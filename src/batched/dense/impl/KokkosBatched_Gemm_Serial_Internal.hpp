@@ -8,7 +8,7 @@
 #include "KokkosBatched_Set_Internal.hpp"
 #include "KokkosBatched_Scale_Internal.hpp"
 
-#include "KokkosBatched_InnerGemmFixC_Serial_Impl.hpp"
+#include "KokkosBatched_InnerGemmFixC_Decl.hpp"
 
 namespace KokkosBatched {
 

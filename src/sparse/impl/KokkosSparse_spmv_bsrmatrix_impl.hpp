@@ -540,7 +540,7 @@ struct BsrMatrixSpMVTensorCoreDispatcher {
 #include "KokkosBlas.hpp"
 #include "KokkosBatched_Gemv_Serial_Internal.hpp"
 #include "KokkosBatched_Gemv_TeamVector_Internal.hpp"
-#include "KokkosBatched_Gemm_Serial_Internal.hpp"
+#include "KokkosBatched_Gemm_Decl.hpp"
 #include "KokkosBatched_Gemm_TeamVector_Internal.hpp"
 #include "KokkosBatched_Scale_Internal.hpp"
 #include "KokkosKernels_ExecSpaceUtils.hpp"
@@ -1229,35 +1229,32 @@ struct BSR_GEMM_Functor {
         static_cast<ordinal_type>(m_A.graph.row_map(iBlock + 1) - start);
     const auto row   = m_A.block_row_Const(iBlock);
     const auto beta1 = static_cast<value_type>(1);
-    const auto ldx   = m_x.stride_1();
-    const auto ldy   = m_y.stride_1();
+    auto yview       = Kokkos::subview(
+        m_y, Kokkos::make_pair(ystart, ystart + block_dim), Kokkos::ALL());
     //
     if (conjugate) {
       for (ordinal_type ic = 0; ic < count; ++ic) {
         const auto Aview  = row.block(ic);
         const auto xstart = row.block_colidx(ic) * block_dim;
-        KokkosBatched::SerialGemmInternal<KokkosBatched::Algo::Gemm::Blocked>::
-            invoke<value_type, value_type,
-                   &Kokkos::ArithTraits<value_type>::conj>(
-                static_cast<ordinal_type>(block_dim),
-                static_cast<ordinal_type>(num_rhs),
-                static_cast<ordinal_type>(block_dim), alpha, Aview.data(),
-                Aview.stride_0(), Aview.stride_1(), &m_x(xstart, 0),
-                m_x.stride_0(), ldx, beta1, &m_y(ystart, 0), m_y.stride_0(),
-                ldy);
+        const auto xview  = Kokkos::subview(
+            m_x, Kokkos::make_pair(xstart, xstart + block_dim), Kokkos::ALL());
+        KokkosBatched::SerialGemm<
+            KokkosBatched::Trans::ConjNoTranspose,
+            KokkosBatched::Trans::NoTranspose,
+            KokkosBatched::Algo::Gemm::Blocked>::invoke(alpha, Aview, xview,
+                                                        beta1, yview);
       }
     } else {
       for (ordinal_type ic = 0; ic < count; ++ic) {
         const auto Aview  = row.block(ic);
         const auto xstart = row.block_colidx(ic) * block_dim;
-        KokkosBatched::SerialGemmInternal<KokkosBatched::Algo::Gemm::Blocked>::
-            invoke<value_type, value_type>(
-                static_cast<ordinal_type>(block_dim),
-                static_cast<ordinal_type>(num_rhs),
-                static_cast<ordinal_type>(block_dim), alpha, Aview.data(),
-                Aview.stride_0(), Aview.stride_1(), &m_x(xstart, 0),
-                m_x.stride_0(), ldx, beta1, &m_y(ystart, 0), m_y.stride_0(),
-                ldy);
+        const auto xview  = Kokkos::subview(
+            m_x, Kokkos::make_pair(xstart, xstart + block_dim), Kokkos::ALL());
+        KokkosBatched::SerialGemm<
+            KokkosBatched::Trans::NoTranspose,
+            KokkosBatched::Trans::NoTranspose,
+            KokkosBatched::Algo::Gemm::Blocked>::invoke(alpha, Aview, xview,
+                                                        beta1, yview);
       }
     }
   }
@@ -1540,15 +1537,11 @@ struct BSR_GEMM_Transpose_Functor {
         const auto Aview  = row.block(ic);
         const auto ystart = row.block_colidx(ic) * block_dim;
         //
-        KokkosBatched::SerialGemmInternal<KokkosBatched::Algo::Gemm::Blocked>::
-            invoke<value_type, value_type,
-                   &Kokkos::ArithTraits<value_type>::conj>(
-                static_cast<ordinal_type>(block_dim),
-                static_cast<ordinal_type>(num_rhs),
-                static_cast<ordinal_type>(block_dim), alpha, Aview.data(),
-                Aview.stride_1(), Aview.stride_0(), xview.data(),
-                xview.stride_0(), xview.stride_1(), beta0, ytmp.data(),
-                ytmp.stride_0(), ytmp.stride_1());
+        KokkosBatched::SerialGemm<
+            KokkosBatched::Trans::ConjTranspose,
+            KokkosBatched::Trans::NoTranspose,
+            KokkosBatched::Algo::Gemm::Blocked>::invoke(alpha, Aview, xview,
+                                                        beta0, ytmp);
         //
         for (ordinal_type jr = 0; jr < num_rhs; ++jr) {
           for (ordinal_type jj = 0; jj < block_dim; ++jj) {
@@ -1558,17 +1551,13 @@ struct BSR_GEMM_Transpose_Functor {
       }
     } else {
       for (ordinal_type ic = 0; ic < count; ++ic) {
-        const auto Aview  = row.block(ic);
-        const auto ystart = row.block_colidx(ic) * block_dim;
-        KokkosBatched::SerialGemmInternal<KokkosBatched::Algo::Gemm::Blocked>::
-            invoke<value_type, value_type>(
-                static_cast<ordinal_type>(block_dim),
-                static_cast<ordinal_type>(num_rhs),
-                static_cast<ordinal_type>(block_dim), alpha, Aview.data(),
-                Aview.stride_1(), Aview.stride_0(), xview.data(),
-                xview.stride_0(), xview.stride_1(), beta0, ytmp.data(),
-                ytmp.stride_0(), ytmp.stride_1());
+        const auto Aview = row.block(ic);
+        KokkosBatched::SerialGemm<
+            KokkosBatched::Trans::Transpose, KokkosBatched::Trans::NoTranspose,
+            KokkosBatched::Algo::Gemm::Blocked>::invoke(alpha, Aview, xview,
+                                                        beta0, ytmp);
         //
+        const auto ystart = row.block_colidx(ic) * block_dim;
         for (ordinal_type jr = 0; jr < num_rhs; ++jr) {
           for (ordinal_type jj = 0; jj < block_dim; ++jj) {
             Kokkos::atomic_add(&m_y(ystart + jj, jr), ytmp(jj, jr));
