@@ -50,12 +50,47 @@ template <class ScalarType, class LayoutType, class ExeSpaceType>
 void doCsc2Csr(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
   RandCscMat<ScalarType, LayoutType, ExeSpaceType> cscMat(m, n, min_val,
                                                           max_val);
+  constexpr int league_size = 32;
 
   auto csrMat = KokkosSparse::csc2csr(
       cscMat.get_m(), cscMat.get_n(), cscMat.get_nnz(), cscMat.get_vals(),
-      cscMat.get_row_ids(), cscMat.get_col_map());
+      cscMat.get_row_ids(), cscMat.get_col_map(), league_size);
 
-  // TODO check csrMat against cscMat
+  auto csc_row_ids = cscMat.get_row_ids();
+  auto csc_col_map = cscMat.get_col_map();
+  auto csc_vals    = cscMat.get_vals();
+
+  auto csr_col_ids = csrMat.graph.entries;
+  auto csr_row_map = csrMat.graph.row_map;
+  auto csr_vals    = csrMat.values;
+
+  for (int j = 0; j < cscMat.get_n(); ++j) {
+    auto col_start = csc_col_map(j);
+    auto col_len   = csc_col_map(j + 1) - col_start;
+
+    for (int k = 0; k < col_len; ++k) {
+      auto i = col_start + k;
+
+      auto row_start = csr_row_map(csc_row_ids(i));
+      auto row_len   = csr_row_map(csc_row_ids(i) + 1) - row_start;
+      auto row_end   = row_start + row_len;
+
+      if (row_len == 0) continue;
+
+      // Linear search for corresponding element in csr matrix
+      int l = row_start;
+      while (l < row_end && csr_col_ids(l) != j) {
+        ++l;
+      }
+
+      if (l == row_end)
+        FAIL() << "csr element at (i: " << csc_row_ids(i) << ", j: " << j
+               << ") not found!" << std::endl;
+
+      ASSERT_EQ(csc_vals(i), csr_vals(l))
+          << "(i: " << csc_row_ids(i) << ", j: " << j << ")" << std::endl;
+    }
+  }
 }
 
 template <class LayoutType, class ExeSpaceType>
@@ -80,7 +115,7 @@ void doAllCsc2csr(size_t m, size_t n) {
 
 TEST_F(TestCategory, sparse_csc2csr) {
   // Square cases
-  for (size_t dim = 1; dim < 1024; dim *= 4)
+  for (size_t dim = 4; dim < 1024; dim *= 4)
     doAllCsc2csr<TestExecSpace>(dim, dim);
 
   // Non-square cases
