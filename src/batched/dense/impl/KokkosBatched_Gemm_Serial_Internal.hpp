@@ -18,8 +18,9 @@ namespace KokkosBatched {
 
 template <typename ArgAlgo>
 struct SerialGemmInternal {
-  template <typename ScalarType, typename ValueType,
-            ValueType (*opA)(ValueType) = details::identity<ValueType> >
+  template <
+      typename ScalarType, typename ValueType,
+      ValueType (*opA)(const ValueType &) = &details::identity<ValueType> >
   KOKKOS_INLINE_FUNCTION static int invoke(
       const int m, const int n, const int k, const ScalarType alpha,
       const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
@@ -29,7 +30,8 @@ struct SerialGemmInternal {
 };
 
 template <>
-template <typename ScalarType, typename ValueType, ValueType (*opA)(ValueType)>
+template <typename ScalarType, typename ValueType,
+          ValueType (*opA)(const ValueType &)>
 KOKKOS_INLINE_FUNCTION int SerialGemmInternal<Algo::Gemm::Unblocked>::invoke(
     const int m, const int n, const int k, const ScalarType alpha,
     const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
@@ -66,7 +68,8 @@ KOKKOS_INLINE_FUNCTION int SerialGemmInternal<Algo::Gemm::Unblocked>::invoke(
 }
 
 template <>
-template <typename ScalarType, typename ValueType, ValueType (*opA)(ValueType)>
+template <typename ScalarType, typename ValueType,
+          ValueType (*opA)(const ValueType &)>
 KOKKOS_INLINE_FUNCTION int SerialGemmInternal<Algo::Gemm::Blocked>::invoke(
     const int m, const int n, const int k, const ScalarType alpha,
     const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,

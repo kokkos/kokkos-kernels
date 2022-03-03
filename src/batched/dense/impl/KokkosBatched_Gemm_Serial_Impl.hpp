@@ -397,7 +397,7 @@ SerialGemm<Trans::ConjNoTranspose, Trans::NoTranspose,
   // C (m x n), A(m x k), B(k x n)
   using ValueType = typename AViewType::non_const_value_type;
   return SerialGemmInternal<Algo::Gemm::Unblocked>::invoke<
-      ScalarType, ValueType, &Kokkos::ArithTraits<ValueType>::conj>(
+      ScalarType, ValueType, &KokkosBatched::details::conj>(
       C.extent(0), C.extent(1), A.extent(1), alpha, A.data(), A.stride_0(),
       A.stride_1(), B.data(), B.stride_0(), B.stride_1(), beta, C.data(),
       C.stride_0(), C.stride_1());
@@ -416,7 +416,7 @@ SerialGemm<Trans::ConjNoTranspose, Trans::NoTranspose,
   // C (m x n), A(m x k), B(k x n)
   using ValueType = typename AViewType::non_const_value_type;
   return SerialGemmInternal<Algo::Gemm::Blocked>::invoke<
-      ScalarType, ValueType, &Kokkos::ArithTraits<ValueType>::conj>(
+      ScalarType, ValueType, &KokkosBatched::details::conj>(
       C.extent(0), C.extent(1), A.extent(1), alpha, A.data(), A.stride_0(),
       A.stride_1(), B.data(), B.stride_0(), B.stride_1(), beta, C.data(),
       C.stride_0(), C.stride_1());
@@ -440,7 +440,7 @@ SerialGemm<Trans::ConjTranspose, Trans::NoTranspose,
   // C (m x n), A(k x m), B(k x n)
   using ValueType = typename AViewType::non_const_value_type;
   return SerialGemmInternal<Algo::Gemm::Unblocked>::invoke<
-      ScalarType, ValueType, &Kokkos::ArithTraits<ValueType>::conj>(
+      ScalarType, ValueType, &KokkosBatched::details::conj>(
       C.extent(0), C.extent(1), A.extent(0), alpha, A.data(), A.stride_1(),
       A.stride_0(), B.data(), B.stride_0(), B.stride_1(), beta, C.data(),
       C.stride_0(), C.stride_1());
@@ -459,7 +459,7 @@ SerialGemm<Trans::ConjTranspose, Trans::NoTranspose,
   // C (m x n), A(k x m), B(k x n)
   using ValueType = typename AViewType::non_const_value_type;
   return SerialGemmInternal<Algo::Gemm::Blocked>::invoke<
-      ScalarType, ValueType, &Kokkos::ArithTraits<ValueType>::conj>(
+      ScalarType, ValueType, &KokkosBatched::details::conj>(
       C.extent(0), C.extent(1), A.extent(0), alpha, A.data(), A.stride_1(),
       A.stride_0(), B.data(), B.stride_0(), B.stride_1(), beta, C.data(),
       C.stride_0(), C.stride_1());
