@@ -30,6 +30,13 @@ TEST_F(TestCategory, batched_scalar_serial_gemm_t_t_dcomplex_dcomplex) {
   test_batched_gemm<TestExecSpace, Kokkos::complex<double>,
                     Kokkos::complex<double>, param_tag_type, algo_tag_type>();
 }
+TEST_F(TestCategory, batched_scalar_serial_gemm_cnt_nt_dcomplex_dcomplex) {
+  typedef ::Test::Gemm::ParamTag<Trans::ConjNoTranspose, Trans::NoTranspose>
+      param_tag_type;
+  typedef Algo::Gemm::Blocked algo_tag_type;
+  test_batched_gemm<TestExecSpace, Kokkos::complex<double>,
+                    Kokkos::complex<double>, param_tag_type, algo_tag_type>();
+}
 // TEST_F( TestCategory, batched_scalar_serial_gemm_ct_nt_dcomplex_dcomplex ) {
 //   typedef ::Test::Gemm::ParamTag<Trans::ConjTranspose,Trans::NoTranspose>
 //   param_tag_type; typedef Algo::Gemm::Blocked algo_tag_type;
