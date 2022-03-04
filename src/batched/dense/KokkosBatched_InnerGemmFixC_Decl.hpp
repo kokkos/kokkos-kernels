@@ -48,15 +48,19 @@ namespace KokkosBatched {
 
 namespace details {
 
-template <class ValueType>
-KOKKOS_FORCEINLINE_FUNCTION ValueType identity(const ValueType &x) {
-  return x;
-}
+template <typename ValueType>
+struct identity {
+  KOKKOS_FORCEINLINE_FUNCTION ValueType operator()(const ValueType &x) {
+    return x;
+  }
+};
 
-template <class ValueType>
-KOKKOS_FORCEINLINE_FUNCTION ValueType conj(const ValueType &x) {
-  return Kokkos::ArithTraits<ValueType>::conj(x);
-}
+template <typename ValueType>
+struct conj {
+  KOKKOS_FORCEINLINE_FUNCTION ValueType operator()(const ValueType &x) {
+    return Kokkos::ArithTraits<ValueType>::conj(x);
+  }
+};
 
 }  // namespace details
 
@@ -70,9 +74,8 @@ struct InnerGemmFixC {
       : _as0(as0), _as1(as1), _bs0(bs0), _bs1(bs1), _cs0(cs0), _cs1(cs1) {}
 
   // serial rank update
-  template <
-      typename ScalarType, typename ValueType,
-      ValueType (*opA)(const ValueType &) = &details::identity<ValueType> >
+  template <typename ScalarType, typename ValueType,
+            typename OpA = details::identity<ValueType> >
   KOKKOS_INLINE_FUNCTION int serial_invoke(const ScalarType alpha,
                                            const ValueType *KOKKOS_RESTRICT A,
                                            const ValueType *KOKKOS_RESTRICT B,
@@ -80,9 +83,8 @@ struct InnerGemmFixC {
                                            /**/ ValueType *KOKKOS_RESTRICT C);
 
   // serial rank update for remainder
-  template <
-      typename ScalarType, typename ValueType,
-      ValueType (*opA)(const ValueType &) = &details::identity<ValueType> >
+  template <typename ScalarType, typename ValueType,
+            typename OpA = details::identity<ValueType> >
   KOKKOS_INLINE_FUNCTION int serial_invoke(const ScalarType alpha,
                                            const ValueType *KOKKOS_RESTRICT A,
                                            const ValueType *KOKKOS_RESTRICT B,
@@ -90,9 +92,8 @@ struct InnerGemmFixC {
                                            /**/ ValueType *KOKKOS_RESTRICT C);
 
   // serial rank update for remainder
-  template <
-      typename ScalarType, typename ValueType,
-      ValueType (*opA)(const ValueType &) = &details::identity<ValueType> >
+  template <typename ScalarType, typename ValueType,
+            typename OpA = details::identity<ValueType> >
   KOKKOS_INLINE_FUNCTION int serial_invoke(const ScalarType alpha,
                                            const ValueType *KOKKOS_RESTRICT A,
                                            const ValueType *KOKKOS_RESTRICT B,
