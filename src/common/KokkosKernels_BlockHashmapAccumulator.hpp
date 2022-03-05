@@ -46,27 +46,13 @@
 #include <Kokkos_Atomic.hpp>
 #include <atomic>
 #include "KokkosKernels_BlockUtils.hpp"
+#include "KokkosKernels_HashmapAccumulator.hpp"
 
 //#define HASHMAPACCUMULATOR_ASSERT_ENABLED
 
 namespace KokkosKernels {
 
 namespace Experimental {
-
-#if 0  // defined in HashmapAccumulator header - include if needed or drop
-/**
- * @brief types of hash operations supported by HashmapAccumulator.
- *
- * /var bitwiseAnd: Performs key & hashOpRHS
- * /var modulo:     Performs key % hashOpRHS
- * /var pow2Modulo: Performs key & (hashOpRHS - 1)
- */
-struct HashOpType {
-  struct bitwiseAnd {};
-  struct modulo {};
-  struct pow2Modulo {};
-};
-#endif
 
 template <typename size_type, typename key_type, typename value_type,
           typename hash_type>
@@ -173,185 +159,6 @@ struct BlockHashmapAccumulator {
     }
   }
 
-#if 0  // not used in block SPGEMM
-  // function to be called from device.
-  // Accumulation is OR operation.
-  // Insertion is sequential, no race condition for the insertion.
-  KOKKOS_INLINE_FUNCTION
-  int sequential_insert_into_hash_mergeOr_TrackHashes(key_type key,
-                                                      value_type value,
-                                                      size_type *used_size_,
-                                                      size_type *used_hash_size,
-                                                      size_type *used_hashes) {
-    size_type hash, i, my_index;
-
-    if (key == -1) return __insert_success;
-
-    hash = __compute_hash(key, __hashOpRHS);
-    for (i = hash_begins[hash]; i != -1; i = hash_nexts[i]) {
-      if (keys[i] == key) {
-        values[i] = values[i] | value;
-        return __insert_success;
-      }
-    }
-
-    if (*used_size_ >= __max_value_size) return __insert_full;
-    my_index = (*used_size_)++;
-
-    if (hash_begins[hash] == -1) {
-      used_hashes[used_hash_size[0]++] = hash;
-    }
-    hash_nexts[my_index] = hash_begins[hash];
-
-    hash_begins[hash] = my_index;
-    keys[my_index]    = key;
-    values[my_index]  = value;
-    return __insert_success;
-  }
-
-  // function to be called from device.
-  // Accumulation is OR operation.
-  // TODO: This function is for triangle counting.
-  // Assume that there are 2 values for triangle count.
-  KOKKOS_INLINE_FUNCTION
-  int sequential_insert_into_hash_mergeOr_TriangleCount_TrackHashes(
-      key_type key, value_type value, value_type *values2,
-      size_type *used_size_, size_type *used_hash_size,
-      size_type *used_hashes) {
-    size_type hash, i, my_index;
-
-    if (key == -1) return __insert_success;
-
-    hash = __compute_hash(key, __hashOpRHS);
-    for (i = hash_begins[hash]; i != -1; i = hash_nexts[i]) {
-      if (keys[i] == key) {
-        values2[i] = values2[i] | (values[i] & value);
-        values[i]  = values[i] | value;
-        return __insert_success;
-      }
-    }
-
-    if (*used_size_ >= __max_value_size) return __insert_full;
-    my_index = (*used_size_)++;
-
-    if (hash_begins[hash] == -1) {
-      used_hashes[used_hash_size[0]++] = hash;
-    }
-    hash_nexts[my_index] = hash_begins[hash];
-
-    hash_begins[hash] = my_index;
-    keys[my_index]    = key;
-    values[my_index]  = value;
-    values2[my_index] = 0;
-    return __insert_success;
-  }
-
-  // this is used in slow triangle counting method.
-  // L x Incidence
-  KOKKOS_INLINE_FUNCTION
-  int sequential_insert_into_hash_mergeAnd_TriangleCount_TrackHashes(
-      key_type key, value_type value, value_type *values2,
-      size_type * /*used_size_*/, size_type * /*used_hash_size*/,
-      size_type * /*used_hashes*/) {
-    size_type hash, i;
-
-    if (key == -1) return __insert_success;
-
-    // this function will only try to do an AND operation with
-    // existing keys. If the key is not there, returns __insert_full.
-    hash = __compute_hash(key, __hashOpRHS);
-    for (i = hash_begins[hash]; i != -1; i = hash_nexts[i]) {
-      if (keys[i] == key) {
-        // values2[i] = values2[i] | (values[i] & value);
-        values[i] = values[i] & value;
-        ++values2[i];
-        return __insert_success;
-      }
-    }
-    return __insert_full;
-  }
-
-  // this is used in LxL or Incidence^T x L
-  KOKKOS_INLINE_FUNCTION
-  value_type sequential_insert_into_hash_mergeAnd_TriangleCount_TrackHashes(
-      key_type key, value_type value) {
-    size_type hash, i;
-
-    if (key == -1) return __insert_success;
-
-    // this function will only try to do an AND operation with
-    // existing keys. If the key is not there, returns __insert_full.
-    hash = __compute_hash(key, __hashOpRHS);
-    for (i = hash_begins[hash]; i != -1; i = hash_nexts[i]) {
-      if (keys[i] == key) {
-        return values[i] & value;
-      }
-    }
-    return 0;
-  }
-
-  // this is used in slow triangle counting method.
-  // L x Incidence
-  KOKKOS_INLINE_FUNCTION
-  int sequential_insert_into_hash_TriangleCount_TrackHashes(
-      key_type key, value_type value, value_type *values2,
-      size_type *used_size_, size_type *used_hash_size,
-      size_type *used_hashes) {
-    size_type hash, my_index;
-
-    if (key == -1) return __insert_success;
-
-    // this function will directly insert, won't check if it exists already.
-    if (*used_size_ >= __max_value_size) return __insert_full;
-    my_index = (*used_size_)++;
-
-    keys[my_index]    = key;
-    values[my_index]  = value;
-    values2[my_index] = 1;
-
-    hash = __compute_hash(key, __hashOpRHS);
-    if (hash_begins[hash] == -1) {
-      hash_begins[hash]                = my_index;
-      used_hashes[used_hash_size[0]++] = hash;
-    } else {
-      hash_nexts[my_index] = hash_begins[hash];
-      hash_begins[hash]    = my_index;
-    }
-    return __insert_success;
-  }
-
-  // this is used in LxL or Incidence^T x L
-  KOKKOS_INLINE_FUNCTION
-  int sequential_insert_into_hash_TriangleCount_TrackHashes(
-      key_type key, value_type value, size_type *used_size_,
-      size_type *used_hash_size,
-      size_type *used_hashes)  // issue-508, TODO figure out what this
-                               // "used_hashes" is for
-  {
-    size_type hash, my_index;
-
-    if (key == -1) return __insert_success;
-
-    // this function will directly insert, won't check if it exists already.
-    if (*used_size_ >= __max_value_size) return __insert_full;
-    my_index = (*used_size_)++;
-
-    keys[my_index]   = key;
-    values[my_index] = value;
-
-    hash = __compute_hash(key, __hashOpRHS);
-    if (hash_begins[hash] == -1) {
-      hash_begins[hash]                = my_index;
-      used_hashes[used_hash_size[0]++] = hash;
-    } else {
-      hash_nexts[my_index] = hash_begins[hash];
-      hash_begins[hash]    = my_index;
-    }
-    return __insert_success;
-  }
-
-#endif
-
   // Performs C[hash] += A * B (for existing entry)
   //       or C[hash]  = A * B (for new entry)
   // Insertion is sequential, no race condition for the insertion.
@@ -430,39 +237,6 @@ struct BlockHashmapAccumulator {
       }
     }
   }
-
-#if 0
-  // no values. simply adds to the keys.
-  // used in the compression to count the sets.
-  // also used in the symbolic of spgemm if no compression is applied.
-  KOKKOS_INLINE_FUNCTION
-  int sequential_insert_into_hash_TrackHashes(key_type key,
-                                              size_type *used_size_,
-                                              size_type *used_hash_size,
-                                              size_type *used_hashes) {
-    size_type hash, i, my_index;
-
-    if (key == -1) return __insert_success;
-
-    hash = __compute_hash(key, __hashOpRHS);
-    for (i = hash_begins[hash]; i != -1; i = hash_nexts[i]) {
-      if (keys[i] == key) {
-        return __insert_success;
-      }
-    }
-
-    my_index = (*used_size_)++;
-
-    if (hash_begins[hash] == -1) {
-      used_hashes[used_hash_size[0]++] = hash;
-    }
-    hash_nexts[my_index] = hash_begins[hash];
-
-    hash_begins[hash] = my_index;
-    keys[my_index]    = key;
-    return __insert_success;
-  }
-#endif
 
   // used in the kkmem's numeric phase for second level hashmaps.
   // function to be called from device.
