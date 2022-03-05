@@ -75,7 +75,7 @@ struct InnerGemmFixC {
 
   // serial rank update
   template <typename ScalarType, typename ValueType,
-            typename OpA = details::identity<ValueType> >
+            typename OpAType = details::identity<ValueType> >
   KOKKOS_INLINE_FUNCTION int serial_invoke(const ScalarType alpha,
                                            const ValueType *KOKKOS_RESTRICT A,
                                            const ValueType *KOKKOS_RESTRICT B,
@@ -84,7 +84,7 @@ struct InnerGemmFixC {
 
   // serial rank update for remainder
   template <typename ScalarType, typename ValueType,
-            typename OpA = details::identity<ValueType> >
+            typename OpAType = details::identity<ValueType> >
   KOKKOS_INLINE_FUNCTION int serial_invoke(const ScalarType alpha,
                                            const ValueType *KOKKOS_RESTRICT A,
                                            const ValueType *KOKKOS_RESTRICT B,
@@ -93,7 +93,7 @@ struct InnerGemmFixC {
 
   // serial rank update for remainder
   template <typename ScalarType, typename ValueType,
-            typename OpA = details::identity<ValueType> >
+            typename OpAType = details::identity<ValueType> >
   KOKKOS_INLINE_FUNCTION int serial_invoke(const ScalarType alpha,
                                            const ValueType *KOKKOS_RESTRICT A,
                                            const ValueType *KOKKOS_RESTRICT B,
