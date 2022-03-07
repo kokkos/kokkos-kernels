@@ -299,8 +299,8 @@ void test_par_ilut() {
   Test::run_test_par_ilut<scalar_t, lno_t, size_type, device>();
 }
 
-#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                      \
-  TEST_F(TestCategory,                                                     \
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)     \
+  TEST_F(TestCategory,                                                  \
          sparse##_##par_ilut##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
     test_par_ilut<SCALAR, ORDINAL, OFFSET, DEVICE>();                        \
   }
@@ -309,5 +309,5 @@ void test_par_ilut() {
 
 #include <Test_Common_Test_All_Type_Combos.hpp>
 
-#undef EXECUTE_TEST
+#undef KOKKOSKERNELS_EXECUTE_TEST
 #define NO_TEST_COMPLEX
