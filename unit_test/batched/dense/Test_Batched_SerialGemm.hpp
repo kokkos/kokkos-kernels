@@ -95,7 +95,7 @@ void impl_test_batched_gemm(const int N, const int matAdim1, const int matAdim2,
       vgemm;
   vgemm.A_t = (std::is_same<transA, Trans::Transpose>::value) ||
               (std::is_same<transA, Trans::ConjTranspose>::value);
-  vgemm.B_t = (std::is_same<transB, Trans::Transpose>::value) ||
+  vgemm.B_t = std::is_same<transB, Trans::Transpose>::value;
               (std::is_same<transB, Trans::ConjTranspose>::value);
   vgemm.A_c = std::is_same<transA, Trans::ConjTranspose>::value;
   vgemm.B_c = std::is_same<transB, Trans::ConjTranspose>::value;
