@@ -503,7 +503,8 @@ void testBlockCrsMatrix_SpM_MV() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
 
 #define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
-  EXECUTE_BCRS_TIMES_MVEC_TEST(SCALAR, ORDINAL, OFFSET, LayoutLeft, TestExecSpace)
+  EXECUTE_BCRS_TIMES_MVEC_TEST(SCALAR, ORDINAL, OFFSET, LayoutLeft, \
+                               TestExecSpace)
 
 #include <Test_Common_Test_All_Type_Combos.hpp>
 
@@ -513,8 +514,9 @@ void testBlockCrsMatrix_SpM_MV() {
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
 
-#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
-  EXECUTE_BCRS_TIMES_MVEC_TEST(SCALAR, ORDINAL, OFFSET, LayoutRight, TestExecSpace)
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)  \
+  EXECUTE_BCRS_TIMES_MVEC_TEST(SCALAR, ORDINAL, OFFSET, LayoutRight, \
+                               TestExecSpace)
 
 #include <Test_Common_Test_All_Type_Combos.hpp>
 
