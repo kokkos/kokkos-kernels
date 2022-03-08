@@ -94,16 +94,16 @@ void impl_test_batched_gemm(const int N, const int matAdim1, const int matAdim2,
   Functor_BatchedVanillaGEMM<ViewType, ViewType, ViewType, execution_space>
       vgemm;
   vgemm.A_t = std::is_same<transA, Trans::Transpose>::value;
-              (std::is_same<transA, Trans::ConjTranspose>::value);
+  (std::is_same<transA, Trans::ConjTranspose>::value);
   vgemm.B_t = std::is_same<transB, Trans::Transpose>::value;
-              (std::is_same<transB, Trans::ConjTranspose>::value);
-  vgemm.A_c = std::is_same<transA, Trans::ConjTranspose>::value;
-  vgemm.B_c = std::is_same<transB, Trans::ConjTranspose>::value;
-  vgemm.A               = a_expected;
-  vgemm.B               = b_expected;
-  vgemm.C               = c_expected;
-  vgemm.alpha           = alpha;
-  vgemm.beta            = beta;
+  (std::is_same<transB, Trans::ConjTranspose>::value);
+  vgemm.A_c   = std::is_same<transA, Trans::ConjTranspose>::value;
+  vgemm.B_c   = std::is_same<transB, Trans::ConjTranspose>::value;
+  vgemm.A     = a_expected;
+  vgemm.B     = b_expected;
+  vgemm.C     = c_expected;
+  vgemm.alpha = alpha;
+  vgemm.beta  = beta;
   vgemm.run();  // Compute c_expected
   Functor_TestBatchedSerialGemm<DeviceType, ViewType, ScalarType, ParamTagType,
                                 AlgoTagType>(alpha, a_actual, b_actual, beta,
