@@ -230,7 +230,7 @@ display_help_text() {
       echo "--with-openmptarget:                          Enable OpenMPTarget backend."
       echo "--with-sycl:                                  Enable Sycl backend."
       echo "--with-openmp:                                Enable OpenMP backend."
-      echo "--with-pthread:                               Enable Pthreads backend."
+      echo "--with-threads:                               Enable Threads backend."
       echo "--with-serial:                                Enable Serial backend."
       echo "--with-devices:                               Explicitly add a set of backends."
       echo ""
@@ -415,8 +415,8 @@ do
     --with-sycl)
       update_kokkos_devices Sycl
       ;;
-    --with-pthread)
-      update_kokkos_devices Pthread
+    --with-threads)
+      update_kokkos_devices Threads
       ;;
     --with-serial)
       update_kokkos_devices Serial
