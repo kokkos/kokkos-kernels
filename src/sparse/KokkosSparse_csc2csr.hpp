@@ -56,10 +56,10 @@ class Csc2Csr {
  private:
   using CrsST             = typename ValViewType::value_type;
   using CrsOT             = OrdinalType;
-  using CrsDT             = typename ValViewType::execution_space;
+  using CrsET             = typename ValViewType::execution_space;
   using CrsMT             = void;
   using CrsSzT            = SizeType;
-  using CrsType           = CrsMatrix<CrsST, CrsOT, CrsDT, CrsMT, CrsSzT>;
+  using CrsType           = CrsMatrix<CrsST, CrsOT, CrsET, CrsMT, CrsSzT>;
   using CrsValsViewType   = typename CrsType::values_type;
   using CrsRowMapViewType = typename CrsType::row_map_type::non_const_type;
   using CrsColIdViewType  = typename CrsType::index_type;
@@ -87,7 +87,7 @@ class Csc2Csr {
   using s1RowCntTag = typename AlgoTags::s1RowCnt;
   using s3CopyTag   = typename AlgoTags::s3Copy;
 
-  using TeamPolicyType = Kokkos::TeamPolicy<s3CopyTag, CrsDT>;
+  using TeamPolicyType = Kokkos::TeamPolicy<s3CopyTag, CrsET>;
 
   int __suggested_team_size, __suggested_vec_size, __league_size;
 
@@ -96,27 +96,28 @@ class Csc2Csr {
     // s1RowCntTag
     {
       Kokkos::parallel_for("Csc2Csr",
-                           Kokkos::RangePolicy<s1RowCntTag, CrsDT>(0, __nnz),
+                           Kokkos::RangePolicy<s1RowCntTag, CrsET>(0, __nnz),
                            functor);
-      CrsDT().fence();
+      CrsET().fence();
     }
     // s2RowMapTag
     {
       namespace KE = Kokkos::Experimental;
-      CrsDT crsDT;
-      KE::exclusive_scan(crsDT, KE::cbegin(__crs_row_cnt),
-                         KE::cend(__crs_row_cnt), KE::begin(__crs_row_map), 0);
-      __crs_row_map(__nrows) = __nnz;
-      CrsDT().fence();
+      CrsET crsET;
+      KE::inclusive_scan(crsET, KE::cbegin(__crs_row_cnt),
+                         KE::cend(__crs_row_cnt), KE::begin(__crs_row_map) + 1);
+      __crs_row_map(0) = 0;
+      assert(__crs_row_map(__nrows) == __nnz);
+      CrsET().fence();
       Kokkos::deep_copy(__crs_row_map_scratch, __crs_row_map);
-      CrsDT().fence();
+      CrsET().fence();
     }
     // s3CopyTag
     {
       TeamPolicyType teamPolicy(__ncols, __suggested_team_size,
                                 __suggested_vec_size);
       Kokkos::parallel_for("Csc2Csr", teamPolicy, functor);
-      CrsDT().fence();
+      CrsET().fence();
     }
     // TODO: s3CopySortCompressTag
   }
@@ -205,7 +206,7 @@ class Csc2Csr {
         __nrows, __ncols, __nnz, __vals, __crs_vals, __row_ids, __crs_row_map,
         __crs_row_map_scratch, __col_map, __crs_col_ids, __crs_row_cnt);
 
-    KokkosKernels::Impl::get_suggested_vector_size<int64_t, CrsDT>(
+    KokkosKernels::Impl::get_suggested_vector_size<int64_t, CrsET>(
         __suggested_vec_size, __nrows, __nnz);
     __suggested_team_size =
         KokkosKernels::Impl::get_suggested_team_size<TeamPolicyType>(
@@ -239,7 +240,9 @@ template <class OrdinalType, class SizeType, class ValViewType,
 auto csc2csr(OrdinalType nrows, OrdinalType ncols, SizeType nnz,
              ValViewType vals, RowIdViewType row_ids, ColMapViewType col_map,
              int league_size) {
-  Impl::Csc2Csr csc2Csr(nrows, ncols, nnz, vals, row_ids, col_map, league_size);
+  using Csc2csrType = Impl::Csc2Csr<OrdinalType, SizeType, ValViewType,
+                                    RowIdViewType, ColMapViewType>;
+  Csc2csrType csc2Csr(nrows, ncols, nnz, vals, row_ids, col_map, league_size);
   return csc2Csr.get_csrMat();
 }
 }  // namespace KokkosSparse

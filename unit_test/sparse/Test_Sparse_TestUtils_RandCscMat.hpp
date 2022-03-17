@@ -51,7 +51,6 @@ void doCscMat(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
   int64_t expected_nnz = 0;
   RandCscMat<ScalarType, LayoutType, ExeSpaceType> cm(m, n, min_val, max_val);
 
-  std::string fmsg = kk_failure_str(__FILE__, __FUNCTION__, __LINE__);
   for (int64_t i = 0; i < cm.get_nnz(); ++i)
     ASSERT_GE(cm(i), expected_min) << cm.info;
 

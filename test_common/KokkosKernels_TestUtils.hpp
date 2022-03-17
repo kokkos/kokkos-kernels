@@ -129,8 +129,6 @@ static inline const std::string kk_failure_str(std::string file,
                                                std::string func,
                                                const int line) {
   std::string failure_msg = "  > from ";
-  // std::string test =
-  // ::testing::UnitTest::GetInstance()->current_test_info()->name();
   failure_msg += (file + ":" + func + ":" + std::to_string(line) + "\n    > ");
   return std::string(failure_msg);
 }
