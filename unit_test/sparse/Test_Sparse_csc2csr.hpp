@@ -47,9 +47,10 @@
 
 namespace Test {
 template <class ScalarType, class LayoutType, class ExeSpaceType>
-void doCsc2Csr(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
-  RandCscMat<ScalarType, LayoutType, ExeSpaceType> cscMat(m, n, min_val,
-                                                          max_val);
+void doCsc2Csr(size_t m, size_t n, ScalarType min_val, ScalarType max_val,
+               bool fully_sparse = false) {
+  RandCscMat<ScalarType, LayoutType, ExeSpaceType> cscMat(
+      m, n, min_val, max_val, fully_sparse);
   constexpr int league_size = 32;
 
   auto csrMat = KokkosSparse::csc2csr(
@@ -123,5 +124,9 @@ TEST_F(TestCategory, sparse_csc2csr) {
     doAllCsc2csr<TestExecSpace>(dim * 3, dim);
     doAllCsc2csr<TestExecSpace>(dim, dim * 3);
   }
+
+  // Fully sparse
+  doCsc2Csr<float, Kokkos::LayoutLeft, TestExecSpace>(5, 5, 1, 10, true);
+  doCsc2Csr<double, Kokkos::LayoutRight, TestExecSpace>(50, 10, 10, 100, true);
 }
 }  // namespace Test

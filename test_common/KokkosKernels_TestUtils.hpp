@@ -506,6 +506,7 @@ class RandCscMat {
   ColMapViewType __col_map;
   RowIdViewType __row_ids;
   ValViewType __vals;
+  bool __fully_sparse;
 
   /// Generates a random column map where:
   ///  1. __col_map(i) is in [__row_ids.data(), &row_ids.data()[nnz - 1]
@@ -516,7 +517,7 @@ class RandCscMat {
     std::srand(ticks);
     for (int64_t col_idx = 0; col_idx < __ncols; col_idx++) {
       int64_t r = std::rand() % (__nrows + 1);
-      if (r == 0) {  // 100% sparse column
+      if (r == 0 || __fully_sparse) {  // 100% sparse column
         __col_map(col_idx) = __nnz;
       } else {  // sparse column with r elements
         // Populate r row ids
@@ -554,10 +555,12 @@ class RandCscMat {
   /// \param n The number of columns.
   /// \param min_val The minimum scalar value in the matrix.
   /// \param max_val The maximum scalar value in the matrix.
-  RandCscMat(int64_t m, int64_t n, ScalarType min_val, ScalarType max_val) {
-    __ncols   = n;
-    __nrows   = m;
-    __col_map = ColMapViewType("RandCscMat.ColMapViewType", __ncols + 1);
+  RandCscMat(int64_t m, int64_t n, ScalarType min_val, ScalarType max_val,
+             bool fully_sparse = false) {
+    __ncols        = n;
+    __nrows        = m;
+    __fully_sparse = fully_sparse;
+    __col_map      = ColMapViewType("RandCscMat.ColMapViewType", __ncols + 1);
     __row_ids =
         RowIdViewType("RandCscMat.RowIdViewType", m * n + 1);  // over-allocated
 
@@ -565,11 +568,12 @@ class RandCscMat {
         std::chrono::high_resolution_clock::now().time_since_epoch().count() %
         UINT32_MAX;
 
-    info = std::string(std::string("RandCscMat<") + typeid(ScalarType).name() +
-                       ", " + typeid(LayoutType).name() + ", " +
-                       typeid(ExeSpaceType).name() + ">(" + std::to_string(m) +
-                       ", " + std::to_string(n) +
-                       "...): rand seed: " + std::to_string(ticks) + "\n");
+    info = std::string(
+        std::string("RandCscMat<") + typeid(ScalarType).name() + ", " +
+        typeid(LayoutType).name() + ", " + typeid(ExeSpaceType).name() + ">(" +
+        std::to_string(m) + ", " + std::to_string(n) +
+        "...): rand seed: " + std::to_string(ticks) +
+        ", fully sparse: " + (__fully_sparse ? "true" : "false") + "\n");
     Kokkos::Random_XorShift64_Pool<ExeSpaceType> random(ticks);
     __populate_random_csc_mat(ticks);
 
