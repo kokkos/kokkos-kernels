@@ -73,6 +73,8 @@ jobs:
           -DKokkosKernels_INST_FLOAT=ON \
           -DKokkosKernels_INST_LAYOUTLEFT:BOOL=ON \
           -DKokkosKernels_INST_LAYOUTRIGHT:BOOL=ON \
+          -DKokkosKernels_INST_OFFSET_INT=ON \
+          -DKokkosKernels_INST_OFFSET_SIZE_T=ON \
           -DKokkosKernels_ENABLE_TPL_CUSPARSE=OFF \
           -DKokkosKernels_ENABLE_TPL_CUBLAS=OFF \
           ..
