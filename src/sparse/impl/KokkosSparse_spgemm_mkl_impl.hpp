@@ -155,9 +155,6 @@ class MKL_SPMM {
   }
 
  private:
-  static constexpr int max_integer = 2147483647;
-
- private:
   template <typename CB>
   static void spmm(KernelHandle * /* handle */, nnz_lno_t m, nnz_lno_t n,
                    nnz_lno_t k, a_rowmap_view_type row_mapA,
@@ -186,8 +183,7 @@ class MKL_SPMM {
     int_tmp_view_t a_xadj_v, b_xadj_v;
 
     if (!std::is_same<size_type, int>::value) {
-      if (entriesA.extent(0) > max_integer ||
-          entriesB.extent(0) > max_integer) {
+      if (entriesA.extent(0) > INT_MAX || entriesB.extent(0) > INT_MAX) {
         throw std::runtime_error(
             "MKL requires integer values for size type for SPGEMM. Copying "
             "to "
