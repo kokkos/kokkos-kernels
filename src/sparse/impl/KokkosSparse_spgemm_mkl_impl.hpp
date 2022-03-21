@@ -60,7 +60,7 @@ inline static MKLSparseMatrix<value_type> mkl_spmm(
     sparse_operation_t operation, const MKLSparseMatrix<value_type> &A,
     const MKLSparseMatrix<value_type> &B) {
   sparse_matrix_t C;
-  MKL_SAFE_CALL(mkl_sparse_spmm(operation, A, B, &C));
+  KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_spmm(operation, A, B, &C));
   return MKLSparseMatrix<value_type>(C);
 }
 

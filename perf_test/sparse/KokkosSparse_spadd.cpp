@@ -245,11 +245,11 @@ void run_experiment(const Params& params) {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
   sparse_matrix_t Amkl, Bmkl, Cmkl;
   if (params.use_mkl) {
-    MKL_SAFE_CALL(mkl_sparse_d_create_csr(
+    KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_d_create_csr(
         &Amkl, SPARSE_INDEX_BASE_ZERO, m, n, (int*)A.graph.row_map.data(),
         (int*)A.graph.row_map.data() + 1, A.graph.entries.data(),
         A.values.data()));
-    MKL_SAFE_CALL(mkl_sparse_d_create_csr(
+    KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_d_create_csr(
         &Bmkl, SPARSE_INDEX_BASE_ZERO, m, n, (int*)B.graph.row_map.data(),
         (int*)B.graph.row_map.data() + 1, B.graph.entries.data(),
         B.values.data()));
@@ -312,9 +312,9 @@ void run_experiment(const Params& params) {
 #endif
       } else if (params.use_mkl) {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
-        MKL_SAFE_CALL(mkl_sparse_d_add(SPARSE_OPERATION_NON_TRANSPOSE, Amkl,
-                                       1.0, Bmkl, &Cmkl));
-        MKL_SAFE_CALL(mkl_sparse_destroy(Cmkl));
+        KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_d_add(
+            SPARSE_OPERATION_NON_TRANSPOSE, Amkl, 1.0, Bmkl, &Cmkl));
+        KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_destroy(Cmkl));
 #endif
       } else {
         spadd_numeric(
@@ -337,8 +337,8 @@ void run_experiment(const Params& params) {
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
   if (params.use_mkl) {
-    MKL_SAFE_CALL(mkl_sparse_destroy(Amkl));
-    MKL_SAFE_CALL(mkl_sparse_destroy(Bmkl));
+    KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_destroy(Amkl));
+    KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_destroy(Bmkl));
   }
 #endif
 
