@@ -296,12 +296,12 @@ template <typename KernelHandle, typename a_rowmap_type, typename a_index_type,
           typename b_values_type, typename c_rowmap_type, typename c_index_type,
           typename c_values_type,
           typename nnz_lno_t = typename KernelHandle::nnz_lno_t>
-void mkl_apply(KernelHandle *handle, nnz_lno_t m, nnz_lno_t n, nnz_lno_t k,
-               a_rowmap_type row_mapA, a_index_type entriesA,
-               a_values_type valuesA, bool transposeA, b_rowmap_type row_mapB,
-               b_index_type entriesB, b_values_type valuesB, bool transposeB,
-               c_rowmap_type row_mapC, c_index_type entriesC,
-               c_values_type valuesC, bool verbose = false) {
+void mkl_numeric(KernelHandle *handle, nnz_lno_t m, nnz_lno_t n, nnz_lno_t k,
+                 a_rowmap_type row_mapA, a_index_type entriesA,
+                 a_values_type valuesA, bool transposeA, b_rowmap_type row_mapB,
+                 b_index_type entriesB, b_values_type valuesB, bool transposeB,
+                 c_rowmap_type row_mapC, c_index_type entriesC,
+                 c_values_type valuesC, bool verbose = false) {
   using mkl = MKL_SPMM<KernelHandle, a_rowmap_type, a_index_type, a_values_type,
                        b_rowmap_type, b_index_type, b_values_type,
                        c_rowmap_type, c_index_type, c_values_type>;
