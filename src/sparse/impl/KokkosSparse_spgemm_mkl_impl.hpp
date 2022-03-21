@@ -69,7 +69,7 @@ template <typename KernelHandle, typename a_rowmap_view_type,
           typename b_rowmap_view_type, typename b_index_view_type,
           typename b_values_view_type, typename c_rowmap_view_type,
           typename c_index_view_type, typename c_values_view_type>
-class MKL_SPMM {
+class MKL_SPGEMM {
  public:
   typedef typename KernelHandle::nnz_lno_t nnz_lno_t;
   typedef typename KernelHandle::size_type size_type;
@@ -280,9 +280,9 @@ void mkl_symbolic(KernelHandle *handle, nnz_lno_t m, nnz_lno_t n, nnz_lno_t k,
                   c_rowmap_type row_mapC, bool verbose = false) {
   using values_type  = typename KernelHandle::scalar_temp_work_view_t;
   using c_index_type = b_index_type;
-  using mkl = MKL_SPMM<KernelHandle, a_rowmap_type, a_index_type, values_type,
-                       b_rowmap_type, b_index_type, values_type, c_rowmap_type,
-                       c_index_type, values_type>;
+  using mkl = MKL_SPGEMM<KernelHandle, a_rowmap_type, a_index_type, values_type,
+                         b_rowmap_type, b_index_type, values_type,
+                         c_rowmap_type, c_index_type, values_type>;
   mkl::mkl_symbolic(handle, m, n, k, row_mapA, entriesA, transposeA, row_mapB,
                     entriesB, transposeB, row_mapC, verbose);
 }
@@ -298,9 +298,10 @@ void mkl_numeric(KernelHandle *handle, nnz_lno_t m, nnz_lno_t n, nnz_lno_t k,
                  b_index_type entriesB, b_values_type valuesB, bool transposeB,
                  c_rowmap_type row_mapC, c_index_type entriesC,
                  c_values_type valuesC, bool verbose = false) {
-  using mkl = MKL_SPMM<KernelHandle, a_rowmap_type, a_index_type, a_values_type,
-                       b_rowmap_type, b_index_type, b_values_type,
-                       c_rowmap_type, c_index_type, c_values_type>;
+  using mkl =
+      MKL_SPGEMM<KernelHandle, a_rowmap_type, a_index_type, a_values_type,
+                 b_rowmap_type, b_index_type, b_values_type, c_rowmap_type,
+                 c_index_type, c_values_type>;
   mkl::mkl_numeric(handle, m, n, k, row_mapA, entriesA, valuesA, transposeA,
                    row_mapB, entriesB, valuesB, transposeB, row_mapC, entriesC,
                    valuesC, verbose);
