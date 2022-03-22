@@ -78,6 +78,7 @@ class Csc2Csr {
   CrsRowMapViewType __crs_row_map_scratch;
   CrsColIdViewType __crs_col_ids;
 
+ public:
   struct AlgoTags {
     struct s1RowCnt {};
     struct s2RowMap {};
@@ -87,6 +88,7 @@ class Csc2Csr {
   using s1RowCntTag = typename AlgoTags::s1RowCnt;
   using s3CopyTag   = typename AlgoTags::s3Copy;
 
+ private:
   using TeamPolicyType = Kokkos::TeamPolicy<s3CopyTag, CrsET>;
 
   int __suggested_team_size, __suggested_vec_size, __league_size;

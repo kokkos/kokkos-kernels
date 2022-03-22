@@ -57,13 +57,45 @@ void doCsc2Csr(size_t m, size_t n, ScalarType min_val, ScalarType max_val,
       cscMat.get_m(), cscMat.get_n(), cscMat.get_nnz(), cscMat.get_vals(),
       cscMat.get_row_ids(), cscMat.get_col_map(), league_size);
 
-  auto csc_row_ids = cscMat.get_row_ids();
-  auto csc_col_map = cscMat.get_col_map();
-  auto csc_vals    = cscMat.get_vals();
+  auto csc_row_ids_d = cscMat.get_row_ids();
+  auto csc_col_map_d = cscMat.get_col_map();
+  auto csc_vals_d    = cscMat.get_vals();
 
-  auto csr_col_ids = csrMat.graph.entries;
-  auto csr_row_map = csrMat.graph.row_map;
-  auto csr_vals    = csrMat.values;
+  using ViewTypeRowIds = decltype(csc_row_ids_d);
+  using ViewTypeColMap = decltype(csc_col_map_d);
+  using ViewTypeVals   = decltype(csc_vals_d);
+
+  // Copy to host
+  typename ViewTypeRowIds::HostMirror csc_row_ids =
+      Kokkos::create_mirror_view(csc_row_ids_d);
+  Kokkos::deep_copy(csc_row_ids, csc_row_ids_d);
+  typename ViewTypeColMap::HostMirror csc_col_map =
+      Kokkos::create_mirror_view(csc_col_map_d);
+  Kokkos::deep_copy(csc_col_map, csc_col_map_d);
+  typename ViewTypeVals::HostMirror csc_vals =
+      Kokkos::create_mirror_view(csc_vals_d);
+  Kokkos::deep_copy(csc_vals, csc_vals_d);
+
+  auto csr_col_ids_d = csrMat.graph.entries;
+  auto csr_row_map_d = csrMat.graph.row_map;
+  auto csr_vals_d    = csrMat.values;
+
+  using ViewTypeCsrColIds = decltype(csr_col_ids_d);
+  using ViewTypeCsrRowMap = decltype(csr_row_map_d);
+  using ViewTypeCsrVals   = decltype(csr_vals_d);
+
+  // Copy to host
+  typename ViewTypeCsrColIds::HostMirror csr_col_ids =
+      Kokkos::create_mirror_view(csr_col_ids_d);
+  Kokkos::deep_copy(csr_col_ids, csr_col_ids_d);
+  typename ViewTypeCsrRowMap::HostMirror csr_row_map =
+      Kokkos::create_mirror_view(csr_row_map_d);
+  Kokkos::deep_copy(csr_row_map, csr_row_map_d);
+  typename ViewTypeCsrVals::HostMirror csr_vals =
+      Kokkos::create_mirror_view(csr_vals_d);
+  Kokkos::deep_copy(csr_vals, csr_vals_d);
+
+  Kokkos::fence();
 
   for (int j = 0; j < cscMat.get_n(); ++j) {
     auto col_start = csc_col_map(j);

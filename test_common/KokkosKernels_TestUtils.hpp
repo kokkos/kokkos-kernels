@@ -497,15 +497,21 @@ int string_compare_no_case(const char* str1, const char* str2) {
 template <class ScalarType, class LayoutType, class ExeSpaceType>
 class RandCscMat {
  private:
-  using ValViewType    = Kokkos::View<ScalarType*, LayoutType, ExeSpaceType>;
-  using RowIdViewType  = Kokkos::View<int64_t*, LayoutType, ExeSpaceType>;
-  using ColMapViewType = Kokkos::View<int64_t*, LayoutType, ExeSpaceType>;
+  using ValViewTypeD    = Kokkos::View<ScalarType*, LayoutType, ExeSpaceType>;
+  using RowIdViewTypeD  = Kokkos::View<int64_t*, LayoutType, ExeSpaceType>;
+  using ColMapViewTypeD = Kokkos::View<int64_t*, LayoutType, ExeSpaceType>;
+  using ValViewTypeH = Kokkos::View<ScalarType*, LayoutType, Kokkos::HostSpace>;
+  using RowIdViewTypeH  = Kokkos::View<int64_t*, LayoutType, Kokkos::HostSpace>;
+  using ColMapViewTypeH = Kokkos::View<int64_t*, LayoutType, Kokkos::HostSpace>;
   int64_t __nrows;
   int64_t __ncols;
   int64_t __nnz = 0;
-  ColMapViewType __col_map;
-  RowIdViewType __row_ids;
-  ValViewType __vals;
+  ColMapViewTypeD __col_map_d;
+  RowIdViewTypeD __row_ids_d;
+  ValViewTypeD __vals_d;
+  ColMapViewTypeH __col_map;
+  RowIdViewTypeH __row_ids;
+  ValViewTypeH __vals;
   bool __fully_sparse;
 
   /// Generates a random column map where:
@@ -537,6 +543,11 @@ class RandCscMat {
 
     // last entry in map points to end of row id list
     __col_map(__ncols) = __nnz;
+
+    // Copy to device
+    Kokkos::deep_copy(__col_map_d, __col_map);
+    Kokkos::deep_copy(__row_ids_d, __row_ids);
+    ExeSpaceType().fence();
   }
 
   template <class T>
@@ -560,9 +571,11 @@ class RandCscMat {
     __ncols        = n;
     __nrows        = m;
     __fully_sparse = fully_sparse;
-    __col_map      = ColMapViewType("RandCscMat.ColMapViewType", __ncols + 1);
-    __row_ids =
-        RowIdViewType("RandCscMat.RowIdViewType", m * n + 1);  // over-allocated
+    __col_map_d    = ColMapViewTypeD("RandCscMat.ColMapViewType", __ncols + 1);
+    __col_map      = Kokkos::create_mirror_view(__col_map_d);
+    __row_ids_d    = RowIdViewTypeD("RandCscMat.RowIdViewType",
+                                 m * n + 1);  // over-allocated
+    __row_ids      = Kokkos::create_mirror_view(__row_ids_d);
 
     uint64_t ticks =
         std::chrono::high_resolution_clock::now().time_since_epoch().count() %
@@ -574,13 +587,18 @@ class RandCscMat {
         std::to_string(m) + ", " + std::to_string(n) +
         "...): rand seed: " + std::to_string(ticks) +
         ", fully sparse: " + (__fully_sparse ? "true" : "false") + "\n");
-    Kokkos::Random_XorShift64_Pool<ExeSpaceType> random(ticks);
+    Kokkos::Random_XorShift64_Pool<Kokkos::HostSpace> random(ticks);
     __populate_random_csc_mat(ticks);
 
-    __vals = ValViewType("RandCscMat.ValViewType", __nnz + 1);
+    __vals_d = ValViewTypeD("RandCscMat.ValViewType", __nnz + 1);
+    __vals   = Kokkos::create_mirror_view(__vals_d);
     Kokkos::fill_random(__vals, random, min_val, max_val);  // random scalars
-    ExeSpaceType().fence();
+    Kokkos::fence();
     __vals(__nnz) = ScalarType(0);
+
+    // Copy to device
+    Kokkos::deep_copy(__vals_d, __vals);
+    ExeSpaceType().fence();
   }
 
   // O(c), where c is a constant.
@@ -593,9 +611,9 @@ class RandCscMat {
     return j < __ncols ? (__col_map(j + 1) - __col_map(j)) : 0;
   }
   int64_t get_col_start(int64_t j) { return j < __ncols ? __col_map(j) : 0; }
-  ValViewType get_vals() { return __getter_copy_helper(__vals); }
-  RowIdViewType get_row_ids() { return __getter_copy_helper(__row_ids); }
-  ColMapViewType get_col_map() { return __getter_copy_helper(__col_map); }
+  ValViewTypeD get_vals() { return __getter_copy_helper(__vals_d); }
+  RowIdViewTypeD get_row_ids() { return __getter_copy_helper(__row_ids_d); }
+  ColMapViewTypeD get_col_map() { return __getter_copy_helper(__col_map_d); }
 };
 
 }  // namespace Test
