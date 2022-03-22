@@ -60,7 +60,7 @@ inline static MKLSparseMatrix<value_type> mkl_spmm(
     sparse_operation_t operation, const MKLSparseMatrix<value_type> &A,
     const MKLSparseMatrix<value_type> &B) {
   sparse_matrix_t C;
-  MKL_SAFE_CALL(mkl_sparse_spmm(operation, A, B, &C));
+  KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_spmm(operation, A, B, &C));
   return MKLSparseMatrix<value_type>(C);
 }
 
@@ -69,7 +69,7 @@ template <typename KernelHandle, typename a_rowmap_view_type,
           typename b_rowmap_view_type, typename b_index_view_type,
           typename b_values_view_type, typename c_rowmap_view_type,
           typename c_index_view_type, typename c_values_view_type>
-class MKL_SPMM {
+class MKL_SPGEMM {
  public:
   typedef typename KernelHandle::nnz_lno_t nnz_lno_t;
   typedef typename KernelHandle::size_type size_type;
@@ -155,9 +155,6 @@ class MKL_SPMM {
   }
 
  private:
-  static constexpr int max_integer = 2147483647;
-
- private:
   template <typename CB>
   static void spmm(KernelHandle * /* handle */, nnz_lno_t m, nnz_lno_t n,
                    nnz_lno_t k, a_rowmap_view_type row_mapA,
@@ -186,8 +183,7 @@ class MKL_SPMM {
     int_tmp_view_t a_xadj_v, b_xadj_v;
 
     if (!std::is_same<size_type, int>::value) {
-      if (entriesA.extent(0) > max_integer ||
-          entriesB.extent(0) > max_integer) {
+      if (entriesA.extent(0) > INT_MAX || entriesB.extent(0) > INT_MAX) {
         throw std::runtime_error(
             "MKL requires integer values for size type for SPGEMM. Copying "
             "to "
@@ -284,9 +280,9 @@ void mkl_symbolic(KernelHandle *handle, nnz_lno_t m, nnz_lno_t n, nnz_lno_t k,
                   c_rowmap_type row_mapC, bool verbose = false) {
   using values_type  = typename KernelHandle::scalar_temp_work_view_t;
   using c_index_type = b_index_type;
-  using mkl = MKL_SPMM<KernelHandle, a_rowmap_type, a_index_type, values_type,
-                       b_rowmap_type, b_index_type, values_type, c_rowmap_type,
-                       c_index_type, values_type>;
+  using mkl = MKL_SPGEMM<KernelHandle, a_rowmap_type, a_index_type, values_type,
+                         b_rowmap_type, b_index_type, values_type,
+                         c_rowmap_type, c_index_type, values_type>;
   mkl::mkl_symbolic(handle, m, n, k, row_mapA, entriesA, transposeA, row_mapB,
                     entriesB, transposeB, row_mapC, verbose);
 }
@@ -296,15 +292,16 @@ template <typename KernelHandle, typename a_rowmap_type, typename a_index_type,
           typename b_values_type, typename c_rowmap_type, typename c_index_type,
           typename c_values_type,
           typename nnz_lno_t = typename KernelHandle::nnz_lno_t>
-void mkl_apply(KernelHandle *handle, nnz_lno_t m, nnz_lno_t n, nnz_lno_t k,
-               a_rowmap_type row_mapA, a_index_type entriesA,
-               a_values_type valuesA, bool transposeA, b_rowmap_type row_mapB,
-               b_index_type entriesB, b_values_type valuesB, bool transposeB,
-               c_rowmap_type row_mapC, c_index_type entriesC,
-               c_values_type valuesC, bool verbose = false) {
-  using mkl = MKL_SPMM<KernelHandle, a_rowmap_type, a_index_type, a_values_type,
-                       b_rowmap_type, b_index_type, b_values_type,
-                       c_rowmap_type, c_index_type, c_values_type>;
+void mkl_numeric(KernelHandle *handle, nnz_lno_t m, nnz_lno_t n, nnz_lno_t k,
+                 a_rowmap_type row_mapA, a_index_type entriesA,
+                 a_values_type valuesA, bool transposeA, b_rowmap_type row_mapB,
+                 b_index_type entriesB, b_values_type valuesB, bool transposeB,
+                 c_rowmap_type row_mapC, c_index_type entriesC,
+                 c_values_type valuesC, bool verbose = false) {
+  using mkl =
+      MKL_SPGEMM<KernelHandle, a_rowmap_type, a_index_type, a_values_type,
+                 b_rowmap_type, b_index_type, b_values_type, c_rowmap_type,
+                 c_index_type, c_values_type>;
   mkl::mkl_numeric(handle, m, n, k, row_mapA, entriesA, valuesA, transposeA,
                    row_mapB, entriesB, valuesB, transposeB, row_mapC, entriesC,
                    valuesC, verbose);
