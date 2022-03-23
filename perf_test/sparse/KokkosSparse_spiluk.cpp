@@ -257,8 +257,8 @@ int test_spiluk_perf(std::vector<int> tests, std::string afilename, int kin,
                 << std::endl;
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-    // cuSPARSE requires lno_t = size_type = int. For both, int is always used
-    // (if enabled)
+      // cuSPARSE requires lno_t = size_type = int. For both, int is always used
+      // (if enabled)
 #if defined(KOKKOSKERNELS_INST_ORDINAL_INT) && \
     defined(KOKKOSKERNELS_INST_OFFSET_INT)
       if (fill_lev == 0) {
@@ -441,8 +441,8 @@ int test_spiluk_perf(std::vector<int> tests, std::string afilename, int kin,
       std::cout << "LOOP_MIN_TIME:  " << min_time << std::endl;
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-    // cuSPARSE requires lno_t = size_type = int. For both, int is always used
-    // (if enabled)
+      // cuSPARSE requires lno_t = size_type = int. For both, int is always used
+      // (if enabled)
 #if defined(KOKKOSKERNELS_INST_ORDINAL_INT) && \
     defined(KOKKOSKERNELS_INST_OFFSET_INT)
       if (fill_lev == 0) {
