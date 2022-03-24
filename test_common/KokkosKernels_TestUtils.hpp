@@ -500,15 +500,15 @@ class RandCscMat {
   using ValViewTypeD    = Kokkos::View<ScalarType*, LayoutType, ExeSpaceType>;
   using RowIdViewTypeD  = Kokkos::View<int64_t*, LayoutType, ExeSpaceType>;
   using ColMapViewTypeD = Kokkos::View<int64_t*, LayoutType, ExeSpaceType>;
-  using ValViewTypeH = Kokkos::View<ScalarType*, LayoutType, Kokkos::HostSpace>;
-  using RowIdViewTypeH  = Kokkos::View<int64_t*, LayoutType, Kokkos::HostSpace>;
-  using ColMapViewTypeH = Kokkos::View<int64_t*, LayoutType, Kokkos::HostSpace>;
   int64_t __nrows;
   int64_t __ncols;
   int64_t __nnz = 0;
   ColMapViewTypeD __col_map_d;
   RowIdViewTypeD __row_ids_d;
   ValViewTypeD __vals_d;
+  using ColMapViewTypeH = typename ColMapViewTypeD::HostMirror;
+  using RowIdViewTypeH  = typename RowIdViewTypeD::HostMirror;
+  using ValViewTypeH    = typename ValViewTypeD::HostMirror;
   ColMapViewTypeH __col_map;
   RowIdViewTypeH __row_ids;
   ValViewTypeH __vals;
