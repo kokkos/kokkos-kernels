@@ -4,7 +4,7 @@ Contributing
 Comment Style
 -------------
 We follow doxygen style comments for both external (API) and internal members. See https://www.doxygen.nl/manual/docblocks.html for details.
-Our documentation can be generated using the `-DKokkosKernels_ENABLE_DOCS:BOOL=ON` cmake flag.
+Our documentation can be generated using the `-DKokkosKernels_ENABLE_DOCS:BOOL=ON` cmake flag; see `Building the Documentation`.
 
 In general, we prefer that the prototype has the doxygen style comment rather than the definition. If there is no prototype, then the definition should have the doxygen style comment.
 

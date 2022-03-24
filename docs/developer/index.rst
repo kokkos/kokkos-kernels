@@ -2,7 +2,7 @@ Developer Manual
 ================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    Source Code Documentation <apidocs.rst>
    Building the Documentation <build_doc.rst>
