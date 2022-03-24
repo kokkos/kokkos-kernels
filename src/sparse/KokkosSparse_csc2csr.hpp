@@ -106,10 +106,11 @@ class Csc2Csr {
     {
       namespace KE = Kokkos::Experimental;
       CrsET crsET;
-      KE::inclusive_scan(crsET, KE::cbegin(__crs_row_cnt),
-                         KE::cend(__crs_row_cnt), KE::begin(__crs_row_map) + 1);
-      __crs_row_map(0) = 0;
-      assert(__crs_row_map(__nrows) == __nnz);
+      // Use exclusive scan so we can allocate the row map uninitialized and
+      // avoid accessing device views on the host.
+      KE::exclusive_scan(crsET, KE::cbegin(__crs_row_cnt),
+                         KE::cend(__crs_row_cnt) + 1, KE::begin(__crs_row_map),
+                         0);
       CrsET().fence();
       Kokkos::deep_copy(__crs_row_map_scratch, __crs_row_map);
       CrsET().fence();
