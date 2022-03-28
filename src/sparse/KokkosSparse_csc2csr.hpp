@@ -132,21 +132,21 @@ class Csc2Csr {
     OrdinalType __nrows;
     OrdinalType __ncols;
     SizeType __nnz;
-    ValViewType &__vals;
-    CrsValsViewType &__crs_vals;
-    RowIdViewType &__row_ids;
-    CrsRowMapViewType &__crs_row_map;
-    CrsRowMapViewType &__crs_row_map_scratch;
-    ColMapViewType &__col_map;
-    CrsColIdViewType &__crs_col_ids;
-    RowIdViewType &__crs_row_cnt;
+    ValViewType __vals;
+    CrsValsViewType __crs_vals;
+    RowIdViewType __row_ids;
+    CrsRowMapViewType __crs_row_map;
+    CrsRowMapViewType __crs_row_map_scratch;
+    ColMapViewType __col_map;
+    CrsColIdViewType __crs_col_ids;
+    RowIdViewType __crs_row_cnt;
 
    public:
     __Functor(OrdinalType nrows, OrdinalType ncols, SizeType nnz,
-              ValViewType &vals, CrsValsViewType &crs_vals,
-              RowIdViewType &row_ids, CrsRowMapViewType &crs_row_map,
-              CrsRowMapViewType &crs_row_map_scratch, ColMapViewType &col_map,
-              CrsColIdViewType &crs_col_ids, RowIdViewType &crs_row_cnt)
+              ValViewType vals, CrsValsViewType crs_vals, RowIdViewType row_ids,
+              CrsRowMapViewType crs_row_map,
+              CrsRowMapViewType crs_row_map_scratch, ColMapViewType col_map,
+              CrsColIdViewType crs_col_ids, RowIdViewType crs_row_cnt)
         : __nrows(nrows),
           __ncols(ncols),
           __nnz(nnz),
