@@ -119,7 +119,7 @@ KOKKOS_INLINE_FUNCTION void kk_block_add_mul(const size_type block_dim,
 // Performs C += A * B (dense GEMM) on blocks
 // Note: all pointers reference dense row-major blocks (no extra padding)
 template <typename size_type, typename value_type>
-KOKKOS_INLINE_FUNCTION void kk_vector_block_mul_add(const size_type block_dim,
+KOKKOS_INLINE_FUNCTION void kk_vector_block_add_mul(const size_type block_dim,
                                                     value_type *dst,
                                                     const value_type *valA,
                                                     const value_type *valB) {
