@@ -45,15 +45,6 @@
 #ifndef _KOKKOSBSPGEMMIMPL_HPP
 #define _KOKKOSBSPGEMMIMPL_HPP
 
-//#define KOKKOSKERNELS_ANALYZE_COMPRESSION
-//#define KOKKOSKERNELS_ANALYZE_MEMORYACCESS
-//#define HASHTRACK
-
-//#define TRACK_INSERTS
-//#define GPU_EXPERIMENTAL
-//#define NUMERIC_USE_STATICMEM
-//#define twostep
-
 #include "KokkosSparse_spgemm_impl.hpp"
 
 namespace KokkosSparse {

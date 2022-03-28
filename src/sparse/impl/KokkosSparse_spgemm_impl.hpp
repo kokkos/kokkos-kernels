@@ -45,14 +45,6 @@
 #ifndef _KOKKOSSPGEMMIMPL_HPP
 #define _KOKKOSSPGEMMIMPL_HPP
 
-//#define KOKKOSKERNELS_ANALYZE_COMPRESSION
-//#define KOKKOSKERNELS_ANALYZE_MEMORYACCESS
-//#define HASHTRACK
-
-//#define TRACK_INSERTS
-//#define GPU_EXPERIMENTAL
-//#define NUMERIC_USE_STATICMEM
-//#define twostep
 #include <KokkosKernels_Utils.hpp>
 #include <KokkosKernels_SimpleUtils.hpp>
 #include <KokkosKernels_SparseUtils.hpp>
