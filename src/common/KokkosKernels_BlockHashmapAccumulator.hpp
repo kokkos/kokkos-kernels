@@ -543,8 +543,6 @@ struct BlockHashmapAccumulator {
     }
   }
 
-  // NOTE: this is an exact copy of vector_atmoic_insert_into_hash_mergeAdd from
-  // https://github.com/kokkos/kokkos-kernels/blob/750fe24508a69ed4dba92bb4a9e17a6094b1a083/src/common/KokkosKernels_HashmapAccumulator.hpp#L442-L502
   template <typename team_member_t>
   KOKKOS_INLINE_FUNCTION int
   vector_atomic_insert_into_hash_mergeAdd_with_team_level_list_length(
