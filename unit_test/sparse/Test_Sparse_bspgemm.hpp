@@ -199,8 +199,10 @@ void test_bspgemm(lno_t blockDim, lno_t m, lno_t k, lno_t n, size_type nnz,
                    shared_memory_size);
 
   std::vector<SPGEMMAlgorithm> algorithms = {
-      SPGEMM_KK, SPGEMM_KK_MEMORY /* alias SPGEMM_KK_MEMSPEED */,
-      SPGEMM_KK_SPEED /* alias SPGEMM_KK_DENSE */
+      SPGEMM_KK,
+      SPGEMM_KK_MEMORY /* alias SPGEMM_KK_MEMSPEED */,
+      SPGEMM_KK_SPEED /* alias SPGEMM_KK_DENSE */,
+      SPGEMM_MKL /* verify failure in case of missing build */,
   };
 
   if (!KokkosKernels::Impl::kk_is_gpu_exec_space<
@@ -209,10 +211,6 @@ void test_bspgemm(lno_t blockDim, lno_t m, lno_t k, lno_t n, size_type nnz,
     // (otherwise skipped) but on GPU it's same as SPGEMM_KK, so we can skip it.
     algorithms.push_back(SPGEMM_KK_LP);
   }
-
-#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
-  algorithms.push_back(SPGEMM_MKL);
-#endif
 
   for (auto spgemm_algorithm : algorithms) {
     const uint64_t max_integer = Kokkos::ArithTraits<int>::max();
@@ -228,11 +226,15 @@ void test_bspgemm(lno_t blockDim, lno_t m, lno_t k, lno_t n, size_type nnz,
 #endif
         break;
 
-      case SPGEMM_MKL: algo = "SPGEMM_MKL";
+      case SPGEMM_MKL:
+        algo                = "SPGEMM_MKL";
+        is_expected_to_fail = !is_empy_case;  // TODO: add block MKL impl
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
         if (!KokkosSparse::Impl::mkl_is_supported_value_type<scalar_t>::value) {
           is_expected_to_fail = true;
         }
+#else
+        is_expected_to_fail = true;  // fail: MKL not enabled in build
 #endif
         // MKL requires local ordinals to be int.
         // Note: empty-array special case will NOT fail on this.
