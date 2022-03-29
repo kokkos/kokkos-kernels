@@ -357,13 +357,13 @@ struct BlockHashmapAccumulator {
   // Insertion is sequential, no race condition for the insertion.
   // the mergeadd used in the numeric of KKMEM.
   KOKKOS_INLINE_FUNCTION
-  int sequential_insert_into_hash_mergeAdd_TrackHashes(
+  void sequential_insert_into_hash_mergeAdd_TrackHashes(
       key_type key, const value_type *valueA, const value_type *valueB,
       size_type *used_size_, size_type *used_hash_size,
       size_type *used_hashes) {
     size_type hash, i, my_index;
 
-    if (key == -1) return __insert_success;
+    if (key == -1) return;
 
     // issue-508, TODO: ensure that i < __max_value_size, but
     // need information about length of keys, values, and hash_nexts first!
@@ -372,7 +372,7 @@ struct BlockHashmapAccumulator {
       if (keys[i] == key) {
         KokkosSparse::Impl::kk_block_add_mul(block_dim, values + i * block_size,
                                              valueA, valueB);
-        return __insert_success;
+        return;
       }
     }
 
@@ -387,7 +387,6 @@ struct BlockHashmapAccumulator {
     keys[my_index]    = key;
     KokkosSparse::Impl::kk_block_set_mul(
         block_dim, values + my_index * block_size, valueA, valueB);
-    return __insert_success;
   }
 
   // Performs C[hash] += A * B (for existing entry)
