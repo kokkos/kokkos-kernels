@@ -156,6 +156,11 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
     }
     char *marker = (char *)(dense_accum + numcols * block_size);
 
+    // Performs C[row_index,b_col_ind] += A[row_index,rowB] * B[rowB,b_col_ind]
+    // using dense_accum[col] to accumulate scalar values,
+    // marker[col] for boolean flags denoting initialized accumulators
+    // and col=pEntriesC[i] to index sparse column indices.
+    // Note: each CPU thread works on its own row, thus no need for locking.
     Kokkos::parallel_for(
         Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end),
         [&](const nnz_lno_t &row_index) {
