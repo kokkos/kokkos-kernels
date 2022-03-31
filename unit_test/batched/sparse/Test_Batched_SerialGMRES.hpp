@@ -12,11 +12,11 @@
 using namespace KokkosBatched;
 
 namespace Test {
-namespace TeamGMRES {
+namespace GMRES {
 
 template <typename DeviceType, typename ValuesViewType, typename IntView,
           typename VectorViewType, typename KrylovHandleType>
-struct Functor_TestBatchedTeamGMRES {
+struct Functor_TestBatchedSerialGMRES {
   const ValuesViewType _D;
   const IntView _r;
   const IntView _c;
@@ -26,11 +26,11 @@ struct Functor_TestBatchedTeamGMRES {
   const int _N_team;
   KrylovHandleType _handle;
 
-  Functor_TestBatchedTeamGMRES(const ValuesViewType &D, const IntView &r,
-                               const IntView &c, const VectorViewType &X,
-                               const VectorViewType &B,
-                               const VectorViewType &diag, const int N_team,
-                               KrylovHandleType &handle)
+  Functor_TestBatchedSerialGMRES(const ValuesViewType &D, const IntView &r,
+                                 const IntView &c, const VectorViewType &X,
+                                 const VectorViewType &B,
+                                 const VectorViewType &diag, const int N_team,
+                                 KrylovHandleType &handle)
       : _D(D),
         _r(r),
         _c(c),
@@ -40,14 +40,9 @@ struct Functor_TestBatchedTeamGMRES {
         _Diag(diag),
         _handle(handle) {}
 
-  template <typename MemberType>
-  KOKKOS_INLINE_FUNCTION void operator()(const MemberType &member) const {
-    const int first_matrix = static_cast<int>(member.league_rank()) * _N_team;
-    const int N            = _D.extent(0);
-    const int last_matrix =
-        (static_cast<int>(member.league_rank() + 1) * _N_team < N
-             ? static_cast<int>(member.league_rank() + 1) * _N_team
-             : N);
+  KOKKOS_INLINE_FUNCTION void operator()(const int k) const {
+    const int first_matrix = _handle.first_index(k);
+    const int last_matrix  = _handle.last_index(k);
 
     auto d = Kokkos::subview(_D, Kokkos::make_pair(first_matrix, last_matrix),
                              Kokkos::ALL);
@@ -65,26 +60,21 @@ struct Functor_TestBatchedTeamGMRES {
     PrecOperator P(diag);
     P.setComputedInverse();
 
-    KokkosBatched::TeamGMRES<MemberType>::template invoke<Operator,
-                                                          VectorViewType>(
-        member, A, b, x, P, _handle);
+    KokkosBatched::SerialGMRES::template invoke<Operator, VectorViewType>(
+        A, b, x, P, _handle, k);
   }
 
   inline void run() {
     typedef typename ValuesViewType::value_type value_type;
-    std::string name_region("KokkosBatched::Test::TeamGMRES");
+    std::string name_region("KokkosBatched::Test::SerialGMRES");
     const std::string name_value_type = Test::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
-    Kokkos::TeamPolicy<DeviceType> policy(_D.extent(0) / _N_team,
-                                          Kokkos::AUTO(), Kokkos::AUTO());
+    Kokkos::RangePolicy<DeviceType> policy(0, _D.extent(0) / _N_team);
 
     const int N                 = _D.extent(0);
     const int n                 = _X.extent(1);
     const int maximum_iteration = _handle.get_max_iteration();
-
-    size_t bytes_0 = ValuesViewType::shmem_size(_N_team, n);
-    size_t bytes_1 = ValuesViewType::shmem_size(_N_team, 1);
 
     _handle.set_ortho_strategy(0);
     _handle.set_compute_last_residual(false);
@@ -92,27 +82,8 @@ struct Functor_TestBatchedTeamGMRES {
 
     _handle.Arnoldi_view = typename KrylovHandleType::ArnoldiViewType(
         "", N, maximum_iteration, n + maximum_iteration + 3);
-
-    using ScalarType = typename ValuesViewType::non_const_value_type;
-    using Layout     = typename ValuesViewType::array_layout;
-    using EXSP       = typename ValuesViewType::execution_space;
-
-    using ViewType2D = Kokkos::View<ScalarType **, Layout, EXSP>;
-
-    size_t bytes_1D   = ViewType2D::shmem_size(_N_team, 1);
-    size_t bytes_2D_1 = ViewType2D::shmem_size(_N_team, _X.extent(1));
-    size_t bytes_2D_2 = ViewType2D::shmem_size(_N_team, maximum_iteration + 1);
-
-    size_t bytes_row_ptr = IntView::shmem_size(_r.extent(0));
-    size_t bytes_col_idc = IntView::shmem_size(_c.extent(0));
-
-    size_t bytes_int  = bytes_row_ptr + bytes_col_idc;
-    size_t bytes_diag = bytes_2D_1;
-    size_t bytes_tmp  = 2 * bytes_2D_1 + 2 * bytes_1D + bytes_2D_2;
-    policy.set_scratch_size(
-        0, Kokkos::PerTeam(bytes_tmp + bytes_diag + bytes_int));
-
-    // policy.set_scratch_size(0, Kokkos::PerTeam(5 * bytes_0 + 5 * bytes_1));
+    _handle.tmp_view = typename KrylovHandleType::TemporaryViewType(
+        "", N, n + maximum_iteration + 3);
 
     Kokkos::parallel_for(name.c_str(), policy, *this);
     Kokkos::Profiling::popRegion();
@@ -207,8 +178,8 @@ void impl_test_batched_GMRES(const int N, const int BlkSize, const int N_team) {
       1>(-1, D_host, r_host, c_host, X_host, 1, R_host);
   KokkosBatched::SerialDot<Trans::NoTranspose>::invoke(R_host, R_host,
                                                        sqr_norm_0_host);
-  Functor_TestBatchedTeamGMRES<DeviceType, ValuesViewType, IntView,
-                               VectorViewType, KrylovHandleType>(
+  Functor_TestBatchedSerialGMRES<DeviceType, ValuesViewType, IntView,
+                                 VectorViewType, KrylovHandleType>(
       D, r, c, X, B, Diag, N_team, handle)
       .run();
 
@@ -231,11 +202,11 @@ void impl_test_batched_GMRES(const int N, const int BlkSize, const int N_team) {
     EXPECT_NEAR_KK(
         std::sqrt(sqr_norm_j_host(l)) / std::sqrt(sqr_norm_0_host(l)), 0, eps);
 }
-}  // namespace TeamGMRES
+}  // namespace GMRES
 }  // namespace Test
 
 template <typename DeviceType, typename ValueType>
-int test_batched_team_GMRES() {
+int test_batched_serial_GMRES() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
   {
     typedef Kokkos::View<ValueType **, Kokkos::LayoutLeft, DeviceType> ViewType;
@@ -244,8 +215,8 @@ int test_batched_team_GMRES() {
         VectorViewType;
 
     for (int i = 3; i < 10; ++i) {
-      Test::TeamGMRES::impl_test_batched_GMRES<DeviceType, ViewType, IntView,
-                                               VectorViewType>(1024, i, 2);
+      Test::GMRES::impl_test_batched_GMRES<DeviceType, ViewType, IntView,
+                                           VectorViewType>(1024, i, 2);
     }
   }
 #endif
@@ -258,8 +229,8 @@ int test_batched_team_GMRES() {
         VectorViewType;
 
     for (int i = 3; i < 10; ++i) {
-      Test::TeamGMRES::impl_test_batched_GMRES<DeviceType, ViewType, IntView,
-                                               VectorViewType>(1024, i, 2);
+      Test::GMRES::impl_test_batched_GMRES<DeviceType, ViewType, IntView,
+                                           VectorViewType>(1024, i, 2);
     }
   }
 #endif

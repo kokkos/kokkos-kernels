@@ -62,12 +62,13 @@ namespace KokkosBatched {
 
 template <typename MemberType>
 struct TeamVectorCG {
-  template <typename OperatorType, typename VectorViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(
-      const MemberType& member, const OperatorType& A, const VectorViewType& _B,
-      const VectorViewType& _X,
-      const KrylovHandle<typename VectorViewType::non_const_value_type>&
-          handle) {
+  template <typename OperatorType, typename VectorViewType,
+            typename KrylovHandleType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& member,
+                                           const OperatorType& A,
+                                           const VectorViewType& _B,
+                                           const VectorViewType& _X,
+                                           const KrylovHandleType& handle) {
     typedef int OrdinalType;
     typedef typename Kokkos::Details::ArithTraits<
         typename VectorViewType::non_const_value_type>::mag_type MagnitudeType;
@@ -87,16 +88,29 @@ struct TeamVectorCG {
     const OrdinalType numMatrices = _X.extent(0);
     const OrdinalType numRows     = _X.extent(1);
 
-    ScratchPadVectorViewType P(member.team_scratch(0), numMatrices, numRows);
-    ScratchPadVectorViewType Q(member.team_scratch(0), numMatrices, numRows);
-    ScratchPadVectorViewType R(member.team_scratch(0), numMatrices, numRows);
-    ScratchPadVectorViewType X(member.team_scratch(0), numMatrices, numRows);
+    ScratchPadVectorViewType P(
+        member.team_scratch(handle.get_scratch_pad_level()), numMatrices,
+        numRows);
+    ScratchPadVectorViewType Q(
+        member.team_scratch(handle.get_scratch_pad_level()), numMatrices,
+        numRows);
+    ScratchPadVectorViewType R(
+        member.team_scratch(handle.get_scratch_pad_level()), numMatrices,
+        numRows);
+    ScratchPadVectorViewType X(
+        member.team_scratch(handle.get_scratch_pad_level()), numMatrices,
+        numRows);
 
-    ScratchPadNormViewType sqr_norm_0(member.team_scratch(0), numMatrices);
-    ScratchPadNormViewType sqr_norm_j(member.team_scratch(0), numMatrices);
-    ScratchPadNormViewType alpha(member.team_scratch(0), numMatrices);
-    ScratchPadNormViewType mask(member.team_scratch(0), numMatrices);
-    ScratchPadNormViewType tmp(member.team_scratch(0), numMatrices);
+    ScratchPadNormViewType sqr_norm_0(
+        member.team_scratch(handle.get_scratch_pad_level()), numMatrices);
+    ScratchPadNormViewType sqr_norm_j(
+        member.team_scratch(handle.get_scratch_pad_level()), numMatrices);
+    ScratchPadNormViewType alpha(
+        member.team_scratch(handle.get_scratch_pad_level()), numMatrices);
+    ScratchPadNormViewType mask(
+        member.team_scratch(handle.get_scratch_pad_level()), numMatrices);
+    ScratchPadNormViewType tmp(
+        member.team_scratch(handle.get_scratch_pad_level()), numMatrices);
 
     TeamVectorCopy<MemberType>::invoke(member, _X, X);
     // Deep copy of b into r_0:
@@ -104,9 +118,7 @@ struct TeamVectorCG {
 
     // r_0 := b - A x_0
     member.team_barrier();
-    A.template apply<MemberType, ScratchPadVectorViewType,
-                     ScratchPadVectorViewType, Trans::NoTranspose,
-                     Mode::TeamVector>(member, X, R, -1, 1);
+    A.template apply<Trans::NoTranspose, Mode::TeamVector>(member, X, R, -1, 1);
     member.team_barrier();
 
     // Deep copy of r_0 into p_0:
@@ -128,9 +140,7 @@ struct TeamVectorCG {
 
     for (size_t j = 0; j < maximum_iteration; ++j) {
       // q := A p_j
-      A.template apply<MemberType, ScratchPadVectorViewType,
-                       ScratchPadVectorViewType, Trans::NoTranspose,
-                       Mode::TeamVector>(member, P, Q);
+      A.template apply<Trans::NoTranspose, Mode::TeamVector>(member, P, Q);
       member.team_barrier();
 
       TeamVectorDot<MemberType>::invoke(member, P, Q, tmp);
