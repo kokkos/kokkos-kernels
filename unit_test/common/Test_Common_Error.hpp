@@ -42,37 +42,20 @@
 //@HEADER
 */
 
-#ifndef _KOKKOSKERNELSUTILSMEMSPACEUTILS_HPP
-#define _KOKKOSKERNELSUTILSMEMSPACEUTILS_HPP
+#ifndef TEST_COMMON_ERROR_HPP
+#define TEST_COMMON_ERROR_HPP
 
-#include "Kokkos_Cuda.hpp"
+#include "KokkosKernels_Error.hpp"
 
-namespace KokkosKernels {
-namespace Impl {
-
-template <typename MemorySpace>
-constexpr KOKKOS_INLINE_FUNCTION bool kk_is_gpu_mem_space() {
-  return false;
+void test_kokkoskernels_throw() {
+  const std::string my_throw_msg =
+      "Testing Kokkos Kernels' throw_runtime_exception.";
+  try {
+    KokkosKernels::Impl::throw_runtime_exception(my_throw_msg);
+  } catch (const std::runtime_error& e) {
+  }
 }
 
-#ifdef KOKKOS_ENABLE_CUDA
-template <>
-constexpr KOKKOS_INLINE_FUNCTION bool kk_is_gpu_mem_space<Kokkos::CudaSpace>() {
-  return true;
-}
-template <>
-constexpr KOKKOS_INLINE_FUNCTION bool
-kk_is_gpu_mem_space<Kokkos::CudaUVMSpace>() {
-  return true;
-}
-template <>
-constexpr KOKKOS_INLINE_FUNCTION bool
-kk_is_gpu_mem_space<Kokkos::CudaHostPinnedSpace>() {
-  return true;
-}
-#endif
+TEST_F(TestCategory, common_throw) { test_kokkoskernels_throw(); }
 
-}  // namespace Impl
-}  // namespace KokkosKernels
-
-#endif
+#endif  // TEST_COMMON_ERROR_HPP

@@ -44,7 +44,6 @@
 #include <fstream>
 #include <ostream>
 
-#include <Kokkos_MemoryTraits.hpp>
 #include <Kokkos_Core.hpp>
 #include <KokkosKernels_Utils.hpp>
 

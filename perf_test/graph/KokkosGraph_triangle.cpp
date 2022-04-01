@@ -124,29 +124,30 @@ void print_options() {
 int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc,
                  char **argv) {
   for (int i = 1; i < argc; ++i) {
-    if (0 == strcasecmp(argv[i], "--threads")) {
+    if (0 == Test::string_compare_no_case(argv[i], "--threads")) {
       params.use_threads = atoi(argv[++i]);
-    } else if (0 == strcasecmp(argv[i], "--openmp")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--openmp")) {
       params.use_openmp = atoi(argv[++i]);
-    } else if (0 == strcasecmp(argv[i], "--cuda")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--cuda")) {
       params.use_cuda = 1;
-    } else if (0 == strcasecmp(argv[i], "--hip")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--hip")) {
       params.use_hip = 1;
-    } else if (0 == strcasecmp(argv[i], "--repeat")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--repeat")) {
       params.repeat = atoi(argv[++i]);
-    } else if (0 == strcasecmp(argv[i], "--triangle_operation")) {
+    } else if (0 ==
+               Test::string_compare_no_case(argv[i], "--triangle_operation")) {
       params.triangle_options = atoi(argv[++i]);
-    } else if (0 == strcasecmp(argv[i], "--chunksize")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--chunksize")) {
       params.chunk_size = atoi(argv[++i]);
-    } else if (0 == strcasecmp(argv[i], "--teamsize")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--teamsize")) {
       params.team_size = atoi(argv[++i]);
-    } else if (0 == strcasecmp(argv[i], "--vectorsize")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--vectorsize")) {
       params.vector_size = atoi(argv[++i]);
-    } else if (0 == strcasecmp(argv[i], "--compression")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--compression")) {
       params.apply_compression = atoi(argv[++i]);
-    } else if (0 == strcasecmp(argv[i], "--sort_option")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--sort_option")) {
       params.sort_option = atoi(argv[++i]);
-    } else if (0 == strcasecmp(argv[i], "--memspaces")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--memspaces")) {
       int memspaces    = atoi(argv[++i]);
       int memspaceinfo = memspaces;
       std::cout << "memspaceinfo:" << memspaceinfo << std::endl;
@@ -182,60 +183,61 @@ int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc,
         std::cout << "Using DDR4 for work memory space" << std::endl;
       }
       memspaceinfo = memspaceinfo >> 1;
-    } else if (0 == strcasecmp(argv[i], "--flop")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--flop")) {
       params.calculate_read_write_cost = 1;
-    } else if (0 == strcasecmp(argv[i], "--CIF")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--CIF")) {
       params.coloring_input_file = argv[++i];
-    } else if (0 == strcasecmp(argv[i], "--COF")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--COF")) {
       params.coloring_output_file = argv[++i];
-    } else if (0 == strcasecmp(argv[i], "--mhscale")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--mhscale")) {
       params.minhashscale = atoi(argv[++i]);
-    } else if (0 == strcasecmp(argv[i], "--mcscale")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--mcscale")) {
       params.multi_color_scale = atoi(argv[++i]);
-    } else if (0 == strcasecmp(argv[i], "--shmem")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--shmem")) {
       params.shmemsize = atoi(argv[++i]);
-    } else if (0 == strcasecmp(argv[i], "--compression2step")) {
+    } else if (0 ==
+               Test::string_compare_no_case(argv[i], "--compression2step")) {
       params.compression2step = true;
-    } else if (0 == strcasecmp(argv[i], "--mklsort")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--mklsort")) {
       params.mkl_sort_option = atoi(argv[++i]);
-    } else if (0 == strcasecmp(argv[i], "--mklkeepout")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--mklkeepout")) {
       params.mkl_keep_output = atoi(argv[++i]);
-    } else if (0 == strcasecmp(argv[i], "--checkoutput")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--checkoutput")) {
       params.check_output = 1;
-    } else if (0 == strcasecmp(argv[i], "--amtx")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--amtx")) {
       params.a_mtx_bin_file = argv[++i];
     }
     /*
-    else if ( 0 == strcasecmp( argv[i] , "cmtx" ) ) {
+    else if ( 0 == Test::string_compare_no_case( argv[i] , "cmtx" ) ) {
       params.c_mtx_bin_file = argv[++i];
     }
-    else if ( 0 == strcasecmp( argv[i] , "bmtx" ) ) {
+    else if ( 0 == Test::string_compare_no_case( argv[i] , "bmtx" ) ) {
       params.b_mtx_bin_file = argv[++i];
     }
     */
-    else if (0 == strcasecmp(argv[i], "--dynamic")) {
+    else if (0 == Test::string_compare_no_case(argv[i], "--dynamic")) {
       params.use_dynamic_scheduling = 1;
-    } else if (0 == strcasecmp(argv[i], "--cache_flush")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--cache_flush")) {
       params.cache_flush = atoi(argv[++i]);
     }
 
-    else if (0 == strcasecmp(argv[i], "--RLT")) {
+    else if (0 == Test::string_compare_no_case(argv[i], "--RLT")) {
       params.right_lower_triangle = 1;
-    } else if (0 == strcasecmp(argv[i], "--RS")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--RS")) {
       params.right_sort = atoi(argv[++i]);
     }
 
-    else if (0 == strcasecmp(argv[i], "--verbose")) {
+    else if (0 == Test::string_compare_no_case(argv[i], "--verbose")) {
       params.verbose = 1;
     }
 
-    else if (0 == strcasecmp(argv[i], "--accumulator")) {
+    else if (0 == Test::string_compare_no_case(argv[i], "--accumulator")) {
       ++i;
-      if (0 == strcasecmp(argv[i], "default")) {
+      if (0 == Test::string_compare_no_case(argv[i], "default")) {
         params.accumulator = 0;
-      } else if (0 == strcasecmp(argv[i], "dense")) {
+      } else if (0 == Test::string_compare_no_case(argv[i], "dense")) {
         params.accumulator = 1;
-      } else if (0 == strcasecmp(argv[i], "sparse")) {
+      } else if (0 == Test::string_compare_no_case(argv[i], "sparse")) {
         params.accumulator = 2;
       } else {
         std::cerr << "1-Unrecognized command line argument #" << i << ": "
@@ -243,17 +245,18 @@ int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc,
         print_options();
         return 1;
       }
-    } else if (0 == strcasecmp(argv[i], "--algorithm")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--algorithm")) {
       ++i;
-      if (0 == strcasecmp(argv[i], "TRIANGLEAI")) {
+      if (0 == Test::string_compare_no_case(argv[i], "TRIANGLEAI")) {
         params.algorithm = 16;
-      } else if (0 == strcasecmp(argv[i], "TRIANGLEIA")) {
+      } else if (0 == Test::string_compare_no_case(argv[i], "TRIANGLEIA")) {
         params.algorithm = 17;
-      } else if (0 == strcasecmp(argv[i], "TRIANGLEIAUNION")) {
+      } else if (0 ==
+                 Test::string_compare_no_case(argv[i], "TRIANGLEIAUNION")) {
         params.algorithm = 18;
-      } else if (0 == strcasecmp(argv[i], "TRIANGLELL")) {
+      } else if (0 == Test::string_compare_no_case(argv[i], "TRIANGLELL")) {
         params.algorithm = 19;
-      } else if (0 == strcasecmp(argv[i], "TRIANGLELU")) {
+      } else if (0 == Test::string_compare_no_case(argv[i], "TRIANGLELU")) {
         params.algorithm = 20;
       } else {
         std::cerr << "2-Unrecognized command line argument #" << i << ": "

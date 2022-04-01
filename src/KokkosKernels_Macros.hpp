@@ -78,6 +78,26 @@
 #endif
 #endif
 
+// Macro to place before an ordinary loop to force vectorization, based
+// on the pragmas that are supported by the compiler. "Force" means to
+// override the compiler's heuristics and always vectorize.
+// This respects the fact that "omp simd" is incompatible with
+// "vector always" and "ivdep" in the Intel OneAPI toolchain.
+#ifdef KOKKOSKERNELS_ENABLE_OMP_SIMD
+#define KOKKOSKERNELS_FORCE_SIMD _Pragma("omp simd")
+#else
+#if defined(KOKKOS_ENABLE_PRAGMA_IVDEP) && defined(KOKKOS_ENABLE_PRAGMA_VECTOR)
+#define KOKKOSKERNELS_FORCE_SIMD _Pragma("ivdep") _Pragma("vector always")
+#elif defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
+#define KOKKOSKERNELS_FORCE_SIMD _Pragma("ivdep")
+#elif defined(KOKKOS_ENABLE_PRAGMA_VECTOR)
+#define KOKKOSKERNELS_FORCE_SIMD _Pragma("vector always")
+#else
+// No macros available to suggest vectorization
+#define KOKKOSKERNELS_FORCE_SIMD
+#endif
+#endif
+
 // Macro that tells GCC not to worry if a variable isn't being used.
 // Generalized attributes were not implemented in GCC until 4.8:
 //

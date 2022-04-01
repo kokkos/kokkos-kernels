@@ -47,6 +47,7 @@
 
 #include <KokkosBlas1_nrm2w_spec.hpp>
 #include <KokkosKernels_helpers.hpp>
+#include <KokkosKernels_Error.hpp>
 
 namespace KokkosBlas {
 
@@ -75,7 +76,8 @@ nrm2w(const XVector& x, const XVector& w) {
       typename XVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       XVector_Internal;
 
-  typedef Kokkos::View<mag_type, Kokkos::LayoutLeft, Kokkos::HostSpace,
+  typedef Kokkos::View<mag_type, typename XVector_Internal::array_layout,
+                       Kokkos::HostSpace,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       RVector_Internal;
 
@@ -130,23 +132,24 @@ void nrm2w(const RV& R, const XMV& X, const XMV& W,
     os << "KokkosBlas::nrm2w (MV): Dimensions of R and X do not match: "
        << "R: " << R.extent(0) << ", X: " << X.extent(0) << " x "
        << X.extent(1);
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
+
+  using UnifiedXLayout =
+      typename KokkosKernels::Impl::GetUnifiedLayout<XMV>::array_layout;
+  using UnifiedRVLayout =
+      typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<
+          RV, UnifiedXLayout>::array_layout;
 
   // Create unmanaged versions of the input Views.  RV and XMV may be
   // rank 1 or rank 2.
-  typedef Kokkos::View<
-      typename std::conditional<RV::rank == 0,
-                                typename RV::non_const_value_type,
-                                typename RV::non_const_value_type*>::type,
-      typename KokkosKernels::Impl::GetUnifiedLayout<RV>::array_layout,
-      typename RV::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+  typedef Kokkos::View<typename RV::non_const_data_type, UnifiedRVLayout,
+                       typename RV::device_type,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       RV_Internal;
-  typedef Kokkos::View<
-      typename std::conditional<XMV::rank == 1, typename XMV::const_value_type*,
-                                typename XMV::const_value_type**>::type,
-      typename KokkosKernels::Impl::GetUnifiedLayout<XMV>::array_layout,
-      typename XMV::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+  typedef Kokkos::View<typename XMV::const_data_type, UnifiedXLayout,
+                       typename XMV::device_type,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       XMV_Internal;
 
   RV_Internal R_internal  = R;

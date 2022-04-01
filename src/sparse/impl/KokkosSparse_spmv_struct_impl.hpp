@@ -49,6 +49,7 @@
 #include "KokkosKernels_ExecSpaceUtils.hpp"
 #include "KokkosBlas1_scal.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
+#include "KokkosKernels_Error.hpp"
 
 namespace KokkosSparse {
 namespace Impl {
@@ -548,16 +549,16 @@ struct SPMV_Struct_Functor {
           const size_type rowOffset = m_A.graph.row_map(rowIdx);
 
           y_value_type sum(0.0);
-#if defined(KOKKOS_IF_HOST)
+#if defined(KOKKOS_IF_ON_HOST)
           // clang-format off
-          KOKKOS_IF_HOST((
+          KOKKOS_IF_ON_HOST((
           for (ordinal_type idx = 0; idx < 27; ++idx) {
             sum +=
                 m_A.values(rowOffset + idx) * m_x(rowIdx + columnOffsets(idx));
           }
           ))
 
-          KOKKOS_IF_DEVICE((
+          KOKKOS_IF_ON_DEVICE((
           Kokkos::parallel_reduce(
               Kokkos::ThreadVectorRange(dev, 27),
               [&](const ordinal_type& idx, y_value_type& lclSum) {
@@ -964,7 +965,7 @@ static void spmv_struct_beta(
     spmv_struct_beta_transpose<AMatrix, XVector, YVector, dobeta, true>(
         stencil_type, structure, alpha, A, x, beta, y);
   } else {
-    Kokkos::Impl::throw_runtime_exception(
+    KokkosKernels::Impl::throw_runtime_exception(
         "Invalid Transpose Mode for KokkosSparse::spmv_struct()");
   }
 }
@@ -1498,7 +1499,7 @@ static void spmv_alpha_beta_mv_struct(
     spmv_alpha_beta_mv_struct_transpose<AMatrix, XVector, YVector, doalpha,
                                         dobeta, true>(alpha, A, x, beta, y);
   } else {
-    Kokkos::Impl::throw_runtime_exception(
+    KokkosKernels::Impl::throw_runtime_exception(
         "Invalid Transpose Mode for KokkosSparse::spmv()");
   }
 }

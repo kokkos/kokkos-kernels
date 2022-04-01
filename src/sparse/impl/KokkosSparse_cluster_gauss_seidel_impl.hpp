@@ -47,11 +47,8 @@
 
 #include "KokkosKernels_Utils.hpp"
 #include <Kokkos_Core.hpp>
-#include <Kokkos_Atomic.hpp>
-#include <Kokkos_Timer.hpp>
 #include <Kokkos_Bitset.hpp>
 #include <Kokkos_Sort.hpp>
-#include <Kokkos_MemoryTraits.hpp>
 #include "KokkosGraph_Distance1Color.hpp"
 #include "KokkosKernels_BitUtils.hpp"
 #include "KokkosKernels_SimpleUtils.hpp"
@@ -340,9 +337,13 @@ class ClusterGaussSeidel {
                            (teamMember.league_rank() * _clusters_per_team) +
                            work;
             if (ii >= _color_set_end) return;
-            nnz_lno_t cluster = _color_adj(ii);
-            for (nnz_lno_t j = _cluster_offsets(cluster);
-                 j < _cluster_offsets(cluster + 1); j++) {
+            nnz_lno_t cluster      = _color_adj(ii);
+            nnz_lno_t clusterBegin = _cluster_offsets(cluster);
+            nnz_lno_t clusterEnd   = _cluster_offsets(cluster + 1);
+            for (nnz_lno_t jcount = 0; jcount < clusterEnd - clusterBegin;
+                 jcount++) {
+              nnz_lno_t j = _is_backward ? (clusterEnd - 1 - jcount)
+                                         : clusterBegin + jcount;
               nnz_lno_t row      = _cluster_verts(j);
               nnz_lno_t num_vecs = _Xvector.extent(1);
               for (nnz_lno_t batch_start = 0; batch_start < num_vecs;) {
@@ -355,14 +356,10 @@ class ClusterGaussSeidel {
                   COL_BATCH_CASE(1)
                   COL_BATCH_CASE(2)
                   COL_BATCH_CASE(3)
-                  COL_BATCH_CASE(4)
-                  COL_BATCH_CASE(5)
-                  COL_BATCH_CASE(6)
-                  COL_BATCH_CASE(7)
 #undef COL_BATCH_CASE
                   default:
-                    runColBatch<8>(teamMember, row, batch_start);
-                    batch_start += 8;
+                    runColBatch<4>(teamMember, row, batch_start);
+                    batch_start += 4;
                 }
               }
             }
@@ -564,6 +561,7 @@ class ClusterGaussSeidel {
           in_rowmap_t, in_colinds_t, rowmap_t, colinds_t, MyExecSpace>(
           num_rows, this->row_map, this->entries, sym_xadj, sym_adj);
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
+      MyExecSpace().fence();
       std::cout << "SYMMETRIZING TIME: " << timer.seconds() << std::endl;
       timer.reset();
 #endif
@@ -610,6 +608,7 @@ class ClusterGaussSeidel {
                                  " is not implemented");
     }
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
+    MyExecSpace().fence();
     std::cout << "Graph clustering: " << timer.seconds() << '\n';
     timer.reset();
 #endif
@@ -623,6 +622,7 @@ class ClusterGaussSeidel {
         raw_sym_xadj, raw_sym_adj, vertClusters, numClusters, clusterRowmap,
         clusterEntries, clusterOffsets, clusterVerts, false);
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
+    MyExecSpace().fence();
     std::cout << "Building explicit cluster graph: " << timer.seconds() << '\n';
     timer.reset();
 #endif
@@ -671,6 +671,7 @@ class ClusterGaussSeidel {
     kh.destroy_graph_coloring_handle();
 #endif
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
+    MyExecSpace().fence();
     std::cout << "Coloring: " << timer.seconds() << '\n';
     timer.reset();
 #endif
@@ -680,8 +681,8 @@ class ClusterGaussSeidel {
         typename HandleType::GraphColoringHandleType::color_view_t,
         nnz_lno_persistent_work_view_t, MyExecSpace>(
         numClusters, numColors, colors, color_xadj, color_adj);
-    MyExecSpace().fence();
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
+    MyExecSpace().fence();
     std::cout << "CREATE_REVERSE_MAP:" << timer.seconds() << std::endl;
     timer.reset();
 #endif
@@ -801,8 +802,8 @@ class ClusterGaussSeidel {
     }
     gsHandle->set_inverse_diagonal(inverse_diagonal);
     gsHandle->set_call_numeric(true);
-    MyExecSpace().fence();
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
+    MyExecSpace().fence();
     std::cout << "NUMERIC:" << timer.seconds() << std::endl;
 #endif
   }
@@ -864,7 +865,6 @@ class ClusterGaussSeidel {
       this->IterativePSGS(gs, numColors, h_color_xadj, numIter, apply_forward,
                           apply_backward);
     }
-    MyExecSpace().fence();
   }
 
   template <typename TPSGS>
@@ -897,7 +897,6 @@ class ClusterGaussSeidel {
                               gs._clusters_per_team,
                           team_size, vec_size),
             gs);
-        MyExecSpace().fence();
       }
     }
     if (apply_backward) {
@@ -916,7 +915,6 @@ class ClusterGaussSeidel {
                                 gs._clusters_per_team,
                             team_size, vec_size),
               gs);
-          MyExecSpace().fence();
           if (i == 0) {
             break;
           }
@@ -948,7 +946,6 @@ class ClusterGaussSeidel {
                              Kokkos::RangePolicy<MyExecSpace, PSGS_ForwardTag>(
                                  0, color_index_end - color_index_begin),
                              gs);
-        MyExecSpace().fence();
       }
     }
     if (apply_backward && numColors) {
@@ -961,7 +958,6 @@ class ClusterGaussSeidel {
                              Kokkos::RangePolicy<MyExecSpace, PSGS_BackwardTag>(
                                  0, color_index_end - color_index_begin),
                              gs);
-        MyExecSpace().fence();
         if (i == 0) {
           break;
         }

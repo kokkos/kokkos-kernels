@@ -51,6 +51,7 @@
 #include "KokkosKernels_ExecSpaceUtils.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosSparse_spmv_impl_omp.hpp"
+#include "KokkosKernels_Error.hpp"
 
 namespace KokkosSparse {
 namespace Impl {
@@ -93,7 +94,7 @@ struct SPMV_Transpose_Functor {
   AMatrix m_A;
   XVector m_x;
   YVector m_y;
-  ordinal_type rows_per_team;
+  ordinal_type rows_per_team = 0;
 
   SPMV_Transpose_Functor(const coefficient_type& alpha_, const AMatrix& m_A_,
                          const XVector& m_x_, const YVector& m_y_)
@@ -698,7 +699,7 @@ static void spmv_beta(const KokkosKernels::Experimental::Controls& controls,
     spmv_beta_transpose<AMatrix, XVector, YVector, dobeta, true>(alpha, A, x,
                                                                  beta, y);
   } else {
-    Kokkos::Impl::throw_runtime_exception(
+    KokkosKernels::Impl::throw_runtime_exception(
         "Invalid Transpose Mode for KokkosSparse::spmv()");
   }
 }
@@ -724,7 +725,7 @@ struct SPMV_MV_Transpose_Functor {
   YVector m_y;
 
   const ordinal_type n;
-  ordinal_type rows_per_team;
+  ordinal_type rows_per_team = 0;
 
   SPMV_MV_Transpose_Functor(const coefficient_type& alpha_, const AMatrix& m_A_,
                             const XVector& m_x_, const coefficient_type& beta_,
@@ -1517,7 +1518,7 @@ static void spmv_alpha_beta_mv(
     spmv_alpha_beta_mv_transpose<AMatrix, XVector, YVector, doalpha, dobeta,
                                  true>(alpha, A, x, beta, y);
   } else {
-    Kokkos::Impl::throw_runtime_exception(
+    KokkosKernels::Impl::throw_runtime_exception(
         "Invalid Transpose Mode for KokkosSparse::spmv()");
   }
 }

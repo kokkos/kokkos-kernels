@@ -65,7 +65,6 @@ struct is_same_mag_type {
 };
 
 // to use double, std::complex<double>, Kokkos::complex<double>
-using std::abs;
 using std::max;
 using std::min;
 
@@ -244,42 +243,41 @@ struct Diag {
   };
 };
 
-/// \brief: BatchLayout class used to specify where the batch dimension is
-/// allocated in
-///         the input views for host-level Batched BLAS/LAPACK routines.
-/// \var Left  Batch dimension is the leftmost dimension within input views
-/// \var Right Batch dimension is the rightmost dimension within input views
+/// BatchLayout class used to specify where the batch dimension is
+/// allocated in the input views for host-level Batched BLAS/LAPACK routines.
 struct BatchLayout {
+  /// Batch dimension is the leftmost dimension within input views
   struct Left {};
+  /// Batch dimension is the rightmost dimension within input views
   struct Right {};
 };
 
-/// \brief ResultsPerThread class used to specify how to divide a given
-///        BLAS/LAPACK operation among Kokkos threads
-/// \var Rank0 Each Kokkos thread calculates a 0-rank result
-/// \var Rank1 Each Kokkos thread calculates a 1-rank result
-/// \var Rank2 Each Kokkos thread calculates a 2-rank result
+/// ResultsPerThread class used to specify how to divide a given BLAS/LAPACK
+/// operation among Kokkos threads
 struct ResultsPerThread {
+  /// Each Kokkos thread calculates a 0-rank result
   struct Rank0 {};
+  /// Each Kokkos thread calculates a 1-rank result
   struct Rank1 {};
+  /// Each Kokkos thread calculates a 2-rank result
   struct Rank2 {};
 };
 
-/// \brief BoundsCheck class used to specify whether to check view bounds in
-///        BLAS/LAPACK DblBuf algorithms.
-/// /var Yes Use functor with    bounds check
-/// /var No  Use functor without bound checks
+/// BoundsCheck class used to specify whether to check view bounds in
+/// BLAS/LAPACK DblBuf algorithms.
 struct BoundsCheck {
+  /// Use functor with    bounds check
   struct Yes {};
+  /// Use functor without bounds check
   struct No {};
 };
 
-/// \brief AlphaTag class used to specify where to apply alpha in
-///        BLAS/LAPACK DblBuf algorithms.
-/// /var Yes Use function with    alpha factor
-/// /var No  Use function without alpha factor
+/// AlphaTag class used to specify where to apply alpha in BLAS/LAPACK DblBuf
+/// algorithms.
 struct AlphaTag {
+  /// Use function with    alpha factor
   struct Yes {};
+  /// Use function without alpha factor
   struct No {};
 };
 
@@ -300,7 +298,7 @@ struct Mode {
   };
 };
 
-#if !defined(KOKKOS_IF_HOST)
+#if !defined(KOKKOS_IF_ON_HOST)
 
 template <class>
 struct algo_level3_blocked_mb_impl;
@@ -367,10 +365,10 @@ struct Algo {
       // - team policy (smaller) or range policy (bigger)
       // - space (gpu vs host)
       // - blocksize input (blk <= 4 mb = 2, otherwise mb = 4), etc.
-#if defined(KOKKOS_IF_HOST)
-      static constexpr KOKKKOS_FUNCTION int mb() {
-        KOKKOS_IF_HOST((return 4;))
-        KOKKOS_IF_DEVICE((return 2;))
+#if defined(KOKKOS_IF_ON_HOST)
+      static constexpr KOKKOS_FUNCTION int mb() {
+        KOKKOS_IF_ON_HOST((return 4;))
+        KOKKOS_IF_ON_DEVICE((return 2;))
       }
 
 #else  // FIXME remove when requiring minimum version of Kokkos 3.6
@@ -417,10 +415,10 @@ struct Algo {
       // - team policy (smaller) or range policy (bigger)
       // - space (cuda vs host)
       // - blocksize input (blk <= 4 mb = 2, otherwise mb = 4), etc.
-#if defined(KOKKOS_IF_HOST)
-      static constexpr KOKKKOS_FUNCTION int mb() {
-        KOKKOS_IF_HOST((return 4;))
-        KOKKOS_IF_DEVICE((return 1;))
+#if defined(KOKKOS_IF_ON_HOST)
+      static constexpr KOKKOS_FUNCTION int mb() {
+        KOKKOS_IF_ON_HOST((return 4;))
+        KOKKOS_IF_ON_DEVICE((return 1;))
       }
 
 #else  // FIXME remove when requiring minimum version of Kokkos 3.6

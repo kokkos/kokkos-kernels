@@ -43,9 +43,6 @@
 */
 
 #include <Kokkos_Core.hpp>
-#include <Kokkos_Atomic.hpp>
-#include <Kokkos_Timer.hpp>
-#include <Kokkos_MemoryTraits.hpp>
 #include <vector>
 #include "KokkosGraph_Distance1ColorHandle.hpp"
 

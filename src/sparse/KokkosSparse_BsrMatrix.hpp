@@ -61,6 +61,7 @@
 #include "Kokkos_StaticCrsGraph.hpp"
 #include "Kokkos_ArithTraits.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
+#include "KokkosKernels_Error.hpp"
 
 namespace KokkosSparse {
 
@@ -475,7 +476,7 @@ class BsrMatrix {
     if (blockDim_ < 1) {
       std::ostringstream os;
       os << "KokkosSparse::BsrMatrix: Inappropriate block size: " << blockDim_;
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   }
 
@@ -513,7 +514,7 @@ class BsrMatrix {
     if (blockDim_ < 1) {
       std::ostringstream os;
       os << "KokkosSparse::BsrMatrix: Inappropriate block size: " << blockDim_;
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
 
     if ((ncols % blockDim_ != 0) || (nrows % blockDim_ != 0)) {
@@ -637,7 +638,7 @@ class BsrMatrix {
     if (blockDim_ < 1) {
       std::ostringstream os;
       os << "KokkosSparse::BsrMatrix: Inappropriate block size: " << blockDim_;
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
 
     const ordinal_type actualNumRows =
@@ -680,7 +681,7 @@ class BsrMatrix {
     if (blockDim_ < 1) {
       std::ostringstream os;
       os << "KokkosSparse::BsrMatrix: Inappropriate block size: " << blockDim_;
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   }
 
@@ -701,7 +702,7 @@ class BsrMatrix {
     if (blockDim_ < 1) {
       std::ostringstream os;
       os << "KokkosSparse::BsrMatrix: Inappropriate block size: " << blockDim_;
-      Kokkos::Impl::throw_runtime_exception(os.str());
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
 
     assert(
@@ -868,6 +869,18 @@ class BsrMatrix {
 
   //! The block dimension in the sparse block matrix.
   KOKKOS_INLINE_FUNCTION ordinal_type blockDim() const { return blockDim_; }
+
+  //! The number of "point" (non-block) rows in the matrix.
+  //  This is the dimension of the range of this matrix as a linear operator.
+  KOKKOS_INLINE_FUNCTION ordinal_type numPointRows() const {
+    return numRows() * blockDim();
+  }
+
+  //! The number of "point" (non-block) columns in the matrix.
+  //  This is the dimension of the domain of this matrix as a linear operator.
+  KOKKOS_INLINE_FUNCTION ordinal_type numPointCols() const {
+    return numCols() * blockDim();
+  }
 
   //! The number of stored entries in the sparse matrix.
   KOKKOS_INLINE_FUNCTION size_type nnz() const {

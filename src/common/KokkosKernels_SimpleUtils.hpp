@@ -44,9 +44,7 @@
 #ifndef _KOKKOSKERNELS_SIMPLEUTILS_HPP
 #define _KOKKOSKERNELS_SIMPLEUTILS_HPP
 #include "Kokkos_Core.hpp"
-#include "Kokkos_Atomic.hpp"
 #include "Kokkos_ArithTraits.hpp"
-#include "Kokkos_Timer.hpp"
 #include <type_traits>
 
 #define KOKKOSKERNELS_MACRO_MIN(x, y) ((x) < (y) ? (x) : (y))

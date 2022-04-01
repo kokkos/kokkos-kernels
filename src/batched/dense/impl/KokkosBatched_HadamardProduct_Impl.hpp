@@ -136,7 +136,7 @@ KOKKOS_INLINE_FUNCTION int SerialHadamardProduct::invoke(const XViewType& X,
 
   // Check compatibility of dimensions at run time.
   if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
-    printf(
+    KOKKOS_IMPL_DO_NOT_USE_PRINTF(
         "KokkosBatched::HadamardProduct: Dimensions of X and Y do not match: "
         "X: %d x %d, "
         "Y: %d x %d\n",
@@ -144,7 +144,7 @@ KOKKOS_INLINE_FUNCTION int SerialHadamardProduct::invoke(const XViewType& X,
     return 1;
   }
   if (X.extent(0) != V.extent(0) || X.extent(1) != V.extent(1)) {
-    printf(
+    KOKKOS_IMPL_DO_NOT_USE_PRINTF(
         "KokkosBatched::HadamardProduct: Dimensions of X and V do not match: "
         "X: %d x %d, "
         "V: %d x %d\n",
@@ -187,7 +187,7 @@ KOKKOS_INLINE_FUNCTION int TeamHadamardProduct<MemberType>::invoke(
 
   // Check compatibility of dimensions at run time.
   if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
-    printf(
+    KOKKOS_IMPL_DO_NOT_USE_PRINTF(
         "KokkosBatched::HadamardProduct: Dimensions of X and Y do not match: "
         "X: %d x %d, "
         "Y: %d x %d\n",
@@ -195,7 +195,7 @@ KOKKOS_INLINE_FUNCTION int TeamHadamardProduct<MemberType>::invoke(
     return 1;
   }
   if (X.extent(0) != V.extent(0) || X.extent(1) != V.extent(1)) {
-    printf(
+    KOKKOS_IMPL_DO_NOT_USE_PRINTF(
         "KokkosBatched::HadamardProduct: Dimensions of X and V do not match: "
         "X: %d x %d, "
         "V: %d x %d\n",
@@ -240,7 +240,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorHadamardProduct<MemberType>::invoke(
 
   // Check compatibility of dimensions at run time.
   if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
-    printf(
+    KOKKOS_IMPL_DO_NOT_USE_PRINTF(
         "KokkosBatched::HadamardProduct: Dimensions of X and Y do not match: "
         "X: %d x %d, "
         "Y: %d x %d\n",
@@ -248,7 +248,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorHadamardProduct<MemberType>::invoke(
     return 1;
   }
   if (X.extent(0) != V.extent(0) || X.extent(1) != V.extent(1)) {
-    printf(
+    KOKKOS_IMPL_DO_NOT_USE_PRINTF(
         "KokkosBatched::HadamardProduct: Dimensions of X and V do not match: "
         "X: %d x %d, "
         "V: %d x %d\n",

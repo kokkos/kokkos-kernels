@@ -47,7 +47,9 @@
 #include "KokkosKernels_Handle.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosKernels_SparseUtils_cusparse.hpp"
+#include "KokkosKernels_SparseUtils_mkl.hpp"
 #include "KokkosSparse_spadd.hpp"
+#include "KokkosKernels_TestUtils.hpp"
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 #include <cusparse.h>
@@ -56,21 +58,6 @@
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
 #include <mkl.h>
 #include <mkl_spblas.h>
-
-inline void spadd_mkl_internal_safe_call(sparse_status_t mklStatus,
-                                         const char* name,
-                                         const char* file = nullptr,
-                                         const int line   = 0) {
-  if (SPARSE_STATUS_SUCCESS != mklStatus) {
-    std::ostringstream oss;
-    oss << "MKL call \"" << name << "\" encountered error at " << file << ":"
-        << line << '\n';
-    Kokkos::abort(oss.str().c_str());
-  }
-}
-
-#define SPADD_MKL_SAFE_CALL(call) \
-  spadd_mkl_internal_safe_call(call, #call, __FILE__, __LINE__)
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE) &&     \
@@ -258,11 +245,11 @@ void run_experiment(const Params& params) {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
   sparse_matrix_t Amkl, Bmkl, Cmkl;
   if (params.use_mkl) {
-    SPADD_MKL_SAFE_CALL(mkl_sparse_d_create_csr(
+    KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_d_create_csr(
         &Amkl, SPARSE_INDEX_BASE_ZERO, m, n, (int*)A.graph.row_map.data(),
         (int*)A.graph.row_map.data() + 1, A.graph.entries.data(),
         A.values.data()));
-    SPADD_MKL_SAFE_CALL(mkl_sparse_d_create_csr(
+    KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_d_create_csr(
         &Bmkl, SPARSE_INDEX_BASE_ZERO, m, n, (int*)B.graph.row_map.data(),
         (int*)B.graph.row_map.data() + 1, B.graph.entries.data(),
         B.values.data()));
@@ -325,9 +312,9 @@ void run_experiment(const Params& params) {
 #endif
       } else if (params.use_mkl) {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
-        SPADD_MKL_SAFE_CALL(mkl_sparse_d_add(SPARSE_OPERATION_NON_TRANSPOSE,
-                                             Amkl, 1.0, Bmkl, &Cmkl));
-        SPADD_MKL_SAFE_CALL(mkl_sparse_destroy(Cmkl));
+        KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_d_add(
+            SPARSE_OPERATION_NON_TRANSPOSE, Amkl, 1.0, Bmkl, &Cmkl));
+        KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_destroy(Cmkl));
 #endif
       } else {
         spadd_numeric(
@@ -350,8 +337,8 @@ void run_experiment(const Params& params) {
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
   if (params.use_mkl) {
-    SPADD_MKL_SAFE_CALL(mkl_sparse_destroy(Amkl));
-    SPADD_MKL_SAFE_CALL(mkl_sparse_destroy(Bmkl));
+    KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_destroy(Amkl));
+    KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_destroy(Bmkl));
   }
 #endif
 
@@ -426,47 +413,47 @@ void print_options() {
 
 int parse_inputs(Params& params, int argc, char** argv) {
   for (int i = 1; i < argc; ++i) {
-    if (0 == strcasecmp(argv[i], "--threads")) {
+    if (0 == Test::string_compare_no_case(argv[i], "--threads")) {
       params.use_threads = atoi(argv[++i]);
-    } else if (0 == strcasecmp(argv[i], "--openmp")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--openmp")) {
       params.use_openmp = atoi(argv[++i]);
-    } else if (0 == strcasecmp(argv[i], "--cuda")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--cuda")) {
       params.use_cuda = atoi(argv[++i]) + 1;
-    } else if (0 == strcasecmp(argv[i], "--mkl")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--mkl")) {
       params.use_mkl = 1;
-    } else if (0 == strcasecmp(argv[i], "--cusparse")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--cusparse")) {
       params.use_cusparse = 1;
-    } else if (0 == strcasecmp(argv[i], "--sorted")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--sorted")) {
       params.sorted = true;
-    } else if (0 == strcasecmp(argv[i], "--unsorted")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--unsorted")) {
       params.sorted = false;
-    } else if (0 == strcasecmp(argv[i], "--amtx")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--amtx")) {
       // A at C=AxB
       params.amtx = argv[++i];
-    } else if (0 == strcasecmp(argv[i], "--bmtx")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--bmtx")) {
       // B at C=AxB.
       // if not provided, C = AxA will be performed.
       params.bmtx = argv[++i];
-    } else if (0 == strcasecmp(argv[i], "--cmtx")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--cmtx")) {
       // if provided, C will be written to given file.
       // has to have ".bin", or ".crs" extension.
       params.cmtx = argv[++i];
-    } else if (0 == strcasecmp(argv[i], "--m")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--m")) {
       params.m = atoi(argv[++i]);
-    } else if (0 == strcasecmp(argv[i], "--n")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--n")) {
       params.n = atoi(argv[++i]);
-    } else if (0 == strcasecmp(argv[i], "--nnz")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--nnz")) {
       params.nnzPerRow = atoi(argv[++i]);
-    } else if (0 == strcasecmp(argv[i], "--bdiag")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--bdiag")) {
       params.bDiag = true;
-    } else if (0 == strcasecmp(argv[i], "--repeat")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--repeat")) {
       // if provided, C will be written to given file.
       // has to have ".bin", or ".crs" extension.
       params.repeat = atoi(argv[++i]);
-    } else if (0 == strcasecmp(argv[i], "--numeric-repeat")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--numeric-repeat")) {
       // Reuse the symbolic step this many times.
       params.numericRepeat = atoi(argv[++i]);
-    } else if (0 == strcasecmp(argv[i], "--verbose")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--verbose")) {
       params.verbose = true;
     } else {
       std::cerr << "Unrecognized command line argument #" << i << ": "

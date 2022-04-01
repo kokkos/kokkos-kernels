@@ -47,6 +47,7 @@
 #include "KokkosSparse_gauss_seidel_spec.hpp"
 #include "KokkosKernels_Handle.hpp"
 #include "KokkosKernels_helpers.hpp"
+#include "KokkosKernels_Error.hpp"
 
 namespace KokkosSparse {
 
@@ -131,7 +132,8 @@ void block_gauss_seidel_symbolic(
                         is_graph_symmetric);
 }
 
-template <typename KernelHandle, typename lno_row_view_t_,
+template <KokkosKernels::SparseMatrixFormat format = KokkosKernels::CRS,
+          typename KernelHandle, typename lno_row_view_t_,
           typename lno_nnz_view_t_, typename scalar_nnz_view_t_>
 void gauss_seidel_numeric(KernelHandle *handle,
                           typename KernelHandle::const_nnz_lno_t num_rows,
@@ -197,14 +199,16 @@ void gauss_seidel_numeric(KernelHandle *handle,
   using namespace KokkosSparse::Impl;
 
   GAUSS_SEIDEL_NUMERIC<
-      const_handle_type, Internal_alno_row_view_t_, Internal_alno_nnz_view_t_,
+      const_handle_type, format, Internal_alno_row_view_t_,
+      Internal_alno_nnz_view_t_,
       Internal_ascalar_nnz_view_t_>::gauss_seidel_numeric(&tmp_handle, num_rows,
                                                           num_cols, const_a_r,
                                                           const_a_l, const_a_v,
                                                           is_graph_symmetric);
 }
 
-template <typename KernelHandle, typename lno_row_view_t_,
+template <KokkosKernels::SparseMatrixFormat format = KokkosKernels::CRS,
+          typename KernelHandle, typename lno_row_view_t_,
           typename lno_nnz_view_t_, typename scalar_nnz_view_t_>
 void gauss_seidel_numeric(KernelHandle *handle,
                           typename KernelHandle::const_nnz_lno_t num_rows,
@@ -273,7 +277,8 @@ void gauss_seidel_numeric(KernelHandle *handle,
   using namespace KokkosSparse::Impl;
 
   GAUSS_SEIDEL_NUMERIC<
-      const_handle_type, Internal_alno_row_view_t_, Internal_alno_nnz_view_t_,
+      const_handle_type, format, Internal_alno_row_view_t_,
+      Internal_alno_nnz_view_t_,
       Internal_ascalar_nnz_view_t_>::gauss_seidel_numeric(&tmp_handle, num_rows,
                                                           num_cols, const_a_r,
                                                           const_a_l, const_a_v,
@@ -281,7 +286,8 @@ void gauss_seidel_numeric(KernelHandle *handle,
                                                           is_graph_symmetric);
 }
 
-template <typename KernelHandle, typename lno_row_view_t_,
+template <KokkosKernels::SparseMatrixFormat format = KokkosKernels::BlockCRS,
+          typename KernelHandle, typename lno_row_view_t_,
           typename lno_nnz_view_t_, typename scalar_nnz_view_t_>
 void block_gauss_seidel_numeric(
     KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
@@ -297,11 +303,12 @@ void block_gauss_seidel_numeric(
   }
   gsHandle->set_block_size(block_size);
 
-  gauss_seidel_numeric(handle, num_rows, num_cols, row_map, entries, values,
-                       is_graph_symmetric);
+  gauss_seidel_numeric<format>(handle, num_rows, num_cols, row_map, entries,
+                               values, is_graph_symmetric);
 }
 
-template <typename KernelHandle, typename lno_row_view_t_,
+template <KokkosKernels::SparseMatrixFormat format = KokkosKernels::CRS,
+          typename KernelHandle, typename lno_row_view_t_,
           typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
           typename x_scalar_view_t, typename y_scalar_view_t>
 void symmetric_gauss_seidel_apply(
@@ -357,7 +364,7 @@ void symmetric_gauss_seidel_apply(
     os << "KokkosSparse::symmetric_gauss_seidel_apply: "
        << "X has " << x_lhs_output_vec.extent(1) << "columns, Y has "
        << y_rhs_input_vec.extent(1) << " columns.";
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
   typedef typename KernelHandle::const_size_type c_size_t;
@@ -421,19 +428,17 @@ void symmetric_gauss_seidel_apply(
 
   using namespace KokkosSparse::Impl;
 
-  GAUSS_SEIDEL_APPLY<
-      const_handle_type, Internal_alno_row_view_t_, Internal_alno_nnz_view_t_,
-      Internal_ascalar_nnz_view_t_, Internal_xscalar_nnz_view_t_,
-      Internal_yscalar_nnz_view_t_>::gauss_seidel_apply(&tmp_handle, num_rows,
-                                                        num_cols, const_a_r,
-                                                        const_a_l, const_a_v,
-                                                        nonconst_x_v, const_y_v,
-                                                        init_zero_x_vector,
-                                                        update_y_vector, omega,
-                                                        numIter, true, true);
+  GAUSS_SEIDEL_APPLY<const_handle_type, format, Internal_alno_row_view_t_,
+                     Internal_alno_nnz_view_t_, Internal_ascalar_nnz_view_t_,
+                     Internal_xscalar_nnz_view_t_,
+                     Internal_yscalar_nnz_view_t_>::
+      gauss_seidel_apply(&tmp_handle, num_rows, num_cols, const_a_r, const_a_l,
+                         const_a_v, nonconst_x_v, const_y_v, init_zero_x_vector,
+                         update_y_vector, omega, numIter, true, true);
 }
 
-template <typename KernelHandle, typename lno_row_view_t_,
+template <KokkosKernels::SparseMatrixFormat format = KokkosKernels::BlockCRS,
+          typename KernelHandle, typename lno_row_view_t_,
           typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
           typename x_scalar_view_t, typename y_scalar_view_t>
 void symmetric_block_gauss_seidel_apply(
@@ -452,7 +457,7 @@ void symmetric_block_gauss_seidel_apply(
           "and Y do not match: "
        << "X has " << x_lhs_output_vec.extent(1) << "columns, Y has "
        << y_rhs_input_vec.extent(1) << " columns.";
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
   auto gsHandle = handle->get_point_gs_handle();
   if (gsHandle->get_algorithm_type() == GS_CLUSTER) {
@@ -462,11 +467,12 @@ void symmetric_block_gauss_seidel_apply(
   }
 
   gsHandle->set_block_size(block_size);
-  symmetric_gauss_seidel_apply(
+  symmetric_gauss_seidel_apply<format>(
       handle, num_rows, num_cols, row_map, entries, values, x_lhs_output_vec,
       y_rhs_input_vec, init_zero_x_vector, update_y_vector, omega, numIter);
 }
-template <class KernelHandle, typename lno_row_view_t_,
+template <KokkosKernels::SparseMatrixFormat format = KokkosKernels::CRS,
+          class KernelHandle, typename lno_row_view_t_,
           typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
           typename x_scalar_view_t, typename y_scalar_view_t>
 void forward_sweep_gauss_seidel_apply(
@@ -523,7 +529,7 @@ void forward_sweep_gauss_seidel_apply(
           "Y do not match: "
        << "X has " << x_lhs_output_vec.extent(1) << "columns, Y has "
        << y_rhs_input_vec.extent(1) << " columns.";
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
   typedef typename KernelHandle::const_size_type c_size_t;
@@ -588,19 +594,17 @@ void forward_sweep_gauss_seidel_apply(
 
   using namespace KokkosSparse::Impl;
 
-  GAUSS_SEIDEL_APPLY<
-      const_handle_type, Internal_alno_row_view_t_, Internal_alno_nnz_view_t_,
-      Internal_ascalar_nnz_view_t_, Internal_xscalar_nnz_view_t_,
-      Internal_yscalar_nnz_view_t_>::gauss_seidel_apply(&tmp_handle, num_rows,
-                                                        num_cols, const_a_r,
-                                                        const_a_l, const_a_v,
-                                                        nonconst_x_v, const_y_v,
-                                                        init_zero_x_vector,
-                                                        update_y_vector, omega,
-                                                        numIter, true, false);
+  GAUSS_SEIDEL_APPLY<const_handle_type, format, Internal_alno_row_view_t_,
+                     Internal_alno_nnz_view_t_, Internal_ascalar_nnz_view_t_,
+                     Internal_xscalar_nnz_view_t_,
+                     Internal_yscalar_nnz_view_t_>::
+      gauss_seidel_apply(&tmp_handle, num_rows, num_cols, const_a_r, const_a_l,
+                         const_a_v, nonconst_x_v, const_y_v, init_zero_x_vector,
+                         update_y_vector, omega, numIter, true, false);
 }
 
-template <typename KernelHandle, typename lno_row_view_t_,
+template <KokkosKernels::SparseMatrixFormat format = KokkosKernels::BlockCRS,
+          typename KernelHandle, typename lno_row_view_t_,
           typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
           typename x_scalar_view_t, typename y_scalar_view_t>
 void forward_sweep_block_gauss_seidel_apply(
@@ -619,7 +623,7 @@ void forward_sweep_block_gauss_seidel_apply(
           "X and Y do not match: "
        << "X has " << x_lhs_output_vec.extent(1) << "columns, Y has "
        << y_rhs_input_vec.extent(1) << " columns.";
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
   auto gsHandle = handle->get_point_gs_handle();
@@ -629,11 +633,12 @@ void forward_sweep_block_gauss_seidel_apply(
         "GS_CLUSTER");
   }
   gsHandle->set_block_size(block_size);
-  forward_sweep_gauss_seidel_apply(
+  forward_sweep_gauss_seidel_apply<format>(
       handle, num_rows, num_cols, row_map, entries, values, x_lhs_output_vec,
       y_rhs_input_vec, init_zero_x_vector, update_y_vector, omega, numIter);
 }
-template <class KernelHandle, typename lno_row_view_t_,
+template <KokkosKernels::SparseMatrixFormat format = KokkosKernels::CRS,
+          class KernelHandle, typename lno_row_view_t_,
           typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
           typename x_scalar_view_t, typename y_scalar_view_t>
 void backward_sweep_gauss_seidel_apply(
@@ -690,7 +695,7 @@ void backward_sweep_gauss_seidel_apply(
           "and Y do not match: "
        << "X has " << x_lhs_output_vec.extent(1) << "columns, Y has "
        << y_rhs_input_vec.extent(1) << " columns.";
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
   typedef typename KernelHandle::const_size_type c_size_t;
@@ -755,19 +760,17 @@ void backward_sweep_gauss_seidel_apply(
 
   using namespace KokkosSparse::Impl;
 
-  GAUSS_SEIDEL_APPLY<
-      const_handle_type, Internal_alno_row_view_t_, Internal_alno_nnz_view_t_,
-      Internal_ascalar_nnz_view_t_, Internal_xscalar_nnz_view_t_,
-      Internal_yscalar_nnz_view_t_>::gauss_seidel_apply(&tmp_handle, num_rows,
-                                                        num_cols, const_a_r,
-                                                        const_a_l, const_a_v,
-                                                        nonconst_x_v, const_y_v,
-                                                        init_zero_x_vector,
-                                                        update_y_vector, omega,
-                                                        numIter, false, true);
+  GAUSS_SEIDEL_APPLY<const_handle_type, format, Internal_alno_row_view_t_,
+                     Internal_alno_nnz_view_t_, Internal_ascalar_nnz_view_t_,
+                     Internal_xscalar_nnz_view_t_,
+                     Internal_yscalar_nnz_view_t_>::
+      gauss_seidel_apply(&tmp_handle, num_rows, num_cols, const_a_r, const_a_l,
+                         const_a_v, nonconst_x_v, const_y_v, init_zero_x_vector,
+                         update_y_vector, omega, numIter, false, true);
 }
 
-template <typename KernelHandle, typename lno_row_view_t_,
+template <KokkosKernels::SparseMatrixFormat format = KokkosKernels::BlockCRS,
+          typename KernelHandle, typename lno_row_view_t_,
           typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
           typename x_scalar_view_t, typename y_scalar_view_t>
 void backward_sweep_block_gauss_seidel_apply(
@@ -786,7 +789,7 @@ void backward_sweep_block_gauss_seidel_apply(
           "of X and Y do not match: "
        << "X has " << x_lhs_output_vec.extent(1) << "columns, Y has "
        << y_rhs_input_vec.extent(1) << " columns.";
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
   auto gsHandle = handle->get_point_gs_handle();
   if (gsHandle->get_algorithm_type() == GS_CLUSTER) {
@@ -795,7 +798,7 @@ void backward_sweep_block_gauss_seidel_apply(
         "GS_CLUSTER");
   }
   gsHandle->set_block_size(block_size);
-  backward_sweep_gauss_seidel_apply(
+  backward_sweep_gauss_seidel_apply<format>(
       handle, num_rows, num_cols, row_map, entries, values, x_lhs_output_vec,
       y_rhs_input_vec, init_zero_x_vector, update_y_vector, omega, numIter);
 }

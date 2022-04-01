@@ -848,6 +848,18 @@ class BlockCrsMatrix {
   //! The block dimension in the sparse block matrix.
   KOKKOS_INLINE_FUNCTION ordinal_type blockDim() const { return blockDim_; }
 
+  //! The number of "point" (non-block) rows in the matrix.
+  //  This is the dimension of the range of this matrix as a linear operator.
+  KOKKOS_INLINE_FUNCTION ordinal_type numPointRows() const {
+    return numRows() * blockDim();
+  }
+
+  //! The number of "point" (non-block) columns in the matrix.
+  //  This is the dimension of the domain of this matrix as a linear operator.
+  KOKKOS_INLINE_FUNCTION ordinal_type numPointCols() const {
+    return numCols() * blockDim();
+  }
+
   //! The number of stored entries in the sparse matrix.
   KOKKOS_INLINE_FUNCTION size_type nnz() const {
     return graph.entries.extent(0);

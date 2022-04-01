@@ -51,6 +51,7 @@
 #include <KokkosBlas3_trsm.hpp>
 #include <KokkosSparse_spmv.hpp>
 #include <KokkosSparse_Preconditioner.hpp>
+#include "KokkosKernels_Error.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 // libstdc++ half_t overloads
@@ -69,6 +70,19 @@ Kokkos::Experimental::half_t fabs(
       Kokkos::complex<double>((double)arg.real(), (double)arg.imag())));
 }
 #endif  // KOKKOS_HALF_T_IS_FLOAT
+
+#if !KOKKOS_BHALF_T_IS_FLOAT
+Kokkos::Experimental::bhalf_t fabs(Kokkos::Experimental::bhalf_t arg) {
+  using AT = Kokkos::Details::ArithTraits<Kokkos::Experimental::bhalf_t>;
+  return AT::abs(arg);
+}
+
+Kokkos::Experimental::bhalf_t fabs(
+    Kokkos::complex<Kokkos::Experimental::bhalf_t> arg) noexcept {
+  return Kokkos::Experimental::bhalf_t(Kokkos::abs(
+      Kokkos::complex<double>((double)arg.real(), (double)arg.imag())));
+}
+#endif  // KOKKOS_BHALF_T_IS_FLOAT
 
 // This fabs wrapper was added to resolve:
 // https://github.com/kokkos/kokkos-kernels/issues/1172
@@ -141,7 +155,7 @@ GmresStats gmres(
     std::ostringstream os;
     os << "gmres: A must be a square matrix: "
        << "numRows: " << n << "  numCols: " << A.numCols();
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
   if (X.extent(0) != B.extent(0) || X.extent(0) != n) {
@@ -149,7 +163,7 @@ GmresStats gmres(
     os << "gmres: Dimensions of A, X, and B do not match: "
        << "A: " << n << " x " << n << ", X: " << X.extent(0)
        << "x 1, B: " << B.extent(0) << " x 1";
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
   // Check parameter validity:
   if (m <= 0) {

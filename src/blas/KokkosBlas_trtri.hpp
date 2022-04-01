@@ -51,6 +51,7 @@
 #include "KokkosKernels_helpers.hpp"
 #include <sstream>
 #include <type_traits>
+#include "KokkosKernels_Error.hpp"
 
 namespace KokkosBlas {
 
@@ -91,7 +92,7 @@ int trtri(const char uplo[], const char diag[], const AViewType& A) {
     os << "KokkosBlas::trtri: uplo = '" << uplo[0] << "'. "
        << "Valid values include 'U' or 'u' (A is upper triangular), "
           "'L' or 'l' (A is lower triangular).";
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
   if (!valid_diag) {
     std::ostringstream os;
@@ -99,7 +100,7 @@ int trtri(const char uplo[], const char diag[], const AViewType& A) {
        << "Valid values include 'U' or 'u' (the diagonal of A is assumed to be "
           "unit), "
           "'N' or 'n' (the diagonal of A is assumed to be non-unit).";
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
   int64_t A_m = A.extent(0);
@@ -116,7 +117,7 @@ int trtri(const char uplo[], const char diag[], const AViewType& A) {
     std::ostringstream os;
     os << "KokkosBlas::trtri: Dimensions of A do not match,"
        << " A: " << A.extent(0) << " x " << A.extent(1);
-    Kokkos::Impl::throw_runtime_exception(os.str());
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
   // Create A matrix view type alias
