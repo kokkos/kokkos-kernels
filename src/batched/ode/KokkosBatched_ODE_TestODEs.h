@@ -9,7 +9,6 @@
 #ifndef SIERRA_tftk_TestODEs_h
 #define SIERRA_tftk_TestODEs_h
 
-#include <Kokkos_Macros.hpp>
 #include <Kokkos_ArithTraits.hpp>
 
 namespace KokkosBatched {

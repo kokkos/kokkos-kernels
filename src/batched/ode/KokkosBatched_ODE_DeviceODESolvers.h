@@ -9,7 +9,6 @@
 #ifndef SIERRA_tftk_DeviceODESolvers_h
 #define SIERRA_tftk_DeviceODESolvers_h
 
-#include <Kokkos_Macros.hpp>
 #include <Kokkos_ArithTraits.hpp>
 #include "Kokkos_Layout.hpp"
 #include "Kokkos_MemoryTraits.hpp"

@@ -10,7 +10,6 @@
 #define SIERRA_tftk_ODEArgs_h
 
 #include <limits>
-//#include <stk_util/diag/String.hpp>
 
 namespace KokkosBatched {
 namespace ode {
