@@ -18,8 +18,6 @@
 #include <tftk_DeviceODESolverStatus.h>
 #include <tftk_DeviceODESolverState.h>
 
-//#include "stk_util/util/ReportHandler.hpp"
-
 #include <type_traits>
 
 namespace KokkosBatched {
