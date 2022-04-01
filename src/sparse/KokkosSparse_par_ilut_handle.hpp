@@ -56,12 +56,6 @@
 namespace KokkosSparse {
 namespace Experimental {
 
-// TP2 algorithm has issues with some offset-ordinal combo to be addressed
-enum class PAR_ILUTAlgorithm {
-  SEQLVLSCHD_RP,
-  SEQLVLSCHD_TP1 /*, SEQLVLSCHED_TP2*/
-};
-
 template <class size_type_, class lno_t_, class scalar_t_, class ExecutionSpace,
           class TemporaryMemorySpace, class PersistentMemorySpace>
 class PAR_ILUTHandle {
@@ -110,13 +104,11 @@ class PAR_ILUTHandle {
 
   bool symbolic_complete;
 
-  PAR_ILUTAlgorithm algm;
-
   int team_size;
   int vector_size;
 
  public:
-  PAR_ILUTHandle(PAR_ILUTAlgorithm choice, const size_type nrows_,
+  PAR_ILUTHandle(const size_type nrows_,
                const size_type nnzL_, const size_type nnzU_,
                bool symbolic_complete_ = false)
       : level_list(),
@@ -128,7 +120,6 @@ class PAR_ILUTHandle {
         nnzU(nnzU_),
         level_maxrows(0),
         symbolic_complete(symbolic_complete_),
-        algm(choice),
         team_size(-1),
         vector_size(-1) {}
 
@@ -146,10 +137,6 @@ class PAR_ILUTHandle {
   }
 
   virtual ~PAR_ILUTHandle(){};
-
-  void set_algorithm(PAR_ILUTAlgorithm choice) { algm = choice; }
-
-  PAR_ILUTAlgorithm get_algorithm() { return algm; }
 
   KOKKOS_INLINE_FUNCTION
   nnz_row_view_t get_level_list() const { return level_list; }
@@ -199,37 +186,6 @@ class PAR_ILUTHandle {
 
   void set_vector_size(const int vs) { this->vector_size = vs; }
   int get_vector_size() const { return this->vector_size; }
-
-  void print_algorithm() {
-    if (algm == PAR_ILUTAlgorithm::SEQLVLSCHD_RP)
-      std::cout << "SEQLVLSCHD_RP" << std::endl;
-    ;
-
-    if (algm == PAR_ILUTAlgorithm::SEQLVLSCHD_TP1)
-      std::cout << "SEQLVLSCHD_TP1" << std::endl;
-    ;
-
-    /*
-    if ( algm == PAR_ILUTAlgorithm::SEQLVLSCHED_TP2 ) {
-      std::cout << "SEQLVLSCHED_TP2" << std::endl;;
-      std::cout << "WARNING: With CUDA this is currently only reliable with
-    int-int ordinal-offset pair" << std::endl;
-    }
-    */
-  }
-
-  inline PAR_ILUTAlgorithm StringToPAR_ILUTAlgorithm(std::string &name) {
-    if (name == "PAR_ILUT_DEFAULT")
-      return PAR_ILUTAlgorithm::SEQLVLSCHD_RP;
-    else if (name == "PAR_ILUT_RANGEPOLICY")
-      return PAR_ILUTAlgorithm::SEQLVLSCHD_RP;
-    else if (name == "PAR_ILUT_TEAMPOLICY1")
-      return PAR_ILUTAlgorithm::SEQLVLSCHD_TP1;
-    /*else if(name=="PAR_ILUT_TEAMPOLICY2")    return
-     * PAR_ILUTAlgorithm::SEQLVLSCHED_TP2;*/
-    else
-      throw std::runtime_error("Invalid PAR_ILUTAlgorithm name");
-  }
 };
 
 }  // namespace Experimental

@@ -162,9 +162,8 @@ void run_test_par_ilut() {
 
   KernelHandle kh;
 
-  // PAR_ILUTAlgorithm::SEQLVLSCHD_RP
   {
-    kh.create_par_ilut_handle(PAR_ILUTAlgorithm::SEQLVLSCHD_RP, nrows, 4 * nrows,
+    kh.create_par_ilut_handle(nrows, 4 * nrows,
                             4 * nrows);
 
     auto par_ilut_handle = kh.get_par_ilut_handle();
@@ -189,71 +188,6 @@ void run_test_par_ilut() {
     Kokkos::resize(U_entries, par_ilut_handle->get_nnzU());
     Kokkos::resize(U_values, par_ilut_handle->get_nnzU());
 
-    par_ilut_handle->print_algorithm();
-    par_ilut_numeric(&kh, fill_lev, row_map, entries, values, L_row_map,
-                   L_entries, L_values, U_row_map, U_entries, U_values);
-
-    Kokkos::fence();
-
-    // Checking
-    typedef CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
-    crsMat_t A("A_Mtx", nrows, nrows, nnz, values, row_map, entries);
-    crsMat_t L("L_Mtx", nrows, nrows, par_ilut_handle->get_nnzL(), L_values,
-               L_row_map, L_entries);
-    crsMat_t U("U_Mtx", nrows, nrows, par_ilut_handle->get_nnzU(), U_values,
-               U_row_map, U_entries);
-
-    // Create a reference view e set to all 1's
-    ValuesType e_one("e_one", nrows);
-    Kokkos::deep_copy(e_one, 1.0);
-
-    // Create two views for spmv results
-    ValuesType bb("bb", nrows);
-    ValuesType bb_tmp("bb_tmp", nrows);
-
-    // Compute norm2(L*U*e_one - A*e_one)/norm2(A*e_one)
-    KokkosSparse::spmv("N", ONE, A, e_one, ZERO, bb);
-
-    typename AT::mag_type bb_nrm = KokkosBlas::nrm2(bb);
-
-    KokkosSparse::spmv("N", ONE, U, e_one, ZERO, bb_tmp);
-    KokkosSparse::spmv("N", ONE, L, bb_tmp, MONE, bb);
-
-    typename AT::mag_type diff_nrm = KokkosBlas::nrm2(bb);
-
-    EXPECT_TRUE((diff_nrm / bb_nrm) < 1e-4);
-
-    kh.destroy_par_ilut_handle();
-  }
-
-  // PAR_ILUTAlgorithm::SEQLVLSCHD_TP1
-  {
-    kh.create_par_ilut_handle(PAR_ILUTAlgorithm::SEQLVLSCHD_TP1, nrows, 4 * nrows,
-                            4 * nrows);
-
-    auto par_ilut_handle = kh.get_par_ilut_handle();
-
-    // Allocate L and U as outputs
-    RowMapType L_row_map("L_row_map", nrows + 1);
-    EntriesType L_entries("L_entries", par_ilut_handle->get_nnzL());
-    ValuesType L_values("L_values", par_ilut_handle->get_nnzL());
-    RowMapType U_row_map("U_row_map", nrows + 1);
-    EntriesType U_entries("U_entries", par_ilut_handle->get_nnzU());
-    ValuesType U_values("U_values", par_ilut_handle->get_nnzU());
-
-    typename KernelHandle::const_nnz_lno_t fill_lev = 2;
-
-    par_ilut_symbolic(&kh, fill_lev, row_map, entries, L_row_map, L_entries,
-                    U_row_map, U_entries);
-
-    Kokkos::fence();
-
-    Kokkos::resize(L_entries, par_ilut_handle->get_nnzL());
-    Kokkos::resize(L_values, par_ilut_handle->get_nnzL());
-    Kokkos::resize(U_entries, par_ilut_handle->get_nnzU());
-    Kokkos::resize(U_values, par_ilut_handle->get_nnzU());
-
-    par_ilut_handle->print_algorithm();
     par_ilut_numeric(&kh, fill_lev, row_map, entries, values, L_row_map,
                    L_entries, L_values, U_row_map, U_entries, U_values);
 

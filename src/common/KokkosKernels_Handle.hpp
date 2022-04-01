@@ -864,11 +864,10 @@ class KokkosKernelsHandle {
   }
 
   PAR_ILUTHandleType *get_par_ilut_handle() { return this->par_ilutHandle; }
-  void create_par_ilut_handle(KokkosSparse::Experimental::PAR_ILUTAlgorithm algm,
-                            size_type nrows, size_type nnzL, size_type nnzU) {
+  void create_par_ilut_handle(size_type nrows, size_type nnzL, size_type nnzU) {
     this->destroy_par_ilut_handle();
     this->is_owner_of_the_par_ilut_handle = true;
-    this->par_ilutHandle = new PAR_ILUTHandleType(algm, nrows, nnzL, nnzU);
+    this->par_ilutHandle = new PAR_ILUTHandleType(nrows, nnzL, nnzU);
     this->par_ilutHandle->reset_handle(nrows, nnzL, nnzU);
     this->par_ilutHandle->set_team_size(this->team_work_size);
     this->par_ilutHandle->set_vector_size(this->vector_size);

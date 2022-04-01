@@ -156,12 +156,6 @@ void iluk_symbolic(IlukHandle& thandle,
                    const AEntriesType& A_entries_d, LRowMapType& L_row_map_d,
                    LEntriesType& L_entries_d, URowMapType& U_row_map_d,
                    UEntriesType& U_entries_d) {
-  if (thandle.get_algorithm() ==
-          KokkosSparse::Experimental::PAR_ILUTAlgorithm::SEQLVLSCHD_RP ||
-      thandle.get_algorithm() ==
-          KokkosSparse::Experimental::PAR_ILUTAlgorithm::SEQLVLSCHD_TP1)
-  /*   || thandle.get_algorithm() ==
-     KokkosSparse::Experimental::PAR_ILUTAlgorithm::SEQLVLSCHED_TP2 )*/
   {
     // Scheduling and symbolic phase currently compute on host - need host copy
     // of all views

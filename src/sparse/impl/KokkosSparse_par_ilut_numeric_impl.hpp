@@ -413,8 +413,6 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
     nnz_lno_t lev_end   = level_ptr_h(lvl + 1);
 
     if ((lev_end - lev_start) != 0) {
-      if (thandle.get_algorithm() ==
-          KokkosSparse::Experimental::PAR_ILUTAlgorithm::SEQLVLSCHD_RP) {
         Kokkos::parallel_for(
             "parfor_fixed_lvl",
             Kokkos::RangePolicy<execution_space>(lev_start, lev_end),
@@ -424,64 +422,7 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
                 UValuesType, HandleDeviceEntriesType, WorkViewType, nnz_lno_t>(
                 A_row_map, A_entries, A_values, L_row_map, L_entries, L_values,
                 U_row_map, U_entries, U_values, level_idx, iw, lev_start));
-      } else if (thandle.get_algorithm() ==
-                 KokkosSparse::Experimental::PAR_ILUTAlgorithm::SEQLVLSCHD_TP1) {
-        using policy_type = Kokkos::TeamPolicy<execution_space>;
-        int team_size     = thandle.get_team_size();
-
-        ILUKLvlSchedTP1NumericFunctor<
-            ARowMapType, AEntriesType, AValuesType, LRowMapType, LEntriesType,
-            LValuesType, URowMapType, UEntriesType, UValuesType,
-            HandleDeviceEntriesType, WorkViewType, nnz_lno_t>
-            tstf(A_row_map, A_entries, A_values, L_row_map, L_entries, L_values,
-                 U_row_map, U_entries, U_values, level_idx, iw, lev_start);
-        if (team_size == -1)
-          Kokkos::parallel_for("parfor_l_team",
-                               policy_type(lev_end - lev_start, Kokkos::AUTO),
-                               tstf);
-        else
-          Kokkos::parallel_for("parfor_l_team",
-                               policy_type(lev_end - lev_start, team_size),
-                               tstf);
-      }
-      //      /*
-      //      // TP2 algorithm has issues with some offset-ordinal combo to be
-      //      addressed else if ( thandle.get_algorithm() ==
-      //      KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHED_TP2 ) {
-      //        typedef Kokkos::TeamPolicy<execution_space> tvt_policy_type;
-      //
-      //        int team_size = thandle.get_team_size();
-      //        if ( team_size == -1 ) {
-      //          team_size = std::is_same< typename
-      //          Kokkos::DefaultExecutionSpace::memory_space, Kokkos::HostSpace
-      //          >::value ? 1 : 128;
-      //        }
-      //        int vector_size = thandle.get_team_size();
-      //        if ( vector_size == -1 ) {
-      //          vector_size = std::is_same< typename
-      //          Kokkos::DefaultExecutionSpace::memory_space, Kokkos::HostSpace
-      //          >::value ? 1 : 4;
-      //        }
-      //
-      //        // This impl: "chunk" lvl_nodes into node_groups; a league_rank
-      //        is responsible for processing that many nodes
-      //        //       TeamThreadRange over number of node_groups
-      //        //       To avoid masking threads, 1 thread (team) per node in
-      //        node_group
-      //        //       ThreadVectorRange responsible for the actual solve
-      //        computation const int node_groups = team_size;
-      //
-      //        LowerTriLvlSchedTP2SolverFunctor<RowMapType, EntriesType,
-      //        ValuesType, LHSType, RHSType, HandleDeviceEntriesType>
-      //        tstf(row_map, entries, values, lhs, rhs, nodes_grouped_by_level,
-      //        row_count, node_groups);
-      //        Kokkos::parallel_for("parfor_u_team_vector", tvt_policy_type(
-      //        (int)std::ceil((float)lvl_nodes/(float)node_groups) , team_size,
-      //        vector_size ), tstf);
-      //      } // end elseif
-      //      */
-
-    }  // end if
+    }
   }    // end for lvl
 
 // Output check
