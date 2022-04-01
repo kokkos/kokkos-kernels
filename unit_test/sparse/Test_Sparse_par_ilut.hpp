@@ -188,7 +188,7 @@ void run_test_par_ilut() {
     Kokkos::resize(U_entries, par_ilut_handle->get_nnzU());
     Kokkos::resize(U_values, par_ilut_handle->get_nnzU());
 
-    par_ilut_numeric(&kh, fill_lev, row_map, entries, values, L_row_map,
+    par_ilut_numeric(&kh, row_map, entries, values, L_row_map,
                    L_entries, L_values, U_row_map, U_entries, U_values);
 
     Kokkos::fence();

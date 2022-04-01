@@ -142,7 +142,6 @@ template <class KernelHandle, class ARowMapType, class AEntriesType,
 struct PAR_ILUT_NUMERIC {
   static void par_ilut_numeric(
       KernelHandle *handle,
-      const typename KernelHandle::const_nnz_lno_t &fill_lev,
       const ARowMapType &A_row_map, const AEntriesType &A_entries,
       const AValuesType &A_values, LRowMapType &L_row_map,
       LEntriesType &L_entries, LValuesType &L_values, URowMapType &U_row_map,
@@ -162,7 +161,6 @@ struct PAR_ILUT_NUMERIC<KernelHandle, ARowMapType, AEntriesType, AValuesType,
                       KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   static void par_ilut_numeric(
       KernelHandle *handle,
-      const typename KernelHandle::const_nnz_lno_t & /*fill_lev*/,
       const ARowMapType &A_row_map, const AEntriesType &A_entries,
       const AValuesType &A_values, LRowMapType &L_row_map,
       LEntriesType &L_entries, LValuesType &L_values, URowMapType &U_row_map,

@@ -277,7 +277,6 @@ template <typename KernelHandle, typename ARowMapType, typename AEntriesType,
           typename LValuesType, typename URowMapType, typename UEntriesType,
           typename UValuesType>
 void par_ilut_numeric(KernelHandle* handle,
-                    typename KernelHandle::const_nnz_lno_t fill_lev,
                     ARowMapType& A_rowmap, AEntriesType& A_entries,
                     AValuesType& A_values, LRowMapType& L_rowmap,
                     LEntriesType& L_entries, LValuesType& L_values,
@@ -444,14 +443,6 @@ void par_ilut_numeric(KernelHandle* handle,
                    typename LValuesType::device_type>::value,
       "par_ilut_numeric: rowmap and values have different device types.");
 
-  // Check validity of fill level
-  if (fill_lev < 0) {
-    std::ostringstream os;
-    os << "KokkosSparse::Experimental::par_ilut_numeric: fill_lev: " << fill_lev
-       << ". Valid value is >= 0.";
-    KokkosKernels::Impl::throw_runtime_exception(os.str());
-  }
-
   // Check if symbolic has been called
   if (handle->get_par_ilut_handle()->is_symbolic_complete() == false) {
     std::ostringstream os;
@@ -553,7 +544,7 @@ void par_ilut_numeric(KernelHandle* handle,
       const_handle_type, ARowMap_Internal, AEntries_Internal, AValues_Internal,
       LRowMap_Internal, LEntries_Internal, LValues_Internal, URowMap_Internal,
       UEntries_Internal, UValues_Internal>::par_ilut_numeric(&tmp_handle,
-                                                           fill_lev, A_rowmap_i,
+                                                           A_rowmap_i,
                                                            A_entries_i,
                                                            A_values_i,
                                                            L_rowmap_i,
