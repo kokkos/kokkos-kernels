@@ -26,8 +26,7 @@ template <int NDOFS, int NSTAGES>
 struct RkStack {
   using type = StackAllocationTag;
 
-  using V1 =
-      Kokkos::View<double[NDOFS], AnonSpace, Kokkos::MemoryUnmanaged>;
+  using V1   = Kokkos::View<double[NDOFS], AnonSpace, Kokkos::MemoryUnmanaged>;
   using V2   = Kokkos::View<double[NSTAGES][NDOFS], Kokkos::LayoutRight,
                           AnonSpace, Kokkos::MemoryUnmanaged>;
   using Arr1 = Kokkos::Array<double, NDOFS>;

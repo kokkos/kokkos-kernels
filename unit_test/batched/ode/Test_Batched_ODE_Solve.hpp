@@ -6,8 +6,8 @@
 #include <tftk_TestODEs.h>
 #include <tftk_ODEArgs.h>
 
-namespace KokkosBatched{
-namespace ode{
+namespace KokkosBatched {
+namespace ode {
 
 template <typename SolverState, typename MemorySpace, typename ODEType,
           typename SolverType>
@@ -435,7 +435,7 @@ TEST_F(TestCategory, ODE_RKSingleStep) {
   check_single_step(dt, s.table, state, ke);
 }
 
-} //namespace ode
-} //namespace KokkosBatched
+}  // namespace ode
+}  // namespace KokkosBatched
 
 #endif

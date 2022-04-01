@@ -6,8 +6,8 @@
 #include <tftk_TestODEs.h>
 #include <tftk_ODEArgs.h>
 
-namespace KokkosBatched{
-namespace ode{
+namespace KokkosBatched {
+namespace ode {
 
 template <typename MemorySpace, typename ODEType, typename SolverType>
 void scratch_kernel(const ODEType &ode, const SolverType &solver,
@@ -240,7 +240,7 @@ TEST_F(TestCategory, ODE_RKPerformance) {
             << dt_host_scratch / dt_host_stack << "\n";
 }
 
-} //namespace ode
-} //namespace KokkosBatched
+}  // namespace ode
+}  // namespace KokkosBatched
 
 #endif

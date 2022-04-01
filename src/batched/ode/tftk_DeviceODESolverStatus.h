@@ -19,7 +19,7 @@ enum class ODESolverStatus {
   NONFINITE_STATE
 };
 
-//std::ostream& operator<<(std::ostream& os, ODESolverStatus status);
+// std::ostream& operator<<(std::ostream& os, ODESolverStatus status);
 }  // namespace ode
 }  // namespace KokkosBatched
 #endif
