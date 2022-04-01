@@ -10,8 +10,6 @@
 #define SIERRA_tftk_DeviceODESolverState_h
 
 #include "Kokkos_View.hpp"
-//#include "tftk_util/tftk_KokkosTypes.h"
-#include "tftk_KokkosTypes.h"
 
 namespace KokkosBatched {
 namespace ode {
@@ -26,9 +24,9 @@ template <int NDOFS, int NSTAGES>
 struct RkStack {
   using type = StackAllocationTag;
 
-  using V1   = Kokkos::View<double[NDOFS], AnonSpace, Kokkos::MemoryUnmanaged>;
+  using V1   = Kokkos::View<double[NDOFS], Kokkos::AnonymousSpace, Kokkos::MemoryUnmanaged>;
   using V2   = Kokkos::View<double[NSTAGES][NDOFS], Kokkos::LayoutRight,
-                          AnonSpace, Kokkos::MemoryUnmanaged>;
+                          Kokkos::AnonymousSpace, Kokkos::MemoryUnmanaged>;
   using Arr1 = Kokkos::Array<double, NDOFS>;
   using Arr2 = Kokkos::Array<double, NSTAGES * NDOFS>;
   Arr1 y;
@@ -80,9 +78,9 @@ struct RkSolverState {
       std::conditional_t<std::is_same<Type, StackAllocationTag>::value,
                          Kokkos::LayoutRight, Kokkos::LayoutStride>;
   using View1 =
-      Kokkos::View<double *, Layout, AnonSpace, Kokkos::MemoryUnmanaged>;
+      Kokkos::View<double *, Layout, Kokkos::AnonymousSpace, Kokkos::MemoryUnmanaged>;
   using View2 =
-      Kokkos::View<double **, Layout, AnonSpace, Kokkos::MemoryUnmanaged>;
+      Kokkos::View<double **, Layout, Kokkos::AnonymousSpace, Kokkos::MemoryUnmanaged>;
 
   KOKKOS_FORCEINLINE_FUNCTION int ndofs() const {
     return static_cast<int>(y.extent(0));

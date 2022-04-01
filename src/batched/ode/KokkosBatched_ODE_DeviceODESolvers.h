@@ -14,8 +14,6 @@
 #include "Kokkos_Layout.hpp"
 #include "Kokkos_MemoryTraits.hpp"
 
-//#include "tftk_util/tftk_KokkosTypes.h"
-#include "tftk_KokkosTypes.h"
 #include <tftk_ODEArgs.h>
 #include <tftk_RungeKuttaTables.h>
 #include <tftk_DeviceODESolverStatus.h>
