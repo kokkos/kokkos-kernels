@@ -223,21 +223,22 @@ void lower_tri_symbolic(TriSolveHandle& thandle, const RowMapType drow_map,
     HostSignedEntriesType level_list = Kokkos::create_mirror_view(dlevel_list);
     Kokkos::deep_copy(level_list, dlevel_list);
 
-    signed_integral_t level    = 0;
-    size_type node_count = 0;
+    signed_integral_t level = 0;
+    size_type node_count    = 0;
 
-    typename DeviceEntriesType::HostMirror level_ptr("lp", nrows+1);  // temp View used for index bookkeeping
+    typename DeviceEntriesType::HostMirror level_ptr(
+        "lp", nrows + 1);  // temp View used for index bookkeeping
     level_ptr(0) = 0;
     for (size_type i = 0; i < nrows; ++i) {
-      signed_integral_t l        = 0;
-      size_type rowstart = row_map(i);
-      size_type rowend   = row_map(i + 1);
+      signed_integral_t l = 0;
+      size_type rowstart  = row_map(i);
+      size_type rowend    = row_map(i + 1);
       for (size_type j = rowstart; j < rowend; j++) {
         size_type col = entries(j);
         l             = std::max(l, level_list(col));
       }
       level_list(i) = l + 1;
-      nodes_per_level(l) += 1; // 0-based indexing
+      nodes_per_level(l) += 1;  // 0-based indexing
       level_ptr(l + 1) += 1;
       level = std::max(level, l + 1);
       node_count++;
@@ -288,7 +289,7 @@ void lower_tri_symbolic(TriSolveHandle& thandle, const RowMapType drow_map,
     Kokkos::deep_copy(dnodes_per_level, nodes_per_level);
     Kokkos::deep_copy(dlevel_list, level_list);
 
-      // Extra check:
+    // Extra check:
 #ifdef LVL_OUTPUT_INFO
     {
       std::cout << "  End symb - extra checks" << std::endl;
@@ -671,22 +672,24 @@ void upper_tri_symbolic(TriSolveHandle& thandle, const RowMapType drow_map,
     HostSignedEntriesType level_list = Kokkos::create_mirror_view(dlevel_list);
     Kokkos::deep_copy(level_list, dlevel_list);
 
-    signed_integral_t level    = 0;
-    size_type node_count = 0;
+    signed_integral_t level = 0;
+    size_type node_count    = 0;
 
-    typename DeviceEntriesType::HostMirror level_ptr("lp", nrows+1);  // temp View used for index bookkeeping
+    typename DeviceEntriesType::HostMirror level_ptr(
+        "lp", nrows + 1);  // temp View used for index bookkeeping
     level_ptr(0) = 0;
-    for (size_type ii = nrows; ii > 0 ; ii--) {
-      size_type i = ii-1; // Avoid >= 0 comparison in for-loop to prevent wraparound errors with unsigned types
-      signed_integral_t l        = 0;
-      size_type rowstart = row_map(i)+1; // skip diag
-      size_type rowend   = row_map(i + 1);
+    for (size_type ii = nrows; ii > 0; ii--) {
+      size_type i = ii - 1;  // Avoid >= 0 comparison in for-loop to prevent
+                             // wraparound errors with unsigned types
+      signed_integral_t l = 0;
+      size_type rowstart  = row_map(i) + 1;  // skip diag
+      size_type rowend    = row_map(i + 1);
       for (size_type j = rowstart; j < rowend; ++j) {
         size_type col = entries(j);
         l             = std::max(l, level_list(col));
       }
       level_list(i) = l + 1;
-      nodes_per_level(l) += 1; // 0-based indexing
+      nodes_per_level(l) += 1;  // 0-based indexing
       level_ptr(l + 1) += 1;
       level = std::max(level, l + 1);
       node_count++;
@@ -737,7 +740,7 @@ void upper_tri_symbolic(TriSolveHandle& thandle, const RowMapType drow_map,
     Kokkos::deep_copy(dnodes_per_level, nodes_per_level);
     Kokkos::deep_copy(dlevel_list, level_list);
 
-      // Extra check:
+    // Extra check:
 #ifdef LVL_OUTPUT_INFO
     {
       std::cout << "  End symb - extra checks" << std::endl;
