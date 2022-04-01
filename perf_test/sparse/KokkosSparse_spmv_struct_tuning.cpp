@@ -605,7 +605,7 @@ int main(int argc, char** argv) {
       const double alpha = 1.0, beta = 1.0;
       size_t bufferSize     = 0;
       void* dBuffer         = NULL;
-      cusparseSpMVAlg_t alg = CUSPARSE_MV_ALG_DEFAULT;
+      cusparseSpMVAlg_t alg = CUSPARSE_SPMV_ALG_DEFAULT;
       KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpMV_bufferSize(
           controls.getCusparseHandle(), CUSPARSE_OPERATION_NON_TRANSPOSE,
           &alpha, A_cusparse, vecX, &beta, vecY, myCudaDataType, alg,
