@@ -10,19 +10,16 @@
 #define SIERRA_tftk_DeviceODESolverStatus_h
 
 #include <ostream>
-namespace tftk
-{
-namespace ode
-{
-enum class ODESolverStatus
-{
+namespace tftk {
+namespace ode {
+enum class ODESolverStatus {
   SUCCESS = 0,
   FAILED_TO_CONVERGE,
   MINIMUM_TIMESTEP_REACHED,
   NONFINITE_STATE
 };
 
-std::ostream & operator<<(std::ostream & os, ODESolverStatus status);
-} // namespace ode
-} // namespace tftk
+std::ostream& operator<<(std::ostream& os, ODESolverStatus status);
+}  // namespace ode
+}  // namespace tftk
 #endif

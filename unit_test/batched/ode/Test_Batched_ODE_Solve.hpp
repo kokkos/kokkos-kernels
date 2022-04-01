@@ -6,35 +6,30 @@
 #include <tftk_TestODEs.h>
 #include <tftk_ODEArgs.h>
 
-template <typename SolverState, typename MemorySpace, typename ODEType, typename SolverType>
-void kernel(int nelems,
-    const ODEType & ode,
-    const SolverType & solver,
-    double tstart,
-    double tend,
-    const int ndofs,
-    const RkDynamicAllocation<MemorySpace> & pool)
-{
+template <typename SolverState, typename MemorySpace, typename ODEType,
+          typename SolverType>
+void kernel(int nelems, const ODEType &ode, const SolverType &solver,
+            double tstart, double tend, const int ndofs,
+            const RkDynamicAllocation<MemorySpace> &pool) {
   int glob_status = 0;
 
   Kokkos::parallel_reduce(
       "ODESolverKernel",
       Kokkos::RangePolicy<typename MemorySpace::execution_space>(0, nelems),
-      KOKKOS_LAMBDA(const int elem, int & status) {
+      KOKKOS_LAMBDA(const int elem, int &status) {
         typename SolverState::StackType stack{};
         SolverState s;
         s.set_views(stack, pool, elem);
 
-        for (int dof = 0; dof < ndofs; ++dof)
-        {
+        for (int dof = 0; dof < ndofs; ++dof) {
           s.y[dof] = ode.expected_val(ode.tstart(), dof);
         }
 
-        auto thread_status = static_cast<int>(solver.solve(ode, tstart, tend, s));
+        auto thread_status =
+            static_cast<int>(solver.solve(ode, tstart, tend, s));
         status = thread_status > status ? thread_status : status;
 
-        for (int dof = 0; dof < ndofs; ++dof)
-        {
+        for (int dof = 0; dof < ndofs; ++dof) {
           pool.y(elem, dof) = s.y[dof];
         }
       },
@@ -43,82 +38,64 @@ void kernel(int nelems,
   ASSERT_EQ(ODESolverStatus(glob_status), ODESolverStatus::SUCCESS);
 }
 
-template <typename SolverState, typename MemorySpace, typename ODEType, typename SolverType>
-void compute_errors(const RkDynamicAllocation<MemorySpace> & pool,
-    Kokkos::View<double ***, Kokkos::HostSpace> errs,
-    const ODEType & ode,
-    const SolverType & solver,
-    const int nelems,
-    const int ndofs,
-    const int level)
-{
-  kernel<SolverState>(nelems, ode, solver, ode.tstart(), ode.tend(), ndofs, pool);
+template <typename SolverState, typename MemorySpace, typename ODEType,
+          typename SolverType>
+void compute_errors(const RkDynamicAllocation<MemorySpace> &pool,
+                    Kokkos::View<double ***, Kokkos::HostSpace> errs,
+                    const ODEType &ode, const SolverType &solver,
+                    const int nelems, const int ndofs, const int level) {
+  kernel<SolverState>(nelems, ode, solver, ode.tstart(), ode.tend(), ndofs,
+                      pool);
 
-  auto y_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), pool.y);
+  auto y_host =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), pool.y);
 
-  for (int elem = 0; elem < nelems; ++elem)
-  {
-    for (int n = 0; n < ndofs; ++n)
-    {
-      const double err =
-          Kokkos::Experimental::fabs(ode.expected_val(ode.tend(), n) - y_host(elem, n));
+  for (int elem = 0; elem < nelems; ++elem) {
+    for (int n = 0; n < ndofs; ++n) {
+      const double err = Kokkos::Experimental::fabs(
+          ode.expected_val(ode.tend(), n) - y_host(elem, n));
       errs(elem, n, level) = err;
     }
   }
 }
 
 template <typename ODEType>
-using ErrorCheck =
-    std::function<void(const int, const double, const ODEType &, const double, const double)>;
+using ErrorCheck = std::function<void(const int, const double, const ODEType &,
+                                      const double, const double)>;
 
 template <typename ODEType>
-void empty_check(const int dof,
-    const double err,
-    const ODEType & ode,
-    const double rel_tol,
-    const double abs_tol)
-{
-}
+void empty_check(const int dof, const double err, const ODEType &ode,
+                 const double rel_tol, const double abs_tol) {}
 
 template <typename ODEType>
-void error_check(const int dof,
-    const double err,
-    const ODEType & ode,
-    const double rel_tol,
-    const double abs_tol)
-{
-  const double val = Kokkos::Experimental::fabs(ode.expected_val(ode.tend(), dof));
+void error_check(const int dof, const double err, const ODEType &ode,
+                 const double rel_tol, const double abs_tol) {
+  const double val =
+      Kokkos::Experimental::fabs(ode.expected_val(ode.tend(), dof));
   const bool condition = (err < rel_tol * val) || (err < abs_tol);
   EXPECT_TRUE(condition);
 };
 
-template <typename MemorySpace, typename TableType, typename ODEType, int ndofs> 
-struct RKTest
-{
-  using SolverType = RungeKuttaSolver<TableType>;
+template <typename MemorySpace, typename TableType, typename ODEType, int ndofs>
+struct RKTest {
+  using SolverType       = RungeKuttaSolver<TableType>;
   using SolverStateStack = RkSolverState<RkStack<ndofs, SolverType::nstages>>;
-  using SolverStateDyn = RkSolverState<RkDynamicAllocation<MemorySpace>>;
+  using SolverStateDyn   = RkSolverState<RkDynamicAllocation<MemorySpace>>;
 
-  RKTest(const bool use_stack_,
-      const int nelems_,
-      ODEArgs args_,
-      ODEType ode_,
-      ErrorCheck<ODEType> check_,
-      const bool do_convergence_ = false,
-      const double rel_tol_ = 1e-12,
-      const double abs_tol_ = 1e-16)
+  RKTest(const bool use_stack_, const int nelems_, ODEArgs args_, ODEType ode_,
+         ErrorCheck<ODEType> check_, const bool do_convergence_ = false,
+         const double rel_tol_ = 1e-12, const double abs_tol_ = 1e-16)
       : use_stack(use_stack_),
         nelems(nelems_),
         args(args_),
         ode(ode_),
         pool(nelems, ndofs, TableType::n),
-        errs(Kokkos::ViewAllocateWithoutInitializing("errs"), nelems, ndofs, nlevels),
+        errs(Kokkos::ViewAllocateWithoutInitializing("errs"), nelems, ndofs,
+             nlevels),
         check(std::move(check_)),
         do_convergence(do_convergence_),
         rel_tol(rel_tol_),
-        abs_tol(abs_tol_)
-  {
-  }
+        abs_tol(abs_tol_) {}
   const int nlevels = 5;
 
   const bool use_stack;
@@ -136,42 +113,35 @@ struct RKTest
 
   void run() { do_convergence ? test_convergence() : test_tolerance(); }
 
-  void test_convergence()
-  {
+  void test_convergence() {
     const int num_substeps = args.num_substeps;
-    ODEArgs args_local = args;
+    ODEArgs args_local     = args;
 
-    for (int m = 0; m < nlevels; ++m)
-    {
-      const int reduction = 1 << m;
+    for (int m = 0; m < nlevels; ++m) {
+      const int reduction     = 1 << m;
       args_local.num_substeps = num_substeps * reduction;
       SolverType solver(args_local);
 
-      if (use_stack)
-      {
-        compute_errors<SolverStateStack>(pool, errs, ode, solver, nelems, ndofs, m);
-      }
-      else
-      {
-        compute_errors<SolverStateDyn>(pool, errs, ode, solver, nelems, ndofs, m);
+      if (use_stack) {
+        compute_errors<SolverStateStack>(pool, errs, ode, solver, nelems, ndofs,
+                                         m);
+      } else {
+        compute_errors<SolverStateDyn>(pool, errs, ode, solver, nelems, ndofs,
+                                       m);
       }
 
-      for (int e = 0; e < nelems; ++e)
-      {
-        for (int n = 0; n < ndofs; ++n)
-        {
+      for (int e = 0; e < nelems; ++e) {
+        for (int n = 0; n < ndofs; ++n) {
           double err_ratio = 0.0;
-          double slope = 0.0;
+          double slope     = 0.0;
 
-          if (m >= 1)
-          {
+          if (m >= 1) {
             err_ratio = errs(e, n, m - 1) / errs(e, n, m);
-            slope = Kokkos::Experimental::log2(err_ratio);
+            slope     = Kokkos::Experimental::log2(err_ratio);
           }
 
           // check the slope of last few refinements
-          if (m >= (nlevels - 2))
-          {
+          if (m >= (nlevels - 2)) {
             EXPECT_TRUE(slope > 0.98 * TableType::order);
           }
         }
@@ -179,23 +149,18 @@ struct RKTest
     }
   }
 
-  void test_tolerance()
-  {
+  void test_tolerance() {
     SolverType solver(args);
 
-    if (use_stack)
-    {
-      compute_errors<SolverStateStack>(pool, errs, ode, solver, nelems, ndofs, 0);
-    }
-    else
-    {
+    if (use_stack) {
+      compute_errors<SolverStateStack>(pool, errs, ode, solver, nelems, ndofs,
+                                       0);
+    } else {
       compute_errors<SolverStateDyn>(pool, errs, ode, solver, nelems, ndofs, 0);
     }
 
-    for (int e = 0; e < nelems; ++e)
-    {
-      for (int n = 0; n < ndofs; ++n)
-      {
+    for (int e = 0; e < nelems; ++e) {
+      for (int n = 0; n < ndofs; ++n) {
         check(n, errs(e, n, 0), ode, rel_tol, abs_tol);
       }
     }
@@ -203,20 +168,23 @@ struct RKTest
 };
 
 template <typename MemorySpace, typename ODEType, int NDOFS>
-void run_all_rks_verify(const bool use_stack,
-    const int nelems,
-    const ODEArgs & args,
-    const ODEType & ode,
-    const std::vector<char> & do_conv = {true, true, true, true, true, true},
-    ErrorCheck<ODEType> check = error_check<ODEType>)
-{
-  RKTest<MemorySpace, RKEH, ODEType, NDOFS> t1(use_stack, nelems, args, ode, check, do_conv[0]);
-  RKTest<MemorySpace, RK12, ODEType, NDOFS> t2(use_stack, nelems, args, ode, check, do_conv[1]);
-  RKTest<MemorySpace, BS, ODEType, NDOFS> t3(use_stack, nelems, args, ode, check, do_conv[2]);
-  RKTest<MemorySpace, RKF45, ODEType, NDOFS> t4(use_stack, nelems, args, ode, check, do_conv[3]);
-  RKTest<MemorySpace, CashKarp, ODEType, NDOFS> t5(use_stack, nelems, args, ode, check, do_conv[4]);
-  RKTest<MemorySpace, DormandPrince, ODEType, NDOFS> t6(
-      use_stack, nelems, args, ode, check, do_conv[5]);
+void run_all_rks_verify(const bool use_stack, const int nelems,
+                        const ODEArgs &args, const ODEType &ode,
+                        const std::vector<char> &do_conv = {true, true, true,
+                                                            true, true, true},
+                        ErrorCheck<ODEType> check = error_check<ODEType>) {
+  RKTest<MemorySpace, RKEH, ODEType, NDOFS> t1(use_stack, nelems, args, ode,
+                                               check, do_conv[0]);
+  RKTest<MemorySpace, RK12, ODEType, NDOFS> t2(use_stack, nelems, args, ode,
+                                               check, do_conv[1]);
+  RKTest<MemorySpace, BS, ODEType, NDOFS> t3(use_stack, nelems, args, ode,
+                                             check, do_conv[2]);
+  RKTest<MemorySpace, RKF45, ODEType, NDOFS> t4(use_stack, nelems, args, ode,
+                                                check, do_conv[3]);
+  RKTest<MemorySpace, CashKarp, ODEType, NDOFS> t5(use_stack, nelems, args, ode,
+                                                   check, do_conv[4]);
+  RKTest<MemorySpace, DormandPrince, ODEType, NDOFS> t6(use_stack, nelems, args,
+                                                        ode, check, do_conv[5]);
 
   t1.run();
   t2.run();
@@ -227,15 +195,14 @@ void run_all_rks_verify(const bool use_stack,
 }
 
 template <typename MemorySpace, int NDOFS>
-void run_rk_verification_tests(const bool use_stack, const int nelems)
-{
+void run_rk_verification_tests(const bool use_stack, const int nelems) {
   const int ndofs = NDOFS;
   ODEArgs args;
   args.is_adaptive = false;
 
-  // For the stiffer ODES, params are chosen to be suitable for a convergence study
-  // i.e. time step for stability is sufficiently large so we avoid reaching machine precision too
-  // quickly
+  // For the stiffer ODES, params are chosen to be suitable for a convergence
+  // study i.e. time step for stability is sufficiently large so we avoid
+  // reaching machine precision too quickly
 
   // True indicates whether to do a convergence study,
   // otherwise we test for exact reproduction
@@ -245,39 +212,37 @@ void run_rk_verification_tests(const bool use_stack, const int nelems)
   run_all_rks_verify<MemorySpace, DegreeTwoPoly, NDOFS>(
       use_stack, nelems, args, DegreeTwoPoly(ndofs), do_conv);
   run_all_rks_verify<MemorySpace, DegreeThreePoly, NDOFS>(
-      use_stack, nelems, args, DegreeThreePoly(ndofs), {true, true, false, false, false, false});
+      use_stack, nelems, args, DegreeThreePoly(ndofs),
+      {true, true, false, false, false, false});
   run_all_rks_verify<MemorySpace, DegreeFivePoly, NDOFS>(
-      use_stack, nelems, args, DegreeFivePoly(ndofs), {true, true, true, false, false, false});
+      use_stack, nelems, args, DegreeFivePoly(ndofs),
+      {true, true, true, false, false, false});
   run_all_rks_verify<MemorySpace, SpringMassDamper, 2>(
       use_stack, nelems, args, SpringMassDamper(2, 21., 100.));
-  run_all_rks_verify<MemorySpace, CosExp, NDOFS>(
-      use_stack, nelems, args, CosExp(ndofs, -1., 1., 2.));
+  run_all_rks_verify<MemorySpace, CosExp, NDOFS>(use_stack, nelems, args,
+                                                 CosExp(ndofs, -1., 1., 2.));
 
   // coarsen step
   args.num_substeps = 4;
   run_all_rks_verify<MemorySpace, StiffChemicalDecayProcess, 3>(
       use_stack, nelems, args, StiffChemicalDecayProcess(3, 10., 1.));
-  run_all_rks_verify<MemorySpace, Exponential, NDOFS>(
-      use_stack, nelems, args, Exponential(ndofs, -2.));
+  run_all_rks_verify<MemorySpace, Exponential, NDOFS>(use_stack, nelems, args,
+                                                      Exponential(ndofs, -2.));
 }
 
 template <typename MemorySpace, typename ODEType, int NDOFS>
-void run_all_rks_adapt(const bool use_stack,
-    const int nelems,
-    const ODEArgs & args,
-    const ODEType & ode,
-    const double rel_tol = 0.0,
-    const double abs_tol = 0.0,
-    ErrorCheck<ODEType> check = empty_check<ODEType>)
-{
-  RKTest<MemorySpace, RKEH, ODEType, NDOFS> t1(
-      use_stack, nelems, args, ode, check, false, rel_tol, abs_tol);
-  RKTest<MemorySpace, RK12, ODEType, NDOFS> t2(
-      use_stack, nelems, args, ode, check, false, rel_tol, abs_tol);
-  RKTest<MemorySpace, BS, ODEType, NDOFS> t3(
-      use_stack, nelems, args, ode, check, false, rel_tol, abs_tol);
-  RKTest<MemorySpace, RKF45, ODEType, NDOFS> t4(
-      use_stack, nelems, args, ode, check, false, rel_tol, abs_tol);
+void run_all_rks_adapt(const bool use_stack, const int nelems,
+                       const ODEArgs &args, const ODEType &ode,
+                       const double rel_tol = 0.0, const double abs_tol = 0.0,
+                       ErrorCheck<ODEType> check = empty_check<ODEType>) {
+  RKTest<MemorySpace, RKEH, ODEType, NDOFS> t1(use_stack, nelems, args, ode,
+                                               check, false, rel_tol, abs_tol);
+  RKTest<MemorySpace, RK12, ODEType, NDOFS> t2(use_stack, nelems, args, ode,
+                                               check, false, rel_tol, abs_tol);
+  RKTest<MemorySpace, BS, ODEType, NDOFS> t3(use_stack, nelems, args, ode,
+                                             check, false, rel_tol, abs_tol);
+  RKTest<MemorySpace, RKF45, ODEType, NDOFS> t4(use_stack, nelems, args, ode,
+                                                check, false, rel_tol, abs_tol);
   RKTest<MemorySpace, CashKarp, ODEType, NDOFS> t5(
       use_stack, nelems, args, ode, check, false, rel_tol, abs_tol);
   RKTest<MemorySpace, DormandPrince, ODEType, NDOFS> t6(
@@ -292,13 +257,13 @@ void run_all_rks_adapt(const bool use_stack,
 }
 
 template <typename MemorySpace, int NDOFS>
-void run_rk_adaptive_tests(const bool use_stack, const int nelems)
-{
+void run_rk_adaptive_tests(const bool use_stack, const int nelems) {
   const int ndofs = NDOFS;
   ODEArgs args;
   args.maxSubSteps = 1e6;
 
-  // Linear problems - both real and complex eigenvalues, checking for rel errors
+  // Linear problems - both real and complex eigenvalues, checking for rel
+  // errors
 
   // No. fcn evals
   // CosExp =                    {56340, 5367, 6200, 3492, 2670, 3752}
@@ -306,28 +271,22 @@ void run_rk_adaptive_tests(const bool use_stack, const int nelems)
   // StiffChemicalDecayProcess = {32124, 8178, 8084, 7722, 6870, 9737}
   // B5 =                        {249k, 24765, 24800, 6990, 4800, 7357}
 
-  // the relative tolerance is set based on the dof w/ largest rel. err across all solvers
-  // for the higher order solvers the rel tol reached is much better than shown
-  // e.g. EnrightB5 limited by RK12 and BS, otherwise < 5e-5 rel. tol
+  // the relative tolerance is set based on the dof w/ largest rel. err across
+  // all solvers for the higher order solvers the rel tol reached is much better
+  // than shown e.g. EnrightB5 limited by RK12 and BS, otherwise < 5e-5 rel. tol
 
   run_all_rks_adapt<MemorySpace, CosExp, NDOFS>(
-      use_stack, nelems, args, CosExp(ndofs, -10., 2., 1.), 5.3e-5, 0., error_check<CosExp>);
-  run_all_rks_adapt<MemorySpace, SpringMassDamper, 2>(use_stack,
-      nelems,
-      args,
-      SpringMassDamper(2, 1001., 1000.),
-      1e-4,
-      0.,
+      use_stack, nelems, args, CosExp(ndofs, -10., 2., 1.), 5.3e-5, 0.,
+      error_check<CosExp>);
+  run_all_rks_adapt<MemorySpace, SpringMassDamper, 2>(
+      use_stack, nelems, args, SpringMassDamper(2, 1001., 1000.), 1e-4, 0.,
       error_check<SpringMassDamper>);
-  run_all_rks_adapt<MemorySpace, StiffChemicalDecayProcess, 3>(use_stack,
-      nelems,
-      args,
-      StiffChemicalDecayProcess(3, 1e4, 1.),
-      4e-9,
-      1.8e-10,
-      error_check<StiffChemicalDecayProcess>);
-  run_all_rks_adapt<MemorySpace, EnrightB5, 6>(
-      use_stack, nelems, args, EnrightB5(6), 1.3e-2, 0.0, error_check<EnrightB5>);
+  run_all_rks_adapt<MemorySpace, StiffChemicalDecayProcess, 3>(
+      use_stack, nelems, args, StiffChemicalDecayProcess(3, 1e4, 1.), 4e-9,
+      1.8e-10, error_check<StiffChemicalDecayProcess>);
+  run_all_rks_adapt<MemorySpace, EnrightB5, 6>(use_stack, nelems, args,
+                                               EnrightB5(6), 1.3e-2, 0.0,
+                                               error_check<EnrightB5>);
 
   // Nonlinear problems -- Enright problems are checking only for solver success
 
@@ -339,33 +298,34 @@ void run_rk_adaptive_tests(const bool use_stack, const int nelems)
   // D4 =     {265k, 529k, 529k, 623k, 614k, 809k} // Tend = 50
   run_all_rks_adapt<MemorySpace, Tracer, 2>(
       use_stack, nelems, args, Tracer(2, 10.0), 0.0, 1e-3, error_check<Tracer>);
-  run_all_rks_adapt<MemorySpace, EnrightC1, 4>(use_stack, nelems, args, EnrightC1(4));
-  run_all_rks_adapt<MemorySpace, EnrightC5, 4>(use_stack, nelems, args, EnrightC5(4));
-  run_all_rks_adapt<MemorySpace, EnrightD2, 3>(use_stack, nelems, args, EnrightD2(3));
-  run_all_rks_adapt<MemorySpace, EnrightD4, 3>(use_stack, nelems, args, EnrightD4(3));
+  run_all_rks_adapt<MemorySpace, EnrightC1, 4>(use_stack, nelems, args,
+                                               EnrightC1(4));
+  run_all_rks_adapt<MemorySpace, EnrightC5, 4>(use_stack, nelems, args,
+                                               EnrightC5(4));
+  run_all_rks_adapt<MemorySpace, EnrightD2, 3>(use_stack, nelems, args,
+                                               EnrightD2(3));
+  run_all_rks_adapt<MemorySpace, EnrightD4, 3>(use_stack, nelems, args,
+                                               EnrightD4(3));
 }
 
-TEST_F(TestCategory, ODE_RKVerificationTests)
-{
+TEST_F(TestCategory, ODE_RKVerificationTests) {
   run_rk_verification_tests<TestExecSpace, 1>(true, 2);
   run_rk_verification_tests<TestExecSpace, 1>(false, 2);
 }
 
-TEST_F(TestCategory, ODE_RKAdaptiveTests)
-{
+TEST_F(TestCategory, ODE_RKAdaptiveTests) {
   run_rk_adaptive_tests<TestExecSpace, 1>(true, 2);
   run_rk_adaptive_tests<TestExecSpace, 1>(false, 2);
 }
 
-TEST_F(TestCategory, ODE_RKSolverStatus)
-{
+TEST_F(TestCategory, ODE_RKSolverStatus) {
   constexpr int ndofs = 1;
-  using Arr = Kokkos::Array<double, ndofs>;
-  using Solver = RungeKuttaSolver<RKEH>;
-  using Stack = RkStack<ndofs, Solver::nstages>;
+  using Arr           = Kokkos::Array<double, ndofs>;
+  using Solver        = RungeKuttaSolver<RKEH>;
+  using Stack         = RkStack<ndofs, Solver::nstages>;
   Exponential ode(ndofs, -10);
   double tstart = 0.0;
-  double tend = 1.0;
+  double tend   = 1.0;
 
   Stack stack{};
   RkSolverState<Stack> state;
@@ -400,17 +360,14 @@ TEST_F(TestCategory, ODE_RKSolverStatus)
 }
 
 template <typename TableType, typename StateType, typename Arr>
-void check_single_step(
-    const double dt, const TableType & table, const StateType & s, const Arr & ke)
-{
+void check_single_step(const double dt, const TableType &table,
+                       const StateType &s, const Arr &ke) {
   using Kokkos::Experimental::fabs;
 
   const double tol = 1e-15;
-  for (unsigned dof = 0; dof < s.y.extent(0); ++dof)
-  {
+  for (unsigned dof = 0; dof < s.y.extent(0); ++dof) {
     double b_dot_k = 0.0;
-    for (int j = 0; j < table.n; ++j)
-    {
+    for (int j = 0; j < table.n; ++j) {
       const double err = fabs(ke[j][dof] - s.k(j, dof));
       EXPECT_TRUE(err <= fabs(tol * ke[j][dof]));
       b_dot_k += table.b[j] * ke[j][dof];
@@ -421,13 +378,13 @@ void check_single_step(
 }
 
 // Manually verify the j RK stages are computed properly
-// RK solvers go through the same step(...)..use the RK45 table which is sufficiently
-// complex. Note the ODE must have a dependence on y to fully test the stages
-TEST_F(TestCategory, ODE_RKSingleStep)
-{
+// RK solvers go through the same step(...)..use the RK45 table which is
+// sufficiently complex. Note the ODE must have a dependence on y to fully test
+// the stages
+TEST_F(TestCategory, ODE_RKSingleStep) {
   constexpr int ndofs = 2;
-  using Arr = Kokkos::Array<double, ndofs>;
-  using Stack = RkStack<ndofs, RKF45::n>;
+  using Arr           = Kokkos::Array<double, ndofs>;
+  using Stack         = RkStack<ndofs, RKF45::n>;
   SpringMassDamper ode(ndofs, 1001, 1000.);
   RungeKuttaSolver<RKF45> s{ODEArgs()};
 
@@ -440,8 +397,8 @@ TEST_F(TestCategory, ODE_RKSingleStep)
   RkSolverState<Stack> state;
   state.set_views(stack);
   auto y0 = state.y0;
-  y0(0) = ode.expected_val(t0, 0);
-  y0(1) = ode.expected_val(t0, 1);
+  y0(0)   = ode.expected_val(t0, 0);
+  y0(1)   = ode.expected_val(t0, 1);
   s.step(ode, t0, dt, state, est_err);
 
   Kokkos::Array<Arr, RKF45::n> ke{};
@@ -475,4 +432,4 @@ TEST_F(TestCategory, ODE_RKSingleStep)
   check_single_step(dt, s.table, state, ke);
 }
 
-#endif 
+#endif

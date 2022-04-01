@@ -25,64 +25,58 @@
 
 #include <type_traits>
 
-namespace tftk
-{
-namespace ode
-{
+namespace tftk {
+namespace ode {
 
-KOKKOS_FORCEINLINE_FUNCTION double
-tol(const double y, const double y0, const double absTol, const double relTol)
-{
+KOKKOS_FORCEINLINE_FUNCTION double tol(const double y, const double y0,
+                                       const double absTol,
+                                       const double relTol) {
   return absTol +
-      relTol *
-      Kokkos::Experimental::fmax(Kokkos::Experimental::fabs(y), Kokkos::Experimental::fabs(y0));
+         relTol * Kokkos::Experimental::fmax(Kokkos::Experimental::fabs(y),
+                                             Kokkos::Experimental::fabs(y0));
 }
 
-template <typename View> KOKKOS_FUNCTION bool isfinite(View & y, const unsigned ndofs)
-{
+template <typename View>
+KOKKOS_FUNCTION bool isfinite(View& y, const unsigned ndofs) {
   bool is_finite = true;
-  for (unsigned i = 0; i < ndofs; ++i)
-  {
-    if (!Kokkos::Experimental::isfinite(y[i]))
-    {
+  for (unsigned i = 0; i < ndofs; ++i) {
+    if (!Kokkos::Experimental::isfinite(y[i])) {
       is_finite = false;
       break;
     }
   }
   return is_finite;
 }
-template <typename TableType> struct RungeKuttaSolver
-{
+template <typename TableType>
+struct RungeKuttaSolver {
   static constexpr int nstages = TableType::n;
 
-  RungeKuttaSolver(const ODEArgs & args) : controls(args) {}
+  RungeKuttaSolver(const ODEArgs& args) : controls(args) {}
 
   template <typename ODEType, typename StateType>
-  KOKKOS_FUNCTION ODESolverStatus solve(
-      const ODEType & ode, double tstart, double tend, StateType & s) const
-  {
+  KOKKOS_FUNCTION ODESolverStatus solve(const ODEType& ode, double tstart,
+                                        double tend, StateType& s) const {
     using Kokkos::Experimental::fmax;
     using Kokkos::Experimental::fmin;
     using Kokkos::Experimental::pow;
 
     const int ndofs = s.ndofs();
-    
-    //TODO: should this be handled with an assert?
-   // assert(ode.num_equations() == ndofs, "Mismatched number of dofs in ode solver");
-    //if(ode.num_equations != ndofs)
+
+    // TODO: should this be handled with an assert?
+    // assert(ode.num_equations() == ndofs, "Mismatched number of dofs in ode
+    // solver");
+    // if(ode.num_equations != ndofs)
     //{
-     // throw std::runtime_error("Mismatched number of dofs in ode solver.");
+    // throw std::runtime_error("Mismatched number of dofs in ode solver.");
     //}
 
     double t0 = tstart;
 
-    for (int i = 0; i < ndofs; ++i)
-    {
+    for (int i = 0; i < ndofs; ++i) {
       s.y0[i] = s.y[i];
     }
 
-    if (!isfinite(s.y0, ndofs))
-    {
+    if (!isfinite(s.y0, ndofs)) {
       return ODESolverStatus::NONFINITE_STATE;
     }
 
@@ -90,30 +84,25 @@ template <typename TableType> struct RungeKuttaSolver
 
     double dt = (tend - t0) / controls.num_substeps;
 
-    for (int n = 0; n < controls.maxSubSteps; ++n)
-    {
+    for (int n = 0; n < controls.maxSubSteps; ++n) {
       ode.derivatives(t0, s.y0, s.dydt);
 
       // Limit dt to not exceed t_end
-      if (t0 + dt > tend)
-      {
+      if (t0 + dt > tend) {
         dt = tend - t0;
       }
 
       double err = 0.0;
       // Start iterative approach with time step adaptation
-      do
-      {
+      do {
         err = 0.0;
         step(ode, t0, dt, s, err);
 
         // Reduce dt for large error
-        if (err > 1 && controls.is_adaptive)
-        {
+        if (err > 1 && controls.is_adaptive) {
           dt *= fmax(0.2, 0.8 * pow(err, pFactor));
 
-          if (dt < controls.minStepSize)
-          {
+          if (dt < controls.minStepSize) {
             return ODESolverStatus::MINIMUM_TIMESTEP_REACHED;
           }
         }
@@ -122,21 +111,18 @@ template <typename TableType> struct RungeKuttaSolver
 
       t0 += dt;
 
-      for (int i = 0; i < ndofs; ++i)
-      {
+      for (int i = 0; i < ndofs; ++i) {
         s.y0[i] = s.y[i];
       }
 
-      if (t0 >= tend)
-      {
-        auto status =
-            !isfinite(s.y, ndofs) ? ODESolverStatus::NONFINITE_STATE : ODESolverStatus::SUCCESS;
+      if (t0 >= tend) {
+        auto status = !isfinite(s.y, ndofs) ? ODESolverStatus::NONFINITE_STATE
+                                            : ODESolverStatus::SUCCESS;
         return status;
       }
 
       // Increase dt for small error
-      if (err < 0.5 && controls.is_adaptive)
-      {
+      if (err < 0.5 && controls.is_adaptive) {
         dt *= fmin(10.0, fmax(2.0, 0.9 * pow(err, pFactor)));
       }
     }
@@ -144,19 +130,15 @@ template <typename TableType> struct RungeKuttaSolver
   }
 
   template <typename ODEType, typename StateType>
-  KOKKOS_FUNCTION void
-  step(const ODEType & ode, const double t0, const double dt, StateType & s, double & err) const
-  {
+  KOKKOS_FUNCTION void step(const ODEType& ode, const double t0,
+                            const double dt, StateType& s, double& err) const {
     const int ndofs = s.ndofs();
 
-    for (int j = 0; j < nstages; ++j)
-    {
+    for (int j = 0; j < nstages; ++j) {
       const int offset = (j + 1) * j / 2;
-      for (int n = 0; n < ndofs; ++n)
-      {
+      for (int n = 0; n < ndofs; ++n) {
         double coeff = 0.0;
-        for (int k = 0; k < j; ++k)
-        { // lower diagonal matrix
+        for (int k = 0; k < j; ++k) {  // lower diagonal matrix
           coeff += table.a[k + offset] * s.k(k, n);
         }
 
@@ -166,27 +148,25 @@ template <typename TableType> struct RungeKuttaSolver
       ode.derivatives(t0 + table.c[j] * dt, s.ytemp, ksub);
     }
 
-    for (int n = 0; n < ndofs; ++n)
-    {
+    for (int n = 0; n < ndofs; ++n) {
       double coeff = 0.0;
-      double errJ = 0.0;
-      for (int k = 0; k < nstages; ++k)
-      {
+      double errJ  = 0.0;
+      for (int k = 0; k < nstages; ++k) {
         coeff += table.b[k] * s.k(k, n);
         errJ += table.e[k] * s.k(k, n);
       }
       s.y[n] = s.y0[n] + dt * coeff;
       errJ *= dt;
-      err = Kokkos::Experimental::fmax(err,
-          Kokkos::Experimental::fabs(errJ) /
-              tol(s.y[n], s.y0[n], controls.absTol, controls.relTol));
+      err = Kokkos::Experimental::fmax(
+          err, Kokkos::Experimental::fabs(errJ) /
+                   tol(s.y[n], s.y0[n], controls.absTol, controls.relTol));
     }
   }
 
   const TableType table;
   const SolverControls controls;
 };
-} // namespace ode
-} // namespace tftk
+}  // namespace ode
+}  // namespace tftk
 
 #endif
