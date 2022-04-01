@@ -12,7 +12,7 @@
 #include <limits>
 //#include <stk_util/diag/String.hpp>
 
-namespace tftk {
+namespace KokkosBatched {
 namespace ode {
 
 enum class ODESolverType {
@@ -73,6 +73,6 @@ struct SolverControls {
   const bool is_adaptive;
 };
 }  // namespace ode
-}  // namespace tftk
+}  // namespace KokkosBatched
 
 #endif

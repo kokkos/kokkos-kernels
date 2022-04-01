@@ -11,7 +11,7 @@
 
 #include <Kokkos_Array.hpp>
 
-namespace tftk {
+namespace KokkosBatched {
 namespace ode {
 //=====================================================================
 // Generalized RK Explicit ODE solver with embedded error estimation
@@ -182,6 +182,6 @@ struct DormandPrince  // Referred to as DOPRI5
        11.0 / 84.0 - 187.0 / 2100.0, -1.0 / 40.0}};
 };
 }  // namespace ode
-}  // namespace tftk
+}  // namespace KokkosBatched
 
 #endif

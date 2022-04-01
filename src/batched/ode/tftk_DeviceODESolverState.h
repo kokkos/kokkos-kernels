@@ -13,7 +13,7 @@
 //#include "tftk_util/tftk_KokkosTypes.h"
 #include "tftk_KokkosTypes.h"
 
-namespace tftk {
+namespace KokkosBatched {
 namespace ode {
 
 struct StackAllocationTag;
@@ -27,9 +27,9 @@ struct RkStack {
   using type = StackAllocationTag;
 
   using V1 =
-      Kokkos::View<double[NDOFS], tftk::AnonSpace, Kokkos::MemoryUnmanaged>;
+      Kokkos::View<double[NDOFS], AnonSpace, Kokkos::MemoryUnmanaged>;
   using V2   = Kokkos::View<double[NSTAGES][NDOFS], Kokkos::LayoutRight,
-                          tftk::AnonSpace, Kokkos::MemoryUnmanaged>;
+                          AnonSpace, Kokkos::MemoryUnmanaged>;
   using Arr1 = Kokkos::Array<double, NDOFS>;
   using Arr2 = Kokkos::Array<double, NSTAGES * NDOFS>;
   Arr1 y;
@@ -81,9 +81,9 @@ struct RkSolverState {
       std::conditional_t<std::is_same<Type, StackAllocationTag>::value,
                          Kokkos::LayoutRight, Kokkos::LayoutStride>;
   using View1 =
-      Kokkos::View<double *, Layout, tftk::AnonSpace, Kokkos::MemoryUnmanaged>;
+      Kokkos::View<double *, Layout, AnonSpace, Kokkos::MemoryUnmanaged>;
   using View2 =
-      Kokkos::View<double **, Layout, tftk::AnonSpace, Kokkos::MemoryUnmanaged>;
+      Kokkos::View<double **, Layout, AnonSpace, Kokkos::MemoryUnmanaged>;
 
   KOKKOS_FORCEINLINE_FUNCTION int ndofs() const {
     return static_cast<int>(y.extent(0));
@@ -154,6 +154,6 @@ struct RkSolverState {
 };
 
 }  // namespace ode
-}  // namespace tftk
+}  // namespace KokkosBatched
 
 #endif

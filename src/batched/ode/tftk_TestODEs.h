@@ -12,7 +12,7 @@
 #include <Kokkos_Macros.hpp>
 #include <Kokkos_ArithTraits.hpp>
 
-namespace tftk {
+namespace KokkosBatched {
 namespace ode {
 
 struct DegreeOnePoly {
@@ -414,6 +414,6 @@ struct EnrightD4 {
 };
 
 }  // namespace ode
-}  // namespace tftk
+}  // namespace KokkosBatched
 
 #endif

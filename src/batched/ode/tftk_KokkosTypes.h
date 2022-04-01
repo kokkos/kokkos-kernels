@@ -13,7 +13,7 @@
 //#include <tftk_util/tftk_Macros.h>
 #include <tftk_Macros.h>
 
-namespace tftk {
+namespace KokkosBatched {
 
 using HostSpace = Kokkos::HostSpace;
 
@@ -70,6 +70,6 @@ using Array2d = Kokkos::View<T **, Kokkos::LayoutRight, UVMSpace>;
 
 template <class T>
 using Array3d = Kokkos::View<T ***, Kokkos::LayoutRight, UVMSpace>;
-}  // namespace tftk
+}  // namespace KokkosBatched
 
 #endif /* TFTK_TFTK_UTIL_TFTK_UTIL_TFTK_KOKKOSTYPES_H_ */

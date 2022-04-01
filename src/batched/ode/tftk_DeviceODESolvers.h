@@ -25,7 +25,7 @@
 
 #include <type_traits>
 
-namespace tftk {
+namespace KokkosBatched {
 namespace ode {
 
 KOKKOS_FORCEINLINE_FUNCTION double tol(const double y, const double y0,
@@ -167,6 +167,6 @@ struct RungeKuttaSolver {
   const SolverControls controls;
 };
 }  // namespace ode
-}  // namespace tftk
+}  // namespace KokkosBatched
 
 #endif

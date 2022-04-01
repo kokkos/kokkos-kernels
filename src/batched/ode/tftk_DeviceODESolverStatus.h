@@ -10,7 +10,7 @@
 #define SIERRA_tftk_DeviceODESolverStatus_h
 
 #include <ostream>
-namespace tftk {
+namespace KokkosBatched {
 namespace ode {
 enum class ODESolverStatus {
   SUCCESS = 0,
@@ -19,7 +19,7 @@ enum class ODESolverStatus {
   NONFINITE_STATE
 };
 
-std::ostream& operator<<(std::ostream& os, ODESolverStatus status);
+//std::ostream& operator<<(std::ostream& os, ODESolverStatus status);
 }  // namespace ode
-}  // namespace tftk
+}  // namespace KokkosBatched
 #endif
