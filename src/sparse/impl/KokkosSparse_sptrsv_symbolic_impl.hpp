@@ -243,7 +243,7 @@ void lower_tri_symbolic(TriSolveHandle& thandle, const RowMapType drow_map,
       level = std::max(level, l + 1);
       node_count++;
     }
-    for (size_type i = 1; i <= level; ++i) {
+    for (signed_integral_t i = 1; i <= level; ++i) {
       level_ptr(i) += level_ptr(i - 1);
     }
     for (size_type i = 0; i < nrows; i++) {
@@ -694,7 +694,7 @@ void upper_tri_symbolic(TriSolveHandle& thandle, const RowMapType drow_map,
       level = std::max(level, l + 1);
       node_count++;
     }
-    for (size_type i = 1; i <= level; ++i) {
+    for (signed_integral_t i = 1; i <= level; ++i) {
       level_ptr(i) += level_ptr(i - 1);
     }
     for (size_type i = 0; i < nrows; i++) {
