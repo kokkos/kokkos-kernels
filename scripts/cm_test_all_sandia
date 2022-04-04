@@ -564,9 +564,9 @@ elif [ "$MACHINE" = "inouye" ]; then
   MODULE_ENVIRONMENT="module purge"
   eval "$MODULE_ENVIRONMENT"
   SKIP_HWLOC=True
-  export OMP_PROC_BIND=close
-  export OMP_PLACES=cores
-  export OMP_NUM_THREADS=47
+  export omp_proc_bind=close
+  export omp_places=cores
+  export omp_num_threads=47
 
   BASE_MODULE_LIST="cmake/3.17.0,<COMPILER_NAME>/<COMPILER_VERSION>"
 
@@ -916,9 +916,9 @@ else
   exit 1
 fi
 
-export OMP_NUM_THREADS=8
-export OMP_PROC_BIND=spread
-export OMP_PLACES=cores
+export OMP_NUM_THREADS=${omp_num_threads:=8}
+export OMP_PROC_BIND=${omp_proc_bind:=spread}
+export OMP_PLACES=${omp_places:=cores}
 
 declare -i NUM_RESULTS_TO_KEEP=7
 
