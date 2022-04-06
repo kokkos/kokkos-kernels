@@ -6,8 +6,8 @@
 /*    of the U.S. Government.  Export of this program may require     */
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
-#ifndef SIERRA_tftk_TestODEs_h
-#define SIERRA_tftk_TestODEs_h
+#ifndef __KOKKOSBATCHED_ODE_TESTPROBLEMS_HPP__
+#define __KOKKOSBATCHED_ODE_TESTPROBLEMS_HPP__
 
 #include <Kokkos_ArithTraits.hpp>
 

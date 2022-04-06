@@ -6,8 +6,8 @@
 /*    of the U.S. Government.  Export of this program may require     */
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
-#ifndef SIERRA_tftk_DeviceODESolverState_h
-#define SIERRA_tftk_DeviceODESolverState_h
+#ifndef __KOKKOSBATCHED_ODE_ALLOCATIONSTATE_HPP__
+#define __KOKKOSBATCHED_ODE_ALLOCATIONSTATE_HPP__
 
 #include "Kokkos_View.hpp"
 
@@ -24,7 +24,8 @@ template <int NDOFS, int NSTAGES>
 struct RkStack {
   using type = StackAllocationTag;
 
-  using V1   = Kokkos::View<double[NDOFS], Kokkos::AnonymousSpace, Kokkos::MemoryUnmanaged>;
+  using V1   = Kokkos::View<double[NDOFS], Kokkos::AnonymousSpace,
+                          Kokkos::MemoryUnmanaged>;
   using V2   = Kokkos::View<double[NSTAGES][NDOFS], Kokkos::LayoutRight,
                           Kokkos::AnonymousSpace, Kokkos::MemoryUnmanaged>;
   using Arr1 = Kokkos::Array<double, NDOFS>;
@@ -77,10 +78,10 @@ struct RkSolverState {
   using Layout =
       std::conditional_t<std::is_same<Type, StackAllocationTag>::value,
                          Kokkos::LayoutRight, Kokkos::LayoutStride>;
-  using View1 =
-      Kokkos::View<double *, Layout, Kokkos::AnonymousSpace, Kokkos::MemoryUnmanaged>;
-  using View2 =
-      Kokkos::View<double **, Layout, Kokkos::AnonymousSpace, Kokkos::MemoryUnmanaged>;
+  using View1 = Kokkos::View<double *, Layout, Kokkos::AnonymousSpace,
+                             Kokkos::MemoryUnmanaged>;
+  using View2 = Kokkos::View<double **, Layout, Kokkos::AnonymousSpace,
+                             Kokkos::MemoryUnmanaged>;
 
   KOKKOS_FORCEINLINE_FUNCTION int ndofs() const {
     return static_cast<int>(y.extent(0));

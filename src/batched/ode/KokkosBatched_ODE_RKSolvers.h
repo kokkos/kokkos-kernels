@@ -6,17 +6,17 @@
 /*    of the U.S. Government.  Export of this program may require     */
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
-#ifndef SIERRA_tftk_DeviceODESolvers_h
-#define SIERRA_tftk_DeviceODESolvers_h
+#ifndef __KOKKOSBATCHED_ODE_RKSOLVERS_HPP__
+#define __KOKKOSBATCHED_ODE_RKSOLVERS_HPP__
 
 #include <Kokkos_ArithTraits.hpp>
 #include "Kokkos_Layout.hpp"
 #include "Kokkos_MemoryTraits.hpp"
 
-#include <tftk_ODEArgs.h>
-#include <tftk_RungeKuttaTables.h>
-#include <tftk_DeviceODESolverStatus.h>
-#include <tftk_DeviceODESolverState.h>
+#include <KokkosBatched_ODE_Args.h>
+#include <KokkosBatched_ODE_RungeKuttaTables.h>
+#include <KokkosBatched_ODE_SolverEndStatus.h>
+#include <KokkosBatched_ODE_AllocationState.h>
 
 #include <type_traits>
 
