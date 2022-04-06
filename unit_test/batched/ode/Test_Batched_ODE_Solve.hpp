@@ -2,9 +2,9 @@
 
 #include <gtest/gtest.h>
 
-#include <tftk_DeviceODESolvers.h>
-#include <tftk_TestODEs.h>
-#include <tftk_ODEArgs.h>
+#include <KokkosBatched_ODE_DeviceODESolvers.h>
+#include <KokkosBatched_ODE_TestODEs.h>
+#include <KokkosBatched_ODE_ODEArgs.h>
 
 namespace KokkosBatched {
 namespace ode {
