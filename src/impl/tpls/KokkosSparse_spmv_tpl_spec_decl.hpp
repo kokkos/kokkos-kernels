@@ -136,11 +136,19 @@ void spmv_cusparse(const KokkosKernels::Experimental::Controls& controls,
 
   size_t bufferSize     = 0;
   void* dBuffer         = NULL;
+#if CUSPARSE_VERSION >= 11201
   cusparseSpMVAlg_t alg = CUSPARSE_SPMV_ALG_DEFAULT;
+#else 
+  cusparseSpMVAlg_t alg = CUSPARSE_MV_ALG_DEFAULT;
+#endif
   if (controls.isParameter("algorithm")) {
     const std::string algName = controls.getParameter("algorithm");
     if (algName == "default")
-      alg = CUSPARSE_SPMV_ALG_DEFAULT;
+#if CUSPARSE_VERSION >= 11201
+      cusparseSpMVAlg_t alg = CUSPARSE_SPMV_ALG_DEFAULT;
+#else 
+      cusparseSpMVAlg_t alg = CUSPARSE_MV_ALG_DEFAULT;
+#endif
     else if (algName == "merge")
       alg = CUSPARSE_SPMV_CSR_ALG2;
   }
