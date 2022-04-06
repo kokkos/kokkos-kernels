@@ -134,11 +134,11 @@ void spmv_cusparse(const KokkosKernels::Experimental::Controls& controls,
   KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateDnVec(
       &vecY, y.extent_int(0), (void*)y.data(), myCudaDataType));
 
-  size_t bufferSize     = 0;
-  void* dBuffer         = NULL;
+  size_t bufferSize = 0;
+  void* dBuffer     = NULL;
 #if CUSPARSE_VERSION >= 11201
   cusparseSpMVAlg_t alg = CUSPARSE_SPMV_ALG_DEFAULT;
-#else 
+#else
   cusparseSpMVAlg_t alg = CUSPARSE_MV_ALG_DEFAULT;
 #endif
   if (controls.isParameter("algorithm")) {
@@ -146,7 +146,7 @@ void spmv_cusparse(const KokkosKernels::Experimental::Controls& controls,
     if (algName == "default")
 #if CUSPARSE_VERSION >= 11201
       cusparseSpMVAlg_t alg = CUSPARSE_SPMV_ALG_DEFAULT;
-#else 
+#else
       cusparseSpMVAlg_t alg = CUSPARSE_MV_ALG_DEFAULT;
 #endif
     else if (algName == "merge")
