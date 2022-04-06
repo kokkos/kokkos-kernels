@@ -55,8 +55,8 @@ void compute_errors(const RkDynamicAllocation<MemorySpace> &pool,
 
   for (int elem = 0; elem < nelems; ++elem) {
     for (int n = 0; n < ndofs; ++n) {
-      const double err = Kokkos::Experimental::fabs(
-          ode.expected_val(ode.tend(), n) - y_host(elem, n));
+      const double err =
+          Kokkos::fabs(ode.expected_val(ode.tend(), n) - y_host(elem, n));
       errs(elem, n, level) = err;
     }
   }
@@ -73,8 +73,7 @@ void empty_check(const int dof, const double err, const ODEType &ode,
 template <typename ODEType>
 void error_check(const int dof, const double err, const ODEType &ode,
                  const double rel_tol, const double abs_tol) {
-  const double val =
-      Kokkos::Experimental::fabs(ode.expected_val(ode.tend(), dof));
+  const double val     = Kokkos::fabs(ode.expected_val(ode.tend(), dof));
   const bool condition = (err < rel_tol * val) || (err < abs_tol);
   EXPECT_TRUE(condition);
 };
@@ -140,7 +139,7 @@ struct RKTest {
 
           if (m >= 1) {
             err_ratio = errs(e, n, m - 1) / errs(e, n, m);
-            slope     = Kokkos::Experimental::log2(err_ratio);
+            slope     = Kokkos::log2(err_ratio);
           }
 
           // check the slope of last few refinements
@@ -365,7 +364,7 @@ TEST_F(TestCategory, ODE_RKSolverStatus) {
 template <typename TableType, typename StateType, typename Arr>
 void check_single_step(const double dt, const TableType &table,
                        const StateType &s, const Arr &ke) {
-  using Kokkos::Experimental::fabs;
+  using Kokkos::fabs;
 
   const double tol = 1e-15;
   for (unsigned dof = 0; dof < s.y.extent(0); ++dof) {

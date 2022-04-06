@@ -62,16 +62,14 @@ namespace ode {
 KOKKOS_FORCEINLINE_FUNCTION double tol(const double y, const double y0,
                                        const double absTol,
                                        const double relTol) {
-  return absTol +
-         relTol * Kokkos::Experimental::fmax(Kokkos::Experimental::fabs(y),
-                                             Kokkos::Experimental::fabs(y0));
+  return absTol + relTol * Kokkos::fmax(Kokkos::fabs(y), Kokkos::fabs(y0));
 }
 
 template <typename View>
 KOKKOS_FUNCTION bool isfinite(View& y, const unsigned ndofs) {
   bool is_finite = true;
   for (unsigned i = 0; i < ndofs; ++i) {
-    if (!Kokkos::Experimental::isfinite(y[i])) {
+    if (!Kokkos::isfinite(y[i])) {
       is_finite = false;
       break;
     }
@@ -87,9 +85,9 @@ struct RungeKuttaSolver {
   template <typename ODEType, typename StateType>
   KOKKOS_FUNCTION ODESolverStatus solve(const ODEType& ode, double tstart,
                                         double tend, StateType& s) const {
-    using Kokkos::Experimental::fmax;
-    using Kokkos::Experimental::fmin;
-    using Kokkos::Experimental::pow;
+    using Kokkos::fmax;
+    using Kokkos::fmin;
+    using Kokkos::pow;
 
     const int ndofs = s.ndofs();
 
@@ -188,8 +186,8 @@ struct RungeKuttaSolver {
       }
       s.y[n] = s.y0[n] + dt * coeff;
       errJ *= dt;
-      err = Kokkos::Experimental::fmax(
-          err, Kokkos::Experimental::fabs(errJ) /
+      err = Kokkos::fmax(
+          err, Kokkos::fabs(errJ) /
                    tol(s.y[n], s.y0[n], controls.absTol, controls.relTol));
     }
   }

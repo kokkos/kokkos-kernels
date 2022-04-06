@@ -138,7 +138,7 @@ struct Exponential {
   KOKKOS_FUNCTION double tstart() const { return 0.0; }
   KOKKOS_FUNCTION double tend() const { return 1.0; }
   KOKKOS_FUNCTION double expected_val(const double t, const int n) const {
-    return Kokkos::Experimental::exp(rate * t);
+    return Kokkos::exp(rate * t);
   }
   KOKKOS_FUNCTION int num_equations() const { return neqs; }
   const int neqs;
@@ -154,17 +154,15 @@ struct CosExp {
   template <typename View1, typename View2>
   KOKKOS_FUNCTION void derivatives(double t, View1& y, View2& dydt) const {
     for (int i = 0; i < neqs; i++) {
-      dydt[i] = lambda * (y[i] - Kokkos::Experimental::cos(t)) -
-                Kokkos::Experimental::sin(t);
+      dydt[i] = lambda * (y[i] - Kokkos::cos(t)) - Kokkos::sin(t);
     }
   }
 
   KOKKOS_FUNCTION double tstart() const { return 0.0; }
   KOKKOS_FUNCTION double tend() const { return 10.0; }
   KOKKOS_FUNCTION double expected_val(const double t, const int n) const {
-    return Kokkos::Experimental::exp(lambda * (t - t0)) *
-               (eta - Kokkos::Experimental::cos(t0)) +
-           Kokkos::Experimental::cos(t);
+    return Kokkos::exp(lambda * (t - t0)) * (eta - Kokkos::cos(t0)) +
+           Kokkos::cos(t);
   }
   KOKKOS_FUNCTION int num_equations() const { return neqs; }
   const int neqs;
@@ -186,8 +184,8 @@ struct SpringMassDamper {
       : neqs(neqs_),
         c(c_),
         k(k_),
-        lambda1((-c + Kokkos::Experimental::pow(c * c - 4. * k, 0.5)) / 2.),
-        lambda2((-c - Kokkos::Experimental::pow(c * c - 4. * k, 0.5)) / 2.) {}
+        lambda1((-c + Kokkos::pow(c * c - 4. * k, 0.5)) / 2.),
+        lambda2((-c - Kokkos::pow(c * c - 4. * k, 0.5)) / 2.) {}
 
   template <typename View1, typename View2>
   KOKKOS_FUNCTION void derivatives(double t, View1& y, View2& dydt) const {
@@ -198,7 +196,7 @@ struct SpringMassDamper {
   KOKKOS_FUNCTION double tstart() const { return 0.0; }
   KOKKOS_FUNCTION double tend() const { return 1.0; }
   KOKKOS_FUNCTION double expected_val(const double t, const int n) const {
-    using Kokkos::Experimental::exp;
+    using Kokkos::exp;
 
     const double det = lambda1 - lambda2;
     double val       = 0;
@@ -241,7 +239,7 @@ struct StiffChemicalDecayProcess {
   KOKKOS_FUNCTION double tstart() const { return 0.0; }
   KOKKOS_FUNCTION double tend() const { return 0.2; }
   KOKKOS_FUNCTION double expected_val(const double t, const int n) const {
-    using Kokkos::Experimental::exp;
+    using Kokkos::exp;
 
     const double C21 = y1_init * K1 / (K2 - K1);
     const double C22 = y2_init - C21;
@@ -275,10 +273,9 @@ struct Tracer {
   template <typename View1, typename View2>
   KOKKOS_FUNCTION void derivatives(double t, View1& y, View2& dydt) const {
     for (int i = 0; i < neqs; i += 2) {
-      const double R =
-          Kokkos::Experimental::sqrt(y[i] * y[i] + y[i + 1] * y[i + 1]);
-      dydt[i]     = -rate * y[i + 1] / R;
-      dydt[i + 1] = rate * y[i] / R;
+      const double R = Kokkos::sqrt(y[i] * y[i] + y[i + 1] * y[i + 1]);
+      dydt[i]        = -rate * y[i + 1] / R;
+      dydt[i + 1]    = rate * y[i] / R;
     }
   }
 
@@ -288,15 +285,15 @@ struct Tracer {
     const double theta = rate * t;
     double val         = 0.0;
     if (n % 2 == 0) {
-      val = Kokkos::Experimental::cos(theta);
+      val = Kokkos::cos(theta);
     } else {
-      val = Kokkos::Experimental::sin(theta);
+      val = Kokkos::sin(theta);
     }
     return val;
   }
   KOKKOS_FUNCTION int num_equations() const { return neqs; }
   const int neqs;
-  const double pi = 4.0 * Kokkos::Experimental::atan(1.0);
+  const double pi = 4.0 * Kokkos::atan(1.0);
   const double rate;
 };
 
@@ -318,9 +315,9 @@ struct EnrightB5 {
   KOKKOS_FUNCTION double tstart() const { return 0.0; }
   KOKKOS_FUNCTION double tend() const { return 1.0; }
   KOKKOS_FUNCTION double expected_val(const double t, const int n) const {
-    using Kokkos::Experimental::cos;
-    using Kokkos::Experimental::exp;
-    using Kokkos::Experimental::sin;
+    using Kokkos::cos;
+    using Kokkos::exp;
+    using Kokkos::sin;
 
     double val = 0;
 
