@@ -67,8 +67,9 @@ using ErrorCheck = std::function<void(const int, const double, const ODEType &,
                                       const double, const double)>;
 
 template <typename ODEType>
-void empty_check(const int dof, const double err, const ODEType &ode,
-                 const double rel_tol, const double abs_tol) {}
+void empty_check(const int /*dof*/, const double /*err*/,
+                 const ODEType /*&ode*/, const double /*rel_tol*/,
+                 const double /*abs_tol*/) {}
 
 template <typename ODEType>
 void error_check(const int dof, const double err, const ODEType &ode,

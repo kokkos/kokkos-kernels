@@ -129,8 +129,7 @@ struct RkSolverState {
   // to pass it in to give the compiler a chance of putting it in the threads
   // registers
   template <typename... Ignored>
-  KOKKOS_FORCEINLINE_FUNCTION void set_views(Allocation &stack,
-                                             Ignored... ignored) {
+  KOKKOS_FORCEINLINE_FUNCTION void set_views(Allocation &stack, Ignored...) {
     using V1 = typename Allocation::V1;
     using V2 = typename Allocation::V2;
     y        = V1(stack.y.data());
@@ -141,7 +140,7 @@ struct RkSolverState {
   };
 
   // wrap host / device dynamically allocated memory
-  KOKKOS_FORCEINLINE_FUNCTION void set_views(EmptyRkStack &stack,
+  KOKKOS_FORCEINLINE_FUNCTION void set_views(EmptyRkStack /*&stack*/,
                                              const Allocation &dynamic,
                                              int tid) {
     y     = Kokkos::subview(dynamic.y, tid, Kokkos::ALL);
@@ -159,7 +158,7 @@ struct RkSolverState {
 
   // wrap scratch pad memory
   template <typename ScratchHandle>
-  KOKKOS_FORCEINLINE_FUNCTION void set_views(EmptyRkStack &stack,
+  KOKKOS_FORCEINLINE_FUNCTION void set_views(EmptyRkStack /*&stack*/,
                                              ScratchHandle &handle,
                                              const int ndofs,
                                              const int nstages) {
