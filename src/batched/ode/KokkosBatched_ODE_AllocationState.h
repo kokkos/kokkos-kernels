@@ -79,8 +79,8 @@ struct RkDynamicAllocation {
   using View2D = Kokkos::View<double **, MemorySpace>;
   using View3D = Kokkos::View<double ***, MemorySpace>;
 
-  RkDynamicAllocation(View1D y_, View1D y0_, View1D dydt_, View1D ytemp_,
-                      View2D k_)
+  RkDynamicAllocation(View2D y_, View2D y0_, View2D dydt_, View2D ytemp_,
+                      View3D k_)
       : y(y_), y0(y0_), dydt(dydt_), ytemp(ytemp_), k(k_) {}
 
   RkDynamicAllocation(const int n, const int ndofs, const int nstages)
