@@ -54,7 +54,8 @@ struct DegreeOnePoly {
   DegreeOnePoly(int neqs_) : neqs(neqs_) {}
 
   template <typename View1, typename View2>
-  KOKKOS_FUNCTION void derivatives(double t, View1& y, View2& dydt) const {
+  KOKKOS_FUNCTION void derivatives(double /*t*/, View1& /*y*/,
+                                   View2& dydt) const {
     for (int i = 0; i < neqs; i++) {
       dydt[i] = 1;
     }
@@ -62,7 +63,7 @@ struct DegreeOnePoly {
 
   KOKKOS_FUNCTION double tstart() const { return 0.0; }
   KOKKOS_FUNCTION double tend() const { return 1.0; }
-  KOKKOS_FUNCTION double expected_val(const double t, const int n) const {
+  KOKKOS_FUNCTION double expected_val(const double t, const int /*n*/) const {
     return t + 1.0;
   }
   KOKKOS_FUNCTION int num_equations() const { return neqs; }
@@ -72,7 +73,7 @@ struct DegreeOnePoly {
 struct DegreeTwoPoly {
   DegreeTwoPoly(int neqs_) : neqs(neqs_) {}
   template <typename View1, typename View2>
-  KOKKOS_FUNCTION void derivatives(double t, View1& y, View2& dydt) const {
+  KOKKOS_FUNCTION void derivatives(double t, View1& /*y*/, View2& dydt) const {
     for (int i = 0; i < neqs; i++) {
       dydt[i] = t + 1;
     }
@@ -80,7 +81,7 @@ struct DegreeTwoPoly {
 
   KOKKOS_FUNCTION double tstart() const { return 0.0; }
   KOKKOS_FUNCTION double tend() const { return 1.0; }
-  KOKKOS_FUNCTION double expected_val(const double t, const int n) const {
+  KOKKOS_FUNCTION double expected_val(const double t, const int /*n*/) const {
     return 0.5 * t * t + t + 1.0;
   }
   KOKKOS_FUNCTION int num_equations() const { return neqs; }
@@ -90,7 +91,7 @@ struct DegreeTwoPoly {
 struct DegreeThreePoly {
   DegreeThreePoly(int neqs_) : neqs(neqs_) {}
   template <typename View1, typename View2>
-  KOKKOS_FUNCTION void derivatives(double t, View1& y, View2& dydt) const {
+  KOKKOS_FUNCTION void derivatives(double t, View1& /*y*/, View2& dydt) const {
     for (int i = 0; i < neqs; i++) {
       dydt[i] = t * t + t + 1;
     }
@@ -98,7 +99,7 @@ struct DegreeThreePoly {
 
   KOKKOS_FUNCTION double tstart() const { return 0.0; }
   KOKKOS_FUNCTION double tend() const { return 1.0; }
-  KOKKOS_FUNCTION double expected_val(const double t, const int n) const {
+  KOKKOS_FUNCTION double expected_val(const double t, const int /*n*/) const {
     return (1. / 3) * t * t * t + (1. / 2) * t * t + t + 1;
   }
   KOKKOS_FUNCTION int num_equations() const { return neqs; }
@@ -109,7 +110,7 @@ struct DegreeFivePoly {
   DegreeFivePoly(int neqs_) : neqs(neqs_) {}
 
   template <typename View1, typename View2>
-  KOKKOS_FUNCTION void derivatives(double t, View1& y, View2& dydt) const {
+  KOKKOS_FUNCTION void derivatives(double t, View1& /*y*/, View2& dydt) const {
     for (int i = 0; i < neqs; i++) {
       dydt[i] = t * t * t * t + t * t * t + t * t + t + 1;
     }
@@ -117,7 +118,7 @@ struct DegreeFivePoly {
 
   KOKKOS_FUNCTION double tstart() const { return 0.0; }
   KOKKOS_FUNCTION double tend() const { return 1.0; }
-  KOKKOS_FUNCTION double expected_val(const double t, const int n) const {
+  KOKKOS_FUNCTION double expected_val(const double t, const int /*n*/) const {
     return (1. / 5) * t * t * t * t * t + (1. / 4) * t * t * t * t +
            (1. / 3) * t * t * t + (1. / 2) * t * t + t + 1;
   }
@@ -129,7 +130,7 @@ struct Exponential {
   Exponential(int neqs_, double rate_) : neqs(neqs_), rate(rate_) {}
 
   template <typename View1, typename View2>
-  KOKKOS_FUNCTION void derivatives(double t, View1& y, View2& dydt) const {
+  KOKKOS_FUNCTION void derivatives(double /*t*/, View1& y, View2& dydt) const {
     for (int i = 0; i < neqs; i++) {
       dydt[i] = rate * y[i];
     }
@@ -137,7 +138,7 @@ struct Exponential {
 
   KOKKOS_FUNCTION double tstart() const { return 0.0; }
   KOKKOS_FUNCTION double tend() const { return 1.0; }
-  KOKKOS_FUNCTION double expected_val(const double t, const int n) const {
+  KOKKOS_FUNCTION double expected_val(const double t, const int /*n*/) const {
     return Kokkos::exp(rate * t);
   }
   KOKKOS_FUNCTION int num_equations() const { return neqs; }
@@ -160,7 +161,7 @@ struct CosExp {
 
   KOKKOS_FUNCTION double tstart() const { return 0.0; }
   KOKKOS_FUNCTION double tend() const { return 10.0; }
-  KOKKOS_FUNCTION double expected_val(const double t, const int n) const {
+  KOKKOS_FUNCTION double expected_val(const double t, const int /*n*/) const {
     return Kokkos::exp(lambda * (t - t0)) * (eta - Kokkos::cos(t0)) +
            Kokkos::cos(t);
   }
@@ -188,7 +189,7 @@ struct SpringMassDamper {
         lambda2((-c - Kokkos::pow(c * c - 4. * k, 0.5)) / 2.) {}
 
   template <typename View1, typename View2>
-  KOKKOS_FUNCTION void derivatives(double t, View1& y, View2& dydt) const {
+  KOKKOS_FUNCTION void derivatives(double /*t*/, View1& y, View2& dydt) const {
     dydt[0] = y[1];
     dydt[1] = -k * y[0] - c * y[1];
   }
@@ -230,7 +231,7 @@ struct StiffChemicalDecayProcess {
       : neqs(neqs_), K1(K1_), K2(K2_) {}
 
   template <typename View1, typename View2>
-  KOKKOS_FUNCTION void derivatives(double t, View1& y, View2& dydt) const {
+  KOKKOS_FUNCTION void derivatives(double /*t*/, View1& y, View2& dydt) const {
     dydt[0] = -K1 * y[0];
     dydt[1] = K1 * y[0] - K2 * y[1];
     dydt[2] = K2 * y[1];
@@ -271,7 +272,7 @@ struct Tracer {
   Tracer(int neqs_, double rate_) : neqs(neqs_), rate(rate_) {}
 
   template <typename View1, typename View2>
-  KOKKOS_FUNCTION void derivatives(double t, View1& y, View2& dydt) const {
+  KOKKOS_FUNCTION void derivatives(double /*t*/, View1& y, View2& dydt) const {
     for (int i = 0; i < neqs; i += 2) {
       const double R = Kokkos::sqrt(y[i] * y[i] + y[i + 1] * y[i + 1]);
       dydt[i]        = -rate * y[i + 1] / R;
@@ -303,7 +304,7 @@ struct EnrightB5 {
   EnrightB5(int neqs_, double alpha_ = 100.0) : neqs(neqs_), alpha(alpha_) {}
 
   template <typename View1, typename View2>
-  KOKKOS_FUNCTION void derivatives(double t, View1& y, View2& dydt) const {
+  KOKKOS_FUNCTION void derivatives(double /*t*/, View1& y, View2& dydt) const {
     dydt[0] = -10. * y[0] + alpha * y[1];
     dydt[1] = -alpha * y[0] - 10. * y[1];
     dydt[2] = -4. * y[2];
@@ -353,7 +354,7 @@ struct EnrightC1 {
   EnrightC1(int neqs_) : neqs(neqs_) {}
 
   template <typename View1, typename View2>
-  KOKKOS_FUNCTION void derivatives(double t, View1& y, View2& dydt) const {
+  KOKKOS_FUNCTION void derivatives(double /*t*/, View1& y, View2& dydt) const {
     dydt[0] = -y[0] + y[1] * y[1] + y[2] * y[2] + y[3] * y[3];
     dydt[1] = -10. * y[1] + 10. * (y[2] * y[2] + y[3] * y[3]);
     dydt[2] = -40. * y[2] + 40. * y[3] * y[3];
@@ -362,7 +363,8 @@ struct EnrightC1 {
 
   KOKKOS_FUNCTION double tstart() const { return 0.0; }
   KOKKOS_FUNCTION double tend() const { return 20.0; }
-  KOKKOS_FUNCTION double expected_val(const double t, const int n) const {
+  KOKKOS_FUNCTION double expected_val(const double /*t*/,
+                                      const int /*n*/) const {
     // IC at t = 0
     return 1.0;
   }
@@ -375,7 +377,7 @@ struct EnrightC5 {
   EnrightC5(int neqs_, const double beta_ = 20.0) : neqs(neqs_), beta(beta_) {}
 
   template <typename View1, typename View2>
-  KOKKOS_FUNCTION void derivatives(double t, View1& y, View2& dydt) const {
+  KOKKOS_FUNCTION void derivatives(double /*t*/, View1& y, View2& dydt) const {
     dydt[0] = -y[0] + 2.;
     dydt[1] = -10. * y[1] + beta * y[0] * y[0];
     dydt[2] = -40. * y[2] + 4. * beta * (y[0] * y[0] + y[1] * y[1]);
@@ -385,7 +387,8 @@ struct EnrightC5 {
 
   KOKKOS_FUNCTION double tstart() const { return 0.0; }
   KOKKOS_FUNCTION double tend() const { return 20.0; }
-  KOKKOS_FUNCTION double expected_val(const double t, const int n) const {
+  KOKKOS_FUNCTION double expected_val(const double /*t*/,
+                                      const int /*n*/) const {
     // IC at t = 0
     return 1.0;
   }
@@ -400,7 +403,7 @@ struct EnrightD2 {
   EnrightD2(int neqs_) : neqs(neqs_) {}
 
   template <typename View1, typename View2>
-  KOKKOS_FUNCTION void derivatives(double t, View1& y, View2& dydt) const {
+  KOKKOS_FUNCTION void derivatives(double /*t*/, View1& y, View2& dydt) const {
     dydt[0] = -0.04 * y[0] + 0.01 * y[1] * y[2];
     dydt[1] = 400.0 * y[0] - 100.0 * y[1] * y[2] - 3000. * y[1] * y[1];
     dydt[2] = 30. * y[1] * y[1];
@@ -408,7 +411,7 @@ struct EnrightD2 {
 
   KOKKOS_FUNCTION double tstart() const { return 0.0; }
   KOKKOS_FUNCTION double tend() const { return 1.0; }  // decrease from 40.0
-  KOKKOS_FUNCTION double expected_val(const double t, const int n) const {
+  KOKKOS_FUNCTION double expected_val(const double /*t*/, const int n) const {
     // IC at t = 0
     double val = 0.0;
     if (n == 0) {
@@ -425,7 +428,7 @@ struct EnrightD4 {
   EnrightD4(int neqs_) : neqs(neqs_) {}
 
   template <typename View1, typename View2>
-  KOKKOS_FUNCTION void derivatives(double t, View1& y, View2& dydt) const {
+  KOKKOS_FUNCTION void derivatives(double /*t*/, View1& y, View2& dydt) const {
     dydt[0] = -0.013 * y[0] - 1000. * y[0] * y[2];
     dydt[1] = -2500. * y[1] * y[2];
     dydt[2] = dydt[0] + dydt[1];
@@ -433,7 +436,7 @@ struct EnrightD4 {
 
   KOKKOS_FUNCTION double tstart() const { return 0.0; }
   KOKKOS_FUNCTION double tend() const { return 1.0; }  // decrease from 50.0
-  KOKKOS_FUNCTION double expected_val(const double t, const int n) const {
+  KOKKOS_FUNCTION double expected_val(const double /*t*/, const int n) const {
     // IC at t = 0
     double val = 0.0;
     if (n < 2) {
