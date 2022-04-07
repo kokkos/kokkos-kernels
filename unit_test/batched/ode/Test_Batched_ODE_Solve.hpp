@@ -323,7 +323,6 @@ TEST_F(TestCategory, ODE_RKAdaptiveTests) {
 
 TEST_F(TestCategory, ODE_RKSolverStatus) {
   constexpr int ndofs = 1;
-  using Arr           = Kokkos::Array<double, ndofs>;
   using Solver        = RungeKuttaSolver<RKEH>;
   using Stack         = RkStack<ndofs, Solver::nstages>;
   Exponential ode(ndofs, -10);
