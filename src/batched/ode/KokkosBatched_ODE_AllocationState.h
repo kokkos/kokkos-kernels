@@ -75,11 +75,12 @@ struct RkStack {
 
 template <typename MemorySpace>
 struct RkDynamicAllocation {
-  using type  = DynamicAllocationTag;
-  using View1 = Kokkos::View<double **, MemorySpace>;
-  using View2 = Kokkos::View<double ***, MemorySpace>;
+  using type   = DynamicAllocationTag;
+  using View2D = Kokkos::View<double **, MemorySpace>;
+  using View3D = Kokkos::View<double ***, MemorySpace>;
 
-  RkDynamicAllocation(View1 y_, View1 y0_, View1 dydt_, View1 ytemp_, View2 k_)
+  RkDynamicAllocation(View1D y_, View1D y0_, View1D dydt_, View1D ytemp_,
+                      View2D k_)
       : y(y_), y0(y0_), dydt(dydt_), ytemp(ytemp_), k(k_) {}
 
   RkDynamicAllocation(const int n, const int ndofs, const int nstages)
@@ -89,11 +90,11 @@ struct RkDynamicAllocation {
         ytemp(Kokkos::ViewAllocateWithoutInitializing("ytemp"), n, ndofs),
         k(Kokkos::ViewAllocateWithoutInitializing("k"), n, nstages, ndofs) {}
 
-  View1 y;
-  View1 y0;
-  View1 dydt;
-  View1 ytemp;
-  View2 k;
+  View2D y;
+  View2D y0;
+  View2D dydt;
+  View2D ytemp;
+  View3D k;
 };
 
 template <typename MemorySpace>
@@ -114,10 +115,16 @@ struct RkSolverState {
   using Layout =
       std::conditional_t<std::is_same<Type, StackAllocationTag>::value,
                          Kokkos::LayoutRight, Kokkos::LayoutStride>;
-  using View1 = Kokkos::View<double *, Layout, Kokkos::AnonymousSpace,
-                             Kokkos::MemoryUnmanaged>;
-  using View2 = Kokkos::View<double **, Layout, Kokkos::AnonymousSpace,
-                             Kokkos::MemoryUnmanaged>;
+  using View1D = Kokkos::View<double *, Layout, Kokkos::AnonymousSpace,
+                              Kokkos::MemoryUnmanaged>;
+  using View2D = Kokkos::View<double **, Layout, Kokkos::AnonymousSpace,
+                              Kokkos::MemoryUnmanaged>;
+  // Internal variables:
+  View1D y;
+  View1D y0;
+  View1D dydt;
+  View1D ytemp;
+  View2D k;  // NSTAGES x NDOFS
 
   KOKKOS_FORCEINLINE_FUNCTION int ndofs() const {
     return static_cast<int>(y.extent(0));
@@ -178,12 +185,6 @@ struct RkSolverState {
     EmptyRkStack stack{};
     set_views(stack, handle, ndofs, nstages);
   };
-
-  View1 y;
-  View1 y0;
-  View1 dydt;
-  View1 ytemp;
-  View2 k;  // NSTAGES x NDOFS
 };
 
 }  // namespace ode

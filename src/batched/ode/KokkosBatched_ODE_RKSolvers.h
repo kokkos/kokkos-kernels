@@ -78,6 +78,8 @@ KOKKOS_FUNCTION bool isfinite(View& y, const unsigned ndofs) {
 }
 template <typename TableType>
 struct RungeKuttaSolver {
+  const TableType table;
+  const SolverControls controls;
   static constexpr int nstages = TableType::n;
 
   RungeKuttaSolver(const ODEArgs& args) : controls(args) {}
@@ -113,6 +115,7 @@ struct RungeKuttaSolver {
 
     double dt = (tend - t0) / controls.num_substeps;
 
+    // Main time-stepping loop:
     for (int n = 0; n < controls.maxSubSteps; ++n) {
       ode.derivatives(t0, s.y0, s.dydt);
 
@@ -191,9 +194,6 @@ struct RungeKuttaSolver {
                    tol(s.y[n], s.y0[n], controls.absTol, controls.relTol));
     }
   }
-
-  const TableType table;
-  const SolverControls controls;
 };
 }  // namespace ode
 }  // namespace KokkosBatched
