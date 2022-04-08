@@ -77,7 +77,7 @@ void error_check(const int dof, const double err, const ODEType &ode,
   const double val     = Kokkos::fabs(ode.expected_val(ode.tend(), dof));
   const bool condition = (err < rel_tol * val) || (err < abs_tol);
   EXPECT_TRUE(condition);
-};
+}
 
 template <typename MemorySpace, typename TableType, typename ODEType, int ndofs>
 struct RKTest {

@@ -128,7 +128,7 @@ struct RkSolverState {
 
   KOKKOS_FORCEINLINE_FUNCTION int ndofs() const {
     return static_cast<int>(y.extent(0));
-  };
+  }
 
   // wrap stack
   // Its unclear why cuda compiler decides to put the stack in local memory /
@@ -144,7 +144,7 @@ struct RkSolverState {
     dydt     = V1(stack.dydt.data());
     ytemp    = V1(stack.ytemp.data());
     k        = V2(stack.k.data());
-  };
+  }
 
   // wrap host / device dynamically allocated memory
   KOKKOS_FORCEINLINE_FUNCTION void set_views(EmptyRkStack /*&stack*/,
@@ -155,13 +155,13 @@ struct RkSolverState {
     dydt  = Kokkos::subview(dynamic.dydt, tid, Kokkos::ALL);
     ytemp = Kokkos::subview(dynamic.ytemp, tid, Kokkos::ALL);
     k     = Kokkos::subview(dynamic.k, tid, Kokkos::ALL, Kokkos::ALL);
-  };
+  }
 
   KOKKOS_FORCEINLINE_FUNCTION void set_views(const Allocation &dynamic,
                                              int tid) {
     EmptyRkStack stack{};
     set_views(stack, dynamic, tid);
-  };
+  }
 
   // wrap scratch pad memory
   template <typename ScratchHandle>
@@ -176,7 +176,7 @@ struct RkSolverState {
     dydt     = V1(handle, ndofs);
     ytemp    = V1(handle, ndofs);
     k        = V2(handle, nstages, ndofs);
-  };
+  }
 
   template <typename ScratchHandle>
   KOKKOS_FORCEINLINE_FUNCTION void set_views(ScratchHandle &handle,
@@ -184,7 +184,7 @@ struct RkSolverState {
                                              const int nstages) {
     EmptyRkStack stack{};
     set_views(stack, handle, ndofs, nstages);
-  };
+  }
 };
 
 }  // namespace ode
