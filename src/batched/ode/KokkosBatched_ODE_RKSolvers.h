@@ -76,12 +76,22 @@ KOKKOS_FUNCTION bool isfinite(View& y, const unsigned ndofs) {
   }
   return is_finite;
 }
+
 template <typename TableType>
 struct RungeKuttaSolver {
+  // Type of Runge-Kutta table.
+  // Current methods supported are:
+  // RKEH, RK12, BS, RKF45, CashKarp, DormandPrince
   const TableType table;
-  const SolverControls controls;
   static constexpr int nstages = TableType::n;
 
+  // Internal solver options. Initialized via ODEArgs passed to
+  // the RungeKuttaSolver constructor.
+  const SolverControls controls;
+
+  // Initializes RK Solver with paremeters.
+  // Passing the ODEArgs to Solver Controls verifies that all
+  // settings are withing acceptable tolerances.
   RungeKuttaSolver(const ODEArgs& args) : controls(args) {}
 
   template <typename ODEType, typename StateType>

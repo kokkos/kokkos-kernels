@@ -58,8 +58,8 @@ namespace ode {
 // Fehlberg 1-2 (RK12)
 // Bogacki-Shampine (BS)
 // Fehlberg Method (RKF45)
-// Cash-Karp Method
-// Dormand-Prince Method
+// Cash-Karp Method (CashKarp)
+// Dormand-Prince Method (DormandPrince)
 
 struct RKEH  // Euler Huen Method
 {
