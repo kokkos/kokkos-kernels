@@ -186,7 +186,8 @@ TEST_F(TestCategory, ODE_RKPerformance) {
     std::cout << "RK Performance - Host (Stack) time = " << dt_host_stack
               << "\n";
   }
-  if (1
+  if (1  // TODO: Check what needs to be enabled here.
+         // These tests were stalling out on certain backends.
 #ifdef KOKKOS_ENABLE_OPENMP
       && !std::is_same<TestExecSpace, Kokkos::OpenMP>::value
 #endif
@@ -194,7 +195,7 @@ TEST_F(TestCategory, ODE_RKPerformance) {
       && !std::is_same<TestExecSpace, Kokkos::Serial>::value
 #endif
 #ifdef KOKKOS_ENABLE_THREADS
-      && std::is_same<ExecutionSpace, Kokkos::Threads>::value
+      && !std::is_same<TestExecSpace, Kokkos::Threads>::value
 #endif
       )
   // See if this is a better way to fix it??
