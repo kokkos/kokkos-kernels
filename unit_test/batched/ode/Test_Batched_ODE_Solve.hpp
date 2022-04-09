@@ -394,6 +394,7 @@ TEST_F(TestCategory, ODE_RKSingleStep) {
   using Stack         = RkStack<ndofs, RKF45::n>;
   SpringMassDamper ode(ndofs, 1001, 1000.);
   SerialRKSolve<RKF45> solver{ODEArgs()};
+  SolverControls controls{ODEArgs()};
 
   const double t0 = 0.1;
   const double dt = 1e-3;
@@ -406,7 +407,8 @@ TEST_F(TestCategory, ODE_RKSingleStep) {
   auto y0 = state.y0;
   y0(0)   = ode.expected_val(t0, 0);
   y0(1)   = ode.expected_val(t0, 1);
-  solver.step(ode, t0, dt, state.y, state.y0, state.ytemp, state.k, est_err);
+  SerialRKSolveInternal::step(ode, solver.table, t0, dt, state.y, state.y0,
+                              state.ytemp, state.k, controls, est_err);
 
   Kokkos::Array<Arr, RKF45::n> ke{};
 

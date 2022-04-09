@@ -82,6 +82,52 @@ KOKKOS_FUNCTION bool isfinite(View& y, const unsigned ndofs) {
 }
 
 //=====================================================================
+// RKSolve internal:
+//=====================================================================
+//
+// template <typename TableType>
+struct SerialRKSolveInternal {
+  template <typename ODEType, typename TableType, typename ViewTypeA,
+            typename ViewTypeB>
+  KOKKOS_FUNCTION static void step(const ODEType& ode, const TableType table,
+                                   const double t0, const double dt,
+                                   ViewTypeA y, ViewTypeA y0, ViewTypeA ytemp,
+                                   ViewTypeB kstack, SolverControls controls,
+                                   double& err) {
+    const int ndofs              = static_cast<int>(y.extent(0));
+    static constexpr int nstages = TableType::n;
+
+    for (int j = 0; j < nstages; ++j) {
+      const int offset = (j + 1) * j / 2;
+      for (int n = 0; n < ndofs; ++n) {
+        double coeff = 0.0;
+        for (int k = 0; k < j; ++k) {  // lower diagonal matrix
+          coeff += table.a[k + offset] * kstack(k, n);
+        }
+
+        ytemp[n] = y0[n] + dt * coeff;
+      }
+      auto ksub = Kokkos::subview(kstack, j, Kokkos::ALL);
+      ode.derivatives(t0 + table.c[j] * dt, ytemp, ksub);
+    }
+
+    for (int n = 0; n < ndofs; ++n) {
+      double coeff = 0.0;
+      double errJ  = 0.0;
+      for (int k = 0; k < nstages; ++k) {
+        coeff += table.b[k] * kstack(k, n);
+        errJ += table.e[k] * kstack(k, n);
+      }
+      y[n] = y0[n] + dt * coeff;
+      errJ *= dt;
+      err = Kokkos::fmax(
+          err, Kokkos::fabs(errJ) /
+                   tol(y[n], y0[n], controls.absTol, controls.relTol));
+    }
+  }
+};
+
+//=====================================================================
 // RKSolve impl:
 //=====================================================================
 
@@ -133,7 +179,8 @@ KOKKOS_FUNCTION ODESolverStatus SerialRKSolve<TableType>::invoke(
     // Start iterative approach with time step adaptation
     do {
       err = 0.0;
-      step(ode, t0, dt, y, y0, ytemp, kstack, err);
+      SerialRKSolveInternal::step(ode, table, t0, dt, y, y0, ytemp, kstack,
+                                  controls, err);
 
       // Reduce dt for large error
       if (err > 1 && controls.is_adaptive) {
@@ -165,48 +212,6 @@ KOKKOS_FUNCTION ODESolverStatus SerialRKSolve<TableType>::invoke(
   }
   return ODESolverStatus::FAILED_TO_CONVERGE;
 }
-
-template <typename TableType>
-template <typename ODEType, typename ViewTypeA, typename ViewTypeB>
-KOKKOS_FUNCTION void SerialRKSolve<TableType>::step(
-    const ODEType& ode, const double t0, const double dt, ViewTypeA y,
-    ViewTypeA y0, ViewTypeA ytemp, ViewTypeB kstack, double& err) const {
-  const int ndofs = static_cast<int>(y.extent(0));
-
-  for (int j = 0; j < nstages; ++j) {
-    const int offset = (j + 1) * j / 2;
-    for (int n = 0; n < ndofs; ++n) {
-      double coeff = 0.0;
-      for (int k = 0; k < j; ++k) {  // lower diagonal matrix
-        coeff += table.a[k + offset] * kstack(k, n);
-      }
-
-      ytemp[n] = y0[n] + dt * coeff;
-    }
-    auto ksub = Kokkos::subview(kstack, j, Kokkos::ALL);
-    ode.derivatives(t0 + table.c[j] * dt, ytemp, ksub);
-  }
-
-  for (int n = 0; n < ndofs; ++n) {
-    double coeff = 0.0;
-    double errJ  = 0.0;
-    for (int k = 0; k < nstages; ++k) {
-      coeff += table.b[k] * kstack(k, n);
-      errJ += table.e[k] * kstack(k, n);
-    }
-    y[n] = y0[n] + dt * coeff;
-    errJ *= dt;
-    err =
-        Kokkos::fmax(err, Kokkos::fabs(errJ) / tol(y[n], y0[n], controls.absTol,
-                                                   controls.relTol));
-  }
-}
-
-//=====================================================================
-// RKSolve internal:
-//=====================================================================
-//
-// struct SerialRKSolveInternal
 
 }  // namespace ODE
 }  // namespace Experimental

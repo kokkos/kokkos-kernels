@@ -51,7 +51,7 @@ namespace KokkosBatched {
 namespace Experimental {
 namespace ODE {
 
-enum class ODESolverType {
+/*enum class ODESolverType {
   CVODE,
   LSODE,
   RKEH,
@@ -60,10 +60,10 @@ enum class ODESolverType {
   RKF45,
   CashKarp,
   DOPRI5
-};
+};*/
 
 struct ODEArgs {
-  ODESolverType solverType = ODESolverType::CVODE;
+  // ODESolverType solverType = ODESolverType::CVODE;
 
   double absTol    = 1e-12;
   double relTol    = 1e-6;
@@ -74,18 +74,18 @@ struct ODEArgs {
   // Will be set to 10*std::numeric_limits<double>::epsilon() if not set by user
   double minStepSize = std::numeric_limits<double>::lowest();
 
-  int order            = 0;  // CVODE
-  int multistep_method = 2;  // CV_BDF;    // CVODE
-  int iteration_method = 2;  // CV_NEWTON; // CVODE
+  // int order            = 0;  // CVODE
+  // int multistep_method = 2;  // CV_BDF;    // CVODE
+  // int iteration_method = 2;  // CV_NEWTON; // CVODE
 
-  int matrix_solver = 0;  // CVODE and LSODE
-  int band          = 0;  // CVODE and LSODE
+  // int matrix_solver = 0;  // CVODE and LSODE
+  // int band          = 0;  // CVODE and LSODE
 
-  bool defaultValues = true;
-  bool verified      = false;
-  bool is_adaptive   = true;
+  // bool defaultValues = true;
+  // bool verified      = false;
+  bool is_adaptive = true;
 
-  void verify(std::ostream& outputStream, const std::string& infoLine);
+  // void verify(std::ostream& outputStream, const std::string& infoLine);
 };
 
 struct SolverControls {

@@ -82,11 +82,11 @@ struct SerialRKSolve {
                                          ViewTypeA ytemp, ViewTypeB kstack,
                                          double tstart, double tend) const;
 
-  template <typename ODEType, typename ViewTypeA, typename ViewTypeB>
-  KOKKOS_FUNCTION void step(const ODEType& ode, const double t0,
-                            const double dt, ViewTypeA y, ViewTypeA y0,
-                            ViewTypeA ytemp, ViewTypeB kstack,
-                            double& err) const;
+  /*  template <typename ODEType, typename ViewTypeA, typename ViewTypeB>
+    KOKKOS_FUNCTION void step(const ODEType& ode, const double t0,
+                              const double dt, ViewTypeA y, ViewTypeA y0,
+                              ViewTypeA ytemp, ViewTypeB kstack,
+                              double& err) const;*/
 };
 }  // namespace ODE
 }  // namespace Experimental
