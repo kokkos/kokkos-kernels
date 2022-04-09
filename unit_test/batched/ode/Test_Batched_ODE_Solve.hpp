@@ -7,7 +7,8 @@
 #include <KokkosBatched_ODE_Args.h>
 
 namespace KokkosBatched {
-namespace ode {
+namespace Experimental {
+namespace ODE {
 
 template <typename SolverState, typename MemorySpace, typename ODEType,
           typename SolverType>
@@ -434,7 +435,8 @@ TEST_F(TestCategory, ODE_RKSingleStep) {
   check_single_step(dt, s.table, state, ke);
 }
 
-}  // namespace ode
+}  // namespace ODE
+}  // namespace Experimental
 }  // namespace KokkosBatched
 
 #endif

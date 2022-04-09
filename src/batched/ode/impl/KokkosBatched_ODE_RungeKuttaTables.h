@@ -48,7 +48,8 @@
 #include <Kokkos_Array.hpp>
 
 namespace KokkosBatched {
-namespace ode {
+namespace Experimental {
+namespace ODE {
 //=====================================================================
 // Generalized RK Explicit ODE solver with embedded error estimation
 //=====================================================================
@@ -217,7 +218,8 @@ struct DormandPrince  // Referred to as DOPRI5
        125.0 / 192.0 - 393.0 / 640.0, -2187.0 / 6784.0 + 92097.0 / 339200.0,
        11.0 / 84.0 - 187.0 / 2100.0, -1.0 / 40.0}};
 };
-}  // namespace ode
+}  // namespace ODE
+}  // namespace Experimental
 }  // namespace KokkosBatched
 
 #endif

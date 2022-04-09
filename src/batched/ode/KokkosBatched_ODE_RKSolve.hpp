@@ -57,7 +57,8 @@
 #include <type_traits>
 
 namespace KokkosBatched {
-namespace ode {
+namespace Experimental {
+namespace ODE {
 
 template <typename TableType>
 struct SerialRKSolve {
@@ -84,7 +85,8 @@ struct SerialRKSolve {
   KOKKOS_FUNCTION void step(const ODEType& ode, const double t0,
                             const double dt, StateType& s, double& err) const;
 };
-}  // namespace ode
+}  // namespace ODE
+}  // namespace Experimental
 }  // namespace KokkosBatched
 
 #include "KokkosBatched_ODE_RKSolve_Impl.hpp"

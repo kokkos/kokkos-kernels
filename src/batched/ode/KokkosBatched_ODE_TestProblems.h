@@ -48,7 +48,8 @@
 #include <Kokkos_ArithTraits.hpp>
 
 namespace KokkosBatched {
-namespace ode {
+namespace Experimental {
+namespace ODE {
 
 struct DegreeOnePoly {
   DegreeOnePoly(int neqs_) : neqs(neqs_) {}
@@ -448,7 +449,8 @@ struct EnrightD4 {
   const int neqs;
 };
 
-}  // namespace ode
+}  // namespace ODE
+}  // namespace Experimental
 }  // namespace KokkosBatched
 
 #endif

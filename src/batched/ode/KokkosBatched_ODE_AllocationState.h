@@ -48,7 +48,8 @@
 #include "Kokkos_View.hpp"
 
 namespace KokkosBatched {
-namespace ode {
+namespace Experimental {
+namespace ODE {
 
 struct StackAllocationTag;
 struct ScratchAllocationTag;
@@ -187,7 +188,8 @@ struct RkSolverState {
   }
 };
 
-}  // namespace ode
+}  // namespace ODE
+}  // namespace Experimental
 }  // namespace KokkosBatched
 
 #endif

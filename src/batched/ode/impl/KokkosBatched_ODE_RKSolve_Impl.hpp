@@ -57,7 +57,12 @@
 #include <type_traits>
 
 namespace KokkosBatched {
-namespace ode {
+namespace Experimental {
+namespace ODE {
+
+//=====================================================================
+// Functions used in RKSolve:
+//=====================================================================
 
 KOKKOS_FORCEINLINE_FUNCTION double tol(const double y, const double y0,
                                        const double absTol,
@@ -76,6 +81,10 @@ KOKKOS_FUNCTION bool isfinite(View& y, const unsigned ndofs) {
   }
   return is_finite;
 }
+
+//=====================================================================
+// RKSolve impl:
+//=====================================================================
 
 template <typename TableType>
 template <typename ODEType, typename StateType>
@@ -193,7 +202,14 @@ KOKKOS_FUNCTION void SerialRKSolve<TableType>::step(const ODEType& ode,
   }
 }
 
-}  // namespace ode
+//=====================================================================
+// RKSolve internal:
+//=====================================================================
+//
+// struct SerialRKSolveInternal
+
+}  // namespace ODE
+}  // namespace Experimental
 }  // namespace KokkosBatched
 
 #endif

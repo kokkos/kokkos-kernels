@@ -7,7 +7,8 @@
 #include <KokkosBatched_ODE_Args.h>
 
 namespace KokkosBatched {
-namespace ode {
+namespace Experimental {
+namespace ODE {
 
 template <typename MemorySpace, typename ODEType, typename SolverType>
 void scratch_kernel(const ODEType &ode, const SolverType &solver,
@@ -241,7 +242,8 @@ TEST_F(TestCategory, ODE_RKPerformance) {
             << dt_host_scratch / dt_host_stack << "\n";
 }
 
-}  // namespace ode
+}  // namespace ODE
+}  // namespace Experimental
 }  // namespace KokkosBatched
 
 #endif

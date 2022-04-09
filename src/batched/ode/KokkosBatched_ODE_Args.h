@@ -48,7 +48,8 @@
 #include <limits>
 
 namespace KokkosBatched {
-namespace ode {
+namespace Experimental {
+namespace ODE {
 
 enum class ODESolverType {
   CVODE,
@@ -107,7 +108,8 @@ struct SolverControls {
   const int num_substeps;
   const bool is_adaptive;
 };
-}  // namespace ode
+}  // namespace ODE
+}  // namespace Experimental
 }  // namespace KokkosBatched
 
 #endif
