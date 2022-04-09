@@ -2,7 +2,7 @@
 
 #include <gtest/gtest.h>
 
-#include <KokkosBatched_ODE_RKSolvers.h>
+#include <KokkosBatched_ODE_RKSolve.hpp>
 #include <KokkosBatched_ODE_TestProblems.h>
 #include <KokkosBatched_ODE_Args.h>
 
@@ -38,7 +38,7 @@ void scratch_kernel(const ODEType &ode, const SolverType &solver,
           s.y[dof] = ode.expected_val(ode.tstart(), dof);
         }
 
-        solver.solve(ode, ode.tstart(), ode.tend(), s);
+        solver.invoke(ode, ode.tstart(), ode.tend(), s);
       });
   Kokkos::fence();
 }
@@ -61,7 +61,7 @@ void kernel(const RkDynamicAllocation<MemorySpace> &pool, const ODEType &ode,
           s.y[dof] = ode.expected_val(ode.tstart(), dof);
         }
 
-        solver.solve(ode, ode.tstart(), ode.tend(), s);
+        solver.invoke(ode, ode.tstart(), ode.tend(), s);
       });
   Kokkos::fence();
 }
@@ -81,7 +81,7 @@ void perf_run(RkDynamicAllocation<MemorySpace> &pool, const ODEType &ode,
 
 template <typename MemorySpace, typename TableType, typename ODEType, int ndofs>
 struct RKPerfTest {
-  using SolverType       = RungeKuttaSolver<TableType>;
+  using SolverType       = SerialRKSolve<TableType>;
   using SolverStateStack = RkSolverState<RkStack<ndofs, TableType::n>>;
   using SolverStateDyn   = RkSolverState<RkDynamicAllocation<MemorySpace>>;
 
@@ -101,7 +101,7 @@ struct RKPerfTest {
 
 template <typename MemorySpace, typename TableType, typename ODEType>
 struct RKScratchPerfTest {
-  using SolverType = RungeKuttaSolver<TableType>;
+  using SolverType = SerialRKSolve<TableType>;
   RKScratchPerfTest(const int nelems, const ODEArgs &args, const ODEType &ode_)
       : solver(args) {
     scratch_perf_run<MemorySpace>(ode_, solver, nelems);

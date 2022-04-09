@@ -2,7 +2,7 @@
 
 #include <gtest/gtest.h>
 
-#include <KokkosBatched_ODE_RKSolvers.h>
+#include <KokkosBatched_ODE_RKSolve.hpp>
 #include <KokkosBatched_ODE_TestProblems.h>
 #include <KokkosBatched_ODE_Args.h>
 
@@ -29,7 +29,7 @@ void kernel(int nelems, const ODEType &ode, const SolverType &solver,
         }
 
         auto thread_status =
-            static_cast<int>(solver.solve(ode, tstart, tend, s));
+            static_cast<int>(solver.invoke(ode, tstart, tend, s));
         status = thread_status > status ? thread_status : status;
 
         for (int dof = 0; dof < ndofs; ++dof) {
@@ -81,7 +81,7 @@ void error_check(const int dof, const double err, const ODEType &ode,
 
 template <typename MemorySpace, typename TableType, typename ODEType, int ndofs>
 struct RKTest {
-  using SolverType       = RungeKuttaSolver<TableType>;
+  using SolverType       = SerialRKSolve<TableType>;
   using SolverStateStack = RkSolverState<RkStack<ndofs, SolverType::nstages>>;
   using SolverStateDyn   = RkSolverState<RkDynamicAllocation<MemorySpace>>;
 
@@ -323,7 +323,7 @@ TEST_F(TestCategory, ODE_RKAdaptiveTests) {
 
 TEST_F(TestCategory, ODE_RKSolverStatus) {
   constexpr int ndofs = 1;
-  using Solver        = RungeKuttaSolver<RKEH>;
+  using Solver        = SerialRKSolve<RKEH>;
   using Stack         = RkStack<ndofs, Solver::nstages>;
   Exponential ode(ndofs, -10);
   double tstart = 0.0;
@@ -338,7 +338,7 @@ TEST_F(TestCategory, ODE_RKSolverStatus) {
     Solver s(args);
     state.y[0] = std::numeric_limits<double>::quiet_NaN();
 
-    auto status = s.solve(ode, tstart, tend, state);
+    auto status = s.invoke(ode, tstart, tend, state);
     EXPECT_TRUE(status == ODESolverStatus::NONFINITE_STATE);
   }
 
@@ -348,7 +348,7 @@ TEST_F(TestCategory, ODE_RKSolverStatus) {
     ODEArgs args;
     args.maxSubSteps = 3;
     Solver s(args);
-    auto status = s.solve(ode, tstart, tend, state);
+    auto status = s.invoke(ode, tstart, tend, state);
     EXPECT_TRUE(status == ODESolverStatus::FAILED_TO_CONVERGE);
   }
 
@@ -356,7 +356,7 @@ TEST_F(TestCategory, ODE_RKSolverStatus) {
     ODEArgs args;
     args.minStepSize = 1.0;
     Solver s(args);
-    auto status = s.solve(ode, tstart, tend, state);
+    auto status = s.invoke(ode, tstart, tend, state);
     EXPECT_TRUE(status == ODESolverStatus::MINIMUM_TIMESTEP_REACHED);
   }
 }
@@ -388,7 +388,7 @@ TEST_F(TestCategory, ODE_RKSingleStep) {
   using Arr           = Kokkos::Array<double, ndofs>;
   using Stack         = RkStack<ndofs, RKF45::n>;
   SpringMassDamper ode(ndofs, 1001, 1000.);
-  RungeKuttaSolver<RKF45> s{ODEArgs()};
+  SerialRKSolve<RKF45> s{ODEArgs()};
 
   const double t0 = 0.1;
   const double dt = 1e-3;
