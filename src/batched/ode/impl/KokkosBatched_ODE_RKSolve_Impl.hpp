@@ -70,7 +70,7 @@ KOKKOS_FORCEINLINE_FUNCTION double tol(const double y, const double y0,
 }
 
 template <typename View>
-KOKKOS_FUNCTION bool isfinite(View& y, const unsigned ndofs) {
+KOKKOS_FUNCTION bool isfinite(View &y, const unsigned ndofs) {
   bool is_finite = true;
   for (unsigned i = 0; i < ndofs; ++i) {
     if (!Kokkos::isfinite(y[i])) {
@@ -89,11 +89,13 @@ KOKKOS_FUNCTION bool isfinite(View& y, const unsigned ndofs) {
 struct SerialRKSolveInternal {
   template <typename ODEType, typename TableType, typename ViewTypeA,
             typename ViewTypeB>
-  KOKKOS_FUNCTION static void step(const ODEType& ode, const TableType table,
-                                   const double t0, const double dt,
-                                   ViewTypeA y, ViewTypeA y0, ViewTypeA ytemp,
-                                   ViewTypeB kstack, SolverControls controls,
-                                   double& err) {
+  KOKKOS_FUNCTION static void step(
+      const ODEType &ode, const TableType &table, const double t0,
+      const double dt, ViewTypeA &y, ViewTypeA &y0, ViewTypeA &ytemp,
+      ViewTypeB &kstack,
+      SolverControls controls,  // Don't pass SolverControls by reference!  Then
+                                // code won't compile. //TODO why??
+      double &err) {
     const int ndofs              = static_cast<int>(y.extent(0));
     static constexpr int nstages = TableType::n;
 
@@ -134,8 +136,8 @@ struct SerialRKSolveInternal {
 template <typename TableType>
 template <typename ODEType, typename ViewTypeA, typename ViewTypeB>
 KOKKOS_FUNCTION ODESolverStatus SerialRKSolve<TableType>::invoke(
-    const ODEType& ode, ViewTypeA y, ViewTypeA y0, ViewTypeA dydt,
-    ViewTypeA ytemp, ViewTypeB kstack, double tstart, double tend) const {
+    const ODEType &ode, ViewTypeA &y, ViewTypeA &y0, ViewTypeA &dydt,
+    ViewTypeA &ytemp, ViewTypeB &kstack, double tstart, double tend) const {
   using Kokkos::fmax;
   using Kokkos::fmin;
   using Kokkos::pow;
