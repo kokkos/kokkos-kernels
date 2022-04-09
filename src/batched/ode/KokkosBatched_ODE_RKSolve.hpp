@@ -52,7 +52,6 @@
 #include <KokkosBatched_ODE_Args.h>
 #include <KokkosBatched_ODE_RungeKuttaTables.h>
 #include <KokkosBatched_ODE_SolverEndStatus.h>
-#include <KokkosBatched_ODE_AllocationState.h>
 
 #include <type_traits>
 
@@ -77,13 +76,17 @@ struct SerialRKSolve {
   // settings are withing acceptable tolerances.
   SerialRKSolve(const ODEArgs& args) : controls(args) {}
 
-  template <typename ODEType, typename StateType>
-  KOKKOS_FUNCTION ODESolverStatus invoke(const ODEType& ode, double tstart,
-                                         double tend, StateType& s) const;
+  template <typename ODEType, typename ViewTypeA, typename ViewTypeB>
+  KOKKOS_FUNCTION ODESolverStatus invoke(const ODEType& ode, ViewTypeA y,
+                                         ViewTypeA y0, ViewTypeA dydt,
+                                         ViewTypeA ytemp, ViewTypeB kstack,
+                                         double tstart, double tend) const;
 
-  template <typename ODEType, typename StateType>
+  template <typename ODEType, typename ViewTypeA, typename ViewTypeB>
   KOKKOS_FUNCTION void step(const ODEType& ode, const double t0,
-                            const double dt, StateType& s, double& err) const;
+                            const double dt, ViewTypeA y, ViewTypeA y0,
+                            ViewTypeA ytemp, ViewTypeB kstack,
+                            double& err) const;
 };
 }  // namespace ODE
 }  // namespace Experimental

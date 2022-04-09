@@ -5,6 +5,7 @@
 #include <KokkosBatched_ODE_RKSolve.hpp>
 #include <KokkosBatched_ODE_TestProblems.h>
 #include <KokkosBatched_ODE_Args.h>
+#include <KokkosBatched_ODE_AllocationState.h>
 
 namespace KokkosBatched {
 namespace Experimental {
@@ -39,7 +40,8 @@ void scratch_kernel(const ODEType &ode, const SolverType &solver,
           s.y[dof] = ode.expected_val(ode.tstart(), dof);
         }
 
-        solver.invoke(ode, ode.tstart(), ode.tend(), s);
+        solver.invoke(ode, s.y, s.y0, s.dydt, s.ytemp, s.k, ode.tstart(),
+                      ode.tend());
       });
   Kokkos::fence();
 }
@@ -62,7 +64,8 @@ void kernel(const RkDynamicAllocation<MemorySpace> &pool, const ODEType &ode,
           s.y[dof] = ode.expected_val(ode.tstart(), dof);
         }
 
-        solver.invoke(ode, ode.tstart(), ode.tend(), s);
+        solver.invoke(ode, s.y, s.y0, s.dydt, s.ytemp, s.k, ode.tstart(),
+                      ode.tend());
       });
   Kokkos::fence();
 }

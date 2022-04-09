@@ -5,6 +5,7 @@
 #include <KokkosBatched_ODE_RKSolve.hpp>
 #include <KokkosBatched_ODE_TestProblems.h>
 #include <KokkosBatched_ODE_Args.h>
+#include <KokkosBatched_ODE_AllocationState.h>
 
 namespace KokkosBatched {
 namespace Experimental {
@@ -29,8 +30,8 @@ void kernel(int nelems, const ODEType &ode, const SolverType &solver,
           s.y[dof] = ode.expected_val(ode.tstart(), dof);
         }
 
-        auto thread_status =
-            static_cast<int>(solver.invoke(ode, tstart, tend, s));
+        auto thread_status = static_cast<int>(
+            solver.invoke(ode, s.y, s.y0, s.dydt, s.ytemp, s.k, tstart, tend));
         status = thread_status > status ? thread_status : status;
 
         for (int dof = 0; dof < ndofs; ++dof) {
@@ -339,7 +340,8 @@ TEST_F(TestCategory, ODE_RKSolverStatus) {
     Solver s(args);
     state.y[0] = std::numeric_limits<double>::quiet_NaN();
 
-    auto status = s.invoke(ode, tstart, tend, state);
+    auto status = s.invoke(ode, state.y, state.y0, state.dydt, state.ytemp,
+                           state.k, tstart, tend);
     EXPECT_TRUE(status == ODESolverStatus::NONFINITE_STATE);
   }
 
@@ -349,7 +351,8 @@ TEST_F(TestCategory, ODE_RKSolverStatus) {
     ODEArgs args;
     args.maxSubSteps = 3;
     Solver s(args);
-    auto status = s.invoke(ode, tstart, tend, state);
+    auto status = s.invoke(ode, state.y, state.y0, state.dydt, state.ytemp,
+                           state.k, tstart, tend);
     EXPECT_TRUE(status == ODESolverStatus::FAILED_TO_CONVERGE);
   }
 
@@ -357,7 +360,8 @@ TEST_F(TestCategory, ODE_RKSolverStatus) {
     ODEArgs args;
     args.minStepSize = 1.0;
     Solver s(args);
-    auto status = s.invoke(ode, tstart, tend, state);
+    auto status = s.invoke(ode, state.y, state.y0, state.dydt, state.ytemp,
+                           state.k, tstart, tend);
     EXPECT_TRUE(status == ODESolverStatus::MINIMUM_TIMESTEP_REACHED);
   }
 }
@@ -389,7 +393,7 @@ TEST_F(TestCategory, ODE_RKSingleStep) {
   using Arr           = Kokkos::Array<double, ndofs>;
   using Stack         = RkStack<ndofs, RKF45::n>;
   SpringMassDamper ode(ndofs, 1001, 1000.);
-  SerialRKSolve<RKF45> s{ODEArgs()};
+  SerialRKSolve<RKF45> solver{ODEArgs()};
 
   const double t0 = 0.1;
   const double dt = 1e-3;
@@ -402,7 +406,7 @@ TEST_F(TestCategory, ODE_RKSingleStep) {
   auto y0 = state.y0;
   y0(0)   = ode.expected_val(t0, 0);
   y0(1)   = ode.expected_val(t0, 1);
-  s.step(ode, t0, dt, state, est_err);
+  solver.step(ode, t0, dt, state.y, state.y0, state.ytemp, state.k, est_err);
 
   Kokkos::Array<Arr, RKF45::n> ke{};
 
@@ -432,7 +436,7 @@ TEST_F(TestCategory, ODE_RKSingleStep) {
 
   ode.derivatives(t0 + 0.5 * dt, tmp, ke[5]);
 
-  check_single_step(dt, s.table, state, ke);
+  check_single_step(dt, solver.table, state, ke);
 }
 
 }  // namespace ODE
