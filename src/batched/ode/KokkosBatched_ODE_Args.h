@@ -51,27 +51,14 @@ namespace KokkosBatched {
 namespace Experimental {
 namespace ODE {
 
-/*enum class ODESolverType {
-  CVODE,
-  LSODE,
-  RKEH,
-  RK12,
-  RKBS,
-  RKF45,
-  CashKarp,
-  DOPRI5
-};*/
-
 struct ODEArgs {
-  // ODESolverType solverType = ODESolverType::CVODE;
-
   double absTol    = 1e-12;
   double relTol    = 1e-6;
   int maxSubSteps  = 100000;
   int num_substeps = 10;
 
   // Initially set to an unrealistic number.
-  // Will be set to 10*std::numeric_limits<double>::epsilon() if not set by user
+  // Will be set to std::numeric_limits<double>::epsilon() if not set by user
   double minStepSize = std::numeric_limits<double>::lowest();
 
   // int order            = 0;  // CVODE
@@ -81,11 +68,7 @@ struct ODEArgs {
   // int matrix_solver = 0;  // CVODE and LSODE
   // int band          = 0;  // CVODE and LSODE
 
-  // bool defaultValues = true;
-  // bool verified      = false;
   bool is_adaptive = true;
-
-  // void verify(std::ostream& outputStream, const std::string& infoLine);
 };
 
 struct SolverControls {
