@@ -51,7 +51,11 @@ namespace KokkosBatched {
 namespace Experimental {
 namespace ODE {
 
+// Note: The name `DegreeNPoly` indicates that the SOLUTION
+// is a degree N poly, not the ODE. :)
+
 struct DegreeOnePoly {
+  // Soln: y = t + 1
   DegreeOnePoly(int neqs_) : neqs(neqs_) {}
 
   template <typename View1, typename View2>
@@ -72,6 +76,7 @@ struct DegreeOnePoly {
 };
 
 struct DegreeTwoPoly {
+  // Soln: y = (1/2)t^2 + t + 1
   DegreeTwoPoly(int neqs_) : neqs(neqs_) {}
   template <typename View1, typename View2>
   KOKKOS_FUNCTION void derivatives(double t, View1& /*y*/, View2& dydt) const {
@@ -90,6 +95,7 @@ struct DegreeTwoPoly {
 };
 
 struct DegreeThreePoly {
+  // Soln: y = (1/3)t^3 + (1/2)t^2 + t + 1
   DegreeThreePoly(int neqs_) : neqs(neqs_) {}
   template <typename View1, typename View2>
   KOKKOS_FUNCTION void derivatives(double t, View1& /*y*/, View2& dydt) const {
@@ -108,11 +114,13 @@ struct DegreeThreePoly {
 };
 
 struct DegreeFivePoly {
+  // Soln: y = (1/5)t^5 + (1/4)t^4 + (1/3)t^3 + (1/2)t^2 + t + 1
   DegreeFivePoly(int neqs_) : neqs(neqs_) {}
 
   template <typename View1, typename View2>
   KOKKOS_FUNCTION void derivatives(double t, View1& /*y*/, View2& dydt) const {
     for (int i = 0; i < neqs; i++) {
+      // dydt = t^4 + t^3 + t^2 + t + 1
       dydt[i] = t * t * t * t + t * t * t + t * t + t + 1;
     }
   }
@@ -128,6 +136,7 @@ struct DegreeFivePoly {
 };
 
 struct Exponential {
+  // Soln: y = e^(rate*t)
   Exponential(int neqs_, double rate_) : neqs(neqs_), rate(rate_) {}
 
   template <typename View1, typename View2>

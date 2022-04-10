@@ -62,23 +62,29 @@ namespace ODE {
 // Cash-Karp Method (CashKarp)
 // Dormand-Prince Method (DormandPrince)
 
+// Format follows form of Butcher Tableau
+
+// c0| a00
+// c2| a10 a11
+// c3| a20 a21 a22
+// c4| a30 a31 a32
+// . | .   .   .
+// . | .   .       .
+// . | .   .          .
+// cs| as0 as1 . . . . . .  ass
+//--------------------------------
+//   | b0  b1  b2  b3 . . . bs
+//
+// And is always in lower triangular form for explicit methods
+// For explicit methods the methods on the diagonal will always be zero.
+//
+// Here, n = s = number of stages.
+// 'order' refers to the accuracy of the method.
+// The array of aij coefficients is ordered by rows as: a =
+// {a00,a10,a11,a20,a21,a22....}
+
 struct RKEH  // Euler Huen Method
 {
-  // Follows form of Butcher Tableau
-
-  // c0| a00
-  // c2| a10 a11
-  // c3| a20 a21 a22
-  // c4| a30 a31 a32
-  // . | .   .   .
-  // . | .   .       .
-  // . | .   .          .
-  // cs| as0 as1 . . . . . .  ass
-  //--------------------------------
-  //   | b0  b1  b2  b3 . . . bs
-  //
-  // And is always in lower triangular form for explicit methods
-
   static constexpr int n     = 2;  // total dimensions, nxn system
   static constexpr int order = 2;
   Kokkos::Array<double, (n * n + n) / 2> a{
