@@ -48,6 +48,7 @@
 #include <Kokkos_ArithTraits.hpp>
 #include "Kokkos_Layout.hpp"
 #include "Kokkos_MemoryTraits.hpp"
+#include "Kokkos_NumericTraits.hpp"
 
 #include <KokkosBatched_ODE_Args.h>
 #include <KokkosBatched_ODE_RungeKuttaTables.h>
@@ -86,18 +87,18 @@ KOKKOS_FUNCTION bool isfinite(View &y, const unsigned ndofs) {
 //=====================================================================
 //
 // template <typename TableType>
+//
+// Use only NumEquations and derivatives from ode in solver...
 struct SerialRKSolveInternal {
   template <typename ODEType, typename TableType, typename ViewTypeA,
             typename ViewTypeB>
-  KOKKOS_FUNCTION static void step(
-      const ODEType &ode, const TableType &table, const double t0,
-      const double dt, ViewTypeA &y, ViewTypeA &y0, ViewTypeA &ytemp,
-      ViewTypeB &kstack,
-      SolverControls controls,  // Don't pass SolverControls by reference!  Then
-                                // code won't compile. //TODO why??
-      double &err) {
+  KOKKOS_FUNCTION static void step(const ODEType &ode, const TableType &table,
+                                   const double t0, const double dt,
+                                   ViewTypeA &y, ViewTypeA &y0,
+                                   ViewTypeA &ytemp, ViewTypeB &kstack,
+                                   const ODEArgs &args, double &err) {
     const int ndofs              = static_cast<int>(y.extent(0));
-    static constexpr int nstages = TableType::n;
+    static constexpr int nstages = TableType::nstages;
 
     for (int j = 0; j < nstages; ++j) {
       const int offset = (j + 1) * j / 2;
@@ -123,8 +124,7 @@ struct SerialRKSolveInternal {
       y[n] = y0[n] + dt * coeff;
       errJ *= dt;
       err = Kokkos::fmax(
-          err, Kokkos::fabs(errJ) /
-                   tol(y[n], y0[n], controls.absTol, controls.relTol));
+          err, Kokkos::fabs(errJ) / tol(y[n], y0[n], args.absTol, args.relTol));
     }
   }
 };
@@ -136,15 +136,24 @@ struct SerialRKSolveInternal {
 template <typename TableType>
 template <typename ODEType, typename ViewTypeA, typename ViewTypeB>
 KOKKOS_FUNCTION ODESolverStatus SerialRKSolve<TableType>::invoke(
-    const ODEType &ode, ViewTypeA &y, ViewTypeA &y0, ViewTypeA &dydt,
-    ViewTypeA &ytemp, ViewTypeB &kstack, double tstart, double tend) const {
+    const ODEType &ode, const ODEArgs &args_, ViewTypeA &y, ViewTypeA &y0,
+    ViewTypeA &dydt, ViewTypeA &ytemp, ViewTypeB &kstack, double tstart,
+    double tend) {
   using Kokkos::fmax;
   using Kokkos::fmin;
   using Kokkos::pow;
 
-  const int ndofs = static_cast<int>(y.extent(0));
+  TableType table;
+
+  double epsilon = Kokkos::Experimental::epsilon<double>::value;
+  // args checks for valid arguments.
+  ODEArgs args(args_);
+  args.absTol      = args.absTol > epsilon ? args.absTol : epsilon;
+  args.minStepSize = args.minStepSize > epsilon ? args.minStepSize : epsilon;
+  const int ndofs  = static_cast<int>(y.extent(0));
   // TODO: Add a whole bunch of checks here to make sure view dimensions line
   // up.
+  // Check: size y = size y0 = size ytemp = size dydt
 
   // TODO: should this be handled with an assert?
   // assert(ode.num_equations() == ndofs, "Mismatched number of dofs in ode
@@ -157,7 +166,7 @@ KOKKOS_FUNCTION ODESolverStatus SerialRKSolve<TableType>::invoke(
   double t0 = tstart;
 
   for (int i = 0; i < ndofs; ++i) {
-    y0[i] = y[i];
+    y0[i] = y[i];  // why??
   }
 
   if (!isfinite(y0, ndofs)) {
@@ -166,10 +175,11 @@ KOKKOS_FUNCTION ODESolverStatus SerialRKSolve<TableType>::invoke(
 
   const double pFactor = -1.0 / table.order;
 
-  double dt = (tend - t0) / controls.num_substeps;
+  // Compute starting time step length:
+  double dt = (tend - t0) / args.num_substeps;
 
   // Main time-stepping loop:
-  for (int n = 0; n < controls.maxSubSteps; ++n) {
+  for (int n = 0; n < args.maxSubSteps; ++n) {
     ode.derivatives(t0, y0, dydt);
 
     // Limit dt to not exceed t_end
@@ -182,23 +192,23 @@ KOKKOS_FUNCTION ODESolverStatus SerialRKSolve<TableType>::invoke(
     do {
       err = 0.0;
       SerialRKSolveInternal::step(ode, table, t0, dt, y, y0, ytemp, kstack,
-                                  controls, err);
+                                  args, err);
 
       // Reduce dt for large error
-      if (err > 1 && controls.is_adaptive) {
+      if (err > 1 && args.is_adaptive) {
         dt *= fmax(0.2, 0.8 * pow(err, pFactor));
 
-        if (dt < controls.minStepSize) {
+        if (dt < args.minStepSize) {
           return ODESolverStatus::MINIMUM_TIMESTEP_REACHED;
         }
       }
 
-    } while (err > 1 && controls.is_adaptive);
+    } while (err > 1 && args.is_adaptive);
 
     t0 += dt;
 
     for (int i = 0; i < ndofs; ++i) {
-      y0[i] = y[i];
+      y0[i] = y[i];  // why again??
     }
 
     if (t0 >= tend) {
@@ -208,7 +218,7 @@ KOKKOS_FUNCTION ODESolverStatus SerialRKSolve<TableType>::invoke(
     }
 
     // Increase dt for small error
-    if (err < 0.5 && controls.is_adaptive) {
+    if (err < 0.5 && args.is_adaptive) {
       dt *= fmin(10.0, fmax(2.0, 0.9 * pow(err, pFactor)));
     }
   }

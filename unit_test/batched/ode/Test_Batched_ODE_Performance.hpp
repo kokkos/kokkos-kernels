@@ -11,9 +11,8 @@ namespace KokkosBatched {
 namespace Experimental {
 namespace ODE {
 
-template <typename MemorySpace, typename ODEType, typename SolverType>
-void scratch_kernel(const ODEType &ode, const SolverType &solver,
-                    const int nelems) {
+template <typename MemorySpace, typename ODEType, typename TableType>
+void scratch_kernel(const ODEType &ode, const ODEArgs &args, const int nelems) {
   using ScratchSpace =
       Kokkos::ScratchMemorySpace<typename MemorySpace::execution_space>;
   using ScratchView =
@@ -22,7 +21,7 @@ void scratch_kernel(const ODEType &ode, const SolverType &solver,
   const int team_size =
       std::is_same<MemorySpace, Kokkos::HostSpace>::value ? 1 : 32;
   const int scratch_size =
-      ScratchView::shmem_size(team_size, (4 + SolverType::nstages), ode.neqs);
+      ScratchView::shmem_size(team_size, (4 + TableType::nstages), ode.neqs);
 
   using member_type = typename Kokkos::TeamPolicy<
       typename MemorySpace::execution_space>::member_type;
@@ -34,22 +33,22 @@ void scratch_kernel(const ODEType &ode, const SolverType &solver,
   Kokkos::parallel_for(
       "ODESolverKernel", team_policy, KOKKOS_LAMBDA(const member_type &team) {
         SolverState s;
-        s.set_views(team.team_scratch(0), ode.neqs, SolverType::nstages);
+        s.set_views(team.team_scratch(0), ode.neqs, TableType::nstages);
 
         for (int dof = 0; dof < ode.neqs; ++dof) {
           s.y[dof] = ode.expected_val(ode.tstart(), dof);
         }
 
-        solver.invoke(ode, s.y, s.y0, s.dydt, s.ytemp, s.k, ode.tstart(),
-                      ode.tend());
+        SerialRKSolve<TableType>::invoke(ode, args, s.y, s.y0, s.dydt, s.ytemp,
+                                         s.k, ode.tstart(), ode.tend());
       });
   Kokkos::fence();
 }
 
 template <typename SolverState, typename MemorySpace, typename ODEType,
-          typename SolverType>
+          typename TableType>
 void kernel(const RkDynamicAllocation<MemorySpace> &pool, const ODEType &ode,
-            const SolverType &solver, int nelems) {
+            const ODEArgs &args, int nelems) {
   Kokkos::parallel_for(
       "ODESolverKernel",
       Kokkos::RangePolicy<typename MemorySpace::execution_space>(0, nelems),
@@ -64,53 +63,51 @@ void kernel(const RkDynamicAllocation<MemorySpace> &pool, const ODEType &ode,
           s.y[dof] = ode.expected_val(ode.tstart(), dof);
         }
 
-        solver.invoke(ode, s.y, s.y0, s.dydt, s.ytemp, s.k, ode.tstart(),
-                      ode.tend());
+        SerialRKSolve<TableType>::invoke(ode, args, s.y, s.y0, s.dydt, s.ytemp,
+                                         s.k, ode.tstart(), ode.tend());
       });
   Kokkos::fence();
 }
 
-template <typename MemorySpace, typename ODEType, typename SolverType>
-void scratch_perf_run(const ODEType &ode, const SolverType &solver,
+template <typename MemorySpace, typename ODEType, typename TableType>
+void scratch_perf_run(const ODEType &ode, const ODEArgs &args,
                       const int nelems) {
-  scratch_kernel<MemorySpace>(ode, solver, nelems);
+  scratch_kernel<MemorySpace, ODEType, TableType>(ode, args, nelems);
 }
 
 template <typename MemorySpace, typename SolverState, typename ODEType,
-          typename SolverType>
+          typename TableType>
 void perf_run(RkDynamicAllocation<MemorySpace> &pool, const ODEType &ode,
-              const SolverType &solver, const int nelems) {
-  kernel<SolverState>(pool, ode, solver, nelems);
+              const ODEArgs &args, const int nelems) {
+  kernel<SolverState, MemorySpace, ODEType, TableType>(pool, ode, args, nelems);
 }
 
 template <typename MemorySpace, typename TableType, typename ODEType, int ndofs>
 struct RKPerfTest {
-  using SolverType       = SerialRKSolve<TableType>;
-  using SolverStateStack = RkSolverState<RkStack<ndofs, TableType::n>>;
+  using SolverStateStack = RkSolverState<RkStack<ndofs, TableType::nstages>>;
   using SolverStateDyn   = RkSolverState<RkDynamicAllocation<MemorySpace>>;
 
-  RKPerfTest(const int nelems, const ODEArgs &args, const ODEType &ode_,
+  RkDynamicAllocation<MemorySpace> pool;
+
+  RKPerfTest(const int nelems, const ODEArgs &args, const ODEType &ode,
              const bool use_stack)
-      : pool(nelems, ode_.neqs, TableType::n), solver(args), ode(ode_) {
+      : pool(nelems, ode.neqs, TableType::nstages) {
     if (use_stack) {
-      perf_run<MemorySpace, SolverStateStack>(pool, ode, solver, nelems);
+      perf_run<MemorySpace, SolverStateStack, ODEType, TableType>(pool, ode,
+                                                                  args, nelems);
     } else {
-      perf_run<MemorySpace, SolverStateDyn>(pool, ode, solver, nelems);
+      perf_run<MemorySpace, SolverStateDyn, ODEType, TableType>(pool, ode, args,
+                                                                nelems);
     }
   }
-  RkDynamicAllocation<MemorySpace> pool;
-  SolverType solver;
-  ODEType ode;
 };
 
 template <typename MemorySpace, typename TableType, typename ODEType>
 struct RKScratchPerfTest {
-  using SolverType = SerialRKSolve<TableType>;
-  RKScratchPerfTest(const int nelems, const ODEArgs &args, const ODEType &ode_)
-      : solver(args) {
-    scratch_perf_run<MemorySpace>(ode_, solver, nelems);
+  RKScratchPerfTest(const int nelems, const ODEArgs &args,
+                    const ODEType &ode_) {
+    scratch_perf_run<MemorySpace, ODEType, TableType>(ode_, args, nelems);
   }
-  SolverType solver;
 };
 
 template <typename MemorySpace, typename TableType>

@@ -12,9 +12,9 @@ namespace Experimental {
 namespace ODE {
 
 template <typename SolverState, typename MemorySpace, typename ODEType,
-          typename SolverType>
-void kernel(int nelems, const ODEType &ode, const SolverType &solver,
-            double tstart, double tend, const int ndofs,
+          typename TableType>
+void kernel(int nelems, const ODEType &ode, ODEArgs &args, double tstart,
+            double tend, const int ndofs,
             const RkDynamicAllocation<MemorySpace> &pool) {
   int glob_status = 0;
 
@@ -30,9 +30,9 @@ void kernel(int nelems, const ODEType &ode, const SolverType &solver,
           s.y[dof] = ode.expected_val(ode.tstart(), dof);
         }
 
-        auto thread_status = static_cast<int>(
-            solver.invoke(ode, s.y, s.y0, s.dydt, s.ytemp, s.k, tstart, tend));
-        status = thread_status > status ? thread_status : status;
+        auto thread_status = static_cast<int>(SerialRKSolve<TableType>::invoke(
+            ode, args, s.y, s.y0, s.dydt, s.ytemp, s.k, tstart, tend));
+        status             = thread_status > status ? thread_status : status;
 
         for (int dof = 0; dof < ndofs; ++dof) {
           pool.y(elem, dof) = s.y[dof];
@@ -44,13 +44,13 @@ void kernel(int nelems, const ODEType &ode, const SolverType &solver,
 }
 
 template <typename SolverState, typename MemorySpace, typename ODEType,
-          typename SolverType>
+          typename TableType>
 void compute_errors(const RkDynamicAllocation<MemorySpace> &pool,
                     Kokkos::View<double ***, Kokkos::HostSpace> errs,
-                    const ODEType &ode, const SolverType &solver,
-                    const int nelems, const int ndofs, const int level) {
-  kernel<SolverState>(nelems, ode, solver, ode.tstart(), ode.tend(), ndofs,
-                      pool);
+                    const ODEType &ode, ODEArgs &args, const int nelems,
+                    const int ndofs, const int level) {
+  kernel<SolverState, MemorySpace, ODEType, TableType>(
+      nelems, ode, args, ode.tstart(), ode.tend(), ndofs, pool);
 
   auto y_host =
       Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), pool.y);
@@ -83,8 +83,7 @@ void error_check(const int dof, const double err, const ODEType &ode,
 
 template <typename MemorySpace, typename TableType, typename ODEType, int ndofs>
 struct RKTest {
-  using SolverType       = SerialRKSolve<TableType>;
-  using SolverStateStack = RkSolverState<RkStack<ndofs, SolverType::nstages>>;
+  using SolverStateStack = RkSolverState<RkStack<ndofs, TableType::nstages>>;
   using SolverStateDyn   = RkSolverState<RkDynamicAllocation<MemorySpace>>;
 
   RKTest(const bool use_stack_, const int nelems_, ODEArgs args_, ODEType ode_,
@@ -94,7 +93,7 @@ struct RKTest {
         nelems(nelems_),
         args(args_),
         ode(ode_),
-        pool(nelems, ndofs, TableType::n),
+        pool(nelems, ndofs, TableType::nstages),
         errs(Kokkos::ViewAllocateWithoutInitializing("errs"), nelems, ndofs,
              nlevels),
         check(std::move(check_)),
@@ -105,7 +104,7 @@ struct RKTest {
 
   const bool use_stack;
   const int nelems;
-  const ODEArgs args;
+  ODEArgs args;
   const ODEType ode;
 
   RkDynamicAllocation<MemorySpace> pool;
@@ -125,14 +124,13 @@ struct RKTest {
     for (int m = 0; m < nlevels; ++m) {
       const int reduction     = 1 << m;
       args_local.num_substeps = num_substeps * reduction;
-      SolverType solver(args_local);
 
       if (use_stack) {
-        compute_errors<SolverStateStack>(pool, errs, ode, solver, nelems, ndofs,
-                                         m);
+        compute_errors<SolverStateStack, MemorySpace, ODEType, TableType>(
+            pool, errs, ode, args_local, nelems, ndofs, m);
       } else {
-        compute_errors<SolverStateDyn>(pool, errs, ode, solver, nelems, ndofs,
-                                       m);
+        compute_errors<SolverStateDyn, MemorySpace, ODEType, TableType>(
+            pool, errs, ode, args_local, nelems, ndofs, m);
       }
 
       for (int e = 0; e < nelems; ++e) {
@@ -155,13 +153,12 @@ struct RKTest {
   }
 
   void test_tolerance() {
-    SolverType solver(args);
-
     if (use_stack) {
-      compute_errors<SolverStateStack>(pool, errs, ode, solver, nelems, ndofs,
-                                       0);
+      compute_errors<SolverStateStack, MemorySpace, ODEType, TableType>(
+          pool, errs, ode, args, nelems, ndofs, 0);
     } else {
-      compute_errors<SolverStateDyn>(pool, errs, ode, solver, nelems, ndofs, 0);
+      compute_errors<SolverStateDyn, MemorySpace, ODEType, TableType>(
+          pool, errs, ode, args, nelems, ndofs, 0);
     }
 
     for (int e = 0; e < nelems; ++e) {
@@ -173,8 +170,8 @@ struct RKTest {
 };
 
 template <typename MemorySpace, typename ODEType, int NDOFS>
-void run_all_rks_verify(const bool use_stack, const int nelems,
-                        const ODEArgs &args, const ODEType &ode,
+void run_all_rks_verify(const bool use_stack, const int nelems, ODEArgs &args,
+                        const ODEType &ode,
                         const std::vector<char> &do_conv = {true, true, true,
                                                             true, true, true},
                         ErrorCheck<ODEType> check = error_check<ODEType>) {
@@ -236,9 +233,9 @@ void run_rk_verification_tests(const bool use_stack, const int nelems) {
 }
 
 template <typename MemorySpace, typename ODEType, int NDOFS>
-void run_all_rks_adapt(const bool use_stack, const int nelems,
-                       const ODEArgs &args, const ODEType &ode,
-                       const double rel_tol = 0.0, const double abs_tol = 0.0,
+void run_all_rks_adapt(const bool use_stack, const int nelems, ODEArgs &args,
+                       const ODEType &ode, const double rel_tol = 0.0,
+                       const double abs_tol      = 0.0,
                        ErrorCheck<ODEType> check = empty_check<ODEType>) {
   RKTest<MemorySpace, RKEH, ODEType, NDOFS> t1(use_stack, nelems, args, ode,
                                                check, false, rel_tol, abs_tol);
@@ -325,8 +322,8 @@ TEST_F(TestCategory, ODE_RKAdaptiveTests) {
 
 TEST_F(TestCategory, ODE_RKSolverStatus) {
   constexpr int ndofs = 1;
-  using Solver        = SerialRKSolve<RKEH>;
-  using Stack         = RkStack<ndofs, Solver::nstages>;
+  using TableType     = RKEH;
+  using Stack         = RkStack<ndofs, TableType::nstages>;
   Exponential ode(ndofs, -10);
   double tstart = 0.0;
   double tend   = 1.0;
@@ -337,11 +334,11 @@ TEST_F(TestCategory, ODE_RKSolverStatus) {
 
   {
     ODEArgs args;
-    Solver s(args);
     state.y[0] = std::numeric_limits<double>::quiet_NaN();
 
-    auto status = s.invoke(ode, state.y, state.y0, state.dydt, state.ytemp,
-                           state.k, tstart, tend);
+    auto status = SerialRKSolve<TableType>::invoke(ode, args, state.y, state.y0,
+                                                   state.dydt, state.ytemp,
+                                                   state.k, tstart, tend);
     EXPECT_TRUE(status == ODESolverStatus::NONFINITE_STATE);
   }
 
@@ -350,18 +347,18 @@ TEST_F(TestCategory, ODE_RKSolverStatus) {
   {
     ODEArgs args;
     args.maxSubSteps = 3;
-    Solver s(args);
-    auto status = s.invoke(ode, state.y, state.y0, state.dydt, state.ytemp,
-                           state.k, tstart, tend);
+    auto status = SerialRKSolve<TableType>::invoke(ode, args, state.y, state.y0,
+                                                   state.dydt, state.ytemp,
+                                                   state.k, tstart, tend);
     EXPECT_TRUE(status == ODESolverStatus::FAILED_TO_CONVERGE);
   }
 
   {
     ODEArgs args;
     args.minStepSize = 1.0;
-    Solver s(args);
-    auto status = s.invoke(ode, state.y, state.y0, state.dydt, state.ytemp,
-                           state.k, tstart, tend);
+    auto status = SerialRKSolve<TableType>::invoke(ode, args, state.y, state.y0,
+                                                   state.dydt, state.ytemp,
+                                                   state.k, tstart, tend);
     EXPECT_TRUE(status == ODESolverStatus::MINIMUM_TIMESTEP_REACHED);
   }
 }
@@ -374,7 +371,7 @@ void check_single_step(const double dt, const TableType &table,
   const double tol = 1e-15;
   for (unsigned dof = 0; dof < s.y.extent(0); ++dof) {
     double b_dot_k = 0.0;
-    for (int j = 0; j < table.n; ++j) {
+    for (int j = 0; j < table.nstages; ++j) {
       const double err = fabs(ke[j][dof] - s.k(j, dof));
       EXPECT_TRUE(err <= fabs(tol * ke[j][dof]));
       b_dot_k += table.b[j] * ke[j][dof];
@@ -391,10 +388,10 @@ void check_single_step(const double dt, const TableType &table,
 TEST_F(TestCategory, ODE_RKSingleStep) {
   constexpr int ndofs = 2;
   using Arr           = Kokkos::Array<double, ndofs>;
-  using Stack         = RkStack<ndofs, RKF45::n>;
+  using Stack         = RkStack<ndofs, RKF45::nstages>;
   SpringMassDamper ode(ndofs, 1001, 1000.);
-  SerialRKSolve<RKF45> solver{ODEArgs()};
-  SolverControls controls{ODEArgs()};
+  ODEArgs args = ODEArgs();
+  RKF45 table;
 
   const double t0 = 0.1;
   const double dt = 1e-3;
@@ -407,10 +404,10 @@ TEST_F(TestCategory, ODE_RKSingleStep) {
   auto y0 = state.y0;
   y0(0)   = ode.expected_val(t0, 0);
   y0(1)   = ode.expected_val(t0, 1);
-  SerialRKSolveInternal::step(ode, solver.table, t0, dt, state.y, state.y0,
-                              state.ytemp, state.k, controls, est_err);
+  SerialRKSolveInternal::step(ode, table, t0, dt, state.y, state.y0,
+                              state.ytemp, state.k, args, est_err);
 
-  Kokkos::Array<Arr, RKF45::n> ke{};
+  Kokkos::Array<Arr, RKF45::nstages> ke{};
 
   Arr tmp;
   ode.derivatives(t0, y0, ke[0]);
@@ -438,7 +435,7 @@ TEST_F(TestCategory, ODE_RKSingleStep) {
 
   ode.derivatives(t0 + 0.5 * dt, tmp, ke[5]);
 
-  check_single_step(dt, solver.table, state, ke);
+  check_single_step(dt, table, state, ke);
 }
 
 }  // namespace ODE

@@ -51,12 +51,15 @@ namespace KokkosBatched {
 namespace Experimental {
 namespace ODE {
 
-struct ODEArgs {
-  double absTol    = 1e-12;
-  double relTol    = 1e-6;
-  int maxSubSteps  = 100000;
-  int num_substeps = 10;
+enum class ODESolverType { RKEH, RK12, RKBS, RKF45, CashKarp, DOPRI5 };
 
+struct ODEArgs {
+  double absTol    = 1e-12;   // Absolute tolerance
+  double relTol    = 1e-6;    // Relative tolerance
+  int maxSubSteps  = 100000;  // Max number of time steps.
+  int num_substeps = 10;      // Starting (=Minimum) number of time steps.
+
+  // Minimum time step length:
   // Initially set to an unrealistic number.
   // Will be set to std::numeric_limits<double>::epsilon() if not set by user
   double minStepSize = std::numeric_limits<double>::lowest();
@@ -68,10 +71,11 @@ struct ODEArgs {
   // int matrix_solver = 0;  // CVODE and LSODE
   // int band          = 0;  // CVODE and LSODE
 
+  // Use adaptive time stepping?
   bool is_adaptive = true;
 };
 
-struct SolverControls {
+/*struct SolverControls {
   SolverControls(const ODEArgs& args)
       : absTol(args.absTol > std::numeric_limits<double>::epsilon()
                    ? args.absTol
@@ -90,7 +94,7 @@ struct SolverControls {
   const int maxSubSteps;
   const int num_substeps;
   const bool is_adaptive;
-};
+};*/
 }  // namespace ODE
 }  // namespace Experimental
 }  // namespace KokkosBatched

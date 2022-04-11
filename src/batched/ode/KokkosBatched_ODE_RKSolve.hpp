@@ -64,23 +64,14 @@ struct SerialRKSolve {
   // Type of Runge-Kutta table.
   // Current methods supported are:
   // RKEH, RK12, BS, RKF45, CashKarp, DormandPrince
-  const TableType table;
-  static constexpr int nstages = TableType::n;
-
-  // Internal solver options. Initialized via ODEArgs passed to
-  // the RungeKuttaSolver constructor.
-  const SolverControls controls;
-
-  // Initializes RK Solver with paremeters.
-  // Passing the ODEArgs to Solver Controls verifies that all
-  // settings are withing acceptable tolerances.
-  SerialRKSolve(const ODEArgs &args) : controls(args) {}
+  static const TableType table;
+  static constexpr int nstages = TableType::nstages;
 
   template <typename ODEType, typename ViewTypeA, typename ViewTypeB>
-  KOKKOS_FUNCTION ODESolverStatus invoke(const ODEType &ode, ViewTypeA &y,
-                                         ViewTypeA &y0, ViewTypeA &dydt,
-                                         ViewTypeA &ytemp, ViewTypeB &kstack,
-                                         double tstart, double tend) const;
+  KOKKOS_FUNCTION static ODESolverStatus invoke(
+      const ODEType &ode, const ODEArgs &args, ViewTypeA &y, ViewTypeA &y0,
+      ViewTypeA &dydt, ViewTypeA &ytemp, ViewTypeB &kstack, double tstart,
+      double tend);
 };
 }  // namespace ODE
 }  // namespace Experimental
