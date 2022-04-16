@@ -1,7 +1,3 @@
-#ifdef KOKKOSKERNELS_INST_DOUBLE
-
-#include <gtest/gtest.h>
-
 #include <KokkosBatched_ODE_RKSolve.hpp>
 #include <KokkosBatched_ODE_TestProblems.h>
 #include <KokkosBatched_ODE_Args.h>
@@ -152,7 +148,17 @@ void run_all_tables(const bool use_stack, const int nelems) {
   run_enright<MemorySpace, DormandPrince>(use_stack, nelems);
 }
 
-TEST_F(TestCategory, ODE_RKPerformance) {
+}  // namespace ODE
+}  // namespace Experimental
+}  // namespace KokkosBatched
+
+int main(int argc, char *argv[]) {
+  Kokkos::initialize(argc, argv);
+
+#if !defined(__CUDA_ARCH__) && !defined(__HIP_DEVICE_COMPILE__)
+  using KokkosBatched::Experimental::ODE::run_all_tables;
+  using KokkosBatched::Experimental::ODE::run_all_tables_scratch;
+
   const int nelems_host   = 64;
   const int nelems_device = nelems_host * 512;
 
@@ -187,63 +193,12 @@ TEST_F(TestCategory, ODE_RKPerformance) {
     std::cout << "RK Performance - Host (Stack) time = " << dt_host_stack
               << "\n";
   }
-  if (1  // TODO: Check what needs to be enabled here.
-         // These tests were stalling out on certain backends.
-#ifdef KOKKOS_ENABLE_OPENMP
-      && !std::is_same<TestExecSpace, Kokkos::OpenMP>::value
-#endif
-#ifdef KOKKOS_ENABLE_SERIAL
-      && !std::is_same<TestExecSpace, Kokkos::Serial>::value
-#endif
-#ifdef KOKKOS_ENABLE_THREADS
-      && !std::is_same<TestExecSpace, Kokkos::Threads>::value
-#endif
-      )
-  // See if this is a better way to fix it??
-  // https://github.com/google/googletest/blob/main/docs/advanced.md#skipping-test-execution
-  // See word doc with notes on this.
-  // But the original test with Kokkos::Host was giving valid info.... Hmm. What
-  // was Host at the time?
-  {
-    {
-      Kokkos::Timer timer;
-      run_all_tables_scratch<TestExecSpace>(nelems_device);
-      dt_device_scratch = timer.seconds();
-      std::cout << "RK Performance - Device (Scratch) time = "
-                << dt_device_scratch << "\n";
-    }
-
-    {
-      Kokkos::Timer timer;
-      run_all_tables<TestExecSpace>(false, nelems_device);
-      dt_device_dynamic = timer.seconds();
-      std::cout << "RK Performance - Device (Dynamic) time = "
-                << dt_device_dynamic << "\n";
-    }
-    {
-      Kokkos::Timer timer;
-      run_all_tables<TestExecSpace>(true, nelems_device);
-      dt_device_stack = timer.seconds();
-      std::cout << "RK Performance - Device (Stack) time = " << dt_device_stack
-                << "\n";
-    }
-
-    std::cout << "RK Performance - Device (Dynamic / Stack) time = "
-              << dt_device_dynamic / dt_device_stack << "\n";
-    std::cout << "RK Performance - Device (Shared / Stack) time = "
-              << dt_device_scratch / dt_device_stack << "\n";
-    std::cout << "RK Performance - Host / Device (Stack) time = "
-              << dt_host_stack / dt_device_stack << "\n";
-  }
-
   std::cout << "RK Performance - Host (Dynamic / Stack) time = "
             << dt_host_dynamic / dt_host_stack << "\n";
   std::cout << "RK Performance - Host (Scratch / Stack) time = "
             << dt_host_scratch / dt_host_stack << "\n";
-}
-
-}  // namespace ODE
-}  // namespace Experimental
-}  // namespace KokkosBatched
-
 #endif
+  Kokkos::finalize();
+
+  return 0;
+}
