@@ -61,18 +61,13 @@ namespace ODE {
 
 template <typename TableType>
 struct SerialRKSolve {
-  // Type of Runge-Kutta table.
-  // Current methods supported are:
-  // RKEH, RK12, BS, RKF45, CashKarp, DormandPrince
-  static const TableType table;
-  static constexpr int nstages = TableType::nstages;
-
   template <typename ODEType, typename ViewTypeA, typename ViewTypeB>
   KOKKOS_FUNCTION static ODESolverStatus invoke(
       const ODEType &ode, const ODEArgs &args, ViewTypeA &y, ViewTypeA &y0,
       ViewTypeA &dydt, ViewTypeA &ytemp, ViewTypeB &kstack, double tstart,
       double tend);
 };
+
 }  // namespace ODE
 }  // namespace Experimental
 }  // namespace KokkosBatched
