@@ -159,16 +159,11 @@ int main(int argc, char *argv[]) {
   using KokkosBatched::Experimental::ODE::run_all_tables;
   using KokkosBatched::Experimental::ODE::run_all_tables_scratch;
 
-  const int nelems_host   = 64;
-  const int nelems_device = nelems_host * 512;
+  const int nelems_host = 64;
 
   double dt_host_scratch = 0.0;
   double dt_host_dynamic = 0.0;
   double dt_host_stack   = 0.0;
-
-  double dt_device_scratch = 0.0;
-  double dt_device_dynamic = 0.0;
-  double dt_device_stack   = 0.0;
 
   {
     Kokkos::Timer timer;

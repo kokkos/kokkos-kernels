@@ -237,7 +237,7 @@ int main(int argc, char *argv[]) {
 }
 #else
 
-int main(int argc, char *argv[]) {
+int main() {
   std::cout << "Kokkos::Cuda is not enabled\n";
   return 0;
 }

@@ -143,8 +143,6 @@ KOKKOS_FUNCTION ODESolverStatus SerialRKSolve<TableType>::invoke(
   using Kokkos::fmin;
   using Kokkos::pow;
 
-  TableType table;
-
   double epsilon = Kokkos::Experimental::epsilon<double>::value;
   // args checks for valid arguments.
   ODEArgs args(args_);
