@@ -61,8 +61,8 @@ int main(int argc, char* argv[]) {
   int m          = 50;        // Max subspace size before restarting.
   double convTol = 1e-10;     // Relative residual convergence tolerance.
   int cycLim     = 50;        // Maximum number of times to restart the solver.
-  bool rand_rhs = false;      // Generate random right-hand side.
-  bool pass = false;
+  bool rand_rhs  = false;     // Generate random right-hand side.
+  bool pass      = false;
 
   for (int i = 1; i < argc; ++i) {
     const std::string& token = argv[i];
