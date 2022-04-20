@@ -72,6 +72,7 @@ int main(int /*argc*/, char** /*argv[]*/) {
   solverOpts.m          = 15;      // Max subspace size before restarting.
   solverOpts.tol        = 1e-10;   // Relative residual convergence tolerance.
   solverOpts.maxRestart = 50;
+  solverOpts.verbose    = false;  // No verbosity needed for most testing
   bool pass1            = false;
   bool pass2            = false;
 
