@@ -18,5 +18,7 @@ class cuda : public ::testing::Test {
 
 #define TestCategory cuda
 #define TestExecSpace Kokkos::Cuda
+#define TEST_BACKEND_IS_CUDA  // tests can check this to disable themselves if
+                              // desired
 
 #endif  // TEST_CUDA_HPP

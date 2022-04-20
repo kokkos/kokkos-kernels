@@ -5,19 +5,8 @@
 //       backends so the whole file is guarded
 //       to ensure it is not included in these
 //       backends unit-test
-
-#if !defined(TEST_CUDA_BATCHED_DENSE_SERIAL_OTHER_CPP) &&                   \
-    !defined(TEST_CUDA_BATCHED_DENSE_TEAM_TEAMVECTOR_VECTOR_CPP) &&         \
-    !defined(TEST_CUDA_BATCHED_DENSE_SERIAL_BATCHEDGEMM_CPP) &&             \
-    !defined(TEST_HIP_BATCHED_DENSE_SERIAL_OTHER_CPP) &&                    \
-    !defined(TEST_HIP_BATCHED_DENSE_TEAM_TEAMVECTOR_VECTOR_CPP) &&          \
-    !defined(TEST_HIP_BATCHED_DENSE_SERIAL_BATCHEDGEMM_CPP) &&              \
-    !defined(TEST_SYCL_BATCHED_DENSE_SERIAL_OTHER_CPP) &&                   \
-    !defined(TEST_SYCL_BATCHED_DENSE_TEAM_TEAMVECTOR_VECTOR_CPP) &&         \
-    !defined(TEST_SYCL_BATCHED_DENSE_SERIAL_BATCHEDGEMM_CPP) &&             \
-    !defined(TEST_OPENMPTARGET_BATCHED_DENSE_SERIAL_OTHER_CPP) &&           \
-    !defined(TEST_OPENMPTARGET_BATCHED_DENSE_TEAM_TEAMVECTOR_VECTOR_CPP) && \
-    !defined(TEST_OPENMPTARGET_BATCHED_DENSE_SERIAL_BATCHEDGEMM_CPP)
+#if !defined(TEST_BACKEND_IS_CUDA) && !defined(TEST_BACKEND_IS_HIP) && \
+    !defined(TEST_BACKEND_IS_SYCL) && !defined(TEST_BACKEND_IS_OPENMPTARGET)
 
 #include "gtest/gtest.h"
 #include "Kokkos_Core.hpp"

@@ -18,5 +18,7 @@ class openmptarget : public ::testing::Test {
 
 #define TestCategory openmptarget
 #define TestExecSpace Kokkos::Experimental::OpenMPTarget
+#define TEST_BACKEND_IS_OPENMPTARGET  // tests can check this to disable
+                                      // themselves if desired
 
 #endif  // TEST_OPENMPTARGET_HPP

@@ -18,5 +18,7 @@ class hip : public ::testing::Test {
 
 #define TestCategory hip
 #define TestExecSpace Kokkos::Experimental::HIP
+#define TEST_BACKEND_IS_HIP  // tests can check this to disable themselves if
+                             // desired
 
 #endif  // TEST_HIP_HPP

@@ -15,3 +15,5 @@ class sycl_test : public ::testing::Test {
 
 #define TestCategory sycl_test
 #define TestExecSpace Kokkos::Experimental::SYCL
+#define TEST_BACKEND_IS_SYCL  // tests can check this to disable themselves if
+                              // desired
