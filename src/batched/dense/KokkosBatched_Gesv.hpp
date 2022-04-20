@@ -49,6 +49,13 @@
 
 namespace KokkosBatched {
 
+struct Gesv {
+  struct StaticPivoting {};
+  struct NoPivoting {};
+
+  using Default = StaticPivoting;
+};
+
 /// \brief Serial Batched GESV:
 ///
 /// Solve A_l x_l = b_l for all l = 0, ..., N
@@ -66,9 +73,22 @@ namespace KokkosBatched {
 /// must be N x n x (n+4) where N is the batched size and n is the number of
 /// rows.
 ///
+///
+/// Two versions are available (those are chosen based on ArgAlgo):
+///
+///   1. NoPivoting: the solver does not use a pivoting strategy,
+///   2. StaticPivoting: the solver uses a static pivoting strategy that relies
+///   on using
+///      maximal absolute value of row and column to choose pivots and apply
+///      them before calling the LU decomposition. Known limitation: the
+///      currently implemented strategy would not work with some matrices such
+///      as [[2, 1], [1, 0]], when this is the case, the Gesv (if used with
+///      pivoting), will return 1 and print an error message.
+///
 /// No nested parallel_for is used inside of the function.
 ///
 
+template <typename ArgAlgo>
 struct SerialGesv {
   template <typename MatrixType, typename VectorType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MatrixType A,
@@ -92,10 +112,21 @@ struct SerialGesv {
 /// \param X [out]: solution, a rank 2 view
 /// \param B [in]: right-hand side, a rank 2 view
 ///
+/// Two versions are available (those are chosen based on ArgAlgo):
+///
+///   1. NoPivoting: the solver does not use a pivoting strategy,
+///   2. StaticPivoting: the solver uses a static pivoting strategy that relies
+///   on using
+///      maximal absolute value of row and column to choose pivots and apply
+///      them before calling the LU decomposition. Known limitation: the
+///      currently implemented strategy would not work with some matrices such
+///      as [[2, 1], [1, 0]], when this is the case, the Gesv (if used with
+///      pivoting), will return 1 and print an error message.
+///
 /// A nested parallel_for with TeamThreadRange is used.
 ///
 
-template <typename MemberType>
+template <typename MemberType, typename ArgAlgo>
 struct TeamGesv {
   template <typename MatrixType, typename VectorType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
@@ -119,11 +150,22 @@ struct TeamGesv {
 /// \param X [out]: solution, a rank 2 view
 /// \param B [in]: right-hand side, a rank 2 view
 ///
+/// Two versions are available (those are chosen based on ArgAlgo):
+///
+///   1. NoPivoting: the solver does not use a pivoting strategy,
+///   2. StaticPivoting: the solver uses a static pivoting strategy that relies
+///   on using
+///      maximal absolute value of row and column to choose pivots and apply
+///      them before calling the LU decomposition. Known limitation: the
+///      currently implemented strategy would not work with some matrices such
+///      as [[2, 1], [1, 0]], when this is the case, the Gesv (if used with
+///      pivoting), will return 1 and print an error message.
+///
 ///   Two nested parallel_for with both TeamVectorRange and ThreadVectorRange
 ///   (or one with TeamVectorRange) are used inside.
 ///
 
-template <typename MemberType>
+template <typename MemberType, typename ArgAlgo>
 struct TeamVectorGesv {
   template <typename MatrixType, typename VectorType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,

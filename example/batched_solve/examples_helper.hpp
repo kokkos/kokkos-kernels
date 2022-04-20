@@ -40,69 +40,65 @@
 // ************************************************************************
 //@HEADER
 
-template <class XType>
-void write2DArrayToMM(std::string name, const XType x) {
-  std::ofstream myfile;
-  myfile.open(name);
-
-  auto x_h = Kokkos::create_mirror_view(x);
-
-  Kokkos::deep_copy(x_h, x);
-
-  if (XType::Rank == 2) {
-    myfile << "%% MatrixMarket 2D Array\n%" << std::endl;
-    myfile << x_h.extent(0) << " " << x_h.extent(1) << std::endl;
-
-    for (size_t i = 0; i < x_h.extent(0); ++i) {
-      for (size_t j = 0; j < x_h.extent(1); ++j) {
-        myfile << std::setprecision(15) << x_h(i, j) << " ";
-      }
-      myfile << std::endl;
-    }
-
-    myfile.close();
-  }
-}
-
-template <class XType>
-void write3DArrayToMM(std::string name, const XType x) {
-  std::ofstream myfile;
-  myfile.open(name);
-
-  auto x_h = Kokkos::create_mirror_view(x);
-
-  Kokkos::deep_copy(x_h, x);
-
-  if (XType::Rank == 3) {
-    myfile << "%% MatrixMarket 3D Array\n%" << std::endl;
-    myfile << x_h.extent(0) << " " << x_h.extent(1) << " " << x_h.extent(2)
-           << std::endl;
-
-    for (size_t i = 0; i < x_h.extent(0); ++i) {
-      myfile << "Slice " << i << std::endl;
-      for (size_t j = 0; j < x_h.extent(1); ++j) {
-        for (size_t k = 0; k < x_h.extent(2); ++k) {
-          myfile << std::setprecision(15) << x_h(i, j, k) << " ";
-        }
-        myfile << std::endl;
-      }
-    }
-
-    myfile.close();
-  }
-}
+/// \brief create_saddle_point_matrices:
+///
+///  This function creates the matrices and the rhs of a batched saddle point
+///  systems where A and Y (the right hand side) are as follows:
+///
+///        ___________
+///       |     |   T |
+///       |  B  |  C  |
+///  A =  |-----+-----|
+///       |  C  |  0  |
+///       |_____|_____|
+///
+///        _____
+///       |     |
+///       |  D  |
+///  Y =  |-----|
+///       |  0  |
+///       |_____|
+///
+///  with A in R^{n \times n}, B in R^{(n-n_2) \times (n-n_2)} and
+///  where B and C are computed as follows:
+///
+///  1. A sequence of n-n_2 points of R^{n_dim} is generated randomly:
+///     x^(0), ..., x^(n-n_2-1)
+///  2. Given this sequence, the entries are computed as follows:
+///     B_{(i,j)} = \| x^(i) - x^(j)\|
+///     C_{(0,j)} = 1
+///     C_{(i,j)} = (x^(j))_{(i-1)} for i != 0
+///
+///  3. D is generated randomly.
+///
+/// This function uses a different sequence of x and a different D for every
+/// systems within the batched system.
+///
+/// As a consequence of its definitation, the diagonal of A is 0 for every
+/// entries.
+///
+/// \tparam MatrixViewType: type of the batched matrices
+/// \tparam VectorViewType: type of the batched vectors
+///
+/// \param A [in/out]: a rank 3 view that has to be prealocated that will store
+/// the entries of the batched matrix. \param Y [in/out]: a rank 2 view that has
+/// to be prealocated that will store the entries of the right hand side. \param
+/// n_dim [in]: the dimension of the physical space where the points are
+/// randomly generated (default = 3).
+///
 
 template <typename MatrixViewType, typename VectorViewType>
 void create_saddle_point_matrices(const MatrixViewType &A,
-                                  const VectorViewType &Y, const int n_2 = 4) {
+                                  const VectorViewType &Y,
+                                  const int n_dim = 3) {
   Kokkos::Random_XorShift64_Pool<
       typename MatrixViewType::device_type::execution_space>
       random(13718);
   const int N   = A.extent(0);
   const int n   = A.extent(1);
+  const int n_2 = n_dim + 1;
   const int n_1 = n - n_2;
 
-  const int n_dim = n_2 - 1;
   MatrixViewType xs("xs", N, n_1, n_dim);
   VectorViewType ys("ys", N, n_1);
 

@@ -53,6 +53,7 @@
 /// KokkosKernels headers
 #include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Vector.hpp"
+#include "KokkosKernels_IOUtils.hpp"
 
 #include <Kokkos_ArithTraits.hpp>
 #include <KokkosBatched_Util.hpp>
@@ -86,7 +87,10 @@ struct Functor_TeamTestStaticPivoting {
     auto X = Kokkos::subview(_X, matrix_id, Kokkos::ALL);
     auto Y = Kokkos::subview(_Y, matrix_id, Kokkos::ALL);
     member.team_barrier();
-    KokkosBatched::TeamGesv<MemberType>::invoke(member, A, X, Y);
+    KokkosBatched::TeamGesv<MemberType,
+                            KokkosBatched::Gesv::StaticPivoting>::invoke(member,
+                                                                         A, X,
+                                                                         Y);
     member.team_barrier();
   }
 
@@ -126,7 +130,8 @@ struct Functor_SerialTestStaticPivoting {
     auto tmp = Kokkos::subview(_tmp, matrix_id, Kokkos::ALL, Kokkos::ALL);
     auto X   = Kokkos::subview(_X, matrix_id, Kokkos::ALL);
     auto Y   = Kokkos::subview(_Y, matrix_id, Kokkos::ALL);
-    KokkosBatched::SerialGesv::invoke(A, X, Y, tmp);
+    KokkosBatched::SerialGesv<KokkosBatched::Gesv::StaticPivoting>::invoke(
+        A, X, Y, tmp);
   }
 
   inline void run() {
@@ -162,16 +167,16 @@ int main(int /*argc*/, char ** /*argv[]*/) {
     Kokkos::deep_copy(A2, A);
     Kokkos::deep_copy(Y2, Y);
 
-    write3DArrayToMM("A.mm", A);
-    write2DArrayToMM("Y.mm", Y);
+    KokkosKernels::Impl::kk_write_3Dview_to_file(A, "A.txt");
+    KokkosKernels::Impl::kk_write_2Dview_to_file(Y, "Y.txt");
 
     Functor_SerialTestStaticPivoting<exec_space, AViewType, XYViewType>(A, tmp,
                                                                         X, Y)
         .run();
-    write2DArrayToMM("X_serial.mm", X);
+    KokkosKernels::Impl::kk_write_2Dview_to_file(X, "X_serial.txt");
     Functor_TeamTestStaticPivoting<exec_space, AViewType, XYViewType>(A2, X, Y2)
         .run();
-    write2DArrayToMM("X_team.mm", X);
+    KokkosKernels::Impl::kk_write_2Dview_to_file(X, "X_team.txt");
   }
   Kokkos::finalize();
 }

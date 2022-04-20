@@ -17,7 +17,8 @@ using namespace KokkosBatched;
 namespace Test {
 namespace Gesv {
 
-template <typename DeviceType, typename MatrixType, typename VectorType>
+template <typename DeviceType, typename MatrixType, typename VectorType,
+          typename AlgoTagType>
 struct Functor_TestBatchedSerialGesv {
   const MatrixType _A;
   const MatrixType _tmp;
@@ -36,7 +37,7 @@ struct Functor_TestBatchedSerialGesv {
     auto b   = Kokkos::subview(_B, k, Kokkos::ALL);
     auto tmp = Kokkos::subview(_tmp, k, Kokkos::ALL, Kokkos::ALL);
 
-    KokkosBatched::SerialGesv::invoke(A, x, b, tmp);
+    KokkosBatched::SerialGesv<AlgoTagType>::invoke(A, x, b, tmp);
   }
 
   inline void run() {
@@ -51,7 +52,8 @@ struct Functor_TestBatchedSerialGesv {
   }
 };
 
-template <typename DeviceType, typename MatrixType, typename VectorType>
+template <typename DeviceType, typename MatrixType, typename VectorType,
+          typename AlgoTagType>
 void impl_test_batched_gesv(const int N, const int BlkSize) {
   typedef typename MatrixType::value_type value_type;
   typedef Kokkos::Details::ArithTraits<value_type> ats;
@@ -81,8 +83,8 @@ void impl_test_batched_gesv(const int N, const int BlkSize) {
 
   Kokkos::fence();
 
-  Functor_TestBatchedSerialGesv<DeviceType, MatrixType, VectorType>(A, tmp, X,
-                                                                    B)
+  Functor_TestBatchedSerialGesv<DeviceType, MatrixType, VectorType,
+                                AlgoTagType>(A, tmp, X, B)
       .run();
 
   Kokkos::fence();
@@ -106,7 +108,7 @@ void impl_test_batched_gesv(const int N, const int BlkSize) {
 }  // namespace Gesv
 }  // namespace Test
 
-template <typename DeviceType, typename ValueType>
+template <typename DeviceType, typename ValueType, typename AlgoTagType>
 int test_batched_gesv() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
   {
@@ -116,8 +118,8 @@ int test_batched_gesv() {
         VectorType;
 
     for (int i = 3; i < 10; ++i) {
-      Test::Gesv::impl_test_batched_gesv<DeviceType, MatrixType, VectorType>(
-          1024, i);
+      Test::Gesv::impl_test_batched_gesv<DeviceType, MatrixType, VectorType,
+                                         AlgoTagType>(1024, i);
     }
   }
 #endif
@@ -129,8 +131,8 @@ int test_batched_gesv() {
         VectorType;
 
     for (int i = 3; i < 10; ++i) {
-      Test::Gesv::impl_test_batched_gesv<DeviceType, MatrixType, VectorType>(
-          1024, i);
+      Test::Gesv::impl_test_batched_gesv<DeviceType, MatrixType, VectorType,
+                                         AlgoTagType>(1024, i);
     }
   }
 #endif
