@@ -126,9 +126,9 @@ IF (KOKKOS_ENABLE_SYCL)
     batched_dla_sycl
     SOURCES
       Test_Main.cpp
-      syncl/Test_SYCL_Batched_Dense_Serial_Other.cpp
-      syncl/Test_SYCL_Batched_Dense_Serial_BatchedGemm.cpp
-      syncl/Test_SYCL_Batched_Dense_Team_TeamVector_Vector.cpp
+      sycl/Test_SYCL_Batched_Dense_Serial_Other.cpp
+      sycl/Test_SYCL_Batched_Dense_Serial_BatchedGemm.cpp
+      sycl/Test_SYCL_Batched_Dense_Team_TeamVector_Vector.cpp
     COMPONENTS batched
   )
 
