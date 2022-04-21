@@ -224,7 +224,7 @@ KOKKOS_INLINE_FUNCTION int TeamStaticPivoting<MemberType>::invoke(
         reducer_value);
     row_index = value.loc;
     value.loc = 0;
-    value.val = 0.;
+    value.val = Kokkos::ArithTraits<value_type>::zero();
     Kokkos::parallel_reduce(
         Kokkos::TeamThreadRange(member, n),
         [&](const int &j, reducer_value_type &update) {
@@ -329,7 +329,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorStaticPivoting<MemberType>::invoke(
         reducer_value);
     row_index = value.loc;
     value.loc = 0;
-    value.val = 0.;
+    value.val = Kokkos::ArithTraits<value_type>::zero();
     Kokkos::parallel_reduce(
         Kokkos::TeamVectorRange(member, n),
         [&](const int &j, reducer_value_type &update) {
