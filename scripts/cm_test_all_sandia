@@ -1456,13 +1456,18 @@ wait_summarize_and_exit() {
       if [ $TEST_SPACK = "False" ]; then
         echo "#######################################################"
         echo "  # Reproducer instructions:"
-        echo "   1. \\$(cat $faildir/reload_modules.sh)
-        echo “   2. Then run the following bash script:" 
+                  modulefile=$faildir/reload_modules.sh
+                  head -1 $modulefile | cut -c 2-
+        echo ""
+        echo “   Then run the following bash script:" 
+        echo ""
         echo \"$(cat $faildir/call_generate_makefile_genericpath.sh)\"
+        echo ""
         echo "   where KOKKOSKERNELS_PATH is the top-level KokkosKernels
         echo "   code directory. This will generate a makefile. 
         echo ""
-        echo "  #  If (and only if) you have webcars Jenkins job creation access:
+        echo "  #  If you have webcars Jenkins job creation access: "
+        echo ""
         echo "  ##  To reload modules, reconfigure, rebuild, and retest 
         echo "  ##  directly from this failing build, do the following:
         echo "      # Move to the build directory"
