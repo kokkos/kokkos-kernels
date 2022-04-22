@@ -550,6 +550,81 @@ inline void kk_read_1Dview_from_file(idx_array_type &view,
   Kokkos::fence();
 }
 
+template <typename idx_array_type>
+inline void kk_write_2Dview_to_file(idx_array_type view, const char *filename) {
+  typedef typename idx_array_type::HostMirror host_type;
+  // typedef typename idx_array_type::size_type idx;
+  host_type host_view = Kokkos::create_mirror_view(view);
+  Kokkos::deep_copy(host_view, view);
+  Kokkos::fence();
+  std::ofstream myFile(filename, std::ios::out);
+  for (size_t i = 0; i < view.extent(0); ++i) {
+    for (size_t j = 0; j < view.extent(1); ++j) {
+      myFile << host_view(i, j) << " ";
+    }
+    myFile << std::endl;
+  }
+  myFile.close();
+}
+
+template <typename idx_array_type>
+inline void kk_read_2Dview_from_file(idx_array_type &view,
+                                     const char *filename) {
+  typedef typename idx_array_type::HostMirror host_type;
+  // typedef typename idx_array_type::size_type idx;
+  host_type host_view = Kokkos::create_mirror_view(view);
+  std::ifstream myFile(filename, std::ios::in);
+
+  for (size_t i = 0; i < view.extent(0); ++i) {
+    for (size_t j = 0; j < view.extent(1); ++j) {
+      myFile >> host_view(i, j);
+    }
+  }
+  myFile.close();
+  Kokkos::deep_copy(view, host_view);
+  Kokkos::fence();
+}
+
+template <typename idx_array_type>
+inline void kk_write_3Dview_to_file(idx_array_type view, const char *filename) {
+  typedef typename idx_array_type::HostMirror host_type;
+  // typedef typename idx_array_type::size_type idx;
+  host_type host_view = Kokkos::create_mirror_view(view);
+  Kokkos::deep_copy(host_view, view);
+  Kokkos::fence();
+  std::ofstream myFile(filename, std::ios::out);
+  for (size_t i = 0; i < view.extent(0); ++i) {
+    for (size_t j = 0; j < view.extent(1); ++j) {
+      for (size_t k = 0; k < view.extent(2); ++k) {
+        myFile << host_view(i, j, k) << " ";
+      }
+      myFile << std::endl;
+    }
+    myFile << std::endl;
+  }
+  myFile.close();
+}
+
+template <typename idx_array_type>
+inline void kk_read_3Dview_from_file(idx_array_type &view,
+                                     const char *filename) {
+  typedef typename idx_array_type::HostMirror host_type;
+  // typedef typename idx_array_type::size_type idx;
+  host_type host_view = Kokkos::create_mirror_view(view);
+  std::ifstream myFile(filename, std::ios::in);
+
+  for (size_t i = 0; i < view.extent(0); ++i) {
+    for (size_t j = 0; j < view.extent(1); ++j) {
+      for (size_t k = 0; k < view.extent(2); ++k) {
+        myFile >> host_view(i, j, k);
+      }
+    }
+  }
+  myFile.close();
+  Kokkos::deep_copy(view, host_view);
+  Kokkos::fence();
+}
+
 template <typename idx>
 void convert_crs_to_lower_triangle_edge_list(idx nv, idx *xadj, idx *adj,
                                              idx *lower_triangle_srcs,
