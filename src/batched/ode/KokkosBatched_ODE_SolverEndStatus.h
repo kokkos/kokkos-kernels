@@ -56,7 +56,23 @@ enum class ODESolverStatus {
   NONFINITE_STATE
 };
 
-// std::ostream& operator<<(std::ostream& os, ODESolverStatus status);
+std::ostream& operator<<(std::ostream & os, ODESolverStatus  & status) 
+{
+  switch (status) {
+  case ODESolverStatus::SUCCESS:
+      os << "Success!";
+      break;
+  case ODESolverStatus::FAILED_TO_CONVERGE:
+      os << "Failed to Converge";
+      break;
+  case ODESolverStatus::MINIMUM_TIMESTEP_REACHED:
+      os << "Minimum Timestep Reached";
+      break;
+  case ODESolverStatus::NONFINITE_STATE:
+      os << "Non-Finite State";
+  }
+  return os;
+}
 }  // namespace ODE
 }  // namespace Experimental
 }  // namespace KokkosBatched
