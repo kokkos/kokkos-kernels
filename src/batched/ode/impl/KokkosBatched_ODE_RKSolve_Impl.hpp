@@ -162,6 +162,45 @@ KOKKOS_FUNCTION ODESolverStatus SerialRKSolve<TableType>::invoke(
   //{
   // throw std::runtime_error("Mismatched number of dofs in ode solver.");
   //}
+#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+  static_assert(
+      Kokkos::is_view<ViewTypeA>::value,
+      "KokkosBatched::ODE::SerialRKSolve: ViewTypeA is not a Kokkos::View.");
+  static_assert(
+      Kokkos::is_view<ViewTypeB>::value,
+      "KokkosBatched::ODE::SerialRKSolve: ViewTypeB is not a Kokkos::View.");
+  static_assert(
+      ViewTypeA::Rank == 1,
+      "KokkosBatched::ODE::SerialRKSolve: ViewTypeA must have rank 1.");
+  static_assert(
+      ViewTypeB::Rank == 2,
+      "KokkosBatched::ODE::SerialRKSolve: ViewTypeB must have rank 2.");
+
+  // Check compatibility of dimensions at run time.
+  if (y.extent(0) != y0.extent(0) || y.extent(0) != dydt.extent(0) ||
+      y.extent(0) != ytemp.extent(0)) {
+    KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+        "KokkosBatched::ODE::SerialRKSolve: Dimensions of y, y0, ytemp, dydt "
+        "do not match: y: %d, y0: %d, "
+        "ytemp: %d, dydt: %d\n",
+        (int)y.extent(0), (int)y0.extent(0), (int)ytemp.extent(0),
+        (int)dydt.extent(0));
+    return 1;
+  }
+  if (ode.num_equations != ndofs) {
+    KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+        "KokkosBatched::ODE::SerialRKSolve: Mismatched number of dofs."
+        "y.extent(0) = %d, ode.num_equations = %d.",
+        (int)y.extent(0), (int)ode.num_equations);
+    return 1;
+  }
+    if (TableType::nstages != k.extent(0) || nodfs != k.extent(1){
+    KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+        "KokkosBatched::ODE::SerialRKSolve: Wrong dimensions of k. k: %d x %d",
+        (int)k.extent(0), (int)k.extent(1));
+    return 1;
+    }
+#endif
 
   double t0 = tstart;
 
