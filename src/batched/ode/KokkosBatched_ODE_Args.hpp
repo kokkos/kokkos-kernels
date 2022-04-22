@@ -75,26 +75,6 @@ struct ODEArgs {
   bool is_adaptive = true;
 };
 
-/*struct SolverControls {
-  SolverControls(const ODEArgs& args)
-      : absTol(args.absTol > std::numeric_limits<double>::epsilon()
-                   ? args.absTol
-                   : std::numeric_limits<double>::epsilon()),
-        relTol(args.relTol),
-        minStepSize(args.minStepSize > std::numeric_limits<double>::epsilon()
-                        ? args.minStepSize
-                        : std::numeric_limits<double>::epsilon()),
-        maxSubSteps(args.maxSubSteps),
-        num_substeps(args.num_substeps),
-        is_adaptive(args.is_adaptive) {}
-
-  const double absTol;
-  const double relTol;
-  const double minStepSize;
-  const int maxSubSteps;
-  const int num_substeps;
-  const bool is_adaptive;
-};*/
 }  // namespace ODE
 }  // namespace Experimental
 }  // namespace KokkosBatched

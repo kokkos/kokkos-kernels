@@ -49,9 +49,9 @@
 #include "Kokkos_Layout.hpp"
 #include "Kokkos_MemoryTraits.hpp"
 
-#include <KokkosBatched_ODE_Args.h>
-#include <KokkosBatched_ODE_RungeKuttaTables.h>
-#include <KokkosBatched_ODE_SolverEndStatus.h>
+#include <KokkosBatched_ODE_Args.hpp>
+#include <KokkosBatched_ODE_RungeKuttaTables.hpp>
+#include <KokkosBatched_ODE_SolverStatus.hpp>
 
 #include <type_traits>
 

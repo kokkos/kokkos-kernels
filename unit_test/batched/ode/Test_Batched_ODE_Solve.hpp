@@ -3,9 +3,9 @@
 #include <gtest/gtest.h>
 
 #include <KokkosBatched_ODE_RKSolve.hpp>
-#include <KokkosBatched_ODE_TestProblems.h>
-#include <KokkosBatched_ODE_Args.h>
-#include <KokkosBatched_ODE_AllocationState.h>
+#include <KokkosBatched_ODE_TestProblems.hpp>
+#include <KokkosBatched_ODE_Args.hpp>
+#include <KokkosBatched_ODE_AllocationState.hpp>
 
 namespace KokkosBatched {
 namespace Experimental {
