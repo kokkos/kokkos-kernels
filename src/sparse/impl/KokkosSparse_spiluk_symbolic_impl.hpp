@@ -130,7 +130,6 @@ void level_sched(IlukHandle& thandle, const RowMapType row_map,
   // Scheduling currently compute on host
 
   using nnz_lno_t    = typename IlukHandle::nnz_lno_t;
-  using memory_space = typename IlukHandle::memory_space;
 
   size_type nrows = thandle.get_nrows();
 
@@ -175,8 +174,9 @@ void level_sched(IlukHandle& thandle, const RowMapType row_map,
   HostViewType lnchunks("lnchunks", nlevels);
   HostViewType lnrowsperchunk("lnrowsperchunk", nlevels);
 
-  size_t avail_byte = 0;
 #ifdef KOKKOS_ENABLE_CUDA
+  using memory_space = typename IlukHandle::memory_space;
+  size_t avail_byte = 0;
   if (std::is_same<memory_space, Kokkos::CudaSpace>::value) {
     size_t free_byte, total_byte;
     KokkosKernels::Impl::kk_get_free_total_memory<memory_space>(free_byte,
@@ -206,7 +206,7 @@ void level_sched(IlukHandle& thandle, const RowMapType row_map,
       lnchunks(i)       = 1;
       lnrowsperchunk(i) = lnrows;
     }
-    if (maxrowsperchunk < lnrowsperchunk(i)) {
+    if (maxrowsperchunk < static_cast<size_type>(lnrowsperchunk(i))) {
       maxrowsperchunk = lnrowsperchunk(i);
     }
   }
