@@ -100,17 +100,17 @@ class SPILUKHandle {
   nnz_lno_view_t level_idx;   // the list of rows in each level
   nnz_lno_view_t
       level_ptr;  // the starting index (into the view level_idx) of each level
-  nnz_lno_view_t level_nchunks; //number of chunks of rows at each level
-  nnz_lno_view_t 
-      level_nrowsperchunk; //maximum number of rows among chunks at each level
+  nnz_lno_view_t level_nchunks;  // number of chunks of rows at each level
+  nnz_lno_view_t
+      level_nrowsperchunk;  // maximum number of rows among chunks at each level
 
   size_type nrows;
   size_type nlevels;
   size_type nnzL;
   size_type nnzU;
   size_type level_maxrows;  // max. number of rows among levels
-  size_type 
-      level_maxrowsperchunk;//max.number of rows among chunks among levels
+  size_type
+      level_maxrowsperchunk;  // max.number of rows among chunks among levels
 
   bool symbolic_complete;
 
@@ -147,11 +147,10 @@ class SPILUKHandle {
     set_nnzU(nnzU_);
     set_level_maxrows(0);
     set_level_maxrowsperchunk(0);
-    level_list = nnz_row_view_t("level_list", nrows_),
-    level_idx  = nnz_lno_view_t("level_idx", nrows_),
-    level_ptr  = nnz_lno_view_t("level_ptr", nrows_ + 1),
-    level_nchunks = nnz_lno_view_t(),
-    level_nrowsperchunk = nnz_lno_view_t(),
+    level_list    = nnz_row_view_t("level_list", nrows_),
+    level_idx     = nnz_lno_view_t("level_idx", nrows_),
+    level_ptr     = nnz_lno_view_t("level_ptr", nrows_ + 1),
+    level_nchunks = nnz_lno_view_t(), level_nrowsperchunk = nnz_lno_view_t(),
     reset_symbolic_complete();
   }
 
@@ -178,9 +177,7 @@ class SPILUKHandle {
   }
 
   KOKKOS_INLINE_FUNCTION
-  nnz_lno_view_t get_level_nrowsperchunk() const { 
-    return level_nrowsperchunk; 
-  }
+  nnz_lno_view_t get_level_nrowsperchunk() const { return level_nrowsperchunk; }
 
   void alloc_level_nrowsperchunk(const size_type nlevels_) {
     level_nrowsperchunk = nnz_lno_view_t("level_nrowsperchunk", nlevels_);
@@ -216,8 +213,8 @@ class SPILUKHandle {
   size_type get_level_maxrowsperchunk() const { return level_maxrowsperchunk; }
 
   KOKKOS_INLINE_FUNCTION
-  void set_level_maxrowsperchunk(const size_type level_maxrowsperchunk_) { 
-    this->level_maxrowsperchunk = level_maxrowsperchunk_; 
+  void set_level_maxrowsperchunk(const size_type level_maxrowsperchunk_) {
+    this->level_maxrowsperchunk = level_maxrowsperchunk_;
   }
 
   bool is_symbolic_complete() const { return symbolic_complete; }

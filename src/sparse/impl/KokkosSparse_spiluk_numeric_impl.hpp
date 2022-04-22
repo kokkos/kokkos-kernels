@@ -323,9 +323,9 @@ struct ILUKLvlSchedTP1NumericFunctor {
             if (ipos != -1) {
               auto lxu = -U_values(kk) * fact;
               if (col < rowid)
-                Kokkos::atomic_add (&L_values(ipos), lxu);
+                Kokkos::atomic_add(&L_values(ipos), lxu);
               else
-                Kokkos::atomic_add (&U_values(ipos), lxu);
+                Kokkos::atomic_add(&U_values(ipos), lxu);
             }
           });  // end for kk
 
@@ -383,19 +383,19 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
   using size_type               = typename IlukHandle::size_type;
   using nnz_lno_t               = typename IlukHandle::nnz_lno_t;
   using HandleDeviceEntriesType = typename IlukHandle::nnz_lno_view_t;
-  using WorkViewType            = 
-      Kokkos::View<nnz_lno_t**, Kokkos::Device<execution_space,memory_space>>;
-  using LevelHostViewType       = Kokkos::View<nnz_lno_t*, Kokkos::HostSpace>;
+  using WorkViewType =
+      Kokkos::View<nnz_lno_t **, Kokkos::Device<execution_space, memory_space>>;
+  using LevelHostViewType = Kokkos::View<nnz_lno_t *, Kokkos::HostSpace>;
 
   size_type nlevels = thandle.get_num_levels();
   size_type nrows   = thandle.get_nrows();
 
   // Keep these as host View, create device version and copy back to host
-  HandleDeviceEntriesType level_ptr = thandle.get_level_ptr();
-  HandleDeviceEntriesType level_idx = thandle.get_level_idx();
+  HandleDeviceEntriesType level_ptr     = thandle.get_level_ptr();
+  HandleDeviceEntriesType level_idx     = thandle.get_level_idx();
   HandleDeviceEntriesType level_nchunks = thandle.get_level_nchunks();
-  HandleDeviceEntriesType level_nrowsperchunk = 
-                                    thandle.get_level_nrowsperchunk();
+  HandleDeviceEntriesType level_nrowsperchunk =
+      thandle.get_level_nrowsperchunk();
 
   // Make level_ptr_h a separate allocation, since it will be accessed on host
   // between kernel launches. If a mirror were used and level_ptr is in UVM
@@ -404,23 +404,28 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
   LevelHostViewType level_ptr_h, level_nchunks_h, level_nrowsperchunk_h;
   WorkViewType iw;
 
-  level_ptr_h = LevelHostViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Host level pointers"),
-                                  level_ptr.extent(0));
+  level_ptr_h = LevelHostViewType(
+      Kokkos::view_alloc(Kokkos::WithoutInitializing, "Host level pointers"),
+      level_ptr.extent(0));
   Kokkos::deep_copy(level_ptr_h, level_ptr);
 
-  if ( thandle.get_algorithm() == 
-       KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1 ) {
-    level_nchunks_h       = LevelHostViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Host level nchunks"),
-                                              level_nchunks.extent(0));
-    level_nrowsperchunk_h = LevelHostViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Host level nrowsperchunk"),
-                                              level_nrowsperchunk.extent(0));
-    Kokkos::deep_copy(level_nchunks_h,       level_nchunks);
+  if (thandle.get_algorithm() ==
+      KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1) {
+    level_nchunks_h = LevelHostViewType(
+        Kokkos::view_alloc(Kokkos::WithoutInitializing, "Host level nchunks"),
+        level_nchunks.extent(0));
+    level_nrowsperchunk_h =
+        LevelHostViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing,
+                                             "Host level nrowsperchunk"),
+                          level_nrowsperchunk.extent(0));
+    Kokkos::deep_copy(level_nchunks_h, level_nchunks);
     Kokkos::deep_copy(level_nrowsperchunk_h, level_nrowsperchunk);
-    iw = WorkViewType( Kokkos::view_alloc(Kokkos::WithoutInitializing, "iw"), thandle.get_level_maxrowsperchunk(), nrows );
+    iw = WorkViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "iw"),
+                      thandle.get_level_maxrowsperchunk(), nrows);
     Kokkos::deep_copy(iw, nnz_lno_t(-1));
-    }
-  else {
-    iw = WorkViewType( Kokkos::view_alloc(Kokkos::WithoutInitializing, "iw"), thandle.get_level_maxrows(), nrows );
+  } else {
+    iw = WorkViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "iw"),
+                      thandle.get_level_maxrows(), nrows);
     Kokkos::deep_copy(iw, nnz_lno_t(-1));
   }
 
@@ -442,39 +447,36 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
                 UValuesType, HandleDeviceEntriesType, WorkViewType, nnz_lno_t>(
                 A_row_map, A_entries, A_values, L_row_map, L_entries, L_values,
                 U_row_map, U_entries, U_values, level_idx, iw, lev_start));
-      } else if ( thandle.get_algorithm() ==
-                KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1 ) {
+      } else if (thandle.get_algorithm() ==
+                 KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1) {
         using policy_type = Kokkos::TeamPolicy<execution_space>;
-        int team_size = thandle.get_team_size();
-    
+        int team_size     = thandle.get_team_size();
+
         nnz_lno_t lvl_rowid_start = 0;
         nnz_lno_t lvl_nrows_chunk;
-        for(int chunkid=0; chunkid<level_nchunks_h(lvl); chunkid++) {
-          if ((lvl_rowid_start + level_nrowsperchunk_h(lvl)) > 
+        for (int chunkid = 0; chunkid < level_nchunks_h(lvl); chunkid++) {
+          if ((lvl_rowid_start + level_nrowsperchunk_h(lvl)) >
               (lev_end - lev_start))
-             lvl_nrows_chunk = (lev_end - lev_start)-lvl_rowid_start;
-          else         
-             lvl_nrows_chunk = level_nrowsperchunk_h(lvl);
-    
+            lvl_nrows_chunk = (lev_end - lev_start) - lvl_rowid_start;
+          else
+            lvl_nrows_chunk = level_nrowsperchunk_h(lvl);
+
           ILUKLvlSchedTP1NumericFunctor<
-              ARowMapType, AEntriesType, AValuesType,
-              LRowMapType, LEntriesType, LValuesType,
-              URowMapType, UEntriesType, UValuesType,
-              HandleDeviceEntriesType, WorkViewType, nnz_lno_t> 
-              tstf(A_row_map, A_entries, A_values,
-                   L_row_map, L_entries, L_values,
-                   U_row_map, U_entries, U_values,
-                   level_idx, iw, lev_start+lvl_rowid_start);
-    
-          if ( team_size == -1 )
+              ARowMapType, AEntriesType, AValuesType, LRowMapType, LEntriesType,
+              LValuesType, URowMapType, UEntriesType, UValuesType,
+              HandleDeviceEntriesType, WorkViewType, nnz_lno_t>
+              tstf(A_row_map, A_entries, A_values, L_row_map, L_entries,
+                   L_values, U_row_map, U_entries, U_values, level_idx, iw,
+                   lev_start + lvl_rowid_start);
+
+          if (team_size == -1)
             Kokkos::parallel_for("parfor_l_team",
-                                 policy_type( lvl_nrows_chunk , Kokkos::AUTO ),
+                                 policy_type(lvl_nrows_chunk, Kokkos::AUTO),
                                  tstf);
           else
             Kokkos::parallel_for("parfor_l_team",
-                                 policy_type( lvl_nrows_chunk , team_size ),
-                                 tstf);
-    
+                                 policy_type(lvl_nrows_chunk, team_size), tstf);
+
           lvl_rowid_start += lvl_nrows_chunk;
         }
       }
