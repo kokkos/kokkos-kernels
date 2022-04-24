@@ -6,13 +6,8 @@ KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/batched/ode/impl)
 KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/batched/ode/impl)
 
 KOKKOSKERNELS_ADD_EXECUTABLE(
-  KokkosBatched_Test_ODE_Cuda
-  SOURCES KokkosBatched_Test_ODE_Cuda.cpp       
-  )
-
-KOKKOSKERNELS_ADD_EXECUTABLE(
-  KokkosBatched_Test_ODE_Host
-  SOURCES KokkosBatched_Test_ODE_Host.cpp       
+  KokkosBatched_Test_ODE
+  SOURCES KokkosBatched_Test_ODE.cpp       
   )
 
 #KOKKOSKERNELS_ADD_EXECUTABLE(KokkosBatched_Test_BlockTridiag

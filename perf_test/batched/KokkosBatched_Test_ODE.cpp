@@ -151,8 +151,7 @@ void run_all_tables(const bool use_stack, const int nelems) {
 }  // namespace ODE
 }  // namespace Experimental
 }  // namespace KokkosBatched
-#if defined(KOKKOS_ENABLE_CUDA)
-#define __KOKKOSBATCHED_TEST_ENABLE_CUDA__
+
 int main(int argc, char *argv[]) {
   Kokkos::initialize(argc, argv);
 
@@ -194,6 +193,20 @@ int main(int argc, char *argv[]) {
     std::cout << "RK Performance - Host (Stack) time = " << dt_host_stack
               << "\n";
   }
+  if (1  // TODO: Check what needs to be enabled here.
+         // These tests were stalling out on certain backends.
+#ifdef KOKKOS_ENABLE_OPENMP
+      && !std::is_same<TestExecSpace, Kokkos::OpenMP>::value
+#endif
+#ifdef KOKKOS_ENABLE_SERIAL
+      && !std::is_same<TestExecSpace, Kokkos::Serial>::value
+#endif
+#ifdef KOKKOS_ENABLE_THREADS
+      && !std::is_same<TestExecSpace, Kokkos::Threads>::value
+#endif
+      )
+  // See if this is a better way to fix it?
+  // https://github.com/google/googletest/blob/main/docs/advanced.md#skipping-test-execution
   {
     {
       Kokkos::Timer timer;
@@ -235,11 +248,3 @@ int main(int argc, char *argv[]) {
 
   return 0;
 }
-#else
-
-int main() {
-  std::cout << "Kokkos::Cuda is not enabled\n";
-  return 0;
-}
-
-#endif
