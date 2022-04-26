@@ -1,0 +1,7 @@
+#ifndef TEST_HIP_BATCHED_DENSE_SERIALSVD_CPP
+#define TEST_HIP_BATCHED_DENSE_SERIALSVD_CPP
+
+#include <Test_HIP.hpp>
+#include <Test_Batched_SerialSVD.hpp>
+
+#endif  // TEST_HIP_BATCHED_DENSE_SERIALSVD_CPP

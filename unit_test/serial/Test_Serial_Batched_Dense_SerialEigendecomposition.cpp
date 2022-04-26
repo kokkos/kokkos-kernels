@@ -1,0 +1,8 @@
+#ifndef TEST_SERIAL_BATCHED_DENSE_SERIALEIGENDECOMPOSITION_CPP
+#define TEST_SERIAL_BATCHED_DENSE_SERIALEIGENDECOMPOSITION_CPP
+
+#include <Test_Serial.hpp>
+#include <Test_Batched_SerialEigendecomposition.hpp>
+#include <Test_Batched_SerialEigendecomposition_Real.hpp>
+
+#endif  // TEST_SERIAL_BATCHED_DENSE_SERIALEIGENDECOMPOSITION_CPP

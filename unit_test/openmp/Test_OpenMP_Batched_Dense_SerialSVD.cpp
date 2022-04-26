@@ -1,0 +1,7 @@
+#ifndef TEST_OPENMP_BATCHED_DENSE_SERIALSVD_CPP
+#define TEST_OPENMP_BATCHED_DENSE_SERIALSVD_CPP
+
+#include <Test_OpenMP.hpp>
+#include <Test_Batched_SerialSVD.hpp>
+
+#endif  // TEST_OPENMP_BATCHED_DENSE_SERIALSVD_CPP

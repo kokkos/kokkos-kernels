@@ -68,8 +68,20 @@ IF (KOKKOS_ENABLE_CUDA)
     batched_dla_cuda
     SOURCES
       Test_Main.cpp
-      cuda/Test_Cuda_Batched_Dense_Serial_Other.cpp
+      cuda/Test_Cuda_Batched_Dense_SerialAxpy.cpp
       cuda/Test_Cuda_Batched_Dense_Serial_BatchedGemm.cpp
+      cuda/Test_Cuda_Batched_Dense_SerialEigendecomposition.cpp
+      cuda/Test_Cuda_Batched_Dense_SerialGemm.cpp
+      cuda/Test_Cuda_Batched_Dense_SerialGemv.cpp
+      cuda/Test_Cuda_Batched_Dense_SerialInverseLU.cpp
+      cuda/Test_Cuda_Batched_Dense_SerialLU.cpp
+      cuda/Test_Cuda_Batched_Dense_SerialMatUtil.cpp
+      cuda/Test_Cuda_Batched_Dense_SerialSolveLU.cpp
+      cuda/Test_Cuda_Batched_Dense_SerialSVD.cpp
+      cuda/Test_Cuda_Batched_Dense_SerialTrmm.cpp
+      cuda/Test_Cuda_Batched_Dense_SerialTrsm.cpp
+      cuda/Test_Cuda_Batched_Dense_SerialTrsv.cpp
+      cuda/Test_Cuda_Batched_Dense_SerialTrtri.cpp
       cuda/Test_Cuda_Batched_Dense_Team_TeamVector_Vector.cpp
     COMPONENTS batched
   )
@@ -126,8 +138,20 @@ IF (KOKKOS_ENABLE_SYCL)
     batched_dla_sycl
     SOURCES
       Test_Main.cpp
-      sycl/Test_SYCL_Batched_Dense_Serial_Other.cpp
+      sycl/Test_SYCL_Batched_Dense_SerialAxpy.cpp
       sycl/Test_SYCL_Batched_Dense_Serial_BatchedGemm.cpp
+      sycl/Test_SYCL_Batched_Dense_SerialEigendecomposition.cpp
+      sycl/Test_SYCL_Batched_Dense_SerialGemm.cpp
+      sycl/Test_SYCL_Batched_Dense_SerialGemv.cpp
+      sycl/Test_SYCL_Batched_Dense_SerialInverseLU.cpp
+      sycl/Test_SYCL_Batched_Dense_SerialLU.cpp
+      sycl/Test_SYCL_Batched_Dense_SerialMatUtil.cpp
+      sycl/Test_SYCL_Batched_Dense_SerialSolveLU.cpp
+      sycl/Test_SYCL_Batched_Dense_SerialSVD.cpp
+      sycl/Test_SYCL_Batched_Dense_SerialTrmm.cpp
+      sycl/Test_SYCL_Batched_Dense_SerialTrsm.cpp
+      sycl/Test_SYCL_Batched_Dense_SerialTrsv.cpp
+      sycl/Test_SYCL_Batched_Dense_SerialTrtri.cpp
       sycl/Test_SYCL_Batched_Dense_Team_TeamVector_Vector.cpp
     COMPONENTS batched
   )
@@ -184,8 +208,20 @@ IF (KOKKOS_ENABLE_HIP)
     batched_dla_hip
     SOURCES
       Test_Main.cpp
-      hip/Test_HIP_Batched_Dense_Serial_Other.cpp
+      hip/Test_HIP_Batched_Dense_SerialAxpy.cpp
       hip/Test_HIP_Batched_Dense_Serial_BatchedGemm.cpp
+      hip/Test_HIP_Batched_Dense_SerialEigendecomposition.cpp
+      hip/Test_HIP_Batched_Dense_SerialGemm.cpp
+      hip/Test_HIP_Batched_Dense_SerialGemv.cpp
+      hip/Test_HIP_Batched_Dense_SerialInverseLU.cpp
+      hip/Test_HIP_Batched_Dense_SerialLU.cpp
+      hip/Test_HIP_Batched_Dense_SerialMatUtil.cpp
+      hip/Test_HIP_Batched_Dense_SerialSolveLU.cpp
+      hip/Test_HIP_Batched_Dense_SerialSVD.cpp
+      hip/Test_HIP_Batched_Dense_SerialTrmm.cpp
+      hip/Test_HIP_Batched_Dense_SerialTrsm.cpp
+      hip/Test_HIP_Batched_Dense_SerialTrsv.cpp
+      hip/Test_HIP_Batched_Dense_SerialTrtri.cpp
       hip/Test_HIP_Batched_Dense_Team_TeamVector_Vector.cpp
     COMPONENTS batched
   )
@@ -242,8 +278,20 @@ IF (KOKKOS_ENABLE_OPENMPTARGET)
   #   batched_dla_openmptarget
   #   SOURCES
   #     Test_Main.cpp
-  #     openmptarget/Test_OpenMPTarget_Batched_Dense_Serial_Other.cpp
+  #     openmptarget/Test_OpenMPTarget_Batched_Dense_SerialAxpy.cpp
   #     openmptarget/Test_OpenMPTarget_Batched_Dense_Serial_BatchedGemm.cpp
+  #     openmptarget/Test_OpenMPTarget_Batched_Dense_SerialEigendecomposition.cpp
+  #     openmptarget/Test_OpenMPTarget_Batched_Dense_SerialGemm.cpp
+  #     openmptarget/Test_OpenMPTarget_Batched_Dense_SerialGemv.cpp
+  #     openmptarget/Test_OpenMPTarget_Batched_Dense_SerialInverseLU.cpp
+  #     openmptarget/Test_OpenMPTarget_Batched_Dense_SerialLU.cpp
+  #     openmptarget/Test_OpenMPTarget_Batched_Dense_SerialMatUtil.cpp
+  #     openmptarget/Test_OpenMPTarget_Batched_Dense_SerialSolveLU.cpp
+  #     openmptarget/Test_OpenMPTarget_Batched_Dense_SerialSVD.cpp
+  #     openmptarget/Test_OpenMPTarget_Batched_Dense_SerialTrmm.cpp
+  #     openmptarget/Test_OpenMPTarget_Batched_Dense_SerialTrsm.cpp
+  #     openmptarget/Test_OpenMPTarget_Batched_Dense_SerialTrsv.cpp
+  #     openmptarget/Test_OpenMPTarget_Batched_Dense_SerialTrtri.cpp
   #     openmptarget/Test_OpenMPTarget_Batched_Dense_Team_TeamVector_Vector.cpp
   #   COMPONENTS batched
   # )
@@ -292,8 +340,20 @@ IF (KOKKOS_ENABLE_OPENMP)
     batched_dla_openmp
     SOURCES
       Test_Main.cpp
-      openmp/Test_OpenMP_Batched_Dense_Serial_Other.cpp
+      openmp/Test_OpenMP_Batched_Dense_SerialAxpy.cpp
       openmp/Test_OpenMP_Batched_Dense_Serial_BatchedGemm.cpp
+      openmp/Test_OpenMP_Batched_Dense_SerialEigendecomposition.cpp
+      openmp/Test_OpenMP_Batched_Dense_SerialGemm.cpp
+      openmp/Test_OpenMP_Batched_Dense_SerialGemv.cpp
+      openmp/Test_OpenMP_Batched_Dense_SerialInverseLU.cpp
+      openmp/Test_OpenMP_Batched_Dense_SerialLU.cpp
+      openmp/Test_OpenMP_Batched_Dense_SerialMatUtil.cpp
+      openmp/Test_OpenMP_Batched_Dense_SerialSolveLU.cpp
+      openmp/Test_OpenMP_Batched_Dense_SerialSVD.cpp
+      openmp/Test_OpenMP_Batched_Dense_SerialTrmm.cpp
+      openmp/Test_OpenMP_Batched_Dense_SerialTrsm.cpp
+      openmp/Test_OpenMP_Batched_Dense_SerialTrsv.cpp
+      openmp/Test_OpenMP_Batched_Dense_SerialTrtri.cpp
       openmp/Test_OpenMP_Batched_Dense_Team_TeamVector_Vector.cpp
     COMPONENTS batched
   )
@@ -354,8 +414,20 @@ IF (KOKKOS_ENABLE_SERIAL)
     batched_dla_serial
     SOURCES
       Test_Main.cpp
-      serial/Test_Serial_Batched_Dense_Serial_Other.cpp
+      serial/Test_Serial_Batched_Dense_SerialAxpy.cpp
       serial/Test_Serial_Batched_Dense_Serial_BatchedGemm.cpp
+      serial/Test_Serial_Batched_Dense_SerialEigendecomposition.cpp
+      serial/Test_Serial_Batched_Dense_SerialGemm.cpp
+      serial/Test_Serial_Batched_Dense_SerialGemv.cpp
+      serial/Test_Serial_Batched_Dense_SerialInverseLU.cpp
+      serial/Test_Serial_Batched_Dense_SerialLU.cpp
+      serial/Test_Serial_Batched_Dense_SerialMatUtil.cpp
+      serial/Test_Serial_Batched_Dense_SerialSolveLU.cpp
+      serial/Test_Serial_Batched_Dense_SerialSVD.cpp
+      serial/Test_Serial_Batched_Dense_SerialTrmm.cpp
+      serial/Test_Serial_Batched_Dense_SerialTrsm.cpp
+      serial/Test_Serial_Batched_Dense_SerialTrsv.cpp
+      serial/Test_Serial_Batched_Dense_SerialTrtri.cpp
       serial/Test_Serial_Batched_Dense_Team_TeamVector_Vector.cpp
     COMPONENTS batched
   )
@@ -412,8 +484,20 @@ IF (KOKKOS_ENABLE_THREADS)
     batched_dla_threads
     SOURCES
       Test_Main.cpp
-      threads/Test_Threads_Batched_Dense_Serial_Other.cpp
+      threads/Test_Threads_Batched_Dense_SerialAxpy.cpp
       threads/Test_Threads_Batched_Dense_Serial_BatchedGemm.cpp
+      threads/Test_Threads_Batched_Dense_SerialEigendecomposition.cpp
+      threads/Test_Threads_Batched_Dense_SerialGemm.cpp
+      threads/Test_Threads_Batched_Dense_SerialGemv.cpp
+      threads/Test_Threads_Batched_Dense_SerialInverseLU.cpp
+      threads/Test_Threads_Batched_Dense_SerialLU.cpp
+      threads/Test_Threads_Batched_Dense_SerialMatUtil.cpp
+      threads/Test_Threads_Batched_Dense_SerialSolveLU.cpp
+      threads/Test_Threads_Batched_Dense_SerialSVD.cpp
+      threads/Test_Threads_Batched_Dense_SerialTrmm.cpp
+      threads/Test_Threads_Batched_Dense_SerialTrsm.cpp
+      threads/Test_Threads_Batched_Dense_SerialTrsv.cpp
+      threads/Test_Threads_Batched_Dense_SerialTrtri.cpp
       threads/Test_Threads_Batched_Dense_Team_TeamVector_Vector.cpp
     COMPONENTS batched
   )

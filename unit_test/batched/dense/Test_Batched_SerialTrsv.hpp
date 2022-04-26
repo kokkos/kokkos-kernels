@@ -4,10 +4,10 @@
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Random.hpp"
 
+#include "KokkosKernels_TestUtils.hpp"
+
 #include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Trsv_Decl.hpp"
-
-//#include "KokkosKernels_TestUtils.hpp"
 
 using namespace KokkosBatched;
 

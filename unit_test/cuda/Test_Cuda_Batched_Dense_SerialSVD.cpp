@@ -1,0 +1,7 @@
+#ifndef TEST_CUDA_BATCHED_DENSE_SERIALSVD_CPP
+#define TEST_CUDA_BATCHED_DENSE_SERIALSVD_CPP
+
+#include <Test_Cuda.hpp>
+#include <Test_Batched_SerialSVD.hpp>
+
+#endif  // TEST_CUDA_BATCHED_DENSE_SERIALSVD_CPP
