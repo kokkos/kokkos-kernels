@@ -1,0 +1,36 @@
+name: github-FORMAT
+
+on:
+  pull_request:
+    branches:
+      - master
+      - develop
+
+jobs:
+  clang-format-check:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install Dependencies
+        run: sudo apt install clang-format-8
+
+      - name: check
+        run: |
+          # Fetch from the default remote (origin)
+          git fetch &> /dev/null
+
+          # For every file changed, apply clang-format
+          for file in $(git diff --name-only origin/$GITHUB_BASE_REF | egrep '.*\.cpp$|.*\.hpp$|.*\.h$'); do
+            if [ -e $file ]; then
+              clang-format-8 -i -style=file $file
+              git add $file
+            fi
+          done
+
+          # If any diffs exist, error out
+          if [[ ! -z $(git status -s -uno . -- ':!.github') ]]; then
+            echo "The following files require formatting changes:"
+            git status -s -uno . -- ':!.github'
+            exit 1
+          fi

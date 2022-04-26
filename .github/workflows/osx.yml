@@ -1,0 +1,86 @@
+name: github-OSX
+
+on:
+  pull_request:
+    branches:
+      - master
+      - develop
+
+jobs:
+  osxci:
+    name: osx-ci
+    runs-on: [macos-latest]
+
+    strategy:
+      matrix:
+        include:
+          - backend: "SERIAL"
+            cmake_build_type: "RelWithDebInfo"
+          - backend: "THREADS"
+            cmake_build_type: "RelWithDebInfo"
+          - backend: "SERIAL"
+            cmake_build_type: "Debug"
+          - backend: "SERIAL"
+            cmake_build_type: "Release"
+
+    steps:
+      - name: checkout_kokkos_kernels
+        uses: actions/checkout@v2
+        with:
+          path: kokkos-kernels
+
+      - name: checkout_kokkos
+        uses: actions/checkout@v2
+        with:
+          repository: kokkos/kokkos
+          ref: ${{ github.base_ref }}
+          path: kokkos
+
+      - name: configure_kokkos
+        run: |
+          ls -lat
+          mkdir -p kokkos/{build,install}
+          cd kokkos/build
+          cmake \
+          -DKokkos_ENABLE_${{ matrix.backend }}=ON \
+          -DCMAKE_CXX_FLAGS="-Werror" \
+          -DCMAKE_CXX_STANDARD=14 \
+          -DKokkos_ENABLE_COMPILER_WARNINGS=ON \
+          -DKokkos_ENABLE_DEPRECATED_CODE_3=OFF \
+          -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} \
+          -DCMAKE_INSTALL_PREFIX=$PWD/../install \
+          ..
+
+      - name: build_and_install_kokkos
+        working-directory: kokkos/build
+        run: make -j2 install
+
+      - name: configure_kokkos_kernels
+        run: |
+          ls -lat
+          mkdir -p kokkos-kernels/{build,install}
+          cd kokkos-kernels/build
+          cmake \
+          -DKokkos_DIR=$PWD/../../kokkos/install/lib/cmake/Kokkos \
+          -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} \
+          -DCMAKE_CXX_FLAGS="-Wall -Wshadow -pedantic -Werror -Wsign-compare -Wtype-limits -Wignored-qualifiers -Wempty-body -Wuninitialized" \
+          -DCMAKE_INSTALL_PREFIX=$PWD/../install \
+          -DKokkosKernels_ENABLE_TESTS=ON \
+          -DKokkosKernels_ENABLE_EXAMPLES:BOOL=ON \
+          -DKokkosKernels_INST_COMPLEX_DOUBLE=ON \
+          -DKokkosKernels_INST_DOUBLE=ON \
+          -DKokkosKernels_INST_COMPLEX_FLOAT=ON \
+          -DKokkosKernels_INST_FLOAT=ON \
+          -DKokkosKernels_INST_LAYOUTLEFT:BOOL=ON \
+          -DKokkosKernels_INST_LAYOUTRIGHT:BOOL=ON \
+          -DKokkosKernels_ENABLE_TPL_CUSPARSE=OFF \
+          -DKokkosKernels_ENABLE_TPL_CUBLAS=OFF \
+          ..
+
+      - name: build_kokkos_kernels
+        working-directory: kokkos-kernels/build
+        run: make -j2
+
+      - name: test
+        working-directory: kokkos-kernels/build
+        run: ctest -j2 --output-on-failure
