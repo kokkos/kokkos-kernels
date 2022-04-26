@@ -36,8 +36,8 @@ struct Functor_TestBatchedSerialGMRES {
         _c(c),
         _X(X),
         _B(B),
-        _N_team(N_team),
         _Diag(diag),
+        _N_team(N_team),
         _handle(handle) {}
 
   KOKKOS_INLINE_FUNCTION void operator()(const int k) const {

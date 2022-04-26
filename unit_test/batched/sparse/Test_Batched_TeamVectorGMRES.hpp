@@ -36,8 +36,8 @@ struct Functor_TestBatchedTeamVectorGMRES {
         _c(c),
         _X(X),
         _B(B),
-        _N_team(N_team),
         _Diag(diag),
+        _N_team(N_team),
         _handle(handle) {}
 
   template <typename MemberType>
@@ -83,9 +83,6 @@ struct Functor_TestBatchedTeamVectorGMRES {
     const int n                 = _X.extent(1);
     const int maximum_iteration = _handle.get_max_iteration();
 
-    size_t bytes_0 = ValuesViewType::shmem_size(_N_team, n);
-    size_t bytes_1 = ValuesViewType::shmem_size(_N_team, 1);
-
     _handle.set_ortho_strategy(0);
     _handle.set_compute_last_residual(false);
     _handle.set_tolerance(1e-8);
@@ -111,8 +108,6 @@ struct Functor_TestBatchedTeamVectorGMRES {
     size_t bytes_tmp  = 2 * bytes_2D_1 + 2 * bytes_1D + bytes_2D_2;
     policy.set_scratch_size(
         0, Kokkos::PerTeam(bytes_tmp + bytes_diag + bytes_int));
-
-    // policy.set_scratch_size(0, Kokkos::PerTeam(5 * bytes_0 + 5 * bytes_1));
 
     Kokkos::parallel_for(name.c_str(), policy, *this);
     Kokkos::Profiling::popRegion();

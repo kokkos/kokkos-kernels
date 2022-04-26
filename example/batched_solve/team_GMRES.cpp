@@ -232,11 +232,6 @@ struct Functor_TestBatchedTeamVectorGMRES {
     size_t bytes_col_idc = IntView::shmem_size(_c.extent(0));
     size_t bytes_2D_1    = ViewType2D::shmem_size(_N_team, _X.extent(1));
     size_t bytes_2D_2 = ViewType2D::shmem_size(_N_team, maximum_iteration + 1);
-    size_t bytes_3D_1 =
-        ViewType3D::shmem_size(_N_team, _X.extent(1), maximum_iteration);
-    size_t bytes_3D_2 = ViewType3D::shmem_size(_N_team, maximum_iteration + 1,
-                                               maximum_iteration);
-    size_t bytes_3D_3 = ViewType3D::shmem_size(_N_team, 2, maximum_iteration);
 
     size_t bytes_int  = bytes_row_ptr + bytes_col_idc;
     size_t bytes_diag = bytes_2D_1;
@@ -267,7 +262,7 @@ int main(int /*argc*/, char ** /*argv*/) {
     std::string name_A = "mat.mm";
     std::string name_B = "rhs.mm";
 
-    int N, Blk, nnz, ncols;
+    int N, Blk, nnz;
 
     Blk = 10;
     N   = 100;
