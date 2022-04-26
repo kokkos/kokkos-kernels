@@ -79,15 +79,8 @@ struct TeamVectorGMRES {
         typename VectorViewType::non_const_value_type>::mag_type MagnitudeType;
     typedef Kokkos::Details::ArithTraits<MagnitudeType> ATM;
 
-    using ScratchPadNormViewType = Kokkos::View<
-        MagnitudeType*,
-        typename VectorViewType::execution_space::scratch_memory_space>;
     using ScratchPadVectorViewType = Kokkos::View<
         typename VectorViewType::non_const_value_type**,
-        typename VectorViewType::array_layout,
-        typename VectorViewType::execution_space::scratch_memory_space>;
-    using ScratchPadMultiVectorViewType = Kokkos::View<
-        typename VectorViewType::non_const_value_type***,
         typename VectorViewType::array_layout,
         typename VectorViewType::execution_space::scratch_memory_space>;
     using TeamVectorCopy1D = TeamVectorCopy<MemberType, Trans::NoTranspose, 1>;

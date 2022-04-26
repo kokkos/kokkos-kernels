@@ -192,7 +192,6 @@ struct Functor_TestBatchedTeamVectorGMRES {
   }
 
   inline double run() {
-    typedef typename ValuesViewType::value_type value_type;
     std::string name("KokkosBatched::Test::TeamVectorGMRES");
     Kokkos::Timer timer;
     Kokkos::Profiling::pushRegion(name.c_str());
@@ -220,12 +219,7 @@ struct Functor_TestBatchedTeamVectorGMRES {
     using Layout     = typename ValuesViewType::array_layout;
     using EXSP       = typename ValuesViewType::execution_space;
 
-    using MagnitudeType =
-        typename Kokkos::Details::ArithTraits<ScalarType>::mag_type;
-
-    using ViewType1D = Kokkos::View<MagnitudeType *, Layout, EXSP>;
     using ViewType2D = Kokkos::View<ScalarType **, Layout, EXSP>;
-    using ViewType3D = Kokkos::View<ScalarType ***, Layout, EXSP>;
 
     size_t bytes_1D      = ViewType2D::shmem_size(_N_team, 1);
     size_t bytes_row_ptr = IntView::shmem_size(_r.extent(0));
@@ -294,7 +288,6 @@ int main(int /*argc*/, char ** /*argv*/) {
 
     using MagnitudeType =
         typename Kokkos::Details::ArithTraits<ScalarType>::mag_type;
-    using NormViewType = Kokkos::View<MagnitudeType *, Layout, EXSP>;
 
     using Norm2DViewType   = Kokkos::View<MagnitudeType **, Layout, EXSP>;
     using Scalar3DViewType = Kokkos::View<ScalarType ***, Layout, EXSP>;
