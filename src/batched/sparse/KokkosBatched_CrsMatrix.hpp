@@ -111,7 +111,7 @@ class CrsMatrix {
       MagnitudeType alpha = Kokkos::Details::ArithTraits<MagnitudeType>::one(),
       MagnitudeType beta =
           Kokkos::Details::ArithTraits<MagnitudeType>::zero()) const {
-    if (beta == 0)
+    if (beta == Kokkos::Details::ArithTraits<MagnitudeType>::zero())
       KokkosBatched::TeamVectorSpmv<MemberType, ArgTrans>::template invoke<
           ValuesViewType, IntViewType, XViewType, YViewType, 0>(
           member, alpha, values, row_ptr, colIndices, X, beta, Y);
@@ -127,7 +127,7 @@ class CrsMatrix {
       MagnitudeType alpha = Kokkos::Details::ArithTraits<MagnitudeType>::one(),
       MagnitudeType beta =
           Kokkos::Details::ArithTraits<MagnitudeType>::zero()) const {
-    if (beta == 0)
+    if (beta == Kokkos::Details::ArithTraits<MagnitudeType>::zero())
       KokkosBatched::SerialSpmv<ArgTrans>::template invoke<
           ValuesViewType, IntViewType, XViewType, YViewType, 0>(
           alpha, values, row_ptr, colIndices, X, beta, Y);

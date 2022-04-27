@@ -60,6 +60,7 @@
 /// \param handle [in]: a handle which provides different information such as
 /// the tolerance or the maximal number of iterations of the solver.
 
+#include <KokkosBatched_Krylov_Solvers.hpp>
 #include "KokkosBatched_Krylov_Handle.hpp"
 #include "KokkosBatched_GMRES_Serial_Impl.hpp"
 #include "KokkosBatched_GMRES_Team_Impl.hpp"

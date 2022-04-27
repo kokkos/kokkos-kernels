@@ -42,19 +42,36 @@
 //@HEADER
 */
 
-#include <Kokkos_Core.hpp>
-#include <iostream>
-#include <string>
-
 #ifndef __KOKKOSBATCHED_KRYLOV_HANDLE_HPP__
 #define __KOKKOSBATCHED_KRYLOV_HANDLE_HPP__
-//#define VERBOSE
+
+#include <KokkosBatched_Krylov_Solvers.hpp>
+#include <Kokkos_Core.hpp>
 
 namespace KokkosBatched {
 
 /// \brief KrylovHandle
 ///
-/// \tparam scalar_type: Scalar type of the linear solver
+/// The handle is used to pass information between the Krylov solver and the
+/// calling code.
+///
+/// The handle has some views as data member, their required size can be
+/// different depending on the used Krylov solver.
+///
+/// In the case of the Batched GMRES, the size should be as follows:
+///  - Arnoldi_view a batched_size x max_iteration x (n_rows + max_iteration +
+///  3);
+///  - tmp_view is NOT used for the team/teamvector GMRES;
+///    it is used for the serial GMRES and the size is batched_size x (n_rows +
+///    max_iteration + 3);
+///  - residual_norms is an optional batched_size x (max_iteration + 2) used to
+///  store the convergence history;
+///  - iteration_numbers is a 1D view of length batched_size;
+///  - first_index and last_index are 1D of length n_teams.
+///
+/// \tparam NormViewType: type of the view used to store the convergence history
+/// \tparam IntViewType: type of the view used to store the number of iteration
+/// per system \tparam ViewType3D: type of the 3D temporary views
 
 template <class NormViewType, class IntViewType, class ViewType3D>
 class KrylovHandle {
@@ -82,7 +99,8 @@ class KrylovHandle {
   norm_type max_tolerance;
   int max_iteration;
   int batched_size;
-  int N_team;
+  const int N_team;
+  int n_teams;
   int ortho_strategy;
   int scratch_pad_level;
   bool compute_last_residual;
@@ -105,7 +123,7 @@ class KrylovHandle {
     iteration_numbers = IntViewType("", batched_size);
     Kokkos::deep_copy(iteration_numbers, -1);
 
-    int n_teams = ceil(1. * batched_size / N_team);
+    n_teams     = ceil(1. * batched_size / N_team);
     first_index = IntViewType("", n_teams);
     last_index  = IntViewType("", n_teams);
 
@@ -130,6 +148,12 @@ class KrylovHandle {
     host_synchronised     = false;
   }
 
+  /// \brief get_number_of_systems_per_team
+  int get_number_of_systems_per_team() { return N_team; }
+
+  /// \brief get_number_of_teams
+  int get_number_of_teams() { return n_teams; }
+
   /// \brief reset
   ///   Reset the iteration numbers to the default value of -1
   ///   and the residual norms if monitored.
@@ -144,6 +168,8 @@ class KrylovHandle {
     host_synchronised = false;
   }
 
+  /// \brief synchronise_host
+  ///   Synchronise host and device.
   ///
 
   void synchronise_host() {
@@ -250,33 +276,6 @@ class KrylovHandle {
   KOKKOS_INLINE_FUNCTION
   int get_max_iteration() const { return max_iteration; }
 
-  /// \brief set_norm
-  ///   Store the norm of one of the system at one of the iteration
-  ///
-  /// \param batched_id [in]: Global batched ID
-  /// \param iteration_id [in]: Iteration ID
-  /// \param norm_i [in]: Norm to store
-
-  KOKKOS_INLINE_FUNCTION
-  void set_norm(int batched_id, int iteration_id, norm_type norm_i) const {
-    if (monitor_residual) residual_norms(batched_id, iteration_id) = norm_i;
-  }
-
-  /// \brief set_norm
-  ///   Store the norm of one of the system at one of the iteration
-  ///
-  /// \param batchedteam_id [in]: Team ID
-  /// \param batched_id [in]: Local batched ID (local ID within the team)
-  /// \param iteration_id [in]: Iteration ID
-  /// \param norm_i [in]: Norm to store
-
-  KOKKOS_INLINE_FUNCTION
-  void set_norm(int team_id, int batched_id, int iteration_id,
-                norm_type norm_i) const {
-    if (monitor_residual)
-      residual_norms(team_id * N_team + batched_id, iteration_id) = norm_i;
-  }
-
   /// \brief get_norm
   ///   Get the norm of one system at a given iteration
   ///
@@ -305,32 +304,6 @@ class KrylovHandle {
       return 0;
   }
 
-  /// \brief set_last_norm
-  ///   Store the last norm of one system
-  ///
-  /// \param batched_id [in]: Global batched ID
-  /// \param norm_i [in]: Norm to store
-
-  KOKKOS_INLINE_FUNCTION
-  void set_last_norm(int batched_id, norm_type norm_i) const {
-    if (monitor_residual)
-      residual_norms(batched_id, max_iteration + 1) = norm_i;
-  }
-
-  /// \brief set_last_norm
-  ///   Store the last norm of one system
-  ///
-  /// \param batchedteam_id [in]: Team ID
-  /// \param batched_id [in]: Local batched ID (local ID within the team)
-  /// \param batched_id [in]: Global batched ID
-  /// \param norm_i [in]: Norm to store
-
-  KOKKOS_INLINE_FUNCTION
-  void set_last_norm(int team_id, int batched_id, norm_type norm_i) const {
-    if (monitor_residual)
-      residual_norms(team_id * N_team + batched_id, max_iteration + 1) = norm_i;
-  }
-
   /// \brief get_last_norm
   ///   Get the last norm of one system
   ///
@@ -355,29 +328,6 @@ class KrylovHandle {
       return residual_norms_host(batched_id, max_iteration + 1);
     } else
       return 0;
-  }
-
-  /// \brief set_iteration
-  ///   Store the number of iteration after convergence for one system
-  ///
-  /// \param batched_id [in]: Global batched ID
-  /// \param iteration_id [in]: Iteration ID
-
-  KOKKOS_INLINE_FUNCTION
-  void set_iteration(int batched_id, int iteration_id) const {
-    iteration_numbers(batched_id) = iteration_id;
-  }
-
-  /// \brief set_iteration
-  ///   Store the number of iteration after convergence for one system
-  ///
-  /// \param batchedteam_id [in]: Team ID
-  /// \param batched_id [in]: Local batched ID (local ID within the team)
-  /// \param iteration_id [in]: Iteration ID
-
-  KOKKOS_INLINE_FUNCTION
-  void set_iteration(int team_id, int batched_id, int iteration_id) const {
-    iteration_numbers(team_id * N_team + batched_id) = iteration_id;
   }
 
   /// \brief get_iteration
@@ -460,6 +410,95 @@ class KrylovHandle {
     else
       return false;
   }
+
+ private:
+  /// \brief set_norm
+  ///   Store the norm of one of the system at one of the iteration
+  ///
+  /// \param batched_id [in]: Global batched ID
+  /// \param iteration_id [in]: Iteration ID
+  /// \param norm_i [in]: Norm to store
+
+  KOKKOS_INLINE_FUNCTION
+  void set_norm(int batched_id, int iteration_id, norm_type norm_i) const {
+    if (monitor_residual) residual_norms(batched_id, iteration_id) = norm_i;
+  }
+
+  /// \brief set_norm
+  ///   Store the norm of one of the system at one of the iteration
+  ///
+  /// \param batchedteam_id [in]: Team ID
+  /// \param batched_id [in]: Local batched ID (local ID within the team)
+  /// \param iteration_id [in]: Iteration ID
+  /// \param norm_i [in]: Norm to store
+
+  KOKKOS_INLINE_FUNCTION
+  void set_norm(int team_id, int batched_id, int iteration_id,
+                norm_type norm_i) const {
+    if (monitor_residual)
+      residual_norms(team_id * N_team + batched_id, iteration_id) = norm_i;
+  }
+
+  /// \brief set_last_norm
+  ///   Store the last norm of one system
+  ///
+  /// \param batched_id [in]: Global batched ID
+  /// \param norm_i [in]: Norm to store
+
+  KOKKOS_INLINE_FUNCTION
+  void set_last_norm(int batched_id, norm_type norm_i) const {
+    if (monitor_residual)
+      residual_norms(batched_id, max_iteration + 1) = norm_i;
+  }
+
+  /// \brief set_last_norm
+  ///   Store the last norm of one system
+  ///
+  /// \param batchedteam_id [in]: Team ID
+  /// \param batched_id [in]: Local batched ID (local ID within the team)
+  /// \param batched_id [in]: Global batched ID
+  /// \param norm_i [in]: Norm to store
+
+  KOKKOS_INLINE_FUNCTION
+  void set_last_norm(int team_id, int batched_id, norm_type norm_i) const {
+    if (monitor_residual)
+      residual_norms(team_id * N_team + batched_id, max_iteration + 1) = norm_i;
+  }
+
+  /// \brief set_iteration
+  ///   Store the number of iteration after convergence for one system
+  ///
+  /// \param batched_id [in]: Global batched ID
+  /// \param iteration_id [in]: Iteration ID
+
+  KOKKOS_INLINE_FUNCTION
+  void set_iteration(int batched_id, int iteration_id) const {
+    iteration_numbers(batched_id) = iteration_id;
+  }
+
+  /// \brief set_iteration
+  ///   Store the number of iteration after convergence for one system
+  ///
+  /// \param batchedteam_id [in]: Team ID
+  /// \param batched_id [in]: Local batched ID (local ID within the team)
+  /// \param iteration_id [in]: Iteration ID
+
+  KOKKOS_INLINE_FUNCTION
+  void set_iteration(int team_id, int batched_id, int iteration_id) const {
+    iteration_numbers(team_id * N_team + batched_id) = iteration_id;
+  }
+
+ public:
+  friend struct SerialGMRES;
+  template <typename MemberType>
+  friend struct TeamGMRES;
+  template <typename MemberType>
+  friend struct TeamVectorGMRES;
+
+  template <typename MemberType>
+  friend struct TeamCG;
+  template <typename MemberType>
+  friend struct TeamVectorCG;
 };
 
 }  // namespace KokkosBatched

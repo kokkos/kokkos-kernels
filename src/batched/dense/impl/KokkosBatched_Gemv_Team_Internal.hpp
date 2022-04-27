@@ -24,6 +24,7 @@ struct TeamGemvInternal {
       const int as1, const ValueType *KOKKOS_RESTRICT x, const int xs0,
       const ScalarType beta,
       /**/ ValueType *KOKKOS_RESTRICT y, const int ys0);
+
   template <typename MemberType, typename ScalarType, typename layout,
             typename ValueType>
   KOKKOS_INLINE_FUNCTION static int invoke(

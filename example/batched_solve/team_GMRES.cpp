@@ -69,76 +69,55 @@ typedef Kokkos::DefaultExecutionSpace exec_space;
 template <typename DeviceType, typename ValuesViewType, typename IntView,
           typename VectorViewType, typename KrylovHandleType, bool UsePrec>
 struct Functor_TestBatchedTeamVectorGMRES {
-  const ValuesViewType _D;
+  const ValuesViewType _values;
   const ValuesViewType _diag;
   const IntView _r;
   const IntView _c;
   const VectorViewType _X;
   const VectorViewType _B;
-  const int _N_team, _team_size, _vector_length;
-  const int _N_iteration;
-  const double _tol;
-  const int _ortho_strategy;
-  const int _scratch_pad_level;
+  const int _team_size, _vector_length;
   KrylovHandleType _handle;
 
   KOKKOS_INLINE_FUNCTION
   Functor_TestBatchedTeamVectorGMRES(
-      const ValuesViewType &D, const IntView &r, const IntView &c,
-      const VectorViewType &X, const VectorViewType &B, const int N_team,
-      const int team_size, const int vector_length, const int N_iteration,
-      const double tol, const int ortho_strategy, const int scratch_pad_level,
-      KrylovHandleType &handle)
-      : _D(D),
+      const ValuesViewType &values, const IntView &r, const IntView &c,
+      const VectorViewType &X, const VectorViewType &B, const int team_size,
+      const int vector_length, KrylovHandleType &handle)
+      : _values(values),
         _r(r),
         _c(c),
         _X(X),
         _B(B),
-        _N_team(N_team),
         _team_size(team_size),
         _vector_length(vector_length),
-        _N_iteration(N_iteration),
-        _tol(tol),
-        _ortho_strategy(ortho_strategy),
-        _scratch_pad_level(scratch_pad_level),
         _handle(handle) {}
 
   KOKKOS_INLINE_FUNCTION
   Functor_TestBatchedTeamVectorGMRES(
-      const ValuesViewType &D, const ValuesViewType &diag, const IntView &r,
-      const IntView &c, const VectorViewType &X, const VectorViewType &B,
-      const int N_team, const int team_size, const int vector_length,
-      const int N_iteration, const double tol, int ortho_strategy,
-      const int scratch_pad_level, KrylovHandleType &handle)
-      : _D(D),
+      const ValuesViewType &values, const ValuesViewType &diag,
+      const IntView &r, const IntView &c, const VectorViewType &X,
+      const VectorViewType &B, const int team_size, const int vector_length,
+      KrylovHandleType &handle)
+      : _values(values),
         _diag(diag),
         _r(r),
         _c(c),
         _X(X),
         _B(B),
-        _N_team(N_team),
         _team_size(team_size),
         _vector_length(vector_length),
-        _N_iteration(N_iteration),
-        _tol(tol),
-        _ortho_strategy(ortho_strategy),
-        _scratch_pad_level(scratch_pad_level),
         _handle(handle) {}
 
   template <typename MemberType>
   KOKKOS_INLINE_FUNCTION void operator()(const MemberType &member) const {
-    const int first_matrix = static_cast<int>(member.league_rank()) * _N_team;
-    const int N            = _D.extent(0);
-    const int last_matrix =
-        (static_cast<int>(member.league_rank() + 1) * _N_team < N
-             ? static_cast<int>(member.league_rank() + 1) * _N_team
-             : N);
+    const int first_matrix = _handle.first_index(member.league_rank());
+    const int last_matrix  = _handle.last_index(member.league_rank());
     using TeamVectorCopy1D =
         KokkosBatched::TeamVectorCopy<MemberType,
                                       KokkosBatched::Trans::NoTranspose, 1>;
 
-    auto d = Kokkos::subview(_D, Kokkos::make_pair(first_matrix, last_matrix),
-                             Kokkos::ALL);
+    auto d = Kokkos::subview(
+        _values, Kokkos::make_pair(first_matrix, last_matrix), Kokkos::ALL);
     auto x = Kokkos::subview(_X, Kokkos::make_pair(first_matrix, last_matrix),
                              Kokkos::ALL);
     auto b = Kokkos::subview(_B, Kokkos::make_pair(first_matrix, last_matrix),
@@ -196,22 +175,16 @@ struct Functor_TestBatchedTeamVectorGMRES {
     Kokkos::Timer timer;
     Kokkos::Profiling::pushRegion(name.c_str());
 
-    Kokkos::TeamPolicy<DeviceType> auto_policy(
-        ceil(1. * _D.extent(0) / _N_team), Kokkos::AUTO(), Kokkos::AUTO());
-    Kokkos::TeamPolicy<DeviceType> tuned_policy(
-        ceil(1. * _D.extent(0) / _N_team), _team_size, _vector_length);
+    Kokkos::TeamPolicy<DeviceType> auto_policy(_handle.get_number_of_teams(),
+                                               Kokkos::AUTO(), Kokkos::AUTO());
+    Kokkos::TeamPolicy<DeviceType> tuned_policy(_handle.get_number_of_teams(),
+                                                _team_size, _vector_length);
     Kokkos::TeamPolicy<DeviceType> policy;
 
     if (_team_size < 1)
       policy = auto_policy;
     else
       policy = tuned_policy;
-
-    _handle.set_max_iteration(_N_iteration);
-    _handle.set_tolerance(_tol);
-    _handle.set_ortho_strategy(_ortho_strategy);
-    _handle.set_scratch_pad_level(_scratch_pad_level);
-    _handle.set_compute_last_residual(true);
 
     int maximum_iteration = _handle.get_max_iteration();
 
@@ -221,11 +194,14 @@ struct Functor_TestBatchedTeamVectorGMRES {
 
     using ViewType2D = Kokkos::View<ScalarType **, Layout, EXSP>;
 
-    size_t bytes_1D      = ViewType2D::shmem_size(_N_team, 1);
+    size_t bytes_1D =
+        ViewType2D::shmem_size(_handle.get_number_of_systems_per_team(), 1);
     size_t bytes_row_ptr = IntView::shmem_size(_r.extent(0));
     size_t bytes_col_idc = IntView::shmem_size(_c.extent(0));
-    size_t bytes_2D_1    = ViewType2D::shmem_size(_N_team, _X.extent(1));
-    size_t bytes_2D_2 = ViewType2D::shmem_size(_N_team, maximum_iteration + 1);
+    size_t bytes_2D_1    = ViewType2D::shmem_size(
+        _handle.get_number_of_systems_per_team(), _X.extent(1));
+    size_t bytes_2D_2 = ViewType2D::shmem_size(
+        _handle.get_number_of_systems_per_team(), maximum_iteration + 1);
 
     size_t bytes_int  = bytes_row_ptr + bytes_col_idc;
     size_t bytes_diag = bytes_2D_1;
@@ -309,12 +285,18 @@ int main(int /*argc*/, char ** /*argv*/) {
     handle.Arnoldi_view =
         Scalar3DViewType("", N, n_iterations, Blk + n_iterations + 3);
 
+    handle.set_max_iteration(n_iterations);
+    handle.set_tolerance(tol);
+    handle.set_ortho_strategy(ortho_strategy);
+    handle.set_scratch_pad_level(0);
+    handle.set_compute_last_residual(true);
+
     double time =
         Functor_TestBatchedTeamVectorGMRES<exec_space, AMatrixValueView,
                                            IntView, XYType, KrylovHandleType,
-                                           true>(
-            values, diag, rowOffsets, colIndices, x, y, N_team, team_size,
-            vector_length, n_iterations, tol, ortho_strategy, 0, handle)
+                                           true>(values, diag, rowOffsets,
+                                                 colIndices, x, y, team_size,
+                                                 vector_length, handle)
             .run();
 
     printf("times = %f secondes\n", time);
