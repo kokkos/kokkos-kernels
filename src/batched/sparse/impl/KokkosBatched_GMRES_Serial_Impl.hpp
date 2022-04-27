@@ -281,7 +281,7 @@ KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A,
     auto B_l = Kokkos::subview(G, l, first_indices);
 
     SerialTrsm<Side::Left, Uplo::Lower, Trans::Transpose, Diag::NonUnit,
-               Algo::Trsm::Unblocked>::template invoke(1, A_l, B_l);
+               Algo::Trsm::Unblocked>::invoke(1, A_l, B_l);
   }
 
   if (handle.get_ortho_strategy() == 0) {

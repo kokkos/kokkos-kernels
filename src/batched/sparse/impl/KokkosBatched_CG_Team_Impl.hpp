@@ -61,7 +61,7 @@ namespace KokkosBatched {
 
 template <typename MemberType>
 template <typename OperatorType, typename VectorViewType, typename KrylovHandle>
-KOKKOS_INLINE_FUNCTION int TeamCG<MemberType>::template invoke(
+KOKKOS_INLINE_FUNCTION int TeamCG<MemberType>::invoke(
     const MemberType& member, const OperatorType& A, const VectorViewType& _B,
     const VectorViewType& _X, const KrylovHandle& handle) {
   typedef int OrdinalType;

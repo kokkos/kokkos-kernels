@@ -67,7 +67,7 @@ namespace KokkosBatched {
 template <typename MemberType>
 template <typename OperatorType, typename VectorViewType,
           typename PrecOperatorType, typename KrylovHandleType>
-KOKKOS_INLINE_FUNCTION int TeamVectorGMRES<MemberType>::template invoke(
+KOKKOS_INLINE_FUNCTION int TeamVectorGMRES<MemberType>::invoke(
     const MemberType& member, const OperatorType& A, const VectorViewType& _B,
     const VectorViewType& _X, const PrecOperatorType& P,
     const KrylovHandleType& handle) {
@@ -326,7 +326,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorGMRES<MemberType>::template invoke(
         auto B_l = Kokkos::subview(G, l, first_indices);
 
         SerialTrsm<Side::Left, Uplo::Lower, Trans::Transpose, Diag::NonUnit,
-                   Algo::Trsm::Unblocked>::template invoke(1, A_l, B_l);
+                   Algo::Trsm::Unblocked>::invoke(1, A_l, B_l);
       });
 
   member.team_barrier();  // Finish writing to G
@@ -375,7 +375,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorGMRES<MemberType>::template invoke(
 template <typename MemberType>
 template <typename OperatorType, typename VectorViewType,
           typename KrylovHandleType>
-KOKKOS_INLINE_FUNCTION int TeamVectorGMRES<MemberType>::template invoke(
+KOKKOS_INLINE_FUNCTION int TeamVectorGMRES<MemberType>::invoke(
     const MemberType& member, const OperatorType& A, const VectorViewType& _B,
     const VectorViewType& _X, const KrylovHandleType& handle) {
   Identity P;
