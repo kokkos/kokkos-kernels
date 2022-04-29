@@ -62,6 +62,13 @@ struct DefaultComparator {
 }  // namespace Impl
 
 // ----------------------------------
+// BSR matrix/graph sorting utilities
+// ----------------------------------
+
+template <typename bsrMat_t>
+void sort_bsr_matrix(const bsrMat_t& A);
+
+// ----------------------------------
 // CRS matrix/graph sorting utilities
 // ----------------------------------
 
@@ -563,6 +570,70 @@ void sort_crs_matrix(const crsMat_t& A) {
   // is allowed)
   sort_crs_matrix<exec_space, rowmap_t, entries_t, values_t>(
       A.graph.row_map, A.graph.entries, A.values);
+}
+
+namespace Impl {
+
+template <typename T>
+KOKKOS_INLINE_FUNCTION void kk_swap(T& a, T& b) {
+  T t = a;
+  a   = b;
+  b   = t;
+}
+
+}  // namespace Impl
+
+// Sort a BRS matrix: within each row, sort entries ascending by column and
+// permute the values accordingly.
+template <typename execution_space, typename rowmap_t, typename entries_t,
+          typename values_t,
+          typename lno_t = typename entries_t::non_const_value_type>
+void sort_bsr_matrix(const lno_t blockdim, const rowmap_t& rowmap,
+                     const entries_t& entries, const values_t& values) {
+  // TODO: this is O(N^2) mock for debugging - do regular implementation based
+  // on Radix/Bitonic sort (like CSR) IDEA: maybe we need only one general
+  // Radix2/Bitonic2 and CSR sorting may call it with blockSize=1 ?
+  lno_t numRows = rowmap.extent(0) ? rowmap.extent(0) - 1 : 0;
+  if (numRows == 0) return;
+  const lno_t blocksize = blockdim * blockdim;
+
+  assert(values.extent(0) == entries.extent(0) * blocksize);
+  Kokkos::parallel_for(
+      "sort_bsr_matrix", Kokkos::RangePolicy<execution_space>(0, numRows),
+      KOKKOS_LAMBDA(lno_t i) {
+        const lno_t rowStart = rowmap(i);
+        const lno_t rowSize  = rowmap(i + 1) - rowStart;
+        auto* e              = entries.data() + rowStart;
+        auto* v              = values.data() + rowStart * blocksize;
+        bool done            = false;
+        while (!done) {
+          done = true;
+          for (lno_t j = 1; j < rowSize; ++j) {
+            const lno_t jp = j - 1;
+            if (e[jp] <= e[j]) continue;
+            Impl::kk_swap(e[jp], e[j]);
+            auto const vb  = v + j * blocksize;
+            auto const vbp = v + jp * blocksize;
+            for (lno_t k = 0; k < blocksize;
+                 ++k)  // std::swap_ranges(vb, vb + blocksize, vbp);
+              Impl::kk_swap(vb[k], vbp[k]);
+            done = false;
+          }
+        }
+      });
+}
+
+// Sort a BSR matrix (like CRS but single values are replaced with contignous
+// blocks)
+template <typename bsrMat_t>
+void sort_bsr_matrix(const bsrMat_t& A) {
+  // NOTE: unlike rowmap, entries and values are non-const, so we can sort them
+  // directly
+  sort_bsr_matrix<typename bsrMat_t::execution_space,
+                  typename bsrMat_t::row_map_type,
+                  typename bsrMat_t::index_type::non_const_type,
+                  typename bsrMat_t::values_type::non_const_type>(
+      A.blockDim(), A.graph.row_map, A.graph.entries, A.values);
 }
 
 // Sort a CRS graph: within each row, sort entries ascending by column.

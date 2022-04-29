@@ -65,6 +65,7 @@ int main(int /*argc*/, char** /*argv[]*/) {
   solverOpts.tol        = 1e-05;  // Relative residual convergence tolerance.
   solverOpts.maxRestart = 60;
   solverOpts.ortho      = "CGS2";  // orthog type
+  solverOpts.verbose    = false;   // No verbosity needed for most testing
   bool pass1            = false;
   bool pass2            = false;
 

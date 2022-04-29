@@ -47,6 +47,7 @@
 #include "KokkosKernels_Handle.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosKernels_SparseUtils_cusparse.hpp"
+#include "KokkosKernels_SparseUtils_mkl.hpp"
 #include "KokkosSparse_spadd.hpp"
 #include "KokkosKernels_TestUtils.hpp"
 
@@ -57,21 +58,6 @@
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
 #include <mkl.h>
 #include <mkl_spblas.h>
-
-inline void spadd_mkl_internal_safe_call(sparse_status_t mklStatus,
-                                         const char* name,
-                                         const char* file = nullptr,
-                                         const int line   = 0) {
-  if (SPARSE_STATUS_SUCCESS != mklStatus) {
-    std::ostringstream oss;
-    oss << "MKL call \"" << name << "\" encountered error at " << file << ":"
-        << line << '\n';
-    Kokkos::abort(oss.str().c_str());
-  }
-}
-
-#define SPADD_MKL_SAFE_CALL(call) \
-  spadd_mkl_internal_safe_call(call, #call, __FILE__, __LINE__)
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE) &&     \
@@ -259,11 +245,11 @@ void run_experiment(const Params& params) {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
   sparse_matrix_t Amkl, Bmkl, Cmkl;
   if (params.use_mkl) {
-    SPADD_MKL_SAFE_CALL(mkl_sparse_d_create_csr(
+    KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_d_create_csr(
         &Amkl, SPARSE_INDEX_BASE_ZERO, m, n, (int*)A.graph.row_map.data(),
         (int*)A.graph.row_map.data() + 1, A.graph.entries.data(),
         A.values.data()));
-    SPADD_MKL_SAFE_CALL(mkl_sparse_d_create_csr(
+    KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_d_create_csr(
         &Bmkl, SPARSE_INDEX_BASE_ZERO, m, n, (int*)B.graph.row_map.data(),
         (int*)B.graph.row_map.data() + 1, B.graph.entries.data(),
         B.values.data()));
@@ -326,9 +312,9 @@ void run_experiment(const Params& params) {
 #endif
       } else if (params.use_mkl) {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
-        SPADD_MKL_SAFE_CALL(mkl_sparse_d_add(SPARSE_OPERATION_NON_TRANSPOSE,
-                                             Amkl, 1.0, Bmkl, &Cmkl));
-        SPADD_MKL_SAFE_CALL(mkl_sparse_destroy(Cmkl));
+        KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_d_add(
+            SPARSE_OPERATION_NON_TRANSPOSE, Amkl, 1.0, Bmkl, &Cmkl));
+        KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_destroy(Cmkl));
 #endif
       } else {
         spadd_numeric(
@@ -351,8 +337,8 @@ void run_experiment(const Params& params) {
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
   if (params.use_mkl) {
-    SPADD_MKL_SAFE_CALL(mkl_sparse_destroy(Amkl));
-    SPADD_MKL_SAFE_CALL(mkl_sparse_destroy(Bmkl));
+    KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_destroy(Amkl));
+    KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_destroy(Bmkl));
   }
 #endif
 

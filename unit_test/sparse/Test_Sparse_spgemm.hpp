@@ -229,7 +229,7 @@ bool is_same_matrix(crsMat_t output_mat_actual, crsMat_t output_mat_reference) {
 
   typedef typename Kokkos::Details::ArithTraits<
       typename scalar_view_t::non_const_value_type>::mag_type eps_type;
-  eps_type eps = std::is_same<eps_type, float>::value ? 2 * 1e-3 : 1e-7;
+  eps_type eps = std::is_same<eps_type, float>::value ? 3.7e-3 : 1e-7;
 
   is_identical = KokkosKernels::Impl::kk_is_relatively_identical_view<
       scalar_view_t, scalar_view_t, eps_type, typename device::execution_space>(
@@ -269,6 +269,8 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth,
   crsMat_t B = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(
       k, n, nnz, row_size_variance, bandwidth);
 
+  const bool is_empy_case = m < 1 || n < 1 || k < 1 || nnz < 1;
+
   crsMat_t output_mat2;
   if (oldInterface)
     run_spgemm_old_interface<crsMat_t, device>(A, B, SPGEMM_DEBUG, output_mat2);
@@ -280,12 +282,12 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth,
       SPGEMM_KK_SPEED /* alias SPGEMM_KK_DENSE */
   };
 
-#ifdef HAVE_KOKKOSKERNELS_MKL
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
   algorithms.push_back(SPGEMM_MKL);
 #endif
 
   for (auto spgemm_algorithm : algorithms) {
-    const uint64_t max_integer = 2147483647;
+    const uint64_t max_integer = Kokkos::ArithTraits<int>::max();
     std::string algo           = "UNKNOWN";
     bool is_expected_to_fail   = false;
 
@@ -299,26 +301,20 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth,
 #endif
         break;
 
-      case SPGEMM_MKL:
-        algo = "SPGEMM_MKL";
-        // MKL requires scalar to be either float or double
-        if (!(std::is_same<float, scalar_t>::value ||
-              std::is_same<double, scalar_t>::value)) {
+      case SPGEMM_MKL: algo = "SPGEMM_MKL";
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
+        if (!KokkosSparse::Impl::mkl_is_supported_value_type<scalar_t>::value) {
           is_expected_to_fail = true;
         }
-        // mkl requires local ordinals to be int.
-        if (!(std::is_same<int, lno_t>::value)) {
+#endif
+        // MKL requires local ordinals to be int.
+        // Note: empty-array special case will NOT fail on this.
+        if (!std::is_same<int, lno_t>::value && !is_empy_case) {
           is_expected_to_fail = true;
         }
         // if size_type is larger than int, mkl casts it to int.
         // it will fail if casting cause overflow.
         if (A.values.extent(0) > max_integer) {
-          is_expected_to_fail = true;
-        }
-
-        if (!(Kokkos::SpaceAccessibility<
-                typename Kokkos::HostSpace::execution_space,
-                typename device::memory_space>::accessible)) {
           is_expected_to_fail = true;
         }
         break;
@@ -352,7 +348,7 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth,
       EXPECT_TRUE(is_expected_to_fail) << algo << ": " << e.what();
       failed = true;
     }
-    EXPECT_TRUE((failed == is_expected_to_fail));
+    EXPECT_EQ(is_expected_to_fail, failed);
 
     // double spgemm_time = timer1.seconds();
 
