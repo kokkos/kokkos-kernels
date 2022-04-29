@@ -152,10 +152,9 @@ template <class IlukHandle, class ARowMapType, class AEntriesType,
           class UEntriesType>
 void iluk_symbolic(IlukHandle& thandle,
                    const typename IlukHandle::const_nnz_lno_t& fill_lev,
-                   const ARowMapType& A_row_map_d,
-                   const AEntriesType& A_entries_d, LRowMapType& L_row_map_d,
-                   LEntriesType& L_entries_d, URowMapType& U_row_map_d,
-                   UEntriesType& U_entries_d) {
+                   const ARowMapType& A_row_map_d, const AEntriesType& A_entries_d,
+                   LRowMapType& L_row_map_d, LEntriesType& L_entries_d,
+                   URowMapType& U_row_map_d, UEntriesType& U_entries_d) {
   {
     // Scheduling and symbolic phase currently compute on host - need host copy
     // of all views

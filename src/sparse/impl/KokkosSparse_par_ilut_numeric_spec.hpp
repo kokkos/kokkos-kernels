@@ -165,7 +165,6 @@ struct PAR_ILUT_NUMERIC<KernelHandle, ARowMapType, AEntriesType, AValuesType,
       const AValuesType &A_values, LRowMapType &L_row_map,
       LEntriesType &L_entries, LValuesType &L_values, URowMapType &U_row_map,
       UEntriesType &U_entries, UValuesType &U_values) {
-    // Call specific algorithm type
     auto par_ilut_handle = handle->get_par_ilut_handle();
 
     Experimental::iluk_numeric(*par_ilut_handle, A_row_map, A_entries, A_values,
