@@ -202,6 +202,9 @@ void run_test_par_ilut() {
 
   typename KernelHandle::const_nnz_lno_t fill_lev = 2; // Does par_ilut need this?
 
+  std::cout << "Initial A" << std::endl;
+  print_matrix(decompress_matrix(row_map, entries, values));
+
   // Initial L/U approximations for A
   par_ilut_symbolic(&kh, fill_lev, row_map, entries, L_row_map, L_entries,
                     U_row_map, U_entries);

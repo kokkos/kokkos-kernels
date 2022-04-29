@@ -88,24 +88,42 @@ void iluk_symbolic(IlukHandle& thandle,
 
   // Sizing
   const auto policy = thandle.get_default_team_policy();
-  auto nnzs = Kokkos::make_pair<size_type, size_type>(0, 0);
+  size_type nnzsL, nnzsU = 0;
   Kokkos::parallel_reduce(
     "symbolic sizing",
     policy,
-    KOKKOS_LAMBDA(const member_type& team, decltype(nnzs)& nnzs_outer) {
+    KOKKOS_LAMBDA(const member_type& team, size_type& nnzsL_outer, size_type& nnzsU_outer) {
       const auto row_idx = team.league_rank();
 
       const auto row_nnz_begin = A_row_map_d(row_idx);
       const auto row_nnz_end   = A_row_map_d(row_idx+1);
+
+      size_type nnzsL_temp, nnzsU_temp = 0;
+      // Multi-reductions are not supported at the TeamThread level
       Kokkos::parallel_reduce(
-        "symbolic sizing team",
         Kokkos::TeamThreadRange(team, row_nnz_begin, row_nnz_end),
-        [&](const size_type nnz, decltype(nnzs)& nnzs_inner) {
+        [&](const size_type nnz, size_type& nnzsL_inner) {
           const auto col_idx = A_entries_d(nnz);
-          nnzs_inner.first  += col_idx < row_idx;
-          nnzs_inner.second += col_idx > row_idx;
-      }, nnzs_outer);
-  }, nnzs);
+          nnzsL_inner += col_idx < row_idx;
+      }, nnzsL_temp);
+
+      Kokkos::parallel_reduce(
+        Kokkos::TeamThreadRange(team, row_nnz_begin, row_nnz_end),
+        [&](const size_type nnz, size_type& nnzsU_inner) {
+          const auto col_idx = A_entries_d(nnz);
+          nnzsU_inner += col_idx > row_idx;
+      }, nnzsU_temp);
+
+      nnzsL_outer += nnzsL_temp + 1;
+      nnzsU_outer += nnzsU_temp + 1;
+
+      L_row_map_d(row_idx+1) = nnzsL_outer;
+      U_row_map_d(row_idx+1) = nnzsU_outer;
+
+  }, nnzsL, nnzsU);
+
+  std::cout << "nnzL: " << nnzsL << std::endl;
+  std::cout << "nnzU: " << nnzsU << std::endl;
 }  // end iluk_symbolic
 
 }  // namespace Experimental
