@@ -66,6 +66,7 @@ class PAR_ILUTHandle {
 
   typedef ExecutionSpace execution_space;
   typedef HandlePersistentMemorySpace memory_space;
+  using TeamPolicy = Kokkos::TeamPolicy<execution_space>;
 
   typedef typename std::remove_const<size_type_>::type size_type;
   typedef const size_type const_size_type;
@@ -93,8 +94,7 @@ class PAR_ILUTHandle {
  private:
   nnz_row_view_t level_list;  // level IDs which the rows belong to
   nnz_lno_view_t level_idx;   // the list of rows in each level
-  nnz_lno_view_t
-      level_ptr;  // the starting index (into the view level_idx) of each level
+  nnz_lno_view_t level_ptr;   // the starting index (into the view level_idx) of each level
 
   size_type nrows;
   size_type nlevel;
@@ -186,6 +186,16 @@ class PAR_ILUTHandle {
 
   void set_vector_size(const int vs) { this->vector_size = vs; }
   int get_vector_size() const { return this->vector_size; }
+
+  TeamPolicy get_default_team_policy() const
+  {
+    if (team_size == -1) {
+      return TeamPolicy(nrows, Kokkos::AUTO);
+    }
+    else {
+      return TeamPolicy(nrows, team_size);
+    }
+  }
 };
 
 }  // namespace Experimental
