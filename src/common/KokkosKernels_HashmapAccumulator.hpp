@@ -780,6 +780,22 @@ struct HashmapAccumulator {
       return __insert_success;
     }
   }
+
+  // function to be called from device.
+  KOKKOS_INLINE_FUNCTION
+  size_type find(const key_type &key) {
+    size_type hash, i;
+
+    if (key == -1) return -1;
+
+    hash = __compute_hash(key, __hashOpRHS);
+    for (i = hash_begins[hash]; i != -1; i = hash_nexts[i]) {
+      if (keys[i] == key) {
+        return i;
+      }
+    }
+    return -1;
+  }
   // end public members
  private:
   size_type __max_value_size;
