@@ -41,8 +41,8 @@
 // ************************************************************************
 //@HEADER
 */
-#ifndef KOKKOSSPARSE_IMPL_SPGEMM_NUMERIC_SPEC_HPP_
-#define KOKKOSSPARSE_IMPL_SPGEMM_NUMERIC_SPEC_HPP_
+#ifndef KOKKOSSPARSE_IMPL_BSPGEMM_NUMERIC_SPEC_HPP_
+#define KOKKOSSPARSE_IMPL_BSPGEMM_NUMERIC_SPEC_HPP_
 
 #include <KokkosKernels_config.h>
 
@@ -54,8 +54,8 @@
 //#include "KokkosSparse_spgemm_symbolic.hpp"
 #include "KokkosSparse_spgemm_cuSPARSE_impl.hpp"
 #include "KokkosSparse_spgemm_CUSP_impl.hpp"
-#include "KokkosSparse_spgemm_impl.hpp"
-#include "KokkosSparse_spgemm_impl_seq.hpp"
+#include "KokkosSparse_bspgemm_impl.hpp"
+#include "KokkosSparse_bspgemm_impl_seq.hpp"
 #include "KokkosSparse_spgemm_mkl_impl.hpp"
 #include "KokkosSparse_spgemm_mkl2phase_impl.hpp"
 #include "KokkosSparse_spgemm_viennaCL_impl.hpp"
@@ -68,18 +68,18 @@ template <class KernelHandle, class a_size_view_t_, class a_lno_view_t,
           class a_scalar_view_t, class b_size_view_t_, class b_lno_view_t,
           class b_scalar_view_t, class c_size_view_t_, class c_lno_view_t,
           class c_scalar_view_t>
-struct spgemm_numeric_eti_spec_avail {
+struct bspgemm_numeric_eti_spec_avail {
   enum : bool { value = false };
 };
 
 }  // namespace Impl
 }  // namespace KokkosSparse
 
-#define KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_AVAIL(                       \
+#define KOKKOSSPARSE_BSPGEMM_NUMERIC_ETI_SPEC_AVAIL(                      \
     SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, \
     FAST_MEM_SPACE_TYPE, SLOW_MEM_SPACE_TYPE)                             \
   template <>                                                             \
-  struct spgemm_numeric_eti_spec_avail<                                   \
+  struct bspgemm_numeric_eti_spec_avail<                                  \
       KokkosKernels::Experimental::KokkosKernelsHandle<                   \
           const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,       \
           EXEC_SPACE_TYPE, FAST_MEM_SPACE_TYPE, SLOW_MEM_SPACE_TYPE>,     \
@@ -114,7 +114,7 @@ struct spgemm_numeric_eti_spec_avail {
   };                                                                      \
                                                                           \
   template <>                                                             \
-  struct spgemm_numeric_eti_spec_avail<                                   \
+  struct bspgemm_numeric_eti_spec_avail<                                  \
       KokkosKernels::Experimental::KokkosKernelsHandle<                   \
           const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,       \
           EXEC_SPACE_TYPE, FAST_MEM_SPACE_TYPE, SLOW_MEM_SPACE_TYPE>,     \
@@ -149,59 +149,68 @@ struct spgemm_numeric_eti_spec_avail {
   };
 
 // Include the actual specialization declarations
-#include <KokkosSparse_spgemm_tpl_spec_avail.hpp>
-#include <generated_specializations_hpp/KokkosSparse_spgemm_numeric_eti_spec_avail.hpp>
+//#include <KokkosSparse_bspgemm_tpl_spec_avail.hpp>
+#include <generated_specializations_hpp/KokkosSparse_bspgemm_numeric_eti_spec_avail.hpp>
 
 namespace KokkosSparse {
 namespace Impl {
 
+// For future use (when TPL with block SpGEMM numeric phase is encountered)
+template <class KernelHandle, class a_size_view_t_, class a_lno_view_t,
+          class a_scalar_view_t, class b_size_view_t_, class b_lno_view_t,
+          class b_scalar_view_t, class c_size_view_t_, class c_lno_view_t,
+          class c_scalar_view_t>
+struct bspgemm_numeric_tpl_spec_avail {
+  enum : bool { value = false };
+};
+
 // Unification layer
-/// \brief Implementation of KokkosBlas::spgemm (sparse matrix - dense
-///   vector multiply) for multiple vectors at a time (multivectors)
-///   and possibly multiple coefficients at a time.
+/// \brief Implementation of BSR sparse block matrix - matrix multiplication
 
 template <class KernelHandle, class a_size_view_t_, class a_lno_view_t,
           class a_scalar_view_t, class b_size_view_t_, class b_lno_view_t,
           class b_scalar_view_t, class c_size_view_t_, class c_lno_view_t,
           class c_scalar_view_t,
-          bool tpl_spec_avail = spgemm_numeric_tpl_spec_avail<
+          bool tpl_spec_avail = bspgemm_numeric_tpl_spec_avail<
               KernelHandle, a_size_view_t_, a_lno_view_t, a_scalar_view_t,
               b_size_view_t_, b_lno_view_t, b_scalar_view_t, c_size_view_t_,
               c_lno_view_t, c_scalar_view_t>::value,
-          bool eti_spec_avail = spgemm_numeric_eti_spec_avail<
+          bool eti_spec_avail = bspgemm_numeric_eti_spec_avail<
               KernelHandle, a_size_view_t_, a_lno_view_t, a_scalar_view_t,
               b_size_view_t_, b_lno_view_t, b_scalar_view_t, c_size_view_t_,
               c_lno_view_t, c_scalar_view_t>::value>
-struct SPGEMM_NUMERIC {
-  static void spgemm_numeric(KernelHandle *handle,
-                             typename KernelHandle::const_nnz_lno_t m,
-                             typename KernelHandle::const_nnz_lno_t n,
-                             typename KernelHandle::const_nnz_lno_t k,
-                             a_size_view_t_ row_mapA, a_lno_view_t entriesA,
-                             a_scalar_view_t valuesA,
+struct BSPGEMM_NUMERIC {
+  static void bspgemm_numeric(KernelHandle *handle,
+                              typename KernelHandle::const_nnz_lno_t m,
+                              typename KernelHandle::const_nnz_lno_t n,
+                              typename KernelHandle::const_nnz_lno_t k,
+                              typename KernelHandle::const_nnz_lno_t blockDim,
+                              a_size_view_t_ row_mapA, a_lno_view_t entriesA,
+                              a_scalar_view_t valuesA,
 
-                             bool transposeA, b_size_view_t_ row_mapB,
-                             b_lno_view_t entriesB, b_scalar_view_t valuesB,
-                             bool transposeB, c_size_view_t_ row_mapC,
-                             c_lno_view_t &entriesC, c_scalar_view_t &valuesC);
+                              bool transposeA, b_size_view_t_ row_mapB,
+                              b_lno_view_t entriesB, b_scalar_view_t valuesB,
+                              bool transposeB, c_size_view_t_ row_mapC,
+                              c_lno_view_t &entriesC, c_scalar_view_t &valuesC);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 
-//! Full specialization of spgemm_mv for single vectors (2-D Views).
+//! Full specialization of block spgemm
 // Unification layer
 template <class KernelHandle, class a_size_view_t_, class a_lno_view_t,
           class a_scalar_view_t, class b_size_view_t_, class b_lno_view_t,
           class b_scalar_view_t, class c_size_view_t_, class c_lno_view_t,
           class c_scalar_view_t>
-struct SPGEMM_NUMERIC<
+struct BSPGEMM_NUMERIC<
     KernelHandle, a_size_view_t_, a_lno_view_t, a_scalar_view_t, b_size_view_t_,
     b_lno_view_t, b_scalar_view_t, c_size_view_t_, c_lno_view_t,
     c_scalar_view_t, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
-  static void spgemm_numeric(
+  static void bspgemm_numeric(
       KernelHandle *handle, typename KernelHandle::nnz_lno_t m,
       typename KernelHandle::nnz_lno_t n, typename KernelHandle::nnz_lno_t k,
-      a_size_view_t_ row_mapA, a_lno_view_t entriesA, a_scalar_view_t valuesA,
+      typename KernelHandle::const_nnz_lno_t blockDim, a_size_view_t_ row_mapA,
+      a_lno_view_t entriesA, a_scalar_view_t valuesA,
 
       bool transposeA, b_size_view_t_ row_mapB, b_lno_view_t entriesB,
       b_scalar_view_t valuesB, bool transposeB, c_size_view_t_ row_mapC,
@@ -215,56 +224,35 @@ struct SPGEMM_NUMERIC<
 
     switch (sh->get_algorithm_type()) {
       case SPGEMM_CUSPARSE:
-        cuSPARSE_apply<spgemmHandleType>(
-            sh, m, n, k, row_mapA, entriesA, valuesA, transposeA, row_mapB,
-            entriesB, valuesB, transposeB, row_mapC, entriesC, valuesC);
-        break;
+        throw std::runtime_error(
+            "cuSPARSE implementation for block SpGEMM is not available");
       case SPGEMM_CUSP:
-        CUSP_apply<spgemmHandleType, a_size_view_t_, a_lno_view_t,
-                   a_scalar_view_t, b_size_view_t_, b_lno_view_t,
-                   b_scalar_view_t, c_size_view_t_, c_lno_view_t,
-                   c_scalar_view_t>(sh, m, n, k, row_mapA, entriesA, valuesA,
-                                    transposeA, row_mapB, entriesB, valuesB,
-                                    transposeB, row_mapC, entriesC, valuesC);
-        break;
+        throw std::runtime_error(
+            "CUSP implementation for block SpGEMM is not available");
       case SPGEMM_MKL:
-#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
-        mkl_numeric(sh, m, n, k, row_mapA, entriesA, valuesA, transposeA,
-                    row_mapB, entriesB, valuesB, transposeB, row_mapC, entriesC,
-                    valuesC, handle->get_verbose());
-#else
-        throw std::runtime_error("MKL was not enabled in this build!");
-#endif
-        break;
       case SPGEMM_MKL2PHASE:
-        mkl2phase_apply(sh, m, n, k, row_mapA, entriesA, valuesA, transposeA,
-                        row_mapB, entriesB, valuesB, transposeB, row_mapC,
-                        entriesC, valuesC, handle->get_verbose());
-        break;
-
+        throw std::runtime_error(
+            "MKL implementation available for block SpGEMM is not available");
       case SPGEMM_VIENNA:
-        viennaCL_apply<spgemmHandleType>(
-            sh, m, n, k, row_mapA, entriesA, valuesA, transposeA, row_mapB,
-            entriesB, valuesB, transposeB, row_mapC, entriesC, valuesC,
-            handle->get_verbose());
-        break;
+        throw std::runtime_error(
+            "Vienna implementation available for block SpGEMM is not "
+            "available");
 
       default:
 
       {
-        KokkosSPGEMM<KernelHandle, a_size_view_t_, a_lno_view_t,
-                     a_scalar_view_t, b_size_view_t_, b_lno_view_t,
-                     b_scalar_view_t>
-            kspgemm(handle, m, n, k, row_mapA, entriesA, valuesA, transposeA,
-                    row_mapB, entriesB, valuesB, transposeB);
-        kspgemm.KokkosSPGEMM_numeric(row_mapC, entriesC, valuesC);
+        KokkosBSPGEMM<KernelHandle, a_size_view_t_, a_lno_view_t,
+                      a_scalar_view_t, b_size_view_t_, b_lno_view_t,
+                      b_scalar_view_t>
+            kbspgemm(handle, m, n, k, blockDim, row_mapA, entriesA, valuesA,
+                     transposeA, row_mapB, entriesB, valuesB, transposeB);
+        kbspgemm.KokkosBSPGEMM_numeric(row_mapC, entriesC, valuesC);
       } break;
       case SPGEMM_SERIAL:
       case SPGEMM_DEBUG:
-        spgemm_debug_numeric(handle, m, n, k, row_mapA, entriesA, valuesA,
-
-                             transposeA, row_mapB, entriesB, valuesB,
-                             transposeB, row_mapC, entriesC, valuesC);
+        bspgemm_debug_numeric(handle, m, n, k, blockDim, row_mapA, entriesA,
+                              valuesA, transposeA, row_mapB, entriesB, valuesB,
+                              transposeB, row_mapC, entriesC, valuesC);
         break;
     }
   }
@@ -275,10 +263,10 @@ struct SPGEMM_NUMERIC<
 }  // namespace Impl
 }  // namespace KokkosSparse
 
-#define KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_DECL(                        \
+#define KOKKOSSPARSE_BSPGEMM_NUMERIC_ETI_SPEC_DECL(                       \
     SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, \
     FAST_MEM_SPACE_TYPE, SLOW_MEM_SPACE_TYPE)                             \
-  extern template struct SPGEMM_NUMERIC<                                  \
+  extern template struct BSPGEMM_NUMERIC<                                 \
       typename KokkosKernels::Experimental::KokkosKernelsHandle<          \
           const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,       \
           EXEC_SPACE_TYPE, FAST_MEM_SPACE_TYPE, SLOW_MEM_SPACE_TYPE>,     \
@@ -311,7 +299,7 @@ struct SPGEMM_NUMERIC<
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
       false, true>;                                                       \
                                                                           \
-  extern template struct SPGEMM_NUMERIC<                                  \
+  extern template struct BSPGEMM_NUMERIC<                                 \
       typename KokkosKernels::Experimental::KokkosKernelsHandle<          \
           const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,       \
           EXEC_SPACE_TYPE, FAST_MEM_SPACE_TYPE, SLOW_MEM_SPACE_TYPE>,     \
@@ -344,10 +332,10 @@ struct SPGEMM_NUMERIC<
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
       false, true>;
 
-#define KOKKOSSPARSE_SPGEMM_NUMERIC_ETI_SPEC_INST(                        \
+#define KOKKOSSPARSE_BSPGEMM_NUMERIC_ETI_SPEC_INST(                       \
     SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, \
     FAST_MEM_SPACE_TYPE, SLOW_MEM_SPACE_TYPE)                             \
-  template struct SPGEMM_NUMERIC<                                         \
+  template struct BSPGEMM_NUMERIC<                                        \
       KokkosKernels::Experimental::KokkosKernelsHandle<                   \
           const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,       \
           EXEC_SPACE_TYPE, FAST_MEM_SPACE_TYPE, SLOW_MEM_SPACE_TYPE>,     \
@@ -380,7 +368,7 @@ struct SPGEMM_NUMERIC<
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
       false, true>;                                                       \
                                                                           \
-  template struct SPGEMM_NUMERIC<                                         \
+  template struct BSPGEMM_NUMERIC<                                        \
       KokkosKernels::Experimental::KokkosKernelsHandle<                   \
           const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,       \
           EXEC_SPACE_TYPE, FAST_MEM_SPACE_TYPE, SLOW_MEM_SPACE_TYPE>,     \
@@ -413,7 +401,7 @@ struct SPGEMM_NUMERIC<
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
       false, true>;
 
-#include <KokkosSparse_spgemm_tpl_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosSparse_spgemm_numeric_eti_spec_decl.hpp>
+//#include <KokkosSparse_spgemm_tpl_spec_decl.hpp>
+#include <generated_specializations_hpp/KokkosSparse_bspgemm_numeric_eti_spec_decl.hpp>
 
 #endif  // KOKKOS_BLAS1_MV_IMPL_DOT_HPP_
