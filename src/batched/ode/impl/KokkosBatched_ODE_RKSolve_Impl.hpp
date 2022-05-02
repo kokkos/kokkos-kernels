@@ -133,9 +133,9 @@ struct SerialRKSolveInternal {
 // RKSolve impl:
 //=====================================================================
 
-template <typename TableType>
+template <typename TableType, typename ODESolverType>
 template <typename ODEType, typename ViewTypeA, typename ViewTypeB>
-KOKKOS_FUNCTION ODESolverStatus SerialRKSolve<TableType>::invoke(
+KOKKOS_FUNCTION ODESolverStatus SerialRKSolve<TableType, ODESolverType>::invoke(
     const ODEType &ode, const ODEArgs &args_, ViewTypeA &y, ViewTypeA &y0,
     ViewTypeA &dydt, ViewTypeA &ytemp, ViewTypeB &kstack, double tstart,
     double tend) {

@@ -51,8 +51,6 @@ namespace KokkosBatched {
 namespace Experimental {
 namespace ODE {
 
-enum class ODESolverType { RKEH, RK12, RKBS, RKF45, CashKarp, DOPRI5 };
-
 struct ODEArgs {
   double absTol    = 1e-12;   // Absolute tolerance
   double relTol    = 1e-6;    // Relative tolerance

@@ -59,7 +59,27 @@ namespace KokkosBatched {
 namespace Experimental {
 namespace ODE {
 
-template <typename TableType>
+/*template<typename ODESolverType>
+struct ODEHandle {
+  const int ndofs;
+  const double tstart;
+  const double tend;
+};*/
+
+struct ExplicitRKTag {};
+struct ImplicitRKTag {};
+
+/*template<>
+struct ODEHandle<ODESolverType::ExplicitRK>{
+  KOKKOS_FUNCTION ODEHandle<ODESolverType::ExplicitRK>(int ndofs_, double
+tstart, double tend): //, RKTableType tabletype): ndofs(ndofs_), tstart(tstart),
+  tend(tend_)
+  {
+    printf("We ran the Handle constructor!!");
+  }
+};*/
+
+template <typename TableType, typename SolverType>
 struct SerialRKSolve {
   template <typename ODEType, typename ViewTypeA, typename ViewTypeB>
   KOKKOS_FUNCTION static ODESolverStatus invoke(

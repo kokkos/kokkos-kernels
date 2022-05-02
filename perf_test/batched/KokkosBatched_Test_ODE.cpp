@@ -7,7 +7,8 @@ namespace KokkosBatched {
 namespace Experimental {
 namespace ODE {
 
-template <typename MemorySpace, typename ODEType, typename TableType>
+template <typename MemorySpace, typename ODEType, typename TableType,
+          typename SolverType>
 void scratch_kernel(const ODEType &ode, const ODEArgs &args, const int nelems) {
   using ScratchSpace =
       Kokkos::ScratchMemorySpace<typename MemorySpace::execution_space>;
@@ -35,14 +36,15 @@ void scratch_kernel(const ODEType &ode, const ODEArgs &args, const int nelems) {
           s.y[dof] = ode.expected_val(ode.tstart(), dof);
         }
 
-        SerialRKSolve<TableType>::invoke(ode, args, s.y, s.y0, s.dydt, s.ytemp,
-                                         s.k, ode.tstart(), ode.tend());
+        SerialRKSolve<TableType, SolverType>::invoke(ode, args, s.y, s.y0,
+                                                     s.dydt, s.ytemp, s.k,
+                                                     ode.tstart(), ode.tend());
       });
   Kokkos::fence();
 }
 
 template <typename SolverState, typename MemorySpace, typename ODEType,
-          typename TableType>
+          typename TableType, typename SolverType>
 void kernel(const RkDynamicAllocation<MemorySpace> &pool, const ODEType &ode,
             const ODEArgs &args, int nelems) {
   Kokkos::parallel_for(
@@ -59,26 +61,31 @@ void kernel(const RkDynamicAllocation<MemorySpace> &pool, const ODEType &ode,
           s.y[dof] = ode.expected_val(ode.tstart(), dof);
         }
 
-        SerialRKSolve<TableType>::invoke(ode, args, s.y, s.y0, s.dydt, s.ytemp,
-                                         s.k, ode.tstart(), ode.tend());
+        SerialRKSolve<TableType, SolverType>::invoke(ode, args, s.y, s.y0,
+                                                     s.dydt, s.ytemp, s.k,
+                                                     ode.tstart(), ode.tend());
       });
   Kokkos::fence();
 }
 
-template <typename MemorySpace, typename ODEType, typename TableType>
+template <typename MemorySpace, typename ODEType, typename TableType,
+          typename SolverType>
 void scratch_perf_run(const ODEType &ode, const ODEArgs &args,
                       const int nelems) {
-  scratch_kernel<MemorySpace, ODEType, TableType>(ode, args, nelems);
+  scratch_kernel<MemorySpace, ODEType, TableType, SolverType>(ode, args,
+                                                              nelems);
 }
 
 template <typename MemorySpace, typename SolverState, typename ODEType,
-          typename TableType>
+          typename TableType, typename SolverType>
 void perf_run(RkDynamicAllocation<MemorySpace> &pool, const ODEType &ode,
               const ODEArgs &args, const int nelems) {
-  kernel<SolverState, MemorySpace, ODEType, TableType>(pool, ode, args, nelems);
+  kernel<SolverState, MemorySpace, ODEType, TableType, SolverType>(
+      pool, ode, args, nelems);
 }
 
-template <typename MemorySpace, typename TableType, typename ODEType, int ndofs>
+template <typename MemorySpace, typename TableType, typename ODEType, int ndofs,
+          typename SolverType>
 struct RKPerfTest {
   using SolverStateStack = RkSolverState<RkStack<ndofs, TableType::nstages>>;
   using SolverStateDyn   = RkSolverState<RkDynamicAllocation<MemorySpace>>;
@@ -89,43 +96,47 @@ struct RKPerfTest {
              const bool use_stack)
       : pool(nelems, ode.neqs, TableType::nstages) {
     if (use_stack) {
-      perf_run<MemorySpace, SolverStateStack, ODEType, TableType>(pool, ode,
-                                                                  args, nelems);
+      perf_run<MemorySpace, SolverStateStack, ODEType, TableType, SolverType>(
+          pool, ode, args, nelems);
     } else {
-      perf_run<MemorySpace, SolverStateDyn, ODEType, TableType>(pool, ode, args,
-                                                                nelems);
+      perf_run<MemorySpace, SolverStateDyn, ODEType, TableType, SolverType>(
+          pool, ode, args, nelems);
     }
   }
 };
 
-template <typename MemorySpace, typename TableType, typename ODEType>
+template <typename MemorySpace, typename TableType, typename ODEType,
+          typename SolverType>
 struct RKScratchPerfTest {
   RKScratchPerfTest(const int nelems, const ODEArgs &args,
                     const ODEType &ode_) {
-    scratch_perf_run<MemorySpace, ODEType, TableType>(ode_, args, nelems);
+    scratch_perf_run<MemorySpace, ODEType, TableType, SolverType>(ode_, args,
+                                                                  nelems);
   }
 };
 
 template <typename MemorySpace, typename TableType>
 void run_enright(const bool use_stack, const int nelems) {
   ODEArgs args;
-  RKPerfTest<MemorySpace, TableType, EnrightB5, 6> t1(nelems, args,
-                                                      EnrightB5(6), use_stack);
-  RKPerfTest<MemorySpace, TableType, EnrightC1, 4> t2(nelems, args,
-                                                      EnrightC1(4), use_stack);
-  RKPerfTest<MemorySpace, TableType, EnrightC5, 4> t3(nelems, args,
-                                                      EnrightC5(4), use_stack);
+  using SolverType = ExplicitRKTag;
+  RKPerfTest<MemorySpace, TableType, EnrightB5, 6, SolverType> t1(
+      nelems, args, EnrightB5(6), use_stack);
+  RKPerfTest<MemorySpace, TableType, EnrightC1, 4, SolverType> t2(
+      nelems, args, EnrightC1(4), use_stack);
+  RKPerfTest<MemorySpace, TableType, EnrightC5, 4, SolverType> t3(
+      nelems, args, EnrightC5(4), use_stack);
 }
 
 template <typename MemorySpace, typename TableType>
 void run_enright_scratch(const int nelems) {
   ODEArgs args;
-  RKScratchPerfTest<MemorySpace, TableType, EnrightB5> t1(nelems, args,
-                                                          EnrightB5(6));
-  RKScratchPerfTest<MemorySpace, TableType, EnrightC1> t2(nelems, args,
-                                                          EnrightC1(4));
-  RKScratchPerfTest<MemorySpace, TableType, EnrightC5> t3(nelems, args,
-                                                          EnrightC5(4));
+  using SolverType = ExplicitRKTag;
+  RKScratchPerfTest<MemorySpace, TableType, EnrightB5, SolverType> t1(
+      nelems, args, EnrightB5(6));
+  RKScratchPerfTest<MemorySpace, TableType, EnrightC1, SolverType> t2(
+      nelems, args, EnrightC1(4));
+  RKScratchPerfTest<MemorySpace, TableType, EnrightC5, SolverType> t3(
+      nelems, args, EnrightC5(4));
 }
 
 template <typename MemorySpace>
