@@ -582,16 +582,20 @@ KOKKOS_INLINE_FUNCTION void kk_swap(T& a, T& b) {
 }
 
 template <typename row_map_type, typename entries_type, typename values_type>
-struct sort_bsr_functor{
+struct sort_bsr_functor {
   using lno_t = typename entries_type::non_const_value_type;
 
   row_map_type rowmap;
   entries_type entries;
-  values_type  values;
-  const lno_t  blocksize;
+  values_type values;
+  const lno_t blocksize;
 
-  sort_bsr_functor(row_map_type rowmap_, entries_type entries_, values_type values_, const lno_t blocksize_)
-    : rowmap(rowmap_), entries(entries_), values(values_), blocksize(blocksize_) {}
+  sort_bsr_functor(row_map_type rowmap_, entries_type entries_,
+                   values_type values_, const lno_t blocksize_)
+      : rowmap(rowmap_),
+        entries(entries_),
+        values(values_),
+        blocksize(blocksize_) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const lno_t i) const {
@@ -603,15 +607,15 @@ struct sort_bsr_functor{
     while (!done) {
       done = true;
       for (lno_t j = 1; j < rowSize; ++j) {
-	const lno_t jp = j - 1;
-	if (e[jp] <= e[j]) continue;
-	Impl::kk_swap(e[jp], e[j]);
-	auto const vb  = v + j * blocksize;
-	auto const vbp = v + jp * blocksize;
-	for (lno_t k = 0; k < blocksize;
-	     ++k)  // std::swap_ranges(vb, vb + blocksize, vbp);
-	  Impl::kk_swap(vb[k], vbp[k]);
-	done = false;
+        const lno_t jp = j - 1;
+        if (e[jp] <= e[j]) continue;
+        Impl::kk_swap(e[jp], e[j]);
+        auto const vb  = v + j * blocksize;
+        auto const vbp = v + jp * blocksize;
+        for (lno_t k = 0; k < blocksize;
+             ++k)  // std::swap_ranges(vb, vb + blocksize, vbp);
+          Impl::kk_swap(vb[k], vbp[k]);
+        done = false;
       }
     }
   }
@@ -634,10 +638,11 @@ void sort_bsr_matrix(const lno_t blockdim, const rowmap_t& rowmap,
   const lno_t blocksize = blockdim * blockdim;
 
   assert(values.extent(0) == entries.extent(0) * blocksize);
-  Impl::sort_bsr_functor<rowmap_t, entries_t, values_t> bsr_sorter(rowmap, entries, values, blocksize);
-  Kokkos::parallel_for(
-      "sort_bsr_matrix", Kokkos::RangePolicy<execution_space>(0, numRows),
-      bsr_sorter);
+  Impl::sort_bsr_functor<rowmap_t, entries_t, values_t> bsr_sorter(
+      rowmap, entries, values, blocksize);
+  Kokkos::parallel_for("sort_bsr_matrix",
+                       Kokkos::RangePolicy<execution_space>(0, numRows),
+                       bsr_sorter);
 }
 
 // Sort a BSR matrix (like CRS but single values are replaced with contignous

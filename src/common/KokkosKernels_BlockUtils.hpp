@@ -130,7 +130,8 @@ KOKKOS_INLINE_FUNCTION void kk_vector_block_add_mul(const size_type block_dim,
     for (size_type col = 0; col < block_dim; ++col) {
       auto v  = &dst[row_offset + col];
       auto vb = valB + col;
-      for (const value_type *va = valA + row_offset, *end = va + block_dim; va < end; ++va) {
+      for (const value_type *va = valA + row_offset, *end = va + block_dim;
+           va < end; ++va) {
         Kokkos::atomic_add(v, (*va) * (*vb));
         vb += block_dim;
       }
