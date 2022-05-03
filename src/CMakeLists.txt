@@ -52,7 +52,7 @@ IF (KOKKOSKERNELS_ENABLE_TPL_BLAS OR KOKKOSKERNELS_ENABLE_TPL_MKL)
   APPEND_GLOB(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/impl/tpls/KokkosBlas_Host_tpl.cpp)
 ENDIF()
 
-include(kokkoskernels_eti.cmake)
+include(cmake/kokkoskernels_eti.cmake)
 SET(ETI_HEADERS)
 
 #Build up a list of DECL, AVAIL, and INST macros
