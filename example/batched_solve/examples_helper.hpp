@@ -149,3 +149,88 @@ void create_saddle_point_matrices(const MatrixViewType &A,
 
   Kokkos::fence();
 }
+
+template <typename IntView, typename VectorViewType>
+void create_tridiagonal_batched_matrices(const int nnz, const int BlkSize,
+                                         const int N, const IntView &r,
+                                         const IntView &c,
+                                         const VectorViewType &D,
+                                         const VectorViewType &X,
+                                         const VectorViewType &B) {
+  Kokkos::Random_XorShift64_Pool<
+      typename VectorViewType::device_type::execution_space>
+      random(13718);
+  Kokkos::fill_random(
+      X, random,
+      Kokkos::reduction_identity<typename VectorViewType::value_type>::prod());
+  Kokkos::fill_random(
+      B, random,
+      Kokkos::reduction_identity<typename VectorViewType::value_type>::prod());
+
+  auto D_host = Kokkos::create_mirror_view(D);
+  auto r_host = Kokkos::create_mirror_view(r);
+  auto c_host = Kokkos::create_mirror_view(c);
+
+  r_host(0) = 0;
+
+  int current_col = 0;
+
+  for (int i = 0; i < BlkSize; ++i) {
+    r_host(i + 1) = r_host(i) + (i == 0 || i == (BlkSize - 1) ? 2 : 3);
+  }
+  for (int i = 0; i < nnz; ++i) {
+    if (i % 3 == 0) {
+      for (int l = 0; l < N; ++l) {
+        D_host(l, i) = typename VectorViewType::value_type(2.0);
+      }
+      c_host(i) = current_col;
+      ++current_col;
+    } else {
+      for (int l = 0; l < N; ++l) {
+        D_host(l, i) = typename VectorViewType::value_type(-1.0);
+      }
+      c_host(i) = current_col;
+      if (i % 3 == 1)
+        --current_col;
+      else
+        ++current_col;
+    }
+  }
+
+  Kokkos::fence();
+
+  Kokkos::deep_copy(D, D_host);
+  Kokkos::deep_copy(r, r_host);
+  Kokkos::deep_copy(c, c_host);
+
+  Kokkos::fence();
+}
+
+template <class VType, class IntType>
+void getInvDiagFromCRS(const VType &V, const IntType &r, const IntType &c,
+                       const VType &diag) {
+  auto diag_values_host = Kokkos::create_mirror_view(diag);
+  auto values_host      = Kokkos::create_mirror_view(V);
+  auto row_ptr_host     = Kokkos::create_mirror_view(r);
+  auto colIndices_host  = Kokkos::create_mirror_view(c);
+
+  Kokkos::deep_copy(values_host, V);
+  Kokkos::deep_copy(row_ptr_host, r);
+  Kokkos::deep_copy(colIndices_host, c);
+
+  int current_index;
+  int N       = diag.extent(0);
+  int BlkSize = diag.extent(1);
+
+  for (int i = 0; i < BlkSize; ++i) {
+    for (current_index = row_ptr_host(i); current_index < row_ptr_host(i + 1);
+         ++current_index) {
+      if (colIndices_host(current_index) == i) break;
+    }
+    for (int j = 0; j < N; ++j) {
+      diag_values_host(j, i) = 1. / values_host(j, current_index);
+    }
+  }
+
+  Kokkos::deep_copy(diag, diag_values_host);
+}
