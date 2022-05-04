@@ -197,7 +197,6 @@ KOKKOS_INLINE_FUNCTION int TeamGMRES<MemberType>::invoke(
           V_view, Kokkos::ALL, Kokkos::make_pair(0, (int)j + 1), Kokkos::ALL);
       auto H_old = Kokkos::subview(H_view, Kokkos::ALL, j,
                                    Kokkos::make_pair(0, (int)j + 1));
-      member.team_barrier();
       // Inner products
       TeamGemv<MemberType, Trans::NoTranspose, Algo::Gemv::Unblocked>::invoke(
           member, 1, V_old, W, 0, H_old);
@@ -206,7 +205,7 @@ KOKKOS_INLINE_FUNCTION int TeamGMRES<MemberType>::invoke(
       // Update
       TeamGemv<MemberType, Trans::Transpose, Algo::Gemv::Unblocked>::invoke(
           member, -1, V_old, H_old, 1, W);
-      member.team_barrier();
+      member.team_barrier();  // Finish writing to W
     }
     if (handle.get_ortho_strategy() == 1) {
       for (size_t i = 0; i < j + 1; ++i) {
@@ -227,7 +226,6 @@ KOKKOS_INLINE_FUNCTION int TeamGMRES<MemberType>::invoke(
       }
     }
 
-    member.team_barrier();  // Finish writing to W
     TeamDot<MemberType>::invoke(member, W, W, tmp);
     member.team_barrier();
     Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, numMatrices),
@@ -333,6 +331,7 @@ KOKKOS_INLINE_FUNCTION int TeamGMRES<MemberType>::invoke(
         member, 1,
         Kokkos::subview(V_view, Kokkos::ALL, first_indices, Kokkos::ALL),
         Kokkos::subview(G, Kokkos::ALL, first_indices), 1, X);
+    member.team_barrier();  // Finish writing to X
   }
   if (handle.get_ortho_strategy() == 1) {
     for (size_t j = 0; j < maximum_iteration; ++j) {
@@ -342,8 +341,6 @@ KOKKOS_INLINE_FUNCTION int TeamGMRES<MemberType>::invoke(
       member.team_barrier();  // Finish writing to X
     }
   }
-
-  member.team_barrier();  // Finish writing to X
 
   TeamCopy<MemberType>::invoke(member, X, _X);
 
