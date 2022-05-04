@@ -41,75 +41,48 @@
 // ************************************************************************
 //@HEADER
 */
-#ifndef KOKKOSBLAS_CUDA_TPL_HPP_
-#define KOKKOSBLAS_CUDA_TPL_HPP_
+#ifndef KOKKOSLAPACK_HOST_TPL_HPP_
+#define KOKKOSLAPACK_HOST_TPL_HPP_
 
-#if defined(KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
-#include <KokkosBlas_tpl_spec.hpp>
+#include "KokkosKernels_config.h"
+#include "Kokkos_ArithTraits.hpp"
 
-namespace KokkosBlas {
-namespace Impl {
-
-CudaBlasSingleton::CudaBlasSingleton() {
-  cublasStatus_t stat = cublasCreate(&handle);
-  if (stat != CUBLAS_STATUS_SUCCESS)
-    Kokkos::abort("CUBLAS initialization failed\n");
-
-  Kokkos::push_finalize_hook([&]() { cublasDestroy(handle); });
-}
-
-CudaBlasSingleton& CudaBlasSingleton::singleton() {
-  static CudaBlasSingleton s;
-  return s;
-}
-
-}  // namespace Impl
-}  // namespace KokkosBlas
-#endif
-
-#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSOLVER)
-#include <KokkosBlas_tpl_spec.hpp>
-
-namespace KokkosBlas {
-namespace Impl {
-CudaSolverSingleton::CudaSolverSingleton() {
-  auto stat = cusolverDnCreate(&handle);
-  if (stat != CUSOLVER_STATUS_SUCCESS)
-    Kokkos::abort("CUSOLVER initialization failed\n");
-
-  Kokkos::push_finalize_hook([&]() { cusolverDnDestroy(handle); });
-}
-
-CudaSolverSingleton& CudaSolverSingleton::singleton() {
-  static CudaSolverSingleton s;
-  return s;
-}
-
-}  // namespace Impl
-}  // namespace KokkosBlas
-#endif  // KOKKOS_KERNELS_ENABLE_TPL_CUSOLVER
-
-#if defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA)
-#include <KokkosBlas_tpl_spec.hpp>
+#if defined(KOKKOSKERNELS_ENABLE_TPL_BLAS) && \
+    defined(KOKKOSKERNELS_ENABLE_TPL_LAPACKE)
+#include <lapacke.h>
+#include <cblas.h>
 
 namespace KokkosBlas {
 namespace Impl {
 
-MagmaSingleton::MagmaSingleton() {
-  magma_int_t stat = magma_init();
-  if (stat != MAGMA_SUCCESS) Kokkos::abort("MAGMA initialization failed\n");
+template <typename T>
+struct HostLapack {
+  typedef Kokkos::ArithTraits<T> ats;
+  typedef typename ats::mag_type mag_type;
 
-  Kokkos::push_finalize_hook([&]() { magma_finalize(); });
-}
+  static void potrf(bool matrix_layout, char uplo, int n, T* a, int lda);
 
-MagmaSingleton& MagmaSingleton::singleton() {
-  static MagmaSingleton s;
-  return s;
-}
+  static void geqp3(bool matrix_layout, int m, int n, T* a, int lda, int* jpvt,
+                    T* tau);
+
+  static void geqrf(bool matrix_layout, int m, int n, T* a, int lda, T* tau,
+                    T* work, int lwork);
+
+  static void unmqr(bool matrix_layout, char side, char trans, int m, int n,
+                    int k, const T* a, int lda, const T* tau,
+                    /* */ T* c, int ldc,
+                    /* */ T* work, int lwork);
+
+  static void ormqr(bool matrix_layout, char side, char trans, int m, int n,
+                    int k, const T* a, int lda, const T* tau,
+                    /* */ T* c, int ldc,
+                    /* */ T* work, int lwork);
+
+};  // HostLapack
 
 }  // namespace Impl
 }  // namespace KokkosBlas
 
-#endif  // defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA)
+#endif  // ENABLE BLAS/LAPACK
 
-#endif  // KOKKOSBLAS_CUDA_TPL_HPP_
+#endif  // KOKKOSLAPACK_HOST_TPL_HPP_

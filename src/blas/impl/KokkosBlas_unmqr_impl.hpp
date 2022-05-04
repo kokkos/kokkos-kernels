@@ -41,75 +41,38 @@
 // ************************************************************************
 //@HEADER
 */
-#ifndef KOKKOSBLAS_CUDA_TPL_HPP_
-#define KOKKOSBLAS_CUDA_TPL_HPP_
+#ifndef KOKKOSBLAS_IMPL_UNMQR_HPP_
+#define KOKKOSBLAS_IMPL_UNMQR_HPP_
 
-#if defined(KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
-#include <KokkosBlas_tpl_spec.hpp>
-
-namespace KokkosBlas {
-namespace Impl {
-
-CudaBlasSingleton::CudaBlasSingleton() {
-  cublasStatus_t stat = cublasCreate(&handle);
-  if (stat != CUBLAS_STATUS_SUCCESS)
-    Kokkos::abort("CUBLAS initialization failed\n");
-
-  Kokkos::push_finalize_hook([&]() { cublasDestroy(handle); });
-}
-
-CudaBlasSingleton& CudaBlasSingleton::singleton() {
-  static CudaBlasSingleton s;
-  return s;
-}
-
-}  // namespace Impl
-}  // namespace KokkosBlas
-#endif
-
-#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSOLVER)
-#include <KokkosBlas_tpl_spec.hpp>
+#include <Kokkos_Core.hpp>
+#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_config.h>
+#include <type_traits>
+#include <sstream>
 
 namespace KokkosBlas {
 namespace Impl {
-CudaSolverSingleton::CudaSolverSingleton() {
-  auto stat = cusolverDnCreate(&handle);
-  if (stat != CUSOLVER_STATUS_SUCCESS)
-    Kokkos::abort("CUSOLVER initialization failed\n");
+// Put non TPL implementation here
 
-  Kokkos::push_finalize_hook([&]() { cusolverDnDestroy(handle); });
+template <class AVT, class TVT, class CVT, class WVT>
+void execute_unmqr(char /*side*/, char /*trans*/, int /*k*/, AVT& /*A*/, TVT& /*tau*/, CVT& /*C*/,
+                   WVT& /*workspace*/) {
+  std::ostringstream os;
+  os << "There is no ETI implementation of UNMQR. Compile with TPL (LAPACKE or "
+        "CUSOLVER).\n";
+  Kokkos::Impl::throw_runtime_exception(os.str());
 }
 
-CudaSolverSingleton& CudaSolverSingleton::singleton() {
-  static CudaSolverSingleton s;
-  return s;
-}
-
-}  // namespace Impl
-}  // namespace KokkosBlas
-#endif  // KOKKOS_KERNELS_ENABLE_TPL_CUSOLVER
-
-#if defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA)
-#include <KokkosBlas_tpl_spec.hpp>
-
-namespace KokkosBlas {
-namespace Impl {
-
-MagmaSingleton::MagmaSingleton() {
-  magma_int_t stat = magma_init();
-  if (stat != MAGMA_SUCCESS) Kokkos::abort("MAGMA initialization failed\n");
-
-  Kokkos::push_finalize_hook([&]() { magma_finalize(); });
-}
-
-MagmaSingleton& MagmaSingleton::singleton() {
-  static MagmaSingleton s;
-  return s;
+template <class AVT, class TVT, class CVT>
+int64_t execute_unmqr_workspace(char /*side*/, char /*trans*/, int /*k*/, AVT& /*A*/, TVT& /*tau*/, CVT& /*C*/) {
+  std::ostringstream os;
+  os << "There is no ETI implementation of UNMQR Workspace. Compile with TPL "
+        "(LAPACKE or CUSOLVER).\n";
+  Kokkos::Impl::throw_runtime_exception(os.str());
+  return 0;
 }
 
 }  // namespace Impl
 }  // namespace KokkosBlas
 
-#endif  // defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA)
-
-#endif  // KOKKOSBLAS_CUDA_TPL_HPP_
+#endif  // KOKKOSBLAS_IMPL_UNMQR_HPP_
