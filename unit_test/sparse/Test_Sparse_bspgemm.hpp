@@ -173,7 +173,7 @@ bool is_same_block_matrix(bsrMat_t output_mat_actual,
 // C := AB, where A is m*k, B is k*n, and C is m*n.
 template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
-void test_bspgemm(lno_t blockDim, lno_t m, lno_t k, lno_t n, size_type nnz,
+void test_bspgemm(lno_t blkDim, lno_t m, lno_t k, lno_t n, size_type nnz,
                   lno_t bandwidth, lno_t row_size_variance,
                   const bool use_dynamic_scheduling = true,
                   const size_t shared_memory_size   = 0) {
@@ -188,9 +188,9 @@ void test_bspgemm(lno_t blockDim, lno_t m, lno_t k, lno_t n, size_type nnz,
   // Generate random compressed sparse row matrix. Randomly generated (non-zero)
   // values are stored in a 1-D (1 rank) array.
   bsrMat_t A = KokkosKernels::Impl::kk_generate_sparse_matrix<bsrMat_t>(
-      blockDim, m, k, nnz, row_size_variance, bandwidth);
+      blkDim, m, k, nnz, row_size_variance, bandwidth);
   bsrMat_t B = KokkosKernels::Impl::kk_generate_sparse_matrix<bsrMat_t>(
-      blockDim, k, n, nnz, row_size_variance, bandwidth);
+      blkDim, k, n, nnz, row_size_variance, bandwidth);
 
   const bool is_empy_case = m < 1 || n < 1 || k < 1 || nnz < 1;
 
