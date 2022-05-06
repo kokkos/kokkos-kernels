@@ -73,8 +73,8 @@ struct spadd_numeric_eti_spec_avail {
   template <>                                                             \
   struct spadd_numeric_eti_spec_avail<                                    \
       KokkosKernels::Experimental::KokkosKernelsHandle<                   \
-          OFFSET_TYPE, ORDINAL_TYPE, SCALAR_TYPE, EXEC_SPACE_TYPE,        \
-          MEM_SPACE_TYPE, MEM_SPACE_TYPE>,                                \
+          const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,       \
+          EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE>,               \
       Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,                      \
                    Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
@@ -171,8 +171,8 @@ struct SPADD_NUMERIC<KernelHandle, a_size_view_t, a_lno_view_t, a_scalar_view_t,
     MEM_SPACE_TYPE)                                                       \
   extern template struct SPADD_NUMERIC<                                   \
       typename KokkosKernels::Experimental::KokkosKernelsHandle<          \
-          OFFSET_TYPE, ORDINAL_TYPE, SCALAR_TYPE, EXEC_SPACE_TYPE,        \
-          MEM_SPACE_TYPE, MEM_SPACE_TYPE>,                                \
+          const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,       \
+          EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE>,               \
       Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,                      \
                    Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
@@ -207,8 +207,8 @@ struct SPADD_NUMERIC<KernelHandle, a_size_view_t, a_lno_view_t, a_scalar_view_t,
     MEM_SPACE_TYPE)                                                       \
   template struct SPADD_NUMERIC<                                          \
       KokkosKernels::Experimental::KokkosKernelsHandle<                   \
-          OFFSET_TYPE, ORDINAL_TYPE, SCALAR_TYPE, EXEC_SPACE_TYPE,        \
-          MEM_SPACE_TYPE, MEM_SPACE_TYPE>,                                \
+          const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,       \
+          EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE>,               \
       Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,                      \
                    Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
