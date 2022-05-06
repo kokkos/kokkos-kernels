@@ -68,7 +68,17 @@ void spadd_symbolic(
 {
   typedef typename KernelHandle::HandleExecSpace ExecSpace;
   typedef typename KernelHandle::HandleTempMemorySpace MemSpace;
+  typedef typename KernelHandle::HandlePersistentMemorySpace PersistentMemSpace;
   typedef typename Kokkos::Device<ExecSpace, MemSpace> DeviceType;
+
+  typedef typename KernelHandle::const_size_type c_size_t;
+  typedef typename KernelHandle::const_nnz_lno_t c_lno_t;
+  typedef typename KernelHandle::const_nnz_scalar_t c_scalar_t;
+
+  typedef typename KokkosKernels::Experimental::KokkosKernelsHandle<
+      c_size_t, c_lno_t, c_scalar_t, ExecSpace, MemSpace, PersistentMemSpace>
+      ConstKernelHandle;
+  ConstKernelHandle tmp_handle(*handle);
 
   typedef Kokkos::View<typename alno_row_view_t_::const_value_type*,
                        typename KokkosKernels::Impl::GetUnifiedLayout<
@@ -95,10 +105,10 @@ void spadd_symbolic(
                            clno_row_view_t_>::array_layout,
                        DeviceType, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       Internal_c_rowmap;
-  KokkosSparse::Impl::SPADD_SYMBOLIC<KernelHandle, Internal_a_rowmap,
+  KokkosSparse::Impl::SPADD_SYMBOLIC<ConstKernelHandle, Internal_a_rowmap,
                                      Internal_a_entries, Internal_b_rowmap,
                                      Internal_b_entries, Internal_c_rowmap>::
-      spadd_symbolic(handle,
+      spadd_symbolic(&tmp_handle,
                      Internal_a_rowmap(a_rowmap.data(), a_rowmap.extent(0)),
                      Internal_a_entries(a_entries.data(), a_entries.extent(0)),
                      Internal_b_rowmap(b_rowmap.data(), b_rowmap.extent(0)),
@@ -122,7 +132,17 @@ void spadd_numeric(KernelHandle* handle, const alno_row_view_t_ a_rowmap,
                    cscalar_nnz_view_t_ c_values) {
   typedef typename KernelHandle::HandleExecSpace ExecSpace;
   typedef typename KernelHandle::HandleTempMemorySpace MemSpace;
+  typedef typename KernelHandle::HandlePersistentMemorySpace PersistentMemSpace;
   typedef typename Kokkos::Device<ExecSpace, MemSpace> DeviceType;
+
+  typedef typename KernelHandle::const_size_type c_size_t;
+  typedef typename KernelHandle::const_nnz_lno_t c_lno_t;
+  typedef typename KernelHandle::const_nnz_scalar_t c_scalar_t;
+
+  typedef typename KokkosKernels::Experimental::KokkosKernelsHandle<
+      c_size_t, c_lno_t, c_scalar_t, ExecSpace, MemSpace, PersistentMemSpace>
+      ConstKernelHandle;
+  ConstKernelHandle tmp_handle(*handle);
 
   typedef Kokkos::View<typename alno_row_view_t_::const_value_type*,
                        typename KokkosKernels::Impl::GetUnifiedLayout<
@@ -169,20 +189,22 @@ void spadd_numeric(KernelHandle* handle, const alno_row_view_t_ a_rowmap,
                            cscalar_nnz_view_t_>::array_layout,
                        DeviceType, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       Internal_c_values;
-  KokkosSparse::Impl::SPADD_NUMERIC<
-      KernelHandle, Internal_a_rowmap, Internal_a_entries, Internal_a_values,
-      Internal_b_rowmap, Internal_b_entries, Internal_b_values,
-      Internal_c_rowmap, Internal_c_entries, Internal_c_values>::
-      spadd_numeric(
-          handle, alpha, Internal_a_rowmap(a_rowmap.data(), a_rowmap.extent(0)),
-          Internal_a_entries(a_entries.data(), a_entries.extent(0)),
-          Internal_a_values(a_values.data(), a_values.extent(0)), beta,
-          Internal_b_rowmap(b_rowmap.data(), b_rowmap.extent(0)),
-          Internal_b_entries(b_entries.data(), b_entries.extent(0)),
-          Internal_b_values(b_values.data(), b_values.extent(0)),
-          Internal_c_rowmap(c_rowmap.data(), c_rowmap.extent(0)),
-          Internal_c_entries(c_entries.data(), c_entries.extent(0)),
-          Internal_c_values(c_values.data(), c_values.extent(0)));
+  KokkosSparse::Impl::SPADD_NUMERIC<ConstKernelHandle, Internal_a_rowmap,
+                                    Internal_a_entries, Internal_a_values,
+                                    Internal_b_rowmap, Internal_b_entries,
+                                    Internal_b_values, Internal_c_rowmap,
+                                    Internal_c_entries, Internal_c_values>::
+      spadd_numeric(&tmp_handle, alpha,
+                    Internal_a_rowmap(a_rowmap.data(), a_rowmap.extent(0)),
+                    Internal_a_entries(a_entries.data(), a_entries.extent(0)),
+                    Internal_a_values(a_values.data(), a_values.extent(0)),
+                    beta,
+                    Internal_b_rowmap(b_rowmap.data(), b_rowmap.extent(0)),
+                    Internal_b_entries(b_entries.data(), b_entries.extent(0)),
+                    Internal_b_values(b_values.data(), b_values.extent(0)),
+                    Internal_c_rowmap(c_rowmap.data(), c_rowmap.extent(0)),
+                    Internal_c_entries(c_entries.data(), c_entries.extent(0)),
+                    Internal_c_values(c_values.data(), c_values.extent(0)));
 }
 }  // namespace Experimental
 
