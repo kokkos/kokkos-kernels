@@ -369,6 +369,230 @@ struct ILUKLvlSchedTP1NumericFunctor {
   }
 };
 
+template <class ARowMapType,
+          class AEntriesType,
+          class AValuesType,
+          class LRowMapType,
+          class LEntriesType,
+          class LValuesType,
+          class URowMapType,
+          class UEntriesType,
+          class UValuesType,
+          class LevelViewType,
+          class nnz_lno_t>
+struct ILUKLvlSchedTP1HashMapNumericFunctor
+{
+  using execution_space = typename ARowMapType::execution_space;
+  using policy_type     = Kokkos::TeamPolicy<execution_space>;
+  using member_type     = typename policy_type::member_type;
+  using size_type       = typename ARowMapType::non_const_value_type;
+  using scalar_t        = typename AValuesType::non_const_value_type ;
+  using hashmap_type    = KokkosKernels::Experimental::HashmapAccumulator
+        <nnz_lno_t, nnz_lno_t, nnz_lno_t, KokkosKernels::Experimental::HashOpType::bitwiseAnd>;
+
+  ARowMapType   A_row_map;
+  AEntriesType  A_entries;
+  AValuesType   A_values;
+  LRowMapType   L_row_map;
+  LEntriesType  L_entries;
+  LValuesType   L_values;
+  URowMapType   U_row_map;
+  UEntriesType  U_entries;
+  UValuesType   U_values;
+  LevelViewType level_idx;
+  nnz_lno_t     lev_start;
+  nnz_lno_t     shmem_hash_size;
+  nnz_lno_t     shmem_key_size;
+  nnz_lno_t     shared_memory_hash_func;
+  nnz_lno_t     shmem_size;
+
+  ILUKLvlSchedTP1HashMapNumericFunctor( const ARowMapType &A_row_map_, const AEntriesType &A_entries_, const AValuesType &A_values_,
+                                        const LRowMapType &L_row_map_, const LEntriesType &L_entries_, LValuesType &L_values_,
+                                        const URowMapType &U_row_map_, const UEntriesType &U_entries_, UValuesType &U_values_,
+                                        const LevelViewType &level_idx_, const nnz_lno_t &lev_start_, const nnz_lno_t &shmem_hash_size_,
+                                        const nnz_lno_t &shmem_key_size_, const nnz_lno_t &shared_memory_hash_func_, const nnz_lno_t &shmem_size_) :
+    A_row_map(A_row_map_), A_entries(A_entries_), A_values(A_values_),
+    L_row_map(L_row_map_), L_entries(L_entries_), L_values(L_values_),
+    U_row_map(U_row_map_), U_entries(U_entries_), U_values(U_values_),
+    level_idx(level_idx_), lev_start(lev_start_), shmem_hash_size(shmem_hash_size_),
+    shmem_key_size(shmem_key_size_), shared_memory_hash_func(shared_memory_hash_func_),
+    shmem_size(shmem_size_) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const member_type & team ) const {
+    auto my_league = team.league_rank(); // teamid 
+    auto rowid     = level_idx(my_league + lev_start);//teamid-->rowid
+    //auto my_team   = team.team_rank();
+
+    //Kokkos::single(Kokkos::PerTeam(team),[&] () {
+    //  printf("BEFORE CREATE HASH MAP\n");
+    //});
+
+    //START shared hash map initialization
+    char *all_shared_memory = (char *)(team.team_shmem().get_shmem(shmem_size));
+
+    // Threads in a team share 4 arrays: begin, next, keys, values
+    // used_hash_sizes hold the size of 1st and 2nd level hashes (not using 2nd level hash right now)
+    volatile nnz_lno_t *used_hash_sizes = (volatile nnz_lno_t *)(all_shared_memory);
+    all_shared_memory += sizeof(nnz_lno_t) * 2;
+
+    //points to begin array
+    nnz_lno_t *begins = (nnz_lno_t *)(all_shared_memory);
+    all_shared_memory += sizeof(nnz_lno_t) * shmem_hash_size;
+
+    // points to the next elements
+    nnz_lno_t *nexts = (nnz_lno_t *)(all_shared_memory);
+    all_shared_memory += sizeof(nnz_lno_t) * shmem_key_size;
+
+    // holds the keys and vals
+    nnz_lno_t *keys = (nnz_lno_t *)(all_shared_memory);
+    all_shared_memory += sizeof(nnz_lno_t) * shmem_key_size;
+    nnz_lno_t *vals = (nnz_lno_t *)(all_shared_memory);
+
+    hashmap_type hm(shmem_key_size, shared_memory_hash_func, begins, nexts, keys, vals);
+
+    //Kokkos::single(Kokkos::PerTeam(team),[&] () {
+    //  printf("BEFORE INIT\n");
+    //});
+
+    // initialize begins
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, shmem_hash_size), [&](int i) {
+      begins[i] = -1;
+    });
+
+    // initialize hash usage sizes
+    Kokkos::single(Kokkos::PerTeam(team), [&]() {
+      used_hash_sizes[0] = 0;
+      used_hash_sizes[1] = 0;
+    });
+
+    team.team_barrier();
+    //Shared hash map initialization DONE
+
+    Kokkos::single(Kokkos::PerTeam(team),[&] () {
+      printf("TEST BEFORE INSERT HASH used_hash_sizes %d\n",used_hash_sizes[0]);
+    });
+
+    auto k1 = L_row_map(rowid); 
+    auto k2 = L_row_map(rowid+1);
+#ifdef KEEP_DIAG
+    Kokkos::parallel_for( Kokkos::TeamThreadRange( team, k1, k2-1 ), [&] ( const nnz_lno_t k ) { 
+      nnz_lno_t col = static_cast<nnz_lno_t>(L_entries(k));
+      L_values(k) = 0.0;
+      int num_unsuccess = hm.vector_atomic_insert_into_hash_mergeOr(col, k, used_hash_sizes);
+    });
+#else
+    Kokkos::parallel_for( Kokkos::TeamThreadRange( team, k1, k2 ), [&] ( const nnz_lno_t k ) { 
+      nnz_lno_t col = static_cast<nnz_lno_t>(L_entries(k));
+      L_values(k) = 0.0;
+      int num_unsuccess = hm.vector_atomic_insert_into_hash_mergeOr(col, k, used_hash_sizes);
+    });
+#endif
+
+#ifdef KEEP_DIAG
+    //if ( my_team == 0 ) L_values(k2-1) = scalar_t(1.0);
+    Kokkos::single(Kokkos::PerTeam(team),[&] () { L_values(k2-1) = scalar_t(1.0); });
+#endif
+
+    team.team_barrier();
+
+    Kokkos::single(Kokkos::PerTeam(team),[&] () {
+      printf("TEST AFTER INSERT HASH used_hash_sizes %d\n",used_hash_sizes[0]);
+    });
+
+    k1 = U_row_map(rowid); 
+    k2 = U_row_map(rowid+1);
+    Kokkos::parallel_for( Kokkos::TeamThreadRange( team, k1, k2 ), [&] ( const nnz_lno_t k ) { 
+      nnz_lno_t col = static_cast<nnz_lno_t>(U_entries(k));
+      U_values(k) = 0.0;
+      int num_unsuccess = hm.vector_atomic_insert_into_hash_mergeOr(col, k, used_hash_sizes);
+    });
+
+    team.team_barrier();
+	
+    //Unpack the ith row of A
+    k1 = A_row_map(rowid);
+    k2 = A_row_map(rowid+1);
+    Kokkos::parallel_for( Kokkos::TeamThreadRange( team, k1, k2 ), [&] ( const nnz_lno_t k ) {
+      nnz_lno_t col = static_cast<nnz_lno_t>(A_entries(k));
+      nnz_lno_t hashmap_idx = hm.find(col);
+      if (hashmap_idx != -1) {
+        nnz_lno_t ipos = hm.values[hashmap_idx];
+        if (col < rowid)
+          L_values(ipos) = A_values(k);
+        else
+          U_values(ipos) = A_values(k);	  
+      }
+    });
+
+    team.team_barrier();
+	
+    //Eliminate prev rows
+    k1 = L_row_map(rowid); 
+    k2 = L_row_map(rowid+1);
+#ifdef KEEP_DIAG
+    for (auto k = k1; k < k2-1; ++k)
+#else
+    for (auto k = k1; k < k2; ++k)
+#endif
+    {
+      auto prev_row = L_entries(k);
+#ifdef KEEP_DIAG
+      auto fact = L_values(k) / U_values(U_row_map(prev_row));
+#else
+      auto fact = L_values(k) * U_values(U_row_map(prev_row));
+#endif
+      //if ( my_team == 0 ) L_values(k) = fact;
+      Kokkos::single(Kokkos::PerTeam(team),[&] () { L_values(k) = fact; });
+
+      team.team_barrier();
+
+      Kokkos::parallel_for( Kokkos::TeamThreadRange( team, U_row_map(prev_row)+1, U_row_map(prev_row+1) ), [&] ( const size_type kk ) {
+        nnz_lno_t col = static_cast<nnz_lno_t>(U_entries(kk));
+        nnz_lno_t hashmap_idx = hm.find(col);
+        if (hashmap_idx != -1) {
+          nnz_lno_t ipos = hm.values[hashmap_idx];
+          auto lxu = -U_values(kk) * fact;
+          if (col < rowid)
+            //L_values(ipos) += lxu;
+            Kokkos::atomic_add (&L_values(ipos), lxu);
+          else
+            //U_values(ipos) += lxu;
+            Kokkos::atomic_add (&U_values(ipos), lxu);
+        }
+      });// end for kk
+
+      team.team_barrier();
+    }// end for k
+
+    //if ( my_team == 0 ) {
+    Kokkos::single(Kokkos::PerTeam(team),[&] () {
+      nnz_lno_t hashmap_idx = hm.find(rowid);
+      if (hashmap_idx != -1) {
+        nnz_lno_t ipos = hm.values[hashmap_idx];
+#ifdef KEEP_DIAG
+        if (U_values(ipos) == 0.0) {
+          U_values(ipos) = 1e6;
+        }
+#else
+        if (U_values(ipos) == 0.0) {
+          U_values(ipos) = 1e6;
+        }
+        else {
+          U_values(ipos) = 1.0 / U_values(ipos);
+        }
+#endif
+      }
+    });
+    //}
+    //Note: Reseting the hash table umap is done outside the kernel
+  }
+
+  nnz_lno_t team_shmem_size(int /* team_size */) const {
+    return shmem_size;
+  }
+};
+
 template <class IlukHandle, class ARowMapType, class AEntriesType,
           class AValuesType, class LRowMapType, class LEntriesType,
           class LValuesType, class URowMapType, class UEntriesType,
@@ -410,115 +634,129 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
   Kokkos::deep_copy(level_ptr_h, level_ptr);
 
   if (thandle.get_algorithm() ==
-      KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1) {
-    level_nchunks_h = LevelHostViewType(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "Host level nchunks"),
-        level_nchunks.extent(0));
-    level_nrowsperchunk_h =
-        LevelHostViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing,
-                                             "Host level nrowsperchunk"),
-                          level_nrowsperchunk.extent(0));
-    Kokkos::deep_copy(level_nchunks_h, level_nchunks);
-    Kokkos::deep_copy(level_nrowsperchunk_h, level_nrowsperchunk);
-    iw = WorkViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "iw"),
-                      thandle.get_level_maxrowsperchunk(), nrows);
-    Kokkos::deep_copy(iw, nnz_lno_t(-1));
-  } else {
-    iw = WorkViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "iw"),
-                      thandle.get_level_maxrows(), nrows);
-    Kokkos::deep_copy(iw, nnz_lno_t(-1));
-  }
-
-  // Main loop must be performed sequential. Question: Try out Cuda's graph
-  // stuff to reduce kernel launch overhead
-  for (size_type lvl = 0; lvl < nlevels; ++lvl) {
-    nnz_lno_t lev_start = level_ptr_h(lvl);
-    nnz_lno_t lev_end   = level_ptr_h(lvl + 1);
-
-    if ((lev_end - lev_start) != 0) {
-      if (thandle.get_algorithm() ==
-          KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_RP) {
-        Kokkos::parallel_for(
-            "parfor_fixed_lvl",
-            Kokkos::RangePolicy<execution_space>(lev_start, lev_end),
-            ILUKLvlSchedRPNumericFunctor<
-                ARowMapType, AEntriesType, AValuesType, LRowMapType,
-                LEntriesType, LValuesType, URowMapType, UEntriesType,
-                UValuesType, HandleDeviceEntriesType, WorkViewType, nnz_lno_t>(
-                A_row_map, A_entries, A_values, L_row_map, L_entries, L_values,
-                U_row_map, U_entries, U_values, level_idx, iw, lev_start));
-      } else if (thandle.get_algorithm() ==
-                 KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1) {
+       KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1HASHMAP) {
+    auto level_shmem_hash_size = thandle.get_level_shmem_hash_size();
+    auto level_shmem_key_size  = thandle.get_level_shmem_key_size();
+  
+    for ( size_type lvl = 0; lvl < nlevels; ++lvl ) {
+      nnz_lno_t lev_start = level_ptr_h(lvl);
+      nnz_lno_t lev_end   = level_ptr_h(lvl+1);
+    
+      if ( (lev_end - lev_start) != 0 ) {
         using policy_type = Kokkos::TeamPolicy<execution_space>;
-        int team_size     = thandle.get_team_size();
+        using scratch_space = typename execution_space::scratch_memory_space;
+        using view_type_1d_scratch = Kokkos::View<nnz_lno_t*, Kokkos::LayoutLeft, scratch_space>;
 
-        nnz_lno_t lvl_rowid_start = 0;
-        nnz_lno_t lvl_nrows_chunk;
-        for (int chunkid = 0; chunkid < level_nchunks_h(lvl); chunkid++) {
-          if ((lvl_rowid_start + level_nrowsperchunk_h(lvl)) >
-              (lev_end - lev_start))
-            lvl_nrows_chunk = (lev_end - lev_start) - lvl_rowid_start;
-          else
-            lvl_nrows_chunk = level_nrowsperchunk_h(lvl);
+        nnz_lno_t shmem_hash_size = static_cast<nnz_lno_t>(level_shmem_hash_size(lvl));
+        nnz_lno_t shmem_key_size  = static_cast<nnz_lno_t>(level_shmem_key_size(lvl));
+        
+        nnz_lno_t shared_memory_hash_func = shmem_hash_size - 1;//for AND operation we use -1
 
-          ILUKLvlSchedTP1NumericFunctor<
-              ARowMapType, AEntriesType, AValuesType, LRowMapType, LEntriesType,
-              LValuesType, URowMapType, UEntriesType, UValuesType,
-              HandleDeviceEntriesType, WorkViewType, nnz_lno_t>
-              tstf(A_row_map, A_entries, A_values, L_row_map, L_entries,
-                   L_values, U_row_map, U_entries, U_values, level_idx, iw,
-                   lev_start + lvl_rowid_start);
+        //shmem needs the first 2 entries for sizes
+        //nnz_lno_t shmem_size = (2 + shmem_hash_size + shmem_key_size * 3) * sizeof(nnz_lno_t);
+        nnz_lno_t shmem_size = view_type_1d_scratch::shmem_size(2 + shmem_hash_size + shmem_key_size * 3);
 
-          if (team_size == -1)
-            Kokkos::parallel_for("parfor_l_team",
-                                 policy_type(lvl_nrows_chunk, Kokkos::AUTO),
-                                 tstf);
-          else
-            Kokkos::parallel_for("parfor_l_team",
-                                 policy_type(lvl_nrows_chunk, team_size), tstf);
+        printf("lvl %d, shmem_hash_size %d, shmem_key_size %d, shmem_size %d\n",lvl, shmem_hash_size, shmem_key_size, shmem_size);
 
-          lvl_rowid_start += lvl_nrows_chunk;
+        int team_size = thandle.get_team_size();
+        ILUKLvlSchedTP1HashMapNumericFunctor<ARowMapType,
+                                             AEntriesType,
+                                             AValuesType,
+                                             LRowMapType,
+                                             LEntriesType,
+                                             LValuesType,
+                                             URowMapType,
+                                             UEntriesType,
+                                             UValuesType,
+                                             HandleDeviceEntriesType,
+                                             nnz_lno_t> tstf(A_row_map, A_entries, A_values,
+                                                             L_row_map, L_entries, L_values,
+                                                             U_row_map, U_entries, U_values,
+                                                             level_idx, lev_start,
+                                                             shmem_hash_size, shmem_key_size,
+                                                             shared_memory_hash_func, shmem_size);
+        if ( team_size == -1 )
+          Kokkos::parallel_for("parfor_l_team", policy_type( lev_end - lev_start , Kokkos::AUTO ), tstf);
+        else
+          Kokkos::parallel_for("parfor_l_team", policy_type( lev_end - lev_start , team_size ), tstf);
+      } // end if
+    } // end for lvl
+  }//End SEQLVLSCHD_TP1HASHMAP
+  else {
+    if (thandle.get_algorithm() ==
+        KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1) {
+      level_nchunks_h = LevelHostViewType(
+          Kokkos::view_alloc(Kokkos::WithoutInitializing, "Host level nchunks"),
+          level_nchunks.extent(0));
+      level_nrowsperchunk_h =
+          LevelHostViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing,
+                                               "Host level nrowsperchunk"),
+                            level_nrowsperchunk.extent(0));
+      Kokkos::deep_copy(level_nchunks_h, level_nchunks);
+      Kokkos::deep_copy(level_nrowsperchunk_h, level_nrowsperchunk);
+      iw = WorkViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "iw"),
+                        thandle.get_level_maxrowsperchunk(), nrows);
+      Kokkos::deep_copy(iw, nnz_lno_t(-1));
+    } else {
+      iw = WorkViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "iw"),
+                        thandle.get_level_maxrows(), nrows);
+      Kokkos::deep_copy(iw, nnz_lno_t(-1));
+    }
+    
+    // Main loop must be performed sequential. Question: Try out Cuda's graph
+    // stuff to reduce kernel launch overhead
+    for (size_type lvl = 0; lvl < nlevels; ++lvl) {
+      nnz_lno_t lev_start = level_ptr_h(lvl);
+      nnz_lno_t lev_end   = level_ptr_h(lvl + 1);
+    
+      if ((lev_end - lev_start) != 0) {
+        if (thandle.get_algorithm() ==
+            KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_RP) {
+          Kokkos::parallel_for(
+              "parfor_fixed_lvl",
+              Kokkos::RangePolicy<execution_space>(lev_start, lev_end),
+              ILUKLvlSchedRPNumericFunctor<
+                  ARowMapType, AEntriesType, AValuesType, LRowMapType,
+                  LEntriesType, LValuesType, URowMapType, UEntriesType,
+                  UValuesType, HandleDeviceEntriesType, WorkViewType, nnz_lno_t>(
+                  A_row_map, A_entries, A_values, L_row_map, L_entries, L_values,
+                  U_row_map, U_entries, U_values, level_idx, iw, lev_start));
+        } else if (thandle.get_algorithm() ==
+                   KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1) {
+          using policy_type = Kokkos::TeamPolicy<execution_space>;
+          int team_size     = thandle.get_team_size();
+    
+          nnz_lno_t lvl_rowid_start = 0;
+          nnz_lno_t lvl_nrows_chunk;
+          for (int chunkid = 0; chunkid < level_nchunks_h(lvl); chunkid++) {
+            if ((lvl_rowid_start + level_nrowsperchunk_h(lvl)) >
+                (lev_end - lev_start))
+              lvl_nrows_chunk = (lev_end - lev_start) - lvl_rowid_start;
+            else
+              lvl_nrows_chunk = level_nrowsperchunk_h(lvl);
+    
+            ILUKLvlSchedTP1NumericFunctor<
+                ARowMapType, AEntriesType, AValuesType, LRowMapType, LEntriesType,
+                LValuesType, URowMapType, UEntriesType, UValuesType,
+                HandleDeviceEntriesType, WorkViewType, nnz_lno_t>
+                tstf(A_row_map, A_entries, A_values, L_row_map, L_entries,
+                     L_values, U_row_map, U_entries, U_values, level_idx, iw,
+                     lev_start + lvl_rowid_start);
+    
+            if (team_size == -1)
+              Kokkos::parallel_for("parfor_l_team",
+                                   policy_type(lvl_nrows_chunk, Kokkos::AUTO),
+                                   tstf);
+            else
+              Kokkos::parallel_for("parfor_l_team",
+                                   policy_type(lvl_nrows_chunk, team_size), tstf);
+    
+            lvl_rowid_start += lvl_nrows_chunk;
+          }
         }
-      }
-      //      /*
-      //      // TP2 algorithm has issues with some offset-ordinal combo to be
-      //      addressed else if ( thandle.get_algorithm() ==
-      //      KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHED_TP2 ) {
-      //        typedef Kokkos::TeamPolicy<execution_space> tvt_policy_type;
-      //
-      //        int team_size = thandle.get_team_size();
-      //        if ( team_size == -1 ) {
-      //          team_size = std::is_same< typename
-      //          Kokkos::DefaultExecutionSpace::memory_space, Kokkos::HostSpace
-      //          >::value ? 1 : 128;
-      //        }
-      //        int vector_size = thandle.get_team_size();
-      //        if ( vector_size == -1 ) {
-      //          vector_size = std::is_same< typename
-      //          Kokkos::DefaultExecutionSpace::memory_space, Kokkos::HostSpace
-      //          >::value ? 1 : 4;
-      //        }
-      //
-      //        // This impl: "chunk" lvl_nodes into node_groups; a league_rank
-      //        is responsible for processing that many nodes
-      //        //       TeamThreadRange over number of node_groups
-      //        //       To avoid masking threads, 1 thread (team) per node in
-      //        node_group
-      //        //       ThreadVectorRange responsible for the actual solve
-      //        computation const int node_groups = team_size;
-      //
-      //        LowerTriLvlSchedTP2SolverFunctor<RowMapType, EntriesType,
-      //        ValuesType, LHSType, RHSType, HandleDeviceEntriesType>
-      //        tstf(row_map, entries, values, lhs, rhs, nodes_grouped_by_level,
-      //        row_count, node_groups);
-      //        Kokkos::parallel_for("parfor_u_team_vector", tvt_policy_type(
-      //        (int)std::ceil((float)lvl_nodes/(float)node_groups) , team_size,
-      //        vector_size ), tstf);
-      //      } // end elseif
-      //      */
-
-    }  // end if
-  }    // end for lvl
+      }  // end if
+    }    // end for lvl
+  }
 
 // Output check
 #ifdef NUMERIC_OUTPUT_INFO

@@ -219,6 +219,154 @@ void level_sched(IlukHandle& thandle, const RowMapType row_map,
   level_nrowsperchunk = lnrowsperchunk;
 }
 
+template <class IlukHandle,
+          class LRowMapType,
+          class LEntriesType,
+          class URowMapType,
+          class UEntriesType,
+          class LevelType1,
+          class LevelType2,
+          class size_type>
+void level_sched ( IlukHandle& thandle,
+                   const LRowMapType L_row_map, const LEntriesType L_entries,
+                   const URowMapType U_row_map, const UEntriesType U_entries,
+                   LevelType1& level_list, LevelType2& level_ptr, LevelType2& level_idx, size_type &nlevels ) {
+  // Scheduling currently compute on host
+
+  using nnz_lno_t = typename IlukHandle::nnz_lno_t;
+
+  size_type nrows = thandle.get_nrows();
+
+  nlevels      = 0;
+  level_ptr(0) = 0;
+
+  for ( size_type i = 0; i < nrows; ++i ) {
+    size_type l = 0;
+    size_type rowstart= L_row_map(i);
+    size_type rowend  = L_row_map(i+1);
+    for ( size_type j = rowstart; j < rowend; ++j ) {
+      nnz_lno_t col = L_entries(j);
+      l = std::max(l, level_list(col));
+    }
+    level_list(i)   = l+1;
+    level_ptr(l+1) += 1;
+    nlevels         = std::max(nlevels, l+1);
+  }
+
+  for ( size_type i = 1; i <= nlevels; ++i ) {
+    level_ptr(i) += level_ptr(i-1);
+  }
+
+  for ( size_type i = 0; i < nrows; i++ ) {
+    level_idx(level_ptr(level_list(i)-1)) = i;
+    level_ptr(level_list(i)-1) += 1;
+  }
+
+  if (nlevels>0) {//note: to avoid wrapping around to the max of size_t when nlevels = 0.
+    for ( size_type i = nlevels-1; i > 0; --i ) {
+      level_ptr(i) = level_ptr(i-1);
+    }
+  }
+
+  level_ptr(0) = 0;
+
+  //Find the maximum number of nnz per row per level
+  //Determine shmem hash size and key size
+  //(max. number of non-zeros in both L and U)
+  size_type maxrows = 0;
+
+  //TEST
+  size_type max_maxnnzperrow    = 0;
+  size_type max_shmem_hash_size = 0;
+  size_type max_shmem_key_size  = 0;
+  size_type min_maxnnzperrow    = 2000000000;
+  size_type min_shmem_hash_size = 2000000000;
+  size_type min_shmem_key_size  = 2000000000;
+
+  thandle.alloc_level_maxnnzperrow(nlevels);
+  thandle.alloc_level_shmem_hash_size(nlevels);
+  thandle.alloc_level_shmem_key_size(nlevels);
+
+  auto level_maxnnzperrow    = thandle.get_level_maxnnzperrow();
+  auto level_shmem_hash_size = thandle.get_level_shmem_hash_size();
+  auto level_shmem_key_size  = thandle.get_level_shmem_key_size();
+
+  for ( size_type i = 0; i < nlevels; i++ ) {
+    size_type lnrows = level_ptr(i+1) - level_ptr(i);
+    if( maxrows < lnrows ) {
+      maxrows = lnrows;
+    }
+    //Determine the number of non-zeros in each level
+    size_type rid_s = level_ptr(i);
+    size_type rid_e = level_ptr(i+1);
+    size_type lnnz = 0;
+    size_type lmaxnnz = 0;
+    for (size_type rid = rid_s; rid < rid_e; rid++) {//Look at each row in a level
+      size_type rnnz = (L_row_map(rid+1) - L_row_map(rid)) + 
+                       (U_row_map(rid+1) - U_row_map(rid));//count the number of non-zeros in the current row (both L and U)
+      lnnz += rnnz;//accumulate to count the nnz in the current level
+      if( lmaxnnz < rnnz ) {
+        lmaxnnz = rnnz;
+      }
+    }
+    level_maxnnzperrow(i) = lmaxnnz;
+
+    size_type shmem_key_size = lmaxnnz;//the number of keys can a team (row) hold
+
+    // put the hash size closest power of 2.
+    // we round down here, because we want to store more keys,
+    // conflicts are cheaper.
+    size_type shmem_hash_size = 1;
+    while (shmem_hash_size * 2 <= shmem_key_size) {
+      shmem_hash_size = shmem_hash_size * 2;
+    }
+
+    // increase the key size with the left over from hash size.
+    shmem_key_size = shmem_key_size + (shmem_key_size - shmem_hash_size) / 3; //note: divided by 3 because nexts, keys, values have sizes of shmem_key_size
+    // round it down to 2, because of some alignment issues.
+    shmem_key_size = (shmem_key_size >> 1) << 1;
+
+    level_shmem_hash_size(i) = shmem_hash_size;
+    level_shmem_key_size(i)  = shmem_key_size;
+  
+    if ((i < 20)|| (i >= (nlevels-20))) {
+      std::cout << "Level " << i+1 << " has " << level_ptr(i+1) - level_ptr(i) << " rows";
+      std::cout << ", maxnnzperrow: " << level_maxnnzperrow(i);
+      std::cout << ", shmem_hash_size: " << level_shmem_hash_size(i);
+      std::cout << ", shmem_key_size: " << level_shmem_key_size(i);
+      std::cout << std::endl;
+    }
+
+    if( max_maxnnzperrow < level_maxnnzperrow(i) ) {
+      max_maxnnzperrow = level_maxnnzperrow(i);
+    }
+    if( min_maxnnzperrow > level_maxnnzperrow(i) ) {
+      min_maxnnzperrow = level_maxnnzperrow(i);
+    }
+    if( max_shmem_hash_size < level_shmem_hash_size(i) ) {
+      max_shmem_hash_size = level_shmem_hash_size(i);
+    }
+    if( min_shmem_hash_size > level_shmem_hash_size(i) ) {
+      min_shmem_hash_size = level_shmem_hash_size(i);
+    }
+    if( max_shmem_key_size < level_shmem_key_size(i) ) {
+      max_shmem_key_size = level_shmem_key_size(i);
+    }
+    if( min_shmem_key_size > level_shmem_key_size(i) ) {
+      min_shmem_key_size = level_shmem_key_size(i);
+    }
+  }
+
+  std::cout << "              VINH TEST: spiluk_symbolic() -- " << ", unordered map capacity among levels: " << umapcapacity 
+     << ", maxnnzperrow (max " << max_maxnnzperrow  << ", min "<< min_maxnnzperrow << ")"
+     << ", shmem_hash_size (max " << max_shmem_hash_size  << ", min "<< min_shmem_hash_size << ")"
+     << ", shmem_key_size (max " << max_shmem_key_size  << ", min "<< min_shmem_key_size << ")" << std::endl;
+
+  thandle.set_num_levels(nlevels);
+  thandle.set_level_maxrows(maxrows);
+ 
+}
+
 // Linear Search for the smallest row index
 template <class size_type, class nnz_lno_t, class ViewType>
 size_type search_col_index(nnz_lno_t j, size_type lenl, ViewType h_iL,
@@ -261,7 +409,9 @@ void iluk_symbolic(IlukHandle& thandle,
   if (thandle.get_algorithm() ==
           KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_RP ||
       thandle.get_algorithm() ==
-          KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1)
+          KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1 ||
+      thandle.get_algorithm() ==
+          KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1HASHMAP)
   /*   || thandle.get_algorithm() ==
      KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHED_TP2 )*/
   {
@@ -471,6 +621,10 @@ void iluk_symbolic(IlukHandle& thandle,
 
     // Level scheduling on L
     if (thandle.get_algorithm() ==
+        KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1HASHMAP) {
+      level_sched (thandle, L_row_map, L_entries, U_row_map, U_entries,
+                   level_list, level_ptr, level_idx, nlev);
+    } else if (thandle.get_algorithm() ==
         KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1) {
       level_sched(thandle, L_row_map, L_entries, level_list, level_ptr,
                   level_idx, level_nchunks, level_nrowsperchunk, nlev);
