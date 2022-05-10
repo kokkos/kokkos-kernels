@@ -60,31 +60,25 @@ namespace KokkosSparse {
 namespace Impl {
 namespace Experimental {
 
-template <class IlukHandle, class ARowMapType, class AEntriesType,
-          class LRowMapType, class LEntriesType, class URowMapType,
-          class UEntriesType>
-void iluk_symbolic(IlukHandle& thandle,
-                   const typename IlukHandle::const_nnz_lno_t& fill_lev,
-                   const ARowMapType& A_row_map_d, const AEntriesType& A_entries_d,
-                   LRowMapType& L_row_map_d, LEntriesType& L_entries_d,
-                   URowMapType& U_row_map_d, UEntriesType& U_entries_d)
+template <class IlutHandle,
+          class ARowMapType, class AEntriesType, class AValuesType,
+          class LRowMapType, class LEntriesType, class LValuesType,
+          class URowMapType, class UEntriesType, class UValuesType>
+void ilut_symbolic(IlutHandle& thandle,
+                   const typename IlutHandle::const_nnz_lno_t& fill_lev,
+                   const ARowMapType& A_row_map_d, const AEntriesType& A_entries_d, const AValuesType& A_values_d,
+                   LRowMapType& L_row_map_d, LEntriesType& L_entries_d, LValuesType& L_values_d,
+                   URowMapType& U_row_map_d, UEntriesType& U_entries_d, UValuesType& U_values_d)
 {
-  // Symbolic phase currently compute on host - need host copy
-  // of all views
-
   using execution_space = typename ARowMapType::execution_space;
   using policy_type     = Kokkos::TeamPolicy<execution_space>;
   using member_type     = typename policy_type::member_type;
+  using size_type       = typename IlutHandle::size_type;
+  using nnz_lno_t       = typename IlutHandle::nnz_lno_t;
+  using scalar_t        = typename AValuesType::non_const_value_type;
+  using RangePolicy     = typename IlutHandle::RangePolicy;
 
-  typedef typename IlukHandle::size_type size_type;
-  typedef typename IlukHandle::nnz_lno_t nnz_lno_t;
-
-  typedef typename IlukHandle::nnz_lno_view_t HandleDeviceEntriesType;
-  typedef typename IlukHandle::nnz_row_view_t HandleDeviceRowMapType;
-
-  // typedef typename IlukHandle::signed_integral_t signed_integral_t;
-
-  size_type nrows = thandle.get_nrows();
+  const size_type nrows = thandle.get_nrows();
 
   // Sizing
   const auto policy = thandle.get_default_team_policy();
@@ -114,17 +108,82 @@ void iluk_symbolic(IlukHandle& thandle,
           nnzsU_inner += col_idx > row_idx;
       }, nnzsU_temp);
 
-      nnzsL_outer += nnzsL_temp + 1;
-      nnzsU_outer += nnzsU_temp + 1;
+      team.team_barrier();
 
-      L_row_map_d(row_idx+1) = nnzsL_outer;
-      U_row_map_d(row_idx+1) = nnzsU_outer;
+      Kokkos::single(
+        Kokkos::PerTeam(team), [&] () {
+          nnzsL_outer += nnzsL_temp + 1;
+          nnzsU_outer += nnzsU_temp + 1;
+
+          L_row_map_d(row_idx) = nnzsL_temp+1;
+          U_row_map_d(row_idx) = nnzsU_temp+1;
+      });
 
   }, nnzsL, nnzsU);
 
-  std::cout << "nnzL: " << nnzsL << std::endl;
-  std::cout << "nnzU: " << nnzsU << std::endl;
-}  // end iluk_symbolic
+  Kokkos::fence();
+
+  thandle.set_nnzL(nnzsL);
+  thandle.set_nnzU(nnzsU);
+
+  // prefix_sum from gingko. will need to set up a better implementation for this
+  size_type sumL = 0, sumU = 0;
+  for(size_type i = 0; i < nrows+1; ++i) {
+    size_type tmpL = L_row_map_d(i);
+    size_type tmpU = U_row_map_d(i);
+    L_row_map_d(i) = sumL;
+    U_row_map_d(i) = sumU;
+    sumL += tmpL;
+    sumU += tmpU;
+  }
+
+  // Now set actual L/U values
+
+  Kokkos::parallel_for(
+    "symbolic values",
+    RangePolicy(0, nrows), // No team level parallelism in this alg
+    KOKKOS_LAMBDA(const size_type& row_idx) {
+      const auto row_nnz_begin = A_row_map_d(row_idx);
+      const auto row_nnz_end   = A_row_map_d(row_idx+1);
+
+      size_type current_index_l = L_row_map_d(row_idx);
+      size_type current_index_u = U_row_map_d(row_idx) + 1; // we treat the diagonal separately
+
+      // if there is no diagonal value, set it to 1 by default
+      scalar_t diag = 1.;
+
+      for (size_type row_nnz = row_nnz_begin; row_nnz < row_nnz_end; ++row_nnz) {
+        const auto val     = A_values_d(row_nnz);
+        const auto col_idx = A_entries_d(row_nnz);
+
+        if (col_idx < row_idx) {
+          L_entries_d(current_index_l) = col_idx;
+          L_values_d(current_index_l)  = val;
+          ++current_index_l;
+        }
+        else if (col_idx == row_idx) {
+          // save diagonal
+          diag = val;
+        }
+        else {
+          U_entries_d(current_index_u) = col_idx;
+          U_values_d(current_index_u)  = val;
+          ++current_index_u;
+        }
+      }
+
+      // store diagonal values separately
+      const auto l_diag_idx = L_row_map_d(row_idx + 1) - 1;
+      const auto u_diag_idx = U_row_map_d(row_idx);
+      L_entries_d(l_diag_idx) = row_idx;
+      U_entries_d(u_diag_idx) = row_idx;
+      L_values_d(l_diag_idx) = 1.;
+      U_values_d(u_diag_idx) = diag;
+  });
+
+  Kokkos::fence();
+
+}  // end ilut_symbolic
 
 }  // namespace Experimental
 }  // namespace Impl

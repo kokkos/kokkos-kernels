@@ -167,7 +167,7 @@ struct PAR_ILUT_NUMERIC<KernelHandle, ARowMapType, AEntriesType, AValuesType,
       UEntriesType &U_entries, UValuesType &U_values) {
     auto par_ilut_handle = handle->get_par_ilut_handle();
 
-    Experimental::iluk_numeric(*par_ilut_handle, A_row_map, A_entries, A_values,
+    Experimental::ilut_numeric(*handle, *par_ilut_handle, A_row_map, A_entries, A_values,
                                L_row_map, L_entries, L_values, U_row_map,
                                U_entries, U_values);
   }

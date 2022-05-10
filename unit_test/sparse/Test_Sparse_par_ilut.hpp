@@ -107,6 +107,24 @@ std::vector<std::vector<scalar_t>> decompress_matrix(
   return result;
 }
 
+template <typename scalar_t, typename lno_t, typename size_type, typename device>
+void check_matrix(
+  Kokkos::View<size_type*, device>& row_map,
+  Kokkos::View<lno_t*, device>& entries,
+  Kokkos::View<scalar_t*, device>& values,
+  const std::vector<std::vector<scalar_t>>& expected)
+{
+  const auto decompressed_mtx = decompress_matrix(row_map, entries, values);
+
+  const auto nrows = row_map.size() - 1;
+  for (size_type row_idx = 0; row_idx < nrows; ++row_idx) {
+    for (size_type col_idx = 0; col_idx < nrows; ++col_idx) {
+      EXPECT_EQ(expected[row_idx][col_idx], decompressed_mtx[row_idx][col_idx]);
+    }
+  }
+}
+
+
 template <typename scalar_t>
 void print_matrix(const std::vector<std::vector<scalar_t> >& matrix)
 {
@@ -193,37 +211,50 @@ void run_test_par_ilut() {
   auto par_ilut_handle = kh.get_par_ilut_handle();
 
   // Allocate L and U CRS views as outputs
-  RowMapType L_row_map("L_row_map", nrows + 1);
-  EntriesType L_entries("L_entries", 0);
-  ValuesType L_values("L_values", 0);
-  RowMapType U_row_map("U_row_map", nrows + 1);
-  EntriesType U_entries("U_entries", 0);
-  ValuesType U_values("U_values", 0);
+  RowMapType L_row_map("L_row_map",  nrows + 1);
+  EntriesType L_entries("L_entries", nnzL + nrows); // overallocate to be safe
+  ValuesType L_values("L_values",    nnzL + nrows); // overallocate to be safe
+  RowMapType U_row_map("U_row_map",  nrows + 1);
+  EntriesType U_entries("U_entries", nnzU + nrows); // overallocate to be safe
+  ValuesType U_values("U_values",    nnzU + nrows); // overallocate to be safe
 
   typename KernelHandle::const_nnz_lno_t fill_lev = 2; // Does par_ilut need this?
 
-  std::cout << "Initial A" << std::endl;
-  print_matrix(decompress_matrix(row_map, entries, values));
-
   // Initial L/U approximations for A
-  par_ilut_symbolic(&kh, fill_lev, row_map, entries, L_row_map, L_entries,
-                    U_row_map, U_entries);
+  par_ilut_symbolic(&kh, fill_lev,
+                    row_map, entries, values,
+                    L_row_map, L_entries, L_values,
+                    U_row_map, U_entries, U_values);
 
   Kokkos::fence();
+
+  EXPECT_EQ(par_ilut_handle->get_nnzL(), 10);
+  EXPECT_EQ(par_ilut_handle->get_nnzU(), 8);
 
   Kokkos::resize(L_entries, par_ilut_handle->get_nnzL());
   Kokkos::resize(L_values, par_ilut_handle->get_nnzL());
   Kokkos::resize(U_entries, par_ilut_handle->get_nnzU());
   Kokkos::resize(U_values, par_ilut_handle->get_nnzU());
 
-  std::cout << "Initial L" << std::endl;
-  print_matrix(decompress_matrix(L_row_map, L_entries, L_values));
+  std::vector<std::vector<scalar_t> > expected_L = {
+    {1., 0., 0., 0.},
+    {2., 1., 0., 0.},
+    {0.50, -3., 1., 0.},
+    {0.20, -0.50, -9., 1.}
+  };
+  check_matrix(L_row_map, L_entries, L_values, expected_L);
 
-  std::cout << "Initial U" << std::endl;
-  print_matrix(decompress_matrix(U_row_map, U_entries, U_values));
+  std::vector<std::vector<scalar_t> > expected_U = {
+    {1., 6., 4., 7.},
+    {0., -5., 0., 8.},
+    {0., 0., 6., 0.},
+    {0., 0., 0., 1.}
+  };
+  check_matrix(U_row_map, U_entries, U_values, expected_U);
 
-  // par_ilut_numeric(&kh, row_map, entries, values, L_row_map,
-  //                  L_entries, L_values, U_row_map, U_entries, U_values);
+  par_ilut_numeric(&kh, row_map, entries, values,
+                   L_row_map, L_entries, L_values,
+                   U_row_map, U_entries, U_values);
 
   Kokkos::fence();
 

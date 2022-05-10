@@ -67,16 +67,18 @@ namespace Experimental {
   std::is_same<typename std::remove_const<A>::type, \
                typename std::remove_const<B>::type>::value
 
-template <typename KernelHandle, typename ARowMapType, typename AEntriesType,
-          typename LRowMapType, typename LEntriesType, typename URowMapType,
-          typename UEntriesType>
+template <typename KernelHandle,
+          typename ARowMapType, typename AEntriesType, typename AValuesType,
+          typename LRowMapType, typename LEntriesType, typename LValuesType,
+          typename URowMapType, typename UEntriesType, typename UValuesType>
 void par_ilut_symbolic(KernelHandle* handle,
-                     typename KernelHandle::const_nnz_lno_t fill_lev,
-                     ARowMapType& A_rowmap, AEntriesType& A_entries,
-                     LRowMapType& L_rowmap, LEntriesType& L_entries,
-                     URowMapType& U_rowmap, UEntriesType& U_entries) {
-  typedef typename KernelHandle::size_type size_type;
-  typedef typename KernelHandle::nnz_lno_t ordinal_type;
+                       typename KernelHandle::const_nnz_lno_t fill_lev,
+                       ARowMapType& A_rowmap, AEntriesType& A_entries, AValuesType& A_values,
+                       LRowMapType& L_rowmap, LEntriesType& L_entries, LValuesType& L_values,
+                       URowMapType& U_rowmap, UEntriesType& U_entries, UValuesType& U_values) {
+  using size_type    = typename KernelHandle::size_type;
+  using ordinal_type = typename KernelHandle::nnz_lno_t;
+  using scalar_type  = typename KernelHandle::nnz_scalar_t;
 
   static_assert(KOKKOSKERNELS_PAR_ILUT_SAME_TYPE(
                     typename ARowMapType::non_const_value_type, size_type),
@@ -85,6 +87,10 @@ void par_ilut_symbolic(KernelHandle* handle,
   static_assert(KOKKOSKERNELS_PAR_ILUT_SAME_TYPE(
                     typename AEntriesType::non_const_value_type, ordinal_type),
                 "par_ilut_symbolic: A entry type must match KernelHandle entry "
+                "type (aka nnz_lno_t, and const doesn't matter)");
+  static_assert(KOKKOSKERNELS_PAR_ILUT_SAME_TYPE(typename AValuesType::value_type,
+                                               scalar_type),
+                "par_ilut_symbolic: A scalar type must match KernelHandle entry "
                 "type (aka nnz_lno_t, and const doesn't matter)");
 
   static_assert(KOKKOSKERNELS_PAR_ILUT_SAME_TYPE(
@@ -95,6 +101,10 @@ void par_ilut_symbolic(KernelHandle* handle,
                     typename LEntriesType::non_const_value_type, ordinal_type),
                 "par_ilut_symbolic: L entry type must match KernelHandle entry "
                 "type (aka nnz_lno_t, and const doesn't matter)");
+  static_assert(KOKKOSKERNELS_PAR_ILUT_SAME_TYPE(typename LValuesType::value_type,
+                                                 scalar_type),
+                "par_ilut_symbolic: L scalar type must match KernelHandle entry "
+                "type (aka nnz_lno_t, and const doesn't matter)");
 
   static_assert(KOKKOSKERNELS_PAR_ILUT_SAME_TYPE(
                     typename URowMapType::non_const_value_type, size_type),
@@ -104,19 +114,29 @@ void par_ilut_symbolic(KernelHandle* handle,
                     typename UEntriesType::non_const_value_type, ordinal_type),
                 "par_ilut_symbolic: U entry type must match KernelHandle entry "
                 "type (aka nnz_lno_t, and const doesn't matter)");
+  static_assert(KOKKOSKERNELS_PAR_ILUT_SAME_TYPE(typename UValuesType::value_type,
+                                               scalar_type),
+                "par_ilut_symbolic: U scalar type must match KernelHandle entry "
+                "type (aka nnz_lno_t, and const doesn't matter)");
 
   static_assert(Kokkos::is_view<ARowMapType>::value,
                 "par_ilut_symbolic: A_rowmap is not a Kokkos::View.");
   static_assert(Kokkos::is_view<AEntriesType>::value,
                 "par_ilut_symbolic: A_entries is not a Kokkos::View.");
+  static_assert(Kokkos::is_view<AValuesType>::value,
+                "par_ilut_symbolic: A_values is not a Kokkos::View.");
   static_assert(Kokkos::is_view<LRowMapType>::value,
                 "par_ilut_symbolic: L_rowmap is not a Kokkos::View.");
   static_assert(Kokkos::is_view<LEntriesType>::value,
                 "par_ilut_symbolic: L_entries is not a Kokkos::View.");
+  static_assert(Kokkos::is_view<LValuesType>::value,
+                "par_ilut_symbolic: L_values is not a Kokkos::View.");
   static_assert(Kokkos::is_view<URowMapType>::value,
                 "par_ilut_symbolic: U_rowmap is not a Kokkos::View.");
   static_assert(Kokkos::is_view<UEntriesType>::value,
                 "par_ilut_symbolic: U_entries is not a Kokkos::View.");
+  static_assert(Kokkos::is_view<UValuesType>::value,
+                "par_ilut_symbolic: U_values is not a Kokkos::View.");
 
   static_assert(
       (int)LRowMapType::rank == (int)ARowMapType::rank,
@@ -124,6 +144,9 @@ void par_ilut_symbolic(KernelHandle* handle,
   static_assert(
       (int)LEntriesType::rank == (int)AEntriesType::rank,
       "par_ilut_symbolic: The ranks of L_entries and A_entries do not match.");
+  static_assert(
+      (int)LValuesType::rank == (int)AValuesType::rank,
+      "par_ilut_symbolic: The ranks of L_values and A_values do not match.");
 
   static_assert(
       (int)LRowMapType::rank == (int)URowMapType::rank,
@@ -131,6 +154,9 @@ void par_ilut_symbolic(KernelHandle* handle,
   static_assert(
       (int)LEntriesType::rank == (int)UEntriesType::rank,
       "par_ilut_symbolic: The ranks of L_entries and U_entries do not match.");
+  static_assert(
+      (int)LValuesType::rank == (int)UValuesType::rank,
+      "par_ilut_symbolic: The ranks of L_values and U_values do not match.");
 
   static_assert(
       LRowMapType::rank == 1,
@@ -227,6 +253,13 @@ void par_ilut_symbolic(KernelHandle* handle,
       AEntries_Internal;
 
   typedef Kokkos::View<
+      typename AValuesType::const_value_type*,
+      typename KokkosKernels::Impl::GetUnifiedLayout<AValuesType>::array_layout,
+      typename AValuesType::device_type,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >
+      AValues_Internal;
+
+  typedef Kokkos::View<
       typename LRowMapType::non_const_value_type*,
       typename KokkosKernels::Impl::GetUnifiedLayout<LRowMapType>::array_layout,
       typename LRowMapType::device_type,
@@ -240,6 +273,13 @@ void par_ilut_symbolic(KernelHandle* handle,
       typename LEntriesType::device_type,
       Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >
       LEntries_Internal;
+
+  typedef Kokkos::View<
+      typename LValuesType::non_const_value_type*,
+      typename KokkosKernels::Impl::GetUnifiedLayout<LValuesType>::array_layout,
+      typename LValuesType::device_type,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >
+      LValues_Internal;
 
   typedef Kokkos::View<
       typename URowMapType::non_const_value_type*,
@@ -256,19 +296,32 @@ void par_ilut_symbolic(KernelHandle* handle,
       Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >
       UEntries_Internal;
 
+  typedef Kokkos::View<
+      typename UValuesType::non_const_value_type*,
+      typename KokkosKernels::Impl::GetUnifiedLayout<UValuesType>::array_layout,
+      typename UValuesType::device_type,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >
+      UValues_Internal;
+
   ARowMap_Internal A_rowmap_i   = A_rowmap;
   AEntries_Internal A_entries_i = A_entries;
+  AValues_Internal A_values_i   = A_values;
   LRowMap_Internal L_rowmap_i   = L_rowmap;
   LEntries_Internal L_entries_i = L_entries;
+  LValues_Internal L_values_i   = L_values;
   URowMap_Internal U_rowmap_i   = U_rowmap;
   UEntries_Internal U_entries_i = U_entries;
+  UValues_Internal U_values_i   = U_values;
 
   KokkosSparse::Impl::PAR_ILUT_SYMBOLIC<
-      const_handle_type, ARowMap_Internal, AEntries_Internal, LRowMap_Internal,
-      LEntries_Internal, URowMap_Internal,
-      UEntries_Internal>::par_ilut_symbolic(&tmp_handle, fill_lev, A_rowmap_i,
-                                          A_entries_i, L_rowmap_i, L_entries_i,
-                                          U_rowmap_i, U_entries_i);
+    const_handle_type,
+    ARowMap_Internal, AEntries_Internal, AValues_Internal,
+    LRowMap_Internal, LEntries_Internal, LValues_Internal,
+    URowMap_Internal, UEntries_Internal, UValues_Internal>::
+    par_ilut_symbolic(&tmp_handle, fill_lev,
+                      A_rowmap_i, A_entries_i, A_values_i,
+                      L_rowmap_i, L_entries_i, L_values_i,
+                      U_rowmap_i, U_entries_i, U_values_i);
 
 }  // par_ilut_symbolic
 

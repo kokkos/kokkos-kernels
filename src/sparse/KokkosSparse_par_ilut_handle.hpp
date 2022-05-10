@@ -67,6 +67,7 @@ class PAR_ILUTHandle {
   typedef ExecutionSpace execution_space;
   typedef HandlePersistentMemorySpace memory_space;
   using TeamPolicy = Kokkos::TeamPolicy<execution_space>;
+  using RangePolicy = Kokkos::RangePolicy<execution_space>;
 
   typedef typename std::remove_const<size_type_>::type size_type;
   typedef const size_type const_size_type;
@@ -82,6 +83,9 @@ class PAR_ILUTHandle {
 
   typedef typename Kokkos::View<nnz_lno_t *, HandlePersistentMemorySpace>
       nnz_lno_view_t;
+
+  typedef typename Kokkos::View<nnz_scalar_t *, HandlePersistentMemorySpace>
+      nnz_value_view_t;
 
   typedef typename std::make_signed<
       typename nnz_row_view_t::non_const_value_type>::type signed_integral_t;
