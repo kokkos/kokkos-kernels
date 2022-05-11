@@ -424,10 +424,6 @@ struct ILUKLvlSchedTP1HashMapNumericFunctor
     auto rowid     = level_idx(my_league + lev_start);//teamid-->rowid
     //auto my_team   = team.team_rank();
 
-    //Kokkos::single(Kokkos::PerTeam(team),[&] () {
-    //  printf("BEFORE CREATE HASH MAP: team %d/%d, thread %d/%d\n", team.league_rank(), team.league_size(), team.team_rank(), team.team_size());
-    //});
-
     //START shared hash map initialization
     char *all_shared_memory = (char *)(team.team_shmem().get_shmem(shmem_size));
 
@@ -451,19 +447,10 @@ struct ILUKLvlSchedTP1HashMapNumericFunctor
 
     hashmap_type hm(shmem_key_size, shared_memory_hash_func, begins, nexts, keys, vals);
 
-    //Kokkos::single(Kokkos::PerTeam(team),[&] () {
-    //  printf("BEFORE INIT HASH MAP: team %d/%d, thread %d/%d\n", team.league_rank(), team.league_size(), team.team_rank(), team.team_size());
-    //});
-
     // initialize begins
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, shmem_hash_size), [&](int i) {
       begins[i] = -1;
     });
-
-    
-    //Kokkos::single(Kokkos::PerTeam(team),[&] () {
-    //  printf("AFTER INIT BEGINS: team %d/%d, thread %d/%d\n", team.league_rank(), team.league_size(), team.team_rank(), team.team_size());
-    //});
 	
     // initialize hash usage sizes
     Kokkos::single(Kokkos::PerTeam(team), [&]() {
@@ -473,10 +460,6 @@ struct ILUKLvlSchedTP1HashMapNumericFunctor
 
     team.team_barrier();
     //Shared hash map initialization DONE
-
-    //Kokkos::single(Kokkos::PerTeam(team),[&] () {
-    //  printf("TEST BEFORE INSERT HASH used_hash_sizes %d\n",used_hash_sizes[0]);
-    //});
 
     auto k1 = L_row_map(rowid); 
     auto k2 = L_row_map(rowid+1);
@@ -500,10 +483,6 @@ struct ILUKLvlSchedTP1HashMapNumericFunctor
 #endif
 
     team.team_barrier();
-
-    //Kokkos::single(Kokkos::PerTeam(team),[&] () {
-    //  printf("TEST AFTER INSERT HASH used_hash_sizes %d\n",used_hash_sizes[0]);
-    //});
 
     k1 = U_row_map(rowid); 
     k2 = U_row_map(rowid+1);
@@ -590,7 +569,6 @@ struct ILUKLvlSchedTP1HashMapNumericFunctor
       }
     });
     //}
-    //Note: Reseting the hash table umap is done outside the kernel
   }
 
   nnz_lno_t team_shmem_size(int /* team_size */) const {
@@ -660,8 +638,6 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
         //shmem needs the first 2 entries for sizes
         nnz_lno_t shmem_size = (2 + shmem_hash_size + shmem_key_size * 3) * sizeof(nnz_lno_t);
         ////nnz_lno_t shmem_size = view_type_1d_scratch::shmem_size(2 + shmem_hash_size + shmem_key_size * 3);
-
-        //printf("lvl %d, shmem_hash_size %d, shmem_key_size %d, shmem_size %d, shmem_size_ %d, scratch_space %s\n",lvl, shmem_hash_size, shmem_key_size, shmem_size, shmem_size_, typeid(scratch_space).name());
 
         int team_size = thandle.get_team_size();
         ILUKLvlSchedTP1HashMapNumericFunctor<ARowMapType,
