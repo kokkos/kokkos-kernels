@@ -82,7 +82,7 @@ void ilut_symbolic(IlutHandle& thandle,
 
   // Sizing
   const auto policy = thandle.get_default_team_policy();
-  size_type nnzsL, nnzsU = 0;
+  size_type nnzsL = 0, nnzsU = 0;
   Kokkos::parallel_reduce(
     "symbolic sizing",
     policy,
@@ -92,7 +92,7 @@ void ilut_symbolic(IlutHandle& thandle,
       const auto row_nnz_begin = A_row_map_d(row_idx);
       const auto row_nnz_end   = A_row_map_d(row_idx+1);
 
-      size_type nnzsL_temp, nnzsU_temp = 0;
+      size_type nnzsL_temp = 0, nnzsU_temp = 0;
       // Multi-reductions are not supported at the TeamThread level
       Kokkos::parallel_reduce(
         Kokkos::TeamThreadRange(team, row_nnz_begin, row_nnz_end),

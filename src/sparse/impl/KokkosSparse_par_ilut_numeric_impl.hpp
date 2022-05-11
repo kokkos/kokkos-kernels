@@ -59,13 +59,17 @@ namespace KokkosSparse {
 namespace Impl {
 namespace Experimental {
 
-template <class ARowMapType, class AEntriesType, class AValuesType,
+template <class IlutHandle,
+
+template <class IlutHandle,
+          class ARowMapType, class AEntriesType, class AValuesType,
           class LRowMapType, class LEntriesType, class LValuesType,
           class URowMapType, class UEntriesType, class UValuesType,
           class LURowMapType, class LUEntriesType, class LUValuesType,
           class LNewRowMapType, class LNewEntriesType, class LNewValuesType,
           class UNewRowMapType, class UNewEntriesType, class UNewValuesType>
 void add_candidates(
+  IlutHandle& ih,
   const ARowMapType& A_row_map, const AEntriesType& A_entries, const AValuesType& A_values,
   const LRowMapType& L_row_map, const LEntriesType& L_entries, const LValuesType& L_values,
   const URowMapType& U_row_map, const UEntriesType& U_entries, const UValuesType& U_values,
@@ -73,25 +77,129 @@ void add_candidates(
   LNewRowMapType& L_new_row_map, LNewEntriesType& L_new_entries, LNewValuesType& L_new_values,
   UNewRowMapType& U_new_row_map, UNewEntriesType& U_new_entries, UNewValuesType& U_new_values)
 {
-  
+  using size_type       = typename IlutHandle::size_type;
+  using execution_space = typename ARowMapType::execution_space;
+  using policy_type     = Kokkos::TeamPolicy<execution_space>;
+  using member_type     = typename policy_type::member_type;
+
+  size_type l_new_nnz = 0, u_new_nnz = 0;
+
+  const auto policy = thandle.get_default_team_policy();
+
+  Kokkos::parallel_reduce(
+    "add_candidates sizing",
+    policy,
+    KOKKOS_LAMBDA(const member_type& team, size_type& nnzL_outer, size_type& nnzU_outer) {
+      const auto row_idx = team.league_rank();
+
+      const auto a_row_nnz_begin = A_row_map(row_idx);
+      const auto a_row_nnz_end   = A_row_map(row_idx+1);
+      const auto a_tot           = a_row_nnz_end - a_row_nnz_begin;
+
+      const auto lu_row_nnz_begin = LU_row_map(row_idx);
+      const auto lu_row_nnz_end   = LU_row_map(row_idx+1);
+      const auto lu_tot           = lu_row_nnz_end - lu_row_nnz_begin;
+
+      size_type a_l_nnz = 0, a_u_nnz = 0, lu_l_nnz = 0, lu_u_nnz = 0, dup_l_nnz = 0, dup_u_nnz = 0;
+      Kokkos::parallel_reduce(
+        Kokkos::TeamThreadRange(team, a_row_nnz_begin, a_row_nnz_end),
+        [&](const size_type nnz, size_type& nnzL_inner) {
+          const auto col_idx = A_entries(nnz);
+          nnzL_inner += col_idx <= row_idx;
+      }, a_l_nnz);
+
+      Kokkos::parallel_reduce(
+        Kokkos::TeamThreadRange(team, a_row_nnz_begin, a_row_nnz_end),
+        [&](const size_type nnz, size_type& nnzU_inner) {
+          const auto col_idx = A_entries(nnz);
+          nnzU_inner += col_idx >= row_idx;
+      }, a_u_nnz);
+
+      Kokkos::parallel_reduce(
+        Kokkos::TeamThreadRange(team, lu_row_nnz_begin, lu_row_nnz_end),
+        [&](const size_type nnz, size_type& nnzL_inner) {
+          const auto col_idx = LU_entries(nnz);
+          nnzL_inner += col_idx <= row_idx;
+      }, lu_l_nnz);
+
+      Kokkos::parallel_reduce(
+        Kokkos::TeamThreadRange(team, lu_row_nnz_begin, lu_row_nnz_end),
+        [&](const size_type nnz, size_type& nnzU_inner) {
+          const auto col_idx = LU_entries(nnz);
+          nnzU_inner += col_idx >= row_idx;
+      }, lu_u_nnz);
+
+      Kokkos::parallel_reduce(
+        Kokkos::TeamThreadRange(team, a_row_nnz_begin, a_row_nnz_end),
+        [&](const size_type nnz, size_type& dupL_inner) {
+          const auto a_col_idx = A_entries(nnz);
+          if (a_col_idx <= row_idx) {
+            for (size_type lu_i = lu_row_nnz_begin; lu_i < lu_row_nnz_end; ++lu_i) {
+              const auto lu_col_idx = LU_entries(lu_i);
+              if (a_col_idx == lu_col_idx) {
+                ++dupL_inner;
+                break;
+              }
+              else if (lu_col_idx > a_col_idx) {
+                break;
+              }
+            }
+          }
+      }, dup_l_nnz);
+
+      Kokkos::parallel_reduce(
+        Kokkos::TeamThreadRange(team, a_row_nnz_begin, a_row_nnz_end),
+        [&](const size_type nnz, size_type& dupU_inner) {
+          const auto a_col_idx = A_entries(nnz);
+          if (a_col_idx >= row_idx) {
+            for (size_type lu_i = lu_row_nnz_begin; lu_i < lu_row_nnz_end; ++lu_i) {
+              const auto lu_col_idx = LU_entries(lu_i);
+              if (a_col_idx == lu_col_idx) {
+                ++dupU_inner;
+                break;
+              }
+              else if (lu_col_idx > a_col_idx) {
+                break;
+              }
+            }
+          }
+      }, dup_u_nnz);
+
+      team.team_barrier();
+
+      Kokkos::single(
+        Kokkos::PerTeam(team), [&] () {
+          const auto l_nnz = (a_l_nnz + lu_l_nnz - dup_l_nnz);
+          const auto u_nnz = (a_u_nnz + lu_u_nnz - dup_u_nnz);
+
+          nnzL_outer += l_nnz;
+          nnzU_outer += u_nnz;
+
+          L_new_row_map(row_idx) = l_nnz;
+          U_new_row_map(row_idx) = u_nnz;
+      });
+
+    });
+
+  // prefix sum
 }
 
-template <class KHandle, class IlukHandle, class ARowMapType, class AEntriesType,
-          class AValuesType, class LRowMapType, class LEntriesType,
-          class LValuesType, class URowMapType, class UEntriesType,
-          class UValuesType>
-void ilut_numeric(KHandle& kh, IlukHandle &thandle, const ARowMapType &A_row_map,
+template <class KHandle, class IlutHandle,
+          class ARowMapType, class AEntriesType, class AValuesType,
+          class LRowMapType, class LEntriesType, class LValuesType,
+          class URowMapType, class UEntriesType, class UValuesType>
+void ilut_numeric(KHandle& kh, IlutHandle &thandle, const ARowMapType &A_row_map,
                   const AEntriesType &A_entries, const AValuesType &A_values,
                   const LRowMapType &L_row_map, const LEntriesType &L_entries,
                   LValuesType &L_values, const URowMapType &U_row_map,
                   const UEntriesType &U_entries, UValuesType &U_values) {
-  using execution_space         = typename IlukHandle::execution_space;
-  using memory_space            = typename IlukHandle::memory_space;
-  using size_type               = typename IlukHandle::size_type;
-  using nnz_lno_t               = typename IlukHandle::nnz_lno_t;
-  using HandleDeviceEntriesType = typename IlukHandle::nnz_lno_view_t;
-  using HandleDeviceRowMapType  = typename IlukHandle::nnz_row_view_t;
-  using HandleDeviceValueType   = typename IlukHandle::nnz_value_view_t;
+  using execution_space         = typename IlutHandle::execution_space;
+  using memory_space            = typename IlutHandle::memory_space;
+  using size_type               = typename IlutHandle::size_type;
+  using nnz_lno_t               = typename IlutHandle::nnz_lno_t;
+  using HandleDeviceEntriesType = typename IlutHandle::nnz_lno_view_t;
+  using HandleDeviceRowMapType  = typename IlutHandle::nnz_row_view_t;
+  using HandleDeviceValueType   = typename IlutHandle::nnz_value_view_t;
 
   size_type nlevels = thandle.get_num_levels();
   size_type nrows   = thandle.get_nrows();
@@ -135,7 +243,7 @@ void ilut_numeric(KHandle& kh, IlukHandle &thandle, const ARowMapType &A_row_map
       U_row_map, U_entries, U_values, false,
       LU_row_map, LU_entries, LU_values);
 
-    add_candidates(
+    add_candidates(thandle,
       A_row_map, A_entries, A_values,
       L_row_map, L_entries, L_values,
       U_row_map, U_entries, U_values,
@@ -146,7 +254,7 @@ void ilut_numeric(KHandle& kh, IlukHandle &thandle, const ARowMapType &A_row_map
     converged = true;
   }
 
-}  // end iluk_numeric
+}  // end ilut_numeric
 
 }  // namespace Experimental
 }  // namespace Impl
