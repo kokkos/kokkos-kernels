@@ -59,7 +59,79 @@ namespace KokkosSparse {
 namespace Impl {
 namespace Experimental {
 
-template <class IlutHandle,
+template <class IlutHandle, class RowMapType, class PrefixSumView>
+typename IlutHandle::size_type prefix_sum(IlutHandle& ih, RowMapType& row_map, PrefixSumView& prefix_sum_view)
+{
+  using size_type   = typename IlutHandle::size_type;
+  using policy_type = typename IlutHandle::TeamPolicy;
+  using member_type = typename policy_type::member_type;
+
+  const auto policy = ih.get_default_team_policy();
+  const size_type nteams = policy.league_size();
+  const size_type nrows  = ih.get_nrows();
+  const size_type rows_per_team = (nrows - 1) / nteams + 1;
+
+  size_type total_sum = 0;
+  Kokkos::parallel_reduce(
+    "prefix_sum",
+    policy,
+    KOKKOS_LAMBDA(const member_type& team, size_type& total_sum_outer) {
+      const auto team_rank = team.league_rank();
+
+      const size_type starti = team_rank * rows_per_team;
+      const size_type endi   = std::min(nrows, (team_rank + 1) * rows_per_team);
+      size_type sum = 0;
+      Kokkos::parallel_reduce(
+        Kokkos::TeamThreadRange(team, starti, endi),
+        [&](const size_type row, size_type& sum_inner) {
+          sum_inner += row_map(row);
+      }, sum);
+
+      team.team_barrier();
+
+      Kokkos::single(
+        Kokkos::PerTeam(team), [&] () {
+          prefix_sum_view(team_rank) = sum;
+          size_type curr_sum = 0;
+          for (size_type row = starti; row < endi; ++row) {
+            const size_type curr_val = row_map(row);
+            row_map(row) = curr_sum;
+            curr_sum += curr_val;
+          }
+      });
+
+      team.team_barrier();
+
+      Kokkos::single(
+        Kokkos::PerTeam(team), [&] () {
+          if (team_rank == 0) {
+            size_type team_sum = 0;
+            for (size_type t = 0; t < nteams; ++t) {
+              const size_type team_result = prefix_sum_view(t);
+              prefix_sum_view(t) = team_sum;
+              team_sum += team_result;
+            }
+          }
+      });
+
+      team.team_barrier();
+
+      if (team_rank != 0) {
+        Kokkos::parallel_for(
+          Kokkos::TeamThreadRange(team, starti, endi),
+          [&](const size_type row) {
+            row_map(row) += prefix_sum_view(team_rank-1);
+        });
+      }
+
+      total_sum_outer = row_map(endi - 1);
+
+  }, Kokkos::Max<size_type>(total_sum));
+
+  Kokkos::fence();
+
+  return total_sum;
+}
 
 template <class IlutHandle,
           class ARowMapType, class AEntriesType, class AValuesType,
@@ -78,13 +150,12 @@ void add_candidates(
   UNewRowMapType& U_new_row_map, UNewEntriesType& U_new_entries, UNewValuesType& U_new_values)
 {
   using size_type       = typename IlutHandle::size_type;
-  using execution_space = typename ARowMapType::execution_space;
-  using policy_type     = Kokkos::TeamPolicy<execution_space>;
+  using policy_type     = typename IlutHandle::TeamPolicy;
   using member_type     = typename policy_type::member_type;
 
   size_type l_new_nnz = 0, u_new_nnz = 0;
 
-  const auto policy = thandle.get_default_team_policy();
+  const auto policy = ih.get_default_team_policy();
 
   Kokkos::parallel_reduce(
     "add_candidates sizing",
@@ -179,7 +250,7 @@ void add_candidates(
           U_new_row_map(row_idx) = u_nnz;
       });
 
-    });
+    }, l_new_nnz, u_new_nnz);
 
   // prefix sum
 }
@@ -211,6 +282,8 @@ void ilut_numeric(KHandle& kh, IlutHandle &thandle, const ARowMapType &A_row_map
     KokkosSparse::StringToSPGEMMAlgorithm(myalg);
   kh.create_spgemm_handle(spgemm_algorithm);
 
+  const auto policy = thandle.get_default_team_policy();
+
   // temporary workspaces
   HandleDeviceRowMapType
     LU_row_map(
@@ -221,7 +294,10 @@ void ilut_numeric(KHandle& kh, IlutHandle &thandle, const ARowMapType &A_row_map
       nrows + 1),
     U_new_row_map(
       Kokkos::view_alloc(Kokkos::WithoutInitializing, "U_new_row_map"),
-      nrows + 1);
+      nrows + 1),
+    prefix_sum_view(
+      Kokkos::view_alloc(Kokkos::WithoutInitializing, "prefix_sum_view"),
+      policy.league_size());
   HandleDeviceEntriesType LU_entries, L_new_entries, U_new_entries;
   HandleDeviceValueType LU_values, L_new_values, U_new_values;
 
@@ -233,7 +309,7 @@ void ilut_numeric(KHandle& kh, IlutHandle &thandle, const ARowMapType &A_row_map
       U_row_map, U_entries, false,
       LU_row_map);
 
-    const size_t lu_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
+    const size_type lu_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
     Kokkos::resize(LU_entries, lu_nnz_size);
     Kokkos::resize(LU_values, lu_nnz_size);
 

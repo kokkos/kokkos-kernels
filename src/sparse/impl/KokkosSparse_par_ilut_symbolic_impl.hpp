@@ -51,6 +51,7 @@
 #include <KokkosKernels_config.h>
 #include <Kokkos_ArithTraits.hpp>
 #include <KokkosSparse_par_ilut_handle.hpp>
+#include <KokkosSparse_par_ilut_numeric_impl.hpp>
 #include <Kokkos_Sort.hpp>
 #include <KokkosKernels_Error.hpp>
 
@@ -70,18 +71,25 @@ void ilut_symbolic(IlutHandle& thandle,
                    LRowMapType& L_row_map_d, LEntriesType& L_entries_d, LValuesType& L_values_d,
                    URowMapType& U_row_map_d, UEntriesType& U_entries_d, UValuesType& U_values_d)
 {
-  using execution_space = typename ARowMapType::execution_space;
-  using policy_type     = Kokkos::TeamPolicy<execution_space>;
-  using member_type     = typename policy_type::member_type;
-  using size_type       = typename IlutHandle::size_type;
-  using nnz_lno_t       = typename IlutHandle::nnz_lno_t;
-  using scalar_t        = typename AValuesType::non_const_value_type;
-  using RangePolicy     = typename IlutHandle::RangePolicy;
+  using execution_space        = typename ARowMapType::execution_space;
+  using policy_type            = Kokkos::TeamPolicy<execution_space>;
+  using member_type            = typename policy_type::member_type;
+  using size_type              = typename IlutHandle::size_type;
+  using nnz_lno_t              = typename IlutHandle::nnz_lno_t;
+  using scalar_t               = typename AValuesType::non_const_value_type;
+  using RangePolicy            = typename IlutHandle::RangePolicy;
+  using HandleDeviceRowMapType = typename IlutHandle::nnz_row_view_t;
 
   const size_type nrows = thandle.get_nrows();
 
-  // Sizing
   const auto policy = thandle.get_default_team_policy();
+
+  HandleDeviceRowMapType
+    prefix_sum_view(
+      Kokkos::view_alloc(Kokkos::WithoutInitializing, "prefix_sum_view"),
+      policy.league_size());
+
+  // Sizing
   size_type nnzsL = 0, nnzsU = 0;
   Kokkos::parallel_reduce(
     "symbolic sizing",
@@ -126,16 +134,8 @@ void ilut_symbolic(IlutHandle& thandle,
   thandle.set_nnzL(nnzsL);
   thandle.set_nnzU(nnzsU);
 
-  // prefix_sum from gingko. will need to set up a better implementation for this
-  size_type sumL = 0, sumU = 0;
-  for(size_type i = 0; i < nrows+1; ++i) {
-    size_type tmpL = L_row_map_d(i);
-    size_type tmpU = U_row_map_d(i);
-    L_row_map_d(i) = sumL;
-    U_row_map_d(i) = sumU;
-    sumL += tmpL;
-    sumU += tmpU;
-  }
+  prefix_sum(thandle, L_row_map_d, prefix_sum_view);
+  prefix_sum(thandle, U_row_map_d, prefix_sum_view);
 
   // Now set actual L/U values
 

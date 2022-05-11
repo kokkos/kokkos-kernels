@@ -252,9 +252,9 @@ void run_test_par_ilut() {
   };
   check_matrix(U_row_map, U_entries, U_values, expected_U);
 
-  par_ilut_numeric(&kh, row_map, entries, values,
-                   L_row_map, L_entries, L_values,
-                   U_row_map, U_entries, U_values);
+  // par_ilut_numeric(&kh, row_map, entries, values,
+  //                  L_row_map, L_entries, L_values,
+  //                  U_row_map, U_entries, U_values);
 
   Kokkos::fence();
 
