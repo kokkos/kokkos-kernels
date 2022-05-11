@@ -45,6 +45,7 @@
 #include <Kokkos_Core.hpp>
 #include <iostream>
 #include <string>
+#include <KokkosKernels_HashmapAccumulator.hpp>
 
 #ifndef _SPILUKHANDLE_HPP
 #define _SPILUKHANDLE_HPP

@@ -425,7 +425,7 @@ struct ILUKLvlSchedTP1HashMapNumericFunctor
     //auto my_team   = team.team_rank();
 
     //Kokkos::single(Kokkos::PerTeam(team),[&] () {
-    //  printf("BEFORE CREATE HASH MAP\n");
+    //  printf("BEFORE CREATE HASH MAP: team %d/%d, thread %d/%d\n", team.league_rank(), team.league_size(), team.team_rank(), team.team_size());
     //});
 
     //START shared hash map initialization
@@ -452,7 +452,7 @@ struct ILUKLvlSchedTP1HashMapNumericFunctor
     hashmap_type hm(shmem_key_size, shared_memory_hash_func, begins, nexts, keys, vals);
 
     //Kokkos::single(Kokkos::PerTeam(team),[&] () {
-    //  printf("BEFORE INIT\n");
+    //  printf("BEFORE INIT HASH MAP: team %d/%d, thread %d/%d\n", team.league_rank(), team.league_size(), team.team_rank(), team.team_size());
     //});
 
     // initialize begins
@@ -460,6 +460,11 @@ struct ILUKLvlSchedTP1HashMapNumericFunctor
       begins[i] = -1;
     });
 
+    
+    //Kokkos::single(Kokkos::PerTeam(team),[&] () {
+    //  printf("AFTER INIT BEGINS: team %d/%d, thread %d/%d\n", team.league_rank(), team.league_size(), team.team_rank(), team.team_size());
+    //});
+	
     // initialize hash usage sizes
     Kokkos::single(Kokkos::PerTeam(team), [&]() {
       used_hash_sizes[0] = 0;
@@ -469,9 +474,9 @@ struct ILUKLvlSchedTP1HashMapNumericFunctor
     team.team_barrier();
     //Shared hash map initialization DONE
 
-    Kokkos::single(Kokkos::PerTeam(team),[&] () {
-      printf("TEST BEFORE INSERT HASH used_hash_sizes %d\n",used_hash_sizes[0]);
-    });
+    //Kokkos::single(Kokkos::PerTeam(team),[&] () {
+    //  printf("TEST BEFORE INSERT HASH used_hash_sizes %d\n",used_hash_sizes[0]);
+    //});
 
     auto k1 = L_row_map(rowid); 
     auto k2 = L_row_map(rowid+1);
@@ -496,9 +501,9 @@ struct ILUKLvlSchedTP1HashMapNumericFunctor
 
     team.team_barrier();
 
-    Kokkos::single(Kokkos::PerTeam(team),[&] () {
-      printf("TEST AFTER INSERT HASH used_hash_sizes %d\n",used_hash_sizes[0]);
-    });
+    //Kokkos::single(Kokkos::PerTeam(team),[&] () {
+    //  printf("TEST AFTER INSERT HASH used_hash_sizes %d\n",used_hash_sizes[0]);
+    //});
 
     k1 = U_row_map(rowid); 
     k2 = U_row_map(rowid+1);
@@ -644,8 +649,8 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
     
       if ( (lev_end - lev_start) != 0 ) {
         using policy_type = Kokkos::TeamPolicy<execution_space>;
-        using scratch_space = typename execution_space::scratch_memory_space;
-        using view_type_1d_scratch = Kokkos::View<nnz_lno_t*, Kokkos::LayoutLeft, scratch_space>;
+        ////using scratch_space = typename execution_space::scratch_memory_space;
+        ////using view_type_1d_scratch = Kokkos::View<nnz_lno_t*, Kokkos::LayoutLeft, scratch_space>;
 
         nnz_lno_t shmem_hash_size = static_cast<nnz_lno_t>(level_shmem_hash_size(lvl));
         nnz_lno_t shmem_key_size  = static_cast<nnz_lno_t>(level_shmem_key_size(lvl));
@@ -653,10 +658,10 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
         nnz_lno_t shared_memory_hash_func = shmem_hash_size - 1;//for AND operation we use -1
 
         //shmem needs the first 2 entries for sizes
-        //nnz_lno_t shmem_size = (2 + shmem_hash_size + shmem_key_size * 3) * sizeof(nnz_lno_t);
-        nnz_lno_t shmem_size = view_type_1d_scratch::shmem_size(2 + shmem_hash_size + shmem_key_size * 3);
+        nnz_lno_t shmem_size = (2 + shmem_hash_size + shmem_key_size * 3) * sizeof(nnz_lno_t);
+        ////nnz_lno_t shmem_size = view_type_1d_scratch::shmem_size(2 + shmem_hash_size + shmem_key_size * 3);
 
-        printf("lvl %d, shmem_hash_size %d, shmem_key_size %d, shmem_size %d\n",lvl, shmem_hash_size, shmem_key_size, shmem_size);
+        //printf("lvl %d, shmem_hash_size %d, shmem_key_size %d, shmem_size %d, shmem_size_ %d, scratch_space %s\n",lvl, shmem_hash_size, shmem_key_size, shmem_size, shmem_size_, typeid(scratch_space).name());
 
         int team_size = thandle.get_team_size();
         ILUKLvlSchedTP1HashMapNumericFunctor<ARowMapType,
@@ -675,10 +680,16 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
                                                              level_idx, lev_start,
                                                              shmem_hash_size, shmem_key_size,
                                                              shared_memory_hash_func, shmem_size);
-        if ( team_size == -1 )
-          Kokkos::parallel_for("parfor_l_team", policy_type( lev_end - lev_start , Kokkos::AUTO ), tstf);
-        else
-          Kokkos::parallel_for("parfor_l_team", policy_type( lev_end - lev_start , team_size ), tstf);
+        if ( team_size == -1 ) {
+          policy_type team_policy(lev_end - lev_start , Kokkos::AUTO);
+          //team_policy.set_scratch_size(0, Kokkos::PerTeam(shmem_size));
+          Kokkos::parallel_for("parfor_l_team", team_policy, tstf);
+        }
+        else {
+          policy_type team_policy(lev_end - lev_start , team_size);
+          //team_policy.set_scratch_size(0, Kokkos::PerTeam(shmem_size));
+          Kokkos::parallel_for("parfor_l_team", team_policy, tstf);
+        }
       } // end if
     } // end for lvl
   }//End SEQLVLSCHD_TP1HASHMAP
