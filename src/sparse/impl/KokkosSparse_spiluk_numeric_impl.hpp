@@ -492,6 +492,11 @@ struct ILUKLvlSchedTP1HashMapNumericFunctor
       int num_unsuccess = hm.vector_atomic_insert_into_hash_mergeOr(col, k, used_hash_sizes);
     });
 
+    //Kokkos::single(Kokkos::PerTeam(team),[&] () { 
+    //  if (temp_nnz_cnt > shmem_key_size)
+    //    printf("VINHVINH teamid %d, rowid %d (at level %d), temp_nnz_cnt %d, shmem_key_size %d\n", my_league, rowid, lvl+1, temp_nnz_cnt, shmem_key_size); 
+    //});
+
     team.team_barrier();
 	
     //Unpack the ith row of A
@@ -571,9 +576,9 @@ struct ILUKLvlSchedTP1HashMapNumericFunctor
     //}
   }
 
-  nnz_lno_t team_shmem_size(int /* team_size */) const {
-    return shmem_size;
-  }
+  //nnz_lno_t team_shmem_size(int /* team_size */) const {
+  //  return shmem_size;
+  //}
 };
 
 template <class IlukHandle, class ARowMapType, class AEntriesType,
@@ -627,8 +632,6 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
     
       if ( (lev_end - lev_start) != 0 ) {
         using policy_type = Kokkos::TeamPolicy<execution_space>;
-        ////using scratch_space = typename execution_space::scratch_memory_space;
-        ////using view_type_1d_scratch = Kokkos::View<nnz_lno_t*, Kokkos::LayoutLeft, scratch_space>;
 
         nnz_lno_t shmem_hash_size = static_cast<nnz_lno_t>(level_shmem_hash_size(lvl));
         nnz_lno_t shmem_key_size  = static_cast<nnz_lno_t>(level_shmem_key_size(lvl));
@@ -637,7 +640,6 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
 
         //shmem needs the first 2 entries for sizes
         nnz_lno_t shmem_size = (2 + shmem_hash_size + shmem_key_size * 3) * sizeof(nnz_lno_t);
-        ////nnz_lno_t shmem_size = view_type_1d_scratch::shmem_size(2 + shmem_hash_size + shmem_key_size * 3);
 
         int team_size = thandle.get_team_size();
         ILUKLvlSchedTP1HashMapNumericFunctor<ARowMapType,
@@ -658,12 +660,12 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
                                                              shared_memory_hash_func, shmem_size);
         if ( team_size == -1 ) {
           policy_type team_policy(lev_end - lev_start , Kokkos::AUTO);
-          //team_policy.set_scratch_size(0, Kokkos::PerTeam(shmem_size));
+          team_policy.set_scratch_size(0, Kokkos::PerTeam(shmem_size));
           Kokkos::parallel_for("parfor_l_team", team_policy, tstf);
         }
         else {
           policy_type team_policy(lev_end - lev_start , team_size);
-          //team_policy.set_scratch_size(0, Kokkos::PerTeam(shmem_size));
+          team_policy.set_scratch_size(0, Kokkos::PerTeam(shmem_size));
           Kokkos::parallel_for("parfor_l_team", team_policy, tstf);
         }
       } // end if

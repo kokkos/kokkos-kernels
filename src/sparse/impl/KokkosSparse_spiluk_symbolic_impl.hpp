@@ -289,11 +289,12 @@ void level_sched_hashmap ( IlukHandle& thandle,
       maxrows = lnrows;
     }
     //Determine the number of non-zeros in each level
-    size_type rid_s = level_ptr(i);
-    size_type rid_e = level_ptr(i+1);
+    size_type r_s = level_ptr(i);
+    size_type r_e = level_ptr(i+1);
     size_type lnnz = 0;
     size_type lmaxnnz = 0;
-    for (size_type rid = rid_s; rid < rid_e; rid++) {//Look at each row in a level
+    for (size_type r = r_s; r < r_e; r++) {//Look at each row in a level
+	  auto rid       = level_idx(r); //get actual rowid in the level
       size_type rnnz = (L_row_map(rid+1) - L_row_map(rid)) + 
                        (U_row_map(rid+1) - U_row_map(rid));//count the number of non-zeros in the current row (both L and U)
       lnnz += rnnz;//accumulate to count the nnz in the current level
@@ -303,8 +304,8 @@ void level_sched_hashmap ( IlukHandle& thandle,
     }
     level_maxnnzperrow(i) = lmaxnnz;
   
-    size_type shmem_key_size = 3*lmaxnnz;//the number of keys can a team (row) hold
-  
+    size_type shmem_key_size = lmaxnnz;//the number of keys can a team (row) hold
+
     // put the hash size closest power of 2.
     // we round down here, because we want to store more keys,
     // conflicts are cheaper.
@@ -312,24 +313,24 @@ void level_sched_hashmap ( IlukHandle& thandle,
     while (shmem_hash_size * 2 <= shmem_key_size) {
       shmem_hash_size = shmem_hash_size * 2;
     }
-  
+
     // increase the key size with the left over from hash size.
     shmem_key_size = shmem_key_size + (shmem_key_size - shmem_hash_size) / 3; //note: divided by 3 because nexts, keys, values have sizes of shmem_key_size
-    // round it down to 2, because of some alignment issues.
+    // round it down to 2 and multiply by 2, because of some alignment issues.
     shmem_key_size = (shmem_key_size >> 1) << 1;
-  
+
     level_shmem_hash_size(i) = shmem_hash_size;
     level_shmem_key_size(i)  = shmem_key_size;
   
-    if ((i < 20)|| (i >= (nlevels-20))) {
-      std::cout << "Level " << i+1 << " has " << level_ptr(i+1) - level_ptr(i) << " rows";
-      std::cout << ", maxnnzperrow: " << level_maxnnzperrow(i);
-      std::cout << ", shmem_hash_size: " << level_shmem_hash_size(i);
-      std::cout << ", shmem_key_size: " << level_shmem_key_size(i);
-      std::cout << ", shared_memory_hash_func: " << level_shmem_hash_size(i)-1;
-      std::cout << ", shmem_size: " << (2 + shmem_hash_size + shmem_key_size * 3) * sizeof(nnz_lno_t);
-      std::cout << std::endl;
-    }
+    //if ((i < 20)|| (i >= (nlevels-20))) {
+    //  std::cout << "Level " << i+1 << " has " << level_ptr(i+1) - level_ptr(i) << " rows";
+    //  std::cout << ", maxnnzperrow: " << level_maxnnzperrow(i);
+    //  std::cout << ", shmem_hash_size: " << level_shmem_hash_size(i);
+    //  std::cout << ", shmem_key_size: " << level_shmem_key_size(i);
+    //  std::cout << ", shared_memory_hash_func: " << level_shmem_hash_size(i)-1;
+    //  std::cout << ", shmem_size: " << (2 + shmem_hash_size + shmem_key_size * 3) * sizeof(nnz_lno_t);
+    //  std::cout << std::endl;
+    //}
   }
 
   thandle.set_num_levels(nlevels);
