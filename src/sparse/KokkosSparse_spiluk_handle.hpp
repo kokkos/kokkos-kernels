@@ -108,9 +108,12 @@ class SPILUKHandle {
   nnz_lno_view_t level_nchunks;  // number of chunks of rows at each level
   nnz_lno_view_t
       level_nrowsperchunk;  // maximum number of rows among chunks at each level
-  nnz_row_view_host_t level_maxnnzperrow;   //maximum number of nnz per row at each level
-  nnz_row_view_host_t level_shmem_hash_size;//hash size in the shared memory hash map at each level
-  nnz_row_view_host_t level_shmem_key_size; //key size in the shared memory hash map at each level
+  nnz_row_view_host_t
+      level_maxnnzperrow;  // maximum number of nnz per row at each level
+  nnz_row_view_host_t level_shmem_hash_size;  // hash size in the shared memory
+                                              // hash map at each level
+  nnz_row_view_host_t level_shmem_key_size;  // key size in the shared memory
+                                             // hash map at each level
 
   size_type nrows;
   size_type nlevels;
@@ -162,10 +165,9 @@ class SPILUKHandle {
     level_idx     = nnz_lno_view_t("level_idx", nrows_),
     level_ptr     = nnz_lno_view_t("level_ptr", nrows_ + 1),
     level_nchunks = nnz_lno_view_t(), level_nrowsperchunk = nnz_lno_view_t(),
-    level_maxnnzperrow = nnz_row_view_host_t(),
+    level_maxnnzperrow    = nnz_row_view_host_t(),
     level_shmem_hash_size = nnz_row_view_host_t(),
-    level_shmem_key_size = nnz_row_view_host_t(),
-    reset_symbolic_complete();
+    level_shmem_key_size  = nnz_row_view_host_t(), reset_symbolic_complete();
   }
 
   virtual ~SPILUKHandle(){};
@@ -198,24 +200,32 @@ class SPILUKHandle {
   }
 
   KOKKOS_INLINE_FUNCTION
-  nnz_row_view_host_t get_level_maxnnzperrow() const { return level_maxnnzperrow; }
+  nnz_row_view_host_t get_level_maxnnzperrow() const {
+    return level_maxnnzperrow;
+  }
 
   void alloc_level_maxnnzperrow(const size_type nlevels_) {
     level_maxnnzperrow = nnz_row_view_host_t("level_maxnnzperrow", nlevels_);
   }
 
   KOKKOS_INLINE_FUNCTION
-  nnz_row_view_host_t get_level_shmem_hash_size() const { return level_shmem_hash_size; }
+  nnz_row_view_host_t get_level_shmem_hash_size() const {
+    return level_shmem_hash_size;
+  }
 
   void alloc_level_shmem_hash_size(const size_type nlevels_) {
-    level_shmem_hash_size = nnz_row_view_host_t("level_shmem_hash_size", nlevels_);
+    level_shmem_hash_size =
+        nnz_row_view_host_t("level_shmem_hash_size", nlevels_);
   }
 
   KOKKOS_INLINE_FUNCTION
-  nnz_row_view_host_t get_level_shmem_key_size() const { return level_shmem_key_size; }
+  nnz_row_view_host_t get_level_shmem_key_size() const {
+    return level_shmem_key_size;
+  }
 
   void alloc_level_shmem_key_size(const size_type nlevels_) {
-    level_shmem_key_size = nnz_row_view_host_t("level_shmem_key_size", nlevels_);
+    level_shmem_key_size =
+        nnz_row_view_host_t("level_shmem_key_size", nlevels_);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -273,7 +283,7 @@ class SPILUKHandle {
     if (algm == SPILUKAlgorithm::SEQLVLSCHD_TP1)
       std::cout << "SEQLVLSCHD_TP1" << std::endl;
 
-    if ( algm == SPILUKAlgorithm::SEQLVLSCHD_TP1HASHMAP )
+    if (algm == SPILUKAlgorithm::SEQLVLSCHD_TP1HASHMAP)
       std::cout << "SEQLVLSCHD_TP1HASHMAP" << std::endl;
     /*
     if ( algm == SPILUKAlgorithm::SEQLVLSCHED_TP2 ) {
@@ -291,7 +301,7 @@ class SPILUKHandle {
       return SPILUKAlgorithm::SEQLVLSCHD_RP;
     else if (name == "SPILUK_TEAMPOLICY1")
       return SPILUKAlgorithm::SEQLVLSCHD_TP1;
-    else if (name=="SPILUK_TEAMPOLICY1HASHMAP")
+    else if (name == "SPILUK_TEAMPOLICY1HASHMAP")
       return SPILUKAlgorithm::SEQLVLSCHD_TP1HASHMAP;
     /*else if(name=="SPILUK_TEAMPOLICY2")    return
      * SPILUKAlgorithm::SEQLVLSCHED_TP2;*/

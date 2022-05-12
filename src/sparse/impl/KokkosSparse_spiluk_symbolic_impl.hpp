@@ -219,18 +219,15 @@ void level_sched(IlukHandle& thandle, const RowMapType row_map,
   level_nrowsperchunk = lnrowsperchunk;
 }
 
-template <class IlukHandle,
-          class LRowMapType,
-          class LEntriesType,
-          class URowMapType,
-          class UEntriesType,
-          class LevelType1,
-          class LevelType2,
-          class size_type>
-void level_sched_hashmap ( IlukHandle& thandle,
-                           const LRowMapType L_row_map, const LEntriesType L_entries,
-                           const URowMapType U_row_map, const UEntriesType U_entries,
-                           LevelType1& level_list, LevelType2& level_ptr, LevelType2& level_idx, size_type &nlevels ) {
+template <class IlukHandle, class LRowMapType, class LEntriesType,
+          class URowMapType, class UEntriesType, class LevelType1,
+          class LevelType2, class size_type>
+void level_sched_hashmap(IlukHandle& thandle, const LRowMapType L_row_map,
+                         const LEntriesType L_entries,
+                         const URowMapType U_row_map,
+                         const UEntriesType U_entries, LevelType1& level_list,
+                         LevelType2& level_ptr, LevelType2& level_idx,
+                         size_type& nlevels) {
   // Scheduling currently compute on host
 
   using nnz_lno_t = typename IlukHandle::nnz_lno_t;
@@ -240,71 +237,75 @@ void level_sched_hashmap ( IlukHandle& thandle,
   nlevels      = 0;
   level_ptr(0) = 0;
 
-  for ( size_type i = 0; i < nrows; ++i ) {
-    size_type l = 0;
-    size_type rowstart= L_row_map(i);
-    size_type rowend  = L_row_map(i+1);
-    for ( size_type j = rowstart; j < rowend; ++j ) {
+  for (size_type i = 0; i < nrows; ++i) {
+    size_type l        = 0;
+    size_type rowstart = L_row_map(i);
+    size_type rowend   = L_row_map(i + 1);
+    for (size_type j = rowstart; j < rowend; ++j) {
       nnz_lno_t col = L_entries(j);
-      l = std::max(l, level_list(col));
+      l             = std::max(l, level_list(col));
     }
-    level_list(i)   = l+1;
-    level_ptr(l+1) += 1;
-    nlevels         = std::max(nlevels, l+1);
+    level_list(i) = l + 1;
+    level_ptr(l + 1) += 1;
+    nlevels = std::max(nlevels, l + 1);
   }
-  
-  for ( size_type i = 1; i <= nlevels; ++i ) {
-    level_ptr(i) += level_ptr(i-1);
+
+  for (size_type i = 1; i <= nlevels; ++i) {
+    level_ptr(i) += level_ptr(i - 1);
   }
-  
-  for ( size_type i = 0; i < nrows; i++ ) {
-    level_idx(level_ptr(level_list(i)-1)) = i;
-    level_ptr(level_list(i)-1) += 1;
+
+  for (size_type i = 0; i < nrows; i++) {
+    level_idx(level_ptr(level_list(i) - 1)) = i;
+    level_ptr(level_list(i) - 1) += 1;
   }
-  
-  if (nlevels>0) {//note: to avoid wrapping around to the max of size_t when nlevels = 0.
-    for ( size_type i = nlevels-1; i > 0; --i ) {
-      level_ptr(i) = level_ptr(i-1);
+
+  if (nlevels > 0) {  // note: to avoid wrapping around to the max of size_t
+                      // when nlevels = 0.
+    for (size_type i = nlevels - 1; i > 0; --i) {
+      level_ptr(i) = level_ptr(i - 1);
     }
   }
-  
+
   level_ptr(0) = 0;
-  
-  //Find the maximum number of nnz per row per level
-  //Determine shmem hash size and key size
+
+  // Find the maximum number of nnz per row per level
+  // Determine shmem hash size and key size
   //(max. number of non-zeros in both L and U)
   size_type maxrows = 0;
-  
+
   thandle.alloc_level_maxnnzperrow(nlevels);
   thandle.alloc_level_shmem_hash_size(nlevels);
   thandle.alloc_level_shmem_key_size(nlevels);
-  
+
   auto level_maxnnzperrow    = thandle.get_level_maxnnzperrow();
   auto level_shmem_hash_size = thandle.get_level_shmem_hash_size();
   auto level_shmem_key_size  = thandle.get_level_shmem_key_size();
-  
-  for ( size_type i = 0; i < nlevels; i++ ) {
-    size_type lnrows = level_ptr(i+1) - level_ptr(i);
-    if( maxrows < lnrows ) {
+
+  for (size_type i = 0; i < nlevels; i++) {
+    size_type lnrows = level_ptr(i + 1) - level_ptr(i);
+    if (maxrows < lnrows) {
       maxrows = lnrows;
     }
-    //Determine the number of non-zeros in each level
-    size_type r_s = level_ptr(i);
-    size_type r_e = level_ptr(i+1);
-    size_type lnnz = 0;
+    // Determine the number of non-zeros in each level
+    size_type r_s     = level_ptr(i);
+    size_type r_e     = level_ptr(i + 1);
+    size_type lnnz    = 0;
     size_type lmaxnnz = 0;
-    for (size_type r = r_s; r < r_e; r++) {//Look at each row in a level
-	  auto rid       = level_idx(r); //get actual rowid in the level
-      size_type rnnz = (L_row_map(rid+1) - L_row_map(rid)) + 
-                       (U_row_map(rid+1) - U_row_map(rid));//count the number of non-zeros in the current row (both L and U)
-      lnnz += rnnz;//accumulate to count the nnz in the current level
-      if( lmaxnnz < rnnz ) {
+    for (size_type r = r_s; r < r_e; r++) {  // Look at each row in a level
+      auto rid       = level_idx(r);         // get actual rowid in the level
+      size_type rnnz = (L_row_map(rid + 1) - L_row_map(rid)) +
+                       (U_row_map(rid + 1) -
+                        U_row_map(rid));  // count the number of non-zeros in
+                                          // the current row (both L and U)
+      lnnz += rnnz;  // accumulate to count the nnz in the current level
+      if (lmaxnnz < rnnz) {
         lmaxnnz = rnnz;
       }
     }
     level_maxnnzperrow(i) = lmaxnnz;
-  
-    size_type shmem_key_size = lmaxnnz;//the number of keys can a team (row) hold
+
+    size_type shmem_key_size =
+        lmaxnnz;  // the number of keys can a team (row) hold
 
     // put the hash size closest power of 2.
     // we round down here, because we want to store more keys,
@@ -315,21 +316,25 @@ void level_sched_hashmap ( IlukHandle& thandle,
     }
 
     // increase the key size with the left over from hash size.
-    shmem_key_size = shmem_key_size + (shmem_key_size - shmem_hash_size) / 3; //note: divided by 3 because nexts, keys, values have sizes of shmem_key_size
+    shmem_key_size =
+        shmem_key_size + (shmem_key_size - shmem_hash_size) /
+                             3;  // note: divided by 3 because nexts, keys,
+                                 // values have sizes of shmem_key_size
     // round it down to 2 and multiply by 2, because of some alignment issues.
     shmem_key_size = (shmem_key_size >> 1) << 1;
 
     level_shmem_hash_size(i) = shmem_hash_size;
     level_shmem_key_size(i)  = shmem_key_size;
-  
-    //if ((i < 20)|| (i >= (nlevels-20))) {
-    //  std::cout << "Level " << i+1 << " has " << level_ptr(i+1) - level_ptr(i) << " rows";
-    //  std::cout << ", maxnnzperrow: " << level_maxnnzperrow(i);
+
+    // if ((i < 20)|| (i >= (nlevels-20))) {
+    //  std::cout << "Level " << i+1 << " has " << level_ptr(i+1) - level_ptr(i)
+    //  << " rows"; std::cout << ", maxnnzperrow: " << level_maxnnzperrow(i);
     //  std::cout << ", shmem_hash_size: " << level_shmem_hash_size(i);
     //  std::cout << ", shmem_key_size: " << level_shmem_key_size(i);
-    //  std::cout << ", shared_memory_hash_func: " << level_shmem_hash_size(i)-1;
-    //  std::cout << ", shmem_size: " << (2 + shmem_hash_size + shmem_key_size * 3) * sizeof(nnz_lno_t);
-    //  std::cout << std::endl;
+    //  std::cout << ", shared_memory_hash_func: " <<
+    //  level_shmem_hash_size(i)-1; std::cout << ", shmem_size: " << (2 +
+    //  shmem_hash_size + shmem_key_size * 3) * sizeof(nnz_lno_t); std::cout <<
+    //  std::endl;
     //}
   }
 
@@ -595,7 +600,7 @@ void iluk_symbolic(IlukHandle& thandle,
       level_sched_hashmap(thandle, L_row_map, L_entries, U_row_map, U_entries,
                           level_list, level_ptr, level_idx, nlev);
     } else if (thandle.get_algorithm() ==
-        KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1) {
+               KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1) {
       level_sched(thandle, L_row_map, L_entries, level_list, level_ptr,
                   level_idx, level_nchunks, level_nrowsperchunk, nlev);
 
