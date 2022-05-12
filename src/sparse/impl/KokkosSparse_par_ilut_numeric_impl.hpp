@@ -65,17 +65,18 @@ typename IlutHandle::size_type prefix_sum(IlutHandle& ih, RowMapType& row_map, P
   using size_type   = typename IlutHandle::size_type;
   using policy_type = typename IlutHandle::TeamPolicy;
   using member_type = typename policy_type::member_type;
+  using RangePolicy = typename IlutHandle::RangePolicy;
 
   const auto policy = ih.get_default_team_policy();
   const size_type nteams = policy.league_size();
-  const size_type nrows  = ih.get_nrows();
+  const size_type nrows  = ih.get_nrows() + 1;
   const size_type rows_per_team = (nrows - 1) / nteams + 1;
 
   size_type total_sum = 0;
-  Kokkos::parallel_reduce(
-    "prefix_sum",
+  Kokkos::parallel_for(
+    "prefix_sum per-team sums",
     policy,
-    KOKKOS_LAMBDA(const member_type& team, size_type& total_sum_outer) {
+    KOKKOS_LAMBDA(const member_type& team) {
       const auto team_rank = team.league_rank();
 
       const size_type starti = team_rank * rows_per_team;
@@ -99,28 +100,36 @@ typename IlutHandle::size_type prefix_sum(IlutHandle& ih, RowMapType& row_map, P
             curr_sum += curr_val;
           }
       });
+  });
 
-      team.team_barrier();
+  Kokkos::fence();
 
-      Kokkos::single(
-        Kokkos::PerTeam(team), [&] () {
-          if (team_rank == 0) {
-            size_type team_sum = 0;
-            for (size_type t = 0; t < nteams; ++t) {
-              const size_type team_result = prefix_sum_view(t);
-              prefix_sum_view(t) = team_sum;
-              team_sum += team_result;
-            }
-          }
-      });
+  Kokkos::parallel_for(
+    "prefix_sum per-team prefix",
+    RangePolicy(0, 1), // No parallelism in this alg
+    KOKKOS_LAMBDA(const size_type) {
+      size_type team_sum = 0;
+      for (size_type t = 0; t < nteams; ++t) {
+        const size_type team_result = prefix_sum_view(t);
+        prefix_sum_view(t) = team_sum;
+        team_sum += team_result;
+      }
+  });
 
-      team.team_barrier();
+  Kokkos::fence();
 
+  Kokkos::parallel_reduce(
+    "prefix_sum finish",
+    policy,
+    KOKKOS_LAMBDA(const member_type& team, size_type& total_sum_outer) {
+      const auto team_rank = team.league_rank();
+      const size_type starti = team_rank * rows_per_team;
+      const size_type endi   = std::min(nrows, (team_rank + 1) * rows_per_team);
       if (team_rank != 0) {
         Kokkos::parallel_for(
           Kokkos::TeamThreadRange(team, starti, endi),
           [&](const size_type row) {
-            row_map(row) += prefix_sum_view(team_rank-1);
+            row_map(row) += prefix_sum_view(team_rank);
         });
       }
 

@@ -159,7 +159,7 @@ void run_test_par_ilut() {
   const size_type nrows = A.size();
 
   // Count A, L, U nnz's
-  size_type nnz, nnzL, nnzU = 0;
+  size_type nnz = 0, nnzL = 0, nnzU = 0;
   for (size_type row_idx = 0; row_idx < nrows; ++row_idx) {
     for (size_type col_idx = 0; col_idx < nrows; ++col_idx) {
       if (A[row_idx][col_idx] != ZERO) {
