@@ -16,12 +16,16 @@ jobs:
         include:
           - backend: "SERIAL"
             cmake_build_type: "RelWithDebInfo"
+            debug_bounds_check: "ON"
           - backend: "THREADS"
             cmake_build_type: "RelWithDebInfo"
+            debug_bounds_check: "ON"
           - backend: "SERIAL"
             cmake_build_type: "Debug"
+            debug_bounds_check: "OFF"
           - backend: "SERIAL"
             cmake_build_type: "Release"
+            debug_bounds_check: "ON"
 
     steps:
       - name: checkout_kokkos_kernels
@@ -46,7 +50,7 @@ jobs:
           -DCMAKE_CXX_FLAGS="-Werror" \
           -DCMAKE_CXX_STANDARD=14 \
           -DKokkos_ENABLE_COMPILER_WARNINGS=ON \
-          -DKokkos_ENABLE_DEBUG_BOUNDS_CHECK:BOOL=ON \
+          -DKokkos_ENABLE_DEBUG_BOUNDS_CHECK:BOOL=${{ matrix.debug_bounds_check }} \
           -DKokkos_ENABLE_DEPRECATED_CODE_3=OFF \
           -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} \
           -DCMAKE_INSTALL_PREFIX=$PWD/../install \
@@ -86,4 +90,4 @@ jobs:
 
       - name: test
         working-directory: kokkos-kernels/build
-        run: ctest -j2 --output-on-failure --timeout 2500
+        run: ctest -j2 --output-on-failure --timeout 3600
