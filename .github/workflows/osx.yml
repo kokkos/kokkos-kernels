@@ -2,12 +2,19 @@ name: github-OSX
 
 on:
   pull_request:
-    branches:
-      - master
-      - develop
+    types: [ opened, labeled, unlabeled, reopened, synchronize ]
 
 jobs:
+  check-pr-labels:
+    runs-on: [ubuntu-latest]
+    steps:
+      - uses: docker://agilepathway/pull-request-label-checker:latest
+        with:
+          none_of: 'AT: WIP'
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
   osxci:
+    needs: check-pr-labels
+    # TODO: allow re-run via retest label if: ${{ github.event.label.name == 'AT: RETEST' }}
     name: osx-ci
     runs-on: [macos-latest]
 
