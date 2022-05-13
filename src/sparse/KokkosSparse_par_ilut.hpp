@@ -540,7 +540,7 @@ void par_ilut_numeric(KernelHandle* handle,
       AValues_Internal;
 
   typedef Kokkos::View<
-      typename LRowMapType::const_value_type*,
+      typename LRowMapType::non_const_value_type*,
       typename KokkosKernels::Impl::GetUnifiedLayout<LRowMapType>::array_layout,
       typename LRowMapType::device_type,
       Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >
@@ -551,18 +551,18 @@ void par_ilut_numeric(KernelHandle* handle,
       typename KokkosKernels::Impl::GetUnifiedLayout<
           LEntriesType>::array_layout,
       typename LEntriesType::device_type,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >
+      Kokkos::MemoryTraits<Kokkos::RandomAccess> >
       LEntries_Internal;
 
   typedef Kokkos::View<
       typename LValuesType::non_const_value_type*,
       typename KokkosKernels::Impl::GetUnifiedLayout<LValuesType>::array_layout,
       typename LValuesType::device_type,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >
+      Kokkos::MemoryTraits<Kokkos::RandomAccess> >
       LValues_Internal;
 
   typedef Kokkos::View<
-      typename URowMapType::const_value_type*,
+      typename URowMapType::non_const_value_type*,
       typename KokkosKernels::Impl::GetUnifiedLayout<URowMapType>::array_layout,
       typename URowMapType::device_type,
       Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >
@@ -573,14 +573,14 @@ void par_ilut_numeric(KernelHandle* handle,
       typename KokkosKernels::Impl::GetUnifiedLayout<
           UEntriesType>::array_layout,
       typename UEntriesType::device_type,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >
+      Kokkos::MemoryTraits<Kokkos::RandomAccess> >
       UEntries_Internal;
 
   typedef Kokkos::View<
       typename UValuesType::non_const_value_type*,
       typename KokkosKernels::Impl::GetUnifiedLayout<UValuesType>::array_layout,
       typename UValuesType::device_type,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >
+      Kokkos::MemoryTraits<Kokkos::RandomAccess> >
       UValues_Internal;
 
   ARowMap_Internal A_rowmap_i   = A_rowmap;

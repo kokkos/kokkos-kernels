@@ -90,11 +90,10 @@ void ilut_symbolic(IlutHandle& thandle,
       policy.league_size());
 
   // Sizing
-  size_type nnzsL = 0, nnzsU = 0;
-  Kokkos::parallel_reduce(
+  Kokkos::parallel_for(
     "symbolic sizing",
     policy,
-    KOKKOS_LAMBDA(const member_type& team, size_type& nnzsL_outer, size_type& nnzsU_outer) {
+    KOKKOS_LAMBDA(const member_type& team) {
       const auto row_idx = team.league_rank();
 
       const auto row_nnz_begin = A_row_map_d(row_idx);
@@ -120,22 +119,18 @@ void ilut_symbolic(IlutHandle& thandle,
 
       Kokkos::single(
         Kokkos::PerTeam(team), [&] () {
-          nnzsL_outer += nnzsL_temp + 1;
-          nnzsU_outer += nnzsU_temp + 1;
-
           L_row_map_d(row_idx) = nnzsL_temp+1;
           U_row_map_d(row_idx) = nnzsU_temp+1;
       });
-
-  }, nnzsL, nnzsU);
+  });
 
   Kokkos::fence();
 
+  const size_type nnzsL = prefix_sum(thandle, L_row_map_d, prefix_sum_view);
+  const size_type nnzsU = prefix_sum(thandle, U_row_map_d, prefix_sum_view);
+
   thandle.set_nnzL(nnzsL);
   thandle.set_nnzU(nnzsU);
-
-  prefix_sum(thandle, L_row_map_d, prefix_sum_view);
-  prefix_sum(thandle, U_row_map_d, prefix_sum_view);
 
   // Now set actual L/U values
 

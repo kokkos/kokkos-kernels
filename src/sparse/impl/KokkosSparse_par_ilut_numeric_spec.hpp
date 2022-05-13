@@ -91,29 +91,29 @@ struct par_ilut_numeric_eti_spec_avail {
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                     \
           Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,    \
       Kokkos::View<                                                            \
-          const OFFSET_TYPE *, LAYOUT_TYPE,                                    \
+          OFFSET_TYPE *, LAYOUT_TYPE,                                          \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                     \
           Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,    \
       Kokkos::View<                                                            \
           ORDINAL_TYPE *, LAYOUT_TYPE,                                         \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                     \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,    \
+          Kokkos::MemoryTraits<Kokkos::RandomAccess> >,    \
       Kokkos::View<                                                            \
           SCALAR_TYPE *, LAYOUT_TYPE,                                          \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                     \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,    \
+          Kokkos::MemoryTraits<Kokkos::RandomAccess> >,    \
       Kokkos::View<                                                            \
-          const OFFSET_TYPE *, LAYOUT_TYPE,                                    \
+          OFFSET_TYPE *, LAYOUT_TYPE,                                          \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                     \
           Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,    \
       Kokkos::View<                                                            \
           ORDINAL_TYPE *, LAYOUT_TYPE,                                         \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                     \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,    \
+          Kokkos::MemoryTraits<Kokkos::RandomAccess> >,    \
       Kokkos::View<                                                            \
           SCALAR_TYPE *, LAYOUT_TYPE,                                          \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                     \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> > > { \
+          Kokkos::MemoryTraits<Kokkos::RandomAccess> > > { \
     enum : bool { value = true };                                              \
   };
 
@@ -142,10 +142,9 @@ template <class KernelHandle, class ARowMapType, class AEntriesType,
 struct PAR_ILUT_NUMERIC {
   static void par_ilut_numeric(
       KernelHandle *handle,
-      const ARowMapType &A_row_map, const AEntriesType &A_entries,
-      const AValuesType &A_values, LRowMapType &L_row_map,
-      LEntriesType &L_entries, LValuesType &L_values, URowMapType &U_row_map,
-      UEntriesType &U_entries, UValuesType &U_values);
+      const ARowMapType &A_row_map, const AEntriesType &A_entries, const AValuesType &A_values,
+      LRowMapType &L_row_map, LEntriesType &L_entries, LValuesType &L_values,
+      URowMapType &U_row_map, UEntriesType &U_entries, UValuesType &U_values);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
@@ -161,10 +160,9 @@ struct PAR_ILUT_NUMERIC<KernelHandle, ARowMapType, AEntriesType, AValuesType,
                       KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   static void par_ilut_numeric(
       KernelHandle *handle,
-      const ARowMapType &A_row_map, const AEntriesType &A_entries,
-      const AValuesType &A_values, LRowMapType &L_row_map,
-      LEntriesType &L_entries, LValuesType &L_values, URowMapType &U_row_map,
-      UEntriesType &U_entries, UValuesType &U_values) {
+      const ARowMapType &A_row_map, const AEntriesType &A_entries, const AValuesType &A_values,
+      LRowMapType &L_row_map, LEntriesType &L_entries, LValuesType &L_values,
+      URowMapType &U_row_map, UEntriesType &U_entries, UValuesType &U_values) {
     auto par_ilut_handle = handle->get_par_ilut_handle();
 
     Experimental::ilut_numeric(*handle, *par_ilut_handle, A_row_map, A_entries, A_values,
@@ -204,29 +202,29 @@ struct PAR_ILUT_NUMERIC<KernelHandle, ARowMapType, AEntriesType, AValuesType,
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
           Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
       Kokkos::View<                                                         \
-          const OFFSET_TYPE *, LAYOUT_TYPE,                                 \
+          OFFSET_TYPE *, LAYOUT_TYPE,                                       \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
           Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
       Kokkos::View<                                                         \
           ORDINAL_TYPE *, LAYOUT_TYPE,                                      \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
+          Kokkos::MemoryTraits<Kokkos::RandomAccess> >, \
       Kokkos::View<                                                         \
           SCALAR_TYPE *, LAYOUT_TYPE,                                       \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
+          Kokkos::MemoryTraits<Kokkos::RandomAccess> >, \
       Kokkos::View<                                                         \
-          const OFFSET_TYPE *, LAYOUT_TYPE,                                 \
+          OFFSET_TYPE *, LAYOUT_TYPE,                                       \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
           Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
       Kokkos::View<                                                         \
           ORDINAL_TYPE *, LAYOUT_TYPE,                                      \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
+          Kokkos::MemoryTraits<Kokkos::RandomAccess> >, \
       Kokkos::View<                                                         \
           SCALAR_TYPE *, LAYOUT_TYPE,                                       \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
+          Kokkos::MemoryTraits<Kokkos::RandomAccess> >, \
       false, true>;
 
 #define KOKKOSSPARSE_PAR_ILUT_NUMERIC_ETI_SPEC_INST(                          \
@@ -249,29 +247,29 @@ struct PAR_ILUT_NUMERIC<KernelHandle, ARowMapType, AEntriesType, AValuesType,
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
           Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
       Kokkos::View<                                                         \
-          const OFFSET_TYPE *, LAYOUT_TYPE,                                 \
+          OFFSET_TYPE *, LAYOUT_TYPE,                                       \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
           Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
       Kokkos::View<                                                         \
           ORDINAL_TYPE *, LAYOUT_TYPE,                                      \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
+          Kokkos::MemoryTraits<Kokkos::RandomAccess> >, \
       Kokkos::View<                                                         \
           SCALAR_TYPE *, LAYOUT_TYPE,                                       \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
+          Kokkos::MemoryTraits<Kokkos::RandomAccess> >, \
       Kokkos::View<                                                         \
-          const OFFSET_TYPE *, LAYOUT_TYPE,                                 \
+          OFFSET_TYPE *, LAYOUT_TYPE,                                       \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
           Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
       Kokkos::View<                                                         \
           ORDINAL_TYPE *, LAYOUT_TYPE,                                      \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
+          Kokkos::MemoryTraits<Kokkos::RandomAccess> >, \
       Kokkos::View<                                                         \
           SCALAR_TYPE *, LAYOUT_TYPE,                                       \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
+          Kokkos::MemoryTraits<Kokkos::RandomAccess> >, \
       false, true>;
 
 #include <KokkosSparse_par_ilut_numeric_tpl_spec_decl.hpp>
