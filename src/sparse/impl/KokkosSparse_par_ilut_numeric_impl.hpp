@@ -61,6 +61,54 @@ namespace KokkosSparse {
 namespace Impl {
 namespace Experimental {
 
+template <typename scalar_t, typename RowMapType, typename EntriesType, typename ValuesType>
+std::vector<std::vector<scalar_t>> decompress_matrix(
+  const RowMapType& row_map,
+  const EntriesType& entries,
+  const ValuesType& values
+                                                     )
+{
+  using size_type = typename RowMapType::non_const_value_type;
+  using lno_t     = typename EntriesType::non_const_value_type;
+
+  const auto nrows = row_map.size() - 1;
+  std::vector<std::vector<scalar_t> > result;
+  result.resize(nrows);
+  for (auto& row : result) {
+    row.resize(nrows, 0.0);
+  }
+
+  auto hrow_map = Kokkos::create_mirror_view(row_map);
+  auto hentries = Kokkos::create_mirror_view(entries);
+  auto hvalues  = Kokkos::create_mirror_view(values);
+  Kokkos::deep_copy(hrow_map, row_map);
+  Kokkos::deep_copy(hentries, entries);
+  Kokkos::deep_copy(hvalues, values);
+
+  for (size_type row_idx = 0; row_idx < nrows; ++row_idx) {
+    const size_type row_nnz_begin = row_map(row_idx);
+    const size_type row_nnz_end   = row_map(row_idx+1);
+    for (size_type row_nnz = row_nnz_begin; row_nnz < row_nnz_end; ++row_nnz) {
+      const lno_t col_idx = entries(row_nnz);
+      const scalar_t value = values(row_nnz);
+      result[row_idx][col_idx] = value;
+    }
+  }
+
+  return result;
+}
+
+template <typename scalar_t>
+void print_matrix(const std::vector<std::vector<scalar_t> >& matrix)
+{
+  for (const auto& row : matrix) {
+    for (const auto& item : row) {
+      std::printf("%.2f ", item);
+    }
+    std::cout << std::endl;
+  }
+}
+
 template <class IlutHandle, class RowMapType, class PrefixSumView>
 typename IlutHandle::size_type prefix_sum(IlutHandle& ih, RowMapType& row_map, PrefixSumView& prefix_sum_view)
 {
@@ -271,6 +319,16 @@ void add_candidates(
 
   constexpr auto sentinel = std::numeric_limits<size_type>::max();
 
+  using scalar_t        = typename AValuesType::non_const_value_type;
+
+  std::cout << "A:" << std::endl;
+  print_matrix(decompress_matrix<scalar_t>(A_row_map, A_entries, A_values));
+
+  std::cout << "LU:" << std::endl;
+  print_matrix(decompress_matrix<scalar_t>(LU_row_map, LU_entries, LU_values));
+
+  std::cout << "u_new_nnz: " << u_new_nnz << " extent(0) = " << U_new_entries.extent(0) << std::endl;
+
   // Now compute the actual candidate values
   Kokkos::parallel_for(
     "add_candidates",
@@ -294,8 +352,12 @@ void add_candidates(
       size_type u_old_end   = U_row_map(row_idx+1);
       bool      finished_l  = false;
       bool      skip        = false;
+      std::cout << "Begin row_idx: " << row_idx << " with tot=" << tot << std::endl;
       for (size_type i = 0; i < tot; ++i) {
-        if (skip) continue;
+        if (skip) {
+          skip = false;
+          continue;
+        }
 
         const auto a_col  = a_row_nnz_begin  < a_row_nnz_end  ? A_entries(a_row_nnz_begin)   : sentinel;
               auto a_val  = a_row_nnz_begin  < a_row_nnz_end  ? A_values(a_row_nnz_begin)    : 0.;
@@ -324,6 +386,7 @@ void add_candidates(
         // if there is already an entry present, use that instead.
         const auto out_val = lpu_col == col_idx ? lpu_val : r_val / diag;
         // store output entries
+        std::cout << "  row_idx=" << row_idx << ", col_idx=" << col_idx << ", l_new_nnz=" << l_new_nnz << ", u_new_nnz=" << u_new_nnz << ", out_val=" << out_val << ", a_col=" << a_col << ", lu_col=" << lu_col << " a_row_nnz_begin=" << a_row_nnz_begin << ", lu_row_nnz_begin=" << lu_row_nnz_begin << std::endl;
         if (row_idx >= col_idx) {
           L_new_entries(l_new_nnz) = col_idx;
           L_new_values(l_new_nnz)  = row_idx == col_idx ? 1. : out_val;
@@ -332,6 +395,7 @@ void add_candidates(
         if (row_idx <= col_idx) {
           U_new_entries(u_new_nnz) = col_idx;
           U_new_values(u_new_nnz)  = out_val;
+          std::cout << "    Setting U_new_entries(" << u_new_nnz << ") = " << col_idx << "( " << out_val << ")" << std::endl;
           ++u_new_nnz;
         }
         // advance entry of L + U if we used it
@@ -422,15 +486,17 @@ void ilut_numeric(KHandle& kh, IlutHandle &thandle, const ARowMapType &A_row_map
   }
 
   Kokkos::deep_copy(L_row_map, L_new_row_map);
-  Kokkos::resize(L_entries, L_new_entries.extent(0));
+  Kokkos::resize(L_entries,    L_new_entries.extent(0));
   Kokkos::deep_copy(L_entries, L_new_entries);
-  Kokkos::resize(L_values, L_new_values.extent(0));
+  Kokkos::resize(L_values,     L_new_values.extent(0));
   Kokkos::deep_copy(L_values,  L_new_values);
 
   Kokkos::deep_copy(U_row_map, U_new_row_map);
-  Kokkos::resize(U_entries, U_new_entries.extent(0));
+  std::cout << "HERE1: " << U_new_entries.extent(0) << std::endl;
+  Kokkos::resize(U_entries,    U_new_entries.extent(0));
+  std::cout << "HERE2: " << U_entries.extent(0) << std::endl;
   Kokkos::deep_copy(U_entries, U_new_entries);
-  Kokkos::resize(U_values, U_new_values.extent(0));
+  Kokkos::resize(U_values,     U_new_values.extent(0));
   Kokkos::deep_copy(U_values,  U_new_values);
 
 }  // end ilut_numeric
