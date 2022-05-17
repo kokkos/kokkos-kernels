@@ -350,7 +350,7 @@ void add_candidates(
       size_type l_old_end   = L_row_map(row_idx+1) - 1; // skip diagonal
       size_type u_old_begin = U_row_map(row_idx);
       size_type u_old_end   = U_row_map(row_idx+1);
-      bool      finished_l  = false;
+      bool      finished_l  = l_old_begin == l_old_end;
       bool      skip        = false;
       std::cout << "Begin row_idx: " << row_idx << " with tot=" << tot << std::endl;
       for (size_type i = 0; i < tot; ++i) {
@@ -386,7 +386,7 @@ void add_candidates(
         // if there is already an entry present, use that instead.
         const auto out_val = lpu_col == col_idx ? lpu_val : r_val / diag;
         // store output entries
-        std::cout << "  row_idx=" << row_idx << ", col_idx=" << col_idx << ", l_new_nnz=" << l_new_nnz << ", u_new_nnz=" << u_new_nnz << ", out_val=" << out_val << ", a_col=" << a_col << ", lu_col=" << lu_col << " a_row_nnz_begin=" << a_row_nnz_begin << ", lu_row_nnz_begin=" << lu_row_nnz_begin << std::endl;
+        std::cout << "  row_idx=" << row_idx << ", col_idx=" << col_idx << ", u_new_nnz=" << u_new_nnz << ", out_val=" << out_val << ", a_col=" << a_col << ", lu_col=" << lu_col << ", lpu_col=" << lpu_col << ", a_row_nnz_begin=" << a_row_nnz_begin << ", lu_row_nnz_begin=" << lu_row_nnz_begin << ", lpu_val=" << lpu_val << ", diag=" << diag << ", r_val=" << r_val << std::endl;
         if (row_idx >= col_idx) {
           L_new_entries(l_new_nnz) = col_idx;
           L_new_values(l_new_nnz)  = row_idx == col_idx ? 1. : out_val;

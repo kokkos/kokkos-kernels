@@ -586,12 +586,12 @@ void par_ilut_numeric(KernelHandle* handle,
   ARowMap_Internal A_rowmap_i   = A_rowmap;
   AEntries_Internal A_entries_i = A_entries;
   AValues_Internal A_values_i   = A_values;
-  LRowMap_Internal L_rowmap_i   = L_rowmap;
-  LEntries_Internal L_entries_i = L_entries;
-  LValues_Internal L_values_i   = L_values;
-  URowMap_Internal U_rowmap_i   = U_rowmap;
-  UEntries_Internal U_entries_i = U_entries;
-  UValues_Internal U_values_i   = U_values;
+  LRowMap_Internal& L_rowmap_i   = reinterpret_cast<LRowMap_Internal&>(L_rowmap);
+  LEntries_Internal& L_entries_i = reinterpret_cast<LEntries_Internal&>(L_entries);
+  LValues_Internal& L_values_i   = reinterpret_cast<LValues_Internal&>(L_values);
+  URowMap_Internal& U_rowmap_i   = reinterpret_cast<URowMap_Internal&>(U_rowmap);
+  UEntries_Internal& U_entries_i = reinterpret_cast<UEntries_Internal&>(U_entries);
+  UValues_Internal& U_values_i   = reinterpret_cast<UValues_Internal&>(U_values);
 
   KokkosSparse::Impl::PAR_ILUT_NUMERIC<
       const_handle_type, ARowMap_Internal, AEntries_Internal, AValues_Internal,
