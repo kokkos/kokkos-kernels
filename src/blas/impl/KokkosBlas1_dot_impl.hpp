@@ -83,7 +83,7 @@ struct DotFunctor {
     Kokkos::Details::updateDot(sum, m_x(i), m_y(i));  // sum += m_x(i) * m_y(i)
   }
 
-  KOKKOS_INLINE_FUNCTION void init(volatile value_type& update) const {
+  KOKKOS_INLINE_FUNCTION void init(value_type& update) const {
     update = Kokkos::Details::ArithTraits<value_type>::zero();
   }
 

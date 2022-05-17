@@ -74,8 +74,7 @@ struct FixtureVerifyElemNodeCoord {
   void init(value_type& update) const { update.success = update.error = 0; }
 
   KOKKOS_INLINE_FUNCTION
-  void join(volatile value_type& update,
-            volatile const value_type& input) const {
+  void join(value_type& update, const value_type& input) const {
     update.success += input.success;
     update.error += input.error;
   }
