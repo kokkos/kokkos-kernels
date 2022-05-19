@@ -1138,7 +1138,7 @@ class ArithTraits<float> {
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type eps() { return epsilon(); }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type sfmin() {
-    return Kokkos::Experimental::norm_min<val_type>::value;  // ???
+    return Kokkos::Experimental::norm_min<val_type>::value;
   }
   static KOKKOS_FORCEINLINE_FUNCTION int base() {
     return Kokkos::Experimental::radix<val_type>::value;
@@ -1156,15 +1156,14 @@ class ArithTraits<float> {
     return Kokkos::Experimental::min_exponent<val_type>::value;
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type rmin() {
-    return Kokkos::Experimental::norm_min<val_type>::value;  // ??? // should be
-                                                             // base^(emin-1)
+    return Kokkos::Experimental::norm_min<val_type>::value;
   }
   static KOKKOS_FORCEINLINE_FUNCTION int emax() {
     return Kokkos::Experimental::max_exponent<val_type>::value;
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type rmax() {
     return Kokkos::Experimental::finite_max<
-        val_type>::value;  // ??? // should be (base^emax)*(1-eps)
+        val_type>::value;
   }
 };
 
