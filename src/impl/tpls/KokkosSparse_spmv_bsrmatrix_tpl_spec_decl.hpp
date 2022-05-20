@@ -42,8 +42,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOSKERNELS_KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_DECL_HPP
-#define KOKKOSKERNELS_KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_DECL_HPP
+#ifndef KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_DECL_HPP
+#define KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_DECL_HPP
 
 #include "KokkosKernels_Controls.hpp"
 #include "KokkosKernels_SparseUtils_mkl.hpp"
@@ -562,8 +562,24 @@ void spmv_block_impl_cusparse(
 // - Only blockDim > 1 is supported
 // - Only CUSPARSE_OPERATION_NON_TRANSPOSE is supported
 // - Only CUSPARSE_MATRIX_TYPE_GENERAL is supported.
+// - Only LayoutLeft for X and Y:
+//   for X,Y LayoutLeft we want cuSparse to do
+//   C = A * B + C
+//   and for X,Y LayoutRight we want cuSparse to do
+//   trans(C) = A * trans(B) + trans(C)
+//   -> t(t(C)) = t(A * t(B)) + t(t(C))
+//   ->       C = t(t(B)) * t(A) + C
+//   ->       C = B * t(A) + C
+//   This is impossible in cuSparse without explicitly transposing C,
+//   so we just do not support LayoutRight in cuSparse TPL now
 //
-template <class AMatrix, class XVector, class YVector>
+template <
+    class AMatrix, class XVector, class YVector,
+    std::enable_if_t<std::is_same<Kokkos::LayoutLeft,
+                                  typename XVector::array_layout>::value &&
+                         std::is_same<Kokkos::LayoutLeft,
+                                      typename YVector::array_layout>::value,
+                     bool> = true>
 void spm_mv_block_impl_cusparse(
     const KokkosKernels::Experimental::Controls& controls, const char mode[],
     typename YVector::non_const_value_type const& alpha, const AMatrix& A,
@@ -587,8 +603,15 @@ void spm_mv_block_impl_cusparse(
   }
 
   int colx = static_cast<int>(x.extent(1));
-  int ldx  = static_cast<int>(x.stride_1());
-  int ldy  = static_cast<int>(y.stride_1());
+
+  // ldx and ldy should be the leading dimension of X,Y respectively
+  const int ldx = static_cast<int>(x.extent(0));
+  const int ldy = static_cast<int>(y.extent(0));
+  if (!std::is_same<typename XVector::array_layout,
+                    Kokkos::LayoutLeft>::value) {
+    std::cerr << "X,Y must be LayoutLeft cusparse[*]bsrmv.\n";
+    throw std::invalid_argument("Invalid layout");
+  }
 
 #if (9000 <= CUDA_VERSION)
 
@@ -745,29 +768,31 @@ KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int, int, Kokkos::LayoutLeft,
 KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int, int,
                            Kokkos::LayoutRight, Kokkos::CudaUVMSpace,
                            KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-#endif
+#endif  // 9000 <= CUDA_VERSION
 
 #undef KOKKOSSPARSE_SPMV_CUSPARSE
 
-#define KOKKOSSPARSE_SPMV_MV_CUSPARSE(SCALAR, ORDINAL, OFFSET, LAYOUT, SPACE,  \
-                                      COMPILE_LIBRARY)                         \
+// cuSparse TPL does not support LayoutRight for this operation
+// only specialize for LayoutLeft
+#define KOKKOSSPARSE_SPMV_MV_CUSPARSE(SCALAR, ORDINAL, OFFSET, SPACE,          \
+                                      ETI_AVAIL)                               \
   template <>                                                                  \
   struct SPMV_MV_BSRMATRIX<                                                    \
       SCALAR const, ORDINAL const, Kokkos::Device<Kokkos::Cuda, SPACE>,        \
       Kokkos::MemoryTraits<Kokkos::Unmanaged>, OFFSET const, SCALAR const**,   \
-      LAYOUT, Kokkos::Device<Kokkos::Cuda, SPACE>,                             \
+      Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Cuda, SPACE>,                 \
       Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>,          \
-      SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, SPACE>,                   \
-      Kokkos::MemoryTraits<Kokkos::Unmanaged>, true, true, COMPILE_LIBRARY> {  \
+      SCALAR**, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Cuda, SPACE>,       \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged>, false, true, ETI_AVAIL> {       \
     using device_type       = Kokkos::Device<Kokkos::Cuda, SPACE>;             \
     using memory_trait_type = Kokkos::MemoryTraits<Kokkos::Unmanaged>;         \
     using AMatrix = BsrMatrix<SCALAR const, ORDINAL const, device_type,        \
                               memory_trait_type, OFFSET const>;                \
     using XVector = Kokkos::View<                                              \
-        SCALAR const**, LAYOUT, device_type,                                   \
+        SCALAR const**, Kokkos::LayoutLeft, device_type,                       \
         Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>;       \
-    using YVector =                                                            \
-        Kokkos::View<SCALAR**, LAYOUT, device_type, memory_trait_type>;        \
+    using YVector  = Kokkos::View<SCALAR**, Kokkos::LayoutLeft, device_type,   \
+                                 memory_trait_type>;                          \
     using Controls = KokkosKernels::Experimental::Controls;                    \
                                                                                \
     using coefficient_type = typename YVector::non_const_value_type;           \
@@ -786,55 +811,32 @@ KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int, int,
   };
 
 #if (9000 <= CUDA_VERSION)
-KOKKOSSPARSE_SPMV_MV_CUSPARSE(double, int, int, Kokkos::LayoutLeft,
-                              Kokkos::CudaSpace,
-                              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-KOKKOSSPARSE_SPMV_MV_CUSPARSE(double, int, int, Kokkos::LayoutRight,
-                              Kokkos::CudaSpace,
-                              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-KOKKOSSPARSE_SPMV_MV_CUSPARSE(float, int, int, Kokkos::LayoutLeft,
-                              Kokkos::CudaSpace,
-                              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-KOKKOSSPARSE_SPMV_MV_CUSPARSE(float, int, int, Kokkos::LayoutRight,
-                              Kokkos::CudaSpace,
-                              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+KOKKOSSPARSE_SPMV_MV_CUSPARSE(double, int, int, Kokkos::CudaSpace, true)
+KOKKOSSPARSE_SPMV_MV_CUSPARSE(double, int, int, Kokkos::CudaSpace, false)
+KOKKOSSPARSE_SPMV_MV_CUSPARSE(float, int, int, Kokkos::CudaSpace, true)
+KOKKOSSPARSE_SPMV_MV_CUSPARSE(float, int, int, Kokkos::CudaSpace, false)
 KOKKOSSPARSE_SPMV_MV_CUSPARSE(Kokkos::complex<double>, int, int,
-                              Kokkos::LayoutLeft, Kokkos::CudaSpace,
-                              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                              Kokkos::CudaSpace, true)
 KOKKOSSPARSE_SPMV_MV_CUSPARSE(Kokkos::complex<double>, int, int,
-                              Kokkos::LayoutRight, Kokkos::CudaSpace,
-                              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                              Kokkos::CudaSpace, false)
 KOKKOSSPARSE_SPMV_MV_CUSPARSE(Kokkos::complex<float>, int, int,
-                              Kokkos::LayoutLeft, Kokkos::CudaSpace,
-                              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                              Kokkos::CudaSpace, true)
 KOKKOSSPARSE_SPMV_MV_CUSPARSE(Kokkos::complex<float>, int, int,
-                              Kokkos::LayoutRight, Kokkos::CudaSpace,
-                              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-KOKKOSSPARSE_SPMV_MV_CUSPARSE(double, int, int, Kokkos::LayoutLeft,
-                              Kokkos::CudaUVMSpace,
-                              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-KOKKOSSPARSE_SPMV_MV_CUSPARSE(double, int, int, Kokkos::LayoutRight,
-                              Kokkos::CudaUVMSpace,
-                              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-KOKKOSSPARSE_SPMV_MV_CUSPARSE(float, int, int, Kokkos::LayoutLeft,
-                              Kokkos::CudaUVMSpace,
-                              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-KOKKOSSPARSE_SPMV_MV_CUSPARSE(float, int, int, Kokkos::LayoutRight,
-                              Kokkos::CudaUVMSpace,
-                              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                              Kokkos::CudaSpace, false)
+KOKKOSSPARSE_SPMV_MV_CUSPARSE(double, int, int, Kokkos::CudaUVMSpace, true)
+KOKKOSSPARSE_SPMV_MV_CUSPARSE(double, int, int, Kokkos::CudaUVMSpace, false)
+KOKKOSSPARSE_SPMV_MV_CUSPARSE(float, int, int, Kokkos::CudaUVMSpace, true)
+KOKKOSSPARSE_SPMV_MV_CUSPARSE(float, int, int, Kokkos::CudaUVMSpace, false)
 KOKKOSSPARSE_SPMV_MV_CUSPARSE(Kokkos::complex<double>, int, int,
-                              Kokkos::LayoutLeft, Kokkos::CudaUVMSpace,
-                              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                              Kokkos::CudaUVMSpace, true)
 KOKKOSSPARSE_SPMV_MV_CUSPARSE(Kokkos::complex<double>, int, int,
-                              Kokkos::LayoutRight, Kokkos::CudaUVMSpace,
-                              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                              Kokkos::CudaUVMSpace, false)
 KOKKOSSPARSE_SPMV_MV_CUSPARSE(Kokkos::complex<float>, int, int,
-                              Kokkos::LayoutLeft, Kokkos::CudaUVMSpace,
-                              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+                              Kokkos::CudaUVMSpace, true)
 KOKKOSSPARSE_SPMV_MV_CUSPARSE(Kokkos::complex<float>, int, int,
-                              Kokkos::LayoutRight, Kokkos::CudaUVMSpace,
-                              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-#endif
+                              Kokkos::CudaUVMSpace, false)
+
+#endif  // 9000 <= CUDA_VERSION
 
 #undef KOKKOSSPARSE_SPMV_MV_CUSPARSE
 
@@ -842,6 +844,6 @@ KOKKOSSPARSE_SPMV_MV_CUSPARSE(Kokkos::complex<float>, int, int,
 }  // namespace Experimental
 }  // namespace KokkosSparse
 
-#endif
+#endif  // KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 
-#endif  // KOKKOSKERNELS_KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_DECL_HPP
+#endif  // KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_DECL_HPP
