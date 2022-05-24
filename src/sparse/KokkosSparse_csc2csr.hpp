@@ -109,8 +109,7 @@ class Csc2Csr {
       // Use exclusive scan so we can allocate the row map uninitialized and
       // avoid accessing device views on the host.
       KE::exclusive_scan(crsET, KE::cbegin(__crs_row_cnt),
-                         KE::cend(__crs_row_cnt) + 1, KE::begin(__crs_row_map),
-                         0);
+                         KE::cend(__crs_row_cnt), KE::begin(__crs_row_map), 0);
       CrsET().fence();
       Kokkos::deep_copy(__crs_row_map_scratch, __crs_row_map);
       CrsET().fence();
@@ -203,7 +202,7 @@ class Csc2Csr {
     __crs_col_ids = CrsColIdViewType(
         Kokkos::view_alloc(Kokkos::WithoutInitializing, "__crs_col_ids"), nnz);
 
-    __crs_row_cnt = RowIdViewType("__crs_row_cnt", __nrows);
+    __crs_row_cnt = RowIdViewType("__crs_row_cnt", __nrows + 1);
 
     __Functor<typename TeamPolicyType::member_type> functor(
         __nrows, __ncols, __nnz, __vals, __crs_vals, __row_ids, __crs_row_map,

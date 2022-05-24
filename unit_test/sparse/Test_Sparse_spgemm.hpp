@@ -287,7 +287,7 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth,
 #endif
 
   for (auto spgemm_algorithm : algorithms) {
-    const uint64_t max_integer = 2147483647;
+    const uint64_t max_integer = Kokkos::ArithTraits<int>::max();
     std::string algo           = "UNKNOWN";
     bool is_expected_to_fail   = false;
 

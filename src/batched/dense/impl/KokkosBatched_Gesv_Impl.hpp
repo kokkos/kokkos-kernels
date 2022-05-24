@@ -446,16 +446,20 @@ struct SerialGesv<Gesv::StaticPivoting> {
       return 1;
     }
 
-    SerialLU<Algo::Level3::Unblocked>::invoke(PDAD);
+    int r_val = SerialLU<Algo::Level3::Unblocked>::invoke(PDAD);
 
-    SerialTrsm<Side::Left, Uplo::Lower, Trans::NoTranspose, Diag::Unit,
-               Algo::Level3::Unblocked>::invoke(1.0, PDAD, PDY);
+    if (r_val == 0)
+      r_val =
+          SerialTrsm<Side::Left, Uplo::Lower, Trans::NoTranspose, Diag::Unit,
+                     Algo::Level3::Unblocked>::invoke(1.0, PDAD, PDY);
 
-    SerialTrsm<Side::Left, Uplo::Upper, Trans::NoTranspose, Diag::NonUnit,
-               Algo::Level3::Unblocked>::invoke(1.0, PDAD, PDY);
+    if (r_val == 0)
+      r_val =
+          SerialTrsm<Side::Left, Uplo::Upper, Trans::NoTranspose, Diag::NonUnit,
+                     Algo::Level3::Unblocked>::invoke(1.0, PDAD, PDY);
 
-    SerialHadamard1D(PDY, D2, X);
-    return 0;
+    if (r_val == 0) SerialHadamard1D(PDY, D2, X);
+    return r_val;
   }
 };
 
@@ -489,16 +493,21 @@ struct SerialGesv<Gesv::NoPivoting> {
     }
 #endif
 
-    SerialLU<Algo::Level3::Unblocked>::invoke(A);
+    int r_val = SerialLU<Algo::Level3::Unblocked>::invoke(A);
 
-    SerialCopy<Trans::NoTranspose, 1>::invoke(Y, X);
-    SerialTrsm<Side::Left, Uplo::Lower, Trans::NoTranspose, Diag::Unit,
-               Algo::Level3::Unblocked>::invoke(1.0, A, X);
+    if (r_val == 0) r_val = SerialCopy<Trans::NoTranspose, 1>::invoke(Y, X);
 
-    SerialTrsm<Side::Left, Uplo::Upper, Trans::NoTranspose, Diag::NonUnit,
-               Algo::Level3::Unblocked>::invoke(1.0, A, X);
+    if (r_val == 0)
+      r_val =
+          SerialTrsm<Side::Left, Uplo::Lower, Trans::NoTranspose, Diag::Unit,
+                     Algo::Level3::Unblocked>::invoke(1.0, A, X);
 
-    return 0;
+    if (r_val == 0)
+      r_val =
+          SerialTrsm<Side::Left, Uplo::Upper, Trans::NoTranspose, Diag::NonUnit,
+                     Algo::Level3::Unblocked>::invoke(1.0, A, X);
+
+    return r_val;
   }
 };
 
@@ -557,22 +566,31 @@ struct TeamGesv<MemberType, Gesv::StaticPivoting> {
     }
     member.team_barrier();
 
-    TeamLU<MemberType, Algo::Level3::Unblocked>::invoke(member, PDAD);
+    int r_val =
+        TeamLU<MemberType, Algo::Level3::Unblocked>::invoke(member, PDAD);
     member.team_barrier();
 
-    TeamTrsm<MemberType, Side::Left, Uplo::Lower, Trans::NoTranspose,
-             Diag::Unit, Algo::Level3::Unblocked>::invoke(member, 1.0, PDAD,
-                                                          PDY);
-    member.team_barrier();
+    if (r_val == 0) {
+      r_val = TeamTrsm<MemberType, Side::Left, Uplo::Lower, Trans::NoTranspose,
+                       Diag::Unit, Algo::Level3::Unblocked>::invoke(member, 1.0,
+                                                                    PDAD, PDY);
+      member.team_barrier();
+    }
 
-    TeamTrsm<MemberType, Side::Left, Uplo::Upper, Trans::NoTranspose,
-             Diag::NonUnit, Algo::Level3::Unblocked>::invoke(member, 1.0, PDAD,
-                                                             PDY);
-    member.team_barrier();
+    if (r_val == 0) {
+      r_val =
+          TeamTrsm<MemberType, Side::Left, Uplo::Upper, Trans::NoTranspose,
+                   Diag::NonUnit, Algo::Level3::Unblocked>::invoke(member, 1.0,
+                                                                   PDAD, PDY);
+      member.team_barrier();
+    }
 
-    TeamHadamard1D(member, PDY, D2, X);
-    member.team_barrier();
-    return 0;
+    if (r_val == 0) {
+      TeamHadamard1D(member, PDY, D2, X);
+      member.team_barrier();
+    }
+
+    return r_val;
   }
 };
 
@@ -605,21 +623,28 @@ struct TeamGesv<MemberType, Gesv::NoPivoting> {
     }
 #endif
 
-    TeamLU<MemberType, Algo::Level3::Unblocked>::invoke(member, A);
+    int r_val = TeamLU<MemberType, Algo::Level3::Unblocked>::invoke(member, A);
     member.team_barrier();
 
-    TeamCopy<MemberType, Trans::NoTranspose, 1>::invoke(member, Y, X);
-    member.team_barrier();
+    if (r_val == 0) {
+      TeamCopy<MemberType, Trans::NoTranspose, 1>::invoke(member, Y, X);
+      member.team_barrier();
+    }
 
-    TeamTrsm<MemberType, Side::Left, Uplo::Lower, Trans::NoTranspose,
-             Diag::Unit, Algo::Level3::Unblocked>::invoke(member, 1.0, A, X);
-    member.team_barrier();
+    if (r_val == 0) {
+      TeamTrsm<MemberType, Side::Left, Uplo::Lower, Trans::NoTranspose,
+               Diag::Unit, Algo::Level3::Unblocked>::invoke(member, 1.0, A, X);
+      member.team_barrier();
+    }
 
-    TeamTrsm<MemberType, Side::Left, Uplo::Upper, Trans::NoTranspose,
-             Diag::NonUnit, Algo::Level3::Unblocked>::invoke(member, 1.0, A, X);
-    member.team_barrier();
+    if (r_val == 0) {
+      TeamTrsm<MemberType, Side::Left, Uplo::Upper, Trans::NoTranspose,
+               Diag::NonUnit, Algo::Level3::Unblocked>::invoke(member, 1.0, A,
+                                                               X);
+      member.team_barrier();
+    }
 
-    return 0;
+    return r_val;
   }
 };
 
@@ -679,22 +704,31 @@ struct TeamVectorGesv<MemberType, Gesv::StaticPivoting> {
 
     member.team_barrier();
 
-    TeamLU<MemberType, Algo::Level3::Unblocked>::invoke(member, PDAD);
+    int r_val =
+        TeamLU<MemberType, Algo::Level3::Unblocked>::invoke(member, PDAD);
     member.team_barrier();
 
-    TeamVectorTrsm<MemberType, Side::Left, Uplo::Lower, Trans::NoTranspose,
-                   Diag::Unit, Algo::Level3::Unblocked>::invoke(member, 1.0,
-                                                                PDAD, PDY);
-    member.team_barrier();
+    if (r_val == 0) {
+      TeamVectorTrsm<MemberType, Side::Left, Uplo::Lower, Trans::NoTranspose,
+                     Diag::Unit, Algo::Level3::Unblocked>::invoke(member, 1.0,
+                                                                  PDAD, PDY);
+      member.team_barrier();
+    }
 
-    TeamVectorTrsm<MemberType, Side::Left, Uplo::Upper, Trans::NoTranspose,
-                   Diag::NonUnit, Algo::Level3::Unblocked>::invoke(member, 1.0,
-                                                                   PDAD, PDY);
-    member.team_barrier();
+    if (r_val == 0) {
+      TeamVectorTrsm<MemberType, Side::Left, Uplo::Upper, Trans::NoTranspose,
+                     Diag::NonUnit, Algo::Level3::Unblocked>::invoke(member,
+                                                                     1.0, PDAD,
+                                                                     PDY);
+      member.team_barrier();
+    }
 
-    TeamVectorHadamard1D(member, PDY, D2, X);
-    member.team_barrier();
-    return 0;
+    if (r_val == 0) {
+      TeamVectorHadamard1D(member, PDY, D2, X);
+      member.team_barrier();
+    }
+
+    return r_val;
   }
 };
 
@@ -727,23 +761,29 @@ struct TeamVectorGesv<MemberType, Gesv::NoPivoting> {
     }
 #endif
 
-    TeamLU<MemberType, Algo::Level3::Unblocked>::invoke(member, A);
+    int r_val = TeamLU<MemberType, Algo::Level3::Unblocked>::invoke(member, A);
     member.team_barrier();
 
-    TeamVectorCopy<MemberType, Trans::NoTranspose, 1>::invoke(member, Y, X);
-    member.team_barrier();
+    if (r_val == 0) {
+      TeamVectorCopy<MemberType, Trans::NoTranspose, 1>::invoke(member, Y, X);
+      member.team_barrier();
+    }
 
-    TeamVectorTrsm<MemberType, Side::Left, Uplo::Lower, Trans::NoTranspose,
-                   Diag::Unit, Algo::Level3::Unblocked>::invoke(member, 1.0, A,
-                                                                X);
-    member.team_barrier();
+    if (r_val == 0) {
+      TeamVectorTrsm<MemberType, Side::Left, Uplo::Lower, Trans::NoTranspose,
+                     Diag::Unit, Algo::Level3::Unblocked>::invoke(member, 1.0,
+                                                                  A, X);
+      member.team_barrier();
+    }
 
-    TeamVectorTrsm<MemberType, Side::Left, Uplo::Upper, Trans::NoTranspose,
-                   Diag::NonUnit, Algo::Level3::Unblocked>::invoke(member, 1.0,
-                                                                   A, X);
-    member.team_barrier();
+    if (r_val == 0) {
+      TeamVectorTrsm<MemberType, Side::Left, Uplo::Upper, Trans::NoTranspose,
+                     Diag::NonUnit, Algo::Level3::Unblocked>::invoke(member,
+                                                                     1.0, A, X);
+      member.team_barrier();
+    }
 
-    return 0;
+    return r_val;
   }
 };
 

@@ -62,16 +62,15 @@ struct Gesv {
 /// using a batched LU decomposition, 2 batched triangular solves, and a batched
 /// static pivoting.
 ///
-/// \tparam MatrixType: Input type for the matrix, needs to be a 3D view
+/// \tparam MatrixType: Input type for the matrix, needs to be a 2D view
 /// \tparam VectorType: Input type for the right-hand side and the solution,
-/// needs to be a 2D view
+/// needs to be a 1D view
 ///
-/// \param A [in]: batched matrix, a rank 3 view
-/// \param X [out]: solution, a rank 2 view
-/// \param B [in]: right-hand side, a rank 2 view
-/// \param tmp [in]: a rank 3 view used to store temporary variable; dimension
-/// must be N x n x (n+4) where N is the batched size and n is the number of
-/// rows.
+/// \param A [in]: matrix, a rank 2 view
+/// \param X [out]: solution, a rank 1 view
+/// \param B [in]: right-hand side, a rank 1 view
+/// \param tmp [in]: a rank 2 view used to store temporary variable; dimension
+/// must be n x (n+4) where n is the number of rows.
 ///
 ///
 /// Two versions are available (those are chosen based on ArgAlgo):
@@ -103,14 +102,14 @@ struct SerialGesv {
 /// using a batched LU decomposition, 2 batched triangular solves, and a batched
 /// static pivoting.
 ///
-/// \tparam MatrixType: Input type for the matrix, needs to be a 3D view
+/// \tparam MatrixType: Input type for the matrix, needs to be a 2D view
 /// \tparam VectorType: Input type for the right-hand side and the solution,
-/// needs to be a 2D view
+/// needs to be a 1D view
 ///
 /// \param member [in]: TeamPolicy member
-/// \param A [in]: batched matrix, a rank 3 view
-/// \param X [out]: solution, a rank 2 view
-/// \param B [in]: right-hand side, a rank 2 view
+/// \param A [in]: matrix, a rank 2 view
+/// \param X [out]: solution, a rank 1 view
+/// \param B [in]: right-hand side, a rank 1 view
 ///
 /// Two versions are available (those are chosen based on ArgAlgo):
 ///
@@ -141,14 +140,14 @@ struct TeamGesv {
 /// using a batched LU decomposition, 2 batched triangular solves, and a batched
 /// static pivoting.
 ///
-/// \tparam MatrixType: Input type for the matrix, needs to be a 3D view
+/// \tparam MatrixType: Input type for the matrix, needs to be a 2D view
 /// \tparam VectorType: Input type for the right-hand side and the solution,
-/// needs to be a 2D view
+/// needs to be a 1D view
 ///
 /// \param member [in]: TeamPolicy member
-/// \param A [in]: batched matrix, a rank 3 view
-/// \param X [out]: solution, a rank 2 view
-/// \param B [in]: right-hand side, a rank 2 view
+/// \param A [in]: matrix, a rank 2 view
+/// \param X [out]: solution, a rank 1 view
+/// \param B [in]: right-hand side, a rank 1 view
 ///
 /// Two versions are available (those are chosen based on ArgAlgo):
 ///

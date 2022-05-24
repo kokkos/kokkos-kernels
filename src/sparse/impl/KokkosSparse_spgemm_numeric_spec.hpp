@@ -211,23 +211,6 @@ struct SPGEMM_NUMERIC<
     if (!sh->is_symbolic_called()) {
       throw std::runtime_error(
           "Call spgemm symbolic before calling SpGEMM numeric");
-      /*
-      KokkosSparse::Experimental::spgemm_symbolic<KernelHandle,
-                    a_size_view_t_, a_lno_view_t,
-                    b_size_view_t_, b_lno_view_t,
-                    c_size_view_t_>(
-          handle, m, n, k,
-          row_mapA, entriesA, transposeA,
-          row_mapB, entriesB, transposeB,
-          row_mapC
-          );
-      typename c_size_view_t_::value_type c_nnz_size =
-      handle->get_spgemm_handle()->get_c_nnz(); if (c_nnz_size){ entriesC =
-      c_lno_view_t (Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC"),
-      c_nnz_size); valuesC = c_scalar_view_t
-      (Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC"), c_nnz_size);
-      }
-      */
     }
 
     switch (sh->get_algorithm_type()) {

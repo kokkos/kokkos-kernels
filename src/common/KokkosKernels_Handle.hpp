@@ -181,6 +181,7 @@ class KokkosKernelsHandle {
     this->gs_sptrsvUHandle = right_side_handle.get_gs_sptrsvU_handle();
 
     this->spgemmHandle = right_side_handle.get_spgemm_handle();
+    this->spaddHandle  = right_side_handle.get_spadd_handle();
 
     this->sptrsvHandle = right_side_handle.get_sptrsv_handle();
     this->spilukHandle = right_side_handle.get_spiluk_handle();

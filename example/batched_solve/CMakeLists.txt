@@ -5,3 +5,8 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
   static_pivoting
   SOURCES static_pivoting.cpp
   )
+
+KOKKOSKERNELS_ADD_EXECUTABLE(
+  team_GMRES
+  SOURCES team_GMRES.cpp
+  )
