@@ -73,8 +73,9 @@ struct fSPMV {
 
     if (error > eps * max_val) {
       err++;
-      printf("expected_y(%d)=%f, y(%d)=%f err=%f, max_error=%f\n", i,
-             AT::abs(expected_y(i)), i, AT::abs(y(i)), error, eps * max_val);
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+          "expected_y(%d)=%f, y(%d)=%f err=%f, max_error=%f\n", i,
+          AT::abs(expected_y(i)), i, AT::abs(y(i)), error, eps * max_val);
     }
   }
 };
