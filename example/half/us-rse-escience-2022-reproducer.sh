@@ -15,10 +15,11 @@ function printhelp() {
   echo "--Usage--"
   echo "$0 HOST_ARCH <ACCELERATOR_ARCH>"
   echo "  HOST_ARCH:        POWER9, A64FX, SKX"
-  echo "  ACCELERATOR_ARCH: VOLTA70"
+  echo "  ACCELERATOR_ARCH: VOLTA70, AMPERE80"
   echo ""
-  echo "Invocation used for us-rse-escience-2022 results:"
+  echo "Invocations used to collect us-rse-escience-2022 results:"
   echo "env KOKKOS_SRC_DIR=$HOME/KOKKOS.base/kokkos KOKKOSKERNELS_SRC_DIR=$HOME/KOKKOS.base/kokkos-kernels/ KOKKOSKERNELS_SHA=TODO-HEAD-SHA ./us-rse-escience-2022-reproducer.sh POWER9 VOLTA70"
+  echo "env KOKKOS_SRC_DIR=$HOME/KOKKOS.base/kokkos KOKKOSKERNELS_SRC_DIR=$HOME/KOKKOS.base/kokkos-kernels/ KOKKOSKERNELS_SHA=TODO-HEAD-SHA ./us-rse-escience-2022-reproducer.sh AMPERE80"
 }
 
 function earlyexit() {
@@ -77,8 +78,8 @@ elif [ "$arch_names" == "POWER9 VOLTA70" ]; then
                               | tee -a kokkos_config_cmd.out"
 
   kokkoskernels_config_cmd="cd $KOKKOSKERNELS_BUILD_DIR && $KOKKOSKERNELS_SRC_DIR/cm_generate_makefile.bash \
-                            --arch=Power9,Volta70 --with-cuda=$CUDA_PATH --compiler=$KOKKOS_INSTALL_DIR/bin/nvcc_wrapper \
-                            --cxxflags='-O3' \
+                            --arch=Power9,Volta70 --with-cuda=$CUDA_PATH -- --compiler=$KOKKOS_INSTALL_DIR/bin/nvcc_wrapper \
+                            --cxxflags='-O3' --disable-tests --enable-examples \
                             --kokkos-path=$KOKKOS_SRC_DIR --kokkoskernels-path=$KOKKOSKERNELS_SRC_DIR \
                             --kokkos-prefix=$KOKKOS_INSTALL_DIR --prefix=$KOKKOSKERNELS_INSTALL_DIR 2>&1 | \
                             tee kokkoskernels_config_cmd.out"
@@ -92,43 +93,42 @@ elif [ "$arch_names" == "POWER9 VOLTA70" ]; then
 elif [ "$arch_names" == "SNB VOLTA70" ]; then
   module purge
   module load sems-archive-env sems-env sems-gcc/8.3.0 sems-cmake/3.19.1 cuda/11.2 sems-archive-git/2.10.1
-  kokkos_config_cmd="cd $KOKKOS_BUILD_DIR && $KOKKOS_SRC_DIR/generate_makefile.bash --cxxflags='-O3' \                                                                                                                                                                                   
-                     --arch=SNB,Volta70 --with-cuda=$CUDA_PATH --compiler=$KOKKOS_SRC_DIR/bin/nvcc_wrapper \                                                                                                                                                                             
+  kokkos_config_cmd="cd $KOKKOS_BUILD_DIR && $KOKKOS_SRC_DIR/generate_makefile.bash --cxxflags='-O3' \
+                     --arch=SNB,Volta70 --with-cuda=$CUDA_PATH --compiler=$KOKKOS_SRC_DIR/bin/nvcc_wrapper \
                      --kokkos-path=$KOKKOS_SRC_DIR --prefix=$KOKKOS_INSTALL_DIR 2>&1 | tee kokkos_config_cmd.out"
-  kokkos_config_defaults_cmd="cd $KOKKOS_BUILD_DIR && cmake -DKokkos_ENABLE_TESTS:BOOL=OFF $KOKKOS_SRC_DIR 2>&1 \                                                                                                                                                                        
+  kokkos_config_defaults_cmd="cd $KOKKOS_BUILD_DIR && cmake -DKokkos_ENABLE_TESTS:BOOL=OFF $KOKKOS_SRC_DIR 2>&1 \
                               | tee -a kokkos_config_cmd.out"
 
-  kokkoskernels_config_cmd="cd $KOKKOSKERNELS_BUILD_DIR && $KOKKOSKERNELS_SRC_DIR/cm_generate_makefile.bash \                                                                                                                                                                            
-                            --arch=SNB,Volta70 --with-cuda=$CUDA_PATH --compiler=$KOKKOS_INSTALL_DIR/bin/nvcc_wrapper \                                                                                                                                                                  
-                            --cxxflags='-O3' \                                                                                                                                                                                                                                           
-                            --kokkos-path=$KOKKOS_SRC_DIR --kokkoskernels-path=$KOKKOSKERNELS_SRC_DIR \                                                                                                                                                                                  
-                            --kokkos-prefix=$KOKKOS_INSTALL_DIR --prefix=$KOKKOSKERNELS_INSTALL_DIR 2>&1 | \                                                                                                                                                                             
+  kokkoskernels_config_cmd="cd $KOKKOSKERNELS_BUILD_DIR && $KOKKOSKERNELS_SRC_DIR/cm_generate_makefile.bash \
+                            --arch=SNB,Volta70 --with-cuda=$CUDA_PATH --compiler=$KOKKOS_INSTALL_DIR/bin/nvcc_wrapper \
+                            --cxxflags='-O3' --disable-tests --enable-examples \
+                            --kokkos-path=$KOKKOS_SRC_DIR --kokkoskernels-path=$KOKKOSKERNELS_SRC_DIR \
+                            --kokkos-prefix=$KOKKOS_INSTALL_DIR --prefix=$KOKKOSKERNELS_INSTALL_DIR 2>&1 | \
                             tee kokkoskernels_config_cmd.out"
-  kokkoskernels_config_defaults_cmd="cd $KOKKOSKERNELS_BUILD_DIR && cmake -DKokkosKernels_INST_LAYOUTLEFT:BOOL=OFF \                                                                                                                                                                     
-                                   -DKokkosKernels_INST_LAYOUTRIGHT:BOOL=ON -DKokkosKernels_INST_DOUBLE:BOOL=OFF \                                                                                                                                                                       
+  kokkoskernels_config_defaults_cmd="cd $KOKKOSKERNELS_BUILD_DIR && cmake -DKokkosKernels_INST_LAYOUTLEFT:BOOL=OFF \
+                                   -DKokkosKernels_INST_LAYOUTRIGHT:BOOL=ON -DKokkosKernels_INST_DOUBLE:BOOL=OFF \
                                    $KOKKOSKERNELS_SRC_DIR 2>&1 | tee -a kokkoskernels_config_cmd.out"
 
   kokkos_build_cmd="$KOKKOS_BUILD_DIR/build.sh"
   kokkoskernels_build_cmd="$KOKKOSKERNELS_BUILD_DIR/build.sh"
   benchmark_cmd="$KOKKOSKERNELS_BUILD_DIR/bench.sh"
-elif [ "$arch_names" == "ZEN2 AMPERE80" ]; then
+elif [ "$arch_names" == "AMPERE80" ]; then
   module purge
-  module load gcc/8.1.0 cuda/11.2.0 git/TODO cmake/TODO
-  kokkos_config_cmd="cd $KOKKOS_BUILD_DIR && $KOKKOS_SRC_DIR/generate_makefile.bash --cxxflags='-O3' \                                                                                                                                                                                   
-                     --arch=Zen2,Ampere80 --with-cuda=$CUDA_PATH --compiler=$KOKKOS_SRC_DIR/bin/nvcc_wrapper \                                                                                                                                                                             
-                     --kokkos-path=$KOKKOS_SRC_DIR --prefix=$KOKKOS_INSTALL_DIR 2>&1 | tee kokkos_config_cmd.out"
-  kokkos_config_defaults_cmd="cd $KOKKOS_BUILD_DIR && cmake -DKokkos_ENABLE_TESTS:BOOL=OFF $KOKKOS_SRC_DIR 2>&1 \                                                                                                                                                                        
-                              | tee -a kokkos_config_cmd.out"
+  module load cudatoolkit/11.2 cmake/3.22.0
 
-  kokkoskernels_config_cmd="cd $KOKKOSKERNELS_BUILD_DIR && $KOKKOSKERNELS_SRC_DIR/cm_generate_makefile.bash \                                                                                                                                                                            
-                            --arch=Zen2,Ampere80 --with-cuda=$CUDA_PATH --compiler=$KOKKOS_INSTALL_DIR/bin/nvcc_wrapper \                                                                                                                                                                  
-                            --cxxflags='-O3' \                                                                                                                                                                                                                                           
-                            --kokkos-path=$KOKKOS_SRC_DIR --kokkoskernels-path=$KOKKOSKERNELS_SRC_DIR \                                                                                                                                                                                  
-                            --kokkos-prefix=$KOKKOS_INSTALL_DIR --prefix=$KOKKOSKERNELS_INSTALL_DIR 2>&1 | \                                                                                                                                                                             
-                            tee kokkoskernels_config_cmd.out"
-  kokkoskernels_config_defaults_cmd="cd $KOKKOSKERNELS_BUILD_DIR && cmake -DKokkosKernels_INST_LAYOUTLEFT:BOOL=OFF \                                                                                                                                                                     
-                                   -DKokkosKernels_INST_LAYOUTRIGHT:BOOL=ON -DKokkosKernels_INST_DOUBLE:BOOL=OFF \                                                                                                                                                                       
-                                   $KOKKOSKERNELS_SRC_DIR 2>&1 | tee -a kokkoskernels_config_cmd.out"
+  kokkos_config_cmd="cd $KOKKOS_BUILD_DIR && $KOKKOS_SRC_DIR/generate_makefile.bash --cxxflags='-O3' \
+                    --arch=Ampere80 --with-cuda=$CUDA_HOME --compiler=$KOKKOS_SRC_DIR/bin/nvcc_wrapper \
+                    --kokkos-path=$KOKKOS_SRC_DIR --prefix=$KOKKOS_INSTALL_DIR &> kokkos_config_cmd.out"
+
+  kokkos_config_defaults_cmd="cd $KOKKOS_BUILD_DIR && cmake -DKokkos_ENABLE_TESTS:BOOL=OFF $KOKKOS_SRC_DIR &>  kokkos_config_cmd.out"
+  kokkoskernels_config_cmd="cd $KOKKOSKERNELS_BUILD_DIR && $KOKKOSKERNELS_SRC_DIR/cm_generate_makefile.bash \
+                           --arch=Ampere80 --with-cuda=$CUDA_HOME --compiler=$KOKKOS_INSTALL_DIR/bin/nvcc_wrapper \
+                           --cxxflags='-O3' --disable-tests --enable-examples \
+                           --kokkos-path=$KOKKOS_SRC_DIR --kokkoskernels-path=$KOKKOSKERNELS_SRC_DIR \
+                           --kokkos-prefix=$KOKKOS_INSTALL_DIR --prefix=$KOKKOSKERNELS_INSTALL_DIR &> kokkoskernels_config_cmd.out"
+
+  kokkoskernels_config_defaults_cmd="cd $KOKKOSKERNELS_BUILD_DIR && cmake -S $KOKKOSKERNELS_SRC_DIR -DKokkosKernels_INST_LAYOUTLEFT:BOOL=OFF \
+                                  -DKokkosKernels_INST_LAYOUTRIGHT:BOOL=ON -DKokkosKernels_INST_DOUBLE:BOOL=OFF &> kokkoskernels_config_cmd.out"
 
   kokkos_build_cmd="$KOKKOS_BUILD_DIR/build.sh"
   kokkoskernels_build_cmd="$KOKKOSKERNELS_BUILD_DIR/build.sh"
@@ -147,6 +147,7 @@ elif [ "$arch_names" == "A64FX " ]; then
 
   kokkoskernels_config_cmd="cd $KOKKOSKERNELS_BUILD_DIR && $KOKKOSKERNELS_SRC_DIR/cm_generate_makefile.bash \
                             --cxxflags='-msve-vector-bits=512 -Ofast' --arch=A64FX --with-openmp \
+                            --disable-tests --enable-examples \
                             --kokkos-path=$KOKKOS_SRC_DIR --kokkoskernels-path=$KOKKOSKERNELS_SRC_DIR \
                             --kokkos-prefix=$KOKKOS_INSTALL_DIR --prefix=$KOKKOSKERNELS_INSTALL_DIR 2>&1 | \
                             tee kokkoskernels_config_cmd.out"
@@ -168,16 +169,16 @@ elif [ "$arch_names" == "SKX " ]; then
                        --kokkos-path=$KOKKOS_SRC_DIR --prefix=$KOKKOS_INSTALL_DIR 2>&1 | tee kokkos_config_cmd.out"
     kokkos_config_defaults_cmd="cd $KOKKOS_BUILD_DIR && cmake -DKokkos_ENABLE_TESTS:BOOL=OFF $KOKKOS_SRC_DIR 2>&1 \
                                 | tee -a kokkos_config_cmd.out"
-  
+
     kokkoskernels_config_cmd="cd $KOKKOSKERNELS_BUILD_DIR && $KOKKOSKERNELS_SRC_DIR/cm_generate_makefile.bash \
-                              --cxxflags='-O3' --arch=SKX --with-openmp \
+                              --cxxflags='-O3' --arch=SKX --with-openmp --disable-tests --enable-examples \
                               --kokkos-path=$KOKKOS_SRC_DIR --kokkoskernels-path=$KOKKOSKERNELS_SRC_DIR \
                               --kokkos-prefix=$KOKKOS_INSTALL_DIR --prefix=$KOKKOSKERNELS_INSTALL_DIR 2>&1 | \
                               tee kokkoskernels_config_cmd.out"
     kokkoskernels_config_defaults_cmd="cd $KOKKOSKERNELS_BUILD_DIR && cmake -DKokkosKernels_INST_LAYOUTLEFT:BOOL=OFF \
                                      -DKokkosKernels_INST_LAYOUTRIGHT:BOOL=ON -DKokkosKernels_INST_DOUBLE:BOOL=OFF \
                                      $KOKKOSKERNELS_SRC_DIR 2>&1 | tee -a kokkoskernels_config_cmd.out"
-  
+
     kokkos_build_cmd="srun --time=2:00:00 -N1 $KOKKOS_BUILD_DIR/build.sh"
     kokkoskernels_build_cmd="srun --time=2:00:00 -N1 $KOKKOSKERNELS_BUILD_DIR/build.sh"
     benchmark_cmd="srun --time=2:00:00 -N1 $KOKKOSKERNELS_BUILD_DIR/bench.sh"
@@ -236,4 +237,3 @@ beval $kokkoskernels_build_cmd
 
 # Run the benchmark
 beval $benchmark_cmd
-beval "cat ${benchmark_dir}/xpy.out"
