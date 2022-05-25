@@ -96,7 +96,7 @@ void do_xpy(size_t n, bool time_only = false) {
   double s = timer.seconds();
 
   if (!time_only) {
-    for (int i = 0; i < n; i++)
+    for (size_t i = 0; i < n; i++)
       expected(i) = static_cast<ReferenceScalarType>(y_host(i)) +
                     static_cast<ReferenceScalarType>(x_host(i));
   }
@@ -104,13 +104,15 @@ void do_xpy(size_t n, bool time_only = false) {
   deep_copy(x_host, x);
   ExecutionSpace().fence();
 
-  std::cout << "n: " << n << ", Runtime(s): " << s << std::endl;
+  std::cout << "n: " << n << ", " << typeid(ScalarType).name()
+            << " Runtime(s): " << s << std::endl;
 
   if (!time_only) {
-    std::cout << "-- " << typeid(ScalarType).name() << " Relative Errors --"
-              << std::endl;
-    for (int i = 0; i < n; i++) {
-      std::cout << std::abs(expected(i) - x_host(i)) / expected(i) << ", ";
+    std::cout << "n: " << n << ", " << typeid(ScalarType).name()
+              << " Relative Errors:" << std::endl;
+    for (size_t i = 0; i < n; i++) {
+      std::cout << ", " << std::abs(expected(i) - x_host(i)) / expected(i)
+                << std::endl;
     }
     std::cout << std::endl << std::endl;
   }

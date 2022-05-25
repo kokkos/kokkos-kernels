@@ -5,13 +5,3 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
   xpy
   SOURCES xpy.cpp
   )
-
-#KOKKOSKERNELS_ADD_EXECUTABLE(
-#  spmv
-#  SOURCES spmv.cpp
-#  )
-#
-#KOKKOSKERNELS_ADD_EXECUTABLE(
-#  dot
-#  SOURCES dot.cpp
-#  )
