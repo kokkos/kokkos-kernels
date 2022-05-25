@@ -92,8 +92,8 @@ class Controls {
                            const std::string& orUnset = "") const {
     auto search = kernel_parameters.find(name);
     if (kernel_parameters.end() == search) {
-      std::cout << "Parameter " << name
-                << " was not found in the list of parameters!" << std::endl;
+      std::cerr << "WARNING: Controls::getParameter for name \"" << name
+                << "\" was unset" << std::endl;
       return orUnset;
     } else {
       return search->second;
