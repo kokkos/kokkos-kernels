@@ -244,28 +244,31 @@ struct ILUKLvlSchedTP1NumericFunctor {
   void operator()(const member_type &team) const {
     auto my_league = team.league_rank();  // map to rowid
     auto rowid     = level_idx(my_league + lev_start);
-    auto my_team   = team.team_rank();
+    //auto my_team   = team.team_rank();
 
     auto k1 = L_row_map(rowid);
     auto k2 = L_row_map(rowid + 1);
 #ifdef KEEP_DIAG
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2 - 1),
-                         [&](const size_type k) {
-                           auto col           = L_entries(k);
+                         [&](const nnz_lno_t k) {
+                           nnz_lno_t col      = static_cast<nnz_lno_t>(L_entries(k));
                            L_values(k)        = 0.0;
+                           //if (iw(my_league, col) != -1) printf("L initialize k %d, col %d\n", k, col);
                            iw(my_league, col) = k;
                          });
 #else
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2),
-                         [&](const size_type k) {
-                           auto col           = L_entries(k);
+                         [&](const nnz_lno_t k) {
+                           nnz_lno_t col      = static_cast<nnz_lno_t>(L_entries(k));
                            L_values(k)        = 0.0;
                            iw(my_league, col) = k;
                          });
 #endif
 
 #ifdef KEEP_DIAG
-    if (my_team == 0) L_values(k2 - 1) = scalar_t(1.0);
+    //if (my_team == 0) L_values(k2 - 1) = scalar_t(1.0);
+    Kokkos::single(Kokkos::PerTeam(team),
+                   [&]() { L_values(k2 - 1) = scalar_t(1.0); });
 #endif
 
     team.team_barrier();
@@ -273,9 +276,10 @@ struct ILUKLvlSchedTP1NumericFunctor {
     k1 = U_row_map(rowid);
     k2 = U_row_map(rowid + 1);
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2),
-                         [&](const size_type k) {
-                           auto col           = U_entries(k);
+                         [&](const nnz_lno_t k) {
+                           nnz_lno_t col      = static_cast<nnz_lno_t>(U_entries(k));
                            U_values(k)        = 0.0;
+                           //if (iw(my_league, col) != -1) printf("U initialize k %d, col %d\n", k, col);
                            iw(my_league, col) = k;
                          });
 
@@ -285,9 +289,10 @@ struct ILUKLvlSchedTP1NumericFunctor {
     k1 = A_row_map(rowid);
     k2 = A_row_map(rowid + 1);
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2),
-                         [&](const size_type k) {
-                           auto col  = A_entries(k);
-                           auto ipos = iw(my_league, col);
+                         [&](const nnz_lno_t k) {
+                           nnz_lno_t col  = static_cast<nnz_lno_t>(A_entries(k));
+                           nnz_lno_t ipos = iw(my_league, col);
+                           //if (ipos == -1) printf("A populate k %d, col %d\n", k, col);
                            if (col < rowid)
                              L_values(ipos) = A_values(k);
                            else
@@ -310,7 +315,8 @@ struct ILUKLvlSchedTP1NumericFunctor {
 #else
       auto fact = L_values(k) * U_values(U_row_map(prev_row));
 #endif
-      if (my_team == 0) L_values(k) = fact;
+      //if (my_team == 0) L_values(k) = fact;
+      Kokkos::single(Kokkos::PerTeam(team), [&]() { L_values(k) = fact; });
 
       team.team_barrier();
 
@@ -318,8 +324,8 @@ struct ILUKLvlSchedTP1NumericFunctor {
           Kokkos::TeamThreadRange(team, U_row_map(prev_row) + 1,
                                   U_row_map(prev_row + 1)),
           [&](const size_type kk) {
-            auto col  = U_entries(kk);
-            auto ipos = iw(my_league, col);
+            nnz_lno_t col  = static_cast<nnz_lno_t>(U_entries(kk));
+            nnz_lno_t ipos = iw(my_league, col);
             if (ipos != -1) {
               auto lxu = -U_values(kk) * fact;
               if (col < rowid)
@@ -332,19 +338,22 @@ struct ILUKLvlSchedTP1NumericFunctor {
       team.team_barrier();
     }  // end for k
 
-    if (my_team == 0) {
+    //if (my_team == 0) {
+    Kokkos::single(Kokkos::PerTeam(team), [&]() {
+      nnz_lno_t ipos = iw(my_league, rowid);
 #ifdef KEEP_DIAG
-      if (U_values(iw(my_league, rowid)) == 0.0) {
-        U_values(iw(my_league, rowid)) = 1e6;
+      if (U_values(ipos) == 0.0) {
+        U_values(ipos) = 1e6;
       }
 #else
-      if (U_values(iw(my_league, rowid)) == 0.0) {
-        U_values(iw(my_league, rowid)) = 1e6;
+      if (U_values(ipos) == 0.0) {
+        U_values(ipos) = 1e6;
       } else {
-        U_values(iw(my_league, rowid)) = 1.0 / U_values(iw(my_league, rowid));
+        U_values(ipos) = 1.0 / U_values(ipos);
       }
 #endif
-    }
+    });
+    //}
 
     team.team_barrier();
 
@@ -354,18 +363,27 @@ struct ILUKLvlSchedTP1NumericFunctor {
 #ifdef KEEP_DIAG
     Kokkos::parallel_for(
         Kokkos::TeamThreadRange(team, k1, k2 - 1),
-        [&](const size_type k) { iw(my_league, L_entries(k)) = -1; });
+        [&](const nnz_lno_t k) {
+        nnz_lno_t col  = static_cast<nnz_lno_t>(L_entries(k));
+        iw(my_league, col) = -1;
+    });
 #else
     Kokkos::parallel_for(
         Kokkos::TeamThreadRange(team, k1, k2),
-        [&](const size_type k) { iw(my_league, L_entries(k)) = -1; });
+        [&](const nnz_lno_t k) {
+        nnz_lno_t col  = static_cast<nnz_lno_t>(L_entries(k));
+        iw(my_league, col) = -1;
+    });
 #endif
 
     k1 = U_row_map(rowid);
     k2 = U_row_map(rowid + 1);
     Kokkos::parallel_for(
         Kokkos::TeamThreadRange(team, k1, k2),
-        [&](const size_type k) { iw(my_league, U_entries(k)) = -1; });
+        [&](const nnz_lno_t k) {
+        nnz_lno_t col  = static_cast<nnz_lno_t>(U_entries(k));
+        iw(my_league, col) = -1;
+    });
   }
 };
 
@@ -710,6 +728,9 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
 
     // Main loop must be performed sequential. Question: Try out Cuda's graph
     // stuff to reduce kernel launch overhead
+    printf("work array iw %d x %d\n",iw.extent(0),iw.extent(1));
+    int tmpcnt = 0;
+    int tmpnrows = 0;
     for (size_type lvl = 0; lvl < nlevels; ++lvl) {
       nnz_lno_t lev_start = level_ptr_h(lvl);
       nnz_lno_t lev_end   = level_ptr_h(lvl + 1);
@@ -758,12 +779,15 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
               Kokkos::parallel_for("parfor_l_team",
                                    policy_type(lvl_nrows_chunk, team_size),
                                    tstf);
-
+            Kokkos::fence();
             lvl_rowid_start += lvl_nrows_chunk;
+            tmpcnt++;
+            tmpnrows += lvl_nrows_chunk;
           }
         }
       }  // end if
     }    // end for lvl
+    printf("Total kernel calls %d, total nrows %d\n",tmpcnt, tmpnrows);
   }
 
 // Output check

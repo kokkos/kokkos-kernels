@@ -54,6 +54,8 @@
 #include <Kokkos_Sort.hpp>
 #include <KokkosKernels_Error.hpp>
 
+#include <sys/time.h>
+
 //#define SYMBOLIC_OUTPUT_INFO
 
 namespace KokkosSparse {
@@ -200,6 +202,10 @@ void level_sched(IlukHandle& thandle, const RowMapType row_map,
       lnrowsperchunk(i) = (lnrows % lnchunks(i) == 0)
                               ? (lnrows / lnchunks(i))
                               : (lnrows / lnchunks(i) + 1);
+      if ((i < 10) || (i >= nlevels-10))
+        printf("Level %d, lnrows %d, nrows %d, required size %ld, avail_byte %ld, nchunks %d, rows per chunk %d\n",i,lnrows,nrows,required_size,avail_byte,lnchunks(i),lnrowsperchunk(i));
+      if (lnrows == 312)
+        printf("Level %d, lnrows %d, nrows %d, required size %ld, avail_byte %ld, nchunks %d, rows per chunk %d\n",i,lnrows,nrows,required_size,avail_byte,lnchunks(i),lnrowsperchunk(i));
     } else
 #endif
     {
@@ -215,7 +221,7 @@ void level_sched(IlukHandle& thandle, const RowMapType row_map,
   thandle.set_level_maxrows(maxrows);
   thandle.set_level_maxrowsperchunk(maxrowsperchunk);
 
-  level_nchunks       = lnchunks;
+  level_nchunks       = lnchunks; printf("nlevels %d, maxrows %d, maxrowsperchunk %d\n", nlevels, maxrows, maxrowsperchunk);
   level_nrowsperchunk = lnrowsperchunk;
 }
 
@@ -447,6 +453,9 @@ void iluk_symbolic(IlukHandle& thandle,
     using HostTmpViewType =
         Kokkos::View<nnz_lno_t*, Kokkos::LayoutLeft, Kokkos::HostSpace>;
 
+    struct timeval begin, end;//VINH TEST
+    gettimeofday( &begin, NULL );
+
     HostTmpViewType h_lev("h_lev", thandle.get_nnzU());
     HostTmpViewType h_iw("h_iw", nrows);
     HostTmpViewType h_iL("h_iL", nrows);
@@ -580,7 +589,11 @@ void iluk_symbolic(IlukHandle& thandle,
     thandle.set_nnzL(cntL);
     thandle.set_nnzU(cntU);
 
+    gettimeofday( &end, NULL );
+    printf("     VINH TEST: symbolic -- main %.8lf (sec.)\n", 1.0 * ( end.tv_sec - begin.tv_sec ) + 1.0e-6 * ( end.tv_usec - begin.tv_usec ));
+
     // Sort
+    gettimeofday( &begin, NULL );
     for (size_type row_id = 0;
          row_id < static_cast<size_type>(L_row_map.extent(0)) - 1; row_id++) {
       size_type row_start = L_row_map(row_id);
@@ -593,8 +606,11 @@ void iluk_symbolic(IlukHandle& thandle,
       size_type row_end   = U_row_map(row_id + 1);
       Kokkos::sort(subview(U_entries, Kokkos::make_pair(row_start, row_end)));
     }
+    gettimeofday( &end, NULL );
+    printf("     VINH TEST: symbolic -- sort %.8lf (sec.)\n", 1.0 * ( end.tv_sec - begin.tv_sec ) + 1.0e-6 * ( end.tv_usec - begin.tv_usec ));
 
     // Level scheduling on L
+    gettimeofday( &begin, NULL );
     if (thandle.get_algorithm() ==
         KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1HASHMAP) {
       level_sched_hashmap(thandle, L_row_map, L_entries, U_row_map, U_entries,
@@ -626,6 +642,8 @@ void iluk_symbolic(IlukHandle& thandle,
     Kokkos::deep_copy(U_entries_d, U_entries);
 
     thandle.set_symbolic_complete();
+    gettimeofday( &end, NULL );
+    printf("     VINH TEST: symbolic -- sched + copy %.8lf (sec.)\n", 1.0 * ( end.tv_sec - begin.tv_sec ) + 1.0e-6 * ( end.tv_usec - begin.tv_usec ));
 
     // Output check
 #ifdef SYMBOLIC_OUTPUT_INFO
