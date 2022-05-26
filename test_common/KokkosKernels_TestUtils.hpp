@@ -340,6 +340,15 @@ class epsilon<Kokkos::Experimental::half_t> {
 };
 #endif  // KOKKOS_HALF_T_IS_FLOAT
 
+// explicit epsilon specializations
+#if defined(KOKKOS_BHALF_T_IS_FLOAT) && !KOKKOS_BHALF_T_IS_FLOAT
+template <>
+class epsilon<Kokkos::Experimental::bhalf_t> {
+ public:
+  constexpr static double value = 0.0078125F;
+};
+#endif  // KOKKOS_HALF_T_IS_FLOAT
+
 using KokkosKernels::Impl::getRandomBounds;
 
 template <typename scalar_t, typename lno_t, typename size_type,
