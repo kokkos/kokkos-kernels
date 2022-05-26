@@ -411,7 +411,6 @@ class GraphColor_VB
 
     nnz_lno_t numUncolored = this->nv;
 
-    double t, total = 0.0;
     double total_time_greedy_phase               = 0.0;
     double total_time_find_conflicts             = 0.0;
     double total_time_serial_conflict_resolution = 0.0;
@@ -435,8 +434,7 @@ class GraphColor_VB
       MyExecSpace().fence();
 
       if (this->_ticToc) {
-        t = timer.seconds();
-        total += t;
+        double t = timer.seconds();
         total_time_greedy_phase += t;
         std::cout << "\tTime speculative greedy phase " << iter << " : " << t
                   << std::endl;
@@ -459,8 +457,7 @@ class GraphColor_VB
       MyExecSpace().fence();
 
       if (_ticToc) {
-        t = timer.seconds();
-        total += t;
+        double t = timer.seconds();
         total_time_find_conflicts += t;
         std::cout << "\tTime conflict detection " << iter << " : " << t
                   << std::endl;
@@ -500,8 +497,7 @@ class GraphColor_VB
       }
       MyExecSpace().fence();
       if (_ticToc) {
-        t = timer.seconds();
-        total += t;
+        double t = timer.seconds();
         total_time_serial_conflict_resolution += t;
         std::cout << "\tTime serial conflict resolution: " << t << std::endl;
       }

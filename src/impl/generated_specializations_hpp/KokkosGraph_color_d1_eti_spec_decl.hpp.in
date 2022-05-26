@@ -1,5 +1,5 @@
-#ifndef KOKKOSSPARSE_SPADD_SYMBOLIC_ETI_SPEC_DECL_HPP_
-#define KOKKOSSPARSE_SPADD_SYMBOLIC_ETI_SPEC_DECL_HPP_
+#ifndef KOKKOSGRAPH_COLOR_D1_ETI_SPEC_DECL_HPP_
+#define KOKKOSGRAPH_COLOR_D1_ETI_SPEC_DECL_HPP_
 /*
 //@HEADER
 // ************************************************************************
