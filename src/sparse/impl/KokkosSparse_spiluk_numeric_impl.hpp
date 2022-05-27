@@ -335,6 +335,20 @@ struct ILUKLvlSchedTP1NumericFunctor {
             }
           });  // end for kk
 
+      //Kokkos::single(Kokkos::PerTeam(team), [&]() { 
+      //  for (size_type kk = U_row_map(prev_row) + 1; kk < U_row_map(prev_row + 1); kk++) {
+      //      nnz_lno_t col  = static_cast<nnz_lno_t>(U_entries(kk));
+      //      nnz_lno_t ipos = iw(my_league, col);
+      //      if (ipos != -1) {
+      //        auto lxu = -U_values(kk) * fact;
+      //        if (col < rowid)
+      //          Kokkos::atomic_add(&L_values(ipos), lxu);
+      //        else
+      //          Kokkos::atomic_add(&U_values(ipos), lxu);
+      //      }
+      //  }  // end for kk
+      //});
+
       team.team_barrier();
     }  // end for k
 
