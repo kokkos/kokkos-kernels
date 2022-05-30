@@ -1,9 +1,6 @@
 #!/bin/bash
 ################################################################################
-# @Brief: On the specified arch, build and run KokkosBlas3_perf_test.
-#
-# The value of this script is to ensure that the benchmark results can be easily
-# reproduced.
+# @Brief: On the specified arch, build and run xpy.
 #
 # Author: Evan Harvey <eharvey@sandia.gov>
 ################################################################################
@@ -16,11 +13,13 @@ function envprint() {
 
 function printhelp() {
   echo "--Usage--"
-  echo "$0 PRECISION HOST_ARCH <ACCELERATOR_ARCH>"
-  echo "  PRECISION:        Kokkos::Experimental::half_t, float, double"
-  echo "  HOST_ARCH:        POWER9, A64FX, SKX, SNB, DEFAULT"
-  echo "  ACCELERATOR_ARCH: VOLTA70 AMPERE80"
+  echo "$0 HOST_ARCH <ACCELERATOR_ARCH>"
+  echo "  HOST_ARCH:        POWER9, A64FX, SKX"
+  echo "  ACCELERATOR_ARCH: VOLTA70, AMPERE80"
   echo ""
+  echo "Invocations used to collect us-rse-escience-2022 results:"
+  echo "env KOKKOS_SRC_DIR=$HOME/KOKKOS.base/kokkos KOKKOSKERNELS_SRC_DIR=$HOME/KOKKOS.base/kokkos-kernels/ KOKKOSKERNELS_SHA=TODO-HEAD-SHA ./us-rse-escience-2022-reproducer.sh POWER9 VOLTA70"
+  echo "env KOKKOS_SRC_DIR=$HOME/KOKKOS.base/kokkos KOKKOSKERNELS_SRC_DIR=$HOME/KOKKOS.base/kokkos-kernels/ KOKKOSKERNELS_SHA=TODO-HEAD-SHA ./us-rse-escience-2022-reproducer.sh AMPERE80"
 }
 
 function earlyexit() {
@@ -50,13 +49,11 @@ export KOKKOS_SRC_DIR=$(realpath $KOKKOS_SRC_DIR)
 export KOKKOS_SHA=${KOKKOS_SHA:-"tags/3.6.00"}
 export KOKKOSKERNELS_SRC_DIR=${KOKKOSKERNELS_SRC_DIR:-"$HOME/KOKKOS.base/kokkos-kernels"}
 export KOKKOSKERNELS_SRC_DIR=$(realpath $KOKKOSKERNELS_SRC_DIR)
-export KOKKOSKERNELS_SHA=${KOKKOSKERNELS_SHA:-"half_examples"}
 envprint KOKKOS_SRC_DIR KOKKOS_SHA KOKKOSKERNELS_SRC_DIR KOKKOSKERNELS_SHA
 
 dry_run="off"
-precision="$1"
-arch_names="$2 $3"
-echo "PRECISION=\"$1\", HOST_ARCH=\"$2\", ACCELERATOR_ARCH=\"$3\""
+arch_names="$1 $2"
+echo "HOST_ARCH=\"$1\", ACCELERATOR_ARCH=\"$2\""
 
 # Create benchmark directory
 benchmark_dir=$PWD/$0_$(date +"%Y-%m-%d_%H.%M.%S")
@@ -69,11 +66,11 @@ export KOKKOSKERNELS_INSTALL_DIR=$(realpath $benchmark_dir/kokkos-kernels-instal
 envprint KOKKOS_INSTALL_DIR KOKKOS_BUILD_DIR KOKKOSKERNELS_BUILD_DIR KOKKOSKERNELS_INSTALL_DIR
 
 # Setup arch specific cmake configurations and job submission commands
-if [[ "$arch_names" == " " || -z $precision ]]; then
+if [[ "$arch_names" == " " ]]; then
     printhelp; earlyexit 1
 elif [ "$arch_names" == "POWER9 VOLTA70" ]; then
   module purge
-  module load cmake/3.18.0 gcc/7.2.0 cuda/10.2.2
+  module load cuda/11.2.0 gcc/8.3.1 cmake/3.18.0
   kokkos_config_cmd="cd $KOKKOS_BUILD_DIR && $KOKKOS_SRC_DIR/generate_makefile.bash --cxxflags='-O3' \
                      --arch=Power9,Volta70 --with-cuda=$CUDA_PATH --compiler=$KOKKOS_SRC_DIR/bin/nvcc_wrapper \
                      --kokkos-path=$KOKKOS_SRC_DIR --prefix=$KOKKOS_INSTALL_DIR 2>&1 | tee kokkos_config_cmd.out"
@@ -81,8 +78,8 @@ elif [ "$arch_names" == "POWER9 VOLTA70" ]; then
                               | tee -a kokkos_config_cmd.out"
 
   kokkoskernels_config_cmd="cd $KOKKOSKERNELS_BUILD_DIR && $KOKKOSKERNELS_SRC_DIR/cm_generate_makefile.bash \
-                            --arch=Power9,Volta70 --with-cuda=$CUDA_PATH --compiler=$KOKKOS_INSTALL_DIR/bin/nvcc_wrapper \
-                            --cxxflags='-O3' --disable-tests --enable-examples --with-scalars=$precision \
+                            --arch=Power9,Volta70 --with-cuda=$CUDA_PATH -- --compiler=$KOKKOS_INSTALL_DIR/bin/nvcc_wrapper \
+                            --cxxflags='-O3' --disable-tests --enable-examples \
                             --kokkos-path=$KOKKOS_SRC_DIR --kokkoskernels-path=$KOKKOSKERNELS_SRC_DIR \
                             --kokkos-prefix=$KOKKOS_INSTALL_DIR --prefix=$KOKKOSKERNELS_INSTALL_DIR 2>&1 | \
                             tee kokkoskernels_config_cmd.out"
@@ -90,9 +87,9 @@ elif [ "$arch_names" == "POWER9 VOLTA70" ]; then
                                    -DKokkosKernels_INST_LAYOUTRIGHT:BOOL=ON -DKokkosKernels_INST_DOUBLE:BOOL=OFF \
                                    $KOKKOSKERNELS_SRC_DIR 2>&1 | tee -a kokkoskernels_config_cmd.out"
 
-  kokkos_build_cmd="bsub -q rhel7W -W 2:00 -Is $KOKKOS_BUILD_DIR/build.sh"
-  kokkoskernels_build_cmd="bsub -q rhel7W -W 2:00 -Is $KOKKOSKERNELS_BUILD_DIR/build.sh"
-  benchmark_cmd="bsub -q rhel7W -W 2:00 -Is $KOKKOSKERNELS_BUILD_DIR/bench.sh"
+  kokkos_build_cmd="bsub -q normal -W 2:00 -Is $KOKKOS_BUILD_DIR/build.sh"
+  kokkoskernels_build_cmd="bsub -q normal -W 2:00 -Is $KOKKOSKERNELS_BUILD_DIR/build.sh"
+  benchmark_cmd="bsub -q normal -W 2:00 -Is $KOKKOSKERNELS_BUILD_DIR/bench.sh"
 elif [ "$arch_names" == "SNB VOLTA70" ]; then
   module purge
   module load sems-archive-env sems-env sems-gcc/8.3.0 sems-cmake/3.19.1 cuda/11.2 sems-archive-git/2.10.1
@@ -104,7 +101,7 @@ elif [ "$arch_names" == "SNB VOLTA70" ]; then
 
   kokkoskernels_config_cmd="cd $KOKKOSKERNELS_BUILD_DIR && $KOKKOSKERNELS_SRC_DIR/cm_generate_makefile.bash \
                             --arch=SNB,Volta70 --with-cuda=$CUDA_PATH --compiler=$KOKKOS_INSTALL_DIR/bin/nvcc_wrapper \
-                            --cxxflags='-O3' --with-scalars=$precision \
+                            --cxxflags='-O3' --disable-tests --enable-examples \
                             --kokkos-path=$KOKKOS_SRC_DIR --kokkoskernels-path=$KOKKOSKERNELS_SRC_DIR \
                             --kokkos-prefix=$KOKKOS_INSTALL_DIR --prefix=$KOKKOSKERNELS_INSTALL_DIR 2>&1 | \
                             tee kokkoskernels_config_cmd.out"
@@ -115,7 +112,7 @@ elif [ "$arch_names" == "SNB VOLTA70" ]; then
   kokkos_build_cmd="$KOKKOS_BUILD_DIR/build.sh"
   kokkoskernels_build_cmd="$KOKKOSKERNELS_BUILD_DIR/build.sh"
   benchmark_cmd="$KOKKOSKERNELS_BUILD_DIR/bench.sh"
-elif [ "$arch_names" == "DEFAULT AMPERE80" ]; then
+elif [ "$arch_names" == "AMPERE80" ]; then
   module purge
   module load cudatoolkit/11.2 cmake/3.22.0
 
@@ -126,7 +123,7 @@ elif [ "$arch_names" == "DEFAULT AMPERE80" ]; then
   kokkos_config_defaults_cmd="cd $KOKKOS_BUILD_DIR && cmake -DKokkos_ENABLE_TESTS:BOOL=OFF $KOKKOS_SRC_DIR &>  kokkos_config_cmd.out"
   kokkoskernels_config_cmd="cd $KOKKOSKERNELS_BUILD_DIR && $KOKKOSKERNELS_SRC_DIR/cm_generate_makefile.bash \
                            --arch=Ampere80 --with-cuda=$CUDA_HOME --compiler=$KOKKOS_INSTALL_DIR/bin/nvcc_wrapper \
-                           --cxxflags='-O3' --with-scalars=$precision \
+                           --cxxflags='-O3' --disable-tests --enable-examples \
                            --kokkos-path=$KOKKOS_SRC_DIR --kokkoskernels-path=$KOKKOSKERNELS_SRC_DIR \
                            --kokkos-prefix=$KOKKOS_INSTALL_DIR --prefix=$KOKKOSKERNELS_INSTALL_DIR &> kokkoskernels_config_cmd.out"
 
@@ -149,7 +146,8 @@ elif [ "$arch_names" == "A64FX " ]; then
                               | tee -a kokkos_config_cmd.out"
 
   kokkoskernels_config_cmd="cd $KOKKOSKERNELS_BUILD_DIR && $KOKKOSKERNELS_SRC_DIR/cm_generate_makefile.bash \
-                            --cxxflags='-msve-vector-bits=512 -Ofast' --arch=A64FX --with-scalars=$precision --with-openmp \
+                            --cxxflags='-msve-vector-bits=512 -Ofast' --arch=A64FX --with-openmp \
+                            --disable-tests --enable-examples \
                             --kokkos-path=$KOKKOS_SRC_DIR --kokkoskernels-path=$KOKKOSKERNELS_SRC_DIR \
                             --kokkos-prefix=$KOKKOS_INSTALL_DIR --prefix=$KOKKOSKERNELS_INSTALL_DIR 2>&1 | \
                             tee kokkoskernels_config_cmd.out"
@@ -173,7 +171,7 @@ elif [ "$arch_names" == "SKX " ]; then
                                 | tee -a kokkos_config_cmd.out"
 
     kokkoskernels_config_cmd="cd $KOKKOSKERNELS_BUILD_DIR && $KOKKOSKERNELS_SRC_DIR/cm_generate_makefile.bash \
-                              --cxxflags='-O3' --arch=SKX --with-scalars=$precision --with-openmp \
+                              --cxxflags='-O3' --arch=SKX --with-openmp --disable-tests --enable-examples \
                               --kokkos-path=$KOKKOS_SRC_DIR --kokkoskernels-path=$KOKKOSKERNELS_SRC_DIR \
                               --kokkos-prefix=$KOKKOS_INSTALL_DIR --prefix=$KOKKOSKERNELS_INSTALL_DIR 2>&1 | \
                               tee kokkoskernels_config_cmd.out"
@@ -198,21 +196,24 @@ chmod +x $KOKKOS_BUILD_DIR/build.sh
 
 # Write the arch agnostic kokkos-kernels build script
 echo "#!/bin/bash" > $KOKKOSKERNELS_BUILD_DIR/build.sh
-echo "cd $KOKKOSKERNELS_BUILD_DIR/perf_test/blas/blas3" >> $KOKKOSKERNELS_BUILD_DIR/build.sh
-echo "make -j40 KokkosBlas3_perf_test" >> $KOKKOSKERNELS_BUILD_DIR/build.sh
+echo "cd $KOKKOSKERNELS_BUILD_DIR/example/half" >> $KOKKOSKERNELS_BUILD_DIR/build.sh
+echo "make -j40 xpy" >> $KOKKOSKERNELS_BUILD_DIR/build.sh
 chmod +x $KOKKOSKERNELS_BUILD_DIR/build.sh
 
 # Write the arch agnostic kokkos-kernels benchmark script
 echo "#!/bin/bash" > $KOKKOSKERNELS_BUILD_DIR/bench.sh
 echo "cd $benchmark_dir" >> $KOKKOSKERNELS_BUILD_DIR/bench.sh
-echo "$KOKKOSKERNELS_BUILD_DIR/perf_test/blas/blas3/KokkosBlas3_perf_test \
-      --test=batched_heuristic --routines=gemm --loop_type=parallel --batch_size_last_dim=0 \
-      --matrix_size_start=2x2,2x2,2x2 --matrix_size_stop=64x64,64x64,64x64 \
-      --matrix_size_step=2 --batch_size=1024 \
-      --warm_up_loop=10 --iter=20 --verify=1 \
-      ${use_simd} \
-      --csv=${benchmark_dir}/${precision}_bench.csv" \
-       >> $KOKKOSKERNELS_BUILD_DIR/bench.sh
+echo "$KOKKOSKERNELS_BUILD_DIR/example/half/xpy 10 0 &> xpy_relative_error-10.out" >> $KOKKOSKERNELS_BUILD_DIR/bench.sh
+echo "$KOKKOSKERNELS_BUILD_DIR/example/half/xpy 100 0 &> xpy_relative_error-100.out" >> $KOKKOSKERNELS_BUILD_DIR/bench.sh
+echo "$KOKKOSKERNELS_BUILD_DIR/example/half/xpy 1000 0 &> xpy_relative_error-1000.out" >> $KOKKOSKERNELS_BUILD_DIR/bench.sh
+echo "$KOKKOSKERNELS_BUILD_DIR/example/half/xpy 10000 0 &> xpy_relative_error-10000.out" >> $KOKKOSKERNELS_BUILD_DIR/bench.sh
+echo "$KOKKOSKERNELS_BUILD_DIR/example/half/xpy 100000 0 &> xpy_relative_error-100000.out" >> $KOKKOSKERNELS_BUILD_DIR/bench.sh
+
+echo "$KOKKOSKERNELS_BUILD_DIR/example/half/xpy 50000 1 &> xpy_runtime_only-50000.out" >> $KOKKOSKERNELS_BUILD_DIR/bench.sh
+echo "$KOKKOSKERNELS_BUILD_DIR/example/half/xpy 500000 1 &> xpy_runtime_only-500000.out" >> $KOKKOSKERNELS_BUILD_DIR/bench.sh
+echo "$KOKKOSKERNELS_BUILD_DIR/example/half/xpy 5000000 1 &> xpy_runtime_only-5000000.out" >> $KOKKOSKERNELS_BUILD_DIR/bench.sh
+echo "$KOKKOSKERNELS_BUILD_DIR/example/half/xpy 50000000 1 &> xpy_runtime_only-50000000.out" >> $KOKKOSKERNELS_BUILD_DIR/bench.sh
+echo "$KOKKOSKERNELS_BUILD_DIR/example/half/xpy 500000000 1 &> xpy_runtime_only-500000000.out" >> $KOKKOSKERNELS_BUILD_DIR/bench.sh
 chmod +x $KOKKOSKERNELS_BUILD_DIR/bench.sh
 
 # Check out the correct SHAs
@@ -236,4 +237,3 @@ beval $kokkoskernels_build_cmd
 
 # Run the benchmark
 beval $benchmark_cmd
-beval "cat ${benchmark_dir}/${precision}_bench.csv"
