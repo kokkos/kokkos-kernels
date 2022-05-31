@@ -195,7 +195,7 @@ struct spmv_mv_bsrmatrix_tpl_spec_avail {
 
 // These versions of cuSPARSE require the ordinal and offset types to be the
 // same. For KokkosKernels, this means int/int only.
-// cuSapars level 3 does not currently support LayoutRight
+// cuSparse level 3 does not currently support LayoutRight
 #define KOKKOSSPARSE_SPMV_MV_BSRMATRIX_TPL_SPEC_AVAIL_CUSPARSE(              \
     SCALAR, ORDINAL, OFFSET, LAYOUT, MEMSPACE)                               \
   template <>                                                                \
