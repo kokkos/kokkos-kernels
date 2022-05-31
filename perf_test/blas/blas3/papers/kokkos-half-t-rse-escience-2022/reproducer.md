@@ -3,7 +3,7 @@
 git clone https://github.com/kokkos/kokkos.git
 git clone https://github.com/kokkos/kokkos-kernels.git
 cd kokkos-kernels
-git checkout tags/us-rse-escience-2022
+git checkout tags/papers/us-rse-escience-2022
 cd perf_test/blas/blas3
 export KOKKOS_SRC_DIR=/path/to/kokkos
 export KOKKOSKERNELS_SRC_DIR=/path/to/kokkos-kernels
