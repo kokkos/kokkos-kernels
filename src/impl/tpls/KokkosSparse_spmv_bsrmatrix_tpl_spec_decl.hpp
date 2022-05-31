@@ -607,11 +607,6 @@ void spm_mv_block_impl_cusparse(
   // ldx and ldy should be the leading dimension of X,Y respectively
   const int ldx = static_cast<int>(x.extent(0));
   const int ldy = static_cast<int>(y.extent(0));
-  if (!std::is_same<typename XVector::array_layout,
-                    Kokkos::LayoutLeft>::value) {
-    std::cerr << "X,Y must be LayoutLeft cusparse[*]bsrmv.\n";
-    throw std::invalid_argument("Invalid layout");
-  }
 
 #if (9000 <= CUDA_VERSION)
 
