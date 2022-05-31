@@ -204,7 +204,8 @@ void level_sched(IlukHandle& thandle, const RowMapType row_map,
                               : (lnrows / lnchunks(i) + 1);
       if ((i < 10) || (i >= nlevels-10))
         printf("Level %d, lnrows %d, nrows %d, required size %ld, avail_byte %ld, nchunks %d, rows per chunk %d\n",i,lnrows,nrows,required_size,avail_byte,lnchunks(i),lnrowsperchunk(i));
-      if (lnrows == 312)
+      //if (lnrows == 312)
+      if (lnrows > 250)
         printf("Level %d, lnrows %d, nrows %d, required size %ld, avail_byte %ld, nchunks %d, rows per chunk %d\n",i,lnrows,nrows,required_size,avail_byte,lnchunks(i),lnrowsperchunk(i));
     } else
 #endif
