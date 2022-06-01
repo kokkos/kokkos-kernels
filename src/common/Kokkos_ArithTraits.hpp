@@ -228,348 +228,226 @@ namespace Details {
 // Macro to automate the wrapping of Kokkos Mathematical Functions
 // in the ArithTraits struct for real floating point types, hopefully
 // this can be expanded to Kokkos::half_t and Kokkos::bhalf_t
-#define KOKKOSKERNELS_ARITHTRAITS_REAL_FP(FUNC_QUAL)                    \
-  static FUNC_QUAL val_type zero() {                                    \
-    return static_cast<val_type>(0.0);                                  \
-  }                                                                     \
-  static FUNC_QUAL val_type one() {                                     \
-    return static_cast<val_type>(1.0);                                  \
-  }                                                                     \
-  static FUNC_QUAL val_type min() {                                     \
-    return Kokkos::Experimental::finite_min<val_type>::value;           \
-  }                                                                     \
-  static FUNC_QUAL val_type max() {                                     \
-    return Kokkos::Experimental::finite_max<val_type>::value;           \
-  }                                                                     \
-  static FUNC_QUAL val_type infinity() {                                \
-    return Kokkos::Experimental::infinity<val_type>::value;             \
-  }                                                                     \
-  static FUNC_QUAL val_type nan() {                                     \
-    return Kokkos::Experimental::quiet_NaN<val_type>::value;            \
-  }                                                                     \
-  static FUNC_QUAL mag_type epsilon() {                                 \
-    return Kokkos::Experimental::epsilon<val_type>::value;              \
-  }                                                                     \
-  static FUNC_QUAL mag_type sfmin() {                                   \
-    return Kokkos::Experimental::norm_min<val_type>::value;             \
-  }                                                                     \
-  static FUNC_QUAL int base() {                                         \
-    return Kokkos::Experimental::radix<val_type>::value;                \
-  }                                                                     \
-  static FUNC_QUAL mag_type prec() {                                    \
-    return epsilon() * static_cast<mag_type>(base());                   \
-  }                                                                     \
-  static FUNC_QUAL int t() {                                            \
-    return Kokkos::Experimental::digits<val_type>::value;               \
-  }                                                                     \
-  static FUNC_QUAL mag_type rnd() { return one(); }                     \
-  static FUNC_QUAL int emin() {                                         \
-    return Kokkos::Experimental::min_exponent<val_type>::value;         \
-  }                                                                     \
-  static FUNC_QUAL mag_type rmin() {                                    \
-    return Kokkos::Experimental::norm_min<val_type>::value;             \
-  }                                                                     \
-  static FUNC_QUAL int emax() {                                         \
-    return Kokkos::Experimental::max_exponent<val_type>::value;         \
-  }                                                                     \
-  static FUNC_QUAL mag_type rmax() {                                    \
-    return Kokkos::Experimental::finite_max<                            \
-     val_type>::value;                                                  \
-  }                                                                     \
-                                                                        \
-  static FUNC_QUAL bool isInf(const val_type x) {                       \
-    return Kokkos::isinf(x);                                            \
-  }                                                                     \
-  static FUNC_QUAL bool isNan(const val_type x) {                       \
-    return Kokkos::isnan(x);                                            \
-  }                                                                     \
-  static FUNC_QUAL mag_type abs(const val_type x) {                     \
-    return Kokkos::abs(x);                                              \
-  }                                                                     \
-  static FUNC_QUAL mag_type real(const val_type x) {                    \
-    return x;                                                           \
-  }                                                                     \
-  static FUNC_QUAL mag_type imag(const val_type) {                      \
-    return zero();                                                      \
-  }                                                                     \
-  static FUNC_QUAL val_type conj(const val_type x) {                    \
-    return x;                                                           \
-  }                                                                     \
-  static FUNC_QUAL val_type pow(const val_type x, const val_type y) {   \
-    return Kokkos::pow(x, y);                                           \
-  }                                                                     \
-  static FUNC_QUAL val_type sqrt(const val_type x) {                    \
-    return Kokkos::sqrt(x);                                             \
-  }                                                                     \
-  static FUNC_QUAL val_type cbrt(const val_type x) {                    \
-    return Kokkos::cbrt(x);                                             \
-  }                                                                     \
-  static FUNC_QUAL val_type exp(const val_type x) {                     \
-    return Kokkos::exp(x);                                              \
-  }                                                                     \
-  static FUNC_QUAL val_type log(const val_type x) {                     \
-    return Kokkos::log(x);                                              \
-  }                                                                     \
-  static FUNC_QUAL val_type log10(const val_type x) {                   \
-    return Kokkos::log10(x);                                            \
-  }                                                                     \
-  static FUNC_QUAL val_type sin(const val_type x) {                     \
-    return Kokkos::sin(x);                                              \
-  }                                                                     \
-  static FUNC_QUAL val_type cos(const val_type x) {                     \
-    return Kokkos::cos(x);                                              \
-  }                                                                     \
-  static FUNC_QUAL val_type tan(const val_type x) {                     \
-    return Kokkos::tan(x);                                              \
-  }                                                                     \
-  static FUNC_QUAL val_type sinh(const val_type x) {                    \
-    return Kokkos::sinh(x);                                             \
-  }                                                                     \
-  static FUNC_QUAL val_type cosh(const val_type x) {                    \
-    return Kokkos::cosh(x);                                             \
-  }                                                                     \
-  static FUNC_QUAL val_type tanh(const val_type x) {                    \
-    return Kokkos::tanh(x);                                             \
-  }                                                                     \
-  static FUNC_QUAL val_type asin(const val_type x) {                    \
-    return Kokkos::asin(x);                                             \
-  }                                                                     \
-  static FUNC_QUAL val_type acos(const val_type x) {                    \
-    return Kokkos::acos(x);                                             \
-  }                                                                     \
-  static FUNC_QUAL val_type atan(const val_type x) {                    \
-    return Kokkos::atan(x);                                             \
-  }                                                                     \
-                                                                        \
-  static FUNC_QUAL bool isnaninf(const val_type x) {                    \
-    return isNan(x) || isInf(x);                                        \
-  }                                                                     \
-  static FUNC_QUAL magnitudeType magnitude(const val_type x) {          \
-    return abs(x);                                                      \
-  }                                                                     \
-  static FUNC_QUAL val_type conjugate(const val_type x) {               \
-    return conj(x);                                                     \
-  }                                                                     \
-  static FUNC_QUAL val_type squareroot(const val_type x) {              \
-    return sqrt(x);                                                     \
-  }                                                                     \
+#define KOKKOSKERNELS_ARITHTRAITS_REAL_FP(FUNC_QUAL)                           \
+  static FUNC_QUAL val_type zero() { return static_cast<val_type>(0.0); }      \
+  static FUNC_QUAL val_type one() { return static_cast<val_type>(1.0); }       \
+  static FUNC_QUAL val_type min() {                                            \
+    return Kokkos::Experimental::finite_min<val_type>::value;                  \
+  }                                                                            \
+  static FUNC_QUAL val_type max() {                                            \
+    return Kokkos::Experimental::finite_max<val_type>::value;                  \
+  }                                                                            \
+  static FUNC_QUAL val_type infinity() {                                       \
+    return Kokkos::Experimental::infinity<val_type>::value;                    \
+  }                                                                            \
+  static FUNC_QUAL val_type nan() {                                            \
+    return Kokkos::Experimental::quiet_NaN<val_type>::value;                   \
+  }                                                                            \
+  static FUNC_QUAL mag_type epsilon() {                                        \
+    return Kokkos::Experimental::epsilon<val_type>::value;                     \
+  }                                                                            \
+  static FUNC_QUAL mag_type sfmin() {                                          \
+    return Kokkos::Experimental::norm_min<val_type>::value;                    \
+  }                                                                            \
+  static FUNC_QUAL int base() {                                                \
+    return Kokkos::Experimental::radix<val_type>::value;                       \
+  }                                                                            \
+  static FUNC_QUAL mag_type prec() {                                           \
+    return epsilon() * static_cast<mag_type>(base());                          \
+  }                                                                            \
+  static FUNC_QUAL int t() {                                                   \
+    return Kokkos::Experimental::digits<val_type>::value;                      \
+  }                                                                            \
+  static FUNC_QUAL mag_type rnd() { return one(); }                            \
+  static FUNC_QUAL int emin() {                                                \
+    return Kokkos::Experimental::min_exponent<val_type>::value;                \
+  }                                                                            \
+  static FUNC_QUAL mag_type rmin() {                                           \
+    return Kokkos::Experimental::norm_min<val_type>::value;                    \
+  }                                                                            \
+  static FUNC_QUAL int emax() {                                                \
+    return Kokkos::Experimental::max_exponent<val_type>::value;                \
+  }                                                                            \
+  static FUNC_QUAL mag_type rmax() {                                           \
+    return Kokkos::Experimental::finite_max<val_type>::value;                  \
+  }                                                                            \
+                                                                               \
+  static FUNC_QUAL bool isInf(const val_type x) { return Kokkos::isinf(x); }   \
+  static FUNC_QUAL bool isNan(const val_type x) { return Kokkos::isnan(x); }   \
+  static FUNC_QUAL mag_type abs(const val_type x) { return Kokkos::abs(x); }   \
+  static FUNC_QUAL mag_type real(const val_type x) { return x; }               \
+  static FUNC_QUAL mag_type imag(const val_type) { return zero(); }            \
+  static FUNC_QUAL val_type conj(const val_type x) { return x; }               \
+  static FUNC_QUAL val_type pow(const val_type x, const val_type y) {          \
+    return Kokkos::pow(x, y);                                                  \
+  }                                                                            \
+  static FUNC_QUAL val_type sqrt(const val_type x) { return Kokkos::sqrt(x); } \
+  static FUNC_QUAL val_type cbrt(const val_type x) { return Kokkos::cbrt(x); } \
+  static FUNC_QUAL val_type exp(const val_type x) { return Kokkos::exp(x); }   \
+  static FUNC_QUAL val_type log(const val_type x) { return Kokkos::log(x); }   \
+  static FUNC_QUAL val_type log10(const val_type x) {                          \
+    return Kokkos::log10(x);                                                   \
+  }                                                                            \
+  static FUNC_QUAL val_type sin(const val_type x) { return Kokkos::sin(x); }   \
+  static FUNC_QUAL val_type cos(const val_type x) { return Kokkos::cos(x); }   \
+  static FUNC_QUAL val_type tan(const val_type x) { return Kokkos::tan(x); }   \
+  static FUNC_QUAL val_type sinh(const val_type x) { return Kokkos::sinh(x); } \
+  static FUNC_QUAL val_type cosh(const val_type x) { return Kokkos::cosh(x); } \
+  static FUNC_QUAL val_type tanh(const val_type x) { return Kokkos::tanh(x); } \
+  static FUNC_QUAL val_type asin(const val_type x) { return Kokkos::asin(x); } \
+  static FUNC_QUAL val_type acos(const val_type x) { return Kokkos::acos(x); } \
+  static FUNC_QUAL val_type atan(const val_type x) { return Kokkos::atan(x); } \
+                                                                               \
+  static FUNC_QUAL bool isnaninf(const val_type x) {                           \
+    return isNan(x) || isInf(x);                                               \
+  }                                                                            \
+  static FUNC_QUAL magnitudeType magnitude(const val_type x) {                 \
+    return abs(x);                                                             \
+  }                                                                            \
+  static FUNC_QUAL val_type conjugate(const val_type x) { return conj(x); }    \
+  static FUNC_QUAL val_type squareroot(const val_type x) { return sqrt(x); }   \
   static FUNC_QUAL mag_type eps() { return epsilon(); }
 
-#define KOKKOSKERNELS_ARITHTRAITS_CMPLX_FP(FUNC_QUAL)           \
-  static FUNC_QUAL val_type zero() {                            \
-    return val_type(ArithTraits<mag_type>::zero(),              \
-                    ArithTraits<mag_type>::zero());             \
-  }                                                             \
-  static FUNC_QUAL val_type one() {                             \
-    return val_type(ArithTraits<mag_type>::one(),               \
-                    ArithTraits<mag_type>::zero());             \
-  }                                                             \
-  static FUNC_QUAL val_type min() {                             \
-    return val_type(ArithTraits<mag_type>::min(),               \
-                    ArithTraits<mag_type>::min());              \
-  }                                                             \
-  static FUNC_QUAL val_type max() {                             \
-    return val_type(ArithTraits<mag_type>::max(),               \
-                    ArithTraits<mag_type>::max());              \
-  }                                                             \
-  static FUNC_QUAL val_type infinity() {                        \
-    return val_type(ArithTraits<mag_type>::infinity(),          \
-                    ArithTraits<mag_type>::infinity());         \
-  }                                                             \
-  static FUNC_QUAL val_type nan() {                             \
-    return val_type(ArithTraits<mag_type>::nan(),               \
-                    ArithTraits<mag_type>::nan());              \
-  }                                                             \
-  static FUNC_QUAL mag_type epsilon() {                         \
-    return ArithTraits<mag_type>::epsilon();                    \
-  }                                                             \
-  static FUNC_QUAL mag_type sfmin() {                           \
-    return ArithTraits<mag_type>::sfmin();                      \
-  }                                                             \
-  static FUNC_QUAL int base() {                                 \
-    return ArithTraits<mag_type>::base();                       \
-  }                                                             \
-  static FUNC_QUAL mag_type prec() {                            \
-    return ArithTraits<mag_type>::prec();                       \
-  }                                                             \
-  static FUNC_QUAL int t() {                                    \
-    return ArithTraits<mag_type>::t();                          \
-  }                                                             \
-  static FUNC_QUAL mag_type rnd() {                             \
-    return ArithTraits<mag_type>::rnd();                        \
-  }                                                             \
-  static FUNC_QUAL int emin() {                                 \
-    return ArithTraits<mag_type>::emin();                       \
-  }                                                             \
-  static FUNC_QUAL mag_type rmin() {                            \
-    return ArithTraits<mag_type>::rmin();                       \
-  }                                                             \
-  static FUNC_QUAL int emax() {                                 \
-    return ArithTraits<mag_type>::emax();                       \
-  }                                                             \
-  static FUNC_QUAL mag_type rmax() {                            \
-    return ArithTraits<mag_type>::rmax();                       \
-  }                                                             \
-  static FUNC_QUAL bool isInf(const val_type x) {               \
-    return ArithTraits<mag_type>::isInf(x.real()) ||            \
-      ArithTraits<mag_type>::isInf(x.imag());                   \
-  }                                                             \
-  static FUNC_QUAL bool isNan(const val_type x) {               \
-    return ArithTraits<mag_type>::isNan(x.real()) ||            \
-      ArithTraits<mag_type>::isNan(x.imag());                   \
-  }                                                             \
-  static FUNC_QUAL mag_type abs(const val_type x) {             \
-    return ::Kokkos::abs(x);                                    \
-  }                                                             \
-  static FUNC_QUAL mag_type real(const val_type x) {            \
-    return x.real();                                            \
-  }                                                             \
-  static FUNC_QUAL mag_type imag(const val_type x) {            \
-    return x.imag();                                            \
-  }                                                             \
-  static FUNC_QUAL val_type conj(const val_type x) {            \
-    return ::Kokkos::conj(x);                                   \
-  }                                                             \
-  static FUNC_QUAL val_type pow (const val_type x, const        \
-                                 val_type y) {                  \
-    return Kokkos::pow(x, y);                                   \
-  }                                                             \
-  static FUNC_QUAL val_type pow (const val_type x, const        \
-                                 mag_type y) {                  \
-    return Kokkos::pow(x, y);                                   \
-  }                                                             \
-  static FUNC_QUAL val_type pow (const mag_type x, const        \
-                                 val_type y) {                  \
-    return Kokkos::pow(x, y);                                   \
-  }                                                             \
-  static FUNC_QUAL val_type sqrt(const val_type x) {            \
-    return ::Kokkos::sqrt(x);                                   \
-  }                                                             \
-  static FUNC_QUAL val_type exp (const val_type x) {            \
-    return Kokkos::exp(x);                                      \
-  }                                                             \
-  static FUNC_QUAL val_type log (const val_type x) {            \
-    return Kokkos::log(x);                                      \
-  }                                                             \
-  static FUNC_QUAL val_type log10 (const val_type x) {          \
-    return Kokkos::log10(x);                                    \
-  }                                                             \
-  static FUNC_QUAL val_type sin (const val_type x) {            \
-    return Kokkos::sin(x);                                      \
-  }                                                             \
-  static FUNC_QUAL val_type cos (const val_type x) {            \
-    return Kokkos::cos(x);                                      \
-  }                                                             \
-  static FUNC_QUAL val_type tan (const val_type x) {            \
-    return Kokkos::tan(x);                                      \
-  }                                                             \
-  static FUNC_QUAL val_type sinh (const val_type x) {           \
-    return Kokkos::sinh(x);                                     \
-  }                                                             \
-  static FUNC_QUAL val_type cosh (const val_type x) {           \
-    return Kokkos::cosh(x);                                     \
-  }                                                             \
-  static FUNC_QUAL val_type tanh (const val_type x) {           \
-    return Kokkos::tanh(x);                                     \
-  }                                                             \
-  static FUNC_QUAL val_type asin (const val_type x) {           \
-    return Kokkos::asin(x);                                     \
-  }                                                             \
-  static FUNC_QUAL val_type acos (const val_type x) {           \
-    return Kokkos::acos(x);                                     \
-  }                                                             \
-  static FUNC_QUAL val_type atan (const val_type x) {           \
-    return Kokkos::atan(x);                                     \
-  }                                                             \
-  static FUNC_QUAL bool isnaninf(const val_type& x) {           \
-    return isNan(x) || isInf(x);                                \
-  }                                                             \
-  static FUNC_QUAL mag_type magnitude(const val_type x) {       \
-    return abs(x);                                              \
-  }                                                             \
-  static FUNC_QUAL val_type conjugate(const val_type x) {       \
-    return conj(x);                                             \
-  }                                                             \
-  static FUNC_QUAL val_type squareroot (const val_type x) {     \
-    return sqrt (x);                                            \
-  }                                                             \
+#define KOKKOSKERNELS_ARITHTRAITS_CMPLX_FP(FUNC_QUAL)                          \
+  static FUNC_QUAL val_type zero() {                                           \
+    return val_type(ArithTraits<mag_type>::zero(),                             \
+                    ArithTraits<mag_type>::zero());                            \
+  }                                                                            \
+  static FUNC_QUAL val_type one() {                                            \
+    return val_type(ArithTraits<mag_type>::one(),                              \
+                    ArithTraits<mag_type>::zero());                            \
+  }                                                                            \
+  static FUNC_QUAL val_type min() {                                            \
+    return val_type(ArithTraits<mag_type>::min(),                              \
+                    ArithTraits<mag_type>::min());                             \
+  }                                                                            \
+  static FUNC_QUAL val_type max() {                                            \
+    return val_type(ArithTraits<mag_type>::max(),                              \
+                    ArithTraits<mag_type>::max());                             \
+  }                                                                            \
+  static FUNC_QUAL val_type infinity() {                                       \
+    return val_type(ArithTraits<mag_type>::infinity(),                         \
+                    ArithTraits<mag_type>::infinity());                        \
+  }                                                                            \
+  static FUNC_QUAL val_type nan() {                                            \
+    return val_type(ArithTraits<mag_type>::nan(),                              \
+                    ArithTraits<mag_type>::nan());                             \
+  }                                                                            \
+  static FUNC_QUAL mag_type epsilon() {                                        \
+    return ArithTraits<mag_type>::epsilon();                                   \
+  }                                                                            \
+  static FUNC_QUAL mag_type sfmin() { return ArithTraits<mag_type>::sfmin(); } \
+  static FUNC_QUAL int base() { return ArithTraits<mag_type>::base(); }        \
+  static FUNC_QUAL mag_type prec() { return ArithTraits<mag_type>::prec(); }   \
+  static FUNC_QUAL int t() { return ArithTraits<mag_type>::t(); }              \
+  static FUNC_QUAL mag_type rnd() { return ArithTraits<mag_type>::rnd(); }     \
+  static FUNC_QUAL int emin() { return ArithTraits<mag_type>::emin(); }        \
+  static FUNC_QUAL mag_type rmin() { return ArithTraits<mag_type>::rmin(); }   \
+  static FUNC_QUAL int emax() { return ArithTraits<mag_type>::emax(); }        \
+  static FUNC_QUAL mag_type rmax() { return ArithTraits<mag_type>::rmax(); }   \
+  static FUNC_QUAL bool isInf(const val_type x) {                              \
+    return ArithTraits<mag_type>::isInf(x.real()) ||                           \
+           ArithTraits<mag_type>::isInf(x.imag());                             \
+  }                                                                            \
+  static FUNC_QUAL bool isNan(const val_type x) {                              \
+    return ArithTraits<mag_type>::isNan(x.real()) ||                           \
+           ArithTraits<mag_type>::isNan(x.imag());                             \
+  }                                                                            \
+  static FUNC_QUAL mag_type abs(const val_type x) { return ::Kokkos::abs(x); } \
+  static FUNC_QUAL mag_type real(const val_type x) { return x.real(); }        \
+  static FUNC_QUAL mag_type imag(const val_type x) { return x.imag(); }        \
+  static FUNC_QUAL val_type conj(const val_type x) {                           \
+    return ::Kokkos::conj(x);                                                  \
+  }                                                                            \
+  static FUNC_QUAL val_type pow(const val_type x, const val_type y) {          \
+    return Kokkos::pow(x, y);                                                  \
+  }                                                                            \
+  static FUNC_QUAL val_type pow(const val_type x, const mag_type y) {          \
+    return Kokkos::pow(x, y);                                                  \
+  }                                                                            \
+  static FUNC_QUAL val_type pow(const mag_type x, const val_type y) {          \
+    return Kokkos::pow(x, y);                                                  \
+  }                                                                            \
+  static FUNC_QUAL val_type sqrt(const val_type x) {                           \
+    return ::Kokkos::sqrt(x);                                                  \
+  }                                                                            \
+  static FUNC_QUAL val_type exp(const val_type x) { return Kokkos::exp(x); }   \
+  static FUNC_QUAL val_type log(const val_type x) { return Kokkos::log(x); }   \
+  static FUNC_QUAL val_type log10(const val_type x) {                          \
+    return Kokkos::log10(x);                                                   \
+  }                                                                            \
+  static FUNC_QUAL val_type sin(const val_type x) { return Kokkos::sin(x); }   \
+  static FUNC_QUAL val_type cos(const val_type x) { return Kokkos::cos(x); }   \
+  static FUNC_QUAL val_type tan(const val_type x) { return Kokkos::tan(x); }   \
+  static FUNC_QUAL val_type sinh(const val_type x) { return Kokkos::sinh(x); } \
+  static FUNC_QUAL val_type cosh(const val_type x) { return Kokkos::cosh(x); } \
+  static FUNC_QUAL val_type tanh(const val_type x) { return Kokkos::tanh(x); } \
+  static FUNC_QUAL val_type asin(const val_type x) { return Kokkos::asin(x); } \
+  static FUNC_QUAL val_type acos(const val_type x) { return Kokkos::acos(x); } \
+  static FUNC_QUAL val_type atan(const val_type x) { return Kokkos::atan(x); } \
+  static FUNC_QUAL bool isnaninf(const val_type& x) {                          \
+    return isNan(x) || isInf(x);                                               \
+  }                                                                            \
+  static FUNC_QUAL mag_type magnitude(const val_type x) { return abs(x); }     \
+  static FUNC_QUAL val_type conjugate(const val_type x) { return conj(x); }    \
+  static FUNC_QUAL val_type squareroot(const val_type x) { return sqrt(x); }   \
   static FUNC_QUAL mag_type eps() { return epsilon(); }
 
-#define KOKKOSKERNELS_SIGNED_ABS                                \
-  static KOKKOS_FUNCTION mag_type abs(const val_type x) {       \
-    return Kokkos::abs(x);                                      \
-  }                                                             \
-
-#define KOKKOSKERNELS_UNSIGNED_ABS                              \
-  static KOKKOS_FUNCTION mag_type abs(const val_type x) {       \
-    return x;                                                   \
-  }                                                             \
-
-#define KOKKOSKERNELS_ARITHTRAITS_INTEGRAL(KOKKOSKERNELS_ABS)         \
-  static KOKKOS_FUNCTION val_type zero() {                            \
-    return static_cast<val_type>(0);                                  \
-  }                                                                   \
-  static KOKKOS_FUNCTION val_type one() {                             \
-    return static_cast<val_type>(1);                                  \
-  }                                                                   \
-  static KOKKOS_FUNCTION val_type min() {                             \
-    return Kokkos::Experimental::finite_min<val_type>::value;         \
-  }                                                                   \
-  static KOKKOS_FUNCTION val_type max() {                             \
-    return Kokkos::Experimental::finite_max<val_type>::value;         \
-  }                                                                   \
-  static KOKKOS_FUNCTION val_type infinity() {                        \
-    return static_cast<val_type>(0);                                  \
-  }                                                                   \
-  static KOKKOS_FUNCTION bool isInf(const val_type) {                 \
-    return false;                                                     \
-  }                                                                   \
-  static KOKKOS_FUNCTION bool isNan(const val_type) {                 \
-    return false;                                                     \
-  }                                                                   \
-  KOKKOSKERNELS_ABS                                                   \
-  static KOKKOS_FUNCTION mag_type real(const val_type x) {            \
-    return x;                                                         \
-  }                                                                   \
-  static KOKKOS_FUNCTION mag_type imag(const val_type) {              \
-    return zero();                                                    \
-  }                                                                   \
-  static KOKKOS_FUNCTION val_type conj(const val_type x) {            \
-    return x;                                                         \
-  }                                                                   \
-  static KOKKOS_FUNCTION val_type pow(const val_type x,               \
-                                      const val_type y) {             \
-    return Kokkos::pow(x, y);                                         \
-  }                                                                   \
-  static KOKKOS_FUNCTION val_type sqrt(const val_type x) {            \
-    return static_cast<val_type>(Kokkos::sqrt(abs(x)));               \
-  }                                                                   \
-  static KOKKOS_FUNCTION val_type cbrt(const val_type x) {            \
-    return static_cast<val_type>(Kokkos::cbrt(abs(x)));               \
-  }                                                                   \
-  static KOKKOS_FUNCTION val_type exp(const val_type x) {             \
-    return static_cast<val_type>(Kokkos::exp(abs(x)));                \
-  }                                                                   \
-  static KOKKOS_FUNCTION val_type log(const val_type x) {             \
-    return static_cast<val_type>(Kokkos::log(abs(x)));                \
-  }                                                                   \
-  static KOKKOS_FUNCTION val_type log10(const val_type x) {           \
-    return static_cast<val_type>(Kokkos::log10(abs(x)));              \
-  }                                                                   \
-  static KOKKOS_FUNCTION mag_type epsilon() { return zero(); }        \
-  static KOKKOS_FUNCTION magnitudeType magnitude(const val_type x) {  \
-    return abs(x);                                                    \
-  }                                                                   \
-  static KOKKOS_FUNCTION val_type conjugate(const val_type x) {       \
-    return conj(x);                                                   \
-  }                                                                   \
-  static KOKKOS_FUNCTION bool isnaninf(const val_type) {              \
-    return false;                                                     \
-  }                                                                   \
-  static KOKKOS_FUNCTION val_type squareroot(const val_type x) {      \
-    return sqrt(x);                                                   \
+#define KOKKOSKERNELS_SIGNED_ABS                          \
+  static KOKKOS_FUNCTION mag_type abs(const val_type x) { \
+    return Kokkos::abs(x);                                \
   }
 
+#define KOKKOSKERNELS_UNSIGNED_ABS \
+  static KOKKOS_FUNCTION mag_type abs(const val_type x) { return x; }
+
+#define KOKKOSKERNELS_ARITHTRAITS_INTEGRAL(KOKKOSKERNELS_ABS)                 \
+  static KOKKOS_FUNCTION val_type zero() { return static_cast<val_type>(0); } \
+  static KOKKOS_FUNCTION val_type one() { return static_cast<val_type>(1); }  \
+  static KOKKOS_FUNCTION val_type min() {                                     \
+    return Kokkos::Experimental::finite_min<val_type>::value;                 \
+  }                                                                           \
+  static KOKKOS_FUNCTION val_type max() {                                     \
+    return Kokkos::Experimental::finite_max<val_type>::value;                 \
+  }                                                                           \
+  static KOKKOS_FUNCTION val_type infinity() {                                \
+    return static_cast<val_type>(0);                                          \
+  }                                                                           \
+  static KOKKOS_FUNCTION bool isInf(const val_type) { return false; }         \
+  static KOKKOS_FUNCTION bool isNan(const val_type) { return false; }         \
+  KOKKOSKERNELS_ABS                                                           \
+  static KOKKOS_FUNCTION mag_type real(const val_type x) { return x; }        \
+  static KOKKOS_FUNCTION mag_type imag(const val_type) { return zero(); }     \
+  static KOKKOS_FUNCTION val_type conj(const val_type x) { return x; }        \
+  static KOKKOS_FUNCTION val_type pow(const val_type x, const val_type y) {   \
+    return Kokkos::pow(x, y);                                                 \
+  }                                                                           \
+  static KOKKOS_FUNCTION val_type sqrt(const val_type x) {                    \
+    return static_cast<val_type>(Kokkos::sqrt(abs(x)));                       \
+  }                                                                           \
+  static KOKKOS_FUNCTION val_type cbrt(const val_type x) {                    \
+    return static_cast<val_type>(Kokkos::cbrt(abs(x)));                       \
+  }                                                                           \
+  static KOKKOS_FUNCTION val_type exp(const val_type x) {                     \
+    return static_cast<val_type>(Kokkos::exp(abs(x)));                        \
+  }                                                                           \
+  static KOKKOS_FUNCTION val_type log(const val_type x) {                     \
+    return static_cast<val_type>(Kokkos::log(abs(x)));                        \
+  }                                                                           \
+  static KOKKOS_FUNCTION val_type log10(const val_type x) {                   \
+    return static_cast<val_type>(Kokkos::log10(abs(x)));                      \
+  }                                                                           \
+  static KOKKOS_FUNCTION mag_type epsilon() { return zero(); }                \
+  static KOKKOS_FUNCTION magnitudeType magnitude(const val_type x) {          \
+    return abs(x);                                                            \
+  }                                                                           \
+  static KOKKOS_FUNCTION val_type conjugate(const val_type x) {               \
+    return conj(x);                                                           \
+  }                                                                           \
+  static KOKKOS_FUNCTION bool isnaninf(const val_type) { return false; }      \
+  static KOKKOS_FUNCTION val_type squareroot(const val_type x) {              \
+    return sqrt(x);                                                           \
+  }
 
 /// \class ArithTraits
 /// \brief Traits class for arithmetic on type T.
@@ -1045,17 +923,10 @@ class ArithTraits<Kokkos::Experimental::half_t> {
   static KOKKOS_FUNCTION val_type max() {
     return Kokkos::Experimental::cast_to_half(KOKKOSKERNELS_IMPL_FP16_MAX);
   }
-  static KOKKOS_FUNCTION mag_type real(const val_type x) {
-    return x;
-  }
-  static KOKKOS_FUNCTION mag_type imag(const val_type) {
-    return zero();
-  }
-  static KOKKOS_FUNCTION val_type conj(const val_type x) {
-    return x;
-  }
-  static KOKKOS_FUNCTION val_type pow(const val_type x,
-                                                  const val_type y) {
+  static KOKKOS_FUNCTION mag_type real(const val_type x) { return x; }
+  static KOKKOS_FUNCTION mag_type imag(const val_type) { return zero(); }
+  static KOKKOS_FUNCTION val_type conj(const val_type x) { return x; }
+  static KOKKOS_FUNCTION val_type pow(const val_type x, const val_type y) {
     return Kokkos::Experimental::cast_to_half(
         Kokkos::pow(Kokkos::Experimental::cast_from_half<float>(x),
                     Kokkos::Experimental::cast_from_half<float>(y)));
@@ -1150,9 +1021,7 @@ class ArithTraits<Kokkos::Experimental::half_t> {
   static KOKKOS_FUNCTION mag_type sfmin() {
     return Kokkos::Experimental::cast_to_half(KOKKOSKERNELS_IMPL_FP16_MIN);
   }
-  static KOKKOS_FUNCTION int base() {
-    return KOKKOSKERNELS_IMPL_FP16_RADIX;
-  }
+  static KOKKOS_FUNCTION int base() { return KOKKOSKERNELS_IMPL_FP16_RADIX; }
   // Use float to allow running on both host and device
   static KOKKOS_FUNCTION float prec() {
     float e = KOKKOSKERNELS_IMPL_FP16_EPSILON;
@@ -1160,19 +1029,13 @@ class ArithTraits<Kokkos::Experimental::half_t> {
     float r = e * b;
     return r;
   }
-  static KOKKOS_FUNCTION int t() {
-    return KOKKOSKERNELS_IMPL_FP16_MANT_DIG;
-  }
+  static KOKKOS_FUNCTION int t() { return KOKKOSKERNELS_IMPL_FP16_MANT_DIG; }
   static KOKKOS_FUNCTION mag_type rnd() { return one(); }
-  static KOKKOS_FUNCTION int emin() {
-    return KOKKOSKERNELS_IMPL_FP16_MIN_EXP;
-  }
+  static KOKKOS_FUNCTION int emin() { return KOKKOSKERNELS_IMPL_FP16_MIN_EXP; }
   static KOKKOS_FUNCTION mag_type rmin() {
     return Kokkos::Experimental::cast_to_half(KOKKOSKERNELS_IMPL_FP16_MIN);
   }
-  static KOKKOS_FUNCTION int emax() {
-    return KOKKOSKERNELS_IMPL_FP16_MAX_EXP;
-  }
+  static KOKKOS_FUNCTION int emax() { return KOKKOSKERNELS_IMPL_FP16_MAX_EXP; }
   static KOKKOS_FUNCTION mag_type rmax() {
     return Kokkos::Experimental::cast_to_half(KOKKOSKERNELS_IMPL_FP16_MAX);
   }
@@ -1222,17 +1085,12 @@ class ArithTraits<Kokkos::Experimental::bhalf_t> {
   static KOKKOS_FUNCTION val_type max() {
     return Kokkos::Experimental::cast_to_bhalf(KOKKOSKERNELS_IMPL_BF16_MAX);
   }
-  static KOKKOS_FUNCTION mag_type real(const val_type x) {
-    return x;
-  }
+  static KOKKOS_FUNCTION mag_type real(const val_type x) { return x; }
   static KOKKOS_FUNCTION mag_type imag(const val_type) {
     return Kokkos::Experimental::cast_to_bhalf(0.0F);
   }
-  static KOKKOS_FUNCTION val_type conj(const val_type x) {
-    return x;
-  }
-  static KOKKOS_FUNCTION val_type pow(const val_type x,
-                                                  const val_type y) {
+  static KOKKOS_FUNCTION val_type conj(const val_type x) { return x; }
+  static KOKKOS_FUNCTION val_type pow(const val_type x, const val_type y) {
     return Kokkos::Experimental::cast_to_bhalf(
         Kokkos::pow(Kokkos::Experimental::cast_from_bhalf<float>(x),
                     Kokkos::Experimental::cast_from_bhalf<float>(y)));
@@ -1328,9 +1186,7 @@ class ArithTraits<Kokkos::Experimental::bhalf_t> {
   static KOKKOS_FUNCTION mag_type sfmin() {
     return Kokkos::Experimental::cast_to_bhalf(KOKKOSKERNELS_IMPL_BF16_MIN);
   }
-  static KOKKOS_FUNCTION int base() {
-    return KOKKOSKERNELS_IMPL_BF16_RADIX;
-  }
+  static KOKKOS_FUNCTION int base() { return KOKKOSKERNELS_IMPL_BF16_RADIX; }
   // Use float to allow running on both host and device
   static KOKKOS_FUNCTION float prec() {
     float e = KOKKOSKERNELS_IMPL_BF16_EPSILON;
@@ -1338,19 +1194,13 @@ class ArithTraits<Kokkos::Experimental::bhalf_t> {
     float r = e * b;
     return r;
   }
-  static KOKKOS_FUNCTION int t() {
-    return KOKKOSKERNELS_IMPL_BF16_MANT_DIG;
-  }
+  static KOKKOS_FUNCTION int t() { return KOKKOSKERNELS_IMPL_BF16_MANT_DIG; }
   static KOKKOS_FUNCTION mag_type rnd() { return one(); }
-  static KOKKOS_FUNCTION int emin() {
-    return KOKKOSKERNELS_IMPL_BF16_MIN_EXP;
-  }
+  static KOKKOS_FUNCTION int emin() { return KOKKOSKERNELS_IMPL_BF16_MIN_EXP; }
   static KOKKOS_FUNCTION mag_type rmin() {
     return Kokkos::Experimental::cast_to_bhalf(KOKKOSKERNELS_IMPL_BF16_MIN);
   }
-  static KOKKOS_FUNCTION int emax() {
-    return KOKKOSKERNELS_IMPL_BF16_MAX_EXP;
-  }
+  static KOKKOS_FUNCTION int emax() { return KOKKOSKERNELS_IMPL_BF16_MAX_EXP; }
   static KOKKOS_FUNCTION mag_type rmax() {
     return Kokkos::Experimental::cast_to_bhalf(KOKKOSKERNELS_IMPL_BF16_MAX);
   }
@@ -1371,8 +1221,8 @@ class ArithTraits<float> {
   static constexpr bool has_infinity   = true;
 
   // Backwards compatibility with Teuchos::ScalarTraits.
-  using magnitudeType = mag_type;
-  using halfPrecision   = float;   // Should we switch to Kokkos::half_t
+  using magnitudeType   = mag_type;
+  using halfPrecision   = float;  // Should we switch to Kokkos::half_t
   using doublePrecision = double;
 
   static constexpr bool isComplex            = false;
@@ -1450,7 +1300,7 @@ class ArithTraits<long double> {
 
   static std::string name() { return "long double"; }
 
-  KOKKOSKERNELS_ARITHTRAITS_REAL_FP( )
+  KOKKOSKERNELS_ARITHTRAITS_REAL_FP()
 };  // long double specialization
 
 template <>
@@ -1464,7 +1314,7 @@ class ArithTraits< ::Kokkos::complex<float> > {
   static constexpr bool is_integer     = false;
   static constexpr bool is_exact       = false;
   static constexpr bool is_complex     = true;
-  static constexpr bool has_infinity = true;
+  static constexpr bool has_infinity   = true;
 
   // Backwards compatibility with Teuchos::ScalarTraits.
   using magnitudeType = mag_type;
@@ -1513,7 +1363,6 @@ class ArithTraits< ::Kokkos::complex<double> > {
 
   KOKKOSKERNELS_ARITHTRAITS_CMPLX_FP(KOKKOS_FUNCTION)
 };
-
 
 /// \brief Partial specialization for std::complex<RealFloatType>.
 ///
@@ -1770,7 +1619,7 @@ class ArithTraits<__float128> {
   static constexpr bool is_integer     = false;
   static constexpr bool is_exact       = false;
   static constexpr bool is_complex     = false;
-  static constexpr bool has_infinity = true;
+  static constexpr bool has_infinity   = true;
 
   // Backwards compatibility with Teuchos::ScalarTraits.
   using magnitudeType = mag_type;
@@ -1794,24 +1643,16 @@ class ArithTraits<__float128> {
   static val_type infinity() {
     return Kokkos::Experimental::infinity<val_type>::value;
   }
-  static val_type nan() {
-    return Kokkos::Experimental::nanq("");
-  }
+  static val_type nan() { return Kokkos::Experimental::nanq(""); }
   static mag_type epsilon() {
     return Kokkos::Experimental::epsilon<val_type>::value;
   }
   static mag_type sfmin() {
     return Kokkos::Experimental::norm_min<val_type>::value;
   }
-  static int base() {
-    return Kokkos::Experimental::radix<val_type>::value;
-  }
-  static mag_type prec() {
-    return epsilon() * static_cast<mag_type>(base());
-  }
-  static int t() {
-    return Kokkos::Experimental::digits<val_type>::value;
-  }
+  static int base() { return Kokkos::Experimental::radix<val_type>::value; }
+  static mag_type prec() { return epsilon() * static_cast<mag_type>(base()); }
+  static int t() { return Kokkos::Experimental::digits<val_type>::value; }
   static mag_type rnd() { return static_cast<val_type>(1.0); }
   static int emin() {
     return Kokkos::Experimental::min_exponent<val_type>::value;
@@ -1828,12 +1669,8 @@ class ArithTraits<__float128> {
   }
 
   // Math Functions
-  static bool isInf(const val_type x) {
-    return Kokkos::Experimental::isinf(x);
-  }
-  static bool isNan(const val_type x) {
-    return Kokkos::Experimental::isnan(x);
-  }
+  static bool isInf(const val_type x) { return Kokkos::Experimental::isinf(x); }
+  static bool isNan(const val_type x) { return Kokkos::Experimental::isnan(x); }
   static mag_type abs(const val_type x) {
     return Kokkos::Experimental::fabs(x);
   }
@@ -1849,24 +1686,14 @@ class ArithTraits<__float128> {
   static val_type cbrt(const val_type x) {
     return Kokkos::Experimental::cbrt(x);
   }
-  static val_type exp(const val_type x) {
-    return Kokkos::Experimental::exp(x);
-  }
-  static val_type log(const val_type x) {
-    return Kokkos::Experimental::log(x);
-  }
+  static val_type exp(const val_type x) { return Kokkos::Experimental::exp(x); }
+  static val_type log(const val_type x) { return Kokkos::Experimental::log(x); }
   static val_type log10(const val_type x) {
     return Kokkos::Experimental::log10(x);
   }
-  static val_type sin(const val_type x) {
-    return Kokkos::Experimental::sin(x);
-  }
-  static val_type cos(const val_type x) {
-    return Kokkos::Experimental::cos(x);
-  }
-  static val_type tan(const val_type x) {
-    return Kokkos::Experimental::tan(x);
-  }
+  static val_type sin(const val_type x) { return Kokkos::Experimental::sin(x); }
+  static val_type cos(const val_type x) { return Kokkos::Experimental::cos(x); }
+  static val_type tan(const val_type x) { return Kokkos::Experimental::tan(x); }
   static val_type sinh(const val_type x) {
     return Kokkos::Experimental::sinh(x);
   }
@@ -1886,15 +1713,15 @@ class ArithTraits<__float128> {
     return Kokkos::Experimental::atan(x);
   }
 
-  //Aliases
+  // Aliases
   static bool isnaninf(const val_type x) { return isNan(x) || isInf(x); }
   static magnitudeType magnitude(const val_type x) { return abs(x); }
   static val_type conjugate(const val_type x) { return conj(x); }
   static std::string name() { return "__float128"; }
   static val_type squareroot(const val_type x) { return sqrt(x); }
   static mag_type eps() { return epsilon(); }
-};  // __float128 specialization
-#endif // KOKKOS_ENABLE_LIBQUADMATH
+};      // __float128 specialization
+#endif  // KOKKOS_ENABLE_LIBQUADMATH
 
 template <>
 class ArithTraits<char> {
@@ -2282,12 +2109,8 @@ struct [[deprecated]] ArithTraits<dd_real> {
     return ::log(x);
   }
   static inline val_type log10(const val_type& x) { return ::log10(x); }
-  static KOKKOS_FUNCTION val_type sin(const val_type x) {
-    return ::sin(x);
-  }
-  static KOKKOS_FUNCTION val_type cos(const val_type x) {
-    return ::cos(x);
-  }
+  static KOKKOS_FUNCTION val_type sin(const val_type x) { return ::sin(x); }
+  static KOKKOS_FUNCTION val_type cos(const val_type x) { return ::cos(x); }
   static KOKKOS_FUNCTION val_type tan(const val_type x) {
 #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
     return sycl::tan(x);
@@ -2295,15 +2118,9 @@ struct [[deprecated]] ArithTraits<dd_real> {
     return std::tan(x);
 #endif
   }
-  static KOKKOS_FUNCTION val_type sinh(const val_type x) {
-    return ::sinh(x);
-  }
-  static KOKKOS_FUNCTION val_type cosh(const val_type x) {
-    return ::cosh(x);
-  }
-  static KOKKOS_FUNCTION val_type tanh(const val_type x) {
-    return ::tanh(x);
-  }
+  static KOKKOS_FUNCTION val_type sinh(const val_type x) { return ::sinh(x); }
+  static KOKKOS_FUNCTION val_type cosh(const val_type x) { return ::cosh(x); }
+  static KOKKOS_FUNCTION val_type tanh(const val_type x) { return ::tanh(x); }
   static KOKKOS_FUNCTION val_type asin(const val_type x) {
 #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
     return sycl::asin(x);
@@ -2408,12 +2225,8 @@ struct [[deprecated]] ArithTraits<qd_real> {
     return ::log(x);
   }
   static inline val_type log10(const val_type& x) { return ::log10(x); }
-  static KOKKOS_FUNCTION val_type sin(const val_type x) {
-    return ::sin(x);
-  }
-  static KOKKOS_FUNCTION val_type cos(const val_type x) {
-    return ::cos(x);
-  }
+  static KOKKOS_FUNCTION val_type sin(const val_type x) { return ::sin(x); }
+  static KOKKOS_FUNCTION val_type cos(const val_type x) { return ::cos(x); }
   static KOKKOS_FUNCTION val_type tan(const val_type x) {
 #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
     return sycl::tan(x);
@@ -2421,15 +2234,9 @@ struct [[deprecated]] ArithTraits<qd_real> {
     return std::tan(x);
 #endif
   }
-  static KOKKOS_FUNCTION val_type sinh(const val_type x) {
-    return ::sinh(x);
-  }
-  static KOKKOS_FUNCTION val_type cosh(const val_type x) {
-    return ::cosh(x);
-  }
-  static KOKKOS_FUNCTION val_type tanh(const val_type x) {
-    return ::tanh(x);
-  }
+  static KOKKOS_FUNCTION val_type sinh(const val_type x) { return ::sinh(x); }
+  static KOKKOS_FUNCTION val_type cosh(const val_type x) { return ::cosh(x); }
+  static KOKKOS_FUNCTION val_type tanh(const val_type x) { return ::tanh(x); }
   static KOKKOS_FUNCTION val_type asin(const val_type x) {
 #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
     return sycl::asin(x);
