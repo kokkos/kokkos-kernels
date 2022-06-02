@@ -9,6 +9,11 @@ void create_tridiagonal_batched_matrices(const int nnz, const int BlkSize,
                                          const VectorViewType &D,
                                          const VectorViewType &X,
                                          const VectorViewType &B) {
+// FIXME_SYCL Using Random_XorShift64_Pool here gives a segmentation fault
+#ifdef KOKKOS_ENABLE_SYCL
+  Kokkos::deep_copy(X, .5);
+  Kokkos::deep_copy(B, .3);
+#else
   Kokkos::Random_XorShift64_Pool<
       typename VectorViewType::device_type::execution_space>
       random(13718);
@@ -18,6 +23,7 @@ void create_tridiagonal_batched_matrices(const int nnz, const int BlkSize,
   Kokkos::fill_random(
       B, random,
       Kokkos::reduction_identity<typename VectorViewType::value_type>::prod());
+#endif
 
   auto D_host = Kokkos::create_mirror_view(D);
   auto r_host = Kokkos::create_mirror_view(r);

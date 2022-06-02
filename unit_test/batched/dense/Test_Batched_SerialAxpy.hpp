@@ -57,11 +57,18 @@ void impl_test_batched_axpy(const int N, const int BlkSize) {
 
   alphaViewType alpha("alpha", N);
 
+// FIXME_SYCL Using Random_XorShift64_Pool here gives a segmentation fault
+#ifdef KOKKOS_ENABLE_SYCL
+  Kokkos::deep_copy(X0, const_value_type(.5));
+  Kokkos::deep_copy(X0, const_value_type(.3));
+  Kokkos::deep_copy(alpha, alpha_const_value_type(.1));
+#else
   Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(
       13718);
   Kokkos::fill_random(X0, random, const_value_type(1.0));
   Kokkos::fill_random(Y0, random, const_value_type(1.0));
   Kokkos::fill_random(alpha, random, alpha_const_value_type(1.0));
+#endif
 
   Kokkos::fence();
 
