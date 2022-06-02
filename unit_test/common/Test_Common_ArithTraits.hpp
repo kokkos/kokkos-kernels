@@ -1722,6 +1722,10 @@ int runAllArithTraitsHostTests(std::ostream& out, const int verbose) {
   // testArithTraitsOnHost<Kokkos::complex<long double>, DeviceType> (out,
   // verbose);
 
+#if defined(KOKKOS_ENABLE_LIBQUADMATH)
+  success = success && curSuccess;
+  curSuccess = testArithTraitsOnHost<__float128, DeviceType>(out, verbose);
+#endif
   return success && curSuccess;
 }
 
