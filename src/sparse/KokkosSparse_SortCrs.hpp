@@ -392,8 +392,8 @@ void sort_crs_matrix(const rowmap_t& rowmap, const entries_t& entries,
                      const values_t& values) {
   using lno_t    = typename entries_t::non_const_value_type;
   using team_pol = Kokkos::TeamPolicy<execution_space>;
-  bool useRadix  = !KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>();
-  lno_t numRows  = rowmap.extent(0) ? rowmap.extent(0) - 1 : 0;
+  bool useRadix = !KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>();
+  lno_t numRows = rowmap.extent(0) ? rowmap.extent(0) - 1 : 0;
   if (numRows == 0) return;
   Impl::SortCrsMatrixFunctor<execution_space, rowmap_t, entries_t, values_t>
       funct(useRadix, rowmap, entries, values);
@@ -472,8 +472,8 @@ template <typename execution_space, typename rowmap_t, typename entries_t>
 void sort_crs_graph(const rowmap_t& rowmap, const entries_t& entries) {
   using lno_t    = typename entries_t::non_const_value_type;
   using team_pol = Kokkos::TeamPolicy<execution_space>;
-  bool useRadix  = !KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>();
-  lno_t numRows  = rowmap.extent(0) ? rowmap.extent(0) - 1 : 0;
+  bool useRadix = !KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>();
+  lno_t numRows = rowmap.extent(0) ? rowmap.extent(0) - 1 : 0;
   if (numRows == 0) return;
   Impl::SortCrsGraphFunctor<execution_space, rowmap_t, entries_t> funct(
       useRadix, rowmap, entries);
@@ -531,8 +531,8 @@ crsMat_t sort_and_merge_matrix(const crsMat_t& A) {
                               mergedRowmap, A.graph.row_map, A.graph.entries),
                           numCompressedEntries);
   // Prefix sum to get rowmap
-  KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<rowmap_t, exec_space>(A.numRows() + 1,
-                                                                              mergedRowmap);
+  KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<rowmap_t, exec_space>(
+      A.numRows() + 1, mergedRowmap);
   entries_t mergedEntries("SortedMerged entries", numCompressedEntries);
   values_t mergedValues("SortedMerged values", numCompressedEntries);
   // Compute merged entries and values
@@ -576,8 +576,8 @@ void sort_and_merge_graph(const typename rowmap_t::const_type& rowmap_in,
                               rowmap_out, rowmap_in, entries_in),
                           numCompressedEntries);
   // Prefix sum to get rowmap
-  KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<rowmap_t, exec_space>(numRows + 1,
-                                                                              rowmap_out);
+  KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<rowmap_t, exec_space>(
+      numRows + 1, rowmap_out);
   entries_out = entries_t("SortedMerged entries", numCompressedEntries);
   // Compute merged entries and values
   Kokkos::parallel_for(
@@ -601,7 +601,7 @@ crsGraph_t sort_and_merge_graph(const crsGraph_t& G) {
   return crsGraph_t(mergedEntries, mergedRowmap);
 }
 
-} // namespace KokkosSparse
+}  // namespace KokkosSparse
 
 namespace KokkosKernels {
 
@@ -614,15 +614,15 @@ namespace KokkosKernels {
 template <typename execution_space, typename rowmap_t, typename entries_t,
           typename values_t,
           typename lno_t = typename entries_t::non_const_value_type>
-[[deprecated]]
-void sort_bsr_matrix(const lno_t blockdim, const rowmap_t& rowmap,
-                     const entries_t& entries, const values_t& values) {
+[[deprecated]] void sort_bsr_matrix(const lno_t blockdim,
+                                    const rowmap_t& rowmap,
+                                    const entries_t& entries,
+                                    const values_t& values) {
   KokkosSparse::sort_bsr_matrix(blockdim, rowmap, entries, values);
 }
 
 template <typename bsrMat_t>
-[[deprecated]]
-void sort_bsr_matrix(const bsrMat_t& A) {
+[[deprecated]] void sort_bsr_matrix(const bsrMat_t& A) {
   KokkosSparse::sort_bsr_matrix(A);
 }
 
@@ -635,27 +635,25 @@ void sort_bsr_matrix(const bsrMat_t& A) {
 
 template <typename execution_space, typename rowmap_t, typename entries_t,
           typename values_t>
-[[deprecated]]
-void sort_crs_matrix(const rowmap_t& rowmap, const entries_t& entries,
-                     const values_t& values) {
+[[deprecated]] void sort_crs_matrix(const rowmap_t& rowmap,
+                                    const entries_t& entries,
+                                    const values_t& values) {
   KokkosSparse::sort_crs_matrix(rowmap, entries, values);
 }
 
 template <typename crsMat_t>
-[[deprecated]]
-void sort_crs_matrix(const crsMat_t& A) {
+[[deprecated]] void sort_crs_matrix(const crsMat_t& A) {
   KokkosSparse::sort_crs_matrix(A);
 }
 
 template <typename execution_space, typename rowmap_t, typename entries_t>
-[[deprecated]]
-void sort_crs_graph(const rowmap_t& rowmap, const entries_t& entries) {
+[[deprecated]] void sort_crs_graph(const rowmap_t& rowmap,
+                                   const entries_t& entries) {
   KokkosSparse::sort_crs_graph(rowmap, entries);
 }
 
 template <typename crsGraph_t>
-[[deprecated]]
-void sort_crs_graph(const crsGraph_t& G) {
+[[deprecated]] void sort_crs_graph(const crsGraph_t& G) {
   KokkosSparse::sort_crs_graph(G);
 }
 
@@ -663,23 +661,21 @@ void sort_crs_graph(const crsGraph_t& G) {
 // sorted and has no duplicated entries: each (i, j) is unique. Values for
 // duplicated entries are summed.
 template <typename crsMat_t>
-[[deprecated]]
-crsMat_t sort_and_merge_matrix(const crsMat_t& A) {
+[[deprecated]] crsMat_t sort_and_merge_matrix(const crsMat_t& A) {
   KokkosSparse::sort_and_merge_matrix(A);
 }
 
 template <typename crsGraph_t>
-[[deprecated]]
-crsGraph_t sort_and_merge_graph(const crsGraph_t& G) {
+[[deprecated]] crsGraph_t sort_and_merge_graph(const crsGraph_t& G) {
   KokkosSparse::sort_and_merge_graph(G);
 }
 
 template <typename exec_space, typename rowmap_t, typename entries_t>
-[[deprecated]]
-void sort_and_merge_graph(const typename rowmap_t::const_type& rowmap_in,
-                          const entries_t& entries_in, rowmap_t& rowmap_out,
-                          entries_t& entries_out) {
-  KokkosSparse::sort_and_merge_graph(rowmap_in, entries_in, rowmap_out, entries_out);
+[[deprecated]] void sort_and_merge_graph(
+    const typename rowmap_t::const_type& rowmap_in, const entries_t& entries_in,
+    rowmap_t& rowmap_out, entries_t& entries_out) {
+  KokkosSparse::sort_and_merge_graph(rowmap_in, entries_in, rowmap_out,
+                                     entries_out);
 }
 
 // For backward compatibility: keep the public interface accessible in
@@ -719,7 +715,7 @@ template <typename crsMat_t>
   return KokkosKernels::sort_and_merge_matrix(A);
 }
 
-} // namespace Impl
-} // namespace KokkosKernels
+}  // namespace Impl
+}  // namespace KokkosKernels
 
-#endif // _KOKKOSSPARSE_SORTCRS_HPP
+#endif  // _KOKKOSSPARSE_SORTCRS_HPP

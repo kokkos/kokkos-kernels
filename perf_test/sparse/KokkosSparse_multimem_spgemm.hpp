@@ -75,12 +75,10 @@ void run_multi_mem_spgemm(Parameters params) {
 
   if (params.a_mem_space == 1) {
     a_fast_crsmat =
-        KokkosSparse::Impl::read_kokkos_crst_matrix<fast_crstmat_t>(
-            a_mat_file);
+        KokkosSparse::Impl::read_kokkos_crst_matrix<fast_crstmat_t>(a_mat_file);
   } else {
     a_slow_crsmat =
-        KokkosSparse::Impl::read_kokkos_crst_matrix<slow_crstmat_t>(
-            a_mat_file);
+        KokkosSparse::Impl::read_kokkos_crst_matrix<slow_crstmat_t>(a_mat_file);
   }
 
   if ((b_mat_file == NULL || strcmp(b_mat_file, a_mat_file) == 0) &&
@@ -91,13 +89,11 @@ void run_multi_mem_spgemm(Parameters params) {
   } else if (params.b_mem_space == 1) {
     if (b_mat_file == NULL) b_mat_file = a_mat_file;
     b_fast_crsmat =
-        KokkosSparse::Impl::read_kokkos_crst_matrix<fast_crstmat_t>(
-            b_mat_file);
+        KokkosSparse::Impl::read_kokkos_crst_matrix<fast_crstmat_t>(b_mat_file);
   } else {
     if (b_mat_file == NULL) b_mat_file = a_mat_file;
     b_slow_crsmat =
-        KokkosSparse::Impl::read_kokkos_crst_matrix<slow_crstmat_t>(
-            b_mat_file);
+        KokkosSparse::Impl::read_kokkos_crst_matrix<slow_crstmat_t>(b_mat_file);
   }
 
   if (params.a_mem_space == 1) {

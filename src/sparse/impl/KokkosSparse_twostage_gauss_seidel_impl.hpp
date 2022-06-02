@@ -858,7 +858,7 @@ class TwostageGaussSeidel {
                                       entries_view_t, values_view_t>(
             rowmap_viewL, column_viewL, values_viewL);
         KokkosSparse::sort_crs_matrix<execution_space, const_row_map_view_t,
-                                       entries_view_t, values_view_t>(
+                                      entries_view_t, values_view_t>(
             rowmap_viewU, column_viewU, values_viewU);
 
         // now do symbolic

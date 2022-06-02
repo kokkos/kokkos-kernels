@@ -264,9 +264,8 @@ void run_pcg(int *cmdline, const char *mtx_file) {
   default_lno_t *xadj, *adj;
   default_scalar *ew;
 
-  KokkosSparse::Impl::read_matrix<default_lno_t, default_lno_t,
-                                   default_scalar>(&nv, &ne, &xadj, &adj, &ew,
-                                                   mtx_file);
+  KokkosSparse::Impl::read_matrix<default_lno_t, default_lno_t, default_scalar>(
+      &nv, &ne, &xadj, &adj, &ew, mtx_file);
 
   typedef
       typename KokkosSparse::CrsMatrix<default_scalar, default_lno_t,

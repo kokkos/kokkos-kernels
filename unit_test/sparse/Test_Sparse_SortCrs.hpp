@@ -43,7 +43,8 @@
 */
 
 /// \file Test_Sparse_SortCrs.hpp
-/// \brief Tests for sort_crs_matrix and sort_crs_graph in KokkosSparse_SortCrs.hpp
+/// \brief Tests for sort_crs_matrix and sort_crs_graph in
+/// KokkosSparse_SortCrs.hpp
 
 #ifndef KOKKOSSPARSE_SORTCRSTEST_HPP
 #define KOKKOSSPARSE_SORTCRSTEST_HPP
@@ -58,8 +59,6 @@
 #include <Kokkos_ArithTraits.hpp>
 #include <Kokkos_Complex.hpp>
 #include <cstdlib>
-
-
 
 template <typename exec_space>
 void testSortCRS(default_lno_t numRows, default_lno_t numCols,
@@ -308,4 +307,4 @@ TEST_F(TestCategory, common_sort_merge_crsmatrix) {
   testSortAndMerge<TestExecSpace>();
 }
 
-#endif // KOKKOSSPARSE_SORTCRSTEST_HPP
+#endif  // KOKKOSSPARSE_SORTCRSTEST_HPP

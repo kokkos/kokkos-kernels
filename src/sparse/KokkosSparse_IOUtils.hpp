@@ -497,7 +497,8 @@ void convert_undirected_edge_list_to_csr(lno_t nv, size_type ne, in_lno_t *srcs,
 #include <parallel/multiway_merge.h>
 #include <parallel/merge.h>
 #include <parallel/multiway_mergesort.h>
-  __gnu_parallel::parallel_sort_mwms<false, true, struct KokkosKernels::Impl::Edge<lno_t, double> *>(
+  __gnu_parallel::parallel_sort_mwms<
+      false, true, struct KokkosKernels::Impl::Edge<lno_t, double> *>(
       &(edges[0]), &(edges[0]) + ne * 2,
       std::less<struct KokkosKernels::Impl::Edge<lno_t, double>>(), 64);
 #else
@@ -805,7 +806,8 @@ void write_kokkos_crst_matrix(crs_matrix_t a_crsmat, const char *filename) {
   scalar_t *a_values = a_values_view.data();
 
   std::string strfilename(filename);
-  if (KokkosKernels::Impl::endswith(strfilename, ".mtx") || KokkosKernels::Impl::endswith(strfilename, ".mm")) {
+  if (KokkosKernels::Impl::endswith(strfilename, ".mtx") ||
+      KokkosKernels::Impl::endswith(strfilename, ".mm")) {
     write_matrix_mtx<lno_t, offset_t, scalar_t>(
         a_crsmat.numRows(), a_crsmat.numCols(), a_crsmat.nnz(), a_rowmap,
         a_entries, a_values, filename);
@@ -971,7 +973,8 @@ int read_mtx(const char *fileName, lno_t *nrows, lno_t *ncols, size_type *ne,
     numEdges = 2 * nnz;
   }
   // numEdges is only an upper bound (diagonal entries may be removed)
-  std::vector<struct KokkosKernels::Impl::Edge<lno_t, scalar_t>> edges(numEdges);
+  std::vector<struct KokkosKernels::Impl::Edge<lno_t, scalar_t>> edges(
+      numEdges);
   size_type nE      = 0;
   lno_t numDiagonal = 0;
   for (size_type i = 0; i < nnz; ++i) {
@@ -1076,7 +1079,8 @@ template <typename lno_t, typename size_type, typename scalar_t>
 void read_matrix(lno_t *nv, size_type *ne, size_type **xadj, lno_t **adj,
                  scalar_t **ew, const char *filename) {
   std::string strfilename(filename);
-  if (KokkosKernels::Impl::endswith(strfilename, ".mtx") || KokkosKernels::Impl::endswith(strfilename, ".mm")) {
+  if (KokkosKernels::Impl::endswith(strfilename, ".mtx") ||
+      KokkosKernels::Impl::endswith(strfilename, ".mm")) {
     read_mtx(filename, nv, ne, xadj, adj, ew, false, false, false);
   }
 
@@ -1096,8 +1100,8 @@ void read_matrix(lno_t *nv, size_type *ne, size_type **xadj, lno_t **adj,
 template <typename crsMat_t>
 crsMat_t read_kokkos_crst_matrix(const char *filename_) {
   std::string strfilename(filename_);
-  bool isMatrixMarket =
-      KokkosKernels::Impl::endswith(strfilename, ".mtx") || KokkosKernels::Impl::endswith(strfilename, ".mm");
+  bool isMatrixMarket = KokkosKernels::Impl::endswith(strfilename, ".mtx") ||
+                        KokkosKernels::Impl::endswith(strfilename, ".mm");
 
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
@@ -1265,6 +1269,6 @@ inline void kk_sequential_create_incidence_matrix_transpose(
   }
 }
 
-} // namespace Impl
-} // namespace KokkosKernels
-#endif // _KOKKOSSPARSE_IOUTILS_HPP
+}  // namespace Impl
+}  // namespace KokkosSparse
+#endif  // _KOKKOSSPARSE_IOUTILS_HPP
