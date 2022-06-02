@@ -2,6 +2,7 @@
 #include "KokkosKernels_default_types.hpp"
 #include "KokkosKernels_Handle.hpp"
 #include "KokkosKernels_IOUtils.hpp"
+#include "KokkosSparse_IOUtils.hpp"
 #include "KokkosSparse_spmv.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosSparse_gauss_seidel.hpp"
@@ -37,7 +38,7 @@ int main()
     //Get approx. 20 entries per row
     //Diagonals are 2x the absolute sum of all other entries.
     Offset nnz = numRows * 20;
-    Matrix A = KokkosKernels::Impl::kk_generate_diagonally_dominant_sparse_matrix<Matrix>(numRows, numRows, nnz, 2, 100, 1.05 * one);
+    Matrix A = KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<Matrix>(numRows, numRows, nnz, 2, 100, 1.05 * one);
     std::cout << "Generated a matrix with " << numRows << " rows/cols, and " << nnz << " entries.\n";
     //Create a kernel handle, then a Gauss-Seidel handle with the default algorithm
     Handle handle;

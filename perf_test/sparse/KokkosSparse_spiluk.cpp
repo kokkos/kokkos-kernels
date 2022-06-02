@@ -58,13 +58,14 @@
 
 #include <Kokkos_Core.hpp>
 
-#include "KokkosKernels_SparseUtils.hpp"
+#include "KokkosSparse_Utils.hpp"
 #include "KokkosSparse_spiluk.hpp"
 #include "KokkosSparse_spmv.hpp"
 #include "KokkosBlas1_nrm2.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosKernels_default_types.hpp"
 #include <KokkosKernels_IOUtils.hpp>
+#include <KokkosSparse_IOUtils.hpp>
 
 #if defined(KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA) && \
     (!defined(KOKKOS_ENABLE_CUDA) || (8000 <= CUDA_VERSION))
@@ -111,7 +112,7 @@ int test_spiluk_perf(std::vector<int> tests, std::string afilename, int kin,
   if (!afilename.empty()) {
     std::cout << "ILU(K) Begin: Read matrix filename " << afilename
               << std::endl;
-    crsmat_t A = KokkosKernels::Impl::read_kokkos_crst_matrix<crsmat_t>(
+    crsmat_t A = KokkosSparse::Impl::read_kokkos_crst_matrix<crsmat_t>(
         afilename.c_str());           // in_matrix
     graph_t graph         = A.graph;  // in_graph
     const size_type nrows = graph.numRows();

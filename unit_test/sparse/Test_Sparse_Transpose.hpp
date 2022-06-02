@@ -49,11 +49,12 @@
 
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Sort.hpp>
-#include <KokkosKernels_SparseUtils.hpp>
-#include <KokkosKernels_Sorting.hpp>
+#include <KokkosSparse_Utils.hpp>
 #include <KokkosKernels_IOUtils.hpp>
+#include <KokkosSparse_IOUtils.hpp>
 #include <KokkosKernels_default_types.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
+#include <KokkosSparse_SortCrs.hpp>
 
 template <typename size_type, typename V>
 struct ExactCompare {
@@ -85,7 +86,7 @@ void testTranspose(int numRows, int numCols, bool doValues) {
   using values_t    = typename crsMat_t::values_type::non_const_type;
   size_type nnz     = 10 * numRows;
   // Generate a matrix that has 0 entries in some rows
-  crsMat_t input_mat = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(
+  crsMat_t input_mat = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(
       numRows, numCols, nnz, 3 * 10, numRows / 2);
   // compute the transpose while unsorted, then transpose again
   rowmap_t t_rowmap("Rowmap^T", numCols + 1);  // this view is initialized to 0
@@ -124,8 +125,8 @@ void testTranspose(int numRows, int numCols, bool doValues) {
   }
   // Sort both the transpose-transpose, and the original matrix (to compare
   // directly)
-  KokkosKernels::sort_crs_matrix(input_mat);
-  KokkosKernels::sort_crs_matrix<exec_space, c_rowmap_t, entries_t, values_t>(
+  KokkosSparse::sort_crs_matrix(input_mat);
+  KokkosSparse::sort_crs_matrix<exec_space, c_rowmap_t, entries_t, values_t>(
       tt_rowmap, tt_entries, tt_values);
   // The views should now be exactly identical, since they represent the same
   // matrix and are sorted

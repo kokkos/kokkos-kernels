@@ -46,8 +46,8 @@
 #include "KokkosKernels_config.h"
 #include "KokkosKernels_Handle.hpp"
 #include "KokkosKernels_IOUtils.hpp"
-#include "KokkosKernels_SparseUtils_cusparse.hpp"
-#include "KokkosKernels_SparseUtils_mkl.hpp"
+#include "KokkosSparse_Utils_cusparse.hpp"
+#include "KokkosSparse_Utils_mkl.hpp"
 #include "KokkosSparse_spadd.hpp"
 #include "KokkosKernels_TestUtils.hpp"
 

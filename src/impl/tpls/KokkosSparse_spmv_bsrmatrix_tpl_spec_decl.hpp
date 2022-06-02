@@ -46,7 +46,7 @@
 #define KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_DECL_HPP
 
 #include "KokkosKernels_Controls.hpp"
-#include "KokkosKernels_SparseUtils_mkl.hpp"
+#include "KokkosSparse_Utils_mkl.hpp"
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
 #include <mkl.h>
@@ -454,7 +454,7 @@ KOKKOSSPARSE_SPMV_MV_MKL(Kokkos::complex<double>, Kokkos::OpenMP,
 // cuSPARSE
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 #include "cusparse.h"
-#include "KokkosKernels_SparseUtils_cusparse.hpp"
+#include "KokkosSparse_Utils_cusparse.hpp"
 
 //
 // From  https://docs.nvidia.com/cuda/cusparse/index.html#bsrmv

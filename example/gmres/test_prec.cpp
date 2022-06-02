@@ -48,6 +48,7 @@
 #include <Kokkos_Random.hpp>
 #include <KokkosBlas.hpp>
 #include <KokkosSparse_spmv.hpp>
+#include "KokkosSparse_IOUtils.hpp"
 
 int main(int argc, char* argv[]) {
   typedef double ST;
@@ -114,13 +115,13 @@ int main(int argc, char* argv[]) {
   {
     // Generate a diagonal matrix with entries 1, 2, ...., 1000 and its inverse.
     KokkosSparse::CrsMatrix<ST, OT, EXSP> A =
-        KokkosKernels::Impl::kk_generate_diag_matrix<
+        KokkosSparse::Impl::kk_generate_diag_matrix<
             KokkosSparse::CrsMatrix<ST, OT, EXSP>>(n);
     KokkosSparse::Experimental::MatrixPrec<ST, Kokkos::LayoutLeft, EXSP, OT>*
         myPrec =
             new KokkosSparse::Experimental::MatrixPrec<ST, Kokkos::LayoutLeft,
                                                        EXSP, OT>(
-                KokkosKernels::Impl::kk_generate_diag_matrix<
+                KokkosSparse::Impl::kk_generate_diag_matrix<
                     KokkosSparse::CrsMatrix<ST, OT, EXSP>>(n, true));
 
     ViewVectorType X(Kokkos::view_alloc(Kokkos::WithoutInitializing, "X"),

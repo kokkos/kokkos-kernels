@@ -49,7 +49,7 @@
 #include <string>
 #include <stdexcept>
 
-#include "KokkosKernels_SparseUtils.hpp"
+#include "KokkosSparse_Utils.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include <KokkosKernels_IOUtils.hpp>
 #include "KokkosBlas1_nrm2.hpp"

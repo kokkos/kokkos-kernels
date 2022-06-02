@@ -45,10 +45,11 @@
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 
-#include "KokkosKernels_SparseUtils.hpp"
-#include "KokkosKernels_Sorting.hpp"
+#include "KokkosSparse_Utils.hpp"
+#include "KokkosSparse_SortCrs.hpp"
 #include "KokkosSparse_spgemm.hpp"
 #include "KokkosSparse_BsrMatrix.hpp"
+#include "KokkosSparse_IOUtils.hpp"
 
 using namespace KokkosSparse;
 
@@ -120,8 +121,8 @@ bool is_same_block_matrix(bsrMat_t output_mat_actual,
     return false;
   }
 
-  KokkosKernels::sort_bsr_matrix(output_mat_actual);
-  KokkosKernels::sort_bsr_matrix(output_mat_reference);
+  KokkosSparse::sort_bsr_matrix(output_mat_actual);
+  KokkosSparse::sort_bsr_matrix(output_mat_reference);
 
   bool is_identical = true;
   is_identical      = KokkosKernels::Impl::kk_is_identical_view<
@@ -187,9 +188,9 @@ void test_bspgemm(lno_t blkDim, lno_t m, lno_t k, lno_t n, size_type nnz,
 
   // Generate random compressed sparse row matrix. Randomly generated (non-zero)
   // values are stored in a 1-D (1 rank) array.
-  bsrMat_t A = KokkosKernels::Impl::kk_generate_sparse_matrix<bsrMat_t>(
+  bsrMat_t A = KokkosSparse::Impl::kk_generate_sparse_matrix<bsrMat_t>(
       blkDim, m, k, nnz, row_size_variance, bandwidth);
-  bsrMat_t B = KokkosKernels::Impl::kk_generate_sparse_matrix<bsrMat_t>(
+  bsrMat_t B = KokkosSparse::Impl::kk_generate_sparse_matrix<bsrMat_t>(
       blkDim, k, n, nnz, row_size_variance, bandwidth);
 
   const bool is_empy_case = m < 1 || n < 1 || k < 1 || nnz < 1;

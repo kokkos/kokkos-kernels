@@ -50,7 +50,7 @@
 // cuSPARSE
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 #include "cusparse.h"
-#include "KokkosKernels_SparseUtils_cusparse.hpp"
+#include "KokkosSparse_Utils_cusparse.hpp"
 
 namespace KokkosSparse {
 namespace Impl {
@@ -385,7 +385,7 @@ KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int64_t, size_t,
 // rocSPARSE
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE)
 #include <rocsparse.h>
-#include "KokkosKernels_SparseUtils_rocsparse.hpp"
+#include "KokkosSparse_Utils_rocsparse.hpp"
 
 namespace KokkosSparse {
 namespace Impl {
@@ -542,7 +542,7 @@ KOKKOSSPARSE_SPMV_ROCSPARSE(Kokkos::complex<float>, Kokkos::LayoutRight,
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
 #include <mkl.h>
-#include "KokkosKernels_SparseUtils_mkl.hpp"
+#include "KokkosSparse_Utils_mkl.hpp"
 
 namespace KokkosSparse {
 namespace Impl {
