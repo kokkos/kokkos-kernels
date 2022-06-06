@@ -435,8 +435,7 @@ void sort_crs_matrix(const crsMat_t& A) {
 // Sort a BRS matrix: within each row, sort entries ascending by column and
 // permute the values accordingly.
 template <typename execution_space, typename rowmap_t, typename entries_t,
-          typename values_t,
-          typename lno_t = typename entries_t::non_const_value_type>
+          typename values_t, typename lno_t>
 void sort_bsr_matrix(const lno_t blockdim, const rowmap_t& rowmap,
                      const entries_t& entries, const values_t& values) {
   // TODO: this is O(N^2) mock for debugging - do regular implementation based
