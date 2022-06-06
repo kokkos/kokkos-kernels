@@ -229,8 +229,8 @@ namespace Details {
 // in the ArithTraits struct for real floating point types, hopefully
 // this can be expanded to Kokkos::half_t and Kokkos::bhalf_t
 #define KOKKOSKERNELS_ARITHTRAITS_REAL_FP(FUNC_QUAL)                           \
-  static FUNC_QUAL val_type zero() { return static_cast<val_type>(0.0); }      \
-  static FUNC_QUAL val_type one() { return static_cast<val_type>(1.0); }       \
+  static FUNC_QUAL val_type zero() { return static_cast<val_type>(0); }        \
+  static FUNC_QUAL val_type one() { return static_cast<val_type>(1); }         \
   static FUNC_QUAL val_type min() {                                            \
     return Kokkos::Experimental::finite_min<val_type>::value;                  \
   }                                                                            \
@@ -275,8 +275,8 @@ namespace Details {
   static FUNC_QUAL bool isInf(const val_type x) { return Kokkos::isinf(x); }   \
   static FUNC_QUAL bool isNan(const val_type x) { return Kokkos::isnan(x); }   \
   static FUNC_QUAL mag_type abs(const val_type x) { return Kokkos::abs(x); }   \
-  static FUNC_QUAL mag_type real(const val_type x) { return x; }               \
-  static FUNC_QUAL mag_type imag(const val_type) { return zero(); }            \
+  static FUNC_QUAL mag_type real(const val_type x) { return Kokkos::real(x); } \
+  static FUNC_QUAL mag_type imag(const val_type x) { return Kokkos::imag(x); } \
   static FUNC_QUAL val_type conj(const val_type x) { return x; }               \
   static FUNC_QUAL val_type pow(const val_type x, const val_type y) {          \
     return Kokkos::pow(x, y);                                                  \
@@ -309,6 +309,25 @@ namespace Details {
   static FUNC_QUAL mag_type eps() { return epsilon(); }
 
 #define KOKKOSKERNELS_ARITHTRAITS_CMPLX_FP(FUNC_QUAL)                          \
+                                                                        \
+  static constexpr bool is_specialized = true;                          \
+  static constexpr bool is_signed      = true;                          \
+  static constexpr bool is_integer     = false;                         \
+  static constexpr bool is_exact       = false;                         \
+  static constexpr bool is_complex     = true;                          \
+  static constexpr bool has_infinity   = true;                          \
+                                                                        \
+  using magnitudeType = mag_type;                                       \
+  using halfPrecision = ::Kokkos::complex<ArithTraits<mag_type>::halfPrecision>; \
+  using doublePrecision =                                               \
+    ::Kokkos::complex<ArithTraits<mag_type>::doublePrecision>;          \
+                                                                        \
+  static constexpr bool isComplex    = true;                            \
+  static constexpr bool isOrdinal    = false;                           \
+  static constexpr bool isComparable = false;                           \
+  static constexpr bool hasMachineParameters =                          \
+    ArithTraits<mag_type>::hasMachineParameters;                        \
+                                                                        \
   static FUNC_QUAL val_type zero() {                                           \
     return val_type(ArithTraits<mag_type>::zero(),                             \
                     ArithTraits<mag_type>::zero());                            \
@@ -402,6 +421,22 @@ namespace Details {
   static KOKKOS_FUNCTION mag_type abs(const val_type x) { return x; }
 
 #define KOKKOSKERNELS_ARITHTRAITS_INTEGRAL(KOKKOSKERNELS_ABS)                 \
+                                                                              \
+  static constexpr bool is_specialized = true;                                \
+  static constexpr bool is_integer     = true;                                \
+  static constexpr bool is_exact       = true;                                \
+  static constexpr bool is_complex     = false;                               \
+  static constexpr bool has_infinity   = false;                               \
+                                                                              \
+  using magnitudeType   = mag_type;                                           \
+  using halfPrecision   = val_type;                                           \
+  using doublePrecision = val_type;                                           \
+                                                                              \
+  static constexpr bool isComplex            = false;                         \
+  static constexpr bool isOrdinal            = true;                          \
+  static constexpr bool isComparable         = true;                          \
+  static constexpr bool hasMachineParameters = false;                         \
+                                                                              \
   static KOKKOS_FUNCTION val_type zero() { return static_cast<val_type>(0); } \
   static KOKKOS_FUNCTION val_type one() { return static_cast<val_type>(1); }  \
   static KOKKOS_FUNCTION val_type min() {                                     \
@@ -416,7 +451,7 @@ namespace Details {
   static KOKKOS_FUNCTION bool isInf(const val_type) { return false; }         \
   static KOKKOS_FUNCTION bool isNan(const val_type) { return false; }         \
   KOKKOSKERNELS_ABS                                                           \
-  static KOKKOS_FUNCTION mag_type real(const val_type x) { return x; }        \
+  static KOKKOS_FUNCTION mag_type real(const val_type x) { return Kokkos::real(x); } \
   static KOKKOS_FUNCTION mag_type imag(const val_type) { return zero(); }     \
   static KOKKOS_FUNCTION val_type conj(const val_type x) { return x; }        \
   static KOKKOS_FUNCTION val_type pow(const val_type x, const val_type y) {   \
@@ -1303,30 +1338,45 @@ class ArithTraits<long double> {
   KOKKOSKERNELS_ARITHTRAITS_REAL_FP()
 };  // long double specialization
 
+#if defined(KOKKOS_ENABLE_LIBQUADMATH)
+// CUDA does not support __float128 in device functions, so none of
+// the class methods in this specialization are marked as device
+// functions.
 template <>
-class ArithTraits< ::Kokkos::complex<float> > {
+class ArithTraits<__float128> {
  public:
-  using val_type = ::Kokkos::complex<float>;
-  using mag_type = float;
+  using val_type = __float128;
+  using mag_type = val_type;
 
   static constexpr bool is_specialized = true;
   static constexpr bool is_signed      = true;
   static constexpr bool is_integer     = false;
   static constexpr bool is_exact       = false;
-  static constexpr bool is_complex     = true;
+  static constexpr bool is_complex     = false;
   static constexpr bool has_infinity   = true;
 
   // Backwards compatibility with Teuchos::ScalarTraits.
   using magnitudeType = mag_type;
-  using halfPrecision = ::Kokkos::complex<ArithTraits<mag_type>::halfPrecision>;
-  using doublePrecision =
-      ::Kokkos::complex<ArithTraits<mag_type>::doublePrecision>;
+  using halfPrecision = double;
+  // Unfortunately, we can't rely on a standard __float256 type.
+  using doublePrecision = __float128;
 
-  static constexpr bool isComplex    = true;
-  static constexpr bool isOrdinal    = false;
-  static constexpr bool isComparable = false;
-  static constexpr bool hasMachineParameters =
-      ArithTraits<mag_type>::hasMachineParameters;
+  static constexpr bool isComplex            = false;
+  static constexpr bool isOrdinal            = false;
+  static constexpr bool isComparable         = true;
+  static constexpr bool hasMachineParameters = true;
+
+  static std::string name() { return "__float128"; }
+
+  KOKKOSKERNELS_ARITHTRAITS_REAL_FP()
+};      // __float128 specialization
+#endif  // KOKKOS_ENABLE_LIBQUADMATH
+
+template <>
+class ArithTraits< ::Kokkos::complex<float> > {
+ public:
+  using val_type = ::Kokkos::complex<float>;
+  using mag_type = float;
 
   static std::string name() { return "Kokkos::complex<float>"; }
 
@@ -1338,26 +1388,6 @@ class ArithTraits< ::Kokkos::complex<double> > {
  public:
   using val_type = ::Kokkos::complex<double>;
   using mag_type = double;
-
-  static constexpr bool is_specialized = true;
-  static constexpr bool is_signed      = true;
-  static constexpr bool is_integer     = false;
-  static constexpr bool is_exact       = false;
-  static constexpr bool is_complex     = true;
-
-  static constexpr bool has_infinity = true;
-
-  // Backwards compatibility with Teuchos::ScalarTraits.
-  using magnitudeType = mag_type;
-  using halfPrecision = ::Kokkos::complex<ArithTraits<mag_type>::halfPrecision>;
-  using doublePrecision =
-      ::Kokkos::complex<ArithTraits<mag_type>::doublePrecision>;
-
-  static constexpr bool isComplex    = true;
-  static constexpr bool isOrdinal    = false;
-  static constexpr bool isComparable = false;
-  static constexpr bool hasMachineParameters =
-      ArithTraits<mag_type>::hasMachineParameters;
 
   static std::string name() { return "Kokkos::complex<double>"; }
 
@@ -1604,152 +1634,17 @@ class ArithTraits<std::complex<RealFloatType> > {
   static mag_type rmax() { return ArithTraits<mag_type>::rmax(); }
 };
 
-#if defined(KOKKOS_ENABLE_LIBQUADMATH)
-// CUDA does not support __float128 in device functions, so none of
-// the class methods in this specialization are marked as device
-// functions.
-template <>
-class ArithTraits<__float128> {
- public:
-  using val_type = __float128;
-  using mag_type = val_type;
-
-  static constexpr bool is_specialized = true;
-  static constexpr bool is_signed      = true;
-  static constexpr bool is_integer     = false;
-  static constexpr bool is_exact       = false;
-  static constexpr bool is_complex     = false;
-  static constexpr bool has_infinity   = true;
-
-  // Backwards compatibility with Teuchos::ScalarTraits.
-  using magnitudeType = mag_type;
-  using halfPrecision = double;
-  // Unfortunately, we can't rely on a standard __float256 type.
-  using doublePrecision = __float128;
-
-  static constexpr bool isComplex            = false;
-  static constexpr bool isOrdinal            = false;
-  static constexpr bool isComparable         = true;
-  static constexpr bool hasMachineParameters = true;
-
-  static val_type zero() { return static_cast<val_type>(0.0); }
-  static val_type one() { return static_cast<val_type>(1.0); }
-  static val_type min() {
-    return Kokkos::Experimental::finite_min<val_type>::value;
-  }
-  static val_type max() {
-    return Kokkos::Experimental::finite_max<val_type>::value;
-  }
-  static val_type infinity() {
-    return Kokkos::Experimental::infinity<val_type>::value;
-  }
-  static val_type nan() { return Kokkos::Experimental::nanq(""); }
-  static mag_type epsilon() {
-    return Kokkos::Experimental::epsilon<val_type>::value;
-  }
-  static mag_type sfmin() {
-    return Kokkos::Experimental::norm_min<val_type>::value;
-  }
-  static int base() { return Kokkos::Experimental::radix<val_type>::value; }
-  static mag_type prec() { return epsilon() * static_cast<mag_type>(base()); }
-  static int t() { return Kokkos::Experimental::digits<val_type>::value; }
-  static mag_type rnd() { return static_cast<val_type>(1.0); }
-  static int emin() {
-    return Kokkos::Experimental::min_exponent<val_type>::value;
-  }
-  static mag_type rmin() {
-    return Kokkos::Experimental::norm_min<val_type>::value;
-  }
-  static int emax() {
-    return Kokkos::Experimental::max_exponent<val_type>::value;
-  }
-  static mag_type rmax() {
-    return Kokkos::Experimental::finite_max<val_type>::value;
-    // return Kokkos::Experimental::norm_max<val_type>::value;
-  }
-
-  // Math Functions
-  static bool isInf(const val_type x) { return Kokkos::Experimental::isinf(x); }
-  static bool isNan(const val_type x) { return Kokkos::Experimental::isnan(x); }
-  static mag_type abs(const val_type x) {
-    return Kokkos::Experimental::fabs(x);
-  }
-  static mag_type real(const val_type x) { return x; }
-  static mag_type imag(const val_type /* x */) { return zero(); }
-  static val_type conj(const val_type x) { return x; }
-  // static val_type pow(const val_type x, const val_type y) {
-  //   return Kokkos::Experimental::pow(x, y);
-  // }
-  static val_type sqrt(const val_type x) {
-    return Kokkos::Experimental::sqrt(x);
-  }
-  static val_type cbrt(const val_type x) {
-    return Kokkos::Experimental::cbrt(x);
-  }
-  static val_type exp(const val_type x) { return Kokkos::Experimental::exp(x); }
-  static val_type log(const val_type x) { return Kokkos::Experimental::log(x); }
-  static val_type log10(const val_type x) {
-    return Kokkos::Experimental::log10(x);
-  }
-  static val_type sin(const val_type x) { return Kokkos::Experimental::sin(x); }
-  static val_type cos(const val_type x) { return Kokkos::Experimental::cos(x); }
-  static val_type tan(const val_type x) { return Kokkos::Experimental::tan(x); }
-  static val_type sinh(const val_type x) {
-    return Kokkos::Experimental::sinh(x);
-  }
-  static val_type cosh(const val_type x) {
-    return Kokkos::Experimental::cosh(x);
-  }
-  static val_type tanh(const val_type x) {
-    return Kokkos::Experimental::tanh(x);
-  }
-  static val_type asin(const val_type x) {
-    return Kokkos::Experimental::asin(x);
-  }
-  static val_type acos(const val_type x) {
-    return Kokkos::Experimental::acos(x);
-  }
-  static val_type atan(const val_type x) {
-    return Kokkos::Experimental::atan(x);
-  }
-
-  // Aliases
-  static bool isnaninf(const val_type x) { return isNan(x) || isInf(x); }
-  static magnitudeType magnitude(const val_type x) { return abs(x); }
-  static val_type conjugate(const val_type x) { return conj(x); }
-  static std::string name() { return "__float128"; }
-  static val_type squareroot(const val_type x) { return sqrt(x); }
-  static mag_type eps() { return epsilon(); }
-};      // __float128 specialization
-#endif  // KOKKOS_ENABLE_LIBQUADMATH
-
 template <>
 class ArithTraits<char> {
  public:
   using val_type = char;
   using mag_type = val_type;
 
-  static constexpr bool is_specialized = true;
   // The C(++) standard does not require that char be signed.  In
   // fact, signed char, unsigned char, and char are distinct types.
   // We can use std::numeric_limits here because it's a const bool,
   // not a class method.
   static constexpr bool is_signed  = std::numeric_limits<val_type>::is_signed;
-  static constexpr bool is_integer = true;
-  static constexpr bool is_exact   = true;
-  static constexpr bool is_complex = false;
-
-  static constexpr bool has_infinity = false;
-
-  // Backwards compatibility with Teuchos::ScalarTraits.
-  using magnitudeType   = mag_type;
-  using halfPrecision   = val_type;
-  using doublePrecision = val_type;
-
-  static constexpr bool isComplex            = false;
-  static constexpr bool isOrdinal            = true;
-  static constexpr bool isComparable         = true;
-  static constexpr bool hasMachineParameters = false;
 
   static std::string name() { return "char"; }
 
@@ -1762,23 +1657,7 @@ class ArithTraits<signed char> {
   using val_type = signed char;
   using mag_type = val_type;
 
-  static constexpr bool is_specialized = true;
   static constexpr bool is_signed      = true;
-  static constexpr bool is_integer     = true;
-  static constexpr bool is_exact       = true;
-  static constexpr bool is_complex     = false;
-
-  static constexpr bool has_infinity = false;
-
-  // Backwards compatibility with Teuchos::ScalarTraits.
-  using magnitudeType   = mag_type;
-  using halfPrecision   = val_type;
-  using doublePrecision = val_type;
-
-  static constexpr bool isComplex            = false;
-  static constexpr bool isOrdinal            = true;
-  static constexpr bool isComparable         = true;
-  static constexpr bool hasMachineParameters = false;
 
   static std::string name() { return "signed char"; }
 
@@ -1791,23 +1670,7 @@ class ArithTraits<unsigned char> {
   using val_type = unsigned char;
   using mag_type = val_type;
 
-  static constexpr bool is_specialized = true;
   static constexpr bool is_signed      = false;
-  static constexpr bool is_integer     = true;
-  static constexpr bool is_exact       = true;
-  static constexpr bool is_complex     = false;
-
-  static constexpr bool has_infinity = false;
-
-  // Backwards compatibility with Teuchos::ScalarTraits.
-  using magnitudeType   = mag_type;
-  using halfPrecision   = val_type;
-  using doublePrecision = val_type;
-
-  static constexpr bool isComplex            = false;
-  static constexpr bool isOrdinal            = true;
-  static constexpr bool isComparable         = true;
-  static constexpr bool hasMachineParameters = false;
 
   static std::string name() { return "unsigned char"; }
 
@@ -1820,23 +1683,7 @@ class ArithTraits<short> {
   using val_type = short;
   using mag_type = val_type;
 
-  static constexpr bool is_specialized = true;
   static constexpr bool is_signed      = true;
-  static constexpr bool is_integer     = true;
-  static constexpr bool is_exact       = true;
-  static constexpr bool is_complex     = false;
-
-  static constexpr bool has_infinity = false;
-
-  // Backwards compatibility with Teuchos::ScalarTraits.
-  using magnitudeType   = mag_type;
-  using halfPrecision   = val_type;
-  using doublePrecision = val_type;
-
-  static constexpr bool isComplex            = false;
-  static constexpr bool isOrdinal            = true;
-  static constexpr bool isComparable         = true;
-  static constexpr bool hasMachineParameters = false;
 
   static std::string name() { return "short"; }
 
@@ -1849,23 +1696,7 @@ class ArithTraits<unsigned short> {
   using val_type = unsigned short;
   using mag_type = val_type;
 
-  static constexpr bool is_specialized = true;
   static constexpr bool is_signed      = false;
-  static constexpr bool is_integer     = true;
-  static constexpr bool is_exact       = true;
-  static constexpr bool is_complex     = false;
-
-  static constexpr bool has_infinity = false;
-
-  // Backwards compatibility with Teuchos::ScalarTraits.
-  using magnitudeType   = mag_type;
-  using halfPrecision   = val_type;
-  using doublePrecision = val_type;
-
-  static constexpr bool isComplex            = false;
-  static constexpr bool isOrdinal            = true;
-  static constexpr bool isComparable         = true;
-  static constexpr bool hasMachineParameters = false;
 
   static std::string name() { return "unsigned short"; }
 
@@ -1878,23 +1709,7 @@ class ArithTraits<int> {
   using val_type = int;
   using mag_type = val_type;
 
-  static constexpr bool is_specialized = true;
   static constexpr bool is_signed      = true;
-  static constexpr bool is_integer     = true;
-  static constexpr bool is_exact       = true;
-  static constexpr bool is_complex     = false;
-
-  static constexpr bool has_infinity = false;
-
-  // Backwards compatibility with Teuchos::ScalarTraits.
-  using magnitudeType   = mag_type;
-  using halfPrecision   = val_type;
-  using doublePrecision = val_type;
-
-  static constexpr bool isComplex            = false;
-  static constexpr bool isOrdinal            = true;
-  static constexpr bool isComparable         = true;
-  static constexpr bool hasMachineParameters = false;
 
   static std::string name() { return "int"; }
 
@@ -1907,23 +1722,7 @@ class ArithTraits<unsigned int> {
   using val_type = unsigned int;
   using mag_type = val_type;
 
-  static constexpr bool is_specialized = true;
   static constexpr bool is_signed      = false;
-  static constexpr bool is_integer     = true;
-  static constexpr bool is_exact       = true;
-  static constexpr bool is_complex     = false;
-
-  static constexpr bool has_infinity = false;
-
-  // Backwards compatibility with Teuchos::ScalarTraits.
-  using magnitudeType   = mag_type;
-  using halfPrecision   = val_type;
-  using doublePrecision = val_type;
-
-  static constexpr bool isComplex            = false;
-  static constexpr bool isOrdinal            = true;
-  static constexpr bool isComparable         = true;
-  static constexpr bool hasMachineParameters = false;
 
   static std::string name() { return "unsigned int"; }
 
@@ -1936,23 +1735,7 @@ class ArithTraits<long> {
   using val_type = long;
   using mag_type = val_type;
 
-  static constexpr bool is_specialized = true;
   static constexpr bool is_signed      = true;
-  static constexpr bool is_integer     = true;
-  static constexpr bool is_exact       = true;
-  static constexpr bool is_complex     = false;
-
-  static constexpr bool has_infinity = false;
-
-  // Backwards compatibility with Teuchos::ScalarTraits.
-  using magnitudeType   = mag_type;
-  using halfPrecision   = val_type;
-  using doublePrecision = val_type;
-
-  static constexpr bool isComplex            = false;
-  static constexpr bool isOrdinal            = true;
-  static constexpr bool isComparable         = true;
-  static constexpr bool hasMachineParameters = false;
 
   static std::string name() { return "long"; }
 
@@ -1965,23 +1748,7 @@ class ArithTraits<unsigned long> {
   using val_type = unsigned long;
   using mag_type = val_type;
 
-  static constexpr bool is_specialized = true;
   static constexpr bool is_signed      = false;
-  static constexpr bool is_integer     = true;
-  static constexpr bool is_exact       = true;
-  static constexpr bool is_complex     = false;
-
-  static constexpr bool has_infinity = false;
-
-  // Backwards compatibility with Teuchos::ScalarTraits.
-  using magnitudeType   = mag_type;
-  using halfPrecision   = val_type;
-  using doublePrecision = val_type;
-
-  static constexpr bool isComplex            = false;
-  static constexpr bool isOrdinal            = true;
-  static constexpr bool isComparable         = true;
-  static constexpr bool hasMachineParameters = false;
 
   static std::string name() { return "unsigned long"; }
 
@@ -1994,23 +1761,7 @@ class ArithTraits<long long> {
   using val_type = long long;
   using mag_type = val_type;
 
-  static constexpr bool is_specialized = true;
   static constexpr bool is_signed      = true;
-  static constexpr bool is_integer     = true;
-  static constexpr bool is_exact       = true;
-  static constexpr bool is_complex     = false;
-
-  static constexpr bool has_infinity = false;
-
-  // Backwards compatibility with Teuchos::ScalarTraits.
-  using magnitudeType   = mag_type;
-  using halfPrecision   = val_type;
-  using doublePrecision = val_type;
-
-  static constexpr bool isComplex            = false;
-  static constexpr bool isOrdinal            = true;
-  static constexpr bool isComparable         = true;
-  static constexpr bool hasMachineParameters = false;
 
   static std::string name() { return "long long"; }
 
@@ -2023,23 +1774,7 @@ class ArithTraits<unsigned long long> {
   using val_type = unsigned long long;
   using mag_type = val_type;
 
-  static constexpr bool is_specialized = true;
   static constexpr bool is_signed      = false;
-  static constexpr bool is_integer     = true;
-  static constexpr bool is_exact       = true;
-  static constexpr bool is_complex     = false;
-
-  static constexpr bool has_infinity = false;
-
-  // Backwards compatibility with Teuchos::ScalarTraits.
-  using magnitudeType   = mag_type;
-  using halfPrecision   = val_type;
-  using doublePrecision = val_type;
-
-  static constexpr bool isComplex            = false;
-  static constexpr bool isOrdinal            = true;
-  static constexpr bool isComparable         = true;
-  static constexpr bool hasMachineParameters = false;
 
   static std::string name() { return "unsigned long long"; }
 
