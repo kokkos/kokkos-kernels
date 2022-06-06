@@ -50,7 +50,7 @@
 #include "KokkosSparse_pcg.hpp"
 
 #include "KokkosKernels_Utils.hpp"
-#include "KokkosKernels_IOUtils.hpp"
+#include "KokkosSparse_IOUtils.hpp"
 
 #include "KokkosKernels_TestUtils.hpp"
 
@@ -75,7 +75,7 @@ crsMat_t create_crs_matrix(char *mtx_bin_file) {
 
   if (std::string(mtx_bin_file) == "auto") {
     INDEX_TYPE num_rows = 11, num_cols = 11, nnz = 40;
-    crsmat = KokkosKernels::Impl::kk_generate_diagonally_dominant_sparse_matrix<
+    crsmat = KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<
         crsMat_t>(num_rows, num_cols, nnz, 3, 5);
     printf("generating test matrix automatically\n");
     printf("   num rows:      %d", num_rows);
@@ -86,7 +86,7 @@ crsMat_t create_crs_matrix(char *mtx_bin_file) {
     INDEX_TYPE *xadj, *adj;
     SCALAR_TYPE *ew;
 
-    KokkosKernels::Impl::read_matrix<INDEX_TYPE, INDEX_TYPE, SCALAR_TYPE>(
+    KokkosSparse::Impl::read_matrix<INDEX_TYPE, INDEX_TYPE, SCALAR_TYPE>(
         &nv, &ne, &xadj, &adj, &ew, mtx_bin_file);
 
     row_map_view_t rowmap_view("rowmap_view", nv + 1);

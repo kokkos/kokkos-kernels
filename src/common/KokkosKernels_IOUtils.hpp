@@ -269,6 +269,7 @@ inline void kk_read_3Dview_from_file(idx_array_type &view,
 }
 
 template <typename idx, typename wt>
+[[deprecated]]
 void write_edgelist_bin(size_t ne, const idx *edge_begins, const idx *edge_ends,
                         const wt *ew, const char *filename) {
   std::ofstream myFile(filename, std::ios::out | std::ios::binary);
