@@ -309,25 +309,26 @@ namespace Details {
   static FUNC_QUAL mag_type eps() { return epsilon(); }
 
 #define KOKKOSKERNELS_ARITHTRAITS_CMPLX_FP(FUNC_QUAL)                          \
-                                                                        \
-  static constexpr bool is_specialized = true;                          \
-  static constexpr bool is_signed      = true;                          \
-  static constexpr bool is_integer     = false;                         \
-  static constexpr bool is_exact       = false;                         \
-  static constexpr bool is_complex     = true;                          \
-  static constexpr bool has_infinity   = true;                          \
-                                                                        \
-  using magnitudeType = mag_type;                                       \
-  using halfPrecision = ::Kokkos::complex<ArithTraits<mag_type>::halfPrecision>; \
-  using doublePrecision =                                               \
-    ::Kokkos::complex<ArithTraits<mag_type>::doublePrecision>;          \
-                                                                        \
-  static constexpr bool isComplex    = true;                            \
-  static constexpr bool isOrdinal    = false;                           \
-  static constexpr bool isComparable = false;                           \
-  static constexpr bool hasMachineParameters =                          \
-    ArithTraits<mag_type>::hasMachineParameters;                        \
-                                                                        \
+                                                                               \
+  static constexpr bool is_specialized = true;                                 \
+  static constexpr bool is_signed      = true;                                 \
+  static constexpr bool is_integer     = false;                                \
+  static constexpr bool is_exact       = false;                                \
+  static constexpr bool is_complex     = true;                                 \
+  static constexpr bool has_infinity   = true;                                 \
+                                                                               \
+  using magnitudeType = mag_type;                                              \
+  using halfPrecision =                                                        \
+      ::Kokkos::complex<ArithTraits<mag_type>::halfPrecision>;                 \
+  using doublePrecision =                                                      \
+      ::Kokkos::complex<ArithTraits<mag_type>::doublePrecision>;               \
+                                                                               \
+  static constexpr bool isComplex    = true;                                   \
+  static constexpr bool isOrdinal    = false;                                  \
+  static constexpr bool isComparable = false;                                  \
+  static constexpr bool hasMachineParameters =                                 \
+      ArithTraits<mag_type>::hasMachineParameters;                             \
+                                                                               \
   static FUNC_QUAL val_type zero() {                                           \
     return val_type(ArithTraits<mag_type>::zero(),                             \
                     ArithTraits<mag_type>::zero());                            \
@@ -451,7 +452,9 @@ namespace Details {
   static KOKKOS_FUNCTION bool isInf(const val_type) { return false; }         \
   static KOKKOS_FUNCTION bool isNan(const val_type) { return false; }         \
   KOKKOSKERNELS_ABS                                                           \
-  static KOKKOS_FUNCTION mag_type real(const val_type x) { return Kokkos::real(x); } \
+  static KOKKOS_FUNCTION mag_type real(const val_type x) {                    \
+    return Kokkos::real(x);                                                   \
+  }                                                                           \
   static KOKKOS_FUNCTION mag_type imag(const val_type) { return zero(); }     \
   static KOKKOS_FUNCTION val_type conj(const val_type x) { return x; }        \
   static KOKKOS_FUNCTION val_type pow(const val_type x, const val_type y) {   \
@@ -1644,7 +1647,7 @@ class ArithTraits<char> {
   // fact, signed char, unsigned char, and char are distinct types.
   // We can use std::numeric_limits here because it's a const bool,
   // not a class method.
-  static constexpr bool is_signed  = std::numeric_limits<val_type>::is_signed;
+  static constexpr bool is_signed = std::numeric_limits<val_type>::is_signed;
 
   static std::string name() { return "char"; }
 
@@ -1657,7 +1660,7 @@ class ArithTraits<signed char> {
   using val_type = signed char;
   using mag_type = val_type;
 
-  static constexpr bool is_signed      = true;
+  static constexpr bool is_signed = true;
 
   static std::string name() { return "signed char"; }
 
@@ -1670,7 +1673,7 @@ class ArithTraits<unsigned char> {
   using val_type = unsigned char;
   using mag_type = val_type;
 
-  static constexpr bool is_signed      = false;
+  static constexpr bool is_signed = false;
 
   static std::string name() { return "unsigned char"; }
 
@@ -1683,7 +1686,7 @@ class ArithTraits<short> {
   using val_type = short;
   using mag_type = val_type;
 
-  static constexpr bool is_signed      = true;
+  static constexpr bool is_signed = true;
 
   static std::string name() { return "short"; }
 
@@ -1696,7 +1699,7 @@ class ArithTraits<unsigned short> {
   using val_type = unsigned short;
   using mag_type = val_type;
 
-  static constexpr bool is_signed      = false;
+  static constexpr bool is_signed = false;
 
   static std::string name() { return "unsigned short"; }
 
@@ -1709,7 +1712,7 @@ class ArithTraits<int> {
   using val_type = int;
   using mag_type = val_type;
 
-  static constexpr bool is_signed      = true;
+  static constexpr bool is_signed = true;
 
   static std::string name() { return "int"; }
 
@@ -1722,7 +1725,7 @@ class ArithTraits<unsigned int> {
   using val_type = unsigned int;
   using mag_type = val_type;
 
-  static constexpr bool is_signed      = false;
+  static constexpr bool is_signed = false;
 
   static std::string name() { return "unsigned int"; }
 
@@ -1735,7 +1738,7 @@ class ArithTraits<long> {
   using val_type = long;
   using mag_type = val_type;
 
-  static constexpr bool is_signed      = true;
+  static constexpr bool is_signed = true;
 
   static std::string name() { return "long"; }
 
@@ -1748,7 +1751,7 @@ class ArithTraits<unsigned long> {
   using val_type = unsigned long;
   using mag_type = val_type;
 
-  static constexpr bool is_signed      = false;
+  static constexpr bool is_signed = false;
 
   static std::string name() { return "unsigned long"; }
 
@@ -1761,7 +1764,7 @@ class ArithTraits<long long> {
   using val_type = long long;
   using mag_type = val_type;
 
-  static constexpr bool is_signed      = true;
+  static constexpr bool is_signed = true;
 
   static std::string name() { return "long long"; }
 
@@ -1774,7 +1777,7 @@ class ArithTraits<unsigned long long> {
   using val_type = unsigned long long;
   using mag_type = val_type;
 
-  static constexpr bool is_signed      = false;
+  static constexpr bool is_signed = false;
 
   static std::string name() { return "unsigned long long"; }
 
