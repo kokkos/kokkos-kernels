@@ -264,16 +264,6 @@ void run_test_par_ilut() {
     {0.50, -3., 1., 0.},
     {0.20, -0.50, -9., 1.}
   };
-  std::cout << "L candidates: " << std::endl;
-  print_matrix(decompress_matrix(L_row_map, L_entries, L_values));
-  std::cout << "L_row_map: " << std::endl;
-  for(size_type i = 0; i < L_row_map.extent(0); ++i) { std::cout << L_row_map(i) << " "; }
-  std::cout << "\nL_entries: " << std::endl;
-  for(size_type i = 0; i < L_entries.extent(0); ++i) { std::cout << L_entries(i) << " "; }
-  std::cout << "\nL_values: " << std::endl;
-  for(size_type i = 0; i < L_values.extent(0); ++i) { std::cout << L_values(i) << " "; }
-  std::cout << "\nL candidates expected: " << std::endl;
-  print_matrix(expected_L_candidates);
 
   check_matrix(L_row_map, L_entries, L_values, expected_L_candidates);
 
@@ -283,17 +273,6 @@ void run_test_par_ilut() {
     {0., 0., 6., 20.50},
     {0., 0., 0., 1.}
   };
-
-  std::cout << "U candidates: " << std::endl;
-  print_matrix(decompress_matrix(U_row_map, U_entries, U_values));
-  std::cout << "U_row_map: " << std::endl;
-  for(size_type i = 0; i < U_row_map.extent(0); ++i) { std::cout << U_row_map(i) << " "; }
-  std::cout << "\nU_entries: " << U_entries.extent(0) << std::endl;
-  for(size_type i = 0; i < U_entries.extent(0); ++i) { std::cout << U_entries(i) << " "; }
-  std::cout << "\nU_values: " << std::endl;
-  for(size_type i = 0; i < U_values.extent(0); ++i) { std::cout << U_values(i) << " "; }
-  std::cout << "\nU candidates expected: " << std::endl;
-  print_matrix(expected_U_candidates);
 
   check_matrix(U_row_map, U_entries, U_values, expected_U_candidates);
 
