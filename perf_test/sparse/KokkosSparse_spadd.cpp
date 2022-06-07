@@ -118,8 +118,8 @@ void run_experiment(const Params& params) {
   } else {
     std::cout << "Randomly generating A\n";
     size_type nnzUnused = m * params.nnzPerRow;
-    A = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(
-        m, n, nnzUnused, 0, (n + 3) / 3);
+    A = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(m, n, nnzUnused,
+                                                                0, (n + 3) / 3);
   }
   if (params.bmtx.length()) {
     std::cout << "Loading B from " << params.bmtx << '\n';
@@ -154,8 +154,8 @@ void run_experiment(const Params& params) {
   } else {
     std::cout << "Randomly generating B\n";
     size_type nnzUnused = m * params.nnzPerRow;
-    B = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(
-        m, n, nnzUnused, 0, (n + 3) / 3);
+    B = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(m, n, nnzUnused,
+                                                                0, (n + 3) / 3);
   }
   // Make sure dimensions are compatible
   if (A.numRows() != B.numRows() || A.numCols() != B.numCols()) {
@@ -363,8 +363,8 @@ void run_experiment(const Params& params) {
     std::cout << "Writing C (" << m << "x" << n << ") to " << params.cmtx
               << "\n";
     crsMat_t C("C", m, n, c_nnz, valuesC, row_mapC, entriesC);
-    KokkosSparse::Impl::write_kokkos_crst_matrix<crsMat_t>(
-        C, params.cmtx.c_str());
+    KokkosSparse::Impl::write_kokkos_crst_matrix<crsMat_t>(C,
+                                                           params.cmtx.c_str());
   }
 }
 
