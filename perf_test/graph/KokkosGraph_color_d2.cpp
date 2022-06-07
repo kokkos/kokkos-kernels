@@ -65,6 +65,7 @@
 #include <KokkosGraph_Distance2Color.hpp>
 #include "KokkosKernels_default_types.hpp"
 #include "KokkosKernels_TestUtils.hpp"
+#include "KokkosSparse_IOUtils.hpp"
 
 using namespace KokkosGraph;
 
@@ -595,7 +596,7 @@ void experiment_driver(const D2Parameters& params) {
   using graph_t  = typename crsMat_t::StaticCrsGraphType;
 
   crsMat_t A =
-      KokkosKernels::Impl::read_kokkos_crst_matrix<crsMat_t>(params.mtx_file);
+      KokkosSparse::Impl::read_kokkos_crst_matrix<crsMat_t>(params.mtx_file);
   graph_t Agraph = A.graph;
   int num_cols   = A.numCols();
 

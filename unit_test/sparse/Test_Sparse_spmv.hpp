@@ -6,6 +6,7 @@
 #include <KokkosKernels_TestUtils.hpp>
 #include <KokkosKernels_Test_Structured_Matrix.hpp>
 #include <KokkosKernels_IOUtils.hpp>
+#include <KokkosSparse_IOUtils.hpp>
 #include <KokkosKernels_Utils.hpp>
 
 #include "KokkosKernels_Controls.hpp"
@@ -422,7 +423,7 @@ void test_spmv(lno_t numRows, size_type nnz, lno_t bandwidth,
 
   lno_t numCols = numRows;
 
-  crsMat_t input_mat = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(
+  crsMat_t input_mat = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(
       numRows, numCols, nnz, row_size_variance, bandwidth);
   lno_t nr = input_mat.numRows();
   lno_t nc = input_mat.numCols();
@@ -513,7 +514,7 @@ void test_spmv_mv(lno_t numRows, size_type nnz, lno_t bandwidth,
   Kokkos::fill_random(b_xt, rand_pool, randomUpperBound<scalar_t>(max_x));
   Kokkos::fill_random(b_yt, rand_pool, randomUpperBound<scalar_t>(max_y));
 
-  crsMat_t input_mat = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(
+  crsMat_t input_mat = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(
       numRows, numCols, nnz, row_size_variance, bandwidth);
 
   const lno_t max_nnz_per_row =
@@ -574,7 +575,7 @@ void test_spmv_mv_heavy(lno_t numRows, size_type nnz, lno_t bandwidth,
   constexpr mag_t max_y   = static_cast<mag_t>(10);
   constexpr mag_t max_val = static_cast<mag_t>(10);
 
-  crsMat_t input_mat = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(
+  crsMat_t input_mat = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(
       numRows, numRows, nnz, row_size_variance, bandwidth);
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
       13718);
@@ -889,7 +890,7 @@ void test_spmv_controls(lno_t numRows, size_type nnz, lno_t bandwidth,
 
   lno_t numCols = numRows;
 
-  crsMat_t input_mat = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(
+  crsMat_t input_mat = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(
       numRows, numCols, nnz, row_size_variance, bandwidth);
   lno_t nr = input_mat.numRows();
   lno_t nc = input_mat.numCols();

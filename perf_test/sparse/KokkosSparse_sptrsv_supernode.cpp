@@ -43,9 +43,10 @@
 */
 
 #include "Kokkos_Random.hpp"
-#include "KokkosKernels_SparseUtils.hpp"
+#include "KokkosSparse_Utils.hpp"
 #include "KokkosSparse_spmv.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
+#include "KokkosSparse_IOUtils.hpp"
 
 #include "KokkosSparse_sptrsv.hpp"
 #include "KokkosSparse_sptrsv_supernode.hpp"
@@ -130,7 +131,7 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose,
     std::cout << " > Read a triangular-matrix filename " << matrix_filename
               << std::endl;
     host_crsmat_t M =
-        KokkosKernels::Impl::read_kokkos_crst_matrix<host_crsmat_t>(
+        KokkosSparse::Impl::read_kokkos_crst_matrix<host_crsmat_t>(
             matrix_filename.c_str());
     const size_type nrows = M.graph.numRows();
     // transpose the matrix to be stored in CCS

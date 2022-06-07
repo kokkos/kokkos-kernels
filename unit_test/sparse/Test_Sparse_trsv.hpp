@@ -11,6 +11,7 @@
 #include <KokkosSparse_spmv.hpp>
 #include <KokkosKernels_TestUtils.hpp>
 #include <KokkosKernels_IOUtils.hpp>
+#include <KokkosSparse_IOUtils.hpp>
 
 #include <KokkosKernels_Utils.hpp>
 
@@ -76,7 +77,7 @@ void test_trsv_mv(lno_t numRows, size_type nnz, lno_t bandwidth,
   // this function creates a dense lower and upper triangular matrix.
   // TODO: SHOULD CHANGE IT TO SPARSE
   crsMat_t lower_part =
-      KokkosKernels::Impl::kk_generate_triangular_sparse_matrix<crsMat_t>(
+      KokkosSparse::Impl::kk_generate_triangular_sparse_matrix<crsMat_t>(
           'L', numRows, numCols, nnz, row_size_variance, bandwidth);
   KokkosSparse::spmv("N", alpha, lower_part, b_x_copy, beta, b_y);
   Test::check_trsv_mv(lower_part, b_x, b_y, b_x_copy, numMV, "L", "N");
@@ -86,7 +87,7 @@ void test_trsv_mv(lno_t numRows, size_type nnz, lno_t bandwidth,
   // typedef typename Kokkos::View<lno_t*, layout, Device> indexview;
 
   crsMat_t upper_part =
-      KokkosKernels::Impl::kk_generate_triangular_sparse_matrix<crsMat_t>(
+      KokkosSparse::Impl::kk_generate_triangular_sparse_matrix<crsMat_t>(
           'U', numRows, numCols, nnz, row_size_variance, bandwidth);
   KokkosSparse::spmv("N", alpha, upper_part, b_x_copy, beta, b_y);
   Test::check_trsv_mv(upper_part, b_x, b_y, b_x_copy, numMV, "U", "N");

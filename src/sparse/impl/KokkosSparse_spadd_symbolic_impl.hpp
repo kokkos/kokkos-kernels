@@ -46,7 +46,7 @@
 #define _KOKKOS_SPADD_SYMBOLIC_IMPL_HPP
 
 #include "KokkosKernels_Handle.hpp"
-#include "KokkosKernels_Sorting.hpp"
+#include "KokkosSparse_SortCrs.hpp"
 #include "Kokkos_ArithTraits.hpp"
 
 namespace KokkosSparse {
@@ -593,8 +593,8 @@ void spadd_symbolic_impl(
         "KokkosSparse::SpAdd:Symbolic::InputNotSorted::UnmergedSum",
         range_type(0, nrows), unmergedSum);
     // sort the unmerged sum
-    KokkosKernels::sort_crs_matrix<execution_space, offset_view_t,
-                                   ordinal_view_t, ordinal_view_t>(
+    KokkosSparse::sort_crs_matrix<execution_space, offset_view_t,
+                                  ordinal_view_t, ordinal_view_t>(
         c_rowmap_upperbound, c_entries_uncompressed, ab_perm);
     ordinal_view_t a_pos(
         Kokkos::view_alloc(Kokkos::WithoutInitializing, "A entry positions"),

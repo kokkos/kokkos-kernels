@@ -47,7 +47,7 @@
 
 #include <KokkosKernels_Utils.hpp>
 #include <KokkosKernels_SimpleUtils.hpp>
-#include <KokkosKernels_SparseUtils.hpp>
+#include <KokkosSparse_Utils.hpp>
 #include <KokkosKernels_VectorUtils.hpp>
 #include <fstream>
 #include <sstream>
