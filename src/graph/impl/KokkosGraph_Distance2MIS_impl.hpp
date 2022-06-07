@@ -48,6 +48,7 @@
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Bitset.hpp"
 #include "KokkosKernels_Utils.hpp"
+#include "KokkosSparse_Utils.hpp"
 #include <cstdint>
 
 namespace KokkosGraph {
