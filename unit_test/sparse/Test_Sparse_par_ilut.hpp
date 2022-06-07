@@ -119,7 +119,7 @@ void check_matrix(
   const auto nrows = row_map.size() - 1;
   for (size_type row_idx = 0; row_idx < nrows; ++row_idx) {
     for (size_type col_idx = 0; col_idx < nrows; ++col_idx) {
-      EXPECT_EQ(expected[row_idx][col_idx], decompressed_mtx[row_idx][col_idx]);
+      EXPECT_NEAR(expected[row_idx][col_idx], decompressed_mtx[row_idx][col_idx], 0.01);
     }
   }
 }
@@ -258,23 +258,43 @@ void run_test_par_ilut() {
 
   Kokkos::fence();
 
+  // Use these fixtures to test add_candidates
+  // std::vector<std::vector<scalar_t> > expected_L_candidates = {
+  //   {1., 0., 0., 0.},
+  //   {2., 1., 0., 0.},
+  //   {0.50, -3., 1., 0.},
+  //   {0.20, -0.50, -9., 1.}
+  // };
+
+  // check_matrix(L_row_map, L_entries, L_values, expected_L_candidates);
+
+  // std::vector<std::vector<scalar_t> > expected_U_candidates = {
+  //   {1., 6., 4., 7.},
+  //   {0., -5., -8., 8.},
+  //   {0., 0., 6., 20.50},
+  //   {0., 0., 0., 1.}
+  // };
+
+  // check_matrix(U_row_map, U_entries, U_values, expected_U_candidates);
+
   std::vector<std::vector<scalar_t> > expected_L_candidates = {
     {1., 0., 0., 0.},
     {2., 1., 0., 0.},
-    {0.50, -3., 1., 0.},
-    {0.20, -0.50, -9., 1.}
+    {0.50, 0.35, 1., 0.},
+    {0.20, 0.10, -1.32, 1.}
   };
 
   check_matrix(L_row_map, L_entries, L_values, expected_L_candidates);
 
   std::vector<std::vector<scalar_t> > expected_U_candidates = {
     {1., 6., 4., 7.},
-    {0., -5., -8., 8.},
-    {0., 0., 6., 20.50},
-    {0., 0., 0., 1.}
+    {0., -17., -8., -6.},
+    {0., 0., 6.82, -1.38},
+    {0., 0., 0., -2.62}
   };
 
   check_matrix(U_row_map, U_entries, U_values, expected_U_candidates);
+
 
   // Checking
 
