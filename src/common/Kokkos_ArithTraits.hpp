@@ -418,16 +418,17 @@ namespace Details {
     return Kokkos::abs(x);                                \
   }
 
-#define KOKKOSKERNELS_UNSIGNED_ABS                                      \
+#define KOKKOSKERNELS_UNSIGNED_ABS \
   static KOKKOS_FUNCTION mag_type abs(const val_type x) { return x; }
 
-#define KOKKOSKERNELS_SIGNED_NAN                        \
+#define KOKKOSKERNELS_SIGNED_NAN \
   static KOKKOS_FUNCTION val_type nan() { return -1; }
 
-#define KOKKOSKERNELS_UNSIGNED_NAN                              \
+#define KOKKOSKERNELS_UNSIGNED_NAN \
   static KOKKOS_FUNCTION val_type nan() { return max(); }
 
-#define KOKKOSKERNELS_ARITHTRAITS_INTEGRAL(KOKKOSKERNELS_ABS, KOKKOSKERNELS_NAN) \
+#define KOKKOSKERNELS_ARITHTRAITS_INTEGRAL(KOKKOSKERNELS_ABS,                 \
+                                           KOKKOSKERNELS_NAN)                 \
                                                                               \
   static constexpr bool is_specialized = true;                                \
   static constexpr bool is_integer     = true;                                \
