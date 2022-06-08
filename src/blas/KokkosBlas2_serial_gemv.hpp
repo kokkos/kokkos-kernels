@@ -64,22 +64,17 @@ gemv(const char trans, const ScalarType& alpha, const MatrixType& A,
                        typename YVector::non_const_value_type>::value,
       "Serial GEMV requires A,x and y to have same scalar type");
 
-  const auto run = [&](auto mode) {
-    using algo        = KokkosBatched::Algo::Gemv::Default;
-    using serial_impl = KokkosBatched::SerialGemv<decltype(mode), algo>;
-    // ensure same type for alpha and beta (required by serial impl)
-    const auto beta_ = static_cast<ScalarType>(beta);
-
-    serial_impl::invoke(alpha, A, x, beta_, y);
-  };
+  using algo = KokkosBatched::Algo::Gemv::Default;
+  // ensure same type for alpha and beta (required by serial impl)
+  const auto beta_ = static_cast<ScalarType>(beta);
 
   if (trans == 'N' || trans == 'n') {
-    return run(KokkosBatched::Trans::NoTranspose());
+    using mode = KokkosBatched::Trans::NoTranspose;
+    KokkosBatched::SerialGemv<mode, algo>::invoke(alpha, A, x, beta_, y);
   } else if (trans == 'T' || trans == 't') {
-    return run(KokkosBatched::Trans::Transpose());
-    // } else if (trans == 'C' || trans == 'c') { // NOT implemented
-    //   return run(KokkosBatched::Trans::ConjTranspose());
-  } else {  // conjugate[no-transpose] not supported ?
+    using mode = KokkosBatched::Trans::Transpose;
+    KokkosBatched::SerialGemv<mode, algo>::invoke(alpha, A, x, beta_, y);
+  } else {  // NOT supported: Conjugate, ConjTranspose
     std::ostringstream os;
     os << "Matrix mode not supported: " << trans << std::endl;
     KokkosKernels::Impl::throw_runtime_exception(os.str());
