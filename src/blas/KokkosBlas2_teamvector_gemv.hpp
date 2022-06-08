@@ -63,20 +63,17 @@ void KOKKOS_INLINE_FUNCTION team_vector_gemv(
           std::is_same<ScalarType,
                        typename YVector::non_const_value_type>::value,
       "TeamVector GEMV requires A,x and y to have same scalar type");
-
-  const auto run = [&](auto mode) {
-    using algo = KokkosBatched::Algo::Gemv::Default;
-    using impl = KokkosBatched::TeamVectorGemv<TeamType, decltype(mode), algo>;
-    impl::invoke(team, alpha, A, x, beta, y);
-  };
+  using algo = KokkosBatched::Algo::Gemv::Default;
 
   if (trans == 'N' || trans == 'n') {
-    return run(KokkosBatched::Trans::NoTranspose());
+    using mode         = KokkosBatched::Trans::NoTranspose;
+    using tv_gemv_impl = KokkosBatched::TeamVectorGemv<TeamType, mode, algo>;
+    tv_gemv_impl::invoke(team, alpha, A, x, beta, y);
   } else if (trans == 'T' || trans == 't') {
-    return run(KokkosBatched::Trans::Transpose());
-    // } else if (trans == 'C' || trans == 'c') { // NOT implemented
-    //   return run(KokkosBatched::Trans::ConjTranspose());
-  } else {  // conjugate[no-transpose] not supported ?
+    using mode         = KokkosBatched::Trans::Transpose;
+    using tv_gemv_impl = KokkosBatched::TeamVectorGemv<TeamType, mode, algo>;
+    tv_gemv_impl::invoke(team, alpha, A, x, beta, y);
+  } else {  // NOT supported: Conjugate, ConjTranspose
     std::ostringstream os;
     os << "Matrix mode not supported: " << trans << std::endl;
     KokkosKernels::Impl::throw_runtime_exception(os.str());
