@@ -155,10 +155,10 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose,
     cols_view_t entries("colmap_view", nnzL);
     values_view_t values("values_view", nnzL);
     // transpose L
-    KokkosSparse::Impl::transpose_matrix<in_row_map_view_t, in_cols_view_t, in_values_view_t,
-                     row_map_view_t, cols_view_t, values_view_t, row_map_view_t,
-                     host_execution_space>(nrows, nrows, row_mapM, entriesM,
-                                           valuesM, row_map, entries, values);
+    KokkosSparse::Impl::transpose_matrix<
+        in_row_map_view_t, in_cols_view_t, in_values_view_t, row_map_view_t,
+        cols_view_t, values_view_t, row_map_view_t, host_execution_space>(
+        nrows, nrows, row_mapM, entriesM, valuesM, row_map, entries, values);
 
     // store L in CSC
     host_graph_t static_graph(entries, row_map);

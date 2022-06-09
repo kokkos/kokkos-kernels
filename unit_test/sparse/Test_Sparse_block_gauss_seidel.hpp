@@ -177,8 +177,8 @@ int run_block_gauss_seidel_1(
 
 }  // namespace Test
 
-template <KokkosSparse::SparseMatrixFormat mtx_format, typename scalar_t, typename lno_t,
-          typename size_type, typename device>
+template <KokkosSparse::SparseMatrixFormat mtx_format, typename scalar_t,
+          typename lno_t, typename size_type, typename device>
 void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz,
                                    lno_t bandwidth, lno_t row_size_variance) {
   using namespace Test;
@@ -264,8 +264,8 @@ void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz,
   // device::execution_space::finalize();
 }
 
-template <KokkosSparse::SparseMatrixFormat mtx_format, typename scalar_t, typename lno_t,
-          typename size_type, typename device>
+template <KokkosSparse::SparseMatrixFormat mtx_format, typename scalar_t,
+          typename lno_t, typename size_type, typename device>
 void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz,
                                    lno_t bandwidth, lno_t row_size_variance) {
   using namespace Test;
@@ -374,8 +374,8 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz,
   // device::execution_space::finalize();
 }
 
-template <KokkosSparse::SparseMatrixFormat mtx_format, typename scalar_t, typename lno_t,
-          typename size_type, typename device>
+template <KokkosSparse::SparseMatrixFormat mtx_format, typename scalar_t,
+          typename lno_t, typename size_type, typename device>
 void test_block_gauss_seidel_empty() {
   using namespace Test;
   typedef
@@ -422,37 +422,38 @@ void test_block_gauss_seidel_empty() {
   TEST_F(                                                                                \
       TestCategory,                                                                      \
       sparse_blockcrs_gauss_seidel_rank1##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
-    test_block_gauss_seidel_rank1<KokkosSparse::BlockCRS, SCALAR, ORDINAL, OFFSET, DEVICE>( \
-        500, 500 * 10, 70, 3);                                                           \
+    test_block_gauss_seidel_rank1<KokkosSparse::BlockCRS, SCALAR, ORDINAL,               \
+                                  OFFSET, DEVICE>(500, 500 * 10, 70, 3);                 \
   }                                                                                      \
   TEST_F(                                                                                \
       TestCategory,                                                                      \
       sparse_blockcrs_gauss_seidel_rank2_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {   \
-    test_block_gauss_seidel_rank2<KokkosSparse::BlockCRS, SCALAR, ORDINAL, OFFSET, DEVICE>(            \
-        500, 500 * 10, 70, 3);                                                           \
+    test_block_gauss_seidel_rank2<KokkosSparse::BlockCRS, SCALAR, ORDINAL,               \
+                                  OFFSET, DEVICE>(500, 500 * 10, 70, 3);                 \
   }                                                                                      \
   TEST_F(                                                                                \
       TestCategory,                                                                      \
       sparse_blockcrs_gauss_seidel_empty_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {   \
-    test_block_gauss_seidel_empty<KokkosSparse::BlockCRS, SCALAR, ORDINAL, OFFSET,                     \
-                                  DEVICE>();                                             \
+    test_block_gauss_seidel_empty<KokkosSparse::BlockCRS, SCALAR, ORDINAL,               \
+                                  OFFSET, DEVICE>();                                     \
   }                                                                                      \
   TEST_F(                                                                                \
       TestCategory,                                                                      \
       sparse_bsr_gauss_seidel_rank1_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {        \
-    test_block_gauss_seidel_rank1<KokkosSparse::BSR, SCALAR, ORDINAL, OFFSET, DEVICE>(                 \
-        500, 500 * 10, 70, 3);                                                           \
+    test_block_gauss_seidel_rank1<KokkosSparse::BSR, SCALAR, ORDINAL, OFFSET,            \
+                                  DEVICE>(500, 500 * 10, 70, 3);                         \
   }                                                                                      \
   TEST_F(                                                                                \
       TestCategory,                                                                      \
       sparse_bsr_gauss_seidel_rank2_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {        \
-    test_block_gauss_seidel_rank2<KokkosSparse::BSR, SCALAR, ORDINAL, OFFSET, DEVICE>(                 \
-        500, 500 * 10, 70, 3);                                                           \
+    test_block_gauss_seidel_rank2<KokkosSparse::BSR, SCALAR, ORDINAL, OFFSET,            \
+                                  DEVICE>(500, 500 * 10, 70, 3);                         \
   }                                                                                      \
   TEST_F(                                                                                \
       TestCategory,                                                                      \
       sparse_bsr_gauss_seidel_empty_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {        \
-    test_block_gauss_seidel_empty<KokkosSparse::BSR, SCALAR, ORDINAL, OFFSET, DEVICE>();               \
+    test_block_gauss_seidel_empty<KokkosSparse::BSR, SCALAR, ORDINAL, OFFSET,            \
+                                  DEVICE>();                                             \
   }
 
 #include <Test_Common_Test_All_Type_Combos.hpp>
