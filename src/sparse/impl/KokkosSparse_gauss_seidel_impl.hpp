@@ -46,6 +46,7 @@
 #define _KOKKOSGSIMP_HPP
 
 #include "KokkosKernels_Utils.hpp"
+#include "KokkosSparse_Utils.hpp"
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Bitset.hpp>
 #include "KokkosGraph_Distance1Color.hpp"
