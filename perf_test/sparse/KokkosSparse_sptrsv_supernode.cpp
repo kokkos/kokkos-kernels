@@ -63,6 +63,7 @@ using namespace KokkosKernels;
 using namespace KokkosKernels::Impl;
 using namespace KokkosKernels::Experimental;
 using namespace KokkosSparse;
+using namespace KokkosSparse::Impl;
 using namespace KokkosSparse::Experimental;
 using namespace KokkosSparse::PerfTest::Experimental;
 
@@ -154,7 +155,7 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose,
     cols_view_t entries("colmap_view", nnzL);
     values_view_t values("values_view", nnzL);
     // transpose L
-    transpose_matrix<in_row_map_view_t, in_cols_view_t, in_values_view_t,
+    KokkosSparse::Impl::transpose_matrix<in_row_map_view_t, in_cols_view_t, in_values_view_t,
                      row_map_view_t, cols_view_t, values_view_t, row_map_view_t,
                      host_execution_space>(nrows, nrows, row_mapM, entriesM,
                                            valuesM, row_map, entries, values);

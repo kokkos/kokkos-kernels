@@ -63,7 +63,7 @@ namespace Impl {
 
 template <typename HandleType, typename lno_row_view_t_,
           typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
-          KokkosKernels::SparseMatrixFormat format = KokkosKernels::CRS>
+          KokkosSparse::SparseMatrixFormat format = KokkosSparse::CRS>
 class PointGaussSeidel {
  public:
   typedef lno_row_view_t_ in_lno_row_view_t;
@@ -137,7 +137,7 @@ class PointGaussSeidel {
       pool_memory_space;
 
   typedef
-      typename KokkosKernels::Impl::MatrixRowIndex<format, nnz_lno_t, size_type>
+      typename KokkosSparse::Impl::MatrixRowIndex<format, nnz_lno_t, size_type>
           RowIndex;
 
  private:
@@ -1105,7 +1105,7 @@ class PointGaussSeidel {
           // std::cout << "level_2_mem:" << level_2_mem << std::endl;
 
           size_type num_large_rows = 0;
-          KokkosKernels::Impl::kk_reduce_numrows_larger_than_threshold<
+          KokkosSparse::Impl::kk_reduce_numrows_larger_than_threshold<
               row_lno_persistent_work_view_t, MyExecSpace>(
               brows, permuted_xadj, num_values_in_l1, num_large_rows);
           num_big_rows = KOKKOSKERNELS_MACRO_MIN(

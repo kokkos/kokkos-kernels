@@ -322,7 +322,7 @@ void run_experiment(
   // typedef typename lno_nnz_view_t::value_type lno_t;
   // typedef typename lno_view_t::value_type size_type;
   // typedef typename scalar_view_t::value_type scalar_t;
-  KokkosKernels::Impl::kk_create_blockcrs_formated_point_crsmatrix(
+  KokkosSparse::Impl::kk_create_blockcrs_formated_point_crsmatrix(
       block_size, crsmat.numRows(), crsmat.numCols(), crsmat.graph.row_map,
       crsmat.graph.entries, crsmat.values, out_r, out_c, pf_rm, pf_e, pf_v);
 
@@ -349,7 +349,7 @@ void run_experiment(
   scalar_view_t bf_v;
   size_t but_r, but_c;
 
-  KokkosKernels::Impl::kk_create_blockcrs_from_blockcrs_formatted_point_crs(
+  KokkosSparse::Impl::kk_create_blockcrs_from_blockcrs_formatted_point_crs(
       block_size, out_r, out_c, pf_rm, pf_e, pf_v, but_r, but_c, bf_rm, bf_e,
       bf_v);
 

@@ -104,22 +104,22 @@ void testTranspose(int numRows, int numCols, bool doValues) {
       Kokkos::view_alloc(Kokkos::WithoutInitializing, "Values^T"),
       input_mat.values.extent(0));
   if (doValues) {
-    KokkosKernels::Impl::transpose_matrix<c_rowmap_t, c_entries_t, c_values_t,
+    KokkosSparse::Impl::transpose_matrix<c_rowmap_t, c_entries_t, c_values_t,
                                           rowmap_t, entries_t, values_t,
                                           rowmap_t, exec_space>(
         numRows, numCols, input_mat.graph.row_map, input_mat.graph.entries,
         input_mat.values, t_rowmap, t_entries, t_values);
-    KokkosKernels::Impl::transpose_matrix<rowmap_t, entries_t, values_t,
+    KokkosSparse::Impl::transpose_matrix<rowmap_t, entries_t, values_t,
                                           rowmap_t, entries_t, values_t,
                                           rowmap_t, exec_space>(
         numCols, numRows, t_rowmap, t_entries, t_values, tt_rowmap, tt_entries,
         tt_values);
   } else {
-    KokkosKernels::Impl::transpose_graph<c_rowmap_t, c_entries_t, rowmap_t,
+    KokkosSparse::Impl::transpose_graph<c_rowmap_t, c_entries_t, rowmap_t,
                                          entries_t, rowmap_t, exec_space>(
         numRows, numCols, input_mat.graph.row_map, input_mat.graph.entries,
         t_rowmap, t_entries);
-    KokkosKernels::Impl::transpose_graph<rowmap_t, entries_t, rowmap_t,
+    KokkosSparse::Impl::transpose_graph<rowmap_t, entries_t, rowmap_t,
                                          entries_t, rowmap_t, exec_space>(
         numCols, numRows, t_rowmap, t_entries, tt_rowmap, tt_entries);
   }

@@ -57,9 +57,9 @@
 #include <parallel/algorithm>
 #endif
 
-namespace KokkosKernels {
+namespace KokkosSparse {
 
-enum SparseMatrixFormat {
+enum  SparseMatrixFormat {
   BlockCRS,
   BSR,
   CRS = BlockCRS,  // convenience alias: for block_size=1 or no-blocks there is
@@ -425,11 +425,11 @@ void transpose_matrix(
 
   // determine vector lanes per thread
   int thread_size = kk_get_suggested_vector_size(
-      num_rows, nnz, kk_get_exec_space_type<MyExecSpace>());
+      num_rows, nnz, KokkosKernels::Impl::kk_get_exec_space_type<MyExecSpace>());
 
   // determine threads per team
   int team_size = kk_get_suggested_team_size(
-      thread_size, kk_get_exec_space_type<MyExecSpace>());
+      thread_size, KokkosKernels::Impl::kk_get_exec_space_type<MyExecSpace>());
 
   TransposeFunctor_t tm(num_rows, num_cols, xadj, adj, vals, t_xadj, t_adj,
                         t_vals, tmp_row_view, true, team_size);
@@ -439,7 +439,7 @@ void transpose_matrix(
                                   team_size, thread_size),
                        tm);
 
-  kk_exclusive_parallel_prefix_sum<out_row_view_t, MyExecSpace>(num_cols + 1,
+  KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<out_row_view_t, MyExecSpace>(num_cols + 1,
                                                                 t_xadj);
 
   Kokkos::deep_copy(tmp_row_view, t_xadj);
@@ -508,11 +508,11 @@ void transpose_graph(
 
   // determine vector lanes per thread
   int thread_size = kk_get_suggested_vector_size(
-      num_rows, nnz, kk_get_exec_space_type<MyExecSpace>());
+      num_rows, nnz, KokkosKernels::Impl::kk_get_exec_space_type<MyExecSpace>());
 
   // determine threads per team
   int team_size = kk_get_suggested_team_size(
-      thread_size, kk_get_exec_space_type<MyExecSpace>());
+      thread_size, KokkosKernels::Impl::kk_get_exec_space_type<MyExecSpace>());
 
   TransposeFunctor_t tm(num_rows, num_cols, xadj, adj, tmp1, t_xadj, t_adj,
                         tmp2, tmp_row_view, false, team_size);
@@ -522,7 +522,7 @@ void transpose_graph(
                                   team_size, thread_size),
                        tm);
 
-  kk_exclusive_parallel_prefix_sum<out_row_view_t, MyExecSpace>(num_cols + 1,
+  KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<out_row_view_t, MyExecSpace>(num_cols + 1,
                                                                 t_xadj);
 
   Kokkos::deep_copy(tmp_row_view, t_xadj);
@@ -715,7 +715,7 @@ void kk_create_reverse_map(
 
     // kk_inclusive_parallel_prefix_sum<reverse_array_type,
     // MyExecSpace>(tmp_reverse_size + 1, tmp_color_xadj);
-    kk_exclusive_parallel_prefix_sum<reverse_array_type, MyExecSpace>(
+    KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<reverse_array_type, MyExecSpace>(
         tmp_reverse_size + 1, tmp_color_xadj);
     MyExecSpace().fence();
 
@@ -750,7 +750,7 @@ void kk_create_reverse_map(
 
     // kk_inclusive_parallel_prefix_sum<reverse_array_type,
     // MyExecSpace>(num_reverse_elements + 1, reverse_map_xadj);
-    kk_exclusive_parallel_prefix_sum<reverse_array_type, MyExecSpace>(
+    KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<reverse_array_type, MyExecSpace>(
         num_reverse_elements + 1, tmp_color_xadj);
     MyExecSpace().fence();
 
@@ -843,7 +843,7 @@ inline size_t kk_is_d1_coloring_valid(
     typename in_nnz_view_t::non_const_value_type num_rows,
     typename in_nnz_view_t::non_const_value_type /*num_cols*/,
     in_row_view_t xadj, in_nnz_view_t adj, in_color_view_t v_colors) {
-  ExecSpaceType my_exec_space = kk_get_exec_space_type<MyExecSpace>();
+  KokkosKernels::Impl::ExecSpaceType my_exec_space = KokkosKernels::Impl::kk_get_exec_space_type<MyExecSpace>();
   int vector_size =
       kk_get_suggested_vector_size(num_rows, adj.extent(0), my_exec_space);
   int suggested_team_size =
@@ -926,160 +926,6 @@ void graph_min_max_degree(const rowmap_t &rowmap, ordinal_t &min_degree,
   max_degree = result.max_val;
 }
 
-/*
-template <typename in_row_view_t,
-          typename in_nnz_view_t,
-          typename out_nnz_view_t,
-          typename MyExecSpace>
-struct IncidenceMatrix{
-
-  struct FillTag{};
-
-  typedef struct FillTag FillTag;
-
-  typedef Kokkos::TeamPolicy<FillTag, MyExecSpace> team_fill_policy_t ;
-  typedef Kokkos::TeamPolicy<FillTag, MyExecSpace,
-Kokkos::Schedule<Kokkos::Dynamic> > dynamic_team_fill_policy_t ; typedef
-typename team_fill_policy_t::member_type team_fill_member_t ;
-
-  typedef typename in_nnz_view_t::non_const_value_type nnz_lno_t;
-  typedef typename in_row_view_t::non_const_value_type size_type;
-
-
-  typename in_nnz_view_t::non_const_value_type num_rows;
-  in_row_view_t xadj;
-  in_nnz_view_t adj;
-  out_nnz_view_t t_adj;  //allocated
-  typename in_row_view_t::non_const_type tmp_txadj;
-  nnz_lno_t team_work_size;
-
-  IncidenceMatrix(
-      nnz_lno_t num_rows_,
-      in_row_view_t xadj_,
-      in_nnz_view_t adj_,
-      out_nnz_view_t t_adj_,
-      typename in_row_view_t::non_const_type tmp_txadj_,
-      nnz_lno_t team_row_work_size_):
-        num_rows(num_rows_),
-        xadj(xadj_), adj(adj_),
-        t_adj(t_adj_),
-        tmp_txadj(tmp_txadj_), team_work_size(team_row_work_size_) {}
-
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()(const FillTag&, const team_fill_member_t & teamMember) const {
-    const nnz_lno_t team_row_begin = teamMember.league_rank() * team_work_size;
-    const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin +
-team_work_size, num_rows);
-
-
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,team_row_begin,team_row_end),
-[&] (const nnz_lno_t& row_index) { const size_type col_begin = xadj[row_index];
-      const size_type col_end = xadj[row_index + 1];
-      const nnz_lno_t left_work = col_end - col_begin;
-      Kokkos::parallel_for(
-          Kokkos::ThreadVectorRange(teamMember, left_work),
-          [&] (nnz_lno_t i) {
-        const size_type adjind = i + col_begin;
-        const nnz_lno_t colIndex = adj[adjind];
-        if (row_index < colIndex){
-
-          const size_type pos =
-Kokkos::atomic_fetch_add(&(tmp_txadj(colIndex)),1); t_adj(adjind) = adjind;
-          t_adj(pos) = adjind;
-        }
-      });
-    //}
-    });
-  }
-};
-*/
-/**
- * \brief function returns transpose of the given graph.
- * \param num_rows: num rows in input graph
- * \param num_cols: num cols in input graph
- * \param xadj: row pointers of the input graph
- * \param adj: column indices of the input graph
- * \param t_xadj: output, the row indices of the output graph. MUST BE
- * INITIALIZED WITH ZEROES. \param t_adj: output, column indices. No need for
- * initializations. \param vector_size: suggested vector size, optional. if -1,
- * kernel will decide. \param suggested_team_size: suggested team size,
- * optional. if -1, kernel will decide. \param team_work_chunk_size: suggested
- * work size of a team, optional. if -1, kernel will decide. \param
- * use_dynamic_scheduling: whether to use dynamic scheduling. Default is true.
- */
-/*
-template <typename in_row_view_t,
-          typename in_nnz_view_t,
-          typename out_nnz_view_t,
-          typename MyExecSpace>
-inline void kk_create_incidence_matrix(
-    typename in_nnz_view_t::non_const_value_type num_rows,
-    in_row_view_t xadj,
-    in_nnz_view_t adj,
-    out_nnz_view_t i_adj,  //pre-allocated -- no need for initialize -- size is
-same as adj int vector_size = -1, int suggested_team_size = -1, typename
-in_nnz_view_t::non_const_value_type team_work_chunk_size = -1, bool
-use_dynamic_scheduling = true
-    ){
-
-
-  typedef typename in_row_view_t::non_const_type tmp_row_view_t;
-  //allocate some memory for work for row pointers
-  tmp_row_view_t tmp_row_view(Kokkos::view_alloc(Kokkos::WithoutInitializing,
-"tmp_row_view"), num_rows + 1);
-
-  Kokkos::deep_copy(tmp_row_view, xadj);
-
-  in_nnz_view_t tmp1;
-  out_nnz_view_t tmp2;
-
-  //create the functor for tranpose.
-  typedef IncidenceMatrix <
-      in_row_view_t, in_nnz_view_t, in_nnz_view_t,
-      out_nnz_view_t, MyExecSpace>  IncidenceMatrix_Functor_t;
-
-  IncidenceMatrix_Functor_t tm ( num_rows, xadj, adj,
-                                t_adj, tmp_row_view,
-                                false,
-                                team_work_chunk_size);
-
-
-  typedef typename IncidenceMatrix_Functor_t::team_fill_policy_t fill_tp_t;
-  typedef typename IncidenceMatrix_Functor_t::dynamic_team_fill_policy_t
-d_fill_tp_t;
-
-  typename in_row_view_t::non_const_value_type nnz = adj.extent(0);
-
-  //set the vector size, if not suggested.
-  if (vector_size == -1)
-    vector_size = kk_get_suggested_vector_size(num_rows, nnz,
-kk_get_exec_space_type<MyExecSpace>());
-
-  //set the team size, if not suggested.
-  if (suggested_team_size == -1)
-    suggested_team_size = kk_get_suggested_team_size(vector_size,
-kk_get_exec_space_type<MyExecSpace>());
-
-  //set the chunk size, if not suggested.
-  if (team_work_chunk_size == -1)
-    team_work_chunk_size = suggested_team_size;
-
-
-
-  if (use_dynamic_scheduling){
-    Kokkos::parallel_for(  fill_tp_t(num_rows  / team_work_chunk_size + 1 ,
-suggested_team_size, vector_size), tm);
-  }
-  else {
-    Kokkos::parallel_for(  d_fill_tp_t(num_rows  / team_work_chunk_size + 1 ,
-suggested_team_size, vector_size), tm);
-  }
-  MyExecSpace().fence();
-
-}
-*/
-
 template <typename size_type, typename lno_t>
 void kk_get_lower_triangle_count_sequential(const lno_t nv,
                                             const size_type *in_xadj,
@@ -1140,7 +986,7 @@ struct LowerTriangularMatrix {
   scalar_t *t_vals;
 
   const lno_t team_work_size;
-  const ExecSpaceType exec_space;
+  const KokkosKernels::Impl::ExecSpaceType exec_space;
   const bool is_lower;
 
   LowerTriangularMatrix(const lno_t num_rows_, const size_type *xadj_,
@@ -1157,7 +1003,7 @@ struct LowerTriangularMatrix {
         t_adj(t_adj_),
         t_vals(out_vals_),
         team_work_size(team_row_work_size_),
-        exec_space(kk_get_exec_space_type<ExecutionSpace>()),
+        exec_space(KokkosKernels::Impl::kk_get_exec_space_type<ExecutionSpace>()),
         is_lower(is_lower_) {}
 
   KOKKOS_INLINE_FUNCTION
@@ -1274,9 +1120,9 @@ void kk_get_lower_triangle_count_parallel(
     bool use_dynamic_scheduling = false, int chunksize = 4,
     bool is_lower = true) {
   const int vector_size = kk_get_suggested_vector_size(
-      nv, ne, kk_get_exec_space_type<ExecutionSpace>());
+      nv, ne, KokkosKernels::Impl::kk_get_exec_space_type<ExecutionSpace>());
   const int suggested_team_size = kk_get_suggested_team_size(
-      vector_size, kk_get_exec_space_type<ExecutionSpace>());
+      vector_size, KokkosKernels::Impl::kk_get_exec_space_type<ExecutionSpace>());
   const int team_work_chunk_size = suggested_team_size * chunksize;
   typedef LowerTriangularMatrix<size_type, lno_t, ExecutionSpace> ltm_t;
 
@@ -1439,9 +1285,9 @@ void kk_get_lower_triangle_fill_parallel(
     bool use_dynamic_scheduling = false, bool chunksize = 4,
     bool is_lower = true) {
   const int vector_size = kk_get_suggested_vector_size(
-      nv, ne, kk_get_exec_space_type<ExecutionSpace>());
+      nv, ne, KokkosKernels::Impl::kk_get_exec_space_type<ExecutionSpace>());
   const int suggested_team_size = kk_get_suggested_team_size(
-      vector_size, kk_get_exec_space_type<ExecutionSpace>());
+      vector_size, KokkosKernels::Impl::kk_get_exec_space_type<ExecutionSpace>());
   const int team_work_chunk_size = suggested_team_size * chunksize;
 
   typedef LowerTriangularMatrix<size_type, lno_t, ExecutionSpace, scalar_t>
@@ -1573,7 +1419,7 @@ crstmat_t kk_get_lower_triangle(
       nr, ne, rowmap, entries, new_row_map.data(), new_indices,
       use_dynamic_scheduling, chunksize);
 
-  kk_exclusive_parallel_prefix_sum<row_map_view_t, exec_space>(nr + 1,
+  KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<row_map_view_t, exec_space>(nr + 1,
                                                                new_row_map);
   exec_space().fence();
 
@@ -1630,7 +1476,7 @@ crstmat_t kk_get_lower_crs_matrix(
       nr, ne, rowmap, entries, new_row_map.data(), new_indices,
       use_dynamic_scheduling, chunksize);
 
-  kk_exclusive_parallel_prefix_sum<row_map_view_t, exec_space>(nr + 1,
+  KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<row_map_view_t, exec_space>(nr + 1,
                                                                new_row_map);
   exec_space().fence();
 
@@ -1683,7 +1529,7 @@ graph_t kk_get_lower_crs_graph(graph_t in_crs_matrix,
   kk_get_lower_triangle_count<size_type, lno_t, exec_space>(
       nr, ne, rowmap, entries, new_row_map.data(), new_indices);
 
-  kk_exclusive_parallel_prefix_sum<row_map_view_t, exec_space>(nr + 1,
+  KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<row_map_view_t, exec_space>(nr + 1,
                                                                new_row_map);
   exec_space().fence();
 
@@ -1736,7 +1582,7 @@ void kk_get_lower_triangle(typename cols_view_t::non_const_value_type nr,
       nr, ne, rowmap, entries, out_rowmap.data(), new_indices.data(),
       use_dynamic_scheduling, chunksize, is_lower);
 
-  kk_exclusive_parallel_prefix_sum<out_row_map_view_t, exec_space>(nr + 1,
+  KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<out_row_map_view_t, exec_space>(nr + 1,
                                                                    out_rowmap);
   exec_space().fence();
 
@@ -1844,7 +1690,7 @@ void kk_create_incidence_matrix_from_original_matrix(
       permutation.data(), use_dynamic_scheduling, chunksize,
       sort_decreasing_order);
   exec_space().fence();
-  kk_exclusive_parallel_prefix_sum<out_row_map_view_t, exec_space>(nr + 1,
+  KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<out_row_map_view_t, exec_space>(nr + 1,
                                                                    out_rowmap);
 
   // kk_print_1Dview(out_rowmap, false, 20);
@@ -2069,21 +1915,21 @@ template <typename scalar_t, typename lno_t, typename device,
           typename mem_traits, typename size_type>
 struct MatrixTraits<
     KokkosSparse::CrsMatrix<scalar_t, lno_t, device, mem_traits, size_type>> {
-  static constexpr auto format = KokkosKernels::CRS;
+  static constexpr auto format = KokkosSparse::CRS;
 };
 
 template <typename scalar_t, typename lno_t, typename device,
           typename mem_traits, typename size_type>
 struct MatrixTraits<KokkosSparse::Experimental::BlockCrsMatrix<
     scalar_t, lno_t, device, mem_traits, size_type>> {
-  static constexpr auto format = KokkosKernels::BlockCRS;
+  static constexpr auto format = KokkosSparse::BlockCRS;
 };
 
 template <typename scalar_t, typename lno_t, typename device,
           typename mem_traits, typename size_type>
 struct MatrixTraits<KokkosSparse::Experimental::BsrMatrix<
     scalar_t, lno_t, device, mem_traits, size_type>> {
-  static constexpr auto format = KokkosKernels::BSR;
+  static constexpr auto format = KokkosSparse::BSR;
 };
 
 template <SparseMatrixFormat /* outFormat */>
@@ -2120,6 +1966,18 @@ struct MatrixConverter<BSR> {
 };
 
 }  // namespace Impl
+} // namespace KokkosSparse
+
+namespace KokkosKernels {
+
+enum [[deprecated]] SparseMatrixFormat {
+  BlockCRS,
+  BSR,
+  CRS = BlockCRS,  // convenience alias: for block_size=1 or no-blocks there is
+                   // no difference in value ordering (so the format tag becomes
+                   // irrelevant)
+};
+
 }  // namespace KokkosKernels
 
 #endif
