@@ -637,7 +637,8 @@ template <typename execution_space, typename rowmap_t, typename entries_t,
 [[deprecated]] void sort_crs_matrix(const rowmap_t& rowmap,
                                     const entries_t& entries,
                                     const values_t& values) {
-  KokkosSparse::sort_crs_matrix<execution_space, rowmap_t, entries_t>(rowmap, entries, values);
+  KokkosSparse::sort_crs_matrix<execution_space, rowmap_t, entries_t>(
+      rowmap, entries, values);
 }
 
 template <typename crsMat_t>
@@ -648,7 +649,8 @@ template <typename crsMat_t>
 template <typename execution_space, typename rowmap_t, typename entries_t>
 [[deprecated]] void sort_crs_graph(const rowmap_t& rowmap,
                                    const entries_t& entries) {
-  KokkosSparse::sort_crs_graph<execution_space, rowmap_t, entries_t>(rowmap, entries);
+  KokkosSparse::sort_crs_graph<execution_space, rowmap_t, entries_t>(rowmap,
+                                                                     entries);
 }
 
 template <typename crsGraph_t>
