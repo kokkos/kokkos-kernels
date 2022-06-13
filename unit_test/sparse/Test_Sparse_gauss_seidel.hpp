@@ -47,6 +47,7 @@
 #include <Kokkos_Core.hpp>
 #include "KokkosKernels_Handle.hpp"
 #include "KokkosKernels_IOUtils.hpp"
+#include "KokkosSparse_IOUtils.hpp"
 //#include <Kokkos_Sparse_CrsMatrix.hpp>
 #include <KokkosSparse_spmv.hpp>
 #include <KokkosBlas1_dot.hpp>
@@ -61,7 +62,7 @@
 #include "KokkosSparse_gauss_seidel.hpp"
 #include "KokkosSparse_partitioning_impl.hpp"
 #include "KokkosSparse_sor_sequential_impl.hpp"
-#include "KokkosKernels_Sorting.hpp"
+#include "KokkosSparse_SortCrs.hpp"
 #include "KokkosKernels_TestUtils.hpp"
 
 // #ifndef kokkos_complex_double
@@ -183,7 +184,7 @@ void test_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth,
   srand(245);
   lno_t numCols = numRows;
   crsMat_t input_mat =
-      KokkosKernels::Impl::kk_generate_diagonally_dominant_sparse_matrix<
+      KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<
           crsMat_t>(numRows, numCols, nnz, row_size_variance, bandwidth);
   if (symmetric) {
     // Symmetrize on host, rather than relying on the parallel versions (those
@@ -272,7 +273,7 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth,
 
   lno_t numCols = numRows;
   crsMat_t input_mat =
-      KokkosKernels::Impl::kk_generate_diagonally_dominant_sparse_matrix<
+      KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<
           crsMat_t>(numRows, numCols, nnz, row_size_variance, bandwidth);
   if (symmetric) {
     // Symmetrize on host, rather than relying on the parallel versions (those
@@ -396,7 +397,7 @@ void test_sequential_sor(lno_t numRows, size_type nnz, lno_t bandwidth,
           crsMat_t;
   lno_t numCols = numRows;
   crsMat_t input_mat =
-      KokkosKernels::Impl::kk_generate_diagonally_dominant_sparse_matrix<
+      KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<
           crsMat_t>(numRows, numCols, nnz, row_size_variance, bandwidth);
   auto rowmap  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
                                                     input_mat.graph.row_map);
@@ -472,7 +473,7 @@ void test_balloon_clustering(lno_t numRows, size_type nnzPerRow,
   srand(245);
   size_type nnzTotal = nnzPerRow * numRows;
   lno_t nnzVariance  = nnzPerRow / 4;
-  crsMat_t A         = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(
+  crsMat_t A         = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(
       numRows, numRows, nnzTotal, nnzVariance, bandwidth);
   lno_row_view_t symRowmap;
   lno_nnz_view_t symEntries;
@@ -609,7 +610,7 @@ void test_gauss_seidel_long_rows(lno_t numRows, lno_t numLongRows,
                                     rowmap.data(), numRows + 1));
   crsMat_t input_mat("A", numRows, numRows, totalEntries, valuesView,
                      rowmapView, entriesView);
-  input_mat = KokkosKernels::sort_and_merge_matrix(input_mat);
+  input_mat = KokkosSparse::sort_and_merge_matrix(input_mat);
   if (symmetric) {
     // Symmetrize on host, rather than relying on the parallel versions (those
     // can be tested for symmetric=false)
@@ -660,11 +661,11 @@ void test_gauss_seidel_custom_coloring(lno_t numRows, lno_t nnzPerRow) {
   const scalar_t one = Kokkos::ArithTraits<scalar_t>::one();
   size_type nnz      = nnzPerRow * numRows;
   crsMat_t input_mat =
-      KokkosKernels::Impl::kk_generate_diagonally_dominant_sparse_matrix<
+      KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<
           crsMat_t>(numRows, numRows, nnz, 0, numRows / 10, 2.0 * one);
   input_mat =
       Test::symmetrize<scalar_t, lno_t, size_type, device, crsMat_t>(input_mat);
-  input_mat = KokkosKernels::sort_and_merge_matrix(input_mat);
+  input_mat = KokkosSparse::sort_and_merge_matrix(input_mat);
   scalar_view_t solution_x(
       Kokkos::view_alloc(Kokkos::WithoutInitializing, "X (correct)"), numRows);
   create_random_x_vector(solution_x);

@@ -894,8 +894,10 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
   //
   // Whether to call KokkosKernel's native implementation, even if a TPL impl is
   // available
-  bool useFallback = controls.isParameter("algorithm") &&
-                     controls.getParameter("algorithm") == "native";
+  bool useFallback =
+      controls.isParameter("algorithm") &&
+      (controls.getParameter("algorithm") == "native" ||
+       controls.getParameter("algorithm") == "experimental_bsr_tc");
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
   // cuSPARSE does not support the modes (C), (T), (H)
@@ -936,6 +938,7 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
         typename YVector_Internal::array_layout,
         typename YVector_Internal::device_type,
         typename YVector_Internal::memory_traits,
+        std::is_integral<typename AMatrix_Internal::const_value_type>::value,
         false>::spmv_mv_bsrmatrix(controls, mode, alpha, A_i, x_i, beta, y_i);
     Kokkos::Profiling::popRegion();
   } else {
@@ -952,11 +955,9 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
         typename YVector_Internal::value_type**,
         typename YVector_Internal::array_layout,
         typename YVector_Internal::device_type,
-        typename YVector_Internal::memory_traits>::spmv_mv_bsrmatrix(controls,
-                                                                     mode,
-                                                                     alpha, A_i,
-                                                                     x_i, beta,
-                                                                     y_i);
+        typename YVector_Internal::memory_traits,
+        std::is_integral<typename AMatrix_Internal::const_value_type>::value>::
+        spmv_mv_bsrmatrix(controls, mode, alpha, A_i, x_i, beta, y_i);
   }
 }
 
@@ -1097,7 +1098,7 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
 /// entries of y; if alpha == 0, ignore the entries of A and x.
 ///
 /// If \c AMatrix is a KokkosSparse::Experimental::BsrMatrix, controls may have
-/// \c "algorithm" = \c "experimental_tc_bsr" to use Nvidia tensor cores on
+/// \c "algorithm" = \c "experimental_bsr_tc" to use Nvidia tensor cores on
 /// Volta or Ampere architectures. On Volta-architecture GPUs the only available
 /// precision is mixed-precision fp32 accumulator from fp16 inputs. On
 /// Ampere-architecture GPUs (cc >= 80), mixed precision is used when A is fp16,

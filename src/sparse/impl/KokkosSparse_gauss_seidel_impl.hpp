@@ -46,13 +46,14 @@
 #define _KOKKOSGSIMP_HPP
 
 #include "KokkosKernels_Utils.hpp"
+#include "KokkosSparse_Utils.hpp"
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Bitset.hpp>
 #include "KokkosGraph_Distance1Color.hpp"
 #include "KokkosKernels_Uniform_Initialized_MemoryPool.hpp"
 #include "KokkosKernels_BitUtils.hpp"
 #include "KokkosKernels_SimpleUtils.hpp"
-#include "KokkosKernels_Sorting.hpp"
+#include "KokkosSparse_SortCrs.hpp"
 
 // FOR DEBUGGING
 #include "KokkosBlas1_nrm2.hpp"
@@ -979,8 +980,8 @@ class PointGaussSeidel {
       gsHandle->set_long_row_x(long_row_x);
     } else {
       // Just sort rows by ID.
-      KokkosKernels::sort_crs_graph<MyExecSpace, decltype(color_xadj),
-                                    decltype(color_adj)>(color_xadj, color_adj);
+      KokkosSparse::sort_crs_graph<MyExecSpace, decltype(color_xadj),
+                                   decltype(color_adj)>(color_xadj, color_adj);
     }
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
     MyExecSpace().fence();

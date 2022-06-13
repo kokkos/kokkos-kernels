@@ -45,8 +45,8 @@
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 
-#include "KokkosKernels_SparseUtils.hpp"
-#include "KokkosKernels_Sorting.hpp"
+#include "KokkosSparse_Utils.hpp"
+#include "KokkosSparse_SortCrs.hpp"
 #include <Kokkos_Concepts.hpp>
 #include <string>
 #include <stdexcept>
@@ -58,6 +58,7 @@
 #include <Kokkos_Core.hpp>
 
 #include <KokkosKernels_IOUtils.hpp>
+#include <KokkosSparse_IOUtils.hpp>
 
 using namespace KokkosSparse;
 using namespace KokkosSparse::Experimental;
@@ -154,7 +155,7 @@ bool is_same_mat(crsMat_t output_mat1, crsMat_t output_mat2) {
   size_t nentries2 = output_mat2.graph.entries.extent(0);
   size_t nvals2    = output_mat2.values.extent(0);
 
-  KokkosKernels::sort_crs_matrix(output_mat1);
+  KokkosSparse::sort_crs_matrix(output_mat1);
 
   if (nrows1 != nrows2) {
     std::cout << "nrows1:" << nrows1 << " nrows2:" << nrows2 << std::endl;
@@ -170,7 +171,7 @@ bool is_same_mat(crsMat_t output_mat1, crsMat_t output_mat2) {
     return false;
   }
 
-  KokkosKernels::sort_crs_matrix(output_mat2);
+  KokkosSparse::sort_crs_matrix(output_mat2);
 
   bool is_identical = true;
   is_identical      = KokkosKernels::Impl::kk_is_identical_view<
@@ -225,7 +226,7 @@ void test_spgemm_jacobi(lno_t numRows, size_type nnz, lno_t bandwidth,
 
   lno_t numCols = numRows;
   crsMat_t input_mat =
-      KokkosKernels::Impl::kk_generate_diagonally_dominant_sparse_matrix<
+      KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<
           crsMat_t>(numRows, numCols, nnz, row_size_variance, bandwidth);
 
   crsMat_t output_mat2;

@@ -46,7 +46,7 @@
 #define _KOKKOSSPGEMMMKL_HPP
 
 #include "KokkosKernels_config.h"
-#include "KokkosKernels_SparseUtils_mkl.hpp"
+#include "KokkosSparse_Utils_mkl.hpp"
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
 #include "mkl_spblas.h"

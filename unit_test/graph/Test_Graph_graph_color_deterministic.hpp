@@ -48,7 +48,7 @@
 #include "KokkosGraph_Distance1Color.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosKernels_IOUtils.hpp"
-#include "KokkosKernels_SparseUtils.hpp"
+#include "KokkosSparse_Utils.hpp"
 #include "KokkosKernels_Handle.hpp"
 
 using namespace KokkosKernels;

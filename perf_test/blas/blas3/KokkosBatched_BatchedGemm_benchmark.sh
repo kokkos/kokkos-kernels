@@ -50,7 +50,7 @@ export KOKKOS_SRC_DIR=$(realpath $KOKKOS_SRC_DIR)
 export KOKKOS_SHA=${KOKKOS_SHA:-"tags/3.6.00"}
 export KOKKOSKERNELS_SRC_DIR=${KOKKOSKERNELS_SRC_DIR:-"$HOME/KOKKOS.base/kokkos-kernels"}
 export KOKKOSKERNELS_SRC_DIR=$(realpath $KOKKOSKERNELS_SRC_DIR)
-export KOKKOSKERNELS_SHA=${KOKKOSKERNELS_SHA:-"half_examples"}
+export KOKKOSKERNELS_SHA=${KOKKOSKERNELS_SHA:-"tags/papers/us-rse-escience-2022"}
 envprint KOKKOS_SRC_DIR KOKKOS_SHA KOKKOSKERNELS_SRC_DIR KOKKOSKERNELS_SHA
 
 dry_run="off"
@@ -208,7 +208,7 @@ echo "cd $benchmark_dir" >> $KOKKOSKERNELS_BUILD_DIR/bench.sh
 echo "$KOKKOSKERNELS_BUILD_DIR/perf_test/blas/blas3/KokkosBlas3_perf_test \
       --test=batched_heuristic --routines=gemm --loop_type=parallel --batch_size_last_dim=0 \
       --matrix_size_start=2x2,2x2,2x2 --matrix_size_stop=64x64,64x64,64x64 \
-      --matrix_size_step=2 --batch_size=1024 \
+      --matrix_size_step=2 --batch_size=$((32*1024)) \
       --warm_up_loop=10 --iter=20 --verify=1 \
       ${use_simd} \
       --csv=${benchmark_dir}/${precision}_bench.csv" \

@@ -48,6 +48,7 @@
 #include <random>
 
 #include "KokkosKernels_Utils.hpp"
+#include "KokkosKernels_IOUtils.hpp"
 #include "Kokkos_ArithTraits.hpp"
 #include "KokkosSparse_spmv.hpp"
 // Make this include-able from all subdirectories
