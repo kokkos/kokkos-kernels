@@ -9,6 +9,7 @@
 #include <Kokkos_Random.hpp>
 #include <KokkosBlas2_serial_gemv.hpp>
 #include <KokkosBlas1_dot.hpp>
+#include <KokkosBlas_util.hpp>
 #include <KokkosKernels_TestUtils.hpp>
 
 namespace Test {
@@ -115,6 +116,99 @@ void impl_test_serial_gemv(const char *mode, int N, int M) {
   ScalarY const_const_result = KokkosBlas::dot(y, y);
   EXPECT_NEAR_KK(const_const_result, expected_result, eps * expected_result);
 }
+
+template <typename DeviceType, typename ViewType, typename ScalarType,
+          typename TransType, typename AlgoTagType>
+struct Functor_TestSerialGemv {
+  ViewType _a, _b, _c;
+
+  ScalarType _alpha, _beta;
+
+  KOKKOS_INLINE_FUNCTION
+  Functor_TestSerialGemv(const ScalarType alpha, const ViewType &a,
+                         const ViewType &b, const ScalarType beta,
+                         const ViewType &c)
+      : _a(a), _b(b), _c(c), _alpha(alpha), _beta(beta) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const TransType &, const int k) const {
+    auto aa = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
+    auto bb = Kokkos::subview(_b, k, Kokkos::ALL(), 0);
+    auto cc = Kokkos::subview(_c, k, Kokkos::ALL(), 0);
+
+    KokkosBlas::SerialGemv<TransType, AlgoTagType>::invoke(_alpha, aa, bb,
+                                                           _beta, cc);
+  }
+
+  inline void run() {
+    typedef typename ViewType::value_type value_type;
+    std::string name_region("KokkosBlas::Test::SerialGemv");
+    const std::string name_value_type = Test::value_type_name<value_type>();
+    std::string name                  = name_region + name_value_type;
+    Kokkos::Profiling::pushRegion(name.c_str());
+    Kokkos::RangePolicy<DeviceType, TransType> policy(0, _c.extent(0));
+    Kokkos::parallel_for(name.c_str(), policy, *this);
+    Kokkos::Profiling::popRegion();
+  }
+};
+
+template <typename DeviceType, typename ViewType, typename ScalarType,
+          typename TransType, typename AlgoTagType>
+void impl_test_batched_serial_gemv(const int N, const int BlkSize) {
+  typedef typename ViewType::value_type value_type;
+  typedef Kokkos::Details::ArithTraits<value_type> ats;
+
+  /// randomized input testing views
+  ScalarType alpha = 1.5, beta = 3.0;
+
+  ViewType a0("a0", N, BlkSize, BlkSize), a1("a1", N, BlkSize, BlkSize),
+      b0("b0", N, BlkSize, 1), b1("b1", N, BlkSize, 1), c0("c0", N, BlkSize, 1),
+      c1("c1", N, BlkSize, 1);
+
+  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(
+      13718);
+  Kokkos::fill_random(a0, random, value_type(1.0));
+  Kokkos::fill_random(b0, random, value_type(1.0));
+  Kokkos::fill_random(c0, random, value_type(1.0));
+
+  Kokkos::fence();
+
+  Kokkos::deep_copy(a1, a0);
+  Kokkos::deep_copy(b1, b0);
+  Kokkos::deep_copy(c1, c0);
+
+  /// test body
+  Functor_TestSerialGemv<DeviceType, ViewType, ScalarType, TransType,
+                         KokkosBlas::Algo::Gemv::Unblocked>(alpha, a0, b0, beta,
+                                                            c0)
+      .run();
+  Functor_TestSerialGemv<DeviceType, ViewType, ScalarType, TransType,
+                         AlgoTagType>(alpha, a1, b1, beta, c1)
+      .run();
+
+  Kokkos::fence();
+
+  /// for comparison send it to host
+  typename ViewType::HostMirror c0_host = Kokkos::create_mirror_view(c0);
+  typename ViewType::HostMirror c1_host = Kokkos::create_mirror_view(c1);
+
+  Kokkos::deep_copy(c0_host, c0);
+  Kokkos::deep_copy(c1_host, c1);
+
+  /// check c0 = c1 ; this eps is about 10^-14
+  typedef typename ats::mag_type mag_type;
+  mag_type sum(1), diff(0);
+  const mag_type eps = 1.0e3 * ats::epsilon();
+
+  for (int k = 0; k < N; ++k)
+    for (int i = 0; i < BlkSize; ++i)
+      for (int j = 0; j < 1; ++j) {
+        sum += ats::abs(c0_host(k, i, j));
+        diff += ats::abs(c0_host(k, i, j) - c1_host(k, i, j));
+      }
+  EXPECT_NEAR_KK(diff / sum, 0, eps);
+}
+
 }  // namespace Test
 
 template <class ScalarA, class ScalarX, class ScalarY, class Device>
@@ -169,67 +263,110 @@ int test_serial_gemv(const char *mode) {
                               Device>(mode, 124, 124);
 #endif
 
-  return 1;
+  return 0;
 }
 
-template <class Scalar, class Device>
-int test_serial_gemv(const char *mode) {
-  return test_serial_gemv<Scalar, Scalar, Scalar, Device>(mode);
+template <typename DeviceType, typename ValueType, typename ScalarType,
+          typename TransType,
+          typename AlgoType = KokkosBlas::Algo::Gemv::Blocked>
+int test_batched_serial_gemv() {
+#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
+  {
+    typedef Kokkos::View<ValueType ***, Kokkos::LayoutLeft, DeviceType>
+        ViewType;
+    Test::impl_test_batched_serial_gemv<DeviceType, ViewType, ScalarType,
+                                        TransType, AlgoType>(0, 10);
+    for (int i = 0; i < 10; ++i) {
+      // printf("Testing: LayoutLeft,  Blksize %d\n", i);
+      Test::impl_test_batched_serial_gemv<DeviceType, ViewType, ScalarType,
+                                          TransType, AlgoType>(1024, i);
+    }
+  }
+#endif
+#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
+  {
+    typedef Kokkos::View<ValueType ***, Kokkos::LayoutRight, DeviceType>
+        ViewType;
+    Test::Gemv::impl_test_batched_serial_gemv<DeviceType, ViewType, ScalarType,
+                                              TransType, AlgoTagType>(0, 10);
+    for (int i = 0; i < 10; ++i) {
+      // printf("Testing: LayoutRight, Blksize %d\n", i);
+      Test::Gemv::impl_test_batched_serial_gemv<
+          DeviceType, ViewType, ScalarType, TransType, AlgoTagType>(1024, i);
+    }
+  }
+#endif
+
+  return 0;
 }
+
+#define TEST_CASE4(NAME, SCALAR_A, SCALAR_X, SCALAR_Y, SCALAR_COEF)     \
+  TEST_F(TestCategory, serial_gemv_nt_##NAME) {                         \
+    /* FIXME: implement arbitrary SCALAR_COEF for alpha/beta type */    \
+    test_serial_gemv<SCALAR_A, SCALAR_X, SCALAR_Y, TestExecSpace>("N"); \
+  }                                                                     \
+  TEST_F(TestCategory, serial_gemv_t_##NAME) {                          \
+    /* FIXME: implement arbitrary SCALAR_COEF for alpha/beta type */    \
+    test_serial_gemv<SCALAR_A, SCALAR_X, SCALAR_Y, TestExecSpace>("T"); \
+  }                                                                     \
+  TEST_F(TestCategory, serial_gemv_nt2_##NAME) {                        \
+    /* FIXME: implement mixed scalar support and test */                \
+    test_batched_serial_gemv<TestExecSpace, SCALAR_A, SCALAR_COEF,      \
+                             KokkosBlas::Trans::NoTranspose>();         \
+  }                                                                     \
+  TEST_F(TestCategory, serial_gemv_t2_##NAME) {                         \
+    /* FIXME: implement mixed scalar support and test */                \
+    test_batched_serial_gemv<TestExecSpace, SCALAR_A, SCALAR_COEF,      \
+                             KokkosBlas::Trans::Transpose>();           \
+  }
+
+#define _COMMON_TYPE3(T1, T2, T3) std::common_type<T1, T2, T3>::type
+
+#define TEST_CASE3(NAME, SCALAR_A, SCALAR_X, SCALAR_Y) \
+  TEST_CASE4(NAME, SCALAR_A, SCALAR_X, SCALAR_Y,       \
+             _COMMON_TYPE3(SCALAR_A, SCALAR_X, SCALAR_Y))
+
+#define TEST_CASE2(NAME, SCALAR, SCALAR_COEF) \
+  TEST_CASE4(NAME, SCALAR, SCALAR, SCALAR, SCALAR_COEF)
+#define TEST_CASE(NAME, SCALAR) TEST_CASE2(NAME, SCALAR, SCALAR)
 
 #if defined(KOKKOSKERNELS_INST_FLOAT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-TEST_F(TestCategory, serial_gemv_float) {
-  test_serial_gemv<float, TestExecSpace>("N");
-  test_serial_gemv<float, TestExecSpace>("T");
-}
+TEST_CASE(nt_float, float)
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&  \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-TEST_F(TestCategory, serial_gemv_double) {
-  test_serial_gemv<double, TestExecSpace>("N");
-  test_serial_gemv<double, TestExecSpace>("T");
-}
+TEST_CASE(nt_double, double)
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&          \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-TEST_F(TestCategory, serial_gemv_complex_double) {
-  test_serial_gemv<Kokkos::complex<double>, TestExecSpace>("N");
-  test_serial_gemv<Kokkos::complex<double>, TestExecSpace>("T");
-}
+TEST_CASE(nt_complex_double, Kokkos::complex<double>)
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&         \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-TEST_F(TestCategory, serial_gemv_complex_float) {
-  test_serial_gemv<Kokkos::complex<float>, TestExecSpace>("N");
-  test_serial_gemv<Kokkos::complex<float>, TestExecSpace>("T");
-}
+TEST_CASE(nt_complex_float, Kokkos::complex<float>)
 #endif
 
 #if defined(KOKKOSKERNELS_INST_INT) ||   \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-TEST_F(TestCategory, serial_gemv_int) {
-  test_serial_gemv<int, TestExecSpace>("N");
-  test_serial_gemv<int, TestExecSpace>("T");
-}
+TEST_CASE(nt_complex_int, int)
 #endif
 
-#if 0  // mixed scalar types not allowed in batched impl
 #if !defined(KOKKOSKERNELS_ETI_ONLY) && \
     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
-TEST_F(TestCategory, serial_gemv_mixed) {
-  test_serial_gemv<double, int, float, TestExecSpace>("N");
-  test_serial_gemv<double, int, float, TestExecSpace>("T");
-}
-#endif
+// test mixed scalar types
+TEST_CASE3(nt_mixed, double, int, float)
+
+// test arbitrary double alpha/beta with complex<double> values
+TEST_CASE2(nt_alphabeta, Kokkos::complex<double>, double)
 #endif
 
 #endif  // Check for lambda availability on CUDA backend

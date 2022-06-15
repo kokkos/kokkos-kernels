@@ -7,8 +7,6 @@
 //#include "KokkosBatched_Vector.hpp"
 
 #include "KokkosBatched_Gemv_Decl.hpp"
-#include "KokkosBatched_Gemv_Serial_Impl.hpp"
-#include "KokkosBatched_Gemv_Team_Impl.hpp"
 
 #include "KokkosKernels_TestUtils.hpp"
 

@@ -6,7 +6,7 @@
 
 #include "KokkosBatched_Gesv.hpp"
 #include "KokkosBatched_Dot.hpp"
-#include "KokkosBatched_Gemv_Decl.hpp"
+#include "KokkosBlas2_serial_gemv_impl.hpp"
 
 #include "KokkosKernels_TestUtils.hpp"
 
@@ -104,8 +104,8 @@ void impl_test_batched_gesv(const int N, const int BlkSize) {
   Kokkos::deep_copy(X_host, X);
 
   for (int l = 0; l < N; ++l)
-    KokkosBatched::SerialGemv<Trans::NoTranspose,
-                              KokkosBatched::Algo::Gemv::Unblocked>::
+    KokkosBlas::SerialGemv<Trans::NoTranspose,
+                           KokkosBlas::Algo::Gemv::Unblocked>::
         invoke(-1, Kokkos::subview(A_host, l, Kokkos::ALL, Kokkos::ALL),
                Kokkos::subview(X_host, l, Kokkos::ALL), 1,
                Kokkos::subview(B_host, l, Kokkos::ALL));

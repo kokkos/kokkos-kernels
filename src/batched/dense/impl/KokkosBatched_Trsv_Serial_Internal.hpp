@@ -8,7 +8,7 @@
 #include "KokkosBlas1_set_impl.hpp"
 #include "KokkosBlas1_serial_scal_impl.hpp"
 #include "KokkosBatched_InnerTrsm_Serial_Impl.hpp"
-#include "KokkosBatched_Gemv_Serial_Internal.hpp"
+#include "KokkosBlas2_serial_gemv_internal.hpp"
 
 namespace KokkosBatched {
 
@@ -103,7 +103,7 @@ KOKKOS_INLINE_FUNCTION int SerialTrsvInternalLower<Algo::Trsv::Blocked>::invoke(
         trsm_n.serial_invoke(Ap, pb, 1, bp);
 
       // gemv update
-      SerialGemvInternal<Algo::Gemv::Blocked>::invoke(
+      KokkosBlas::Impl::SerialGemvInternal<Algo::Gemv::Blocked>::invoke(
           m - p - pb, pb, minus_one, Ap + pb * as0, as0, as1, bp, bs0, one,
           bp + pb * bs0, bs0);
     }
@@ -196,7 +196,7 @@ KOKKOS_INLINE_FUNCTION int SerialTrsvInternalUpper<Algo::Trsv::Blocked>::invoke(
         trsm_n.serial_invoke(Ap, pb, 1, bp);
 
       // gemv update
-      SerialGemvInternal<Algo::Gemv::Blocked>::invoke(
+      KokkosBlas::Impl::SerialGemvInternal<Algo::Gemv::Blocked>::invoke(
           p, pb, minus_one, Ap - p * as0, as0, as1, bp, bs0, one, b, bs0);
     }
   }

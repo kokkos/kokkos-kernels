@@ -1,16 +1,58 @@
-#ifndef __KOKKOSBATCHED_GEMV_SERIAL_INTERNAL_HPP__
-#define __KOKKOSBATCHED_GEMV_SERIAL_INTERNAL_HPP__
+/*
+//@HEADER
+// ************************************************************************
+//
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
+//
+// Under the terms of Contract DE-NA0003525 with NTESS,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
+//
+// ************************************************************************
+//@HEADER
+*/
+#ifndef __KOKKOSBLAS_GEMV_SERIAL_INTERNAL_HPP__
+#define __KOKKOSBLAS_GEMV_SERIAL_INTERNAL_HPP__
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include "KokkosBatched_Util.hpp"
-
+#include "KokkosBlas_util.hpp"
 #include "KokkosBlas1_set_impl.hpp"
 #include "KokkosBlas1_serial_scal_impl.hpp"
-#include "KokkosBatched_InnerMultipleDotProduct_Serial_Impl.hpp"
+#include "KokkosBlas2_serial_gemv_inner_multiple_dot.hpp"
 
-namespace KokkosBatched {
-
+namespace KokkosBlas {
+namespace Impl {
 ///
 /// Serial Internal Impl
 /// ====================
@@ -77,14 +119,14 @@ KOKKOS_INLINE_FUNCTION int SerialGemvInternal<Algo::Gemv::Blocked>::invoke(
   constexpr int mbAlgo = Algo::Gemv::Blocked::mb();
 
   if (beta == zero)
-    KokkosBlas::Impl::SerialSetInternal::invoke(m, zero, y, ys0);
+    Impl::SerialSetInternal::invoke(m, zero, y, ys0);
   else if (beta != one)
-    KokkosBlas::Impl::SerialScaleInternal::invoke(m, beta, y, ys0);
+    Impl::SerialScaleInternal::invoke(m, beta, y, ys0);
 
   if (alpha != zero) {
     if (m <= 0 || n <= 0) return 0;
 
-    InnerMultipleDotProduct<mbAlgo> inner(as0, as1, xs0, ys0);
+    Impl::InnerMultipleDotProduct<mbAlgo> inner(as0, as1, xs0, ys0);
     const int mb = mbAlgo;
     for (int i = 0; i < m; i += mb)
       inner.serial_invoke(alpha, A + i * as0, x, (i + mb) > m ? (m - i) : mb, n,
@@ -92,7 +134,7 @@ KOKKOS_INLINE_FUNCTION int SerialGemvInternal<Algo::Gemv::Blocked>::invoke(
   }
   return 0;
 }
-
-}  // namespace KokkosBatched
+}  // namespace Impl
+}  // namespace KokkosBlas
 
 #endif

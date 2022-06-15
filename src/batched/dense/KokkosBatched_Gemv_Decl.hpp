@@ -21,7 +21,9 @@ struct SerialGemv {
                                            const xViewType & /*x*/,
                                            const ScalarType /*beta*/,
                                            const yViewType & /*y*/) {
-    assert(false && "Error: encounter dummy impl");
+    assert(false &&
+           "Error: KokkosBatched::SerialGemv has been deprecated - use "
+           "KokkosBlas::SerialGemv instead");
     return 0;
   }
 };
@@ -91,19 +93,18 @@ struct Gemv {
 
 }  // namespace KokkosBatched
 
-#include "KokkosBatched_Gemv_Serial_Impl.hpp"
 #include "KokkosBatched_Gemv_Team_Impl.hpp"
 #include "KokkosBatched_Gemv_TeamVector_Impl.hpp"
 
-#define KOKKOSBATCHED_SERIAL_GEMV_NO_TRANSPOSE_INTERNAL_INVOKE(            \
-    ALGOTYPE, M, N, ALPHA, A, AS0, AS1, X, XS, BETA, Y, YS)                \
-  KokkosBatched::SerialGemvInternal<ALGOTYPE>::invoke(M, N, ALPHA, A, AS0, \
-                                                      AS1, X, XS, BETA, Y, YS)
+#define KOKKOSBATCHED_SERIAL_GEMV_NO_TRANSPOSE_INTERNAL_INVOKE( \
+    ALGOTYPE, M, N, ALPHA, A, AS0, AS1, X, XS, BETA, Y, YS)     \
+  KokkosBlas::Impl::SerialGemvInternal<ALGOTYPE>::invoke(       \
+      M, N, ALPHA, A, AS0, AS1, X, XS, BETA, Y, YS)
 
-#define KOKKOSBATCHED_SERIAL_GEMV_TRANSPOSE_INTERNAL_INVOKE(               \
-    ALGOTYPE, M, N, ALPHA, A, AS0, AS1, X, XS, BETA, Y, YS)                \
-  KokkosBatched::SerialGemvInternal<ALGOTYPE>::invoke(N, M, ALPHA, A, AS1, \
-                                                      AS0, X, XS, BETA, Y, YS)
+#define KOKKOSBATCHED_SERIAL_GEMV_TRANSPOSE_INTERNAL_INVOKE( \
+    ALGOTYPE, M, N, ALPHA, A, AS0, AS1, X, XS, BETA, Y, YS)  \
+  KokkosBlas::Impl::SerialGemvInternal<ALGOTYPE>::invoke(    \
+      N, M, ALPHA, A, AS1, AS0, X, XS, BETA, Y, YS)
 
 #define KOKKOSBATCHED_TEAM_GEMV_NO_TRANSPOSE_INTERNAL_INVOKE(       \
     ALGOTYPE, MEMBER, M, N, ALPHA, A, AS0, AS1, X, XS, BETA, Y, YS) \

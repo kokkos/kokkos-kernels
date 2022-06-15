@@ -7,7 +7,7 @@
 
 #include "KokkosBlas1_set_impl.hpp"
 #include "KokkosBlas1_team_scal_impl.hpp"
-#include "KokkosBatched_InnerMultipleDotProduct_Serial_Impl.hpp"
+#include "KokkosBlas2_serial_gemv_inner_multiple_dot.hpp"
 
 namespace KokkosBatched {
 
@@ -95,7 +95,7 @@ KOKKOS_INLINE_FUNCTION int TeamGemvInternal<Algo::Gemv::Blocked>::invoke(
 
     if (beta != one) member.team_barrier();
 
-    InnerMultipleDotProduct<mbAlgo> inner(as0, as1, xs0, ys0);
+    KokkosBlas::Impl::InnerMultipleDotProduct<mbAlgo> inner(as0, as1, xs0, ys0);
     const int tsize = member.team_size();
     const int mb_a = m / tsize + (m % tsize > 0), mb_b = mbAlgo;
     // Made this non-const in order to WORKAROUND issue #349

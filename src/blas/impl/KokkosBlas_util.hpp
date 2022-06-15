@@ -47,7 +47,119 @@
 
 #include "Kokkos_ArithTraits.hpp"
 
+// TPL macros
+#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
+#include "mkl_version.h"
+#if __INTEL_MKL__ >= 2018
+#define __KOKKOSBLAS_ENABLE_INTEL_MKL_COMPACT__ 1
+#include "mkl.h"
+#endif
+#endif
+
 namespace KokkosBlas {
+
+//////// Tags for BLAS ////////
+struct Trans {
+  struct Transpose {};
+  struct NoTranspose {};
+  struct ConjTranspose {};
+};
+
+struct Algo {
+  struct Level3 {
+    struct Unblocked {
+      static const char *name() { return "Unblocked"; }
+    };
+    struct Blocked {
+      static const char *name() { return "Blocked"; }
+      // TODO:: for now harwire the blocksizes; this should reflect
+      // regieter blocking (not about team parallelism).
+      // this mb should vary according to
+      // - team policy (smaller) or range policy (bigger)
+      // - space (gpu vs host)
+      // - blocksize input (blk <= 4 mb = 2, otherwise mb = 4), etc.
+#if defined(KOKKOS_IF_ON_HOST)
+      static constexpr KOKKOS_FUNCTION int mb() {
+        KOKKOS_IF_ON_HOST((return 4;))
+        KOKKOS_IF_ON_DEVICE((return 2;))
+      }
+
+#else  // FIXME remove when requiring minimum version of Kokkos 3.6
+      static constexpr KOKKOS_FUNCTION int mb() {
+        return algo_level3_blocked_mb_impl<
+            Kokkos::Impl::ActiveExecutionMemorySpace>::value;
+      }
+
+#endif
+    };
+    struct MKL {
+      static const char *name() { return "MKL"; }
+    };
+    struct CompactMKL {
+      static const char *name() { return "CompactMKL"; }
+    };
+
+    // When this is first developed, unblocked algorithm is a naive
+    // implementation and blocked algorithm uses register blocking variant of
+    // algorithm (manual unrolling). This distinction is almost meaningless and
+    // it just adds more complications. Eventually, the blocked version will be
+    // removed and we only use the default algorithm. For testing and
+    // development purpose, we still leave algorithm tag in the template
+    // arguments.
+    using Default = Unblocked;
+  };
+
+  using Gemm      = Level3;
+  using Trsm      = Level3;
+  using Trmm      = Level3;
+  using Trtri     = Level3;
+  using LU        = Level3;
+  using InverseLU = Level3;
+  using SolveLU   = Level3;
+  using QR        = Level3;
+  using UTV       = Level3;
+
+  struct Level2 {
+    struct Unblocked {};
+    struct Blocked {
+      // TODO:: for now hardwire the blocksizes; this should reflect
+      // register blocking (not about team parallelism).
+      // this mb should vary according to
+      // - team policy (smaller) or range policy (bigger)
+      // - space (cuda vs host)
+      // - blocksize input (blk <= 4 mb = 2, otherwise mb = 4), etc.
+#if defined(KOKKOS_IF_ON_HOST)
+      static constexpr KOKKOS_FUNCTION int mb() {
+        KOKKOS_IF_ON_HOST((return 4;))
+        KOKKOS_IF_ON_DEVICE((return 1;))
+      }
+
+#else  // FIXME remove when requiring minimum version of Kokkos 3.6
+      static constexpr KOKKOS_FUNCTION int mb() {
+        return algo_level2_blocked_mb_impl<
+            Kokkos::Impl::ActiveExecutionMemorySpace>::value;
+      }
+
+#endif
+    };
+    struct MKL {};
+    struct CompactMKL {};
+
+    // When this is first developed, unblocked algorithm is a naive
+    // implementation and blocked algorithm uses register blocking variant of
+    // algorithm (manual unrolling). This distinction is almost meaningless and
+    // it just adds more complications. Eventually, the blocked version will be
+    // removed and we only use the default algorithm. For testing and
+    // development purpose, we still leave algorithm tag in the template
+    // arguments.
+    using Default = Unblocked;
+  };
+
+  using Gemv   = Level2;
+  using Trsv   = Level2;
+  using ApplyQ = Level2;
+};
+
 namespace Impl {
 
 // Helper to choose the work distribution for a TeamPolicy computing multiple
@@ -65,7 +177,7 @@ namespace Impl {
 template <typename ExecSpace, typename size_type>
 void multipleReductionWorkDistribution(size_type length,
                                        size_type numReductions,
-                                       size_type& teamsPerDot) {
+                                       size_type &teamsPerDot) {
   constexpr size_type workPerTeam = 4096;  // Amount of work per team
   size_type appxNumTeams =
       (length * numReductions) / workPerTeam;  // Estimation for appxNumTeams
@@ -93,7 +205,7 @@ void multipleReductionWorkDistribution(size_type length,
 
 template <class RV>
 struct TakeSqrtFunctor {
-  TakeSqrtFunctor(const RV& r_) : r(r_) {}
+  TakeSqrtFunctor(const RV &r_) : r(r_) {}
 
   KOKKOS_INLINE_FUNCTION void operator()(int i) const {
     r(i) = Kokkos::ArithTraits<typename RV::non_const_value_type>::sqrt(r(i));

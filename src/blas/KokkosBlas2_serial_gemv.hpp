@@ -45,8 +45,8 @@
 #ifndef KOKKOSBLAS2_SERIAL_GEMV_HPP_
 #define KOKKOSBLAS2_SERIAL_GEMV_HPP_
 
-#include "KokkosBatched_Gemv_Decl.hpp"
-#include "KokkosBatched_Util.hpp"
+#include "KokkosBlas2_serial_gemv_impl.hpp"
+#include "KokkosBlas_util.hpp"
 #include "KokkosKernels_Error.hpp"
 
 namespace KokkosBlas {
@@ -64,16 +64,16 @@ gemv(const char trans, const ScalarType& alpha, const MatrixType& A,
                        typename YVector::non_const_value_type>::value,
       "Serial GEMV requires A,x and y to have same scalar type");
 
-  using algo = KokkosBatched::Algo::Gemv::Default;
+  using algo = KokkosBlas::Algo::Gemv::Default;
   // ensure same type for alpha and beta (required by serial impl)
   const auto beta_ = static_cast<ScalarType>(beta);
 
   if (trans == 'N' || trans == 'n') {
-    using mode = KokkosBatched::Trans::NoTranspose;
-    KokkosBatched::SerialGemv<mode, algo>::invoke(alpha, A, x, beta_, y);
+    using mode = KokkosBlas::Trans::NoTranspose;
+    KokkosBlas::SerialGemv<mode, algo>::invoke(alpha, A, x, beta_, y);
   } else if (trans == 'T' || trans == 't') {
-    using mode = KokkosBatched::Trans::Transpose;
-    KokkosBatched::SerialGemv<mode, algo>::invoke(alpha, A, x, beta_, y);
+    using mode = KokkosBlas::Trans::Transpose;
+    KokkosBlas::SerialGemv<mode, algo>::invoke(alpha, A, x, beta_, y);
   } else {  // NOT supported: Conjugate, ConjTranspose
     std::ostringstream os;
     os << "Matrix mode not supported: " << trans << std::endl;

@@ -54,7 +54,7 @@
 #include "KokkosBatched_Givens_Serial_Internal.hpp"
 #include "KokkosBatched_Trsm_Decl.hpp"
 #include "KokkosBatched_Identity.hpp"
-#include "KokkosBatched_Gemv_Decl.hpp"
+#include "KokkosBlas2_serial_gemv_impl.hpp"
 
 namespace KokkosBatched {
 
@@ -181,11 +181,12 @@ KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A,
             Kokkos::subview(H_view, l, j, Kokkos::make_pair(0, (int)j + 1));
 
         // Inner products
-        SerialGemv<Trans::NoTranspose, Algo::Gemv::Unblocked>::invoke(
-            1, V_old, W_l, 0, H_old);
+        KokkosBlas::SerialGemv<Trans::NoTranspose,
+                               Algo::Gemv::Unblocked>::invoke(1, V_old, W_l, 0,
+                                                              H_old);
 
         // Update
-        SerialGemv<Trans::Transpose, Algo::Gemv::Unblocked>::invoke(
+        KokkosBlas::SerialGemv<Trans::Transpose, Algo::Gemv::Unblocked>::invoke(
             -1, V_old, H_old, 1, W_l);
       }
     }
@@ -286,7 +287,7 @@ KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A,
 
   if (handle.get_ortho_strategy() == 0) {
     for (OrdinalType l = 0; l < numMatrices; ++l) {
-      SerialGemv<Trans::Transpose, Algo::Gemv::Unblocked>::invoke(
+      KokkosBlas::SerialGemv<Trans::Transpose, Algo::Gemv::Unblocked>::invoke(
           1, Kokkos::subview(V_view, l, first_indices, Kokkos::ALL),
           Kokkos::subview(G, l, first_indices), 1,
           Kokkos::subview(_X, l, Kokkos::ALL));

@@ -46,7 +46,7 @@
 #define KOKKOSKERNELS_KOKKOSSPARSE_SPMV_BLOCKCRSMATRIX_IMPL_HPP
 
 #include "KokkosBlas.hpp"
-#include "KokkosBatched_Gemv_Serial_Internal.hpp"
+#include "KokkosBlas2_serial_gemv_internal.hpp"
 #include "KokkosBatched_Gemm_Serial_Internal.hpp"
 #include "KokkosKernels_ExecSpaceUtils.hpp"
 #include "KokkosSparse_spmv_impl.hpp"
@@ -122,11 +122,12 @@ struct BCRS_GEMV_Functor {
       for (ordinal_type ic = 0; ic < count; ++ic) {
         const auto Aview  = row.block(ic);
         const auto xstart = row.block_colidx(ic) * block_dim;
-        KokkosBatched::SerialGemvInternal<KokkosBatched::Algo::Gemv::Blocked>::
-            invoke<value_type, value_type>(
-                block_dim, block_dim, alpha, Aview.data(), Aview.stride_0(),
-                Aview.stride_1(), &m_x(xstart), m_x.stride_0(), beta1,
-                &m_y(ystart), m_y.stride_0());
+        KokkosBlas::Impl::SerialGemvInternal<
+            KokkosBatched::Algo::Gemv::Blocked>::invoke<value_type,
+                                                        value_type>(
+            block_dim, block_dim, alpha, Aview.data(), Aview.stride_0(),
+            Aview.stride_1(), &m_x(xstart), m_x.stride_0(), beta1, &m_y(ystart),
+            m_y.stride_0());
       }
     }
   }
@@ -412,7 +413,7 @@ struct BCRS_GEMV_Transpose_Functor {
         const auto ystart = row.block_colidx(ic) * block_dim;
         for (ordinal_type jj = 0; jj < block_dim; ++jj) {
           value_type t(0);
-          KokkosBatched::SerialGemvInternal<
+          KokkosBlas::Impl::SerialGemvInternal<
               KokkosBatched::Algo::Gemv::Blocked>::invoke<value_type,
                                                           value_type>(
               1, block_dim, alpha1, Aview.data() + jj, Aview.stride_1(),
@@ -966,7 +967,7 @@ struct BCRS_GEMM_Transpose_Functor {
         for (ordinal_type jr = 0; jr < num_rhs; ++jr) {
           for (ordinal_type jj = 0; jj < block_dim; ++jj) {
             value_type t(0);
-            KokkosBatched::SerialGemvInternal<
+            KokkosBlas::Impl::SerialGemvInternal<
                 KokkosBatched::Algo::Gemv::Blocked>::invoke<value_type,
                                                             value_type>(
                 1, block_dim, alpha1, Aview.data() + jj, Aview.stride_1(),
