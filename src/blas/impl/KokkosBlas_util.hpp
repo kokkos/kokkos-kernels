@@ -45,6 +45,8 @@
 #ifndef KOKKOS_BLAS_UTIL_HPP
 #define KOKKOS_BLAS_UTIL_HPP
 
+#include "Kokkos_ArithTraits.hpp"
+
 namespace KokkosBlas {
 namespace Impl {
 
