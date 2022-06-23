@@ -49,7 +49,7 @@ KOKKOS_INLINE_FUNCTION int TeamGemvInternal<Algo::Gemv::Unblocked>::invoke(
   if (beta == zero)
     TeamSetInternal ::invoke(member, m, zero, y, ys0);
   else if (beta != one)
-    TeamScaleInternal::invoke(member, m, beta, y, ys0);
+    KokkosBlas::Impl::TeamScaleInternal::invoke(member, m, beta, y, ys0);
 
   if (alpha != zero) {
     if (m <= 0 || n <= 0) return 0;
@@ -88,7 +88,7 @@ KOKKOS_INLINE_FUNCTION int TeamGemvInternal<Algo::Gemv::Blocked>::invoke(
   if (beta == zero)
     TeamSetInternal ::invoke(member, m, zero, y, ys0);
   else if (beta != one)
-    TeamScaleInternal::invoke(member, m, beta, y, ys0);
+    KokkosBlas::Impl::TeamScaleInternal::invoke(member, m, beta, y, ys0);
 
   if (alpha != zero) {
     if (m <= 0 || n <= 0) return 0;

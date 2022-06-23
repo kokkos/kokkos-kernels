@@ -37,7 +37,8 @@ TeamVectorTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(
     TeamVectorSetInternal ::invoke(member, m, n, zero, B, bs0, bs1);
   else {
     if (alpha != one)
-      TeamVectorScaleInternal::invoke(member, m, n, alpha, B, bs0, bs1);
+      KokkosBlas::Impl::TeamVectorScaleInternal::invoke(member, m, n, alpha, B,
+                                                        bs0, bs1);
     if (m <= 0 || n <= 0) return 0;
 
     for (int p = 0; p < m; ++p) {
@@ -98,7 +99,8 @@ TeamVectorTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(
     TeamVectorSetInternal ::invoke(member, m, n, zero, B, bs0, bs1);
   else {
     if (alpha != one)
-      TeamVectorScaleInternal::invoke(member, m, n, alpha, B, bs0, bs1);
+      KokkosBlas::Impl::TeamVectorScaleInternal::invoke(member, m, n, alpha, B,
+                                                        bs0, bs1);
     if (m <= 0 || n <= 0) return 0;
 
     ValueType *KOKKOS_RESTRICT B0 = B;

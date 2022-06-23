@@ -41,7 +41,8 @@ TeamTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(
     TeamSetInternal ::invoke(member, m, n, zero, B, bs0, bs1);
   else {
     if (alpha != one)
-      TeamScaleInternal::invoke(member, m, n, alpha, B, bs0, bs1);
+      KokkosBlas::Impl::TeamScaleInternal::invoke(member, m, n, alpha, B, bs0,
+                                                  bs1);
     if (m <= 0 || n <= 0) return 0;
 
     for (int p = 0; p < m; ++p) {
@@ -92,7 +93,8 @@ TeamTrsmInternalLeftLower<Algo::Trsm::Blocked>::invoke(
     TeamSetInternal ::invoke(member, m, n, zero, B, bs0, bs1);
   else {
     if (alpha != one)
-      TeamScaleInternal::invoke(member, m, n, alpha, B, bs0, bs1);
+      KokkosBlas::Impl::TeamScaleInternal::invoke(member, m, n, alpha, B, bs0,
+                                                  bs1);
     if (m <= 0 || n <= 0) return 0;
 
     ///
@@ -175,7 +177,8 @@ TeamTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(
     TeamSetInternal ::invoke(member, m, n, zero, B, bs0, bs1);
   else {
     if (alpha != one)
-      TeamScaleInternal::invoke(member, m, n, alpha, B, bs0, bs1);
+      KokkosBlas::Impl::TeamScaleInternal::invoke(member, m, n, alpha, B, bs0,
+                                                  bs1);
     if (m <= 0 || n <= 0) return 0;
 
     ValueType *KOKKOS_RESTRICT B0 = B;
@@ -231,7 +234,8 @@ TeamTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invoke(
     TeamSetInternal ::invoke(member, m, n, zero, B, bs0, bs1);
   else {
     if (alpha != one)
-      TeamScaleInternal::invoke(member, m, n, alpha, B, bs0, bs1);
+      KokkosBlas::Impl::TeamScaleInternal::invoke(member, m, n, alpha, B, bs0,
+                                                  bs1);
     if (m <= 0 || n <= 0) return 0;
 
     InnerTrsmLeftUpperUnitDiag<mbAlgo> trsm_u(as0, as1, bs0, bs1);

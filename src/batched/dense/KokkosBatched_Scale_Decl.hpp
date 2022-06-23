@@ -3,9 +3,6 @@
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include "KokkosBatched_Util.hpp"
-#include "KokkosBatched_Vector.hpp"
-
 namespace KokkosBatched {
 
 ///
@@ -30,7 +27,10 @@ struct TeamScale {
   template <typename ScalarType, typename AViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
                                            const ScalarType alpha,
-                                           const AViewType &A);
+                                           const AViewType &A) {
+    assert(false && "Deprecated: use KokkosBlas::TeamScale");
+    return 0;
+  }
 };
 
 ///
@@ -42,11 +42,13 @@ struct TeamVectorScale {
   template <typename ScalarType, typename AViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
                                            const ScalarType alpha,
-                                           const AViewType &A);
+                                           const AViewType &A) {
+    // static_assert(false);
+    assert(false && "Deprecated: use KokkosBlas::TeamVectorScale");
+    return 0;
+  }
 };
 
 }  // namespace KokkosBatched
-
-#include "KokkosBatched_Scale_Impl.hpp"
 
 #endif
