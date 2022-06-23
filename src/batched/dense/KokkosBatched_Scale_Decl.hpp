@@ -15,7 +15,10 @@ namespace KokkosBatched {
 struct SerialScale {
   template <typename ScalarType, typename AViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha,
-                                           const AViewType &A);
+                                           const AViewType &A) {
+    assert(false && "Deprecated: use KokkosBlas::SerialScale");
+    return 0;
+  }
 };
 
 ///

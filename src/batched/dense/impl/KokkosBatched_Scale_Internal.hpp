@@ -4,38 +4,9 @@
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "KokkosBatched_Util.hpp"
+#include "KokkosBlas1_serial_scal_impl.hpp"
 
 namespace KokkosBatched {
-
-///
-/// Serial Internal Impl
-/// ====================
-struct SerialScaleInternal {
-  template <typename ScalarType, typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const int m, const ScalarType alpha,
-                                           /* */ ValueType *KOKKOS_RESTRICT A,
-                                           const int as0) {
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-#pragma unroll
-#endif
-    for (int i = 0; i < m; ++i) A[i * as0] *= alpha;
-
-    return 0;
-  }
-
-  template <typename ScalarType, typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const int m, const int n,
-                                           const ScalarType alpha,
-                                           /* */ ValueType *KOKKOS_RESTRICT A,
-                                           const int as0, const int as1) {
-    if (as0 > as1)
-      for (int i = 0; i < m; ++i) invoke(n, alpha, A + i * as0, as1);
-    else
-      for (int j = 0; j < n; ++j) invoke(m, alpha, A + j * as1, as0);
-
-    return 0;
-  }
-};
 
 ///
 /// Team Internal Impl
@@ -58,6 +29,7 @@ struct TeamScaleInternal {
                                            const ScalarType alpha,
                                            /* */ ValueType *KOKKOS_RESTRICT A,
                                            const int as0, const int as1) {
+    using KokkosBlas::Impl::SerialScaleInternal;
     if (m > n) {
       Kokkos::parallel_for(
           Kokkos::TeamThreadRange(member, m), [&](const int &i) {

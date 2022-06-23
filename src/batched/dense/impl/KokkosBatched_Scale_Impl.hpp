@@ -9,16 +9,6 @@
 namespace KokkosBatched {
 
 ///
-/// Serial Impl
-/// ===========
-template <typename ScalarType, typename AViewType>
-KOKKOS_INLINE_FUNCTION int SerialScale::invoke(const ScalarType alpha,
-                                               const AViewType &A) {
-  return SerialScaleInternal::invoke(A.extent(0), A.extent(1), alpha, A.data(),
-                                     A.stride_0(), A.stride_1());
-}
-
-///
 /// Team Impl
 /// =========
 
