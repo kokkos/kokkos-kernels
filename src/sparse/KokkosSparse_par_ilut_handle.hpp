@@ -50,7 +50,6 @@
 #ifndef _PAR_ILUTHANDLE_HPP
 #define _PAR_ILUTHANDLE_HPP
 
-//#define EXPAND_FACT 3
 #define KEEP_DIAG
 
 namespace KokkosSparse {
@@ -96,15 +95,9 @@ class PAR_ILUTHandle {
       signed_nnz_lno_view_t;
 
  private:
-  nnz_row_view_t level_list;  // level IDs which the rows belong to
-  nnz_lno_view_t level_idx;   // the list of rows in each level
-  nnz_lno_view_t level_ptr;   // the starting index (into the view level_idx) of each level
-
   size_type nrows;
-  size_type nlevel;
   size_type nnzL;
   size_type nnzU;
-  size_type level_maxrows;  // maximum number of rows of levels
 
   bool symbolic_complete;
 
@@ -115,14 +108,9 @@ class PAR_ILUTHandle {
   PAR_ILUTHandle(const size_type nrows_,
                const size_type nnzL_, const size_type nnzU_,
                bool symbolic_complete_ = false)
-      : level_list(),
-        level_idx(),
-        level_ptr(),
-        nrows(nrows_),
-        nlevel(0),
+      : nrows(nrows_),
         nnzL(nnzL_),
         nnzU(nnzU_),
-        level_maxrows(0),
         symbolic_complete(symbolic_complete_),
         team_size(-1),
         vector_size(-1) {}
@@ -130,26 +118,12 @@ class PAR_ILUTHandle {
   void reset_handle(const size_type nrows_, const size_type nnzL_,
                     const size_type nnzU_) {
     set_nrows(nrows_);
-    set_num_levels(0);
     set_nnzL(nnzL_);
     set_nnzU(nnzU_);
-    set_level_maxrows(0);
-    level_list = nnz_row_view_t("level_list", nrows_),
-    level_idx  = nnz_lno_view_t("level_idx", nrows_),
-    level_ptr  = nnz_lno_view_t("level_ptr", nrows_ + 1),
     reset_symbolic_complete();
   }
 
   virtual ~PAR_ILUTHandle(){};
-
-  KOKKOS_INLINE_FUNCTION
-  nnz_row_view_t get_level_list() const { return level_list; }
-
-  KOKKOS_INLINE_FUNCTION
-  nnz_lno_view_t get_level_idx() const { return level_idx; }
-
-  KOKKOS_INLINE_FUNCTION
-  nnz_lno_view_t get_level_ptr() const { return level_ptr; }
 
   KOKKOS_INLINE_FUNCTION
   size_type get_nrows() const { return nrows; }
@@ -169,18 +143,7 @@ class PAR_ILUTHandle {
   KOKKOS_INLINE_FUNCTION
   void set_nnzU(const size_type nnzU_) { this->nnzU = nnzU_; }
 
-  KOKKOS_INLINE_FUNCTION
-  size_type get_level_maxrows() const { return level_maxrows; }
-
-  KOKKOS_INLINE_FUNCTION
-  void set_level_maxrows(const size_type level_maxrows_) {
-    this->level_maxrows = level_maxrows_;
-  }
-
   bool is_symbolic_complete() const { return symbolic_complete; }
-
-  size_type get_num_levels() const { return nlevel; }
-  void set_num_levels(size_type nlevels_) { this->nlevel = nlevels_; }
 
   void set_symbolic_complete() { this->symbolic_complete = true; }
   void reset_symbolic_complete() { this->symbolic_complete = false; }

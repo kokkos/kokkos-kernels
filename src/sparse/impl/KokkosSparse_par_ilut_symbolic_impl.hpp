@@ -66,7 +66,6 @@ template <class IlutHandle,
           class LRowMapType, class LEntriesType, class LValuesType,
           class URowMapType, class UEntriesType, class UValuesType>
 void ilut_symbolic(IlutHandle& thandle,
-                   const typename IlutHandle::const_nnz_lno_t& fill_lev,
                    const ARowMapType& A_row_map_d, const AEntriesType& A_entries_d, const AValuesType& A_values_d,
                    LRowMapType& L_row_map_d, LEntriesType& L_entries_d, LValuesType& L_values_d,
                    URowMapType& U_row_map_d, UEntriesType& U_entries_d, UValuesType& U_values_d)

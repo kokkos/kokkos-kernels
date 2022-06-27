@@ -72,7 +72,6 @@ template <typename KernelHandle,
           typename LRowMapType, typename LEntriesType, typename LValuesType,
           typename URowMapType, typename UEntriesType, typename UValuesType>
 void par_ilut_symbolic(KernelHandle* handle,
-                       typename KernelHandle::const_nnz_lno_t fill_lev,
                        ARowMapType& A_rowmap, AEntriesType& A_entries, AValuesType& A_values,
                        LRowMapType& L_rowmap, LEntriesType& L_entries, LValuesType& L_values,
                        URowMapType& U_rowmap, UEntriesType& U_entries, UValuesType& U_values) {
@@ -216,14 +215,6 @@ void par_ilut_symbolic(KernelHandle* handle,
                    typename LEntriesType::device_type>::value,
       "par_ilut_symbolic: rowmap and entries have different device types.");
 
-  // Check validity of fill level
-  if (fill_lev < 0) {
-    std::ostringstream os;
-    os << "KokkosSparse::Experimental::par_ilut_symbolic: fill_lev: " << fill_lev
-       << ". Valid value is >= 0.";
-    KokkosKernels::Impl::throw_runtime_exception(os.str());
-  }
-
   typedef typename KernelHandle::const_size_type c_size_t;
   typedef typename KernelHandle::const_nnz_lno_t c_lno_t;
   typedef typename KernelHandle::const_nnz_scalar_t c_scalar_t;
@@ -318,7 +309,7 @@ void par_ilut_symbolic(KernelHandle* handle,
     ARowMap_Internal, AEntries_Internal, AValues_Internal,
     LRowMap_Internal, LEntries_Internal, LValues_Internal,
     URowMap_Internal, UEntries_Internal, UValues_Internal>::
-    par_ilut_symbolic(&tmp_handle, fill_lev,
+    par_ilut_symbolic(&tmp_handle,
                       A_rowmap_i, A_entries_i, A_values_i,
                       L_rowmap_i, L_entries_i, L_values_i,
                       U_rowmap_i, U_entries_i, U_values_i);

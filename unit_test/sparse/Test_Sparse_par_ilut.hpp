@@ -220,10 +220,8 @@ void run_test_par_ilut() {
   EntriesType U_entries("U_entries", nnzU + nrows); // overallocate to be safe
   ValuesType U_values("U_values",    nnzU + nrows); // overallocate to be safe
 
-  typename KernelHandle::const_nnz_lno_t fill_lev = 2; // Does par_ilut need this?
-
   // Initial L/U approximations for A
-  par_ilut_symbolic(&kh, fill_lev,
+  par_ilut_symbolic(&kh,
                     row_map, entries, values,
                     L_row_map, L_entries, L_values,
                     U_row_map, U_entries, U_values);

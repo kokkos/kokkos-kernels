@@ -143,7 +143,6 @@ template <class KernelHandle,
 struct PAR_ILUT_SYMBOLIC {
   static void par_ilut_symbolic(
       KernelHandle *handle,
-      const typename KernelHandle::const_nnz_lno_t &fill_lev,
       const ARowMapType &A_row_map, const AEntriesType &A_entries, const AValuesType& A_values,
       LRowMapType &L_row_map, LEntriesType &L_entries, LValuesType& L_values,
       URowMapType &U_row_map, UEntriesType &U_entries, UValuesType& U_values);
@@ -163,13 +162,12 @@ struct PAR_ILUT_SYMBOLIC<KernelHandle,
                          false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   static void par_ilut_symbolic(
       KernelHandle *handle,
-      const typename KernelHandle::const_nnz_lno_t &fill_lev,
       const ARowMapType &A_row_map, const AEntriesType &A_entries, const AValuesType& A_values_d,
       LRowMapType &L_row_map, LEntriesType &L_entries, LValuesType& L_values_d,
       URowMapType &U_row_map, UEntriesType &U_entries, UValuesType& U_values_d) {
     auto par_ilut_handle = handle->get_par_ilut_handle();
 
-    Experimental::ilut_symbolic(*par_ilut_handle, fill_lev,
+    Experimental::ilut_symbolic(*par_ilut_handle,
                                 A_row_map, A_entries, A_values_d,
                                 L_row_map, L_entries, L_values_d,
                                 U_row_map, U_entries, U_values_d);

@@ -529,12 +529,10 @@ void ilut_numeric(KHandle& kh, IlutHandle &thandle, const ARowMapType &A_row_map
   using execution_space         = typename IlutHandle::execution_space;
   using memory_space            = typename IlutHandle::memory_space;
   using size_type               = typename IlutHandle::size_type;
-  using nnz_lno_t               = typename IlutHandle::nnz_lno_t;
   using HandleDeviceEntriesType = typename IlutHandle::nnz_lno_view_t;
   using HandleDeviceRowMapType  = typename IlutHandle::nnz_row_view_t;
   using HandleDeviceValueType   = typename IlutHandle::nnz_value_view_t;
 
-  const size_type nlevels = thandle.get_num_levels();
   const size_type nrows   = thandle.get_nrows();
 
   bool converged = false;
@@ -616,6 +614,8 @@ void ilut_numeric(KHandle& kh, IlutHandle &thandle, const ARowMapType &A_row_map
       Ut_new_row_map, Ut_new_entries, Ut_new_values);
 
     Kokkos::fence();
+
+    
 
     converged = true;
   }
