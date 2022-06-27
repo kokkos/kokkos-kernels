@@ -714,6 +714,9 @@ void ilut_numeric(KHandle& kh, IlutHandle &thandle, const ARowMapType &A_row_map
     const auto l_threshold = threshold_select(thandle, L_new_values, l_filter_rank, V_copy);
     const auto u_threshold = threshold_select(thandle, U_new_values, l_filter_rank, V_copy);
 
+    std::cout << "L filter rank=" << l_filter_rank << ", thresh=" << l_threshold << std::endl;
+    std::cout << "U filter rank=" << u_filter_rank << ", thresh=" << u_threshold << std::endl;
+
     threshold_filter(
       thandle, l_threshold,
       L_new_row_map, L_new_entries, L_new_values,
@@ -727,22 +730,22 @@ void ilut_numeric(KHandle& kh, IlutHandle &thandle, const ARowMapType &A_row_map
       prefix_sum_view);
 
     // Set Ut_new_row_map back to all zeroes?
-    Kokkos::resize(Ut_new_entries, U_entries.extent(0));
-    Kokkos::resize(Ut_new_values,  U_values.extent(0));
+    // Kokkos::resize(Ut_new_entries, U_entries.extent(0));
+    // Kokkos::resize(Ut_new_values,  U_values.extent(0));
 
-    KokkosKernels::Impl::transpose_matrix<
-      HandleDeviceRowMapType, HandleDeviceEntriesType, HandleDeviceValueType,
-      HandleDeviceRowMapType, HandleDeviceEntriesType, HandleDeviceValueType,
-      HandleDeviceRowMapType, execution_space>(
-      nrows, nrows,
-      U_row_map, U_entries, U_values,
-      Ut_new_row_map, Ut_new_entries, Ut_new_values);
+    // KokkosKernels::Impl::transpose_matrix<
+    //   HandleDeviceRowMapType, HandleDeviceEntriesType, HandleDeviceValueType,
+    //   HandleDeviceRowMapType, HandleDeviceEntriesType, HandleDeviceValueType,
+    //   HandleDeviceRowMapType, execution_space>(
+    //   nrows, nrows,
+    //   U_row_map, U_entries, U_values,
+    //   Ut_new_row_map, Ut_new_entries, Ut_new_values);
 
-    compute_l_u_factors(thandle,
-      A_row_map, A_entries, A_values,
-      L_row_map, L_entries, L_values,
-      U_row_map, U_entries, U_values,
-      Ut_new_row_map, Ut_new_entries, Ut_new_values);
+    // compute_l_u_factors(thandle,
+    //   A_row_map, A_entries, A_values,
+    //   L_row_map, L_entries, L_values,
+    //   U_row_map, U_entries, U_values,
+    //   Ut_new_row_map, Ut_new_entries, Ut_new_values);
 
     converged = true;
   }

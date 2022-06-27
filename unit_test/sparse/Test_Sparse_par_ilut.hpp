@@ -301,7 +301,7 @@ void run_test_par_ilut() {
     {1., 0., 0., 0.},
     {2., 1., 0., 0.},
     {0.50, 0.35, 1., 0.},
-    {0., 0., -1.32, 1.}
+    {0.20, 0.10, -1.32, 1.}
   };
 
   check_matrix("L numeric", L_row_map, L_entries, L_values, expected_L_candidates);
@@ -310,7 +310,7 @@ void run_test_par_ilut() {
     {1., 6., 4., 7.},
     {0., -17., -8., -6.},
     {0., 0., 6.82, 0.},
-    {0., 0., 0., 0.}
+    {0., 0., 0., -2.62} // [3] = 0
   };
 
   check_matrix("U numeric", U_row_map, U_entries, U_values, expected_U_candidates);
