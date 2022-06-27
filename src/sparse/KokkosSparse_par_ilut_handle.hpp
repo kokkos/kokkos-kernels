@@ -104,13 +104,17 @@ class PAR_ILUTHandle {
   int team_size;
   int vector_size;
 
+  nnz_scalar_t fill_in_limit;
+
  public:
   PAR_ILUTHandle(const size_type nrows_,
-               const size_type nnzL_, const size_type nnzU_,
-               bool symbolic_complete_ = false)
+                 const size_type nnzL_, const size_type nnzU_,
+                 const nnz_scalar_t fill_in_limit_ = 0.75,
+                 bool symbolic_complete_ = false)
       : nrows(nrows_),
         nnzL(nnzL_),
         nnzU(nnzU_),
+        fill_in_limit(fill_in_limit_),
         symbolic_complete(symbolic_complete_),
         team_size(-1),
         vector_size(-1) {}
@@ -153,6 +157,9 @@ class PAR_ILUTHandle {
 
   void set_vector_size(const int vs) { this->vector_size = vs; }
   int get_vector_size() const { return this->vector_size; }
+
+  void set_fill_in_limit(const nnz_scalar_t fill_in_limit_) { this->fill_in_limit = fill_in_limit_; }
+  nnz_scalar_t get_fill_in_limit() const { return this->fill_in_limit; }
 
   TeamPolicy get_default_team_policy() const
   {

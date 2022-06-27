@@ -518,6 +518,92 @@ void compute_l_u_factors(
   });
 }
 
+template <class IlutHandle, class ValuesType, class ValuesCopyType>
+typename IlutHandle::nnz_scalar_t threshold_select(
+  IlutHandle& ih, ValuesType& values, const typename IlutHandle::nnz_lno_t rank, ValuesCopyType& values_copy)
+{
+  using index_type = typename IlutHandle::nnz_lno_t;
+  using scalar_t   = typename IlutHandle::nnz_scalar_t;
+
+  Kokkos::resize(values_copy, values.extent(0));
+  Kokkos::deep_copy(values_copy, values);
+
+  index_type size = values.extent(0);
+
+  auto begin  = values.data();
+  auto target = begin + rank;
+  auto end    = begin + size;
+  std::nth_element(begin, target, end,
+                   [](scalar_t a, scalar_t b) { return abs(a) < abs(b); });
+
+  return abs(*target);
+}
+
+template <class IlutHandle,
+          class IRowMapType, class IEntriesType, class IValuesType,
+          class ORowMapType, class OEntriesType, class OValuesType,
+          class PrefixSumType>
+void threshold_filter(
+  IlutHandle& ih, const typename IlutHandle::nnz_scalar_t threshold,
+  const IRowMapType& I_row_map, const IEntriesType& I_entries, const IValuesType& I_values,
+  ORowMapType& O_row_map,             OEntriesType& O_entries,       OValuesType& O_values,
+  PrefixSumType& prefix_sum_view)
+{
+  using size_type   = typename IlutHandle::size_type;
+  using policy_type = typename IlutHandle::TeamPolicy;
+  using member_type = typename policy_type::member_type;
+  using RangePolicy = typename IlutHandle::RangePolicy;
+
+  const auto policy = ih.get_default_team_policy();
+  const size_type nrows  = ih.get_nrows();
+
+  Kokkos::parallel_for(
+    "threshold_filter count",
+    policy,
+    KOKKOS_LAMBDA(const member_type& team) {
+      const auto row_idx = team.league_rank();
+
+      const auto row_nnx_begin = I_row_map(row_idx);
+      const auto row_nnx_end   = I_row_map(row_idx+1);
+
+      size_type count = 0;
+      Kokkos::parallel_reduce(
+        Kokkos::TeamThreadRange(team, row_nnx_begin, row_nnx_end),
+        [&](const size_type nnz, size_type& count_inner) {
+          if (abs(I_values(nnz) >= threshold || I_entries(nnz) == row_idx)) {
+            count_inner += 1;
+          }
+      }, count);
+
+      team.team_barrier();
+
+      O_row_map(row_idx) = count;
+  });
+
+  const auto new_nnz = prefix_sum(ih, O_row_map, prefix_sum_view);
+
+  Kokkos::resize(O_entries, new_nnz);
+  Kokkos::resize(O_values, new_nnz);
+
+  Kokkos::parallel_for(
+    "threshold_filter assign",
+    RangePolicy(0, nrows),
+    KOKKOS_LAMBDA(const size_type row_idx) {
+      const auto i_row_nnx_begin = I_row_map(row_idx);
+      const auto i_row_nnx_end   = I_row_map(row_idx+1);
+
+      auto onnz = O_row_map(row_idx);
+
+      for (size_type innz = i_row_nnx_begin; innz < i_row_nnx_end; ++innz) {
+        if (abs(I_values(innz) >= threshold || I_entries(innz) == row_idx)) {
+          O_entries(onnz) = I_entries(innz);
+          O_values(onnz)  = I_values(innz);
+          ++onnz;
+        }
+      }
+  });
+}
+
 template <class KHandle, class IlutHandle,
           class ARowMapType, class AEntriesType, class AValuesType,
           class LRowMapType, class LEntriesType, class LValuesType,
@@ -528,12 +614,16 @@ void ilut_numeric(KHandle& kh, IlutHandle &thandle, const ARowMapType &A_row_map
                   URowMapType &U_row_map, UEntriesType &U_entries, UValuesType &U_values) {
   using execution_space         = typename IlutHandle::execution_space;
   using memory_space            = typename IlutHandle::memory_space;
+  using index_type              = typename IlutHandle::nnz_lno_t;
   using size_type               = typename IlutHandle::size_type;
   using HandleDeviceEntriesType = typename IlutHandle::nnz_lno_view_t;
   using HandleDeviceRowMapType  = typename IlutHandle::nnz_row_view_t;
   using HandleDeviceValueType   = typename IlutHandle::nnz_value_view_t;
 
-  const size_type nrows   = thandle.get_nrows();
+  const size_type nrows    = thandle.get_nrows();
+  const auto fill_in_limit = thandle.get_fill_in_limit();
+  const auto l_nnz_limit = static_cast<index_type>(fill_in_limit * thandle.get_nnzL());
+  const auto u_nnz_limit = static_cast<index_type>(fill_in_limit * thandle.get_nnzU());
 
   bool converged = false;
 
@@ -562,7 +652,7 @@ void ilut_numeric(KHandle& kh, IlutHandle &thandle, const ARowMapType &A_row_map
       "Ut_new_row_map",
       nrows + 1);
   HandleDeviceEntriesType LU_entries, L_new_entries, U_new_entries, Ut_new_entries;
-  HandleDeviceValueType LU_values, L_new_values, U_new_values, Ut_new_values;
+  HandleDeviceValueType LU_values, L_new_values, U_new_values, Ut_new_values, V_copy;
 
   while (!converged) {
     // LU = L*U
@@ -615,25 +705,49 @@ void ilut_numeric(KHandle& kh, IlutHandle &thandle, const ARowMapType &A_row_map
 
     Kokkos::fence();
 
-    
+    const index_type l_nnz = L_new_values.extent(0);
+    const index_type u_nnz = U_new_values.extent(0);
+
+    const auto l_filter_rank = std::max(0, l_nnz - l_nnz_limit - 1);
+    const auto u_filter_rank = std::max(0, u_nnz - u_nnz_limit - 1);
+
+    const auto l_threshold = threshold_select(thandle, L_new_values, l_filter_rank, V_copy);
+    const auto u_threshold = threshold_select(thandle, U_new_values, l_filter_rank, V_copy);
+
+    threshold_filter(
+      thandle, l_threshold,
+      L_new_row_map, L_new_entries, L_new_values,
+      L_row_map, L_entries, L_values,
+      prefix_sum_view);
+
+    threshold_filter(
+      thandle, u_threshold,
+      U_new_row_map, U_new_entries, U_new_values,
+      U_row_map, U_entries, U_values,
+      prefix_sum_view);
+
+    // Set Ut_new_row_map back to all zeroes?
+    Kokkos::resize(Ut_new_entries, U_entries.extent(0));
+    Kokkos::resize(Ut_new_values,  U_values.extent(0));
+
+    KokkosKernels::Impl::transpose_matrix<
+      HandleDeviceRowMapType, HandleDeviceEntriesType, HandleDeviceValueType,
+      HandleDeviceRowMapType, HandleDeviceEntriesType, HandleDeviceValueType,
+      HandleDeviceRowMapType, execution_space>(
+      nrows, nrows,
+      U_row_map, U_entries, U_values,
+      Ut_new_row_map, Ut_new_entries, Ut_new_values);
+
+    compute_l_u_factors(thandle,
+      A_row_map, A_entries, A_values,
+      L_row_map, L_entries, L_values,
+      U_row_map, U_entries, U_values,
+      Ut_new_row_map, Ut_new_entries, Ut_new_values);
 
     converged = true;
   }
 
   Kokkos::fence();
-
-  Kokkos::deep_copy(L_row_map, L_new_row_map);
-  Kokkos::resize(L_entries,    L_new_entries.extent(0));
-  Kokkos::deep_copy(L_entries, L_new_entries);
-  Kokkos::resize(L_values,     L_new_values.extent(0));
-  Kokkos::deep_copy(L_values,  L_new_values);
-
-  Kokkos::deep_copy(U_row_map, U_new_row_map);
-  Kokkos::resize(U_entries,    U_new_entries.extent(0));
-  Kokkos::deep_copy(U_entries, U_new_entries);
-  Kokkos::resize(U_values,     U_new_values.extent(0));
-  Kokkos::deep_copy(U_values,  U_new_values);
-
 }  // end ilut_numeric
 
 }  // namespace Experimental
