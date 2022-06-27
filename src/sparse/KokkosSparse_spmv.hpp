@@ -662,9 +662,10 @@ template <class AlphaType, class AMatrix, class XVector, class BetaType,
           typename std::enable_if<
               KokkosSparse::is_crs_matrix<AMatrix>::value>::type* = nullptr>
 #endif
-void spmv(KokkosKernels::Experimental::Controls /*controls*/, const char mode[],
+void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
           const BetaType& beta, const YVector& y, const RANK_TWO) {
+
   // Make sure that x and y have the same rank.
   static_assert(
       static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
@@ -752,21 +753,50 @@ void spmv(KokkosKernels::Experimental::Controls /*controls*/, const char mode[],
     XVector_Internal x_i = x;
     YVector_Internal y_i = y;
 
-    return Impl::SPMV_MV<
-        typename AMatrix_Internal::value_type,
-        typename AMatrix_Internal::ordinal_type,
-        typename AMatrix_Internal::device_type,
-        typename AMatrix_Internal::memory_traits,
-        typename AMatrix_Internal::size_type,
-        typename XVector_Internal::value_type**,
-        typename XVector_Internal::array_layout,
-        typename XVector_Internal::device_type,
-        typename XVector_Internal::memory_traits,
-        typename YVector_Internal::value_type**,
-        typename YVector_Internal::array_layout,
-        typename YVector_Internal::device_type,
-        typename YVector_Internal::memory_traits>::spmv_mv(mode, alpha, A_i,
-                                                           x_i, beta, y_i);
+    bool useNative = false;
+
+// cusparseSpMM does not support conjugate mode
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+    useNative = useNative || (Conjugate[0] == mode[0]);
+#endif
+    useNative = useNative || (controls.isParameter("algorithm") &&
+                              (controls.getParameter("algorithm") == "native"));
+
+    if (useNative) {
+      return Impl::SPMV_MV<
+          typename AMatrix_Internal::value_type,
+          typename AMatrix_Internal::ordinal_type,
+          typename AMatrix_Internal::device_type,
+          typename AMatrix_Internal::memory_traits,
+          typename AMatrix_Internal::size_type,
+          typename XVector_Internal::value_type**,
+          typename XVector_Internal::array_layout,
+          typename XVector_Internal::device_type,
+          typename XVector_Internal::memory_traits,
+          typename YVector_Internal::value_type**,
+          typename YVector_Internal::array_layout,
+          typename YVector_Internal::device_type,
+          typename YVector_Internal::memory_traits,
+          std::is_integral<typename AMatrix_Internal::value_type>::value,
+          false>::spmv_mv(controls, mode, alpha, A_i, x_i, beta, y_i);
+    } else {
+      return Impl::SPMV_MV<
+          typename AMatrix_Internal::value_type,
+          typename AMatrix_Internal::ordinal_type,
+          typename AMatrix_Internal::device_type,
+          typename AMatrix_Internal::memory_traits,
+          typename AMatrix_Internal::size_type,
+          typename XVector_Internal::value_type**,
+          typename XVector_Internal::array_layout,
+          typename XVector_Internal::device_type,
+          typename XVector_Internal::memory_traits,
+          typename YVector_Internal::value_type**,
+          typename YVector_Internal::array_layout,
+          typename YVector_Internal::device_type,
+          typename YVector_Internal::memory_traits>::spmv_mv(controls, mode,
+                                                             alpha, A_i, x_i,
+                                                             beta, y_i);
+    }
   }
 }
 
@@ -1531,8 +1561,9 @@ void spmv_struct(const char mode[], const int stencil_type,
         typename YVector_Internal::value_type**,
         typename YVector_Internal::array_layout,
         typename YVector_Internal::device_type,
-        typename YVector_Internal::memory_traits>::spmv_mv(mode, alpha, A_i,
-                                                           x_i, beta, y_i);
+        typename YVector_Internal::memory_traits>::
+        spmv_mv(KokkosKernels::Experimental::Controls(), mode, alpha, A_i, x_i,
+                beta, y_i);
   }
 }
 
