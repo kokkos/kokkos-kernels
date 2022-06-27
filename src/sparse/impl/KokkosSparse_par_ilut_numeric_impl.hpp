@@ -408,9 +408,9 @@ KOKKOS_FUNCTION
 std::pair<typename AValuesType::non_const_value_type, typename IlutHandle::size_type> compute_sum(
   IlutHandle& ih,
   typename IlutHandle::size_type row_idx, typename IlutHandle::size_type col_idx,
-  const ARowMapType&  A_row_map,  const AEntriesType& A_entries, const AValuesType& A_values,
-  const LRowMapType&  L_row_map,  const LEntriesType& L_entries, const LValuesType& L_values,
-  const UtRowMapType& Ut_row_map, const UtEntriesType& Ut_entries, UtValuesType& Ut_values)
+  const ARowMapType&  A_row_map,  const AEntriesType& A_entries,   const AValuesType& A_values,
+  const LRowMapType&  L_row_map,  const LEntriesType& L_entries,   const LValuesType& L_values,
+  const UtRowMapType& Ut_row_map, const UtEntriesType& Ut_entries, const UtValuesType& Ut_values)
 {
   using scalar_t  = typename AValuesType::non_const_value_type;
   using size_type = typename IlutHandle::size_type;
@@ -495,6 +495,8 @@ void compute_l_u_factors(
           }
       });
 
+      team.team_barrier();
+
       const auto u_row_nnz_begin = U_row_map(row_idx);
       const auto u_row_nnz_end   = U_row_map(row_idx+1);
 
@@ -513,9 +515,7 @@ void compute_l_u_factors(
           U_values(u_nnz) = new_val;
           Ut_values(ut_nnz) = new_val;
       });
-
   });
-
 }
 
 template <class KHandle, class IlutHandle,
@@ -593,6 +593,8 @@ void ilut_numeric(KHandle& kh, IlutHandle &thandle, const ARowMapType &A_row_map
       U_new_row_map, U_new_entries, U_new_values,
       prefix_sum_view);
 
+    Kokkos::fence();
+
     // Set Ut_new_row_map back to all zeroes?
     Kokkos::resize(Ut_new_entries, U_new_entries.extent(0));
     Kokkos::resize(Ut_new_values,  U_new_values.extent(0));
@@ -605,14 +607,20 @@ void ilut_numeric(KHandle& kh, IlutHandle &thandle, const ARowMapType &A_row_map
       U_new_row_map, U_new_entries, U_new_values,
       Ut_new_row_map, Ut_new_entries, Ut_new_values);
 
+    Kokkos::fence();
+
     compute_l_u_factors(thandle,
       A_row_map, A_entries, A_values,
       L_new_row_map, L_new_entries, L_new_values,
       U_new_row_map, U_new_entries, U_new_values,
       Ut_new_row_map, Ut_new_entries, Ut_new_values);
 
+    Kokkos::fence();
+
     converged = true;
   }
+
+  Kokkos::fence();
 
   Kokkos::deep_copy(L_row_map, L_new_row_map);
   Kokkos::resize(L_entries,    L_new_entries.extent(0));

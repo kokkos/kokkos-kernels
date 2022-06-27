@@ -109,6 +109,7 @@ std::vector<std::vector<scalar_t>> decompress_matrix(
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void check_matrix(
+  const std::string& name,
   Kokkos::View<size_type*, device>& row_map,
   Kokkos::View<lno_t*, device>& entries,
   Kokkos::View<scalar_t*, device>& values,
@@ -119,7 +120,8 @@ void check_matrix(
   const auto nrows = row_map.size() - 1;
   for (size_type row_idx = 0; row_idx < nrows; ++row_idx) {
     for (size_type col_idx = 0; col_idx < nrows; ++col_idx) {
-      EXPECT_NEAR(expected[row_idx][col_idx], decompressed_mtx[row_idx][col_idx], 0.01);
+      EXPECT_NEAR(expected[row_idx][col_idx], decompressed_mtx[row_idx][col_idx], 0.01)
+        << "Failed check is: " << name << "[" << row_idx << "][" << col_idx << "]";
     }
   }
 }
@@ -242,7 +244,7 @@ void run_test_par_ilut() {
     {0.50, -3., 1., 0.},
     {0.20, -0.50, -9., 1.}
   };
-  check_matrix(L_row_map, L_entries, L_values, expected_L);
+  check_matrix("L symbolic", L_row_map, L_entries, L_values, expected_L);
 
   std::vector<std::vector<scalar_t> > expected_U = {
     {1., 6., 4., 7.},
@@ -250,7 +252,7 @@ void run_test_par_ilut() {
     {0., 0., 6., 0.},
     {0., 0., 0., 1.}
   };
-  check_matrix(U_row_map, U_entries, U_values, expected_U);
+  check_matrix("U symbolic", U_row_map, U_entries, U_values, expected_U);
 
   par_ilut_numeric(&kh, row_map, entries, values,
                    L_row_map, L_entries, L_values,
@@ -284,7 +286,7 @@ void run_test_par_ilut() {
     {0.20, 0.10, -1.32, 1.}
   };
 
-  check_matrix(L_row_map, L_entries, L_values, expected_L_candidates);
+  check_matrix("L numeric", L_row_map, L_entries, L_values, expected_L_candidates);
 
   std::vector<std::vector<scalar_t> > expected_U_candidates = {
     {1., 6., 4., 7.},
@@ -293,7 +295,7 @@ void run_test_par_ilut() {
     {0., 0., 0., -2.62}
   };
 
-  check_matrix(U_row_map, U_entries, U_values, expected_U_candidates);
+  check_matrix("U numeric", U_row_map, U_entries, U_values, expected_U_candidates);
 
 
   // Checking
