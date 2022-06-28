@@ -3,8 +3,7 @@
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include "KokkosBatched_Util.hpp"
-#include "KokkosBatched_Vector.hpp"
+#include "impl/Kokkos_Error.hpp"
 
 namespace KokkosBatched {
 ///
@@ -14,7 +13,12 @@ namespace KokkosBatched {
 struct SerialSet {
   template <typename ScalarType, typename AViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha,
-                                           const AViewType &A);
+                                           const AViewType &A) {
+    Kokkos::abort(
+        "KokkosBatched::SerialSet is deprecated: use KokkosBlas::SerialSet "
+        "instead");
+    return 0;
+  }
 };
 
 ///
@@ -26,7 +30,12 @@ struct TeamSet {
   template <typename ScalarType, typename AViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
                                            const ScalarType alpha,
-                                           const AViewType &A);
+                                           const AViewType &A) {
+    Kokkos::abort(
+        "KokkosBatched::TeamSet is deprecated: use KokkosBlas::TeamSet "
+        "instead");
+    return 0;
+  }
 };
 
 ///
@@ -38,11 +47,14 @@ struct TeamVectorSet {
   template <typename ScalarType, typename AViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
                                            const ScalarType alpha,
-                                           const AViewType &A);
+                                           const AViewType &A) {
+    Kokkos::abort(
+        "KokkosBatched::TeamVectorSet is deprecated: use "
+        "KokkosBlas::TeamVectorSet instead");
+    return 0;
+  }
 };
 
 }  // namespace KokkosBatched
-
-#include "KokkosBatched_Set_Impl.hpp"
 
 #endif

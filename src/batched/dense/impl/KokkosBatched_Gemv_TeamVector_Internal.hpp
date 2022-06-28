@@ -5,9 +5,8 @@
 
 #include "KokkosBatched_Util.hpp"
 
-#include "KokkosBatched_Set_Internal.hpp"
+#include "KokkosBlas1_set_impl.hpp"
 #include "KokkosBlas1_team_scal_impl.hpp"
-
 #include "KokkosBatched_InnerMultipleDotProduct_Serial_Impl.hpp"
 
 namespace KokkosBatched {
@@ -58,7 +57,7 @@ TeamVectorGemvInternal<Algo::Gemv::Unblocked>::invoke(
   // y (m), A(m x n), B(n)
 
   if (beta == zero)
-    TeamVectorSetInternal ::invoke(member, m, zero, y, ys0);
+    KokkosBlas::Impl::TeamVectorSetInternal::invoke(member, m, zero, y, ys0);
   else if (beta != one)
     KokkosBlas::Impl::TeamVectorScaleInternal::invoke(member, m, beta, y, ys0);
 
