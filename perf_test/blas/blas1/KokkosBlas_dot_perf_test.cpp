@@ -236,7 +236,7 @@ int main(int argc, char** argv) {
 #if defined(KOKKOS_ENABLE_HIP)
     run<Kokkos::Experimental::HIP>(params.m, params.repeat);
 #else
-    std::cout << "ERROR: CUDA requested, but not available.\n";
+    std::cout << "ERROR: HIP requested, but not available.\n";
     return 1;
 #endif
   }
@@ -245,7 +245,7 @@ int main(int argc, char** argv) {
 #if defined(KOKKOS_ENABLE_SYCL)
     run<Kokkos::Experimental::SYCL>(params.m, params.repeat);
 #else
-    std::cout << "ERROR: CUDA requested, but not available.\n";
+    std::cout << "ERROR: SYCL requested, but not available.\n";
     return 1;
 #endif
   }
