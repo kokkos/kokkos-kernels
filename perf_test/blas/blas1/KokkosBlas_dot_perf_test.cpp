@@ -54,6 +54,8 @@ struct Params {
   int use_cuda    = 0;
   int use_openmp  = 0;
   int use_threads = 0;
+  int use_hip     = 0;
+  int use_sycl    = 0;
   // m is vector length
   int m      = 100000;
   int repeat = 1;
@@ -63,7 +65,8 @@ void print_options() {
   std::cerr << "Options:\n" << std::endl;
 
   std::cerr << "\tBACKEND: '--threads[numThreads]' | '--openmp [numThreads]' | "
-               "'--cuda [cudaDeviceIndex]'"
+               "'--cuda [cudaDeviceIndex]' | '--hip [hipDeviceIndex]' | "
+               "'--sycl [syclDeviceIndex]'"
             << std::endl;
   std::cerr << "\tIf no BACKEND selected, serial is the default." << std::endl;
   std::cerr << "\t[Optional] --repeat :: how many times to repeat overall "
@@ -86,6 +89,10 @@ int parse_inputs(Params& params, int argc, char** argv) {
       params.use_openmp = atoi(argv[++i]);
     } else if (0 == Test::string_compare_no_case(argv[i], "--cuda")) {
       params.use_cuda = atoi(argv[++i]) + 1;
+    } else if (0 == Test::string_compare_no_case(argv[i], "--hip")) {
+      params.use_hip = atoi(argv[++i]) + 1;
+    } else if (0 == Test::string_compare_no_case(argv[i], "--sycl")) {
+      params.use_sycl = atoi(argv[++i]) + 1;
     } else if (0 == Test::string_compare_no_case(argv[i], "--m")) {
       params.m = atoi(argv[++i]);
     } else if (0 == Test::string_compare_no_case(argv[i], "--repeat")) {
@@ -193,6 +200,8 @@ int main(int argc, char** argv) {
   bool useThreads = params.use_threads != 0;
   bool useOMP     = params.use_openmp != 0;
   bool useCUDA    = params.use_cuda != 0;
+  bool useHIP     = params.use_hip != 0;
+  bool useSYCL    = params.use_sycl != 0;
   bool useSerial  = !useThreads && !useOMP && !useCUDA;
 
   if (useThreads) {
@@ -221,6 +230,25 @@ int main(int argc, char** argv) {
     return 1;
 #endif
   }
+
+  if (useHIP) {
+#if defined(KOKKOS_ENABLE_HIP)
+    run<Kokkos::Experimental::HIP>(params.m, params.repeat);
+#else
+    std::cout << "ERROR: CUDA requested, but not available.\n";
+    return 1;
+#endif
+  }
+
+  if (useSYCL) {
+#if defined(KOKKOS_ENABLE_SYCL)
+    run<Kokkos::Experimental::SYCL>(params.m, params.repeat);
+#else
+    std::cout << "ERROR: CUDA requested, but not available.\n";
+    return 1;
+#endif
+  }
+
   if (useSerial) {
 #if defined(KOKKOS_ENABLE_SERIAL)
     run<Kokkos::Serial>(params.m, params.repeat);
