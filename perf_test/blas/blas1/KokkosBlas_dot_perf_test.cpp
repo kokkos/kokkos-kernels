@@ -191,7 +191,8 @@ int main(int argc, char** argv) {
   if (parse_inputs(params, argc, argv)) {
     return 1;
   }
-  const int device_id = std::max(std::max(params.use_cuda, params.use_hip), params.use_sycl) - 1;
+  const int device_id =
+      std::max(std::max(params.use_cuda, params.use_hip), params.use_sycl) - 1;
 
   const int num_threads = std::max(params.use_openmp, params.use_threads);
 

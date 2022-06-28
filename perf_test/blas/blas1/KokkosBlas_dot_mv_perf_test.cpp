@@ -91,7 +91,8 @@ int parse_inputs(Params& params, int argc, char** argv) {
     } else if (0 == Test::string_compare_no_case(argv[i], "--cuda")) {
       params.use_cuda = atoi(argv[++i]) + 1;
     } else if (0 == Test::string_compare_no_case(argv[i], "--hip")) {
-      params.use_hip = atoi(argv[++i]) + 1;;
+      params.use_hip = atoi(argv[++i]) + 1;
+      ;
     } else if (0 == Test::string_compare_no_case(argv[i], "--sycl")) {
       params.use_sycl = atoi(argv[++i]) + 1;
     } else if (0 == Test::string_compare_no_case(argv[i], "--m")) {
@@ -194,7 +195,8 @@ int main(int argc, char** argv) {
   if (parse_inputs(params, argc, argv)) {
     return 1;
   }
-  const int device_id = std::max(std::max(params.use_cuda, params.use_hip), params.use_sycl) - 1;
+  const int device_id =
+      std::max(std::max(params.use_cuda, params.use_hip), params.use_sycl) - 1;
 
   const int num_threads = std::max(params.use_openmp, params.use_threads);
 
