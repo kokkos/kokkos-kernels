@@ -92,7 +92,6 @@ int parse_inputs(Params& params, int argc, char** argv) {
       params.use_cuda = atoi(argv[++i]) + 1;
     } else if (0 == Test::string_compare_no_case(argv[i], "--hip")) {
       params.use_hip = atoi(argv[++i]) + 1;
-      ;
     } else if (0 == Test::string_compare_no_case(argv[i], "--sycl")) {
       params.use_sycl = atoi(argv[++i]) + 1;
     } else if (0 == Test::string_compare_no_case(argv[i], "--m")) {
