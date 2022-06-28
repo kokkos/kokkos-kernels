@@ -3,6 +3,8 @@
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
+#include "impl/Kokkos_Error.hpp"
+
 namespace KokkosBatched {
 
 ///
@@ -13,7 +15,9 @@ struct SerialScale {
   template <typename ScalarType, typename AViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha,
                                            const AViewType &A) {
-    assert(false && "Deprecated: use KokkosBlas::SerialScale");
+    Kokkos::abort(
+        "KokkosBatched::SerialScale is deprecated: use KokkosBlas::SerialScale "
+        "instead");
     return 0;
   }
 };
@@ -28,7 +32,9 @@ struct TeamScale {
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
                                            const ScalarType alpha,
                                            const AViewType &A) {
-    assert(false && "Deprecated: use KokkosBlas::TeamScale");
+    Kokkos::abort(
+        "KokkosBatched::TeamScale is deprecated: use KokkosBlas::TeamScale "
+        "instead");
     return 0;
   }
 };
@@ -44,7 +50,9 @@ struct TeamVectorScale {
                                            const ScalarType alpha,
                                            const AViewType &A) {
     // static_assert(false);
-    assert(false && "Deprecated: use KokkosBlas::TeamVectorScale");
+    Kokkos::abort(
+        "KokkosBatched::TeamVectorScale is deprecated: use "
+        "KokkosBlas::TeamVectorScale instead");
     return 0;
   }
 };
