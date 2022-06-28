@@ -6,6 +6,7 @@
 #include "KokkosBatched_Util.hpp"
 
 #include "KokkosBatched_Set_Internal.hpp"
+#include "KokkosBlas1_team_scal_impl.hpp"
 
 #include "KokkosBatched_InnerMultipleDotProduct_Serial_Impl.hpp"
 

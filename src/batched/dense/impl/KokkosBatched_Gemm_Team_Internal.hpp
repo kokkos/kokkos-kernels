@@ -7,7 +7,7 @@
 #include "KokkosKernels_ExecSpaceUtils.hpp"
 
 #include "KokkosBatched_Set_Internal.hpp"
-#include "KokkosBlas1_team_scal.hpp"
+#include "KokkosBlas1_team_scal_impl.hpp"
 
 #include "KokkosBatched_InnerGemmFixC_Serial_Impl.hpp"
 
