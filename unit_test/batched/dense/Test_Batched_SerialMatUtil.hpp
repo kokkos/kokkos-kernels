@@ -9,7 +9,7 @@
 
 // TODO: move this test to KokkosBlas when both SerialScale and SerialSet are
 // moved
-#include "KokkosBlas1_serial_scal.hpp"  // #include "KokkosBatched_Scale_Decl.hpp"
+#include "KokkosBlas1_scal.hpp"  // #include "KokkosBatched_Scale_Decl.hpp"
 
 #include "KokkosKernels_TestUtils.hpp"
 

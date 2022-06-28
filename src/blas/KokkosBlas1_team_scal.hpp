@@ -45,46 +45,9 @@
 #ifndef KOKKOSBLAS1_TEAM_SCAL_HPP_
 #define KOKKOSBLAS1_TEAM_SCAL_HPP_
 
-#include <KokkosBlas1_team_scal_impl.hpp>
-
-// TODO: deprecate/remove ?
 #include <KokkosBlas1_team_scal_spec.hpp>
 
 namespace KokkosBlas {
-
-///
-/// Team Scale
-///
-
-template <typename MemberType>
-struct TeamScale {
-  template <typename ScalarType, typename AViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& member,
-                                           const ScalarType alpha,
-                                           const AViewType& A) {
-    return Impl::TeamScaleInternal::invoke(member, A.extent(0), A.extent(1),
-                                           alpha, A.data(), A.stride_0(),
-                                           A.stride_1());
-  }
-};
-
-///
-/// TeamVector Scale
-///
-
-template <typename MemberType>
-struct TeamVectorScale {
-  template <typename ScalarType, typename AViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& member,
-                                           const ScalarType alpha,
-                                           const AViewType& A) {
-    return Impl::TeamVectorScaleInternal::invoke(member, A.extent(0),
-                                                 A.extent(1), alpha, A.data(),
-                                                 A.stride_0(), A.stride_1());
-  }
-};
-
-// TODO: deprecate/remove ?
 namespace Experimental {
 
 template <class TeamType, class RVector, class XVector>
