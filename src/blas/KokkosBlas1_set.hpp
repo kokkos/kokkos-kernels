@@ -46,8 +46,6 @@
 #define KOKKOSBLAS1_SET_HPP_
 
 #include <KokkosBlas1_set_impl.hpp>
-// #include <KokkosKernels_helpers.hpp>
-// #include <KokkosKernels_Error.hpp>
 
 namespace KokkosBlas {
 
