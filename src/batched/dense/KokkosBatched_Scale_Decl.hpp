@@ -49,7 +49,6 @@ struct TeamVectorScale {
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
                                            const ScalarType alpha,
                                            const AViewType &A) {
-    // static_assert(false);
     Kokkos::abort(
         "KokkosBatched::TeamVectorScale is deprecated: use "
         "KokkosBlas::TeamVectorScale instead");
