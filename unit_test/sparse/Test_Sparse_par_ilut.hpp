@@ -95,11 +95,11 @@ std::vector<std::vector<scalar_t>> decompress_matrix(
   Kokkos::deep_copy(hvalues, values);
 
   for (size_type row_idx = 0; row_idx < nrows; ++row_idx) {
-    const size_type row_nnz_begin = row_map(row_idx);
-    const size_type row_nnz_end   = row_map(row_idx+1);
+    const size_type row_nnz_begin = hrow_map(row_idx);
+    const size_type row_nnz_end   = hrow_map(row_idx+1);
     for (size_type row_nnz = row_nnz_begin; row_nnz < row_nnz_end; ++row_nnz) {
-      const lno_t col_idx = entries(row_nnz);
-      const scalar_t value = values(row_nnz);
+      const lno_t col_idx = hentries(row_nnz);
+      const scalar_t value = hvalues(row_nnz);
       result[row_idx][col_idx] = value;
     }
   }
@@ -155,8 +155,6 @@ void run_test_par_ilut() {
   };
 
   const scalar_t ZERO = scalar_t(0);
-  const scalar_t ONE  = scalar_t(1);
-  const scalar_t MONE = scalar_t(-1);
 
   const size_type nrows = A.size();
 
@@ -314,7 +312,6 @@ void run_test_par_ilut() {
   };
 
   check_matrix("U numeric", U_row_map, U_entries, U_values, expected_U_candidates);
-
 
   // Checking
 

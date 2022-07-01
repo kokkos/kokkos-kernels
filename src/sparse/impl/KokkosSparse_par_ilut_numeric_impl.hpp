@@ -131,7 +131,7 @@ typename IlutHandle::size_type prefix_sum(IlutHandle& ih, RowMapType& row_map, P
       const auto team_rank = team.league_rank();
 
       const size_type starti = team_rank * rows_per_team;
-      const size_type endi   = std::min(nrows, (team_rank + 1) * rows_per_team);
+      const size_type endi   = Kokkos::fmin(nrows, (team_rank + 1) * rows_per_team);
       size_type sum = 0;
       Kokkos::parallel_reduce(
         Kokkos::TeamThreadRange(team, starti, endi),
@@ -175,7 +175,7 @@ typename IlutHandle::size_type prefix_sum(IlutHandle& ih, RowMapType& row_map, P
     KOKKOS_LAMBDA(const member_type& team, size_type& total_sum_outer) {
       const auto team_rank = team.league_rank();
       const size_type starti = team_rank * rows_per_team;
-      const size_type endi   = std::min(nrows, (team_rank + 1) * rows_per_team);
+      const size_type endi   = Kokkos::fmin(nrows, (team_rank + 1) * rows_per_team);
       if (team_rank != 0) {
         Kokkos::parallel_for(
           Kokkos::TeamThreadRange(team, starti, endi),
@@ -356,7 +356,7 @@ void add_candidates(
         const auto lu_col = lu_row_nnz_begin < lu_row_nnz_end ? LU_entries(lu_row_nnz_begin) : sentinel;
               auto lu_val = lu_row_nnz_begin < lu_row_nnz_end ? LU_values(lu_row_nnz_begin)  : 0.;
 
-        const auto col_idx = std::min(a_col, lu_col);
+        const size_type col_idx = Kokkos::fmin(a_col, lu_col);
 
         const bool a_active  = col_idx == a_col;
         const bool lu_active = col_idx == lu_col;
@@ -400,13 +400,31 @@ void add_candidates(
   });
 }
 
+template <class ForwardIterator, class T>
+KOKKOS_FUNCTION
+ForwardIterator kok_lower_bound(ForwardIterator first, ForwardIterator last, const T& val)
+{
+  ForwardIterator it;
+  size_t count, step;
+  count = last - first;
+  while (count>0)
+  {
+    it = first; step=count/2; it += step;
+    if (*it<val) {                 // or: if (comp(*it,val)), for version (2)
+      first=++it;
+      count-=step+1;
+    }
+    else count=step;
+  }
+  return first;
+}
+
 template <class IlutHandle,
           class ARowMapType, class AEntriesType, class AValuesType,
           class LRowMapType, class LEntriesType, class LValuesType,
           class UtRowMapType, class UtEntriesType, class UtValuesType>
 KOKKOS_FUNCTION
-std::pair<typename AValuesType::non_const_value_type, typename IlutHandle::size_type> compute_sum(
-  IlutHandle& ih,
+Kokkos::pair<typename AValuesType::non_const_value_type, typename IlutHandle::size_type> compute_sum(
   typename IlutHandle::size_type row_idx, typename IlutHandle::size_type col_idx,
   const ARowMapType&  A_row_map,  const AEntriesType& A_entries,   const AValuesType& A_values,
   const LRowMapType&  L_row_map,  const LEntriesType& L_entries,   const LValuesType& L_values,
@@ -418,8 +436,8 @@ std::pair<typename AValuesType::non_const_value_type, typename IlutHandle::size_
   const auto a_row_nnz_begin = A_row_map(row_idx);
   const auto a_row_nnz_end   = A_row_map(row_idx+1);
   auto a_nnz_it =
-    std::lower_bound(A_entries.data() + a_row_nnz_begin, A_entries.data() + a_row_nnz_end, col_idx);
-  auto a_nnz = std::distance(A_entries.data(), a_nnz_it);
+    kok_lower_bound(A_entries.data() + a_row_nnz_begin, A_entries.data() + a_row_nnz_end, col_idx);
+  auto a_nnz = a_nnz_it - A_entries.data();
   const bool has_a = a_nnz < a_row_nnz_end && A_entries(a_nnz) == col_idx;
   const auto a_val = has_a ? A_values(a_nnz) : 0.0;
   scalar_t sum = 0.0;
@@ -431,7 +449,7 @@ std::pair<typename AValuesType::non_const_value_type, typename IlutHandle::size_
         auto ut_row_nnz     = Ut_row_map(col_idx);
   const auto ut_row_nnz_end = Ut_row_map(col_idx+1);
 
-  const auto last_entry = std::min(row_idx, col_idx);
+  const size_type last_entry = Kokkos::fmin(row_idx, col_idx);
   while (l_row_nnz < l_row_nnz_end && ut_row_nnz < ut_row_nnz_end) {
     const auto l_col = L_entries(l_row_nnz);
     const auto u_row = Ut_entries(ut_row_nnz);
@@ -446,7 +464,7 @@ std::pair<typename AValuesType::non_const_value_type, typename IlutHandle::size_
     ut_row_nnz += u_row <= l_col ? 1 : 0;
   }
 
-  return std::make_pair(a_val - sum, ut_nnz);
+  return Kokkos::make_pair(a_val - sum, ut_nnz);
 }
 
 template <class IlutHandle,
@@ -485,8 +503,7 @@ void compute_l_u_factors(
           const auto col_idx = L_entries(l_nnz);
           const auto u_diag = Ut_values(Ut_row_map(col_idx+1) -1);
           if (u_diag != 0.0) {
-            const auto new_val = compute_sum(
-              ih,
+            const auto new_val = compute_sum<IlutHandle>(
               row_idx, col_idx,
               A_row_map, A_entries, A_values,
               L_row_map, L_entries, L_values,
@@ -504,8 +521,7 @@ void compute_l_u_factors(
         Kokkos::TeamThreadRange(team, u_row_nnz_begin, u_row_nnz_end),
         [&](const size_type u_nnz) {
           const auto col_idx = U_entries(u_nnz);
-          const auto sum = compute_sum(
-            ih,
+          const auto sum = compute_sum<IlutHandle>(
             row_idx, col_idx,
             A_row_map, A_entries, A_values,
             L_row_map, L_entries, L_values,
@@ -656,7 +672,8 @@ void ilut_numeric(KHandle& kh, IlutHandle &thandle, const ARowMapType &A_row_map
       "Ut_new_row_map",
       nrows + 1);
   HandleDeviceEntriesType LU_entries, L_new_entries, U_new_entries, Ut_new_entries;
-  HandleDeviceValueType LU_values, L_new_values, U_new_values, Ut_new_values, V_copy;
+  HandleDeviceValueType LU_values, L_new_values, U_new_values, Ut_new_values, V_copy_d;
+  auto V_copy = Kokkos::create_mirror_view(V_copy_d);
 
   while (!converged) {
     // LU = L*U

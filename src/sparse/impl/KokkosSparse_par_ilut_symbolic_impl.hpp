@@ -176,7 +176,6 @@ void ilut_symbolic(IlutHandle& thandle,
   });
 
   Kokkos::fence();
-
 }  // end ilut_symbolic
 
 }  // namespace Experimental
