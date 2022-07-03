@@ -7,8 +7,9 @@
 #include "KokkosBatched_Set_Decl.hpp"
 #include "KokkosBatched_Set_Impl.hpp"
 
-#include "KokkosBatched_Scale_Decl.hpp"
-#include "KokkosBatched_Scale_Impl.hpp"
+// TODO: move this test to KokkosBlas when both SerialScale and SerialSet are
+// moved
+#include "KokkosBlas1_scal.hpp"  // #include "KokkosBatched_Scale_Decl.hpp"
 
 #include "KokkosKernels_TestUtils.hpp"
 
@@ -36,7 +37,7 @@ struct Functor_TestBatchedSerialMatUtil {
     auto A = Kokkos::subview(_a, i, Kokkos::ALL(), Kokkos::ALL());
     switch (TestID) {
       case BatchedSet: SerialSet ::invoke(_alpha, A); break;
-      case BatchedScale: SerialScale::invoke(_alpha, A); break;
+      case BatchedScale: KokkosBlas::SerialScale::invoke(_alpha, A); break;
     }
   }
 

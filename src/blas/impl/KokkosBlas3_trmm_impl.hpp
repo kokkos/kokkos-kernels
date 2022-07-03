@@ -54,7 +54,6 @@
 #include "Kokkos_Core.hpp"
 #include "Kokkos_ArithTraits.hpp"
 #include "KokkosBatched_Set_Internal.hpp"
-#include "KokkosBatched_Scale_Internal.hpp"
 #include "KokkosBatched_Trmm_Decl.hpp"
 #include "KokkosBatched_Trmm_Serial_Impl.hpp"
 

@@ -6,7 +6,7 @@
 #include "KokkosBatched_Util.hpp"
 
 #include "KokkosBatched_Set_Internal.hpp"
-#include "KokkosBatched_Scale_Internal.hpp"
+#include "KokkosBlas1_team_scal_impl.hpp"
 
 #include "KokkosBatched_InnerMultipleDotProduct_Serial_Impl.hpp"
 
@@ -50,7 +50,7 @@ KOKKOS_INLINE_FUNCTION int TeamGemvInternal<Algo::Gemv::Unblocked>::invoke(
   if (beta == zero)
     TeamSetInternal ::invoke(member, m, zero, y, ys0);
   else if (beta != one)
-    TeamScaleInternal::invoke(member, m, beta, y, ys0);
+    KokkosBlas::Impl::TeamScaleInternal::invoke(member, m, beta, y, ys0);
 
   if (alpha != zero) {
     if (m <= 0 || n <= 0) return 0;
@@ -89,7 +89,7 @@ KOKKOS_INLINE_FUNCTION int TeamGemvInternal<Algo::Gemv::Blocked>::invoke(
   if (beta == zero)
     TeamSetInternal ::invoke(member, m, zero, y, ys0);
   else if (beta != one)
-    TeamScaleInternal::invoke(member, m, beta, y, ys0);
+    KokkosBlas::Impl::TeamScaleInternal::invoke(member, m, beta, y, ys0);
 
   if (alpha != zero) {
     if (m <= 0 || n <= 0) return 0;

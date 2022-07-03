@@ -7,8 +7,7 @@
 #include "KokkosBatched_Set_Decl.hpp"
 #include "KokkosBatched_Set_Impl.hpp"
 
-#include "KokkosBatched_Scale_Decl.hpp"
-#include "KokkosBatched_Scale_Impl.hpp"
+// #include "KokkosBatched_Scale_Decl.hpp"
 
 #include "KokkosKernels_TestUtils.hpp"
 
@@ -40,7 +39,7 @@ struct Functor_TestBatchedTeamMatUtil {
     switch (TestID) {
       case BatchedSet: TeamSet<MemberType>::invoke(member, _alpha, A); break;
       case BatchedScale:
-        TeamScale<MemberType>::invoke(member, _alpha, A);
+        KokkosBlas::TeamScale<MemberType>::invoke(member, _alpha, A);
         break;
     }
   }
