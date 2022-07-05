@@ -216,15 +216,17 @@ void add_candidates(
   using member_type     = typename policy_type::member_type;
   using range_policy    = typename IlutHandle::RangePolicy;
 
-  const auto policy = ih.get_default_team_policy();
-
   const size_type nrows = ih.get_nrows();
+
+  //const auto policy = ih.get_default_team_policy();
+  policy_type policy = policy_type(1, 1);
 
   Kokkos::parallel_for(
     "add_candidates sizing",
     policy,
     KOKKOS_LAMBDA(const member_type& team) {
-      const auto row_idx = team.league_rank();
+      for (size_type row_idx = 0; row_idx < nrows; ++row_idx) {
+        //const auto row_idx = team.league_rank();
 
       const auto a_row_nnz_begin = A_row_map(row_idx);
       const auto a_row_nnz_end   = A_row_map(row_idx+1);
@@ -265,10 +267,13 @@ void add_candidates(
         Kokkos::TeamThreadRange(team, a_row_nnz_begin, a_row_nnz_end),
         [&](const size_type nnz, size_type& dupL_inner) {
           const auto a_col_idx = A_entries(nnz);
+          printf("Checking dups for row_idx: %lu, a_col: %lu\n", row_idx, a_col_idx);
           if (a_col_idx <= row_idx) {
             for (size_type lu_i = lu_row_nnz_begin; lu_i < lu_row_nnz_end; ++lu_i) {
               const auto lu_col_idx = LU_entries(lu_i);
+              printf("Checking lu_col_idx: %lu\n", lu_col_idx);
               if (a_col_idx == lu_col_idx) {
+                printf("Found!\n");
                 ++dupL_inner;
                 break;
               }
@@ -299,19 +304,53 @@ void add_candidates(
 
       team.team_barrier();
 
+      printf("a_l_nnz: %lu lu_l_nnz: %lu dup_l_nnz: %lu\n", a_l_nnz, lu_l_nnz, dup_l_nnz);
+
       Kokkos::single(
         Kokkos::PerTeam(team), [&] () {
-          const auto l_nnz = (a_l_nnz + lu_l_nnz - dup_l_nnz);
+          const auto l_nnz = ((a_l_nnz + lu_l_nnz) - dup_l_nnz);
+          printf("l_nnz: %lu\n", l_nnz);
           const auto u_nnz = (a_u_nnz + lu_u_nnz - dup_u_nnz);
 
           L_new_row_map(row_idx) = l_nnz;
           U_new_row_map(row_idx) = u_nnz;
       });
+      }
   });
+
+  Kokkos::fence();
+
+  auto lnrwh = Kokkos::create_mirror_view(L_new_row_map);
+  auto unrwh = Kokkos::create_mirror_view(U_new_row_map);
+  Kokkos::deep_copy(lnrwh, L_new_row_map);
+  Kokkos::deep_copy(unrwh, U_new_row_map);
+
+  std::cout << "L_new_row_map:" << std::endl;
+  for (size_type i = 0; i < nrows+1; ++i) {
+    std::cout << lnrwh(i) << " ";
+  } std::cout << std::endl;
+
+  std::cout << "U_new_row_map:" << std::endl;
+  for (size_type i = 0; i < nrows+1; ++i) {
+    std::cout << unrwh(i) << " ";
+  } std::cout << std::endl;
 
   // prefix sum
   const size_type l_new_nnz = prefix_sum(ih, L_new_row_map, prefix_sum_view);
   const size_type u_new_nnz = prefix_sum(ih, U_new_row_map, prefix_sum_view);
+
+  Kokkos::deep_copy(lnrwh, L_new_row_map);
+  Kokkos::deep_copy(unrwh, U_new_row_map);
+
+  std::cout << "L_new_row_map:" << std::endl;
+  for (size_type i = 0; i < nrows+1; ++i) {
+    std::cout << lnrwh(i) << " ";
+  } std::cout << std::endl;
+
+  std::cout << "U_new_row_map:" << std::endl;
+  for (size_type i = 0; i < nrows+1; ++i) {
+    std::cout << unrwh(i) << " ";
+  } std::cout << std::endl;
 
   Kokkos::resize(L_new_entries, l_new_nnz);
   Kokkos::resize(U_new_entries, u_new_nnz);
@@ -465,6 +504,89 @@ Kokkos::pair<typename AValuesType::non_const_value_type, typename IlutHandle::si
   }
 
   return Kokkos::make_pair(a_val - sum, ut_nnz);
+}
+
+template <class IlutHandle, class RowMapType, class EntriesType, class ValuesType>
+void cp_vector_to_device(
+  const RowMapType& row_map, const EntriesType& entries, ValuesType& values,
+  const std::vector<std::vector<typename ValuesType::non_const_value_type> >& v)
+{
+  using size_type = typename IlutHandle::size_type;
+
+  const size_type nrows = row_map.extent(0) - 1;
+
+  auto hrow_map = Kokkos::create_mirror_view(row_map);
+  auto hentries = Kokkos::create_mirror_view(entries);
+  auto hvalues  = Kokkos::create_mirror_view(values);
+
+  for (size_type row_idx = 0; row_idx < nrows; ++row_idx) {
+    const size_type row_nnz_begin = hrow_map(row_idx);
+    const size_type row_nnz_end   = hrow_map(row_idx+1);
+    for (size_type row_nnz = row_nnz_begin; row_nnz < row_nnz_end; ++row_nnz) {
+      const auto col_idx = hentries(row_nnz);
+      hvalues(row_nnz) = v[row_idx][col_idx];
+    }
+  }
+
+  Kokkos::deep_copy(values, hvalues);
+}
+
+template <class IlutHandle,
+          class ARowMapType, class AEntriesType, class AValuesType,
+          class LRowMapType, class LEntriesType, class LValuesType,
+          class URowMapType, class UEntriesType, class UValuesType,
+          class UtRowMapType, class UtEntriesType, class UtValuesType>
+void hardcode_compute_l_u_factors(
+  IlutHandle& ih,
+  const ARowMapType& A_row_map, const AEntriesType& A_entries, const AValuesType& A_values,
+  LRowMapType& L_row_map,   LEntriesType& L_entries,   LValuesType& L_values,
+  URowMapType& U_row_map,   UEntriesType& U_entries,   UValuesType& U_values,
+  UtRowMapType& Ut_row_map, UtEntriesType& Ut_entries, UtValuesType& Ut_values)
+{
+  using scalar_t                = typename AValuesType::non_const_value_type;
+  using size_type               = typename IlutHandle::size_type;
+  using execution_space         = typename IlutHandle::execution_space;
+  using range_policy            = typename IlutHandle::RangePolicy;
+  using HandleDeviceEntriesType = typename IlutHandle::nnz_lno_view_t;
+  using HandleDeviceRowMapType  = typename IlutHandle::nnz_row_view_t;
+  using HandleDeviceValueType   = typename IlutHandle::nnz_value_view_t;
+
+  const auto nrows = A_row_map.extent(0) - 1;
+
+  std::vector<std::vector<scalar_t> > hardcoded_L = {
+    {1.0, 0.0, 0.0, 0.0},
+    {2.0, 1.0, 0.0, 0.0},
+    {0.5, 0.35294117647058826, 1.0, 0.0},
+    {0.2, 0.1, -1.3189655172413792, 1.0}
+  };
+
+  std::vector<std::vector<scalar_t> > hardcoded_U = {
+    {1.0, 6.0, 4.0, 7.0},
+    {0.0, -17.0, -8.0, -6.0},
+    {0.0, 0.0, 6.8235294117647065, -1.3823529411764706},
+    {0.0, 0.0, 0.0, -2.623275862068965}
+  };
+
+  cp_vector_to_device<IlutHandle>(L_row_map, L_entries, L_values, hardcoded_L);
+  cp_vector_to_device<IlutHandle>(U_row_map, U_entries, U_values, hardcoded_U);
+
+  Kokkos::parallel_for(
+    range_policy(0, nrows+1),
+    KOKKOS_LAMBDA(const size_type row_idx) {
+      Ut_row_map(row_idx) = 0;
+    });
+  Kokkos::resize(Ut_entries, U_entries.extent(0));
+  Kokkos::resize(Ut_values,  U_values.extent(0));
+
+  Kokkos::fence();
+
+  KokkosKernels::Impl::transpose_matrix<
+    HandleDeviceRowMapType, HandleDeviceEntriesType, HandleDeviceValueType,
+    HandleDeviceRowMapType, HandleDeviceEntriesType, HandleDeviceValueType,
+    HandleDeviceRowMapType, execution_space>(
+      nrows, nrows,
+      U_row_map, U_entries, U_values,
+      Ut_row_map, Ut_entries, Ut_values);
 }
 
 template <class IlutHandle,
@@ -630,7 +752,8 @@ template <class KHandle, class IlutHandle,
 void ilut_numeric(KHandle& kh, IlutHandle &thandle, const ARowMapType &A_row_map,
                   const AEntriesType &A_entries, const AValuesType &A_values,
                   LRowMapType &L_row_map, LEntriesType &L_entries, LValuesType &L_values,
-                  URowMapType &U_row_map, UEntriesType &U_entries, UValuesType &U_values) {
+                  URowMapType &U_row_map, UEntriesType &U_entries, UValuesType &U_values)
+{
   using execution_space         = typename IlutHandle::execution_space;
   using memory_space            = typename IlutHandle::memory_space;
   using index_type              = typename IlutHandle::nnz_lno_t;
@@ -683,6 +806,8 @@ void ilut_numeric(KHandle& kh, IlutHandle &thandle, const ARowMapType &A_row_map
       U_row_map, U_entries, false,
       LU_row_map);
 
+    Kokkos::fence();
+
     const size_type lu_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
     Kokkos::resize(LU_entries, lu_nnz_size);
     Kokkos::resize(LU_values, lu_nnz_size);
@@ -692,6 +817,8 @@ void ilut_numeric(KHandle& kh, IlutHandle &thandle, const ARowMapType &A_row_map
       L_row_map, L_entries, L_values, false,
       U_row_map, U_entries, U_values, false,
       LU_row_map, LU_entries, LU_values);
+
+    Kokkos::fence();
 
     add_candidates(thandle,
       A_row_map, A_entries, A_values,
@@ -704,6 +831,21 @@ void ilut_numeric(KHandle& kh, IlutHandle &thandle, const ARowMapType &A_row_map
 
     Kokkos::fence();
 
+    Kokkos::deep_copy(L_row_map, L_new_row_map);
+    Kokkos::resize(L_entries, L_new_entries.extent(0));
+    Kokkos::deep_copy(L_entries, L_new_entries);
+    Kokkos::resize(L_values, L_new_values.extent(0));
+    Kokkos::deep_copy(L_values, L_new_values);
+
+    Kokkos::deep_copy(U_row_map, U_new_row_map);
+    Kokkos::resize(U_entries, U_new_entries.extent(0));
+    Kokkos::deep_copy(U_entries, U_new_entries);
+    Kokkos::resize(U_values, U_new_values.extent(0));
+    Kokkos::deep_copy(U_values, U_new_values);
+
+    Kokkos::fence();
+
+#if 0
     Kokkos::parallel_for(
       range_policy(0, nrows+1),
       KOKKOS_LAMBDA(const size_type row_idx) {
@@ -724,7 +866,7 @@ void ilut_numeric(KHandle& kh, IlutHandle &thandle, const ARowMapType &A_row_map
 
     Kokkos::fence();
 
-    compute_l_u_factors(thandle,
+    hardcode_compute_l_u_factors(thandle,
       A_row_map, A_entries, A_values,
       L_new_row_map, L_new_entries, L_new_values,
       U_new_row_map, U_new_entries, U_new_values,
@@ -782,7 +924,7 @@ void ilut_numeric(KHandle& kh, IlutHandle &thandle, const ARowMapType &A_row_map
       L_row_map, L_entries, L_values,
       U_row_map, U_entries, U_values,
       Ut_new_row_map, Ut_new_entries, Ut_new_values);
-
+#endif
     converged = true;
   }
 
