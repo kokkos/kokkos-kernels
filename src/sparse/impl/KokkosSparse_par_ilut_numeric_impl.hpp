@@ -269,18 +269,18 @@ void add_candidates(
         Kokkos::TeamThreadRange(team, a_row_nnz_begin, a_row_nnz_end),
         [&](const size_type nnz, size_type& dupL_inner) {
           const auto a_col_idx = A_entries(nnz);
-          printf("Checking dups for row_idx: %lu, a_col: %lu\n", row_idx, a_col_idx);
+          printf("  Checking dups for row_idx: %lu, a_col: %lu\n", row_idx, a_col_idx);
           if (a_col_idx <= row_idx) {
             for (size_type lu_i = lu_row_nnz_begin; lu_i < lu_row_nnz_end; ++lu_i) {
               const auto lu_col_idx = LU_entries(lu_i);
-              printf("  Checking lu_col_idx: %lu against a_col_idx: %lu \n", lu_col_idx, a_col_idx);
+              printf("    Checking lu_col_idx: %lu against a_col_idx: %lu \n", lu_col_idx, a_col_idx);
               if (a_col_idx == lu_col_idx) {
-                printf("    Found!\n");
+                printf("      Found!\n");
                 ++dupL_inner;
                 break;
               }
               else if (lu_col_idx > a_col_idx) {
-                printf("    Break!\n");
+                printf("      Break!\n");
                 break;
               }
             }
@@ -307,12 +307,12 @@ void add_candidates(
 
       team.team_barrier();
 
-      printf("a_l_nnz: %lu lu_l_nnz: %lu dup_l_nnz: %lu\n", a_l_nnz, lu_l_nnz, dup_l_nnz);
+      //printf("a_l_nnz: %lu lu_l_nnz: %lu dup_l_nnz: %lu\n", a_l_nnz, lu_l_nnz, dup_l_nnz);
 
       Kokkos::single(
         Kokkos::PerTeam(team), [&] () {
           const auto l_nnz = ((a_l_nnz + lu_l_nnz) - dup_l_nnz);
-          printf("l_nnz: %lu\n", l_nnz);
+          //printf("l_nnz: %lu\n", l_nnz);
           const auto u_nnz = (a_u_nnz + lu_u_nnz - dup_u_nnz);
 
           L_new_row_map(row_idx) = l_nnz;
