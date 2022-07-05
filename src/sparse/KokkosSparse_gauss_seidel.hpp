@@ -132,7 +132,8 @@ void block_gauss_seidel_symbolic(
                         is_graph_symmetric);
 }
 
-template <KokkosSparse::SparseMatrixFormat format = KokkosSparse::CRS,
+template <KokkosSparse::SparseMatrixFormat format =
+              KokkosSparse::SparseMatrixFormat::CRS,
           typename KernelHandle, typename lno_row_view_t_,
           typename lno_nnz_view_t_, typename scalar_nnz_view_t_>
 void gauss_seidel_numeric(KernelHandle *handle,
@@ -207,7 +208,8 @@ void gauss_seidel_numeric(KernelHandle *handle,
                                                           is_graph_symmetric);
 }
 
-template <KokkosSparse::SparseMatrixFormat format = KokkosSparse::CRS,
+template <KokkosSparse::SparseMatrixFormat format =
+              KokkosSparse::SparseMatrixFormat::CRS,
           typename KernelHandle, typename lno_row_view_t_,
           typename lno_nnz_view_t_, typename scalar_nnz_view_t_>
 void gauss_seidel_numeric(KernelHandle *handle,
@@ -286,7 +288,8 @@ void gauss_seidel_numeric(KernelHandle *handle,
                                                           is_graph_symmetric);
 }
 
-template <KokkosSparse::SparseMatrixFormat format = KokkosSparse::BlockCRS,
+template <KokkosSparse::SparseMatrixFormat format =
+              KokkosSparse::SparseMatrixFormat::BSR,
           typename KernelHandle, typename lno_row_view_t_,
           typename lno_nnz_view_t_, typename scalar_nnz_view_t_>
 void block_gauss_seidel_numeric(
@@ -307,7 +310,8 @@ void block_gauss_seidel_numeric(
                                values, is_graph_symmetric);
 }
 
-template <KokkosSparse::SparseMatrixFormat format = KokkosSparse::CRS,
+template <KokkosSparse::SparseMatrixFormat format =
+              KokkosSparse::SparseMatrixFormat::CRS,
           typename KernelHandle, typename lno_row_view_t_,
           typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
           typename x_scalar_view_t, typename y_scalar_view_t>
@@ -437,7 +441,8 @@ void symmetric_gauss_seidel_apply(
                          update_y_vector, omega, numIter, true, true);
 }
 
-template <KokkosSparse::SparseMatrixFormat format = KokkosSparse::BlockCRS,
+template <KokkosSparse::SparseMatrixFormat format =
+              KokkosSparse::SparseMatrixFormat::BSR,
           typename KernelHandle, typename lno_row_view_t_,
           typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
           typename x_scalar_view_t, typename y_scalar_view_t>
@@ -471,7 +476,8 @@ void symmetric_block_gauss_seidel_apply(
       handle, num_rows, num_cols, row_map, entries, values, x_lhs_output_vec,
       y_rhs_input_vec, init_zero_x_vector, update_y_vector, omega, numIter);
 }
-template <KokkosSparse::SparseMatrixFormat format = KokkosSparse::CRS,
+template <KokkosSparse::SparseMatrixFormat format =
+              KokkosSparse::SparseMatrixFormat::CRS,
           class KernelHandle, typename lno_row_view_t_,
           typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
           typename x_scalar_view_t, typename y_scalar_view_t>
@@ -603,7 +609,8 @@ void forward_sweep_gauss_seidel_apply(
                          update_y_vector, omega, numIter, true, false);
 }
 
-template <KokkosSparse::SparseMatrixFormat format = KokkosSparse::BlockCRS,
+template <KokkosSparse::SparseMatrixFormat format =
+              KokkosSparse::SparseMatrixFormat::BSR,
           typename KernelHandle, typename lno_row_view_t_,
           typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
           typename x_scalar_view_t, typename y_scalar_view_t>
@@ -637,7 +644,8 @@ void forward_sweep_block_gauss_seidel_apply(
       handle, num_rows, num_cols, row_map, entries, values, x_lhs_output_vec,
       y_rhs_input_vec, init_zero_x_vector, update_y_vector, omega, numIter);
 }
-template <KokkosSparse::SparseMatrixFormat format = KokkosSparse::CRS,
+template <KokkosSparse::SparseMatrixFormat format =
+              KokkosSparse::SparseMatrixFormat::CRS,
           class KernelHandle, typename lno_row_view_t_,
           typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
           typename x_scalar_view_t, typename y_scalar_view_t>
@@ -769,7 +777,8 @@ void backward_sweep_gauss_seidel_apply(
                          update_y_vector, omega, numIter, false, true);
 }
 
-template <KokkosSparse::SparseMatrixFormat format = KokkosSparse::BlockCRS,
+template <KokkosSparse::SparseMatrixFormat format =
+              KokkosSparse::SparseMatrixFormat::BSR,
           typename KernelHandle, typename lno_row_view_t_,
           typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
           typename x_scalar_view_t, typename y_scalar_view_t>
