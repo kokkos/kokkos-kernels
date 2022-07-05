@@ -134,16 +134,13 @@ template <>
 inline cudaDataType cuda_data_type_from<Kokkos::Experimental::half_t>() {
   return CUDA_R_16F;  // Kokkos half_t is a half
 }
+#endif
+// half_t is defined to be float, so this works for both half_t and float when
+// half_t is float
 template <>
 inline cudaDataType cuda_data_type_from<float>() {
-  return CUDA_R_32F;
-}
-#else
-template <>
-inline cudaDataType cuda_data_type_from<Kokkos::Experimental::half_t>() {
   return CUDA_R_32F;  // Kokkos half_t is a float
 }
-#endif
 template <>
 inline cudaDataType cuda_data_type_from<double>() {
   return CUDA_R_64F;
