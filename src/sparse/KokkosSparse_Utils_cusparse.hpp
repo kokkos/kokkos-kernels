@@ -126,20 +126,20 @@ cudaDataType cuda_data_type_from() {
   throw std::logic_error("unreachable throw after static_assert");
 }
 
+/* If half_t is not float, need to define a conversion for both
+   otherwise, conversion for half_t IS conversion for float
+*/
 #if defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
 template <>
 inline cudaDataType cuda_data_type_from<Kokkos::Experimental::half_t>() {
   return CUDA_R_16F;  // Kokkos half_t is a half
 }
-#else
-template <>
-inline cudaDataType cuda_data_type_from<Kokkos::Experimental::half_t>() {
-  return CUDA_R_32F;  // Kokkos half_t is a float
-}
 #endif
+// half_t is defined to be float, so this works for both half_t and float when
+// half_t is float
 template <>
 inline cudaDataType cuda_data_type_from<float>() {
-  return CUDA_R_32F;
+  return CUDA_R_32F;  // Kokkos half_t is a float
 }
 template <>
 inline cudaDataType cuda_data_type_from<double>() {
