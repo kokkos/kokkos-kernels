@@ -235,6 +235,8 @@ void add_candidates(
       const auto lu_row_nnz_end   = LU_row_map(row_idx+1);
 
       printf("For row_idx: %lu, nnz_begin=%lu, nnz_end=%lu\n", row_idx, lu_row_nnz_begin, lu_row_nnz_end);
+      printf("LU_entries: ");
+      for (size_type i = 0; i < LU_entries.extent(0); ++i) { printf("%d ", LU_entries(i)); } printf("\n");
 
       size_type a_l_nnz = 0, a_u_nnz = 0, lu_l_nnz = 0, lu_u_nnz = 0, dup_l_nnz = 0, dup_u_nnz = 0;
       Kokkos::parallel_reduce(
@@ -273,7 +275,7 @@ void add_candidates(
           if (a_col_idx <= row_idx) {
             for (size_type lu_i = lu_row_nnz_begin; lu_i < lu_row_nnz_end; ++lu_i) {
               const auto lu_col_idx = LU_entries(lu_i);
-              printf("    Checking lu_col_idx: %lu (%lu_i) against a_col_idx: %lu \n", lu_col_idx, lu_i, a_col_idx);
+              printf("    Checking lu_col_idx: %lu (%lu) against a_col_idx: %lu \n", lu_col_idx, lu_i, a_col_idx);
               if (a_col_idx == lu_col_idx) {
                 printf("      Found!\n");
                 ++dupL_inner;
