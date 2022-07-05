@@ -234,6 +234,8 @@ void add_candidates(
       const auto lu_row_nnz_begin = LU_row_map(row_idx);
       const auto lu_row_nnz_end   = LU_row_map(row_idx+1);
 
+      printf("For row_idx: %lu, nnz_begin=%lu, nnz_end=%lu\n", row_idx, lu_row_nnz_begin, lu_row_nnz_end);
+
       size_type a_l_nnz = 0, a_u_nnz = 0, lu_l_nnz = 0, lu_u_nnz = 0, dup_l_nnz = 0, dup_u_nnz = 0;
       Kokkos::parallel_reduce(
         Kokkos::TeamThreadRange(team, a_row_nnz_begin, a_row_nnz_end),
@@ -271,13 +273,14 @@ void add_candidates(
           if (a_col_idx <= row_idx) {
             for (size_type lu_i = lu_row_nnz_begin; lu_i < lu_row_nnz_end; ++lu_i) {
               const auto lu_col_idx = LU_entries(lu_i);
-              printf("Checking lu_col_idx: %lu\n", lu_col_idx);
+              printf("  Checking lu_col_idx: %lu against a_col_idx: %lu \n", lu_col_idx, a_col_idx);
               if (a_col_idx == lu_col_idx) {
-                printf("Found!\n");
+                printf("    Found!\n");
                 ++dupL_inner;
                 break;
               }
               else if (lu_col_idx > a_col_idx) {
+                printf("    Break!\n");
                 break;
               }
             }
