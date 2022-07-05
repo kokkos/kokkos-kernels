@@ -273,7 +273,7 @@ void add_candidates(
           if (a_col_idx <= row_idx) {
             for (size_type lu_i = lu_row_nnz_begin; lu_i < lu_row_nnz_end; ++lu_i) {
               const auto lu_col_idx = LU_entries(lu_i);
-              printf("    Checking lu_col_idx: %lu against a_col_idx: %lu \n", lu_col_idx, a_col_idx);
+              printf("    Checking lu_col_idx: %lu (%lu_i) against a_col_idx: %lu \n", lu_col_idx, lu_i, a_col_idx);
               if (a_col_idx == lu_col_idx) {
                 printf("      Found!\n");
                 ++dupL_inner;
