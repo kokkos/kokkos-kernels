@@ -219,15 +219,13 @@ void add_candidates(
 
   const size_type nrows = ih.get_nrows();
 
-  //const auto policy = ih.get_default_team_policy();
-  policy_type policy = policy_type(1, 1);
+  const auto policy = ih.get_default_team_policy();
 
   Kokkos::parallel_for(
     "add_candidates sizing",
     policy,
     KOKKOS_LAMBDA(const member_type& team) {
-      for (size_type row_idx = 0; row_idx < nrows; ++row_idx) {
-        //const auto row_idx = team.league_rank();
+      const auto row_idx = team.league_rank();
 
       const auto a_row_nnz_begin = A_row_map(row_idx);
       const auto a_row_nnz_end   = A_row_map(row_idx+1);
@@ -275,6 +273,9 @@ void add_candidates(
                 ++dupL_inner;
                 break;
               }
+              else if (lu_col_idx > a_col_idx) {
+                break;
+              }
             }
           }
       }, dup_l_nnz);
@@ -290,6 +291,9 @@ void add_candidates(
                 ++dupU_inner;
                 break;
               }
+              else if (lu_col_idx > a_col_idx) {
+                break;
+              }
             }
           }
       }, dup_u_nnz);
@@ -298,13 +302,12 @@ void add_candidates(
 
       Kokkos::single(
         Kokkos::PerTeam(team), [&] () {
-          const auto l_nnz = ((a_l_nnz + lu_l_nnz) - dup_l_nnz);
+          const auto l_nnz = (a_l_nnz + lu_l_nnz - dup_l_nnz);
           const auto u_nnz = (a_u_nnz + lu_u_nnz - dup_u_nnz);
 
           L_new_row_map(row_idx) = l_nnz;
           U_new_row_map(row_idx) = u_nnz;
       });
-      }
   });
 
   Kokkos::fence();
