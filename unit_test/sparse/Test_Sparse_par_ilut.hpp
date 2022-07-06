@@ -270,23 +270,23 @@ void run_test_par_ilut() {
   // check_matrix("LU numeric", L_row_map, L_entries, L_values, expected_LU);
 
   // Use these fixtures to test add_candidates
-  std::vector<std::vector<scalar_t> > expected_L_candidates = {
-    {1., 0., 0., 0.},
-    {2., 1., 0., 0.},
-    {0.50, -3., 1., 0.},
-    {0.20, -0.50, -9., 1.}
-  };
+  // std::vector<std::vector<scalar_t> > expected_L_candidates = {
+  //   {1., 0., 0., 0.},
+  //   {2., 1., 0., 0.},
+  //   {0.50, -3., 1., 0.},
+  //   {0.20, -0.50, -9., 1.}
+  // };
 
-  check_matrix("L numeric", L_row_map, L_entries, L_values, expected_L_candidates);
+  // check_matrix("L numeric", L_row_map, L_entries, L_values, expected_L_candidates);
 
-  std::vector<std::vector<scalar_t> > expected_U_candidates = {
-    {1., 6., 4., 7.},
-    {0., -5., -8., 8.},
-    {0., 0., 6., 20.50},
-    {0., 0., 0., 1.}
-  };
+  // std::vector<std::vector<scalar_t> > expected_U_candidates = {
+  //   {1., 6., 4., 7.},
+  //   {0., -5., -8., 8.},
+  //   {0., 0., 6., 20.50},
+  //   {0., 0., 0., 1.}
+  // };
 
-  check_matrix("U numeric", U_row_map, U_entries, U_values, expected_U_candidates);
+  // check_matrix("U numeric", U_row_map, U_entries, U_values, expected_U_candidates);
 
   // Use these fixtures to test compute_l_u_factors
   // std::vector<std::vector<scalar_t> > expected_L_candidates = {
@@ -308,23 +308,23 @@ void run_test_par_ilut() {
   // check_matrix("U numeric", U_row_map, U_entries, U_values, expected_U_candidates);
 
   // Use these fixtures to test full numeric
-  // std::vector<std::vector<scalar_t> > expected_L_candidates = {
-  //   {1., 0., 0., 0.},
-  //   {2., 1., 0., 0.},
-  //   {0.50, 0.35, 1., 0.},
-  //   {0., 0., -1.32, 1.}
-  // };
+  std::vector<std::vector<scalar_t> > expected_L_candidates = {
+    {1., 0., 0., 0.},
+    {2., 1., 0., 0.},
+    {0.50, 0.35, 1., 0.},
+    {0., 0., -1.32, 1.}
+  };
 
-  // check_matrix("L numeric", L_row_map, L_entries, L_values, expected_L_candidates);
+  check_matrix("L numeric", L_row_map, L_entries, L_values, expected_L_candidates);
 
-  // std::vector<std::vector<scalar_t> > expected_U_candidates = {
-  //   {1., 6., 4., 7.},
-  //   {0., -17., -8., -6.},
-  //   {0., 0., 6.82, 0.},
-  //   {0., 0., 0., 0.} // [3] = 0
-  // };
+  std::vector<std::vector<scalar_t> > expected_U_candidates = {
+    {1., 6., 4., 7.},
+    {0., -17., -8., -6.},
+    {0., 0., 6.82, 0.},
+    {0., 0., 0., 0.} // [3] = 0
+  };
 
-  // check_matrix("U numeric", U_row_map, U_entries, U_values, expected_U_candidates);
+  check_matrix("U numeric", U_row_map, U_entries, U_values, expected_U_candidates);
 
   // Checking
 
