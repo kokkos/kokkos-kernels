@@ -48,7 +48,8 @@
 #include "KokkosKernels_TestUtils.hpp"
 #include "KokkosKernels_Handle.hpp"
 #include "KokkosKernels_IOUtils.hpp"
-#include "KokkosKernels_SparseUtils.hpp"
+#include "KokkosSparse_IOUtils.hpp"
+#include "KokkosSparse_Utils.hpp"
 #include <KokkosSparse_spmv.hpp>
 #include <KokkosBlas1_dot.hpp>
 #include <KokkosBlas1_axpby.hpp>
@@ -200,7 +201,7 @@ void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz,
   lno_t block_size = params.block_size;
 
   crsMat_t crsmat =
-      KokkosKernels::Impl::kk_generate_diagonally_dominant_sparse_matrix<
+      KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<
           crsMat_t>(numRows, numCols, nnz, row_size_variance, bandwidth);
 
   lno_view_t pf_rm;
@@ -288,7 +289,7 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz,
   lno_t block_size = params.block_size;
 
   crsMat_t crsmat =
-      KokkosKernels::Impl::kk_generate_diagonally_dominant_sparse_matrix<
+      KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<
           crsMat_t>(numRows, numCols, nnz, row_size_variance, bandwidth);
 
   lno_view_t pf_rm;

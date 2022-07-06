@@ -49,7 +49,6 @@
 
 #include "KokkosKernels_ExecSpaceUtils.hpp"
 #include "KokkosKernels_SimpleUtils.hpp"
-#include "KokkosKernels_SparseUtils.hpp"
 #include "KokkosKernels_PrintUtils.hpp"
 #include "KokkosKernels_VectorUtils.hpp"
 

@@ -50,7 +50,7 @@
 // cuSPARSE
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 #include "cusparse.h"
-#include "KokkosKernels_SparseUtils_cusparse.hpp"
+#include "KokkosSparse_Utils_cusparse.hpp"
 
 namespace KokkosSparse {
 namespace Impl {
@@ -86,25 +86,11 @@ void spmv_cusparse(const KokkosKernels::Experimental::Controls& controls,
 #if defined(CUSPARSE_VERSION) && (10300 <= CUSPARSE_VERSION)
 
   /* Check that cusparse can handle the types of the input Kokkos::CrsMatrix */
-  cusparseIndexType_t myCusparseOffsetType;
-  if (std::is_same<offset_type, int>::value)
-    myCusparseOffsetType = CUSPARSE_INDEX_32I;
-  else if (std::is_same<offset_type, int64_t>::value ||
-           std::is_same<offset_type, size_t>::value)
-    myCusparseOffsetType = CUSPARSE_INDEX_64I;
-  else
-    throw std::logic_error(
-        "Offset type of CrsMatrix isn't supported by cuSPARSE, yet TPL layer "
-        "says it is");
-  cusparseIndexType_t myCusparseEntryType;
-  if (std::is_same<entry_type, int>::value)
-    myCusparseEntryType = CUSPARSE_INDEX_32I;
-  else if (std::is_same<entry_type, int64_t>::value)
-    myCusparseEntryType = CUSPARSE_INDEX_64I;
-  else
-    throw std::logic_error(
-        "Ordinal (entry) type of CrsMatrix isn't supported by cuSPARSE, yet "
-        "TPL layer says it is");
+  const cusparseIndexType_t myCusparseOffsetType =
+      cusparse_index_type_t_from<offset_type>();
+  const cusparseIndexType_t myCusparseEntryType =
+      cusparse_index_type_t_from<entry_type>();
+
   cudaDataType myCudaDataType;
   if (std::is_same<value_type, float>::value)
     myCudaDataType = CUDA_R_32F;
@@ -373,8 +359,8 @@ KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int64_t, size_t,
 KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int64_t, size_t,
                            Kokkos::LayoutRight, Kokkos::CudaUVMSpace,
                            KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-#endif
-#endif
+#endif  // defined(CUSPARSE_VERSION) && (10300 <= CUSPARSE_VERSION)
+#endif  // 9000 <= CUDA_VERSION
 
 #undef KOKKOSSPARSE_SPMV_CUSPARSE
 
@@ -385,7 +371,7 @@ KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int64_t, size_t,
 // rocSPARSE
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE)
 #include <rocsparse.h>
-#include "KokkosKernels_SparseUtils_rocsparse.hpp"
+#include "KokkosSparse_Utils_rocsparse.hpp"
 
 namespace KokkosSparse {
 namespace Impl {
@@ -542,7 +528,7 @@ KOKKOSSPARSE_SPMV_ROCSPARSE(Kokkos::complex<float>, Kokkos::LayoutRight,
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
 #include <mkl.h>
-#include "KokkosKernels_SparseUtils_mkl.hpp"
+#include "KokkosSparse_Utils_mkl.hpp"
 
 namespace KokkosSparse {
 namespace Impl {

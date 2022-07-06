@@ -263,9 +263,11 @@ static std::string gemm_csv_header_str =
 // Flop count formula from lapack working note 41:
 // http://www.icl.utk.edu/~mgates3/docs/lawn41.pdf
 static inline double __gemm_flop_count(double a_m, double a_n, double b_n) {
+  // TODO: if not Kokkos::complex.
   if (std::is_same<double, default_scalar>::value ||
       std::is_same<float, default_scalar>::value ||
-      std::is_same<Kokkos::Experimental::half_t, default_scalar>::value)
+      std::is_same<Kokkos::Experimental::half_t, default_scalar>::value ||
+      std::is_same<Kokkos::Experimental::bhalf_t, default_scalar>::value)
     return 2 * a_m * b_n * a_n;
   else
     // For complex, we need to count 2 flops for each add and 6 flops for each

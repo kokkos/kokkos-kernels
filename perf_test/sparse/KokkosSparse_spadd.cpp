@@ -45,9 +45,9 @@
 #include <iostream>
 #include "KokkosKernels_config.h"
 #include "KokkosKernels_Handle.hpp"
-#include "KokkosKernels_IOUtils.hpp"
-#include "KokkosKernels_SparseUtils_cusparse.hpp"
-#include "KokkosKernels_SparseUtils_mkl.hpp"
+#include "KokkosSparse_IOUtils.hpp"
+#include "KokkosSparse_Utils_cusparse.hpp"
+#include "KokkosSparse_Utils_mkl.hpp"
 #include "KokkosSparse_spadd.hpp"
 #include "KokkosKernels_TestUtils.hpp"
 
@@ -111,19 +111,19 @@ void run_experiment(const Params& params) {
   lno_t n = params.n;
   if (params.amtx.length()) {
     std::cout << "Loading A from " << params.amtx << '\n';
-    A = KokkosKernels::Impl::read_kokkos_crst_matrix<crsMat_t>(
+    A = KokkosSparse::Impl::read_kokkos_crst_matrix<crsMat_t>(
         params.amtx.c_str());
     m = A.numRows();
     n = A.numCols();
   } else {
     std::cout << "Randomly generating A\n";
     size_type nnzUnused = m * params.nnzPerRow;
-    A = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(
-        m, n, nnzUnused, 0, (n + 3) / 3);
+    A = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(m, n, nnzUnused,
+                                                                0, (n + 3) / 3);
   }
   if (params.bmtx.length()) {
     std::cout << "Loading B from " << params.bmtx << '\n';
-    B = KokkosKernels::Impl::read_kokkos_crst_matrix<crsMat_t>(
+    B = KokkosSparse::Impl::read_kokkos_crst_matrix<crsMat_t>(
         params.bmtx.c_str());
   } else if (params.bDiag) {
     std::cout << "Generating B as diagonal matrix.\n";
@@ -154,8 +154,8 @@ void run_experiment(const Params& params) {
   } else {
     std::cout << "Randomly generating B\n";
     size_type nnzUnused = m * params.nnzPerRow;
-    B = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(
-        m, n, nnzUnused, 0, (n + 3) / 3);
+    B = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(m, n, nnzUnused,
+                                                                0, (n + 3) / 3);
   }
   // Make sure dimensions are compatible
   if (A.numRows() != B.numRows() || A.numCols() != B.numCols()) {
@@ -186,8 +186,8 @@ void run_experiment(const Params& params) {
   if (params.sorted) {
     std::cout << "Assuming input matrices are sorted (explicitly sorting just "
                  "in case)\n";
-    KokkosKernels::sort_crs_matrix(A);
-    KokkosKernels::sort_crs_matrix(B);
+    KokkosSparse::sort_crs_matrix(A);
+    KokkosSparse::sort_crs_matrix(B);
   } else
     std::cout << "Assuming input matrices are not sorted.\n";
   kh.create_spadd_handle(params.sorted);
@@ -363,8 +363,8 @@ void run_experiment(const Params& params) {
     std::cout << "Writing C (" << m << "x" << n << ") to " << params.cmtx
               << "\n";
     crsMat_t C("C", m, n, c_nnz, valuesC, row_mapC, entriesC);
-    KokkosKernels::Impl::write_kokkos_crst_matrix<crsMat_t>(
-        C, params.cmtx.c_str());
+    KokkosSparse::Impl::write_kokkos_crst_matrix<crsMat_t>(C,
+                                                           params.cmtx.c_str());
   }
 }
 

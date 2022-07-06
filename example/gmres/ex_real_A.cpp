@@ -43,7 +43,7 @@
 */
 
 #include <math.h>
-#include "KokkosKernels_IOUtils.hpp"
+#include "KokkosSparse_IOUtils.hpp"
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
 #include <KokkosBlas.hpp>
@@ -117,7 +117,7 @@ int main(int argc, char* argv[]) {
   {
     // Read in a matrix Market file and use it to test the Kokkos Operator.
     KokkosSparse::CrsMatrix<ST, OT, EXSP> A =
-        KokkosKernels::Impl::read_kokkos_crst_matrix<
+        KokkosSparse::Impl::read_kokkos_crst_matrix<
             KokkosSparse::CrsMatrix<ST, OT, EXSP>>(filename.c_str());
 
     int n = A.numRows();

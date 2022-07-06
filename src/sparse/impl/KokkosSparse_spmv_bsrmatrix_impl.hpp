@@ -542,7 +542,7 @@ struct BsrMatrixSpMVTensorCoreDispatcher {
 #include "KokkosBatched_Gemv_TeamVector_Internal.hpp"
 #include "KokkosBatched_Gemm_Serial_Internal.hpp"
 #include "KokkosBatched_Gemm_TeamVector_Internal.hpp"
-#include "KokkosBatched_Scale_Internal.hpp"
+#include "KokkosBlas1_team_scal_impl.hpp"
 #include "KokkosKernels_ExecSpaceUtils.hpp"
 
 #include "KokkosBlas2_team_gemv_spec.hpp"
@@ -639,7 +639,7 @@ struct BSR_GEMV_Functor {
     const y_value_type val_one = Kokkos::ArithTraits<y_value_type>::one();
     ;
     if (beta != val_one) {
-      KokkosBatched::TeamVectorScaleInternal::invoke(
+      KokkosBlas::Impl::TeamVectorScaleInternal::invoke(
           dev, block_dim, beta, Y_cur.data(),
           static_cast<int>(Y_cur.stride_0()));
     }
@@ -1276,7 +1276,7 @@ struct BSR_GEMM_Functor {
 
     const y_value_type val_one = Kokkos::ArithTraits<y_value_type>::one();
     if (beta != val_one) {
-      KokkosBatched::TeamVectorScaleInternal::invoke(
+      KokkosBlas::Impl::TeamVectorScaleInternal::invoke(
           dev, block_dim, num_rhs, beta, Y_cur.data(),
           static_cast<int>(Y_cur.stride_0()),
           static_cast<int>(Y_cur.stride_1()));

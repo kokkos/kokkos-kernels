@@ -47,8 +47,8 @@
 
 #include "KokkosGraph_Distance1Color.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
-#include "KokkosKernels_IOUtils.hpp"
-#include "KokkosKernels_SparseUtils.hpp"
+#include "KokkosSparse_IOUtils.hpp"
+#include "KokkosSparse_Utils.hpp"
 #include "KokkosKernels_Handle.hpp"
 
 using namespace KokkosKernels;
@@ -115,7 +115,7 @@ void test_coloring(lno_t numRows, size_type nnz, lno_t bandwidth,
   // typedef typename lno_view_t::non_const_value_type size_type;
 
   lno_t numCols      = numRows;
-  crsMat_t input_mat = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(
+  crsMat_t input_mat = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(
       numRows, numCols, nnz, row_size_variance, bandwidth);
 
   typename lno_view_t::non_const_type sym_xadj;

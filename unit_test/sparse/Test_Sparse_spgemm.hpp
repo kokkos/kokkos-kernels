@@ -45,8 +45,8 @@
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 
-#include "KokkosKernels_SparseUtils.hpp"
-#include "KokkosKernels_Sorting.hpp"
+#include "KokkosSparse_Utils.hpp"
+#include "KokkosSparse_SortCrs.hpp"
 #include <Kokkos_Concepts.hpp>
 #include <string>
 #include <stdexcept>
@@ -58,6 +58,7 @@
 #include <Kokkos_Core.hpp>
 
 #include <KokkosKernels_IOUtils.hpp>
+#include <KokkosSparse_IOUtils.hpp>
 
 // This file contains the matrix for test_issue402
 #include "matrixIssue402.hpp"
@@ -197,8 +198,8 @@ bool is_same_matrix(crsMat_t output_mat_actual, crsMat_t output_mat_reference) {
     return false;
   }
 
-  KokkosKernels::sort_crs_matrix(output_mat_actual);
-  KokkosKernels::sort_crs_matrix(output_mat_reference);
+  KokkosSparse::sort_crs_matrix(output_mat_actual);
+  KokkosSparse::sort_crs_matrix(output_mat_reference);
 
   bool is_identical = true;
   is_identical      = KokkosKernels::Impl::kk_is_identical_view<
@@ -264,9 +265,9 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth,
 
   // Generate random compressed sparse row matrix. Randomly generated (non-zero)
   // values are stored in a 1-D (1 rank) array.
-  crsMat_t A = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(
+  crsMat_t A = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(
       m, k, nnz, row_size_variance, bandwidth);
-  crsMat_t B = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(
+  crsMat_t B = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(
       k, n, nnz, row_size_variance, bandwidth);
 
   const bool is_empy_case = m < 1 || n < 1 || k < 1 || nnz < 1;

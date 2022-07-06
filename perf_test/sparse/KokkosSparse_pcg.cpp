@@ -49,6 +49,7 @@
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosKernels_default_types.hpp"
 #include "KokkosKernels_TestUtils.hpp"
+#include "KokkosSparse_IOUtils.hpp"
 #include <iostream>
 
 #define MAXVAL 1
@@ -263,9 +264,8 @@ void run_pcg(int *cmdline, const char *mtx_file) {
   default_lno_t *xadj, *adj;
   default_scalar *ew;
 
-  KokkosKernels::Impl::read_matrix<default_lno_t, default_lno_t,
-                                   default_scalar>(&nv, &ne, &xadj, &adj, &ew,
-                                                   mtx_file);
+  KokkosSparse::Impl::read_matrix<default_lno_t, default_lno_t, default_scalar>(
+      &nv, &ne, &xadj, &adj, &ew, mtx_file);
 
   typedef
       typename KokkosSparse::CrsMatrix<default_scalar, default_lno_t,
