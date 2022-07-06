@@ -52,8 +52,8 @@
 #include <Kokkos_ArithTraits.hpp>
 #include <KokkosSparse_par_ilut_handle.hpp>
 #include <KokkosSparse_spgemm.hpp>
-#include <KokkosKernels_SparseUtils.hpp>
-#include <KokkosKernels_Sorting.hpp>
+#include <KokkosSparse_Utils.hpp>
+#include <KokkosSparse_SortCrs.hpp>
 
 #include <limits>
 
@@ -786,7 +786,7 @@ void ilut_numeric(KHandle& kh, IlutHandle &thandle, const ARowMapType &A_row_map
       LU_row_map, LU_entries, LU_values);
 
     // Need to sort LU CRS if on CUDA!
-    KokkosKernels::Impl::sort_crs_matrix<execution_space>(LU_row_map, LU_entries, LU_values);
+    sort_crs_matrix<execution_space>(LU_row_map, LU_entries, LU_values);
 
     Kokkos::fence();
 
