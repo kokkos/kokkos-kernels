@@ -321,7 +321,7 @@ void run_test_par_ilut() {
     {1., 6., 4., 7.},
     {0., -17., -8., -6.},
     {0., 0., 6.82, 0.},
-    {0., 0., 0., 0.} // [3] = 0
+    {0., 0., 0., 0.} // [3] = 0 for full alg, -2.62 for post-threshold only
   };
 
   check_matrix("U numeric", U_row_map, U_entries, U_values, expected_U_candidates);
