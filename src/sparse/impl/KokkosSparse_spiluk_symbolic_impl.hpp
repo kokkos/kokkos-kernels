@@ -618,8 +618,13 @@ void iluk_symbolic(IlukHandle& thandle,
                           level_list, level_ptr, level_idx, nlev);
     } else if (thandle.get_algorithm() ==
                KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1) {
+      printf ("LEVEL SCHED on L\n");
       level_sched(thandle, L_row_map, L_entries, level_list, level_ptr,
-                  level_idx, level_nchunks, level_nrowsperchunk, nlev);
+                  level_idx, level_nchunks, level_nrowsperchunk, nlev);//ORIG
+      //Level scheduling on A???
+      //printf ("LEVEL SCHED on A\n");
+      //level_sched (thandle, A_row_map, A_entries, level_list, level_ptr,
+      //            level_idx, level_nchunks, level_nrowsperchunk, nlev);
 
       thandle.alloc_level_nchunks(nlev);
       thandle.alloc_level_nrowsperchunk(nlev);

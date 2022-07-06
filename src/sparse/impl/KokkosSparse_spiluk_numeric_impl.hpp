@@ -354,8 +354,8 @@ struct ILUKLvlSchedTP1NumericFunctor {
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, U_row_map(prev_row) + 1, U_row_map(prev_row + 1)), [&](const size_type kk) {
         nnz_lno_t col  = static_cast<nnz_lno_t>(U_entries(kk));
         nnz_lno_t ipos = iw(my_team, col);
+        auto lxu = -U_values(kk) * fact;
         if (ipos != -1) {
-          auto lxu = -U_values(kk) * fact;
           if (col < rowid)
             Kokkos::atomic_add(&L_values(ipos), lxu);
           else
@@ -366,8 +366,8 @@ struct ILUKLvlSchedTP1NumericFunctor {
       for (nnz_lno_t kk = U_row_map(prev_row) + 1 + my_thread; kk < U_row_map(prev_row + 1); kk += ts) {
         nnz_lno_t col  = static_cast<nnz_lno_t>(U_entries(kk));
         nnz_lno_t ipos = iw(my_team, col);
+        auto lxu = -U_values(kk) * fact;
         if (ipos != -1) {
-          auto lxu = -U_values(kk) * fact;
           if (col < rowid)
             Kokkos::atomic_add(&L_values(ipos), lxu);
           else
