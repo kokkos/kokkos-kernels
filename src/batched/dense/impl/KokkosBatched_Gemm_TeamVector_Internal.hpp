@@ -6,7 +6,6 @@
 #include "KokkosBatched_Util.hpp"
 
 #include "KokkosBatched_Set_Internal.hpp"
-#include "KokkosBatched_Scale_Internal.hpp"
 
 namespace KokkosBatched {
 
@@ -41,7 +40,8 @@ TeamVectorGemmInternal<Algo::Gemm::Unblocked, false>::invoke(
   if (beta == zero)
     TeamVectorSetInternal ::invoke(member, m, n, zero, C, cs0, cs1);
   else if (beta != one)
-    TeamVectorScaleInternal::invoke(member, m, n, beta, C, cs0, cs1);
+    KokkosBlas::Impl::TeamVectorScaleInternal::invoke(member, m, n, beta, C,
+                                                      cs0, cs1);
 
   if (alpha != ScalarType(0.0)) {
     if (m <= 0 || n <= 0 || k <= 0) return 0;
@@ -81,7 +81,8 @@ TeamVectorGemmInternal<Algo::Gemm::Unblocked, true>::invoke(
   if (beta == zero)
     TeamVectorSetInternal ::invoke(member, m, n, zero, C, cs0, cs1);
   else if (beta != one)
-    TeamVectorScaleInternal::invoke(member, m, n, beta, C, cs0, cs1);
+    KokkosBlas::Impl::TeamVectorScaleInternal::invoke(member, m, n, beta, C,
+                                                      cs0, cs1);
 
   if (alpha != ScalarType(0.0)) {
     if (m <= 0 || n <= 0 || k <= 0) return 0;

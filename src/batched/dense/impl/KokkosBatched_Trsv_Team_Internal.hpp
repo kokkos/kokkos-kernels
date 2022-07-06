@@ -6,7 +6,7 @@
 #include "KokkosBatched_Util.hpp"
 
 #include "KokkosBatched_Set_Internal.hpp"
-#include "KokkosBatched_Scale_Internal.hpp"
+#include "KokkosBlas1_team_scal_impl.hpp"
 
 #include "KokkosBatched_InnerTrsm_Serial_Impl.hpp"
 #include "KokkosBatched_Gemv_Team_Internal.hpp"
@@ -47,7 +47,8 @@ KOKKOS_INLINE_FUNCTION int TeamTrsvInternalLower<Algo::Trsv::Unblocked>::invoke(
   if (alpha == zero)
     TeamSetInternal::invoke(member, m, zero, b, bs0);
   else {
-    if (alpha != one) TeamScaleInternal::invoke(member, m, alpha, b, bs0);
+    if (alpha != one)
+      KokkosBlas::Impl::TeamScaleInternal::invoke(member, m, alpha, b, bs0);
     if (m <= 0) return 0;
 
     for (int p = 0; p < m; ++p) {
@@ -92,7 +93,8 @@ KOKKOS_INLINE_FUNCTION int TeamTrsvInternalLower<Algo::Trsv::Blocked>::invoke(
   if (alpha == zero)
     TeamSetInternal::invoke(member, m, zero, b, bs0);
   else {
-    if (alpha != one) TeamScaleInternal::invoke(member, m, alpha, b, bs0);
+    if (alpha != one)
+      KokkosBlas::Impl::TeamScaleInternal::invoke(member, m, alpha, b, bs0);
     if (m <= 0) return 0;
 
     /// case GPU: team size is large and blocksize (mb,nb) is small
@@ -156,7 +158,8 @@ KOKKOS_INLINE_FUNCTION int TeamTrsvInternalUpper<Algo::Trsv::Unblocked>::invoke(
   if (alpha == zero)
     TeamSetInternal::invoke(member, m, zero, b, bs0);
   else {
-    if (alpha != one) TeamScaleInternal::invoke(member, m, alpha, b, bs0);
+    if (alpha != one)
+      KokkosBlas::Impl::TeamScaleInternal::invoke(member, m, alpha, b, bs0);
     if (m <= 0) return 0;
 
     ValueType *KOKKOS_RESTRICT b0 = b;
@@ -199,7 +202,8 @@ KOKKOS_INLINE_FUNCTION int TeamTrsvInternalUpper<Algo::Trsv::Blocked>::invoke(
   if (alpha == zero)
     TeamSetInternal::invoke(member, m, zero, b, bs0);
   else {
-    if (alpha != one) TeamScaleInternal::invoke(member, m, alpha, b, bs0);
+    if (alpha != one)
+      KokkosBlas::Impl::TeamScaleInternal::invoke(member, m, alpha, b, bs0);
     if (m <= 0) return 0;
 
     InnerTrsmLeftUpperUnitDiag<mbAlgo> trsm_u(as0, as1, bs0, 0);

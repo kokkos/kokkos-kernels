@@ -854,10 +854,9 @@ KOKKOS_INLINE_FUNCTION ViewValueType fma_alpha(ViewValueType reg_c,
 
 template <class ViewValueType, class ScalarType>
 KOKKOS_INLINE_FUNCTION ViewValueType fma_alpha(ViewValueType reg_c,
-                                               ScalarType alpha,
+                                               ScalarType /*alpha*/,
                                                const AlphaTag::No &) {
   return reg_c;
-  (void)alpha;
 }
 
 template <class ViewType, class SizeType, class ViewValueType, class ScalarType,

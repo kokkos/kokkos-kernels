@@ -48,7 +48,7 @@
 #include "KokkosBatched_Util.hpp"
 
 #include "KokkosBatched_Set_Internal.hpp"
-#include "KokkosBatched_Scale_Internal.hpp"
+#include "KokkosBlas1_serial_scal_impl.hpp"
 
 namespace KokkosBatched {
 
@@ -154,7 +154,8 @@ SerialTrmmInternalLeftLower<Algo::Trmm::Unblocked>::invoke(
   if (alpha == zero)
     SerialSetInternal::invoke(bm, bn, zero, B, bs0, bs1);
   else {
-    if (alpha != one) SerialScaleInternal::invoke(bm, bn, alpha, B, bs0, bs1);
+    if (alpha != one)
+      KokkosBlas::Impl::SerialScaleInternal::invoke(bm, bn, alpha, B, bs0, bs1);
 
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
@@ -242,7 +243,8 @@ SerialTrmmInternalRightLower<Algo::Trmm::Unblocked>::invoke(
   if (alpha == zero)
     SerialSetInternal::invoke(bm, bn, zero, B, bs0, bs1);
   else {
-    if (alpha != one) SerialScaleInternal::invoke(bm, bn, alpha, B, bs0, bs1);
+    if (alpha != one)
+      KokkosBlas::Impl::SerialScaleInternal::invoke(bm, bn, alpha, B, bs0, bs1);
 
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
@@ -323,7 +325,8 @@ SerialTrmmInternalLeftUpper<Algo::Trmm::Unblocked>::invoke(
   if (alpha == zero)
     SerialSetInternal::invoke(bm, bn, zero, B, bs0, bs1);
   else {
-    if (alpha != one) SerialScaleInternal::invoke(bm, bn, alpha, B, bs0, bs1);
+    if (alpha != one)
+      KokkosBlas::Impl::SerialScaleInternal::invoke(bm, bn, alpha, B, bs0, bs1);
 
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
@@ -403,7 +406,8 @@ SerialTrmmInternalRightUpper<Algo::Trmm::Unblocked>::invoke(
   if (alpha == zero)
     SerialSetInternal::invoke(bm, bn, zero, B, bs0, bs1);
   else {
-    if (alpha != one) SerialScaleInternal::invoke(bm, bn, alpha, B, bs0, bs1);
+    if (alpha != one)
+      KokkosBlas::Impl::SerialScaleInternal::invoke(bm, bn, alpha, B, bs0, bs1);
 
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll

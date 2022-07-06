@@ -114,6 +114,83 @@ inline void cusparse_internal_safe_call(cusparseStatus_t cusparseStatus,
   KokkosSparse::Impl::cusparse_internal_safe_call(call, #call, __FILE__, \
                                                   __LINE__)
 
+template <typename T>
+cudaDataType cuda_data_type_from() {
+  // compile-time failure with a nice message if called on an unsupported type
+  static_assert(!std::is_same<T, T>::value,
+                "cuSparse TPL does not support scalar type");
+  // static_assert(false, ...) is allowed to error even if the code is not
+  // instantiated. obfuscate the predicate Despite this function being
+  // uncompilable, the compiler may decide that a return statement is missing,
+  // so throw to silence that
+  throw std::logic_error("unreachable throw after static_assert");
+}
+
+/* If half_t is not float, need to define a conversion for both
+   otherwise, conversion for half_t IS conversion for float
+*/
+#if defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
+template <>
+inline cudaDataType cuda_data_type_from<Kokkos::Experimental::half_t>() {
+  return CUDA_R_16F;  // Kokkos half_t is a half
+}
+#endif
+// half_t is defined to be float, so this works for both half_t and float when
+// half_t is float
+template <>
+inline cudaDataType cuda_data_type_from<float>() {
+  return CUDA_R_32F;  // Kokkos half_t is a float
+}
+template <>
+inline cudaDataType cuda_data_type_from<double>() {
+  return CUDA_R_64F;
+}
+template <>
+inline cudaDataType cuda_data_type_from<Kokkos::complex<float>>() {
+  return CUDA_C_32F;
+}
+template <>
+inline cudaDataType cuda_data_type_from<Kokkos::complex<double>>() {
+  return CUDA_C_32F;
+}
+
+#if defined(CUSPARSE_VERSION) && (10300 <= CUSPARSE_VERSION)
+
+template <typename T>
+cusparseIndexType_t cusparse_index_type_t_from() {
+#define AS_STR_LITERAL_IMPL_(x) #x
+#define AS_STR_LITERAL(x) AS_STR_LITERAL_IMPL_(x)
+  static_assert(!std::is_same<T, T>::value,
+                "cuSparse " AS_STR_LITERAL(
+                    CUSPARSE_VERSION) " TPL does not support index type");
+  // static_assert(false, ...) is allowed to error even if the code is not
+  // instantiated. obfuscate the predicate Despite this function being
+  // uncompilable, the compiler may decide that a return statement is missing,
+  // so throw to silence that
+  throw std::logic_error("unreachable throw after static_assert");
+#undef AS_STR_LITERAL_IMPL_
+#undef AS_STR_LITERAL
+}
+
+template <>
+inline cusparseIndexType_t cusparse_index_type_t_from<int>() {
+  return CUSPARSE_INDEX_32I;
+}
+template <>
+inline cusparseIndexType_t cusparse_index_type_t_from<int64_t>() {
+  return CUSPARSE_INDEX_64I;
+}
+// Currently no CUSPARSE_INDEX_64U but this will work most of the time
+template <>
+inline cusparseIndexType_t cusparse_index_type_t_from<size_t>() {
+  return CUSPARSE_INDEX_64I;
+}
+template <>
+inline cusparseIndexType_t cusparse_index_type_t_from<unsigned short>() {
+  return CUSPARSE_INDEX_16U;
+}
+#endif
+
 }  // namespace Impl
 
 }  // namespace KokkosSparse

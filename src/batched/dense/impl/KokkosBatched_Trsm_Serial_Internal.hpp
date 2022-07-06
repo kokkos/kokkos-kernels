@@ -6,7 +6,7 @@
 #include "KokkosBatched_Util.hpp"
 
 #include "KokkosBatched_Set_Internal.hpp"
-#include "KokkosBatched_Scale_Internal.hpp"
+#include "KokkosBlas1_serial_scal_impl.hpp"
 
 #include "KokkosBatched_InnerGemmFixA_Serial_Impl.hpp"
 #include "KokkosBatched_InnerTrsm_Serial_Impl.hpp"
@@ -41,7 +41,8 @@ SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(
   if (alpha == zero)
     SerialSetInternal ::invoke(m, n, zero, B, bs0, bs1);
   else {
-    if (alpha != one) SerialScaleInternal::invoke(m, n, alpha, B, bs0, bs1);
+    if (alpha != one)
+      KokkosBlas::Impl::SerialScaleInternal::invoke(m, n, alpha, B, bs0, bs1);
     if (m <= 0 || n <= 0) return 0;
 
     for (int p = 0; p < m; ++p) {
@@ -89,7 +90,8 @@ SerialTrsmInternalLeftLower<Algo::Trsm::Blocked>::invoke(
   if (alpha == zero)
     SerialSetInternal ::invoke(m, n, zero, B, bs0, bs1);
   else {
-    if (alpha != one) SerialScaleInternal::invoke(m, n, alpha, B, bs0, bs1);
+    if (alpha != one)
+      KokkosBlas::Impl::SerialScaleInternal::invoke(m, n, alpha, B, bs0, bs1);
     if (m <= 0 || n <= 0) return 0;
 
     InnerTrsmLeftLowerUnitDiag<mbAlgo> trsm_u(as0, as1, bs0, bs1);
@@ -156,7 +158,8 @@ SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(
   if (alpha == zero)
     SerialSetInternal ::invoke(m, n, zero, B, bs0, bs1);
   else {
-    if (alpha != one) SerialScaleInternal::invoke(m, n, alpha, B, bs0, bs1);
+    if (alpha != one)
+      KokkosBlas::Impl::SerialScaleInternal::invoke(m, n, alpha, B, bs0, bs1);
     if (m <= 0 || n <= 0) return 0;
 
     ValueType *KOKKOS_RESTRICT B0 = B;
@@ -204,7 +207,8 @@ SerialTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invoke(
   if (alpha == zero)
     SerialSetInternal ::invoke(m, n, zero, B, bs0, bs1);
   else {
-    if (alpha != one) SerialScaleInternal::invoke(m, n, alpha, B, bs0, bs1);
+    if (alpha != one)
+      KokkosBlas::Impl::SerialScaleInternal::invoke(m, n, alpha, B, bs0, bs1);
     if (m <= 0 || n <= 0) return 0;
 
     InnerTrsmLeftUpperUnitDiag<mbAlgo> trsm_u(as0, as1, bs0, bs1);
