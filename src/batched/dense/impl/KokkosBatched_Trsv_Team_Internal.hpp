@@ -5,9 +5,8 @@
 
 #include "KokkosBatched_Util.hpp"
 
-#include "KokkosBatched_Set_Internal.hpp"
+#include "KokkosBlas1_set_impl.hpp"
 #include "KokkosBlas1_team_scal_impl.hpp"
-
 #include "KokkosBatched_InnerTrsm_Serial_Impl.hpp"
 #include "KokkosBatched_Gemv_Team_Internal.hpp"
 
@@ -45,7 +44,7 @@ KOKKOS_INLINE_FUNCTION int TeamTrsvInternalLower<Algo::Trsv::Unblocked>::invoke(
   const ScalarType one(1.0), zero(0.0);
 
   if (alpha == zero)
-    TeamSetInternal::invoke(member, m, zero, b, bs0);
+    KokkosBlas::Impl::TeamSetInternal::invoke(member, m, zero, b, bs0);
   else {
     if (alpha != one)
       KokkosBlas::Impl::TeamScaleInternal::invoke(member, m, alpha, b, bs0);
@@ -91,7 +90,7 @@ KOKKOS_INLINE_FUNCTION int TeamTrsvInternalLower<Algo::Trsv::Blocked>::invoke(
   constexpr int mbAlgo = Algo::Trsv::Blocked::mb();
 
   if (alpha == zero)
-    TeamSetInternal::invoke(member, m, zero, b, bs0);
+    KokkosBlas::Impl::TeamSetInternal::invoke(member, m, zero, b, bs0);
   else {
     if (alpha != one)
       KokkosBlas::Impl::TeamScaleInternal::invoke(member, m, alpha, b, bs0);
@@ -156,7 +155,7 @@ KOKKOS_INLINE_FUNCTION int TeamTrsvInternalUpper<Algo::Trsv::Unblocked>::invoke(
   const ScalarType one(1.0), zero(0.0);
 
   if (alpha == zero)
-    TeamSetInternal::invoke(member, m, zero, b, bs0);
+    KokkosBlas::Impl::TeamSetInternal::invoke(member, m, zero, b, bs0);
   else {
     if (alpha != one)
       KokkosBlas::Impl::TeamScaleInternal::invoke(member, m, alpha, b, bs0);
@@ -200,7 +199,7 @@ KOKKOS_INLINE_FUNCTION int TeamTrsvInternalUpper<Algo::Trsv::Blocked>::invoke(
 
   // note that parallel range is different ( m*n vs m-1*n);
   if (alpha == zero)
-    TeamSetInternal::invoke(member, m, zero, b, bs0);
+    KokkosBlas::Impl::TeamSetInternal::invoke(member, m, zero, b, bs0);
   else {
     if (alpha != one)
       KokkosBlas::Impl::TeamScaleInternal::invoke(member, m, alpha, b, bs0);

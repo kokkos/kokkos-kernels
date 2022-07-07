@@ -4,8 +4,7 @@
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Random.hpp"
 
-#include "KokkosBatched_Set_Decl.hpp"
-#include "KokkosBatched_Set_Impl.hpp"
+#include "KokkosBlas1_set.hpp"
 
 // #include "KokkosBatched_Scale_Decl.hpp"
 
@@ -37,7 +36,9 @@ struct Functor_TestBatchedTeamMatUtil {
     const int i = member.league_rank();
     auto A      = Kokkos::subview(_a, i, Kokkos::ALL(), Kokkos::ALL());
     switch (TestID) {
-      case BatchedSet: TeamSet<MemberType>::invoke(member, _alpha, A); break;
+      case BatchedSet:
+        KokkosBlas::TeamSet<MemberType>::invoke(member, _alpha, A);
+        break;
       case BatchedScale:
         KokkosBlas::TeamScale<MemberType>::invoke(member, _alpha, A);
         break;

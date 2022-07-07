@@ -6,7 +6,7 @@
 #include "KokkosBatched_Util.hpp"
 #include "KokkosKernels_ExecSpaceUtils.hpp"
 
-#include "KokkosBatched_Set_Internal.hpp"
+#include "KokkosBlas1_set_impl.hpp"
 #include "KokkosBlas1_team_scal_impl.hpp"
 
 #include "KokkosBatched_InnerGemmFixC_Serial_Impl.hpp"
@@ -41,7 +41,7 @@ KOKKOS_INLINE_FUNCTION int TeamGemmInternal<Algo::Gemm::Unblocked>::invoke(
   const ScalarType one(1.0), zero(0.0);
 
   if (beta == zero)
-    TeamSetInternal ::invoke(member, m, n, zero, C, cs0, cs1);
+    KokkosBlas::Impl::TeamSetInternal::invoke(member, m, n, zero, C, cs0, cs1);
   else if (beta != one)
     KokkosBlas::Impl::TeamScaleInternal::invoke(member, m, n, beta, C, cs0,
                                                 cs1);
@@ -83,7 +83,7 @@ KOKKOS_INLINE_FUNCTION int TeamGemmInternal<Algo::Gemm::Blocked>::invoke(
   const ScalarType one(1.0), zero(0.0);
 
   if (beta == zero)
-    TeamSetInternal ::invoke(member, m, n, zero, C, cs0, cs1);
+    KokkosBlas::Impl::TeamSetInternal::invoke(member, m, n, zero, C, cs0, cs1);
   else if (beta != one)
     KokkosBlas::Impl::TeamScaleInternal::invoke(member, m, n, beta, C, cs0,
                                                 cs1);

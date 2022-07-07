@@ -6,9 +6,8 @@
 #include "KokkosBatched_Util.hpp"
 #include "KokkosKernels_ExecSpaceUtils.hpp"
 
-#include "KokkosBatched_Set_Internal.hpp"
+#include "KokkosBlas1_set_impl.hpp"
 #include "KokkosBlas1_team_scal_impl.hpp"
-
 #include "KokkosBatched_InnerTrsm_Serial_Impl.hpp"
 #include "KokkosBatched_Gemm_Team_Internal.hpp"
 
@@ -39,7 +38,7 @@ TeamTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(
   const ScalarType one(1.0), zero(0.0);
 
   if (alpha == zero)
-    TeamSetInternal ::invoke(member, m, n, zero, B, bs0, bs1);
+    KokkosBlas::Impl::TeamSetInternal::invoke(member, m, n, zero, B, bs0, bs1);
   else {
     if (alpha != one)
       KokkosBlas::Impl::TeamScaleInternal::invoke(member, m, n, alpha, B, bs0,
@@ -91,7 +90,7 @@ TeamTrsmInternalLeftLower<Algo::Trsm::Blocked>::invoke(
 
   // note that parallel range is different ( m*n vs m-1*n);
   if (alpha == zero)
-    TeamSetInternal ::invoke(member, m, n, zero, B, bs0, bs1);
+    KokkosBlas::Impl::TeamSetInternal::invoke(member, m, n, zero, B, bs0, bs1);
   else {
     if (alpha != one)
       KokkosBlas::Impl::TeamScaleInternal::invoke(member, m, n, alpha, B, bs0,
@@ -175,7 +174,7 @@ TeamTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(
 
   // note that parallel range is different ( m*n vs m-1*n);
   if (alpha == zero)
-    TeamSetInternal ::invoke(member, m, n, zero, B, bs0, bs1);
+    KokkosBlas::Impl::TeamSetInternal::invoke(member, m, n, zero, B, bs0, bs1);
   else {
     if (alpha != one)
       KokkosBlas::Impl::TeamScaleInternal::invoke(member, m, n, alpha, B, bs0,
@@ -232,7 +231,7 @@ TeamTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invoke(
 
   // note that parallel range is different ( m*n vs m-1*n);
   if (alpha == zero)
-    TeamSetInternal ::invoke(member, m, n, zero, B, bs0, bs1);
+    KokkosBlas::Impl::TeamSetInternal::invoke(member, m, n, zero, B, bs0, bs1);
   else {
     if (alpha != one)
       KokkosBlas::Impl::TeamScaleInternal::invoke(member, m, n, alpha, B, bs0,
