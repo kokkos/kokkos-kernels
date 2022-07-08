@@ -1003,8 +1003,6 @@ void ilut_numeric(KHandle& kh, IlutHandle &thandle, const ARowMapType &A_row_map
       R_row_map,  R_entries,  R_values,
       LU_row_map, LU_entries, LU_values);
 
-    std::cout << "Residual is: " << curr_residual << std::endl;
-
     if (prev_residual - curr_residual <= residual_norm_delta_stop) {
       converged = true;
     }
