@@ -52,6 +52,7 @@
 #include <Kokkos_ArithTraits.hpp>
 #include <KokkosSparse_par_ilut_handle.hpp>
 #include <KokkosSparse_spgemm.hpp>
+#include <KokkosSparse_spadd.hpp>
 #include <KokkosSparse_Utils.hpp>
 #include <KokkosSparse_SortCrs.hpp>
 
@@ -192,6 +193,45 @@ typename IlutHandle::size_type prefix_sum(IlutHandle& ih, RowMapType& row_map, P
   Kokkos::fence();
 
   return total_sum;
+}
+
+template <class KHandle, class IlutHandle,
+          class LRowMapType, class LEntriesType, class LValuesType,
+          class URowMapType, class UEntriesType, class UValuesType,
+          class LURowMapType, class LUEntriesType, class LUValuesType>
+void multiply_matrices(
+  KHandle& kh, IlutHandle& ih,
+  const LRowMapType& L_row_map, const LEntriesType& L_entries, const LValuesType& L_values,
+  const URowMapType& U_row_map, const UEntriesType& U_entries, const UValuesType& U_values,
+  LURowMapType& LU_row_map,           LUEntriesType& LU_entries,     LUValuesType& LU_values)
+{
+  using execution_space = typename IlutHandle::execution_space;
+  using size_type       = typename IlutHandle::size_type;
+
+  const size_type nrows = ih.get_nrows();
+
+  KokkosSparse::Experimental::spgemm_symbolic(
+    &kh, nrows, nrows, nrows,
+    L_row_map, L_entries, false,
+    U_row_map, U_entries, false,
+    LU_row_map);
+
+  Kokkos::fence();
+
+  const size_type lu_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
+  Kokkos::resize(LU_entries, lu_nnz_size);
+  Kokkos::resize(LU_values, lu_nnz_size);
+
+  KokkosSparse::Experimental::spgemm_numeric(
+    &kh, nrows, nrows, nrows,
+    L_row_map, L_entries, L_values, false,
+    U_row_map, U_entries, U_values, false,
+    LU_row_map, LU_entries, LU_values);
+
+  // Need to sort LU CRS if on CUDA!
+  sort_crs_matrix<execution_space>(LU_row_map, LU_entries, LU_values);
+
+  Kokkos::fence();
 }
 
 template <class IlutHandle,
@@ -715,6 +755,47 @@ void threshold_filter(
 template <class KHandle, class IlutHandle,
           class ARowMapType, class AEntriesType, class AValuesType,
           class LRowMapType, class LEntriesType, class LValuesType,
+          class URowMapType, class UEntriesType, class UValuesType,
+          class RRowMapType, class REntriesType, class RValuesType,
+          class LURowMapType, class LUEntriesType, class LUValuesType>
+typename IlutHandle::nnz_scalar_t compute_residual_norm(
+  KHandle& kh, IlutHandle& ih,
+  const ARowMapType& A_row_map, const AEntriesType& A_entries, const AValuesType& A_values,
+  const LRowMapType& L_row_map, const LEntriesType& L_entries, const LValuesType& L_values,
+  const URowMapType& U_row_map, const UEntriesType& U_entries, const UValuesType& U_values,
+  RRowMapType& R_row_map,             REntriesType& R_entries,       RValuesType& R_values,
+  LURowMapType& LU_row_map,           LUEntriesType& LU_entries,     LUValuesType& LU_values)
+{
+  using size_type = typename IlutHandle::size_type;
+
+  multiply_matrices(kh, ih,
+                    L_row_map, L_entries, L_values,
+                    U_row_map, U_entries, U_values,
+                    LU_row_map, LU_entries, LU_values);
+
+  auto addHandle = kh.get_spadd_handle();
+  KokkosSparse::Experimental::spadd_symbolic(
+    &kh,
+    A_row_map, A_entries,
+    LU_row_map, LU_entries,
+    R_row_map);
+
+  const size_type r_nnz = addHandle->get_c_nnz();
+  Kokkos::resize(R_entries, r_nnz);
+  Kokkos::resize(R_values, r_nnz);
+
+  KokkosSparse::Experimental::spadd_numeric
+    (&kh,
+     A_row_map, A_entries, A_values, 1.,
+     LU_row_map, LU_entries, LU_values, -1.,
+     R_row_map, R_entries, R_values);
+
+  return 0.;
+}
+
+template <class KHandle, class IlutHandle,
+          class ARowMapType, class AEntriesType, class AValuesType,
+          class LRowMapType, class LEntriesType, class LValuesType,
           class URowMapType, class UEntriesType, class UValuesType>
 void ilut_numeric(KHandle& kh, IlutHandle &thandle, const ARowMapType &A_row_map,
                   const AEntriesType &A_entries, const AValuesType &A_values,
@@ -729,18 +810,23 @@ void ilut_numeric(KHandle& kh, IlutHandle &thandle, const ARowMapType &A_row_map
   using HandleDeviceEntriesType = typename IlutHandle::nnz_lno_view_t;
   using HandleDeviceRowMapType  = typename IlutHandle::nnz_row_view_t;
   using HandleDeviceValueType   = typename IlutHandle::nnz_value_view_t;
+  using scalar_t                = typename AValuesType::non_const_value_type;
 
   const size_type nrows    = thandle.get_nrows();
   const auto fill_in_limit = thandle.get_fill_in_limit();
   const auto l_nnz_limit = static_cast<index_type>(fill_in_limit * thandle.get_nnzL());
   const auto u_nnz_limit = static_cast<index_type>(fill_in_limit * thandle.get_nnzU());
 
+  const scalar_t residual_norm_delta_stop = thandle.get_residual_norm_delta_stop();
+  scalar_t prev_residual = std::numeric_limits<scalar_t>::max();
   bool converged = false;
 
-  std::string myalg("SPGEMM_KK_MEMORY");
+  std::string myalg("PAR_ILUT");
   KokkosSparse::SPGEMMAlgorithm spgemm_algorithm =
     KokkosSparse::StringToSPGEMMAlgorithm(myalg);
   kh.create_spgemm_handle(spgemm_algorithm);
+
+  kh.create_spadd_handle(true /*we expect inputs to be sorted*/);
 
   const auto policy = thandle.get_default_team_policy();
 
@@ -755,40 +841,30 @@ void ilut_numeric(KHandle& kh, IlutHandle &thandle, const ARowMapType &A_row_map
     U_new_row_map(
       Kokkos::view_alloc(Kokkos::WithoutInitializing, "U_new_row_map"),
       nrows + 1),
+    R_row_map(
+      Kokkos::view_alloc(Kokkos::WithoutInitializing, "R_row_map"),
+      nrows + 1),
     prefix_sum_view(
       Kokkos::view_alloc(Kokkos::WithoutInitializing, "prefix_sum_view"),
       policy.league_size()),
     Ut_new_row_map(
       "Ut_new_row_map",
       nrows + 1);
-  HandleDeviceEntriesType LU_entries, L_new_entries, U_new_entries, Ut_new_entries;
-  HandleDeviceValueType LU_values, L_new_values, U_new_values, Ut_new_values, V_copy_d;
+
+  HandleDeviceEntriesType LU_entries, L_new_entries, U_new_entries, Ut_new_entries, R_entries;
+  HandleDeviceValueType LU_values, L_new_values, U_new_values, Ut_new_values, V_copy_d, R_values;
   auto V_copy = Kokkos::create_mirror_view(V_copy_d);
 
-  while (!converged) {
+  const size_type max_iter = thandle.get_max_iter();
+  size_type itr = 0;
+  while (!converged && itr < max_iter) {
     // LU = L*U
-    KokkosSparse::Experimental::spgemm_symbolic(
-      &kh, nrows, nrows, nrows,
-      L_row_map, L_entries, false,
-      U_row_map, U_entries, false,
-      LU_row_map);
-
-    Kokkos::fence();
-
-    const size_type lu_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
-    Kokkos::resize(LU_entries, lu_nnz_size);
-    Kokkos::resize(LU_values, lu_nnz_size);
-
-    KokkosSparse::Experimental::spgemm_numeric(
-      &kh, nrows, nrows, nrows,
-      L_row_map, L_entries, L_values, false,
-      U_row_map, U_entries, U_values, false,
-      LU_row_map, LU_entries, LU_values);
-
-    // Need to sort LU CRS if on CUDA!
-    sort_crs_matrix<execution_space>(LU_row_map, LU_entries, LU_values);
-
-    Kokkos::fence();
+    if (prev_residual == std::numeric_limits<scalar_t>::max()) {
+      multiply_matrices(kh, thandle,
+                        L_row_map, L_entries, L_values,
+                        U_row_map, U_entries, U_values,
+                        LU_row_map, LU_entries, LU_values);
+    }
 
     add_candidates(thandle,
       A_row_map, A_entries, A_values,
@@ -880,10 +956,27 @@ void ilut_numeric(KHandle& kh, IlutHandle &thandle, const ARowMapType &A_row_map
       U_row_map, U_entries, U_values,
       Ut_new_row_map, Ut_new_entries, Ut_new_values);
 
-    converged = true;
+    const scalar_t curr_residual = compute_residual_norm(
+      kh, thandle,
+      A_row_map,  A_entries,  A_values,
+      L_row_map,  L_entries,  L_values,
+      U_row_map,  U_entries,  U_values,
+      R_row_map,  R_entries,  R_values,
+      LU_row_map, LU_entries, LU_values);
+
+    if (prev_residual - curr_residual <= residual_norm_delta_stop) {
+      converged = true;
+    }
+    else {
+      prev_residual = curr_residual;
+    }
+    ++itr;
   }
 
   Kokkos::fence();
+
+  kh.destroy_spgemm_handle();
+  kh.destroy_spadd_handle();
 }  // end ilut_numeric
 
 }  // namespace Experimental

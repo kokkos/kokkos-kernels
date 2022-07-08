@@ -95,9 +95,11 @@ class PAR_ILUTHandle {
       signed_nnz_lno_view_t;
 
  private:
-  size_type nrows;
-  size_type nnzL;
-  size_type nnzU;
+  size_type    nrows;
+  size_type    nnzL;
+  size_type    nnzU;
+  size_type    max_iter;
+  nnz_scalar_t residual_norm_delta_stop;
 
   bool symbolic_complete;
 
@@ -109,11 +111,15 @@ class PAR_ILUTHandle {
  public:
   PAR_ILUTHandle(const size_type nrows_,
                  const size_type nnzL_, const size_type nnzU_,
+                 const size_type max_iter_ = 1,
+                 const nnz_scalar_t residual_norm_delta_stop_ = 0.,
                  const nnz_scalar_t fill_in_limit_ = 0.75,
                  bool symbolic_complete_ = false)
       : nrows(nrows_),
         nnzL(nnzL_),
         nnzU(nnzU_),
+        max_iter(max_iter_),
+        residual_norm_delta_stop(residual_norm_delta_stop_),
         fill_in_limit(fill_in_limit_),
         symbolic_complete(symbolic_complete_),
         team_size(-1),
@@ -157,6 +163,12 @@ class PAR_ILUTHandle {
 
   void set_vector_size(const int vs) { this->vector_size = vs; }
   int get_vector_size() const { return this->vector_size; }
+
+  void set_max_iter(const size_type max_iter_) { this->max_iter = max_iter_; }
+  int get_max_iter() const { return this->max_iter; }
+
+  void set_residual_norm_delta_stop(const nnz_scalar_t residual_norm_delta_stop_) { this->residual_norm_delta_stop = residual_norm_delta_stop_; }
+  nnz_scalar_t get_residual_norm_delta_stop() const { return this->residual_norm_delta_stop; }
 
   void set_fill_in_limit(const nnz_scalar_t fill_in_limit_) { this->fill_in_limit = fill_in_limit_; }
   nnz_scalar_t get_fill_in_limit() const { return this->fill_in_limit; }
