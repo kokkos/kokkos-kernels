@@ -766,7 +766,11 @@ typename IlutHandle::nnz_scalar_t compute_residual_norm(
   RRowMapType& R_row_map,             REntriesType& R_entries,       RValuesType& R_values,
   LURowMapType& LU_row_map,           LUEntriesType& LU_entries,     LUValuesType& LU_values)
 {
-  using size_type = typename IlutHandle::size_type;
+  using size_type   = typename IlutHandle::size_type;
+  using scalar_t    = typename AValuesType::non_const_value_type;
+  using idx_t       = typename AEntriesType::non_const_value_type;
+  using policy_type = typename IlutHandle::TeamPolicy;
+  using member_type = typename policy_type::member_type;
 
   multiply_matrices(kh, ih,
                     L_row_map, L_entries, L_values,
@@ -790,7 +794,42 @@ typename IlutHandle::nnz_scalar_t compute_residual_norm(
      LU_row_map, LU_entries, LU_values, -1.,
      R_row_map, R_entries, R_values);
 
-  return 0.;
+  Kokkos::fence();
+
+  scalar_t result;
+
+  auto policy = ih.get_default_team_policy();
+
+  Kokkos::parallel_reduce(
+    "compute_residual_norm",
+    policy,
+    KOKKOS_LAMBDA(const member_type& team, scalar_t& total_sum) {
+      const auto row_idx = team.league_rank();
+
+      const auto a_row_nnz_begin = A_row_map(row_idx);
+      const auto a_row_nnz_end   = A_row_map(row_idx+1);
+
+      const auto a_row_entries_begin = A_entries.data() + a_row_nnz_begin;
+      const auto a_row_entries_end   = A_entries.data() + a_row_nnz_end;
+
+      const auto r_row_nnz_begin = R_row_map(row_idx);
+      const auto r_row_nnz_end   = R_row_map(row_idx+1);
+
+      Kokkos::parallel_reduce(
+        Kokkos::TeamThreadRange(team, r_row_nnz_begin, r_row_nnz_end),
+        [&](const size_type nnz, scalar_t& sum_inner) {
+          const auto r_col_idx = R_entries(nnz);
+          const idx_t* lb = kok_lower_bound(a_row_entries_begin, a_row_entries_end, r_col_idx);
+          if (lb != a_row_entries_end && *lb == r_col_idx) {
+            sum_inner += R_values(nnz) * R_values(nnz);
+          }
+      }, total_sum);
+
+  }, result);
+
+  Kokkos::fence();
+
+  return std::sqrt(result);
 }
 
 template <class KHandle, class IlutHandle,
@@ -821,7 +860,7 @@ void ilut_numeric(KHandle& kh, IlutHandle &thandle, const ARowMapType &A_row_map
   scalar_t prev_residual = std::numeric_limits<scalar_t>::max();
   bool converged = false;
 
-  std::string myalg("PAR_ILUT");
+  std::string myalg("SPGEMM_KK_MEMORY");
   KokkosSparse::SPGEMMAlgorithm spgemm_algorithm =
     KokkosSparse::StringToSPGEMMAlgorithm(myalg);
   kh.create_spgemm_handle(spgemm_algorithm);
@@ -963,6 +1002,8 @@ void ilut_numeric(KHandle& kh, IlutHandle &thandle, const ARowMapType &A_row_map
       U_row_map,  U_entries,  U_values,
       R_row_map,  R_entries,  R_values,
       LU_row_map, LU_entries, LU_values);
+
+    std::cout << "Residual is: " << curr_residual << std::endl;
 
     if (prev_residual - curr_residual <= residual_norm_delta_stop) {
       converged = true;
