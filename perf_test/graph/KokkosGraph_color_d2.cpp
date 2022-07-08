@@ -632,7 +632,9 @@ int main(int argc, char* argv[]) {
     device_id = params.use_cuda - 1;
   else if (params.use_hip)
     device_id = params.use_hip - 1;
-  Kokkos::initialize(Kokkos::InitArguments(num_threads, -1, device_id));
+  Kokkos::initialize(Kokkos::InitializationSettings()
+                         .set_num_threads(num_threads)
+                         .set_device_id(device_id));
 
   // Print out verbose information about the configuration of the run.
   // Kokkos::print_configuration(std::cout);
