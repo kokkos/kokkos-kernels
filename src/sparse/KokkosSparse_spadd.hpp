@@ -57,8 +57,7 @@ namespace Experimental {
 // kernel handle has information about whether it is sorted add or not.
 template <typename KernelHandle, typename alno_row_view_t_,
           typename alno_nnz_view_t_, typename blno_row_view_t_,
-          typename blno_nnz_view_t_, typename clno_row_view_t_,
-          typename clno_nnz_view_t_>
+          typename blno_nnz_view_t_, typename clno_row_view_t_>
 void spadd_symbolic(
     KernelHandle* handle, const alno_row_view_t_ a_rowmap,
     const alno_nnz_view_t_ a_entries, const blno_row_view_t_ b_rowmap,
@@ -222,11 +221,7 @@ void spadd_symbolic(KernelHandle* handle, const AMatrix& A, const BMatrix& B,
   row_map_type row_mapC(
       Kokkos::view_alloc(Kokkos::WithoutInitializing, "row map"),
       A.numRows() + 1);
-  KokkosSparse::Experimental::spadd_symbolic<
-      KernelHandle, typename AMatrix::row_map_type::const_type,
-      typename AMatrix::index_type::const_type,
-      typename BMatrix::row_map_type::const_type,
-      typename BMatrix::index_type::const_type, row_map_type, entries_type>(
+  KokkosSparse::Experimental::spadd_symbolic(
       handle, A.graph.row_map, A.graph.entries, B.graph.row_map,
       B.graph.entries, row_mapC);
 
