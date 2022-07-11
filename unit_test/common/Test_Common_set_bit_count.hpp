@@ -48,7 +48,6 @@
 #include "KokkosKernels_BitUtils.hpp"
 #include "KokkosKernels_SimpleUtils.hpp"
 #include "KokkosKernels_PrintUtils.hpp"
-#include <Kokkos_Concepts.hpp>
 #include <string>
 #include <stdexcept>
 

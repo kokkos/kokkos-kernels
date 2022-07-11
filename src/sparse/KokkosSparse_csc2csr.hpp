@@ -43,14 +43,7 @@
 */
 
 #include "KokkosKernels_Utils.hpp"
-#include <std_algorithms/Kokkos_BeginEnd.hpp>
-#include <std_algorithms/Kokkos_AdjacentDifference.hpp>
-#include <std_algorithms/Kokkos_Reduce.hpp>
-#include <std_algorithms/Kokkos_TransformReduce.hpp>
-#include <std_algorithms/Kokkos_ExclusiveScan.hpp>
-#include <std_algorithms/Kokkos_TransformExclusiveScan.hpp>
-#include <std_algorithms/Kokkos_InclusiveScan.hpp>
-#include <std_algorithms/Kokkos_TransformInclusiveScan.hpp>
+#include <Kokkos_StdAlgorithms.hpp>
 
 #ifndef _KOKKOSSPARSE_CSC2CSR_HPP
 #define _KOKKOSSPARSE_CSC2CSR_HPP

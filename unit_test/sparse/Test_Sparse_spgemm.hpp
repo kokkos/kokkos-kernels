@@ -47,7 +47,6 @@
 
 #include "KokkosSparse_Utils.hpp"
 #include "KokkosSparse_SortCrs.hpp"
-#include <Kokkos_Concepts.hpp>
 #include <string>
 #include <stdexcept>
 
