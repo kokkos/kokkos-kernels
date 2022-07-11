@@ -58,12 +58,6 @@ void KOKKOS_INLINE_FUNCTION
 gemv(const char trans, const ScalarType& alpha, const MatrixType& A,
      const XVector& x, const typename YVector::non_const_value_type& beta,
      const YVector& y) {
-  static_assert(
-      std::is_same<ScalarType, typename XVector::non_const_value_type>::value &&
-          std::is_same<ScalarType,
-                       typename YVector::non_const_value_type>::value,
-      "Serial GEMV requires A,x and y to have same scalar type");
-
   using algo = KokkosBlas::Algo::Gemv::Default;
   // ensure same type for alpha and beta (required by serial impl)
   const auto beta_ = static_cast<ScalarType>(beta);

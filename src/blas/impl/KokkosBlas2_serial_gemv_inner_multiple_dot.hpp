@@ -58,19 +58,21 @@ struct InnerMultipleDotProduct {
                           const int ys0)
       : _as0(as0), _as1(as1), _xs0(xs0), _ys0(ys0) {}
 
-  template <typename ScalarType, typename ValueType>
+  template <typename ScalarType, typename ValueAType, typename ValueXType,
+            typename ValueYType>
   KOKKOS_INLINE_FUNCTION int serial_invoke(const ScalarType alpha,
-                                           const ValueType *KOKKOS_RESTRICT A,
-                                           const ValueType *KOKKOS_RESTRICT x,
+                                           const ValueAType *KOKKOS_RESTRICT A,
+                                           const ValueXType *KOKKOS_RESTRICT x,
                                            const int n,
-                                           /**/ ValueType *KOKKOS_RESTRICT y);
+                                           ValueYType *KOKKOS_RESTRICT y);
 
-  template <typename ScalarType, typename ValueType>
+  template <typename ScalarType, typename ValueAType, typename ValueXType,
+            typename ValueYType>
   KOKKOS_INLINE_FUNCTION int serial_invoke(const ScalarType alpha,
-                                           const ValueType *KOKKOS_RESTRICT A,
-                                           const ValueType *KOKKOS_RESTRICT x,
+                                           const ValueAType *KOKKOS_RESTRICT A,
+                                           const ValueXType *KOKKOS_RESTRICT x,
                                            const int m, const int n,
-                                           /**/ ValueType *KOKKOS_RESTRICT y);
+                                           ValueYType *KOKKOS_RESTRICT y);
 };
 
 ///
@@ -78,25 +80,26 @@ struct InnerMultipleDotProduct {
 /// ====================
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename OpA, typename ScalarType, typename ValueAType,
+          typename ValueXType, typename ValueYType>
 KOKKOS_INLINE_FUNCTION int InnerMultipleDotProduct<5>::serial_invoke(
-    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
-    const ValueType *KOKKOS_RESTRICT x, const int n,
-    /**/ ValueType *KOKKOS_RESTRICT y) {
+    const ScalarType alpha, const ValueAType *KOKKOS_RESTRICT A,
+    const ValueXType *KOKKOS_RESTRICT x, const int n,
+    ValueYType *KOKKOS_RESTRICT y) {
   if (n <= 0) return 0;
 
   const int i0 = 0 * _as0, i1 = 1 * _as0, i2 = 2 * _as0, i3 = 3 * _as0,
             i4 = 4 * _as0;
 
   // unroll by rows
-  ValueType y_0 = 0, y_1 = 0, y_2 = 0, y_3 = 0, y_4 = 0;
+  ValueYType y_0 = 0, y_1 = 0, y_2 = 0, y_3 = 0, y_4 = 0;
 
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
   for (int j = 0; j < n; ++j) {
-    const int jj        = j * _as1;
-    const ValueType x_j = x[j * _xs0];
+    const int jj         = j * _as1;
+    const ValueXType x_j = x[j * _xs0];
 
     y_0 += A[i0 + jj] * x_j;
     y_1 += A[i1 + jj] * x_j;
@@ -115,24 +118,25 @@ KOKKOS_INLINE_FUNCTION int InnerMultipleDotProduct<5>::serial_invoke(
 }
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueAType, typename ValueXType,
+          typename ValueYType>
 KOKKOS_INLINE_FUNCTION int InnerMultipleDotProduct<4>::serial_invoke(
-    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
-    const ValueType *KOKKOS_RESTRICT x, const int n,
-    /**/ ValueType *KOKKOS_RESTRICT y) {
+    const ScalarType alpha, const ValueAType *KOKKOS_RESTRICT A,
+    const ValueXType *KOKKOS_RESTRICT x, const int n,
+    ValueYType *KOKKOS_RESTRICT y) {
   if (!n) return 0;
 
   const int i0 = 0 * _as0, i1 = 1 * _as0, i2 = 2 * _as0, i3 = 3 * _as0;
 
   // unroll by rows
-  ValueType y_0 = 0, y_1 = 0, y_2 = 0, y_3 = 0;
+  ValueYType y_0 = 0, y_1 = 0, y_2 = 0, y_3 = 0;
 
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
   for (int j = 0; j < n; ++j) {
-    const int jj        = j * _as1;
-    const ValueType x_j = x[j * _xs0];
+    const int jj         = j * _as1;
+    const ValueXType x_j = x[j * _xs0];
 
     y_0 += A[i0 + jj] * x_j;
     y_1 += A[i1 + jj] * x_j;
@@ -149,24 +153,25 @@ KOKKOS_INLINE_FUNCTION int InnerMultipleDotProduct<4>::serial_invoke(
 }
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueAType, typename ValueXType,
+          typename ValueYType>
 KOKKOS_INLINE_FUNCTION int InnerMultipleDotProduct<3>::serial_invoke(
-    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
-    const ValueType *KOKKOS_RESTRICT x, const int n,
-    /**/ ValueType *KOKKOS_RESTRICT y) {
+    const ScalarType alpha, const ValueAType *KOKKOS_RESTRICT A,
+    const ValueXType *KOKKOS_RESTRICT x, const int n,
+    ValueYType *KOKKOS_RESTRICT y) {
   if (n <= 0) return 0;
 
   const int i0 = 0 * _as0, i1 = 1 * _as0, i2 = 2 * _as0;
 
   // unroll by rows
-  ValueType y_0 = 0, y_1 = 0, y_2 = 0;
+  ValueYType y_0 = 0, y_1 = 0, y_2 = 0;
 
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
   for (int j = 0; j < n; ++j) {
-    const int jj        = j * _as1;
-    const ValueType x_j = x[j * _xs0];
+    const int jj         = j * _as1;
+    const ValueXType x_j = x[j * _xs0];
 
     y_0 += A[i0 + jj] * x_j;
     y_1 += A[i1 + jj] * x_j;
@@ -181,24 +186,25 @@ KOKKOS_INLINE_FUNCTION int InnerMultipleDotProduct<3>::serial_invoke(
 }
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueAType, typename ValueXType,
+          typename ValueYType>
 KOKKOS_INLINE_FUNCTION int InnerMultipleDotProduct<2>::serial_invoke(
-    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
-    const ValueType *KOKKOS_RESTRICT x, const int n,
-    /**/ ValueType *KOKKOS_RESTRICT y) {
+    const ScalarType alpha, const ValueAType *KOKKOS_RESTRICT A,
+    const ValueXType *KOKKOS_RESTRICT x, const int n,
+    ValueYType *KOKKOS_RESTRICT y) {
   if (n <= 0) return 0;
 
   const int i0 = 0 * _as0, i1 = 1 * _as0;
 
   // unroll by rows
-  ValueType y_0 = 0, y_1 = 0;
+  ValueYType y_0 = 0, y_1 = 0;
 
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
   for (int j = 0; j < n; ++j) {
-    const int jj        = j * _as1;
-    const ValueType x_j = x[j * _xs0];
+    const int jj         = j * _as1;
+    const ValueXType x_j = x[j * _xs0];
 
     y_0 += A[i0 + jj] * x_j;
     y_1 += A[i1 + jj] * x_j;
@@ -211,15 +217,16 @@ KOKKOS_INLINE_FUNCTION int InnerMultipleDotProduct<2>::serial_invoke(
 }
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueAType, typename ValueXType,
+          typename ValueYType>
 KOKKOS_INLINE_FUNCTION int InnerMultipleDotProduct<1>::serial_invoke(
-    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
-    const ValueType *KOKKOS_RESTRICT x, const int n,
-    /**/ ValueType *KOKKOS_RESTRICT y) {
+    const ScalarType alpha, const ValueAType *KOKKOS_RESTRICT A,
+    const ValueXType *KOKKOS_RESTRICT x, const int n,
+    ValueYType *KOKKOS_RESTRICT y) {
   if (n <= 0) return 0;
 
   // unroll by rows
-  ValueType y_0 = 0;
+  ValueYType y_0 = 0;
 
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
@@ -232,11 +239,12 @@ KOKKOS_INLINE_FUNCTION int InnerMultipleDotProduct<1>::serial_invoke(
 }
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueAType, typename ValueXType,
+          typename ValueYType>
 KOKKOS_INLINE_FUNCTION int InnerMultipleDotProduct<5>::serial_invoke(
-    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
-    const ValueType *KOKKOS_RESTRICT x, const int m, const int n,
-    /**/ ValueType *KOKKOS_RESTRICT y) {
+    const ScalarType alpha, const ValueAType *KOKKOS_RESTRICT A,
+    const ValueXType *KOKKOS_RESTRICT x, const int m, const int n,
+    ValueYType *KOKKOS_RESTRICT y) {
   if (m <= 0 || n <= 0) return 0;
   switch (m) {
     case 5: {
@@ -269,11 +277,12 @@ KOKKOS_INLINE_FUNCTION int InnerMultipleDotProduct<5>::serial_invoke(
 }
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueAType, typename ValueXType,
+          typename ValueYType>
 KOKKOS_INLINE_FUNCTION int InnerMultipleDotProduct<4>::serial_invoke(
-    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
-    const ValueType *KOKKOS_RESTRICT x, const int m, const int n,
-    /**/ ValueType *KOKKOS_RESTRICT y) {
+    const ScalarType alpha, const ValueAType *KOKKOS_RESTRICT A,
+    const ValueXType *KOKKOS_RESTRICT x, const int m, const int n,
+    ValueYType *KOKKOS_RESTRICT y) {
   if (m <= 0 || n <= 0) return 0;
   switch (m) {
     case 4: {
@@ -301,11 +310,13 @@ KOKKOS_INLINE_FUNCTION int InnerMultipleDotProduct<4>::serial_invoke(
 }
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueAType, typename ValueXType,
+          typename ValueYType>
+
 KOKKOS_INLINE_FUNCTION int InnerMultipleDotProduct<3>::serial_invoke(
-    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
-    const ValueType *KOKKOS_RESTRICT x, const int m, const int n,
-    /**/ ValueType *KOKKOS_RESTRICT y) {
+    const ScalarType alpha, const ValueAType *KOKKOS_RESTRICT A,
+    const ValueXType *KOKKOS_RESTRICT x, const int m, const int n,
+    ValueYType *KOKKOS_RESTRICT y) {
   if (m <= 0 || n <= 0) return 0;
   switch (m) {
     case 3: {
@@ -328,11 +339,13 @@ KOKKOS_INLINE_FUNCTION int InnerMultipleDotProduct<3>::serial_invoke(
 }
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueAType, typename ValueXType,
+          typename ValueYType>
+
 KOKKOS_INLINE_FUNCTION int InnerMultipleDotProduct<2>::serial_invoke(
-    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
-    const ValueType *KOKKOS_RESTRICT x, const int m, const int n,
-    /**/ ValueType *KOKKOS_RESTRICT y) {
+    const ScalarType alpha, const ValueAType *KOKKOS_RESTRICT A,
+    const ValueXType *KOKKOS_RESTRICT x, const int m, const int n,
+    ValueYType *KOKKOS_RESTRICT y) {
   if (m <= 0 || n <= 0) return 0;
   switch (m) {
     case 2: {
@@ -350,11 +363,13 @@ KOKKOS_INLINE_FUNCTION int InnerMultipleDotProduct<2>::serial_invoke(
 }
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueAType, typename ValueXType,
+          typename ValueYType>
+
 KOKKOS_INLINE_FUNCTION int InnerMultipleDotProduct<1>::serial_invoke(
-    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
-    const ValueType *KOKKOS_RESTRICT x, const int m, const int n,
-    /**/ ValueType *KOKKOS_RESTRICT y) {
+    const ScalarType alpha, const ValueAType *KOKKOS_RESTRICT A,
+    const ValueXType *KOKKOS_RESTRICT x, const int m, const int n,
+    ValueYType *KOKKOS_RESTRICT y) {
   if (m <= 0 || n <= 0) return 0;
   switch (m) {
     case 1: {
@@ -365,6 +380,7 @@ KOKKOS_INLINE_FUNCTION int InnerMultipleDotProduct<1>::serial_invoke(
   }
   return 0;
 }
-}}  // namespace KokkosBlas::Impl
+}  // namespace Impl
+}  // namespace KokkosBlas
 
-#endif // __KOKKOSBLAS_INNER_MULTIPLE_DOT_PRODUCT_SERIAL_IMPL_HPP__
+#endif  // __KOKKOSBLAS_INNER_MULTIPLE_DOT_PRODUCT_SERIAL_IMPL_HPP__

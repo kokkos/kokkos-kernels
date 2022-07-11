@@ -59,21 +59,23 @@ namespace Impl {
 
 template <typename ArgAlgo>
 struct SerialGemvInternal {
-  template <typename ScalarType, typename ValueType>
+  template <typename ScalarType, typename ValueAType, typename ValueXType,
+            typename ValueYType>
   KOKKOS_INLINE_FUNCTION static int invoke(
       const int m, const int n, const ScalarType alpha,
-      const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
-      const ValueType *KOKKOS_RESTRICT x, const int xs0, const ScalarType beta,
-      /**/ ValueType *KOKKOS_RESTRICT y, const int ys0);
+      const ValueAType *KOKKOS_RESTRICT A, const int as0, const int as1,
+      const ValueXType *KOKKOS_RESTRICT x, const int xs0, const ScalarType beta,
+      /**/ ValueYType *KOKKOS_RESTRICT y, const int ys0);
 };
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueAType, typename ValueXType,
+          typename ValueYType>
 KOKKOS_INLINE_FUNCTION int SerialGemvInternal<Algo::Gemv::Unblocked>::invoke(
     const int m, const int n, const ScalarType alpha,
-    const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
-    const ValueType *KOKKOS_RESTRICT x, const int xs0, const ScalarType beta,
-    /**/ ValueType *KOKKOS_RESTRICT y, const int ys0) {
+    const ValueAType *KOKKOS_RESTRICT A, const int as0, const int as1,
+    const ValueXType *KOKKOS_RESTRICT x, const int xs0, const ScalarType beta,
+    /**/ ValueYType *KOKKOS_RESTRICT y, const int ys0) {
   const ScalarType one(1.0), zero(0.0);
 
   // y = beta y + alpha A x
@@ -88,8 +90,8 @@ KOKKOS_INLINE_FUNCTION int SerialGemvInternal<Algo::Gemv::Unblocked>::invoke(
     if (m <= 0 || n <= 0) return 0;
 
     for (int i = 0; i < m; ++i) {
-      ValueType t(0);
-      const ValueType *KOKKOS_RESTRICT tA = (A + i * as0);
+      ValueYType t(0);
+      const ValueAType *KOKKOS_RESTRICT tA = (A + i * as0);
 
 #if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
 #pragma ivdep
@@ -105,12 +107,13 @@ KOKKOS_INLINE_FUNCTION int SerialGemvInternal<Algo::Gemv::Unblocked>::invoke(
 }
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename ScalarType, typename ValueAType, typename ValueXType,
+          typename ValueYType>
 KOKKOS_INLINE_FUNCTION int SerialGemvInternal<Algo::Gemv::Blocked>::invoke(
     const int m, const int n, const ScalarType alpha,
-    const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
-    const ValueType *KOKKOS_RESTRICT x, const int xs0, const ScalarType beta,
-    /**/ ValueType *KOKKOS_RESTRICT y, const int ys0) {
+    const ValueAType *KOKKOS_RESTRICT A, const int as0, const int as1,
+    const ValueXType *KOKKOS_RESTRICT x, const int xs0, const ScalarType beta,
+    /**/ ValueYType *KOKKOS_RESTRICT y, const int ys0) {
   const ScalarType one(1.0), zero(0.0);
 
   // y = beta y + alpha A x

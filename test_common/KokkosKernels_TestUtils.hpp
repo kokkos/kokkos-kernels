@@ -481,6 +481,11 @@ std::string value_type_name<double>() {
 }
 
 template <>
+std::string value_type_name<int>() {
+  return "::Int";
+}
+
+template <>
 std::string value_type_name<Kokkos::complex<float>>() {
   return "::ComplexFloat";
 }
