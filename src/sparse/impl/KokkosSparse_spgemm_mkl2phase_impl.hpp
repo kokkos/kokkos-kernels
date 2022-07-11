@@ -50,7 +50,6 @@
 #endif
 
 #include "KokkosKernels_Utils.hpp"
-#include <vector>
 
 namespace KokkosSparse {
 namespace Impl {

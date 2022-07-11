@@ -51,9 +51,6 @@
 #include <string>
 #include <stdexcept>
 
-#include <gtest/gtest.h>
-#include <Kokkos_Core.hpp>
-
 // const char *input_filename = "sherman1.mtx";
 // const char *input_filename = "Si2.mtx";
 // const char *input_filename = "wathen_30_30.mtx";
