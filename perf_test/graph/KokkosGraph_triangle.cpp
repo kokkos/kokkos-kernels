@@ -303,7 +303,7 @@ int main(int argc, char **argv) {
 #if defined(KOKKOS_ENABLE_OPENMP)
 
   if (params.use_openmp) {
-    Kokkos::OpenMP::print_configuration(std::cout);
+    Kokkos::OpenMP().print_configuration(std::cout);
 #ifdef KOKKOSKERNELS_MULTI_MEM
     KokkosKernels::Experiment::run_multi_mem_triangle<
         size_type, idx, Kokkos::OpenMP, Kokkos::OpenMP::memory_space,
@@ -319,7 +319,7 @@ int main(int argc, char **argv) {
 
 #if defined(KOKKOS_ENABLE_CUDA)
   if (params.use_cuda) {
-    Kokkos::Cuda::print_configuration(std::cout);
+    Kokkos::Cuda().print_configuration(std::cout);
 #ifdef KOKKOSKERNELS_MULTI_MEM
     KokkosKernels::Experiment::run_multi_mem_triangle<
         size_type, idx, Kokkos::Cuda, Kokkos::Cuda::memory_space,
@@ -335,7 +335,7 @@ int main(int argc, char **argv) {
 
 #if defined(KOKKOS_ENABLE_HIP)
   if (params.use_hip) {
-    Kokkos::Experimental::HIP::print_configuration(std::cout);
+    Kokkos::Experimental::HIP().print_configuration(std::cout);
     KokkosKernels::Experiment::run_multi_mem_triangle<
         size_type, idx, Kokkos::Experimental::HIP,
         Kokkos::Experimental::HIPSpace, Kokkos::Experimental::HIPSpace>(params);
