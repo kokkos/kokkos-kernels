@@ -79,6 +79,10 @@ void test_trsv_mv(lno_t numRows, size_type nnz, lno_t bandwidth,
   crsMat_t lower_part =
       KokkosSparse::Impl::kk_generate_triangular_sparse_matrix<crsMat_t>(
           'L', numRows, numCols, nnz, row_size_variance, bandwidth);
+
+  Test::shuffleMatrixEntries(lower_part.graph.row_map, lower_part.graph.entries,
+                             lower_part.values);
+
   KokkosSparse::spmv("N", alpha, lower_part, b_x_copy, beta, b_y);
   Test::check_trsv_mv(lower_part, b_x, b_y, b_x_copy, numMV, "L", "N");
 
@@ -89,6 +93,10 @@ void test_trsv_mv(lno_t numRows, size_type nnz, lno_t bandwidth,
   crsMat_t upper_part =
       KokkosSparse::Impl::kk_generate_triangular_sparse_matrix<crsMat_t>(
           'U', numRows, numCols, nnz, row_size_variance, bandwidth);
+
+  Test::shuffleMatrixEntries(upper_part.graph.row_map, upper_part.graph.entries,
+                             upper_part.values);
+
   KokkosSparse::spmv("N", alpha, upper_part, b_x_copy, beta, b_y);
   Test::check_trsv_mv(upper_part, b_x, b_y, b_x_copy, numMV, "U", "N");
 
