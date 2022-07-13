@@ -381,7 +381,7 @@ int main(int argc, char **argv) {
   int cmdline[CMD_COUNT];
   char *mtx_bin_file = NULL;
   int block_size     = 5;
-  struct Kokkos::InitArguments kargs;
+  struct Kokkos::InitializationSettings kargs;
 
   for (int i = 0; i < CMD_COUNT; ++i) cmdline[i] = 0;
 
@@ -389,9 +389,11 @@ int main(int argc, char **argv) {
     if (0 == Test::string_compare_no_case(argv[i], "--serial")) {
       cmdline[CMD_USE_SERIAL] = 1;
     } else if (0 == Test::string_compare_no_case(argv[i], "--threads")) {
-      kargs.num_threads = cmdline[CMD_USE_THREADS] = atoi(argv[++i]);
+      cmdline[CMD_USE_THREADS] = atoi(argv[++i]);
+      kargs.set_num_threads(cmdline[CMD_USE_THREADS]);
     } else if (0 == Test::string_compare_no_case(argv[i], "--openmp")) {
-      kargs.num_threads = cmdline[CMD_USE_OPENMP] = atoi(argv[++i]);
+      cmdline[CMD_USE_OPENMP] = atoi(argv[++i]);
+      kargs.set_num_threads(cmdline[CMD_USE_OPENMP]);
     } else if (0 == Test::string_compare_no_case(argv[i], "--cuda")) {
       cmdline[CMD_USE_CUDA] = 1;
     } else if (0 == Test::string_compare_no_case(argv[i], "--mtx")) {
@@ -435,7 +437,7 @@ int main(int argc, char **argv) {
 
   if (cmdline[CMD_USE_SERIAL]) {
     using myExecSpace = Kokkos::Serial;
-    Kokkos::Serial::print_configuration(std::cout);
+    myExecSpace().print_configuration(std::cout);
 
     using crsMat_t =
         typename KokkosSparse::CrsMatrix<SCALAR_TYPE, INDEX_TYPE, myExecSpace,
@@ -458,7 +460,7 @@ int main(int argc, char **argv) {
 
   if (cmdline[CMD_USE_THREADS]) {
     using myExecSpace = Kokkos::Threads;
-    Kokkos::Threads::print_configuration(std::cout);
+    myExecSpace().print_configuration(std::cout);
 
     using crsMat_t =
         typename KokkosSparse::CrsMatrix<SCALAR_TYPE, INDEX_TYPE, myExecSpace,
@@ -481,7 +483,7 @@ int main(int argc, char **argv) {
 
   if (cmdline[CMD_USE_OPENMP]) {
     using myExecSpace = Kokkos::OpenMP;
-    Kokkos::OpenMP::print_configuration(std::cout);
+    myExecSpace().print_configuration(std::cout);
 
     using crsMat_t =
         typename KokkosSparse::CrsMatrix<SCALAR_TYPE, INDEX_TYPE, myExecSpace,
@@ -504,7 +506,7 @@ int main(int argc, char **argv) {
   if (cmdline[CMD_USE_CUDA]) {
     // Use the last device:
     using myExecSpace = Kokkos::Cuda;
-    Kokkos::Cuda::print_configuration(std::cout);
+    myExecSpace().print_configuration(std::cout);
 
     using crsMat_t =
         typename KokkosSparse::CrsMatrix<SCALAR_TYPE, INDEX_TYPE, myExecSpace,

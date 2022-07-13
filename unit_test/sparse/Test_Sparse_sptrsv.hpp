@@ -45,7 +45,6 @@
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 
-#include <Kokkos_Concepts.hpp>
 #include <string>
 #include <stdexcept>
 
@@ -122,7 +121,7 @@ void run_test_sptrsv_mtx() {
     bool is_lower_tri = true;
     std::cout << "Create handle" << std::endl;
     kh.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1, nrows, is_lower_tri);
-    
+
     std::cout << "Prepare linear system" << std::endl;
     // Create known_lhs, generate rhs, then solve for lhs to compare to known_lhs
     ValuesType known_lhs("known_lhs", nrows);
@@ -239,7 +238,7 @@ void run_test_sptrsv_mtx() {
     bool is_lower_tri = false;
     std::cout << "Create handle" << std::endl;
     kh.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1, nrows, is_lower_tri);
-    
+
     std::cout << "Prepare linear system" << std::endl;
     // Create known_lhs, generate rhs, then solve for lhs to compare to known_lhs
     ValuesType known_lhs("known_lhs", nrows);
