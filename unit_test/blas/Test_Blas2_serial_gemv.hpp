@@ -58,7 +58,8 @@
 #endif
 
 namespace Test {
-template <class ViewTypeA, class ViewTypeX, class ViewTypeY, class Device>
+template <class ViewTypeA, class ViewTypeX, class ViewTypeY, class ScalarType,
+          class Device>
 void impl_test_serial_gemv(const char *mode, int N, int M) {
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeX::value_type ScalarX;
@@ -80,9 +81,9 @@ void impl_test_serial_gemv(const char *mode, int N, int M) {
       Device>
       BaseTypeY;
 
-  ScalarA a  = 3;
-  ScalarX b  = 5;
-  double eps = (std::is_same<ScalarY, float>::value ||
+  ScalarType a = 3;
+  ScalarType b = 5;
+  double eps   = (std::is_same<ScalarY, float>::value ||
                 std::is_same<ScalarY, Kokkos::complex<float>>::value)
                    ? 2 * 1e-5
                    : 1e-7;
@@ -207,14 +208,17 @@ struct Functor_TestSerialGemv {
 };
 
 template <typename DeviceType, typename LayoutType, typename ValueAType,
-          typename ValueBType, typename ValueCType, typename ScalarType,
+          typename ValueBType, typename ValueCType, typename CoefType,
           typename TransType, typename AlgoTagType>
 void impl_test_batched_serial_gemv(const int N, const int BlkSize) {
   typedef Kokkos::View<ValueAType ***, LayoutType, DeviceType> ViewAType;
   typedef Kokkos::View<ValueBType ***, LayoutType, DeviceType> ViewBType;
   typedef Kokkos::View<ValueCType ***, LayoutType, DeviceType> ViewCType;
   typedef Kokkos::Details::ArithTraits<ValueCType> c_ats;
-
+  typedef typename std::conditional<
+      std::is_void<CoefType>::value,
+      typename std::common_type<ValueAType, ValueBType>::type, CoefType>::type
+      ScalarType;
   /// randomized input testing views
   ScalarType alpha = 1.5, beta = 3.0;
 
@@ -268,55 +272,53 @@ void impl_test_batched_serial_gemv(const int N, const int BlkSize) {
   EXPECT_NEAR_KK(diff / sum, 0, eps);
 }
 
-}  // namespace Test
+template <class ScalarA, class ScalarX, class ScalarY, class Device,
+          class ScalarCoef = void>
+struct SerialGEMVTest {
+  // ScalarCoef==void default behavior is to derive alpha/beta scalar types
+  // from A and X scalar types
+  using ScalarType = typename std::conditional<
+      !std::is_void<ScalarCoef>::value, ScalarCoef,
+      typename std::common_type<ScalarA, ScalarX>::type>::type;
 
-template <class ScalarA, class ScalarX, class ScalarY, class Device>
-int test_serial_gemv(const char *mode) {
+  static void run(const char *mode) {
 #ifdef KOKKOSKERNELS_TEST_LAYOUTLEFT
-  typedef Kokkos::View<ScalarA **, Kokkos::LayoutLeft, Device> view_type_a_ll;
-  typedef Kokkos::View<ScalarX *, Kokkos::LayoutLeft, Device> view_type_b_ll;
-  typedef Kokkos::View<ScalarY *, Kokkos::LayoutLeft, Device> view_type_c_ll;
-  Test::impl_test_serial_gemv<view_type_a_ll, view_type_b_ll, view_type_c_ll,
-                              Device>(mode, 0, 1024);
-  Test::impl_test_serial_gemv<view_type_a_ll, view_type_b_ll, view_type_c_ll,
-                              Device>(mode, 13, 1024);
-  Test::impl_test_serial_gemv<view_type_a_ll, view_type_b_ll, view_type_c_ll,
-                              Device>(mode, 124, 124);
+    run_layout<Kokkos::LayoutLeft>(mode);
 #endif
-
 #ifdef KOKKOSKERNELS_TEST_LAYOUTRIGHT
-  typedef Kokkos::View<ScalarA **, Kokkos::LayoutRight, Device> view_type_a_lr;
-  typedef Kokkos::View<ScalarX *, Kokkos::LayoutRight, Device> view_type_b_lr;
-  typedef Kokkos::View<ScalarY *, Kokkos::LayoutRight, Device> view_type_c_lr;
-  Test::impl_test_serial_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr,
-                              Device>(mode, 0, 1024);
-  Test::impl_test_serial_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr,
-                              Device>(mode, 13, 1024);
-  Test::impl_test_serial_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr,
-                              Device>(mode, 124, 124);
+    run_layout<Kokkos::LayoutRight>(mode);
 #endif
-
 #ifdef KOKKOSKERNELS_TEST_LAYOUTSTRIDE
-  typedef Kokkos::View<ScalarA **, Kokkos::LayoutStride, Device> view_type_a_ls;
-  typedef Kokkos::View<ScalarX *, Kokkos::LayoutStride, Device> view_type_b_ls;
-  typedef Kokkos::View<ScalarY *, Kokkos::LayoutStride, Device> view_type_c_ls;
-  Test::impl_test_serial_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls,
-                              Device>(mode, 0, 1024);
-  Test::impl_test_serial_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls,
-                              Device>(mode, 13, 1024);
-  Test::impl_test_serial_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls,
-                              Device>(mode, 124, 124);
+    run_layout<Kokkos::LayoutStride>(mode);
 #endif
-
-#ifdef KOKKOSKERNELS_TEST_MIXED_TYPES
-  Test::impl_test_serial_gemv<view_type_a_ls, view_type_b_ll, view_type_c_lr,
-                              Device>(mode, 124, 124);
-  Test::impl_test_serial_gemv<view_type_a_ll, view_type_b_ls, view_type_c_lr,
-                              Device>(mode, 124, 124);
+#ifdef KOKKOSKERNELS_TEST_ALL_TYPES
+    using A_t = typename Kokkos::View<ScalarA **, Kokkos::LayoutStride, Device>;
+    using x_t = typename Kokkos::View<ScalarX *, Kokkos::LayoutLeft, Device>;
+    using y_t = typename Kokkos::View<ScalarY *, Kokkos::LayoutRight, Device>;
+    run_views<A_t, x_t, y_t>(mode);
 #endif
+  }
 
-  return 0;
-}
+  template <typename Layout>
+  static void run_layout(const char *mode) {
+    typedef Kokkos::View<ScalarA **, Layout, Device> view_type_A;
+    typedef Kokkos::View<ScalarX *, Layout, Device> view_type_x;
+    typedef Kokkos::View<ScalarY *, Layout, Device> view_type_y;
+    run_views<view_type_A, view_type_x, view_type_y>(mode);
+  }
+
+  template <class ViewAType, class ViewXType, class ViewYType>
+  static void run_views(const char *mode) {
+    constexpr auto impl_test =
+        impl_test_serial_gemv<ViewAType, ViewXType, ViewYType, ScalarType,
+                              Device>;
+    impl_test(mode, 0, 1024);
+    impl_test(mode, 13, 1024);
+    impl_test(mode, 124, 124);
+  }
+};
+
+}  // namespace Test
 
 template <typename DeviceType, typename ValueAType, typename ValueBType,
           typename ValueCType, typename ScalarType, typename TransType,
@@ -356,12 +358,12 @@ int test_batched_serial_gemv() {
 
 #define TEST_CASE4(NAME, SCALAR_A, SCALAR_X, SCALAR_Y, SCALAR_COEF)          \
   TEST_F(TestCategory, serial_gemv_nt_##NAME) {                              \
-    /* FIXME: implement arbitrary SCALAR_COEF for alpha/beta type */         \
-    test_serial_gemv<SCALAR_A, SCALAR_X, SCALAR_Y, TestExecSpace>("N");      \
+    ::Test::SerialGEMVTest<SCALAR_A, SCALAR_X, SCALAR_Y, TestExecSpace,      \
+                           SCALAR_COEF>::run("N");                           \
   }                                                                          \
   TEST_F(TestCategory, serial_gemv_t_##NAME) {                               \
-    /* FIXME: implement arbitrary SCALAR_COEF for alpha/beta type */         \
-    test_serial_gemv<SCALAR_A, SCALAR_X, SCALAR_Y, TestExecSpace>("T");      \
+    ::Test::SerialGEMVTest<SCALAR_A, SCALAR_X, SCALAR_Y, TestExecSpace,      \
+                           SCALAR_COEF>::run("T");                           \
   }                                                                          \
   TEST_F(TestCategory, serial_gemv_nt2_##NAME) {                             \
     test_batched_serial_gemv<TestExecSpace, SCALAR_A, SCALAR_X, SCALAR_Y,    \
@@ -372,15 +374,9 @@ int test_batched_serial_gemv() {
                              SCALAR_COEF, KokkosBlas::Trans::Transpose>();   \
   }
 
-#define _COMMON_TYPE3(T1, T2, T3) std::common_type<T1, T2, T3>::type
-
-#define TEST_CASE3(NAME, SCALAR_A, SCALAR_X, SCALAR_Y) \
-  TEST_CASE4(NAME, SCALAR_A, SCALAR_X, SCALAR_Y,       \
-             _COMMON_TYPE3(SCALAR_A, SCALAR_X, SCALAR_Y))
-
 #define TEST_CASE2(NAME, SCALAR, SCALAR_COEF) \
   TEST_CASE4(NAME, SCALAR, SCALAR, SCALAR, SCALAR_COEF)
-#define TEST_CASE(NAME, SCALAR)  TEST_CASE2(NAME, SCALAR, SCALAR)
+#define TEST_CASE(NAME, SCALAR) TEST_CASE2(NAME, SCALAR, SCALAR)
 
 #ifdef KOKKOSKERNELS_TEST_FLOAT
 TEST_CASE(nt_float, float)
@@ -402,9 +398,9 @@ TEST_CASE(nt_complex_float, Kokkos::complex<float>)
 TEST_CASE(nt_complex_int, int)
 #endif
 
-#ifdef KOKKOSKERNELS_TEST_MIXED_TYPES
-// test mixed scalar types
-TEST_CASE3(nt_mixed, double, int, float)
+#ifdef KOKKOSKERNELS_TEST_ALL_TYPES
+// test mixed scalar types (void -> default alpha/beta)
+TEST_CASE4(nt_mixed, double, int, float, void)
 
 // test arbitrary double alpha/beta with complex<double> values
 TEST_CASE2(nt_alphabeta, Kokkos::complex<double>, double)
