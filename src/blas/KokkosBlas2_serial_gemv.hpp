@@ -52,22 +52,29 @@
 namespace KokkosBlas {
 namespace Experimental {
 
-template <class MatrixType, class XVector, class YVector, class ScalarType>
+template <class AlgoTag, class MatrixType, class XVector, class YVector,
+          class ScalarType>
 void KOKKOS_INLINE_FUNCTION gemv(const char trans, const ScalarType& alpha,
                                  const MatrixType& A, const XVector& x,
                                  const ScalarType& beta, const YVector& y) {
-  using algo = KokkosBlas::Algo::Gemv::Default;
   if (trans == 'N' || trans == 'n') {
     using mode = KokkosBlas::Trans::NoTranspose;
-    KokkosBlas::SerialGemv<mode, algo>::invoke(alpha, A, x, beta, y);
+    KokkosBlas::SerialGemv<mode, AlgoTag>::invoke(alpha, A, x, beta, y);
   } else if (trans == 'T' || trans == 't') {
     using mode = KokkosBlas::Trans::Transpose;
-    KokkosBlas::SerialGemv<mode, algo>::invoke(alpha, A, x, beta, y);
+    KokkosBlas::SerialGemv<mode, AlgoTag>::invoke(alpha, A, x, beta, y);
   } else {  // NOT supported: Conjugate, ConjTranspose
     std::ostringstream os;
     os << "Matrix mode not supported: " << trans << std::endl;
     KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
+}
+
+template <class MatrixType, class XVector, class YVector, class ScalarType>
+void KOKKOS_INLINE_FUNCTION gemv(const char trans, const ScalarType& alpha,
+                                 const MatrixType& A, const XVector& x,
+                                 const ScalarType& beta, const YVector& y) {
+  gemv<KokkosBlas::Algo::Gemv::Default>(trans, alpha, A, x, beta, y);
 }
 
 }  // namespace Experimental

@@ -54,6 +54,41 @@
 // Make this include-able from all subdirectories
 #include "../tpls/gtest/gtest/gtest.h"  //for EXPECT_**
 
+// Simplify ETI macros
+#if !defined(KOKKOSKERNELS_ETI_ONLY) && \
+    !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
+#define KOKKOSKERNELS_TEST_ALL_TYPES
+#endif
+#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
+    defined(KOKKOSKERNELS_TEST_ALL_TYPES)
+#define KOKKOSKERNELS_TEST_LAYOUTLEFT
+#endif
+#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || \
+    defined(KOKKOSKERNELS_TEST_ALL_TYPES)
+#define KOKKOSKERNELS_TEST_LAYOUTRIGHT
+#endif
+#if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
+    defined(KOKKOSKERNELS_TEST_ALL_TYPES)
+#define KOKKOSKERNELS_TEST_LAYOUTSTRIDE
+#endif
+#if defined(KOKKOSKERNELS_INST_FLOAT) || defined(KOKKOSKERNELS_TEST_ALL_TYPES)
+#define KOKKOSKERNELS_TEST_FLOAT
+#endif
+#if defined(KOKKOSKERNELS_INST_DOUBLE) || defined(KOKKOSKERNELS_TEST_ALL_TYPES)
+#define KOKKOSKERNELS_TEST_DOUBLE
+#endif
+#if defined(KOKKOSKERNELS_INST_INT) || defined(KOKKOSKERNELS_TEST_ALL_TYPES)
+#define KOKKOSKERNELS_TEST_INT
+#endif
+#if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT) || \
+    defined(KOKKOSKERNELS_TEST_ALL_TYPES)
+#define KOKKOSKERNELS_TEST_COMPLEX_FLOAT
+#endif
+#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || \
+    defined(KOKKOSKERNELS_TEST_ALL_TYPES)
+#define KOKKOSKERNELS_TEST_COMPLEX_DOUBLE
+#endif
+
 namespace Test {
 template <class ViewType,
           bool strided = std::is_same<typename ViewType::array_layout,
