@@ -413,25 +413,37 @@ namespace Details {
   static FUNC_QUAL val_type squareroot(const val_type x) { return sqrt(x); }   \
   static FUNC_QUAL mag_type eps() { return epsilon(); }
 
-template<typename val_type>
+template <typename val_type>
 static KOKKOS_FUNCTION
-typename std::enable_if<std::numeric_limits<val_type>::is_signed, val_type>::type
-KokkosKernelsAbs(const val_type x) { return Kokkos::abs(x); }
+    typename std::enable_if<std::numeric_limits<val_type>::is_signed,
+                            val_type>::type
+    KokkosKernelsAbs(const val_type x) {
+  return Kokkos::abs(x);
+}
 
-template<typename val_type>
+template <typename val_type>
 static KOKKOS_FUNCTION
-typename std::enable_if<!std::numeric_limits<val_type>::is_signed, val_type>::type
-KokkosKernelsAbs(const val_type x) { return x; }
+    typename std::enable_if<!std::numeric_limits<val_type>::is_signed,
+                            val_type>::type
+    KokkosKernelsAbs(const val_type x) {
+  return x;
+}
 
-template<typename val_type>
+template <typename val_type>
 static KOKKOS_FUNCTION
-typename std::enable_if<std::numeric_limits<val_type>::is_signed, val_type>::type
-KokkosKernelsNan() { return -1; }
+    typename std::enable_if<std::numeric_limits<val_type>::is_signed,
+                            val_type>::type
+    KokkosKernelsNan() {
+  return -1;
+}
 
-template<typename val_type>
+template <typename val_type>
 static KOKKOS_FUNCTION
-typename std::enable_if<!std::numeric_limits<val_type>::is_signed, val_type>::type
-KokkosKernelsNan() { return Kokkos::Experimental::finite_max<val_type>::value; }
+    typename std::enable_if<!std::numeric_limits<val_type>::is_signed,
+                            val_type>::type
+    KokkosKernelsNan() {
+  return Kokkos::Experimental::finite_max<val_type>::value;
+}
 
 #define KOKKOSKERNELS_ARITHTRAITS_INTEGRAL()                                  \
                                                                               \
