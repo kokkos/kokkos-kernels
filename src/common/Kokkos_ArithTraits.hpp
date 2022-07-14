@@ -431,7 +431,7 @@ KokkosKernelsNan() { return -1; }
 template<typename val_type>
 static KOKKOS_FUNCTION
 typename std::enable_if<!std::numeric_limits<val_type>::is_signed, val_type>::type
-KokkosKernelsNan() { return max(); }
+KokkosKernelsNan() { return Kokkos::Experimental::finite_max<val_type>::value; }
 
 #define KOKKOSKERNELS_ARITHTRAITS_INTEGRAL()                                  \
                                                                               \
