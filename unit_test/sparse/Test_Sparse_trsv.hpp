@@ -104,16 +104,19 @@ void test_trsv_mv(lno_t numRows, size_type nnz, lno_t bandwidth,
   Test::check_trsv_mv(upper_part, b_x, b_y, b_x_copy, numMV, "U", "T");
 }
 
+// Note BMK 7-22: the matrix generator used by this test always
+// generates a dense triangle. It ignores bandwidth, nnz and row size variance.
+
 #define EXECUTE_TEST_MV(SCALAR, ORDINAL, OFFSET, LAYOUT, DEVICE)                    \
   TEST_F(                                                                           \
       TestCategory,                                                                 \
       sparse##_##trsv_mv##_##SCALAR##_##ORDINAL##_##OFFSET##_##LAYOUT##_##DEVICE) { \
     test_trsv_mv<SCALAR, ORDINAL, OFFSET, Kokkos::LAYOUT, DEVICE>(                  \
-        5000, 5000 * 30, 200, 10, 1);                                               \
+        1000, 1000 * 30, 200, 10, 1);                                               \
     test_trsv_mv<SCALAR, ORDINAL, OFFSET, Kokkos::LAYOUT, DEVICE>(                  \
-        5000, 5000 * 30, 100, 10, 5);                                               \
+        800, 800 * 30, 100, 10, 5);                                                 \
     test_trsv_mv<SCALAR, ORDINAL, OFFSET, Kokkos::LAYOUT, DEVICE>(                  \
-        1000, 1000 * 20, 100, 5, 10);                                               \
+        400, 400 * 20, 100, 5, 10);                                                 \
   }
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
