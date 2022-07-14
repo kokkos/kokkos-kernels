@@ -208,24 +208,24 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose,
           if (test == SUPERNODAL_NAIVE) {
             std::cout << " > create handle for SUPERNODAL_NAIVE" << std::endl
                       << std::endl;
-            khL.create_sptrsv_handle(KSExp::SPTRSVAlgorithm::SUPERNODAL_NAIVE, nrows,
-                                     true);
-            khU.create_sptrsv_handle(KSExp::SPTRSVAlgorithm::SUPERNODAL_NAIVE, nrows,
-                                     true);
+            khL.create_sptrsv_handle(KSExp::SPTRSVAlgorithm::SUPERNODAL_NAIVE,
+                                     nrows, true);
+            khU.create_sptrsv_handle(KSExp::SPTRSVAlgorithm::SUPERNODAL_NAIVE,
+                                     nrows, true);
           } else if (test == SUPERNODAL_DAG) {
             std::cout << " > create handle for SUPERNODAL_DAG" << std::endl
                       << std::endl;
-            khL.create_sptrsv_handle(KSExp::SPTRSVAlgorithm::SUPERNODAL_DAG, nrows,
-                                     true);
-            khU.create_sptrsv_handle(KSExp::SPTRSVAlgorithm::SUPERNODAL_DAG, nrows,
-                                     true);
+            khL.create_sptrsv_handle(KSExp::SPTRSVAlgorithm::SUPERNODAL_DAG,
+                                     nrows, true);
+            khU.create_sptrsv_handle(KSExp::SPTRSVAlgorithm::SUPERNODAL_DAG,
+                                     nrows, true);
           } else if (test == SUPERNODAL_SPMV_DAG) {
             std::cout << " > create handle for SUPERNODAL_SPMV_DAG" << std::endl
                       << std::endl;
-            khL.create_sptrsv_handle(KSExp::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG,
-                                     nrows, true);
-            khU.create_sptrsv_handle(KSExp::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG,
-                                     nrows, true);
+            khL.create_sptrsv_handle(
+                KSExp::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG, nrows, true);
+            khU.create_sptrsv_handle(
+                KSExp::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG, nrows, true);
           }
           // verbose (optional, default is false)
           khL.set_sptrsv_verbose(verbose);
@@ -250,8 +250,8 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose,
           // graph/dag)
           khU.get_sptrsv_handle()->set_column_major(
               !khL.get_sptrsv_handle()->is_column_major());
-          KSExp::sptrsv_supernodal_symbolic(nsuper, supercols.data(), etree, L.graph,
-                                            &khL, L.graph, &khU);
+          KSExp::sptrsv_supernodal_symbolic(nsuper, supercols.data(), etree,
+                                            L.graph, &khL, L.graph, &khU);
 
           // ==============================================
           // do numeric compute (copy numerical values from SuperLU data

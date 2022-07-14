@@ -82,8 +82,9 @@ struct GSTestParams {
 
   // Note: GS_DEFAULT is same as GS_TEAM and - for blocks - as GS_PERMUTED
   // Note: GS_TWOSTAGE and GS_CLUSTER are not supported for blocks
-  std::vector<KokkosSparse::GSAlgorithm> gs_algorithms = {KokkosSparse::GS_DEFAULT};
-  std::vector<size_t> shmem_sizes        = {
+  std::vector<KokkosSparse::GSAlgorithm> gs_algorithms = {
+      KokkosSparse::GS_DEFAULT};
+  std::vector<size_t> shmem_sizes = {
       32128,
       2008  // make the shmem small on gpus so that it will test 2 level
             // algorithm.
@@ -127,9 +128,9 @@ int run_block_gauss_seidel_1(
   const int apply_count   = 100;
 
   if (!skip_symbolic) {
-    KSExp::block_gauss_seidel_symbolic(&kh, num_rows_1, num_cols_1, block_size,
-                                input_mat.graph.row_map,
-                                input_mat.graph.entries, is_symmetric_graph);
+    KSExp::block_gauss_seidel_symbolic(
+        &kh, num_rows_1, num_cols_1, block_size, input_mat.graph.row_map,
+        input_mat.graph.entries, is_symmetric_graph);
   }
 
   if (!skip_numeric) {
@@ -172,8 +173,8 @@ void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz,
                                    lno_t bandwidth, lno_t row_size_variance) {
   using namespace Test;
   srand(245);
-  using  crsMat_t =
-      typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>;
+  using crsMat_t = typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device,
+                                                    void, size_type>;
   using MatrixConverter = KokkosSparse::Impl::MatrixConverter<mtx_format>;
 
   typedef typename device::execution_space exec_space;
@@ -209,9 +210,8 @@ void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz,
   crsMat_t crsmat2("CrsMatrix2", out_c, pf_v, static_graph2);
 
   // this converts the previous generated matrix to block matrix.
-  auto input_mat =
-      MatrixConverter::from_blockcrs_formatted_point_crsmatrix(
-          crsmat2, block_size);
+  auto input_mat = MatrixConverter::from_blockcrs_formatted_point_crsmatrix(
+      crsmat2, block_size);
 
   lno_t nv = ((crsmat2.numRows() + block_size - 1) / block_size) * block_size;
 
@@ -259,8 +259,8 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz,
                                    lno_t bandwidth, lno_t row_size_variance) {
   using namespace Test;
   srand(245);
-  using crsMat_t =
-      typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>;
+  using crsMat_t = typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device,
+                                                    void, size_type>;
   using MatrixConverter = KokkosSparse::Impl::MatrixConverter<mtx_format>;
 
   typedef typename device::execution_space exec_space;
@@ -296,9 +296,8 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz,
   graph_t static_graph2(pf_e, pf_rm);
   crsMat_t crsmat2("CrsMatrix2", out_c, pf_v, static_graph2);
 
-  auto input_mat =
-      MatrixConverter::from_blockcrs_formatted_point_crsmatrix(
-          crsmat2, block_size);
+  auto input_mat = MatrixConverter::from_blockcrs_formatted_point_crsmatrix(
+      crsmat2, block_size);
 
   lno_t nv = ((crsmat2.numRows() + block_size - 1) / block_size) * block_size;
 
@@ -392,10 +391,10 @@ void test_block_gauss_seidel_empty() {
     entries_type entries("Entries", 0);
     scalar_view_t values("Values", 0);
     // also, make sure graph symmetrization doesn't crash on zero rows
-    KSExp::block_gauss_seidel_symbolic(&kh, num_rows, num_rows, block_size, rowmap,
-                                entries, false);
-    KSExp::block_gauss_seidel_numeric<mtx_format>(&kh, num_rows, num_rows, block_size,
-                                           rowmap, entries, values, false);
+    KSExp::block_gauss_seidel_symbolic(&kh, num_rows, num_rows, block_size,
+                                       rowmap, entries, false);
+    KSExp::block_gauss_seidel_numeric<mtx_format>(
+        &kh, num_rows, num_rows, block_size, rowmap, entries, values, false);
     scalar_view_t x("X", num_rows);
     scalar_view_t y("Y", num_rows);
     scalar_t omega(0.9);
