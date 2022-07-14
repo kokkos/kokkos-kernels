@@ -59,20 +59,10 @@
 #include <complex>
 #include "KokkosSparse_gauss_seidel.hpp"
 
-// #ifndef kokkos_complex_double
-// #define kokkos_complex_double Kokkos::complex<double>
-// #define kokkos_complex_float Kokkos::complex<float>
-// #endif
+using kokkos_complex_double = Kokkos::complex<double>;
+using kokkos_complex_float  = Kokkos::complex<float>;
 
-typedef Kokkos::complex<double> kokkos_complex_double;
-typedef Kokkos::complex<float> kokkos_complex_float;
-
-using namespace KokkosKernels;
-using namespace KokkosKernels::Impl;
-using namespace KokkosKernels::Experimental;
-using namespace KokkosSparse;
-using namespace KokkosSparse::Impl;
-using namespace KokkosSparse::Experimental;
+namespace KSExp = KokkosSparse::Experimental;
 
 namespace Test {
 
@@ -92,7 +82,7 @@ struct GSTestParams {
 
   // Note: GS_DEFAULT is same as GS_TEAM and - for blocks - as GS_PERMUTED
   // Note: GS_TWOSTAGE and GS_CLUSTER are not supported for blocks
-  std::vector<GSAlgorithm> gs_algorithms = {GS_DEFAULT};
+  std::vector<KokkosSparse::GSAlgorithm> gs_algorithms = {KokkosSparse::GS_DEFAULT};
   std::vector<size_t> shmem_sizes        = {
       32128,
       2008  // make the shmem small on gpus so that it will test 2 level
@@ -121,12 +111,11 @@ int run_block_gauss_seidel_1(
   typedef typename lno_nnz_view_t::value_type lno_t;
   typedef typename scalar_view_t::value_type scalar_t;
 
-  constexpr auto format = MatrixTraits<mtx_t>::format;
+  constexpr auto format = KokkosSparse::Impl::MatrixTraits<mtx_t>::format;
 
-  typedef KokkosKernelsHandle<
+  using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<
       size_type, lno_t, scalar_t, typename mtx_t::execution_space,
-      typename mtx_t::memory_space, typename mtx_t::memory_space>
-      KernelHandle;
+      typename mtx_t::memory_space, typename mtx_t::memory_space>;
   KernelHandle kh;
   kh.set_team_work_size(16);
   kh.set_shmem_size(shmem_size);
@@ -138,33 +127,33 @@ int run_block_gauss_seidel_1(
   const int apply_count   = 100;
 
   if (!skip_symbolic) {
-    block_gauss_seidel_symbolic(&kh, num_rows_1, num_cols_1, block_size,
+    KSExp::block_gauss_seidel_symbolic(&kh, num_rows_1, num_cols_1, block_size,
                                 input_mat.graph.row_map,
                                 input_mat.graph.entries, is_symmetric_graph);
   }
 
   if (!skip_numeric) {
-    block_gauss_seidel_numeric<format>(
+    KSExp::block_gauss_seidel_numeric<format>(
         &kh, num_rows_1, num_cols_1, block_size, input_mat.graph.row_map,
         input_mat.graph.entries, input_mat.values, is_symmetric_graph);
   }
 
   switch (apply_type) {
     case Test::forward_sweep:
-      forward_sweep_block_gauss_seidel_apply<format>(
+      KSExp::forward_sweep_block_gauss_seidel_apply<format>(
           &kh, num_rows_1, num_cols_1, block_size, input_mat.graph.row_map,
           input_mat.graph.entries, input_mat.values, x_vector, y_vector, false,
           true, omega, apply_count);
       break;
     case Test::backward_sweep:
-      backward_sweep_block_gauss_seidel_apply<format>(
+      KSExp::backward_sweep_block_gauss_seidel_apply<format>(
           &kh, num_rows_1, num_cols_1, block_size, input_mat.graph.row_map,
           input_mat.graph.entries, input_mat.values, x_vector, y_vector, false,
           true, omega, apply_count);
       break;
     case Test::symmetric:
     default:
-      symmetric_block_gauss_seidel_apply<format>(
+      KSExp::symmetric_block_gauss_seidel_apply<format>(
           &kh, num_rows_1, num_cols_1, block_size, input_mat.graph.row_map,
           input_mat.graph.entries, input_mat.values, x_vector, y_vector, false,
           true, omega, apply_count);
@@ -183,9 +172,9 @@ void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz,
                                    lno_t bandwidth, lno_t row_size_variance) {
   using namespace Test;
   srand(245);
-  typedef
-      typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>
-          crsMat_t;
+  using  crsMat_t =
+      typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>;
+  using MatrixConverter = KokkosSparse::Impl::MatrixConverter<mtx_format>;
 
   typedef typename device::execution_space exec_space;
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
@@ -213,7 +202,7 @@ void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz,
   // this makes consecutive 5 rows to have same columns.
   // it will add scalar 0's for those entries that does not exists.
   // the result is still a point crs matrix.
-  KokkosSparse::Impl::kk_create_blockcrs_formated_point_crsmatrix(
+  KokkosSparse::Impl::kk_create_blockcrs_formatted_point_crsmatrix(
       block_size, crsmat.numRows(), crsmat.numCols(), crsmat.graph.row_map,
       crsmat.graph.entries, crsmat.values, out_r, out_c, pf_rm, pf_e, pf_v);
   graph_t static_graph2(pf_e, pf_rm);
@@ -221,7 +210,7 @@ void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz,
 
   // this converts the previous generated matrix to block matrix.
   auto input_mat =
-      MatrixConverter<mtx_format>::from_blockcrs_formated_point_crsmatrix(
+      MatrixConverter::from_blockcrs_formatted_point_crsmatrix(
           crsmat2, block_size);
 
   lno_t nv = ((crsmat2.numRows() + block_size - 1) / block_size) * block_size;
@@ -270,9 +259,9 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz,
                                    lno_t bandwidth, lno_t row_size_variance) {
   using namespace Test;
   srand(245);
-  typedef
-      typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>
-          crsMat_t;
+  using crsMat_t =
+      typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>;
+  using MatrixConverter = KokkosSparse::Impl::MatrixConverter<mtx_format>;
 
   typedef typename device::execution_space exec_space;
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
@@ -301,14 +290,14 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz,
   // this makes consecutive 5 rows to have same columns.
   // it will add scalar 0's for those entries that does not exists.
   // the result is still a point crs matrix.
-  KokkosSparse::Impl::kk_create_blockcrs_formated_point_crsmatrix(
+  KokkosSparse::Impl::kk_create_blockcrs_formatted_point_crsmatrix(
       block_size, crsmat.numRows(), crsmat.numCols(), crsmat.graph.row_map,
       crsmat.graph.entries, crsmat.values, out_r, out_c, pf_rm, pf_e, pf_v);
   graph_t static_graph2(pf_e, pf_rm);
   crsMat_t crsmat2("CrsMatrix2", out_c, pf_v, static_graph2);
 
   auto input_mat =
-      MatrixConverter<mtx_format>::from_blockcrs_formated_point_crsmatrix(
+      MatrixConverter::from_blockcrs_formatted_point_crsmatrix(
           crsmat2, block_size);
 
   lno_t nv = ((crsmat2.numRows() + block_size - 1) / block_size) * block_size;
@@ -385,10 +374,9 @@ void test_block_gauss_seidel_empty() {
   typedef typename graph_t::row_map_type::non_const_type row_map_type;
   typedef typename graph_t::entries_type::non_const_type entries_type;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
-  typedef KokkosKernelsHandle<
+  using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<
       size_type, lno_t, scalar_t, typename device::execution_space,
-      typename device::memory_space, typename device::memory_space>
-      KernelHandle;
+      typename device::memory_space, typename device::memory_space>;
   // The rowmap of a zero-row matrix can be length 0 or 1, so Gauss-Seidel
   // should work with both (the setup and apply are essentially no-ops but they
   // shouldn't crash or throw exceptions) For this test, create size-0 and
@@ -396,7 +384,7 @@ void test_block_gauss_seidel_empty() {
   // which can trigger different bugs.
   for (const int rowmapLen : {0, 1, 5}) {
     KernelHandle kh;
-    kh.create_gs_handle(GS_DEFAULT);
+    kh.create_gs_handle(KokkosSparse::GS_DEFAULT);
     const auto num_rows    = KOKKOSKERNELS_MACRO_MAX(0, rowmapLen - 1);
     const lno_t block_size = 1;  // irrelevant (no values here)
     // initialized to 0
@@ -404,14 +392,14 @@ void test_block_gauss_seidel_empty() {
     entries_type entries("Entries", 0);
     scalar_view_t values("Values", 0);
     // also, make sure graph symmetrization doesn't crash on zero rows
-    block_gauss_seidel_symbolic(&kh, num_rows, num_rows, block_size, rowmap,
+    KSExp::block_gauss_seidel_symbolic(&kh, num_rows, num_rows, block_size, rowmap,
                                 entries, false);
-    block_gauss_seidel_numeric<mtx_format>(&kh, num_rows, num_rows, block_size,
+    KSExp::block_gauss_seidel_numeric<mtx_format>(&kh, num_rows, num_rows, block_size,
                                            rowmap, entries, values, false);
     scalar_view_t x("X", num_rows);
     scalar_view_t y("Y", num_rows);
     scalar_t omega(0.9);
-    symmetric_block_gauss_seidel_apply<mtx_format>(
+    KSExp::symmetric_block_gauss_seidel_apply<mtx_format>(
         &kh, num_rows, num_rows, block_size, rowmap, entries, values, x, y,
         false, true, omega, 3);
     kh.destroy_gs_handle();

@@ -72,7 +72,7 @@ namespace Impl {
 template <typename in_row_view_t, typename in_nnz_view_t,
           typename in_val_view_t, typename out_row_view_t,
           typename out_nnz_view_t, typename out_val_view_t>
-void kk_create_blockcrs_formated_point_crsmatrix(
+void kk_create_blockcrs_formatted_point_crsmatrix(
     int block_size, size_t num_rows, size_t num_cols, in_row_view_t in_xadj,
     in_nnz_view_t in_adj, in_val_view_t in_vals,
 
@@ -1958,7 +1958,7 @@ struct MatrixConverter<BlockCRS> {
           KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>,
       typename blockCrsMat_t = KokkosSparse::Experimental::BlockCrsMatrix<
           scalar_t, lno_t, device, void, size_type>>
-  static blockCrsMat_t from_blockcrs_formated_point_crsmatrix(
+  static blockCrsMat_t from_blockcrs_formatted_point_crsmatrix(
       const KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>
           &mtx,
       lno_t block_size) {
@@ -1972,7 +1972,7 @@ struct MatrixConverter<BSR> {
             typename device,
             typename bsrMtx_t = KokkosSparse::Experimental::BsrMatrix<
                 scalar_t, lno_t, device, void, size_type>>
-  static bsrMtx_t from_blockcrs_formated_point_crsmatrix(
+  static bsrMtx_t from_blockcrs_formatted_point_crsmatrix(
       const KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>
           &mtx,
       lno_t block_size) {
