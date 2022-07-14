@@ -381,7 +381,7 @@ int main(int argc, char **argv) {
   int cmdline[CMD_COUNT];
   char *mtx_bin_file = NULL;
   int block_size     = 5;
-  struct Kokkos::InitializationSettings kargs;
+  Kokkos::InitializationSettings kargs;
 
   for (int i = 0; i < CMD_COUNT; ++i) cmdline[i] = 0;
 
