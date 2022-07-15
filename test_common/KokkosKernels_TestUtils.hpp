@@ -626,5 +626,32 @@ class RandCscMat {
   ColMapViewTypeD get_col_map() { return __getter_copy_helper(__col_map_d); }
 };
 
+/// \brief Randomly shuffle the entries in each row (col) of a Crs (Ccs) matrix.
+template <typename Rowptrs, typename Entries, typename Values>
+void shuffleMatrixEntries(Rowptrs rowptrs, Entries entries, Values values) {
+  using size_type    = typename Rowptrs::non_const_value_type;
+  using ordinal_type = typename Entries::value_type;
+  auto rowptrsHost =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), rowptrs);
+  auto entriesHost =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), entries);
+  auto valuesHost =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), values);
+  ordinal_type numRows =
+      rowptrsHost.extent(0) ? (rowptrsHost.extent(0) - 1) : 0;
+  for (ordinal_type i = 0; i < numRows; i++) {
+    size_type rowBegin = rowptrsHost(i);
+    size_type rowEnd   = rowptrsHost(i + 1);
+    for (size_type j = rowBegin; j < rowEnd - 1; j++) {
+      ordinal_type swapRange = rowEnd - j;
+      size_type swapOffset   = j + (rand() % swapRange);
+      std::swap(entriesHost(j), entriesHost(swapOffset));
+      std::swap(valuesHost(j), valuesHost(swapOffset));
+    }
+  }
+  Kokkos::deep_copy(entries, entriesHost);
+  Kokkos::deep_copy(values, valuesHost);
+}
+
 }  // namespace Test
 #endif
