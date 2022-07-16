@@ -123,8 +123,7 @@ class SerialGEMVTest {
                         ViewTypeY y) {
     ScalarType a = 3;
     ScalarType b = 5;
-    double eps   = (std::is_same<ScalarY, float>::value ||
-                  std::is_same<ScalarY, Kokkos::complex<float>>::value)
+    double eps   = (std::is_same<ScalarY, float>::value || std::is_same<ScalarY, Kokkos::complex<float>>::value)
                      ? 2 * 1e-5
                      : 1e-7;
 
@@ -140,39 +139,30 @@ class SerialGEMVTest {
                                                               y.extent(0));
     Kokkos::deep_copy(org_y, y);
 
-    ScalarY expected_result = get_expected_result(trans, a, A, x, b, y);
+    Kokkos::View<ScalarY *, Device> ref_y("Y_reference", y.extent(0));
+    Kokkos::deep_copy(ref_y, y);
+    get_expected_result(trans, a, A, x, b, ref_y);
 
     // 1. check non-consts
     Kokkos::deep_copy(y, org_y);
-
     KokkosBlas::Experimental::gemv(trans, a, A, x, b, y);
-
-    ScalarY nonconst_nonconst_result = KokkosBlas::dot(y, y);
-    EXPECT_NEAR_KK(nonconst_nonconst_result, expected_result,
-                   eps * expected_result);
+    EXPECT_NEAR_KK_REL_1DVIEW(y, ref_y, eps);
 
     // 2. check const x
     Kokkos::deep_copy(y, org_y);
     typename ViewTypeX::const_type c_x = x;
-
     KokkosBlas::Experimental::gemv(trans, a, A, c_x, b, y);
-
-    ScalarY const_nonconst_result = KokkosBlas::dot(y, y);
-    EXPECT_NEAR_KK(const_nonconst_result, expected_result,
-                   eps * expected_result);
+    EXPECT_NEAR_KK_REL_1DVIEW(y, ref_y, eps);
 
     // 3. check const A and x
     Kokkos::deep_copy(y, org_y);
     typename ViewTypeA::const_type c_A = A;
-
     KokkosBlas::Experimental::gemv(trans, a, c_A, c_x, b, y);
-
-    ScalarY const_const_result = KokkosBlas::dot(y, y);
-    EXPECT_NEAR_KK(const_const_result, expected_result, eps * expected_result);
+    EXPECT_NEAR_KK_REL_1DVIEW(y, ref_y, eps);
   }
 
   template <class ViewTypeA, class ViewTypeX, class ViewTypeY>
-  static ScalarY get_expected_result(const char trans, ScalarType a,
+  static void get_expected_result(const char trans, ScalarType a,
                                      ViewTypeA A, ViewTypeX x, ScalarType b,
                                      ViewTypeY y) {
     auto h_A = Kokkos::create_mirror_view(A);
@@ -184,7 +174,7 @@ class SerialGEMVTest {
 
     vanillaGEMV(trans, a, h_A, h_x, b, h_y);
 
-    return KokkosBlas::dot(h_y, h_y);
+    Kokkos::deep_copy(y, h_y);
   }
 };
 
