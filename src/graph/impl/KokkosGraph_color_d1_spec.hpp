@@ -64,21 +64,21 @@ struct color_d1_eti_spec_avail {
 }  // namespace Impl
 }  // namespace KokkosGraph
 
-#define KOKKOSGRAPH_COLOR_D1_ETI_SPEC_AVAIL(SCALAR_TYPE, ORDINAL_TYPE,       \
-                                            OFFSET_TYPE, LAYOUT_TYPE,        \
-                                            EXEC_SPACE_TYPE, MEM_SPACE_TYPE) \
-  template <>                                                                \
-  struct color_d1_eti_spec_avail<                                            \
-      KokkosKernels::Experimental::KokkosKernelsHandle<                      \
-          const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,          \
-          EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
-      Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,                         \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,          \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                 \
-      Kokkos::View<const ORDINAL_TYPE *, LAYOUT_TYPE,                        \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,          \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {               \
-    enum : bool { value = true };                                            \
+#define KOKKOSGRAPH_COLOR_D1_ETI_SPEC_AVAIL(                              \
+    SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, \
+    MEM_SPACE_TYPE, SLOW_MEM_SPACE_TYPE)                                  \
+  template <>                                                             \
+  struct color_d1_eti_spec_avail<                                         \
+      KokkosKernels::Experimental::KokkosKernelsHandle<                   \
+          const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,       \
+          EXEC_SPACE_TYPE, MEM_SPACE_TYPE, SLOW_MEM_SPACE_TYPE>,          \
+      Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,                      \
+                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,              \
+      Kokkos::View<const ORDINAL_TYPE *, LAYOUT_TYPE,                     \
+                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {            \
+    enum : bool { value = true };                                         \
   };
 
 // Include the actual specialization declarations
@@ -118,34 +118,34 @@ struct COLOR_D1<KernelHandle, size_view_t, lno_view_t, false,
 }  // namespace Impl
 }  // namespace KokkosGraph
 
-#define KOKKOSGRAPH_COLOR_D1_ETI_SPEC_DECL(SCALAR_TYPE, ORDINAL_TYPE,       \
-                                           OFFSET_TYPE, LAYOUT_TYPE,        \
-                                           EXEC_SPACE_TYPE, MEM_SPACE_TYPE) \
-  extern template struct COLOR_D1<                                          \
-      typename KokkosKernels::Experimental::KokkosKernelsHandle<            \
-          const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,         \
-          EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE>,                 \
-      Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,                        \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,         \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                \
-      Kokkos::View<const ORDINAL_TYPE *, LAYOUT_TYPE,                       \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,         \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                \
+#define KOKKOSGRAPH_COLOR_D1_ETI_SPEC_DECL(                               \
+    SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, \
+    MEM_SPACE_TYPE, SLOW_MEM_SPACE_TYPE)                                  \
+  extern template struct COLOR_D1<                                        \
+      typename KokkosKernels::Experimental::KokkosKernelsHandle<          \
+          const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,       \
+          EXEC_SPACE_TYPE, MEM_SPACE_TYPE, SLOW_MEM_SPACE_TYPE>,          \
+      Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,                      \
+                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,              \
+      Kokkos::View<const ORDINAL_TYPE *, LAYOUT_TYPE,                     \
+                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,              \
       false, true>;
 
-#define KOKKOSGRAPH_COLOR_D1_ETI_SPEC_INST(SCALAR_TYPE, ORDINAL_TYPE,       \
-                                           OFFSET_TYPE, LAYOUT_TYPE,        \
-                                           EXEC_SPACE_TYPE, MEM_SPACE_TYPE) \
-  template struct COLOR_D1<                                                 \
-      KokkosKernels::Experimental::KokkosKernelsHandle<                     \
-          const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,         \
-          EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE>,                 \
-      Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,                        \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,         \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                \
-      Kokkos::View<const ORDINAL_TYPE *, LAYOUT_TYPE,                       \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,         \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                \
+#define KOKKOSGRAPH_COLOR_D1_ETI_SPEC_INST(                               \
+    SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, \
+    MEM_SPACE_TYPE, SLOW_MEM_SPACE_TYPE)                                  \
+  template struct COLOR_D1<                                               \
+      KokkosKernels::Experimental::KokkosKernelsHandle<                   \
+          const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,       \
+          EXEC_SPACE_TYPE, MEM_SPACE_TYPE, SLOW_MEM_SPACE_TYPE>,          \
+      Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,                      \
+                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,              \
+      Kokkos::View<const ORDINAL_TYPE *, LAYOUT_TYPE,                     \
+                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,              \
       false, true>;
 
 #include <generated_specializations_hpp/KokkosGraph_color_d1_eti_spec_decl.hpp>
