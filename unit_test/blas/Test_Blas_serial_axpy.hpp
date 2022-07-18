@@ -92,8 +92,9 @@ struct Functor_TestBlasSerialAxpy {
     std::string name_work_tag =
         (std::is_same<AlgoTagType, KokkosKernelAxpyTag>::value
              ? "::KokkosBlas"
-             : std::is_same<AlgoTagType, NaiveAxpyTag>::value ? "::Naive"
-                                                          : "::UnknownWorkTag");
+             : std::is_same<AlgoTagType, NaiveAxpyTag>::value
+                   ? "::Naive"
+                   : "::UnknownWorkTag");
     std::string name_test_id = "Axpy";
     std::string name =
         name_region + name_value_type + name_work_tag + name_test_id;
@@ -128,8 +129,8 @@ void impl_test_blas_serial_axpy(const int N, const int BlkSize) {
   Functor_TestBlasSerialAxpy<DeviceType, ViewType, ScalarType, NaiveAxpyTag>(
       alpha, X, Yref)
       .run();
-  Functor_TestBlasSerialAxpy<DeviceType, ViewType, ScalarType, KokkosKernelAxpyTag>(
-      alpha, X, Y)
+  Functor_TestBlasSerialAxpy<DeviceType, ViewType, ScalarType,
+                             KokkosKernelAxpyTag>(alpha, X, Y)
       .run();
 
   Kokkos::fence();
