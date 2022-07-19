@@ -25,6 +25,8 @@
 
 // Serial Blas 1
 #include "Test_Blas1_serial_setscal.hpp"
+#include "Test_Blas_serial_axpy.hpp"
+#include "Test_Blas_serial_nrm2.hpp"
 
 // Team Blas 1
 #include "Test_Blas1_team_setscal.hpp"
