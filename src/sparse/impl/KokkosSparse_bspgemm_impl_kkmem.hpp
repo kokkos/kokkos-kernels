@@ -99,11 +99,10 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
   const nnz_lno_t max_nnz;
   const nnz_lno_t pow2_hash_func;
   const KokkosKernels::Impl::ExecSpaceType my_exec_space;
-  const nnz_lno_t team_work_size;
 
   const int unit_memory;  // begins, nexts, and keys. No need for vals yet.
-  const int suggested_team_size;
-  const int thread_memory;
+  int team_size;
+  int thread_memory;
   nnz_lno_t thread_shmem_key_size;
   nnz_lno_t thread_shared_memory_hash_func;
   nnz_lno_t thread_shmem_hash_size;
@@ -125,10 +124,9 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
 
       c_row_view_t rowmapC_, c_nnz_view_t entriesC_, c_scalar_view_t valuesC_,
       size_t shared_memory_size_, int vector_size_, pool_memory_type mpool_,
-      nnz_lno_t min_hash_size, nnz_lno_t max_nnz_, int suggested_team_size_,
+      nnz_lno_t min_hash_size, nnz_lno_t max_nnz_, int team_size_,
       const KokkosKernels::Impl::ExecSpaceType my_exec_space_,
-      nnz_lno_t team_row_chunk_size, double first_level_cut_off,
-      row_lno_persistent_work_view_t flops_per_row_,
+      double first_level_cut_off, row_lno_persistent_work_view_t flops_per_row_,
       bool KOKKOSKERNELS_VERBOSE_)
       : numrows(m_),
         block_dim(block_dim_),
@@ -155,11 +153,9 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
         max_nnz(max_nnz_),
         pow2_hash_func(min_hash_size - 1),
         my_exec_space(my_exec_space_),
-        team_work_size(team_row_chunk_size),
-
         unit_memory(sizeof(nnz_lno_t) * 2 + sizeof(nnz_lno_t) + block_bytes),
-        suggested_team_size(suggested_team_size_),
-        thread_memory((shared_memory_size / 8 / suggested_team_size_) * 8),
+        team_size(team_size_),
+        thread_memory((shared_memory_size / 8 / team_size_) * 8),
         thread_shmem_key_size(),
         thread_shared_memory_hash_func(),
         thread_shmem_hash_size(1),
@@ -189,8 +185,7 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
       std::cout << "\t\tPortableNumericCHASH -- sizeof(scalar_t): "
                 << sizeof(scalar_t)
                 << "  sizeof(nnz_lno_t): " << sizeof(nnz_lno_t)
-                << "  suggested_team_size: " << suggested_team_size
-                << std::endl;
+                << "  team_size: " << team_size << std::endl;
       std::cout << "\t\tPortableNumericCHASH -- thread_memory:" << thread_memory
                 << " unit_memory:" << unit_memory
                 << " initial key size:" << thread_shmem_key_size << std::endl;
@@ -254,6 +249,11 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
     }
   }
 
+  void set_team_size(int team_size_) {
+    this->team_size     = team_size_;
+    this->thread_memory = (shared_memory_size / 8 / team_size_) * 8;
+  }
+
   KOKKOS_INLINE_FUNCTION
   size_t get_thread_id(const size_t row_index) const {
     switch (my_exec_space) {
@@ -282,9 +282,10 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
   KOKKOS_INLINE_FUNCTION
   void operator()(const MultiCoreTag4 &,
                   const team_member_t &teamMember) const {
-    const nnz_lno_t team_row_begin = teamMember.league_rank() * team_work_size;
-    const nnz_lno_t team_row_end =
-        KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_work_size, numrows);
+    const nnz_lno_t team_row_begin =
+        teamMember.league_rank() * teamMember.team_size();
+    const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(
+        team_row_begin + teamMember.team_size(), numrows);
 
     volatile nnz_lno_t *tmp = NULL;
     size_t tid = get_thread_id(team_row_begin + teamMember.team_rank());
@@ -338,9 +339,10 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
   // assumes that the vector lane is 1, as in cpus
   KOKKOS_INLINE_FUNCTION
   void operator()(const MultiCoreTag &, const team_member_t &teamMember) const {
-    const nnz_lno_t team_row_begin = teamMember.league_rank() * team_work_size;
-    const nnz_lno_t team_row_end =
-        KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_work_size, numrows);
+    const nnz_lno_t team_row_begin =
+        teamMember.league_rank() * teamMember.team_size();
+    const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(
+        team_row_begin + teamMember.team_size(), numrows);
 
     BlockAccumulator hm2(block_dim, pow2_hash_size, pow2_hash_func, nullptr,
                          nullptr, nullptr, nullptr);
@@ -402,9 +404,10 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const GPUTag &, const team_member_t &teamMember) const {
-    nnz_lno_t team_row_begin = teamMember.league_rank() * team_work_size;
-    const nnz_lno_t team_row_end =
-        KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_work_size, numrows);
+    nnz_lno_t team_row_begin =
+        teamMember.league_rank() * teamMember.team_size();
+    const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(
+        team_row_begin + teamMember.team_size(), numrows);
 
     // int thread_memory = (shared_memory_size / 8 / teamMember.team_size()) *
     // 8;
@@ -562,9 +565,10 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
   // one row does not fit into shmem, with thread-flat-parallel
   KOKKOS_INLINE_FUNCTION
   void operator()(const GPUTag6 &, const team_member_t &teamMember) const {
-    nnz_lno_t team_row_begin = teamMember.league_rank() * team_work_size;
-    const nnz_lno_t team_row_end =
-        KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_work_size, numrows);
+    nnz_lno_t team_row_begin =
+        teamMember.league_rank() * teamMember.team_size();
+    const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(
+        team_row_begin + teamMember.team_size(), numrows);
     char *all_shared_memory =
         (char *)(teamMember.team_shmem().get_shmem(shared_memory_size));
 
@@ -593,7 +597,7 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
           }
           update += 1;
         });
-    int bs           = vector_size * suggested_team_size;
+    int bs           = vector_size * team_size;
     int vector_shift = thread_rank * vector_size + vector_rank;
 
     for (nnz_lno_t row_index = team_row_begin; row_index < team_row_end;
@@ -891,9 +895,10 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
   KOKKOS_INLINE_FUNCTION
   void operator()(const GPUTag4 &, const team_member_t &teamMember) const {
     const nnz_lno_t init_value = -1;
-    nnz_lno_t team_row_begin   = teamMember.league_rank() * team_work_size;
-    const nnz_lno_t team_row_end =
-        KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_work_size, numrows);
+    nnz_lno_t team_row_begin =
+        teamMember.league_rank() * teamMember.team_size();
+    const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(
+        team_row_begin + teamMember.team_size(), numrows);
 
     // shmem == sizeof(nnz_lno_t)*2 + sizeof(nnz_lno_t)*team_cuckoo_key_size +
     // sizeof(scalar_t)*nvals
@@ -923,7 +928,7 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
           }
           update += 1;
         });
-    int bs           = vector_size * suggested_team_size;
+    int bs           = vector_size * team_size;
     int vector_shift = thread_rank * vector_size + vector_rank;
     for (nnz_lno_t row_index = team_row_begin; row_index < team_row_end;
          ++row_index) {
@@ -1432,8 +1437,6 @@ void KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
       }
     }
   }
-  nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(
-      suggested_team_size, this->concurrency, this->a_row_cnt);
   if (Base::KOKKOSKERNELS_VERBOSE) {
     std::cout << "\t\tPortableNumericCHASH -- adjusted hashsize:"
               << thread_shmem_hash_size
@@ -1495,7 +1498,7 @@ void KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
   // END SIZE CALCULATIONS FOR MEMORYPOOL
 
   if (this->KOKKOSKERNELS_VERBOSE) {
-    std::cout << "\t\t max_nnz: " << max_nnz << " chunk_size:" << chunksize
+    std::cout << "\t\t max_nnz: " << max_nnz
               << " min_hash_size:" << min_hash_size
               << " concurrency:" << this->concurrency
               << " MyExecSpace::concurrency():" << MyExecSpace::concurrency()
@@ -1532,12 +1535,11 @@ void KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
          suggested_vector_size, m_space, min_hash_size, max_nnz,
          suggested_team_size,
 
-         lcl_my_exec_space, team_row_chunk_size, first_level_cut_off,
-         flops_per_row, this->KOKKOSKERNELS_VERBOSE);
+         lcl_my_exec_space, first_level_cut_off, flops_per_row,
+         this->KOKKOSKERNELS_VERBOSE);
 
   if (this->KOKKOSKERNELS_VERBOSE) {
     std::cout << "\t\tvector_size:" << suggested_vector_size
-              << " chunk_size:" << team_row_chunk_size
               << " suggested_team_size:" << suggested_team_size << std::endl;
   }
   timer1.reset();
@@ -1555,10 +1557,14 @@ void KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
             " KokkosBSPGEMM_numeric_hash SPGEMM_KK_MEMORY_SPREADTEAM: "
             "Insufficient shmem available for key for hash map accumulator ");
       }
+      int max_team_size = gpu_team_policy4_t(1, 1, suggested_vector_size)
+                              .team_size_max(sc, Kokkos::ParallelForTag());
+      int team_size = std::min(suggested_team_size, max_team_size);
+      sc.set_team_size(team_size);
       Kokkos::parallel_for(
           "KOKKOSPARSE::SPGEMM::SPGEMM_KK_MEMORY_SPREADTEAM",
-          gpu_team_policy4_t(this->a_row_cnt / team_row_chunk_size + 1,
-                             suggested_team_size, suggested_vector_size),
+          gpu_team_policy4_t((this->a_row_cnt + team_size - 1) / team_size,
+                             team_size, suggested_vector_size),
           sc);
       MyExecSpace().fence();
 
@@ -1574,10 +1580,14 @@ void KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
             " KokkosBSPGEMM_numeric_hash SPGEMM_KK_MEMORY_BIGSPREADTEAM: "
             "Insufficient shmem available for key for hash map accumulator ");
       }
+      int max_team_size = gpu_team_policy6_t(1, 1, suggested_vector_size)
+                              .team_size_max(sc, Kokkos::ParallelForTag());
+      int team_size = std::min(suggested_team_size, max_team_size);
+      sc.set_team_size(team_size);
       Kokkos::parallel_for(
           "KOKKOSPARSE::SPGEMM::SPGEMM_KK_MEMORY_BIGSPREADTEAM",
-          gpu_team_policy6_t(this->a_row_cnt / team_row_chunk_size + 1,
-                             suggested_team_size, suggested_vector_size),
+          gpu_team_policy6_t((this->a_row_cnt + team_size - 1) / team_size,
+                             team_size, suggested_vector_size),
           sc);
     } else {
       if (team_shmem_key_size <= 0) {
@@ -1591,10 +1601,14 @@ void KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
             " KokkosBSPGEMM_numeric_hash SPGEMM_KK_MEMORY: Insufficient shmem "
             "available for key for hash map accumulator ");
       }
+      int max_team_size = gpu_team_policy_t(1, 1, suggested_vector_size)
+                              .team_size_max(sc, Kokkos::ParallelForTag());
+      int team_size = std::min(suggested_team_size, max_team_size);
+      sc.set_team_size(team_size);
       Kokkos::parallel_for(
           "KOKKOSPARSE::SPGEMM::SPGEMM_KK_MEMORY",
-          gpu_team_policy_t(this->a_row_cnt / team_row_chunk_size + 1,
-                            suggested_team_size, suggested_vector_size),
+          gpu_team_policy_t((this->a_row_cnt + team_size - 1) / team_size,
+                            team_size, suggested_vector_size),
           sc);
     }
     MyExecSpace().fence();
@@ -1603,13 +1617,15 @@ void KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
       if (Base::use_dynamic_schedule) {
         Kokkos::parallel_for("KOKKOSPARSE::SPGEMM::SPGEMM_KK_LP::DYNAMIC",
                              dynamic_multicore_team_policy4_t(
-                                 this->a_row_cnt / team_row_chunk_size + 1,
+                                 (this->a_row_cnt + suggested_team_size - 1) /
+                                     suggested_team_size,
                                  suggested_team_size, suggested_vector_size),
                              sc);
       } else {
         Kokkos::parallel_for("KOKKOSPARSE::SPGEMM::SPGEMM_KK_LP::STATIC",
                              multicore_team_policy4_t(
-                                 this->a_row_cnt / team_row_chunk_size + 1,
+                                 (this->a_row_cnt + suggested_team_size - 1) /
+                                     suggested_team_size,
                                  suggested_team_size, suggested_vector_size),
                              sc);
       }
@@ -1617,15 +1633,17 @@ void KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
       if (Base::use_dynamic_schedule) {
         Kokkos::parallel_for("KOKKOSPARSE::SPGEMM::KKMEM::DYNAMIC",
                              dynamic_multicore_team_policy_t(
-                                 this->a_row_cnt / team_row_chunk_size + 1,
+                                 (this->a_row_cnt + suggested_team_size - 1) /
+                                     suggested_team_size,
                                  suggested_team_size, suggested_vector_size),
                              sc);
       } else {
-        Kokkos::parallel_for(
-            "KOKKOSPARSE::SPGEMM::KKMEM::STATIC",
-            multicore_team_policy_t(this->a_row_cnt / team_row_chunk_size + 1,
-                                    suggested_team_size, suggested_vector_size),
-            sc);
+        Kokkos::parallel_for("KOKKOSPARSE::SPGEMM::KKMEM::STATIC",
+                             multicore_team_policy_t(
+                                 (this->a_row_cnt + suggested_team_size - 1) /
+                                     suggested_team_size,
+                                 suggested_team_size, suggested_vector_size),
+                             sc);
       }
     }
     MyExecSpace().fence();
