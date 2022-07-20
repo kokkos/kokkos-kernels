@@ -129,7 +129,7 @@ int trtri(const char uplo[], const char diag[], const AViewType& A) {
 
   // This is the return value type and should always reside on host
   using RViewInternalType =
-      Kokkos::View<int, Kokkos::HostSpace,
+      Kokkos::View<int, Kokkos::LayoutRight, Kokkos::HostSpace,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
   int result;
