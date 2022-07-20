@@ -64,9 +64,7 @@ void KOKKOS_INLINE_FUNCTION gemv(const char trans, const ScalarType& alpha,
     using mode = KokkosBlas::Trans::Transpose;
     KokkosBlas::SerialGemv<mode, AlgoTag>::invoke(alpha, A, x, beta, y);
   } else {  // NOT supported: Conjugate, ConjTranspose
-    std::ostringstream os;
-    os << "Matrix mode not supported: " << trans << std::endl;
-    KokkosKernels::Impl::throw_runtime_exception(os.str());
+    Kokkos::abort("Matrix mode not supported");
   }
 }
 

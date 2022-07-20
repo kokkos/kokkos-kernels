@@ -141,12 +141,12 @@ void EXPECT_NEAR_KK(Scalar1 val1, Scalar2 val2, Scalar3 tol,
 
 template <class Scalar1, class Scalar2, class Scalar3>
 void EXPECT_NEAR_KK_REL(Scalar1 val1, Scalar2 val2, Scalar3 tol,
-                    std::string msg = "") {
+                        std::string msg = "") {
   typedef Kokkos::Details::ArithTraits<Scalar1> AT1;
   typedef Kokkos::Details::ArithTraits<Scalar2> AT2;
   typedef Kokkos::Details::ArithTraits<Scalar3> AT3;
   const auto tolerance = (double)AT3::abs(tol);
-  const auto diff = (double)AT1::abs(val1 - val2);
+  const auto diff      = (double)AT1::abs(val1 - val2);
   const auto val = KOKKOSKERNELS_MACRO_MAX(AT1::abs(val1), AT2::abs(val2));
   if (val < tolerance) {
     // if both values are near-zero, they pass as equal
@@ -357,16 +357,22 @@ void vanillaGEMM(typename ViewTypeC::non_const_value_type alpha,
 }
 
 template <class ViewTypeA, class ViewTypeX, class ViewTypeY>
-void vanillaGEMV(char mode, typename ViewTypeA::non_const_value_type alpha,
-                 const ViewTypeA& A, const ViewTypeX& x,
-                 typename ViewTypeY::non_const_value_type beta,
-                 const ViewTypeY& y) {
+KOKKOS_INLINE_FUNCTION void vanillaGEMV(
+    char mode, typename ViewTypeA::non_const_value_type alpha,
+    const ViewTypeA& A, const ViewTypeX& x,
+    typename ViewTypeY::non_const_value_type beta, const ViewTypeY& y) {
   using ScalarY = typename ViewTypeY::non_const_value_type;
   using KAT_A   = Kokkos::ArithTraits<typename ViewTypeA::non_const_value_type>;
   using KAT_Y   = Kokkos::ArithTraits<ScalarY>;
   int M         = A.extent(0);
   int N         = A.extent(1);
-  if (beta == KAT_Y::zero()) Kokkos::deep_copy(y, KAT_Y::zero());
+  const bool transposed = mode == 'T' || mode == 'H';
+  if (beta == KAT_Y::zero()) {
+    const int i1 = transposed ? N : M;
+    for (int i = 0; i < i1; i++) {  // no deep_copy on device
+      y(i) = KAT_Y::zero();
+    }
+  }
   if (mode == 'N') {
     for (int i = 0; i < M; i++) {
       ScalarY y_i = beta * y(i);

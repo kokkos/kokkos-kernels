@@ -1,9 +1,3 @@
-// Note: Luc Berger-Vergiat 04/14/21
-//       This tests uses KOKKOS_LAMBDA so we need
-//       to make sure that these are enabled in
-//       the CUDA backend before including this test.
-#if !defined(TEST_CUDA_BLAS_CPP) || defined(KOKKOS_ENABLE_CUDA_LAMBDA)
-
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
@@ -14,12 +8,58 @@
 
 namespace Test {
 
+template <class AType, class XType, class YType, class ScalarType>
+struct RefGEMVOp {
+  RefGEMVOp(char trans_, ScalarType alpha_, AType A_, XType x_,
+            ScalarType beta_, YType y_)
+      : trans(trans_), alpha(alpha_), beta(beta_), A(A_), x(x_), y(y_) {}
+
+  template <typename TeamMember>
+  KOKKOS_INLINE_FUNCTION void operator()(
+      const TeamMember & /* member */) const {
+    vanillaGEMV(trans, alpha, A, x, beta, y);
+  }
+
+ private:
+  // parameters
+  char trans;
+  ScalarType alpha;
+  ScalarType beta;
+  // data
+  AType A;
+  XType x;
+  YType y;
+};
+
+template <class AType, class XType, class YType, class ScalarType,
+          class AlgoTag>
+struct SerialGEMVOp {
+  SerialGEMVOp(char trans_, ScalarType alpha_, AType A_, XType x_,
+               ScalarType beta_, YType y_)
+      : trans(trans_), alpha(alpha_), beta(beta_), A(A_), x(x_), y(y_) {}
+
+  template <typename TeamMember>
+  KOKKOS_INLINE_FUNCTION void operator()(
+      const TeamMember & /* member */) const {
+    KokkosBlas::Experimental::gemv<AlgoTag>(trans, alpha, A, x, beta, y);
+  }
+
+ private:
+  // parameters
+  char trans;
+  ScalarType alpha;
+  ScalarType beta;
+  // data
+  AType A;
+  XType x;
+  YType y;
+};
+
 template <class ScalarA, class ScalarX, class ScalarY, class Device,
           class ScalarCoef = void>
 class SerialGEMVTest {
  private:
-  using random_pool_type =
-      Kokkos::Random_XorShift64_Pool<typename Device::execution_space>;
+  using char_type = decltype('x');
 
   // ScalarCoef==void default behavior is to derive alpha/beta scalar types
   // from A and X scalar types
@@ -28,51 +68,58 @@ class SerialGEMVTest {
       typename std::common_type<ScalarA, ScalarX>::type>::type;
 
  public:
-  static void run(const char *mode) { run_layouts(mode); }
+  static void run(const char *mode) {
+    run_layouts<KokkosBlas::Algo::Gemv::Unblocked>(mode);
+    run_layouts<KokkosBlas::Algo::Gemv::Blocked>(mode);
+#ifdef __KOKKOSBLAS_ENABLE_INTEL_MKL_COMPACT__
+    // TODO: run_layouts<KokkosBlas::Algo::Gemv::CompactMKL>(mode);
+#endif
+  }
 
  private:
+  template <class AlgoTag>
   static void run_layouts(const char *mode) {
     // Note: all layouts listed here are subview'ed to test Kokkos::LayoutStride
 #ifdef KOKKOSKERNELS_TEST_LAYOUTLEFT
-    run_view_types<Kokkos::LayoutLeft>(mode);
+    run_view_types<AlgoTag, Kokkos::LayoutLeft>(mode);
 #endif
 #ifdef KOKKOSKERNELS_TEST_LAYOUTRIGHT
-    run_view_types<Kokkos::LayoutRight>(mode);
+    run_view_types<AlgoTag, Kokkos::LayoutRight>(mode);
 #endif
 #if defined(KOKKOSKERNELS_TEST_LAYOUTLEFT) && \
     defined(KOKKOSKERNELS_TEST_LAYOUTRIGHT)
     using A_t = typename Kokkos::View<ScalarA **, Kokkos::LayoutRight, Device>;
     using x_t = typename Kokkos::View<ScalarX *, Kokkos::LayoutLeft, Device>;
     using y_t = typename Kokkos::View<ScalarY *, Kokkos::LayoutRight, Device>;
-    run_sizes<A_t, x_t, y_t>(mode);
+    run_sizes<AlgoTag, A_t, x_t, y_t>(mode);
 #endif
   }
 
-  template <typename Layout>
+  template <class AlgoTag, class Layout>
   static void run_view_types(const char *mode) {
     typedef Kokkos::View<ScalarA **, Layout, Device> view_type_A;
     typedef Kokkos::View<ScalarX *, Layout, Device> view_type_x;
     typedef Kokkos::View<ScalarY *, Layout, Device> view_type_y;
-    run_sizes<view_type_A, view_type_x, view_type_y>(mode);
+    run_sizes<AlgoTag, view_type_A, view_type_x, view_type_y>(mode);
   }
 
-  template <class ViewAType, class ViewXType, class ViewYType>
+  template <class AlgoTag, class ViewAType, class ViewXType, class ViewYType>
   static void run_sizes(const char *mode) {
     // zero cases
-    run_size<ViewAType, ViewXType, ViewYType>(mode, 0, 0);
-    run_size<ViewAType, ViewXType, ViewYType>(mode, 0, 4);
-    run_size<ViewAType, ViewXType, ViewYType>(mode, 4, 0);
+    run_size<AlgoTag, ViewAType, ViewXType, ViewYType>(mode, 0, 0);
+    run_size<AlgoTag, ViewAType, ViewXType, ViewYType>(mode, 0, 4);
+    run_size<AlgoTag, ViewAType, ViewXType, ViewYType>(mode, 4, 0);
     // small block sizes
     for (int n = 1; n <= 16; ++n) {
-      run_size<ViewAType, ViewXType, ViewYType>(mode, n, n);
+      run_size<AlgoTag, ViewAType, ViewXType, ViewYType>(mode, n, n);
     }
     // other cases
-    run_size<ViewAType, ViewXType, ViewYType>(mode, 1024, 1);
-    run_size<ViewAType, ViewXType, ViewYType>(mode, 1024, 13);
-    run_size<ViewAType, ViewXType, ViewYType>(mode, 1024, 124);
+    run_size<AlgoTag, ViewAType, ViewXType, ViewYType>(mode, 1024, 1);
+    run_size<AlgoTag, ViewAType, ViewXType, ViewYType>(mode, 1024, 13);
+    run_size<AlgoTag, ViewAType, ViewXType, ViewYType>(mode, 1024, 124);
   }
 
-  template <class ViewTypeA, class ViewTypeX, class ViewTypeY>
+  template <class AlgoTag, class ViewTypeA, class ViewTypeX, class ViewTypeY>
   static void run_size(const char *mode, int N, int M) {
     using A_layout = typename ViewTypeA::array_layout;
     using x_layout = typename ViewTypeX::array_layout;
@@ -81,15 +128,15 @@ class SerialGEMVTest {
     static_assert(!std::is_same<x_layout, Kokkos::LayoutStride>::value, "");
     static_assert(!std::is_same<y_layout, Kokkos::LayoutStride>::value, "");
 
-    const char trans = mode[0];
-    const auto Nt    = trans == 'N' ? N : M;
-    const auto Mt    = trans == 'N' ? M : N;
+    const char_type trans = mode[0];
+    const auto Nt         = trans == (char)'N' ? N : M;
+    const auto Mt         = trans == (char)'N' ? M : N;
 
     // 1. run on regular (non-strided) views
     ViewTypeA A1("A1", Nt, Mt);
     ViewTypeX x1("X1", M);
     ViewTypeY y1("Y1", N);
-    run_views(trans, A1, x1, y1);
+    run_views<AlgoTag>(trans, A1, x1, y1);
 
     // 2. run on strided subviews (enforced by adding extra rank on both sides)
     // TODO: use multivector_layout_adapter from Kokkos_TestUtils.hpp ?
@@ -115,66 +162,76 @@ class SerialGEMVTest {
     static_assert(std::is_same<typename decltype(y)::array_layout,
                                Kokkos::LayoutStride>::value,
                   "");
-    run_views(trans, A, x, y);
+    run_views<AlgoTag>(trans, A, x, y);
   }
 
-  template <class ViewTypeA, class ViewTypeX, class ViewTypeY>
+  template <class AlgoTag, class ViewTypeA, class ViewTypeX, class ViewTypeY>
   static void run_views(const char trans, ViewTypeA A, ViewTypeX x,
                         ViewTypeY y) {
-    ScalarType a = 3;
-    ScalarType b = 5;
-    double eps   = (std::is_same<ScalarY, float>::value || std::is_same<ScalarY, Kokkos::complex<float>>::value)
-                     ? 2 * 1e-5
-                     : 1e-7;
+    Kokkos::TeamPolicy<Device> teams(1, 1);  // just run on device
+    fill_inputs(A, x, y);
+    ScalarType alpha = 3;  // TODO: test also with zero alpha/beta ?
+    ScalarType beta  = 5;
 
-    // fill in input views
-    random_pool_type rand_pool(13718);
-    Kokkos::fill_random(A, rand_pool, ScalarA(10));
-    Kokkos::fill_random(x, rand_pool, ScalarX(10));
-    Kokkos::fill_random(y, rand_pool, ScalarY(10));
-    Kokkos::fence();
-
-    // backup initial y values because it gets updated in calculation
-    Kokkos::View<ScalarY *, Kokkos::LayoutLeft, Device> org_y("Org_Y",
-                                                              y.extent(0));
-    Kokkos::deep_copy(org_y, y);
-
-    Kokkos::View<ScalarY *, Device> ref_y("Y_reference", y.extent(0));
-    Kokkos::deep_copy(ref_y, y);
-    get_expected_result(trans, a, A, x, b, ref_y);
+    // get reference results
+    Kokkos::View<ScalarY *, Device> y_ref("Y_ref", y.extent(0));
+    Kokkos::deep_copy(y_ref, y);
+    RefGEMVOp<ViewTypeA, ViewTypeX, ViewTypeY, ScalarType> gemv_ref(
+        trans, alpha, A, x, beta, y_ref);
+    Kokkos::parallel_for(teams, gemv_ref);
 
     // 1. check non-consts
-    Kokkos::deep_copy(y, org_y);
-    KokkosBlas::Experimental::gemv(trans, a, A, x, b, y);
-    EXPECT_NEAR_KK_REL_1DVIEW(y, ref_y, eps);
+    run_case<AlgoTag>(trans, alpha, A, x, beta, y, y_ref);
 
     // 2. check const x
-    Kokkos::deep_copy(y, org_y);
     typename ViewTypeX::const_type c_x = x;
-    KokkosBlas::Experimental::gemv(trans, a, A, c_x, b, y);
-    EXPECT_NEAR_KK_REL_1DVIEW(y, ref_y, eps);
+    run_case<AlgoTag>(trans, alpha, A, c_x, beta, y, y_ref);
 
     // 3. check const A and x
-    Kokkos::deep_copy(y, org_y);
     typename ViewTypeA::const_type c_A = A;
-    KokkosBlas::Experimental::gemv(trans, a, c_A, c_x, b, y);
-    EXPECT_NEAR_KK_REL_1DVIEW(y, ref_y, eps);
+    run_case<AlgoTag>(trans, alpha, c_A, c_x, beta, y, y_ref);
+  }
+
+  template <class AlgoTag, class ViewTypeA, class ViewTypeX, class ViewTypeY,
+            class ViewTypeYRef, class ScalarType>
+  static void run_case(const char trans, ScalarType alpha, ViewTypeA A,
+                       ViewTypeX x, ScalarType beta, ViewTypeY y,
+                       ViewTypeYRef y_ref) {
+    // run on original y view (not to alter the test)
+    // but backup it and restore, so it can be reused
+    Kokkos::View<ScalarY *, Device> y_backup("Y2", y.extent(0));
+    Kokkos::deep_copy(y_backup, y);
+
+    SerialGEMVOp<ViewTypeA, ViewTypeX, ViewTypeY, ScalarType, AlgoTag> gemv_op(
+        trans, alpha, A, x, beta, y);
+    Kokkos::parallel_for(Kokkos::TeamPolicy<Device>(1, 1), gemv_op);
+
+    const double eps = epsilon<ScalarY>();
+    EXPECT_NEAR_KK_REL_1DVIEW(y, y_ref, eps);
+    Kokkos::deep_copy(y, y_backup);
+  }
+
+  //----- utilities -----//
+
+  template <class Scalar>
+  static double epsilon() {
+    return (std::is_same<Scalar, float>::value ||
+            std::is_same<Scalar, Kokkos::complex<float>>::value)
+               ? 2 * 1e-5
+               : 1e-7;
   }
 
   template <class ViewTypeA, class ViewTypeX, class ViewTypeY>
-  static void get_expected_result(const char trans, ScalarType a,
-                                     ViewTypeA A, ViewTypeX x, ScalarType b,
-                                     ViewTypeY y) {
-    auto h_A = Kokkos::create_mirror_view(A);
-    auto h_x = Kokkos::create_mirror_view(x);
-    auto h_y = Kokkos::create_mirror_view(y);
-    Kokkos::deep_copy(h_A, A);
-    Kokkos::deep_copy(h_x, x);
-    Kokkos::deep_copy(h_y, y);
-
-    vanillaGEMV(trans, a, h_A, h_x, b, h_y);
-
-    Kokkos::deep_copy(y, h_y);
+  static void fill_inputs(ViewTypeA A, ViewTypeX x, ViewTypeY y) {
+    using A_scalar_type = typename ViewTypeA::non_const_value_type;
+    using x_scalar_type = typename ViewTypeX::non_const_value_type;
+    using y_scalar_type = typename ViewTypeY::non_const_value_type;
+    using exec_space    = typename Device::execution_space;
+    Kokkos::Random_XorShift64_Pool<exec_space> rand_pool(13718);
+    Kokkos::fill_random(A, rand_pool, A_scalar_type(10));
+    Kokkos::fill_random(x, rand_pool, x_scalar_type(10));
+    Kokkos::fill_random(y, rand_pool, y_scalar_type(10));
+    Kokkos::fence();
   }
 };
 
@@ -221,5 +278,3 @@ TEST_CASE4(mixed, double, int, float, void)
 // test arbitrary double alpha/beta with complex<double> values
 TEST_CASE2(alphabeta, Kokkos::complex<double>, double)
 #endif
-
-#endif  // Check for lambda availability on CUDA backend
