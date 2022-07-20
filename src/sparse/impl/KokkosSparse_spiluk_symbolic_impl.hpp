@@ -123,15 +123,15 @@ void level_sched(IlukHandle& thandle, const RowMapType row_map,
 
 // SEQLVLSCHD_TP1 algorithm (chunks)
 template <class IlukHandle, class RowMapType, class EntriesType,
-          class LevelType1, class LevelType2, class LevelType3, class size_type>
-void level_sched(IlukHandle& thandle, const RowMapType row_map,
-                 const EntriesType entries, LevelType1& level_list,
-                 LevelType2& level_ptr, LevelType2& level_idx,
-                 LevelType3& level_nchunks, LevelType3& level_nrowsperchunk,
-                 size_type& nlevels) {
+          class LevelType1, class LevelType2, class size_type>
+void level_sched_tp(IlukHandle& thandle, const RowMapType row_map,
+                    const EntriesType entries, LevelType1& level_list,
+                    LevelType2& level_ptr, LevelType2& level_idx,
+                    size_type& nlevels) {
   // Scheduling currently compute on host
 
   using nnz_lno_t = typename IlukHandle::nnz_lno_t;
+  using nnz_lno_view_host_t = typename IlukHandle::nnz_lno_view_host_t;
 
   size_type nrows = thandle.get_nrows();
 
@@ -170,11 +170,10 @@ void level_sched(IlukHandle& thandle, const RowMapType row_map,
   level_ptr(0) = 0;
 
   // Find max rows, number of chunks, max rows of chunks across levels
-  using HostViewType =
-      Kokkos::View<nnz_lno_t*, Kokkos::LayoutLeft, Kokkos::HostSpace>;
-
-  HostViewType lnchunks("lnchunks", nlevels);
-  HostViewType lnrowsperchunk("lnrowsperchunk", nlevels);
+  thandle.alloc_level_nchunks(nlevels);
+  thandle.alloc_level_nrowsperchunk(nlevels);
+  nnz_lno_view_host_t lnchunks = thandle.get_level_nchunks();
+  nnz_lno_view_host_t lnrowsperchunk= thandle.get_level_nrowsperchunk();
 
 #ifdef KOKKOS_ENABLE_CUDA
   using memory_space = typename IlukHandle::memory_space;
@@ -222,8 +221,7 @@ void level_sched(IlukHandle& thandle, const RowMapType row_map,
   thandle.set_level_maxrows(maxrows);
   thandle.set_level_maxrowsperchunk(maxrowsperchunk);
 
-  level_nchunks       = lnchunks; printf("nlevels %d, maxrows %d, maxrowsperchunk %d\n", nlevels, maxrows, maxrowsperchunk);
-  level_nrowsperchunk = lnrowsperchunk;
+  printf("nlevels %d, maxrows %d, maxrowsperchunk %d\n", nlevels, maxrows, maxrowsperchunk);
 }
 
 template <class IlukHandle, class LRowMapType, class LEntriesType,
@@ -619,23 +617,17 @@ void iluk_symbolic(IlukHandle& thandle,
     } else if (thandle.get_algorithm() ==
                KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1) {
       printf ("LEVEL SCHED on L\n");
-      level_sched(thandle, L_row_map, L_entries, level_list, level_ptr,
-                  level_idx, level_nchunks, level_nrowsperchunk, nlev);//ORIG
+      level_sched_tp(thandle, L_row_map, L_entries, level_list, level_ptr,
+                     level_idx, nlev);//ORIG
       //Level scheduling on A???
       //printf ("LEVEL SCHED on A\n");
       //level_sched (thandle, A_row_map, A_entries, level_list, level_ptr,
-      //            level_idx, level_nchunks, level_nrowsperchunk, nlev);
-
-      thandle.alloc_level_nchunks(nlev);
-      thandle.alloc_level_nrowsperchunk(nlev);
-      HandleDeviceEntriesType dlevel_nchunks = thandle.get_level_nchunks();
-      HandleDeviceEntriesType dlevel_nrowsperchunk =
-          thandle.get_level_nrowsperchunk();
-      Kokkos::deep_copy(dlevel_nchunks, level_nchunks);
-      Kokkos::deep_copy(dlevel_nrowsperchunk, level_nrowsperchunk);
+      //            level_idx, nlev);
+      thandle.alloc_iw(thandle.get_level_maxrowsperchunk(),nrows);
     } else {
       level_sched(thandle, L_row_map, L_entries, level_list, level_ptr,
                   level_idx, nlev);
+      thandle.alloc_iw(thandle.get_level_maxrows(),nrows);
     }
 
     Kokkos::deep_copy(dlevel_ptr, level_ptr);

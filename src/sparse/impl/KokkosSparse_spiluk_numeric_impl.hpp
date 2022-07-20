@@ -52,6 +52,8 @@
 #include <Kokkos_ArithTraits.hpp>
 #include <KokkosSparse_spiluk_handle.hpp>
 
+#include <sys/time.h>
+
 //#define NUMERIC_OUTPUT_INFO
 //#define NUMERIC_USE_FOR
 
@@ -689,21 +691,18 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
   using size_type               = typename IlukHandle::size_type;
   using nnz_lno_t               = typename IlukHandle::nnz_lno_t;
   using HandleDeviceEntriesType = typename IlukHandle::nnz_lno_view_t;
-  //using WorkViewType =
-  //    Kokkos::View<nnz_lno_t **, Kokkos::Device<execution_space, memory_space>>;
-  using WorkViewType =
-      Kokkos::View<nnz_lno_t **, Kokkos::LayoutRight, Kokkos::Device<execution_space, memory_space>>;
-  using LevelHostViewType = Kokkos::View<nnz_lno_t *, Kokkos::HostSpace>;
-
+  using WorkViewType            = typename IlukHandle::work_view_t;
+  using LevelHostViewType       = typename IlukHandle::nnz_lno_view_host_t;
+    
+  struct timeval begin, end;//VINH TEST
+  gettimeofday( &begin, NULL );
+	
   size_type nlevels = thandle.get_num_levels();
   size_type nrows   = thandle.get_nrows();
 
   // Keep these as host View, create device version and copy back to host
   HandleDeviceEntriesType level_ptr     = thandle.get_level_ptr();
   HandleDeviceEntriesType level_idx     = thandle.get_level_idx();
-  HandleDeviceEntriesType level_nchunks = thandle.get_level_nchunks();
-  HandleDeviceEntriesType level_nrowsperchunk =
-      thandle.get_level_nrowsperchunk();
 
   // Make level_ptr_h a separate allocation, since it will be accessed on host
   // between kernel launches. If a mirror were used and level_ptr is in UVM
@@ -716,6 +715,9 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
       Kokkos::view_alloc(Kokkos::WithoutInitializing, "Host level pointers"),
       level_ptr.extent(0));
   Kokkos::deep_copy(level_ptr_h, level_ptr);
+
+  gettimeofday( &end, NULL );
+  printf("     VINH TEST: numeric -- copy level_ptr %.8lf (sec.)\n", 1.0 * ( end.tv_sec - begin.tv_sec ) + 1.0e-6 * ( end.tv_usec - begin.tv_usec ));
 
   if (thandle.get_algorithm() ==
       KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1HASHMAP) {
@@ -763,29 +765,17 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
     }    // end for lvl
   }      // End SEQLVLSCHD_TP1HASHMAP
   else {
+    gettimeofday( &begin, NULL );
     if (thandle.get_algorithm() ==
         KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1) {
-      level_nchunks_h = LevelHostViewType(
-          Kokkos::view_alloc(Kokkos::WithoutInitializing, "Host level nchunks"),
-          level_nchunks.extent(0));
-      level_nrowsperchunk_h =
-          LevelHostViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing,
-                                               "Host level nrowsperchunk"),
-                            level_nrowsperchunk.extent(0));
-      Kokkos::deep_copy(level_nchunks_h, level_nchunks);
-      Kokkos::deep_copy(level_nrowsperchunk_h, level_nrowsperchunk);
-      iw = WorkViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "iw"),
-                        thandle.get_level_maxrowsperchunk(), nrows);
-      Kokkos::deep_copy(iw, nnz_lno_t(-1));
-    } else {
-      iw = WorkViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "iw"),
-                        thandle.get_level_maxrows(), nrows);
-      Kokkos::deep_copy(iw, nnz_lno_t(-1));
+      level_nchunks_h       = thandle.get_level_nchunks();
+      level_nrowsperchunk_h = thandle.get_level_nrowsperchunk();
     }
+    iw = thandle.get_iw();
 
     // Main loop must be performed sequential. Question: Try out Cuda's graph
     // stuff to reduce kernel launch overhead
-    printf("work array iw %d x %d, type %s\n",iw.extent(0),iw.extent(1),typeid(WorkViewType).name());
+    printf("work array iw (alloc at symbolic) %d x %d, type %s, nlevels %d\n",iw.extent(0),iw.extent(1),typeid(WorkViewType).name(), nlevels);
     int tmpcnt = 0;
     int tmpnrows = 0;
     for (size_type lvl = 0; lvl < nlevels; ++lvl) {
@@ -846,6 +836,8 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
       }  // end if
     }    // end for lvl
     printf("Total kernel calls %d, total nrows %d\n",tmpcnt, tmpnrows);
+    gettimeofday( &end, NULL );
+    printf("     VINH TEST: numeric -- main %.8lf (sec.)\n", 1.0 * ( end.tv_sec - begin.tv_sec ) + 1.0e-6 * ( end.tv_usec - begin.tv_usec ));
   }
 
 // Output check
