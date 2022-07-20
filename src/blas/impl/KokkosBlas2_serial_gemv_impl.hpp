@@ -71,13 +71,6 @@ struct SerialGemv {
 /// CompactMKL does not exist on Gemv
 
 ///
-/// Implemented:
-/// NT, T
-///
-/// Not yet implemented
-/// CT
-
-///
 /// NT
 ///
 
@@ -212,6 +205,40 @@ SerialGemv<Trans::Transpose, Algo::Gemv::Blocked>::invoke(
   return Impl::SerialGemvInternal<Algo::Gemv::Blocked>::invoke(
       A.extent(1), A.extent(0), alpha, A.data(), A.stride_1(), A.stride_0(),
       x.data(), x.stride_0(), beta, y.data(), y.stride_0());
+}
+
+///
+/// CT
+///
+
+#ifdef __KOKKOSBLAS_ENABLE_INTEL_MKL_COMPACT__
+#error TODO: implement MKL/ConjTranspose !
+// see mkl_?gemm_compact with transa=MKL_CONJTRANS
+// https://www.intel.com/content/www/us/en/develop/documentation/onemkl-developer-reference-c/top/blas-and-sparse-blas-routines/compact-blas-and-lapack-functions/mkl-gemm-compact.html
+#endif
+
+template <>
+template <typename ScalarType, typename AViewType, typename xViewType,
+          typename yViewType>
+KOKKOS_INLINE_FUNCTION int
+SerialGemv<Trans::ConjTranspose, Algo::Gemv::Unblocked>::invoke(
+    const ScalarType alpha, const AViewType &A, const xViewType &x,
+    const ScalarType beta, const yViewType &y) {
+  return Impl::SerialGemvInternal<Algo::Gemv::Unblocked>::invoke(
+      Impl::OpConj(), A.extent(1), A.extent(0), alpha, A.data(), A.stride_1(),
+      A.stride_0(), x.data(), x.stride_0(), beta, y.data(), y.stride_0());
+}
+
+template <>
+template <typename ScalarType, typename AViewType, typename xViewType,
+          typename yViewType>
+KOKKOS_INLINE_FUNCTION int
+SerialGemv<Trans::ConjTranspose, Algo::Gemv::Blocked>::invoke(
+    const ScalarType alpha, const AViewType &A, const xViewType &x,
+    const ScalarType beta, const yViewType &y) {
+  return Impl::SerialGemvInternal<Algo::Gemv::Blocked>::invoke(
+      Impl::OpConj(), A.extent(1), A.extent(0), alpha, A.data(), A.stride_1(),
+      A.stride_0(), x.data(), x.stride_0(), beta, y.data(), y.stride_0());
 }
 
 }  // namespace KokkosBlas

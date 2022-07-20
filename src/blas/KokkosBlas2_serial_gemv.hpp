@@ -63,7 +63,10 @@ void KOKKOS_INLINE_FUNCTION gemv(const char trans, const ScalarType& alpha,
   } else if (trans == 'T' || trans == 't') {
     using mode = KokkosBlas::Trans::Transpose;
     KokkosBlas::SerialGemv<mode, AlgoTag>::invoke(alpha, A, x, beta, y);
-  } else {  // NOT supported: Conjugate, ConjTranspose
+  } else if (trans == 'C' || trans == 'c') {
+    using mode = KokkosBlas::Trans::ConjTranspose;
+    KokkosBlas::SerialGemv<mode, AlgoTag>::invoke(alpha, A, x, beta, y);
+  } else {
     Kokkos::abort("Matrix mode not supported");
   }
 }

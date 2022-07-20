@@ -366,34 +366,29 @@ KOKKOS_INLINE_FUNCTION void vanillaGEMV(
   using KAT_Y   = Kokkos::ArithTraits<ScalarY>;
   int M         = A.extent(0);
   int N         = A.extent(1);
-  const bool transposed = mode == 'T' || mode == 'H';
+  const bool transposed = mode == 'T' || mode == 'C';
+  const bool conjugated = mode == 'C';
   if (beta == KAT_Y::zero()) {
     const int i1 = transposed ? N : M;
     for (int i = 0; i < i1; i++) {  // no deep_copy on device
       y(i) = KAT_Y::zero();
     }
   }
-  if (mode == 'N') {
+  if (!transposed) {
     for (int i = 0; i < M; i++) {
       ScalarY y_i = beta * y(i);
       for (int j = 0; j < N; j++) {
-        y_i += alpha * A(i, j) * x(j);
+        const auto Aij = conjugated ? KAT_A::conj(A(i, j)) : A(i, j);
+        y_i += alpha * Aij * x(j);
       }
       y(i) = y_i;
     }
-  } else if (mode == 'T') {
+  } else {
     for (int j = 0; j < N; j++) {
       ScalarY y_j = beta * y(j);
       for (int i = 0; i < M; i++) {
-        y_j += alpha * A(i, j) * x(i);
-      }
-      y(j) = y_j;
-    }
-  } else if (mode == 'C') {
-    for (int j = 0; j < N; j++) {
-      ScalarY y_j = beta * y(j);
-      for (int i = 0; i < M; i++) {
-        y_j += alpha * KAT_A::conj(A(i, j)) * x(i);
+        const auto Aij = conjugated ? KAT_A::conj(A(i, j)) : A(i, j);
+        y_j += alpha * Aij * x(i);
       }
       y(j) = y_j;
     }

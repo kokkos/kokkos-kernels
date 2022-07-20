@@ -129,8 +129,9 @@ class SerialGEMVTest {
     static_assert(!std::is_same<y_layout, Kokkos::LayoutStride>::value, "");
 
     const char_type trans = mode[0];
-    const auto Nt         = trans == (char)'N' ? N : M;
-    const auto Mt         = trans == (char)'N' ? M : N;
+    const bool transposed = trans == (char)'T' || trans == (char)'C';
+    const auto Nt         = transposed ? M : N;
+    const auto Mt         = transposed ? N : M;
 
     // 1. run on regular (non-strided) views
     ViewTypeA A1("A1", Nt, Mt);
@@ -245,6 +246,10 @@ class SerialGEMVTest {
   TEST_F(TestCategory, serial_gemv_t_##NAME) {                          \
     ::Test::SerialGEMVTest<SCALAR_A, SCALAR_X, SCALAR_Y, TestExecSpace, \
                            SCALAR_COEF>::run("T");                      \
+  }                                                                     \
+  TEST_F(TestCategory, serial_gemv_c_##NAME) {                          \
+    ::Test::SerialGEMVTest<SCALAR_A, SCALAR_X, SCALAR_Y, TestExecSpace, \
+                           SCALAR_COEF>::run("C");                      \
   }
 
 #define TEST_CASE2(NAME, SCALAR, SCALAR_COEF) \

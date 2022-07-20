@@ -104,9 +104,9 @@ KOKKOS_INLINE_FUNCTION int TeamGemvInternal<Algo::Gemv::Blocked>::invoke(
     Kokkos::parallel_for(Kokkos::TeamThreadRange(member, (m / mb) + (mp > 0)),
                          [&](const int &ii) {
                            const int i = ii * mb;
-                           inner.serial_invoke(alpha, A + i * as0, x,
-                                               (i + mb) > m ? (m - i) : mb, n,
-                                               y + i * ys0);
+                           inner.serial_invoke<KokkosBlas::Impl::OpID>(
+                               alpha, A + i * as0, x,
+                               (i + mb) > m ? (m - i) : mb, n, y + i * ys0);
                          });
     member.team_barrier();
   }

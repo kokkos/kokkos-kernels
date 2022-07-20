@@ -59,20 +59,31 @@ namespace Impl {
 
 template <typename ArgAlgo>
 struct SerialGemvInternal {
+  template <typename OpA, typename ScalarType, typename ValueAType,
+            typename ValueXType, typename ValueYType>
+  KOKKOS_INLINE_FUNCTION static int invoke(
+      OpA op, const int m, const int n, const ScalarType alpha,
+      const ValueAType *KOKKOS_RESTRICT A, const int as0, const int as1,
+      const ValueXType *KOKKOS_RESTRICT x, const int xs0, const ScalarType beta,
+      /**/ ValueYType *KOKKOS_RESTRICT y, const int ys0);
+
+  // default OpA = OpID
   template <typename ScalarType, typename ValueAType, typename ValueXType,
             typename ValueYType>
   KOKKOS_INLINE_FUNCTION static int invoke(
       const int m, const int n, const ScalarType alpha,
       const ValueAType *KOKKOS_RESTRICT A, const int as0, const int as1,
       const ValueXType *KOKKOS_RESTRICT x, const int xs0, const ScalarType beta,
-      /**/ ValueYType *KOKKOS_RESTRICT y, const int ys0);
+      /**/ ValueYType *KOKKOS_RESTRICT y, const int ys0) {
+    return invoke(OpID(), m, n, alpha, A, as0, as1, x, xs0, beta, y, ys0);
+  }
 };
 
 template <>
-template <typename ScalarType, typename ValueAType, typename ValueXType,
-          typename ValueYType>
+template <typename OpA, typename ScalarType, typename ValueAType,
+          typename ValueXType, typename ValueYType>
 KOKKOS_INLINE_FUNCTION int SerialGemvInternal<Algo::Gemv::Unblocked>::invoke(
-    const int m, const int n, const ScalarType alpha,
+    OpA op, const int m, const int n, const ScalarType alpha,
     const ValueAType *KOKKOS_RESTRICT A, const int as0, const int as1,
     const ValueXType *KOKKOS_RESTRICT x, const int xs0, const ScalarType beta,
     /**/ ValueYType *KOKKOS_RESTRICT y, const int ys0) {
@@ -91,7 +102,7 @@ KOKKOS_INLINE_FUNCTION int SerialGemvInternal<Algo::Gemv::Unblocked>::invoke(
 
     for (int i = 0; i < m; ++i) {
       ValueYType t(0);
-      const ValueAType *KOKKOS_RESTRICT tA = (A + i * as0);
+      const ValueAType *KOKKOS_RESTRICT tA = A + i * as0;
 
 #if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
 #pragma ivdep
@@ -99,7 +110,7 @@ KOKKOS_INLINE_FUNCTION int SerialGemvInternal<Algo::Gemv::Unblocked>::invoke(
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
-      for (int j = 0; j < n; ++j) t += tA[j * as1] * x[j * xs0];
+      for (int j = 0; j < n; ++j) t += op(tA[j * as1]) * x[j * xs0];
       y[i * ys0] += alpha * t;
     }
   }
@@ -107,10 +118,10 @@ KOKKOS_INLINE_FUNCTION int SerialGemvInternal<Algo::Gemv::Unblocked>::invoke(
 }
 
 template <>
-template <typename ScalarType, typename ValueAType, typename ValueXType,
-          typename ValueYType>
+template <typename OpA, typename ScalarType, typename ValueAType,
+          typename ValueXType, typename ValueYType>
 KOKKOS_INLINE_FUNCTION int SerialGemvInternal<Algo::Gemv::Blocked>::invoke(
-    const int m, const int n, const ScalarType alpha,
+    OpA /* op */, const int m, const int n, const ScalarType alpha,
     const ValueAType *KOKKOS_RESTRICT A, const int as0, const int as1,
     const ValueXType *KOKKOS_RESTRICT x, const int xs0, const ScalarType beta,
     /**/ ValueYType *KOKKOS_RESTRICT y, const int ys0) {
@@ -132,8 +143,8 @@ KOKKOS_INLINE_FUNCTION int SerialGemvInternal<Algo::Gemv::Blocked>::invoke(
     Impl::InnerMultipleDotProduct<mbAlgo> inner(as0, as1, xs0, ys0);
     const int mb = mbAlgo;
     for (int i = 0; i < m; i += mb)
-      inner.serial_invoke(alpha, A + i * as0, x, (i + mb) > m ? (m - i) : mb, n,
-                          y + i * ys0);
+      inner.serial_invoke<OpA>(alpha, A + i * as0, x,
+                               (i + mb) > m ? (m - i) : mb, n, y + i * ys0);
   }
   return 0;
 }
