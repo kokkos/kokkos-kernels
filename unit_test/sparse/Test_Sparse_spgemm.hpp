@@ -47,7 +47,6 @@
 
 #include "KokkosSparse_Utils.hpp"
 #include "KokkosSparse_SortCrs.hpp"
-#include <Kokkos_Concepts.hpp>
 #include <string>
 #include <stdexcept>
 
@@ -404,7 +403,7 @@ void test_issue402() {
   lno_view_t Browmap("B = A^T rowmap", numRows + 1);
   lno_nnz_view_t Bentries("B = A^T entries", nnz);
   scalar_view_t Bvalues("B = A^T values", nnz);
-  KokkosKernels::Impl::transpose_matrix<
+  KokkosSparse::Impl::transpose_matrix<
       lno_view_t, lno_nnz_view_t, scalar_view_t, lno_view_t, lno_nnz_view_t,
       scalar_view_t, lno_view_t, typename device::execution_space>(
       numRows, numRows, Arowmap, Aentries, Avalues, Browmap, Bentries, Bvalues);

@@ -50,6 +50,7 @@
 #include "KokkosSparse_IOUtils.hpp"
 #include "KokkosSparse_Utils.hpp"
 #include "KokkosKernels_Handle.hpp"
+#include "KokkosKernels_default_types.hpp"
 
 using namespace KokkosKernels;
 using namespace KokkosKernels::Experimental;
@@ -168,7 +169,7 @@ void test_coloring(lno_t numRows, size_type nnz, lno_t bandwidth,
 
     const lno_t num_rows_1 = input_mat.numRows();
     const lno_t num_cols_1 = input_mat.numCols();
-    lno_t num_conflict     = KokkosKernels::Impl::kk_is_d1_coloring_valid<
+    lno_t num_conflict     = KokkosSparse::Impl::kk_is_d1_coloring_valid<
         lno_view_t, lno_nnz_view_t, color_view_t,
         typename device::execution_space>(
         num_rows_1, num_cols_1, input_mat.graph.row_map,
@@ -220,14 +221,14 @@ void test_coloring(lno_t numRows, size_type nnz, lno_t bandwidth,
      defined(KOKKOSKERNELS_INST_OFFSET_INT)) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(double, int, int, TestExecSpace)
+EXECUTE_TEST(default_scalar, int, int, TestExecSpace)
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
      defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||     \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(double, int64_t, int, TestExecSpace)
+EXECUTE_TEST(default_scalar, int64_t, int, TestExecSpace)
 #endif
 
 // FIXME_SYCL
@@ -236,7 +237,7 @@ EXECUTE_TEST(double, int64_t, int, TestExecSpace)
      defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&           \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(double, int, size_t, TestExecSpace)
+EXECUTE_TEST(default_scalar, int, size_t, TestExecSpace)
 #endif
 #endif
 
@@ -244,7 +245,7 @@ EXECUTE_TEST(double, int, size_t, TestExecSpace)
      defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||  \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(double, int64_t, size_t, TestExecSpace)
+EXECUTE_TEST(default_scalar, int64_t, size_t, TestExecSpace)
 #endif
 
 #undef EXECUTE_TEST

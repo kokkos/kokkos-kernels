@@ -190,8 +190,7 @@ struct SingleLevelTransposeGEMV {
     }
   }
 
-  KOKKOS_INLINE_FUNCTION void join(volatile value_type dst,
-                                   const volatile value_type src) const {
+  KOKKOS_INLINE_FUNCTION void join(value_type dst, const value_type src) const {
     for (IndexType j = 0; j < value_count; ++j) {
       dst[j] += src[j];
     }

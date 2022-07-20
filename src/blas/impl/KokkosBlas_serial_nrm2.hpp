@@ -42,43 +42,51 @@
 //@HEADER
 */
 
-#ifndef KOKKOSKERNELS_ERROR_HPP
-#define KOKKOSKERNELS_ERROR_HPP
+#ifndef KOKKOSBLAS_SERIAL_NRM2_HPP_
+#define KOKKOSBLAS_SERIAL_NRM2_HPP_
 
-#include <stdexcept>
+#include <Kokkos_Core.hpp>
+#include <Kokkos_InnerProductSpaceTraits.hpp>
 
-namespace KokkosKernels {
+namespace KokkosBlas {
 namespace Impl {
 
-inline void throw_runtime_exception(const std::string &msg) {
-  throw std::runtime_error(msg);
-}
+///
+/// Serial Internal Impl
+/// ====================
+template <typename ValueType>
+KOKKOS_INLINE_FUNCTION static
+    typename Kokkos::Details::InnerProductSpaceTraits<ValueType>::mag_type
+    serial_nrm2(const int m, const ValueType *KOKKOS_RESTRICT X,
+                const int xs0) {
+  using IPT       = Kokkos::Details::InnerProductSpaceTraits<ValueType>;
+  using norm_type = typename IPT::mag_type;
 
-#if defined(KOKKOS_ENABLE_HIP)
-inline void hip_internal_error_throw(hipError_t e, const char *name,
-                                     const char *file, const int line) {
-  std::ostringstream out;
-  out << name << " error( " << hipGetErrorName(e)
-      << "): " << hipGetErrorString(e);
-  if (file) {
-    out << " " << file << ":" << line;
-  }
-  throw_runtime_exception(out.str());
-}
+  norm_type nrm = Kokkos::ArithTraits<norm_type>::zero();
 
-inline void hip_internal_safe_call(hipError_t e, const char *name,
-                                   const char *file = nullptr,
-                                   const int line   = 0) {
-  if (hipSuccess != e) {
-    hip_internal_error_throw(e, name, file, line);
-  }
-}
-
-#define KOKKOSKERNELS_IMPL_HIP_SAFE_CALL(call) \
-  hip_internal_safe_call(call, #call, __FILE__, __LINE__)
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
 #endif
+  for (int i = 0; i < m; ++i)
+    nrm += IPT::norm(IPT::dot(X[i * xs0], X[i * xs0]));
+
+  return Kokkos::ArithTraits<norm_type>::sqrt(nrm);
+}
+
+template <typename ValueType>
+KOKKOS_INLINE_FUNCTION static void serial_nrm2(
+    const int m, const int n, const ValueType *KOKKOS_RESTRICT X, const int xs0,
+    const int xs1,
+    typename Kokkos::Details::InnerProductSpaceTraits<ValueType>::mag_type
+        *KOKKOS_RESTRICT R,
+    const int ys0) {
+  for (int vecIdx = 0; vecIdx < n; ++vecIdx)
+    R[vecIdx * ys0] = serial_nrm2(m, X + vecIdx * xs1, xs0);
+
+  return;
+}
 
 }  // namespace Impl
-}  // namespace KokkosKernels
+}  // namespace KokkosBlas
 
-#endif  // KOKKOSKERNELS_ERROR_HPP
+#endif  // KOKKOSBLAS_SERIAL_NRM2_HPP_

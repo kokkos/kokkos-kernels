@@ -5,9 +5,8 @@
 
 #include "KokkosBatched_Util.hpp"
 
-#include "KokkosBatched_Set_Internal.hpp"
+#include "KokkosBlas1_set_impl.hpp"
 #include "KokkosBlas1_serial_scal_impl.hpp"
-
 #include "KokkosBatched_InnerMultipleDotProduct_Serial_Impl.hpp"
 
 namespace KokkosBatched {
@@ -39,7 +38,7 @@ KOKKOS_INLINE_FUNCTION int SerialGemvInternal<Algo::Gemv::Unblocked>::invoke(
   // y (m), A(m x n), B(n)
 
   if (beta == zero)
-    SerialSetInternal ::invoke(m, zero, y, ys0);
+    KokkosBlas::Impl::SerialSetInternal::invoke(m, zero, y, ys0);
   else if (beta != one)
     KokkosBlas::Impl::SerialScaleInternal::invoke(m, beta, y, ys0);
 
@@ -78,7 +77,7 @@ KOKKOS_INLINE_FUNCTION int SerialGemvInternal<Algo::Gemv::Blocked>::invoke(
   constexpr int mbAlgo = Algo::Gemv::Blocked::mb();
 
   if (beta == zero)
-    SerialSetInternal ::invoke(m, zero, y, ys0);
+    KokkosBlas::Impl::SerialSetInternal::invoke(m, zero, y, ys0);
   else if (beta != one)
     KokkosBlas::Impl::SerialScaleInternal::invoke(m, beta, y, ys0);
 

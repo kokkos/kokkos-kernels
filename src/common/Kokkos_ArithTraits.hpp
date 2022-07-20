@@ -413,22 +413,39 @@ namespace Details {
   static FUNC_QUAL val_type squareroot(const val_type x) { return sqrt(x); }   \
   static FUNC_QUAL mag_type eps() { return epsilon(); }
 
-#define KOKKOSKERNELS_SIGNED_ABS                          \
-  static KOKKOS_FUNCTION mag_type abs(const val_type x) { \
-    return Kokkos::abs(x);                                \
-  }
+template <typename val_type>
+static KOKKOS_FUNCTION
+    typename std::enable_if<std::numeric_limits<val_type>::is_signed,
+                            val_type>::type
+    KokkosKernelsAbs(const val_type x) {
+  return Kokkos::abs(x);
+}
 
-#define KOKKOSKERNELS_UNSIGNED_ABS \
-  static KOKKOS_FUNCTION mag_type abs(const val_type x) { return x; }
+template <typename val_type>
+static KOKKOS_FUNCTION
+    typename std::enable_if<!std::numeric_limits<val_type>::is_signed,
+                            val_type>::type
+    KokkosKernelsAbs(const val_type x) {
+  return x;
+}
 
-#define KOKKOSKERNELS_SIGNED_NAN \
-  static KOKKOS_FUNCTION val_type nan() { return -1; }
+template <typename val_type>
+static KOKKOS_FUNCTION
+    typename std::enable_if<std::numeric_limits<val_type>::is_signed,
+                            val_type>::type
+    KokkosKernelsNan() {
+  return -1;
+}
 
-#define KOKKOSKERNELS_UNSIGNED_NAN \
-  static KOKKOS_FUNCTION val_type nan() { return max(); }
+template <typename val_type>
+static KOKKOS_FUNCTION
+    typename std::enable_if<!std::numeric_limits<val_type>::is_signed,
+                            val_type>::type
+    KokkosKernelsNan() {
+  return Kokkos::Experimental::finite_max<val_type>::value;
+}
 
-#define KOKKOSKERNELS_ARITHTRAITS_INTEGRAL(KOKKOSKERNELS_ABS,                 \
-                                           KOKKOSKERNELS_NAN)                 \
+#define KOKKOSKERNELS_ARITHTRAITS_INTEGRAL()                                  \
                                                                               \
   static constexpr bool is_specialized = true;                                \
   static constexpr bool is_integer     = true;                                \
@@ -456,10 +473,14 @@ namespace Details {
   static KOKKOS_FUNCTION val_type infinity() {                                \
     return static_cast<val_type>(0);                                          \
   }                                                                           \
-  KOKKOSKERNELS_NAN                                                           \
+  static KOKKOS_FUNCTION val_type nan() {                                     \
+    return KokkosKernelsNan<val_type>();                                      \
+  }                                                                           \
   static KOKKOS_FUNCTION bool isInf(const val_type) { return false; }         \
   static KOKKOS_FUNCTION bool isNan(const val_type) { return false; }         \
-  KOKKOSKERNELS_ABS                                                           \
+  static KOKKOS_FUNCTION mag_type abs(const val_type x) {                     \
+    return KokkosKernelsAbs(x);                                               \
+  }                                                                           \
   static KOKKOS_FUNCTION mag_type real(const val_type x) {                    \
     return Kokkos::real(x);                                                   \
   }                                                                           \
@@ -1659,8 +1680,7 @@ class ArithTraits<char> {
 
   static std::string name() { return "char"; }
 
-  KOKKOSKERNELS_ARITHTRAITS_INTEGRAL(KOKKOSKERNELS_SIGNED_ABS,
-                                     KOKKOSKERNELS_SIGNED_NAN)
+  KOKKOSKERNELS_ARITHTRAITS_INTEGRAL()
 };
 
 template <>
@@ -1673,8 +1693,7 @@ class ArithTraits<signed char> {
 
   static std::string name() { return "signed char"; }
 
-  KOKKOSKERNELS_ARITHTRAITS_INTEGRAL(KOKKOSKERNELS_SIGNED_ABS,
-                                     KOKKOSKERNELS_SIGNED_NAN)
+  KOKKOSKERNELS_ARITHTRAITS_INTEGRAL()
 };
 
 template <>
@@ -1687,8 +1706,7 @@ class ArithTraits<unsigned char> {
 
   static std::string name() { return "unsigned char"; }
 
-  KOKKOSKERNELS_ARITHTRAITS_INTEGRAL(KOKKOSKERNELS_UNSIGNED_ABS,
-                                     KOKKOSKERNELS_UNSIGNED_NAN)
+  KOKKOSKERNELS_ARITHTRAITS_INTEGRAL()
 };
 
 template <>
@@ -1701,8 +1719,7 @@ class ArithTraits<short> {
 
   static std::string name() { return "short"; }
 
-  KOKKOSKERNELS_ARITHTRAITS_INTEGRAL(KOKKOSKERNELS_SIGNED_ABS,
-                                     KOKKOSKERNELS_SIGNED_NAN)
+  KOKKOSKERNELS_ARITHTRAITS_INTEGRAL()
 };
 
 template <>
@@ -1715,8 +1732,7 @@ class ArithTraits<unsigned short> {
 
   static std::string name() { return "unsigned short"; }
 
-  KOKKOSKERNELS_ARITHTRAITS_INTEGRAL(KOKKOSKERNELS_UNSIGNED_ABS,
-                                     KOKKOSKERNELS_UNSIGNED_NAN)
+  KOKKOSKERNELS_ARITHTRAITS_INTEGRAL()
 };
 
 template <>
@@ -1729,8 +1745,7 @@ class ArithTraits<int> {
 
   static std::string name() { return "int"; }
 
-  KOKKOSKERNELS_ARITHTRAITS_INTEGRAL(KOKKOSKERNELS_SIGNED_ABS,
-                                     KOKKOSKERNELS_SIGNED_NAN)
+  KOKKOSKERNELS_ARITHTRAITS_INTEGRAL()
 };
 
 template <>
@@ -1743,8 +1758,7 @@ class ArithTraits<unsigned int> {
 
   static std::string name() { return "unsigned int"; }
 
-  KOKKOSKERNELS_ARITHTRAITS_INTEGRAL(KOKKOSKERNELS_UNSIGNED_ABS,
-                                     KOKKOSKERNELS_UNSIGNED_NAN)
+  KOKKOSKERNELS_ARITHTRAITS_INTEGRAL()
 };
 
 template <>
@@ -1757,8 +1771,7 @@ class ArithTraits<long> {
 
   static std::string name() { return "long"; }
 
-  KOKKOSKERNELS_ARITHTRAITS_INTEGRAL(KOKKOSKERNELS_SIGNED_ABS,
-                                     KOKKOSKERNELS_SIGNED_NAN)
+  KOKKOSKERNELS_ARITHTRAITS_INTEGRAL()
 };
 
 template <>
@@ -1771,8 +1784,7 @@ class ArithTraits<unsigned long> {
 
   static std::string name() { return "unsigned long"; }
 
-  KOKKOSKERNELS_ARITHTRAITS_INTEGRAL(KOKKOSKERNELS_UNSIGNED_ABS,
-                                     KOKKOSKERNELS_UNSIGNED_NAN)
+  KOKKOSKERNELS_ARITHTRAITS_INTEGRAL()
 };
 
 template <>
@@ -1785,8 +1797,7 @@ class ArithTraits<long long> {
 
   static std::string name() { return "long long"; }
 
-  KOKKOSKERNELS_ARITHTRAITS_INTEGRAL(KOKKOSKERNELS_SIGNED_ABS,
-                                     KOKKOSKERNELS_SIGNED_NAN)
+  KOKKOSKERNELS_ARITHTRAITS_INTEGRAL()
 };
 
 template <>
@@ -1799,8 +1810,7 @@ class ArithTraits<unsigned long long> {
 
   static std::string name() { return "unsigned long long"; }
 
-  KOKKOSKERNELS_ARITHTRAITS_INTEGRAL(KOKKOSKERNELS_UNSIGNED_ABS,
-                                     KOKKOSKERNELS_UNSIGNED_NAN)
+  KOKKOSKERNELS_ARITHTRAITS_INTEGRAL()
 };
 
 // dd_real and qd_real are floating-point types provided by the QD

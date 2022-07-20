@@ -42,43 +42,58 @@
 //@HEADER
 */
 
-#ifndef KOKKOSKERNELS_ERROR_HPP
-#define KOKKOSKERNELS_ERROR_HPP
+#ifndef KOKKOSBLAS1_SET_HPP_
+#define KOKKOSBLAS1_SET_HPP_
 
-#include <stdexcept>
+#include <KokkosBlas1_set_impl.hpp>
 
-namespace KokkosKernels {
-namespace Impl {
+namespace KokkosBlas {
 
-inline void throw_runtime_exception(const std::string &msg) {
-  throw std::runtime_error(msg);
-}
+///
+/// Serial Set
+///
 
-#if defined(KOKKOS_ENABLE_HIP)
-inline void hip_internal_error_throw(hipError_t e, const char *name,
-                                     const char *file, const int line) {
-  std::ostringstream out;
-  out << name << " error( " << hipGetErrorName(e)
-      << "): " << hipGetErrorString(e);
-  if (file) {
-    out << " " << file << ":" << line;
+struct SerialSet {
+  template <typename ScalarType, typename AViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha,
+                                           const AViewType &A) {
+    return Impl::SerialSetInternal::invoke(
+        A.extent(0), A.extent(1), alpha, A.data(), A.stride_0(), A.stride_1());
   }
-  throw_runtime_exception(out.str());
-}
+};
 
-inline void hip_internal_safe_call(hipError_t e, const char *name,
-                                   const char *file = nullptr,
-                                   const int line   = 0) {
-  if (hipSuccess != e) {
-    hip_internal_error_throw(e, name, file, line);
+///
+/// Team Set
+///
+
+template <typename MemberType>
+struct TeamSet {
+  template <typename ScalarType, typename AViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
+                                           const ScalarType alpha,
+                                           const AViewType &A) {
+    return Impl::TeamSetInternal::invoke(member, A.extent(0), A.extent(1),
+                                         alpha, A.data(), A.stride_0(),
+                                         A.stride_1());
   }
-}
+};
 
-#define KOKKOSKERNELS_IMPL_HIP_SAFE_CALL(call) \
-  hip_internal_safe_call(call, #call, __FILE__, __LINE__)
+///
+/// TeamVector Set
+///
+
+template <typename MemberType>
+struct TeamVectorSet {
+  template <typename ScalarType, typename AViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
+                                           const ScalarType alpha,
+                                           const AViewType &A) {
+    return Impl::TeamVectorSetInternal::invoke(member, A.extent(0), A.extent(1),
+                                               alpha, A.data(), A.stride_0(),
+                                               A.stride_1());
+  }
+};
+
+}  // namespace KokkosBlas
+
 #endif
-
-}  // namespace Impl
-}  // namespace KokkosKernels
-
-#endif  // KOKKOSKERNELS_ERROR_HPP

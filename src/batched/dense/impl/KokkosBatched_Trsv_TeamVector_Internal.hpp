@@ -5,7 +5,8 @@
 
 #include "KokkosBatched_Util.hpp"
 
-#include "KokkosBatched_Set_Internal.hpp"
+#include "KokkosBlas1_set_impl.hpp"
+#include "KokkosBlas1_team_scal_impl.hpp"
 
 namespace KokkosBatched {
 
@@ -42,7 +43,7 @@ TeamVectorTrsvInternalLower<Algo::Trsv::Unblocked>::invoke(
   const ScalarType one(1.0), zero(0.0);
 
   if (alpha == zero)
-    TeamVectorSetInternal::invoke(member, m, zero, b, bs0);
+    KokkosBlas::Impl::TeamVectorSetInternal::invoke(member, m, zero, b, bs0);
   else {
     if (alpha != one)
       KokkosBlas::Impl::TeamVectorScaleInternal::invoke(member, m, alpha, b,
@@ -106,7 +107,7 @@ TeamVectorTrsvInternalUpper<Algo::Trsv::Unblocked>::invoke(
   const ScalarType one(1.0), zero(0.0);
 
   if (alpha == zero)
-    TeamVectorSetInternal::invoke(member, m, zero, b, bs0);
+    KokkosBlas::Impl::TeamVectorSetInternal::invoke(member, m, zero, b, bs0);
   else {
     if (alpha != one)
       KokkosBlas::Impl::TeamVectorScaleInternal::invoke(member, m, alpha, b,

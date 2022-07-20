@@ -545,7 +545,6 @@ struct TeamGesv<MemberType, Gesv::StaticPivoting> {
 #endif
     using ScratchPadMatrixViewType = Kokkos::View<
         typename MatrixType::non_const_value_type **,
-        typename MatrixType::array_layout,
         typename MatrixType::execution_space::scratch_memory_space>;
 
     const int n = A.extent(0);
@@ -682,7 +681,6 @@ struct TeamVectorGesv<MemberType, Gesv::StaticPivoting> {
 #endif
     using ScratchPadMatrixViewType = Kokkos::View<
         typename MatrixType::non_const_value_type **,
-        typename MatrixType::array_layout,
         typename MatrixType::execution_space::scratch_memory_space>;
 
     const int n = A.extent(0);
