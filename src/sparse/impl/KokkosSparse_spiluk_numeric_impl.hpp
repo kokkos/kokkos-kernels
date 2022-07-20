@@ -689,6 +689,8 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
   using size_type               = typename IlukHandle::size_type;
   using nnz_lno_t               = typename IlukHandle::nnz_lno_t;
   using HandleDeviceEntriesType = typename IlukHandle::nnz_lno_view_t;
+  //using WorkViewType =
+  //    Kokkos::View<nnz_lno_t **, Kokkos::Device<execution_space, memory_space>>;
   using WorkViewType =
       Kokkos::View<nnz_lno_t **, Kokkos::LayoutRight, Kokkos::Device<execution_space, memory_space>>;
   using LevelHostViewType = Kokkos::View<nnz_lno_t *, Kokkos::HostSpace>;
