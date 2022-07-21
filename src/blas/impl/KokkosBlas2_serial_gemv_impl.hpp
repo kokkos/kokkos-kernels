@@ -60,7 +60,7 @@ struct SerialGemv {
                                            const xViewType & /*x*/,
                                            const ScalarType /*beta*/,
                                            const yViewType & /*y*/) {
-    assert(false && "Error: encounter dummy impl");
+    Kokkos::abort("Error: encounter dummy impl");
     return 0;
   }
 };
