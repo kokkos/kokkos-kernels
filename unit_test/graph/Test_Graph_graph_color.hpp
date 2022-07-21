@@ -231,14 +231,11 @@ EXECUTE_TEST(default_scalar, int, int, TestExecSpace)
 EXECUTE_TEST(default_scalar, int64_t, int, TestExecSpace)
 #endif
 
-// FIXME_SYCL
-#ifndef KOKKOS_ENABLE_SYCL
 #if (defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&    \
      defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&           \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 EXECUTE_TEST(default_scalar, int, size_t, TestExecSpace)
-#endif
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
