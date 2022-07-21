@@ -103,7 +103,9 @@ class SPILUKHandle {
                        typename nnz_row_view_t::memory_traits>
       signed_nnz_lno_view_t;
 
-  typedef Kokkos::View<nnz_lno_t **, Kokkos::LayoutRight, HandlePersistentMemorySpace> work_view_t;
+  typedef Kokkos::View<nnz_lno_t **, Kokkos::LayoutRight,
+                       HandlePersistentMemorySpace>
+      work_view_t;
 
  private:
   nnz_row_view_t level_list;  // level IDs which the rows belong to
@@ -117,9 +119,9 @@ class SPILUKHandle {
       level_maxnnzperrow;  // maximum number of nnz per row at each level
   nnz_row_view_host_t level_shmem_hash_size;  // hash size in the shared memory
                                               // hash map at each level
-  nnz_row_view_host_t level_shmem_key_size;  // key size in the shared memory
-                                             // hash map at each level
-  work_view_t iw;//working view for mapping dense indices to sparse indices
+  nnz_row_view_host_t level_shmem_key_size;   // key size in the shared memory
+                                              // hash map at each level
+  work_view_t iw;  // working view for mapping dense indices to sparse indices
 
   size_type nrows;
   size_type nlevels;
@@ -168,15 +170,15 @@ class SPILUKHandle {
     set_nnzU(nnzU_);
     set_level_maxrows(0);
     set_level_maxrowsperchunk(0);
-    level_list    = nnz_row_view_t("level_list", nrows_),
-    level_idx     = nnz_lno_view_t("level_idx", nrows_),
-    level_ptr     = nnz_lno_view_t("level_ptr", nrows_ + 1),
-    level_nchunks = nnz_lno_view_host_t(),
+    level_list            = nnz_row_view_t("level_list", nrows_),
+    level_idx             = nnz_lno_view_t("level_idx", nrows_),
+    level_ptr             = nnz_lno_view_t("level_ptr", nrows_ + 1),
+    level_nchunks         = nnz_lno_view_host_t(),
     level_nrowsperchunk   = nnz_lno_view_host_t(),
     level_maxnnzperrow    = nnz_row_view_host_t(),
     level_shmem_hash_size = nnz_row_view_host_t(),
     level_shmem_key_size  = nnz_row_view_host_t(), reset_symbolic_complete(),
-    iw = work_view_t();
+    iw                    = work_view_t();
   }
 
   virtual ~SPILUKHandle(){};
@@ -202,7 +204,9 @@ class SPILUKHandle {
   }
 
   KOKKOS_INLINE_FUNCTION
-  nnz_lno_view_host_t get_level_nrowsperchunk() const { return level_nrowsperchunk; }
+  nnz_lno_view_host_t get_level_nrowsperchunk() const {
+    return level_nrowsperchunk;
+  }
 
   void alloc_level_nrowsperchunk(const size_type nlevels_) {
     level_nrowsperchunk = nnz_lno_view_host_t("level_nrowsperchunk", nlevels_);
@@ -238,9 +242,7 @@ class SPILUKHandle {
   }
 
   KOKKOS_INLINE_FUNCTION
-  work_view_t get_iw() const {
-    return iw;
-  }
+  work_view_t get_iw() const { return iw; }
 
   void alloc_iw(const size_type nrows_, const size_type ncols_) {
     iw = work_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "iw"),
