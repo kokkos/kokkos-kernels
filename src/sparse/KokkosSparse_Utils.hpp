@@ -293,17 +293,17 @@ struct TransposeMatrix {
   struct CountTag {};
   struct FillTag {};
 
-  typedef Kokkos::TeamPolicy<CountTag, MyExecSpace> team_count_policy_t;
-  typedef Kokkos::TeamPolicy<FillTag, MyExecSpace> team_fill_policy_t;
+  using team_count_policy_t = Kokkos::TeamPolicy<CountTag, MyExecSpace>;
+  using team_fill_policy_t  = Kokkos::TeamPolicy<FillTag, MyExecSpace>;
 
-  typedef typename team_count_policy_t::member_type team_count_member_t;
-  typedef typename team_fill_policy_t::member_type team_fill_member_t;
+  using team_count_member_t = typename team_count_policy_t::member_type;
+  using team_fill_member_t  = typename team_fill_policy_t::member_type;
 
-  typedef typename in_nnz_view_t::non_const_value_type nnz_lno_t;
-  typedef typename in_row_view_t::non_const_value_type size_type;
+  using nnz_lno_t = typename in_nnz_view_t::non_const_value_type;
+  using size_type = typename in_row_view_t::non_const_value_type;
 
-  typename in_nnz_view_t::non_const_value_type num_rows;
-  typename in_nnz_view_t::non_const_value_type num_cols;
+  nnz_lno_t num_rows;
+  nnz_lno_t num_cols;
   in_row_view_t xadj;
   in_nnz_view_t adj;
   in_scalar_view_t vals;
@@ -537,6 +537,116 @@ void transpose_graph(
       tm);
 
   MyExecSpace().fence();
+}
+
+template <typename in_row_view_t, typename in_nnz_view_t,
+          typename in_scalar_view_t, typename out_row_view_t,
+          typename out_nnz_view_t, typename out_scalar_view_t>
+struct TransposeBsrMatrix {
+  using ordinal_type = typename in_nnz_view_t::non_const_value_type;
+  using size_type    = typename in_row_view_t::non_const_value_type;
+
+  int block_size;
+  in_row_view_t Arow_map;
+  in_nnz_view_t Aentries;
+  in_scalar_view_t Avalues;
+  out_row_view_t tArow_map;    // allocated
+  out_nnz_view_t tAentries;    // allocated
+  out_scalar_view_t tAvalues;  // allocated
+
+  TransposeBsrMatrix(const int blockSize, in_row_view_t row_mapA,
+                     in_nnz_view_t entriesA, in_scalar_view_t valuesA,
+                     out_row_view_t row_mapAt, out_nnz_view_t entriesAt,
+                     out_scalar_view_t valuesAt)
+      : block_size(blockSize),
+        Arow_map(row_mapA),
+        Aentries(entriesA),
+        Avalues(valuesA),
+        tArow_map(row_mapAt),
+        tAentries(entriesAt),
+        tAvalues(valuesAt){};
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const int tArowIdx) const {
+    // Loop over entries in row
+    for (size_type tAentryIdx = tArow_map(tArowIdx);
+         tAentryIdx < tArow_map(tArowIdx + 1); ++tAentryIdx) {
+      ordinal_type tAcolIdx = tAentries(tAentryIdx);
+
+      // we have block tA(tArowIdx, tAcolIdx) starting at tAvalues(entryIdx)
+      // we need to find AentryIdx corresponding to A(tAcolIdx, tArowIdx)
+      size_type AentryIdx;
+      for (AentryIdx = Arow_map(tAcolIdx); AentryIdx < Arow_map(tAcolIdx + 1);
+           ++AentryIdx) {
+        if (tArowIdx == Aentries(AentryIdx)) break;
+      }
+
+      // we loop over block_size*block_size Avalues starting at AentryIdx
+      // and store them into tAvalues in transpose order starting at tAentryIdx
+      for (int i = 0; i < block_size; ++i) {
+        for (int j = 0; j < block_size; ++j) {
+          tAvalues(tAentryIdx * block_size * block_size + i * block_size + j) =
+              Avalues(AentryIdx * block_size * block_size + j * block_size + i);
+        }
+      }
+    }
+  }
+};  // TransposeBsrMatrix
+
+template <typename in_row_view_t, typename in_nnz_view_t,
+          typename in_scalar_view_t, typename out_row_view_t,
+          typename out_nnz_view_t, typename out_scalar_view_t,
+          typename MyExecSpace>
+void transpose_bsr_matrix(
+    typename in_nnz_view_t::non_const_value_type num_rows,
+    typename in_nnz_view_t::non_const_value_type num_cols, const int block_size,
+    in_row_view_t xadj, in_nnz_view_t adj, in_scalar_view_t vals,
+    out_row_view_t t_xadj,    // pre-allocated -- initialized with 0
+    out_nnz_view_t t_adj,     // pre-allocated -- no need for initialize
+    out_scalar_view_t t_vals  // pre-allocated -- no need for initialize
+) {
+  using TransposeBsrFunctor_type =
+      TransposeBsrMatrix<in_row_view_t, in_nnz_view_t, in_scalar_view_t,
+                         out_row_view_t, out_nnz_view_t, out_scalar_view_t>;
+
+  // Step 1: call transpose_graph of bsr matrix
+  transpose_graph<in_row_view_t, in_nnz_view_t, out_row_view_t, out_nnz_view_t,
+                  out_row_view_t, MyExecSpace>(num_rows, num_cols, xadj, adj,
+                                               t_xadj, t_adj);
+
+  // Step 2: transpose the values of A
+  Kokkos::RangePolicy<MyExecSpace> my_policy(0, num_cols);
+  TransposeBsrFunctor_type my_functor(block_size, xadj, adj, vals, t_xadj,
+                                      t_adj, t_vals);
+
+  Kokkos::parallel_for(my_policy, my_functor);
+  MyExecSpace().fence();
+}
+
+template <typename bsrMat_t>
+bsrMat_t transpose_bsr_matrix(const bsrMat_t &A) {
+  // Allocate views and call the other version of transpose_matrix
+  using c_rowmap_t  = typename bsrMat_t::row_map_type;
+  using c_entries_t = typename bsrMat_t::index_type;
+  using c_values_t  = typename bsrMat_t::values_type;
+  using rowmap_t    = typename bsrMat_t::row_map_type::non_const_type;
+  using entries_t   = typename bsrMat_t::index_type::non_const_type;
+  using values_t    = typename bsrMat_t::values_type::non_const_type;
+
+  rowmap_t AT_rowmap("Transpose rowmap", A.numCols() + 1);
+  entries_t AT_entries(
+      Kokkos::view_alloc(Kokkos::WithoutInitializing, "Transpose entries"),
+      A.nnz());
+  values_t AT_values(
+      Kokkos::view_alloc(Kokkos::WithoutInitializing, "Transpose values"),
+      A.nnz() * A.blockDim() * A.blockDim());
+  transpose_bsr_matrix<c_rowmap_t, c_entries_t, c_values_t, rowmap_t, entries_t,
+                       values_t, typename bsrMat_t::execution_space>(
+      A.numRows(), A.numCols(), A.blockDim(), A.graph.row_map, A.graph.entries,
+      A.values, AT_rowmap, AT_entries, AT_values);
+  // And construct the transpose crsMat_t
+  return bsrMat_t("Transpose", A.numCols(), A.numRows(), A.nnz(), AT_values,
+                  AT_rowmap, AT_entries, A.blockDim());
 }
 
 template <typename forward_map_type, typename reverse_map_type>
