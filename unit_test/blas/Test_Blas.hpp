@@ -50,6 +50,9 @@
 #include "Test_Blas3_trmm.hpp"
 #include "Test_Blas3_trsm.hpp"
 
+// Stuff that should move later on
+#include "Test_Blas_Newton.hpp"
+
 // TPLs
 #include "Test_Blas_rocblas.hpp"
 
