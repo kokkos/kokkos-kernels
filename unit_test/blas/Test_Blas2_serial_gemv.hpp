@@ -8,6 +8,13 @@
 
 namespace Test {
 
+template <typename ValueType, int length = KokkosBatched::DefaultVectorLength<
+                                  ValueType, TestExecSpace>::value>
+using simd_vector =
+    KokkosBatched::Vector<KokkosBatched::SIMD<ValueType>, length>;
+
+// Note: vanillaGEMV is called on device here - alternatively one can move
+//       _strided_ data using safe_device_to_host_deep_copy() etc.
 template <class AType, class XType, class YType, class ScalarType>
 struct RefGEMVOp {
   RefGEMVOp(char trans_, ScalarType alpha_, AType A_, XType x_,
@@ -55,28 +62,71 @@ struct SerialGEMVOp {
   YType y;
 };
 
+// fill regular view with random values
+template <class ViewType, class PoolType,
+          class ScalarType = typename ViewType::non_const_value_type>
+void fill_random_view(ViewType A, PoolType &rand_pool,
+                      const ScalarType max_val = 10.0) {
+  Kokkos::fill_random(A, rand_pool, max_val);
+  Kokkos::fence();
+}
+
+// fill rank-1 view of SIMD vectors with random values
+template <class ValueType, int VecLength, class Layout, class... Props,
+          class PoolType>
+void fill_random_view(
+    Kokkos::View<
+        KokkosBatched::Vector<KokkosBatched::SIMD<ValueType>, VecLength> *,
+        Layout, Props...>
+        x,
+    PoolType &rand_pool, const ValueType max_val = 10.0) {
+  // the view can be strided and have Vector<SIMD> values, so randoms
+  // are generated in a plain, linear view first and then copied
+  using device_type = typename decltype(x)::device_type;
+  Kokkos::View<ValueType *, device_type> rnd("random_vals",
+                                             x.extent(0) * VecLength);
+  Kokkos::fill_random(rnd, rand_pool, static_cast<ValueType>(10));
+  using size_type = decltype(x.extent(0));
+  for (size_type i = 0; i < x.extent(0); ++i) {
+    x(i).loadUnaligned(&rnd(i * VecLength));
+  }
+}
+
+// fill rank-2 view of SIMD vectors with random values
+template <class ValueType, int VecLength, class Layout, class... Props,
+          class PoolType>
+static void fill_random_view(
+    Kokkos::View<
+        KokkosBatched::Vector<KokkosBatched::SIMD<ValueType>, VecLength> **,
+        Layout, Props...>
+        A,
+    PoolType &rand_pool, const ValueType max_val = 10.0) {
+  // the view can be strided and have Vector<SIMD> values, so randoms
+  // are generated in a plain, linear view first and then copied
+  using device_type = typename decltype(A)::device_type;
+  Kokkos::View<ValueType *, device_type> rnd(
+      "random_vals", A.extent(0) * A.extent(1) * VecLength);
+  Kokkos::fill_random(rnd, rand_pool, static_cast<ValueType>(10));
+  using size_type = decltype(A.extent(0));
+  size_type idx   = 0;
+  for (size_type i = 0; i < A.extent(0); ++i) {
+    for (size_type j = 0; j < A.extent(1); ++j) {
+      A(i, j).loadUnaligned(&rnd(idx));
+      idx += VecLength;
+    }
+  }
+}
+
+//
 template <class ScalarA, class ScalarX, class ScalarY, class Device,
           class ScalarCoef = void>
-class SerialGEMVTest {
- private:
-  using char_type = decltype('x');
-
+struct SerialGEMVTestBase {
   // ScalarCoef==void default behavior is to derive alpha/beta scalar types
   // from A and X scalar types
   using ScalarType = typename std::conditional<
       !std::is_void<ScalarCoef>::value, ScalarCoef,
       typename std::common_type<ScalarA, ScalarX>::type>::type;
 
- public:
-  static void run(const char *mode) {
-    run_layouts<KokkosBlas::Algo::Gemv::Unblocked>(mode);
-    run_layouts<KokkosBlas::Algo::Gemv::Blocked>(mode);
-#ifdef __KOKKOSBLAS_ENABLE_INTEL_MKL_COMPACT__
-    // TODO: run_layouts<KokkosBlas::Algo::Gemv::CompactMKL>(mode);
-#endif
-  }
-
- private:
   template <class AlgoTag>
   static void run_layouts(const char *mode) {
     // Note: all layouts listed here are subview'ed to test Kokkos::LayoutStride
@@ -128,7 +178,7 @@ class SerialGEMVTest {
     static_assert(!std::is_same<x_layout, Kokkos::LayoutStride>::value, "");
     static_assert(!std::is_same<y_layout, Kokkos::LayoutStride>::value, "");
 
-    const char_type trans = mode[0];
+    const auto trans      = mode[0];
     const bool transposed = trans == (char)'T' || trans == (char)'C';
     const auto Nt         = transposed ? M : N;
     const auto Mt         = transposed ? N : M;
@@ -140,30 +190,31 @@ class SerialGEMVTest {
     run_views<AlgoTag>(trans, A1, x1, y1);
 
     // 2. run on strided subviews (enforced by adding extra rank on both sides)
-    // TODO: use multivector_layout_adapter from Kokkos_TestUtils.hpp ?
-    //       it does NOT [always] produce strided subviews yet: fix it ?
-    typedef Kokkos::View<ScalarA ****, A_layout, Device> BaseTypeA;
-    typedef Kokkos::View<ScalarX ***, x_layout, Device> BaseTypeX;
-    typedef Kokkos::View<ScalarY ***, y_layout, Device> BaseTypeY;
+    // Note: strided views are not supported by MKL routines
+    if (!std::is_same<AlgoTag, KokkosBlas::Algo::Gemv::CompactMKL>::value) {
+      typedef Kokkos::View<ScalarA ****, A_layout, Device> BaseTypeA;
+      typedef Kokkos::View<ScalarX ***, x_layout, Device> BaseTypeX;
+      typedef Kokkos::View<ScalarY ***, y_layout, Device> BaseTypeY;
 
-    BaseTypeA b_A("A", 2, Nt, Mt, 2);
-    BaseTypeX b_x("X", 2, M, 2);
-    BaseTypeY b_y("Y", 2, N, 2);
-    auto A = Kokkos::subview(b_A, 0, Kokkos::ALL(), Kokkos::ALL(), 0);
-    auto x = Kokkos::subview(b_x, 0, Kokkos::ALL(), 0);
-    auto y = Kokkos::subview(b_y, 0, Kokkos::ALL(), 0);
+      BaseTypeA b_A("A", 2, Nt, Mt, 2);
+      BaseTypeX b_x("X", 2, M, 2);
+      BaseTypeY b_y("Y", 2, N, 2);
+      auto A = Kokkos::subview(b_A, 0, Kokkos::ALL(), Kokkos::ALL(), 0);
+      auto x = Kokkos::subview(b_x, 0, Kokkos::ALL(), 0);
+      auto y = Kokkos::subview(b_y, 0, Kokkos::ALL(), 0);
 
-    // make sure it's actually LayoutStride there
-    static_assert(std::is_same<typename decltype(A)::array_layout,
-                               Kokkos::LayoutStride>::value,
-                  "");
-    static_assert(std::is_same<typename decltype(x)::array_layout,
-                               Kokkos::LayoutStride>::value,
-                  "");
-    static_assert(std::is_same<typename decltype(y)::array_layout,
-                               Kokkos::LayoutStride>::value,
-                  "");
-    run_views<AlgoTag>(trans, A, x, y);
+      // make sure it's actually LayoutStride there
+      static_assert(std::is_same<typename decltype(A)::array_layout,
+                                 Kokkos::LayoutStride>::value,
+                    "");
+      static_assert(std::is_same<typename decltype(x)::array_layout,
+                                 Kokkos::LayoutStride>::value,
+                    "");
+      static_assert(std::is_same<typename decltype(y)::array_layout,
+                                 Kokkos::LayoutStride>::value,
+                    "");
+      run_views<AlgoTag>(trans, A, x, y);
+    }
   }
 
   template <class AlgoTag, class ViewTypeA, class ViewTypeX, class ViewTypeY>
@@ -177,7 +228,7 @@ class SerialGEMVTest {
     // get reference results
     Kokkos::View<ScalarY *, Device> y_ref("Y_ref", y.extent(0));
     Kokkos::deep_copy(y_ref, y);
-    RefGEMVOp<ViewTypeA, ViewTypeX, ViewTypeY, ScalarType> gemv_ref(
+    RefGEMVOp<ViewTypeA, ViewTypeX, decltype(y_ref), ScalarType> gemv_ref(
         trans, alpha, A, x, beta, y_ref);
     Kokkos::parallel_for(teams, gemv_ref);
 
@@ -207,32 +258,65 @@ class SerialGEMVTest {
         trans, alpha, A, x, beta, y);
     Kokkos::parallel_for(Kokkos::TeamPolicy<Device>(1, 1), gemv_op);
 
-    const double eps = epsilon<ScalarY>();
+    const double eps = epsilon(ScalarY{});
     EXPECT_NEAR_KK_REL_1DVIEW(y, y_ref, eps);
     Kokkos::deep_copy(y, y_backup);
   }
 
   //----- utilities -----//
 
-  template <class Scalar>
-  static double epsilon() {
-    return (std::is_same<Scalar, float>::value ||
-            std::is_same<Scalar, Kokkos::complex<float>>::value)
-               ? 2 * 1e-5
-               : 1e-7;
+  // GEMV tolerance for scalar types
+  static double epsilon(float) { return 2 * 1e-5; }
+  static double epsilon(double) { return 1e-7; }
+  static double epsilon(int) { return 0; }
+  // tolerance for derived types
+  template <class ScalarType>
+  static double epsilon(Kokkos::complex<ScalarType>) {
+    return epsilon(ScalarType{});
+  }
+  template <class ScalarType, int VecLen>
+  static double epsilon(simd_vector<ScalarType, VecLen>) {
+    return epsilon(ScalarType{});
   }
 
   template <class ViewTypeA, class ViewTypeX, class ViewTypeY>
   static void fill_inputs(ViewTypeA A, ViewTypeX x, ViewTypeY y) {
-    using A_scalar_type = typename ViewTypeA::non_const_value_type;
-    using x_scalar_type = typename ViewTypeX::non_const_value_type;
-    using y_scalar_type = typename ViewTypeY::non_const_value_type;
-    using exec_space    = typename Device::execution_space;
+    using exec_space = typename Device::execution_space;
     Kokkos::Random_XorShift64_Pool<exec_space> rand_pool(13718);
-    Kokkos::fill_random(A, rand_pool, A_scalar_type(10));
-    Kokkos::fill_random(x, rand_pool, x_scalar_type(10));
-    Kokkos::fill_random(y, rand_pool, y_scalar_type(10));
-    Kokkos::fence();
+    fill_random_view(A, rand_pool);
+    fill_random_view(x, rand_pool);
+    fill_random_view(y, rand_pool);
+  }
+};
+
+template <class ScalarA, class ScalarX, class ScalarY, class Device,
+          class ScalarCoef = void>
+struct SerialGEMVTest {
+  static void run(const char *mode) {
+    using base =
+        SerialGEMVTestBase<ScalarA, ScalarX, ScalarY, Device, ScalarCoef>;
+    base::template run_layouts<KokkosBlas::Algo::Gemv::Unblocked>(mode);
+    base::template run_layouts<KokkosBlas::Algo::Gemv::Blocked>(mode);
+  }
+};
+
+// Special handling of Vector<SIMD<T>> (instead of plain scalars)
+// Note: MKL compact routines don't allow mixed scalar types
+template <class ScalarType, int VecLen, class Device, class ScalarCoef>
+struct SerialGEMVTest<simd_vector<ScalarType, VecLen>,
+                      simd_vector<ScalarType, VecLen>,
+                      simd_vector<ScalarType, VecLen>, Device, ScalarCoef> {
+  static void run(const char *mode) {
+    using vector_type = simd_vector<ScalarType, VecLen>;
+    using base = SerialGEMVTestBase<vector_type, vector_type, vector_type,
+                                    Device, ScalarCoef>;
+    // run all usual, non-vector tests
+    base::template run_layouts<KokkosBlas::Algo::Gemv::Unblocked>(mode);
+    base::template run_layouts<KokkosBlas::Algo::Gemv::Blocked>(mode);
+    // run vector tests
+#ifdef __KOKKOSBLAS_ENABLE_INTEL_MKL_COMPACT__
+    base::template run_layouts<KokkosBlas::Algo::Gemv::CompactMKL>(mode);
+#endif
   }
 };
 
@@ -247,7 +331,7 @@ class SerialGEMVTest {
     ::Test::SerialGEMVTest<SCALAR_A, SCALAR_X, SCALAR_Y, TestExecSpace, \
                            SCALAR_COEF>::run("T");                      \
   }                                                                     \
-  TEST_F(TestCategory, serial_gemv_c_##NAME) {                          \
+  TEST_F(TestCategory, serial_gemv_ct_##NAME) {                         \
     ::Test::SerialGEMVTest<SCALAR_A, SCALAR_X, SCALAR_Y, TestExecSpace, \
                            SCALAR_COEF>::run("C");                      \
   }
@@ -262,6 +346,13 @@ TEST_CASE(float, float)
 
 #ifdef KOKKOSKERNELS_TEST_DOUBLE
 TEST_CASE(double, double)
+// MKL vector types
+#ifdef __KOKKOSBLAS_ENABLE_INTEL_MKL_COMPACT__
+using simd_vector_avx8 = ::Test::simd_vector<double, 8>;
+using simd_vector_avx4 = ::Test::simd_vector<double, 4>;
+TEST_CASE2(mkl_simd_vector_avx8, simd_vector_avx8, double)
+TEST_CASE2(mkl_simd_vector_avx4, simd_vector_avx4, double)
+#endif
 #endif
 
 #ifdef KOKKOSKERNELS_TEST_COMPLEX_DOUBLE

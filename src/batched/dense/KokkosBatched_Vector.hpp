@@ -255,6 +255,18 @@ class ArithTraits<KokkosBatched::Vector<KokkosBatched::SIMD<T>, l>> {
     return val;
   }
 
+  static KOKKOS_FORCEINLINE_FUNCTION val_type conj(const val_type &val) {
+    return val;
+  }
+
+  static KOKKOS_FORCEINLINE_FUNCTION mag_scalar_type abs(const val_type &val) {
+    mag_scalar_type v = ArithTraits<mag_scalar_type>::zero();
+    for (int i = 0; i < l; ++i) {
+      v = KOKKOSKERNELS_MACRO_MAX(v, KOKKOSKERNELS_MACRO_ABS(val[i]));
+    }
+    return v;
+  }
+
   static const bool is_specialized = ArithTraits<T>::is_specialized;
   static const bool is_signed      = ArithTraits<T>::is_signed;
   static const bool is_integer     = ArithTraits<T>::is_integer;
@@ -288,6 +300,23 @@ class ArithTraits<
       r_val[i] = val[i].imag();
     }
     return r_val;
+  }
+
+  static KOKKOS_FORCEINLINE_FUNCTION val_type conj(const val_type &val) {
+    using KAT = ArithTraits<typename val_type::value_type>;
+    val_type v{};
+    for (int i = 0; i < l; ++i) {
+      v[i] = KAT::conj(v[i]);
+    }
+    return v;
+  }
+
+  static KOKKOS_FORCEINLINE_FUNCTION mag_scalar_type abs(const val_type &val) {
+    mag_scalar_type v = ArithTraits<mag_scalar_type>::zero();
+    for (int i = 0; i < l; ++i) {
+      v = KOKKOSKERNELS_MACRO_MAX(v, KOKKOSKERNELS_MACRO_ABS(val[i]));
+    }
+    return v;
   }
 };
 

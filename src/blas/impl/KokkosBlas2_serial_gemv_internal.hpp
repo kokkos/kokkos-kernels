@@ -92,9 +92,10 @@ KOKKOS_INLINE_FUNCTION int SerialGemvInternal<Algo::Gemv::Unblocked>::invoke(
   // y = beta y + alpha A x
   // y (m), A(m x n), B(n)
 
-  if (beta == zero)
-    KokkosBlas::Impl::SerialSetInternal::invoke(m, zero, y, ys0);
-  else if (beta != one)
+  if (beta == zero) {
+    ValueYType val_zero{};  // can be Vector<SIMD> so avoid assigning explicit 0
+    KokkosBlas::Impl::SerialSetInternal::invoke(m, val_zero, y, ys0);
+  } else if (beta != one)
     KokkosBlas::Impl::SerialScaleInternal::invoke(m, beta, y, ys0);
 
   if (alpha != zero) {

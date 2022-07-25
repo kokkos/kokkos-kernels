@@ -48,6 +48,7 @@
 
 #include "KokkosBlas_util.hpp"
 #include "KokkosBlas2_serial_gemv_internal.hpp"
+#include "KokkosBatched_Vector.hpp"  // for Vector handling in CompactMKL impls
 
 namespace KokkosBlas {
 
@@ -70,6 +71,47 @@ struct SerialGemv {
 /// ===========
 /// CompactMKL does not exist on Gemv
 
+namespace Impl {
+
+#ifdef __KOKKOSBLAS_ENABLE_INTEL_MKL_COMPACT__
+template <typename ScalarType, typename AViewType, typename xViewType,
+          typename yViewType>
+void kk_mkl_gemv(MKL_TRANSPOSE trans, const ScalarType alpha,
+                 const AViewType &A, const xViewType &x, const ScalarType beta,
+                 const yViewType &y) {
+  typedef typename yViewType::value_type vector_type;
+
+  static_assert(KokkosBatched::is_vector<vector_type>::value,
+                "value type is not vector type");
+  static_assert(
+      vector_type::vector_length == 4 || vector_type::vector_length == 8,
+      "AVX, AVX2 and AVX512 is supported");
+
+  if (A.stride_0() != 1 && A.stride_1() != 1) {
+    Kokkos::abort("Strided A matrix is not supported in MKL gemv/gemm");
+  }
+
+  // Note: MKL handles 0-sizes fine
+  const int m = A.extent(MKL_NOTRANS == trans ? 0 : 1);
+  const int n = 1;
+  const int k = A.extent(MKL_NOTRANS == trans ? 1 : 0);
+
+  const bool col_major    = A.stride_0() == 1;
+  const MKL_LAYOUT layout = col_major ? MKL_COL_MAJOR : MKL_ROW_MAJOR;
+  const MKL_INT A_stride  = col_major ? A.stride_1() : A.stride_0();
+  const MKL_COMPACT_PACK format =
+      vector_type::vector_length == 8 ? MKL_COMPACT_AVX512 : MKL_COMPACT_AVX;
+
+  mkl_dgemm_compact(layout, trans, MKL_NOTRANS, m, n, k, alpha,
+                    (const double *)A.data(), A_stride,
+                    (const double *)x.data(), x.stride_0(), beta,
+                    (double *)y.data(), y.stride_0(), format,
+                    (MKL_INT)vector_type::vector_length);
+}
+#endif
+
+}  // namespace Impl
+
 ///
 /// NT
 ///
@@ -82,36 +124,8 @@ KOKKOS_INLINE_FUNCTION int
 SerialGemv<Trans::NoTranspose, Algo::Gemv::CompactMKL>::invoke(
     const ScalarType alpha, const AViewType &A, const xViewType &x,
     const ScalarType beta, const yViewType &y) {
-  typedef typename yViewType::value_type vector_type;
-  // typedef typename vector_type::value_type value_type;
-
-  const int m = A.extent(0), n = 1, k = A.extent(1);
-
-  static_assert(is_vector<vector_type>::value, "value type is not vector type");
-  static_assert(
-      vector_type::vector_length == 4 || vector_type::vector_length == 8,
-      "AVX, AVX2 and AVX512 is supported");
-  const MKL_COMPACT_PACK format =
-      vector_type::vector_length == 8 ? MKL_COMPACT_AVX512 : MKL_COMPACT_AVX;
-
-  // no error check
-  int r_val = 0;
-  if (A.stride_0() == 1) {
-    mkl_dgemm_compact(MKL_COL_MAJOR, MKL_NOTRANS, MKL_NOTRANS, m, n, k, alpha,
-                      (const double *)A.data(), A.stride_1(),
-                      (const double *)x.data(), x.stride_0(), beta,
-                      (double *)y.data(), y.stride_0(), format,
-                      (MKL_INT)vector_type::vector_length);
-  } else if (A.stride_1() == 1) {
-    mkl_dgemm_compact(MKL_ROW_MAJOR, MKL_NOTRANS, MKL_NOTRANS, m, n, k, alpha,
-                      (const double *)A.data(), A.stride_0(),
-                      (const double *)x.data(), x.stride_0(), beta,
-                      (double *)y.data(), y.stride_0(), format,
-                      (MKL_INT)vector_type::vector_length);
-  } else {
-    r_val = -1;
-  }
-  return r_val;
+  Impl::kk_mkl_gemv(MKL_NOTRANS, alpha, A, x, beta, y);
+  return 0;
 }
 #endif
 
@@ -150,36 +164,8 @@ KOKKOS_INLINE_FUNCTION int
 SerialGemv<Trans::Transpose, Algo::Gemv::CompactMKL>::invoke(
     const ScalarType alpha, const AViewType &A, const xViewType &x,
     const ScalarType beta, const yViewType &y) {
-  typedef typename yViewType::value_type vector_type;
-  // typedef typename vector_type::value_type value_type;
-
-  const int m = A.extent(0), n = 1, k = A.extent(1);
-
-  static_assert(is_vector<vector_type>::value, "value type is not vector type");
-  static_assert(
-      vector_type::vector_length == 4 || vector_type::vector_length == 8,
-      "AVX, AVX2 and AVX512 is supported");
-  const MKL_COMPACT_PACK format =
-      vector_type::vector_length == 8 ? MKL_COMPACT_AVX512 : MKL_COMPACT_AVX;
-
-  // no error check
-  int r_val = 0;
-  if (A.stride_0() == 1) {
-    mkl_dgemm_compact(MKL_COL_MAJOR, MKL_TRANS, MKL_NOTRANS, m, n, k, alpha,
-                      (const double *)A.data(), A.stride_1(),
-                      (const double *)x.data(), x.stride_0(), beta,
-                      (double *)y.data(), y.stride_0(), format,
-                      (MKL_INT)vector_type::vector_length);
-  } else if (A.stride_1() == 1) {
-    mkl_dgemm_compact(MKL_ROW_MAJOR, MKL_TRANS, MKL_NOTRANS, m, n, k, alpha,
-                      (const double *)A.data(), A.stride_0(),
-                      (const double *)x.data(), x.stride_0(), beta,
-                      (double *)y.data(), y.stride_0(), format,
-                      (MKL_INT)vector_type::vector_length);
-  } else {
-    r_val = -1;
-  }
-  return r_val;
+  Impl::kk_mkl_gemv(MKL_TRANS, alpha, A, x, beta, y);
+  return 0;
 }
 #endif
 
@@ -212,9 +198,16 @@ SerialGemv<Trans::Transpose, Algo::Gemv::Blocked>::invoke(
 ///
 
 #ifdef __KOKKOSBLAS_ENABLE_INTEL_MKL_COMPACT__
-#error TODO: implement MKL/ConjTranspose !
-// see mkl_?gemm_compact with transa=MKL_CONJTRANS
-// https://www.intel.com/content/www/us/en/develop/documentation/onemkl-developer-reference-c/top/blas-and-sparse-blas-routines/compact-blas-and-lapack-functions/mkl-gemm-compact.html
+template <>
+template <typename ScalarType, typename AViewType, typename xViewType,
+          typename yViewType>
+KOKKOS_INLINE_FUNCTION int
+SerialGemv<Trans::ConjTranspose, Algo::Gemv::CompactMKL>::invoke(
+    const ScalarType alpha, const AViewType &A, const xViewType &x,
+    const ScalarType beta, const yViewType &y) {
+  Impl::kk_mkl_gemv(MKL_CONJTRANS, alpha, A, x, beta, y);
+  return 0;
+}
 #endif
 
 template <>

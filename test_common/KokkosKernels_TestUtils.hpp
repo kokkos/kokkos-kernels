@@ -356,42 +356,27 @@ void vanillaGEMM(typename ViewTypeC::non_const_value_type alpha,
   }
 }
 
-template <class ViewTypeA, class ViewTypeX, class ViewTypeY>
-KOKKOS_INLINE_FUNCTION void vanillaGEMV(
-    char mode, typename ViewTypeA::non_const_value_type alpha,
-    const ViewTypeA& A, const ViewTypeX& x,
-    typename ViewTypeY::non_const_value_type beta, const ViewTypeY& y) {
+template <class AlphaType, class ViewTypeA, class ViewTypeX, class BetaType,
+          class ViewTypeY>
+KOKKOS_INLINE_FUNCTION void vanillaGEMV(char mode, AlphaType alpha,
+                                        const ViewTypeA& A, const ViewTypeX& x,
+                                        BetaType beta, const ViewTypeY& y) {
   using ScalarY = typename ViewTypeY::non_const_value_type;
   using KAT_A   = Kokkos::ArithTraits<typename ViewTypeA::non_const_value_type>;
-  using KAT_Y   = Kokkos::ArithTraits<ScalarY>;
-  int M         = A.extent(0);
-  int N         = A.extent(1);
   const bool transposed = mode == 'T' || mode == 'C';
   const bool conjugated = mode == 'C';
-  if (beta == KAT_Y::zero()) {
-    const int i1 = transposed ? N : M;
-    for (int i = 0; i < i1; i++) {  // no deep_copy on device
-      y(i) = KAT_Y::zero();
-    }
-  }
-  if (!transposed) {
-    for (int i = 0; i < M; i++) {
-      ScalarY y_i = beta * y(i);
-      for (int j = 0; j < N; j++) {
-        const auto Aij = conjugated ? KAT_A::conj(A(i, j)) : A(i, j);
-        y_i += alpha * Aij * x(j);
-      }
-      y(i) = y_i;
-    }
-  } else {
+  const bool has_beta   = beta != Kokkos::ArithTraits<BetaType>::zero();
+  int M                 = A.extent(transposed ? 1 : 0);
+  int N                 = A.extent(transposed ? 0 : 1);
+  for (int i = 0; i < M; i++) {
+    ScalarY y_i{};
+    if (has_beta) y_i = beta * y(i);
     for (int j = 0; j < N; j++) {
-      ScalarY y_j = beta * y(j);
-      for (int i = 0; i < M; i++) {
-        const auto Aij = conjugated ? KAT_A::conj(A(i, j)) : A(i, j);
-        y_j += alpha * Aij * x(i);
-      }
-      y(j) = y_j;
+      const auto a   = transposed ? A(j, i) : A(i, j);
+      const auto Aij = conjugated ? KAT_A::conj(a) : a;
+      y_i += alpha * Aij * x(j);
     }
+    y(i) = y_i;
   }
 }
 
