@@ -154,7 +154,10 @@ bool is_same_block_matrix(bsrMat_t output_mat_actual,
 
   typedef typename Kokkos::Details::ArithTraits<
       typename scalar_view_t::non_const_value_type>::mag_type eps_type;
-  eps_type eps = std::is_same<eps_type, float>::value ? 3.7e-3 : 1e-7;
+  eps_type eps = std::is_same<eps_type, float>::value ||
+                         std::is_same<eps_type, Kokkos::complex<float>>::value
+                     ? 5.7e-3
+                     : 1e-7;
 
   is_identical = KokkosKernels::Impl::kk_is_relatively_identical_view<
       scalar_view_t, scalar_view_t, eps_type, typename device::execution_space>(
@@ -311,6 +314,9 @@ void test_bspgemm(lno_t blkDim, lno_t m, lno_t k, lno_t n, size_type nnz,
     test_case(2, 0, 12, 5, 0, 10, 0, true, SHMEM_AUTO);                    \
     test_case(2, 10, 10, 0, 0, 10, 10, true, SHMEM_AUTO);                  \
   }
+
+typedef Kokkos::complex<double> kokkos_complex_double;
+typedef Kokkos::complex<float> kokkos_complex_float;
 
 #include <Test_Common_Test_All_Type_Combos.hpp>
 
