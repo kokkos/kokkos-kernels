@@ -394,7 +394,6 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
                   LValuesType &L_values, const URowMapType &U_row_map,
                   const UEntriesType &U_entries, UValuesType &U_values) {
   using execution_space         = typename IlukHandle::execution_space;
-  using memory_space            = typename IlukHandle::memory_space;
   using size_type               = typename IlukHandle::size_type;
   using nnz_lno_t               = typename IlukHandle::nnz_lno_t;
   using HandleDeviceEntriesType = typename IlukHandle::nnz_lno_view_t;
