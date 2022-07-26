@@ -50,6 +50,7 @@
 #include "KokkosSparse_spgemm.hpp"
 #include "KokkosSparse_BsrMatrix.hpp"
 #include "KokkosSparse_IOUtils.hpp"
+#include "KokkosSparse_Utils_mkl.hpp"
 
 using namespace KokkosSparse;
 
@@ -227,8 +228,7 @@ void test_bspgemm(lno_t blkDim, lno_t m, lno_t k, lno_t n, size_type nnz,
 #endif
         break;
 
-      case SPGEMM_MKL:
-        algo                = "SPGEMM_MKL";
+      case SPGEMM_MKL: algo = "SPGEMM_MKL";
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
         if (!KokkosSparse::Impl::mkl_is_supported_value_type<scalar_t>::value) {
           is_expected_to_fail = true;
