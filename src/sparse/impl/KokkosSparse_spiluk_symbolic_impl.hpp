@@ -466,7 +466,7 @@ void iluk_symbolic(IlukHandle& thandle,
 
     // Level scheduling on L
     if (thandle.get_algorithm() ==
-               KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1) {
+        KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1) {
       level_sched_tp(thandle, L_row_map, L_entries, level_list, level_ptr,
                      level_idx, nlev);
       thandle.alloc_iw(thandle.get_level_maxrowsperchunk(), nrows);

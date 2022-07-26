@@ -421,69 +421,66 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
   Kokkos::deep_copy(level_ptr_h, level_ptr);
 
   //{
-    if (thandle.get_algorithm() ==
-        KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1) {
-      level_nchunks_h       = thandle.get_level_nchunks();
-      level_nrowsperchunk_h = thandle.get_level_nrowsperchunk();
-    }
-    iw = thandle.get_iw();
+  if (thandle.get_algorithm() ==
+      KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1) {
+    level_nchunks_h       = thandle.get_level_nchunks();
+    level_nrowsperchunk_h = thandle.get_level_nrowsperchunk();
+  }
+  iw = thandle.get_iw();
 
-    // Main loop must be performed sequential. Question: Try out Cuda's graph
-    // stuff to reduce kernel launch overhead
-    for (size_type lvl = 0; lvl < nlevels; ++lvl) {
-      nnz_lno_t lev_start = level_ptr_h(lvl);
-      nnz_lno_t lev_end   = level_ptr_h(lvl + 1);
+  // Main loop must be performed sequential. Question: Try out Cuda's graph
+  // stuff to reduce kernel launch overhead
+  for (size_type lvl = 0; lvl < nlevels; ++lvl) {
+    nnz_lno_t lev_start = level_ptr_h(lvl);
+    nnz_lno_t lev_end   = level_ptr_h(lvl + 1);
 
-      if ((lev_end - lev_start) != 0) {
-        if (thandle.get_algorithm() ==
-            KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_RP) {
-          Kokkos::parallel_for(
-              "parfor_fixed_lvl",
-              Kokkos::RangePolicy<execution_space>(lev_start, lev_end),
-              ILUKLvlSchedRPNumericFunctor<
-                  ARowMapType, AEntriesType, AValuesType, LRowMapType,
-                  LEntriesType, LValuesType, URowMapType, UEntriesType,
-                  UValuesType, HandleDeviceEntriesType, WorkViewType,
-                  nnz_lno_t>(A_row_map, A_entries, A_values, L_row_map,
-                             L_entries, L_values, U_row_map, U_entries,
-                             U_values, level_idx, iw, lev_start));
-        } else if (thandle.get_algorithm() ==
-                   KokkosSparse::Experimental::SPILUKAlgorithm::
-                       SEQLVLSCHD_TP1) {
-          using policy_type = Kokkos::TeamPolicy<execution_space>;
-          int team_size     = thandle.get_team_size();
-
-          nnz_lno_t lvl_rowid_start = 0;
-          nnz_lno_t lvl_nrows_chunk;
-          for (int chunkid = 0; chunkid < level_nchunks_h(lvl); chunkid++) {
-            if ((lvl_rowid_start + level_nrowsperchunk_h(lvl)) >
-                (lev_end - lev_start))
-              lvl_nrows_chunk = (lev_end - lev_start) - lvl_rowid_start;
-            else
-              lvl_nrows_chunk = level_nrowsperchunk_h(lvl);
-
-            ILUKLvlSchedTP1NumericFunctor<
+    if ((lev_end - lev_start) != 0) {
+      if (thandle.get_algorithm() ==
+          KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_RP) {
+        Kokkos::parallel_for(
+            "parfor_fixed_lvl",
+            Kokkos::RangePolicy<execution_space>(lev_start, lev_end),
+            ILUKLvlSchedRPNumericFunctor<
                 ARowMapType, AEntriesType, AValuesType, LRowMapType,
                 LEntriesType, LValuesType, URowMapType, UEntriesType,
-                UValuesType, HandleDeviceEntriesType, WorkViewType, nnz_lno_t>
-                tstf(A_row_map, A_entries, A_values, L_row_map, L_entries,
-                     L_values, U_row_map, U_entries, U_values, level_idx, iw,
-                     lev_start + lvl_rowid_start);
+                UValuesType, HandleDeviceEntriesType, WorkViewType, nnz_lno_t>(
+                A_row_map, A_entries, A_values, L_row_map, L_entries, L_values,
+                U_row_map, U_entries, U_values, level_idx, iw, lev_start));
+      } else if (thandle.get_algorithm() ==
+                 KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1) {
+        using policy_type = Kokkos::TeamPolicy<execution_space>;
+        int team_size     = thandle.get_team_size();
 
-            if (team_size == -1)
-              Kokkos::parallel_for("parfor_l_team",
-                                   policy_type(lvl_nrows_chunk, Kokkos::AUTO),
-                                   tstf);
-            else
-              Kokkos::parallel_for("parfor_l_team",
-                                   policy_type(lvl_nrows_chunk, team_size),
-                                   tstf);
-            Kokkos::fence();
-            lvl_rowid_start += lvl_nrows_chunk;
-          }
+        nnz_lno_t lvl_rowid_start = 0;
+        nnz_lno_t lvl_nrows_chunk;
+        for (int chunkid = 0; chunkid < level_nchunks_h(lvl); chunkid++) {
+          if ((lvl_rowid_start + level_nrowsperchunk_h(lvl)) >
+              (lev_end - lev_start))
+            lvl_nrows_chunk = (lev_end - lev_start) - lvl_rowid_start;
+          else
+            lvl_nrows_chunk = level_nrowsperchunk_h(lvl);
+
+          ILUKLvlSchedTP1NumericFunctor<
+              ARowMapType, AEntriesType, AValuesType, LRowMapType, LEntriesType,
+              LValuesType, URowMapType, UEntriesType, UValuesType,
+              HandleDeviceEntriesType, WorkViewType, nnz_lno_t>
+              tstf(A_row_map, A_entries, A_values, L_row_map, L_entries,
+                   L_values, U_row_map, U_entries, U_values, level_idx, iw,
+                   lev_start + lvl_rowid_start);
+
+          if (team_size == -1)
+            Kokkos::parallel_for("parfor_l_team",
+                                 policy_type(lvl_nrows_chunk, Kokkos::AUTO),
+                                 tstf);
+          else
+            Kokkos::parallel_for("parfor_l_team",
+                                 policy_type(lvl_nrows_chunk, team_size), tstf);
+          Kokkos::fence();
+          lvl_rowid_start += lvl_nrows_chunk;
         }
-      }  // end if
-    }    // end for lvl
+      }
+    }  // end if
+  }    // end for lvl
   //}
 
 // Output check
