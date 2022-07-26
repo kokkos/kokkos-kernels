@@ -245,8 +245,8 @@ struct ILUKLvlSchedTP1NumericFunctor {
     nnz_lno_t my_team = static_cast<nnz_lno_t>(team.league_rank());
     nnz_lno_t rowid =
         static_cast<nnz_lno_t>(level_idx(my_team + lev_start));  // map to rowid
-    //nnz_lno_t my_thread = static_cast<nnz_lno_t>(team.team_rank());
-    //nnz_lno_t ts        = static_cast<nnz_lno_t>(team.team_size());
+    // nnz_lno_t my_thread = static_cast<nnz_lno_t>(team.team_rank());
+    // nnz_lno_t ts        = static_cast<nnz_lno_t>(team.team_size());
 
     nnz_lno_t k1 = static_cast<nnz_lno_t>(L_row_map(rowid));
     nnz_lno_t k2 = static_cast<nnz_lno_t>(L_row_map(rowid + 1));
@@ -402,7 +402,6 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
   using LevelHostViewType       = typename IlukHandle::nnz_lno_view_host_t;
 
   size_type nlevels = thandle.get_num_levels();
-
 
   // Keep these as host View, create device version and copy back to host
   HandleDeviceEntriesType level_ptr = thandle.get_level_ptr();
