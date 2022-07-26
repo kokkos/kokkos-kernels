@@ -342,16 +342,27 @@ struct SerialGEMVTest<simd_vector<ScalarType, VecLen>,
 
 #ifdef KOKKOSKERNELS_TEST_FLOAT
 TEST_CASE(float, float)
+// MKL vector types
+#ifdef __KOKKOSBLAS_ENABLE_INTEL_MKL_COMPACT__
+using simd_float_sse    = ::Test::simd_vector<float, 4>;
+using simd_float_avx    = ::Test::simd_vector<float, 8>;
+using simd_float_avx512 = ::Test::simd_vector<float, 16>;
+TEST_CASE2(mkl_float_sse, simd_float_sse, float)
+TEST_CASE2(mkl_float_avx, simd_float_avx, float)
+TEST_CASE2(mkl_float_avx512, simd_float_avx512, float)
+#endif
 #endif
 
 #ifdef KOKKOSKERNELS_TEST_DOUBLE
 TEST_CASE(double, double)
 // MKL vector types
 #ifdef __KOKKOSBLAS_ENABLE_INTEL_MKL_COMPACT__
-using simd_vector_avx8 = ::Test::simd_vector<double, 8>;
-using simd_vector_avx4 = ::Test::simd_vector<double, 4>;
-TEST_CASE2(mkl_simd_vector_avx8, simd_vector_avx8, double)
-TEST_CASE2(mkl_simd_vector_avx4, simd_vector_avx4, double)
+using simd_double_sse    = ::Test::simd_vector<double, 2>;
+using simd_double_avx    = ::Test::simd_vector<double, 4>;
+using simd_double_avx512 = ::Test::simd_vector<double, 8>;
+TEST_CASE2(mkl_double_sse, simd_double_sse, double)
+TEST_CASE2(mkl_double_avx, simd_double_avx, double)
+TEST_CASE2(mkl_double_avx512, simd_double_avx512, double)
 #endif
 #endif
 

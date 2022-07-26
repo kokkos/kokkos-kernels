@@ -74,6 +74,51 @@ struct SerialGemv {
 namespace Impl {
 
 #ifdef __KOKKOSBLAS_ENABLE_INTEL_MKL_COMPACT__
+
+#define __IMPL_KK_MKL_DGEMM_COMPACT(SCALAR, MKL_ROUTINE)                   \
+  void kk_mkl_gemm_compact(                                                \
+      MKL_LAYOUT layout, MKL_TRANSPOSE transa, MKL_TRANSPOSE transb,       \
+      MKL_INT m, MKL_INT n, MKL_INT k, SCALAR alpha, const SCALAR *a,      \
+      MKL_INT ldap, const SCALAR *b, MKL_INT ldbp, SCALAR beta, SCALAR *c, \
+      MKL_INT ldcp, MKL_COMPACT_PACK format, MKL_INT nm) {                 \
+    MKL_ROUTINE(layout, transa, transb, m, n, k, alpha, a, ldap, b, ldbp,  \
+                beta, c, ldcp, format, nm);                                \
+  }
+
+__IMPL_KK_MKL_DGEMM_COMPACT(double, mkl_dgemm_compact)
+__IMPL_KK_MKL_DGEMM_COMPACT(float, mkl_sgemm_compact)
+// TODO: add complex ? see mkl_cgemm_compact() and mkl_zgemm_compact()
+#undef __IMPL_KK_MKL_DGEMM_COMPACT
+
+template <typename ScalarType, int VecLen>
+MKL_COMPACT_PACK mkl_compact_format() {
+  Kokkos::abort("vector size not supported");
+}
+template <>
+MKL_COMPACT_PACK mkl_compact_format<double, 2>() {
+  return MKL_COMPACT_SSE;
+}
+template <>
+MKL_COMPACT_PACK mkl_compact_format<float, 4>() {
+  return MKL_COMPACT_SSE;
+}
+template <>
+MKL_COMPACT_PACK mkl_compact_format<double, 4>() {
+  return MKL_COMPACT_AVX;
+}
+template <>
+MKL_COMPACT_PACK mkl_compact_format<float, 8>() {
+  return MKL_COMPACT_AVX;
+}
+template <>
+MKL_COMPACT_PACK mkl_compact_format<double, 8>() {
+  return MKL_COMPACT_AVX512;
+}
+template <>
+MKL_COMPACT_PACK mkl_compact_format<float, 16>() {
+  return MKL_COMPACT_AVX512;
+}
+
 template <typename ScalarType, typename AViewType, typename xViewType,
           typename yViewType>
 void kk_mkl_gemv(MKL_TRANSPOSE trans, const ScalarType alpha,
@@ -83,30 +128,38 @@ void kk_mkl_gemv(MKL_TRANSPOSE trans, const ScalarType alpha,
 
   static_assert(KokkosBatched::is_vector<vector_type>::value,
                 "value type is not vector type");
-  static_assert(
-      vector_type::vector_length == 4 || vector_type::vector_length == 8,
-      "AVX, AVX2 and AVX512 is supported");
-
-  if (A.stride_0() != 1 && A.stride_1() != 1) {
-    Kokkos::abort("Strided A matrix is not supported in MKL gemv/gemm");
+  using value_type = typename vector_type::value_type;
+  static_assert(std::is_same<typename AViewType::value_type::value_type,
+                             value_type>::value &&
+                    std::is_same<typename xViewType::value_type::value_type,
+                                 value_type>::value,
+                "scalar type mismatch");
+  if (A.stride_0() != 1 && A.stride_1() != 1 && x.stride_0() != 1 &&
+      y.stride_0() != 1) {
+    Kokkos::abort("Strided inputs are not supported in MKL gemv/gemm");
   }
 
-  // Note: MKL handles 0-sizes fine
-  const int m = A.extent(MKL_NOTRANS == trans ? 0 : 1);
-  const int n = 1;
-  const int k = A.extent(MKL_NOTRANS == trans ? 1 : 0);
+  // Note: not checking 0-sizes as MKL handles it fine
+  const bool transposed = trans == MKL_TRANS || trans == MKL_CONJTRANS;
+  const int m           = A.extent(transposed ? 1 : 0);
+  const int n           = 1;
+  const int k           = A.extent(transposed ? 0 : 1);
 
   const bool col_major    = A.stride_0() == 1;
   const MKL_LAYOUT layout = col_major ? MKL_COL_MAJOR : MKL_ROW_MAJOR;
-  const MKL_INT A_stride  = col_major ? A.stride_1() : A.stride_0();
+  const MKL_INT A_ld = KOKKOSKERNELS_MACRO_MAX(1, A.extent(col_major ? 0 : 1));
   const MKL_COMPACT_PACK format =
-      vector_type::vector_length == 8 ? MKL_COMPACT_AVX512 : MKL_COMPACT_AVX;
+      Impl::mkl_compact_format<value_type, vector_type::vector_length>();
 
-  mkl_dgemm_compact(layout, trans, MKL_NOTRANS, m, n, k, alpha,
-                    (const double *)A.data(), A_stride,
-                    (const double *)x.data(), x.stride_0(), beta,
-                    (double *)y.data(), y.stride_0(), format,
-                    (MKL_INT)vector_type::vector_length);
+  // cast away simd-vector pointers
+  auto A_data = reinterpret_cast<const value_type *>(A.data());
+  auto x_data = reinterpret_cast<const value_type *>(x.data());
+  auto y_data = reinterpret_cast<value_type *>(y.data());
+
+  Impl::kk_mkl_gemm_compact(layout, trans, MKL_NOTRANS, m, n, k,
+                            (value_type)alpha, A_data, A_ld, x_data, 1,
+                            (value_type)beta, y_data, 1, format,
+                            (MKL_INT)vector_type::vector_length);
 }
 #endif
 
