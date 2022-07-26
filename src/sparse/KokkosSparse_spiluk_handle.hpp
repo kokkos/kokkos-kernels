@@ -60,7 +60,6 @@ namespace Experimental {
 enum class SPILUKAlgorithm {
   SEQLVLSCHD_RP,
   SEQLVLSCHD_TP1 /*, SEQLVLSCHED_TP2*/
-  //SEQLVLSCHD_TP1HASHMAP
 };
 
 template <class size_type_, class lno_t_, class scalar_t_, class ExecutionSpace,
@@ -115,12 +114,6 @@ class SPILUKHandle {
   nnz_lno_view_host_t level_nchunks;  // number of chunks of rows at each level
   nnz_lno_view_host_t
       level_nrowsperchunk;  // maximum number of rows among chunks at each level
-  //nnz_row_view_host_t
-  //    level_maxnnzperrow;  // maximum number of nnz per row at each level
-  //nnz_row_view_host_t level_shmem_hash_size;  // hash size in the shared memory
-  //                                            // hash map at each level
-  //nnz_row_view_host_t level_shmem_key_size;   // key size in the shared memory
-  //                                            // hash map at each level
   work_view_t iw;  // working view for mapping dense indices to sparse indices
 
   size_type nrows;
@@ -147,9 +140,6 @@ class SPILUKHandle {
         level_ptr(),
         level_nchunks(),
         level_nrowsperchunk(),
-        //level_maxnnzperrow(),
-        //level_shmem_hash_size(),
-        //level_shmem_key_size(),
         iw(),
         nrows(nrows_),
         nlevels(0),
@@ -175,9 +165,7 @@ class SPILUKHandle {
     level_ptr             = nnz_lno_view_t("level_ptr", nrows_ + 1),
     level_nchunks         = nnz_lno_view_host_t(),
     level_nrowsperchunk   = nnz_lno_view_host_t(),
-    //level_maxnnzperrow    = nnz_row_view_host_t(),
-    //level_shmem_hash_size = nnz_row_view_host_t(),
-    //level_shmem_key_size  = nnz_row_view_host_t(), reset_symbolic_complete(),
+    reset_symbolic_complete(),
     iw                    = work_view_t();
   }
 
@@ -211,35 +199,6 @@ class SPILUKHandle {
   void alloc_level_nrowsperchunk(const size_type nlevels_) {
     level_nrowsperchunk = nnz_lno_view_host_t("level_nrowsperchunk", nlevels_);
   }
-
-  //KOKKOS_INLINE_FUNCTION
-  //nnz_row_view_host_t get_level_maxnnzperrow() const {
-  //  return level_maxnnzperrow;
-  //}
-  //
-  //void alloc_level_maxnnzperrow(const size_type nlevels_) {
-  //  level_maxnnzperrow = nnz_row_view_host_t("level_maxnnzperrow", nlevels_);
-  //}
-  //
-  //KOKKOS_INLINE_FUNCTION
-  //nnz_row_view_host_t get_level_shmem_hash_size() const {
-  //  return level_shmem_hash_size;
-  //}
-  //
-  //void alloc_level_shmem_hash_size(const size_type nlevels_) {
-  //  level_shmem_hash_size =
-  //      nnz_row_view_host_t("level_shmem_hash_size", nlevels_);
-  //}
-  //
-  //KOKKOS_INLINE_FUNCTION
-  //nnz_row_view_host_t get_level_shmem_key_size() const {
-  //  return level_shmem_key_size;
-  //}
-  //
-  //void alloc_level_shmem_key_size(const size_type nlevels_) {
-  //  level_shmem_key_size =
-  //      nnz_row_view_host_t("level_shmem_key_size", nlevels_);
-  //}
 
   KOKKOS_INLINE_FUNCTION
   work_view_t get_iw() const { return iw; }
@@ -305,10 +264,7 @@ class SPILUKHandle {
     if (algm == SPILUKAlgorithm::SEQLVLSCHD_TP1)
       std::cout << "SEQLVLSCHD_TP1" << std::endl;
 
-    /*if (algm == SPILUKAlgorithm::SEQLVLSCHD_TP1HASHMAP)
-      std::cout << "SEQLVLSCHD_TP1HASHMAP" << std::endl;
-
-    if ( algm == SPILUKAlgorithm::SEQLVLSCHED_TP2 ) {
+    /*if ( algm == SPILUKAlgorithm::SEQLVLSCHED_TP2 ) {
       std::cout << "SEQLVLSCHED_TP2" << std::endl;;
       std::cout << "WARNING: With CUDA this is currently only reliable with
     int-int ordinal-offset pair" << std::endl;
@@ -323,9 +279,7 @@ class SPILUKHandle {
       return SPILUKAlgorithm::SEQLVLSCHD_RP;
     else if (name == "SPILUK_TEAMPOLICY1")
       return SPILUKAlgorithm::SEQLVLSCHD_TP1;
-    /*else if (name == "SPILUK_TEAMPOLICY1HASHMAP")
-      return SPILUKAlgorithm::SEQLVLSCHD_TP1HASHMAP;
-    else if(name=="SPILUK_TEAMPOLICY2")    return
+    /*else if(name=="SPILUK_TEAMPOLICY2")    return
      * SPILUKAlgorithm::SEQLVLSCHED_TP2;*/
     else
       throw std::runtime_error("Invalid SPILUKAlgorithm name");
