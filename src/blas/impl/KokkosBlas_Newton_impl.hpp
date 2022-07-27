@@ -154,7 +154,7 @@ struct NewtonFunctor {
 
   KOKKOS_INLINE_FUNCTION
   NewtonSolverStatus solve() const {
-    norm_type norm = Kokkos::ArithTraits<norm_type>::zero();
+    norm_type norm    = Kokkos::ArithTraits<norm_type>::zero();
     yvalue_type alpha = Kokkos::ArithTraits<yvalue_type>::one();
     handle.set_residual(-1);  // init to dummy value
 
