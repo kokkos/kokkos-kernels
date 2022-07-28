@@ -583,8 +583,8 @@ inline void spmv_mkl(sparse_operation_t op, Kokkos::complex<float> alpha,
       &A_mkl, SPARSE_INDEX_BASE_ZERO, m, n, const_cast<int*>(Arowptrs),
       const_cast<int*>(Arowptrs + 1), const_cast<int*>(Aentries),
       (MKL_Complex8*)Avalues));
-  MKL_Complex8& alpha_mkl = reinterpret_cast<MKL_Complex8&>(alpha);
-  MKL_Complex8& beta_mkl  = reinterpret_cast<MKL_Complex8&>(beta);
+  MKL_Complex8 alpha_mkl{alpha.real(), alpha.imag()};
+  MKL_Complex8 beta_mkl{beta.real(), beta.imag()};
   KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_c_mv(
       op, alpha_mkl, A_mkl, A_descr, reinterpret_cast<const MKL_Complex8*>(x),
       beta_mkl, reinterpret_cast<MKL_Complex8*>(y)));
@@ -605,8 +605,8 @@ inline void spmv_mkl(sparse_operation_t op, Kokkos::complex<double> alpha,
       &A_mkl, SPARSE_INDEX_BASE_ZERO, m, n, const_cast<int*>(Arowptrs),
       const_cast<int*>(Arowptrs + 1), const_cast<int*>(Aentries),
       (MKL_Complex16*)Avalues));
-  MKL_Complex16& alpha_mkl = reinterpret_cast<MKL_Complex16&>(alpha);
-  MKL_Complex16& beta_mkl  = reinterpret_cast<MKL_Complex16&>(beta);
+  MKL_Complex16 alpha_mkl{alpha.real(), alpha.imag()};
+  MKL_Complex16 beta_mkl{beta.real(), beta.imag()};
   KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_z_mv(
       op, alpha_mkl, A_mkl, A_descr, reinterpret_cast<const MKL_Complex16*>(x),
       beta_mkl, reinterpret_cast<MKL_Complex16*>(y)));
