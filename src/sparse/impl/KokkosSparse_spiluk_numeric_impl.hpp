@@ -245,24 +245,22 @@ struct ILUKLvlSchedTP1NumericFunctor {
     nnz_lno_t my_team = static_cast<nnz_lno_t>(team.league_rank());
     nnz_lno_t rowid =
         static_cast<nnz_lno_t>(level_idx(my_team + lev_start));  // map to rowid
-    // nnz_lno_t my_thread = static_cast<nnz_lno_t>(team.team_rank());
-    // nnz_lno_t ts        = static_cast<nnz_lno_t>(team.team_size());
 
-    nnz_lno_t k1 = static_cast<nnz_lno_t>(L_row_map(rowid));
-    nnz_lno_t k2 = static_cast<nnz_lno_t>(L_row_map(rowid + 1));
+    size_type k1 = static_cast<size_type>(L_row_map(rowid));
+    size_type k2 = static_cast<size_type>(L_row_map(rowid + 1));
 #ifdef KEEP_DIAG
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2 - 1),
-                         [&](const nnz_lno_t k) {
+                         [&](const size_type k) {
                            nnz_lno_t col = static_cast<nnz_lno_t>(L_entries(k));
                            L_values(k)   = 0.0;
-                           iw(my_team, col) = k;
+                           iw(my_team, col) = static_cast<nnz_lno_t>(k);
                          });
 #else
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2),
-                         [&](const nnz_lno_t k) {
+                         [&](const size_type k) {
                            nnz_lno_t col = static_cast<nnz_lno_t>(L_entries(k));
                            L_values(k)   = 0.0;
-                           iw(my_team, col) = k;
+                           iw(my_team, col) = static_cast<nnz_lno_t>(k);
                          });
 #endif
 
@@ -274,22 +272,22 @@ struct ILUKLvlSchedTP1NumericFunctor {
 
     team.team_barrier();
 
-    k1 = static_cast<nnz_lno_t>(U_row_map(rowid));
-    k2 = static_cast<nnz_lno_t>(U_row_map(rowid + 1));
+    k1 = static_cast<size_type>(U_row_map(rowid));
+    k2 = static_cast<size_type>(U_row_map(rowid + 1));
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2),
-                         [&](const nnz_lno_t k) {
+                         [&](const size_type k) {
                            nnz_lno_t col = static_cast<nnz_lno_t>(U_entries(k));
                            U_values(k)   = 0.0;
-                           iw(my_team, col) = k;
+                           iw(my_team, col) = static_cast<nnz_lno_t>(k);
                          });
 
     team.team_barrier();
 
     // Unpack the ith row of A
-    k1 = static_cast<nnz_lno_t>(A_row_map(rowid));
-    k2 = static_cast<nnz_lno_t>(A_row_map(rowid + 1));
+    k1 = static_cast<size_type>(A_row_map(rowid));
+    k2 = static_cast<size_type>(A_row_map(rowid + 1));
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2),
-                         [&](const nnz_lno_t k) {
+                         [&](const size_type k) {
                            nnz_lno_t col = static_cast<nnz_lno_t>(A_entries(k));
                            nnz_lno_t ipos = iw(my_team, col);
                            if (col < rowid)
@@ -301,12 +299,12 @@ struct ILUKLvlSchedTP1NumericFunctor {
     team.team_barrier();
 
     // Eliminate prev rows
-    k1 = static_cast<nnz_lno_t>(L_row_map(rowid));
-    k2 = static_cast<nnz_lno_t>(L_row_map(rowid + 1));
+    k1 = static_cast<size_type>(L_row_map(rowid));
+    k2 = static_cast<size_type>(L_row_map(rowid + 1));
 #ifdef KEEP_DIAG
-    for (nnz_lno_t k = k1; k < k2 - 1; k++)
+    for (size_type k = k1; k < k2 - 1; k++)
 #else
-    for (nnz_lno_t k = k1; k < k2; k++)
+    for (size_type k = k1; k < k2; k++)
 #endif
     {
       nnz_lno_t prev_row = L_entries(k);
@@ -358,26 +356,26 @@ struct ILUKLvlSchedTP1NumericFunctor {
     team.team_barrier();
 
     // Reset
-    k1 = static_cast<nnz_lno_t>(L_row_map(rowid));
-    k2 = static_cast<nnz_lno_t>(L_row_map(rowid + 1));
+    k1 = static_cast<size_type>(L_row_map(rowid));
+    k2 = static_cast<size_type>(L_row_map(rowid + 1));
 #ifdef KEEP_DIAG
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2 - 1),
-                         [&](const nnz_lno_t k) {
+                         [&](const size_type k) {
                            nnz_lno_t col = static_cast<nnz_lno_t>(L_entries(k));
                            iw(my_team, col) = -1;
                          });
 #else
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2),
-                         [&](const nnz_lno_t k) {
+                         [&](const size_type k) {
                            nnz_lno_t col = static_cast<nnz_lno_t>(L_entries(k));
                            iw(my_team, col) = -1;
                          });
 #endif
 
-    k1 = static_cast<nnz_lno_t>(U_row_map(rowid));
-    k2 = static_cast<nnz_lno_t>(U_row_map(rowid + 1));
+    k1 = static_cast<size_type>(U_row_map(rowid));
+    k2 = static_cast<size_type>(U_row_map(rowid + 1));
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2),
-                         [&](const nnz_lno_t k) {
+                         [&](const size_type k) {
                            nnz_lno_t col = static_cast<nnz_lno_t>(U_entries(k));
                            iw(my_team, col) = -1;
                          });
