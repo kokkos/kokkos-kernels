@@ -139,22 +139,6 @@ void EXPECT_NEAR_KK(Scalar1 val1, Scalar2 val2, Scalar3 tol,
   EXPECT_LE((double)AT1::abs(val1 - val2), (double)AT3::abs(tol)) << msg;
 }
 
-template <class Scalar1, class Scalar2, class Scalar3>
-void EXPECT_NEAR_KK_REL(Scalar1 val1, Scalar2 val2, Scalar3 tol,
-                        std::string msg = "") {
-  typedef Kokkos::Details::ArithTraits<Scalar1> AT1;
-  typedef Kokkos::Details::ArithTraits<Scalar2> AT2;
-  typedef Kokkos::Details::ArithTraits<Scalar3> AT3;
-  const auto tolerance = (double)AT3::abs(tol);
-  const auto diff      = (double)AT1::abs(val1 - val2);
-  const auto val = KOKKOSKERNELS_MACRO_MAX(AT1::abs(val1), AT2::abs(val2));
-  if (val < tolerance) {
-    // if both values are near-zero, they pass as equal
-  } else {
-    EXPECT_LE(diff / val, tolerance) << msg;
-  }
-}
-
 template <class ViewType1, class ViewType2, class Scalar>
 void EXPECT_NEAR_KK_1DVIEW(ViewType1 v1, ViewType2 v2, Scalar tol) {
   size_t v1_size = v1.extent(0);
@@ -185,7 +169,11 @@ void EXPECT_NEAR_KK_REL_1DVIEW(ViewType1 v1, ViewType2 v2, Scalar tol) {
   KokkosKernels::Impl::safe_device_to_host_deep_copy(v2.extent(0), v2, h_v2);
 
   for (size_t i = 0; i < v1_size; ++i) {
-    EXPECT_NEAR_KK_REL(h_v1(i), h_v2(i), tol);
+    typedef typename std::remove_reference<decltype(h_v1(i))>::type hv1_type;
+    typedef typename std::remove_reference<decltype(h_v2(i))>::type hv2_type;
+    const auto ahv1 = Kokkos::Details::ArithTraits<hv1_type>::abs(h_v1(i));
+    const auto ahv2 = Kokkos::Details::ArithTraits<hv2_type>::abs(h_v2(i));
+    EXPECT_NEAR_KK(h_v1(i), h_v2(i), tol * Kokkos::max(ahv1, ahv2));
   }
 }
 
