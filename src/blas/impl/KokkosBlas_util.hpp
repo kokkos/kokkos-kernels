@@ -64,7 +64,7 @@ struct Algo {
     struct Blocked {
       static const char *name() { return "Blocked"; }
       // TODO:: for now harwire the blocksizes; this should reflect
-      // regieter blocking (not about team parallelism).
+      // register blocking (not about team parallelism).
       // this mb should vary according to
       // - team policy (smaller) or range policy (bigger)
       // - space (gpu vs host)
