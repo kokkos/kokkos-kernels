@@ -141,9 +141,9 @@ void kk_mkl_gemv(MKL_TRANSPOSE trans, const ScalarType alpha,
 
   // Note: not checking 0-sizes as MKL handles it fine
   const bool transposed = trans == MKL_TRANS || trans == MKL_CONJTRANS;
-  const int m           = A.extent(transposed ? 1 : 0);
+  const int m           = A.extent_int(transposed ? 1 : 0);
   const int n           = 1;
-  const int k           = A.extent(transposed ? 0 : 1);
+  const int k           = A.extent_int(transposed ? 0 : 1);
 
   const bool col_major    = A.stride_0() == 1;
   const MKL_LAYOUT layout = col_major ? MKL_COL_MAJOR : MKL_ROW_MAJOR;
