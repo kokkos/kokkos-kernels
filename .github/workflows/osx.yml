@@ -55,7 +55,7 @@ jobs:
           cmake \
           -DKokkos_ENABLE_${{ matrix.backend }}=ON \
           -DCMAKE_CXX_FLAGS="-Werror" \
-          -DCMAKE_CXX_STANDARD=14 \
+          -DCMAKE_CXX_STANDARD=17 \
           -DKokkos_ENABLE_COMPILER_WARNINGS=ON \
           -DKokkos_ENABLE_DEBUG_BOUNDS_CHECK:BOOL=${{ matrix.debug_bounds_check }} \
           -DKokkos_ENABLE_DEPRECATED_CODE_3=OFF \
