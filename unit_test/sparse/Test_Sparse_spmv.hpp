@@ -486,6 +486,13 @@ template <typename scalar_t, typename lno_t, typename size_type,
           typename layout, class Device>
 void test_spmv_mv(lno_t numRows, size_type nnz, lno_t bandwidth,
                   lno_t row_size_variance, bool heavy, int numMV) {
+  // The kokkos-kernels gtest does not have GTEST_SKIP defined. Suggest updating
+  // or using kokkos/tpls/gtest instead.
+  // if (std::is_same<typename Test::scalar_t, typename
+  // Kokkos::complex<double>>::value)
+  //  GTEST_SKIP(
+  //      "Skipped until https://github.com/kokkos/kokkos-kernels/issues/1331 is
+  //      " "resolved");
   using mag_t = typename Kokkos::ArithTraits<scalar_t>::mag_type;
 
   constexpr mag_t max_x   = static_cast<mag_t>(1);

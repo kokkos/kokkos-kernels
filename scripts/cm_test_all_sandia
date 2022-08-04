@@ -133,6 +133,7 @@ fi
 
 if [[ "$HOSTNAME" =~ weaver.* ]]; then
   MACHINE=weaver
+  source /etc/profile.d/modules.sh
   module load git
 fi
 
@@ -169,6 +170,10 @@ fi
 
 if [[ "$HOSTNAME" == sogpu01* ]]; then
   MACHINE=sogpu
+fi
+
+if [[ "$HOSTNAME" == sorh7* ]]; then
+  MACHINE=sorh7
 fi
 
 if [ ! -z "$SEMS_MODULEFILES_ROOT" ]; then
@@ -483,7 +488,8 @@ elif [ "$MACHINE" = "sogpu" ]; then
   INTEL_BASE_MODULE_LIST="sems-archive-env,sems-archive-cmake/3.17.1,sems-archive-gcc/7.2.0,sems-archive-<COMPILER_NAME>/<COMPILER_VERSION>"
   CLANG_BASE_MODULE_LIST="sems-archive-env,sems-archive-cmake/3.17.1,sems-archive-gcc/9.2.0,sems-archive-<COMPILER_NAME>/<COMPILER_VERSION>"
   CUDA_MODULE_LIST="sems-archive-env,sems-archive-cmake/3.17.1,sems-archive-gcc/7.2.0,sems-archive-<COMPILER_NAME>/<COMPILER_VERSION>"
-  CUDA11_MODULE_LIST="sems-archive-env,sems-archive-cmake/3.17.1,sems-archive-gcc/8.3.0,sems-archive-<COMPILER_NAME>/<COMPILER_VERSION>"
+  CUDA11_MODULE_LIST="sems-cmake/3.23.1,sems-gcc/8.3.0,sems-<COMPILER_NAME>/<COMPILER_VERSION>"
+  CUDA11_MODULE_TPL_LIST="$CUDA11_MODULE_LIST,sems-openblas/0.3.10"
   SKIP_HWLOC=True
   # No sems hwloc module
 
@@ -491,6 +497,15 @@ elif [ "$MACHINE" = "sogpu" ]; then
     ARCH_FLAG="--arch=Volta70"
   fi
 
+  if [ "$SPOT_CHECK" = "True" ]; then
+    # Format: (compiler module-list build-list exe-name warning-flag)
+    COMPILERS=("cuda/11.1.0 $CUDA11_MODULE_LIST "Cuda_OpenMP" $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+              )
+  elif [ "$SPOT_CHECK_TPLS" = "True" ]; then
+    # Format: (compiler module-list build-list exe-name warning-flag)
+    COMPILERS=("cuda/11.1.0 $CUDA11_MODULE_TPL_LIST "Cuda_Serial" $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+              )
+  else
     # Format: (compiler module-list build-list exe-name warning-flag)
     COMPILERS=("gcc/5.3.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
                "gcc/6.1.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
@@ -509,6 +524,45 @@ elif [ "$MACHINE" = "sogpu" ]; then
                "cuda/10.1 $CUDA_MODULE_LIST $CUDA_BUILD_LIST $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
                "cuda/11.1 $CUDA11_MODULE_LIST $CUDA_BUILD_LIST $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
               )
+
+  fi
+elif [ "$MACHINE" = "sorh7" ]; then
+  module load sems-cmake/3.23.1 sems-git
+  BASE_MODULE_LIST="sems-cmake/3.23.1,sems-<COMPILER_NAME>/<COMPILER_VERSION>"
+  INTEL_BASE_MODULE_LIST="sems-cmake/3.23.1,sems-gcc/7.3.0,sems-<COMPILER_NAME>/<COMPILER_VERSION>"
+  CLANG_BASE_MODULE_LIST="sems-cmake/3.23.1,sems-gcc/10.1.0,sems-<COMPILER_NAME>/<COMPILER_VERSION>"
+  SKIP_HWLOC=True
+  # No sems hwloc module
+
+  if [ -z "$ARCH_FLAG" ]; then
+    ARCH_FLAG="--arch=SKX"
+  fi
+
+  if [ "$SPOT_CHECK" = "True" ]; then
+    # Format: (compiler module-list build-list exe-name warning-flag)
+    COMPILERS=("intel/19.0.5 $INTEL_BASE_MODULE_LIST "OpenMP,Threads" icpc $INTEL_WARNING_FLAGS"
+              )
+  elif [ "$SPOT_CHECK_TPLS" = "True" ]; then
+    # Format: (compiler module-list build-list exe-name warning-flag)
+    COMPILERS=("intel/19.0.5 $INTEL_BASE_MODULE_LIST "OpenMP,Threads" icpc $INTEL_WARNING_FLAGS"
+              )
+  else
+    # Format: (compiler module-list build-list exe-name warning-flag)
+    COMPILERS=("gcc/5.3.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+                "gcc/6.1.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+                "gcc/6.4.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+                "gcc/7.2.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+                "gcc/7.3.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+                "gcc/8.3.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+                "gcc/9.2.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+                "clang/5.0.1 $CLANG_BASE_MODULE_LIST $CLANG_BUILD_LIST clang++ $CLANG_WARNING_FLAGS"
+                "clang/7.0.1 $CLANG_BASE_MODULE_LIST $CLANG_BUILD_LIST clang++ $CLANG_WARNING_FLAGS"
+                "clang/9.0.0 $CLANG_BASE_MODULE_LIST $CLANG_BUILD_LIST clang++ $CLANG_WARNING_FLAGS"
+                "clang/10.0.0 $CLANG_BASE_MODULE_LIST $CLANG_BUILD_LIST clang++ $CLANG_WARNING_FLAGS"
+                "intel/19.0.5 $INTEL_BASE_MODULE_LIST $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
+              )
+
+  fi
 elif [ "$MACHINE" = "kokkos-dev" ]; then
   MODULE_ENVIRONMENT="source /projects/sems/modulefiles/utils/sems-archive-modules-init.sh"
   eval "$MODULE_ENVIRONMENT"
@@ -696,6 +750,7 @@ elif [ "$MACHINE" = "weaver" ]; then
                "gcc/7.2.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
                "cuda/9.2.88 $CUDA_MODULE_LIST "Cuda_Serial" ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
                "cuda/10.1.243 $CUDA10_MODULE_LIST "Cuda_OpenMP" ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+               "cuda/11.2.2 $CUDA11_MODULE_LIST "Cuda_OpenMP" ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
     )
   elif [ "$SPOT_CHECK_TPLS" = "True" ]; then
     # Format: (compiler module-list build-list exe-name warning-flag)
@@ -810,6 +865,7 @@ elif [ "$MACHINE" = "blake" ]; then
     COMPILERS=("intel/19.1.144 $BASE_MODULE_LIST_INTEL "OpenMP_Serial" icpc $INTEL_WARNING_FLAGS"
                "gcc/7.2.0 $BASE_MODULE_LIST "Threads_Serial,OpenMP" g++ $GCC_WARNING_FLAGS"
                "clang/10.0.1 $BASE_MODULE_LIST "Threads_Serial" clang++ $CLANG_WARNING_FLAGS"
+               "intel/19.5.281 $BASE_MODULE_LIST_INTEL "OpenMP,Threads" icpc $INTEL_WARNING_FLAGS"
     )
   elif [ "$SPOT_CHECK_TPLS" = "True" ]; then
       # Format: (compiler module-list build-list exe-name warning-flag)
@@ -817,6 +873,7 @@ elif [ "$MACHINE" = "blake" ]; then
       #"pgi/18.7.0 $BASE_MODULE_LIST $GCC_BUILD_LIST pgc++ $PGI_WARNING_FLAGS"
     COMPILERS=("intel/18.1.163 $BASE_MODULE_LIST_INTEL "OpenMP,Threads" icpc $INTEL_WARNING_FLAGS"
                "gcc/7.2.0 $GCC72_MODULE_TPL_LIST "OpenMP_Serial" g++ $GCC_WARNING_FLAGS"
+               "intel/19.5.281 $BASE_MODULE_LIST_INTEL "OpenMP,Threads" icpc $INTEL_WARNING_FLAGS"
     )
   else
     COMPILERS=("intel/17.4.196 $BASE_MODULE_LIST_INTEL $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
@@ -1171,7 +1228,7 @@ setup_env() {
 
     if [[ "${SPOT_CHECK_TPLS}" = "True" ]]; then
       # Some machines will require explicitly setting include dirs and libs
-      if ([[ "$MACHINE" = white* ]] || [[ "$MACHINE" = weaver* ]] || [[ "$MACHINE" = blake* ]]) && [[ "$mod" = openblas* ]]; then
+      if ([[ "$MACHINE" = white* ]] || [[ "$MACHINE" = weaver* ]] || [[ "$MACHINE" = blake* ]] || [[ "$MACHINE" = sogpu* ]]) && [[ "$mod" = openblas* ]]; then
         BLAS_LIBRARY_DIRS="${OPENBLAS_ROOT}/lib"
         LAPACK_LIBRARY_DIRS="${OPENBLAS_ROOT}/lib"
   #      BLAS_LIBRARIES="openblas"
