@@ -50,6 +50,7 @@
 #include "KokkosKernels_Utils.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 #include "Kokkos_ArithTraits.hpp"
+#include "KokkosBatched_Vector.hpp"
 #include "KokkosSparse_spmv.hpp"
 // Make this include-able from all subdirectories
 #include "../tpls/gtest/gtest/gtest.h"  //for EXPECT_**
@@ -139,6 +140,27 @@ void EXPECT_NEAR_KK(Scalar1 val1, Scalar2 val2, Scalar3 tol,
   EXPECT_LE((double)AT1::abs(val1 - val2), (double)AT3::abs(tol)) << msg;
 }
 
+template <class Scalar1, class Scalar2, class Scalar3>
+void EXPECT_NEAR_KK_REL(Scalar1 val1, Scalar2 val2, Scalar3 tol,
+                        std::string msg = "") {
+  typedef typename std::remove_reference<decltype(val1)>::type hv1_type;
+  typedef typename std::remove_reference<decltype(val2)>::type hv2_type;
+  const auto ahv1 = Kokkos::Details::ArithTraits<hv1_type>::abs(val1);
+  const auto ahv2 = Kokkos::Details::ArithTraits<hv2_type>::abs(val2);
+  EXPECT_NEAR_KK(val1, val2, tol * Kokkos::max(ahv1, ahv2), msg);
+}
+
+// Special overload for accurate value by value SIMD vectors comparison
+template <class Scalar, int VecLen, class Tolerance>
+void EXPECT_NEAR_KK_REL(
+    const KokkosBatched::Vector<KokkosBatched::SIMD<Scalar>, VecLen>& val1,
+    const KokkosBatched::Vector<KokkosBatched::SIMD<Scalar>, VecLen>& val2,
+    Tolerance tol, std::string msg = "") {
+  for (int i = 0; i < VecLen; ++i) {
+    EXPECT_NEAR_KK_REL(val1[i], val2[i], tol, msg);
+  }
+}
+
 template <class ViewType1, class ViewType2, class Scalar>
 void EXPECT_NEAR_KK_1DVIEW(ViewType1 v1, ViewType2 v2, Scalar tol) {
   size_t v1_size = v1.extent(0);
@@ -169,11 +191,7 @@ void EXPECT_NEAR_KK_REL_1DVIEW(ViewType1 v1, ViewType2 v2, Scalar tol) {
   KokkosKernels::Impl::safe_device_to_host_deep_copy(v2.extent(0), v2, h_v2);
 
   for (size_t i = 0; i < v1_size; ++i) {
-    typedef typename std::remove_reference<decltype(h_v1(i))>::type hv1_type;
-    typedef typename std::remove_reference<decltype(h_v2(i))>::type hv2_type;
-    const auto ahv1 = Kokkos::Details::ArithTraits<hv1_type>::abs(h_v1(i));
-    const auto ahv2 = Kokkos::Details::ArithTraits<hv2_type>::abs(h_v2(i));
-    EXPECT_NEAR_KK(h_v1(i), h_v2(i), tol * Kokkos::max(ahv1, ahv2));
+    EXPECT_NEAR_KK_REL(h_v1(i), h_v2(i), tol);
   }
 }
 
