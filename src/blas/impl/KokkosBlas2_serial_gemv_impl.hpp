@@ -59,10 +59,7 @@ struct SerialGemv {
                                            const AViewType & /*A*/,
                                            const xViewType & /*x*/,
                                            const ScalarType /*beta*/,
-                                           const yViewType & /*y*/) {
-    Kokkos::abort("Error: encounter dummy impl");
-    return 0;
-  }
+                                           const yViewType & /*y*/);
 };
 
 }  // namespace KokkosBlas
