@@ -21,9 +21,9 @@ struct SerialGemv {
                                            const xViewType & /*x*/,
                                            const ScalarType /*beta*/,
                                            const yViewType & /*y*/) {
-    assert(false &&
-           "Error: KokkosBatched::SerialGemv has been deprecated - use "
-           "KokkosBlas::SerialGemv instead");
+    Kokkos::abort(
+        "Error: KokkosBatched::SerialGemv has been deprecated - use "
+        "KokkosBlas::SerialGemv instead");
     return 0;
   }
 };
