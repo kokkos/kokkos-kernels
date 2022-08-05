@@ -47,7 +47,6 @@
 
 #include "KokkosBlas2_serial_gemv_impl.hpp"
 #include "KokkosBlas_util.hpp"
-#include "KokkosKernels_Error.hpp"
 
 namespace KokkosBlas {
 namespace Experimental {
