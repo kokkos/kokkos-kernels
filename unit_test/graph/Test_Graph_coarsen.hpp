@@ -51,7 +51,6 @@
 #include "KokkosGraph_CoarsenConstruct.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosKernels_IOUtils.hpp"
-#include "KokkosKernels_SparseUtils.hpp"
 #include "KokkosKernels_Handle.hpp"
 #include "KokkosKernels_ExecSpaceUtils.hpp"
 
@@ -383,7 +382,7 @@ void test_coarsen_random(lno_t numVerts, size_type nnz, lno_t bandwidth,
   using entries_t   = typename c_entries_t::non_const_type;
   using svt         = typename crsMat::values_type;
   // Generate graph, and add some out-of-bounds columns
-  crsMat A = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat>(
+  crsMat A = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat>(
       numVerts, numVerts, nnz, row_size_variance, bandwidth);
   auto G = A.graph;
   // Symmetrize the graph

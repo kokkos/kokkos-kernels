@@ -4,12 +4,9 @@
 #include <list>
 #include <limits>
 #include <Kokkos_Core.hpp>
-#include <Kokkos_Atomic.hpp>
-#include <Kokkos_UniqueToken.hpp>
-#include <Kokkos_Functional.hpp>
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosSparse_spgemm.hpp"
-#include "KokkosKernels_Sorting.hpp"
+#include "KokkosSparse_SortCrs.hpp"
 #include "KokkosKernels_HashmapAccumulator.hpp"
 #include "KokkosKernels_Uniform_Initialized_MemoryPool.hpp"
 #include "KokkosGraph_CoarsenHeuristics.hpp"
@@ -249,7 +246,7 @@ class coarse_builder {
     ordinal_t nc = interp_mtx.numCols();
 
     matrix_t interp_transpose =
-        KokkosKernels::Impl::transpose_matrix(interp_mtx);
+        KokkosSparse::Impl::transpose_matrix(interp_mtx);
 
     spgemm_kernel_handle kh;
     kh.set_team_work_size(64);
@@ -729,12 +726,9 @@ class coarse_builder {
       for (edge_offset_t i = row_map(idx); i < row_map(idx + 1); i++) {
         ordinal_t key  = entries_in(i);
         scalar_t value = wgts_in(i);
-        int r = hash_map.sequential_insert_into_hash_mergeAdd_TrackHashes(
+        hash_map.sequential_insert_into_hash_mergeAdd_TrackHashes(
             key, value, used_hash_size, used_hash_count, used_hash_indices);
 
-        // Check return code
-        if (r) {
-        }
       };
 
       // Reset the Begins values to -1 before releasing the memory pool chunk.

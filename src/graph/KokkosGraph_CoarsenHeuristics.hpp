@@ -3,13 +3,11 @@
 #if !defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_CUDA_LAMBDA)
 #include <limits>
 #include <Kokkos_Core.hpp>
-#include <Kokkos_Atomic.hpp>
 #include <Kokkos_Random.hpp>
 #include <Kokkos_Sort.hpp>
 #include <Kokkos_Functional.hpp>
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosGraph_MIS2.hpp"
-#include "KokkosKernels_SparseUtils.hpp"
 
 namespace KokkosGraph {
 
@@ -1029,7 +1027,7 @@ class coarsen_heuristics {
         BinOp bin_op(unmapped, 0, max);
         // VERY important that final parameter is true
         Kokkos::BinSort<Kokkos::View<uint32_t*, Device>, BinOp,
-                        Kokkos::DefaultExecutionSpace, ordinal_t>
+                        exec_space, ordinal_t>
             sorter(hashes, bin_op, true);
         sorter.create_permute_vector();
         sorter.template sort<Kokkos::View<uint32_t*, Device> >(hashes);
