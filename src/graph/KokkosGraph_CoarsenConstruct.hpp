@@ -728,7 +728,6 @@ class coarse_builder {
         scalar_t value = wgts_in(i);
         hash_map.sequential_insert_into_hash_mergeAdd_TrackHashes(
             key, value, used_hash_size, used_hash_count, used_hash_indices);
-
       };
 
       // Reset the Begins values to -1 before releasing the memory pool chunk.

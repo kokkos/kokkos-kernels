@@ -1026,8 +1026,8 @@ class coarsen_heuristics {
         typedef Kokkos::BinOp1D<Kokkos::View<uint32_t*, Device> > BinOp;
         BinOp bin_op(unmapped, 0, max);
         // VERY important that final parameter is true
-        Kokkos::BinSort<Kokkos::View<uint32_t*, Device>, BinOp,
-                        exec_space, ordinal_t>
+        Kokkos::BinSort<Kokkos::View<uint32_t*, Device>, BinOp, exec_space,
+                        ordinal_t>
             sorter(hashes, bin_op, true);
         sorter.create_permute_vector();
         sorter.template sort<Kokkos::View<uint32_t*, Device> >(hashes);
