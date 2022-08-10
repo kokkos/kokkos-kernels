@@ -121,6 +121,20 @@ TEST_F(TestCategory, batched_scalar_serial_gemm_t_t_float_float) {
   test_batched_gemm<TestExecSpace, float, float, param_tag_type,
                     algo_tag_type>();
 }
+TEST_F(TestCategory, batched_scalar_serial_gemm_cnt_nt_float_float) {
+  typedef ::Test::Gemm::ParamTag<Trans::ConjNoTranspose, Trans::NoTranspose>
+      param_tag_type;
+  typedef Algo::Gemm::Blocked algo_tag_type;
+  test_batched_gemm<TestExecSpace, float, float, param_tag_type,
+                    algo_tag_type>();
+}
+TEST_F(TestCategory, batched_scalar_serial_gemm_cnt_t_float_float) {
+  typedef ::Test::Gemm::ParamTag<Trans::ConjNoTranspose, Trans::Transpose>
+      param_tag_type;
+  typedef Algo::Gemm::Blocked algo_tag_type;
+  test_batched_gemm<TestExecSpace, float, float, param_tag_type,
+                    algo_tag_type>();
+}
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
@@ -147,6 +161,20 @@ TEST_F(TestCategory, batched_scalar_serial_gemm_nt_t_double_double) {
 }
 TEST_F(TestCategory, batched_scalar_serial_gemm_t_t_double_double) {
   typedef ::Test::Gemm::ParamTag<Trans::Transpose, Trans::Transpose>
+      param_tag_type;
+  typedef Algo::Gemm::Blocked algo_tag_type;
+  test_batched_gemm<TestExecSpace, double, double, param_tag_type,
+                    algo_tag_type>();
+}
+TEST_F(TestCategory, batched_scalar_serial_gemm_ct_nt_double_double) {
+  typedef ::Test::Gemm::ParamTag<Trans::ConjTranspose, Trans::NoTranspose>
+      param_tag_type;
+  typedef Algo::Gemm::Blocked algo_tag_type;
+  test_batched_gemm<TestExecSpace, double, double, param_tag_type,
+                    algo_tag_type>();
+}
+TEST_F(TestCategory, batched_scalar_serial_gemm_ct_t_double_double) {
+  typedef ::Test::Gemm::ParamTag<Trans::ConjTranspose, Trans::Transpose>
       param_tag_type;
   typedef Algo::Gemm::Blocked algo_tag_type;
   test_batched_gemm<TestExecSpace, double, double, param_tag_type,

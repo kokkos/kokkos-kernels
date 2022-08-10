@@ -221,6 +221,7 @@ struct Trans {
   struct Transpose {};
   struct NoTranspose {};
   struct ConjTranspose {};
+  struct ConjNoTranspose {};
 };
 
 struct Side {
