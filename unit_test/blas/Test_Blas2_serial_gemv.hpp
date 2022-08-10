@@ -65,8 +65,9 @@ struct SerialGEMVOp {
 // fill regular view with random values
 template <class ViewType, class PoolType,
           class ScalarType = typename ViewType::non_const_value_type>
-void fill_random_view(ViewType A, PoolType &rand_pool,
-                      const ScalarType max_val = 10.0) {
+typename std::enable_if<!KokkosBatched::is_vector<ScalarType>::value>::type
+fill_random_view(ViewType A, PoolType &rand_pool,
+                 const ScalarType max_val = 10.0) {
   Kokkos::fill_random(A, rand_pool, max_val);
   Kokkos::fence();
 }
