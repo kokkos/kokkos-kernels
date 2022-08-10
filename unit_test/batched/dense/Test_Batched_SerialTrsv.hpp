@@ -39,7 +39,8 @@ struct Functor_TestBatchedSerialTrsv {
     auto bb = Kokkos::subview(_b, k, Kokkos::ALL(), 0);
 
     SerialTrsv<typename ParamTagType::uplo, typename ParamTagType::trans,
-               typename ParamTagType::diag, AlgoTagType>::invoke(_alpha, aa,
+               typename ParamTagType::diag, AlgoTagType>::invoke(DeviceType{},
+                                                                 _alpha, aa,
                                                                  bb);
   }
 

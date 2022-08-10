@@ -67,11 +67,12 @@ namespace KokkosBatched {
     defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__) && \
     defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
 template <>
-template <typename ScalarType, typename AViewType, typename BViewType,
-          typename CViewType>
+template <typename ExecSpace, typename ScalarType, typename AViewType,
+          typename BViewType, typename CViewType>
 KOKKOS_INLINE_FUNCTION int
 SerialGemm<Trans::NoTranspose, Trans::NoTranspose,
-           Algo::Gemm::CompactMKL>::invoke(const ScalarType alpha,
+           Algo::Gemm::CompactMKL>::invoke(ExecSpace /* ex */,
+                                           const ScalarType alpha,
                                            const AViewType &A,
                                            const BViewType &B,
                                            const ScalarType beta,
@@ -110,11 +111,11 @@ SerialGemm<Trans::NoTranspose, Trans::NoTranspose,
 #endif
 
 template <>
-template <typename ScalarType, typename AViewType, typename BViewType,
-          typename CViewType>
+template <typename ExecSpace, typename ScalarType, typename AViewType,
+          typename BViewType, typename CViewType>
 KOKKOS_INLINE_FUNCTION int
 SerialGemm<Trans::NoTranspose, Trans::NoTranspose,
-           Algo::Gemm::Unblocked>::invoke(const ScalarType alpha,
+           Algo::Gemm::Unblocked>::invoke(ExecSpace ex, const ScalarType alpha,
                                           const AViewType &A,
                                           const BViewType &B,
                                           const ScalarType beta,
@@ -122,22 +123,22 @@ SerialGemm<Trans::NoTranspose, Trans::NoTranspose,
   // C = beta C + alpha A B
   // C (m x n), A(m x k), B(k x n)
   return SerialGemmInternal<Algo::Gemm::Unblocked>::invoke(
-      C.extent(0), C.extent(1), A.extent(1), alpha, A.data(), A.stride_0(),
+      ex, C.extent(0), C.extent(1), A.extent(1), alpha, A.data(), A.stride_0(),
       A.stride_1(), B.data(), B.stride_0(), B.stride_1(), beta, C.data(),
       C.stride_0(), C.stride_1());
 }
 
 template <>
-template <typename ScalarType, typename AViewType, typename BViewType,
-          typename CViewType>
+template <typename ExecSpace, typename ScalarType, typename AViewType,
+          typename BViewType, typename CViewType>
 KOKKOS_INLINE_FUNCTION int
 SerialGemm<Trans::NoTranspose, Trans::NoTranspose, Algo::Gemm::Blocked>::invoke(
-    const ScalarType alpha, const AViewType &A, const BViewType &B,
-    const ScalarType beta, const CViewType &C) {
+    ExecSpace ex, const ScalarType alpha, const AViewType &A,
+    const BViewType &B, const ScalarType beta, const CViewType &C) {
   // C = beta C + alpha A B
   // C (m x n), A(m x k), B(k x n)
   return SerialGemmInternal<Algo::Gemm::Blocked>::invoke(
-      C.extent(0), C.extent(1), A.extent(1), alpha, A.data(), A.stride_0(),
+      ex, C.extent(0), C.extent(1), A.extent(1), alpha, A.data(), A.stride_0(),
       A.stride_1(), B.data(), B.stride_0(), B.stride_1(), beta, C.data(),
       C.stride_0(), C.stride_1());
 }
@@ -150,11 +151,12 @@ SerialGemm<Trans::NoTranspose, Trans::NoTranspose, Algo::Gemm::Blocked>::invoke(
     defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__) && \
     defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
 template <>
-template <typename ScalarType, typename AViewType, typename BViewType,
-          typename CViewType>
+template <typename ExecSpace, typename ScalarType, typename AViewType,
+          typename BViewType, typename CViewType>
 KOKKOS_INLINE_FUNCTION int
 SerialGemm<Trans::Transpose, Trans::NoTranspose,
-           Algo::Gemm::CompactMKL>::invoke(const ScalarType alpha,
+           Algo::Gemm::CompactMKL>::invoke(ExecSpace /* ex */,
+                                           const ScalarType alpha,
                                            const AViewType &A,
                                            const BViewType &B,
                                            const ScalarType beta,
@@ -193,31 +195,31 @@ SerialGemm<Trans::Transpose, Trans::NoTranspose,
 #endif
 
 template <>
-template <typename ScalarType, typename AViewType, typename BViewType,
-          typename CViewType>
+template <typename ExecSpace, typename ScalarType, typename AViewType,
+          typename BViewType, typename CViewType>
 KOKKOS_INLINE_FUNCTION int
 SerialGemm<Trans::Transpose, Trans::NoTranspose, Algo::Gemm::Unblocked>::invoke(
-    const ScalarType alpha, const AViewType &A, const BViewType &B,
-    const ScalarType beta, const CViewType &C) {
+    ExecSpace ex, const ScalarType alpha, const AViewType &A,
+    const BViewType &B, const ScalarType beta, const CViewType &C) {
   // C = beta C + alpha A B
   // C (m x n), A(m x k), B(k x n)
   return SerialGemmInternal<Algo::Gemm::Unblocked>::invoke(
-      C.extent(0), C.extent(1), A.extent(0), alpha, A.data(), A.stride_1(),
+      ex, C.extent(0), C.extent(1), A.extent(0), alpha, A.data(), A.stride_1(),
       A.stride_0(), B.data(), B.stride_0(), B.stride_1(), beta, C.data(),
       C.stride_0(), C.stride_1());
 }
 
 template <>
-template <typename ScalarType, typename AViewType, typename BViewType,
-          typename CViewType>
+template <typename ExecSpace, typename ScalarType, typename AViewType,
+          typename BViewType, typename CViewType>
 KOKKOS_INLINE_FUNCTION int
 SerialGemm<Trans::Transpose, Trans::NoTranspose, Algo::Gemm::Blocked>::invoke(
-    const ScalarType alpha, const AViewType &A, const BViewType &B,
-    const ScalarType beta, const CViewType &C) {
+    ExecSpace ex, const ScalarType alpha, const AViewType &A,
+    const BViewType &B, const ScalarType beta, const CViewType &C) {
   // C = beta C + alpha A B
   // C (m x n), A(m x k), B(k x n)
   return SerialGemmInternal<Algo::Gemm::Blocked>::invoke(
-      C.extent(0), C.extent(1), A.extent(0), alpha, A.data(), A.stride_1(),
+      ex, C.extent(0), C.extent(1), A.extent(0), alpha, A.data(), A.stride_1(),
       A.stride_0(), B.data(), B.stride_0(), B.stride_1(), beta, C.data(),
       C.stride_0(), C.stride_1());
 }
@@ -230,11 +232,12 @@ SerialGemm<Trans::Transpose, Trans::NoTranspose, Algo::Gemm::Blocked>::invoke(
     defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__) && \
     defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
 template <>
-template <typename ScalarType, typename AViewType, typename BViewType,
-          typename CViewType>
+template <typename ExecSpace, typename ScalarType, typename AViewType,
+          typename BViewType, typename CViewType>
 KOKKOS_INLINE_FUNCTION int
 SerialGemm<Trans::NoTranspose, Trans::Transpose,
-           Algo::Gemm::CompactMKL>::invoke(const ScalarType alpha,
+           Algo::Gemm::CompactMKL>::invoke(ExecSpace /* ex */,
+                                           const ScalarType alpha,
                                            const AViewType &A,
                                            const BViewType &B,
                                            const ScalarType beta,
@@ -273,31 +276,31 @@ SerialGemm<Trans::NoTranspose, Trans::Transpose,
 #endif
 
 template <>
-template <typename ScalarType, typename AViewType, typename BViewType,
-          typename CViewType>
+template <typename ExecSpace, typename ScalarType, typename AViewType,
+          typename BViewType, typename CViewType>
 KOKKOS_INLINE_FUNCTION int
 SerialGemm<Trans::NoTranspose, Trans::Transpose, Algo::Gemm::Unblocked>::invoke(
-    const ScalarType alpha, const AViewType &A, const BViewType &B,
-    const ScalarType beta, const CViewType &C) {
+    ExecSpace ex, const ScalarType alpha, const AViewType &A,
+    const BViewType &B, const ScalarType beta, const CViewType &C) {
   // C = beta C + alpha A B
   // C (m x n), A(m x k), B(k x n)
   return SerialGemmInternal<Algo::Gemm::Unblocked>::invoke(
-      C.extent(0), C.extent(1), A.extent(1), alpha, A.data(), A.stride_0(),
+      ex, C.extent(0), C.extent(1), A.extent(1), alpha, A.data(), A.stride_0(),
       A.stride_1(), B.data(), B.stride_1(), B.stride_0(), beta, C.data(),
       C.stride_0(), C.stride_1());
 }
 
 template <>
-template <typename ScalarType, typename AViewType, typename BViewType,
-          typename CViewType>
+template <typename ExecSpace, typename ScalarType, typename AViewType,
+          typename BViewType, typename CViewType>
 KOKKOS_INLINE_FUNCTION int
 SerialGemm<Trans::NoTranspose, Trans::Transpose, Algo::Gemm::Blocked>::invoke(
-    const ScalarType alpha, const AViewType &A, const BViewType &B,
-    const ScalarType beta, const CViewType &C) {
+    ExecSpace ex, const ScalarType alpha, const AViewType &A,
+    const BViewType &B, const ScalarType beta, const CViewType &C) {
   // C = beta C + alpha A B
   // C (m x n), A(m x k), B(k x n)
   return SerialGemmInternal<Algo::Gemm::Blocked>::invoke(
-      C.extent(0), C.extent(1), A.extent(1), alpha, A.data(), A.stride_0(),
+      ex, C.extent(0), C.extent(1), A.extent(1), alpha, A.data(), A.stride_0(),
       A.stride_1(), B.data(), B.stride_1(), B.stride_0(), beta, C.data(),
       C.stride_0(), C.stride_1());
 }
@@ -310,12 +313,12 @@ SerialGemm<Trans::NoTranspose, Trans::Transpose, Algo::Gemm::Blocked>::invoke(
     defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__) && \
     defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
 template <>
-template <typename ScalarType, typename AViewType, typename BViewType,
-          typename CViewType>
+template <typename ExecSpace, typename ScalarType, typename AViewType,
+          typename BViewType, typename CViewType>
 KOKKOS_INLINE_FUNCTION int
 SerialGemm<Trans::Transpose, Trans::Transpose, Algo::Gemm::CompactMKL>::invoke(
-    const ScalarType alpha, const AViewType &A, const BViewType &B,
-    const ScalarType beta, const CViewType &C) {
+    ExecSpace /* ex */, const ScalarType alpha, const AViewType &A,
+    const BViewType &B, const ScalarType beta, const CViewType &C) {
   typedef typename CViewType::value_type vector_type;
   // typedef typename vector_type::value_type value_type;
 
@@ -350,31 +353,31 @@ SerialGemm<Trans::Transpose, Trans::Transpose, Algo::Gemm::CompactMKL>::invoke(
 #endif
 
 template <>
-template <typename ScalarType, typename AViewType, typename BViewType,
-          typename CViewType>
+template <typename ExecSpace, typename ScalarType, typename AViewType,
+          typename BViewType, typename CViewType>
 KOKKOS_INLINE_FUNCTION int
 SerialGemm<Trans::Transpose, Trans::Transpose, Algo::Gemm::Unblocked>::invoke(
-    const ScalarType alpha, const AViewType &A, const BViewType &B,
-    const ScalarType beta, const CViewType &C) {
+    ExecSpace ex, const ScalarType alpha, const AViewType &A,
+    const BViewType &B, const ScalarType beta, const CViewType &C) {
   // C = beta C + alpha A B
   // C (m x n), A(m x k), B(k x n)
   return SerialGemmInternal<Algo::Gemm::Unblocked>::invoke(
-      C.extent(0), C.extent(1), A.extent(0), alpha, A.data(), A.stride_1(),
+      ex, C.extent(0), C.extent(1), A.extent(0), alpha, A.data(), A.stride_1(),
       A.stride_0(), B.data(), B.stride_1(), B.stride_0(), beta, C.data(),
       C.stride_0(), C.stride_1());
 }
 
 template <>
-template <typename ScalarType, typename AViewType, typename BViewType,
-          typename CViewType>
+template <typename ExecSpace, typename ScalarType, typename AViewType,
+          typename BViewType, typename CViewType>
 KOKKOS_INLINE_FUNCTION int
 SerialGemm<Trans::Transpose, Trans::Transpose, Algo::Gemm::Blocked>::invoke(
-    const ScalarType alpha, const AViewType &A, const BViewType &B,
-    const ScalarType beta, const CViewType &C) {
+    ExecSpace ex, const ScalarType alpha, const AViewType &A,
+    const BViewType &B, const ScalarType beta, const CViewType &C) {
   // C = beta C + alpha A B
   // C (m x n), A(m x k), B(k x n)
   return SerialGemmInternal<Algo::Gemm::Blocked>::invoke(
-      C.extent(0), C.extent(1), A.extent(0), alpha, A.data(), A.stride_1(),
+      ex, C.extent(0), C.extent(1), A.extent(0), alpha, A.data(), A.stride_1(),
       A.stride_0(), B.data(), B.stride_1(), B.stride_0(), beta, C.data(),
       C.stride_0(), C.stride_1());
 }
@@ -387,6 +390,7 @@ template <class ArgTransA, class ArgTransB, class ArgMode, class ArgBatchSzDim,
           class BViewType, class CViewType>
 class BatchedSerialGemm {
  private:
+  using execution_space = typename CViewType::device_type::execution_space;
   AViewType A;
   BViewType B;
   CViewType C;
@@ -397,7 +401,6 @@ class BatchedSerialGemm {
   ArgTransB transB_tag;
 
   void run() {
-    using execution_space = typename CViewType::device_type::execution_space;
     using policy_type =
         Kokkos::RangePolicy<ArgResultsPerThread, execution_space>;
     Kokkos::parallel_for("BatchedSerialGemm", policy_type(0, batch_size),
@@ -468,8 +471,8 @@ class BatchedSerialGemm {
     // row_vec x col_vec, which is svA_row' x svB_col to compute the element
     // of C.
     KokkosBatched::SerialGemm<Trans::Transpose, Trans::NoTranspose,
-                              ArgMode>::invoke(alpha, svA_row, svB_col, beta,
-                                               svC_ele);
+                              ArgMode>::invoke(execution_space{}, alpha,
+                                               svA_row, svB_col, beta, svC_ele);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -482,7 +485,7 @@ class BatchedSerialGemm {
         subview_wrapper(C, i, Kokkos::ALL(), Kokkos::ALL(), batch_layout_tag);
 
     KokkosBatched::SerialGemm<ArgTransA, ArgTransB, ArgMode>::invoke(
-        alpha, svA, svB, beta, svC);
+        execution_space{}, alpha, svA, svB, beta, svC);
   }
 };
 /********************* END non-functor-level routines *********************/

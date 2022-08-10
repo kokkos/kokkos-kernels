@@ -84,7 +84,8 @@ TeamTrsmInternalLeftLower<Algo::Trsm::Blocked>::invoke(
     const int n, const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
     const int as0, const int as1,
     /**/ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
-  constexpr int mbAlgo = Algo::Trsm::Blocked::mb();
+  using execution_space = typename MemberType::execution_space;
+  constexpr int mbAlgo  = Algo::Trsm::mb<execution_space>();
 
   const ScalarType one(1.0), zero(0.0), minus_one(-1.0);
 
@@ -225,7 +226,8 @@ TeamTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invoke(
     const int n, const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A,
     const int as0, const int as1,
     /**/ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
-  constexpr int mbAlgo = Algo::Trsm::Blocked::mb();
+  using execution_space = typename MemberType::execution_space;
+  constexpr int mbAlgo  = Algo::Trsm::mb<execution_space>();
 
   const ScalarType one(1.0), zero(0.0), minus_one(-1.0);
 

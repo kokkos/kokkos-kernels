@@ -392,8 +392,8 @@ KOKKOS_INLINE_FUNCTION void TeamVectorHadamard1D(const MemberType &member,
 /// ===========
 template <>
 struct SerialGesv<Gesv::StaticPivoting> {
-  template <typename MatrixType, typename VectorType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MatrixType A,
+  template <typename ExecSpace, typename MatrixType, typename VectorType>
+  KOKKOS_INLINE_FUNCTION static int invoke(ExecSpace ex, const MatrixType A,
                                            const VectorType X,
                                            const VectorType Y,
                                            const MatrixType tmp) {
@@ -451,12 +451,12 @@ struct SerialGesv<Gesv::StaticPivoting> {
     if (r_val == 0)
       r_val =
           SerialTrsm<Side::Left, Uplo::Lower, Trans::NoTranspose, Diag::Unit,
-                     Algo::Level3::Unblocked>::invoke(1.0, PDAD, PDY);
+                     Algo::Level3::Unblocked>::invoke(ex, 1.0, PDAD, PDY);
 
     if (r_val == 0)
       r_val =
           SerialTrsm<Side::Left, Uplo::Upper, Trans::NoTranspose, Diag::NonUnit,
-                     Algo::Level3::Unblocked>::invoke(1.0, PDAD, PDY);
+                     Algo::Level3::Unblocked>::invoke(ex, 1.0, PDAD, PDY);
 
     if (r_val == 0) SerialHadamard1D(PDY, D2, X);
     return r_val;
@@ -465,8 +465,8 @@ struct SerialGesv<Gesv::StaticPivoting> {
 
 template <>
 struct SerialGesv<Gesv::NoPivoting> {
-  template <typename MatrixType, typename VectorType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MatrixType A,
+  template <typename ExecSpace, typename MatrixType, typename VectorType>
+  KOKKOS_INLINE_FUNCTION static int invoke(ExecSpace ex, const MatrixType A,
                                            const VectorType X,
                                            const VectorType Y,
                                            const MatrixType /*tmp*/) {
@@ -500,12 +500,12 @@ struct SerialGesv<Gesv::NoPivoting> {
     if (r_val == 0)
       r_val =
           SerialTrsm<Side::Left, Uplo::Lower, Trans::NoTranspose, Diag::Unit,
-                     Algo::Level3::Unblocked>::invoke(1.0, A, X);
+                     Algo::Level3::Unblocked>::invoke(ex, 1.0, A, X);
 
     if (r_val == 0)
       r_val =
           SerialTrsm<Side::Left, Uplo::Upper, Trans::NoTranspose, Diag::NonUnit,
-                     Algo::Level3::Unblocked>::invoke(1.0, A, X);
+                     Algo::Level3::Unblocked>::invoke(ex, 1.0, A, X);
 
     return r_val;
   }

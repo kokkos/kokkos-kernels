@@ -84,7 +84,8 @@ KOKKOS_INLINE_FUNCTION int TeamLU_Internal<Algo::LU::Blocked>::invoke(
     const MemberType &member, const int m, const int n,
     ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
     const typename MagnitudeScalarType<ValueType>::type /*tiny*/) {
-  constexpr int mbAlgo = Algo::LU::Blocked::mb();
+  using execution_space = typename MemberType::execution_space;
+  constexpr int mbAlgo  = Algo::LU::mb<execution_space>();
 
   const int k = (m < n ? m : n);
   if (k <= 0) return 0;

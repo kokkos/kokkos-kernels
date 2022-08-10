@@ -75,6 +75,8 @@ KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A,
       typename VectorViewType::non_const_value_type>::mag_type MagnitudeType;
   typedef Kokkos::Details::ArithTraits<MagnitudeType> ATM;
 
+  typename VectorViewType::execution_space ex;
+
   using SerialCopy1D = SerialCopy<Trans::NoTranspose, 1>;
   using SerialCopy2D = SerialCopy<Trans::NoTranspose, 2>;
 
@@ -182,12 +184,12 @@ KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A,
 
         // Inner products
         KokkosBlas::SerialGemv<Trans::NoTranspose,
-                               Algo::Gemv::Unblocked>::invoke(1, V_old, W_l, 0,
-                                                              H_old);
+                               Algo::Gemv::Unblocked>::invoke(ex, 1, V_old, W_l,
+                                                              0, H_old);
 
         // Update
         KokkosBlas::SerialGemv<Trans::Transpose, Algo::Gemv::Unblocked>::invoke(
-            -1, V_old, H_old, 1, W_l);
+            ex, -1, V_old, H_old, 1, W_l);
       }
     }
     if (handle.get_ortho_strategy() == 1) {
@@ -282,13 +284,13 @@ KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A,
     auto B_l = Kokkos::subview(G, l, first_indices);
 
     SerialTrsm<Side::Left, Uplo::Lower, Trans::Transpose, Diag::NonUnit,
-               Algo::Trsm::Unblocked>::invoke(1, A_l, B_l);
+               Algo::Trsm::Unblocked>::invoke(ex, 1, A_l, B_l);
   }
 
   if (handle.get_ortho_strategy() == 0) {
     for (OrdinalType l = 0; l < numMatrices; ++l) {
       KokkosBlas::SerialGemv<Trans::Transpose, Algo::Gemv::Unblocked>::invoke(
-          1, Kokkos::subview(V_view, l, first_indices, Kokkos::ALL),
+          ex, 1, Kokkos::subview(V_view, l, first_indices, Kokkos::ALL),
           Kokkos::subview(G, l, first_indices), 1,
           Kokkos::subview(_X, l, Kokkos::ALL));
     }

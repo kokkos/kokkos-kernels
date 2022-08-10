@@ -48,7 +48,7 @@ struct Functor_BatchedSerialGemm {
     for (int i = 0; i < static_cast<int>(aa.extent(0)); ++i) aa(i, i) += 10.0;
 
     SerialGemm<typename ParamTagType::transA, typename ParamTagType::transB,
-               AlgoTagType>::invoke(_alpha, aa, bb, _beta, cc);
+               AlgoTagType>::invoke(DeviceType{}, _alpha, aa, bb, _beta, cc);
   }
 
   inline void run() {

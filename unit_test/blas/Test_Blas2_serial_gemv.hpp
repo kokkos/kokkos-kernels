@@ -38,8 +38,8 @@ struct RefGEMVOp {
   YType y;
 };
 
-template <class AType, class XType, class YType, class ScalarType,
-          class AlgoTag>
+template <class ExecSpace, class AType, class XType, class YType,
+          class ScalarType, class AlgoTag>
 struct SerialGEMVOp {
   SerialGEMVOp(char trans_, ScalarType alpha_, AType A_, XType x_,
                ScalarType beta_, YType y_)
@@ -48,7 +48,8 @@ struct SerialGEMVOp {
   template <typename TeamMember>
   KOKKOS_INLINE_FUNCTION void operator()(
       const TeamMember & /* member */) const {
-    KokkosBlas::Experimental::gemv<AlgoTag>(trans, alpha, A, x, beta, y);
+    KokkosBlas::Experimental::gemv<AlgoTag>(ExecSpace(), trans, alpha, A, x,
+                                            beta, y);
   }
 
  private:
@@ -254,8 +255,10 @@ struct SerialGEMVTestBase {
     Kokkos::View<ScalarY *, Device> y_backup("Y2", y.extent(0));
     Kokkos::deep_copy(y_backup, y);
 
-    SerialGEMVOp<ViewTypeA, ViewTypeX, ViewTypeY, ScalarType, AlgoTag> gemv_op(
-        trans, alpha, A, x, beta, y);
+    using execution_space = typename ViewTypeY::execution_space;
+    SerialGEMVOp<execution_space, ViewTypeA, ViewTypeX, ViewTypeY, ScalarType,
+                 AlgoTag>
+        gemv_op(trans, alpha, A, x, beta, y);
     Kokkos::parallel_for(Kokkos::TeamPolicy<Device>(1, 1), gemv_op);
 
     const double eps = epsilon(ScalarY{});

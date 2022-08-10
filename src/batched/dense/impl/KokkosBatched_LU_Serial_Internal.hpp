@@ -17,17 +17,19 @@ namespace KokkosBatched {
 
 template <typename AlgoType>
 struct SerialLU_Internal {
-  template <typename ValueType>
+  template <typename ExecSpace, typename ValueType>
   KOKKOS_INLINE_FUNCTION static int invoke(
-      const int m, const int n, ValueType *KOKKOS_RESTRICT A, const int as0,
-      const int as1, const typename MagnitudeScalarType<ValueType>::type tiny);
+      ExecSpace ex, const int m, const int n, ValueType *KOKKOS_RESTRICT A,
+      const int as0, const int as1,
+      const typename MagnitudeScalarType<ValueType>::type tiny);
 };
 
 template <>
-template <typename ValueType>
+template <typename ExecSpace, typename ValueType>
 KOKKOS_INLINE_FUNCTION int SerialLU_Internal<Algo::LU::Unblocked>::invoke(
-    const int m, const int n, ValueType *KOKKOS_RESTRICT A, const int as0,
-    const int as1, const typename MagnitudeScalarType<ValueType>::type tiny) {
+    ExecSpace /* ex */, const int m, const int n, ValueType *KOKKOS_RESTRICT A,
+    const int as0, const int as1,
+    const typename MagnitudeScalarType<ValueType>::type tiny) {
   const int k = (m < n ? m : n);
   if (k <= 0) return 0;
 
@@ -69,12 +71,12 @@ KOKKOS_INLINE_FUNCTION int SerialLU_Internal<Algo::LU::Unblocked>::invoke(
 }
 
 template <>
-template <typename ValueType>
+template <typename ExecSpace, typename ValueType>
 KOKKOS_INLINE_FUNCTION int SerialLU_Internal<Algo::LU::Blocked>::invoke(
-    const int m, const int n, ValueType *KOKKOS_RESTRICT A, const int as0,
-    const int as1,
+    ExecSpace ex, const int m, const int n, ValueType *KOKKOS_RESTRICT A,
+    const int as0, const int as1,
     const typename MagnitudeScalarType<ValueType>::type /*tiny*/) {
-  constexpr int mbAlgo = Algo::LU::Blocked::mb();
+  constexpr int mbAlgo = Algo::LU::mb<ExecSpace>();
   const typename MagnitudeScalarType<ValueType>::type one(1.0), minus_one(-1.0);
 
   const int k = (m < n ? m : n);
@@ -107,8 +109,8 @@ KOKKOS_INLINE_FUNCTION int SerialLU_Internal<Algo::LU::Blocked>::invoke(
 
       // gemm update
       SerialGemmInternal<Algo::Gemm::Blocked>::invoke(
-          m_abr, n_abr, pb, minus_one, Ap + mb * as0, as0, as1, Ap + mb * as1,
-          as0, as1, one, Ap + mb * as0 + mb * as1, as0, as1);
+          ex, m_abr, n_abr, pb, minus_one, Ap + mb * as0, as0, as1,
+          Ap + mb * as1, as0, as1, one, Ap + mb * as0 + mb * as1, as0, as1);
     }
   };
 

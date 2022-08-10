@@ -83,7 +83,8 @@ KOKKOS_INLINE_FUNCTION int TeamGemvInternal<Algo::Gemv::Blocked>::invoke(
   // y = beta y + alpha A x
   // y (m), A(m x n), B(n)
 
-  constexpr int mbAlgo = Algo::Gemv::Blocked::mb();
+  using execution_space = typename MemberType::execution_space;
+  constexpr int mbAlgo  = Algo::Gemv::mb<execution_space>();
 
   if (beta == zero)
     KokkosBlas::Impl::TeamSetInternal::invoke(member, m, zero, y, ys0);
@@ -104,7 +105,7 @@ KOKKOS_INLINE_FUNCTION int TeamGemvInternal<Algo::Gemv::Blocked>::invoke(
     Kokkos::parallel_for(Kokkos::TeamThreadRange(member, (m / mb) + (mp > 0)),
                          [&](const int &ii) {
                            const int i = ii * mb;
-                           inner.serial_invoke<KokkosBlas::Impl::OpID>(
+                           inner.template serial_invoke<KokkosBlas::Impl::OpID>(
                                alpha, A + i * as0, x,
                                (i + mb) > m ? (m - i) : mb, n, y + i * ys0);
                          });

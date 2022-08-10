@@ -37,7 +37,7 @@ struct Functor_TestBatchedSerialGesv {
     auto b   = Kokkos::subview(_B, k, Kokkos::ALL);
     auto tmp = Kokkos::subview(_tmp, k, Kokkos::ALL, Kokkos::ALL);
 
-    KokkosBatched::SerialGesv<AlgoTagType>::invoke(A, x, b, tmp);
+    KokkosBatched::SerialGesv<AlgoTagType>::invoke(DeviceType{}, A, x, b, tmp);
   }
 
   inline void run() {
@@ -94,7 +94,8 @@ void impl_test_batched_gesv(const int N, const int BlkSize) {
   for (int l = 0; l < N; ++l)
     KokkosBlas::SerialGemv<Trans::NoTranspose,
                            KokkosBlas::Algo::Gemv::Unblocked>::
-        invoke(-1, Kokkos::subview(A_host, l, Kokkos::ALL, Kokkos::ALL),
+        invoke(DeviceType{}, -1,
+               Kokkos::subview(A_host, l, Kokkos::ALL, Kokkos::ALL),
                Kokkos::subview(X_host, l, Kokkos::ALL), 1,
                Kokkos::subview(B_host, l, Kokkos::ALL));
 

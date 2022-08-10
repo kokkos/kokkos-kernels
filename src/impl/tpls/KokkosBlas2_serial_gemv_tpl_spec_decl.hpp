@@ -159,12 +159,12 @@ void kk_mkl_gemv(MKL_TRANSPOSE trans, const ScalarType alpha,
 ///
 
 template <>
-template <typename ScalarType, typename AViewType, typename xViewType,
-          typename yViewType>
+template <typename ExecSpace, typename ScalarType, typename AViewType,
+          typename xViewType, typename yViewType>
 KOKKOS_INLINE_FUNCTION int
 SerialGemv<Trans::NoTranspose, Algo::Gemv::CompactMKL>::invoke(
-    const ScalarType alpha, const AViewType &A, const xViewType &x,
-    const ScalarType beta, const yViewType &y) {
+    ExecSpace /* ex */, const ScalarType alpha, const AViewType &A,
+    const xViewType &x, const ScalarType beta, const yViewType &y) {
   Impl::kk_mkl_gemv(MKL_NOTRANS, alpha, A, x, beta, y);
   return 0;
 }
@@ -174,12 +174,12 @@ SerialGemv<Trans::NoTranspose, Algo::Gemv::CompactMKL>::invoke(
 ///
 
 template <>
-template <typename ScalarType, typename AViewType, typename xViewType,
-          typename yViewType>
+template <typename ExecSpace, typename ScalarType, typename AViewType,
+          typename xViewType, typename yViewType>
 KOKKOS_INLINE_FUNCTION int
 SerialGemv<Trans::Transpose, Algo::Gemv::CompactMKL>::invoke(
-    const ScalarType alpha, const AViewType &A, const xViewType &x,
-    const ScalarType beta, const yViewType &y) {
+    ExecSpace /* ex */, const ScalarType alpha, const AViewType &A,
+    const xViewType &x, const ScalarType beta, const yViewType &y) {
   Impl::kk_mkl_gemv(MKL_TRANS, alpha, A, x, beta, y);
   return 0;
 }
@@ -189,12 +189,12 @@ SerialGemv<Trans::Transpose, Algo::Gemv::CompactMKL>::invoke(
 ///
 
 template <>
-template <typename ScalarType, typename AViewType, typename xViewType,
-          typename yViewType>
+template <typename ExecSpace, typename ScalarType, typename AViewType,
+          typename xViewType, typename yViewType>
 KOKKOS_INLINE_FUNCTION int
 SerialGemv<Trans::ConjTranspose, Algo::Gemv::CompactMKL>::invoke(
-    const ScalarType alpha, const AViewType &A, const xViewType &x,
-    const ScalarType beta, const yViewType &y) {
+    ExecSpace /* ex */, const ScalarType alpha, const AViewType &A,
+    const xViewType &x, const ScalarType beta, const yViewType &y) {
   Impl::kk_mkl_gemv(MKL_CONJTRANS, alpha, A, x, beta, y);
   return 0;
 }

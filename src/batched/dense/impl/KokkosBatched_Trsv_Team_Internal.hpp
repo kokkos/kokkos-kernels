@@ -87,7 +87,8 @@ KOKKOS_INLINE_FUNCTION int TeamTrsvInternalLower<Algo::Trsv::Blocked>::invoke(
     /**/ ValueType *KOKKOS_RESTRICT b, const int bs0) {
   const ScalarType one(1.0), zero(0.0), minus_one(-1.0);
 
-  constexpr int mbAlgo = Algo::Trsv::Blocked::mb();
+  using execution_space = typename MemberType::execution_space;
+  constexpr int mbAlgo  = Algo::Trsv::mb<execution_space>();
 
   if (alpha == zero)
     KokkosBlas::Impl::TeamSetInternal::invoke(member, m, zero, b, bs0);
@@ -195,7 +196,8 @@ KOKKOS_INLINE_FUNCTION int TeamTrsvInternalUpper<Algo::Trsv::Blocked>::invoke(
     /**/ ValueType *KOKKOS_RESTRICT b, const int bs0) {
   const ScalarType one(1.0), zero(0.0), minus_one(-1.0);
 
-  constexpr int mbAlgo = Algo::Trsm::Blocked::mb();
+  using execution_space = typename MemberType::execution_space;
+  constexpr int mbAlgo  = Algo::Trsm::mb<execution_space>();
 
   // note that parallel range is different ( m*n vs m-1*n);
   if (alpha == zero)

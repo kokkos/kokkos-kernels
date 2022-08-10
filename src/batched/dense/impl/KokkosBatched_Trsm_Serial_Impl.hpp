@@ -20,8 +20,10 @@ namespace KokkosBatched {
 template <typename ArgDiag>
 struct SerialTrsm<Side::Left, Uplo::Lower, Trans::NoTranspose, ArgDiag,
                   Algo::Trsm::CompactMKL> {
-  template <typename ScalarType, typename AViewType, typename BViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha,
+  template <typename ExecSpace, typename ScalarType, typename AViewType,
+            typename BViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(ExecSpace /* ex */,
+                                           const ScalarType alpha,
                                            const AViewType &A,
                                            const BViewType &B) {
     typedef typename BViewType::value_type vector_type;
@@ -62,12 +64,13 @@ struct SerialTrsm<Side::Left, Uplo::Lower, Trans::NoTranspose, ArgDiag,
 template <typename ArgDiag>
 struct SerialTrsm<Side::Left, Uplo::Lower, Trans::NoTranspose, ArgDiag,
                   Algo::Trsm::Unblocked> {
-  template <typename ScalarType, typename AViewType, typename BViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha,
+  template <typename ExecSpace, typename ScalarType, typename AViewType,
+            typename BViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(ExecSpace ex, const ScalarType alpha,
                                            const AViewType &A,
                                            const BViewType &B) {
     return SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(
-        ArgDiag::use_unit_diag, B.extent(0), B.extent(1), alpha, A.data(),
+        ex, ArgDiag::use_unit_diag, B.extent(0), B.extent(1), alpha, A.data(),
         A.stride_0(), A.stride_1(), B.data(), B.stride_0(), B.stride_1());
   }
 };
@@ -75,12 +78,13 @@ struct SerialTrsm<Side::Left, Uplo::Lower, Trans::NoTranspose, ArgDiag,
 template <typename ArgDiag>
 struct SerialTrsm<Side::Left, Uplo::Lower, Trans::NoTranspose, ArgDiag,
                   Algo::Trsm::Blocked> {
-  template <typename ScalarType, typename AViewType, typename BViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha,
+  template <typename ExecSpace, typename ScalarType, typename AViewType,
+            typename BViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(ExecSpace ex, const ScalarType alpha,
                                            const AViewType &A,
                                            const BViewType &B) {
     return SerialTrsmInternalLeftLower<Algo::Trsm::Blocked>::invoke(
-        ArgDiag::use_unit_diag, B.extent(0), B.extent(1), alpha, A.data(),
+        ex, ArgDiag::use_unit_diag, B.extent(0), B.extent(1), alpha, A.data(),
         A.stride_0(), A.stride_1(), B.data(), B.stride_0(), B.stride_1());
   }
 };
@@ -96,8 +100,10 @@ struct SerialTrsm<Side::Left, Uplo::Lower, Trans::NoTranspose, ArgDiag,
 template <typename ArgDiag>
 struct SerialTrsm<Side::Right, Uplo::Upper, Trans::NoTranspose, ArgDiag,
                   Algo::Trsm::CompactMKL> {
-  template <typename ScalarType, typename AViewType, typename BViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha,
+  template <typename ExecSpace, typename ScalarType, typename AViewType,
+            typename BViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(ExecSpace /* ex */,
+                                           const ScalarType alpha,
                                            const AViewType &A,
                                            const BViewType &B) {
     typedef typename BViewType::value_type vector_type;
@@ -138,12 +144,13 @@ struct SerialTrsm<Side::Right, Uplo::Upper, Trans::NoTranspose, ArgDiag,
 template <typename ArgDiag>
 struct SerialTrsm<Side::Right, Uplo::Upper, Trans::NoTranspose, ArgDiag,
                   Algo::Trsm::Unblocked> {
-  template <typename ScalarType, typename AViewType, typename BViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha,
+  template <typename ExecSpace, typename ScalarType, typename AViewType,
+            typename BViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(ExecSpace ex, const ScalarType alpha,
                                            const AViewType &A,
                                            const BViewType &B) {
     return SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(
-        ArgDiag::use_unit_diag, B.extent(1), B.extent(0), alpha, A.data(),
+        ex, ArgDiag::use_unit_diag, B.extent(1), B.extent(0), alpha, A.data(),
         A.stride_1(), A.stride_0(), B.data(), B.stride_1(), B.stride_0());
   }
 };
@@ -151,12 +158,13 @@ struct SerialTrsm<Side::Right, Uplo::Upper, Trans::NoTranspose, ArgDiag,
 template <typename ArgDiag>
 struct SerialTrsm<Side::Right, Uplo::Upper, Trans::NoTranspose, ArgDiag,
                   Algo::Trsm::Blocked> {
-  template <typename ScalarType, typename AViewType, typename BViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha,
+  template <typename ExecSpace, typename ScalarType, typename AViewType,
+            typename BViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(ExecSpace ex, const ScalarType alpha,
                                            const AViewType &A,
                                            const BViewType &B) {
     return SerialTrsmInternalLeftLower<Algo::Trsm::Blocked>::invoke(
-        ArgDiag::use_unit_diag, B.extent(1), B.extent(0), alpha, A.data(),
+        ex, ArgDiag::use_unit_diag, B.extent(1), B.extent(0), alpha, A.data(),
         A.stride_1(), A.stride_0(), B.data(), B.stride_1(), B.stride_0());
   }
 };
@@ -172,8 +180,9 @@ struct SerialTrsm<Side::Right, Uplo::Upper, Trans::NoTranspose, ArgDiag,
 template <typename ArgDiag>
 struct SerialTrsm<Side::Left, Uplo::Upper, Trans::NoTranspose, ArgDiag,
                   Algo::Trsm::CompactMKL> {
-  template <typename ScalarType, typename AViewType, typename BViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha,
+  template <typename ExecSpace, typename ScalarType, typename AViewType,
+            typename BViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(ExecSpace ex, const ScalarType alpha,
                                            const AViewType &A,
                                            const BViewType &B) {
     typedef typename BViewType::value_type vector_type;
@@ -214,12 +223,13 @@ struct SerialTrsm<Side::Left, Uplo::Upper, Trans::NoTranspose, ArgDiag,
 template <typename ArgDiag>
 struct SerialTrsm<Side::Left, Uplo::Upper, Trans::NoTranspose, ArgDiag,
                   Algo::Trsm::Unblocked> {
-  template <typename ScalarType, typename AViewType, typename BViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha,
+  template <typename ExecSpace, typename ScalarType, typename AViewType,
+            typename BViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(ExecSpace ex, const ScalarType alpha,
                                            const AViewType &A,
                                            const BViewType &B) {
     return SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(
-        ArgDiag::use_unit_diag, B.extent(0), B.extent(1), alpha, A.data(),
+        ex, ArgDiag::use_unit_diag, B.extent(0), B.extent(1), alpha, A.data(),
         A.stride_0(), A.stride_1(), B.data(), B.stride_0(), B.stride_1());
   }
 };
@@ -227,12 +237,13 @@ struct SerialTrsm<Side::Left, Uplo::Upper, Trans::NoTranspose, ArgDiag,
 template <typename ArgDiag>
 struct SerialTrsm<Side::Left, Uplo::Upper, Trans::NoTranspose, ArgDiag,
                   Algo::Trsm::Blocked> {
-  template <typename ScalarType, typename AViewType, typename BViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha,
+  template <typename ExecSpace, typename ScalarType, typename AViewType,
+            typename BViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(ExecSpace ex, const ScalarType alpha,
                                            const AViewType &A,
                                            const BViewType &B) {
     return SerialTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invoke(
-        ArgDiag::use_unit_diag, B.extent(0), B.extent(1), alpha, A.data(),
+        ex, ArgDiag::use_unit_diag, B.extent(0), B.extent(1), alpha, A.data(),
         A.stride_0(), A.stride_1(), B.data(), B.stride_0(), B.stride_1());
   }
 };
@@ -249,8 +260,10 @@ struct SerialTrsm<Side::Left, Uplo::Upper, Trans::NoTranspose, ArgDiag,
 template <typename ArgDiag>
 struct SerialTrsm<Side::Left, Uplo::Lower, Trans::Transpose, ArgDiag,
                   Algo::Trsm::CompactMKL> {
-  template <typename ScalarType, typename AViewType, typename BViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha,
+  template <typename ExecSpace, typename ScalarType, typename AViewType,
+            typename BViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(ExecSpace /* ex */,
+                                           const ScalarType alpha,
                                            const AViewType &A,
                                            const BViewType &B) {
     typedef typename BViewType::value_type vector_type;
@@ -291,12 +304,13 @@ struct SerialTrsm<Side::Left, Uplo::Lower, Trans::Transpose, ArgDiag,
 template <typename ArgDiag>
 struct SerialTrsm<Side::Left, Uplo::Lower, Trans::Transpose, ArgDiag,
                   Algo::Trsm::Unblocked> {
-  template <typename ScalarType, typename AViewType, typename BViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha,
+  template <typename ExecSpace, typename ScalarType, typename AViewType,
+            typename BViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(ExecSpace ex, const ScalarType alpha,
                                            const AViewType &A,
                                            const BViewType &B) {
     return SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(
-        ArgDiag::use_unit_diag, B.extent(0), B.extent(1), alpha, A.data(),
+        ex, ArgDiag::use_unit_diag, B.extent(0), B.extent(1), alpha, A.data(),
         A.stride_1(), A.stride_0(), B.data(), B.stride_0(), B.stride_1());
   }
 };
@@ -304,12 +318,13 @@ struct SerialTrsm<Side::Left, Uplo::Lower, Trans::Transpose, ArgDiag,
 template <typename ArgDiag>
 struct SerialTrsm<Side::Left, Uplo::Lower, Trans::Transpose, ArgDiag,
                   Algo::Trsm::Blocked> {
-  template <typename ScalarType, typename AViewType, typename BViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha,
+  template <typename ExecSpace, typename ScalarType, typename AViewType,
+            typename BViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(ExecSpace ex, const ScalarType alpha,
                                            const AViewType &A,
                                            const BViewType &B) {
     return SerialTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invoke(
-        ArgDiag::use_unit_diag, B.extent(0), B.extent(1), alpha, A.data(),
+        ex, ArgDiag::use_unit_diag, B.extent(0), B.extent(1), alpha, A.data(),
         A.stride_1(), A.stride_0(), B.data(), B.stride_0(), B.stride_1());
   }
 };
@@ -324,8 +339,10 @@ struct SerialTrsm<Side::Left, Uplo::Lower, Trans::Transpose, ArgDiag,
 template <typename ArgDiag>
 struct SerialTrsm<Side::Left, Uplo::Upper, Trans::Transpose, ArgDiag,
                   Algo::Trsm::CompactMKL> {
-  template <typename ScalarType, typename AViewType, typename BViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha,
+  template <typename ExecSpace, typename ScalarType, typename AViewType,
+            typename BViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(ExecSpace /* ex */,
+                                           const ScalarType alpha,
                                            const AViewType &A,
                                            const BViewType &B) {
     typedef typename BViewType::value_type vector_type;
@@ -366,12 +383,13 @@ struct SerialTrsm<Side::Left, Uplo::Upper, Trans::Transpose, ArgDiag,
 template <typename ArgDiag>
 struct SerialTrsm<Side::Left, Uplo::Upper, Trans::Transpose, ArgDiag,
                   Algo::Trsm::Unblocked> {
-  template <typename ScalarType, typename AViewType, typename BViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha,
+  template <typename ExecSpace, typename ScalarType, typename AViewType,
+            typename BViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(ExecSpace ex, const ScalarType alpha,
                                            const AViewType &A,
                                            const BViewType &B) {
     return SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(
-        ArgDiag::use_unit_diag, B.extent(0), B.extent(1), alpha, A.data(),
+        ex, ArgDiag::use_unit_diag, B.extent(0), B.extent(1), alpha, A.data(),
         A.stride_1(), A.stride_0(), B.data(), B.stride_0(), B.stride_1());
   }
 };
@@ -379,12 +397,13 @@ struct SerialTrsm<Side::Left, Uplo::Upper, Trans::Transpose, ArgDiag,
 template <typename ArgDiag>
 struct SerialTrsm<Side::Left, Uplo::Upper, Trans::Transpose, ArgDiag,
                   Algo::Trsm::Blocked> {
-  template <typename ScalarType, typename AViewType, typename BViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha,
+  template <typename ExecSpace, typename ScalarType, typename AViewType,
+            typename BViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(ExecSpace ex, const ScalarType alpha,
                                            const AViewType &A,
                                            const BViewType &B) {
     return SerialTrsmInternalLeftLower<Algo::Trsm::Blocked>::invoke(
-        ArgDiag::use_unit_diag, B.extent(0), B.extent(1), alpha, A.data(),
+        ex, ArgDiag::use_unit_diag, B.extent(0), B.extent(1), alpha, A.data(),
         A.stride_1(), A.stride_0(), B.data(), B.stride_0(), B.stride_1());
   }
 };

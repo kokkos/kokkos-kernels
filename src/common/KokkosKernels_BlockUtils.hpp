@@ -84,36 +84,36 @@ KOKKOS_INLINE_FUNCTION void kk_block_add(const size_type block_dim,
 // Performs C += A * B on blocks
 // Note: block is assumed to be row-major, dense matrix (no extra padding)
 // Note: set clear=true to set C = 0 before increment
-template <typename size_type, typename value_type,
+template <typename execution_space, typename size_type, typename value_type,
           typename DGEMM = KokkosBatched::SerialGemmInternal<
               KokkosBatched::Algo::Gemm::Unblocked>>
-KOKKOS_INLINE_FUNCTION void kk_block_dgemm(const size_type block_dim,
-                                           value_type *dst,
-                                           const value_type *valA,
-                                           const value_type *valB,
-                                           const bool clear = false) {
+KOKKOS_INLINE_FUNCTION void kk_block_dgemm(
+    execution_space ex, const size_type block_dim, value_type *dst,
+    const value_type *valA, const value_type *valB, const bool clear = false) {
   const auto ZERO = static_cast<value_type>(0);
   const auto ONE  = static_cast<value_type>(1);
-  DGEMM::invoke(block_dim, block_dim, block_dim, ONE, valA, block_dim, 1, valB,
-                block_dim, 1, clear ? ZERO : ONE, dst, block_dim, 1);
+  DGEMM::invoke(ex, block_dim, block_dim, block_dim, ONE, valA, block_dim, 1,
+                valB, block_dim, 1, clear ? ZERO : ONE, dst, block_dim, 1);
 }
 
 // dgemm: C = A * B
-template <typename size_type, typename value_type>
-KOKKOS_INLINE_FUNCTION void kk_block_set_mul(const size_type block_dim,
+template <typename execution_space, typename size_type, typename value_type>
+KOKKOS_INLINE_FUNCTION void kk_block_set_mul(execution_space ex,
+                                             const size_type block_dim,
                                              value_type *c_val,
                                              const value_type *a_val,
                                              const value_type *b_val) {
-  kk_block_dgemm(block_dim, c_val, a_val, b_val, true);
+  kk_block_dgemm(ex, block_dim, c_val, a_val, b_val, true);
 }
 
 // dgemm: C += A * B
-template <typename size_type, typename value_type>
-KOKKOS_INLINE_FUNCTION void kk_block_add_mul(const size_type block_dim,
+template <typename execution_space, typename size_type, typename value_type>
+KOKKOS_INLINE_FUNCTION void kk_block_add_mul(execution_space ex,
+                                             const size_type block_dim,
                                              value_type *c_val,
                                              const value_type *a_val,
                                              const value_type *b_val) {
-  kk_block_dgemm(block_dim, c_val, a_val, b_val, false);
+  kk_block_dgemm(ex, block_dim, c_val, a_val, b_val, false);
 }
 
 // Performs C += A * B (dense GEMM) on blocks

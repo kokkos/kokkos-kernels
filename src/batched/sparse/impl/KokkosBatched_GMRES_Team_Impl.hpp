@@ -317,11 +317,12 @@ KOKKOS_INLINE_FUNCTION int TeamGMRES<MemberType>::invoke(
   Kokkos::parallel_for(
       Kokkos::TeamVectorRange(member, 0, numMatrices),
       [&](const OrdinalType& l) {
+        typename MemberType::execution_space ex;
         auto A_l = Kokkos::subview(H_view, l, first_indices, first_indices);
         auto B_l = Kokkos::subview(G, l, first_indices);
 
         SerialTrsm<Side::Left, Uplo::Lower, Trans::Transpose, Diag::NonUnit,
-                   Algo::Trsm::Unblocked>::invoke(1, A_l, B_l);
+                   Algo::Trsm::Unblocked>::invoke(ex, 1, A_l, B_l);
       });
 
   member.team_barrier();  // Finish writing to G

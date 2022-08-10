@@ -619,10 +619,10 @@ struct BSR_GEMV_Functor {
         const auto Aview  = row.block(ic);
         const auto xstart = row.block_colidx(ic) * block_dim;
         KokkosBlas::Impl::SerialGemvInternal<KokkosBlas::Algo::Gemv::Blocked>::
-            invoke<value_type, value_type>(
-                block_dim, block_dim, alpha, Aview.data(), block_dim, 1,
-                &m_x(xstart), static_cast<int>(m_x.stride_0()), beta1,
-                &m_y(ystart), static_cast<int>(m_y.stride_0()));
+            template invoke(execution_space{}, block_dim, block_dim, alpha,
+                            Aview.data(), block_dim, 1, &m_x(xstart),
+                            static_cast<int>(m_x.stride_0()), beta1,
+                            &m_y(ystart), static_cast<int>(m_y.stride_0()));
       }
     }
   }
@@ -915,10 +915,14 @@ struct BSR_GEMV_Transpose_Functor {
         for (ordinal_type jj = 0; jj < block_dim; ++jj) {
           value_type t(0);
           KokkosBlas::Impl::SerialGemvInternal<
-              KokkosBlas::Algo::Gemv::Blocked>::invoke<value_type,
-                                                       value_type>(
-              1, block_dim, alpha1, Aview.data() + jj, Aview.stride_1(),
-              Aview.stride_0(), xview.data(), xview.stride_0(), beta1, &t, 1);
+              KokkosBlas::Algo::Gemv::Blocked>::invoke(execution_space{}, 1,
+                                                       block_dim, alpha1,
+                                                       Aview.data() + jj,
+                                                       Aview.stride_1(),
+                                                       Aview.stride_0(),
+                                                       xview.data(),
+                                                       xview.stride_0(), beta1,
+                                                       &t, 1);
           t *= alpha;
           Kokkos::atomic_add(&m_y(ystart + jj), t);
         }
@@ -1253,13 +1257,12 @@ struct BSR_GEMM_Functor {
         const auto Aview  = row.block(ic);
         const auto xstart = row.block_colidx(ic) * block_dim;
         KokkosBatched::SerialGemmInternal<KokkosBatched::Algo::Gemm::Blocked>::
-            invoke<value_type, value_type>(
-                static_cast<ordinal_type>(block_dim),
-                static_cast<ordinal_type>(num_rhs),
-                static_cast<ordinal_type>(block_dim), alpha, Aview.data(),
-                Aview.stride_0(), Aview.stride_1(), &m_x(xstart, 0),
-                m_x.stride_0(), ldx, beta1, &m_y(ystart, 0), m_y.stride_0(),
-                ldy);
+            invoke(execution_space{}, static_cast<ordinal_type>(block_dim),
+                   static_cast<ordinal_type>(num_rhs),
+                   static_cast<ordinal_type>(block_dim), alpha, Aview.data(),
+                   Aview.stride_0(), Aview.stride_1(), &m_x(xstart, 0),
+                   m_x.stride_0(), ldx, beta1, &m_y(ystart, 0), m_y.stride_0(),
+                   ldy);
       }
     }
   }
@@ -1561,12 +1564,11 @@ struct BSR_GEMM_Transpose_Functor {
         for (ordinal_type jr = 0; jr < num_rhs; ++jr) {
           for (ordinal_type jj = 0; jj < block_dim; ++jj) {
             value_type t(0);
-            KokkosBlas::Impl::SerialGemvInternal<
-                KokkosBlas::Algo::Gemv::Blocked>::invoke<value_type,
-                                                         value_type>(
-                1, block_dim, alpha1, Aview.data() + jj, Aview.stride_1(),
-                Aview.stride_0(), xview.data() + jr * ldx, xview.stride_0(),
-                beta1, &t, 1);
+            KokkosBlas::Impl::
+                SerialGemvInternal<KokkosBlas::Algo::Gemv::Blocked>::invoke(
+                    execution_space{}, 1, block_dim, alpha1, Aview.data() + jj,
+                    Aview.stride_1(), Aview.stride_0(), xview.data() + jr * ldx,
+                    xview.stride_0(), beta1, &t, 1);
             t *= alpha;
             Kokkos::atomic_add(&m_y(ystart + jj, jr), t);
           }

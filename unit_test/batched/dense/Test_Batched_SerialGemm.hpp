@@ -42,7 +42,7 @@ struct Functor_TestBatchedSerialGemm {
     auto cc = Kokkos::subview(_c, k, Kokkos::ALL(), Kokkos::ALL());
 
     SerialGemm<typename ParamTagType::transA, typename ParamTagType::transB,
-               AlgoTagType>::invoke(_alpha, aa, bb, _beta, cc);
+               AlgoTagType>::invoke(DeviceType{}, _alpha, aa, bb, _beta, cc);
   }
 
   inline void run() {

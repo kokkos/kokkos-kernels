@@ -41,7 +41,7 @@ struct Functor_TestBatchedSerialTrsm {
 
     SerialTrsm<typename ParamTagType::side, typename ParamTagType::uplo,
                typename ParamTagType::trans, typename ParamTagType::diag,
-               AlgoTagType>::invoke(_alpha, aa, bb);
+               AlgoTagType>::invoke(DeviceType{}, _alpha, aa, bb);
   }
 
   inline void run() {

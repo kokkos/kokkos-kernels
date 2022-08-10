@@ -131,7 +131,7 @@ struct Functor_SerialTestStaticPivoting {
     auto X   = Kokkos::subview(_X, matrix_id, Kokkos::ALL);
     auto Y   = Kokkos::subview(_Y, matrix_id, Kokkos::ALL);
     KokkosBatched::SerialGesv<KokkosBatched::Gesv::StaticPivoting>::invoke(
-        A, X, Y, tmp);
+        DeviceType{}, A, X, Y, tmp);
   }
 
   inline void run() {

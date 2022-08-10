@@ -43,6 +43,7 @@
 */
 
 #include "KokkosKernels_Utils.hpp"
+#include "KokkosKernels_BlockUtils.hpp"
 
 namespace KokkosSparse {
 
@@ -164,6 +165,7 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
     Kokkos::parallel_for(
         Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end),
         [&](const nnz_lno_t &row_index) {
+          typename HandleType::HandleExecSpace ex;
           const size_type c_row_begin = rowmapC[row_index];
           nnz_lno_t *myentries        = pEntriesC + c_row_begin;
           scalar_t *myvals            = pVals + c_row_begin * block_size;
@@ -187,8 +189,9 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
                 marker[b_col_ind]              = 1;
                 myentries[current_col_index++] = b_col_ind;
               }
-              kk_block_add_mul(block_dim, dense_accum + b_col_ind * block_size,
-                               a_val, b_val);
+              kk_block_add_mul(ex, block_dim,
+                               dense_accum + b_col_ind * block_size, a_val,
+                               b_val);
             }
           }
           for (nnz_lno_t i = 0; i < current_col_index; ++i) {
@@ -380,6 +383,7 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
     Kokkos::parallel_for(
         Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end),
         [&](const nnz_lno_t &row_index) {
+          typename HandleType::HandleExecSpace ex;
           const size_type c_row_begin = rowmapC[row_index];
           const nnz_lno_t global_memory_hash_size =
               nnz_lno_t(rowmapC[row_index + 1] - c_row_begin);
@@ -426,7 +430,7 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
                   });
 
               int num_unsuccess = hm.vector_atomic_insert_into_hash_mergeAdd(
-                  b_col_ind, a_val, b_val, used_hash_sizes);
+                  ex, b_col_ind, a_val, b_val, used_hash_sizes);
 
               int overall_num_unsuccess = 0;
 
@@ -445,7 +449,7 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
 
                 // int insertion =
                 hm2.vector_atomic_insert_into_hash_mergeAdd_with_team_level_list_length(
-                    teamMember, vector_size, hash_, b_col_ind, a_val, b_val,
+                    ex, teamMember, vector_size, hash_, b_col_ind, a_val, b_val,
                     used_hash_sizes + 1, global_memory_hash_size);
               }
               left_work_ -= work_to_handle;

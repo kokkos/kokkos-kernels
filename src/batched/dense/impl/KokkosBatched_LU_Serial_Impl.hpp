@@ -59,8 +59,10 @@ KOKKOS_INLINE_FUNCTION int SerialLU<Algo::LU::Unblocked>::invoke(
     const AViewType &A,
     const typename MagnitudeScalarType<
         typename AViewType::non_const_value_type>::type tiny) {
+  using execution_space = typename AViewType::execution_space;
   return SerialLU_Internal<Algo::LU::Unblocked>::invoke(
-      A.extent(0), A.extent(1), A.data(), A.stride_0(), A.stride_1(), tiny);
+      execution_space{}, A.extent(0), A.extent(1), A.data(), A.stride_0(),
+      A.stride_1(), tiny);
 }
 
 template <>
@@ -69,8 +71,10 @@ KOKKOS_INLINE_FUNCTION int SerialLU<Algo::LU::Blocked>::invoke(
     const AViewType &A,
     const typename MagnitudeScalarType<
         typename AViewType::non_const_value_type>::type tiny) {
+  using execution_space = typename AViewType::execution_space;
   return SerialLU_Internal<Algo::LU::Blocked>::invoke(
-      A.extent(0), A.extent(1), A.data(), A.stride_0(), A.stride_1(), tiny);
+      execution_space{}, A.extent(0), A.extent(1), A.data(), A.stride_0(),
+      A.stride_1(), tiny);
 }
 
 }  // namespace KokkosBatched

@@ -122,12 +122,11 @@ struct BCRS_GEMV_Functor {
       for (ordinal_type ic = 0; ic < count; ++ic) {
         const auto Aview  = row.block(ic);
         const auto xstart = row.block_colidx(ic) * block_dim;
-        KokkosBlas::Impl::SerialGemvInternal<
-            KokkosBatched::Algo::Gemv::Blocked>::invoke<value_type,
-                                                        value_type>(
-            block_dim, block_dim, alpha, Aview.data(), Aview.stride_0(),
-            Aview.stride_1(), &m_x(xstart), m_x.stride_0(), beta1, &m_y(ystart),
-            m_y.stride_0());
+        KokkosBlas::Impl::
+            SerialGemvInternal<KokkosBatched::Algo::Gemv::Blocked>::invoke(
+                execution_space{}, block_dim, block_dim, alpha, Aview.data(),
+                Aview.stride_0(), Aview.stride_1(), &m_x(xstart),
+                m_x.stride_0(), beta1, &m_y(ystart), m_y.stride_0());
       }
     }
   }
@@ -414,10 +413,14 @@ struct BCRS_GEMV_Transpose_Functor {
         for (ordinal_type jj = 0; jj < block_dim; ++jj) {
           value_type t(0);
           KokkosBlas::Impl::SerialGemvInternal<
-              KokkosBatched::Algo::Gemv::Blocked>::invoke<value_type,
-                                                          value_type>(
-              1, block_dim, alpha1, Aview.data() + jj, Aview.stride_1(),
-              Aview.stride_0(), xview.data(), xview.stride_0(), beta1, &t, 1);
+              KokkosBatched::Algo::Gemv::Blocked>::invoke(execution_space{}, 1,
+                                                          block_dim, alpha1,
+                                                          Aview.data() + jj,
+                                                          Aview.stride_1(),
+                                                          Aview.stride_0(),
+                                                          xview.data(),
+                                                          xview.stride_0(),
+                                                          beta1, &t, 1);
           t *= alpha;
           Kokkos::atomic_add(&m_y(ystart + jj), t);
         }
@@ -967,12 +970,11 @@ struct BCRS_GEMM_Transpose_Functor {
         for (ordinal_type jr = 0; jr < num_rhs; ++jr) {
           for (ordinal_type jj = 0; jj < block_dim; ++jj) {
             value_type t(0);
-            KokkosBlas::Impl::SerialGemvInternal<
-                KokkosBatched::Algo::Gemv::Blocked>::invoke<value_type,
-                                                            value_type>(
-                1, block_dim, alpha1, Aview.data() + jj, Aview.stride_1(),
-                Aview.stride_0(), xview.data() + jr * ldx, xview.stride_0(),
-                beta1, &t, 1);
+            KokkosBlas::Impl::
+                SerialGemvInternal<KokkosBatched::Algo::Gemv::Blocked>::invoke(
+                    execution_space{}, 1, block_dim, alpha1, Aview.data() + jj,
+                    Aview.stride_1(), Aview.stride_0(), xview.data() + jr * ldx,
+                    xview.stride_0(), beta1, &t, 1);
             t *= alpha;
             Kokkos::atomic_add(&m_y(ystart + jj, jr), t);
           }

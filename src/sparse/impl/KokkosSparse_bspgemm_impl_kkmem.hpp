@@ -282,6 +282,7 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
   KOKKOS_INLINE_FUNCTION
   void operator()(const MultiCoreTag4 &,
                   const team_member_t &teamMember) const {
+    typename HandleType::HandleExecSpace ex;
     const nnz_lno_t team_row_begin =
         teamMember.league_rank() * teamMember.team_size();
     const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(
@@ -324,7 +325,7 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
               nnz_lno_t b_col_ind    = entriesB[adjind];
               const scalar_t *valB   = valuesB.data() + adjind * block_size;
 
-              hm.sequential_insert_into_hash_simple(b_col_ind, valA, valB,
+              hm.sequential_insert_into_hash_simple(ex, b_col_ind, valA, valB,
                                                     used_count, used_indices);
             }
           }
@@ -339,6 +340,7 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
   // assumes that the vector lane is 1, as in cpus
   KOKKOS_INLINE_FUNCTION
   void operator()(const MultiCoreTag &, const team_member_t &teamMember) const {
+    typename HandleType::HandleExecSpace ex;
     const nnz_lno_t team_row_begin =
         teamMember.league_rank() * teamMember.team_size();
     const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(
@@ -390,7 +392,7 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
               // this has to be a success, we do not need to check for the
               // success. int insertion =
               hm2.sequential_insert_into_hash_mergeAdd_TrackHashes(
-                  b_col_ind, a_val, b_val, &used_hash_sizes,
+                  ex, b_col_ind, a_val, b_val, &used_hash_sizes,
                   &globally_used_hash_count, globally_used_hash_indices);
             }
           }
@@ -404,6 +406,7 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const GPUTag &, const team_member_t &teamMember) const {
+    typename HandleType::HandleExecSpace ex;
     nnz_lno_t team_row_begin =
         teamMember.league_rank() * teamMember.team_size();
     const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(
@@ -520,10 +523,10 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
                   const scalar_t *valB   = valuesB.data() + adjind * block_size;
                   volatile int num_unsuccess =
                       hm.vector_atomic_insert_into_hash_mergeAdd(
-                          b_col_ind, valA, valB, used_hash_sizes);
+                          ex, b_col_ind, valA, valB, used_hash_sizes);
                   if (num_unsuccess) {
                     hm2.vector_atomic_insert_into_hash_mergeAdd_TrackHashes(
-                        b_col_ind, valA, valB, used_hash_sizes + 1,
+                        ex, b_col_ind, valA, valB, used_hash_sizes + 1,
                         globally_used_hash_count, globally_used_hash_indices);
                   }
                 });

@@ -46,6 +46,7 @@
 #define KOKKOS_BLAS_UTIL_HPP
 
 #include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ExecSpaceUtils.hpp"
 
 namespace KokkosBlas {
 
@@ -56,63 +57,6 @@ struct Trans {
   struct ConjTranspose {};
 };
 
-#if !defined(KOKKOS_IF_ON_HOST)
-
-namespace Impl {
-
-template <class>
-struct algo_level3_blocked_mb_impl;
-template <>
-struct algo_level3_blocked_mb_impl<Kokkos::HostSpace> {
-  static constexpr int value = 4;
-};
-#if defined(KOKKOS_ENABLE_CUDA)
-template <>
-struct algo_level3_blocked_mb_impl<Kokkos::CudaSpace> {
-  static constexpr int value = 2;
-};
-#endif
-#if defined(KOKKOS_ENABLE_HIP)
-template <>
-struct algo_level3_blocked_mb_impl<Kokkos::Experimental::HIPSpace> {
-  static constexpr int value = 2;
-};
-#endif
-#if defined(KOKKOS_ENABLE_SYCL)
-template <>
-struct algo_level3_blocked_mb_impl<Kokkos::Experimental::SYCLDeviceUSMSpace> {
-  static constexpr int value = 2;
-};
-#endif
-
-template <class>
-struct algo_level2_blocked_mb_impl;
-template <>
-struct algo_level2_blocked_mb_impl<Kokkos::HostSpace> {
-  static constexpr int value = 4;
-};
-#if defined(KOKKOS_ENABLE_CUDA)
-template <>
-struct algo_level2_blocked_mb_impl<Kokkos::CudaSpace> {
-  static constexpr int value = 1;
-};
-#endif
-#if defined(KOKKOS_ENABLE_HIP)
-template <>
-struct algo_level2_blocked_mb_impl<Kokkos::Experimental::HIPSpace> {
-  static constexpr int value = 1;
-};
-#endif
-#if defined(KOKKOS_ENABLE_SYCL)
-template <>
-struct algo_level2_blocked_mb_impl<Kokkos::Experimental::SYCLDeviceUSMSpace> {
-  static constexpr int value = 1;
-};
-#endif
-
-}  // namespace Impl
-#endif
-
 struct Algo {
   struct Level3 {
     struct Unblocked {
@@ -120,26 +64,21 @@ struct Algo {
     };
     struct Blocked {
       static const char *name() { return "Blocked"; }
-      // TODO:: for now harwire the blocksizes; this should reflect
-      // register blocking (not about team parallelism).
-      // this mb should vary according to
-      // - team policy (smaller) or range policy (bigger)
-      // - space (gpu vs host)
-      // - blocksize input (blk <= 4 mb = 2, otherwise mb = 4), etc.
-#if defined(KOKKOS_IF_ON_HOST)
-      static constexpr KOKKOS_FUNCTION int mb() {
-        KOKKOS_IF_ON_HOST((return 4;))
-        KOKKOS_IF_ON_DEVICE((return 2;))
-      }
-
-#else  // FIXME remove when requiring minimum version of Kokkos 3.6
-      static constexpr KOKKOS_FUNCTION int mb() {
-        return algo_level3_blocked_mb_impl<
-            Kokkos::Impl::ActiveExecutionMemorySpace>::value;
-      }
-
-#endif
     };
+    // TODO:: for now harwire the blocksizes; this should reflect
+    // regieter blocking (not about team parallelism).
+    // this mb should vary according to
+    // - team policy (smaller) or range policy (bigger)
+    // - space (gpu vs host)
+    // - blocksize input (blk <= 4 mb = 2, otherwise mb = 4), etc.
+    template <class ExecSpace>
+    static constexpr KOKKOS_FUNCTION int mb() {
+      if (KokkosKernels::Impl::kk_is_gpu_exec_space<ExecSpace>()) {
+        return 2;
+      } else {
+        return 4;
+      }
+    }
     struct MKL {
       static const char *name() { return "MKL"; }
     };
@@ -169,27 +108,21 @@ struct Algo {
 
   struct Level2 {
     struct Unblocked {};
-    struct Blocked {
-      // TODO:: for now hardwire the blocksizes; this should reflect
-      // register blocking (not about team parallelism).
-      // this mb should vary according to
-      // - team policy (smaller) or range policy (bigger)
-      // - space (cuda vs host)
-      // - blocksize input (blk <= 4 mb = 2, otherwise mb = 4), etc.
-#if defined(KOKKOS_IF_ON_HOST)
-      static constexpr KOKKOS_FUNCTION int mb() {
-        KOKKOS_IF_ON_HOST((return 4;))
-        KOKKOS_IF_ON_DEVICE((return 1;))
+    struct Blocked {};
+    // TODO:: for now harwire the blocksizes; this should reflect
+    // regieter blocking (not about team parallelism).
+    // this mb should vary according to
+    // - team policy (smaller) or range policy (bigger)
+    // - space (cuda vs host)
+    // - blocksize input (blk <= 4 mb = 2, otherwise mb = 4), etc.
+    template <class ExecSpace>
+    static constexpr KOKKOS_FUNCTION int mb() {
+      if (KokkosKernels::Impl::kk_is_gpu_exec_space<ExecSpace>()) {
+        return 1;
+      } else {
+        return 4;
       }
-
-#else  // FIXME remove when requiring minimum version of Kokkos 3.6
-      static constexpr KOKKOS_FUNCTION int mb() {
-        return algo_level2_blocked_mb_impl<
-            Kokkos::Impl::ActiveExecutionMemorySpace>::value;
-      }
-
-#endif
-    };
+    }
     struct MKL {};
     struct CompactMKL {};
 

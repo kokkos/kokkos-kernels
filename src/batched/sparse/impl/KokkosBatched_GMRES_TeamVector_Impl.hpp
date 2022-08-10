@@ -320,11 +320,13 @@ KOKKOS_INLINE_FUNCTION int TeamVectorGMRES<MemberType>::invoke(
   Kokkos::parallel_for(
       Kokkos::TeamVectorRange(member, 0, numMatrices),
       [&](const OrdinalType& l) {
+        using execution_space = typename MemberType::execution_space;
         auto A_l = Kokkos::subview(H_view, l, first_indices, first_indices);
         auto B_l = Kokkos::subview(G, l, first_indices);
 
         SerialTrsm<Side::Left, Uplo::Lower, Trans::Transpose, Diag::NonUnit,
-                   Algo::Trsm::Unblocked>::invoke(1, A_l, B_l);
+                   Algo::Trsm::Unblocked>::invoke(execution_space{}, 1, A_l,
+                                                  B_l);
       });
 
   member.team_barrier();  // Finish writing to G

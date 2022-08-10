@@ -154,8 +154,9 @@ void bspgemm_debug_numeric(KernelHandle* /* handle */,
         }
         // accumulator(b_col) += a_val * b_val
         auto acc = get_block(accumulator, b_col, block_size);
-        GEMM::invoke(block_dim, block_dim, block_dim, ONE, a_val, block_dim, 1,
-                     b_val, block_dim, 1, ONE, acc.data(), block_dim, 1);
+        GEMM::invoke(Kokkos::DefaultHostExecutionSpace{}, block_dim, block_dim,
+                     block_dim, ONE, a_val, block_dim, 1, b_val, block_dim, 1,
+                     ONE, acc.data(), block_dim, 1);
       }
     }
 

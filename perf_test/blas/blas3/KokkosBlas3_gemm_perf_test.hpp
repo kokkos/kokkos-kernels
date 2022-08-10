@@ -418,8 +418,9 @@ void __do_gemm_serial_batched_template(options_t options,
           C = Kokkos::subview(_gemm_args.C, Kokkos::ALL(), Kokkos::ALL(), j);
         }
 
+        using exec_space = typename decltype(A)::execution_space;
         KokkosBatched::SerialGemm<TransAType, TransBType, AlgoType>::invoke(
-            _gemm_args.alpha, A, B, _gemm_args.beta, C);
+            exec_space{}, _gemm_args.alpha, A, B, _gemm_args.beta, C);
       }
     }
   };
@@ -616,7 +617,7 @@ struct parallel_batched_gemm_range_policy {
     auto svC = Kokkos::subview(gemm_args_.C, i, Kokkos::ALL(), Kokkos::ALL());
 
     KokkosBatched::SerialGemm<TransAType, TransBType, BlockingType>::invoke(
-        gemm_args_.alpha, svA, svB, gemm_args_.beta, svC);
+        default_device{}, gemm_args_.alpha, svA, svB, gemm_args_.beta, svC);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -626,7 +627,7 @@ struct parallel_batched_gemm_range_policy {
     auto svC = Kokkos::subview(gemm_args_.C, Kokkos::ALL(), Kokkos::ALL(), i);
 
     KokkosBatched::SerialGemm<TransAType, TransBType, BlockingType>::invoke(
-        gemm_args_.alpha, svA, svB, gemm_args_.beta, svC);
+        default_device{}, gemm_args_.alpha, svA, svB, gemm_args_.beta, svC);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -639,7 +640,7 @@ struct parallel_batched_gemm_range_policy {
         Kokkos::subview(gemm_args_.Cv.vec_3d, i, Kokkos::ALL(), Kokkos::ALL());
 
     KokkosBatched::SerialGemm<TransAType, TransBType, BlockingType>::invoke(
-        gemm_args_.alpha, svA, svB, gemm_args_.beta, svC);
+        default_device{}, gemm_args_.alpha, svA, svB, gemm_args_.beta, svC);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -652,7 +653,7 @@ struct parallel_batched_gemm_range_policy {
         Kokkos::subview(gemm_args_.Cv.vec_3d, Kokkos::ALL(), Kokkos::ALL(), i);
 
     KokkosBatched::SerialGemm<TransAType, TransBType, BlockingType>::invoke(
-        gemm_args_.alpha, svA, svB, gemm_args_.beta, svC);
+        default_device{}, gemm_args_.alpha, svA, svB, gemm_args_.beta, svC);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -695,24 +696,26 @@ struct parallel_batched_gemm {
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const SerialTag &, const MemberType &member) const {
+    typename MemberType::execution_space ex;
     auto i   = member.league_rank();
     auto svA = Kokkos::subview(gemm_args_.A, i, Kokkos::ALL(), Kokkos::ALL());
     auto svB = Kokkos::subview(gemm_args_.B, i, Kokkos::ALL(), Kokkos::ALL());
     auto svC = Kokkos::subview(gemm_args_.C, i, Kokkos::ALL(), Kokkos::ALL());
 
     KokkosBatched::SerialGemm<TransAType, TransBType, BlockingType>::invoke(
-        gemm_args_.alpha, svA, svB, gemm_args_.beta, svC);
+        ex, gemm_args_.alpha, svA, svB, gemm_args_.beta, svC);
   }
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const SerialBatchDim3Tag &, const MemberType &member) const {
+    typename MemberType::execution_space ex;
     auto i   = member.league_rank();
     auto svA = Kokkos::subview(gemm_args_.A, Kokkos::ALL(), Kokkos::ALL(), i);
     auto svB = Kokkos::subview(gemm_args_.B, Kokkos::ALL(), Kokkos::ALL(), i);
     auto svC = Kokkos::subview(gemm_args_.C, Kokkos::ALL(), Kokkos::ALL(), i);
 
     KokkosBatched::SerialGemm<TransAType, TransBType, BlockingType>::invoke(
-        gemm_args_.alpha, svA, svB, gemm_args_.beta, svC);
+        ex, gemm_args_.alpha, svA, svB, gemm_args_.beta, svC);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -1008,13 +1011,14 @@ struct parallel_batched_gemm_experiment1 {
   KOKKOS_INLINE_FUNCTION
 
   void operator()(const SerialTag &, const int &i) const {
+    typename decltype(gemm_args_.A)::execution_space ex;
     auto svA = Kokkos::subview(gemm_args_.A, i, Kokkos::ALL(), Kokkos::ALL());
     auto svB = Kokkos::subview(gemm_args_.B, i, Kokkos::ALL(), Kokkos::ALL());
     auto svC = Kokkos::subview(gemm_args_.C, i, Kokkos::ALL(), Kokkos::ALL());
 
     // Uses two serial for-loops internally
     KokkosBatched::SerialGemm<TransAType, TransBType, BlockingType>::invoke(
-        gemm_args_.alpha, svA, svB, gemm_args_.beta, svC);
+        ex, gemm_args_.alpha, svA, svB, gemm_args_.beta, svC);
   }
 };
 

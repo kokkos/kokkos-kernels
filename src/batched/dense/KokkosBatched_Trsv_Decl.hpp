@@ -15,8 +15,10 @@ namespace KokkosBatched {
 template <typename ArgUplo, typename ArgTrans, typename ArgDiag,
           typename ArgAlgo>
 struct SerialTrsv {
-  template <typename ScalarType, typename AViewType, typename bViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType /*alpha*/,
+  template <typename ExecSpace, typename ScalarType, typename AViewType,
+            typename bViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(ExecSpace ex,
+                                           const ScalarType /*alpha*/,
                                            const AViewType & /*A*/,
                                            const bViewType & /*b*/) {
     assert(false && "Error: encounter dummy impl");

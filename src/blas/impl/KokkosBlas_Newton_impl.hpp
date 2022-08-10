@@ -205,7 +205,8 @@ struct NewtonFunctor {
 
       // solve linear problem
       int linSolverStat = KokkosBatched::SerialGesv<
-          KokkosBatched::Gesv::StaticPivoting>::invoke(J, update, rhs, tmp);
+          KokkosBatched::Gesv::StaticPivoting>::invoke(execution_space{}, J,
+                                                       update, rhs, tmp);
       KokkosBlas::SerialScale::invoke(-1, update);
 
       if (handle.debug_mode) {
