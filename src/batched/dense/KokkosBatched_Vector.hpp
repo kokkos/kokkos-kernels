@@ -263,7 +263,7 @@ class ArithTraits<KokkosBatched::Vector<KokkosBatched::SIMD<T>, l>> {
     using KAT = ArithTraits<typename val_type::value_type>;
     val_type v{};
     for (int i = 0; i < l; ++i) {
-      v[i] = KAT::abs(v[i]);
+      v[i] = KAT::abs(val[i]);
     }
     return v;
   }
@@ -307,7 +307,7 @@ class ArithTraits<
     using KAT = ArithTraits<typename val_type::value_type>;
     val_type v{};
     for (int i = 0; i < l; ++i) {
-      v[i] = KAT::conj(v[i]);
+      v[i] = KAT::conj(val[i]);
     }
     return v;
   }
@@ -316,7 +316,7 @@ class ArithTraits<
     using KAT = ArithTraits<typename val_type::value_type>;
     val_type v{};
     for (int i = 0; i < l; ++i) {
-      v[i] = KAT::abs(v[i]);
+      v[i] = KAT::abs(val[i]);
     }
     return v;
   }
