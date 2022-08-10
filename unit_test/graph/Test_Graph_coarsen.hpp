@@ -96,10 +96,10 @@ bool verify_coarsening(typename coarsener_t::coarse_level_triple fine_l,
       Kokkos::HostSpace(), coarse_l.vtx_wgts);
   ordinal_t f_size = 0;
   ordinal_t c_size = 0;
-  for (ordinal_t i = 0; i < fvw.extent(0); i++) {
+  for (ordinal_t i = 0; i < static_cast<ordinal_t>(fvw.extent(0)); i++) {
     f_size += fvw(i);
   }
-  for (ordinal_t i = 0; i < cvw.extent(0); i++) {
+  for (ordinal_t i = 0; i < static_cast<ordinal_t>(cvw.extent(0)); i++) {
     c_size += cvw(i);
   }
   // number of columns in interpolation matrix should give number of rows in
@@ -169,12 +169,9 @@ bool verify_is_graph(crsMat A) {
 template <class crsMat>
 bool verify_aggregator(crsMat A, crsMat agg) {
   using graph_type  = typename crsMat::StaticCrsGraphType;
-  using c_rowmap_t  = typename graph_type::row_map_type;
   using c_entries_t = typename graph_type::entries_type;
-  using rowmap_t    = typename c_rowmap_t::non_const_type;
   using entries_t   = typename c_entries_t::non_const_type;
   using ordinal_t   = typename entries_t::value_type;
-  using edge_t      = typename rowmap_t::value_type;
 
   bool correct = true;
   // aggregator should have as many rows as A
@@ -182,7 +179,7 @@ bool verify_aggregator(crsMat A, crsMat agg) {
     correct = false;
   }
   // aggregator should have as many entries as A has rows
-  if (A.numRows() != agg.nnz()) {
+  if (A.numRows() != static_cast<ordinal_t>(agg.nnz())) {
     correct = false;
   }
   // aggregator should have fewer columns than A has rows
@@ -194,7 +191,7 @@ bool verify_aggregator(crsMat A, crsMat agg) {
                                           agg.graph.entries);
 
   std::vector<int> aggregateSizes(agg.numCols(), 0);
-  for (ordinal_t i = 0; i < agg.nnz(); i++) {
+  for (ordinal_t i = 0; i < static_cast<ordinal_t>(agg.nnz()); i++) {
     ordinal_t v = entries(i);
     // aggregator should not have out-of-bounds columns
     if (v >= agg.numCols()) {
@@ -276,15 +273,8 @@ crsMat gen_grid() {
 
 template <typename scalar, typename lno_t, typename size_type, typename device>
 void test_multilevel_coarsen_grid() {
-  using execution_space = typename device::execution_space;
   using crsMat =
       KokkosSparse::CrsMatrix<scalar, lno_t, device, void, size_type>;
-  using graph_type  = typename crsMat::StaticCrsGraphType;
-  using c_rowmap_t  = typename graph_type::row_map_type;
-  using c_entries_t = typename graph_type::entries_type;
-  using rowmap_t    = typename c_rowmap_t::non_const_type;
-  using entries_t   = typename c_entries_t::non_const_type;
-  using svt         = typename crsMat::values_type;
   crsMat A          = gen_grid<crsMat>();
   using coarsener_t = coarse_builder<crsMat>;
   typename coarsener_t::coarsen_handle handle;
@@ -303,10 +293,10 @@ void test_multilevel_coarsen_grid() {
         << coarse->level - 1;
     bool correct_graph      = verify_is_graph<crsMat>(coarse->mtx);
     bool correct_coarsening = verify_coarsening<coarsener_t>(*fine, *coarse);
-    EXPECT_TRUE(correct_aggregator)
+    EXPECT_TRUE(correct_graph)
         << "Multilevel coarsening produced invalid graph on level "
         << coarse->level;
-    EXPECT_TRUE(correct_aggregator)
+    EXPECT_TRUE(correct_coarsening)
         << "Multilevel coarsening produced invalid coarsening on level "
         << coarse->level;
     fine++;
@@ -316,15 +306,11 @@ void test_multilevel_coarsen_grid() {
 
 template <typename scalar, typename lno_t, typename size_type, typename device>
 void test_coarsen_grid() {
-  using execution_space = typename device::execution_space;
   using crsMat =
       KokkosSparse::CrsMatrix<scalar, lno_t, device, void, size_type>;
   using graph_type  = typename crsMat::StaticCrsGraphType;
-  using c_rowmap_t  = typename graph_type::row_map_type;
   using c_entries_t = typename graph_type::entries_type;
-  using rowmap_t    = typename c_rowmap_t::non_const_type;
   using entries_t   = typename c_entries_t::non_const_type;
-  using svt         = typename crsMat::values_type;
   crsMat A          = gen_grid<crsMat>();
   entries_t vWgts("vertex weights", A.numRows());
   Kokkos::deep_copy(vWgts, static_cast<typename entries_t::value_type>(1));

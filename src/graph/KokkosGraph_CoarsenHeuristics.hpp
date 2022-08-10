@@ -395,7 +395,7 @@ class coarsen_heuristics {
 
     typename matrix_t::staticcrsgraph_type::entries_type::non_const_value_type
         nc           = 0;
-    vtx_view_t vcmap = KokkosGraph::Experimental::graph_mis2_aggregate<
+    vtx_view_t vcmap = KokkosGraph::graph_mis2_aggregate<
         Device, typename matrix_t::staticcrsgraph_type::row_map_type,
         typename matrix_t::staticcrsgraph_type::entries_type, vtx_view_t>(
         g.graph.row_map, g.graph.entries, nc);
@@ -758,15 +758,15 @@ class coarsen_heuristics {
     Kokkos::View<uint32_t*, Device> hashes;
     ordinal_t unmapped_total;
     Kokkos::View<ordinal_t, Device> nvertices_coarse;
-    MatchByHashSorted(vtx_view_t vcmap, vtx_view_t unmapped,
-                      Kokkos::View<uint32_t*, Device> hashes,
-                      ordinal_t unmapped_total,
-                      Kokkos::View<ordinal_t, Device> nvertices_coarse)
-        : vcmap(vcmap),
-          unmapped(unmapped),
-          hashes(hashes),
-          unmapped_total(unmapped_total),
-          nvertices_coarse(nvertices_coarse) {}
+    MatchByHashSorted(vtx_view_t _vcmap, vtx_view_t _unmapped,
+                      Kokkos::View<uint32_t*, Device> _hashes,
+                      ordinal_t _unmapped_total,
+                      Kokkos::View<ordinal_t, Device> _nvertices_coarse)
+        : vcmap(_vcmap),
+          unmapped(_unmapped),
+          hashes(_hashes),
+          unmapped_total(_unmapped_total),
+          nvertices_coarse(_nvertices_coarse) {}
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const ordinal_t i, ordinal_t& update,

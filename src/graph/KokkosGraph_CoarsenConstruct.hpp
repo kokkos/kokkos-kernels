@@ -11,7 +11,7 @@
 #include "KokkosKernels_Uniform_Initialized_MemoryPool.hpp"
 #include "KokkosGraph_CoarsenHeuristics.hpp"
 
-namespace KokkosKernels {
+namespace KokkosSparse {
 
 namespace Impl {
 
@@ -24,14 +24,14 @@ struct SortLowDegreeCrsMatrixFunctor {
   using team_mem   = typename Kokkos::TeamPolicy<execution_space>::member_type;
   using value_type = lno_t;
 
-  SortLowDegreeCrsMatrixFunctor(bool usingRangePol, const rowmap_t& rowmap_,
-                                const entries_t& entries_,
-                                const values_t& values_,
-                                const lno_t degreeLimit_)
-      : rowmap(rowmap_),
-        entries(entries_),
-        values(values_),
-        degreeLimit(degreeLimit_) {
+  SortLowDegreeCrsMatrixFunctor(bool usingRangePol, const rowmap_t& _rowmap,
+                                const entries_t& _entries,
+                                const values_t& _values,
+                                const lno_t _degreeLimit)
+      : rowmap(_rowmap),
+        entries(_entries),
+        values(_values),
+        degreeLimit(_degreeLimit) {
     if (usingRangePol) {
       entriesAux =
           entries_t(Kokkos::ViewAllocateWithoutInitializing("Entries aux"),
@@ -94,7 +94,7 @@ typename entries_t::non_const_value_type sort_low_degree_rows_crs_matrix(
     const typename entries_t::non_const_value_type degreeLimit) {
   using lno_t    = typename entries_t::non_const_value_type;
   using team_pol = Kokkos::TeamPolicy<execution_space>;
-  bool useRadix  = !Impl::kk_is_gpu_exec_space<execution_space>();
+  bool useRadix  = !KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>();
   Impl::SortLowDegreeCrsMatrixFunctor<execution_space, rowmap_t, entries_t,
                                       values_t>
       funct(useRadix, rowmap, entries, values, degreeLimit);
@@ -407,8 +407,8 @@ class coarse_builder {
     vtx_view_t input;
     edge_view_t output;
 
-    prefix_sum(vtx_view_t input, edge_view_t output)
-        : input(input), output(output) {}
+    prefix_sum(vtx_view_t _input, edge_view_t _output)
+        : input(_input), output(_output) {}
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const ordinal_t i, edge_offset_t& update,
@@ -431,25 +431,26 @@ class coarse_builder {
     vtx_view_t dedupe_edge_count;
     ordinal_t degreeLimit;
 
-    functorDedupeLowDegreeAfterSort(edge_view_t row_map, vtx_view_t entries,
-                                    vtx_view_t entriesOut, wgt_view_t wgts,
-                                    wgt_view_t wgtsOut,
-                                    vtx_view_t dedupe_edge_count,
-                                    ordinal_t degreeLimit_)
-        : row_map(row_map),
-          entries(entries),
-          entriesOut(entriesOut),
-          wgts(wgts),
-          wgtsOut(wgtsOut),
-          dedupe_edge_count(dedupe_edge_count),
-          degreeLimit(degreeLimit_) {}
+    functorDedupeLowDegreeAfterSort(edge_view_t _row_map, vtx_view_t _entries,
+                                    vtx_view_t _entriesOut, wgt_view_t _wgts,
+                                    wgt_view_t _wgtsOut,
+                                    vtx_view_t _dedupe_edge_count,
+                                    ordinal_t _degreeLimit_)
+        : row_map(_row_map),
+          entries(_entries),
+          entriesOut(_entriesOut),
+          wgts(_wgts),
+          wgtsOut(_wgtsOut),
+          dedupe_edge_count(_dedupe_edge_count),
+          degreeLimit(_degreeLimit_) {}
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const member& thread, edge_offset_t& thread_sum) const {
       ordinal_t u         = thread.league_rank();
       edge_offset_t start = row_map(u);
       edge_offset_t end   = row_map(u + 1);
-      if (end - start > degreeLimit) {
+      ordinal_t degree = end - start;
+      if (degree > degreeLimit) {
         return;
       }
       Kokkos::parallel_scan(
@@ -483,7 +484,8 @@ class coarse_builder {
     void operator()(const ordinal_t& u, edge_offset_t& thread_sum) const {
       ordinal_t offset = row_map(u);
       ordinal_t last   = ORD_MAX;
-      if (row_map(u + 1) - row_map(u) > degreeLimit) {
+      ordinal_t degree = row_map(u + 1) - row_map(u);
+      if (degree > degreeLimit) {
         return;
       }
       for (edge_offset_t i = row_map(u); i < row_map(u + 1); i++) {
@@ -510,15 +512,15 @@ class coarse_builder {
     wgt_view_t wgts, wgtsOut;
     vtx_view_t dedupe_edge_count;
 
-    functorDedupeAfterSort(edge_view_t row_map, vtx_view_t entries,
-                           vtx_view_t entriesOut, wgt_view_t wgts,
-                           wgt_view_t wgtsOut, vtx_view_t dedupe_edge_count)
-        : row_map(row_map),
-          entries(entries),
-          entriesOut(entriesOut),
-          wgts(wgts),
-          wgtsOut(wgtsOut),
-          dedupe_edge_count(dedupe_edge_count) {}
+    functorDedupeAfterSort(edge_view_t _row_map, vtx_view_t _entries,
+                           vtx_view_t _entriesOut, wgt_view_t _wgts,
+                           wgt_view_t _wgtsOut, vtx_view_t _dedupe_edge_count)
+        : row_map(_row_map),
+          entries(_entries),
+          entriesOut(_entriesOut),
+          wgts(_wgts),
+          wgtsOut(_wgtsOut),
+          dedupe_edge_count(_dedupe_edge_count) {}
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const member& thread, edge_offset_t& thread_sum) const {
@@ -576,18 +578,18 @@ class coarse_builder {
     wgt_view_t target_wgts;
 
     functorCollapseDirectedToUndirected(
-        const edge_view_t source_row_map, const edge_view_t target_row_map,
-        const vtx_view_t source_edge_counts, vtx_view_t target_edge_counts,
-        const vtx_view_t source_destinations, vtx_view_t target_destinations,
-        const wgt_view_t source_wgts, wgt_view_t target_wgts)
-        : source_row_map(source_row_map),
-          target_row_map(target_row_map),
-          source_edge_counts(source_edge_counts),
-          target_edge_counts(target_edge_counts),
-          source_destinations(source_destinations),
-          target_destinations(target_destinations),
-          source_wgts(source_wgts),
-          target_wgts(target_wgts) {}
+        const edge_view_t _source_row_map, const edge_view_t _target_row_map,
+        const vtx_view_t _source_edge_counts, vtx_view_t _target_edge_counts,
+        const vtx_view_t _source_destinations, vtx_view_t _target_destinations,
+        const wgt_view_t _source_wgts, wgt_view_t _target_wgts)
+        : source_row_map(_source_row_map),
+          target_row_map(_target_row_map),
+          source_edge_counts(_source_edge_counts),
+          target_edge_counts(_target_edge_counts),
+          source_destinations(_source_destinations),
+          target_destinations(_target_destinations),
+          source_wgts(_source_wgts),
+          target_wgts(_target_wgts) {}
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const member& thread) const {
@@ -618,34 +620,34 @@ class coarse_builder {
   struct functorHashmapAccumulator {
     // compiler may get confused what the reduction type is without this
     typedef ordinal_t value_type;
-    vtx_view_t remaining;
     edge_view_t row_map;
     vtx_view_t entries_in, entries_out;
     wgt_view_t wgts_in, wgts_out;
     vtx_view_t dedupe_edge_count;
-    uniform_memory_pool_t _memory_pool;
-    const ordinal_t _hash_size;
-    const ordinal_t _max_hash_entries;
+    uniform_memory_pool_t memory_pool;
+    const ordinal_t hash_size;
+    const ordinal_t max_hash_entries;
+    vtx_view_t remaining;
     bool use_out;
 
-    functorHashmapAccumulator(edge_view_t row_map, vtx_view_t entries_in,
-                              vtx_view_t entries_out, wgt_view_t wgts_in,
-                              wgt_view_t wgts_out, vtx_view_t dedupe_edge_count,
-                              uniform_memory_pool_t memory_pool,
-                              const ordinal_t hash_size,
-                              const ordinal_t max_hash_entries,
-                              vtx_view_t remaining, bool use_out)
-        : row_map(row_map),
-          entries_in(entries_in),
-          entries_out(entries_out),
-          wgts_in(wgts_in),
-          wgts_out(wgts_out),
-          dedupe_edge_count(dedupe_edge_count),
-          _memory_pool(memory_pool),
-          _hash_size(hash_size),
-          _max_hash_entries(max_hash_entries),
-          remaining(remaining),
-          use_out(use_out) {}
+    functorHashmapAccumulator(edge_view_t _row_map, vtx_view_t _entries_in,
+                              vtx_view_t _entries_out, wgt_view_t _wgts_in,
+                              wgt_view_t _wgts_out, vtx_view_t _dedupe_edge_count,
+                              uniform_memory_pool_t _memory_pool,
+                              const ordinal_t _hash_size,
+                              const ordinal_t _max_hash_entries,
+                              vtx_view_t _remaining, bool _use_out)
+        : row_map(_row_map),
+          entries_in(_entries_in),
+          entries_out(_entries_out),
+          wgts_in(_wgts_in),
+          wgts_out(_wgts_out),
+          dedupe_edge_count(_dedupe_edge_count),
+          memory_pool(_memory_pool),
+          hash_size(_hash_size),
+          max_hash_entries(_max_hash_entries),
+          remaining(_remaining),
+          use_out(_use_out) {}
 
     KOKKOS_INLINE_FUNCTION
     ordinal_t get_thread_id(const ordinal_t row_index) const {
@@ -672,7 +674,8 @@ class coarse_builder {
       typedef scalar_t hash_value_type;
 
       // can't do this row at current hashmap size
-      if (row_map(idx + 1) - row_map(idx) >= _max_hash_entries) {
+      ordinal_t hash_entries = row_map(idx + 1) - row_map(idx);
+      if (hash_entries >= max_hash_entries) {
         thread_sum++;
         return;
       }
@@ -682,7 +685,7 @@ class coarse_builder {
       // OneThread2OneChunk
       t_id = get_thread_id(t_id);
       while (nullptr == ptr_temp) {
-        ptr_temp = (volatile ordinal_t*)(_memory_pool.allocate_chunk(t_id));
+        ptr_temp = (volatile ordinal_t*)(memory_pool.allocate_chunk(t_id));
       }
       if (ptr_temp == nullptr) {
         return;
@@ -698,15 +701,15 @@ class coarse_builder {
       *used_hash_count = 0;
 
       // hash function is hash_size-1 (note: hash_size must be a power of 2)
-      ordinal_t hash_func_pow2 = _hash_size - 1;
+      ordinal_t hash_func_pow2 = hash_size - 1;
 
       // Set pointer to hash indices
       ordinal_t* used_hash_indices = (ordinal_t*)(ptr_temp);
-      ptr_temp += _hash_size;
+      ptr_temp += hash_size;
 
       // Set pointer to hash begins
       ordinal_t* hash_begins = (ordinal_t*)(ptr_temp);
-      ptr_temp += _hash_size;
+      ptr_temp += hash_size;
 
       // Set pointer to hash nexts
       ordinal_t* hash_nexts = (ordinal_t*)(ptr_temp);
@@ -720,7 +723,7 @@ class coarse_builder {
       KokkosKernels::Experimental::HashmapAccumulator<
           hash_size_type, hash_key_type, hash_value_type,
           KokkosKernels::Experimental::HashOpType::bitwiseAnd>
-          hash_map(_hash_size, hash_func_pow2, hash_begins, hash_nexts, keys,
+          hash_map(hash_size, hash_func_pow2, hash_begins, hash_nexts, keys,
                    values);
 
       for (edge_offset_t i = row_map(idx); i < row_map(idx + 1); i++) {
@@ -743,7 +746,7 @@ class coarse_builder {
       // number of dirty hash values (I think)
       dedupe_edge_count(idx) = *used_hash_size;
       // Release the memory pool chunk back to the pool
-      _memory_pool.release_chunk(ptr_memory_pool_chunk);
+      memory_pool.release_chunk(ptr_memory_pool_chunk);
 
     }  // operator()
 
@@ -756,7 +759,8 @@ class coarse_builder {
       typedef scalar_t hash_value_type;
 
       // can't do this row at current hashmap size
-      if (row_map(idx + 1) - row_map(idx) >= _max_hash_entries) {
+      ordinal_t hash_entries = row_map(idx + 1) - row_map(idx);
+      if (hash_entries >= max_hash_entries) {
         Kokkos::single(Kokkos::PerTeam(thread), [&]() { thread_sum++; });
         thread.team_barrier();
         return;
@@ -768,7 +772,7 @@ class coarse_builder {
             // Acquire a chunk from the memory pool using a spin-loop.
             ptr_write = nullptr;
             while (nullptr == ptr_write) {
-              ptr_write = (volatile ordinal_t*)(_memory_pool.allocate_chunk(
+              ptr_write = (volatile ordinal_t*)(memory_pool.allocate_chunk(
                   thread.league_rank()));
             }
           },
@@ -793,23 +797,23 @@ class coarse_builder {
       });
 
       // hash function is hash_size-1 (note: hash_size must be a power of 2)
-      ordinal_t hash_func_pow2 = _hash_size - 1;
+      ordinal_t hash_func_pow2 = hash_size - 1;
 
       // Set pointer to hash indices
       ordinal_t* used_hash_indices = (ordinal_t*)(ptr_temp);
-      ptr_temp += _hash_size;
+      ptr_temp += hash_size;
 
       // Set pointer to hash begins
       ordinal_t* hash_begins = (ordinal_t*)(ptr_temp);
-      ptr_temp += _hash_size;
+      ptr_temp += hash_size;
 
       // Set pointer to hash nexts
       ordinal_t* hash_nexts = (ordinal_t*)(ptr_temp);
-      ptr_temp += _max_hash_entries;
+      ptr_temp += max_hash_entries;
 
       // Set pointer to hash keys
       ordinal_t* keys = (ordinal_t*)(ptr_temp);
-      ptr_temp += _max_hash_entries;
+      ptr_temp += max_hash_entries;
 
       // Set pointer to hash values
       scalar_t* values;
@@ -822,7 +826,7 @@ class coarse_builder {
       KokkosKernels::Experimental::HashmapAccumulator<
           hash_size_type, hash_key_type, hash_value_type,
           KokkosKernels::Experimental::HashOpType::bitwiseAnd>
-          hash_map(_hash_size, hash_func_pow2, hash_begins, hash_nexts, keys,
+          hash_map(hash_size, hash_func_pow2, hash_begins, hash_nexts, keys,
                    values);
 
       Kokkos::parallel_for(
@@ -942,7 +946,7 @@ class coarse_builder {
         // number of dirty hash values (I think)
         dedupe_edge_count(idx) = *write_idx;
         // Release the memory pool chunk back to the pool
-        _memory_pool.release_chunk(ptr_memory_pool_chunk);
+        memory_pool.release_chunk(ptr_memory_pool_chunk);
       });
 
     }  // operator()
@@ -1116,7 +1120,7 @@ class coarse_builder {
       }
     } else if (handle.b == Sort) {
       // sort the (implicit) crs matrix
-      KokkosKernels::sort_crs_matrix<exec_space, edge_view_t, vtx_view_t,
+      KokkosSparse::sort_crs_matrix<exec_space, edge_view_t, vtx_view_t,
                                      wgt_view_t>(source_bucket_offset,
                                                  dest_by_source, wgt_by_source);
 
@@ -1150,7 +1154,7 @@ class coarse_builder {
       ordinal_t limit = 128;
       // sort the (implicit) crs matrix, but only the low degree rows
       ordinal_t remaining_count =
-          KokkosKernels::sort_low_degree_rows_crs_matrix<
+          KokkosSparse::sort_low_degree_rows_crs_matrix<
               exec_space, edge_view_t, vtx_view_t, wgt_view_t>(
               source_bucket_offset, dest_by_source, wgt_by_source, limit);
       // combine adjacent entries that are equal
@@ -1250,18 +1254,18 @@ class coarse_builder {
     wgt_view_t wgts_out;
     ordinal_t workLength;
 
-    translationFunctor(matrix_t vcmap, matrix_t g, vtx_view_t mapped_edges,
-                       vtx_view_t edges_per_source,
-                       edge_view_t source_bucket_offset, vtx_view_t edges_out,
-                       wgt_view_t wgts_out)
-        : vcmap(vcmap),
-          g(g),
-          mapped_edges(mapped_edges),
-          edges_per_source(edges_per_source),
-          source_bucket_offset(source_bucket_offset),
-          workLength(g.numRows()),
-          edges_out(edges_out),
-          wgts_out(wgts_out) {}
+    translationFunctor(matrix_t _vcmap, matrix_t _g, vtx_view_t _mapped_edges,
+                       vtx_view_t _edges_per_source,
+                       edge_view_t _source_bucket_offset, vtx_view_t _edges_out,
+                       wgt_view_t _wgts_out)
+        : vcmap(_vcmap),
+          g(_g),
+          mapped_edges(_mapped_edges),
+          edges_per_source(_edges_per_source),
+          source_bucket_offset(_source_bucket_offset),
+          edges_out(_edges_out),
+          wgts_out(_wgts_out),
+          workLength(_g.numRows()) {}
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const member& t) const {
@@ -1380,7 +1384,7 @@ class coarse_builder {
             KOKKOS_LAMBDA(const ordinal_t& u) {
               edge_offset_t start_origin = source_bucket_offset(u);
               edge_offset_t start_dest   = source_offsets(u);
-              for (edge_offset_t idx = 0; idx < edges_per_source(u); idx++) {
+              for (ordinal_t idx = 0; idx < edges_per_source(u); idx++) {
                 dest_idx(start_dest + idx) = dest_by_source(start_origin + idx);
                 wgts(start_dest + idx)     = wgt_by_source(start_origin + idx);
               }
@@ -1391,7 +1395,7 @@ class coarse_builder {
             KOKKOS_LAMBDA(const ordinal_t& u) {
               edge_offset_t start_origin = source_bucket_offset(u);
               edge_offset_t start_dest   = source_offsets(u);
-              for (edge_offset_t idx = 0; idx < edges_per_source(u); idx++) {
+              for (ordinal_t idx = 0; idx < edges_per_source(u); idx++) {
                 dest_idx(start_dest + idx) = dest_by_source(start_origin + idx);
                 wgts(start_dest + idx)     = wgt_by_source(start_origin + idx);
               }
@@ -1406,7 +1410,7 @@ class coarse_builder {
             edge_offset_t start_dest   = source_offsets(u);
             Kokkos::parallel_for(
                 Kokkos::TeamThreadRange(thread, edges_per_source(u)),
-                [=](const edge_offset_t idx) {
+                [=](const ordinal_t idx) {
                   dest_idx(start_dest + idx) =
                       dest_by_source(start_origin + idx);
                   wgts(start_dest + idx) = wgt_by_source(start_origin + idx);
@@ -1706,16 +1710,16 @@ class coarse_builder {
     vtx_view_t c_vtx_w, f_vtx_w;
     ordinal_t workLength;
 
-    countingFunctor(matrix_t vcmap, matrix_t g, vtx_view_t mapped_edges,
-                    vtx_view_t degree_initial, vtx_view_t c_vtx_w,
-                    vtx_view_t f_vtx_w)
-        : vcmap(vcmap),
-          g(g),
-          mapped_edges(mapped_edges),
-          degree_initial(degree_initial),
-          c_vtx_w(c_vtx_w),
-          f_vtx_w(f_vtx_w),
-          workLength(g.numRows()) {}
+    countingFunctor(matrix_t _vcmap, matrix_t _g, vtx_view_t _mapped_edges,
+                    vtx_view_t _degree_initial, vtx_view_t _c_vtx_w,
+                    vtx_view_t _f_vtx_w)
+        : vcmap(_vcmap),
+          g(_g),
+          mapped_edges(_mapped_edges),
+          degree_initial(_degree_initial),
+          c_vtx_w(_c_vtx_w),
+          f_vtx_w(_f_vtx_w),
+          workLength(_g.numRows()) {}
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const member& t) const {
@@ -1817,7 +1821,7 @@ class coarse_builder {
           sum += degree_initial(i);
         },
         total_unduped);
-    edge_offset_t avg_unduped = total_unduped / nc;
+    ordinal_t avg_unduped = total_unduped / nc;
 
     coarse_level_triple next_level;
     // optimized subroutines for sufficiently irregular graphs or high average
@@ -1850,6 +1854,7 @@ class coarse_builder {
     switch (handle.h) {
       case Match: choice = 0; break;
       case MtMetis: choice = 1; break;
+      default: choice = 0;
     }
 
     switch (handle.h) {
