@@ -94,7 +94,7 @@ typename entries_t::non_const_value_type sort_low_degree_rows_crs_matrix(
     const typename entries_t::non_const_value_type degreeLimit) {
   using lno_t    = typename entries_t::non_const_value_type;
   using team_pol = Kokkos::TeamPolicy<execution_space>;
-  bool useRadix  = !KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>();
+  bool useRadix = !KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>();
   Impl::SortLowDegreeCrsMatrixFunctor<execution_space, rowmap_t, entries_t,
                                       values_t>
       funct(useRadix, rowmap, entries, values, degreeLimit);
@@ -128,7 +128,7 @@ typename entries_t::non_const_value_type sort_low_degree_rows_crs_matrix(
   return notSorted;
 }
 
-}  // namespace KokkosKernels
+}  // namespace KokkosSparse
 
 namespace KokkosGraph {
 
@@ -449,7 +449,7 @@ class coarse_builder {
       ordinal_t u         = thread.league_rank();
       edge_offset_t start = row_map(u);
       edge_offset_t end   = row_map(u + 1);
-      ordinal_t degree = end - start;
+      ordinal_t degree    = end - start;
       if (degree > degreeLimit) {
         return;
       }
@@ -632,7 +632,8 @@ class coarse_builder {
 
     functorHashmapAccumulator(edge_view_t _row_map, vtx_view_t _entries_in,
                               vtx_view_t _entries_out, wgt_view_t _wgts_in,
-                              wgt_view_t _wgts_out, vtx_view_t _dedupe_edge_count,
+                              wgt_view_t _wgts_out,
+                              vtx_view_t _dedupe_edge_count,
                               uniform_memory_pool_t _memory_pool,
                               const ordinal_t _hash_size,
                               const ordinal_t _max_hash_entries,
@@ -1121,8 +1122,8 @@ class coarse_builder {
     } else if (handle.b == Sort) {
       // sort the (implicit) crs matrix
       KokkosSparse::sort_crs_matrix<exec_space, edge_view_t, vtx_view_t,
-                                     wgt_view_t>(source_bucket_offset,
-                                                 dest_by_source, wgt_by_source);
+                                    wgt_view_t>(source_bucket_offset,
+                                                dest_by_source, wgt_by_source);
 
       // combine adjacent entries that are equal
       if (use_team) {
@@ -1154,8 +1155,8 @@ class coarse_builder {
       ordinal_t limit = 128;
       // sort the (implicit) crs matrix, but only the low degree rows
       ordinal_t remaining_count =
-          KokkosSparse::sort_low_degree_rows_crs_matrix<
-              exec_space, edge_view_t, vtx_view_t, wgt_view_t>(
+          KokkosSparse::sort_low_degree_rows_crs_matrix<exec_space, edge_view_t,
+                                                        vtx_view_t, wgt_view_t>(
               source_bucket_offset, dest_by_source, wgt_by_source, limit);
       // combine adjacent entries that are equal
       {
