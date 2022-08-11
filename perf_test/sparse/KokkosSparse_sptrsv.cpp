@@ -307,6 +307,7 @@ int test_sptrsv_perf(std::vector<int> tests, const std::string &lfilename,
 #else
           std::cout << "CUSPARSE not enabled: Fall through to defaults"
                     << std::endl;
+          [[fallthrough]];
 #endif
         default:
           kh.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1, nrows,
@@ -709,6 +710,7 @@ int test_sptrsv_perf(std::vector<int> tests, const std::string &lfilename,
 #else
           std::cout << "CUSPARSE not enabled: Fall through to defaults"
                     << std::endl;
+          [[fallthrough]];
 #endif
         default:
           kh.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1, nrows,

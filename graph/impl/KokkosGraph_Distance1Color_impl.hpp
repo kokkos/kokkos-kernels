@@ -3159,8 +3159,8 @@ void graph_color_impl(KernelHandle *handle,
                                  gch);
       break;
 
-    case COLORING_VB:
-    case COLORING_VBBIT:
+    case COLORING_VB: [[fallthrough]];
+    case COLORING_VBBIT: [[fallthrough]];
     case COLORING_VBCS:
       typedef typename Impl::GraphColor_VB<
           typename KernelHandle::GraphColoringHandleType, lno_row_view_t_,
@@ -3170,7 +3170,7 @@ void graph_color_impl(KernelHandle *handle,
                                gch);
       break;
 
-    case COLORING_VBD:
+    case COLORING_VBD: [[fallthrough]];
     case COLORING_VBDBIT:
       typedef typename Impl::GraphColor_VBD<
           typename KernelHandle::GraphColoringHandleType, lno_row_view_t_,

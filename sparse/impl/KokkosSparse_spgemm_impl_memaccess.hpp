@@ -691,7 +691,7 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
                               cache_1_line_count);
                     }
                   } break;
-                  case 2: hyper_thread_ind = 1;
+                  case 2: hyper_thread_ind = 1; [[fallthrough]];
                   case 1: {
                     nnz_lno_t result_col_ind =
                         result_col + (hyper_thread_ind - 1) * b_col_cnt;
@@ -726,7 +726,7 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
                           hyper_thread_ind);
                     }
                   } break;
-                  case 3:
+                  case 3: [[fallthrough]];
                   case 4: {
                     nnz_lno_t row_color = vertex_colors(row);
                     // if (row_color < 0 || row_color >= num_multi_colors)
