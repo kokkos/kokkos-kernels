@@ -86,7 +86,7 @@ void fill_random_view(
   using device_type = typename decltype(x)::device_type;
   Kokkos::View<ValueType *, device_type> rnd("random_vals",
                                              x.extent(0) * VecLength);
-  Kokkos::fill_random(rnd, rand_pool, static_cast<ValueType>(10));
+  Kokkos::fill_random(rnd, rand_pool, max_val);
   using size_type = decltype(x.extent(0));
   for (size_type i = 0; i < x.extent(0); ++i) {
     x(i).loadUnaligned(&rnd(i * VecLength));
@@ -107,7 +107,7 @@ static void fill_random_view(
   using device_type = typename decltype(A)::device_type;
   Kokkos::View<ValueType *, device_type> rnd(
       "random_vals", A.extent(0) * A.extent(1) * VecLength);
-  Kokkos::fill_random(rnd, rand_pool, static_cast<ValueType>(10));
+  Kokkos::fill_random(rnd, rand_pool, max_val);
   using size_type = decltype(A.extent(0));
   size_type idx   = 0;
   for (size_type i = 0; i < A.extent(0); ++i) {
