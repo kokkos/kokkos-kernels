@@ -5,7 +5,7 @@
 
 #include "KokkosBatched_Util.hpp"
 
-#include "KokkosBatched_Gemv_TeamVector_Internal.hpp"
+#include "KokkosBlas2_team_gemv_impl.hpp"
 #include "KokkosBatched_Trsv_TeamVector_Internal.hpp"
 
 #include "KokkosBatched_Gemm_TeamVector_Internal.hpp"
@@ -34,7 +34,7 @@ struct TeamVectorSolveUTV_Internal {
 
     if (matrix_rank < m) {
       /// w = U^T b
-      TeamVectorGemvInternal<Algo::Gemv::Unblocked>::invoke(
+      KokkosBlas::Impl::TeamVectorGemvInternal<Algo::Gemv::Unblocked>::invoke(
           member, matrix_rank, m, one, U, us1, us0, b, bs0, zero, w, ws0);
 
       /// w = T^{-1} w
@@ -42,10 +42,10 @@ struct TeamVectorSolveUTV_Internal {
           member, false, matrix_rank, one, T, ts0, ts1, w, ws0);
 
       /// x = V^T w
-      TeamVectorGemvInternal<Algo::Gemv::Unblocked>::invoke(
+      KokkosBlas::Impl::TeamVectorGemvInternal<Algo::Gemv::Unblocked>::invoke(
           member, m, matrix_rank, one, V, vs1, vs0, w, ws0, zero, x, xs0);
     } else {
-      TeamVectorGemvInternal<Algo::Gemv::Unblocked>::invoke(
+      KokkosBlas::Impl::TeamVectorGemvInternal<Algo::Gemv::Unblocked>::invoke(
           member, matrix_rank, m, one, U, us1, us0, b, bs0, zero, x, xs0);
 
       TeamVectorTrsvInternalUpper<Algo::Trsv::Unblocked>::invoke(

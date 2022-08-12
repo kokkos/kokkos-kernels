@@ -57,15 +57,12 @@
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
 
 // Enable supernodal sptrsv
-#include "KokkosBlas2_gemv.hpp"
-#include "KokkosBlas2_team_gemv.hpp"
 #include "KokkosBlas3_trsm.hpp"
 #include "KokkosSparse_spmv.hpp"
 
 #include "KokkosBatched_Util.hpp"
 
-#include "KokkosBatched_Gemv_Decl.hpp"
-#include "KokkosBatched_Gemv_Team_Impl.hpp"
+#include "KokkosBlas2_team_gemv_spec.hpp"
 
 #include "KokkosBatched_Trsm_Team_Impl.hpp"
 #endif
@@ -897,10 +894,12 @@ struct LowerTriSupernodalFunctor {
                 workoffset,
                 workoffset + nsrow));  // needed for gemv instead of trmv/trsv
         auto Ljj = Kokkos::subview(viewL, range_type(0, nsrow), Kokkos::ALL());
-        KokkosBatched::TeamGemv<
-            member_type, KokkosBatched::Trans::NoTranspose,
-            KokkosBatched::Algo::Gemv::Unblocked>::invoke(team, one, Ljj, Xj,
-                                                          zero, Y);
+        KokkosBlas::TeamGemv<member_type, KokkosBlas::Trans::NoTranspose,
+                             KokkosBlas::Algo::Gemv::Unblocked>::invoke(team,
+                                                                        one,
+                                                                        Ljj, Xj,
+                                                                        zero,
+                                                                        Y);
         team.team_barrier();
         for (int ii = team_rank; ii < nscol; ii += team_size) {
           Xj(ii) = Y(ii);
@@ -923,10 +922,13 @@ struct LowerTriSupernodalFunctor {
           team.team_barrier();
           // calling team-level "Unblocked" gemv on small-size diagonal in
           // KokkosBatched
-          KokkosBatched::TeamGemv<
-              member_type, KokkosBatched::Trans::NoTranspose,
-              KokkosBatched::Algo::Gemv::Unblocked>::invoke(team, one, Ljj, Y,
-                                                            zero, Xj);
+          KokkosBlas::TeamGemv<member_type, KokkosBlas::Trans::NoTranspose,
+                               KokkosBlas::Algo::Gemv::Unblocked>::invoke(team,
+                                                                          one,
+                                                                          Ljj,
+                                                                          Y,
+                                                                          zero,
+                                                                          Xj);
         } else {
           // NOTE: we currently supports only default_layout = LayoutLeft
           Kokkos::View<scalar_t **, default_layout, memory_space,
@@ -953,10 +955,12 @@ struct LowerTriSupernodalFunctor {
         /* GEMM to update with off diagonal blocks */
         auto Lij =
             Kokkos::subview(viewL, range_type(nscol, nsrow), Kokkos::ALL());
-        KokkosBatched::TeamGemv<
-            member_type, KokkosBatched::Trans::NoTranspose,
-            KokkosBatched::Algo::Gemv::Unblocked>::invoke(team, one, Lij, Xj,
-                                                          zero, Z);
+        KokkosBlas::TeamGemv<member_type, KokkosBatched::Trans::NoTranspose,
+                             KokkosBlas::Algo::Gemv::Unblocked>::invoke(team,
+                                                                        one,
+                                                                        Lij, Xj,
+                                                                        zero,
+                                                                        Z);
         team.team_barrier();
       }
     }
@@ -1103,8 +1107,8 @@ struct UpperTriSupernodalFunctor {
       auto Uij =
           Kokkos::subview(viewU, range_type(nscol, nsrow), Kokkos::ALL());
       using Uij_type = decltype(Uij);
-      KokkosBatched::TeamGemv<member_type, KokkosBatched::Trans::Transpose,
-                              KokkosBatched::Algo::Gemv::Unblocked>::
+      KokkosBlas::TeamGemv<member_type, KokkosBatched::Trans::Transpose,
+                           KokkosBlas::Algo::Gemv::Unblocked>::
           template invoke<const scalar_t, Uij_type, Z_type, Xj_type>(
               team, -one, Uij, Z, one, Xj);
       team.team_barrier();
@@ -1128,8 +1132,8 @@ struct UpperTriSupernodalFunctor {
         team.team_barrier();
 
         // caling team-level kernel in KokkosBatched on a small-size diagonal
-        KokkosBatched::TeamGemv<member_type, KokkosBatched::Trans::Transpose,
-                                KokkosBatched::Algo::Gemv::Unblocked>::
+        KokkosBlas::TeamGemv<member_type, KokkosBatched::Trans::Transpose,
+                             KokkosBlas::Algo::Gemv::Unblocked>::
             template invoke<const scalar_t, Ujj_type, Y_type, Xj_type>(
                 team, one, Ujj, Y, zero, Xj);
       } else {
@@ -1267,10 +1271,12 @@ struct UpperTriTranSupernodalFunctor {
                 workoffset,
                 workoffset + nsrow));  // needed with gemv for update&scatter
         auto Uij = Kokkos::subview(viewU, range_type(0, nsrow), Kokkos::ALL());
-        KokkosBatched::TeamGemv<
-            member_type, KokkosBatched::Trans::NoTranspose,
-            KokkosBatched::Algo::Gemv::Unblocked>::invoke(team, one, Uij, Xj,
-                                                          zero, Y);
+        KokkosBlas::TeamGemv<member_type, KokkosBatched::Trans::NoTranspose,
+                             KokkosBlas::Algo::Gemv::Unblocked>::invoke(team,
+                                                                        one,
+                                                                        Uij, Xj,
+                                                                        zero,
+                                                                        Y);
         team.team_barrier();
         // copy the diagonal back to output
         for (int ii = team_rank; ii < nscol; ii += team_size) {
@@ -1289,10 +1295,13 @@ struct UpperTriTranSupernodalFunctor {
             Y(ii) = Xj(ii);
           }
           team.team_barrier();
-          KokkosBatched::TeamGemv<
-              member_type, KokkosBatched::Trans::NoTranspose,
-              KokkosBatched::Algo::Gemv::Unblocked>::invoke(team, one, Ujj, Y,
-                                                            zero, Xj);
+          KokkosBlas::TeamGemv<member_type, KokkosBatched::Trans::NoTranspose,
+                               KokkosBlas::Algo::Gemv::Unblocked>::invoke(team,
+                                                                          one,
+                                                                          Ujj,
+                                                                          Y,
+                                                                          zero,
+                                                                          Xj);
         } else {
           // NOTE: we currently supports only default_layout = LayoutLeft
           Kokkos::View<scalar_t **, default_layout, memory_space,
@@ -1316,10 +1325,12 @@ struct UpperTriTranSupernodalFunctor {
         // not device-level TRSM-solve
         auto Uij =
             Kokkos::subview(viewU, range_type(nscol, nsrow), Kokkos::ALL());
-        KokkosBatched::TeamGemv<
-            member_type, KokkosBatched::Trans::NoTranspose,
-            KokkosBatched::Algo::Gemv::Unblocked>::invoke(team, one, Uij, Xj,
-                                                          zero, Z);
+        KokkosBlas::TeamGemv<member_type, KokkosBatched::Trans::NoTranspose,
+                             KokkosBlas::Algo::Gemv::Unblocked>::invoke(team,
+                                                                        one,
+                                                                        Uij, Xj,
+                                                                        zero,
+                                                                        Z);
         team.team_barrier();
       }
 

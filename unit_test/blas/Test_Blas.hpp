@@ -44,6 +44,7 @@
 
 // Serial Blas 2
 #include "Test_Blas2_serial_gemv.hpp"
+
 // Team Blas 2
 #include "Test_Blas2_team_gemv.hpp"
 #include "Test_Blas2_teamvector_gemv.hpp"

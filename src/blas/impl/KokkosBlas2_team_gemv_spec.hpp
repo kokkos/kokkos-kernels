@@ -49,6 +49,7 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_ArithTraits.hpp>
 #include <Kokkos_InnerProductSpaceTraits.hpp>
+#include <KokkosBlas2_team_gemv_impl.hpp>
 
 namespace KokkosBlas {
 namespace Experimental {
@@ -162,6 +163,189 @@ struct TeamGEMV<TeamType, MatrixType, XVector, YVector, 2, false> {
 };
 }  // namespace Impl
 }  // namespace Experimental
+
+template <typename MemberType, typename ArgTrans,
+          typename ArgAlgo = Algo::Gemv::Default>
+struct TeamGemv {
+  template <typename ScalarType, typename AViewType, typename xViewType,
+            typename yViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& /*member*/,
+                                           const ScalarType /*alpha*/,
+                                           const AViewType& /*A*/,
+                                           const xViewType& /*x*/,
+                                           const ScalarType /*beta*/,
+                                           const yViewType& /*y*/);
+};
+
+template <typename MemberType, typename ArgTrans, typename ArgAlgo>
+struct TeamVectorGemv {
+  template <typename ScalarType, typename AViewType, typename xViewType,
+            typename yViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& /*member*/,
+                                           const ScalarType /*alpha*/,
+                                           const AViewType& /*A*/,
+                                           const xViewType& /*x*/,
+                                           const ScalarType /*beta*/,
+                                           const yViewType& /*y*/);
+};
+
+///
+/// NT
+///
+
+template <typename MemberType>
+struct TeamGemv<MemberType, Trans::NoTranspose, Algo::Gemv::Unblocked> {
+  template <typename ScalarType, typename AViewType, typename xViewType,
+            typename yViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(
+      const MemberType& member, const ScalarType alpha, const AViewType& A,
+      const xViewType& x, const ScalarType beta, const yViewType& y) {
+    static_assert(AViewType::Rank == 2,
+                  "KokkosBlas::TeamGemv requires rank-2 A matrix");
+    return Impl::TeamGemvInternal<Algo::Gemv::Unblocked>::template invoke<
+        MemberType, ScalarType, typename AViewType::non_const_value_type>(
+        member, A.extent(0), A.extent(1), alpha, A.data(), A.stride_0(),
+        A.stride_1(), x.data(), x.stride_0(), beta, y.data(), y.stride_0());
+  }
+};
+
+template <typename MemberType>
+struct TeamGemv<MemberType, Trans::NoTranspose, Algo::Gemv::Blocked> {
+  template <typename ScalarType, typename AViewType, typename xViewType,
+            typename yViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(
+      const MemberType& member, const ScalarType alpha, const AViewType& A,
+      const xViewType& x, const ScalarType beta, const yViewType& y) {
+    static_assert(AViewType::Rank == 2,
+                  "KokkosBlas::TeamGemv requires rank-2 A matrix");
+    return Impl::TeamGemvInternal<Algo::Gemv::Blocked>::template invoke<
+        MemberType, ScalarType, typename AViewType::non_const_value_type>(
+        member, A.extent(0), A.extent(1), alpha, A.data(), A.stride_0(),
+        A.stride_1(), x.data(), x.stride_0(), beta, y.data(), y.stride_0());
+  }
+};
+
+///
+/// T
+///
+
+template <typename MemberType>
+struct TeamGemv<MemberType, Trans::Transpose, Algo::Gemv::Unblocked> {
+  template <typename ScalarType, typename AViewType, typename xViewType,
+            typename yViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(
+      const MemberType& member, const ScalarType alpha, const AViewType& A,
+      const xViewType& x, const ScalarType beta, const yViewType& y) {
+    static_assert(AViewType::Rank == 2,
+                  "BLAS TeamGemv requires rank-2 A matrix");
+    return Impl::TeamGemvInternal<Algo::Gemv::Unblocked>::template invoke<
+        MemberType, ScalarType, typename AViewType::non_const_value_type>(
+        member, A.extent(1), A.extent(0), alpha, A.data(), A.stride_1(),
+        A.stride_0(), x.data(), x.stride_0(), beta, y.data(), y.stride_0());
+  }
+};
+
+template <typename MemberType>
+struct TeamGemv<MemberType, Trans::Transpose, Algo::Gemv::Blocked> {
+  template <typename ScalarType, typename AViewType, typename xViewType,
+            typename yViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(
+      const MemberType& member, const ScalarType alpha, const AViewType& A,
+      const xViewType& x, const ScalarType beta, const yViewType& y) {
+    static_assert(AViewType::Rank == 2,
+                  "BLAS TeamGemv requires rank-2 A matrix");
+    return Impl::TeamGemvInternal<Algo::Gemv::Blocked>::template invoke<
+        MemberType, ScalarType, typename AViewType::non_const_value_type>(
+        member, A.extent(1), A.extent(0), alpha, A.data(), A.stride_1(),
+        A.stride_0(), x.data(), x.stride_0(), beta, y.data(), y.stride_0());
+  }
+};
+
+///
+/// CT
+///
+
+template <typename MemberType>
+struct TeamGemv<MemberType, Trans::ConjTranspose, Algo::Gemv::Unblocked> {
+  template <typename ScalarType, typename AViewType, typename xViewType,
+            typename yViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(
+      const MemberType& member, const ScalarType alpha, const AViewType& A,
+      const xViewType& x, const ScalarType beta, const yViewType& y) {
+    static_assert(AViewType::Rank == 2,
+                  "BLAS TeamGemv requires rank-2 A matrix");
+    Kokkos::abort("TODO: implement conjugate-transpose !");
+  }
+};
+
+template <typename MemberType>
+struct TeamGemv<MemberType, Trans::ConjTranspose, Algo::Gemv::Blocked> {
+  template <typename ScalarType, typename AViewType, typename xViewType,
+            typename yViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(
+      const MemberType& member, const ScalarType alpha, const AViewType& A,
+      const xViewType& x, const ScalarType beta, const yViewType& y) {
+    static_assert(AViewType::Rank == 2,
+                  "BLAS TeamGemv requires rank-2 A matrix");
+    Kokkos::abort("TODO: implement conjugate-transpose !");
+  }
+};
+
+///
+/// NT
+///
+
+template <typename MemberType>
+struct TeamVectorGemv<MemberType, Trans::NoTranspose, Algo::Gemv::Unblocked> {
+  template <typename ScalarType, typename AViewType, typename xViewType,
+            typename yViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(
+      const MemberType& member, const ScalarType alpha, const AViewType& A,
+      const xViewType& x, const ScalarType beta, const yViewType& y) {
+    static_assert(AViewType::Rank == 2,
+                  "Batched TeamVectorGemv requires rank-2 A matrix");
+    return Impl::TeamVectorGemvInternal<Algo::Gemv::Unblocked>::invoke(
+        member, A.extent(0), A.extent(1), alpha, A.data(), A.stride_0(),
+        A.stride_1(), x.data(), x.stride_0(), beta, y.data(), y.stride_0());
+  }
+};
+
+///
+/// T
+///
+
+template <typename MemberType>
+struct TeamVectorGemv<MemberType, Trans::Transpose, Algo::Gemv::Unblocked> {
+  template <typename ScalarType, typename AViewType, typename xViewType,
+            typename yViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(
+      const MemberType& member, const ScalarType alpha, const AViewType& A,
+      const xViewType& x, const ScalarType beta, const yViewType& y) {
+    static_assert(AViewType::Rank == 2,
+                  "Batched TeamVectorGemv requires rank-2 A matrix");
+    return Impl::TeamVectorGemvInternal<Algo::Gemv::Unblocked>::invoke(
+        member, A.extent(1), A.extent(0), alpha, A.data(), A.stride_1(),
+        A.stride_0(), x.data(), x.stride_0(), beta, y.data(), y.stride_0());
+  }
+};
+
+///
+/// CT
+///
+
+template <typename MemberType>
+struct TeamVectorGemv<MemberType, Trans::ConjTranspose, Algo::Gemv::Unblocked> {
+  template <typename ScalarType, typename AViewType, typename xViewType,
+            typename yViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(
+      const MemberType& member, const ScalarType alpha, const AViewType& A,
+      const xViewType& x, const ScalarType beta, const yViewType& y) {
+    static_assert(AViewType::Rank == 2,
+                  "Batched TeamVectorGemv requires rank-2 A matrix");
+    Kokkos::abort("TODO: implement conjugate-transpose !");
+  }
+};
+
 }  // namespace KokkosBlas
 
 #endif
