@@ -65,6 +65,13 @@ void KOKKOS_INLINE_FUNCTION gemv(const TeamType& team, const char trans,
   if (trans == 'C' || trans == 'c')
     TeamGemv<TeamType, Trans::ConjTranspose, AlgoTag>::invoke(team, alpha, A, x,
                                                               beta, y);
+  //
+  // TODO: what letter should be used here ?
+  //    * in blas "C" means conjugate-transpose
+  //    * in sparse "C" meanse conjugate and "H" conjugate-transpose...
+  if (trans == 'X' || trans == 'x')
+    TeamGemv<TeamType, Trans::ConjNoTranspose, AlgoTag>::invoke(team, alpha, A,
+                                                                x, beta, y);
 }
 
 // default AlgoTag
@@ -92,6 +99,13 @@ team_vector_gemv(const TeamType& team, const char trans,
   } else if (trans == 'C' || trans == 'c') {
     KokkosBlas::TeamVectorGemv<TeamType, Trans::ConjTranspose, AlgoTag>::invoke(
         team, alpha, A, x, beta, y);
+    //
+    // TODO: what letter should be used here ?
+    //    * in blas "C" means conjugate-transpose
+    //    * in sparse "C" meanse conjugate and "H" conjugate-transpose...
+  } else if (trans == 'X' || trans == 'x') {
+    KokkosBlas::TeamVectorGemv<TeamType, Trans::ConjNoTranspose,
+                               AlgoTag>::invoke(team, alpha, A, x, beta, y);
   } else {
     Kokkos::abort("Matrix mode not supported");
   }

@@ -27,6 +27,11 @@ struct TeamVectorGemvFactory {
 
   template <class... Params>
   static constexpr bool allow_algorithm = true;
+
+  template <class... Params>
+  static bool allow_mode(char trans) {
+    return true;
+  }
 };
 
 }  // namespace Test

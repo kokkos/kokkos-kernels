@@ -145,10 +145,13 @@ struct GEMVTest {
     // skip unsupported combinations
   }
 
+  // Note: all layouts listed here are subview'ed to test Kokkos::LayoutStride
   template <class AlgoTag>
   static typename std::enable_if<allow_algorithm<AlgoTag>>::type run_layouts(
       const char *mode) {
-    // Note: all layouts listed here are subview'ed to test Kokkos::LayoutStride
+    if (!GemvFunc::template allow_mode<AlgoTag, ScalarA, ScalarX, ScalarY,
+                                       Device, ScalarCoef>(mode[0]))
+      return;  // skip matrix modes not supported by the algorithm
 #ifdef KOKKOSKERNELS_TEST_LAYOUTLEFT
     run_view_types<AlgoTag, Kokkos::LayoutLeft>(mode);
 #endif
@@ -327,6 +330,9 @@ struct GEMVTest {
   }                                                                     \
   TEST_F(TestCategory, PREFIX##_gemv_ct_##NAME) {                       \
     PREFIX##_##NAME##_gemv_test::run("C");                              \
+  }                                                                     \
+  TEST_F(TestCategory, PREFIX##_gemv_cnt_##NAME) {                      \
+    PREFIX##_##NAME##_gemv_test::run("X");                              \
   }
 
 #define TEST_CASE2(PREFIX, FACTORY, NAME, SCALAR, SCALAR_COEF) \

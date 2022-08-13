@@ -30,15 +30,24 @@ struct SerialGemvFactory {
 #endif
                                 >;
 
+  template <class AlgoTag>
+  static constexpr bool is_mkl =
+      std::is_same<AlgoTag, KokkosBlas::Algo::Gemv::CompactMKL>::value;
+
   // block testing of CompackMKL on non-vector scalars
   // (they are not supported by the implementation)
   template <class AlgoTag, class ScalarA, class ScalarX, class ScalarY,
             class Device, class ScalarCoef>
   static constexpr bool allow_algorithm =
-      !std::is_same<AlgoTag, KokkosBlas::Algo::Gemv::CompactMKL>::value ||
-      (KokkosBatched::is_vector<ScalarA>::value &&
-       KokkosBatched::is_vector<ScalarX>::value &&
-       KokkosBatched::is_vector<ScalarY>::value);
+      !is_mkl<AlgoTag> || (KokkosBatched::is_vector<ScalarA>::value &&
+                           KokkosBatched::is_vector<ScalarX>::value &&
+                           KokkosBatched::is_vector<ScalarY>::value);
+
+  // block testing of ConjNoTranspose mode on CompactMKL
+  template <class AlgoTag, class... Params>
+  static bool allow_mode(char trans) {
+    return !is_mkl<AlgoTag> || toupper(trans) != 'X';
+  }
 };
 
 }  // namespace Test
