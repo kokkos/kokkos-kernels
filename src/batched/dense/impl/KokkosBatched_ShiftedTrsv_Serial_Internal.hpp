@@ -8,7 +8,6 @@
 #include "KokkosBlas1_set_impl.hpp"
 #include "KokkosBlas1_team_scal_impl.hpp"
 #include "KokkosBatched_InnerTrsm_Serial_Impl.hpp"
-#include "KokkosBatched_Gemv_Serial_Internal.hpp"
 
 namespace KokkosBatched {
 

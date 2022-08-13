@@ -50,9 +50,45 @@
 #include "KokkosKernels_Utils.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 #include "Kokkos_ArithTraits.hpp"
+#include "KokkosBatched_Vector.hpp"
 #include "KokkosSparse_spmv.hpp"
 // Make this include-able from all subdirectories
 #include "../tpls/gtest/gtest/gtest.h"  //for EXPECT_**
+
+// Simplify ETI macros
+#if !defined(KOKKOSKERNELS_ETI_ONLY) && \
+    !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
+#define KOKKOSKERNELS_TEST_ALL_TYPES
+#endif
+#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
+    defined(KOKKOSKERNELS_TEST_ALL_TYPES)
+#define KOKKOSKERNELS_TEST_LAYOUTLEFT
+#endif
+#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || \
+    defined(KOKKOSKERNELS_TEST_ALL_TYPES)
+#define KOKKOSKERNELS_TEST_LAYOUTRIGHT
+#endif
+#if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
+    defined(KOKKOSKERNELS_TEST_ALL_TYPES)
+#define KOKKOSKERNELS_TEST_LAYOUTSTRIDE
+#endif
+#if defined(KOKKOSKERNELS_INST_FLOAT) || defined(KOKKOSKERNELS_TEST_ALL_TYPES)
+#define KOKKOSKERNELS_TEST_FLOAT
+#endif
+#if defined(KOKKOSKERNELS_INST_DOUBLE) || defined(KOKKOSKERNELS_TEST_ALL_TYPES)
+#define KOKKOSKERNELS_TEST_DOUBLE
+#endif
+#if defined(KOKKOSKERNELS_INST_INT) || defined(KOKKOSKERNELS_TEST_ALL_TYPES)
+#define KOKKOSKERNELS_TEST_INT
+#endif
+#if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT) || \
+    defined(KOKKOSKERNELS_TEST_ALL_TYPES)
+#define KOKKOSKERNELS_TEST_COMPLEX_FLOAT
+#endif
+#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || \
+    defined(KOKKOSKERNELS_TEST_ALL_TYPES)
+#define KOKKOSKERNELS_TEST_COMPLEX_DOUBLE
+#endif
 
 namespace Test {
 template <class ViewType,
@@ -104,6 +140,27 @@ void EXPECT_NEAR_KK(Scalar1 val1, Scalar2 val2, Scalar3 tol,
   EXPECT_LE((double)AT1::abs(val1 - val2), (double)AT3::abs(tol)) << msg;
 }
 
+template <class Scalar1, class Scalar2, class Scalar3>
+void EXPECT_NEAR_KK_REL(Scalar1 val1, Scalar2 val2, Scalar3 tol,
+                        std::string msg = "") {
+  typedef typename std::remove_reference<decltype(val1)>::type hv1_type;
+  typedef typename std::remove_reference<decltype(val2)>::type hv2_type;
+  const auto ahv1 = Kokkos::Details::ArithTraits<hv1_type>::abs(val1);
+  const auto ahv2 = Kokkos::Details::ArithTraits<hv2_type>::abs(val2);
+  EXPECT_NEAR_KK(val1, val2, tol * Kokkos::max(ahv1, ahv2), msg);
+}
+
+// Special overload for accurate value by value SIMD vectors comparison
+template <class Scalar, int VecLen, class Tolerance>
+void EXPECT_NEAR_KK_REL(
+    const KokkosBatched::Vector<KokkosBatched::SIMD<Scalar>, VecLen>& val1,
+    const KokkosBatched::Vector<KokkosBatched::SIMD<Scalar>, VecLen>& val2,
+    Tolerance tol, std::string msg = "") {
+  for (int i = 0; i < VecLen; ++i) {
+    EXPECT_NEAR_KK_REL(val1[i], val2[i], tol, msg);
+  }
+}
+
 template <class ViewType1, class ViewType2, class Scalar>
 void EXPECT_NEAR_KK_1DVIEW(ViewType1 v1, ViewType2 v2, Scalar tol) {
   size_t v1_size = v1.extent(0);
@@ -118,6 +175,23 @@ void EXPECT_NEAR_KK_1DVIEW(ViewType1 v1, ViewType2 v2, Scalar tol) {
 
   for (size_t i = 0; i < v1_size; ++i) {
     EXPECT_NEAR_KK(h_v1(i), h_v2(i), tol);
+  }
+}
+
+template <class ViewType1, class ViewType2, class Scalar>
+void EXPECT_NEAR_KK_REL_1DVIEW(ViewType1 v1, ViewType2 v2, Scalar tol) {
+  size_t v1_size = v1.extent(0);
+  size_t v2_size = v2.extent(0);
+  EXPECT_EQ(v1_size, v2_size);
+
+  typename ViewType1::HostMirror h_v1 = Kokkos::create_mirror_view(v1);
+  typename ViewType2::HostMirror h_v2 = Kokkos::create_mirror_view(v2);
+
+  KokkosKernels::Impl::safe_device_to_host_deep_copy(v1.extent(0), v1, h_v1);
+  KokkosKernels::Impl::safe_device_to_host_deep_copy(v2.extent(0), v2, h_v2);
+
+  for (size_t i = 0; i < v1_size; ++i) {
+    EXPECT_NEAR_KK_REL(h_v1(i), h_v2(i), tol);
   }
 }
 
@@ -288,41 +362,27 @@ void vanillaGEMM(typename ViewTypeC::non_const_value_type alpha,
   }
 }
 
-template <class ViewTypeA, class ViewTypeX, class ViewTypeY>
-void vanillaGEMV(char mode, typename ViewTypeA::non_const_value_type alpha,
-                 const ViewTypeA& A, const ViewTypeX& x,
-                 typename ViewTypeY::non_const_value_type beta,
-                 const ViewTypeY& y) {
+template <class AlphaType, class ViewTypeA, class ViewTypeX, class BetaType,
+          class ViewTypeY>
+KOKKOS_INLINE_FUNCTION void vanillaGEMV(char mode, AlphaType alpha,
+                                        const ViewTypeA& A, const ViewTypeX& x,
+                                        BetaType beta, const ViewTypeY& y) {
   using ScalarY = typename ViewTypeY::non_const_value_type;
   using KAT_A   = Kokkos::ArithTraits<typename ViewTypeA::non_const_value_type>;
-  using KAT_Y   = Kokkos::ArithTraits<ScalarY>;
-  int M         = A.extent(0);
-  int N         = A.extent(1);
-  if (beta == KAT_Y::zero()) Kokkos::deep_copy(y, KAT_Y::zero());
-  if (mode == 'N') {
-    for (int i = 0; i < M; i++) {
-      ScalarY y_i = beta * y(i);
-      for (int j = 0; j < N; j++) {
-        y_i += alpha * A(i, j) * x(j);
-      }
-      y(i) = y_i;
-    }
-  } else if (mode == 'T') {
+  const bool transposed = mode == 'T' || mode == 'C';
+  const bool conjugated = mode == 'C';
+  const bool has_beta   = beta != Kokkos::ArithTraits<BetaType>::zero();
+  int M                 = A.extent(transposed ? 1 : 0);
+  int N                 = A.extent(transposed ? 0 : 1);
+  for (int i = 0; i < M; i++) {
+    ScalarY y_i{};
+    if (has_beta) y_i = beta * y(i);
     for (int j = 0; j < N; j++) {
-      ScalarY y_j = beta * y(j);
-      for (int i = 0; i < M; i++) {
-        y_j += alpha * A(i, j) * x(i);
-      }
-      y(j) = y_j;
+      const auto a   = transposed ? A(j, i) : A(i, j);
+      const auto Aij = conjugated ? KAT_A::conj(a) : a;
+      y_i += alpha * Aij * x(j);
     }
-  } else if (mode == 'C') {
-    for (int j = 0; j < N; j++) {
-      ScalarY y_j = beta * y(j);
-      for (int i = 0; i < M; i++) {
-        y_j += alpha * KAT_A::conj(A(i, j)) * x(i);
-      }
-      y(j) = y_j;
-    }
+    y(i) = y_i;
   }
 }
 
@@ -478,6 +538,11 @@ std::string value_type_name<float>() {
 template <>
 std::string value_type_name<double>() {
   return "::Double";
+}
+
+template <>
+std::string value_type_name<int>() {
+  return "::Int";
 }
 
 template <>

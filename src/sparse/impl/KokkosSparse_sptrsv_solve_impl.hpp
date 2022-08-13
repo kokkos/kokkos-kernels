@@ -66,7 +66,6 @@
 
 #include "KokkosBatched_Gemv_Decl.hpp"
 #include "KokkosBatched_Gemv_Team_Impl.hpp"
-#include "KokkosBatched_Gemv_Serial_Impl.hpp"
 
 #include "KokkosBatched_Trsm_Team_Impl.hpp"
 #endif
