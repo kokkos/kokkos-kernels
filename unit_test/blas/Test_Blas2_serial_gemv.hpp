@@ -1,6 +1,7 @@
+#include <KokkosBlas_util.hpp>
 #include <KokkosKernels_TestUtils.hpp>  // for ETI test guards
 // Note: include serial gemv before util so it knows if CompactMKL is available
-#include <KokkosBlas2_serial_gemv.hpp>
+#include <KokkosBlas2_gemv.hpp>
 #include <Test_Blas2_gemv_util.hpp>
 
 namespace Test {
@@ -9,10 +10,10 @@ template <class AType, class XType, class YType, class ScalarType,
           class AlgoTag>
 KK_DEFINE_BLAS2_GEMV_TEST_OP_CLASS(SerialGEMVOp)
 template <typename TeamMember>
-KOKKOS_INLINE_FUNCTION void operator()(const TeamMember& /* member */) const {
-  KokkosBlas::Experimental::gemv<AlgoTag>(params::trans, params::alpha,
-                                          params::A, params::x, params::beta,
-                                          params::y);
+KOKKOS_INLINE_FUNCTION void operator()(const TeamMember& member) const {
+  KokkosBlas::Experimental::Gemv<KokkosBlas::Mode::Serial, AlgoTag>::invoke(
+      member, params::trans, params::alpha, params::A, params::x, params::beta,
+      params::y);
 }
 KK_END_BLAS2_GEMV_TEST_OP_CLASS
 

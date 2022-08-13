@@ -1,3 +1,4 @@
+#include <KokkosBlas_util.hpp>
 #include <KokkosKernels_TestUtils.hpp>  // for test/inst guards
 // Note: include serial gemv before util so it knows if CompactMKL is available
 #include <Test_Blas2_gemv_util.hpp>
@@ -10,9 +11,9 @@ template <class AType, class XType, class YType, class ScalarType,
 KK_DEFINE_BLAS2_GEMV_TEST_OP_CLASS(TeamGEMVOp)
 template <typename TeamMember>
 KOKKOS_INLINE_FUNCTION void operator()(const TeamMember& member) const {
-  KokkosBlas::Experimental::gemv<AlgoTag>(member, params::trans, params::alpha,
-                                          params::A, params::x, params::beta,
-                                          params::y);
+  KokkosBlas::Experimental::Gemv<KokkosBlas::Mode::Team, AlgoTag>::invoke(
+      member, params::trans, params::alpha, params::A, params::x, params::beta,
+      params::y);
 }
 KK_END_BLAS2_GEMV_TEST_OP_CLASS
 
