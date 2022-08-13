@@ -202,8 +202,7 @@ struct TeamGemv<MemberType, Trans::NoTranspose, Algo::Gemv::Unblocked> {
       const xViewType& x, const ScalarType beta, const yViewType& y) {
     static_assert(AViewType::Rank == 2,
                   "KokkosBlas::TeamGemv requires rank-2 A matrix");
-    return Impl::TeamGemvInternal<Algo::Gemv::Unblocked>::template invoke<
-        MemberType, ScalarType, typename AViewType::non_const_value_type>(
+    return Impl::TeamGemvInternal<Algo::Gemv::Unblocked>::invoke(
         member, A.extent(0), A.extent(1), alpha, A.data(), A.stride_0(),
         A.stride_1(), x.data(), x.stride_0(), beta, y.data(), y.stride_0());
   }
@@ -218,8 +217,7 @@ struct TeamGemv<MemberType, Trans::NoTranspose, Algo::Gemv::Blocked> {
       const xViewType& x, const ScalarType beta, const yViewType& y) {
     static_assert(AViewType::Rank == 2,
                   "KokkosBlas::TeamGemv requires rank-2 A matrix");
-    return Impl::TeamGemvInternal<Algo::Gemv::Blocked>::template invoke<
-        MemberType, ScalarType, typename AViewType::non_const_value_type>(
+    return Impl::TeamGemvInternal<Algo::Gemv::Blocked>::invoke(
         member, A.extent(0), A.extent(1), alpha, A.data(), A.stride_0(),
         A.stride_1(), x.data(), x.stride_0(), beta, y.data(), y.stride_0());
   }
@@ -238,8 +236,7 @@ struct TeamGemv<MemberType, Trans::Transpose, Algo::Gemv::Unblocked> {
       const xViewType& x, const ScalarType beta, const yViewType& y) {
     static_assert(AViewType::Rank == 2,
                   "BLAS TeamGemv requires rank-2 A matrix");
-    return Impl::TeamGemvInternal<Algo::Gemv::Unblocked>::template invoke<
-        MemberType, ScalarType, typename AViewType::non_const_value_type>(
+    return Impl::TeamGemvInternal<Algo::Gemv::Unblocked>::invoke(
         member, A.extent(1), A.extent(0), alpha, A.data(), A.stride_1(),
         A.stride_0(), x.data(), x.stride_0(), beta, y.data(), y.stride_0());
   }
@@ -254,8 +251,7 @@ struct TeamGemv<MemberType, Trans::Transpose, Algo::Gemv::Blocked> {
       const xViewType& x, const ScalarType beta, const yViewType& y) {
     static_assert(AViewType::Rank == 2,
                   "BLAS TeamGemv requires rank-2 A matrix");
-    return Impl::TeamGemvInternal<Algo::Gemv::Blocked>::template invoke<
-        MemberType, ScalarType, typename AViewType::non_const_value_type>(
+    return Impl::TeamGemvInternal<Algo::Gemv::Blocked>::invoke(
         member, A.extent(1), A.extent(0), alpha, A.data(), A.stride_1(),
         A.stride_0(), x.data(), x.stride_0(), beta, y.data(), y.stride_0());
   }
@@ -274,7 +270,10 @@ struct TeamGemv<MemberType, Trans::ConjTranspose, Algo::Gemv::Unblocked> {
       const xViewType& x, const ScalarType beta, const yViewType& y) {
     static_assert(AViewType::Rank == 2,
                   "BLAS TeamGemv requires rank-2 A matrix");
-    Kokkos::abort("TODO: implement conjugate-transpose !");
+    return Impl::TeamGemvInternal<Algo::Gemv::Unblocked>::invoke(
+        member, Impl::OpConj{}, A.extent(1), A.extent(0), alpha, A.data(),
+        A.stride_1(), A.stride_0(), x.data(), x.stride_0(), beta, y.data(),
+        y.stride_0());
   }
 };
 
@@ -287,7 +286,10 @@ struct TeamGemv<MemberType, Trans::ConjTranspose, Algo::Gemv::Blocked> {
       const xViewType& x, const ScalarType beta, const yViewType& y) {
     static_assert(AViewType::Rank == 2,
                   "BLAS TeamGemv requires rank-2 A matrix");
-    Kokkos::abort("TODO: implement conjugate-transpose !");
+    return Impl::TeamGemvInternal<Algo::Gemv::Blocked>::invoke(
+        member, Impl::OpConj{}, A.extent(1), A.extent(0), alpha, A.data(),
+        A.stride_1(), A.stride_0(), x.data(), x.stride_0(), beta, y.data(),
+        y.stride_0());
   }
 };
 
@@ -342,7 +344,10 @@ struct TeamVectorGemv<MemberType, Trans::ConjTranspose, Algo::Gemv::Unblocked> {
       const xViewType& x, const ScalarType beta, const yViewType& y) {
     static_assert(AViewType::Rank == 2,
                   "Batched TeamVectorGemv requires rank-2 A matrix");
-    Kokkos::abort("TODO: implement conjugate-transpose !");
+    return Impl::TeamVectorGemvInternal<Algo::Gemv::Unblocked>::invoke(
+        member, Impl::OpConj{}, A.extent(1), A.extent(0), alpha, A.data(),
+        A.stride_1(), A.stride_0(), x.data(), x.stride_0(), beta, y.data(),
+        y.stride_0());
   }
 };
 

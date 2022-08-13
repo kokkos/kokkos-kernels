@@ -54,6 +54,16 @@ namespace Impl {
 
 template <typename ArgAlgo>
 struct TeamGemvInternal {
+  template <typename MemberType, typename OpA, typename ScalarType,
+            typename ValueAType, typename ValueXType, typename ValueYType>
+  KOKKOS_INLINE_FUNCTION static int invoke(
+      const MemberType &member, OpA op, const int m, const int n,
+      const ScalarType alpha, const ValueAType *KOKKOS_RESTRICT A,
+      const int as0, const int as1, const ValueXType *KOKKOS_RESTRICT x,
+      const int xs0, const ScalarType beta,
+      /**/ ValueYType *KOKKOS_RESTRICT y, const int ys0);
+
+  // default OpA = OpID
   template <typename MemberType, typename ScalarType, typename ValueAType,
             typename ValueXType, typename ValueYType>
   KOKKOS_INLINE_FUNCTION static int invoke(
@@ -61,11 +71,24 @@ struct TeamGemvInternal {
       const ScalarType alpha, const ValueAType *KOKKOS_RESTRICT A,
       const int as0, const int as1, const ValueXType *KOKKOS_RESTRICT x,
       const int xs0, const ScalarType beta,
-      /**/ ValueYType *KOKKOS_RESTRICT y, const int ys0);
+      /**/ ValueYType *KOKKOS_RESTRICT y, const int ys0) {
+    return invoke(member, OpID{}, m, n, alpha, A, as0, as1, x, xs0, beta, y,
+                  ys0);
+  }
 };
 
 template <typename ArgAlgo>
 struct TeamVectorGemvInternal {
+  template <typename MemberType, typename OpA, typename ScalarType,
+            typename ValueAType, typename ValueXType, typename ValueYType>
+  KOKKOS_INLINE_FUNCTION static int invoke(
+      const MemberType &member, OpA op, const int m, const int n,
+      const ScalarType alpha, const ValueAType *KOKKOS_RESTRICT A,
+      const int as0, const int as1, const ValueXType *KOKKOS_RESTRICT x,
+      const int xs0, const ScalarType beta,
+      /**/ ValueYType *KOKKOS_RESTRICT y, const int ys0);
+
+  // default OpA = OpID
   template <typename MemberType, typename ScalarType, typename ValueAType,
             typename ValueXType, typename ValueYType>
   KOKKOS_INLINE_FUNCTION static int invoke(
@@ -73,7 +96,10 @@ struct TeamVectorGemvInternal {
       const ScalarType alpha, const ValueAType *KOKKOS_RESTRICT A,
       const int as0, const int as1, const ValueXType *KOKKOS_RESTRICT x,
       const int xs0, const ScalarType beta,
-      /**/ ValueYType *KOKKOS_RESTRICT y, const int ys0);
+      /**/ ValueYType *KOKKOS_RESTRICT y, const int ys0) {
+    return invoke(member, OpID{}, m, n, alpha, A, as0, as1, x, xs0, beta, y,
+                  ys0);
+  }
 };
 
 ///
@@ -81,12 +107,13 @@ struct TeamVectorGemvInternal {
 /// ====================
 
 template <>
-template <typename MemberType, typename ScalarType, typename ValueAType,
-          typename ValueXType, typename ValueYType>
+template <typename MemberType, typename OpA, typename ScalarType,
+          typename ValueAType, typename ValueXType, typename ValueYType>
 KOKKOS_INLINE_FUNCTION int TeamGemvInternal<Algo::Gemv::Unblocked>::invoke(
-    const MemberType &member, const int m, const int n, const ScalarType alpha,
-    const ValueAType *KOKKOS_RESTRICT A, const int as0, const int as1,
-    const ValueXType *KOKKOS_RESTRICT x, const int xs0, const ScalarType beta,
+    const MemberType &member, OpA op, const int m, const int n,
+    const ScalarType alpha, const ValueAType *KOKKOS_RESTRICT A, const int as0,
+    const int as1, const ValueXType *KOKKOS_RESTRICT x, const int xs0,
+    const ScalarType beta,
     /**/ ValueYType *KOKKOS_RESTRICT y, const int ys0) {
   const ScalarType one(1.0), zero(0.0);
 
@@ -111,7 +138,7 @@ KOKKOS_INLINE_FUNCTION int TeamGemvInternal<Algo::Gemv::Unblocked>::invoke(
 #pragma unroll
 #endif
                            for (int j = 0; j < n; ++j)
-                             t += tA[j * as1] * x[j * xs0];
+                             t += op(tA[j * as1]) * x[j * xs0];
                            y[i * ys0] += alpha * t;
                          });
   }
@@ -119,12 +146,13 @@ KOKKOS_INLINE_FUNCTION int TeamGemvInternal<Algo::Gemv::Unblocked>::invoke(
 }
 
 template <>
-template <typename MemberType, typename ScalarType, typename ValueAType,
-          typename ValueXType, typename ValueYType>
+template <typename MemberType, typename OpA, typename ScalarType,
+          typename ValueAType, typename ValueXType, typename ValueYType>
 KOKKOS_INLINE_FUNCTION int TeamGemvInternal<Algo::Gemv::Blocked>::invoke(
-    const MemberType &member, const int m, const int n, const ScalarType alpha,
-    const ValueAType *KOKKOS_RESTRICT A, const int as0, const int as1,
-    const ValueXType *KOKKOS_RESTRICT x, const int xs0, const ScalarType beta,
+    const MemberType &member, OpA /* op */, const int m, const int n,
+    const ScalarType alpha, const ValueAType *KOKKOS_RESTRICT A, const int as0,
+    const int as1, const ValueXType *KOKKOS_RESTRICT x, const int xs0,
+    const ScalarType beta,
     /**/ ValueYType *KOKKOS_RESTRICT y, const int ys0) {
   const ScalarType one(1.0), zero(0.0);
 
@@ -152,9 +180,9 @@ KOKKOS_INLINE_FUNCTION int TeamGemvInternal<Algo::Gemv::Blocked>::invoke(
     Kokkos::parallel_for(Kokkos::TeamThreadRange(member, (m / mb) + (mp > 0)),
                          [&](const int &ii) {
                            const int i = ii * mb;
-                           inner.serial_invoke<KokkosBlas::Impl::OpID>(
-                               alpha, A + i * as0, x,
-                               (i + mb) > m ? (m - i) : mb, n, y + i * ys0);
+                           inner.serial_invoke<OpA>(alpha, A + i * as0, x,
+                                                    (i + mb) > m ? (m - i) : mb,
+                                                    n, y + i * ys0);
                          });
     member.team_barrier();
   }
@@ -167,13 +195,14 @@ KOKKOS_INLINE_FUNCTION int TeamGemvInternal<Algo::Gemv::Blocked>::invoke(
 /// ====================
 
 template <>
-template <typename MemberType, typename ScalarType, typename ValueAType,
-          typename ValueXType, typename ValueYType>
+template <typename MemberType, typename OpA, typename ScalarType,
+          typename ValueAType, typename ValueXType, typename ValueYType>
 KOKKOS_INLINE_FUNCTION int
 TeamVectorGemvInternal<Algo::Gemv::Unblocked>::invoke(
-    const MemberType &member, const int m, const int n, const ScalarType alpha,
-    const ValueAType *KOKKOS_RESTRICT A, const int as0, const int as1,
-    const ValueXType *KOKKOS_RESTRICT x, const int xs0, const ScalarType beta,
+    const MemberType &member, OpA op, const int m, const int n,
+    const ScalarType alpha, const ValueAType *KOKKOS_RESTRICT A, const int as0,
+    const int as1, const ValueXType *KOKKOS_RESTRICT x, const int xs0,
+    const ScalarType beta,
     /**/ ValueYType *KOKKOS_RESTRICT y, const int ys0) {
   const ScalarType one(1.0), zero(0.0);
 
@@ -196,7 +225,7 @@ TeamVectorGemvInternal<Algo::Gemv::Unblocked>::invoke(
       Kokkos::parallel_reduce(
           Kokkos::ThreadVectorRange(member, n),
           [&](const int &j, ValueYType &update) {
-            update += tA[j * as1] * x[j * xs0];
+            update += op(tA[j * as1]) * x[j * xs0];
           },
           t);
       Kokkos::single(Kokkos::PerThread(member),
