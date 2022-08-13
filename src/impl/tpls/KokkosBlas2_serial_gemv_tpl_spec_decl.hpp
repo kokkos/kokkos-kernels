@@ -64,7 +64,7 @@ namespace Impl {
 // Note: using GEMM because there is no GEMV in MKL compact routines
 
 #define __IMPL_KK_MKL_DGEMM_COMPACT(SCALAR, MKL_ROUTINE)                   \
-  void kk_mkl_gemm_compact(                                                \
+  inline void kk_mkl_gemm_compact(                                         \
       MKL_LAYOUT layout, MKL_TRANSPOSE transa, MKL_TRANSPOSE transb,       \
       MKL_INT m, MKL_INT n, MKL_INT k, SCALAR alpha, const SCALAR *a,      \
       MKL_INT ldap, const SCALAR *b, MKL_INT ldbp, SCALAR beta, SCALAR *c, \
@@ -81,31 +81,31 @@ __IMPL_KK_MKL_DGEMM_COMPACT(float, mkl_sgemm_compact)
 #undef __IMPL_KK_MKL_DGEMM_COMPACT
 
 template <typename ScalarType, int VecLen>
-MKL_COMPACT_PACK mkl_compact_format() {
+inline MKL_COMPACT_PACK mkl_compact_format() {
   Kokkos::abort("vector size not supported");
 }
 template <>
-MKL_COMPACT_PACK mkl_compact_format<double, 2>() {
+inline MKL_COMPACT_PACK mkl_compact_format<double, 2>() {
   return MKL_COMPACT_SSE;
 }
 template <>
-MKL_COMPACT_PACK mkl_compact_format<float, 4>() {
+inline MKL_COMPACT_PACK mkl_compact_format<float, 4>() {
   return MKL_COMPACT_SSE;
 }
 template <>
-MKL_COMPACT_PACK mkl_compact_format<double, 4>() {
+inline MKL_COMPACT_PACK mkl_compact_format<double, 4>() {
   return MKL_COMPACT_AVX;
 }
 template <>
-MKL_COMPACT_PACK mkl_compact_format<float, 8>() {
+inline MKL_COMPACT_PACK mkl_compact_format<float, 8>() {
   return MKL_COMPACT_AVX;
 }
 template <>
-MKL_COMPACT_PACK mkl_compact_format<double, 8>() {
+inline MKL_COMPACT_PACK mkl_compact_format<double, 8>() {
   return MKL_COMPACT_AVX512;
 }
 template <>
-MKL_COMPACT_PACK mkl_compact_format<float, 16>() {
+inline MKL_COMPACT_PACK mkl_compact_format<float, 16>() {
   return MKL_COMPACT_AVX512;
 }
 
