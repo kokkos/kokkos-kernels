@@ -8,14 +8,20 @@ namespace Test {
 
 template <class AType, class XType, class YType, class ScalarType,
           class AlgoTag>
-KK_DEFINE_BLAS2_GEMV_TEST_OP_CLASS(TeamGEMVOp)
-template <typename TeamMember>
-KOKKOS_INLINE_FUNCTION void operator()(const TeamMember& member) const {
-  KokkosBlas::Experimental::Gemv<KokkosBlas::Mode::Team, AlgoTag>::invoke(
-      member, params::trans, params::alpha, params::A, params::x, params::beta,
-      params::y);
-}
-KK_END_BLAS2_GEMV_TEST_OP_CLASS
+struct TeamGEMVOp : public GemvOpBase<AType, XType, YType, ScalarType> {
+  using params = GemvOpBase<AType, XType, YType, ScalarType>;
+
+  TeamGEMVOp(char trans_, ScalarType alpha_, AType A_, XType x_,
+              ScalarType beta_, YType y_)
+        : params(trans_, alpha_, A_, x_, beta_, y_) {}
+
+  template <typename TeamMember>
+  KOKKOS_INLINE_FUNCTION void operator()(const TeamMember& member) const {
+    KokkosBlas::Experimental::Gemv<KokkosBlas::Mode::Team, AlgoTag>::invoke(
+        member, params::trans, params::alpha, params::A, params::x, params::beta,
+        params::y);
+  }
+};
 
 struct TeamGemvFactory {
   template <class AlgoTag, class ViewTypeA, class ViewTypeX, class ViewTypeY,
@@ -25,14 +31,6 @@ struct TeamGemvFactory {
 
   using algorithms = std::tuple<KokkosBlas::Algo::Gemv::Unblocked,
                                 KokkosBlas::Algo::Gemv::Blocked>;
-
-  template <class... Params>
-  static constexpr bool allow_algorithm = true;
-
-  template <class... Params>
-  static bool allow_mode(char trans) {
-    return true;
-  }
 };
 
 }  // namespace Test

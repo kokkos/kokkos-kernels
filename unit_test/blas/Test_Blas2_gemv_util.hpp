@@ -30,26 +30,22 @@ struct GemvOpBase {
   YType y;
 };
 
-#define KK_DEFINE_BLAS2_GEMV_TEST_OP_CLASS(ClassName)                     \
-  struct ClassName : public GemvOpBase<AType, XType, YType, ScalarType> { \
-    using params = GemvOpBase<AType, XType, YType, ScalarType>;           \
-    ClassName(char trans_, ScalarType alpha_, AType A_, XType x_,         \
-              ScalarType beta_, YType y_)                                 \
-        : params(trans_, alpha_, A_, x_, beta_, y_) {}
-#define KK_END_BLAS2_GEMV_TEST_OP_CLASS \
-  }                                     \
-  ;
-
 // Note: vanillaGEMV is called on device here - alternatively one can move
 //       _strided_ data using safe_device_to_host_deep_copy() etc.
 template <class AType, class XType, class YType, class ScalarType>
-KK_DEFINE_BLAS2_GEMV_TEST_OP_CLASS(RefGEMVOp)
-template <typename TeamMember>
-KOKKOS_INLINE_FUNCTION void operator()(const TeamMember & /* member */) const {
-  vanillaGEMV(params::trans, params::alpha, params::A, params::x, params::beta,
-              params::y);
-}
-KK_END_BLAS2_GEMV_TEST_OP_CLASS
+struct RefGEMVOp : public GemvOpBase<AType, XType, YType, ScalarType> {
+  using params = GemvOpBase<AType, XType, YType, ScalarType>;
+
+  RefGEMVOp(char trans_, ScalarType alpha_, AType A_, XType x_,
+              ScalarType beta_, YType y_)
+        : params(trans_, alpha_, A_, x_, beta_, y_) {}
+
+  template <typename TeamMember>
+  KOKKOS_INLINE_FUNCTION void operator()(const TeamMember & /* member */) const {
+    vanillaGEMV(params::trans, params::alpha, params::A, params::x, params::beta,
+		params::y);
+  }
+}; // RefGEMVOp
 
 // fill regular view with random values
 template <class ViewType, class PoolType,
@@ -123,7 +119,7 @@ struct GEMVTest {
 
   template <int Idx, class AlgorithmsTuple>
   static std::enable_if_t<Idx == std::tuple_size<AlgorithmsTuple>::value>
-  run_algorithms(const char *mode) {}
+  run_algorithms(const char */*mode*/) {}
 
   template <int Idx, class AlgorithmsTuple>
   static
@@ -134,24 +130,9 @@ struct GEMVTest {
     run_algorithms<Idx + 1, AlgorithmsTuple>(mode);
   }
 
-  template <class AlgoTag>
-  static constexpr bool allow_algorithm =
-      GemvFunc::template allow_algorithm<AlgoTag, ScalarA, ScalarX, ScalarY,
-                                         Device, ScalarCoef>;
-
-  template <class AlgoTag>
-  static typename std::enable_if<!allow_algorithm<AlgoTag>>::type run_layouts(
-      const char *mode) {
-    // skip unsupported combinations
-  }
-
   // Note: all layouts listed here are subview'ed to test Kokkos::LayoutStride
   template <class AlgoTag>
-  static typename std::enable_if<allow_algorithm<AlgoTag>>::type run_layouts(
-      const char *mode) {
-    if (!GemvFunc::template allow_mode<AlgoTag, ScalarA, ScalarX, ScalarY,
-                                       Device, ScalarCoef>(mode[0]))
-      return;  // skip matrix modes not supported by the algorithm
+  static void run_layouts(const char *mode) {
 #ifdef KOKKOSKERNELS_TEST_LAYOUTLEFT
     run_view_types<AlgoTag, Kokkos::LayoutLeft>(mode);
 #endif
@@ -313,7 +294,7 @@ struct GEMVTest {
     fill_random_view(x, rand_pool);
     fill_random_view(y, rand_pool);
   }
-};
+}; // struct GEMVTest
 
 }  // namespace Test
 

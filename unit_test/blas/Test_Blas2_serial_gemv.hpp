@@ -8,14 +8,20 @@ namespace Test {
 
 template <class AType, class XType, class YType, class ScalarType,
           class AlgoTag>
-KK_DEFINE_BLAS2_GEMV_TEST_OP_CLASS(SerialGEMVOp)
-template <typename TeamMember>
-KOKKOS_INLINE_FUNCTION void operator()(const TeamMember& member) const {
-  KokkosBlas::Experimental::Gemv<KokkosBlas::Mode::Serial, AlgoTag>::invoke(
-      member, params::trans, params::alpha, params::A, params::x, params::beta,
-      params::y);
-}
-KK_END_BLAS2_GEMV_TEST_OP_CLASS
+struct SerialGEMVOp : public GemvOpBase<AType, XType, YType, ScalarType> {
+  using params = GemvOpBase<AType, XType, YType, ScalarType>;
+
+  SerialGEMVOp(char trans_, ScalarType alpha_, AType A_, XType x_,
+              ScalarType beta_, YType y_)
+        : params(trans_, alpha_, A_, x_, beta_, y_) {}
+
+  template <typename TeamMember>
+  KOKKOS_INLINE_FUNCTION void operator()(const TeamMember& member) const {
+    KokkosBlas::Experimental::Gemv<KokkosBlas::Mode::Serial, AlgoTag>::invoke(
+        member, params::trans, params::alpha, params::A, params::x, params::beta,
+        params::y);
+  }
+};
 
 struct SerialGemvFactory {
   template <class AlgoTag, class ViewTypeA, class ViewTypeX, class ViewTypeY,
@@ -24,32 +30,19 @@ struct SerialGemvFactory {
       SerialGEMVOp<ViewTypeA, ViewTypeX, ViewTypeY, ScalarType, AlgoTag>;
 
   using algorithms = std::tuple<KokkosBlas::Algo::Gemv::Unblocked,
-                                KokkosBlas::Algo::Gemv::Blocked
-#ifdef __KOKKOSBLAS_ENABLE_INTEL_MKL_COMPACT__
-                                ,
-                                KokkosBlas::Algo::Gemv::CompactMKL
-#endif
-                                >;
-
-  template <class AlgoTag>
-  static constexpr bool is_mkl =
-      std::is_same<AlgoTag, KokkosBlas::Algo::Gemv::CompactMKL>::value;
-
-  // block testing of CompackMKL on non-vector scalars
-  // (they are not supported by the implementation)
-  template <class AlgoTag, class ScalarA, class ScalarX, class ScalarY,
-            class Device, class ScalarCoef>
-  static constexpr bool allow_algorithm =
-      !is_mkl<AlgoTag> || (KokkosBatched::is_vector<ScalarA>::value &&
-                           KokkosBatched::is_vector<ScalarX>::value &&
-                           KokkosBatched::is_vector<ScalarY>::value);
-
-  // block testing of ConjNoTranspose mode on CompactMKL
-  template <class AlgoTag, class... Params>
-  static bool allow_mode(char trans) {
-    return !is_mkl<AlgoTag> || toupper(trans) != 'X';
-  }
+                                KokkosBlas::Algo::Gemv::Blocked>;
 };
+
+#ifdef __KOKKOSBLAS_ENABLE_INTEL_MKL_COMPACT__
+struct SerialMKLGemvFactory {
+  template <class AlgoTag, class ViewTypeA, class ViewTypeX, class ViewTypeY,
+            class Device, class ScalarType>
+  using functor_type =
+      SerialGEMVOp<ViewTypeA, ViewTypeX, ViewTypeY, ScalarType, AlgoTag>;
+
+  using algorithms = std::tuple<KokkosBlas::Algo::Gemv::CompactMKL>;
+};
+#endif
 
 }  // namespace Test
 
@@ -66,9 +59,9 @@ TEST_SERIAL_CASE(float, float)
 using simd_float_sse    = ::Test::simd_vector<float, 4>;
 using simd_float_avx    = ::Test::simd_vector<float, 8>;
 using simd_float_avx512 = ::Test::simd_vector<float, 16>;
-TEST_SERIAL_CASE2(mkl_float_sse, simd_float_sse, float)
-TEST_SERIAL_CASE2(mkl_float_avx, simd_float_avx, float)
-TEST_SERIAL_CASE2(mkl_float_avx512, simd_float_avx512, float)
+TEST_CASE2(serial, SerialMKLGemvFactory, mkl_float_sse, simd_float_sse, float)
+TEST_CASE2(serial, SerialMKLGemvFactory, mkl_float_avx, simd_float_avx, float)
+TEST_CASE2(serial, SerialMKLGemvFactory, mkl_float_avx512, simd_float_avx512, float)
 #endif
 #endif
 

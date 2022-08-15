@@ -227,7 +227,7 @@ struct Gemv<Mode::Serial, ArgAlgo> {
   template <class MemberType, class MatrixType, class XVector, class YVector,
             class ScalarType>
   static void KOKKOS_INLINE_FUNCTION
-  invoke(const MemberType& member, const char trans, const ScalarType& alpha,
+  invoke(const MemberType& /*member*/, const char trans, const ScalarType& alpha,
          const MatrixType& A, const XVector& x, const ScalarType& beta,
          const YVector& y) {
     serial_gemv<ArgAlgo>(trans, alpha, A, x, beta, y);
