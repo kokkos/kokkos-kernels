@@ -46,9 +46,12 @@ template <typename MemberType>
 struct TeamVectorGemv<MemberType, Trans::NoTranspose, Algo::Gemv::Blocked> {
   template <typename ScalarType, typename AViewType, typename xViewType,
             typename yViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(
-      const MemberType &/*member*/, const ScalarType /*alpha*/, const AViewType &/*A*/,
-      const xViewType &/*x*/, const ScalarType /*beta*/, const yViewType &/*y*/) {
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType & /*member*/,
+                                           const ScalarType /*alpha*/,
+                                           const AViewType & /*A*/,
+                                           const xViewType & /*x*/,
+                                           const ScalarType /*beta*/,
+                                           const yViewType & /*y*/) {
     static_assert(AViewType::Rank == 3,
                   "Batched TeamVectorGemv requires rank-3 A matrix (use "
                   "KokkosBlas::TeamVectorGemv for regular rank-2 matrix)");
@@ -85,9 +88,12 @@ template <typename MemberType>
 struct TeamVectorGemv<MemberType, Trans::Transpose, Algo::Gemv::Blocked> {
   template <typename ScalarType, typename AViewType, typename xViewType,
             typename yViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(
-      const MemberType &/*member*/, const ScalarType /*alpha*/, const AViewType &/*A*/,
-      const xViewType &/*x*/, const ScalarType /*beta*/, const yViewType &/*y*/) {
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType & /*member*/,
+                                           const ScalarType /*alpha*/,
+                                           const AViewType & /*A*/,
+                                           const xViewType & /*x*/,
+                                           const ScalarType /*beta*/,
+                                           const yViewType & /*y*/) {
     static_assert(AViewType::Rank == 3,
                   "Batched TeamVectorGemv requires rank-3 A matrix (use "
                   "KokkosBlas::TeamVectorGemv for regular rank-2 matrix)");

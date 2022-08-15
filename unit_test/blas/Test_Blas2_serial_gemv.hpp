@@ -12,14 +12,14 @@ struct SerialGEMVOp : public GemvOpBase<AType, XType, YType, ScalarType> {
   using params = GemvOpBase<AType, XType, YType, ScalarType>;
 
   SerialGEMVOp(char trans_, ScalarType alpha_, AType A_, XType x_,
-              ScalarType beta_, YType y_)
-        : params(trans_, alpha_, A_, x_, beta_, y_) {}
+               ScalarType beta_, YType y_)
+      : params(trans_, alpha_, A_, x_, beta_, y_) {}
 
   template <typename TeamMember>
   KOKKOS_INLINE_FUNCTION void operator()(const TeamMember& member) const {
     KokkosBlas::Experimental::Gemv<KokkosBlas::Mode::Serial, AlgoTag>::invoke(
-        member, params::trans, params::alpha, params::A, params::x, params::beta,
-        params::y);
+        member, params::trans, params::alpha, params::A, params::x,
+        params::beta, params::y);
   }
 };
 
@@ -61,7 +61,8 @@ using simd_float_avx    = ::Test::simd_vector<float, 8>;
 using simd_float_avx512 = ::Test::simd_vector<float, 16>;
 TEST_CASE2(serial, SerialMKLGemvFactory, mkl_float_sse, simd_float_sse, float)
 TEST_CASE2(serial, SerialMKLGemvFactory, mkl_float_avx, simd_float_avx, float)
-TEST_CASE2(serial, SerialMKLGemvFactory, mkl_float_avx512, simd_float_avx512, float)
+TEST_CASE2(serial, SerialMKLGemvFactory, mkl_float_avx512, simd_float_avx512,
+           float)
 #endif
 #endif
 

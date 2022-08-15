@@ -37,15 +37,16 @@ struct RefGEMVOp : public GemvOpBase<AType, XType, YType, ScalarType> {
   using params = GemvOpBase<AType, XType, YType, ScalarType>;
 
   RefGEMVOp(char trans_, ScalarType alpha_, AType A_, XType x_,
-              ScalarType beta_, YType y_)
-        : params(trans_, alpha_, A_, x_, beta_, y_) {}
+            ScalarType beta_, YType y_)
+      : params(trans_, alpha_, A_, x_, beta_, y_) {}
 
   template <typename TeamMember>
-  KOKKOS_INLINE_FUNCTION void operator()(const TeamMember & /* member */) const {
-    vanillaGEMV(params::trans, params::alpha, params::A, params::x, params::beta,
-		params::y);
+  KOKKOS_INLINE_FUNCTION void operator()(
+      const TeamMember & /* member */) const {
+    vanillaGEMV(params::trans, params::alpha, params::A, params::x,
+                params::beta, params::y);
   }
-}; // RefGEMVOp
+};  // RefGEMVOp
 
 // fill regular view with random values
 template <class ViewType, class PoolType,
@@ -119,7 +120,7 @@ struct GEMVTest {
 
   template <int Idx, class AlgorithmsTuple>
   static std::enable_if_t<Idx == std::tuple_size<AlgorithmsTuple>::value>
-  run_algorithms(const char */*mode*/) {}
+  run_algorithms(const char * /*mode*/) {}
 
   template <int Idx, class AlgorithmsTuple>
   static
@@ -294,7 +295,7 @@ struct GEMVTest {
     fill_random_view(x, rand_pool);
     fill_random_view(y, rand_pool);
   }
-}; // struct GEMVTest
+};  // struct GEMVTest
 
 }  // namespace Test
 
