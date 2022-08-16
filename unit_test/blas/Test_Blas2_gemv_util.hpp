@@ -134,9 +134,6 @@ struct GEMVTest {
   // Note: all layouts listed here are subview'ed to test Kokkos::LayoutStride
   template <class AlgoTag>
   static void run_layouts(const char *mode) {
-    if (!GemvFunc::is_supported_mode(mode[0])) {
-      return;
-    }
 #ifdef KOKKOSKERNELS_TEST_LAYOUTLEFT
     run_view_types<AlgoTag, Kokkos::LayoutLeft>(mode);
 #endif
@@ -315,9 +312,6 @@ struct GEMVTest {
   }                                                                     \
   TEST_F(TestCategory, PREFIX##_gemv_ct_##NAME) {                       \
     PREFIX##_##NAME##_gemv_test::run("C");                              \
-  }                                                                     \
-  TEST_F(TestCategory, PREFIX##_gemv_cnt_##NAME) {                      \
-    PREFIX##_##NAME##_gemv_test::run("X");                              \
   }
 
 #define TEST_CASE2(PREFIX, FACTORY, NAME, SCALAR, SCALAR_COEF) \

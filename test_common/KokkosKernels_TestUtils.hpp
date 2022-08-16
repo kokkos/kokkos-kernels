@@ -370,7 +370,7 @@ KOKKOS_INLINE_FUNCTION void vanillaGEMV(char mode, AlphaType alpha,
   using ScalarY = typename ViewTypeY::non_const_value_type;
   using KAT_A   = Kokkos::ArithTraits<typename ViewTypeA::non_const_value_type>;
   const bool transposed = mode == 'T' || mode == 'C';
-  const bool conjugated = mode == 'C' || mode == 'X';
+  const bool conjugated = mode == 'C';
   const bool has_beta   = beta != Kokkos::ArithTraits<BetaType>::zero();
   int M                 = A.extent(transposed ? 1 : 0);
   int N                 = A.extent(transposed ? 0 : 1);

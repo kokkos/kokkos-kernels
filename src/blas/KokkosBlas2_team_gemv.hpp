@@ -60,19 +60,15 @@ void KOKKOS_INLINE_FUNCTION team_gemv(const TeamType& team, const char trans,
   if (trans == 'N' || trans == 'n')
     TeamGemv<TeamType, Trans::NoTranspose, AlgoTag>::invoke(team, alpha, A, x,
                                                             beta, y);
-  if (trans == 'T' || trans == 't')
+  else if (trans == 'T' || trans == 't')
     TeamGemv<TeamType, Trans::Transpose, AlgoTag>::invoke(team, alpha, A, x,
                                                           beta, y);
-  if (trans == 'C' || trans == 'c')
+  else if (trans == 'C' || trans == 'c')
     TeamGemv<TeamType, Trans::ConjTranspose, AlgoTag>::invoke(team, alpha, A, x,
                                                               beta, y);
-  //
-  // TODO: what letter should be used here ?
-  //    * in blas "C" means conjugate-transpose
-  //    * in sparse "C" meanse conjugate and "H" conjugate-transpose...
-  if (trans == 'X' || trans == 'x')
-    TeamGemv<TeamType, Trans::ConjNoTranspose, AlgoTag>::invoke(team, alpha, A,
-                                                                x, beta, y);
+  else {
+    Kokkos::abort("Matrix mode not supported");
+  }
 }
 
 // default AlgoTag
@@ -101,13 +97,6 @@ teamvector_gemv(const TeamType& team, const char trans, const ScalarType& alpha,
   } else if (trans == 'C' || trans == 'c') {
     KokkosBlas::TeamVectorGemv<TeamType, Trans::ConjTranspose, AlgoTag>::invoke(
         team, alpha, A, x, beta, y);
-    //
-    // TODO: what letter should be used here ?
-    //    * in blas "C" means conjugate-transpose
-    //    * in sparse "C" meanse conjugate and "H" conjugate-transpose...
-  } else if (trans == 'X' || trans == 'x') {
-    KokkosBlas::TeamVectorGemv<TeamType, Trans::ConjNoTranspose,
-                               AlgoTag>::invoke(team, alpha, A, x, beta, y);
   } else {
     Kokkos::abort("Matrix mode not supported");
   }

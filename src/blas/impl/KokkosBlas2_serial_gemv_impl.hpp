@@ -156,34 +156,6 @@ SerialGemv<Trans::ConjTranspose, Algo::Gemv::Blocked>::invoke(
       A.stride_0(), x.data(), x.stride_0(), beta, y.data(), y.stride_0());
 }
 
-///
-/// CNT
-///
-
-template <>
-template <typename ScalarType, typename AViewType, typename xViewType,
-          typename yViewType>
-KOKKOS_INLINE_FUNCTION int
-SerialGemv<Trans::ConjNoTranspose, Algo::Gemv::Unblocked>::invoke(
-    const ScalarType alpha, const AViewType &A, const xViewType &x,
-    const ScalarType beta, const yViewType &y) {
-  return Impl::SerialGemvInternal<Algo::Gemv::Unblocked>::invoke(
-      Impl::OpConj{}, A.extent(0), A.extent(1), alpha, A.data(), A.stride_0(),
-      A.stride_1(), x.data(), x.stride_0(), beta, y.data(), y.stride_0());
-}
-
-template <>
-template <typename ScalarType, typename AViewType, typename xViewType,
-          typename yViewType>
-KOKKOS_INLINE_FUNCTION int
-SerialGemv<Trans::ConjNoTranspose, Algo::Gemv::Blocked>::invoke(
-    const ScalarType alpha, const AViewType &A, const xViewType &x,
-    const ScalarType beta, const yViewType &y) {
-  return Impl::SerialGemvInternal<Algo::Gemv::Blocked>::invoke(
-      Impl::OpConj{}, A.extent(0), A.extent(1), alpha, A.data(), A.stride_0(),
-      A.stride_1(), x.data(), x.stride_0(), beta, y.data(), y.stride_0());
-}
-
 }  // namespace KokkosBlas
 
 #endif

@@ -67,7 +67,6 @@ struct Trans {
   struct Transpose {};
   struct NoTranspose {};
   struct ConjTranspose {};
-  struct ConjNoTranspose {};  // Note: usually not available in BLAS, MKL, etc.
 };
 
 #if !defined(KOKKOS_IF_ON_HOST)

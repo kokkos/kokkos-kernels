@@ -199,23 +199,6 @@ SerialGemv<Trans::ConjTranspose, Algo::Gemv::CompactMKL>::invoke(
   return 0;
 }
 
-///
-/// CNT (not supported)
-///
-
-template <>
-template <typename ScalarType, typename AViewType, typename xViewType,
-          typename yViewType>
-KOKKOS_INLINE_FUNCTION int
-SerialGemv<Trans::ConjNoTranspose, Algo::Gemv::CompactMKL>::invoke(
-    const ScalarType alpha, const AViewType &A, const xViewType &x,
-    const ScalarType beta, const yViewType &y) {
-  Kokkos::abort(
-      "CompactMKL implementation of serial GEMV does not support "
-      "ConjNoTranspose mode");
-  return 0;
-}
-
 }  // namespace KokkosBlas
 
 #endif  // __KOKKOSBLAS_ENABLE_INTEL_MKL_COMPACT__

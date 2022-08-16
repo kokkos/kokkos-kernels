@@ -539,13 +539,11 @@ struct BsrMatrixSpMVTensorCoreDispatcher {
 
 #include "KokkosBlas.hpp"
 #include "KokkosBlas2_serial_gemv_internal.hpp"
-#include "KokkosBatched_Gemv_TeamVector_Internal.hpp"
+#include "KokkosBlas2_team_gemv_impl.hpp"
 #include "KokkosBatched_Gemm_Serial_Internal.hpp"
 #include "KokkosBatched_Gemm_TeamVector_Internal.hpp"
 #include "KokkosBlas1_team_scal_impl.hpp"
 #include "KokkosKernels_ExecSpaceUtils.hpp"
-
-#include "KokkosBlas2_team_gemv_spec.hpp"
 
 namespace KokkosSparse {
 namespace Experimental {
@@ -656,10 +654,12 @@ struct BSR_GEMV_Functor {
         const auto X_ptBeg  = X_blkCol * block_dim;
         const auto X_cur    = Kokkos::subview(
             m_x, ::Kokkos::make_pair(X_ptBeg, X_ptBeg + block_dim));
-        KokkosBlas::TeamVectorGemv<
-            team_member, KokkosBlas::Trans::ConjNoTranspose,
-            KokkosBlas::Algo::Gemv::Default>::invoke(dev, alpha, A_cur, X_cur,
-                                                     val_one, Y_cur);
+        KokkosBlas::Impl::
+            TeamVectorGemvInternal<KokkosBlas::Algo::Gemv::Unblocked>::invoke(
+                dev, KokkosBlas::Impl::OpConj{}, A_cur.extent(0),
+                A_cur.extent(1), alpha, A_cur.data(), A_cur.stride_0(),
+                A_cur.stride_1(), X_cur.data(), X_cur.stride_0(), val_one,
+                Y_cur.data(), Y_cur.stride_0());
       }
     } else {
       for (ordinal_type jBlock = 0; jBlock < count; ++jBlock) {

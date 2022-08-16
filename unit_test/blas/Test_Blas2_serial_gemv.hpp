@@ -31,7 +31,6 @@ struct SerialGemvFactory {
 
   using algorithms = std::tuple<KokkosBlas::Algo::Gemv::Unblocked,
                                 KokkosBlas::Algo::Gemv::Blocked>;
-  static bool is_supported_mode(char /* trans */) { return true; }
 };
 
 #ifdef __KOKKOSBLAS_ENABLE_INTEL_MKL_COMPACT__
@@ -42,7 +41,6 @@ struct SerialMKLGemvFactory {
       SerialGEMVOp<ViewTypeA, ViewTypeX, ViewTypeY, ScalarType, AlgoTag>;
 
   using algorithms = std::tuple<KokkosBlas::Algo::Gemv::CompactMKL>;
-  static bool is_supported_mode(char trans) { return trans != 'X'; }
 };
 #endif
 

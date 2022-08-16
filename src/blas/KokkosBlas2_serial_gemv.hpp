@@ -67,13 +67,6 @@ void KOKKOS_INLINE_FUNCTION serial_gemv(const char trans,
   } else if (trans == 'C' || trans == 'c') {
     using mode = KokkosBlas::Trans::ConjTranspose;
     KokkosBlas::SerialGemv<mode, AlgoTag>::invoke(alpha, A, x, beta, y);
-    //
-    // TODO: what letter should be used here ?
-    //    * in blas "C" means conjugate-transpose
-    //    * in sparse "C" meanse conjugate and "H" conjugate-transpose...
-  } else if (trans == 'X' || trans == 'x') {
-    using mode = KokkosBlas::Trans::ConjNoTranspose;
-    KokkosBlas::SerialGemv<mode, AlgoTag>::invoke(alpha, A, x, beta, y);
   } else {
     Kokkos::abort("Matrix mode not supported");
   }
