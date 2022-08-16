@@ -1,3 +1,9 @@
+// Note: Luc Berger-Vergiat 04/14/21
+//       This tests uses KOKKOS_LAMBDA so we need
+//       to make sure that these are enabled in
+//       the CUDA backend before including this test.
+#if !defined(TEST_CUDA_BLAS_CPP) || defined(KOKKOS_ENABLE_CUDA_LAMBDA)
+
 #include <KokkosBlas_util.hpp>
 #include <KokkosKernels_TestUtils.hpp>  // for test/inst guards
 // Note: include serial gemv before util so it knows if CompactMKL is available
@@ -75,3 +81,5 @@ TEST_TEAMVECTOR_CASE2(alphabeta, Kokkos::complex<double>, double)
 #undef TEST_TEAMVECTOR_CASE4
 #undef TEST_TEAMVECTOR_CASE2
 #undef TEST_TEAMVECTOR_CASE
+
+#endif  // Check for lambda availability on CUDA backend
