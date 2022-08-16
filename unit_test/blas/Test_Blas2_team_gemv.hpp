@@ -8,7 +8,7 @@
 #include <KokkosKernels_TestUtils.hpp>  // for test/inst guards
 // Note: include serial gemv before util so it knows if CompactMKL is available
 #include <Test_Blas2_gemv_util.hpp>
-#include <KokkosBlas2_team_gemv.hpp>
+#include <KokkosBlas2_gemv.hpp>
 
 namespace Test {
 
