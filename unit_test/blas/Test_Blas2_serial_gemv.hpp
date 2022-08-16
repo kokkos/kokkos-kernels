@@ -73,9 +73,12 @@ TEST_SERIAL_CASE(double, double)
 using simd_double_sse    = ::Test::simd_vector<double, 2>;
 using simd_double_avx    = ::Test::simd_vector<double, 4>;
 using simd_double_avx512 = ::Test::simd_vector<double, 8>;
-TEST_SERIAL_CASE2(mkl_double_sse, simd_double_sse, double)
-TEST_SERIAL_CASE2(mkl_double_avx, simd_double_avx, double)
-TEST_SERIAL_CASE2(mkl_double_avx512, simd_double_avx512, double)
+TEST_CASE2(serial, SerialMKLGemvFactory, mkl_double_sse, simd_double_sse,
+           double)
+TEST_CASE2(serial, SerialMKLGemvFactory, mkl_double_avx, simd_double_avx,
+           double)
+TEST_CASE2(serial, SerialMKLGemvFactory, mkl_double_avx512, simd_double_avx512,
+           double)
 #endif
 #endif
 
