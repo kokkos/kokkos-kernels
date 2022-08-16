@@ -39,6 +39,7 @@ struct TeamVectorGemvFactory {
 
   // no Blocked implementation
   using algorithms = std::tuple<KokkosBlas::Algo::Gemv::Unblocked>;
+  static bool is_supported_mode(char /* trans */) { return true; }
 };
 
 }  // namespace Test

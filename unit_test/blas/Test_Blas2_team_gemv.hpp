@@ -37,6 +37,7 @@ struct TeamGemvFactory {
 
   using algorithms = std::tuple<KokkosBlas::Algo::Gemv::Unblocked,
                                 KokkosBlas::Algo::Gemv::Blocked>;
+  static bool is_supported_mode(char /* trans */) { return true; }
 };
 
 }  // namespace Test
