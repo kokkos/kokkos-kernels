@@ -50,6 +50,19 @@
 namespace KokkosBlas {
 
 //////// Tags for BLAS ////////
+
+struct Mode {
+  struct Serial {
+    static const char *name() { return "Serial"; }
+  };
+  struct Team {
+    static const char *name() { return "Team"; }
+  };
+  struct TeamVector {
+    static const char *name() { return "TeamVector"; }
+  };
+};
+
 struct Trans {
   struct Transpose {};
   struct NoTranspose {};

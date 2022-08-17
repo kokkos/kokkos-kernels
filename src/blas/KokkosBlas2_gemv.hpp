@@ -49,6 +49,8 @@
 ///   Tpetra::MultiVector use cases.
 
 #include <KokkosBlas2_gemv_spec.hpp>
+#include <KokkosBlas2_serial_gemv.hpp>
+#include <KokkosBlas2_team_gemv.hpp>
 #include <KokkosKernels_helpers.hpp>
 #include <KokkosKernels_Error.hpp>
 #include <sstream>
@@ -206,6 +208,57 @@ void gemv(const char trans[], typename AViewType::const_value_type& alpha,
   gemv(space, trans, alpha, A, x, beta, y);
 }
 
+namespace Experimental {
+///
+/// Selective Interface
+///
+template <class ArgMode, class ArgAlgo>
+struct Gemv {
+  template <class MemberType, class MatrixType, class XVector, class YVector,
+            class ScalarType>
+  static void KOKKOS_INLINE_FUNCTION
+  invoke(const MemberType& member, const char trans, const ScalarType& alpha,
+         const MatrixType& A, const XVector& x, const ScalarType& beta,
+         const YVector& y);
+};
+
+template <class ArgAlgo>
+struct Gemv<Mode::Serial, ArgAlgo> {
+  template <class MemberType, class MatrixType, class XVector, class YVector,
+            class ScalarType>
+  static void KOKKOS_INLINE_FUNCTION
+  invoke(const MemberType& /*member*/, const char trans,
+         const ScalarType& alpha, const MatrixType& A, const XVector& x,
+         const ScalarType& beta, const YVector& y) {
+    serial_gemv<ArgAlgo>(trans, alpha, A, x, beta, y);
+  }
+};
+
+template <class ArgAlgo>
+struct Gemv<Mode::Team, ArgAlgo> {
+  template <class MemberType, class MatrixType, class XVector, class YVector,
+            class ScalarType>
+  static void KOKKOS_INLINE_FUNCTION
+  invoke(const MemberType& member, const char trans, const ScalarType& alpha,
+         const MatrixType& A, const XVector& x, const ScalarType& beta,
+         const YVector& y) {
+    team_gemv<ArgAlgo>(member, trans, alpha, A, x, beta, y);
+  }
+};
+
+template <class ArgAlgo>
+struct Gemv<Mode::TeamVector, ArgAlgo> {
+  template <class MemberType, class MatrixType, class XVector, class YVector,
+            class ScalarType>
+  static void KOKKOS_INLINE_FUNCTION
+  invoke(const MemberType& member, const char trans, const ScalarType& alpha,
+         const MatrixType& A, const XVector& x, const ScalarType& beta,
+         const YVector& y) {
+    teamvector_gemv<ArgAlgo>(member, trans, alpha, A, x, beta, y);
+  }
+};
+
+}  // namespace Experimental
 }  // namespace KokkosBlas
 
 #endif  // KOKKOS_BLAS2_MV_HPP_

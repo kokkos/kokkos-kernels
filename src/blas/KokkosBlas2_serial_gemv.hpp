@@ -53,9 +53,11 @@ namespace Experimental {
 
 template <class AlgoTag, class MatrixType, class XVector, class YVector,
           class ScalarType>
-void KOKKOS_INLINE_FUNCTION gemv(const char trans, const ScalarType& alpha,
-                                 const MatrixType& A, const XVector& x,
-                                 const ScalarType& beta, const YVector& y) {
+void KOKKOS_INLINE_FUNCTION serial_gemv(const char trans,
+                                        const ScalarType& alpha,
+                                        const MatrixType& A, const XVector& x,
+                                        const ScalarType& beta,
+                                        const YVector& y) {
   if (trans == 'N' || trans == 'n') {
     using mode = KokkosBlas::Trans::NoTranspose;
     KokkosBlas::SerialGemv<mode, AlgoTag>::invoke(alpha, A, x, beta, y);
@@ -70,11 +72,14 @@ void KOKKOS_INLINE_FUNCTION gemv(const char trans, const ScalarType& alpha,
   }
 }
 
+// default AlgoTag
 template <class MatrixType, class XVector, class YVector, class ScalarType>
-void KOKKOS_INLINE_FUNCTION gemv(const char trans, const ScalarType& alpha,
-                                 const MatrixType& A, const XVector& x,
-                                 const ScalarType& beta, const YVector& y) {
-  gemv<KokkosBlas::Algo::Gemv::Default>(trans, alpha, A, x, beta, y);
+void KOKKOS_INLINE_FUNCTION serial_gemv(const char trans,
+                                        const ScalarType& alpha,
+                                        const MatrixType& A, const XVector& x,
+                                        const ScalarType& beta,
+                                        const YVector& y) {
+  serial_gemv<KokkosBlas::Algo::Gemv::Default>(trans, alpha, A, x, beta, y);
 }
 
 }  // namespace Experimental

@@ -6,7 +6,7 @@
 
 #include "KokkosBatched_Copy_Decl.hpp"
 #include "KokkosBatched_ApplyPivot_Decl.hpp"
-#include "KokkosBatched_Gemv_Decl.hpp"
+#include "KokkosBlas2_team_gemv_spec.hpp"
 #include "KokkosBatched_Trsv_Decl.hpp"
 #include "KokkosBatched_UTV_Decl.hpp"
 #include "KokkosBatched_SolveUTV_Decl.hpp"
@@ -79,9 +79,9 @@ struct Functor_TestBatchedTeamVectorSolveUTV {
     TeamVectorCopy<MemberType, Trans::NoTranspose>::invoke(member, aa, ac);
 
     /// bb = AA*xx
-    TeamVectorGemv<MemberType, Trans::NoTranspose,
-                   Algo::Gemv::Unblocked>::invoke(member, one, aa, xx, zero,
-                                                  bb);
+    KokkosBlas::TeamVectorGemv<MemberType, Trans::NoTranspose,
+                               Algo::Gemv::Unblocked>::invoke(member, one, aa,
+                                                              xx, zero, bb);
     member.team_barrier();
 
     /// Solving Ax = b using UTV transformation

@@ -283,19 +283,8 @@ struct Direct {
   struct Backward {};
 };
 
-struct Mode {
-  struct Serial {
-    static const char *name() { return "Serial"; }
-  };
-  struct Team {
-    static const char *name() { return "Team"; }
-  };
-  struct TeamVector {
-    static const char *name() { return "TeamVector"; }
-  };
-};
-
 using KokkosBlas::Algo;
+using KokkosBlas::Mode;
 
 struct Util {
   template <typename ValueType>

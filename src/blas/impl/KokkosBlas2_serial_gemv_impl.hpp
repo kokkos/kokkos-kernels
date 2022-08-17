@@ -99,6 +99,7 @@ SerialGemv<Trans::NoTranspose, Algo::Gemv::Blocked>::invoke(
       A.extent(0), A.extent(1), alpha, A.data(), A.stride_0(), A.stride_1(),
       x.data(), x.stride_0(), beta, y.data(), y.stride_0());
 }
+
 ///
 /// T
 ///
