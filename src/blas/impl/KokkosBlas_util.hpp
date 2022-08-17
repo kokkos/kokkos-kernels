@@ -7,8 +7,8 @@
 //               Solutions of Sandia, LLC (NTESS).
 //
 // Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
+// the U.S. Government retains certain rights in this software./
+/
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -67,6 +67,46 @@ struct Trans {
   struct Transpose {};
   struct NoTranspose {};
   struct ConjTranspose {};
+};
+
+//////// execution_policy ////////
+template <class ExecResource, class Algo = void>
+struct execution_policy {
+  using execution_resource = ExecResource;
+  using algorithm          = Algo;
+
+  // The execution resource describes what processing
+  // resources are available to the algorithm. For
+  // instance it might be an execution_space if we are
+  // launching a kernel from host or it might be one of
+  // the Mode (Serial, Team or TeamVector) if the kernel
+  // is launched from a parallel_for.
+  const execution_resource &exec;
+
+  // Algo allows to directly request an specific kernel
+  // implementation, such as Blocked or Unblocked. More
+  // algo can be used depending on kernels implementations.
+  const Algo &alg;
+
+  KOKKOS_FUNCTION
+  execution_policy(const execution_resource &exec_, const algorithm &alg_)
+      : exec(exec_), alg(alg_) {}
+};
+
+template <class ExecResource>
+struct execution_policy<ExecResource, void> {
+  using execution_resource = ExecResource;
+
+  // Only member actually used, this is currently the case
+  // when calling a device level implementation
+  const execution_resource &exec;
+
+  // In this case, alg is not specified so we store is as nullptr
+  const void *alg;
+
+  KOKKOS_FUNCTION
+  execution_policy(const execution_resource &exec_)
+      : exec(exec_), alg(nullptr) {}
 };
 
 #if !defined(KOKKOS_IF_ON_HOST)
