@@ -75,7 +75,6 @@ bool verify_coarsening(typename coarsener_t::coarse_level_triple fine_l,
   using ordinal_t   = typename entries_t::value_type;
   using edge_t      = typename rowmap_t::value_type;
 
-  bool correct    = true;
   crsMat A        = fine_l.mtx;
   crsMat coarse_A = coarse_l.mtx;
   auto f_rowmap =
@@ -105,11 +104,11 @@ bool verify_coarsening(typename coarsener_t::coarse_level_triple fine_l,
   // number of columns in interpolation matrix should give number of rows in
   // coarse matrix
   if (coarse_l.interp_mtx.numCols() != coarse_l.mtx.numRows()) {
-    correct = false;
+    return false;
   }
   // sum of vertex weights in each graph should be equal
   if (f_size != c_size) {
-    correct = false;
+    return false;
   }
   typename svt::value_type f_edges = 0, c_edges = 0;
   for (ordinal_t i = 0; i < A.numRows(); i++) {
@@ -128,9 +127,9 @@ bool verify_coarsening(typename coarsener_t::coarse_level_triple fine_l,
   // sum of inter-aggregate edges in fine graph should be sum of all edges in
   // coarse graph
   if (f_edges != c_edges) {
-    correct = false;
+    return false;
   }
-  return correct;
+  return true;
 }
 
 template <class crsMat>
@@ -147,23 +146,22 @@ bool verify_is_graph(crsMat A) {
   typename c_entries_t::HostMirror entries =
       Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.graph.entries);
 
-  bool correct = true;
   for (ordinal_t i = 0; i < A.numRows(); i++) {
     std::set<ordinal_t> adjset;
     for (edge_t j = rowmap(i); j < rowmap(i + 1); j++) {
       ordinal_t v = entries(j);
       // A should not contain out-of-bounds columns
       if (v >= A.numRows()) {
-        correct = false;
+        return false;
       }
       // Each row should not contain duplicate columns
       if (adjset.find(v) != adjset.end()) {
-        correct = false;
+        return false;
       }
       adjset.insert(v);
     }
   }
-  return correct;
+  return true;
 }
 
 template <class crsMat>
@@ -173,18 +171,17 @@ bool verify_aggregator(crsMat A, crsMat agg) {
   using entries_t   = typename c_entries_t::non_const_type;
   using ordinal_t   = typename entries_t::value_type;
 
-  bool correct = true;
   // aggregator should have as many rows as A
   if (A.numRows() != agg.numRows()) {
-    correct = false;
+    return false;
   }
   // aggregator should have as many entries as A has rows
   if (A.numRows() != static_cast<ordinal_t>(agg.nnz())) {
-    correct = false;
+    return false;
   }
   // aggregator should have fewer columns than A has rows
   if (A.numRows() <= agg.numCols()) {
-    correct = false;
+    return false;
   }
   typename c_entries_t::HostMirror entries =
       Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
@@ -195,17 +192,17 @@ bool verify_aggregator(crsMat A, crsMat agg) {
     ordinal_t v = entries(i);
     // aggregator should not have out-of-bounds columns
     if (v >= agg.numCols()) {
-      correct = false;
+      return false;
     }
     aggregateSizes[v]++;
   }
   for (ordinal_t i = 0; i < agg.numCols(); i++) {
     // each aggregate label should contain at least one fine vertex
     if (aggregateSizes[i] == 0) {
-      correct = false;
+      return false;
     }
   }
-  return correct;
+  return true;
 }
 
 template <class crsMat>
@@ -367,7 +364,7 @@ void test_coarsen_random(lno_t numVerts, size_type nnz, lno_t bandwidth,
   using rowmap_t    = typename c_rowmap_t::non_const_type;
   using entries_t   = typename c_entries_t::non_const_type;
   using svt         = typename crsMat::values_type;
-  // Generate graph, and add some out-of-bounds columns
+  // Generate graph
   crsMat A = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat>(
       numVerts, numVerts, nnz, row_size_variance, bandwidth);
   auto G = A.graph;
