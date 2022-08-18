@@ -692,7 +692,7 @@ class coarsen_heuristics {
             if (adj_size > 0) {
               edge_offset_t end = g.graph.row_map(i + 1);
               typename Kokkos::MaxLoc<scalar_t, edge_offset_t,
-                                      Device>::value_type argmax;
+                                      Device>::value_type argmax{};
               Kokkos::parallel_reduce(
                   Kokkos::TeamThreadRange(thread, g.graph.row_map(i), end),
                   [=](const edge_offset_t idx,
