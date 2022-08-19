@@ -179,8 +179,12 @@ bool verify_aggregator(crsMat A, crsMat agg) {
   if (A.numRows() != static_cast<ordinal_t>(agg.nnz())) {
     return false;
   }
-  // aggregator should have fewer columns than A has rows
-  if (A.numRows() <= agg.numCols()) {
+  // column count gives number of vertices in coarse graph
+  // aggregator should not have more columns than A has rows
+  // it is valid for coarse graph to be same size as input graph
+  // some graphs (for example a graph with only self-loops) may produce
+  // coarsenings that don't shrink the graph
+  if (A.numRows() < agg.numCols()) {
     return false;
   }
   typename c_entries_t::HostMirror entries =
