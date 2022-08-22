@@ -41,17 +41,17 @@
 // ************************************************************************
 //@HEADER
 */
+#ifndef _SPGEMMHANDLE_HPP
+#define _SPGEMMHANDLE_HPP
 
 #include <Kokkos_Core.hpp>
 #include <iostream>
 #include <string>
+//#define VERBOSE
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-#include "cusparse.h"
+#include "KokkosSparse_Utils_cusparse.hpp"
 #endif
-#ifndef _SPGEMMHANDLE_HPP
-#define _SPGEMMHANDLE_HPP
-//#define VERBOSE
 
 namespace KokkosSparse {
 
@@ -142,6 +142,54 @@ class SPGEMMHandle {
       nnz_lno_persistent_work_host_view_t;  // Host view type
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+#if (CUSPARSE_VERSION >= 11400)
+  struct cuSparseHandleType {
+    cusparseHandle_t handle;
+    cusparseOperation_t opA, opB;
+    cusparseSpMatDescr_t A_descr, B_descr, C_descr;
+    cusparseSpGEMMDescr_t spgemmDescr;
+
+    cudaDataType scalarType;
+    cusparseSpGEMMAlg_t alg;
+
+    // buffer1~2 are not needed in the numeric phase,
+    // so we don't have them as member variables
+    size_t bufferSize3, bufferSize4, bufferSize5;
+    void *dBuffer3, *dBuffer4, *dBuffer5;
+
+    bool C_populated;
+
+    cuSparseHandleType(bool transposeA, bool transposeB) {
+      opA        = transposeA ? CUSPARSE_OPERATION_TRANSPOSE
+                              : CUSPARSE_OPERATION_NON_TRANSPOSE;
+      opB        = transposeB ? CUSPARSE_OPERATION_TRANSPOSE
+                              : CUSPARSE_OPERATION_NON_TRANSPOSE;
+      scalarType = Impl::cuda_data_type_from<nnz_scalar_t>();
+
+      alg         = CUSPARSE_SPGEMM_DEFAULT;
+      bufferSize3 = bufferSize4 = bufferSize5 = 0;
+      dBuffer3 = dBuffer4 = dBuffer5 = NULL;
+      C_populated                    = false;
+
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreate(&handle));
+      // In alpha*Op(A)*Op(B) + beta*C, alpha, beta are on host
+      KOKKOS_CUSPARSE_SAFE_CALL(
+          cusparseSetPointerMode(handle, CUSPARSE_POINTER_MODE_HOST));
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMM_createDescr(&spgemmDescr));
+    }
+
+    ~cuSparseHandleType() {
+      cusparseDestroySpMat(A_descr);
+      cusparseDestroySpMat(B_descr);
+      cusparseDestroySpMat(C_descr);
+      cusparseSpGEMM_destroyDescr(spgemmDescr);
+      cudaFree(dBuffer3);
+      cudaFree(dBuffer4);
+      cudaFree(dBuffer5);
+      cusparseDestroy(handle);
+    }
+  };
+#else
   struct cuSparseHandleType {
     cusparseHandle_t handle;
     cusparseOperation_t transA;
@@ -200,7 +248,7 @@ class SPGEMMHandle {
       cusparseDestroy(handle);
     }
   };
-
+#endif
   typedef cuSparseHandleType SPGEMMcuSparseHandleType;
 #endif
  private:
