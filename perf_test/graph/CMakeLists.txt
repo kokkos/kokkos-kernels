@@ -11,6 +11,11 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
   SOURCES KokkosGraph_color_d2.cpp       
   )
 
+  KOKKOSKERNELS_ADD_EXECUTABLE(
+    graph_loadbalance
+    SOURCES KokkosGraph_loadbalance.cpp      
+    )
+
 KOKKOSKERNELS_ADD_EXECUTABLE(
   graph_mis_d2
   SOURCES KokkosGraph_mis_d2.cpp       
@@ -21,3 +26,7 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
   SOURCES KokkosGraph_triangle.cpp      
   )
 
+KOKKOSKERNELS_ADD_EXECUTABLE(
+ graph_merge
+ SOURCES KokkosGraph_merge.cpp      
+ )

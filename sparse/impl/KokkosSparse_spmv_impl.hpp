@@ -17,13 +17,22 @@
 #ifndef KOKKOSSPARSE_IMPL_SPMV_DEF_HPP_
 #define KOKKOSSPARSE_IMPL_SPMV_DEF_HPP_
 
-#include "KokkosKernels_Controls.hpp"
 #include "Kokkos_InnerProductSpaceTraits.hpp"
-#include "KokkosBlas1_scal.hpp"
+
+#include "KokkosKernels_Controls.hpp"
+#include "KokkosKernels_Error.hpp"
 #include "KokkosKernels_ExecSpaceUtils.hpp"
+#include "KokkosKernels_LowerBound.hpp"
+
+#include "KokkosBlas1_scal.hpp"
+
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosSparse_spmv_impl_omp.hpp"
-#include "KokkosKernels_Error.hpp"
+
+#include "KokkosGraph_LoadBalance.hpp"
+#include "KokkosGraph_MergePath_impl.hpp"
+
+#define USE_UNSAFE
 
 namespace KokkosSparse {
 namespace Impl {
@@ -1500,6 +1509,1590 @@ void spmv_alpha_mv(const char mode[],
                                                               beta, y);
   }
 }
+
+/* Merge-based SpMV
+
+   One thread is assigned to each non-zero.
+   Threads atomically add into the product vector
+*/
+template <class AMatrix, class XVector, class YVector>
+struct SpmvMerge {
+  typedef KokkosGraph::LoadBalanceResult<typename AMatrix::row_map_type> LBR;
+  typedef typename LBR::assignment_type assignment_type;
+  typedef typename LBR::rank_type rank_type;
+  typedef typename YVector::non_const_value_type y_value_type;
+
+  struct Functor {
+    Functor(assignment_type& _assignment, rank_type& _rank,
+            const y_value_type& _alpha, const AMatrix& _A, const XVector& _x,
+            const YVector& _y)
+        : assignment(_assignment),
+          rank(_rank),
+          alpha(_alpha),
+          A(_A),
+          x(_x),
+          y(_y) {}
+
+    assignment_type assignment;
+    rank_type rank;
+    y_value_type alpha;
+    AMatrix A;
+    XVector x;
+    YVector y;
+
+    KOKKOS_INLINE_FUNCTION void operator()(size_t i) const {
+      if (i >= A.nnz()) {
+        return;
+      }
+
+      typename AMatrix::non_const_ordinal_type row  = assignment(i);
+      typename AMatrix::non_const_size_type nzInRow = rank(i);
+      typename AMatrix::non_const_size_type ji = A.graph.row_map(row) + nzInRow;
+      typename AMatrix::non_const_ordinal_type col = A.graph.entries(ji);
+
+      Kokkos::atomic_add(
+          &y(row), static_cast<y_value_type>(alpha * A.values(ji) * x(col)));
+    }
+  };
+
+  static void spmv(const char mode[], const y_value_type& alpha,
+                   const AMatrix& A, const XVector& x, const y_value_type& beta,
+                   const YVector& y) {
+    LBR lbr = KokkosGraph::load_balance_exclusive(A.graph.row_map, A.nnz());
+    KokkosBlas::scal(y, beta, y);
+    Functor functor(lbr.assignment, lbr.rank, alpha, A, x, y);
+    Kokkos::parallel_for("SpmvMerge::spmv", A.nnz(), functor);
+  }
+};
+
+/* Merge-based SpMV
+   Each thread is assigned to a chunk of non-zeros
+   Whenever a thread reaches a row-boundary, atomically increment the
+   corresponding Y entry
+*/
+template <class AMatrix, class XVector, class YVector>
+struct SpmvMerge2 {
+  typedef typename YVector::device_type device_type;
+  typedef typename device_type::execution_space exec_space;
+  typedef typename YVector::non_const_value_type y_value_type;
+
+  struct Functor {
+    Functor(const y_value_type& _alpha, const AMatrix& _A, const XVector& _x,
+            const YVector& _y)
+        : alpha(_alpha), A(_A), x(_x), y(_y) {}
+
+    y_value_type alpha;
+    AMatrix A;
+    XVector x;
+    YVector y;
+
+    KOKKOS_INLINE_FUNCTION void operator()(size_t i) const {
+      typedef typename AMatrix::size_type size_type;
+      typedef typename AMatrix::ordinal_type ordinal_type;
+
+      // iota(i) -> i
+      KokkosKernels::Impl::Iota<size_t, size_t> iota(A.nnz());
+
+      const size_type pathLength = A.numRows() + A.nnz();
+      const size_type chunkSize = (pathLength + exec_space::concurrency() - 1) /
+                                  exec_space::concurrency();
+      const size_type d = i * chunkSize;  // diagonal
+
+      // remove leading 0 from row_map
+      Kokkos::View<typename AMatrix::row_map_type::value_type*,
+                   typename AMatrix::row_map_type::device_type::memory_space,
+                   Kokkos::MemoryUnmanaged>
+          rowMapTail(&A.graph.row_map(1), A.graph.row_map.size() - 1);
+
+      // beginning of my chunk
+      auto dsr = KokkosGraph::Impl::diagonal_search(rowMapTail, iota, d);
+      const ordinal_type myRowStart = dsr.ai;
+      const size_type myNnzStart    = dsr.bi;
+      // end of my chunk
+      dsr = KokkosGraph::Impl::diagonal_search(rowMapTail, iota, d + chunkSize);
+      const ordinal_type myRowEnd = dsr.ai;
+      const size_type myNnzEnd    = dsr.bi;
+
+      // if (myRowEnd >= A.numRows()) {
+      //   printf("TOO MANY ROWS d=%lu, %d,%lu -> %d,%lu\n", d, myRowStart,
+      //   myNnzStart, myRowEnd, myNnzEnd);
+      // }
+      // if (myNnzEnd >= A.nnz()) {
+      //   printf("TOO MANY NNZ d=%lu, %d,%lu -> %d,%lu\n", d, myRowStart,
+      //   myNnzStart, myRowEnd, myNnzEnd);
+      // }
+
+      // if (true) {
+      //   printf("d=%lu, %d,%lu -> %d,%lu\n", d, myRowStart, myNnzStart,
+      //   myRowEnd, myNnzEnd);
+      // }
+
+      // first row the first nnz is in
+      ordinal_type row = myRowStart;
+      size_type ni     = myNnzStart;
+
+      // do the rest of the first row (might start in the middle of it)
+      y_value_type acc = 0;
+      for (; ni < A.graph.row_map(row + 1) && ni < myNnzEnd; ++ni) {
+        typename AMatrix::non_const_ordinal_type col = A.graph.entries(ni);
+        acc += alpha * A.values(ni) * x(col);
+      }
+      Kokkos::atomic_add(
+          &y(row),
+          acc);  // other threads may contribute to this partial product
+
+      // do remaining rows.
+      for (++row; row <= myRowEnd && row < A.numRows(); ++row) {
+        acc = 0;
+        for (ni = A.graph.row_map(row);
+             ni < myNnzEnd && ni < A.graph.row_map(row + 1); ++ni) {
+          typename AMatrix::non_const_ordinal_type col = A.graph.entries(ni);
+          acc += alpha * A.values(ni) * x(col);
+        }
+        // if this is our last row, other threads may contribute as well
+        // otherwise, we're doing the whole row, so no need for atomics
+        if (row < myRowEnd) {
+          y(row) += acc;
+        } else {
+          Kokkos::atomic_add(&y(row), acc);
+        }
+      }
+    }
+  };
+
+  static void spmv(const char mode[], const y_value_type& alpha,
+                   const AMatrix& A, const XVector& x, const y_value_type& beta,
+                   const YVector& y) {
+    const int numThreads = exec_space::concurrency();
+
+    KokkosBlas::scal(y, beta, y);
+    Functor functor(alpha, A, x, y);
+    Kokkos::RangePolicy<Kokkos::Schedule<Kokkos::Static>> policy(0, numThreads);
+    Kokkos::parallel_for("SpmvMerge2::spmv", policy, functor);
+  }
+};
+
+/* Merge-based SpMV
+
+  Each team is assigned to a chunk of non-zeros
+  Team uses diagonal search to find it's chunk
+  Team collaborates on partial products
+
+*/
+template <class AMatrix, class XVector, class YVector>
+struct SpmvMerge3 {
+  typedef typename YVector::device_type device_type;
+  typedef typename device_type::execution_space exec_space;
+  typedef typename YVector::non_const_value_type y_value_type;
+  typedef typename XVector::non_const_value_type x_value_type;
+  typedef typename AMatrix::non_const_value_type A_value_type;
+
+  typedef Kokkos::TeamPolicy<exec_space> policy_type;
+  typedef typename policy_type::member_type team_member;
+
+  typedef Kokkos::View<
+      typename AMatrix::row_map_type::value_type*,
+      typename AMatrix::row_map_type::device_type::memory_space,
+      Kokkos::MemoryUnmanaged>
+      um_row_map_type;
+
+  typedef typename AMatrix::size_type size_type;
+  typedef typename AMatrix::ordinal_type ordinal_type;
+  typedef KokkosKernels::Impl::Iota<size_type, size_type> iota_type;
+
+  typedef KokkosGraph::Impl::DiagonalSearchResult<
+      typename um_row_map_type::size_type, typename iota_type::size_type>
+      DSR;
+
+  // results of a lower-bound and upper-bound diagonal search
+  struct Chunk {
+    DSR lb;  // lower bound
+    DSR ub;  // upper bound
+  };
+
+  struct Functor {
+    Functor(const y_value_type& _alpha, const AMatrix& _A, const XVector& _x,
+            const YVector& _y)
+        : alpha(_alpha), A(_A), x(_x), y(_y) {}
+
+    y_value_type alpha;
+    AMatrix A;
+    XVector x;
+    YVector y;
+
+    KOKKOS_INLINE_FUNCTION void operator()(const team_member& thread) const {
+      um_row_map_type rowEnds(&A.graph.row_map(1), A.graph.row_map.size() - 1);
+
+      // single thread determines the beginning and end of the team chunk
+      Chunk chunk;
+      Kokkos::single(
+          Kokkos::PerTeam(thread),
+          [&](Chunk& myChunk) {
+            // iota(i) -> i
+            iota_type iota(A.nnz());
+
+            const size_type pathLength = A.numRows() + A.nnz();
+            const size_type chunkSize =
+                (pathLength + thread.league_size() - 1) / thread.league_size();
+            const size_type d = thread.league_rank() * chunkSize;  // diagonal
+            const size_type dEnd =
+                KOKKOSKERNELS_MACRO_MIN(d + chunkSize, pathLength);
+            myChunk.lb = KokkosGraph::Impl::diagonal_search(rowEnds, iota, d);
+            myChunk.ub =
+                KokkosGraph::Impl::diagonal_search(rowEnds, iota, dEnd);
+          },
+          chunk);
+      const ordinal_type teamRowStart = chunk.lb.ai;
+      const size_type teamNnzStart    = chunk.lb.bi;
+      const ordinal_type teamRowEnd   = chunk.ub.ai;
+      const size_type teamNnzEnd      = chunk.ub.bi;
+
+      for (ordinal_type row = teamRowStart;
+           row <= teamRowEnd && row < A.numRows(); ++row) {
+        y_value_type acc = 0;
+
+        // where the non-zeros start/end in this row
+        const size_type nb =
+            KOKKOSKERNELS_MACRO_MAX(teamNnzStart, A.graph.row_map(row));
+        const size_type ne = KOKKOSKERNELS_MACRO_MIN(teamNnzEnd, rowEnds(row));
+
+#if 1
+        Kokkos::parallel_reduce(
+            Kokkos::TeamVectorRange(thread, nb, ne),
+            [&](size_type& ni, y_value_type& lacc) {
+              typename AMatrix::non_const_ordinal_type col =
+                  A.graph.entries(ni);
+              lacc += A.values(ni) * x(col);
+            },
+            acc);
+#else
+        // split the non-zeros in this row into three regions
+        // nb....nx.....ny....ne
+        //       ^ first aligned address
+        //             ^ last aligned address
+        // nb <= nx <= ne
+        // nx <= ny <= ne
+        // assume the entries and values arrays have a reasonable alignment
+        // themselves
+        constexpr unsigned ALIGN_TARGET = 64;
+        static_assert(sizeof(ordinal_type) <= ALIGN_TARGET, "");
+        static_assert(sizeof(A_value_type) <= ALIGN_TARGET, "");
+        constexpr unsigned COLS_PER_ALIGN = ALIGN_TARGET / sizeof(ordinal_type);
+        constexpr unsigned VALS_PER_ALIGN = ALIGN_TARGET / sizeof(A_value_type);
+        constexpr unsigned PER_ALIGN =
+            COLS_PER_ALIGN > VALS_PER_ALIGN ? COLS_PER_ALIGN : VALS_PER_ALIGN;
+        size_type nx =
+            ((nb + PER_ALIGN - 1) / PER_ALIGN) * PER_ALIGN;  // nb <= nx
+        nx           = KOKKOSKERNELS_MACRO_MIN(nx, ne);      // nb <= nx <= ne
+        size_type ny = (ne / PER_ALIGN) * PER_ALIGN;         // ny <= ne
+        ny           = KOKKOSKERNELS_MACRO_MAX(ny, nx);      // nx <= ny <= ne
+
+        const A_value_type* __restrict__ valuesNx =
+            KokkosKernels::Impl::assume_aligned(&A.values(nx), ALIGN_TARGET);
+        const ordinal_type* __restrict__ colsNx =
+            KokkosKernels::Impl::assume_aligned(&A.graph.entries(nx),
+                                                ALIGN_TARGET);
+
+        // head
+        y_value_type hacc;
+        Kokkos::parallel_reduce(
+            Kokkos::TeamThreadRange(thread, nb, nx),
+            [&](size_type& ni, y_value_type& lacc) {
+              typename AMatrix::non_const_ordinal_type col =
+                  A.graph.entries(ni);
+              lacc += A.values(ni) * x(col);
+            },
+            hacc);
+        acc += hacc;
+
+        // body (aligned)
+        y_value_type bacc;
+        Kokkos::parallel_reduce(
+            Kokkos::TeamVectorRange(thread, 0, ny - nx),
+            [&](size_type& i, y_value_type& lacc) {
+              typename AMatrix::non_const_ordinal_type col = colsNx[i];
+              lacc += valuesNx[i] * x(col);
+            },
+            bacc);
+        acc += bacc;
+
+        // tail
+        y_value_type tacc;
+        Kokkos::parallel_reduce(
+            Kokkos::TeamThreadRange(thread, ny, ne),
+            [&](size_type& ni, y_value_type& lacc) {
+              typename AMatrix::non_const_ordinal_type col =
+                  A.graph.entries(ni);
+              lacc += A.values(ni) * x(col);
+            },
+            tacc);
+        acc += tacc;
+#endif
+        // on the margins other teams may contribute to a row as well
+        Kokkos::single(Kokkos::PerTeam(thread), [&]() {
+          if (row > teamRowStart && row < teamRowEnd) {
+            y(row) += alpha * acc;
+          } else {
+            Kokkos::atomic_add(&y(row), alpha * acc);
+          }
+        });
+      }
+    }
+  };
+
+  static void spmv(const char mode[], const y_value_type& alpha,
+                   const AMatrix& A, const XVector& x, const y_value_type& beta,
+                   const YVector& y) {
+    int teamSize;
+    int vectorSize;
+    if constexpr (KokkosKernels::Impl::kk_is_gpu_exec_space<exec_space>()) {
+      teamSize   = 32;
+      vectorSize = 1;
+    } else {
+      teamSize   = 1;
+      vectorSize = 8;
+    }
+
+    KokkosBlas::scal(y, beta, y);
+    int leagueSize = (exec_space::concurrency() + teamSize - 1) / teamSize;
+    policy_type policy(exec_space(), leagueSize, teamSize, vectorSize);
+    Functor functor(alpha, A, x, y);
+    Kokkos::parallel_for("SpmvMerge3::spmv", policy, functor);
+  }
+};
+
+/* Merge-based SpMV
+
+  Each team is assigned to a chunk of non-zeros
+  Team uses diagonal search to find it's chunk
+  Team collaborates across non-zeros, uses atomics to accumulate partial
+  products
+
+*/
+template <class AMatrix, class XVector, class YVector>
+struct SpmvMerge4 {
+  typedef typename YVector::device_type device_type;
+  typedef typename device_type::execution_space exec_space;
+  typedef typename YVector::non_const_value_type y_value_type;
+  typedef typename XVector::non_const_value_type x_value_type;
+  typedef typename AMatrix::non_const_value_type A_value_type;
+
+  typedef Kokkos::TeamPolicy<exec_space> policy_type;
+  typedef typename policy_type::member_type team_member;
+
+  typedef Kokkos::View<
+      typename AMatrix::row_map_type::value_type*,
+      typename AMatrix::row_map_type::device_type::memory_space,
+      Kokkos::MemoryUnmanaged>
+      um_row_map_type;
+
+  typedef typename AMatrix::size_type size_type;
+  typedef typename AMatrix::ordinal_type ordinal_type;
+  typedef KokkosKernels::Impl::Iota<size_type, size_type> iota_type;
+
+  typedef KokkosGraph::Impl::DiagonalSearchResult<
+      typename um_row_map_type::size_type, typename iota_type::size_type>
+      DSR;
+
+  // results of a lower-bound and upper-bound diagonal search
+  struct Chunk {
+    DSR lb;  // lower bound
+    DSR ub;  // upper bound
+  };
+
+  struct Functor {
+    Functor(
+        const y_value_type& _alpha, const AMatrix& _A, const XVector& _x,
+        const YVector& _y,
+        const ordinal_type rowsAtOnce /*products resident in scratch per team*/
+        )
+        : alpha(_alpha), A(_A), x(_x), y(_y), rowsAtOnce_(rowsAtOnce) {}
+
+    y_value_type alpha;
+    AMatrix A;
+    XVector x;
+    YVector y;
+    ordinal_type rowsAtOnce_;
+
+    KOKKOS_INLINE_FUNCTION void operator()(const team_member& thread) const {
+      // single thread determines the beginning and end of the team chunk
+      Chunk chunk;
+      Kokkos::single(
+          Kokkos::PerTeam(thread),
+          [&](Chunk& myChunk) {
+            // iota(i) -> i
+            iota_type iota(A.nnz());
+
+            // remove leading 0 from row_map
+            um_row_map_type rowMapTail(&A.graph.row_map(1),
+                                       A.graph.row_map.size() - 1);
+
+            const size_type pathLength = A.numRows() + A.nnz();
+            const size_type chunkSize =
+                (pathLength + thread.league_size() - 1) / thread.league_size();
+            const size_type d = thread.league_rank() * chunkSize;  // diagonal
+            myChunk.lb =
+                KokkosGraph::Impl::diagonal_search(rowMapTail, iota, d);
+            myChunk.ub = KokkosGraph::Impl::diagonal_search(rowMapTail, iota,
+                                                            d + chunkSize);
+          },
+          chunk);
+      const size_type myNnzStart =
+          chunk.lb.bi;  // the first nnz this team will handle
+      const size_type myNnzEnd =
+          chunk.ub.bi;  // one-past the last nnz this team will handle
+      const ordinal_type myRowStart =
+          chunk.lb.ai;  // <= the row than the first nnz is in
+      const ordinal_type myRowEnd =
+          chunk.ub.ai;  // >= the row than the last nnz is in
+
+      // unmanaged subview into rowmap
+      um_row_map_type rowMapSlice(
+          &A.graph.row_map(myRowStart),
+          myRowEnd - myRowStart + 1 /*inclusive of myRowEnd*/);
+
+      Kokkos::parallel_for(
+          Kokkos::TeamVectorRange(thread, myNnzStart, myNnzEnd),
+          [&](size_type& ni) {
+            // look up the row this non-zero is in
+            // find the smallest row offset > ni, meaning ni is in the previous
+            // row we know ni is in [myRowStart, myRowEnd] from the diagonal
+            // search lower_bound returns the index of the first element in a
+            // view that does not satisfy `pred(element, value)` we want the
+            // index to the first row-map entry where element > ni **is**
+            // satisfied, which is the first row-map entry where element <= ni
+            // is not satisfied, so our predicate is `<=`
+
+            ordinal_type row =
+                KokkosKernels::lower_bound_thread(
+                    rowMapSlice, ni, KokkosKernels::LTE<ordinal_type>()) +
+                myRowStart;
+            // row is the first row that is too large,
+            // so we are in the previous row
+            --row;
+
+            typename AMatrix::non_const_ordinal_type col = A.graph.entries(ni);
+            const A_value_type val                       = A.values(ni);
+
+            Kokkos::atomic_add(&y(row), alpha * val * x(col));
+          });
+    }
+  };
+
+  static void spmv(const char mode[], const y_value_type& alpha,
+                   const AMatrix& A, const XVector& x, const y_value_type& beta,
+                   const YVector& y) {
+    KokkosBlas::scal(y, beta, y);
+
+    int teamSize;
+    int vectorSize;
+    if constexpr (KokkosKernels::Impl::kk_is_gpu_exec_space<exec_space>()) {
+      teamSize   = 128;
+      vectorSize = 1;
+    } else {
+      teamSize   = 1;
+      vectorSize = 4;
+    }
+
+    const size_type pathLength = A.numRows() + A.nnz();
+
+    int leagueSize = (exec_space::concurrency() + teamSize - 1) / teamSize;
+    if (leagueSize > pathLength) leagueSize = pathLength;
+
+    const size_type chunkSize = (pathLength + leagueSize - 1) / leagueSize;
+
+    {
+      static bool printOnce = false;
+      if (!printOnce) {
+        std::cerr << "pathLength=" << pathLength << " chunkSize=" << chunkSize
+                  << " leagueSize=" << leagueSize << std::endl;
+        printOnce = true;
+      }
+    }
+
+    const size_t rowsAtOnce = 1024;
+
+    policy_type policy(exec_space(), leagueSize, teamSize, vectorSize);
+    Functor functor(alpha, A, x, y, rowsAtOnce);
+    Kokkos::parallel_for("SpmvMerge4::spmv", policy, functor);
+  }
+};
+
+/* Merge-based SpMV
+
+   Each team uses diagonal search to find the chunk
+
+
+*/
+template <class AMatrix, class XVector, class YVector>
+struct SpmvMerge5 {
+  typedef typename YVector::device_type device_type;
+  typedef typename device_type::execution_space exec_space;
+  typedef typename YVector::non_const_value_type y_value_type;
+  typedef typename XVector::non_const_value_type x_value_type;
+  typedef typename AMatrix::non_const_value_type A_value_type;
+  typedef typename AMatrix::row_map_type::non_const_value_type
+      row_map_non_const_value_type;
+
+  typedef Kokkos::TeamPolicy<exec_space> policy_type;
+  typedef typename policy_type::member_type team_member;
+
+  typedef Kokkos::View<
+      typename AMatrix::row_map_type::value_type*,
+      typename AMatrix::row_map_type::device_type::memory_space,
+      Kokkos::MemoryUnmanaged>
+      um_row_map_type;
+
+  typedef typename AMatrix::size_type size_type;
+  typedef typename AMatrix::ordinal_type ordinal_type;
+  typedef KokkosKernels::Impl::Iota<size_type, size_type> iota_type;
+
+  typedef KokkosGraph::Impl::DiagonalSearchResult<
+      typename um_row_map_type::size_type, typename iota_type::size_type>
+      DSR;
+
+  // results of a lower-bound and upper-bound diagonal search
+  struct Chunk {
+    DSR lb;  // lower bound
+    DSR ub;  // upper bound
+  };
+
+  struct Functor {
+    Functor(
+        const y_value_type& _alpha, const AMatrix& _A, const XVector& _x,
+        const YVector& _y,
+        const ordinal_type rowsAtOnce /*products resident in scratch per team*/
+        )
+        : alpha(_alpha), A(_A), x(_x), y(_y), rowsAtOnce_(rowsAtOnce) {}
+
+    y_value_type alpha;
+    AMatrix A;
+    XVector x;
+    YVector y;
+    ordinal_type rowsAtOnce_;
+
+    KOKKOS_INLINE_FUNCTION void operator()(const team_member& thread) const {
+      // single thread determines the beginning and end of the team chunk
+      Chunk chunk;
+      Kokkos::single(
+          Kokkos::PerTeam(thread),
+          [&](Chunk& myChunk) {
+            // iota(i) -> i
+            iota_type iota(A.nnz());
+
+            // remove leading 0 from row_map
+            um_row_map_type rowMapTail(&A.graph.row_map(1),
+                                       A.graph.row_map.size() - 1);
+
+            const size_type pathLength = A.numRows() + A.nnz();
+            const size_type chunkSize =
+                (pathLength + thread.league_size() - 1) / thread.league_size();
+            const size_type d = thread.league_rank() * chunkSize;  // diagonal
+            myChunk.lb =
+                KokkosGraph::Impl::diagonal_search(rowMapTail, iota, d);
+            myChunk.ub = KokkosGraph::Impl::diagonal_search(rowMapTail, iota,
+                                                            d + chunkSize);
+          },
+          chunk);
+      const size_type myNnzStart =
+          chunk.lb.bi;  // the first nnz this team will handle
+      const size_type myNnzEnd =
+          chunk.ub.bi;  // one-past the last nnz this team will handle
+      const ordinal_type myRowStart =
+          chunk.lb.ai;  // <= the row than the first nnz is in
+      const ordinal_type myRowEnd =
+          chunk.ub.ai;  // >= the row than the last nnz is in
+
+      y_value_type* ys = (y_value_type*)thread.team_shmem().get_shmem(
+          sizeof(y_value_type) * rowsAtOnce_);
+      // if (thread.team_rank() == 0) {
+      //   printf("ys = %p\n", ys);
+      // }
+
+      row_map_non_const_value_type* rms =
+          (row_map_non_const_value_type*)thread.team_shmem().get_shmem(
+              sizeof(row_map_non_const_value_type) * rowsAtOnce_);
+
+      // apply the team to non-zeros in rowsAtOnce_ rows at a time
+      for (ordinal_type chunkStart = myRowStart; chunkStart <= myRowEnd;
+           chunkStart += rowsAtOnce_) {
+        // chunkEnd may contain the last nnz of the row, or be past it
+        // make sure chunkEnd is not past the end of the matrix
+        ordinal_type chunkEnd =
+            KOKKOSKERNELS_MACRO_MIN(chunkStart + rowsAtOnce_, myRowEnd);
+        chunkEnd = KOKKOSKERNELS_MACRO_MIN(chunkEnd, A.numRows() - 1);
+
+        // initialize team scratch
+        Kokkos::parallel_for(
+            Kokkos::TeamThreadRange(thread, 0, rowsAtOnce_),
+            [&](const ordinal_type& i) {
+              // zero shared accumulator
+              ys[i] = 0;
+
+              // copy row-map into scratch
+              if (i <= chunkEnd + 1 && i + chunkStart <= A.numRows()) {
+                rms[i] = A.graph.row_map(chunkStart + i);
+              }
+            });
+        thread.team_barrier();
+
+        // figure out where in the non-zeros this group of rows starts and stops
+#if 0  // global memory
+        size_type chunkNnzStart = KOKKOSKERNELS_MACRO_MAX(myNnzStart, A.graph.row_map(chunkStart));
+        const size_type chunkNnzEnd = KOKKOSKERNELS_MACRO_MIN(A.graph.row_map(chunkEnd+1), myNnzEnd);
+#else
+        size_type chunkNnzStart = KOKKOSKERNELS_MACRO_MAX(myNnzStart, rms[0]);
+        const size_type chunkNnzEnd =
+            KOKKOSKERNELS_MACRO_MIN(rms[chunkEnd - chunkStart + 1], myNnzEnd);
+#endif
+
+        // if (thread.team_rank() == 0) {
+        //   printf("lr=%d chunkStart=%d chunkEnd=%d chunkNnzStart=%d
+        //   chunkNnzEnd=%d\n",
+        //     int(thread.league_rank()),
+        //     int(chunkStart),
+        //     int(chunkEnd),
+        //     int(chunkNnzStart),
+        //     int(chunkNnzEnd)
+        //   );
+        // }
+
+        // unmanaged subview into rowmap
+#if 0  // global memory
+        um_row_map_type rowMapSlice(&A.graph.row_map(chunkStart), chunkEnd - chunkStart + 1 /*inclusive of chunkEnd*/);
+#else
+        um_row_map_type rowMapSlice(
+            rms, chunkEnd - chunkStart + 1 /*inclusive of chunkEnd*/);
+#endif
+        // row partial products
+        Kokkos::parallel_for(
+            Kokkos::TeamThreadRange(thread, chunkNnzStart, chunkNnzEnd),
+            [&](size_type& ni) {
+              // look up the row this non-zero is in
+              // find the smallest row offset > ni, meaning ni is in the
+              // previous row we know ni is in [chunkStart, chunkEnd]
+              // lower_bound returns the index of the first element in a view
+              // that does not satisfy `pred(element, value)` we want the index
+              // to the first row-map entry where element > ni **is** satisfied,
+              // which is the first row-map entry where element <= ni is not
+              // satisfied, so our predicate is `<=`
+              ordinal_type row = KokkosKernels::lower_bound_thread(
+                  rowMapSlice, ni, KokkosKernels::LTE<ordinal_type>());
+              // row is the first row that is too large,
+              // so we are in the previous row
+              --row;
+
+              typename AMatrix::non_const_ordinal_type col =
+                  A.graph.entries(ni);
+              const A_value_type val = A.values(ni);
+              Kokkos::atomic_add(&ys[row], val * x(col));
+            });
+        thread.team_barrier();
+
+        // accumulate into global memory
+        // this may be way larger than the number of rows we're working on,
+        // which will write out into a crazy place
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(thread, 0, rowsAtOnce_),
+                             [&](const ordinal_type& i) {
+                               ordinal_type ii = i + chunkStart;
+                               if (ii < y.extent(0)) {
+                                 Kokkos::atomic_add(&y(ii), alpha * ys[i]);
+                               }
+                             });
+        thread.team_barrier();
+      }
+    }
+  };
+
+  static void spmv(const char mode[], const y_value_type& alpha,
+                   const AMatrix& A, const XVector& x, const y_value_type& beta,
+                   const YVector& y) {
+    KokkosBlas::scal(y, beta, y);
+
+    int teamSize;
+    int vectorSize;
+    if constexpr (KokkosKernels::Impl::kk_is_gpu_exec_space<exec_space>()) {
+      teamSize   = 128;
+      vectorSize = 1;
+    } else {
+      teamSize   = 1;
+      vectorSize = 4;
+    }
+
+    const size_type pathLength = A.numRows() + A.nnz();
+
+    // minimize the number of global memory accesses
+    // int leagueSize = A.nnz() / (2 * std::log(2 * A.numRows()));
+    int leagueSize = (exec_space::concurrency() + teamSize - 1) / teamSize;
+
+    if (leagueSize > pathLength) leagueSize = pathLength;
+
+    const size_type chunkSize = (pathLength + leagueSize - 1) / leagueSize;
+
+    {
+      static bool printOnce = false;
+      if (!printOnce) {
+        std::cerr << "pathLength=" << pathLength << " chunkSize=" << chunkSize
+                  << " leagueSize=" << leagueSize << std::endl;
+        printOnce = true;
+      }
+    }
+
+    size_t rowsAtOnce = 512;
+    // TODO, this causes errors but should not
+    // if (rowsAtOnce > chunkSize) rowsAtOnce = chunkSize;
+
+    policy_type policy(exec_space(), leagueSize, teamSize, vectorSize);
+    policy = policy.set_scratch_size(
+        0,
+        Kokkos::PerTeam(sizeof(y_value_type) * rowsAtOnce  // for y accumulator
+                        + sizeof(row_map_non_const_value_type) *
+                              rowsAtOnce  // for row map slice
+                        ));
+    Functor functor(alpha, A, x, y, rowsAtOnce);
+    Kokkos::parallel_for("SpmvMerge5::spmv", policy, functor);
+  }
+};
+
+/*! \brief Merge-based SpMV
+
+  Hierarchical GPU implementation
+  Each team uses MergePath search to find the non-zeros and rows it is
+  responsible for Each thread in the team similarly uses diagonal search within
+  the team to determine which entries it will be responsible for
+
+
+
+  The threads then atomically accumulate partial produces
+
+*/
+template <class AMatrix, class XVector, class YVector>
+struct SpmvMergeHierarchical {
+  typedef typename YVector::device_type device_type;
+  typedef typename device_type::execution_space exec_space;
+  typedef typename YVector::non_const_value_type y_value_type;
+  typedef typename XVector::non_const_value_type x_value_type;
+  typedef typename AMatrix::non_const_value_type A_value_type;
+  typedef typename AMatrix::row_map_type::non_const_value_type
+      row_map_non_const_value_type;
+
+  typedef Kokkos::TeamPolicy<exec_space> policy_type;
+  typedef typename policy_type::member_type team_member;
+
+  typedef Kokkos::View<
+      typename AMatrix::row_map_type::data_type,
+      typename AMatrix::row_map_type::device_type::memory_space,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged>
+      // Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>
+      >
+      um_row_map_type;
+
+  typedef Kokkos::View<
+      typename AMatrix::row_map_type::non_const_data_type,
+      typename exec_space::scratch_memory_space,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess |
+                           Kokkos::Restrict>>
+      row_map_scratch_type;
+
+  typedef Kokkos::View<
+      typename AMatrix::staticcrsgraph_type::entries_type::non_const_data_type,
+      typename exec_space::scratch_memory_space,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess |
+                           Kokkos::Restrict>>
+      entries_scratch_type;
+
+  typedef Kokkos::View<
+      typename AMatrix::values_type::non_const_data_type,
+      typename exec_space::scratch_memory_space,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess |
+                           Kokkos::Restrict>>
+      values_scratch_type;
+
+  typedef Kokkos::View<
+      typename YVector::non_const_data_type,
+      typename exec_space::scratch_memory_space,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess |
+                           Kokkos::Restrict>>
+      y_scratch_type;
+
+  typedef typename AMatrix::size_type size_type;
+  typedef typename AMatrix::ordinal_type ordinal_type;
+  typedef KokkosKernels::Impl::Iota<size_type, size_type> iota_type;
+
+  typedef KokkosGraph::Impl::DiagonalSearchResult<
+      typename um_row_map_type::size_type, typename iota_type::size_type>
+      DSR;
+
+  using KAT = Kokkos::Details::ArithTraits<A_value_type>;
+  // using a_mag_type = typename KAT::mag_type;
+
+  // results of a lower-bound and upper-bound diagonal search
+  struct Chunk {
+    DSR lb;  // lower bound
+    DSR ub;  // upper bound
+  };
+
+  template <bool NONZEROS_USE_SCRATCH, bool ROWENDS_USE_SCRATCH,
+            bool Y_USE_SCRATCH, bool CONJ>
+  struct Functor {
+    Functor(const y_value_type& _alpha, const AMatrix& _A, const XVector& _x,
+            const YVector& _y, const size_type pathLengthThreadChunk)
+        : alpha(_alpha),
+          A(_A),
+          x(_x),
+          y(_y),
+          pathLengthThreadChunk_(pathLengthThreadChunk) {}
+
+    y_value_type alpha;
+    AMatrix A;
+    XVector x;
+    YVector y;
+    size_type pathLengthThreadChunk_;
+
+    KOKKOS_INLINE_FUNCTION void operator()(const team_member& thread) const {
+      const size_type pathLengthTeamChunk =
+          thread.team_size() * pathLengthThreadChunk_;
+
+      const size_type pathLength = A.numRows() + A.nnz();
+      const size_type teamD =
+          thread.league_rank() * pathLengthTeamChunk;  // diagonal
+      const size_type teamDEnd =
+          KOKKOSKERNELS_MACRO_MIN(teamD + pathLengthTeamChunk, pathLength);
+
+      // iota(i) -> i
+      iota_type iota(A.nnz());
+
+      // remove leading 0 from row_map
+      um_row_map_type rowEnds(&A.graph.row_map(1), A.graph.row_map.size() - 1);
+
+#if 0
+      // determine the beginning and end of the team chunk
+      Chunk teamChunk;
+      Kokkos::single(Kokkos::PerTeam(thread), [&](Chunk &myChunk) {
+        myChunk.lb = KokkosGraph::Impl::diagonal_search(rowEnds, iota, teamD);
+        myChunk.ub = KokkosGraph::Impl::diagonal_search(rowEnds, iota, teamDEnd);
+      }, teamChunk);
+
+      const size_type teamNnzBegin = teamChunk.lb.bi; // the first nnz this team will handle
+      const size_type teamNnzEnd = teamChunk.ub.bi; // one-past the last nnz this team will handle
+      const ordinal_type teamRowBegin = teamChunk.lb.ai; // <= the row than the first nnz is in
+      const ordinal_type teamRowEnd = teamChunk.ub.ai; // >= the row than the last nnz is in
+#elif 0
+      DSR lb = KokkosGraph::Impl::diagonal_search(thread, rowEnds, iota, teamD);
+      DSR ub =
+          KokkosGraph::Impl::diagonal_search(thread, rowEnds, iota, teamDEnd);
+
+      const size_type teamNnzBegin =
+          lb.bi;  // the first nnz this team will handle
+      const size_type teamNnzEnd =
+          ub.bi;  // one-past the last nnz this team will handle
+      const ordinal_type teamRowBegin =
+          lb.ai;  // <= the row than the first nnz is in
+      const ordinal_type teamRowEnd =
+          ub.ai;  // >= the row than the last nnz is in
+
+#else
+      DSR lb;
+      DSR ub;
+
+      // thread 0 does the lower bound, thread 1 does the upper bound
+      if (0 == thread.team_rank() || 1 == thread.team_rank()) {
+        const size_type d = thread.team_rank() ? teamDEnd : teamD;
+        DSR dsr = KokkosGraph::Impl::diagonal_search(rowEnds, iota, d);
+        if (0 == thread.team_rank()) {
+          lb = dsr;
+        }
+        if (1 == thread.team_rank()) {
+          ub = dsr;
+        }
+      }
+      thread.team_broadcast(lb, 0);
+      thread.team_broadcast(ub, 1);
+      const size_type teamNnzBegin =
+          lb.bi;  // the first nnz this team will handle
+      const size_type teamNnzEnd =
+          ub.bi;  // one-past the last nnz this team will handle
+      const ordinal_type teamRowBegin =
+          lb.ai;  // <= the row than the first nnz is in
+      const ordinal_type teamRowEnd =
+          ub.ai;  // >= the row than the last nnz is in
+#endif
+
+      // if (teamRowBegin != teamRowEnd && thread.team_rank() == 0) {
+      //   printf(
+      //     "lr=%d       teamD=%d teamRow=%d-%d teamNnz=%d-%d\n",
+      //     int(thread.league_rank()),
+      //     int(teamD),
+      //     int(teamRowBegin), int(teamRowEnd),
+      //     int(teamNnzBegin), int(teamNnzEnd)
+      //   );
+      // }
+
+      // team-collaborative copy of matrix data into scratch
+      row_map_scratch_type rowEndsS;
+      entries_scratch_type entriesS;
+      values_scratch_type valuesS;
+      y_scratch_type yS;
+
+      if constexpr (ROWENDS_USE_SCRATCH) {
+        rowEndsS =
+            row_map_scratch_type(thread.team_shmem(), pathLengthTeamChunk);
+        Kokkos::parallel_for(
+            Kokkos::TeamThreadRange(thread, teamRowBegin, teamRowEnd + 1),
+            [&](const ordinal_type& i) {
+              rowEndsS(i - teamRowBegin) = rowEnds(i);
+            });
+      } else {
+        (void)(rowEndsS == rowEndsS);  // set but unused, expr has no effect
+      }
+
+      if constexpr (NONZEROS_USE_SCRATCH) {
+        entriesS =
+            entries_scratch_type(thread.team_shmem(), pathLengthTeamChunk);
+        valuesS = values_scratch_type(thread.team_shmem(), pathLengthTeamChunk);
+        Kokkos::parallel_for(
+            Kokkos::TeamThreadRange(thread, teamNnzBegin, teamNnzEnd),
+            [&](const ordinal_type& i) {
+              valuesS(i - teamNnzBegin)  = A.values(i);
+              entriesS(i - teamNnzBegin) = A.graph.entries(i);
+            });
+      } else {
+        (void)(entriesS == entriesS);  // set but unused, expr has no effect
+        (void)(valuesS == valuesS);    // set but unused, expr has no effect
+      }
+
+      if constexpr (Y_USE_SCRATCH) {
+        yS = y_scratch_type(thread.team_shmem(), pathLengthTeamChunk);
+        Kokkos::parallel_for(
+            Kokkos::TeamThreadRange(thread, teamRowBegin, teamRowEnd + 1),
+            [&](const ordinal_type& i) {
+              if (i < A.numRows()) {
+                yS(i - teamRowBegin) = 0;
+              }
+            });
+      } else {
+        (void)(yS == yS);  // set but unused, expr has no effect
+      }
+
+      if constexpr (ROWENDS_USE_SCRATCH || NONZEROS_USE_SCRATCH ||
+                    Y_USE_SCRATCH) {
+        thread.team_barrier();
+      }
+
+      // each thread determines it's location within the team chunk
+
+      // team's view of row map is either in scratch or global
+      typename std::conditional<ROWENDS_USE_SCRATCH, row_map_scratch_type,
+                                um_row_map_type>::type teamRowEnds;
+
+      if constexpr (ROWENDS_USE_SCRATCH) {
+        teamRowEnds =
+            row_map_scratch_type(&rowEndsS(0), teamRowEnd - teamRowBegin);
+      } else {
+        teamRowEnds =
+            um_row_map_type(&rowEnds(teamRowBegin), teamRowEnd - teamRowBegin);
+      }
+
+      iota_type teamIota(teamNnzEnd - teamNnzBegin,
+                         teamNnzBegin);  // teamNnzBegin..<teamNnzEnd
+
+      // diagonal is local to the team's path
+      size_type threadD = KOKKOSKERNELS_MACRO_MIN(
+          teamD + thread.team_rank() * pathLengthThreadChunk_, pathLength);
+      threadD -= teamD;
+
+      // size_type threadDEnd = KOKKOSKERNELS_MACRO_MIN(
+      //   threadD + pathLengthThreadChunk_,
+      //   pathLength
+      // );
+      // threadDEnd -= teamD;
+
+      Chunk threadChunk;
+      threadChunk.lb =
+          KokkosGraph::Impl::diagonal_search(teamRowEnds, teamIota, threadD);
+      const size_type threadNnzBegin    = threadChunk.lb.bi + teamNnzBegin;
+      const ordinal_type threadRowBegin = threadChunk.lb.ai + teamRowBegin;
+
+      // threadChunk.ub = KokkosGraph::Impl::diagonal_search(teamRowEnds,
+      // teamIota, threadDEnd); const size_type threadNnzEnd = threadChunk.ub.bi
+      // + teamNnzBegin; const ordinal_type threadRowEnd = threadChunk.ub.ai +
+      // teamRowBegin;
+
+      // if (threadNnzBegin != threadNnzEnd) {
+      //   printf(
+      //     "lr=%d tr=%d teamD=%d teamRow=%d-%d teamNnz=%d-%d threadD=%d
+      //     threadRow=%d-%d threadNnz=%d-%d\n", int(thread.league_rank()),
+      //     int(thread.team_rank()), int(teamD), int(teamRowBegin),
+      //     int(teamRowEnd), int(teamNnzBegin), int(teamNnzEnd), int(threadD),
+      //     int(threadRowBegin), int(threadRowEnd),
+      //     int(threadNnzBegin), int(threadNnzEnd)
+      //   );
+      // }
+
+      // each thread does some accumulating
+      y_value_type acc    = 0;
+      ordinal_type curRow = threadRowBegin;
+      size_type curNnz    = threadNnzBegin;
+      for (ordinal_type i = 0;
+           i < pathLengthThreadChunk_ /*some threads have less work*/ &&
+           curNnz < A.nnz() + 1 && curRow < A.numRows();
+           ++i) {
+        size_type curRowEnd;
+        if constexpr (ROWENDS_USE_SCRATCH) {
+          curRowEnd = rowEndsS(curRow - teamRowBegin);
+        } else {
+          curRowEnd = rowEnds(curRow);
+        }
+
+        if (curNnz < curRowEnd) {
+          typename AMatrix::non_const_ordinal_type col;
+          A_value_type val;
+          if constexpr (NONZEROS_USE_SCRATCH) {
+            col = entriesS(curNnz - teamNnzBegin);
+            val = valuesS(curNnz - teamNnzBegin);
+          } else {
+            col = A.graph.entries(curNnz);
+            val = CONJ ? KAT::conj(A.values(curNnz)) : A.values(curNnz);
+          }
+          // printf(
+          //   "lr=%d tr=%d accumulate curNnz=%d\n",
+          //   int(thread.league_rank()), int(thread.team_rank()),
+          //   int(curNnz)
+          // );
+
+          acc += val * x(col);
+          ++curNnz;
+        } else {
+          // if (0 != acc) {
+          //   printf(
+          //     "lr=%d tr=%d store %f to curRow=%d\n",
+          //     int(thread.league_rank()), int(thread.team_rank()),
+          //     float(alpha * acc), int(curRow)
+          //   );
+          // }
+          if constexpr (Y_USE_SCRATCH) {
+#if defined(KOKKOS_ENABLE_HIP) && __HIP_DEVICE_COMPILE__
+            unsafeAtomicAdd(&yS(curRow - teamRowBegin), alpha * acc);
+#else
+            Kokkos::atomic_add(&yS(curRow - teamRowBegin), alpha * acc);
+#endif
+          } else {
+#if defined(KOKKOS_ENABLE_HIP) && __HIP_DEVICE_COMPILE__
+            unsafeAtomicAdd(&y(curRow), alpha * acc);
+#else
+            Kokkos::atomic_add(&y(curRow), alpha * acc);
+#endif
+          }
+          acc = 0;
+          ++curRow;
+        }
+      }
+      // save the accumulated results of a partial last row.
+      // might be 0 if last row was not partial
+      if (curRow < A.numRows()) {
+        if constexpr (Y_USE_SCRATCH) {
+          Kokkos::atomic_add(&yS(curRow - teamRowBegin), alpha * acc);
+        } else {
+#if defined(KOKKOS_ENABLE_HIP) && __HIP_DEVICE_COMPILE__
+          unsafeAtomicAdd(&y(curRow), alpha * acc);
+#else
+          Kokkos::atomic_add(&y(curRow), alpha * acc);
+#endif
+        }
+      }
+
+      if constexpr (Y_USE_SCRATCH) {
+        thread.team_barrier();
+
+        Kokkos::parallel_for(
+            Kokkos::TeamThreadRange(thread, teamRowBegin, teamRowEnd + 1),
+            [&](const ordinal_type& i) {
+              if (i < A.numRows()) {
+                if (i > teamRowBegin && i < teamRowEnd) {
+                  y(i) += yS(i - teamRowBegin);
+                } else {
+#if defined(KOKKOS_ENABLE_HIP) && __HIP_DEVICE_COMPILE__
+                  unsafeAtomicAdd(&y(i), yS(i - teamRowBegin));
+#else
+                  Kokkos::atomic_add(&y(i), yS(i - teamRowBegin));
+#endif
+                }
+              }
+            });
+      }
+    }
+
+    size_t team_shmem_size(int teamSize) const {
+      const size_type pathLengthTeamChunk = pathLengthThreadChunk_ * teamSize;
+      size_t val                          = 0;
+      if constexpr (Y_USE_SCRATCH) {
+        val += sizeof(y_value_type) * pathLengthTeamChunk;
+      }
+      if constexpr (ROWENDS_USE_SCRATCH) {
+        val += sizeof(row_map_non_const_value_type) * pathLengthTeamChunk;
+      }
+      if constexpr (NONZEROS_USE_SCRATCH) {
+        val += sizeof(ordinal_type) * pathLengthTeamChunk;
+        val += sizeof(A_value_type) * pathLengthTeamChunk;
+      }
+      return val;
+    }
+  };
+
+  /*
+     collaboratively reduce N key-value pairs from each thread
+     into the output views
+  */
+  template <typename KeyView, typename ValueView, unsigned N>
+  static void reduce_by_key(const team_member& thread, ordinal_type ik[N],
+                            y_value_type iv[N], const KeyView& ok,
+                            const ValueView& ov) {}
+
+  static void spmv(const char mode[], const y_value_type& alpha,
+                   const AMatrix& A, const XVector& x, const y_value_type& beta,
+                   const YVector& y) {
+    KokkosBlas::scal(y, beta, y);
+
+    /* determine launch parameters for different architectures
+       On architectures where there is a natural execution hierarchy with true
+       team scratch, we'll assign each team to use an appropriate amount of the
+       scratch.
+
+       On other architectures, just have each team do the maximal amount of work
+       to amortize the cost of the diagonal search
+    */
+    const size_type pathLength = A.numRows() + A.nnz();
+    size_type pathLengthThreadChunk;
+    int teamSize;
+    if constexpr (false) {
+    }
+#if defined(KOKKOS_ENABLE_CUDA)
+    else if constexpr (std::is_same<exec_space, Kokkos::Cuda>::value) {
+      pathLengthThreadChunk = 4;
+      teamSize              = 128;
+    }
+#elif defined(KOKKOS_ENABLE_HIP)
+    else if constexpr (std::is_same<exec_space, Kokkos::HIP>::value) {
+      pathLengthThreadChunk = 4;
+      teamSize              = 128;
+    }
+#else
+    else if constexpr (KokkosKernels::Impl::kk_is_gpu_exec_space<
+                           exec_space>()) {
+      pathLengthThreadChunk = 4;
+      teamSize = 128;
+    }
+#endif
+    else {
+      teamSize              = 1;
+      pathLengthThreadChunk = (pathLength + exec_space::concurrency() - 1) /
+                              exec_space::concurrency();
+    }
+
+    const size_t pathLengthTeamChunk = pathLengthThreadChunk * teamSize;
+    const int leagueSize =
+        (pathLength + pathLengthTeamChunk - 1) / pathLengthTeamChunk;
+
+    {
+      static bool printOnce = false;
+      if (!printOnce) {
+        std::cerr << "pathLength=" << pathLength
+                  << " pathLengthThreadChunk=" << pathLengthThreadChunk
+                  << " pathLengthTeamChunk=" << pathLengthTeamChunk
+                  << " leagueSize=" << leagueSize << std::endl;
+        printOnce = true;
+      }
+    }
+
+    policy_type policy(exec_space(), leagueSize, teamSize);
+
+    /* Currently:
+       Volta+ global atomics are fast, so don't use scratch for y
+       CDNA2 atomics are CAS unless unsafe is explicitly requested, which only
+       works on coarse-grained allocations global memory is fast for unsafe Not
+       sure about Intel
+
+       On CPU spaces, there's no real point to using scratch, just rely on the
+       memory hierarchy Using scratch just increases the number of required
+       atomic operations
+    */
+    if (KokkosSparse::NoTranspose == mode) {
+      constexpr bool CONJ = false;
+      using GpuOp         = Functor<true, true, false, CONJ>;
+      using CpuOp         = Functor<false, false, false, CONJ>;
+      using Op            = typename std::conditional<
+          KokkosKernels::Impl::kk_is_gpu_exec_space<exec_space>(), GpuOp,
+          CpuOp>::type;
+      Op op(alpha, A, x, y, pathLengthThreadChunk);
+      Kokkos::parallel_for("SpmvMergeHierarchical::spmv", policy, op);
+    } else if (KokkosSparse::Conjugate == mode) {
+      constexpr bool CONJ = true;
+      using GpuOp         = Functor<true, true, false, CONJ>;
+      using CpuOp         = Functor<false, false, false, CONJ>;
+      using Op            = typename std::conditional<
+          KokkosKernels::Impl::kk_is_gpu_exec_space<exec_space>(), GpuOp,
+          CpuOp>::type;
+      Op op(alpha, A, x, y, pathLengthThreadChunk);
+      Kokkos::parallel_for("SpmvMergeHierarchical::spmv", policy, op);
+    } else {
+      throw std::logic_error("unsupported mode");
+    }
+  }
+};
+
+/* Merge-based SpMV
+
+  Hierarchical GPU implementation
+  Each team uses MergePath search to find the non-zeros and rows it is
+  responsible for Each thread in the team similarly uses diagonal search within
+  the team to determine which entries it will be responsible for
+
+
+
+  The threads then atomically accumulate partial produces
+
+*/
+template <class AMatrix, class XVector, class YVector>
+struct SpmvMvMergeHierarchical {
+  typedef typename YVector::device_type device_type;
+  typedef typename device_type::execution_space exec_space;
+  typedef typename YVector::non_const_value_type y_value_type;
+  typedef typename XVector::non_const_value_type x_value_type;
+  typedef typename AMatrix::non_const_value_type A_value_type;
+  typedef typename AMatrix::row_map_type::non_const_value_type
+      row_map_non_const_value_type;
+
+  typedef Kokkos::TeamPolicy<exec_space> policy_type;
+  typedef typename policy_type::member_type team_member;
+
+  typedef Kokkos::View<
+      typename AMatrix::row_map_type::data_type,
+      typename AMatrix::row_map_type::device_type::memory_space,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged>
+      // Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>
+      >
+      um_row_map_type;
+
+  typedef Kokkos::View<
+      typename AMatrix::row_map_type::non_const_data_type,
+      typename exec_space::scratch_memory_space,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess |
+                           Kokkos::Restrict>>
+      row_map_scratch_type;
+
+  typedef Kokkos::View<
+      typename AMatrix::staticcrsgraph_type::entries_type::non_const_data_type,
+      typename exec_space::scratch_memory_space,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess |
+                           Kokkos::Restrict>>
+      entries_scratch_type;
+
+  typedef Kokkos::View<
+      typename AMatrix::values_type::non_const_data_type,
+      typename exec_space::scratch_memory_space,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess |
+                           Kokkos::Restrict>>
+      values_scratch_type;
+
+  typedef Kokkos::View<
+      typename YVector::non_const_data_type,
+      typename exec_space::scratch_memory_space,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess |
+                           Kokkos::Restrict>>
+      y_scratch_type;
+
+  using KAT = Kokkos::Details::ArithTraits<A_value_type>;
+  // using a_mag_type = typename KAT::mag_type;
+
+  typedef typename AMatrix::size_type size_type;
+  typedef typename AMatrix::ordinal_type ordinal_type;
+  typedef KokkosKernels::Impl::Iota<size_type, size_type> iota_type;
+
+  typedef KokkosGraph::Impl::DiagonalSearchResult<
+      typename um_row_map_type::size_type, typename iota_type::size_type>
+      DSR;
+
+  // results of a lower-bound and upper-bound diagonal search
+  struct Chunk {
+    DSR lb;  // lower bound
+    DSR ub;  // upper bound
+  };
+
+  template <bool CONJ>
+  struct Functor {
+    Functor(const y_value_type& _alpha, const AMatrix& _A, const XVector& _x,
+            const YVector& _y, const size_type pathLengthThreadChunk)
+        : alpha(_alpha),
+          A(_A),
+          x(_x),
+          y(_y),
+          pathLengthThreadChunk_(pathLengthThreadChunk) {}
+
+    y_value_type alpha;
+    AMatrix A;
+    XVector x;
+    YVector y;
+    size_type pathLengthThreadChunk_;
+
+    template <unsigned K>
+    KOKKOS_INLINE_FUNCTION void contribute_path(
+        const team_member& thread, const unsigned ks,
+        const row_map_scratch_type& rowEnds, ordinal_type teamRowBegin,
+        const entries_scratch_type& entries, const values_scratch_type& values,
+        size_type teamNnzBegin, ordinal_type threadRowBegin,
+        size_type threadNnzBegin) const {
+      y_value_type acc[K] = {0};  // prefer this if acc is still registers
+
+      /* Make sure the last row is contributed out to Y
+         Consider curNnz = A.nnz() - 1 (the final non-zero)
+         and curRow = A.numRows() - 1 (the final row)
+
+         curNnz < curRowEnd, so the final partial product will be accumulated,
+         and then ++curNnz
+
+         now curNnz == A.nnz() and curNnz !< curRowEnd, so the final row
+         will be written out.
+         Thus we need to run this loop when curNnz < A.nnz() + 1
+      */
+      ordinal_type curRow = threadRowBegin;
+      size_type curNnz    = threadNnzBegin;
+      for (ordinal_type i = 0;
+           i < ordinal_type(pathLengthThreadChunk_) &&
+           curNnz < A.nnz() + 1 /* write out the final row*/ &&
+           curRow < A.numRows();
+           ++i) {
+        const size_type curRowEnd = rowEnds(curRow - teamRowBegin);
+
+        if (curNnz < curRowEnd) {
+          typename AMatrix::non_const_ordinal_type col;
+          A_value_type val;
+          col = entries(curNnz - teamNnzBegin);
+          val = values(curNnz - teamNnzBegin);
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
+          for (unsigned k = 0; k < K; ++k) {
+            acc[k] += (CONJ ? KAT::conj(val) : val) * x(col, ks + k);
+          }
+
+          ++curNnz;
+        } else {
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
+          for (unsigned k = 0; k < K; ++k) {
+            Kokkos::atomic_add(&y(curRow, ks + k), alpha * acc[k]);
+            acc[k] = 0;
+          }
+          ++curRow;
+        }
+      }
+
+      // the path may end in the middle of a row
+      // save the accumulated results of a partial last row (or 0 if path ended
+      // on a row boundary) may have already done the last row in the matrix in
+      // which case acc will be 0 and curRow will be incremented past the
+      // boundary
+      if (curRow < A.numRows()) {
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
+        for (unsigned k = 0; k < K; ++k) {
+          Kokkos::atomic_add(&y(curRow, ks + k), alpha * acc[k]);
+        }
+      }
+    }
+
+    KOKKOS_INLINE_FUNCTION void operator()(const team_member& thread) const {
+      const size_type pathLengthTeamChunk =
+          thread.team_size() * pathLengthThreadChunk_;
+
+      const size_type pathLength = A.numRows() + A.nnz();
+      const size_type teamD =
+          thread.league_rank() * pathLengthTeamChunk;  // diagonal
+      const size_type teamDEnd =
+          KOKKOSKERNELS_MACRO_MIN(teamD + pathLengthTeamChunk, pathLength);
+
+      // iota(i) -> i
+      iota_type iota(A.nnz());
+
+      // remove leading 0 from row_map
+      um_row_map_type rowEnds(&A.graph.row_map(1), A.graph.row_map.size() - 1);
+
+      DSR lb;
+      DSR ub;
+
+      // thread 0 does the lower bound, thread 1 does the upper bound
+      if (0 == thread.team_rank() || 1 == thread.team_rank()) {
+        const size_type d = thread.team_rank() ? teamDEnd : teamD;
+        DSR dsr = KokkosGraph::Impl::diagonal_search(rowEnds, iota, d);
+        if (0 == thread.team_rank()) {
+          lb = dsr;
+        }
+        if (1 == thread.team_rank()) {
+          ub = dsr;
+        }
+      }
+      thread.team_broadcast(lb, 0);
+      thread.team_broadcast(ub, 1);
+      const size_type teamNnzBegin =
+          lb.bi;  // the first nnz this team will handle
+      const size_type teamNnzEnd =
+          ub.bi;  // one-past the last nnz this team will handle
+      const ordinal_type teamRowBegin =
+          lb.ai;  // <= the row than the first nnz is in
+      const ordinal_type teamRowEnd =
+          ub.ai;  // >= the row than the last nnz is in
+
+      // team-collaborative copy of matrix data into scratch
+      row_map_scratch_type rowEndsS;
+      entries_scratch_type entriesS;
+      values_scratch_type valuesS;
+
+      rowEndsS = row_map_scratch_type(thread.team_shmem(), pathLengthTeamChunk);
+      Kokkos::parallel_for(
+          Kokkos::TeamThreadRange(thread, teamRowBegin, teamRowEnd + 1),
+          [&](const ordinal_type& i) {
+            rowEndsS(i - teamRowBegin) = rowEnds(i);
+          });
+
+      entriesS = entries_scratch_type(thread.team_shmem(), pathLengthTeamChunk);
+      valuesS  = values_scratch_type(thread.team_shmem(), pathLengthTeamChunk);
+      Kokkos::parallel_for(
+          Kokkos::TeamThreadRange(thread, teamNnzBegin, teamNnzEnd),
+          [&](const ordinal_type& i) {
+            valuesS(i - teamNnzBegin)  = A.values(i);
+            entriesS(i - teamNnzBegin) = A.graph.entries(i);
+          });
+      thread.team_barrier();
+
+      row_map_scratch_type teamRowEnds(&rowEndsS(0), teamRowEnd - teamRowBegin);
+
+      // each thread determines it's location within the team chunk
+      iota_type teamIota(teamNnzEnd - teamNnzBegin,
+                         teamNnzBegin);  // teamNnzBegin..<teamNnzEnd
+
+      // diagonal is local to the team's path
+      size_type threadD = KOKKOSKERNELS_MACRO_MIN(
+          teamD + thread.team_rank() * pathLengthThreadChunk_, pathLength);
+      threadD -= teamD;
+
+      // size_type threadDEnd = KOKKOSKERNELS_MACRO_MIN(
+      //   threadD + pathLengthThreadChunk_,
+      //   pathLength
+      // );
+      // threadDEnd -= teamD;
+
+      Chunk threadChunk;
+      threadChunk.lb =
+          KokkosGraph::Impl::diagonal_search(teamRowEnds, teamIota, threadD);
+      const size_type threadNnzBegin    = threadChunk.lb.bi + teamNnzBegin;
+      const ordinal_type threadRowBegin = threadChunk.lb.ai + teamRowBegin;
+
+      // threadChunk.ub = KokkosGraph::Impl::diagonal_search(teamRowEnds,
+      // teamIota, threadDEnd); const size_type threadNnzEnd = threadChunk.ub.bi
+      // + teamNnzBegin; const ordinal_type threadRowEnd = threadChunk.ub.ai +
+      // teamRowBegin;
+
+      // each thread does some accumulating
+      constexpr unsigned K_CHUNK_SIZE = 4;
+      unsigned ks;
+      for (ks = 0; ks + K_CHUNK_SIZE < x.extent(1); ks += K_CHUNK_SIZE) {
+        contribute_path<K_CHUNK_SIZE>(thread, ks, rowEndsS, teamRowBegin,
+                                      entriesS, valuesS, teamNnzBegin,
+                                      threadRowBegin, threadNnzBegin);
+      }
+      for (; ks < x.extent(1); ++ks) {
+        contribute_path<1>(thread, ks, rowEndsS, teamRowBegin, entriesS,
+                           valuesS, teamNnzBegin, threadRowBegin,
+                           threadNnzBegin);
+      }
+    }
+
+    size_t team_shmem_size(int teamSize) const {
+      const size_type pathLengthTeamChunk = pathLengthThreadChunk_ * teamSize;
+      size_t val                          = 0;
+      val += sizeof(row_map_non_const_value_type) * pathLengthTeamChunk;
+      val += sizeof(ordinal_type) * pathLengthTeamChunk;
+      val += sizeof(A_value_type) * pathLengthTeamChunk;
+      return val;
+    }
+  };
+
+  static void spmv(const char mode[], const y_value_type& alpha,
+                   const AMatrix& A, const XVector& x, const y_value_type& beta,
+                   const YVector& y) {
+    KokkosBlas::scal(y, beta, y);
+
+    /* determine launch parameters for different architectures
+       On architectures where there is a natural execution hierarchy with true
+       team scratch, we'll assign each team to use an appropriate amount of the
+       scratch.
+
+       On other architectures, just have each team do the maximal amount of work
+       to amortize the cost of the diagonal search
+    */
+    const size_type pathLength = A.numRows() + A.nnz();
+    size_type pathLengthThreadChunk;
+    int teamSize;
+    if constexpr (false) {
+    }
+#if defined(KOKKOS_ENABLE_CUDA)
+    else if constexpr (std::is_same<exec_space, Kokkos::Cuda>::value) {
+      pathLengthThreadChunk = 4;
+      teamSize              = 128;
+    }
+#elif defined(KOKKOS_ENABLE_HIP)
+    else if constexpr (std::is_same<exec_space, Kokkos::HIP>::value) {
+      pathLengthThreadChunk = 4;
+      teamSize              = 64;
+    }
+#else
+    else if constexpr (KokkosKernels::Impl::kk_is_gpu_exec_space<
+                           exec_space>()) {
+      pathLengthThreadChunk = 4;
+      teamSize = 128;
+    }
+#endif
+    else {
+      teamSize              = 1;
+      pathLengthThreadChunk = (pathLength + exec_space::concurrency() - 1) /
+                              exec_space::concurrency();
+    }
+
+    const size_t pathLengthTeamChunk = pathLengthThreadChunk * teamSize;
+    const int leagueSize =
+        (pathLength + pathLengthTeamChunk - 1) / pathLengthTeamChunk;
+
+    {
+      static bool printOnce = false;
+      if (!printOnce) {
+        std::cerr << "SpmvMvMergeHierarchical"
+                  << " pathLength=" << pathLength
+                  << " pathLengthThreadChunk=" << pathLengthThreadChunk
+                  << " pathLengthTeamChunk=" << pathLengthTeamChunk
+                  << " leagueSize=" << leagueSize << std::endl;
+        printOnce = true;
+      }
+    }
+
+    policy_type policy(exec_space(), leagueSize, teamSize);
+
+    if (KokkosSparse::NoTranspose == mode) {
+      constexpr bool CONJ = false;
+      using Op            = Functor<CONJ>;
+      Op op(alpha, A, x, y, pathLengthThreadChunk);
+      Kokkos::parallel_for("SpmvMvMergeHierarchical::spmv", policy, op);
+    } else if (KokkosSparse::Conjugate == mode) {
+      constexpr bool CONJ = true;
+      using Op            = Functor<CONJ>;
+      Op op(alpha, A, x, y, pathLengthThreadChunk);
+      Kokkos::parallel_for("SpmvMvMergeHierarchical::spmv", policy, op);
+    } else {
+      throw std::logic_error("unsupported mode");
+    }
+  }
+};  // SpmvMvMergeHierarchical
 
 }  // namespace Impl
 }  // namespace KokkosSparse

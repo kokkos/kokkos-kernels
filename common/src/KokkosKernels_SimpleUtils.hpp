@@ -142,20 +142,42 @@ inline void kk_exclusive_parallel_prefix_sum(
   kk_exclusive_parallel_prefix_sum(MyExecSpace(), num_elements, arr, finalSum);
 }
 
-/***
- * \brief Function performs the inclusive parallel prefix sum. That is each
- * entry holds the sum until itself including itself. \param num_elements: size
- * of the array \param arr: the array for which the prefix sum will be
- * performed.
+/*! \brief Function performs the inclusive parallel prefix sum.
+
+    \tparam View the type of `arr`
+
+    \param arr: the array for which the prefix sum will be performed
+    \param num_elements: size of the array
+
+   Each entry in `arr` will hold the sum until itself including itself.
  */
-template <typename forward_array_type, typename MyExecSpace>
-void kk_inclusive_parallel_prefix_sum(
-    typename forward_array_type::value_type num_elements,
-    forward_array_type arr) {
-  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
+template <typename View, typename ExecSpace>
+void kk_inclusive_parallel_prefix_sum(typename View::value_type num_elements,
+                                      View arr) {
+  typedef Kokkos::RangePolicy<ExecSpace> policy;
   Kokkos::parallel_scan("KokkosKernels::Common::PrefixSum",
-                        my_exec_space(0, num_elements),
-                        InclusiveParallelPrefixSum<forward_array_type>(arr));
+                        policy(0, num_elements),
+                        InclusiveParallelPrefixSum<View>(arr));
+}
+
+/*! \brief Function performs the inclusive parallel prefix sum in `space`
+
+    \tparam View the type of `arr`
+
+    \param space: the execution space to perform the sum in
+    \param arr: the array for which the prefix sum will be performed
+    \param num_elements: size of the array
+
+   Each entry in `arr` will hold the sum until itself including itself.
+ */
+template <typename View, typename ExecSpace>
+void kk_inclusive_parallel_prefix_sum(const ExecSpace &space,
+                                      typename View::value_type num_elements,
+                                      View arr) {
+  typedef Kokkos::RangePolicy<ExecSpace> policy;
+  Kokkos::parallel_scan("KokkosKernels::Common::PrefixSum",
+                        policy(space, 0, num_elements),
+                        InclusiveParallelPrefixSum<View>(arr));
 }
 
 template <typename view_t>

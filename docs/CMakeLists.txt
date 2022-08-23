@@ -20,6 +20,7 @@ set(DOXYFILE_IN ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in)
 set(DOXYFILE_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
 
 #Replace variables inside @@ with the current values
+message(STATUS "${DOXYFILE_IN} -> ${DOXYFILE_OUT}")
 configure_file(${DOXYFILE_IN} ${DOXYFILE_OUT})
 
 file(MAKE_DIRECTORY ${DOXYGEN_OUTPUT_DIR}) #Doxygen won't create this for us

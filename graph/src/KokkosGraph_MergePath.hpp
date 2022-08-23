@@ -1,0 +1,287 @@
+/*
+//@HEADER
+// ************************************************************************
+//
+//                        Kokkos v. 3.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
+//
+// Under the terms of Contract DE-NA0003525 with NTESS,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
+//
+// ************************************************************************
+//@HEADER
+*/
+
+#ifndef _KOKKOSGRAPH_MERGEPATH_HPP
+#define _KOKKOSGRAPH_MERGEPATH_HPP
+
+#include "KokkosKernels_SimpleUtils.hpp"
+#include "KokkosGraph_MergePath_impl.hpp"
+
+/*! \file KokkosGraph_MergePath.hpp
+    \brief Provides a MergePath abstraction and related operations
+
+    The "merge matrix" M of two sorted lists A and B has M[i,j] = 1 iff A[i] >
+   B[j], and 0 otherwise.
+
+    \verbatim
+       0 1 2 3 B
+      ________
+    2| 1 1 0 0
+    2| 1 1 0 0
+    2| 1 1 0 0
+    2| 1 1 0 0
+    4| 1 1 1 1
+    A
+    \endverbatim
+
+    The merge path follows the boundaries between the 0s and 1s.
+
+    \verbatim
+       0 1 2 3 B
+      ________
+      *->->
+    2| 1 1|0 0
+          v
+    2| 1 1|0 0
+          v
+    2| 1 1|0 0
+          v
+    2| 1 1|0 0
+          v->->
+    4| 1 1 1 1|
+    A         v
+    \endverbatim
+
+    This is equivalent to answering the question, "if I have two sorted lists A
+   and B, what order should I take elements from them to produce a merged sorted
+   list C", where ties are arbitrarily broken by choosing from list A.
+
+    The length of the merge path is len(A) + len(B)
+
+    This file provides functions that abstract over the merge path, calling a \c
+   Stepper at each step along the merge path. The stepper is provided with a
+   direction, as well as an index into list A, list B, and the number of steps
+   along the merge path
+
+    For the merge path shown above, the following Stepper calls are made:
+
+    \verbatim
+    stepper(b, {0,0,0})
+    stepper(b, {0,1,1}) // step in b direction, +1 b, +1 path index
+    stepper(a, {1,1,2}) // step in a direction, +1 a, +1 path index
+    stepper(a, {2,1,3})
+    stepper(a, {3,1,4})
+    stepper(a, {4,1,5})
+    stepper(b, {4,2,6})
+    stepper(b, {4,3,7})
+    stepper(a, {5,3,8}) // path length is 9, 9 steps have been made
+    \endverbatim
+
+    In practice, the indices into A, B, and the merge path are provided through
+   \c StepperContext structs, and the direction through a \c StepDirection enum.
+
+    The merge path is traversed hierarchically: each Team traverses a chunk, and
+   each thread within the team a small part of the team's chunk. Therefore, the
+   \c Stepper takes two contexts, a `step` and a `thread` context. The `step`
+   context tells you where within the thread's piece the current step is. The
+   `thread` context tells you where within the team's piece the current thread
+   is. The global location in A, B, and the path can be recovered by summing the
+   corresponding \c StepperContext members.
+*/
+
+namespace KokkosGraph {
+
+/*! \brief Provides context for where in the merge matrix a step is taking place
+ */
+struct StepperContext {
+  using offset_type = size_t;
+
+  offset_type ai;  //!< index into a
+  offset_type bi;  //!< index into b
+  offset_type pi;  //!< index into the path
+
+  KOKKOS_INLINE_FUNCTION
+  constexpr StepperContext(offset_type _ai, offset_type _bi, offset_type _pi)
+      : ai(_ai), bi(_bi), pi(_pi) {}
+
+  KOKKOS_INLINE_FUNCTION
+  constexpr StepperContext() : StepperContext(0, 0, 0) {}
+};
+
+/*! \enum StepDirection
+    \brief Whether the merge-path step was along the A or B list
+*/
+enum class StepDirection { a, b };
+
+/*! \brief
+    Follow up to pathLength steps along the merge-path for a and b, if a and b
+   are long enough Whenever moving in positive a, call astepper(ci, ai, bi)
+    Whenever moving in posibive b, call bstepper(ci, ai, bi)
+    pi is the distance traveled along the path so far
+    ai is the current index into a
+    bi is the current index into b
+
+    This generates the `step` StepperContext for each step of the merge path
+    Other contexts are optional. if not provided, zeros will be provided to the
+   steppers IF a team context is provided, a thread context must also be
+   provided
+
+    The steppers may use these contexts to reconstruct what part of the merge
+   path they're on when they're called
+*/
+template <typename AView, typename BView, typename Stepper, typename... Ctxs>
+KOKKOS_INLINE_FUNCTION void merge_path_thread(const AView &a, const BView &b,
+                                              const size_t pathLength,
+                                              const Stepper &stepper,
+                                              Ctxs... ctxs) {
+  static_assert(AView::Rank == 1, "follow_path requires rank-1 AView");
+  static_assert(BView::Rank == 1, "follow_path requires rank-1 BView");
+
+  constexpr bool ONE_CTX =
+      std::is_invocable<Stepper, StepDirection, StepperContext>::value;
+  constexpr bool TWO_CTX =
+      std::is_invocable<Stepper, StepDirection, StepperContext,
+                        StepperContext>::value;
+  constexpr bool THREE_CTX =
+      std::is_invocable<Stepper, StepDirection, StepperContext, StepperContext,
+                        StepperContext>::value;
+  static_assert(ONE_CTX || TWO_CTX || THREE_CTX,
+                "Stepper should be invokable with a StepDirection, then 1, 2, "
+                "or 3 StepperContext arguments, for the step, thread, and team "
+                "context respectively");
+
+  static_assert(
+      sizeof...(Ctxs) == 0 || sizeof...(Ctxs) == 1 || sizeof...(Ctxs) == 2,
+      "Zero, one, or two contexts should be passed to merge_path_thread");
+
+  StepperContext step;
+  while (step.pi < pathLength && step.ai < a.size() && step.bi < b.size()) {
+    if (a(step.ai) <= b(step.bi)) {  // step in A direction
+      stepper(StepDirection::a, step, ctxs...);
+      ++step.ai;
+      ++step.pi;
+    } else {  // step in B direction
+      stepper(StepDirection::b, step, ctxs...);
+      ++step.bi;
+      ++step.pi;
+    }
+  }
+  while (step.pi < pathLength && step.ai < a.size()) {
+    stepper(StepDirection::a, step, ctxs...);
+    ++step.ai;
+    ++step.pi;
+  }
+  while (step.pi < pathLength && step.bi < b.size()) {
+    stepper(StepDirection::b, step, ctxs...);
+    ++step.bi;
+    ++step.pi;
+  }
+}
+
+/*! \brief Collaboratively call merge_path_thread on subpaths
+
+     \tparam TeamHandle
+     \tparam AView
+     \tparam BViewLike A Kokkos::View or KokkosKernels::Impl::Iota
+     \tparam Stepper
+
+*/
+template <typename TeamHandle, typename AView, typename BViewLike,
+          typename Stepper>
+KOKKOS_INLINE_FUNCTION void merge_path_team(const TeamHandle &handle,
+                                            const AView &a, const BViewLike &b,
+                                            const size_t pathLength,
+                                            const Stepper &stepper,
+                                            size_t threadPathLength) {
+  static_assert(AView::Rank == 1, "merge_path_team requires rank-1 a");
+  static_assert(BViewLike::Rank == 1, "merge_path_team requires rank-1 b");
+
+  using a_uview_type =
+      Kokkos::View<typename AView::data_type, typename AView::device_type,
+                   Kokkos::MemoryUnmanaged>;
+
+  // the "unmanaged" version depends on whether it's a View or Iota
+  using b_uview_type =
+      typename std::conditional<KokkosKernels::Impl::is_iota<BViewLike>::value,
+                                BViewLike,
+                                Kokkos::View<typename BViewLike::data_type,
+                                             typename BViewLike::device_type,
+                                             Kokkos::MemoryUnmanaged> >::type;
+
+  Kokkos::parallel_for(
+      Kokkos::TeamThreadRange(handle, 0, handle.team_size()),
+      [&](const size_t i) {
+        // split up with a diagonal search
+        // size_t threadPathLength =
+        //     (pathLength + handle.team_size() - 1) / handle.team_size();
+        const size_t diagonal = threadPathLength * i;
+        if (diagonal >= pathLength) {
+          return;
+        }
+        auto dsr  = Impl::diagonal_search(a, b, diagonal);
+        size_t ai = dsr.ai;
+        size_t bi = dsr.bi;
+
+        // capture where in the team context the thread is working
+        const StepperContext threadCtx(ai, bi, diagonal);
+
+        // final piece pay be shorter
+        threadPathLength =
+            KOKKOSKERNELS_MACRO_MIN(threadPathLength, pathLength - diagonal);
+
+        // take appropriate subviews of A and B according to diagonal search
+        size_t nA = KOKKOSKERNELS_MACRO_MIN(threadPathLength, a.size() - ai);
+        size_t nB = KOKKOSKERNELS_MACRO_MIN(threadPathLength, b.size() - bi);
+        a_uview_type as(a, Kokkos::make_pair(ai, ai + nA));
+        b_uview_type bs(b, Kokkos::make_pair(bi, bi + nB));
+
+        // each thread contributes a path segment in parallel
+        merge_path_thread(as, bs, threadPathLength, stepper, threadCtx);
+      });
+}
+
+template <typename TeamHandle, typename AView, typename BViewLike,
+          typename Stepper>
+KOKKOS_INLINE_FUNCTION void merge_path_team(const TeamHandle &handle,
+                                            const AView &a, const BViewLike &b,
+                                            const size_t pathLength,
+                                            const Stepper &stepper) {
+  const size_t threadPathLength =
+      (pathLength + handle.team_size() - 1) / handle.team_size();
+  merge_path_team(handle, a, b, pathLength, stepper, threadPathLength);
+}
+
+}  // namespace KokkosGraph
+
+#endif  // _KOKKOSGRAPH_MERGEPATH_HPP
