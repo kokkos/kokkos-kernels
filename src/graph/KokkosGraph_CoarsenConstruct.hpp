@@ -598,7 +598,7 @@ class coarse_builder {
       edge_offset_t u_dest_offset = target_row_map(u);
       Kokkos::parallel_for(
           Kokkos::TeamThreadRange(thread, source_edge_counts(u)),
-          [=](const edge_offset_t u_idx) {
+          [&](const edge_offset_t u_idx) {
             ordinal_t v                 = source_destinations(u_origin + u_idx);
             scalar_t wgt                = source_wgts(u_origin + u_idx);
             edge_offset_t v_dest_offset = target_row_map(v);
@@ -769,7 +769,7 @@ class coarse_builder {
       volatile ordinal_t* ptr_temp = nullptr;
       Kokkos::single(
           Kokkos::PerTeam(thread),
-          [=](volatile ordinal_t*& ptr_write) {
+          [&](volatile ordinal_t*& ptr_write) {
             // Acquire a chunk from the memory pool using a spin-loop.
             ptr_write = nullptr;
             while (nullptr == ptr_write) {
@@ -1276,7 +1276,7 @@ class coarse_builder {
       edge_offset_t start = g.graph.row_map(i);
       edge_offset_t end   = g.graph.row_map(i + 1);
       Kokkos::parallel_for(Kokkos::ThreadVectorRange(t, start, end),
-                           [=](const edge_offset_t idx) {
+                           [&](const edge_offset_t idx) {
                              ordinal_t v = mapped_edges(idx);
                              if (u != v) {
                                // fix this, inefficient
@@ -1732,7 +1732,7 @@ class coarse_builder {
       ordinal_t nonLoopEdgesTotal = 0;
       Kokkos::parallel_reduce(
           Kokkos::ThreadVectorRange(t, start, end),
-          [=](const edge_offset_t idx, ordinal_t& local_sum) {
+          [&](const edge_offset_t idx, ordinal_t& local_sum) {
             ordinal_t v       = vcmap.graph.entries(g.graph.entries(idx));
             mapped_edges(idx) = v;
             if (u != v) {
@@ -1740,7 +1740,7 @@ class coarse_builder {
             }
           },
           nonLoopEdgesTotal);
-      Kokkos::single(Kokkos::PerThread(t), [=]() {
+      Kokkos::single(Kokkos::PerThread(t), [&]() {
         Kokkos::atomic_add(&degree_initial(u), nonLoopEdgesTotal);
         Kokkos::atomic_add(&c_vtx_w(u), f_vtx_w(i));
       });
