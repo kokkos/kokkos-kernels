@@ -2,6 +2,7 @@
 #define TEST_SPARSE_HPP
 
 #include "Test_Sparse_block_gauss_seidel.hpp"
+#include "Test_Sparse_Controls.hpp"
 #include "Test_Sparse_CrsMatrix.hpp"
 #include "Test_Sparse_BsrMatrix.hpp"
 #include "Test_Sparse_findRelOffset.hpp"

@@ -1,43 +1,36 @@
 
-KOKKOSKERNELS_CONFIGURE_FILE(KokkosKernels_config.h)
-
 KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-SET(KK_INCLUDE_DIRS ${CMAKE_CURRENT_BINARY_DIR})
-LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR})
-
-#I don't want the complexity of sometimes interface/sometimes not
-#Just minimally force an empty dummy file
-SET(SOURCES dummy.cpp)
+LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 #-----------------------------------------------------------------------------
 
 LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR})
-LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/impl)
-LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_BINARY_DIR}/impl)
-LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/impl/tpls)
-LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/blas)
-LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/blas/impl)
+LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src/impl)
+LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_BINARY_DIR}/src/impl)
+LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src/impl/tpls)
+LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src/blas)
+LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src/blas/impl)
 
 #Include Sparse
-LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/sparse)
-LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/sparse/impl)
+LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src/sparse)
+LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src/sparse/impl)
 
 #Include graph
-LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/graph)
-LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/graph/impl)
+LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src/graph)
+LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src/graph/impl)
 
 #Include batched
-LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/batched)
-LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/batched/dense)
-LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/batched/dense/impl)
-LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/batched/sparse)
-LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/batched/sparse/impl)
+LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src/batched)
+LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src/batched/dense)
+LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src/batched/dense/impl)
+LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src/batched/sparse)
+LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src/batched/sparse/impl)
 
-#Include Common
-LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/common)
-LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/impl)
+# #Include Common
+# LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/common)
+# LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/impl)
 
 
 FOREACH(DIR ${KK_INCLUDE_DIRS})
@@ -52,7 +45,7 @@ IF (KOKKOSKERNELS_ENABLE_TPL_BLAS OR KOKKOSKERNELS_ENABLE_TPL_MKL)
   APPEND_GLOB(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/impl/tpls/KokkosBlas_Host_tpl.cpp)
 ENDIF()
 
-include(cmake/kokkoskernels_eti.cmake)
+include(src/cmake/kokkoskernels_eti.cmake)
 SET(ETI_HEADERS)
 
 #Build up a list of DECL, AVAIL, and INST macros
@@ -436,72 +429,9 @@ LIST(APPEND HEADERS ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h)
 
 #Add a few other utility files
 LIST(APPEND SOURCES
- batched/KokkosBatched_Util.cpp
- impl/tpls/KokkosBlas_Host_tpl.cpp
- impl/tpls/KokkosBlas_Cuda_tpl.cpp
- impl/tpls/KokkosBlas_Rocm_tpl.cpp
- impl/tpls/KokkosKernels_tpl_handles.cpp
+ src/batched/KokkosBatched_Util.cpp
+ src/impl/tpls/KokkosBlas_Host_tpl.cpp
+ src/impl/tpls/KokkosBlas_Cuda_tpl.cpp
+ src/impl/tpls/KokkosBlas_Rocm_tpl.cpp
+ src/impl/tpls/KokkosKernels_tpl_handles.cpp
 )
-
-# For now, don't add the ETI headers to complete list of headers
-# This will break some IDEs and won't properly display headers in the file list
-# However, because of the behavior of TRIBITS_ADD_LIBRARY
-# I can't add the ETI headers with them getting double-installed
-# with a bunch of headers in the wrong location
-# This doesn't change pre-existing behavior before the ETI changes
-#LIST(APPEND HEADERS ${ETI_HEADERS})
-#-----------------------------------------------------------------------------
-
-KOKKOSKERNELS_ADD_LIBRARY(
-  kokkoskernels
-  HEADERS ${HEADERS}
-  SOURCES ${SOURCES}
-)
-
-# It does not seem to be possible to automatically have headers installed
-# in the correct subdirectory structure using HEADERS and ADD_LIBRARY with tribits
-# Force the specializations to be installed in a subdirectory
-INSTALL(FILES ${ETI_HEADERS} DESTINATION ${KOKKOSKERNELS_HEADER_INSTALL_DIR}/generated_specializations_hpp/)
-
-IF (KOKKOSKERNELS_HAS_TRILINOS)
-  #no linking commands required - tribits does this
-ELSE()
-  ADD_LIBRARY(Kokkos::kokkoskernels ALIAS kokkoskernels)
-  TARGET_LINK_LIBRARIES(kokkoskernels PUBLIC Kokkos::kokkos)
-  FOREACH(DIR ${KK_INCLUDE_DIRS})
-    TARGET_INCLUDE_DIRECTORIES(kokkoskernels PUBLIC $<BUILD_INTERFACE:${DIR}>)
-  ENDFOREACH()
-  TARGET_INCLUDE_DIRECTORIES(kokkoskernels PUBLIC
-    $<INSTALL_INTERFACE:${KOKKOSKERNELS_HEADER_INSTALL_DIR}>)
-ENDIF()
-
-IF (KOKKOS_ENABLE_SYCL)
-  SET(KOKKOSKERNELS_INTEL_ARCHS ${Kokkos_ARCH})
-  LIST(FILTER KOKKOSKERNELS_INTEL_ARCHS INCLUDE REGEX ".*INTEL.*")
-  LIST(LENGTH KOKKOSKERNELS_INTEL_ARCHS KOKKOSKERNELS_INTEL_ARCHS_NUM)
-  IF(KOKKOSKERNELS_INTEL_ARCHS_NUM GREATER_EQUAL 1)
-    IF (NOT BUILD_SHARED_LIBS)
-      MESSAGE(SEND_ERROR
-        "At the moment, we require KokkosKernels (and Kokkos) to be built as "
-        "shared libraries to allow querying free and total device memory!"
-      )
-    ENDIF()
-    TARGET_LINK_LIBRARIES(kokkoskernels PUBLIC ze_loader)
-  ENDIF()
-ENDIF()
-
-KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC LAPACK)
-KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC BLAS)
-KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC CBLAS)
-KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC LAPACKE)
-KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC SUPERLU)
-KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC CHOLMOD)
-KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC MKL)
-KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC CUBLAS)
-KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC CUSPARSE)
-KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC ROCBLAS)
-KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC ROCSPARSE)
-KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC METIS)
-KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC ARMPL)
-KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC MAGMA)
-# Not yet here KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC MAGMA)

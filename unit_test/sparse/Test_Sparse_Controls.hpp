@@ -42,8 +42,8 @@
 //@HEADER
 */
 
-#ifndef TEST_COMMON_CONTROLS_HPP
-#define TEST_COMMON_CONTROLS_HPP
+#ifndef TEST_SPARSE_CONTROLS_HPP
+#define TEST_SPARSE_CONTROLS_HPP
 
 #include "KokkosKernels_Controls.hpp"
 
@@ -69,4 +69,4 @@ void test_controls_set() {
 TEST_F(TestCategory, controls_empty) { test_controls_empty(); }
 TEST_F(TestCategory, controls_set) { test_controls_set(); }
 
-#endif  // TEST_COMMON_CONTROLS_HPP
+#endif  // TEST_SPARSE_CONTROLS_HPP
