@@ -46,6 +46,7 @@
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
+#include "KokkosBlas_execution_policy.hpp"
 #include "KokkosBlas_util.hpp"
 #include "KokkosBlas1_set_impl.hpp"
 #include "KokkosBlas1_serial_scal_impl.hpp"

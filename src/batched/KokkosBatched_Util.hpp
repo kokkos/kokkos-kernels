@@ -21,6 +21,7 @@
 
 #include "KokkosKernels_config.h"
 #include "KokkosKernels_SimpleUtils.hpp"
+#include "KokkosBlas_execution_policy.hpp"
 #include "KokkosBlas_util.hpp"
 
 // TPL macros
