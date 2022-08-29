@@ -43,11 +43,14 @@
 */
 
 /// \file KokkosSparse_par_ilut.hpp
-/// \brief Parallel incomplete LU factorization ILU(k)
+/// \brief Parallel threshold incomplete LU factorization ILU(t)
 ///
 /// This file provides KokkosSparse::par_ilut.  This function performs a
-/// local (no MPI) sparse ILU(k) on matrices stored in
+/// local (no MPI) sparse ILU(t) on matrices stored in
 /// compressed row sparse ("Crs") format.
+///
+/// This algorithm is described in the paper:
+/// PARILUT - A New Parallel Threshold ILU Factorization - Anzt, Chow, Dongarra
 
 #ifndef KOKKOSSPARSE_PAR_ILUT_HPP_
 #define KOKKOSSPARSE_PAR_ILUT_HPP_

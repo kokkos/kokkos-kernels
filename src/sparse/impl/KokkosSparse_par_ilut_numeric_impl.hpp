@@ -64,54 +64,9 @@ namespace KokkosSparse {
 namespace Impl {
 namespace Experimental {
 
-template <typename scalar_t, typename RowMapType, typename EntriesType, typename ValuesType>
-std::vector<std::vector<scalar_t>> decompress_matrix(
-  const RowMapType& row_map,
-  const EntriesType& entries,
-  const ValuesType& values
-                                                     )
-{
-  using size_type = typename RowMapType::non_const_value_type;
-  using lno_t     = typename EntriesType::non_const_value_type;
-
-  const auto nrows = row_map.size() - 1;
-  std::vector<std::vector<scalar_t> > result;
-  result.resize(nrows);
-  for (auto& row : result) {
-    row.resize(nrows, 0.0);
-  }
-
-  auto hrow_map = Kokkos::create_mirror_view(row_map);
-  auto hentries = Kokkos::create_mirror_view(entries);
-  auto hvalues  = Kokkos::create_mirror_view(values);
-  Kokkos::deep_copy(hrow_map, row_map);
-  Kokkos::deep_copy(hentries, entries);
-  Kokkos::deep_copy(hvalues, values);
-
-  for (size_type row_idx = 0; row_idx < nrows; ++row_idx) {
-    const size_type row_nnz_begin = row_map(row_idx);
-    const size_type row_nnz_end   = row_map(row_idx+1);
-    for (size_type row_nnz = row_nnz_begin; row_nnz < row_nnz_end; ++row_nnz) {
-      const lno_t col_idx = entries(row_nnz);
-      const scalar_t value = values(row_nnz);
-      result[row_idx][col_idx] = value;
-    }
-  }
-
-  return result;
-}
-
-template <typename scalar_t>
-void print_matrix(const std::vector<std::vector<scalar_t> >& matrix)
-{
-  for (const auto& row : matrix) {
-    for (const auto& item : row) {
-      std::printf("%.2f ", item);
-    }
-    std::cout << std::endl;
-  }
-}
-
+/**
+ * prefix_sum: Take a row_map of counts and transform it to sums
+ */
 template <class IlutHandle, class RowMapType, class PrefixSumView>
 typename IlutHandle::size_type prefix_sum(IlutHandle& ih, RowMapType& row_map, PrefixSumView& prefix_sum_view)
 {
@@ -125,13 +80,13 @@ typename IlutHandle::size_type prefix_sum(IlutHandle& ih, RowMapType& row_map, P
   const size_type nrows  = ih.get_nrows() + 1;
   const size_type rows_per_team = (nrows - 1) / nteams + 1;
 
-  size_type total_sum = 0;
   Kokkos::parallel_for(
     "prefix_sum per-team sums",
     policy,
     KOKKOS_LAMBDA(const member_type& team) {
       const auto team_rank = team.league_rank();
 
+      // Get sum total of rows for this team
       const size_type starti = team_rank * rows_per_team;
       const size_type endi   = Kokkos::fmin(nrows, (team_rank + 1) * rows_per_team);
       size_type sum = 0;
@@ -143,6 +98,9 @@ typename IlutHandle::size_type prefix_sum(IlutHandle& ih, RowMapType& row_map, P
 
       team.team_barrier();
 
+      // Convert counts to local sums for this team. No team parallelism
+      // due to dependencies. Could potentially get some parallelism here
+      // by splitting into (endi - starti)/team_size chunks.
       Kokkos::single(
         Kokkos::PerTeam(team), [&] () {
           prefix_sum_view(team_rank) = sum;
@@ -157,9 +115,11 @@ typename IlutHandle::size_type prefix_sum(IlutHandle& ih, RowMapType& row_map, P
 
   Kokkos::fence();
 
+  // Convert prefix_sum_view from per-team sums to global sums.
+  // This currently has no parallelism
   Kokkos::parallel_for(
     "prefix_sum per-team prefix",
-    RangePolicy(0, 1), // No parallelism in this alg
+    RangePolicy(0, 1),
     KOKKOS_LAMBDA(const size_type) {
       size_type team_sum = 0;
       for (size_type t = 0; t < nteams; ++t) {
@@ -171,10 +131,12 @@ typename IlutHandle::size_type prefix_sum(IlutHandle& ih, RowMapType& row_map, P
 
   Kokkos::fence();
 
+  // Add sums from earlier teams
+  size_type total_sum = 0;
   Kokkos::parallel_reduce(
     "prefix_sum finish",
     policy,
-    KOKKOS_LAMBDA(const member_type& team, size_type& total_sum_outer) {
+    KOKKOS_LAMBDA(const member_type& team, size_type& total_sum_arg) {
       const auto team_rank = team.league_rank();
       const size_type starti = team_rank * rows_per_team;
       const size_type endi   = Kokkos::fmin(nrows, (team_rank + 1) * rows_per_team);
@@ -186,7 +148,7 @@ typename IlutHandle::size_type prefix_sum(IlutHandle& ih, RowMapType& row_map, P
         });
       }
 
-      total_sum_outer = row_map(endi - 1);
+      total_sum_arg = row_map(endi - 1);
 
   }, Kokkos::Max<size_type>(total_sum));
 
@@ -195,6 +157,9 @@ typename IlutHandle::size_type prefix_sum(IlutHandle& ih, RowMapType& row_map, P
   return total_sum;
 }
 
+/**
+ * Just a convenience wrapper around spgemm
+ */
 template <class KHandle, class IlutHandle,
           class LRowMapType, class LEntriesType, class LValuesType,
           class URowMapType, class UEntriesType, class UValuesType,
@@ -234,6 +199,54 @@ void multiply_matrices(
   Kokkos::fence();
 }
 
+/**
+ * Just a convenience wrapper around transpose_matrix
+ */
+template <class IlutHandle,
+          class RowMapType,  class EntriesType,  class ValuesType,
+          class TRowMapType, class TEntriesType, class TValuesType>
+void transpose_wrap(
+  IlutHandle& ih,
+  const RowMapType& row_map, const EntriesType& entries, const ValuesType& values,
+  TRowMapType& t_row_map,          TEntriesType& t_entries,    TValuesType& t_values)
+{
+  using execution_space = typename IlutHandle::execution_space;
+  using size_type       = typename IlutHandle::size_type;
+  using range_policy    = typename IlutHandle::RangePolicy;
+
+  using HandleDeviceEntriesType = typename IlutHandle::nnz_lno_view_t;
+  using HandleDeviceRowMapType  = typename IlutHandle::nnz_row_view_t;
+  using HandleDeviceValueType   = typename IlutHandle::nnz_value_view_t;
+
+  const size_type nrows = ih.get_nrows();
+
+  // Need to reset t_row_map
+  Kokkos::parallel_for(
+    range_policy(0, nrows+1),
+    KOKKOS_LAMBDA(const size_type row_idx) {
+      t_row_map(row_idx) = 0;
+    });
+  Kokkos::resize(t_entries, entries.extent(0));
+  Kokkos::resize(t_values,  values.extent(0));
+
+  Kokkos::fence();
+
+  KokkosKernels::Impl::transpose_matrix<
+    HandleDeviceRowMapType, HandleDeviceEntriesType, HandleDeviceValueType,
+    HandleDeviceRowMapType, HandleDeviceEntriesType, HandleDeviceValueType,
+    HandleDeviceRowMapType, execution_space>(
+      nrows, nrows,
+      row_map, entries, values,
+      t_row_map, t_entries, t_values);
+
+  Kokkos::fence();
+}
+
+/**
+ * Adds new entries from the sparsity pattern of A - L * U
+ * to L and U, where new values are chosen based on the residual
+ * value divided by the corresponding diagonal entry.
+ */
 template <class IlutHandle,
           class ARowMapType, class AEntriesType, class AValuesType,
           class LRowMapType, class LEntriesType, class LValuesType,
@@ -261,6 +274,7 @@ void add_candidates(
 
   const auto policy = ih.get_default_team_policy();
 
+  // Sizing run for add_candidates. Count nnz's and remove dupes
   Kokkos::parallel_for(
     "add_candidates sizing",
     policy,
@@ -273,6 +287,7 @@ void add_candidates(
       const auto lu_row_nnz_begin = LU_row_map(row_idx);
       const auto lu_row_nnz_end   = LU_row_map(row_idx+1);
 
+      // Really wish kokkos could do a multi-reduce here
       size_type a_l_nnz = 0, a_u_nnz = 0, lu_l_nnz = 0, lu_u_nnz = 0, dup_l_nnz = 0, dup_u_nnz = 0;
       Kokkos::parallel_reduce(
         Kokkos::TeamThreadRange(team, a_row_nnz_begin, a_row_nnz_end),
@@ -441,8 +456,13 @@ void add_candidates(
       }
 
   });
+
+  Kokkos::fence();
 }
 
+/**
+ * A device-safe lower_bound impl
+ */
 template <class ForwardIterator, class T>
 KOKKOS_FUNCTION
 ForwardIterator kok_lower_bound(ForwardIterator first, ForwardIterator last, const T& val)
@@ -462,6 +482,9 @@ ForwardIterator kok_lower_bound(ForwardIterator first, ForwardIterator last, con
   return first;
 }
 
+/**
+ * The compute_sum component of compute_l_u_factors
+ */
 template <class IlutHandle,
           class ARowMapType, class AEntriesType, class AValuesType,
           class LRowMapType, class LEntriesType, class LValuesType,
@@ -510,92 +533,11 @@ Kokkos::pair<typename AValuesType::non_const_value_type, typename IlutHandle::si
   return Kokkos::make_pair(a_val - sum, ut_nnz);
 }
 
-template <class IlutHandle, class RowMapType, class EntriesType, class ValuesType>
-void cp_vector_to_device(
-  const RowMapType& row_map, const EntriesType& entries, ValuesType& values,
-  const std::vector<std::vector<typename ValuesType::non_const_value_type> >& v)
-{
-  using size_type = typename IlutHandle::size_type;
-
-  const size_type nrows = row_map.extent(0) - 1;
-
-  auto hrow_map = Kokkos::create_mirror_view(row_map);
-  auto hentries = Kokkos::create_mirror_view(entries);
-  auto hvalues  = Kokkos::create_mirror_view(values);
-
-  Kokkos::deep_copy(hrow_map, row_map);
-  Kokkos::deep_copy(hentries, entries);
-
-  for (size_type row_idx = 0; row_idx < nrows; ++row_idx) {
-    const size_type row_nnz_begin = hrow_map(row_idx);
-    const size_type row_nnz_end   = hrow_map(row_idx+1);
-    for (size_type row_nnz = row_nnz_begin; row_nnz < row_nnz_end; ++row_nnz) {
-      const auto col_idx = hentries(row_nnz);
-      hvalues(row_nnz) = v[row_idx][col_idx];
-    }
-  }
-
-  Kokkos::deep_copy(values, hvalues);
-}
-
-template <class IlutHandle,
-          class ARowMapType, class AEntriesType, class AValuesType,
-          class LRowMapType, class LEntriesType, class LValuesType,
-          class URowMapType, class UEntriesType, class UValuesType,
-          class UtRowMapType, class UtEntriesType, class UtValuesType>
-void hardcode_compute_l_u_factors(
-  IlutHandle& ih,
-  const ARowMapType& A_row_map, const AEntriesType& A_entries, const AValuesType& A_values,
-  LRowMapType& L_row_map,   LEntriesType& L_entries,   LValuesType& L_values,
-  URowMapType& U_row_map,   UEntriesType& U_entries,   UValuesType& U_values,
-  UtRowMapType& Ut_row_map, UtEntriesType& Ut_entries, UtValuesType& Ut_values)
-{
-  using scalar_t                = typename AValuesType::non_const_value_type;
-  using size_type               = typename IlutHandle::size_type;
-  using execution_space         = typename IlutHandle::execution_space;
-  using range_policy            = typename IlutHandle::RangePolicy;
-  using HandleDeviceEntriesType = typename IlutHandle::nnz_lno_view_t;
-  using HandleDeviceRowMapType  = typename IlutHandle::nnz_row_view_t;
-  using HandleDeviceValueType   = typename IlutHandle::nnz_value_view_t;
-
-  const auto nrows = A_row_map.extent(0) - 1;
-
-  std::vector<std::vector<scalar_t> > hardcoded_L = {
-    {1.0, 0.0, 0.0, 0.0},
-    {2.0, 1.0, 0.0, 0.0},
-    {0.5, 0.35294117647058826, 1.0, 0.0},
-    {0.2, 0.1, -1.3189655172413792, 1.0}
-  };
-
-  std::vector<std::vector<scalar_t> > hardcoded_U = {
-    {1.0, 6.0, 4.0, 7.0},
-    {0.0, -17.0, -8.0, -6.0},
-    {0.0, 0.0, 6.8235294117647065, -1.3823529411764706},
-    {0.0, 0.0, 0.0, -2.623275862068965}
-  };
-
-  cp_vector_to_device<IlutHandle>(L_row_map, L_entries, L_values, hardcoded_L);
-  cp_vector_to_device<IlutHandle>(U_row_map, U_entries, U_values, hardcoded_U);
-
-  Kokkos::parallel_for(
-    range_policy(0, nrows+1),
-    KOKKOS_LAMBDA(const size_type row_idx) {
-      Ut_row_map(row_idx) = 0;
-    });
-  Kokkos::resize(Ut_entries, U_entries.extent(0));
-  Kokkos::resize(Ut_values,  U_values.extent(0));
-
-  Kokkos::fence();
-
-  KokkosKernels::Impl::transpose_matrix<
-    HandleDeviceRowMapType, HandleDeviceEntriesType, HandleDeviceValueType,
-    HandleDeviceRowMapType, HandleDeviceEntriesType, HandleDeviceValueType,
-    HandleDeviceRowMapType, execution_space>(
-      nrows, nrows,
-      U_row_map, U_entries, U_values,
-      Ut_row_map, Ut_entries, Ut_values);
-}
-
+/**
+ * Implements a single iteration/sweep of the fixed-point ILU algorithm.
+ * The results of this function are non-deterministic due to concurrent
+ * reading and writing of Ut values
+ */
 template <class IlutHandle,
           class ARowMapType, class AEntriesType, class AValuesType,
           class LRowMapType, class LEntriesType, class LValuesType,
@@ -658,11 +600,96 @@ void compute_l_u_factors(
           const auto new_val = sum.first;
           const auto ut_nnz = sum.second;
           U_values(u_nnz) = new_val;
-          Ut_values(ut_nnz) = new_val;
+          Ut_values(ut_nnz) = new_val; // ut_nnz is not guarateed to fail into range used exclusively by this team
       });
   });
+
+  Kokkos::fence();
 }
 
+/**
+ * Copy std::vectors to device. Used only for hardcoded fixture testing
+ */
+template <class IlutHandle, class RowMapType, class EntriesType, class ValuesType>
+void cp_vector_to_device(
+  const RowMapType& row_map, const EntriesType& entries, ValuesType& values,
+  const std::vector<std::vector<typename ValuesType::non_const_value_type> >& v)
+{
+  using size_type = typename IlutHandle::size_type;
+
+  const size_type nrows = row_map.extent(0) - 1;
+
+  auto hrow_map = Kokkos::create_mirror_view(row_map);
+  auto hentries = Kokkos::create_mirror_view(entries);
+  auto hvalues  = Kokkos::create_mirror_view(values);
+
+  Kokkos::deep_copy(hrow_map, row_map);
+  Kokkos::deep_copy(hentries, entries);
+
+  for (size_type row_idx = 0; row_idx < nrows; ++row_idx) {
+    const size_type row_nnz_begin = hrow_map(row_idx);
+    const size_type row_nnz_end   = hrow_map(row_idx+1);
+    for (size_type row_nnz = row_nnz_begin; row_nnz < row_nnz_end; ++row_nnz) {
+      const auto col_idx = hentries(row_nnz);
+      hvalues(row_nnz) = v[row_idx][col_idx];
+    }
+  }
+
+  Kokkos::deep_copy(values, hvalues);
+}
+
+/**
+ * Hardcode results for first compute_l_u_factors call in par_ilut. This allows us to
+ * get deterministic results for our fixture testing.
+ */
+template <class IlutHandle,
+          class ARowMapType, class AEntriesType, class AValuesType,
+          class LRowMapType, class LEntriesType, class LValuesType,
+          class URowMapType, class UEntriesType, class UValuesType,
+          class UtRowMapType, class UtEntriesType, class UtValuesType>
+void hardcode_compute_l_u_factors(
+  IlutHandle& ih,
+  const ARowMapType& A_row_map, const AEntriesType& A_entries, const AValuesType& A_values,
+  LRowMapType& L_row_map,   LEntriesType& L_entries,   LValuesType& L_values,
+  URowMapType& U_row_map,   UEntriesType& U_entries,   UValuesType& U_values,
+  UtRowMapType& Ut_row_map, UtEntriesType& Ut_entries, UtValuesType& Ut_values)
+{
+  using scalar_t                = typename AValuesType::non_const_value_type;
+  using size_type               = typename IlutHandle::size_type;
+  using execution_space         = typename IlutHandle::execution_space;
+  using range_policy            = typename IlutHandle::RangePolicy;
+  using HandleDeviceEntriesType = typename IlutHandle::nnz_lno_view_t;
+  using HandleDeviceRowMapType  = typename IlutHandle::nnz_row_view_t;
+  using HandleDeviceValueType   = typename IlutHandle::nnz_value_view_t;
+
+  const auto nrows = A_row_map.extent(0) - 1;
+
+  std::vector<std::vector<scalar_t> > hardcoded_L = {
+    {1.0, 0.0, 0.0, 0.0},
+    {2.0, 1.0, 0.0, 0.0},
+    {0.5, 0.35294117647058826, 1.0, 0.0},
+    {0.2, 0.1, -1.3189655172413792, 1.0}
+  };
+
+  std::vector<std::vector<scalar_t> > hardcoded_U = {
+    {1.0, 6.0, 4.0, 7.0},
+    {0.0, -17.0, -8.0, -6.0},
+    {0.0, 0.0, 6.8235294117647065, -1.3823529411764706},
+    {0.0, 0.0, 0.0, -2.623275862068965}
+  };
+
+  cp_vector_to_device<IlutHandle>(L_row_map, L_entries, L_values, hardcoded_L);
+  cp_vector_to_device<IlutHandle>(U_row_map, U_entries, U_values, hardcoded_U);
+
+  transpose_wrap(
+    ih,
+    U_row_map, U_entries, U_values,
+    Ut_row_map, Ut_entries, Ut_values);
+}
+
+/**
+ * Select threshold based on filter rank. Do all this on host
+ */
 template <class IlutHandle, class ValuesType, class ValuesCopyType>
 typename IlutHandle::nnz_scalar_t threshold_select(
   IlutHandle& ih, ValuesType& values, const typename IlutHandle::nnz_lno_t rank, ValuesCopyType& values_copy)
@@ -684,6 +711,9 @@ typename IlutHandle::nnz_scalar_t threshold_select(
   return std::abs(values_copy(rank));
 }
 
+/**
+ * Remove non-diagnal elements that are below the threshold.
+ */
 template <class IlutHandle,
           class IRowMapType, class IEntriesType, class IValuesType,
           class ORowMapType, class OEntriesType, class OValuesType,
@@ -750,8 +780,13 @@ void threshold_filter(
         }
       }
   });
+
+  Kokkos::fence();
 }
 
+/**
+ * Compute residual norm for R = A - LU
+ */
 template <class KHandle, class IlutHandle,
           class ARowMapType, class AEntriesType, class AValuesType,
           class LRowMapType, class LEntriesType, class LValuesType,
@@ -832,6 +867,9 @@ typename IlutHandle::nnz_scalar_t compute_residual_norm(
   return std::sqrt(result);
 }
 
+/**
+ * The main par_ilut numeric function.
+ */
 template <class KHandle, class IlutHandle,
           class ARowMapType, class AEntriesType, class AValuesType,
           class LRowMapType, class LEntriesType, class LValuesType,
@@ -841,6 +879,9 @@ void ilut_numeric(KHandle& kh, IlutHandle &thandle, const ARowMapType &A_row_map
                   LRowMapType &L_row_map, LEntriesType &L_entries, LValuesType &L_values,
                   URowMapType &U_row_map, UEntriesType &U_entries, UValuesType &U_values)
 {
+  //
+  // Useful types, constants, and handles
+  //
   using execution_space         = typename IlutHandle::execution_space;
   using memory_space            = typename IlutHandle::memory_space;
   using index_type              = typename IlutHandle::nnz_lno_t;
@@ -857,8 +898,7 @@ void ilut_numeric(KHandle& kh, IlutHandle &thandle, const ARowMapType &A_row_map
   const auto u_nnz_limit = static_cast<index_type>(fill_in_limit * thandle.get_nnzU());
 
   const scalar_t residual_norm_delta_stop = thandle.get_residual_norm_delta_stop();
-  scalar_t prev_residual = std::numeric_limits<scalar_t>::max();
-  bool converged = false;
+  const size_type max_iter = thandle.get_max_iter();
 
   std::string myalg("SPGEMM_KK_MEMORY");
   KokkosSparse::SPGEMMAlgorithm spgemm_algorithm =
@@ -869,7 +909,9 @@ void ilut_numeric(KHandle& kh, IlutHandle &thandle, const ARowMapType &A_row_map
 
   const auto policy = thandle.get_default_team_policy();
 
-  // temporary workspaces
+  //
+  // temporary workspaces and scalars
+  //
   HandleDeviceRowMapType
     LU_row_map(
       Kokkos::view_alloc(Kokkos::WithoutInitializing, "LU_row_map"),
@@ -894,8 +936,13 @@ void ilut_numeric(KHandle& kh, IlutHandle &thandle, const ARowMapType &A_row_map
   HandleDeviceValueType LU_values, L_new_values, U_new_values, Ut_new_values, V_copy_d, R_values;
   auto V_copy = Kokkos::create_mirror_view(V_copy_d);
 
-  const size_type max_iter = thandle.get_max_iter();
   size_type itr = 0;
+  scalar_t prev_residual = std::numeric_limits<scalar_t>::max();
+  bool converged = false;
+
+  //
+  // main loop
+  //
   while (!converged && itr < max_iter) {
     // LU = L*U
     if (prev_residual == std::numeric_limits<scalar_t>::max()) {
@@ -905,6 +952,7 @@ void ilut_numeric(KHandle& kh, IlutHandle &thandle, const ARowMapType &A_row_map
                         LU_row_map, LU_entries, LU_values);
     }
 
+    // Identify candidate locations and add them
     add_candidates(thandle,
       A_row_map, A_entries, A_values,
       L_row_map, L_entries, L_values,
@@ -914,101 +962,76 @@ void ilut_numeric(KHandle& kh, IlutHandle &thandle, const ARowMapType &A_row_map
       U_new_row_map, U_new_entries, U_new_values,
       prefix_sum_view);
 
-    Kokkos::fence();
-
-    Kokkos::parallel_for(
-      range_policy(0, nrows+1),
-      KOKKOS_LAMBDA(const size_type row_idx) {
-        Ut_new_row_map(row_idx) = 0;
-    });
-    Kokkos::resize(Ut_new_entries, U_new_entries.extent(0));
-    Kokkos::resize(Ut_new_values,  U_new_values.extent(0));
-
-    Kokkos::fence();
-
-    KokkosKernels::Impl::transpose_matrix<
-      HandleDeviceRowMapType, HandleDeviceEntriesType, HandleDeviceValueType,
-      HandleDeviceRowMapType, HandleDeviceEntriesType, HandleDeviceValueType,
-      HandleDeviceRowMapType, execution_space>(
-      nrows, nrows,
+    // Get transpose of U_new, needed for compute_l_u_factors
+    transpose_wrap(
+      thandle,
       U_new_row_map, U_new_entries, U_new_values,
       Ut_new_row_map, Ut_new_entries, Ut_new_values);
 
-    Kokkos::fence();
-
+    // Do one sweep of the fixed-point ILU algorithm
     compute_l_u_factors(thandle,
       A_row_map, A_entries, A_values,
       L_new_row_map, L_new_entries, L_new_values,
       U_new_row_map, U_new_entries, U_new_values,
       Ut_new_row_map, Ut_new_entries, Ut_new_values);
 
-    Kokkos::fence();
+    // Filter smallest elements from L_new and U_new. Store result back
+    // in L and U.
+    {
+      const index_type l_nnz = L_new_values.extent(0);
+      const index_type u_nnz = U_new_values.extent(0);
 
-    const index_type l_nnz = L_new_values.extent(0);
-    const index_type u_nnz = U_new_values.extent(0);
+      const auto l_filter_rank = std::max(0, l_nnz - l_nnz_limit - 1);
+      const auto u_filter_rank = std::max(0, u_nnz - u_nnz_limit - 1);
 
-    const auto l_filter_rank = std::max(0, l_nnz - l_nnz_limit - 1);
-    const auto u_filter_rank = std::max(0, u_nnz - u_nnz_limit - 1);
+      const auto l_threshold = threshold_select(thandle, L_new_values, l_filter_rank, V_copy);
+      const auto u_threshold = threshold_select(thandle, U_new_values, u_filter_rank, V_copy);
 
-    const auto l_threshold = threshold_select(thandle, L_new_values, l_filter_rank, V_copy);
-    const auto u_threshold = threshold_select(thandle, U_new_values, u_filter_rank, V_copy);
+      threshold_filter(
+        thandle, l_threshold,
+        L_new_row_map, L_new_entries, L_new_values,
+        L_row_map, L_entries, L_values,
+        prefix_sum_view);
 
-    threshold_filter(
-      thandle, l_threshold,
-      L_new_row_map, L_new_entries, L_new_values,
-      L_row_map, L_entries, L_values,
-      prefix_sum_view);
+      threshold_filter(
+        thandle, u_threshold,
+        U_new_row_map, U_new_entries, U_new_values,
+        U_row_map, U_entries, U_values,
+        prefix_sum_view);
+    }
 
-    Kokkos::fence();
-
-    threshold_filter(
-      thandle, u_threshold,
-      U_new_row_map, U_new_entries, U_new_values,
-      U_row_map, U_entries, U_values,
-      prefix_sum_view);
-
-    Kokkos::fence();
-
-    Kokkos::parallel_for(
-      range_policy(0, nrows+1),
-      KOKKOS_LAMBDA(const size_type row_idx) {
-        Ut_new_row_map(row_idx) = 0;
-    });
-    Kokkos::resize(Ut_new_entries, U_entries.extent(0));
-    Kokkos::resize(Ut_new_values,  U_values.extent(0));
-
-    Kokkos::fence();
-
-    KokkosKernels::Impl::transpose_matrix<
-      HandleDeviceRowMapType, HandleDeviceEntriesType, HandleDeviceValueType,
-      HandleDeviceRowMapType, HandleDeviceEntriesType, HandleDeviceValueType,
-      HandleDeviceRowMapType, execution_space>(
-      nrows, nrows,
+    // Get transpose of U, needed for compute_l_u_factors. Store in Ut_new*
+    // since we aren't using those temporaries anymore
+    transpose_wrap(
+      thandle,
       U_row_map, U_entries, U_values,
       Ut_new_row_map, Ut_new_entries, Ut_new_values);
 
-    Kokkos::fence();
-
+    // Do one sweep of the fixed-point ILU algorithm
     compute_l_u_factors(thandle,
       A_row_map, A_entries, A_values,
       L_row_map, L_entries, L_values,
       U_row_map, U_entries, U_values,
       Ut_new_row_map, Ut_new_entries, Ut_new_values);
 
-    const scalar_t curr_residual = compute_residual_norm(
-      kh, thandle,
-      A_row_map,  A_entries,  A_values,
-      L_row_map,  L_entries,  L_values,
-      U_row_map,  U_entries,  U_values,
-      R_row_map,  R_entries,  R_values,
-      LU_row_map, LU_entries, LU_values);
+    // Compute residual and terminate if converged
+    {
+      const scalar_t curr_residual = compute_residual_norm(
+        kh, thandle,
+        A_row_map,  A_entries,  A_values,
+        L_row_map,  L_entries,  L_values,
+        U_row_map,  U_entries,  U_values,
+        R_row_map,  R_entries,  R_values,
+        LU_row_map, LU_entries, LU_values);
 
-    if (prev_residual - curr_residual <= residual_norm_delta_stop) {
-      converged = true;
+      if (prev_residual - curr_residual <= residual_norm_delta_stop) {
+        converged = true;
+      }
+      else {
+        prev_residual = curr_residual;
+      }
     }
-    else {
-      prev_residual = curr_residual;
-    }
+
     ++itr;
   }
 
