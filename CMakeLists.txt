@@ -113,10 +113,14 @@ IF (KokkosKernels_INSTALL_TESTING)
   INCLUDE(cmake/kokkos_backends.cmake)
   # Only build the tests
   KOKKOSKERNELS_ADD_TEST_DIRECTORIES(perf_test)
+  KOKKOSKERNELS_ADD_TEST_DIRECTORIES(common/unit_test)
+  IF (KokkosKernels_ENABLE_BATCHED)
+    KOKKOSKERNELS_ADD_TEST_DIRECTORIES(batched/dense/unit_test)
+    KOKKOSKERNELS_ADD_TEST_DIRECTORIES(batched/sparse/unit_test)
+  ENDIF()
   IF(KokkosKernels_ENABLE_REMAINDER)
     KOKKOSKERNELS_ADD_TEST_DIRECTORIES(unit_test)
   ENDIF()
-  KOKKOSKERNELS_ADD_TEST_DIRECTORIES(common/unit_test)
   KOKKOSKERNELS_ADD_EXAMPLE_DIRECTORIES(example)
 ELSE()
   # Regular build, not install testing
@@ -242,16 +246,28 @@ ELSE()
 
   #I don't want the complexity of sometimes interface/sometimes not
   #Just minimally force an empty dummy file
+  SET(HEADERS)
   SET(SOURCES src/dummy.cpp)
 
 
-
-  # Skip building Kokkos Kernels if we are doing an installation test
+  # Only enable requested components
+  # if nothing requested, build everything
+  # to recover original behavior.
+  INCLUDE(cmake/kokkoskernels_components.cmake)
+  INCLUDE(common/CMakeLists.txt)
+  LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src/impl/tpls)
+  IF (KokkosKernels_ENABLE_BATCHED)
+    INCLUDE(batched/CMakeLists.txt)
+  ENDIF()
   IF (KokkosKernels_ENABLE_REMAINDER)
     INCLUDE(src/CMakeLists.txt)
   ENDIF()
-  INCLUDE(common/CMakeLists.txt)
 
+  FOREACH(DIR ${KK_INCLUDE_DIRS})
+    KOKKOSKERNELS_INCLUDE_DIRECTORIES(${DIR})
+    APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+  ENDFOREACH()
+  # MESSAGE("HEADERS: ${HEADERS}")
 
 
   # For now, don't add the ETI headers to complete list of headers
@@ -338,12 +354,16 @@ ELSE()
     #Gtest minimally requires C++11
     TARGET_COMPILE_FEATURES(kokkoskernels_gtest PUBLIC cxx_std_11)
   ENDIF()
+  KOKKOSKERNELS_ADD_TEST_DIRECTORIES(common/unit_test)
+  IF (KokkosKernels_ENABLE_BATCHED)
+    KOKKOSKERNELS_ADD_TEST_DIRECTORIES(batched/dense/unit_test)
+    KOKKOSKERNELS_ADD_TEST_DIRECTORIES(batched/sparse/unit_test)
+  ENDIF()
   IF (KokkosKernels_ENABLE_REMAINDER)
     KOKKOSKERNELS_ADD_TEST_DIRECTORIES(perf_test)
     KOKKOSKERNELS_ADD_TEST_DIRECTORIES(unit_test)
     KOKKOSKERNELS_ADD_EXAMPLE_DIRECTORIES(example)
   ENDIF()
-  KOKKOSKERNELS_ADD_TEST_DIRECTORIES(common/unit_test)
 
   KOKKOSKERNELS_PACKAGE_POSTPROCESS()
   IF (KokkosKernels_ENABLE_DOCS)

@@ -46,6 +46,7 @@
 
 #include <Kokkos_Core.hpp>
 #include "KokkosKernels_TestUtils.hpp"
+#include "Test_Sparse_Utils.hpp"
 #include "KokkosKernels_Handle.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosSparse_IOUtils.hpp"

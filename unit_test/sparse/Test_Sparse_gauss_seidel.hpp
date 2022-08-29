@@ -64,6 +64,7 @@
 #include "KokkosSparse_sor_sequential_impl.hpp"
 #include "KokkosSparse_SortCrs.hpp"
 #include "KokkosKernels_TestUtils.hpp"
+#include "Test_Sparse_Utils.hpp"
 
 // #ifndef kokkos_complex_double
 // #define kokkos_complex_double Kokkos::complex<double>
