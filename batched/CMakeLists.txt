@@ -10,9 +10,8 @@ LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/batched/sparse/impl)
 LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/batched/sparse/unit_test)
 
 IF (NOT KokkosKernels_ENABLE_BLAS)
-  MESSAGE("batched enabled and blas not enabled, we need to include some headers manually!")
-  APPEND_GLOB(HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/src/blas/impl/KokkosBlas_util.hpp)
-  APPEND_GLOB(HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/src/blas/)
+  LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/blas/impl)
+  APPEND_GLOB(HEADERS ${PACKAGE_SOURCE_DIR}/blas/impl/KokkosBlas_util.hpp)
   LIST(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/batched/KokkosBatched_Util.cpp)
 ENDIF()
 

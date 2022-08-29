@@ -65,6 +65,6 @@ vector_t create_random_y_vector_mv(crsMat_t crsMat, vector_t x_vector) {
   return y_vector;
 }
 
-}
+}  // namespace Test
 
-#endif // TEST_SPARSE_UTILS_HPP
+#endif  // TEST_SPARSE_UTILS_HPP
