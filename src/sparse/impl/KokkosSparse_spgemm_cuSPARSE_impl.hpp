@@ -88,6 +88,17 @@ void cuSPARSE_symbolic(KernelHandle *handle, typename KernelHandle::nnz_lno_t m,
   }
 
 #if defined(CUSPARSE_VERSION) && (11000 <= CUSPARSE_VERSION)
+  (void)handle;
+  (void)m;
+  (void)n;
+  (void)k;
+  (void)row_mapA;
+  (void)row_mapB;
+  (void)row_mapC;
+  (void)entriesA;
+  (void)entriesB;
+  (void)transposeA;
+  (void)transposeB;
   throw std::runtime_error(
       "SpGEMM cuSPARSE backend is not yet supported for this CUDA version\n");
 #else
@@ -166,6 +177,19 @@ void cuSPARSE_apply(
     cin_nonzero_index_view_type entriesC, cin_nonzero_value_view_type valuesC) {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 #if defined(CUSPARSE_VERSION) && (11000 <= CUSPARSE_VERSION)
+  (void)handle;
+  (void)m;
+  (void)n;
+  (void)k;
+  (void)row_mapA;
+  (void)row_mapB;
+  (void)row_mapC;
+  (void)entriesA;
+  (void)entriesB;
+  (void)entriesC;
+  (void)valuesA;
+  (void)valuesB;
+  (void)valuesC;
   throw std::runtime_error(
       "SpGEMM cuSPARSE backend is not yet supported for this CUDA version\n");
 #else
