@@ -156,8 +156,8 @@ MACRO(KOKKOSKERNELS_GENERATE_ETI FUNCTION_NAME SUBFOLDER)
       LIST(APPEND ${UPPER_NAME}_ETI_AVAIL_LIST "${ETI_AVAIL_MACRO}${MACRO_STRING}")
       SET(${UPPER_NAME}_ETI_DECL_LIST  "${ETI_DECL_MACRO}${MACRO_STRING}")
       #Make a different source file for each instance
-      SET(INST_SOURCE   "src/impl/generated_specializations_cpp/${SUBFOLDER}/${ETI}.cpp")
-      SET(INST_TEMPLATE "src/impl/generated_specializations_cpp/${SUBFOLDER}/Kokkos${FUNCTION_NAME}_eti_spec_inst.cpp.in")
+      SET(INST_SOURCE   "${ETI_COMPONENTS}/eti/generated_specializations_cpp/${SUBFOLDER}/${ETI}.cpp")
+      SET(INST_TEMPLATE "${ETI_COMPONENTS}/eti/generated_specializations_cpp/${SUBFOLDER}/Kokkos${FUNCTION_NAME}_eti_spec_inst.cpp.in")
       SET(${UPPER_NAME}_ETI_INST_BLOCK "${ETI_INST_MACRO}${MACRO_STRING}")
       CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/${INST_TEMPLATE}
           ${CMAKE_CURRENT_BINARY_DIR}/${INST_SOURCE})
@@ -167,9 +167,9 @@ MACRO(KOKKOSKERNELS_GENERATE_ETI FUNCTION_NAME SUBFOLDER)
     MESSAGE(STATUS "Skipping ETI files for ${FUNCTION_NAME} because not all components are enabled")
   ENDIF()
 
-  SET(AVAIL_HEADER   "src/impl/generated_specializations_hpp/Kokkos${FUNCTION_NAME}_eti_spec_avail.hpp")
+  SET(AVAIL_HEADER   "${ETI_COMPONENTS}/eti/generated_specializations_hpp/Kokkos${FUNCTION_NAME}_eti_spec_avail.hpp")
   SET(AVAIL_TEMPLATE "${AVAIL_HEADER}.in")
-  SET(DECL_HEADER   "src/impl/generated_specializations_hpp/Kokkos${FUNCTION_NAME}_eti_spec_decl.hpp")
+  SET(DECL_HEADER   "${ETI_COMPONENTS}/eti/generated_specializations_hpp/Kokkos${FUNCTION_NAME}_eti_spec_decl.hpp")
   SET(DECL_TEMPLATE "${DECL_HEADER}.in")
 
   STRING(REPLACE ";" "\n" ${UPPER_NAME}_ETI_INST_BLOCK  "${${UPPER_NAME}_ETI_INST_LIST}")

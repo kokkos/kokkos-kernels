@@ -54,7 +54,6 @@
 
 #include <KokkosKernels_Uniform_Initialized_MemoryPool.hpp>
 #include <KokkosKernels_HashmapAccumulator.hpp>
-#include <KokkosSparse_spgemm.hpp>
 #include <KokkosKernels_BitUtils.hpp>
 
 #include "KokkosGraph_Distance1Color.hpp"

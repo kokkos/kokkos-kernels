@@ -48,6 +48,7 @@
 #include "KokkosGraph_Distance2ColorHandle.hpp"
 #include "KokkosGraph_Distance2Color_impl.hpp"
 #include "KokkosKernels_Utils.hpp"
+#include "KokkosSparse_Utils.hpp"
 
 namespace KokkosGraph {
 

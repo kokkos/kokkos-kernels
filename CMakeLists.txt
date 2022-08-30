@@ -112,21 +112,14 @@ IF (KokkosKernels_INSTALL_TESTING)
   # Still need to figure out which backends
   INCLUDE(cmake/kokkos_backends.cmake)
   # Only build the tests
-  KOKKOSKERNELS_ADD_TEST_DIRECTORIES(perf_test)
+  # Assume that all components have been enabled
   KOKKOSKERNELS_ADD_TEST_DIRECTORIES(common/unit_test)
-  IF (KokkosKernels_ENABLE_BATCHED)
-    KOKKOSKERNELS_ADD_TEST_DIRECTORIES(batched/dense/unit_test)
-    KOKKOSKERNELS_ADD_TEST_DIRECTORIES(batched/sparse/unit_test)
-  ENDIF()
-  IF (KokkosKernels_ENABLE_BLAS)
-    KOKKOSKERNELS_ADD_TEST_DIRECTORIES(blas/unit_test)
-  ENDIF()
-  IF (KokkosKernels_ENABLE_GRAPH)
-    KOKKOSKERNELS_ADD_TEST_DIRECTORIES(graph/unit_test)
-  ENDIF()
-  IF (KokkosKernels_ENABLE_SPARSE)
-    KOKKOSKERNELS_ADD_TEST_DIRECTORIES(sparse/unit_test)
-  ENDIF()
+  KOKKOSKERNELS_ADD_TEST_DIRECTORIES(batched/dense/unit_test)
+  KOKKOSKERNELS_ADD_TEST_DIRECTORIES(batched/sparse/unit_test)
+  KOKKOSKERNELS_ADD_TEST_DIRECTORIES(blas/unit_test)
+  KOKKOSKERNELS_ADD_TEST_DIRECTORIES(graph/unit_test)
+  KOKKOSKERNELS_ADD_TEST_DIRECTORIES(sparse/unit_test)
+  KOKKOSKERNELS_ADD_TEST_DIRECTORIES(perf_test)
   KOKKOSKERNELS_ADD_EXAMPLE_DIRECTORIES(example)
 ELSE()
   # Regular build, not install testing
@@ -224,18 +217,29 @@ ELSE()
   INCLUDE(cmake/kokkoskernels_features.cmake)
   INCLUDE(cmake/kokkos_requirements.cmake)
   # ==================================================================
+  # Enable Library Components
+  # ==================================================================
+  INCLUDE(cmake/kokkoskernels_components.cmake)
+  # ==================================================================
   # CMake Summary
   # ==================================================================
   MESSAGE("")
   MESSAGE("=======================")
-  MESSAGE("KokkosKernels ETI Types")
+  MESSAGE("Kokkos Kernels ETI Types")
   MESSAGE("   Devices:  ${DEVICE_LIST}")
   MESSAGE("   Scalars:  ${SCALAR_LIST}")
   MESSAGE("   Ordinals: ${ORDINAL_LIST}")
   MESSAGE("   Offsets:  ${OFFSET_LIST}")
   MESSAGE("   Layouts:  ${LAYOUT_LIST}")
   MESSAGE("")
-  MESSAGE("KokkosKernels TPLs")
+  MESSAGE("Kokkos Kernels components")
+  MESSAGE("   COMMON:    ON")
+  MESSAGE("   BATCHED:   ${KokkosKernels_ENABLE_BATCHED}")
+  MESSAGE("   BLAS:      ${KokkosKernels_ENABLE_BLAS}")
+  MESSAGE("   GRAPH:     ${KokkosKernels_ENABLE_GRAPH}")
+  MESSAGE("   SPARSE:    ${KokkosKernels_ENABLE_SPARSE}")
+  MESSAGE("")
+  MESSAGE("Kokkos Kernels TPLs")
   FOREACH(TPL ${KOKKOSKERNELS_TPL_LIST})
     PAD_STRING("${TPL}:" TPL_PADDED 12)
     MESSAGE("   ${TPL_PADDED} ${${TPL}_FOUND_INFO}")
@@ -253,23 +257,17 @@ ELSE()
   #I don't want the complexity of sometimes interface/sometimes not
   #Just minimally force an empty dummy file
   SET(HEADERS)
-  SET(SOURCES src/dummy.cpp)
+  SET(SOURCES common/src/dummy.cpp)
 
   # ETI infrastructure to be used by components
-  include(src/cmake/kokkoskernels_eti.cmake)
+  include(cmake/kokkoskernels_eti.cmake)
   SET(ETI_HEADERS)
 
-  # Add some common files and directories that we always require
-  # for TPLs, ETI, etc...
-  LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src)
-  LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src/impl/tpls)
-  LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_BINARY_DIR}/src/impl)
   LIST(APPEND HEADERS ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h)
 
   # Only enable requested components
   # if nothing requested, build everything
   # to recover original behavior.
-  INCLUDE(cmake/kokkoskernels_components.cmake)
   INCLUDE(common/CMakeLists.txt)
   IF (KokkosKernels_ENABLE_BATCHED)
     INCLUDE(batched/CMakeLists.txt)

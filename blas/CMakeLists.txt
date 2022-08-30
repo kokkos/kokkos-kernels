@@ -1,5 +1,8 @@
 LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/blas/src)
 LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/blas/impl)
+LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/blas/eti)
+LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_BINARY_DIR}/blas/eti)
+LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/blas/tpls)
 
 IF (NOT KokkosKernels_ENABLE_BATCHED)
   MESSAGE("blas enabled and batched not enabled, we need to include some headers manually!")
@@ -22,27 +25,27 @@ KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_C
 #Include BLAS, Blas host wrapper
 IF (KOKKOSKERNELS_ENABLE_TPL_BLAS OR KOKKOSKERNELS_ENABLE_TPL_MKL)
   #Do NOT add this to include path
-  APPEND_GLOB(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/impl/tpls/KokkosBlas_Host_tpl.cpp)
+  APPEND_GLOB(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/tpls/KokkosBlas_Host_tpl.cpp)
 ENDIF()
 
 # Include host blas TPL source file
-IF (KOKKOSKERNELS_ENABLE_TPL_BLAS)
+IF (KOKKOSKERNELS_ENABLE_TPL_BLAS OR KOKKOSKERNELS_ENABLE_TPL_MKL)
   LIST(APPEND SOURCES
-   src/impl/tpls/KokkosBlas_Host_tpl.cpp
+   blas/tpls/KokkosBlas_Host_tpl.cpp
   )
 ENDIF()
 
 # Include cuda blas TPL source file
 IF (KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
   LIST(APPEND SOURCES
-   src/impl/tpls/KokkosBlas_Cuda_tpl.cpp
+   blas/tpls/KokkosBlas_Cuda_tpl.cpp
   )
 ENDIF()
 
 # Include rocm blas TPL source file
 IF (KOKKOSKERNELS_ENABLE_TPL_ROCBLAS)
   LIST(APPEND SOURCES
-   src/impl/tpls/KokkosBlas_Rocm_tpl.cpp
+   blas/tpls/KokkosBlas_Rocm_tpl.cpp
   )
 ENDIF()
 

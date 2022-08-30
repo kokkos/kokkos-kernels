@@ -54,18 +54,23 @@ IF (KokkosKernels_ENABLE_BATCHED OR KokkosKernels_ENABLE_BLAS
    SET(KokkosKernels_ENABLE_ALL_COMPONENTS OFF)
 ENDIF()
 
-IF (KokkosKernels_ENABLE_SPARSE)
-  SET(KokkosKernels_ENABLE_BATCHED ON)
-  SET(KokkosKernels_ENABLE_BLAS ON)
-  SET(KokkosKernels_ENABLE_GRAPH ON)
-ENDIF()
-
+# Graph depends on everything else because it depends
+# on Sparse at the moment, breaking that dependency will
+# allow for Graph to build pretty much as a standalone
+# component.
 IF (KokkosKernels_ENABLE_GRAPH)
   SET(KokkosKernels_ENABLE_BATCHED ON)
   SET(KokkosKernels_ENABLE_BLAS ON)
   SET(KokkosKernels_ENABLE_SPARSE ON)
 ENDIF()
 
+# Sparse depends on everything else so no real benefit
+# here unfortunately...
+IF (KokkosKernels_ENABLE_SPARSE)
+  SET(KokkosKernels_ENABLE_BATCHED ON)
+  SET(KokkosKernels_ENABLE_BLAS ON)
+  SET(KokkosKernels_ENABLE_GRAPH ON)
+ENDIF()
 
 # At this point, if ENABLE_ALL_COMPONENTS is
 # still ON we need to enable all individual
@@ -77,12 +82,3 @@ IF (KokkosKernels_ENABLE_ALL_COMPONENTS)
   SET(KokkosKernels_ENABLE_SPARSE ON)
   SET(KokkosKernels_ENABLE_GRAPH ON)
 ENDIF()
-
-MESSAGE("")
-MESSAGE("Kokkos Kernels components")
-MESSAGE("   COMMON:    ON")
-MESSAGE("   BATCHED:   ${KokkosKernels_ENABLE_BATCHED}")
-MESSAGE("   BLAS:      ${KokkosKernels_ENABLE_BLAS}")
-MESSAGE("   GRAPH:     ${KokkosKernels_ENABLE_GRAPH}")
-MESSAGE("   SPARSE:    ${KokkosKernels_ENABLE_SPARSE}")
-MESSAGE("")
