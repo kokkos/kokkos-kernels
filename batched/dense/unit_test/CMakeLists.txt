@@ -41,7 +41,7 @@ IF (KOKKOS_ENABLE_CUDA)
   KOKKOSKERNELS_ADD_UNIT_TEST(
     batched_dla_cuda
     SOURCES
-      ${PACKAGE_SOURCE_DIR}/unit_test/Test_Main.cpp
+      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
       backends/Test_Cuda_Batched_Dense.cpp
     COMPONENTS batched_dla
   )
@@ -51,7 +51,7 @@ IF (KOKKOS_ENABLE_HIP)
   KOKKOSKERNELS_ADD_UNIT_TEST(
     batched_dla_hip
     SOURCES
-      ${PACKAGE_SOURCE_DIR}/unit_test/Test_Main.cpp
+      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
       backends/Test_HIP_Batched_Dense.cpp
     COMPONENTS batched_dla
   )
@@ -61,7 +61,7 @@ IF (KOKKOS_ENABLE_SYCL)
   KOKKOSKERNELS_ADD_UNIT_TEST(
     batched_dla_sycl
     SOURCES
-      ${PACKAGE_SOURCE_DIR}/unit_test/Test_Main.cpp
+      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
       backends/Test_SYCL_Batched_Dense.cpp
     COMPONENTS batched_dla
   )
@@ -71,7 +71,7 @@ IF (KOKKOS_ENABLE_OPENMPTARGET)
   # KOKKOSKERNELS_ADD_UNIT_TEST(
   #   batched_dla_openmptarget
   #   SOURCES
-  #     ${PACKAGE_SOURCE_DIR}/unit_test/Test_Main.cpp
+  #     ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
   #     backends/Test_OpenMPTarget_Batched_Dense.cpp
   #   COMPONENTS batched_dla
   # )
@@ -88,7 +88,7 @@ IF (KOKKOS_ENABLE_SERIAL)
   KOKKOSKERNELS_ADD_UNIT_TEST(
     batched_dla_serial
     SOURCES
-      ${PACKAGE_SOURCE_DIR}/unit_test/Test_Main.cpp
+      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
       backends/Test_Serial_Batched_Dense.cpp
     COMPONENTS batched_dla
   )
@@ -98,7 +98,7 @@ IF (KOKKOS_ENABLE_OPENMP)
   KOKKOSKERNELS_ADD_UNIT_TEST(
     batched_dla_openmp
     SOURCES
-      ${PACKAGE_SOURCE_DIR}/unit_test/Test_Main.cpp
+      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
       backends/Test_OpenMP_Batched_Dense.cpp
     COMPONENTS batched_dla
   )
@@ -108,7 +108,7 @@ IF (KOKKOS_ENABLE_THREADS)
   KOKKOSKERNELS_ADD_UNIT_TEST(
     batched_dla_threads
     SOURCES
-      ${PACKAGE_SOURCE_DIR}/unit_test/Test_Main.cpp
+      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
       backends/Test_Threads_Batched_Dense.cpp
     COMPONENTS batched_dla
   )

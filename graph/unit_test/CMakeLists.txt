@@ -17,41 +17,41 @@ KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_C
 #####################
 IF (KOKKOS_ENABLE_CUDA)
   KOKKOSKERNELS_ADD_UNIT_TEST(
-    blas_cuda
+    graph_cuda
     SOURCES
       ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-      backends/Test_Cuda_Blas.cpp
-    COMPONENTS blas
+      backends/Test_Cuda_Graph.cpp
+    COMPONENTS graph
   )
 ENDIF ()
 
 IF (KOKKOS_ENABLE_HIP)
   KOKKOSKERNELS_ADD_UNIT_TEST(
-    blas_hip
+    graph_hip
     SOURCES
       ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-      backends/Test_HIP_Blas.cpp
-    COMPONENTS blas
+      backends/Test_HIP_Graph.cpp
+    COMPONENTS graph
   )
 ENDIF ()
 
 IF (KOKKOS_ENABLE_SYCL)
   KOKKOSKERNELS_ADD_UNIT_TEST(
-    blas_sycl
+    graph_sycl
     SOURCES
       ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-      backends/Test_SYCL_Blas.cpp
-    COMPONENTS blas
+      backends/Test_SYCL_Graph.cpp
+    COMPONENTS graph
   )
 ENDIF ()
 
 IF (KOKKOS_ENABLE_OPENMPTARGET)
   # KOKKOSKERNELS_ADD_UNIT_TEST(
-  #   blas_openmptarget
+  #   graph_openmptarget
   #   SOURCES
   #     ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-  #     backends/Test_OpenMPTarget_Blas.cpp
-  #   COMPONENTS blas
+  #     backends/Test_OpenMPTarget_Graph.cpp
+  #   COMPONENTS graph
   # )
 ENDIF ()
 
@@ -64,31 +64,31 @@ ENDIF ()
 #####################
 IF (KOKKOS_ENABLE_SERIAL)
   KOKKOSKERNELS_ADD_UNIT_TEST(
-    blas_serial
+    graph_serial
     SOURCES
       ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-      backends/Test_Serial_Blas.cpp
-    COMPONENTS blas
+      backends/Test_Serial_Graph.cpp
+    COMPONENTS graph
   )
 ENDIF ()
 
 IF (KOKKOS_ENABLE_OPENMP)
   KOKKOSKERNELS_ADD_UNIT_TEST(
-    blas_openmp
+    graph_openmp
     SOURCES
       ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-      backends/Test_OpenMP_Blas.cpp
-    COMPONENTS blas
+      backends/Test_OpenMP_Graph.cpp
+    COMPONENTS graph
   )
 ENDIF ()
 
 IF (KOKKOS_ENABLE_THREADS)
   KOKKOSKERNELS_ADD_UNIT_TEST(
-    blas_threads
+    graph_threads
     SOURCES
       ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-      backends/Test_Threads_Blas.cpp
-    COMPONENTS blas
+      backends/Test_Threads_Graph.cpp
+    COMPONENTS graph
   )
 ENDIF ()
 
