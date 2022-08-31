@@ -80,6 +80,8 @@ print_help() {
   echo "--with-spaces=SPACES:       Set spaces to be instantiated."
   echo "                                Options: hostspace, cudaspace, cudauvmspace"
   echo ""
+  echo "--disable-perftests:  Do not build perftests for Kokkos Kernels"
+  echo ""
 
   echo "ARGS: list of expressions matching compilers to test"
   echo "  supported compilers sems"
@@ -217,6 +219,7 @@ TEST_SPACK=False
 SKIP_HWLOC=False
 SPOT_CHECK=False
 NO_DEFAULT_ETI=False
+ENABLE_PERFTESTS=True
 
 PRINT_HELP=False
 OPT_FLAG=""
@@ -375,6 +378,9 @@ do
       ;;
     --no-default-eti*)
       NO_DEFAULT_ETI=True
+      ;;
+    --disable-perftests*)
+      ENABLE_PERFTESTS=False
       ;;
     --with-spaces*)
       KOKKOSKERNELS_SPACES="${key#*=}"
@@ -1349,6 +1355,10 @@ single_build_and_test() {
 
   if [ "${NO_DEFAULT_ETI}" = "True" ]; then
     local extra_args="$extra_args --no-default-eti"
+  fi
+
+  if [ "${ENABLE_PERFTESTS}" = "False" ]; then
+    local extra_args="$extra_args --disable-perftests"
   fi
 
 
