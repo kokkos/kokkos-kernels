@@ -480,6 +480,7 @@ if [ "$MACHINE" = "sems" ]; then
   SPACK_CUDA_ARCH="+maxwell50" #use an old one
   SPACK_CUDA_HOST_COMPILER="%gcc@7.2.0"
 elif [ "$MACHINE" = "sogpu" ]; then
+  #source /projects/sems/modulefiles/utils/sems-v2-modules-init.sh #TODO: use this script after moving away from sems-archive modules
   source /projects/sems/modulefiles/utils/sems-archive-modules-init.sh
 
   module load sems-archive-cmake/3.17.1 sems-archive-git
@@ -488,7 +489,8 @@ elif [ "$MACHINE" = "sogpu" ]; then
   INTEL_BASE_MODULE_LIST="sems-archive-env,sems-archive-cmake/3.17.1,sems-archive-gcc/7.2.0,sems-archive-<COMPILER_NAME>/<COMPILER_VERSION>"
   CLANG_BASE_MODULE_LIST="sems-archive-env,sems-archive-cmake/3.17.1,sems-archive-gcc/9.2.0,sems-archive-<COMPILER_NAME>/<COMPILER_VERSION>"
   CUDA_MODULE_LIST="sems-archive-env,sems-archive-cmake/3.17.1,sems-archive-gcc/7.2.0,sems-archive-<COMPILER_NAME>/<COMPILER_VERSION>"
-  CUDA11_MODULE_LIST="sems-cmake/3.23.1,sems-gcc/8.3.0,sems-<COMPILER_NAME>/<COMPILER_VERSION>"
+  CUDA11_MODULE_LIST="sems-archive-env,sems-archive-cmake/3.17.1,sems-archive-gcc/8.3.0,sems-archive-<COMPILER_NAME>/<COMPILER_VERSION>"
+  #CUDA11_MODULE_LIST="sems-cmake/3.23.1,sems-gcc/8.3.0,sems-<COMPILER_NAME>/<COMPILER_VERSION>" # TODO: use this variable after moving away from sems-archive modules
   CUDA11_MODULE_TPL_LIST="$CUDA11_MODULE_LIST,sems-openblas/0.3.10"
   SKIP_HWLOC=True
   # No sems hwloc module
@@ -499,11 +501,11 @@ elif [ "$MACHINE" = "sogpu" ]; then
 
   if [ "$SPOT_CHECK" = "True" ]; then
     # Format: (compiler module-list build-list exe-name warning-flag)
-    COMPILERS=("cuda/11.1.0 $CUDA11_MODULE_LIST "Cuda_OpenMP" $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+    COMPILERS=("cuda/11.1 $CUDA11_MODULE_LIST "Cuda_OpenMP" $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
               )
   elif [ "$SPOT_CHECK_TPLS" = "True" ]; then
     # Format: (compiler module-list build-list exe-name warning-flag)
-    COMPILERS=("cuda/11.1.0 $CUDA11_MODULE_TPL_LIST "Cuda_Serial" $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+    COMPILERS=("cuda/11.1 $CUDA11_MODULE_TPL_LIST "Cuda_Serial" $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
               )
   else
     # Format: (compiler module-list build-list exe-name warning-flag)
