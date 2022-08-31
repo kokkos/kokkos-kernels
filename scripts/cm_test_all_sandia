@@ -82,6 +82,8 @@ print_help() {
   echo ""
   echo "--disable-perftests:  Do not build perftests for Kokkos Kernels"
   echo ""
+  echo "--enable-perftests:  build perftests for Kokkos Kernels (default)"
+  echo ""
 
   echo "ARGS: list of expressions matching compilers to test"
   echo "  supported compilers sems"
@@ -381,6 +383,9 @@ do
       ;;
     --disable-perftests*)
       ENABLE_PERFTESTS=False
+      ;;
+    --enable-perftests*)
+      ENABLE_PERFTESTS=True
       ;;
     --with-spaces*)
       KOKKOSKERNELS_SPACES="${key#*=}"

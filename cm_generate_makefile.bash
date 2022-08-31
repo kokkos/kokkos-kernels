@@ -339,6 +339,7 @@ display_help_text() {
       echo "--enable-tests: build Kokkos Kernels unit tests"
       echo "--disable-tests: Do not build Kokkos Kernels unit tests"
       echo "--disable-perftests: Do not build Kokkos Kernels performance tests"
+      echo "--enable-perftests: build Kokkos Kernels performance tests (default)"
       echo "--deprecated-code             Enable deprecated code (disabled by default)"
       echo "--enable-perfsuite: build Kokkos Kernels performance tests with
 RAJAPerf Suite"
@@ -525,6 +526,9 @@ do
       ;;
     --disable-perftests)
       KOKKOSKERNELS_DO_PERFTESTS=OFF
+      ;;
+    --enable-perftests)
+      KOKKOSKERNELS_DO_PERFTESTS=ON
       ;;
     --enable-examples)
       # This is the default
