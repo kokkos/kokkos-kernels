@@ -151,7 +151,7 @@ endif()
   * Default: OFF
 * KokkosKernels_ENABLE_PERFTESTS: BOOL
   * Whether to build performance tests.
-  * Default: OFF
+  * Default: ON
 * KokkosKernels_ENABLE_TESTS_AND_PERFSUITE: BOOL
   * Whether to build performance tests and suite.
   * Default: OFF

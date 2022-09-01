@@ -67,7 +67,7 @@ IF (NOT KOKKOSKERNELS_HAS_TRILINOS)
   )
   KOKKOSKERNELS_ADD_OPTION(
           "ENABLE_PERFTESTS"
-          OFF
+          ON
           BOOL
           "Whether to build performance tests. Default: OFF"
   )

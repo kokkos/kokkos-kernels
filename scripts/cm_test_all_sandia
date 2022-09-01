@@ -80,6 +80,10 @@ print_help() {
   echo "--with-spaces=SPACES:       Set spaces to be instantiated."
   echo "                                Options: hostspace, cudaspace, cudauvmspace"
   echo ""
+  echo "--disable-perftests:  Do not build perftests for Kokkos Kernels"
+  echo ""
+  echo "--enable-perftests:  build perftests for Kokkos Kernels (default)"
+  echo ""
 
   echo "ARGS: list of expressions matching compilers to test"
   echo "  supported compilers sems"
@@ -217,6 +221,7 @@ TEST_SPACK=False
 SKIP_HWLOC=False
 SPOT_CHECK=False
 NO_DEFAULT_ETI=False
+ENABLE_PERFTESTS=True
 
 PRINT_HELP=False
 OPT_FLAG=""
@@ -375,6 +380,12 @@ do
       ;;
     --no-default-eti*)
       NO_DEFAULT_ETI=True
+      ;;
+    --disable-perftests*)
+      ENABLE_PERFTESTS=False
+      ;;
+    --enable-perftests*)
+      ENABLE_PERFTESTS=True
       ;;
     --with-spaces*)
       KOKKOSKERNELS_SPACES="${key#*=}"
@@ -731,6 +742,7 @@ elif [ "$MACHINE" = "weaver" ]; then
 
   GCC72_MODULE_TPL_LIST="cmake/3.19.3,<COMPILER_NAME>/<COMPILER_VERSION>,openblas/0.2.20/gcc/7.2.0"
   GCC74_MODULE_TPL_LIST="cmake/3.19.3,<COMPILER_NAME>/<COMPILER_VERSION>,openblas/0.2.20/gcc/7.2.0,gcc/7.4.0"
+  GCC93_MODULE_TPL_LIST="cmake/3.19.3,<COMPILER_NAME>/<COMPILER_VERSION>,openblas/0.3.20/gcc/9.3.0,gcc/9.3.0"
   CUDA_MODULE_TPL_LIST="cmake/3.19.3,<COMPILER_NAME>/<COMPILER_VERSION>,gcc/7.2.0,netlib/3.8.0/gcc/7.2.0"
   CUDA10_MODULE_TPL_LIST="cmake/3.19.3,<COMPILER_NAME>/<COMPILER_VERSION>,gcc/7.2.0,openblas/0.2.20/gcc/7.2.0"
   # Cuda/11 modules available only on the dev queue (rhel8 OS); gcc/8.3.1 load by default
@@ -751,6 +763,7 @@ elif [ "$MACHINE" = "weaver" ]; then
                "cuda/9.2.88 $CUDA_MODULE_LIST "Cuda_Serial" ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
                "cuda/10.1.243 $CUDA10_MODULE_LIST "Cuda_OpenMP" ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
                "cuda/11.2.2 $CUDA11_MODULE_LIST "Cuda_OpenMP" ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+               "gcc/9.3.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
     )
   elif [ "$SPOT_CHECK_TPLS" = "True" ]; then
     # Format: (compiler module-list build-list exe-name warning-flag)
@@ -758,6 +771,7 @@ elif [ "$MACHINE" = "weaver" ]; then
                "gcc/7.4.0 $GCC74_MODULE_TPL_LIST "OpenMP" g++ $GCC_WARNING_FLAGS"
                "cuda/9.2.88 $CUDA_MODULE_TPL_LIST "Cuda_OpenMP" ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
                "cuda/10.1.243 $CUDA10_MODULE_TPL_LIST "Cuda_Serial" ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+               "gcc/9.3.0 $GCC93_MODULE_TPL_LIST "OpenMP,Serial" g++ $GCC_WARNING_FLAGS"
     )
   else
     # Format: (compiler module-list build-list exe-name warning-flag)
@@ -856,6 +870,7 @@ elif [ "$MACHINE" = "blake" ]; then
   ONEAPI_WARNING_FLAGS=""
 
   GCC72_MODULE_TPL_LIST="$BASE_MODULE_LIST,openblas/0.2.20/gcc/7.2.0"
+  GCC102_MODULE_TPL_LIST="$BASE_MODULE_LIST,openblas/0.3.13/gcc/10.2.0"
 
   if [ "$SPOT_CHECK" = "True" ]; then
       # Format: (compiler module-list build-list exe-name warning-flag)
@@ -866,6 +881,8 @@ elif [ "$MACHINE" = "blake" ]; then
                "gcc/7.2.0 $BASE_MODULE_LIST "Threads_Serial,OpenMP" g++ $GCC_WARNING_FLAGS"
                "clang/10.0.1 $BASE_MODULE_LIST "Threads_Serial" clang++ $CLANG_WARNING_FLAGS"
                "intel/19.5.281 $BASE_MODULE_LIST_INTEL "OpenMP,Threads" icpc $INTEL_WARNING_FLAGS"
+               "gcc/10.2.0 $BASE_MODULE_LIST "Threads_Serial,OpenMP" g++ $GCC_WARNING_FLAGS"
+               "gcc/11.2.0 $BASE_MODULE_LIST "Threads_Serial,OpenMP" g++ $GCC_WARNING_FLAGS"
     )
   elif [ "$SPOT_CHECK_TPLS" = "True" ]; then
       # Format: (compiler module-list build-list exe-name warning-flag)
@@ -874,6 +891,7 @@ elif [ "$MACHINE" = "blake" ]; then
     COMPILERS=("intel/18.1.163 $BASE_MODULE_LIST_INTEL "OpenMP,Threads" icpc $INTEL_WARNING_FLAGS"
                "gcc/7.2.0 $GCC72_MODULE_TPL_LIST "OpenMP_Serial" g++ $GCC_WARNING_FLAGS"
                "intel/19.5.281 $BASE_MODULE_LIST_INTEL "OpenMP,Threads" icpc $INTEL_WARNING_FLAGS"
+               "gcc/10.2.0 $GCC102_MODULE_TPL_LIST "OpenMP_Serial" g++ $GCC_WARNING_FLAGS"
     )
   else
     COMPILERS=("intel/17.4.196 $BASE_MODULE_LIST_INTEL $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
@@ -1342,6 +1360,10 @@ single_build_and_test() {
 
   if [ "${NO_DEFAULT_ETI}" = "True" ]; then
     local extra_args="$extra_args --no-default-eti"
+  fi
+
+  if [ "${ENABLE_PERFTESTS}" = "False" ]; then
+    local extra_args="$extra_args --disable-perftests"
   fi
 
 
