@@ -803,8 +803,7 @@ class coarsen_heuristics {
     }
 
     KOKKOS_INLINE_FUNCTION
-    void join(volatile ordinal_t& update,
-              volatile const ordinal_t& input) const {
+    void join(ordinal_t& update, const ordinal_t& input) const {
       if (input > update) update = input;
     }
   };
