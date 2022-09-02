@@ -46,6 +46,8 @@
 #define _KOKKOSKERNELS_SPARSEUTILS_CUSPARSE_HPP
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+#include "cuda.h"
+#include "cuda_runtime.h"
 #include "cusparse.h"
 
 namespace KokkosSparse {

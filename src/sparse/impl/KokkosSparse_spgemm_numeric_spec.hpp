@@ -215,9 +215,14 @@ struct SPGEMM_NUMERIC<
 
     switch (sh->get_algorithm_type()) {
       case SPGEMM_CUSPARSE:
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
         cuSPARSE_apply<spgemmHandleType>(
             sh, m, n, k, row_mapA, entriesA, valuesA, transposeA, row_mapB,
             entriesB, valuesB, transposeB, row_mapC, entriesC, valuesC);
+#else
+        throw std::runtime_error(
+            "Requiring SPGEMM_CUSPARSE but TPL_CUSPARSE was not enabled!");
+#endif
         break;
       case SPGEMM_CUSP:
         CUSP_apply<spgemmHandleType, a_size_view_t_, a_lno_view_t,

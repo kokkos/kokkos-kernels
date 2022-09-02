@@ -41,17 +41,19 @@
 // ************************************************************************
 //@HEADER
 */
+#ifndef _SPGEMMHANDLE_HPP
+#define _SPGEMMHANDLE_HPP
 
+#include <KokkosKernels_config.h>
+#include <KokkosKernels_Controls.hpp>
 #include <Kokkos_Core.hpp>
 #include <iostream>
 #include <string>
+//#define VERBOSE
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-#include "cusparse.h"
+#include "KokkosSparse_Utils_cusparse.hpp"
 #endif
-#ifndef _SPGEMMHANDLE_HPP
-#define _SPGEMMHANDLE_HPP
-//#define VERBOSE
 
 namespace KokkosSparse {
 
@@ -142,14 +144,59 @@ class SPGEMMHandle {
       nnz_lno_persistent_work_host_view_t;  // Host view type
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-  struct cuSparseHandleType {
-    cusparseHandle_t handle;
+#if (CUDA_VERSION >= 11040)
+  struct cuSparseSpgemmHandleType {
+    KokkosKernels::Experimental::Controls kkControls;
+    cusparseHandle_t cusparseHandle;
+    cusparseOperation_t opA, opB;
+    cusparseSpMatDescr_t descr_A, descr_B, descr_C;
+    cusparseSpGEMMDescr_t spgemmDescr;
+
+    cudaDataType scalarType;
+    cusparseSpGEMMAlg_t alg;
+
+    // buffer1~2 are not needed in the numeric phase,
+    // so we don't have them as member variables
+    size_t bufferSize3, bufferSize4, bufferSize5;
+    void *buffer3, *buffer4, *buffer5;
+
+    bool C_populated;
+
+    cuSparseSpgemmHandleType(bool transposeA, bool transposeB) {
+      opA = transposeA ? CUSPARSE_OPERATION_TRANSPOSE
+                       : CUSPARSE_OPERATION_NON_TRANSPOSE;
+      opB = transposeB ? CUSPARSE_OPERATION_TRANSPOSE
+                       : CUSPARSE_OPERATION_NON_TRANSPOSE;
+      scalarType = Impl::cuda_data_type_from<nnz_scalar_t>();
+
+      alg         = CUSPARSE_SPGEMM_DEFAULT;
+      bufferSize3 = bufferSize4 = bufferSize5 = 0;
+      buffer3 = buffer4 = buffer5 = NULL;
+      C_populated                 = false;
+
+      cusparseHandle = kkControls.getCusparseHandle();
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMM_createDescr(&spgemmDescr));
+    }
+
+    ~cuSparseSpgemmHandleType() {
+      cusparseDestroySpMat(descr_A);
+      cusparseDestroySpMat(descr_B);
+      cusparseDestroySpMat(descr_C);
+      cusparseSpGEMM_destroyDescr(spgemmDescr);
+      cudaFree(buffer3);
+      cudaFree(buffer4);
+      cudaFree(buffer5);
+    }
+  };
+#else
+  struct cuSparseSpgemmHandleType {
+    cusparse_spgemm_handle_t handle;
     cusparseOperation_t transA;
     cusparseOperation_t transB;
     cusparseMatDescr_t a_descr;
     cusparseMatDescr_t b_descr;
     cusparseMatDescr_t c_descr;
-    cuSparseHandleType(bool transposeA, bool transposeB) {
+    cuSparseSpgemmHandleType(bool transposeA, bool transposeB) {
       cusparseStatus_t status;
       status = cusparseCreate(&handle);
       if (status != CUSPARSE_STATUS_SUCCESS) {
@@ -193,15 +240,14 @@ class SPGEMMHandle {
       cusparseSetMatType(c_descr, CUSPARSE_MATRIX_TYPE_GENERAL);
       cusparseSetMatIndexBase(c_descr, CUSPARSE_INDEX_BASE_ZERO);
     }
-    ~cuSparseHandleType() {
+    ~cuSparseSpgemmHandleType() {
       cusparseDestroyMatDescr(a_descr);
       cusparseDestroyMatDescr(b_descr);
       cusparseDestroyMatDescr(c_descr);
       cusparseDestroy(handle);
     }
   };
-
-  typedef cuSparseHandleType SPGEMMcuSparseHandleType;
+#endif
 #endif
  private:
   SPGEMMAlgorithm algorithm_type;
@@ -299,7 +345,7 @@ class SPGEMMHandle {
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
  private:
-  SPGEMMcuSparseHandleType *cuSPARSEHandle;
+  cuSparseSpgemmHandleType *cusparse_spgemm_handle;
 
  public:
 #endif
@@ -483,7 +529,7 @@ class SPGEMMHandle {
         is_compression_single_step(false)
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
         ,
-        cuSPARSEHandle(NULL)
+        cusparse_spgemm_handle(NULL)
 #endif
   {
     if (gs == SPGEMM_DEFAULT) {
@@ -493,26 +539,27 @@ class SPGEMMHandle {
 
   virtual ~SPGEMMHandle() {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-    this->destroy_cuSPARSE_Handle();
+    this->destroy_cusparse_spgemm_handle();
 #endif
   };
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-  void create_cuSPARSE_Handle(bool transA, bool transB) {
-    this->destroy_cuSPARSE_Handle();
-    this->cuSPARSEHandle = new cuSparseHandleType(transA, transB);
+  void create_cusparse_spgemm_handle(bool transA, bool transB) {
+    this->destroy_cusparse_spgemm_handle();
+    this->cusparse_spgemm_handle = new cuSparseSpgemmHandleType(transA, transB);
   }
-  void destroy_cuSPARSE_Handle() {
-    if (this->cuSPARSEHandle != NULL) {
-      delete this->cuSPARSEHandle;
-      this->cuSPARSEHandle = NULL;
+  void destroy_cusparse_spgemm_handle() {
+    if (this->cusparse_spgemm_handle != NULL) {
+      delete this->cusparse_spgemm_handle;
+      this->cusparse_spgemm_handle = NULL;
     }
   }
 
-  SPGEMMcuSparseHandleType *get_cuSparseHandle() {
-    return this->cuSPARSEHandle;
+  cuSparseSpgemmHandleType *get_cusparse_spgemm_handle() {
+    return this->cusparse_spgemm_handle;
   }
 #endif
+
   void choose_default_algorithm() {
 #if defined(KOKKOS_ENABLE_SERIAL)
     if (std::is_same<Kokkos::Serial, ExecutionSpace>::value) {
@@ -546,7 +593,8 @@ class SPGEMMHandle {
 
 #if defined(KOKKOS_ENABLE_CUDA)
     if (std::is_same<Kokkos::Cuda, ExecutionSpace>::value) {
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && \
+    (CUDA_VERSION >= 11040 || CUSPARSE_VERSION < 11000)
       this->algorithm_type = SPGEMM_CUSPARSE;
 #else
       this->algorithm_type = SPGEMM_KK;

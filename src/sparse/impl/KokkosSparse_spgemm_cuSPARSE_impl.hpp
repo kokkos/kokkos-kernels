@@ -45,12 +45,9 @@
 #ifndef _KOKKOSSPGEMMCUSPARSE_HPP
 #define _KOKKOSSPGEMMCUSPARSE_HPP
 
-//#define KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-
 #include "KokkosKernels_Controls.hpp"
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-#include "cusparse.h"
-#endif
+#include "KokkosSparse_Utils_cusparse.hpp"
+
 namespace KokkosSparse {
 
 namespace Impl {
@@ -69,11 +66,15 @@ void cuSPARSE_symbolic(KernelHandle *handle, typename KernelHandle::nnz_lno_t m,
                        bin_nonzero_index_view_type entriesB, bool transposeB,
                        cin_row_index_view_type row_mapC) {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+  using device1     = typename ain_row_index_view_type::device_type;
+  using device2     = typename ain_nonzero_index_view_type::device_type;
+  using idx         = typename KernelHandle::nnz_lno_t;
+  using size_type   = typename KernelHandle::size_type;
+  using scalar_type = typename KernelHandle::nnz_scalar_t;
 
-  using device1   = typename ain_row_index_view_type::device_type;
-  using device2   = typename ain_nonzero_index_view_type::device_type;
-  using idx       = typename KernelHandle::nnz_lno_t;
-  using size_type = typename KernelHandle::size_type;
+  // In case the KernelHandle uses const types!
+  using non_const_idx       = typename std::remove_cv<idx>::type;
+  using non_const_size_type = typename std::remove_cv<size_type>::type;
 
   // TODO this is not correct, check memory space.
   if (std::is_same<Kokkos::Cuda, device1>::value) {
@@ -87,18 +88,89 @@ void cuSPARSE_symbolic(KernelHandle *handle, typename KernelHandle::nnz_lno_t m,
     // return;
   }
 
-#if defined(CUSPARSE_VERSION) && (11000 <= CUSPARSE_VERSION)
-  (void)handle;
-  (void)m;
-  (void)n;
-  (void)k;
-  (void)row_mapA;
-  (void)row_mapB;
-  (void)row_mapC;
-  (void)entriesA;
-  (void)entriesB;
-  (void)transposeA;
-  (void)transposeB;
+  // CUDA_VERSION coming along with CUDAToolkit is easier to find than
+  // CUSPARSE_VERSION
+#if (CUDA_VERSION >= 11040)
+  if (!std::is_same<non_const_idx, int>::value ||
+      !std::is_same<non_const_size_type, int>::value) {
+    throw std::runtime_error(
+        "cusparseSpGEMMreuse requires local ordinals to be 32-bit integer.");
+  }
+
+  handle->set_sort_option(1);  // tells users the output is sorted
+  handle->create_cusparse_spgemm_handle(transposeA, transposeB);
+  typename KernelHandle::cuSparseSpgemmHandleType *h =
+      handle->get_cusparse_spgemm_handle();
+
+  // Follow
+  // https://github.com/NVIDIA/CUDALibrarySamples/tree/master/cuSPARSE/spgemm_reuse
+  void *buffer1      = NULL;
+  void *buffer2      = NULL;
+  size_t bufferSize1 = 0;
+  size_t bufferSize2 = 0;
+
+  // When nnz is not zero, cusparseCreateCsr insists non-null a value pointer,
+  // which however is not available in this function. So we fake it with the
+  // entries instead. Fortunately, it seems cupsarse does not access that in the
+  // symbolic phase.
+  KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateCsr(
+      &h->descr_A, m, n, entriesA.extent(0), (void *)row_mapA.data(),
+      (void *)entriesA.data(), (void *)entriesA.data() /*fake*/,
+      CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO,
+      h->scalarType));
+
+  KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateCsr(
+      &h->descr_B, n, k, entriesB.extent(0), (void *)row_mapB.data(),
+      (void *)entriesB.data(), (void *)entriesB.data() /*fake*/,
+      CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO,
+      h->scalarType));
+
+  KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateCsr(
+      &h->descr_C, m, k, 0, NULL, NULL, NULL, CUSPARSE_INDEX_32I,
+      CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO, h->scalarType));
+
+  //----------------------------------------------------------------------
+  // ask bufferSize1 bytes for external memory
+  KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMMreuse_workEstimation(
+      h->cusparseHandle, h->opA, h->opB, h->descr_A, h->descr_B, h->descr_C,
+      h->alg, h->spgemmDescr, &bufferSize1, NULL));
+
+  KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc((void **)&buffer1, bufferSize1));
+  // inspect matrices A and B to understand the memory requirement for the next
+  // step
+  KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMMreuse_workEstimation(
+      h->cusparseHandle, h->opA, h->opB, h->descr_A, h->descr_B, h->descr_C,
+      h->alg, h->spgemmDescr, &bufferSize1, buffer1));
+
+  //----------------------------------------------------------------------
+  // Compute nnz of C
+  KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMMreuse_nnz(
+      h->cusparseHandle, h->opA, h->opB, h->descr_A, h->descr_B, h->descr_C,
+      h->alg, h->spgemmDescr, &bufferSize2, NULL, &h->bufferSize3, NULL,
+      &h->bufferSize4, NULL));
+
+  KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc((void **)&buffer2, bufferSize2));
+  KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc((void **)&h->buffer3, h->bufferSize3));
+  KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc((void **)&h->buffer4, h->bufferSize4));
+
+  KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMMreuse_nnz(
+      h->cusparseHandle, h->opA, h->opB, h->descr_A, h->descr_B, h->descr_C,
+      h->alg, h->spgemmDescr, &bufferSize2, buffer2, &h->bufferSize3,
+      h->buffer3, &h->bufferSize4, h->buffer4));
+
+  KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(buffer1));
+  KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(buffer2));
+
+  int64_t C_nrow, C_ncol, C_nnz;
+  KOKKOS_CUSPARSE_SAFE_CALL(
+      cusparseSpMatGetSize(h->descr_C, &C_nrow, &C_ncol, &C_nnz));
+  if (C_nnz > std::numeric_limits<int>::max()) {
+    throw std::runtime_error("nnz of C overflowed over 32-bit int\n");
+  }
+  handle->set_c_nnz(C_nnz);
+  h->C_populated = false;  // sparsity pattern of C is not set yet
+
+#elif defined(CUSPARSE_VERSION) && (11000 <= CUSPARSE_VERSION)
   throw std::runtime_error(
       "SpGEMM cuSPARSE backend is not yet supported for this CUDA version\n");
 #else
@@ -110,9 +182,9 @@ void cuSPARSE_symbolic(KernelHandle *handle, typename KernelHandle::nnz_lno_t m,
 
     const idx *a_adj = entriesA.data();
     const idx *b_adj = entriesB.data();
-    handle->create_cuSPARSE_Handle(transposeA, transposeB);
-    typename KernelHandle::SPGEMMcuSparseHandleType *h =
-        handle->get_cuSparseHandle();
+    handle->create_cusparse_spgemm_handle(transposeA, transposeB);
+    typename KernelHandle::get_cusparse_spgemm_handle *h =
+        handle->get_cusparse_spgemm_handle();
 
     int nnzA = entriesA.extent(0);
     int nnzB = entriesB.extent(0);
@@ -120,6 +192,7 @@ void cuSPARSE_symbolic(KernelHandle *handle, typename KernelHandle::nnz_lno_t m,
     int baseC, nnzC;
     int *nnzTotalDevHostPtr = &nnzC;
 
+    handle->set_sort_option(1);  // tells users the output is sorted
     cusparseXcsrgemmNnz(h->handle, h->transA, h->transB, (int)m, (int)n, (int)k,
                         h->a_descr, nnzA, (int *)a_xadj, (int *)a_adj,
                         h->b_descr, nnzB, (int *)b_xadj, (int *)b_adj,
@@ -176,23 +249,6 @@ void cuSPARSE_apply(
     bool /* transposeB */, cin_row_index_view_type row_mapC,
     cin_nonzero_index_view_type entriesC, cin_nonzero_value_view_type valuesC) {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-#if defined(CUSPARSE_VERSION) && (11000 <= CUSPARSE_VERSION)
-  (void)handle;
-  (void)m;
-  (void)n;
-  (void)k;
-  (void)row_mapA;
-  (void)row_mapB;
-  (void)row_mapC;
-  (void)entriesA;
-  (void)entriesB;
-  (void)entriesC;
-  (void)valuesA;
-  (void)valuesB;
-  (void)valuesC;
-  throw std::runtime_error(
-      "SpGEMM cuSPARSE backend is not yet supported for this CUDA version\n");
-#else
   typedef typename KernelHandle::nnz_lno_t idx;
 
   typedef typename KernelHandle::nnz_scalar_t value_type;
@@ -216,7 +272,57 @@ void cuSPARSE_apply(
         "MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSPARSE\n");
     // return;
   }
+#if (CUDA_VERSION >= 11040)
+  typename KernelHandle::cuSparseSpgemmHandleType *h =
+      handle->get_cusparse_spgemm_handle();
 
+  KOKKOS_CUSPARSE_SAFE_CALL(
+      cusparseCsrSetPointers(h->descr_A, (void *)row_mapA.data(),
+                             (void *)entriesA.data(), (void *)valuesA.data()));
+
+  KOKKOS_CUSPARSE_SAFE_CALL(
+      cusparseCsrSetPointers(h->descr_B, (void *)row_mapB.data(),
+                             (void *)entriesB.data(), (void *)valuesB.data()));
+
+  KOKKOS_CUSPARSE_SAFE_CALL(
+      cusparseCsrSetPointers(h->descr_C, (void *)row_mapC.data(),
+                             (void *)entriesC.data(), (void *)valuesC.data()));
+
+  if (!h->C_populated) {
+    cusparseSpGEMMreuse_copy(h->cusparseHandle, h->opA, h->opB, h->descr_A,
+                             h->descr_B, h->descr_C, h->alg, h->spgemmDescr,
+                             &h->bufferSize5, NULL);
+    cudaMalloc((void **)&h->buffer5, h->bufferSize5);
+    cusparseSpGEMMreuse_copy(h->cusparseHandle, h->opA, h->opB, h->descr_A,
+                             h->descr_B, h->descr_C, h->alg, h->spgemmDescr,
+                             &h->bufferSize5, h->buffer5);
+    cudaFree(h->buffer3);
+    h->buffer3     = NULL;
+    h->C_populated = true;
+  }
+
+  // C' = alpha * opA(A) * opB(B) + beta * C
+  const auto alpha = Kokkos::ArithTraits<value_type>::one();
+  const auto beta  = Kokkos::ArithTraits<value_type>::zero();
+
+  // alpha, beta are on host, but since we use singleton on the cusparse
+  // handle, we save/restore the pointer mode to not interference with
+  // others' use
+  cusparsePointerMode_t oldPtrMode;
+  KOKKOS_CUSPARSE_SAFE_CALL(
+      cusparseGetPointerMode(h->cusparseHandle, &oldPtrMode));
+  KOKKOS_CUSPARSE_SAFE_CALL(
+      cusparseSetPointerMode(h->cusparseHandle, CUSPARSE_POINTER_MODE_HOST));
+  KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMMreuse_compute(
+      h->cusparseHandle, h->opA, h->opB, &alpha, h->descr_A, h->descr_B, &beta,
+      h->descr_C, h->scalarType, h->alg, h->spgemmDescr));
+  KOKKOS_CUSPARSE_SAFE_CALL(
+      cusparseSetPointerMode(h->cusparseHandle, oldPtrMode));
+
+#elif (CUSPARSE_VERSION >= 11000)
+  throw std::runtime_error(
+      "SpGEMM cuSPARSE backend is not yet supported for this CUDA version\n");
+#else
   if (std::is_same<idx, int>::value) {
     int *a_xadj = (int *)row_mapA.data();
     int *b_xadj = (int *)row_mapB.data();
@@ -226,8 +332,8 @@ void cuSPARSE_apply(
     int *b_adj = (int *)entriesB.data();
     int *c_adj = (int *)entriesC.data();
 
-    typename KernelHandle::SPGEMMcuSparseHandleType *h =
-        handle->get_cuSparseHandle();
+    typename KernelHandle::cuSparseSpgemmHandleType *h =
+        handle->get_cusparse_spgemm_handle();
 
     int nnzA = entriesA.extent(0);
     int nnzB = entriesB.extent(0);
