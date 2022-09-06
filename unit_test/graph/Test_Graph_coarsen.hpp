@@ -272,7 +272,6 @@ crsMat gen_grid() {
   return A;
 }
 
-#if !defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_CUDA_LAMBDA)
 template <typename scalar, typename lno_t, typename size_type, typename device>
 void test_multilevel_coarsen_grid() {
   using crsMat =
@@ -305,12 +304,7 @@ void test_multilevel_coarsen_grid() {
     coarse++;
   }
 }
-#else
-template <typename scalar, typename lno_t, typename size_type, typename device>
-void test_multilevel_coarsen_grid() {}
-#endif
 
-#if !defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_CUDA_LAMBDA)
 template <typename scalar, typename lno_t, typename size_type, typename device>
 void test_coarsen_grid() {
   using crsMat =
@@ -361,12 +355,7 @@ void test_coarsen_grid() {
     }
   }
 }
-#else
-template <typename scalar, typename lno_t, typename size_type, typename device>
-void test_coarsen_grid() {}
-#endif
 
-#if !defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_CUDA_LAMBDA)
 template <typename scalar, typename lno_t, typename size_type, typename device>
 void test_coarsen_random(lno_t numVerts, size_type nnz, lno_t bandwidth,
                          lno_t row_size_variance) {
@@ -435,11 +424,6 @@ void test_coarsen_random(lno_t numVerts, size_type nnz, lno_t bandwidth,
     }
   }
 }
-#else
-template <typename scalar, typename lno_t, typename size_type, typename device>
-void test_coarsen_random(lno_t /*numVerts*/, size_type /*nnz*/,
-                         lno_t /*bandwidth*/, lno_t /*row_size_variance*/) {}
-#endif
 
 #define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                                         \
   TEST_F(                                                                                     \
