@@ -756,9 +756,9 @@ class KokkosKernelsHandle {
 
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
     // default SpMV option
-    if (algm == KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV ||
-        algm ==
-            KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
+    using namespace KokkosSparse::Experimental;
+    if (algm == SPTRSVAlgorithm::SUPERNODAL_SPMV ||
+        algm == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
       this->set_sptrsv_column_major(true);
     }
 #endif
@@ -790,7 +790,21 @@ class KokkosKernelsHandle {
   }
 
   void set_sptrsv_invert_diagonal(bool flag) {
+    auto algo = this->sptrsvHandle->get_algorithm();
+    using namespace KokkosSparse::Experimental;
+    if(!flag && (algo == SPTRSVAlgorithm::SUPERNODAL_SPMV ||
+                 algo == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG)) {
+      std::cout << std::endl
+                << " ** Supernodal SpTRSV with SpMV require diagonal inversion **"
+                << std::endl << std::endl;
+      this->sptrsvHandle->set_invert_diagonal(true);
+      return;
+    }
     this->sptrsvHandle->set_invert_diagonal(flag);
+  }
+
+  bool get_sptrsv_invert_diagonal() {
+    return this->sptrsvHandle->get_invert_diagonal();
   }
 
   void set_sptrsv_invert_offdiagonal(bool flag) {
@@ -798,10 +812,15 @@ class KokkosKernelsHandle {
       std::cout << std::endl
                 << " ** cannot invert offdiagonal in CSR **" << std::endl
                 << std::endl;
+      this->sptrsvHandle->set_invert_offdiagonal(false);
       return;
     }
 
     this->sptrsvHandle->set_invert_offdiagonal(flag);
+  }
+
+  bool get_sptrsv_invert_offdiagonal() {
+    return this->sptrsvHandle->get_invert_offdiagonal();
   }
 
   void set_sptrsv_etree(int *etree) { this->sptrsvHandle->set_etree(etree); }

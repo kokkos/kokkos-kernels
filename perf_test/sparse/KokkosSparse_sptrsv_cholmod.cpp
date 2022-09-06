@@ -43,6 +43,8 @@
 
 #include "Kokkos_Random.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
+#include "KokkosSparse_IOUtils.hpp"
+
 #include "KokkosSparse_spmv.hpp"
 #include "KokkosSparse_sptrsv.hpp"
 #include "KokkosSparse_sptrsv_cholmod.hpp"
@@ -234,7 +236,7 @@ int test_sptrsv_perf(std::vector<int> tests, std::string &filename,
     std::cout << " CHOLMOD Tester Begin: Read matrix filename " << filename
               << std::endl;
     host_crsmat_t Mtx =
-        KokkosKernels::Impl::read_kokkos_crst_matrix<host_crsmat_t>(
+        KokkosSparse::Impl::read_kokkos_crst_matrix<host_crsmat_t>(
             filename.c_str());          // in_matrix
     auto graph_host       = Mtx.graph;  // in_graph
     const size_type nrows = graph_host.numRows();
@@ -323,16 +325,19 @@ int test_sptrsv_perf(std::vector<int> tests, std::string &filename,
 
           // ==============================================
           // specify wheather to invert diagonal blocks
-          std::cout << " Invert diagonal    : " << invert_diag << std::endl;
           khL.set_sptrsv_invert_diagonal(invert_diag);
           khU.set_sptrsv_invert_diagonal(invert_diag);
+	  invert_diag = khU.get_sptrsv_invert_diagonal();
+          std::cout << " Invert diagonal    : " << invert_diag << std::endl;
 
           // ==============================================
           // specify wheather to apply diagonal-inversion to off-diagonal blocks
           // (optional, default is false)
-          std::cout << " Invert Off-diagonal: " << invert_offdiag << std::endl;
-          khL.set_sptrsv_invert_offdiagonal(invert_offdiag);
           khU.set_sptrsv_invert_offdiagonal(invert_offdiag);
+	  // > make sure if the flag is set before setting for L
+	  invert_offdiag = khU.get_sptrsv_invert_offdiagonal();
+          khL.set_sptrsv_invert_offdiagonal(invert_offdiag);
+          std::cout << " Invert Off-diagonal: " << invert_offdiag << std::endl;
 
           // ==============================================
           // block size to switch to device call

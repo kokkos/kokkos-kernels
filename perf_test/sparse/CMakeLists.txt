@@ -85,7 +85,12 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
         SOURCES KokkosSparse_sptrsv_cholmod.cpp
 )
 
-IF (NOT ${KOKKOS_HAS_TRILINOS})
+IF (KOKKOS_HAS_TRILINOS)
+    SET (KOKKOSKERNELS_ENABLE_SPTRSV_SUPERLU OFF)
+ELSE ()
+    SET (KOKKOSKERNELS_ENABLE_SPTRSV_SUPERLU ON)
+ENDIF ()
+IF (KOKKOSKERNELS_ENABLE_SPTRSV_SUPERLU)
     # Disable this perf test with Trilinos builds to workaround
     # -Werror issues error: declaration of xyz with C language linkage
     KOKKOSKERNELS_ADD_EXECUTABLE(
