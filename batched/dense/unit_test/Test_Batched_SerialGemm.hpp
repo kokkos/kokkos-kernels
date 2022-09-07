@@ -6,8 +6,7 @@
 
 //#include "KokkosBatched_Vector.hpp"
 
-#include "KokkosBatched_Gemm_Decl.hpp"
-#include "KokkosBatched_Gemm_Serial_Impl.hpp"
+#include "KokkosBlas3_gemm.hpp"
 
 #include "KokkosKernels_TestUtils.hpp"
 
@@ -41,8 +40,9 @@ struct Functor_TestBatchedSerialGemm {
     auto bb = Kokkos::subview(_b, k, Kokkos::ALL(), Kokkos::ALL());
     auto cc = Kokkos::subview(_c, k, Kokkos::ALL(), Kokkos::ALL());
 
-    SerialGemm<typename ParamTagType::transA, typename ParamTagType::transB,
-               AlgoTagType>::invoke(_alpha, aa, bb, _beta, cc);
+    KokkosBlas::SerialGemm<typename ParamTagType::transA,
+                           typename ParamTagType::transB,
+                           AlgoTagType>::invoke(_alpha, aa, bb, _beta, cc);
   }
 
   inline void run() {

@@ -256,6 +256,78 @@ void gemm(const char transA[], const char transB[],
   gemm(space, transA, transB, alpha, A, B, beta, C);
 }
 
+/********************* BEGIN functor-level routines *********************/
+
+///
+/// Serial Gemm
+///
+
+template <typename ArgTransA, typename ArgTransB, typename ArgAlgo>
+struct SerialGemm {
+  template <typename ScalarType, typename AViewType, typename BViewType,
+            typename CViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha,
+                                           const AViewType& A,
+                                           const BViewType& B,
+                                           const ScalarType beta,
+                                           const CViewType& C);
+};
+
+///
+/// Team Impl
+/// =========
+
+template <typename MemberType, typename ArgTransA, typename ArgTransB,
+          typename ArgAlgo>
+struct TeamGemm {
+  template <typename ScalarType, typename AViewType, typename BViewType,
+            typename CViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(
+      const MemberType& member, const ScalarType alpha, const AViewType& A,
+      const BViewType& B, const ScalarType beta, const CViewType& C);
+};
+
+///
+/// TeamVector Impl
+/// =========
+
+template <typename MemberType, typename ArgTransA, typename ArgTransB,
+          typename ArgAlgo>
+struct TeamVectorGemm {
+  template <typename ScalarType, typename AViewType, typename BViewType,
+            typename CViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(
+      const MemberType& member, const ScalarType alpha, const AViewType& A,
+      const BViewType& B, const ScalarType beta, const CViewType& C);
+};
+
+///
+/// Selective Interface
+///
+template <typename MemberType, typename ArgTransA, typename ArgTransB,
+          typename ArgMode, typename ArgAlgo>
+struct Gemm {
+  template <typename ScalarType, typename AViewType, typename BViewType,
+            typename CViewType>
+  KOKKOS_FORCEINLINE_FUNCTION static int invoke(
+      const MemberType& member, const ScalarType alpha, const AViewType& A,
+      const BViewType& B, const ScalarType beta, const CViewType& C) {
+    int r_val = 0;
+    if (std::is_same<ArgMode, Mode::Serial>::value) {
+      r_val = SerialGemm<ArgTransA, ArgTransB, ArgAlgo>::invoke(alpha, A, B,
+                                                                beta, C);
+    } else if (std::is_same<ArgMode, Mode::Team>::value) {
+      r_val = TeamGemm<MemberType, ArgTransA, ArgTransB, ArgAlgo>::invoke(
+          member, alpha, A, B, beta, C);
+    }
+    return r_val;
+  }
+};
+
+/********************* END functor-level routines *********************/
 }  // namespace KokkosBlas
+
+#include <KokkosBlas3_serial_gemm_impl.hpp>
+#include <KokkosBlas3_team_gemm_impl.hpp>
 
 #endif  // KOKKOS_BLAS3_MV_HPP_

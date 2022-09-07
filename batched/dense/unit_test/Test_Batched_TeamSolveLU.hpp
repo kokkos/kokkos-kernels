@@ -6,8 +6,7 @@
 
 //#include "KokkosBatched_Vector.hpp"
 
-#include "KokkosBatched_Gemm_Decl.hpp"
-#include "KokkosBatched_Gemm_Team_Impl.hpp"
+#include "KokkosBlas3_gemm.hpp"
 #include "KokkosBatched_LU_Decl.hpp"
 #include "KokkosBatched_LU_Team_Impl.hpp"
 #include "KokkosBatched_SolveLU_Decl.hpp"
@@ -53,10 +52,10 @@ struct Functor_BatchedTeamGemm {
     }
     member.team_barrier();
 
-    KokkosBatched::TeamGemm<MemberType, typename ParamTagType::transA,
-                            typename ParamTagType::transB,
-                            AlgoTagType>::invoke(member, _alpha, aa, bb, _beta,
-                                                 cc);
+    KokkosBlas::TeamGemm<MemberType, typename ParamTagType::transA,
+                         typename ParamTagType::transB,
+                         AlgoTagType>::invoke(member, _alpha, aa, bb, _beta,
+                                              cc);
   }
 
   inline void run() {

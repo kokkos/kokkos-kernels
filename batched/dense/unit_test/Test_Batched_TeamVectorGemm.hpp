@@ -2,8 +2,7 @@
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Random.hpp"
 
-#include "KokkosBatched_Gemm_Decl.hpp"
-#include "KokkosBatched_Gemm_TeamVector_Impl.hpp"
+#include "KokkosBlas3_gemm.hpp"
 
 #include "KokkosKernels_TestUtils.hpp"
 
@@ -40,10 +39,10 @@ struct Functor_TestBatchedTeamVector {
     auto bb = Kokkos::subview(_b, k, Kokkos::ALL(), Kokkos::ALL());
     auto cc = Kokkos::subview(_c, k, Kokkos::ALL(), Kokkos::ALL());
 
-    KokkosBatched::TeamVectorGemm<MemberType, typename ParamTagType::transA,
-                                  typename ParamTagType::transB,
-                                  AlgoTagType>::invoke(member, _alpha, aa, bb,
-                                                       _beta, cc);
+    KokkosBlas::TeamVectorGemm<MemberType, typename ParamTagType::transA,
+                               typename ParamTagType::transB,
+                               AlgoTagType>::invoke(member, _alpha, aa, bb,
+                                                    _beta, cc);
   }
 
   inline void run() {
