@@ -327,15 +327,15 @@ int test_sptrsv_perf(std::vector<int> tests, std::string &filename,
           // specify wheather to invert diagonal blocks
           khL.set_sptrsv_invert_diagonal(invert_diag);
           khU.set_sptrsv_invert_diagonal(invert_diag);
-	  invert_diag = khU.get_sptrsv_invert_diagonal();
+          invert_diag = khU.get_sptrsv_invert_diagonal();
           std::cout << " Invert diagonal    : " << invert_diag << std::endl;
 
           // ==============================================
           // specify wheather to apply diagonal-inversion to off-diagonal blocks
           // (optional, default is false)
           khU.set_sptrsv_invert_offdiagonal(invert_offdiag);
-	  // > make sure if the flag is set before setting for L
-	  invert_offdiag = khU.get_sptrsv_invert_offdiagonal();
+          // > make sure if the flag is set before setting for L
+          invert_offdiag = khU.get_sptrsv_invert_offdiagonal();
           khL.set_sptrsv_invert_offdiagonal(invert_offdiag);
           std::cout << " Invert Off-diagonal: " << invert_offdiag << std::endl;
 

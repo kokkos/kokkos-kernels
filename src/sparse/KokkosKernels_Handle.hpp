@@ -792,11 +792,13 @@ class KokkosKernelsHandle {
   void set_sptrsv_invert_diagonal(bool flag) {
     auto algo = this->sptrsvHandle->get_algorithm();
     using namespace KokkosSparse::Experimental;
-    if(!flag && (algo == SPTRSVAlgorithm::SUPERNODAL_SPMV ||
-                 algo == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG)) {
-      std::cout << std::endl
-                << " ** Supernodal SpTRSV with SpMV require diagonal inversion **"
-                << std::endl << std::endl;
+    if (!flag && (algo == SPTRSVAlgorithm::SUPERNODAL_SPMV ||
+                  algo == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG)) {
+      std::cout
+          << std::endl
+          << " ** Supernodal SpTRSV with SpMV require diagonal inversion **"
+          << std::endl
+          << std::endl;
       this->sptrsvHandle->set_invert_diagonal(true);
       return;
     }
