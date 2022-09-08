@@ -114,6 +114,12 @@
 #else
 #define KOKKOSKERNELS_UNUSED_ATTRIBUTE
 #endif  // __GNUC__
+
+#if defined(KOKKOS_COMPILER_GNU)
+#define KOKKOSKERNELS_GNU_COMPILER_FENCE __sync_synchronize();
+#else
+#define KOKKOSKERNELS_GNU_COMPILER_FENCE
+#endif  // KOKKOS_COMPILER_GNU
 /******* END other helper macros *******/
 
 #endif  // KOKKOSKERNELS_MACROS_HPP_
