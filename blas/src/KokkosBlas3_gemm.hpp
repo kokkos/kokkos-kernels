@@ -305,22 +305,54 @@ struct TeamVectorGemm {
 /// Selective Interface
 ///
 template <typename MemberType, typename ArgTransA, typename ArgTransB,
-          typename ArgMode, typename ArgAlgo>
+          typename ArgMode, typename ArgAlgo = Algo::Gemm::Default>
 struct Gemm {
   template <typename ScalarType, typename AViewType, typename BViewType,
             typename CViewType>
   KOKKOS_FORCEINLINE_FUNCTION static int invoke(
       const MemberType& member, const ScalarType alpha, const AViewType& A,
+      const BViewType& B, const ScalarType beta, const CViewType& C);
+};
+
+template <typename MemberType, typename ArgTransA, typename ArgTransB,
+          typename ArgAlgo>
+struct Gemm<MemberType, ArgTransA, ArgTransB, Mode::Serial, ArgAlgo> {
+  template <typename ScalarType, typename AViewType,
+            typename BViewType, typename CViewType>
+  KOKKOS_FORCEINLINE_FUNCTION static int invoke(const MemberType& /* member */,
+                                                const ScalarType alpha,
+                                                const AViewType& A,
+                                                const BViewType& B,
+                                                const ScalarType beta,
+                                                const CViewType& C) {
+    return SerialGemm<ArgTransA, ArgTransB, ArgAlgo>::invoke(alpha, A, B, beta,
+                                                             C);
+  }
+};
+
+template <typename MemberType, typename ArgTransA, typename ArgTransB,
+          typename ArgAlgo>
+struct Gemm<MemberType, ArgTransA, ArgTransB, Mode::Team, ArgAlgo> {
+  template <typename ScalarType, typename AViewType, typename BViewType,
+            typename CViewType>
+  KOKKOS_FORCEINLINE_FUNCTION static int invoke(
+      const MemberType& member, const ScalarType alpha, const AViewType& A,
       const BViewType& B, const ScalarType beta, const CViewType& C) {
-    int r_val = 0;
-    if (std::is_same<ArgMode, Mode::Serial>::value) {
-      r_val = SerialGemm<ArgTransA, ArgTransB, ArgAlgo>::invoke(alpha, A, B,
-                                                                beta, C);
-    } else if (std::is_same<ArgMode, Mode::Team>::value) {
-      r_val = TeamGemm<MemberType, ArgTransA, ArgTransB, ArgAlgo>::invoke(
-          member, alpha, A, B, beta, C);
-    }
-    return r_val;
+    return TeamGemm<MemberType, ArgTransA, ArgTransB, ArgAlgo>::invoke(
+        member, alpha, A, B, beta, C);
+  }
+};
+
+template <typename MemberType, typename ArgTransA, typename ArgTransB,
+          typename ArgAlgo>
+struct Gemm<MemberType, ArgTransA, ArgTransB, Mode::TeamVector, ArgAlgo> {
+  template <typename ScalarType, typename AViewType, typename BViewType,
+            typename CViewType>
+  KOKKOS_FORCEINLINE_FUNCTION static int invoke(
+      const MemberType& member, const ScalarType alpha, const AViewType& A,
+      const BViewType& B, const ScalarType beta, const CViewType& C) {
+    return TeamVectorGemm<MemberType, ArgTransA, ArgTransB, ArgAlgo>::invoke(
+        member, alpha, A, B, beta, C);
   }
 };
 
