@@ -719,9 +719,8 @@ struct parallel_batched_gemm {
     auto svB = Kokkos::subview(gemm_args_.B, i, Kokkos::ALL(), Kokkos::ALL());
     auto svC = Kokkos::subview(gemm_args_.C, i, Kokkos::ALL(), Kokkos::ALL());
 
-    KokkosBlas::TeamGemm<MemberType, TransAType, TransBType,
-                         BlockingType>::invoke(member, gemm_args_.alpha, svA,
-                                               svB, gemm_args_.beta, svC);
+    KokkosBlas::TeamGemm<TransAType, TransBType, BlockingType>::invoke(
+        member, gemm_args_.alpha, svA, svB, gemm_args_.beta, svC);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -731,9 +730,8 @@ struct parallel_batched_gemm {
     auto svB = Kokkos::subview(gemm_args_.B, Kokkos::ALL(), Kokkos::ALL(), i);
     auto svC = Kokkos::subview(gemm_args_.C, Kokkos::ALL(), Kokkos::ALL(), i);
 
-    KokkosBlas::TeamGemm<MemberType, TransAType, TransBType,
-                         BlockingType>::invoke(member, gemm_args_.alpha, svA,
-                                               svB, gemm_args_.beta, svC);
+    KokkosBlas::TeamGemm<TransAType, TransBType, BlockingType>::invoke(
+        member, gemm_args_.alpha, svA, svB, gemm_args_.beta, svC);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -746,10 +744,8 @@ struct parallel_batched_gemm {
     auto svC =
         Kokkos::subview(gemm_args_.C, team_idx, Kokkos::ALL(), Kokkos::ALL());
 
-    KokkosBlas::TeamVectorGemm<MemberType, TransAType, TransBType,
-                               BlockingType>::invoke(member, gemm_args_.alpha,
-                                                     svA, svB, gemm_args_.beta,
-                                                     svC);
+    KokkosBlas::TeamVectorGemm<TransAType, TransBType, BlockingType>::invoke(
+        member, gemm_args_.alpha, svA, svB, gemm_args_.beta, svC);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -763,10 +759,8 @@ struct parallel_batched_gemm {
     auto svC =
         Kokkos::subview(gemm_args_.C, Kokkos::ALL(), Kokkos::ALL(), team_idx);
 
-    KokkosBlas::TeamVectorGemm<MemberType, TransAType, TransBType,
-                               BlockingType>::invoke(member, gemm_args_.alpha,
-                                                     svA, svB, gemm_args_.beta,
-                                                     svC);
+    KokkosBlas::TeamVectorGemm<TransAType, TransBType, BlockingType>::invoke(
+        member, gemm_args_.alpha, svA, svB, gemm_args_.beta, svC);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -782,7 +776,7 @@ struct parallel_batched_gemm {
           auto svC = Kokkos::subview(gemm_args_.Cv.ivec_4d, i, Kokkos::ALL(),
                                      Kokkos::ALL(), vector_lane);
 
-          KokkosBlas::Gemm<MemberType, TransAType, TransBType, AlgoMode,
+          KokkosBlas::Gemm<TransAType, TransBType, AlgoMode,
                            BlockingType>::invoke(member, gemm_args_.alpha, svA,
                                                  svB, gemm_args_.beta, svC);
         });
@@ -802,7 +796,7 @@ struct parallel_batched_gemm {
           auto svC = Kokkos::subview(gemm_args_.Cv.ivec_4d, vector_lane,
                                      Kokkos::ALL(), Kokkos::ALL(), i);
 
-          KokkosBlas::Gemm<MemberType, TransAType, TransBType, AlgoMode,
+          KokkosBlas::Gemm<TransAType, TransBType, AlgoMode,
                            BlockingType>::invoke(member, gemm_args_.alpha, svA,
                                                  svB, gemm_args_.beta, svC);
         });
@@ -1066,10 +1060,8 @@ struct parallel_batched_gemm_experiment2_3_4 {
 
     // Uses TeamThreadRange over C-rows
     //        ThreadVectorRange over C-cols
-    KokkosBlas::TeamVectorGemm<MemberType, TransAType, TransBType,
-                               BlockingType>::invoke(member, gemm_args_.alpha,
-                                                     svA, svB, gemm_args_.beta,
-                                                     svC);
+    KokkosBlas::TeamVectorGemm<TransAType, TransBType, BlockingType>::invoke(
+        member, gemm_args_.alpha, svA, svB, gemm_args_.beta, svC);
   }
 
   // Experiment 3
@@ -1096,10 +1088,8 @@ struct parallel_batched_gemm_experiment2_3_4 {
           auto svC_col = Kokkos::subview(svC, Kokkos::ALL(), lane_idx);
           // TeamGemm Calls TeamThreadRange over M*N meaning the flat M*N array
           // is split over all threads of the team
-          KokkosBlas::TeamGemm<MemberType, TransAType, TransBType,
-                               BlockingType>::invoke(member, gemm_args_.alpha,
-                                                     svA, svB_col,
-                                                     gemm_args_.beta, svC_col);
+          KokkosBlas::TeamGemm<TransAType, TransBType, BlockingType>::invoke(
+              member, gemm_args_.alpha, svA, svB_col, gemm_args_.beta, svC_col);
         });
   }
 
@@ -1128,10 +1118,8 @@ struct parallel_batched_gemm_experiment2_3_4 {
           auto svC_row = Kokkos::subview(svC, lane_idx, Kokkos::ALL());
           // TeamGemm Calls TeamThreadRange over M*N meaning the flat M*N array
           // is split over all threads of the team
-          KokkosBlas::TeamGemm<MemberType, TransAType, TransBType,
-                               BlockingType>::invoke(member, gemm_args_.alpha,
-                                                     svA_row, svB,
-                                                     gemm_args_.beta, svC_row);
+          KokkosBlas::TeamGemm<TransAType, TransBType, BlockingType>::invoke(
+              member, gemm_args_.alpha, svA_row, svB, gemm_args_.beta, svC_row);
         });
   }
 };
@@ -1412,10 +1400,8 @@ class parallel_batched_gemm_experiment6 {
     auto svC = Kokkos::subview(C, i, Kokkos::ALL(), Kokkos::ALL());
 
     // Uses two serial for-loops internally
-    KokkosBlas::TeamVectorGemm<MemberType, TransAType, TransBType,
-                               BlockingType>::invoke(member, gemm_args.alpha,
-                                                     svA, svB, gemm_args.beta,
-                                                     svC);
+    KokkosBlas::TeamVectorGemm<TransAType, TransBType, BlockingType>::invoke(
+        member, gemm_args.alpha, svA, svB, gemm_args.beta, svC);
   }
 };
 

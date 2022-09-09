@@ -42,7 +42,7 @@ struct Functor_TestBatchedTeamGemm {
     auto bb = Kokkos::subview(_b, k, Kokkos::ALL(), Kokkos::ALL());
     auto cc = Kokkos::subview(_c, k, Kokkos::ALL(), Kokkos::ALL());
 
-    KokkosBlas::TeamGemm<MemberType, typename ParamTagType::transA,
+    KokkosBlas::TeamGemm<typename ParamTagType::transA,
                          typename ParamTagType::transB,
                          AlgoTagType>::invoke(member, _alpha, aa, bb, _beta,
                                               cc);

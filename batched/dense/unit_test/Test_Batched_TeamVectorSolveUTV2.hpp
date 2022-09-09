@@ -81,8 +81,7 @@ struct Functor_TestBatchedTeamVectorSolveUTV2 {
     TeamVectorCopy<MemberType, Trans::NoTranspose>::invoke(member, aa, ac);
 
     /// bb = AA*xx
-    KokkosBlas::TeamVectorGemm<MemberType, Trans::NoTranspose,
-                               Trans::NoTranspose,
+    KokkosBlas::TeamVectorGemm<Trans::NoTranspose, Trans::NoTranspose,
                                Algo::Gemm::Unblocked>::invoke(member, one, aa,
                                                               xx, zero, bb);
     member.team_barrier();

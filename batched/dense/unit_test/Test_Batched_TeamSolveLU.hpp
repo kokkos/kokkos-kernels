@@ -52,7 +52,7 @@ struct Functor_BatchedTeamGemm {
     }
     member.team_barrier();
 
-    KokkosBlas::TeamGemm<MemberType, typename ParamTagType::transA,
+    KokkosBlas::TeamGemm<typename ParamTagType::transA,
                          typename ParamTagType::transB,
                          AlgoTagType>::invoke(member, _alpha, aa, bb, _beta,
                                               cc);
