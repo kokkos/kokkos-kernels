@@ -1454,10 +1454,7 @@ struct array_sum_reduce {
   array_sum_reduce() {
     for (int i = 0; i < N; i++) data[i] = scalar_t();
   }
-  KOKKOS_INLINE_FUNCTION
-  array_sum_reduce(const ValueType &rhs) {
-    for (int i = 0; i < N; i++) data[i] = rhs.data[i];
-  }
+
   KOKKOS_INLINE_FUNCTION  // add operator
       array_sum_reduce &
       operator+=(const ValueType &src) {
