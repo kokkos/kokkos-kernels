@@ -45,10 +45,6 @@
 #ifndef KOKKOSBLAS2_TEAM_GEMV_IMPL_HPP_
 #define KOKKOSBLAS2_TEAM_GEMV_IMPL_HPP_
 
-#include <KokkosKernels_config.h>
-#include <Kokkos_Core.hpp>
-#include <Kokkos_ArithTraits.hpp>
-#include <Kokkos_InnerProductSpaceTraits.hpp>
 #include <KokkosBlas2_team_gemv_internal.hpp>
 
 namespace KokkosBlas {
