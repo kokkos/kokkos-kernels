@@ -6,7 +6,7 @@
 
 #include "KokkosBatched_Copy_Decl.hpp"
 #include "KokkosBatched_ApplyPivot_Decl.hpp"
-#include "KokkosBlas2_team_gemv_spec.hpp"
+#include "KokkosBlas2_team_gemv_impl.hpp"
 #include "KokkosBatched_Trsv_Decl.hpp"
 #include "KokkosBatched_UTV_Decl.hpp"
 #include "KokkosBatched_SolveUTV_Decl.hpp"

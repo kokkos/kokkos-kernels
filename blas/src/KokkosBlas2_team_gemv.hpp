@@ -45,7 +45,7 @@
 #ifndef KOKKOSBLAS2_TEAM_GEMV_HPP_
 #define KOKKOSBLAS2_TEAM_GEMV_HPP_
 
-#include <KokkosBlas2_team_gemv_spec.hpp>
+#include <KokkosBlas2_team_gemv_impl.hpp>
 
 namespace KokkosBlas {
 namespace Experimental {

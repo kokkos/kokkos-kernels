@@ -42,8 +42,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOSBLAS2_TEAM_GEMV_SPEC_HPP_
-#define KOKKOSBLAS2_TEAM_GEMV_SPEC_HPP_
+#ifndef KOKKOSBLAS2_TEAM_GEMV_IMPL_HPP_
+#define KOKKOSBLAS2_TEAM_GEMV_IMPL_HPP_
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
