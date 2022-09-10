@@ -6,7 +6,7 @@
 
 #include "KokkosBlas1_set.hpp"
 #include "KokkosBatched_Copy_Decl.hpp"
-#include "KokkosBlas2_team_gemv_impl.hpp"
+#include "KokkosBlas2_gemv.hpp"
 #include "KokkosBatched_Trsv_Decl.hpp"
 #include "KokkosBatched_QR_Decl.hpp"
 #include "KokkosBatched_ApplyQ_Decl.hpp"

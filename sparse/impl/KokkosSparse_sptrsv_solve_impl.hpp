@@ -62,7 +62,7 @@
 
 #include "KokkosBatched_Util.hpp"
 
-#include "KokkosBlas2_team_gemv_impl.hpp"
+#include "KokkosBlas2_gemv.hpp"
 
 #include "KokkosBatched_Trsm_Team_Impl.hpp"
 #endif

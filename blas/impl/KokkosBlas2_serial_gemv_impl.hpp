@@ -49,21 +49,6 @@
 #include "KokkosBlas_util.hpp"
 #include "KokkosBlas2_serial_gemv_internal.hpp"
 
-namespace KokkosBlas {
-
-template <typename ArgTrans, typename ArgAlgo>
-struct SerialGemv {
-  template <typename ScalarType, typename AViewType, typename xViewType,
-            typename yViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType /*alpha*/,
-                                           const AViewType & /*A*/,
-                                           const xViewType & /*x*/,
-                                           const ScalarType /*beta*/,
-                                           const yViewType & /*y*/);
-};
-
-}  // namespace KokkosBlas
-
 #include "KokkosBlas2_serial_gemv_tpl_spec_decl.hpp"
 
 namespace KokkosBlas {

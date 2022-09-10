@@ -49,8 +49,7 @@
 ///   Tpetra::MultiVector use cases.
 
 #include <KokkosBlas2_gemv_spec.hpp>
-#include <KokkosBlas2_serial_gemv.hpp>
-#include <KokkosBlas2_team_gemv.hpp>
+#include <KokkosBlas_util.hpp>
 #include <KokkosKernels_helpers.hpp>
 #include <KokkosKernels_Error.hpp>
 #include <sstream>
@@ -208,7 +207,140 @@ void gemv(const char trans[], typename AViewType::const_value_type& alpha,
   gemv(space, trans, alpha, A, x, beta, y);
 }
 
+/********************* BEGIN functor-level routines *********************/
+
+template <typename ArgTrans, typename ArgAlgo>
+struct SerialGemv {
+  template <typename ScalarType, typename AViewType, typename xViewType,
+            typename yViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType /*alpha*/,
+                                           const AViewType& /*A*/,
+                                           const xViewType& /*x*/,
+                                           const ScalarType /*beta*/,
+                                           const yViewType& /*y*/);
+};
+
+template <typename MemberType, typename ArgTrans,
+          typename ArgAlgo = Algo::Gemv::Default>
+struct TeamGemv {
+  template <typename ScalarType, typename AViewType, typename xViewType,
+            typename yViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& /*member*/,
+                                           const ScalarType /*alpha*/,
+                                           const AViewType& /*A*/,
+                                           const xViewType& /*x*/,
+                                           const ScalarType /*beta*/,
+                                           const yViewType& /*y*/);
+};
+
+template <typename MemberType, typename ArgTrans, typename ArgAlgo>
+struct TeamVectorGemv {
+  template <typename ScalarType, typename AViewType, typename xViewType,
+            typename yViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& /*member*/,
+                                           const ScalarType /*alpha*/,
+                                           const AViewType& /*A*/,
+                                           const xViewType& /*x*/,
+                                           const ScalarType /*beta*/,
+                                           const yViewType& /*y*/);
+};
+
 namespace Experimental {
+
+template <class AlgoTag, class MatrixType, class XVector, class YVector,
+          class ScalarType>
+void KOKKOS_INLINE_FUNCTION serial_gemv(const char trans,
+                                        const ScalarType& alpha,
+                                        const MatrixType& A, const XVector& x,
+                                        const ScalarType& beta,
+                                        const YVector& y) {
+  if (trans == 'N' || trans == 'n') {
+    using mode = KokkosBlas::Trans::NoTranspose;
+    KokkosBlas::SerialGemv<mode, AlgoTag>::invoke(alpha, A, x, beta, y);
+  } else if (trans == 'T' || trans == 't') {
+    using mode = KokkosBlas::Trans::Transpose;
+    KokkosBlas::SerialGemv<mode, AlgoTag>::invoke(alpha, A, x, beta, y);
+  } else if (trans == 'C' || trans == 'c') {
+    using mode = KokkosBlas::Trans::ConjTranspose;
+    KokkosBlas::SerialGemv<mode, AlgoTag>::invoke(alpha, A, x, beta, y);
+  } else {
+    Kokkos::abort("Matrix mode not supported");
+  }
+}
+
+// default AlgoTag
+template <class MatrixType, class XVector, class YVector, class ScalarType>
+void KOKKOS_INLINE_FUNCTION serial_gemv(const char trans,
+                                        const ScalarType& alpha,
+                                        const MatrixType& A, const XVector& x,
+                                        const ScalarType& beta,
+                                        const YVector& y) {
+  serial_gemv<KokkosBlas::Algo::Gemv::Default>(trans, alpha, A, x, beta, y);
+}
+
+template <class AlgoTag, class TeamType, class MatrixType, class XVector,
+          class YVector, class ScalarType>
+void KOKKOS_INLINE_FUNCTION team_gemv(const TeamType& team, const char trans,
+                                      const ScalarType& alpha,
+                                      const MatrixType& A, const XVector& x,
+                                      const ScalarType& beta,
+                                      const YVector& y) {
+  if (trans == 'N' || trans == 'n')
+    TeamGemv<TeamType, Trans::NoTranspose, AlgoTag>::invoke(team, alpha, A, x,
+                                                            beta, y);
+  else if (trans == 'T' || trans == 't')
+    TeamGemv<TeamType, Trans::Transpose, AlgoTag>::invoke(team, alpha, A, x,
+                                                          beta, y);
+  else if (trans == 'C' || trans == 'c')
+    TeamGemv<TeamType, Trans::ConjTranspose, AlgoTag>::invoke(team, alpha, A, x,
+                                                              beta, y);
+  else {
+    Kokkos::abort("Matrix mode not supported");
+  }
+}
+
+// default AlgoTag
+template <class TeamType, class MatrixType, class XVector, class YVector,
+          class ScalarType>
+void KOKKOS_INLINE_FUNCTION team_gemv(const TeamType& team, const char trans,
+                                      const ScalarType& alpha,
+                                      const MatrixType& A, const XVector& x,
+                                      const ScalarType& beta,
+                                      const YVector& y) {
+  team_gemv<KokkosBlas::Algo::Gemv::Default>(team, trans, alpha, A, x, beta, y);
+}
+
+template <class AlgoTag, class TeamType, class MatrixType, class XVector,
+          class YVector, class ScalarType>
+void KOKKOS_INLINE_FUNCTION
+teamvector_gemv(const TeamType& team, const char trans, const ScalarType& alpha,
+                const MatrixType& A, const XVector& x, const ScalarType& beta,
+                const YVector& y) {
+  if (trans == 'N' || trans == 'n') {
+    KokkosBlas::TeamVectorGemv<TeamType, Trans::NoTranspose, AlgoTag>::invoke(
+        team, alpha, A, x, beta, y);
+  } else if (trans == 'T' || trans == 't') {
+    KokkosBlas::TeamVectorGemv<TeamType, Trans::Transpose, AlgoTag>::invoke(
+        team, alpha, A, x, beta, y);
+  } else if (trans == 'C' || trans == 'c') {
+    KokkosBlas::TeamVectorGemv<TeamType, Trans::ConjTranspose, AlgoTag>::invoke(
+        team, alpha, A, x, beta, y);
+  } else {
+    Kokkos::abort("Matrix mode not supported");
+  }
+}
+
+// default AlgoTag
+template <class TeamType, class MatrixType, class XVector, class YVector,
+          class ScalarType>
+void KOKKOS_INLINE_FUNCTION
+team_vector_gemv(const TeamType& team, const char trans,
+                 const ScalarType& alpha, const MatrixType& A, const XVector& x,
+                 const ScalarType& beta, const YVector& y) {
+  teamvector_gemv<KokkosBlas::Algo::Gemv::Default>(team, trans, alpha, A, x,
+                                                   beta, y);
+}
+
 ///
 /// Selective Interface
 ///
@@ -259,6 +391,10 @@ struct Gemv<Mode::TeamVector, ArgAlgo> {
 };
 
 }  // namespace Experimental
+/********************* END non-functor-level routines *********************/
 }  // namespace KokkosBlas
+
+#include "KokkosBlas2_serial_gemv_impl.hpp"
+#include "KokkosBlas2_team_gemv_impl.hpp"
 
 #endif  // KOKKOS_BLAS2_MV_HPP_

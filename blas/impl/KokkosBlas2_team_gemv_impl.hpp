@@ -49,31 +49,6 @@
 
 namespace KokkosBlas {
 
-template <typename MemberType, typename ArgTrans,
-          typename ArgAlgo = Algo::Gemv::Default>
-struct TeamGemv {
-  template <typename ScalarType, typename AViewType, typename xViewType,
-            typename yViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& /*member*/,
-                                           const ScalarType /*alpha*/,
-                                           const AViewType& /*A*/,
-                                           const xViewType& /*x*/,
-                                           const ScalarType /*beta*/,
-                                           const yViewType& /*y*/);
-};
-
-template <typename MemberType, typename ArgTrans, typename ArgAlgo>
-struct TeamVectorGemv {
-  template <typename ScalarType, typename AViewType, typename xViewType,
-            typename yViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& /*member*/,
-                                           const ScalarType /*alpha*/,
-                                           const AViewType& /*A*/,
-                                           const xViewType& /*x*/,
-                                           const ScalarType /*beta*/,
-                                           const yViewType& /*y*/);
-};
-
 ///
 /// NT
 ///
