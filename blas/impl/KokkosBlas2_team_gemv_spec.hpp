@@ -49,7 +49,7 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_ArithTraits.hpp>
 #include <Kokkos_InnerProductSpaceTraits.hpp>
-#include <KokkosBlas2_team_gemv_impl.hpp>
+#include <KokkosBlas2_team_gemv_internal.hpp>
 
 namespace KokkosBlas {
 

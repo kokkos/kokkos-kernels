@@ -42,8 +42,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOSBLAS2_TEAM_GEMV_IMPL_HPP_
-#define KOKKOSBLAS2_TEAM_GEMV_IMPL_HPP_
+#ifndef KOKKOSBLAS2_TEAM_GEMV_INTERNAL_HPP_
+#define KOKKOSBLAS2_TEAM_GEMV_INTERNAL_HPP_
 
 #include "KokkosBlas1_set_impl.hpp"
 #include "KokkosBlas1_team_scal_impl.hpp"
