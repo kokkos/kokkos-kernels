@@ -771,21 +771,21 @@ int main(int argc, char** argv) {
 
       Kokkos::deep_copy(h_y, y_check);
       Scalar error = 0;
-      Scalar sum   = 0;
+      // Scalar sum   = 0;
       for (int rowIdx = 0; rowIdx < A.numRows(); ++rowIdx) {
         for (int vecIdx = 0; vecIdx < numVecs; ++vecIdx) {
           error += (h_y_compare(rowIdx) - h_y(rowIdx)) *
                    (h_y_compare(rowIdx) - h_y(rowIdx));
-          sum += h_y_compare(rowIdx) * h_y_compare(rowIdx);
+          // sum += h_y_compare(rowIdx) * h_y_compare(rowIdx);
         }
       }
 
-      int num_errors     = 0;
+      // int num_errors     = 0;
       double total_error = 0;
-      double total_sum   = 0;
-      num_errors += (error / (sum == 0 ? 1 : sum)) > 1e-5 ? 1 : 0;
+      // double total_sum   = 0;
+      // num_errors += (error / (sum == 0 ? 1 : sum)) > 1e-5 ? 1 : 0;
       total_error += error;
-      total_sum += sum;
+      // total_sum += sum;
 
       if (total_error == 0) {
         printf("Kokkos::MultiVector Test: Passed\n");
