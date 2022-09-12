@@ -94,13 +94,6 @@ KOKKOSKERNELS_ADD_OPTION(
         "Whether to build docs. Default: OFF"
 )
 
-KOKKOSKERNELS_ADD_OPTION(
-        "ENABLE_REMAINDER"
-        ON
-        BOOL
-        "Whether to build library remainder components. Default: ON"
-)
-
 SET(KokkosKernels_INSTALL_TESTING OFF CACHE INTERNAL
         "Whether to build tests and examples against installation")
 IF (KokkosKernels_INSTALL_TESTING)
@@ -350,7 +343,6 @@ ELSE()
   KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC METIS)
   KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC ARMPL)
   KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC MAGMA)
-  # Not yet here KOKKOSKERNELS_LINK_TPL(kokkoskernels PUBLIC MAGMA)
 
 
 

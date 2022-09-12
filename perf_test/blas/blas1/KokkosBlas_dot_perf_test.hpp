@@ -6,7 +6,7 @@
 #define KOKKOSKERNELS_KOKKOSBLAS_DOT_TEST_RPS_HPP
 
 #include <Kokkos_Core.hpp>
-#include "src/KokkosBlas1_dot.hpp"
+#include "KokkosBlas1_dot.hpp"
 #include <Kokkos_Random.hpp>
 
 // These headers are required for RPS perf test implementation
