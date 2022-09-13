@@ -591,10 +591,12 @@ class Vector<SIMD<Kokkos::complex<double> >, 2> {
   inline Vector() { _data = _mm256_setzero_pd(); }
   inline Vector(const value_type &val) {
     _data = _mm256_broadcast_pd((const __m128d *)&val);
+    KOKKOSKERNELS_GNU_COMPILER_FENCE
   }
   inline Vector(const mag_type &val) {
     const value_type a(val);
     _data = _mm256_broadcast_pd((__m128d const *)&a);
+    KOKKOSKERNELS_GNU_COMPILER_FENCE
   }
   inline Vector(const type &b) { _data = b._data; }
   inline Vector(const __m256d &val) { _data = val; }
@@ -744,10 +746,12 @@ class Vector<SIMD<Kokkos::complex<double> >, 4> {
   inline Vector(const value_type &val) {
     _data = _mm512_mask_broadcast_f64x4(_mm512_set1_pd(val.imag()), 0x55,
                                         _mm256_set1_pd(val.real()));
+    KOKKOSKERNELS_GNU_COMPILER_FENCE
   }
   inline Vector(const mag_type &val) {
     _data = _mm512_mask_broadcast_f64x4(_mm512_setzero_pd(), 0x55,
                                         _mm256_set1_pd(val));
+    KOKKOSKERNELS_GNU_COMPILER_FENCE
   }
   inline Vector(const type &b) { _data = b._data; }
   inline Vector(const __m512d &val) { _data = val; }
