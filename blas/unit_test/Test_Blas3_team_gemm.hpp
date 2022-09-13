@@ -1,24 +1,9 @@
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include "gtest/gtest.h"
-#include "Kokkos_Core.hpp"
-#include "Kokkos_Random.hpp"
-
-//#include "KokkosBatched_Vector.hpp"
-
-#include "KokkosBlas3_gemm.hpp"
-#include "KokkosKernels_TestUtils.hpp"
-
-using namespace KokkosBatched;
+#include "Test_Blas3_gemm_util.hpp"
 
 namespace Test {
-namespace TeamGemm {
-
-template <typename TA, typename TB>
-struct ParamTag {
-  typedef TA transA;
-  typedef TB transB;
-};
+namespace Gemm {
 
 template <typename DeviceType, typename ViewType, typename ScalarType,
           typename ParamTagType, typename AlgoTagType>
@@ -64,15 +49,23 @@ struct Functor_TestBlasTeamGemm {
 
 template <typename DeviceType, typename ViewType, typename ScalarType,
           typename ParamTagType, typename AlgoTagType>
-void impl_test_blas_teamgemm(const int N, const int matAdim1,
-                             const int matAdim2, const int matBdim1,
-                             const int matBdim2, const int matCdim1,
-                             const int matCdim2) {
+void impl_test_blas_teamgemm(const int N, const int dimM, const int dimN,
+                             const int dimK) {
   using transA          = typename ParamTagType::transA;
   using transB          = typename ParamTagType::transB;
   using execution_space = typename DeviceType::execution_space;
   using value_type      = typename ViewType::value_type;
   using ats             = Kokkos::Details::ArithTraits<value_type>;
+
+  const auto transposed_A = !std::is_same<transA, Trans::NoTranspose>::value;
+  const auto transposed_B = !std::is_same<transB, Trans::NoTranspose>::value;
+
+  const int matAdim1 = transposed_A ? dimM : dimK;
+  const int matAdim2 = transposed_A ? dimK : dimM;
+  const int matBdim1 = transposed_B ? dimK : dimN;
+  const int matBdim2 = transposed_B ? dimN : dimK;
+  const int matCdim1 = dimM;
+  const int matCdim2 = dimN;
 
   /// randomized input testing views
   ScalarType alpha = ScalarType(1.5), beta = ScalarType(3.0);
@@ -99,14 +92,15 @@ void impl_test_blas_teamgemm(const int N, const int matAdim1,
 
   Functor_BatchedVanillaGEMM<ViewType, ViewType, ViewType, execution_space>
       vgemm;
-  vgemm.A_t = std::is_same<transA, Trans::Transpose>::value;
-  vgemm.B_t = std::is_same<transB, Trans::Transpose>::value;
-  vgemm.A_c = vgemm.B_c = false;
-  vgemm.A               = a_expected;
-  vgemm.B               = b_expected;
-  vgemm.C               = c_expected;
-  vgemm.alpha           = alpha;
-  vgemm.beta            = beta;
+  vgemm.A_t   = transposed_A;
+  vgemm.B_t   = transposed_B;
+  vgemm.A_c   = false;
+  vgemm.B_c   = false;
+  vgemm.A     = a_expected;
+  vgemm.B     = b_expected;
+  vgemm.C     = c_expected;
+  vgemm.alpha = alpha;
+  vgemm.beta  = beta;
   vgemm.run();  // Compute c_expected
 
   Functor_TestBlasTeamGemm<DeviceType, ViewType, ScalarType, ParamTagType,
@@ -142,11 +136,7 @@ void impl_test_blas_teamgemm(const int N, const int matAdim1,
       }
   EXPECT_NEAR_KK(diff / sum, 0, eps);
 }
-}  // namespace TeamGemm
-}  // namespace Test
 
-// void (*impl_test)(const int, const int, const int, const int, const int,
-// const int, const int)
 template <typename DeviceType, typename ValueType, typename ScalarType,
           typename ParamTagType, typename AlgoTagType>
 int test_blas_teamgemm() {
@@ -154,52 +144,20 @@ int test_blas_teamgemm() {
   {
     typedef Kokkos::View<ValueType ***, Kokkos::LayoutLeft, DeviceType>
         ViewType;
-    Test::TeamGemm::impl_test_blas_teamgemm<DeviceType, ViewType, ScalarType,
-                                            ParamTagType, AlgoTagType>(
-        0, 10, 10, 10, 10, 10, 10);
+    impl_test_blas_teamgemm<DeviceType, ViewType, ScalarType, ParamTagType,
+                            AlgoTagType>(0, 10, 10, 10);
     for (int i = 0; i < 10; ++i) {
       // printf("Testing: LayoutLeft,  Blksize %d\n", i);
-      Test::TeamGemm::impl_test_blas_teamgemm<DeviceType, ViewType, ScalarType,
-                                              ParamTagType, AlgoTagType>(
-          1024, i, i, i, i, i, i);
+      impl_test_blas_teamgemm<DeviceType, ViewType, ScalarType, ParamTagType,
+                              AlgoTagType>(1024, i, i, i);
     }
     for (int i = 0; i < 10; ++i) {
       // printf("Testing: LayoutLeft,  Blksize %d\n", i);
       int dimM = i;
       int dimN = 2 * i;
       int dimK = 3 * i;
-      if ((std::is_same<typename ParamTagType::transA,
-                        Trans::NoTranspose>::value) &&
-          (std::is_same<typename ParamTagType::transB,
-                        Trans::NoTranspose>::value)) {
-        Test::TeamGemm::impl_test_blas_teamgemm<
-            DeviceType, ViewType, ScalarType, ParamTagType, AlgoTagType>(
-            1024, dimM, dimK, dimK, dimN, dimM, dimN);
-      }
-      if ((std::is_same<typename ParamTagType::transA,
-                        Trans::NoTranspose>::value) &&
-          (std::is_same<typename ParamTagType::transB,
-                        Trans::Transpose>::value)) {
-        Test::TeamGemm::impl_test_blas_teamgemm<
-            DeviceType, ViewType, ScalarType, ParamTagType, AlgoTagType>(
-            1024, dimM, dimK, dimN, dimK, dimM, dimN);
-      }
-      if ((std::is_same<typename ParamTagType::transA,
-                        Trans::Transpose>::value) &&
-          (std::is_same<typename ParamTagType::transB,
-                        Trans::NoTranspose>::value)) {
-        Test::TeamGemm::impl_test_blas_teamgemm<
-            DeviceType, ViewType, ScalarType, ParamTagType, AlgoTagType>(
-            1024, dimK, dimM, dimK, dimN, dimM, dimN);
-      }
-      if ((std::is_same<typename ParamTagType::transA,
-                        Trans::Transpose>::value) &&
-          (std::is_same<typename ParamTagType::transB,
-                        Trans::Transpose>::value)) {
-        Test::TeamGemm::impl_test_blas_teamgemm<
-            DeviceType, ViewType, ScalarType, ParamTagType, AlgoTagType>(
-            1024, dimK, dimM, dimN, dimK, dimM, dimN);
-      }
+      impl_test_blas_teamgemm<DeviceType, ViewType, ScalarType, ParamTagType,
+                              AlgoTagType>(1024, dimM, dimN, dimK);
     }
   }
 #endif
@@ -207,52 +165,20 @@ int test_blas_teamgemm() {
   {
     typedef Kokkos::View<ValueType ***, Kokkos::LayoutRight, DeviceType>
         ViewType;
-    Test::TeamGemm::impl_test_blas_teamgemm<DeviceType, ViewType, ScalarType,
-                                            ParamTagType, AlgoTagType>(
-        0, 10, 10, 10, 10, 10, 10);
+    impl_test_blas_teamgemm<DeviceType, ViewType, ScalarType, ParamTagType,
+                            AlgoTagType>(0, 10, 10, 10);
     for (int i = 0; i < 10; ++i) {
       // printf("Testing: LayoutRight, Blksize %d\n", i);
-      Test::TeamGemm::impl_test_blas_teamgemm<DeviceType, ViewType, ScalarType,
-                                              ParamTagType, AlgoTagType>(
-          1024, i, i, i, i, i, i);
+      impl_test_blas_teamgemm<DeviceType, ViewType, ScalarType, ParamTagType,
+                              AlgoTagType>(1024, i, i, i);
     }
     for (int i = 0; i < 10; ++i) {
       // printf("Testing: LayoutLeft,  Blksize %d\n", i);
       int dimM = i;
       int dimN = 2 * i;
       int dimK = 3 * i;
-      if ((std::is_same<typename ParamTagType::transA,
-                        Trans::NoTranspose>::value) &&
-          (std::is_same<typename ParamTagType::transB,
-                        Trans::NoTranspose>::value)) {
-        Test::TeamGemm::impl_test_blas_teamgemm<
-            DeviceType, ViewType, ScalarType, ParamTagType, AlgoTagType>(
-            1024, dimM, dimK, dimK, dimN, dimM, dimN);
-      }
-      if ((std::is_same<typename ParamTagType::transA,
-                        Trans::NoTranspose>::value) &&
-          (std::is_same<typename ParamTagType::transB,
-                        Trans::Transpose>::value)) {
-        Test::TeamGemm::impl_test_blas_teamgemm<
-            DeviceType, ViewType, ScalarType, ParamTagType, AlgoTagType>(
-            1024, dimM, dimK, dimN, dimK, dimM, dimN);
-      }
-      if ((std::is_same<typename ParamTagType::transA,
-                        Trans::Transpose>::value) &&
-          (std::is_same<typename ParamTagType::transB,
-                        Trans::NoTranspose>::value)) {
-        Test::TeamGemm::impl_test_blas_teamgemm<
-            DeviceType, ViewType, ScalarType, ParamTagType, AlgoTagType>(
-            1024, dimK, dimM, dimK, dimN, dimM, dimN);
-      }
-      if ((std::is_same<typename ParamTagType::transA,
-                        Trans::Transpose>::value) &&
-          (std::is_same<typename ParamTagType::transB,
-                        Trans::Transpose>::value)) {
-        Test::TeamGemm::impl_test_blas_teamgemm<
-            DeviceType, ViewType, ScalarType, ParamTagType, AlgoTagType>(
-            1024, dimK, dimM, dimN, dimK, dimM, dimN);
-      }
+      impl_test_blas_teamgemm<DeviceType, ViewType, ScalarType, ParamTagType,
+                              AlgoTagType>(1024, dimM, dimN, dimK);
     }
   }
 #endif
@@ -260,244 +186,38 @@ int test_blas_teamgemm() {
   return 0;
 }
 
+#define TEST_TEAM_CASE2(NAME, VALUE, SCALAR) \
+  TEST_GEMM_CASE(team, NAME, test_blas_teamgemm, VALUE, SCALAR)
+#define TEST_TEAM_CASE(NAME, VALUE) TEST_TEAM_CASE2(NAME, VALUE, VALUE)
+
 #if defined(KOKKOS_BHALF_T_IS_FLOAT)
-TEST_F(TestCategory, blas_scalar_team_gemm_nt_nt_bhalf_bhalf) {
-  typedef ::Test::TeamGemm::ParamTag<Trans::NoTranspose, Trans::NoTranspose>
-      param_tag_type;
-
-  test_blas_teamgemm<TestExecSpace, ::Test::bhalfScalarType,
-                     ::Test::bhalfScalarType, param_tag_type,
-                     Algo::Gemm::Blocked>();
-  test_blas_teamgemm<TestExecSpace, ::Test::bhalfScalarType,
-                     ::Test::bhalfScalarType, param_tag_type,
-                     Algo::Gemm::Unblocked>();
-}
-TEST_F(TestCategory, blas_scalar_team_gemm_t_nt_bhalf_bhalf) {
-  typedef ::Test::TeamGemm::ParamTag<Trans::Transpose, Trans::NoTranspose>
-      param_tag_type;
-
-  test_blas_teamgemm<TestExecSpace, ::Test::bhalfScalarType,
-                     ::Test::bhalfScalarType, param_tag_type,
-                     Algo::Gemm::Blocked>();
-  test_blas_teamgemm<TestExecSpace, ::Test::bhalfScalarType,
-                     ::Test::bhalfScalarType, param_tag_type,
-                     Algo::Gemm::Unblocked>();
-}
-TEST_F(TestCategory, blas_scalar_team_gemm_nt_t_bhalf_bhalf) {
-  typedef ::Test::TeamGemm::ParamTag<Trans::NoTranspose, Trans::Transpose>
-      param_tag_type;
-
-  test_blas_teamgemm<TestExecSpace, ::Test::bhalfScalarType,
-                     ::Test::bhalfScalarType, param_tag_type,
-                     Algo::Gemm::Blocked>();
-  test_blas_teamgemm<TestExecSpace, ::Test::bhalfScalarType,
-                     ::Test::bhalfScalarType, param_tag_type,
-                     Algo::Gemm::Unblocked>();
-}
-TEST_F(TestCategory, blas_scalar_team_gemm_t_t_bhalf_bhalf) {
-  typedef ::Test::TeamGemm::ParamTag<Trans::Transpose, Trans::Transpose>
-      param_tag_type;
-
-  test_blas_teamgemm<TestExecSpace, ::Test::bhalfScalarType,
-                     ::Test::bhalfScalarType, param_tag_type,
-                     Algo::Gemm::Blocked>();
-  test_blas_teamgemm<TestExecSpace, ::Test::bhalfScalarType,
-                     ::Test::bhalfScalarType, param_tag_type,
-                     Algo::Gemm::Unblocked>();
-}
-#endif  // KOKKOS_BHALF_T_IS_FLOAT
+TEST_TEAM_CASE(bhalf_bhalf, ::Test::bhalfScalarType)
+#endif
 
 #if defined(KOKKOS_HALF_T_IS_FLOAT)
-TEST_F(TestCategory, blas_scalar_team_gemm_nt_nt_half_half) {
-  typedef ::Test::TeamGemm::ParamTag<Trans::NoTranspose, Trans::NoTranspose>
-      param_tag_type;
-
-  test_blas_teamgemm<TestExecSpace, ::Test::halfScalarType,
-                     ::Test::halfScalarType, param_tag_type,
-                     Algo::Gemm::Blocked>();
-  test_blas_teamgemm<TestExecSpace, ::Test::halfScalarType,
-                     ::Test::halfScalarType, param_tag_type,
-                     Algo::Gemm::Unblocked>();
-}
-TEST_F(TestCategory, blas_scalar_team_gemm_t_nt_half_half) {
-  typedef ::Test::TeamGemm::ParamTag<Trans::Transpose, Trans::NoTranspose>
-      param_tag_type;
-
-  test_blas_teamgemm<TestExecSpace, ::Test::halfScalarType,
-                     ::Test::halfScalarType, param_tag_type,
-                     Algo::Gemm::Blocked>();
-  test_blas_teamgemm<TestExecSpace, ::Test::halfScalarType,
-                     ::Test::halfScalarType, param_tag_type,
-                     Algo::Gemm::Unblocked>();
-}
-TEST_F(TestCategory, blas_scalar_team_gemm_nt_t_half_half) {
-  typedef ::Test::TeamGemm::ParamTag<Trans::NoTranspose, Trans::Transpose>
-      param_tag_type;
-
-  test_blas_teamgemm<TestExecSpace, ::Test::halfScalarType,
-                     ::Test::halfScalarType, param_tag_type,
-                     Algo::Gemm::Blocked>();
-  test_blas_teamgemm<TestExecSpace, ::Test::halfScalarType,
-                     ::Test::halfScalarType, param_tag_type,
-                     Algo::Gemm::Unblocked>();
-}
-TEST_F(TestCategory, blas_scalar_team_gemm_t_t_half_half) {
-  typedef ::Test::TeamGemm::ParamTag<Trans::Transpose, Trans::Transpose>
-      param_tag_type;
-
-  test_blas_teamgemm<TestExecSpace, ::Test::halfScalarType,
-                     ::Test::halfScalarType, param_tag_type,
-                     Algo::Gemm::Blocked>();
-  test_blas_teamgemm<TestExecSpace, ::Test::halfScalarType,
-                     ::Test::halfScalarType, param_tag_type,
-                     Algo::Gemm::Unblocked>();
-}
-#endif  // KOKKOS_HALF_T_IS_FLOAT
+TEST_TEAM_CASE(half_half, ::Test::halfScalarType)
+#endif
 
 #if defined(KOKKOSKERNELS_INST_FLOAT)
-TEST_F(TestCategory, blas_scalar_team_gemm_nt_nt_float_float) {
-  typedef ::Test::TeamGemm::ParamTag<Trans::NoTranspose, Trans::NoTranspose>
-      param_tag_type;
-  typedef Algo::Gemm::Blocked algo_tag_type;
-  test_blas_teamgemm<TestExecSpace, float, float, param_tag_type,
-                     algo_tag_type>();
-}
-TEST_F(TestCategory, blas_scalar_team_gemm_t_nt_float_float) {
-  typedef ::Test::TeamGemm::ParamTag<Trans::Transpose, Trans::NoTranspose>
-      param_tag_type;
-  typedef Algo::Gemm::Blocked algo_tag_type;
-  test_blas_teamgemm<TestExecSpace, float, float, param_tag_type,
-                     algo_tag_type>();
-}
-TEST_F(TestCategory, blas_scalar_team_gemm_nt_t_float_float) {
-  typedef ::Test::TeamGemm::ParamTag<Trans::NoTranspose, Trans::Transpose>
-      param_tag_type;
-  typedef Algo::Gemm::Blocked algo_tag_type;
-  test_blas_teamgemm<TestExecSpace, float, float, param_tag_type,
-                     algo_tag_type>();
-}
-TEST_F(TestCategory, blas_scalar_team_gemm_t_t_float_float) {
-  typedef ::Test::TeamGemm::ParamTag<Trans::Transpose, Trans::Transpose>
-      param_tag_type;
-  typedef Algo::Gemm::Blocked algo_tag_type;
-  test_blas_teamgemm<TestExecSpace, float, float, param_tag_type,
-                     algo_tag_type>();
-}
+TEST_TEAM_CASE(float_float, float)
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
-TEST_F(TestCategory, blas_scalar_team_gemm_nt_nt_double_double) {
-  typedef ::Test::TeamGemm::ParamTag<Trans::NoTranspose, Trans::NoTranspose>
-      param_tag_type;
-  typedef Algo::Gemm::Blocked algo_tag_type;
-  test_blas_teamgemm<TestExecSpace, double, double, param_tag_type,
-                     algo_tag_type>();
-}
-TEST_F(TestCategory, blas_scalar_team_gemm_t_nt_double_double) {
-  typedef ::Test::TeamGemm::ParamTag<Trans::Transpose, Trans::NoTranspose>
-      param_tag_type;
-  typedef Algo::Gemm::Blocked algo_tag_type;
-  test_blas_teamgemm<TestExecSpace, double, double, param_tag_type,
-                     algo_tag_type>();
-}
-TEST_F(TestCategory, blas_scalar_team_gemm_nt_t_double_double) {
-  typedef ::Test::TeamGemm::ParamTag<Trans::NoTranspose, Trans::Transpose>
-      param_tag_type;
-  typedef Algo::Gemm::Blocked algo_tag_type;
-  test_blas_teamgemm<TestExecSpace, double, double, param_tag_type,
-                     algo_tag_type>();
-}
-TEST_F(TestCategory, blas_scalar_team_gemm_t_t_double_double) {
-  typedef ::Test::TeamGemm::ParamTag<Trans::Transpose, Trans::Transpose>
-      param_tag_type;
-  typedef Algo::Gemm::Blocked algo_tag_type;
-  test_blas_teamgemm<TestExecSpace, double, double, param_tag_type,
-                     algo_tag_type>();
-}
+TEST_TEAM_CASE(double_double, double)
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
-
-/// dcomplex, dcomplex
-
-TEST_F(TestCategory, blas_scalar_team_gemm_nt_nt_dcomplex_dcomplex) {
-  typedef ::Test::TeamGemm::ParamTag<Trans::NoTranspose, Trans::NoTranspose>
-      param_tag_type;
-  typedef Algo::Gemm::Blocked algo_tag_type;
-  test_blas_teamgemm<TestExecSpace, Kokkos::complex<double>,
-                     Kokkos::complex<double>, param_tag_type, algo_tag_type>();
-}
-TEST_F(TestCategory, blas_scalar_team_gemm_t_nt_dcomplex_dcomplex) {
-  typedef ::Test::TeamGemm::ParamTag<Trans::Transpose, Trans::NoTranspose>
-      param_tag_type;
-  typedef Algo::Gemm::Blocked algo_tag_type;
-  test_blas_teamgemm<TestExecSpace, Kokkos::complex<double>,
-                     Kokkos::complex<double>, param_tag_type, algo_tag_type>();
-}
-TEST_F(TestCategory, blas_scalar_team_gemm_nt_t_dcomplex_dcomplex) {
-  typedef ::Test::TeamGemm::ParamTag<Trans::NoTranspose, Trans::Transpose>
-      param_tag_type;
-  typedef Algo::Gemm::Blocked algo_tag_type;
-  test_blas_teamgemm<TestExecSpace, Kokkos::complex<double>,
-                     Kokkos::complex<double>, param_tag_type, algo_tag_type>();
-}
-TEST_F(TestCategory, blas_scalar_team_gemm_t_t_dcomplex_dcomplex) {
-  typedef ::Test::TeamGemm::ParamTag<Trans::Transpose, Trans::Transpose>
-      param_tag_type;
-  typedef Algo::Gemm::Blocked algo_tag_type;
-  test_blas_teamgemm<TestExecSpace, Kokkos::complex<double>,
-                     Kokkos::complex<double>, param_tag_type, algo_tag_type>();
-}
-// TEST_F( TestCategory, blas_scalar_team_gemm_ct_nt_dcomplex_dcomplex ) {
-//   typedef ::Test::TeamGemm::ParamTag<Trans::ConjTranspose,Trans::NoTranspose>
-//   param_tag_type; typedef Algo::Gemm::Blocked algo_tag_type;
-//   test_blas_teamgemm<TestExecSpace,Kokkos::complex<double>,Kokkos::complex<double>,param_tag_type,algo_tag_type>();
-// }
-// TEST_F( TestCategory, blas_scalar_team_gemm_nt_ct_dcomplex_dcomplex ) {
-//   typedef ::Test::TeamGemm::ParamTag<Trans::NoTranspose,Trans::ConjTranspose>
-//   param_tag_type; typedef Algo::Gemm::Blocked algo_tag_type;
-//   test_blas_teamgemm<TestExecSpace,Kokkos::complex<double>,Kokkos::complex<double>,param_tag_type,algo_tag_type>();
-// }
-
-/// dcomplex, double
-
-TEST_F(TestCategory, blas_scalar_team_gemm_nt_nt_dcomplex_double) {
-  typedef ::Test::TeamGemm::ParamTag<Trans::NoTranspose, Trans::NoTranspose>
-      param_tag_type;
-  typedef Algo::Gemm::Blocked algo_tag_type;
-  test_blas_teamgemm<TestExecSpace, Kokkos::complex<double>, double,
-                     param_tag_type, algo_tag_type>();
-}
-TEST_F(TestCategory, blas_scalar_team_gemm_t_nt_dcomplex_double) {
-  typedef ::Test::TeamGemm::ParamTag<Trans::Transpose, Trans::NoTranspose>
-      param_tag_type;
-  typedef Algo::Gemm::Blocked algo_tag_type;
-  test_blas_teamgemm<TestExecSpace, Kokkos::complex<double>, double,
-                     param_tag_type, algo_tag_type>();
-}
-TEST_F(TestCategory, blas_scalar_team_gemm_nt_t_dcomplex_double) {
-  typedef ::Test::TeamGemm::ParamTag<Trans::NoTranspose, Trans::Transpose>
-      param_tag_type;
-  typedef Algo::Gemm::Blocked algo_tag_type;
-  test_blas_teamgemm<TestExecSpace, Kokkos::complex<double>, double,
-                     param_tag_type, algo_tag_type>();
-}
-TEST_F(TestCategory, blas_scalar_team_gemm_t_t_dcomplex_double) {
-  typedef ::Test::TeamGemm::ParamTag<Trans::Transpose, Trans::Transpose>
-      param_tag_type;
-  typedef Algo::Gemm::Blocked algo_tag_type;
-  test_blas_teamgemm<TestExecSpace, Kokkos::complex<double>, double,
-                     param_tag_type, algo_tag_type>();
-}
-// TEST_F( TestCategory, blas_scalar_team_gemm_ct_nt_dcomplex_double ) {
-//   typedef ::Test::TeamGemm::ParamTag<Trans::ConjTranspose,Trans::NoTranspose>
-//   param_tag_type; typedef Algo::Gemm::Blocked algo_tag_type;
-//   test_blas_teamgemm<TestExecSpace,Kokkos::complex<double>,double,param_tag_type,algo_tag_type>();
-// }
-// TEST_F( TestCategory, blas_scalar_team_gemm_nt_ct_dcomplex_double ) {
-//   typedef ::Test::TeamGemm::ParamTag<Trans::NoTranspose,Trans::ConjTranspose>
-//   param_tag_type; typedef Algo::Gemm::Blocked algo_tag_type;
-//   test_blas_teamgemm<TestExecSpace,Kokkos::complex<double>,double,param_tag_type,algo_tag_type>();
-// }
-
+TEST_TEAM_CASE(dcomplex_dcomplex, Kokkos::complex<double>)
+TEST_TEAM_CASE2(dcomplex_double, Kokkos::complex<double>, double)
 #endif
+
+#if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)
+TEST_TEAM_CASE(fcomplex_fcomplex, Kokkos::complex<float>)
+TEST_TEAM_CASE2(fcomplex_float, Kokkos::complex<float>, float)
+#endif
+
+#undef TEST_TEAM_CASE
+#undef TEST_TEAM_CASE2
+
+}  // namespace Gemm
+}  // namespace Test

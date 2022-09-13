@@ -63,145 +63,31 @@ namespace KokkosBlas {
 /// CT/NT, NT/CT, CT/CT
 ///
 
-///
-/// NT/NT
-///
-
-template <>
+template <typename ArgTransA, typename ArgTransB, typename ArgAlgo>
 template <typename ScalarType, typename AViewType, typename BViewType,
           typename CViewType>
-KOKKOS_INLINE_FUNCTION int
-SerialGemm<Trans::NoTranspose, Trans::NoTranspose,
-           Algo::Gemm::Unblocked>::invoke(const ScalarType alpha,
-                                          const AViewType &A,
-                                          const BViewType &B,
-                                          const ScalarType beta,
-                                          const CViewType &C) {
-  // C = beta C + alpha A B
-  // C (m x n), A(m x k), B(k x n)
-  return Impl::SerialGemmInternal<Algo::Gemm::Unblocked>::invoke(
-      C.extent(0), C.extent(1), A.extent(1), alpha, A.data(), A.stride_0(),
-      A.stride_1(), B.data(), B.stride_0(), B.stride_1(), beta, C.data(),
-      C.stride_0(), C.stride_1());
-}
-
-template <>
-template <typename ScalarType, typename AViewType, typename BViewType,
-          typename CViewType>
-KOKKOS_INLINE_FUNCTION int
-SerialGemm<Trans::NoTranspose, Trans::NoTranspose, Algo::Gemm::Blocked>::invoke(
+KOKKOS_INLINE_FUNCTION int SerialGemm<ArgTransA, ArgTransB, ArgAlgo>::invoke(
     const ScalarType alpha, const AViewType &A, const BViewType &B,
     const ScalarType beta, const CViewType &C) {
   // C = beta C + alpha A B
   // C (m x n), A(m x k), B(k x n)
-  return Impl::SerialGemmInternal<Algo::Gemm::Blocked>::invoke(
-      C.extent(0), C.extent(1), A.extent(1), alpha, A.data(), A.stride_0(),
-      A.stride_1(), B.data(), B.stride_0(), B.stride_1(), beta, C.data(),
-      C.stride_0(), C.stride_1());
+  static_assert(std::is_same<ArgAlgo, Algo::Gemm::Unblocked>::value ||
+                    std::is_same<ArgAlgo, Algo::Gemm::Blocked>::value ||
+                    std::is_same<ArgAlgo, Algo::Gemm::CompactMKL>::value,
+                "Algorithm not supported");
+
+  using TransA   = Impl::MatrixModeInfo<ArgTransA>;
+  using TransB   = Impl::MatrixModeInfo<ArgTransB>;
+  const auto ae1 = TransA::extent(A, 1);
+  const auto as0 = TransA::stride_0(A);
+  const auto as1 = TransA::stride_1(A);
+  const auto bs0 = TransB::stride_0(B);
+  const auto bs1 = TransB::stride_1(B);
+
+  return Impl::SerialGemmInternal<ArgAlgo>::invoke(
+      C.extent(0), C.extent(1), ae1, alpha, A.data(), as0, as1, B.data(), bs0,
+      bs1, beta, C.data(), C.stride_0(), C.stride_1());
 }
-
-///
-/// T/NT
-///
-
-template <>
-template <typename ScalarType, typename AViewType, typename BViewType,
-          typename CViewType>
-KOKKOS_INLINE_FUNCTION int
-SerialGemm<Trans::Transpose, Trans::NoTranspose, Algo::Gemm::Unblocked>::invoke(
-    const ScalarType alpha, const AViewType &A, const BViewType &B,
-    const ScalarType beta, const CViewType &C) {
-  // C = beta C + alpha A B
-  // C (m x n), A(m x k), B(k x n)
-  return Impl::SerialGemmInternal<Algo::Gemm::Unblocked>::invoke(
-      C.extent(0), C.extent(1), A.extent(0), alpha, A.data(), A.stride_1(),
-      A.stride_0(), B.data(), B.stride_0(), B.stride_1(), beta, C.data(),
-      C.stride_0(), C.stride_1());
-}
-
-template <>
-template <typename ScalarType, typename AViewType, typename BViewType,
-          typename CViewType>
-KOKKOS_INLINE_FUNCTION int
-SerialGemm<Trans::Transpose, Trans::NoTranspose, Algo::Gemm::Blocked>::invoke(
-    const ScalarType alpha, const AViewType &A, const BViewType &B,
-    const ScalarType beta, const CViewType &C) {
-  // C = beta C + alpha A B
-  // C (m x n), A(m x k), B(k x n)
-  return Impl::SerialGemmInternal<Algo::Gemm::Blocked>::invoke(
-      C.extent(0), C.extent(1), A.extent(0), alpha, A.data(), A.stride_1(),
-      A.stride_0(), B.data(), B.stride_0(), B.stride_1(), beta, C.data(),
-      C.stride_0(), C.stride_1());
-}
-
-///
-/// NT/T
-///
-
-template <>
-template <typename ScalarType, typename AViewType, typename BViewType,
-          typename CViewType>
-KOKKOS_INLINE_FUNCTION int
-SerialGemm<Trans::NoTranspose, Trans::Transpose, Algo::Gemm::Unblocked>::invoke(
-    const ScalarType alpha, const AViewType &A, const BViewType &B,
-    const ScalarType beta, const CViewType &C) {
-  // C = beta C + alpha A B
-  // C (m x n), A(m x k), B(k x n)
-  return Impl::SerialGemmInternal<Algo::Gemm::Unblocked>::invoke(
-      C.extent(0), C.extent(1), A.extent(1), alpha, A.data(), A.stride_0(),
-      A.stride_1(), B.data(), B.stride_1(), B.stride_0(), beta, C.data(),
-      C.stride_0(), C.stride_1());
-}
-
-template <>
-template <typename ScalarType, typename AViewType, typename BViewType,
-          typename CViewType>
-KOKKOS_INLINE_FUNCTION int
-SerialGemm<Trans::NoTranspose, Trans::Transpose, Algo::Gemm::Blocked>::invoke(
-    const ScalarType alpha, const AViewType &A, const BViewType &B,
-    const ScalarType beta, const CViewType &C) {
-  // C = beta C + alpha A B
-  // C (m x n), A(m x k), B(k x n)
-  return Impl::SerialGemmInternal<Algo::Gemm::Blocked>::invoke(
-      C.extent(0), C.extent(1), A.extent(1), alpha, A.data(), A.stride_0(),
-      A.stride_1(), B.data(), B.stride_1(), B.stride_0(), beta, C.data(),
-      C.stride_0(), C.stride_1());
-}
-
-///
-/// T/T
-///
-
-template <>
-template <typename ScalarType, typename AViewType, typename BViewType,
-          typename CViewType>
-KOKKOS_INLINE_FUNCTION int
-SerialGemm<Trans::Transpose, Trans::Transpose, Algo::Gemm::Unblocked>::invoke(
-    const ScalarType alpha, const AViewType &A, const BViewType &B,
-    const ScalarType beta, const CViewType &C) {
-  // C = beta C + alpha A B
-  // C (m x n), A(m x k), B(k x n)
-  return Impl::SerialGemmInternal<Algo::Gemm::Unblocked>::invoke(
-      C.extent(0), C.extent(1), A.extent(0), alpha, A.data(), A.stride_1(),
-      A.stride_0(), B.data(), B.stride_1(), B.stride_0(), beta, C.data(),
-      C.stride_0(), C.stride_1());
-}
-
-template <>
-template <typename ScalarType, typename AViewType, typename BViewType,
-          typename CViewType>
-KOKKOS_INLINE_FUNCTION int
-SerialGemm<Trans::Transpose, Trans::Transpose, Algo::Gemm::Blocked>::invoke(
-    const ScalarType alpha, const AViewType &A, const BViewType &B,
-    const ScalarType beta, const CViewType &C) {
-  // C = beta C + alpha A B
-  // C (m x n), A(m x k), B(k x n)
-  return Impl::SerialGemmInternal<Algo::Gemm::Blocked>::invoke(
-      C.extent(0), C.extent(1), A.extent(0), alpha, A.data(), A.stride_1(),
-      A.stride_0(), B.data(), B.stride_1(), B.stride_0(), beta, C.data(),
-      C.stride_0(), C.stride_1());
-}
-
 }  // namespace KokkosBlas
 
 #endif

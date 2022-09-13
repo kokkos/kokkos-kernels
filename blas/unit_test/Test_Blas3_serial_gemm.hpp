@@ -1,25 +1,9 @@
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include "gtest/gtest.h"
-#include "Kokkos_Core.hpp"
-#include "Kokkos_Random.hpp"
-
-//#include "KokkosBatched_Vector.hpp"
-
-#include "KokkosBlas3_gemm.hpp"
-
-#include "KokkosKernels_TestUtils.hpp"
-
-using namespace KokkosBatched;
+#include "Test_Blas3_gemm_util.hpp"
 
 namespace Test {
 namespace Gemm {
-
-template <typename TA, typename TB>
-struct ParamTag {
-  typedef TA transA;
-  typedef TB transB;
-};
 
 template <typename DeviceType, typename ViewType, typename ScalarType,
           typename ParamTagType, typename AlgoTagType>
@@ -59,14 +43,23 @@ struct Functor_TestBlasSerialGemm {
 
 template <typename DeviceType, typename ViewType, typename ScalarType,
           typename ParamTagType, typename AlgoTagType>
-void impl_test_blas_gemm(const int N, const int matAdim1, const int matAdim2,
-                         const int matBdim1, const int matBdim2,
-                         const int matCdim1, const int matCdim2) {
+void impl_test_blas_gemm(const int N, const int dimM, const int dimN,
+                         const int dimK) {
   using execution_space = typename DeviceType::execution_space;
   using transA          = typename ParamTagType::transA;
   using transB          = typename ParamTagType::transB;
   using value_type      = typename ViewType::value_type;
   using ats             = Kokkos::Details::ArithTraits<value_type>;
+
+  const auto transposed_A = !std::is_same<transA, Trans::NoTranspose>::value;
+  const auto transposed_B = !std::is_same<transB, Trans::NoTranspose>::value;
+
+  const int matAdim1 = transposed_A ? dimM : dimK;
+  const int matAdim2 = transposed_A ? dimK : dimM;
+  const int matBdim1 = transposed_B ? dimK : dimN;
+  const int matBdim2 = transposed_B ? dimN : dimK;
+  const int matCdim1 = dimM;
+  const int matCdim2 = dimN;
 
   /// randomized input testing views
   ScalarType alpha = ScalarType(1.5);
@@ -93,14 +86,15 @@ void impl_test_blas_gemm(const int N, const int matAdim1, const int matAdim2,
 
   Functor_BatchedVanillaGEMM<ViewType, ViewType, ViewType, execution_space>
       vgemm;
-  vgemm.A_t = std::is_same<transA, Trans::Transpose>::value;
-  vgemm.B_t = std::is_same<transB, Trans::Transpose>::value;
-  vgemm.A_c = vgemm.B_c = false;
-  vgemm.A               = a_expected;
-  vgemm.B               = b_expected;
-  vgemm.C               = c_expected;
-  vgemm.alpha           = alpha;
-  vgemm.beta            = beta;
+  vgemm.A_t   = transposed_A;
+  vgemm.B_t   = transposed_B;
+  vgemm.A_c   = false;
+  vgemm.B_c   = false;
+  vgemm.A     = a_expected;
+  vgemm.B     = b_expected;
+  vgemm.C     = c_expected;
+  vgemm.alpha = alpha;
+  vgemm.beta  = beta;
   vgemm.run();  // Compute c_expected
   Functor_TestBlasSerialGemm<DeviceType, ViewType, ScalarType, ParamTagType,
                              AlgoTagType>(alpha, a_actual, b_actual, beta,
@@ -138,8 +132,6 @@ void impl_test_blas_gemm(const int N, const int matAdim1, const int matAdim2,
       }
   EXPECT_NEAR_KK(diff / sum, 0, eps);
 }
-}  // namespace Gemm
-}  // namespace Test
 
 template <typename DeviceType, typename ValueType, typename ScalarType,
           typename ParamTagType, typename AlgoTagType>
@@ -149,51 +141,20 @@ int test_blas_gemm() {
     typedef Kokkos::View<ValueType ***, Kokkos::LayoutLeft, DeviceType>
         ViewType;
     Test::Gemm::impl_test_blas_gemm<DeviceType, ViewType, ScalarType,
-                                    ParamTagType, AlgoTagType>(0, 10, 10, 10,
-                                                               10, 10, 10);
+                                    ParamTagType, AlgoTagType>(0, 10, 10, 10);
     for (int i = 0; i < 10; ++i) {
       // printf("Testing: LayoutLeft,  Blksize %d\n", i);
       Test::Gemm::impl_test_blas_gemm<DeviceType, ViewType, ScalarType,
-                                      ParamTagType, AlgoTagType>(1024, i, i, i,
-                                                                 i, i, i);
+                                      ParamTagType, AlgoTagType>(1024, i, i, i);
     }
     for (int i = 0; i < 10; ++i) {
       // printf("Testing: LayoutLeft,  Blksize %d\n", i);
       int dimM = i;
       int dimN = 2 * i;
       int dimK = 3 * i;
-      if ((std::is_same<typename ParamTagType::transA,
-                        Trans::NoTranspose>::value) &&
-          (std::is_same<typename ParamTagType::transB,
-                        Trans::NoTranspose>::value)) {
-        Test::Gemm::impl_test_blas_gemm<DeviceType, ViewType, ScalarType,
-                                        ParamTagType, AlgoTagType>(
-            1024, dimM, dimK, dimK, dimN, dimM, dimN);
-      }
-      if ((std::is_same<typename ParamTagType::transA,
-                        Trans::NoTranspose>::value) &&
-          (std::is_same<typename ParamTagType::transB,
-                        Trans::Transpose>::value)) {
-        Test::Gemm::impl_test_blas_gemm<DeviceType, ViewType, ScalarType,
-                                        ParamTagType, AlgoTagType>(
-            1024, dimM, dimK, dimN, dimK, dimM, dimN);
-      }
-      if ((std::is_same<typename ParamTagType::transA,
-                        Trans::Transpose>::value) &&
-          (std::is_same<typename ParamTagType::transB,
-                        Trans::NoTranspose>::value)) {
-        Test::Gemm::impl_test_blas_gemm<DeviceType, ViewType, ScalarType,
-                                        ParamTagType, AlgoTagType>(
-            1024, dimK, dimM, dimK, dimN, dimM, dimN);
-      }
-      if ((std::is_same<typename ParamTagType::transA,
-                        Trans::Transpose>::value) &&
-          (std::is_same<typename ParamTagType::transB,
-                        Trans::Transpose>::value)) {
-        Test::Gemm::impl_test_blas_gemm<DeviceType, ViewType, ScalarType,
-                                        ParamTagType, AlgoTagType>(
-            1024, dimK, dimM, dimN, dimK, dimM, dimN);
-      }
+      Test::Gemm::impl_test_blas_gemm<DeviceType, ViewType, ScalarType,
+                                      ParamTagType, AlgoTagType>(1024, dimM,
+                                                                 dimN, dimK);
     }
   }
 #endif
@@ -202,51 +163,20 @@ int test_blas_gemm() {
     typedef Kokkos::View<ValueType ***, Kokkos::LayoutRight, DeviceType>
         ViewType;
     Test::Gemm::impl_test_blas_gemm<DeviceType, ViewType, ScalarType,
-                                    ParamTagType, AlgoTagType>(0, 10, 10, 10,
-                                                               10, 10, 10);
+                                    ParamTagType, AlgoTagType>(0, 10, 10, 10);
     for (int i = 0; i < 10; ++i) {
       // printf("Testing: LayoutRight, Blksize %d\n", i);
       Test::Gemm::impl_test_blas_gemm<DeviceType, ViewType, ScalarType,
-                                      ParamTagType, AlgoTagType>(1024, i, i, i,
-                                                                 i, i, i);
+                                      ParamTagType, AlgoTagType>(1024, i, i, i);
     }
     for (int i = 0; i < 10; ++i) {
       // printf("Testing: LayoutLeft,  Blksize %d\n", i);
       int dimM = i;
       int dimN = 2 * i;
       int dimK = 3 * i;
-      if ((std::is_same<typename ParamTagType::transA,
-                        Trans::NoTranspose>::value) &&
-          (std::is_same<typename ParamTagType::transB,
-                        Trans::NoTranspose>::value)) {
-        Test::Gemm::impl_test_blas_gemm<DeviceType, ViewType, ScalarType,
-                                        ParamTagType, AlgoTagType>(
-            1024, dimM, dimK, dimK, dimN, dimM, dimN);
-      }
-      if ((std::is_same<typename ParamTagType::transA,
-                        Trans::NoTranspose>::value) &&
-          (std::is_same<typename ParamTagType::transB,
-                        Trans::Transpose>::value)) {
-        Test::Gemm::impl_test_blas_gemm<DeviceType, ViewType, ScalarType,
-                                        ParamTagType, AlgoTagType>(
-            1024, dimM, dimK, dimN, dimK, dimM, dimN);
-      }
-      if ((std::is_same<typename ParamTagType::transA,
-                        Trans::Transpose>::value) &&
-          (std::is_same<typename ParamTagType::transB,
-                        Trans::NoTranspose>::value)) {
-        Test::Gemm::impl_test_blas_gemm<DeviceType, ViewType, ScalarType,
-                                        ParamTagType, AlgoTagType>(
-            1024, dimK, dimM, dimK, dimN, dimM, dimN);
-      }
-      if ((std::is_same<typename ParamTagType::transA,
-                        Trans::Transpose>::value) &&
-          (std::is_same<typename ParamTagType::transB,
-                        Trans::Transpose>::value)) {
-        Test::Gemm::impl_test_blas_gemm<DeviceType, ViewType, ScalarType,
-                                        ParamTagType, AlgoTagType>(
-            1024, dimK, dimM, dimN, dimK, dimM, dimN);
-      }
+      Test::Gemm::impl_test_blas_gemm<DeviceType, ViewType, ScalarType,
+                                      ParamTagType, AlgoTagType>(1024, dimM,
+                                                                 dimN, dimK);
     }
   }
 #endif
@@ -254,182 +184,28 @@ int test_blas_gemm() {
   return 0;
 }
 
+#define TEST_SERIAL_CASE2(NAME, VALUE, SCALAR) \
+  TEST_GEMM_CASE(serial, NAME, test_blas_gemm, VALUE, SCALAR)
+#define TEST_SERIAL_CASE(NAME, VALUE) TEST_SERIAL_CASE2(NAME, VALUE, VALUE)
+
 #if defined(KOKKOS_BHALF_T_IS_FLOAT)
-TEST_F(TestCategory, blas_scalar_serial_gemm_nt_nt_bhalf_bhalf) {
-  typedef ::Test::Gemm::ParamTag<Trans::NoTranspose, Trans::NoTranspose>
-      param_tag_type;
-
-  test_blas_gemm<TestExecSpace, ::Test::bhalfScalarType,
-                 ::Test::bhalfScalarType, param_tag_type,
-                 Algo::Gemm::Blocked>();
-  test_blas_gemm<TestExecSpace, ::Test::bhalfScalarType,
-                 ::Test::bhalfScalarType, param_tag_type,
-                 Algo::Gemm::Unblocked>();
-}
-TEST_F(TestCategory, blas_scalar_serial_gemm_t_nt_bhalf_bhalf) {
-  typedef ::Test::Gemm::ParamTag<Trans::Transpose, Trans::NoTranspose>
-      param_tag_type;
-
-  test_blas_gemm<TestExecSpace, ::Test::bhalfScalarType,
-                 ::Test::bhalfScalarType, param_tag_type,
-                 Algo::Gemm::Blocked>();
-  test_blas_gemm<TestExecSpace, ::Test::bhalfScalarType,
-                 ::Test::bhalfScalarType, param_tag_type,
-                 Algo::Gemm::Unblocked>();
-}
-TEST_F(TestCategory, blas_scalar_serial_gemm_nt_t_bhalf_bhalf) {
-  typedef ::Test::Gemm::ParamTag<Trans::NoTranspose, Trans::Transpose>
-      param_tag_type;
-
-  test_blas_gemm<TestExecSpace, ::Test::bhalfScalarType,
-                 ::Test::bhalfScalarType, param_tag_type,
-                 Algo::Gemm::Blocked>();
-  test_blas_gemm<TestExecSpace, ::Test::bhalfScalarType,
-                 ::Test::bhalfScalarType, param_tag_type,
-                 Algo::Gemm::Unblocked>();
-}
-TEST_F(TestCategory, blas_scalar_serial_gemm_t_t_bhalf_bhalf) {
-  typedef ::Test::Gemm::ParamTag<Trans::Transpose, Trans::Transpose>
-      param_tag_type;
-
-  test_blas_gemm<TestExecSpace, ::Test::bhalfScalarType,
-                 ::Test::bhalfScalarType, param_tag_type,
-                 Algo::Gemm::Blocked>();
-  test_blas_gemm<TestExecSpace, ::Test::bhalfScalarType,
-                 ::Test::bhalfScalarType, param_tag_type,
-                 Algo::Gemm::Unblocked>();
-}
-#endif  // KOKKOS_BHALF_T_IS_FLOAT
+TEST_SERIAL_CASE(bhalf_bhalf, ::Test::bhalfScalarType)
+#endif
 
 #if defined(KOKKOS_HALF_T_IS_FLOAT)
-TEST_F(TestCategory, blas_scalar_serial_gemm_nt_nt_half_half) {
-  typedef ::Test::Gemm::ParamTag<Trans::NoTranspose, Trans::NoTranspose>
-      param_tag_type;
-
-  test_blas_gemm<TestExecSpace, ::Test::halfScalarType, ::Test::halfScalarType,
-                 param_tag_type, Algo::Gemm::Blocked>();
-  test_blas_gemm<TestExecSpace, ::Test::halfScalarType, ::Test::halfScalarType,
-                 param_tag_type, Algo::Gemm::Unblocked>();
-}
-TEST_F(TestCategory, blas_scalar_serial_gemm_t_nt_half_half) {
-  typedef ::Test::Gemm::ParamTag<Trans::Transpose, Trans::NoTranspose>
-      param_tag_type;
-
-  test_blas_gemm<TestExecSpace, ::Test::halfScalarType, ::Test::halfScalarType,
-                 param_tag_type, Algo::Gemm::Blocked>();
-  test_blas_gemm<TestExecSpace, ::Test::halfScalarType, ::Test::halfScalarType,
-                 param_tag_type, Algo::Gemm::Unblocked>();
-}
-TEST_F(TestCategory, blas_scalar_serial_gemm_nt_t_half_half) {
-  typedef ::Test::Gemm::ParamTag<Trans::NoTranspose, Trans::Transpose>
-      param_tag_type;
-
-  test_blas_gemm<TestExecSpace, ::Test::halfScalarType, ::Test::halfScalarType,
-                 param_tag_type, Algo::Gemm::Blocked>();
-  test_blas_gemm<TestExecSpace, ::Test::halfScalarType, ::Test::halfScalarType,
-                 param_tag_type, Algo::Gemm::Unblocked>();
-}
-TEST_F(TestCategory, blas_scalar_serial_gemm_t_t_half_half) {
-  typedef ::Test::Gemm::ParamTag<Trans::Transpose, Trans::Transpose>
-      param_tag_type;
-
-  test_blas_gemm<TestExecSpace, ::Test::halfScalarType, ::Test::halfScalarType,
-                 param_tag_type, Algo::Gemm::Blocked>();
-  test_blas_gemm<TestExecSpace, ::Test::halfScalarType, ::Test::halfScalarType,
-                 param_tag_type, Algo::Gemm::Unblocked>();
-}
-#endif  // KOKKOS_HALF_T_IS_FLOAT
+TEST_SERIAL_CASE(half_half, ::Test::halfScalarType)
+#endif
 
 #if defined(KOKKOSKERNELS_INST_FLOAT)
-TEST_F(TestCategory, blas_scalar_serial_gemm_nt_nt_float_float) {
-  typedef ::Test::Gemm::ParamTag<Trans::NoTranspose, Trans::NoTranspose>
-      param_tag_type;
-  typedef Algo::Gemm::Blocked algo_tag_type;
-  test_blas_gemm<TestExecSpace, float, float, param_tag_type, algo_tag_type>();
-}
-TEST_F(TestCategory, blas_scalar_serial_gemm_t_nt_float_float) {
-  typedef ::Test::Gemm::ParamTag<Trans::Transpose, Trans::NoTranspose>
-      param_tag_type;
-  typedef Algo::Gemm::Blocked algo_tag_type;
-  test_blas_gemm<TestExecSpace, float, float, param_tag_type, algo_tag_type>();
-}
-TEST_F(TestCategory, blas_scalar_serial_gemm_nt_t_float_float) {
-  typedef ::Test::Gemm::ParamTag<Trans::NoTranspose, Trans::Transpose>
-      param_tag_type;
-  typedef Algo::Gemm::Blocked algo_tag_type;
-  test_blas_gemm<TestExecSpace, float, float, param_tag_type, algo_tag_type>();
-}
-TEST_F(TestCategory, blas_scalar_serial_gemm_t_t_float_float) {
-  typedef ::Test::Gemm::ParamTag<Trans::Transpose, Trans::Transpose>
-      param_tag_type;
-  typedef Algo::Gemm::Blocked algo_tag_type;
-  test_blas_gemm<TestExecSpace, float, float, param_tag_type, algo_tag_type>();
-}
+TEST_SERIAL_CASE(float_float, float)
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
-TEST_F(TestCategory, blas_scalar_serial_gemm_nt_nt_double_double) {
-  typedef ::Test::Gemm::ParamTag<Trans::NoTranspose, Trans::NoTranspose>
-      param_tag_type;
-  typedef Algo::Gemm::Blocked algo_tag_type;
-  test_blas_gemm<TestExecSpace, double, double, param_tag_type,
-                 algo_tag_type>();
-}
-TEST_F(TestCategory, blas_scalar_serial_gemm_t_nt_double_double) {
-  typedef ::Test::Gemm::ParamTag<Trans::Transpose, Trans::NoTranspose>
-      param_tag_type;
-  typedef Algo::Gemm::Blocked algo_tag_type;
-  test_blas_gemm<TestExecSpace, double, double, param_tag_type,
-                 algo_tag_type>();
-}
-TEST_F(TestCategory, blas_scalar_serial_gemm_nt_t_double_double) {
-  typedef ::Test::Gemm::ParamTag<Trans::NoTranspose, Trans::Transpose>
-      param_tag_type;
-  typedef Algo::Gemm::Blocked algo_tag_type;
-  test_blas_gemm<TestExecSpace, double, double, param_tag_type,
-                 algo_tag_type>();
-}
-TEST_F(TestCategory, blas_scalar_serial_gemm_t_t_double_double) {
-  typedef ::Test::Gemm::ParamTag<Trans::Transpose, Trans::Transpose>
-      param_tag_type;
-  typedef Algo::Gemm::Blocked algo_tag_type;
-  test_blas_gemm<TestExecSpace, double, double, param_tag_type,
-                 algo_tag_type>();
-}
+TEST_SERIAL_CASE(double_double, double)
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
-
-/// dcomplex, dcomplex
-
-TEST_F(TestCategory, blas_scalar_serial_gemm_nt_nt_dcomplex_dcomplex) {
-  typedef ::Test::Gemm::ParamTag<Trans::NoTranspose, Trans::NoTranspose>
-      param_tag_type;
-  typedef Algo::Gemm::Blocked algo_tag_type;
-  test_blas_gemm<TestExecSpace, Kokkos::complex<double>,
-                 Kokkos::complex<double>, param_tag_type, algo_tag_type>();
-}
-TEST_F(TestCategory, blas_scalar_serial_gemm_t_nt_dcomplex_dcomplex) {
-  typedef ::Test::Gemm::ParamTag<Trans::Transpose, Trans::NoTranspose>
-      param_tag_type;
-  typedef Algo::Gemm::Blocked algo_tag_type;
-  test_blas_gemm<TestExecSpace, Kokkos::complex<double>,
-                 Kokkos::complex<double>, param_tag_type, algo_tag_type>();
-}
-TEST_F(TestCategory, blas_scalar_serial_gemm_nt_t_dcomplex_dcomplex) {
-  typedef ::Test::Gemm::ParamTag<Trans::NoTranspose, Trans::Transpose>
-      param_tag_type;
-  typedef Algo::Gemm::Blocked algo_tag_type;
-  test_blas_gemm<TestExecSpace, Kokkos::complex<double>,
-                 Kokkos::complex<double>, param_tag_type, algo_tag_type>();
-}
-TEST_F(TestCategory, blas_scalar_serial_gemm_t_t_dcomplex_dcomplex) {
-  typedef ::Test::Gemm::ParamTag<Trans::Transpose, Trans::Transpose>
-      param_tag_type;
-  typedef Algo::Gemm::Blocked algo_tag_type;
-  test_blas_gemm<TestExecSpace, Kokkos::complex<double>,
-                 Kokkos::complex<double>, param_tag_type, algo_tag_type>();
-}
+TEST_SERIAL_CASE(dcomplex_dcomplex, Kokkos::complex<double>)
 // TEST_F( TestCategory, blas_scalar_serial_gemm_ct_nt_dcomplex_dcomplex ) {
 //   typedef ::Test::Gemm::ParamTag<Trans::ConjTranspose,Trans::NoTranspose>
 //   param_tag_type; typedef Algo::Gemm::Blocked algo_tag_type;
@@ -440,37 +216,7 @@ TEST_F(TestCategory, blas_scalar_serial_gemm_t_t_dcomplex_dcomplex) {
 //   param_tag_type; typedef Algo::Gemm::Blocked algo_tag_type;
 //   test_blas_gemm<TestExecSpace,Kokkos::complex<double>,Kokkos::complex<double>,param_tag_type,algo_tag_type>();
 // }
-
-/// dcomplex, double
-
-TEST_F(TestCategory, blas_scalar_serial_gemm_nt_nt_dcomplex_double) {
-  typedef ::Test::Gemm::ParamTag<Trans::NoTranspose, Trans::NoTranspose>
-      param_tag_type;
-  typedef Algo::Gemm::Blocked algo_tag_type;
-  test_blas_gemm<TestExecSpace, Kokkos::complex<double>, double, param_tag_type,
-                 algo_tag_type>();
-}
-TEST_F(TestCategory, blas_scalar_serial_gemm_t_nt_dcomplex_double) {
-  typedef ::Test::Gemm::ParamTag<Trans::Transpose, Trans::NoTranspose>
-      param_tag_type;
-  typedef Algo::Gemm::Blocked algo_tag_type;
-  test_blas_gemm<TestExecSpace, Kokkos::complex<double>, double, param_tag_type,
-                 algo_tag_type>();
-}
-TEST_F(TestCategory, blas_scalar_serial_gemm_nt_t_dcomplex_double) {
-  typedef ::Test::Gemm::ParamTag<Trans::NoTranspose, Trans::Transpose>
-      param_tag_type;
-  typedef Algo::Gemm::Blocked algo_tag_type;
-  test_blas_gemm<TestExecSpace, Kokkos::complex<double>, double, param_tag_type,
-                 algo_tag_type>();
-}
-TEST_F(TestCategory, blas_scalar_serial_gemm_t_t_dcomplex_double) {
-  typedef ::Test::Gemm::ParamTag<Trans::Transpose, Trans::Transpose>
-      param_tag_type;
-  typedef Algo::Gemm::Blocked algo_tag_type;
-  test_blas_gemm<TestExecSpace, Kokkos::complex<double>, double, param_tag_type,
-                 algo_tag_type>();
-}
+TEST_SERIAL_CASE2(dcomplex_double, Kokkos::complex<double>, double)
 // TEST_F( TestCategory, blas_scalar_serial_gemm_ct_nt_dcomplex_double ) {
 //   typedef ::Test::Gemm::ParamTag<Trans::ConjTranspose,Trans::NoTranspose>
 //   param_tag_type; typedef Algo::Gemm::Blocked algo_tag_type;
@@ -481,5 +227,12 @@ TEST_F(TestCategory, blas_scalar_serial_gemm_t_t_dcomplex_double) {
 //   param_tag_type; typedef Algo::Gemm::Blocked algo_tag_type;
 //   test_blas_gemm<TestExecSpace,Kokkos::complex<double>,double,param_tag_type,algo_tag_type>();
 // }
-
 #endif
+
+#if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)
+TEST_SERIAL_CASE(fcomplex_fcomplex, Kokkos::complex<float>)
+TEST_SERIAL_CASE2(fcomplex_float, Kokkos::complex<float>, float)
+#endif
+
+}  // namespace Gemm
+}  // namespace Test
