@@ -203,15 +203,15 @@ void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz,
   // this makes consecutive 5 rows to have same columns.
   // it will add scalar 0's for those entries that does not exists.
   // the result is still a point crs matrix.
-  KokkosSparse::Impl::kk_create_blockcrs_formatted_point_crsmatrix(
+  KokkosSparse::Impl::kk_create_bsr_formated_point_crsmatrix(
       block_size, crsmat.numRows(), crsmat.numCols(), crsmat.graph.row_map,
       crsmat.graph.entries, crsmat.values, out_r, out_c, pf_rm, pf_e, pf_v);
   graph_t static_graph2(pf_e, pf_rm);
   crsMat_t crsmat2("CrsMatrix2", out_c, pf_v, static_graph2);
 
   // this converts the previous generated matrix to block matrix.
-  auto input_mat = MatrixConverter::from_blockcrs_formatted_point_crsmatrix(
-      crsmat2, block_size);
+  auto input_mat =
+      MatrixConverter::from_bsr_formated_point_crsmatrix(crsmat2, block_size);
 
   lno_t nv = ((crsmat2.numRows() + block_size - 1) / block_size) * block_size;
 
@@ -290,14 +290,14 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz,
   // this makes consecutive 5 rows to have same columns.
   // it will add scalar 0's for those entries that does not exists.
   // the result is still a point crs matrix.
-  KokkosSparse::Impl::kk_create_blockcrs_formatted_point_crsmatrix(
+  KokkosSparse::Impl::kk_create_bsr_formated_point_crsmatrix(
       block_size, crsmat.numRows(), crsmat.numCols(), crsmat.graph.row_map,
       crsmat.graph.entries, crsmat.values, out_r, out_c, pf_rm, pf_e, pf_v);
   graph_t static_graph2(pf_e, pf_rm);
   crsMat_t crsmat2("CrsMatrix2", out_c, pf_v, static_graph2);
 
-  auto input_mat = MatrixConverter::from_blockcrs_formatted_point_crsmatrix(
-      crsmat2, block_size);
+  auto input_mat =
+      MatrixConverter::from_bsr_formated_point_crsmatrix(crsmat2, block_size);
 
   lno_t nv = ((crsmat2.numRows() + block_size - 1) / block_size) * block_size;
 
@@ -405,42 +405,26 @@ void test_block_gauss_seidel_empty() {
   }
 }
 
-#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                      \
-  TEST_F(                                                                                \
-      TestCategory,                                                                      \
-      sparse_blockcrs_gauss_seidel_rank1##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
-    test_block_gauss_seidel_rank1<KokkosSparse::BlockCRS, SCALAR, ORDINAL,               \
-                                  OFFSET, DEVICE>(500, 500 * 10, 70, 3);                 \
-  }                                                                                      \
-  TEST_F(                                                                                \
-      TestCategory,                                                                      \
-      sparse_blockcrs_gauss_seidel_rank2_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {   \
-    test_block_gauss_seidel_rank2<KokkosSparse::BlockCRS, SCALAR, ORDINAL,               \
-                                  OFFSET, DEVICE>(500, 500 * 10, 70, 3);                 \
-  }                                                                                      \
-  TEST_F(                                                                                \
-      TestCategory,                                                                      \
-      sparse_blockcrs_gauss_seidel_empty_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {   \
-    test_block_gauss_seidel_empty<KokkosSparse::BlockCRS, SCALAR, ORDINAL,               \
-                                  OFFSET, DEVICE>();                                     \
-  }                                                                                      \
-  TEST_F(                                                                                \
-      TestCategory,                                                                      \
-      sparse_bsr_gauss_seidel_rank1_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {        \
-    test_block_gauss_seidel_rank1<KokkosSparse::BSR, SCALAR, ORDINAL, OFFSET,            \
-                                  DEVICE>(500, 500 * 10, 70, 3);                         \
-  }                                                                                      \
-  TEST_F(                                                                                \
-      TestCategory,                                                                      \
-      sparse_bsr_gauss_seidel_rank2_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {        \
-    test_block_gauss_seidel_rank2<KokkosSparse::BSR, SCALAR, ORDINAL, OFFSET,            \
-                                  DEVICE>(500, 500 * 10, 70, 3);                         \
-  }                                                                                      \
-  TEST_F(                                                                                \
-      TestCategory,                                                                      \
-      sparse_bsr_gauss_seidel_empty_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {        \
-    test_block_gauss_seidel_empty<KokkosSparse::BSR, SCALAR, ORDINAL, OFFSET,            \
-                                  DEVICE>();                                             \
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)               \
+  TEST_F(                                                                         \
+      TestCategory,                                                               \
+      sparse_bsr_gauss_seidel_rank1_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
+    test_block_gauss_seidel_rank1<KokkosSparse::SparseMatrixFormat::BSR,          \
+                                  SCALAR, ORDINAL, OFFSET, DEVICE>(               \
+        500, 500 * 10, 70, 3);                                                    \
+  }                                                                               \
+  TEST_F(                                                                         \
+      TestCategory,                                                               \
+      sparse_bsr_gauss_seidel_rank2_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
+    test_block_gauss_seidel_rank2<KokkosSparse::SparseMatrixFormat::BSR,          \
+                                  SCALAR, ORDINAL, OFFSET, DEVICE>(               \
+        500, 500 * 10, 70, 3);                                                    \
+  }                                                                               \
+  TEST_F(                                                                         \
+      TestCategory,                                                               \
+      sparse_bsr_gauss_seidel_empty_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
+    test_block_gauss_seidel_empty<KokkosSparse::SparseMatrixFormat::BSR,          \
+                                  SCALAR, ORDINAL, OFFSET, DEVICE>();             \
   }
 
 #include <Test_Common_Test_All_Type_Combos.hpp>

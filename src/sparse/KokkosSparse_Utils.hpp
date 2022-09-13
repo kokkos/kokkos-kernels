@@ -43,14 +43,14 @@
 */
 #ifndef _KOKKOSKERNELS_SPARSEUTILS_HPP
 #define _KOKKOSKERNELS_SPARSEUTILS_HPP
+#include <vector>
+
 #include "Kokkos_Core.hpp"
 #include "KokkosKernels_SimpleUtils.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosKernels_ExecSpaceUtils.hpp"
-#include <vector>
 #include "KokkosKernels_PrintUtils.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
-#include "KokkosSparse_BlockCrsMatrix.hpp"
 #include "KokkosSparse_BsrMatrix.hpp"
 
 #ifdef KOKKOSKERNELS_HAVE_PARALLEL_GNUSORT
@@ -59,25 +59,23 @@
 
 namespace KokkosSparse {
 
-enum SparseMatrixFormat {
-  BlockCRS,
+enum class SparseMatrixFormat {
   BSR,
-  CRS = BlockCRS,  // convenience alias: for block_size=1 or no-blocks there is
-                   // no difference in value ordering (so the format tag becomes
-                   // irrelevant)
+  CRS,
 };
 
 namespace Impl {
 
+/* create a block-sparse version of a CrsMatrix
+ */
 template <typename in_row_view_t, typename in_nnz_view_t,
           typename in_val_view_t, typename out_row_view_t,
           typename out_nnz_view_t, typename out_val_view_t>
-void kk_create_blockcrs_formatted_point_crsmatrix(
+void kk_create_bsr_formated_point_crsmatrix(
     int block_size, size_t num_rows, size_t num_cols, in_row_view_t in_xadj,
-    in_nnz_view_t in_adj, in_val_view_t in_vals,
-
-    size_t &out_num_rows, size_t &out_num_cols, out_row_view_t &out_xadj,
-    out_nnz_view_t &out_adj, out_val_view_t &out_vals) {
+    in_nnz_view_t in_adj, in_val_view_t in_vals, size_t &out_num_rows,
+    size_t &out_num_cols, out_row_view_t &out_xadj, out_nnz_view_t &out_adj,
+    out_val_view_t &out_vals) {
   typedef typename in_nnz_view_t::non_const_value_type lno_t;
   typedef typename in_row_view_t::non_const_value_type size_type;
   typedef typename in_val_view_t::non_const_value_type scalar_t;
@@ -103,13 +101,13 @@ void kk_create_blockcrs_formatted_point_crsmatrix(
   std::vector<scalar_t> block_accumulators(out_num_cols, 0);
   std::vector<bool> block_flags(out_num_cols, false);
 
+  // loop over first rows of each block-row
   for (lno_t i = 0; i < lno_t(num_rows); i += block_size) {
-    // std::cout << "row:" << i << std::endl;
     lno_t outputrowsize = 0;
 
+    // loop over rows in block
     for (lno_t block_ind = 0; block_ind < block_size; ++block_ind) {
-      lno_t row_ind = block_ind + i;
-      // std::cout << "\nrow_ind:" << row_ind << std::endl;
+      const lno_t row_ind = block_ind + i;
       if (row_ind < lno_t(num_rows)) {
         size_type adj_begin = hr(row_ind);
         size_type adj_end   = hr(row_ind + 1);
@@ -216,73 +214,74 @@ void kk_create_blockcrs_formatted_point_crsmatrix(
   Kokkos::deep_copy(out_vals, hov);
 }
 
+/* can be used in a parallel for to copy between compatible views
+ */
+template <typename T, typename U>
+struct ViewConverter {
+  ViewConverter(const T &_dst, const U &_src) : dst(_dst), src(_src) {}
+  KOKKOS_INLINE_FUNCTION void operator()(size_t i) const { dst[i] = src[i]; }
+  T dst;
+  U src;
+};
+
+/* Create output row pointer, col index, and value arrays
+   for BSR-format data from CRS data consistent with BSR format
+
+*/
 template <typename in_row_view_t, typename in_nnz_view_t,
-          typename in_val_view_t, typename out_row_view_t,
+          typename in_val_view_t,
+          typename out_row_view_t /*output row_map view type*/,
           typename out_nnz_view_t, typename out_val_view_t>
-void kk_create_blockcrs_from_blockcrs_formatted_point_crs(
-    int block_size, size_t num_rows, size_t num_cols, in_row_view_t in_xadj,
-    in_nnz_view_t in_adj, in_val_view_t in_vals,
+void kk_create_bsr_from_bsr_formatted_point_crs(
+    int block_size, size_t num_rows, size_t num_cols,
+    in_row_view_t in_xadj,  // row pointer (CrsMatrix::graph.row_map)
+    in_nnz_view_t in_adj,   // col index (CrsMatrix::graph.entries)
+    in_val_view_t in_vals,  // values CrsMatrix::values
+    size_t &out_num_rows,   // rows of blocks in output
+    size_t &out_num_cols,   // cols of blocks in output
+    out_row_view_t &out_xadj, out_nnz_view_t &out_adj,
+    out_val_view_t &out_vals) {
+  typedef typename in_nnz_view_t::non_const_value_type in_ordinal_type;
+  typedef typename in_val_view_t::non_const_value_type in_scalar_type;
+  typedef typename in_nnz_view_t::device_type in_device_type;
+  typedef typename out_nnz_view_t::non_const_value_type out_ordinal_type;
+  typedef typename out_val_view_t::non_const_value_type out_scalar_type;
+  typedef typename out_nnz_view_t::device_type out_device_type;
 
-    size_t &out_num_rows, size_t &out_num_cols, out_row_view_t &out_xadj,
-    out_nnz_view_t &out_adj, out_val_view_t &out_vals) {
-  typename in_row_view_t::HostMirror hr = Kokkos::create_mirror_view(in_xadj);
-  Kokkos::deep_copy(hr, in_xadj);
-  typename in_nnz_view_t::HostMirror he = Kokkos::create_mirror_view(in_adj);
-  Kokkos::deep_copy(he, in_adj);
-  typename in_val_view_t::HostMirror hv = Kokkos::create_mirror_view(in_vals);
-  Kokkos::deep_copy(hv, in_vals);
+  // in_row_view_t and out_row_view_t may not be the same, so use ViewConverter
+  // to do the conversion
+  typedef KokkosSparse::CrsMatrix<in_scalar_type, in_ordinal_type,
+                                  in_device_type>
+      InMatrix;
+  typedef KokkosSparse::Experimental::BsrMatrix<
+      out_scalar_type, out_ordinal_type, out_device_type>
+      OutMatrix;
 
-  out_num_rows = num_rows / block_size;
-  out_num_cols = num_cols / block_size;
+  // in_rowmap <- in_xadj
+  Kokkos::View<typename InMatrix::non_const_size_type *, in_device_type>
+      in_rowmap("", in_xadj.size());
+  Kokkos::parallel_for(
+      "", in_xadj.size(),
+      ViewConverter<decltype(in_rowmap), in_row_view_t>(in_rowmap, in_xadj));
 
-  out_xadj = out_row_view_t("BlockedCRS XADJ", out_num_rows + 1);
-  out_adj  = out_nnz_view_t("BlockedCRS ADJ",
-                           in_adj.extent(0) / (block_size * block_size));
-  out_vals = out_val_view_t("BlockedCRS VALS", in_vals.extent(0));
+  // reconstruct original CrsMatrix
+  InMatrix in("", num_rows, num_cols, in_vals.size(), in_vals, in_rowmap,
+              in_adj);
 
-  typename out_row_view_t::HostMirror hor =
-      Kokkos::create_mirror_view(out_xadj);
-  typename out_nnz_view_t::HostMirror hoe = Kokkos::create_mirror_view(out_adj);
-  typename out_val_view_t::HostMirror hov =
-      Kokkos::create_mirror_view(out_vals);
+  // convert to BsrMatrix
+  OutMatrix out(in, block_size);
 
-  typedef typename in_nnz_view_t::non_const_value_type lno_t;
-  typedef typename in_row_view_t::non_const_value_type size_type;
-  // typedef typename in_val_view_t::non_const_value_type scalar_t;
+  // out_xadj <- out.graph.row_map
+  Kokkos::resize(out_xadj, out.graph.row_map.size());
+  Kokkos::parallel_for(
+      "", out_xadj.size(),
+      ViewConverter<out_row_view_t, decltype(out.graph.row_map)>(
+          out_xadj, out.graph.row_map));
 
-  for (lno_t i = 0; i < lno_t(out_num_rows); ++i) {
-    hor(i) = hr(i * block_size) / (block_size * block_size);
-
-    size_type ib = hr(i * block_size);
-    size_type ie = hr(i * block_size + 1);
-
-    lno_t is = ie - ib;
-
-    size_type ob = hor(i);
-    // size_type oe = hr(i * block_size + 1) / block_size;
-    lno_t os          = (ie - ib) / block_size;
-    lno_t write_index = 0;
-    for (lno_t j = 0; j < is; ++j) {
-      lno_t e = he(ib + j);
-      if (e % block_size == 0) {
-        hoe(ob + write_index++) = e / block_size;
-      }
-    }
-    if (write_index != os) {
-      std::cerr << "row:" << i << " expected size:" << os
-                << " written size:" << write_index << std::endl;
-      exit(1);
-    }
-  }
-  hor(out_num_rows) = hr(out_num_rows * block_size) / (block_size * block_size);
-  Kokkos::deep_copy(out_xadj, hor);
-  Kokkos::deep_copy(out_adj, hoe);
-
-  size_type ne = in_adj.extent(0);
-  for (size_type i = 0; i < ne; ++i) {
-    hov(i) = hv(i);
-  }
-  Kokkos::deep_copy(out_vals, hov);
+  out_adj      = out.graph.entries;
+  out_vals     = out.values;
+  out_num_rows = out.numRows();
+  out_num_cols = out.numCols();
 }
 
 template <typename in_row_view_t, typename in_nnz_view_t,
@@ -1935,7 +1934,7 @@ void kk_reduce_numrows_larger_than_threshold(
       sum_reduction);
 }
 
-// Note: "block" in property name means it's block internal - otherwise it
+// Note: "block" in member name means it's block internal - otherwise it
 // addresses sparse rows/columns (whole blocks) within whole matrix.
 template <typename lno_t, typename size_type>
 class RowIndexBase {
@@ -1978,11 +1977,20 @@ class RowIndexBase {
   lno_t row_size;
 };
 
+/* The only use of this is in Sparse Gauss Seidel, which is only implemented
+   for BSR and CRS, which are identical when block size is 1
+
+*/
 template <SparseMatrixFormat /* format */, typename lno_t, typename size_type>
 class MatrixRowIndex;
 
+/* CWP August 11 2022
+   This is pretty much the old BlockCRS one, but
+   Should be able to create a specialized version of this for CRS because block
+   size is 1
+*/
 template <typename lno_t, typename size_type>
-class MatrixRowIndex<BlockCRS, lno_t, size_type>
+class MatrixRowIndex<SparseMatrixFormat::CRS, lno_t, size_type>
     : public RowIndexBase<lno_t, size_type> {
  public:
   using Base = RowIndexBase<lno_t, size_type>;
@@ -2008,7 +2016,7 @@ class MatrixRowIndex<BlockCRS, lno_t, size_type>
 };
 
 template <typename lno_t, typename size_type>
-class MatrixRowIndex<BSR, lno_t, size_type>
+class MatrixRowIndex<SparseMatrixFormat::BSR, lno_t, size_type>
     : public RowIndexBase<lno_t, size_type> {
  public:
   using Base = RowIndexBase<lno_t, size_type>;
@@ -2040,49 +2048,26 @@ template <typename scalar_t, typename lno_t, typename device,
           typename mem_traits, typename size_type>
 struct MatrixTraits<
     KokkosSparse::CrsMatrix<scalar_t, lno_t, device, mem_traits, size_type>> {
-  static constexpr auto format = KokkosSparse::CRS;
-};
-
-template <typename scalar_t, typename lno_t, typename device,
-          typename mem_traits, typename size_type>
-struct MatrixTraits<KokkosSparse::Experimental::BlockCrsMatrix<
-    scalar_t, lno_t, device, mem_traits, size_type>> {
-  static constexpr auto format = KokkosSparse::BlockCRS;
+  static constexpr auto format = KokkosSparse::SparseMatrixFormat::CRS;
 };
 
 template <typename scalar_t, typename lno_t, typename device,
           typename mem_traits, typename size_type>
 struct MatrixTraits<KokkosSparse::Experimental::BsrMatrix<
     scalar_t, lno_t, device, mem_traits, size_type>> {
-  static constexpr auto format = KokkosSparse::BSR;
+  static constexpr auto format = KokkosSparse::SparseMatrixFormat::BSR;
 };
 
 template <SparseMatrixFormat /* outFormat */>
 struct MatrixConverter;
 
 template <>
-struct MatrixConverter<BlockCRS> {
-  template <
-      typename scalar_t, typename lno_t, typename device, typename size_type,
-      typename crsMat_t =
-          KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>,
-      typename blockCrsMat_t = KokkosSparse::Experimental::BlockCrsMatrix<
-          scalar_t, lno_t, device, void, size_type>>
-  static blockCrsMat_t from_blockcrs_formatted_point_crsmatrix(
-      const KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>
-          &mtx,
-      lno_t block_size) {
-    return blockCrsMat_t(mtx, block_size);
-  }
-};
-
-template <>
-struct MatrixConverter<BSR> {
+struct MatrixConverter<SparseMatrixFormat::BSR> {
   template <typename scalar_t, typename lno_t, typename size_type,
             typename device,
             typename bsrMtx_t = KokkosSparse::Experimental::BsrMatrix<
                 scalar_t, lno_t, device, void, size_type>>
-  static bsrMtx_t from_blockcrs_formatted_point_crsmatrix(
+  static bsrMtx_t from_bsr_formated_point_crsmatrix(
       const KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>
           &mtx,
       lno_t block_size) {
@@ -2092,16 +2077,5 @@ struct MatrixConverter<BSR> {
 
 }  // namespace Impl
 }  // namespace KokkosSparse
-
-namespace KokkosKernels {
-
-enum [[deprecated]] SparseMatrixFormat{
-    BlockCRS, BSR,
-    CRS = BlockCRS,  // convenience alias: for block_size=1 or no-blocks there
-                     // is no difference in value ordering (so the format tag
-                     // becomes irrelevant)
-};
-
-}  // namespace KokkosKernels
 
 #endif

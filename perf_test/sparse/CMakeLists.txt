@@ -65,10 +65,6 @@ IF (KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
     )
 ENDIF ()
 
-KOKKOSKERNELS_ADD_EXECUTABLE(
-        sparse_spmv_blockcrs
-        SOURCES KokkosSparse_spmv_blockcrs.cpp
-)
 
 KOKKOSKERNELS_ADD_EXECUTABLE(
         sparse_spmv_bsr
