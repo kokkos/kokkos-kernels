@@ -128,6 +128,18 @@ void F77_BLAS_MANGLE(zaxpy,
                             /* */ std::complex<double>* y, const int* y_inc);
 
 ///
+/// rotg
+///
+void F77_BLAS_MANGLE(srotg, SROTG)(float* a, float* b, float* c, float* s);
+void F77_BLAS_MANGLE(drotg, DROTG)(double* a, double* b, double* c, double* s);
+void F77_BLAS_MANGLE(crotg, CROTG)(std::complex<float>* a,
+                                   std::complex<float>* b, float* c,
+                                   std::complex<float>* s);
+void F77_BLAS_MANGLE(zrotg, ZROTG)(std::complex<double>* a,
+                                   std::complex<double>* b, double* c,
+                                   std::complex<double>* s);
+
+///
 /// Gemv
 ///
 void F77_BLAS_MANGLE(sgemv, SGEMV)(const char*, int*, int*, const float*,
@@ -339,6 +351,11 @@ void F77_BLAS_MANGLE(zscal,
 #define F77_FUNC_CAXPY F77_BLAS_MANGLE(caxpy, CAXPY)
 #define F77_FUNC_ZAXPY F77_BLAS_MANGLE(zaxpy, ZAXPY)
 
+#define F77_FUNC_SROTG F77_BLAS_MANGLE(srotg, SROTG)
+#define F77_FUNC_DROTG F77_BLAS_MANGLE(drotg, DROTG)
+#define F77_FUNC_CROTG F77_BLAS_MANGLE(crotg, CROTG)
+#define F77_FUNC_ZROTG F77_BLAS_MANGLE(zrotg, ZROTG)
+
 #define F77_FUNC_SGEMV F77_BLAS_MANGLE(sgemv, SGEMV)
 #define F77_FUNC_DGEMV F77_BLAS_MANGLE(dgemv, DGEMV)
 #define F77_FUNC_CGEMV F77_BLAS_MANGLE(cgemv, CGEMV)
@@ -412,6 +429,10 @@ template <>
 void HostBlas<float>::axpy(int n, const float alpha, const float* x, int x_inc,
                            /* */ float* y, int y_inc) {
   F77_FUNC_SAXPY(&n, &alpha, x, &x_inc, y, &y_inc);
+}
+template <>
+void HostBlas<float>::rotg(float* a, float* b, float* c, float* s) {
+  F77_FUNC_SROTG(a, b, c, s);
 }
 template <>
 void HostBlas<float>::gemv(const char trans, int m, int n, const float alpha,
@@ -501,6 +522,10 @@ void HostBlas<double>::axpy(int n, const double alpha, const double* x,
                             int x_inc,
                             /* */ double* y, int y_inc) {
   F77_FUNC_DAXPY(&n, &alpha, x, &x_inc, y, &y_inc);
+}
+template <>
+void HostBlas<double>::rotg(double* a, double* b, double* c, double* s) {
+  F77_FUNC_DROTG(a, b, c, s);
 }
 template <>
 void HostBlas<double>::gemv(const char trans, int m, int n, const double alpha,
@@ -605,6 +630,12 @@ void HostBlas<std::complex<float> >::axpy(int n,
                                           /* */ std::complex<float>* y,
                                           int y_inc) {
   F77_FUNC_CAXPY(&n, &alpha, x, &x_inc, y, &y_inc);
+}
+template <>
+void HostBlas<std::complex<float> >::rotg(std::complex<float>* a,
+                                          std::complex<float>* b, float* c,
+                                          std::complex<float>* s) {
+  F77_FUNC_CROTG(a, b, c, s);
 }
 
 template <>
@@ -739,6 +770,12 @@ void HostBlas<std::complex<double> >::axpy(int n,
                                            /* */ std::complex<double>* y,
                                            int y_inc) {
   F77_FUNC_ZAXPY(&n, &alpha, x, &x_inc, y, &y_inc);
+}
+template <>
+void HostBlas<std::complex<double> >::rotg(std::complex<double>* a,
+                                           std::complex<double>* b, double* c,
+                                           std::complex<double>* s) {
+  F77_FUNC_ZROTG(a, b, c, s);
 }
 
 template <>
