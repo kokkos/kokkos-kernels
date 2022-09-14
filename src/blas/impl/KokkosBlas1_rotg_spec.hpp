@@ -88,14 +88,18 @@ template <class Scalar,
           bool tpl_spec_avail = rotg_tpl_spec_avail<Scalar>::value,
           bool eti_spec_avail = rotg_eti_spec_avail<Scalar>::value>
 struct Rotg {
-  static void rotg(Scalar& a, Scalar& b, Scalar& c, Scalar& s);
+  static void rotg(Scalar& a, Scalar& b,
+                   typename Kokkos::ArithTraits<Scalar>::mag_type& c,
+                   Scalar& s);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 //! Full specialization of Rotg.
 template <class Scalar>
 struct Rotg<Scalar, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
-  static void rotg(Scalar& a, Scalar& b, Scalar& c, Scalar& s) {
+  static void rotg(Scalar& a, Scalar& b,
+                   typename Kokkos::ArithTraits<Scalar>::mag_type& c,
+                   Scalar& s) {
     Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
                                       ? "KokkosBlas::rotg[ETI]"
                                       : "KokkosBlas::rotg[noETI]");

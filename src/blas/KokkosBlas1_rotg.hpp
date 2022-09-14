@@ -59,7 +59,8 @@ namespace KokkosBlas {
 /// output the rotated value \param c [out] cosine value associated with the
 /// rotation \param s [out] sine value associated with the rotation
 template <class Scalar>
-void rotg(Scalar& a, Scalar& b, Scalar& c, Scalar& s) {
+void rotg(Scalar& a, Scalar& b,
+          typename Kokkos::ArithTraits<Scalar>::mag_type& c, Scalar& s) {
   Kokkos::Profiling::pushRegion("KokkosBlas::rotg");
   Impl::Rotg<Scalar>::rotg(a, b, c, s);
   Kokkos::Profiling::popRegion();

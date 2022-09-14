@@ -90,20 +90,24 @@ void Rotg_Invoke(Scalar& a, Scalar& b, Scalar& c, Scalar& s) {
 template <class Scalar,
           typename std::enable_if<Kokkos::ArithTraits<Scalar>::is_complex,
                                   bool>::type = true>
-void Rotg_Invoke(Scalar& a, Scalar& b, Scalar& c, Scalar& s) {
-  const Scalar one  = Kokkos::ArithTraits<Scalar>::one();
-  const Scalar zero = Kokkos::ArithTraits<Scalar>::zero();
+void Rotg_Invoke(Scalar& a, Scalar& b,
+                 typename Kokkos::ArithTraits<Scalar>::mag_type& c, Scalar& s) {
+  using mag_type = typename Kokkos::ArithTraits<Scalar>::mag_type;
 
-  const Scalar numerical_scaling = Kokkos::abs(a) + Kokkos::abs(b);
+  const Scalar one        = Kokkos::ArithTraits<Scalar>::one();
+  const Scalar zero       = Kokkos::ArithTraits<Scalar>::zero();
+  const mag_type mag_zero = Kokkos::ArithTraits<mag_type>::zero();
+
+  const mag_type numerical_scaling = Kokkos::abs(a) + Kokkos::abs(b);
   if (Kokkos::abs(a) == zero) {
-    c = zero;
+    c = mag_zero;
     s = one;
     a = b;
   } else {
     const Scalar scaled_a = Kokkos::abs(a / numerical_scaling);
     const Scalar scaled_b = Kokkos::abs(b / numerical_scaling);
-    Scalar norm = Kokkos::sqrt(scaled_a * scaled_a + scaled_b * scaled_b) *
-                  numerical_scaling;
+    mag_type norm = Kokkos::sqrt(scaled_a * scaled_a + scaled_b * scaled_b) *
+                    numerical_scaling;
     Scalar unit_a = a / Kokkos::abs(a);
     c             = Kokkos::abs(a) / norm;
     s             = unit_a * Kokkos::conj(b) / norm;

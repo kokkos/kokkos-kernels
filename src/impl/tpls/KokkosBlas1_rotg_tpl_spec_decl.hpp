@@ -67,60 +67,67 @@ inline void rotg_print_specialization() {
 namespace KokkosBlas {
 namespace Impl {
 
-// #define KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_BLAS(ETI_SPEC_AVAIL)		\
-//   struct Rotg<double, true, ETI_SPEC_AVAIL> {			\
-//     									\
-//     static void rotg(double& a, double& b, double& c, double& s) { \
-//       Kokkos::Profiling::pushRegion("KokkosBlas::rotg[TPL_BLAS,double]"); \
-//       Kokkos::Profiling::popRegion();					\
-//     }									\
-//   };
+#define KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_BLAS(ETI_SPEC_AVAIL)              \
+  template <>                                                             \
+  struct Rotg<double, true, ETI_SPEC_AVAIL> {                             \
+    static void rotg(double& a, double& b, double& c, double& s) {        \
+      Kokkos::Profiling::pushRegion("KokkosBlas::rotg[TPL_BLAS,double]"); \
+      HostBlas<double>::rotg(&a, &b, &c, &s);                             \
+      Kokkos::Profiling::popRegion();                                     \
+    }                                                                     \
+  };
 
-// #define KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_BLAS(ETI_SPEC_AVAIL) \
-//   struct Rotg<float, true, ETI_SPEC_AVAIL> {				\
-//     									\
-//     static void rotg(float& a, float& b, float& c, float& s) { \
-//       Kokkos::Profiling::pushRegion("KokkosBlas::rotg[TPL_BLAS,float]");       \
-//       Kokkos::Profiling::popRegion();                                          \
-//     }                                                                          \
-//   };
+#define KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_BLAS(ETI_SPEC_AVAIL)             \
+  template <>                                                            \
+  struct Rotg<float, true, ETI_SPEC_AVAIL> {                             \
+    static void rotg(float& a, float& b, float& c, float& s) {           \
+      Kokkos::Profiling::pushRegion("KokkosBlas::rotg[TPL_BLAS,float]"); \
+      HostBlas<float>::rotg(&a, &b, &c, &s);                             \
+      Kokkos::Profiling::popRegion();                                    \
+    }                                                                    \
+  };
 
-// #define KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_BLAS(ETI_SPEC_AVAIL)    \
-//   struct Rotg<double, true, ETI_SPEC_AVAIL> {				\
-//                                                                                   \
-//     static void rotg(Kokkos::complex<double>& a,			\
-// 		     Kokkos::complex<double>& b,			\
-// 		     Kokkos::complex<double>& c, Kokkos::complex<double>& s) { \
-//       Kokkos::Profiling::pushRegion(                                              \
-//           "KokkosBlas::rotg[TPL_BLAS,complex<double>]");                          \
-//       Kokkos::Profiling::popRegion();                                             \
-//     }                                                                             \
-//   };
+#define KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_BLAS(ETI_SPEC_AVAIL)                 \
+  template <>                                                                \
+  struct Rotg<Kokkos::complex<double>, true, ETI_SPEC_AVAIL> {               \
+    static void rotg(Kokkos::complex<double>& a, Kokkos::complex<double>& b, \
+                     double& c, Kokkos::complex<double>& s) {                \
+      Kokkos::Profiling::pushRegion(                                         \
+          "KokkosBlas::rotg[TPL_BLAS,complex<double>]");                     \
+      HostBlas<std::complex<double> >::rotg(                                 \
+          reinterpret_cast<std::complex<double>*>(&a),                       \
+          reinterpret_cast<std::complex<double>*>(&b), &c,                   \
+          reinterpret_cast<std::complex<double>*>(&s));                      \
+      Kokkos::Profiling::popRegion();                                        \
+    }                                                                        \
+  };
 
-// #define KOKKOSBLAS1_CNRM1_TPL_SPEC_DECL_BLAS(ETI_SPEC_AVAIL)   \
-//   struct Rotg<Kokkos::complex<float>, true, ETI_SPEC_AVAIL> {		\
-//     									\
-//     static void rotg(Kokkos::complex<float>& a,			\
-// 		     Kokkos::complex<float>& b,			\
-// 		     Kokkos::complex<float>& c,				\
-// 		     Kokkos::complex<float>& s) {			\
-//       Kokkos::Profiling::pushRegion(					\
-// 	  "KokkosBlas::rotg[TPL_BLAS,complex<float>]"); \
-//       Kokkos::Profiling::popRegion();					\
-//     }									\
-//   };
+#define KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_BLAS(ETI_SPEC_AVAIL)               \
+  template <>                                                              \
+  struct Rotg<Kokkos::complex<float>, true, ETI_SPEC_AVAIL> {              \
+    static void rotg(Kokkos::complex<float>& a, Kokkos::complex<float>& b, \
+                     float& c, Kokkos::complex<float>& s) {                \
+      Kokkos::Profiling::pushRegion(                                       \
+          "KokkosBlas::rotg[TPL_BLAS,complex<float>]");                    \
+      HostBlas<std::complex<float> >::rotg(                                \
+          reinterpret_cast<std::complex<float>*>(&a),                      \
+          reinterpret_cast<std::complex<float>*>(&b), &c,                  \
+          reinterpret_cast<std::complex<float>*>(&s));                     \
+      Kokkos::Profiling::popRegion();                                      \
+    }                                                                      \
+  };
 
-// KOKKOSBLAS1_DNRM1_TPL_SPEC_DECL_BLAS(true)
-// KOKKOSBLAS1_DNRM1_TPL_SPEC_DECL_BLAS(false)
+KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_BLAS(true)
+KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_BLAS(false)
 
-// KOKKOSBLAS1_SNRM1_TPL_SPEC_DECL_BLAS(true)
-// KOKKOSBLAS1_SNRM1_TPL_SPEC_DECL_BLAS(false)
+KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_BLAS(true)
+KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_BLAS(false)
 
-// KOKKOSBLAS1_ZNRM1_TPL_SPEC_DECL_BLAS(true)
-// KOKKOSBLAS1_ZNRM1_TPL_SPEC_DECL_BLAS(false)
+KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_BLAS(true)
+KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_BLAS(false)
 
-// KOKKOSBLAS1_CNRM1_TPL_SPEC_DECL_BLAS(true)
-// KOKKOSBLAS1_CNRM1_TPL_SPEC_DECL_BLAS(false)
+KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_BLAS(true)
+KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_BLAS(false)
 
 }  // namespace Impl
 }  // namespace KokkosBlas
@@ -134,171 +141,165 @@ namespace Impl {
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS1_DNRM1_TPL_SPEC_DECL_CUBLAS(LAYOUT, MEMSPACE,               \
-                                               ETI_SPEC_AVAIL)                 \
-  template <class ExecSpace>                                                   \
-  struct Nrm1<                                                                 \
-      Kokkos::View<double, LAYOUT, Kokkos::HostSpace,                          \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      1, true, ETI_SPEC_AVAIL> {                                               \
-    typedef Kokkos::View<double, LAYOUT, Kokkos::HostSpace,                    \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
-        RV;                                                                    \
-    typedef Kokkos::View<const double*, LAYOUT,                                \
-                         Kokkos::Device<ExecSpace, MEMSPACE>,                  \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
-        XV;                                                                    \
-    typedef typename XV::size_type size_type;                                  \
-                                                                               \
-    static void nrm1(RV& R, const XV& X) {                                     \
-      Kokkos::Profiling::pushRegion("KokkosBlas::nrm1[TPL_CUBLAS,double]");    \
-      const size_type numElems = X.extent(0);                                  \
-      if (numElems < static_cast<size_type>(INT_MAX)) {                        \
-        nrm1_print_specialization<RV, XV>();                                   \
-        const int N       = static_cast<int>(numElems);                        \
-        constexpr int one = 1;                                                 \
-        KokkosBlas::Impl::CudaBlasSingleton& s =                               \
-            KokkosBlas::Impl::CudaBlasSingleton::singleton();                  \
-        cublasDasum(s.handle, N, X.data(), one, R.data());                     \
-      } else {                                                                 \
-        Nrm1<RV, XV, 1, false, ETI_SPEC_AVAIL>::nrm1(R, X);                    \
-      }                                                                        \
-      Kokkos::Profiling::popRegion();                                          \
-    }                                                                          \
+#define KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_CUBLAS(ETI_SPEC_AVAIL)              \
+  template <>                                                               \
+  struct Rotg<double, true, ETI_SPEC_AVAIL> {                               \
+    static void rotg(double& a, double& b, double& c, double& s) {          \
+      Kokkos::Profiling::pushRegion("KokkosBlas::nrm1[TPL_CUBLAS,double]"); \
+      rotg_print_specialization<double>();                                  \
+      KokkosBlas::Impl::CudaBlasSingleton& singleton =                      \
+          KokkosBlas::Impl::CudaBlasSingleton::singleton();                 \
+      cublasDrotg(singleton.handle, &a, &b, &c, &s);                        \
+      Kokkos::Profiling::popRegion();                                       \
+    }                                                                       \
   };
 
-#define KOKKOSBLAS1_SNRM1_TPL_SPEC_DECL_CUBLAS(LAYOUT, MEMSPACE,              \
-                                               ETI_SPEC_AVAIL)                \
-  template <class ExecSpace>                                                  \
-  struct Nrm1<                                                                \
-      Kokkos::View<float, LAYOUT, Kokkos::HostSpace,                          \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
-      Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
-      1, true, ETI_SPEC_AVAIL> {                                              \
-    typedef Kokkos::View<float, LAYOUT, Kokkos::HostSpace,                    \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >            \
-        RV;                                                                   \
-    typedef Kokkos::View<const float*, LAYOUT,                                \
-                         Kokkos::Device<ExecSpace, MEMSPACE>,                 \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >            \
-        XV;                                                                   \
-    typedef typename XV::size_type size_type;                                 \
-                                                                              \
-    static void nrm1(RV& R, const XV& X) {                                    \
-      Kokkos::Profiling::pushRegion("KokkosBlas::nrm1[TPL_CUBLAS,float]");    \
-      const size_type numElems = X.extent(0);                                 \
-      if (numElems < static_cast<size_type>(INT_MAX)) {                       \
-        nrm1_print_specialization<RV, XV>();                                  \
-        const int N       = static_cast<int>(numElems);                       \
-        constexpr int one = 1;                                                \
-        KokkosBlas::Impl::CudaBlasSingleton& s =                              \
-            KokkosBlas::Impl::CudaBlasSingleton::singleton();                 \
-        cublasSasum(s.handle, N, X.data(), one, R.data());                    \
-      } else {                                                                \
-        Nrm1<RV, XV, 1, false, ETI_SPEC_AVAIL>::nrm1(R, X);                   \
-      }                                                                       \
-      Kokkos::Profiling::popRegion();                                         \
-    }                                                                         \
+#define KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_CUBLAS(ETI_SPEC_AVAIL)             \
+  template <>                                                              \
+  struct Rotg<float, true, ETI_SPEC_AVAIL> {                               \
+    static void rotg(float& a, float& b, float& c, float& s) {             \
+      Kokkos::Profiling::pushRegion("KokkosBlas::nrm1[TPL_CUBLAS,float]"); \
+      rotg_print_specialization<float>();                                  \
+      KokkosBlas::Impl::CudaBlasSingleton& singleton =                     \
+          KokkosBlas::Impl::CudaBlasSingleton::singleton();                \
+      cublasSrotg(singleton.handle, &a, &b, &c, &s);                       \
+      Kokkos::Profiling::popRegion();                                      \
+    }                                                                      \
   };
 
-#define KOKKOSBLAS1_ZNRM1_TPL_SPEC_DECL_CUBLAS(LAYOUT, MEMSPACE,              \
-                                               ETI_SPEC_AVAIL)                \
-  template <class ExecSpace>                                                  \
-  struct Nrm1<Kokkos::View<double, LAYOUT, Kokkos::HostSpace,                 \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,         \
-              Kokkos::View<const Kokkos::complex<double>*, LAYOUT,            \
-                           Kokkos::Device<ExecSpace, MEMSPACE>,               \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,         \
-              1, true, ETI_SPEC_AVAIL> {                                      \
-    typedef Kokkos::View<double, LAYOUT, Kokkos::HostSpace,                   \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >            \
-        RV;                                                                   \
-    typedef Kokkos::View<const Kokkos::complex<double>*, LAYOUT,              \
-                         Kokkos::Device<ExecSpace, MEMSPACE>,                 \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >            \
-        XV;                                                                   \
-    typedef typename XV::size_type size_type;                                 \
-                                                                              \
-    static void nrm1(RV& R, const XV& X) {                                    \
-      Kokkos::Profiling::pushRegion(                                          \
-          "KokkosBlas::nrm1[TPL_CUBLAS,complex<double>]");                    \
-      const size_type numElems = X.extent(0);                                 \
-      if (numElems < static_cast<size_type>(INT_MAX)) {                       \
-        nrm1_print_specialization<RV, XV>();                                  \
-        const int N       = static_cast<int>(numElems);                       \
-        constexpr int one = 1;                                                \
-        KokkosBlas::Impl::CudaBlasSingleton& s =                              \
-            KokkosBlas::Impl::CudaBlasSingleton::singleton();                 \
-        cublasDzasum(s.handle, N,                                             \
-                     reinterpret_cast<const cuDoubleComplex*>(X.data()), one, \
-                     R.data());                                               \
-      } else {                                                                \
-        Nrm1<RV, XV, 1, false, ETI_SPEC_AVAIL>::nrm1(R, X);                   \
-      }                                                                       \
-      Kokkos::Profiling::popRegion();                                         \
-    }                                                                         \
+#define KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_CUBLAS(ETI_SPEC_AVAIL)               \
+  template <>                                                                \
+  struct Rotg<Kokkos::complex<double>, true, ETI_SPEC_AVAIL> {               \
+    static void rotg(Kokkos::complex<double>& a, Kokkos::complex<double>& b, \
+                     double& c, Kokkos::complex<double>& s) {                \
+      Kokkos::Profiling::pushRegion(                                         \
+          "KokkosBlas::nrm1[TPL_CUBLAS,complex<double>]");                   \
+      rotg_print_specialization<Kokkos::complex<double> >();                 \
+      KokkosBlas::Impl::CudaBlasSingleton& singleton =                       \
+          KokkosBlas::Impl::CudaBlasSingleton::singleton();                  \
+      cublasZrotg(singleton.handle, reinterpret_cast<cuDoubleComplex*>(&a),  \
+                  reinterpret_cast<cuDoubleComplex*>(&b), &c,                \
+                  reinterpret_cast<cuDoubleComplex*>(&s));                   \
+      Kokkos::Profiling::popRegion();                                        \
+    }                                                                        \
   };
 
-#define KOKKOSBLAS1_CNRM1_TPL_SPEC_DECL_CUBLAS(LAYOUT, MEMSPACE,        \
-                                               ETI_SPEC_AVAIL)          \
-  template <class ExecSpace>                                            \
-  struct Nrm1<Kokkos::View<float, LAYOUT, Kokkos::HostSpace,            \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,   \
-              Kokkos::View<const Kokkos::complex<float>*, LAYOUT,       \
-                           Kokkos::Device<ExecSpace, MEMSPACE>,         \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,   \
-              1, true, ETI_SPEC_AVAIL> {                                \
-    typedef Kokkos::View<float, LAYOUT, Kokkos::HostSpace,              \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >      \
-        RV;                                                             \
-    typedef Kokkos::View<const Kokkos::complex<float>*, LAYOUT,         \
-                         Kokkos::Device<ExecSpace, MEMSPACE>,           \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >      \
-        XV;                                                             \
-    typedef typename XV::size_type size_type;                           \
-                                                                        \
-    static void nrm1(RV& R, const XV& X) {                              \
-      Kokkos::Profiling::pushRegion(                                    \
-          "KokkosBlas::nrm1[TPL_CUBLAS,complex<float>]");               \
-      const size_type numElems = X.extent(0);                           \
-      if (numElems < static_cast<size_type>(INT_MAX)) {                 \
-        nrm1_print_specialization<RV, XV>();                            \
-        const int N       = static_cast<int>(numElems);                 \
-        constexpr int one = 1;                                          \
-        KokkosBlas::Impl::CudaBlasSingleton& s =                        \
-            KokkosBlas::Impl::CudaBlasSingleton::singleton();           \
-        cublasScasum(s.handle, N,                                       \
-                     reinterpret_cast<const cuComplex*>(X.data()), one, \
-                     R.data());                                         \
-      } else {                                                          \
-        Nrm1<RV, XV, 1, false, ETI_SPEC_AVAIL>::nrm1(R, X);             \
-      }                                                                 \
-      Kokkos::Profiling::popRegion();                                   \
-    }                                                                   \
+#define KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_CUBLAS(ETI_SPEC_AVAIL)             \
+  template <>                                                              \
+  struct Rotg<Kokkos::complex<float>, true, ETI_SPEC_AVAIL> {              \
+    static void rotg(Kokkos::complex<float>& a, Kokkos::complex<float>& b, \
+                     float& c, Kokkos::complex<float>& s) {                \
+      Kokkos::Profiling::pushRegion(                                       \
+          "KokkosBlas::nrm1[TPL_CUBLAS,complex<float>]");                  \
+      rotg_print_specialization<Kokkos::complex<float> >();                \
+      KokkosBlas::Impl::CudaBlasSingleton& singleton =                     \
+          KokkosBlas::Impl::CudaBlasSingleton::singleton();                \
+      cublasCrotg(singleton.handle, reinterpret_cast<cuComplex*>(&a),      \
+                  reinterpret_cast<cuComplex*>(&b), &c,                    \
+                  reinterpret_cast<cuComplex*>(&s));                       \
+      Kokkos::Profiling::popRegion();                                      \
+    }                                                                      \
   };
 
-KOKKOSBLAS1_DNRM1_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::CudaSpace,
-                                       true)
-KOKKOSBLAS1_DNRM1_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::CudaSpace,
-                                       false)
+KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_CUBLAS(true)
+KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_CUBLAS(false)
 
-KOKKOSBLAS1_SNRM1_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::CudaSpace,
-                                       true)
-KOKKOSBLAS1_SNRM1_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::CudaSpace,
-                                       false)
+KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_CUBLAS(true)
+KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_CUBLAS(false)
 
-KOKKOSBLAS1_ZNRM1_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::CudaSpace,
-                                       true)
-KOKKOSBLAS1_ZNRM1_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::CudaSpace,
-                                       false)
+KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_CUBLAS(true)
+KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_CUBLAS(false)
 
-KOKKOSBLAS1_CNRM1_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::CudaSpace,
-                                       true)
-KOKKOSBLAS1_CNRM1_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::CudaSpace,
-                                       false)
+KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_CUBLAS(true)
+KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_CUBLAS(false)
+
+}  // namespace Impl
+}  // namespace KokkosBlas
+
+#endif
+
+// rocBLAS
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
+#include <KokkosBlas_tpl_spec.hpp>
+
+namespace KokkosBlas {
+namespace Impl {
+
+#define KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_ROCBLAS(ETI_SPEC_AVAIL)              \
+  template <>                                                                \
+  struct Rotg<double, true, ETI_SPEC_AVAIL> {                                \
+    static void rotg(double& a, double& b, double& c, double& s) {           \
+      Kokkos::Profiling::pushRegion("KokkosBlas::nrm1[TPL_ROCBLAS,double]"); \
+      rotg_print_specialization<double>();                                   \
+      KokkosBlas::Impl::RocBlasSingleton& singleton =                        \
+          KokkosBlas::Impl::RocBlasSingleton::singleton();                   \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                         \
+          rocblas_drotg(singleton.handle, &a, &b, &c, &s));                  \
+      Kokkos::Profiling::popRegion();                                        \
+    }                                                                        \
+  };
+
+#define KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_ROCBLAS(ETI_SPEC_AVAIL)             \
+  template <>                                                               \
+  struct Rotg<float, true, ETI_SPEC_AVAIL> {                                \
+    static void rotg(float& a, float& b, float& c, float& s) {              \
+      Kokkos::Profiling::pushRegion("KokkosBlas::nrm1[TPL_ROCBLAS,float]"); \
+      rotg_print_specialization<float>();                                   \
+      KokkosBlas::Impl::RocBlasSingleton& singleton =                       \
+          KokkosBlas::Impl::RocBlasSingleton::singleton();                  \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                        \
+          rocblas_srotg(singleton.handle, &a, &b, &c, &s));                 \
+      Kokkos::Profiling::popRegion();                                       \
+    }                                                                       \
+  };
+
+#define KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_ROCBLAS(ETI_SPEC_AVAIL)              \
+  template <>                                                                \
+  struct Rotg<Kokkos::complex<double>, true, ETI_SPEC_AVAIL> {               \
+    static void rotg(Kokkos::complex<double>& a, Kokkos::complex<double>& b, \
+                     double& c, Kokkos::complex<double>& s) {                \
+      Kokkos::Profiling::pushRegion(                                         \
+          "KokkosBlas::nrm1[TPL_ROCBLAS,complex<double>]");                  \
+      rotg_print_specialization<Kokkos::complex<double> >();                 \
+      KokkosBlas::Impl::RocBlasSingleton& singleton =                        \
+          KokkosBlas::Impl::RocBlasSingleton::singleton();                   \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_zrotg(                           \
+          singleton.handle, reinterpret_cast<rocblas_double_complex*>(&a),   \
+          reinterpret_cast<rocblas_double_complex*>(&b), &c,                 \
+          reinterpret_cast<rocblas_double_complex*>(&s)));                   \
+      Kokkos::Profiling::popRegion();                                        \
+    }                                                                        \
+  };
+
+#define KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_ROCBLAS(ETI_SPEC_AVAIL)            \
+  template <>                                                              \
+  struct Rotg<Kokkos::complex<float>, true, ETI_SPEC_AVAIL> {              \
+    static void rotg(Kokkos::complex<float>& a, Kokkos::complex<float>& b, \
+                     float& c, Kokkos::complex<float>& s) {                \
+      Kokkos::Profiling::pushRegion(                                       \
+          "KokkosBlas::nrm1[TPL_ROCBLAS,complex<float>]");                 \
+      rotg_print_specialization<Kokkos::complex<float> >();                \
+      KokkosBlas::Impl::RocBlasSingleton& singleton =                      \
+          KokkosBlas::Impl::RocBlasSingleton::singleton();                 \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_crotg(                         \
+          singleton.handle, reinterpret_cast<rocblas_float_complex*>(&a),  \
+          reinterpret_cast<rocblas_float_complex*>(&b), &c,                \
+          reinterpret_cast<rocblas_float_complex*>(&s)));                  \
+      Kokkos::Profiling::popRegion();                                      \
+    }                                                                      \
+  };
+
+KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_ROCBLAS(true)
+KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_ROCBLAS(false)
+
+KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_ROCBLAS(true)
+KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_ROCBLAS(false)
+
+KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_ROCBLAS(true)
+KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_ROCBLAS(false)
+
+KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_ROCBLAS(true)
+KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_ROCBLAS(false)
 
 }  // namespace Impl
 }  // namespace KokkosBlas
