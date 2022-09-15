@@ -258,6 +258,98 @@ struct Gemv<Mode::TeamVector, ArgAlgo> {
   }
 };
 
+///
+/// Unified interfaces
+///
+
+/// \brief Dense matrix-vector multiply: y = beta*y + alpha*A*x.
+///
+/// \tparam ExecResource computational resources available to run
+///   the kernel
+/// \tparam AViewType Input matrix, as a 2-D Kokkos::View
+/// \tparam XViewType Input vector, as a 1-D Kokkos::View
+/// \tparam YViewType Output vector, as a nonconst 1-D Kokkos::View
+/// \tparam AlphaCoeffType Type of input coefficient alpha
+/// \tparam BetaCoeffType Type of input coefficient beta
+///
+/// \param trans [in] "N" for non-transpose, "T" for transpose, "C"
+///   for conjugate transpose.  All characters after the first are
+///   ignored.  This works just like the BLAS routines.
+/// \param alpha [in] Input coefficient of A*x
+/// \param A [in] Input matrix, as a 2-D Kokkos::View
+/// \param x [in] Input vector, as a 1-D Kokkos::View
+/// \param beta [in] Input coefficient of y
+/// \param y [in/out] Output vector, as a nonconst 1-D Kokkos::View
+template <class ExecResource, class AViewType, class XViewType, class YViewType>
+void gemv(const execution_policy<ExecResource>& policy, const char trans[],
+          typename AViewType::const_value_type& alpha, const AViewType& A,
+          const XViewType& x, typename YViewType::const_value_type& beta,
+          const YViewType& y,
+          std::enable_if_t<Kokkos::is_execution_space<ExecResource>::value>*
+              dummy = nullptr) {
+  (void)dummy;
+
+  // Since the ExecResource is an execution space
+  // we call the host interface
+  KokkosBlas::gemv(policy.exec, trans, alpha, A, x, beta, y);
+}
+
+template <class ExecPolicy, class MemberType, class AViewType, class XViewType,
+          class YViewType>
+KOKKOS_INLINE_FUNCTION void gemv(
+    const ExecPolicy& /*policy*/, MemberType member, const char trans[],
+    typename AViewType::const_value_type& alpha, const AViewType& A,
+    const XViewType& x, typename YViewType::const_value_type& beta,
+    const YViewType& y,
+    typename std::enable_if<
+        std::is_same<typename ExecPolicy::execution_resource,
+                     KokkosBlas::Mode::Team>::value>::type* dummy = nullptr) {
+  // std::enable_if_t<std::is_same_v<typename ExecPolicy::execution_resource,
+  // KokkosBlas::Mode::Team> >* dummy = nullptr) {
+
+  (void)dummy;
+
+  team_gemv<typename ExecPolicy::algorithm>(member, trans, alpha, A, x, beta,
+                                            y);
+}
+
+template <class ExecPolicy, class MemberType, class AViewType, class XViewType,
+          class YViewType>
+KOKKOS_INLINE_FUNCTION void gemv(
+    const ExecPolicy& /*policy*/, MemberType member, const char trans[],
+    typename AViewType::const_value_type& alpha, const AViewType& A,
+    const XViewType& x, typename YViewType::const_value_type& beta,
+    const YViewType& y,
+    typename std::enable_if<
+        std::is_same<typename ExecPolicy::execution_resource,
+                     KokkosBlas::Mode::TeamVector>::value>::type* dummy =
+        nullptr) {
+  // std::enable_if_t<std::is_same_v<typename ExecPolicy::execution_resource,
+  // KokkosBlas::Mode::TeamVector> >* dummy = nullptr) {
+
+  (void)dummy;
+
+  teamvector_gemv<typename ExecPolicy::algorithm>(member, trans, alpha, A, x,
+                                                  beta, y);
+}
+
+template <class ExecPolicy, class AViewType, class XViewType, class YViewType>
+KOKKOS_INLINE_FUNCTION void gemv(
+    const ExecPolicy& /*policy*/, const char trans[],
+    typename AViewType::const_value_type& alpha, const AViewType& A,
+    const XViewType& x, typename YViewType::const_value_type& beta,
+    const YViewType& y,
+    typename std::enable_if<
+        std::is_same<typename ExecPolicy::execution_resource,
+                     KokkosBlas::Mode::Serial>::value>::type* dummy = nullptr) {
+  // std::enable_if_t<std::is_same_v<typename ExecPolicy::execution_resource,
+  // KokkosBlas::Mode::Serial> >* dummy = nullptr) {
+
+  (void)dummy;
+
+  serial_gemv<typename ExecPolicy::algorithm>(trans, alpha, A, x, beta, y);
+}
+
 }  // namespace Experimental
 }  // namespace KokkosBlas
 

@@ -8,12 +8,11 @@
 namespace Test {
 template <class ViewTypeA, class ViewTypeX, class ViewTypeY, class Device>
 void impl_test_gemv(const char* mode, int M, int N) {
-  typedef typename ViewTypeA::value_type ScalarA;
-  typedef typename ViewTypeX::value_type ScalarX;
-  typedef typename ViewTypeY::value_type ScalarY;
-  typedef Kokkos::ArithTraits<ScalarY> KAT_Y;
-
-  typedef multivector_layout_adapter<ViewTypeA> vfA_type;
+  using ScalarA  = typename ViewTypeA::value_type;
+  using ScalarX  = typename ViewTypeX::value_type;
+  using ScalarY  = typename ViewTypeY::value_type;
+  using KAT_Y    = Kokkos::ArithTraits<ScalarY>;
+  using vfA_type = multivector_layout_adapter<ViewTypeA>;
 
   ScalarA alpha = 3;
   ScalarY beta  = 5;
@@ -128,6 +127,149 @@ void impl_test_gemv(const char* mode, int M, int N) {
   EXPECT_EQ(numErrors, 0) << "beta = 0, input contains NaN, A is " << M << 'x'
                           << N << ", mode " << mode << ": gemv incorrect";
 }
+
+template <class execution_policy, class AViewType, class XViewType,
+          class YViewType>
+struct TeamGemv {
+  execution_policy team_policy;
+  typename AViewType::value_type alpha;
+  AViewType A;
+  XViewType x;
+  typename YViewType::value_type beta;
+  YViewType y;
+
+  TeamGemv(const execution_policy& exec_policy,
+           typename AViewType::value_type alpha_, const AViewType& A_,
+           const XViewType& x_, typename YViewType::value_type beta_,
+           const YViewType& y_)
+      : team_policy(exec_policy),
+        alpha(alpha_),
+        A(A_),
+        x(x_),
+        beta(beta_),
+        y(y_) {}
+
+  template <typename member_type>
+  KOKKOS_INLINE_FUNCTION void operator()(const member_type& member) const {
+    KokkosBlas::Experimental::gemv(team_policy, member, "N", alpha, A, x, beta,
+                                   y);
+  }
+};
+
+template <class execution_policy, class AViewType, class XViewType,
+          class YViewType>
+struct TeamVectorGemv {
+  execution_policy teamvector_policy;
+  typename AViewType::value_type alpha;
+  AViewType A;
+  XViewType x;
+  typename YViewType::value_type beta;
+  YViewType y;
+
+  TeamVectorGemv(const execution_policy& exec_policy,
+                 typename AViewType::value_type alpha_, const AViewType& A_,
+                 const XViewType& x_, typename YViewType::value_type beta_,
+                 const YViewType& y_)
+      : teamvector_policy(exec_policy),
+        alpha(alpha_),
+        A(A_),
+        x(x_),
+        beta(beta_),
+        y(y_) {}
+
+  template <typename member_type>
+  KOKKOS_INLINE_FUNCTION void operator()(const member_type& member) const {
+    KokkosBlas::Experimental::gemv(teamvector_policy, member, "N", alpha, A, x,
+                                   beta, y);
+  }
+};
+
+template <class execution_policy, class AViewType, class XViewType,
+          class YViewType>
+struct SerialGemv {
+  execution_policy serial_policy;
+  typename AViewType::value_type alpha;
+  AViewType A;
+  XViewType x;
+  typename YViewType::value_type beta;
+  YViewType y;
+
+  SerialGemv(const execution_policy& exec_policy,
+             typename AViewType::value_type alpha_, const AViewType& A_,
+             const XViewType& x_, typename YViewType::value_type beta_,
+             const YViewType& y_)
+      : serial_policy(exec_policy),
+        alpha(alpha_),
+        A(A_),
+        x(x_),
+        beta(beta_),
+        y(y_) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const int) const {
+    KokkosBlas::Experimental::gemv(serial_policy, "N", alpha, A, x, beta, y);
+  }
+};
+
+// Unified interface testing
+// this test does not need to run many sizes
+// it only means to assess that the interface
+// dispatches to the right kernel implementation
+template <class Device>
+void impl_test_gemv_unified_interface() {
+  using execution_space = typename Device::execution_space;
+  using matrix_type     = Kokkos::View<double**, execution_space>;
+  using vector_type     = Kokkos::View<double*, execution_space>;
+
+  matrix_type A("A", 5, 5);
+  vector_type x("x", 5);
+  vector_type y("y", 5);
+
+  typename matrix_type::value_type alpha = 3.0;
+  typename vector_type::value_type beta  = 2.0;
+
+  {  // Test interface to call device level implementation
+    execution_space mySpace = execution_space();
+    KokkosBlas::execution_policy<execution_space, void> exec_space_policy(
+        mySpace);
+    KokkosBlas::Experimental::gemv(exec_space_policy, "N", alpha, A, x, beta,
+                                   y);
+  }
+
+  {  // Test interface to call team level implementation
+    using policy_type =
+        KokkosBlas::execution_policy<KokkosBlas::Mode::Team,
+                                     KokkosBlas::Algo::Gemv::Default>;
+    policy_type team_policy(KokkosBlas::Mode::Team{},
+                            KokkosBlas::Algo::Gemv::Default{});
+    TeamGemv<policy_type, matrix_type, vector_type, vector_type> myFunc(
+        team_policy, alpha, A, x, beta, y);
+    Kokkos::parallel_for(Kokkos::TeamPolicy<execution_space>(4, 1), myFunc);
+  }
+
+  {  // Test interface to call team-vector level implementation
+    using policy_type =
+        KokkosBlas::execution_policy<KokkosBlas::Mode::TeamVector,
+                                     KokkosBlas::Algo::Gemv::Default>;
+    policy_type teamvector_policy(KokkosBlas::Mode::TeamVector{},
+                                  KokkosBlas::Algo::Gemv::Default{});
+    TeamVectorGemv<policy_type, matrix_type, vector_type, vector_type> myFunc(
+        teamvector_policy, alpha, A, x, beta, y);
+    Kokkos::parallel_for(Kokkos::TeamPolicy<execution_space>(4, 1), myFunc);
+  }
+
+  {  // Test interface to call serial level implementation
+    using policy_type =
+        KokkosBlas::execution_policy<KokkosBlas::Mode::Serial,
+                                     KokkosBlas::Algo::Gemv::Default>;
+    policy_type serial_policy(KokkosBlas::Mode::Serial{},
+                              KokkosBlas::Algo::Gemv::Default{});
+    SerialGemv<policy_type, matrix_type, vector_type, vector_type> myFunc(
+        serial_policy, alpha, A, x, beta, y);
+    Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0, 4), myFunc);
+  }
+}
+
 }  // namespace Test
 
 template <class ScalarA, class ScalarX, class ScalarY, class Device>
@@ -296,5 +438,21 @@ TEST_F(TestCategory, gemv_double_int) {
   // Kokkos::Profiling::pushRegion("KokkosBlas::Test::gemvt_double_int");
   //  test_gemv<double,int,float,TestExecSpace> ("T");
   // Kokkos::Profiling::popRegion();
+}
+#endif
+
+#if defined(KOKKOSKERNELS_INST_DOUBLE) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&  \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+TEST_F(TestCategory, gemv_unified_interfaces) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::gemv_unified_interfaces");
+#if defined(KOKKOSKERNELS_INST_LAYOUT_LEFT)
+  ::Test::impl_test_gemv_unified_interface<TestExecSpace, Kokkos::LayoutLeft>();
+#endif
+#if defined(KOKKOSKERNELS_INST_LAYOUT_RIGHT)
+  ::Test::impl_test_gemv_unified_interface<TestExecSpace,
+                                           Kokkos::LayoutRight>();
+#endif
+  Kokkos::Profiling::popRegion();
 }
 #endif
