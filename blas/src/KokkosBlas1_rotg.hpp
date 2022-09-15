@@ -50,7 +50,7 @@
 
 namespace KokkosBlas {
 
-/// \brief Compute the coefficient to apply a Givens rotation.
+/// \brief Compute the coefficients to apply a Givens rotation.
 ///
 /// \tparam Scalar data type of inputs and outputs
 ///
