@@ -106,8 +106,9 @@ void Rotg_Invoke(Scalar& a, Scalar& b,
   } else {
     const Scalar scaled_a = Kokkos::abs(a / numerical_scaling);
     const Scalar scaled_b = Kokkos::abs(b / numerical_scaling);
-    mag_type norm = Kokkos::sqrt(scaled_a * scaled_a + scaled_b * scaled_b) *
-                    numerical_scaling;
+    mag_type norm =
+        Kokkos::abs(Kokkos::sqrt(scaled_a * scaled_a + scaled_b * scaled_b)) *
+        numerical_scaling;
     Scalar unit_a = a / Kokkos::abs(a);
     c             = Kokkos::abs(a) / norm;
     s             = unit_a * Kokkos::conj(b) / norm;
