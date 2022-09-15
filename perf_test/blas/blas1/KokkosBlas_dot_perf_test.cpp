@@ -43,7 +43,6 @@
 */
 
 #include <Kokkos_Core.hpp>
-#include <blas/KokkosBlas1_dot.hpp>
 #include <Kokkos_Random.hpp>
 
 // For RPS implementation

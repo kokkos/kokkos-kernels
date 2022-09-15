@@ -51,7 +51,6 @@
 #include "KokkosKernels_IOUtils.hpp"
 #include "Kokkos_ArithTraits.hpp"
 #include "KokkosBatched_Vector.hpp"
-#include "KokkosSparse_spmv.hpp"
 // Make this include-able from all subdirectories
 #include "../tpls/gtest/gtest/gtest.h"  //for EXPECT_**
 
@@ -493,22 +492,6 @@ vec_t create_random_x_vector(vec_t& kok_x, double max_value = 10.0) {
   }
   Kokkos::deep_copy(kok_x, h_x);
   return kok_x;
-}
-
-template <typename crsMat_t, typename vector_t>
-vector_t create_random_y_vector(crsMat_t crsMat, vector_t x_vector) {
-  vector_t y_vector(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Y VECTOR"),
-                    crsMat.numRows());
-  KokkosSparse::spmv("N", 1, crsMat, x_vector, 0, y_vector);
-  return y_vector;
-}
-
-template <typename crsMat_t, typename vector_t>
-vector_t create_random_y_vector_mv(crsMat_t crsMat, vector_t x_vector) {
-  vector_t y_vector(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Y VECTOR"),
-                    crsMat.numRows(), x_vector.extent(1));
-  KokkosSparse::spmv("N", 1, crsMat, x_vector, 0, y_vector);
-  return y_vector;
 }
 
 /// \brief SharedParamTag class used to specify how to invoke templates within

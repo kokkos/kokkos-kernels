@@ -19,7 +19,7 @@ get_kokkos_device_list() {
   KOKKOS_DEVICE_CMD=
   PARSE_DEVICES_LST=$(echo $KOKKOS_DEVICES | tr "," "\n")
   for DEVICE_ in $PARSE_DEVICES_LST
-  do 
+  do
      UC_DEVICE=$(echo $DEVICE_ | tr "[:lower:]" "[:upper:]")
      if [ "${UC_DEVICE}" == "CUDA" ]; then
        WITH_CUDA_BACKEND=ON
@@ -39,7 +39,7 @@ get_kokkos_arch_list() {
   KOKKOS_ARCH_CMD=
   PARSE_ARCH_LST=$(echo $KOKKOS_ARCH | tr "," "\n")
   for ARCH_ in $PARSE_ARCH_LST
-  do 
+  do
      UC_ARCH=$(echo $ARCH_ | tr "[:lower:]" "[:upper:]")
      KOKKOS_ARCH_CMD="-DKokkos_ARCH_${UC_ARCH}=ON ${KOKKOS_ARCH_CMD}"
   done
@@ -50,11 +50,11 @@ get_kokkos_cuda_option_list() {
   KOKKOS_CUDA_OPTION_CMD=
   PARSE_CUDA_LST=$(echo $KOKKOS_CUDA_OPTIONS | tr "," "\n")
   for CUDA_ in $PARSE_CUDA_LST
-  do 
+  do
      CUDA_OPT_NAME=
      if [ "${CUDA_}" == "enable_lambda" ]; then
         CUDA_OPT_NAME=CUDA_LAMBDA
-     elif  [ "${CUDA_}" == "rdc" ]; then	
+     elif  [ "${CUDA_}" == "rdc" ]; then
         CUDA_OPT_NAME=CUDA_RELOCATABLE_DEVICE_CODE
      elif  [ "${CUDA_}" == "force_uvm" ]; then
         CUDA_OPT_NAME=CUDA_UVM
@@ -92,7 +92,7 @@ get_kokkos_option_list() {
   KOKKOS_OPTION_CMD=
   PARSE_OPTIONS_LST=$(echo $KOKKOS_OPTIONS | tr "," "\n")
   for OPT_ in $PARSE_OPTIONS_LST
-  do 
+  do
      UC_OPT_=$(echo $OPT_ | tr "[:lower:]" "[:upper:]")
      if [[ "$UC_OPT_" == *DISABLE* ]]; then
         FLIP_OPT_=${UC_OPT_/DISABLE/ENABLE}
@@ -157,6 +157,17 @@ get_kernels_spaces_list() {
   do
     UC_SPACES=$(echo $SPACES_ | tr "[:lower:]" "[:upper:]")
     KOKKOSKERNELS_SPACES_CMD="-DKokkosKernels_INST_MEMSPACE_${UC_SPACES}=ON ${KOKKOSKERNELS_SPACES_CMD}"
+  done
+}
+
+get_kernels_components_list() {
+  echo "parsing KOKKOSKERNELS_COMPONENTS=$KOKKOSKERNELS_COMPONENTS"
+  KOKKOSKERNELS_COMPONENTS_CMD=
+  PARSE_COMPONENTS_LIST=$(echo $KOKKOSKERNELS_COMPONENTS | tr "," "\n")
+  for COMPONENTS_ in $PARSE_COMPONENTS_LIST
+  do
+    UC_COMPONENTS=$(echo $COMPONENTS_ | tr "[:lower:]" "[:upper:]")
+    KOKKOSKERNELS_COMPONENTS_CMD="${KOKKOSKERNELS_COMPONENTS_CMD} -D KokkosKernels_ENABLE_${UC_COMPONENTS}=ON"
   done
 }
 
@@ -317,6 +328,8 @@ display_help_text() {
       echo "                                Options: layoutleft, layoutright"
       echo "--with-spaces=[SPACES]:       Set spaces to be instantiated."
       echo "                                Options: hostspace, cudaspace, cudauvmspace"
+      echo "--with-components=[COMPS]:    Set the components to be built, if not specified all components are built."
+      echo "                                Options: batched, blas, graph, sparse"
       echo "--with-tpls=[TPLS]:           Set tpls to be instantiated (Proper support requies that appropriate compiler and device must be enabled)."
       echo "                              This may require providing paths and the library name if using custom installs not on a default path"
       echo "                              that CMake searches"
@@ -333,7 +346,7 @@ display_help_text() {
 #      echo "--with-hpx-options=[OPT]:     Additional options to HPX:"
 #      echo "                                enable_async_dispatch"
       echo "--no-default-eti:  Do not include default ETI types for Kokkos Kernels"
-      echo "--gcc-toolchain=/Path/To/GccRoot:  Set the gcc toolchain to use with clang (e.g. /usr)" 
+      echo "--gcc-toolchain=/Path/To/GccRoot:  Set the gcc toolchain to use with clang (e.g. /usr)"
       echo "--kokkos-make-j=[NUM]:        Set -j parallel level for kokkos install"
       echo "                                Default: j == 4"
       echo "--enable-tests: build Kokkos Kernels unit tests"
@@ -443,7 +456,7 @@ do
       DEVICES="${key#*=}"
       PARSE_DEVICES=$(echo $DEVICES | tr "," "\n")
       for DEVICE_ in $PARSE_DEVICES
-      do 
+      do
          update_kokkos_devices $DEVICE_
       done
       ;;
@@ -556,7 +569,7 @@ do
         echo "Invalid compiler by --compiler command: '${COMPILER}'"
         exit
       fi
-      # ... valid compiler, ensure absolute path set 
+      # ... valid compiler, ensure absolute path set
       WCOMPATH=$(command -v $COMPILER)
       COMPDIR=$(dirname $WCOMPATH)
       COMPNAME=$(basename $WCOMPATH)
@@ -576,6 +589,9 @@ do
       ;;
     --with-spaces*)
       KOKKOSKERNELS_SPACES="${key#*=}"
+      ;;
+    --with-components*)
+      KOKKOSKERNELS_COMPONENTS="${key#*=}"
       ;;
     --with-tpls*)
       KOKKOSKERNELS_TPLS="${key#*=}"
@@ -677,7 +693,7 @@ if [ ! -e ${KOKKOSKERNELS_PATH}/CMakeLists.txt ]; then
          exit 0
       fi
    else
-      echo "KOKKOSKERNELS_PATH does not appear to be set properly. please specify in location of CMakeLists.txt"   
+      echo "KOKKOSKERNELS_PATH does not appear to be set properly. please specify in location of CMakeLists.txt"
       display_help_text
       exit 0
    fi
@@ -696,7 +712,7 @@ if [ "${KOKKOS_PATH}" == "" ]; then
 else
   # IMPROVE THIS CHECK - not sufficient for old vs new kokkos
   if [ ! -e ${KOKKOS_PATH}/CMakeLists.txt ]; then
-     echo "KOKKOS_PATH does not appear to be set properly. Please check and try again."   
+     echo "KOKKOS_PATH does not appear to be set properly. Please check and try again."
      display_help_text
      exit 0
   fi
@@ -713,6 +729,7 @@ get_kernels_ordinals_list
 get_kernels_offsets_list
 get_kernels_layouts_list
 get_kernels_spaces_list
+get_kernels_components_list
 get_kernels_tpls_list
 get_kernels_extra_linker_flags
 
@@ -730,7 +747,7 @@ if [[ ${COMPILER} == *clang* ]]; then
 
    if [ ! "${CUDA_PATH}" == "" ]; then
       KOKKOS_CXXFLAGS="${KOKKOS_CXXFLAGS} --cuda-path=${CUDA_PATH}"
-   fi 
+   fi
 fi
 
 
@@ -783,7 +800,6 @@ cd $STORE_KOKKOSKERNELS_BUILD_PATH
 
 # Configure kokkos-kernels
 echo ""
-echo cmake $COMPILER_CMD -DKokkos_DIR="${KOKKOS_FIND_PATH}" -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS}" -DCMAKE_INSTALL_PREFIX="${PREFIX}" -DKokkosKernels_ENABLE_TESTS_AND_PERFSUITE=${KOKKOSKERNELS_DO_PERFSUITE} -DKokkosKernels_ENABLE_TESTS=${KOKKOSKERNELS_DO_TESTS} -DKokkosKernels_ENABLE_PERFTESTS=${KOKKOSKERNELS_DO_PERFTESTS} -DKokkosKernels_ENABLE_EXAMPLES:BOOL=${KOKKOSKERNELS_DO_EXAMPLES} ${KOKKOSKERNELS_SCALARS_CMD} ${KOKKOSKERNELS_ORDINALS_CMD} ${KOKKOSKERNELS_OFFSETS_CMD} ${KOKKOSKERNELS_LAYOUTS_CMD} ${KOKKOSKERNELS_TPLS_CMD} ${KOKKOSKERNELS_USER_TPL_PATH_CMD} ${KOKKOSKERNELS_USER_TPL_LIBNAME_CMD} ${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD} ${KOKKOSKERNELS_BUILDTYPE_CMD} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBRARIES} ${KOKKOSKERNELS_SPACES_CMD} ${KERNELS_DEFAULT_ETI_OPTION} ${KOKKOSKERNELS_PATH}
+echo cmake $COMPILER_CMD -DKokkos_DIR="${KOKKOS_FIND_PATH}" -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS}" -DCMAKE_INSTALL_PREFIX="${PREFIX}" -DKokkosKernels_ENABLE_TESTS_AND_PERFSUITE=${KOKKOSKERNELS_DO_PERFSUITE} -DKokkosKernels_ENABLE_TESTS=${KOKKOSKERNELS_DO_TESTS} -DKokkosKernels_ENABLE_PERFTESTS=${KOKKOSKERNELS_DO_PERFTESTS} -DKokkosKernels_ENABLE_EXAMPLES:BOOL=${KOKKOSKERNELS_DO_EXAMPLES} ${KOKKOSKERNELS_SCALARS_CMD} ${KOKKOSKERNELS_ORDINALS_CMD} ${KOKKOSKERNELS_OFFSETS_CMD} ${KOKKOSKERNELS_LAYOUTS_CMD} ${KOKKOSKERNELS_TPLS_CMD} ${KOKKOSKERNELS_USER_TPL_PATH_CMD} ${KOKKOSKERNELS_USER_TPL_LIBNAME_CMD} ${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD} ${KOKKOSKERNELS_BUILDTYPE_CMD} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBRARIES} ${KOKKOSKERNELS_SPACES_CMD} ${KOKKOSKERNELS_COMPONENTS_CMD} ${KERNELS_DEFAULT_ETI_OPTION} ${KOKKOSKERNELS_PATH}
 echo ""
-cmake $COMPILER_CMD -DKokkos_DIR="${KOKKOS_FIND_PATH}" -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS//\"}" -DCMAKE_INSTALL_PREFIX="${PREFIX}" -DKokkosKernels_ENABLE_TESTS_AND_PERFSUITE=${KOKKOSKERNELS_DO_PERFSUITE} -DKokkosKernels_ENABLE_TESTS=${KOKKOSKERNELS_DO_TESTS} -DKokkosKernels_ENABLE_PERFTESTS=${KOKKOSKERNELS_DO_PERFTESTS} -DKokkosKernels_ENABLE_EXAMPLES:BOOL=${KOKKOSKERNELS_DO_EXAMPLES} ${KOKKOSKERNELS_SCALARS_CMD} ${KOKKOSKERNELS_ORDINALS_CMD} ${KOKKOSKERNELS_OFFSETS_CMD} ${KOKKOSKERNELS_LAYOUTS_CMD} ${KOKKOSKERNELS_TPLS_CMD} ${KOKKOSKERNELS_USER_TPL_PATH_CMD} ${KOKKOSKERNELS_USER_TPL_LIBNAME_CMD} ${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD} ${KOKKOSKERNELS_BUILDTYPE_CMD} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBRARIES} ${KOKKOSKERNELS_SPACES_CMD} ${KERNELS_DEFAULT_ETI_OPTION} ${KOKKOSKERNELS_PATH}
-
+cmake $COMPILER_CMD -DKokkos_DIR="${KOKKOS_FIND_PATH}" -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS//\"}" -DCMAKE_INSTALL_PREFIX="${PREFIX}" -DKokkosKernels_ENABLE_TESTS_AND_PERFSUITE=${KOKKOSKERNELS_DO_PERFSUITE} -DKokkosKernels_ENABLE_TESTS=${KOKKOSKERNELS_DO_TESTS} -DKokkosKernels_ENABLE_PERFTESTS=${KOKKOSKERNELS_DO_PERFTESTS} -DKokkosKernels_ENABLE_EXAMPLES:BOOL=${KOKKOSKERNELS_DO_EXAMPLES} ${KOKKOSKERNELS_SCALARS_CMD} ${KOKKOSKERNELS_ORDINALS_CMD} ${KOKKOSKERNELS_OFFSETS_CMD} ${KOKKOSKERNELS_LAYOUTS_CMD} ${KOKKOSKERNELS_TPLS_CMD} ${KOKKOSKERNELS_USER_TPL_PATH_CMD} ${KOKKOSKERNELS_USER_TPL_LIBNAME_CMD} ${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD} ${KOKKOSKERNELS_BUILDTYPE_CMD} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBRARIES} ${KOKKOSKERNELS_SPACES_CMD}  ${KOKKOSKERNELS_COMPONENTS_CMD} ${KERNELS_DEFAULT_ETI_OPTION} ${KOKKOSKERNELS_PATH}
