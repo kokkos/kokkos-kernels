@@ -94,8 +94,8 @@ void impl_test_blas_teamgemm(const int N, const int dimM, const int dimN,
       vgemm;
   vgemm.A_t   = transposed_A;
   vgemm.B_t   = transposed_B;
-  vgemm.A_c   = false;
-  vgemm.B_c   = false;
+  vgemm.A_c   = std::is_same<transA, Trans::ConjTranspose>::value;
+  vgemm.B_c   = std::is_same<transB, Trans::ConjTranspose>::value;
   vgemm.A     = a_expected;
   vgemm.B     = b_expected;
   vgemm.C     = c_expected;

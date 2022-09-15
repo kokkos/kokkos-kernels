@@ -73,6 +73,8 @@ KOKKOS_INLINE_FUNCTION int TeamGemm<ArgTransA, ArgTransB, ArgAlgo>::invoke(
                     std::is_same<ArgAlgo, Algo::Gemm::Blocked>::value,
                 "Algorithm not supported");
 
+  using OpA      = typename Impl::MatrixModeInfo<ArgTransA>::Op;
+  using OpB      = typename Impl::MatrixModeInfo<ArgTransB>::Op;
   using TransA   = Impl::MatrixModeInfo<ArgTransA>;
   using TransB   = Impl::MatrixModeInfo<ArgTransB>;
   const auto ae1 = TransA::extent(A, 1);
@@ -82,8 +84,8 @@ KOKKOS_INLINE_FUNCTION int TeamGemm<ArgTransA, ArgTransB, ArgAlgo>::invoke(
   const auto bs1 = TransB::stride_1(B);
 
   return Impl::TeamGemmInternal<ArgAlgo>::invoke(
-      member, C.extent(0), C.extent(1), ae1, alpha, A.data(), as0, as1,
-      B.data(), bs0, bs1, beta, C.data(), C.stride_0(), C.stride_1());
+      OpA{}, OpB{}, member, C.extent(0), C.extent(1), ae1, alpha, A.data(), as0,
+      as1, B.data(), bs0, bs1, beta, C.data(), C.stride_0(), C.stride_1());
 }
 
 ///
@@ -107,6 +109,8 @@ TeamVectorGemm<ArgTransA, ArgTransB, ArgAlgo>::invoke(
   static_assert(std::is_same<ArgAlgo, Algo::Gemm::Unblocked>::value,
                 "Algorithm not supported");
 
+  using OpA      = typename Impl::MatrixModeInfo<ArgTransA>::Op;
+  using OpB      = typename Impl::MatrixModeInfo<ArgTransB>::Op;
   using TransA   = Impl::MatrixModeInfo<ArgTransA>;
   using TransB   = Impl::MatrixModeInfo<ArgTransB>;
   const auto ae1 = TransA::extent(A, 1);
@@ -116,8 +120,8 @@ TeamVectorGemm<ArgTransA, ArgTransB, ArgAlgo>::invoke(
   const auto bs1 = TransB::stride_1(B);
 
   return Impl::TeamVectorGemmInternal<ArgAlgo>::invoke(
-      member, C.extent(0), C.extent(1), ae1, alpha, A.data(), as0, as1,
-      B.data(), bs0, bs1, beta, C.data(), C.stride_0(), C.stride_1());
+      OpA{}, OpB{}, member, C.extent(0), C.extent(1), ae1, alpha, A.data(), as0,
+      as1, B.data(), bs0, bs1, beta, C.data(), C.stride_0(), C.stride_1());
 }
 
 }  // namespace KokkosBlas

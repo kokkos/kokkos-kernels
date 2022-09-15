@@ -28,15 +28,25 @@ struct ParamTag {
          Algo::Gemm::Unblocked>();                                             \
   }
 
-#define TEST_GEMM_CASE(PREFIX, NAME, FUNC, VALUE, SCALAR)              \
-  TEST_GEMM_ALGO(PREFIX##_gemm_nt_nt_##NAME, FUNC, Trans::NoTranspose, \
-                 Trans::NoTranspose, VALUE, SCALAR)                    \
-  TEST_GEMM_ALGO(PREFIX##_gemm_t_nt_##NAME, FUNC, Trans::Transpose,    \
-                 Trans::NoTranspose, VALUE, SCALAR)                    \
-  TEST_GEMM_ALGO(PREFIX##_gemm_nt_t_##NAME, FUNC, Trans::NoTranspose,  \
-                 Trans::Transpose, VALUE, SCALAR)                      \
-  TEST_GEMM_ALGO(PREFIX##_gemm_t_t_##NAME, FUNC, Trans::Transpose,     \
-                 Trans::Transpose, VALUE, SCALAR)
+#define TEST_GEMM_CASE(PREFIX, NAME, FUNC, VALUE, SCALAR)                \
+  TEST_GEMM_ALGO(PREFIX##_gemm_nt_nt_##NAME, FUNC, Trans::NoTranspose,   \
+                 Trans::NoTranspose, VALUE, SCALAR)                      \
+  TEST_GEMM_ALGO(PREFIX##_gemm_t_nt_##NAME, FUNC, Trans::Transpose,      \
+                 Trans::NoTranspose, VALUE, SCALAR)                      \
+  TEST_GEMM_ALGO(PREFIX##_gemm_ct_nt_##NAME, FUNC, Trans::ConjTranspose, \
+                 Trans::NoTranspose, VALUE, SCALAR)                      \
+  TEST_GEMM_ALGO(PREFIX##_gemm_nt_t_##NAME, FUNC, Trans::NoTranspose,    \
+                 Trans::Transpose, VALUE, SCALAR)                        \
+  TEST_GEMM_ALGO(PREFIX##_gemm_t_t_##NAME, FUNC, Trans::Transpose,       \
+                 Trans::Transpose, VALUE, SCALAR)                        \
+  TEST_GEMM_ALGO(PREFIX##_gemm_ct_t_##NAME, FUNC, Trans::ConjTranspose,  \
+                 Trans::Transpose, VALUE, SCALAR)                        \
+  TEST_GEMM_ALGO(PREFIX##_gemm_nt_ct_##NAME, FUNC, Trans::NoTranspose,   \
+                 Trans::ConjTranspose, VALUE, SCALAR)                    \
+  TEST_GEMM_ALGO(PREFIX##_gemm_t_ct_##NAME, FUNC, Trans::Transpose,      \
+                 Trans::ConjTranspose, VALUE, SCALAR)                    \
+  TEST_GEMM_ALGO(PREFIX##_gemm_ct_ct_##NAME, FUNC, Trans::ConjTranspose, \
+                 Trans::ConjTranspose, VALUE, SCALAR)
 
 }  // namespace Gemm
 }  // namespace Test

@@ -223,12 +223,30 @@ struct Algo {
 
 namespace Impl {
 
+// matrix value fetching conenient for passing conjugation as template param
+struct OpID {
+  template <typename ValueType>
+  KOKKOS_INLINE_FUNCTION ValueType operator()(ValueType v) const {
+    return v;
+  }
+};
+
+struct OpConj {
+  template <typename ValueType>
+  KOKKOS_INLINE_FUNCTION ValueType operator()(ValueType v) const {
+    using KAT = Kokkos::Details::ArithTraits<ValueType>;
+    return KAT::conj(v);
+  }
+};
+
 // This utility fetches matrix extents and strides based on transpose mode
 template <typename ArgTrans>
 struct MatrixModeInfo;
 
 template <>
 struct MatrixModeInfo<Trans::NoTranspose> {
+  using Op = OpID;
+
   template <typename ViewType>
   static size_t stride_0(ViewType v) {
     return v.stride_0();
@@ -247,6 +265,8 @@ struct MatrixModeInfo<Trans::NoTranspose> {
 
 template <>
 struct MatrixModeInfo<Trans::Transpose> {
+  using Op = OpID;
+
   template <typename ViewType>
   static size_t stride_0(ViewType v) {
     return v.stride_1();
@@ -265,7 +285,9 @@ struct MatrixModeInfo<Trans::Transpose> {
 
 template <>
 struct MatrixModeInfo<Trans::ConjTranspose>
-    : public MatrixModeInfo<Trans::Transpose> {};
+    : public MatrixModeInfo<Trans::Transpose> {
+  using Op = OpConj;
+};
 
 // Helper to choose the work distribution for a TeamPolicy computing multiple
 // reductions. Each team computes a partial reduction and atomically contributes

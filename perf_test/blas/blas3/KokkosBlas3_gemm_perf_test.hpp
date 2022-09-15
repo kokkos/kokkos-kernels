@@ -943,7 +943,7 @@ void __do_gemm_parallel_batched(options_t options, gemm_args_t gemm_args) {
   char b  = gemm_args.transB;
   using N = KokkosBatched::Trans::NoTranspose;
   using T = KokkosBatched::Trans::Transpose;
-  // using C = KokkosBatched::Trans::ConjTranspose;
+  using C = KokkosBatched::Trans::ConjTranspose;
 
   STATUS;
 
@@ -955,9 +955,10 @@ void __do_gemm_parallel_batched(options_t options, gemm_args_t gemm_args) {
     __do_gemm_parallel_batched_template<N, T, blocking_type, algo_tag,
                                         device_type, algo_mode>(options,
                                                                 gemm_args);
-    //} else if (a == 'N' && b == 'C') {
-    //  __do_gemm_parallel_batched_template<N, C, blocking_type, algo_tag,
-    //  device_type>(options, gemm_args);
+  } else if (a == 'N' && b == 'C') {
+    __do_gemm_parallel_batched_template<N, C, blocking_type, algo_tag,
+                                        device_type, algo_mode>(options,
+                                                                gemm_args);
   } else if (a == 'T' && b == 'N') {
     __do_gemm_parallel_batched_template<T, N, blocking_type, algo_tag,
                                         device_type, algo_mode>(options,
@@ -966,18 +967,22 @@ void __do_gemm_parallel_batched(options_t options, gemm_args_t gemm_args) {
     __do_gemm_parallel_batched_template<T, T, blocking_type, algo_tag,
                                         device_type, algo_mode>(options,
                                                                 gemm_args);
-    //} else if (a == 'T' && b == 'C') {
-    //  __do_gemm_parallel_batched_template<T, C, blocking_type, algo_tag,
-    //  device_type>(options, gemm_args);
-    //} else if (a == 'C' && b == 'N') {
-    //  __do_gemm_parallel_batched_template<C, N, blocking_type, algo_tag,
-    //  device_type>(options, gemm_args);
-    //} else if (a == 'C' && b == 'T') {
-    //  __do_gemm_parallel_batched_template<C, T, blocking_type, algo_tag,
-    //  device_type>(options, gemm_args);
-    //} else if (a == 'C' && b == 'C') {
-    //  __do_gemm_parallel_batched_template<C, C, blocking_type, algo_tag,
-    //  device_type>(options, gemm_args);
+  } else if (a == 'T' && b == 'C') {
+    __do_gemm_parallel_batched_template<T, C, blocking_type, algo_tag,
+                                        device_type, algo_mode>(options,
+                                                                gemm_args);
+  } else if (a == 'C' && b == 'N') {
+    __do_gemm_parallel_batched_template<C, N, blocking_type, algo_tag,
+                                        device_type, algo_mode>(options,
+                                                                gemm_args);
+  } else if (a == 'C' && b == 'T') {
+    __do_gemm_parallel_batched_template<C, T, blocking_type, algo_tag,
+                                        device_type, algo_mode>(options,
+                                                                gemm_args);
+  } else if (a == 'C' && b == 'C') {
+    __do_gemm_parallel_batched_template<C, C, blocking_type, algo_tag,
+                                        device_type, algo_mode>(options,
+                                                                gemm_args);
   } else {
     FATAL_ERROR("Bad gemm_args TransA or TransB value");
   }
@@ -1842,9 +1847,10 @@ static inline void __gemm_do_verify(options_t options, gemm_args_t gemm_args,
   Test::Functor_BatchedVanillaGEMM<decltype(A_expected), decltype(B_expected),
                                    decltype(C_expected), execution_space>
       vgemm;
-  vgemm.A_t = toupper(gemm_args.transA) == 'T';
-  vgemm.B_t = toupper(gemm_args.transB) == 'T';
-  vgemm.A_c = vgemm.B_c     = false;
+  vgemm.A_t                 = toupper(gemm_args.transA) != 'N';
+  vgemm.B_t                 = toupper(gemm_args.transB) != 'N';
+  vgemm.A_c                 = toupper(gemm_args.transA) == 'C';
+  vgemm.B_c                 = toupper(gemm_args.transB) == 'C';
   vgemm.batch_size_last_dim = options.blas_args.batch_size_last_dim;
   vgemm.A                   = A_expected;
   vgemm.B                   = B_expected;

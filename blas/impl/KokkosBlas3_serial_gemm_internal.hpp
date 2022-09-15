@@ -61,24 +61,36 @@ namespace Impl {
 
 template <typename ArgAlgo>
 struct SerialGemmInternal {
+  template <typename OpA, typename OpB, typename ScalarType, typename ValueType>
+  KOKKOS_INLINE_FUNCTION static int invoke(
+      OpA opA, OpB opB, const int m, const int n, const int k,
+      const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A, const int as0,
+      const int as1, const ValueType *KOKKOS_RESTRICT B, const int bs0,
+      const int bs1, const ScalarType beta,
+      /**/ ValueType *KOKKOS_RESTRICT C, const int cs0, const int cs1);
+
+  // default OpA=OpB=Impl::OpID
   template <typename ScalarType, typename ValueType>
   KOKKOS_INLINE_FUNCTION static int invoke(
       const int m, const int n, const int k, const ScalarType alpha,
       const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
       const ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1,
       const ScalarType beta,
-      /**/ ValueType *KOKKOS_RESTRICT C, const int cs0, const int cs1);
+      /**/ ValueType *KOKKOS_RESTRICT C, const int cs0, const int cs1) {
+    return invoke(OpID{}, OpID{}, m, n, k, alpha, A, as0, as1, B, bs0, bs1,
+                  beta, C, cs0, cs1);
+  }
 };
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename OpA, typename OpB, typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int SerialGemmInternal<Algo::Gemm::Unblocked>::invoke(
-    const int m, const int n, const int k, const ScalarType alpha,
-    const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
-    const ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1,
-    const ScalarType beta,
+    OpA opA, OpB opB, const int m, const int n, const int k,
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A, const int as0,
+    const int as1, const ValueType *KOKKOS_RESTRICT B, const int bs0,
+    const int bs1, const ScalarType beta,
     /**/ ValueType *KOKKOS_RESTRICT C, const int cs0, const int cs1) {
-  // C = beta C + alpha A B
+  // C = beta C + alpha opA(A) opB(B)
   // C (m x n), A(m x k), B(k x n)
 
   const ScalarType one(1.0), zero(0.0);
@@ -93,14 +105,15 @@ KOKKOS_INLINE_FUNCTION int SerialGemmInternal<Algo::Gemm::Unblocked>::invoke(
 
     ValueType *KOKKOS_RESTRICT pC = C;
     for (int p = 0; p < k; ++p) {
-      const ValueType *KOKKOS_RESTRICT pA                  = A + p * as1,
-                                       *KOKKOS_RESTRICT pB = B + p * bs0;
+      const ValueType *KOKKOS_RESTRICT pA = A + p * as1;
+      const ValueType *KOKKOS_RESTRICT pB = B + p * bs0;
       for (int i = 0; i < m; ++i) {
-        const ValueType tA(alpha * pA[i * as0]);
+        const ValueType tA(alpha * opA(pA[i * as0]));
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
-        for (int j = 0; j < n; ++j) pC[i * cs0 + j * cs1] += tA * pB[j * bs1];
+        for (int j = 0; j < n; ++j)
+          pC[i * cs0 + j * cs1] += tA * opB(pB[j * bs1]);
       }
     }
   }
@@ -108,12 +121,12 @@ KOKKOS_INLINE_FUNCTION int SerialGemmInternal<Algo::Gemm::Unblocked>::invoke(
 }
 
 template <>
-template <typename ScalarType, typename ValueType>
+template <typename OpA, typename OpB, typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int SerialGemmInternal<Algo::Gemm::Blocked>::invoke(
-    const int m, const int n, const int k, const ScalarType alpha,
-    const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
-    const ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1,
-    const ScalarType beta,
+    OpA opA, OpB opB, const int m, const int n, const int k,
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A, const int as0,
+    const int as1, const ValueType *KOKKOS_RESTRICT B, const int bs0,
+    const int bs1, const ScalarType beta,
     /**/ ValueType *KOKKOS_RESTRICT C, const int cs0, const int cs1) {
   // C = beta C + alpha A B
   // C (m x n), A(m x k), B(k x n)
@@ -141,7 +154,7 @@ KOKKOS_INLINE_FUNCTION int SerialGemmInternal<Algo::Gemm::Blocked>::invoke(
       const int mb = mbAlgo, nb = nbAlgo;
       for (int i = 0; i < ib; i += mb)
         for (int j = 0; j < jb; j += nb)
-          inner.serial_invoke(alpha_value, AA + i * as0, BB + j * bs1,
+          inner.serial_invoke(opA, opB, alpha_value, AA + i * as0, BB + j * bs1,
                               (i + mb) > ib ? (ib - i) : mb,
                               (j + nb) > jb ? (jb - j) : nb, pb,
                               CC + i * cs0 + j * cs1);

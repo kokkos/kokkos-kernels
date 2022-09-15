@@ -52,17 +52,22 @@
 
 namespace KokkosBlas {
 
+namespace Impl {
+
+template <typename ArgTrans>
+constexpr MKL_TRANSPOSE trans2mkl =
+    std::is_same<ArgTrans, Trans::NoTranspose>::value
+        ? MKL_NOTRANS
+        : (std::is_same<ArgTrans, Trans::Transpose>::value
+               ? MKL_TRANS
+               : (std::is_same<ArgTrans, Trans::ConjTranspose>::value
+                      ? MKL_CONJTRANS
+                      : MKL_CONJ));  // Note: CONJ is not supported by MKL GEMM
+
+}
 ///
 /// Serial Impl
 /// ===========
-
-///
-/// Implemented:
-/// NT/NT, T/NT, NT/T, T/T
-///
-/// Not yet immplemented (ConjTranspose):
-/// CT/NT, NT/CT, CT/CT, CT/T, T/CT
-///
 
 template <typename ArgTransA, typename ArgTransB>
 struct SerialGemm<ArgTransA, ArgTransB, Algo::Gemm::CompactMKL> {
@@ -79,12 +84,8 @@ struct SerialGemm<ArgTransA, ArgTransB, Algo::Gemm::CompactMKL> {
     const int m = C.extent(0), n = C.extent(1);
     const int k =
         A.extent(std::is_same<ArgTransA, Trans::NoTranspose>::value ? 1 : 0);
-    const MKL_TRANSPOSE trans_A =
-        std::is_same<ArgTransA, Trans::Transpose>::value ? MKL_TRANS
-                                                         : MKL_NOTRANS;
-    const MKL_TRANSPOSE trans_B =
-        std::is_same<ArgTransB, Trans::Transpose>::value ? MKL_TRANS
-                                                         : MKL_NOTRANS;
+    const MKL_TRANSPOSE trans_A = Impl::trans2mkl<ArgTransA>;
+    const MKL_TRANSPOSE trans_B = Impl::trans2mkl<ArgTransB>;
 
     static_assert(KokkosBatched::is_vector<vector_type>::value,
                   "value type is not vector type");
