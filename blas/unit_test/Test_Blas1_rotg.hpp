@@ -8,10 +8,10 @@ void test_rotg_impl(const Scalar a_in, const Scalar b_in) {
   const Scalar zero        = Kokkos::ArithTraits<Scalar>::zero();
 
   // Initialize inputs/outputs
-  Scalar a = a_in;
-  Scalar b = b_in;
+  Scalar a         = a_in;
+  Scalar b         = b_in;
   magnitude_type c = Kokkos::ArithTraits<magnitude_type>::zero();
-  Scalar s = zero;
+  Scalar s         = zero;
 
   KokkosBlas::rotg(a, b, c, s);
 
