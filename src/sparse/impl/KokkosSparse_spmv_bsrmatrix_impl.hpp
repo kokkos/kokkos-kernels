@@ -59,6 +59,8 @@ namespace Experimental {
 namespace Impl {
 
 struct BsrMatrixSpMVTensorCoreFunctorParams {
+  int warpsPerTeamX;
+  int warpsPerTeamY;
   int teamsPerBlockM;
   int teamsPerBlockN;
   int leagueDim_x;
@@ -76,13 +78,17 @@ struct BsrMatrixSpMVTensorCoreFunctorParams {
 /// TEAMS_PER_BLOCK_M and TEAMS_PER_BLOCK_N) if non-zero, statically-known
 /// launch parameters to reduce the cost of divmod operations on the GPU. If 0,
 /// provided runtime values will be used instead.
+/// \tparam WARPS_PER_TEAM_X for large blocks, we can have each team be a 2D
+/// grid of fragments if blocks fit within one fragment, extra warps per team
+/// will not do MMA operations
 template <typename AMatrix,
           typename AFragScalar,  // input matrix type and fragment scalar type
           typename XMatrix, typename XFragScalar, typename YMatrix,
           typename YFragScalar, unsigned FRAG_M, unsigned FRAG_N,
           unsigned FRAG_K,  // fragment sizes
           unsigned LEAGUE_DIM_X = 0, unsigned TEAMS_PER_BLOCK_M = 0,
-          unsigned TEAMS_PER_BLOCK_N = 0>
+          unsigned TEAMS_PER_BLOCK_N = 0, unsigned WARPS_PER_TEAM_X = 0,
+          unsigned WARPS_PER_TEAM_Y = 0>
 struct BsrMatrixSpMVTensorCoreFunctor {
   typedef nvcuda::wmma::accumulator accumulator;
   typedef nvcuda::wmma::row_major row_major;
@@ -91,6 +97,10 @@ struct BsrMatrixSpMVTensorCoreFunctor {
   typedef nvcuda::wmma::matrix_b matrix_b;
   using FragA = nvcuda::wmma::fragment<matrix_a, FRAG_M, FRAG_N, FRAG_K,
                                        AFragScalar, row_major>;
+
+  // TODO: col-major for layout left, row-major for layout-right
+  // because the team threads are mapped to different X entries depending
+  // on layout, so we want best coalescing in shared memory too
   using FragX = nvcuda::wmma::fragment<matrix_b, FRAG_M, FRAG_N, FRAG_K,
                                        XFragScalar, row_major>;
   using FragY =
@@ -138,8 +148,6 @@ struct BsrMatrixSpMVTensorCoreFunctor {
   BsrMatrixSpMVTensorCoreFunctorParams params;
 
   // a team is a 2D grid of warps
-  static constexpr int WARPS_PER_TEAM_X = 2;
-  static constexpr int WARPS_PER_TEAM_Y = 2;
   static constexpr int THREADS_PER_WARP = 32;
 
   BsrMatrixSpMVTensorCoreFunctor() = delete;  // need all runtime parameters
@@ -153,20 +161,20 @@ struct BsrMatrixSpMVTensorCoreFunctor {
   size_t league_size() const { return params.leagueDim_x * params.leagueDim_y; }
 
   size_t team_size() const {
-    return THREADS_PER_WARP * WARPS_PER_TEAM_X * WARPS_PER_TEAM_Y;
+    return THREADS_PER_WARP * params.warpsPerTeamX * params.warpsPerTeamY;
   }
 
   // single column of fragments from A
   KOKKOS_INLINE_FUNCTION size_t a_scratch_size() const {
-    return WARPS_PER_TEAM_Y * FRAG_M * FRAG_K * sizeof(AFragScalar);
+    return params.warpsPerTeamY * FRAG_M * FRAG_K * sizeof(AFragScalar);
   }
   // single row of fragments from X
   KOKKOS_INLINE_FUNCTION size_t x_scratch_size() const {
-    return WARPS_PER_TEAM_X * FRAG_K * FRAG_N * sizeof(XFragScalar);
+    return params.warpsPerTeamX * FRAG_K * FRAG_N * sizeof(XFragScalar);
   }
   // one fragment per warp in the team
   KOKKOS_INLINE_FUNCTION size_t y_scratch_size() const {
-    return WARPS_PER_TEAM_X * WARPS_PER_TEAM_Y * FRAG_M * FRAG_N *
+    return params.warpsPerTeamX * params.warpsPerTeamY * FRAG_M * FRAG_N *
            sizeof(YFragScalar);
   }
 
@@ -190,12 +198,16 @@ struct BsrMatrixSpMVTensorCoreFunctor {
     int fragsPerBlockM = (a.blockDim() + FRAG_M - 1) / FRAG_M;
     int fragsPerBlockN = (a.blockDim() + FRAG_N - 1) / FRAG_N;
 
+    // fragsPerBlock capped in [1,2]
+    params.warpsPerTeamY = std::min(std::max(1, fragsPerBlockM), 2);
+    params.warpsPerTeamX = std::min(std::max(1, fragsPerBlockN), 2);
+
     // determine how many teams will need to cover each block (Y in M direction,
     // X in N direction)
     params.teamsPerBlockM =
-        (fragsPerBlockM + WARPS_PER_TEAM_Y - 1) / WARPS_PER_TEAM_Y;
+        (fragsPerBlockM + params.warpsPerTeamY - 1) / params.warpsPerTeamY;
     params.teamsPerBlockN =
-        (fragsPerBlockN + WARPS_PER_TEAM_X - 1) / WARPS_PER_TEAM_X;
+        (fragsPerBlockN + params.warpsPerTeamX - 1) / params.warpsPerTeamX;
 
     // determine how many teams will be needed co cover the product vector
     int yTeamsM = params.teamsPerBlockM * blocksPerYM;
@@ -252,6 +264,10 @@ struct BsrMatrixSpMVTensorCoreFunctor {
         TEAMS_PER_BLOCK_N > 0 ? TEAMS_PER_BLOCK_N : params.teamsPerBlockN;
     const int tpbm =
         TEAMS_PER_BLOCK_M > 0 ? TEAMS_PER_BLOCK_M : params.teamsPerBlockM;
+    const int wptx =
+        WARPS_PER_TEAM_X > 0 ? WARPS_PER_TEAM_X : params.warpsPerTeamX;
+    const int wpty =
+        WARPS_PER_TEAM_Y > 0 ? WARPS_PER_TEAM_Y : params.warpsPerTeamY;
 
     // which team I am in the league
     const int teamIdx_x = mbr.league_rank() % ld_x;
@@ -266,23 +282,22 @@ struct BsrMatrixSpMVTensorCoreFunctor {
     const int teamIdx_j = teamIdx_x % tpbn;
 
     // which warp I am in the team
-    const int warpIdx_x = (mbr.team_rank() / 32) % WARPS_PER_TEAM_X;
-    const int warpIdx_y = (mbr.team_rank() / 32) / WARPS_PER_TEAM_X;
+    const int warpIdx_x = (mbr.team_rank() / 32) % wptx;
+    const int warpIdx_y = (mbr.team_rank() / 32) / wptx;
 
     // which lane I am in the warp
     const int lx = mbr.team_rank() % THREADS_PER_WARP;
 
     // which row of a/y the fragment this warp contributes to starts at
     const AOrdinal ay_i =
-        blockIdx_i * a.blockDim()                // offset due to block
-        + teamIdx_i * WARPS_PER_TEAM_Y * FRAG_M  // offset of team within block
-        + warpIdx_y * FRAG_M;                    // offset of warp within team
+        blockIdx_i * a.blockDim()    // offset due to block
+        + teamIdx_i * wpty * FRAG_M  // offset of team within block
+        + warpIdx_y * FRAG_M;        // offset of warp within team
 
     // which column of x/y the fragments warp will read from/contribute to
     // starts at
     const AOrdinal xy_j = blockIdx_j * a.blockDim() +
-                          teamIdx_j * WARPS_PER_TEAM_X * FRAG_N +
-                          warpIdx_x * FRAG_N;
+                          teamIdx_j * wptx * FRAG_N + warpIdx_x * FRAG_N;
 
     AFragScalar *_sa =
         (AFragScalar *)mbr.team_shmem().get_shmem(a_scratch_size());
@@ -291,9 +306,9 @@ struct BsrMatrixSpMVTensorCoreFunctor {
     YFragScalar *_sy =
         (YFragScalar *)mbr.team_shmem().get_shmem(y_scratch_size());
 
-    AScratchView sa(_sa, WARPS_PER_TEAM_Y);
-    XScratchView sx(_sx, WARPS_PER_TEAM_X);
-    YScratchView sy(_sy, WARPS_PER_TEAM_Y, WARPS_PER_TEAM_X);
+    AScratchView sa(_sa, wpty);
+    XScratchView sx(_sx, wptx);
+    YScratchView sy(_sy, wpty, wptx);
 
     // team loads its fragments of Y that make up part or all of the block of Y
     // it's responsible for. each warp loads the part corresponding to its y
@@ -302,12 +317,28 @@ struct BsrMatrixSpMVTensorCoreFunctor {
     // no need for a team barrier because each warp uses an individual part of
     // shared memory
     for (unsigned i = lx; i < FRAG_M * FRAG_N; i += THREADS_PER_WARP) {
-      const unsigned fi = i / FRAG_N;  // position in fragment of Y
-      const unsigned fj = i % FRAG_N;
-      const AOrdinal bi = teamIdx_i * WARPS_PER_TEAM_Y * FRAG_M +
-                          warpIdx_y * FRAG_M + fi;  // position in block of Y
-      const AOrdinal bj =
-          teamIdx_j * WARPS_PER_TEAM_X * FRAG_N + warpIdx_x * FRAG_N + fj;
+      unsigned fi, fj;
+      if (false) {
+        // if (std::is_same<typename YMatrix::array_layout,
+        // Kokkos::LayoutLeft>::value) {
+        fi = i % FRAG_N;
+        fj = i / FRAG_N;
+      } else if (true) {
+        // } else if (std::is_same<typename YMatrix::array_layout,
+        // Kokkos::LayoutRight>::value) {
+        fi = i / FRAG_N;
+        fj = i % FRAG_N;
+      } else {
+        static_assert(std::is_same<typename YMatrix::array_layout,
+                                   Kokkos::LayoutLeft>::value ||
+                          std::is_same<typename YMatrix::array_layout,
+                                       Kokkos::LayoutRight>::value,
+                      "unexpected array layout");
+      }
+
+      const AOrdinal bi = teamIdx_i * wpty * FRAG_M + warpIdx_y * FRAG_M +
+                          fi;  // position in block of Y
+      const AOrdinal bj = teamIdx_j * wptx * FRAG_N + warpIdx_x * FRAG_N + fj;
 
       // load 0 outside of the block boundary and y vector boundary
       // load 0 outside of the vector boundary
@@ -352,13 +383,14 @@ struct BsrMatrixSpMVTensorCoreFunctor {
       for (AOrdinal bk = 0; bk < a.blockDim(); bk += FRAG_K /*M*/) {
         // team collaborative load of A
         // the footprint is one fragment wide in K direction
+        // The values in A are 1D; want consecutive threads in J index
         mbr.team_barrier();
-        for (unsigned i = mbr.team_rank();
-             i < WARPS_PER_TEAM_Y * FRAG_M * FRAG_K; i += mbr.team_size()) {
+        for (unsigned i = mbr.team_rank(); i < wpty * FRAG_M * FRAG_K;
+             i += mbr.team_size()) {
           const unsigned ti = i / FRAG_K;  // offset inside the fragments
           const unsigned tj = i % FRAG_K;
           // add in offset within block
-          const AOrdinal bi = teamIdx_i * WARPS_PER_TEAM_Y * FRAG_M + ti;
+          const AOrdinal bi = teamIdx_i * wpty * FRAG_M + ti;
           const AOrdinal bj = bk + tj;
 
           // fill shmem with 0 outside of the block boundary
@@ -371,16 +403,41 @@ struct BsrMatrixSpMVTensorCoreFunctor {
         }
 
         // collaborative load of X fragments into shared memory
-        // entire team loads fragment footprint
-        for (unsigned i = mbr.team_rank();
-             i < WARPS_PER_TEAM_X * FRAG_N * FRAG_K; i += mbr.team_size()) {
-          const unsigned ti =
-              i / (WARPS_PER_TEAM_X * FRAG_N);  // position in combined tiles
-          const unsigned tj = i % (WARPS_PER_TEAM_X * FRAG_N);
+        // entire team loads fragment footprint, loading wptx side-by-side K x N
+        // fragments of X linearize the thread ranks and distribute them across
+        // the WARPS_PER_TEAM KxN fragments For LayoutRight, we want consecutive
+        // i's making consecutive accesses in the right index (the N dimension)
+        // For LayoutLeft, we want consecutive i's making consecutive accesses
+        // in the left index (the K dimension) both are correct for either
+        // layout, it's just a matter of performance
+        for (unsigned i = mbr.team_rank(); i < wptx * FRAG_N * FRAG_K;
+             i += mbr.team_size()) {
+          // index in the side-by-side fragments the thread will be loading from
+          unsigned ti, tj;
+          if (false) {
+            // if (std::is_same<typename XMatrix::array_layout,
+            // Kokkos::LayoutLeft>::value) {
+            tj = i / (wptx * FRAG_N);
+            ti = i % (wptx * FRAG_N);
+          } else if (true) {
+            // } else if (std::is_same<typename XMatrix::array_layout,
+            // Kokkos::LayoutRight>::value) {
+            ti = i / (wptx * FRAG_N);
+            tj = i % (wptx * FRAG_N);
+          } else {
+            static_assert(std::is_same<typename XMatrix::array_layout,
+                                       Kokkos::LayoutLeft>::value ||
+                              std::is_same<typename XMatrix::array_layout,
+                                           Kokkos::LayoutRight>::value,
+                          "unexpected array layout");
+          }
 
-          // add in offset within block
+          // only contribute partial products from a frag-column of A / a
+          // frag-row of X at a time so add in the offset from the col/row that
+          // is being worked on in this loop iteration add in offset within
+          // block
           const AOrdinal bi = bk + ti;
-          const AOrdinal bj = teamIdx_j * WARPS_PER_TEAM_X * FRAG_N + tj;
+          const AOrdinal bj = teamIdx_j * wptx * FRAG_N + tj;
 
           // load 0 outside of the block boundary
           // x is not necessarily a multiple of block size, so make sure access
@@ -418,10 +475,9 @@ struct BsrMatrixSpMVTensorCoreFunctor {
     for (unsigned i = lx; i < FRAG_M * FRAG_N; i += THREADS_PER_WARP) {
       const unsigned fi = i / FRAG_N;  // position in fragment of Y
       const unsigned fj = i % FRAG_N;
-      const AOrdinal bi = teamIdx_i * WARPS_PER_TEAM_Y * FRAG_M +
-                          warpIdx_y * FRAG_M + fi;  // position in block of Y
-      const AOrdinal bj =
-          teamIdx_j * WARPS_PER_TEAM_X * FRAG_N + warpIdx_x * FRAG_N + fj;
+      const AOrdinal bi = teamIdx_i * wpty * FRAG_M + warpIdx_y * FRAG_M +
+                          fi;  // position in block of Y
+      const AOrdinal bj = teamIdx_j * wptx * FRAG_N + warpIdx_x * FRAG_N + fj;
 
       // only store inside the block boundary
       // FIXME: what if Y is not wide enough? check y(_, j)
@@ -450,44 +506,53 @@ struct BsrMatrixSpMVTensorCoreDispatcher {
   typedef typename YMatrix::value_type YScalar;
   typedef typename XMatrix::value_type XScalar;
 
-  template <unsigned X, unsigned Y, unsigned Z>
-  using Dyn = BsrMatrixSpMVTensorCoreFunctor<AMatrix, AFragScalar, XMatrix,
-                                             XFragScalar, YMatrix, YFragScalar,
-                                             FRAG_M, FRAG_N, FRAG_K, X, Y, Z>;
+  template <unsigned X, unsigned Y, unsigned Z, unsigned A, unsigned B>
+  using Dyn =
+      BsrMatrixSpMVTensorCoreFunctor<AMatrix, AFragScalar, XMatrix, XFragScalar,
+                                     YMatrix, YFragScalar, FRAG_M, FRAG_N,
+                                     FRAG_K, X, Y, Z, A, B>;
 
   // to be used when the various matrix types are supported
   static void tag_dispatch(std::true_type, YScalar alpha, AMatrix a, XMatrix x,
                            YScalar beta, YMatrix y) {
     BsrMatrixSpMVTensorCoreFunctorParams params =
-        Dyn<0, 0, 0>::launch_parameters(alpha, a, x, beta, y);
+        Dyn<0, 0, 0, 0, 0>::launch_parameters(alpha, a, x, beta, y);
 
     if (false) {  // consistency of formatting for next sections
     } else if (1 == params.leagueDim_x && 1 == params.teamsPerBlockM &&
-               1 == params.teamsPerBlockN) {
-      Dyn<1, 1, 1>(alpha, a, x, beta, y, params).dispatch();
+               1 == params.teamsPerBlockN && 1 == params.warpsPerTeamX &&
+               1 == params.warpsPerTeamY) {
+      Dyn<1, 1, 1, 1, 1>(alpha, a, x, beta, y, params).dispatch();
+    } else if (1 == params.leagueDim_x && 1 == params.teamsPerBlockM &&
+               1 == params.teamsPerBlockN && 2 == params.warpsPerTeamX &&
+               2 == params.warpsPerTeamY) {
+      Dyn<1, 1, 1, 2, 2>(alpha, a, x, beta, y, params).dispatch();
     } else if (1 == params.leagueDim_x && 2 == params.teamsPerBlockM &&
-               2 == params.teamsPerBlockN) {
-      Dyn<1, 2, 2>(alpha, a, x, beta, y, params).dispatch();
+               2 == params.teamsPerBlockN && 2 == params.warpsPerTeamX &&
+               2 == params.warpsPerTeamY) {
+      Dyn<1, 2, 2, 2, 2>(alpha, a, x, beta, y, params).dispatch();
     } else if (1 == params.leagueDim_x && 4 == params.teamsPerBlockM &&
-               4 == params.teamsPerBlockN) {
-      Dyn<1, 4, 4>(alpha, a, x, beta, y, params).dispatch();
-    } else if (1 == params.leagueDim_x && 8 == params.teamsPerBlockM &&
-               8 == params.teamsPerBlockN) {
-      Dyn<1, 8, 8>(alpha, a, x, beta, y, params).dispatch();
+               4 == params.teamsPerBlockN && 2 == params.warpsPerTeamX &&
+               2 == params.warpsPerTeamY) {
+      Dyn<1, 4, 4, 2, 2>(alpha, a, x, beta, y, params).dispatch();
     } else if (2 == params.leagueDim_x && 1 == params.teamsPerBlockM &&
-               1 == params.teamsPerBlockN) {
-      Dyn<2, 1, 1>(alpha, a, x, beta, y, params).dispatch();
+               1 == params.teamsPerBlockN && 1 == params.warpsPerTeamX &&
+               1 == params.warpsPerTeamY) {
+      Dyn<2, 1, 1, 1, 1>(alpha, a, x, beta, y, params).dispatch();
+    } else if (2 == params.leagueDim_x && 1 == params.teamsPerBlockM &&
+               1 == params.teamsPerBlockN && 2 == params.warpsPerTeamX &&
+               2 == params.warpsPerTeamY) {
+      Dyn<2, 1, 1, 2, 2>(alpha, a, x, beta, y, params).dispatch();
     } else if (2 == params.leagueDim_x && 2 == params.teamsPerBlockM &&
-               2 == params.teamsPerBlockN) {
-      Dyn<2, 2, 2>(alpha, a, x, beta, y, params).dispatch();
+               2 == params.teamsPerBlockN && 2 == params.warpsPerTeamX &&
+               2 == params.warpsPerTeamY) {
+      Dyn<2, 2, 2, 2, 2>(alpha, a, x, beta, y, params).dispatch();
     } else if (2 == params.leagueDim_x && 4 == params.teamsPerBlockM &&
-               4 == params.teamsPerBlockN) {
-      Dyn<2, 4, 4>(alpha, a, x, beta, y, params).dispatch();
-    } else if (2 == params.leagueDim_x && 8 == params.teamsPerBlockM &&
-               8 == params.teamsPerBlockN) {
-      Dyn<2, 8, 8>(alpha, a, x, beta, y, params).dispatch();
+               4 == params.teamsPerBlockN && 2 == params.warpsPerTeamX &&
+               2 == params.warpsPerTeamY) {
+      Dyn<2, 4, 4, 2, 2>(alpha, a, x, beta, y, params).dispatch();
     } else {
-      Dyn<0, 0, 0>(alpha, a, x, beta, y, params).dispatch();
+      Dyn<0, 0, 0, 0, 0>(alpha, a, x, beta, y, params).dispatch();
     }
   }
 
