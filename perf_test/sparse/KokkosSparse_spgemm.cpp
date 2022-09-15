@@ -110,6 +110,8 @@ int parse_inputs(KokkosKernels::Experiment::Parameters& params, int argc,
       params.use_hip = atoi(getNextArg(i, argc, argv)) + 1;
     } else if (0 == Test::string_compare_no_case(argv[i], "--repeat")) {
       params.repeat = atoi(getNextArg(i, argc, argv));
+    } else if (0 == Test::string_compare_no_case(argv[i], "--blocksize")) {
+      params.block_size = atoi(getNextArg(i, argc, argv));
     } else if (0 == Test::string_compare_no_case(argv[i], "--hashscale")) {
       params.minhashscale = atoi(getNextArg(i, argc, argv));
     } else if (0 == Test::string_compare_no_case(argv[i], "--chunksize")) {
