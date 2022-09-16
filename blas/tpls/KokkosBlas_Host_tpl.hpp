@@ -76,6 +76,8 @@ struct HostBlas {
   static void axpy(int n, const T alpha, const T *x, int x_inc,
                    /* */ T *y, int y_inc);
 
+  static void rotg(T *a, T *b, mag_type *c, T *s);
+
   static void gemv(const char trans, int m, int n, const T alpha, const T *a,
                    int lda, const T *b, int ldb, const T beta,
                    /* */ T *c, int ldc);
