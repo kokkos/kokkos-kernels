@@ -171,7 +171,6 @@ void cuSPARSE_symbolic(KernelHandle *handle, typename KernelHandle::nnz_lno_t m,
   h->C_populated = false;  // sparsity pattern of C is not set yet
   (void)row_mapC;
 
-
 #elif defined(CUSPARSE_VERSION) && (11000 <= CUSPARSE_VERSION)
   throw std::runtime_error(
       "SpGEMM cuSPARSE backend is not yet supported for this CUDA version\n");
@@ -321,9 +320,9 @@ void cuSPARSE_apply(
   KOKKOS_CUSPARSE_SAFE_CALL(
       cusparseSetPointerMode(h->cusparseHandle, oldPtrMode));
 
-  (void) m;
-  (void) n;
-  (void) k;
+  (void)m;
+  (void)n;
+  (void)k;
 
 #elif (CUSPARSE_VERSION >= 11000)
   throw std::runtime_error(
