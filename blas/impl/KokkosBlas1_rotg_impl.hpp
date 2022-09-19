@@ -52,7 +52,7 @@ namespace KokkosBlas {
 namespace Impl {
 
 /// \brief Compute Givens rotation coefficients.
-template <class Scalar,
+template <class Scalar, class ExecutionSpace,
           typename std::enable_if<!Kokkos::ArithTraits<Scalar>::is_complex,
                                   bool>::type = true>
 void Rotg_Invoke(Scalar& a, Scalar& b, Scalar& c, Scalar& s) {
@@ -87,7 +87,7 @@ void Rotg_Invoke(Scalar& a, Scalar& b, Scalar& c, Scalar& s) {
   }
 }
 
-template <class Scalar,
+template <class Scalar, class ExecutionSpace,
           typename std::enable_if<Kokkos::ArithTraits<Scalar>::is_complex,
                                   bool>::type = true>
 void Rotg_Invoke(Scalar& a, Scalar& b,
