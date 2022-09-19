@@ -56,7 +56,7 @@
 namespace KokkosBlas {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class Scalar>
+template <class Scalar, class ExecutionSpace, class MemorySpace>
 struct rotg_eti_spec_avail {
   enum : bool { value = false };
 };
@@ -70,10 +70,10 @@ struct rotg_eti_spec_avail {
 // We may spread out definitions (see _INST macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSBLAS1_ROTG_ETI_SPEC_AVAIL(SCALAR) \
-  template <>                                   \
-  struct rotg_eti_spec_avail<SCALAR> {          \
-    enum : bool { value = true };               \
+#define KOKKOSBLAS1_ROTG_ETI_SPEC_AVAIL(SCALAR, EXECSPACE, MEMSPACE) \
+  template <>                                                        \
+  struct rotg_eti_spec_avail<SCALAR, EXECSPACE, MEMSPACE> {          \
+    enum : bool { value = true };                                    \
   };
 
 // Include the actual specialization declarations
@@ -84,9 +84,11 @@ namespace KokkosBlas {
 namespace Impl {
 
 // Unification layer
-template <class Scalar,
-          bool tpl_spec_avail = rotg_tpl_spec_avail<Scalar>::value,
-          bool eti_spec_avail = rotg_eti_spec_avail<Scalar>::value>
+template <class Scalar, class ExecutionSpace, class MemorySpace,
+          bool tpl_spec_avail =
+              rotg_tpl_spec_avail<Scalar, ExecutionSpace, MemorySpace>::value,
+          bool eti_spec_avail =
+              rotg_eti_spec_avail<Scalar, ExecutionSpace, MemorySpace>::value>
 struct Rotg {
   static void rotg(Scalar& a, Scalar& b,
                    typename Kokkos::ArithTraits<Scalar>::mag_type& c,
@@ -95,8 +97,9 @@ struct Rotg {
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 //! Full specialization of Rotg.
-template <class Scalar>
-struct Rotg<Scalar, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+template <class Scalar, class ExecutionSpace, class MemorySpace>
+struct Rotg<Scalar, ExecutionSpace, MemorySpace, false,
+            KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   static void rotg(Scalar& a, Scalar& b,
                    typename Kokkos::ArithTraits<Scalar>::mag_type& c,
                    Scalar& s) {
@@ -112,7 +115,7 @@ struct Rotg<Scalar, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
              typeid(Scalar).name());
     }
 #endif
-    Rotg_Invoke<Scalar>(a, b, c, s);
+    Rotg_Invoke<Scalar, ExecutionSpace>(a, b, c, s);
     Kokkos::Profiling::popRegion();
   }
 };
@@ -128,16 +131,16 @@ struct Rotg<Scalar, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 // We may spread out definitions (see _DEF macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSBLAS1_ROTG_ETI_SPEC_DECL(SCALAR) \
-  extern template struct Rotg<SCALAR, false, true>;
+#define KOKKOSBLAS1_ROTG_ETI_SPEC_DECL(SCALAR, EXECSPACE, MEMSPACE) \
+  extern template struct Rotg<SCALAR, EXECSPACE, MEMSPACE, false, true>;
 
 //
 // Macro for definition of full specialization of
 // KokkosBlas::Impl::Rotg.  This is NOT for users!!!  We
 // use this macro in one or more .cpp files in this directory.
 //
-#define KOKKOSBLAS1_ROTG_ETI_SPEC_INST(SCALAR) \
-  template struct Rotg<SCALAR, false, true>;
+#define KOKKOSBLAS1_ROTG_ETI_SPEC_INST(SCALAR, EXECSPACE, MEMSPACE) \
+  template struct Rotg<SCALAR, EXECSPACE, MEMSPACE, false, true>;
 
 #include <KokkosBlas1_rotg_tpl_spec_decl.hpp>
 #include <generated_specializations_hpp/KokkosBlas1_rotg_eti_spec_decl.hpp>

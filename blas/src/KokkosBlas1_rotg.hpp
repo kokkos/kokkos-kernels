@@ -58,11 +58,12 @@ namespace KokkosBlas {
 /// rotated value \param b [in/out] on input one of the values to rotate, on
 /// output the rotated value \param c [out] cosine value associated with the
 /// rotation \param s [out] sine value associated with the rotation
-template <class Scalar>
+template <class Scalar, class ExecutionSpace = Kokkos::DefaultExecutionSpace>
 void rotg(Scalar& a, Scalar& b,
           typename Kokkos::ArithTraits<Scalar>::mag_type& c, Scalar& s) {
   Kokkos::Profiling::pushRegion("KokkosBlas::rotg");
-  Impl::Rotg<Scalar>::rotg(a, b, c, s);
+  Impl::Rotg<Scalar, ExecutionSpace,
+             typename ExecutionSpace::memory_space>::rotg(a, b, c, s);
   Kokkos::Profiling::popRegion();
 }
 

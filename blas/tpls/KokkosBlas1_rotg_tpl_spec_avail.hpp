@@ -48,7 +48,7 @@
 namespace KokkosBlas {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class Scalar>
+template <class Scalar, class ExecutionSpace, class MemorySpace>
 struct rotg_tpl_spec_avail {
   enum : bool { value = false };
 };
@@ -60,44 +60,53 @@ namespace Impl {
 
 // Generic Host side BLAS (could be MKL or whatever)
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
-#define KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_BLAS(SCALAR) \
-  template <>                                        \
-  struct rotg_tpl_spec_avail<SCALAR> {               \
-    enum : bool { value = true };                    \
+#define KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_BLAS(SCALAR, EXECSPACE) \
+  template <class MemorySpace>                                  \
+  struct rotg_tpl_spec_avail<SCALAR, EXECSPACE, MemorySpace> {  \
+    enum : bool { value = true };                               \
   };
 
-KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_BLAS(double)
-KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_BLAS(float)
-KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<double>)
-KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>)
+#ifdef KOKKOS_ENABLE_SERIAL
+KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_BLAS(double, Kokkos::Serial)
+KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_BLAS(float, Kokkos::Serial)
+KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<double>, Kokkos::Serial)
+KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>, Kokkos::Serial)
+#endif
+
+#ifdef KOKKOS_ENABLE_OPENMP
+KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_BLAS(double, Kokkos::OpenMP)
+KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_BLAS(float, Kokkos::OpenMP)
+KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<double>, Kokkos::OpenMP)
+KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>, Kokkos::OpenMP)
+#endif
 #endif
 
 // cuBLAS
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
-#define KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_CUBLAS(SCALAR) \
-  template <>                                          \
-  struct rotg_tpl_spec_avail<SCALAR> {                 \
-    enum : bool { value = true };                      \
+#define KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_CUBLAS(SCALAR, EXECSPACE) \
+  template <class MemorySpace>                                    \
+  struct rotg_tpl_spec_avail<SCALAR, EXECSPACE, MemorySpace> {    \
+    enum : bool { value = true };                                 \
   };
 
-KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_CUBLAS(double)
-KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_CUBLAS(float)
-KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>)
-KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>)
+KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_CUBLAS(double, Kokkos::Cuda)
+KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::Cuda)
+KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>, Kokkos::Cuda)
+KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>, Kokkos::Cuda)
 #endif
 
 // rocBLAS
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
-#define KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_ROCBLAS(SCALAR) \
-  template <>                                           \
-  struct rotg_tpl_spec_avail<SCALAR> {                  \
-    enum : bool { value = true };                       \
+#define KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_ROCBLAS(SCALAR, EXECSPACE) \
+  template <class MemorySpace>                                     \
+  struct rotg_tpl_spec_avail<SCALAR, EXECSPACE, MemorySpace> {     \
+    enum : bool { value = true };                                  \
   };
 
-KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_ROCBLAS(double)
-KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_ROCBLAS(float)
-KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<double>)
-KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<float>)
+KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_ROCBLAS(double, Kokkos::HIP)
+KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_ROCBLAS(float, Kokkos::HIP)
+KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<double>, Kokkos::HIP)
+KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<float>, Kokkos::HIP)
 #endif
 
 }  // namespace Impl
