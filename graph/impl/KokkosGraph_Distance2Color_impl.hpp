@@ -372,7 +372,7 @@ class GraphColorDistance2 {
       std::cout << "\tTime serial conflict resolution   : " << time
                 << std::endl;
       std::cout << "\tTotal time for coloring           : " << total_time
-		<< std::endl;
+                << std::endl;
       gc_handle->add_to_overall_coloring_time_phase3(time);
     }
 
