@@ -81,18 +81,17 @@ bool verify_coarsening(typename coarsener_t::coarse_level_triple fine_l,
       Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.graph.row_map);
   auto c_rowmap = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
                                                       coarse_A.graph.row_map);
-  typename c_entries_t::HostMirror f_entries =
+  auto f_entries =
       Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.graph.entries);
-  typename c_entries_t::HostMirror vcmap = Kokkos::create_mirror_view_and_copy(
+  auto vcmap = Kokkos::create_mirror_view_and_copy(
       Kokkos::HostSpace(), coarse_l.interp_mtx.graph.entries);
-  typename svt::HostMirror few =
-      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.values);
-  typename svt::HostMirror cew =
+  auto few = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.values);
+  auto cew =
       Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), coarse_A.values);
-  typename entries_t::HostMirror fvw =
+  auto fvw =
       Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), fine_l.vtx_wgts);
-  typename entries_t::HostMirror cvw = Kokkos::create_mirror_view_and_copy(
-      Kokkos::HostSpace(), coarse_l.vtx_wgts);
+  auto cvw         = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
+                                                 coarse_l.vtx_wgts);
   ordinal_t f_size = 0;
   ordinal_t c_size = 0;
   for (ordinal_t i = 0; i < static_cast<ordinal_t>(fvw.extent(0)); i++) {
@@ -143,7 +142,7 @@ bool verify_is_graph(crsMat A) {
   using edge_t      = typename rowmap_t::value_type;
   auto rowmap =
       Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.graph.row_map);
-  typename c_entries_t::HostMirror entries =
+  auto entries =
       Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.graph.entries);
 
   for (ordinal_t i = 0; i < A.numRows(); i++) {
@@ -187,9 +186,8 @@ bool verify_aggregator(crsMat A, crsMat agg) {
   if (A.numRows() < agg.numCols()) {
     return false;
   }
-  typename c_entries_t::HostMirror entries =
-      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
-                                          agg.graph.entries);
+  auto entries = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
+                                                     agg.graph.entries);
 
   std::vector<int> aggregateSizes(agg.numCols(), 0);
   for (ordinal_t i = 0; i < static_cast<ordinal_t>(agg.nnz()); i++) {
