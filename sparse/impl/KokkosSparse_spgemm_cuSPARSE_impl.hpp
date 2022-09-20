@@ -169,6 +169,7 @@ void cuSPARSE_symbolic(KernelHandle *handle, typename KernelHandle::nnz_lno_t m,
   }
   handle->set_c_nnz(C_nnz);
   h->C_populated = false;  // sparsity pattern of C is not set yet
+  (void)row_mapC;
 
 #elif defined(CUSPARSE_VERSION) && (11000 <= CUSPARSE_VERSION)
   throw std::runtime_error(
@@ -318,6 +319,10 @@ void cuSPARSE_apply(
       h->descr_C, h->scalarType, h->alg, h->spgemmDescr));
   KOKKOS_CUSPARSE_SAFE_CALL(
       cusparseSetPointerMode(h->cusparseHandle, oldPtrMode));
+
+  (void)m;
+  (void)n;
+  (void)k;
 
 #elif (CUSPARSE_VERSION >= 11000)
   throw std::runtime_error(
