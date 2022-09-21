@@ -44,6 +44,8 @@
 
 #include "Kokkos_Random.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
+#include "KokkosSparse_IOUtils.hpp"
+
 #include "KokkosSparse_spmv.hpp"
 #include "KokkosSparse_sptrsv.hpp"
 #include "KokkosSparse_sptrsv_superlu.hpp"
@@ -382,7 +384,7 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose,
     std::cout << " SuperLU Tester Begin: Read matrix filename " << filename
               << std::endl;
     host_crsmat_t Mtx =
-        KokkosKernels::Impl::read_kokkos_crst_matrix<host_crsmat_t>(
+        KokkosSparse::Impl::read_kokkos_crst_matrix<host_crsmat_t>(
             filename.c_str());
 
     const size_type nrows = Mtx.graph.numRows();
