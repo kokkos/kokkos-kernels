@@ -2,12 +2,19 @@ name: github-OSX
 
 on:
   pull_request:
-    branches:
-      - master
-      - develop
+    types: [ opened, labeled, unlabeled, reopened, synchronize ]
 
 jobs:
+  check-pr-labels:
+    runs-on: [ubuntu-latest]
+    steps:
+      - uses: docker://agilepathway/pull-request-label-checker:latest
+        with:
+          none_of: 'AT: WIP'
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
   osxci:
+    needs: check-pr-labels
+    # TODO: allow re-run via retest label if: ${{ github.event.label.name == 'AT: RETEST' }}
     name: osx-ci
     runs-on: [macos-latest]
 
@@ -16,12 +23,16 @@ jobs:
         include:
           - backend: "SERIAL"
             cmake_build_type: "RelWithDebInfo"
+            debug_bounds_check: "ON"
           - backend: "THREADS"
             cmake_build_type: "RelWithDebInfo"
+            debug_bounds_check: "ON"
           - backend: "SERIAL"
             cmake_build_type: "Debug"
+            debug_bounds_check: "OFF"
           - backend: "SERIAL"
             cmake_build_type: "Release"
+            debug_bounds_check: "ON"
 
     steps:
       - name: checkout_kokkos_kernels
@@ -46,6 +57,7 @@ jobs:
           -DCMAKE_CXX_FLAGS="-Werror" \
           -DCMAKE_CXX_STANDARD=14 \
           -DKokkos_ENABLE_COMPILER_WARNINGS=ON \
+          -DKokkos_ENABLE_DEBUG_BOUNDS_CHECK:BOOL=${{ matrix.debug_bounds_check }} \
           -DKokkos_ENABLE_DEPRECATED_CODE_3=OFF \
           -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} \
           -DCMAKE_INSTALL_PREFIX=$PWD/../install \
@@ -73,6 +85,8 @@ jobs:
           -DKokkosKernels_INST_FLOAT=ON \
           -DKokkosKernels_INST_LAYOUTLEFT:BOOL=ON \
           -DKokkosKernels_INST_LAYOUTRIGHT:BOOL=ON \
+          -DKokkosKernels_INST_OFFSET_INT=ON \
+          -DKokkosKernels_INST_OFFSET_SIZE_T=ON \
           -DKokkosKernels_ENABLE_TPL_CUSPARSE=OFF \
           -DKokkosKernels_ENABLE_TPL_CUBLAS=OFF \
           ..
@@ -83,4 +97,4 @@ jobs:
 
       - name: test
         working-directory: kokkos-kernels/build
-        run: ctest -j2 --output-on-failure
+        run: ctest -j2 --output-on-failure --timeout 3600
