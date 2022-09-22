@@ -49,8 +49,81 @@
 #include <KokkosBatched_Gemm_Handle.hpp>
 #include <KokkosKernels_ExecSpaceUtils.hpp>
 #include <KokkosKernels_Error.hpp>
+#include <KokkosBlas3_gemm.hpp>
 
 namespace KokkosBatched {
+/********************* BEGIN functor-level routines *********************/
+// clang-format off
+// Note: formatting gets mislead by [[deprecated]] attributes
+
+///
+/// Serial Gemm
+///
+
+template <typename ArgTransA, typename ArgTransB, typename ArgAlgo>
+struct [[deprecated]] SerialGemm {
+  template <typename ScalarType, typename AViewType, typename BViewType,
+            typename CViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha,
+                                           const AViewType &A,
+                                           const BViewType &B,
+                                           const ScalarType beta,
+                                           const CViewType &C) {
+    return KokkosBlas::SerialGemm<ArgTransA, ArgTransB, ArgAlgo>::invoke(
+        alpha, A, B, beta, C);
+  }
+};
+
+///
+/// Team Gemm
+///
+
+template <typename MemberType, typename ArgTransA, typename ArgTransB,
+          typename ArgAlgo>
+struct [[deprecated]] TeamGemm {
+  template <typename ScalarType, typename AViewType, typename BViewType,
+            typename CViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(
+      const MemberType &member, const ScalarType alpha, const AViewType &A,
+      const BViewType &B, const ScalarType beta, const CViewType &C) {
+    return KokkosBlas::TeamGemm<ArgTransA, ArgTransB, ArgAlgo>::invoke(
+        member, alpha, A, B, beta, C);
+  }
+};
+
+///
+/// TeamVector Gemm
+///
+
+template <typename MemberType, typename ArgTransA, typename ArgTransB,
+          typename ArgAlgo>
+struct [[deprecated]] TeamVectorGemm {
+  template <typename ScalarType, typename AViewType, typename BViewType,
+            typename CViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(
+      const MemberType &member, const ScalarType alpha, const AViewType &A,
+      const BViewType &B, const ScalarType beta, const CViewType &C) {
+    return KokkosBlas::TeamVectorGemm<ArgTransA, ArgTransB, ArgAlgo>::invoke(
+        member, alpha, A, B, beta, C);
+  }
+};
+
+///
+/// Selective Interface
+///
+template <typename MemberType, typename ArgTransA, typename ArgTransB,
+          typename ArgMode, typename ArgAlgo>
+struct [[deprecated]] Gemm {
+  template <typename ScalarType, typename AViewType, typename BViewType,
+            typename CViewType>
+  KOKKOS_FORCEINLINE_FUNCTION static int invoke(
+      const MemberType &member, const ScalarType alpha, const AViewType &A,
+      const BViewType &B, const ScalarType beta, const CViewType &C) {
+    return KokkosBlas::Gemm(member, alpha, A, B, beta, C);
+  }
+};
+// clang-format on
+/********************* END functor-level routines *********************/
 
 /********************* BEGIN non-functor-level routines *********************/
 
