@@ -49,7 +49,6 @@
 #include "KokkosSparse_Utils_mkl.hpp"
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
-#include <mkl.h>
 
 namespace KokkosSparse {
 namespace Experimental {
