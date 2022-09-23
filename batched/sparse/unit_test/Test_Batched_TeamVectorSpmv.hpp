@@ -72,10 +72,18 @@ struct Functor_TestBatchedTeamVectorSpmv {
     auto y = Kokkos::subview(_Y, Kokkos::make_pair(first_matrix, last_matrix),
                              Kokkos::ALL);
 
-    KokkosBatched::TeamVectorSpmv<MemberType, typename ParamTagType::trans>::
-        template invoke<ValuesViewType, IntView, xViewType, yViewType,
-                        alphaViewType, betaViewType, dobeta>(
-            member, alpha, d, _r, _c, x, beta, y);
+    if (last_matrix != N)
+      KokkosBatched::TeamVectorSpmv<
+          MemberType, typename ParamTagType::trans,
+          2>::template invoke<ValuesViewType, IntView, xViewType, yViewType,
+                              alphaViewType, betaViewType, dobeta>(
+          member, alpha, d, _r, _c, x, beta, y);
+    else
+      KokkosBatched::TeamVectorSpmv<
+          MemberType, typename ParamTagType::trans,
+          0>::template invoke<ValuesViewType, IntView, xViewType, yViewType,
+                              alphaViewType, betaViewType, dobeta>(
+          member, alpha, d, _r, _c, x, beta, y);
   }
 
   inline void run() {
@@ -85,7 +93,7 @@ struct Functor_TestBatchedTeamVectorSpmv {
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
     Kokkos::TeamPolicy<DeviceType, ParamTagType> policy(
-        _D.extent(0) / _N_team, Kokkos::AUTO(), Kokkos::AUTO());
+        ceil(1. * _D.extent(0) / _N_team), Kokkos::AUTO(), Kokkos::AUTO());
     Kokkos::parallel_for(name.c_str(), policy, *this);
     Kokkos::Profiling::popRegion();
   }
@@ -187,12 +195,12 @@ int test_batched_teamvector_spmv() {
     for (int i = 3; i < 10; ++i) {
       Test::TeamVectorSpmv::impl_test_batched_spmv<
           DeviceType, ParamTagType, ViewType, IntView, ViewType, ViewType,
-          alphaViewType, alphaViewType, 0>(1024, i, 2);
+          alphaViewType, alphaViewType, 0>(1025, i, 2);
     }
     for (int i = 3; i < 10; ++i) {
       Test::TeamVectorSpmv::impl_test_batched_spmv<
           DeviceType, ParamTagType, ViewType, IntView, ViewType, ViewType,
-          alphaViewType, alphaViewType, 1>(1024, i, 2);
+          alphaViewType, alphaViewType, 1>(1025, i, 2);
     }
   }
 #endif
@@ -207,12 +215,12 @@ int test_batched_teamvector_spmv() {
     for (int i = 3; i < 10; ++i) {
       Test::TeamVectorSpmv::impl_test_batched_spmv<
           DeviceType, ParamTagType, ViewType, IntView, ViewType, ViewType,
-          alphaViewType, alphaViewType, 0>(1024, i, 2);
+          alphaViewType, alphaViewType, 0>(1025, i, 2);
     }
     for (int i = 3; i < 10; ++i) {
       Test::TeamVectorSpmv::impl_test_batched_spmv<
           DeviceType, ParamTagType, ViewType, IntView, ViewType, ViewType,
-          alphaViewType, alphaViewType, 1>(1024, i, 2);
+          alphaViewType, alphaViewType, 1>(1025, i, 2);
     }
   }
 #endif

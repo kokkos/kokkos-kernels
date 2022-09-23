@@ -53,7 +53,7 @@ namespace KokkosBatched {
 /// ====================
 struct TeamVectorSpmvInternal {
   template <typename MemberType, typename ScalarType, typename ValueType,
-            typename OrdinalType, typename layout, int dobeta>
+            typename OrdinalType, typename layout, int dobeta, unsigned N_team>
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType& member, const OrdinalType numMatrices,
       const OrdinalType numRows, const ScalarType* KOKKOS_RESTRICT alpha,
@@ -68,7 +68,7 @@ struct TeamVectorSpmvInternal {
       const OrdinalType ys1);
 
   template <typename MemberType, typename ScalarType, typename ValueType,
-            typename OrdinalType, typename layout, int dobeta>
+            typename OrdinalType, typename layout, int dobeta, unsigned N_team>
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType& member, const OrdinalType numMatrices,
       const OrdinalType numRows, const ScalarType alpha,
@@ -83,7 +83,7 @@ struct TeamVectorSpmvInternal {
 };
 
 template <typename MemberType, typename ScalarType, typename ValueType,
-          typename OrdinalType, typename layout, int dobeta>
+          typename OrdinalType, typename layout, int dobeta, unsigned N_team>
 KOKKOS_INLINE_FUNCTION int TeamVectorSpmvInternal::invoke(
     const MemberType& member, const OrdinalType numMatrices,
     const OrdinalType numRows, const ScalarType* KOKKOS_RESTRICT alpha,
@@ -96,43 +96,120 @@ KOKKOS_INLINE_FUNCTION int TeamVectorSpmvInternal::invoke(
     const ScalarType* KOKKOS_RESTRICT beta, const OrdinalType betas0,
     /**/ ValueType* KOKKOS_RESTRICT Y, const OrdinalType ys0,
     const OrdinalType ys1) {
-  Kokkos::parallel_for(
-      Kokkos::TeamVectorRange(member, 0, numMatrices * numRows),
-      [&](const OrdinalType& iTemp) {
-        OrdinalType iRow, iMatrix;
-        getIndices<OrdinalType, layout>(iTemp, numRows, numMatrices, iRow,
-                                        iMatrix);
+#if !defined(__CUDA_ARCH__) && !defined(__HIP_DEVICE_COMPILE__)
+  if (member.team_size() == 1) {
+    if (N_team != 0 && valuess0 == 1) {
+      /*
+        Left layout as valuess0 = 1 and non-zero vector length given at
+        compilation time. Here we use the SIMD data type which is using Intel
+        Intrinsics under the hood on Intel architectures.
+      */
+      typedef Vector<SIMD<ValueType>, N_team> VectorType;
 
+      VectorType alpha_v, beta_v, values_v, y_v, x_v;
+
+      alpha_v.loadAligned(alpha);
+      beta_v.loadAligned(beta);
+
+      for (OrdinalType iRow = 0; iRow < numRows; ++iRow) {
         const OrdinalType rowLength =
             row_ptr[(iRow + 1) * row_ptrs0] - row_ptr[iRow * row_ptrs0];
-        ValueType sum = 0;
+
+        VectorType sum_v(0);
+
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
         for (OrdinalType iEntry = 0; iEntry < rowLength; ++iEntry) {
-          sum += values[iMatrix * valuess0 +
-                        (row_ptr[iRow * row_ptrs0] + iEntry) * valuess1] *
-                 X[iMatrix * xs0 +
-                   colIndices[(row_ptr[iRow * row_ptrs0] + iEntry) *
-                              colIndicess0] *
-                       xs1];
+          values_v.loadAligned(
+              &values[(row_ptr[iRow * row_ptrs0] + iEntry) * valuess1]);
+          x_v.loadAligned(&X[colIndices[(row_ptr[iRow * row_ptrs0] + iEntry) *
+                                        colIndicess0] *
+                             xs1]);
+          sum_v += values_v * x_v;
         }
-
-        sum *= alpha[iMatrix * alphas0];
-
-        if (dobeta == 0) {
-          Y[iMatrix * ys0 + iRow * ys1] = sum;
-        } else {
-          Y[iMatrix * ys0 + iRow * ys1] =
-              beta[iMatrix * betas0] * Y[iMatrix * ys0 + iRow * ys1] + sum;
+        sum_v *= alpha_v;
+        if (dobeta != 0) {
+          y_v.loadAligned(&Y[iRow * ys1]);
+          sum_v += y_v * beta_v;
         }
-      });
+        sum_v.storeAligned(&Y[iRow * ys1]);
+      }
+    } else {
+      Kokkos::Impl::integral_nonzero_constant<unsigned, N_team> n_team(
+          numMatrices);
 
+      for (unsigned iMatrix = 0; iMatrix < unsigned(n_team.value); ++iMatrix) {
+        for (OrdinalType iRow = 0; iRow < numRows; ++iRow) {
+          const OrdinalType rowLength =
+              row_ptr[(iRow + 1) * row_ptrs0] - row_ptr[iRow * row_ptrs0];
+
+          ValueType sum = 0;
+          Kokkos::parallel_reduce(
+              Kokkos::ThreadVectorRange(member, rowLength),
+              [&](const OrdinalType& iEntry, ValueType& lsum) {
+                lsum +=
+                    values[iMatrix * valuess0 +
+                           (row_ptr[iRow * row_ptrs0] + iEntry) * valuess1] *
+                    X[iMatrix * xs0 +
+                      colIndices[(row_ptr[iRow * row_ptrs0] + iEntry) *
+                                 colIndicess0] *
+                          xs1];
+              },
+              sum);
+
+          sum *= alpha[iMatrix * alphas0];
+
+          if (dobeta == 0) {
+            Y[iMatrix * ys0 + iRow * ys1] = sum;
+          } else {
+            Y[iMatrix * ys0 + iRow * ys1] =
+                beta[iMatrix * betas0] * Y[iMatrix * ys0 + iRow * ys1] + sum;
+          }
+        }
+      }
+    }
+  } else {
+#endif
+    Kokkos::parallel_for(
+        Kokkos::TeamVectorRange(member, 0, numMatrices * numRows),
+        [&](const OrdinalType& iTemp) {
+          OrdinalType iRow, iMatrix;
+          getIndices<OrdinalType, layout>(iTemp, numRows, numMatrices, iRow,
+                                          iMatrix);
+
+          const OrdinalType rowLength =
+              row_ptr[(iRow + 1) * row_ptrs0] - row_ptr[iRow * row_ptrs0];
+          ValueType sum = 0;
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
+          for (OrdinalType iEntry = 0; iEntry < rowLength; ++iEntry) {
+            sum += values[iMatrix * valuess0 +
+                          (row_ptr[iRow * row_ptrs0] + iEntry) * valuess1] *
+                   X[iMatrix * xs0 +
+                     colIndices[(row_ptr[iRow * row_ptrs0] + iEntry) *
+                                colIndicess0] *
+                         xs1];
+          }
+
+          sum *= alpha[iMatrix * alphas0];
+
+          if (dobeta == 0) {
+            Y[iMatrix * ys0 + iRow * ys1] = sum;
+          } else {
+            Y[iMatrix * ys0 + iRow * ys1] =
+                beta[iMatrix * betas0] * Y[iMatrix * ys0 + iRow * ys1] + sum;
+          }
+        });
+#if !defined(__CUDA_ARCH__) && !defined(__HIP_DEVICE_COMPILE__)
+  }
+#endif
   return 0;
 }
 
 template <typename MemberType, typename ScalarType, typename ValueType,
-          typename OrdinalType, typename layout, int dobeta>
+          typename OrdinalType, typename layout, int dobeta, unsigned N_team>
 KOKKOS_INLINE_FUNCTION int TeamVectorSpmvInternal::invoke(
     const MemberType& member, const OrdinalType numMatrices,
     const OrdinalType numRows, const ScalarType alpha,
@@ -143,43 +220,117 @@ KOKKOS_INLINE_FUNCTION int TeamVectorSpmvInternal::invoke(
     const OrdinalType xs0, const OrdinalType xs1, const ScalarType beta,
     /**/ ValueType* KOKKOS_RESTRICT Y, const OrdinalType ys0,
     const OrdinalType ys1) {
-  Kokkos::parallel_for(
-      Kokkos::TeamVectorRange(member, 0, numMatrices * numRows),
-      [&](const OrdinalType& iTemp) {
-        OrdinalType iRow, iMatrix;
-        getIndices<OrdinalType, layout>(iTemp, numRows, numMatrices, iRow,
-                                        iMatrix);
+#if !defined(__CUDA_ARCH__) && !defined(__HIP_DEVICE_COMPILE__)
+  if (member.team_size() == 1) {
+    if (N_team != 0 && valuess0 == 1) {
+      /*
+        Left layout as valuess0 = 1 and non-zero vector length given at
+        compilation time Here we use the SIMD data type which is using Intel
+        Intrinsics under the hood on Intel architectures.
+      */
+      typedef Vector<SIMD<ValueType>, N_team> VectorType;
 
+      VectorType alpha_v(alpha), beta_v(beta), values_v, y_v, x_v;
+
+      for (OrdinalType iRow = 0; iRow < numRows; ++iRow) {
         const OrdinalType rowLength =
             row_ptr[(iRow + 1) * row_ptrs0] - row_ptr[iRow * row_ptrs0];
-        ValueType sum = 0;
+
+        VectorType sum_v(0);
+
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
         for (OrdinalType iEntry = 0; iEntry < rowLength; ++iEntry) {
-          sum += values[iMatrix * valuess0 +
-                        (row_ptr[iRow * row_ptrs0] + iEntry) * valuess1] *
-                 X[iMatrix * xs0 +
-                   colIndices[(row_ptr[iRow * row_ptrs0] + iEntry) *
-                              colIndicess0] *
-                       xs1];
+          values_v.loadAligned(
+              &values[(row_ptr[iRow * row_ptrs0] + iEntry) * valuess1]);
+          x_v.loadAligned(&X[colIndices[(row_ptr[iRow * row_ptrs0] + iEntry) *
+                                        colIndicess0] *
+                             xs1]);
+          sum_v += values_v * x_v;
         }
-
-        sum *= alpha;
-
-        if (dobeta == 0) {
-          Y[iMatrix * ys0 + iRow * ys1] = sum;
-        } else {
-          Y[iMatrix * ys0 + iRow * ys1] =
-              beta * Y[iMatrix * ys0 + iRow * ys1] + sum;
+        sum_v *= alpha_v;
+        if (dobeta != 0) {
+          y_v.loadAligned(&Y[iRow * ys1]);
+          sum_v += y_v * beta_v;
         }
-      });
+        sum_v.storeAligned(&Y[iRow * ys1]);
+      }
+    } else {
+      Kokkos::Impl::integral_nonzero_constant<unsigned, N_team> n_team(
+          numMatrices);
 
+      for (unsigned iMatrix = 0; iMatrix < unsigned(n_team.value); ++iMatrix) {
+        for (OrdinalType iRow = 0; iRow < numRows; ++iRow) {
+          const OrdinalType rowLength =
+              row_ptr[(iRow + 1) * row_ptrs0] - row_ptr[iRow * row_ptrs0];
+
+          ValueType sum = 0;
+          Kokkos::parallel_reduce(
+              Kokkos::ThreadVectorRange(member, rowLength),
+              [&](const OrdinalType& iEntry, ValueType& lsum) {
+                lsum +=
+                    values[iMatrix * valuess0 +
+                           (row_ptr[iRow * row_ptrs0] + iEntry) * valuess1] *
+                    X[iMatrix * xs0 +
+                      colIndices[(row_ptr[iRow * row_ptrs0] + iEntry) *
+                                 colIndicess0] *
+                          xs1];
+              },
+              sum);
+
+          sum *= alpha;
+
+          if (dobeta == 0) {
+            Y[iMatrix * ys0 + iRow * ys1] = sum;
+          } else {
+            Y[iMatrix * ys0 + iRow * ys1] =
+                beta * Y[iMatrix * ys0 + iRow * ys1] + sum;
+          }
+        }
+      }
+    }
+  } else {
+#endif
+    Kokkos::parallel_for(
+        Kokkos::TeamVectorRange(member, 0, numMatrices * numRows),
+        [&](const OrdinalType& iTemp) {
+          OrdinalType iRow, iMatrix;
+          getIndices<OrdinalType, layout>(iTemp, numRows, numMatrices, iRow,
+                                          iMatrix);
+
+          const OrdinalType rowLength =
+              row_ptr[(iRow + 1) * row_ptrs0] - row_ptr[iRow * row_ptrs0];
+          ValueType sum = 0;
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
+          for (OrdinalType iEntry = 0; iEntry < rowLength; ++iEntry) {
+            sum += values[iMatrix * valuess0 +
+                          (row_ptr[iRow * row_ptrs0] + iEntry) * valuess1] *
+                   X[iMatrix * xs0 +
+                     colIndices[(row_ptr[iRow * row_ptrs0] + iEntry) *
+                                colIndicess0] *
+                         xs1];
+          }
+
+          sum *= alpha;
+
+          if (dobeta == 0) {
+            Y[iMatrix * ys0 + iRow * ys1] = sum;
+          } else {
+            Y[iMatrix * ys0 + iRow * ys1] =
+                beta * Y[iMatrix * ys0 + iRow * ys1] + sum;
+          }
+        });
+#if !defined(__CUDA_ARCH__) && !defined(__HIP_DEVICE_COMPILE__)
+  }
+#endif
   return 0;
 }
 
-template <typename MemberType>
-struct TeamVectorSpmv<MemberType, Trans::NoTranspose> {
+template <typename MemberType, unsigned N_team>
+struct TeamVectorSpmv<MemberType, Trans::NoTranspose, N_team> {
   template <typename ValuesViewType, typename IntView, typename xViewType,
             typename yViewType, typename alphaViewType, typename betaViewType,
             int dobeta>
@@ -272,7 +423,7 @@ struct TeamVectorSpmv<MemberType, Trans::NoTranspose> {
         MemberType, typename alphaViewType::non_const_value_type,
         typename ValuesViewType::non_const_value_type,
         typename IntView::non_const_value_type,
-        typename ValuesViewType::array_layout, dobeta>(
+        typename ValuesViewType::array_layout, dobeta, N_team>(
         member, X.extent(0), X.extent(1), alpha.data(), alpha.stride_0(),
         values.data(), values.stride_0(), values.stride_1(), row_ptr.data(),
         row_ptr.stride_0(), colIndices.data(), colIndices.stride_0(), X.data(),
@@ -351,7 +502,7 @@ struct TeamVectorSpmv<MemberType, Trans::NoTranspose> {
             typename ValuesViewType::non_const_value_type>::mag_type,
         typename ValuesViewType::non_const_value_type,
         typename IntView::non_const_value_type,
-        typename ValuesViewType::array_layout, dobeta>(
+        typename ValuesViewType::array_layout, dobeta, N_team>(
         member, X.extent(0), X.extent(1), alpha, values.data(),
         values.stride_0(), values.stride_1(), row_ptr.data(),
         row_ptr.stride_0(), colIndices.data(), colIndices.stride_0(), X.data(),

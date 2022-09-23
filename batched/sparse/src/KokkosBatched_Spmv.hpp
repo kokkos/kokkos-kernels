@@ -215,7 +215,8 @@ struct TeamSpmv {
 /// (or one with TeamVectorRange) are used inside.
 ///
 
-template <typename MemberType, typename ArgTrans = Trans::NoTranspose>
+template <typename MemberType, typename ArgTrans = Trans::NoTranspose,
+          unsigned N_team = 0>
 struct TeamVectorSpmv {
   template <typename ValuesViewType, typename IntView, typename xViewType,
             typename yViewType, typename alphaViewType, typename betaViewType,
