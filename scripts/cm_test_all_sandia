@@ -84,6 +84,8 @@ print_help() {
   echo ""
   echo "--enable-perftests:  build perftests for Kokkos Kernels (default)"
   echo ""
+  echo "--make-par-level=N:  Set parallelism level for builds (default: N=12)"
+  echo ""
 
   echo "ARGS: list of expressions matching compilers to test"
   echo "  supported compilers sems"
@@ -280,6 +282,8 @@ CTESTTIMEOUT=2500
 
 KOKKOS_DEPRECATED_CODE=""
 
+MAKE_PAR_LEVEL=12
+
 #
 # Handle arguments.
 #
@@ -361,6 +365,9 @@ do
       else
          CXX_STANDARD="${FULL_CXX_STANDARD}"
       fi
+      ;;
+    --make-par-level*)
+      MAKE_PAR_LEVEL="${key#*=}"
       ;;
     --ldflags-extra*)
       LD_FLAGS_EXTRA="${key#*=}"
@@ -846,10 +853,8 @@ elif [ "$MACHINE" = "caraway" ]; then
   HIPCLANG_WARNING_FLAGS=""
 
   # Format: (compiler module-list build-list exe-name warning-flag)
-  COMPILERS=("rocm/4.3.0 $BASE_MODULE_LIST $HIPCLANG_BUILD_LIST hipcc $HIPCLANG_WARNING_FLAGS"
-             "rocm/4.5.0 $BASE_MODULE_LIST $HIPCLANG_BUILD_LIST hipcc $HIPCLANG_WARNING_FLAGS"
+  COMPILERS=("rocm/5.2.0 $BASE_MODULE_LIST $HIPCLANG_BUILD_LIST hipcc $HIPCLANG_WARNING_FLAGS"
              "cuda/11.4 $CUDA11_MODULE_LIST $CUDA_BUILD_LIST $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
-             "gcc/7.2.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
              "gcc/8.2.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
              "gcc/9.2.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
              "gcc/10.2.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
@@ -857,7 +862,7 @@ elif [ "$MACHINE" = "caraway" ]; then
   )
 
   if [ -z "$ARCH_FLAG" ]; then
-    ARCH_FLAG="--arch=VEGA906"
+    ARCH_FLAG="--arch=VEGA908"
   fi
 elif [ "$MACHINE" = "blake" ]; then
   MODULE_ENVIRONMENT="source /etc/profile.d/modules.sh"
@@ -1427,12 +1432,8 @@ single_build_and_test() {
 
     run_cmd ${KOKKOSKERNELS_PATH}/cm_generate_makefile.bash --with-devices=$LOCAL_KOKKOS_DEVICES $ARCH_FLAG --compiler=$(which $compiler_exe) --cxxflags=\"$cxxflags\" --cxxstandard=\"$cxx_standard\" --ldflags=\"$ldflags\" $CUDA_ENABLE_CMD $HIP_ENABLE_CMD --kokkos-path=${KOKKOS_PATH} --kokkoskernels-path=${KOKKOSKERNELS_PATH} --with-scalars=$kk_scalars --with-ordinals=${KOKKOSKERNELS_ORDINALS} --with-offsets=${KOKKOSKERNELS_OFFSETS} --with-layouts=${KOKKOSKERNELS_LAYOUTS} ${KOKKOSKERNELS_ENABLE_TPL_CMD} ${KOKKOSKERNELS_TPL_PATH_CMD} ${KOKKOSKERNELS_TPL_LIBS_CMD} ${KOKKOSKERNELS_EXTRA_LINKER_FLAGS_CMD} ${KOKKOS_BOUNDS_CHECK} ${KOKKOSKERNELS_SPACES} --no-examples ${KOKKOS_DEPRECATED_CODE} $extra_args &>> ${desc}.configure.log || { report_and_log_test_result 1 ${desc} configure && return 0; }
 
-    local make_par_lvl=12
-    if [[ "$MACHINE" = white* ]]; then
-      make_par_lvl=48
-    fi
     local -i build_start_time=$(date +%s)
-    run_cmd make -j $make_par_lvl all >& ${desc}.build.log || { report_and_log_test_result 1 ${desc} build && return 0; }
+    run_cmd make -j $MAKE_PAR_LEVEL all >& ${desc}.build.log || { report_and_log_test_result 1 ${desc} build && return 0; }
     local -i build_end_time=$(date +%s)
     comment="build_time=$(($build_end_time-$build_start_time))"
 
