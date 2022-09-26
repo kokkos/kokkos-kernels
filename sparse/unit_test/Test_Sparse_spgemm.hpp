@@ -252,6 +252,15 @@ template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
 void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth,
                  lno_t row_size_variance, bool oldInterface = false) {
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
+  {
+    std::cerr
+        << "TEST SKIPPED: See "
+           "https://github.com/kokkos/kokkos-kernels/issues/1542 for details."
+        << std::endl;
+    return;
+  }
+#endif  // KOKKOSKERNELS_ENABLE_TPL_ARMPL
   using namespace Test;
   // device::execution_space::initialize();
   // device::execution_space::print_configuration(std::cout);
@@ -369,6 +378,15 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth,
 template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
 void test_issue402() {
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
+  {
+    std::cerr
+        << "TEST SKIPPED: See "
+           "https://github.com/kokkos/kokkos-kernels/issues/1542 for details."
+        << std::endl;
+    return;
+  }
+#endif  // KOKKOSKERNELS_ENABLE_TPL_ARMPL
   using namespace Test;
   typedef CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
 

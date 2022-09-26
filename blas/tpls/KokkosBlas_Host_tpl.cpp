@@ -798,6 +798,7 @@ void HostBlas<std::complex<double> >::trsv(const char uplo, const char transa,
   F77_FUNC_ZTRSV(&uplo, &transa, &diag, &m, (const std::complex<double>*)a,
                  &lda, (std::complex<double>*)b, &ldb);
 }
+
 template <>
 void HostBlas<std::complex<double> >::gemm(
     const char transa, const char transb, int m, int n, int k,
