@@ -136,10 +136,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorSpmvInternal::invoke(
         sum_v.storeAligned(&Y[iRow * ys1]);
       }
     } else {
-      Kokkos::Impl::integral_nonzero_constant<unsigned, N_team> n_team(
-          numMatrices);
-
-      for (unsigned iMatrix = 0; iMatrix < unsigned(n_team.value); ++iMatrix) {
+      for (unsigned iMatrix = 0; iMatrix < unsigned(numMatrices); ++iMatrix) {
         for (OrdinalType iRow = 0; iRow < numRows; ++iRow) {
           const OrdinalType rowLength =
               row_ptr[(iRow + 1) * row_ptrs0] - row_ptr[iRow * row_ptrs0];
@@ -222,7 +219,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorSpmvInternal::invoke(
     const OrdinalType ys1) {
 #if !defined(__CUDA_ARCH__) && !defined(__HIP_DEVICE_COMPILE__)
   if (member.team_size() == 1) {
-    if (N_team != 0 && valuess0 == 1) {
+    if (N_team > 1 && valuess0 == 1) {
       /*
         Left layout as valuess0 = 1 and non-zero vector length given at
         compilation time Here we use the SIMD data type which is using Intel
@@ -257,10 +254,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorSpmvInternal::invoke(
         sum_v.storeAligned(&Y[iRow * ys1]);
       }
     } else {
-      Kokkos::Impl::integral_nonzero_constant<unsigned, N_team> n_team(
-          numMatrices);
-
-      for (unsigned iMatrix = 0; iMatrix < unsigned(n_team.value); ++iMatrix) {
+      for (unsigned iMatrix = 0; iMatrix < unsigned(numMatrices); ++iMatrix) {
         for (OrdinalType iRow = 0; iRow < numRows; ++iRow) {
           const OrdinalType rowLength =
               row_ptr[(iRow + 1) * row_ptrs0] - row_ptr[iRow * row_ptrs0];
