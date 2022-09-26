@@ -53,7 +53,7 @@ struct Functor_TestBatchedTeamVectorQR_WithColumnPivoting {
     member.team_barrier();
 
     /// bb = AA*xx
-    KokkosBlas::TeamVectorGemv<MemberType, Trans::NoTranspose,
+    KokkosBlas::TeamVectorGemv<Trans::NoTranspose,
                                Algo::Gemv::Unblocked>::invoke(member, one, aa,
                                                               xx, zero, bb);
     member.team_barrier();

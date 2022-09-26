@@ -947,7 +947,7 @@ struct BSR_GEMV_Transpose_Functor {
         const auto A_cur = myRow.block(jBlock);
         //
         KokkosBlas::TeamVectorGemv<
-            team_member, KokkosBlas::Trans::ConjTranspose,
+            KokkosBlas::Trans::ConjTranspose,
             KokkosBlas::Algo::Gemv::Default>::invoke(dev, alpha, A_cur, X_cur,
                                                      val_zero, shared_view);
         //

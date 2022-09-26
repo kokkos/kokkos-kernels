@@ -53,10 +53,10 @@ namespace KokkosBlas {
 /// NT
 ///
 
-template <typename MemberType>
-struct TeamGemv<MemberType, Trans::NoTranspose, Algo::Gemv::Unblocked> {
-  template <typename ScalarType, typename AViewType, typename xViewType,
-            typename yViewType>
+template <>
+struct TeamGemv<Trans::NoTranspose, Algo::Gemv::Unblocked> {
+  template <typename MemberType, typename ScalarType, typename AViewType,
+            typename xViewType, typename yViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType& member, const ScalarType alpha, const AViewType& A,
       const xViewType& x, const ScalarType beta, const yViewType& y) {
@@ -68,10 +68,10 @@ struct TeamGemv<MemberType, Trans::NoTranspose, Algo::Gemv::Unblocked> {
   }
 };
 
-template <typename MemberType>
-struct TeamGemv<MemberType, Trans::NoTranspose, Algo::Gemv::Blocked> {
-  template <typename ScalarType, typename AViewType, typename xViewType,
-            typename yViewType>
+template <>
+struct TeamGemv<Trans::NoTranspose, Algo::Gemv::Blocked> {
+  template <typename MemberType, typename ScalarType, typename AViewType,
+            typename xViewType, typename yViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType& member, const ScalarType alpha, const AViewType& A,
       const xViewType& x, const ScalarType beta, const yViewType& y) {
@@ -87,10 +87,10 @@ struct TeamGemv<MemberType, Trans::NoTranspose, Algo::Gemv::Blocked> {
 /// T
 ///
 
-template <typename MemberType>
-struct TeamGemv<MemberType, Trans::Transpose, Algo::Gemv::Unblocked> {
-  template <typename ScalarType, typename AViewType, typename xViewType,
-            typename yViewType>
+template <>
+struct TeamGemv<Trans::Transpose, Algo::Gemv::Unblocked> {
+  template <typename MemberType, typename ScalarType, typename AViewType,
+            typename xViewType, typename yViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType& member, const ScalarType alpha, const AViewType& A,
       const xViewType& x, const ScalarType beta, const yViewType& y) {
@@ -102,10 +102,10 @@ struct TeamGemv<MemberType, Trans::Transpose, Algo::Gemv::Unblocked> {
   }
 };
 
-template <typename MemberType>
-struct TeamGemv<MemberType, Trans::Transpose, Algo::Gemv::Blocked> {
-  template <typename ScalarType, typename AViewType, typename xViewType,
-            typename yViewType>
+template <>
+struct TeamGemv<Trans::Transpose, Algo::Gemv::Blocked> {
+  template <typename MemberType, typename ScalarType, typename AViewType,
+            typename xViewType, typename yViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType& member, const ScalarType alpha, const AViewType& A,
       const xViewType& x, const ScalarType beta, const yViewType& y) {
@@ -121,10 +121,10 @@ struct TeamGemv<MemberType, Trans::Transpose, Algo::Gemv::Blocked> {
 /// CT
 ///
 
-template <typename MemberType>
-struct TeamGemv<MemberType, Trans::ConjTranspose, Algo::Gemv::Unblocked> {
-  template <typename ScalarType, typename AViewType, typename xViewType,
-            typename yViewType>
+template <>
+struct TeamGemv<Trans::ConjTranspose, Algo::Gemv::Unblocked> {
+  template <typename MemberType, typename ScalarType, typename AViewType,
+            typename xViewType, typename yViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType& member, const ScalarType alpha, const AViewType& A,
       const xViewType& x, const ScalarType beta, const yViewType& y) {
@@ -137,10 +137,10 @@ struct TeamGemv<MemberType, Trans::ConjTranspose, Algo::Gemv::Unblocked> {
   }
 };
 
-template <typename MemberType>
-struct TeamGemv<MemberType, Trans::ConjTranspose, Algo::Gemv::Blocked> {
-  template <typename ScalarType, typename AViewType, typename xViewType,
-            typename yViewType>
+template <>
+struct TeamGemv<Trans::ConjTranspose, Algo::Gemv::Blocked> {
+  template <typename MemberType, typename ScalarType, typename AViewType,
+            typename xViewType, typename yViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType& member, const ScalarType alpha, const AViewType& A,
       const xViewType& x, const ScalarType beta, const yViewType& y) {
@@ -157,10 +157,10 @@ struct TeamGemv<MemberType, Trans::ConjTranspose, Algo::Gemv::Blocked> {
 /// NT
 ///
 
-template <typename MemberType>
-struct TeamVectorGemv<MemberType, Trans::NoTranspose, Algo::Gemv::Unblocked> {
-  template <typename ScalarType, typename AViewType, typename xViewType,
-            typename yViewType>
+template <>
+struct TeamVectorGemv<Trans::NoTranspose, Algo::Gemv::Unblocked> {
+  template <typename MemberType, typename ScalarType, typename AViewType,
+            typename xViewType, typename yViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType& member, const ScalarType alpha, const AViewType& A,
       const xViewType& x, const ScalarType beta, const yViewType& y) {
@@ -176,10 +176,10 @@ struct TeamVectorGemv<MemberType, Trans::NoTranspose, Algo::Gemv::Unblocked> {
 /// T
 ///
 
-template <typename MemberType>
-struct TeamVectorGemv<MemberType, Trans::Transpose, Algo::Gemv::Unblocked> {
-  template <typename ScalarType, typename AViewType, typename xViewType,
-            typename yViewType>
+template <>
+struct TeamVectorGemv<Trans::Transpose, Algo::Gemv::Unblocked> {
+  template <typename MemberType, typename ScalarType, typename AViewType,
+            typename xViewType, typename yViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType& member, const ScalarType alpha, const AViewType& A,
       const xViewType& x, const ScalarType beta, const yViewType& y) {
@@ -195,10 +195,10 @@ struct TeamVectorGemv<MemberType, Trans::Transpose, Algo::Gemv::Unblocked> {
 /// CT
 ///
 
-template <typename MemberType>
-struct TeamVectorGemv<MemberType, Trans::ConjTranspose, Algo::Gemv::Unblocked> {
-  template <typename ScalarType, typename AViewType, typename xViewType,
-            typename yViewType>
+template <>
+struct TeamVectorGemv<Trans::ConjTranspose, Algo::Gemv::Unblocked> {
+  template <typename MemberType, typename ScalarType, typename AViewType,
+            typename xViewType, typename yViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType& member, const ScalarType alpha, const AViewType& A,
       const xViewType& x, const ScalarType beta, const yViewType& y) {
