@@ -93,7 +93,8 @@ struct Functor_TestBatchedTeamVectorSpmv {
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
     Kokkos::TeamPolicy<DeviceType, ParamTagType> policy(
-        ceil(1. * _D.extent(0) / _N_team), Kokkos::AUTO(), Kokkos::AUTO());
+        ceil(static_cast<double>(_D.extent(0)) / _N_team), Kokkos::AUTO(),
+        Kokkos::AUTO());
     Kokkos::parallel_for(name.c_str(), policy, *this);
     Kokkos::Profiling::popRegion();
   }

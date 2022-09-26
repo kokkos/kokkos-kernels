@@ -124,7 +124,7 @@ class KrylovHandle {
     iteration_numbers = IntViewType("", batched_size);
     Kokkos::deep_copy(iteration_numbers, -1);
 
-    n_teams     = ceil(1. * batched_size / N_team);
+    n_teams     = ceil(static_cast<double>(batched_size) / N_team);
     first_index = IntViewType("", n_teams);
     last_index  = IntViewType("", n_teams);
 
