@@ -216,7 +216,7 @@ struct TeamSpmv {
 ///
 
 template <typename MemberType, typename ArgTrans = Trans::NoTranspose,
-          unsigned N_team = 0>
+          unsigned N_team = 1>
 struct TeamVectorSpmv {
   template <typename ValuesViewType, typename IntView, typename xViewType,
             typename yViewType, typename alphaViewType, typename betaViewType,

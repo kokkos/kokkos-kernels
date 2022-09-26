@@ -77,10 +77,6 @@ KOKKOS_INLINE_FUNCTION int TeamGMRES<MemberType>::invoke(
       typename VectorViewType::non_const_value_type>::mag_type MagnitudeType;
   typedef Kokkos::Details::ArithTraits<MagnitudeType> ATM;
 
-  using ScratchPadVectorViewType = Kokkos::View<
-      typename VectorViewType::non_const_value_type**,
-      typename VectorViewType::array_layout,
-      typename VectorViewType::execution_space::scratch_memory_space>;
   using TeamCopy1D = TeamCopy<MemberType, Trans::NoTranspose, 1>;
 
   const OrdinalType numMatrices = _X.extent(0);

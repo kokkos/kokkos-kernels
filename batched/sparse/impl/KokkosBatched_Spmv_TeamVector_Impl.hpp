@@ -98,7 +98,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorSpmvInternal::invoke(
     const OrdinalType ys1) {
 #if !defined(__CUDA_ARCH__) && !defined(__HIP_DEVICE_COMPILE__)
   if (member.team_size() == 1) {
-    if (N_team != 0 && valuess0 == 1) {
+    if (N_team > 1 && valuess0 == 1) {
       /*
         Left layout as valuess0 = 1 and non-zero vector length given at
         compilation time. Here we use the SIMD data type which is using Intel

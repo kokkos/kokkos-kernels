@@ -73,13 +73,6 @@ KOKKOS_INLINE_FUNCTION int TeamCG<MemberType>::invoke(
   size_t maximum_iteration      = handle.get_max_iteration();
   const MagnitudeType tolerance = handle.get_tolerance();
 
-  using ScratchPadNormViewType = Kokkos::View<
-      MagnitudeType*,
-      typename VectorViewType::execution_space::scratch_memory_space>;
-  using ScratchPadVectorViewType = Kokkos::View<
-      typename VectorViewType::non_const_value_type**,
-      typename VectorViewType::array_layout,
-      typename VectorViewType::execution_space::scratch_memory_space>;
   using TeamCopy1D = TeamCopy<MemberType, Trans::NoTranspose, 1>;
 
   const OrdinalType numMatrices = _X.extent(0);

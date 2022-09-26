@@ -79,11 +79,10 @@ struct Functor_TestBatchedTeamVectorSpmv {
                               alphaViewType, betaViewType, dobeta>(
           member, alpha, d, _r, _c, x, beta, y);
     else
-      KokkosBatched::TeamVectorSpmv<
-          MemberType, typename ParamTagType::trans,
-          0>::template invoke<ValuesViewType, IntView, xViewType, yViewType,
-                              alphaViewType, betaViewType, dobeta>(
-          member, alpha, d, _r, _c, x, beta, y);
+      KokkosBatched::TeamVectorSpmv<MemberType, typename ParamTagType::trans>::
+          template invoke<ValuesViewType, IntView, xViewType, yViewType,
+                          alphaViewType, betaViewType, dobeta>(
+              member, alpha, d, _r, _c, x, beta, y);
   }
 
   inline void run() {
