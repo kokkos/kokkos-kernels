@@ -57,6 +57,7 @@
 #include "Test_Blas3_serial_gemm.hpp"
 #include "Test_Blas3_team_gemm.hpp"
 #include "Test_Blas3_teamvector_gemm.hpp"
+#include "Test_Blas3_threadvector_gemm.hpp"
 #include "Test_Blas3_trmm.hpp"
 #include "Test_Blas3_trsm.hpp"
 

@@ -300,6 +300,19 @@ struct TeamVectorGemm {
 };
 
 ///
+/// ThreadVector Impl
+/// =========
+
+template <typename ArgTransA, typename ArgTransB, typename ArgAlgo>
+struct ThreadVectorGemm {
+  template <typename MemberType, typename ScalarType, typename AViewType,
+            typename BViewType, typename CViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(
+      const MemberType& member, const ScalarType alpha, const AViewType& A,
+      const BViewType& B, const ScalarType beta, const CViewType& C);
+};
+
+///
 /// Selective Interface
 ///
 template <typename ArgTransA, typename ArgTransB, typename ArgMode,

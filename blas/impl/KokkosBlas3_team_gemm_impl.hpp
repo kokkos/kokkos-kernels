@@ -124,6 +124,40 @@ TeamVectorGemm<ArgTransA, ArgTransB, ArgAlgo>::invoke(
       as1, B.data(), bs0, bs1, beta, C.data(), C.stride_0(), C.stride_1());
 }
 
+///
+/// Implemented:
+/// NT/NT, T/NT, NT/T, T/T
+///
+/// Not yet implemented (ConjTranspose)
+/// CT/NT, NT/CT, CT/CT
+///
+
+template <typename ArgTransA, typename ArgTransB, typename ArgAlgo>
+template <typename MemberType, typename ScalarType, typename AViewType,
+          typename BViewType, typename CViewType>
+KOKKOS_INLINE_FUNCTION int
+ThreadVectorGemm<ArgTransA, ArgTransB, ArgAlgo>::invoke(
+    const MemberType &member, const ScalarType alpha, const AViewType &A,
+    const BViewType &B, const ScalarType beta, const CViewType &C) {
+  // C = beta C + alpha A B
+  // C (m x n), A(m x k), B(k x n)
+
+  static_assert(std::is_same<ArgAlgo, Algo::Gemm::Unblocked>::value,
+                "Algorithm not supported");
+
+  using TransA   = Impl::MatrixModeInfo<ArgTransA>;
+  using TransB   = Impl::MatrixModeInfo<ArgTransB>;
+  const auto ae1 = TransA::extent(A, 1);
+  const auto as0 = TransA::stride_0(A);
+  const auto as1 = TransA::stride_1(A);
+  const auto bs0 = TransB::stride_0(B);
+  const auto bs1 = TransB::stride_1(B);
+
+  return Impl::ThreadVectorGemmInternal<ArgAlgo>::invoke(
+      member, C.extent(0), C.extent(1), ae1, alpha, A.data(), as0, as1,
+      B.data(), bs0, bs1, beta, C.data(), C.stride_0(), C.stride_1());
+}
+
 }  // namespace KokkosBlas
 
 #endif
