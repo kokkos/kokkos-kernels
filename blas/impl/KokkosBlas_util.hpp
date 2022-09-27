@@ -61,6 +61,9 @@ struct Mode {
   struct TeamVector {
     static const char *name() { return "TeamVector"; }
   };
+  struct ThreadVector {
+    static const char *name() { return "ThreadVector"; }
+  };
 };
 
 struct Trans {

@@ -94,6 +94,22 @@ struct TeamVectorSet {
   }
 };
 
+///
+/// ThreadVector Set
+///
+
+template <typename MemberType>
+struct ThreadVectorSet {
+  template <typename ScalarType, typename AViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
+                                           const ScalarType alpha,
+                                           const AViewType &A) {
+    return Impl::ThreadVectorSetInternal::invoke(member, A.extent(0),
+                                                 A.extent(1), alpha, A.data(),
+                                                 A.stride_0(), A.stride_1());
+  }
+};
+
 }  // namespace KokkosBlas
 
 #endif

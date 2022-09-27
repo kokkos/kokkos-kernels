@@ -31,6 +31,7 @@
 
 // Team Blas 1
 #include "Test_Blas1_team_setscal.hpp"
+#include "Test_Blas1_threadvector_setscal.hpp"
 #include "Test_Blas1_team_abs.hpp"
 #include "Test_Blas1_team_axpby.hpp"
 #include "Test_Blas1_team_axpy.hpp"
