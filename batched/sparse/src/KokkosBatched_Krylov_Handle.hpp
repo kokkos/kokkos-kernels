@@ -103,6 +103,7 @@ class KrylovHandle {
   int n_teams;
   int ortho_strategy;
   int scratch_pad_level;
+  int memory_strategy;
   bool compute_last_residual;
   bool monitor_residual;
   bool host_synchronised;
@@ -123,7 +124,7 @@ class KrylovHandle {
     iteration_numbers = IntViewType("", batched_size);
     Kokkos::deep_copy(iteration_numbers, -1);
 
-    n_teams     = ceil(1. * batched_size / N_team);
+    n_teams     = ceil(static_cast<double>(batched_size) / N_team);
     first_index = IntViewType("", n_teams);
     last_index  = IntViewType("", n_teams);
 
@@ -146,6 +147,7 @@ class KrylovHandle {
     scratch_pad_level     = 0;
     compute_last_residual = true;
     host_synchronised     = false;
+    memory_strategy       = 0;
   }
 
   /// \brief get_number_of_systems_per_team
@@ -410,6 +412,14 @@ class KrylovHandle {
     else
       return false;
   }
+
+  KOKKOS_INLINE_FUNCTION
+  void set_memory_strategy(int _memory_strategy) {
+    memory_strategy = _memory_strategy;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  int get_memory_strategy() const { return memory_strategy; }
 
  private:
   /// \brief set_norm

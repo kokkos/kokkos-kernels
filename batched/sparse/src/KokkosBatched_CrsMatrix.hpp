@@ -111,14 +111,25 @@ class CrsMatrix {
       MagnitudeType alpha = Kokkos::Details::ArithTraits<MagnitudeType>::one(),
       MagnitudeType beta =
           Kokkos::Details::ArithTraits<MagnitudeType>::zero()) const {
-    if (beta == Kokkos::Details::ArithTraits<MagnitudeType>::zero())
-      KokkosBatched::TeamVectorSpmv<MemberType, ArgTrans>::template invoke<
-          ValuesViewType, IntViewType, XViewType, YViewType, 0>(
-          member, alpha, values, row_ptr, colIndices, X, beta, Y);
-    else
-      KokkosBatched::TeamVectorSpmv<MemberType, ArgTrans>::template invoke<
-          ValuesViewType, IntViewType, XViewType, YViewType, 1>(
-          member, alpha, values, row_ptr, colIndices, X, beta, Y);
+    if (beta == Kokkos::Details::ArithTraits<MagnitudeType>::zero()) {
+      if (member.team_size() == 1 && n_operators == 8)
+        KokkosBatched::TeamVectorSpmv<MemberType, ArgTrans, 8>::template invoke<
+            ValuesViewType, IntViewType, XViewType, YViewType, 0>(
+            member, alpha, values, row_ptr, colIndices, X, beta, Y);
+      else
+        KokkosBatched::TeamVectorSpmv<MemberType, ArgTrans>::template invoke<
+            ValuesViewType, IntViewType, XViewType, YViewType, 0>(
+            member, alpha, values, row_ptr, colIndices, X, beta, Y);
+    } else {
+      if (member.team_size() == 1 && n_operators == 8)
+        KokkosBatched::TeamVectorSpmv<MemberType, ArgTrans, 8>::template invoke<
+            ValuesViewType, IntViewType, XViewType, YViewType, 1>(
+            member, alpha, values, row_ptr, colIndices, X, beta, Y);
+      else
+        KokkosBatched::TeamVectorSpmv<MemberType, ArgTrans>::template invoke<
+            ValuesViewType, IntViewType, XViewType, YViewType, 1>(
+            member, alpha, values, row_ptr, colIndices, X, beta, Y);
+    }
   }
 
   template <typename ArgTrans, typename XViewType, typename YViewType>

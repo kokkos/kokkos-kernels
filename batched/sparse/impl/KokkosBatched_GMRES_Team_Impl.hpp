@@ -65,20 +65,18 @@ namespace KokkosBatched {
 
 template <typename MemberType>
 template <typename OperatorType, typename VectorViewType,
-          typename PrecOperatorType, typename KrylovHandleType>
+          typename PrecOperatorType, typename KrylovHandleType,
+          typename ArnoldiViewType, typename TMPViewType>
 KOKKOS_INLINE_FUNCTION int TeamGMRES<MemberType>::invoke(
     const MemberType& member, const OperatorType& A, const VectorViewType& _B,
     const VectorViewType& _X, const PrecOperatorType& P,
-    const KrylovHandleType& handle) {
+    const KrylovHandleType& handle, const ArnoldiViewType& _ArnoldiView,
+    const TMPViewType& _TMPView) {
   typedef int OrdinalType;
   typedef typename Kokkos::Details::ArithTraits<
       typename VectorViewType::non_const_value_type>::mag_type MagnitudeType;
   typedef Kokkos::Details::ArithTraits<MagnitudeType> ATM;
 
-  using ScratchPadVectorViewType = Kokkos::View<
-      typename VectorViewType::non_const_value_type**,
-      typename VectorViewType::array_layout,
-      typename VectorViewType::execution_space::scratch_memory_space>;
   using TeamCopy1D = TeamCopy<MemberType, Trans::NoTranspose, 1>;
 
   const OrdinalType numMatrices = _X.extent(0);
@@ -98,51 +96,36 @@ KOKKOS_INLINE_FUNCTION int TeamGMRES<MemberType>::invoke(
   int offset_H      = offset_V + n_V;
   int offset_Givens = offset_H + n_H;
 
-  const int first_matrix = handle.first_index(member.league_rank());
-  const int last_matrix  = handle.last_index(member.league_rank());
-
-  auto V_view = Kokkos::subview(
-      handle.Arnoldi_view, Kokkos::make_pair(first_matrix, last_matrix),
-      Kokkos::ALL, Kokkos::make_pair(offset_V, offset_V + n_V));
-  auto H_view = Kokkos::subview(
-      handle.Arnoldi_view, Kokkos::make_pair(first_matrix, last_matrix),
-      Kokkos::ALL, Kokkos::make_pair(offset_H, offset_H + n_H));
+  auto V_view      = Kokkos::subview(_ArnoldiView, Kokkos::ALL, Kokkos::ALL,
+                                Kokkos::make_pair(offset_V, offset_V + n_V));
+  auto H_view      = Kokkos::subview(_ArnoldiView, Kokkos::ALL, Kokkos::ALL,
+                                Kokkos::make_pair(offset_H, offset_H + n_H));
   auto Givens_view = Kokkos::subview(
-      handle.Arnoldi_view, Kokkos::make_pair(first_matrix, last_matrix),
-      Kokkos::ALL, Kokkos::make_pair(offset_Givens, offset_Givens + n_Givens));
+      _ArnoldiView, Kokkos::ALL, Kokkos::ALL,
+      Kokkos::make_pair(offset_Givens, offset_Givens + n_Givens));
 
   int n_G    = maximum_iteration + 1;
   int n_W    = numRows;
-  int n_X    = numRows;
   int n_mask = 1;
-  int n_tmp  = 1;
 
   int offset_G    = 0;
   int offset_W    = offset_G + n_G;
-  int offset_X    = offset_W + n_W;
-  int offset_mask = offset_X + n_X;
+  int offset_mask = offset_W + n_W;
   int offset_tmp  = offset_mask + n_mask;
 
-  ScratchPadVectorViewType tmp_2D(
-      member.team_scratch(handle.get_scratch_pad_level()), numMatrices,
-      n_G + n_W + n_X + n_mask + n_tmp);
-
-  auto G    = Kokkos::subview(tmp_2D, Kokkos::ALL,
+  auto G    = Kokkos::subview(_TMPView, Kokkos::ALL,
                            Kokkos::make_pair(offset_G, offset_G + n_G));
-  auto W    = Kokkos::subview(tmp_2D, Kokkos::ALL,
+  auto W    = Kokkos::subview(_TMPView, Kokkos::ALL,
                            Kokkos::make_pair(offset_W, offset_W + n_W));
-  auto X    = Kokkos::subview(tmp_2D, Kokkos::ALL,
-                           Kokkos::make_pair(offset_X, offset_X + n_X));
-  auto mask = Kokkos::subview(tmp_2D, Kokkos::ALL, offset_mask);
-  auto tmp  = Kokkos::subview(tmp_2D, Kokkos::ALL, offset_tmp);
+  auto mask = Kokkos::subview(_TMPView, Kokkos::ALL, offset_mask);
+  auto tmp  = Kokkos::subview(_TMPView, Kokkos::ALL, offset_tmp);
 
-  TeamCopy<MemberType>::invoke(member, _X, X);
   // Deep copy of b into r_0:
   TeamCopy<MemberType>::invoke(member, _B, W);
 
   // r_0 := b - A x_0
   member.team_barrier();
-  A.template apply<Trans::NoTranspose, Mode::Team>(member, X, W, -1, 1);
+  A.template apply<Trans::NoTranspose, Mode::Team>(member, _X, W, -1, 1);
   member.team_barrier();
 
   P.template apply<Trans::NoTranspose, Mode::Team, 1>(member, W, W);
@@ -330,26 +313,22 @@ KOKKOS_INLINE_FUNCTION int TeamGMRES<MemberType>::invoke(
     TeamGemv<MemberType, Trans::Transpose, Algo::Gemv::Unblocked>::invoke(
         member, 1,
         Kokkos::subview(V_view, Kokkos::ALL, first_indices, Kokkos::ALL),
-        Kokkos::subview(G, Kokkos::ALL, first_indices), 1, X);
-    member.team_barrier();  // Finish writing to X
+        Kokkos::subview(G, Kokkos::ALL, first_indices), 1, _X);
+    member.team_barrier();  // Finish writing to _X
   }
   if (handle.get_ortho_strategy() == 1) {
     for (size_t j = 0; j < maximum_iteration; ++j) {
       TeamAxpy<MemberType>::invoke(
           member, Kokkos::subview(G, Kokkos::ALL, j),
-          Kokkos::subview(V_view, Kokkos::ALL, j, Kokkos::ALL), X);
-      member.team_barrier();  // Finish writing to X
+          Kokkos::subview(V_view, Kokkos::ALL, j, Kokkos::ALL), _X);
+      member.team_barrier();  // Finish writing to _X
     }
   }
-
-  TeamCopy<MemberType>::invoke(member, X, _X);
-
-  member.team_barrier();
 
   if (handle.get_compute_last_residual()) {
     TeamCopy<MemberType>::invoke(member, _B, W);
     member.team_barrier();
-    A.template apply<Trans::NoTranspose, Mode::Team>(member, X, W, -1, 1);
+    A.template apply<Trans::NoTranspose, Mode::Team>(member, _X, W, -1, 1);
     member.team_barrier();
     P.template apply<Trans::NoTranspose, Mode::Team, 1>(member, W, W);
     member.team_barrier();
@@ -364,6 +343,101 @@ KOKKOS_INLINE_FUNCTION int TeamGMRES<MemberType>::invoke(
                          });
   }
   return status;
+}
+
+template <typename MemberType>
+template <typename OperatorType, typename VectorViewType,
+          typename PrecOperatorType, typename KrylovHandleType>
+KOKKOS_INLINE_FUNCTION int TeamGMRES<MemberType>::invoke(
+    const MemberType& member, const OperatorType& A, const VectorViewType& _B,
+    const VectorViewType& _X, const PrecOperatorType& P,
+    const KrylovHandleType& handle) {
+  const int strategy = handle.get_memory_strategy();
+  if (strategy == 0) {
+    const int first_matrix = handle.first_index(member.league_rank());
+    const int last_matrix  = handle.last_index(member.league_rank());
+
+    auto _ArnoldiView = Kokkos::subview(
+        handle.Arnoldi_view, Kokkos::make_pair(first_matrix, last_matrix),
+        Kokkos::ALL, Kokkos::ALL);
+
+    const int numMatrices = _X.extent(0);
+    const int numRows     = _X.extent(1);
+
+    size_t maximum_iteration = handle.get_max_iteration() < numRows
+                                   ? handle.get_max_iteration()
+                                   : numRows;
+
+    int n_G    = maximum_iteration + 1;
+    int n_W    = numRows;
+    int n_mask = 1;
+    int n_tmp  = 1;
+
+    using ScratchPadVectorViewType = Kokkos::View<
+        typename VectorViewType::non_const_value_type**,
+        typename VectorViewType::array_layout,
+        typename VectorViewType::execution_space::scratch_memory_space>;
+
+    ScratchPadVectorViewType _TMPView(
+        member.team_scratch(handle.get_scratch_pad_level()), numMatrices,
+        n_G + n_W + n_mask + n_tmp);
+
+    return invoke<OperatorType, VectorViewType, PrecOperatorType,
+                  KrylovHandleType>(member, A, _B, _X, P, handle, _ArnoldiView,
+                                    _TMPView);
+  }
+  if (strategy == 1) {
+    const int first_matrix = handle.first_index(member.league_rank());
+    const int last_matrix  = handle.last_index(member.league_rank());
+
+    auto _ArnoldiView = Kokkos::subview(
+        handle.Arnoldi_view, Kokkos::make_pair(first_matrix, last_matrix),
+        Kokkos::ALL, Kokkos::ALL);
+
+    auto _TMPView = Kokkos::subview(
+        handle.tmp_view, Kokkos::make_pair(first_matrix, last_matrix),
+        Kokkos::ALL);
+
+    return invoke<OperatorType, VectorViewType, PrecOperatorType,
+                  KrylovHandleType>(member, A, _B, _X, P, handle, _ArnoldiView,
+                                    _TMPView);
+  }
+  if (strategy == 2) {
+    using ScratchPadArnoldiViewType = Kokkos::View<
+        typename VectorViewType::non_const_value_type***,
+        typename VectorViewType::array_layout,
+        typename VectorViewType::execution_space::scratch_memory_space>;
+
+    using ScratchPadVectorViewType = Kokkos::View<
+        typename VectorViewType::non_const_value_type**,
+        typename VectorViewType::array_layout,
+        typename VectorViewType::execution_space::scratch_memory_space>;
+
+    const int numMatrices = _X.extent(0);
+    const int numRows     = _X.extent(1);
+
+    size_t maximum_iteration = handle.get_max_iteration() < numRows
+                                   ? handle.get_max_iteration()
+                                   : numRows;
+
+    int n_G    = maximum_iteration + 1;
+    int n_W    = numRows;
+    int n_mask = 1;
+    int n_tmp  = 1;
+
+    ScratchPadArnoldiViewType _ArnoldiView(
+        member.team_scratch(handle.get_scratch_pad_level()), numMatrices,
+        maximum_iteration, numRows + maximum_iteration + 3);
+
+    ScratchPadVectorViewType _TMPView(
+        member.team_scratch(handle.get_scratch_pad_level()), numMatrices,
+        n_G + n_W + n_mask + n_tmp);
+
+    return invoke<OperatorType, VectorViewType, PrecOperatorType,
+                  KrylovHandleType>(member, A, _B, _X, P, handle, _ArnoldiView,
+                                    _TMPView);
+  }
+  return 0;
 }
 
 template <typename MemberType>
