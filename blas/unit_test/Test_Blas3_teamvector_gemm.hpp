@@ -5,17 +5,20 @@
 namespace Test {
 namespace Gemm {
 
-template <typename DeviceType, typename ViewType, typename ScalarType,
-          typename ParamTagType, typename AlgoTagType>
+template <typename DeviceType, typename ViewTypeA, typename ViewTypeB,
+          typename ViewTypeC, typename ScalarType, typename ParamTagType,
+          typename AlgoTagType>
 struct Functor_TestBlasTeamVector {
-  ViewType _a, _b, _c;
+  ViewTypeA _a;
+  ViewTypeB _b;
+  ViewTypeC _c;
 
   ScalarType _alpha, _beta;
 
   KOKKOS_INLINE_FUNCTION
-  Functor_TestBlasTeamVector(const ScalarType alpha, const ViewType &a,
-                             const ViewType &b, const ScalarType beta,
-                             const ViewType &c)
+  Functor_TestBlasTeamVector(const ScalarType alpha, const ViewTypeA &a,
+                             const ViewTypeB &b, const ScalarType beta,
+                             const ViewTypeC &c)
       : _a(a), _b(b), _c(c), _alpha(alpha), _beta(beta) {}
 
   template <typename MemberType>
@@ -34,7 +37,7 @@ struct Functor_TestBlasTeamVector {
   }
 
   inline void run() {
-    typedef typename ViewType::value_type value_type;
+    typedef typename ViewTypeC::value_type value_type;
     std::string name_region("KokkosBlas::Test::TeamVector");
     const std::string name_value_type = Test::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
@@ -47,15 +50,18 @@ struct Functor_TestBlasTeamVector {
   }
 };
 
-template <typename DeviceType, typename ViewType, typename ScalarType,
-          typename ParamTagType, typename AlgoTagType>
+template <typename DeviceType, typename ViewTypeA, typename ViewTypeB,
+          typename ViewTypeC, typename ScalarType, typename ParamTagType,
+          typename AlgoTagType>
 void impl_test_blas_teamvectorgemm(const int N, const int dimM, const int dimN,
                                    const int dimK) {
   using transA          = typename ParamTagType::transA;
   using transB          = typename ParamTagType::transB;
   using execution_space = typename DeviceType::execution_space;
-  using value_type      = typename ViewType::value_type;
-  using ats             = Kokkos::Details::ArithTraits<value_type>;
+  using value_type_a    = typename ViewTypeA::value_type;
+  using value_type_b    = typename ViewTypeB::value_type;
+  using value_type_c    = typename ViewTypeC::value_type;
+  using ats_c           = Kokkos::Details::ArithTraits<value_type_c>;
 
   const auto transposed_A = !std::is_same<transA, Trans::NoTranspose>::value;
   const auto transposed_B = !std::is_same<transB, Trans::NoTranspose>::value;
@@ -70,19 +76,19 @@ void impl_test_blas_teamvectorgemm(const int N, const int dimM, const int dimN,
   /// randomized input testing views
   ScalarType alpha = ScalarType(1.5), beta = ScalarType(3.0);
 
-  ViewType a_expected("a_expected", N, matAdim1, matAdim2),
-      a_actual("a_actual", N, matAdim1, matAdim2),
-      b_expected("b_expected", N, matBdim1, matBdim2),
-      b_actual("b_actual", N, matBdim1, matBdim2),
-      c_expected("c_expected", N, matCdim1, matCdim2),
-      c_actual("c_actual", N, matCdim1, matCdim2);
+  ViewTypeA a_expected("a_expected", N, matAdim1, matAdim2);
+  ViewTypeA a_actual("a_actual", N, matAdim1, matAdim2);
+  ViewTypeB b_expected("b_expected", N, matBdim1, matBdim2);
+  ViewTypeB b_actual("b_actual", N, matBdim1, matBdim2);
+  ViewTypeC c_expected("c_expected", N, matCdim1, matCdim2);
+  ViewTypeC c_actual("c_actual", N, matCdim1, matCdim2);
 
   Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(
       13718);
 
-  Kokkos::fill_random(a_expected, random, value_type(1.0));
-  Kokkos::fill_random(b_expected, random, value_type(1.0));
-  Kokkos::fill_random(c_expected, random, value_type(1.0));
+  Kokkos::fill_random(a_expected, random, value_type_a(1.0));
+  Kokkos::fill_random(b_expected, random, value_type_b(1.0));
+  Kokkos::fill_random(c_expected, random, value_type_c(1.0));
 
   Kokkos::fence();
 
@@ -93,7 +99,7 @@ void impl_test_blas_teamvectorgemm(const int N, const int dimM, const int dimN,
   // Functor_TestBlasTeamVector<DeviceType,ViewType,ScalarType,
   //   ParamTagType,Algo::Gemm::Unblocked>(alpha, a_expected, b_expected,
   //   beta, c_expected).run();
-  Functor_BatchedVanillaGEMM<ViewType, ViewType, ViewType, execution_space>
+  Functor_BatchedVanillaGEMM<ViewTypeA, ViewTypeB, ViewTypeC, execution_space>
       vgemm;
   vgemm.A_t   = transposed_A;
   vgemm.B_t   = transposed_B;
@@ -106,43 +112,45 @@ void impl_test_blas_teamvectorgemm(const int N, const int dimM, const int dimN,
   vgemm.beta  = beta;
   vgemm.run();  // Compute c_expected
 
-  Functor_TestBlasTeamVector<DeviceType, ViewType, ScalarType, ParamTagType,
-                             AlgoTagType>(alpha, a_actual, b_actual, beta,
-                                          c_actual)
+  Functor_TestBlasTeamVector<DeviceType, ViewTypeA, ViewTypeB, ViewTypeC,
+                             ScalarType, ParamTagType, AlgoTagType>(
+      alpha, a_actual, b_actual, beta, c_actual)
       .run();
 
   Kokkos::fence();
 
-  typename ViewType::HostMirror c_expected_host =
+  typename ViewTypeC::HostMirror c_expected_host =
       Kokkos::create_mirror_view(c_expected);
-  typename ViewType::HostMirror c_actual_host =
+  typename ViewTypeC::HostMirror c_actual_host =
       Kokkos::create_mirror_view(c_actual);
 
   // Copy to host for comparison
   Kokkos::deep_copy(c_expected_host, c_expected);
   Kokkos::deep_copy(c_actual_host, c_actual);
 
-  using mag_type = typename ats::mag_type;
+  using mag_type = typename ats_c::mag_type;
   mag_type sum(1), diff(0);
 
-  mag_type eps = ats::epsilon();
+  mag_type eps = ats_c::epsilon();
 
-  eps *= std::is_same<value_type, Kokkos::Experimental::half_t>::value ||
-                 std::is_same<value_type, Kokkos::Experimental::bhalf_t>::value
-             ? 4
-             : 1e3;
+  eps *=
+      std::is_same<value_type_c, Kokkos::Experimental::half_t>::value ||
+              std::is_same<value_type_c, Kokkos::Experimental::bhalf_t>::value
+          ? 4
+          : 1e3;
 
   for (int k = 0; k < N; ++k)
     for (int i = 0; i < matCdim1; ++i)
       for (int j = 0; j < matCdim2; ++j) {
-        sum += ats::abs(c_expected_host(k, i, j));
-        diff += ats::abs(c_expected_host(k, i, j) - c_actual_host(k, i, j));
+        sum += ats_c::abs(c_expected_host(k, i, j));
+        diff += ats_c::abs(c_expected_host(k, i, j) - c_actual_host(k, i, j));
       }
   EXPECT_NEAR_KK(diff / sum, 0, eps);
 }
 
-template <typename DeviceType, typename ValueType, typename ScalarType,
-          typename ParamTagType, typename AlgoTagType>
+template <typename DeviceType, typename ValueTypeA, typename ValueTypeB,
+          typename ValueTypeC, typename ScalarType, typename ParamTagType,
+          typename AlgoTagType>
 typename std::enable_if<
     !std::is_same<AlgoTagType, Algo::Gemm::Unblocked>::value, int>::type
 test_blas_teamvectorgemm() {
@@ -150,52 +158,65 @@ test_blas_teamvectorgemm() {
   return 0;
 }
 
-template <typename DeviceType, typename ValueType, typename ScalarType,
-          typename ParamTagType, typename AlgoTagType>
+template <typename DeviceType, typename ValueTypeA, typename ValueTypeB,
+          typename ValueTypeC, typename ScalarType, typename ParamTagType,
+          typename AlgoTagType>
 typename std::enable_if<std::is_same<AlgoTagType, Algo::Gemm::Unblocked>::value,
                         int>::type
 test_blas_teamvectorgemm() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
   {
-    typedef Kokkos::View<ValueType ***, Kokkos::LayoutLeft, DeviceType>
-        ViewType;
-    impl_test_blas_teamvectorgemm<DeviceType, ViewType, ScalarType,
-                                  ParamTagType, AlgoTagType>(0, 10, 10, 10);
+    typedef Kokkos::View<ValueTypeA ***, Kokkos::LayoutLeft, DeviceType>
+        ViewTypeA;
+    typedef Kokkos::View<ValueTypeB ***, Kokkos::LayoutLeft, DeviceType>
+        ViewTypeB;
+    typedef Kokkos::View<ValueTypeC ***, Kokkos::LayoutLeft, DeviceType>
+        ViewTypeC;
+    impl_test_blas_teamvectorgemm<DeviceType, ViewTypeA, ViewTypeB, ViewTypeC,
+                                  ScalarType, ParamTagType, AlgoTagType>(
+        0, 10, 10, 10);
     for (int i = 0; i < 10; ++i) {
       // printf("Testing: LayoutLeft,  Blksize %d\n", i);
-      impl_test_blas_teamvectorgemm<DeviceType, ViewType, ScalarType,
-                                    ParamTagType, AlgoTagType>(1024, i, i, i);
+      impl_test_blas_teamvectorgemm<DeviceType, ViewTypeA, ViewTypeB, ViewTypeC,
+                                    ScalarType, ParamTagType, AlgoTagType>(
+          1024, i, i, i);
     }
     for (int i = 0; i < 10; ++i) {
       // printf("Testing: LayoutLeft,  Blksize %d\n", i);
       int dimM = i;
       int dimN = 2 * i;
       int dimK = 3 * i;
-      impl_test_blas_teamvectorgemm<DeviceType, ViewType, ScalarType,
-                                    ParamTagType, AlgoTagType>(1024, dimM, dimN,
-                                                               dimK);
+      impl_test_blas_teamvectorgemm<DeviceType, ViewTypeA, ViewTypeB, ViewTypeC,
+                                    ScalarType, ParamTagType, AlgoTagType>(
+          1024, dimM, dimN, dimK);
     }
   }
 #endif
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
   {
-    typedef Kokkos::View<ValueType ***, Kokkos::LayoutRight, DeviceType>
-        ViewType;
-    impl_test_blas_teamvectorgemm<DeviceType, ViewType, ScalarType,
-                                  ParamTagType, AlgoTagType>(0, 10, 10, 10);
+    typedef Kokkos::View<ValueTypeA ***, Kokkos::LayoutRight, DeviceType>
+        ViewTypeA;
+    typedef Kokkos::View<ValueTypeB ***, Kokkos::LayoutRight, DeviceType>
+        ViewTypeB;
+    typedef Kokkos::View<ValueTypeC ***, Kokkos::LayoutRight, DeviceType>
+        ViewTypeC;
+    impl_test_blas_teamvectorgemm<DeviceType, ViewTypeA, ViewTypeB, ViewTypeC,
+                                  ScalarType, ParamTagType, AlgoTagType>(
+        0, 10, 10, 10);
     for (int i = 0; i < 10; ++i) {
       // printf("Testing: LayoutRight, Blksize %d\n", i);
-      impl_test_blas_teamvectorgemm<DeviceType, ViewType, ScalarType,
-                                    ParamTagType, AlgoTagType>(1024, i, i, i);
+      impl_test_blas_teamvectorgemm<DeviceType, ViewTypeA, ViewTypeB, ViewTypeC,
+                                    ScalarType, ParamTagType, AlgoTagType>(
+          1024, i, i, i);
     }
     for (int i = 0; i < 10; ++i) {
       // printf("Testing: LayoutLeft,  Blksize %d\n", i);
       int dimM = i;
       int dimN = 2 * i;
       int dimK = 3 * i;
-      impl_test_blas_teamvectorgemm<DeviceType, ViewType, ScalarType,
-                                    ParamTagType, AlgoTagType>(1024, dimM, dimN,
-                                                               dimK);
+      impl_test_blas_teamvectorgemm<DeviceType, ViewTypeA, ViewTypeB, ViewTypeC,
+                                    ScalarType, ParamTagType, AlgoTagType>(
+          1024, dimM, dimN, dimK);
     }
   }
 #endif
@@ -203,8 +224,9 @@ test_blas_teamvectorgemm() {
   return 0;
 }
 
-#define TEST_TEAMVECTOR_CASE2(NAME, VALUE, SCALAR) \
-  TEST_GEMM_CASE(team_vector, NAME, test_blas_teamvectorgemm, VALUE, SCALAR)
+#define TEST_TEAMVECTOR_CASE2(NAME, VALUE, SCALAR)                          \
+  TEST_GEMM_CASE(team_vector, NAME, test_blas_teamvectorgemm, VALUE, VALUE, \
+                 VALUE, SCALAR)
 #define TEST_TEAMVECTOR_CASE(NAME, VALUE) \
   TEST_TEAMVECTOR_CASE2(NAME, VALUE, VALUE)
 
@@ -232,6 +254,11 @@ TEST_TEAMVECTOR_CASE2(dcomplex_double, Kokkos::complex<double>, double)
 #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)
 TEST_TEAMVECTOR_CASE(fcomplex_fcomplex, Kokkos::complex<float>)
 TEST_TEAMVECTOR_CASE2(fcomplex_float, Kokkos::complex<float>, float)
+#endif
+
+#if defined(KOKKOSKERNELS_INST_FLOAT) && defined(KOKKOSKERNELS_INST_DOUBLE)
+TEST_GEMM_CASE(team_vector, mixed_scalars, test_blas_teamvectorgemm, float, int,
+               double, double)
 #endif
 
 #undef TEST_TEAMVECTOR_CASE

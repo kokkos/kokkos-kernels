@@ -113,49 +113,54 @@ struct InnerGemmFixC {
       : _as0(as0), _as1(as1), _bs0(bs0), _bs1(bs1), _cs0(cs0), _cs1(cs1) {}
 
   // serial rank update
-  template <typename OpA, typename OpB, typename ScalarType, typename ValueType>
+  template <typename OpA, typename OpB, typename ScalarType,
+            typename ValueTypeA, typename ValueTypeB, typename ValueTypeC>
   KOKKOS_INLINE_FUNCTION int serial_invoke(OpA opA, OpB opB,
                                            const ScalarType alpha,
-                                           const ValueType *KOKKOS_RESTRICT A,
-                                           const ValueType *KOKKOS_RESTRICT B,
+                                           const ValueTypeA *KOKKOS_RESTRICT A,
+                                           const ValueTypeB *KOKKOS_RESTRICT B,
                                            const int k,
-                                           /**/ ValueType *KOKKOS_RESTRICT C);
+                                           /**/ ValueTypeC *KOKKOS_RESTRICT C);
 
   // serial rank update for remainder
-  template <typename OpA, typename OpB, typename ScalarType, typename ValueType>
+  template <typename OpA, typename OpB, typename ScalarType,
+            typename ValueTypeA, typename ValueTypeB, typename ValueTypeC>
   KOKKOS_INLINE_FUNCTION int serial_invoke(OpA opA, OpB opB,
                                            const ScalarType alpha,
-                                           const ValueType *KOKKOS_RESTRICT A,
-                                           const ValueType *KOKKOS_RESTRICT B,
+                                           const ValueTypeA *KOKKOS_RESTRICT A,
+                                           const ValueTypeB *KOKKOS_RESTRICT B,
                                            const int m, const int k,
-                                           /**/ ValueType *KOKKOS_RESTRICT C);
+                                           /**/ ValueTypeC *KOKKOS_RESTRICT C);
 
   // serial rank update for remainder
-  template <typename OpA, typename OpB, typename ScalarType, typename ValueType>
+  template <typename OpA, typename OpB, typename ScalarType,
+            typename ValueTypeA, typename ValueTypeB, typename ValueTypeC>
   KOKKOS_INLINE_FUNCTION int serial_invoke(OpA opA, OpB opB,
                                            const ScalarType alpha,
-                                           const ValueType *KOKKOS_RESTRICT A,
-                                           const ValueType *KOKKOS_RESTRICT B,
+                                           const ValueTypeA *KOKKOS_RESTRICT A,
+                                           const ValueTypeB *KOKKOS_RESTRICT B,
                                            const int m, const int n,
                                            const int k,
-                                           /**/ ValueType *KOKKOS_RESTRICT C);
+                                           /**/ ValueTypeC *KOKKOS_RESTRICT C);
 
-  template <typename MemberType, typename ScalarType, typename ValueType>
+  template <typename MemberType, typename ScalarType, typename ValueTypeA,
+            typename ValueTypeB, typename ValueTypeC>
   KOKKOS_INLINE_FUNCTION int team_invoke(const MemberType &member,
                                          const ScalarType alpha,
-                                         const ValueType *KOKKOS_RESTRICT A,
-                                         const ValueType *KOKKOS_RESTRICT B,
+                                         const ValueTypeA *KOKKOS_RESTRICT A,
+                                         const ValueTypeB *KOKKOS_RESTRICT B,
                                          const int k,
-                                         /**/ ValueType *KOKKOS_RESTRICT C);
+                                         /**/ ValueTypeC *KOKKOS_RESTRICT C);
 
   // team rank update for remainder
-  template <typename MemberType, typename ScalarType, typename ValueType>
+  template <typename MemberType, typename ScalarType, typename ValueTypeA,
+            typename ValueTypeB, typename ValueTypeC>
   KOKKOS_INLINE_FUNCTION int team_invoke(const MemberType &member,
                                          const ScalarType alpha,
-                                         const ValueType *KOKKOS_RESTRICT A,
-                                         const ValueType *KOKKOS_RESTRICT B,
+                                         const ValueTypeA *KOKKOS_RESTRICT A,
+                                         const ValueTypeB *KOKKOS_RESTRICT B,
                                          const int m, const int n, const int k,
-                                         /**/ ValueType *KOKKOS_RESTRICT C);
+                                         /**/ ValueTypeC *KOKKOS_RESTRICT C);
 };
 
 }  // namespace KokkosBlas
