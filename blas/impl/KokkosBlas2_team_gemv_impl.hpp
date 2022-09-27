@@ -94,6 +94,28 @@ KOKKOS_INLINE_FUNCTION int TeamVectorGemv<ArgTrans, ArgAlgo>::invoke(
       y.data(), y.stride_0());
 }
 
+template <typename ArgTrans, typename ArgAlgo>
+template <typename MemberType, typename ScalarType, typename AViewType,
+          typename xViewType, typename yViewType>
+KOKKOS_INLINE_FUNCTION int ThreadVectorGemv<ArgTrans, ArgAlgo>::invoke(
+    const MemberType& member, const ScalarType alpha, const AViewType& A,
+    const xViewType& x, const ScalarType beta, const yViewType& y) {
+  static_assert(std::is_same<ArgAlgo, Algo::Gemv::Unblocked>::value,
+                "Algorithm not supported");
+  static_assert(AViewType::Rank == 2,
+                "Batched TeamVectorGemv requires rank-2 A matrix");
+
+  using TransA   = Impl::MatrixModeInfo<ArgTrans>;
+  const auto ae0 = TransA::extent(A, 0);
+  const auto ae1 = TransA::extent(A, 1);
+  const auto as0 = TransA::stride_0(A);
+  const auto as1 = TransA::stride_1(A);
+
+  return Impl::ThreadVectorGemvInternal<Algo::Gemv::Unblocked>::invoke(
+      member, ae0, ae1, alpha, A.data(), as0, as1, x.data(), x.stride_0(), beta,
+      y.data(), y.stride_0());
+}
+
 }  // namespace KokkosBlas
 
 #endif

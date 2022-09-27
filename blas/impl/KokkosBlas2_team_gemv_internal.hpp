@@ -102,6 +102,31 @@ struct TeamVectorGemvInternal {
   }
 };
 
+template <typename ArgAlgo>
+struct ThreadVectorGemvInternal {
+  template <typename MemberType, typename OpA, typename ScalarType,
+            typename ValueAType, typename ValueXType, typename ValueYType>
+  KOKKOS_INLINE_FUNCTION static int invoke(
+      const MemberType &member, OpA op, const int m, const int n,
+      const ScalarType alpha, const ValueAType *KOKKOS_RESTRICT A,
+      const int as0, const int as1, const ValueXType *KOKKOS_RESTRICT x,
+      const int xs0, const ScalarType beta,
+      /**/ ValueYType *KOKKOS_RESTRICT y, const int ys0);
+
+  // default OpA = OpID
+  template <typename MemberType, typename ScalarType, typename ValueAType,
+            typename ValueXType, typename ValueYType>
+  KOKKOS_INLINE_FUNCTION static int invoke(
+      const MemberType &member, const int m, const int n,
+      const ScalarType alpha, const ValueAType *KOKKOS_RESTRICT A,
+      const int as0, const int as1, const ValueXType *KOKKOS_RESTRICT x,
+      const int xs0, const ScalarType beta,
+      /**/ ValueYType *KOKKOS_RESTRICT y, const int ys0) {
+    return invoke(member, OpID{}, m, n, alpha, A, as0, as1, x, xs0, beta, y,
+                  ys0);
+  }
+};
+
 ///
 /// Team Internal Impl
 /// ====================
@@ -232,6 +257,57 @@ TeamVectorGemvInternal<Algo::Gemv::Unblocked>::invoke(
                      [&]() { y[i * ys0] += alpha * t; });
     });
   }
+  return 0;
+}
+
+///
+/// ThreadVector Internal Impl
+/// ====================
+
+template <>
+template <typename MemberType, typename OpA, typename ScalarType,
+          typename ValueAType, typename ValueXType, typename ValueYType>
+KOKKOS_INLINE_FUNCTION int
+ThreadVectorGemvInternal<Algo::Gemv::Unblocked>::invoke(
+    const MemberType &member, OpA op, const int m, const int n,
+    const ScalarType alpha, const ValueAType *KOKKOS_RESTRICT A, const int as0,
+    const int as1, const ValueXType *KOKKOS_RESTRICT x, const int xs0,
+    const ScalarType beta,
+    /**/ ValueYType *KOKKOS_RESTRICT y, const int ys0) {
+  const ScalarType one(1.0), zero(0.0);
+
+  // y = beta y + alpha A x
+  // y (m), A(m x n), B(n)
+
+  constexpr int mbAlgo = Algo::Gemv::Blocked::mb();
+
+  if (beta == zero)
+    KokkosBlas::Impl::ThreadVectorSetInternal::invoke(member, m, zero, y, ys0);
+  else if (beta != one)
+    KokkosBlas::Impl::ThreadVectorScaleInternal::invoke(member, m, beta, y,
+                                                        ys0);
+
+  if (alpha != zero) {
+    if (m <= 0 || n <= 0) return 0;
+
+    if (beta != one) member.team_barrier();
+
+    KokkosBlas::Impl::InnerMultipleDotProduct<mbAlgo> inner(as0, as1, xs0, ys0);
+    const int tsize = member.team_size();
+    const int mb_a = m / tsize + (m % tsize > 0), mb_b = mbAlgo;
+    // Made this non-const in order to WORKAROUND issue #349
+    int mb = mb_a < mb_b ? mb_a : mb_b, mp = m % mb;
+
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, (m / mb) + (mp > 0)),
+                         [&](const int &ii) {
+                           const int i = ii * mb;
+                           inner.serial_invoke<OpA>(alpha, A + i * as0, x,
+                                                    (i + mb) > m ? (m - i) : mb,
+                                                    n, y + i * ys0);
+                         });
+    member.team_barrier();
+  }
+
   return 0;
 }
 

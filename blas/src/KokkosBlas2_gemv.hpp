@@ -244,6 +244,18 @@ struct TeamVectorGemv {
                                            const yViewType& /*y*/);
 };
 
+template <typename ArgTrans, typename ArgAlgo = Algo::Gemv::Default>
+struct ThreadVectorGemv {
+  template <typename MemberType, typename ScalarType, typename AViewType,
+            typename xViewType, typename yViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& /*member*/,
+                                           const ScalarType /*alpha*/,
+                                           const AViewType& /*A*/,
+                                           const xViewType& /*x*/,
+                                           const ScalarType /*beta*/,
+                                           const yViewType& /*y*/);
+};
+
 namespace Experimental {
 
 template <class AlgoTag, class MatrixType, class XVector, class YVector,
@@ -337,6 +349,37 @@ team_vector_gemv(const MemberType& team, const char trans,
                                                    beta, y);
 }
 
+template <class AlgoTag, class MemberType, class MatrixType, class XVector,
+          class YVector, class ScalarType>
+void KOKKOS_INLINE_FUNCTION
+threadvector_gemv(const MemberType& team, const char trans,
+                  const ScalarType& alpha, const MatrixType& A,
+                  const XVector& x, const ScalarType& beta, const YVector& y) {
+  if (trans == 'N' || trans == 'n') {
+    KokkosBlas::ThreadVectorGemv<Trans::NoTranspose, AlgoTag>::invoke(
+        team, alpha, A, x, beta, y);
+  } else if (trans == 'T' || trans == 't') {
+    KokkosBlas::ThreadVectorGemv<Trans::Transpose, AlgoTag>::invoke(
+        team, alpha, A, x, beta, y);
+  } else if (trans == 'C' || trans == 'c') {
+    KokkosBlas::ThreadVectorGemv<Trans::ConjTranspose, AlgoTag>::invoke(
+        team, alpha, A, x, beta, y);
+  } else {
+    Kokkos::abort("Matrix mode not supported");
+  }
+}
+
+// default AlgoTag
+template <class MemberType, class MatrixType, class XVector, class YVector,
+          class ScalarType>
+void KOKKOS_INLINE_FUNCTION
+threadvector_gemv(const MemberType& team, const char trans,
+                  const ScalarType& alpha, const MatrixType& A,
+                  const XVector& x, const ScalarType& beta, const YVector& y) {
+  threadvector_gemv<KokkosBlas::Algo::Gemv::Default>(team, trans, alpha, A, x,
+                                                     beta, y);
+}
+
 ///
 /// Selective Interface
 ///
@@ -383,6 +426,18 @@ struct Gemv<Mode::TeamVector, ArgAlgo> {
          const MatrixType& A, const XVector& x, const ScalarType& beta,
          const YVector& y) {
     teamvector_gemv<ArgAlgo>(member, trans, alpha, A, x, beta, y);
+  }
+};
+
+template <class ArgAlgo>
+struct Gemv<Mode::ThreadVector, ArgAlgo> {
+  template <class MemberType, class MatrixType, class XVector, class YVector,
+            class ScalarType>
+  static void KOKKOS_INLINE_FUNCTION
+  invoke(const MemberType& member, const char trans, const ScalarType& alpha,
+         const MatrixType& A, const XVector& x, const ScalarType& beta,
+         const YVector& y) {
+    threadvector_gemv<ArgAlgo>(member, trans, alpha, A, x, beta, y);
   }
 };
 
