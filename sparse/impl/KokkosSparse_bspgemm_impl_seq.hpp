@@ -44,7 +44,7 @@
 #ifndef KOKKOSSPARSE_BSPGEMM_DEBUG_HPP_
 #define KOKKOSSPARSE_BSPGEMM_DEBUG_HPP_
 #include "KokkosKernels_helpers.hpp"
-#include "KokkosBatched_Gemm_Serial_Internal.hpp"
+#include "KokkosBlas3_gemm.hpp"
 #include <cstring>
 
 namespace KokkosSparse {
@@ -113,8 +113,8 @@ void bspgemm_debug_numeric(KernelHandle* /* handle */,
   typedef typename KernelHandle::nnz_lno_t lno_t;
   typedef typename KernelHandle::size_type size_type;
   typedef typename KernelHandle::nnz_scalar_t scalar_t;
-  typedef KokkosBatched::SerialGemmInternal<
-      KokkosBatched::Algo::Gemm::Unblocked>
+  typedef KokkosBlas::Impl::SerialGemmInternal<
+      KokkosBlas::Algo::Gemm::Unblocked>
       GEMM;
 
   const auto block_size = block_dim * block_dim;

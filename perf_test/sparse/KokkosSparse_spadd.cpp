@@ -56,7 +56,6 @@
 #endif
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
-#include <mkl.h>
 #include <mkl_spblas.h>
 #endif
 

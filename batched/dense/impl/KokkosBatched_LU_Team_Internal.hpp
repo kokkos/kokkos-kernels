@@ -9,7 +9,7 @@
 #include "KokkosBatched_InnerTrsm_Serial_Impl.hpp"
 
 #include "KokkosBatched_Trsm_Team_Internal.hpp"
-#include "KokkosBatched_Gemm_Team_Internal.hpp"
+#include "KokkosBlas3_team_gemm_internal.hpp"
 
 namespace KokkosBatched {
 
@@ -138,7 +138,7 @@ KOKKOS_INLINE_FUNCTION int TeamLU_Internal<Algo::LU::Blocked>::invoke(
       member.team_barrier();
 
       // gemm update
-      TeamGemmInternal<Algo::Gemm::Blocked>::invoke(
+      KokkosBlas::Impl::TeamGemmInternal<Algo::Gemm::Blocked>::invoke(
           member, m_abr, n_abr, pb, minus_one, Ap + mb * as0, as0, as1,
           Ap + mb * as1, as0, as1, one, Ap + mb * as0 + mb * as1, as0, as1);
     }
