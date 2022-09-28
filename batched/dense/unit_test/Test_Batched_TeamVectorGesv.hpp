@@ -6,7 +6,6 @@
 
 #include "KokkosBatched_Gesv.hpp"
 #include "KokkosBatched_Dot.hpp"
-#include "KokkosBlas2_serial_gemv_impl.hpp"
 
 #include "KokkosKernels_TestUtils.hpp"
 

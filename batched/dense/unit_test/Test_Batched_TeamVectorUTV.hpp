@@ -6,7 +6,7 @@
 
 #include "KokkosBatched_Copy_Decl.hpp"
 #include "KokkosBatched_ApplyPivot_Decl.hpp"
-#include "KokkosBlas2_team_gemv_spec.hpp"
+#include "KokkosBlas2_gemv.hpp"
 #include "KokkosBatched_Trsv_Decl.hpp"
 #include "KokkosBatched_UTV_Decl.hpp"
 
@@ -78,7 +78,7 @@ struct Functor_TestBatchedTeamVectorUTV {
     TeamVectorCopy<MemberType, Trans::NoTranspose>::invoke(member, aa, ac);
 
     /// bb = AA*xx
-    KokkosBlas::TeamVectorGemv<MemberType, Trans::NoTranspose,
+    KokkosBlas::TeamVectorGemv<Trans::NoTranspose,
                                Algo::Gemv::Unblocked>::invoke(member, one, aa,
                                                               xx, zero, bb);
     member.team_barrier();
@@ -98,7 +98,7 @@ struct Functor_TestBatchedTeamVectorUTV {
     auto vm = Kokkos::subview(vv, range_upto_rank, Kokkos::ALL());
     if (matrix_rank < m) {
       /// w = U^T b
-      KokkosBlas::TeamVectorGemv<MemberType, Trans::Transpose,
+      KokkosBlas::TeamVectorGemv<Trans::Transpose,
                                  Algo::Gemv::Unblocked>::invoke(member, one, um,
                                                                 bb, zero, ww);
       member.team_barrier();
@@ -109,13 +109,13 @@ struct Functor_TestBatchedTeamVectorUTV {
       member.team_barrier();
 
       /// x = V^T w
-      KokkosBlas::TeamVectorGemv<MemberType, Trans::Transpose,
+      KokkosBlas::TeamVectorGemv<Trans::Transpose,
                                  Algo::Gemv::Unblocked>::invoke(member, one, vm,
                                                                 ww, zero, xx);
       member.team_barrier();
     } else {
       /// x = U^T b
-      KokkosBlas::TeamVectorGemv<MemberType, Trans::Transpose,
+      KokkosBlas::TeamVectorGemv<Trans::Transpose,
                                  Algo::Gemv::Unblocked>::invoke(member, one, um,
                                                                 bb, zero, xx);
       member.team_barrier();

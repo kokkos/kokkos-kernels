@@ -6,7 +6,7 @@
 
 #include "KokkosBlas1_set.hpp"
 #include "KokkosBatched_Copy_Decl.hpp"
-#include "KokkosBlas2_team_gemv_spec.hpp"
+#include "KokkosBlas2_gemv.hpp"
 #include "KokkosBatched_Trsv_Decl.hpp"
 #include "KokkosBatched_QR_Decl.hpp"
 #include "KokkosBatched_ApplyQ_Decl.hpp"
@@ -53,7 +53,7 @@ struct Functor_TestBatchedTeamVectorQR {
     member.team_barrier();
 
     /// bb = AA*xx
-    KokkosBlas::TeamVectorGemv<MemberType, Trans::NoTranspose,
+    KokkosBlas::TeamVectorGemv<Trans::NoTranspose,
                                Algo::Gemv::Unblocked>::invoke(member, one, aa,
                                                               xx, zero, bb);
     member.team_barrier();
