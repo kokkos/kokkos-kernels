@@ -1030,10 +1030,10 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixB<2, 3>::serial_invoke(
                   b_02 = B[0 * _bs0 + 2 * _bs1], b_10 = B[1 * _bs0 + 0 * _bs1],
                   b_11 = B[1 * _bs0 + 1 * _bs1], b_12 = B[1 * _bs0 + 2 * _bs1];
 
-  ValueType a_p0, a_p1, a_p2, c_p0, c_p1;
+  ValueType a_p0, a_p1, c_p0, c_p1, c_p2;
 
   const int ja0 = 0 * _as1, ja1 = 1 * _as1, ja2 = 2 * _as1, jc0 = 0 * _cs1,
-            jc1 = 1 * _cs1;
+            jc1 = 1 * _cs1, jc2 = 2 * _cs1;
 
   for (int p = 0; p < m; ++p) {
     a_p0 = A[p * _bs0 + ja0];
@@ -1062,11 +1062,12 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixB<1, 3>::serial_invoke(
   if (m <= 0) return 0;
 
   const ValueType b_00 = B[0 * _bs0 + 0 * _bs1], b_01 = B[0 * _bs0 + 1 * _bs1],
-                  b_10 = B[1 * _bs0 + 0 * _bs1], b_11 = B[1 * _bs0 + 1 * _bs1];
+                  b_02 = B[0 * _bs0 + 2 * _bs1];
 
-  ValueType a_p0, a_p1, a_p2, c_p0;
+  ValueType a_p0, a_p1, a_p2, c_p0, c_p1, c_p2;
 
-  const int ja0 = 0 * _as1, ja1 = 1 * _as1, ja2 = 2 * _as1, jc0 = 0 * _cs1;
+  const int ja0 = 0 * _as1, ja1 = 1 * _as1, ja2 = 2 * _as1, jc0 = 0 * _cs1,
+            jc1 = 1 * _cs1, jc2 = 2 * _cs1;
 
   for (int p = 0; p < m; ++p) {
     a_p0 = A[p * _bs0 + ja0];
@@ -1307,7 +1308,7 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixB<0, 0>::serial_invoke(
         const ValueType *KOKKOS_RESTRICT jB = B + j * _bs1;
         /**/ ValueType tC                     = 0;
         for (int p = 0; p < k; ++p) tC += iA[p * _as1] * jB[p * _bs0];
-        pC[i * _cs0] += alpha * tC;
+        iC[j * _cs1] += alpha * tC;
       }
     }
   }

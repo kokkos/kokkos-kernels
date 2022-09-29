@@ -166,8 +166,7 @@ struct InnerGemmFixC {
 }  // namespace KokkosBlas
 
 #include "KokkosBlas3_serial_gemm_inner_fixa_impl.hpp"
-// TODO: fix compilation errors InnerGemmFixB (not used internally, not tested)
-// #include "KokkosBlas3_serial_gemm_inner_fixb_impl.hpp"
+#include "KokkosBlas3_serial_gemm_inner_fixb_impl.hpp"
 #include "KokkosBlas3_serial_gemm_inner_fixc_impl.hpp"
 #include "KokkosBlas3_team_gemm_inner_fixc_impl.hpp"
 
