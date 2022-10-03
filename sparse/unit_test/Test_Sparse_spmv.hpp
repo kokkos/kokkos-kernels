@@ -565,7 +565,7 @@ template <typename scalar_t, typename lno_t, typename size_type,
           typename layout, class Device>
 void test_spmv_mv_heavy(lno_t numRows, size_type nnz, lno_t bandwidth,
                         lno_t row_size_variance, int numMV) {
-#if defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL) || defined(KOKKOS_ARCH_A64FX)
   if (std::is_same<scalar_t, Kokkos::complex<double>>::value) {
     std::cerr
         << "TEST SKIPPED: See "
@@ -573,7 +573,7 @@ void test_spmv_mv_heavy(lno_t numRows, size_type nnz, lno_t bandwidth,
         << std::endl;
     return;
   }
-#endif  // KOKKOSKERNELS_ENABLE_TPL_ARMPL
+#endif  // KOKKOSKERNELS_ENABLE_TPL_ARMPL || KOKKOS_ARCH_A64FX
   using crsMat_t  = typename KokkosSparse::CrsMatrix<scalar_t, lno_t, Device,
                                                     void, size_type>;
   using ViewTypeX = Kokkos::View<scalar_t **, layout, Device>;
