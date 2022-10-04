@@ -5,9 +5,9 @@
 
 #include "KokkosBatched_Util.hpp"
 
-// #include "KokkosBlas1_set_impl.hpp"
-// #include "KokkosBlas1_team_scal_impl.hpp"
-// #include "KokkosBlas2_serial_gemv_inner_multiple_dot.hpp"
+//#include "KokkosBlas1_set_impl.hpp"
+//#include "KokkosBlas1_team_scal_impl.hpp"
+//#include "KokkosBlas2_serial_gemv_inner_multiple_dot.hpp"
 
 namespace KokkosBatched {
 

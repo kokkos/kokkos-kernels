@@ -95,6 +95,7 @@ struct Gemv {
 
 #include "KokkosBatched_Gemv_Team_Impl.hpp"
 #include "KokkosBatched_Gemv_TeamVector_Impl.hpp"
+#include "KokkosBlas2_serial_gemv_internal.hpp"
 
 #define KOKKOSBATCHED_SERIAL_GEMV_NO_TRANSPOSE_INTERNAL_INVOKE( \
     ALGOTYPE, M, N, ALPHA, A, AS0, AS1, X, XS, BETA, Y, YS)     \
@@ -108,12 +109,12 @@ struct Gemv {
 
 #define KOKKOSBATCHED_TEAM_GEMV_NO_TRANSPOSE_INTERNAL_INVOKE(       \
     ALGOTYPE, MEMBER, M, N, ALPHA, A, AS0, AS1, X, XS, BETA, Y, YS) \
-  KokkosBatched::TeamGemvInternal<ALGOTYPE>::invoke(                \
+  KokkosBlas::Impl::TeamGemvInternal<ALGOTYPE>::invoke(             \
       MEMBER, M, N, ALPHA, A, AS0, AS1, X, XS, BETA, Y, YS)
 
 #define KOKKOSBATCHED_TEAM_GEMV_TRANSPOSE_INTERNAL_INVOKE(          \
     ALGOTYPE, MEMBER, M, N, ALPHA, A, AS0, AS1, X, XS, BETA, Y, YS) \
-  KokkosBatched::TeamGemvInternal<ALGOTYPE>::invoke(                \
+  KokkosBlas::Impl::TeamGemvInternal<ALGOTYPE>::invoke(             \
       MEMBER, N, M, ALPHA, A, AS1, AS0, X, XS, BETA, Y, YS)
 
 #define KOKKOSBATCHED_GEMV_NO_TRANSPOSE_INTERNAL_INVOKE(                      \
