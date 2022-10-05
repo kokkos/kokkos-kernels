@@ -878,7 +878,7 @@ elif [ "$MACHINE" = "blake" ]; then
   ONEAPI_WARNING_FLAGS=""
 
   GCC72_MODULE_TPL_LIST="$BASE_MODULE_LIST,openblas/0.2.20/gcc/7.2.0"
-  GCC102_MODULE_TPL_LIST="$BASE_MODULE_LIST,openblas/0.3.13/gcc/10.2.0"
+  GCC102_MODULE_TPL_LIST="$BASE_MODULE_LIST,openblas/0.3.21/gcc/10.2.0"
 
   if [ "$SPOT_CHECK" = "True" ]; then
       # Format: (compiler module-list build-list exe-name warning-flag)
