@@ -49,16 +49,15 @@ namespace Test {
 template <class ScalarType, class LayoutType, class ExeSpaceType>
 void doCsc2Csr(size_t m, size_t n, ScalarType min_val, ScalarType max_val,
                bool fully_sparse = false) {
-  RandCscMat<ScalarType, LayoutType, ExeSpaceType> cscMat(
-      m, n, min_val, max_val, fully_sparse);
-  constexpr int league_size = 32;
+  RandCsMatrix<ScalarType, LayoutType, ExeSpaceType> cscMat(
+      n, m, min_val, max_val, fully_sparse);
 
-  auto csrMat = KokkosSparse::csc2csr(
-      cscMat.get_m(), cscMat.get_n(), cscMat.get_nnz(), cscMat.get_vals(),
-      cscMat.get_row_ids(), cscMat.get_col_map(), league_size);
+  auto csrMat = KokkosSparse::csc2csr(cscMat.get_dim2(), cscMat.get_dim1(),
+                                      cscMat.get_nnz(), cscMat.get_vals(),
+                                      cscMat.get_map(), cscMat.get_ids());
 
-  auto csc_row_ids_d = cscMat.get_row_ids();
-  auto csc_col_map_d = cscMat.get_col_map();
+  auto csc_row_ids_d = cscMat.get_ids();
+  auto csc_col_map_d = cscMat.get_map();
   auto csc_vals_d    = cscMat.get_vals();
 
   using ViewTypeRowIds = decltype(csc_row_ids_d);
@@ -97,7 +96,7 @@ void doCsc2Csr(size_t m, size_t n, ScalarType min_val, ScalarType max_val,
 
   Kokkos::fence();
 
-  for (int j = 0; j < cscMat.get_n(); ++j) {
+  for (int j = 0; j < cscMat.get_dim1(); ++j) {
     auto col_start = csc_col_map(j);
     auto col_len   = csc_col_map(j + 1) - col_start;
 
@@ -147,17 +146,36 @@ void doAllCsc2csr(size_t m, size_t n) {
 }
 
 TEST_F(TestCategory, sparse_csc2csr) {
-  // Square cases
-  for (size_t dim = 4; dim < 1024; dim *= 4)
-    doAllCsc2csr<TestExecSpace>(dim, dim);
+  uint64_t ticks =
+      std::chrono::high_resolution_clock::now().time_since_epoch().count() %
+      UINT32_MAX;
+  std::srand(ticks);
 
-  // Non-square cases
-  for (size_t dim = 1; dim < 1024; dim *= 4) {
-    doAllCsc2csr<TestExecSpace>(dim * 3, dim);
-    doAllCsc2csr<TestExecSpace>(dim, dim * 3);
+  // Empty cases
+  doCsc2Csr<float, Kokkos::LayoutLeft, TestExecSpace>(1, 0, 1, 10);
+  doCsc2Csr<float, Kokkos::LayoutLeft, TestExecSpace>(0, 1, 1, 10);
+
+  doCsc2Csr<float, Kokkos::LayoutRight, TestExecSpace>(1, 0, 1, 10);
+  doCsc2Csr<float, Kokkos::LayoutRight, TestExecSpace>(0, 1, 1, 10);
+
+  doCsc2Csr<float, Kokkos::LayoutLeft, TestExecSpace>(0, 0, 1, 10);
+  doCsc2Csr<float, Kokkos::LayoutRight, TestExecSpace>(0, 0, 1, 10);
+
+  // Square cases
+  for (size_t i = 4; i < 1024; i *= 4) {
+    size_t dim = (std::rand() % 511) + 1;
+    doAllCsc2csr<TestExecSpace>(dim, dim);
   }
 
-  // Fully sparse
+  // Non-square cases
+  for (size_t i = 1; i < 1024; i *= 4) {
+    size_t m = (std::rand() % 511) + 1;
+    size_t n = (std::rand() % 511) + 1;
+    while (n == m) n = (std::rand() % 511) + 1;
+    doAllCsc2csr<TestExecSpace>(m, n);
+  }
+
+  // Fully sparse cases
   doCsc2Csr<float, Kokkos::LayoutLeft, TestExecSpace>(5, 5, 1, 10, true);
   doCsc2Csr<double, Kokkos::LayoutRight, TestExecSpace>(50, 10, 10, 100, true);
 }

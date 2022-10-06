@@ -22,8 +22,9 @@
 #include "Test_Sparse_trsv.hpp"
 #include "Test_Sparse_par_ilut.hpp"
 #include "Test_Sparse_Transpose.hpp"
-#include "Test_Sparse_TestUtils_RandCscMat.hpp"
-#include "Test_Sparse_csc2csr.hpp"
+#include "Test_Sparse_TestUtils_RandCsMat.hpp"
+#include "Test_Sparse_ccs2crs.hpp"
+#include "Test_Sparse_crs2ccs.hpp"
 
 // TPL specific tests, these require
 // particular pairs of backend and TPL

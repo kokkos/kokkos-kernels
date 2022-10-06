@@ -251,7 +251,7 @@ int main(int argc, char *argv[]) {
       cols_view_t new_entries("new_rowmap", a_crsmat.nnz());
       values_view_t new_values("new_rowmap", a_crsmat.nnz());
 
-      KokkosKernels::Impl::transpose_matrix<
+      KokkosSparse::Impl::transpose_matrix<
           c_row_map_view_t, c_cols_view_t, c_values_view_t, row_map_view_t,
           cols_view_t, values_view_t, row_map_view_t, MyExecSpace>(
           a_crsmat.numRows(), a_crsmat.numCols(), a_crsmat.graph.row_map,

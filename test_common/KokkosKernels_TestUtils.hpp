@@ -548,42 +548,47 @@ int string_compare_no_case(const char* str1, const char* str2) {
   return strcmp(str1_s.c_str(), str2_s.c_str());
 }
 
-/// /brief Csc matrix class for testing purposes.
+/// /brief Cs (Compressed Sparse) matrix class for testing purposes.
+/// This class is for testing purposes only and will generate a random
+/// Crs / Ccs matrix when instantiated. The class is intentionally written
+/// without the use of "row" and "column" member names.
+/// dim1 refers to either rows for Crs matrix or columns for a Ccs matrix.
+/// dim2 refers to either columns for a Crs matrix or rows for a Ccs matrix.
 /// \tparam ScalarType
 /// \tparam LayoutType
 /// \tparam ExeSpaceType
 template <class ScalarType, class LayoutType, class ExeSpaceType>
-class RandCscMat {
+class RandCsMatrix {
  private:
-  using ValViewTypeD    = Kokkos::View<ScalarType*, LayoutType, ExeSpaceType>;
-  using RowIdViewTypeD  = Kokkos::View<int64_t*, LayoutType, ExeSpaceType>;
-  using ColMapViewTypeD = Kokkos::View<int64_t*, LayoutType, ExeSpaceType>;
-  int64_t __nrows;
-  int64_t __ncols;
+  using ValViewTypeD = Kokkos::View<ScalarType*, LayoutType, ExeSpaceType>;
+  using IdViewTypeD  = Kokkos::View<int64_t*, LayoutType, ExeSpaceType>;
+  using MapViewTypeD = Kokkos::View<int64_t*, LayoutType, ExeSpaceType>;
+  int64_t __dim2;
+  int64_t __dim1;
   int64_t __nnz = 0;
-  ColMapViewTypeD __col_map_d;
-  RowIdViewTypeD __row_ids_d;
+  MapViewTypeD __map_d;
+  IdViewTypeD __ids_d;
   ValViewTypeD __vals_d;
-  using ColMapViewTypeH = typename ColMapViewTypeD::HostMirror;
-  using RowIdViewTypeH  = typename RowIdViewTypeD::HostMirror;
-  using ValViewTypeH    = typename ValViewTypeD::HostMirror;
-  ColMapViewTypeH __col_map;
-  RowIdViewTypeH __row_ids;
+  using MapViewTypeH = typename MapViewTypeD::HostMirror;
+  using IdViewTypeH  = typename IdViewTypeD::HostMirror;
+  using ValViewTypeH = typename ValViewTypeD::HostMirror;
+  MapViewTypeH __map;
+  IdViewTypeH __ids;
   ValViewTypeH __vals;
   bool __fully_sparse;
 
-  /// Generates a random column map where:
-  ///  1. __col_map(i) is in [__row_ids.data(), &row_ids.data()[nnz - 1]
-  ///  2. __col_map(i) > col_map(i - 1) for i > 1
-  ///  3. __col_map(i) == col_map(j) iff __col_map(i) == col_map(j) == nullptr
-  ///  4. __col_map(i) - col_map(i - 1) is in [0, m]
-  void __populate_random_csc_mat(uint64_t ticks) {
+  /// Generates a random map where (using Ccs terminology):
+  ///  1. __map(i) is in [__ids.data(), &row_ids.data()[nnz - 1]
+  ///  2. __map(i) > col_map(i - 1) for i > 1
+  ///  3. __map(i) == col_map(j) iff __map(i) == col_map(j) == nullptr
+  ///  4. __map(i) - col_map(i - 1) is in [0, m]
+  void __populate_random_cs_mat(uint64_t ticks) {
     std::srand(ticks);
-    for (int64_t col_idx = 0; col_idx < __ncols; col_idx++) {
-      int64_t r = std::rand() % (__nrows + 1);
-      if (r == 0 || __fully_sparse) {  // 100% sparse column
-        __col_map(col_idx) = __nnz;
-      } else {  // sparse column with r elements
+    for (int64_t col_idx = 0; col_idx < __dim1; col_idx++) {
+      int64_t r = std::rand() % (__dim2 + 1);
+      if (r == 0 || __fully_sparse) {  // 100% sparse vector
+        __map(col_idx) = __nnz;
+      } else {  // sparse vector with r elements
         // Populate r row ids
         std::vector<int64_t> v(r);
 
@@ -591,26 +596,26 @@ class RandCscMat {
 
         std::shuffle(v.begin(), v.end(), std::mt19937(std::random_device()()));
 
-        for (int64_t i = 0; i < r; i++) __row_ids(i + __nnz) = v.at(i);
+        for (int64_t i = 0; i < r; i++) __ids(i + __nnz) = v.at(i);
 
         // Point to new column and accumulate number of non zeros
-        __col_map(col_idx) = __nnz;
+        __map(col_idx) = __nnz;
         __nnz += r;
       }
     }
 
-    // last entry in map points to end of row id list
-    __col_map(__ncols) = __nnz;
+    // last entry in map points to end of id list
+    __map(__dim1) = __nnz;
 
     // Copy to device
-    Kokkos::deep_copy(__col_map_d, __col_map);
-    Kokkos::deep_copy(__row_ids_d, __row_ids);
+    Kokkos::deep_copy(__map_d, __map);
+    Kokkos::deep_copy(__ids_d, __ids);
     ExeSpaceType().fence();
   }
 
   template <class T>
   T __getter_copy_helper(T src) {
-    T dst(std::string("RandCscMat.") + typeid(T).name() + " copy",
+    T dst(std::string("RandCsMatrix.") + typeid(T).name() + " copy",
           src.extent(0));
     Kokkos::deep_copy(dst, src);
     ExeSpaceType().fence();
@@ -619,36 +624,36 @@ class RandCscMat {
 
  public:
   std::string info;
-  /// Constructs a random csc matrix.
-  /// \param m The number of rows.
-  /// \param n The number of columns.
+  /// Constructs a random cs matrix.
+  /// \param dim1 The first dimension: rows for Crs or columns for Ccs
+  /// \param dim2 The second dimension: columns for Crs or rows for Ccs
   /// \param min_val The minimum scalar value in the matrix.
   /// \param max_val The maximum scalar value in the matrix.
-  RandCscMat(int64_t m, int64_t n, ScalarType min_val, ScalarType max_val,
-             bool fully_sparse = false) {
-    __ncols        = n;
-    __nrows        = m;
+  RandCsMatrix(int64_t dim1, int64_t dim2, ScalarType min_val,
+               ScalarType max_val, bool fully_sparse = false) {
+    __dim1         = dim1;
+    __dim2         = dim2;
     __fully_sparse = fully_sparse;
-    __col_map_d    = ColMapViewTypeD("RandCscMat.ColMapViewType", __ncols + 1);
-    __col_map      = Kokkos::create_mirror_view(__col_map_d);
-    __row_ids_d    = RowIdViewTypeD("RandCscMat.RowIdViewType",
-                                 m * n + 1);  // over-allocated
-    __row_ids      = Kokkos::create_mirror_view(__row_ids_d);
+    __map_d        = MapViewTypeD("RandCsMatrix.ColMapViewType", __dim1 + 1);
+    __map          = Kokkos::create_mirror_view(__map_d);
+    __ids_d        = IdViewTypeD("RandCsMatrix.RowIdViewType",
+                          dim2 * dim1 + 1);  // over-allocated
+    __ids          = Kokkos::create_mirror_view(__ids_d);
 
     uint64_t ticks =
         std::chrono::high_resolution_clock::now().time_since_epoch().count() %
         UINT32_MAX;
 
     info = std::string(
-        std::string("RandCscMat<") + typeid(ScalarType).name() + ", " +
+        std::string("RandCsMatrix<") + typeid(ScalarType).name() + ", " +
         typeid(LayoutType).name() + ", " + typeid(ExeSpaceType).name() + ">(" +
-        std::to_string(m) + ", " + std::to_string(n) +
+        std::to_string(dim2) + ", " + std::to_string(dim1) +
         "...): rand seed: " + std::to_string(ticks) +
         ", fully sparse: " + (__fully_sparse ? "true" : "false") + "\n");
     Kokkos::Random_XorShift64_Pool<Kokkos::HostSpace> random(ticks);
-    __populate_random_csc_mat(ticks);
+    __populate_random_cs_mat(ticks);
 
-    __vals_d = ValViewTypeD("RandCscMat.ValViewType", __nnz + 1);
+    __vals_d = ValViewTypeD("RandCsMatrix.ValViewType", __nnz + 1);
     __vals   = Kokkos::create_mirror_view(__vals_d);
     Kokkos::fill_random(__vals, random, min_val, max_val);  // random scalars
     Kokkos::fence();
@@ -661,17 +666,15 @@ class RandCscMat {
 
   // O(c), where c is a constant.
   ScalarType operator()(int64_t idx) { return __vals(idx); }
-
   int64_t get_nnz() { return __nnz; }
-  int64_t get_m() { return __nrows; }
-  int64_t get_n() { return __ncols; }
-  int64_t get_col_len(int64_t j) {
-    return j < __ncols ? (__col_map(j + 1) - __col_map(j)) : 0;
-  }
-  int64_t get_col_start(int64_t j) { return j < __ncols ? __col_map(j) : 0; }
+  // dimension2: This is either columns for a Crs matrix or rows for a Ccs
+  // matrix.
+  int64_t get_dim2() { return __dim2; }
+  // dimension1: This is either rows for Crs matrix or columns for a Ccs matrix.
+  int64_t get_dim1() { return __dim1; }
   ValViewTypeD get_vals() { return __getter_copy_helper(__vals_d); }
-  RowIdViewTypeD get_row_ids() { return __getter_copy_helper(__row_ids_d); }
-  ColMapViewTypeD get_col_map() { return __getter_copy_helper(__col_map_d); }
+  IdViewTypeD get_ids() { return __getter_copy_helper(__ids_d); }
+  MapViewTypeD get_map() { return __getter_copy_helper(__map_d); }
 };
 
 /// \brief Randomly shuffle the entries in each row (col) of a Crs (Ccs) matrix.
