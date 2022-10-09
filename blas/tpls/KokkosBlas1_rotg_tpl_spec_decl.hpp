@@ -67,84 +67,184 @@ inline void rotg_print_specialization() {
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_BLAS(EXECSPACE, ETI_SPEC_AVAIL)   \
-  template <class MEMSPACE>                                               \
-  struct Rotg<double, EXECSPACE, MEMSPACE, true, ETI_SPEC_AVAIL> {        \
-    static void rotg(double& a, double& b, double& c, double& s) {        \
-      Kokkos::Profiling::pushRegion("KokkosBlas::rotg[TPL_BLAS,double]"); \
-      HostBlas<double>::rotg(&a, &b, &c, &s);                             \
-      Kokkos::Profiling::popRegion();                                     \
-    }                                                                     \
+#define KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_BLAS(LAYOUT, EXECSPACE, MEMSPACE,     \
+                                             ETI_SPEC_AVAIL)                  \
+  template <>                                                                 \
+  struct Rotg<                                                                \
+      EXECSPACE,                                                              \
+      Kokkos::View<double, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,       \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
+      Kokkos::View<double, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,       \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
+      true, ETI_SPEC_AVAIL> {                                                 \
+    using SViewType =                                                         \
+        Kokkos::View<double, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,     \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                \
+    using MViewType =                                                         \
+        Kokkos::View<double, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,     \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                \
+    static void rotg(EXECSPACE const, SViewType const& a, SViewType const& b, \
+                     MViewType const& c, SViewType const& s) {                \
+      Kokkos::Profiling::pushRegion("KokkosBlas::rotg[TPL_BLAS,double]");     \
+      HostBlas<double>::rotg(a.data(), b.data(), c.data(), s.data());         \
+      Kokkos::Profiling::popRegion();                                         \
+    }                                                                         \
   };
 
-#define KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_BLAS(EXECSPACE, ETI_SPEC_AVAIL)  \
-  template <class MEMSPACE>                                              \
-  struct Rotg<float, EXECSPACE, MEMSPACE, true, ETI_SPEC_AVAIL> {        \
-    static void rotg(float& a, float& b, float& c, float& s) {           \
-      Kokkos::Profiling::pushRegion("KokkosBlas::rotg[TPL_BLAS,float]"); \
-      HostBlas<float>::rotg(&a, &b, &c, &s);                             \
-      Kokkos::Profiling::popRegion();                                    \
-    }                                                                    \
+#define KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_BLAS(LAYOUT, EXECSPACE, MEMSPACE,      \
+                                             ETI_SPEC_AVAIL)                   \
+  template <>                                                                  \
+  struct Rotg<EXECSPACE,                                                       \
+              Kokkos::View<float, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>>,           \
+              Kokkos::View<float, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>>,           \
+              true, ETI_SPEC_AVAIL> {                                          \
+    using SViewType =                                                          \
+        Kokkos::View<float, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,       \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                 \
+    using MViewType =                                                          \
+        Kokkos::View<float, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,       \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                 \
+    static void rotg(EXECSPACE const, SViewType const& a, SViewType const& b,  \
+                     MViewType const& c, SViewType const& s) {                 \
+      Kokkos::Profiling::pushRegion("KokkosBlas::rotg[TPL_BLAS,float]");       \
+      HostBlas<float>::rotg(a.data(), b.data(), c.data(), s.data());           \
+      Kokkos::Profiling::popRegion();                                          \
+    }                                                                          \
   };
 
-#define KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_BLAS(EXECSPACE, ETI_SPEC_AVAIL)      \
-  template <class MEMSPACE>                                                  \
-  struct Rotg<Kokkos::complex<double>, EXECSPACE, MEMSPACE, true,            \
-              ETI_SPEC_AVAIL> {                                              \
-    static void rotg(Kokkos::complex<double>& a, Kokkos::complex<double>& b, \
-                     double& c, Kokkos::complex<double>& s) {                \
-      Kokkos::Profiling::pushRegion(                                         \
-          "KokkosBlas::rotg[TPL_BLAS,complex<double>]");                     \
-      HostBlas<std::complex<double> >::rotg(                                 \
-          reinterpret_cast<std::complex<double>*>(&a),                       \
-          reinterpret_cast<std::complex<double>*>(&b), &c,                   \
-          reinterpret_cast<std::complex<double>*>(&s));                      \
-      Kokkos::Profiling::popRegion();                                        \
-    }                                                                        \
+#define KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_BLAS(LAYOUT, EXECSPACE, MEMSPACE,     \
+                                             ETI_SPEC_AVAIL)                  \
+  template <>                                                                 \
+  struct Rotg<                                                                \
+      EXECSPACE,                                                              \
+      Kokkos::View<Kokkos::complex<double>, LAYOUT,                           \
+                   Kokkos::Device<EXECSPACE, MEMSPACE>,                       \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
+      Kokkos::View<double, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,       \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
+      true, ETI_SPEC_AVAIL> {                                                 \
+    using SViewType = Kokkos::View<Kokkos::complex<double>, LAYOUT,           \
+                                   Kokkos::Device<EXECSPACE, MEMSPACE>,       \
+                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;  \
+    using MViewType =                                                         \
+        Kokkos::View<double, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,     \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                \
+    static void rotg(EXECSPACE const, SViewType const& a, SViewType const& b, \
+                     MViewType const& c, SViewType const& s) {                \
+      Kokkos::Profiling::pushRegion(                                          \
+          "KokkosBlas::rotg[TPL_BLAS,complex<double>]");                      \
+      HostBlas<std::complex<double>>::rotg(                                   \
+          reinterpret_cast<std::complex<double>*>(a.data()),                  \
+          reinterpret_cast<std::complex<double>*>(b.data()), c.data(),        \
+          reinterpret_cast<std::complex<double>*>(s.data()));                 \
+      Kokkos::Profiling::popRegion();                                         \
+    }                                                                         \
   };
 
-#define KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_BLAS(EXECSPACE, ETI_SPEC_AVAIL)    \
-  template <class MEMSPACE>                                                \
-  struct Rotg<Kokkos::complex<float>, EXECSPACE, MEMSPACE, true,           \
-              ETI_SPEC_AVAIL> {                                            \
-    static void rotg(Kokkos::complex<float>& a, Kokkos::complex<float>& b, \
-                     float& c, Kokkos::complex<float>& s) {                \
-      Kokkos::Profiling::pushRegion(                                       \
-          "KokkosBlas::rotg[TPL_BLAS,complex<float>]");                    \
-      HostBlas<std::complex<float> >::rotg(                                \
-          reinterpret_cast<std::complex<float>*>(&a),                      \
-          reinterpret_cast<std::complex<float>*>(&b), &c,                  \
-          reinterpret_cast<std::complex<float>*>(&s));                     \
-      Kokkos::Profiling::popRegion();                                      \
-    }                                                                      \
+#define KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_BLAS(LAYOUT, EXECSPACE, MEMSPACE,      \
+                                             ETI_SPEC_AVAIL)                   \
+  template <>                                                                  \
+  struct Rotg<EXECSPACE,                                                       \
+              Kokkos::View<Kokkos::complex<float>, LAYOUT,                     \
+                           Kokkos::Device<EXECSPACE, MEMSPACE>,                \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>>,           \
+              Kokkos::View<float, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>>,           \
+              true, ETI_SPEC_AVAIL> {                                          \
+    using SViewType = Kokkos::View<Kokkos::complex<float>, LAYOUT,             \
+                                   Kokkos::Device<EXECSPACE, MEMSPACE>,        \
+                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;   \
+    using MViewType =                                                          \
+        Kokkos::View<float, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,       \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                 \
+    static void rotg(EXECSPACE const, SViewType const& a, SViewType const& b,  \
+                     MViewType const& c, SViewType const& s) {                 \
+      Kokkos::Profiling::pushRegion(                                           \
+          "KokkosBlas::rotg[TPL_BLAS,complex<float>]");                        \
+      HostBlas<std::complex<float>>::rotg(                                     \
+          reinterpret_cast<std::complex<float>*>(a.data()),                    \
+          reinterpret_cast<std::complex<float>*>(b.data()), c.data(),          \
+          reinterpret_cast<std::complex<float>*>(s.data()));                   \
+      Kokkos::Profiling::popRegion();                                          \
+    }                                                                          \
   };
 
 #ifdef KOKKOS_ENABLE_SERIAL
-KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_BLAS(Kokkos::Serial, true)
-KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_BLAS(Kokkos::Serial, false)
+KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::Serial,
+                                     Kokkos::HostSpace, true)
+KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_BLAS(Kokkos::LayoutRight, Kokkos::Serial,
+                                     Kokkos::HostSpace, true)
+KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::Serial,
+                                     Kokkos::HostSpace, false)
+KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_BLAS(Kokkos::LayoutRight, Kokkos::Serial,
+                                     Kokkos::HostSpace, false)
 
-KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_BLAS(Kokkos::Serial, true)
-KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_BLAS(Kokkos::Serial, false)
+KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::Serial,
+                                     Kokkos::HostSpace, true)
+KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_BLAS(Kokkos::LayoutRight, Kokkos::Serial,
+                                     Kokkos::HostSpace, true)
+KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::Serial,
+                                     Kokkos::HostSpace, false)
+KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_BLAS(Kokkos::LayoutRight, Kokkos::Serial,
+                                     Kokkos::HostSpace, false)
 
-KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_BLAS(Kokkos::Serial, true)
-KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_BLAS(Kokkos::Serial, false)
+KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::Serial,
+                                     Kokkos::HostSpace, true)
+KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_BLAS(Kokkos::LayoutRight, Kokkos::Serial,
+                                     Kokkos::HostSpace, true)
+KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::Serial,
+                                     Kokkos::HostSpace, false)
+KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_BLAS(Kokkos::LayoutRight, Kokkos::Serial,
+                                     Kokkos::HostSpace, false)
 
-KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_BLAS(Kokkos::Serial, true)
-KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_BLAS(Kokkos::Serial, false)
+KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::Serial,
+                                     Kokkos::HostSpace, true)
+KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_BLAS(Kokkos::LayoutRight, Kokkos::Serial,
+                                     Kokkos::HostSpace, true)
+KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::Serial,
+                                     Kokkos::HostSpace, false)
+KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_BLAS(Kokkos::LayoutRight, Kokkos::Serial,
+                                     Kokkos::HostSpace, false)
 #endif
 
 #ifdef KOKKOS_ENABLE_OPENMP
-KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_BLAS(Kokkos::OpenMP, true)
-KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_BLAS(Kokkos::OpenMP, false)
+KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::OpenMP,
+                                     Kokkos::HostSpace, true)
+KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_BLAS(Kokkos::LayoutRight, Kokkos::OpenMP,
+                                     Kokkos::HostSpace, true)
+KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::OpenMP,
+                                     Kokkos::HostSpace, false)
+KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_BLAS(Kokkos::LayoutRight, Kokkos::OpenMP,
+                                     Kokkos::HostSpace, false)
 
-KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_BLAS(Kokkos::OpenMP, true)
-KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_BLAS(Kokkos::OpenMP, false)
+KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::OpenMP,
+                                     Kokkos::HostSpace, true)
+KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_BLAS(Kokkos::LayoutRight, Kokkos::OpenMP,
+                                     Kokkos::HostSpace, true)
+KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::OpenMP,
+                                     Kokkos::HostSpace, false)
+KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_BLAS(Kokkos::LayoutRight, Kokkos::OpenMP,
+                                     Kokkos::HostSpace, false)
 
-KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_BLAS(Kokkos::OpenMP, true)
-KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_BLAS(Kokkos::OpenMP, false)
+KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::OpenMP,
+                                     Kokkos::HostSpace, true)
+KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_BLAS(Kokkos::LayoutRight, Kokkos::OpenMP,
+                                     Kokkos::HostSpace, true)
+KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::OpenMP,
+                                     Kokkos::HostSpace, false)
+KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_BLAS(Kokkos::LayoutRight, Kokkos::OpenMP,
+                                     Kokkos::HostSpace, false)
 
-KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_BLAS(Kokkos::OpenMP, true)
-KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_BLAS(Kokkos::OpenMP, false)
+KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::OpenMP,
+                                     Kokkos::HostSpace, true)
+KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_BLAS(Kokkos::LayoutRight, Kokkos::OpenMP,
+                                     Kokkos::HostSpace, true)
+KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::OpenMP,
+                                     Kokkos::HostSpace, false)
+KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_BLAS(Kokkos::LayoutRight, Kokkos::OpenMP,
+                                     Kokkos::HostSpace, false)
 #endif
 
 }  // namespace Impl
@@ -159,79 +259,200 @@ KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_BLAS(Kokkos::OpenMP, false)
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_CUBLAS(EXECSPACE, ETI_SPEC_AVAIL)   \
-  template <class MEMSPACE>                                                 \
-  struct Rotg<double, EXECSPACE, MEMSPACE, true, ETI_SPEC_AVAIL> {          \
-    static void rotg(double& a, double& b, double& c, double& s) {          \
-      Kokkos::Profiling::pushRegion("KokkosBlas::nrm1[TPL_CUBLAS,double]"); \
-      rotg_print_specialization<double, EXECSPACE>();                       \
-      KokkosBlas::Impl::CudaBlasSingleton& singleton =                      \
-          KokkosBlas::Impl::CudaBlasSingleton::singleton();                 \
-      cublasDrotg(singleton.handle, &a, &b, &c, &s);                        \
-      Kokkos::Profiling::popRegion();                                       \
-    }                                                                       \
-  };
-
-#define KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_CUBLAS(EXECSPACE, ETI_SPEC_AVAIL)  \
-  template <class MEMSPACE>                                                \
-  struct Rotg<float, EXECSPACE, MEMSPACE, true, ETI_SPEC_AVAIL> {          \
-    static void rotg(float& a, float& b, float& c, float& s) {             \
-      Kokkos::Profiling::pushRegion("KokkosBlas::nrm1[TPL_CUBLAS,float]"); \
-      rotg_print_specialization<float, EXECSPACE>();                       \
-      KokkosBlas::Impl::CudaBlasSingleton& singleton =                     \
-          KokkosBlas::Impl::CudaBlasSingleton::singleton();                \
-      cublasSrotg(singleton.handle, &a, &b, &c, &s);                       \
-      Kokkos::Profiling::popRegion();                                      \
-    }                                                                      \
-  };
-
-#define KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_CUBLAS(EXECSPACE, ETI_SPEC_AVAIL)    \
-  template <class MEMSPACE>                                                  \
-  struct Rotg<Kokkos::complex<double>, EXECSPACE, MEMSPACE, true,            \
-              ETI_SPEC_AVAIL> {                                              \
-    static void rotg(Kokkos::complex<double>& a, Kokkos::complex<double>& b, \
-                     double& c, Kokkos::complex<double>& s) {                \
-      Kokkos::Profiling::pushRegion(                                         \
-          "KokkosBlas::nrm1[TPL_CUBLAS,complex<double>]");                   \
-      rotg_print_specialization<Kokkos::complex<double>, EXECSPACE>();       \
+#define KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_CUBLAS(LAYOUT, EXECSPACE, MEMSPACE,  \
+                                               ETI_SPEC_AVAIL)               \
+  template <>                                                                \
+  struct Rotg<                                                               \
+      EXECSPACE,                                                             \
+      Kokkos::View<double, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,      \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                 \
+      Kokkos::View<double, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,      \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                 \
+      true, ETI_SPEC_AVAIL> {                                                \
+    using SViewType =                                                        \
+        Kokkos::View<double, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,    \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;               \
+    using MViewType =                                                        \
+        Kokkos::View<double, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,    \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;               \
+    static void rotg(EXECSPACE const& space, SViewType const& a,             \
+                     SViewType const& b, MViewType const& c,                 \
+                     SViewType const& s) {                                   \
+      Kokkos::Profiling::pushRegion("KokkosBlas::nrm1[TPL_CUBLAS,double]");  \
+      rotg_print_specialization<double, EXECSPACE>();                        \
       KokkosBlas::Impl::CudaBlasSingleton& singleton =                       \
           KokkosBlas::Impl::CudaBlasSingleton::singleton();                  \
-      cublasZrotg(singleton.handle, reinterpret_cast<cuDoubleComplex*>(&a),  \
-                  reinterpret_cast<cuDoubleComplex*>(&b), &c,                \
-                  reinterpret_cast<cuDoubleComplex*>(&s));                   \
+      KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                          \
+          cublasSetStream(singleton.handle, space.cuda_stream()));           \
+      cublasDrotg(singleton.handle, a.data(), b.data(), c.data(), s.data()); \
       Kokkos::Profiling::popRegion();                                        \
     }                                                                        \
   };
 
-#define KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_CUBLAS(EXECSPACE, ETI_SPEC_AVAIL)  \
-  template <class MEMSPACE>                                                \
-  struct Rotg<Kokkos::complex<float>, EXECSPACE, MEMSPACE, true,           \
-              ETI_SPEC_AVAIL> {                                            \
-    static void rotg(Kokkos::complex<float>& a, Kokkos::complex<float>& b, \
-                     float& c, Kokkos::complex<float>& s) {                \
-      Kokkos::Profiling::pushRegion(                                       \
-          "KokkosBlas::nrm1[TPL_CUBLAS,complex<float>]");                  \
-      rotg_print_specialization<Kokkos::complex<float>, EXECSPACE>();      \
-      KokkosBlas::Impl::CudaBlasSingleton& singleton =                     \
-          KokkosBlas::Impl::CudaBlasSingleton::singleton();                \
-      cublasCrotg(singleton.handle, reinterpret_cast<cuComplex*>(&a),      \
-                  reinterpret_cast<cuComplex*>(&b), &c,                    \
-                  reinterpret_cast<cuComplex*>(&s));                       \
-      Kokkos::Profiling::popRegion();                                      \
-    }                                                                      \
+#define KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_CUBLAS(LAYOUT, EXECSPACE, MEMSPACE,    \
+                                               ETI_SPEC_AVAIL)                 \
+  template <>                                                                  \
+  struct Rotg<EXECSPACE,                                                       \
+              Kokkos::View<float, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>>,           \
+              Kokkos::View<float, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>>,           \
+              true, ETI_SPEC_AVAIL> {                                          \
+    using SViewType =                                                          \
+        Kokkos::View<float, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,       \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                 \
+    using MViewType =                                                          \
+        Kokkos::View<float, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,       \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                 \
+    static void rotg(EXECSPACE const& space, SViewType const& a,               \
+                     SViewType const& b, MViewType const& c,                   \
+                     SViewType const& s) {                                     \
+      Kokkos::Profiling::pushRegion("KokkosBlas::nrm1[TPL_CUBLAS,float]");     \
+      rotg_print_specialization<float, EXECSPACE>();                           \
+      KokkosBlas::Impl::CudaBlasSingleton& singleton =                         \
+          KokkosBlas::Impl::CudaBlasSingleton::singleton();                    \
+      KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                            \
+          cublasSetStream(singleton.handle, space.cuda_stream()));             \
+      cublasSrotg(singleton.handle, a.data(), b.data(), c.data(), s.data());   \
+      Kokkos::Profiling::popRegion();                                          \
+    }                                                                          \
   };
 
-KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_CUBLAS(Kokkos::Cuda, true)
-KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_CUBLAS(Kokkos::Cuda, false)
+#define KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_CUBLAS(LAYOUT, EXECSPACE, MEMSPACE, \
+                                               ETI_SPEC_AVAIL)              \
+  template <class MEMSPACE>                                                 \
+  struct Rotg<                                                              \
+      EXECSPACE,                                                            \
+      Kokkos::View<Kokkos::complex<double>, LAYOUT,                         \
+                   Kokkos::Device<EXECSPACE, MEMSPACE>,                     \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                \
+      Kokkos::View<double, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,     \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                \
+      true, ETI_SPEC_AVAIL> {                                               \
+    using SViewTypeKokkos::View<Kokkos::complex<double>, LAYOUT,            \
+                                Kokkos::Device<EXECSPACE, MEMSPACE>,        \
+                                Kokkos::MemoryTraits<Kokkos::Unmanaged>>;   \
+    using MViewType =                                                       \
+        Kokkos::View<double, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,   \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;              \
+    static void rotg(EXECSPACE const& space, SViewType const& a,            \
+                     SViewType const& b, MViewType const& c,                \
+                     SViewType const& s) {                                  \
+      Kokkos::Profiling::pushRegion(                                        \
+          "KokkosBlas::nrm1[TPL_CUBLAS,complex<double>]");                  \
+      rotg_print_specialization<Kokkos::complex<double>, EXECSPACE>();      \
+      KokkosBlas::Impl::CudaBlasSingleton& singleton =                      \
+          KokkosBlas::Impl::CudaBlasSingleton::singleton();                 \
+      KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                         \
+          cublasSetStream(singleton.handle, space.cuda_stream()));          \
+      cublasZrotg(singleton.handle,                                         \
+                  reinterpret_cast<cuDoubleComplex*>(a.data()),             \
+                  reinterpret_cast<cuDoubleComplex*>(b.data()), c.data(),   \
+                  reinterpret_cast<cuDoubleComplex*>(s.data()));            \
+      Kokkos::Profiling::popRegion();                                       \
+    }                                                                       \
+  };
 
-KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_CUBLAS(Kokkos::Cuda, true)
-KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_CUBLAS(Kokkos::Cuda, false)
+#define KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_CUBLAS(LAYOUT, EXECSPACE, MEMSPACE,    \
+                                               ETI_SPEC_AVAIL)                 \
+  template <class MEMSPACE>                                                    \
+  struct Rotg<EXECSPACE,                                                       \
+              Kokkos::View<Kokkos::complex<float>, LAYOUT,                     \
+                           Kokkos::Device<EXECSPACE, MEMSPACE>,                \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>>,           \
+              Kokkos::View<float, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>>,           \
+              true, ETI_SPEC_AVAIL> {                                          \
+    using SViewType = Kokkos::View<Kokkos::complex<float>, LAYOUT,             \
+                                   Kokkos::Device<EXECSPACE, MEMSPACE>,        \
+                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;   \
+    using MViewType =                                                          \
+        Kokkos::View<float, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,       \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                 \
+    static void rotg(EXECSPACE const& space, SViewType const& a,               \
+                     SViewType const& b, MViewType const& c,                   \
+                     SViewType const& s) {                                     \
+      Kokkos::Profiling::pushRegion(                                           \
+          "KokkosBlas::nrm1[TPL_CUBLAS,complex<float>]");                      \
+      rotg_print_specialization<Kokkos::complex<float>, EXECSPACE>();          \
+      KokkosBlas::Impl::CudaBlasSingleton& singleton =                         \
+          KokkosBlas::Impl::CudaBlasSingleton::singleton();                    \
+      KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                            \
+          cublasSetStream(singleton.handle, space.cuda_stream()));             \
+      cublasCrotg(singleton.handle, reinterpret_cast<cuComplex*>(a.data()),    \
+                  reinterpret_cast<cuComplex*>(b.data()), c.data(),            \
+                  reinterpret_cast<cuComplex*>(s.data()));                     \
+      Kokkos::Profiling::popRegion();                                          \
+    }                                                                          \
+  };
 
-KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_CUBLAS(Kokkos::Cuda, true)
-KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_CUBLAS(Kokkos::Cuda, false)
+KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
+                                       Kokkos::CudaSpace, true)
+KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
+                                       Kokkos::CudaSpace, false)
+KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
+                                       Kokkos::CudaSpace, true)
+KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
+                                       Kokkos::CudaSpace, false)
+KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
+                                       Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
+                                       Kokkos::CudaUVMSpace, false)
+KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
+                                       Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
+                                       Kokkos::CudaUVMSpace, false)
 
-KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_CUBLAS(Kokkos::Cuda, true)
-KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_CUBLAS(Kokkos::Cuda, false)
+KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
+                                       Kokkos::CudaSpace, true)
+KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
+                                       Kokkos::CudaSpace, false)
+KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
+                                       Kokkos::CudaSpace, true)
+KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
+                                       Kokkos::CudaSpace, false)
+KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
+                                       Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
+                                       Kokkos::CudaUVMSpace, false)
+KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
+                                       Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
+                                       Kokkos::CudaUVMSpace, false)
+
+KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
+                                       Kokkos::CudaSpace, true)
+KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
+                                       Kokkos::CudaSpace, false)
+KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
+                                       Kokkos::CudaSpace, true)
+KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
+                                       Kokkos::CudaSpace, false)
+KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
+                                       Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
+                                       Kokkos::CudaUVMSpace, false)
+KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
+                                       Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
+                                       Kokkos::CudaUVMSpace, false)
+
+KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
+                                       Kokkos::CudaSpace, true)
+KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
+                                       Kokkos::CudaSpace, false)
+KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
+                                       Kokkos::CudaSpace, true)
+KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
+                                       Kokkos::CudaSpace, false)
+KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
+                                       Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
+                                       Kokkos::CudaUVMSpace, false)
+KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
+                                       Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
+                                       Kokkos::CudaUVMSpace, false)
 
 }  // namespace Impl
 }  // namespace KokkosBlas
@@ -245,83 +466,173 @@ KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_CUBLAS(Kokkos::Cuda, false)
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_ROCBLAS(EXECSPACE, ETI_SPEC_AVAIL)   \
-  template <class MEMSPACE>                                                  \
-  struct Rotg<double, EXECSPACE, MEMSPACE, true, ETI_SPEC_AVAIL> {           \
-    static void rotg(double& a, double& b, double& c, double& s) {           \
+#define KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_ROCBLAS(LAYOUT, EXECSPACE, MEMSPACE, \
+                                                ETI_SPEC_AVAIL)              \
+  template <>                                                                \
+  struct Rotg<                                                               \
+      EXECSPACE,                                                             \
+      Kokkos::View<double, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,      \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                 \
+      Kokkos::View<double, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,      \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                 \
+      true, ETI_SPEC_AVAIL> {                                                \
+    using SViewType =                                                        \
+        Kokkos::View<double, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,    \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;               \
+    using MViewType =                                                        \
+        Kokkos::View<double, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,    \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;               \
+    static void rotg(EXECSPACE const& space, SViewType const& a,             \
+                     SViewType const& b, MViewType const& c,                 \
+                     SViewType const& s) {                                   \
       Kokkos::Profiling::pushRegion("KokkosBlas::nrm1[TPL_ROCBLAS,double]"); \
       rotg_print_specialization<double, EXECSPACE>();                        \
       KokkosBlas::Impl::RocBlasSingleton& singleton =                        \
           KokkosBlas::Impl::RocBlasSingleton::singleton();                   \
       KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                         \
-          rocblas_drotg(singleton.handle, &a, &b, &c, &s));                  \
+          rocblasSetStream(singleton.handle, space.hip_stream()));           \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_drotg(                           \
+          singleton.handle, a.data(), b.data(), c.data(), s.data()));        \
       Kokkos::Profiling::popRegion();                                        \
     }                                                                        \
   };
 
-#define KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_ROCBLAS(EXECSPACE, ETI_SPEC_AVAIL)  \
-  template <class MEMSPACE>                                                 \
-  struct Rotg<float, EXECSPACE, MEMSPACE, true, ETI_SPEC_AVAIL> {           \
-    static void rotg(float& a, float& b, float& c, float& s) {              \
-      Kokkos::Profiling::pushRegion("KokkosBlas::nrm1[TPL_ROCBLAS,float]"); \
-      rotg_print_specialization<float, EXECSPACE>();                        \
-      KokkosBlas::Impl::RocBlasSingleton& singleton =                       \
-          KokkosBlas::Impl::RocBlasSingleton::singleton();                  \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                        \
-          rocblas_srotg(singleton.handle, &a, &b, &c, &s));                 \
-      Kokkos::Profiling::popRegion();                                       \
-    }                                                                       \
+#define KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_ROCBLAS(LAYOUT, EXECSPACE, MEMSPACE,   \
+                                                ETI_SPEC_AVAIL)                \
+  template <>                                                                  \
+  struct Rotg<EXECSPACE,                                                       \
+              Kokkos::View<float, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>>,           \
+              Kokkos::View<float, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>>,           \
+              true, ETI_SPEC_AVAIL> {                                          \
+    using SViewType =                                                          \
+        Kokkos::View<float, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,       \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                 \
+    using MViewType =                                                          \
+        Kokkos::View<float, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,       \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                 \
+    static void rotg(EXECSPACE const& space, SViewType const& a,               \
+                     SViewType const& b, MViewType const& c,                   \
+                     SViewType const& s) {                                     \
+      Kokkos::Profiling::pushRegion("KokkosBlas::nrm1[TPL_ROCBLAS,float]");    \
+      rotg_print_specialization<float, EXECSPACE>();                           \
+      KokkosBlas::Impl::RocBlasSingleton& singleton =                          \
+          KokkosBlas::Impl::RocBlasSingleton::singleton();                     \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                           \
+          rocblasSetStream(singleton.handle, space.hip_stream()));             \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_srotg(                             \
+          singleton.handle, a.data(), b.data(), c.data(), s.data()));          \
+      Kokkos::Profiling::popRegion();                                          \
+    }                                                                          \
   };
 
-#define KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_ROCBLAS(EXECSPACE, ETI_SPEC_AVAIL)   \
+#define KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_ROCBLAS(LAYOUT, EXECSPACE, MEMSPACE, \
+                                                ETI_SPEC_AVAIL)              \
   template <class MEMSPACE>                                                  \
-  struct Rotg<Kokkos::complex<double>, EXECSPACE, MEMSPACE, true,            \
-              ETI_SPEC_AVAIL> {                                              \
-    static void rotg(Kokkos::complex<double>& a, Kokkos::complex<double>& b, \
-                     double& c, Kokkos::complex<double>& s) {                \
+  struct Rotg<                                                               \
+      EXECSPACE,                                                             \
+      Kokkos::View<Kokkos::complex<double>, LAYOUT,                          \
+                   Kokkos::Device<EXECSPACE, MEMSPACE>,                      \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                 \
+      Kokkos::View<double, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,      \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                 \
+      true, ETI_SPEC_AVAIL> {                                                \
+    using SViewType = Kokkos::View<Kokkos::complex<double>, LAYOUT,          \
+                                   Kokkos::Device<EXECSPACE, MEMSPACE>,      \
+                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>; \
+    using MViewType =                                                        \
+        Kokkos::View<double, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,    \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;               \
+    static void rotg(EXECSPACE const& space, SViewType const& a,             \
+                     SViewType const& b, MViewType const& c,                 \
+                     SViewType const& s) {                                   \
       Kokkos::Profiling::pushRegion(                                         \
           "KokkosBlas::nrm1[TPL_ROCBLAS,complex<double>]");                  \
       rotg_print_specialization<Kokkos::complex<double>, EXECSPACE>();       \
       KokkosBlas::Impl::RocBlasSingleton& singleton =                        \
           KokkosBlas::Impl::RocBlasSingleton::singleton();                   \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                         \
+          rocblasSetStream(singleton.handle, space.hip_stream()));           \
       KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_zrotg(                           \
-          singleton.handle, reinterpret_cast<rocblas_double_complex*>(&a),   \
-          reinterpret_cast<rocblas_double_complex*>(&b), &c,                 \
-          reinterpret_cast<rocblas_double_complex*>(&s)));                   \
+          singleton.handle,                                                  \
+          reinterpret_cast<rocblas_double_complex*>(a.data()),               \
+          reinterpret_cast<rocblas_double_complex*>(b.data()), c.data(),     \
+          reinterpret_cast<rocblas_double_complex*>(s.data())));             \
       Kokkos::Profiling::popRegion();                                        \
     }                                                                        \
   };
 
-#define KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_ROCBLAS(EXECSPACE, ETI_SPEC_AVAIL) \
-  template <class MEMSPACE>                                                \
-  struct Rotg<Kokkos::complex<float>, EXECSPACE, MEMSPACE, true,           \
-              ETI_SPEC_AVAIL> {                                            \
-    static void rotg(Kokkos::complex<float>& a, Kokkos::complex<float>& b, \
-                     float& c, Kokkos::complex<float>& s) {                \
-      Kokkos::Profiling::pushRegion(                                       \
-          "KokkosBlas::nrm1[TPL_ROCBLAS,complex<float>]");                 \
-      rotg_print_specialization<Kokkos::complex<float>, EXECSPACE>();      \
-      KokkosBlas::Impl::RocBlasSingleton& singleton =                      \
-          KokkosBlas::Impl::RocBlasSingleton::singleton();                 \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_crotg(                         \
-          singleton.handle, reinterpret_cast<rocblas_float_complex*>(&a),  \
-          reinterpret_cast<rocblas_float_complex*>(&b), &c,                \
-          reinterpret_cast<rocblas_float_complex*>(&s)));                  \
-      Kokkos::Profiling::popRegion();                                      \
-    }                                                                      \
+#define KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_ROCBLAS(LAYOUT, EXECSPACE, MEMSPACE,   \
+                                                ETI_SPEC_AVAIL)                \
+  template <class MEMSPACE>                                                    \
+  struct Rotg<EXECSPACE,                                                       \
+              Kokkos::View<Kokkos::complex<float>, LAYOUT,                     \
+                           Kokkos::Device<EXECSPACE, MEMSPACE>,                \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>>,           \
+              Kokkos::View<float, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>>,           \
+              true, ETI_SPEC_AVAIL> {                                          \
+    using SViewType = Kokkos::View<Kokkos::complex<float>, LAYOUT,             \
+                                   Kokkos::Device<EXECSPACE, MEMSPACE>,        \
+                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;   \
+    using MViewType =                                                          \
+        Kokkos::View<float, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,       \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                 \
+    static void rotg(EXECSPACE const& space, SViewType const& a,               \
+                     SViewType const& b, MViewType const& c,                   \
+                     SViewType const& s) {                                     \
+      Kokkos::Profiling::pushRegion(                                           \
+          "KokkosBlas::nrm1[TPL_ROCBLAS,complex<float>]");                     \
+      rotg_print_specialization<Kokkos::complex<float>, EXECSPACE>();          \
+      KokkosBlas::Impl::RocBlasSingleton& singleton =                          \
+          KokkosBlas::Impl::RocBlasSingleton::singleton();                     \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                           \
+          rocblasSetStream(singleton.handle, space.hip_stream()));             \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_crotg(                             \
+          singleton.handle,                                                    \
+          reinterpret_cast<rocblas_float_complex*>(a.data()),                  \
+          reinterpret_cast<rocblas_float_complex*>(b.data()), c.data(),        \
+          reinterpret_cast<rocblas_float_complex*>(s.data())));                \
+      Kokkos::Profiling::popRegion();                                          \
+    }                                                                          \
   };
 
-KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_ROCBLAS(Kokkos::HIP, true)
-KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_ROCBLAS(Kokkos::HIP, false)
+KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP,
+                                        Kokkos::HIPSpace, true)
+KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP,
+                                        Kokkos::HIPSpace, false)
+KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP,
+                                        Kokkos::HIPSpace, true)
+KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP,
+                                        Kokkos::HIPSpace, false)
 
-KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_ROCBLAS(Kokkos::HIP, true)
-KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_ROCBLAS(Kokkos::HIP, false)
+KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP,
+                                        Kokkos::HIPSpace, true)
+KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP,
+                                        Kokkos::HIPSpace, false)
+KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP,
+                                        Kokkos::HIPSpace, true)
+KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP,
+                                        Kokkos::HIPSpace, false)
 
-KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_ROCBLAS(Kokkos::HIP, true)
-KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_ROCBLAS(Kokkos::HIP, false)
+KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP,
+                                        Kokkos::HIPSpace, true)
+KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP,
+                                        Kokkos::HIPSpace, false)
+KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP,
+                                        Kokkos::HIPSpace, true)
+KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP,
+                                        Kokkos::HIPSpace, false)
 
-KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_ROCBLAS(Kokkos::HIP, true)
-KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_ROCBLAS(Kokkos::HIP, false)
+KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP,
+                                        Kokkos::HIPSpace, true)
+KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP,
+                                        Kokkos::HIPSpace, false)
+KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP,
+                                        Kokkos::HIPSpace, true)
+KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP,
+                                        Kokkos::HIPSpace, false)
 
 }  // namespace Impl
 }  // namespace KokkosBlas
