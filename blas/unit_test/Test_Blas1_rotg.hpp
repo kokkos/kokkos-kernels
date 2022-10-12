@@ -2,7 +2,8 @@
 
 namespace Test {
 template <class ExecSpace, class Scalar>
-void test_rotg_impl(ExecSpace const& space, Scalar const a_in, Scalar const b_in) {
+void test_rotg_impl(ExecSpace const& space, Scalar const a_in,
+                    Scalar const b_in) {
   using magnitude_type = typename Kokkos::ArithTraits<Scalar>::mag_type;
   using SViewType      = Kokkos::View<Scalar, ExecSpace>;
   using MViewType      = Kokkos::View<magnitude_type, ExecSpace>;
@@ -11,8 +12,10 @@ void test_rotg_impl(ExecSpace const& space, Scalar const a_in, Scalar const b_in
   // const Scalar zero        = Kokkos::ArithTraits<Scalar>::zero();
 
   // Initialize inputs/outputs
-  SViewType a("a"); Kokkos::deep_copy(a, a_in);
-  SViewType b("b"); Kokkos::deep_copy(b, b_in);
+  SViewType a("a");
+  Kokkos::deep_copy(a, a_in);
+  SViewType b("b");
+  Kokkos::deep_copy(b, b_in);
   MViewType c("c");
   SViewType s("s");
 
