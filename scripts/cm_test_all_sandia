@@ -702,7 +702,7 @@ elif [ "$MACHINE" = "weaver" ]; then
   CLANG13_MODULE_TPL_LIST="cmake/3.21.2,<COMPILER_NAME>/<COMPILER_VERSION>,openblas/0.3.20/gcc/9.3.0,cuda/10.1.243"
 
 # used with rhel8 queue
-  BASE_MODULE_LIST="cmake/3.21.2,<COMPILER_NAME>/<COMPILER_VERSION>"
+  RHEL8_BASE_MODULE_LIST="cmake/3.21.2,<COMPILER_NAME>/<COMPILER_VERSION>"
   # Cuda/11 modules available only on the dev queue (rhel8 OS); gcc/8.3.1 load by default
   RHEL8_CUDA11_MODULE_LIST="cmake/3.21.2,<COMPILER_NAME>/<COMPILER_VERSION>,openblas/0.3.18/gcc/8.3.1"
 
