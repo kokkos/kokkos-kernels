@@ -153,12 +153,13 @@ struct MDF_discarded_fill_norm {
                   KAS::abs(At.values(alphaIdx) * A.values(betaIdx)) *
                   KAS::abs(At.values(alphaIdx) * A.values(betaIdx));
               if (verbosity > 1) {
-                printf("Adding value A[%d,%d]=%f to discard norm of row %d\n",
-                       int(At.graph.entries(alphaIdx)),
-                       int(A.graph.entries(betaIdx)),
-                       KAS::abs(At.values(alphaIdx) * A.values(betaIdx)) *
-                           KAS::abs(At.values(alphaIdx) * A.values(betaIdx)),
-                       int(rowIdx));
+                KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+                    "Adding value A[%d,%d]=%f to discard norm of row %d\n",
+                    int(At.graph.entries(alphaIdx)),
+                    int(A.graph.entries(betaIdx)),
+                    KAS::abs(At.values(alphaIdx) * A.values(betaIdx)) *
+                        KAS::abs(At.values(alphaIdx) * A.values(betaIdx)),
+                    int(rowIdx));
               }
             }
           }
@@ -166,8 +167,9 @@ struct MDF_discarded_fill_norm {
       } else if (fillRowIdx == rowIdx) {
         diag_val = At.values(alphaIdx);
         if (verbosity > 1) {
-          printf("Row %d diagonal value dected, values(%d)=%f\n", int(rowIdx),
-                 int(alphaIdx), At.values(alphaIdx));
+          KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+              "Row %d diagonal value dected, values(%d)=%f\n", int(rowIdx),
+              int(alphaIdx), At.values(alphaIdx));
         }
       }
     }
@@ -179,7 +181,7 @@ struct MDF_discarded_fill_norm {
     if (verbosity > 0) {
       const ordinal_type degree = ordinal_type(A.graph.row_map(rowIdx + 1) -
                                                A.graph.row_map(rowIdx) - 1);
-      printf(
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
           "Row %d has discarded fill of %f, deficiency of %d and degree %d\n",
           rowIdx, KAS::sqrt(discard_norm), deficiency(rowIdx), degree);
     }
@@ -356,11 +358,11 @@ struct MDF_factorize_row {
     permutation_inv(permutation(selected_row_idx))   = selected_row_idx;
 
     if (verbosity > 0) {
-      printf("Permutation vector: { ");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("Permutation vector: { ");
       for (ordinal_type rowIdx = 0; rowIdx < A.numRows(); ++rowIdx) {
-        printf("%d ", permutation(rowIdx));
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("%d ", permutation(rowIdx));
       }
-      printf("}\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("}\n");
     }
 
     // Insert the upper part of the selected row in U
@@ -381,25 +383,26 @@ struct MDF_factorize_row {
     row_mapU(factorization_step + 1) = U_entryIdx;
 
     if (verbosity > 0) {
-      printf("Diagonal values of row %d is %f\n", selected_row, diag);
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("Diagonal values of row %d is %f\n",
+                                    selected_row, diag);
     }
 
     if (verbosity > 2) {
-      printf("U, row_map={ ");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("U, row_map={ ");
       for (ordinal_type rowIdx = 0; rowIdx < factorization_step + 1; ++rowIdx) {
-        printf("%d ", int(row_mapU(rowIdx)));
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("%d ", int(row_mapU(rowIdx)));
       }
-      printf("}, entries={ ");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("}, entries={ ");
       for (size_type entryIdx = row_mapU(0);
            entryIdx < row_mapU(factorization_step + 1); ++entryIdx) {
-        printf("%d ", int(entriesU(entryIdx)));
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("%d ", int(entriesU(entryIdx)));
       }
-      printf("}, values={ ");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("}, values={ ");
       for (size_type entryIdx = row_mapU(0);
            entryIdx < row_mapU(factorization_step + 1); ++entryIdx) {
-        printf("%f ", valuesU(entryIdx));
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("%f ", valuesU(entryIdx));
       }
-      printf("}\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("}\n");
     }
 
     // Insert the lower part of the selected column of A
@@ -420,20 +423,21 @@ struct MDF_factorize_row {
     row_mapL(factorization_step + 1) = L_entryIdx;
 
     if (verbosity > 2) {
-      printf("L(%d), [row_map(%d), row_map(%d)[ = [%d, %d[, entries={ ",
-             int(factorization_step), int(factorization_step),
-             int(factorization_step + 1), int(row_mapL(factorization_step)),
-             int(row_mapL(factorization_step + 1)));
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+          "L(%d), [row_map(%d), row_map(%d)[ = [%d, %d[, entries={ ",
+          int(factorization_step), int(factorization_step),
+          int(factorization_step + 1), int(row_mapL(factorization_step)),
+          int(row_mapL(factorization_step + 1)));
       for (size_type entryIdx = row_mapL(factorization_step);
            entryIdx < row_mapL(factorization_step + 1); ++entryIdx) {
-        printf("%d ", int(entriesL(entryIdx)));
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("%d ", int(entriesL(entryIdx)));
       }
-      printf("}, values={ ");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("}, values={ ");
       for (size_type entryIdx = row_mapL(factorization_step);
            entryIdx < row_mapL(factorization_step + 1); ++entryIdx) {
-        printf("%f ", valuesL(entryIdx));
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("%f ", valuesL(entryIdx));
       }
-      printf("}\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("}\n");
     }
 
     // If this was the last row no need to update A and At!
@@ -489,8 +493,9 @@ struct MDF_factorize_row {
                     At.values(alphaIdx) * A.values(betaIdx) / diag_val;
 
                 if (verbosity > 1) {
-                  printf("A[%d, %d] -= %f\n", int(fillRowIdx), int(fillColIdx),
-                         At.values(alphaIdx) * A.values(betaIdx) / diag_val);
+                  KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+                      "A[%d, %d] -= %f\n", int(fillRowIdx), int(fillColIdx),
+                      At.values(alphaIdx) * A.values(betaIdx) / diag_val);
                 }
               }
             }
@@ -508,16 +513,16 @@ struct MDF_factorize_row {
     }
 
     if (verbosity > 0) {
-      printf("New values in A: { ");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("New values in A: { ");
       for (size_type entryIdx = 0; entryIdx < A.nnz(); ++entryIdx) {
-        printf("%f ", A.values(entryIdx));
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("%f ", A.values(entryIdx));
       }
-      printf("}\n");
-      printf("New values in At: { ");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("}\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("New values in At: { ");
       for (size_type entryIdx = 0; entryIdx < At.nnz(); ++entryIdx) {
-        printf("%f ", At.values(entryIdx));
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("%f ", At.values(entryIdx));
       }
-      printf("}\n");
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("}\n");
     }
   }  // operator()
 
