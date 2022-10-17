@@ -50,7 +50,7 @@
 #include <stdexcept>
 
 #include "KokkosSparse_CrsMatrix.hpp"
-#include <KokkosKernels_IOUtils.hpp>
+#include "KokkosKernels_IOUtils.hpp"
 #include "KokkosBlas1_nrm2.hpp"
 #include "KokkosSparse_spmv.hpp"
 #include "KokkosSparse_par_ilut.hpp"

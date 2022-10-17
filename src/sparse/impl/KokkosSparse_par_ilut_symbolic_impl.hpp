@@ -83,11 +83,6 @@ void ilut_symbolic(IlutHandle& thandle,
 
   const auto policy = thandle.get_default_team_policy();
 
-  HandleDeviceRowMapType
-    prefix_sum_view(
-      Kokkos::view_alloc(Kokkos::WithoutInitializing, "prefix_sum_view"),
-      policy.league_size());
-
   // Sizing
   Kokkos::parallel_for(
     "symbolic sizing",
@@ -125,8 +120,8 @@ void ilut_symbolic(IlutHandle& thandle,
 
   Kokkos::fence();
 
-  const size_type nnzsL = prefix_sum(thandle, L_row_map_d, prefix_sum_view);
-  const size_type nnzsU = prefix_sum(thandle, U_row_map_d, prefix_sum_view);
+  const size_type nnzsL = prefix_sum(thandle, L_row_map_d);
+  const size_type nnzsU = prefix_sum(thandle, U_row_map_d);
 
   thandle.set_nnzL(nnzsL);
   thandle.set_nnzU(nnzsU);

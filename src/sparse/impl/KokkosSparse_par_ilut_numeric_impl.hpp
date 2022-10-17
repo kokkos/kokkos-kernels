@@ -55,6 +55,7 @@
 #include <KokkosSparse_spadd.hpp>
 #include <KokkosSparse_Utils.hpp>
 #include <KokkosSparse_SortCrs.hpp>
+#include <KokkosKernels_Utils.hpp>
 
 #include <limits>
 
@@ -65,96 +66,24 @@ namespace Impl {
 namespace Experimental {
 
 /**
- * prefix_sum: Take a row_map of counts and transform it to sums
+ * prefix_sum: Take a row_map of counts and transform it to sums, and
+ * return the total sum.
  */
-template <class IlutHandle, class RowMapType, class PrefixSumView>
-typename IlutHandle::size_type prefix_sum(IlutHandle& ih, RowMapType& row_map, PrefixSumView& prefix_sum_view)
+template <class IlutHandle, class RowMapType>
+typename IlutHandle::size_type prefix_sum(IlutHandle& ih, RowMapType& row_map)
 {
-  using size_type   = typename IlutHandle::size_type;
-  using policy_type = typename IlutHandle::TeamPolicy;
-  using member_type = typename policy_type::member_type;
-  using RangePolicy = typename IlutHandle::RangePolicy;
+  using size_type    = typename IlutHandle::size_type;
 
-  const auto policy = ih.get_default_team_policy();
-  const size_type nteams = policy.league_size();
-  const size_type nrows  = ih.get_nrows() + 1;
-  const size_type rows_per_team = (nrows - 1) / nteams + 1;
+  KokkosKernels::Impl::exclusive_parallel_prefix_sum<RowMapType, typename IlutHandle::HandleExecSpace>
+    (row_map.extent(0), row_map);
 
-  Kokkos::parallel_for(
-    "prefix_sum per-team sums",
-    policy,
-    KOKKOS_LAMBDA(const member_type& team) {
-      const auto team_rank = team.league_rank();
+  // Grab last value
+  size_type result = 0;
+  Kokkos::parallel_reduce(1, KOKKOS_LAMBDA(const size_type i, size_type& inner) {
+      inner = row_map(row_map.extent(0) - 1);
+  }, Kokkos::Max<size_type>(result));
 
-      // Get sum total of rows for this team
-      const size_type starti = team_rank * rows_per_team;
-      const size_type endi   = Kokkos::fmin(nrows, (team_rank + 1) * rows_per_team);
-      size_type sum = 0;
-      Kokkos::parallel_reduce(
-        Kokkos::TeamThreadRange(team, starti, endi),
-        [&](const size_type row, size_type& sum_inner) {
-          sum_inner += row_map(row);
-      }, sum);
-
-      team.team_barrier();
-
-      // Convert counts to local sums for this team. No team parallelism
-      // due to dependencies. Could potentially get some parallelism here
-      // by splitting into (endi - starti)/team_size chunks.
-      Kokkos::single(
-        Kokkos::PerTeam(team), [&] () {
-          prefix_sum_view(team_rank) = sum;
-          size_type curr_sum = 0;
-          for (size_type row = starti; row < endi; ++row) {
-            const size_type curr_val = row_map(row);
-            row_map(row) = curr_sum;
-            curr_sum += curr_val;
-          }
-      });
-  });
-
-  Kokkos::fence();
-
-  // Convert prefix_sum_view from per-team sums to global sums.
-  // This currently has no parallelism
-  Kokkos::parallel_for(
-    "prefix_sum per-team prefix",
-    RangePolicy(0, 1),
-    KOKKOS_LAMBDA(const size_type) {
-      size_type team_sum = 0;
-      for (size_type t = 0; t < nteams; ++t) {
-        const size_type team_result = prefix_sum_view(t);
-        prefix_sum_view(t) = team_sum;
-        team_sum += team_result;
-      }
-  });
-
-  Kokkos::fence();
-
-  // Add sums from earlier teams
-  size_type total_sum = 0;
-  Kokkos::parallel_reduce(
-    "prefix_sum finish",
-    policy,
-    KOKKOS_LAMBDA(const member_type& team, size_type& total_sum_arg) {
-      const auto team_rank = team.league_rank();
-      const size_type starti = team_rank * rows_per_team;
-      const size_type endi   = Kokkos::fmin(nrows, (team_rank + 1) * rows_per_team);
-      if (team_rank != 0) {
-        Kokkos::parallel_for(
-          Kokkos::TeamThreadRange(team, starti, endi),
-          [&](const size_type row) {
-            row_map(row) += prefix_sum_view(team_rank);
-        });
-      }
-
-      total_sum_arg = row_map(endi - 1);
-
-  }, Kokkos::Max<size_type>(total_sum));
-
-  Kokkos::fence();
-
-  return total_sum;
+  return result;
 }
 
 /**
@@ -212,7 +141,6 @@ void transpose_wrap(
 {
   using execution_space = typename IlutHandle::execution_space;
   using size_type       = typename IlutHandle::size_type;
-  using range_policy    = typename IlutHandle::RangePolicy;
 
   using HandleDeviceEntriesType = typename IlutHandle::nnz_lno_view_t;
   using HandleDeviceRowMapType  = typename IlutHandle::nnz_row_view_t;
@@ -221,11 +149,8 @@ void transpose_wrap(
   const size_type nrows = ih.get_nrows();
 
   // Need to reset t_row_map
-  Kokkos::parallel_for(
-    range_policy(0, nrows+1),
-    KOKKOS_LAMBDA(const size_type row_idx) {
-      t_row_map(row_idx) = 0;
-    });
+  Kokkos::deep_copy(t_row_map, 0);
+
   Kokkos::resize(t_entries, entries.extent(0));
   Kokkos::resize(t_values,  values.extent(0));
 
@@ -253,8 +178,7 @@ template <class IlutHandle,
           class URowMapType, class UEntriesType, class UValuesType,
           class LURowMapType, class LUEntriesType, class LUValuesType,
           class LNewRowMapType, class LNewEntriesType, class LNewValuesType,
-          class UNewRowMapType, class UNewEntriesType, class UNewValuesType,
-          class PrefixSumType>
+          class UNewRowMapType, class UNewEntriesType, class UNewValuesType>
 void add_candidates(
   IlutHandle& ih,
   const ARowMapType& A_row_map, const AEntriesType& A_entries, const AValuesType& A_values,
@@ -262,8 +186,7 @@ void add_candidates(
   const URowMapType& U_row_map, const UEntriesType& U_entries, const UValuesType& U_values,
   const LURowMapType& LU_row_map, const LUEntriesType& LU_entries, const LUValuesType& LU_values,
   LNewRowMapType& L_new_row_map, LNewEntriesType& L_new_entries, LNewValuesType& L_new_values,
-  UNewRowMapType& U_new_row_map, UNewEntriesType& U_new_entries, UNewValuesType& U_new_values,
-  PrefixSumType& prefix_sum_view)
+  UNewRowMapType& U_new_row_map, UNewEntriesType& U_new_entries, UNewValuesType& U_new_values)
 {
   using size_type       = typename IlutHandle::size_type;
   using policy_type     = typename IlutHandle::TeamPolicy;
@@ -368,8 +291,8 @@ void add_candidates(
   Kokkos::fence();
 
   // prefix sum
-  const size_type l_new_nnz = prefix_sum(ih, L_new_row_map, prefix_sum_view);
-  const size_type u_new_nnz = prefix_sum(ih, U_new_row_map, prefix_sum_view);
+  const size_type l_new_nnz = prefix_sum(ih, L_new_row_map);
+  const size_type u_new_nnz = prefix_sum(ih, U_new_row_map);
 
   Kokkos::resize(L_new_entries, l_new_nnz);
   Kokkos::resize(U_new_entries, u_new_nnz);
@@ -716,13 +639,11 @@ typename IlutHandle::nnz_scalar_t threshold_select(
  */
 template <class IlutHandle,
           class IRowMapType, class IEntriesType, class IValuesType,
-          class ORowMapType, class OEntriesType, class OValuesType,
-          class PrefixSumType>
+          class ORowMapType, class OEntriesType, class OValuesType>
 void threshold_filter(
   IlutHandle& ih, const typename IlutHandle::nnz_scalar_t threshold,
   const IRowMapType& I_row_map, const IEntriesType& I_entries, const IValuesType& I_values,
-  ORowMapType& O_row_map,             OEntriesType& O_entries,       OValuesType& O_values,
-  PrefixSumType& prefix_sum_view)
+  ORowMapType& O_row_map,             OEntriesType& O_entries,       OValuesType& O_values)
 {
   using size_type   = typename IlutHandle::size_type;
   using policy_type = typename IlutHandle::TeamPolicy;
@@ -758,7 +679,7 @@ void threshold_filter(
   });
 
   Kokkos::fence();
-  const auto new_nnz = prefix_sum(ih, O_row_map, prefix_sum_view);
+  const auto new_nnz = prefix_sum(ih, O_row_map);
 
   Kokkos::resize(O_entries, new_nnz);
   Kokkos::resize(O_values, new_nnz);
@@ -925,9 +846,6 @@ void ilut_numeric(KHandle& kh, IlutHandle &thandle, const ARowMapType &A_row_map
     R_row_map(
       Kokkos::view_alloc(Kokkos::WithoutInitializing, "R_row_map"),
       nrows + 1),
-    prefix_sum_view(
-      Kokkos::view_alloc(Kokkos::WithoutInitializing, "prefix_sum_view"),
-      policy.league_size()),
     Ut_new_row_map(
       "Ut_new_row_map",
       nrows + 1);
@@ -959,8 +877,7 @@ void ilut_numeric(KHandle& kh, IlutHandle &thandle, const ARowMapType &A_row_map
       U_row_map, U_entries, U_values,
       LU_row_map, LU_entries, LU_values,
       L_new_row_map, L_new_entries, L_new_values,
-      U_new_row_map, U_new_entries, U_new_values,
-      prefix_sum_view);
+      U_new_row_map, U_new_entries, U_new_values);
 
     // Get transpose of U_new, needed for compute_l_u_factors
     transpose_wrap(
@@ -990,14 +907,12 @@ void ilut_numeric(KHandle& kh, IlutHandle &thandle, const ARowMapType &A_row_map
       threshold_filter(
         thandle, l_threshold,
         L_new_row_map, L_new_entries, L_new_values,
-        L_row_map, L_entries, L_values,
-        prefix_sum_view);
+        L_row_map, L_entries, L_values);
 
       threshold_filter(
         thandle, u_threshold,
         U_new_row_map, U_new_entries, U_new_values,
-        U_row_map, U_entries, U_values,
-        prefix_sum_view);
+        U_row_map, U_entries, U_values);
     }
 
     // Get transpose of U, needed for compute_l_u_factors. Store in Ut_new*
