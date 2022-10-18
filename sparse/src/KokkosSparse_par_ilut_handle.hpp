@@ -42,7 +42,6 @@
 //@HEADER
 */
 
-#include <Kokkos_MemoryTraits.hpp>
 #include <Kokkos_Core.hpp>
 #include <iostream>
 #include <string>

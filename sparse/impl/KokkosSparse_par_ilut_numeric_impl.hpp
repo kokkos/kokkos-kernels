@@ -150,7 +150,7 @@ void transpose_wrap(
   Kokkos::resize(t_entries, entries.extent(0));
   Kokkos::resize(t_values,  values.extent(0));
 
-  KokkosKernels::Impl::transpose_matrix<
+  KokkosSparse::Impl::transpose_matrix<
     HandleDeviceRowMapType, HandleDeviceEntriesType, HandleDeviceValueType,
     HandleDeviceRowMapType, HandleDeviceEntriesType, HandleDeviceValueType,
     HandleDeviceRowMapType, execution_space>(
