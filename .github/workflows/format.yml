@@ -6,6 +6,9 @@ on:
       - master
       - develop
 
+permissions:
+  contents: none
+
 jobs:
   clang-format-check:
     runs-on: ubuntu-20.04
