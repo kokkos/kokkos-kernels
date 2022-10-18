@@ -47,7 +47,10 @@
 ///
 /// This file provides KokkosSparse::par_ilut.  This function performs a
 /// local (no MPI) sparse ILU(t) on matrices stored in
-/// compressed row sparse ("Crs") format.
+/// compressed row sparse ("Crs") format. It is expected that symbolic
+/// is called before numeric. The numeric function offers a deterministic
+/// flag that will force the function to have deterministic results. This
+/// is useful for testing but incurs a big performance penalty.
 ///
 /// This algorithm is described in the paper:
 /// PARILUT - A New Parallel Threshold ILU Factorization - Anzt, Chow, Dongarra
@@ -57,7 +60,6 @@
 
 #include <type_traits>
 
-//#include "KokkosSparse_par_ilut_handle.hpp"
 #include "KokkosKernels_helpers.hpp"
 #include "KokkosKernels_Error.hpp"
 #include "KokkosSparse_par_ilut_symbolic_spec.hpp"
