@@ -118,8 +118,6 @@ void ilut_symbolic(IlutHandle& thandle,
       });
   });
 
-  Kokkos::fence();
-
   const size_type nnzsL = prefix_sum(thandle, L_row_map_d);
   const size_type nnzsU = prefix_sum(thandle, U_row_map_d);
 
@@ -170,7 +168,6 @@ void ilut_symbolic(IlutHandle& thandle,
       U_values_d(u_diag_idx) = diag;
   });
 
-  Kokkos::fence();
 }  // end ilut_symbolic
 
 }  // namespace Experimental

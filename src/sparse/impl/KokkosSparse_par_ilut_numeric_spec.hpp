@@ -144,7 +144,8 @@ struct PAR_ILUT_NUMERIC {
       KernelHandle *handle,
       const ARowMapType &A_row_map, const AEntriesType &A_entries, const AValuesType &A_values,
       LRowMapType &L_row_map, LEntriesType &L_entries, LValuesType &L_values,
-      URowMapType &U_row_map, UEntriesType &U_entries, UValuesType &U_values);
+      URowMapType &U_row_map, UEntriesType &U_entries, UValuesType &U_values,
+      bool deterministic=false);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
@@ -162,12 +163,15 @@ struct PAR_ILUT_NUMERIC<KernelHandle, ARowMapType, AEntriesType, AValuesType,
       KernelHandle *handle,
       const ARowMapType &A_row_map, const AEntriesType &A_entries, const AValuesType &A_values,
       LRowMapType &L_row_map, LEntriesType &L_entries, LValuesType &L_values,
-      URowMapType &U_row_map, UEntriesType &U_entries, UValuesType &U_values) {
+      URowMapType &U_row_map, UEntriesType &U_entries, UValuesType &U_values,
+      bool deterministic=false) {
     auto par_ilut_handle = handle->get_par_ilut_handle();
 
-    Experimental::ilut_numeric(*handle, *par_ilut_handle, A_row_map, A_entries, A_values,
-                               L_row_map, L_entries, L_values, U_row_map,
-                               U_entries, U_values);
+    Experimental::ilut_numeric(*handle, *par_ilut_handle,
+                               A_row_map, A_entries, A_values,
+                               L_row_map, L_entries, L_values,
+                               U_row_map, U_entries, U_values,
+                               deterministic);
   }
 };
 

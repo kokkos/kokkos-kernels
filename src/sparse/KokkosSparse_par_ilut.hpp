@@ -323,12 +323,12 @@ template <typename KernelHandle, typename ARowMapType, typename AEntriesType,
           typename AValuesType, typename LRowMapType, typename LEntriesType,
           typename LValuesType, typename URowMapType, typename UEntriesType,
           typename UValuesType>
-void par_ilut_numeric(KernelHandle* handle,
-                    ARowMapType& A_rowmap, AEntriesType& A_entries,
-                    AValuesType& A_values, LRowMapType& L_rowmap,
-                    LEntriesType& L_entries, LValuesType& L_values,
-                    URowMapType& U_rowmap, UEntriesType& U_entries,
-                    UValuesType& U_values) {
+void par_ilut_numeric(
+  KernelHandle* handle,
+  ARowMapType& A_rowmap, AEntriesType& A_entries, AValuesType& A_values,
+  LRowMapType& L_rowmap, LEntriesType& L_entries, LValuesType& L_values,
+  URowMapType& U_rowmap, UEntriesType& U_entries, UValuesType& U_values,
+  bool deterministic) {
   typedef typename KernelHandle::size_type size_type;
   typedef typename KernelHandle::nnz_lno_t ordinal_type;
   typedef typename KernelHandle::nnz_scalar_t scalar_type;
@@ -590,16 +590,12 @@ void par_ilut_numeric(KernelHandle* handle,
   KokkosSparse::Impl::PAR_ILUT_NUMERIC<
       const_handle_type, ARowMap_Internal, AEntries_Internal, AValues_Internal,
       LRowMap_Internal, LEntries_Internal, LValues_Internal, URowMap_Internal,
-      UEntries_Internal, UValues_Internal>::par_ilut_numeric(&tmp_handle,
-                                                           A_rowmap_i,
-                                                           A_entries_i,
-                                                           A_values_i,
-                                                           L_rowmap_i,
-                                                           L_entries_i,
-                                                           L_values_i,
-                                                           U_rowmap_i,
-                                                           U_entries_i,
-                                                           U_values_i);
+      UEntries_Internal, UValues_Internal>::par_ilut_numeric(
+        &tmp_handle,
+        A_rowmap_i, A_entries_i, A_values_i,
+        L_rowmap_i, L_entries_i, L_values_i,
+        U_rowmap_i, U_entries_i, U_values_i,
+        deterministic);
 
 }  // par_ilut_numeric
 

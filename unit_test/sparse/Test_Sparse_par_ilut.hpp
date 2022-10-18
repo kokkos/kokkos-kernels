@@ -221,8 +221,6 @@ void run_test_par_ilut() {
                     L_row_map, L_entries, L_values,
                     U_row_map, U_entries, U_values);
 
-  Kokkos::fence();
-
   EXPECT_EQ(par_ilut_handle->get_nnzL(), 10);
   EXPECT_EQ(par_ilut_handle->get_nnzU(), 8);
 
@@ -249,9 +247,8 @@ void run_test_par_ilut() {
 
   par_ilut_numeric(&kh, row_map, entries, values,
                    L_row_map, L_entries, L_values,
-                   U_row_map, U_entries, U_values);
-
-  Kokkos::fence();
+                   U_row_map, U_entries, U_values,
+                   true /*deterministic*/);
 
   // Use this to check LU
   // std::vector<std::vector<scalar_t> > expected_LU = {
