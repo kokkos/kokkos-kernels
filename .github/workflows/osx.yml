@@ -2,7 +2,18 @@ name: github-OSX
 
 on:
   pull_request:
-    types: [ opened, labeled, unlabeled, reopened, synchronize ]
+    paths-ignore:
+    - '**/*.rst'
+    - '**/*.md'
+    - '**/requirements.txt'
+    - '**/*.py'
+    - 'docs/**'
+    types: [ opened, reopened, synchronize ]
+
+# Cancels any in progress 'workflow' associated with this PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   check-pr-labels:
@@ -49,13 +60,12 @@ jobs:
 
       - name: configure_kokkos
         run: |
-          ls -lat
           mkdir -p kokkos/{build,install}
           cd kokkos/build
           cmake \
           -DKokkos_ENABLE_${{ matrix.backend }}=ON \
           -DCMAKE_CXX_FLAGS="-Werror" \
-          -DCMAKE_CXX_STANDARD=14 \
+          -DCMAKE_CXX_STANDARD=17 \
           -DKokkos_ENABLE_COMPILER_WARNINGS=ON \
           -DKokkos_ENABLE_DEBUG_BOUNDS_CHECK:BOOL=${{ matrix.debug_bounds_check }} \
           -DKokkos_ENABLE_DEPRECATED_CODE_3=OFF \
@@ -69,7 +79,6 @@ jobs:
 
       - name: configure_kokkos_kernels
         run: |
-          ls -lat
           mkdir -p kokkos-kernels/{build,install}
           cd kokkos-kernels/build
           cmake \

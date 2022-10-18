@@ -476,7 +476,9 @@ int main(int argc, char** argv) {
                           // as number of threads
   const int device_id = params.use_cuda - 1;
 
-  Kokkos::initialize(Kokkos::InitArguments(num_threads, -1, device_id));
+  Kokkos::initialize(Kokkos::InitializationSettings()
+                         .set_num_threads(num_threads)
+                         .set_device_id(device_id));
   // Kokkos::print_configuration(std::cout);
 
   // First, make sure that requested TPL (if any) is actually available

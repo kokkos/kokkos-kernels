@@ -46,12 +46,12 @@ pipeline {
                     }
                 }
 
-                stage('HIP-ROCm-4.5-C++14') {
+                stage('HIP-ROCm-5.2') {
                     agent {
                         dockerfile {
                             filename 'Dockerfile.hip'
                             dir 'scripts/docker'
-                            additionalBuildArgs '--build-arg BASE=rocm/dev-ubuntu-20.04:4.5'
+                            additionalBuildArgs '--build-arg BASE=rocm/dev-ubuntu-20.04:5.2'
                             label 'rocm-docker && vega'
                             args '-v /tmp/ccache.kokkos:/tmp/ccache --device=/dev/kfd --device=/dev/dri --security-opt seccomp=unconfined --group-add video --env HIP_VISIBLE_DEVICES=$HIP_VISIBLE_DEVICES'
                         }
@@ -62,6 +62,7 @@ pipeline {
                               mkdir build && cd build && \
                               cmake \
                                 -DCMAKE_CXX_COMPILER=hipcc \
+                                -DCMAKE_CXX_STANDARD=17 \
                                 -DCMAKE_CXX_EXTENSIONS=OFF \
                                 -DKokkos_ENABLE_HIP=ON \
                               .. && \
@@ -71,6 +72,7 @@ pipeline {
                               cmake \
                                 -DCMAKE_BUILD_TYPE=RelWithDebInfo \
                                 -DCMAKE_CXX_COMPILER=hipcc \
+                                -DCMAKE_CXX_STANDARD=17 \
                                 -DCMAKE_CXX_EXTENSIONS=OFF \
                                 -DKokkosKernels_ENABLE_TESTS=ON \
                                 -DKokkosKernels_ENABLE_EXAMPLES=ON \
