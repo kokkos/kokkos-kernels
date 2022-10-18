@@ -528,7 +528,6 @@ void compute_l_u_factors(
   using size_type = typename IlutHandle::size_type;
 
   if (deterministic) {
-    std::cout << "Using deterministic version of compute_l_u_factors" << std::endl;
     using spolicy_type = Kokkos::TeamPolicy<Kokkos::Serial>;
     using smember_type = typename spolicy_type::member_type;
 
@@ -577,8 +576,6 @@ void compute_l_u_factors(
     Kokkos::deep_copy(Ut_values, Ut_values_h);
   }
   else {
-    std::cout << "Using non-deterministic version of compute_l_u_factors" << std::endl;
-
     using policy_type     = typename IlutHandle::TeamPolicy;
     using member_type     = typename policy_type::member_type;
 
