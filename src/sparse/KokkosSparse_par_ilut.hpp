@@ -218,84 +218,72 @@ void par_ilut_symbolic(KernelHandle* handle,
                    typename LEntriesType::device_type>::value,
       "par_ilut_symbolic: rowmap and entries have different device types.");
 
-  typedef typename KernelHandle::const_size_type c_size_t;
-  typedef typename KernelHandle::const_nnz_lno_t c_lno_t;
-  typedef typename KernelHandle::const_nnz_scalar_t c_scalar_t;
+  using c_size_t   = typename KernelHandle::const_size_type;
+  using c_lno_t    = typename KernelHandle::const_nnz_lno_t ;
+  using c_scalar_t = typename KernelHandle::const_nnz_scalar_t;
 
-  typedef typename KernelHandle::HandleExecSpace c_exec_t;
-  typedef typename KernelHandle::HandleTempMemorySpace c_temp_t;
-  typedef typename KernelHandle::HandlePersistentMemorySpace c_persist_t;
+  using c_exec_t    = typename KernelHandle::HandleExecSpace;
+  using c_temp_t    = typename KernelHandle::HandleTempMemorySpace;
+  using c_persist_t = typename KernelHandle::HandlePersistentMemorySpace;
 
-  typedef typename KokkosKernels::Experimental::KokkosKernelsHandle<
-      c_size_t, c_lno_t, c_scalar_t, c_exec_t, c_temp_t, c_persist_t>
-      const_handle_type;
+  using const_handle_type = typename KokkosKernels::Experimental::KokkosKernelsHandle<
+    c_size_t, c_lno_t, c_scalar_t, c_exec_t, c_temp_t, c_persist_t>;
+
   const_handle_type tmp_handle(*handle);
 
-  typedef Kokkos::View<
-      typename ARowMapType::const_value_type*,
-      typename KokkosKernels::Impl::GetUnifiedLayout<ARowMapType>::array_layout,
-      typename ARowMapType::device_type,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >
-      ARowMap_Internal;
+  using ARowMap_Internal = Kokkos::View<
+    typename ARowMapType::const_value_type*,
+    typename KokkosKernels::Impl::GetUnifiedLayout<ARowMapType>::array_layout,
+    typename ARowMapType::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
-  typedef Kokkos::View<
-      typename AEntriesType::const_value_type*,
-      typename KokkosKernels::Impl::GetUnifiedLayout<
-          AEntriesType>::array_layout,
-      typename AEntriesType::device_type,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >
-      AEntries_Internal;
+  using AEntries_Internal = Kokkos::View<
+    typename AEntriesType::const_value_type*,
+    typename KokkosKernels::Impl::GetUnifiedLayout<AEntriesType>::array_layout,
+    typename AEntriesType::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
-  typedef Kokkos::View<
-      typename AValuesType::const_value_type*,
-      typename KokkosKernels::Impl::GetUnifiedLayout<AValuesType>::array_layout,
-      typename AValuesType::device_type,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >
-      AValues_Internal;
+  using AValues_Internal = Kokkos::View<
+    typename AValuesType::const_value_type*,
+    typename KokkosKernels::Impl::GetUnifiedLayout<AValuesType>::array_layout,
+    typename AValuesType::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
-  typedef Kokkos::View<
-      typename LRowMapType::non_const_value_type*,
-      typename KokkosKernels::Impl::GetUnifiedLayout<LRowMapType>::array_layout,
-      typename LRowMapType::device_type,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >
-      LRowMap_Internal;
+  using LRowMap_Internal = Kokkos::View<
+    typename LRowMapType::non_const_value_type*,
+    typename KokkosKernels::Impl::GetUnifiedLayout<LRowMapType>::array_layout,
+    typename LRowMapType::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
-  typedef Kokkos::View<
-      typename LEntriesType::non_const_value_type*,
-      typename KokkosKernels::Impl::GetUnifiedLayout<
-          LEntriesType>::array_layout,
-      typename LEntriesType::device_type,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >
-      LEntries_Internal;
+  using LEntries_Internal = Kokkos::View<
+    typename LEntriesType::non_const_value_type*,
+    typename KokkosKernels::Impl::GetUnifiedLayout<LEntriesType>::array_layout,
+    typename LEntriesType::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
-  typedef Kokkos::View<
-      typename LValuesType::non_const_value_type*,
-      typename KokkosKernels::Impl::GetUnifiedLayout<LValuesType>::array_layout,
-      typename LValuesType::device_type,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >
-      LValues_Internal;
+  using LValues_Internal = Kokkos::View<
+    typename LValuesType::non_const_value_type*,
+    typename KokkosKernels::Impl::GetUnifiedLayout<LValuesType>::array_layout,
+    typename LValuesType::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
-  typedef Kokkos::View<
-      typename URowMapType::non_const_value_type*,
-      typename KokkosKernels::Impl::GetUnifiedLayout<URowMapType>::array_layout,
-      typename URowMapType::device_type,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >
-      URowMap_Internal;
+  using URowMap_Internal = Kokkos::View<
+    typename URowMapType::non_const_value_type*,
+    typename KokkosKernels::Impl::GetUnifiedLayout<URowMapType>::array_layout,
+    typename URowMapType::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
-  typedef Kokkos::View<
-      typename UEntriesType::non_const_value_type*,
-      typename KokkosKernels::Impl::GetUnifiedLayout<
-          UEntriesType>::array_layout,
-      typename UEntriesType::device_type,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >
-      UEntries_Internal;
+  using UEntries_Internal = Kokkos::View<
+    typename UEntriesType::non_const_value_type*,
+    typename KokkosKernels::Impl::GetUnifiedLayout<UEntriesType>::array_layout,
+    typename UEntriesType::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
-  typedef Kokkos::View<
-      typename UValuesType::non_const_value_type*,
-      typename KokkosKernels::Impl::GetUnifiedLayout<UValuesType>::array_layout,
-      typename UValuesType::device_type,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >
-      UValues_Internal;
+  using UValues_Internal = Kokkos::View<
+    typename UValuesType::non_const_value_type*,
+    typename KokkosKernels::Impl::GetUnifiedLayout<UValuesType>::array_layout,
+    typename UValuesType::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
   ARowMap_Internal A_rowmap_i   = A_rowmap;
   AEntries_Internal A_entries_i = A_entries;
@@ -329,9 +317,10 @@ void par_ilut_numeric(
   LRowMapType& L_rowmap, LEntriesType& L_entries, LValuesType& L_values,
   URowMapType& U_rowmap, UEntriesType& U_entries, UValuesType& U_values,
   bool deterministic) {
-  typedef typename KernelHandle::size_type size_type;
-  typedef typename KernelHandle::nnz_lno_t ordinal_type;
-  typedef typename KernelHandle::nnz_scalar_t scalar_type;
+
+  using size_type    = typename KernelHandle::size_type;
+  using ordinal_type = typename KernelHandle::nnz_lno_t;
+  using scalar_type  = typename KernelHandle::nnz_scalar_t;
 
   static_assert(KOKKOSKERNELS_PAR_ILUT_SAME_TYPE(
                     typename ARowMapType::non_const_value_type, size_type),
@@ -498,84 +487,72 @@ void par_ilut_numeric(
     KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
-  typedef typename KernelHandle::const_size_type c_size_t;
-  typedef typename KernelHandle::const_nnz_lno_t c_lno_t;
-  typedef typename KernelHandle::const_nnz_scalar_t c_scalar_t;
+  using c_size_t   = typename KernelHandle::const_size_type;
+  using c_lno_t    = typename KernelHandle::const_nnz_lno_t;
+  using c_scalar_t = typename KernelHandle::const_nnz_scalar_t;
 
-  typedef typename KernelHandle::HandleExecSpace c_exec_t;
-  typedef typename KernelHandle::HandleTempMemorySpace c_temp_t;
-  typedef typename KernelHandle::HandlePersistentMemorySpace c_persist_t;
+  using c_exec_t    = typename KernelHandle::HandleExecSpace;
+  using c_temp_t    = typename KernelHandle::HandleTempMemorySpace;
+  using c_persist_t = typename KernelHandle::HandlePersistentMemorySpace;
 
-  typedef typename KokkosKernels::Experimental::KokkosKernelsHandle<
-      c_size_t, c_lno_t, c_scalar_t, c_exec_t, c_temp_t, c_persist_t>
-      const_handle_type;
+  using const_handle_type = typename KokkosKernels::Experimental::KokkosKernelsHandle<
+    c_size_t, c_lno_t, c_scalar_t, c_exec_t, c_temp_t, c_persist_t>;
+
   const_handle_type tmp_handle(*handle);
 
-  typedef Kokkos::View<
-      typename ARowMapType::const_value_type*,
-      typename KokkosKernels::Impl::GetUnifiedLayout<ARowMapType>::array_layout,
-      typename ARowMapType::device_type,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >
-      ARowMap_Internal;
+  using ARowMap_Internal = Kokkos::View<
+    typename ARowMapType::const_value_type*,
+    typename KokkosKernels::Impl::GetUnifiedLayout<ARowMapType>::array_layout,
+    typename ARowMapType::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
-  typedef Kokkos::View<
-      typename AEntriesType::const_value_type*,
-      typename KokkosKernels::Impl::GetUnifiedLayout<
-          AEntriesType>::array_layout,
-      typename AEntriesType::device_type,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >
-      AEntries_Internal;
+  using AEntries_Internal = Kokkos::View<
+    typename AEntriesType::const_value_type*,
+    typename KokkosKernels::Impl::GetUnifiedLayout<AEntriesType>::array_layout,
+    typename AEntriesType::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
-  typedef Kokkos::View<
-      typename AValuesType::const_value_type*,
-      typename KokkosKernels::Impl::GetUnifiedLayout<AValuesType>::array_layout,
-      typename AValuesType::device_type,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >
-      AValues_Internal;
+  using AValues_Internal = Kokkos::View<
+    typename AValuesType::const_value_type*,
+    typename KokkosKernels::Impl::GetUnifiedLayout<AValuesType>::array_layout,
+    typename AValuesType::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
-  typedef Kokkos::View<
-      typename LRowMapType::non_const_value_type*,
-      typename KokkosKernels::Impl::GetUnifiedLayout<LRowMapType>::array_layout,
-      typename LRowMapType::device_type,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >
-      LRowMap_Internal;
+  using LRowMap_Internal = Kokkos::View<
+    typename LRowMapType::non_const_value_type*,
+    typename KokkosKernels::Impl::GetUnifiedLayout<LRowMapType>::array_layout,
+    typename LRowMapType::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
-  typedef Kokkos::View<
-      typename LEntriesType::non_const_value_type*,
-      typename KokkosKernels::Impl::GetUnifiedLayout<
-          LEntriesType>::array_layout,
-      typename LEntriesType::device_type,
-      Kokkos::MemoryTraits<Kokkos::RandomAccess> >
-      LEntries_Internal;
+  using LEntries_Internal = Kokkos::View<
+    typename LEntriesType::non_const_value_type*,
+    typename KokkosKernels::Impl::GetUnifiedLayout<LEntriesType>::array_layout,
+    typename LEntriesType::device_type,
+    Kokkos::MemoryTraits<Kokkos::RandomAccess> >;
 
-  typedef Kokkos::View<
-      typename LValuesType::non_const_value_type*,
-      typename KokkosKernels::Impl::GetUnifiedLayout<LValuesType>::array_layout,
-      typename LValuesType::device_type,
-      Kokkos::MemoryTraits<Kokkos::RandomAccess> >
-      LValues_Internal;
+  using LValues_Internal = Kokkos::View<
+    typename LValuesType::non_const_value_type*,
+    typename KokkosKernels::Impl::GetUnifiedLayout<LValuesType>::array_layout,
+    typename LValuesType::device_type,
+    Kokkos::MemoryTraits<Kokkos::RandomAccess> >;
 
-  typedef Kokkos::View<
-      typename URowMapType::non_const_value_type*,
-      typename KokkosKernels::Impl::GetUnifiedLayout<URowMapType>::array_layout,
-      typename URowMapType::device_type,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >
-      URowMap_Internal;
+  using URowMap_Internal = Kokkos::View<
+    typename URowMapType::non_const_value_type*,
+    typename KokkosKernels::Impl::GetUnifiedLayout<URowMapType>::array_layout,
+    typename URowMapType::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
-  typedef Kokkos::View<
-      typename UEntriesType::non_const_value_type*,
-      typename KokkosKernels::Impl::GetUnifiedLayout<
-          UEntriesType>::array_layout,
-      typename UEntriesType::device_type,
-      Kokkos::MemoryTraits<Kokkos::RandomAccess> >
-      UEntries_Internal;
+  using UEntries_Internal = Kokkos::View<
+    typename UEntriesType::non_const_value_type*,
+    typename KokkosKernels::Impl::GetUnifiedLayout<UEntriesType>::array_layout,
+    typename UEntriesType::device_type,
+    Kokkos::MemoryTraits<Kokkos::RandomAccess> >;
 
-  typedef Kokkos::View<
-      typename UValuesType::non_const_value_type*,
-      typename KokkosKernels::Impl::GetUnifiedLayout<UValuesType>::array_layout,
-      typename UValuesType::device_type,
-      Kokkos::MemoryTraits<Kokkos::RandomAccess> >
-      UValues_Internal;
+  using UValues_Internal = Kokkos::View<
+    typename UValuesType::non_const_value_type*,
+    typename KokkosKernels::Impl::GetUnifiedLayout<UValuesType>::array_layout,
+    typename UValuesType::device_type,
+    Kokkos::MemoryTraits<Kokkos::RandomAccess> >;
 
   ARowMap_Internal A_rowmap_i   = A_rowmap;
   AEntries_Internal A_entries_i = A_entries;
