@@ -604,11 +604,12 @@ void compute_l_u_factors(IlutHandle& ih, const ARowMapType& A_row_map,
  * Select threshold based on filter rank. Do all this on host
  */
 template <class IlutHandle, class ValuesType, class ValuesCopyType>
-typename IlutHandle::nnz_scalar_t threshold_select(
+typename IlutHandle::float_t threshold_select(
     IlutHandle& ih, ValuesType& values,
     const typename IlutHandle::nnz_lno_t rank, ValuesCopyType& values_copy) {
   using index_type = typename IlutHandle::nnz_lno_t;
   using scalar_t   = typename IlutHandle::nnz_scalar_t;
+  using karith     = typename Kokkos::ArithTraits<scalar_t>;
 
   const index_type size = values.extent(0);
 
@@ -619,10 +620,10 @@ typename IlutHandle::nnz_scalar_t threshold_select(
   auto target = begin + rank;
   auto end    = begin + size;
   std::nth_element(begin, target, end, [](scalar_t a, scalar_t b) {
-    return std::abs(a) < std::abs(b);
+    return karith::abs(a) < karith::abs(b);
   });
 
-  return std::abs(values_copy(rank));
+  return karith::abs(values_copy(rank));
 }
 
 /**
@@ -632,7 +633,7 @@ template <class IlutHandle, class IRowMapType, class IEntriesType,
           class IValuesType, class ORowMapType, class OEntriesType,
           class OValuesType>
 void threshold_filter(IlutHandle& ih,
-                      const typename IlutHandle::nnz_scalar_t threshold,
+                      const typename IlutHandle::float_t threshold,
                       const IRowMapType& I_row_map,
                       const IEntriesType& I_entries,
                       const IValuesType& I_values, ORowMapType& O_row_map,
@@ -641,6 +642,8 @@ void threshold_filter(IlutHandle& ih,
   using policy_type = typename IlutHandle::TeamPolicy;
   using member_type = typename policy_type::member_type;
   using RangePolicy = typename IlutHandle::RangePolicy;
+  using scalar_t    = typename IlutHandle::nnz_scalar_t;
+  using karith      = typename Kokkos::ArithTraits<scalar_t>;
 
   const auto policy     = ih.get_default_team_policy();
   const size_type nrows = ih.get_nrows();
@@ -654,14 +657,14 @@ void threshold_filter(IlutHandle& ih,
 
         size_type count = 0;
         Kokkos::parallel_reduce(
-            Kokkos::TeamThreadRange(team, row_nnx_begin, row_nnx_end),
-            [&](const size_type nnz, size_type& count_inner) {
-              if (std::abs(I_values(nnz)) >= threshold ||
-                  I_entries(nnz) == row_idx) {
-                count_inner += 1;
-              }
-            },
-            count);
+          Kokkos::TeamThreadRange(team, row_nnx_begin, row_nnx_end),
+          [&](const size_type nnz, size_type& count_inner) {
+            if (karith::abs(I_values(nnz)) >= threshold ||
+                I_entries(nnz) == row_idx) {
+              count_inner += 1;
+            }
+          },
+          count);
 
         team.team_barrier();
 
@@ -684,7 +687,7 @@ void threshold_filter(IlutHandle& ih,
         auto onnz = O_row_map(row_idx);
 
         for (size_type innz = i_row_nnx_begin; innz < i_row_nnx_end; ++innz) {
-          if (std::abs(I_values(innz)) >= threshold ||
+          if (karith::abs(I_values(innz)) >= threshold ||
               static_cast<size_type>(I_entries(innz)) == row_idx) {
             O_entries(onnz) = I_entries(innz);
             O_values(onnz)  = I_values(innz);
@@ -717,6 +720,7 @@ typename IlutHandle::nnz_scalar_t compute_residual_norm(
   using idx_t       = typename AEntriesType::non_const_value_type;
   using policy_type = typename IlutHandle::TeamPolicy;
   using member_type = typename policy_type::member_type;
+  using karith                  = typename Kokkos::ArithTraits<scalar_t>;
 
   multiply_matrices(kh, ih, L_row_map, L_entries, L_values, U_row_map,
                     U_entries, U_values, LU_row_map, LU_entries, LU_values);
@@ -765,7 +769,7 @@ typename IlutHandle::nnz_scalar_t compute_residual_norm(
       },
       result);
 
-  return std::sqrt(result);
+  return karith::sqrt(result);
 }
 
 /**
@@ -790,6 +794,7 @@ void ilut_numeric(KHandle& kh, IlutHandle& thandle,
   using HandleDeviceRowMapType  = typename IlutHandle::nnz_row_view_t;
   using HandleDeviceValueType   = typename IlutHandle::nnz_value_view_t;
   using scalar_t                = typename AValuesType::non_const_value_type;
+  using karith                  = typename Kokkos::ArithTraits<scalar_t>;
 
   const size_type nrows    = thandle.get_nrows();
   const auto fill_in_limit = thandle.get_fill_in_limit();
@@ -798,7 +803,7 @@ void ilut_numeric(KHandle& kh, IlutHandle& thandle,
   const auto u_nnz_limit =
       static_cast<index_type>(fill_in_limit * thandle.get_nnzU());
 
-  const scalar_t residual_norm_delta_stop =
+  const auto residual_norm_delta_stop =
       thandle.get_residual_norm_delta_stop();
   const size_type max_iter = thandle.get_max_iter();
 
@@ -895,12 +900,12 @@ void ilut_numeric(KHandle& kh, IlutHandle& thandle,
 
     // Compute residual and terminate if converged
     {
-      const scalar_t curr_residual = compute_residual_norm(
+      const auto curr_residual = compute_residual_norm(
           kh, thandle, A_row_map, A_entries, A_values, L_row_map, L_entries,
           L_values, U_row_map, U_entries, U_values, R_row_map, R_entries,
           R_values, LU_row_map, LU_entries, LU_values);
 
-      if (prev_residual - curr_residual <= residual_norm_delta_stop) {
+      if (karith::abs(prev_residual - curr_residual) <= karith::abs(residual_norm_delta_stop)) {
         converged = true;
       } else {
         prev_residual = curr_residual;

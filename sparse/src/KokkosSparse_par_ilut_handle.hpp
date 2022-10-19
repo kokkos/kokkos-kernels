@@ -76,6 +76,8 @@ class PAR_ILUTHandle {
   using nnz_scalar_t       = typename std::remove_const<scalar_t_>::type;
   using const_nnz_scalar_t = const nnz_scalar_t;
 
+  using float_t = typename Kokkos::ArithTraits<nnz_scalar_t>::mag_type;
+
   using nnz_row_view_t =
       typename Kokkos::View<size_type *, HandlePersistentMemorySpace>;
 
@@ -105,13 +107,13 @@ class PAR_ILUTHandle {
   int team_size;
   int vector_size;
 
-  nnz_scalar_t fill_in_limit;
+  float_t fill_in_limit;
 
  public:
   PAR_ILUTHandle(const size_type nrows_, const size_type nnzL_,
                  const size_type nnzU_, const size_type max_iter_ = 1,
-                 const nnz_scalar_t residual_norm_delta_stop_ = 0.,
-                 const nnz_scalar_t fill_in_limit_            = 0.75,
+                 const nnz_scalar_t   residual_norm_delta_stop_ = 0.,
+                 const float_t   fill_in_limit_            = 0.75,
                  bool symbolic_complete_                      = false)
       : nrows(nrows_),
         nnzL(nnzL_),
@@ -174,10 +176,10 @@ class PAR_ILUTHandle {
     return this->residual_norm_delta_stop;
   }
 
-  void set_fill_in_limit(const nnz_scalar_t fill_in_limit_) {
+  void set_fill_in_limit(const float_t fill_in_limit_) {
     this->fill_in_limit = fill_in_limit_;
   }
-  nnz_scalar_t get_fill_in_limit() const { return this->fill_in_limit; }
+  float_t get_fill_in_limit() const { return this->fill_in_limit; }
 
   TeamPolicy get_default_team_policy() const {
     if (team_size == -1) {
