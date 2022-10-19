@@ -137,7 +137,6 @@ void run_test_par_ilut() {
   typedef Kokkos::View<size_type*, device> RowMapType;
   typedef Kokkos::View<lno_t*, device> EntriesType;
   typedef Kokkos::View<scalar_t*, device> ValuesType;
-  typedef Kokkos::Details::ArithTraits<scalar_t> AT;
 
   // Simple test fixture A
   std::vector<std::vector<scalar_t> > A = {

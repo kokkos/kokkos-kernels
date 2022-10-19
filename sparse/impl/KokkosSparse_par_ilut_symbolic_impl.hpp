@@ -74,10 +74,9 @@ void ilut_symbolic(IlutHandle& thandle,
   using policy_type            = Kokkos::TeamPolicy<execution_space>;
   using member_type            = typename policy_type::member_type;
   using size_type              = typename IlutHandle::size_type;
-  using nnz_lno_t              = typename IlutHandle::nnz_lno_t;
   using scalar_t               = typename AValuesType::non_const_value_type;
+  using index_t                = typename AEntriesType::non_const_value_type;
   using RangePolicy            = typename IlutHandle::RangePolicy;
-  using HandleDeviceRowMapType = typename IlutHandle::nnz_row_view_t;
 
   const size_type nrows = thandle.get_nrows();
 
@@ -129,7 +128,7 @@ void ilut_symbolic(IlutHandle& thandle,
   Kokkos::parallel_for(
     "symbolic values",
     RangePolicy(0, nrows), // No team level parallelism in this alg
-    KOKKOS_LAMBDA(const size_type& row_idx) {
+    KOKKOS_LAMBDA(const index_t& row_idx) {
       const auto row_nnz_begin = A_row_map_d(row_idx);
       const auto row_nnz_end   = A_row_map_d(row_idx+1);
 

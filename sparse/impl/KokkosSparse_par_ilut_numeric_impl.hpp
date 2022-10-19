@@ -294,8 +294,6 @@ void add_candidates(
 
   constexpr auto sentinel = std::numeric_limits<size_type>::max();
 
-  using scalar_t = typename AValuesType::non_const_value_type;
-
   // Now compute the actual candidate values
   Kokkos::parallel_for(
     "add_candidates",
@@ -405,7 +403,7 @@ template <class IlutHandle,
           class UtRowMapType, class UtEntriesType, class UtValuesType>
 KOKKOS_FUNCTION
 Kokkos::pair<typename AValuesType::non_const_value_type, typename IlutHandle::size_type> compute_sum(
-  typename IlutHandle::size_type row_idx, typename IlutHandle::size_type col_idx,
+  typename IlutHandle::size_type row_idx, typename IlutHandle::nnz_lno_t col_idx,
   const ARowMapType&  A_row_map,  const AEntriesType& A_entries,   const AValuesType& A_values,
   const LRowMapType&  L_row_map,  const LEntriesType& L_entries,   const LValuesType& L_values,
   const UtRowMapType& Ut_row_map, const UtEntriesType& Ut_entries, const UtValuesType& Ut_values)
@@ -417,7 +415,7 @@ Kokkos::pair<typename AValuesType::non_const_value_type, typename IlutHandle::si
   const auto a_row_nnz_end   = A_row_map(row_idx+1);
   auto a_nnz_it =
     kok_lower_bound(A_entries.data() + a_row_nnz_begin, A_entries.data() + a_row_nnz_end, col_idx);
-  auto a_nnz = a_nnz_it - A_entries.data();
+  const size_type a_nnz = a_nnz_it - A_entries.data();
   const bool has_a = a_nnz < a_row_nnz_end && A_entries(a_nnz) == col_idx;
   const auto a_val = has_a ? A_values(a_nnz) : 0.0;
   scalar_t sum = 0.0;
@@ -429,14 +427,14 @@ Kokkos::pair<typename AValuesType::non_const_value_type, typename IlutHandle::si
         auto ut_row_nnz     = Ut_row_map(col_idx);
   const auto ut_row_nnz_end = Ut_row_map(col_idx+1);
 
-  const size_type last_entry = Kokkos::fmin(row_idx, col_idx);
+  const auto last_entry = Kokkos::fmin(row_idx, col_idx);
   while (l_row_nnz < l_row_nnz_end && ut_row_nnz < ut_row_nnz_end) {
     const auto l_col = L_entries(l_row_nnz);
     const auto u_row = Ut_entries(ut_row_nnz);
     if (l_col == u_row && l_col < last_entry) {
       sum += L_values(l_row_nnz) * Ut_values(ut_row_nnz);
     }
-    if (u_row == row_idx) {
+    if (static_cast<size_type>(u_row) == row_idx) {
       ut_nnz = ut_row_nnz;
     }
 
@@ -677,7 +675,7 @@ void threshold_filter(
       auto onnz = O_row_map(row_idx);
 
       for (size_type innz = i_row_nnx_begin; innz < i_row_nnx_end; ++innz) {
-        if (std::abs(I_values(innz)) >= threshold || I_entries(innz) == row_idx) {
+        if (std::abs(I_values(innz)) >= threshold || static_cast<size_type>(I_entries(innz)) == row_idx) {
           O_entries(onnz) = I_entries(innz);
           O_values(onnz)  = I_values(innz);
           ++onnz;
@@ -782,11 +780,8 @@ void ilut_numeric(KHandle& kh, IlutHandle &thandle, const ARowMapType &A_row_map
   //
   // Useful types, constants, and handles
   //
-  using execution_space         = typename IlutHandle::execution_space;
-  using memory_space            = typename IlutHandle::memory_space;
   using index_type              = typename IlutHandle::nnz_lno_t;
   using size_type               = typename IlutHandle::size_type;
-  using range_policy            = typename IlutHandle::RangePolicy;
   using HandleDeviceEntriesType = typename IlutHandle::nnz_lno_view_t;
   using HandleDeviceRowMapType  = typename IlutHandle::nnz_row_view_t;
   using HandleDeviceValueType   = typename IlutHandle::nnz_value_view_t;
@@ -806,8 +801,6 @@ void ilut_numeric(KHandle& kh, IlutHandle &thandle, const ARowMapType &A_row_map
   kh.create_spgemm_handle(spgemm_algorithm);
 
   kh.create_spadd_handle(true /*we expect inputs to be sorted*/);
-
-  const auto policy = thandle.get_default_team_policy();
 
   //
   // temporary workspaces and scalars

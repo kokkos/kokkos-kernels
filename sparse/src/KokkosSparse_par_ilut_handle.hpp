@@ -116,10 +116,10 @@ class PAR_ILUTHandle {
         nnzU(nnzU_),
         max_iter(max_iter_),
         residual_norm_delta_stop(residual_norm_delta_stop_),
-        fill_in_limit(fill_in_limit_),
         symbolic_complete(symbolic_complete_),
         team_size(-1),
-        vector_size(-1) {}
+        vector_size(-1),
+        fill_in_limit(fill_in_limit_) {}
 
   void reset_handle(const size_type nrows_, const size_type nnzL_,
                     const size_type nnzU_) {
