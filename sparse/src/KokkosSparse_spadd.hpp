@@ -221,9 +221,9 @@ void spadd_symbolic(KernelHandle* handle, const AMatrix& A, const BMatrix& B,
   row_map_type row_mapC(
       Kokkos::view_alloc(Kokkos::WithoutInitializing, "row map"),
       A.numRows() + 1);
-  KokkosSparse::Experimental::spadd_symbolic(
-      handle, A.graph.row_map, A.graph.entries, B.graph.row_map,
-      B.graph.entries, row_mapC);
+  KokkosSparse::Experimental::spadd_symbolic(handle, A.graph.row_map,
+                                             A.graph.entries, B.graph.row_map,
+                                             B.graph.entries, row_mapC);
 
   // Now create and allocate the entries and values
   // views so we can build a graph and then matrix C

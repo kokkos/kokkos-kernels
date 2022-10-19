@@ -184,8 +184,8 @@ class KokkosKernelsHandle {
     this->spgemmHandle = right_side_handle.get_spgemm_handle();
     this->spaddHandle  = right_side_handle.get_spadd_handle();
 
-    this->sptrsvHandle = right_side_handle.get_sptrsv_handle();
-    this->spilukHandle = right_side_handle.get_spiluk_handle();
+    this->sptrsvHandle   = right_side_handle.get_sptrsv_handle();
+    this->spilukHandle   = right_side_handle.get_spiluk_handle();
     this->par_ilutHandle = right_side_handle.get_par_ilut_handle();
 
     this->team_work_size      = right_side_handle.get_set_team_work_size();
@@ -900,7 +900,6 @@ class KokkosKernelsHandle {
       this->par_ilutHandle = nullptr;
     }
   }
-
 
 };  // end class KokkosKernelsHandle
 

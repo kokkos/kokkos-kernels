@@ -66,15 +66,14 @@ typedef Kokkos::complex<float> kokkos_complex_float;
 
 namespace Test {
 
-template <typename scalar_t, typename lno_t, typename size_type, typename device>
+template <typename scalar_t, typename lno_t, typename size_type,
+          typename device>
 std::vector<std::vector<scalar_t>> decompress_matrix(
-  Kokkos::View<size_type*, device>& row_map,
-  Kokkos::View<lno_t*, device>& entries,
-  Kokkos::View<scalar_t*, device>& values
-                                                       )
-{
+    Kokkos::View<size_type*, device>& row_map,
+    Kokkos::View<lno_t*, device>& entries,
+    Kokkos::View<scalar_t*, device>& values) {
   const auto nrows = row_map.size() - 1;
-  std::vector<std::vector<scalar_t> > result;
+  std::vector<std::vector<scalar_t>> result;
   result.resize(nrows);
   for (auto& row : result) {
     row.resize(nrows, 0.0);
@@ -89,10 +88,10 @@ std::vector<std::vector<scalar_t>> decompress_matrix(
 
   for (size_type row_idx = 0; row_idx < nrows; ++row_idx) {
     const size_type row_nnz_begin = hrow_map(row_idx);
-    const size_type row_nnz_end   = hrow_map(row_idx+1);
+    const size_type row_nnz_end   = hrow_map(row_idx + 1);
     for (size_type row_nnz = row_nnz_begin; row_nnz < row_nnz_end; ++row_nnz) {
-      const lno_t col_idx = hentries(row_nnz);
-      const scalar_t value = hvalues(row_nnz);
+      const lno_t col_idx      = hentries(row_nnz);
+      const scalar_t value     = hvalues(row_nnz);
       result[row_idx][col_idx] = value;
     }
   }
@@ -100,29 +99,28 @@ std::vector<std::vector<scalar_t>> decompress_matrix(
   return result;
 }
 
-template <typename scalar_t, typename lno_t, typename size_type, typename device>
-void check_matrix(
-  const std::string& name,
-  Kokkos::View<size_type*, device>& row_map,
-  Kokkos::View<lno_t*, device>& entries,
-  Kokkos::View<scalar_t*, device>& values,
-  const std::vector<std::vector<scalar_t>>& expected)
-{
+template <typename scalar_t, typename lno_t, typename size_type,
+          typename device>
+void check_matrix(const std::string& name,
+                  Kokkos::View<size_type*, device>& row_map,
+                  Kokkos::View<lno_t*, device>& entries,
+                  Kokkos::View<scalar_t*, device>& values,
+                  const std::vector<std::vector<scalar_t>>& expected) {
   const auto decompressed_mtx = decompress_matrix(row_map, entries, values);
 
   const auto nrows = row_map.size() - 1;
   for (size_type row_idx = 0; row_idx < nrows; ++row_idx) {
     for (size_type col_idx = 0; col_idx < nrows; ++col_idx) {
-      EXPECT_NEAR(expected[row_idx][col_idx], decompressed_mtx[row_idx][col_idx], 0.01)
-        << "Failed check is: " << name << "[" << row_idx << "][" << col_idx << "]";
+      EXPECT_NEAR(expected[row_idx][col_idx],
+                  decompressed_mtx[row_idx][col_idx], 0.01)
+          << "Failed check is: " << name << "[" << row_idx << "][" << col_idx
+          << "]";
     }
   }
 }
 
-
 template <typename scalar_t>
-void print_matrix(const std::vector<std::vector<scalar_t> >& matrix)
-{
+void print_matrix(const std::vector<std::vector<scalar_t>>& matrix) {
   for (const auto& row : matrix) {
     for (const auto& item : row) {
       std::printf("%.2f ", item);
@@ -139,12 +137,10 @@ void run_test_par_ilut() {
   typedef Kokkos::View<scalar_t*, device> ValuesType;
 
   // Simple test fixture A
-  std::vector<std::vector<scalar_t> > A = {
-    {1.,   6.,   4., 7.},
-    {2.,  -5.,   0., 8.},
-    {0.5, -3.,   6., 0.},
-    {0.2, -0.5, -9., 0.}
-  };
+  std::vector<std::vector<scalar_t>> A = {{1., 6., 4., 7.},
+                                          {2., -5., 0., 8.},
+                                          {0.5, -3., 6., 0.},
+                                          {0.2, -0.5, -9., 0.}};
 
   const scalar_t ZERO = scalar_t(0);
 
@@ -178,10 +174,10 @@ void run_test_par_ilut() {
     for (size_type col_idx = 0; col_idx < nrows; ++col_idx) {
       if (A[row_idx][col_idx] != ZERO) {
         hentries(curr_nnz) = col_idx;
-        hvalues(curr_nnz) = A[row_idx][col_idx];
+        hvalues(curr_nnz)  = A[row_idx][col_idx];
         ++curr_nnz;
       }
-      hrow_map(row_idx+1) = curr_nnz;
+      hrow_map(row_idx + 1) = curr_nnz;
     }
   }
 
@@ -203,21 +199,20 @@ void run_test_par_ilut() {
   auto par_ilut_handle = kh.get_par_ilut_handle();
 
   // Allocate L and U CRS views as outputs
-  RowMapType L_row_map("L_row_map",  nrows + 1);
-  EntriesType L_entries("L_entries", nnzL + nrows); // overallocate to be safe
-  ValuesType L_values("L_values",    nnzL + nrows); // overallocate to be safe
-  RowMapType U_row_map("U_row_map",  nrows + 1);
-  EntriesType U_entries("U_entries", nnzU + nrows); // overallocate to be safe
-  ValuesType U_values("U_values",    nnzU + nrows); // overallocate to be safe
+  RowMapType L_row_map("L_row_map", nrows + 1);
+  EntriesType L_entries("L_entries", nnzL + nrows);  // overallocate to be safe
+  ValuesType L_values("L_values", nnzL + nrows);     // overallocate to be safe
+  RowMapType U_row_map("U_row_map", nrows + 1);
+  EntriesType U_entries("U_entries", nnzU + nrows);  // overallocate to be safe
+  ValuesType U_values("U_values", nnzU + nrows);     // overallocate to be safe
 
   const auto policy = par_ilut_handle->get_default_team_policy();
-  std::cout << "Running with league size: " << policy.league_size() << ", and team size: " << policy.team_size() << std::endl;
+  std::cout << "Running with league size: " << policy.league_size()
+            << ", and team size: " << policy.team_size() << std::endl;
 
   // Initial L/U approximations for A
-  par_ilut_symbolic(&kh,
-                    row_map, entries, values,
-                    L_row_map, L_entries, L_values,
-                    U_row_map, U_entries, U_values);
+  par_ilut_symbolic(&kh, row_map, entries, values, L_row_map, L_entries,
+                    L_values, U_row_map, U_entries, U_values);
 
   EXPECT_EQ(par_ilut_handle->get_nnzL(), 10);
   EXPECT_EQ(par_ilut_handle->get_nnzU(), 8);
@@ -227,25 +222,18 @@ void run_test_par_ilut() {
   Kokkos::resize(U_entries, par_ilut_handle->get_nnzU());
   Kokkos::resize(U_values, par_ilut_handle->get_nnzU());
 
-  std::vector<std::vector<scalar_t> > expected_L = {
-    {1., 0., 0., 0.},
-    {2., 1., 0., 0.},
-    {0.50, -3., 1., 0.},
-    {0.20, -0.50, -9., 1.}
-  };
+  std::vector<std::vector<scalar_t>> expected_L = {{1., 0., 0., 0.},
+                                                   {2., 1., 0., 0.},
+                                                   {0.50, -3., 1., 0.},
+                                                   {0.20, -0.50, -9., 1.}};
   check_matrix("L symbolic", L_row_map, L_entries, L_values, expected_L);
 
-  std::vector<std::vector<scalar_t> > expected_U = {
-    {1., 6., 4., 7.},
-    {0., -5., 0., 8.},
-    {0., 0., 6., 0.},
-    {0., 0., 0., 1.}
-  };
+  std::vector<std::vector<scalar_t>> expected_U = {
+      {1., 6., 4., 7.}, {0., -5., 0., 8.}, {0., 0., 6., 0.}, {0., 0., 0., 1.}};
   check_matrix("U symbolic", U_row_map, U_entries, U_values, expected_U);
 
-  par_ilut_numeric(&kh, row_map, entries, values,
-                   L_row_map, L_entries, L_values,
-                   U_row_map, U_entries, U_values,
+  par_ilut_numeric(&kh, row_map, entries, values, L_row_map, L_entries,
+                   L_values, U_row_map, U_entries, U_values,
                    true /*deterministic*/);
 
   // Use this to check LU
@@ -266,7 +254,8 @@ void run_test_par_ilut() {
   //   {0.20, -0.50, -9., 1.}
   // };
 
-  // check_matrix("L numeric", L_row_map, L_entries, L_values, expected_L_candidates);
+  // check_matrix("L numeric", L_row_map, L_entries, L_values,
+  // expected_L_candidates);
 
   // std::vector<std::vector<scalar_t> > expected_U_candidates = {
   //   {1., 6., 4., 7.},
@@ -275,7 +264,8 @@ void run_test_par_ilut() {
   //   {0., 0., 0., 1.}
   // };
 
-  // check_matrix("U numeric", U_row_map, U_entries, U_values, expected_U_candidates);
+  // check_matrix("U numeric", U_row_map, U_entries, U_values,
+  // expected_U_candidates);
 
   // Use these fixtures to test compute_l_u_factors
   // std::vector<std::vector<scalar_t> > expected_L_candidates = {
@@ -285,7 +275,8 @@ void run_test_par_ilut() {
   //   {0.20, 0.10, -1.32, 1.}
   // };
 
-  // check_matrix("L numeric", L_row_map, L_entries, L_values, expected_L_candidates);
+  // check_matrix("L numeric", L_row_map, L_entries, L_values,
+  // expected_L_candidates);
 
   // std::vector<std::vector<scalar_t> > expected_U_candidates = {
   //   {1., 6., 4., 7.},
@@ -294,26 +285,28 @@ void run_test_par_ilut() {
   //   {0., 0., 0., -2.62}
   // };
 
-  // check_matrix("U numeric", U_row_map, U_entries, U_values, expected_U_candidates);
+  // check_matrix("U numeric", U_row_map, U_entries, U_values,
+  // expected_U_candidates);
 
   // Use these fixtures to test full numeric
-  std::vector<std::vector<scalar_t> > expected_L_candidates = {
-    {1., 0., 0., 0.},
-    {2., 1., 0., 0.},
-    {0.50, 0.35, 1., 0.},
-    {0., 0., -1.32, 1.}
+  std::vector<std::vector<scalar_t>> expected_L_candidates = {
+      {1., 0., 0., 0.},
+      {2., 1., 0., 0.},
+      {0.50, 0.35, 1., 0.},
+      {0., 0., -1.32, 1.}};
+
+  check_matrix("L numeric", L_row_map, L_entries, L_values,
+               expected_L_candidates);
+
+  std::vector<std::vector<scalar_t>> expected_U_candidates = {
+      {1., 6., 4., 7.},
+      {0., -17., -8., -6.},
+      {0., 0., 6.82, 0.},
+      {0., 0., 0., 0.}  // [3] = 0 for full alg, -2.62 for post-threshold only
   };
 
-  check_matrix("L numeric", L_row_map, L_entries, L_values, expected_L_candidates);
-
-  std::vector<std::vector<scalar_t> > expected_U_candidates = {
-    {1., 6., 4., 7.},
-    {0., -17., -8., -6.},
-    {0., 0., 6.82, 0.},
-    {0., 0., 0., 0.} // [3] = 0 for full alg, -2.62 for post-threshold only
-  };
-
-  check_matrix("U numeric", U_row_map, U_entries, U_values, expected_U_candidates);
+  check_matrix("U numeric", U_row_map, U_entries, U_values,
+               expected_U_candidates);
 
   // Checking
 
@@ -328,8 +321,8 @@ void test_par_ilut() {
   Test::run_test_par_ilut<scalar_t, lno_t, size_type, device>();
 }
 
-#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)     \
-  TEST_F(TestCategory,                                                  \
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)          \
+  TEST_F(TestCategory,                                                       \
          sparse##_##par_ilut##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
     test_par_ilut<SCALAR, ORDINAL, OFFSET, DEVICE>();                        \
   }

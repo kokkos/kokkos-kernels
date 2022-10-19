@@ -74,27 +74,30 @@ class PAR_ILUTHandle {
   using const_nnz_lno_t = const nnz_lno_t;
 
   using nnz_scalar_t       = typename std::remove_const<scalar_t_>::type;
-  using const_nnz_scalar_t = const nnz_scalar_t ;
+  using const_nnz_scalar_t = const nnz_scalar_t;
 
-  using nnz_row_view_t = typename Kokkos::View<size_type *, HandlePersistentMemorySpace>;
+  using nnz_row_view_t =
+      typename Kokkos::View<size_type *, HandlePersistentMemorySpace>;
 
-  using nnz_lno_view_t = typename Kokkos::View<nnz_lno_t *, HandlePersistentMemorySpace>;
+  using nnz_lno_view_t =
+      typename Kokkos::View<nnz_lno_t *, HandlePersistentMemorySpace>;
 
-  using nnz_value_view_t = typename Kokkos::View<nnz_scalar_t *, HandlePersistentMemorySpace>;
+  using nnz_value_view_t =
+      typename Kokkos::View<nnz_scalar_t *, HandlePersistentMemorySpace>;
 
-  using signed_integral_t = typename std::make_signed<typename nnz_row_view_t::non_const_value_type>::type;
+  using signed_integral_t = typename std::make_signed<
+      typename nnz_row_view_t::non_const_value_type>::type;
 
   using signed_nnz_lno_view_t =
-    Kokkos::View<signed_integral_t *,
-                 typename nnz_row_view_t::array_layout,
-                 typename nnz_row_view_t::device_type,
-                 typename nnz_row_view_t::memory_traits>;
+      Kokkos::View<signed_integral_t *, typename nnz_row_view_t::array_layout,
+                   typename nnz_row_view_t::device_type,
+                   typename nnz_row_view_t::memory_traits>;
 
  private:
-  size_type    nrows;
-  size_type    nnzL;
-  size_type    nnzU;
-  size_type    max_iter;
+  size_type nrows;
+  size_type nnzL;
+  size_type nnzU;
+  size_type max_iter;
   nnz_scalar_t residual_norm_delta_stop;
 
   bool symbolic_complete;
@@ -105,12 +108,11 @@ class PAR_ILUTHandle {
   nnz_scalar_t fill_in_limit;
 
  public:
-  PAR_ILUTHandle(const size_type nrows_,
-                 const size_type nnzL_, const size_type nnzU_,
-                 const size_type max_iter_ = 1,
+  PAR_ILUTHandle(const size_type nrows_, const size_type nnzL_,
+                 const size_type nnzU_, const size_type max_iter_ = 1,
                  const nnz_scalar_t residual_norm_delta_stop_ = 0.,
-                 const nnz_scalar_t fill_in_limit_ = 0.75,
-                 bool symbolic_complete_ = false)
+                 const nnz_scalar_t fill_in_limit_            = 0.75,
+                 bool symbolic_complete_                      = false)
       : nrows(nrows_),
         nnzL(nnzL_),
         nnzU(nnzU_),
@@ -163,18 +165,23 @@ class PAR_ILUTHandle {
   void set_max_iter(const size_type max_iter_) { this->max_iter = max_iter_; }
   int get_max_iter() const { return this->max_iter; }
 
-  void set_residual_norm_delta_stop(const nnz_scalar_t residual_norm_delta_stop_) { this->residual_norm_delta_stop = residual_norm_delta_stop_; }
-  nnz_scalar_t get_residual_norm_delta_stop() const { return this->residual_norm_delta_stop; }
+  void set_residual_norm_delta_stop(
+      const nnz_scalar_t residual_norm_delta_stop_) {
+    this->residual_norm_delta_stop = residual_norm_delta_stop_;
+  }
+  nnz_scalar_t get_residual_norm_delta_stop() const {
+    return this->residual_norm_delta_stop;
+  }
 
-  void set_fill_in_limit(const nnz_scalar_t fill_in_limit_) { this->fill_in_limit = fill_in_limit_; }
+  void set_fill_in_limit(const nnz_scalar_t fill_in_limit_) {
+    this->fill_in_limit = fill_in_limit_;
+  }
   nnz_scalar_t get_fill_in_limit() const { return this->fill_in_limit; }
 
-  TeamPolicy get_default_team_policy() const
-  {
+  TeamPolicy get_default_team_policy() const {
     if (team_size == -1) {
       return TeamPolicy(nrows, Kokkos::AUTO);
-    }
-    else {
+    } else {
       return TeamPolicy(nrows, team_size);
     }
   }

@@ -61,22 +61,23 @@ namespace KokkosSparse {
 namespace Impl {
 namespace Experimental {
 
-template <class IlutHandle,
-          class ARowMapType, class AEntriesType, class AValuesType,
-          class LRowMapType, class LEntriesType, class LValuesType,
-          class URowMapType, class UEntriesType, class UValuesType>
-void ilut_symbolic(IlutHandle& thandle,
-                   const ARowMapType& A_row_map_d, const AEntriesType& A_entries_d, const AValuesType& A_values_d,
-                   LRowMapType& L_row_map_d, LEntriesType& L_entries_d, LValuesType& L_values_d,
-                   URowMapType& U_row_map_d, UEntriesType& U_entries_d, UValuesType& U_values_d)
-{
-  using execution_space        = typename ARowMapType::execution_space;
-  using policy_type            = Kokkos::TeamPolicy<execution_space>;
-  using member_type            = typename policy_type::member_type;
-  using size_type              = typename IlutHandle::size_type;
-  using scalar_t               = typename AValuesType::non_const_value_type;
-  using index_t                = typename AEntriesType::non_const_value_type;
-  using RangePolicy            = typename IlutHandle::RangePolicy;
+template <class IlutHandle, class ARowMapType, class AEntriesType,
+          class AValuesType, class LRowMapType, class LEntriesType,
+          class LValuesType, class URowMapType, class UEntriesType,
+          class UValuesType>
+void ilut_symbolic(IlutHandle& thandle, const ARowMapType& A_row_map_d,
+                   const AEntriesType& A_entries_d,
+                   const AValuesType& A_values_d, LRowMapType& L_row_map_d,
+                   LEntriesType& L_entries_d, LValuesType& L_values_d,
+                   URowMapType& U_row_map_d, UEntriesType& U_entries_d,
+                   UValuesType& U_values_d) {
+  using execution_space = typename ARowMapType::execution_space;
+  using policy_type     = Kokkos::TeamPolicy<execution_space>;
+  using member_type     = typename policy_type::member_type;
+  using size_type       = typename IlutHandle::size_type;
+  using scalar_t        = typename AValuesType::non_const_value_type;
+  using index_t         = typename AEntriesType::non_const_value_type;
+  using RangePolicy     = typename IlutHandle::RangePolicy;
 
   const size_type nrows = thandle.get_nrows();
 
@@ -84,38 +85,37 @@ void ilut_symbolic(IlutHandle& thandle,
 
   // Sizing
   Kokkos::parallel_for(
-    "symbolic sizing",
-    policy,
-    KOKKOS_LAMBDA(const member_type& team) {
-      const auto row_idx = team.league_rank();
+      "symbolic sizing", policy, KOKKOS_LAMBDA(const member_type& team) {
+        const auto row_idx = team.league_rank();
 
-      const auto row_nnz_begin = A_row_map_d(row_idx);
-      const auto row_nnz_end   = A_row_map_d(row_idx+1);
+        const auto row_nnz_begin = A_row_map_d(row_idx);
+        const auto row_nnz_end   = A_row_map_d(row_idx + 1);
 
-      size_type nnzsL_temp = 0, nnzsU_temp = 0;
-      // Multi-reductions are not supported at the TeamThread level
-      Kokkos::parallel_reduce(
-        Kokkos::TeamThreadRange(team, row_nnz_begin, row_nnz_end),
-        [&](const size_type nnz, size_type& nnzsL_inner) {
-          const auto col_idx = A_entries_d(nnz);
-          nnzsL_inner += col_idx < row_idx;
-      }, nnzsL_temp);
+        size_type nnzsL_temp = 0, nnzsU_temp = 0;
+        // Multi-reductions are not supported at the TeamThread level
+        Kokkos::parallel_reduce(
+            Kokkos::TeamThreadRange(team, row_nnz_begin, row_nnz_end),
+            [&](const size_type nnz, size_type& nnzsL_inner) {
+              const auto col_idx = A_entries_d(nnz);
+              nnzsL_inner += col_idx < row_idx;
+            },
+            nnzsL_temp);
 
-      Kokkos::parallel_reduce(
-        Kokkos::TeamThreadRange(team, row_nnz_begin, row_nnz_end),
-        [&](const size_type nnz, size_type& nnzsU_inner) {
-          const auto col_idx = A_entries_d(nnz);
-          nnzsU_inner += col_idx > row_idx;
-      }, nnzsU_temp);
+        Kokkos::parallel_reduce(
+            Kokkos::TeamThreadRange(team, row_nnz_begin, row_nnz_end),
+            [&](const size_type nnz, size_type& nnzsU_inner) {
+              const auto col_idx = A_entries_d(nnz);
+              nnzsU_inner += col_idx > row_idx;
+            },
+            nnzsU_temp);
 
-      team.team_barrier();
+        team.team_barrier();
 
-      Kokkos::single(
-        Kokkos::PerTeam(team), [&] () {
-          L_row_map_d(row_idx) = nnzsL_temp+1;
-          U_row_map_d(row_idx) = nnzsU_temp+1;
+        Kokkos::single(Kokkos::PerTeam(team), [&]() {
+          L_row_map_d(row_idx) = nnzsL_temp + 1;
+          U_row_map_d(row_idx) = nnzsU_temp + 1;
+        });
       });
-  });
 
   const size_type nnzsL = prefix_sum(thandle, L_row_map_d);
   const size_type nnzsU = prefix_sum(thandle, U_row_map_d);
@@ -126,46 +126,46 @@ void ilut_symbolic(IlutHandle& thandle,
   // Now set actual L/U values
 
   Kokkos::parallel_for(
-    "symbolic values",
-    RangePolicy(0, nrows), // No team level parallelism in this alg
-    KOKKOS_LAMBDA(const index_t& row_idx) {
-      const auto row_nnz_begin = A_row_map_d(row_idx);
-      const auto row_nnz_end   = A_row_map_d(row_idx+1);
+      "symbolic values",
+      RangePolicy(0, nrows),  // No team level parallelism in this alg
+      KOKKOS_LAMBDA(const index_t& row_idx) {
+        const auto row_nnz_begin = A_row_map_d(row_idx);
+        const auto row_nnz_end   = A_row_map_d(row_idx + 1);
 
-      size_type current_index_l = L_row_map_d(row_idx);
-      size_type current_index_u = U_row_map_d(row_idx) + 1; // we treat the diagonal separately
+        size_type current_index_l = L_row_map_d(row_idx);
+        size_type current_index_u =
+            U_row_map_d(row_idx) + 1;  // we treat the diagonal separately
 
-      // if there is no diagonal value, set it to 1 by default
-      scalar_t diag = 1.;
+        // if there is no diagonal value, set it to 1 by default
+        scalar_t diag = 1.;
 
-      for (size_type row_nnz = row_nnz_begin; row_nnz < row_nnz_end; ++row_nnz) {
-        const auto val     = A_values_d(row_nnz);
-        const auto col_idx = A_entries_d(row_nnz);
+        for (size_type row_nnz = row_nnz_begin; row_nnz < row_nnz_end;
+             ++row_nnz) {
+          const auto val     = A_values_d(row_nnz);
+          const auto col_idx = A_entries_d(row_nnz);
 
-        if (col_idx < row_idx) {
-          L_entries_d(current_index_l) = col_idx;
-          L_values_d(current_index_l)  = val;
-          ++current_index_l;
+          if (col_idx < row_idx) {
+            L_entries_d(current_index_l) = col_idx;
+            L_values_d(current_index_l)  = val;
+            ++current_index_l;
+          } else if (col_idx == row_idx) {
+            // save diagonal
+            diag = val;
+          } else {
+            U_entries_d(current_index_u) = col_idx;
+            U_values_d(current_index_u)  = val;
+            ++current_index_u;
+          }
         }
-        else if (col_idx == row_idx) {
-          // save diagonal
-          diag = val;
-        }
-        else {
-          U_entries_d(current_index_u) = col_idx;
-          U_values_d(current_index_u)  = val;
-          ++current_index_u;
-        }
-      }
 
-      // store diagonal values separately
-      const auto l_diag_idx = L_row_map_d(row_idx + 1) - 1;
-      const auto u_diag_idx = U_row_map_d(row_idx);
-      L_entries_d(l_diag_idx) = row_idx;
-      U_entries_d(u_diag_idx) = row_idx;
-      L_values_d(l_diag_idx) = 1.;
-      U_values_d(u_diag_idx) = diag;
-  });
+        // store diagonal values separately
+        const auto l_diag_idx   = L_row_map_d(row_idx + 1) - 1;
+        const auto u_diag_idx   = U_row_map_d(row_idx);
+        L_entries_d(l_diag_idx) = row_idx;
+        U_entries_d(u_diag_idx) = row_idx;
+        L_values_d(l_diag_idx)  = 1.;
+        U_values_d(u_diag_idx)  = diag;
+      });
 
 }  // end ilut_symbolic
 
