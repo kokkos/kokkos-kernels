@@ -168,8 +168,7 @@ class SPILUKHandle {
     iw                  = work_view_t();
   }
 
-  KOKKOS_INLINE_FUNCTION
-  ~SPILUKHandle(){};
+  virtual ~SPILUKHandle(){};
 
   void set_algorithm(SPILUKAlgorithm choice) { algm = choice; }
 

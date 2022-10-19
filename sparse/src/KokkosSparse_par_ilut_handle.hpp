@@ -131,7 +131,8 @@ class PAR_ILUTHandle {
     reset_symbolic_complete();
   }
 
-  virtual ~PAR_ILUTHandle(){};
+  KOKKOS_INLINE_FUNCTION
+  ~PAR_ILUTHandle() {}
 
   KOKKOS_INLINE_FUNCTION
   size_type get_nrows() const { return nrows; }
