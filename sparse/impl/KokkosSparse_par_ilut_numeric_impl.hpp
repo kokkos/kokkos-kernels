@@ -70,7 +70,7 @@ namespace Experimental {
  * return the total sum.
  */
 template <class IlutHandle, class RowMapType>
-typename IlutHandle::size_type prefix_sum(IlutHandle& ih, RowMapType& row_map) {
+typename IlutHandle::size_type prefix_sum(RowMapType& row_map) {
   using size_type = typename IlutHandle::size_type;
 
   KokkosKernels::Impl::exclusive_parallel_prefix_sum<
@@ -81,7 +81,7 @@ typename IlutHandle::size_type prefix_sum(IlutHandle& ih, RowMapType& row_map) {
   size_type result = 0;
   Kokkos::parallel_reduce(
       1,
-      KOKKOS_LAMBDA(const size_type i, size_type& inner) {
+      KOKKOS_LAMBDA(const size_type, size_type& inner) {
         inner = row_map(row_map.extent(0) - 1);
       },
       Kokkos::Max<size_type>(result));
@@ -287,13 +287,13 @@ void add_candidates(
       });
 
   // prefix sum
-  const size_type l_new_nnz = prefix_sum(ih, L_new_row_map);
-  const size_type u_new_nnz = prefix_sum(ih, U_new_row_map);
+  const size_type l_new_nnz_tot = prefix_sum<IlutHandle>(L_new_row_map);
+  const size_type u_new_nnz_tot = prefix_sum<IlutHandle>(U_new_row_map);
 
-  Kokkos::resize(L_new_entries, l_new_nnz);
-  Kokkos::resize(U_new_entries, u_new_nnz);
-  Kokkos::resize(L_new_values, l_new_nnz);
-  Kokkos::resize(U_new_values, u_new_nnz);
+  Kokkos::resize(L_new_entries, l_new_nnz_tot);
+  Kokkos::resize(U_new_entries, u_new_nnz_tot);
+  Kokkos::resize(L_new_values, l_new_nnz_tot);
+  Kokkos::resize(U_new_values, u_new_nnz_tot);
 
   constexpr auto sentinel = std::numeric_limits<size_type>::max();
 
@@ -470,7 +470,7 @@ template <class IlutHandle, class ARowMapType, class AEntriesType,
           class UValuesType, class UtRowMapType, class UtEntriesType,
           class UtValuesType, class MemberType>
 KOKKOS_FUNCTION void compute_l_u_factors_impl(
-    IlutHandle& ih, const ARowMapType& A_row_map, const AEntriesType& A_entries,
+    const ARowMapType& A_row_map, const AEntriesType& A_entries,
     const AValuesType& A_values, LRowMapType& L_row_map,
     LEntriesType& L_entries, LValuesType& L_values, URowMapType& U_row_map,
     UEntriesType& U_entries, UValuesType& U_values, UtRowMapType& Ut_row_map,
@@ -575,8 +575,8 @@ void compute_l_u_factors(IlutHandle& ih, const ARowMapType& A_row_map,
 
     Kokkos::parallel_for(
         "compute_l_u_factors", policy, KOKKOS_LAMBDA(const smember_type& team) {
-          compute_l_u_factors_impl(
-              ih, A_row_map_h, A_entries_h, A_values_h, L_row_map_h,
+          compute_l_u_factors_impl<IlutHandle>(
+              A_row_map_h, A_entries_h, A_values_h, L_row_map_h,
               L_entries_h, L_values_h, U_row_map_h, U_entries_h, U_values_h,
               Ut_row_map_h, Ut_entries_h, Ut_values_h, team);
         });
@@ -592,10 +592,11 @@ void compute_l_u_factors(IlutHandle& ih, const ARowMapType& A_row_map,
 
     Kokkos::parallel_for(
         "compute_l_u_factors", policy, KOKKOS_LAMBDA(const member_type& team) {
-          compute_l_u_factors_impl(ih, A_row_map, A_entries, A_values,
-                                   L_row_map, L_entries, L_values, U_row_map,
-                                   U_entries, U_values, Ut_row_map, Ut_entries,
-                                   Ut_values, team);
+          compute_l_u_factors_impl<IlutHandle>(
+            A_row_map, A_entries, A_values,
+            L_row_map, L_entries, L_values, U_row_map,
+            U_entries, U_values, Ut_row_map, Ut_entries,
+            Ut_values, team);
         });
   }
 }
@@ -605,7 +606,7 @@ void compute_l_u_factors(IlutHandle& ih, const ARowMapType& A_row_map,
  */
 template <class IlutHandle, class ValuesType, class ValuesCopyType>
 typename IlutHandle::float_t threshold_select(
-    IlutHandle& ih, ValuesType& values,
+    ValuesType& values,
     const typename IlutHandle::nnz_lno_t rank, ValuesCopyType& values_copy) {
   using index_type = typename IlutHandle::nnz_lno_t;
   using scalar_t   = typename IlutHandle::nnz_scalar_t;
@@ -673,7 +674,7 @@ void threshold_filter(IlutHandle& ih,
         O_row_map(nrows + 1) = 0;  // harmless race
       });
 
-  const auto new_nnz = prefix_sum(ih, O_row_map);
+  const auto new_nnz = prefix_sum<IlutHandle>(O_row_map);
 
   Kokkos::resize(O_entries, new_nnz);
   Kokkos::resize(O_values, new_nnz);
@@ -875,9 +876,9 @@ void ilut_numeric(KHandle& kh, IlutHandle& thandle,
       const auto u_filter_rank = std::max(0, u_nnz - u_nnz_limit - 1);
 
       const auto l_threshold =
-          threshold_select(thandle, L_new_values, l_filter_rank, V_copy);
+        threshold_select<IlutHandle>(L_new_values, l_filter_rank, V_copy);
       const auto u_threshold =
-          threshold_select(thandle, U_new_values, u_filter_rank, V_copy);
+        threshold_select<IlutHandle>(U_new_values, u_filter_rank, V_copy);
 
       threshold_filter(thandle, l_threshold, L_new_row_map, L_new_entries,
                        L_new_values, L_row_map, L_entries, L_values);
