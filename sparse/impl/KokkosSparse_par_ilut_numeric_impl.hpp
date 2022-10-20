@@ -576,9 +576,9 @@ void compute_l_u_factors(IlutHandle& ih, const ARowMapType& A_row_map,
     Kokkos::parallel_for(
         "compute_l_u_factors", policy, KOKKOS_LAMBDA(const smember_type& team) {
           compute_l_u_factors_impl<IlutHandle>(
-              A_row_map_h, A_entries_h, A_values_h, L_row_map_h,
-              L_entries_h, L_values_h, U_row_map_h, U_entries_h, U_values_h,
-              Ut_row_map_h, Ut_entries_h, Ut_values_h, team);
+              A_row_map_h, A_entries_h, A_values_h, L_row_map_h, L_entries_h,
+              L_values_h, U_row_map_h, U_entries_h, U_values_h, Ut_row_map_h,
+              Ut_entries_h, Ut_values_h, team);
         });
 
     Kokkos::deep_copy(L_values, L_values_h);
@@ -593,10 +593,9 @@ void compute_l_u_factors(IlutHandle& ih, const ARowMapType& A_row_map,
     Kokkos::parallel_for(
         "compute_l_u_factors", policy, KOKKOS_LAMBDA(const member_type& team) {
           compute_l_u_factors_impl<IlutHandle>(
-            A_row_map, A_entries, A_values,
-            L_row_map, L_entries, L_values, U_row_map,
-            U_entries, U_values, Ut_row_map, Ut_entries,
-            Ut_values, team);
+              A_row_map, A_entries, A_values, L_row_map, L_entries, L_values,
+              U_row_map, U_entries, U_values, Ut_row_map, Ut_entries, Ut_values,
+              team);
         });
   }
 }
@@ -606,8 +605,8 @@ void compute_l_u_factors(IlutHandle& ih, const ARowMapType& A_row_map,
  */
 template <class IlutHandle, class ValuesType, class ValuesCopyType>
 typename IlutHandle::float_t threshold_select(
-    ValuesType& values,
-    const typename IlutHandle::nnz_lno_t rank, ValuesCopyType& values_copy) {
+    ValuesType& values, const typename IlutHandle::nnz_lno_t rank,
+    ValuesCopyType& values_copy) {
   using index_type = typename IlutHandle::nnz_lno_t;
   using scalar_t   = typename IlutHandle::nnz_scalar_t;
   using karith     = typename Kokkos::ArithTraits<scalar_t>;
@@ -876,9 +875,9 @@ void ilut_numeric(KHandle& kh, IlutHandle& thandle,
       const auto u_filter_rank = std::max(0, u_nnz - u_nnz_limit - 1);
 
       const auto l_threshold =
-        threshold_select<IlutHandle>(L_new_values, l_filter_rank, V_copy);
+          threshold_select<IlutHandle>(L_new_values, l_filter_rank, V_copy);
       const auto u_threshold =
-        threshold_select<IlutHandle>(U_new_values, u_filter_rank, V_copy);
+          threshold_select<IlutHandle>(U_new_values, u_filter_rank, V_copy);
 
       threshold_filter(thandle, l_threshold, L_new_row_map, L_new_entries,
                        L_new_values, L_row_map, L_entries, L_values);
