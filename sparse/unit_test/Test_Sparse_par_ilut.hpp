@@ -72,7 +72,7 @@ std::vector<std::vector<scalar_t>> decompress_matrix(
     Kokkos::View<size_type*, device>& row_map,
     Kokkos::View<lno_t*, device>& entries,
     Kokkos::View<scalar_t*, device>& values) {
-  const auto nrows = row_map.size() - 1;
+  const size_type nrows = row_map.size() - 1;
   std::vector<std::vector<scalar_t>> result;
   result.resize(nrows);
   for (auto& row : result) {
@@ -108,7 +108,7 @@ void check_matrix(const std::string& name,
                   const std::vector<std::vector<scalar_t>>& expected) {
   const auto decompressed_mtx = decompress_matrix(row_map, entries, values);
 
-  const auto nrows = row_map.size() - 1;
+  const size_type nrows = row_map.size() - 1;
   for (size_type row_idx = 0; row_idx < nrows; ++row_idx) {
     for (size_type col_idx = 0; col_idx < nrows; ++col_idx) {
       EXPECT_NEAR(expected[row_idx][col_idx],
