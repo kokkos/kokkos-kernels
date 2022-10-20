@@ -657,14 +657,14 @@ void threshold_filter(IlutHandle& ih,
 
         size_type count = 0;
         Kokkos::parallel_reduce(
-          Kokkos::TeamThreadRange(team, row_nnx_begin, row_nnx_end),
-          [&](const size_type nnz, size_type& count_inner) {
-            if (karith::abs(I_values(nnz)) >= threshold ||
-                I_entries(nnz) == row_idx) {
-              count_inner += 1;
-            }
-          },
-          count);
+            Kokkos::TeamThreadRange(team, row_nnx_begin, row_nnx_end),
+            [&](const size_type nnz, size_type& count_inner) {
+              if (karith::abs(I_values(nnz)) >= threshold ||
+                  I_entries(nnz) == row_idx) {
+                count_inner += 1;
+              }
+            },
+            count);
 
         team.team_barrier();
 
@@ -720,7 +720,7 @@ typename IlutHandle::nnz_scalar_t compute_residual_norm(
   using idx_t       = typename AEntriesType::non_const_value_type;
   using policy_type = typename IlutHandle::TeamPolicy;
   using member_type = typename policy_type::member_type;
-  using karith                  = typename Kokkos::ArithTraits<scalar_t>;
+  using karith      = typename Kokkos::ArithTraits<scalar_t>;
 
   multiply_matrices(kh, ih, L_row_map, L_entries, L_values, U_row_map,
                     U_entries, U_values, LU_row_map, LU_entries, LU_values);
@@ -803,9 +803,8 @@ void ilut_numeric(KHandle& kh, IlutHandle& thandle,
   const auto u_nnz_limit =
       static_cast<index_type>(fill_in_limit * thandle.get_nnzU());
 
-  const auto residual_norm_delta_stop =
-      thandle.get_residual_norm_delta_stop();
-  const size_type max_iter = thandle.get_max_iter();
+  const auto residual_norm_delta_stop = thandle.get_residual_norm_delta_stop();
+  const size_type max_iter            = thandle.get_max_iter();
 
   std::string myalg("SPGEMM_KK_MEMORY");
   KokkosSparse::SPGEMMAlgorithm spgemm_algorithm =
@@ -905,7 +904,8 @@ void ilut_numeric(KHandle& kh, IlutHandle& thandle,
           L_values, U_row_map, U_entries, U_values, R_row_map, R_entries,
           R_values, LU_row_map, LU_entries, LU_values);
 
-      if (karith::abs(prev_residual - curr_residual) <= karith::abs(residual_norm_delta_stop)) {
+      if (karith::abs(prev_residual - curr_residual) <=
+          karith::abs(residual_norm_delta_stop)) {
         converged = true;
       } else {
         prev_residual = curr_residual;
