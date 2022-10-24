@@ -50,7 +50,7 @@ breathe_projects = {}
 if read_the_docs_build:
     cwd = os.getcwd()
     print(cwd)
-    input_dir = cwd + '/../src/'
+    input_dir = cwd + '/..'
     output_dir = cwd +'/doxygen/'
     doxyfile_in = cwd + '/Doxyfile.in'
     doxyfile_out = cwd + '/Doxyfile'
