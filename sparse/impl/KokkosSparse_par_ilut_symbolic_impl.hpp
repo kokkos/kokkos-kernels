@@ -64,8 +64,7 @@ namespace Experimental {
 template <class IlutHandle, class ARowMapType, class AEntriesType,
           class LRowMapType, class URowMapType>
 void ilut_symbolic(IlutHandle& thandle, const ARowMapType& A_row_map_d,
-                   const AEntriesType& A_entries_d,
-                   LRowMapType& L_row_map_d,
+                   const AEntriesType& A_entries_d, LRowMapType& L_row_map_d,
                    URowMapType& U_row_map_d) {
   using execution_space = typename ARowMapType::execution_space;
   using policy_type     = Kokkos::TeamPolicy<execution_space>;

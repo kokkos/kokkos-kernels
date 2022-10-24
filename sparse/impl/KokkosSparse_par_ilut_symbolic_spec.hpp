@@ -124,13 +124,14 @@ struct PAR_ILUT_SYMBOLIC {
 // Unification layer
 template <class KernelHandle, class ARowMapType, class AEntriesType,
           class LRowMapType, class URowMapType>
-struct PAR_ILUT_SYMBOLIC<KernelHandle, ARowMapType, AEntriesType,
-                         LRowMapType, URowMapType, false,
+struct PAR_ILUT_SYMBOLIC<KernelHandle, ARowMapType, AEntriesType, LRowMapType,
+                         URowMapType, false,
                          KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   static void par_ilut_symbolic(KernelHandle *handle,
                                 const ARowMapType &A_row_map,
                                 const AEntriesType &A_entries,
-                                LRowMapType &L_row_map, URowMapType &U_row_map) {
+                                LRowMapType &L_row_map,
+                                URowMapType &U_row_map) {
     auto par_ilut_handle = handle->get_par_ilut_handle();
 
     Experimental::ilut_symbolic(*par_ilut_handle, A_row_map, A_entries,

@@ -187,12 +187,9 @@ void par_ilut_symbolic(KernelHandle* handle, ARowMapType& A_rowmap,
   URowMap_Internal U_rowmap_i   = U_rowmap;
 
   KokkosSparse::Impl::PAR_ILUT_SYMBOLIC<
-    const_handle_type, ARowMap_Internal, AEntries_Internal,
-    LRowMap_Internal, URowMap_Internal>::par_ilut_symbolic(&tmp_handle,
-                                                           A_rowmap_i,
-                                                           A_entries_i,
-                                                           L_rowmap_i,
-                                                           U_rowmap_i);
+      const_handle_type, ARowMap_Internal, AEntries_Internal, LRowMap_Internal,
+      URowMap_Internal>::par_ilut_symbolic(&tmp_handle, A_rowmap_i, A_entries_i,
+                                           L_rowmap_i, U_rowmap_i);
 
 }  // par_ilut_symbolic
 

@@ -124,11 +124,13 @@ inline void kk_exclusive_parallel_prefix_sum(
  * equivalent to the sum-reduction of arr before doing the scan.
  * \param num_elements: size of the array
  * \param arr: the array for which the prefix sum will be performed.
- * \param finalSum: will be set to arr[num_elements - 1] after computing the prefix sum.
+ * \param finalSum: will be set to arr[num_elements - 1] after computing the
+ * prefix sum.
  */
 template <typename view_t, typename MyExecSpace>
 inline void kk_exclusive_parallel_prefix_sum(
-  typename view_t::size_type num_elements, view_t arr, typename view_t::non_const_value_type& finalSum) {
+    typename view_t::size_type num_elements, view_t arr,
+    typename view_t::non_const_value_type &finalSum) {
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
   Kokkos::parallel_scan("KokkosKernels::Common::PrefixSum",
                         my_exec_space(0, num_elements),
