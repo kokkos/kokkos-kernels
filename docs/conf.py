@@ -19,7 +19,7 @@ def configureDoxyfile(input_dir, output_dir, doxyfile_in, doxyfile_out):
     with open(doxyfile_in, 'r') as file :
         filedata = file.read()
 
-    filedata = filedata.replace('@DOXYGEN_KOKKOSKERNELS_INPUT_DIR@', input_dir)
+    filedata = filedata.replace('@CMAKE_SOURCE_DIR@', input_dir)
     filedata = filedata.replace('@DOXYGEN_OUTPUT_DIR@', output_dir)
 
     with open(doxyfile_out, 'w') as file:
