@@ -146,14 +146,12 @@ void run_test_par_ilut() {
 
   const size_type nrows = A.size();
 
-  // Count A, L, U nnz's
-  size_type nnz = 0, nnzL = 0, nnzU = 0;
+  // Count A nnz's
+  size_type nnz = 0;
   for (size_type row_idx = 0; row_idx < nrows; ++row_idx) {
     for (size_type col_idx = 0; col_idx < nrows; ++col_idx) {
       if (A[row_idx][col_idx] != ZERO) {
         ++nnz;
-        nnzL += col_idx <= row_idx;
-        nnzU += col_idx >= row_idx;
       }
     }
   }
@@ -194,43 +192,27 @@ void run_test_par_ilut() {
 
   KernelHandle kh;
 
-  kh.create_par_ilut_handle(nrows, nnzL, nnzU);
+  kh.create_par_ilut_handle(nrows);
 
   auto par_ilut_handle = kh.get_par_ilut_handle();
 
   // Allocate L and U CRS views as outputs
   RowMapType L_row_map("L_row_map", nrows + 1);
-  EntriesType L_entries("L_entries", nnzL + nrows);  // overallocate to be safe
-  ValuesType L_values("L_values", nnzL + nrows);     // overallocate to be safe
   RowMapType U_row_map("U_row_map", nrows + 1);
-  EntriesType U_entries("U_entries", nnzU + nrows);  // overallocate to be safe
-  ValuesType U_values("U_values", nnzU + nrows);     // overallocate to be safe
-
-  const auto policy = par_ilut_handle->get_default_team_policy();
-  std::cout << "Running with league size: " << policy.league_size()
-            << ", and team size: " << policy.team_size() << std::endl;
 
   // Initial L/U approximations for A
-  par_ilut_symbolic(&kh, row_map, entries, values, L_row_map, L_entries,
-                    L_values, U_row_map, U_entries, U_values);
+  par_ilut_symbolic(&kh, row_map, entries, L_row_map, U_row_map);
 
-  EXPECT_EQ(par_ilut_handle->get_nnzL(), 10);
-  EXPECT_EQ(par_ilut_handle->get_nnzU(), 8);
+  const size_type nnzL = par_ilut_handle->get_nnzL();
+  const size_type nnzU = par_ilut_handle->get_nnzU();
 
-  Kokkos::resize(L_entries, par_ilut_handle->get_nnzL());
-  Kokkos::resize(L_values, par_ilut_handle->get_nnzL());
-  Kokkos::resize(U_entries, par_ilut_handle->get_nnzU());
-  Kokkos::resize(U_values, par_ilut_handle->get_nnzU());
+  EXPECT_EQ(nnzL, 10);
+  EXPECT_EQ(nnzU, 8);
 
-  std::vector<std::vector<scalar_t>> expected_L = {{1., 0., 0., 0.},
-                                                   {2., 1., 0., 0.},
-                                                   {0.50, -3., 1., 0.},
-                                                   {0.20, -0.50, -9., 1.}};
-  check_matrix("L symbolic", L_row_map, L_entries, L_values, expected_L);
-
-  std::vector<std::vector<scalar_t>> expected_U = {
-      {1., 6., 4., 7.}, {0., -5., 0., 8.}, {0., 0., 6., 0.}, {0., 0., 0., 1.}};
-  check_matrix("U symbolic", U_row_map, U_entries, U_values, expected_U);
+  EntriesType L_entries("L_entries", nnzL);
+  ValuesType L_values("L_values", nnzL);
+  EntriesType U_entries("U_entries", nnzU);
+  ValuesType U_values("U_values", nnzU);
 
   par_ilut_numeric(&kh, row_map, entries, values, L_row_map, L_entries,
                    L_values, U_row_map, U_entries, U_values,

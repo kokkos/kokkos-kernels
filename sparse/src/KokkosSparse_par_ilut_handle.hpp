@@ -110,8 +110,8 @@ class PAR_ILUTHandle {
   float_t fill_in_limit;
 
  public:
-  PAR_ILUTHandle(const size_type nrows_, const size_type nnzL_,
-                 const size_type nnzU_, const size_type max_iter_ = 1,
+  PAR_ILUTHandle(const size_type nrows_, const size_type nnzL_ = 0,
+                 const size_type nnzU_ = 0, const size_type max_iter_ = 1,
                  const nnz_scalar_t residual_norm_delta_stop_ = 0.,
                  const float_t fill_in_limit_                 = 0.75,
                  bool symbolic_complete_                      = false)

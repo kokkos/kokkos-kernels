@@ -886,7 +886,7 @@ class KokkosKernelsHandle {
   }
 
   PAR_ILUTHandleType *get_par_ilut_handle() { return this->par_ilutHandle; }
-  void create_par_ilut_handle(size_type nrows, size_type nnzL, size_type nnzU) {
+  void create_par_ilut_handle(size_type nrows, size_type nnzL=0, size_type nnzU=0) {
     this->destroy_par_ilut_handle();
     this->is_owner_of_the_par_ilut_handle = true;
     this->par_ilutHandle = new PAR_ILUTHandleType(nrows, nnzL, nnzU);

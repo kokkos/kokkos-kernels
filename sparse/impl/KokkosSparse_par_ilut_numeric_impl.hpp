@@ -73,19 +73,8 @@ template <class IlutHandle, class RowMapType>
 typename IlutHandle::size_type prefix_sum(RowMapType& row_map) {
   using size_type = typename IlutHandle::size_type;
 
-  KokkosKernels::Impl::exclusive_parallel_prefix_sum<
-      RowMapType, typename IlutHandle::HandleExecSpace>(row_map.extent(0),
-                                                        row_map);
-
-  // Grab last value
-  size_type result = 0;
-  Kokkos::parallel_reduce(
-      1,
-      KOKKOS_LAMBDA(const size_type, size_type& inner) {
-        inner = row_map(row_map.extent(0) - 1);
-      },
-      Kokkos::Max<size_type>(result));
-
+  size_type result;
+  KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<RowMapType, typename IlutHandle::HandleExecSpace>(row_map.extent(0), row_map, result);
   return result;
 }
 
@@ -666,11 +655,12 @@ void threshold_filter(IlutHandle& ih,
             },
             count);
 
-        team.team_barrier();
-
-        O_row_map(row_idx) = count;
-
-        O_row_map(nrows + 1) = 0;  // harmless race
+        Kokkos::single(Kokkos::PerTeam(team), [=]() {
+            O_row_map(row_idx) = count;
+            if (static_cast<size_type>(row_idx) == nrows-1) {
+              O_row_map(nrows) = 0;
+            }
+          });
       });
 
   const auto new_nnz = prefix_sum<IlutHandle>(O_row_map);
@@ -755,6 +745,7 @@ typename IlutHandle::nnz_scalar_t compute_residual_norm(
         const auto r_row_nnz_begin = R_row_map(row_idx);
         const auto r_row_nnz_end   = R_row_map(row_idx + 1);
 
+        scalar_t team_sum = 0.;
         Kokkos::parallel_reduce(
             Kokkos::TeamThreadRange(team, r_row_nnz_begin, r_row_nnz_end),
             [&](const size_type nnz, scalar_t& sum_inner) {
@@ -765,11 +756,79 @@ typename IlutHandle::nnz_scalar_t compute_residual_norm(
                 sum_inner += R_values(nnz) * R_values(nnz);
               }
             },
-            total_sum);
+            team_sum);
+
+        Kokkos::single(Kokkos::PerTeam(team),
+                       [&]() {total_sum += team_sum;});
       },
       result);
 
   return karith::sqrt(result);
+}
+
+/**
+ * Set the initial L/U values for the initial approximation
+ */
+template <class IlutHandle, class ARowMapType,
+          class AEntriesType, class AValuesType, class LRowMapType,
+          class LEntriesType, class LValuesType, class URowMapType,
+          class UEntriesType, class UValuesType>
+void initialize_LU(
+    IlutHandle& ih, const ARowMapType& A_row_map,
+    const AEntriesType& A_entries, const AValuesType& A_values,
+    const LRowMapType& L_row_map, const LEntriesType& L_entries,
+    const LValuesType& L_values, const URowMapType& U_row_map,
+    const UEntriesType& U_entries, const UValuesType& U_values) {
+
+  using size_type   = typename IlutHandle::size_type;
+  using scalar_t    = typename AValuesType::non_const_value_type;
+  using index_t     = typename AEntriesType::non_const_value_type;
+  using RangePolicy = typename IlutHandle::RangePolicy;
+
+  const size_type nrows = ih.get_nrows();
+
+  Kokkos::parallel_for(
+      "approx LU values",
+      RangePolicy(0, nrows),  // No team level parallelism in this alg
+      KOKKOS_LAMBDA(const index_t& row_idx) {
+        const auto row_nnz_begin = A_row_map(row_idx);
+        const auto row_nnz_end   = A_row_map(row_idx + 1);
+
+        size_type current_index_l = L_row_map(row_idx);
+        size_type current_index_u =
+            U_row_map(row_idx) + 1;  // we treat the diagonal separately
+
+        // if there is no diagonal value, set it to 1 by default
+        scalar_t diag = 1.;
+
+        for (size_type row_nnz = row_nnz_begin; row_nnz < row_nnz_end;
+             ++row_nnz) {
+          const auto val     = A_values(row_nnz);
+          const auto col_idx = A_entries(row_nnz);
+
+          if (col_idx < row_idx) {
+            L_entries(current_index_l) = col_idx;
+            L_values(current_index_l)  = val;
+            ++current_index_l;
+          } else if (col_idx == row_idx) {
+            // save diagonal
+            diag = val;
+          } else {
+            U_entries(current_index_u) = col_idx;
+            U_values(current_index_u)  = val;
+            ++current_index_u;
+          }
+        }
+
+        // store diagonal values separately
+        const auto l_diag_idx   = L_row_map(row_idx + 1) - 1;
+        const auto u_diag_idx   = U_row_map(row_idx);
+        L_entries(l_diag_idx) = row_idx;
+        U_entries(u_diag_idx) = row_idx;
+        L_values(l_diag_idx)  = 1.;
+        U_values(u_diag_idx)  = diag;
+      });
+
 }
 
 /**
@@ -837,6 +896,10 @@ void ilut_numeric(KHandle& kh, IlutHandle& thandle,
   size_type itr          = 0;
   scalar_t prev_residual = std::numeric_limits<scalar_t>::max();
   bool converged         = false;
+
+  // Set the initial L/U values for the initial approximation
+  initialize_LU(thandle, A_row_map, A_entries, A_values, L_row_map,
+                L_entries, L_values, U_row_map, U_entries, U_values);
 
   //
   // main loop
