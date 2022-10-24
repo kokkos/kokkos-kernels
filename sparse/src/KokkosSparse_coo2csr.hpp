@@ -50,7 +50,8 @@
 #define _KOKKOSSPARSE_COO2CSR_HPP
 namespace KokkosSparse {
 namespace Impl {
-template <class RowViewType, class ColViewType, class DataViewType>
+template <class DimType, class RowViewType, class ColViewType,
+          class DataViewType>
 class Coo2Csr {
  private:
   using CrsST             = typename DataViewType::value_type;
@@ -63,10 +64,15 @@ class Coo2Csr {
   using CrsRowMapViewType = typename CrsType::row_map_type::non_const_type;
   using CrsColIdViewType  = typename CrsType::index_type;
   using RowIdViewType     = RowViewType;
-  using ColMapViewType    = ColViewType;
-  using ValViewType       = DataViewType;
-  using OrdinalType       = CrsOT;
-  using SizeType          = CrsSzT;
+  using AtomicRowIdViewType =
+      Kokkos::View<typename RowIdViewType::value_type *,
+                   typename RowIdViewType::array_layout,
+                   typename RowIdViewType::execution_space,
+                   Kokkos::MemoryTraits<Kokkos::Atomic>>;
+  using ColMapViewType = ColViewType;
+  using ValViewType    = DataViewType;
+  using OrdinalType    = CrsOT;
+  using SizeType       = CrsSzT;
 
   OrdinalType __nrows;
   OrdinalType __ncols;
@@ -75,13 +81,14 @@ class Coo2Csr {
   RowIdViewType __row_ids;
   ColMapViewType __col_map;
 
-  RowIdViewType __crs_row_cnt;
+  AtomicRowIdViewType __crs_row_cnt;
 
   CrsValsViewType __crs_vals;
   CrsRowMapViewType __crs_row_map;
   CrsRowMapViewType __crs_row_map_scratch;
   CrsColIdViewType __crs_col_ids;
 
+  size_t __n_tuples;
   bool __insert_mode;
 
  public:
@@ -93,16 +100,26 @@ class Coo2Csr {
     struct s5MaxRowCnt {};
   };
 
-  template <class MemberType>
   class __Phase1Functor {
    private:
     RowViewType __row;
     ColViewType __col;
     DataViewType __data;
+    AtomicRowIdViewType __crs_row_cnt;
 
    public:
-    __Phase1Functor(RowViewType row, ColViewType col, DataViewType data)
-        : __row(row), __col(col), __data(data){};
+    __Phase1Functor(RowViewType row, ColViewType col, DataViewType data,
+                    AtomicRowIdViewType crs_row_cnt)
+        : __row(row), __col(col), __data(data), __crs_row_cnt(crs_row_cnt){};
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(const typename phase1Tags::s1RowCntDup &,
+                    const int &thread_id) const {
+      auto i = __row(thread_id);
+      auto j = __col(thread_id);
+
+      if (i >= 0 && j >= 0) __crs_row_cnt(i)++;
+    }
   };
 
   struct phase2Tags {
@@ -110,7 +127,6 @@ class Coo2Csr {
     struct s7Copy {};
   };
 
-  template <class MemberType>
   class __Phase2Functor {
    private:
     OrdinalType __nrows;
@@ -123,7 +139,7 @@ class Coo2Csr {
     CrsRowMapViewType __crs_row_map_scratch;
     ColMapViewType __col_map;
     CrsColIdViewType __crs_col_ids;
-    RowIdViewType __crs_row_cnt;
+    AtomicRowIdViewType __crs_row_cnt;
 
    public:
     __Phase2Functor(OrdinalType nrows, OrdinalType ncols, SizeType nnz,
@@ -131,7 +147,7 @@ class Coo2Csr {
                     RowIdViewType row_ids, CrsRowMapViewType crs_row_map,
                     CrsRowMapViewType crs_row_map_scratch,
                     ColMapViewType col_map, CrsColIdViewType crs_col_ids,
-                    RowIdViewType crs_row_cnt)
+                    AtomicRowIdViewType crs_row_cnt)
         : __nrows(nrows),
           __ncols(ncols),
           __nnz(nnz),
@@ -146,33 +162,35 @@ class Coo2Csr {
   };
 
  private:
-  using TeamPolicyType = Kokkos::TeamPolicy<typename phase2Tags::s7Copy, CrsET>;
-
   int __suggested_team_size, __suggested_vec_size, __league_size;
 
-  template <class MemberType>
-  void __runPhase1(__Phase1Functor<MemberType> &functor) {
-    /*     // s1RowCntTag
-        {
-          Kokkos::parallel_for("Coo2Csr",
-                               Kokkos::RangePolicy<AlgoTags::s1RowCntDup,
-       CrsET>(0, __coo_n), functor); CrsET().fence();
-        } */
+  template <class FunctorType>
+  void __runPhase1(FunctorType &functor) {
+    {
+      Kokkos::parallel_for(
+          "Coo2Csr",
+          Kokkos::RangePolicy<typename phase1Tags::s1RowCntDup, CrsET>(
+              0, __n_tuples),
+          functor);
+      CrsET().fence();
+    }
     return;
   }
 
-  template <class MemberType>
-  void __runPhase2(__Phase2Functor<MemberType> &functor) {
+  template <class FunctorType>
+  void __runPhase2(FunctorType &functor) {
     return;
   }
 
  public:
-  Coo2Csr(RowViewType row, ColViewType col, DataViewType data,
-          bool insert_mode) {
+  Coo2Csr(DimType m, DimType n, RowViewType row, ColViewType col,
+          DataViewType data, bool insert_mode) {
     __insert_mode = insert_mode;
-    __Phase1Functor<typename TeamPolicyType::member_type> phase1Functor(
-        row, col, data);
-    __runPhase1<typename TeamPolicyType::member_type>(phase1Functor);
+    __n_tuples    = data.extent(1);
+
+    __crs_row_cnt = AtomicRowIdViewType("__crs_row_cnt", m);
+    __Phase1Functor phase1Functor(row, col, data, __crs_row_cnt);
+    __runPhase1(phase1Functor);
 
     /*    __crs_vals = CrsValsViewType(
         Kokkos::view_alloc(Kokkos::WithoutInitializing, "__crs_vals"), nnz);
@@ -185,8 +203,6 @@ class Coo2Csr {
                           nrows + 1);
     __crs_col_ids = CrsColIdViewType(
         Kokkos::view_alloc(Kokkos::WithoutInitializing, "__crs_col_ids"), nnz);
-
-    __crs_row_cnt = RowIdViewType("__crs_row_cnt", __nrows + 1);
 
         KokkosKernels::Impl::get_suggested_vector_size<int64_t, CrsET>(
         __suggested_vec_size, __nrows, __nnz);
@@ -209,17 +225,21 @@ class Coo2Csr {
 }  // namespace Impl
 ///
 /// \brief Converts a coo matrix to a CrsMatrix.
+/// \tparam DimType the dimension type
 /// \tparam RowViewType The row array view type
 /// \tparam ColViewType The column array view type
 /// \tparam DataViewType The data array view type
+/// \param m the number of rows
+/// \param n the number of columns
 /// \param row the array of row ids
 /// \param col the array of col ids
 /// \param data the array of data
 /// \param insert_mode whether to insert values. By default, values are added.
 /// \return A KokkosSparse::CrsMatrix.
-template <class RowViewType, class ColViewType, class DataViewType>
-auto coo2csr(RowViewType row, ColViewType col, DataViewType data,
-             bool insert_mode = false) {
+template <class DimType, class RowViewType, class ColViewType,
+          class DataViewType>
+auto coo2csr(DimType m, DimType n, RowViewType row, ColViewType col,
+             DataViewType data, bool insert_mode = false) {
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
   static_assert(Kokkos::is_view<RowViewType>::value,
                 "RowViewType must be a Kokkos::View.");
@@ -242,23 +262,30 @@ auto coo2csr(RowViewType row, ColViewType col, DataViewType data,
 
   if (insert_mode) Kokkos::abort("insert_mode not supported yet.");
 
-  using Coo2csrType = Impl::Coo2Csr<RowViewType, ColViewType, DataViewType>;
-  Coo2csrType Coo2Csr(row, col, data, insert_mode);
+  if (row.extent(1) != col.extent(1) || row.extent(1) != data.extent(1))
+    Kokkos::abort("row.extent(1) = col.extent(1) = data.extent(1) required.");
+
+  using Coo2csrType =
+      Impl::Coo2Csr<DimType, RowViewType, ColViewType, DataViewType>;
+  Coo2csrType Coo2Csr(m, n, row, col, data, insert_mode);
   return Coo2Csr.get_csrMat();
 }
 
 #if 0
 /// \brief Inserts new values into the given CrsMatrix.
+/// \tparam DimType the dimension type
 /// \tparam RowViewType The row array view type
 /// \tparam ColViewType The column array view type
 /// \tparam DataViewType The data array view type
+/// \param m the number of rows
+/// \param n the number of columns
 /// \param row the array of row ids
 /// \param col the array of col ids
 /// \param data the array of data
 /// \param insert_mode whether to insert values. By default, values are added.
 /// \return A KokkosSparse::CrsMatrix.
-template <class RowViewType, class ColViewType, class DataViewType, class CrsMatrixType>
-auto coo2csr(RowViewType row, ColViewType col, DataViewType data, CrsMatrixType crsMatrix) {
+template <class DimType, class RowViewType, class ColViewType, class DataViewType, class CrsMatrixType>
+auto coo2csr(DimType m, DimType n, RowViewType row, ColViewType col, DataViewType data, CrsMatrixType crsMatrix) {
   // TODO: Run phase2 only.
 }
 #endif

@@ -50,7 +50,7 @@ template <class ScalarType, class LayoutType, class ExeSpaceType>
 void doCoo2Csr(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
   RandCooMat<ScalarType, LayoutType, ExeSpaceType> cooMat(m, n, m * n, min_val,
                                                           max_val);
-  auto csrMat = KokkosSparse::coo2csr(cooMat.get_row(), cooMat.get_col(),
+  auto csrMat = KokkosSparse::coo2csr(m, n, cooMat.get_row(), cooMat.get_col(),
                                       cooMat.get_data());
   /*
     auto csc_row_ids_d = cscMat.get_row_ids();
