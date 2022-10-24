@@ -548,6 +548,65 @@ int string_compare_no_case(const char* str1, const char* str2) {
   return strcmp(str1_s.c_str(), str2_s.c_str());
 }
 
+/// /brief Coo matrix class for testing purposes.
+/// \tparam ScalarType
+/// \tparam LayoutType
+/// \tparam ExeSpaceType
+template <class ScalarType, class LayoutType, class ExeSpaceType>
+class RandCooMat {
+ private:
+  using RowViewTypeD  = Kokkos::View<int64_t*, LayoutType, ExeSpaceType>;
+  using ColViewTypeD  = Kokkos::View<int64_t*, LayoutType, ExeSpaceType>;
+  using DataViewTypeD = Kokkos::View<ScalarType*, LayoutType, ExeSpaceType>;
+  RowViewTypeD __row_d;
+  ColViewTypeD __col_d;
+  DataViewTypeD __data_d;
+
+  template <class T>
+  T __getter_copy_helper(T src) {
+    T dst(std::string("RandCooMat.") + typeid(T).name() + " copy",
+          src.extent(0));
+    Kokkos::deep_copy(dst, src);
+    ExeSpaceType().fence();
+    return dst;
+  }
+
+ public:
+  std::string info;
+  /// Constructs a random coo matrix with negative indices.
+  /// \param m The max row id
+  /// \param n The max col id
+  /// \param n_tuples The number of tuples.
+  /// \param min_val The minimum scalar value in the matrix.
+  /// \param max_val The maximum scalar value in the matrix.
+  RandCooMat(int64_t m, int64_t n, int64_t n_tuples, ScalarType min_val,
+             ScalarType max_val) {
+    uint64_t ticks =
+        std::chrono::high_resolution_clock::now().time_since_epoch().count() %
+        UINT32_MAX;
+
+    info = std::string(std::string("RandCooMat<") + typeid(ScalarType).name() +
+                       ", " + typeid(LayoutType).name() + ", " +
+                       typeid(ExeSpaceType).name() + std::to_string(n) +
+                       "...): rand seed: " + std::to_string(ticks) + "\n");
+    Kokkos::Random_XorShift64_Pool<ExeSpaceType> random(ticks);
+
+    __row_d = RowViewTypeD("RandCooMat.RowViewType", n_tuples);
+    Kokkos::fill_random(__row_d, random, -m, m);
+
+    __col_d = ColViewTypeD("RandCooMat.ColViewType", n_tuples);
+    Kokkos::fill_random(__col_d, random, -n, n);
+
+    __data_d = DataViewTypeD("RandCooMat.DataViewType", n_tuples);
+    Kokkos::fill_random(__data_d, random, min_val, max_val);
+
+    ExeSpaceType().fence();
+  }
+  auto get_row() { return __getter_copy_helper(__row_d); }
+  auto get_col() { return __getter_copy_helper(__col_d); }
+  auto get_data() { return __getter_copy_helper(__data_d); }
+};
+
 /// /brief Cs (Compressed Sparse) matrix class for testing purposes.
 /// This class is for testing purposes only and will generate a random
 /// Crs / Ccs matrix when instantiated. The class is intentionally written

@@ -42,123 +42,120 @@
 //@HEADER
 */
 
-#include "KokkosSparse_csc2csr.hpp"
+#include "KokkosSparse_coo2csr.hpp"
 #include "KokkosKernels_TestUtils.hpp"
 
 namespace Test {
 template <class ScalarType, class LayoutType, class ExeSpaceType>
-void doCsc2Csr(size_t m, size_t n, ScalarType min_val, ScalarType max_val,
-               bool fully_sparse = false) {
-  RandCscMat<ScalarType, LayoutType, ExeSpaceType> cscMat(
-      m, n, min_val, max_val, fully_sparse);
-  constexpr int league_size = 32;
+void doCoo2Csr(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
+  RandCooMat<ScalarType, LayoutType, ExeSpaceType> cooMat(m, n, m * n, min_val,
+                                                          max_val);
+  auto csrMat = KokkosSparse::coo2csr(cooMat.get_row(), cooMat.get_col(),
+                                      cooMat.get_data());
+  /*
+    auto csc_row_ids_d = cscMat.get_row_ids();
+    auto csc_col_map_d = cscMat.get_col_map();
+    auto csc_vals_d    = cscMat.get_vals();
 
-  auto csrMat = KokkosSparse::csc2csr(
-      cscMat.get_m(), cscMat.get_n(), cscMat.get_nnz(), cscMat.get_vals(),
-      cscMat.get_row_ids(), cscMat.get_col_map(), league_size);
+    using ViewTypeRowIds = decltype(csc_row_ids_d);
+    using ViewTypeColMap = decltype(csc_col_map_d);
+    using ViewTypeVals   = decltype(csc_vals_d);
 
-  auto csc_row_ids_d = cscMat.get_row_ids();
-  auto csc_col_map_d = cscMat.get_col_map();
-  auto csc_vals_d    = cscMat.get_vals();
+    // Copy to host
+    typename ViewTypeRowIds::HostMirror csc_row_ids =
+        Kokkos::create_mirror_view(csc_row_ids_d);
+    Kokkos::deep_copy(csc_row_ids, csc_row_ids_d);
+    typename ViewTypeColMap::HostMirror csc_col_map =
+        Kokkos::create_mirror_view(csc_col_map_d);
+    Kokkos::deep_copy(csc_col_map, csc_col_map_d);
+    typename ViewTypeVals::HostMirror csc_vals =
+        Kokkos::create_mirror_view(csc_vals_d);
+    Kokkos::deep_copy(csc_vals, csc_vals_d);
 
-  using ViewTypeRowIds = decltype(csc_row_ids_d);
-  using ViewTypeColMap = decltype(csc_col_map_d);
-  using ViewTypeVals   = decltype(csc_vals_d);
+    auto csr_col_ids_d = csrMat.graph.entries;
+    auto csr_row_map_d = csrMat.graph.row_map;
+    auto csr_vals_d    = csrMat.values;
 
-  // Copy to host
-  typename ViewTypeRowIds::HostMirror csc_row_ids =
-      Kokkos::create_mirror_view(csc_row_ids_d);
-  Kokkos::deep_copy(csc_row_ids, csc_row_ids_d);
-  typename ViewTypeColMap::HostMirror csc_col_map =
-      Kokkos::create_mirror_view(csc_col_map_d);
-  Kokkos::deep_copy(csc_col_map, csc_col_map_d);
-  typename ViewTypeVals::HostMirror csc_vals =
-      Kokkos::create_mirror_view(csc_vals_d);
-  Kokkos::deep_copy(csc_vals, csc_vals_d);
+    using ViewTypeCsrColIds = decltype(csr_col_ids_d);
+    using ViewTypeCsrRowMap = decltype(csr_row_map_d);
+    using ViewTypeCsrVals   = decltype(csr_vals_d);
 
-  auto csr_col_ids_d = csrMat.graph.entries;
-  auto csr_row_map_d = csrMat.graph.row_map;
-  auto csr_vals_d    = csrMat.values;
+    // Copy to host
+    typename ViewTypeCsrColIds::HostMirror csr_col_ids =
+        Kokkos::create_mirror_view(csr_col_ids_d);
+    Kokkos::deep_copy(csr_col_ids, csr_col_ids_d);
+    typename ViewTypeCsrRowMap::HostMirror csr_row_map =
+        Kokkos::create_mirror_view(csr_row_map_d);
+    Kokkos::deep_copy(csr_row_map, csr_row_map_d);
+    typename ViewTypeCsrVals::HostMirror csr_vals =
+        Kokkos::create_mirror_view(csr_vals_d);
+    Kokkos::deep_copy(csr_vals, csr_vals_d);
 
-  using ViewTypeCsrColIds = decltype(csr_col_ids_d);
-  using ViewTypeCsrRowMap = decltype(csr_row_map_d);
-  using ViewTypeCsrVals   = decltype(csr_vals_d);
+    Kokkos::fence();
 
-  // Copy to host
-  typename ViewTypeCsrColIds::HostMirror csr_col_ids =
-      Kokkos::create_mirror_view(csr_col_ids_d);
-  Kokkos::deep_copy(csr_col_ids, csr_col_ids_d);
-  typename ViewTypeCsrRowMap::HostMirror csr_row_map =
-      Kokkos::create_mirror_view(csr_row_map_d);
-  Kokkos::deep_copy(csr_row_map, csr_row_map_d);
-  typename ViewTypeCsrVals::HostMirror csr_vals =
-      Kokkos::create_mirror_view(csr_vals_d);
-  Kokkos::deep_copy(csr_vals, csr_vals_d);
+    for (int j = 0; j < cscMat.get_n(); ++j) {
+      auto col_start = csc_col_map(j);
+      auto col_len   = csc_col_map(j + 1) - col_start;
 
-  Kokkos::fence();
+      for (int k = 0; k < col_len; ++k) {
+        auto i = col_start + k;
 
-  for (int j = 0; j < cscMat.get_n(); ++j) {
-    auto col_start = csc_col_map(j);
-    auto col_len   = csc_col_map(j + 1) - col_start;
+        auto row_start = csr_row_map(csc_row_ids(i));
+        auto row_len   = csr_row_map(csc_row_ids(i) + 1) - row_start;
+        auto row_end   = row_start + row_len;
 
-    for (int k = 0; k < col_len; ++k) {
-      auto i = col_start + k;
+        if (row_len == 0) continue;
 
-      auto row_start = csr_row_map(csc_row_ids(i));
-      auto row_len   = csr_row_map(csc_row_ids(i) + 1) - row_start;
-      auto row_end   = row_start + row_len;
+        // Linear search for corresponding element in csr matrix
+        int l = row_start;
+        while (l < row_end && csr_col_ids(l) != j) {
+          ++l;
+        }
 
-      if (row_len == 0) continue;
+        if (l == row_end)
+          FAIL() << "csr element at (i: " << csc_row_ids(i) << ", j: " << j
+                 << ") not found!" << std::endl;
 
-      // Linear search for corresponding element in csr matrix
-      int l = row_start;
-      while (l < row_end && csr_col_ids(l) != j) {
-        ++l;
+        ASSERT_EQ(csc_vals(i), csr_vals(l))
+            << "(i: " << csc_row_ids(i) << ", j: " << j << ")" << std::endl;
       }
-
-      if (l == row_end)
-        FAIL() << "csr element at (i: " << csc_row_ids(i) << ", j: " << j
-               << ") not found!" << std::endl;
-
-      ASSERT_EQ(csc_vals(i), csr_vals(l))
-          << "(i: " << csc_row_ids(i) << ", j: " << j << ")" << std::endl;
-    }
-  }
+    } */
 }
 
 template <class LayoutType, class ExeSpaceType>
-void doAllScalarsCsc2Csr(size_t m, size_t n, int min, int max) {
-  doCsc2Csr<float, LayoutType, ExeSpaceType>(m, n, min, max);
-  doCsc2Csr<double, LayoutType, ExeSpaceType>(m, n, min, max);
-  doCsc2Csr<Kokkos::complex<float>, LayoutType, ExeSpaceType>(m, n, min, max);
-  doCsc2Csr<Kokkos::complex<double>, LayoutType, ExeSpaceType>(m, n, min, max);
+void doAllScalarsCoo2Csr(size_t m, size_t n, int min, int max) {
+  doCoo2Csr<float, LayoutType, ExeSpaceType>(m, n, min, max);
+  doCoo2Csr<double, LayoutType, ExeSpaceType>(m, n, min, max);
+  doCoo2Csr<Kokkos::complex<float>, LayoutType, ExeSpaceType>(m, n, min, max);
+  doCoo2Csr<Kokkos::complex<double>, LayoutType, ExeSpaceType>(m, n, min, max);
 }
 
 template <class ExeSpaceType>
-void doAllLayoutsCsc2Csr(size_t m, size_t n, int min, int max) {
-  doAllScalarsCsc2Csr<Kokkos::LayoutLeft, ExeSpaceType>(m, n, min, max);
-  doAllScalarsCsc2Csr<Kokkos::LayoutRight, ExeSpaceType>(m, n, min, max);
+void doAllLayoutsCoo2Csr(size_t m, size_t n, int min, int max) {
+  doAllScalarsCoo2Csr<Kokkos::LayoutLeft, ExeSpaceType>(m, n, min, max);
+  doAllScalarsCoo2Csr<Kokkos::LayoutRight, ExeSpaceType>(m, n, min, max);
 }
 
 template <class ExeSpaceType>
-void doAllCsc2csr(size_t m, size_t n) {
+void doAllCoo2csr(size_t m, size_t n) {
   int min = 1, max = 10;
-  doAllLayoutsCsc2Csr<ExeSpaceType>(m, n, min, max);
+  doAllLayoutsCoo2Csr<ExeSpaceType>(m, n, min, max);
 }
 
-TEST_F(TestCategory, sparse_csc2csr) {
+TEST_F(TestCategory, sparse_coo2csr) {
   // Square cases
   for (size_t dim = 4; dim < 1024; dim *= 4)
-    doAllCsc2csr<TestExecSpace>(dim, dim);
+    doAllCoo2csr<TestExecSpace>(dim, dim);
 
   // Non-square cases
   for (size_t dim = 1; dim < 1024; dim *= 4) {
-    doAllCsc2csr<TestExecSpace>(dim * 3, dim);
-    doAllCsc2csr<TestExecSpace>(dim, dim * 3);
+    doAllCoo2csr<TestExecSpace>(dim * 3, dim);
+    doAllCoo2csr<TestExecSpace>(dim, dim * 3);
   }
 
-  // Fully sparse
-  doCsc2Csr<float, Kokkos::LayoutLeft, TestExecSpace>(5, 5, 1, 10, true);
-  doCsc2Csr<double, Kokkos::LayoutRight, TestExecSpace>(50, 10, 10, 100, true);
+  /* // Fully sparse
+  doCoo2Csr<float, Kokkos::LayoutLeft, TestExecSpace>(5, 5, 1, 10, true);
+  doCoo2Csr<double, Kokkos::LayoutRight, TestExecSpace>(50, 10, 10, 100, true);
+*/
 }
 }  // namespace Test
