@@ -444,7 +444,7 @@ class KokkosKernelsHandle {
   /**
    * \brief Sets whether to use dynamic scheduling or
    * not for those kernels where load-imbalances might occur.
-   * \input is_dynamic: true or false -> dynamic or static scheduling.
+   * @param is_dynamic: true or false -> dynamic or static scheduling..
    */
   void set_dynamic_scheduling(const bool is_dynamic) {
     this->use_dynamic_scheduling = is_dynamic;
