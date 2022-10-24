@@ -71,6 +71,7 @@ void ilut_symbolic(IlutHandle& thandle, const ARowMapType& A_row_map_d,
   using policy_type     = Kokkos::TeamPolicy<execution_space>;
   using member_type     = typename policy_type::member_type;
   using size_type       = typename IlutHandle::size_type;
+  using Ilut            = IlutWrap<IlutHandle>;
 
   const auto policy = thandle.get_default_team_policy();
 
@@ -108,8 +109,8 @@ void ilut_symbolic(IlutHandle& thandle, const ARowMapType& A_row_map_d,
         });
       });
 
-  const size_type nnzsL = prefix_sum<IlutHandle>(L_row_map_d);
-  const size_type nnzsU = prefix_sum<IlutHandle>(U_row_map_d);
+  const size_type nnzsL = Ilut::prefix_sum(L_row_map_d);
+  const size_type nnzsU = Ilut::prefix_sum(U_row_map_d);
 
   thandle.set_nnzL(nnzsL);
   thandle.set_nnzU(nnzsU);

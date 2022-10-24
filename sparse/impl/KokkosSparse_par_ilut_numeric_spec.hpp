@@ -166,10 +166,11 @@ struct PAR_ILUT_NUMERIC<KernelHandle, ARowMapType, AEntriesType, AValuesType,
                                UEntriesType &U_entries, UValuesType &U_values,
                                bool deterministic = false) {
     auto par_ilut_handle = handle->get_par_ilut_handle();
+    using Ilut = Experimental::IlutWrap<typename std::remove_pointer<decltype(par_ilut_handle)>::type>;
 
-    Experimental::ilut_numeric(*handle, *par_ilut_handle, A_row_map, A_entries,
-                               A_values, L_row_map, L_entries, L_values,
-                               U_row_map, U_entries, U_values, deterministic);
+    Ilut::ilut_numeric(*handle, *par_ilut_handle, A_row_map, A_entries,
+                       A_values, L_row_map, L_entries, L_values,
+                       U_row_map, U_entries, U_values, deterministic);
   }
 };
 
