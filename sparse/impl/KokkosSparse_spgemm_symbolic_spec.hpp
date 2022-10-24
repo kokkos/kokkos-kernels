@@ -161,11 +161,13 @@ struct SPGEMM_SYMBOLIC<KernelHandle, a_size_view_t_, a_lno_view_t,
         break;
       case SPGEMM_ROCSPARSE:
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE)
-        rocsparse_spgemm_symbolic<spgemmHandleType, a_size_view_t_,
-                                  a_lno_view_t, b_size_view_t_, b_lno_view_t,
-                                  c_size_view_t_>(
-            sh, m, n, k, row_mapA, entriesA, transposeA, row_mapB, entriesB,
-            transposeB, row_mapC);
+        spgemm_symbolic_rocsparse<spgemmHandleType,
+          typename KernelHandle::nnz_scalar_t, a_size_view_t_, 
+          a_lno_view_t,c_size_view_t_>(
+            sh, m, n, k,
+            row_mapA, entriesA, transposeA,
+            row_mapB, entriesB, transposeB,
+            row_mapC);
 #else
         throw std::runtime_error(
             "Requiring SPGEMM_ROCSPARSE but TPL_ROCSPARSE was not enabled!");

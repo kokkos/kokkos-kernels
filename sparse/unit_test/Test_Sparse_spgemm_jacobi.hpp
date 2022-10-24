@@ -100,6 +100,11 @@ int run_spgemm_jacobi(crsMat_t input_mat, crsMat_t input_mat2,
 
   kh.create_spgemm_handle(spgemm_algorithm);
 
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE) && defined(TEST_HIP_SPARSE_CPP)
+  kh.get_spgemm_handle()->create_rocsparse_spgemm_handle(false,false);
+  kh.get_spgemm_handle()->get_rocsparse_spgemm_handle()->enable_jacobi=true;
+#endif
+
   const size_t num_rows_1 = input_mat.numRows();
   const size_t num_rows_2 = input_mat2.numRows();
   const size_t num_cols_2 = input_mat2.numCols();
@@ -256,15 +261,20 @@ void test_spgemm_jacobi(lno_t numRows, size_type nnz, lno_t bandwidth,
   run_spgemm_jacobi<crsMat_t, device, scalar_t, view_t>(
       input_mat, input_mat, omega, dinv, SPGEMM_SERIAL, output_mat2);
 
-  SPGEMMAlgorithm spgemm_algorithm =
-      SPGEMM_KK_MEMORY;  // should we test other SpGEMM algorithms as well?
+  std::vector<SPGEMMAlgorithm> spgemm_algorithms;
+  spgemm_algorithms.push_back(SPGEMM_KK_MEMORY);
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE) && defined(TEST_HIP_SPARSE_CPP)
+  spgemm_algorithms.push_back(SPGEMM_ROCSPARSE);
+#endif
 
-  crsMat_t output_mat;
+  for(const auto & spgemm_algorithm : spgemm_algorithms){
+    crsMat_t output_mat;
 
-  run_spgemm_jacobi<crsMat_t, device>(input_mat, input_mat, omega, dinv,
-                                      spgemm_algorithm, output_mat);
-  bool is_identical = is_same_mat<crsMat_t, device>(output_mat, output_mat2);
-  EXPECT_TRUE(is_identical);
+    run_spgemm_jacobi<crsMat_t, device>(input_mat, input_mat, omega, dinv,
+                                        spgemm_algorithm, output_mat);
+    bool is_identical = is_same_mat<crsMat_t, device>(output_mat, output_mat2);
+    EXPECT_TRUE(is_identical);
+  }
 }
 
 #define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)            \
