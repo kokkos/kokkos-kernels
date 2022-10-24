@@ -171,9 +171,6 @@ void run_experiment(const Params& params) {
       lno_view_t;
   typedef typename crsMat_t::StaticCrsGraphType::entries_type::non_const_type
       lno_nnz_view_t;
-  typedef typename crsMat_t::StaticCrsGraphType::row_map_type const_lno_view_t;
-  typedef
-      typename crsMat_t::StaticCrsGraphType::entries_type const_lno_nnz_view_t;
 
   lno_view_t row_mapC;
   // entriesC, valuesC and cusparseBuffer are allocated inside
