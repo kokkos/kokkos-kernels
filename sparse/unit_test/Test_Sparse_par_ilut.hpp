@@ -221,7 +221,7 @@ void run_test_par_ilut() {
 #else
                    false /*cannot ask for determinism*/
 #endif
-                   );
+  );
 
   // Use this to check LU
   // std::vector<std::vector<scalar_t> > expected_LU = {

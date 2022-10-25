@@ -567,7 +567,9 @@ struct IlutWrap {
       Kokkos::deep_copy(U_values, U_values_h);
       Kokkos::deep_copy(Ut_values, Ut_values_h);
 #else
-      throw std::runtime_error("compute_l_u factors cannot be deterministic without Kokkos::Serial available");
+      throw std::runtime_error(
+          "compute_l_u factors cannot be deterministic without Kokkos::Serial "
+          "available");
 #endif
     } else {
       const auto policy = ih.get_default_team_policy();
