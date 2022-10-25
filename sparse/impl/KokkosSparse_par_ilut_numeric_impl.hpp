@@ -178,7 +178,7 @@ struct IlutWrap {
       UNewValuesType& U_new_values) {
     const size_type nrows = ih.get_nrows();
 
-    const auto policy = ih.get_default_team_policy();
+    const policy_type policy = ih.get_default_team_policy();
 
     // Sizing run for add_candidates. Count nnz's and remove dupes
     Kokkos::parallel_for(
@@ -521,6 +521,7 @@ struct IlutWrap {
       UtRowMapType& Ut_row_map, UtEntriesType& Ut_entries,
       UtValuesType& Ut_values, bool deterministic) {
     if (deterministic) {
+#ifdef KOKKOS_ENABLE_SERIAL
       using spolicy_type = Kokkos::TeamPolicy<Kokkos::Serial>;
       using smember_type = typename spolicy_type::member_type;
 
@@ -565,6 +566,9 @@ struct IlutWrap {
       Kokkos::deep_copy(L_values, L_values_h);
       Kokkos::deep_copy(U_values, U_values_h);
       Kokkos::deep_copy(Ut_values, Ut_values_h);
+#else
+      throw std::runtime_error("compute_l_u factors cannot be deterministic without Kokkos::Serial available");
+#endif
     } else {
       const auto policy = ih.get_default_team_policy();
 

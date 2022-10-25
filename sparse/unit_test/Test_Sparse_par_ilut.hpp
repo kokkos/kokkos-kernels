@@ -216,7 +216,12 @@ void run_test_par_ilut() {
 
   par_ilut_numeric(&kh, row_map, entries, values, L_row_map, L_entries,
                    L_values, U_row_map, U_entries, U_values,
-                   true /*deterministic*/);
+#ifdef KOKKOS_ENABLE_SERIAL
+                   true /*deterministic*/
+#else
+                   false /*cannot ask for determinism*/
+#endif
+                   );
 
   // Use this to check LU
   // std::vector<std::vector<scalar_t> > expected_LU = {
@@ -270,6 +275,10 @@ void run_test_par_ilut() {
   // check_matrix("U numeric", U_row_map, U_entries, U_values,
   // expected_U_candidates);
 
+  // Serial is required for deterministic mode and the checks below cannot
+  // reliably pass without determinism.
+#ifdef KOKKOS_ENABLE_SERIAL
+
   // Use these fixtures to test full numeric
   std::vector<std::vector<scalar_t>> expected_L_candidates = {
       {1., 0., 0., 0.},
@@ -293,6 +302,7 @@ void run_test_par_ilut() {
   // Checking
 
   kh.destroy_par_ilut_handle();
+#endif
 }
 
 }  // namespace Test
