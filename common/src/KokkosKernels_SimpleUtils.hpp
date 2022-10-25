@@ -75,15 +75,15 @@ class SquareRootFunctor {
 
 template <typename view_t>
 struct ExclusiveParallelPrefixSum {
-  typedef typename view_t::value_type idx;
+  typedef typename view_t::value_type value_type;
   view_t array_sum;
   ExclusiveParallelPrefixSum(view_t arr_) : array_sum(arr_) {}
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(const size_t ii, size_t &update, const bool final) const {
-    idx val = array_sum(ii);
+  void operator()(const size_t ii, value_type &update, const bool final) const {
+    value_type val = array_sum(ii);
     if (final) {
-      array_sum(ii) = idx(update);
+      array_sum(ii) = value_type(update);
     }
     update += val;
   }
@@ -129,7 +129,7 @@ inline void kk_exclusive_parallel_prefix_sum(
  */
 template <typename view_t, typename MyExecSpace>
 inline void kk_exclusive_parallel_prefix_sum(
-    typename view_t::size_type num_elements, view_t arr,
+    typename view_t::value_type num_elements, view_t arr,
     typename view_t::non_const_value_type &finalSum) {
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
   Kokkos::parallel_scan("KokkosKernels::Common::PrefixSum",
