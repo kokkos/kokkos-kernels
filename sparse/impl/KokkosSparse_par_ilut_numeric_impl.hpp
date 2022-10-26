@@ -641,9 +641,8 @@ struct IlutWrap {
               },
               count);
 
-          Kokkos::single(Kokkos::PerTeam(team), [=]() {
-            O_row_map(row_idx) = count;
-          });
+          Kokkos::single(Kokkos::PerTeam(team),
+                         [=]() { O_row_map(row_idx) = count; });
         });
 
     const auto new_nnz = prefix_sum(O_row_map);
