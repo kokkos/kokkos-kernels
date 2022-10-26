@@ -273,6 +273,11 @@ struct IlutWrap {
 
             L_new_row_map(row_idx) = l_nnz;
             U_new_row_map(row_idx) = u_nnz;
+
+            if (static_cast<size_type>(row_idx) == nrows - 1) {
+              L_new_row_map(nrows) = 0;
+              U_new_row_map(nrows) = 0;
+            }
           });
         });
 
