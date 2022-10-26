@@ -81,7 +81,7 @@ struct ExclusiveParallelPrefixSum {
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const size_t ii, value_type &update, const bool final) const {
-    value_type val = array_sum(ii);
+    value_type val = (ii == array_sum.extent(0) - 1) ? value_type(0) : array_sum(ii);
     if (final) {
       array_sum(ii) = value_type(update);
     }
