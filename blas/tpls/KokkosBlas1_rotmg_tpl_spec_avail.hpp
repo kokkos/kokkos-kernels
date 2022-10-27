@@ -59,7 +59,8 @@ namespace KokkosBlas {
 namespace Impl {
 
 // Generic Host side BLAS (could be MKL or whatever)
-#ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
+#if defined(KOKKOSKERNELS_ENABLE_TPL_BLAS) && \
+    !defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
 #define KOKKOSBLAS1_ROTMG_TPL_SPEC_AVAIL_BLAS(SCALAR, LAYOUT, EXEC_SPACE,    \
                                               MEM_SPACE)                     \
   template <>                                                                \
@@ -96,7 +97,7 @@ KOKKOSBLAS1_ROTMG_TPL_SPEC_AVAIL_BLAS(double, Kokkos::LayoutRight,
 KOKKOSBLAS1_ROTMG_TPL_SPEC_AVAIL_BLAS(float, Kokkos::LayoutRight,
                                       Kokkos::OpenMP, Kokkos::HostSpace)
 #endif
-#endif
+#endif  // KOKKOSKERNELS_ENABLE_TPL_BLAS
 
 // cuBLAS
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS

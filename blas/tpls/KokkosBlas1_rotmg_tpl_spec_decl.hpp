@@ -61,7 +61,8 @@ inline void rotmg_print_specialization() {
 }  // namespace KokkosBlas
 
 // Generic Host side BLAS (could be MKL or whatever)
-#ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
+#if defined(KOKKOSKERNELS_ENABLE_TPL_BLAS) && \
+    !defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
 #include "KokkosBlas_Host_tpl.hpp"
 
 namespace KokkosBlas {
@@ -139,7 +140,7 @@ KOKKOSBLAS1_ROTMG_TPL_SPEC_DECL_BLAS(float, Kokkos::LayoutRight, Kokkos::OpenMP,
 }  // namespace Impl
 }  // namespace KokkosBlas
 
-#endif
+#endif  // KOKKOSKERNELS_ENABLE_TPL_BLAS
 
 // cuBLAS
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
