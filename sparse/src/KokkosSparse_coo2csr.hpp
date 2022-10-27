@@ -74,6 +74,14 @@ class Coo2Csr {
   using OrdinalType    = CrsOT;
   using SizeType       = CrsSzT;
 
+  using KeyType          = uint32_t;
+  using ValueType        = typename DataViewType::value_type;
+  using ScratchSpaceType = typename CrsET::scratch_memory_space;
+  using KeyViewScratch =
+      Kokkos::View<KeyType *, Kokkos::LayoutRight, ScratchSpaceType>;
+  using ValViewScratch =
+      Kokkos::View<ValueType *, Kokkos::LayoutRight, ScratchSpaceType>;
+
   OrdinalType __nrows;
   OrdinalType __ncols;
   SizeType __nnz;
@@ -101,17 +109,23 @@ class Coo2Csr {
     struct s5MaxRowCnt {};
   };
 
+  using s3Policy = Kokkos::TeamPolicy<typename phase1Tags::s3UniqRows, CrsET>;
+
   class __Phase1Functor {
    private:
+    using s3MemberType = typename s3Policy::member_type;
     RowViewType __row;
     ColViewType __col;
     DataViewType __data;
     AtomicRowIdViewType __crs_row_cnt;
+    unsigned __n;
 
    public:
     __Phase1Functor(RowViewType row, ColViewType col, DataViewType data,
                     AtomicRowIdViewType crs_row_cnt)
-        : __row(row), __col(col), __data(data), __crs_row_cnt(crs_row_cnt){};
+        : __row(row), __col(col), __data(data), __crs_row_cnt(crs_row_cnt) {
+      __n = data.extent(0);
+    };
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const typename phase1Tags::s1RowCntDup &,
@@ -127,6 +141,14 @@ class Coo2Csr {
                     const unsigned long &thread_id,
                     RowViewScalarType &value) const {
       if (__crs_row_cnt(thread_id) > value) value = __crs_row_cnt(thread_id);
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(const typename phase1Tags::s3UniqRows &,
+                    const s3MemberType &member) const {
+      unsigned my_n = (__n / member.league_size()) * member.league_rank();
+      KeyViewScratch keys(member.team_scratch(0), my_n);
+      ValViewScratch vals(member.team_scratch(0), my_n);
     }
   };
 
@@ -188,6 +210,23 @@ class Coo2Csr {
                                                                        __nrows),
           functor, max_row_cnt);
       CrsET().fence();
+
+      KokkosKernels::Impl::get_suggested_vector_size<int64_t, CrsET>(
+          __suggested_vec_size, 1, __n_tuples);
+
+      __suggested_team_size =
+          KokkosKernels::Impl::get_suggested_team_size<s3Policy>(
+              functor, __suggested_vec_size);
+
+      auto league_size =
+          __n_tuples / (__suggested_team_size * __suggested_vec_size);
+
+      s3Policy s3p(league_size == 0 ? 1 : league_size, __suggested_team_size,
+                   __suggested_vec_size);
+
+      int shmem_size = KeyViewScratch::shmem_size(max_row_cnt) +
+                       ValViewScratch::shmem_size(max_row_cnt);
+      s3p.set_scratch_size(0, Kokkos::PerTeam(shmem_size));
     }
     return;
   }
