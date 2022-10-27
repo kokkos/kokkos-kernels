@@ -154,6 +154,51 @@ class SPTRSVHandle {
       mtx_scalar_view_t;
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+#if (CUDA_VERSION >= 11030)
+  struct cuSparseHandleType {
+    cusparseHandle_t handle;
+    cusparseOperation_t transpose;
+    cusparseSpMatDescr_t matDescr;
+    cusparseDnVecDescr_t vecBDescr, vecBDescr_dummy;
+    cusparseDnVecDescr_t vecXDescr, vecXDescr_dummy;
+    cusparseSpSVDescr_t  spsvDescr;
+    void *pBuffer{nullptr};
+
+    cuSparseHandleType(bool transpose_, bool is_lower) {
+      cusparseStatus_t status;
+      status = cusparseCreate(&handle);
+      if (status != CUSPARSE_STATUS_SUCCESS) {
+        throw std::runtime_error("cusparseCreate ERROR\n");
+      }
+      cusparseSetPointerMode(handle, CUSPARSE_POINTER_MODE_HOST);
+
+      if (transpose_) {
+        transpose = CUSPARSE_OPERATION_TRANSPOSE;
+      } else {
+        transpose = CUSPARSE_OPERATION_NON_TRANSPOSE;
+      }
+
+      status = cusparseSpSV_createDescr(&spsvDescr);
+      if (status != CUSPARSE_STATUS_SUCCESS) {
+        throw std::runtime_error("cusparseSpSV_createDescr spsvDescr ERROR\n");
+      }
+    }
+
+    ~cuSparseHandleType() {
+      if (pBuffer != nullptr) {
+        cudaFree(pBuffer);
+        pBuffer = nullptr;
+      }
+      cusparseDestroySpMat(matDescr);
+      cusparseDestroyDnVec(vecBDescr);
+      cusparseDestroyDnVec(vecBDescr_dummy);
+      cusparseDestroyDnVec(vecXDescr);
+      cusparseDestroyDnVec(vecXDescr_dummy);
+      cusparseSpSV_destroyDescr(spsvDescr);
+      cusparseDestroy(handle);
+    }
+  };
+#else //CUDA_VERSION < 11030
   struct cuSparseHandleType {
     cusparseHandle_t handle;
     cusparseOperation_t transpose;
@@ -202,6 +247,7 @@ class SPTRSVHandle {
       cusparseDestroy(handle);
     }
   };
+#endif
 
   typedef cuSparseHandleType SPTRSVcuSparseHandleType;
 #endif
