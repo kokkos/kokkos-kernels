@@ -82,6 +82,7 @@ class Coo2Csr {
   ColMapViewType __col_map;
 
   AtomicRowIdViewType __crs_row_cnt;
+  using RowViewScalarType = typename AtomicRowIdViewType::value_type;
 
   CrsValsViewType __crs_vals;
   CrsRowMapViewType __crs_row_map;
@@ -119,6 +120,13 @@ class Coo2Csr {
       auto j = __col(thread_id);
 
       if (i >= 0 && j >= 0) __crs_row_cnt(i)++;
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(const typename phase1Tags::s2MaxRowCnt,
+                    const unsigned long &thread_id,
+                    RowViewScalarType &value) const {
+      if (__crs_row_cnt(thread_id) > value) value = __crs_row_cnt(thread_id);
     }
   };
 
@@ -168,10 +176,17 @@ class Coo2Csr {
   void __runPhase1(FunctorType &functor) {
     {
       Kokkos::parallel_for(
-          "Coo2Csr",
+          "Coo2Csr::phase1Tags::s1RowCntDup",
           Kokkos::RangePolicy<typename phase1Tags::s1RowCntDup, CrsET>(
               0, __n_tuples),
           functor);
+      CrsET().fence();
+
+      RowViewScalarType max_row_cnt;
+      Kokkos::parallel_reduce(
+          Kokkos::RangePolicy<CrsET, typename phase1Tags::s2MaxRowCnt>(0,
+                                                                       __nrows),
+          functor, max_row_cnt);
       CrsET().fence();
     }
     return;
@@ -186,7 +201,9 @@ class Coo2Csr {
   Coo2Csr(DimType m, DimType n, RowViewType row, ColViewType col,
           DataViewType data, bool insert_mode) {
     __insert_mode = insert_mode;
-    __n_tuples    = data.extent(1);
+    __n_tuples    = data.extent(0);
+    __nrows       = m;
+    __ncols       = n;
 
     __crs_row_cnt = AtomicRowIdViewType("__crs_row_cnt", m);
     __Phase1Functor phase1Functor(row, col, data, __crs_row_cnt);
@@ -262,8 +279,8 @@ auto coo2csr(DimType m, DimType n, RowViewType row, ColViewType col,
 
   if (insert_mode) Kokkos::abort("insert_mode not supported yet.");
 
-  if (row.extent(1) != col.extent(1) || row.extent(1) != data.extent(1))
-    Kokkos::abort("row.extent(1) = col.extent(1) = data.extent(1) required.");
+  if (row.extent(0) != col.extent(0) || row.extent(0) != data.extent(0))
+    Kokkos::abort("row.extent(0) = col.extent(0) = data.extent(0) required.");
 
   using Coo2csrType =
       Impl::Coo2Csr<DimType, RowViewType, ColViewType, DataViewType>;
