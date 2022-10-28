@@ -59,6 +59,8 @@ namespace KokkosBlas {
 namespace Impl {
 
 // Generic Host side BLAS (could be MKL or whatever)
+// ARMPL is disabled as it does not detect some corner
+// cases correctly which leads to failing unit-tests
 #if defined(KOKKOSKERNELS_ENABLE_TPL_BLAS) && \
     !defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
 #define KOKKOSBLAS1_ROTMG_TPL_SPEC_AVAIL_BLAS(SCALAR, LAYOUT, EXEC_SPACE,    \
