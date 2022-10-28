@@ -215,9 +215,8 @@ int test_rotmg() {
 
   constexpr int num_test_cases = 9;
   for (int test_case = 0; test_case < num_test_cases; ++test_case) {
-      Test::set_rotmg_input_ref_vals(test_case, d1, d2, x1, y1, param,
-                                     ref_vals);
-      Test::test_rotmg_impl(d1, d2, x1, y1, param, ref_vals);
+    Test::set_rotmg_input_ref_vals(test_case, d1, d2, x1, y1, param, ref_vals);
+    Test::test_rotmg_impl(d1, d2, x1, y1, param, ref_vals);
   }
 
   return 1;
