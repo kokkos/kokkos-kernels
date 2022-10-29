@@ -320,7 +320,7 @@ namespace Impl {
 
 #define KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_CUBLAS(LAYOUT, EXECSPACE, MEMSPACE, \
                                                ETI_SPEC_AVAIL)              \
-  template <class MEMSPACE>                                                 \
+  template <>                                                               \
   struct Rotg<                                                              \
       EXECSPACE,                                                            \
       Kokkos::View<Kokkos::complex<double>, LAYOUT,                         \
@@ -329,9 +329,9 @@ namespace Impl {
       Kokkos::View<double, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,     \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                \
       true, ETI_SPEC_AVAIL> {                                               \
-    using SViewTypeKokkos::View<Kokkos::complex<double>, LAYOUT,            \
-                                Kokkos::Device<EXECSPACE, MEMSPACE>,        \
-                                Kokkos::MemoryTraits<Kokkos::Unmanaged>>;   \
+    using SViewType = Kokkos::View<Kokkos::complex<double>, LAYOUT,         \
+                                   Kokkos::Device<EXECSPACE, MEMSPACE>,     \
+                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;\
     using MViewType =                                                       \
         Kokkos::View<double, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,   \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>;              \
@@ -355,7 +355,7 @@ namespace Impl {
 
 #define KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_CUBLAS(LAYOUT, EXECSPACE, MEMSPACE,    \
                                                ETI_SPEC_AVAIL)                 \
-  template <class MEMSPACE>                                                    \
+  template <>                                                                  \
   struct Rotg<EXECSPACE,                                                       \
               Kokkos::View<Kokkos::complex<float>, LAYOUT,                     \
                            Kokkos::Device<EXECSPACE, MEMSPACE>,                \
@@ -529,7 +529,7 @@ namespace Impl {
 
 #define KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_ROCBLAS(LAYOUT, EXECSPACE, MEMSPACE, \
                                                 ETI_SPEC_AVAIL)              \
-  template <class MEMSPACE>                                                  \
+  template <>                                                                \
   struct Rotg<                                                               \
       EXECSPACE,                                                             \
       Kokkos::View<Kokkos::complex<double>, LAYOUT,                          \
@@ -565,7 +565,7 @@ namespace Impl {
 
 #define KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_ROCBLAS(LAYOUT, EXECSPACE, MEMSPACE,   \
                                                 ETI_SPEC_AVAIL)                \
-  template <class MEMSPACE>                                                    \
+  template <>                                                                  \
   struct Rotg<EXECSPACE,                                                       \
               Kokkos::View<Kokkos::complex<float>, LAYOUT,                     \
                            Kokkos::Device<EXECSPACE, MEMSPACE>,                \
