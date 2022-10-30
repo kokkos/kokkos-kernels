@@ -163,7 +163,7 @@ class SPTRSVHandle {
     cusparseSpMatDescr_t matDescr;
     cusparseDnVecDescr_t vecBDescr, vecBDescr_dummy;
     cusparseDnVecDescr_t vecXDescr, vecXDescr_dummy;
-    cusparseSpSVDescr_t  spsvDescr;
+    cusparseSpSVDescr_t spsvDescr;
     void *pBuffer{nullptr};
 
     cuSparseHandleType(bool transpose_, bool is_lower) {
@@ -200,7 +200,7 @@ class SPTRSVHandle {
       cusparseDestroy(handle);
     }
   };
-#else //CUDA_VERSION < 11030
+#else  // CUDA_VERSION < 11030
   struct cuSparseHandleType {
     cusparseHandle_t handle;
     cusparseOperation_t transpose;
