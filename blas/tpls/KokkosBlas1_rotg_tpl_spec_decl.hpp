@@ -318,44 +318,44 @@ namespace Impl {
     }                                                                          \
   };
 
-#define KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_CUBLAS(LAYOUT, EXECSPACE, MEMSPACE, \
-                                               ETI_SPEC_AVAIL)              \
-  template <class MEMSPACE>                                                 \
-  struct Rotg<                                                              \
-      EXECSPACE,                                                            \
-      Kokkos::View<Kokkos::complex<double>, LAYOUT,                         \
-                   Kokkos::Device<EXECSPACE, MEMSPACE>,                     \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                \
-      Kokkos::View<double, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,     \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                \
-      true, ETI_SPEC_AVAIL> {                                               \
-    using SViewTypeKokkos::View<Kokkos::complex<double>, LAYOUT,            \
-                                Kokkos::Device<EXECSPACE, MEMSPACE>,        \
-                                Kokkos::MemoryTraits<Kokkos::Unmanaged>>;   \
-    using MViewType =                                                       \
-        Kokkos::View<double, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,   \
-                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;              \
-    static void rotg(EXECSPACE const& space, SViewType const& a,            \
-                     SViewType const& b, MViewType const& c,                \
-                     SViewType const& s) {                                  \
-      Kokkos::Profiling::pushRegion(                                        \
-          "KokkosBlas::nrm1[TPL_CUBLAS,complex<double>]");                  \
-      rotg_print_specialization<Kokkos::complex<double>, EXECSPACE>();      \
-      KokkosBlas::Impl::CudaBlasSingleton& singleton =                      \
-          KokkosBlas::Impl::CudaBlasSingleton::singleton();                 \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                         \
-          cublasSetStream(singleton.handle, space.cuda_stream()));          \
-      cublasZrotg(singleton.handle,                                         \
-                  reinterpret_cast<cuDoubleComplex*>(a.data()),             \
-                  reinterpret_cast<cuDoubleComplex*>(b.data()), c.data(),   \
-                  reinterpret_cast<cuDoubleComplex*>(s.data()));            \
-      Kokkos::Profiling::popRegion();                                       \
-    }                                                                       \
+#define KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_CUBLAS(LAYOUT, EXECSPACE, MEMSPACE,  \
+                                               ETI_SPEC_AVAIL)               \
+  template <>                                                                \
+  struct Rotg<                                                               \
+      EXECSPACE,                                                             \
+      Kokkos::View<Kokkos::complex<double>, LAYOUT,                          \
+                   Kokkos::Device<EXECSPACE, MEMSPACE>,                      \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                 \
+      Kokkos::View<double, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,      \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                 \
+      true, ETI_SPEC_AVAIL> {                                                \
+    using SViewType = Kokkos::View<Kokkos::complex<double>, LAYOUT,          \
+                                   Kokkos::Device<EXECSPACE, MEMSPACE>,      \
+                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>; \
+    using MViewType =                                                        \
+        Kokkos::View<double, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,    \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;               \
+    static void rotg(EXECSPACE const& space, SViewType const& a,             \
+                     SViewType const& b, MViewType const& c,                 \
+                     SViewType const& s) {                                   \
+      Kokkos::Profiling::pushRegion(                                         \
+          "KokkosBlas::nrm1[TPL_CUBLAS,complex<double>]");                   \
+      rotg_print_specialization<Kokkos::complex<double>, EXECSPACE>();       \
+      KokkosBlas::Impl::CudaBlasSingleton& singleton =                       \
+          KokkosBlas::Impl::CudaBlasSingleton::singleton();                  \
+      KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                          \
+          cublasSetStream(singleton.handle, space.cuda_stream()));           \
+      cublasZrotg(singleton.handle,                                          \
+                  reinterpret_cast<cuDoubleComplex*>(a.data()),              \
+                  reinterpret_cast<cuDoubleComplex*>(b.data()), c.data(),    \
+                  reinterpret_cast<cuDoubleComplex*>(s.data()));             \
+      Kokkos::Profiling::popRegion();                                        \
+    }                                                                        \
   };
 
 #define KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_CUBLAS(LAYOUT, EXECSPACE, MEMSPACE,    \
                                                ETI_SPEC_AVAIL)                 \
-  template <class MEMSPACE>                                                    \
+  template <>                                                                  \
   struct Rotg<EXECSPACE,                                                       \
               Kokkos::View<Kokkos::complex<float>, LAYOUT,                     \
                            Kokkos::Device<EXECSPACE, MEMSPACE>,                \
@@ -529,7 +529,7 @@ namespace Impl {
 
 #define KOKKOSBLAS1_ZROTG_TPL_SPEC_DECL_ROCBLAS(LAYOUT, EXECSPACE, MEMSPACE, \
                                                 ETI_SPEC_AVAIL)              \
-  template <class MEMSPACE>                                                  \
+  template <>                                                                \
   struct Rotg<                                                               \
       EXECSPACE,                                                             \
       Kokkos::View<Kokkos::complex<double>, LAYOUT,                          \
@@ -565,7 +565,7 @@ namespace Impl {
 
 #define KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_ROCBLAS(LAYOUT, EXECSPACE, MEMSPACE,   \
                                                 ETI_SPEC_AVAIL)                \
-  template <class MEMSPACE>                                                    \
+  template <>                                                                  \
   struct Rotg<EXECSPACE,                                                       \
               Kokkos::View<Kokkos::complex<float>, LAYOUT,                     \
                            Kokkos::Device<EXECSPACE, MEMSPACE>,                \

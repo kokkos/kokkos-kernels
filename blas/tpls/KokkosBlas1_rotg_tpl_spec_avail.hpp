@@ -139,7 +139,7 @@ KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_CUBLAS(double, Kokkos::LayoutRight,
                                        Kokkos::Cuda, Kokkos::CudaSpace)
 KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::LayoutLeft, Kokkos::Cuda,
                                        Kokkos::CudaSpace)
-KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::LayoutLeft, Kokkos::Cuda,
+KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::LayoutRight, Kokkos::Cuda,
                                        Kokkos::CudaSpace)
 KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>,
                                        Kokkos::LayoutLeft, Kokkos::Cuda,
@@ -160,7 +160,7 @@ KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_CUBLAS(double, Kokkos::LayoutRight,
                                        Kokkos::Cuda, Kokkos::CudaUVMSpace)
 KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::LayoutLeft, Kokkos::Cuda,
                                        Kokkos::CudaUVMSpace)
-KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::LayoutLeft, Kokkos::Cuda,
+KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::LayoutRight, Kokkos::Cuda,
                                        Kokkos::CudaUVMSpace)
 KOKKOSBLAS1_ROTG_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>,
                                        Kokkos::LayoutLeft, Kokkos::Cuda,
