@@ -455,9 +455,9 @@ void sptrsvcuSPARSE_solve(KernelHandle* sptrsv_handle,
       cualpha.x = 1.0;
       cualpha.y = 0.0;
       status    = cusparseZcsrsv2_solve(
-          h->handle, h->transpose, nrows, nnz, &cualpha, h->descr,
-          (cuDoubleComplex*)vals, (int*)rm, (int*)ent, h->info,
-          (cuDoubleComplex*)bv, (cuDoubleComplex*)xv, h->policy, h->pBuffer);
+             h->handle, h->transpose, nrows, nnz, &cualpha, h->descr,
+             (cuDoubleComplex*)vals, (int*)rm, (int*)ent, h->info,
+             (cuDoubleComplex*)bv, (cuDoubleComplex*)xv, h->policy, h->pBuffer);
 
       if (CUSPARSE_STATUS_SUCCESS != status)
         std::cout << "solve status error name " << (status) << std::endl;
@@ -466,9 +466,9 @@ void sptrsvcuSPARSE_solve(KernelHandle* sptrsv_handle,
       cualpha.x = 1.0;
       cualpha.y = 0.0;
       status    = cusparseCcsrsv2_solve(
-          h->handle, h->transpose, nrows, nnz, &cualpha, h->descr,
-          (cuComplex*)vals, (int*)rm, (int*)ent, h->info, (cuComplex*)bv,
-          (cuComplex*)xv, h->policy, h->pBuffer);
+             h->handle, h->transpose, nrows, nnz, &cualpha, h->descr,
+             (cuComplex*)vals, (int*)rm, (int*)ent, h->info, (cuComplex*)bv,
+             (cuComplex*)xv, h->policy, h->pBuffer);
 
       if (CUSPARSE_STATUS_SUCCESS != status)
         std::cout << "solve status error name " << (status) << std::endl;
