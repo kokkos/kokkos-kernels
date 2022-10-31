@@ -438,11 +438,6 @@ class CrsMatrix {
                     size_type>
       const_type;
 
-#ifdef KOKKOS_USE_CUSPARSE
-  cusparseHandle_t cusparse_handle;
-  cusparseMatDescr_t cusparse_descr;
-#endif  // KOKKOS_USE_CUSPARSE
-
   /// \name Storage of the actual sparsity structure and values.
   ///
   /// CrsMatrix uses the compressed sparse row (CSR) storage format to
@@ -492,11 +487,6 @@ class CrsMatrix {
         values(B.values),
         numCols_(B.numCols()),
         dev_config(B.dev_config)
-#ifdef KOKKOS_USE_CUSPARSE
-        ,
-        cusparse_handle(B.cusparse_handle),
-        cusparse_descr(B.cusparse_descr)
-#endif  // KOKKOS_USE_CUSPARSE
   {
     graph.row_block_offsets = B.graph.row_block_offsets;
     // TODO: MD 07/2017: Changed the copy constructor of graph
@@ -523,11 +513,6 @@ class CrsMatrix {
 
     numCols_ = mat_.numCols();
     graph    = StaticCrsGraphType(cols, rowmap);
-
-#ifdef KOKKOS_USE_CUSPARSE
-    cusparseCreate(&cusparse_handle);
-    cusparseCreateMatDescr(&cusparse_descr);
-#endif  // KOKKOS_USE_CUSPARSE
   }
 
   /// \brief Construct with a graph that will be shared.
@@ -560,12 +545,7 @@ class CrsMatrix {
             const OrdinalType& ncols)
       : graph(graph_.entries, graph_.row_map),
         values(label, graph_.entries.extent(0)),
-        numCols_(ncols) {
-#ifdef KOKKOS_USE_CUSPARSE
-    cusparseCreate(&cusparse_handle);
-    cusparseCreateMatDescr(&cusparse_descr);
-#endif  // KOKKOS_USE_CUSPARSE
-  }
+        numCols_(ncols) {}
 
   /// \brief Constructor that accepts a a static graph, and values.
   ///
@@ -586,12 +566,7 @@ class CrsMatrix {
             const values_type& vals,
             const Kokkos::StaticCrsGraph<InOrdinal, InLayout, InDevice,
                                          InMemTraits, InSizeType>& graph_)
-      : graph(graph_.entries, graph_.row_map), values(vals), numCols_(ncols) {
-#ifdef KOKKOS_USE_CUSPARSE
-    cusparseCreate(&cusparse_handle);
-    cusparseCreateMatDescr(&cusparse_descr);
-#endif  // KOKKOS_USE_CUSPARSE
-  }
+      : graph(graph_.entries, graph_.row_map), values(vals), numCols_(ncols) {}
 
   /// \brief Constructor that copies raw arrays of host data in
   ///   3-array CRS (compresed row storage) format.
@@ -654,20 +629,6 @@ class CrsMatrix {
         Kokkos::view_alloc(Kokkos::WithoutInitializing, "values"), annz);
     UnmanagedValues valuesRaw(val, annz);
     Kokkos::deep_copy(this->values, valuesRaw);
-
-    // FIXME (mfh 09 Aug 2013) Specialize this on the Device type.
-    // Only use cuSPARSE for the Cuda Device.
-#ifdef KOKKOS_USE_CUSPARSE
-    // FIXME (mfh 09 Aug 2013) This is actually static initialization
-    // of the library; you should do it once for the whole program,
-    // not once per matrix.  We need to protect this somehow.
-    cusparseCreate(&cusparse_handle);
-
-    // This is a per-matrix attribute.  It encapsulates things like
-    // whether the matrix is lower or upper triangular, etc.  Ditto
-    // for other TPLs like MKL.
-    cusparseCreateMatDescr(&cusparse_descr);
-#endif  // KOKKOS_USE_CUSPARSE
   }
 
   /// \brief Constructor that accepts a row map, column indices, and
@@ -708,11 +669,6 @@ class CrsMatrix {
          << ".";
       throw std::invalid_argument(os.str());
     }
-
-#ifdef KOKKOS_USE_CUSPARSE
-    cusparseCreate(&cusparse_handle);
-    cusparseCreateMatDescr(&cusparse_descr);
-#endif  // KOKKOS_USE_CUSPARSE
   }
 
   KOKKOS_INLINE_FUNCTION
