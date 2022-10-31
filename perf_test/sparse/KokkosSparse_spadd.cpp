@@ -171,9 +171,6 @@ void run_experiment(const Params& params) {
       lno_view_t;
   typedef typename crsMat_t::StaticCrsGraphType::entries_type::non_const_type
       lno_nnz_view_t;
-  typedef typename crsMat_t::StaticCrsGraphType::row_map_type const_lno_view_t;
-  typedef
-      typename crsMat_t::StaticCrsGraphType::entries_type const_lno_nnz_view_t;
 
   lno_view_t row_mapC;
   // entriesC, valuesC and cusparseBuffer are allocated inside
@@ -200,10 +197,8 @@ void run_experiment(const Params& params) {
   double numericTime  = 0;
 
   // Do an untimed warm up symbolic, and preallocate space for C entries/values
-  spadd_symbolic<KernelHandle, const_lno_view_t, const_lno_nnz_view_t,
-                 const_lno_view_t, const_lno_nnz_view_t, lno_view_t,
-                 lno_nnz_view_t>(&kh, A.graph.row_map, A.graph.entries,
-                                 B.graph.row_map, B.graph.entries, row_mapC);
+  spadd_symbolic(&kh, A.graph.row_map, A.graph.entries, B.graph.row_map,
+                 B.graph.entries, row_mapC);
 
   bool use_kk = !params.use_cusparse && !params.use_mkl;
 
@@ -261,11 +256,8 @@ void run_experiment(const Params& params) {
   for (int sumRep = 0; sumRep < params.repeat; sumRep++) {
     timer.reset();
     if (use_kk) {
-      spadd_symbolic<KernelHandle, const_lno_view_t, const_lno_nnz_view_t,
-                     const_lno_view_t, const_lno_nnz_view_t, lno_view_t,
-                     lno_nnz_view_t>(&kh, A.graph.row_map, A.graph.entries,
-                                     B.graph.row_map, B.graph.entries,
-                                     row_mapC);
+      spadd_symbolic(&kh, A.graph.row_map, A.graph.entries, B.graph.row_map,
+                     B.graph.entries, row_mapC);
       c_nnz = addHandle->get_c_nnz();
     } else if (params.use_cusparse) {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE

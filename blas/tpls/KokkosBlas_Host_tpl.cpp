@@ -140,6 +140,14 @@ void F77_BLAS_MANGLE(zrotg, ZROTG)(std::complex<double>* a,
                                    std::complex<double>* s);
 
 ///
+/// rotmg
+///
+void F77_BLAS_MANGLE(srotmg, SROTMG)(float* d1, float* d2, float* x1,
+                                     const float* y1, float* param);
+void F77_BLAS_MANGLE(drotmg, DROTMG)(double* d1, double* d2, double* x1,
+                                     const double* y1, double* param);
+
+///
 /// Gemv
 ///
 void F77_BLAS_MANGLE(sgemv, SGEMV)(const char*, int*, int*, const float*,
@@ -356,6 +364,9 @@ void F77_BLAS_MANGLE(zscal,
 #define F77_FUNC_CROTG F77_BLAS_MANGLE(crotg, CROTG)
 #define F77_FUNC_ZROTG F77_BLAS_MANGLE(zrotg, ZROTG)
 
+#define F77_FUNC_SROTMG F77_BLAS_MANGLE(srotmg, SROTMG)
+#define F77_FUNC_DROTMG F77_BLAS_MANGLE(drotmg, DROTMG)
+
 #define F77_FUNC_SGEMV F77_BLAS_MANGLE(sgemv, SGEMV)
 #define F77_FUNC_DGEMV F77_BLAS_MANGLE(dgemv, DGEMV)
 #define F77_FUNC_CGEMV F77_BLAS_MANGLE(cgemv, CGEMV)
@@ -433,6 +444,11 @@ void HostBlas<float>::axpy(int n, const float alpha, const float* x, int x_inc,
 template <>
 void HostBlas<float>::rotg(float* a, float* b, float* c, float* s) {
   F77_FUNC_SROTG(a, b, c, s);
+}
+template <>
+void HostBlas<float>::rotmg(float* d1, float* d2, float* x1, const float* y1,
+                            float* param) {
+  F77_FUNC_SROTMG(d1, d2, x1, y1, param);
 }
 template <>
 void HostBlas<float>::gemv(const char trans, int m, int n, const float alpha,
@@ -526,6 +542,11 @@ void HostBlas<double>::axpy(int n, const double alpha, const double* x,
 template <>
 void HostBlas<double>::rotg(double* a, double* b, double* c, double* s) {
   F77_FUNC_DROTG(a, b, c, s);
+}
+template <>
+void HostBlas<double>::rotmg(double* d1, double* d2, double* x1,
+                             const double* y1, double* param) {
+  F77_FUNC_DROTMG(d1, d2, x1, y1, param);
 }
 template <>
 void HostBlas<double>::gemv(const char trans, int m, int n, const double alpha,

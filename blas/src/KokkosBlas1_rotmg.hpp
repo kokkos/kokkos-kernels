@@ -42,60 +42,71 @@
 //@HEADER
 */
 
-#ifndef KOKKOSBLAS1_ROTG_HPP_
-#define KOKKOSBLAS1_ROTG_HPP_
+#ifndef KOKKOSBLAS1_ROTMG_HPP_
+#define KOKKOSBLAS1_ROTMG_HPP_
 
 #include <Kokkos_Core.hpp>
-#include <KokkosBlas1_rotg_spec.hpp>
+#include <KokkosBlas1_rotmg_spec.hpp>
 
 namespace KokkosBlas {
 
-/// \brief Compute the coefficients to apply a Givens rotation.
+/// \brief Compute the coefficients to apply a modified Givens rotation.
 ///
-/// \tparam Scalar data type of inputs and outputs
+/// \tparam execution_space the execution space where the kernel will be
+/// executed \tparam DXView a rank0 view type that hold non const data \tparam
+/// YView a rank0 view type that holds const data \tparam PView a rank1 view of
+/// static extent 5 that holds non const data
 ///
-/// \param a [in/out] on input one of the values to rotate, on output the
-/// rotated value \param b [in/out] on input one of the values to rotate, on
-/// output the rotated value \param c [out] cosine value associated with the
-/// rotation \param s [out] sine value associated with the rotation
-template <class execution_space, class SViewType, class MViewType>
-void rotg(execution_space const& space, SViewType const& a, SViewType const& b,
-          MViewType const& c, SViewType const& s) {
-  static_assert(SViewType::rank == 0,
-                "rotg: the inputs need to be rank 0 views");
-  static_assert(MViewType::rank == 0,
-                "rotg: the inputs need to be rank 0 views");
-  static_assert(
-      !Kokkos::ArithTraits<typename MViewType::value_type>::is_complex);
+/// \param d1 [in/out]
+/// \param d2 [in/out]
+/// \param x1 [in/out]
+/// \param y1 [in]
+/// \param param [out]
+///
+template <class execution_space, class DXView, class YView, class PView>
+void rotmg(execution_space const& space, DXView const& d1, DXView const& d2,
+           DXView const& x1, YView const& y1, PView const& param) {
   static_assert(
       Kokkos::SpaceAccessibility<execution_space,
-                                 typename SViewType::memory_space>::accessible,
-      "rotg: execution_space cannot access data in SViewType");
-  static_assert(
-      Kokkos::SpaceAccessibility<execution_space,
-                                 typename MViewType::memory_space>::accessible,
-      "rotg: execution_space cannot access data in MViewType");
+                                 typename DXView::memory_space>::accessible,
+      "rotmg: execution_space cannot access data in DXView");
 
-  using SView_Internal = Kokkos::View<
-      typename SViewType::value_type,
-      typename KokkosKernels::Impl::GetUnifiedLayout<SViewType>::array_layout,
-      Kokkos::Device<execution_space, typename SViewType::memory_space>,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-  using MView_Internal = Kokkos::View<
-      typename MViewType::value_type,
-      typename KokkosKernels::Impl::GetUnifiedLayout<MViewType>::array_layout,
-      Kokkos::Device<execution_space, typename MViewType::memory_space>,
+  using DXView_Internal = Kokkos::View<
+      typename DXView::value_type,
+      typename KokkosKernels::Impl::GetUnifiedLayout<DXView>::array_layout,
+      Kokkos::Device<execution_space, typename DXView::memory_space>,
       Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
-  SView_Internal a_(a), b_(b), s_(s);
-  MView_Internal c_(c);
+  using YView_Internal = Kokkos::View<
+      typename YView::value_type,
+      typename KokkosKernels::Impl::GetUnifiedLayout<YView>::array_layout,
+      Kokkos::Device<execution_space, typename YView::memory_space>,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
-  Kokkos::Profiling::pushRegion("KokkosBlas::rotg");
-  Impl::Rotg<execution_space, SView_Internal, MView_Internal>::rotg(space, a, b,
-                                                                    c, s);
+  using PView_Internal = Kokkos::View<
+      typename PView::value_type[5],
+      typename KokkosKernels::Impl::GetUnifiedLayout<PView>::array_layout,
+      Kokkos::Device<execution_space, typename PView::memory_space>,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+
+  DXView_Internal d1_(d1), d2_(d2), x1_(x1);
+  YView_Internal y1_(y1);
+  PView_Internal param_(param);
+
+  Kokkos::Profiling::pushRegion("KokkosBlas::rotmg");
+  Impl::Rotmg<execution_space, DXView_Internal, YView_Internal,
+              PView_Internal>::rotmg(space, d1_, d2_, x1_, y1_, param_);
   Kokkos::Profiling::popRegion();
+}
+
+template <class DXView, class YView, class PView>
+void rotmg(DXView const& d1, DXView const& d2, DXView const& x1,
+           YView const& y1, PView const& param) {
+  const typename PView::execution_space space =
+      typename PView::execution_space();
+  rotmg(space, d1, d2, x1, y1, param);
 }
 
 }  // namespace KokkosBlas
 
-#endif  // KOKKOSBLAS1_ROTG_HPP_
+#endif  // KOKKOSBLAS1_ROTMG_HPP_

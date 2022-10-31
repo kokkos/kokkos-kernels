@@ -235,7 +235,7 @@ class SPGEMMHandle {
   };
 #else
   struct cuSparseSpgemmHandleType {
-    cusparse_spgemm_handle_t handle;
+    cusparseHandle_t handle;
     cusparseOperation_t transA;
     cusparseOperation_t transB;
     cusparseMatDescr_t a_descr;

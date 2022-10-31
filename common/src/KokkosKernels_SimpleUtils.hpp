@@ -75,15 +75,16 @@ class SquareRootFunctor {
 
 template <typename view_t>
 struct ExclusiveParallelPrefixSum {
-  typedef typename view_t::value_type idx;
+  typedef typename view_t::value_type value_type;
   view_t array_sum;
   ExclusiveParallelPrefixSum(view_t arr_) : array_sum(arr_) {}
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(const size_t ii, size_t &update, const bool final) const {
-    idx val = array_sum(ii);
+  void operator()(const size_t ii, value_type &update, const bool final) const {
+    value_type val =
+        (ii == array_sum.extent(0) - 1) ? value_type(0) : array_sum(ii);
     if (final) {
-      array_sum(ii) = idx(update);
+      array_sum(ii) = value_type(update);
     }
     update += val;
   }
@@ -116,6 +117,25 @@ inline void kk_exclusive_parallel_prefix_sum(
   Kokkos::parallel_scan("KokkosKernels::Common::PrefixSum",
                         my_exec_space(0, num_elements),
                         ExclusiveParallelPrefixSum<view_t>(arr));
+}
+
+/***
+ * \brief Function performs the exclusive parallel prefix sum. That is each
+ * entry holds the sum until itself. This version also returns the final sum
+ * equivalent to the sum-reduction of arr before doing the scan.
+ * \param num_elements: size of the array
+ * \param arr: the array for which the prefix sum will be performed.
+ * \param finalSum: will be set to arr[num_elements - 1] after computing the
+ * prefix sum.
+ */
+template <typename view_t, typename MyExecSpace>
+inline void kk_exclusive_parallel_prefix_sum(
+    typename view_t::value_type num_elements, view_t arr,
+    typename view_t::non_const_value_type &finalSum) {
+  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
+  Kokkos::parallel_scan("KokkosKernels::Common::PrefixSum",
+                        my_exec_space(0, num_elements),
+                        ExclusiveParallelPrefixSum<view_t>(arr), finalSum);
 }
 
 /***
