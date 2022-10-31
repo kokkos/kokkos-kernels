@@ -189,7 +189,7 @@ class SPGEMMHandle {
 #endif
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-#if (CUDA_VERSION >= 11040)
+#if (CUDA_VERSION >= 11000)
   struct cuSparseSpgemmHandleType {
     KokkosKernels::Experimental::Controls kkControls;
     cusparseHandle_t cusparseHandle;
@@ -672,15 +672,19 @@ class SPGEMMHandle {
 
 #if defined(KOKKOS_ENABLE_CUDA)
     if (std::is_same<Kokkos::Cuda, ExecutionSpace>::value) {
-#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && \
-    (CUDA_VERSION >= 11040 || CUSPARSE_VERSION < 11000)
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
       this->algorithm_type = SPGEMM_CUSPARSE;
-#else
-      this->algorithm_type = SPGEMM_KK;
-#endif
 #ifdef VERBOSE
       std::cout << "Cuda Execution Space, Default Algorithm: SPGEMM_CUSPARSE"
                 << std::endl;
+#endif
+#else
+      this->algorithm_type = SPGEMM_KK;
+#ifdef VERBOSE
+      std::cout << "Cuda Execution Space, without cuSPARSE, Default Algorithm: "
+                   "SPGEMM_KK"
+                << std::endl;
+#endif
 #endif
     }
 #endif
