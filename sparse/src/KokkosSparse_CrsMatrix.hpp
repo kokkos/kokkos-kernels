@@ -486,8 +486,7 @@ class CrsMatrix {
       : graph(B.graph.entries, B.graph.row_map),
         values(B.values),
         numCols_(B.numCols()),
-        dev_config(B.dev_config)
-  {
+        dev_config(B.dev_config) {
     graph.row_block_offsets = B.graph.row_block_offsets;
     // TODO: MD 07/2017: Changed the copy constructor of graph
     // as the constructor of StaticCrsGraph does not allow copy from non const
