@@ -607,6 +607,93 @@ struct IlutWrap {
     return karith::abs(values_copy(rank));
   }
 
+  template <class IRowMapType, class IEntriesType, class IValuesType,
+            class ORowMapType>
+  struct ThresholdFilterCountFunctor {
+    using float_t = typename IlutHandle::float_t;
+    ThresholdFilterCountFunctor(const float_t threshold_,
+                                const IRowMapType& I_row_map_,
+                                const IEntriesType& I_entries_,
+                                const IValuesType& I_values_,
+                                const ORowMapType& O_row_map_)
+        : threshold(threshold_),
+          I_row_map(I_row_map_),
+          I_entries(I_entries_),
+          I_values(I_values_),
+          O_row_map(O_row_map_) {}
+
+    KOKKOS_INLINE_FUNCTION void operator()(const member_type& team) const {
+      const auto row_idx = team.league_rank();
+
+      const auto row_nnx_begin = I_row_map(row_idx);
+      const auto row_nnx_end   = I_row_map(row_idx + 1);
+
+      size_type count = 0;
+      Kokkos::parallel_reduce(
+          Kokkos::TeamThreadRange(team, row_nnx_begin, row_nnx_end),
+          [&](const size_type nnz, size_type& count_inner) {
+            if (karith::abs(I_values(nnz)) >= threshold ||
+                I_entries(nnz) == row_idx) {
+              count_inner += 1;
+            }
+          },
+          count);
+
+      Kokkos::single(Kokkos::PerTeam(team),
+                     [=]() { O_row_map(row_idx) = count; });
+    }
+
+    float_t threshold;
+    IRowMapType I_row_map;
+    IEntriesType I_entries;
+    IValuesType I_values;
+    ORowMapType O_row_map;
+  };
+
+  template <class IRowMapType, class IEntriesType, class IValuesType,
+            class ORowMapType, class OEntriesType, class OValuesType>
+  struct ThresholdFilterAssignFunctor {
+    using float_t = typename IlutHandle::float_t;
+    ThresholdFilterAssignFunctor(const float_t threshold_,
+                                 const IRowMapType& I_row_map_,
+                                 const IEntriesType& I_entries_,
+                                 const IValuesType& I_values_,
+                                 const ORowMapType& O_row_map_,
+                                 const OEntriesType& O_entries_,
+                                 const OValuesType& O_values_)
+        : threshold(threshold_),
+          I_row_map(I_row_map_),
+          I_entries(I_entries_),
+          I_values(I_values_),
+          O_row_map(O_row_map_),
+          O_entries(O_entries_),
+          O_values(O_values_) {}
+
+    KOKKOS_INLINE_FUNCTION void operator()(const size_type row_idx) const {
+      const auto i_row_nnx_begin = I_row_map(row_idx);
+      const auto i_row_nnx_end   = I_row_map(row_idx + 1);
+
+      auto onnz = O_row_map(row_idx);
+
+      for (size_type innz = i_row_nnx_begin; innz < i_row_nnx_end; ++innz) {
+        if (karith::abs(I_values(innz)) >= threshold ||
+            static_cast<size_type>(I_entries(innz)) == row_idx) {
+          O_entries(onnz) = I_entries(innz);
+          O_values(onnz)  = I_values(innz);
+          ++onnz;
+        }
+      }
+    }
+
+    float_t threshold;
+    IRowMapType I_row_map;
+    IEntriesType I_entries;
+    IValuesType I_values;
+    ORowMapType O_row_map;
+    OEntriesType O_entries;
+    OValuesType O_values;
+  };
+
   /**
    * Remove non-diagnal elements that are below the threshold.
    */
@@ -624,26 +711,9 @@ struct IlutWrap {
 
     Kokkos::parallel_for(
         "threshold_filter count", policy,
-        KOKKOS_LAMBDA(const member_type& team) {
-          const auto row_idx = team.league_rank();
-
-          const auto row_nnx_begin = I_row_map(row_idx);
-          const auto row_nnx_end   = I_row_map(row_idx + 1);
-
-          size_type count = 0;
-          Kokkos::parallel_reduce(
-              Kokkos::TeamThreadRange(team, row_nnx_begin, row_nnx_end),
-              [&](const size_type nnz, size_type& count_inner) {
-                if (karith::abs(I_values(nnz)) >= threshold ||
-                    I_entries(nnz) == row_idx) {
-                  count_inner += 1;
-                }
-              },
-              count);
-
-          Kokkos::single(Kokkos::PerTeam(team),
-                         [=]() { O_row_map(row_idx) = count; });
-        });
+        ThresholdFilterCountFunctor<IRowMapType, IEntriesType, IValuesType,
+                                    ORowMapType>(
+            threshold, I_row_map, I_entries, I_values, O_row_map));
 
     const auto new_nnz = prefix_sum(O_row_map);
 
@@ -652,21 +722,10 @@ struct IlutWrap {
 
     Kokkos::parallel_for(
         "threshold_filter assign", range_policy(0, nrows),
-        KOKKOS_LAMBDA(const size_type row_idx) {
-          const auto i_row_nnx_begin = I_row_map(row_idx);
-          const auto i_row_nnx_end   = I_row_map(row_idx + 1);
-
-          auto onnz = O_row_map(row_idx);
-
-          for (size_type innz = i_row_nnx_begin; innz < i_row_nnx_end; ++innz) {
-            if (karith::abs(I_values(innz)) >= threshold ||
-                static_cast<size_type>(I_entries(innz)) == row_idx) {
-              O_entries(onnz) = I_entries(innz);
-              O_values(onnz)  = I_values(innz);
-              ++onnz;
-            }
-          }
-        });
+        ThresholdFilterAssignFunctor<IRowMapType, IEntriesType, IValuesType,
+                                     ORowMapType, OEntriesType, OValuesType>(
+            threshold, I_row_map, I_entries, I_values, O_row_map, O_entries,
+            O_values));
   }
 
   /**
