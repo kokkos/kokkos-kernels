@@ -730,6 +730,62 @@ struct HashmapAccumulator {
     }
   }
 
+  KOKKOS_INLINE_FUNCTION
+  /**
+   * This is a copy of vector_atomic_insert_into_hash modified to count
+   * new keys.
+   *
+   * @brief This function behaves kind of like a thread-safe std::unordered_set.
+   * This is used by coo2csr to count the number of unique row ids
+   * in a given team's coo partition. See coo2csr phase1Tags::s3UniqRow.s
+   *
+   * @param key: The key to insert.
+   * @return 1 upon new key insertion; 0, otherwise
+   */
+  int vector_atomic_insert_into_hash_KeyCounter(
+      const key_type &key, volatile size_type *used_size_) {
+    size_type hash, i, my_write_index, hashbeginning;
+
+    if (key < 0) return 0;
+
+    hash = __compute_hash(key, __hashOpRHS);
+    for (i = hash_begins[hash]; i != -1; i = hash_nexts[i]) {
+      if (keys[i] == key) {
+        return 0;
+      }
+    }
+
+    my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
+
+    if (my_write_index >= __max_value_size) {
+      Kokkos::abort(
+          "vector_atomic_insert_into_hash_KeyCounter: keys size exceeded.\n");
+    } else {
+      keys[my_write_index] = key;
+
+#if defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_TURING75) || \
+    defined(KOKKOS_ARCH_AMPERE)
+      // this is an issue on VOLTA and up because warps do not go in SIMD
+      // fashion anymore. while some thread might insert my_write_index into
+      // linked list, another thread in the warp might be reading keys in above
+      // loop. before inserting the new value in liked list -- which is done
+      // with atomic exchange below, we make sure that the linked is is complete
+      // my assigning the hash_next to current head. the head might be different
+      // when we do the atomic exchange. this would cause temporarily skipping a
+      // key in the linkedlist until hash_nexts is updated second time as below.
+      // but this is okay for spgemm,
+      // because no two keys will be inserted into hashmap at the same time, as
+      // rows have unique columns.
+      hash_nexts[my_write_index] = hash_begins[hash];
+#endif
+
+      hashbeginning =
+          Kokkos::atomic_exchange(hash_begins + hash, my_write_index);
+      hash_nexts[my_write_index] = hashbeginning;
+      return 1;
+    }
+  }
+
   // function to be called from device.
   // Accumulation is Add operation. It is not atomicAdd, as this
   // is for the cases where we know that none of the simultanous
