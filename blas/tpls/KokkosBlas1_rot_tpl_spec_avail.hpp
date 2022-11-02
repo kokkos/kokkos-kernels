@@ -61,15 +61,16 @@ namespace Impl {
 // Generic Host side BLAS (could be MKL or whatever)
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
 #define KOKKOSBLAS1_ROT_TPL_SPEC_AVAIL_BLAS(SCALAR, LAYOUT, EXECSPACE) \
-  template <>								\
-  struct rot_tpl_spec_avail<EXECSPACE,					\
-			    Kokkos::View<SCALAR*, LAYOUT,		\
-					 Kokkos::Device<EXECSPACE, Kokkos::HostSpace>, \
-					 Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-			    Kokkos::View<SCALAR, LAYOUT,		\
-					 Kokkos::Device<EXECSPACE, Kokkos::HostSpace>, \
-					 Kokkos::MemoryTraits<Kokkos::Unmanaged>>> { \
-    enum : bool { value = true };					\
+  template <>                                                          \
+  struct rot_tpl_spec_avail<                                           \
+      EXECSPACE,                                                       \
+      Kokkos::View<SCALAR*, LAYOUT,                                    \
+                   Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,       \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,           \
+      Kokkos::View<SCALAR, LAYOUT,                                     \
+                   Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,       \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {         \
+    enum : bool { value = true };                                      \
   };
 
 #ifdef KOKKOS_ENABLE_SERIAL
@@ -93,42 +94,54 @@ KOKKOSBLAS1_ROT_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>, Kokkos::LayoutLeft,
 
 // cuBLAS
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
-#define KOKKOSBLAS1_ROT_TPL_SPEC_AVAIL_CUBLAS(SCALAR, LAYOUT, EXECSPACE, MEMSPACE) \
-  template <>								\
-  struct rot_tpl_spec_avail<EXECSPACE,					\
-			    Kokkos::View<SCALAR*, LAYOUT,		\
-					 Kokkos::Device<EXECSPACE, MEMSPACE>, \
-					 Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-			    Kokkos::View<SCALAR, LAYOUT,		\
-					 Kokkos::Device<EXECSPACE, MEMSPACE>, \
-					 Kokkos::MemoryTraits<Kokkos::Unmanaged>>> { \
-    enum : bool { value = true };					\
+#define KOKKOSBLAS1_ROT_TPL_SPEC_AVAIL_CUBLAS(SCALAR, LAYOUT, EXECSPACE, \
+                                              MEMSPACE)                  \
+  template <>                                                            \
+  struct rot_tpl_spec_avail<                                             \
+      EXECSPACE,                                                         \
+      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,             \
+      Kokkos::View<SCALAR, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,  \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {           \
+    enum : bool { value = true };                                        \
   };
 
-KOKKOSBLAS1_ROT_TPL_SPEC_AVAIL_CUBLAS(double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
-KOKKOSBLAS1_ROT_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
-KOKKOSBLAS1_ROT_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
-KOKKOSBLAS1_ROT_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
+KOKKOSBLAS1_ROT_TPL_SPEC_AVAIL_CUBLAS(double, Kokkos::LayoutLeft, Kokkos::Cuda,
+                                      Kokkos::CudaSpace)
+KOKKOSBLAS1_ROT_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::LayoutLeft, Kokkos::Cuda,
+                                      Kokkos::CudaSpace)
+KOKKOSBLAS1_ROT_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>,
+                                      Kokkos::LayoutLeft, Kokkos::Cuda,
+                                      Kokkos::CudaSpace)
+KOKKOSBLAS1_ROT_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>,
+                                      Kokkos::LayoutLeft, Kokkos::Cuda,
+                                      Kokkos::CudaSpace)
 #endif
 
 // rocBLAS
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
-#define KOKKOSBLAS1_ROT_TPL_SPEC_AVAIL_ROCBLAS(SCALAR, LAYOUT, EXECSPACE, MEMSPACE) \
-  template <>								\
-  struct rot_tpl_spec_avail<EXECSPACE, 					\
-			    Kokkos::View<SCALAR*, LAYOUT,		\
-					 Kokkos::Device<EXECSPACE, MEMSPACE>, \
-					 Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-			    Kokkos::View<SCALAR, LAYOUT,		\
-					 Kokkos::Device<EXECSPACE, MEMSPACE>, \
-					 Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {     \
-    enum : bool { value = true };                                  \
+#define KOKKOSBLAS1_ROT_TPL_SPEC_AVAIL_ROCBLAS(SCALAR, LAYOUT, EXECSPACE, \
+                                               MEMSPACE)                  \
+  template <>                                                             \
+  struct rot_tpl_spec_avail<                                              \
+      EXECSPACE,                                                          \
+      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,  \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,              \
+      Kokkos::View<SCALAR, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,   \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {            \
+    enum : bool { value = true };                                         \
   };
 
-KOKKOSBLAS1_ROT_TPL_SPEC_AVAIL_ROCBLAS(double, Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::HIPSpace)
-KOKKOSBLAS1_ROT_TPL_SPEC_AVAIL_ROCBLAS(float, Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::HIPSpace)
-KOKKOSBLAS1_ROT_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::HIPSpace)
-KOKKOSBLAS1_ROT_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::HIPSpace)
+KOKKOSBLAS1_ROT_TPL_SPEC_AVAIL_ROCBLAS(double, Kokkos::LayoutLeft, Kokkos::HIP,
+                                       Kokkos::HIPSpace)
+KOKKOSBLAS1_ROT_TPL_SPEC_AVAIL_ROCBLAS(float, Kokkos::LayoutLeft, Kokkos::HIP,
+                                       Kokkos::HIPSpace)
+KOKKOSBLAS1_ROT_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<double>,
+                                       Kokkos::LayoutLeft, Kokkos::HIP,
+                                       Kokkos::HIPSpace)
+KOKKOSBLAS1_ROT_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<float>,
+                                       Kokkos::LayoutLeft, Kokkos::HIP,
+                                       Kokkos::HIPSpace)
 #endif
 
 }  // namespace Impl
