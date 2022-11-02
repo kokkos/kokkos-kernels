@@ -73,12 +73,13 @@ struct rot_eti_spec_avail {
 //
 #define KOKKOSBLAS1_ROT_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXECSPACE, MEMSPACE) \
   template <>                                                               \
-  struct rot_eti_spec_avail<EXECSPACE,					\
-			    Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, \
-					 Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-			    Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, \
-					 LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, \
-					 Kokkos::MemoryTraits<Kokkos::Unmanaged>>> { \
+  struct rot_eti_spec_avail<                                                \
+      EXECSPACE,                                                            \
+      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,    \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                \
+      Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT,  \
+                   Kokkos::Device<EXECSPACE, MEMSPACE>,                     \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {              \
     enum : bool { value = true };                                           \
   };
 
@@ -138,13 +139,14 @@ struct Rot<ExecutionSpace, Vector, Scalar, false,
 // more .cpp files.
 //
 #define KOKKOSBLAS1_ROT_ETI_SPEC_DECL(SCALAR, LAYOUT, EXECSPACE, MEMSPACE) \
-  extern template struct Rot<EXECSPACE,					\
-			     Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,	\
-					  Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-			     Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, \
-					  LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, \
-					  Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-			     false, true>;
+  extern template struct Rot<                                              \
+      EXECSPACE,                                                           \
+      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,   \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,               \
+      Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT, \
+                   Kokkos::Device<EXECSPACE, MEMSPACE>,                    \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,               \
+      false, true>;
 
 //
 // Macro for definition of full specialization of
@@ -152,13 +154,14 @@ struct Rot<ExecutionSpace, Vector, Scalar, false,
 // use this macro in one or more .cpp files in this directory.
 //
 #define KOKKOSBLAS1_ROT_ETI_SPEC_INST(SCALAR, LAYOUT, EXECSPACE, MEMSPACE) \
-  template struct Rot<EXECSPACE,					\
-		      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, \
-				   Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-		      Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, \
-				   LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, \
-				   Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-				   false, true>;
+  template struct Rot<                                                     \
+      EXECSPACE,                                                           \
+      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,   \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,               \
+      Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT, \
+                   Kokkos::Device<EXECSPACE, MEMSPACE>,                    \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,               \
+      false, true>;
 
 #include <KokkosBlas1_rot_tpl_spec_decl.hpp>
 #include <generated_specializations_hpp/KokkosBlas1_rot_eti_spec_decl.hpp>

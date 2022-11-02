@@ -131,15 +131,16 @@ void F77_BLAS_MANGLE(zaxpy,
 /// rot
 ///
 void F77_BLAS_MANGLE(srot, SROT)(int const* N, float* X, int const* incx,
-				 float* Y, int const* incy, float* c, float* s);
+                                 float* Y, int const* incy, float* c, float* s);
 void F77_BLAS_MANGLE(drot, DROT)(int const* N, double* X, int const* incx,
-				 double* Y, int const* incy, double* c, double* s);
-void F77_BLAS_MANGLE(crot, CROT)(int const* N, std::complex<float>* X, int const* incx,
-				 std::complex<float>* Y, int const* incy,
-				 float* c, float* s);
-void F77_BLAS_MANGLE(zrot, ZROT)(int const* N, std::complex<double>* X, int const* incx,
-				 std::complex<double>* Y, int const* incy,
-				 double* c, double* s);
+                                 double* Y, int const* incy, double* c,
+                                 double* s);
+void F77_BLAS_MANGLE(crot, CROT)(int const* N, std::complex<float>* X,
+                                 int const* incx, std::complex<float>* Y,
+                                 int const* incy, float* c, float* s);
+void F77_BLAS_MANGLE(zrot, ZROT)(int const* N, std::complex<double>* X,
+                                 int const* incx, std::complex<double>* Y,
+                                 int const* incy, double* c, double* s);
 
 ///
 /// rotg
@@ -461,8 +462,8 @@ void HostBlas<float>::axpy(int n, const float alpha, const float* x, int x_inc,
   F77_FUNC_SAXPY(&n, &alpha, x, &x_inc, y, &y_inc);
 }
 template <>
-void HostBlas<float>::rot(int const N, float* X, int const incx,
-			  float* Y, int const incy, float* c, float* s) {
+void HostBlas<float>::rot(int const N, float* X, int const incx, float* Y,
+                          int const incy, float* c, float* s) {
   F77_FUNC_SROT(&N, X, &incx, Y, &incy, c, s);
 }
 template <>
@@ -564,8 +565,8 @@ void HostBlas<double>::axpy(int n, const double alpha, const double* x,
   F77_FUNC_DAXPY(&n, &alpha, x, &x_inc, y, &y_inc);
 }
 template <>
-void HostBlas<double>::rot(int const N, double* X, int const incx,
-			   double* Y, int const incy, double* c, double* s) {
+void HostBlas<double>::rot(int const N, double* X, int const incx, double* Y,
+                           int const incy, double* c, double* s) {
   F77_FUNC_DROT(&N, X, &incx, Y, &incy, c, s);
 }
 template <>
@@ -682,9 +683,9 @@ void HostBlas<std::complex<float> >::axpy(int n,
   F77_FUNC_CAXPY(&n, &alpha, x, &x_inc, y, &y_inc);
 }
 template <>
-void HostBlas<std::complex<float> >::rot(int const N, std::complex<float>* X, int const incx,
-					 std::complex<float>* Y, int const incy,
-					 float* c, float* s) {
+void HostBlas<std::complex<float> >::rot(int const N, std::complex<float>* X,
+                                         int const incx, std::complex<float>* Y,
+                                         int const incy, float* c, float* s) {
   F77_FUNC_CROT(&N, X, &incx, Y, &incy, c, s);
 }
 template <>
@@ -828,9 +829,11 @@ void HostBlas<std::complex<double> >::axpy(int n,
   F77_FUNC_ZAXPY(&n, &alpha, x, &x_inc, y, &y_inc);
 }
 template <>
-void HostBlas<std::complex<double> >::rot(int const N, std::complex<double>* X, int const incx,
-					  std::complex<double>* Y, int const incy,
-					  double* c, double* s) {
+void HostBlas<std::complex<double> >::rot(int const N, std::complex<double>* X,
+                                          int const incx,
+                                          std::complex<double>* Y,
+                                          int const incy, double* c,
+                                          double* s) {
   F77_FUNC_ZROT(&N, X, &incx, Y, &incy, c, s);
 }
 template <>

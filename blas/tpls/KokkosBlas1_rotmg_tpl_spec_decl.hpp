@@ -181,8 +181,24 @@ namespace Impl {
           KokkosBlas::Impl::CudaBlasSingleton::singleton();                    \
       KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                            \
           cublasSetStream(s.handle, space.cuda_stream()));                     \
-      cublasDrotmg(s.handle, d1.data(), d2.data(), x1.data(), y1.data(),       \
-                   param.data());                                              \
+      typename DXView::HostMirror d1_h = Kokkos::create_mirror_view(d1);       \
+      typename DXView::HostMirror d2_h = Kokkos::create_mirror_view(d2);       \
+      typename DXView::HostMirror x1_h = Kokkos::create_mirror_view(x1);       \
+      typename YView::non_const_type::HostMirror y1_h =                        \
+          Kokkos::create_mirror_view(y1);                                      \
+      typename PView::HostMirror param_h = Kokkos::create_mirror_view(param);  \
+      Kokkos::deep_copy(d1_h, d1);                                             \
+      Kokkos::deep_copy(d2_h, d2);                                             \
+      Kokkos::deep_copy(x1_h, x1);                                             \
+      Kokkos::deep_copy(y1_h, y1);                                             \
+      Kokkos::deep_copy(param_h, param);                                       \
+      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasDrotmg(s.handle, d1_h.data(),         \
+                                                d2_h.data(), x1_h.data(),      \
+                                                y1_h.data(), param_h.data())); \
+      Kokkos::deep_copy(d1, d1_h);                                             \
+      Kokkos::deep_copy(d2, d2_h);                                             \
+      Kokkos::deep_copy(x1, x1_h);                                             \
+      Kokkos::deep_copy(param, param_h);                                       \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };
@@ -227,9 +243,24 @@ KOKKOSBLAS1_DROTMG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
           KokkosBlas::Impl::CudaBlasSingleton::singleton();                    \
       KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                            \
           cublasSetStream(s.handle, space.cuda_stream()));                     \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSrotmg(s.handle, d1.data(),           \
-                                                d2.data(), x1.data(),          \
-                                                y1.data(), param.data()));     \
+      typename DXView::HostMirror d1_h = Kokkos::create_mirror_view(d1);       \
+      typename DXView::HostMirror d2_h = Kokkos::create_mirror_view(d2);       \
+      typename DXView::HostMirror x1_h = Kokkos::create_mirror_view(x1);       \
+      typename YView::non_const_type::HostMirror y1_h =                        \
+          Kokkos::create_mirror_view(y1);                                      \
+      typename PView::HostMirror param_h = Kokkos::create_mirror_view(param);  \
+      Kokkos::deep_copy(d1_h, d1);                                             \
+      Kokkos::deep_copy(d2_h, d2);                                             \
+      Kokkos::deep_copy(x1_h, x1);                                             \
+      Kokkos::deep_copy(y1_h, y1);                                             \
+      Kokkos::deep_copy(param_h, param);                                       \
+      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSrotmg(s.handle, d1_h.data(),         \
+                                                d2_h.data(), x1_h.data(),      \
+                                                y1_h.data(), param_h.data())); \
+      Kokkos::deep_copy(d1, d1_h);                                             \
+      Kokkos::deep_copy(d2, d2_h);                                             \
+      Kokkos::deep_copy(x1, x1_h);                                             \
+      Kokkos::deep_copy(param, param_h);                                       \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };

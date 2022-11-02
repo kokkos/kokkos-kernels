@@ -215,6 +215,13 @@ int test_rotmg() {
 
   constexpr int num_test_cases = 9;
   for (int test_case = 0; test_case < num_test_cases; ++test_case) {
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
+    // There is a bug in the current cuBLAS implementation for this
+    // corner case so we do not test it when cuBLAS is enabled.
+    if (test_case == 4 || test_case == 5) {
+      continue;
+    }
+#endif
     Test::set_rotmg_input_ref_vals(test_case, d1, d2, x1, y1, param, ref_vals);
     Test::test_rotmg_impl(d1, d2, x1, y1, param, ref_vals);
   }

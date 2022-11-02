@@ -259,34 +259,47 @@ KOKKOSBLAS1_CROTG_TPL_SPEC_DECL_BLAS(Kokkos::LayoutRight, Kokkos::OpenMP,
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_CUBLAS(LAYOUT, EXECSPACE, MEMSPACE,  \
-                                               ETI_SPEC_AVAIL)               \
-  template <>                                                                \
-  struct Rotg<                                                               \
-      EXECSPACE,                                                             \
-      Kokkos::View<double, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                 \
-      Kokkos::View<double, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                 \
-      true, ETI_SPEC_AVAIL> {                                                \
-    using SViewType =                                                        \
-        Kokkos::View<double, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,    \
-                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;               \
-    using MViewType =                                                        \
-        Kokkos::View<double, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,    \
-                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;               \
-    static void rotg(EXECSPACE const& space, SViewType const& a,             \
-                     SViewType const& b, MViewType const& c,                 \
-                     SViewType const& s) {                                   \
-      Kokkos::Profiling::pushRegion("KokkosBlas::nrm1[TPL_CUBLAS,double]");  \
-      rotg_print_specialization<double, EXECSPACE>();                        \
-      KokkosBlas::Impl::CudaBlasSingleton& singleton =                       \
-          KokkosBlas::Impl::CudaBlasSingleton::singleton();                  \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                          \
-          cublasSetStream(singleton.handle, space.cuda_stream()));           \
-      cublasDrotg(singleton.handle, a.data(), b.data(), c.data(), s.data()); \
-      Kokkos::Profiling::popRegion();                                        \
-    }                                                                        \
+#define KOKKOSBLAS1_DROTG_TPL_SPEC_DECL_CUBLAS(LAYOUT, EXECSPACE, MEMSPACE,   \
+                                               ETI_SPEC_AVAIL)                \
+  template <>                                                                 \
+  struct Rotg<                                                                \
+      EXECSPACE,                                                              \
+      Kokkos::View<double, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,       \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
+      Kokkos::View<double, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,       \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
+      true, ETI_SPEC_AVAIL> {                                                 \
+    using SViewType =                                                         \
+        Kokkos::View<double, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,     \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                \
+    using MViewType =                                                         \
+        Kokkos::View<double, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,     \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                \
+    static void rotg(EXECSPACE const& space, SViewType const& a,              \
+                     SViewType const& b, MViewType const& c,                  \
+                     SViewType const& s) {                                    \
+      Kokkos::Profiling::pushRegion("KokkosBlas::nrm1[TPL_CUBLAS,double]");   \
+      rotg_print_specialization<double, EXECSPACE>();                         \
+      KokkosBlas::Impl::CudaBlasSingleton& singleton =                        \
+          KokkosBlas::Impl::CudaBlasSingleton::singleton();                   \
+      KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                           \
+          cublasSetStream(singleton.handle, space.cuda_stream()));            \
+      typename SViewType::HostMirror a_h = Kokkos::create_mirror_view(a);     \
+      typename SViewType::HostMirror b_h = Kokkos::create_mirror_view(b);     \
+      typename MViewType::HostMirror cos = Kokkos::create_mirror_view(c);     \
+      typename SViewType::HostMirror sin = Kokkos::create_mirror_view(s);     \
+      Kokkos::deep_copy(cos, c);                                              \
+      Kokkos::deep_copy(sin, s);                                              \
+      Kokkos::deep_copy(a_h, a);                                              \
+      Kokkos::deep_copy(b_h, b);                                              \
+      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasDrotg(                               \
+          singleton.handle, a_h.data(), b_h.data(), cos.data(), sin.data())); \
+      Kokkos::deep_copy(c, cos);                                              \
+      Kokkos::deep_copy(s, sin);                                              \
+      Kokkos::deep_copy(a, a_h);                                              \
+      Kokkos::deep_copy(b, b_h);                                              \
+      Kokkos::Profiling::popRegion();                                         \
+    }                                                                         \
   };
 
 #define KOKKOSBLAS1_SROTG_TPL_SPEC_DECL_CUBLAS(LAYOUT, EXECSPACE, MEMSPACE,    \
@@ -313,7 +326,20 @@ namespace Impl {
           KokkosBlas::Impl::CudaBlasSingleton::singleton();                    \
       KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                            \
           cublasSetStream(singleton.handle, space.cuda_stream()));             \
-      cublasSrotg(singleton.handle, a.data(), b.data(), c.data(), s.data());   \
+      typename SViewType::HostMirror a_h = Kokkos::create_mirror_view(a);      \
+      typename SViewType::HostMirror b_h = Kokkos::create_mirror_view(b);      \
+      typename MViewType::HostMirror cos = Kokkos::create_mirror_view(c);      \
+      typename SViewType::HostMirror sin = Kokkos::create_mirror_view(s);      \
+      Kokkos::deep_copy(cos, c);                                               \
+      Kokkos::deep_copy(sin, s);                                               \
+      Kokkos::deep_copy(a_h, a);                                               \
+      Kokkos::deep_copy(b_h, b);                                               \
+      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSrotg(                                \
+          singleton.handle, a_h.data(), b_h.data(), cos.data(), sin.data()));  \
+      Kokkos::deep_copy(c, cos);                                               \
+      Kokkos::deep_copy(s, sin);                                               \
+      Kokkos::deep_copy(a, a_h);                                               \
+      Kokkos::deep_copy(b, b_h);                                               \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };
@@ -345,10 +371,22 @@ namespace Impl {
           KokkosBlas::Impl::CudaBlasSingleton::singleton();                  \
       KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                          \
           cublasSetStream(singleton.handle, space.cuda_stream()));           \
-      cublasZrotg(singleton.handle,                                          \
-                  reinterpret_cast<cuDoubleComplex*>(a.data()),              \
-                  reinterpret_cast<cuDoubleComplex*>(b.data()), c.data(),    \
-                  reinterpret_cast<cuDoubleComplex*>(s.data()));             \
+      typename SViewType::HostMirror a_h = Kokkos::create_mirror_view(a);    \
+      typename SViewType::HostMirror b_h = Kokkos::create_mirror_view(b);    \
+      typename MViewType::HostMirror cos = Kokkos::create_mirror_view(c);    \
+      typename SViewType::HostMirror sin = Kokkos::create_mirror_view(s);    \
+      Kokkos::deep_copy(cos, c);                                             \
+      Kokkos::deep_copy(sin, s);                                             \
+      Kokkos::deep_copy(a_h, a);                                             \
+      Kokkos::deep_copy(b_h, b);                                             \
+      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasZrotg(                              \
+          singleton.handle, reinterpret_cast<cuDoubleComplex*>(a_h.data()),  \
+          reinterpret_cast<cuDoubleComplex*>(b_h.data()), cos.data(),        \
+          reinterpret_cast<cuDoubleComplex*>(sin.data())));                  \
+      Kokkos::deep_copy(c, cos);                                             \
+      Kokkos::deep_copy(s, sin);                                             \
+      Kokkos::deep_copy(a, a_h);                                             \
+      Kokkos::deep_copy(b, b_h);                                             \
       Kokkos::Profiling::popRegion();                                        \
     }                                                                        \
   };
@@ -379,9 +417,22 @@ namespace Impl {
           KokkosBlas::Impl::CudaBlasSingleton::singleton();                    \
       KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                            \
           cublasSetStream(singleton.handle, space.cuda_stream()));             \
-      cublasCrotg(singleton.handle, reinterpret_cast<cuComplex*>(a.data()),    \
-                  reinterpret_cast<cuComplex*>(b.data()), c.data(),            \
-                  reinterpret_cast<cuComplex*>(s.data()));                     \
+      typename SViewType::HostMirror a_h = Kokkos::create_mirror_view(a);      \
+      typename SViewType::HostMirror b_h = Kokkos::create_mirror_view(b);      \
+      typename MViewType::HostMirror cos = Kokkos::create_mirror_view(c);      \
+      typename SViewType::HostMirror sin = Kokkos::create_mirror_view(s);      \
+      Kokkos::deep_copy(cos, c);                                               \
+      Kokkos::deep_copy(sin, s);                                               \
+      Kokkos::deep_copy(a_h, a);                                               \
+      Kokkos::deep_copy(b_h, b);                                               \
+      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasCrotg(                                \
+          singleton.handle, reinterpret_cast<cuComplex*>(a_h.data()),          \
+          reinterpret_cast<cuComplex*>(b_h.data()), cos.data(),                \
+          reinterpret_cast<cuComplex*>(sin.data())));                          \
+      Kokkos::deep_copy(c, cos);                                               \
+      Kokkos::deep_copy(s, sin);                                               \
+      Kokkos::deep_copy(a, a_h);                                               \
+      Kokkos::deep_copy(b, b_h);                                               \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };
