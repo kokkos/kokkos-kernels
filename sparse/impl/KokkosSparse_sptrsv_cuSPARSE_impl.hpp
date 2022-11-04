@@ -45,9 +45,8 @@
 #ifndef _KOKKOSSPTRSVCUSPARSE_HPP
 #define _KOKKOSSPTRSVCUSPARSE_HPP
 
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-#include "cusparse.h"
-#endif
+#include "KokkosSparse_Utils_cusparse.hpp"
+
 namespace KokkosSparse {
 namespace Impl {
 
@@ -79,14 +78,16 @@ void sptrsvcuSPARSE_symbolic(KernelHandle* sptrsv_handle,
     throw std::runtime_error(
         "KokkosKernels sptrsvcuSPARSE_symbolic: MEMORY IS NOT ALLOCATED IN GPU "
         "DEVICE for CUSPARSE\n");
-  } else if (is_idx_type_supported) {
+  } else if (!is_idx_type_supported) {
+    throw std::runtime_error(
+        "CUSPARSE requires local ordinals to be integer (32 bits or 64 "
+        "bits).\n");
+  } else {
     bool is_lower = sptrsv_handle->is_lower_tri();
     sptrsv_handle->create_cuSPARSE_Handle(trans, is_lower);
 
     typename KernelHandle::SPTRSVcuSparseHandleType* h =
         sptrsv_handle->get_cuSparseHandle();
-
-    cusparseStatus_t status;
 
     int64_t nnz = static_cast<int64_t>(entries.extent(0));
     size_t pBufferSize;
@@ -95,105 +96,77 @@ void sptrsvcuSPARSE_symbolic(KernelHandle* sptrsv_handle,
     // cusparseCreateCsr only supports the same sizes (either 32 bits or 64
     // bits) for row_map_type and entries_type
     if (std::is_same<idx_type, int>::value) {
-      if (!std::is_same<size_type, int>::value)
+      if (!std::is_same<size_type, int>::value) {
         sptrsv_handle->allocate_tmp_int_rowmap(row_map.extent(0));
-      rm = !std::is_same<size_type, int>::value
-               ? (void*)sptrsv_handle->get_int_rowmap_ptr_copy(row_map)
-               : (void*)row_map.data();
+        rm = (void*)sptrsv_handle->get_int_rowmap_ptr_copy(row_map);
+      } else {
+        rm = (void*)row_map.data();
+      }
     } else {  // idx_type has 64 bits
-      if (!std::is_same<size_type, int64_t>::value)
+      if (!std::is_same<size_type, int64_t>::value) {
         sptrsv_handle->allocate_tmp_int64_rowmap(row_map.extent(0));
-      rm = !std::is_same<size_type, int64_t>::value
-               ? (void*)sptrsv_handle->get_int64_rowmap_ptr_copy(row_map)
-               : (void*)row_map.data();
+        rm = (void*)sptrsv_handle->get_int64_rowmap_ptr_copy(row_map);
+      } else {
+        rm = (void*)row_map.data();
+      }
     }
     const scalar_type alpha = scalar_type(1.0);
 
-    cusparseIndexType_t cudaCsrColIndType, cudaCsrRowMapType;
-    cudaDataType cudaValueType;
-
-    if (std::is_same<idx_type, int>::value) {
-      cudaCsrColIndType = CUSPARSE_INDEX_32I;
-      cudaCsrRowMapType = CUSPARSE_INDEX_32I;
-    } else {  // idx_type has 64 bits
-      cudaCsrColIndType = CUSPARSE_INDEX_64I;
-      cudaCsrRowMapType = CUSPARSE_INDEX_64I;
-    }
-
-    if (std::is_same<scalar_type, double>::value) {
-      cudaValueType = CUDA_R_64F;
-    } else if (std::is_same<scalar_type, float>::value) {
-      cudaValueType = CUDA_R_32F;
-    } else if (std::is_same<scalar_type, Kokkos::complex<double>>::value) {
-      cudaValueType = CUDA_C_64F;
-    } else if (std::is_same<scalar_type, Kokkos::complex<float>>::value) {
-      cudaValueType = CUDA_C_32F;
-    } else {
-      throw std::runtime_error("CUSPARSE wrapper error: unsupported type.\n");
-    }
+    cusparseIndexType_t cudaCsrRowMapType =
+        cusparse_index_type_t_from<idx_type>();
+    cusparseIndexType_t cudaCsrColIndType =
+        cusparse_index_type_t_from<idx_type>();
+    cudaDataType cudaValueType = cuda_data_type_from<scalar_type>();
 
     // Create sparse matrix in CSR format
-    status = cusparseCreateCsr(&(h->matDescr), static_cast<int64_t>(nrows),
-                               static_cast<int64_t>(nrows), nnz, rm,
-                               (void*)entries.data(), (void*)values.data(),
-                               cudaCsrRowMapType, cudaCsrColIndType,
-                               CUSPARSE_INDEX_BASE_ZERO, cudaValueType);
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateCsr(
+        &(h->matDescr), static_cast<int64_t>(nrows),
+        static_cast<int64_t>(nrows), nnz, rm, (void*)entries.data(),
+        (void*)values.data(), cudaCsrRowMapType, cudaCsrColIndType,
+        CUSPARSE_INDEX_BASE_ZERO, cudaValueType));
 
     // Create dummy dense vector B (RHS)
     nnz_scalar_view_t b_dummy("b_dummy", nrows);
-    cusparseCreateDnVec(&(h->vecBDescr_dummy), static_cast<int64_t>(nrows),
-                        b_dummy.data(), cudaValueType);
+    KOKKOS_CUSPARSE_SAFE_CALL(
+        cusparseCreateDnVec(&(h->vecBDescr_dummy), static_cast<int64_t>(nrows),
+                            b_dummy.data(), cudaValueType));
 
     // Create dummy dense vector X (LHS)
     nnz_scalar_view_t x_dummy("x_dummy", nrows);
-    cusparseCreateDnVec(&(h->vecXDescr_dummy), static_cast<int64_t>(nrows),
-                        x_dummy.data(), cudaValueType);
+    KOKKOS_CUSPARSE_SAFE_CALL(
+        cusparseCreateDnVec(&(h->vecXDescr_dummy), static_cast<int64_t>(nrows),
+                            x_dummy.data(), cudaValueType));
 
     // Specify Lower|Upper fill mode
     if (is_lower) {
       cusparseFillMode_t fillmode = CUSPARSE_FILL_MODE_LOWER;
-      cusparseSpMatSetAttribute(h->matDescr, CUSPARSE_SPMAT_FILL_MODE,
-                                &fillmode, sizeof(fillmode));
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpMatSetAttribute(
+          h->matDescr, CUSPARSE_SPMAT_FILL_MODE, &fillmode, sizeof(fillmode)));
     } else {
       cusparseFillMode_t fillmode = CUSPARSE_FILL_MODE_UPPER;
-      cusparseSpMatSetAttribute(h->matDescr, CUSPARSE_SPMAT_FILL_MODE,
-                                &fillmode, sizeof(fillmode));
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpMatSetAttribute(
+          h->matDescr, CUSPARSE_SPMAT_FILL_MODE, &fillmode, sizeof(fillmode)));
     }
 
     // Specify Unit|Non-Unit diagonal type.
     cusparseDiagType_t diagtype = CUSPARSE_DIAG_TYPE_NON_UNIT;
-    cusparseSpMatSetAttribute(h->matDescr, CUSPARSE_SPMAT_DIAG_TYPE, &diagtype,
-                              sizeof(diagtype));
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpMatSetAttribute(
+        h->matDescr, CUSPARSE_SPMAT_DIAG_TYPE, &diagtype, sizeof(diagtype)));
 
     // Allocate an external buffer for analysis
-    status = cusparseSpSV_bufferSize(
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpSV_bufferSize(
         h->handle, h->transpose, &alpha, h->matDescr, h->vecBDescr_dummy,
         h->vecXDescr_dummy, cudaValueType, CUSPARSE_SPSV_ALG_DEFAULT,
-        h->spsvDescr, &pBufferSize);
-
-    if (CUSPARSE_STATUS_SUCCESS != status)
-      std::cout << "bufferSize status error name " << (status) << std::endl;
+        h->spsvDescr, &pBufferSize));
 
     // pBuffer returned by cudaMalloc is automatically aligned to 128 bytes.
-    cudaError_t my_error;
-    my_error = cudaMalloc((void**)&(h->pBuffer), pBufferSize);
-
-    if (cudaSuccess != my_error)
-      std::cout << "cudmalloc pBuffer error_t error name "
-                << cudaGetErrorString(my_error) << std::endl;
+    KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc((void**)&(h->pBuffer), pBufferSize));
 
     // Run analysis
-    status = cusparseSpSV_analysis(h->handle, h->transpose, &alpha, h->matDescr,
-                                   h->vecBDescr_dummy, h->vecXDescr_dummy,
-                                   cudaValueType, CUSPARSE_SPSV_ALG_DEFAULT,
-                                   h->spsvDescr, h->pBuffer);
-
-    if (CUSPARSE_STATUS_SUCCESS != status)
-      std::cout << "analysis status error name " << (status) << std::endl;
-  } else {
-    throw std::runtime_error(
-        "CUSPARSE requires local ordinals to be integer (32 bits or 64 "
-        "bits).\n");
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpSV_analysis(
+        h->handle, h->transpose, &alpha, h->matDescr, h->vecBDescr_dummy,
+        h->vecXDescr_dummy, cudaValueType, CUSPARSE_SPSV_ALG_DEFAULT,
+        h->spsvDescr, h->pBuffer));
   }
 #else  // CUDA_VERSION < 11030
   typedef typename KernelHandle::nnz_lno_t idx_type;
@@ -273,7 +246,7 @@ void sptrsvcuSPARSE_symbolic(KernelHandle* sptrsv_handle,
 
       if (CUSPARSE_STATUS_SUCCESS != status)
         std::cout << "analysis status error name " << (status) << std::endl;
-    } else if (std::is_same<scalar_type, Kokkos::complex<double>>::value) {
+    } else if (std::is_same<scalar_type, Kokkos::complex<double> >::value) {
       cusparseZcsrsv2_bufferSize(h->handle, h->transpose, nrows, nnz, h->descr,
                                  (cuDoubleComplex*)vals, (int*)rm, (int*)ent,
                                  h->info, &pBufferSize);
@@ -292,7 +265,7 @@ void sptrsvcuSPARSE_symbolic(KernelHandle* sptrsv_handle,
 
       if (CUSPARSE_STATUS_SUCCESS != status)
         std::cout << "analysis status error name " << (status) << std::endl;
-    } else if (std::is_same<scalar_type, Kokkos::complex<float>>::value) {
+    } else if (std::is_same<scalar_type, Kokkos::complex<float> >::value) {
       cusparseCcsrsv2_bufferSize(h->handle, h->transpose, nrows, nnz, h->descr,
                                  (cuComplex*)vals, (int*)rm, (int*)ent, h->info,
                                  &pBufferSize);
@@ -362,46 +335,32 @@ void sptrsvcuSPARSE_solve(KernelHandle* sptrsv_handle,
     throw std::runtime_error(
         "KokkosKernels sptrsvcuSPARSE_solve: MEMORY IS NOT ALLOCATED IN GPU "
         "DEVICE for CUSPARSE\n");
-  } else if (is_idx_type_supported) {
-    cusparseStatus_t status;
-
+  } else if (!is_idx_type_supported) {
+    throw std::runtime_error(
+        "CUSPARSE requires local ordinals to be integer (32 bits or 64 "
+        "bits).\n");
+  } else {
     typename KernelHandle::SPTRSVcuSparseHandleType* h =
         sptrsv_handle->get_cuSparseHandle();
 
     const scalar_type alpha = scalar_type(1.0);
 
-    cudaDataType cudaValueType;
-    if (std::is_same<scalar_type, double>::value) {
-      cudaValueType = CUDA_R_64F;
-    } else if (std::is_same<scalar_type, float>::value) {
-      cudaValueType = CUDA_R_32F;
-    } else if (std::is_same<scalar_type, Kokkos::complex<double>>::value) {
-      cudaValueType = CUDA_C_64F;
-    } else if (std::is_same<scalar_type, Kokkos::complex<float>>::value) {
-      cudaValueType = CUDA_C_32F;
-    } else {
-      throw std::runtime_error("CUSPARSE wrapper error: unsupported type.\n");
-    }
+    cudaDataType cudaValueType = cuda_data_type_from<scalar_type>();
 
     // Create dense vector B (RHS)
-    cusparseCreateDnVec(&(h->vecBDescr), static_cast<int64_t>(nrows),
-                        (void*)rhs.data(), cudaValueType);
+    KOKKOS_CUSPARSE_SAFE_CALL(
+        cusparseCreateDnVec(&(h->vecBDescr), static_cast<int64_t>(nrows),
+                            (void*)rhs.data(), cudaValueType));
 
     // Create dense vector X (LHS)
-    cusparseCreateDnVec(&(h->vecXDescr), static_cast<int64_t>(nrows),
-                        (void*)lhs.data(), cudaValueType);
+    KOKKOS_CUSPARSE_SAFE_CALL(
+        cusparseCreateDnVec(&(h->vecXDescr), static_cast<int64_t>(nrows),
+                            (void*)lhs.data(), cudaValueType));
 
     // Solve
-    status = cusparseSpSV_solve(h->handle, h->transpose, &alpha, h->matDescr,
-                                h->vecBDescr, h->vecXDescr, cudaValueType,
-                                CUSPARSE_SPSV_ALG_DEFAULT, h->spsvDescr);
-
-    if (CUSPARSE_STATUS_SUCCESS != status)
-      std::cout << "solve status error name " << (status) << std::endl;
-  } else {
-    throw std::runtime_error(
-        "CUSPARSE requires local ordinals to be integer (32 bits or 64 "
-        "bits).\n");
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpSV_solve(
+        h->handle, h->transpose, &alpha, h->matDescr, h->vecBDescr,
+        h->vecXDescr, cudaValueType, CUSPARSE_SPSV_ALG_DEFAULT, h->spsvDescr));
   }
 #else  // CUDA_VERSION < 11030
   typedef typename KernelHandle::nnz_lno_t idx_type;
@@ -450,7 +409,7 @@ void sptrsvcuSPARSE_solve(KernelHandle* sptrsv_handle,
 
       if (CUSPARSE_STATUS_SUCCESS != status)
         std::cout << "solve status error name " << (status) << std::endl;
-    } else if (std::is_same<scalar_type, Kokkos::complex<double>>::value) {
+    } else if (std::is_same<scalar_type, Kokkos::complex<double> >::value) {
       cuDoubleComplex cualpha;
       cualpha.x = 1.0;
       cualpha.y = 0.0;
@@ -461,7 +420,7 @@ void sptrsvcuSPARSE_solve(KernelHandle* sptrsv_handle,
 
       if (CUSPARSE_STATUS_SUCCESS != status)
         std::cout << "solve status error name " << (status) << std::endl;
-    } else if (std::is_same<scalar_type, Kokkos::complex<float>>::value) {
+    } else if (std::is_same<scalar_type, Kokkos::complex<float> >::value) {
       cuComplex cualpha;
       cualpha.x = 1.0;
       cualpha.y = 0.0;

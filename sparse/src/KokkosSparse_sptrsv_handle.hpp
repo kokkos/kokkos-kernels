@@ -50,7 +50,7 @@
 #define KOKKOSSPARSE_SPTRSVHANDLE_HPP
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-#include "cusparse.h"
+#include "KokkosSparse_Utils_cusparse.hpp"
 #endif
 
 #if defined(KOKKOS_ENABLE_CUDA) && 10000 < CUDA_VERSION && \
@@ -167,12 +167,10 @@ class SPTRSVHandle {
     void *pBuffer{nullptr};
 
     cuSparseHandleType(bool transpose_, bool is_lower) {
-      cusparseStatus_t status;
-      status = cusparseCreate(&handle);
-      if (status != CUSPARSE_STATUS_SUCCESS) {
-        throw std::runtime_error("cusparseCreate ERROR\n");
-      }
-      cusparseSetPointerMode(handle, CUSPARSE_POINTER_MODE_HOST);
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreate(&handle));
+
+      KOKKOS_CUSPARSE_SAFE_CALL(
+          cusparseSetPointerMode(handle, CUSPARSE_POINTER_MODE_HOST));
 
       if (transpose_) {
         transpose = CUSPARSE_OPERATION_TRANSPOSE;
@@ -180,24 +178,21 @@ class SPTRSVHandle {
         transpose = CUSPARSE_OPERATION_NON_TRANSPOSE;
       }
 
-      status = cusparseSpSV_createDescr(&spsvDescr);
-      if (status != CUSPARSE_STATUS_SUCCESS) {
-        throw std::runtime_error("cusparseSpSV_createDescr spsvDescr ERROR\n");
-      }
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpSV_createDescr(&spsvDescr));
     }
 
     ~cuSparseHandleType() {
       if (pBuffer != nullptr) {
-        cudaFree(pBuffer);
+        KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(pBuffer));
         pBuffer = nullptr;
       }
-      cusparseDestroySpMat(matDescr);
-      cusparseDestroyDnVec(vecBDescr);
-      cusparseDestroyDnVec(vecBDescr_dummy);
-      cusparseDestroyDnVec(vecXDescr);
-      cusparseDestroyDnVec(vecXDescr_dummy);
-      cusparseSpSV_destroyDescr(spsvDescr);
-      cusparseDestroy(handle);
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(matDescr));
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecBDescr));
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecBDescr_dummy));
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecXDescr));
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecXDescr_dummy));
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpSV_destroyDescr(spsvDescr));
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroy(handle));
     }
   };
 #else  // CUDA_VERSION < 11030
