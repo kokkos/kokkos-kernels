@@ -97,8 +97,9 @@ template <class ExecutionSpace, class VectorView, class ScalarView,
           bool eti_spec_avail =
               rot_eti_spec_avail<ExecutionSpace, VectorView, ScalarView>::value>
 struct Rot {
-  static void rot(ExecutionSpace const& space, VectorView const& X, VectorView const& Y,
-                  ScalarView const& c, ScalarView const& s);
+  static void rot(ExecutionSpace const& space, VectorView const& X,
+                  VectorView const& Y, ScalarView const& c,
+                  ScalarView const& s);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
@@ -106,8 +107,9 @@ struct Rot {
 template <class ExecutionSpace, class VectorView, class ScalarView>
 struct Rot<ExecutionSpace, VectorView, ScalarView, false,
            KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
-  static void rot(ExecutionSpace const& space, VectorView const& X, VectorView const& Y,
-                  ScalarView const& c, ScalarView const& s) {
+  static void rot(ExecutionSpace const& space, VectorView const& X,
+                  VectorView const& Y, ScalarView const& c,
+                  ScalarView const& s) {
     Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
                                       ? "KokkosBlas::rot[ETI]"
                                       : "KokkosBlas::rot[noETI]");

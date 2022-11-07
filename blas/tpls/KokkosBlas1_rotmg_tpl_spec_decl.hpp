@@ -181,16 +181,16 @@ namespace Impl {
           KokkosBlas::Impl::CudaBlasSingleton::singleton();                    \
       KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                            \
           cublasSetStream(s.handle, space.cuda_stream()));                     \
-      cublasPointerMode_t pointer_mode;                                       \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                           \
-          cublasGetPointerMode(s.handle, &pointer_mode));             \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                           \
-          cublasSetPointerMode(s.handle, CUBLAS_POINTER_MODE_DEVICE));\
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasDrotmg(s.handle, d1.data(),         \
-                                                d2.data(), x1.data(),      \
-                                                y1.data(), param.data())); \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(					      \
-          cublasSetPointerMode(s.handle, pointer_mode));              \
+      cublasPointerMode_t pointer_mode;                                        \
+      KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                            \
+          cublasGetPointerMode(s.handle, &pointer_mode));                      \
+      KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                            \
+          cublasSetPointerMode(s.handle, CUBLAS_POINTER_MODE_DEVICE));         \
+      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasDrotmg(s.handle, d1.data(),           \
+                                                d2.data(), x1.data(),          \
+                                                y1.data(), param.data()));     \
+      KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                            \
+          cublasSetPointerMode(s.handle, pointer_mode));                       \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };
@@ -235,16 +235,16 @@ KOKKOSBLAS1_DROTMG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
           KokkosBlas::Impl::CudaBlasSingleton::singleton();                    \
       KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                            \
           cublasSetStream(s.handle, space.cuda_stream()));                     \
-      cublasPointerMode_t pointer_mode;                                       \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                           \
-          cublasGetPointerMode(s.handle, &pointer_mode));             \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                           \
-          cublasSetPointerMode(s.handle, CUBLAS_POINTER_MODE_DEVICE));\
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSrotmg(s.handle, d1.data(),         \
-                                                d2.data(), x1.data(),      \
-                                                y1.data(), param.data())); \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(					      \
-          cublasSetPointerMode(s.handle, pointer_mode));              \
+      cublasPointerMode_t pointer_mode;                                        \
+      KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                            \
+          cublasGetPointerMode(s.handle, &pointer_mode));                      \
+      KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                            \
+          cublasSetPointerMode(s.handle, CUBLAS_POINTER_MODE_DEVICE));         \
+      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSrotmg(s.handle, d1.data(),           \
+                                                d2.data(), x1.data(),          \
+                                                y1.data(), param.data()));     \
+      KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                            \
+          cublasSetPointerMode(s.handle, pointer_mode));                       \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };

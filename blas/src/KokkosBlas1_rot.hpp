@@ -62,12 +62,14 @@ void rot(execution_space const& space, VectorView const& X, VectorView const& Y,
   static_assert(
       Kokkos::SpaceAccessibility<execution_space,
                                  typename VectorView::memory_space>::accessible,
-      "rot: VectorView template parameter memory space needs to be accessible from "
+      "rot: VectorView template parameter memory space needs to be accessible "
+      "from "
       "execution_space template parameter");
   static_assert(
       Kokkos::SpaceAccessibility<execution_space,
                                  typename ScalarView::memory_space>::accessible,
-      "rot: VectorView template parameter memory space needs to be accessible from "
+      "rot: VectorView template parameter memory space needs to be accessible "
+      "from "
       "execution_space template parameter");
   static_assert(
       std::is_same<typename VectorView::non_const_value_type,
@@ -90,13 +92,14 @@ void rot(execution_space const& space, VectorView const& X, VectorView const& Y,
   ScalarView_Internal c_(c), s_(s);
 
   Kokkos::Profiling::pushRegion("KokkosBlas::rot");
-  Impl::Rot<execution_space, VectorView_Internal, ScalarView_Internal>::
-    rot(space, X_, Y_, c_, s_);
+  Impl::Rot<execution_space, VectorView_Internal, ScalarView_Internal>::rot(
+      space, X_, Y_, c_, s_);
   Kokkos::Profiling::popRegion();
 }
 
 template <class VectorView, class ScalarView>
-void rot(VectorView const& X, VectorView const& Y, ScalarView const& c, ScalarView const& s) {
+void rot(VectorView const& X, VectorView const& Y, ScalarView const& c,
+         ScalarView const& s) {
   const typename VectorView::execution_space space =
       typename VectorView::execution_space();
   rot(space, X, Y, c, s);
