@@ -57,7 +57,7 @@
 namespace KokkosBlas {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class ExecutionSpace, class Vector, class Scalar>
+template <class ExecutionSpace, class VectorView, class ScalarView>
 struct rot_eti_spec_avail {
   enum : bool { value = false };
 };
@@ -91,38 +91,38 @@ namespace KokkosBlas {
 namespace Impl {
 
 // Unification layer
-template <class ExecutionSpace, class Vector, class Scalar,
+template <class ExecutionSpace, class VectorView, class ScalarView,
           bool tpl_spec_avail =
-              rot_tpl_spec_avail<ExecutionSpace, Vector, Scalar>::value,
+              rot_tpl_spec_avail<ExecutionSpace, VectorView, ScalarView>::value,
           bool eti_spec_avail =
-              rot_eti_spec_avail<ExecutionSpace, Vector, Scalar>::value>
+              rot_eti_spec_avail<ExecutionSpace, VectorView, ScalarView>::value>
 struct Rot {
-  static void rot(ExecutionSpace const& space, Vector const& X, Vector const& Y,
-                  Scalar const& c, Scalar const& s);
+  static void rot(ExecutionSpace const& space, VectorView const& X, VectorView const& Y,
+                  ScalarView const& c, ScalarView const& s);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 //! Full specialization of Rot.
-template <class ExecutionSpace, class Vector, class Scalar>
-struct Rot<ExecutionSpace, Vector, Scalar, false,
+template <class ExecutionSpace, class VectorView, class ScalarView>
+struct Rot<ExecutionSpace, VectorView, ScalarView, false,
            KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
-  static void rot(ExecutionSpace const& space, Vector const& X, Vector const& Y,
-                  Scalar const& c, Scalar const& s) {
+  static void rot(ExecutionSpace const& space, VectorView const& X, VectorView const& Y,
+                  ScalarView const& c, ScalarView const& s) {
     Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
                                       ? "KokkosBlas::rot[ETI]"
                                       : "KokkosBlas::rot[noETI]");
 #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
     if (KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
       printf("KokkosBlas1::rot<> ETI specialization for < %s, %s, %s >\n",
-             typeid(ExecutionSpace).name(), typeid(Vector).name(),
-             typeid(Scalar).name());
+             typeid(ExecutionSpace).name(), typeid(VectorView).name(),
+             typeid(ScalarView).name());
     else {
       printf("KokkosBlas1::rot<> non-ETI specialization for < %s, %s, %s >\n",
-             typeid(ExecutionSpace).name(), typeid(Vector).name(),
-             typeid(Scalar).name());
+             typeid(ExecutionSpace).name(), typeid(VectorView).name(),
+             typeid(ScalarView).name());
     }
 #endif
-    Rot_Invoke<ExecutionSpace, Vector, Scalar>(space, X, Y, c, s);
+    Rot_Invoke<ExecutionSpace, VectorView, ScalarView>(space, X, Y, c, s);
     Kokkos::Profiling::popRegion();
   }
 };

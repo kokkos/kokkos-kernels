@@ -49,56 +49,56 @@
 
 namespace KokkosBlas {
 
-template <class execution_space, class Vector, class Scalar>
-void rot(execution_space const& space, Vector const& X, Vector const& Y,
-         Scalar const& c, Scalar const& s) {
+template <class execution_space, class VectorView, class ScalarView>
+void rot(execution_space const& space, VectorView const& X, VectorView const& Y,
+         ScalarView const& c, ScalarView const& s) {
   static_assert(Kokkos::is_execution_space<execution_space>::value,
                 "rot: execution_space template parameter is not a Kokkos "
                 "execution space.");
-  static_assert(Vector::rank == 1,
-                "rot: Vector template parameter needs to be a rank 1 view");
-  static_assert(Scalar::rank == 0,
-                "rot: Scalar template parameter needs to be a rank 0 view");
+  static_assert(VectorView::rank == 1,
+                "rot: VectorView template parameter needs to be a rank 1 view");
+  static_assert(ScalarView::rank == 0,
+                "rot: ScalarView template parameter needs to be a rank 0 view");
   static_assert(
       Kokkos::SpaceAccessibility<execution_space,
-                                 typename Vector::memory_space>::accessible,
-      "rot: Vector template parameter memory space needs to be accessible from "
+                                 typename VectorView::memory_space>::accessible,
+      "rot: VectorView template parameter memory space needs to be accessible from "
       "execution_space template parameter");
   static_assert(
       Kokkos::SpaceAccessibility<execution_space,
-                                 typename Scalar::memory_space>::accessible,
-      "rot: Vector template parameter memory space needs to be accessible from "
+                                 typename ScalarView::memory_space>::accessible,
+      "rot: VectorView template parameter memory space needs to be accessible from "
       "execution_space template parameter");
   static_assert(
-      std::is_same<typename Vector::non_const_value_type,
-                   typename Vector::value_type>::value,
-      "rot: Vector template parameter needs to store non-const values");
+      std::is_same<typename VectorView::non_const_value_type,
+                   typename VectorView::value_type>::value,
+      "rot: VectorView template parameter needs to store non-const values");
 
-  using Vector_Internal = Kokkos::View<
-      typename Vector::non_const_value_type*,
-      typename KokkosKernels::Impl::GetUnifiedLayout<Vector>::array_layout,
-      Kokkos::Device<execution_space, typename Vector::memory_space>,
+  using VectorView_Internal = Kokkos::View<
+      typename VectorView::non_const_value_type*,
+      typename KokkosKernels::Impl::GetUnifiedLayout<VectorView>::array_layout,
+      Kokkos::Device<execution_space, typename VectorView::memory_space>,
       Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
-  using Scalar_Internal = Kokkos::View<
-      typename Scalar::non_const_value_type,
-      typename KokkosKernels::Impl::GetUnifiedLayout<Scalar>::array_layout,
-      Kokkos::Device<execution_space, typename Scalar::memory_space>,
+  using ScalarView_Internal = Kokkos::View<
+      typename ScalarView::non_const_value_type,
+      typename KokkosKernels::Impl::GetUnifiedLayout<ScalarView>::array_layout,
+      Kokkos::Device<execution_space, typename ScalarView::memory_space>,
       Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
-  Vector_Internal X_(X), Y_(Y);
-  Scalar_Internal c_(c), s_(s);
+  VectorView_Internal X_(X), Y_(Y);
+  ScalarView_Internal c_(c), s_(s);
 
   Kokkos::Profiling::pushRegion("KokkosBlas::rot");
-  Impl::Rot<execution_space, Vector_Internal, Scalar_Internal>::rot(space, X_,
-                                                                    Y_, c_, s_);
+  Impl::Rot<execution_space, VectorView_Internal, ScalarView_Internal>::
+    rot(space, X_, Y_, c_, s_);
   Kokkos::Profiling::popRegion();
 }
 
-template <class Vector, class Scalar>
-void rot(Vector const& X, Vector const& Y, Scalar const& c, Scalar const& s) {
-  const typename Vector::execution_space space =
-      typename Vector::execution_space();
+template <class VectorView, class ScalarView>
+void rot(VectorView const& X, VectorView const& Y, ScalarView const& c, ScalarView const& s) {
+  const typename VectorView::execution_space space =
+      typename VectorView::execution_space();
   rot(space, X, Y, c, s);
 }
 

@@ -48,7 +48,7 @@
 namespace KokkosBlas {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class ExecutionSpace, class Vector, class Scalar>
+template <class ExecutionSpace, class VectorView, class ScalarView>
 struct rot_tpl_spec_avail {
   enum : bool { value = false };
 };
