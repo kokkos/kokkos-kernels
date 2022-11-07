@@ -86,6 +86,11 @@ print_help() {
   echo ""
   echo "--make-par-level=N:  Set parallelism level for builds (default: N=12)"
   echo ""
+  echo "--with-tpls=TPLS: set KOKKOSKERNELS_ENABLE_TPLS"
+  echo "    Provide a comma-separated list of TPLs"
+  echo "    Valid items:"
+  echo "      blas, mkl, cublas, cusparse, magma, armpl, rocblas, rocsparse"
+  echo ""
 
   echo "ARGS: list of expressions matching compilers to test"
   echo "  supported compilers sems"
@@ -1173,7 +1178,7 @@ setup_env() {
     NEW_TPL_LIST=$(echo ${NEW_TPL_LIST} | sed 's/.\w*$//')
     #echo "TESTING NEW_TPL_LIST=$NEW_TPL_LIST"
 
-    KOKKOSKERNELS_ENABLE_TPL_CMD="--with-tpls=${NEW_TPL_LIST}"
+    KOKKOSKERNELS_ENABLE_TPL_CMD="--with-tpls=${KOKKOSKERNELS_ENABLE_TPLS},${NEW_TPL_LIST}"
     #echo "TPL USAGE: KOKKOSKERNELS_ENABLE_TPL_CMD=$KOKKOSKERNELS_ENABLE_TPL_CMD"
   fi
 
