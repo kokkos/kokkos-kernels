@@ -296,13 +296,22 @@ namespace Impl {
     static void rotmg(EXEC_SPACE const& space, DXView const& d1,               \
                       DXView const& d2, DXView const& x1, YView const& y1,     \
                       PView const& param) {                                    \
-      Kokkos::Profiling::pushRegion("KokkosBlas::nrm1[TPL_ROCBLAS,double]");   \
+      Kokkos::Profiling::pushRegion("KokkosBlas::rotmg[TPL_ROCBLAS,double]");  \
       rotmg_print_specialization<double>();                                    \
       KokkosBlas::Impl::RocBlasSingleton& s =                                  \
           KokkosBlas::Impl::RocBlasSingleton::singleton();                     \
       KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                           \
-          rocblasSetStream(s.handle, space.hip_stream()));                     \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_drotmg(s.handle, &a, &b, &c, &s)); \
+          rocblas_set_stream(s.handle, space.hip_stream()));                   \
+      rocblas_pointer_mode pointer_mode;                                       \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                           \
+          rocblas_get_pointer_mode(s.handle, &pointer_mode));                  \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                           \
+          rocblas_set_pointer_mode(s.handle, rocblas_pointer_mode_device));    \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_drotmg(s.handle, d1.data(),        \
+                                                   d2.data(), x1.data(),       \
+                                                   y1.data(), param.data()));  \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                           \
+          rocblas_set_pointer_mode(s.handle, pointer_mode));                   \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };
@@ -341,13 +350,22 @@ KOKKOSBLAS1_DROTMG_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP,
     static void rotmg(EXEC_SPACE const& space, DXView const& d1,               \
                       DXView const& d2, DXView const& x1, YView const& y1,     \
                       PView const& param) {                                    \
-      Kokkos::Profiling::pushRegion("KokkosBlas::nrm1[TPL_ROCBLAS,float]");    \
+      Kokkos::Profiling::pushRegion("KokkosBlas::rotmg[TPL_ROCBLAS,float]");   \
       rotmg_print_specialization<float>();                                     \
       KokkosBlas::Impl::RocBlasSingleton& s =                                  \
           KokkosBlas::Impl::RocBlasSingleton::singleton();                     \
       KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                           \
-          rocblasSetStream(s.handle, space.hip_stream()));                     \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_srotmg(s.handle, &a, &b, &c, &s)); \
+          rocblas_set_stream(s.handle, space.hip_stream()));                   \
+      rocblas_pointer_mode pointer_mode;                                       \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                           \
+          rocblas_get_pointer_mode(s.handle, &pointer_mode));                  \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                           \
+          rocblas_set_pointer_mode(s.handle, rocblas_pointer_mode_device));    \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_srotmg(s.handle, d1.data(),        \
+                                                   d2.data(), x1.data(),       \
+                                                   y1.data(), param.data()));  \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                           \
+          rocblas_set_pointer_mode(s.handle, pointer_mode));                   \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };

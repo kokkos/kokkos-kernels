@@ -119,6 +119,7 @@ KOKKOSBLAS1_ROT_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>,
 #endif
 
 // rocBLAS
+/*
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
 #define KOKKOSBLAS1_ROT_TPL_SPEC_AVAIL_ROCBLAS(SCALAR, LAYOUT, EXECSPACE, \
                                                MEMSPACE)                  \
@@ -143,6 +144,7 @@ KOKKOSBLAS1_ROT_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<float>,
                                        Kokkos::LayoutLeft, Kokkos::HIP,
                                        Kokkos::HIPSpace)
 #endif
+*/
 
 }  // namespace Impl
 }  // namespace KokkosBlas
