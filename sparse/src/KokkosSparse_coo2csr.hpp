@@ -73,9 +73,9 @@ class Coo2Csr {
   using ColMapViewType = ColViewType;
   using ValViewType    = DataViewType;
   using OrdinalType    = CrsOT;
-  using SizeType       = CrsSzT;
+  using SizeType       = int;  // Must be int for HashmapAccumulator...
 
-  using KeyType          = uint32_t;
+  using KeyType          = int;
   using ValueType        = typename DataViewType::value_type;
   using ScratchSpaceType = typename CrsET::scratch_memory_space;
   using KeyViewScratch =
@@ -160,26 +160,47 @@ class Coo2Csr {
       unsigned start_n = teams_work * member.league_rank();
       unsigned stop_n  = start_n + n;
 
-      KeyViewScratch keys(max_row_cnt);
-      SizeViewScratch hash_ll(pow2_max_row_cnt * 2);
-      volatile SizeType used_size;
-      unsigned unique_row_cnt = 0;
+      KeyViewScratch keys(member.team_scratch(0), max_row_cnt);
+      SizeViewScratch hash_ll(member.team_scratch(0), pow2_max_row_cnt * 2 + 1);
+      volatile SizeType *used_size = hash_ll.data() + member.league_rank();
+      auto *hash_begins            = hash_ll.data() + member.league_size();
+      auto *hash_nexts             = hash_begins + pow2_max_row_cnt;
+      unsigned unique_row_cnt      = 0;  // thread-local row count
+
+      // Initialize hash_begins to -1
+      Kokkos::parallel_for(Kokkos::TeamVectorRange(member, 0, pow2_max_row_cnt),
+                           [&](const int &tid) { hash_begins[tid] = -1; });
+      // Wait for each team's hashmap to be initialized.
+      member.team_barrier();
 
       KokkosKernels::Experimental::HashmapAccumulator<
           SizeType, KeyType, ValueType,
           KokkosKernels::Experimental::HashOpType::bitwiseAnd>
-          uset(max_row_cnt, pow2_max_row_cnt, hash_ll.data(),
-               hash_ll.data() + pow2_max_row_cnt, keys.data(), nullptr);
+          uset(max_row_cnt, pow2_max_row_cnt - 1, hash_begins, hash_nexts,
+               keys.data(), nullptr);
 
-      Kokkos::parallel_for(Kokkos::TeamVectorRange(member, start_n, stop_n),
-                           [&](const int &tid) {
-                             KeyType i = __row(tid);
-                             unique_row_cnt +=
-                                 uset.vector_atomic_insert_into_hash_KeyCounter(
-                                     i, &used_size);
-                           });
+#if 1
+      std::cout << "------------------" << std::endl;
+      std::cout << "rank: " << member.league_rank() << std::endl;
+      std::cout << "n: " << n << std::endl;
+      std::cout << "start_n: " << start_n << std::endl;
+      std::cout << "stop_n: " << stop_n << std::endl;
+#endif
+
+      Kokkos::parallel_for(
+          Kokkos::TeamVectorRange(member, start_n, stop_n),
+          [&](const int &tid) {
+            KeyType i = __row(tid);
+            auto j    = __col(tid);
+            std::cerr << "i: " << i << std::endl;
+
+            if (i >= 0 && j >= 0)
+              unique_row_cnt +=
+                  uset.vector_atomic_insert_into_hash_KeyCounter(i, used_size);
+            std::cerr << "unique_row_cnt: " << unique_row_cnt << std::endl;
+          });
       // All threads add their partial row counts
-      Kokkos::atomic_add(n_unique_rows_per_team[member.league_rank()],
+      Kokkos::atomic_add(&n_unique_rows_per_team[member.league_rank()],
                          unique_row_cnt);
     }
   };
@@ -224,14 +245,15 @@ class Coo2Csr {
   };
 
  private:
-  unsigned int __suggested_team_size, __suggested_vec_size, __league_size;
+  unsigned int __suggested_team_size, __suggested_vec_size, __n_teams;
 
   template <class FunctorType>
   void __runPhase1(FunctorType &functor) {
     {
-#if 0
+#if 1
       for (size_t i = 0; i < __n_tuples; i++) {
-        std::cout << "(" << functor.__row(i) << ", " << functor.__col(i) << ", " << functor.__data(i) << ")" << std::endl;
+        std::cout << "(" << functor.__row(i) << ", " << functor.__col(i) << ", "
+                  << functor.__data(i) << ")" << std::endl;
       }
 #endif
 
@@ -247,6 +269,10 @@ class Coo2Csr {
                                                                        __nrows),
           functor, functor.max_row_cnt);
       CrsET().fence();
+#if 1
+      std::cout << "phase1Functor.max_row_cnt: " << functor.max_row_cnt
+                << std::endl;
+#endif
 
       functor.pow2_max_row_cnt = 1;
       while (functor.pow2_max_row_cnt < functor.max_row_cnt)
@@ -255,23 +281,42 @@ class Coo2Csr {
       s3Policy s3p;
       __suggested_team_size =
           s3p.team_size_recommended(functor, Kokkos::ParallelForTag());
-      __league_size      = __n_tuples / __suggested_team_size;
-      functor.teams_work = __league_size;
-      functor.last_teams_work =
-          __n_tuples - (__league_size * __suggested_team_size);
+      __n_teams               = __n_tuples / __suggested_team_size;
+      functor.teams_work      = __n_tuples / __n_teams;
+      functor.last_teams_work = __n_tuples - (functor.teams_work * __n_teams);
       functor.last_teams_work = functor.last_teams_work == 0
                                     ? functor.teams_work
                                     : functor.last_teams_work;
       functor.n_unique_rows_per_team = Kokkos::View<unsigned *, CrsET>(
-          "n_unique_rows_per_team", __league_size);
+          "n_unique_rows_per_team", __n_teams);  // Intialized to 0
 
       int shmem_size =
-          KeyViewScratch::shmem_size(functor.max_row_cnt) +
-          SizeViewScratch::shmem_size(functor.pow2_max_row_cnt *
-                                      2);  // * 2 for hash_begins & hash_nexts
+          KeyViewScratch::shmem_size(functor.max_row_cnt *
+                                     2) +           // keys and hash_nexts
+          SizeViewScratch::shmem_size(__n_teams) +  // used_sizes
+          SizeViewScratch::shmem_size(functor.pow2_max_row_cnt);  // hash_begins
 
-      s3p = s3Policy(__league_size, __suggested_team_size);
+#if 1
+      std::cout << "__n_tuples: " << __n_tuples << std::endl;
+      std::cout << "__n_teams: " << __n_teams << std::endl;
+      std::cout << "__suggested_team_size: " << __suggested_team_size
+                << std::endl;
+      std::cout << "functor.teams_work: " << functor.teams_work << std::endl;
+      std::cout << "functor.last_teams_work: " << functor.last_teams_work
+                << std::endl;
+      std::cout << "shmem_size: " << shmem_size << std::endl;
+#endif
+
+      s3p = s3Policy(__n_teams, __suggested_team_size);
       s3p.set_scratch_size(0, Kokkos::PerTeam(shmem_size));
+      Kokkos::parallel_for("Coo2Csr::phase1Tags::s3UniqRows", s3p, functor);
+      CrsET().fence();
+#if 1
+      std::cout << "phase1Functor.n_unique_rows_per_team: " << std::endl;
+      for (unsigned i = 0; i < __n_teams; i++) {
+        std::cout << i << ":" << functor.n_unique_rows_per_team[i] << std::endl;
+      }
+#endif
     }
     return;
   }

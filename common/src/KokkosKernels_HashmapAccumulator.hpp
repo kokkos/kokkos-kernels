@@ -746,7 +746,7 @@ struct HashmapAccumulator {
       const key_type &key, volatile size_type *used_size_) {
     size_type hash, i, my_write_index, hashbeginning;
 
-    if (key < 0) return 0;
+    /* if (key == -1) return 0; */
 
     hash = __compute_hash(key, __hashOpRHS);
     for (i = hash_begins[hash]; i != -1; i = hash_nexts[i]) {
