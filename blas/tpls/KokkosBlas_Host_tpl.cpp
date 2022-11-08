@@ -157,6 +157,16 @@ void F77_BLAS_MANGLE(zrotg, ZROTG)(std::complex<double>* a,
 ///
 /// rotmg
 ///
+void F77_BLAS_MANGLE(srotm, SROTM)(const int* n, float* X, const int* incx,
+                                   float* Y, const int* incy,
+                                   float const* param);
+void F77_BLAS_MANGLE(drotm, DROTM)(const int* n, double* X, const int* incx,
+                                   double* Y, const int* incy,
+                                   double const* param);
+
+///
+/// rotmg
+///
 void F77_BLAS_MANGLE(srotmg, SROTMG)(float* d1, float* d2, float* x1,
                                      const float* y1, float* param);
 void F77_BLAS_MANGLE(drotmg, DROTMG)(double* d1, double* d2, double* x1,
@@ -384,6 +394,9 @@ void F77_BLAS_MANGLE(zscal,
 #define F77_FUNC_CROTG F77_BLAS_MANGLE(crotg, CROTG)
 #define F77_FUNC_ZROTG F77_BLAS_MANGLE(zrotg, ZROTG)
 
+#define F77_FUNC_SROTM F77_BLAS_MANGLE(srotm, SROTM)
+#define F77_FUNC_DROTM F77_BLAS_MANGLE(drotm, DROTM)
+
 #define F77_FUNC_SROTMG F77_BLAS_MANGLE(srotmg, SROTMG)
 #define F77_FUNC_DROTMG F77_BLAS_MANGLE(drotmg, DROTMG)
 
@@ -469,6 +482,11 @@ void HostBlas<float>::rot(int const N, float* X, int const incx, float* Y,
 template <>
 void HostBlas<float>::rotg(float* a, float* b, float* c, float* s) {
   F77_FUNC_SROTG(a, b, c, s);
+}
+template <>
+void HostBlas<float>::rotm(const int n, float* X, const int incx, float* Y,
+                           const int incy, const float* param) {
+  F77_FUNC_SROTM(&n, X, &incx, Y, &incy, param);
 }
 template <>
 void HostBlas<float>::rotmg(float* d1, float* d2, float* x1, const float* y1,
@@ -572,6 +590,11 @@ void HostBlas<double>::rot(int const N, double* X, int const incx, double* Y,
 template <>
 void HostBlas<double>::rotg(double* a, double* b, double* c, double* s) {
   F77_FUNC_DROTG(a, b, c, s);
+}
+template <>
+void HostBlas<double>::rotm(const int n, double* X, const int incx, double* Y,
+                            const int incy, const double* param) {
+  F77_FUNC_DROTM(&n, X, &incx, Y, &incy, param);
 }
 template <>
 void HostBlas<double>::rotmg(double* d1, double* d2, double* x1,

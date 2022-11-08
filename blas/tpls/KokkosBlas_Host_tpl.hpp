@@ -81,6 +81,9 @@ struct HostBlas {
 
   static void rotg(T *a, T *b, mag_type *c, T *s);
 
+  static void rotm(const int n, T *X, const int incx, T *Y, const int incy,
+                   T const *param);
+
   static void rotmg(T *d1, T *d2, T *x1, const T *y1, T *param);
 
   static void gemv(const char trans, int m, int n, const T alpha, const T *a,
