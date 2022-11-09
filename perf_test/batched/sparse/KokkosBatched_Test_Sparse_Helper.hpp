@@ -105,21 +105,6 @@ void readArrayFromMM(std::string name, const XType &x) {
   input.close();
 
   Kokkos::deep_copy(x, x_h);
-
-  /*
-    std::ofstream myfile;
-    myfile.open("x-data.txt");
-
-
-    for (size_t i = 0; i < x_h.extent(0); ++i) {
-      for (size_t j = 0; j < x_h.extent(1); ++j) {
-        myfile << std::setprecision (15) << x_h(i, j) << " ";
-      }
-      myfile << std::endl;
-    }
-
-    myfile.close();
-    */
 }
 
 template <class AType>
@@ -195,21 +180,6 @@ void readCRSFromMM(std::string name, const VType &V, const IntType &r,
   Kokkos::deep_copy(V, V_h);
   Kokkos::deep_copy(r, r_h);
   Kokkos::deep_copy(c, c_h);
-
-  /*
-    std::ofstream myfile;
-    myfile.open("a-data.txt");
-
-
-    for (size_t i = 0; i < nrows; ++i) {
-      for (size_t j = r_h(i); j < r_h(i+1); ++j) {
-        myfile << std::setprecision (15) << i+1 << " " << c_h(j)+1 << " " <<
-    V_h(0, j) << std::endl;
-      }
-    }
-
-    myfile.close();
-    */
 }
 
 template <class VType, class IntType>
@@ -238,17 +208,4 @@ void getInvDiagFromCRS(const VType &V, const IntType &r, const IntType &c,
   }
 
   Kokkos::deep_copy(diag, diag_values_host);
-
-  /*
-    std::ofstream myfile;
-    myfile.open("a-diag.txt");
-
-
-    for (size_t i = 0; i < BlkSize; ++i) {
-      myfile << std::setprecision (15) << i+1 << " " << diag_values_host(0, i)
-    << std::endl;
-    }
-
-    myfile.close();
-    */
 }

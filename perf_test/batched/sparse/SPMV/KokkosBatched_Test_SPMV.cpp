@@ -44,30 +44,12 @@
 
 /// Kokkos headers
 #include "Kokkos_Core.hpp"
-#include "Kokkos_Timer.hpp"
-#include "Kokkos_Random.hpp"
-#include "Kokkos_UnorderedMap.hpp"
-#include "Kokkos_Sort.hpp"
-
-/// KokkosKernels headers
+#include "Kokkos_ArithTraits.hpp"
 #include "KokkosBatched_Util.hpp"
-#include "KokkosBatched_Vector.hpp"
-
-#include <Kokkos_ArithTraits.hpp>
-#include <KokkosBatched_Util.hpp>
-#include <KokkosBatched_Vector.hpp>
-#include <KokkosBatched_Copy_Decl.hpp>
-#include <KokkosBatched_AddRadial_Decl.hpp>
-#include <KokkosBatched_Gemm_Decl.hpp>
-#include <KokkosBatched_Gemv_Decl.hpp>
-#include <KokkosBatched_Trsm_Decl.hpp>
-#include <KokkosBatched_Trsv_Decl.hpp>
-#include <KokkosBatched_LU_Decl.hpp>
-#include <KokkosSparse_CrsMatrix.hpp>
-#include <KokkosBatched_SPMV_View.hpp>
 
 #include "KokkosBatched_Test_Sparse_Helper.hpp"
 
+#include "KokkosBatched_SPMV_View.hpp"
 #include "KokkosBatched_Spmv.hpp"
 
 typedef Kokkos::DefaultExecutionSpace exec_space;
@@ -106,9 +88,6 @@ struct Functor_TestBatchedTeamVectorSpmv {
 
   template <typename MemberType>
   KOKKOS_INLINE_FUNCTION void operator()(const MemberType &member) const {
-    // int team_size = member.team_size();
-    // printf("team_size %d\n", team_size);
-    // std::cout << "member.team_size() = " << member.team_size() << std::endl;
     const int first_matrix =
         static_cast<int>(member.league_rank()) * _matrices_per_team;
     const int N = _D.extent(0);
@@ -209,14 +188,35 @@ int main(int argc, char *argv[]) {
             << std::endl
             << "-timers           :  Filename of the output timers."
             << std::endl
-            << "-n1               :  Number of repetitions 1." << std::endl
-            << "-n2               :  Number of repetitions 2." << std::endl
+            << "-n1               :  Number of repetitions of the experience."
+            << std::endl
+            << "-n2               :  Number of the kernel calls inside one "
+               "experience."
+            << std::endl
             << "-team_size        :  Used team size." << std::endl
             << "-n_implementations:  Number of implementations to use: test "
                "all "
                "implementations [0, specified number -1]."
             << std::endl
             << "-implementation   :  Specify only one implementation at a time."
+            << std::endl
+            << "                     Note: implementation 0 : use a Team "
+               "approach where a Team have to apply N_team SPMV. A given team "
+               "applies N_team SPMV sequentially and uses a ThreadRange over "
+               "the row and a VectorRange over the non zero entries of a given "
+               "row."
+            << std::endl
+            << "                     Note: implementation 1 : use a Team "
+               "approach where a Team have to apply N_team SPMV. A given team "
+               "uses a fused thread vector range policy to loop over the "
+               "independent fibers."
+            << std::endl
+            << "                     Note: implementation 2 : same as "
+               "implementation 1 but using scratch pad for the graph."
+            << std::endl
+            << "                     Note: implementation 3 : same as "
+               "implementation 1 but using the kernels from "
+               "batched/sparse/impl/*."
             << std::endl
             << "-l                :  Specify left layout." << std::endl
             << "-r                :  Specify right layout." << std::endl
@@ -348,9 +348,8 @@ int main(int argc, char *argv[]) {
           timer.reset();
           exec_space().fence();
 
-          int N_team          = i_impl == 0 ? 1 : N_team_potential;
-          N_team              = N_team_potential;
-          int number_of_teams = i_impl == 0 ? N : ceil(1. * N / N_team);
+          int N_team          = N_team_potential;
+          int number_of_teams = ceil(static_cast<double>(N) / N_team);
 
           if (layout_left) {
             using policy_type = Kokkos::TeamPolicy<exec_space>;

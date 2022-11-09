@@ -43,26 +43,10 @@
 
 /// Kokkos headers
 #include "Kokkos_Core.hpp"
-#include "Kokkos_Timer.hpp"
-#include "Kokkos_Random.hpp"
-#include "Kokkos_UnorderedMap.hpp"
-#include "Kokkos_Sort.hpp"
 
-/// KokkosKernels headers
+#include "Kokkos_ArithTraits.hpp"
 #include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Vector.hpp"
-
-#include <Kokkos_ArithTraits.hpp>
-#include <KokkosBatched_Util.hpp>
-#include <KokkosBatched_Vector.hpp>
-#include <KokkosBatched_Copy_Decl.hpp>
-#include <KokkosBatched_AddRadial_Decl.hpp>
-#include <KokkosBatched_Gemm_Decl.hpp>
-#include <KokkosBatched_Gemv_Decl.hpp>
-#include <KokkosBatched_Trsm_Decl.hpp>
-#include <KokkosBatched_Trsv_Decl.hpp>
-#include <KokkosBatched_LU_Decl.hpp>
-#include <KokkosSparse_CrsMatrix.hpp>
 
 #include "KokkosBatched_Test_Sparse_Helper.hpp"
 
@@ -128,14 +112,28 @@ int main(int argc, char *argv[]) {
             << std::endl
             << "-timers           :  Filename of the output timers."
             << std::endl
-            << "-n1               :  Number of repetitions 1." << std::endl
-            << "-n2               :  Number of repetitions 2." << std::endl
+            << "-n1               :  Number of repetitions of the experience."
+            << std::endl
+            << "-n2               :  Number of the kernel calls inside one "
+               "experience."
+            << std::endl
             << "-team_size        :  Used team size." << std::endl
             << "-n_implementations:  Number of implementations to use: test "
                "all "
                "implementations [0, specified number -1]."
             << std::endl
             << "-implementation   :  Specify only one implementation at a time."
+            << std::endl
+            << "                     Note: implementation 0 : use scratch pad "
+               "only for scalar temporary variable."
+            << std::endl
+            << "                     Note: implementation 1 : use scratch pad "
+               "for scalar temporary variables and for the graph of the "
+               "matrices."
+            << std::endl
+            << "                     Note: implementation 2 : use scratch pad "
+               "for scalar and vector temporary variables and for the graph of "
+               "the matrices."
             << std::endl
             << "-l                :  Specify left layout." << std::endl
             << "-r                :  Specify right layout." << std::endl
@@ -271,8 +269,6 @@ int main(int argc, char *argv[]) {
           Kokkos::deep_copy(xLL, 0.0);
           Kokkos::deep_copy(xLR, 0.0);
           flush.run();
-          exec_space().fence();
-
           exec_space().fence();
 
           if (i_impl == 0 && layout_left) {

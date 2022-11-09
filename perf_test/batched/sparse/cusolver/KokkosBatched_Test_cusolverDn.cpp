@@ -60,10 +60,6 @@
 #include "KokkosKernels_config.h"
 #include "KokkosKernels_SparseUtils_cusparse.hpp"
 
-/// KokkosKernels headers
-#include "KokkosBatched_Util.hpp"
-#include "KokkosBatched_Vector.hpp"
-
 #include <Kokkos_ArithTraits.hpp>
 #include <KokkosBatched_Util.hpp>
 #include <KokkosBatched_Vector.hpp>
@@ -85,7 +81,6 @@
 #include "KokkosBatched_Gesv.hpp"
 #include "KokkosBatched_JacobiPrec.hpp"
 #include "KokkosBatched_Dot.hpp"
-#include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Dot_Internal.hpp"
 #include "KokkosBatched_Spmv_Serial_Impl.hpp"
 #include "KokkosBatched_Copy_Decl.hpp"

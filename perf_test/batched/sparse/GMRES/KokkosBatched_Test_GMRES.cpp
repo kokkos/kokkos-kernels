@@ -46,26 +46,10 @@
 
 /// Kokkos headers
 #include "Kokkos_Core.hpp"
-#include "Kokkos_Timer.hpp"
-#include "Kokkos_Random.hpp"
-#include "Kokkos_UnorderedMap.hpp"
-#include "Kokkos_Sort.hpp"
 
-/// KokkosKernels headers
+#include "Kokkos_ArithTraits.hpp"
 #include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Vector.hpp"
-
-#include <Kokkos_ArithTraits.hpp>
-#include <KokkosBatched_Util.hpp>
-#include <KokkosBatched_Vector.hpp>
-#include <KokkosBatched_Copy_Decl.hpp>
-#include <KokkosBatched_AddRadial_Decl.hpp>
-#include <KokkosBatched_Gemm_Decl.hpp>
-#include <KokkosBatched_Gemv_Decl.hpp>
-#include <KokkosBatched_Trsm_Decl.hpp>
-#include <KokkosBatched_Trsv_Decl.hpp>
-#include <KokkosBatched_LU_Decl.hpp>
-#include <KokkosSparse_CrsMatrix.hpp>
 
 #include "KokkosBatched_Test_Sparse_Helper.hpp"
 
@@ -74,11 +58,6 @@
 #include "KokkosBatched_Krylov_Handle.hpp"
 #include "KokkosBatched_GMRES.hpp"
 #include "KokkosBatched_JacobiPrec.hpp"
-#include "KokkosBatched_Dot.hpp"
-#include "KokkosBatched_Util.hpp"
-#include "KokkosBatched_Dot_Internal.hpp"
-#include "KokkosBatched_Spmv_Serial_Impl.hpp"
-#include "KokkosBatched_Copy_Decl.hpp"
 
 typedef Kokkos::DefaultExecutionSpace exec_space;
 typedef typename exec_space::memory_space memory_space;
@@ -150,14 +129,27 @@ int main(int argc, char *argv[]) {
             << "-other_level      :  Select the scratch pad level (if used) "
                "where everything except the Arnoldi vectors are stored."
             << std::endl
-            << "-n1               :  Number of repetitions 1." << std::endl
-            << "-n2               :  Number of repetitions 2." << std::endl
+            << "-n1               :  Number of repetitions of the experience."
+            << std::endl
+            << "-n2               :  Number of the kernel calls inside one "
+               "experience."
+            << std::endl
             << "-team_size        :  Used team size." << std::endl
             << "-n_implementations:  Number of implementations to use: test "
                "all "
                "implementations [0, specified number -1]."
             << std::endl
             << "-implementation   :  Specify only one implementation at a time."
+            << std::endl
+            << "                     Note: implementation 0 : does not use "
+               "scratch pad."
+            << std::endl
+            << "                     Note: implementation 1 : use scratch pad "
+               "for the graph and for the diagonal entries of the matrices."
+            << std::endl
+            << "                     Note: implementation 2 : use scratch pad "
+               "for the graph and for the diagonal entries of the matrices and "
+               "for the temporary variable but not for the Arnoldi vectors."
             << std::endl
             << "-l                :  Specify left layout." << std::endl
             << "-r                :  Specify right layout." << std::endl
@@ -316,8 +308,6 @@ int main(int argc, char *argv[]) {
           Kokkos::deep_copy(xLL, 0.0);
           Kokkos::deep_copy(xLR, 0.0);
           flush.run();
-          exec_space().fence();
-
           exec_space().fence();
 
           if (i_impl == 0 && layout_left) {

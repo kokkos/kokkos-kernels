@@ -147,10 +147,10 @@ struct Functor_TestBatchedTeamVectorGMRES_1 {
     _handle.tmp_view = typename KrylovHandleType::TemporaryViewType(
         "", _X.extent(0), _X.extent(1) + maximum_iteration + 3);
 
-    Kokkos::TeamPolicy<DeviceType> auto_policy(
-        ceil(1. * _D.extent(0) / _N_team), Kokkos::AUTO(), Kokkos::AUTO());
-    Kokkos::TeamPolicy<DeviceType> tuned_policy(
-        ceil(1. * _D.extent(0) / _N_team), _team_size, _vector_length);
+    Kokkos::TeamPolicy<DeviceType> auto_policy(_handle.get_number_of_teams(),
+                                               Kokkos::AUTO(), Kokkos::AUTO());
+    Kokkos::TeamPolicy<DeviceType> tuned_policy(_handle.get_number_of_teams(),
+                                                _team_size, _vector_length);
     Kokkos::TeamPolicy<DeviceType> policy;
 
     if (_team_size < 1)
