@@ -185,6 +185,18 @@ void spmv_mv_cusparse(const KokkosKernels::Experimental::Controls &controls,
   const cudaDataType computeType =
       compute_type<value_type, x_value_type, y_value_type>();
 
+  // cuSPARSE fails when conjugate_transpose is requested on R types
+  // to avoid this problem we switch to transpose since the two are
+  // equivalent in that case.
+  if ((computeType == CUDA_R_32F) || (computeType == CUDA_R_64F)) {
+    if (opA == CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE) {
+      opA = CUSPARSE_OPERATION_TRANSPOSE;
+    }
+    if (opB == CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE) {
+      opB = CUSPARSE_OPERATION_TRANSPOSE;
+    }
+  }
+
   size_t bufferSize = 0;
   KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpMM_bufferSize(
       cusparseHandle, opA, opB, &alpha, A_cusparse, vecX, &beta, vecY,
