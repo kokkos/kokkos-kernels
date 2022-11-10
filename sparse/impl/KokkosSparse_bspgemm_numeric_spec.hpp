@@ -52,7 +52,6 @@
 // Include the actual functors
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 //#include "KokkosSparse_spgemm_symbolic.hpp"
-#include "KokkosSparse_spgemm_cuSPARSE_impl.hpp"
 #include "KokkosSparse_spgemm_CUSP_impl.hpp"
 #include "KokkosSparse_bspgemm_impl.hpp"
 #include "KokkosSparse_bspgemm_impl_seq.hpp"

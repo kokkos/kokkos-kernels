@@ -113,7 +113,7 @@ struct spgemm_jacobi_eti_spec_avail {
   };
 
 // Include the actual specialization declarations
-#include <KokkosSparse_spgemm_tpl_spec_avail.hpp>
+#include <KokkosSparse_spgemm_jacobi_tpl_spec_avail.hpp>
 #include <generated_specializations_hpp/KokkosSparse_spgemm_jacobi_eti_spec_avail.hpp>
 
 namespace KokkosSparse {
@@ -292,7 +292,7 @@ struct SPGEMM_JACOBI<KernelHandle, a_size_view_t_, a_lno_view_t,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
       false, true>;
 
-#include <KokkosSparse_spgemm_tpl_spec_decl.hpp>
+#include <KokkosSparse_spgemm_jacobi_tpl_spec_decl.hpp>
 #include <generated_specializations_hpp/KokkosSparse_spgemm_jacobi_eti_spec_decl.hpp>
 
 #endif

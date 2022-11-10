@@ -52,7 +52,6 @@
 // Include the actual functors
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 //#include "KokkosSparse_spgemm_symbolic.hpp"
-#include "KokkosSparse_spgemm_cuSPARSE_impl.hpp"
 #include "KokkosSparse_spgemm_rocSPARSE_impl.hpp"
 #include "KokkosSparse_spgemm_CUSP_impl.hpp"
 #include "KokkosSparse_spgemm_impl.hpp"
@@ -150,7 +149,7 @@ struct spgemm_numeric_eti_spec_avail {
   };
 
 // Include the actual specialization declarations
-#include <KokkosSparse_spgemm_tpl_spec_avail.hpp>
+#include <KokkosSparse_spgemm_numeric_tpl_spec_avail.hpp>
 #include <generated_specializations_hpp/KokkosSparse_spgemm_numeric_eti_spec_avail.hpp>
 
 namespace KokkosSparse {
@@ -215,16 +214,6 @@ struct SPGEMM_NUMERIC<
     }
 
     switch (sh->get_algorithm_type()) {
-      case SPGEMM_CUSPARSE:
-#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
-        cuSPARSE_apply<spgemmHandleType>(
-            sh, m, n, k, row_mapA, entriesA, valuesA, transposeA, row_mapB,
-            entriesB, valuesB, transposeB, row_mapC, entriesC, valuesC);
-#else
-        throw std::runtime_error(
-            "Requiring SPGEMM_CUSPARSE but TPL_CUSPARSE was not enabled!");
-#endif
-        break;
       case SPGEMM_ROCSPARSE:
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE)
         rocsparse_spgemm_numeric<spgemmHandleType>(
@@ -429,7 +418,7 @@ struct SPGEMM_NUMERIC<
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
       false, true>;
 
-#include <KokkosSparse_spgemm_tpl_spec_decl.hpp>
+#include <KokkosSparse_spgemm_numeric_tpl_spec_decl.hpp>
 #include <generated_specializations_hpp/KokkosSparse_spgemm_numeric_eti_spec_decl.hpp>
 
 #endif  // KOKKOS_BLAS1_MV_IMPL_DOT_HPP_

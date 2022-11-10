@@ -69,12 +69,16 @@ enum SPGEMMAlgorithm {
   SPGEMM_KK_DENSE,
   SPGEMM_KK_MEMORY,
   SPGEMM_KK_LP,  // KKVARIANTS
-  SPGEMM_CUSPARSE,
+  SPGEMM_CUSPARSE [[deprecated("cuSPARSE is now used automatically in all "
+                               "supported SpGEMM calls, if enabled.")]],
   SPGEMM_CUSP,
-  SPGEMM_MKL,
-  SPGEMM_MKL2PHASE,
+  SPGEMM_MKL [[deprecated("MKL is now used automatically in all supported "
+                          "SpGEMM calls, if enabled.")]],
+  SPGEMM_MKL2PHASE [[deprecated("MKL is now used automatically in all "
+                                "supported SpGEMM calls, if enabled.")]],
   SPGEMM_VIENNA,  // TPLS
-  SPGEMM_ROCSPARSE,
+  SPGEMM_ROCSPARSE [[deprecated("rocSPARSE is now used automatically in all "
+                                "supported SpGEMM calls, if enabled.")]],
 
   // TRIANGLE COUNTING SPECIALIZED
   SPGEMM_KK_TRIANGLE_AI,  // SPGEMM_KK_TRIANGLE_DEFAULT, SPGEMM_KK_TRIANGLE_MEM,
@@ -672,29 +676,20 @@ class SPGEMMHandle {
 
 #if defined(KOKKOS_ENABLE_CUDA)
     if (std::is_same<Kokkos::Cuda, ExecutionSpace>::value) {
-#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
-      this->algorithm_type = SPGEMM_CUSPARSE;
-#ifdef VERBOSE
-      std::cout << "Cuda Execution Space, Default Algorithm: SPGEMM_CUSPARSE"
-                << std::endl;
-#endif
-#else
       this->algorithm_type = SPGEMM_KK;
 #ifdef VERBOSE
-      std::cout << "Cuda Execution Space, without cuSPARSE, Default Algorithm: "
-                   "SPGEMM_KK"
+      std::cout << "Cuda Execution Space, Default Algorithm: SPGEMM_KK"
                 << std::endl;
-#endif
 #endif
     }
 #endif
 
 #if defined(KOKKOS_ENABLE_HIP)
     if (std::is_same<Kokkos::Experimental::HIP, ExecutionSpace>::value) {
-#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
-      this->algorithm_type = SPGEMM_ROCSPARSE;
-#else
       this->algorithm_type = SPGEMM_KK;
+#ifdef VERBOSE
+      std::cout << "HIP Execution Space, Default Algorithm: SPGEMM_KK"
+                << std::endl;
 #endif
     }
 #endif
@@ -804,21 +799,26 @@ inline SPGEMMAlgorithm StringToSPGEMMAlgorithm(std::string &name) {
     return SPGEMM_KK_LP;
   else if (name == "SPGEMM_KK_MEMSPEED")
     return SPGEMM_KK;
-
   else if (name == "SPGEMM_DEBUG")
     return SPGEMM_SERIAL;
   else if (name == "SPGEMM_SERIAL")
     return SPGEMM_SERIAL;
   else if (name == "SPGEMM_CUSPARSE")
-    return SPGEMM_CUSPARSE;
-  else if (name == "SPGEMM_ROCSPARSE")
-    return SPGEMM_ROCSPARSE;
-  else if (name == "SPGEMM_CUSP")
-    return SPGEMM_CUSP;
+    throw std::runtime_error(
+        "Enum value SPGEMM_CUSPARSE is deprecated. cuSPARSE is automatically "
+        "used in all supported SpGEMM calls.");
   else if (name == "SPGEMM_MKL")
-    return SPGEMM_MKL;
-  else if (name == "SPGEMM_VIENNA")
-    return SPGEMM_VIENNA;
+    throw std::runtime_error(
+        "Enum value SPGEMM_MKL is deprecated. MKL is automatically used in all "
+        "supported SpGEMM calls.");
+  else if (name == "SPGEMM_MKL2PHASE")
+    throw std::runtime_error(
+        "Enum value SPGEMM_MKL2PHASE is deprecated. MKL is automatically used "
+        "in all supported SpGEMM calls.");
+  else if (name == "SPGEMM_ROCSPARSE")
+    throw std::runtime_error(
+        "Enum value SPGEMM_ROCSPARSE is deprecated. rocSPARSE is automatically "
+        "used in all supported SpGEMM calls.");
   else
     throw std::runtime_error("Invalid SPGEMMAlgorithm name");
 }
