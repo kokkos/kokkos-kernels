@@ -58,12 +58,41 @@ namespace KokkosBlas {
 /// rotated value \param b [in/out] on input one of the values to rotate, on
 /// output the rotated value \param c [out] cosine value associated with the
 /// rotation \param s [out] sine value associated with the rotation
-template <class Scalar, class ExecutionSpace = Kokkos::DefaultExecutionSpace>
-void rotg(Scalar& a, Scalar& b,
-          typename Kokkos::ArithTraits<Scalar>::mag_type& c, Scalar& s) {
+template <class execution_space, class SViewType, class MViewType>
+void rotg(execution_space const& space, SViewType const& a, SViewType const& b,
+          MViewType const& c, SViewType const& s) {
+  static_assert(SViewType::rank == 0,
+                "rotg: the inputs need to be rank 0 views");
+  static_assert(MViewType::rank == 0,
+                "rotg: the inputs need to be rank 0 views");
+  static_assert(
+      !Kokkos::ArithTraits<typename MViewType::value_type>::is_complex);
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename SViewType::memory_space>::accessible,
+      "rotg: execution_space cannot access data in SViewType");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename MViewType::memory_space>::accessible,
+      "rotg: execution_space cannot access data in MViewType");
+
+  using SView_Internal = Kokkos::View<
+      typename SViewType::value_type,
+      typename KokkosKernels::Impl::GetUnifiedLayout<SViewType>::array_layout,
+      Kokkos::Device<execution_space, typename SViewType::memory_space>,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using MView_Internal = Kokkos::View<
+      typename MViewType::value_type,
+      typename KokkosKernels::Impl::GetUnifiedLayout<MViewType>::array_layout,
+      Kokkos::Device<execution_space, typename MViewType::memory_space>,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+
+  SView_Internal a_(a), b_(b), s_(s);
+  MView_Internal c_(c);
+
   Kokkos::Profiling::pushRegion("KokkosBlas::rotg");
-  Impl::Rotg<Scalar, ExecutionSpace,
-             typename ExecutionSpace::memory_space>::rotg(a, b, c, s);
+  Impl::Rotg<execution_space, SView_Internal, MView_Internal>::rotg(space, a, b,
+                                                                    c, s);
   Kokkos::Profiling::popRegion();
 }
 

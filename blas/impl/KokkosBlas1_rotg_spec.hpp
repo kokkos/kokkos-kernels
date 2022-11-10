@@ -56,7 +56,7 @@
 namespace KokkosBlas {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class Scalar, class ExecutionSpace, class MemorySpace>
+template <class ExecutionSpace, class SViewType, class MViewType>
 struct rotg_eti_spec_avail {
   enum : bool { value = false };
 };
@@ -70,10 +70,16 @@ struct rotg_eti_spec_avail {
 // We may spread out definitions (see _INST macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSBLAS1_ROTG_ETI_SPEC_AVAIL(SCALAR, EXECSPACE, MEMSPACE) \
-  template <>                                                        \
-  struct rotg_eti_spec_avail<SCALAR, EXECSPACE, MEMSPACE> {          \
-    enum : bool { value = true };                                    \
+#define KOKKOSBLAS1_ROTG_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXECSPACE, MEMSPACE) \
+  template <>                                                                \
+  struct rotg_eti_spec_avail<                                                \
+      EXECSPACE,                                                             \
+      Kokkos::View<SCALAR, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,      \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                 \
+      Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT,   \
+                   Kokkos::Device<EXECSPACE, MEMSPACE>,                      \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {               \
+    enum : bool { value = true };                                            \
   };
 
 // Include the actual specialization declarations
@@ -84,38 +90,38 @@ namespace KokkosBlas {
 namespace Impl {
 
 // Unification layer
-template <class Scalar, class ExecutionSpace, class MemorySpace,
+template <class ExecutionSpace, class SViewType, class MViewType,
           bool tpl_spec_avail =
-              rotg_tpl_spec_avail<Scalar, ExecutionSpace, MemorySpace>::value,
+              rotg_tpl_spec_avail<ExecutionSpace, SViewType, MViewType>::value,
           bool eti_spec_avail =
-              rotg_eti_spec_avail<Scalar, ExecutionSpace, MemorySpace>::value>
+              rotg_eti_spec_avail<ExecutionSpace, SViewType, MViewType>::value>
 struct Rotg {
-  static void rotg(Scalar& a, Scalar& b,
-                   typename Kokkos::ArithTraits<Scalar>::mag_type& c,
-                   Scalar& s);
+  static void rotg(ExecutionSpace const& space, SViewType const& a,
+                   SViewType const& b, MViewType const& c, SViewType const& s);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 //! Full specialization of Rotg.
-template <class Scalar, class ExecutionSpace, class MemorySpace>
-struct Rotg<Scalar, ExecutionSpace, MemorySpace, false,
+template <class ExecutionSpace, class SViewType, class MViewType>
+struct Rotg<ExecutionSpace, SViewType, MViewType, false,
             KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
-  static void rotg(Scalar& a, Scalar& b,
-                   typename Kokkos::ArithTraits<Scalar>::mag_type& c,
-                   Scalar& s) {
+  static void rotg(ExecutionSpace const& space, SViewType const& a,
+                   SViewType const& b, MViewType const& c, SViewType const& s) {
     Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
                                       ? "KokkosBlas::rotg[ETI]"
                                       : "KokkosBlas::rotg[noETI]");
 #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
     if (KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-      printf("KokkosBlas1::rotg<> ETI specialization for < %s >\n",
-             typeid(Scalar).name());
+      printf("KokkosBlas1::rotg<> ETI specialization for < %s, %s, %s >\n",
+             typeid(ExecutionSpace).name(), typeid(SViewType).name(),
+             typeid(MViewType).name());
     else {
-      printf("KokkosBlas1::rotg<> non-ETI specialization for < %s >\n",
-             typeid(Scalar).name());
+      printf("KokkosBlas1::rotg<> non-ETI specialization for < %s, %s, %s >\n",
+             typeid(ExecutionSpace).name(), typeid(SViewType).name(),
+             typeid(MViewType).name());
     }
 #endif
-    Rotg_Invoke<Scalar, ExecutionSpace>(a, b, c, s);
+    Rotg_Invoke<ExecutionSpace, SViewType, MViewType>(space, a, b, c, s);
     Kokkos::Profiling::popRegion();
   }
 };
@@ -131,16 +137,30 @@ struct Rotg<Scalar, ExecutionSpace, MemorySpace, false,
 // We may spread out definitions (see _DEF macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSBLAS1_ROTG_ETI_SPEC_DECL(SCALAR, EXECSPACE, MEMSPACE) \
-  extern template struct Rotg<SCALAR, EXECSPACE, MEMSPACE, false, true>;
+#define KOKKOSBLAS1_ROTG_ETI_SPEC_DECL(SCALAR, LAYOUT, EXECSPACE, MEMSPACE) \
+  extern template struct Rotg<                                              \
+      EXECSPACE,                                                            \
+      Kokkos::View<SCALAR, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,     \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                \
+      Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT,  \
+                   Kokkos::Device<EXECSPACE, MEMSPACE>,                     \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                \
+      false, true>;
 
 //
 // Macro for definition of full specialization of
 // KokkosBlas::Impl::Rotg.  This is NOT for users!!!  We
 // use this macro in one or more .cpp files in this directory.
 //
-#define KOKKOSBLAS1_ROTG_ETI_SPEC_INST(SCALAR, EXECSPACE, MEMSPACE) \
-  template struct Rotg<SCALAR, EXECSPACE, MEMSPACE, false, true>;
+#define KOKKOSBLAS1_ROTG_ETI_SPEC_INST(SCALAR, LAYOUT, EXECSPACE, MEMSPACE) \
+  template struct Rotg<                                                     \
+      EXECSPACE,                                                            \
+      Kokkos::View<SCALAR, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,     \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                \
+      Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT,  \
+                   Kokkos::Device<EXECSPACE, MEMSPACE>,                     \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                \
+      false, true>;
 
 #include <KokkosBlas1_rotg_tpl_spec_decl.hpp>
 #include <generated_specializations_hpp/KokkosBlas1_rotg_eti_spec_decl.hpp>

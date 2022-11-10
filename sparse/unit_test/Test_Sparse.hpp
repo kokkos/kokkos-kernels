@@ -20,6 +20,7 @@
 #include "Test_Sparse_spmv_bsr.hpp"
 #include "Test_Sparse_sptrsv.hpp"
 #include "Test_Sparse_trsv.hpp"
+#include "Test_Sparse_par_ilut.hpp"
 #include "Test_Sparse_Transpose.hpp"
 #include "Test_Sparse_TestUtils_RandCscMat.hpp"
 #include "Test_Sparse_csc2csr.hpp"

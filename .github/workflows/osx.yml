@@ -10,6 +10,9 @@ on:
     - 'docs/**'
     types: [ opened, reopened, synchronize ]
 
+permissions:
+  contents: none
+
 # Cancels any in progress 'workflow' associated with this PR
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
