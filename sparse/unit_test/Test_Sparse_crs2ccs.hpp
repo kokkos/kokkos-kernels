@@ -47,12 +47,11 @@
 #include "KokkosKernels_TestUtils.hpp"
 
 namespace Test {
-template <class CcsType, class CrsType>
-void check_ccs_matrix(CcsType ccsMat, CrsType crsMat) {
-  auto crs_col_ids_d = crsMat.get_ids();
-  auto crs_row_map_d = crsMat.get_map();
-  auto crs_vals_d    = crsMat.get_vals();
-
+template <class CcsType, class IdType, class MapType, class ValsType,
+          class ColsType>
+void check_ccs_matrix(CcsType ccsMat, IdType crs_col_ids_d,
+                      MapType crs_row_map_d, ValsType crs_vals_d,
+                      ColsType cols) {
   using ViewTypeRowIds = decltype(crs_col_ids_d);
   using ViewTypeColMap = decltype(crs_row_map_d);
   using ViewTypeVals   = decltype(crs_vals_d);
@@ -87,7 +86,7 @@ void check_ccs_matrix(CcsType ccsMat, CrsType crsMat) {
       Kokkos::create_mirror_view(ccs_vals_d);
   Kokkos::deep_copy(ccs_vals, ccs_vals_d);
 
-  for (int j = 0; j < crsMat.get_dim2(); ++j) {
+  for (int j = 0; j < cols; ++j) {
     auto col_start = ccs_col_map(j);
     auto col_len   = ccs_col_map(j + 1) - col_start;
 
@@ -126,7 +125,11 @@ void doCrs2Ccs(size_t m, size_t n, ScalarType min_val, ScalarType max_val,
                                       crsMat.get_nnz(), crsMat.get_vals(),
                                       crsMat.get_map(), crsMat.get_ids());
 
-  check_ccs_matrix(ccsMat, crsMat);
+  auto crs_col_ids_d = crsMat.get_ids();
+  auto crs_row_map_d = crsMat.get_map();
+  auto crs_vals_d    = crsMat.get_vals();
+  auto cols          = crsMat.get_dim2();
+  check_ccs_matrix(ccsMat, crs_col_ids_d, crs_row_map_d, crs_vals_d, cols);
 }
 
 template <class LayoutType, class ExeSpaceType>
@@ -189,6 +192,11 @@ TEST_F(TestCategory, sparse_crs2ccs) {
   auto crsMatrix = ccs2crs(csMat.get_dim2(), csMat.get_dim1(), csMat.get_nnz(),
                            csMat.get_vals(), csMat.get_map(), csMat.get_ids());
   auto ccsMatrix = crs2ccs(crsMatrix);
-  check_ccs_matrix(ccsMatrix, csMat);
+
+  auto crs_col_ids_d = crsMatrix.graph.entries;
+  auto crs_row_map_d = crsMatrix.graph.row_map;
+  auto crs_vals_d    = crsMatrix.values;
+  auto cols          = crsMatrix.numCols();
+  check_ccs_matrix(ccsMatrix, crs_col_ids_d, crs_row_map_d, crs_vals_d, cols);
 }
 }  // namespace Test
