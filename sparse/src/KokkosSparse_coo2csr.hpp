@@ -108,6 +108,7 @@ class Coo2Csr {
     struct s1RowCntDup {};
     struct s2MaxRowCnt {};
     struct s3UniqRows {};
+    struct s4MaxUniqueRows {};
     struct s4RowCnt {};
     struct s5MaxRowCnt {};
   };
@@ -117,10 +118,10 @@ class Coo2Csr {
   class __Phase1Functor {
    private:
     using s3MemberType = typename s3Policy::member_type;
-    AtomicRowIdViewType __crs_row_cnt;
     unsigned __n;
 
    public:
+    AtomicRowIdViewType __crs_row_cnt;
     RowViewType __row;
     ColViewType __col;
     DataViewType __data;
@@ -128,11 +129,14 @@ class Coo2Csr {
     RowViewScalarType max_row_cnt;
     RowViewScalarType pow2_max_row_cnt;
     Kokkos::View<unsigned *, CrsET> n_unique_rows_per_team;
+    unsigned max_n_unique_rows;
 
     __Phase1Functor(RowViewType row, ColViewType col, DataViewType data,
                     AtomicRowIdViewType crs_row_cnt)
         : __crs_row_cnt(crs_row_cnt), __row(row), __col(col), __data(data) {
-      __n = data.extent(0);
+      __n               = data.extent(0);
+      max_row_cnt       = 0;
+      max_n_unique_rows = 0;
     };
 
     KOKKOS_INLINE_FUNCTION
@@ -166,6 +170,7 @@ class Coo2Csr {
       auto *hash_begins            = hash_ll.data() + member.league_size();
       auto *hash_nexts             = hash_begins + pow2_max_row_cnt;
       unsigned unique_row_cnt      = 0;  // thread-local row count
+      n_unique_rows_per_team[member.league_rank()] = unique_row_cnt;
 
       // Initialize hash_begins to -1
       Kokkos::parallel_for(Kokkos::TeamVectorRange(member, 0, pow2_max_row_cnt),
@@ -176,10 +181,10 @@ class Coo2Csr {
       KokkosKernels::Experimental::HashmapAccumulator<
           SizeType, KeyType, ValueType,
           KokkosKernels::Experimental::HashOpType::bitwiseAnd>
-          uset(max_row_cnt, pow2_max_row_cnt - 1, hash_begins, hash_nexts,
-               keys.data(), nullptr);
+          team_uset(max_row_cnt, pow2_max_row_cnt - 1, hash_begins, hash_nexts,
+                    keys.data(), nullptr);
 
-#if 1
+#if 0
       std::cout << "------------------" << std::endl;
       std::cout << "rank: " << member.league_rank() << std::endl;
       std::cout << "n: " << n << std::endl;
@@ -192,16 +197,24 @@ class Coo2Csr {
           [&](const int &tid) {
             KeyType i = __row(tid);
             auto j    = __col(tid);
-            std::cerr << "i: " << i << std::endl;
+            // std::cerr << "i: " << i << std::endl;
 
             if (i >= 0 && j >= 0)
               unique_row_cnt +=
-                  uset.vector_atomic_insert_into_hash_KeyCounter(i, used_size);
-            std::cerr << "unique_row_cnt: " << unique_row_cnt << std::endl;
+                  team_uset.vector_atomic_insert_into_hash_KeyCounter(
+                      i, used_size);
+            // std::cerr << "unique_row_cnt: " << unique_row_cnt << std::endl;
           });
       // All threads add their partial row counts
       Kokkos::atomic_add(&n_unique_rows_per_team[member.league_rank()],
                          unique_row_cnt);
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(const typename phase1Tags::s4MaxUniqueRows,
+                    const unsigned long &thread_id, unsigned &value) const {
+      if (n_unique_rows_per_team(thread_id) > value)
+        value = n_unique_rows_per_team(thread_id);
     }
   };
 
@@ -263,11 +276,17 @@ class Coo2Csr {
               0, __n_tuples),
           functor);
       CrsET().fence();
+#if 1
+      std::cout << "phase1Functor.__crs_row_cnt: " << std::endl;
+      for (unsigned i = 0; i < __nrows; i++) {
+        std::cout << i << ":" << functor.__crs_row_cnt[i] << std::endl;
+      }
+#endif
 
       Kokkos::parallel_reduce(
           Kokkos::RangePolicy<CrsET, typename phase1Tags::s2MaxRowCnt>(0,
                                                                        __nrows),
-          functor, functor.max_row_cnt);
+          functor, Kokkos::Max<RowViewScalarType>(functor.max_row_cnt));
       CrsET().fence();
 #if 1
       std::cout << "phase1Functor.max_row_cnt: " << functor.max_row_cnt
@@ -316,6 +335,16 @@ class Coo2Csr {
       for (unsigned i = 0; i < __n_teams; i++) {
         std::cout << i << ":" << functor.n_unique_rows_per_team[i] << std::endl;
       }
+#endif
+
+      Kokkos::parallel_reduce(
+          Kokkos::RangePolicy<CrsET, typename phase1Tags::s4MaxUniqueRows>(
+              0, __n_teams),
+          functor, Kokkos::Max<unsigned>(functor.max_n_unique_rows));
+      CrsET().fence();
+#if 1
+      std::cout << "phase1Functor.max_n_unique_rows: "
+                << functor.max_n_unique_rows << std::endl;
 #endif
     }
     return;
