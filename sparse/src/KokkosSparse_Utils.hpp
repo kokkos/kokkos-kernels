@@ -434,7 +434,7 @@ void transpose_matrix(
   TransposeFunctor_t tm(num_rows, num_cols, xadj, adj, vals, t_xadj, t_adj,
                         t_vals, tmp_row_view, true, team_size);
 
-  Kokkos::parallel_for("KokkosKernels::Impl::transpose_matrix::S0",
+  Kokkos::parallel_for("KokkosSparse::Impl::transpose_matrix::S0",
                        count_tp_t((num_rows + team_size - 1) / team_size,
                                   team_size, thread_size),
                        tm);
@@ -446,7 +446,7 @@ void transpose_matrix(
   Kokkos::deep_copy(tmp_row_view, t_xadj);
 
   Kokkos::parallel_for(
-      "KokkosKernels::Impl::transpose_matrix::S1",
+      "KokkosSparse::Impl::transpose_matrix::S1",
       fill_tp_t((num_rows + team_size - 1) / team_size, team_size, thread_size),
       tm);
 

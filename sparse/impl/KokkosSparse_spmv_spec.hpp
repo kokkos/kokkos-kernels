@@ -176,7 +176,7 @@ struct SPMV {
 ///
 /// The first 5 template parameters are the template parameters of the
 /// input 1-D View of coefficients 'alpha'.  The next 5 template
-/// parameters are the same as those of KokkosSparse::CrsMatrix.  In
+/// parameters are the same as those of KokkosSparse::CrsMatrix. In
 /// particular:
 ///
 /// AT: type of each entry of the sparse matrix

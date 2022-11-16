@@ -46,19 +46,25 @@
 
 namespace Test {
 template <class ScalarType, class LayoutType, class ExeSpaceType>
-void doCscMat(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
+void doCsMat(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
   auto expected_min    = ScalarType(1.0);
   int64_t expected_nnz = 0;
-  RandCscMat<ScalarType, LayoutType, ExeSpaceType> cm(m, n, min_val, max_val);
+  RandCsMatrix<ScalarType, LayoutType, ExeSpaceType> cm(m, n, min_val, max_val);
 
   for (int64_t i = 0; i < cm.get_nnz(); ++i)
     ASSERT_GE(cm(i), expected_min) << cm.info;
 
-  for (int64_t j = 0; j < cm.get_n(); ++j) {
-    for (int64_t i = 0; i < cm.get_col_len(j); ++i)
-      ASSERT_FLOAT_EQ(cm(cm.get_col_start(j) + i), cm(expected_nnz + i))
-          << cm.info;
-    expected_nnz += cm.get_col_len(j);
+  auto map_d = cm.get_map();
+  auto map   = Kokkos::create_mirror_view(map_d);
+  Kokkos::deep_copy(map, map_d);
+
+  for (int64_t j = 0; j < cm.get_dim1(); ++j) {
+    int64_t row_len = j < static_cast<int64_t>(m) ? (map(j + 1) - map(j)) : 0;
+    for (int64_t i = 0; i < row_len; ++i) {
+      int64_t row_start = j < static_cast<int64_t>(m) ? map(j) : 0;
+      ASSERT_FLOAT_EQ(cm(row_start + i), cm(expected_nnz + i)) << cm.info;
+    }
+    expected_nnz += row_len;
   }
   ASSERT_EQ(cm.get_nnz(), expected_nnz) << cm.info;
 
@@ -66,40 +72,40 @@ void doCscMat(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
   auto vals = cm.get_vals();
   ASSERT_EQ(vals.extent(0), cm.get_nnz() + 1) << cm.info;
 
-  auto row_ids = cm.get_row_ids();
-  ASSERT_EQ(row_ids.extent(0), cm.get_n() * cm.get_m() + 1) << cm.info;
+  auto row_ids = cm.get_ids();
+  ASSERT_EQ(row_ids.extent(0), cm.get_dim1() * cm.get_dim2() + 1) << cm.info;
 
-  auto col_map = cm.get_col_map();
-  ASSERT_EQ(col_map.extent(0), cm.get_n() + 1);
+  auto col_map = cm.get_map();
+  ASSERT_EQ(col_map.extent(0), cm.get_dim1() + 1);
 }
 
 template <class ExeSpaceType>
-void doAllCscMat(size_t m, size_t n) {
+void doAllCsMat(size_t m, size_t n) {
   int min = 1, max = 10;
 
-  // Verify that CscMax is constructed properly.
-  doCscMat<float, Kokkos::LayoutLeft, ExeSpaceType>(m, n, min, max);
-  doCscMat<float, Kokkos::LayoutRight, ExeSpaceType>(m, n, min, max);
+  // Verify that CsMax is constructed properly.
+  doCsMat<float, Kokkos::LayoutLeft, ExeSpaceType>(m, n, min, max);
+  doCsMat<float, Kokkos::LayoutRight, ExeSpaceType>(m, n, min, max);
 
-  doCscMat<double, Kokkos::LayoutLeft, ExeSpaceType>(m, n, min, max);
-  doCscMat<double, Kokkos::LayoutRight, ExeSpaceType>(m, n, min, max);
+  doCsMat<double, Kokkos::LayoutLeft, ExeSpaceType>(m, n, min, max);
+  doCsMat<double, Kokkos::LayoutRight, ExeSpaceType>(m, n, min, max);
 
-  // Verify that CscMax can be instantiated with complex types.
-  RandCscMat<Kokkos::complex<float>, Kokkos::LayoutLeft, ExeSpaceType> cmcf(
+  // Verify that CsMat can be instantiated with complex types.
+  RandCsMatrix<Kokkos::complex<float>, Kokkos::LayoutLeft, ExeSpaceType> cmcf(
       m, n, min, max);
-  RandCscMat<Kokkos::complex<double>, Kokkos::LayoutRight, ExeSpaceType> cmcd(
+  RandCsMatrix<Kokkos::complex<double>, Kokkos::LayoutRight, ExeSpaceType> cmcd(
       m, n, min, max);
 }
 
-// Test randomly generated csc matrices
-TEST_F(TestCategory, sparse_randcscmat) {
+// Test randomly generated Cs matrices
+TEST_F(TestCategory, sparse_randcsmat) {
   // Square cases
-  for (int dim = 1; dim < 1024; dim *= 4) doAllCscMat<TestExecSpace>(dim, dim);
+  for (int dim = 1; dim < 1024; dim *= 4) doAllCsMat<TestExecSpace>(dim, dim);
 
   // Non-square cases
   for (int dim = 1; dim < 1024; dim *= 4) {
-    doAllCscMat<TestExecSpace>(dim * 3, dim);
-    doAllCscMat<TestExecSpace>(dim, dim * 3);
+    doAllCsMat<TestExecSpace>(dim * 3, dim);
+    doAllCsMat<TestExecSpace>(dim, dim * 3);
   }
 }
 }  // namespace Test

@@ -570,7 +570,7 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
       Kokkos::view_alloc(Kokkos::WithoutInitializing, "transpose_col_values"),
       entriesA.extent(0));
 
-  KokkosKernels::Impl::transpose_matrix<
+  KokkosSparse::Impl::transpose_matrix<
       const_a_lno_row_view_t, const_a_lno_nnz_view_t, const_a_scalar_nnz_view_t,
       row_lno_temp_work_view_t, nnz_lno_temp_work_view_t,
       scalar_temp_work_view_t, row_lno_temp_work_view_t, MyExecSpace>(

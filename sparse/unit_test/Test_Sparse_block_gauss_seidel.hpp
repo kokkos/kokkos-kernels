@@ -177,7 +177,6 @@ void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz,
   using crsMat_t = typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device,
                                                     void, size_type>;
   using MatrixConverter = KokkosSparse::Impl::MatrixConverter<mtx_format>;
-
   typedef typename device::execution_space exec_space;
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;

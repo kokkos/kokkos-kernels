@@ -42,7 +42,7 @@
 //@HEADER
 */
 
-/// \file Kokkos_Sparse_CrsMatrix.hpp
+/// \file KokkosSparse_CrsMatrix.hpp
 /// \brief Local sparse matrix interface
 ///
 /// This file provides KokkosSparse::CrsMatrix.  This implements a
