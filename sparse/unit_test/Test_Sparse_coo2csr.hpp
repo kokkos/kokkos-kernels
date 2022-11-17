@@ -54,6 +54,7 @@ void doCoo2Csr(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
   auto col    = cooMat.get_col();
   auto data   = cooMat.get_data();
   auto csrMat = KokkosSparse::coo2csr(m, n, row, col, data);
+
   /*
     auto csc_row_ids_d = cscMat.get_row_ids();
     auto csc_col_map_d = cscMat.get_col_map();
@@ -149,15 +150,23 @@ TEST_F(TestCategory, sparse_coo2csr) {
   for (size_t dim = 4; dim < 8 /* 1024 */; dim *= 4)
     doAllCoo2csr<TestExecSpace>(dim, dim);
 
-  /*   // Non-square cases
-    for (size_t dim = 1; dim < 1024; dim *= 4) {
-      doAllCoo2csr<TestExecSpace>(dim * 3, dim);
-      doAllCoo2csr<TestExecSpace>(dim, dim * 3);
-    } */
+  // Non-square cases
+  /* for (size_t dim = 1; dim < 1024; dim *= 4) {
+    doAllCoo2csr<TestExecSpace>(dim * 3, dim);
+    doAllCoo2csr<TestExecSpace>(dim, dim * 3);
+  } */
 
-  /* // Fully sparse
-  doCoo2Csr<float, Kokkos::LayoutLeft, TestExecSpace>(5, 5, 1, 10, true);
+  // Fully sparse
+  /* doCoo2Csr<float, Kokkos::LayoutLeft, TestExecSpace>(5, 5, 1, 10, true);
   doCoo2Csr<double, Kokkos::LayoutRight, TestExecSpace>(50, 10, 10, 100, true);
 */
+
+  // Test edge case: len(coo) % team_size != 0
+  RandCooMat<double, Kokkos::LayoutLeft, TestExecSpace> cooMat(4, 4, 4 * 4, 1,
+                                                               10);
+  auto row    = cooMat.get_row();
+  auto col    = cooMat.get_col();
+  auto data   = cooMat.get_data();
+  auto csrMat = KokkosSparse::coo2csr(4, 4, row, col, data, 3);
 }
 }  // namespace Test
