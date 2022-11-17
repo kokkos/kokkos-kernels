@@ -521,9 +521,16 @@ namespace Impl {
       KokkosBlas::Impl::RocBlasSingleton& singleton =                        \
           KokkosBlas::Impl::RocBlasSingleton::singleton();                   \
       KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                         \
-          rocblasSetStream(singleton.handle, space.hip_stream()));           \
+          rocblas_set_stream(singleton.handle, space.hip_stream()));         \
+      rocblas_pointer_mode pointer_mode;                                     \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                         \
+          rocblas_get_pointer_mode(singleton.handle, &pointer_mode));        \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_pointer_mode(                \
+          singleton.handle, rocblas_pointer_mode_device));                   \
       KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_drotg(                           \
           singleton.handle, a.data(), b.data(), c.data(), s.data()));        \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                         \
+          rocblas_set_pointer_mode(singleton.handle, pointer_mode));         \
       Kokkos::Profiling::popRegion();                                        \
     }                                                                        \
   };
@@ -551,9 +558,16 @@ namespace Impl {
       KokkosBlas::Impl::RocBlasSingleton& singleton =                          \
           KokkosBlas::Impl::RocBlasSingleton::singleton();                     \
       KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                           \
-          rocblasSetStream(singleton.handle, space.hip_stream()));             \
+          rocblas_set_stream(singleton.handle, space.hip_stream()));           \
+      rocblas_pointer_mode pointer_mode;                                       \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                           \
+          rocblas_get_pointer_mode(singleton.handle, &pointer_mode));          \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_pointer_mode(                  \
+          singleton.handle, rocblas_pointer_mode_device));                     \
       KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_srotg(                             \
           singleton.handle, a.data(), b.data(), c.data(), s.data()));          \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                           \
+          rocblas_set_pointer_mode(singleton.handle, pointer_mode));           \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };
@@ -584,12 +598,19 @@ namespace Impl {
       KokkosBlas::Impl::RocBlasSingleton& singleton =                        \
           KokkosBlas::Impl::RocBlasSingleton::singleton();                   \
       KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                         \
-          rocblasSetStream(singleton.handle, space.hip_stream()));           \
+          rocblas_set_stream(singleton.handle, space.hip_stream()));         \
+      rocblas_pointer_mode pointer_mode;                                     \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                         \
+          rocblas_get_pointer_mode(singleton.handle, &pointer_mode));        \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_pointer_mode(                \
+          singleton.handle, rocblas_pointer_mode_device));                   \
       KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_zrotg(                           \
           singleton.handle,                                                  \
           reinterpret_cast<rocblas_double_complex*>(a.data()),               \
           reinterpret_cast<rocblas_double_complex*>(b.data()), c.data(),     \
           reinterpret_cast<rocblas_double_complex*>(s.data())));             \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                         \
+          rocblas_set_pointer_mode(singleton.handle, pointer_mode));         \
       Kokkos::Profiling::popRegion();                                        \
     }                                                                        \
   };
@@ -619,12 +640,19 @@ namespace Impl {
       KokkosBlas::Impl::RocBlasSingleton& singleton =                          \
           KokkosBlas::Impl::RocBlasSingleton::singleton();                     \
       KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                           \
-          rocblasSetStream(singleton.handle, space.hip_stream()));             \
+          rocblas_set_stream(singleton.handle, space.hip_stream()));           \
+      rocblas_pointer_mode pointer_mode;                                       \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                           \
+          rocblas_get_pointer_mode(singleton.handle, &pointer_mode));          \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_pointer_mode(                  \
+          singleton.handle, rocblas_pointer_mode_device));                     \
       KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_crotg(                             \
           singleton.handle,                                                    \
           reinterpret_cast<rocblas_float_complex*>(a.data()),                  \
           reinterpret_cast<rocblas_float_complex*>(b.data()), c.data(),        \
           reinterpret_cast<rocblas_float_complex*>(s.data())));                \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                           \
+          rocblas_set_pointer_mode(singleton.handle, pointer_mode));           \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };

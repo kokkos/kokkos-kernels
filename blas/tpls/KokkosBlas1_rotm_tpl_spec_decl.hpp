@@ -256,34 +256,37 @@ namespace Impl {
   template <>                                                                  \
   struct Rotm<                                                                 \
       EXEC_SPACE,                                                              \
-      Kokkos::View<double, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,      \
+      Kokkos::View<double*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,     \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
-      Kokkos::View<double const, LAYOUT,                                       \
+      Kokkos::View<const double[5], LAYOUT,                                    \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                      \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
-      Kokkos::View<double[5], LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,   \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
       true, ETI_SPEC_AVAIL> {                                                  \
-    using DXView =                                                             \
-        Kokkos::View<double, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,    \
+    using VectorView =                                                         \
+        Kokkos::View<double*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,   \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                 \
-    using YView = Kokkos::View<double const, LAYOUT,                           \
+    using PView = Kokkos::View<const double[5], LAYOUT,                        \
                                Kokkos::Device<EXEC_SPACE, MEM_SPACE>,          \
                                Kokkos::MemoryTraits<Kokkos::Unmanaged>>;       \
-    using PView =                                                              \
-        Kokkos::View<double[5], LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                 \
                                                                                \
-    static void rotm(EXEC_SPACE const& space, DXView const& d1,                \
-                     DXView const& d2, DXView const& x1, YView const& y1,      \
-                     PView const& param) {                                     \
-      Kokkos::Profiling::pushRegion("KokkosBlas::nrm1[TPL_ROCBLAS,double]");   \
+    static void rotm(EXEC_SPACE const& space, VectorView const& X,             \
+                     VectorView const& Y, PView const& param) {                \
+      Kokkos::Profiling::pushRegion("KokkosBlas::rotm[TPL_ROCBLAS,double]");   \
       rotm_print_specialization<double>();                                     \
       KokkosBlas::Impl::RocBlasSingleton& s =                                  \
           KokkosBlas::Impl::RocBlasSingleton::singleton();                     \
       KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                           \
-          rocblasSetStream(s.handle, space.hip_stream()));                     \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_drotm(s.handle, &a, &b, &c, &s));  \
+          rocblas_set_stream(s.handle, space.hip_stream()));                   \
+      rocblas_pointer_mode pointer_mode;                                       \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                           \
+          rocblas_get_pointer_mode(s.handle, &pointer_mode));                  \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                           \
+          rocblas_set_pointer_mode(s.handle, rocblas_pointer_mode_device));    \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                           \
+          rocblas_drotm(s.handle, static_cast<int>(X.extent(0)), X.data(), 1,  \
+                        Y.data(), 1, param.data()));                           \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                           \
+          rocblas_set_pointer_mode(s.handle, pointer_mode));                   \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };
@@ -302,33 +305,37 @@ KOKKOSBLAS1_DROTM_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP,
   template <>                                                                  \
   struct Rotm<                                                                 \
       EXEC_SPACE,                                                              \
-      Kokkos::View<float, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,       \
+      Kokkos::View<float*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,      \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
-      Kokkos::View<float const, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
-      Kokkos::View<float[5], LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,    \
+      Kokkos::View<const float[5], LAYOUT,                                     \
+                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                      \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
       true, ETI_SPEC_AVAIL> {                                                  \
-    using DXView =                                                             \
-        Kokkos::View<float, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,     \
+    using VectorView =                                                         \
+        Kokkos::View<float*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,    \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                 \
-    using YView = Kokkos::View<float const, LAYOUT,                            \
+    using PView = Kokkos::View<const float[5], LAYOUT,                         \
                                Kokkos::Device<EXEC_SPACE, MEM_SPACE>,          \
                                Kokkos::MemoryTraits<Kokkos::Unmanaged>>;       \
-    using PView =                                                              \
-        Kokkos::View<float[5], LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,  \
-                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                 \
                                                                                \
-    static void rotm(EXEC_SPACE const& space, DXView const& d1,                \
-                     DXView const& d2, DXView const& x1, YView const& y1,      \
-                     PView const& param) {                                     \
-      Kokkos::Profiling::pushRegion("KokkosBlas::nrm1[TPL_ROCBLAS,float]");    \
+    static void rotm(EXEC_SPACE const& space, VectorView const& X,             \
+                     VectorView const& Y, PView const& param) {                \
+      Kokkos::Profiling::pushRegion("KokkosBlas::rotm[TPL_ROCBLAS,float]");    \
       rotm_print_specialization<float>();                                      \
       KokkosBlas::Impl::RocBlasSingleton& s =                                  \
           KokkosBlas::Impl::RocBlasSingleton::singleton();                     \
       KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                           \
-          rocblasSetStream(s.handle, space.hip_stream()));                     \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_srotm(s.handle, &a, &b, &c, &s));  \
+          rocblas_set_stream(s.handle, space.hip_stream()));                   \
+      rocblas_pointer_mode pointer_mode;                                       \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                           \
+          rocblas_get_pointer_mode(s.handle, &pointer_mode));                  \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                           \
+          rocblas_set_pointer_mode(s.handle, rocblas_pointer_mode_device));    \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                           \
+          rocblas_srotm(s.handle, static_cast<int>(X.extent(0)), X.data(), 1,  \
+                        Y.data(), 1, param.data()));                           \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                           \
+          rocblas_set_pointer_mode(s.handle, pointer_mode));                   \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };
