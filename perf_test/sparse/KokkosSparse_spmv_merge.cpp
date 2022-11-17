@@ -196,9 +196,8 @@ void print_help() {
 }
 
 int main(int argc, char** argv) {
-  using Scalar    = default_scalar;
-  using lno_t     = default_lno_t;
-  using size_type = default_size_type;
+  using Scalar = default_scalar;
+  using lno_t  = default_lno_t;
 
   bool compare         = false;
   lno_t loop           = 100;

@@ -266,7 +266,6 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L,
 
   using host_values_view_t =
       typename host_crsmat_t::values_type::non_const_type;
-  using host_scalar_t = typename host_values_view_t::value_type;
 
   using execution_space = typename values_view_t::execution_space;
   using memory_space    = typename execution_space::memory_space;

@@ -66,15 +66,9 @@ void cuSPARSE_symbolic(KernelHandle *handle, typename KernelHandle::nnz_lno_t m,
                        bin_nonzero_index_view_type entriesB, bool transposeB,
                        cin_row_index_view_type row_mapC) {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-  using device1     = typename ain_row_index_view_type::device_type;
-  using device2     = typename ain_nonzero_index_view_type::device_type;
-  using idx         = typename KernelHandle::nnz_lno_t;
-  using size_type   = typename KernelHandle::size_type;
-  using scalar_type = typename KernelHandle::nnz_scalar_t;
-
-  // In case the KernelHandle uses const types!
-  using non_const_idx       = typename std::remove_cv<idx>::type;
-  using non_const_size_type = typename std::remove_cv<size_type>::type;
+  using device1 = typename ain_row_index_view_type::device_type;
+  using device2 = typename ain_nonzero_index_view_type::device_type;
+  using idx     = typename KernelHandle::nnz_lno_t;
 
   // TODO this is not correct, check memory space.
   if (std::is_same<Kokkos::Cuda, device1>::value) {
@@ -93,8 +87,10 @@ void cuSPARSE_symbolic(KernelHandle *handle, typename KernelHandle::nnz_lno_t m,
 #if (CUDA_VERSION >= 11040)
   // Newest versions of cuSPARSE have the generic SpGEMM interface, with "reuse"
   // functions.
-  if (!std::is_same<non_const_idx, int>::value ||
-      !std::is_same<non_const_size_type, int>::value) {
+  if (!std::is_same<typename std::remove_cv<idx>::type, int>::value ||
+      !std::is_same<
+          typename std::remove_cv<typename KernelHandle::size_type>::type,
+          int>::value) {
     throw std::runtime_error(
         "cusparseSpGEMMreuse requires local ordinals to be 32-bit integer.");
   }
@@ -174,12 +170,15 @@ void cuSPARSE_symbolic(KernelHandle *handle, typename KernelHandle::nnz_lno_t m,
   (void)row_mapC;
 
 #elif defined(CUSPARSE_VERSION) && (11000 <= CUSPARSE_VERSION)
+  using scalar_type = typename KernelHandle::nnz_scalar_t;
   // cuSPARSE from CUDA 11.0-11.3 (inclusive) supports the new "generic" SpGEMM
   // interface, just not the "reuse" set of functions. This means compute must
   // be called in both symbolic and numeric (otherwise, the NNZ of C can't be
   // known by symbolic)
-  if (!std::is_same<non_const_idx, int>::value ||
-      !std::is_same<non_const_size_type, int>::value) {
+  if (!std::is_same<typename std::remove_cv<idx>::type, int>::value ||
+      !std::is_same<
+          typename std::remove_cv<typename KernelHandle::size_type>::type,
+          int>::value) {
     throw std::runtime_error(
         "cusparseSpGEMM requires local ordinals to be 32-bit integer.");
   }
@@ -259,7 +258,8 @@ void cuSPARSE_symbolic(KernelHandle *handle, typename KernelHandle::nnz_lno_t m,
 
 #else
 
-  if (std::is_same<idx, int>::value && std::is_same<size_type, int>::value) {
+  if (std::is_same<idx, int>::value &&
+      std::is_same<typename KernelHandle::size_type, int>::value) {
     const idx *a_xadj = (const idx *)row_mapA.data();
     const idx *b_xadj = (const idx *)row_mapB.data();
     idx *c_xadj       = (idx *)row_mapC.data();
@@ -267,7 +267,7 @@ void cuSPARSE_symbolic(KernelHandle *handle, typename KernelHandle::nnz_lno_t m,
     const idx *a_adj = entriesA.data();
     const idx *b_adj = entriesB.data();
     handle->create_cusparse_spgemm_handle(transposeA, transposeB);
-    typename KernelHandle::get_cusparse_spgemm_handle *h =
+    typename KernelHandle::cuSparseSpgemmHandleType *h =
         handle->get_cusparse_spgemm_handle();
 
     int nnzA = entriesA.extent(0);
@@ -408,8 +408,9 @@ void cuSPARSE_apply(
   (void)k;
 
 #elif (CUSPARSE_VERSION >= 11000)
-  const auto alpha = Kokkos::ArithTraits<scalar_type>::one();
-  const auto beta  = Kokkos::ArithTraits<scalar_type>::zero();
+  using scalar_type = typename KernelHandle::nnz_scalar_t;
+  const auto alpha  = Kokkos::ArithTraits<scalar_type>::one();
+  const auto beta   = Kokkos::ArithTraits<scalar_type>::zero();
   typename KernelHandle::cuSparseSpgemmHandleType *h =
       handle->get_cusparse_spgemm_handle();
   KOKKOS_CUSPARSE_SAFE_CALL(
