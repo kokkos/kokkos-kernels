@@ -239,6 +239,64 @@ int parse_inputs(KokkosKernels::Experiment::Parameters &params, int argc,
   return 0;
 }
 
+using KokkosKernels::Impl::xorshiftHash;
+
+template <typename lno_t, typename size_type, typename rowmap_t,
+          typename entries_t>
+bool verifySymmetric(lno_t numVerts, const rowmap_t &d_rowmap,
+                     const entries_t &d_entries) {
+  auto rowmap =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), d_rowmap);
+  auto entries =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), d_entries);
+  size_t hash = 0;
+  for (lno_t v = 0; v < numVerts; v++) {
+    size_type rowBegin = rowmap(v);
+    size_type rowEnd   = rowmap(v + 1);
+    for (size_type i = rowBegin; i < rowEnd; i++) {
+      lno_t nei = entries(i);
+      if (nei < numVerts && nei != v) {
+        hash ^= xorshiftHash<size_t>(xorshiftHash<size_t>(v) ^
+                                     xorshiftHash<size_t>(nei));
+      }
+    }
+  }
+  return hash == 0U;
+}
+
+template <typename lno_t, typename size_type, typename rowmap_t,
+          typename entries_t, typename colors_t>
+bool verifyColoring(lno_t numVerts, const rowmap_t &d_rowmap,
+                    const entries_t &d_entries, const colors_t &d_colors) {
+  auto rowmap =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), d_rowmap);
+  auto entries =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), d_entries);
+  auto colors =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), d_colors);
+  // Just do the simplest possible neighbors-of-neighbors loop to find conflicts
+  for (lno_t v = 0; v < numVerts; v++) {
+    if (colors(v) == 0) {
+      std::cout << "Vertex " << v << " is uncolored.\n";
+      return false;
+    }
+    size_type rowBegin = rowmap(v);
+    size_type rowEnd   = rowmap(v + 1);
+    for (size_type i = rowBegin; i < rowEnd; i++) {
+      lno_t nei = entries(i);
+      if (nei < numVerts && nei != v) {
+        // check for dist-1 conflict
+        if (colors(v) == colors(nei)) {
+          std::cout << "Dist-1 conflict between " << v << " and " << nei
+                    << '\n';
+          return false;
+        }
+      }
+    }
+  }
+  return true;
+}
+
 namespace KokkosKernels {
 
 namespace Experiment {
@@ -273,6 +331,19 @@ void run_experiment(crsGraph_t crsGraph, int num_cols, Parameters params) {
   typedef KokkosKernels::Experimental::KokkosKernelsHandle<
       size_type, lno_t, lno_t, ExecSpace, TempMemSpace, PersistentMemSpace>
       KernelHandle;
+
+  if (verbose) {
+    if (verifySymmetric<lno_t, size_type, decltype(crsGraph.row_map),
+                        decltype(crsGraph.entries)>(
+            crsGraph.numRows(), crsGraph.row_map, crsGraph.entries)) {
+      std::cout << std::endl << "Graph is symmetric (valid input)" << std::endl;
+    } else {
+      std::cout << std::endl
+                << "Graph is nonsymmetric (INVALID INPUT)" << std::endl;
+      // Don't attempt coloring when input is invalid
+      return;
+    }
+  }
 
   KernelHandle kh;
   kh.set_team_work_size(chunk_size);
@@ -319,13 +390,26 @@ void run_experiment(crsGraph_t crsGraph, int num_cols, Parameters params) {
                  "Num Phases:"
               << kh.get_graph_coloring_handle()->get_num_phases() << std::endl;
     std::cout << "\t";
-    KokkosKernels::Impl::print_1Dview(
-        kh.get_graph_coloring_handle()->get_vertex_colors());
+
+    auto colors = kh.get_graph_coloring_handle()->get_vertex_colors();
+    KokkosKernels::Impl::print_1Dview(colors);
+
+    if (verbose) {
+      if (verifyColoring<lno_t, size_type, decltype(crsGraph.row_map),
+                         decltype(crsGraph.entries), decltype(colors)>(
+              crsGraph.numRows(), crsGraph.row_map, crsGraph.entries, colors)) {
+        std::cout << std::endl
+                  << "Graph Coloring is VALID" << std::endl
+                  << std::endl;
+      } else {
+        std::cout << std::endl << "Graph Coloring is NOT VALID" << std::endl;
+        break;
+      }
+    }
 
     if (params.coloring_output_file != NULL) {
       std::ofstream os(params.coloring_output_file, std::ofstream::out);
-      KokkosKernels::Impl::print_1Dview(
-          os, kh.get_graph_coloring_handle()->get_vertex_colors(), true, "\n");
+      KokkosKernels::Impl::print_1Dview(os, colors, true, "\n");
     }
     totalTime += kh.get_graph_coloring_handle()->get_overall_coloring_time();
   }

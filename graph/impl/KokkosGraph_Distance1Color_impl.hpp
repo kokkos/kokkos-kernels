@@ -2009,14 +2009,17 @@ class GraphColor_VBD
     void operator()(const int node) const {
       typedef typename std::remove_reference<decltype(newFrontierSize_())>::type
           atomic_incr_type;
-      int myScore   = score_(node);
-      int numNeighs = xadj_(node + 1) - xadj_(node);
-      for (int neigh = 0; neigh < numNeighs; ++neigh) {
-        if (myScore < score_(adj_(xadj_(node) + neigh))) {
+      int myScore        = score_(node);
+      int numNeighs      = xadj_(node + 1) - xadj_(node);
+      nnz_lno_t numVerts = xadj_.extent(0) - 1;
+      size_type rowBegin = xadj_(node);
+      for (int i = 0; i < numNeighs; ++i) {
+        nnz_lno_t neigh = adj_(rowBegin + i);
+        if (neigh >= numVerts) continue;
+        if (myScore < score_(neigh)) {
           dependency_(node) = dependency_(node) + 1;
         }
-        if ((myScore == score_(adj_(xadj_(node) + neigh))) &&
-            (node < adj_(xadj_(node) + neigh))) {
+        if ((myScore == score_(neigh)) && (node < adj_(xadj_(node) + i))) {
           dependency_(node) = dependency_(node) + 1;
         }
       }
@@ -2063,6 +2066,7 @@ class GraphColor_VBD
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const size_type frontierIdx) const {
+      nnz_lno_t numVerts = xadj_.extent(0) - 1;
       typedef typename std::remove_reference<decltype(newFrontierSize_())>::type
           atomic_incr_type;
       size_type frontierNode = frontier_(frontierIdx);
@@ -2072,21 +2076,24 @@ class GraphColor_VBD
 
       // Loop over neighbors, find banned colors, decrement dependency and
       // update newFrontier
-      for (size_type neigh = xadj_(frontierNode);
-           neigh < xadj_(frontierNode + 1); ++neigh) {
-        bannedColors_(frontierIdx, colors_(adj_(neigh))) = 1;
+      for (size_type i = xadj_(frontierNode); i < xadj_(frontierNode + 1);
+           ++i) {
+        nnz_lno_t neigh = adj_(i);
+        // Skip remote edges (in case this is part of a distributed graph)
+        if (neigh >= numVerts) continue;
+        bannedColors_(frontierIdx, colors_(neigh)) = 1;
 
         // We want to avoid the cost of atomic operations when not needed
         // so let's check that the node is not already colored, i.e.
         // its dependency is not -1.
-        if (dependency_(adj_(neigh)) >= 0) {
+        if (dependency_(neigh) >= 0) {
           nnz_lno_t myDependency =
-              Kokkos::atomic_fetch_add(&dependency_(adj_(neigh)), -1);
-          // dependency(myAdj(neigh)) = dependency(myAdj(neigh)) - 1;
+              Kokkos::atomic_fetch_add(&dependency_(neigh), -1);
+          // dependency(neigh) = dependency(neigh) - 1;
           if (myDependency - 1 == 0) {
             const size_type newFrontierIdx = Kokkos::atomic_fetch_add(
                 &newFrontierSize_(), atomic_incr_type(1));
-            newFrontier_(newFrontierIdx) = adj_(neigh);
+            newFrontier_(newFrontierIdx) = neigh;
           }
         }
       }  // Loop over neighbors
@@ -2133,6 +2140,7 @@ class GraphColor_VBD
     void operator()(const size_type frontierIdx) const {
       typedef typename std::remove_reference<decltype(newFrontierSize_())>::type
           atomic_incr_type;
+      nnz_lno_t numVerts     = xadj_.extent(0) - 1;
       size_type frontierNode = frontier_(frontierIdx);
       // Initialize bit array to all bits = 0
       unsigned long long bannedColors = 0;
@@ -2141,9 +2149,11 @@ class GraphColor_VBD
       while (myColor == 0) {
         // Loop over neighbors, find banned colors in the range:
         // [colorOffset + 1, colorOffset + 64]
-        for (size_type neigh = xadj_(frontierNode);
-             neigh < xadj_(frontierNode + 1); ++neigh) {
-          color_t neighColor = colors_(adj_(neigh));
+        for (size_type i = xadj_(frontierNode); i < xadj_(frontierNode + 1);
+             ++i) {
+          nnz_lno_t neigh = adj_(i);
+          if (neigh >= numVerts) continue;
+          color_t neighColor = colors_(neigh);
           // Check that the color is in the current range
           if (neighColor > colorOffset && neighColor < colorOffset + 65) {
             // Set bannedColors' bit in location colors(adj_(neigh)) to 1.
@@ -2153,13 +2163,13 @@ class GraphColor_VBD
           // We want to avoid the cost of atomic operations when not needed
           // so let's check that the node is not already colored, i.e.
           // its dependency is not -1.
-          if (colorOffset == 0 && dependency_(adj_(neigh)) >= 0) {
+          if (colorOffset == 0 && dependency_(neigh) >= 0) {
             nnz_lno_t myDependency =
-                Kokkos::atomic_fetch_add(&dependency_(adj_(neigh)), -1);
+                Kokkos::atomic_fetch_add(&dependency_(neigh), -1);
             if (myDependency - 1 == 0) {
               const size_type newFrontierIdx = Kokkos::atomic_fetch_add(
                   &newFrontierSize_(), atomic_incr_type(1));
-              newFrontier_(newFrontierIdx) = adj_(neigh);
+              newFrontier_(newFrontierIdx) = neigh;
             }
           }
         }  // Loop over neighbors
