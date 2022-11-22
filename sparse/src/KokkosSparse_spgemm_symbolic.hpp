@@ -62,7 +62,7 @@ void spgemm_symbolic(KernelHandle *handle,
                      alno_row_view_t_ row_mapA, alno_nnz_view_t_ entriesA,
                      bool transposeA, blno_row_view_t_ row_mapB,
                      blno_nnz_view_t_ entriesB, bool transposeB,
-                     clno_row_view_t_ row_mapC) {
+                     clno_row_view_t_ row_mapC, bool computeRowptrs = false) {
   static_assert(
       std::is_same<typename clno_row_view_t_::value_type,
                    typename clno_row_view_t_::non_const_value_type>::value,
@@ -163,20 +163,22 @@ void spgemm_symbolic(KernelHandle *handle,
   Internal_alno_nnz_view_t_ const_a_l(entriesA.data(), entriesA.extent(0));
   Internal_blno_row_view_t_ const_b_r(row_mapB.data(), row_mapB.extent(0));
   Internal_blno_nnz_view_t_ const_b_l(entriesB.data(), entriesB.extent(0));
-  Internal_clno_row_view_t_ const_c_r(row_mapC.data(), row_mapC.extent(0));
+  Internal_clno_row_view_t_ c_r(row_mapC.data(), row_mapC.extent(0));
 
-  using namespace KokkosSparse::Impl;
-  SPGEMM_SYMBOLIC<
+  KokkosSparse::Impl::SPGEMM_SYMBOLIC<
       const_handle_type,  // KernelHandle,
       Internal_alno_row_view_t_, Internal_alno_nnz_view_t_,
       Internal_blno_row_view_t_, Internal_blno_nnz_view_t_,
       Internal_clno_row_view_t_>::spgemm_symbolic(&tmp_handle,  // handle,
                                                   m, n, k, const_a_r, const_a_l,
                                                   transposeA, const_b_r,
-                                                  const_b_l, transposeB,
-                                                  const_c_r);
+                                                  const_b_l, transposeB, c_r,
+                                                  computeRowptrs);
 }
 
 }  // namespace Experimental
+
+using Experimental::spgemm_symbolic;
+
 }  // namespace KokkosSparse
 #endif

@@ -119,13 +119,13 @@ template <class KernelHandle, class a_size_view_t_, class a_lno_view_t,
               b_lno_view_t, c_size_view_t_>::value>
 struct SPGEMM_SYMBOLIC {
   static void spgemm_symbolic(KernelHandle *handle,
-                              typename KernelHandle::const_nnz_lno_t m,
-                              typename KernelHandle::const_nnz_lno_t n,
-                              typename KernelHandle::const_nnz_lno_t k,
+                              typename KernelHandle::nnz_lno_t m,
+                              typename KernelHandle::nnz_lno_t n,
+                              typename KernelHandle::nnz_lno_t k,
                               a_size_view_t_ row_mapA, a_lno_view_t entriesA,
                               bool transposeA, b_size_view_t_ row_mapB,
                               b_lno_view_t entriesB, bool transposeB,
-                              c_size_view_t_ row_mapC);
+                              c_size_view_t_ row_mapC, bool computeRowptrs);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
@@ -136,16 +136,24 @@ template <class KernelHandle, class a_size_view_t_, class a_lno_view_t,
 struct SPGEMM_SYMBOLIC<KernelHandle, a_size_view_t_, a_lno_view_t,
                        b_size_view_t_, b_lno_view_t, c_size_view_t_, false,
                        KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
-  static void spgemm_symbolic(KernelHandle *handle,
-                              typename KernelHandle::nnz_lno_t m,
-                              typename KernelHandle::nnz_lno_t n,
-                              typename KernelHandle::nnz_lno_t k,
-                              a_size_view_t_ row_mapA, a_lno_view_t entriesA,
-                              bool transposeA, b_size_view_t_ row_mapB,
-                              b_lno_view_t entriesB, bool transposeB,
-                              c_size_view_t_ row_mapC) {
+  static void spgemm_symbolic(
+      KernelHandle *handle, typename KernelHandle::nnz_lno_t m,
+      typename KernelHandle::nnz_lno_t n, typename KernelHandle::nnz_lno_t k,
+      a_size_view_t_ row_mapA, a_lno_view_t entriesA, bool transposeA,
+      b_size_view_t_ row_mapB, b_lno_view_t entriesB, bool transposeB,
+      c_size_view_t_ row_mapC, bool /* computeRowptrs */) {
     typedef typename KernelHandle::SPGEMMHandleType spgemmHandleType;
     spgemmHandleType *sh = handle->get_spgemm_handle();
+    if (sh->is_symbolic_called() && sh->are_rowptrs_computed()) return;
+    if (m == 0 || n == 0 || k == 0 || !entriesA.extent(0) ||
+        !entriesB.extent(0)) {
+      sh->set_computed_rowptrs();
+      sh->set_call_symbolic();
+      sh->set_c_nnz(0);
+      Kokkos::deep_copy(typename spgemmHandleType::HandleExecSpace(), row_mapC,
+                        typename c_size_view_t_::non_const_value_type(0));
+      return;
+    }
     switch (sh->get_algorithm_type()) {
       case SPGEMM_ROCSPARSE:
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE)
@@ -191,6 +199,8 @@ struct SPGEMM_SYMBOLIC<KernelHandle, a_size_view_t_, a_lno_view_t,
 #endif
     }
     sh->set_call_symbolic();
+    // The KokkosKernels implementation of symbolic always populates rowptrs.
+    sh->set_computed_rowptrs();
   }
 };
 
@@ -201,10 +211,8 @@ struct SPGEMM_SYMBOLIC<KernelHandle, a_size_view_t_, a_lno_view_t,
 
 //
 // Macro for declaration of full specialization of
-// KokkosSparse::Impl::Dot for rank == 2.  This is NOT for users!!!  All
+// KokkosSparse::Impl::SPGEMM_SYMBOLIC.  This is NOT for users!!!  All
 // the declarations of full specializations go in this header file.
-// We may spread out definitions (see _DEF macro below) across one or
-// more .cpp files.
 //
 #define KOKKOSSPARSE_SPGEMM_SYMBOLIC_ETI_SPEC_DECL(                       \
     SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, \

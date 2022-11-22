@@ -88,7 +88,7 @@ struct spgemm_numeric_tpl_spec_avail {
       Kokkos::View<const SCALAR*, default_layout,                     \
                    Kokkos::Device<Kokkos::Cuda, MEMSPACE>,            \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,         \
-      Kokkos::View<int*, default_layout,                              \
+      Kokkos::View<const int*, default_layout,                        \
                    Kokkos::Device<Kokkos::Cuda, MEMSPACE>,            \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,         \
       Kokkos::View<int*, default_layout,                              \

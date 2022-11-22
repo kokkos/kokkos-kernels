@@ -93,6 +93,7 @@ SPGEMM_SYMBOLIC_AVAIL_CUSPARSE_S(float)
 SPGEMM_SYMBOLIC_AVAIL_CUSPARSE_S(double)
 SPGEMM_SYMBOLIC_AVAIL_CUSPARSE_S(Kokkos::complex<float>)
 SPGEMM_SYMBOLIC_AVAIL_CUSPARSE_S(Kokkos::complex<double>)
+
 #endif
 
 }  // namespace Impl

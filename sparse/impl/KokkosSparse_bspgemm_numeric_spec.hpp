@@ -51,7 +51,7 @@
 #include "KokkosKernels_Handle.hpp"
 // Include the actual functors
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
-//#include "KokkosSparse_spgemm_symbolic.hpp"
+#include "KokkosSparse_spgemm_symbolic.hpp"
 #include "KokkosSparse_spgemm_CUSP_impl.hpp"
 #include "KokkosSparse_bspgemm_impl.hpp"
 #include "KokkosSparse_bspgemm_impl_seq.hpp"
@@ -218,7 +218,27 @@ struct BSPGEMM_NUMERIC<
     spgemmHandleType *sh = handle->get_spgemm_handle();
     if (!sh->is_symbolic_called()) {
       throw std::runtime_error(
-          "Call spgemm symbolic before calling SpGEMM numeric");
+          "KokkosSparse::bspgemm_numeric: must first call spgemm_symbolic with "
+          "the same handle.");
+    }
+    if (!sh->are_rowptrs_computed()) {
+      // Call symbolic, and make sure rowptrs are populated. This will not
+      // duplicate any work if the user has already called symbolic. Must also
+      // cast away constness of row_mapC.
+      using c_size_view_t_nc = typename c_size_view_t_::non_const_type;
+      using c_size_type      = typename c_size_view_t_::non_const_value_type;
+      c_size_view_t_nc row_mapC_nc(const_cast<c_size_type *>(row_mapC.data()),
+                                   row_mapC.extent(0));
+      KokkosSparse::spgemm_symbolic(handle, m, n, k, row_mapA, entriesA,
+                                    transposeA, row_mapB, entriesB, transposeB,
+                                    row_mapC_nc, true);
+    }
+    if (!sh->are_rowflops_computed()) {
+      KokkosSPGEMM<KernelHandle, a_size_view_t_, a_lno_view_t, a_scalar_view_t,
+                   b_size_view_t_, b_lno_view_t, b_scalar_view_t>
+          kspgemm(handle, m, n, k, row_mapA, entriesA, valuesA, transposeA,
+                  row_mapB, entriesB, valuesB, transposeB);
+      kspgemm.compute_row_flops();
     }
 
     switch (sh->get_algorithm_type()) {

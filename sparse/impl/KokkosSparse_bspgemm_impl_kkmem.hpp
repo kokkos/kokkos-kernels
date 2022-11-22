@@ -1206,7 +1206,8 @@ void KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
       this->handle->get_spgemm_handle()->row_flops;
   size_t original_overall_flops =
       this->handle->get_spgemm_handle()->original_overall_flops;
-  nnz_lno_t max_nnz = this->handle->get_spgemm_handle()->get_max_result_nnz();
+  nnz_lno_t max_nnz = this->handle->get_spgemm_handle()
+                          ->template get_max_result_nnz<c_row_view_t>(rowmapC_);
   size_type overall_nnz = this->handle->get_spgemm_handle()->get_c_nnz();
 
   typedef KokkosKernels::Impl::UniformMemoryPool<MyTempMemorySpace, nnz_lno_t>

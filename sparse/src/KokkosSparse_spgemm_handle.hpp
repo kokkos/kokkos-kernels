@@ -46,6 +46,7 @@
 
 #include <KokkosKernels_config.h>
 #include <KokkosKernels_Controls.hpp>
+#include <KokkosSparse_Utils.hpp>
 #include <Kokkos_Core.hpp>
 #include <iostream>
 #include <string>
@@ -162,7 +163,6 @@ class SPGEMMHandle {
     rocsparse_mat_info info_C;
     size_t bufferSize;
     void *buffer;
-    bool C_populated;
 
     rocSparseSpgemmHandleType(bool transposeA, bool transposeB) {
       opA =
@@ -170,9 +170,8 @@ class SPGEMMHandle {
       opB =
           transposeB ? rocsparse_operation_transpose : rocsparse_operation_none;
 
-      bufferSize  = 0;
-      buffer      = NULL;
-      C_populated = false;
+      bufferSize = 0;
+      buffer     = NULL;
       KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_mat_descr(&descr_A));
       KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_mat_descr(&descr_B));
       KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_mat_descr(&descr_C));
@@ -209,8 +208,6 @@ class SPGEMMHandle {
     size_t bufferSize3, bufferSize4, bufferSize5;
     void *buffer3, *buffer4, *buffer5;
 
-    bool C_populated;
-
     cuSparseSpgemmHandleType(bool transposeA, bool transposeB) {
       opA = transposeA ? CUSPARSE_OPERATION_TRANSPOSE
                        : CUSPARSE_OPERATION_NON_TRANSPOSE;
@@ -221,7 +218,6 @@ class SPGEMMHandle {
       alg         = CUSPARSE_SPGEMM_DEFAULT;
       bufferSize3 = bufferSize4 = bufferSize5 = 0;
       buffer3 = buffer4 = buffer5 = NULL;
-      C_populated                 = false;
 
       cusparseHandle = kkControls.getCusparseHandle();
       KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMM_createDescr(&spgemmDescr));
@@ -304,11 +300,15 @@ class SPGEMMHandle {
   size_type result_nnz_size;
 
   bool called_symbolic;
+  bool computed_rowptrs;
+  bool computed_rowflops;
+  bool computed_entries;
   bool called_numeric;
 
   int suggested_vector_size;
   int suggested_team_size;
-  nnz_lno_t max_nnz_inresult;
+  nnz_lno_t max_nnz_inresult;  // C max nonzeros per row.
+  bool computed_max_nnz_inresult;
   nnz_lno_t max_nnz_compressed_result;
 
   size_type compressed_b_size;
@@ -533,10 +533,14 @@ class SPGEMMHandle {
         accumulator_type(SPGEMM_ACC_DEFAULT),
         result_nnz_size(0),
         called_symbolic(false),
+        computed_rowptrs(false),
+        computed_rowflops(false),
+        computed_entries(false),
         called_numeric(false),
         suggested_vector_size(0),
         suggested_team_size(0),
         max_nnz_inresult(0),
+        computed_max_nnz_inresult(false),
         c_column_indices(),
         tranpose_a_xadj(),
         tranpose_b_xadj(),
@@ -722,9 +726,21 @@ class SPGEMMHandle {
   SPGEMMAlgorithm get_algorithm_type() const { return this->algorithm_type; }
 
   bool is_symbolic_called() { return this->called_symbolic; }
+  bool are_rowptrs_computed() { return this->computed_rowptrs; }
+  bool are_rowflops_computed() { return this->computed_rowflops; }
+  bool are_entries_computed() { return this->computed_entries; }
   bool is_numeric_called() { return this->called_numeric; }
 
-  nnz_lno_t get_max_result_nnz() const { return this->max_nnz_inresult; }
+  template <typename c_row_view_t>
+  nnz_lno_t get_max_result_nnz(const c_row_view_t &row_mapC) {
+    if (!this->computed_max_nnz_inresult) {
+      this->max_nnz_inresult =
+          KokkosSparse::Impl::graph_max_degree<HandleExecSpace, size_type,
+                                               c_row_view_t>(row_mapC);
+      this->computed_max_nnz_inresult = true;
+    }
+    return this->max_nnz_inresult;
+  }
 
   nnz_lno_t get_max_compresed_result_nnz() const {
     return this->max_nnz_compressed_result;
@@ -735,10 +751,14 @@ class SPGEMMHandle {
     this->algorithm_type = sgs_algo;
   }
   void set_call_symbolic(bool call = true) { this->called_symbolic = call; }
+  void set_computed_rowptrs() { this->computed_rowptrs = true; }
+  void set_computed_rowflops() { this->computed_rowflops = true; }
+  void set_computed_entries() { this->computed_entries = true; }
   void set_call_numeric(bool call = true) { this->called_numeric = call; }
 
-  void set_max_result_nnz(nnz_lno_t num_result_nnz_) {
-    this->max_nnz_inresult = num_result_nnz_;
+  void set_max_result_nnz(nnz_lno_t nz) {
+    this->max_nnz_inresult          = nz;
+    this->computed_max_nnz_inresult = true;
   }
 
   void set_max_compresed_result_nnz(nnz_lno_t num_result_nnz_) {

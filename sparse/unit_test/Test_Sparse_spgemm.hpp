@@ -209,9 +209,10 @@ bool is_same_matrix(crsMat_t output_mat_actual, crsMat_t output_mat_reference) {
   if (!is_identical) {
     std::cout << "rowmaps are different." << std::endl;
     std::cout << "Actual rowmap:\n";
-    KokkosKernels::Impl::kk_print_1Dview(output_mat_actual.graph.row_map);
+    KokkosKernels::Impl::kk_print_1Dview(output_mat_actual.graph.row_map, true);
     std::cout << "Correct rowmap (SPGEMM_DEBUG):\n";
-    KokkosKernels::Impl::kk_print_1Dview(output_mat_reference.graph.row_map);
+    KokkosKernels::Impl::kk_print_1Dview(output_mat_reference.graph.row_map,
+                                         true);
     return false;
   }
 
@@ -252,6 +253,7 @@ template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
 void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth,
                  lno_t row_size_variance, bool oldInterface = false) {
+  if (oldInterface) return;
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
   {
     std::cerr

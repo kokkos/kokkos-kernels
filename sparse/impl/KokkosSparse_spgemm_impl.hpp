@@ -829,6 +829,42 @@ class KokkosSPGEMM {
     }
     return po2_num_chunks;
   }
+
+ public:
+  void compute_row_flops() {
+    auto sh                    = this->handle->get_spgemm_handle();
+    nnz_lno_t maxNumRoughZeros = 0;
+    size_t overall_flops       = 0;
+    Kokkos::Timer timer1;
+    auto new_row_mapB_begin =
+        Kokkos::subview(row_mapB, std::make_pair(nnz_lno_t(0), b_row_cnt));
+    auto new_row_mapB_end =
+        Kokkos::subview(row_mapB, std::make_pair(nnz_lno_t(1), b_row_cnt + 1));
+    row_lno_persistent_work_view_t flops_per_row(
+        Kokkos::view_alloc(Kokkos::WithoutInitializing, "original row flops"),
+        a_row_cnt);
+
+    // get maximum row flops.
+    maxNumRoughZeros = this->getMaxRoughRowNNZ(
+        a_row_cnt, row_mapA, entriesA, new_row_mapB_begin, new_row_mapB_end,
+        flops_per_row.data());
+
+    // calculate overal flops.
+    KokkosKernels::Impl::kk_reduce_view2<row_lno_persistent_work_view_t,
+                                         MyExecSpace>(a_row_cnt, flops_per_row,
+                                                      overall_flops);
+    if (KOKKOSKERNELS_VERBOSE) {
+      std::cout << "\tOriginal Max Row Flops:" << maxNumRoughZeros << std::endl;
+      std::cout << "\tOriginal overall_flops Flops:" << overall_flops
+                << std::endl;
+      std::cout << "\ttOriginal Max Row Flop Calc Time:" << timer1.seconds()
+                << std::endl;
+    }
+    sh->original_max_row_flops = maxNumRoughZeros;
+    sh->original_overall_flops = overall_flops;
+    sh->row_flops              = flops_per_row;
+    sh->set_computed_rowflops();
+  }
 };
 
 }  // namespace Impl
