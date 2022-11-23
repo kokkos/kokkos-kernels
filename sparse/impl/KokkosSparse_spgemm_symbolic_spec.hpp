@@ -51,7 +51,6 @@
 #include "KokkosKernels_Handle.hpp"
 // Include the actual functors
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
-#include "KokkosSparse_spgemm_rocSPARSE_impl.hpp"
 #include "KokkosSparse_spgemm_CUSP_impl.hpp"
 #include "KokkosSparse_spgemm_impl.hpp"
 #include "KokkosSparse_spgemm_impl_seq.hpp"
@@ -155,18 +154,6 @@ struct SPGEMM_SYMBOLIC<KernelHandle, a_size_view_t_, a_lno_view_t,
       return;
     }
     switch (sh->get_algorithm_type()) {
-      case SPGEMM_ROCSPARSE:
-#if defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE)
-        rocsparse_spgemm_symbolic<spgemmHandleType, a_size_view_t_,
-                                  a_lno_view_t, b_size_view_t_, b_lno_view_t,
-                                  c_size_view_t_>(
-            sh, m, n, k, row_mapA, entriesA, transposeA, row_mapB, entriesB,
-            transposeB, row_mapC);
-#else
-        throw std::runtime_error(
-            "Requiring SPGEMM_ROCSPARSE but TPL_ROCSPARSE was not enabled!");
-#endif
-        break;
       case SPGEMM_MKL2PHASE:
         mkl2phase_symbolic(sh, m, n, k, row_mapA, entriesA, transposeA,
                            row_mapB, entriesB, transposeB, row_mapC,

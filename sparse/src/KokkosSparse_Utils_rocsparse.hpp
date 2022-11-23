@@ -46,7 +46,7 @@
 #define _KOKKOSKERNELS_SPARSEUTILS_ROCSPARSE_HPP
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
-#include "rocsparse.h"
+#include "rocsparse/rocsparse.h"
 
 namespace KokkosSparse {
 namespace Impl {
@@ -176,6 +176,21 @@ template <>
 inline rocsparse_datatype rocsparse_compute_type<Kokkos::complex<double>>() {
   return rocsparse_datatype_f64_c;
 }
+
+template <typename Scalar>
+struct kokkos_to_rocsparse_type {
+  using type = Scalar;
+};
+
+template <>
+struct kokkos_to_rocsparse_type<Kokkos::complex<float>> {
+  using type = rocsparse_float_complex;
+};
+
+template <>
+struct kokkos_to_rocsparse_type<Kokkos::complex<double>> {
+  using type = rocsparse_double_complex;
+};
 
 }  // namespace Impl
 

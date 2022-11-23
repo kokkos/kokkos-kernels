@@ -52,7 +52,6 @@
 // Include the actual functors
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 #include "KokkosSparse_spgemm_symbolic.hpp"
-#include "KokkosSparse_spgemm_rocSPARSE_impl.hpp"
 #include "KokkosSparse_spgemm_CUSP_impl.hpp"
 #include "KokkosSparse_spgemm_impl.hpp"
 #include "KokkosSparse_spgemm_impl_seq.hpp"
@@ -180,16 +179,6 @@ struct SPGEMM_NUMERIC<
       return;
     }
     switch (sh->get_algorithm_type()) {
-      case SPGEMM_ROCSPARSE:
-#if defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE)
-        rocsparse_spgemm_numeric<spgemmHandleType>(
-            sh, m, n, k, row_mapA, entriesA, valuesA, transposeA, row_mapB,
-            entriesB, valuesB, transposeB, row_mapC, entriesC, valuesC);
-#else
-        throw std::runtime_error(
-            "Requiring SPGEMM_ROCSPARSE but TPL_ROCSPARSE was not enabled!");
-#endif
-        break;
       case SPGEMM_CUSP:
         CUSP_apply<spgemmHandleType, a_size_view_t_, a_lno_view_t,
                    a_scalar_view_t, b_size_view_t_, b_lno_view_t,

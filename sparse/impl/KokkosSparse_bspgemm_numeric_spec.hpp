@@ -242,9 +242,6 @@ struct BSPGEMM_NUMERIC<
     }
 
     switch (sh->get_algorithm_type()) {
-      case SPGEMM_CUSPARSE:
-        throw std::runtime_error(
-            "cuSPARSE implementation for block SpGEMM is not available");
       case SPGEMM_CUSP:
         throw std::runtime_error(
             "CUSP implementation for block SpGEMM is not available");

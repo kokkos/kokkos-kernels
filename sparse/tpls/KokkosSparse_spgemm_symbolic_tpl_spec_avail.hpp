@@ -93,7 +93,37 @@ SPGEMM_SYMBOLIC_AVAIL_CUSPARSE_S(float)
 SPGEMM_SYMBOLIC_AVAIL_CUSPARSE_S(double)
 SPGEMM_SYMBOLIC_AVAIL_CUSPARSE_S(Kokkos::complex<float>)
 SPGEMM_SYMBOLIC_AVAIL_CUSPARSE_S(Kokkos::complex<double>)
+#endif
 
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+#define SPGEMM_SYMBOLIC_AVAIL_ROCSPARSE(SCALAR)                              \
+  template <>                                                                \
+  struct spgemm_symbolic_tpl_spec_avail<                                     \
+      KokkosKernels::Experimental::KokkosKernelsHandle<                      \
+          const int, const int, const SCALAR, Kokkos::HIP, Kokkos::HIPSpace, \
+          Kokkos::HIPSpace>,                                                 \
+      Kokkos::View<const int*, default_layout,                               \
+                   Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,            \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
+      Kokkos::View<const int*, default_layout,                               \
+                   Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,            \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
+      Kokkos::View<const int*, default_layout,                               \
+                   Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,            \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
+      Kokkos::View<const int*, default_layout,                               \
+                   Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,            \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
+      Kokkos::View<int*, default_layout,                                     \
+                   Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,            \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {             \
+    enum : bool { value = true };                                            \
+  };
+
+SPGEMM_SYMBOLIC_AVAIL_ROCSPARSE(float)
+SPGEMM_SYMBOLIC_AVAIL_ROCSPARSE(double)
+SPGEMM_SYMBOLIC_AVAIL_ROCSPARSE(Kokkos::complex<float>)
+SPGEMM_SYMBOLIC_AVAIL_ROCSPARSE(Kokkos::complex<double>)
 #endif
 
 }  // namespace Impl

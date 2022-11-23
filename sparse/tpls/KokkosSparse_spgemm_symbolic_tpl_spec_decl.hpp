@@ -50,12 +50,13 @@
 #include "KokkosSparse_Utils_cusparse.hpp"
 #endif
 
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+#include "rocsparse/rocsparse.h"
+#include "KokkosSparse_Utils_rocsparse.hpp"
+#endif
+
 namespace KokkosSparse {
 namespace Impl {
-
-//=====================
-//  SpGEMM Symbolic
-//=====================
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 // NOTE: all versions of cuSPARSE 10.x and 11.x support exactly the same matrix
@@ -77,7 +78,6 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k,
                               const ConstEntriesType &entriesB,
                               const RowMapType &row_mapC, bool computeRowptrs) {
   auto sh = handle->get_spgemm_handle();
-  sh->set_sort_option(1);  // tells users the output is sorted
   // Split symbolic into two sub-phases: handle/buffer setup and nnz(C), and
   // then rowptrs (if requested). That way, calling symbolic once with
   // computeRowptrs=false, and then again with computeRowptrs=true will not
@@ -210,7 +210,6 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k,
   using Offset = typename KernelHandle::size_type;
   auto sh      = handle->get_spgemm_handle();
   if (sh->is_symbolic_called() && sh->are_rowptrs_computed()) return;
-  sh->set_sort_option(1);  // tells users the output is sorted
   sh->create_cusparse_spgemm_handle(false, false);
   auto h = sh->get_cusparse_spgemm_handle();
 
@@ -305,7 +304,6 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k,
   int baseC, nnzC;
   int *nnzTotalDevHostPtr = &nnzC;
 
-  handle->set_sort_option(1);  // tells users the output is sorted
   cusparseXcsrgemmNnz(h->handle, h->transA, h->transB, (int)m, (int)n, (int)k,
                       h->a_descr, nnzA, row_mapA.data(), entriesA.data(),
                       h->b_descr, nnzB, row_mapB.data(), entriesB.data(),
@@ -428,10 +426,166 @@ SPGEMM_SYMBOLIC_DECL_CUSPARSE_S(double, false)
 SPGEMM_SYMBOLIC_DECL_CUSPARSE_S(Kokkos::complex<float>, false)
 SPGEMM_SYMBOLIC_DECL_CUSPARSE_S(Kokkos::complex<double>, false)
 
-#undef SPGEMM_SYMBOLIC_DECL_CUSPARSE_S
-#undef SPGEMM_SYMBOLIC_DECL_CUSPARSE
-
 #endif
+
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+//=============================================================================
+// Overload rocsparse_Xcsrgemm_buffer_size() over scalar types
+#define ROCSPARSE_XCSRGEMM_BUFFER_SIZE_SPEC(scalar_type, TOKEN)               \
+  inline rocsparse_status rocsparse_Xcsrgemm_buffer_size(                     \
+      rocsparse_handle handle, rocsparse_operation trans_A,                   \
+      rocsparse_operation trans_B, rocsparse_int m, rocsparse_int n,          \
+      rocsparse_int k, const scalar_type *alpha,                              \
+      const rocsparse_mat_descr descr_A, rocsparse_int nnz_A,                 \
+      const rocsparse_int *csr_row_ptr_A, const rocsparse_int *csr_col_ind_A, \
+      const rocsparse_mat_descr descr_B, rocsparse_int nnz_B,                 \
+      const rocsparse_int *csr_row_ptr_B, const rocsparse_int *csr_col_ind_B, \
+      const scalar_type *beta, const rocsparse_mat_descr descr_D,             \
+      rocsparse_int nnz_D, const rocsparse_int *csr_row_ptr_D,                \
+      const rocsparse_int *csr_col_ind_D, rocsparse_mat_info info_C,          \
+      size_t *buffer_size) {                                                  \
+    return rocsparse_##TOKEN##csrgemm_buffer_size(                            \
+        handle, trans_A, trans_B, m, n, k, alpha, descr_A, nnz_A,             \
+        csr_row_ptr_A, csr_col_ind_A, descr_B, nnz_B, csr_row_ptr_B,          \
+        csr_col_ind_B, beta, descr_D, nnz_D, csr_row_ptr_D, csr_col_ind_D,    \
+        info_C, buffer_size);                                                 \
+  }
+
+ROCSPARSE_XCSRGEMM_BUFFER_SIZE_SPEC(float, s)
+ROCSPARSE_XCSRGEMM_BUFFER_SIZE_SPEC(double, d)
+ROCSPARSE_XCSRGEMM_BUFFER_SIZE_SPEC(rocsparse_float_complex, c)
+ROCSPARSE_XCSRGEMM_BUFFER_SIZE_SPEC(rocsparse_double_complex, z)
+
+template <
+    typename KernelHandle, typename ain_row_index_view_type,
+    typename ain_nonzero_index_view_type, typename bin_row_index_view_type,
+    typename bin_nonzero_index_view_type, typename cin_row_index_view_type>
+void spgemm_symbolic_rocsparse(
+    KernelHandle *handle, typename KernelHandle::nnz_lno_t m,
+    typename KernelHandle::nnz_lno_t n, typename KernelHandle::nnz_lno_t k,
+    ain_row_index_view_type rowptrA, ain_nonzero_index_view_type colidxA,
+    bin_row_index_view_type rowptrB, bin_nonzero_index_view_type colidxB,
+    cin_row_index_view_type rowptrC) {
+  using index_type  = typename KernelHandle::nnz_lno_t;
+  using size_type   = typename KernelHandle::size_type;
+  using scalar_type = typename KernelHandle::nnz_scalar_t;
+  using rocsparse_scalar_type =
+      typename kokkos_to_rocsparse_type<scalar_type>::type;
+
+  auto nnz_A = colidxA.extent(0);
+  auto nnz_B = colidxB.extent(0);
+
+  if (handle->is_symbolic_called()) {
+    return;
+  }
+  handle->create_rocsparse_spgemm_handle(false, false);
+  typename KernelHandle::rocSparseSpgemmHandleType *h =
+      handle->get_rocsparse_spgemm_handle();
+
+  // alpha, beta are on host, but since we use singleton on the rocsparse
+  // handle, we save/restore the pointer mode to not interference with
+  // others' use
+  const auto alpha = Kokkos::ArithTraits<scalar_type>::one();
+  const auto beta  = Kokkos::ArithTraits<scalar_type>::zero();
+  rocsparse_pointer_mode oldPtrMode;
+
+  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(
+      rocsparse_get_pointer_mode(h->rocsparseHandle, &oldPtrMode));
+  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_set_pointer_mode(
+      h->rocsparseHandle, rocsparse_pointer_mode_host));
+
+  // C = alpha * OpA(A) * OpB(B) + beta * D
+  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_Xcsrgemm_buffer_size(
+      h->rocsparseHandle, h->opA, h->opB, m, k, n,
+      reinterpret_cast<const rocsparse_scalar_type *>(&alpha), h->descr_A,
+      nnz_A, rowptrA.data(), colidxA.data(), h->descr_B, nnz_B, rowptrB.data(),
+      colidxB.data(), reinterpret_cast<const rocsparse_scalar_type *>(&beta),
+      h->descr_D, 0, NULL, NULL, h->info_C, &h->bufferSize));
+
+  KOKKOS_IMPL_HIP_SAFE_CALL(hipMalloc(&h->buffer, h->bufferSize));
+
+  rocsparse_int nnz_C = 0;
+  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_csrgemm_nnz(
+      h->rocsparseHandle, h->opA, h->opB, m, k, n, h->descr_A, nnz_A,
+      rowptrA.data(), colidxA.data(), h->descr_B, nnz_B, rowptrB.data(),
+      colidxB.data(), h->descr_D, 0, NULL, NULL, h->descr_C, rowptrC.data(),
+      &nnz_C, h->info_C, h->buffer));
+  // If C has zero rows, its rowptrs are not populated
+  if (m == 0) {
+    KOKKOS_IMPL_HIP_SAFE_CALL(
+        hipMemset(rowptrC.data(), 0, rowptrC.extent(0) * sizeof(index_type)));
+  }
+  // Restore previous pointer mode
+  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(
+      rocsparse_set_pointer_mode(h->rocsparseHandle, oldPtrMode));
+
+  handle->set_c_nnz(nnz_C);
+  handle->set_call_symbolic();
+  handle->set_computed_rowptrs();
+}
+
+#define SPGEMM_SYMBOLIC_DECL_ROCSPARSE(SCALAR, COMPILE_LIBRARY)               \
+  template <>                                                                 \
+  struct SPGEMM_SYMBOLIC<                                                     \
+      KokkosKernels::Experimental::KokkosKernelsHandle<                       \
+          const int, const int, const SCALAR, Kokkos::HIP, Kokkos::HIPSpace,  \
+          Kokkos::HIPSpace>,                                                  \
+      Kokkos::View<const int *, default_layout,                               \
+                   Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,             \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
+      Kokkos::View<const int *, default_layout,                               \
+                   Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,             \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
+      Kokkos::View<const int *, default_layout,                               \
+                   Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,             \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
+      Kokkos::View<const int *, default_layout,                               \
+                   Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,             \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
+      Kokkos::View<int *, default_layout,                                     \
+                   Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,             \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
+      true, COMPILE_LIBRARY> {                                                \
+    using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<    \
+        const int, const int, const SCALAR, Kokkos::HIP, Kokkos::HIPSpace,    \
+        Kokkos::HIPSpace>;                                                    \
+    using c_int_view_t =                                                      \
+        Kokkos::View<const int *, default_layout,                             \
+                     Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,           \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >;               \
+    using int_view_t =                                                        \
+        Kokkos::View<int *, default_layout,                                   \
+                     Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,           \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >;               \
+    static void spgemm_symbolic(KernelHandle *handle,                         \
+                                typename KernelHandle::nnz_lno_t m,           \
+                                typename KernelHandle::nnz_lno_t n,           \
+                                typename KernelHandle::nnz_lno_t k,           \
+                                c_int_view_t row_mapA, c_int_view_t entriesA, \
+                                bool, c_int_view_t row_mapB,                  \
+                                c_int_view_t entriesB, bool,                  \
+                                int_view_t row_mapC, bool) {                  \
+      std::string label = "KokkosSparse::spgemm[TPL_ROCSPARSE," +             \
+                          Kokkos::ArithTraits<SCALAR>::name() + "]";          \
+      Kokkos::Profiling::pushRegion(label);                                   \
+      spgemm_symbolic_rocsparse(handle->get_spgemm_handle(), m, n, k,         \
+                                row_mapA, entriesA, row_mapB, entriesB,       \
+                                row_mapC);                                    \
+      Kokkos::Profiling::popRegion();                                         \
+    }                                                                         \
+  };
+
+SPGEMM_SYMBOLIC_DECL_ROCSPARSE(float, false)
+SPGEMM_SYMBOLIC_DECL_ROCSPARSE(double, false)
+SPGEMM_SYMBOLIC_DECL_ROCSPARSE(Kokkos::complex<float>, false)
+SPGEMM_SYMBOLIC_DECL_ROCSPARSE(Kokkos::complex<double>, false)
+
+SPGEMM_SYMBOLIC_DECL_ROCSPARSE(float, true)
+SPGEMM_SYMBOLIC_DECL_ROCSPARSE(double, true)
+SPGEMM_SYMBOLIC_DECL_ROCSPARSE(Kokkos::complex<float>, true)
+SPGEMM_SYMBOLIC_DECL_ROCSPARSE(Kokkos::complex<double>, true)
+#endif
+
 }  // namespace Impl
 }  // namespace KokkosSparse
 

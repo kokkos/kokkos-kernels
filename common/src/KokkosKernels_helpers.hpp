@@ -46,7 +46,6 @@
 
 #include "KokkosKernels_config.h"  // KOKKOSKERNELS_INST_LAYOUTLEFT, KOKKOSKERNELS_INST_LAYOUTRIGHT
 #include "KokkosKernels_default_types.hpp"  // default_layout
-#include "/ascldap/users/bmkelle/BMK_DebugUtils.hpp"
 
 namespace KokkosKernels {
 namespace Impl {

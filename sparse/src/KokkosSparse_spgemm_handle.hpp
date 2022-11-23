@@ -334,7 +334,6 @@ class SPGEMMHandle {
   bool create_lower_triangular;
   int sort_lower_triangular;  // 0 - do not sort // 1 - sort // 2 - Algorithm
                               // decides (default)
-  int sort_option;
   nnz_lno_persistent_work_view_t lower_triangular_permutation;
 
   row_lno_persistent_work_view_t lower_triangular_matrix_rowmap;
@@ -476,9 +475,6 @@ class SPGEMMHandle {
   }
   int get_sort_lower_triangular() { return this->sort_lower_triangular; }
 
-  void set_sort_option(int option) { this->sort_option = option; }
-  int get_sort_option() { return this->sort_option; }
-
   void set_create_lower_triangular(bool option) {
     this->create_lower_triangular = option;
   }
@@ -561,7 +557,6 @@ class SPGEMMHandle {
 
         create_lower_triangular(false),
         sort_lower_triangular(2),
-        sort_option(-1),
         lower_triangular_permutation(),
         lower_triangular_matrix_rowmap(),
         lower_triangular_matrix_entries(),

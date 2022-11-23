@@ -228,14 +228,6 @@ void test_bspgemm(lno_t blkDim, lno_t m, lno_t k, lno_t n, size_type nnz,
     bool is_expected_to_fail   = false;
 
     switch (spgemm_algorithm) {
-      case SPGEMM_CUSPARSE:
-        // TODO: add these test failure cases for cusparse too.
-        algo = "SPGEMM_CUSPARSE";
-#ifndef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-        is_expected_to_fail = true;
-#endif
-        break;
-
       case SPGEMM_MKL:
         algo                = "SPGEMM_MKL";
         is_expected_to_fail = !is_empy_case;  // TODO: add block MKL impl
