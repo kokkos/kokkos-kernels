@@ -145,14 +145,14 @@ KOKKOSBLAS1_ROTMG_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::LayoutRight,
     enum : bool { value = true };                                            \
   };
 
-KOKKOSBLAS1_ROTMG_TPL_SPEC_AVAIL_ROCBLAS(double, Kokkos::LayoutLeft,
-                                         Kokkos::HIP, Kokkos::HIPSpace)
-KOKKOSBLAS1_ROTMG_TPL_SPEC_AVAIL_ROCBLAS(float, Kokkos::LayoutLeft, Kokkos::HIP,
-                                         Kokkos::HIPSpace)
-KOKKOSBLAS1_ROTMG_TPL_SPEC_AVAIL_ROCBLAS(double, Kokkos::LayoutRight,
-                                         Kokkos::HIP, Kokkos::HIPSpace)
-KOKKOSBLAS1_ROTMG_TPL_SPEC_AVAIL_ROCBLAS(float, Kokkos::LayoutRight,
-                                         Kokkos::HIP, Kokkos::HIPSpace)
+// KOKKOSBLAS1_ROTMG_TPL_SPEC_AVAIL_ROCBLAS(double, Kokkos::LayoutLeft,
+//                                          Kokkos::HIP, Kokkos::HIPSpace)
+// KOKKOSBLAS1_ROTMG_TPL_SPEC_AVAIL_ROCBLAS(float, Kokkos::LayoutLeft, Kokkos::HIP,
+//                                          Kokkos::HIPSpace)
+// KOKKOSBLAS1_ROTMG_TPL_SPEC_AVAIL_ROCBLAS(double, Kokkos::LayoutRight,
+//                                          Kokkos::HIP, Kokkos::HIPSpace)
+// KOKKOSBLAS1_ROTMG_TPL_SPEC_AVAIL_ROCBLAS(float, Kokkos::LayoutRight,
+//                                          Kokkos::HIP, Kokkos::HIPSpace)
 #endif
 
 }  // namespace Impl

@@ -42,6 +42,7 @@ void test_rotmg_impl(View0& d1, View0& d2, View0& x1, View0& y1, PView& param,
   EXPECT_NEAR_KK_REL(param_h(2), ref_vals(6), tol, "rotmg: param(2) is off");
   EXPECT_NEAR_KK_REL(param_h(3), ref_vals(7), tol, "rotmg: param(3) is off");
   EXPECT_NEAR_KK_REL(param_h(4), ref_vals(8), tol, "rotmg: param(4) is off");
+
 }
 
 template <class View0, class PView, class RView>
