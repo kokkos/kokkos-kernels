@@ -145,14 +145,18 @@ KOKKOSBLAS1_ROTMG_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::LayoutRight,
     enum : bool { value = true };                                            \
   };
 
-KOKKOSBLAS1_ROTMG_TPL_SPEC_AVAIL_ROCBLAS(double, Kokkos::LayoutLeft,
-                                         Kokkos::HIP, Kokkos::HIPSpace)
-KOKKOSBLAS1_ROTMG_TPL_SPEC_AVAIL_ROCBLAS(float, Kokkos::LayoutLeft, Kokkos::HIP,
-                                         Kokkos::HIPSpace)
-KOKKOSBLAS1_ROTMG_TPL_SPEC_AVAIL_ROCBLAS(double, Kokkos::LayoutRight,
-                                         Kokkos::HIP, Kokkos::HIPSpace)
-KOKKOSBLAS1_ROTMG_TPL_SPEC_AVAIL_ROCBLAS(float, Kokkos::LayoutRight,
-                                         Kokkos::HIP, Kokkos::HIPSpace)
+// Turning off use of rocBLAS as it returns false results in some of the
+// param  values as well as x1 and d1. These values can e Inf which really
+// should be checked by rocBLAS : (
+// KOKKOSBLAS1_ROTMG_TPL_SPEC_AVAIL_ROCBLAS(double, Kokkos::LayoutLeft,
+//                                          Kokkos::HIP, Kokkos::HIPSpace)
+// KOKKOSBLAS1_ROTMG_TPL_SPEC_AVAIL_ROCBLAS(float, Kokkos::LayoutLeft,
+// Kokkos::HIP,
+//                                          Kokkos::HIPSpace)
+// KOKKOSBLAS1_ROTMG_TPL_SPEC_AVAIL_ROCBLAS(double, Kokkos::LayoutRight,
+//                                          Kokkos::HIP, Kokkos::HIPSpace)
+// KOKKOSBLAS1_ROTMG_TPL_SPEC_AVAIL_ROCBLAS(float, Kokkos::LayoutRight,
+//                                          Kokkos::HIP, Kokkos::HIPSpace)
 #endif
 
 }  // namespace Impl
