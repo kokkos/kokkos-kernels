@@ -153,7 +153,7 @@ inline cudaDataType cuda_data_type_from<Kokkos::complex<float>>() {
 }
 template <>
 inline cudaDataType cuda_data_type_from<Kokkos::complex<double>>() {
-  return CUDA_C_32F;
+  return CUDA_C_64F;
 }
 
 #if defined(CUSPARSE_VERSION) && (10300 <= CUSPARSE_VERSION)
