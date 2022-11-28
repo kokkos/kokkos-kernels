@@ -215,7 +215,14 @@ void check_bsrm_times_v(const char fOp[], scalar_t alpha, scalar_t beta,
     //
     // Make reference computation with a CrsMatrix variable
     //
-    KokkosSparse::spmv(fOp, alpha, Acrs, xref, beta, ycrs);
+    KokkosKernels::Experimental::Controls controls;
+    // Use the native implementation since the CUDA 11.2.2 spmv implementation
+    // is not matching the bsr spmv test tolerance when OFFSET is int.
+    // See https://github.com/kokkos/kokkos-kernels/issues/1586
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && (11200 <= CUSPARSE_VERSION)
+    controls.setParameter("algorithm", "native");
+#endif
+    KokkosSparse::spmv(controls, fOp, alpha, Acrs, xref, beta, ycrs);
 
     y_vector_type ybsr("bsr_product_result", nRow);
     auto h_ybsr = Kokkos::create_mirror_view(ybsr);
