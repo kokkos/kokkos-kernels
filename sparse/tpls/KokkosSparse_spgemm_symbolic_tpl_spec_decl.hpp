@@ -369,7 +369,7 @@ Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>, Kokkos::MemoryTraits<1u> >,
 
 */
 
-#define SPGEMM_SYMBOLIC_DECL_CUSPARSE(SCALAR, MEMSPACE, TPL_AVAIL)       \
+#define SPGEMM_SYMBOLIC_DECL_CUSPARSE(SCALAR, MEMSPACE, TPL_AVAIL)             \
   template <>                                                                  \
   struct SPGEMM_SYMBOLIC<                                                      \
       KokkosKernels::Experimental::KokkosKernelsHandle<                        \
@@ -377,29 +377,29 @@ Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>, Kokkos::MemoryTraits<1u> >,
           MEMSPACE>,                                                           \
       Kokkos::View<const int *, default_layout,                                \
                    Kokkos::Device<Kokkos::Cuda, MEMSPACE>,                     \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
       Kokkos::View<const int *, default_layout,                                \
                    Kokkos::Device<Kokkos::Cuda, MEMSPACE>,                     \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
       Kokkos::View<const int *, default_layout,                                \
                    Kokkos::Device<Kokkos::Cuda, MEMSPACE>,                     \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
       Kokkos::View<const int *, default_layout,                                \
                    Kokkos::Device<Kokkos::Cuda, MEMSPACE>,                     \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
       Kokkos::View<int *, default_layout,                                      \
                    Kokkos::Device<Kokkos::Cuda, MEMSPACE>,                     \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      true, TPL_AVAIL> {                                                 \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
+      true, TPL_AVAIL> {                                                       \
     using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<     \
         const int, const int, const SCALAR, Kokkos::Cuda, MEMSPACE, MEMSPACE>; \
     using c_int_view_t =                                                       \
         Kokkos::View<const int *, default_layout,                              \
                      Kokkos::Device<Kokkos::Cuda, MEMSPACE>,                   \
-                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >;                \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                 \
     using int_view_t = Kokkos::View<int *, default_layout,                     \
                                     Kokkos::Device<Kokkos::Cuda, MEMSPACE>,    \
-                                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >; \
+                                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>;  \
     static void spgemm_symbolic(KernelHandle *handle,                          \
                                 typename KernelHandle::nnz_lno_t m,            \
                                 typename KernelHandle::nnz_lno_t n,            \
@@ -529,7 +529,7 @@ void spgemm_symbolic_rocsparse(
   handle->set_computed_rowptrs();
 }
 
-#define SPGEMM_SYMBOLIC_DECL_ROCSPARSE(SCALAR, TPL_AVAIL)               \
+#define SPGEMM_SYMBOLIC_DECL_ROCSPARSE(SCALAR, TPL_AVAIL)                     \
   template <>                                                                 \
   struct SPGEMM_SYMBOLIC<                                                     \
       KokkosKernels::Experimental::KokkosKernelsHandle<                       \
@@ -537,31 +537,31 @@ void spgemm_symbolic_rocsparse(
           Kokkos::HIPSpace>,                                                  \
       Kokkos::View<const int *, default_layout,                               \
                    Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,             \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
       Kokkos::View<const int *, default_layout,                               \
                    Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,             \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
       Kokkos::View<const int *, default_layout,                               \
                    Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,             \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
       Kokkos::View<const int *, default_layout,                               \
                    Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,             \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
       Kokkos::View<int *, default_layout,                                     \
                    Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,             \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
-      true, TPL_AVAIL> {                                                \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
+      true, TPL_AVAIL> {                                                      \
     using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<    \
         const int, const int, const SCALAR, Kokkos::HIP, Kokkos::HIPSpace,    \
         Kokkos::HIPSpace>;                                                    \
     using c_int_view_t =                                                      \
         Kokkos::View<const int *, default_layout,                             \
                      Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,           \
-                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >;               \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                \
     using int_view_t =                                                        \
         Kokkos::View<int *, default_layout,                                   \
                      Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,           \
-                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >;               \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                \
     static void spgemm_symbolic(KernelHandle *handle,                         \
                                 typename KernelHandle::nnz_lno_t m,           \
                                 typename KernelHandle::nnz_lno_t n,           \
@@ -602,35 +602,39 @@ void spgemm_symbolic_mkl(
     ain_row_index_view_type rowptrA, ain_nonzero_index_view_type colidxA,
     bin_row_index_view_type rowptrB, bin_nonzero_index_view_type colidxB,
     cin_row_index_view_type rowptrC) {
-  using ExecSpace = typename KernelHandle::HandleExecSpace;
+  using ExecSpace   = typename KernelHandle::HandleExecSpace;
   using index_type  = typename KernelHandle::nnz_lno_t;
   using size_type   = typename KernelHandle::size_type;
   using scalar_type = typename KernelHandle::nnz_scalar_t;
-  using MKLMatrix = MKLSparseMatrix<scalar_type>;
-  if(m == 0 || n == 0 || k == 0 || colidxA.extent(0) == size_type(0) || colidxB.extent(0) == size_type(0)) {
+  using MKLMatrix   = MKLSparseMatrix<scalar_type>;
+  if (m == 0 || n == 0 || k == 0 || colidxA.extent(0) == size_type(0) ||
+      colidxB.extent(0) == size_type(0)) {
     Kokkos::deep_copy(ExecSpace(), rowptrC, size_type(0));
     handle->set_call_symbolic();
     handle->set_computed_rowptrs();
     handle->set_c_nnz(0);
     return;
   }
-  MKLMatrix A(m, n, (int *) rowptrA.data(), (int *) colidxA.data(), NULL);
-  MKLMatrix B(n, k, (int *) rowptrB.data(), (int *) colidxB.data(), NULL);
+  MKLMatrix A(m, n, (int *)rowptrA.data(), (int *)colidxA.data(), NULL);
+  MKLMatrix B(n, k, (int *)rowptrB.data(), (int *)colidxB.data(), NULL);
   sparse_matrix_t C;
   matrix_descr generalDescr;
   generalDescr.type = SPARSE_MATRIX_TYPE_GENERAL;
   generalDescr.mode = SPARSE_FILL_MODE_FULL;
   generalDescr.diag = SPARSE_DIAG_NON_UNIT;
-  KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_sp2m(
-        SPARSE_OPERATION_NON_TRANSPOSE, generalDescr, A,
-        SPARSE_OPERATION_NON_TRANSPOSE, generalDescr, B, SPARSE_STAGE_NNZ_COUNT, &C));
+  KOKKOSKERNELS_MKL_SAFE_CALL(
+      mkl_sparse_sp2m(SPARSE_OPERATION_NON_TRANSPOSE, generalDescr, A,
+                      SPARSE_OPERATION_NON_TRANSPOSE, generalDescr, B,
+                      SPARSE_STAGE_NNZ_COUNT, &C));
   MKLMatrix wrappedC(C);
   MKL_INT nrows = 0, ncols = 0;
-  MKL_INT* rowptrRaw = NULL;
-  MKL_INT* colidxRaw = NULL;
-  scalar_type* valuesRaw = NULL;
+  MKL_INT *rowptrRaw     = NULL;
+  MKL_INT *colidxRaw     = NULL;
+  scalar_type *valuesRaw = NULL;
   wrappedC.export_data(nrows, ncols, rowptrRaw, colidxRaw, valuesRaw);
-  Kokkos::View<index_type*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> rowptrRawView(rowptrRaw, nrows + 1);
+  Kokkos::View<index_type *, Kokkos::HostSpace,
+               Kokkos::MemoryTraits<Kokkos::Unmanaged>>
+      rowptrRawView(rowptrRaw, nrows + 1);
   Kokkos::deep_copy(ExecSpace(), rowptrC, rowptrRawView);
   handle->create_mkl_spgemm_handle(C);
   handle->set_call_symbolic();
@@ -638,38 +642,38 @@ void spgemm_symbolic_mkl(
   handle->set_c_nnz(rowptrC(m));
 }
 
-#define SPGEMM_SYMBOLIC_DECL_MKL(SCALAR, EXEC, TPL_AVAIL)               \
+#define SPGEMM_SYMBOLIC_DECL_MKL(SCALAR, EXEC, TPL_AVAIL)                     \
   template <>                                                                 \
   struct SPGEMM_SYMBOLIC<                                                     \
       KokkosKernels::Experimental::KokkosKernelsHandle<                       \
-          const int, const int, const SCALAR, EXEC, Kokkos::HostSpace,  \
-          Kokkos::HostSpace>,                                                  \
+          const int, const int, const SCALAR, EXEC, Kokkos::HostSpace,        \
+          Kokkos::HostSpace>,                                                 \
       Kokkos::View<const int *, default_layout,                               \
-                   Kokkos::Device<EXEC, Kokkos::HostSpace>,             \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
+                   Kokkos::Device<EXEC, Kokkos::HostSpace>,                   \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
       Kokkos::View<const int *, default_layout,                               \
-                   Kokkos::Device<EXEC, Kokkos::HostSpace>,             \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
+                   Kokkos::Device<EXEC, Kokkos::HostSpace>,                   \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
       Kokkos::View<const int *, default_layout,                               \
-                   Kokkos::Device<EXEC, Kokkos::HostSpace>,             \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
+                   Kokkos::Device<EXEC, Kokkos::HostSpace>,                   \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
       Kokkos::View<const int *, default_layout,                               \
-                   Kokkos::Device<EXEC, Kokkos::HostSpace>,             \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
+                   Kokkos::Device<EXEC, Kokkos::HostSpace>,                   \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
       Kokkos::View<int *, default_layout,                                     \
-                   Kokkos::Device<EXEC, Kokkos::HostSpace>,             \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
-      true, TPL_AVAIL> {                                                \
+                   Kokkos::Device<EXEC, Kokkos::HostSpace>,                   \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
+      true, TPL_AVAIL> {                                                      \
     using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<    \
-        const int, const int, const SCALAR, EXEC, Kokkos::HostSpace, Kokkos::HostSpace>;                                                    \
+        const int, const int, const SCALAR, EXEC, Kokkos::HostSpace,          \
+        Kokkos::HostSpace>;                                                   \
     using c_int_view_t =                                                      \
         Kokkos::View<const int *, default_layout,                             \
-                     Kokkos::Device<EXEC, Kokkos::HostSpace>,           \
-                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >;               \
-    using int_view_t =                                                        \
-        Kokkos::View<int *, default_layout,                                   \
-                     Kokkos::Device<EXEC, Kokkos::HostSpace>,           \
-                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >;               \
+                     Kokkos::Device<EXEC, Kokkos::HostSpace>,                 \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                \
+    using int_view_t = Kokkos::View<int *, default_layout,                    \
+                                    Kokkos::Device<EXEC, Kokkos::HostSpace>,  \
+                                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>; \
     static void spgemm_symbolic(KernelHandle *handle,                         \
                                 typename KernelHandle::nnz_lno_t m,           \
                                 typename KernelHandle::nnz_lno_t n,           \
@@ -678,25 +682,24 @@ void spgemm_symbolic_mkl(
                                 bool, c_int_view_t row_mapB,                  \
                                 c_int_view_t entriesB, bool,                  \
                                 int_view_t row_mapC, bool) {                  \
-      std::string label = "KokkosSparse::spgemm_symbolic[TPL_MKL," +             \
+      std::string label = "KokkosSparse::spgemm_symbolic[TPL_MKL," +          \
                           Kokkos::ArithTraits<SCALAR>::name() + "]";          \
       Kokkos::Profiling::pushRegion(label);                                   \
-      spgemm_symbolic_mkl(handle->get_spgemm_handle(), m, n, k,         \
-                                row_mapA, entriesA, row_mapB, entriesB,       \
-                                row_mapC);                                    \
+      spgemm_symbolic_mkl(handle->get_spgemm_handle(), m, n, k, row_mapA,     \
+                          entriesA, row_mapB, entriesB, row_mapC);            \
       Kokkos::Profiling::popRegion();                                         \
     }                                                                         \
   };
 
 #define SPGEMM_SYMBOLIC_DECL_MKL_SE(SCALAR, EXEC) \
-SPGEMM_SYMBOLIC_DECL_MKL(SCALAR, EXEC, true) \
-SPGEMM_SYMBOLIC_DECL_MKL(SCALAR, EXEC, false)
+  SPGEMM_SYMBOLIC_DECL_MKL(SCALAR, EXEC, true)    \
+  SPGEMM_SYMBOLIC_DECL_MKL(SCALAR, EXEC, false)
 
-#define SPGEMM_SYMBOLIC_DECL_MKL_E(EXEC) \
-SPGEMM_SYMBOLIC_DECL_MKL_SE(float, EXEC) \
-SPGEMM_SYMBOLIC_DECL_MKL_SE(double, EXEC) \
-SPGEMM_SYMBOLIC_DECL_MKL_SE(Kokkos::complex<float>, EXEC) \
-SPGEMM_SYMBOLIC_DECL_MKL_SE(Kokkos::complex<double>, EXEC)
+#define SPGEMM_SYMBOLIC_DECL_MKL_E(EXEC)                    \
+  SPGEMM_SYMBOLIC_DECL_MKL_SE(float, EXEC)                  \
+  SPGEMM_SYMBOLIC_DECL_MKL_SE(double, EXEC)                 \
+  SPGEMM_SYMBOLIC_DECL_MKL_SE(Kokkos::complex<float>, EXEC) \
+  SPGEMM_SYMBOLIC_DECL_MKL_SE(Kokkos::complex<double>, EXEC)
 
 #ifdef KOKKOS_ENABLE_SERIAL
 SPGEMM_SYMBOLIC_DECL_MKL_E(Kokkos::Serial)

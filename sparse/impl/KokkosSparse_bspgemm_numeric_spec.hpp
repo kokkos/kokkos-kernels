@@ -244,8 +244,7 @@ struct BSPGEMM_NUMERIC<
                               valuesA, transposeA, row_mapB, entriesB, valuesB,
                               transposeB, row_mapC, entriesC, valuesC);
         break;
-      default:
-      {
+      default: {
         KokkosBSPGEMM<KernelHandle, a_size_view_t_, a_lno_view_t,
                       a_scalar_view_t, b_size_view_t_, b_lno_view_t,
                       b_scalar_view_t>

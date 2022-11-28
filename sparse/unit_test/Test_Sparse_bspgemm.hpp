@@ -209,8 +209,7 @@ void test_bspgemm(lno_t blkDim, lno_t m, lno_t k, lno_t n, size_type nnz,
                    shared_memory_size);
 
   std::vector<SPGEMMAlgorithm> algorithms = {
-      SPGEMM_KK,
-      SPGEMM_KK_MEMORY /* alias SPGEMM_KK_MEMSPEED */,
+      SPGEMM_KK, SPGEMM_KK_MEMORY /* alias SPGEMM_KK_MEMSPEED */,
       SPGEMM_KK_SPEED /* alias SPGEMM_KK_DENSE */
   };
 

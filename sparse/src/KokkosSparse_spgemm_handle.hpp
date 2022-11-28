@@ -299,11 +299,11 @@ class SPGEMMHandle {
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
   struct mklSpgemmHandleType {
-    //Allow mkl_sparse_sp2m (in SPARSE_STAGE_NNZ_COUNT mode) to construct C.
-    //Then this assumes ownership of it and will destroy it later.
-    mklSpgemmHandleType(const sparse_matrix_t& C_) : C(C_) {}
+    // Allow mkl_sparse_sp2m (in SPARSE_STAGE_NNZ_COUNT mode) to construct C.
+    // Then this assumes ownership of it and will destroy it later.
+    mklSpgemmHandleType(const sparse_matrix_t &C_) : C(C_) {}
 
-    ~mklSpgemmHandleType() { 
+    ~mklSpgemmHandleType() {
       KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_destroy(C));
     }
 
