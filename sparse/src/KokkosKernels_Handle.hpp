@@ -50,6 +50,7 @@
 #include "KokkosSparse_sptrsv_handle.hpp"
 #include "KokkosSparse_spiluk_handle.hpp"
 #include "KokkosSparse_par_ilut_handle.hpp"
+#include "KokkosSparse_gmres_handle.hpp"
 #include "KokkosKernels_default_types.hpp"
 
 #ifndef _KOKKOSKERNELHANDLE_HPP
@@ -187,6 +188,7 @@ class KokkosKernelsHandle {
     this->sptrsvHandle   = right_side_handle.get_sptrsv_handle();
     this->spilukHandle   = right_side_handle.get_spiluk_handle();
     this->par_ilutHandle = right_side_handle.get_par_ilut_handle();
+    this->gmresHandle    = right_side_handle.get_gmres_handle();
 
     this->team_work_size      = right_side_handle.get_set_team_work_size();
     this->shared_memory_size  = right_side_handle.get_shmem_size();
@@ -210,6 +212,7 @@ class KokkosKernelsHandle {
     is_owner_of_the_sptrsv_handle   = false;
     is_owner_of_the_spiluk_handle   = false;
     is_owner_of_the_par_ilut_handle = false;
+    is_owner_of_the_gmres_handle    = false;
     // return *this;
   }
 
@@ -309,6 +312,11 @@ class KokkosKernelsHandle {
       HandleTempMemorySpace, HandlePersistentMemorySpace>
       PAR_ILUTHandleType;
 
+  typedef typename KokkosSparse::Experimental::GMRESHandle<
+      const_size_type, const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace,
+      HandleTempMemorySpace, HandlePersistentMemorySpace>
+      GMRESHandleType;
+
  private:
   GraphColoringHandleType *gcHandle;
   GraphColorDistance2HandleType *gcHandle_d2;
@@ -325,6 +333,7 @@ class KokkosKernelsHandle {
   SPTRSVHandleType *sptrsvHandle;
   SPILUKHandleType *spilukHandle;
   PAR_ILUTHandleType *par_ilutHandle;
+  GMRESHandleType *gmresHandle;
 
   int team_work_size;
   size_t shared_memory_size;
@@ -348,6 +357,7 @@ class KokkosKernelsHandle {
   bool is_owner_of_the_sptrsv_handle;
   bool is_owner_of_the_spiluk_handle;
   bool is_owner_of_the_par_ilut_handle;
+  bool is_owner_of_the_gmres_handle;
 
  public:
   KokkosKernelsHandle()
@@ -365,6 +375,7 @@ class KokkosKernelsHandle {
         sptrsvHandle(NULL),
         spilukHandle(NULL),
         par_ilutHandle(NULL),
+        gmresHandle(NULL),
         team_work_size(-1),
         shared_memory_size(16128),
         suggested_team_size(-1),
@@ -386,7 +397,8 @@ class KokkosKernelsHandle {
         is_owner_of_the_spadd_handle(true),
         is_owner_of_the_sptrsv_handle(true),
         is_owner_of_the_spiluk_handle(true),
-        is_owner_of_the_par_ilut_handle(true) {}
+        is_owner_of_the_par_ilut_handle(true),
+        is_owner_of_the_gmres_handle(true) {}
 
   ~KokkosKernelsHandle() {
     this->destroy_gs_handle();
@@ -402,6 +414,7 @@ class KokkosKernelsHandle {
     this->destroy_sptrsv_handle();
     this->destroy_spiluk_handle();
     this->destroy_par_ilut_handle();
+    this->destroy_gmres_handle();
   }
 
   void set_verbose(bool verbose_) { this->KKVERBOSE = verbose_; }
@@ -899,6 +912,23 @@ class KokkosKernelsHandle {
     if (is_owner_of_the_par_ilut_handle && this->par_ilutHandle != nullptr) {
       delete this->par_ilutHandle;
       this->par_ilutHandle = nullptr;
+    }
+  }
+
+  GMRESHandleType *get_gmres_handle() { return this->gmresHandle; }
+  void create_gmres_handle(size_type nrows, size_type nnzL = 0,
+                              size_type nnzU = 0) {
+    this->destroy_gmres_handle();
+    this->is_owner_of_the_gmres_handle = true;
+    this->gmresHandle = new GMRESHandleType(nrows, nnzL, nnzU);
+    this->gmresHandle->reset_handle(nrows, nnzL, nnzU);
+    this->gmresHandle->set_team_size(this->team_work_size);
+    this->gmresHandle->set_vector_size(this->vector_size);
+  }
+  void destroy_gmres_handle() {
+    if (is_owner_of_the_gmres_handle && this->gmresHandle != nullptr) {
+      delete this->gmresHandle;
+      this->gmresHandle = nullptr;
     }
   }
 

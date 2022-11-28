@@ -21,6 +21,7 @@
 #include "Test_Sparse_sptrsv.hpp"
 #include "Test_Sparse_trsv.hpp"
 #include "Test_Sparse_par_ilut.hpp"
+#include "Test_Sparse_gmres.hpp"
 #include "Test_Sparse_Transpose.hpp"
 #include "Test_Sparse_TestUtils_RandCsMat.hpp"
 #include "Test_Sparse_ccs2crs.hpp"
