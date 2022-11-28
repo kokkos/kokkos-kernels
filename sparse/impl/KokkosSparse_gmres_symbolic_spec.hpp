@@ -134,8 +134,8 @@ struct GMRES_SYMBOLIC<KernelHandle, ARowMapType, AEntriesType, LRowMapType,
                                 URowMapType &U_row_map) {
     auto gmres_handle = handle->get_gmres_handle();
 
-    Experimental::ilut_symbolic(*gmres_handle, A_row_map, A_entries,
-                                L_row_map, U_row_map);
+    Experimental::gmres_symbolic(*gmres_handle, A_row_map, A_entries,
+                                 L_row_map, U_row_map);
     gmres_handle->set_symbolic_complete();
   }
 };

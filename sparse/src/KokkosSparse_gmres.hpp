@@ -43,17 +43,15 @@
 */
 
 /// \file KokkosSparse_gmres.hpp
-/// \brief Parallel threshold incomplete LU factorization ILU(t)
+/// \brief GMRES Ax = b solver
 ///
 /// This file provides KokkosSparse::gmres.  This function performs a
-/// local (no MPI) sparse ILU(t) on matrices stored in
+/// local (no MPI) solve of Ax = b for sparse A. It is expected that A is in
 /// compressed row sparse ("Crs") format. It is expected that symbolic
-/// is called before numeric. The numeric function offers a deterministic
-/// flag that will force the function to have deterministic results. This
-/// is useful for testing but incurs a big performance penalty.
+/// is called before numeric.
 ///
 /// This algorithm is described in the paper:
-/// PARILUT - A New Parallel Threshold ILU Factorization - Anzt, Chow, Dongarra
+/// GMRES - A Generalized Minimal Residual Algorithm for Solving Nonsymmetric Linear Systems - Saad, Schultz
 
 #ifndef KOKKOSSPARSE_GMRES_HPP_
 #define KOKKOSSPARSE_GMRES_HPP_

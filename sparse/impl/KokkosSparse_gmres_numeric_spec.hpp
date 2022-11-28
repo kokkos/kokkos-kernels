@@ -166,12 +166,12 @@ struct GMRES_NUMERIC<KernelHandle, ARowMapType, AEntriesType, AValuesType,
                                UEntriesType &U_entries, UValuesType &U_values,
                                bool deterministic = false) {
     auto gmres_handle = handle->get_gmres_handle();
-    using Ilut           = Experimental::IlutWrap<
+    using Gmres           = Experimental::GmresWrap<
         typename std::remove_pointer<decltype(gmres_handle)>::type>;
 
-    Ilut::ilut_numeric(*handle, *gmres_handle, A_row_map, A_entries,
-                       A_values, L_row_map, L_entries, L_values, U_row_map,
-                       U_entries, U_values, deterministic);
+    Gmres::gmres_numeric(*handle, *gmres_handle, A_row_map, A_entries,
+                         A_values, L_row_map, L_entries, L_values, U_row_map,
+                         U_entries, U_values, deterministic);
   }
 };
 
