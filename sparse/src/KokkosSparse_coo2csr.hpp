@@ -84,6 +84,9 @@ class Coo2Csr {
   using UsetType = KokkosKernels::Experimental::HashmapAccumulator<
       SizeType, KeyType, ValueType,
       KokkosKernels::Experimental::HashOpType::bitwiseAnd>;
+  using HmapType = KokkosKernels::Experimental::HashmapAccumulator<
+      SizeType, KeyType, UsetType,
+      KokkosKernels::Experimental::HashOpType::bitwiseAnd>;
   using KeyViewScratch =
       Kokkos::View<KeyType *, Kokkos::LayoutRight, ScratchSpaceType>;
   using SizeViewScratch =
@@ -179,7 +182,8 @@ class Coo2Csr {
       unsigned stop_n  = start_n + n;
 
       KeyViewScratch keys(member.team_scratch(0), max_row_cnt);
-      SizeViewScratch hash_ll(member.team_scratch(0), pow2_max_row_cnt * 2 + 1);
+      SizeViewScratch hash_ll(member.team_scratch(0),
+                              pow2_max_row_cnt + max_row_cnt + 1);
       volatile SizeType *used_size = hash_ll.data() + member.league_rank();
       auto *hash_begins            = hash_ll.data() + member.league_size();
       auto *hash_nexts             = hash_begins + pow2_max_row_cnt;
@@ -229,10 +233,57 @@ class Coo2Csr {
         value = n_unique_rows_per_team(thread_id);
     }
 
-    /* KOKKOS_INLINE_FUNCTION
+#if 0
+    KOKKOS_INLINE_FUNCTION
     void operator()(const typename phase1Tags::s4RowCnt &,
                     const s4MemberType &member) const {
-    } */
+      unsigned n = member.league_rank() == member.league_size() - 1
+                       ? last_teams_work
+                       : teams_work;
+      unsigned start_n = teams_work * member.league_rank();
+      unsigned stop_n  = start_n + n;
+
+      KeyViewScratch hmap_keys(member.team_scratch(0), max_n_unique_rows);
+      UsetViewScratch hmap_values(member.team_scratch(0), max_n_unique_rows);
+      SizeViewScratch hmap_ll(member.team_scratch(0), pow2_max_n_unique_rows * 2 + 1);
+      volatile SizeType *used_size = hmap_ll.data() + member.league_rank();
+      auto *hmap_begins            = hmap_ll.data() + member.league_size();
+      auto *hmap_nexts             = hmap_begins + pow2_max_n_unique_rows; // hash_nexts is max_n_unique_rows long
+
+      // Initialize hash_begins to -1
+      Kokkos::parallel_for(Kokkos::TeamVectorRange(member, 0, pow2_max_n_unique_rows),
+                           [&](const int &tid) { hmap_begins[tid] = -1; });
+      // Wait for each team's hashmap to be initialized.
+      member.team_barrier();
+
+      // This is a hashmap key'd on row ids. Each value is a unordered set of column ids.
+      HmapType hmap(max_n_unique_rows, pow2_max_n_unique_rows - 1, hmap_begins,
+                    hmap_nexts, hmap_keys.data(), hmap_values.data());
+
+#if 0
+      std::cout << "------------------" << std::endl;
+      std::cout << "rank: " << member.league_rank() << std::endl;
+      std::cout << "league_size: " << member.league_size() << std::endl;
+      std::cout << "n: " << n << std::endl;
+      std::cout << "start_n: " << start_n << std::endl;
+      std::cout << "stop_n: " << stop_n << std::endl;
+#endif
+
+      Kokkos::parallel_for(
+          Kokkos::TeamVectorRange(member, start_n, stop_n),
+          [&](const int &tid) {
+            KeyType i = __row(tid);
+            auto j    = __col(tid);
+            // std::cerr << "i: " << i << std::endl;
+
+            if (i >= 0 && j >= 0)
+              unique_row_cnt +=
+                  team_uset.vector_atomic_insert_into_hash_KeyCounter(
+                      i, used_size);
+            // std::cerr << "unique_row_cnt: " << unique_row_cnt << std::endl;
+          });
+    }
+#endif
   };
 
   struct phase2Tags {
@@ -333,11 +384,12 @@ class Coo2Csr {
 
       // clang-format: off
       int s3_shmem_size =
-          KeyViewScratch::shmem_size(functor.max_row_cnt *
-                                     2) +           // keys and hash_nexts
-          SizeViewScratch::shmem_size(__n_teams) +  // used_sizes
-          SizeViewScratch::shmem_size(functor.pow2_max_row_cnt);  // hash_begins
-      // clang-format: on
+          KeyViewScratch::shmem_size(functor.max_row_cnt) +  // keys
+          SizeViewScratch::shmem_size(__n_teams) +           // used_sizes
+          SizeViewScratch::shmem_size(
+              functor.pow2_max_row_cnt +
+              functor.max_row_cnt);  // hash_begins and hash_nexts
+                                     // clang-format: on
 
 #if 0
       std::cout << "__n_tuples: " << __n_tuples << std::endl;
@@ -387,26 +439,27 @@ class Coo2Csr {
       // clang-format: off
       // Calculate size of each team's outer hashmap to row unordered sets
       int s4_shmem_size =
-          KeyViewScratch::shmem_size(functor.max_n_unique_rows *
-                                     2) +  // keys and hash_nexts
+          KeyViewScratch::shmem_size(functor.max_n_unique_rows) +   // keys
           UsetViewScratch::shmem_size(functor.max_n_unique_rows) +  // values
           SizeViewScratch::shmem_size(__n_teams) +  // used_sizes
           SizeViewScratch::shmem_size(
-              functor.pow2_max_n_unique_rows);  // hash_begins
+              functor.pow2_max_n_unique_rows +
+              functor.max_n_unique_rows);  // hash_begins and hash_nexts
       // Calculate size of each team's unordered sets for counting unique
       // columns
       int s4_shmem_per_row =
-          KeyViewScratch::shmem_size(functor.max_row_cnt *
-                                     2) +           // keys and hash_nexts
-          SizeViewScratch::shmem_size(__n_teams) +  // used_sizes
-          SizeViewScratch::shmem_size(functor.pow2_max_row_cnt);  // hash_begins
+          KeyViewScratch::shmem_size(functor.max_row_cnt) +  // keys
+          SizeViewScratch::shmem_size(__n_teams) +           // used_sizes
+          SizeViewScratch::shmem_size(
+              functor.pow2_max_row_cnt +
+              functor.max_row_cnt);  // hash_begins and hash_nexts
       // Each team has up to max_n_unique_rows with up to max_row_cnt columns
       s4_shmem_size += s4_shmem_per_row * functor.max_n_unique_rows;
       // clang-format: on
 
       s4p = s4Policy(__n_teams, __suggested_team_size);
-      /* Kokkos::parallel_for("Coo2Csr::phase1Tags::s4RowCnt", s4p, functor);
-      CrsET().fence(); */
+      /*       Kokkos::parallel_for("Coo2Csr::phase1Tags::s4RowCnt", s4p,
+         functor); CrsET().fence(); */
     }
     return;
   }
