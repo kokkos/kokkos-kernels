@@ -86,16 +86,12 @@ struct GmresWrap {
    * The main gmres numeric function.
    */
   template <class KHandle, class ARowMapType, class AEntriesType,
-            class AValuesType, class LRowMapType, class LEntriesType,
-            class LValuesType, class URowMapType, class UEntriesType,
-            class UValuesType>
+            class AValuesType, class BType, class XType>
   static void gmres_numeric(KHandle& kh, GmresHandle& thandle,
-                           const ARowMapType& A_row_map,
-                           const AEntriesType& A_entries,
-                           const AValuesType& A_values, LRowMapType& L_row_map,
-                           LEntriesType& L_entries, LValuesType& L_values,
-                           URowMapType& U_row_map, UEntriesType& U_entries,
-                           UValuesType& U_values, bool deterministic) {
+                            const ARowMapType& A_row_map,
+                            const AEntriesType& A_entries,
+                            const AValuesType& A_values, const BType& B,
+                            XType& X) {
   }  // end gmres_numeric
 
 };  // struct GmresWrap

@@ -97,40 +97,26 @@ class GMRESHandle {
 
  private:
   size_type nrows;
-  size_type nnzL;
-  size_type nnzU;
-  size_type max_iter;
-  nnz_scalar_t residual_norm_delta_stop;
-
-  bool symbolic_complete;
+  size_type m;
+  size_type max_restart;
 
   int team_size;
   int vector_size;
 
-  float_t fill_in_limit;
-
  public:
-  GMRESHandle(const size_type nrows_, const size_type nnzL_ = 0,
-                 const size_type nnzU_ = 0, const size_type max_iter_ = 1,
-                 const nnz_scalar_t residual_norm_delta_stop_ = 0.,
-                 const float_t fill_in_limit_                 = 0.75,
-                 bool symbolic_complete_                      = false)
+  GMRESHandle(const size_type nrows_, const size_type m_ = 50,
+                 const size_type max_restart_ = 50)
       : nrows(nrows_),
-        nnzL(nnzL_),
-        nnzU(nnzU_),
-        max_iter(max_iter_),
-        residual_norm_delta_stop(residual_norm_delta_stop_),
-        symbolic_complete(symbolic_complete_),
+        m(m_),
+        max_restart(max_restart_),
         team_size(-1),
-        vector_size(-1),
-        fill_in_limit(fill_in_limit_) {}
+        vector_size(-1) {}
 
-  void reset_handle(const size_type nrows_, const size_type nnzL_,
-                    const size_type nnzU_) {
+  void reset_handle(const size_type nrows_, const size_type m_,
+                    const size_type max_restart_) {
     set_nrows(nrows_);
-    set_nnzL(nnzL_);
-    set_nnzU(nnzU_);
-    reset_symbolic_complete();
+    set_m(m_);
+    set_max_restart(max_restart_);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -143,43 +129,22 @@ class GMRESHandle {
   void set_nrows(const size_type nrows_) { this->nrows = nrows_; }
 
   KOKKOS_INLINE_FUNCTION
-  size_type get_nnzL() const { return nnzL; }
+  size_type get_m() const { return m; }
 
   KOKKOS_INLINE_FUNCTION
-  void set_nnzL(const size_type nnzL_) { this->nnzL = nnzL_; }
+  void set_m(const size_type m_) { this->m = m_; }
 
   KOKKOS_INLINE_FUNCTION
-  size_type get_nnzU() const { return nnzU; }
+  size_type get_max_restart() const { return max_restart; }
 
   KOKKOS_INLINE_FUNCTION
-  void set_nnzU(const size_type nnzU_) { this->nnzU = nnzU_; }
-
-  bool is_symbolic_complete() const { return symbolic_complete; }
-
-  void set_symbolic_complete() { this->symbolic_complete = true; }
-  void reset_symbolic_complete() { this->symbolic_complete = false; }
+  void set_max_restart(const size_type max_restart_) { this->max_restart = max_restart_; }
 
   void set_team_size(const int ts) { this->team_size = ts; }
   int get_team_size() const { return this->team_size; }
 
   void set_vector_size(const int vs) { this->vector_size = vs; }
   int get_vector_size() const { return this->vector_size; }
-
-  void set_max_iter(const size_type max_iter_) { this->max_iter = max_iter_; }
-  int get_max_iter() const { return this->max_iter; }
-
-  void set_residual_norm_delta_stop(
-      const nnz_scalar_t residual_norm_delta_stop_) {
-    this->residual_norm_delta_stop = residual_norm_delta_stop_;
-  }
-  nnz_scalar_t get_residual_norm_delta_stop() const {
-    return this->residual_norm_delta_stop;
-  }
-
-  void set_fill_in_limit(const float_t fill_in_limit_) {
-    this->fill_in_limit = fill_in_limit_;
-  }
-  float_t get_fill_in_limit() const { return this->fill_in_limit; }
 
   TeamPolicy get_default_team_policy() const {
     if (team_size == -1) {

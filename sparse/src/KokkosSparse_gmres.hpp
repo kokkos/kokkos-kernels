@@ -68,16 +68,12 @@ namespace Experimental {
   std::is_same<typename std::remove_const<A>::type, \
                typename std::remove_const<B>::type>::value
 
-template <typename KernelHandle, typename ARowMapType, typename AEntriesType,
-          typename AValuesType, typename LRowMapType, typename LEntriesType,
-          typename LValuesType, typename URowMapType, typename UEntriesType,
-          typename UValuesType>
+template <typename KernelHandle,
+          typename ARowMapType, typename AEntriesType, typename AValuesType,
+          typename BType, typename XType>
 void gmres_numeric(KernelHandle* handle, ARowMapType& A_rowmap,
-                      AEntriesType& A_entries, AValuesType& A_values,
-                      LRowMapType& L_rowmap, LEntriesType& L_entries,
-                      LValuesType& L_values, URowMapType& U_rowmap,
-                      UEntriesType& U_entries, UValuesType& U_values,
-                      bool deterministic) {
+                   AEntriesType& A_entries, AValuesType& A_values,
+                   BType& B, XType& X) {
   using size_type    = typename KernelHandle::size_type;
   using ordinal_type = typename KernelHandle::nnz_lno_t;
   using scalar_type  = typename KernelHandle::nnz_scalar_t;
@@ -88,40 +84,22 @@ void gmres_numeric(KernelHandle* handle, ARowMapType& A_rowmap,
       "gmres_numeric: A size_type must match KernelHandle size_type "
       "(const doesn't matter)");
   static_assert(KOKKOSKERNELS_GMRES_SAME_TYPE(
-                    typename AEntriesType::non_const_value_type, ordinal_type),
+                  typename AEntriesType::non_const_value_type, ordinal_type),
                 "gmres_numeric: A entry type must match KernelHandle entry "
                 "type (aka nnz_lno_t, and const doesn't matter)");
   static_assert(KOKKOSKERNELS_GMRES_SAME_TYPE(
-                    typename AValuesType::value_type, scalar_type),
+                  typename AValuesType::value_type, scalar_type),
                 "gmres_numeric: A scalar type must match KernelHandle entry "
                 "type (aka nnz_scalar_t, and const doesn't matter)");
 
-  static_assert(
-      KOKKOSKERNELS_GMRES_SAME_TYPE(
-          typename LRowMapType::non_const_value_type, size_type),
-      "gmres_numeric: L size_type must match KernelHandle size_type "
-      "(const doesn't matter)");
   static_assert(KOKKOSKERNELS_GMRES_SAME_TYPE(
-                    typename LEntriesType::non_const_value_type, ordinal_type),
-                "gmres_numeric: L entry type must match KernelHandle entry "
-                "type (aka nnz_lno_t, and const doesn't matter)");
-  static_assert(KOKKOSKERNELS_GMRES_SAME_TYPE(
-                    typename LValuesType::value_type, scalar_type),
-                "gmres_numeric: L scalar type must match KernelHandle entry "
+                  typename BType::value_type, scalar_type),
+                "gmres_numeric: B scalar type must match KernelHandle entry "
                 "type (aka nnz_scalar_t, and const doesn't matter)");
 
-  static_assert(
-      KOKKOSKERNELS_GMRES_SAME_TYPE(
-          typename URowMapType::non_const_value_type, size_type),
-      "gmres_numeric: U size_type must match KernelHandle size_type "
-      "(const doesn't matter)");
   static_assert(KOKKOSKERNELS_GMRES_SAME_TYPE(
-                    typename UEntriesType::non_const_value_type, ordinal_type),
-                "gmres_numeric: U entry type must match KernelHandle entry "
-                "type (aka nnz_lno_t, and const doesn't matter)");
-  static_assert(KOKKOSKERNELS_GMRES_SAME_TYPE(
-                    typename UValuesType::value_type, scalar_type),
-                "gmres_numeric: U scalar type must match KernelHandle entry "
+                  typename XType::value_type, scalar_type),
+                "gmres_numeric: X scalar type must match KernelHandle entry "
                 "type (aka nnz_scalar_t, and const doesn't matter)");
 
   static_assert(Kokkos::is_view<ARowMapType>::value,
@@ -130,117 +108,57 @@ void gmres_numeric(KernelHandle* handle, ARowMapType& A_rowmap,
                 "gmres_numeric: A_entries is not a Kokkos::View.");
   static_assert(Kokkos::is_view<AValuesType>::value,
                 "gmres_numeric: A_values is not a Kokkos::View.");
-  static_assert(Kokkos::is_view<LRowMapType>::value,
-                "gmres_numeric: L_rowmap is not a Kokkos::View.");
-  static_assert(Kokkos::is_view<LEntriesType>::value,
-                "gmres_numeric: L_entries is not a Kokkos::View.");
-  static_assert(Kokkos::is_view<LValuesType>::value,
-                "gmres_numeric: L_values is not a Kokkos::View.");
-  static_assert(Kokkos::is_view<URowMapType>::value,
-                "gmres_numeric: U_rowmap is not a Kokkos::View.");
-  static_assert(Kokkos::is_view<UEntriesType>::value,
-                "gmres_numeric: U_entries is not a Kokkos::View.");
-  static_assert(Kokkos::is_view<UValuesType>::value,
-                "gmres_numeric: U_values is not a Kokkos::View.");
+  static_assert(Kokkos::is_view<BType>::value,
+                "gmres_numeric: B is not a Kokkos::View.");
+  static_assert(Kokkos::is_view<XType>::value,
+                "gmres_numeric: X is not a Kokkos::View.");
 
   static_assert(
-      (int)LRowMapType::rank == (int)ARowMapType::rank,
-      "gmres_numeric: The ranks of L_rowmap and A_rowmap do not match.");
+      (int)BType::rank == (int)ARowMapType::rank,
+      "gmres_numeric: The ranks of B and A_rowmap do not match.");
   static_assert(
-      (int)LEntriesType::rank == (int)AEntriesType::rank,
-      "gmres_numeric: The ranks of L_entries and A_entries do not match.");
-  static_assert(
-      (int)LValuesType::rank == (int)AValuesType::rank,
-      "gmres_numeric: The ranks of L_values and A_values do not match.");
+      (int)XType::rank == (int)AEntriesType::rank,
+      "gmres_numeric: The ranks of X and A_entries do not match.");
+
+  static_assert(ARowMapType::rank == 1,
+                "gmres_numeric: A_rowmap must have rank 1.");
+  static_assert(AEntriesType::rank == 1,
+                "gmres_numeric: A_entries must have rank 1.");
+  static_assert(AValuesType::rank == 1,
+                "gmres_numeric: A_values must have rank 1.");
 
   static_assert(
-      (int)LRowMapType::rank == (int)URowMapType::rank,
-      "gmres_numeric: The ranks of L_rowmap and U_rowmap do not match.");
-  static_assert(
-      (int)LEntriesType::rank == (int)UEntriesType::rank,
-      "gmres_numeric: The ranks of L_entries and U_entries do not match.");
-  static_assert(
-      (int)LValuesType::rank == (int)UValuesType::rank,
-      "gmres_numeric: The ranks of L_values and U_values do not match.");
-
-  static_assert(LRowMapType::rank == 1,
-                "gmres_numeric: A_rowmap, L_rowmap and U_rowmap must all "
-                "have rank 1.");
-  static_assert(LEntriesType::rank == 1,
-                "gmres_numeric: A_entries, L_entries and U_entries must all "
-                "have rank 1.");
-  static_assert(LValuesType::rank == 1,
-                "gmres_numeric: A_values, L_values and U_values must all "
-                "have rank 1.");
-
-  static_assert(
-      std::is_same<typename LEntriesType::value_type,
-                   typename LEntriesType::non_const_value_type>::value,
-      "gmres_numeric: The output L_entries must be nonconst.");
-  static_assert(std::is_same<typename LValuesType::value_type,
-                             typename LValuesType::non_const_value_type>::value,
-                "gmres_numeric: The output L_values must be nonconst.");
-  static_assert(
-      std::is_same<typename UEntriesType::value_type,
-                   typename UEntriesType::non_const_value_type>::value,
-      "gmres_numeric: The output U_entries must be nonconst.");
-  static_assert(std::is_same<typename UValuesType::value_type,
-                             typename UValuesType::non_const_value_type>::value,
-                "gmres_numeric: The output U_values must be nonconst.");
-
-  static_assert(std::is_same<typename LRowMapType::device_type,
-                             typename ARowMapType::device_type>::value,
-                "gmres_numeric: Views LRowMapType and ARowMapType have "
-                "different device_types.");
-  static_assert(std::is_same<typename LEntriesType::device_type,
-                             typename AEntriesType::device_type>::value,
-                "gmres_numeric: Views LEntriesType and AEntriesType have "
-                "different device_types.");
-  static_assert(std::is_same<typename LValuesType::device_type,
-                             typename AValuesType::device_type>::value,
-                "gmres_numeric: Views LValuesType and AValuesType have "
-                "different device_types.");
-
-  static_assert(std::is_same<typename LRowMapType::device_type,
-                             typename URowMapType::device_type>::value,
-                "gmres_numeric: Views LRowMapType and URowMapType have "
-                "different device_types.");
-  static_assert(std::is_same<typename LEntriesType::device_type,
-                             typename UEntriesType::device_type>::value,
-                "gmres_numeric: Views LEntriesType and UEntriesType have "
-                "different device_types.");
-  static_assert(std::is_same<typename LValuesType::device_type,
-                             typename UValuesType::device_type>::value,
-                "gmres_numeric: Views LValuesType and UValuesType have "
-                "different device_types.");
+      std::is_same<typename XType::value_type,
+                   typename XType::non_const_value_type>::value,
+      "gmres_numeric: The output X must be nonconst.");
 
   static_assert(
       std::is_same<
-          typename LRowMapType::device_type::execution_space,
+          typename ARowMapType::device_type::execution_space,
           typename KernelHandle::GMRESHandleType::execution_space>::value,
       "gmres_numeric: KernelHandle and Views have different execution "
       "spaces.");
   static_assert(
       std::is_same<
-          typename LEntriesType::device_type::execution_space,
+          typename AEntriesType::device_type::execution_space,
           typename KernelHandle::GMRESHandleType::execution_space>::value,
       "gmres_numeric: KernelHandle and Views have different execution "
       "spaces.");
   static_assert(
       std::is_same<
-          typename LValuesType::device_type::execution_space,
+          typename AValuesType::device_type::execution_space,
           typename KernelHandle::GMRESHandleType::execution_space>::value,
       "gmres_numeric: KernelHandle and Views have different execution "
       "spaces.");
 
   static_assert(
-      std::is_same<typename LRowMapType::device_type,
-                   typename LEntriesType::device_type>::value,
-      "gmres_numeric: rowmap and entries have different device types.");
+      std::is_same<typename ARowMapType::device_type,
+                   typename BType::device_type>::value,
+      "gmres_numeric: rowmap and B have different device types.");
   static_assert(
-      std::is_same<typename LRowMapType::device_type,
-                   typename LValuesType::device_type>::value,
-      "gmres_numeric: rowmap and values have different device types.");
+      std::is_same<typename ARowMapType::device_type,
+                   typename XType::device_type>::value,
+      "gmres_numeric: rowmap and X have different device types.");
 
   using c_size_t   = typename KernelHandle::const_size_type;
   using c_lno_t    = typename KernelHandle::const_nnz_lno_t;
@@ -275,68 +193,28 @@ void gmres_numeric(KernelHandle* handle, ARowMapType& A_rowmap,
       typename AValuesType::device_type,
       Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
-  using LRowMap_Internal = Kokkos::View<
-      typename LRowMapType::non_const_value_type*,
-      typename KokkosKernels::Impl::GetUnifiedLayout<LRowMapType>::array_layout,
-      typename LRowMapType::device_type,
+  using B_Internal = Kokkos::View<
+      typename BType::non_const_value_type*,
+      typename KokkosKernels::Impl::GetUnifiedLayout<BType>::array_layout,
+      typename BType::device_type,
       Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
-  using LEntries_Internal =
-      Kokkos::View<typename LEntriesType::non_const_value_type*,
-                   typename KokkosKernels::Impl::GetUnifiedLayout<
-                       LEntriesType>::array_layout,
-                   typename LEntriesType::device_type,
-                   Kokkos::MemoryTraits<Kokkos::RandomAccess> >;
+  using X_Internal = Kokkos::View<
+    typename XType::non_const_value_type*,
+    typename KokkosKernels::Impl::GetUnifiedLayout<XType>::array_layout,
+    typename XType::device_type,
+    Kokkos::MemoryTraits<Kokkos::RandomAccess> >;
 
-  using LValues_Internal = Kokkos::View<
-      typename LValuesType::non_const_value_type*,
-      typename KokkosKernels::Impl::GetUnifiedLayout<LValuesType>::array_layout,
-      typename LValuesType::device_type,
-      Kokkos::MemoryTraits<Kokkos::RandomAccess> >;
-
-  using URowMap_Internal = Kokkos::View<
-      typename URowMapType::non_const_value_type*,
-      typename KokkosKernels::Impl::GetUnifiedLayout<URowMapType>::array_layout,
-      typename URowMapType::device_type,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
-
-  using UEntries_Internal =
-      Kokkos::View<typename UEntriesType::non_const_value_type*,
-                   typename KokkosKernels::Impl::GetUnifiedLayout<
-                       UEntriesType>::array_layout,
-                   typename UEntriesType::device_type,
-                   Kokkos::MemoryTraits<Kokkos::RandomAccess> >;
-
-  using UValues_Internal = Kokkos::View<
-      typename UValuesType::non_const_value_type*,
-      typename KokkosKernels::Impl::GetUnifiedLayout<UValuesType>::array_layout,
-      typename UValuesType::device_type,
-      Kokkos::MemoryTraits<Kokkos::RandomAccess> >;
-
-  ARowMap_Internal A_rowmap_i   = A_rowmap;
+  ARowMap_Internal  A_rowmap_i  = A_rowmap;
   AEntries_Internal A_entries_i = A_entries;
-  AValues_Internal A_values_i   = A_values;
-  LRowMap_Internal L_rowmap_i   = L_rowmap;
-  LEntries_Internal L_entries_i = L_entries;
-  LValues_Internal L_values_i   = L_values;
-  URowMap_Internal U_rowmap_i   = U_rowmap;
-  UEntries_Internal U_entries_i = U_entries;
-  UValues_Internal U_values_i   = U_values;
+  AValues_Internal  A_values_i  = A_values;
+  B_Internal        b_i         = B;
+  X_Internal        x_i         = X;
 
   KokkosSparse::Impl::GMRES_NUMERIC<
       const_handle_type, ARowMap_Internal, AEntries_Internal, AValues_Internal,
-      LRowMap_Internal, LEntries_Internal, LValues_Internal, URowMap_Internal,
-      UEntries_Internal,
-      UValues_Internal>::gmres_numeric(&tmp_handle, A_rowmap_i, A_entries_i,
-                                          A_values_i, L_rowmap_i, L_entries_i,
-                                          L_values_i, U_rowmap_i, U_entries_i,
-                                          U_values_i, deterministic);
-
-  // These may have been resized
-  L_entries = L_entries_i;
-  L_values  = L_values_i;
-  U_entries = U_entries_i;
-  U_values  = U_values_i;
+      B_Internal, X_Internal>::gmres_numeric(&tmp_handle, A_rowmap_i, A_entries_i,
+                                             A_values_i, b_i, x_i);
 
 }  // gmres_numeric
 

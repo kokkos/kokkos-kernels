@@ -59,9 +59,7 @@ namespace KokkosSparse {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
 template <class KernelHandle, class ARowMapType, class AEntriesType,
-          class AValuesType, class LRowMapType, class LEntriesType,
-          class LValuesType, class URowMapType, class UEntriesType,
-          class UValuesType>
+          class AValuesType, class BType, class XType>
 struct gmres_numeric_eti_spec_avail {
   enum : bool { value = false };
 };
@@ -90,25 +88,13 @@ struct gmres_numeric_eti_spec_avail {
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
           Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
       Kokkos::View<                                                         \
-          OFFSET_TYPE *, LAYOUT_TYPE,                                       \
+          const SCALAR_TYPE *, LAYOUT_TYPE,                                 \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
           Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
-      Kokkos::View<ORDINAL_TYPE *, LAYOUT_TYPE,                             \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,         \
-                   Kokkos::MemoryTraits<Kokkos::RandomAccess> >,            \
-      Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,                              \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,         \
-                   Kokkos::MemoryTraits<Kokkos::RandomAccess> >,            \
       Kokkos::View<                                                         \
-          OFFSET_TYPE *, LAYOUT_TYPE,                                       \
+          SCALAR_TYPE *, LAYOUT_TYPE,                                       \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
-      Kokkos::View<ORDINAL_TYPE *, LAYOUT_TYPE,                             \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,         \
-                   Kokkos::MemoryTraits<Kokkos::RandomAccess> >,            \
-      Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,                              \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,         \
-                   Kokkos::MemoryTraits<Kokkos::RandomAccess> > > {         \
+          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> > > { \
     enum : bool { value = true };                                           \
   };
 
@@ -123,54 +109,37 @@ namespace Impl {
 /// \brief Implementation of KokkosSparse::gmres_numeric
 
 template <class KernelHandle, class ARowMapType, class AEntriesType,
-          class AValuesType, class LRowMapType, class LEntriesType,
-          class LValuesType, class URowMapType, class UEntriesType,
-          class UValuesType,
+          class AValuesType, class BType, class XType,
           bool tpl_spec_avail = gmres_numeric_tpl_spec_avail<
-              KernelHandle, ARowMapType, AEntriesType, AValuesType, LRowMapType,
-              LEntriesType, LValuesType, URowMapType, UEntriesType,
-              UValuesType>::value,
+            KernelHandle, ARowMapType, AEntriesType, AValuesType, BType, XType>::value,
           bool eti_spec_avail = gmres_numeric_eti_spec_avail<
-              KernelHandle, ARowMapType, AEntriesType, AValuesType, LRowMapType,
-              LEntriesType, LValuesType, URowMapType, UEntriesType,
-              UValuesType>::value>
+            KernelHandle, ARowMapType, AEntriesType, AValuesType, BType, XType>::value>
 struct GMRES_NUMERIC {
   static void gmres_numeric(KernelHandle *handle,
-                               const ARowMapType &A_row_map,
-                               const AEntriesType &A_entries,
-                               const AValuesType &A_values,
-                               LRowMapType &L_row_map, LEntriesType &L_entries,
-                               LValuesType &L_values, URowMapType &U_row_map,
-                               UEntriesType &U_entries, UValuesType &U_values,
-                               bool deterministic = false);
+                            const ARowMapType &A_row_map,
+                            const AEntriesType &A_entries,
+                            const AValuesType &A_values,
+                            const BType &B, XType &X);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 //! Full specialization of gmres_numeric
 // Unification layer
 template <class KernelHandle, class ARowMapType, class AEntriesType,
-          class AValuesType, class LRowMapType, class LEntriesType,
-          class LValuesType, class URowMapType, class UEntriesType,
-          class UValuesType>
+          class AValuesType, class BType, class XType>
 struct GMRES_NUMERIC<KernelHandle, ARowMapType, AEntriesType, AValuesType,
-                        LRowMapType, LEntriesType, LValuesType, URowMapType,
-                        UEntriesType, UValuesType, false,
-                        KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+                     BType, XType, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   static void gmres_numeric(KernelHandle *handle,
-                               const ARowMapType &A_row_map,
-                               const AEntriesType &A_entries,
-                               const AValuesType &A_values,
-                               LRowMapType &L_row_map, LEntriesType &L_entries,
-                               LValuesType &L_values, URowMapType &U_row_map,
-                               UEntriesType &U_entries, UValuesType &U_values,
-                               bool deterministic = false) {
+                            const ARowMapType &A_row_map,
+                            const AEntriesType &A_entries,
+                            const AValuesType &A_values,
+                            BType &B, XType &X) {
     auto gmres_handle = handle->get_gmres_handle();
     using Gmres           = Experimental::GmresWrap<
         typename std::remove_pointer<decltype(gmres_handle)>::type>;
 
     Gmres::gmres_numeric(*handle, *gmres_handle, A_row_map, A_entries,
-                         A_values, L_row_map, L_entries, L_values, U_row_map,
-                         U_entries, U_values, deterministic);
+                         A_values, B, X);
   }
 };
 
@@ -205,25 +174,13 @@ struct GMRES_NUMERIC<KernelHandle, ARowMapType, AEntriesType, AValuesType,
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
           Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
       Kokkos::View<                                                         \
-          OFFSET_TYPE *, LAYOUT_TYPE,                                       \
+          const SCALAR_TYPE *, LAYOUT_TYPE,                                 \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
           Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
-      Kokkos::View<ORDINAL_TYPE *, LAYOUT_TYPE,                             \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,         \
-                   Kokkos::MemoryTraits<Kokkos::RandomAccess> >,            \
-      Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,                              \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,         \
-                   Kokkos::MemoryTraits<Kokkos::RandomAccess> >,            \
       Kokkos::View<                                                         \
-          OFFSET_TYPE *, LAYOUT_TYPE,                                       \
+          SCALAR_TYPE *, LAYOUT_TYPE,                                       \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
           Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
-      Kokkos::View<ORDINAL_TYPE *, LAYOUT_TYPE,                             \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,         \
-                   Kokkos::MemoryTraits<Kokkos::RandomAccess> >,            \
-      Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,                              \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,         \
-                   Kokkos::MemoryTraits<Kokkos::RandomAccess> >,            \
       false, true>;
 
 #define KOKKOSSPARSE_GMRES_NUMERIC_ETI_SPEC_INST(                        \
@@ -246,25 +203,13 @@ struct GMRES_NUMERIC<KernelHandle, ARowMapType, AEntriesType, AValuesType,
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
           Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
       Kokkos::View<                                                         \
-          OFFSET_TYPE *, LAYOUT_TYPE,                                       \
+          const SCALAR_TYPE *, LAYOUT_TYPE,                                 \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
           Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
-      Kokkos::View<ORDINAL_TYPE *, LAYOUT_TYPE,                             \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,         \
-                   Kokkos::MemoryTraits<Kokkos::RandomAccess> >,            \
-      Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,                              \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,         \
-                   Kokkos::MemoryTraits<Kokkos::RandomAccess> >,            \
       Kokkos::View<                                                         \
-          OFFSET_TYPE *, LAYOUT_TYPE,                                       \
+          SCALAR_TYPE *, LAYOUT_TYPE,                                       \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
           Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
-      Kokkos::View<ORDINAL_TYPE *, LAYOUT_TYPE,                             \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,         \
-                   Kokkos::MemoryTraits<Kokkos::RandomAccess> >,            \
-      Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,                              \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,         \
-                   Kokkos::MemoryTraits<Kokkos::RandomAccess> >,            \
       false, true>;
 
 #include <KokkosSparse_gmres_numeric_tpl_spec_decl.hpp>
