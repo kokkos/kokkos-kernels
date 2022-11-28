@@ -53,7 +53,6 @@
 // Include the actual functors
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 #include <KokkosSparse_gmres_numeric_impl.hpp>
-#include <KokkosSparse_gmres_symbolic_impl.hpp>
 #endif
 
 namespace KokkosSparse {

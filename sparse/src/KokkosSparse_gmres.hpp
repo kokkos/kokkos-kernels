@@ -45,10 +45,9 @@
 /// \file KokkosSparse_gmres.hpp
 /// \brief GMRES Ax = b solver
 ///
-/// This file provides KokkosSparse::gmres.  This function performs a
+/// This file provides KokkosSparse::gmres_numeric.  This function performs a
 /// local (no MPI) solve of Ax = b for sparse A. It is expected that A is in
-/// compressed row sparse ("Crs") format. It is expected that symbolic
-/// is called before numeric.
+/// compressed row sparse ("Crs") format.
 ///
 /// This algorithm is described in the paper:
 /// GMRES - A Generalized Minimal Residual Algorithm for Solving Nonsymmetric Linear Systems - Saad, Schultz
@@ -60,7 +59,6 @@
 
 #include "KokkosKernels_helpers.hpp"
 #include "KokkosKernels_Error.hpp"
-#include "KokkosSparse_gmres_symbolic_spec.hpp"
 #include "KokkosSparse_gmres_numeric_spec.hpp"
 
 namespace KokkosSparse {
@@ -69,127 +67,6 @@ namespace Experimental {
 #define KOKKOSKERNELS_GMRES_SAME_TYPE(A, B)      \
   std::is_same<typename std::remove_const<A>::type, \
                typename std::remove_const<B>::type>::value
-
-template <typename KernelHandle, typename ARowMapType, typename AEntriesType,
-          typename LRowMapType, typename URowMapType>
-void gmres_symbolic(KernelHandle* handle, ARowMapType& A_rowmap,
-                       AEntriesType& A_entries, LRowMapType& L_rowmap,
-                       URowMapType& U_rowmap) {
-  using size_type    = typename KernelHandle::size_type;
-  using ordinal_type = typename KernelHandle::nnz_lno_t;
-
-  static_assert(KOKKOSKERNELS_GMRES_SAME_TYPE(
-                    typename ARowMapType::non_const_value_type, size_type),
-                "gmres_symbolic: A size_type must match KernelHandle "
-                "size_type (const doesn't matter)");
-  static_assert(KOKKOSKERNELS_GMRES_SAME_TYPE(
-                    typename AEntriesType::non_const_value_type, ordinal_type),
-                "gmres_symbolic: A entry type must match KernelHandle entry "
-                "type (aka nnz_lno_t, and const doesn't matter)");
-
-  static_assert(KOKKOSKERNELS_GMRES_SAME_TYPE(
-                    typename LRowMapType::non_const_value_type, size_type),
-                "gmres_symbolic: L size_type must match KernelHandle "
-                "size_type (const doesn't matter)");
-
-  static_assert(KOKKOSKERNELS_GMRES_SAME_TYPE(
-                    typename URowMapType::non_const_value_type, size_type),
-                "gmres_symbolic: U size_type must match KernelHandle "
-                "size_type (const doesn't matter)");
-
-  static_assert(Kokkos::is_view<ARowMapType>::value,
-                "gmres_symbolic: A_rowmap is not a Kokkos::View.");
-  static_assert(Kokkos::is_view<AEntriesType>::value,
-                "gmres_symbolic: A_entries is not a Kokkos::View.");
-  static_assert(Kokkos::is_view<LRowMapType>::value,
-                "gmres_symbolic: L_rowmap is not a Kokkos::View.");
-  static_assert(Kokkos::is_view<URowMapType>::value,
-                "gmres_symbolic: U_rowmap is not a Kokkos::View.");
-
-  static_assert(
-      (int)LRowMapType::rank == (int)ARowMapType::rank,
-      "gmres_symbolic: The ranks of L_rowmap and A_rowmap do not match.");
-
-  static_assert(
-      (int)LRowMapType::rank == (int)URowMapType::rank,
-      "gmres_symbolic: The ranks of L_rowmap and U_rowmap do not match.");
-
-  static_assert(LRowMapType::rank == 1,
-                "gmres_symbolic: A_rowmap, L_rowmap and U_rowmap must all "
-                "have rank 1.");
-
-  static_assert(std::is_same<typename LRowMapType::value_type,
-                             typename LRowMapType::non_const_value_type>::value,
-                "gmres_symbolic: The output L_rowmap must be nonconst.");
-  static_assert(std::is_same<typename URowMapType::value_type,
-                             typename URowMapType::non_const_value_type>::value,
-                "gmres_symbolic: The output U_rowmap must be nonconst.");
-  static_assert(std::is_same<typename LRowMapType::device_type,
-                             typename ARowMapType::device_type>::value,
-                "gmres_symbolic: Views LRowMapType and ARowMapType have "
-                "different device_types.");
-  static_assert(std::is_same<typename LRowMapType::device_type,
-                             typename URowMapType::device_type>::value,
-                "gmres_symbolic: Views LRowMapType and URowMapType have "
-                "different device_types.");
-
-  static_assert(
-      std::is_same<
-          typename LRowMapType::device_type::execution_space,
-          typename KernelHandle::GMRESHandleType::execution_space>::value,
-      "gmres_symbolic: KernelHandle and Views have different execution "
-      "spaces.");
-
-  using c_size_t   = typename KernelHandle::const_size_type;
-  using c_lno_t    = typename KernelHandle::const_nnz_lno_t;
-  using c_scalar_t = typename KernelHandle::const_nnz_scalar_t;
-
-  using c_exec_t    = typename KernelHandle::HandleExecSpace;
-  using c_temp_t    = typename KernelHandle::HandleTempMemorySpace;
-  using c_persist_t = typename KernelHandle::HandlePersistentMemorySpace;
-
-  using const_handle_type =
-      typename KokkosKernels::Experimental::KokkosKernelsHandle<
-          c_size_t, c_lno_t, c_scalar_t, c_exec_t, c_temp_t, c_persist_t>;
-
-  const_handle_type tmp_handle(*handle);
-
-  using ARowMap_Internal = Kokkos::View<
-      typename ARowMapType::const_value_type*,
-      typename KokkosKernels::Impl::GetUnifiedLayout<ARowMapType>::array_layout,
-      typename ARowMapType::device_type,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
-
-  using AEntries_Internal = Kokkos::View<
-      typename AEntriesType::const_value_type*,
-      typename KokkosKernels::Impl::GetUnifiedLayout<
-          AEntriesType>::array_layout,
-      typename AEntriesType::device_type,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
-
-  using LRowMap_Internal = Kokkos::View<
-      typename LRowMapType::non_const_value_type*,
-      typename KokkosKernels::Impl::GetUnifiedLayout<LRowMapType>::array_layout,
-      typename LRowMapType::device_type,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
-
-  using URowMap_Internal = Kokkos::View<
-      typename URowMapType::non_const_value_type*,
-      typename KokkosKernels::Impl::GetUnifiedLayout<URowMapType>::array_layout,
-      typename URowMapType::device_type,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
-
-  ARowMap_Internal A_rowmap_i   = A_rowmap;
-  AEntries_Internal A_entries_i = A_entries;
-  LRowMap_Internal L_rowmap_i   = L_rowmap;
-  URowMap_Internal U_rowmap_i   = U_rowmap;
-
-  KokkosSparse::Impl::GMRES_SYMBOLIC<
-      const_handle_type, ARowMap_Internal, AEntries_Internal, LRowMap_Internal,
-      URowMap_Internal>::gmres_symbolic(&tmp_handle, A_rowmap_i, A_entries_i,
-                                           L_rowmap_i, U_rowmap_i);
-
-}  // gmres_symbolic
 
 template <typename KernelHandle, typename ARowMapType, typename AEntriesType,
           typename AValuesType, typename LRowMapType, typename LEntriesType,
@@ -364,15 +241,6 @@ void gmres_numeric(KernelHandle* handle, ARowMapType& A_rowmap,
       std::is_same<typename LRowMapType::device_type,
                    typename LValuesType::device_type>::value,
       "gmres_numeric: rowmap and values have different device types.");
-
-  // Check if symbolic has been called
-  if (handle->get_gmres_handle()->is_symbolic_complete() == false) {
-    std::ostringstream os;
-    os << "KokkosSparse::Experimental::gmres_numeric: gmres_symbolic "
-          "must be "
-          "called before gmres_numeric.";
-    KokkosKernels::Impl::throw_runtime_exception(os.str());
-  }
 
   using c_size_t   = typename KernelHandle::const_size_type;
   using c_lno_t    = typename KernelHandle::const_nnz_lno_t;
