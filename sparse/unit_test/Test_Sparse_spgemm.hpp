@@ -293,34 +293,12 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth,
       SPGEMM_KK_SPEED /* alias SPGEMM_KK_DENSE */
   };
 
-#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
-  algorithms.push_back(SPGEMM_MKL);
-#endif
-
   for (auto spgemm_algorithm : algorithms) {
     const uint64_t max_integer = Kokkos::ArithTraits<int>::max();
     std::string algo           = "UNKNOWN";
     bool is_expected_to_fail   = false;
 
     switch (spgemm_algorithm) {
-      case SPGEMM_MKL: algo = "SPGEMM_MKL";
-#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
-        if (!KokkosSparse::Impl::mkl_is_supported_value_type<scalar_t>::value) {
-          is_expected_to_fail = true;
-        }
-#endif
-        // MKL requires local ordinals to be int.
-        // Note: empty-array special case will NOT fail on this.
-        if (!std::is_same<int, lno_t>::value && !is_empy_case) {
-          is_expected_to_fail = true;
-        }
-        // if size_type is larger than int, mkl casts it to int.
-        // it will fail if casting cause overflow.
-        if (A.values.extent(0) > max_integer) {
-          is_expected_to_fail = true;
-        }
-        break;
-
       case SPGEMM_KK: algo = "SPGEMM_KK"; break;
       case SPGEMM_KK_LP: algo = "SPGEMM_KK_LP"; break;
       case SPGEMM_KK_MEMSPEED: algo = "SPGEMM_KK_MEMSPEED"; break;

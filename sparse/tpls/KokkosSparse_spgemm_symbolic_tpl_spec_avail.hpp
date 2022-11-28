@@ -126,6 +126,45 @@ SPGEMM_SYMBOLIC_AVAIL_ROCSPARSE(Kokkos::complex<float>)
 SPGEMM_SYMBOLIC_AVAIL_ROCSPARSE(Kokkos::complex<double>)
 #endif
 
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
+#define SPGEMM_SYMBOLIC_AVAIL_MKL(SCALAR, EXEC)               \
+  template <>                                                                \
+  struct spgemm_symbolic_tpl_spec_avail<                                     \
+      KokkosKernels::Experimental::KokkosKernelsHandle<                       \
+          const int, const int, const SCALAR, EXEC, Kokkos::HostSpace,  \
+          Kokkos::HostSpace>,                                                  \
+      Kokkos::View<const int *, default_layout,                               \
+                   Kokkos::Device<EXEC, Kokkos::HostSpace>,             \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
+      Kokkos::View<const int *, default_layout,                               \
+                   Kokkos::Device<EXEC, Kokkos::HostSpace>,             \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
+      Kokkos::View<const int *, default_layout,                               \
+                   Kokkos::Device<EXEC, Kokkos::HostSpace>,             \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
+      Kokkos::View<const int *, default_layout,                               \
+                   Kokkos::Device<EXEC, Kokkos::HostSpace>,             \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
+      Kokkos::View<int *, default_layout,                                     \
+                   Kokkos::Device<EXEC, Kokkos::HostSpace>,             \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {  \
+    enum : bool { value = true };                                            \
+  };
+
+#define SPGEMM_SYMBOLIC_AVAIL_MKL_E(EXEC) \
+SPGEMM_SYMBOLIC_AVAIL_MKL(float, EXEC) \
+SPGEMM_SYMBOLIC_AVAIL_MKL(double, EXEC) \
+SPGEMM_SYMBOLIC_AVAIL_MKL(Kokkos::complex<float>, EXEC) \
+SPGEMM_SYMBOLIC_AVAIL_MKL(Kokkos::complex<double>, EXEC)
+
+#ifdef KOKKOS_ENABLE_SERIAL
+SPGEMM_SYMBOLIC_AVAIL_MKL_E(Kokkos::Serial)
+#endif
+#ifdef KOKKOS_ENABLE_OPENMP
+SPGEMM_SYMBOLIC_AVAIL_MKL_E(Kokkos::OpenMP)
+#endif
+#endif
+
 }  // namespace Impl
 }  // namespace KokkosSparse
 

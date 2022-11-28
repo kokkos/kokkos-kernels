@@ -52,12 +52,8 @@
 // Include the actual functors
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 #include "KokkosSparse_spgemm_symbolic.hpp"
-#include "KokkosSparse_spgemm_CUSP_impl.hpp"
 #include "KokkosSparse_bspgemm_impl.hpp"
 #include "KokkosSparse_bspgemm_impl_seq.hpp"
-#include "KokkosSparse_spgemm_mkl_impl.hpp"
-#include "KokkosSparse_spgemm_mkl2phase_impl.hpp"
-#include "KokkosSparse_spgemm_viennaCL_impl.hpp"
 #endif
 
 namespace KokkosSparse {
@@ -242,20 +238,13 @@ struct BSPGEMM_NUMERIC<
     }
 
     switch (sh->get_algorithm_type()) {
-      case SPGEMM_CUSP:
-        throw std::runtime_error(
-            "CUSP implementation for block SpGEMM is not available");
-      case SPGEMM_MKL:
-      case SPGEMM_MKL2PHASE:
-        throw std::runtime_error(
-            "MKL implementation available for block SpGEMM is not available");
-      case SPGEMM_VIENNA:
-        throw std::runtime_error(
-            "Vienna implementation available for block SpGEMM is not "
-            "available");
-
+      case SPGEMM_SERIAL:
+      case SPGEMM_DEBUG:
+        bspgemm_debug_numeric(handle, m, n, k, blockDim, row_mapA, entriesA,
+                              valuesA, transposeA, row_mapB, entriesB, valuesB,
+                              transposeB, row_mapC, entriesC, valuesC);
+        break;
       default:
-
       {
         KokkosBSPGEMM<KernelHandle, a_size_view_t_, a_lno_view_t,
                       a_scalar_view_t, b_size_view_t_, b_lno_view_t,
@@ -264,12 +253,6 @@ struct BSPGEMM_NUMERIC<
                      transposeA, row_mapB, entriesB, valuesB, transposeB);
         kbspgemm.KokkosBSPGEMM_numeric(row_mapC, entriesC, valuesC);
       } break;
-      case SPGEMM_SERIAL:
-      case SPGEMM_DEBUG:
-        bspgemm_debug_numeric(handle, m, n, k, blockDim, row_mapA, entriesA,
-                              valuesA, transposeA, row_mapB, entriesB, valuesB,
-                              transposeB, row_mapC, entriesC, valuesC);
-        break;
     }
   }
 };

@@ -60,6 +60,10 @@
 #include "KokkosSparse_Utils_cusparse.hpp"
 #endif
 
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
+#include "KokkosSparse_Utils_mkl.hpp"
+#endif
+
 namespace KokkosSparse {
 
 // TODO:SPGEMM_KK_MEMORY2 option is for testing in openmp.
@@ -72,12 +76,10 @@ enum SPGEMMAlgorithm {
   SPGEMM_KK_LP,  // KKVARIANTS
   SPGEMM_CUSPARSE [[deprecated("cuSPARSE is now used automatically in all "
                                "supported SpGEMM calls, if enabled.")]],
-  SPGEMM_CUSP,
   SPGEMM_MKL [[deprecated("MKL is now used automatically in all supported "
                           "SpGEMM calls, if enabled.")]],
   SPGEMM_MKL2PHASE [[deprecated("MKL is now used automatically in all "
                                 "supported SpGEMM calls, if enabled.")]],
-  SPGEMM_VIENNA,  // TPLS
   SPGEMM_ROCSPARSE [[deprecated("rocSPARSE is now used automatically in all "
                                 "supported SpGEMM calls, if enabled.")]],
 
@@ -294,6 +296,21 @@ class SPGEMMHandle {
   };
 #endif
 #endif
+
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
+  struct mklSpgemmHandleType {
+    //Allow mkl_sparse_sp2m (in SPARSE_STAGE_NNZ_COUNT mode) to construct C.
+    //Then this assumes ownership of it and will destroy it later.
+    mklSpgemmHandleType(const sparse_matrix_t& C_) : C(C_) {}
+
+    ~mklSpgemmHandleType() { 
+      KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_destroy(C));
+    }
+
+    sparse_matrix_t C;
+  };
+#endif
+
  private:
   SPGEMMAlgorithm algorithm_type;
   SPGEMMAccumulator accumulator_type;
@@ -405,6 +422,13 @@ class SPGEMMHandle {
  public:
 #endif
 
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
+ private:
+  mklSpgemmHandleType *mkl_spgemm_handle;
+
+ public:
+#endif
+
   void set_c_column_indices(nnz_lno_temp_work_view_t c_col_indices_) {
     this->c_column_indices = c_col_indices_;
   }
@@ -466,9 +490,6 @@ class SPGEMMHandle {
   void get_compressed_c(row_lno_temp_work_view_t &compressed_c_rowmap_) {
     compressed_c_rowmap_ = compressed_c_rowmap;
   }
-
-  // TODO: store transpose here.
-  void get_c_transpose_symbolic() {}
 
   void set_sort_lower_triangular(int option) {
     this->sort_lower_triangular = option;
@@ -590,6 +611,10 @@ class SPGEMMHandle {
         ,
         cusparse_spgemm_handle(NULL)
 #endif
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
+        ,
+        mkl_spgemm_handle(NULL)
+#endif
   {
     if (gs == SPGEMM_DEFAULT) {
       this->choose_default_algorithm();
@@ -602,6 +627,9 @@ class SPGEMMHandle {
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
     this->destroy_cusparse_spgemm_handle();
+#endif
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
+    this->destroy_mkl_spgemm_handle();
 #endif
   };
 
@@ -639,6 +667,23 @@ class SPGEMMHandle {
 
   cuSparseSpgemmHandleType *get_cusparse_spgemm_handle() {
     return this->cusparse_spgemm_handle;
+  }
+#endif
+
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
+  void create_mkl_spgemm_handle(sparse_matrix_t C) {
+    this->destroy_mkl_spgemm_handle();
+    this->mkl_spgemm_handle = new mklSpgemmHandleType(C);
+  }
+  void destroy_mkl_spgemm_handle() {
+    if (this->mkl_spgemm_handle != NULL) {
+      delete this->mkl_spgemm_handle;
+      this->mkl_spgemm_handle = NULL;
+    }
+  }
+
+  mklSpgemmHandleType *get_mkl_spgemm_handle() {
+    return this->mkl_spgemm_handle;
   }
 #endif
 

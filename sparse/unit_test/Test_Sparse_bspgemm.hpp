@@ -211,8 +211,7 @@ void test_bspgemm(lno_t blkDim, lno_t m, lno_t k, lno_t n, size_type nnz,
   std::vector<SPGEMMAlgorithm> algorithms = {
       SPGEMM_KK,
       SPGEMM_KK_MEMORY /* alias SPGEMM_KK_MEMSPEED */,
-      SPGEMM_KK_SPEED /* alias SPGEMM_KK_DENSE */,
-      SPGEMM_MKL /* verify failure in case of missing build */,
+      SPGEMM_KK_SPEED /* alias SPGEMM_KK_DENSE */
   };
 
   if (!KokkosKernels::Impl::kk_is_gpu_exec_space<
@@ -228,28 +227,6 @@ void test_bspgemm(lno_t blkDim, lno_t m, lno_t k, lno_t n, size_type nnz,
     bool is_expected_to_fail   = false;
 
     switch (spgemm_algorithm) {
-      case SPGEMM_MKL:
-        algo                = "SPGEMM_MKL";
-        is_expected_to_fail = !is_empy_case;  // TODO: add block MKL impl
-#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
-        if (!KokkosSparse::Impl::mkl_is_supported_value_type<scalar_t>::value) {
-          is_expected_to_fail = true;
-        }
-#else
-        is_expected_to_fail = true;  // fail: MKL not enabled in build
-#endif
-        // MKL requires local ordinals to be int.
-        // Note: empty-array special case will NOT fail on this.
-        if (!std::is_same<int, lno_t>::value && !is_empy_case) {
-          is_expected_to_fail = true;
-        }
-        // if size_type is larger than int, mkl casts it to int.
-        // it will fail if casting cause overflow.
-        if (A.values.extent(0) > max_integer) {
-          is_expected_to_fail = true;
-        }
-        break;
-
       case SPGEMM_KK: algo = "SPGEMM_KK"; break;
       case SPGEMM_KK_LP: algo = "SPGEMM_KK_LP"; break;
       case SPGEMM_KK_MEMSPEED: algo = "SPGEMM_KK_MEMSPEED"; break;

@@ -154,12 +154,13 @@ struct SPGEMM_SYMBOLIC<KernelHandle, a_size_view_t_, a_lno_view_t,
       return;
     }
     switch (sh->get_algorithm_type()) {
-      case SPGEMM_MKL2PHASE:
-        mkl2phase_symbolic(sh, m, n, k, row_mapA, entriesA, transposeA,
-                           row_mapB, entriesB, transposeB, row_mapC,
-                           handle->get_verbose());
-        break;
+      case SPGEMM_SERIAL:
+      case SPGEMM_DEBUG:
+        spgemm_debug_symbolic(handle, m, n, k, row_mapA, entriesA,
 
+                              transposeA, row_mapB, entriesB, transposeB,
+                              row_mapC);
+        break;
       default: {
         KokkosSPGEMM<KernelHandle, a_size_view_t_, a_lno_view_t,
                      typename KernelHandle::in_scalar_nnz_view_t,
@@ -169,21 +170,6 @@ struct SPGEMM_SYMBOLIC<KernelHandle, a_size_view_t_, a_lno_view_t,
                     entriesB, transposeB);
         kspgemm.KokkosSPGEMM_symbolic(row_mapC);
       } break;
-      case SPGEMM_SERIAL:
-      case SPGEMM_DEBUG:
-        spgemm_debug_symbolic(handle, m, n, k, row_mapA, entriesA,
-
-                              transposeA, row_mapB, entriesB, transposeB,
-                              row_mapC);
-        break;
-      case SPGEMM_MKL:
-#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
-        mkl_symbolic(sh, m, n, k, row_mapA, entriesA, transposeA, row_mapB,
-                     entriesB, transposeB, row_mapC, handle->get_verbose());
-        break;
-#else
-        throw std::runtime_error("MKL was not enabled in this build!");
-#endif
     }
     sh->set_call_symbolic();
     // The KokkosKernels implementation of symbolic always populates rowptrs.

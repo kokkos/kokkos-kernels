@@ -84,6 +84,7 @@ class MKL_SPGEMM {
                            b_rowmap_view_type row_mapB,
                            b_index_view_type entriesB, bool transposeB,
                            c_rowmap_view_type row_mapC, bool verbose = false) {
+    std::cout << "Hello from MKL symbolic, single-phase.\n";
     if (m < 1 || n < 1 || k < 1 || entriesA.extent(0) < 1 ||
         entriesB.extent(0) < 1) {
       // set correct values in non-empty 0-nnz corner case

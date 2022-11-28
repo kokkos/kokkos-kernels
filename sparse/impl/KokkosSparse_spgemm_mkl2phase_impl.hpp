@@ -150,6 +150,7 @@ void mkl2phase_symbolic(
     */
     Kokkos::Timer timer1;
 
+    std::cout << "Hello from MKL symbolic. Version < 2018.\n";
     mkl_dcsrmultcsr(&trans, &request, &sort, &mklm, &mkln, &mklk, mynullptr,
                     a_adj, a_xadj, mynullptr, b_adj, b_xadj, mynullptr,
                     mynulladj, c_xadj, &nzmax, &info);
@@ -172,6 +173,7 @@ void mkl2phase_symbolic(
 #endif  // __INTEL_MKL__ < 2018
 
 #if __INTEL_MKL__ == 2018 && __INTEL_MKL_UPDATE__ >= 2
+    std::cout << "Hello from MKL symbolic. Version 2018 update 2.\n";
     MKL_INT mklm = m, mkln = n;
     double *mynullptr = NULL;
 
@@ -287,6 +289,7 @@ void mkl2phase_symbolic(
       throw std::runtime_error("Error at mkl_sparse_destroy C\n");
     }
 #elif __INTEL_MKL__ == 2018 && __INTEL_MKL_UPDATE__ < 2
+    std::cout << "Hello from MKL symbolic. Version 2018 update < 2, so can't use.\n";
     throw std::runtime_error(
         "Intel MKL version 18 must have update 2 - use intel/18.2.xyz\n");
     (void)k;
@@ -294,6 +297,7 @@ void mkl2phase_symbolic(
     (void)transposeB;
     (void)verbose;
 #else
+    std::cout << "Hello from MKL symbolic. Version > 2018, so can't use.\n";
     throw std::runtime_error(
         "Intel MKL versions > 18 are not yet tested/supported\n");
     (void)k;

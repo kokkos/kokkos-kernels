@@ -52,12 +52,8 @@
 // Include the actual functors
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 #include "KokkosSparse_spgemm_symbolic.hpp"
-#include "KokkosSparse_spgemm_CUSP_impl.hpp"
 #include "KokkosSparse_spgemm_impl.hpp"
 #include "KokkosSparse_spgemm_impl_seq.hpp"
-#include "KokkosSparse_spgemm_mkl_impl.hpp"
-#include "KokkosSparse_spgemm_mkl2phase_impl.hpp"
-#include "KokkosSparse_spgemm_viennaCL_impl.hpp"
 #endif
 
 namespace KokkosSparse {
@@ -179,38 +175,14 @@ struct SPGEMM_NUMERIC<
       return;
     }
     switch (sh->get_algorithm_type()) {
-      case SPGEMM_CUSP:
-        CUSP_apply<spgemmHandleType, a_size_view_t_, a_lno_view_t,
-                   a_scalar_view_t, b_size_view_t_, b_lno_view_t,
-                   b_scalar_view_t, c_size_view_t_, c_lno_view_t,
-                   c_scalar_view_t>(sh, m, n, k, row_mapA, entriesA, valuesA,
-                                    transposeA, row_mapB, entriesB, valuesB,
-                                    transposeB, row_mapC, entriesC, valuesC);
-        break;
-      case SPGEMM_MKL:
-#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
-        mkl_numeric(sh, m, n, k, row_mapA, entriesA, valuesA, transposeA,
-                    row_mapB, entriesB, valuesB, transposeB, row_mapC, entriesC,
-                    valuesC, handle->get_verbose());
-        break;
-#else
-        throw std::runtime_error("MKL was not enabled in this build!");
-#endif
-      case SPGEMM_MKL2PHASE:
-        mkl2phase_apply(sh, m, n, k, row_mapA, entriesA, valuesA, transposeA,
-                        row_mapB, entriesB, valuesB, transposeB, row_mapC,
-                        entriesC, valuesC, handle->get_verbose());
-        break;
+      case SPGEMM_SERIAL:
+      case SPGEMM_DEBUG:
+        spgemm_debug_numeric(handle, m, n, k, row_mapA, entriesA, valuesA,
 
-      case SPGEMM_VIENNA:
-        viennaCL_apply<spgemmHandleType>(
-            sh, m, n, k, row_mapA, entriesA, valuesA, transposeA, row_mapB,
-            entriesB, valuesB, transposeB, row_mapC, entriesC, valuesC,
-            handle->get_verbose());
+                             transposeA, row_mapB, entriesB, valuesB,
+                             transposeB, row_mapC, entriesC, valuesC);
         break;
-
       default:
-
       {
         KokkosSPGEMM<KernelHandle, a_size_view_t_, a_lno_view_t,
                      a_scalar_view_t, b_size_view_t_, b_lno_view_t,
@@ -219,13 +191,6 @@ struct SPGEMM_NUMERIC<
                     row_mapB, entriesB, valuesB, transposeB);
         kspgemm.KokkosSPGEMM_numeric(row_mapC, entriesC, valuesC);
       } break;
-      case SPGEMM_SERIAL:
-      case SPGEMM_DEBUG:
-        spgemm_debug_numeric(handle, m, n, k, row_mapA, entriesA, valuesA,
-
-                             transposeA, row_mapB, entriesB, valuesB,
-                             transposeB, row_mapC, entriesC, valuesC);
-        break;
     }
     sh->set_call_numeric();
     sh->set_computed_entries();
