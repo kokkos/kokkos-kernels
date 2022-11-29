@@ -1,7 +1,8 @@
-files=`find . -path './tpls' -prune -o -name '*.cpp' -o -name '*.pc.in' -o -name '*.h' -o -name '*.hpp' -o -name '*.cc'`
+files=`find . -path './tpls' -prune -o -name '*.cpp.in' -o -name '*.hpp.in' -o -name '*.cpp' -o -name '*.pc.in' -o -name '*.h' -o -name '*.hpp' -o -name '*.cc'`
 echo "" &> diff_files
 echo "" &> clean_files
 echo "" &> updated_files
+echo "" &> noheader_files
 tmp=`cat scripts/new_header | wc -l`
 NNEW=$(($tmp))
 tmp=`cat scripts/old_header | wc -l`
@@ -12,6 +13,7 @@ for file in $files; do
   if [ "$tmp" -eq "0" ]; then
     { head -n +$NNEW scripts/new_header; cat $file; } > tmp
     cp tmp $file
+    echo $file >> noheader_files
   else
     head -n +$NOLD $file &> header
     diff header scripts/old_header &> old_header_diff
