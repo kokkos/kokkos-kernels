@@ -213,6 +213,7 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k,
                               const ConstEntriesType &entriesB,
                               const RowMapType &row_mapC,
                               bool /* computeRowptrs */) {
+  using scalar_type = typename KernelHandle::nnz_scalar_t;
   using Offset = typename KernelHandle::size_type;
   auto sh      = handle->get_spgemm_handle();
   if (sh->is_symbolic_called() && sh->are_rowptrs_computed()) return;
