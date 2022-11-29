@@ -233,7 +233,6 @@ class Coo2Csr {
         value = n_unique_rows_per_team(thread_id);
     }
 
-#if 0
     KOKKOS_INLINE_FUNCTION
     void operator()(const typename phase1Tags::s4RowCnt &,
                     const s4MemberType &member) const {
@@ -245,20 +244,42 @@ class Coo2Csr {
 
       KeyViewScratch hmap_keys(member.team_scratch(0), max_n_unique_rows);
       UsetViewScratch hmap_values(member.team_scratch(0), max_n_unique_rows);
-      SizeViewScratch hmap_ll(member.team_scratch(0), pow2_max_n_unique_rows * 2 + 1);
+      SizeViewScratch hmap_ll(member.team_scratch(0),
+                              pow2_max_n_unique_rows + max_n_unique_rows + 1);
       volatile SizeType *used_size = hmap_ll.data() + member.league_rank();
       auto *hmap_begins            = hmap_ll.data() + member.league_size();
-      auto *hmap_nexts             = hmap_begins + pow2_max_n_unique_rows; // hash_nexts is max_n_unique_rows long
-
+      auto *hmap_nexts =
+          hmap_begins +
+          pow2_max_n_unique_rows;  // hash_nexts is max_n_unique_rows long
       // Initialize hash_begins to -1
-      Kokkos::parallel_for(Kokkos::TeamVectorRange(member, 0, pow2_max_n_unique_rows),
-                           [&](const int &tid) { hmap_begins[tid] = -1; });
-      // Wait for each team's hashmap to be initialized.
-      member.team_barrier();
-
-      // This is a hashmap key'd on row ids. Each value is a unordered set of column ids.
+      Kokkos::parallel_for(
+          Kokkos::TeamVectorRange(member, 0, pow2_max_n_unique_rows),
+          [&](const int &tid) { hmap_begins[tid] = -1; });
+      // This is a hashmap key'd on row ids. Each value is a unordered set of
+      // column ids.
       HmapType hmap(max_n_unique_rows, pow2_max_n_unique_rows - 1, hmap_begins,
                     hmap_nexts, hmap_keys.data(), hmap_values.data());
+
+      // TODO: How to allocate this dynamically?
+      KeyViewScratch uset_keys(member.team_scratch(0),
+                               max_n_unique_rows * max_row_cnt);
+      SizeViewScratch uset_ll(
+          member.team_scratch(0),
+          max_n_unique_rows * (pow2_max_row_cnt + max_row_cnt + 1));
+      volatile SizeType *used_size = uset_ll.data() + member.league_rank();
+      auto *uset_begins            = uset_ll.data() + member.league_size();
+      auto *uset_nexts =
+          uset_begins + pow2_max_row_cnt;  // hash_nexts is max_row_cnt long
+      // Initialize hash_begins to -1
+      Kokkos::parallel_for(Kokkos::TeamVectorRange(member, 0, pow2_max_row_cnt),
+                           [&](const int &tid) { uset_begins[tid] = -1; });
+      // This is an unordered set key'd on col ids. Each value is a unordered
+      // set of column ids.
+      HmapType uset(max_row_cnt, pow2_max_row_cnt - 1, uset_begins, uset_nexts,
+                    uset_keys.data(), uset_values.data());
+
+      // Wait for each team's hashmap to be initialized.
+      member.team_barrier();
 
 #if 0
       std::cout << "------------------" << std::endl;
@@ -283,7 +304,6 @@ class Coo2Csr {
             // std::cerr << "unique_row_cnt: " << unique_row_cnt << std::endl;
           });
     }
-#endif
   };
 
   struct phase2Tags {
