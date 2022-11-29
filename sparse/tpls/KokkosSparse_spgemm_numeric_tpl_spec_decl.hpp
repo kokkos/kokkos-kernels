@@ -351,8 +351,6 @@ void spgemm_numeric_rocsparse(
     bin_nonzero_index_view_type colidxB, bin_nonzero_value_view_type valuesB,
     cin_row_index_view_type rowptrC, cin_nonzero_index_view_type colidxC,
     cin_nonzero_value_view_type valuesC) {
-  using index_type  = typename KernelHandle::nnz_lno_t;
-  using size_type   = typename KernelHandle::size_type;
   using scalar_type = typename KernelHandle::nnz_scalar_t;
   using rocsparse_scalar_type =
       typename kokkos_to_rocsparse_type<scalar_type>::type;

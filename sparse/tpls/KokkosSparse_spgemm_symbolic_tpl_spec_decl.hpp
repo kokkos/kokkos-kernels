@@ -211,7 +211,8 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k,
                               const ConstEntriesType &entriesA,
                               const ConstRowMapType &row_mapB,
                               const ConstEntriesType &entriesB,
-                              const RowMapType &row_mapC) {
+                              const RowMapType &row_mapC,
+                              bool /* computeRowptrs */) {
   using Offset = typename KernelHandle::size_type;
   auto sh      = handle->get_spgemm_handle();
   if (sh->is_symbolic_called() && sh->are_rowptrs_computed()) return;
@@ -472,7 +473,6 @@ void spgemm_symbolic_rocsparse(
     bin_row_index_view_type rowptrB, bin_nonzero_index_view_type colidxB,
     cin_row_index_view_type rowptrC) {
   using index_type  = typename KernelHandle::nnz_lno_t;
-  using size_type   = typename KernelHandle::size_type;
   using scalar_type = typename KernelHandle::nnz_scalar_t;
   using rocsparse_scalar_type =
       typename kokkos_to_rocsparse_type<scalar_type>::type;
