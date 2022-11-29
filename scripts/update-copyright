@@ -8,25 +8,31 @@ tmp=`cat scripts/old_header | wc -l`
 NOLD=$(($tmp))
 NOLD1=$(($NOLD+1))
 for file in $files; do
-  head -n +$NOLD $file &> header
-  diff header scripts/old_header &> old_header_diff
-  count=`cat old_header_diff | wc -l`
-  #echo $file " " COUNT " " $count >> diff_headers
-  if [ "$count" -eq "0" ]; then
-    echo $file >> clean_files
-    cat old_header_diff >> clean_files
-    { head -n +$NNEW scripts/new_header; tail -n +$NOLD1 $file; } > tmp
+  tmp=`cat $file | grep "//@HEADER" | wc -l`
+  if [ "$tmp" -eq "0" ]; then
+    { head -n +$NNEW scripts/new_header; cat $file; } > tmp
     cp tmp $file
   else
-    head -n +$NNEW $file &> header
-    diff header scripts/new_header &> new_header_diff  
-    count=`cat new_header_diff | wc -l`
-    if [ "$count" -eq "0" ]; then  
-      echo $file >> updated_files
+    head -n +$NOLD $file &> header
+    diff header scripts/old_header &> old_header_diff
+    count=`cat old_header_diff | wc -l`
+    #echo $file " " COUNT " " $count >> diff_headers
+    if [ "$count" -eq "0" ]; then
+      echo $file >> clean_files
+      cat old_header_diff >> clean_files
+      { head -n +$NNEW scripts/new_header; tail -n +$NOLD1 $file; } > tmp
+      cp tmp $file
     else
-      echo $file >> diff_files
-      #cat header_diff >> diff_files
-      tr -d '\n' < diff_files  | sed 's|\.\/| |g' &> modify_files
+      head -n +$NNEW $file &> header
+      diff header scripts/new_header &> new_header_diff  
+      count=`cat new_header_diff | wc -l`
+      if [ "$count" -eq "0" ]; then  
+        echo $file >> updated_files
+      else
+        echo $file >> diff_files
+        #cat header_diff >> diff_files
+        tr -d '\n' < diff_files  | sed 's|\.\/| |g' &> modify_files
+      fi
     fi
   fi
 done
