@@ -58,60 +58,188 @@ namespace Impl {
 
 //=============================================================================
 // Overload rocsparse_Xcsrgemm_buffer_size() over scalar types
-#define ROCSPARSE_XCSRGEMM_BUFFER_SIZE_SPEC(scalar_type, TOKEN)               \
-  inline rocsparse_status rocsparse_Xcsrgemm_buffer_size(                     \
-      rocsparse_handle handle, rocsparse_operation trans_A,                   \
-      rocsparse_operation trans_B, rocsparse_int m, rocsparse_int n,          \
-      rocsparse_int k, const scalar_type *alpha,                              \
-      const rocsparse_mat_descr descr_A, rocsparse_int nnz_A,                 \
-      const rocsparse_int *csr_row_ptr_A, const rocsparse_int *csr_col_ind_A, \
-      const rocsparse_mat_descr descr_B, rocsparse_int nnz_B,                 \
-      const rocsparse_int *csr_row_ptr_B, const rocsparse_int *csr_col_ind_B, \
-      const scalar_type *beta, const rocsparse_mat_descr descr_D,             \
-      rocsparse_int nnz_D, const rocsparse_int *csr_row_ptr_D,                \
-      const rocsparse_int *csr_col_ind_D, rocsparse_mat_info info_C,          \
-      size_t *buffer_size) {                                                  \
-    return rocsparse_##TOKEN##csrgemm_buffer_size(                            \
-        handle, trans_A, trans_B, m, n, k, alpha, descr_A, nnz_A,             \
-        csr_row_ptr_A, csr_col_ind_A, descr_B, nnz_B, csr_row_ptr_B,          \
-        csr_col_ind_B, beta, descr_D, nnz_D, csr_row_ptr_D, csr_col_ind_D,    \
-        info_C, buffer_size);                                                 \
-  }
-ROCSPARSE_XCSRGEMM_BUFFER_SIZE_SPEC(float, s)
-ROCSPARSE_XCSRGEMM_BUFFER_SIZE_SPEC(double, d)
-ROCSPARSE_XCSRGEMM_BUFFER_SIZE_SPEC(rocsparse_float_complex, c)
-ROCSPARSE_XCSRGEMM_BUFFER_SIZE_SPEC(rocsparse_double_complex, z)
+inline rocsparse_status rocsparse_Xcsrgemm_buffer_size(
+    rocsparse_handle handle, rocsparse_operation trans_A,
+    rocsparse_operation trans_B, rocsparse_int m, rocsparse_int n,
+    rocsparse_int k, const float *alpha, const rocsparse_mat_descr descr_A,
+    rocsparse_int nnz_A, const rocsparse_int *csr_row_ptr_A,
+    const rocsparse_int *csr_col_ind_A, const rocsparse_mat_descr descr_B,
+    rocsparse_int nnz_B, const rocsparse_int *csr_row_ptr_B,
+    const rocsparse_int *csr_col_ind_B, const float *beta,
+    const rocsparse_mat_descr descr_D, rocsparse_int nnz_D,
+    const rocsparse_int *csr_row_ptr_D, const rocsparse_int *csr_col_ind_D,
+    rocsparse_mat_info info_C, size_t *buffer_size) {
+  return rocsparse_scsrgemm_buffer_size(
+      handle, trans_A, trans_B, m, n, k, alpha, descr_A, nnz_A, csr_row_ptr_A,
+      csr_col_ind_A, descr_B, nnz_B, csr_row_ptr_B, csr_col_ind_B, beta,
+      descr_D, nnz_D, csr_row_ptr_D, csr_col_ind_D, info_C, buffer_size);
+}
+
+inline rocsparse_status rocsparse_Xcsrgemm_buffer_size(
+    rocsparse_handle handle, rocsparse_operation trans_A,
+    rocsparse_operation trans_B, rocsparse_int m, rocsparse_int n,
+    rocsparse_int k, const double *alpha, const rocsparse_mat_descr descr_A,
+    rocsparse_int nnz_A, const rocsparse_int *csr_row_ptr_A,
+    const rocsparse_int *csr_col_ind_A, const rocsparse_mat_descr descr_B,
+    rocsparse_int nnz_B, const rocsparse_int *csr_row_ptr_B,
+    const rocsparse_int *csr_col_ind_B, const double *beta,
+    const rocsparse_mat_descr descr_D, rocsparse_int nnz_D,
+    const rocsparse_int *csr_row_ptr_D, const rocsparse_int *csr_col_ind_D,
+    rocsparse_mat_info info_C, size_t *buffer_size) {
+  return rocsparse_dcsrgemm_buffer_size(
+      handle, trans_A, trans_B, m, n, k, alpha, descr_A, nnz_A, csr_row_ptr_A,
+      csr_col_ind_A, descr_B, nnz_B, csr_row_ptr_B, csr_col_ind_B, beta,
+      descr_D, nnz_D, csr_row_ptr_D, csr_col_ind_D, info_C, buffer_size);
+}
+
+inline rocsparse_status rocsparse_Xcsrgemm_buffer_size(
+    rocsparse_handle handle, rocsparse_operation trans_A,
+    rocsparse_operation trans_B, rocsparse_int m, rocsparse_int n,
+    rocsparse_int k, const Kokkos::complex<float> *alpha,
+    const rocsparse_mat_descr descr_A, rocsparse_int nnz_A,
+    const rocsparse_int *csr_row_ptr_A, const rocsparse_int *csr_col_ind_A,
+    const rocsparse_mat_descr descr_B, rocsparse_int nnz_B,
+    const rocsparse_int *csr_row_ptr_B, const rocsparse_int *csr_col_ind_B,
+    const Kokkos::complex<float> *beta, const rocsparse_mat_descr descr_D,
+    rocsparse_int nnz_D, const rocsparse_int *csr_row_ptr_D,
+    const rocsparse_int *csr_col_ind_D, rocsparse_mat_info info_C,
+    size_t *buffer_size) {
+  return rocsparse_ccsrgemm_buffer_size(
+      handle, trans_A, trans_B, m, n, k,
+      reinterpret_cast<const rocsparse_float_complex *>(alpha), descr_A, nnz_A,
+      csr_row_ptr_A, csr_col_ind_A, descr_B, nnz_B, csr_row_ptr_B,
+      csr_col_ind_B, reinterpret_cast<const rocsparse_float_complex *>(beta),
+      descr_D, nnz_D, csr_row_ptr_D, csr_col_ind_D, info_C, buffer_size);
+}
+
+inline rocsparse_status rocsparse_Xcsrgemm_buffer_size(
+    rocsparse_handle handle, rocsparse_operation trans_A,
+    rocsparse_operation trans_B, rocsparse_int m, rocsparse_int n,
+    rocsparse_int k, const Kokkos::complex<double> *alpha,
+    const rocsparse_mat_descr descr_A, rocsparse_int nnz_A,
+    const rocsparse_int *csr_row_ptr_A, const rocsparse_int *csr_col_ind_A,
+    const rocsparse_mat_descr descr_B, rocsparse_int nnz_B,
+    const rocsparse_int *csr_row_ptr_B, const rocsparse_int *csr_col_ind_B,
+    const Kokkos::complex<double> *beta, const rocsparse_mat_descr descr_D,
+    rocsparse_int nnz_D, const rocsparse_int *csr_row_ptr_D,
+    const rocsparse_int *csr_col_ind_D, rocsparse_mat_info info_C,
+    size_t *buffer_size) {
+  return rocsparse_zcsrgemm_buffer_size(
+      handle, trans_A, trans_B, m, n, k,
+      reinterpret_cast<const rocsparse_double_complex *>(alpha), descr_A, nnz_A,
+      csr_row_ptr_A, csr_col_ind_A, descr_B, nnz_B, csr_row_ptr_B,
+      csr_col_ind_B, reinterpret_cast<const rocsparse_double_complex *>(beta),
+      descr_D, nnz_D, csr_row_ptr_D, csr_col_ind_D, info_C, buffer_size);
+}
 
 //=============================================================================
 // Overload rocsparse_Xcsrgemm_numeric() over scalar types
-#define ROCSPARSE_XCSRGEMM_NUMERIC_SPEC(scalar_type, TOKEN)                   \
-  inline rocsparse_status rocsparse_Xcsrgemm_numeric(                         \
-      rocsparse_handle handle, rocsparse_operation trans_A,                   \
-      rocsparse_operation trans_B, rocsparse_int m, rocsparse_int n,          \
-      rocsparse_int k, const scalar_type *alpha,                              \
-      const rocsparse_mat_descr descr_A, rocsparse_int nnz_A,                 \
-      const scalar_type *csr_val_A, const rocsparse_int *csr_row_ptr_A,       \
-      const rocsparse_int *csr_col_ind_A, const rocsparse_mat_descr descr_B,  \
-      rocsparse_int nnz_B, const scalar_type *csr_val_B,                      \
-      const rocsparse_int *csr_row_ptr_B, const rocsparse_int *csr_col_ind_B, \
-      const scalar_type *beta, const rocsparse_mat_descr descr_D,             \
-      rocsparse_int nnz_D, const scalar_type *csr_val_D,                      \
-      const rocsparse_int *csr_row_ptr_D, const rocsparse_int *csr_col_ind_D, \
-      const rocsparse_mat_descr descr_C, rocsparse_int nnz_C,                 \
-      scalar_type *csr_val_C, const rocsparse_int *csr_row_ptr_C,             \
-      const rocsparse_int *csr_col_ind_C, const rocsparse_mat_info info_C,    \
-      void *buffer) {                                                         \
-    return rocsparse_##TOKEN##csrgemm_numeric(                                \
-        handle, trans_A, trans_B, m, n, k, alpha, descr_A, nnz_A, csr_val_A,  \
-        csr_row_ptr_A, csr_col_ind_A, descr_B, nnz_B, csr_val_B,              \
-        csr_row_ptr_B, csr_col_ind_B, beta, descr_D, nnz_D, csr_val_D,        \
-        csr_row_ptr_D, csr_col_ind_D, descr_C, nnz_C, csr_val_C,              \
-        csr_row_ptr_C, csr_col_ind_C, info_C, buffer);                        \
-  }
-ROCSPARSE_XCSRGEMM_NUMERIC_SPEC(float, s)
-ROCSPARSE_XCSRGEMM_NUMERIC_SPEC(double, d)
-ROCSPARSE_XCSRGEMM_NUMERIC_SPEC(rocsparse_float_complex, c)
-ROCSPARSE_XCSRGEMM_NUMERIC_SPEC(rocsparse_double_complex, z)
+inline rocsparse_status rocsparse_Xcsrgemm_numeric(
+    rocsparse_handle handle, rocsparse_operation trans_A,
+    rocsparse_operation trans_B, rocsparse_int m, rocsparse_int n,
+    rocsparse_int k, const float *alpha, const rocsparse_mat_descr descr_A,
+    rocsparse_int nnz_A, const float *csr_val_A,
+    const rocsparse_int *csr_row_ptr_A, const rocsparse_int *csr_col_ind_A,
+    const rocsparse_mat_descr descr_B, rocsparse_int nnz_B,
+    const float *csr_val_B, const rocsparse_int *csr_row_ptr_B,
+    const rocsparse_int *csr_col_ind_B, const float *beta,
+    const rocsparse_mat_descr descr_D, rocsparse_int nnz_D,
+    const float *csr_val_D, const rocsparse_int *csr_row_ptr_D,
+    const rocsparse_int *csr_col_ind_D, const rocsparse_mat_descr descr_C,
+    rocsparse_int nnz_C, float *csr_val_C, const rocsparse_int *csr_row_ptr_C,
+    const rocsparse_int *csr_col_ind_C, const rocsparse_mat_info info_C,
+    void *buffer) {
+  return rocsparse_scsrgemm_numeric(
+      handle, trans_A, trans_B, m, n, k, alpha, descr_A, nnz_A, csr_val_A,
+      csr_row_ptr_A, csr_col_ind_A, descr_B, nnz_B, csr_val_B, csr_row_ptr_B,
+      csr_col_ind_B, beta, descr_D, nnz_D, csr_val_D, csr_row_ptr_D,
+      csr_col_ind_D, descr_C, nnz_C, csr_val_C, csr_row_ptr_C, csr_col_ind_C,
+      info_C, buffer);
+}
+
+inline rocsparse_status rocsparse_Xcsrgemm_numeric(
+    rocsparse_handle handle, rocsparse_operation trans_A,
+    rocsparse_operation trans_B, rocsparse_int m, rocsparse_int n,
+    rocsparse_int k, const double *alpha, const rocsparse_mat_descr descr_A,
+    rocsparse_int nnz_A, const double *csr_val_A,
+    const rocsparse_int *csr_row_ptr_A, const rocsparse_int *csr_col_ind_A,
+    const rocsparse_mat_descr descr_B, rocsparse_int nnz_B,
+    const double *csr_val_B, const rocsparse_int *csr_row_ptr_B,
+    const rocsparse_int *csr_col_ind_B, const double *beta,
+    const rocsparse_mat_descr descr_D, rocsparse_int nnz_D,
+    const double *csr_val_D, const rocsparse_int *csr_row_ptr_D,
+    const rocsparse_int *csr_col_ind_D, const rocsparse_mat_descr descr_C,
+    rocsparse_int nnz_C, double *csr_val_C, const rocsparse_int *csr_row_ptr_C,
+    const rocsparse_int *csr_col_ind_C, const rocsparse_mat_info info_C,
+    void *buffer) {
+  return rocsparse_dcsrgemm_numeric(
+      handle, trans_A, trans_B, m, n, k, alpha, descr_A, nnz_A, csr_val_A,
+      csr_row_ptr_A, csr_col_ind_A, descr_B, nnz_B, csr_val_B, csr_row_ptr_B,
+      csr_col_ind_B, beta, descr_D, nnz_D, csr_val_D, csr_row_ptr_D,
+      csr_col_ind_D, descr_C, nnz_C, csr_val_C, csr_row_ptr_C, csr_col_ind_C,
+      info_C, buffer);
+}
+
+inline rocsparse_status rocsparse_Xcsrgemm_numeric(
+    rocsparse_handle handle, rocsparse_operation trans_A,
+    rocsparse_operation trans_B, rocsparse_int m, rocsparse_int n,
+    rocsparse_int k, const Kokkos::complex<float> *alpha,
+    const rocsparse_mat_descr descr_A, rocsparse_int nnz_A,
+    const Kokkos::complex<float> *csr_val_A, const rocsparse_int *csr_row_ptr_A,
+    const rocsparse_int *csr_col_ind_A, const rocsparse_mat_descr descr_B,
+    rocsparse_int nnz_B, const Kokkos::complex<float> *csr_val_B,
+    const rocsparse_int *csr_row_ptr_B, const rocsparse_int *csr_col_ind_B,
+    const Kokkos::complex<float> *beta, const rocsparse_mat_descr descr_D,
+    rocsparse_int nnz_D, const Kokkos::complex<float> *csr_val_D,
+    const rocsparse_int *csr_row_ptr_D, const rocsparse_int *csr_col_ind_D,
+    const rocsparse_mat_descr descr_C, rocsparse_int nnz_C,
+    Kokkos::complex<float> *csr_val_C, const rocsparse_int *csr_row_ptr_C,
+    const rocsparse_int *csr_col_ind_C, const rocsparse_mat_info info_C,
+    void *buffer) {
+  return rocsparse_ccsrgemm_numeric(
+      handle, trans_A, trans_B, m, n, k,
+      reinterpret_cast<const rocsparse_float_complex *>(alpha), descr_A, nnz_A,
+      reinterpret_cast<const rocsparse_float_complex *>(csr_val_A),
+      csr_row_ptr_A, csr_col_ind_A, descr_B, nnz_B,
+      reinterpret_cast<const rocsparse_float_complex *>(csr_val_B),
+      csr_row_ptr_B, csr_col_ind_B,
+      reinterpret_cast<const rocsparse_float_complex *>(beta), descr_D, nnz_D,
+      reinterpret_cast<const rocsparse_float_complex *>(csr_val_D),
+      csr_row_ptr_D, csr_col_ind_D, descr_C, nnz_C,
+      reinterpret_cast<rocsparse_float_complex *>(csr_val_C), csr_row_ptr_C,
+      csr_col_ind_C, info_C, buffer);
+}
+
+inline rocsparse_status rocsparse_Xcsrgemm_numeric(
+    rocsparse_handle handle, rocsparse_operation trans_A,
+    rocsparse_operation trans_B, rocsparse_int m, rocsparse_int n,
+    rocsparse_int k, const Kokkos::complex<double> *alpha,
+    const rocsparse_mat_descr descr_A, rocsparse_int nnz_A,
+    const Kokkos::complex<double> *csr_val_A,
+    const rocsparse_int *csr_row_ptr_A, const rocsparse_int *csr_col_ind_A,
+    const rocsparse_mat_descr descr_B, rocsparse_int nnz_B,
+    const Kokkos::complex<double> *csr_val_B,
+    const rocsparse_int *csr_row_ptr_B, const rocsparse_int *csr_col_ind_B,
+    const Kokkos::complex<double> *beta, const rocsparse_mat_descr descr_D,
+    rocsparse_int nnz_D, const Kokkos::complex<double> *csr_val_D,
+    const rocsparse_int *csr_row_ptr_D, const rocsparse_int *csr_col_ind_D,
+    const rocsparse_mat_descr descr_C, rocsparse_int nnz_C,
+    Kokkos::complex<double> *csr_val_C, const rocsparse_int *csr_row_ptr_C,
+    const rocsparse_int *csr_col_ind_C, const rocsparse_mat_info info_C,
+    void *buffer) {
+  return rocsparse_zcsrgemm_numeric(
+      handle, trans_A, trans_B, m, n, k,
+      reinterpret_cast<const rocsparse_double_complex *>(alpha), descr_A, nnz_A,
+      reinterpret_cast<const rocsparse_double_complex *>(csr_val_A),
+      csr_row_ptr_A, csr_col_ind_A, descr_B, nnz_B,
+      reinterpret_cast<const rocsparse_double_complex *>(csr_val_B),
+      csr_row_ptr_B, csr_col_ind_B,
+      reinterpret_cast<const rocsparse_double_complex *>(beta), descr_D, nnz_D,
+      reinterpret_cast<const rocsparse_double_complex *>(csr_val_D),
+      csr_row_ptr_D, csr_col_ind_D, descr_C, nnz_C,
+      reinterpret_cast<rocsparse_double_complex *>(csr_val_C), csr_row_ptr_C,
+      csr_col_ind_C, info_C, buffer);
+}
 
 //=============================================================================
 template <typename KernelHandle, typename index_type, typename size_type,
