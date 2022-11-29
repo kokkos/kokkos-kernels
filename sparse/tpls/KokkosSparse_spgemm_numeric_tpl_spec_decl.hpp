@@ -521,18 +521,15 @@ void spgemm_numeric_mkl(
   generalDescr.type = SPARSE_MATRIX_TYPE_GENERAL;
   generalDescr.mode = SPARSE_FILL_MODE_FULL;
   generalDescr.diag = SPARSE_DIAG_NON_UNIT;
-  if (!handle->are_entries_computed()) {
-    KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_sp2m(
+  KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_sp2m(
         SPARSE_OPERATION_NON_TRANSPOSE, generalDescr, A,
         SPARSE_OPERATION_NON_TRANSPOSE, generalDescr, B,
         SPARSE_STAGE_FINALIZE_MULT_NO_VAL, &mklSpgemmHandle->C));
-    handle->set_computed_entries();
-    computedEntries = true;
-  }
   KOKKOSKERNELS_MKL_SAFE_CALL(
       mkl_sparse_sp2m(SPARSE_OPERATION_NON_TRANSPOSE, generalDescr, A,
                       SPARSE_OPERATION_NON_TRANSPOSE, generalDescr, B,
                       SPARSE_STAGE_FINALIZE_MULT, &mklSpgemmHandle->C));
+  KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_order(mklSpgemmHandle->C));
   MKLMatrix wrappedC(mklSpgemmHandle->C);
   MKL_INT nrows = 0, ncols = 0;
   MKL_INT *rowptrRaw     = NULL;
@@ -545,9 +542,10 @@ void spgemm_numeric_mkl(
   Kokkos::View<scalar_type *, Kokkos::HostSpace,
                Kokkos::MemoryTraits<Kokkos::Unmanaged>>
       valuesRawView(valuesRaw, c_nnz);
-  if (computedEntries) Kokkos::deep_copy(ExecSpace(), colidxC, colidxRawView);
+  Kokkos::deep_copy(ExecSpace(), colidxC, colidxRawView);
   Kokkos::deep_copy(ExecSpace(), valuesC, valuesRawView);
   handle->set_call_numeric();
+  handle->set_computed_entries();
 }
 
 #define SPGEMM_NUMERIC_DECL_MKL(SCALAR, EXEC, TPL_AVAIL)                       \
