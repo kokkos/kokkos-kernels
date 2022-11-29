@@ -197,7 +197,7 @@ bool is_same_matrix(crsMat_t output_mat_actual, crsMat_t output_mat_reference) {
     return false;
   }
 
-  KokkosSparse::sort_crs_matrix(output_mat_actual);
+  // Do not sort the actual product matrix - test that it's already sorted
   KokkosSparse::sort_crs_matrix(output_mat_reference);
 
   bool is_identical = true;
@@ -279,6 +279,9 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth,
       m, k, nnz, row_size_variance, bandwidth);
   crsMat_t B = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(
       k, n, nnz, row_size_variance, bandwidth);
+
+  KokkosSparse::sort_crs_matrix(A);
+  KokkosSparse::sort_crs_matrix(B);
 
   const bool is_empy_case = m < 1 || n < 1 || k < 1 || nnz < 1;
 

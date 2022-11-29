@@ -54,6 +54,7 @@
 #include "KokkosSparse_spgemm_symbolic.hpp"
 #include "KokkosSparse_bspgemm_impl.hpp"
 #include "KokkosSparse_bspgemm_impl_seq.hpp"
+#include "KokkosSparse_SortCrs.hpp"
 #endif
 
 namespace KokkosSparse {
@@ -253,6 +254,10 @@ struct BSPGEMM_NUMERIC<
         kbspgemm.KokkosBSPGEMM_numeric(row_mapC, entriesC, valuesC);
       } break;
     }
+    // Current implementation does not produce sorted matrix
+    // TODO: remove this call when impl sorts
+    KokkosSparse::sort_bsr_matrix<typename KernelHandle::HandleExecSpace>(
+        blockDim, row_mapC, entriesC, valuesC);
   }
 };
 

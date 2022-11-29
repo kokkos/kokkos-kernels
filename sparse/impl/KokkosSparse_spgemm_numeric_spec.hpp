@@ -54,6 +54,7 @@
 #include "KokkosSparse_spgemm_symbolic.hpp"
 #include "KokkosSparse_spgemm_impl.hpp"
 #include "KokkosSparse_spgemm_impl_seq.hpp"
+#include "KokkosSparse_SortCrs.hpp"
 #endif
 
 namespace KokkosSparse {
@@ -159,7 +160,6 @@ struct SPGEMM_NUMERIC<
       KernelHandle *handle, typename KernelHandle::nnz_lno_t m,
       typename KernelHandle::nnz_lno_t n, typename KernelHandle::nnz_lno_t k,
       a_size_view_t_ row_mapA, a_lno_view_t entriesA, a_scalar_view_t valuesA,
-
       bool transposeA, b_size_view_t_ row_mapB, b_lno_view_t entriesB,
       b_scalar_view_t valuesB, bool transposeB, c_size_view_t_ row_mapC,
       c_lno_view_t entriesC, c_scalar_view_t valuesC) {
@@ -191,6 +191,10 @@ struct SPGEMM_NUMERIC<
         kspgemm.KokkosSPGEMM_numeric(row_mapC, entriesC, valuesC);
       } break;
     }
+    // Current implementation does not produce sorted matrix
+    // TODO: remove this call when impl sorts
+    KokkosSparse::sort_crs_matrix<typename KernelHandle::HandleExecSpace>(
+        row_mapC, entriesC, valuesC);
     sh->set_call_numeric();
     sh->set_computed_entries();
   }

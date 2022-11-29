@@ -121,7 +121,7 @@ bool is_same_block_matrix(bsrMat_t output_mat_actual,
     return false;
   }
 
-  KokkosSparse::sort_bsr_matrix(output_mat_actual);
+  // Do not sort the actual product matrix - test that it's already sorted
   KokkosSparse::sort_bsr_matrix(output_mat_reference);
 
   bool is_identical = true;
@@ -201,6 +201,9 @@ void test_bspgemm(lno_t blkDim, lno_t m, lno_t k, lno_t n, size_type nnz,
       blkDim, m, k, nnz, row_size_variance, bandwidth);
   bsrMat_t B = KokkosSparse::Impl::kk_generate_sparse_matrix<bsrMat_t>(
       blkDim, k, n, nnz, row_size_variance, bandwidth);
+
+  KokkosSparse::sort_bsr_matrix(A);
+  KokkosSparse::sort_bsr_matrix(B);
 
   const bool is_empy_case = m < 1 || n < 1 || k < 1 || nnz < 1;
 

@@ -56,6 +56,7 @@
 #include "KokkosSparse_spgemm_jacobi_denseacc_impl.hpp"
 #include "KokkosSparse_spgemm_jacobi_sparseacc_impl.hpp"
 #include "KokkosSparse_spgemm_jacobi_seq_impl.hpp"
+#include "KokkosSparse_SortCrs.hpp"
 #endif
 
 namespace KokkosSparse {
@@ -227,6 +228,10 @@ struct SPGEMM_JACOBI<KernelHandle, a_size_view_t_, a_lno_view_t,
       kspgemm.KokkosSPGEMM_jacobi_sparseacc(row_mapC, entriesC, valuesC, omega,
                                             dinv, myExecSpace);
     }
+    // Current implementation does not produce sorted matrix
+    // TODO: remove this call when impl sorts
+    KokkosSparse::sort_crs_matrix<typename KernelHandle::HandleExecSpace>(
+        row_mapC, entriesC, valuesC);
   }
 };
 
