@@ -62,7 +62,7 @@
 #endif
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
-#include "rocsparse.h"
+#include <rocsparse/rocsparse.h>
 #endif
 
 namespace KokkosKernels {

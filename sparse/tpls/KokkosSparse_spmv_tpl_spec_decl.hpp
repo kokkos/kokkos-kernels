@@ -370,7 +370,7 @@ KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int64_t, size_t,
 
 // rocSPARSE
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE)
-#include <rocsparse.h>
+#include <rocsparse/rocsparse.h>
 #include "KokkosSparse_Utils_rocsparse.hpp"
 
 namespace KokkosSparse {
