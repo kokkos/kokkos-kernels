@@ -205,8 +205,6 @@ void test_bspgemm(lno_t blkDim, lno_t m, lno_t k, lno_t n, size_type nnz,
   KokkosSparse::sort_bsr_matrix(A);
   KokkosSparse::sort_bsr_matrix(B);
 
-  const bool is_empy_case = m < 1 || n < 1 || k < 1 || nnz < 1;
-
   bsrMat_t output_mat2;
   run_block_spgemm(A, B, output_mat2, SPGEMM_DEBUG, use_dynamic_scheduling,
                    shared_memory_size);

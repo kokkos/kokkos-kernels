@@ -283,8 +283,6 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth,
   KokkosSparse::sort_crs_matrix(A);
   KokkosSparse::sort_crs_matrix(B);
 
-  const bool is_empy_case = m < 1 || n < 1 || k < 1 || nnz < 1;
-
   crsMat_t output_mat2;
   if (oldInterface)
     run_spgemm_old_interface<crsMat_t, device>(A, B, SPGEMM_DEBUG, output_mat2);
