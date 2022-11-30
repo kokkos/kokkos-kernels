@@ -86,6 +86,8 @@ struct HostBlas {
 
   static void rotmg(T *d1, T *d2, T *x1, const T *y1, T *param);
 
+  static void swap(int const N, T *X, int const incx, T *Y, int const incy);
+
   static void gemv(const char trans, int m, int n, const T alpha, const T *a,
                    int lda, const T *b, int ldb, const T beta,
                    /* */ T *c, int ldc);

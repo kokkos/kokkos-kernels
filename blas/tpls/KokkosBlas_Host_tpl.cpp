@@ -155,7 +155,7 @@ void F77_BLAS_MANGLE(zrotg, ZROTG)(std::complex<double>* a,
                                    std::complex<double>* s);
 
 ///
-/// rotmg
+/// rotm
 ///
 void F77_BLAS_MANGLE(srotm, SROTM)(const int* n, float* X, const int* incx,
                                    float* Y, const int* incy,
@@ -171,6 +171,20 @@ void F77_BLAS_MANGLE(srotmg, SROTMG)(float* d1, float* d2, float* x1,
                                      const float* y1, float* param);
 void F77_BLAS_MANGLE(drotmg, DROTMG)(double* d1, double* d2, double* x1,
                                      const double* y1, double* param);
+
+///
+/// swap
+///
+void F77_BLAS_MANGLE(sswap, SSWAP)(int const* N, float* X, int const* incx,
+                                   float* Y, int const* incy);
+void F77_BLAS_MANGLE(dswap, DSWAP)(int const* N, double* X, int const* incx,
+                                   double* Y, int const* incy);
+void F77_BLAS_MANGLE(cswap, CSWAP)(int const* N, std::complex<float>* X,
+                                   int const* incx, std::complex<float>* Y,
+                                   int const* incy);
+void F77_BLAS_MANGLE(zswap, ZSWAP)(int const* N, std::complex<double>* X,
+                                   int const* incx, std::complex<double>* Y,
+                                   int const* incy);
 
 ///
 /// Gemv
@@ -400,6 +414,11 @@ void F77_BLAS_MANGLE(zscal,
 #define F77_FUNC_SROTMG F77_BLAS_MANGLE(srotmg, SROTMG)
 #define F77_FUNC_DROTMG F77_BLAS_MANGLE(drotmg, DROTMG)
 
+#define F77_FUNC_SSWAP F77_BLAS_MANGLE(sswap, SSWAP)
+#define F77_FUNC_DSWAP F77_BLAS_MANGLE(dswap, DSWAP)
+#define F77_FUNC_CSWAP F77_BLAS_MANGLE(cswap, CSWAP)
+#define F77_FUNC_ZSWAP F77_BLAS_MANGLE(zswap, ZSWAP)
+
 #define F77_FUNC_SGEMV F77_BLAS_MANGLE(sgemv, SGEMV)
 #define F77_FUNC_DGEMV F77_BLAS_MANGLE(dgemv, DGEMV)
 #define F77_FUNC_CGEMV F77_BLAS_MANGLE(cgemv, CGEMV)
@@ -492,6 +511,11 @@ template <>
 void HostBlas<float>::rotmg(float* d1, float* d2, float* x1, const float* y1,
                             float* param) {
   F77_FUNC_SROTMG(d1, d2, x1, y1, param);
+}
+template <>
+void HostBlas<float>::swap(int const N, float* X, int const incx, float* Y,
+                           int const incy) {
+  F77_FUNC_SSWAP(&N, X, &incx, Y, &incy);
 }
 template <>
 void HostBlas<float>::gemv(const char trans, int m, int n, const float alpha,
@@ -600,6 +624,11 @@ template <>
 void HostBlas<double>::rotmg(double* d1, double* d2, double* x1,
                              const double* y1, double* param) {
   F77_FUNC_DROTMG(d1, d2, x1, y1, param);
+}
+template <>
+void HostBlas<double>::swap(int const N, double* X, int const incx, double* Y,
+                            int const incy) {
+  F77_FUNC_DSWAP(&N, X, &incx, Y, &incy);
 }
 template <>
 void HostBlas<double>::gemv(const char trans, int m, int n, const double alpha,
@@ -716,6 +745,13 @@ void HostBlas<std::complex<float> >::rotg(std::complex<float>* a,
                                           std::complex<float>* b, float* c,
                                           std::complex<float>* s) {
   F77_FUNC_CROTG(a, b, c, s);
+}
+template <>
+void HostBlas<std::complex<float> >::swap(int const N, std::complex<float>* X,
+                                          int const incx,
+                                          std::complex<float>* Y,
+                                          int const incy) {
+  F77_FUNC_CSWAP(&N, X, &incx, Y, &incy);
 }
 
 template <>
@@ -864,6 +900,13 @@ void HostBlas<std::complex<double> >::rotg(std::complex<double>* a,
                                            std::complex<double>* b, double* c,
                                            std::complex<double>* s) {
   F77_FUNC_ZROTG(a, b, c, s);
+}
+template <>
+void HostBlas<std::complex<double> >::swap(int const N, std::complex<double>* X,
+                                           int const incx,
+                                           std::complex<double>* Y,
+                                           int const incy) {
+  F77_FUNC_ZSWAP(&N, X, &incx, Y, &incy);
 }
 
 template <>
