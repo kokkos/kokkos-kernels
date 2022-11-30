@@ -14,16 +14,16 @@ namespace Test {
 
 template <class AType, class XType, class YType, class ScalarType,
           class AlgoTag>
-struct TeamVectorGEMVOp : public GemvOpBase<AType, XType, YType, ScalarType> {
+struct ThreadVectorGEMVOp : public GemvOpBase<AType, XType, YType, ScalarType> {
   using params = GemvOpBase<AType, XType, YType, ScalarType>;
 
-  TeamVectorGEMVOp(char trans_, ScalarType alpha_, AType A_, XType x_,
-                   ScalarType beta_, YType y_)
+  ThreadVectorGEMVOp(char trans_, ScalarType alpha_, AType A_, XType x_,
+                     ScalarType beta_, YType y_)
       : params(trans_, alpha_, A_, x_, beta_, y_) {}
 
   template <typename TeamMember>
   KOKKOS_INLINE_FUNCTION void operator()(const TeamMember& member) const {
-    KokkosBlas::Experimental::Gemv<KokkosBlas::Mode::TeamVector,
+    KokkosBlas::Experimental::Gemv<KokkosBlas::Mode::ThreadVector,
                                    AlgoTag>::invoke(member, params::trans,
                                                     params::alpha, params::A,
                                                     params::x, params::beta,
@@ -31,11 +31,11 @@ struct TeamVectorGEMVOp : public GemvOpBase<AType, XType, YType, ScalarType> {
   }
 };
 
-struct TeamVectorGemvFactory {
+struct ThreadVectorGemvFactory {
   template <class AlgoTag, class ViewTypeA, class ViewTypeX, class ViewTypeY,
             class Device, class ScalarType>
   using functor_type =
-      TeamVectorGEMVOp<ViewTypeA, ViewTypeX, ViewTypeY, ScalarType, AlgoTag>;
+      ThreadVectorGEMVOp<ViewTypeA, ViewTypeX, ViewTypeY, ScalarType, AlgoTag>;
 
   // no Blocked implementation
   using algorithms = std::tuple<KokkosBlas::Algo::Gemv::Unblocked>;
@@ -43,43 +43,43 @@ struct TeamVectorGemvFactory {
 
 }  // namespace Test
 
-#define TEST_TEAMVECTOR_CASE4(N, A, X, Y, SC) \
-  TEST_GEMV_CASE4(teamvector, TeamVectorGemvFactory, N, A, X, Y, SC)
-#define TEST_TEAMVECTOR_CASE2(N, S, SC) \
-  TEST_GEMV_CASE2(teamvector, TeamVectorGemvFactory, N, S, SC)
-#define TEST_TEAMVECTOR_CASE(N, S) \
-  TEST_GEMV_CASE(teamvector, TeamVectorGemvFactory, N, S)
+#define TEST_THREADVECTOR_CASE4(N, A, X, Y, SC) \
+  TEST_GEMV_CASE4(threadvector, ThreadVectorGemvFactory, N, A, X, Y, SC)
+#define TEST_THREADVECTOR_CASE2(N, S, SC) \
+  TEST_GEMV_CASE2(threadvector, ThreadVectorGemvFactory, N, S, SC)
+#define TEST_THREADVECTOR_CASE(N, S) \
+  TEST_GEMV_CASE(threadvector, ThreadVectorGemvFactory, N, S)
 
 #ifdef KOKKOSKERNELS_TEST_FLOAT
-TEST_TEAMVECTOR_CASE(float, float)
+TEST_THREADVECTOR_CASE(float, float)
 #endif
 
 #ifdef KOKKOSKERNELS_TEST_DOUBLE
-TEST_TEAMVECTOR_CASE(double, double)
+TEST_THREADVECTOR_CASE(double, double)
 #endif
 
 #ifdef KOKKOSKERNELS_TEST_COMPLEX_DOUBLE
-TEST_TEAMVECTOR_CASE(complex_double, Kokkos::complex<double>)
+TEST_THREADVECTOR_CASE(complex_double, Kokkos::complex<double>)
 #endif
 
 #ifdef KOKKOSKERNELS_TEST_COMPLEX_FLOAT
-TEST_TEAMVECTOR_CASE(complex_float, Kokkos::complex<float>)
+TEST_THREADVECTOR_CASE(complex_float, Kokkos::complex<float>)
 #endif
 
 #ifdef KOKKOSKERNELS_TEST_INT
-TEST_TEAMVECTOR_CASE(int, int)
+TEST_THREADVECTOR_CASE(int, int)
 #endif
 
 #ifdef KOKKOSKERNELS_TEST_ALL_TYPES
 // test mixed scalar types (void -> default alpha/beta)
-TEST_TEAMVECTOR_CASE4(mixed, double, int, float, void)
+TEST_THREADVECTOR_CASE4(mixed, double, int, float, void)
 
 // test arbitrary double alpha/beta with complex<double> values
-TEST_TEAMVECTOR_CASE2(alphabeta, Kokkos::complex<double>, double)
+TEST_THREADVECTOR_CASE2(alphabeta, Kokkos::complex<double>, double)
 #endif
 
-#undef TEST_TEAMVECTOR_CASE4
-#undef TEST_TEAMVECTOR_CASE2
-#undef TEST_TEAMVECTOR_CASE
+#undef TEST_THREADVECTOR_CASE4
+#undef TEST_THREADVECTOR_CASE2
+#undef TEST_THREADVECTOR_CASE
 
 #endif  // Check for lambda availability on CUDA backend

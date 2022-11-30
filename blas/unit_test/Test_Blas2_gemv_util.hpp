@@ -299,24 +299,24 @@ struct GEMVTest {
 
 }  // namespace Test
 
-#define TEST_CASE4(PREFIX, FACTORY, NAME, SCALAR_A, SCALAR_X, SCALAR_Y, \
-                   SCALAR_COEF)                                         \
-  using PREFIX##_##NAME##_gemv_test =                                   \
-      ::Test::GEMVTest<::Test::FACTORY, SCALAR_A, SCALAR_X, SCALAR_Y,   \
-                       TestExecSpace, SCALAR_COEF>;                     \
-  TEST_F(TestCategory, PREFIX##_gemv_nt_##NAME) {                       \
-    PREFIX##_##NAME##_gemv_test::run("N");                              \
-  }                                                                     \
-  TEST_F(TestCategory, PREFIX##_gemv_t_##NAME) {                        \
-    PREFIX##_##NAME##_gemv_test::run("T");                              \
-  }                                                                     \
-  TEST_F(TestCategory, PREFIX##_gemv_ct_##NAME) {                       \
-    PREFIX##_##NAME##_gemv_test::run("C");                              \
+#define TEST_GEMV_CASE4(PREFIX, FACTORY, NAME, SCALAR_A, SCALAR_X, SCALAR_Y, \
+                        SCALAR_COEF)                                         \
+  using PREFIX##_##NAME##_gemv_test =                                        \
+      ::Test::GEMVTest<::Test::FACTORY, SCALAR_A, SCALAR_X, SCALAR_Y,        \
+                       TestExecSpace, SCALAR_COEF>;                          \
+  TEST_F(TestCategory, PREFIX##_gemv_nt_##NAME) {                            \
+    PREFIX##_##NAME##_gemv_test::run("N");                                   \
+  }                                                                          \
+  TEST_F(TestCategory, PREFIX##_gemv_t_##NAME) {                             \
+    PREFIX##_##NAME##_gemv_test::run("T");                                   \
+  }                                                                          \
+  TEST_F(TestCategory, PREFIX##_gemv_ct_##NAME) {                            \
+    PREFIX##_##NAME##_gemv_test::run("C");                                   \
   }
 
-#define TEST_CASE2(PREFIX, FACTORY, NAME, SCALAR, SCALAR_COEF) \
-  TEST_CASE4(PREFIX, FACTORY, NAME, SCALAR, SCALAR, SCALAR, SCALAR_COEF)
-#define TEST_CASE(PREFIX, FACTORY, NAME, SCALAR) \
-  TEST_CASE2(PREFIX, FACTORY, NAME, SCALAR, SCALAR)
+#define TEST_GEMV_CASE2(PREFIX, FACTORY, NAME, SCALAR, SCALAR_COEF) \
+  TEST_GEMV_CASE4(PREFIX, FACTORY, NAME, SCALAR, SCALAR, SCALAR, SCALAR_COEF)
+#define TEST_GEMV_CASE(PREFIX, FACTORY, NAME, SCALAR) \
+  TEST_GEMV_CASE2(PREFIX, FACTORY, NAME, SCALAR, SCALAR)
 
 #endif  // TEST_BLAS2_GEMV_UTIL_HPP

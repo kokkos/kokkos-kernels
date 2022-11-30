@@ -34,6 +34,7 @@
 
 // Team Blas 1
 #include "Test_Blas1_team_setscal.hpp"
+#include "Test_Blas1_threadvector_setscal.hpp"
 #include "Test_Blas1_team_abs.hpp"
 #include "Test_Blas1_team_axpby.hpp"
 #include "Test_Blas1_team_axpy.hpp"
@@ -52,9 +53,14 @@
 // Team Blas 2
 #include "Test_Blas2_team_gemv.hpp"
 #include "Test_Blas2_teamvector_gemv.hpp"
+#include "Test_Blas2_threadvector_gemv.hpp"
 
 // Blas 3
 #include "Test_Blas3_gemm.hpp"
+#include "Test_Blas3_serial_gemm.hpp"
+#include "Test_Blas3_team_gemm.hpp"
+#include "Test_Blas3_teamvector_gemm.hpp"
+#include "Test_Blas3_threadvector_gemm.hpp"
 #include "Test_Blas3_trmm.hpp"
 #include "Test_Blas3_trsm.hpp"
 

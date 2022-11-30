@@ -397,4 +397,4 @@ struct Scal<RMV, typename XMV::non_const_value_type, XMV, 2, false,
 #include <generated_specializations_hpp/KokkosBlas1_scal_eti_spec_decl.hpp>
 #include <generated_specializations_hpp/KokkosBlas1_scal_mv_eti_spec_decl.hpp>
 
-#endif  // KOKKOS_BLAS1_MV_IMPL_SCAL_HPP_
+#endif  // KOKKOS_BLAS1_IMPL_SCAL_SPEC_HPP_

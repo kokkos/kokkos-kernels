@@ -41,42 +41,56 @@
 // ************************************************************************
 //@HEADER
 */
-#ifndef __KOKKOSBLAS_GEMV_SERIAL_IMPL_HPP__
-#define __KOKKOSBLAS_GEMV_SERIAL_IMPL_HPP__
+
+#ifndef KOKKOSBLAS3_INNER_GEMM_FIXC_TEAM_IMPL_HPP
+#define KOKKOSBLAS3_INNER_GEMM_FIXC_TEAM_IMPL_HPP
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include "KokkosBlas_util.hpp"
-#include "KokkosBlas2_serial_gemv_internal.hpp"
-
-#include "KokkosBlas2_serial_gemv_tpl_spec_decl.hpp"
+#include "KokkosBatched_Util.hpp"
 
 namespace KokkosBlas {
 
-///
-/// Serial Impl
-/// ===========
+template <int mb, int nb>
+template <typename MemberType, typename ScalarType, typename ValueType>
+KOKKOS_INLINE_FUNCTION int InnerGemmFixC<mb, nb>::team_invoke(
+    const MemberType &member, const ScalarType alpha,
+    const ValueType *KOKKOS_RESTRICT A, const ValueType *KOKKOS_RESTRICT B,
+    const int k,
+    /**/ ValueType *KOKKOS_RESTRICT C) {
+  Kokkos::parallel_for(
+      Kokkos::TeamThreadRange(member, 0, mb * nb), [&](const int &ij) {
+        const int i = ij / nb, j = ij % nb;
 
-template <typename ArgTrans, typename ArgAlgo>
-template <typename ScalarType, typename AViewType, typename xViewType,
-          typename yViewType>
-KOKKOS_INLINE_FUNCTION int SerialGemv<ArgTrans, ArgAlgo>::invoke(
-    const ScalarType alpha, const AViewType &A, const xViewType &x,
-    const ScalarType beta, const yViewType &y) {
-  static_assert(std::is_same<ArgAlgo, Algo::Gemv::Unblocked>::value ||
-                    std::is_same<ArgAlgo, Algo::Gemv::Blocked>::value ||
-                    std::is_same<ArgAlgo, Algo::Gemv::CompactMKL>::value,
-                "Algorithm not supported");
+        const ValueType *KOKKOS_RESTRICT pA                  = A + i * _as0,
+                                         *KOKKOS_RESTRICT pB = B + j * _bs1;
 
-  using TransA   = Impl::MatrixModeInfo<ArgTrans>;
-  const auto ae0 = TransA::extent(A, 0);
-  const auto ae1 = TransA::extent(A, 1);
-  const auto as0 = TransA::stride_0(A);
-  const auto as1 = TransA::stride_1(A);
+        ValueType c = 0;
+        for (int p = 0; p < k; ++p) c += pA[p * _as1] * pB[p * _bs0];
+        C[i * _cs0 + j * _cs1] += alpha * c;
+      });
+  return 0;
+}
 
-  return Impl::SerialGemvInternal<ArgAlgo>::invoke(
-      ae0, ae1, alpha, A.data(), as0, as1, x.data(), x.stride_0(), beta,
-      y.data(), y.stride_0());
+template <int mb, int nb>
+template <typename MemberType, typename ScalarType, typename ValueType>
+KOKKOS_INLINE_FUNCTION int InnerGemmFixC<mb, nb>::team_invoke(
+    const MemberType &member, const ScalarType alpha,
+    const ValueType *KOKKOS_RESTRICT A, const ValueType *KOKKOS_RESTRICT B,
+    const int m, const int n, const int k,
+    /**/ ValueType *KOKKOS_RESTRICT C) {
+  Kokkos::parallel_for(
+      Kokkos::TeamThreadRange(member, 0, m * n), [&](const int &ij) {
+        const int i = ij / n, j = ij % n;
+
+        const ValueType *KOKKOS_RESTRICT pA                  = A + i * _as0,
+                                         *KOKKOS_RESTRICT pB = B + j * _bs1;
+
+        ValueType c = 0;
+        for (int p = 0; p < k; ++p) c += pA[p * _as1] * pB[p * _bs0];
+        C[i * _cs0 + j * _cs1] += alpha * c;
+      });
+  return 0;
 }
 
 }  // namespace KokkosBlas

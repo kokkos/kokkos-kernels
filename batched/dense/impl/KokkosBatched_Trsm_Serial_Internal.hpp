@@ -7,7 +7,7 @@
 
 #include "KokkosBlas1_set_impl.hpp"
 #include "KokkosBlas1_serial_scal_impl.hpp"
-#include "KokkosBatched_InnerGemmFixA_Serial_Impl.hpp"
+#include "KokkosBlas3_gemm_inner_fix.hpp"
 #include "KokkosBatched_InnerTrsm_Serial_Impl.hpp"
 
 namespace KokkosBatched {
@@ -96,7 +96,8 @@ SerialTrsmInternalLeftLower<Algo::Trsm::Blocked>::invoke(
     InnerTrsmLeftLowerUnitDiag<mbAlgo> trsm_u(as0, as1, bs0, bs1);
     InnerTrsmLeftLowerNonUnitDiag<mbAlgo> trsm_n(as0, as1, bs0, bs1);
 
-    InnerGemmFixA<mbAlgo, mbAlgo> gemm(as0, as1, bs0, bs1, bs0, bs1);
+    KokkosBlas::InnerGemmFixA<mbAlgo, mbAlgo> gemm(as0, as1, bs0, bs1, bs0,
+                                                   bs1);
     auto trsm = [&](const int ib, const int jb,
                     const ValueType *KOKKOS_RESTRICT AA,
                     /**/ ValueType *KOKKOS_RESTRICT BB) {
@@ -213,7 +214,8 @@ SerialTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invoke(
     InnerTrsmLeftUpperUnitDiag<mbAlgo> trsm_u(as0, as1, bs0, bs1);
     InnerTrsmLeftUpperNonUnitDiag<mbAlgo> trsm_n(as0, as1, bs0, bs1);
 
-    InnerGemmFixA<mbAlgo, mbAlgo> gemm(as0, as1, bs0, bs1, bs0, bs1);
+    KokkosBlas::InnerGemmFixA<mbAlgo, mbAlgo> gemm(as0, as1, bs0, bs1, bs0,
+                                                   bs1);
 
     auto trsm = [&](const int ib, const int jb,
                     const ValueType *KOKKOS_RESTRICT AA,
