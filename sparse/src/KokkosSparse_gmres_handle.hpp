@@ -49,8 +49,6 @@
 #ifndef _GMRESHANDLE_HPP
 #define _GMRESHANDLE_HPP
 
-#define KEEP_DIAG
-
 namespace KokkosSparse {
 namespace Experimental {
 
@@ -87,6 +85,9 @@ class GMRESHandle {
   using nnz_value_view_t =
       typename Kokkos::View<nnz_scalar_t *, HandlePersistentMemorySpace>;
 
+  using nnz_value_view2d_t =
+      typename Kokkos::View<nnz_scalar_t **, Kokkos::LayoutLeft, HandlePersistentMemorySpace>;
+
   using signed_integral_t = typename std::make_signed<
       typename nnz_row_view_t::non_const_value_type>::type;
 
@@ -95,28 +96,51 @@ class GMRESHandle {
                    typename nnz_row_view_t::device_type,
                    typename nnz_row_view_t::memory_traits>;
 
+  enum Ortho { CGS2, MGS };
+
  private:
   size_type nrows;
   size_type m;
   size_type max_restart;
+
+  float_t tol;
+
+  Ortho ortho;
+
+  bool verbose;
 
   int team_size;
   int vector_size;
 
  public:
   GMRESHandle(const size_type nrows_, const size_type m_ = 50,
-                 const size_type max_restart_ = 50)
+              const size_type max_restart_ = 50, const float_t tol_ = 1e-8, const Ortho ortho_ = CGS2,
+              const bool verbose_ = false)
       : nrows(nrows_),
         m(m_),
         max_restart(max_restart_),
+        tol(tol_),
+        ortho(ortho_),
+        verbose(verbose_),
         team_size(-1),
-        vector_size(-1) {}
+        vector_size(-1) {
+    if (m <= 0) {
+      throw std::invalid_argument("gmres: Please choose restart size m greater than zero.");
+    }
+    if (max_restart < 0) {
+      throw std::invalid_argument("gmres: Please choose max_restart greater than zero.");
+    }
+  }
 
   void reset_handle(const size_type nrows_, const size_type m_,
-                    const size_type max_restart_) {
+                    const size_type max_restart_, const float_t tol_, const Ortho ortho_,
+                    const bool verbose_) {
     set_nrows(nrows_);
     set_m(m_);
     set_max_restart(max_restart_);
+    set_tol(tol_);
+    set_ortho(ortho_);
+    set_verbose(verbose_);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -139,6 +163,24 @@ class GMRESHandle {
 
   KOKKOS_INLINE_FUNCTION
   void set_max_restart(const size_type max_restart_) { this->max_restart = max_restart_; }
+
+  KOKKOS_INLINE_FUNCTION
+  float_t get_tol() const { return tol; }
+
+  KOKKOS_INLINE_FUNCTION
+  void set_tol(const float_t tol_) { this->tol = tol_; }
+
+  KOKKOS_INLINE_FUNCTION
+  Ortho get_ortho() const { return ortho; }
+
+  KOKKOS_INLINE_FUNCTION
+  void set_ortho(const Ortho ortho_) { this->ortho = ortho_; }
+
+  KOKKOS_INLINE_FUNCTION
+  bool get_verbose() const { return verbose; }
+
+  KOKKOS_INLINE_FUNCTION
+  void set_verbose(const bool verbose_) { this->verbose = verbose_; }
 
   void set_team_size(const int ts) { this->team_size = ts; }
   int get_team_size() const { return this->team_size; }

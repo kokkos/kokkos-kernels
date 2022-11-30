@@ -49,8 +49,6 @@
 #ifndef _PAR_ILUTHANDLE_HPP
 #define _PAR_ILUTHANDLE_HPP
 
-#define KEEP_DIAG
-
 namespace KokkosSparse {
 namespace Experimental {
 
