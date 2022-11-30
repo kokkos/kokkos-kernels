@@ -54,9 +54,6 @@
 #include <KokkosBlas3_gemm.hpp>
 
 #include "KokkosBatched_Gemm_Decl.hpp"
-#include "KokkosBatched_Gemm_Serial_Impl.hpp"
-//#include "KokkosBatched_Gemm_Team_Impl.hpp"
-//#include "KokkosBatched_Gemm_TeamVector_Impl.hpp"
 #include "KokkosBatched_Util.hpp"
 #include "gtest/gtest.h"  // EXPECT_NEAR
 #include "KokkosKernels_TestUtils.hpp"
@@ -418,7 +415,7 @@ void __do_gemm_serial_batched_template(options_t options,
           C = Kokkos::subview(_gemm_args.C, Kokkos::ALL(), Kokkos::ALL(), j);
         }
 
-        KokkosBatched::SerialGemm<TransAType, TransBType, AlgoType>::invoke(
+        KokkosBlas::SerialGemm<TransAType, TransBType, AlgoType>::invoke(
             _gemm_args.alpha, A, B, _gemm_args.beta, C);
       }
     }
@@ -615,7 +612,7 @@ struct parallel_batched_gemm_range_policy {
     auto svB = Kokkos::subview(gemm_args_.B, i, Kokkos::ALL(), Kokkos::ALL());
     auto svC = Kokkos::subview(gemm_args_.C, i, Kokkos::ALL(), Kokkos::ALL());
 
-    KokkosBatched::SerialGemm<TransAType, TransBType, BlockingType>::invoke(
+    KokkosBlas::SerialGemm<TransAType, TransBType, BlockingType>::invoke(
         gemm_args_.alpha, svA, svB, gemm_args_.beta, svC);
   }
 
@@ -625,7 +622,7 @@ struct parallel_batched_gemm_range_policy {
     auto svB = Kokkos::subview(gemm_args_.B, Kokkos::ALL(), Kokkos::ALL(), i);
     auto svC = Kokkos::subview(gemm_args_.C, Kokkos::ALL(), Kokkos::ALL(), i);
 
-    KokkosBatched::SerialGemm<TransAType, TransBType, BlockingType>::invoke(
+    KokkosBlas::SerialGemm<TransAType, TransBType, BlockingType>::invoke(
         gemm_args_.alpha, svA, svB, gemm_args_.beta, svC);
   }
 
@@ -638,7 +635,7 @@ struct parallel_batched_gemm_range_policy {
     auto svC =
         Kokkos::subview(gemm_args_.Cv.vec_3d, i, Kokkos::ALL(), Kokkos::ALL());
 
-    KokkosBatched::SerialGemm<TransAType, TransBType, BlockingType>::invoke(
+    KokkosBlas::SerialGemm<TransAType, TransBType, BlockingType>::invoke(
         gemm_args_.alpha, svA, svB, gemm_args_.beta, svC);
   }
 
@@ -651,7 +648,7 @@ struct parallel_batched_gemm_range_policy {
     auto svC =
         Kokkos::subview(gemm_args_.Cv.vec_3d, Kokkos::ALL(), Kokkos::ALL(), i);
 
-    KokkosBatched::SerialGemm<TransAType, TransBType, BlockingType>::invoke(
+    KokkosBlas::SerialGemm<TransAType, TransBType, BlockingType>::invoke(
         gemm_args_.alpha, svA, svB, gemm_args_.beta, svC);
   }
 
@@ -700,7 +697,7 @@ struct parallel_batched_gemm {
     auto svB = Kokkos::subview(gemm_args_.B, i, Kokkos::ALL(), Kokkos::ALL());
     auto svC = Kokkos::subview(gemm_args_.C, i, Kokkos::ALL(), Kokkos::ALL());
 
-    KokkosBatched::SerialGemm<TransAType, TransBType, BlockingType>::invoke(
+    KokkosBlas::SerialGemm<TransAType, TransBType, BlockingType>::invoke(
         gemm_args_.alpha, svA, svB, gemm_args_.beta, svC);
   }
 
@@ -711,7 +708,7 @@ struct parallel_batched_gemm {
     auto svB = Kokkos::subview(gemm_args_.B, Kokkos::ALL(), Kokkos::ALL(), i);
     auto svC = Kokkos::subview(gemm_args_.C, Kokkos::ALL(), Kokkos::ALL(), i);
 
-    KokkosBatched::SerialGemm<TransAType, TransBType, BlockingType>::invoke(
+    KokkosBlas::SerialGemm<TransAType, TransBType, BlockingType>::invoke(
         gemm_args_.alpha, svA, svB, gemm_args_.beta, svC);
   }
 
@@ -722,9 +719,8 @@ struct parallel_batched_gemm {
     auto svB = Kokkos::subview(gemm_args_.B, i, Kokkos::ALL(), Kokkos::ALL());
     auto svC = Kokkos::subview(gemm_args_.C, i, Kokkos::ALL(), Kokkos::ALL());
 
-    KokkosBatched::TeamGemm<MemberType, TransAType, TransBType,
-                            BlockingType>::invoke(member, gemm_args_.alpha, svA,
-                                                  svB, gemm_args_.beta, svC);
+    KokkosBlas::TeamGemm<TransAType, TransBType, BlockingType>::invoke(
+        member, gemm_args_.alpha, svA, svB, gemm_args_.beta, svC);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -734,9 +730,8 @@ struct parallel_batched_gemm {
     auto svB = Kokkos::subview(gemm_args_.B, Kokkos::ALL(), Kokkos::ALL(), i);
     auto svC = Kokkos::subview(gemm_args_.C, Kokkos::ALL(), Kokkos::ALL(), i);
 
-    KokkosBatched::TeamGemm<MemberType, TransAType, TransBType,
-                            BlockingType>::invoke(member, gemm_args_.alpha, svA,
-                                                  svB, gemm_args_.beta, svC);
+    KokkosBlas::TeamGemm<TransAType, TransBType, BlockingType>::invoke(
+        member, gemm_args_.alpha, svA, svB, gemm_args_.beta, svC);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -749,11 +744,8 @@ struct parallel_batched_gemm {
     auto svC =
         Kokkos::subview(gemm_args_.C, team_idx, Kokkos::ALL(), Kokkos::ALL());
 
-    KokkosBatched::TeamVectorGemm<MemberType, TransAType, TransBType,
-                                  BlockingType>::invoke(member,
-                                                        gemm_args_.alpha, svA,
-                                                        svB, gemm_args_.beta,
-                                                        svC);
+    KokkosBlas::TeamVectorGemm<TransAType, TransBType, BlockingType>::invoke(
+        member, gemm_args_.alpha, svA, svB, gemm_args_.beta, svC);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -767,11 +759,8 @@ struct parallel_batched_gemm {
     auto svC =
         Kokkos::subview(gemm_args_.C, Kokkos::ALL(), Kokkos::ALL(), team_idx);
 
-    KokkosBatched::TeamVectorGemm<MemberType, TransAType, TransBType,
-                                  BlockingType>::invoke(member,
-                                                        gemm_args_.alpha, svA,
-                                                        svB, gemm_args_.beta,
-                                                        svC);
+    KokkosBlas::TeamVectorGemm<TransAType, TransBType, BlockingType>::invoke(
+        member, gemm_args_.alpha, svA, svB, gemm_args_.beta, svC);
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -787,10 +776,9 @@ struct parallel_batched_gemm {
           auto svC = Kokkos::subview(gemm_args_.Cv.ivec_4d, i, Kokkos::ALL(),
                                      Kokkos::ALL(), vector_lane);
 
-          KokkosBatched::Gemm<MemberType, TransAType, TransBType, AlgoMode,
-                              BlockingType>::invoke(member, gemm_args_.alpha,
-                                                    svA, svB, gemm_args_.beta,
-                                                    svC);
+          KokkosBlas::Gemm<TransAType, TransBType, AlgoMode,
+                           BlockingType>::invoke(member, gemm_args_.alpha, svA,
+                                                 svB, gemm_args_.beta, svC);
         });
   }
 
@@ -808,10 +796,9 @@ struct parallel_batched_gemm {
           auto svC = Kokkos::subview(gemm_args_.Cv.ivec_4d, vector_lane,
                                      Kokkos::ALL(), Kokkos::ALL(), i);
 
-          KokkosBatched::Gemm<MemberType, TransAType, TransBType, AlgoMode,
-                              BlockingType>::invoke(member, gemm_args_.alpha,
-                                                    svA, svB, gemm_args_.beta,
-                                                    svC);
+          KokkosBlas::Gemm<TransAType, TransBType, AlgoMode,
+                           BlockingType>::invoke(member, gemm_args_.alpha, svA,
+                                                 svB, gemm_args_.beta, svC);
         });
   }
 
@@ -956,7 +943,7 @@ void __do_gemm_parallel_batched(options_t options, gemm_args_t gemm_args) {
   char b  = gemm_args.transB;
   using N = KokkosBatched::Trans::NoTranspose;
   using T = KokkosBatched::Trans::Transpose;
-  // using C = KokkosBatched::Trans::ConjTranspose;
+  using C = KokkosBatched::Trans::ConjTranspose;
 
   STATUS;
 
@@ -968,9 +955,10 @@ void __do_gemm_parallel_batched(options_t options, gemm_args_t gemm_args) {
     __do_gemm_parallel_batched_template<N, T, blocking_type, algo_tag,
                                         device_type, algo_mode>(options,
                                                                 gemm_args);
-    //} else if (a == 'N' && b == 'C') {
-    //  __do_gemm_parallel_batched_template<N, C, blocking_type, algo_tag,
-    //  device_type>(options, gemm_args);
+  } else if (a == 'N' && b == 'C') {
+    __do_gemm_parallel_batched_template<N, C, blocking_type, algo_tag,
+                                        device_type, algo_mode>(options,
+                                                                gemm_args);
   } else if (a == 'T' && b == 'N') {
     __do_gemm_parallel_batched_template<T, N, blocking_type, algo_tag,
                                         device_type, algo_mode>(options,
@@ -979,18 +967,22 @@ void __do_gemm_parallel_batched(options_t options, gemm_args_t gemm_args) {
     __do_gemm_parallel_batched_template<T, T, blocking_type, algo_tag,
                                         device_type, algo_mode>(options,
                                                                 gemm_args);
-    //} else if (a == 'T' && b == 'C') {
-    //  __do_gemm_parallel_batched_template<T, C, blocking_type, algo_tag,
-    //  device_type>(options, gemm_args);
-    //} else if (a == 'C' && b == 'N') {
-    //  __do_gemm_parallel_batched_template<C, N, blocking_type, algo_tag,
-    //  device_type>(options, gemm_args);
-    //} else if (a == 'C' && b == 'T') {
-    //  __do_gemm_parallel_batched_template<C, T, blocking_type, algo_tag,
-    //  device_type>(options, gemm_args);
-    //} else if (a == 'C' && b == 'C') {
-    //  __do_gemm_parallel_batched_template<C, C, blocking_type, algo_tag,
-    //  device_type>(options, gemm_args);
+  } else if (a == 'T' && b == 'C') {
+    __do_gemm_parallel_batched_template<T, C, blocking_type, algo_tag,
+                                        device_type, algo_mode>(options,
+                                                                gemm_args);
+  } else if (a == 'C' && b == 'N') {
+    __do_gemm_parallel_batched_template<C, N, blocking_type, algo_tag,
+                                        device_type, algo_mode>(options,
+                                                                gemm_args);
+  } else if (a == 'C' && b == 'T') {
+    __do_gemm_parallel_batched_template<C, T, blocking_type, algo_tag,
+                                        device_type, algo_mode>(options,
+                                                                gemm_args);
+  } else if (a == 'C' && b == 'C') {
+    __do_gemm_parallel_batched_template<C, C, blocking_type, algo_tag,
+                                        device_type, algo_mode>(options,
+                                                                gemm_args);
   } else {
     FATAL_ERROR("Bad gemm_args TransA or TransB value");
   }
@@ -1013,7 +1005,7 @@ struct parallel_batched_gemm_experiment1 {
     auto svC = Kokkos::subview(gemm_args_.C, i, Kokkos::ALL(), Kokkos::ALL());
 
     // Uses two serial for-loops internally
-    KokkosBatched::SerialGemm<TransAType, TransBType, BlockingType>::invoke(
+    KokkosBlas::SerialGemm<TransAType, TransBType, BlockingType>::invoke(
         gemm_args_.alpha, svA, svB, gemm_args_.beta, svC);
   }
 };
@@ -1073,11 +1065,8 @@ struct parallel_batched_gemm_experiment2_3_4 {
 
     // Uses TeamThreadRange over C-rows
     //        ThreadVectorRange over C-cols
-    KokkosBatched::TeamVectorGemm<MemberType, TransAType, TransBType,
-                                  BlockingType>::invoke(member,
-                                                        gemm_args_.alpha, svA,
-                                                        svB, gemm_args_.beta,
-                                                        svC);
+    KokkosBlas::TeamVectorGemm<TransAType, TransBType, BlockingType>::invoke(
+        member, gemm_args_.alpha, svA, svB, gemm_args_.beta, svC);
   }
 
   // Experiment 3
@@ -1104,12 +1093,8 @@ struct parallel_batched_gemm_experiment2_3_4 {
           auto svC_col = Kokkos::subview(svC, Kokkos::ALL(), lane_idx);
           // TeamGemm Calls TeamThreadRange over M*N meaning the flat M*N array
           // is split over all threads of the team
-          KokkosBatched::TeamGemm<MemberType, TransAType, TransBType,
-                                  BlockingType>::invoke(member,
-                                                        gemm_args_.alpha, svA,
-                                                        svB_col,
-                                                        gemm_args_.beta,
-                                                        svC_col);
+          KokkosBlas::TeamGemm<TransAType, TransBType, BlockingType>::invoke(
+              member, gemm_args_.alpha, svA, svB_col, gemm_args_.beta, svC_col);
         });
   }
 
@@ -1138,12 +1123,8 @@ struct parallel_batched_gemm_experiment2_3_4 {
           auto svC_row = Kokkos::subview(svC, lane_idx, Kokkos::ALL());
           // TeamGemm Calls TeamThreadRange over M*N meaning the flat M*N array
           // is split over all threads of the team
-          KokkosBatched::TeamGemm<MemberType, TransAType, TransBType,
-                                  BlockingType>::invoke(member,
-                                                        gemm_args_.alpha,
-                                                        svA_row, svB,
-                                                        gemm_args_.beta,
-                                                        svC_row);
+          KokkosBlas::TeamGemm<TransAType, TransBType, BlockingType>::invoke(
+              member, gemm_args_.alpha, svA_row, svB, gemm_args_.beta, svC_row);
         });
   }
 };
@@ -1316,7 +1297,7 @@ class parallel_batched_gemm_experiment5 {
     auto svC = Kokkos::subview(C, i, Kokkos::ALL(), Kokkos::ALL());
 
     // Uses two serial for-loops internally
-    KokkosBatched::SerialGemm<TransAType, TransBType, BlockingType>::invoke(
+    KokkosBlas::SerialGemm<TransAType, TransBType, BlockingType>::invoke(
         gemm_args.alpha, svA, svB, gemm_args.beta, svC);
   }
 };
@@ -1424,10 +1405,8 @@ class parallel_batched_gemm_experiment6 {
     auto svC = Kokkos::subview(C, i, Kokkos::ALL(), Kokkos::ALL());
 
     // Uses two serial for-loops internally
-    KokkosBatched::TeamVectorGemm<MemberType, TransAType, TransBType,
-                                  BlockingType>::invoke(member, gemm_args.alpha,
-                                                        svA, svB,
-                                                        gemm_args.beta, svC);
+    KokkosBlas::TeamVectorGemm<TransAType, TransBType, BlockingType>::invoke(
+        member, gemm_args.alpha, svA, svB, gemm_args.beta, svC);
   }
 };
 
@@ -1868,9 +1847,10 @@ static inline void __gemm_do_verify(options_t options, gemm_args_t gemm_args,
   Test::Functor_BatchedVanillaGEMM<decltype(A_expected), decltype(B_expected),
                                    decltype(C_expected), execution_space>
       vgemm;
-  vgemm.A_t = toupper(gemm_args.transA) == 'T';
-  vgemm.B_t = toupper(gemm_args.transB) == 'T';
-  vgemm.A_c = vgemm.B_c     = false;
+  vgemm.A_t                 = toupper(gemm_args.transA) != 'N';
+  vgemm.B_t                 = toupper(gemm_args.transB) != 'N';
+  vgemm.A_c                 = toupper(gemm_args.transA) == 'C';
+  vgemm.B_c                 = toupper(gemm_args.transB) == 'C';
   vgemm.batch_size_last_dim = options.blas_args.batch_size_last_dim;
   vgemm.A                   = A_expected;
   vgemm.B                   = B_expected;

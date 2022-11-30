@@ -42,9 +42,10 @@ struct TeamGemvFactory {
 }  // namespace Test
 
 #define TEST_TEAM_CASE4(N, A, X, Y, SC) \
-  TEST_CASE4(team, TeamGemvFactory, N, A, X, Y, SC)
-#define TEST_TEAM_CASE2(N, S, SC) TEST_CASE2(team, TeamGemvFactory, N, S, SC)
-#define TEST_TEAM_CASE(N, S) TEST_CASE(team, TeamGemvFactory, N, S)
+  TEST_GEMV_CASE4(team, TeamGemvFactory, N, A, X, Y, SC)
+#define TEST_TEAM_CASE2(N, S, SC) \
+  TEST_GEMV_CASE2(team, TeamGemvFactory, N, S, SC)
+#define TEST_TEAM_CASE(N, S) TEST_GEMV_CASE(team, TeamGemvFactory, N, S)
 
 #ifdef KOKKOSKERNELS_TEST_FLOAT
 TEST_TEAM_CASE(float, float)

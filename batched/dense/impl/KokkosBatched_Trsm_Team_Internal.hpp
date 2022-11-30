@@ -9,7 +9,7 @@
 #include "KokkosBlas1_set_impl.hpp"
 #include "KokkosBlas1_team_scal_impl.hpp"
 #include "KokkosBatched_InnerTrsm_Serial_Impl.hpp"
-#include "KokkosBatched_Gemm_Team_Internal.hpp"
+#include "KokkosBlas3_team_gemm_internal.hpp"
 
 namespace KokkosBatched {
 
@@ -135,7 +135,7 @@ TeamTrsmInternalLeftLower<Algo::Trsm::Blocked>::invoke(
         member.team_barrier();
 
         // gemm update
-        TeamGemmInternal<Algo::Gemm::Blocked>::invoke(
+        KokkosBlas::Impl::TeamGemmInternal<Algo::Gemm::Blocked>::invoke(
             member, ib - p - pb, jb, pb, minus_one, Ap + pb * as0, as0, as1, Bp,
             bs0, bs1, one, Bp + pb * bs0, bs0, bs1);
       }
@@ -270,7 +270,7 @@ TeamTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invoke(
         member.team_barrier();
 
         // gemm update
-        TeamGemmInternal<Algo::Gemm::Blocked>::invoke(
+        KokkosBlas::Impl::TeamGemmInternal<Algo::Gemm::Blocked>::invoke(
             member, p, jb, pb, minus_one, Ap - p * as0, as0, as1, Bp, bs0, bs1,
             one, BB, bs0, bs1);
       }

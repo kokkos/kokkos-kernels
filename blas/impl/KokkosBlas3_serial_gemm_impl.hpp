@@ -42,47 +42,46 @@
 //@HEADER
 */
 
-#ifndef KOKKOSBLAS2_SERIAL_GEMV_HPP_
-#define KOKKOSBLAS2_SERIAL_GEMV_HPP_
+#ifndef KOKKOSBLAS3_SERIAL_GEMM_IMPL_HPP_
+#define KOKKOSBLAS3_SERIAL_GEMM_IMPL_HPP_
 
-#include "KokkosBlas2_serial_gemv_impl.hpp"
+#include "KokkosBlas3_serial_gemm_internal.hpp"
+#include "KokkosBlas3_serial_gemm_tpl_spec_decl.hpp"
 #include "KokkosBlas_util.hpp"
 
 namespace KokkosBlas {
-namespace Experimental {
 
-template <class AlgoTag, class MatrixType, class XVector, class YVector,
-          class ScalarType>
-void KOKKOS_INLINE_FUNCTION serial_gemv(const char trans,
-                                        const ScalarType& alpha,
-                                        const MatrixType& A, const XVector& x,
-                                        const ScalarType& beta,
-                                        const YVector& y) {
-  if (trans == 'N' || trans == 'n') {
-    using mode = KokkosBlas::Trans::NoTranspose;
-    KokkosBlas::SerialGemv<mode, AlgoTag>::invoke(alpha, A, x, beta, y);
-  } else if (trans == 'T' || trans == 't') {
-    using mode = KokkosBlas::Trans::Transpose;
-    KokkosBlas::SerialGemv<mode, AlgoTag>::invoke(alpha, A, x, beta, y);
-  } else if (trans == 'C' || trans == 'c') {
-    using mode = KokkosBlas::Trans::ConjTranspose;
-    KokkosBlas::SerialGemv<mode, AlgoTag>::invoke(alpha, A, x, beta, y);
-  } else {
-    Kokkos::abort("Matrix mode not supported");
-  }
+///
+/// Serial Impl
+/// ===========
+
+template <typename ArgTransA, typename ArgTransB, typename ArgAlgo>
+template <typename ScalarType, typename AViewType, typename BViewType,
+          typename CViewType>
+KOKKOS_INLINE_FUNCTION int SerialGemm<ArgTransA, ArgTransB, ArgAlgo>::invoke(
+    const ScalarType alpha, const AViewType &A, const BViewType &B,
+    const ScalarType beta, const CViewType &C) {
+  // C = beta C + alpha opA(A) opB(B)
+  // C (m x n), A(m x k), B(k x n)
+  static_assert(std::is_same<ArgAlgo, Algo::Gemm::Unblocked>::value ||
+                    std::is_same<ArgAlgo, Algo::Gemm::Blocked>::value ||
+                    std::is_same<ArgAlgo, Algo::Gemm::CompactMKL>::value,
+                "Algorithm not supported");
+
+  using OpA      = typename Impl::MatrixModeInfo<ArgTransA>::Op;
+  using OpB      = typename Impl::MatrixModeInfo<ArgTransB>::Op;
+  using TransA   = Impl::MatrixModeInfo<ArgTransA>;
+  using TransB   = Impl::MatrixModeInfo<ArgTransB>;
+  const auto ae1 = TransA::extent(A, 1);
+  const auto as0 = TransA::stride_0(A);
+  const auto as1 = TransA::stride_1(A);
+  const auto bs0 = TransB::stride_0(B);
+  const auto bs1 = TransB::stride_1(B);
+
+  return Impl::SerialGemmInternal<ArgAlgo>::invoke(
+      OpA{}, OpB{}, C.extent(0), C.extent(1), ae1, alpha, A.data(), as0, as1,
+      B.data(), bs0, bs1, beta, C.data(), C.stride_0(), C.stride_1());
 }
-
-// default AlgoTag
-template <class MatrixType, class XVector, class YVector, class ScalarType>
-void KOKKOS_INLINE_FUNCTION serial_gemv(const char trans,
-                                        const ScalarType& alpha,
-                                        const MatrixType& A, const XVector& x,
-                                        const ScalarType& beta,
-                                        const YVector& y) {
-  serial_gemv<KokkosBlas::Algo::Gemv::Default>(trans, alpha, A, x, beta, y);
-}
-
-}  // namespace Experimental
 }  // namespace KokkosBlas
 
 #endif

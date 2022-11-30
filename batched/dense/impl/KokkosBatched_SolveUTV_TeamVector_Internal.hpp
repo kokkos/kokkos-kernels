@@ -5,10 +5,10 @@
 
 #include "KokkosBatched_Util.hpp"
 
-#include "KokkosBlas2_team_gemv_impl.hpp"
+#include "KokkosBlas2_team_gemv_internal.hpp"
 #include "KokkosBatched_Trsv_TeamVector_Internal.hpp"
 
-#include "KokkosBatched_Gemm_TeamVector_Internal.hpp"
+#include "KokkosBlas3_team_gemm_internal.hpp"
 #include "KokkosBatched_Trsm_TeamVector_Internal.hpp"
 
 namespace KokkosBatched {
@@ -81,7 +81,7 @@ struct TeamVectorSolveUTV_Internal {
       /// T is matrix_rank x matrix_rank
       /// V is matrix_rank x n
       /// W = U^T B
-      TeamVectorGemmInternal<Algo::Gemm::Unblocked>::invoke(
+      KokkosBlas::Impl::TeamVectorGemmInternal<Algo::Gemm::Unblocked>::invoke(
           member, matrix_rank, nrhs, m, one, U, us1, us0, B, bs0, bs1, zero, W,
           ws0, ws1);
       member.team_barrier();
@@ -92,13 +92,13 @@ struct TeamVectorSolveUTV_Internal {
       member.team_barrier();
 
       /// X = V^T W
-      TeamVectorGemmInternal<Algo::Gemm::Unblocked>::invoke(
+      KokkosBlas::Impl::TeamVectorGemmInternal<Algo::Gemm::Unblocked>::invoke(
           member, n, nrhs, matrix_rank, one, V, vs1, vs0, W, ws0, ws1, zero, X,
           xs0, xs1);
       member.team_barrier();
     } else {
       /// W = U^T B
-      TeamVectorGemmInternal<Algo::Gemm::Unblocked>::invoke(
+      KokkosBlas::Impl::TeamVectorGemmInternal<Algo::Gemm::Unblocked>::invoke(
           member, matrix_rank, nrhs, m, one, U, us1, us0, B, bs0, bs1, zero, X,
           xs0, xs1);
       member.team_barrier();

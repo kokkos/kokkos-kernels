@@ -7,7 +7,7 @@
 #include "KokkosBatched_Vector.hpp"
 #include "KokkosBatched_InnerLU_Serial_Impl.hpp"
 #include "KokkosBatched_InnerTrsm_Serial_Impl.hpp"
-#include "KokkosBatched_Gemm_Serial_Internal.hpp"
+#include "KokkosBlas3_serial_gemm_internal.hpp"
 
 namespace KokkosBatched {
 
@@ -106,7 +106,7 @@ KOKKOS_INLINE_FUNCTION int SerialLU_Internal<Algo::LU::Blocked>::invoke(
       trsm_run.serial_invoke(Ap, pb, m_abr, Ap + mb * as0);
 
       // gemm update
-      SerialGemmInternal<Algo::Gemm::Blocked>::invoke(
+      KokkosBlas::Impl::SerialGemmInternal<Algo::Gemm::Blocked>::invoke(
           m_abr, n_abr, pb, minus_one, Ap + mb * as0, as0, as1, Ap + mb * as1,
           as0, as1, one, Ap + mb * as0 + mb * as1, as0, as1);
     }
