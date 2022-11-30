@@ -44,11 +44,11 @@ struct TeamVectorGemvFactory {
 }  // namespace Test
 
 #define TEST_TEAMVECTOR_CASE4(N, A, X, Y, SC) \
-  TEST_CASE4(teamvector, TeamVectorGemvFactory, N, A, X, Y, SC)
+  TEST_GEMV_CASE4(teamvector, TeamVectorGemvFactory, N, A, X, Y, SC)
 #define TEST_TEAMVECTOR_CASE2(N, S, SC) \
-  TEST_CASE2(teamvector, TeamVectorGemvFactory, N, S, SC)
+  TEST_GEMV_CASE2(teamvector, TeamVectorGemvFactory, N, S, SC)
 #define TEST_TEAMVECTOR_CASE(N, S) \
-  TEST_CASE(teamvector, TeamVectorGemvFactory, N, S)
+  TEST_GEMV_CASE(teamvector, TeamVectorGemvFactory, N, S)
 
 #ifdef KOKKOSKERNELS_TEST_FLOAT
 TEST_TEAMVECTOR_CASE(float, float)

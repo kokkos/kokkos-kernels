@@ -46,52 +46,12 @@
 #define _KOKKOSKERNELS_SPARSEUTILS_MKL_HPP
 
 #include "KokkosKernels_config.h"
+#include "KokkosKernels_MKLUtils.hpp"
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
 
-#include <mkl.h>
-
 namespace KokkosSparse {
 namespace Impl {
-
-inline void mkl_internal_safe_call(sparse_status_t mkl_status, const char *name,
-                                   const char *file = nullptr,
-                                   const int line   = 0) {
-  if (SPARSE_STATUS_SUCCESS != mkl_status) {
-    std::ostringstream oss;
-    oss << "MKL call \"" << name << "\" at " << file << ":" << line
-        << " encountered error: ";
-    switch (mkl_status) {
-      case SPARSE_STATUS_NOT_INITIALIZED:
-        oss << "SPARSE_STATUS_NOT_INITIALIZED (empty handle or matrix arrays)";
-        break;
-      case SPARSE_STATUS_ALLOC_FAILED:
-        oss << "SPARSE_STATUS_ALLOC_FAILED (internal error: memory allocation "
-               "failed)";
-        break;
-      case SPARSE_STATUS_INVALID_VALUE:
-        oss << "SPARSE_STATUS_INVALID_VALUE (invalid input value)";
-        break;
-      case SPARSE_STATUS_EXECUTION_FAILED:
-        oss << "SPARSE_STATUS_EXECUTION_FAILED (e.g. 0-diagonal element for "
-               "triangular solver)";
-        break;
-      case SPARSE_STATUS_INTERNAL_ERROR:
-        oss << "SPARSE_STATUS_INTERNAL_ERROR";
-        break;
-      case SPARSE_STATUS_NOT_SUPPORTED:
-        oss << "SPARSE_STATUS_NOT_SUPPORTED (e.g. operation for double "
-               "precision doesn't support other types)";
-        break;
-      default: oss << "unknown (code " << (int)mkl_status << ")"; break;
-    }
-    oss << '\n';
-    Kokkos::abort(oss.str().c_str());
-  }
-}
-
-#define KOKKOSKERNELS_MKL_SAFE_CALL(call) \
-  KokkosSparse::Impl::mkl_internal_safe_call(call, #call, __FILE__, __LINE__)
 
 inline sparse_operation_t mode_kk_to_mkl(char mode_kk) {
   switch (toupper(mode_kk)) {

@@ -42,56 +42,82 @@
 //@HEADER
 */
 
-#ifndef KOKKOSBLAS2_TEAM_GEMV_IMPL_HPP_
-#define KOKKOSBLAS2_TEAM_GEMV_IMPL_HPP_
+#ifndef KOKKOSBLAS3_TEAM_GEMM_IMPL_HPP_
+#define KOKKOSBLAS3_TEAM_GEMM_IMPL_HPP_
 
-#include <KokkosBlas2_team_gemv_internal.hpp>
+/// \author Kyungjoo Kim (kyukim@sandia.gov)
+
+#include "KokkosBlas3_team_gemm_internal.hpp"
+#include "KokkosBatched_Util.hpp"
 
 namespace KokkosBlas {
 
-template <typename ArgTrans, typename ArgAlgo>
-template <typename MemberType, typename ScalarType, typename AViewType,
-          typename xViewType, typename yViewType>
-KOKKOS_INLINE_FUNCTION int TeamGemv<ArgTrans, ArgAlgo>::invoke(
-    const MemberType& member, const ScalarType alpha, const AViewType& A,
-    const xViewType& x, const ScalarType beta, const yViewType& y) {
-  static_assert(std::is_same<ArgAlgo, Algo::Gemv::Unblocked>::value ||
-                    std::is_same<ArgAlgo, Algo::Gemv::Blocked>::value,
-                "Algorithm not supported");
-  static_assert(AViewType::Rank == 2,
-                "KokkosBlas::TeamGemv requires rank-2 A matrix");
+///
+/// Implemented:
+/// NT/NT, T/NT, NT/T, T/T
+///
+/// Not yet implemented (ConjTranspose)
+/// CT/NT, NT/CT, CT/CT
+///
 
-  using TransA   = Impl::MatrixModeInfo<ArgTrans>;
-  const auto ae0 = TransA::extent(A, 0);
+template <typename ArgTransA, typename ArgTransB, typename ArgAlgo>
+template <typename MemberType, typename ScalarType, typename AViewType,
+          typename BViewType, typename CViewType>
+KOKKOS_INLINE_FUNCTION int TeamGemm<ArgTransA, ArgTransB, ArgAlgo>::invoke(
+    const MemberType &member, const ScalarType alpha, const AViewType &A,
+    const BViewType &B, const ScalarType beta, const CViewType &C) {
+  // C = beta C + alpha A B
+  // C (m x n), A(m x k), B(k x n)
+
+  static_assert(std::is_same<ArgAlgo, Algo::Gemm::Unblocked>::value ||
+                    std::is_same<ArgAlgo, Algo::Gemm::Blocked>::value,
+                "Algorithm not supported");
+
+  using TransA   = Impl::MatrixModeInfo<ArgTransA>;
+  using TransB   = Impl::MatrixModeInfo<ArgTransB>;
   const auto ae1 = TransA::extent(A, 1);
   const auto as0 = TransA::stride_0(A);
   const auto as1 = TransA::stride_1(A);
+  const auto bs0 = TransB::stride_0(B);
+  const auto bs1 = TransB::stride_1(B);
 
-  return Impl::TeamGemvInternal<ArgAlgo>::invoke(
-      member, ae0, ae1, alpha, A.data(), as0, as1, x.data(), x.stride_0(), beta,
-      y.data(), y.stride_0());
+  return Impl::TeamGemmInternal<ArgAlgo>::invoke(
+      member, C.extent(0), C.extent(1), ae1, alpha, A.data(), as0, as1,
+      B.data(), bs0, bs1, beta, C.data(), C.stride_0(), C.stride_1());
 }
 
-template <typename ArgTrans, typename ArgAlgo>
-template <typename MemberType, typename ScalarType, typename AViewType,
-          typename xViewType, typename yViewType>
-KOKKOS_INLINE_FUNCTION int TeamVectorGemv<ArgTrans, ArgAlgo>::invoke(
-    const MemberType& member, const ScalarType alpha, const AViewType& A,
-    const xViewType& x, const ScalarType beta, const yViewType& y) {
-  static_assert(std::is_same<ArgAlgo, Algo::Gemv::Unblocked>::value,
-                "Algorithm not supported");
-  static_assert(AViewType::Rank == 2,
-                "KokkosBlas::TeamVectorGemv requires rank-2 A matrix");
+///
+/// Implemented:
+/// NT/NT, T/NT, NT/T, T/T
+///
+/// Not yet implemented (ConjTranspose)
+/// CT/NT, NT/CT, CT/CT
+///
 
-  using TransA   = Impl::MatrixModeInfo<ArgTrans>;
-  const auto ae0 = TransA::extent(A, 0);
+template <typename ArgTransA, typename ArgTransB, typename ArgAlgo>
+template <typename MemberType, typename ScalarType, typename AViewType,
+          typename BViewType, typename CViewType>
+KOKKOS_INLINE_FUNCTION int
+TeamVectorGemm<ArgTransA, ArgTransB, ArgAlgo>::invoke(
+    const MemberType &member, const ScalarType alpha, const AViewType &A,
+    const BViewType &B, const ScalarType beta, const CViewType &C) {
+  // C = beta C + alpha A B
+  // C (m x n), A(m x k), B(k x n)
+
+  static_assert(std::is_same<ArgAlgo, Algo::Gemm::Unblocked>::value,
+                "Algorithm not supported");
+
+  using TransA   = Impl::MatrixModeInfo<ArgTransA>;
+  using TransB   = Impl::MatrixModeInfo<ArgTransB>;
   const auto ae1 = TransA::extent(A, 1);
   const auto as0 = TransA::stride_0(A);
   const auto as1 = TransA::stride_1(A);
+  const auto bs0 = TransB::stride_0(B);
+  const auto bs1 = TransB::stride_1(B);
 
-  return Impl::TeamVectorGemvInternal<Algo::Gemv::Unblocked>::invoke(
-      member, ae0, ae1, alpha, A.data(), as0, as1, x.data(), x.stride_0(), beta,
-      y.data(), y.stride_0());
+  return Impl::TeamVectorGemmInternal<ArgAlgo>::invoke(
+      member, C.extent(0), C.extent(1), ae1, alpha, A.data(), as0, as1,
+      B.data(), bs0, bs1, beta, C.data(), C.stride_0(), C.stride_1());
 }
 
 }  // namespace KokkosBlas
