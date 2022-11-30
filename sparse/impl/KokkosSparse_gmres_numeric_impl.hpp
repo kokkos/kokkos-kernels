@@ -79,23 +79,6 @@ struct GmresWrap {
   using karith                  = typename Kokkos::ArithTraits<scalar_t>;
   using device_t                = typename HandleDeviceEntriesType::device_type;
 
-  // This struct is returned to the user to give solver
-  // statistics and convergence status.
-  struct GmresStats {
-    int numIters;
-    double endRelRes;
-    enum FLAG { Conv, NoConv, LOA };
-    FLAG convFlagVal;
-    std::string convFlag() {
-      switch (convFlagVal) {
-      case Conv: return "Converged";
-      case NoConv: return "Not Converged";
-      case LOA: return "Solver has had loss of accuracy.";
-      default: return "Flag not defined.";
-      }
-    }
-  };
-
   /**
    * The main gmres numeric function. Copied with slight modifications from example/gmres/gmres.hpp
    */
@@ -124,7 +107,6 @@ struct GmresWrap {
     int numIters   = 0;  // Number of iterations within the cycle before
     // convergence.
     MT nrmB, trueRes, relRes, shortRelRes;
-    GmresStats myStats;
 
     if (verbose) {
       std::cout << "Convergence tolerance is: " << tol << std::endl;
@@ -334,38 +316,42 @@ struct GmresWrap {
       Kokkos::deep_copy(X, Xiter);
     }
 
+    int num_iters = 0;
+    MT end_rel_res = 0;
+    typename GmresHandle::Flag conv_flag_val;
     std::cout << "Ending relative residual is: " << relRes << std::endl;
-    myStats.endRelRes = static_cast<double>(relRes);
+    end_rel_res = static_cast<double>(relRes);
     if (converged) {
       if (verbose) {
         std::cout << "Solver converged! " << std::endl;
       }
-      myStats.convFlagVal = GmresStats::FLAG::Conv;
+      conv_flag_val = GmresHandle::Flag::Conv;
     } else if (shortRelRes < tol) {
       if (verbose) {
         std::cout << "Shortcut residual converged, but solver experienced a loss "
           "of accuracy."
                   << std::endl;
       }
-      myStats.convFlagVal = GmresStats::FLAG::LOA;
+      conv_flag_val = GmresHandle::Flag::LOA;
     } else {
       if (verbose) {
         std::cout << "Solver did not converge. :( " << std::endl;
       }
-      myStats.convFlagVal = GmresStats::FLAG::NoConv;
+      conv_flag_val = GmresHandle::Flag::NoConv;
     }
     if (cycle > 0) {
-      myStats.numIters = (cycle - 1) * m + numIters;
+      num_iters = (cycle - 1) * m + numIters;
     } else {
-      myStats.numIters = 0;
+      num_iters = 0;
     }
     if (verbose) {
-      std::cout << "The solver completed " << myStats.numIters << " iterations."
+      std::cout << "The solver completed " << num_iters << " iterations."
                 << std::endl;
     }
 
+    thandle.set_stats(num_iters, end_rel_res, conv_flag_val);
+
     Kokkos::Profiling::popRegion();
-    //return myStats;
   }  // end gmres_numeric
 
 };  // struct GmresWrap

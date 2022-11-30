@@ -97,8 +97,12 @@ class GMRESHandle {
                    typename nnz_row_view_t::memory_traits>;
 
   enum Ortho { CGS2, MGS };
+  enum Flag { Conv, NoConv, LOA, NotRun };
 
  private:
+
+  // Inputs
+
   size_type nrows;
   size_type m;
   size_type max_restart;
@@ -112,6 +116,11 @@ class GMRESHandle {
   int team_size;
   int vector_size;
 
+  // Outputs
+  int num_iters;
+  float_t end_rel_res;
+  Flag conv_flag_val;
+
  public:
   GMRESHandle(const size_type nrows_, const size_type m_ = 50,
               const size_type max_restart_ = 50, const float_t tol_ = 1e-8, const Ortho ortho_ = CGS2,
@@ -123,7 +132,10 @@ class GMRESHandle {
         ortho(ortho_),
         verbose(verbose_),
         team_size(-1),
-        vector_size(-1) {
+        vector_size(-1),
+        num_iters(-1),
+        end_rel_res(0),
+        conv_flag_val(NotRun) {
     if (m <= 0) {
       throw std::invalid_argument("gmres: Please choose restart size m greater than zero.");
     }
@@ -141,6 +153,9 @@ class GMRESHandle {
     set_tol(tol_);
     set_ortho(ortho_);
     set_verbose(verbose_);
+    num_iters = -1;
+    end_rel_res = 0;
+    conv_flag_val = NotRun;
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -194,6 +209,17 @@ class GMRESHandle {
     } else {
       return TeamPolicy(nrows, team_size);
     }
+  }
+
+  int get_num_iters() const       { assert(get_conv_flag_val() != NotRun); return num_iters; }
+  float_t get_end_rel_res() const { assert(get_conv_flag_val() != NotRun); return end_rel_res; }
+  Flag get_conv_flag_val() const { return conv_flag_val; }
+
+  void set_stats(int num_iters_, float_t end_rel_res_, Flag conv_flag_val_) {
+    assert(conv_flag_val_ != NotRun);
+    num_iters = num_iters_;
+    end_rel_res = end_rel_res_;
+    conv_flag_val = conv_flag_val_;
   }
 };
 
