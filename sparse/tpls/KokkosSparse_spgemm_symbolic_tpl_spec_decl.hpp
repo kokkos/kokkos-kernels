@@ -319,8 +319,8 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k,
   if (NULL != nnzTotalDevHostPtr) {
     nnzC = *nnzTotalDevHostPtr;
   } else {
-    cudaMemcpy(&nnzC, c_xadj + m, sizeof(int), cudaMemcpyDeviceToHost);
-    cudaMemcpy(&baseC, c_xadj, sizeof(int), cudaMemcpyDeviceToHost);
+    cudaMemcpy(&nnzC, row_mapC.data() + m, sizeof(int), cudaMemcpyDeviceToHost);
+    cudaMemcpy(&baseC, row_mapC.data(), sizeof(int), cudaMemcpyDeviceToHost);
     nnzC -= baseC;
   }
   sh->set_c_nnz(nnzC);
@@ -329,47 +329,6 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k,
 }
 
 #endif
-
-/*
-KokkosSparse::Impl::SPGEMM_SYMBOLIC<
-  KokkosKernels::Experimental::KokkosKernelsHandle<int const, int const, double
-const, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaSpace>, Kokkos::View<int
-const*, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
-Kokkos::MemoryTraits<1u> >, Kokkos::View<int const*, Kokkos::LayoutLeft,
-Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>, Kokkos::MemoryTraits<1u> >,
-    Kokkos::View<int const*, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Cuda,
-Kokkos::CudaSpace>, Kokkos::MemoryTraits<1u> >, Kokkos::View<int const*,
-Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
-Kokkos::MemoryTraits<1u> >, Kokkos::View<int*, Kokkos::LayoutLeft,
-Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>, Kokkos::MemoryTraits<1u> >,
-true, true>:: spgemm_symbolic(
-        KokkosKernels::Experimental::KokkosKernelsHandle<int const, int const,
-double const, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaSpace>*, int, int,
-int, Kokkos::View<int const*, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Cuda,
-Kokkos::CudaSpace>, Kokkos::MemoryTraits<1u> >, Kokkos::View<int const*,
-Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
-Kokkos::MemoryTraits<1u> >, bool, Kokkos::View<int const*, Kokkos::LayoutLeft,
-Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>, Kokkos::MemoryTraits<1u> >,
-        Kokkos::View<int const*, Kokkos::LayoutLeft,
-Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>, Kokkos::MemoryTraits<1u> >,
-        bool,
-        Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Cuda,
-Kokkos::CudaSpace>, Kokkos::MemoryTraits<1u> >, bool)
-
-KokkosSparse::Impl::SPGEMM_SYMBOLIC<
-  KokkosKernels::Experimental::KokkosKernelsHandle<int const, int const, double
-const, Kokkos::Cuda, Kokkos::CudaSpace, Kokkos::CudaSpace>, Kokkos::View<int
-const*, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
-Kokkos::MemoryTraits<1u> >, Kokkos::View<int const*, Kokkos::LayoutLeft,
-Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>, Kokkos::MemoryTraits<1u> >,
-  Kokkos::View<int const*, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Cuda,
-Kokkos::CudaSpace>, Kokkos::MemoryTraits<1u> >, Kokkos::View<int const*,
-Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
-Kokkos::MemoryTraits<1u> >, Kokkos::View<int*, Kokkos::LayoutLeft,
-Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>, Kokkos::MemoryTraits<1u> >,
-  true, true>
-
-*/
 
 #define SPGEMM_SYMBOLIC_DECL_CUSPARSE(SCALAR, MEMSPACE, TPL_AVAIL)             \
   template <>                                                                  \

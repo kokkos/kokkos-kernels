@@ -222,7 +222,6 @@ void test_bspgemm(lno_t blkDim, lno_t m, lno_t k, lno_t n, size_type nnz,
   }
 
   for (auto spgemm_algorithm : algorithms) {
-    const uint64_t max_integer = Kokkos::ArithTraits<int>::max();
     std::string algo           = "UNKNOWN";
     bool is_expected_to_fail   = false;
 

@@ -98,9 +98,23 @@ int run_spgemm(crsMat_t A, crsMat_t B,
   kh.set_dynamic_scheduling(true);
 
   kh.create_spgemm_handle(spgemm_algorithm);
+  {
+    auto sh = kh.get_spgemm_handle();
 
-  KokkosSparse::spgemm_symbolic(kh, A, false, B, false, C);
-  KokkosSparse::spgemm_numeric(kh, A, false, B, false, C);
+    EXPECT_FALSE(sh->is_symbolic_called());
+    EXPECT_FALSE(sh->is_numeric_called());
+    EXPECT_FALSE(sh->are_rowptrs_computed());
+    EXPECT_FALSE(sh->are_entries_computed());
+
+    KokkosSparse::spgemm_symbolic(kh, A, false, B, false, C);
+
+    EXPECT_TRUE(sh->is_symbolic_called());
+
+    KokkosSparse::spgemm_numeric(kh, A, false, B, false, C);
+
+    EXPECT_TRUE(sh->are_entries_computed());
+    EXPECT_TRUE(sh->is_numeric_called());
+  }
   kh.destroy_spgemm_handle();
 
   return 0;
@@ -130,42 +144,55 @@ int run_spgemm_old_interface(crsMat_t input_mat, crsMat_t input_mat2,
   // kh.set_verbose(true);
 
   kh.create_spgemm_handle(spgemm_algorithm);
+  {
+    auto sh = kh.get_spgemm_handle();
 
-  const size_t num_rows_1 = input_mat.numRows();
-  const size_t num_rows_2 = input_mat2.numRows();
-  const size_t num_cols_2 = input_mat2.numCols();
+    const size_t num_rows_1 = input_mat.numRows();
+    const size_t num_rows_2 = input_mat2.numRows();
+    const size_t num_cols_2 = input_mat2.numCols();
 
-  const size_t num_cols_1 = input_mat.numCols();
-  bool equal              = num_rows_2 == num_cols_1;
-  if (!equal) return 1;
+    const size_t num_cols_1 = input_mat.numCols();
+    bool equal              = num_rows_2 == num_cols_1;
+    if (!equal) return 1;
 
-  lno_view_t row_mapC("non_const_lnow_row", num_rows_1 + 1);
-  lno_nnz_view_t entriesC;
-  scalar_view_t valuesC;
+    lno_view_t row_mapC("non_const_lnow_row", num_rows_1 + 1);
+    lno_nnz_view_t entriesC;
+    scalar_view_t valuesC;
 
-  spgemm_symbolic(&kh, num_rows_1, num_rows_2, num_cols_2,
-                  input_mat.graph.row_map, input_mat.graph.entries, false,
-                  input_mat2.graph.row_map, input_mat2.graph.entries, false,
-                  row_mapC);
+    EXPECT_FALSE(sh->is_symbolic_called());
+    EXPECT_FALSE(sh->is_numeric_called());
+    EXPECT_FALSE(sh->are_rowptrs_computed());
+    EXPECT_FALSE(sh->are_entries_computed());
 
-  size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
-  entriesC          = lno_nnz_view_t(
-      Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC"), c_nnz_size);
-  valuesC = scalar_view_t(
-      Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC"), c_nnz_size);
-  spgemm_numeric(&kh, num_rows_1, num_rows_2, num_cols_2,
-                 input_mat.graph.row_map, input_mat.graph.entries,
-                 input_mat.values, false,
+    spgemm_symbolic(&kh, num_rows_1, num_rows_2, num_cols_2,
+                    input_mat.graph.row_map, input_mat.graph.entries, false,
+                    input_mat2.graph.row_map, input_mat2.graph.entries, false,
+                    row_mapC);
 
-                 input_mat2.graph.row_map, input_mat2.graph.entries,
-                 input_mat2.values, false, row_mapC, entriesC, valuesC);
+    EXPECT_TRUE(sh->is_symbolic_called());
 
-  graph_t static_graph(entriesC, row_mapC);
-  result = crsMat_t("CrsMatrix", num_cols_2, valuesC, static_graph);
+    size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
+    entriesC          = lno_nnz_view_t(
+        Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC"), c_nnz_size);
+    valuesC = scalar_view_t(
+        Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC"), c_nnz_size);
+    spgemm_numeric(&kh, num_rows_1, num_rows_2, num_cols_2,
+                   input_mat.graph.row_map, input_mat.graph.entries,
+                   input_mat.values, false,
+
+                   input_mat2.graph.row_map, input_mat2.graph.entries,
+                   input_mat2.values, false, row_mapC, entriesC, valuesC);
+
+    EXPECT_TRUE(sh->are_entries_computed());
+    EXPECT_TRUE(sh->is_numeric_called());
+
+    graph_t static_graph(entriesC, row_mapC);
+    result = crsMat_t("CrsMatrix", num_cols_2, valuesC, static_graph);
+  }
   kh.destroy_spgemm_handle();
-
   return 0;
 }
+
 template <typename crsMat_t, typename device>
 bool is_same_matrix(crsMat_t output_mat_actual, crsMat_t output_mat_reference) {
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
@@ -295,7 +322,6 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth,
   };
 
   for (auto spgemm_algorithm : algorithms) {
-    const uint64_t max_integer = Kokkos::ArithTraits<int>::max();
     std::string algo           = "UNKNOWN";
     bool is_expected_to_fail   = false;
 
