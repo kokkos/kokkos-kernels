@@ -247,11 +247,11 @@ trsv
 
 gemm
 ----
-.. doxygenstruct:: KokkosBatched::SerialGemm
+.. doxygenstruct:: KokkosBlas::SerialGemm
     :members:
-.. doxygenstruct:: KokkosBatched::TeamGemm
+.. doxygenstruct:: KokkosBlas::TeamGemm
     :members:
-.. doxygenstruct:: KokkosBatched::TeamVectorGemm
+.. doxygenstruct:: KokkosBlas::TeamVectorGemm
     :members:
-.. doxygenstruct:: KokkosBatched::Gemm
+.. doxygenstruct:: KokkosBlas::Gemm
     :members:

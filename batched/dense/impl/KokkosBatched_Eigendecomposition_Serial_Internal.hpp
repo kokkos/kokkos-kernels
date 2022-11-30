@@ -12,7 +12,6 @@
 #include "KokkosBatched_Schur_Serial_Internal.hpp"
 #include "KokkosBatched_RightEigenvectorFromSchur_Serial_Internal.hpp"
 #include "KokkosBatched_LeftEigenvectorFromSchur_Serial_Internal.hpp"
-#include "KokkosBatched_Gemm_Serial_Internal.hpp"
 
 namespace KokkosBatched {
 

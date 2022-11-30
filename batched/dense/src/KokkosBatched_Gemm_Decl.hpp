@@ -49,22 +49,29 @@
 #include <KokkosBatched_Gemm_Handle.hpp>
 #include <KokkosKernels_ExecSpaceUtils.hpp>
 #include <KokkosKernels_Error.hpp>
+#include <KokkosBlas3_gemm.hpp>
 
 namespace KokkosBatched {
 /********************* BEGIN functor-level routines *********************/
+// clang-format off
+// Note: formatting gets mislead by [[deprecated]] attributes
+
 ///
 /// Serial Gemm
 ///
 
 template <typename ArgTransA, typename ArgTransB, typename ArgAlgo>
-struct SerialGemm {
+struct [[deprecated]] SerialGemm {
   template <typename ScalarType, typename AViewType, typename BViewType,
             typename CViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha,
                                            const AViewType &A,
                                            const BViewType &B,
                                            const ScalarType beta,
-                                           const CViewType &C);
+                                           const CViewType &C) {
+    return KokkosBlas::SerialGemm<ArgTransA, ArgTransB, ArgAlgo>::invoke(
+        alpha, A, B, beta, C);
+  }
 };
 
 ///
@@ -73,12 +80,15 @@ struct SerialGemm {
 
 template <typename MemberType, typename ArgTransA, typename ArgTransB,
           typename ArgAlgo>
-struct TeamGemm {
+struct [[deprecated]] TeamGemm {
   template <typename ScalarType, typename AViewType, typename BViewType,
             typename CViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType &member, const ScalarType alpha, const AViewType &A,
-      const BViewType &B, const ScalarType beta, const CViewType &C);
+      const BViewType &B, const ScalarType beta, const CViewType &C) {
+    return KokkosBlas::TeamGemm<ArgTransA, ArgTransB, ArgAlgo>::invoke(
+        member, alpha, A, B, beta, C);
+  }
 };
 
 ///
@@ -87,12 +97,15 @@ struct TeamGemm {
 
 template <typename MemberType, typename ArgTransA, typename ArgTransB,
           typename ArgAlgo>
-struct TeamVectorGemm {
+struct [[deprecated]] TeamVectorGemm {
   template <typename ScalarType, typename AViewType, typename BViewType,
             typename CViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType &member, const ScalarType alpha, const AViewType &A,
-      const BViewType &B, const ScalarType beta, const CViewType &C);
+      const BViewType &B, const ScalarType beta, const CViewType &C) {
+    return KokkosBlas::TeamVectorGemm<ArgTransA, ArgTransB, ArgAlgo>::invoke(
+        member, alpha, A, B, beta, C);
+  }
 };
 
 ///
@@ -100,23 +113,16 @@ struct TeamVectorGemm {
 ///
 template <typename MemberType, typename ArgTransA, typename ArgTransB,
           typename ArgMode, typename ArgAlgo>
-struct Gemm {
+struct [[deprecated]] Gemm {
   template <typename ScalarType, typename AViewType, typename BViewType,
             typename CViewType>
   KOKKOS_FORCEINLINE_FUNCTION static int invoke(
       const MemberType &member, const ScalarType alpha, const AViewType &A,
       const BViewType &B, const ScalarType beta, const CViewType &C) {
-    int r_val = 0;
-    if (std::is_same<ArgMode, Mode::Serial>::value) {
-      r_val = SerialGemm<ArgTransA, ArgTransB, ArgAlgo>::invoke(alpha, A, B,
-                                                                beta, C);
-    } else if (std::is_same<ArgMode, Mode::Team>::value) {
-      r_val = TeamGemm<MemberType, ArgTransA, ArgTransB, ArgAlgo>::invoke(
-          member, alpha, A, B, beta, C);
-    }
-    return r_val;
+    return KokkosBlas::Gemm(member, alpha, A, B, beta, C);
   }
 };
+// clang-format on
 /********************* END functor-level routines *********************/
 
 /********************* BEGIN non-functor-level routines *********************/
@@ -682,8 +688,6 @@ int BatchedGemm(BatchedGemmHandleType *const handle, const ScalarType alpha,
 }  // namespace KokkosBatched
 
 #include "KokkosBatched_Gemm_Serial_Impl.hpp"
-#include "KokkosBatched_Gemm_Team_Impl.hpp"
-#include "KokkosBatched_Gemm_TeamVector_Impl.hpp"
 #include "KokkosBatched_Gemm_DblBuf_Impl.hpp"
 #include "KokkosBatched_Gemm_Armpl_Impl.hpp"
 
