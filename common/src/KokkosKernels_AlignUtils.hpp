@@ -91,11 +91,14 @@ T *assume_aligned(T *ptr, size_t /*align*/) {
 template <typename T>
 KOKKOS_FORCEINLINE_FUNCTION
 T *assume_aligned(T *ptr, size_t n) {
-#if defined(KOKKOS_COMPILER_INTEL) && !defined(__clang__)
+#if defined(KOKKOS_COMPILER_INTEL)
   __assume_aligned(ptr, n);
   return ptr;
-#elif defined(__GNUC__) || defined(__GNUG__) || defined(__clang__)
+#elif defined(KOKKOS_COMPILER_GNU) || defined(KOKKOS_COMPILER_CLANG)
   return static_cast<T*>(__builtin_assume_aligned(ptr, n));
+#elif defined(KOKKOS_COMPILER_MSVC)
+  __assume(std::uintptr_t(ptr) % n == 0); // can the compiler see this through a function return?
+  return ptr;
 #else
 #warning KokkosKernels::Impl::assume_aligned is not supported for this compiler. Please report this
 #endif
