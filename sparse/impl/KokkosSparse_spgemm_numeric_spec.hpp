@@ -172,6 +172,7 @@ struct SPGEMM_NUMERIC<
     if (m == 0 || n == 0 || k == 0 || !entriesA.extent(0) ||
         !entriesB.extent(0)) {
       sh->set_call_numeric();
+      sh->set_computed_entries();
       return;
     }
     switch (sh->get_algorithm_type()) {

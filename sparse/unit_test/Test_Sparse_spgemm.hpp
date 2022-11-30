@@ -424,6 +424,8 @@ void test_issue402() {
       scalar_view_t, lno_view_t, typename device::execution_space>(
       numRows, numRows, Arowmap, Aentries, Avalues, Browmap, Bentries, Bvalues);
   crsMat_t B("B=A^T", numRows, numRows, nnz, Bvalues, Browmap, Bentries);
+  KokkosSparse::sort_crs_matrix(A);
+  KokkosSparse::sort_crs_matrix(B);
   crsMat_t Cgold;
   run_spgemm<crsMat_t, device>(A, B, SPGEMM_DEBUG, Cgold);
   crsMat_t C;
@@ -442,11 +444,11 @@ void test_issue402() {
     errMsg  = e.what();
     success = false;
   }
-  EXPECT_TRUE(success) << "KKMEM still has issue 402 bug! Error message:\n"
+  EXPECT_TRUE(success) << "SpGEMM still has issue 402 bug! Error message:\n"
                        << errMsg << '\n';
   bool correctResult = is_same_matrix<crsMat_t, device>(C, Cgold);
   EXPECT_TRUE(correctResult)
-      << "KKMEM still has issue 402 bug; C=AA' is incorrect!\n";
+      << "SpGEMM still has issue 402 bug; C=AA' is incorrect!\n";
 }
 
 #define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)            \

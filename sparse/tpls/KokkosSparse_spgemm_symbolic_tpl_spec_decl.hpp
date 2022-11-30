@@ -82,19 +82,18 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k,
                               const ConstRowMapType &row_mapB,
                               const ConstEntriesType &entriesB,
                               const RowMapType &row_mapC, bool computeRowptrs) {
-  auto sh = handle->get_spgemm_handle();
   // Split symbolic into two sub-phases: handle/buffer setup and nnz(C), and
   // then rowptrs (if requested). That way, calling symbolic once with
   // computeRowptrs=false, and then again with computeRowptrs=true will not
   // duplicate any work.
-  if (!sh->is_symbolic_called()) {
-    sh->create_cusparse_spgemm_handle(false, false);
+  if (!handle->is_symbolic_called()) {
+    handle->create_cusparse_spgemm_handle(false, false);
     auto h = sh->get_cusparse_spgemm_handle();
 
     // Follow
     // https://github.com/NVIDIA/CUDALibrarySamples/tree/master/cuSPARSE/spgemm_reuse
-    void *buffer1      = NULL;
-    void *buffer2      = NULL;
+    void *buffer1      = nullptr;
+    void *buffer2      = nullptr;
     size_t bufferSize1 = 0;
     size_t bufferSize2 = 0;
 
@@ -115,14 +114,14 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k,
         h->scalarType));
 
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateCsr(
-        &h->descr_C, m, k, 0, NULL, NULL, NULL, CUSPARSE_INDEX_32I,
+        &h->descr_C, m, k, 0, nullptr, nullptr, nullptr, CUSPARSE_INDEX_32I,
         CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO, h->scalarType));
 
     //----------------------------------------------------------------------
     // ask bufferSize1 bytes for external memory
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMMreuse_workEstimation(
         h->cusparseHandle, h->opA, h->opB, h->descr_A, h->descr_B, h->descr_C,
-        h->alg, h->spgemmDescr, &bufferSize1, NULL));
+        h->alg, h->spgemmDescr, &bufferSize1, nullptr));
 
     KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc((void **)&buffer1, bufferSize1));
     // inspect matrices A and B to understand the memory requirement for the
@@ -135,8 +134,8 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k,
     // Compute nnz of C
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMMreuse_nnz(
         h->cusparseHandle, h->opA, h->opB, h->descr_A, h->descr_B, h->descr_C,
-        h->alg, h->spgemmDescr, &bufferSize2, NULL, &h->bufferSize3, NULL,
-        &h->bufferSize4, NULL));
+        h->alg, h->spgemmDescr, &bufferSize2, nullptr, &h->bufferSize3, nullptr,
+        &h->bufferSize4, nullptr));
 
     KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc((void **)&buffer2, bufferSize2));
     KOKKOS_IMPL_CUDA_SAFE_CALL(
@@ -158,8 +157,8 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k,
     if (C_nnz > std::numeric_limits<int>::max()) {
       throw std::runtime_error("nnz of C overflowed over 32-bit int\n");
     }
-    sh->set_c_nnz(C_nnz);
-    sh->set_call_symbolic();
+    handle->set_c_nnz(C_nnz);
+    handle->set_call_symbolic();
   }
   if (computeRowptrs && !sh->are_rowptrs_computed()) {
     using Scalar  = typename KernelHandle::nnz_scalar_t;
@@ -181,7 +180,7 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k,
 
     cusparseSpGEMMreuse_copy(h->cusparseHandle, h->opA, h->opB, h->descr_A,
                              h->descr_B, h->descr_C, h->alg, h->spgemmDescr,
-                             &h->bufferSize5, NULL);
+                             &h->bufferSize5, nullptr);
     KOKKOS_IMPL_CUDA_SAFE_CALL(
         cudaMalloc((void **)&h->buffer5, h->bufferSize5));
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMMreuse_copy(
@@ -189,16 +188,12 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k,
         h->alg, h->spgemmDescr, &h->bufferSize5, h->buffer5));
     if (!sh->get_c_nnz()) {
       // cuSPARSE does not populate C rowptrs if C has no entries
-      cudaStream_t stream;
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseGetStream(h->cusparseHandle, &stream));
-      cudaMemsetAsync(
-          (void *)row_mapC.data(), 0,
-          row_mapC.extent(0) * sizeof(typename ConstRowMapType::value_type));
+      Kokkos::deep_copy(typename KernelHandle::HandleExecSpace(), row_mapC.data(), size_type(0));
     }
     KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(h->buffer5));
     KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(dummyValues));
     KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(dummyEntries));
-    sh->set_computed_rowptrs();
+    handle->set_computed_rowptrs();
   }
 }
 
@@ -215,10 +210,9 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k,
                               bool /* computeRowptrs */) {
   using scalar_type = typename KernelHandle::nnz_scalar_t;
   using Offset = typename KernelHandle::size_type;
-  auto sh      = handle->get_spgemm_handle();
-  if (sh->is_symbolic_called() && sh->are_rowptrs_computed()) return;
-  sh->create_cusparse_spgemm_handle(false, false);
-  auto h = sh->get_cusparse_spgemm_handle();
+  if (handle->is_symbolic_called() && handle->are_rowptrs_computed()) return;
+  handle->create_cusparse_spgemm_handle(false, false);
+  auto h = handle->get_cusparse_spgemm_handle();
 
   // Follow
   // https://github.com/NVIDIA/CUDALibrarySamples/blob/master/cuSPARSE/spgemm
@@ -249,7 +243,7 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k,
       CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO, h->scalarType));
 
   KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateCsr(
-      &h->descr_C, m, k, 0, row_mapC.data(), NULL, NULL, CUSPARSE_INDEX_32I,
+      &h->descr_C, m, k, 0, row_mapC.data(), nullptr, nullptr, CUSPARSE_INDEX_32I,
       CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO, h->scalarType));
 
   //----------------------------------------------------------------------
@@ -257,7 +251,7 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k,
   KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMM_workEstimation(
       h->cusparseHandle, h->opA, h->opB, &alpha, h->descr_A, h->descr_B, &beta,
       h->descr_C, h->scalarType, h->alg, h->spgemmDescr, &h->bufferSize3,
-      NULL));
+      nullptr));
   KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc((void **)&h->buffer3, h->bufferSize3));
   KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMM_workEstimation(
       h->cusparseHandle, h->opA, h->opB, &alpha, h->descr_A, h->descr_B, &beta,
@@ -270,7 +264,7 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k,
   KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMM_compute(
       h->cusparseHandle, h->opA, h->opB, &alpha, h->descr_A, h->descr_B, &beta,
       h->descr_C, h->scalarType, CUSPARSE_SPGEMM_DEFAULT, h->spgemmDescr,
-      &h->bufferSize4, NULL));
+      &h->bufferSize4, nullptr));
   KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc((void **)&h->buffer4, h->bufferSize4));
   KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMM_compute(
       h->cusparseHandle, h->opA, h->opB, &alpha, h->descr_A, h->descr_B, &beta,
@@ -284,13 +278,56 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k,
   if (C_nnz > std::numeric_limits<int>::max()) {
     throw std::runtime_error("nnz of C overflowed over 32-bit int\n");
   }
-  sh->set_c_nnz(C_nnz);
-  sh->set_call_symbolic();
-  sh->set_computed_rowptrs();
+  handle->set_c_nnz(C_nnz);
+  handle->set_call_symbolic();
+  handle->set_computed_rowptrs();
 }
 
 #else
-// 10.x supports the pre-generic interface. It always populates C rowptrs.
+//Generic wrapper for cusparseXcsrgemm2_bufferSizeExt (where X is S, D, C, or Z).
+//Accepts Kokkos types (e.g. Kokkos::complex<float>) for Scalar
+//and handles casting to cuSparse types internally.
+
+#define CUSPARSE_XCSRGEMM2_BUFFERSIZE_SPEC(KokkosType, CusparseType, Abbreviation) \
+  inline cusparseStatus_t cusparseXcsrgemm2_bufferSizeExt(                         \
+      cusparseHandle_t handle, \
+      int                      m, \
+      int                      n, \
+      int                      k, \
+      const KokkosType* alpha, \
+      const cusparseMatDescr_t descrA, \
+      int                      nnzA, \
+      const int*               csrSortedRowPtrA, \
+      const int*               csrSortedColIndA, \
+      const cusparseMatDescr_t descrB, \
+      int                      nnzB, \
+      const int*               csrSortedRowPtrB, \
+      const int*               csrSortedColIndB, \
+      const KokkosType*             beta, \
+      const cusparseMatDescr_t descrD, \
+      int                      nnzD, \
+      const int*               csrSortedRowPtrD, \
+      const int*               csrSortedColIndD, \
+      csrgemm2Info_t           info, \
+      size_t*                  pBufferSizeInBytes) \
+  { \
+    return cusparse##Abbreviation##csrgemm2_bufferSizeExt(                              \
+        handle, m, n, k, reinterpret_cast<const CusparseType*>(alpha), \
+        descrA, nnzA, csrSortedRowPtrA, csrSortedColIndA, \
+        descrB, nnzB, csrSortedRowPtrB, csrSortedColIndB, \
+        reinterpret_cast<const CusparseType*>(beta), \
+        descrD, nnzD, csrSortedRowPtrD, csrSortedColIndD, \
+        info, pBufferSizeInBytes); \
+  }
+
+CUSPARSE_XCSRGEMM2_BUFFERSIZE_SPEC(float, float, S)
+CUSPARSE_XCSRGEMM2_BUFFERSIZE_SPEC(double, double, D)
+CUSPARSE_XCSRGEMM2_BUFFERSIZE_SPEC(Kokkos::complex<float>, cuComplex, C)
+CUSPARSE_XCSRGEMM2_BUFFERSIZE_SPEC(Kokkos::complex<double>, cuDoubleComplex, Z)
+
+#undef CUSPARSE_XCSRGEMM2_BUFFERSIZE_SPEC
+
+// 10.x supports the pre-generic interface csrgemm2. It always populates C rowptrs.
 template <typename KernelHandle, typename lno_t, typename ConstRowMapType,
           typename ConstEntriesType, typename RowMapType>
 void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k,
@@ -300,32 +337,57 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k,
                               const ConstEntriesType &entriesB,
                               const RowMapType &row_mapC,
                               bool /* computeRowptrs */) {
-  auto sh = handle->get_spgemm_handle();
-  if (sh->are_rowptrs_computed()) return;
-  sh->create_cusparse_spgemm_handle(false, false);
-  auto h = sh->get_cusparse_spgemm_handle();
-
+  using scalar_type = typename KernelHandle::nnz_scalar_t;
+  using size_type = typename KernelHandle::size_type;
+  if (handle->are_rowptrs_computed()) return;
+  handle->create_cusparse_spgemm_handle(false, false);
+  auto h = handle->get_cusparse_spgemm_handle();
   int nnzA = entriesA.extent(0);
   int nnzB = entriesB.extent(0);
 
   int baseC, nnzC;
   int *nnzTotalDevHostPtr = &nnzC;
 
-  cusparseXcsrgemmNnz(h->handle, h->transA, h->transB, (int)m, (int)n, (int)k,
-                      h->a_descr, nnzA, row_mapA.data(), entriesA.data(),
-                      h->b_descr, nnzB, row_mapB.data(), entriesB.data(),
-                      h->c_descr, row_mapC.data(), nnzTotalDevHostPtr);
+  std::cout << "Hello from cusparse 10 symbolic. A is " << m << 'x' << n << ", B is " << n << 'x' << k << ". nnzA = " << nnzA << ", nnzB = " << nnzB << '\n';
 
-  if (NULL != nnzTotalDevHostPtr) {
-    nnzC = *nnzTotalDevHostPtr;
-  } else {
-    cudaMemcpy(&nnzC, row_mapC.data() + m, sizeof(int), cudaMemcpyDeviceToHost);
-    cudaMemcpy(&baseC, row_mapC.data(), sizeof(int), cudaMemcpyDeviceToHost);
-    nnzC -= baseC;
+  //In empty (zero entries) matrix case, cusparse does not populate rowptrs to zeros
+  if (m == 0 || n == 0 || k == 0 || entriesA.extent(0) == size_type(0) || entriesB.extent(0) == size_type(0)) {
+    std::cout << " >> Emtpy case, zeroing out rowptrs.\n";
+    Kokkos::deep_copy(typename KernelHandle::HandleExecSpace(), row_mapC, size_type(0));
+    nnzC = 0;
   }
-  sh->set_c_nnz(nnzC);
-  sh->set_call_symbolic();
-  sh->set_computed_rowptrs();
+  else {
+    // Allocate and zero-initialize D's rowptrs array
+    KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc((void **) &h->row_ptrD, (m + 1) * sizeof(size_type)));
+    KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMemset(h->row_ptrD, 0, (m + 1) * sizeof(size_type)));
+    // Calculate workspace buffer size
+    size_t pBufferSize;
+    const scalar_type alpha = Kokkos::ArithTraits<scalar_type>::one();
+    const scalar_type beta  = Kokkos::ArithTraits<scalar_type>::zero();
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseXcsrgemm2_bufferSizeExt(h->cusparseHandle, m, n, k,
+          &alpha, h->generalDescr, nnzA, row_mapA.data(), entriesA.data(),
+          h->generalDescr, nnzB, row_mapB.data(), entriesB.data(),
+          &beta, h->generalDescr, 0, h->row_ptrD, h->row_ptrD, h->info, &pBufferSize));
+    KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc((void **) &h->pBuffer, pBufferSize));
+    //NOTE: also passing D's rowptr as D's entries, since it must be non-null but it will never be dereferenced (has length 0)
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseXcsrgemm2Nnz(h->cusparseHandle, (int)m, (int)n, (int)k,
+                        h->generalDescr, nnzA, row_mapA.data(), entriesA.data(),
+                        h->generalDescr, nnzB, row_mapB.data(), entriesB.data(),
+                        h->generalDescr, 0, h->row_ptrD, h->row_ptrD,
+                        h->generalDescr, row_mapC.data(), nnzTotalDevHostPtr, h->info, h->pBuffer));
+    if (nullptr != nnzTotalDevHostPtr) {
+      nnzC = *nnzTotalDevHostPtr;
+      std::cout << " >> Called cusparse nnz, got nnzC = " << nnzC << '\n';
+    } else {
+      KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMemcpy(&nnzC, row_mapC.data() + m, sizeof(int), cudaMemcpyDeviceToHost));
+      KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMemcpy(&baseC, row_mapC.data(), sizeof(int), cudaMemcpyDeviceToHost));
+      nnzC -= baseC;
+      std::cout << " >> Called cusparse nnz, got nnzC (from device ptrs) = " << nnzC << '\n';
+    }
+  }
+  handle->set_c_nnz(nnzC);
+  handle->set_call_symbolic();
+  handle->set_computed_rowptrs();
 }
 
 #endif
@@ -372,7 +434,7 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k,
       std::string label = "KokkosSparse::spgemm[TPL_CUSPARSE," +               \
                           Kokkos::ArithTraits<SCALAR>::name() + "]";           \
       Kokkos::Profiling::pushRegion(label);                                    \
-      spgemm_symbolic_cusparse(handle, m, n, k, row_mapA, entriesA, row_mapB,  \
+      spgemm_symbolic_cusparse(handle->get_spgemm_handle(), m, n, k, row_mapA, entriesA, row_mapB,  \
                                entriesB, row_mapC, computeRowptrs);            \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
@@ -465,7 +527,7 @@ void spgemm_symbolic_rocsparse(
       reinterpret_cast<const rocsparse_scalar_type *>(&alpha), h->descr_A,
       nnz_A, rowptrA.data(), colidxA.data(), h->descr_B, nnz_B, rowptrB.data(),
       colidxB.data(), reinterpret_cast<const rocsparse_scalar_type *>(&beta),
-      h->descr_D, 0, NULL, NULL, h->info_C, &h->bufferSize));
+      h->descr_D, 0, nullptr, nullptr, h->info_C, &h->bufferSize));
 
   KOKKOS_IMPL_HIP_SAFE_CALL(hipMalloc(&h->buffer, h->bufferSize));
 
@@ -473,7 +535,7 @@ void spgemm_symbolic_rocsparse(
   KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_csrgemm_nnz(
       h->rocsparseHandle, h->opA, h->opB, m, k, n, h->descr_A, nnz_A,
       rowptrA.data(), colidxA.data(), h->descr_B, nnz_B, rowptrB.data(),
-      colidxB.data(), h->descr_D, 0, NULL, NULL, h->descr_C, rowptrC.data(),
+      colidxB.data(), h->descr_D, 0, nullptr, nullptr, h->descr_C, rowptrC.data(),
       &nnz_C, h->info_C, h->buffer));
   // If C has zero rows, its rowptrs are not populated
   if (m == 0) {
@@ -575,8 +637,8 @@ void spgemm_symbolic_mkl(
     handle->set_c_nnz(0);
     return;
   }
-  MKLMatrix A(m, n, (int *)rowptrA.data(), (int *)colidxA.data(), NULL);
-  MKLMatrix B(n, k, (int *)rowptrB.data(), (int *)colidxB.data(), NULL);
+  MKLMatrix A(m, n, (int *)rowptrA.data(), (int *)colidxA.data(), nullptr);
+  MKLMatrix B(n, k, (int *)rowptrB.data(), (int *)colidxB.data(), nullptr);
   sparse_matrix_t C;
   matrix_descr generalDescr;
   generalDescr.type = SPARSE_MATRIX_TYPE_GENERAL;
@@ -588,9 +650,9 @@ void spgemm_symbolic_mkl(
                       SPARSE_STAGE_NNZ_COUNT, &C));
   MKLMatrix wrappedC(C);
   MKL_INT nrows = 0, ncols = 0;
-  MKL_INT *rowptrRaw     = NULL;
-  MKL_INT *colidxRaw     = NULL;
-  scalar_type *valuesRaw = NULL;
+  MKL_INT *rowptrRaw     = nullptr;
+  MKL_INT *colidxRaw     = nullptr;
+  scalar_type *valuesRaw = nullptr;
   wrappedC.export_data(nrows, ncols, rowptrRaw, colidxRaw, valuesRaw);
   Kokkos::View<index_type *, Kokkos::HostSpace,
                Kokkos::MemoryTraits<Kokkos::Unmanaged>>

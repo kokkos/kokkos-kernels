@@ -173,7 +173,7 @@ class SPGEMMHandle {
           transposeB ? rocsparse_operation_transpose : rocsparse_operation_none;
 
       bufferSize = 0;
-      buffer     = NULL;
+      buffer     = nullptr;
       KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_mat_descr(&descr_A));
       KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_mat_descr(&descr_B));
       KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_mat_descr(&descr_C));
@@ -219,79 +219,55 @@ class SPGEMMHandle {
 
       alg         = CUSPARSE_SPGEMM_DEFAULT;
       bufferSize3 = bufferSize4 = bufferSize5 = 0;
-      buffer3 = buffer4 = buffer5 = NULL;
+      buffer3 = buffer4 = buffer5 = nullptr;
 
       cusparseHandle = kkControls.getCusparseHandle();
       KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMM_createDescr(&spgemmDescr));
     }
 
     ~cuSparseSpgemmHandleType() {
-      cusparseDestroySpMat(descr_A);
-      cusparseDestroySpMat(descr_B);
-      cusparseDestroySpMat(descr_C);
-      cusparseSpGEMM_destroyDescr(spgemmDescr);
-      cudaFree(buffer3);
-      cudaFree(buffer4);
-      cudaFree(buffer5);
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(descr_A));
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(descr_B));
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(descr_C));
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMM_destroyDescr(spgemmDescr));
+      KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(buffer3));
+      KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(buffer4));
+      KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(buffer5));
     }
   };
 #else
   struct cuSparseSpgemmHandleType {
-    cusparseHandle_t handle;
-    cusparseOperation_t transA;
-    cusparseOperation_t transB;
-    cusparseMatDescr_t a_descr;
-    cusparseMatDescr_t b_descr;
-    cusparseMatDescr_t c_descr;
-    cuSparseSpgemmHandleType(bool transposeA, bool transposeB) {
-      cusparseStatus_t status;
-      status = cusparseCreate(&handle);
-      if (status != CUSPARSE_STATUS_SUCCESS) {
-        throw std::runtime_error("cusparseCreate ERROR\n");
-        // return;
-      }
-      cusparseSetPointerMode(handle, CUSPARSE_POINTER_MODE_HOST);
+    cusparseHandle_t cusparseHandle;
+    //Descriptor for any general matrix with index base 0
+    cusparseMatDescr_t generalDescr;
 
-      if (transposeA) {
-        transA = CUSPARSE_OPERATION_TRANSPOSE;
-      } else {
-        transA = CUSPARSE_OPERATION_NON_TRANSPOSE;
-      }
-      if (transposeB) {
-        transB = CUSPARSE_OPERATION_TRANSPOSE;
-      } else {
-        transB = CUSPARSE_OPERATION_NON_TRANSPOSE;
-      }
+    csrgemm2Info_t info;
+    // D matrix will always have 0 entries, but we still need to allocate its rowmap (length m+1)
+    nnz_lno_t* row_ptrD;
+    // Workspace buffer (cusparse names it pBuffer)
+    void* pBuffer;
 
-      status = cusparseCreateMatDescr(&a_descr);
-      if (status != CUSPARSE_STATUS_SUCCESS) {
-        throw std::runtime_error("cusparseCreateMatDescr a_descr ERROR\n");
-        // return;
-      }
-      cusparseSetMatType(a_descr, CUSPARSE_MATRIX_TYPE_GENERAL);
-      cusparseSetMatIndexBase(a_descr, CUSPARSE_INDEX_BASE_ZERO);
+    cuSparseSpgemmHandleType(bool /* transposeA */, bool /* transposeB */)
+    {
+      KokkosKernels::Experimental::Controls kkControls;
+      //Get singleton cusparse handle from default controls
+      cusparseHandle = kkControls.getCusparseHandle();
 
-      status = cusparseCreateMatDescr(&b_descr);
-      if (status != CUSPARSE_STATUS_SUCCESS) {
-        throw std::runtime_error("cusparseCreateMatDescr b_descr ERROR\n");
-        // return;
-      }
-      cusparseSetMatType(b_descr, CUSPARSE_MATRIX_TYPE_GENERAL);
-      cusparseSetMatIndexBase(b_descr, CUSPARSE_INDEX_BASE_ZERO);
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&generalDescr));
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatType(generalDescr, CUSPARSE_MATRIX_TYPE_GENERAL));
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatIndexBase(generalDescr, CUSPARSE_INDEX_BASE_ZERO));
 
-      status = cusparseCreateMatDescr(&c_descr);
-      if (status != CUSPARSE_STATUS_SUCCESS) {
-        throw std::runtime_error("cusparseCreateMatDescr  c_descr ERROR\n");
-        // return;
-      }
-      cusparseSetMatType(c_descr, CUSPARSE_MATRIX_TYPE_GENERAL);
-      cusparseSetMatIndexBase(c_descr, CUSPARSE_INDEX_BASE_ZERO);
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateCsrgemm2Info(&info));
+
+      row_ptrD = nullptr;
+      pBuffer = nullptr;
     }
     ~cuSparseSpgemmHandleType() {
-      cusparseDestroyMatDescr(a_descr);
-      cusparseDestroyMatDescr(b_descr);
-      cusparseDestroyMatDescr(c_descr);
-      cusparseDestroy(handle);
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyMatDescr(generalDescr));
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyCsrgemm2Info(info));
+      if(pBuffer) {
+        KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(pBuffer));
+      }
     }
   };
 #endif
@@ -605,15 +581,15 @@ class SPGEMMHandle {
         is_compression_single_step(false)
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
         ,
-        rocsparse_spgemm_handle(NULL)
+        rocsparse_spgemm_handle(nullptr)
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
         ,
-        cusparse_spgemm_handle(NULL)
+        cusparse_spgemm_handle(nullptr)
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
         ,
-        mkl_spgemm_handle(NULL)
+        mkl_spgemm_handle(nullptr)
 #endif
   {
     if (gs == SPGEMM_DEFAULT) {
@@ -645,9 +621,9 @@ class SPGEMMHandle {
   }
 
   void destroy_rocsparse_spgemm_handle() {
-    if (this->rocsparse_spgemm_handle != NULL) {
+    if (this->rocsparse_spgemm_handle != nullptr) {
       delete this->rocsparse_spgemm_handle;
-      this->rocsparse_spgemm_handle = NULL;
+      this->rocsparse_spgemm_handle = nullptr;
     }
   }
 
@@ -659,9 +635,9 @@ class SPGEMMHandle {
     this->cusparse_spgemm_handle = new cuSparseSpgemmHandleType(transA, transB);
   }
   void destroy_cusparse_spgemm_handle() {
-    if (this->cusparse_spgemm_handle != NULL) {
+    if (this->cusparse_spgemm_handle != nullptr) {
       delete this->cusparse_spgemm_handle;
-      this->cusparse_spgemm_handle = NULL;
+      this->cusparse_spgemm_handle = nullptr;
     }
   }
 
@@ -676,9 +652,9 @@ class SPGEMMHandle {
     this->mkl_spgemm_handle = new mklSpgemmHandleType(C);
   }
   void destroy_mkl_spgemm_handle() {
-    if (this->mkl_spgemm_handle != NULL) {
+    if (this->mkl_spgemm_handle != nullptr) {
       delete this->mkl_spgemm_handle;
-      this->mkl_spgemm_handle = NULL;
+      this->mkl_spgemm_handle = nullptr;
     }
   }
 
