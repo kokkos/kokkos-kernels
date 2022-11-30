@@ -1,6 +1,7 @@
 #ifndef TEST_COMMON_HPP
 #define TEST_COMMON_HPP
 
+#include <Test_Common_Align.hpp>
 #include <Test_Common_ArithTraits.hpp>
 // #include<Test_Common_float128.hpp>
 #include <Test_Common_set_bit_count.hpp>

@@ -143,10 +143,8 @@ void openmp_smart_static_matvec(AType A, XType x, YType y) {
 
 #pragma omp parallel
   {
-#if defined(KOKKOS_COMPILER_INTEL) && !defined(__clang__)
-    __assume_aligned(x_ptr, 64);
-    __assume_aligned(y_ptr, 64);
-#endif
+    x_ptr = Kokkos::Impl::assume_aligned(x_ptr, 64);
+    y_ptr = Kokkos::Impl::assume_aligned(y_ptr, 64);
 
     const int myID        = omp_get_thread_num();
     const Ordinal myStart = threadStarts[myID];

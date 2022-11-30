@@ -75,10 +75,8 @@ void spmv_raw_openmp_no_transpose(typename YVector::const_value_type& s_a,
   typename YVector::const_value_type zero = 0;
 #pragma omp parallel
   {
-#if defined(KOKKOS_COMPILER_INTEL) && !defined(__clang__)
-    __assume_aligned(x_ptr, 64);
-    __assume_aligned(y_ptr, 64);
-#endif
+    x_ptr = Kokkos::Impl::assume_aligned(x_ptr, 64);
+    y_ptr = Kokkos::Impl::assume_aligned(y_ptr, 64);
 
     const int myID          = omp_get_thread_num();
     const size_type myStart = threadStarts[myID];
