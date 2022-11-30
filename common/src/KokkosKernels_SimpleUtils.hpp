@@ -310,7 +310,6 @@ struct IsRelativelyIdenticalFunctor {
     typedef typename view_type2::non_const_value_type val_type;
     typedef Kokkos::ArithTraits<val_type> KAT;
     typedef typename KAT::mag_type mag_type;
-    typedef Kokkos::ArithTraits<mag_type> KATM;
 
     mag_type val_diff = KAT::abs(view1(i) - view2(i));
     if (KAT::abs(view1(i)) > mag_type(eps) ||
@@ -318,8 +317,7 @@ struct IsRelativelyIdenticalFunctor {
       val_diff = val_diff / (KAT::abs(view1(i)) + KAT::abs(view2(i)));
     }
 
-    if (val_diff > eps) {
-      printf("Element %d differs: diff magnitude %f but value magnitudes are %f and %f\n", (int) i, (double) val_diff, (double) KAT::abs(view1(i)), (double) KAT::abs(view2(i)));
+    if (val_diff > mag_type(eps)) {
       num_diffs++;
     }
   }
