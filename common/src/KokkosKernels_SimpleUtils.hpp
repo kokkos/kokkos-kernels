@@ -313,12 +313,13 @@ struct IsRelativelyIdenticalFunctor {
     typedef Kokkos::ArithTraits<mag_type> KATM;
 
     mag_type val_diff = KAT::abs(view1(i) - view2(i));
-    if (KAT::abs(view1(i)) > KATM::zero() &&
-        KAT::abs(view2(i)) > KATM::zero()) {
+    if (KAT::abs(view1(i)) > mag_type(eps) ||
+        KAT::abs(view2(i)) > mag_type(eps)) {
       val_diff = val_diff / (KAT::abs(view1(i)) + KAT::abs(view2(i)));
     }
 
     if (val_diff > eps) {
+      printf("Element %d differs: diff magnitude %f but value magnitudes are %f and %f\n", (int) i, (double) val_diff, (double) KAT::abs(view1(i)), (double) KAT::abs(view2(i)));
       num_diffs++;
     }
   }
