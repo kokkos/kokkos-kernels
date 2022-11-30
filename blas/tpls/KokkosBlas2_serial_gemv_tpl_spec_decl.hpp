@@ -46,17 +46,9 @@
 
 #include "KokkosBlas_util.hpp"
 #include "KokkosBatched_Vector.hpp"
-
-#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
-#include "mkl_version.h"
-#if __INTEL_MKL__ >= 2018
-#define __KOKKOSBLAS_ENABLE_INTEL_MKL_COMPACT__ 1
-#endif
-#endif
+#include "KokkosKernels_MKLUtils.hpp"
 
 #ifdef __KOKKOSBLAS_ENABLE_INTEL_MKL_COMPACT__
-
-#include "mkl_compact.h"
 
 namespace KokkosBlas {
 namespace Impl {

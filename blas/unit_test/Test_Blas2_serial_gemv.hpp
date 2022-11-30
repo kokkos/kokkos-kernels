@@ -47,10 +47,12 @@ struct SerialMKLGemvFactory {
 }  // namespace Test
 
 #define TEST_SERIAL_CASE4(N, A, X, Y, SC) \
-  TEST_CASE4(serial, SerialGemvFactory, N, A, X, Y, SC)
+  TEST_GEMV_CASE4(serial, SerialGemvFactory, N, A, X, Y, SC)
 #define TEST_SERIAL_CASE2(N, S, SC) \
-  TEST_CASE2(serial, SerialGemvFactory, N, S, SC)
-#define TEST_SERIAL_CASE(N, S) TEST_CASE(serial, SerialGemvFactory, N, S)
+  TEST_GEMV_CASE2(serial, SerialGemvFactory, N, S, SC)
+#define TEST_SERIAL_CASE(N, S) TEST_GEMV_CASE(serial, SerialGemvFactory, N, S)
+#define TEST_SERIAL_GEMV_MKL_CASE(N, S, SC) \
+  TEST_GEMV_CASE2(serial, SerialMKLGemvFactory, N, S, SC)
 
 #ifdef KOKKOSKERNELS_TEST_FLOAT
 TEST_SERIAL_CASE(float, float)
@@ -59,10 +61,9 @@ TEST_SERIAL_CASE(float, float)
 using simd_float_sse    = ::Test::simd_vector<float, 4>;
 using simd_float_avx    = ::Test::simd_vector<float, 8>;
 using simd_float_avx512 = ::Test::simd_vector<float, 16>;
-TEST_CASE2(serial, SerialMKLGemvFactory, mkl_float_sse, simd_float_sse, float)
-TEST_CASE2(serial, SerialMKLGemvFactory, mkl_float_avx, simd_float_avx, float)
-TEST_CASE2(serial, SerialMKLGemvFactory, mkl_float_avx512, simd_float_avx512,
-           float)
+TEST_SERIAL_GEMV_MKL_CASE(mkl_float_sse, simd_float_sse, float)
+TEST_SERIAL_GEMV_MKL_CASE(mkl_float_avx, simd_float_avx, float)
+TEST_SERIAL_GEMV_MKL_CASE(mkl_float_avx512, simd_float_avx512, float)
 #endif
 #endif
 
@@ -73,12 +74,9 @@ TEST_SERIAL_CASE(double, double)
 using simd_double_sse    = ::Test::simd_vector<double, 2>;
 using simd_double_avx    = ::Test::simd_vector<double, 4>;
 using simd_double_avx512 = ::Test::simd_vector<double, 8>;
-TEST_CASE2(serial, SerialMKLGemvFactory, mkl_double_sse, simd_double_sse,
-           double)
-TEST_CASE2(serial, SerialMKLGemvFactory, mkl_double_avx, simd_double_avx,
-           double)
-TEST_CASE2(serial, SerialMKLGemvFactory, mkl_double_avx512, simd_double_avx512,
-           double)
+TEST_SERIAL_GEMV_MKL_CASE(mkl_double_sse, simd_double_sse, double)
+TEST_SERIAL_GEMV_MKL_CASE(mkl_double_avx, simd_double_avx, double)
+TEST_SERIAL_GEMV_MKL_CASE(mkl_double_avx512, simd_double_avx512, double)
 #endif
 #endif
 
@@ -105,3 +103,4 @@ TEST_SERIAL_CASE2(alphabeta, Kokkos::complex<double>, double)
 #undef TEST_SERIAL_CASE4
 #undef TEST_SERIAL_CASE2
 #undef TEST_SERIAL_CASE
+#undef TEST_SERIAL_GEMV_MKL_CASE
