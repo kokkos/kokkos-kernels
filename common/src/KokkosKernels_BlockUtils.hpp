@@ -46,7 +46,7 @@
 
 // #include <Kokkos_Atomic.hpp>
 // #include <atomic>
-#include "KokkosBatched_Gemm_Serial_Internal.hpp"
+#include "KokkosBlas3_gemm.hpp"
 
 namespace KokkosSparse {
 namespace Impl {
@@ -85,8 +85,8 @@ KOKKOS_INLINE_FUNCTION void kk_block_add(const size_type block_dim,
 // Note: block is assumed to be row-major, dense matrix (no extra padding)
 // Note: set clear=true to set C = 0 before increment
 template <typename size_type, typename value_type,
-          typename DGEMM = KokkosBatched::SerialGemmInternal<
-              KokkosBatched::Algo::Gemm::Unblocked>>
+          typename DGEMM = KokkosBlas::Impl::SerialGemmInternal<
+              KokkosBlas::Algo::Gemm::Unblocked>>
 KOKKOS_INLINE_FUNCTION void kk_block_dgemm(const size_type block_dim,
                                            value_type *dst,
                                            const value_type *valA,
