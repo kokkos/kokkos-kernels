@@ -319,7 +319,7 @@ struct IsRelativelyIdenticalFunctor {
     }
 
     if (val_diff > mag_type(eps)) {
-      printf("Values at index %d, %.6f + %.6fi and %.6f + %.6fi, differ too much (eps = %e)\n", KAT::real(view1(i)), KAT::imag(view1(i)), KAT::real(view2(i)), KAT::imag(view2(i)), eps);
+      printf("Values at index %d, %.6f + %.6fi and %.6f + %.6fi, differ too much (eps = %e)\n", (int) i, KAT::real(view1(i)), KAT::imag(view1(i)), KAT::real(view2(i)), KAT::imag(view2(i)), eps);
       num_diffs++;
     }
   }
