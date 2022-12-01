@@ -266,7 +266,7 @@ void triangle_generic(KernelHandle *handle, typename KernelHandle::nnz_lno_t m,
         KokkosKernels::Impl::kk_sort_by_row_size<size_type, nnz_lno_t,
                                                  ExecutionSpace>(
             m, row_mapA.data(), new_indices.data(), sort_decreasing_order,
-            ExecutionSpace::concurrency());
+            ExecutionSpace().concurrency());
       }
       sh->set_lower_triangular_permutation(new_indices);
     }
@@ -299,7 +299,7 @@ void triangle_generic(KernelHandle *handle, typename KernelHandle::nnz_lno_t m,
           m, row_mapA, entriesA, null_values, lower_triangular_matrix_rowmap,
           lower_triangular_matrix_entries, null_values, new_indices,
           handle->is_dynamic_scheduling(),
-          handle->get_team_work_size(1, ExecutionSpace::concurrency(), m));
+          handle->get_team_work_size(1, ExecutionSpace().concurrency(), m));
 
       sh->set_lower_triangular_matrix(lower_triangular_matrix_rowmap,
                                       lower_triangular_matrix_entries);

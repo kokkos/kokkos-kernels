@@ -1111,7 +1111,7 @@ class PointGaussSeidel {
               brows, permuted_xadj, num_values_in_l1, num_large_rows);
           num_big_rows = KOKKOSKERNELS_MACRO_MIN(
               num_large_rows,
-              (size_type)(MyExecSpace::concurrency() / suggested_vector_size));
+              (size_type)(MyExecSpace().concurrency() / suggested_vector_size));
           // std::cout << "num_big_rows:" << num_big_rows << std::endl;
 
           if (KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>()) {
@@ -1389,7 +1389,7 @@ class PointGaussSeidel {
       int suggested_team_size =
           this->handle->get_suggested_team_size(suggested_vector_size);
       nnz_lno_t rows_per_team = this->handle->get_team_work_size(
-          suggested_team_size, MyExecSpace::concurrency(), num_rows);
+          suggested_team_size, MyExecSpace().concurrency(), num_rows);
 
       nnz_lno_t block_size        = gsHandle->get_block_size();
       nnz_lno_t block_matrix_size = block_size * block_size;
@@ -1590,7 +1590,7 @@ class PointGaussSeidel {
     int suggested_team_size =
         this->handle->get_suggested_team_size(suggested_vector_size);
     nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(
-        suggested_team_size, MyExecSpace::concurrency(), brows);
+        suggested_team_size, MyExecSpace().concurrency(), brows);
 
     // size_t shmem_size_to_use = this->handle->get_shmem_size();
     size_t l1_shmem_size       = gsHandle->get_level_1_mem();

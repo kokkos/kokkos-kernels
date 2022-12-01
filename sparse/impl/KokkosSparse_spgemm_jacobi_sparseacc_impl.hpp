@@ -1562,7 +1562,7 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
     std::cout << "\t\t max_nnz: " << max_nnz << " chunk_size:" << chunksize
               << " min_hash_size:" << min_hash_size
               << " concurrency:" << concurrency
-              << " MyExecSpace::concurrency():" << MyExecSpace::concurrency()
+              << " MyExecSpace().concurrency():" << MyExecSpace().concurrency()
               << " numchunks:" << num_chunks << std::endl;
   }
 

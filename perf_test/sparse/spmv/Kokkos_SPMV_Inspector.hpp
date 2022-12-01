@@ -128,13 +128,13 @@ void kk_inspector_matvec(AType A, XType x, YType y, int team_size,
   typedef typename AType::non_const_ordinal_type lno_t;
   typedef typename AType::non_const_value_type scalar_t;
 
+  int const concurrency = execution_space().concurrency();
   static int worksets =
       std::is_same<Schedule, Kokkos::Static>::value
-          ? team_size > 0 ? execution_space::concurrency() / team_size
-                          : execution_space::concurrency()
+          ? team_size > 0 ? concurrency / team_size : concurrency
           :  // static
-          team_size > 0 ? execution_space::concurrency() * 32 / team_size
-                        : execution_space::concurrency() * 32;  // dynamic
+          team_size > 0 ? concurrency * 32 / team_size
+                        : concurrency * 32;  // dynamic
   static Kokkos::View<lno_t*, memory_space> workset_offsets;
   if (workset_offsets.extent(0) == 0) {
     workset_offsets     = Kokkos::View<lno_t*>("WorksetOffsets", worksets + 1);

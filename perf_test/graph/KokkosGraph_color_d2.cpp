@@ -539,7 +539,7 @@ void run_experiment(crsGraph_t crsGraph, int num_cols,
               << "    Num Edges      : " << crsGraph.entries.extent(0)
               << std::endl
               << "    Concurrency    : "
-              << Kokkos::DefaultExecutionSpace::concurrency() << std::endl
+              << Kokkos::DefaultExecutionSpace().concurrency() << std::endl
               << "    Algorithm      : " << label_algorithm << std::endl
               << "Overall Time/Stats" << std::endl
               << "    Total Time     : " << total_time << std::endl
@@ -602,7 +602,7 @@ void run_experiment(crsGraph_t crsGraph, int num_cols,
               << currentDateTimeStr << "," << crsGraph.numRows() << ","
               << crsGraph.entries.extent(0) << ","
               << Kokkos::DefaultExecutionSpace::name() << "," << label_algorithm
-              << "," << Kokkos::DefaultExecutionSpace::concurrency() << ","
+              << "," << Kokkos::DefaultExecutionSpace().concurrency() << ","
               << repeat << "," << total_time << "," << total_time_matrix_squared
               << "," << total_time_matrix_squared_d1 << ","
               << total_time_color_greedy << "," << total_time_find_conflicts
@@ -636,7 +636,7 @@ void run_experiment(crsGraph_t crsGraph, int num_cols,
               << currentDateTimeStr << "," << crsGraph.numRows() << ","
               << crsGraph.entries.extent(0) << ","
               << Kokkos::DefaultExecutionSpace::name() << "," << label_algorithm
-              << "," << Kokkos::DefaultExecutionSpace::concurrency() << ",";
+              << "," << Kokkos::DefaultExecutionSpace().concurrency() << ",";
     KokkosGraph::Impl::graph_print_distance2_color_histogram(&kh, true);
     std::cout << std::endl;
   }

@@ -220,7 +220,7 @@ void experiment(const parameters_t& params) {
   size_t max_value = 100;
 
   // Get the concurrecny
-  size_t concurrency = execution_space::concurrency();
+  size_t concurrency = execution_space().concurrency();
 
   // Set up random number generator
   std::random_device rd;

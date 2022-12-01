@@ -192,7 +192,7 @@ void matvec(AType& A, XType x, YType y, Ordinal rows_per_thread, int team_size,
         printf("PTR: %p\n",
                static_cast<const void*>(A.graph.row_block_offsets.data()));
         A.graph.create_block_partitioning(
-            AType::execution_space::concurrency());
+            typename AType::execution_space().concurrency());
         printf("PTR2: %p\n",
                static_cast<const void*>(A.graph.row_block_offsets.data()));
       }
