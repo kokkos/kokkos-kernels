@@ -310,14 +310,16 @@ struct IsRelativelyIdenticalFunctor {
     typedef typename view_type2::non_const_value_type val_type;
     typedef Kokkos::ArithTraits<val_type> KAT;
     typedef typename KAT::mag_type mag_type;
+    typedef Kokkos::ArithTraits<mag_type> KATM;
 
-    mag_type val_diff = KAT::abs(view1(i) - view2(i));
+    mag_type val_diff = KATM::zero();
     if (KAT::abs(view1(i)) > mag_type(eps) ||
         KAT::abs(view2(i)) > mag_type(eps)) {
-      val_diff = val_diff / (KAT::abs(view1(i)) + KAT::abs(view2(i)));
+      val_diff = KAT::abs(view1(i) - view2(i)) / (KAT::abs(view1(i)) + KAT::abs(view2(i)));
     }
 
     if (val_diff > mag_type(eps)) {
+      printf("Values at index %d, %.6f + %.6fi and %.6f + %.6fi, differ too much (eps = %e)\n", KAT::real(view1(i)), KAT::imag(view1(i)), KAT::real(view2(i)), KAT::imag(view2(i)), eps);
       num_diffs++;
     }
   }
