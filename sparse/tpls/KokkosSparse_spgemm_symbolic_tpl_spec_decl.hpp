@@ -88,7 +88,7 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k,
   // duplicate any work.
   if (!handle->is_symbolic_called()) {
     handle->create_cusparse_spgemm_handle(false, false);
-    auto h = sh->get_cusparse_spgemm_handle();
+    auto h = handle->get_cusparse_spgemm_handle();
 
     // Follow
     // https://github.com/NVIDIA/CUDALibrarySamples/tree/master/cuSPARSE/spgemm_reuse
@@ -158,16 +158,17 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k,
       throw std::runtime_error("nnz of C overflowed over 32-bit int\n");
     }
     handle->set_c_nnz(C_nnz);
+    std::cout << "Have C_nnz: " << C_nnz << '\n';
     handle->set_call_symbolic();
   }
-  if (computeRowptrs && !sh->are_rowptrs_computed()) {
+  if (computeRowptrs && !handle->are_rowptrs_computed()) {
     using Scalar  = typename KernelHandle::nnz_scalar_t;
     using Ordinal = typename KernelHandle::nnz_lno_t;
     using Offset  = typename KernelHandle::size_type;
     Ordinal *dummyEntries;
     Scalar *dummyValues;
-    auto C_nnz = sh->get_c_nnz();
-    auto h     = sh->get_cusparse_spgemm_handle();
+    auto C_nnz = handle->get_c_nnz();
+    auto h     = handle->get_cusparse_spgemm_handle();
     // We just want rowptrs, but since C's entries/values are not yet allocated,
     // we must use dummy versions and then discard them.
     KOKKOS_IMPL_CUDA_SAFE_CALL(
@@ -186,11 +187,10 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k,
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMMreuse_copy(
         h->cusparseHandle, h->opA, h->opB, h->descr_A, h->descr_B, h->descr_C,
         h->alg, h->spgemmDescr, &h->bufferSize5, h->buffer5));
-    if (!sh->get_c_nnz()) {
+    if (!handle->get_c_nnz()) {
       // cuSPARSE does not populate C rowptrs if C has no entries
-      Kokkos::deep_copy(typename KernelHandle::HandleExecSpace(), row_mapC.data(), size_type(0));
+      Kokkos::deep_copy(typename KernelHandle::HandleExecSpace(), row_mapC, Offset(0));
     }
-    KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(h->buffer5));
     KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(dummyValues));
     KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(dummyEntries));
     handle->set_computed_rowptrs();
@@ -257,6 +257,8 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k,
       h->cusparseHandle, h->opA, h->opB, &alpha, h->descr_A, h->descr_B, &beta,
       h->descr_C, h->scalarType, h->alg, h->spgemmDescr, &h->bufferSize3,
       h->buffer3));
+  cudaFree(h->buffer3);
+  h->buffer3 = nullptr;
 
   //----------------------------------------------------------------------
   // query compute buffer size, allocate, then call again with buffer.

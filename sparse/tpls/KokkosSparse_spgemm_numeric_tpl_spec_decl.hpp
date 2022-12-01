@@ -78,7 +78,23 @@ void spgemm_numeric_cusparse(
     const ConstRowMapType &row_mapC, const EntriesType &entriesC,
     const ValuesType &valuesC) {
   using scalar_type = typename KernelHandle::nnz_scalar_t;
+  using size_type = typename KernelHandle::size_type;
   auto h = handle->get_cusparse_spgemm_handle();
+
+  if (handle->get_c_nnz() == size_type(0)) {
+    //Handle empty C case. entriesC and valuesC have extent 0 so nothing needs to be done for them,
+    //but we must populate row_mapC to zeros if not already done.
+    if(!handle->are_rowptrs_computed()) {
+      Kokkos::View<size_type*, typename ConstRowMapType::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>
+        row_mapC_nonconst(const_cast<size_type*>(row_mapC.data()), row_mapC.extent(0));
+      Kokkos::deep_copy(typename KernelHandle::HandleExecSpace(), row_mapC_nonconst, size_type(0));
+      handle->set_computed_rowptrs();
+      std::cout << "Empty C case (no entries): just initialized rowptrs to 0.\n";
+    }
+    handle->set_computed_entries();
+    handle->set_call_numeric();
+    return;
+  }
 
   KOKKOS_CUSPARSE_SAFE_CALL(
       cusparseCsrSetPointers(h->descr_A, (void *)row_mapA.data(),
@@ -92,24 +108,18 @@ void spgemm_numeric_cusparse(
       cusparseCsrSetPointers(h->descr_C, (void *)row_mapC.data(),
                              (void *)entriesC.data(), (void *)valuesC.data()));
 
-  if (!sh->are_entries_computed()) {
-    cusparseSpGEMMreuse_copy(h->cusparseHandle, h->opA, h->opB, h->descr_A,
-                             h->descr_B, h->descr_C, h->alg, h->spgemmDescr,
-                             &h->bufferSize5, nullptr);
-    cudaMalloc((void **)&h->buffer5, h->bufferSize5);
-    cusparseSpGEMMreuse_copy(h->cusparseHandle, h->opA, h->opB, h->descr_A,
-                             h->descr_B, h->descr_C, h->alg, h->spgemmDescr,
-                             &h->bufferSize5, h->buffer5);
-    if (!sh->get_c_nnz()) {
-      // cuSPARSE does not populate C rowptrs if C has no entries
-      cudaStream_t stream;
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseGetStream(h->cusparseHandle, &stream));
-      cudaMemsetAsync(
-          (void *)row_mapC.data(), 0,
-          row_mapC.extent(0) * sizeof(typename ConstRowMapType::value_type));
+  if (!handle->are_entries_computed()) {
+    if(!h->buffer5) {
+      // If symbolic was previously called with computeRowptrs=true, then buffer5 will have
+      // already been allocated to the correct size. Otherwise size and allocate it here.
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMMreuse_copy(h->cusparseHandle, h->opA, h->opB, h->descr_A,
+                               h->descr_B, h->descr_C, h->alg, h->spgemmDescr,
+                               &h->bufferSize5, nullptr));
+      KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc((void **)&h->buffer5, h->bufferSize5));
     }
-    cudaFree(h->buffer3);
-    h->buffer3 = nullptr;
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMMreuse_copy(h->cusparseHandle, h->opA, h->opB, h->descr_A,
+                             h->descr_B, h->descr_C, h->alg, h->spgemmDescr,
+                             &h->bufferSize5, h->buffer5));
     handle->set_computed_rowptrs();
     handle->set_computed_entries();
   }
