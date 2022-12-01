@@ -182,46 +182,37 @@ void spgemm_numeric_cusparse(
 
 #else
 
-//Generic (using overloads) wrapper for cusparseXcsrgemm2 (where X is S, D, C, or Z).
+//Generic (using overloads) wrapper for cusparseXcsrgemm (where X is S, D, C, or Z).
 //Accepts Kokkos types (e.g. Kokkos::complex<float>) for Scalar
 //and handles casting to cuSparse types internally.
 
-#define CUSPARSE_XCSRGEMM2_SPEC(KokkosType, CusparseType, Abbreviation) \
-  inline cusparseStatus_t cusparseXcsrgemm2(                         \
-    cusparseHandle_t handle, int m, int n, int k, \
-    const KokkosType* alpha, \
+#define CUSPARSE_XCSRGEMM_SPEC(KokkosType, CusparseType, Abbreviation) \
+  inline cusparseStatus_t cusparseXcsrgemm(                         \
+    cusparseHandle_t handle, cusparseOperation_t transA, cusparseOperation_t transB, \
+    int m, int n, int k, \
     const cusparseMatDescr_t descrA, const int nnzA, \
     const KokkosType *csrSortedValA, \
     const int *csrSortedRowPtrA, const int *csrSortedColIndA, \
     const cusparseMatDescr_t descrB, const int nnzB,                             \
     const KokkosType *csrSortedValB,  \
     const int *csrSortedRowPtrB, const int *csrSortedColIndB, \
-    const KokkosType* beta, \
-    const cusparseMatDescr_t descrD, const int nnzD,                             \
-    const KokkosType *csrSortedValD,  \
-    const int *csrSortedRowPtrD, const int *csrSortedColIndD, \
     const cusparseMatDescr_t descrC, \
     KokkosType *csrSortedValC, \
-    const int *csrSortedRowPtrC, int *csrSortedColIndC, \
-    const csrgemm2Info_t     info, \
-    void*                    pBuffer) \
+    const int *csrSortedRowPtrC, int *csrSortedColIndC) \
   { \
-    return cusparse##Abbreviation##csrgemm2(                              \
-        handle, m, n, k, reinterpret_cast<const CusparseType*>(alpha), \
+    return cusparse##Abbreviation##csrgemm(                              \
+        handle, transA, transB, m, n, k, \
         descrA, nnzA, reinterpret_cast<const CusparseType*>(csrSortedValA), csrSortedRowPtrA, csrSortedColIndA, \
         descrB, nnzB, reinterpret_cast<const CusparseType*>(csrSortedValB), csrSortedRowPtrB, csrSortedColIndB, \
-        reinterpret_cast<const CusparseType*>(beta), \
-        descrD, nnzD, reinterpret_cast<const CusparseType*>(csrSortedValD), csrSortedRowPtrD, csrSortedColIndD, \
-        descrC, reinterpret_cast<CusparseType*>(csrSortedValC), csrSortedRowPtrC, csrSortedColIndC, \
-        info, pBuffer); \
+        descrC, reinterpret_cast<CusparseType*>(csrSortedValC), csrSortedRowPtrC, csrSortedColIndC); \
   }
 
-CUSPARSE_XCSRGEMM2_SPEC(float, float, S)
-CUSPARSE_XCSRGEMM2_SPEC(double, double, D)
-CUSPARSE_XCSRGEMM2_SPEC(Kokkos::complex<float>, cuComplex, C)
-CUSPARSE_XCSRGEMM2_SPEC(Kokkos::complex<double>, cuDoubleComplex, Z)
+CUSPARSE_XCSRGEMM_SPEC(float, float, S)
+CUSPARSE_XCSRGEMM_SPEC(double, double, D)
+CUSPARSE_XCSRGEMM_SPEC(Kokkos::complex<float>, cuComplex, C)
+CUSPARSE_XCSRGEMM_SPEC(Kokkos::complex<double>, cuDoubleComplex, Z)
 
-#undef CUSPARSE_XCSRGEMM2_SPEC
+#undef CUSPARSE_XCSRGEMM_SPEC
 
 // 10.x supports the pre-generic interface.
 template <typename KernelHandle, typename lno_t, typename ConstRowMapType,
@@ -234,27 +225,20 @@ void spgemm_numeric_cusparse(
     const ConstEntriesType &entriesB, const ConstValuesType &valuesB,
     const ConstRowMapType &row_mapC, const EntriesType &entriesC,
     const ValuesType &valuesC) {
-  using scalar_type = typename KernelHandle::nnz_scalar_t;
   auto h = handle->get_cusparse_spgemm_handle();
 
   int nnzA = entriesA.extent(0);
   int nnzB = entriesB.extent(0);
 
-  if(entriesC.extent(0)) {
-    const scalar_type alpha = Kokkos::ArithTraits<scalar_type>::one();
-    const scalar_type beta  = Kokkos::ArithTraits<scalar_type>::zero();
-    // In the empty C case, we did not actually call cusparseXcsrgemmNnz, so
-    // the cusparse handle might not be in a valid state to call cusparseXcsrgemm now.
-    //
-    // NOTE: also passing D's rowptr as D's entries and values (appropriately casted),
-    // since they must be non-null but will never be dereferenced (have length 0)
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseXcsrgemm2(h->cusparseHandle, m, n, k, &alpha,
+  //Only call numeric if C actually has entries
+  if(handle->get_c_nnz()) {
+    KOKKOS_CUSPARSE_SAFE_CALL(
+        cusparseXcsrgemm(
+          h->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE,
+          m, n, k,
           h->generalDescr, nnzA, valuesA.data(), row_mapA.data(), entriesA.data(),
           h->generalDescr, nnzB, valuesB.data(), row_mapB.data(), entriesB.data(),
-          &beta,
-          h->generalDescr, 0, reinterpret_cast<const scalar_type*>(h->row_ptrD), h->row_ptrD, h->row_ptrD,
-          h->generalDescr, valuesC.data(), row_mapC.data(), entriesC.data(),
-          h->info, h->pBuffer));
+          h->generalDescr, valuesC.data(), row_mapC.data(), entriesC.data()));
   }
   handle->set_computed_entries();
   handle->set_call_numeric();

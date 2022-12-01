@@ -241,12 +241,6 @@ class SPGEMMHandle {
     //Descriptor for any general matrix with index base 0
     cusparseMatDescr_t generalDescr;
 
-    csrgemm2Info_t info;
-    // D matrix will always have 0 entries, but we still need to allocate its rowmap (length m+1)
-    nnz_lno_t* row_ptrD;
-    // Workspace buffer (cusparse names it pBuffer)
-    void* pBuffer;
-
     cuSparseSpgemmHandleType(bool /* transposeA */, bool /* transposeB */)
     {
       KokkosKernels::Experimental::Controls kkControls;
@@ -256,18 +250,9 @@ class SPGEMMHandle {
       KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&generalDescr));
       KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatType(generalDescr, CUSPARSE_MATRIX_TYPE_GENERAL));
       KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatIndexBase(generalDescr, CUSPARSE_INDEX_BASE_ZERO));
-
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateCsrgemm2Info(&info));
-
-      row_ptrD = nullptr;
-      pBuffer = nullptr;
     }
     ~cuSparseSpgemmHandleType() {
       KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyMatDescr(generalDescr));
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyCsrgemm2Info(info));
-      if(pBuffer) {
-        KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(pBuffer));
-      }
     }
   };
 #endif

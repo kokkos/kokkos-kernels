@@ -286,50 +286,7 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k,
 }
 
 #else
-//Generic wrapper for cusparseXcsrgemm2_bufferSizeExt (where X is S, D, C, or Z).
-//Accepts Kokkos types (e.g. Kokkos::complex<float>) for Scalar
-//and handles casting to cuSparse types internally.
-
-#define CUSPARSE_XCSRGEMM2_BUFFERSIZE_SPEC(KokkosType, CusparseType, Abbreviation) \
-  inline cusparseStatus_t cusparseXcsrgemm2_bufferSizeExt(                         \
-      cusparseHandle_t handle, \
-      int                      m, \
-      int                      n, \
-      int                      k, \
-      const KokkosType* alpha, \
-      const cusparseMatDescr_t descrA, \
-      int                      nnzA, \
-      const int*               csrSortedRowPtrA, \
-      const int*               csrSortedColIndA, \
-      const cusparseMatDescr_t descrB, \
-      int                      nnzB, \
-      const int*               csrSortedRowPtrB, \
-      const int*               csrSortedColIndB, \
-      const KokkosType*             beta, \
-      const cusparseMatDescr_t descrD, \
-      int                      nnzD, \
-      const int*               csrSortedRowPtrD, \
-      const int*               csrSortedColIndD, \
-      csrgemm2Info_t           info, \
-      size_t*                  pBufferSizeInBytes) \
-  { \
-    return cusparse##Abbreviation##csrgemm2_bufferSizeExt(                              \
-        handle, m, n, k, reinterpret_cast<const CusparseType*>(alpha), \
-        descrA, nnzA, csrSortedRowPtrA, csrSortedColIndA, \
-        descrB, nnzB, csrSortedRowPtrB, csrSortedColIndB, \
-        reinterpret_cast<const CusparseType*>(beta), \
-        descrD, nnzD, csrSortedRowPtrD, csrSortedColIndD, \
-        info, pBufferSizeInBytes); \
-  }
-
-CUSPARSE_XCSRGEMM2_BUFFERSIZE_SPEC(float, float, S)
-CUSPARSE_XCSRGEMM2_BUFFERSIZE_SPEC(double, double, D)
-CUSPARSE_XCSRGEMM2_BUFFERSIZE_SPEC(Kokkos::complex<float>, cuComplex, C)
-CUSPARSE_XCSRGEMM2_BUFFERSIZE_SPEC(Kokkos::complex<double>, cuDoubleComplex, Z)
-
-#undef CUSPARSE_XCSRGEMM2_BUFFERSIZE_SPEC
-
-// 10.x supports the pre-generic interface csrgemm2. It always populates C rowptrs.
+// 10.x supports the pre-generic interface (cusparseXcsrgemmNnz). It always populates C rowptrs.
 template <typename KernelHandle, typename lno_t, typename ConstRowMapType,
           typename ConstEntriesType, typename RowMapType>
 void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k,
@@ -339,7 +296,7 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k,
                               const ConstEntriesType &entriesB,
                               const RowMapType &row_mapC,
                               bool /* computeRowptrs */) {
-  using scalar_type = typename KernelHandle::nnz_scalar_t;
+  //using scalar_type = typename KernelHandle::nnz_scalar_t;
   using size_type = typename KernelHandle::size_type;
   if (handle->are_rowptrs_computed()) return;
   handle->create_cusparse_spgemm_handle(false, false);
@@ -350,41 +307,25 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k,
   int baseC, nnzC;
   int *nnzTotalDevHostPtr = &nnzC;
 
-  std::cout << "Hello from cusparse 10 symbolic. A is " << m << 'x' << n << ", B is " << n << 'x' << k << ". nnzA = " << nnzA << ", nnzB = " << nnzB << '\n';
-
   //In empty (zero entries) matrix case, cusparse does not populate rowptrs to zeros
   if (m == 0 || n == 0 || k == 0 || entriesA.extent(0) == size_type(0) || entriesB.extent(0) == size_type(0)) {
-    std::cout << " >> Emtpy case, zeroing out rowptrs.\n";
     Kokkos::deep_copy(typename KernelHandle::HandleExecSpace(), row_mapC, size_type(0));
     nnzC = 0;
   }
   else {
-    // Allocate and zero-initialize D's rowptrs array
-    KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc((void **) &h->row_ptrD, (m + 1) * sizeof(size_type)));
-    KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMemset(h->row_ptrD, 0, (m + 1) * sizeof(size_type)));
-    // Calculate workspace buffer size
-    size_t pBufferSize;
-    const scalar_type alpha = Kokkos::ArithTraits<scalar_type>::one();
-    const scalar_type beta  = Kokkos::ArithTraits<scalar_type>::zero();
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseXcsrgemm2_bufferSizeExt(h->cusparseHandle, m, n, k,
-          &alpha, h->generalDescr, nnzA, row_mapA.data(), entriesA.data(),
-          h->generalDescr, nnzB, row_mapB.data(), entriesB.data(),
-          &beta, h->generalDescr, 0, h->row_ptrD, h->row_ptrD, h->info, &pBufferSize));
-    KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc((void **) &h->pBuffer, pBufferSize));
-    //NOTE: also passing D's rowptr as D's entries, since it must be non-null but it will never be dereferenced (has length 0)
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseXcsrgemm2Nnz(h->cusparseHandle, (int)m, (int)n, (int)k,
-                        h->generalDescr, nnzA, row_mapA.data(), entriesA.data(),
-                        h->generalDescr, nnzB, row_mapB.data(), entriesB.data(),
-                        h->generalDescr, 0, h->row_ptrD, h->row_ptrD,
-                        h->generalDescr, row_mapC.data(), nnzTotalDevHostPtr, h->info, h->pBuffer));
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseXcsrgemmNnz(h->cusparseHandle,
+        CUSPARSE_OPERATION_NON_TRANSPOSE,
+        CUSPARSE_OPERATION_NON_TRANSPOSE,
+        m, n, k,
+        h->generalDescr, nnzA, row_mapA.data(), entriesA.data(),
+        h->generalDescr, nnzB, row_mapB.data(), entriesB.data(),
+        h->generalDescr, row_mapC.data(), nnzTotalDevHostPtr));
     if (nullptr != nnzTotalDevHostPtr) {
       nnzC = *nnzTotalDevHostPtr;
-      std::cout << " >> Called cusparse nnz, got nnzC = " << nnzC << '\n';
     } else {
       KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMemcpy(&nnzC, row_mapC.data() + m, sizeof(int), cudaMemcpyDeviceToHost));
       KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMemcpy(&baseC, row_mapC.data(), sizeof(int), cudaMemcpyDeviceToHost));
       nnzC -= baseC;
-      std::cout << " >> Called cusparse nnz, got nnzC (from device ptrs) = " << nnzC << '\n';
     }
   }
   handle->set_c_nnz(nnzC);
