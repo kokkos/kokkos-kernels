@@ -61,14 +61,14 @@ void impl_test_scal(int N) {
   KokkosBlas::scal(y, a, x);
   Kokkos::deep_copy(h_y, y);
   for (int i = 0; i < N; i++) {
-    EXPECT_NEAR_KK(a * h_x(i), h_y(i), eps);
+    EXPECT_NEAR_KK(static_cast<ScalarB>(a * h_x(i)), h_y(i), eps);
   }
 
   Kokkos::deep_copy(y, org_y);
   KokkosBlas::scal(y, a, c_x);
   Kokkos::deep_copy(h_y, y);
   for (int i = 0; i < N; i++) {
-    EXPECT_NEAR_KK(a * h_x(i), h_y(i), eps);
+    EXPECT_NEAR_KK(static_cast<ScalarB>(a * h_x(i)), h_y(i), eps);
   }
 }
 
@@ -128,7 +128,7 @@ void impl_test_scal_mv(int N, int K) {
   Kokkos::deep_copy(h_b_y, b_y);
   for (int i = 0; i < N; i++) {
     for (int j = 0; j < K; j++) {
-      EXPECT_NEAR_KK(a * h_x(i, j), h_y(i, j), eps);
+      EXPECT_NEAR_KK(static_cast<ScalarB>(a * h_x(i, j)), h_y(i, j), eps);
     }
   }
 
@@ -137,7 +137,7 @@ void impl_test_scal_mv(int N, int K) {
   Kokkos::deep_copy(h_b_y, b_y);
   for (int i = 0; i < N; i++) {
     for (int j = 0; j < K; j++) {
-      EXPECT_NEAR_KK(a * h_x(i, j), h_y(i, j), eps);
+      EXPECT_NEAR_KK(static_cast<ScalarB>(a * h_x(i, j)), h_y(i, j), eps);
     }
   }
 
@@ -156,7 +156,8 @@ void impl_test_scal_mv(int N, int K) {
   Kokkos::deep_copy(h_b_y, b_y);
   for (int i = 0; i < N; i++) {
     for (int j = 0; j < K; j++) {
-      EXPECT_NEAR_KK(h_params(j) * h_x(i, j), h_y(i, j), eps);
+      EXPECT_NEAR_KK(static_cast<ScalarB>(h_params(j) * h_x(i, j)), h_y(i, j),
+                     eps);
     }
   }
 
@@ -165,7 +166,8 @@ void impl_test_scal_mv(int N, int K) {
   Kokkos::deep_copy(h_b_y, b_y);
   for (int i = 0; i < N; i++) {
     for (int j = 0; j < K; j++) {
-      EXPECT_NEAR_KK(h_params(j) * h_x(i, j), h_y(i, j), eps);
+      EXPECT_NEAR_KK(static_cast<ScalarB>(h_params(j) * h_x(i, j)), h_y(i, j),
+                     eps);
     }
   }
 }
@@ -195,24 +197,24 @@ int test_scal() {
   // Test::impl_test_scal<view_type_a_lr, view_type_b_lr, Device>(132231);
 #endif
 
-/*
-#if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-  typedef Kokkos::View<ScalarA*, Kokkos::LayoutStride, Device> view_type_a_ls;
-  typedef Kokkos::View<ScalarB*, Kokkos::LayoutStride, Device> view_type_b_ls;
-  Test::impl_test_scal<view_type_a_ls, view_type_b_ls, Device>(0);
-  Test::impl_test_scal<view_type_a_ls, view_type_b_ls, Device>(13);
-  Test::impl_test_scal<view_type_a_ls, view_type_b_ls, Device>(1024);
-  // Test::impl_test_scal<view_type_a_ls, view_type_b_ls, Device>(132231);
-#endif
+  /*
+  #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
+      (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
+       !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    typedef Kokkos::View<ScalarA*, Kokkos::LayoutStride, Device> view_type_a_ls;
+    typedef Kokkos::View<ScalarB*, Kokkos::LayoutStride, Device> view_type_b_ls;
+    Test::impl_test_scal<view_type_a_ls, view_type_b_ls, Device>(0);
+    Test::impl_test_scal<view_type_a_ls, view_type_b_ls, Device>(13);
+    Test::impl_test_scal<view_type_a_ls, view_type_b_ls, Device>(1024);
+    // Test::impl_test_scal<view_type_a_ls, view_type_b_ls, Device>(132231);
+  #endif
 
-#if !defined(KOKKOSKERNELS_ETI_ONLY) && \
-    !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
-  Test::impl_test_scal<view_type_a_ls, view_type_b_ll, Device>(1024);
-  Test::impl_test_scal<view_type_a_ll, view_type_b_ls, Device>(1024);
-#endif
-*/
+  #if !defined(KOKKOSKERNELS_ETI_ONLY) && \
+      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
+    Test::impl_test_scal<view_type_a_ls, view_type_b_ll, Device>(1024);
+    Test::impl_test_scal<view_type_a_ll, view_type_b_ls, Device>(1024);
+  #endif
+  */
 
   return 1;
 }
@@ -241,24 +243,25 @@ int test_scal_mv() {
   // Test::impl_test_scal_mv<view_type_a_lr, view_type_b_lr, Device>(132231,5);
 #endif
 
-/*
-#if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-  typedef Kokkos::View<ScalarA**, Kokkos::LayoutStride, Device> view_type_a_ls;
-  typedef Kokkos::View<ScalarB**, Kokkos::LayoutStride, Device> view_type_b_ls;
-  Test::impl_test_scal_mv<view_type_a_ls, view_type_b_ls, Device>(0, 5);
-  Test::impl_test_scal_mv<view_type_a_ls, view_type_b_ls, Device>(13, 5);
-  Test::impl_test_scal_mv<view_type_a_ls, view_type_b_ls, Device>(1024, 5);
-  // Test::impl_test_scal_mv<view_type_a_ls, view_type_b_ls, Device>(132231,5);
-#endif
+  /*
+  #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
+      (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
+       !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    typedef Kokkos::View<ScalarA**, Kokkos::LayoutStride, Device>
+  view_type_a_ls; typedef Kokkos::View<ScalarB**, Kokkos::LayoutStride, Device>
+  view_type_b_ls; Test::impl_test_scal_mv<view_type_a_ls, view_type_b_ls,
+  Device>(0, 5); Test::impl_test_scal_mv<view_type_a_ls, view_type_b_ls,
+  Device>(13, 5); Test::impl_test_scal_mv<view_type_a_ls, view_type_b_ls,
+  Device>(1024, 5);
+    // Test::impl_test_scal_mv<view_type_a_ls, view_type_b_ls,
+  Device>(132231,5); #endif
 
-#if !defined(KOKKOSKERNELS_ETI_ONLY) && \
-    !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
-  Test::impl_test_scal_mv<view_type_a_ls, view_type_b_ll, Device>(1024, 5);
-  Test::impl_test_scal_mv<view_type_a_ll, view_type_b_ls, Device>(1024, 5);
-#endif
-*/
+  #if !defined(KOKKOSKERNELS_ETI_ONLY) && \
+      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
+    Test::impl_test_scal_mv<view_type_a_ls, view_type_b_ll, Device>(1024, 5);
+    Test::impl_test_scal_mv<view_type_a_ll, view_type_b_ls, Device>(1024, 5);
+  #endif
+  */
 
   return 1;
 }

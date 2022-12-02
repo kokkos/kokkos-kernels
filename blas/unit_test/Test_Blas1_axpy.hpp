@@ -154,7 +154,8 @@ void impl_test_axpy_mv(int N, int K) {
   Kokkos::deep_copy(h_b_y, b_y);
   for (int i = 0; i < N; i++) {
     for (int j = 0; j < K; j++) {
-      EXPECT_NEAR_KK(a * h_x(i, j) + h_org_y(i, j), h_y(i, j), eps);
+      EXPECT_NEAR_KK(static_cast<ScalarB>(a * h_x(i, j) + h_org_y(i, j)),
+                     h_y(i, j), eps);
     }
   }
 
@@ -163,7 +164,8 @@ void impl_test_axpy_mv(int N, int K) {
   Kokkos::deep_copy(h_b_y, b_y);
   for (int i = 0; i < N; i++) {
     for (int j = 0; j < K; j++) {
-      EXPECT_NEAR_KK(a * h_x(i, j) + h_org_y(i, j), h_y(i, j), eps);
+      EXPECT_NEAR_KK(static_cast<ScalarB>(a * h_x(i, j) + h_org_y(i, j)),
+                     h_y(i, j), eps);
     }
   }
 }

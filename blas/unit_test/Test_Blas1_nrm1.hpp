@@ -143,17 +143,17 @@ int test_nrm1() {
   Test::impl_test_nrm1<view_type_a_lr, Device>(132231);
 #endif
 
-/*
-#if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-  typedef Kokkos::View<ScalarA*, Kokkos::LayoutStride, Device> view_type_a_ls;
-  Test::impl_test_nrm1<view_type_a_ls, Device>(0);
-  Test::impl_test_nrm1<view_type_a_ls, Device>(13);
-  Test::impl_test_nrm1<view_type_a_ls, Device>(1024);
-  Test::impl_test_nrm1<view_type_a_ls, Device>(132231);
-#endif
-*/
+  /*
+  #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
+      (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
+       !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    typedef Kokkos::View<ScalarA*, Kokkos::LayoutStride, Device> view_type_a_ls;
+    Test::impl_test_nrm1<view_type_a_ls, Device>(0);
+    Test::impl_test_nrm1<view_type_a_ls, Device>(13);
+    Test::impl_test_nrm1<view_type_a_ls, Device>(1024);
+    Test::impl_test_nrm1<view_type_a_ls, Device>(132231);
+  #endif
+  */
 
   return 1;
 }

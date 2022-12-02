@@ -137,17 +137,17 @@ int test_nrm2w() {
   // Test::impl_test_nrm2<view_type_a_lr, Device>(132231);
 #endif
 
-/*
-#if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-  typedef Kokkos::View<ScalarA*, Kokkos::LayoutStride, Device> view_type_a_ls;
-  Test::impl_test_nrm2w<view_type_a_ls, Device>(0);
-  Test::impl_test_nrm2w<view_type_a_ls, Device>(13);
-  Test::impl_test_nrm2w<view_type_a_ls, Device>(1024);
-  // Test::impl_test_nrm2<view_type_a_ls, Device>(132231);
-#endif
-*/
+  /*
+  #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
+      (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
+       !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    typedef Kokkos::View<ScalarA*, Kokkos::LayoutStride, Device> view_type_a_ls;
+    Test::impl_test_nrm2w<view_type_a_ls, Device>(0);
+    Test::impl_test_nrm2w<view_type_a_ls, Device>(13);
+    Test::impl_test_nrm2w<view_type_a_ls, Device>(1024);
+    // Test::impl_test_nrm2<view_type_a_ls, Device>(132231);
+  #endif
+  */
 
   return 1;
 }
@@ -176,18 +176,18 @@ int test_nrm2w_mv() {
   // Test::impl_test_nrm2w_mv<view_type_a_lr, Device>(132231,5);
 #endif
 
-/*
-#if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-  typedef Kokkos::View<ScalarA**, Kokkos::LayoutStride, Device> view_type_a_ls;
-  Test::impl_test_nrm2w_mv<view_type_a_ls, Device>(0, 5);
-  Test::impl_test_nrm2w_mv<view_type_a_ls, Device>(13, 5);
-  Test::impl_test_nrm2w_mv<view_type_a_ls, Device>(1024, 5);
-  Test::impl_test_nrm2w_mv<view_type_a_ls, Device>(789, 1);
-  // Test::impl_test_nrm2w_mv<view_type_a_ls, Device>(132231,5);
-#endif
-*/
+  /*
+  #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
+      (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
+       !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    typedef Kokkos::View<ScalarA**, Kokkos::LayoutStride, Device>
+  view_type_a_ls; Test::impl_test_nrm2w_mv<view_type_a_ls, Device>(0, 5);
+    Test::impl_test_nrm2w_mv<view_type_a_ls, Device>(13, 5);
+    Test::impl_test_nrm2w_mv<view_type_a_ls, Device>(1024, 5);
+    Test::impl_test_nrm2w_mv<view_type_a_ls, Device>(789, 1);
+    // Test::impl_test_nrm2w_mv<view_type_a_ls, Device>(132231,5);
+  #endif
+  */
 
   return 1;
 }

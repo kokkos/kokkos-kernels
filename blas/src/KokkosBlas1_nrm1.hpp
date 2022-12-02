@@ -39,17 +39,17 @@ nrm1(const XVector& x) {
   static_assert(XVector::rank == 1,
                 "KokkosBlas::nrm1: "
                 "Both Vector inputs must have rank 1.");
-  using mag_type= typename Kokkos::Details::InnerProductSpaceTraits<
+  using mag_type = typename Kokkos::Details::InnerProductSpaceTraits<
       typename XVector::non_const_value_type>::mag_type;
 
-  using XVector_Internal = Kokkos::View<typename XVector::const_value_type*,
-					typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
-					typename XVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+  using XVector_Internal = Kokkos::View<
+      typename XVector::const_value_type*,
+      typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
+      typename XVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
-  using RVector_Internal = Kokkos::View<mag_type,
-					Kokkos::LayoutLeft,
-					Kokkos::HostSpace,
-					Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+  using RVector_Internal =
+      Kokkos::View<mag_type, default_layout, Kokkos::HostSpace,
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
   mag_type result;
   RVector_Internal R = RVector_Internal(&result);

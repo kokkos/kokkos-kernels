@@ -187,24 +187,24 @@ int test_dot() {
 
   // Removing the layout stride test as ViewTypeA a("a", N);
   // is invalid since the view constructor needs a stride object!
-/*
-#if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-  typedef Kokkos::View<ScalarA*, Kokkos::LayoutStride, Device> view_type_a_ls;
-  typedef Kokkos::View<ScalarB*, Kokkos::LayoutStride, Device> view_type_b_ls;
-  Test::impl_test_dot<view_type_a_ls, view_type_b_ls, Device>(0);
-  Test::impl_test_dot<view_type_a_ls, view_type_b_ls, Device>(13);
-  Test::impl_test_dot<view_type_a_ls, view_type_b_ls, Device>(1024);
-  // Test::impl_test_dot<view_type_a_ls, view_type_b_ls, Device>(132231);
-#endif
+  /*
+  #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
+      (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
+       !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    typedef Kokkos::View<ScalarA*, Kokkos::LayoutStride, Device> view_type_a_ls;
+    typedef Kokkos::View<ScalarB*, Kokkos::LayoutStride, Device> view_type_b_ls;
+    Test::impl_test_dot<view_type_a_ls, view_type_b_ls, Device>(0);
+    Test::impl_test_dot<view_type_a_ls, view_type_b_ls, Device>(13);
+    Test::impl_test_dot<view_type_a_ls, view_type_b_ls, Device>(1024);
+    // Test::impl_test_dot<view_type_a_ls, view_type_b_ls, Device>(132231);
+  #endif
 
-#if !defined(KOKKOSKERNELS_ETI_ONLY) && \
-    !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
-  Test::impl_test_dot<view_type_a_ls, view_type_b_ll, Device>(1024);
-  Test::impl_test_dot<view_type_a_ll, view_type_b_ls, Device>(1024);
-#endif
-*/
+  #if !defined(KOKKOSKERNELS_ETI_ONLY) && \
+      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
+    Test::impl_test_dot<view_type_a_ls, view_type_b_ll, Device>(1024);
+    Test::impl_test_dot<view_type_a_ll, view_type_b_ls, Device>(1024);
+  #endif
+  */
 
   return 1;
 }
@@ -237,25 +237,26 @@ int test_dot_mv() {
 
   // Removing the layout stride test as ViewTypeA a("a", N);
   // is invalid since the view constructor needs a stride object!
-/*
-#if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-  typedef Kokkos::View<ScalarA**, Kokkos::LayoutStride, Device> view_type_a_ls;
-  typedef Kokkos::View<ScalarB**, Kokkos::LayoutStride, Device> view_type_b_ls;
-  Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ls, Device>(0, 5);
-  Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ls, Device>(13, 5);
-  Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ls, Device>(1024, 5);
-  Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ls, Device>(789, 1);
-  // Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ls, Device>(132231,5);
-#endif
+  /*
+  #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
+      (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
+       !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    typedef Kokkos::View<ScalarA**, Kokkos::LayoutStride, Device>
+  view_type_a_ls; typedef Kokkos::View<ScalarB**, Kokkos::LayoutStride, Device>
+  view_type_b_ls; Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ls,
+  Device>(0, 5); Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ls,
+  Device>(13, 5); Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ls,
+  Device>(1024, 5); Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ls,
+  Device>(789, 1);
+    // Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ls, Device>(132231,5);
+  #endif
 
-#if !defined(KOKKOSKERNELS_ETI_ONLY) && \
-    !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
-  Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ll, Device>(1024, 5);
-  Test::impl_test_dot_mv<view_type_a_ll, view_type_b_ls, Device>(1024, 5);
-#endif
-*/
+  #if !defined(KOKKOSKERNELS_ETI_ONLY) && \
+      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
+    Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ll, Device>(1024, 5);
+    Test::impl_test_dot_mv<view_type_a_ll, view_type_b_ls, Device>(1024, 5);
+  #endif
+  */
 
   return 1;
 }
