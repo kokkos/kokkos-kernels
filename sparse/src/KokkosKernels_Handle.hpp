@@ -899,12 +899,11 @@ class KokkosKernelsHandle {
   }
 
   PAR_ILUTHandleType *get_par_ilut_handle() { return this->par_ilutHandle; }
-  void create_par_ilut_handle(size_type nrows, size_type nnzL = 0,
-                              size_type nnzU = 0) {
+  void create_par_ilut_handle(const size_type nrows, const size_type nnzL = 0,
+                              const size_type nnzU = 0, const size_type max_iter = 1) {
     this->destroy_par_ilut_handle();
     this->is_owner_of_the_par_ilut_handle = true;
-    this->par_ilutHandle = new PAR_ILUTHandleType(nrows, nnzL, nnzU);
-    this->par_ilutHandle->reset_handle(nrows, nnzL, nnzU);
+    this->par_ilutHandle = new PAR_ILUTHandleType(nrows, nnzL, nnzU, max_iter);
     this->par_ilutHandle->set_team_size(this->team_work_size);
     this->par_ilutHandle->set_vector_size(this->vector_size);
   }
@@ -916,12 +915,11 @@ class KokkosKernelsHandle {
   }
 
   GMRESHandleType *get_gmres_handle() { return this->gmresHandle; }
-  void create_gmres_handle(size_type nrows, size_type nnzL = 0,
-                              size_type nnzU = 0) {
+  void create_gmres_handle(const size_type nrows, const size_type m = 50,
+                           const size_type max_restart = 50) {
     this->destroy_gmres_handle();
     this->is_owner_of_the_gmres_handle = true;
-    this->gmresHandle = new GMRESHandleType(nrows, nnzL, nnzU);
-    this->gmresHandle->reset_handle(nrows, nnzL, nnzU);
+    this->gmresHandle = new GMRESHandleType(nrows, m, max_restart);
     this->gmresHandle->set_team_size(this->team_work_size);
     this->gmresHandle->set_vector_size(this->vector_size);
   }

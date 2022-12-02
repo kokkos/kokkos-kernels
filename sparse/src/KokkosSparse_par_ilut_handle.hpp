@@ -109,26 +109,25 @@ class PAR_ILUTHandle {
 
  public:
   PAR_ILUTHandle(const size_type nrows_, const size_type nnzL_ = 0,
-                 const size_type nnzU_ = 0, const size_type max_iter_ = 1,
-                 const nnz_scalar_t residual_norm_delta_stop_ = 0.,
-                 const float_t fill_in_limit_                 = 0.75,
-                 bool symbolic_complete_                      = false)
+                 const size_type nnzU_ = 0, const size_type max_iter_ = 1)
       : nrows(nrows_),
         nnzL(nnzL_),
         nnzU(nnzU_),
         max_iter(max_iter_),
-        residual_norm_delta_stop(residual_norm_delta_stop_),
-        symbolic_complete(symbolic_complete_),
+        residual_norm_delta_stop(0.),
+        symbolic_complete(false),
         team_size(-1),
         vector_size(-1),
-        fill_in_limit(fill_in_limit_) {}
+        fill_in_limit(0.75) {}
 
   void reset_handle(const size_type nrows_, const size_type nnzL_,
                     const size_type nnzU_) {
     set_nrows(nrows_);
     set_nnzL(nnzL_);
     set_nnzU(nnzU_);
+    set_residual_norm_delta_stop(0.);
     reset_symbolic_complete();
+    set_fill_in_limit(0.75);
   }
 
   KOKKOS_INLINE_FUNCTION

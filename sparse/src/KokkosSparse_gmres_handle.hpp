@@ -128,16 +128,16 @@ class GMRESHandle {
   Flag conv_flag_val;
 
  public:
+  // Use set methods to control ortho, preconditioner, and verbose
   GMRESHandle(const size_type nrows_, const size_type m_ = 50,
-              const size_type max_restart_ = 50, const float_t tol_ = 1e-10, const Ortho ortho_ = CGS2,
-              const bool verbose_ = false, precond_t* precond_ = nullptr)
+              const size_type max_restart_ = 50)
       : nrows(nrows_),
         m(m_),
         max_restart(max_restart_),
-        tol(tol_),
-        ortho(ortho_),
-        verbose(verbose_),
-        precond(precond_),
+        tol(1e-10),
+        ortho(CGS2),
+        verbose(false),
+        precond(nullptr),
         team_size(-1),
         vector_size(-1),
         num_iters(-1),
@@ -152,15 +152,14 @@ class GMRESHandle {
   }
 
   void reset_handle(const size_type nrows_, const size_type m_ = 50,
-                    const size_type max_restart_ = 50, const float_t tol_ = 1e-10, const Ortho ortho_ = CGS2,
-                    const bool verbose_ = false, precond_t* precond_ = nullptr) {
+                    const size_type max_restart_ = 50) {
     set_nrows(nrows_);
     set_m(m_);
     set_max_restart(max_restart_);
-    set_tol(tol_);
-    set_ortho(ortho_);
-    set_verbose(verbose_);
-    set_precond(precond_);
+    set_tol(1e-10);
+    set_ortho(CGS2);
+    set_verbose(false);
+    set_precond(nullptr);
     num_iters = -1;
     end_rel_res = 0;
     conv_flag_val = NotRun;

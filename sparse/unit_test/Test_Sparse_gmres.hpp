@@ -79,6 +79,7 @@ void run_test_gmres() {
   constexpr auto numRows       = n;
   constexpr auto numCols       = n;
   constexpr auto diagDominance = 1;
+  constexpr bool verbose       = false;
   size_type      nnz           = 10 * numRows;
   auto A =
     KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<
@@ -97,6 +98,8 @@ void run_test_gmres() {
   ViewVectorType Wj("Wj", n);  // For checking residuals at end.
   ViewVectorType B(Kokkos::view_alloc(Kokkos::WithoutInitializing, "B"),
                    n);  // right-hand side vec
+
+  gmres_handle->set_verbose(verbose);
 
   // Make rhs ones so that results are repeatable:
   {
@@ -122,6 +125,7 @@ void run_test_gmres() {
   {
     gmres_handle->reset_handle(n, m);
     gmres_handle->set_ortho(GMRESHandle::Ortho::MGS);
+    gmres_handle->set_verbose(verbose);
     Kokkos::deep_copy(X, 0.0);
     Kokkos::deep_copy(B, 1.0);
 

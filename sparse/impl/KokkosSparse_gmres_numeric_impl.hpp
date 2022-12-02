@@ -96,7 +96,7 @@ struct GmresWrap {
 
     // Store solver options:
     const auto n          = thandle.get_nrows();
-    const auto m          = thandle.get_m();
+    const int  m          = thandle.get_m();
     const auto maxRestart = thandle.get_max_restart();
     const auto tol        = thandle.get_tol();
     const auto ortho      = thandle.get_ortho();
@@ -110,7 +110,12 @@ struct GmresWrap {
     MT nrmB, trueRes, relRes, shortRelRes;
 
     if (verbose) {
-      std::cout << "Convergence tolerance is: " << tol << std::endl;
+      std::cout << "Starting GMRES with..." << std::endl;
+      std::cout << "  n:          " << n << std::endl;
+      std::cout << "  m:          " << m << std::endl;
+      std::cout << "  maxRestart: " << maxRestart << std::endl;
+      std::cout << "  tol:        " << tol << std::endl;
+      std::cout << "  ortho:      " << ((ortho == GmresHandle::Ortho::CGS2) ? "CGS2" : "MGS") << std::endl;
     }
 
     // Make tmp work views
@@ -179,7 +184,7 @@ struct GmresWrap {
         if (ortho == GmresHandle::Ortho::MGS) {
           for (int i = 0; i <= j; i++) {
             auto Vi   = Kokkos::subview(V, Kokkos::ALL, i);
-            H_h(i, j) = KokkosBlas::dot(Vi, Wj);   // Vi^* Wj // JGF: This does not compile due to Vi being LayoutStride
+            H_h(i, j) = KokkosBlas::dot(Vi, Wj);   // Vi^* Wj
             KokkosBlas::axpy(-H_h(i, j), Vi, Wj);  // wj = wj-Hij*Vi
           }
           auto Hj_h = Kokkos::subview(H_h, Kokkos::make_pair(0, j + 1), j);
@@ -257,7 +262,7 @@ struct GmresWrap {
           auto GLsSolnSub_h = Kokkos::subview(
             GLsSoln_h, Kokkos::ALL,
             0);  // Original view has rank 2, need a rank 1 here.
-          auto GVecSub_h = GVec_h; //Kokkos::subview(GVec_h, Kokkos::make_pair(0, m));
+          auto GVecSub_h = Kokkos::subview(GVec_h, Kokkos::make_pair(0, m));
           Kokkos::deep_copy(GLsSolnSub_h,
                             GVecSub_h);  // Copy LS rhs vec for triangle solve.
           auto GLsSolnSub2_h = Kokkos::subview(
