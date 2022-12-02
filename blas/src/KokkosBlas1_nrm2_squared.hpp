@@ -49,7 +49,7 @@ nrm2_squared(const XVector& x) {
       typename XVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       XVector_Internal;
 
-  typedef Kokkos::View<mag_type, typename XVector_Internal::array_layout,
+  typedef Kokkos::View<mag_type, Kokkos::LayoutRight,
                        Kokkos::HostSpace,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       RVector_Internal;
@@ -111,7 +111,7 @@ void nrm2_squared(
       typename KokkosKernels::Impl::GetUnifiedLayout<XMV>::array_layout;
   using UnifiedRVLayout =
       typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<
-          RV, UnifiedXLayout>::array_layout;
+	RV, Kokkos::LayoutRight>::array_layout;
 
   // Create unmanaged versions of the input Views.  RV and XMV may be
   // rank 1 or rank 2.

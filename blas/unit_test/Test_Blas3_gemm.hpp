@@ -394,6 +394,23 @@ void test_gemm_enabled_layouts() {
 #endif
 }
 
+template <class scalar1, class scalar2>
+void test_gemm_mixed_scalars() {
+  using CMatrix = Kokkos::View<scalar1**, TestExecSpace>;
+  using BMatrix = Kokkos::View<scalar1**, TestExecSpace>;
+  using AMatrix = Kokkos::View<scalar1**, TestExecSpace>;
+
+  AMatrix A("A", 10, 10);
+  BMatrix B("B", 10, 10);
+  CMatrix C("C", 10, 10);
+
+  Kokkos::deep_copy(A, Kokkos::ArithTraits<scalar2>::one());
+  Kokkos::deep_copy(B, Kokkos::ArithTraits<scalar1>::one());
+  Kokkos::deep_copy(C, Kokkos::ArithTraits<scalar1>::one());
+
+  KokkosBlas::gemm(TestExecSpace(), "N", "N", 1.0, C, A, 0.0, B);
+}
+
 #if defined(KOKKOSKERNELS_INST_FLOAT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -433,3 +450,24 @@ TEST_F(TestCategory, gemm_complex_float) {
   Kokkos::Profiling::popRegion();
 }
 #endif
+
+#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&          \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+TEST_F(TestCategory, gemm_mixed_scalars_complex_double_double) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::gemm_mixed_complex_double_double");
+  test_gemm_mixed_scalars<Kokkos::complex<double>, double>();
+  Kokkos::Profiling::popRegion();
+}
+#endif
+
+#if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&         \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+TEST_F(TestCategory, gemm_mixed_scalar_complex_float_float) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::gemm_mixed_complex_float_float");
+  test_gemm_mixed_scalars<Kokkos::complex<float>, float>();
+  Kokkos::Profiling::popRegion();
+}
+#endif
+

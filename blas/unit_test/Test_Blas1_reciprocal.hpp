@@ -212,6 +212,7 @@ int test_reciprocal() {
   // Test::impl_test_reciprocal<view_type_a_lr, view_type_b_lr, Device>(132231);
 #endif
 
+/*
 #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -228,6 +229,7 @@ int test_reciprocal() {
   Test::impl_test_reciprocal<view_type_a_ls, view_type_b_ll, Device>(1024);
   Test::impl_test_reciprocal<view_type_a_ll, view_type_b_ls, Device>(1024);
 #endif
+*/
 
   return 1;
 }
@@ -260,6 +262,7 @@ int test_reciprocal_mv() {
   // Device>(132231,5);
 #endif
 
+/*
 #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -280,6 +283,7 @@ int test_reciprocal_mv() {
   Test::impl_test_reciprocal_mv<view_type_a_ll, view_type_b_ls, Device>(1024,
                                                                         5);
 #endif
+*/
 
   return 1;
 }

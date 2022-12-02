@@ -75,10 +75,10 @@ dot(const XVector& x, const YVector& y) {
   using result_type =
       typename KokkosBlas::Impl::DotAccumulatingScalar<dot_type>::type;
   using RVector_Internal =
-      Kokkos::View<dot_type, typename XVector_Internal::array_layout,
+      Kokkos::View<dot_type, Kokkos::LayoutRight,
                    Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
   using RVector_Result =
-      Kokkos::View<result_type, typename XVector_Internal::array_layout,
+      Kokkos::View<result_type, Kokkos::LayoutRight,
                    Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
   result_type result{};
