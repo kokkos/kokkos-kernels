@@ -80,7 +80,7 @@ enum PoolType { OneThread2OneChunk, ManyThread2OneChunk };
  not
  *   enough memory. This case still would work for #chunks = #threads, with an
  extra atomic
- *   operation. On GPUs, even when #chunks = Kokkos::Cuda::concurrency(), this
+ *   operation. On GPUs, even when #chunks = Kokkos::Cuda().concurrency(), this
  option is safe
  *   to use.
  *
@@ -116,7 +116,7 @@ enum PoolType { OneThread2OneChunk, ManyThread2OneChunk };
  *      --- either requires the initializations to go into loop body, resulting
  in N work in each loop.
  *      --- Or, we can use preinitialized 2d views where the first dimension is
- ExecutionSpace::concurrency()
+ ExecutionSpace().concurrency()
  *          However, this case becomes a problem in CUDA, as concurrency is
  pretty high and we might not have
  *          enough memory for that.

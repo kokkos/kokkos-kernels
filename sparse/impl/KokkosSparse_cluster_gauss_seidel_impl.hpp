@@ -781,7 +781,7 @@ class ClusterGaussSeidel {
     scalar_persistent_work_view_t inverse_diagonal(
         Kokkos::view_alloc(Kokkos::WithoutInitializing, "Aii^-1"), num_rows);
     nnz_lno_t rows_per_team = this->handle->get_team_work_size(
-        suggested_team_size, MyExecSpace::concurrency(), num_rows);
+        suggested_team_size, MyExecSpace().concurrency(), num_rows);
 
     if (have_diagonal_given) {
       Kokkos::deep_copy(inverse_diagonal, this->given_inverse_diagonal);
@@ -839,7 +839,7 @@ class ClusterGaussSeidel {
           this->handle->get_suggested_team_size(suggested_vector_size);
 
       nnz_lno_t rows_per_team = this->handle->get_team_work_size(
-          suggested_team_size, MyExecSpace::concurrency(), num_rows);
+          suggested_team_size, MyExecSpace().concurrency(), num_rows);
       // Get clusters per team. Round down to favor finer granularity, since
       // this is sensitive to load imbalance
       nnz_lno_t clusters_per_team =

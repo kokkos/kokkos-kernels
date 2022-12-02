@@ -473,7 +473,7 @@ void run_example(CrsGraph_type crsGraph, DataType num_cols, Parameters params) {
             << "    Num Edges      : " << crsGraph.entries.extent(0)
             << std::endl
             << "    Concurrency    : "
-            << Kokkos::DefaultExecutionSpace::concurrency() << std::endl
+            << Kokkos::DefaultExecutionSpace().concurrency() << std::endl
             << "    Algorithm      : " << label_algorithm << std::endl
             << "Coloring Stats" << std::endl
             << "    Num colors     : " << num_colors << std::endl

@@ -1050,7 +1050,7 @@ class coarse_builder {
         3 * max_entries;   // for hash nexts, keys, and values (unless scalar_t
                            // != ordinal_t, in which case memory is unused)
     mem_chunk_size += 10;  // for metadata
-    mem_chunk_count = exec_space::concurrency();
+    mem_chunk_count = exec_space().concurrency();
     if (mem_chunk_count > remaining_count) {
       mem_chunk_count = remaining_count + 1;
     }
@@ -1385,7 +1385,7 @@ class coarse_builder {
                                   wgt_by_source);
     if (is_host_space) {
       bool use_dyn =
-          should_use_dyn(n, g.graph.row_map, exec_space::concurrency());
+          should_use_dyn(n, g.graph.row_map, exec_space().concurrency());
       if (use_dyn) {
         Kokkos::parallel_for("move edges to coarse matrix", dyn_policy_t(0, n),
                              translateF);
@@ -1422,7 +1422,7 @@ class coarse_builder {
 
     if (is_host_space) {
       bool use_dyn =
-          should_use_dyn(nc, source_offsets, exec_space::concurrency());
+          should_use_dyn(nc, source_offsets, exec_space().concurrency());
       if (use_dyn) {
         Kokkos::parallel_for(
             "move deduped edges to new coarse matrix", dyn_policy_t(0, nc),

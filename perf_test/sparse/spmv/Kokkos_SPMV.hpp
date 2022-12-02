@@ -151,7 +151,7 @@ int launch_parameters(int numRows, int nnz, int rows_per_thread, int& team_size,
 
   if (rows_per_team < 0) {
     int nnz_per_team = 4096;
-    int conc         = execution_space::concurrency();
+    int conc         = execution_space().concurrency();
     while ((conc * nnz_per_team * 4 > nnz) && (nnz_per_team > 256))
       nnz_per_team /= 2;
     int tmp_nnz_per_row = nnz / numRows;
