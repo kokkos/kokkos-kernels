@@ -44,6 +44,14 @@ IF (KOKKOS_ENABLE_CUDA)
       backends/Test_Cuda_Batched_Dense.cpp
     COMPONENTS batched_dla
   )
+
+  KOKKOSKERNELS_ADD_UNIT_TEST(
+    batched_gemm_cuda
+    SOURCES
+      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
+      backends/Test_Cuda_Batched_GEMM.cpp
+    COMPONENTS batched_dla
+  )
 ENDIF ()
 
 IF (KOKKOS_ENABLE_HIP)
@@ -52,6 +60,14 @@ IF (KOKKOS_ENABLE_HIP)
     SOURCES
       ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
       backends/Test_HIP_Batched_Dense.cpp
+    COMPONENTS batched_dla
+  )
+
+  KOKKOSKERNELS_ADD_UNIT_TEST(
+    batched_gemm_hip
+    SOURCES
+      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
+      backends/Test_HIP_Batched_GEMM.cpp
     COMPONENTS batched_dla
   )
 ENDIF ()
@@ -64,6 +80,14 @@ IF (KOKKOS_ENABLE_SYCL)
       backends/Test_SYCL_Batched_Dense.cpp
     COMPONENTS batched_dla
   )
+
+  KOKKOSKERNELS_ADD_UNIT_TEST(
+    batched_gemm_sycl
+    SOURCES
+      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
+      backends/Test_SYCL_Batched_GEMM.cpp
+    COMPONENTS batched_dla
+  )
 ENDIF ()
 
 IF (KOKKOS_ENABLE_OPENMPTARGET)
@@ -72,6 +96,14 @@ IF (KOKKOS_ENABLE_OPENMPTARGET)
   #   SOURCES
   #     ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
   #     backends/Test_OpenMPTarget_Batched_Dense.cpp
+  #   COMPONENTS batched_dla
+  # )
+
+  # KOKKOSKERNELS_ADD_UNIT_TEST(
+  #   batched_gemm_openmptarget
+  #   SOURCES
+  #     ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
+  #     backends/Test_OpenMPTarget_Batched_GEMM.cpp
   #   COMPONENTS batched_dla
   # )
 ENDIF ()
@@ -91,6 +123,14 @@ IF (KOKKOS_ENABLE_SERIAL)
       backends/Test_Serial_Batched_Dense.cpp
     COMPONENTS batched_dla
   )
+
+  KOKKOSKERNELS_ADD_UNIT_TEST(
+    batched_gemm_serial
+    SOURCES
+      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
+      backends/Test_Serial_Batched_GEMM.cpp
+    COMPONENTS batched_dla
+  )
 ENDIF ()
 
 IF (KOKKOS_ENABLE_OPENMP)
@@ -101,6 +141,14 @@ IF (KOKKOS_ENABLE_OPENMP)
       backends/Test_OpenMP_Batched_Dense.cpp
     COMPONENTS batched_dla
   )
+
+  KOKKOSKERNELS_ADD_UNIT_TEST(
+    batched_gemm_openmp
+    SOURCES
+      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
+      backends/Test_OpenMP_Batched_GEMM.cpp
+    COMPONENTS batched_dla
+  )
 ENDIF ()
 
 IF (KOKKOS_ENABLE_THREADS)
@@ -109,6 +157,14 @@ IF (KOKKOS_ENABLE_THREADS)
     SOURCES
       ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
       backends/Test_Threads_Batched_Dense.cpp
+    COMPONENTS batched_dla
+  )
+
+  KOKKOSKERNELS_ADD_UNIT_TEST(
+    batched_gemm_threads
+    SOURCES
+      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
+      backends/Test_Threads_Batched_GEMM.cpp
     COMPONENTS batched_dla
   )
 ENDIF ()
