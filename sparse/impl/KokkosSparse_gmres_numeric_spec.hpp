@@ -119,7 +119,7 @@ struct GMRES_NUMERIC<KernelHandle, AT, AO, AD, AM, AS,
   using AMatrix = CrsMatrix<AT, AO, AD, AM, AS>;
   static void gmres_numeric(KernelHandle *handle,
                             const AMatrix &A,
-                            BType &B, XType &X) {
+                            const BType &B, XType &X) {
     auto gmres_handle = handle->get_gmres_handle();
     using Gmres           = Experimental::GmresWrap<
         typename std::remove_pointer<decltype(gmres_handle)>::type>;
