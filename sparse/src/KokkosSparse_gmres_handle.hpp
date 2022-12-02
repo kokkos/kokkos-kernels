@@ -43,6 +43,7 @@
 */
 
 #include <Kokkos_Core.hpp>
+#include <KokkosSparse_Preconditioner.hpp>
 #include <iostream>
 #include <string>
 
@@ -96,6 +97,8 @@ class GMRESHandle {
                    typename nnz_row_view_t::device_type,
                    typename nnz_row_view_t::memory_traits>;
 
+  using precond_t = Preconditioner<nnz_scalar_t, default_layout, ExecutionSpace, nnz_lno_t>;
+
   enum Ortho { CGS2, MGS };
   enum Flag { Conv, NoConv, LOA, NotRun };
 
@@ -113,6 +116,8 @@ class GMRESHandle {
 
   bool verbose;
 
+  precond_t* precond;
+
   int team_size;
   int vector_size;
 
@@ -123,14 +128,15 @@ class GMRESHandle {
 
  public:
   GMRESHandle(const size_type nrows_, const size_type m_ = 50,
-              const size_type max_restart_ = 50, const float_t tol_ = 1e-8, const Ortho ortho_ = CGS2,
-              const bool verbose_ = false)
+              const size_type max_restart_ = 50, const float_t tol_ = 1e-10, const Ortho ortho_ = CGS2,
+              const bool verbose_ = false, precond_t* precond_ = nullptr)
       : nrows(nrows_),
         m(m_),
         max_restart(max_restart_),
         tol(tol_),
         ortho(ortho_),
         verbose(verbose_),
+        precond(precond_),
         team_size(-1),
         vector_size(-1),
         num_iters(-1),
@@ -144,15 +150,16 @@ class GMRESHandle {
     }
   }
 
-  void reset_handle(const size_type nrows_, const size_type m_,
-                    const size_type max_restart_, const float_t tol_, const Ortho ortho_,
-                    const bool verbose_) {
+  void reset_handle(const size_type nrows_, const size_type m_ = 50,
+                    const size_type max_restart_ = 50, const float_t tol_ = 1e-10, const Ortho ortho_ = CGS2,
+                    const bool verbose_ = false, precond_t* precond_ = nullptr) {
     set_nrows(nrows_);
     set_m(m_);
     set_max_restart(max_restart_);
     set_tol(tol_);
     set_ortho(ortho_);
     set_verbose(verbose_);
+    set_precond(precond_);
     num_iters = -1;
     end_rel_res = 0;
     conv_flag_val = NotRun;
@@ -196,6 +203,13 @@ class GMRESHandle {
 
   KOKKOS_INLINE_FUNCTION
   void set_verbose(const bool verbose_) { this->verbose = verbose_; }
+
+  KOKKOS_INLINE_FUNCTION
+  precond_t* get_precond() const { return this->precond; }
+
+  KOKKOS_INLINE_FUNCTION
+  void set_precond(precond_t* precond_) { this->precond = precond_; }
+
 
   void set_team_size(const int ts) { this->team_size = ts; }
   int get_team_size() const { return this->team_size; }

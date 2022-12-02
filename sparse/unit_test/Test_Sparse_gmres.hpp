@@ -61,17 +61,86 @@ using namespace KokkosSparse::Experimental;
 using namespace KokkosKernels;
 using namespace KokkosKernels::Experimental;
 
-typedef Kokkos::complex<double> kokkos_complex_double;
-typedef Kokkos::complex<float> kokkos_complex_float;
-
 namespace Test {
 
 template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
 void run_test_gmres() {
-  typedef Kokkos::View<size_type*, device> RowMapType;
-  typedef Kokkos::View<lno_t*, device> EntriesType;
-  typedef Kokkos::View<scalar_t*, device> ValuesType;
+  using exe_space      = typename device::execution_space;
+  using mem_space      = typename device::memory_space;
+  using sp_matrix_type = KokkosSparse::CrsMatrix<scalar_t, lno_t, exe_space>;
+  using KernelHandle =
+    KokkosKernels::Experimental::KokkosKernelsHandle<
+      size_type, lno_t, scalar_t, exe_space, mem_space, mem_space>;
+
+  // Create a diagonally dominant sparse matrix to test:
+  constexpr auto n             = 5000;
+  constexpr auto m             = 15;
+  constexpr auto numRows       = n;
+  constexpr auto numCols       = n;
+  constexpr auto diagDominance = 1;
+  size_type      nnz           = 10 * numRows;
+  auto A =
+    KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<
+      sp_matrix_type>(numRows, numCols, nnz, 0, lno_t(0.01 * numRows),
+                      diagDominance);
+
+  // Make kernel handles
+  KernelHandle kh;
+  kh.create_gmres_handle(n, m);
+  auto gmres_handle = kh.get_gmres_handle();
+  using GMRESHandle = typename std::remove_reference<decltype(*gmres_handle)>::type;
+  using ViewVectorType = typename GMRESHandle::nnz_value_view_t;
+
+  // Set initial vectors:
+  ViewVectorType X("X", n);    // Solution and initial guess
+  ViewVectorType Wj("Wj", n);  // For checking residuals at end.
+  ViewVectorType B(Kokkos::view_alloc(Kokkos::WithoutInitializing, "B"),
+                   n);  // right-hand side vec
+
+  // Make rhs ones so that results are repeatable:
+  {
+    Kokkos::deep_copy(B, 1.0);
+
+    gmres_numeric(&kh, A, B, X);
+
+    // Double check residuals at end of solve:
+    scalar_t nrmB = static_cast<scalar_t>(KokkosBlas::nrm2(B));
+    //KokkosSparse::spmv("N", 1.0, A, X, 0.0, Wj);  // wj = Ax
+    KokkosBlas::axpy(-1.0, Wj, B);                // b = b-Ax.
+    scalar_t endRes = KokkosBlas::nrm2(B) / nrmB;
+
+    const auto num_iters   = gmres_handle->get_num_iters();
+    const auto conv_flag   = gmres_handle->get_conv_flag_val();
+
+    EXPECT_LT(num_iters, 40);
+    EXPECT_GT(num_iters, 20);
+    EXPECT_LT(endRes, gmres_handle->get_tol());
+    EXPECT_EQ(conv_flag, GMRESHandle::Flag::Conv);
+  }
+
+  {
+    gmres_handle->reset_handle(n, m);
+    gmres_handle->set_ortho(GMRESHandle::Ortho::MGS);
+    Kokkos::deep_copy(X, 0.0);
+    Kokkos::deep_copy(B, 1.0);
+
+    gmres_numeric(&kh, A, B, X);
+
+    // Double check residuals at end of solve:
+    scalar_t nrmB = static_cast<scalar_t>(KokkosBlas::nrm2(B));
+    //KokkosSparse::spmv("N", 1.0, A, X, 0.0, Wj);  // wj = Ax
+    KokkosBlas::axpy(-1.0, Wj, B);                // b = b-Ax.
+    scalar_t endRes = KokkosBlas::nrm2(B) / nrmB;
+
+    const auto num_iters   = gmres_handle->get_num_iters();
+    const auto conv_flag   = gmres_handle->get_conv_flag_val();
+
+    EXPECT_LT(num_iters, 40);
+    EXPECT_GT(num_iters, 20);
+    EXPECT_LT(endRes, gmres_handle->get_tol());
+    EXPECT_EQ(conv_flag, GMRESHandle::Flag::Conv);
+  }
 }
 
 }  // namespace Test
@@ -88,9 +157,6 @@ void test_gmres() {
     test_gmres<SCALAR, ORDINAL, OFFSET, DEVICE>();                        \
   }
 
-#define NO_TEST_COMPLEX
-
 #include <Test_Common_Test_All_Type_Combos.hpp>
 
 #undef KOKKOSKERNELS_EXECUTE_TEST
-#define NO_TEST_COMPLEX

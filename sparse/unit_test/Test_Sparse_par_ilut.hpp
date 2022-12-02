@@ -61,9 +61,6 @@ using namespace KokkosSparse::Experimental;
 using namespace KokkosKernels;
 using namespace KokkosKernels::Experimental;
 
-typedef Kokkos::complex<double> kokkos_complex_double;
-typedef Kokkos::complex<float> kokkos_complex_float;
-
 namespace Test {
 
 template <typename scalar_t, typename lno_t, typename size_type,
@@ -132,9 +129,13 @@ void print_matrix(const std::vector<std::vector<scalar_t>>& matrix) {
 template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
 void run_test_par_ilut() {
-  typedef Kokkos::View<size_type*, device> RowMapType;
-  typedef Kokkos::View<lno_t*, device> EntriesType;
-  typedef Kokkos::View<scalar_t*, device> ValuesType;
+  using RowMapType   = Kokkos::View<size_type*, device>;
+  using EntriesType  = Kokkos::View<lno_t*,     device>;
+  using ValuesType   = Kokkos::View<scalar_t*,  device>;
+  using KernelHandle =
+    KokkosKernels::Experimental::KokkosKernelsHandle<
+      size_type, lno_t, scalar_t, typename device::execution_space,
+      typename device::memory_space, typename device::memory_space>;
 
   // Simple test fixture A
   std::vector<std::vector<scalar_t>> A = {{1., 6., 4., 7.},
@@ -185,11 +186,6 @@ void run_test_par_ilut() {
   Kokkos::deep_copy(values, hvalues);
 
   // Make kernel handle
-  typedef KokkosKernels::Experimental::KokkosKernelsHandle<
-      size_type, lno_t, scalar_t, typename device::execution_space,
-      typename device::memory_space, typename device::memory_space>
-      KernelHandle;
-
   KernelHandle kh;
 
   kh.create_par_ilut_handle(nrows);
@@ -324,4 +320,4 @@ void test_par_ilut() {
 #include <Test_Common_Test_All_Type_Combos.hpp>
 
 #undef KOKKOSKERNELS_EXECUTE_TEST
-#define NO_TEST_COMPLEX
+#undef NO_TEST_COMPLEX

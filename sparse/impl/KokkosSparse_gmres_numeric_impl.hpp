@@ -101,6 +101,7 @@ struct GmresWrap {
     const auto tol        = thandle.get_tol();
     const auto ortho      = thandle.get_ortho();
     const auto verbose    = thandle.get_verbose();
+    auto precond          = thandle.get_precond();
 
     bool converged = false;
     int cycle      = 0;  // How many times have we restarted?
@@ -168,9 +169,9 @@ struct GmresWrap {
       KokkosBlas::scal(Vj, one / trueRes, Vj);  // V0 = V0/norm(V0)
 
       for (int j = 0; j < m; j++) {
-        if (false /*M != NULL*/) {                                   // Apply Right prec
-          //M->apply(Vj, Wj2);                               // wj2 = M*Vj
-          //KokkosSparse::spmv("N", one, A, Wj2, zero, Wj);  // wj = A*MVj = A*Wj2
+        if (precond) {                                     // Apply Right prec
+          precond->apply(Vj, Wj2);                         // wj2 = M*Vj
+          KokkosSparse::spmv("N", one, A, Wj2, zero, Wj);  // wj = A*MVj = A*Wj2
         } else {
           KokkosSparse::spmv("N", one, A, Vj, zero, Wj);  // wj = A*Vj
         }
@@ -273,10 +274,10 @@ struct GmresWrap {
                             X);  // Can't overwrite X with intermediate solution.
           auto GLsSolnSub3 =
             Kokkos::subview(GLsSoln, Kokkos::make_pair(0, j + 1), 0);
-          if (false /*M != NULL*/) {  // Apply right prec to correct soln.
-            // KokkosBlas::gemv("N", one, VSub, GLsSolnSub3, zero,
-            //                  Wj);                // wj = V(1:j+1)*lsSoln
-            // M->apply(Wj, Xiter, "N", one, one);  // Xiter = M*wj + X
+          if (precond) {  // Apply right prec to correct soln.
+            KokkosBlas::gemv("N", one, VSub, GLsSolnSub3, zero,
+                             Wj);                // wj = V(1:j+1)*lsSoln
+            precond->apply(Wj, Xiter, "N", one, one);  // Xiter = M*wj + X
           } else {
             KokkosBlas::gemv("N", one, VSub, GLsSolnSub3, one,
                              Xiter);  // x_iter = x + V(1:j+1)*lsSoln
@@ -298,11 +299,13 @@ struct GmresWrap {
               X, Xiter);  // Final solution is the iteration solution.
             break;          // End Arnoldi iteration.
           } else if (shortRelRes < 1e-30) {
-            std::cout << "Short residual has converged to machine zero, but true "
-              "residual is not converged.\n"
-                      << "You may have given GMRES a singular matrix. Ending the "
-              "GMRES iteration."
-                      << std::endl;
+            if (verbose) {
+              std::cout << "Short residual has converged to machine zero, but true "
+                "residual is not converged.\n"
+                        << "You may have given GMRES a singular matrix. Ending the "
+                "GMRES iteration."
+                        << std::endl;
+            }
             break;  // End Arnoldi iteration; we can't make any more progress.
           }
         }
@@ -319,7 +322,9 @@ struct GmresWrap {
     int num_iters = 0;
     MT end_rel_res = 0;
     typename GmresHandle::Flag conv_flag_val;
-    std::cout << "Ending relative residual is: " << relRes << std::endl;
+    if (verbose) {
+      std::cout << "Ending relative residual is: " << relRes << std::endl;
+    }
     end_rel_res = static_cast<double>(relRes);
     if (converged) {
       if (verbose) {

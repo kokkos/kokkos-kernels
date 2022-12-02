@@ -141,7 +141,7 @@ void gmres_numeric(KernelHandle* handle, AMatrix& A,
     AMatrix_Internal;
 
   using B_Internal = Kokkos::View<
-      typename BType::non_const_value_type*,
+      typename BType::const_value_type*,
       typename KokkosKernels::Impl::GetUnifiedLayout<BType>::array_layout,
       typename BType::device_type,
       Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
@@ -150,7 +150,7 @@ void gmres_numeric(KernelHandle* handle, AMatrix& A,
     typename XType::non_const_value_type*,
     typename KokkosKernels::Impl::GetUnifiedLayout<XType>::array_layout,
     typename XType::device_type,
-    Kokkos::MemoryTraits<Kokkos::RandomAccess> >;
+    Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
   AMatrix_Internal A_i = A;
   B_Internal       b_i = B;
