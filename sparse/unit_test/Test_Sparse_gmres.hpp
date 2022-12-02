@@ -68,7 +68,7 @@ template <typename scalar_t, typename lno_t, typename size_type,
 void run_test_gmres() {
   using exe_space      = typename device::execution_space;
   using mem_space      = typename device::memory_space;
-  using sp_matrix_type = KokkosSparse::CrsMatrix<scalar_t, lno_t, exe_space>;
+  using sp_matrix_type = KokkosSparse::CrsMatrix<scalar_t, lno_t, device>;
   using KernelHandle =
     KokkosKernels::Experimental::KokkosKernelsHandle<
       size_type, lno_t, scalar_t, exe_space, mem_space, mem_space>;
@@ -106,7 +106,7 @@ void run_test_gmres() {
 
     // Double check residuals at end of solve:
     scalar_t nrmB = static_cast<scalar_t>(KokkosBlas::nrm2(B));
-    //KokkosSparse::spmv("N", 1.0, A, X, 0.0, Wj);  // wj = Ax
+    KokkosSparse::spmv("N", 1.0, A, X, 0.0, Wj);  // wj = Ax
     KokkosBlas::axpy(-1.0, Wj, B);                // b = b-Ax.
     scalar_t endRes = KokkosBlas::nrm2(B) / nrmB;
 
@@ -129,7 +129,7 @@ void run_test_gmres() {
 
     // Double check residuals at end of solve:
     scalar_t nrmB = static_cast<scalar_t>(KokkosBlas::nrm2(B));
-    //KokkosSparse::spmv("N", 1.0, A, X, 0.0, Wj);  // wj = Ax
+    KokkosSparse::spmv("N", 1.0, A, X, 0.0, Wj);  // wj = Ax
     KokkosBlas::axpy(-1.0, Wj, B);                // b = b-Ax.
     scalar_t endRes = KokkosBlas::nrm2(B) / nrmB;
 

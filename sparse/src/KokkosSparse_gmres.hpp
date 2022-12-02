@@ -110,6 +110,11 @@ void gmres_numeric(KernelHandle* handle, AMatrix& A,
                    typename BType::device_type>::value,
       "gmres_numeric: X and B have different device types.");
 
+  static_assert(
+      std::is_same<typename AMatrix::device_type,
+                   typename BType::device_type>::value,
+      "gmres_numeric: A and B have different device types.");
+
   using c_size_t   = typename KernelHandle::const_size_type;
   using c_lno_t    = typename KernelHandle::const_nnz_lno_t;
   using c_scalar_t = typename KernelHandle::const_nnz_scalar_t;

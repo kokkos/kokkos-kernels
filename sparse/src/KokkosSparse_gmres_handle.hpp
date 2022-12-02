@@ -63,6 +63,7 @@ class GMRESHandle {
 
   using execution_space = ExecutionSpace;
   using memory_space    = HandlePersistentMemorySpace;
+  using device_t        = Kokkos::Device<execution_space, memory_space>;
   using TeamPolicy      = Kokkos::TeamPolicy<execution_space>;
   using RangePolicy     = Kokkos::RangePolicy<execution_space>;
 
@@ -78,16 +79,16 @@ class GMRESHandle {
   using float_t = typename Kokkos::ArithTraits<nnz_scalar_t>::mag_type;
 
   using nnz_row_view_t =
-      typename Kokkos::View<size_type *, HandlePersistentMemorySpace>;
+      typename Kokkos::View<size_type *, device_t>;
 
   using nnz_lno_view_t =
-      typename Kokkos::View<nnz_lno_t *, HandlePersistentMemorySpace>;
+      typename Kokkos::View<nnz_lno_t *, device_t>;
 
   using nnz_value_view_t =
-      typename Kokkos::View<nnz_scalar_t *, HandlePersistentMemorySpace>;
+      typename Kokkos::View<nnz_scalar_t *, device_t>;
 
   using nnz_value_view2d_t =
-      typename Kokkos::View<nnz_scalar_t **, Kokkos::LayoutLeft, HandlePersistentMemorySpace>;
+      typename Kokkos::View<nnz_scalar_t **, Kokkos::LayoutLeft, device_t>;
 
   using signed_integral_t = typename std::make_signed<
       typename nnz_row_view_t::non_const_value_type>::type;
