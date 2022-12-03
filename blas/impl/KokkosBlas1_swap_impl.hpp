@@ -46,7 +46,6 @@
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
-// #include <KokkosBlas1_rot_spec.hpp>
 
 namespace KokkosBlas {
 namespace Impl {

@@ -63,6 +63,9 @@ namespace KokkosBlas {
 ///         performing a deep_copy, swapping pointers inside view
 ///         can only be performed if no aliasing, subviews, etc...
 ///         exist, which cannot be asserted by this function.
+///
+/// This function is non-blocking unless the underlying TPL requested
+/// at compile time is itself blocking
 template <class execution_space, class XVector, class YVector>
 void swap(execution_space const& space, XVector const& x, YVector const& y) {
   // Assert properties of XVector
@@ -131,6 +134,10 @@ void swap(execution_space const& space, XVector const& x, YVector const& y) {
 /// \param y [in/out] 1-D View.
 ///
 /// \return x and y with swapped values.
+///
+/// This function is non-blocking unless the underlying TPL requested
+/// at compile time is itself blocking. Note that the kernel will be
+/// executed on the default stream of the execution_space associted with x.
 template <class XVector, class YVector>
 void swap(const XVector& x, const YVector& y) {
   const typename XVector::execution_space space =
