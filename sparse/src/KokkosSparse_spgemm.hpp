@@ -63,10 +63,10 @@ void spgemm_symbolic(KernelHandle& kh, const AMatrix& A, const bool Amode,
   entries_type entriesC;
   values_type valuesC;
 
-  KokkosSparse::spgemm_symbolic(&kh, A.numRows(), B.numRows(), B.numCols(),
-                                A.graph.row_map, A.graph.entries, Amode,
-                                B.graph.row_map, B.graph.entries, Bmode,
-                                row_mapC);
+  KokkosSparse::Experimental::spgemm_symbolic(
+      &kh, A.numRows(), B.numRows(), B.numCols(), A.graph.row_map,
+      A.graph.entries, Amode, B.graph.row_map, B.graph.entries, Bmode,
+      row_mapC);
 
   const size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
   if (c_nnz_size) {
@@ -101,10 +101,10 @@ void block_spgemm_symbolic(KernelHandle& kh, const AMatrixType& A,
       Kokkos::view_alloc(Kokkos::WithoutInitializing, "non_const_lnow_row"),
       A.numRows() + 1);
 
-  KokkosSparse::spgemm_symbolic(&kh, A.numRows(), B.numRows(), B.numCols(),
-                                A.graph.row_map, A.graph.entries, transposeA,
-                                B.graph.row_map, B.graph.entries, transposeB,
-                                row_mapC);
+  KokkosSparse::Experimental::spgemm_symbolic(
+      &kh, A.numRows(), B.numRows(), B.numCols(), A.graph.row_map,
+      A.graph.entries, transposeA, B.graph.row_map, B.graph.entries, transposeB,
+      row_mapC);
 
   entries_type entriesC;
   values_type valuesC;
@@ -129,7 +129,7 @@ void spgemm_numeric(KernelHandle& kh, const AMatrix& A, const bool Amode,
   // using entries_type = typename CMatrix::row_map_type::non_const_type;
   // using values_type  = typename CMatrix::values_type::non_const_type;
 
-  KokkosSparse::spgemm_numeric(
+  KokkosSparse::Experimental::spgemm_numeric(
       &kh, A.numRows(), B.numRows(), B.numCols(), A.graph.row_map,
       A.graph.entries, A.values, Amode, B.graph.row_map, B.graph.entries,
       B.values, Bmode, C.graph.row_map, C.graph.entries, C.values);
@@ -144,7 +144,7 @@ void block_spgemm_numeric(KernelHandle& kh, const AMatrix& A, const bool Amode,
         "Block SpGEMM must be called for matrices with the same block size");
   }
 
-  KokkosSparse::spgemm_numeric(
+  KokkosSparse::Experimental::spgemm_numeric(
       &kh, A.numRows(), B.numRows(), B.numCols(), A.graph.row_map,
       A.graph.entries, A.values, Amode, B.graph.row_map, B.graph.entries,
       B.values, Bmode, C.graph.row_map, C.graph.entries, C.values, blockDim);

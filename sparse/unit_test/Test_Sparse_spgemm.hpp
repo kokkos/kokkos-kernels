@@ -66,10 +66,6 @@
 // const char *input_filename = "Si2.mtx";
 // const char *input_filename = "wathen_30_30.mtx";
 // const size_t expected_num_cols = 9906;
-using namespace KokkosSparse;
-using namespace KokkosSparse::Experimental;
-using namespace KokkosKernels;
-using namespace KokkosKernels::Experimental;
 
 // #ifndef kokkos_complex_double
 // #define kokkos_complex_double Kokkos::complex<double>
@@ -181,9 +177,10 @@ int run_spgemm_old_interface(crsMat_t A, crsMat_t B,
     EXPECT_FALSE(sh->are_rowptrs_computed());
     EXPECT_FALSE(sh->are_entries_computed());
 
-    spgemm_symbolic(&kh, num_rows_A, num_rows_B, num_cols_B, A.graph.row_map,
-                    A.graph.entries, false, B.graph.row_map, B.graph.entries,
-                    false, row_mapC);
+    KokkosSparse::Experimental::spgemm_symbolic(
+        &kh, num_rows_A, num_rows_B, num_cols_B, A.graph.row_map,
+        A.graph.entries, false, B.graph.row_map, B.graph.entries, false,
+        row_mapC);
 
     EXPECT_TRUE(sh->is_symbolic_called());
 
@@ -193,10 +190,10 @@ int run_spgemm_old_interface(crsMat_t A, crsMat_t B,
         c_nnz_size);
     valuesC = scalar_view_t(
         Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC"), c_nnz_size);
-    spgemm_numeric(&kh, num_rows_A, num_rows_B, num_cols_B, A.graph.row_map,
-                   A.graph.entries, A.values, false, B.graph.row_map,
-                   B.graph.entries, B.values, false, row_mapC, entriesC,
-                   valuesC);
+    KokkosSparse::Experimental::spgemm_numeric(
+        &kh, num_rows_A, num_rows_B, num_cols_B, A.graph.row_map,
+        A.graph.entries, A.values, false, B.graph.row_map, B.graph.entries,
+        B.values, false, row_mapC, entriesC, valuesC);
 
     EXPECT_TRUE(sh->are_entries_computed());
     EXPECT_TRUE(sh->is_numeric_called());
@@ -205,10 +202,10 @@ int run_spgemm_old_interface(crsMat_t A, crsMat_t B,
       // Give A and B completely new random values, and re-run just numeric
       randomize_matrix_values(A.values);
       randomize_matrix_values(B.values);
-      spgemm_numeric(&kh, num_rows_A, num_rows_B, num_cols_B, A.graph.row_map,
-                     A.graph.entries, A.values, false, B.graph.row_map,
-                     B.graph.entries, B.values, false, row_mapC, entriesC,
-                     valuesC);
+      KokkosSparse::Experimental::spgemm_numeric(
+          &kh, num_rows_A, num_rows_B, num_cols_B, A.graph.row_map,
+          A.graph.entries, A.values, false, B.graph.row_map, B.graph.entries,
+          B.values, false, row_mapC, entriesC, valuesC);
       EXPECT_TRUE(sh->are_entries_computed());
       EXPECT_TRUE(sh->is_numeric_called());
     }

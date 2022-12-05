@@ -194,8 +194,5 @@ void spgemm_symbolic(KernelHandle *handle,
 }
 
 }  // namespace Experimental
-
-using Experimental::spgemm_symbolic;
-
 }  // namespace KokkosSparse
 #endif

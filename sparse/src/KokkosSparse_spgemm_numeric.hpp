@@ -300,8 +300,6 @@ void spgemm_numeric(KernelHandle *handle,
 }
 
 }  // namespace Experimental
-
-using Experimental::spgemm_numeric;
-
 }  // namespace KokkosSparse
+
 #endif
