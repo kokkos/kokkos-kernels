@@ -78,14 +78,11 @@ class GMRESHandle {
 
   using float_t = typename Kokkos::ArithTraits<nnz_scalar_t>::mag_type;
 
-  using nnz_row_view_t =
-      typename Kokkos::View<size_type *, device_t>;
+  using nnz_row_view_t = typename Kokkos::View<size_type *, device_t>;
 
-  using nnz_lno_view_t =
-      typename Kokkos::View<nnz_lno_t *, device_t>;
+  using nnz_lno_view_t = typename Kokkos::View<nnz_lno_t *, device_t>;
 
-  using nnz_value_view_t =
-      typename Kokkos::View<nnz_scalar_t *, device_t>;
+  using nnz_value_view_t = typename Kokkos::View<nnz_scalar_t *, device_t>;
 
   using nnz_value_view2d_t =
       typename Kokkos::View<nnz_scalar_t **, Kokkos::LayoutLeft, device_t>;
@@ -98,13 +95,13 @@ class GMRESHandle {
                    typename nnz_row_view_t::device_type,
                    typename nnz_row_view_t::memory_traits>;
 
-  using precond_t = Preconditioner<nnz_scalar_t, default_layout, ExecutionSpace, nnz_lno_t>;
+  using precond_t =
+      Preconditioner<nnz_scalar_t, default_layout, ExecutionSpace, nnz_lno_t>;
 
   enum Ortho { CGS2, MGS };
   enum Flag { Conv, NoConv, LOA, NotRun };
 
  private:
-
   // Inputs
 
   size_type nrows;
@@ -117,7 +114,7 @@ class GMRESHandle {
 
   bool verbose;
 
-  precond_t* precond;
+  precond_t *precond;
 
   int team_size;
   int vector_size;
@@ -144,10 +141,12 @@ class GMRESHandle {
         end_rel_res(0),
         conv_flag_val(NotRun) {
     if (m <= 0) {
-      throw std::invalid_argument("gmres: Please choose restart size m greater than zero.");
+      throw std::invalid_argument(
+          "gmres: Please choose restart size m greater than zero.");
     }
     if (max_restart < 0) {
-      throw std::invalid_argument("gmres: Please choose max_restart greater than zero.");
+      throw std::invalid_argument(
+          "gmres: Please choose max_restart greater than zero.");
     }
   }
 
@@ -160,8 +159,8 @@ class GMRESHandle {
     set_ortho(CGS2);
     set_verbose(false);
     set_precond(nullptr);
-    num_iters = -1;
-    end_rel_res = 0;
+    num_iters     = -1;
+    end_rel_res   = 0;
     conv_flag_val = NotRun;
   }
 
@@ -184,7 +183,9 @@ class GMRESHandle {
   size_type get_max_restart() const { return max_restart; }
 
   KOKKOS_INLINE_FUNCTION
-  void set_max_restart(const size_type max_restart_) { this->max_restart = max_restart_; }
+  void set_max_restart(const size_type max_restart_) {
+    this->max_restart = max_restart_;
+  }
 
   KOKKOS_INLINE_FUNCTION
   float_t get_tol() const { return tol; }
@@ -205,11 +206,10 @@ class GMRESHandle {
   void set_verbose(const bool verbose_) { this->verbose = verbose_; }
 
   KOKKOS_INLINE_FUNCTION
-  precond_t* get_precond() const { return this->precond; }
+  precond_t *get_precond() const { return this->precond; }
 
   KOKKOS_INLINE_FUNCTION
-  void set_precond(precond_t* precond_) { this->precond = precond_; }
-
+  void set_precond(precond_t *precond_) { this->precond = precond_; }
 
   void set_team_size(const int ts) { this->team_size = ts; }
   int get_team_size() const { return this->team_size; }
@@ -225,14 +225,20 @@ class GMRESHandle {
     }
   }
 
-  int get_num_iters() const       { assert(get_conv_flag_val() != NotRun); return num_iters; }
-  float_t get_end_rel_res() const { assert(get_conv_flag_val() != NotRun); return end_rel_res; }
+  int get_num_iters() const {
+    assert(get_conv_flag_val() != NotRun);
+    return num_iters;
+  }
+  float_t get_end_rel_res() const {
+    assert(get_conv_flag_val() != NotRun);
+    return end_rel_res;
+  }
   Flag get_conv_flag_val() const { return conv_flag_val; }
 
   void set_stats(int num_iters_, float_t end_rel_res_, Flag conv_flag_val_) {
     assert(conv_flag_val_ != NotRun);
-    num_iters = num_iters_;
-    end_rel_res = end_rel_res_;
+    num_iters     = num_iters_;
+    end_rel_res   = end_rel_res_;
     conv_flag_val = conv_flag_val_;
   }
 };

@@ -900,7 +900,8 @@ class KokkosKernelsHandle {
 
   PAR_ILUTHandleType *get_par_ilut_handle() { return this->par_ilutHandle; }
   void create_par_ilut_handle(const size_type nrows, const size_type nnzL = 0,
-                              const size_type nnzU = 0, const size_type max_iter = 1) {
+                              const size_type nnzU     = 0,
+                              const size_type max_iter = 1) {
     this->destroy_par_ilut_handle();
     this->is_owner_of_the_par_ilut_handle = true;
     this->par_ilutHandle = new PAR_ILUTHandleType(nrows, nnzL, nnzU, max_iter);

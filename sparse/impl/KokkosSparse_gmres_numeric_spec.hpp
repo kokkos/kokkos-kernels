@@ -58,7 +58,8 @@
 namespace KokkosSparse {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class KernelHandle, class AT, class AO, class AD, class AM, class AS, class BType, class XType>
+template <class KernelHandle, class AT, class AO, class AD, class AM, class AS,
+          class BType, class XType>
 struct gmres_numeric_eti_spec_avail {
   enum : bool { value = false };
 };
@@ -66,26 +67,26 @@ struct gmres_numeric_eti_spec_avail {
 }  // namespace Impl
 }  // namespace KokkosSparse
 
-#define KOKKOSSPARSE_GMRES_NUMERIC_ETI_SPEC_AVAIL(                       \
-    SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE,   \
-    MEM_SPACE_TYPE)                                                         \
-  template <>                                                               \
-  struct gmres_numeric_eti_spec_avail<                                       \
-      KokkosKernels::Experimental::KokkosKernelsHandle<                     \
-          const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,         \
-          EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE>,                 \
-      const SCALAR_TYPE, const ORDINAL_TYPE,                                \
-      Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                      \
-      Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET_TYPE,           \
-      Kokkos::View<                                                         \
-          const SCALAR_TYPE *, LAYOUT_TYPE,                                 \
-          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
-      Kokkos::View<                                                         \
-          SCALAR_TYPE *, LAYOUT_TYPE,                                       \
-          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                  \
+#define KOKKOSSPARSE_GMRES_NUMERIC_ETI_SPEC_AVAIL(                             \
+    SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE,      \
+    MEM_SPACE_TYPE)                                                            \
+  template <>                                                                  \
+  struct gmres_numeric_eti_spec_avail<                                         \
+      KokkosKernels::Experimental::KokkosKernelsHandle<                        \
+          const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,            \
+          EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE>,                    \
+      const SCALAR_TYPE, const ORDINAL_TYPE,                                   \
+      Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                         \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET_TYPE,              \
+      Kokkos::View<                                                            \
+          const SCALAR_TYPE *, LAYOUT_TYPE,                                    \
+          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                     \
+          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >,    \
+      Kokkos::View<                                                            \
+          SCALAR_TYPE *, LAYOUT_TYPE,                                          \
+          Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                     \
           Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> > > { \
-    enum : bool { value = true };                                           \
+    enum : bool { value = true };                                              \
   };
 
 // Include the actual specialization declarations
@@ -98,30 +99,30 @@ namespace Impl {
 // Unification layer
 /// \brief Implementation of KokkosSparse::gmres_numeric
 
-template <class KernelHandle, class AT, class AO, class AD, class AM, class AS, class BType, class XType,
+template <class KernelHandle, class AT, class AO, class AD, class AM, class AS,
+          class BType, class XType,
           bool tpl_spec_avail = gmres_numeric_tpl_spec_avail<
-            KernelHandle, AT, AO, AD, AM, AS, BType, XType>::value,
+              KernelHandle, AT, AO, AD, AM, AS, BType, XType>::value,
           bool eti_spec_avail = gmres_numeric_eti_spec_avail<
-            KernelHandle, AT, AO, AD, AM, AS, BType, XType>::value>
+              KernelHandle, AT, AO, AD, AM, AS, BType, XType>::value>
 struct GMRES_NUMERIC {
   using AMatrix = CrsMatrix<AT, AO, AD, AM, AS>;
-  static void gmres_numeric(KernelHandle *handle,
-                            const AMatrix &A,
+  static void gmres_numeric(KernelHandle *handle, const AMatrix &A,
                             const BType &B, XType &X);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 //! Full specialization of gmres_numeric
 // Unification layer
-template <class KernelHandle, class AT, class AO, class AD, class AM, class AS, class BType, class XType>
-struct GMRES_NUMERIC<KernelHandle, AT, AO, AD, AM, AS,
-                     BType, XType, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+template <class KernelHandle, class AT, class AO, class AD, class AM, class AS,
+          class BType, class XType>
+struct GMRES_NUMERIC<KernelHandle, AT, AO, AD, AM, AS, BType, XType, false,
+                     KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   using AMatrix = CrsMatrix<AT, AO, AD, AM, AS>;
-  static void gmres_numeric(KernelHandle *handle,
-                            const AMatrix &A,
+  static void gmres_numeric(KernelHandle *handle, const AMatrix &A,
                             const BType &B, XType &X) {
     auto gmres_handle = handle->get_gmres_handle();
-    using Gmres           = Experimental::GmresWrap<
+    using Gmres       = Experimental::GmresWrap<
         typename std::remove_pointer<decltype(gmres_handle)>::type>;
 
     Gmres::gmres_numeric(*gmres_handle, A, B, X);
@@ -139,10 +140,10 @@ struct GMRES_NUMERIC<KernelHandle, AT, AO, AD, AM, AS,
 // We may spread out definitions (see _DEF macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSSPARSE_GMRES_NUMERIC_ETI_SPEC_DECL(                        \
+#define KOKKOSSPARSE_GMRES_NUMERIC_ETI_SPEC_DECL(                           \
     SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE,   \
     MEM_SPACE_TYPE)                                                         \
-  extern template struct GMRES_NUMERIC<                                  \
+  extern template struct GMRES_NUMERIC<                                     \
       KokkosKernels::Experimental::KokkosKernelsHandle<                     \
           const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,         \
           EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE>,                 \
@@ -159,10 +160,10 @@ struct GMRES_NUMERIC<KernelHandle, AT, AO, AD, AM, AS,
           Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
       false, true>;
 
-#define KOKKOSSPARSE_GMRES_NUMERIC_ETI_SPEC_INST(                        \
+#define KOKKOSSPARSE_GMRES_NUMERIC_ETI_SPEC_INST(                           \
     SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE,   \
     MEM_SPACE_TYPE)                                                         \
-  template struct GMRES_NUMERIC<                                         \
+  template struct GMRES_NUMERIC<                                            \
       KokkosKernels::Experimental::KokkosKernelsHandle<                     \
           const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,         \
           EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE>,                 \

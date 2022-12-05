@@ -52,16 +52,16 @@
 #include <KokkosSparse_gmres.hpp>
 
 int main(int argc, char* argv[]) {
-  using ST = double;
-  using OT = int;
+  using ST   = double;
+  using OT   = int;
   using EXSP = Kokkos::DefaultExecutionSpace;
   using MESP = typename EXSP::memory_space;
-  using CRS =  KokkosSparse::CrsMatrix<ST, OT, EXSP, void, OT>;
+  using CRS  = KokkosSparse::CrsMatrix<ST, OT, EXSP, void, OT>;
 
   using ViewVectorType = Kokkos::View<ST*, Kokkos::LayoutLeft, EXSP>;
   using KernelHandle =
-    KokkosKernels::Experimental::KokkosKernelsHandle<
-      OT, OT, ST, EXSP, MESP, MESP>;
+      KokkosKernels::Experimental::KokkosKernelsHandle<OT, OT, ST, EXSP, MESP,
+                                                       MESP>;
 
   std::string filename("bcsstk09.mtx");  // example matrix
   std::string ortho("CGS2");             // orthog type
@@ -124,9 +124,11 @@ int main(int argc, char* argv[]) {
     KernelHandle kh;
     kh.create_gmres_handle(n, m, cycLim);
     auto gmres_handle = kh.get_gmres_handle();
-    using GMRESHandle = typename std::remove_reference<decltype(*gmres_handle)>::type;
+    using GMRESHandle =
+        typename std::remove_reference<decltype(*gmres_handle)>::type;
     gmres_handle->set_tol(convTol);
-    gmres_handle->set_ortho(ortho == "CGS2" ? GMRESHandle::Ortho::CGS2 : GMRESHandle::Ortho::MGS);
+    gmres_handle->set_ortho(ortho == "CGS2" ? GMRESHandle::Ortho::CGS2
+                                            : GMRESHandle::Ortho::MGS);
 
     if (rand_rhs) {
       // Make rhs random.
@@ -152,8 +154,7 @@ int main(int argc, char* argv[]) {
     ST endRes = KokkosBlas::nrm2(B) / nrmB;
     std::cout << "=========================================" << std::endl;
     std::cout << "Verify from main: Ending residual is " << endRes << std::endl;
-    std::cout << "Number of iterations is: " << numIters
-              << std::endl;
+    std::cout << "Number of iterations is: " << numIters << std::endl;
     std::cout << "Diff of residual from main - residual from solver: "
               << endRelRes - endRes << std::endl;
     std::cout << "Convergence flag is : " << convFlag << std::endl;

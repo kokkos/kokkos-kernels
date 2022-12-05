@@ -130,10 +130,9 @@ template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
 void run_test_par_ilut() {
   using RowMapType   = Kokkos::View<size_type*, device>;
-  using EntriesType  = Kokkos::View<lno_t*,     device>;
-  using ValuesType   = Kokkos::View<scalar_t*,  device>;
-  using KernelHandle =
-    KokkosKernels::Experimental::KokkosKernelsHandle<
+  using EntriesType  = Kokkos::View<lno_t*, device>;
+  using ValuesType   = Kokkos::View<scalar_t*, device>;
+  using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<
       size_type, lno_t, scalar_t, typename device::execution_space,
       typename device::memory_space, typename device::memory_space>;
 
