@@ -172,10 +172,6 @@ int run_spgemm_old_interface(crsMat_t A, crsMat_t B,
     const size_t num_rows_B = B.numRows();
     const size_t num_cols_B = B.numCols();
 
-    const size_t num_cols_1 = A.numCols();
-    bool equal              = num_cols_A == num_rows_B;
-    if (!equal) return 1;
-
     lno_view_t row_mapC("non_const_lnow_row", num_rows_A + 1);
     lno_nnz_view_t entriesC;
     scalar_view_t valuesC;
