@@ -488,10 +488,10 @@ void test_issue402() {
 #define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)            \
   TEST_F(TestCategory,                                                         \
          sparse##_##spgemm##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {     \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10000, 10000, 10000,          \
-                                                 10000 * 20, 500, 10, false);  \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10000, 10000, 10000,          \
-                                                 10000 * 20, 500, 10, true);   \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10000, 8000, 6000,          \
+                                                 8000 * 20, 500, 10, false);  \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10000, 8000, 6000,          \
+                                                 8000 * 20, 500, 10, true);   \
     test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(1000, 500, 1600,          \
                                                  1000 * 20, 500, 10, false, true);   \
     test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(1000, 500, 1600,          \

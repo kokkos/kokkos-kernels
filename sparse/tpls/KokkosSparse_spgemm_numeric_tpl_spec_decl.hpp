@@ -234,7 +234,7 @@ void spgemm_numeric_cusparse(
     KOKKOS_CUSPARSE_SAFE_CALL(
         cusparseXcsrgemm(
           h->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE,
-          m, n, k,
+          m, k, n,
           h->generalDescr, nnzA, valuesA.data(), row_mapA.data(), entriesA.data(),
           h->generalDescr, nnzB, valuesB.data(), row_mapB.data(), entriesB.data(),
           h->generalDescr, valuesC.data(), row_mapC.data(), entriesC.data()));

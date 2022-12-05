@@ -315,7 +315,7 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k,
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseXcsrgemmNnz(h->cusparseHandle,
         CUSPARSE_OPERATION_NON_TRANSPOSE,
         CUSPARSE_OPERATION_NON_TRANSPOSE,
-        m, n, k,
+        m, k, n,
         h->generalDescr, nnzA, row_mapA.data(), entriesA.data(),
         h->generalDescr, nnzB, row_mapB.data(), entriesB.data(),
         h->generalDescr, row_mapC.data(), nnzTotalDevHostPtr));
