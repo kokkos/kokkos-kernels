@@ -73,7 +73,7 @@ namespace Experimental{
 ///   - isComputed() returns true 
 ///
 template< class ScalarType, class Layout, class EXSP, class OrdinalType = int > 
-class MatrixPrec : virtual public KokkosSparse::Experimental::Preconditioner<ScalarType, Layout, EXSP, OrdinalType>
+class MatrixPrec : public KokkosSparse::Experimental::Preconditioner<ScalarType, Layout, EXSP, OrdinalType>
 { 
 private:
     using crsMat_t = KokkosSparse::CrsMatrix<ScalarType, OrdinalType, EXSP>;
@@ -107,7 +107,7 @@ public:
   //
   virtual void
   apply (const Kokkos::View<ScalarType*, Layout, EXSP> &X, 
-         Kokkos::View<ScalarType*, Layout, EXSP> &Y, 
+         const Kokkos::View<ScalarType*, Layout, EXSP> &Y, 
          const char transM[] = "N",
          ScalarType alpha = Kokkos::Details::ArithTraits<ScalarType>::one(),
          ScalarType beta = Kokkos::Details::ArithTraits<ScalarType>::zero()) const 

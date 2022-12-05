@@ -101,6 +101,10 @@ void run_test_gmres() {
   ViewVectorType B(Kokkos::view_alloc(Kokkos::WithoutInitializing, "B"),
                    n);  // right-hand side vec
 
+  if (std::is_same<float_t, float>::value) {
+    // reduce tol for float
+    gmres_handle->set_tol(1e-7);
+  }
   gmres_handle->set_verbose(verbose);
 
   // Make rhs ones so that results are repeatable:
@@ -128,6 +132,11 @@ void run_test_gmres() {
     gmres_handle->reset_handle(n, m);
     gmres_handle->set_ortho(GMRESHandle::Ortho::MGS);
     gmres_handle->set_verbose(verbose);
+    if (std::is_same<float_t, float>::value) {
+      // reduce tol for float
+      gmres_handle->set_tol(1e-7);
+    }
+
     Kokkos::deep_copy(X, 0.0);
     Kokkos::deep_copy(B, 1.0);
 
