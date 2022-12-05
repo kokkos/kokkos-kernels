@@ -89,7 +89,6 @@ void spgemm_numeric_cusparse(
         row_mapC_nonconst(const_cast<size_type*>(row_mapC.data()), row_mapC.extent(0));
       Kokkos::deep_copy(typename KernelHandle::HandleExecSpace(), row_mapC_nonconst, size_type(0));
       handle->set_computed_rowptrs();
-      std::cout << "Empty C case (no entries): just initialized rowptrs to 0.\n";
     }
     handle->set_computed_entries();
     handle->set_call_numeric();

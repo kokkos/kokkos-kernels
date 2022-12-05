@@ -158,7 +158,6 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k,
       throw std::runtime_error("nnz of C overflowed over 32-bit int\n");
     }
     handle->set_c_nnz(C_nnz);
-    std::cout << "Have C_nnz: " << C_nnz << '\n';
     handle->set_call_symbolic();
   }
   if (computeRowptrs && !handle->are_rowptrs_computed()) {
