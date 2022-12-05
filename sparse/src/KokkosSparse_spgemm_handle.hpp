@@ -238,18 +238,19 @@ class SPGEMMHandle {
 #else
   struct cuSparseSpgemmHandleType {
     cusparseHandle_t cusparseHandle;
-    //Descriptor for any general matrix with index base 0
+    // Descriptor for any general matrix with index base 0
     cusparseMatDescr_t generalDescr;
 
-    cuSparseSpgemmHandleType(bool /* transposeA */, bool /* transposeB */)
-    {
+    cuSparseSpgemmHandleType(bool /* transposeA */, bool /* transposeB */) {
       KokkosKernels::Experimental::Controls kkControls;
-      //Get singleton cusparse handle from default controls
+      // Get singleton cusparse handle from default controls
       cusparseHandle = kkControls.getCusparseHandle();
 
       KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&generalDescr));
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatType(generalDescr, CUSPARSE_MATRIX_TYPE_GENERAL));
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatIndexBase(generalDescr, CUSPARSE_INDEX_BASE_ZERO));
+      KOKKOS_CUSPARSE_SAFE_CALL(
+          cusparseSetMatType(generalDescr, CUSPARSE_MATRIX_TYPE_GENERAL));
+      KOKKOS_CUSPARSE_SAFE_CALL(
+          cusparseSetMatIndexBase(generalDescr, CUSPARSE_INDEX_BASE_ZERO));
     }
     ~cuSparseSpgemmHandleType() {
       KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyMatDescr(generalDescr));

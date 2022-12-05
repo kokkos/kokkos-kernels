@@ -222,8 +222,8 @@ void test_bspgemm(lno_t blkDim, lno_t m, lno_t k, lno_t n, size_type nnz,
   }
 
   for (auto spgemm_algorithm : algorithms) {
-    std::string algo           = "UNKNOWN";
-    bool is_expected_to_fail   = false;
+    std::string algo         = "UNKNOWN";
+    bool is_expected_to_fail = false;
 
     switch (spgemm_algorithm) {
       case SPGEMM_KK: algo = "SPGEMM_KK"; break;
