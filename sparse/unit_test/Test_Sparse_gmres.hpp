@@ -68,7 +68,7 @@ template <typename scalar_t, typename lno_t, typename size_type,
 void run_test_gmres() {
   using exe_space      = typename device::execution_space;
   using mem_space      = typename device::memory_space;
-  using sp_matrix_type = KokkosSparse::CrsMatrix<scalar_t, lno_t, device>;
+  using sp_matrix_type = KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>;
   using KernelHandle =
     KokkosKernels::Experimental::KokkosKernelsHandle<
       size_type, lno_t, scalar_t, exe_space, mem_space, mem_space>;
@@ -80,7 +80,8 @@ void run_test_gmres() {
   constexpr auto numCols       = n;
   constexpr auto diagDominance = 1;
   constexpr bool verbose       = false;
-  size_type      nnz           = 10 * numRows;
+
+  typename sp_matrix_type::non_const_size_type nnz = 10 * numRows;
   auto A =
     KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<
       sp_matrix_type>(numRows, numCols, nnz, 0, lno_t(0.01 * numRows),
@@ -92,6 +93,7 @@ void run_test_gmres() {
   auto gmres_handle = kh.get_gmres_handle();
   using GMRESHandle = typename std::remove_reference<decltype(*gmres_handle)>::type;
   using ViewVectorType = typename GMRESHandle::nnz_value_view_t;
+  using float_t        = typename GMRESHandle::float_t;
 
   // Set initial vectors:
   ViewVectorType X("X", n);    // Solution and initial guess
@@ -108,10 +110,10 @@ void run_test_gmres() {
     gmres_numeric(&kh, A, B, X);
 
     // Double check residuals at end of solve:
-    scalar_t nrmB = static_cast<scalar_t>(KokkosBlas::nrm2(B));
+    float_t nrmB = KokkosBlas::nrm2(B);
     KokkosSparse::spmv("N", 1.0, A, X, 0.0, Wj);  // wj = Ax
     KokkosBlas::axpy(-1.0, Wj, B);                // b = b-Ax.
-    scalar_t endRes = KokkosBlas::nrm2(B) / nrmB;
+    float_t endRes = KokkosBlas::nrm2(B) / nrmB;
 
     const auto num_iters   = gmres_handle->get_num_iters();
     const auto conv_flag   = gmres_handle->get_conv_flag_val();
@@ -132,10 +134,10 @@ void run_test_gmres() {
     gmres_numeric(&kh, A, B, X);
 
     // Double check residuals at end of solve:
-    scalar_t nrmB = static_cast<scalar_t>(KokkosBlas::nrm2(B));
+    float_t nrmB = KokkosBlas::nrm2(B);
     KokkosSparse::spmv("N", 1.0, A, X, 0.0, Wj);  // wj = Ax
     KokkosBlas::axpy(-1.0, Wj, B);                // b = b-Ax.
-    scalar_t endRes = KokkosBlas::nrm2(B) / nrmB;
+    float_t endRes = KokkosBlas::nrm2(B) / nrmB;
 
     const auto num_iters   = gmres_handle->get_num_iters();
     const auto conv_flag   = gmres_handle->get_conv_flag_val();

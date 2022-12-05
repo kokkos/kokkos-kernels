@@ -124,7 +124,7 @@ struct GMRES_NUMERIC<KernelHandle, AT, AO, AD, AM, AS,
     using Gmres           = Experimental::GmresWrap<
         typename std::remove_pointer<decltype(gmres_handle)>::type>;
 
-    Gmres::gmres_numeric(*handle, *gmres_handle, A, B, X);
+    Gmres::gmres_numeric(*gmres_handle, A, B, X);
   }
 };
 

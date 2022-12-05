@@ -82,8 +82,8 @@ struct GmresWrap {
   /**
    * The main gmres numeric function. Copied with slight modifications from example/gmres/gmres.hpp
    */
-  template <class KHandle, class AMatrix, class BType, class XType>
-  static void gmres_numeric(KHandle& kh, GmresHandle& thandle,
+  template <class AMatrix, class BType, class XType>
+  static void gmres_numeric(GmresHandle& thandle,
                             const AMatrix& A, const BType& B, XType& X) {
     using ST = typename karith::val_type;// So this code will run with scalar_t = std::complex<T>.
     using MT = typename karith::mag_type;
@@ -104,8 +104,8 @@ struct GmresWrap {
     auto precond          = thandle.get_precond();
 
     bool converged = false;
-    int cycle      = 0;  // How many times have we restarted?
-    int numIters   = 0;  // Number of iterations within the cycle before
+    size_type cycle      = 0;  // How many times have we restarted?
+    size_type numIters   = 0;  // Number of iterations within the cycle before
     // convergence.
     MT nrmB, trueRes, relRes, shortRelRes;
 
@@ -240,7 +240,7 @@ struct GmresWrap {
 
         GVec_h(j + 1) = GVec_h(j) * (-karith::conj(SinVal_h(j)));
         GVec_h(j)     = GVec_h(j) * CosVal_h(j);
-        shortRelRes   = fabs(GVec_h(j + 1)) / nrmB;
+        shortRelRes   = karith::abs(GVec_h(j + 1)) / nrmB;
 
         if (verbose) {
           std::cout << "Shortcut relative residual for iteration "

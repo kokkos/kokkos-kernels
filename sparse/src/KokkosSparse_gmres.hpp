@@ -72,9 +72,9 @@ template <typename KernelHandle,
           typename AMatrix, typename BType, typename XType>
 void gmres_numeric(KernelHandle* handle, AMatrix& A,
                    BType& B, XType& X) {
+  using scalar_type  = typename KernelHandle::nnz_scalar_t;
   using size_type    = typename KernelHandle::size_type;
   using ordinal_type = typename KernelHandle::nnz_lno_t;
-  using scalar_type  = typename KernelHandle::nnz_scalar_t;
 
   static_assert(KOKKOSKERNELS_GMRES_SAME_TYPE(
                   typename BType::value_type, scalar_type),
@@ -85,6 +85,21 @@ void gmres_numeric(KernelHandle* handle, AMatrix& A,
                   typename XType::value_type, scalar_type),
                 "gmres_numeric: X scalar type must match KernelHandle entry "
                 "type (aka nnz_scalar_t, and const doesn't matter)");
+
+  static_assert(KOKKOSKERNELS_GMRES_SAME_TYPE(
+                  typename AMatrix::value_type, scalar_type),
+                "gmres_numeric: A scalar type must match KernelHandle entry "
+                "type (aka nnz_scalar_t, and const doesn't matter)");
+
+  static_assert(KOKKOSKERNELS_GMRES_SAME_TYPE(
+                  typename AMatrix::ordinal_type, ordinal_type),
+                "gmres_numeric: A ordinal type must match KernelHandle entry "
+                "type (aka nnz_lno_t, and const doesn't matter)");
+
+  static_assert(KOKKOSKERNELS_GMRES_SAME_TYPE(
+                  typename AMatrix::size_type, size_type),
+                "gmres_numeric: A size type must match KernelHandle entry "
+                "type (aka size_type, and const doesn't matter)");
 
   static_assert(KokkosSparse::is_crs_matrix<AMatrix>::value,
                 "gmres_numeric: A is not a CRS matrix.");

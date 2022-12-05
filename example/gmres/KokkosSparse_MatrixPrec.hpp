@@ -105,14 +105,15 @@ public:
   ///// \f$M \cdot X\f$, then this method computes \f$Y = \beta Y + \alpha M \cdot X\f$.
   ///// The typical case is \f$\beta = 0\f$ and \f$\alpha = 1\f$.
   //
-  void apply (const Kokkos::View<ScalarType*, Layout, EXSP> &X, 
-      Kokkos::View<ScalarType*, Layout, EXSP> &Y, 
-      const char transM[] = "N",
-      ScalarType alpha = Kokkos::Details::ArithTraits<ScalarType>::one(),
-      ScalarType beta = Kokkos::Details::ArithTraits<ScalarType>::zero()) const 
+  virtual void
+  apply (const Kokkos::View<ScalarType*, Layout, EXSP> &X, 
+         Kokkos::View<ScalarType*, Layout, EXSP> &Y, 
+         const char transM[] = "N",
+         ScalarType alpha = Kokkos::Details::ArithTraits<ScalarType>::one(),
+         ScalarType beta = Kokkos::Details::ArithTraits<ScalarType>::zero()) const 
   {
     KokkosSparse::spmv(transM, alpha, A, X, beta, Y);
-  };
+  }
   //@}
 
   //! Set this preconditioner's parameters.
