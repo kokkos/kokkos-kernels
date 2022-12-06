@@ -52,7 +52,7 @@
 #include <Kokkos_ArithTraits.hpp>
 #include <KokkosSparse_gmres_handle.hpp>
 #include <KokkosBlas.hpp>
-#include <KokkosBlas3_trsm.hpp>
+#include <KokkosBlas3_trsm_impl.hpp>
 #include <KokkosSparse_spmv.hpp>
 //#include <KokkosSparse_Preconditioner.hpp>
 #include "KokkosKernels_Error.hpp"
@@ -281,8 +281,11 @@ struct GmresWrap {
               GLsSoln_h, Kokkos::make_pair(0, j + 1), Kokkos::ALL);
           auto H_Sub_h = Kokkos::subview(H_h, Kokkos::make_pair(0, j + 1),
                                          Kokkos::make_pair(0, j + 1));
-          KokkosBlas::trsm("L", "U", "N", "N", one, H_Sub_h,
-                           GLsSolnSub2_h);  // GLsSoln = H\GLsSoln
+          {
+            // Hack to get around uninstantiated trsm for layoutleft
+            KokkosBlas::Impl::SerialTrsm_Invoke("L", "U", "N", "N",
+                                                one, H_Sub_h, GLsSolnSub2_h);
+          }
           Kokkos::deep_copy(GLsSoln, GLsSoln_h);
 
           // Update solution and compute residual with Givens:

@@ -96,7 +96,7 @@ class GMRESHandle {
                    typename nnz_row_view_t::memory_traits>;
 
   using precond_t =
-      Preconditioner<nnz_scalar_t, default_layout, ExecutionSpace, nnz_lno_t>;
+    Preconditioner<nnz_scalar_t, Kokkos::LayoutLeft, ExecutionSpace, nnz_lno_t>;
 
   enum Ortho { CGS2, MGS };
   enum Flag { Conv, NoConv, LOA, NotRun };
