@@ -283,8 +283,8 @@ struct GmresWrap {
                                          Kokkos::make_pair(0, j + 1));
           {
             // Hack to get around uninstantiated trsm for layoutleft
-            KokkosBlas::Impl::SerialTrsm_Invoke("L", "U", "N", "N",
-                                                one, H_Sub_h, GLsSolnSub2_h);
+            KokkosBlas::Impl::SerialTrsm_Invoke("L", "U", "N", "N", one,
+                                                H_Sub_h, GLsSolnSub2_h);
           }
           Kokkos::deep_copy(GLsSoln, GLsSoln_h);
 
