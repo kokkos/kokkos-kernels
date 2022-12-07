@@ -144,10 +144,6 @@ class GMRESHandle {
       throw std::invalid_argument(
           "gmres: Please choose restart size m greater than zero.");
     }
-    if (max_restart < 0) {
-      throw std::invalid_argument(
-          "gmres: Please choose max_restart greater than zero.");
-    }
   }
 
   void reset_handle(const size_type nrows_, const size_type m_ = 50,
