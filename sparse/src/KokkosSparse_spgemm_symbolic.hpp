@@ -45,8 +45,8 @@
 #define _KOKKOS_SPGEMM_SYMBOLIC_HPP
 
 #include "KokkosKernels_helpers.hpp"
-
 #include "KokkosSparse_spgemm_symbolic_spec.hpp"
+#include "KokkosSparse_Utils.hpp"
 
 namespace KokkosSparse {
 
@@ -164,6 +164,20 @@ void spgemm_symbolic(KernelHandle *handle,
   Internal_blno_row_view_t_ const_b_r(row_mapB.data(), row_mapB.extent(0));
   Internal_blno_nnz_view_t_ const_b_l(entriesB.data(), entriesB.extent(0));
   Internal_clno_row_view_t_ c_r(row_mapC.data(), row_mapC.extent(0));
+
+  // Verify that graphs A and B are sorted.
+  // This test is designed to be as efficient as possible, but still skip
+  // it in a release build.
+#ifndef NDEBUG
+  if (!KokkosSparse::Impl::isCrsGraphSorted(const_a_r, const_a_l))
+    throw std::runtime_error(
+        "KokkosSparse::spgemm_symbolic: entries of A are not sorted within "
+        "rows. May use KokkosSparse::sort_crs_matrix to sort it.");
+  if (!KokkosSparse::Impl::isCrsGraphSorted(const_b_r, const_b_l))
+    throw std::runtime_error(
+        "KokkosSparse::spgemm_symbolic: entries of B are not sorted within "
+        "rows. May use KokkosSparse::sort_crs_matrix to sort it.");
+#endif
 
   auto algo = tmp_handle.get_spgemm_handle()->get_algorithm_type();
 
