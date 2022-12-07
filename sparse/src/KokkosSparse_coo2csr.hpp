@@ -94,8 +94,8 @@ class Coo2Csr {
       Kokkos::View<SizeType *, Kokkos::LayoutRight, ScratchSpaceType>;
   using UsedSizePtrType = SizeType *;
   using UsedSizePtrView =
-      Kokkos::View<volatile UsedSizePtrType *, Kokkos::LayoutRight>;
-  using UsetView = Kokkos::View<UsetType *, Kokkos::LayoutRight>;
+      Kokkos::View<volatile UsedSizePtrType **, Kokkos::LayoutRight>;
+  using UsetView = Kokkos::View<UsetType **, Kokkos::LayoutRight>;
 
   // Hashmap types.
   using UsetIdxViewScratch =
@@ -189,8 +189,8 @@ class Coo2Csr {
       KeyViewScratch keys(member.team_scratch(0), max_row_cnt);
       SizeViewScratch hash_ll(member.team_scratch(0),
                               pow2_max_row_cnt + max_row_cnt + 1);
-      volatile SizeType *used_size = hash_ll.data() + member.league_rank();
-      auto *hash_begins            = hash_ll.data() + member.league_size();
+      volatile SizeType *used_size = hash_ll.data();
+      auto *hash_begins            = hash_ll.data() + 1;
       auto *hash_nexts             = hash_begins + pow2_max_row_cnt;
       unsigned unique_row_cnt      = 0;  // thread-local row count
       n_unique_rows_per_team[member.league_rank()] = unique_row_cnt;
@@ -224,7 +224,7 @@ class Coo2Csr {
             if (i >= 0 && j >= 0)
               unique_row_cnt +=
                   team_uset.vector_atomic_insert_into_hash_KeyCounter(
-                      i, used_size + member.league_rank());
+                      i, used_size);
             // std::cerr << "unique_row_cnt: " << unique_row_cnt << std::endl;
           });
       // TODO: use used_size here.
@@ -255,8 +255,8 @@ class Coo2Csr {
       UsetIdxViewScratch hmap_values(member.team_scratch(0), max_n_unique_rows);
       SizeViewScratch hmap_ll(member.team_scratch(0),
                               pow2_max_n_unique_rows + max_n_unique_rows + 1);
-      volatile SizeType *hmap_used_size = hmap_ll.data() + member.league_rank();
-      auto *hmap_begins                 = hmap_ll.data() + member.league_size();
+      volatile SizeType *hmap_used_size = hmap_ll.data();
+      auto *hmap_begins                 = hmap_ll.data() + 1;
       auto *hmap_nexts =
           hmap_begins +
           pow2_max_n_unique_rows;  // hash_nexts is max_n_unique_rows long
@@ -279,25 +279,24 @@ class Coo2Csr {
           member.team_scratch(0),
           max_n_unique_rows * (pow2_max_row_cnt + max_row_cnt + 1));
       UsetView usets(Kokkos::view_alloc(Kokkos::WithoutInitializing, "usets"),
-                     max_n_unique_rows);
+                     member.league_size(), max_n_unique_rows);
       UsedSizePtrView uset_used_sizes(
           Kokkos::view_alloc(Kokkos::WithoutInitializing, "uset_used_sizes"),
-          max_n_unique_rows);
+          member.league_size(), max_n_unique_rows);
 
       Kokkos::parallel_for(
           Kokkos::TeamVectorRange(member, 0, max_n_unique_rows),
           [&](const int &i) {
-            size_t row_stride = max_n_unique_rows * i;
-            SizeType *used_size =
-                uset_ll.data() + member.league_rank() + row_stride;
-            auto *uset_begins =
-                uset_ll.data() + member.league_size() + row_stride;
+            size_t row_stride   = max_n_unique_rows * i;
+            SizeType *used_size = uset_ll.data() + row_stride;
+            auto *uset_begins   = uset_ll.data() + 1 + row_stride;
             auto *uset_nexts =
                 uset_begins +
                 pow2_max_row_cnt;  // uset_nexts is max_row_cnt long
             auto *keys_ptr = uset_keys.data() + row_stride;
 
             // Initialize uset_begins to -1
+            // TODO: Use kokkos signle per team here
             for (unsigned j = 0; j < pow2_max_row_cnt; j++) uset_begins[j] = -1;
             *used_size = 0;
 
@@ -306,8 +305,8 @@ class Coo2Csr {
             UsetType uset(max_row_cnt, pow2_max_row_cnt - 1, uset_begins,
                           uset_nexts, keys_ptr, nullptr);
 
-            usets(i)           = uset;
-            uset_used_sizes(i) = uset_ll.data();
+            usets(member.league_rank(), i)           = uset;
+            uset_used_sizes(member.league_rank(), i) = used_size;
           });
 
       // Wait for the scratch memory initialization
@@ -322,54 +321,32 @@ class Coo2Csr {
       std::cout << "stop_n: " << stop_n << std::endl;
 #endif
 
-      std::cout << "Adding i,j pairs..." << std::endl;
-
       Kokkos::parallel_for(
           Kokkos::TeamVectorRange(member, start_n, stop_n),
           [&](const int &tid) {
             KeyType i = __row(tid);
             auto j    = __col(tid);
 
-            std::cout << i << ", " << j << std::endl;
-
             if (i >= 0 && j >= 0) {
-              auto my_used_size = hmap_ll.data() + member.league_rank();
-              std::cout << "vector_atomic_insert_into_hash_once" << std::endl;
               // Possibly insert a new row id, i, if it hasn't already been
               // inserted.
               int uset_idx =
-                  hmap.vector_atomic_insert_into_hash_once(i, my_used_size);
-              std::cout << "my_used_size: " << *my_used_size << std::endl;
-              std::cout << "uset_idx: " << uset_idx << std::endl;
-              std::cout << uset_used_sizes(uset_idx)[member.league_rank()]
-                        << std::endl;
-              usets(uset_idx).vector_atomic_insert_into_hash_KeyCounter(
-                  j, uset_used_sizes(uset_idx) + member.league_rank());
-              std::cout << uset_used_sizes(uset_idx)[member.league_rank()]
-                        << std::endl;
+                  hmap.vector_atomic_insert_into_hash_once(i, hmap_used_size);
+              usets(member.league_rank(), uset_idx)
+                  .vector_atomic_insert_into_hash_KeyCounter(
+                      j, uset_used_sizes(member.league_rank(), uset_idx));
             }
           });
 
       member.team_barrier();
 
-      std::cout << "Getting tight row count..." << std::endl;
-
-      std::cout << "hmap_ll.data()[member.league_rank()]: "
-                << hmap_ll.data()[member.league_rank()] << std::endl;
-
       // Add up the "tight" row count
-      Kokkos::parallel_for(
-          Kokkos::TeamVectorRange(member, 0,
-                                  hmap_ll.data()[member.league_rank()]),
-          [&](const int &tid) {
-            std::cout << "tid: " << tid << std::endl;
-            std::cout << "hmap_keys(tid): " << hmap_keys(tid) << std::endl;
-            std::cout << "hmap_values(tid): " << hmap_values(tid) << std::endl;
-            __crs_row_cnt(hmap_keys(tid)) +=
-                uset_used_sizes(hmap_values(tid))[member.league_rank()];
-          });
-
-      std::cout << "Done." << std::endl;
+      Kokkos::parallel_for(Kokkos::TeamVectorRange(member, 0, *hmap_used_size),
+                           [&](const int &tid) {
+                             std::cout << "tid: " << tid << std::endl;
+                             __crs_row_cnt(hmap_keys(tid)) += *uset_used_sizes(
+                                 member.league_rank(), hmap_values(tid));
+                           });
     }
   };
 
