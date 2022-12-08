@@ -53,6 +53,10 @@
 namespace KokkosSparse {
 namespace Experimental {
 
+/**
+ * The handle class for GMRES. Used to store some input parameters and
+ * results.
+ */
 template <class size_type_, class lno_t_, class scalar_t_, class ExecutionSpace,
           class TemporaryMemorySpace, class PersistentMemorySpace>
 class GMRESHandle {
@@ -93,8 +97,19 @@ class GMRESHandle {
                    typename nnz_row_view_t::device_type,
                    typename nnz_row_view_t::memory_traits>;
 
-  enum Ortho { CGS2, MGS };
-  enum Flag { Conv, NoConv, LOA, NotRun };
+  /**
+   * The orthogonalization type
+   */
+  enum Ortho { CGS2,  // Two iterations of Classical Gram-Schmidt
+               MGS }; // One iteration of Modified Gram-Schmidt
+
+  /**
+   * The result of the run
+   */
+  enum Flag { Conv,     // Converged
+              NoConv,   // Did not converge
+              LOA,      // Solver had loss of accuracy
+              NotRun }; // GMRES was never run
 
  private:
   // Inputs
