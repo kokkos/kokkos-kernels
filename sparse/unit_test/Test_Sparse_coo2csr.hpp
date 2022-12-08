@@ -53,7 +53,7 @@ void doCoo2Csr(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
   auto row    = cooMat.get_row();
   auto col    = cooMat.get_col();
   auto data   = cooMat.get_data();
-  auto csrMat = KokkosSparse::coo2csr(m, n, row, col, data);
+  auto csrMat = KokkosSparse::coo2csr(m, n, row, col, data, 4);
 
   /*
     auto csc_row_ids_d = cscMat.get_row_ids();

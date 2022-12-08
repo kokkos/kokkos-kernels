@@ -782,7 +782,10 @@ struct HashmapAccumulator {
       hashbeginning =
           Kokkos::atomic_exchange(hash_begins + hash, my_write_index);
       hash_nexts[my_write_index] = hashbeginning;
-      return 1;
+
+      // Only count the first thread's insertion
+      if (hashbeginning == -1) return 1;
+      return 0;
     }
   }
 
@@ -804,6 +807,7 @@ struct HashmapAccumulator {
 
     /* if (key == -1) return 0; */
 
+    // TODO: Detect duplicate insertions.
     hash = __compute_hash(key, __hashOpRHS);
     for (i = hash_begins[hash]; i != -1; i = hash_nexts[i]) {
       if (keys[i] == key) {
@@ -817,8 +821,7 @@ struct HashmapAccumulator {
       Kokkos::abort(
           "vector_atomic_insert_into_hash_once: keys size exceeded.\n");
     } else {
-      keys[my_write_index]   = key;
-      values[my_write_index] = my_write_index;
+      keys[my_write_index] = key;
 
 #if defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_TURING75) || \
     defined(KOKKOS_ARCH_AMPERE)
@@ -839,6 +842,18 @@ struct HashmapAccumulator {
       hashbeginning =
           Kokkos::atomic_exchange(hash_begins + hash, my_write_index);
       hash_nexts[my_write_index] = hashbeginning;
+
+      // TODO: remove this after handling duplicate insertions.
+      // If 2 or more threads insert the same key at the same time,
+      // we must return the index which the first thread inserted.
+      // If hashbeginning is -1, this is the first insertion and we can
+      // set values to the next index. If hashbeginning != -1, we must
+      // always return the index associated with the first insertion.
+      if (hashbeginning == -1)
+        values[my_write_index] = my_write_index;
+      else
+        values[my_write_index] = values[hashbeginning];
+
       return values[my_write_index];
     }
   }
