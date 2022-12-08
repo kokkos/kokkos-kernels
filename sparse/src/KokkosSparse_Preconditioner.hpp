@@ -82,8 +82,9 @@ namespace Experimental {
 template <class CRS>
 class Preconditioner {
  public:
-  using ScalarType = typename CRS::value_type;
+  using ScalarType = typename std::remove_const<typename CRS::value_type>::type;
   using EXSP       = typename CRS::execution_space;
+  using karith     = typename Kokkos::ArithTraits<ScalarType>;
 
   //! Constructor:
   Preconditioner() {}
@@ -108,12 +109,11 @@ class Preconditioner {
   ///// The typical case is \f$\beta = 0\f$ and \f$\alpha = 1\f$.
   //
   virtual void apply(
-      const Kokkos::View<ScalarType *, EXSP> &X,
+      const Kokkos::View<const ScalarType *, EXSP> &X,
       const Kokkos::View<ScalarType *, EXSP> &Y,
       const char transM[] = "N",
-      ScalarType alpha    = Kokkos::Details::ArithTraits<ScalarType>::one(),
-      ScalarType beta =
-          Kokkos::Details::ArithTraits<ScalarType>::zero()) const = 0;
+      ScalarType alpha    = karith::one(),
+      ScalarType beta     = karith::zero()) const = 0;
   //@}
 
   //! Set this preconditioner's parameters.

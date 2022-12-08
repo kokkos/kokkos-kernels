@@ -121,9 +121,9 @@ int main(int argc, char* argv[]) {
   Kokkos::initialize();
   {
     // Generate a diagonal matrix with entries 1, 2, ...., 1000 and its inverse.
-    CRS A = KokkosSparse::Impl::kk_generate_diag_matrix<CRS>(n, true);
+    CRS A = KokkosSparse::Impl::kk_generate_diag_matrix<CRS>(n);
     auto myPrec =
-      new KokkosSparse::Experimental::MatrixPrec<CRS, Kokkos::LayoutLeft>(A);
+      new KokkosSparse::Experimental::MatrixPrec<CRS>(KokkosSparse::Impl::kk_generate_diag_matrix<CRS>(n, true));
 
     ViewVectorType X(Kokkos::view_alloc(Kokkos::WithoutInitializing, "X"),
                      n);         // Solution and initial guess
