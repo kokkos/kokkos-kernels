@@ -121,13 +121,9 @@ int main(int argc, char* argv[]) {
   Kokkos::initialize();
   {
     // Generate a diagonal matrix with entries 1, 2, ...., 1000 and its inverse.
-    CRS A = KokkosSparse::Impl::kk_generate_diag_matrix<CRS>(n);
-    KokkosSparse::Experimental::MatrixPrec<ST, Kokkos::LayoutLeft, EXSP, OT>*
-        myPrec =
-            new KokkosSparse::Experimental::MatrixPrec<ST, Kokkos::LayoutLeft,
-                                                       EXSP, OT>(
-                KokkosSparse::Impl::kk_generate_diag_matrix<
-                    KokkosSparse::CrsMatrix<ST, OT, EXSP>>(n, true));
+    CRS A = KokkosSparse::Impl::kk_generate_diag_matrix<CRS>(n, true);
+    auto myPrec =
+      new KokkosSparse::Experimental::MatrixPrec<CRS, Kokkos::LayoutLeft>(A);
 
     ViewVectorType X(Kokkos::view_alloc(Kokkos::WithoutInitializing, "X"),
                      n);         // Solution and initial guess
@@ -146,8 +142,7 @@ int main(int argc, char* argv[]) {
       Kokkos::deep_copy(B, 1.0);
     }
 
-    gmres_handle->set_precond(myPrec);
-    KokkosSparse::Experimental::gmres_numeric(&kh, A, B, X);
+    KokkosSparse::Experimental::gmres_numeric(&kh, A, B, X, myPrec);
 
     const auto numIters  = gmres_handle->get_num_iters();
     const auto convFlag  = gmres_handle->get_conv_flag_val();

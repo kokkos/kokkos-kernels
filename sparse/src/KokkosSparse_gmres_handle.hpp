@@ -64,8 +64,6 @@ class GMRESHandle {
   using execution_space = ExecutionSpace;
   using memory_space    = HandlePersistentMemorySpace;
   using device_t        = Kokkos::Device<execution_space, memory_space>;
-  using TeamPolicy      = Kokkos::TeamPolicy<execution_space>;
-  using RangePolicy     = Kokkos::RangePolicy<execution_space>;
 
   using size_type       = typename std::remove_const<size_type_>::type;
   using const_size_type = const size_type;
@@ -95,9 +93,6 @@ class GMRESHandle {
                    typename nnz_row_view_t::device_type,
                    typename nnz_row_view_t::memory_traits>;
 
-  using precond_t = Preconditioner<nnz_scalar_t, Kokkos::LayoutLeft,
-                                   ExecutionSpace, nnz_lno_t>;
-
   enum Ortho { CGS2, MGS };
   enum Flag { Conv, NoConv, LOA, NotRun };
 
@@ -114,8 +109,7 @@ class GMRESHandle {
 
   bool verbose;
 
-  precond_t *precond;
-
+  // Internals
   int team_size;
   int vector_size;
 
@@ -125,16 +119,15 @@ class GMRESHandle {
   Flag conv_flag_val;
 
  public:
-  // Use set methods to control ortho, preconditioner, and verbose
+  // Use set methods to control ortho, and verbose
   GMRESHandle(const size_type nrows_, const size_type m_ = 50,
               const size_type max_restart_ = 50)
       : nrows(nrows_),
         m(m_),
         max_restart(max_restart_),
-        tol(1e-10),
+        tol(1e-8),
         ortho(CGS2),
         verbose(false),
-        precond(nullptr),
         team_size(-1),
         vector_size(-1),
         num_iters(-1),
@@ -151,10 +144,9 @@ class GMRESHandle {
     set_nrows(nrows_);
     set_m(m_);
     set_max_restart(max_restart_);
-    set_tol(1e-10);
+    set_tol(1e-8);
     set_ortho(CGS2);
     set_verbose(false);
-    set_precond(nullptr);
     num_iters     = -1;
     end_rel_res   = 0;
     conv_flag_val = NotRun;
@@ -201,25 +193,11 @@ class GMRESHandle {
   KOKKOS_INLINE_FUNCTION
   void set_verbose(const bool verbose_) { this->verbose = verbose_; }
 
-  KOKKOS_INLINE_FUNCTION
-  precond_t *get_precond() const { return this->precond; }
-
-  KOKKOS_INLINE_FUNCTION
-  void set_precond(precond_t *precond_) { this->precond = precond_; }
-
   void set_team_size(const int ts) { this->team_size = ts; }
   int get_team_size() const { return this->team_size; }
 
   void set_vector_size(const int vs) { this->vector_size = vs; }
   int get_vector_size() const { return this->vector_size; }
-
-  TeamPolicy get_default_team_policy() const {
-    if (team_size == -1) {
-      return TeamPolicy(nrows, Kokkos::AUTO);
-    } else {
-      return TeamPolicy(nrows, team_size);
-    }
-  }
 
   int get_num_iters() const {
     assert(get_conv_flag_val() != NotRun);

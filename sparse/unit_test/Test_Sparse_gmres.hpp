@@ -53,6 +53,7 @@
 #include "KokkosBlas1_nrm2.hpp"
 #include "KokkosSparse_spmv.hpp"
 #include "KokkosSparse_gmres.hpp"
+#include "KokkosSparse_MatrixPrec.hpp"
 
 #include <gtest/gtest.h>
 
@@ -95,6 +96,8 @@ void run_test_gmres() {
   using ViewVectorType = typename GMRESHandle::nnz_value_view_t;
   using float_t        = typename GMRESHandle::float_t;
 
+  constexpr float_t low_tol = 1e-5; // Lower tolerance for floats
+
   // Set initial vectors:
   ViewVectorType X("X", n);    // Solution and initial guess
   ViewVectorType Wj("Wj", n);  // For checking residuals at end.
@@ -103,12 +106,13 @@ void run_test_gmres() {
 
   if (std::is_same<float_t, float>::value) {
     // reduce tol for float
-    gmres_handle->set_tol(1e-7);
+    gmres_handle->set_tol(low_tol);
   }
   gmres_handle->set_verbose(verbose);
 
-  // Make rhs ones so that results are repeatable:
+  // Test CGS2
   {
+    // Make rhs ones so that results are repeatable:
     Kokkos::deep_copy(B, 1.0);
 
     gmres_numeric(&kh, A, B, X);
@@ -119,26 +123,24 @@ void run_test_gmres() {
     KokkosBlas::axpy(-1.0, Wj, B);                // b = b-Ax.
     float_t endRes = KokkosBlas::nrm2(B) / nrmB;
 
-    const auto num_iters = gmres_handle->get_num_iters();
     const auto conv_flag = gmres_handle->get_conv_flag_val();
 
-    EXPECT_LT(num_iters, 40);
-    EXPECT_GT(num_iters, 20);
     EXPECT_LT(endRes, gmres_handle->get_tol());
     EXPECT_EQ(conv_flag, GMRESHandle::Flag::Conv);
   }
 
+  // Test MGS
   {
     gmres_handle->reset_handle(n, m);
     gmres_handle->set_ortho(GMRESHandle::Ortho::MGS);
     gmres_handle->set_verbose(verbose);
     if (std::is_same<float_t, float>::value) {
       // reduce tol for float
-      gmres_handle->set_tol(1e-7);
+      gmres_handle->set_tol(low_tol);
     }
 
+    // reset X for next gmres call
     Kokkos::deep_copy(X, 0.0);
-    Kokkos::deep_copy(B, 1.0);
 
     gmres_numeric(&kh, A, B, X);
 
@@ -148,13 +150,42 @@ void run_test_gmres() {
     KokkosBlas::axpy(-1.0, Wj, B);                // b = b-Ax.
     float_t endRes = KokkosBlas::nrm2(B) / nrmB;
 
-    const auto num_iters = gmres_handle->get_num_iters();
     const auto conv_flag = gmres_handle->get_conv_flag_val();
 
-    EXPECT_LT(num_iters, 40);
-    EXPECT_GT(num_iters, 20);
     EXPECT_LT(endRes, gmres_handle->get_tol());
     EXPECT_EQ(conv_flag, GMRESHandle::Flag::Conv);
+  }
+
+  // Test GSS2 with simple preconditioner
+  {
+    gmres_handle->reset_handle(n, m);
+    gmres_handle->set_verbose(verbose);
+    if (std::is_same<float_t, float>::value) {
+      // reduce tol for float
+      gmres_handle->set_tol(low_tol);
+    }
+
+    // Make precond
+    auto myPrec =
+      new KokkosSparse::Experimental::MatrixPrec<sp_matrix_type>(A);
+
+    // reset X for next gmres call
+    Kokkos::deep_copy(X, 0.0);
+
+    gmres_numeric(&kh, A, B, X, myPrec);
+
+    // Double check residuals at end of solve:
+    float_t nrmB = KokkosBlas::nrm2(B);
+    KokkosSparse::spmv("N", 1.0, A, X, 0.0, Wj);  // wj = Ax
+    KokkosBlas::axpy(-1.0, Wj, B);                // b = b-Ax.
+    float_t endRes = KokkosBlas::nrm2(B) / nrmB;
+
+    const auto conv_flag = gmres_handle->get_conv_flag_val();
+
+    EXPECT_LT(endRes, gmres_handle->get_tol());
+    EXPECT_EQ(conv_flag, GMRESHandle::Flag::Conv);
+
+    delete myPrec;
   }
 }
 

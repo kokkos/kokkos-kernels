@@ -108,7 +108,8 @@ template <class KernelHandle, class AT, class AO, class AD, class AM, class AS,
 struct GMRES_NUMERIC {
   using AMatrix = CrsMatrix<AT, AO, AD, AM, AS>;
   static void gmres_numeric(KernelHandle *handle, const AMatrix &A,
-                            const BType &B, XType &X);
+                            const BType &B, XType &X,
+                            KokkosSparse::Experimental::Preconditioner<AMatrix>* precond = nullptr);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
@@ -120,12 +121,13 @@ struct GMRES_NUMERIC<KernelHandle, AT, AO, AD, AM, AS, BType, XType, false,
                      KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   using AMatrix = CrsMatrix<AT, AO, AD, AM, AS>;
   static void gmres_numeric(KernelHandle *handle, const AMatrix &A,
-                            const BType &B, XType &X) {
+                            const BType &B, XType &X,
+                            KokkosSparse::Experimental::Preconditioner<AMatrix>* precond = nullptr) {
     auto gmres_handle = handle->get_gmres_handle();
     using Gmres       = Experimental::GmresWrap<
         typename std::remove_pointer<decltype(gmres_handle)>::type>;
 
-    Gmres::gmres_numeric(*gmres_handle, A, B, X);
+    Gmres::gmres_numeric(*gmres_handle, A, B, X, precond);
   }
 };
 

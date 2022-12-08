@@ -72,22 +72,23 @@ namespace Experimental {
 ///   - compute() Does nothing; Matrix initialized upon object construction.
 ///   - isComputed() returns true
 ///
-template <class ScalarType, class Layout, class EXSP, class OrdinalType = int>
+template <class CRS>
 class MatrixPrec
-    : public KokkosSparse::Experimental::Preconditioner<ScalarType, Layout,
-                                                        EXSP, OrdinalType> {
+  : public KokkosSparse::Experimental::Preconditioner<CRS> {
  private:
-  using crsMat_t = KokkosSparse::CrsMatrix<ScalarType, OrdinalType, EXSP>;
-  crsMat_t A;
+  CRS A;
 
   bool isInitialized_ = true;
   bool isComputed_    = true;
 
  public:
+  using ScalarType = typename CRS::value_type;
+  using EXSP       = typename CRS::execution_space;
+
   //! Constructor:
-  MatrixPrec<ScalarType, Layout, EXSP, OrdinalType>(
-      const KokkosSparse::CrsMatrix<ScalarType, OrdinalType, EXSP> &mat)
-      : A(mat) {}
+  template <class CRSArg>
+  MatrixPrec(const CRSArg &mat)
+    : A(mat) {}
 
   //! Destructor.
   virtual ~MatrixPrec() {}
@@ -109,8 +110,8 @@ class MatrixPrec
   ///// The typical case is \f$\beta = 0\f$ and \f$\alpha = 1\f$.
   //
   virtual void apply(
-      const Kokkos::View<ScalarType *, Layout, EXSP> &X,
-      const Kokkos::View<ScalarType *, Layout, EXSP> &Y,
+      const Kokkos::View<ScalarType *, EXSP> &X,
+      const Kokkos::View<ScalarType *, EXSP> &Y,
       const char transM[] = "N",
       ScalarType alpha    = Kokkos::Details::ArithTraits<ScalarType>::one(),
       ScalarType beta =

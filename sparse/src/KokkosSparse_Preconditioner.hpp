@@ -79,9 +79,12 @@ namespace Experimental {
 /// previously allocated information, and reinitializes the preconditioner.
 /// Every time compute() is called, the object recomputes the actual values of
 /// the preconditioner.
-template <class ScalarType, class Layout, class EXSP, class OrdinalType = int>
+template <class CRS>
 class Preconditioner {
  public:
+  using ScalarType = typename CRS::value_type;
+  using EXSP       = typename CRS::execution_space;
+
   //! Constructor:
   Preconditioner() {}
 
@@ -105,8 +108,8 @@ class Preconditioner {
   ///// The typical case is \f$\beta = 0\f$ and \f$\alpha = 1\f$.
   //
   virtual void apply(
-      const Kokkos::View<ScalarType *, Layout, EXSP> &X,
-      const Kokkos::View<ScalarType *, Layout, EXSP> &Y,
+      const Kokkos::View<ScalarType *, EXSP> &X,
+      const Kokkos::View<ScalarType *, EXSP> &Y,
       const char transM[] = "N",
       ScalarType alpha    = Kokkos::Details::ArithTraits<ScalarType>::one(),
       ScalarType beta =

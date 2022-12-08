@@ -61,6 +61,7 @@
 #include "KokkosKernels_helpers.hpp"
 #include "KokkosKernels_Error.hpp"
 #include "KokkosSparse_gmres_numeric_spec.hpp"
+#include "KokkosSparse_Preconditioner.hpp"
 
 namespace KokkosSparse {
 namespace Experimental {
@@ -71,7 +72,7 @@ namespace Experimental {
 
 template <typename KernelHandle, typename AMatrix, typename BType,
           typename XType>
-void gmres_numeric(KernelHandle* handle, AMatrix& A, BType& B, XType& X) {
+void gmres_numeric(KernelHandle* handle, AMatrix& A, BType& B, XType& X, Preconditioner<AMatrix>* precond = nullptr) {
   using scalar_type  = typename KernelHandle::nnz_scalar_t;
   using size_type    = typename KernelHandle::size_type;
   using ordinal_type = typename KernelHandle::nnz_lno_t;
@@ -147,11 +148,10 @@ void gmres_numeric(KernelHandle* handle, AMatrix& A, BType& B, XType& X) {
 
   const_handle_type tmp_handle(*handle);
 
-  typedef KokkosSparse::CrsMatrix<
+  using AMatrix_Internal = KokkosSparse::CrsMatrix<
       typename AMatrix::const_value_type, typename AMatrix::const_ordinal_type,
       typename AMatrix::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-      typename AMatrix::const_size_type>
-      AMatrix_Internal;
+      typename AMatrix::const_size_type>;
 
   using B_Internal = Kokkos::View<
       typename BType::const_value_type*,
@@ -165,9 +165,13 @@ void gmres_numeric(KernelHandle* handle, AMatrix& A, BType& B, XType& X) {
       typename XType::device_type,
       Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
+  using Precond_Internal = Preconditioner<AMatrix_Internal>;
+
   AMatrix_Internal A_i = A;
   B_Internal b_i       = B;
   X_Internal x_i       = X;
+
+  Precond_Internal* precond_i = reinterpret_cast<Precond_Internal*>(precond);
 
   KokkosSparse::Impl::GMRES_NUMERIC<
       const_handle_type, typename AMatrix_Internal::value_type,
@@ -175,7 +179,7 @@ void gmres_numeric(KernelHandle* handle, AMatrix& A, BType& B, XType& X) {
       typename AMatrix_Internal::device_type,
       typename AMatrix_Internal::memory_traits,
       typename AMatrix_Internal::size_type, B_Internal,
-      X_Internal>::gmres_numeric(&tmp_handle, A_i, b_i, x_i);
+    X_Internal>::gmres_numeric(&tmp_handle, A_i, b_i, x_i, precond_i);
 
 }  // gmres_numeric
 

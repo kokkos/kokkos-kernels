@@ -54,10 +54,8 @@
 #include <KokkosBlas.hpp>
 #include <KokkosBlas3_trsm_impl.hpp>
 #include <KokkosSparse_spmv.hpp>
-//#include <KokkosSparse_Preconditioner.hpp>
+#include <KokkosSparse_Preconditioner.hpp>
 #include "KokkosKernels_Error.hpp"
-
-//#define NUMERIC_OUTPUT_INFO
 
 namespace KokkosSparse {
 namespace Impl {
@@ -85,7 +83,8 @@ struct GmresWrap {
    */
   template <class AMatrix, class BType, class XType>
   static void gmres_numeric(GmresHandle& thandle, const AMatrix& A,
-                            const BType& B, XType& X) {
+                            const BType& B, XType& X,
+                            KokkosSparse::Experimental::Preconditioner<AMatrix>* precond = nullptr) {
     using ST = typename karith::val_type;  // So this code will run with
                                            // scalar_t = std::complex<T>.
     using MT                  = typename karith::mag_type;
@@ -103,7 +102,6 @@ struct GmresWrap {
     const auto tol        = thandle.get_tol();
     const auto ortho      = thandle.get_ortho();
     const auto verbose    = thandle.get_verbose();
-    auto precond          = thandle.get_precond();
 
     bool converged     = false;
     size_type cycle    = 0;  // How many times have we restarted?
