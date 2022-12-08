@@ -242,7 +242,7 @@ int parse_inputs(KokkosKernels::Experiment::Parameters& params, int argc,
       } else if (0 == Test::string_compare_no_case(algoStr, "KKLP")) {
         params.algorithm = KokkosSparse::SPGEMM_KK_LP;
       } else if (0 == Test::string_compare_no_case(algoStr, "KKDEBUG")) {
-        params.algorithm = KokkosSparse::SPGEMM_KK_LP;
+        params.algorithm = KokkosSparse::SPGEMM_DEBUG;
       }
 
       else {
