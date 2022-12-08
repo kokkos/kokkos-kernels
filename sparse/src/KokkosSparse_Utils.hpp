@@ -2079,15 +2079,13 @@ template <typename Rowmap, typename Entries>
 struct CountEntriesFallingEdges {
   using size_type = typename Rowmap::non_const_value_type;
 
-  CountEntriesFallingEdges(const Rowmap &rowmap_, const Entries &entries_)
-      : rowmap(rowmap_), entries(entries_) {}
+  CountEntriesFallingEdges(const Entries &entries_) : entries(entries_) {}
 
   KOKKOS_INLINE_FUNCTION void operator()(size_type i,
                                          size_type &numFallingEdges) const {
     if (entries(i) > entries(i + 1)) numFallingEdges++;
   }
 
-  Rowmap rowmap;
   Entries entries;
 };
 
@@ -2137,12 +2135,11 @@ bool isCrsGraphSorted(const Rowmap &rowmap, const Entries &entries) {
   // A graph is unsorted if and only if there is a falling edge where i, i+1 are
   // in the same row. So count the total falling edges, and then subtract the
   // falling edges which cross row boundaries.
-  size_type totalFallingEdges;
-  Kokkos::parallel_reduce(
-      Kokkos::RangePolicy<exec_space>(0, nnz - 1),
-      CountEntriesFallingEdges<Rowmap, Entries>(rowmap, entries),
-      totalFallingEdges);
-  size_type rowBoundaryFallingEdges;
+  size_type totalFallingEdges = 0;
+  Kokkos::parallel_reduce(Kokkos::RangePolicy<exec_space>(0, nnz - 1),
+                          CountEntriesFallingEdges<Rowmap, Entries>(entries),
+                          totalFallingEdges);
+  size_type rowBoundaryFallingEdges = 0;
   Kokkos::parallel_reduce(
       Kokkos::RangePolicy<exec_space>(0, numRows - 1),
       CountRowBoundaryFallingEdges<Rowmap, Entries>(rowmap, entries),
