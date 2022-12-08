@@ -16,8 +16,6 @@ int main() {
   using device_type = typename Kokkos::Device<
       Kokkos::DefaultExecutionSpace,
       typename Kokkos::DefaultExecutionSpace::memory_space>;
-  using execution_space = typename device_type::execution_space;
-  using memory_space    = typename device_type::memory_space;
   using matrix_type =
       typename KokkosSparse::CrsMatrix<Scalar, Ordinal, device_type, void,
                                        Offset>;
