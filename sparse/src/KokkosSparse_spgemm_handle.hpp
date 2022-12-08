@@ -149,44 +149,83 @@ class SPGEMMHandle {
       nnz_lno_persistent_work_host_view_t;  // Host view type
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
-  struct rocSparseSpgemmHandleType {
-    KokkosKernels::Experimental::Controls
-        kkControls;  // give a singleton rocsparse handle
-    rocsparse_handle rocsparseHandle;
-    rocsparse_operation opA, opB;
-    rocsparse_mat_descr descr_A, descr_B, descr_C, descr_D;
-    rocsparse_mat_info info_C;
-    size_t bufferSize;
-    void *buffer;
-    bool C_populated;
 
-    rocSparseSpgemmHandleType(bool transposeA, bool transposeB) {
-      opA =
-          transposeA ? rocsparse_operation_transpose : rocsparse_operation_none;
-      opB =
-          transposeB ? rocsparse_operation_transpose : rocsparse_operation_none;
+  struct rocSparseSpgemmHandleType
+  {
 
-      bufferSize  = 0;
-      buffer      = NULL;
-      C_populated = false;
+    /// Constructor
+    rocSparseSpgemmHandleType(bool transposeA, bool transposeB):
+      opA(transposeA ? rocsparse_operation_transpose : rocsparse_operation_none),
+      opB(transposeB ? rocsparse_operation_transpose : rocsparse_operation_none),
+      enable_jacobi(false),
+      C_populated(false)
+    {
+      // Get singleton handle
+      handle = kkControls.getRocsparseHandle();
+
+      // Create matrix descriptors
       KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_mat_descr(&descr_A));
       KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_mat_descr(&descr_B));
       KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_mat_descr(&descr_C));
       KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_mat_descr(&descr_D));
+
+      // Create C info object
       KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_mat_info(&info_C));
-      rocsparseHandle = kkControls.getRocsparseHandle();
+
     }
 
-    ~rocSparseSpgemmHandleType() {
-      rocsparse_destroy_mat_info(info_C);
-      rocsparse_destroy_mat_descr(descr_A);
-      rocsparse_destroy_mat_descr(descr_B);
-      rocsparse_destroy_mat_descr(descr_C);
-      rocsparse_destroy_mat_descr(descr_D);
+    // Destructor
+    ~rocSparseSpgemmHandleType()
+    {
+
+      (void) rocsparse_destroy_mat_descr(descr_A);
+      (void) rocsparse_destroy_mat_descr(descr_B);
+      (void) rocsparse_destroy_mat_descr(descr_C);
+      (void) rocsparse_destroy_mat_descr(descr_D);
+      (void) rocsparse_destroy_mat_info(info_C);
     }
+
+    // rocsparse handle wrappers
+    KokkosKernels::Experimental::Controls kkControls;  // give a singleton rocsparse handle
+    rocsparse_handle handle;
+    rocsparse_operation opA, opB;
+
+    // Matrix descriptors
+    rocsparse_mat_descr descr_A;
+    rocsparse_mat_descr descr_B;
+    rocsparse_mat_descr descr_C;
+    rocsparse_mat_descr descr_D;
+    rocsparse_mat_info info_C;
+    
+    // Scratch buffer allocation
+    using buffer_t = Kokkos::View<char*, 
+      Kokkos::Device<Kokkos::Experimental::HIP, Kokkos::Experimental::HIPSpace>>;
+    buffer_t buffer;
+
+    // Currently SpGEMM in rocSPARSE only supports the int datatype
+    // We use these arrays to transform back and forth as needed
+    using rocsparse_index_array_t = Kokkos::View<rocsparse_int*, 
+      Kokkos::Device<Kokkos::Experimental::HIP, Kokkos::Experimental::HIPSpace>>;
+    rocsparse_index_array_t csr_row_ptr_A;
+    rocsparse_index_array_t csr_row_ptr_B;
+    rocsparse_index_array_t csr_row_ptr_C;
+    rocsparse_index_array_t csr_row_ptr_D;
+    rocsparse_index_array_t csr_col_ind_A;
+    rocsparse_index_array_t csr_col_ind_B;
+    rocsparse_index_array_t csr_col_ind_C;
+    rocsparse_index_array_t csr_col_ind_D;
+
+    // (Jacobi only) Used to store D^{-1} * A entries for use with rocsparse csrgemm
+    scalar_temp_work_view_t csr_values_invDA;
+
+    // Used to trigger Jacobi SpGEMM via rocsparse
+    bool enable_jacobi;
+
+    // Used to ensure C column indexes are not recomputed in the spgemm_numeric call
+    bool C_populated;
   };
 
-#endif
+#endif // KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 #if (CUDA_VERSION >= 11000)

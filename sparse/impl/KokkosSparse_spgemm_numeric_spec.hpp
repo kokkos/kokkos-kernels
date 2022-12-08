@@ -225,16 +225,6 @@ struct SPGEMM_NUMERIC<
             "Requiring SPGEMM_CUSPARSE but TPL_CUSPARSE was not enabled!");
 #endif
         break;
-      case SPGEMM_ROCSPARSE:
-#if defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE)
-        rocsparse_spgemm_numeric<spgemmHandleType>(
-            sh, m, n, k, row_mapA, entriesA, valuesA, transposeA, row_mapB,
-            entriesB, valuesB, transposeB, row_mapC, entriesC, valuesC);
-#else
-        throw std::runtime_error(
-            "Requiring SPGEMM_ROCSPARSE but TPL_ROCSPARSE was not enabled!");
-#endif
-        break;
       case SPGEMM_CUSP:
         CUSP_apply<spgemmHandleType, a_size_view_t_, a_lno_view_t,
                    a_scalar_view_t, b_size_view_t_, b_lno_view_t,
@@ -243,6 +233,18 @@ struct SPGEMM_NUMERIC<
                                     transposeA, row_mapB, entriesB, valuesB,
                                     transposeB, row_mapC, entriesC, valuesC);
         break;
+      case SPGEMM_ROCSPARSE:
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE)
+        spgemm_numeric_rocsparse<spgemmHandleType, a_size_view_t_, a_lno_view_t,a_scalar_view_t,c_lno_view_t,c_scalar_view_t>(
+            sh, m, n, k,
+            row_mapA, entriesA, valuesA, transposeA,
+            row_mapB, entriesB, valuesB, transposeB,
+            row_mapC, entriesC, valuesC);
+#else
+        throw std::runtime_error("Requested rocSPARSE for SpGEMM, but it is not available. Please recompile with rocsparse enabled.");
+#endif
+        break;
+
       case SPGEMM_MKL:
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
         mkl_numeric(sh, m, n, k, row_mapA, entriesA, valuesA, transposeA,

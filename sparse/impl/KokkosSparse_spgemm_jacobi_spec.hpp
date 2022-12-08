@@ -57,6 +57,10 @@
 #include "KokkosSparse_spgemm_jacobi_seq_impl.hpp"
 #endif
 
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE)
+#include "KokkosSparse_spgemm_rocSPARSE_impl.hpp"
+#endif
+
 namespace KokkosSparse {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
@@ -194,6 +198,20 @@ struct SPGEMM_JACOBI<KernelHandle, a_size_view_t_, a_lno_view_t,
       spgemm_jacobi_seq(handle, m, n, k, row_mapA, entriesA, valuesA,
                         transposeA, row_mapB, entriesB, valuesB, transposeB,
                         row_mapC, entriesC, valuesC, omega, dinv);
+    } else if (sh->get_algorithm_type() == SPGEMM_ROCSPARSE) {
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE)
+      jacobi_spgemm_numeric_rocsparse<spgemmHandleType,
+          a_size_view_t_,a_lno_view_t,a_scalar_view_t,
+          c_lno_view_t,c_scalar_view_t,dinv_scalar_view_t>(
+            sh, m, n, k,
+            row_mapA, entriesA, valuesA, transposeA,
+            row_mapB, entriesB, valuesB, transposeB,
+            omega, dinv,
+            row_mapC, entriesC, valuesC);
+#else
+      throw std::runtime_error(
+          "Requiring (jacobi) SPGEMM_ROCSPARSE but TPL_ROCSPARSE was not enabled!");
+#endif
     } else {
       KokkosSPGEMM<KernelHandle, a_size_view_t_, a_lno_view_t, a_scalar_view_t,
                    b_size_view_t_, b_lno_view_t, b_scalar_view_t>
@@ -292,7 +310,6 @@ struct SPGEMM_JACOBI<KernelHandle, a_size_view_t_, a_lno_view_t,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
       false, true>;
 
-#include <KokkosSparse_spgemm_tpl_spec_decl.hpp>
 #include <generated_specializations_hpp/KokkosSparse_spgemm_jacobi_eti_spec_decl.hpp>
 
 #endif

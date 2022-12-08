@@ -295,6 +295,10 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth,
   algorithms.push_back(SPGEMM_MKL);
 #endif
 
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE) && defined(TEST_HIP_SPARSE_CPP)
+  algorithms.push_back(SPGEMM_ROCSPARSE);
+#endif
+
   for (auto spgemm_algorithm : algorithms) {
     const uint64_t max_integer = Kokkos::ArithTraits<int>::max();
     std::string algo           = "UNKNOWN";
@@ -309,7 +313,13 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth,
         is_expected_to_fail = true;
 #endif
         break;
-
+      case SPGEMM_ROCSPARSE: algo = "SPGEMM_ROCSPARSE"; 
+      // The rocsparse implementation internally casts size types to int
+      if (A.values.extent(0) > max_integer) {
+        is_expected_to_fail = true;
+      }
+      
+      break;
       case SPGEMM_MKL: algo = "SPGEMM_MKL";
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
         if (!KokkosSparse::Impl::mkl_is_supported_value_type<scalar_t>::value) {
