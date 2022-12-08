@@ -96,7 +96,7 @@ struct GmresWrap {
     Kokkos::Profiling::pushRegion("GMRES::TotalTime:");
 
     // Store solver options:
-    const auto n          = thandle.get_nrows();
+    const auto n          = A.numRows();
     const int m           = thandle.get_m();
     const auto maxRestart = thandle.get_max_restart();
     const auto tol        = thandle.get_tol();

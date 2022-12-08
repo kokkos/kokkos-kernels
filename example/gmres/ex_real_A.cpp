@@ -122,7 +122,7 @@ int main(int argc, char* argv[]) {
 
     // Make kernel handles and set options
     KernelHandle kh;
-    kh.create_gmres_handle(n, m, cycLim);
+    kh.create_gmres_handle(m, cycLim);
     auto gmres_handle = kh.get_gmres_handle();
     using GMRESHandle =
         typename std::remove_reference<decltype(*gmres_handle)>::type;

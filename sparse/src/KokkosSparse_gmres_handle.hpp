@@ -99,7 +99,6 @@ class GMRESHandle {
  private:
   // Inputs
 
-  size_type nrows;
   size_type m;
   size_type max_restart;
 
@@ -120,10 +119,9 @@ class GMRESHandle {
 
  public:
   // Use set methods to control ortho, and verbose
-  GMRESHandle(const size_type nrows_, const size_type m_ = 50,
+  GMRESHandle(const size_type m_ = 50,
               const size_type max_restart_ = 50)
-      : nrows(nrows_),
-        m(m_),
+      : m(m_),
         max_restart(max_restart_),
         tol(1e-8),
         ortho(CGS2),
@@ -139,9 +137,8 @@ class GMRESHandle {
     }
   }
 
-  void reset_handle(const size_type nrows_, const size_type m_ = 50,
+  void reset_handle(const size_type m_ = 50,
                     const size_type max_restart_ = 50) {
-    set_nrows(nrows_);
     set_m(m_);
     set_max_restart(max_restart_);
     set_tol(1e-8);
@@ -154,12 +151,6 @@ class GMRESHandle {
 
   KOKKOS_INLINE_FUNCTION
   ~GMRESHandle() {}
-
-  KOKKOS_INLINE_FUNCTION
-  size_type get_nrows() const { return nrows; }
-
-  KOKKOS_INLINE_FUNCTION
-  void set_nrows(const size_type nrows_) { this->nrows = nrows_; }
 
   KOKKOS_INLINE_FUNCTION
   size_type get_m() const { return m; }

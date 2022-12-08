@@ -89,7 +89,7 @@ void run_test_gmres() {
 
   // Make kernel handles
   KernelHandle kh;
-  kh.create_gmres_handle(n, m);
+  kh.create_gmres_handle(m);
   auto gmres_handle = kh.get_gmres_handle();
   using GMRESHandle =
       typename std::remove_reference<decltype(*gmres_handle)>::type;
