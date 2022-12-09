@@ -120,10 +120,6 @@ class GMRESHandle {
   Ortho     ortho;       /// The orthogonalization type
   bool      verbose;     /// Print extra info to stdout
 
-  // Internals
-  int team_size;
-  int vector_size;
-
   // Outputs
   int     num_iters;     /// Number of iterations the sovler took
   float_t end_rel_res;   /// Residual from solver
@@ -138,8 +134,6 @@ class GMRESHandle {
         max_restart(max_restart_),
         ortho(CGS2),
         verbose(false),
-        team_size(-1),
-        vector_size(-1),
         num_iters(-1),
         end_rel_res(0),
         conv_flag_val(NotRun) {
@@ -195,12 +189,6 @@ class GMRESHandle {
 
   KOKKOS_INLINE_FUNCTION
   void set_verbose(const bool verbose_) { this->verbose = verbose_; }
-
-  void set_team_size(const int ts) { this->team_size = ts; }
-  int get_team_size() const { return this->team_size; }
-
-  void set_vector_size(const int vs) { this->vector_size = vs; }
-  int get_vector_size() const { return this->vector_size; }
 
   int get_num_iters() const {
     assert(get_conv_flag_val() != NotRun);

@@ -921,8 +921,6 @@ class KokkosKernelsHandle {
     this->destroy_gmres_handle();
     this->is_owner_of_the_gmres_handle = true;
     this->gmresHandle = new GMRESHandleType(m, tol, max_restart);
-    this->gmresHandle->set_team_size(this->team_work_size);
-    this->gmresHandle->set_vector_size(this->vector_size);
   }
   void destroy_gmres_handle() {
     if (is_owner_of_the_gmres_handle && this->gmresHandle != nullptr) {
