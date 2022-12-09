@@ -42,10 +42,10 @@
 //@HEADER
 */
 
-#ifndef KOKKOSSPARSE_IMPL_GMRES_NUMERIC_HPP_
-#define KOKKOSSPARSE_IMPL_GMRES_NUMERIC_HPP_
+#ifndef KOKKOSSPARSE_IMPL_GMRES_HPP_
+#define KOKKOSSPARSE_IMPL_GMRES_HPP_
 
-/// \file KokkosSparse_gmres_numeric_impl.hpp
+/// \file KokkosSparse_gmres_impl.hpp
 /// \brief Implementation(s) of the numeric phase of GMRES.
 
 #include <KokkosKernels_config.h>
@@ -82,7 +82,7 @@ struct GmresWrap {
    * example/gmres/gmres.hpp
    */
   template <class AMatrix, class BType, class XType>
-  static void gmres_numeric(GmresHandle& thandle, const AMatrix& A,
+  static void gmres(GmresHandle& thandle, const AMatrix& A,
                             const BType& B, XType& X,
                             KokkosSparse::Experimental::Preconditioner<AMatrix>* precond = nullptr) {
     using ST = typename karith::val_type;  // So this code will run with
@@ -378,7 +378,7 @@ struct GmresWrap {
     thandle.set_stats(num_iters, end_rel_res, conv_flag_val);
 
     Kokkos::Profiling::popRegion();
-  }  // end gmres_numeric
+  }  // end gmres
 
 };  // struct GmresWrap
 

@@ -1,5 +1,5 @@
-#ifndef KOKKOSSPARSE_GMRES_NUMERIC_ETI_SPEC_DECL_HPP_
-#define KOKKOSSPARSE_GMRES_NUMERIC_ETI_SPEC_DECL_HPP_
+#ifndef KOKKOSSPARSE_GMRES_ETI_SPEC_DECL_HPP_
+#define KOKKOSSPARSE_GMRES_ETI_SPEC_DECL_HPP_
 /*
 //@HEADER
 // ************************************************************************
@@ -46,8 +46,8 @@
 namespace KokkosSparse {
 namespace Impl {
 
-@SPARSE_GMRES_NUMERIC_DECL_BLOCK@
+@SPARSE_GMRES_DECL_BLOCK@
 
 } // Impl
 } // KokkosSparse
-#endif // KOKKOSSPARSE_GMRES_NUMERIC_ETI_SPEC_DECL_HPP_
+#endif // KOKKOSSPARSE_GMRES_ETI_SPEC_DECL_HPP_

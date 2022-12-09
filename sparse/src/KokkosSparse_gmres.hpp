@@ -45,7 +45,7 @@
 /// \file KokkosSparse_gmres.hpp
 /// \brief GMRES Ax = b solver
 ///
-/// This file provides KokkosSparse::gmres_numeric.  This function performs a
+/// This file provides KokkosSparse::gmres.  This function performs a
 /// local (no MPI) solve of Ax = b for sparse A. It is expected that A is in
 /// compressed row sparse ("Crs") format.
 ///
@@ -62,7 +62,7 @@
 
 #include "KokkosKernels_helpers.hpp"
 #include "KokkosKernels_Error.hpp"
-#include "KokkosSparse_gmres_numeric_spec.hpp"
+#include "KokkosSparse_gmres_spec.hpp"
 #include "KokkosSparse_Preconditioner.hpp"
 
 namespace KokkosSparse {
@@ -74,57 +74,57 @@ namespace Experimental {
 
 template <typename KernelHandle, typename AMatrix, typename BType,
           typename XType>
-void gmres_numeric(KernelHandle* handle, AMatrix& A, BType& B, XType& X, Preconditioner<AMatrix>* precond = nullptr) {
+void gmres(KernelHandle* handle, AMatrix& A, BType& B, XType& X, Preconditioner<AMatrix>* precond = nullptr) {
   using scalar_type  = typename KernelHandle::nnz_scalar_t;
   using size_type    = typename KernelHandle::size_type;
   using ordinal_type = typename KernelHandle::nnz_lno_t;
 
   static_assert(
       KOKKOSKERNELS_GMRES_SAME_TYPE(typename BType::value_type, scalar_type),
-      "gmres_numeric: B scalar type must match KernelHandle entry "
+      "gmres: B scalar type must match KernelHandle entry "
       "type (aka nnz_scalar_t, and const doesn't matter)");
 
   static_assert(
       KOKKOSKERNELS_GMRES_SAME_TYPE(typename XType::value_type, scalar_type),
-      "gmres_numeric: X scalar type must match KernelHandle entry "
+      "gmres: X scalar type must match KernelHandle entry "
       "type (aka nnz_scalar_t, and const doesn't matter)");
 
   static_assert(
       KOKKOSKERNELS_GMRES_SAME_TYPE(typename AMatrix::value_type, scalar_type),
-      "gmres_numeric: A scalar type must match KernelHandle entry "
+      "gmres: A scalar type must match KernelHandle entry "
       "type (aka nnz_scalar_t, and const doesn't matter)");
 
   static_assert(KOKKOSKERNELS_GMRES_SAME_TYPE(typename AMatrix::ordinal_type,
                                               ordinal_type),
-                "gmres_numeric: A ordinal type must match KernelHandle entry "
+                "gmres: A ordinal type must match KernelHandle entry "
                 "type (aka nnz_lno_t, and const doesn't matter)");
 
   static_assert(
       KOKKOSKERNELS_GMRES_SAME_TYPE(typename AMatrix::size_type, size_type),
-      "gmres_numeric: A size type must match KernelHandle entry "
+      "gmres: A size type must match KernelHandle entry "
       "type (aka size_type, and const doesn't matter)");
 
   static_assert(KokkosSparse::is_crs_matrix<AMatrix>::value,
-                "gmres_numeric: A is not a CRS matrix.");
+                "gmres: A is not a CRS matrix.");
   static_assert(Kokkos::is_view<BType>::value,
-                "gmres_numeric: B is not a Kokkos::View.");
+                "gmres: B is not a Kokkos::View.");
   static_assert(Kokkos::is_view<XType>::value,
-                "gmres_numeric: X is not a Kokkos::View.");
+                "gmres: X is not a Kokkos::View.");
 
-  static_assert(BType::rank == 1, "gmres_numeric: B must have rank 1");
-  static_assert(XType::rank == 1, "gmres_numeric: X must have rank 1");
+  static_assert(BType::rank == 1, "gmres: B must have rank 1");
+  static_assert(XType::rank == 1, "gmres: X must have rank 1");
 
   static_assert(std::is_same<typename XType::value_type,
                              typename XType::non_const_value_type>::value,
-                "gmres_numeric: The output X must be nonconst.");
+                "gmres: The output X must be nonconst.");
 
   static_assert(std::is_same<typename XType::device_type,
                              typename BType::device_type>::value,
-                "gmres_numeric: X and B have different device types.");
+                "gmres: X and B have different device types.");
 
   static_assert(std::is_same<typename AMatrix::device_type,
                              typename BType::device_type>::value,
-                "gmres_numeric: A and B have different device types.");
+                "gmres: A and B have different device types.");
 
   using c_size_t   = typename KernelHandle::const_size_type;
   using c_lno_t    = typename KernelHandle::const_nnz_lno_t;
@@ -175,15 +175,15 @@ void gmres_numeric(KernelHandle* handle, AMatrix& A, BType& B, XType& X, Precond
 
   Precond_Internal* precond_i = reinterpret_cast<Precond_Internal*>(precond);
 
-  KokkosSparse::Impl::GMRES_NUMERIC<
+  KokkosSparse::Impl::GMRES<
       const_handle_type, typename AMatrix_Internal::value_type,
       typename AMatrix_Internal::ordinal_type,
       typename AMatrix_Internal::device_type,
       typename AMatrix_Internal::memory_traits,
       typename AMatrix_Internal::size_type, B_Internal,
-    X_Internal>::gmres_numeric(&tmp_handle, A_i, b_i, x_i, precond_i);
+    X_Internal>::gmres(&tmp_handle, A_i, b_i, x_i, precond_i);
 
-}  // gmres_numeric
+}  // gmres
 
 }  // namespace Experimental
 }  // namespace KokkosSparse

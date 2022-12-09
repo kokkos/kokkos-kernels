@@ -140,7 +140,7 @@ int main(int argc, char* argv[]) {
     }
 
     // Run GMRS solve:
-    KokkosSparse::Experimental::gmres_numeric(&kh, A, B, X);
+    KokkosSparse::Experimental::gmres(&kh, A, B, X);
 
     const auto numIters  = gmres_handle->get_num_iters();
     const auto convFlag  = gmres_handle->get_conv_flag_val();

@@ -123,7 +123,7 @@ void run_test_gmres() {
     // Make rhs ones so that results are repeatable:
     Kokkos::deep_copy(B, 1.0);
 
-    gmres_numeric(&kh, A, B, X);
+    gmres(&kh, A, B, X);
 
     // Double check residuals at end of solve:
     float_t nrmB = KokkosBlas::nrm2(B);
@@ -146,7 +146,7 @@ void run_test_gmres() {
     // reset X for next gmres call
     Kokkos::deep_copy(X, 0.0);
 
-    gmres_numeric(&kh, A, B, X);
+    gmres(&kh, A, B, X);
 
     // Double check residuals at end of solve:
     float_t nrmB = KokkosBlas::nrm2(B);
@@ -172,7 +172,7 @@ void run_test_gmres() {
     // reset X for next gmres call
     Kokkos::deep_copy(X, 0.0);
 
-    gmres_numeric(&kh, A, B, X, myPrec);
+    gmres(&kh, A, B, X, myPrec);
 
     // Double check residuals at end of solve:
     float_t nrmB = KokkosBlas::nrm2(B);
