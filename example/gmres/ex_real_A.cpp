@@ -124,6 +124,8 @@ int main(int argc, char* argv[]) {
     KernelHandle kh;
     kh.create_gmres_handle(m, convTol, cycLim);
     auto gmres_handle = kh.get_gmres_handle();
+    // Get full gmres handle type using decltype. Deferencing a pointer gives a reference,
+    // so we need to strip that too.
     using GMRESHandle =
         typename std::remove_reference<decltype(*gmres_handle)>::type;
     gmres_handle->set_ortho(ortho == "CGS2" ? GMRESHandle::Ortho::CGS2

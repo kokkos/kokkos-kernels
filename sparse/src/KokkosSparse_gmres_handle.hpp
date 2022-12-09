@@ -137,7 +137,7 @@ class GMRESHandle {
         ortho(CGS2),
         verbose(false),
         num_iters(-1),
-        end_rel_res(0),
+        end_rel_res(-1),
         conv_flag_val(NotRun) {
     if (m <= 0) {
       throw std::invalid_argument(
@@ -153,7 +153,7 @@ class GMRESHandle {
     set_ortho(CGS2);
     set_verbose(false);
     num_iters     = -1;
-    end_rel_res   = 0;
+    end_rel_res   = -1;
     conv_flag_val = NotRun;
   }
 
