@@ -82,9 +82,9 @@ struct GmresWrap {
    * example/gmres/gmres.hpp
    */
   template <class AMatrix, class BType, class XType>
-  static void gmres(GmresHandle& thandle, const AMatrix& A,
-                            const BType& B, XType& X,
-                            KokkosSparse::Experimental::Preconditioner<AMatrix>* precond = nullptr) {
+  static void gmres(
+      GmresHandle& thandle, const AMatrix& A, const BType& B, XType& X,
+      KokkosSparse::Experimental::Preconditioner<AMatrix>* precond = nullptr) {
     using ST = typename karith::val_type;  // So this code will run with
                                            // scalar_t = std::complex<T>.
     using MT                  = typename karith::mag_type;

@@ -102,30 +102,34 @@ class GMRESHandle {
   /**
    * The orthogonalization type
    */
-  enum Ortho { CGS2,  // Two iterations of Classical Gram-Schmidt
-               MGS }; // One iteration of Modified Gram-Schmidt
+  enum Ortho {
+    CGS2,  // Two iterations of Classical Gram-Schmidt
+    MGS
+  };  // One iteration of Modified Gram-Schmidt
 
   /**
    * The result of the run
    */
-  enum Flag { Conv,     // Converged
-              NoConv,   // Did not converge
-              LOA,      // Solver had loss of accuracy
-              NotRun }; // GMRES was never run
+  enum Flag {
+    Conv,    // Converged
+    NoConv,  // Did not converge
+    LOA,     // Solver had loss of accuracy
+    NotRun
+  };  // GMRES was never run
 
  private:
   // Inputs
 
-  size_type m;           /// Max subspace size before restarting
-  float_t   tol;         /// Relative residual convergence tolerance
-  size_type max_restart; /// Maximum number of times to restart the solver
-  Ortho     ortho;       /// The orthogonalization type
-  bool      verbose;     /// Print extra info to stdout
+  size_type m;            /// Max subspace size before restarting
+  float_t tol;            /// Relative residual convergence tolerance
+  size_type max_restart;  /// Maximum number of times to restart the solver
+  Ortho ortho;            /// The orthogonalization type
+  bool verbose;           /// Print extra info to stdout
 
   // Outputs
-  int     num_iters;     /// Number of iterations the sovler took
-  float_t end_rel_res;   /// Residual from solver
-  Flag    conv_flag_val; /// Denotes end result of the run
+  int num_iters;        /// Number of iterations the sovler took
+  float_t end_rel_res;  /// Residual from solver
+  Flag conv_flag_val;   /// Denotes end result of the run
 
  public:
   // Use set methods to control ortho, and verbose

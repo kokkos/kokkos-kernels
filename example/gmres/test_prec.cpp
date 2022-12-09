@@ -111,8 +111,8 @@ int main(int argc, char* argv[]) {
   KernelHandle kh;
   kh.create_gmres_handle(m, convTol, cycLim);
   auto gmres_handle = kh.get_gmres_handle();
-  // Get full gmres handle type using decltype. Deferencing a pointer gives a reference,
-  // so we need to strip that too.
+  // Get full gmres handle type using decltype. Deferencing a pointer gives a
+  // reference, so we need to strip that too.
   using GMRESHandle =
       typename std::remove_reference<decltype(*gmres_handle)>::type;
   gmres_handle->set_ortho(ortho == "CGS2" ? GMRESHandle::Ortho::CGS2
@@ -122,9 +122,9 @@ int main(int argc, char* argv[]) {
   Kokkos::initialize();
   {
     // Generate a diagonal matrix with entries 1, 2, ...., 1000 and its inverse.
-    CRS A = KokkosSparse::Impl::kk_generate_diag_matrix<CRS>(n);
-    auto myPrec =
-      new KokkosSparse::Experimental::MatrixPrec<CRS>(KokkosSparse::Impl::kk_generate_diag_matrix<CRS>(n, true));
+    CRS A       = KokkosSparse::Impl::kk_generate_diag_matrix<CRS>(n);
+    auto myPrec = new KokkosSparse::Experimental::MatrixPrec<CRS>(
+        KokkosSparse::Impl::kk_generate_diag_matrix<CRS>(n, true));
 
     ViewVectorType X(Kokkos::view_alloc(Kokkos::WithoutInitializing, "X"),
                      n);         // Solution and initial guess

@@ -67,11 +67,11 @@ struct gmres_eti_spec_avail {
 }  // namespace Impl
 }  // namespace KokkosSparse
 
-#define KOKKOSSPARSE_GMRES_ETI_SPEC_AVAIL(                             \
-    SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE,      \
-    MEM_SPACE_TYPE)                                                            \
+#define KOKKOSSPARSE_GMRES_ETI_SPEC_AVAIL(SCALAR_TYPE, ORDINAL_TYPE,           \
+                                          OFFSET_TYPE, LAYOUT_TYPE,            \
+                                          EXEC_SPACE_TYPE, MEM_SPACE_TYPE)     \
   template <>                                                                  \
-  struct gmres_eti_spec_avail<                                         \
+  struct gmres_eti_spec_avail<                                                 \
       KokkosKernels::Experimental::KokkosKernelsHandle<                        \
           const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,            \
           EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE>,                    \
@@ -107,9 +107,9 @@ template <class KernelHandle, class AT, class AO, class AD, class AM, class AS,
               KernelHandle, AT, AO, AD, AM, AS, BType, XType>::value>
 struct GMRES {
   using AMatrix = CrsMatrix<AT, AO, AD, AM, AS>;
-  static void gmres(KernelHandle *handle, const AMatrix &A,
-                            const BType &B, XType &X,
-                            KokkosSparse::Experimental::Preconditioner<AMatrix>* precond = nullptr);
+  static void gmres(
+      KernelHandle *handle, const AMatrix &A, const BType &B, XType &X,
+      KokkosSparse::Experimental::Preconditioner<AMatrix> *precond = nullptr);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
@@ -118,11 +118,11 @@ struct GMRES {
 template <class KernelHandle, class AT, class AO, class AD, class AM, class AS,
           class BType, class XType>
 struct GMRES<KernelHandle, AT, AO, AD, AM, AS, BType, XType, false,
-                     KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+             KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   using AMatrix = CrsMatrix<AT, AO, AD, AM, AS>;
-  static void gmres(KernelHandle *handle, const AMatrix &A,
-                            const BType &B, XType &X,
-                            KokkosSparse::Experimental::Preconditioner<AMatrix>* precond = nullptr) {
+  static void gmres(
+      KernelHandle *handle, const AMatrix &A, const BType &B, XType &X,
+      KokkosSparse::Experimental::Preconditioner<AMatrix> *precond = nullptr) {
     auto gmres_handle = handle->get_gmres_handle();
     using Gmres       = Experimental::GmresWrap<
         typename std::remove_pointer<decltype(gmres_handle)>::type>;
@@ -142,10 +142,10 @@ struct GMRES<KernelHandle, AT, AO, AD, AM, AS, BType, XType, false,
 // We may spread out definitions (see _DEF macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSSPARSE_GMRES_ETI_SPEC_DECL(                           \
-    SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE,   \
-    MEM_SPACE_TYPE)                                                         \
-  extern template struct GMRES<                                     \
+#define KOKKOSSPARSE_GMRES_ETI_SPEC_DECL(SCALAR_TYPE, ORDINAL_TYPE,         \
+                                         OFFSET_TYPE, LAYOUT_TYPE,          \
+                                         EXEC_SPACE_TYPE, MEM_SPACE_TYPE)   \
+  extern template struct GMRES<                                             \
       KokkosKernels::Experimental::KokkosKernelsHandle<                     \
           const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,         \
           EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE>,                 \
@@ -162,10 +162,10 @@ struct GMRES<KernelHandle, AT, AO, AD, AM, AS, BType, XType, false,
           Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >, \
       false, true>;
 
-#define KOKKOSSPARSE_GMRES_ETI_SPEC_INST(                           \
-    SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE,   \
-    MEM_SPACE_TYPE)                                                         \
-  template struct GMRES<                                            \
+#define KOKKOSSPARSE_GMRES_ETI_SPEC_INST(SCALAR_TYPE, ORDINAL_TYPE,         \
+                                         OFFSET_TYPE, LAYOUT_TYPE,          \
+                                         EXEC_SPACE_TYPE, MEM_SPACE_TYPE)   \
+  template struct GMRES<                                                    \
       KokkosKernels::Experimental::KokkosKernelsHandle<                     \
           const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,         \
           EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE>,                 \

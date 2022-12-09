@@ -916,8 +916,9 @@ class KokkosKernelsHandle {
   }
 
   GMRESHandleType *get_gmres_handle() { return this->gmresHandle; }
-  void create_gmres_handle(const size_type m = 50, const typename GMRESHandleType::float_t tol = 1e-8,
-                           const size_type max_restart = 50) {
+  void create_gmres_handle(const size_type m                           = 50,
+                           const typename GMRESHandleType::float_t tol = 1e-8,
+                           const size_type max_restart                 = 50) {
     this->destroy_gmres_handle();
     this->is_owner_of_the_gmres_handle = true;
     this->gmresHandle = new GMRESHandleType(m, tol, max_restart);

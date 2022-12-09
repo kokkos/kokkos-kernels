@@ -65,17 +65,14 @@ using namespace KokkosKernels::Experimental;
 namespace Test {
 
 template <class T>
-struct TolMeta
-{
+struct TolMeta {
   static constexpr T value = 1e-8;
 };
 
 template <>
-struct TolMeta<float>
-{
-  static constexpr float value = 1e-5; // Lower tolerance for floats
+struct TolMeta<float> {
+  static constexpr float value = 1e-5;  // Lower tolerance for floats
 };
-
 
 template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
@@ -166,8 +163,7 @@ void run_test_gmres() {
     gmres_handle->set_verbose(verbose);
 
     // Make precond
-    auto myPrec =
-      new KokkosSparse::Experimental::MatrixPrec<sp_matrix_type>(A);
+    auto myPrec = new KokkosSparse::Experimental::MatrixPrec<sp_matrix_type>(A);
 
     // reset X for next gmres call
     Kokkos::deep_copy(X, 0.0);

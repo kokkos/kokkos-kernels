@@ -73,8 +73,7 @@ namespace Experimental {
 ///   - isComputed() returns true
 ///
 template <class CRS>
-class MatrixPrec
-  : public KokkosSparse::Experimental::Preconditioner<CRS> {
+class MatrixPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
  private:
   CRS A;
 
@@ -88,8 +87,7 @@ class MatrixPrec
 
   //! Constructor:
   template <class CRSArg>
-  MatrixPrec(const CRSArg &mat)
-    : A(mat) {}
+  MatrixPrec(const CRSArg &mat) : A(mat) {}
 
   //! Destructor.
   virtual ~MatrixPrec() {}
@@ -110,12 +108,11 @@ class MatrixPrec
   ///\cdot X\f$.
   ///// The typical case is \f$\beta = 0\f$ and \f$\alpha = 1\f$.
   //
-  virtual void apply(
-      const Kokkos::View<const ScalarType *, EXSP> &X,
-      const Kokkos::View<ScalarType *, EXSP> &Y,
-      const char transM[] = "N",
-      ScalarType alpha    = karith::one(),
-      ScalarType beta     = karith::zero()) const {
+  virtual void apply(const Kokkos::View<const ScalarType *, EXSP> &X,
+                     const Kokkos::View<ScalarType *, EXSP> &Y,
+                     const char transM[] = "N",
+                     ScalarType alpha    = karith::one(),
+                     ScalarType beta     = karith::zero()) const {
     KokkosSparse::spmv(transM, alpha, A, X, beta, Y);
   }
   //@}

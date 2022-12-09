@@ -74,7 +74,8 @@ namespace Experimental {
 
 template <typename KernelHandle, typename AMatrix, typename BType,
           typename XType>
-void gmres(KernelHandle* handle, AMatrix& A, BType& B, XType& X, Preconditioner<AMatrix>* precond = nullptr) {
+void gmres(KernelHandle* handle, AMatrix& A, BType& B, XType& X,
+           Preconditioner<AMatrix>* precond = nullptr) {
   using scalar_type  = typename KernelHandle::nnz_scalar_t;
   using size_type    = typename KernelHandle::size_type;
   using ordinal_type = typename KernelHandle::nnz_lno_t;
@@ -175,13 +176,14 @@ void gmres(KernelHandle* handle, AMatrix& A, BType& B, XType& X, Preconditioner<
 
   Precond_Internal* precond_i = reinterpret_cast<Precond_Internal*>(precond);
 
-  KokkosSparse::Impl::GMRES<
-      const_handle_type, typename AMatrix_Internal::value_type,
-      typename AMatrix_Internal::ordinal_type,
-      typename AMatrix_Internal::device_type,
-      typename AMatrix_Internal::memory_traits,
-      typename AMatrix_Internal::size_type, B_Internal,
-    X_Internal>::gmres(&tmp_handle, A_i, b_i, x_i, precond_i);
+  KokkosSparse::Impl::GMRES<const_handle_type,
+                            typename AMatrix_Internal::value_type,
+                            typename AMatrix_Internal::ordinal_type,
+                            typename AMatrix_Internal::device_type,
+                            typename AMatrix_Internal::memory_traits,
+                            typename AMatrix_Internal::size_type, B_Internal,
+                            X_Internal>::gmres(&tmp_handle, A_i, b_i, x_i,
+                                               precond_i);
 
 }  // gmres
 
