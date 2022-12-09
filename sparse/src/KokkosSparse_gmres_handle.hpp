@@ -56,6 +56,8 @@ namespace Experimental {
 /**
  * The handle class for GMRES. Used to store some input parameters and
  * results.
+ *
+ * For more info, see KokkosSparse_gmres.hpp doxygen
  */
 template <class size_type_, class lno_t_, class scalar_t_, class ExecutionSpace,
           class TemporaryMemorySpace, class PersistentMemorySpace>

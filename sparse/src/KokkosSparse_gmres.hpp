@@ -52,6 +52,8 @@
 /// This algorithm is described in the paper:
 /// GMRES - A Generalized Minimal Residual Algorithm for Solving Nonsymmetric
 /// Linear Systems - Saad, Schultz
+///
+/// For more info, see example/gmres/README.md
 
 #ifndef KOKKOSSPARSE_GMRES_HPP_
 #define KOKKOSSPARSE_GMRES_HPP_
