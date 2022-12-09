@@ -64,6 +64,19 @@ using namespace KokkosKernels::Experimental;
 
 namespace Test {
 
+template <class T>
+struct TolMeta
+{
+  static constexpr T value = 1e-8;
+};
+
+template <>
+struct TolMeta<float>
+{
+  static constexpr float value = 1e-5; // Lower tolerance for floats
+};
+
+
 template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
 void run_test_gmres() {
@@ -73,10 +86,12 @@ void run_test_gmres() {
       KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>;
   using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<
       size_type, lno_t, scalar_t, exe_space, mem_space, mem_space>;
+  using float_t = typename Kokkos::ArithTraits<scalar_t>::mag_type;
 
   // Create a diagonally dominant sparse matrix to test:
   constexpr auto n             = 5000;
   constexpr auto m             = 15;
+  constexpr auto tol           = TolMeta<float_t>::value;
   constexpr auto numRows       = n;
   constexpr auto numCols       = n;
   constexpr auto diagDominance = 1;
@@ -89,14 +104,11 @@ void run_test_gmres() {
 
   // Make kernel handles
   KernelHandle kh;
-  kh.create_gmres_handle(m);
+  kh.create_gmres_handle(m, tol);
   auto gmres_handle = kh.get_gmres_handle();
   using GMRESHandle =
       typename std::remove_reference<decltype(*gmres_handle)>::type;
   using ViewVectorType = typename GMRESHandle::nnz_value_view_t;
-  using float_t        = typename GMRESHandle::float_t;
-
-  constexpr float_t low_tol = 1e-5; // Lower tolerance for floats
 
   // Set initial vectors:
   ViewVectorType X("X", n);    // Solution and initial guess
@@ -104,10 +116,6 @@ void run_test_gmres() {
   ViewVectorType B(Kokkos::view_alloc(Kokkos::WithoutInitializing, "B"),
                    n);  // right-hand side vec
 
-  if (std::is_same<float_t, float>::value) {
-    // reduce tol for float
-    gmres_handle->set_tol(low_tol);
-  }
   gmres_handle->set_verbose(verbose);
 
   // Test CGS2
@@ -131,13 +139,9 @@ void run_test_gmres() {
 
   // Test MGS
   {
-    gmres_handle->reset_handle(n, m);
+    gmres_handle->reset_handle(m, tol);
     gmres_handle->set_ortho(GMRESHandle::Ortho::MGS);
     gmres_handle->set_verbose(verbose);
-    if (std::is_same<float_t, float>::value) {
-      // reduce tol for float
-      gmres_handle->set_tol(low_tol);
-    }
 
     // reset X for next gmres call
     Kokkos::deep_copy(X, 0.0);
@@ -158,12 +162,8 @@ void run_test_gmres() {
 
   // Test GSS2 with simple preconditioner
   {
-    gmres_handle->reset_handle(n, m);
+    gmres_handle->reset_handle(m, tol);
     gmres_handle->set_verbose(verbose);
-    if (std::is_same<float_t, float>::value) {
-      // reduce tol for float
-      gmres_handle->set_tol(low_tol);
-    }
 
     // Make precond
     auto myPrec =

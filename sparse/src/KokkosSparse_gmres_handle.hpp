@@ -114,31 +114,28 @@ class GMRESHandle {
  private:
   // Inputs
 
-  size_type m;
-  size_type max_restart;
-
-  float_t tol;
-
-  Ortho ortho;
-
-  bool verbose;
+  size_type m;           /// Max subspace size before restarting
+  float_t   tol;         /// Relative residual convergence tolerance
+  size_type max_restart; /// Maximum number of times to restart the solver
+  Ortho     ortho;       /// The orthogonalization type
+  bool      verbose;     /// Print extra info to stdout
 
   // Internals
   int team_size;
   int vector_size;
 
   // Outputs
-  int num_iters;
-  float_t end_rel_res;
-  Flag conv_flag_val;
+  int     num_iters;     /// Number of iterations the sovler took
+  float_t end_rel_res;   /// Residual from solver
+  Flag    conv_flag_val; /// Denotes end result of the run
 
  public:
   // Use set methods to control ortho, and verbose
-  GMRESHandle(const size_type m_ = 50,
+  GMRESHandle(const size_type m_ = 50, const float_t tol_ = 1e-8,
               const size_type max_restart_ = 50)
       : m(m_),
+        tol(tol_),
         max_restart(max_restart_),
-        tol(1e-8),
         ortho(CGS2),
         verbose(false),
         team_size(-1),
@@ -152,11 +149,11 @@ class GMRESHandle {
     }
   }
 
-  void reset_handle(const size_type m_ = 50,
+  void reset_handle(const size_type m_ = 50, const float_t tol_ = 1e-8,
                     const size_type max_restart_ = 50) {
     set_m(m_);
+    set_tol(tol_);
     set_max_restart(max_restart_);
-    set_tol(1e-8);
     set_ortho(CGS2);
     set_verbose(false);
     num_iters     = -1;

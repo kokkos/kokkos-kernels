@@ -109,11 +109,10 @@ int main(int argc, char* argv[]) {
 
   // Make kernel handles and set options
   KernelHandle kh;
-  kh.create_gmres_handle(m, cycLim);
+  kh.create_gmres_handle(m, convTol, cycLim);
   auto gmres_handle = kh.get_gmres_handle();
   using GMRESHandle =
       typename std::remove_reference<decltype(*gmres_handle)>::type;
-  gmres_handle->set_tol(convTol);
   gmres_handle->set_ortho(ortho == "CGS2" ? GMRESHandle::Ortho::CGS2
                                           : GMRESHandle::Ortho::MGS);
 
