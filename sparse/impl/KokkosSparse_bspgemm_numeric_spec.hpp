@@ -51,14 +51,10 @@
 #include "KokkosKernels_Handle.hpp"
 // Include the actual functors
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
-//#include "KokkosSparse_spgemm_symbolic.hpp"
-#include "KokkosSparse_spgemm_cuSPARSE_impl.hpp"
-#include "KokkosSparse_spgemm_CUSP_impl.hpp"
+#include "KokkosSparse_spgemm_symbolic.hpp"
 #include "KokkosSparse_bspgemm_impl.hpp"
 #include "KokkosSparse_bspgemm_impl_seq.hpp"
-#include "KokkosSparse_spgemm_mkl_impl.hpp"
-#include "KokkosSparse_spgemm_mkl2phase_impl.hpp"
-#include "KokkosSparse_spgemm_viennaCL_impl.hpp"
+#include "KokkosSparse_SortCrs.hpp"
 #endif
 
 namespace KokkosSparse {
@@ -219,28 +215,37 @@ struct BSPGEMM_NUMERIC<
     spgemmHandleType *sh = handle->get_spgemm_handle();
     if (!sh->is_symbolic_called()) {
       throw std::runtime_error(
-          "Call spgemm symbolic before calling SpGEMM numeric");
+          "KokkosSparse::bspgemm_numeric: must first call spgemm_symbolic with "
+          "the same handle.");
+    }
+    if (!sh->are_rowptrs_computed()) {
+      // Call symbolic, and make sure rowptrs are populated. This will not
+      // duplicate any work if the user has already called symbolic. Must also
+      // cast away constness of row_mapC.
+      using c_size_view_t_nc = typename c_size_view_t_::non_const_type;
+      using c_size_type      = typename c_size_view_t_::non_const_value_type;
+      c_size_view_t_nc row_mapC_nc(const_cast<c_size_type *>(row_mapC.data()),
+                                   row_mapC.extent(0));
+      KokkosSparse::Experimental::spgemm_symbolic(
+          handle, m, n, k, row_mapA, entriesA, transposeA, row_mapB, entriesB,
+          transposeB, row_mapC_nc, true);
+    }
+    if (!sh->are_rowflops_computed()) {
+      KokkosSPGEMM<KernelHandle, a_size_view_t_, a_lno_view_t, a_scalar_view_t,
+                   b_size_view_t_, b_lno_view_t, b_scalar_view_t>
+          kspgemm(handle, m, n, k, row_mapA, entriesA, valuesA, transposeA,
+                  row_mapB, entriesB, valuesB, transposeB);
+      kspgemm.compute_row_flops();
     }
 
     switch (sh->get_algorithm_type()) {
-      case SPGEMM_CUSPARSE:
-        throw std::runtime_error(
-            "cuSPARSE implementation for block SpGEMM is not available");
-      case SPGEMM_CUSP:
-        throw std::runtime_error(
-            "CUSP implementation for block SpGEMM is not available");
-      case SPGEMM_MKL:
-      case SPGEMM_MKL2PHASE:
-        throw std::runtime_error(
-            "MKL implementation available for block SpGEMM is not available");
-      case SPGEMM_VIENNA:
-        throw std::runtime_error(
-            "Vienna implementation available for block SpGEMM is not "
-            "available");
-
-      default:
-
-      {
+      case SPGEMM_SERIAL:
+      case SPGEMM_DEBUG:
+        bspgemm_debug_numeric(handle, m, n, k, blockDim, row_mapA, entriesA,
+                              valuesA, transposeA, row_mapB, entriesB, valuesB,
+                              transposeB, row_mapC, entriesC, valuesC);
+        break;
+      default: {
         KokkosBSPGEMM<KernelHandle, a_size_view_t_, a_lno_view_t,
                       a_scalar_view_t, b_size_view_t_, b_lno_view_t,
                       b_scalar_view_t>
@@ -248,13 +253,11 @@ struct BSPGEMM_NUMERIC<
                      transposeA, row_mapB, entriesB, valuesB, transposeB);
         kbspgemm.KokkosBSPGEMM_numeric(row_mapC, entriesC, valuesC);
       } break;
-      case SPGEMM_SERIAL:
-      case SPGEMM_DEBUG:
-        bspgemm_debug_numeric(handle, m, n, k, blockDim, row_mapA, entriesA,
-                              valuesA, transposeA, row_mapB, entriesB, valuesB,
-                              transposeB, row_mapC, entriesC, valuesC);
-        break;
     }
+    // Current implementation does not produce sorted matrix
+    // TODO: remove this call when impl sorts
+    KokkosSparse::sort_bsr_matrix<typename KernelHandle::HandleExecSpace>(
+        blockDim, row_mapC, entriesC, valuesC);
   }
 };
 

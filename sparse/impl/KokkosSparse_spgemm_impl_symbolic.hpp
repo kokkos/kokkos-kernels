@@ -1699,32 +1699,15 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
     std::cout << "\tStructureC Kernel time:" << timer1.seconds() << std::endl
               << std::endl;
   }
-  // we need to find the max nnz in a row.
-  {
-    Kokkos::Timer timer1_;
-    size_type c_max_nnz = 0;
-    if (m > 0) {
-      KokkosKernels::Impl::view_reduce_max<c_row_view_t, MyExecSpace>(
-          m, rowmapC, c_max_nnz);
-      MyExecSpace().fence();
-    }
-    this->handle->get_spgemm_handle()->set_max_result_nnz(c_max_nnz);
-
-    if (KOKKOSKERNELS_VERBOSE) {
-      std::cout << "\tReduce Max Row Size Time:" << timer1_.seconds()
-                << std::endl;
-    }
-  }
-
+  typename c_row_view_t::non_const_value_type c_nnz_size = 0;
   KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<c_row_view_t,
-                                                        MyExecSpace>(m + 1,
-                                                                     rowmapC);
-  MyExecSpace().fence();
-  auto d_c_nnz_size = Kokkos::subview(rowmapC, m);
-  auto h_c_nnz_size = Kokkos::create_mirror_view(d_c_nnz_size);
-  Kokkos::deep_copy(h_c_nnz_size, d_c_nnz_size);
-  typename c_row_view_t::non_const_value_type c_nnz_size = h_c_nnz_size();
+                                                        MyExecSpace>(
+      m + 1, rowmapC, c_nnz_size);
   this->handle->get_spgemm_handle()->set_c_nnz(c_nnz_size);
+  nnz_lno_t c_max_nnz =
+      KokkosSparse::Impl::graph_max_degree<MyExecSpace, size_type,
+                                           c_row_view_t>(rowmapC);
+  this->handle->get_spgemm_handle()->set_max_result_nnz(c_max_nnz);
 }  // end: symbolic_c_no_compression
 
 template <typename HandleType, typename a_row_view_t_,
@@ -2232,32 +2215,15 @@ void KokkosSPGEMM<
 	  }
   }
 #endif
-  // if we need to find the max nnz in a row.
-  {
-    Kokkos::Timer timer1_;
-    size_type c_max_nnz = 0;
-    if (m > 0) {
-      KokkosKernels::Impl::view_reduce_max<c_row_view_t, MyExecSpace>(
-          m, rowmapC, c_max_nnz);
-      MyExecSpace().fence();
-    }
-    this->handle->get_spgemm_handle()->set_max_result_nnz(c_max_nnz);
-
-    if (KOKKOSKERNELS_VERBOSE) {
-      std::cout << "\tReduce Max Row Size Time:" << timer1_.seconds()
-                << std::endl;
-    }
-  }
-
+  typename c_row_view_t::non_const_value_type c_nnz_size = 0;
   KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<c_row_view_t,
-                                                        MyExecSpace>(m + 1,
-                                                                     rowmapC);
-  MyExecSpace().fence();
-  auto d_c_nnz_size = Kokkos::subview(rowmapC, m);
-  auto h_c_nnz_size = Kokkos::create_mirror_view(d_c_nnz_size);
-  Kokkos::deep_copy(h_c_nnz_size, d_c_nnz_size);
-  typename c_row_view_t::non_const_value_type c_nnz_size = h_c_nnz_size();
+                                                        MyExecSpace>(
+      m + 1, rowmapC, c_nnz_size);
   this->handle->get_spgemm_handle()->set_c_nnz(c_nnz_size);
+  nnz_lno_t c_max_nnz =
+      KokkosSparse::Impl::graph_max_degree<MyExecSpace, size_type,
+                                           c_row_view_t>(rowmapC);
+  this->handle->get_spgemm_handle()->set_max_result_nnz(c_max_nnz);
 }  // symbolic_c (end)
 
 template <typename HandleType, typename a_row_view_t_,

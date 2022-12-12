@@ -51,15 +51,10 @@
 #include "KokkosKernels_Handle.hpp"
 // Include the actual functors
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
-//#include "KokkosSparse_spgemm_symbolic.hpp"
-#include "KokkosSparse_spgemm_cuSPARSE_impl.hpp"
-#include "KokkosSparse_spgemm_rocSPARSE_impl.hpp"
-#include "KokkosSparse_spgemm_CUSP_impl.hpp"
+#include "KokkosSparse_spgemm_symbolic.hpp"
 #include "KokkosSparse_spgemm_impl.hpp"
 #include "KokkosSparse_spgemm_impl_seq.hpp"
-#include "KokkosSparse_spgemm_mkl_impl.hpp"
-#include "KokkosSparse_spgemm_mkl2phase_impl.hpp"
-#include "KokkosSparse_spgemm_viennaCL_impl.hpp"
+#include "KokkosSparse_SortCrs.hpp"
 #endif
 
 namespace KokkosSparse {
@@ -112,45 +107,10 @@ struct spgemm_numeric_eti_spec_avail {
                    Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {          \
     enum : bool { value = true };                                         \
-  };                                                                      \
-                                                                          \
-  template <>                                                             \
-  struct spgemm_numeric_eti_spec_avail<                                   \
-      KokkosKernels::Experimental::KokkosKernelsHandle<                   \
-          const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,       \
-          EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE>,               \
-      Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,                      \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
-      Kokkos::View<const ORDINAL_TYPE *, LAYOUT_TYPE,                     \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
-      Kokkos::View<const SCALAR_TYPE *, LAYOUT_TYPE,                      \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
-      Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,                      \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
-      Kokkos::View<const ORDINAL_TYPE *, LAYOUT_TYPE,                     \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
-      Kokkos::View<const SCALAR_TYPE *, LAYOUT_TYPE,                      \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
-      Kokkos::View<OFFSET_TYPE *, LAYOUT_TYPE,                            \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
-      Kokkos::View<ORDINAL_TYPE *, LAYOUT_TYPE,                           \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
-      Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,                            \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {          \
-    enum : bool { value = true };                                         \
   };
 
 // Include the actual specialization declarations
-#include <KokkosSparse_spgemm_tpl_spec_avail.hpp>
+#include <KokkosSparse_spgemm_numeric_tpl_spec_avail.hpp>
 #include <generated_specializations_hpp/KokkosSparse_spgemm_numeric_eti_spec_avail.hpp>
 
 namespace KokkosSparse {
@@ -174,17 +134,14 @@ template <class KernelHandle, class a_size_view_t_, class a_lno_view_t,
               b_size_view_t_, b_lno_view_t, b_scalar_view_t, c_size_view_t_,
               c_lno_view_t, c_scalar_view_t>::value>
 struct SPGEMM_NUMERIC {
-  static void spgemm_numeric(KernelHandle *handle,
-                             typename KernelHandle::const_nnz_lno_t m,
-                             typename KernelHandle::const_nnz_lno_t n,
-                             typename KernelHandle::const_nnz_lno_t k,
-                             a_size_view_t_ row_mapA, a_lno_view_t entriesA,
-                             a_scalar_view_t valuesA,
+  static void spgemm_numeric(
+      KernelHandle *handle, typename KernelHandle::nnz_lno_t m,
+      typename KernelHandle::nnz_lno_t n, typename KernelHandle::nnz_lno_t k,
+      a_size_view_t_ row_mapA, a_lno_view_t entriesA, a_scalar_view_t valuesA,
 
-                             bool transposeA, b_size_view_t_ row_mapB,
-                             b_lno_view_t entriesB, b_scalar_view_t valuesB,
-                             bool transposeB, c_size_view_t_ row_mapC,
-                             c_lno_view_t &entriesC, c_scalar_view_t &valuesC);
+      bool transposeA, b_size_view_t_ row_mapB, b_lno_view_t entriesB,
+      b_scalar_view_t valuesB, bool transposeB, c_size_view_t_ row_mapC,
+      c_lno_view_t entriesC, c_scalar_view_t valuesC);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
@@ -203,78 +160,22 @@ struct SPGEMM_NUMERIC<
       KernelHandle *handle, typename KernelHandle::nnz_lno_t m,
       typename KernelHandle::nnz_lno_t n, typename KernelHandle::nnz_lno_t k,
       a_size_view_t_ row_mapA, a_lno_view_t entriesA, a_scalar_view_t valuesA,
-
       bool transposeA, b_size_view_t_ row_mapB, b_lno_view_t entriesB,
       b_scalar_view_t valuesB, bool transposeB, c_size_view_t_ row_mapC,
-      c_lno_view_t &entriesC, c_scalar_view_t &valuesC) {
+      c_lno_view_t entriesC, c_scalar_view_t valuesC) {
     typedef typename KernelHandle::SPGEMMHandleType spgemmHandleType;
     spgemmHandleType *sh = handle->get_spgemm_handle();
     if (!sh->is_symbolic_called()) {
       throw std::runtime_error(
           "Call spgemm symbolic before calling SpGEMM numeric");
     }
-
+    if (m == 0 || n == 0 || k == 0 || !entriesA.extent(0) ||
+        !entriesB.extent(0)) {
+      sh->set_call_numeric();
+      sh->set_computed_entries();
+      return;
+    }
     switch (sh->get_algorithm_type()) {
-      case SPGEMM_CUSPARSE:
-#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
-        cuSPARSE_apply<spgemmHandleType>(
-            sh, m, n, k, row_mapA, entriesA, valuesA, transposeA, row_mapB,
-            entriesB, valuesB, transposeB, row_mapC, entriesC, valuesC);
-#else
-        throw std::runtime_error(
-            "Requiring SPGEMM_CUSPARSE but TPL_CUSPARSE was not enabled!");
-#endif
-        break;
-      case SPGEMM_ROCSPARSE:
-#if defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE)
-        rocsparse_spgemm_numeric<spgemmHandleType>(
-            sh, m, n, k, row_mapA, entriesA, valuesA, transposeA, row_mapB,
-            entriesB, valuesB, transposeB, row_mapC, entriesC, valuesC);
-#else
-        throw std::runtime_error(
-            "Requiring SPGEMM_ROCSPARSE but TPL_ROCSPARSE was not enabled!");
-#endif
-        break;
-      case SPGEMM_CUSP:
-        CUSP_apply<spgemmHandleType, a_size_view_t_, a_lno_view_t,
-                   a_scalar_view_t, b_size_view_t_, b_lno_view_t,
-                   b_scalar_view_t, c_size_view_t_, c_lno_view_t,
-                   c_scalar_view_t>(sh, m, n, k, row_mapA, entriesA, valuesA,
-                                    transposeA, row_mapB, entriesB, valuesB,
-                                    transposeB, row_mapC, entriesC, valuesC);
-        break;
-      case SPGEMM_MKL:
-#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
-        mkl_numeric(sh, m, n, k, row_mapA, entriesA, valuesA, transposeA,
-                    row_mapB, entriesB, valuesB, transposeB, row_mapC, entriesC,
-                    valuesC, handle->get_verbose());
-        break;
-#else
-        throw std::runtime_error("MKL was not enabled in this build!");
-#endif
-      case SPGEMM_MKL2PHASE:
-        mkl2phase_apply(sh, m, n, k, row_mapA, entriesA, valuesA, transposeA,
-                        row_mapB, entriesB, valuesB, transposeB, row_mapC,
-                        entriesC, valuesC, handle->get_verbose());
-        break;
-
-      case SPGEMM_VIENNA:
-        viennaCL_apply<spgemmHandleType>(
-            sh, m, n, k, row_mapA, entriesA, valuesA, transposeA, row_mapB,
-            entriesB, valuesB, transposeB, row_mapC, entriesC, valuesC,
-            handle->get_verbose());
-        break;
-
-      default:
-
-      {
-        KokkosSPGEMM<KernelHandle, a_size_view_t_, a_lno_view_t,
-                     a_scalar_view_t, b_size_view_t_, b_lno_view_t,
-                     b_scalar_view_t>
-            kspgemm(handle, m, n, k, row_mapA, entriesA, valuesA, transposeA,
-                    row_mapB, entriesB, valuesB, transposeB);
-        kspgemm.KokkosSPGEMM_numeric(row_mapC, entriesC, valuesC);
-      } break;
       case SPGEMM_SERIAL:
       case SPGEMM_DEBUG:
         spgemm_debug_numeric(handle, m, n, k, row_mapA, entriesA, valuesA,
@@ -282,7 +183,21 @@ struct SPGEMM_NUMERIC<
                              transposeA, row_mapB, entriesB, valuesB,
                              transposeB, row_mapC, entriesC, valuesC);
         break;
+      default: {
+        KokkosSPGEMM<KernelHandle, a_size_view_t_, a_lno_view_t,
+                     a_scalar_view_t, b_size_view_t_, b_lno_view_t,
+                     b_scalar_view_t>
+            kspgemm(handle, m, n, k, row_mapA, entriesA, valuesA, transposeA,
+                    row_mapB, entriesB, valuesB, transposeB);
+        kspgemm.KokkosSPGEMM_numeric(row_mapC, entriesC, valuesC);
+      } break;
     }
+    // Current implementation does not produce sorted matrix
+    // TODO: remove this call when impl sorts
+    KokkosSparse::sort_crs_matrix<typename KernelHandle::HandleExecSpace>(
+        row_mapC, entriesC, valuesC);
+    sh->set_call_numeric();
+    sh->set_computed_entries();
   }
 };
 
@@ -317,39 +232,6 @@ struct SPGEMM_NUMERIC<
                    Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
       Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,                      \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
-      Kokkos::View<ORDINAL_TYPE *, LAYOUT_TYPE,                           \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
-      Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,                            \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
-      false, true>;                                                       \
-                                                                          \
-  extern template struct SPGEMM_NUMERIC<                                  \
-      typename KokkosKernels::Experimental::KokkosKernelsHandle<          \
-          const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,       \
-          EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE>,               \
-      Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,                      \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
-      Kokkos::View<const ORDINAL_TYPE *, LAYOUT_TYPE,                     \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
-      Kokkos::View<const SCALAR_TYPE *, LAYOUT_TYPE,                      \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
-      Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,                      \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
-      Kokkos::View<const ORDINAL_TYPE *, LAYOUT_TYPE,                     \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
-      Kokkos::View<const SCALAR_TYPE *, LAYOUT_TYPE,                      \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
-      Kokkos::View<OFFSET_TYPE *, LAYOUT_TYPE,                            \
                    Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
       Kokkos::View<ORDINAL_TYPE *, LAYOUT_TYPE,                           \
@@ -394,42 +276,9 @@ struct SPGEMM_NUMERIC<
       Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,                            \
                    Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
-      false, true>;                                                       \
-                                                                          \
-  template struct SPGEMM_NUMERIC<                                         \
-      KokkosKernels::Experimental::KokkosKernelsHandle<                   \
-          const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,       \
-          EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE>,               \
-      Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,                      \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
-      Kokkos::View<const ORDINAL_TYPE *, LAYOUT_TYPE,                     \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
-      Kokkos::View<const SCALAR_TYPE *, LAYOUT_TYPE,                      \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
-      Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,                      \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
-      Kokkos::View<const ORDINAL_TYPE *, LAYOUT_TYPE,                     \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
-      Kokkos::View<const SCALAR_TYPE *, LAYOUT_TYPE,                      \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
-      Kokkos::View<OFFSET_TYPE *, LAYOUT_TYPE,                            \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
-      Kokkos::View<ORDINAL_TYPE *, LAYOUT_TYPE,                           \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
-      Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,                            \
-                   Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
       false, true>;
 
-#include <KokkosSparse_spgemm_tpl_spec_decl.hpp>
+#include <KokkosSparse_spgemm_numeric_tpl_spec_decl.hpp>
 #include <generated_specializations_hpp/KokkosSparse_spgemm_numeric_eti_spec_decl.hpp>
 
 #endif  // KOKKOS_BLAS1_MV_IMPL_DOT_HPP_

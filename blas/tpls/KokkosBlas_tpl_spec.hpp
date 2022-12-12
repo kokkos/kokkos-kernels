@@ -137,7 +137,7 @@ inline cublasOperation_t trans_mode_kk_to_cublas(const char kkMode[]) {
 #endif  // KOKKOSKERNELS_ENABLE_TPL_CUBLAS
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
-#include <rocblas.h>
+#include <rocblas/rocblas.h>
 
 namespace KokkosBlas {
 namespace Impl {

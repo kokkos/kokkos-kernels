@@ -51,10 +51,12 @@
 #include "KokkosKernels_Handle.hpp"
 // Include the actual functors
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
+#include "KokkosSparse_spgemm_symbolic.hpp"
 #include "KokkosSparse_spgemm_impl.hpp"
 #include "KokkosSparse_spgemm_jacobi_denseacc_impl.hpp"
 #include "KokkosSparse_spgemm_jacobi_sparseacc_impl.hpp"
 #include "KokkosSparse_spgemm_jacobi_seq_impl.hpp"
+#include "KokkosSparse_SortCrs.hpp"
 #endif
 
 namespace KokkosSparse {
@@ -113,7 +115,7 @@ struct spgemm_jacobi_eti_spec_avail {
   };
 
 // Include the actual specialization declarations
-#include <KokkosSparse_spgemm_tpl_spec_avail.hpp>
+#include <KokkosSparse_spgemm_jacobi_tpl_spec_avail.hpp>
 #include <generated_specializations_hpp/KokkosSparse_spgemm_jacobi_eti_spec_avail.hpp>
 
 namespace KokkosSparse {
@@ -187,7 +189,27 @@ struct SPGEMM_JACOBI<KernelHandle, a_size_view_t_, a_lno_view_t,
     spgemmHandleType *sh = handle->get_spgemm_handle();
     if (!sh->is_symbolic_called()) {
       throw std::runtime_error(
-          "Call spgemm symbolic before calling SpGEMM jacobi");
+          "KokkosSparse::spgemm_jacobi: must first call spgemm_symbolic with "
+          "the same handle.");
+    }
+    if (!sh->are_rowptrs_computed()) {
+      // Call symbolic, and make sure rowptrs are populated. This will not
+      // duplicate any work if the user has already called symbolic. Must also
+      // cast away constness of row_mapC.
+      using c_size_view_t_nc = typename c_size_view_t_::non_const_type;
+      using c_size_type      = typename c_size_view_t_::non_const_value_type;
+      c_size_view_t_nc row_mapC_nc(const_cast<c_size_type *>(row_mapC.data()),
+                                   row_mapC.extent(0));
+      KokkosSparse::Experimental::spgemm_symbolic(
+          handle, m, n, k, row_mapA, entriesA, transposeA, row_mapB, entriesB,
+          transposeB, row_mapC_nc, true);
+    }
+    if (!sh->are_rowflops_computed()) {
+      KokkosSPGEMM<KernelHandle, a_size_view_t_, a_lno_view_t, a_scalar_view_t,
+                   b_size_view_t_, b_lno_view_t, b_scalar_view_t>
+          kspgemm(handle, m, n, k, row_mapA, entriesA, valuesA, transposeA,
+                  row_mapB, entriesB, valuesB, transposeB);
+      kspgemm.compute_row_flops();
     }
 
     if (sh->get_algorithm_type() == SPGEMM_SERIAL) {
@@ -206,6 +228,10 @@ struct SPGEMM_JACOBI<KernelHandle, a_size_view_t_, a_lno_view_t,
       kspgemm.KokkosSPGEMM_jacobi_sparseacc(row_mapC, entriesC, valuesC, omega,
                                             dinv, myExecSpace);
     }
+    // Current implementation does not produce sorted matrix
+    // TODO: remove this call when impl sorts
+    KokkosSparse::sort_crs_matrix<typename KernelHandle::HandleExecSpace>(
+        row_mapC, entriesC, valuesC);
   }
 };
 
@@ -292,7 +318,7 @@ struct SPGEMM_JACOBI<KernelHandle, a_size_view_t_, a_lno_view_t,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
       false, true>;
 
-#include <KokkosSparse_spgemm_tpl_spec_decl.hpp>
+#include <KokkosSparse_spgemm_jacobi_tpl_spec_decl.hpp>
 #include <generated_specializations_hpp/KokkosSparse_spgemm_jacobi_eti_spec_decl.hpp>
 
 #endif

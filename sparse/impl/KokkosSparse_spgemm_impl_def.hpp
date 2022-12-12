@@ -92,40 +92,7 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_,
       std::cout << "SYMBOLIC PHASE" << std::endl;
     }
     // first calculate the number of original flops required.
-    {
-      nnz_lno_t maxNumRoughZeros = 0;
-      size_t overall_flops       = 0;
-      Kokkos::Timer timer1;
-      auto new_row_mapB_begin =
-          Kokkos::subview(row_mapB, std::make_pair(nnz_lno_t(0), b_row_cnt));
-      auto new_row_mapB_end = Kokkos::subview(
-          row_mapB, std::make_pair(nnz_lno_t(1), b_row_cnt + 1));
-      row_lno_persistent_work_view_t flops_per_row(
-          Kokkos::view_alloc(Kokkos::WithoutInitializing, "original row flops"),
-          a_row_cnt);
-
-      // get maximum row flops.
-      maxNumRoughZeros = this->getMaxRoughRowNNZ(
-          a_row_cnt, row_mapA, entriesA, new_row_mapB_begin, new_row_mapB_end,
-          flops_per_row.data());
-
-      // calculate overal flops.
-      KokkosKernels::Impl::kk_reduce_view2<row_lno_persistent_work_view_t,
-                                           MyExecSpace>(
-          a_row_cnt, flops_per_row, overall_flops);
-      if (KOKKOSKERNELS_VERBOSE) {
-        std::cout << "\tOriginal Max Row Flops:" << maxNumRoughZeros
-                  << std::endl;
-        std::cout << "\tOriginal overall_flops Flops:" << overall_flops
-                  << std::endl;
-        std::cout << "\ttOriginal Max Row Flop Calc Time:" << timer1.seconds()
-                  << std::endl;
-      }
-      this->handle->get_spgemm_handle()->original_max_row_flops =
-          maxNumRoughZeros;
-      this->handle->get_spgemm_handle()->original_overall_flops = overall_flops;
-      this->handle->get_spgemm_handle()->row_flops              = flops_per_row;
-    }
+    this->compute_row_flops();
 
     // number of rows and nnzs
     nnz_lno_t n   = this->row_mapB.extent(0) - 1;

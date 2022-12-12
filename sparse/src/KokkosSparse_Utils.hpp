@@ -2075,6 +2075,105 @@ struct MatrixConverter<SparseMatrixFormat::BSR> {
   }
 };
 
+template <typename Rowmap, typename Entries>
+struct CountEntriesFallingEdges {
+  using size_type = typename Rowmap::non_const_value_type;
+
+  CountEntriesFallingEdges(const Entries &entries_) : entries(entries_) {}
+
+  KOKKOS_INLINE_FUNCTION void operator()(size_type i,
+                                         size_type &numFallingEdges) const {
+    if (entries(i) > entries(i + 1)) numFallingEdges++;
+  }
+
+  Entries entries;
+};
+
+template <typename Rowmap, typename Entries>
+struct CountRowBoundaryFallingEdges {
+  using size_type    = typename Rowmap::non_const_value_type;
+  using ordinal_type = typename Entries::non_const_value_type;
+
+  CountRowBoundaryFallingEdges(const Rowmap &rowmap_, const Entries &entries_)
+      : rowmap(rowmap_), entries(entries_) {}
+
+  KOKKOS_INLINE_FUNCTION void operator()(
+      ordinal_type i, size_type &numBoundaryFallingEdges) const {
+    // Comparing the entries at end of row i, and beginning of row i+1
+    size_type rowBegin = rowmap(i);
+    size_type rowEnd   = rowmap(i + 1);
+    // But skip this row if empty (meaning there is no last entry), because
+    // there would be double-counting.
+    if (rowBegin == rowEnd) return;
+    // rowEnd is also the beginning of the next (nonempty) row.
+    // But if it points the end of all entries, skip this row because it's the
+    // last nonempty row.
+    if (rowEnd == size_type(entries.extent(0))) return;
+    if (entries(rowEnd - 1) > entries(rowEnd)) numBoundaryFallingEdges++;
+  }
+
+  Rowmap rowmap;
+  Entries entries;
+};
+
+// Efficient test for whether a StaticCrsGraph has sorted rows
+//(parallel and not affected by imbalanced rows).
+// Unmerged/repeated entries in a row are still considered sorted.
+template <typename Rowmap, typename Entries>
+bool isCrsGraphSorted(const Rowmap &rowmap, const Entries &entries) {
+  using size_type    = typename Rowmap::non_const_value_type;
+  using ordinal_type = typename Entries::non_const_value_type;
+  using exec_space   = typename Entries::execution_space;
+  size_type nnz      = entries.extent(0);
+  // Catch case of zero rows, and zero-length rowmap
+  if (rowmap.extent(0) == size_t(0)) return true;
+  // Eliminate cases with zero rows/cols/entries.
+  // This also eliminates cases where row_map is extent 0.
+  if (nnz == size_type(0)) return true;
+  ordinal_type numRows = rowmap.extent(0) - 1;
+  // A "falling edge" is where entry i is greater than entry i+1.
+  // A graph is unsorted if and only if there is a falling edge where i, i+1 are
+  // in the same row. So count the total falling edges, and then subtract the
+  // falling edges which cross row boundaries.
+  size_type totalFallingEdges = 0;
+  Kokkos::parallel_reduce(Kokkos::RangePolicy<exec_space>(0, nnz - 1),
+                          CountEntriesFallingEdges<Rowmap, Entries>(entries),
+                          totalFallingEdges);
+  size_type rowBoundaryFallingEdges = 0;
+  Kokkos::parallel_reduce(
+      Kokkos::RangePolicy<exec_space>(0, numRows - 1),
+      CountRowBoundaryFallingEdges<Rowmap, Entries>(rowmap, entries),
+      rowBoundaryFallingEdges);
+  return totalFallingEdges == rowBoundaryFallingEdges;
+}
+
+template <typename Rowmap, typename Entries, typename Values>
+void validateCrsMatrix(int m, int n, const Rowmap &rowmapIn,
+                       const Entries &entriesIn, const Values &valuesIn) {
+  auto rowmap =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), rowmapIn);
+  auto entries =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), entriesIn);
+  auto values =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), valuesIn);
+  size_t nnz = entries.extent(0);
+  if (nnz != values.extent(0))
+    throw std::runtime_error(
+        "Matrix entries/values views have different lengths");
+  if ((m == 0 && rowmap.extent(0) > size_t(1)) ||
+      (rowmap.extent(0) != size_t(m + 1)))
+    throw std::runtime_error("Matrix rowmap has wrong length");
+  if (m && nnz != rowmap(m))
+    throw std::runtime_error("Matrix rowmap final entry doesn't match nnz");
+  for (int i = 0; i < m; i++) {
+    if (rowmap(i) > rowmap(i + 1))
+      throw std::runtime_error("Matrix rowmap not ascending");
+  }
+  for (size_t i = 0; i < size_t(nnz); i++) {
+    if (entries(i) >= n) throw std::runtime_error("Matrix entry out of bounds");
+  }
+}
+
 }  // namespace Impl
 }  // namespace KokkosSparse
 

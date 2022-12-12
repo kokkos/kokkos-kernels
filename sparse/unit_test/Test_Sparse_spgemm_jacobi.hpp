@@ -154,8 +154,6 @@ bool is_same_mat(crsMat_t output_mat1, crsMat_t output_mat2) {
   size_t nentries2 = output_mat2.graph.entries.extent(0);
   size_t nvals2    = output_mat2.values.extent(0);
 
-  KokkosSparse::sort_crs_matrix(output_mat1);
-
   if (nrows1 != nrows2) {
     std::cout << "nrows1:" << nrows1 << " nrows2:" << nrows2 << std::endl;
     return false;
@@ -169,8 +167,6 @@ bool is_same_mat(crsMat_t output_mat1, crsMat_t output_mat2) {
     std::cout << "nvals1:" << nvals1 << " nvals2:" << nvals2 << std::endl;
     return false;
   }
-
-  KokkosSparse::sort_crs_matrix(output_mat2);
 
   bool is_identical = true;
   is_identical      = KokkosKernels::Impl::kk_is_identical_view<
@@ -237,6 +233,8 @@ void test_spgemm_jacobi(lno_t numRows, size_type nnz, lno_t bandwidth,
       KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<
           crsMat_t>(numRows, numCols, nnz, row_size_variance, bandwidth);
 
+  KokkosSparse::sort_crs_matrix(input_mat);
+
   crsMat_t output_mat2;
   scalar_t omega = 3.0;
 
@@ -263,6 +261,9 @@ void test_spgemm_jacobi(lno_t numRows, size_type nnz, lno_t bandwidth,
 
   run_spgemm_jacobi<crsMat_t, device>(input_mat, input_mat, omega, dinv,
                                       spgemm_algorithm, output_mat);
+  // Sort the reference output_mat2, but not output_mat. It should already be
+  // soted.
+  KokkosSparse::sort_crs_matrix(output_mat2);
   bool is_identical = is_same_mat<crsMat_t, device>(output_mat, output_mat2);
   EXPECT_TRUE(is_identical);
 }

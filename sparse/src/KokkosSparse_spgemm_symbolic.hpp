@@ -45,8 +45,8 @@
 #define _KOKKOS_SPGEMM_SYMBOLIC_HPP
 
 #include "KokkosKernels_helpers.hpp"
-
 #include "KokkosSparse_spgemm_symbolic_spec.hpp"
+#include "KokkosSparse_Utils.hpp"
 
 namespace KokkosSparse {
 
@@ -62,7 +62,7 @@ void spgemm_symbolic(KernelHandle *handle,
                      alno_row_view_t_ row_mapA, alno_nnz_view_t_ entriesA,
                      bool transposeA, blno_row_view_t_ row_mapB,
                      blno_nnz_view_t_ entriesB, bool transposeB,
-                     clno_row_view_t_ row_mapC) {
+                     clno_row_view_t_ row_mapC, bool computeRowptrs = false) {
   static_assert(
       std::is_same<typename clno_row_view_t_::value_type,
                    typename clno_row_view_t_::non_const_value_type>::value,
@@ -163,18 +163,48 @@ void spgemm_symbolic(KernelHandle *handle,
   Internal_alno_nnz_view_t_ const_a_l(entriesA.data(), entriesA.extent(0));
   Internal_blno_row_view_t_ const_b_r(row_mapB.data(), row_mapB.extent(0));
   Internal_blno_nnz_view_t_ const_b_l(entriesB.data(), entriesB.extent(0));
-  Internal_clno_row_view_t_ const_c_r(row_mapC.data(), row_mapC.extent(0));
+  Internal_clno_row_view_t_ c_r(row_mapC.data(), row_mapC.extent(0));
 
-  using namespace KokkosSparse::Impl;
-  SPGEMM_SYMBOLIC<
-      const_handle_type,  // KernelHandle,
-      Internal_alno_row_view_t_, Internal_alno_nnz_view_t_,
-      Internal_blno_row_view_t_, Internal_blno_nnz_view_t_,
-      Internal_clno_row_view_t_>::spgemm_symbolic(&tmp_handle,  // handle,
-                                                  m, n, k, const_a_r, const_a_l,
-                                                  transposeA, const_b_r,
-                                                  const_b_l, transposeB,
-                                                  const_c_r);
+  // Verify that graphs A and B are sorted.
+  // This test is designed to be as efficient as possible, but still skip
+  // it in a release build.
+#ifndef NDEBUG
+  if (!KokkosSparse::Impl::isCrsGraphSorted(const_a_r, const_a_l))
+    throw std::runtime_error(
+        "KokkosSparse::spgemm_symbolic: entries of A are not sorted within "
+        "rows. May use KokkosSparse::sort_crs_matrix to sort it.");
+  if (!KokkosSparse::Impl::isCrsGraphSorted(const_b_r, const_b_l))
+    throw std::runtime_error(
+        "KokkosSparse::spgemm_symbolic: entries of B are not sorted within "
+        "rows. May use KokkosSparse::sort_crs_matrix to sort it.");
+#endif
+
+  auto algo = tmp_handle.get_spgemm_handle()->get_algorithm_type();
+
+  if (algo == SPGEMM_DEBUG || algo == SPGEMM_SERIAL) {
+    // Never call a TPL if serial/debug is requested (this is needed for
+    // testing)
+    KokkosSparse::Impl::SPGEMM_SYMBOLIC<
+        const_handle_type,  // KernelHandle,
+        Internal_alno_row_view_t_, Internal_alno_nnz_view_t_,
+        Internal_blno_row_view_t_, Internal_blno_nnz_view_t_,
+        Internal_clno_row_view_t_,
+        false>::spgemm_symbolic(&tmp_handle,  // handle,
+                                m, n, k, const_a_r, const_a_l, transposeA,
+                                const_b_r, const_b_l, transposeB, c_r,
+                                computeRowptrs);
+  } else {
+    KokkosSparse::Impl::SPGEMM_SYMBOLIC<
+        const_handle_type,  // KernelHandle,
+        Internal_alno_row_view_t_, Internal_alno_nnz_view_t_,
+        Internal_blno_row_view_t_, Internal_blno_nnz_view_t_,
+        Internal_clno_row_view_t_>::spgemm_symbolic(&tmp_handle,  // handle,
+                                                    m, n, k, const_a_r,
+                                                    const_a_l, transposeA,
+                                                    const_b_r, const_b_l,
+                                                    transposeB, c_r,
+                                                    computeRowptrs);
+  }
 }
 
 }  // namespace Experimental

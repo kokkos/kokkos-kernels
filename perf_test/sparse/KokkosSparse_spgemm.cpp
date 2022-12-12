@@ -60,11 +60,11 @@ void print_options() {
                "[hipDeviceIndex]' --> if none are specified, Serial is used "
                "(if enabled)"
             << std::endl;
-  std::cerr << "\t[Optional] '--algorithm "
-               "[DEFAULT=KKDEFAULT=KKSPGEMM|KKMEM|KKDENSE|MKL|CUSPARSE|CUSP|"
-               "VIENNA|MKL2]' --> to choose algorithm. KKMEM is outdated, use "
-               "KKSPGEMM instead."
-            << std::endl;
+  std::cerr
+      << "\t[Optional] '--algorithm "
+         "[DEFAULT=KKDEFAULT=KKSPGEMM|KKMEM|KKDENSE]' --> to choose algorithm. "
+         "KKMEM is outdated, use KKSPGEMM instead."
+      << std::endl;
   std::cerr << "\t[Optional] --bmtx [righ_hand_side.mtx]' for C = AxB"
             << std::endl;
   std::cerr << "\t[Optional] OUTPUT MATRICES: '--cmtx [output_matrix.mtx]' --> "
@@ -241,18 +241,8 @@ int parse_inputs(KokkosKernels::Experiment::Parameters& params, int argc,
         params.algorithm = KokkosSparse::SPGEMM_KK_DENSE;
       } else if (0 == Test::string_compare_no_case(algoStr, "KKLP")) {
         params.algorithm = KokkosSparse::SPGEMM_KK_LP;
-      } else if (0 == Test::string_compare_no_case(algoStr, "MKL")) {
-        params.algorithm = KokkosSparse::SPGEMM_MKL;
-      } else if (0 == Test::string_compare_no_case(algoStr, "CUSPARSE")) {
-        params.algorithm = KokkosSparse::SPGEMM_CUSPARSE;
-      } else if (0 == Test::string_compare_no_case(algoStr, "CUSP")) {
-        params.algorithm = KokkosSparse::SPGEMM_CUSP;
       } else if (0 == Test::string_compare_no_case(algoStr, "KKDEBUG")) {
-        params.algorithm = KokkosSparse::SPGEMM_KK_LP;
-      } else if (0 == Test::string_compare_no_case(algoStr, "MKL2")) {
-        params.algorithm = KokkosSparse::SPGEMM_MKL2PHASE;
-      } else if (0 == Test::string_compare_no_case(algoStr, "VIENNA")) {
-        params.algorithm = KokkosSparse::SPGEMM_VIENNA;
+        params.algorithm = KokkosSparse::SPGEMM_DEBUG;
       }
 
       else {

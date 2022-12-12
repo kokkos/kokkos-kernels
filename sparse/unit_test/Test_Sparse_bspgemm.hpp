@@ -121,7 +121,7 @@ bool is_same_block_matrix(bsrMat_t output_mat_actual,
     return false;
   }
 
-  KokkosSparse::sort_bsr_matrix(output_mat_actual);
+  // Do not sort the actual product matrix - test that it's already sorted
   KokkosSparse::sort_bsr_matrix(output_mat_reference);
 
   bool is_identical = true;
@@ -153,7 +153,7 @@ bool is_same_block_matrix(bsrMat_t output_mat_actual,
 
   typedef typename Kokkos::Details::ArithTraits<
       typename scalar_view_t::non_const_value_type>::mag_type eps_type;
-  eps_type eps = std::is_same<eps_type, float>::value ? 3.7e-3 : 1e-7;
+  eps_type eps = std::is_same<eps_type, float>::value ? 3e-2 : 5e-7;
 
   is_identical = KokkosKernels::Impl::kk_is_relatively_identical_view<
       scalar_view_t, scalar_view_t, eps_type, typename device::execution_space>(
@@ -202,17 +202,16 @@ void test_bspgemm(lno_t blkDim, lno_t m, lno_t k, lno_t n, size_type nnz,
   bsrMat_t B = KokkosSparse::Impl::kk_generate_sparse_matrix<bsrMat_t>(
       blkDim, k, n, nnz, row_size_variance, bandwidth);
 
-  const bool is_empy_case = m < 1 || n < 1 || k < 1 || nnz < 1;
+  KokkosSparse::sort_bsr_matrix(A);
+  KokkosSparse::sort_bsr_matrix(B);
 
   bsrMat_t output_mat2;
   run_block_spgemm(A, B, output_mat2, SPGEMM_DEBUG, use_dynamic_scheduling,
                    shared_memory_size);
 
   std::vector<SPGEMMAlgorithm> algorithms = {
-      SPGEMM_KK,
-      SPGEMM_KK_MEMORY /* alias SPGEMM_KK_MEMSPEED */,
-      SPGEMM_KK_SPEED /* alias SPGEMM_KK_DENSE */,
-      SPGEMM_MKL /* verify failure in case of missing build */,
+      SPGEMM_KK, SPGEMM_KK_MEMORY /* alias SPGEMM_KK_MEMSPEED */,
+      SPGEMM_KK_SPEED /* alias SPGEMM_KK_DENSE */
   };
 
   if (!KokkosKernels::Impl::kk_is_gpu_exec_space<
@@ -223,41 +222,10 @@ void test_bspgemm(lno_t blkDim, lno_t m, lno_t k, lno_t n, size_type nnz,
   }
 
   for (auto spgemm_algorithm : algorithms) {
-    const uint64_t max_integer = Kokkos::ArithTraits<int>::max();
-    std::string algo           = "UNKNOWN";
-    bool is_expected_to_fail   = false;
+    std::string algo         = "UNKNOWN";
+    bool is_expected_to_fail = false;
 
     switch (spgemm_algorithm) {
-      case SPGEMM_CUSPARSE:
-        // TODO: add these test failure cases for cusparse too.
-        algo = "SPGEMM_CUSPARSE";
-#ifndef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-        is_expected_to_fail = true;
-#endif
-        break;
-
-      case SPGEMM_MKL:
-        algo                = "SPGEMM_MKL";
-        is_expected_to_fail = !is_empy_case;  // TODO: add block MKL impl
-#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
-        if (!KokkosSparse::Impl::mkl_is_supported_value_type<scalar_t>::value) {
-          is_expected_to_fail = true;
-        }
-#else
-        is_expected_to_fail = true;  // fail: MKL not enabled in build
-#endif
-        // MKL requires local ordinals to be int.
-        // Note: empty-array special case will NOT fail on this.
-        if (!std::is_same<int, lno_t>::value && !is_empy_case) {
-          is_expected_to_fail = true;
-        }
-        // if size_type is larger than int, mkl casts it to int.
-        // it will fail if casting cause overflow.
-        if (A.values.extent(0) > max_integer) {
-          is_expected_to_fail = true;
-        }
-        break;
-
       case SPGEMM_KK: algo = "SPGEMM_KK"; break;
       case SPGEMM_KK_LP: algo = "SPGEMM_KK_LP"; break;
       case SPGEMM_KK_MEMSPEED: algo = "SPGEMM_KK_MEMSPEED"; break;

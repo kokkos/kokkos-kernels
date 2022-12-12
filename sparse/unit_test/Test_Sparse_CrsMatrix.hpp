@@ -47,6 +47,7 @@
 #include <Kokkos_Core.hpp>
 #include <stdexcept>
 #include "KokkosSparse_CrsMatrix.hpp"
+#include "Kokkos_ArithTraits.hpp"
 
 // #ifndef kokkos_complex_double
 // #define kokkos_complex_double Kokkos::complex<double>

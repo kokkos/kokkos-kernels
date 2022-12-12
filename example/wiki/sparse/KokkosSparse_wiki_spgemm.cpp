@@ -16,8 +16,6 @@ int main() {
   using device_type = typename Kokkos::Device<
       Kokkos::DefaultExecutionSpace,
       typename Kokkos::DefaultExecutionSpace::memory_space>;
-  using execution_space = typename device_type::execution_space;
-  using memory_space    = typename device_type::memory_space;
   using matrix_type =
       typename KokkosSparse::CrsMatrix<Scalar, Ordinal, device_type, void,
                                        Offset>;
@@ -32,7 +30,7 @@ int main() {
     // In each row the first entry is the number of grid point in
     // that direction, the second and third entries are used to apply
     // BCs in that direction.
-    Kokkos::View<Ordinal* [3], Kokkos::HostSpace> mat_structure(
+    Kokkos::View<Ordinal * [3], Kokkos::HostSpace> mat_structure(
         "Matrix Structure", 2);
     mat_structure(0, 0) = 10;  // Request 10 grid point in 'x' direction
     mat_structure(0, 1) = 1;   // Add BC to the left
@@ -45,27 +43,11 @@ int main() {
         Test::generate_structured_matrix2D<matrix_type>("FD", mat_structure);
     matrix_type B =
         Test::generate_structured_matrix2D<matrix_type>("FE", mat_structure);
-    matrix_type C;
 
-    // Create KokkosKernelHandle
-    using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<
-        Offset, Ordinal, Scalar, execution_space, memory_space, memory_space>;
-    KernelHandle kh;
-    kh.set_team_work_size(16);
-    kh.set_dynamic_scheduling(true);
+    matrix_type C = KokkosSparse::spgemm<matrix_type>(A, false, B, false);
 
-    // Select an spgemm algorithm, limited by configuration at compile-time and
-    // set via the handle Some options: {SPGEMM_KK_MEMORY, SPGEMM_KK_SPEED,
-    // SPGEMM_KK_MEMSPEED, /*SPGEMM_CUSPARSE, */ SPGEMM_MKL}
-    std::string myalg("SPGEMM_KK_MEMORY");
-    KokkosSparse::SPGEMMAlgorithm spgemm_algorithm =
-        KokkosSparse::StringToSPGEMMAlgorithm(myalg);
-    kh.create_spgemm_handle(spgemm_algorithm);
-
-    KokkosSparse::spgemm_symbolic(kh, A, false, B, false, C);
-    KokkosSparse::spgemm_numeric(kh, A, false, B, false, C);
-
-    std::cout << "spgemm was performed correctly!" << std::endl;
+    std::cout << "Ran spgemm: product C is " << C.numRows() << 'x'
+              << C.numCols() << " and has " << C.nnz() << " nonzeros.\n";
   }
 
   Kokkos::finalize();

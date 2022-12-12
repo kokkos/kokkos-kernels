@@ -285,25 +285,26 @@ class coarse_builder {
       const matrix_t interp_mtx) {
     vtx_view_t f_vtx_w = level.vtx_wgts;
     matrix_t g         = level.mtx;
+    if (!KokkosSparse::Impl::isCrsGraphSorted(g.graph.row_map, g.graph.entries))
+      KokkosSparse::sort_crs_matrix(g);
 
     ordinal_t n  = g.numRows();
     ordinal_t nc = interp_mtx.numCols();
 
     matrix_t interp_transpose =
         KokkosSparse::Impl::transpose_matrix(interp_mtx);
+    KokkosSparse::sort_crs_matrix(interp_transpose);
 
     spgemm_kernel_handle kh;
     kh.set_team_work_size(64);
     kh.set_dynamic_scheduling(true);
-    KokkosSparse::SPGEMMAlgorithm spgemm_algorithm =
-        KokkosSparse::SPGEMM_KK_MEMORY;
-    kh.create_spgemm_handle(spgemm_algorithm);
 
     vtx_view_t adj_coarse;
     wgt_view_t wgt_coarse;
     edge_view_t row_map_coarse;
 
     if (handle.b == Spgemm_transpose_first) {
+      kh.create_spgemm_handle();
       edge_view_t row_map_p1("rows_partial", nc + 1);
       KokkosSparse::Experimental::spgemm_symbolic(
           &kh, nc, n, n, interp_transpose.graph.row_map,
@@ -321,8 +322,10 @@ class coarse_builder {
           interp_transpose.graph.entries, interp_transpose.values, false,
           g.graph.row_map, g.graph.entries, g.values, false, row_map_p1,
           entries_p1, values_p1);
+      kh.destroy_spgemm_handle();
 
       row_map_coarse = edge_view_t("rows_coarse", nc + 1);
+      kh.create_spgemm_handle();
       KokkosSparse::Experimental::spgemm_symbolic(
           &kh, nc, n, nc, row_map_p1, entries_p1, false,
           interp_mtx.graph.row_map, interp_mtx.graph.entries, false,
@@ -337,8 +340,10 @@ class coarse_builder {
           &kh, nc, n, nc, row_map_p1, entries_p1, values_p1, false,
           interp_mtx.graph.row_map, interp_mtx.graph.entries, interp_mtx.values,
           false, row_map_coarse, adj_coarse, wgt_coarse);
+      kh.destroy_spgemm_handle();
     } else {
       edge_view_t row_map_p1("rows_partial", n + 1);
+      kh.create_spgemm_handle();
       KokkosSparse::Experimental::spgemm_symbolic(
           &kh, n, n, nc, g.graph.row_map, g.graph.entries, false,
           interp_mtx.graph.row_map, interp_mtx.graph.entries, false,
@@ -354,8 +359,10 @@ class coarse_builder {
           &kh, n, n, nc, g.graph.row_map, g.graph.entries, g.values, false,
           interp_mtx.graph.row_map, interp_mtx.graph.entries, interp_mtx.values,
           false, row_map_p1, entries_p1, values_p1);
+      kh.destroy_spgemm_handle();
 
       row_map_coarse = edge_view_t("rows_coarse", nc + 1);
+      kh.create_spgemm_handle();
       KokkosSparse::Experimental::spgemm_symbolic(
           &kh, nc, n, nc, interp_transpose.graph.row_map,
           interp_transpose.graph.entries, false, row_map_p1, entries_p1, false,
@@ -371,6 +378,7 @@ class coarse_builder {
           interp_transpose.graph.entries, interp_transpose.values, false,
           row_map_p1, entries_p1, values_p1, false, row_map_coarse, adj_coarse,
           wgt_coarse);
+      kh.destroy_spgemm_handle();
     }
 
     // now we must remove self-loop edges

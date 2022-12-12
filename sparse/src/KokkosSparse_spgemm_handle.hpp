@@ -46,6 +46,7 @@
 
 #include <KokkosKernels_config.h>
 #include <KokkosKernels_Controls.hpp>
+#include <KokkosSparse_Utils.hpp>
 #include <Kokkos_Core.hpp>
 #include <iostream>
 #include <string>
@@ -59,6 +60,10 @@
 #include "KokkosSparse_Utils_cusparse.hpp"
 #endif
 
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
+#include "KokkosSparse_Utils_mkl.hpp"
+#endif
+
 namespace KokkosSparse {
 
 // TODO:SPGEMM_KK_MEMORY2 option is for testing in openmp.
@@ -69,12 +74,14 @@ enum SPGEMMAlgorithm {
   SPGEMM_KK_DENSE,
   SPGEMM_KK_MEMORY,
   SPGEMM_KK_LP,  // KKVARIANTS
-  SPGEMM_CUSPARSE,
-  SPGEMM_CUSP,
-  SPGEMM_MKL,
-  SPGEMM_MKL2PHASE,
-  SPGEMM_VIENNA,  // TPLS
-  SPGEMM_ROCSPARSE,
+  SPGEMM_CUSPARSE [[deprecated("cuSPARSE is now used automatically in all "
+                               "supported SpGEMM calls, if enabled.")]],
+  SPGEMM_MKL [[deprecated("MKL is now used automatically in all supported "
+                          "SpGEMM calls, if enabled.")]],
+  SPGEMM_MKL2PHASE [[deprecated("MKL is now used automatically in all "
+                                "supported SpGEMM calls, if enabled.")]],
+  SPGEMM_ROCSPARSE [[deprecated("rocSPARSE is now used automatically in all "
+                                "supported SpGEMM calls, if enabled.")]],
 
   // TRIANGLE COUNTING SPECIALIZED
   SPGEMM_KK_TRIANGLE_AI,  // SPGEMM_KK_TRIANGLE_DEFAULT, SPGEMM_KK_TRIANGLE_MEM,
@@ -158,7 +165,6 @@ class SPGEMMHandle {
     rocsparse_mat_info info_C;
     size_t bufferSize;
     void *buffer;
-    bool C_populated;
 
     rocSparseSpgemmHandleType(bool transposeA, bool transposeB) {
       opA =
@@ -166,9 +172,8 @@ class SPGEMMHandle {
       opB =
           transposeB ? rocsparse_operation_transpose : rocsparse_operation_none;
 
-      bufferSize  = 0;
-      buffer      = NULL;
-      C_populated = false;
+      bufferSize = 0;
+      buffer     = nullptr;
       KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_mat_descr(&descr_A));
       KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_mat_descr(&descr_B));
       KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_mat_descr(&descr_C));
@@ -205,8 +210,6 @@ class SPGEMMHandle {
     size_t bufferSize3, bufferSize4, bufferSize5;
     void *buffer3, *buffer4, *buffer5;
 
-    bool C_populated;
-
     cuSparseSpgemmHandleType(bool transposeA, bool transposeB) {
       opA = transposeA ? CUSPARSE_OPERATION_TRANSPOSE
                        : CUSPARSE_OPERATION_NON_TRANSPOSE;
@@ -216,95 +219,75 @@ class SPGEMMHandle {
 
       alg         = CUSPARSE_SPGEMM_DEFAULT;
       bufferSize3 = bufferSize4 = bufferSize5 = 0;
-      buffer3 = buffer4 = buffer5 = NULL;
-      C_populated                 = false;
+      buffer3 = buffer4 = buffer5 = nullptr;
 
       cusparseHandle = kkControls.getCusparseHandle();
       KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMM_createDescr(&spgemmDescr));
     }
 
     ~cuSparseSpgemmHandleType() {
-      cusparseDestroySpMat(descr_A);
-      cusparseDestroySpMat(descr_B);
-      cusparseDestroySpMat(descr_C);
-      cusparseSpGEMM_destroyDescr(spgemmDescr);
-      cudaFree(buffer3);
-      cudaFree(buffer4);
-      cudaFree(buffer5);
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(descr_A));
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(descr_B));
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(descr_C));
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMM_destroyDescr(spgemmDescr));
+      KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(buffer3));
+      KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(buffer4));
+      KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(buffer5));
     }
   };
 #else
   struct cuSparseSpgemmHandleType {
-    cusparseHandle_t handle;
-    cusparseOperation_t transA;
-    cusparseOperation_t transB;
-    cusparseMatDescr_t a_descr;
-    cusparseMatDescr_t b_descr;
-    cusparseMatDescr_t c_descr;
-    cuSparseSpgemmHandleType(bool transposeA, bool transposeB) {
-      cusparseStatus_t status;
-      status = cusparseCreate(&handle);
-      if (status != CUSPARSE_STATUS_SUCCESS) {
-        throw std::runtime_error("cusparseCreate ERROR\n");
-        // return;
-      }
-      cusparseSetPointerMode(handle, CUSPARSE_POINTER_MODE_HOST);
+    cusparseHandle_t cusparseHandle;
+    // Descriptor for any general matrix with index base 0
+    cusparseMatDescr_t generalDescr;
 
-      if (transposeA) {
-        transA = CUSPARSE_OPERATION_TRANSPOSE;
-      } else {
-        transA = CUSPARSE_OPERATION_NON_TRANSPOSE;
-      }
-      if (transposeB) {
-        transB = CUSPARSE_OPERATION_TRANSPOSE;
-      } else {
-        transB = CUSPARSE_OPERATION_NON_TRANSPOSE;
-      }
+    cuSparseSpgemmHandleType(bool /* transposeA */, bool /* transposeB */) {
+      KokkosKernels::Experimental::Controls kkControls;
+      // Get singleton cusparse handle from default controls
+      cusparseHandle = kkControls.getCusparseHandle();
 
-      status = cusparseCreateMatDescr(&a_descr);
-      if (status != CUSPARSE_STATUS_SUCCESS) {
-        throw std::runtime_error("cusparseCreateMatDescr a_descr ERROR\n");
-        // return;
-      }
-      cusparseSetMatType(a_descr, CUSPARSE_MATRIX_TYPE_GENERAL);
-      cusparseSetMatIndexBase(a_descr, CUSPARSE_INDEX_BASE_ZERO);
-
-      status = cusparseCreateMatDescr(&b_descr);
-      if (status != CUSPARSE_STATUS_SUCCESS) {
-        throw std::runtime_error("cusparseCreateMatDescr b_descr ERROR\n");
-        // return;
-      }
-      cusparseSetMatType(b_descr, CUSPARSE_MATRIX_TYPE_GENERAL);
-      cusparseSetMatIndexBase(b_descr, CUSPARSE_INDEX_BASE_ZERO);
-
-      status = cusparseCreateMatDescr(&c_descr);
-      if (status != CUSPARSE_STATUS_SUCCESS) {
-        throw std::runtime_error("cusparseCreateMatDescr  c_descr ERROR\n");
-        // return;
-      }
-      cusparseSetMatType(c_descr, CUSPARSE_MATRIX_TYPE_GENERAL);
-      cusparseSetMatIndexBase(c_descr, CUSPARSE_INDEX_BASE_ZERO);
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&generalDescr));
+      KOKKOS_CUSPARSE_SAFE_CALL(
+          cusparseSetMatType(generalDescr, CUSPARSE_MATRIX_TYPE_GENERAL));
+      KOKKOS_CUSPARSE_SAFE_CALL(
+          cusparseSetMatIndexBase(generalDescr, CUSPARSE_INDEX_BASE_ZERO));
     }
     ~cuSparseSpgemmHandleType() {
-      cusparseDestroyMatDescr(a_descr);
-      cusparseDestroyMatDescr(b_descr);
-      cusparseDestroyMatDescr(c_descr);
-      cusparseDestroy(handle);
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyMatDescr(generalDescr));
     }
   };
 #endif
 #endif
+
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
+  struct mklSpgemmHandleType {
+    // Allow mkl_sparse_sp2m (in SPARSE_STAGE_NNZ_COUNT mode) to construct C.
+    // Then this assumes ownership of it and will destroy it later.
+    mklSpgemmHandleType(const sparse_matrix_t &C_) : C(C_) {}
+
+    ~mklSpgemmHandleType() {
+      KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_destroy(C));
+    }
+
+    sparse_matrix_t C;
+  };
+#endif
+
  private:
   SPGEMMAlgorithm algorithm_type;
   SPGEMMAccumulator accumulator_type;
   size_type result_nnz_size;
 
   bool called_symbolic;
+  bool computed_rowptrs;
+  bool computed_rowflops;
+  bool computed_entries;
   bool called_numeric;
 
   int suggested_vector_size;
   int suggested_team_size;
-  nnz_lno_t max_nnz_inresult;
+  nnz_lno_t max_nnz_inresult;  // C max nonzeros per row.
+  bool computed_max_nnz_inresult;
   nnz_lno_t max_nnz_compressed_result;
 
   size_type compressed_b_size;
@@ -330,7 +313,6 @@ class SPGEMMHandle {
   bool create_lower_triangular;
   int sort_lower_triangular;  // 0 - do not sort // 1 - sort // 2 - Algorithm
                               // decides (default)
-  int sort_option;
   nnz_lno_persistent_work_view_t lower_triangular_permutation;
 
   row_lno_persistent_work_view_t lower_triangular_matrix_rowmap;
@@ -402,6 +384,13 @@ class SPGEMMHandle {
  public:
 #endif
 
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
+ private:
+  mklSpgemmHandleType *mkl_spgemm_handle;
+
+ public:
+#endif
+
   void set_c_column_indices(nnz_lno_temp_work_view_t c_col_indices_) {
     this->c_column_indices = c_col_indices_;
   }
@@ -464,16 +453,10 @@ class SPGEMMHandle {
     compressed_c_rowmap_ = compressed_c_rowmap;
   }
 
-  // TODO: store transpose here.
-  void get_c_transpose_symbolic() {}
-
   void set_sort_lower_triangular(int option) {
     this->sort_lower_triangular = option;
   }
   int get_sort_lower_triangular() { return this->sort_lower_triangular; }
-
-  void set_sort_option(int option) { this->sort_option = option; }
-  int get_sort_option() { return this->sort_option; }
 
   void set_create_lower_triangular(bool option) {
     this->create_lower_triangular = option;
@@ -529,10 +512,14 @@ class SPGEMMHandle {
         accumulator_type(SPGEMM_ACC_DEFAULT),
         result_nnz_size(0),
         called_symbolic(false),
+        computed_rowptrs(false),
+        computed_rowflops(false),
+        computed_entries(false),
         called_numeric(false),
         suggested_vector_size(0),
         suggested_team_size(0),
         max_nnz_inresult(0),
+        computed_max_nnz_inresult(false),
         c_column_indices(),
         tranpose_a_xadj(),
         tranpose_b_xadj(),
@@ -553,7 +540,6 @@ class SPGEMMHandle {
 
         create_lower_triangular(false),
         sort_lower_triangular(2),
-        sort_option(-1),
         lower_triangular_permutation(),
         lower_triangular_matrix_rowmap(),
         lower_triangular_matrix_entries(),
@@ -581,11 +567,15 @@ class SPGEMMHandle {
         is_compression_single_step(false)
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
         ,
-        rocsparse_spgemm_handle(NULL)
+        rocsparse_spgemm_handle(nullptr)
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
         ,
-        cusparse_spgemm_handle(NULL)
+        cusparse_spgemm_handle(nullptr)
+#endif
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
+        ,
+        mkl_spgemm_handle(nullptr)
 #endif
   {
     if (gs == SPGEMM_DEFAULT) {
@@ -599,6 +589,9 @@ class SPGEMMHandle {
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
     this->destroy_cusparse_spgemm_handle();
+#endif
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
+    this->destroy_mkl_spgemm_handle();
 #endif
   };
 
@@ -614,9 +607,9 @@ class SPGEMMHandle {
   }
 
   void destroy_rocsparse_spgemm_handle() {
-    if (this->rocsparse_spgemm_handle != NULL) {
+    if (this->rocsparse_spgemm_handle != nullptr) {
       delete this->rocsparse_spgemm_handle;
-      this->rocsparse_spgemm_handle = NULL;
+      this->rocsparse_spgemm_handle = nullptr;
     }
   }
 
@@ -628,14 +621,31 @@ class SPGEMMHandle {
     this->cusparse_spgemm_handle = new cuSparseSpgemmHandleType(transA, transB);
   }
   void destroy_cusparse_spgemm_handle() {
-    if (this->cusparse_spgemm_handle != NULL) {
+    if (this->cusparse_spgemm_handle != nullptr) {
       delete this->cusparse_spgemm_handle;
-      this->cusparse_spgemm_handle = NULL;
+      this->cusparse_spgemm_handle = nullptr;
     }
   }
 
   cuSparseSpgemmHandleType *get_cusparse_spgemm_handle() {
     return this->cusparse_spgemm_handle;
+  }
+#endif
+
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
+  void create_mkl_spgemm_handle(sparse_matrix_t C) {
+    this->destroy_mkl_spgemm_handle();
+    this->mkl_spgemm_handle = new mklSpgemmHandleType(C);
+  }
+  void destroy_mkl_spgemm_handle() {
+    if (this->mkl_spgemm_handle != nullptr) {
+      delete this->mkl_spgemm_handle;
+      this->mkl_spgemm_handle = nullptr;
+    }
+  }
+
+  mklSpgemmHandleType *get_mkl_spgemm_handle() {
+    return this->mkl_spgemm_handle;
   }
 #endif
 
@@ -672,29 +682,20 @@ class SPGEMMHandle {
 
 #if defined(KOKKOS_ENABLE_CUDA)
     if (std::is_same<Kokkos::Cuda, ExecutionSpace>::value) {
-#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
-      this->algorithm_type = SPGEMM_CUSPARSE;
-#ifdef VERBOSE
-      std::cout << "Cuda Execution Space, Default Algorithm: SPGEMM_CUSPARSE"
-                << std::endl;
-#endif
-#else
       this->algorithm_type = SPGEMM_KK;
 #ifdef VERBOSE
-      std::cout << "Cuda Execution Space, without cuSPARSE, Default Algorithm: "
-                   "SPGEMM_KK"
+      std::cout << "Cuda Execution Space, Default Algorithm: SPGEMM_KK"
                 << std::endl;
-#endif
 #endif
     }
 #endif
 
 #if defined(KOKKOS_ENABLE_HIP)
     if (std::is_same<Kokkos::Experimental::HIP, ExecutionSpace>::value) {
-#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
-      this->algorithm_type = SPGEMM_ROCSPARSE;
-#else
       this->algorithm_type = SPGEMM_KK;
+#ifdef VERBOSE
+      std::cout << "HIP Execution Space, Default Algorithm: SPGEMM_KK"
+                << std::endl;
 #endif
     }
 #endif
@@ -727,9 +728,21 @@ class SPGEMMHandle {
   SPGEMMAlgorithm get_algorithm_type() const { return this->algorithm_type; }
 
   bool is_symbolic_called() { return this->called_symbolic; }
+  bool are_rowptrs_computed() { return this->computed_rowptrs; }
+  bool are_rowflops_computed() { return this->computed_rowflops; }
+  bool are_entries_computed() { return this->computed_entries; }
   bool is_numeric_called() { return this->called_numeric; }
 
-  nnz_lno_t get_max_result_nnz() const { return this->max_nnz_inresult; }
+  template <typename c_row_view_t>
+  nnz_lno_t get_max_result_nnz(const c_row_view_t &row_mapC) {
+    if (!this->computed_max_nnz_inresult) {
+      this->max_nnz_inresult =
+          KokkosSparse::Impl::graph_max_degree<HandleExecSpace, size_type,
+                                               c_row_view_t>(row_mapC);
+      this->computed_max_nnz_inresult = true;
+    }
+    return this->max_nnz_inresult;
+  }
 
   nnz_lno_t get_max_compresed_result_nnz() const {
     return this->max_nnz_compressed_result;
@@ -740,10 +753,14 @@ class SPGEMMHandle {
     this->algorithm_type = sgs_algo;
   }
   void set_call_symbolic(bool call = true) { this->called_symbolic = call; }
+  void set_computed_rowptrs() { this->computed_rowptrs = true; }
+  void set_computed_rowflops() { this->computed_rowflops = true; }
+  void set_computed_entries() { this->computed_entries = true; }
   void set_call_numeric(bool call = true) { this->called_numeric = call; }
 
-  void set_max_result_nnz(nnz_lno_t num_result_nnz_) {
-    this->max_nnz_inresult = num_result_nnz_;
+  void set_max_result_nnz(nnz_lno_t nz) {
+    this->max_nnz_inresult          = nz;
+    this->computed_max_nnz_inresult = true;
   }
 
   void set_max_compresed_result_nnz(nnz_lno_t num_result_nnz_) {
@@ -804,21 +821,26 @@ inline SPGEMMAlgorithm StringToSPGEMMAlgorithm(std::string &name) {
     return SPGEMM_KK_LP;
   else if (name == "SPGEMM_KK_MEMSPEED")
     return SPGEMM_KK;
-
   else if (name == "SPGEMM_DEBUG")
     return SPGEMM_SERIAL;
   else if (name == "SPGEMM_SERIAL")
     return SPGEMM_SERIAL;
   else if (name == "SPGEMM_CUSPARSE")
-    return SPGEMM_CUSPARSE;
-  else if (name == "SPGEMM_ROCSPARSE")
-    return SPGEMM_ROCSPARSE;
-  else if (name == "SPGEMM_CUSP")
-    return SPGEMM_CUSP;
+    throw std::runtime_error(
+        "Enum value SPGEMM_CUSPARSE is deprecated. cuSPARSE is automatically "
+        "used in all supported SpGEMM calls.");
   else if (name == "SPGEMM_MKL")
-    return SPGEMM_MKL;
-  else if (name == "SPGEMM_VIENNA")
-    return SPGEMM_VIENNA;
+    throw std::runtime_error(
+        "Enum value SPGEMM_MKL is deprecated. MKL is automatically used in all "
+        "supported SpGEMM calls.");
+  else if (name == "SPGEMM_MKL2PHASE")
+    throw std::runtime_error(
+        "Enum value SPGEMM_MKL2PHASE is deprecated. MKL is automatically used "
+        "in all supported SpGEMM calls.");
+  else if (name == "SPGEMM_ROCSPARSE")
+    throw std::runtime_error(
+        "Enum value SPGEMM_ROCSPARSE is deprecated. rocSPARSE is automatically "
+        "used in all supported SpGEMM calls.");
   else
     throw std::runtime_error("Invalid SPGEMMAlgorithm name");
 }

@@ -150,6 +150,25 @@ void block_spgemm_numeric(KernelHandle& kh, const AMatrix& A, const bool Amode,
       B.values, Bmode, C.graph.row_map, C.graph.entries, C.values, blockDim);
 }
 
+template <class CMatrix, class AMatrix, class BMatrix>
+CMatrix spgemm(const AMatrix& A, const bool Amode, const BMatrix& B,
+               const bool Bmode) {
+  using device_t  = typename CMatrix::device_type;
+  using scalar_t  = typename CMatrix::value_type;
+  using ordinal_t = typename CMatrix::ordinal_type;
+  using size_type = typename CMatrix::size_type;
+  using KKH       = KokkosKernels::Experimental::KokkosKernelsHandle<
+      size_type, ordinal_t, scalar_t, typename device_t::execution_space,
+      typename device_t::memory_space, typename device_t::memory_space>;
+  KKH kh;
+  kh.create_spgemm_handle();
+  CMatrix C;
+  spgemm_symbolic(kh, A, Amode, B, Bmode, C);
+  spgemm_numeric(kh, A, Amode, B, Bmode, C);
+  kh.destroy_spgemm_handle();
+  return C;
+}
+
 }  // namespace KokkosSparse
 
 #endif
