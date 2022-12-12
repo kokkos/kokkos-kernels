@@ -46,49 +46,51 @@
 #ifndef KK_MATRIX_PREC_HPP
 #define KK_MATRIX_PREC_HPP
 
-#include<KokkosSparse_Preconditioner.hpp>
-#include<Kokkos_Core.hpp>
-#include<KokkosBlas.hpp>
-#include<KokkosSparse_spmv.hpp>
+#include <KokkosSparse_Preconditioner.hpp>
+#include <Kokkos_Core.hpp>
+#include <KokkosBlas.hpp>
+#include <KokkosSparse_spmv.hpp>
 
-namespace KokkosSparse{
+namespace KokkosSparse {
 
-namespace Experimental{
+namespace Experimental {
 
 /// \class MatrixPrec
-/// \brief  This is a simple class to use if one 
-///         already has a matrix representation of their 
+/// \brief  This is a simple class to use if one
+///         already has a matrix representation of their
 ///         preconditioner M.  The class applies an
-///         SpMV with M as the preconditioning step. 
+///         SpMV with M as the preconditioning step.
 /// \tparam ScalarType Type of the matrix's entries
-/// \tparam Layout Kokkos layout of vectors X and Y to which 
+/// \tparam Layout Kokkos layout of vectors X and Y to which
 ///         the preconditioner is applied
 /// \tparam EXSP Execution space for the preconditioner apply
-/// \tparam Ordinal Type of the matrix's indices; 
+/// \tparam Ordinal Type of the matrix's indices;
 ///
 /// Preconditioner provides the following methods
-///   - initialize() Does nothing; Matrix initialized upon object construction. 
-///   - isInitialized() returns true 
+///   - initialize() Does nothing; Matrix initialized upon object construction.
+///   - isInitialized() returns true
 ///   - compute() Does nothing; Matrix initialized upon object construction.
-///   - isComputed() returns true 
+///   - isComputed() returns true
 ///
-template< class ScalarType, class Layout, class EXSP, class OrdinalType = int > 
-class MatrixPrec : virtual public KokkosSparse::Experimental::Preconditioner<ScalarType, Layout, EXSP, OrdinalType>
-{ 
-private:
-    using crsMat_t = KokkosSparse::CrsMatrix<ScalarType, OrdinalType, EXSP>;
-    crsMat_t A;
+template <class CRS>
+class MatrixPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
+ private:
+  CRS A;
 
-    bool isInitialized_ = true;
-    bool isComputed_ = true;
+  bool isInitialized_ = true;
+  bool isComputed_    = true;
 
-public:
+ public:
+  using ScalarType = typename std::remove_const<typename CRS::value_type>::type;
+  using EXSP       = typename CRS::execution_space;
+  using karith     = typename Kokkos::ArithTraits<ScalarType>;
+
   //! Constructor:
-    MatrixPrec<ScalarType, Layout, EXSP, OrdinalType> (const KokkosSparse::CrsMatrix<ScalarType, OrdinalType, EXSP> &mat) 
-     : A(mat) {}
+  template <class CRSArg>
+  MatrixPrec(const CRSArg &mat) : A(mat) {}
 
   //! Destructor.
-  virtual ~MatrixPrec(){}
+  virtual ~MatrixPrec() {}
 
   ///// \brief Apply the preconditioner to X, putting the result in Y.
   /////
@@ -102,37 +104,36 @@ public:
   ///// \param beta [in] Input coefficient of Y
   /////
   ///// If the result of applying this preconditioner to a vector X is
-  ///// \f$M \cdot X\f$, then this method computes \f$Y = \beta Y + \alpha M \cdot X\f$.
+  ///// \f$M \cdot X\f$, then this method computes \f$Y = \beta Y + \alpha M
+  ///\cdot X\f$.
   ///// The typical case is \f$\beta = 0\f$ and \f$\alpha = 1\f$.
   //
-  void apply (const Kokkos::View<ScalarType*, Layout, EXSP> &X, 
-      Kokkos::View<ScalarType*, Layout, EXSP> &Y, 
-      const char transM[] = "N",
-      ScalarType alpha = Kokkos::Details::ArithTraits<ScalarType>::one(),
-      ScalarType beta = Kokkos::Details::ArithTraits<ScalarType>::zero()) const 
-  {
+  virtual void apply(const Kokkos::View<const ScalarType *, EXSP> &X,
+                     const Kokkos::View<ScalarType *, EXSP> &Y,
+                     const char transM[] = "N",
+                     ScalarType alpha    = karith::one(),
+                     ScalarType beta     = karith::zero()) const {
     KokkosSparse::spmv(transM, alpha, A, X, beta, Y);
-  };
+  }
   //@}
 
   //! Set this preconditioner's parameters.
-  void setParameters () {}
+  void setParameters() {}
 
-  void initialize() { }
+  void initialize() {}
 
   //! True if the preconditioner has been successfully initialized, else false.
-  bool isInitialized() const { return isInitialized_;}
+  bool isInitialized() const { return isInitialized_; }
 
-  void compute(){ }
+  void compute() {}
 
   //! True if the preconditioner has been successfully computed, else false.
-  bool isComputed() const {return isComputed_;}
+  bool isComputed() const { return isComputed_; }
 
-  //! True if the preconditioner implements a transpose operator apply. 
-  bool hasTransposeApply() const { return true; } 
-
+  //! True if the preconditioner implements a transpose operator apply.
+  bool hasTransposeApply() const { return true; }
 };
-} //End Experimental
-} //End namespace KokkosSparse
+}  // namespace Experimental
+}  // End namespace KokkosSparse
 
 #endif

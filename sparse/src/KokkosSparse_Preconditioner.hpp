@@ -46,21 +46,20 @@
 #ifndef KK_PREC_HPP
 #define KK_PREC_HPP
 
-#include<Kokkos_Core.hpp>
-#include<KokkosKernels_Controls.hpp>
-#include<Kokkos_ArithTraits.hpp>
+#include <Kokkos_Core.hpp>
+#include <KokkosKernels_Controls.hpp>
+#include <Kokkos_ArithTraits.hpp>
 
-namespace KokkosSparse{
-
-namespace Experimental{
+namespace KokkosSparse {
+namespace Experimental {
 
 /// \class Preconditioner
 /// \brief Interface for KokkosKernels preconditioners
 /// \tparam ScalarType Type of the matrix's entries
-/// \tparam Layout Kokkos layout of vectors X and Y to which 
+/// \tparam Layout Kokkos layout of vectors X and Y to which
 ///         the preconditioner is applied
 /// \tparam EXSP Execution space for the preconditioner apply
-/// \tparam Ordinal Type of the matrix's indices; 
+/// \tparam Ordinal Type of the matrix's indices;
 ///
 /// Preconditioner provides the following methods
 ///   - initialize() performs all operations based on the graph of the
@@ -75,20 +74,23 @@ namespace Experimental{
 ///
 /// Implementations of compute() must internally call initialize() if
 /// isInitialized() returns false. The preconditioner is applied by
-/// apply(). 
-/// Every time that initialize() is called, the object destroys all the previously
-/// allocated information, and reinitializes the preconditioner. Every
-/// time compute() is called, the object recomputes the actual values of
+/// apply().
+/// Every time that initialize() is called, the object destroys all the
+/// previously allocated information, and reinitializes the preconditioner.
+/// Every time compute() is called, the object recomputes the actual values of
 /// the preconditioner.
-template< class ScalarType, class Layout, class EXSP, class OrdinalType = int > 
-class Preconditioner{ 
-  
-public:
+template <class CRS>
+class Preconditioner {
+ public:
+  using ScalarType = typename std::remove_const<typename CRS::value_type>::type;
+  using EXSP       = typename CRS::execution_space;
+  using karith     = typename Kokkos::ArithTraits<ScalarType>;
+
   //! Constructor:
-  Preconditioner(){}
+  Preconditioner() {}
 
   //! Destructor.
-  virtual ~Preconditioner(){}
+  virtual ~Preconditioner() {}
 
   ///// \brief Apply the preconditioner to X, putting the result in Y.
   /////
@@ -102,19 +104,19 @@ public:
   ///// \param beta [in] Input coefficient of Y
   /////
   ///// If the result of applying this preconditioner to a vector X is
-  ///// \f$M \cdot X\f$, then this method computes \f$Y = \beta Y + \alpha M \cdot X\f$.
+  ///// \f$M \cdot X\f$, then this method computes \f$Y = \beta Y + \alpha M
+  ///\cdot X\f$.
   ///// The typical case is \f$\beta = 0\f$ and \f$\alpha = 1\f$.
   //
-  virtual void
-  apply (const Kokkos::View<ScalarType*, Layout, EXSP> &X, 
-         Kokkos::View<ScalarType*, Layout, EXSP> &Y, 
-         const char transM[] = "N",
-         ScalarType alpha = Kokkos::Details::ArithTraits<ScalarType>::one(),
-         ScalarType beta = Kokkos::Details::ArithTraits<ScalarType>::zero()) const = 0;
+  virtual void apply(const Kokkos::View<const ScalarType *, EXSP> &X,
+                     const Kokkos::View<ScalarType *, EXSP> &Y,
+                     const char transM[] = "N",
+                     ScalarType alpha    = karith::one(),
+                     ScalarType beta     = karith::zero()) const = 0;
   //@}
 
   //! Set this preconditioner's parameters.
-  virtual void setParameters () = 0;
+  virtual void setParameters() = 0;
 
   /// @brief Set up the graph structure of this preconditioner.
   ///
@@ -144,12 +146,11 @@ public:
   //! True if the preconditioner has been successfully computed, else false.
   virtual bool isComputed() const = 0;
 
-  //! True if the preconditioner implements a transpose operator apply. 
-  virtual bool hasTransposeApply() const { return false; } 
-
+  //! True if the preconditioner implements a transpose operator apply.
+  virtual bool hasTransposeApply() const { return false; }
 };
 
-} // End Experimental
-} //End namespace KokkosSparse
+}  // namespace Experimental
+}  // End namespace KokkosSparse
 
 #endif

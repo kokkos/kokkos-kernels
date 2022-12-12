@@ -49,15 +49,19 @@
 #include <KokkosBlas.hpp>
 #include <KokkosBlas3_trsm.hpp>
 #include <KokkosSparse_spmv.hpp>
-
-#include "gmres.hpp"
+#include <KokkosSparse_gmres.hpp>
 
 int main(int argc, char* argv[]) {
-  typedef double ST;
-  typedef int OT;
-  typedef Kokkos::DefaultExecutionSpace EXSP;
+  using ST   = double;
+  using OT   = int;
+  using EXSP = Kokkos::DefaultExecutionSpace;
+  using MESP = typename EXSP::memory_space;
+  using CRS  = KokkosSparse::CrsMatrix<ST, OT, EXSP, void, OT>;
 
   using ViewVectorType = Kokkos::View<ST*, Kokkos::LayoutLeft, EXSP>;
+  using KernelHandle =
+      KokkosKernels::Experimental::KokkosKernelsHandle<OT, OT, ST, EXSP, MESP,
+                                                       MESP>;
 
   std::string filename("bcsstk09.mtx");  // example matrix
   std::string ortho("CGS2");             // orthog type
@@ -104,27 +108,28 @@ int main(int argc, char* argv[]) {
   std::cout << "File to process is: " << filename << std::endl;
   std::cout << "Convergence tolerance is: " << convTol << std::endl;
 
-  // Set GMRES options:
-  GmresOpts<ST> solverOpts;
-  solverOpts.tol        = convTol;
-  solverOpts.m          = m;
-  solverOpts.maxRestart = cycLim;
-  solverOpts.ortho      = ortho;
-  solverOpts.verbose    = false;  // No verbosity needed for most testing
-
   // Initialize Kokkos AFTER parsing parameters:
   Kokkos::initialize();
   {
     // Read in a matrix Market file and use it to test the Kokkos Operator.
-    KokkosSparse::CrsMatrix<ST, OT, EXSP> A =
-        KokkosSparse::Impl::read_kokkos_crst_matrix<
-            KokkosSparse::CrsMatrix<ST, OT, EXSP>>(filename.c_str());
+    CRS A = KokkosSparse::Impl::read_kokkos_crst_matrix<CRS>(filename.c_str());
 
     int n = A.numRows();
     ViewVectorType X("X", n);    // Solution and initial guess
     ViewVectorType Wj("Wj", n);  // For checking residuals at end.
     ViewVectorType B(Kokkos::view_alloc(Kokkos::WithoutInitializing, "B"),
                      n);  // right-hand side vec
+
+    // Make kernel handles and set options
+    KernelHandle kh;
+    kh.create_gmres_handle(m, convTol, cycLim);
+    auto gmres_handle = kh.get_gmres_handle();
+    // Get full gmres handle type using decltype. Deferencing a pointer gives a
+    // reference, so we need to strip that too.
+    using GMRESHandle =
+        typename std::remove_reference<decltype(*gmres_handle)>::type;
+    gmres_handle->set_ortho(ortho == "CGS2" ? GMRESHandle::Ortho::CGS2
+                                            : GMRESHandle::Ortho::MGS);
 
     if (rand_rhs) {
       // Make rhs random.
@@ -137,8 +142,11 @@ int main(int argc, char* argv[]) {
     }
 
     // Run GMRS solve:
-    GmresStats solveStats =
-        gmres<ST, Kokkos::LayoutLeft, EXSP>(A, B, X, solverOpts);
+    KokkosSparse::Experimental::gmres(&kh, A, B, X);
+
+    const auto numIters  = gmres_handle->get_num_iters();
+    const auto convFlag  = gmres_handle->get_conv_flag_val();
+    const auto endRelRes = gmres_handle->get_end_rel_res();
 
     // Double check residuals at end of solve:
     ST nrmB = KokkosBlas::nrm2(B);
@@ -147,11 +155,10 @@ int main(int argc, char* argv[]) {
     ST endRes = KokkosBlas::nrm2(B) / nrmB;
     std::cout << "=========================================" << std::endl;
     std::cout << "Verify from main: Ending residual is " << endRes << std::endl;
-    std::cout << "Number of iterations is: " << solveStats.numIters
-              << std::endl;
+    std::cout << "Number of iterations is: " << numIters << std::endl;
     std::cout << "Diff of residual from main - residual from solver: "
-              << solveStats.endRelRes - endRes << std::endl;
-    std::cout << "Convergence flag is : " << solveStats.convFlag() << std::endl;
+              << endRelRes - endRes << std::endl;
+    std::cout << "Convergence flag is : " << convFlag << std::endl;
   }
   Kokkos::finalize();
 }

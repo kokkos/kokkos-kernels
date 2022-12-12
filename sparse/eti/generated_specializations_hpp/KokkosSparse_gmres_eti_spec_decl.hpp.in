@@ -1,3 +1,5 @@
+#ifndef KOKKOSSPARSE_GMRES_ETI_SPEC_DECL_HPP_
+#define KOKKOSSPARSE_GMRES_ETI_SPEC_DECL_HPP_
 /*
 //@HEADER
 // ************************************************************************
@@ -41,13 +43,11 @@
 //@HEADER
 */
 
-
-#define KOKKOSKERNELS_IMPL_COMPILE_LIBRARY true
-#include "KokkosKernels_config.h"
-
-#include "KokkosSparse_par_ilut_symbolic_spec.hpp"
 namespace KokkosSparse {
 namespace Impl {
-@SPARSE_PAR_ILUT_SYMBOLIC_ETI_INST_BLOCK@
-  } //IMPL
-} //Kokkos
+
+@SPARSE_GMRES_DECL_BLOCK@
+
+} // Impl
+} // KokkosSparse
+#endif // KOKKOSSPARSE_GMRES_ETI_SPEC_DECL_HPP_

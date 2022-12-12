@@ -61,3 +61,4 @@
 #include "KokkosSparse_spgemm.hpp"
 #include "KokkosSparse_gauss_seidel.hpp"
 #include "KokkosSparse_par_ilut.hpp"
+#include "KokkosSparse_gmres.hpp"

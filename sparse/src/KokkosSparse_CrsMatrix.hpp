@@ -426,8 +426,7 @@ class CrsMatrix {
   //! Nonconst version of the type of row offsets in the sparse matrix.
   typedef typename row_map_type::non_const_value_type non_const_size_type;
   //! Kokkos Array type of the entries (values) in the sparse matrix.
-  typedef Kokkos::View<value_type*, Kokkos::LayoutRight, device_type,
-                       MemoryTraits>
+  typedef Kokkos::View<value_type*, default_layout, device_type, MemoryTraits>
       values_type;
   //! Const version of the type of the entries in the sparse matrix.
   typedef typename values_type::const_value_type const_value_type;
