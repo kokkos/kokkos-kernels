@@ -96,6 +96,7 @@ SET(KokkosKernels_INSTALL_TESTING OFF CACHE INTERNAL
 IF (KokkosKernels_INSTALL_TESTING)
   # Force testing on if we are doing intall testing
   SET(KOKKOSKERNELS_ENABLE_TESTS ON)
+  SET(KOKKOSKERNELS_ENABLE_BENCHMARKS ON)
   SET(KOKKOSKERNELS_ENABLE_EXAMPLES ON)
   # Don't build, load installed kernels
   FIND_PACKAGE(KokkosKernels REQUIRED)

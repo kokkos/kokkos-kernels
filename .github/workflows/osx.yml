@@ -90,6 +90,7 @@ jobs:
           -DCMAKE_CXX_FLAGS="-Wall -Wshadow -pedantic -Werror -Wsign-compare -Wtype-limits -Wignored-qualifiers -Wempty-body -Wuninitialized" \
           -DCMAKE_INSTALL_PREFIX=$PWD/../install \
           -DKokkosKernels_ENABLE_TESTS=ON \
+          -DKokkosKernels_ENABLE_BENCHMARKS=ON \
           -DKokkosKernels_ENABLE_EXAMPLES:BOOL=ON \
           -DKokkosKernels_INST_COMPLEX_DOUBLE=ON \
           -DKokkosKernels_INST_DOUBLE=ON \

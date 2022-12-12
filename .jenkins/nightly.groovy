@@ -37,6 +37,7 @@ pipeline {
                                 -DCMAKE_BUILD_TYPE=Release \
                                 -DCMAKE_CXX_COMPILER=clang++ \
                                 -DKokkosKernels_ENABLE_TESTS=ON \
+                                -DKokkosKernels_ENABLE_BENCHMARKS=ON \
                                 -DKokkosKernels_ENABLE_EXAMPLES=ON \
                                 -DKokkosKernels_INST_DOUBLE=ON \
                                 -DKokkosKernels_INST_ORDINAL_INT=ON \
@@ -75,6 +76,7 @@ pipeline {
                                 -DCMAKE_CXX_STANDARD=17 \
                                 -DCMAKE_CXX_EXTENSIONS=OFF \
                                 -DKokkosKernels_ENABLE_TESTS=ON \
+                                -DKokkosKernels_ENABLE_BENCHMARKS=ON \
                                 -DKokkosKernels_ENABLE_EXAMPLES=ON \
                                 -DKokkosKernels_INST_DOUBLE=ON \
                                 -DKokkosKernels_INST_ORDINAL_INT=ON \
