@@ -194,6 +194,8 @@ TEST_F(TestCategory, sparse_coo2csr) {
   auto csrMat = KokkosSparse::coo2csr(4, 4, row, col, data, 3);
 }
 
+// TODO: Add reproducer for HashmapAccumulator vector atomic insert of same keys
+// from multiple threads
 #if 0
 class CasBug {
   public:
