@@ -36,14 +36,14 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
+// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
 */
 
-#ifndef KOKKOS_CORE_PERFTEST_BENCHMARK_CONTEXT_HPP
-#define KOKKOS_CORE_PERFTEST_BENCHMARK_CONTEXT_HPP
+#ifndef KOKKOSKERNELS_PERFTEST_BENCHMARK_CONTEXT_HPP
+#define KOKKOSKENERLS_PERFTEST_BENCHMARK_CONTEXT_HPP
 
 #include <string>
 
@@ -51,7 +51,7 @@
 
 #include <Kokkos_Core.hpp>
 
-namespace KokkosBenchmark {
+namespace KokkosKernelsBenchmark {
 
 /// \brief Remove unwanted spaces and colon signs from input string. In case of
 /// invalid input it will return an empty string.
@@ -94,6 +94,6 @@ void add_benchmark_context(bool verbose = false) {
   add_kokkos_configuration(verbose);
 }
 
-}  // namespace KokkosBenchmark
+}  // namespace KokkosKernelsBenchmark
 
 #endif

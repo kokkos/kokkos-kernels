@@ -51,7 +51,7 @@ if (KokkosKernels_ENABLE_PERFTESTS)
     ADD_SUBDIRECTORY(performance)
     #ADD_SUBDIRECTORY(common)
 
-    IF (KOKKOS_HAS_TRILINOS)
+    IF (KOKKOSKERNELS_HAS_TRILINOS)
       message(FATAL_ERROR "Benchmarks are not supported when building as part of Trilinos")
     ENDIF()
 
@@ -64,6 +64,8 @@ if (KokkosKernels_ENABLE_PERFTESTS)
       SET(BENCHMARK_ENABLE_TESTING OFF)
 
       list(APPEND CMAKE_MESSAGE_INDENT "    ")
+      #Note: recent bug (google/benchmark#1441) is preventing us from using
+      # the latest benchmark release.
       FetchContent_Declare(
         googlebenchmark
         URL https://github.com/google/benchmark/archive/refs/tags/v1.6.2.tar.gz

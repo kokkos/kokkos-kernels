@@ -36,7 +36,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Christian R. Trott (crtrott@sandia.gov)
+// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
 //
 // ************************************************************************
 //@HEADER
@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
   Kokkos::initialize(argc, argv);
   benchmark::Initialize(&argc, argv);
   benchmark::SetDefaultTimeUnit(benchmark::kSecond);
-  KokkosBenchmark::add_benchmark_context(true);
+  KokkosKernelsBenchmark::add_benchmark_context(true);
 
   benchmark::RunSpecifiedBenchmarks();
 
