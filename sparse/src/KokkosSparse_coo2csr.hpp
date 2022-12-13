@@ -92,7 +92,7 @@ class Coo2Csr {
       Kokkos::View<KeyType *, Kokkos::LayoutRight, ScratchSpaceType>;
   using SizeViewScratch =
       Kokkos::View<SizeType *, Kokkos::LayoutRight, ScratchSpaceType>;
-  using UsedSizePtrType = SizeType *;
+  using UsedSizePtrType = volatile SizeType *;
   using UsedSizePtrView =
       Kokkos::View<volatile UsedSizePtrType **, Kokkos::LayoutRight>;
   using UsetView = Kokkos::View<UsetType **, Kokkos::LayoutRight>;
@@ -223,14 +223,15 @@ class Coo2Csr {
             auto j    = __col(tid);
 
             if (i >= 0 && j >= 0)
-              unique_row_cnt +=
-                  team_uset.vector_atomic_insert_into_hash_KeyCounter(
-                      i, used_size);
+              team_uset.vector_atomic_insert_into_hash_KeyCounter(i, used_size);
           });
 
-      // All threads add their partial row counts
-      Kokkos::atomic_add(&n_unique_rows_per_team[member.league_rank()],
-                         unique_row_cnt);
+      member.team_barrier();
+
+      // All teams write their unique row counts to global memory
+      Kokkos::single(Kokkos::PerTeam(member), [&]() {
+        n_unique_rows_per_team[member.league_rank()] = *used_size;
+      });
     }
 
     KOKKOS_INLINE_FUNCTION
@@ -282,13 +283,13 @@ class Coo2Csr {
       Kokkos::parallel_for(
           Kokkos::TeamVectorRange(member, 0, max_n_unique_rows),
           [&](const int &i) {
-            size_t row_stride   = max_n_unique_rows * i;
-            SizeType *used_size = uset_ll.data() + row_stride;
-            auto *uset_begins   = uset_ll.data() + 1 + row_stride;
+            size_t ll_stride = (pow2_max_row_cnt + max_row_cnt + 1) * i;
+            volatile SizeType *used_size = uset_ll.data() + ll_stride;
+            auto *uset_begins            = uset_ll.data() + ll_stride + 1;
             auto *uset_nexts =
                 uset_begins +
                 pow2_max_row_cnt;  // uset_nexts is max_row_cnt long
-            auto *keys_ptr = uset_keys.data() + row_stride;
+            auto *keys_ptr = uset_keys.data() + (max_row_cnt * i);
 
             // Initialize uset_begins to -1
             for (unsigned j = 0; j < pow2_max_row_cnt; j++) uset_begins[j] = -1;
@@ -327,6 +328,8 @@ class Coo2Csr {
               int uset_idx =
                   hmap.vector_atomic_insert_into_hash_once(i, hmap_used_size);
 
+              if (uset_idx < 0) Kokkos::abort("uset_idx < 0");
+
               // Get the unordered set mapped to row i
               auto uset = usets(member.league_rank(), uset_idx);
               auto uset_used_size =
@@ -340,13 +343,18 @@ class Coo2Csr {
       member.team_barrier();
 
       // Add up the "tight" row count
+      // Can we use a thread's unique_col_count safely here? We have to
+      // increment used_size anyways, so let's use that instead.
       Kokkos::parallel_for(Kokkos::TeamVectorRange(member, 0, *hmap_used_size),
-                           [&](const int &tid) {
-                             // std::cout << "rank: " << member.league_rank() <<
-                             // ", row: " << hmap_keys(tid) << "cnt: " <<
-                             // hmap_values(tid) << std::endl;
-                             __crs_row_cnt(hmap_keys(tid)) += *uset_used_sizes(
-                                 member.league_rank(), hmap_values(tid));
+                           [&](const int &i) {
+                             auto uset_idx  = hmap_values(i);
+                             auto col_count = uset_used_sizes(
+                                 member.league_rank(), uset_idx);
+                             auto row_id = hmap_keys(i);
+#if 0
+          std::cout << "rank: " << member.league_rank() << ", uset_idx: " << uset_idx << ", col_count: " << *col_count << ", row_id: " << row_id << std::endl;
+#endif
+                             __crs_row_cnt(row_id) += *col_count;
                            });
     }
   };
@@ -548,7 +556,13 @@ class Coo2Csr {
       std::cout << "s4_shmem_size: " << s4_shmem_size << std::endl;
 #endif
 
-      // TODO: Check this with partition sizes > 1.
+#if 1
+      std::cout << "phase1Functor.__crs_row_cnt: " << std::endl;
+      for (unsigned i = 0; i < __nrows; i++) {
+        std::cout << i << ":" << functor.__crs_row_cnt[i] << std::endl;
+      }
+#endif
+
       s4p = s4Policy(__n_teams, __suggested_team_size);
       s4p.set_scratch_size(0, Kokkos::PerTeam(s4_shmem_size));
       Kokkos::parallel_for("Coo2Csr::phase1Tags::s4RowCnt", s4p, functor);

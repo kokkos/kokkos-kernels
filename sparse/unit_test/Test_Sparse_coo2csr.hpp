@@ -50,10 +50,34 @@ template <class ScalarType, class LayoutType, class ExeSpaceType>
 void doCoo2Csr(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
   RandCooMat<ScalarType, LayoutType, ExeSpaceType> cooMat(m, n, m * n, min_val,
                                                           max_val);
-  auto row    = cooMat.get_row();
-  auto col    = cooMat.get_col();
-  auto data   = cooMat.get_data();
+  auto randRow  = cooMat.get_row();
+  auto randCol  = cooMat.get_col();
+  auto randData = cooMat.get_data();
+
+#if 0
+  long long staticRow[16] {0, 1, 3, 2, 3, 2, 2, 2, 0, 0, 0, 1, 2, 0, 3, 0};
+  long long staticCol[16] {1, 1, 2, 3, 3, 2, 3, 2, 0, 0, 1, 3, 1, 2, 0, 0};
+  float staticData[16] {7.28411, 8.17991, 8.84304, 5.01788, 9.85646, 
+  5.79404, 8.42014, 1.90238, 8.24195, 4.39955, 3.2637, 5.4546, 
+  6.51895, 8.09302, 9.36294, 3.44206};
+  using rvt = decltype(randRow);
+  using cvt = decltype(randCol);
+  using dvt = decltype(randData);
+  rvt row("coo row", 16);
+  cvt col("coo col", 16);
+  dvt data("coo data", 16);
+  for (int i = 0; i < 16; i++) {
+    row(i) = staticRow[i];
+    col(i) = staticCol[i];
+    data(i) = staticData[i];
+  }
+  // Even partitions with multiple threads
   auto csrMat = KokkosSparse::coo2csr(m, n, row, col, data, 4);
+#else
+  // TODO: Uneven partition, Even partitions with multiple threads, Uneven
+  // partitions with multiple threads
+  auto csrMat = KokkosSparse::coo2csr(m, n, randRow, randCol, randData);
+#endif
 
   /*
     auto csc_row_ids_d = cscMat.get_row_ids();
@@ -169,4 +193,66 @@ TEST_F(TestCategory, sparse_coo2csr) {
   auto data   = cooMat.get_data();
   auto csrMat = KokkosSparse::coo2csr(4, 4, row, col, data, 3);
 }
+
+#if 0
+class CasBug {
+  public:
+  using tpType = Kokkos::TeamPolicy<Kokkos::OpenMP>;
+  using tpMemberType = typename tpType::member_type;
+  using svaType = Kokkos::View<int *, Kokkos::LayoutRight, typename Kokkos::OpenMP::scratch_memory_space>;
+  Kokkos::View<int *, Kokkos::OpenMP> a;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const tpMemberType &member) const {
+    int start_n = member.league_rank() * 4;
+    svaType sva(member.team_scratch(0), 4);
+    
+    Kokkos::single(Kokkos::PerTeam(member), [&] {
+        for (unsigned i = 0; i < 4; i++)
+          sva(i) = -1;
+    });
+    member.team_barrier();
+
+    Kokkos::parallel_for(
+          Kokkos::TeamVectorRange(member, 0, 4),
+          [&](const int &tid) {
+            Kokkos::atomic_compare_exchange_strong(sva.data() + a(start_n + tid), int(-1), int(-2 - member.league_rank()));
+          });
+    member.team_barrier();
+
+    Kokkos::single(Kokkos::PerTeam(member), [&]() {
+      int stop_n = start_n + 4;
+      int j = 0;
+      for (int i = start_n; i < stop_n; i++, j++) {
+        a(i) = sva(j);
+      }
+    });
+  }
+};
+
+TEST_F(TestCategory, kokkos_cas_bug) {
+  CasBug casBug;
+  casBug.a = Kokkos::View<int *, Kokkos::OpenMP>("a", 16);
+  int staticCol[16] {1, 1, 2, 3, 3, 2, 3, 2, 0,  0, 1, 3, 1, 2, 0, 0};
+  for (int i = 0; i < 16; i++)
+    casBug.a(i) = staticCol[i];
+
+  CasBug::tpType tp(4, 4);
+  int shmem_size = CasBug::svaType::shmem_size(4);
+  tp.set_scratch_size(0, Kokkos::PerTeam(shmem_size));
+  Kokkos::parallel_for("casBug", tp, casBug);
+  Kokkos::fence();
+  for (int i = 0; i < 16; i++) {
+    if (i % 4 == 0)
+      printf("\nrank: %d:\n", i / 4);
+    printf("%d\t", staticCol[i]);
+  }
+  for (int i = 0; i < 16; i++) {
+    if (i % 4 == 0)
+      printf("\nrank: %d:\n", i / 4);
+    printf("%d\t", casBug.a(i));
+  }
+  printf("\n");
+}
+#endif
 }  // namespace Test

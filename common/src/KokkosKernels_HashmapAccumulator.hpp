@@ -45,6 +45,7 @@
 #define _KOKKOSKERNELS_HASHMAPACCUMULATOR_HPP
 #include <Kokkos_Atomic.hpp>
 #include <atomic>
+#include <cstdint>
 
 namespace KokkosKernels {
 
@@ -733,65 +734,63 @@ struct HashmapAccumulator {
   KOKKOS_INLINE_FUNCTION
   /**
    * This is a copy of vector_atomic_insert_into_hash modified to count
-   * new keys.
+   * new keys exactly once.
    *
    * @brief This function behaves kind of like a thread-safe std::unordered_set.
-   * This is used by coo2csr to count the number of unique row ids
+   * This is used by coo2csr to count the number of unique row or col indexes
    * in a given team's coo partition. See coo2csr phase1Tags::s3UniqRows.
    *
    * @param key: The key to insert.
-   * @return 1 upon new key insertion; 0, otherwise
+   * @return __insert_success when a new key is inserted; otherwise,
+   * __insert_full.
    */
   int vector_atomic_insert_into_hash_KeyCounter(
       const key_type &key, volatile size_type *used_size_) {
-    size_type hash, i, my_write_index, hashbeginning;
-
-    /* if (key == -1) return 0; */
+    size_type hash, my_write_index, hashbeginning;
 
     hash = __compute_hash(key, __hashOpRHS);
-    for (i = hash_begins[hash]; i != -1; i = hash_nexts[i]) {
-      if (keys[i] == key) {
-        return 0;
-      }
-    }
 
-    my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
+    // The first thread to complete this CAS proceeds with the insertion.
+    if (Kokkos::atomic_compare_exchange_strong(&hash_begins[hash], -1, -2)) {
+      my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
 
-    if (my_write_index >= __max_value_size) {
-      Kokkos::abort(
-          "vector_atomic_insert_into_hash_KeyCounter: keys size exceeded.\n");
-    } else {
-      keys[my_write_index] = key;
+      if (my_write_index >= __max_value_size) {
+        Kokkos::abort(
+            "vector_atomic_insert_into_hash_KeyCounter: keys size exceeded.\n");
+      } else {
+        keys[my_write_index] = key;
+        // The key is the value in an unordered set.
 
 #if defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_TURING75) || \
     defined(KOKKOS_ARCH_AMPERE)
-      // this is an issue on VOLTA and up because warps do not go in SIMD
-      // fashion anymore. while some thread might insert my_write_index into
-      // linked list, another thread in the warp might be reading keys in above
-      // loop. before inserting the new value in liked list -- which is done
-      // with atomic exchange below, we make sure that the linked is is complete
-      // my assigning the hash_next to current head. the head might be different
-      // when we do the atomic exchange. this would cause temporarily skipping a
-      // key in the linkedlist until hash_nexts is updated second time as below.
-      // but this is okay for spgemm,
-      // because no two keys will be inserted into hashmap at the same time, as
-      // rows have unique columns.
-      hash_nexts[my_write_index] = hash_begins[hash];
+        // this is an issue on VOLTA and up because warps do not go in SIMD
+        // fashion anymore. while some thread might insert my_write_index into
+        // linked list, another thread in the warp might be reading keys in
+        // above loop. before inserting the new value in liked list -- which is
+        // done with atomic exchange below, we make sure that the linked is is
+        // complete my assigning the hash_next to current head. the head might
+        // be different when we do the atomic exchange. this would cause
+        // temporarily skipping a key in the linkedlist until hash_nexts is
+        // updated second time as below. but this is okay for spgemm, because no
+        // two keys will be inserted into hashmap at the same time, as rows have
+        // unique columns.
+        hash_nexts[my_write_index] = hash_begins[hash];
 #endif
 
-      hashbeginning =
-          Kokkos::atomic_exchange(hash_begins + hash, my_write_index);
-      hash_nexts[my_write_index] = hashbeginning;
-
-      // Only count the first thread's insertion
-      if (hashbeginning == -1) return 1;
-      return 0;
+        // TODO: No need for atomic exchange or hash_nexts here.
+        hashbeginning =
+            Kokkos::atomic_exchange(hash_begins + hash, my_write_index);
+        hash_nexts[my_write_index] = hashbeginning;
+      }
+      return __insert_success;
+    } else {
+      return __insert_full;
     }
   }
 
   /**
    * This is a copy of vector_atomic_insert_into_hash modified to insert each
-   * key once.
+   * key exactly once.
    *
    * @brief This is used by coo2csr to associate a row id with another instance
    * of the hashmap accumulator that is treated like an unordered set. With this
@@ -799,62 +798,54 @@ struct HashmapAccumulator {
    * counts the number of column ids per row.  See coo2csr phase1Tags::s4RowCnt.
    *
    * @param key: The key to insert.
-   * @return 1 upon insertion; 0, otherwise
+   * @return The index of the k,v pair in the keys and values arrays.
    */
   int vector_atomic_insert_into_hash_once(const key_type &key,
                                           volatile size_type *used_size_) {
-    size_type hash, i, my_write_index, hashbeginning;
+    size_type hash, my_write_index, hashbeginning;
 
-    /* if (key == -1) return 0; */
-
-    // TODO: Detect duplicate insertions.
     hash = __compute_hash(key, __hashOpRHS);
-    for (i = hash_begins[hash]; i != -1; i = hash_nexts[i]) {
-      if (keys[i] == key) {
-        return values[i];
-      }
-    }
 
-    my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
+    // The first thread to complete this CAS proceeds with the insertion.
+    if (Kokkos::atomic_compare_exchange_strong(hash_begins + hash, -1, -2)) {
+      my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
 
-    if (my_write_index >= __max_value_size) {
-      Kokkos::abort(
-          "vector_atomic_insert_into_hash_once: keys size exceeded.\n");
-    } else {
-      keys[my_write_index] = key;
+      if (my_write_index >= __max_value_size) {
+        Kokkos::abort(
+            "vector_atomic_insert_into_hash_once: keys size exceeded.\n");
+      } else {
+        keys[my_write_index] = key;
+        // If memory bound, remove values and use hash_begins[hash] instead.
+        values[my_write_index] = my_write_index;
 
 #if defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_TURING75) || \
     defined(KOKKOS_ARCH_AMPERE)
-      // this is an issue on VOLTA and up because warps do not go in SIMD
-      // fashion anymore. while some thread might insert my_write_index into
-      // linked list, another thread in the warp might be reading keys in above
-      // loop. before inserting the new value in liked list -- which is done
-      // with atomic exchange below, we make sure that the linked is is complete
-      // my assigning the hash_next to current head. the head might be different
-      // when we do the atomic exchange. this would cause temporarily skipping a
-      // key in the linkedlist until hash_nexts is updated second time as below.
-      // but this is okay for spgemm,
-      // because no two keys will be inserted into hashmap at the same time, as
-      // rows have unique columns.
-      hash_nexts[my_write_index] = hash_begins[hash];
+        // this is an issue on VOLTA and up because warps do not go in SIMD
+        // fashion anymore. while some thread might insert my_write_index into
+        // linked list, another thread in the warp might be reading keys in
+        // above loop. before inserting the new value in liked list -- which is
+        // done with atomic exchange below, we make sure that the linked is is
+        // complete my assigning the hash_next to current head. the head might
+        // be different when we do the atomic exchange. this would cause
+        // temporarily skipping a key in the linkedlist until hash_nexts is
+        // updated second time as below. but this is okay for spgemm, because no
+        // two keys will be inserted into hashmap at the same time, as rows have
+        // unique columns.
+        hash_nexts[my_write_index] = hash_begins[hash];
 #endif
 
-      hashbeginning =
-          Kokkos::atomic_exchange(hash_begins + hash, my_write_index);
-      hash_nexts[my_write_index] = hashbeginning;
-
-      // TODO: remove this after handling duplicate insertions.
-      // If 2 or more threads insert the same key at the same time,
-      // we must return the index which the first thread inserted.
-      // If hashbeginning is -1, this is the first insertion and we can
-      // set values to the next index. If hashbeginning != -1, we must
-      // always return the index associated with the first insertion.
-      if (hashbeginning == -1)
-        values[my_write_index] = my_write_index;
-      else
-        values[my_write_index] = values[hashbeginning];
-
-      return values[my_write_index];
+        // TODO: No need for atomic exchange here.
+        hashbeginning =
+            Kokkos::atomic_exchange(hash_begins + hash, my_write_index);
+        hash_nexts[my_write_index] = hashbeginning;
+      }
+      return my_write_index;
+    } else {
+      // Wait for the other thread to insert
+      while (hash_begins[hash] < 0)
+        ;
+      // return my_write_index from the other thread
+      return hash_begins[hash];
     }
   }
 
@@ -1032,10 +1023,10 @@ struct HashmapAccumulator {
                 std::size_t>::type = 0>
   KOKKOS_INLINE_FUNCTION int __compute_hash(size_type key, size_type bitmask) {
     size_type hash = key & bitmask;
-#ifdef HASHMAPACCUMULATOR_ASSERT_ENABLED
+    //#ifdef HASHMAPACCUMULATOR_ASSERT_ENABLED
     if (hash == -1) Kokkos::abort("__compute_hash: hash = -1");
     if (key == -1) Kokkos::abort("__compute_hash: key = -1");
-#endif  // HASHMAPACCUMULATOR_ASSERT_ENABLED
+    //#endif  // HASHMAPACCUMULATOR_ASSERT_ENABLED
     return hash;
   }
 
