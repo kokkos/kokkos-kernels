@@ -70,10 +70,9 @@ class Coo2Crs {
                    typename RowIdViewType::array_layout,
                    typename RowIdViewType::execution_space,
                    Kokkos::MemoryTraits<Kokkos::Atomic>>;
-  using ColMapViewType = ColViewType;
-  using ValViewType    = DataViewType;
-  using OrdinalType    = CrsOT;
-  using SizeType       = int;  // Must be int for HashmapAccumulator...
+  using RowViewScalarType = typename AtomicRowIdViewType::value_type;
+  using OrdinalType       = CrsOT;
+  using SizeType          = int;  // Must be int for HashmapAccumulator...
 
   using KeyType          = int;
   using ValueType        = typename DataViewType::value_type;
@@ -106,16 +105,10 @@ class Coo2Crs {
   OrdinalType __nrows;
   OrdinalType __ncols;
   SizeType __nnz;
-  ValViewType __vals;
-  RowIdViewType __row_ids;
-  ColMapViewType __col_map;
 
   AtomicRowIdViewType __crs_row_cnt;
-  using RowViewScalarType = typename AtomicRowIdViewType::value_type;
-
   CrsValsViewType __crs_vals;
   CrsRowMapViewType __crs_row_map;
-  CrsRowMapViewType __crs_row_map_scratch;
   CrsColIdViewType __crs_col_ids;
 
   size_t __n_tuples;
@@ -139,12 +132,12 @@ class Coo2Crs {
     using s3MemberType = typename s3Policy::member_type;
     using s4MemberType = typename s4Policy::member_type;
     unsigned __n;
-
-   public:
     AtomicRowIdViewType __crs_row_cnt;
     RowViewType __row;
     ColViewType __col;
     DataViewType __data;
+
+   public:
     unsigned teams_work, last_teams_work;
     RowViewScalarType max_row_cnt;
     RowViewScalarType pow2_max_row_cnt;
@@ -365,36 +358,31 @@ class Coo2Crs {
 
   class __Phase2Functor {
    private:
+    RowIdViewType __row;
+    ColViewType __col;
+    DataViewType __data;
     OrdinalType __nrows;
     OrdinalType __ncols;
     SizeType __nnz;
-    ValViewType __vals;
+
     CrsValsViewType __crs_vals;
-    RowIdViewType __row_ids;
     CrsRowMapViewType __crs_row_map;
-    CrsRowMapViewType __crs_row_map_scratch;
-    ColMapViewType __col_map;
     CrsColIdViewType __crs_col_ids;
-    AtomicRowIdViewType __crs_row_cnt;
 
    public:
-    __Phase2Functor(OrdinalType nrows, OrdinalType ncols, SizeType nnz,
-                    ValViewType vals, CrsValsViewType crs_vals,
-                    RowIdViewType row_ids, CrsRowMapViewType crs_row_map,
-                    CrsRowMapViewType crs_row_map_scratch,
-                    ColMapViewType col_map, CrsColIdViewType crs_col_ids,
-                    AtomicRowIdViewType crs_row_cnt)
-        : __nrows(nrows),
+    __Phase2Functor(RowIdViewType row, ColViewType col, DataViewType data,
+                    OrdinalType nrows, OrdinalType ncols, SizeType nnz,
+                    CrsValsViewType crs_vals, CrsRowMapViewType crs_row_map,
+                    CrsColIdViewType crs_col_ids)
+        : __row(row),
+          __col(col),
+          __data(data),
+          __nrows(nrows),
           __ncols(ncols),
           __nnz(nnz),
-          __vals(vals),
           __crs_vals(crs_vals),
-          __row_ids(row_ids),
           __crs_row_map(crs_row_map),
-          __crs_row_map_scratch(crs_row_map_scratch),
-          __col_map(col_map),
-          __crs_col_ids(crs_col_ids),
-          __crs_row_cnt(crs_row_cnt){};
+          __crs_col_ids(crs_col_ids){};
   };
 
  private:
@@ -501,7 +489,6 @@ class Coo2Crs {
       // since the coo partitions are the same. We do need new scratch
       // memory allocations and suggested team sizes though.
       s4Policy s4p;
-      // TODO: put this in a function
       __suggested_team_size =
           __team_size == 0
               ? s4p.team_size_recommended(functor, Kokkos::ParallelForTag())
@@ -597,6 +584,19 @@ class Coo2Crs {
 
   template <class FunctorType>
   void __runPhase2(FunctorType &functor) {
+    // Allocate global_hmap[nrows]
+    // Partition col_ids and vals into global hashmap
+    /*       s3Policy s3p;
+          __suggested_team_size =
+              __team_size == 0
+                  ? s3p.team_size_recommended(functor, Kokkos::ParallelForTag())
+                  : __team_size;
+          __n_teams               = __n_tuples / __suggested_team_size;
+          functor.teams_work      = __n_tuples / __n_teams;
+          functor.last_teams_work = __n_tuples - (functor.teams_work *
+       __n_teams); functor.last_teams_work = functor.last_teams_work == 0 ?
+       functor.teams_work : functor.last_teams_work;
+          __n_teams += !!(__n_tuples % __suggested_team_size); */
     return;
   }
 
@@ -617,30 +617,30 @@ class Coo2Crs {
     }
 
     // Allocate and populate crs.
+    {
+      namespace KE = Kokkos::Experimental;
+      CrsET crsET;
 
-    /*    __crs_vals = CrsValsViewType(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "__crs_vals"), nnz);
-    __crs_row_map = CrsRowMapViewType(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "__crs_row_map"),
-        nrows + 1);
-    __crs_row_map_scratch =
-        CrsRowMapViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing,
-                                             "__crs_row_map_scratch"),
-                          nrows + 1);
-    __crs_col_ids = CrsColIdViewType(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "__crs_col_ids"), nnz);
+      __crs_row_map = CrsRowMapViewType(
+          Kokkos::view_alloc(Kokkos::WithoutInitializing, "__crs_row_map"),
+          __nrows + 1);
+      KE::exclusive_scan(crsET, KE::cbegin(__crs_row_cnt),
+                         KE::cend(__crs_row_cnt) + 1, KE::begin(__crs_row_map),
+                         0);
+      CrsET().fence();
 
-        KokkosKernels::Impl::get_suggested_vector_size<int64_t, CrsET>(
-        __suggested_vec_size, __nrows, __nnz);
-    __suggested_team_size =
-        KokkosKernels::Impl::get_suggested_team_size<TeamPolicyType>(
-            functor, __suggested_vec_size);
+      __nnz = __crs_row_map(__nrows);
 
-    __Phase2Functor<typename TeamPolicyType::member_type> phase2Functor(__nrows,
-    __ncols, __nnz, __vals, __crs_vals, __row_ids, __crs_row_map,
-        __crs_row_map_scratch, __col_map, __crs_col_ids, __crs_row_cnt);
-    __runPhase2(phase2Functor);
-    */
+      __crs_vals = CrsValsViewType(
+          Kokkos::view_alloc(Kokkos::WithoutInitializing, "__crs_vals"), __nnz);
+      __crs_col_ids = CrsColIdViewType(
+          Kokkos::view_alloc(Kokkos::WithoutInitializing, "__crs_col_ids"),
+          __nnz);
+
+      __Phase2Functor phase2Functor(row, col, data, __nrows, __ncols, __nnz,
+                                    __crs_vals, __crs_row_map, __crs_col_ids);
+      __runPhase2(phase2Functor);
+    }
   }
 
   CrsType get_crsMat() {
