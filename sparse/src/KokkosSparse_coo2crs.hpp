@@ -72,9 +72,9 @@ class Coo2Crs {
                    Kokkos::MemoryTraits<Kokkos::Atomic>>;
   using RowViewScalarType = typename AtomicRowIdViewType::value_type;
   using OrdinalType       = CrsOT;
-  using SizeType          = int;  // Must be int for HashmapAccumulator...
 
-  using KeyType          = int;
+  using SizeType         = int;  // Must be int for HashmapAccumulator...
+  using KeyType          = typename CrsType::index_type::value_type;
   using ValueType        = typename DataViewType::value_type;
   using ScratchSpaceType = typename CrsET::scratch_memory_space;
 
@@ -102,9 +102,13 @@ class Coo2Crs {
   using ValViewScratch =
       Kokkos::View<ValueType *, Kokkos::LayoutRight, ScratchSpaceType>;
 
+  using GlobalHmapType = KokkosKernels::Experimental::HashmapAccumulator<
+      SizeType, KeyType, ValueType,
+      KokkosKernels::Experimental::HashOpType::bitwiseAnd>;
+
   OrdinalType __nrows;
   OrdinalType __ncols;
-  SizeType __nnz;
+  CrsSzT __nnz;
 
   AtomicRowIdViewType __crs_row_cnt;
   CrsValsViewType __crs_vals;
@@ -585,6 +589,11 @@ class Coo2Crs {
   template <class FunctorType>
   void __runPhase2(FunctorType &functor) {
     // Allocate global_hmap[nrows]
+    // This is largely allocated already except for the linked lists.
+    // __crs_col_ids will be the keys for each hmap.
+    // __crs_vals will be the values for each hmap.
+    // We will have a view of hmaps to map to row ids.
+
     // Partition col_ids and vals into global hashmap
     /*       s3Policy s3p;
           __suggested_team_size =
