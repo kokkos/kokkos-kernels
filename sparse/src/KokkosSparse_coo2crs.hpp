@@ -67,8 +67,7 @@ class Coo2Crs {
   using RowIdViewType     = RowViewType;
   using AtomicRowIdViewType =
       Kokkos::View<typename RowIdViewType::value_type *,
-                   typename RowIdViewType::array_layout,
-                   typename RowIdViewType::execution_space,
+                   typename RowIdViewType::array_layout, CrsET,
                    Kokkos::MemoryTraits<Kokkos::Atomic>>;
   using RowViewScalarType = typename AtomicRowIdViewType::value_type;
   using OrdinalType       = CrsOT;
@@ -93,8 +92,8 @@ class Coo2Crs {
       Kokkos::View<SizeType *, Kokkos::LayoutRight, ScratchSpaceType>;
   using UsedSizePtrType = volatile SizeType *;
   using UsedSizePtrView =
-      Kokkos::View<volatile UsedSizePtrType **, Kokkos::LayoutRight>;
-  using UsetView = Kokkos::View<UsetType **, Kokkos::LayoutRight>;
+      Kokkos::View<volatile UsedSizePtrType **, Kokkos::LayoutRight, CrsET>;
+  using UsetView = Kokkos::View<UsetType **, Kokkos::LayoutRight, CrsET>;
 
   // Hashmap types.
   using UsetIdxViewScratch =
@@ -105,6 +104,9 @@ class Coo2Crs {
   using GlobalHmapType = KokkosKernels::Experimental::HashmapAccumulator<
       SizeType, KeyType, ValueType,
       KokkosKernels::Experimental::HashOpType::bitwiseAnd>;
+  using GlobalHmapView =
+      Kokkos::View<GlobalHmapType *, Kokkos::LayoutRight, CrsET>;
+  using SizeView = Kokkos::View<SizeType *, Kokkos::LayoutRight, CrsET>;
 
   OrdinalType __nrows;
   OrdinalType __ncols;
@@ -117,7 +119,7 @@ class Coo2Crs {
 
   size_t __n_tuples;
   bool __insert_mode;
-  unsigned __team_size;
+  unsigned int __team_size, __suggested_team_size, __n_teams;
 
  public:
   struct phase1Tags {
@@ -356,12 +358,16 @@ class Coo2Crs {
   };
 
   struct phase2Tags {
-    struct s6RowMap {};
+    struct s6GlobalHmapSetup {};
     struct s7Copy {};
   };
 
+  using s7Policy = Kokkos::TeamPolicy<typename phase2Tags::s7Copy, CrsET>;
+
   class __Phase2Functor {
    private:
+    using s7MemberType = typename s7Policy::member_type;
+
     RowIdViewType __row;
     ColViewType __col;
     DataViewType __data;
@@ -372,6 +378,8 @@ class Coo2Crs {
     CrsValsViewType __crs_vals;
     CrsRowMapViewType __crs_row_map;
     CrsColIdViewType __crs_col_ids;
+
+    GlobalHmapView __global_hmap;
 
    public:
     __Phase2Functor(RowIdViewType row, ColViewType col, DataViewType data,
@@ -386,11 +394,42 @@ class Coo2Crs {
           __nnz(nnz),
           __crs_vals(crs_vals),
           __crs_row_map(crs_row_map),
-          __crs_col_ids(crs_col_ids){};
-  };
+          __crs_col_ids(crs_col_ids) {
+      __global_hmap = GlobalHmapView(
+          Kokkos::view_alloc(Kokkos::WithoutInitializing, "__global_hmap"),
+          __nrows);
+    };
 
- private:
-  unsigned int __suggested_team_size, __suggested_vec_size, __n_teams;
+    KOKKOS_INLINE_FUNCTION
+    void operator()(const typename phase2Tags::s6GlobalHmapSetup &,
+                    const int &row_idx) const {
+      auto row_start                 = __crs_row_map(row_idx);
+      auto row_len                   = __crs_row_map(row_idx + 1) - row_start;
+      decltype(row_len) pow2_row_len = 1;
+      while (pow2_row_len < row_len) pow2_row_len *= 2;
+
+      SizeView hmap_begins(
+          Kokkos::view_alloc(Kokkos::WithoutInitializing, "hmap_begins"),
+          pow2_row_len);
+      Kokkos::deep_copy(hmap_begins, -1);
+      SizeView hmap_nexts(
+          Kokkos::view_alloc(Kokkos::WithoutInitializing, "hmap_begins"),
+          row_len);
+
+      auto keys   = __crs_col_ids.data() + row_start;
+      auto values = __crs_vals.data() + row_start;
+      GlobalHmapType hmap(row_len, pow2_row_len - 1, hmap_begins.data(),
+                          hmap_nexts.data(), keys, values);
+      __global_hmap(row_idx) = hmap;
+      /* printf("row_idx: %d, row_start: %lu, row_len: %lu, pow2_row_len: %lu,
+       * keys: %p, values: %p\n", row_idx, row_start, row_len, pow2_row_len,
+       * (void *) keys, (void *) values); */
+    }
+    /* KOKKOS_INLINE_FUNCTION
+  void operator()(const typename phase2Tags::s7Copy &,
+                  const s7MemberType &member) const {
+  } */
+  };
 
   template <class FunctorType>
   void __runPhase1(FunctorType &functor) {
@@ -560,7 +599,7 @@ class Coo2Crs {
 #if 0
       std::cout << "phase1Functor.__crs_row_cnt: " << std::endl;
       for (unsigned i = 0; i < __nrows; i++) {
-        std::cout << i << ":" << functor.__crs_row_cnt[i] << std::endl;
+        std::cout << i << ":" << __crs_row_cnt(i) << std::endl;
       }
 #endif
 
@@ -575,24 +614,18 @@ class Coo2Crs {
       std::cout << "phase1Functor.max_row_cnt: " << functor.max_row_cnt
                 << std::endl;
 #endif
-
-#if 0
-      for (size_t i = 0; i < __n_tuples; i++) {
-        std::cout << "(" << functor.__row(i) << ", " << functor.__col(i) << ", "
-                  << functor.__data(i) << ")" << std::endl;
-      }
-#endif
     }
     return;
   }
 
   template <class FunctorType>
   void __runPhase2(FunctorType &functor) {
-    // Allocate global_hmap[nrows]
-    // This is largely allocated already except for the linked lists.
-    // __crs_col_ids will be the keys for each hmap.
-    // __crs_vals will be the values for each hmap.
-    // We will have a view of hmaps to map to row ids.
+    Kokkos::parallel_for(
+        "Coo2Crs::phase2Tags::s6GlobalHmapSetup",
+        Kokkos::RangePolicy<typename phase2Tags::s6GlobalHmapSetup, CrsET>(
+            0, __nrows),
+        functor);
+    CrsET().fence();
 
     // Partition col_ids and vals into global hashmap
     /*       s3Policy s3p;
@@ -619,11 +652,17 @@ class Coo2Crs {
     __team_size   = team_size;
 
     // Get an estimate of the number of columns per row.
-    __crs_row_cnt = AtomicRowIdViewType("__crs_row_cnt", m);
+    __crs_row_cnt = AtomicRowIdViewType("__crs_row_cnt", m + 1);
     {
       __Phase1Functor phase1Functor(row, col, data, __crs_row_cnt);
       __runPhase1(phase1Functor);
     }
+#if 0
+      for (size_t i = 0; i < __n_tuples; i++) {
+        std::cout << "(" << row(i) << ", " << col(i) << ", "
+                  << data(i) << ")" << std::endl;
+      }
+#endif
 
     // Allocate and populate crs.
     {
@@ -634,11 +673,16 @@ class Coo2Crs {
           Kokkos::view_alloc(Kokkos::WithoutInitializing, "__crs_row_map"),
           __nrows + 1);
       KE::exclusive_scan(crsET, KE::cbegin(__crs_row_cnt),
-                         KE::cend(__crs_row_cnt) + 1, KE::begin(__crs_row_map),
-                         0);
+                         KE::cend(__crs_row_cnt), KE::begin(__crs_row_map), 0);
       CrsET().fence();
 
       __nnz = __crs_row_map(__nrows);
+
+#if 0
+      for (int i = 0; i <= __nrows; i++)
+        printf("__crs_row_map(%d) = %lu\n", i, __crs_row_map(i));
+      std::cout << "__nnz: = " << __nnz << std::endl;
+#endif
 
       __crs_vals = CrsValsViewType(
           Kokkos::view_alloc(Kokkos::WithoutInitializing, "__crs_vals"), __nnz);
