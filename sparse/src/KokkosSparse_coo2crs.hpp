@@ -47,13 +47,13 @@
 #include "KokkosKernels_HashmapAccumulator.hpp"
 #include <Kokkos_StdAlgorithms.hpp>
 
-#ifndef _KOKKOSSPARSE_COO2CSR_HPP
-#define _KOKKOSSPARSE_COO2CSR_HPP
+#ifndef _KOKKOSSPARSE_COO2CRS_HPP
+#define _KOKKOSSPARSE_COO2CRS_HPP
 namespace KokkosSparse {
 namespace Impl {
 template <class DimType, class RowViewType, class ColViewType,
           class DataViewType>
-class Coo2Csr {
+class Coo2Crs {
  private:
   using CrsST             = typename DataViewType::value_type;
   using CrsOT             = int64_t;
@@ -129,7 +129,6 @@ class Coo2Csr {
     struct s3UniqRows {};
     struct s4MaxUniqueRows {};
     struct s4RowCnt {};
-    struct s5MaxRowCnt {};
   };
 
   using s3Policy = Kokkos::TeamPolicy<typename phase1Tags::s3UniqRows, CrsET>;
@@ -404,7 +403,7 @@ class Coo2Csr {
   template <class FunctorType>
   void __runPhase1(FunctorType &functor) {
     {
-#if 1
+#if 0
       for (size_t i = 0; i < __n_tuples; i++) {
         std::cout << "(" << functor.__row(i) << ", " << functor.__col(i) << ", "
                   << functor.__data(i) << ")" << std::endl;
@@ -412,12 +411,12 @@ class Coo2Csr {
 #endif
 
       Kokkos::parallel_for(
-          "Coo2Csr::phase1Tags::s1RowCntDup",
+          "Coo2Crs::phase1Tags::s1RowCntDup",
           Kokkos::RangePolicy<typename phase1Tags::s1RowCntDup, CrsET>(
               0, __n_tuples),
           functor);
       CrsET().fence();
-#if 1
+#if 0
       std::cout << "phase1Functor.__crs_row_cnt: " << std::endl;
       for (unsigned i = 0; i < __nrows; i++) {
         std::cout << i << ":" << functor.__crs_row_cnt[i] << std::endl;
@@ -479,9 +478,9 @@ class Coo2Csr {
 
       s3p = s3Policy(__n_teams, __suggested_team_size);
       s3p.set_scratch_size(0, Kokkos::PerTeam(s3_shmem_size));
-      Kokkos::parallel_for("Coo2Csr::phase1Tags::s3UniqRows", s3p, functor);
+      Kokkos::parallel_for("Coo2Crs::phase1Tags::s3UniqRows", s3p, functor);
       CrsET().fence();
-#if 1
+#if 0
       std::cout << "phase1Functor.n_unique_rows_per_team: " << std::endl;
       for (unsigned i = 0; i < __n_teams; i++) {
         std::cout << i << ":" << functor.n_unique_rows_per_team[i] << std::endl;
@@ -493,7 +492,7 @@ class Coo2Csr {
               0, __n_teams),
           functor, Kokkos::Max<unsigned>(functor.max_n_unique_rows));
       CrsET().fence();
-#if 1
+#if 0
       std::cout << "phase1Functor.max_n_unique_rows: "
                 << functor.max_n_unique_rows << std::endl;
 #endif
@@ -545,7 +544,7 @@ class Coo2Csr {
           Kokkos::view_alloc(Kokkos::WithoutInitializing, "uset_used_sizes"),
           __n_teams, functor.max_n_unique_rows);
 
-#if 1
+#if 0
       std::cout << "__n_tuples: " << __n_tuples << std::endl;
       std::cout << "__n_teams: " << __n_teams << std::endl;
       std::cout << "__suggested_team_size: " << __suggested_team_size
@@ -556,7 +555,7 @@ class Coo2Csr {
       std::cout << "s4_shmem_size: " << s4_shmem_size << std::endl;
 #endif
 
-#if 1
+#if 0
       std::cout << "phase1Functor.__crs_row_cnt: " << std::endl;
       for (unsigned i = 0; i < __nrows; i++) {
         std::cout << i << ":" << functor.__crs_row_cnt[i] << std::endl;
@@ -565,16 +564,28 @@ class Coo2Csr {
 
       s4p = s4Policy(__n_teams, __suggested_team_size);
       s4p.set_scratch_size(0, Kokkos::PerTeam(s4_shmem_size));
-      Kokkos::parallel_for("Coo2Csr::phase1Tags::s4RowCnt", s4p, functor);
+      Kokkos::parallel_for("Coo2Crs::phase1Tags::s4RowCnt", s4p, functor);
       CrsET().fence();
-#if 1
+#if 0
       std::cout << "phase1Functor.__crs_row_cnt: " << std::endl;
       for (unsigned i = 0; i < __nrows; i++) {
         std::cout << i << ":" << functor.__crs_row_cnt[i] << std::endl;
       }
 #endif
 
-#if 1
+      functor.max_row_cnt = 0;
+      Kokkos::parallel_reduce(
+          Kokkos::RangePolicy<CrsET, typename phase1Tags::s2MaxRowCnt>(0,
+                                                                       __nrows),
+          functor, Kokkos::Max<RowViewScalarType>(functor.max_row_cnt));
+      CrsET().fence();
+
+#if 0
+      std::cout << "phase1Functor.max_row_cnt: " << functor.max_row_cnt
+                << std::endl;
+#endif
+
+#if 0
       for (size_t i = 0; i < __n_tuples; i++) {
         std::cout << "(" << functor.__row(i) << ", " << functor.__col(i) << ", "
                   << functor.__data(i) << ")" << std::endl;
@@ -590,7 +601,7 @@ class Coo2Csr {
   }
 
  public:
-  Coo2Csr(DimType m, DimType n, RowViewType row, ColViewType col,
+  Coo2Crs(DimType m, DimType n, RowViewType row, ColViewType col,
           DataViewType data, unsigned team_size, bool insert_mode) {
     __insert_mode = insert_mode;
     __n_tuples    = data.extent(0);
@@ -598,9 +609,14 @@ class Coo2Csr {
     __ncols       = n;
     __team_size   = team_size;
 
+    // Get an estimate of the number of columns per row.
     __crs_row_cnt = AtomicRowIdViewType("__crs_row_cnt", m);
-    __Phase1Functor phase1Functor(row, col, data, __crs_row_cnt);
-    __runPhase1(phase1Functor);
+    {
+      __Phase1Functor phase1Functor(row, col, data, __crs_row_cnt);
+      __runPhase1(phase1Functor);
+    }
+
+    // Allocate and populate crs.
 
     /*    __crs_vals = CrsValsViewType(
         Kokkos::view_alloc(Kokkos::WithoutInitializing, "__crs_vals"), nnz);
@@ -627,8 +643,8 @@ class Coo2Csr {
     */
   }
 
-  CrsType get_csrMat() {
-    return CrsType("coo2csr", __nrows, __ncols, __nnz, __crs_vals,
+  CrsType get_crsMat() {
+    return CrsType("coo2crs", __nrows, __ncols, __nnz, __crs_vals,
                    __crs_row_map, __crs_col_ids);
   }
 };
@@ -649,7 +665,7 @@ class Coo2Csr {
 /// default, values are added. \return A KokkosSparse::CrsMatrix.
 template <class DimType, class RowViewType, class ColViewType,
           class DataViewType>
-auto coo2csr(DimType m, DimType n, RowViewType row, ColViewType col,
+auto coo2crs(DimType m, DimType n, RowViewType row, ColViewType col,
              DataViewType data, unsigned team_size = 0,
              bool insert_mode = false) {
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
@@ -677,10 +693,10 @@ auto coo2csr(DimType m, DimType n, RowViewType row, ColViewType col,
   if (row.extent(0) != col.extent(0) || row.extent(0) != data.extent(0))
     Kokkos::abort("row.extent(0) = col.extent(0) = data.extent(0) required.");
 
-  using Coo2csrType =
-      Impl::Coo2Csr<DimType, RowViewType, ColViewType, DataViewType>;
-  Coo2csrType Coo2Csr(m, n, row, col, data, team_size, insert_mode);
-  return Coo2Csr.get_csrMat();
+  using Coo2crsType =
+      Impl::Coo2Crs<DimType, RowViewType, ColViewType, DataViewType>;
+  Coo2crsType Coo2Crs(m, n, row, col, data, team_size, insert_mode);
+  return Coo2Crs.get_crsMat();
 }
 
 #if 0
@@ -697,9 +713,9 @@ auto coo2csr(DimType m, DimType n, RowViewType row, ColViewType col,
 /// \param insert_mode whether to insert values. By default, values are added.
 /// \return A KokkosSparse::CrsMatrix.
 template <class DimType, class RowViewType, class ColViewType, class DataViewType, class CrsMatrixType>
-auto coo2csr(DimType m, DimType n, RowViewType row, ColViewType col, DataViewType data, CrsMatrixType crsMatrix) {
+auto coo2crs(DimType m, DimType n, RowViewType row, ColViewType col, DataViewType data, CrsMatrixType crsMatrix) {
   // TODO: Run phase2 only.
 }
 #endif
 }  // namespace KokkosSparse
-#endif  //  _KOKKOSSPARSE_COO2CSR_HPP
+#endif  //  _KOKKOSSPARSE_COO2CRS_HPP

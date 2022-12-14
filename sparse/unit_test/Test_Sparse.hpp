@@ -1,7 +1,7 @@
 #ifndef TEST_SPARSE_HPP
 #define TEST_SPARSE_HPP
 
-#include "Test_Sparse_coo2csr.hpp"
+#include "Test_Sparse_coo2crs.hpp"
 #include "Test_Sparse_block_gauss_seidel.hpp"
 #include "Test_Sparse_Controls.hpp"
 #include "Test_Sparse_CrsMatrix.hpp"
