@@ -46,6 +46,37 @@
 #include "KokkosKernels_TestUtils.hpp"
 
 namespace Test {
+template <class CrsType, class RowType, class ColType, class DataType>
+void check_crs_matrix(CrsType crsMat, RowType row, ColType col, DataType data) {
+  // Copy coo to host
+  typename RowType::HostMirror row_h = Kokkos::create_mirror_view(row);
+  Kokkos::deep_copy(row_h, row);
+  typename ColType::HostMirror col_h = Kokkos::create_mirror_view(col);
+  Kokkos::deep_copy(col_h, col);
+  typename DataType::HostMirror data_h = Kokkos::create_mirror_view(data);
+  Kokkos::deep_copy(data_h, data);
+
+  auto crs_col_ids_d = crsMat.graph.entries;
+  auto crs_row_map_d = crsMat.graph.row_map;
+  auto crs_vals_d    = crsMat.values;
+
+  using ViewTypeCrsColIds = decltype(crs_col_ids_d);
+  using ViewTypeCrsRowMap = decltype(crs_row_map_d);
+  using ViewTypeCrsVals   = decltype(crs_vals_d);
+
+  // Copy crs to host
+  typename ViewTypeCrsColIds::HostMirror crs_col_ids =
+      Kokkos::create_mirror_view(crs_col_ids_d);
+  Kokkos::deep_copy(crs_col_ids, crs_col_ids_d);
+  typename ViewTypeCrsRowMap::HostMirror crs_row_map =
+      Kokkos::create_mirror_view(crs_row_map_d);
+  Kokkos::deep_copy(crs_row_map, crs_row_map_d);
+  typename ViewTypeCrsVals::HostMirror crs_vals =
+      Kokkos::create_mirror_view(crs_vals_d);
+  Kokkos::deep_copy(crs_vals, crs_vals_d);
+
+  Kokkos::fence();
+}
 template <class ScalarType, class LayoutType, class ExeSpaceType>
 void doCoo2Crs(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
   RandCooMat<ScalarType, LayoutType, ExeSpaceType> cooMat(m, n, m * n, min_val,
@@ -131,9 +162,11 @@ void doCoo2Crs(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
 template <class LayoutType, class ExeSpaceType>
 void doAllScalarsCoo2Crs(size_t m, size_t n, int min, int max) {
   doCoo2Crs<float, LayoutType, ExeSpaceType>(m, n, min, max);
-  doCoo2Crs<double, LayoutType, ExeSpaceType>(m, n, min, max);
-  doCoo2Crs<Kokkos::complex<float>, LayoutType, ExeSpaceType>(m, n, min, max);
+  /* doCoo2Crs<double, LayoutType, ExeSpaceType>(m, n, min, max); */
+  /* doCoo2Crs<Kokkos::complex<float>, LayoutType, ExeSpaceType>(m, n, min,
+  max);
   doCoo2Crs<Kokkos::complex<double>, LayoutType, ExeSpaceType>(m, n, min, max);
+*/
 }
 
 template <class ExeSpaceType>
@@ -191,8 +224,29 @@ TEST_F(TestCategory, sparse_coo2crs_staticMatrix_edgeCases) {
   }
   // Even partitions with multiple threads
   auto crsMatTs4 = KokkosSparse::coo2crs(m, n, row, col, data, 4);
+  printf("row_map: \n");
+  for (long long i = 0; i < crsMatTs4.numRows(); i++)
+    std::cout << crsMatTs4.graph.row_map(i) << " ";
+  printf("\ncol_ids: \n");
+  for (unsigned long i = 0; i < crsMatTs4.nnz(); i++)
+    std::cout << crsMatTs4.graph.entries(i) << " ";
+  printf("\nvals: \n");
+  for (unsigned long i = 0; i < crsMatTs4.nnz(); i++)
+    std::cout << crsMatTs4.values(i) << " ";
+  std::cout << std::endl;
+
   // Uneven partitions with multiple threads
   auto crsMatTs3 = KokkosSparse::coo2crs(m, n, row, col, data, 3);
+  printf("row_map: \n");
+  for (long long i = 0; i < crsMatTs4.numRows(); i++)
+    std::cout << crsMatTs3.graph.row_map(i) << " ";
+  printf("\ncol_ids: \n");
+  for (unsigned long i = 0; i < crsMatTs3.nnz(); i++)
+    std::cout << crsMatTs3.graph.entries(i) << " ";
+  printf("\nvals: \n");
+  for (unsigned long i = 0; i < crsMatTs3.nnz(); i++)
+    std::cout << crsMatTs3.values(i) << " ";
+  std::cout << std::endl;
 }
 
 // TODO: Add reproducer for HashmapAccumulator vector atomic insert of same keys
