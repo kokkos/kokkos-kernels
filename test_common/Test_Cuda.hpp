@@ -9,14 +9,14 @@
 #define KOKKOSKERNELS_ETI_ONLY
 #endif
 
-class cuda : public ::testing::Test {
+class Cuda : public ::testing::Test {
  protected:
   static void SetUpTestCase() {}
 
   static void TearDownTestCase() {}
 };
 
-#define TestCategory cuda
+#define TestCategory Cuda
 #define TestExecSpace Kokkos::Cuda
 
 #endif  // TEST_CUDA_HPP
