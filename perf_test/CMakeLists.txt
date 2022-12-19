@@ -51,11 +51,16 @@ if (KokkosKernels_ENABLE_PERFTESTS)
     ADD_SUBDIRECTORY(performance)
     #ADD_SUBDIRECTORY(common)
 
+endif()
+
+IF(KokkosKernels_ENABLE_BENCHMARK)
+
     IF (KOKKOSKERNELS_HAS_TRILINOS)
       message(FATAL_ERROR "Benchmarks are not supported when building as part of Trilinos")
     ENDIF()
 
     find_package(benchmark QUIET)
+
     IF(benchmark_FOUND)
       MESSAGE(STATUS "Using google benchmark found in ${benchmark_DIR}")
     ELSE()
@@ -143,4 +148,3 @@ if (KokkosKernels_ENABLE_PERFTESTS)
     )
 
 endif()
-
