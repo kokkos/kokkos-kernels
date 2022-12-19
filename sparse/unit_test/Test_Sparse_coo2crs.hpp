@@ -249,6 +249,154 @@ TEST_F(TestCategory, sparse_coo2crs_staticMatrix_edgeCases) {
   std::cout << std::endl;
 }
 
-// TODO: Add reproducer for HashmapAccumulator vector atomic insert of same keys
-// from multiple threads
+// Reading III.D of https://ieeexplore.ieee.org/abstract/document/7965111/
+// indicates that the vector atomic insert routines were originally intended
+// to be used by a set of vector lanes that performs insertions for a single row
+// with a set of unique column ids. The part that worries me from a correctness
+// perspective in the paper is:
+// "If a key already exists in the hashmap, values are accumulated with “add”
+// and Bitwiseor in numeric and symbolic phases, respectively.".
+//
+// I think a major challenge with the class is that
+// it's not encapsulate and its behavior varies widely based on each insertion
+// routine. This makes the class very difficult to understand and use unless you
+// read through it in detail.
+//
+// The behavior this test demonstrates may not be a bug but an undocumented
+// feature added for performance. Based on my experience trying to use this
+// class when implementing coo2csr, my recommendation would be to rewrite the
+// HashmapAccumulator. With the rewrite, any customization of the class for an
+// algorithm would not be permitted within the class but instead would require a
+// subclass such as: SpgemmHashmapAccumulator : public HashmapAccumulator. In
+// this way, it's clear that anything using the child types is using a different
+// behavior from the standard HashmapAccumulator insertion and lookup routines
+// supported in the parent class.
+//
+// With that said, my assumption (after reading the insertion routine code) was
+// that for any of the vector atomic insert routines a given key will be
+// inserted exactly once and subsequent insertions would either SUM values or
+// bitise-OR values. In this way, I thought of a new insertion as the creation
+// of a bucket and the SUMing or bitwise-ORing of values as addition to that
+// bucket.
+//
+// This test will fail if the same key appears twice in the hashmap.
+namespace HashmapAccumulator_RaceToInsert {
+struct myFunctor {
+  using PolicyType = Kokkos::TeamPolicy<TestExecSpace>;
+  using MemberType = typename PolicyType::member_type;
+
+  using SizeType  = int32_t;
+  using KeyType   = int32_t;
+  using ValueType = int32_t;
+
+  using ScratchSpaceType = typename TestExecSpace::scratch_memory_space;
+  using KeyViewScratch =
+      Kokkos::View<KeyType *, Kokkos::LayoutRight, ScratchSpaceType>;
+  using SizeViewScratch =
+      Kokkos::View<SizeType *, Kokkos::LayoutRight, ScratchSpaceType>;
+
+  using UmapType = KokkosKernels::Experimental::HashmapAccumulator<
+      SizeType, KeyType, ValueType,
+      KokkosKernels::Experimental::HashOpType::bitwiseAnd>;
+
+  using KeyViewType =
+      Kokkos::View<KeyType *, Kokkos::LayoutRight, TestExecSpace>;
+  using KeyViewType2 =
+      Kokkos::View<KeyType **, Kokkos::LayoutRight, TestExecSpace>;
+
+  KeyViewType keys_to_insert;
+  KeyType key_len      = 4;
+  KeyType pow2_key_len = 4;
+
+  KeyViewType2 keys_inserted;
+  KeyViewType key_count;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const MemberType &member) const {
+    KeyViewScratch keys(member.team_scratch(0), key_len);
+    SizeViewScratch hash_ll(member.team_scratch(0), pow2_key_len + key_len + 1);
+    volatile SizeType *used_size = hash_ll.data();
+    auto *hash_begins            = hash_ll.data() + 1;
+    auto *hash_nexts             = hash_begins + pow2_key_len;
+
+    // Initialize hash_begins to -1
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(member, 0, pow2_key_len),
+                         [&](const int &tid) { hash_begins[tid] = -1; });
+    *used_size = 0;
+    // Wait for each team's hashmap to be initialized.
+    member.team_barrier();
+
+    UmapType team_uset(key_len, pow2_key_len - 1, hash_begins, hash_nexts,
+                       keys.data(), nullptr);
+
+    Kokkos::parallel_for(
+        Kokkos::TeamVectorRange(member, 0, 4), [&](const int &i) {
+          KeyType key = keys_to_insert(i);
+          team_uset.vector_atomic_insert_into_hash(key, used_size);
+        });
+
+    member.team_barrier();
+    Kokkos::single(Kokkos::PerTeam(member), [&]() {
+      int rank        = member.league_rank();
+      key_count(rank) = *used_size;
+      for (int i = 0; i < *used_size; i++) keys_inserted(rank, i) = keys(i);
+    });
+  }
+};
+}  // namespace HashmapAccumulator_RaceToInsert
+TEST_F(TestCategory, HashmapAccumulator_RaceToInsertion) {
+  using namespace Test::HashmapAccumulator_RaceToInsert;
+  myFunctor functor;
+
+  int team_size, n_teams;
+  team_size = n_teams = 4;
+  typename myFunctor::PolicyType policy(n_teams, team_size);
+
+  functor.keys_inserted =
+      myFunctor::KeyViewType2("keys_inserted", n_teams, functor.key_len);
+  functor.key_count = myFunctor::KeyViewType("key_count", n_teams);
+  functor.keys_to_insert =
+      myFunctor::KeyViewType("keys_to_insert", functor.key_len);
+
+  typename myFunctor::KeyViewType::HostMirror kti =
+      Kokkos::create_mirror_view(functor.keys_to_insert);
+  kti(0) = 0;
+  kti(1) = 0;
+  kti(2) = 2;
+  kti(3) = 2;
+  Kokkos::deep_copy(functor.keys_to_insert, kti);
+  typename myFunctor::KeyViewType2::HostMirror ki =
+      Kokkos::create_mirror_view(functor.keys_inserted);
+  for (int i = 0; i < n_teams; i++) {
+    for (int j = 0; j < functor.key_len; j++) ki(i, j) = -1;
+  }
+  Kokkos::deep_copy(functor.keys_inserted, ki);
+
+  int scratch = myFunctor::KeyViewScratch::shmem_size(functor.key_len) +
+                myFunctor::SizeViewScratch::shmem_size(n_teams) +
+                myFunctor::SizeViewScratch::shmem_size(functor.pow2_key_len +
+                                                       functor.key_len);
+  policy.set_scratch_size(0, Kokkos::PerTeam(scratch));
+  Kokkos::parallel_for("Test::HashmapAccumulator_RaceToInsert", policy,
+                       functor);
+  TestExecSpace().fence();
+  Kokkos::deep_copy(ki, functor.keys_inserted);
+  typename myFunctor::KeyViewType::HostMirror kc =
+      Kokkos::create_mirror_view(functor.key_count);
+  Kokkos::deep_copy(kc, functor.key_count);
+
+  bool passed = true;
+
+  for (int i = 0; i < n_teams; i++) {
+    // We only have 2 unique keys (0 and 2) above
+    if (kc(i) > 2) {
+      printf("team %d has duplicate insertions. keys inserted:\n", i);
+      for (int j = 0; j < functor.key_len; j++)
+        printf("ki(%d, %d): %d\n", i, j, ki(i, j));
+      passed = false;
+    }
+  }
+
+  if (!passed) FAIL();
+}
 }  // namespace Test
