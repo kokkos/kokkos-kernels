@@ -397,6 +397,6 @@ TEST_F(TestCategory, HashmapAccumulator_RaceToInsertion) {
     }
   }
 
-  if (!passed) FAIL();
+  if (!passed) printf("%s:%d: FAILED.\n", __FILE__, __LINE__);
 }
 }  // namespace Test
