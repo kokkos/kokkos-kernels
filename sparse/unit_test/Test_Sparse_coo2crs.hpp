@@ -47,6 +47,76 @@
 
 namespace Test {
 template <class CrsType, class RowType, class ColType, class DataType>
+CrsType vanilla_coo2crs(size_t m, size_t n, RowType row, ColType col,
+                        DataType data) {
+  using RowIndexType = typename RowType::value_type;
+  using ColIndexType = typename ColType::value_type;
+  using ValueType    = typename DataType::value_type;
+  std::unordered_map<RowIndexType,
+                     std::unordered_map<ColIndexType, ValueType> *>
+      umap;
+  int nnz = 0;
+
+  for (uint64_t i = 0; i < data.extent(0); i++) {
+    auto r = row(i);
+    auto c = col(i);
+    auto d = data(i);
+
+    if (r >= 0 && c >= 0) {
+      if (umap.find(r) != umap.end()) {  // exists
+        auto my_row = umap.at(r);
+        if (my_row->find(c) != my_row->end())
+          my_row->at(c) += d;
+        else {
+          my_row->insert(std::make_pair(c, d));
+          nnz++;
+        }
+      } else {  // create a new row.
+        auto new_row = new std::unordered_map<ColIndexType, ValueType>();
+        umap.insert(std::make_pair(r, new_row));
+        new_row->insert(std::make_pair(c, d));
+        nnz++;
+      }
+    }
+  }
+
+  typename CrsType::row_map_type::non_const_type row_map("vanilla_row_map",
+                                                         m + 1);
+  typename CrsType::values_type values("vanilla_values", nnz);
+  typename CrsType::staticcrsgraph_type::entries_type col_ids("vanilla_col_ids",
+                                                              nnz);
+
+  int row_len = 0;
+  for (uint64_t i = 0; i < m; i++) {
+    row_len += umap.at(i)->size();
+    row_map(i + 1) = row_len;
+  }
+
+  for (uint64_t i = 0; i < m; i++) {
+    auto row_start = row_map(i);
+    auto row_end   = row_map(i + 1);
+    auto my_row    = umap.at(i);
+    auto iter      = my_row->begin();
+    for (uint64_t j = row_start; j < row_end; j++, iter++) {
+      col_ids(j) = iter->first;
+      values(j)  = iter->second;
+    }
+    delete my_row;
+  }
+
+  printf("vanilla_row_map:\n");
+  for (uint64_t i = 0; i < m; i++) printf("%lu ", row_map(i));
+  printf("\n");
+  printf("vanilla_col_ids:\n");
+  for (int i = 0; i < nnz; i++) printf("%lld ", col_ids(i));
+  printf("\n");
+  for (int i = 0; i < nnz; i++) printf("%g ", values(i));
+  printf("\n");
+
+  return CrsType("vanilla_coo2csr", m, n, nnz, values, row_map, col_ids);
+}
+
+template <class CrsType, class RowType, class ColType, class DataType>
 void check_crs_matrix(CrsType crsMat, RowType row, ColType col, DataType data) {
   // Copy coo to host
   typename RowType::HostMirror row_h = Kokkos::create_mirror_view(row);
@@ -55,6 +125,9 @@ void check_crs_matrix(CrsType crsMat, RowType row, ColType col, DataType data) {
   Kokkos::deep_copy(col_h, col);
   typename DataType::HostMirror data_h = Kokkos::create_mirror_view(data);
   Kokkos::deep_copy(data_h, data);
+
+  auto crsMatRef = vanilla_coo2crs<CrsType, RowType, ColType, DataType>(
+      crsMat.numRows(), crsMat.numCols(), row_h, col_h, data_h);
 
   auto crs_col_ids_d = crsMat.graph.entries;
   auto crs_row_map_d = crsMat.graph.row_map;
@@ -85,9 +158,8 @@ void doCoo2Crs(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
   auto randCol  = cooMat.get_col();
   auto randData = cooMat.get_data();
 
-  // TODO: Uneven partition, Even partitions with multiple threads, Uneven
-  // partitions with multiple threads
   auto crsMat = KokkosSparse::coo2crs(m, n, randRow, randCol, randData);
+  check_crs_matrix(crsMat, randRow, randCol, randData);
 
   /*
     auto csc_row_ids_d = cscMat.get_row_ids();
@@ -197,7 +269,6 @@ TEST_F(TestCategory, sparse_coo2crs) {
   doCoo2Crs<double, Kokkos::LayoutRight, TestExecSpace>(50, 10, 10, 100, true);
 */
 
-  // Test edge case: len(coo) % team_size != 0
   RandCooMat<double, Kokkos::LayoutLeft, TestExecSpace> cooMat(4, 4, 4 * 4, 1,
                                                                10);
   auto row    = cooMat.get_row();
@@ -224,6 +295,7 @@ TEST_F(TestCategory, sparse_coo2crs_staticMatrix_edgeCases) {
   }
   // Even partitions with multiple threads
   auto crsMatTs4 = KokkosSparse::coo2crs(m, n, row, col, data, 4);
+  check_crs_matrix(crsMatTs4, row, col, data);
   printf("row_map: \n");
   for (long long i = 0; i < crsMatTs4.numRows(); i++)
     std::cout << crsMatTs4.graph.row_map(i) << " ";
@@ -237,6 +309,7 @@ TEST_F(TestCategory, sparse_coo2crs_staticMatrix_edgeCases) {
 
   // Uneven partitions with multiple threads
   auto crsMatTs3 = KokkosSparse::coo2crs(m, n, row, col, data, 3);
+  check_crs_matrix(crsMatTs3, row, col, data);
   printf("row_map: \n");
   for (long long i = 0; i < crsMatTs4.numRows(); i++)
     std::cout << crsMatTs3.graph.row_map(i) << " ";
@@ -330,7 +403,7 @@ struct myFunctor {
                        keys.data(), nullptr);
 
     Kokkos::parallel_for(
-        Kokkos::TeamVectorRange(member, 0, 4), [&](const int &i) {
+        Kokkos::TeamThreadRange(member, 0, 4), [&](const int &i) {
           KeyType key = keys_to_insert(i);
           team_uset.vector_atomic_insert_into_hash(key, used_size);
         });
