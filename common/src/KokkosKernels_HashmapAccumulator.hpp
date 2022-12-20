@@ -406,9 +406,9 @@ struct HashmapAccumulator {
   // used in the kkmem's numeric phase for second level hashmaps.
   // function to be called from device.
   // Accumulation is Add operation. It is not atomicAdd, as this
-  // is for the cases where we know that none of the simultanous
+  // is for the cases where we know that none of the simultaneous
   // insertions will have the same key.
-  // Insertion is simulteanous for the vector lanes of a thread.
+  // Insertion is simultaneous for the vector lanes of a thread.
   // used_size should be a shared pointer among the thread vectors
   KOKKOS_INLINE_FUNCTION
   int vector_atomic_insert_into_hash_mergeAdd_TrackHashes(
