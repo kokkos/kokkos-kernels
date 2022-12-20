@@ -141,6 +141,7 @@ IF(KokkosKernels_ENABLE_BENCHMARK)
     SET(
       BENCHMARK_SOURCES
       BenchmarkMain.cpp
+      blas/blas1/KokkosBlas_dot_perf_test_benchmark.cpp
     )
 
     KOKKOSKERNELS_ADD_BENCHMARK(
