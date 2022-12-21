@@ -88,11 +88,14 @@ CrsType vanilla_coo2crs(size_t m, size_t n, RowType row, ColType col,
 
   int row_len = 0;
   for (uint64_t i = 0; i < m; i++) {
-    row_len += umap.at(i)->size();
+    if (umap.find(i) != umap.end()) row_len += umap.at(i)->size();
     row_map(i + 1) = row_len;
   }
 
   for (uint64_t i = 0; i < m; i++) {
+    if (umap.find(i) == umap.end())  // Fully sparse row
+      continue;
+
     auto row_start = row_map(i);
     auto row_end   = row_map(i + 1);
     auto my_row    = umap.at(i);
@@ -104,14 +107,14 @@ CrsType vanilla_coo2crs(size_t m, size_t n, RowType row, ColType col,
     delete my_row;
   }
 
-  printf("vanilla_row_map:\n");
-  for (uint64_t i = 0; i < m; i++) printf("%lu ", row_map(i));
-  printf("\n");
-  printf("vanilla_col_ids:\n");
-  for (int i = 0; i < nnz; i++) printf("%lld ", col_ids(i));
-  printf("\n");
-  for (int i = 0; i < nnz; i++) printf("%g ", values(i));
-  printf("\n");
+  /*   printf("vanilla_row_map:\n");
+    for (uint64_t i = 0; i < m; i++) printf("%lu ", row_map(i));
+    printf("\n");
+    printf("vanilla_col_ids:\n");
+    for (int i = 0; i < nnz; i++) printf("%lld ", col_ids(i));
+    printf("\n");
+    for (int i = 0; i < nnz; i++) printf("%g ", values(i));
+    printf("\n"); */
 
   return CrsType("vanilla_coo2csr", m, n, nnz, values, row_map, col_ids);
 }
@@ -206,10 +209,11 @@ void doCoo2Crs(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
   auto randCol  = cooMat.get_col();
   auto randData = cooMat.get_data();
 
-  for (size_t i = 0; i < randData.extent(0); i++) {
-    std::cout << "(" << randRow(i) << ", " << randCol(i) << ", " << randData(i)
-              << ")" << std::endl;
-  }
+  /*   for (size_t i = 0; i < randData.extent(0); i++) {
+      std::cout << "(" << randRow(i) << ", " << randCol(i) << ", " <<
+    randData(i)
+                << ")" << std::endl;
+    } */
   auto crsMat = KokkosSparse::coo2crs(m, n, randRow, randCol, randData);
   check_crs_matrix(crsMat, randRow, randCol, randData);
 }
@@ -278,8 +282,8 @@ TEST_F(TestCategory, sparse_coo2crs_staticMatrix_edgeCases) {
   // auto crsMatTs3 = KokkosSparse::coo2crs(m, n, row, col, data, 3);
   // check_crs_matrix(crsMatTs3, row, col, data);
 
-  long long staticRowTs1[16]{0, 2, 1, 0, 1, 3, 2, 0, 3, 3, 1, 2, 0, 1, 2, 1};
-  long long staticColTs1[16]{2, 2, 1, 3, 2, 3, 1, 2, 3, 3, 3, 0, 0, 0, 1, 2};
+  long long staticRowTs1[16]{0, 3, 0, 2, 2, 3, 0, 3, 2, 0, 0, 0, 0, 3, 3, 0};
+  long long staticColTs1[16]{3, 1, 3, 1, 2, 2, 1, 1, 2, 3, 3, 1, 1, 0, 0, 0};
   float staticDataTs1[16]{6.1355,  6.53989, 8.58559, 6.37476, 4.18964, 2.41146,
                           1.82177, 1.4249,  1.52659, 5.50521, 8.0484,  3.98874,
                           6.74709, 3.35072, 7.81944, 5.83494};
@@ -288,7 +292,7 @@ TEST_F(TestCategory, sparse_coo2crs_staticMatrix_edgeCases) {
     col(i)  = staticColTs1[i];
     data(i) = staticDataTs1[i];
   }
-  // Even partitions with single thread
+  // Even partitions, single thread, fully sparse row
   auto crsMatTs1 = KokkosSparse::coo2crs(m, n, row, col, data, 1);
   check_crs_matrix(crsMatTs1, row, col, data);
 }
