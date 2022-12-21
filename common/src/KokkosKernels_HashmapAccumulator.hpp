@@ -746,13 +746,13 @@ struct HashmapAccumulator {
    */
   int vector_atomic_insert_into_hash_KeyCounter(
       const key_type &key, volatile size_type *used_size_) {
-    size_type hash, my_write_index, hashbeginning, i, head;
+    size_type hash, my_write_index, i, head;
 
     hash = __compute_hash(key, __hashOpRHS);
 
     // Busy wait until hash_begins[hash] is populated or we have the first key
-    while (head = Kokkos::atomic_compare_exchange(&hash_begins[hash], -1,
-                                                  -key - 2)) {
+    while ((head = Kokkos::atomic_compare_exchange(&hash_begins[hash], -1,
+                                                   -key - 2))) {
       if (head == -1 || head >= 0) break;
     }
 
@@ -807,13 +807,13 @@ struct HashmapAccumulator {
    */
   int vector_atomic_insert_into_hash_once(const key_type &key,
                                           volatile size_type *used_size_) {
-    size_type hash, my_write_index, hashbeginning, i, head;
+    size_type hash, my_write_index, i, head;
 
     hash = __compute_hash(key, __hashOpRHS);
 
     // Busy wait until hash_begins[hash] is populated or we have the first key
-    while (head = Kokkos::atomic_compare_exchange(&hash_begins[hash], -1,
-                                                  -key - 2)) {
+    while ((head = Kokkos::atomic_compare_exchange(&hash_begins[hash], -1,
+                                                   -key - 2))) {
       if (head == -1 || head >= 0) break;
     }
 
@@ -849,11 +849,8 @@ struct HashmapAccumulator {
       // unique columns.
       hash_nexts[my_write_index] = hash_begins[hash];
 #endif
-
-      // TODO: No need for atomic exchange here.
-      hashbeginning =
-          Kokkos::atomic_exchange(hash_begins + hash, my_write_index);
-      hash_nexts[my_write_index] = hashbeginning;
+      Kokkos::atomic_store(hash_begins + hash, my_write_index);
+      hash_nexts[my_write_index] = head;
     }
     return my_write_index;
   }
@@ -873,13 +870,13 @@ struct HashmapAccumulator {
   int vector_atomic_insert_into_hash_once_mergeAtomicAdd(
       const key_type &key, const value_type &value,
       volatile size_type *used_size_) {
-    size_type hash, my_write_index, hashbeginning, i, head;
+    size_type hash, my_write_index, i, head;
 
     hash = __compute_hash(key, __hashOpRHS);
 
     // Busy wait until hash_begins[hash] is populated or we have the first key
-    while (head = Kokkos::atomic_compare_exchange(&hash_begins[hash], -1,
-                                                  -key - 2)) {
+    while ((head = Kokkos::atomic_compare_exchange(&hash_begins[hash], -1,
+                                                   -key - 2))) {
       if (head == -1 || head >= 0) break;
     }
 
@@ -916,11 +913,8 @@ struct HashmapAccumulator {
       // unique columns.
       hash_nexts[my_write_index] = hash_begins[hash];
 #endif
-
-      // TODO: No need for atomic exchange or nexts here.
-      hashbeginning =
-          Kokkos::atomic_exchange(hash_begins + hash, my_write_index);
-      hash_nexts[my_write_index] = hashbeginning;
+      Kokkos::atomic_store(hash_begins + hash, my_write_index);
+      hash_nexts[my_write_index] = head;
     }
     return __insert_success;
   }
