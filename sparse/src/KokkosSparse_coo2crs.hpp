@@ -428,10 +428,7 @@ class Coo2Crs {
           Kokkos::view_alloc(Kokkos::WithoutInitializing, "__global_hmap"),
           __nrows);
       global_hmap_used_sizes = SizeTypeView("global_hmap_used_sizes", __nrows);
-      for (int i = 0; i < __nrows; i++)
-        printf("phase2Functor.global_hmap_used_sizes)(%d) = %d\n", i,
-               global_hmap_used_sizes(i));
-      pow2_max_row_cnt = 1;
+      pow2_max_row_cnt       = 1;
       while (pow2_max_row_cnt < max_row_cnt) pow2_max_row_cnt *= 2;
 
       __global_hmap_begins =
@@ -448,22 +445,21 @@ class Coo2Crs {
     KOKKOS_INLINE_FUNCTION
     void operator()(const typename phase2Tags::s6GlobalHmapSetup &,
                     const int &row_idx) const {
-      auto row_start = __crs_row_map(row_idx);
-      auto row_len   = __crs_row_map(row_idx + 1) - row_start;
-      // TODO: All pow2_* passed in to the Hashmap accumulator must be based on
-      // the next power of 2 of the maximum key value. i.e. next_pow2(nrows) and
-      // next_pow2(ncols)
-      /*       decltype(row_len) pow2_row_len = 1;
-            while (pow2_row_len < row_len) pow2_row_len *= 2; */
+      auto row_start                 = __crs_row_map(row_idx);
+      auto row_len                   = __crs_row_map(row_idx + 1) - row_start;
+      decltype(row_len) pow2_row_len = 1;
+      while (pow2_row_len < row_len) pow2_row_len *= 2;
 
-      auto hmap_begins =
-          __global_hmap_begins.data() + pow2_max_row_cnt * row_idx;
-      auto hmap_nexts = __global_hmap_nexts.data() + max_row_cnt * row_idx;
-      auto keys       = __crs_col_ids.data() + row_start;
-      auto values     = __crs_vals.data() + row_start;
-      GlobalHmapType hmap(row_len, pow2_max_row_cnt - 1, hmap_begins,
-                          hmap_nexts, keys, values);
+      auto hmap_begins = __global_hmap_begins.data() + pow2_row_len * row_idx;
+      auto hmap_nexts  = __global_hmap_nexts.data() + row_start;
+      auto keys        = __crs_col_ids.data() + row_start;
+      auto values      = __crs_vals.data() + row_start;
+      GlobalHmapType hmap(row_len, pow2_row_len - 1, hmap_begins, hmap_nexts,
+                          keys, values);
       __global_hmap(row_idx) = hmap;
+      /* printf("row_idx: %d, row_start: %lu, row_len: %lu, pow2_row_len: %lu,
+       * keys: %p, values: %p\n", row_idx, row_start, row_len, pow2_row_len,
+       * (void *) keys, (void *) values); */
     }
     KOKKOS_INLINE_FUNCTION
     void operator()(const typename phase2Tags::s7Copy &,
@@ -589,7 +585,6 @@ class Coo2Crs {
             for (int j = 0; j < col_count; j++) {
               auto col_id = uset.keys[j];
               auto val    = uset.values[j];
-              printf("%d-%lld-%lld\n", member.league_rank(), row_id, col_id);
               __global_hmap(row_id)
                   .vector_atomic_insert_into_hash_once_mergeAtomicAdd(
                       col_id, val, used_size);
@@ -910,11 +905,6 @@ class Coo2Crs {
 
       __runPhase2(phase2Functor);
 
-#if 1
-      for (int i = 0; i < __nrows; i++)
-        printf("phase2Functor.global_hmap_used_sizes)(%d) = %d\n", i,
-               phase2Functor.global_hmap_used_sizes(i));
-#endif
       // Find populate the exact row map and nnz
       KE::exclusive_scan(crsET,
                          KE::cbegin(phase2Functor.global_hmap_used_sizes),
@@ -923,8 +913,6 @@ class Coo2Crs {
       CrsET().fence();
 
       __nnz = __crs_row_map(__nrows);
-
-      std::cout << "__nnz: = " << __nnz << std::endl;
 
       // TODO: resize and shift vals and col ids to match the final row map.
     }
