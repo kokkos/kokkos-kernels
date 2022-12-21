@@ -146,6 +146,8 @@ class Coo2Crs {
     using s3MemberType = typename s3Policy::member_type;
     using s4MemberType = typename s4Policy::member_type;
     unsigned __n;
+    OrdinalType __nrows;
+    OrdinalType __ncols;
     AtomicRowIdViewType __crs_row_cnt;
     RowViewType __row;
     ColViewType __col;
@@ -162,9 +164,15 @@ class Coo2Crs {
     RowViewScalarType max_n_unique_rows;
     RowViewScalarType pow2_max_n_unique_rows;
 
-    __Phase1Functor(RowViewType row, ColViewType col, DataViewType data,
+    __Phase1Functor(OrdinalType nrows, OrdinalType ncols, RowViewType row,
+                    ColViewType col, DataViewType data,
                     AtomicRowIdViewType crs_row_cnt)
-        : __crs_row_cnt(crs_row_cnt), __row(row), __col(col), __data(data) {
+        : __nrows(nrows),
+          __ncols(ncols),
+          __crs_row_cnt(crs_row_cnt),
+          __row(row),
+          __col(col),
+          __data(data) {
       __n               = data.extent(0);
       max_row_cnt       = 0;
       max_n_unique_rows = 0;
@@ -175,6 +183,10 @@ class Coo2Crs {
                     const int &thread_id) const {
       auto i = __row(thread_id);
       auto j = __col(thread_id);
+
+      if (i >= __nrows) Kokkos::abort("A row id is greater than m.");
+
+      if (j >= __ncols) Kokkos::abort("A column id is greater than n.");
 
       if (i >= 0 && j >= 0) __crs_row_cnt(i)++;
     }
@@ -838,8 +850,9 @@ class Coo2Crs {
 
     // Get an estimate of the number of columns per row.
     {
-      __crs_row_cnt = AtomicRowIdViewType("__crs_row_cnt", m + 1);
-      __Phase1Functor phase1Functor(row, col, data, __crs_row_cnt);
+      __crs_row_cnt = AtomicRowIdViewType("__crs_row_cnt", __nrows + 1);
+      __Phase1Functor phase1Functor(__nrows, __ncols, row, col, data,
+                                    __crs_row_cnt);
       __runPhase1(phase1Functor);
       phase1_max_row_cnt            = phase1Functor.max_row_cnt;
       phase1_max_n_unique_rows      = phase1Functor.max_n_unique_rows;

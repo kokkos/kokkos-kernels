@@ -219,20 +219,29 @@ void doAllLayoutsCoo2Crs(size_t m, size_t n, int min, int max) {
 }
 
 template <class ExeSpaceType>
-void doAllCoo2crs(size_t m, size_t n) {
+void doAllCoo2Crs(size_t m, size_t n) {
   int min = 1, max = 10;
   doAllLayoutsCoo2Crs<ExeSpaceType>(m, n, min, max);
 }
 
 TEST_F(TestCategory, sparse_coo2crs) {
+  uint64_t ticks =
+      std::chrono::high_resolution_clock::now().time_since_epoch().count() %
+      UINT32_MAX;
+  std::srand(ticks);
+
   // Square cases
-  for (size_t dim = 4; dim < 1024; dim *= 4)
-    doAllCoo2crs<TestExecSpace>(dim, dim);
+  for (size_t i = 1; i < 256; i *= 4) {
+    size_t dim = (std::rand() % 511) + 1;
+    doAllCoo2Crs<TestExecSpace>(dim, dim);
+  }
 
   // Non-square cases
-  for (size_t dim = 1; dim < 1024; dim *= 4) {
-    doAllCoo2crs<TestExecSpace>(dim * 3, dim);
-    doAllCoo2crs<TestExecSpace>(dim, dim * 3);
+  for (size_t i = 1; i < 256; i *= 4) {
+    size_t m = (std::rand() % 511) + 1;
+    size_t n = (std::rand() % 511) + 1;
+    while (n == m) n = (std::rand() % 511) + 1;
+    doAllCoo2Crs<TestExecSpace>(m, n);
   }
 }
 
