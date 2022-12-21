@@ -214,15 +214,6 @@ class Coo2Crs {
       L0HmapType team_uset(max_row_cnt, pow2_max_row_cnt - 1, hash_begins,
                            hash_nexts, keys.data(), nullptr);
 
-#if 0
-      std::cout << "------------------" << std::endl;
-      std::cout << "rank: " << member.league_rank() << std::endl;
-      std::cout << "league_size: " << member.league_size() << std::endl;
-      std::cout << "n: " << n << std::endl;
-      std::cout << "start_n: " << start_n << std::endl;
-      std::cout << "stop_n: " << stop_n << std::endl;
-#endif
-
       Kokkos::parallel_for(
           Kokkos::TeamVectorRange(member, start_n, stop_n),
           [&](const int &tid) {
@@ -317,15 +308,6 @@ class Coo2Crs {
       // Wait for the scratch memory initialization
       member.team_barrier();
 
-#if 0
-      std::cout << "------------------" << std::endl;
-      std::cout << "rank: " << member.league_rank() << std::endl;
-      std::cout << "league_size: " << member.league_size() << std::endl;
-      std::cout << "n: " << n << std::endl;
-      std::cout << "start_n: " << start_n << std::endl;
-      std::cout << "stop_n: " << stop_n << std::endl;
-#endif
-
       Kokkos::parallel_for(
           Kokkos::TeamVectorRange(member, start_n, stop_n),
           [&](const int &tid) {
@@ -361,9 +343,6 @@ class Coo2Crs {
                              auto col_count = uset_used_sizes(
                                  member.league_rank(), uset_idx);
                              auto row_id = hmap_keys(i);
-#if 0
-          std::cout << "rank: " << member.league_rank() << ", uset_idx: " << uset_idx << ", col_count: " << *col_count << ", row_id: " << row_id << std::endl;
-#endif
                              __crs_row_cnt(row_id) += *col_count;
                            });
     }
@@ -458,9 +437,6 @@ class Coo2Crs {
       GlobalHmapType hmap(row_len, pow2_row_len - 1, hmap_begins, hmap_nexts,
                           keys, values);
       __global_hmap(row_idx) = hmap;
-      /* printf("row_idx: %d, row_start: %lu, row_len: %lu, pow2_row_len: %lu,
-       * keys: %p, values: %p\n", row_idx, row_start, row_len, pow2_row_len,
-       * (void *) keys, (void *) values); */
     }
 
     KOKKOS_INLINE_FUNCTION
@@ -537,15 +513,6 @@ class Coo2Crs {
       // Wait for the scratch memory initialization
       member.team_barrier();
 
-#if 0
-      std::cout << "------------------" << std::endl;
-      std::cout << "rank: " << member.league_rank() << std::endl;
-      std::cout << "league_size: " << member.league_size() << std::endl;
-      std::cout << "n: " << n << std::endl;
-      std::cout << "start_n: " << start_n << std::endl;
-      std::cout << "stop_n: " << stop_n << std::endl;
-#endif
-
       Kokkos::parallel_for(
           Kokkos::TeamVectorRange(member, start_n, stop_n),
           [&](const int &tid) {
@@ -608,9 +575,9 @@ class Coo2Crs {
     OrdinalType __nrows;
     OrdinalType __ncols;
 
-    CrsValsViewType __crs_vals_in;
-    CrsRowMapViewType __crs_row_map_in;
-    CrsColIdViewType __crs_col_ids_in;
+    CrsValsViewType __crs_vals_tight;
+    CrsRowMapViewType __crs_row_map_tight;
+    CrsColIdViewType __crs_col_ids_tight;
     SizeType __nnz;
     CrsValsViewType __crs_vals_out;
     CrsRowMapViewType __crs_row_map_out;
@@ -618,17 +585,17 @@ class Coo2Crs {
 
    public:
     __Phase3Functor(OrdinalType nrows, OrdinalType ncols,
-                    CrsValsViewType crs_vals_in,
-                    CrsRowMapViewType crs_row_map_in,
-                    CrsColIdViewType crs_col_ids_in, SizeType nnz,
+                    CrsValsViewType crs_vals_tight,
+                    CrsRowMapViewType crs_row_map_tight,
+                    CrsColIdViewType crs_col_ids_tight, SizeType nnz,
                     CrsValsViewType crs_vals_out,
                     CrsRowMapViewType crs_row_map_out,
                     CrsColIdViewType crs_col_ids_out)
         : __nrows(nrows),
           __ncols(ncols),
-          __crs_vals_in(crs_vals_in),
-          __crs_row_map_in(crs_row_map_in),
-          __crs_col_ids_in(crs_col_ids_in),
+          __crs_vals_tight(crs_vals_tight),
+          __crs_row_map_tight(crs_row_map_tight),
+          __crs_col_ids_tight(crs_col_ids_tight),
           __nnz(nnz),
           __crs_vals_out(crs_vals_out),
           __crs_row_map_out(crs_row_map_out),
@@ -638,52 +605,36 @@ class Coo2Crs {
     void operator()(const typename phase3Tags::s8CopyCrs &,
                     const s8MemberType &member) const {
       unsigned team_row_out_start = __crs_row_map_out(member.league_rank());
-      unsigned team_row_in_start  = __crs_row_map_in(member.league_rank());
-      unsigned team_row_in_stop   = __crs_row_map_in(member.league_rank() + 1);
-      unsigned row_len            = team_row_in_stop - team_row_in_start;
+      unsigned team_row_out_stop  = __crs_row_map_out(member.league_rank() + 1);
+      unsigned row_len            = team_row_out_stop - team_row_out_start;
+      unsigned team_row_tight_start = __crs_row_map_tight(member.league_rank());
 
-      Kokkos::parallel_for(Kokkos::TeamVectorRange(member, 0, row_len),
-                           [&](const int &tid) {
-                             __crs_col_ids_out(tid + team_row_out_start) =
-                                 __crs_col_ids_in(tid + team_row_in_start);
-                             __crs_vals_out(tid + team_row_out_start) =
-                                 __crs_vals_in(tid + team_row_in_start);
-                           });
+      Kokkos::parallel_for(
+          Kokkos::TeamVectorRange(member, 0, row_len), [&](const int &tid) {
+            __crs_col_ids_out(tid + team_row_out_start) =
+                __crs_col_ids_tight(tid + team_row_tight_start);
+            __crs_vals_out(tid + team_row_out_start) =
+                __crs_vals_tight(tid + team_row_tight_start);
+          });
     }
   };
 
   template <class FunctorType>
   void __runPhase1(FunctorType &functor) {
     {
-#if 0
-      for (size_t i = 0; i < __n_tuples; i++) {
-        std::cout << "(" << functor.__row(i) << ", " << functor.__col(i) << ", "
-                  << functor.__data(i) << ")" << std::endl;
-      }
-#endif
-
       Kokkos::parallel_for(
           "Coo2Crs::phase1Tags::s1RowCntDup",
           Kokkos::RangePolicy<typename phase1Tags::s1RowCntDup, CrsET>(
               0, __n_tuples),
           functor);
       CrsET().fence();
-#if 0
-      std::cout << "phase1Functor.__crs_row_cnt: " << std::endl;
-      for (unsigned i = 0; i < __nrows; i++) {
-        std::cout << i << ":" << functor.__crs_row_cnt[i] << std::endl;
-      }
-#endif
 
       Kokkos::parallel_reduce(
           Kokkos::RangePolicy<CrsET, typename phase1Tags::s2MaxRowCnt>(0,
                                                                        __nrows),
           functor, Kokkos::Max<RowViewScalarType>(functor.max_row_cnt));
       CrsET().fence();
-#if 0
-      std::cout << "phase1Functor.max_row_cnt: " << functor.max_row_cnt
-                << std::endl;
-#endif
+
       // Reset to 0 for s4RowCnt
       Kokkos::deep_copy(__crs_row_cnt, 0);
 
@@ -718,37 +669,16 @@ class Coo2Crs {
               functor.max_row_cnt);  // hash_begins and hash_nexts
                                      // clang-format: on
 
-#if 0
-      std::cout << "__n_tuples: " << __n_tuples << std::endl;
-      std::cout << "__n_teams: " << __n_teams << std::endl;
-      std::cout << "__suggested_team_size: " << __suggested_team_size
-                << std::endl;
-      std::cout << "functor.teams_work: " << functor.teams_work << std::endl;
-      std::cout << "functor.last_teams_work: " << functor.last_teams_work
-                << std::endl;
-      std::cout << "s3_shmem_size: " << s3_shmem_size << std::endl;
-#endif
-
       s3p = s3Policy(__n_teams, __suggested_team_size);
       s3p.set_scratch_size(0, Kokkos::PerTeam(s3_shmem_size));
       Kokkos::parallel_for("Coo2Crs::phase1Tags::s3UniqRows", s3p, functor);
       CrsET().fence();
-#if 0
-      std::cout << "phase1Functor.n_unique_rows_per_team: " << std::endl;
-      for (unsigned i = 0; i < __n_teams; i++) {
-        std::cout << i << ":" << functor.n_unique_rows_per_team[i] << std::endl;
-      }
-#endif
 
       Kokkos::parallel_reduce(
           Kokkos::RangePolicy<CrsET, typename phase1Tags::s4MaxUniqueRows>(
               0, __n_teams),
           functor, Kokkos::Max<RowViewScalarType>(functor.max_n_unique_rows));
       CrsET().fence();
-#if 0
-      std::cout << "phase1Functor.max_n_unique_rows: "
-                << functor.max_n_unique_rows << std::endl;
-#endif
 
       // Between s3 and s4, the number of teams does not change
       // since the coo partitions are the same. We do need new scratch
@@ -798,34 +728,10 @@ class Coo2Crs {
           Kokkos::view_alloc(Kokkos::WithoutInitializing, "uset_used_sizes"),
           __n_teams, functor.max_n_unique_rows);
 
-#if 0
-      std::cout << "__n_tuples: " << __n_tuples << std::endl;
-      std::cout << "__n_teams: " << __n_teams << std::endl;
-      std::cout << "__suggested_team_size: " << __suggested_team_size
-                << std::endl;
-      std::cout << "functor.teams_work: " << functor.teams_work << std::endl;
-      std::cout << "functor.last_teams_work: " << functor.last_teams_work
-                << std::endl;
-      std::cout << "s4_shmem_size: " << s4_shmem_size << std::endl;
-#endif
-
-#if 0
-      std::cout << "phase1Functor.__crs_row_cnt: " << std::endl;
-      for (unsigned i = 0; i < __nrows; i++) {
-        std::cout << i << ":" << functor.__crs_row_cnt[i] << std::endl;
-      }
-#endif
-
       s4p = s4Policy(__n_teams, __suggested_team_size);
       s4p.set_scratch_size(0, Kokkos::PerTeam(s4_shmem_size));
       Kokkos::parallel_for("Coo2Crs::phase1Tags::s4RowCnt", s4p, functor);
       CrsET().fence();
-#if 0
-      std::cout << "phase1Functor.__crs_row_cnt: " << std::endl;
-      for (unsigned i = 0; i < __nrows; i++) {
-        std::cout << i << ":" << __crs_row_cnt(i) << std::endl;
-      }
-#endif
 
       functor.max_row_cnt = 0;
       Kokkos::parallel_reduce(
@@ -833,11 +739,6 @@ class Coo2Crs {
                                                                        __nrows),
           functor, Kokkos::Max<RowViewScalarType>(functor.max_row_cnt));
       CrsET().fence();
-
-#if 0
-      std::cout << "phase1Functor.max_row_cnt: " << functor.max_row_cnt
-                << std::endl;
-#endif
     }
     return;
   }
@@ -938,13 +839,6 @@ class Coo2Crs {
       phase1_pow2_max_n_unique_rows = phase1Functor.pow2_max_n_unique_rows;
     }
 
-#if 1
-    for (size_t i = 0; i < __n_tuples; i++) {
-      std::cout << "(" << row(i) << ", " << col(i) << ", " << data(i) << ")"
-                << std::endl;
-    }
-#endif
-
     // Allocate and compute tight crs.
     {
       namespace KE = Kokkos::Experimental;
@@ -960,12 +854,6 @@ class Coo2Crs {
       CrsET().fence();
 
       __nnz = __crs_row_map_tight(__nrows);
-
-#if 0
-      for (int i = 0; i <= __nrows; i++)
-        printf("__crs_row_map_tight(%d) = %lu\n", i, __crs_row_map_tight(i));
-      std::cout << "__nnz: = " << __nnz << std::endl;
-#endif
 
       __crs_vals_tight = CrsValsViewType(
           Kokkos::view_alloc(Kokkos::WithoutInitializing, "__crs_vals_tight"),

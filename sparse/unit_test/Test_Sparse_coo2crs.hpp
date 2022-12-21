@@ -118,6 +118,9 @@ CrsType vanilla_coo2crs(size_t m, size_t n, RowType row, ColType col,
 
 template <class CrsType, class RowType, class ColType, class DataType>
 void check_crs_matrix(CrsType crsMat, RowType row, ColType col, DataType data) {
+  using value_type = typename DataType::value_type;
+  using ats        = Kokkos::Details::ArithTraits<value_type>;
+
   // Copy coo to host
   typename RowType::HostMirror row_h = Kokkos::create_mirror_view(row);
   Kokkos::deep_copy(row_h, row);
@@ -159,7 +162,7 @@ void check_crs_matrix(CrsType crsMat, RowType row, ColType col, DataType data) {
   for (int i = 0; i < crsMatRef.numRows(); i++) {
     ASSERT_EQ(crs_row_map_ref(i), crs_row_map(i))
         << "crs_row_map_ref(" << i << " = " << crs_row_map_ref(i) << " != "
-        << "crs_row_map(" << i << " = " << crs_row_map(i);
+        << "crs_row_map(" << i << " = " << crs_row_map(i) << " -- ";
   }
 
   for (int i = 0; i < crsMatRef.numRows(); ++i) {
@@ -185,11 +188,15 @@ void check_crs_matrix(CrsType crsMat, RowType row, ColType col, DataType data) {
         if (crs_col_ids(k) == col_id_ref) break;
       if (k == row_stop_ref) FAIL() << fail_msg << " not found in crs_col_ids!";
 
-      ASSERT_EQ(crs_vals_ref(j), crs_vals(k))
-          << fail_msg << " mismatched values!";
+      // ASSERT_EQ doesn't work -- values may be summed in different orders
+      // We sum at most numCols values.
+      auto eps = crsMatRef.numCols() * ats::epsilon();
+      EXPECT_NEAR_KK(crs_vals_ref(j), crs_vals(k), eps,
+                     fail_msg + " mismatched values!");
     }
   }
 }
+
 template <class ScalarType, class LayoutType, class ExeSpaceType>
 void doCoo2Crs(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
   RandCooMat<ScalarType, LayoutType, ExeSpaceType> cooMat(m, n, m * n, min_val,
@@ -264,33 +271,14 @@ TEST_F(TestCategory, sparse_coo2crs_staticMatrix_edgeCases) {
     col(i)  = staticCol[i];
     data(i) = staticData[i];
   }
+
   // Even partitions with multiple threads
   auto crsMatTs4 = KokkosSparse::coo2crs(m, n, row, col, data, 4);
   check_crs_matrix(crsMatTs4, row, col, data);
-  printf("row_map: \n");
-  for (long long i = 0; i < crsMatTs4.numRows(); i++)
-    std::cout << crsMatTs4.graph.row_map(i) << " ";
-  printf("\ncol_ids: \n");
-  for (unsigned long i = 0; i < crsMatTs4.nnz(); i++)
-    std::cout << crsMatTs4.graph.entries(i) << " ";
-  printf("\nvals: \n");
-  for (unsigned long i = 0; i < crsMatTs4.nnz(); i++)
-    std::cout << crsMatTs4.values(i) << " ";
-  std::cout << std::endl;
 
   // Uneven partitions with multiple threads
   auto crsMatTs3 = KokkosSparse::coo2crs(m, n, row, col, data, 3);
   check_crs_matrix(crsMatTs3, row, col, data);
-  printf("row_map: \n");
-  for (long long i = 0; i < crsMatTs4.numRows(); i++)
-    std::cout << crsMatTs3.graph.row_map(i) << " ";
-  printf("\ncol_ids: \n");
-  for (unsigned long i = 0; i < crsMatTs3.nnz(); i++)
-    std::cout << crsMatTs3.graph.entries(i) << " ";
-  printf("\nvals: \n");
-  for (unsigned long i = 0; i < crsMatTs3.nnz(); i++)
-    std::cout << crsMatTs3.values(i) << " ";
-  std::cout << std::endl;
 }
 
 // Reading III.D of https://ieeexplore.ieee.org/abstract/document/7965111/
