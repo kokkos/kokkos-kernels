@@ -104,14 +104,14 @@ CrsType vanilla_coo2crs(size_t m, size_t n, RowType row, ColType col,
     delete my_row;
   }
 
-  printf("vanilla_row_map:\n");
-  for (uint64_t i = 0; i < m; i++) printf("%lu ", row_map(i));
-  printf("\n");
-  printf("vanilla_col_ids:\n");
-  for (int i = 0; i < nnz; i++) printf("%lld ", col_ids(i));
-  printf("\n");
-  for (int i = 0; i < nnz; i++) printf("%g ", values(i));
-  printf("\n");
+  /*   printf("vanilla_row_map:\n");
+    for (uint64_t i = 0; i < m; i++) printf("%lu ", row_map(i));
+    printf("\n");
+    printf("vanilla_col_ids:\n");
+    for (int i = 0; i < nnz; i++) printf("%lld ", col_ids(i));
+    printf("\n");
+    for (int i = 0; i < nnz; i++) printf("%g ", values(i));
+    printf("\n"); */
 
   return CrsType("vanilla_coo2csr", m, n, nnz, values, row_map, col_ids);
 }
@@ -128,6 +128,10 @@ void check_crs_matrix(CrsType crsMat, RowType row, ColType col, DataType data) {
 
   auto crsMatRef = vanilla_coo2crs<CrsType, RowType, ColType, DataType>(
       crsMat.numRows(), crsMat.numCols(), row_h, col_h, data_h);
+
+  auto crs_col_ids_ref = crsMatRef.graph.entries;
+  auto crs_row_map_ref = crsMatRef.graph.row_map;
+  auto crs_vals_ref    = crsMatRef.values;
 
   auto crs_col_ids_d = crsMat.graph.entries;
   auto crs_row_map_d = crsMat.graph.row_map;
@@ -149,6 +153,42 @@ void check_crs_matrix(CrsType crsMat, RowType row, ColType col, DataType data) {
   Kokkos::deep_copy(crs_vals, crs_vals_d);
 
   Kokkos::fence();
+
+  ASSERT_EQ(crsMatRef.nnz(), crsMat.nnz());
+
+  for (int i = 0; i < crsMatRef.numRows(); i++) {
+    ASSERT_EQ(crs_row_map_ref(i), crs_row_map(i))
+        << "crs_row_map_ref(" << i << " = " << crs_row_map_ref(i) << " != "
+        << "crs_row_map(" << i << " = " << crs_row_map(i);
+  }
+
+  for (int i = 0; i < crsMatRef.numRows(); ++i) {
+    auto row_start_ref = crs_row_map_ref(i);
+    auto row_stop_ref  = crs_row_map_ref(i + 1);
+    auto row_len_ref   = row_stop_ref - row_start_ref;
+
+    auto row_start = crs_row_map(i);
+    auto row_len   = crs_row_map(i + 1) - row_start;
+
+    ASSERT_EQ(row_start_ref, row_start);
+    ASSERT_EQ(row_len_ref, row_len);
+
+    for (auto j = row_start_ref; j < row_stop_ref; ++j) {
+      // Look for the corresponding col_id
+      auto col_id_ref      = crs_col_ids_ref(j);
+      std::string fail_msg = "row: " + std::to_string(i) +
+                             ", crs_col_ids_ref(" + std::to_string(j) +
+                             ") = " + std::to_string(col_id_ref);
+
+      auto k = row_start_ref;
+      for (; k < row_stop_ref; ++k)
+        if (crs_col_ids(k) == col_id_ref) break;
+      if (k == row_stop_ref) FAIL() << fail_msg << " not found in crs_col_ids!";
+
+      ASSERT_EQ(crs_vals_ref(j), crs_vals(k))
+          << fail_msg << " mismatched values!";
+    }
+  }
 }
 template <class ScalarType, class LayoutType, class ExeSpaceType>
 void doCoo2Crs(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
@@ -160,75 +200,6 @@ void doCoo2Crs(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
 
   auto crsMat = KokkosSparse::coo2crs(m, n, randRow, randCol, randData);
   check_crs_matrix(crsMat, randRow, randCol, randData);
-
-  /*
-    auto csc_row_ids_d = cscMat.get_row_ids();
-    auto csc_col_map_d = cscMat.get_col_map();
-    auto csc_vals_d    = cscMat.get_vals();
-
-    using ViewTypeRowIds = decltype(csc_row_ids_d);
-    using ViewTypeColMap = decltype(csc_col_map_d);
-    using ViewTypeVals   = decltype(csc_vals_d);
-
-    // Copy to host
-    typename ViewTypeRowIds::HostMirror csc_row_ids =
-        Kokkos::create_mirror_view(csc_row_ids_d);
-    Kokkos::deep_copy(csc_row_ids, csc_row_ids_d);
-    typename ViewTypeColMap::HostMirror csc_col_map =
-        Kokkos::create_mirror_view(csc_col_map_d);
-    Kokkos::deep_copy(csc_col_map, csc_col_map_d);
-    typename ViewTypeVals::HostMirror csc_vals =
-        Kokkos::create_mirror_view(csc_vals_d);
-    Kokkos::deep_copy(csc_vals, csc_vals_d);
-
-    auto crs_col_ids_d = crsMat.graph.entries;
-    auto crs_row_map_d = crsMat.graph.row_map;
-    auto crs_vals_d    = crsMat.values;
-
-    using ViewTypeCrsColIds = decltype(crs_col_ids_d);
-    using ViewTypeCrsRowMap = decltype(crs_row_map_d);
-    using ViewTypeCrsVals   = decltype(crs_vals_d);
-
-    // Copy to host
-    typename ViewTypeCrsColIds::HostMirror crs_col_ids =
-        Kokkos::create_mirror_view(crs_col_ids_d);
-    Kokkos::deep_copy(crs_col_ids, crs_col_ids_d);
-    typename ViewTypeCrsRowMap::HostMirror crs_row_map =
-        Kokkos::create_mirror_view(crs_row_map_d);
-    Kokkos::deep_copy(crs_row_map, crs_row_map_d);
-    typename ViewTypeCrsVals::HostMirror crs_vals =
-        Kokkos::create_mirror_view(crs_vals_d);
-    Kokkos::deep_copy(crs_vals, crs_vals_d);
-
-    Kokkos::fence();
-
-    for (int j = 0; j < cscMat.get_n(); ++j) {
-      auto col_start = csc_col_map(j);
-      auto col_len   = csc_col_map(j + 1) - col_start;
-
-      for (int k = 0; k < col_len; ++k) {
-        auto i = col_start + k;
-
-        auto row_start = crs_row_map(csc_row_ids(i));
-        auto row_len   = crs_row_map(csc_row_ids(i) + 1) - row_start;
-        auto row_end   = row_start + row_len;
-
-        if (row_len == 0) continue;
-
-        // Linear search for corresponding element in crs matrix
-        int l = row_start;
-        while (l < row_end && crs_col_ids(l) != j) {
-          ++l;
-        }
-
-        if (l == row_end)
-          FAIL() << "crs element at (i: " << csc_row_ids(i) << ", j: " << j
-                 << ") not found!" << std::endl;
-
-        ASSERT_EQ(csc_vals(i), crs_vals(l))
-            << "(i: " << csc_row_ids(i) << ", j: " << j << ")" << std::endl;
-      }
-    } */
 }
 
 template <class LayoutType, class ExeSpaceType>
