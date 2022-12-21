@@ -115,9 +115,9 @@ class Coo2Crs {
   CrsSzT __nnz;
 
   AtomicRowIdViewType __crs_row_cnt;
-  CrsValsViewType __crs_vals;
-  CrsRowMapViewType __crs_row_map;
-  CrsColIdViewType __crs_col_ids;
+  CrsValsViewType __crs_vals_tight, __crs_vals;
+  CrsRowMapViewType __crs_row_map_tight, __crs_row_map;
+  CrsColIdViewType __crs_col_ids_tight, __crs_col_ids;
 
   size_t __n_tuples;
   bool __insert_mode;
@@ -371,10 +371,10 @@ class Coo2Crs {
 
   struct phase2Tags {
     struct s6GlobalHmapSetup {};
-    struct s7Copy {};
+    struct s7CopyCoo {};
   };
 
-  using s7Policy = Kokkos::TeamPolicy<typename phase2Tags::s7Copy, CrsET>;
+  using s7Policy = Kokkos::TeamPolicy<typename phase2Tags::s7CopyCoo, CrsET>;
 
   class __Phase2Functor {
    private:
@@ -427,8 +427,9 @@ class Coo2Crs {
       __global_hmap = GlobalHmapView(
           Kokkos::view_alloc(Kokkos::WithoutInitializing, "__global_hmap"),
           __nrows);
-      global_hmap_used_sizes = SizeTypeView("global_hmap_used_sizes", __nrows);
-      pow2_max_row_cnt       = 1;
+      global_hmap_used_sizes =
+          SizeTypeView("global_hmap_used_sizes", __nrows + 1);
+      pow2_max_row_cnt = 1;
       while (pow2_max_row_cnt < max_row_cnt) pow2_max_row_cnt *= 2;
 
       __global_hmap_begins =
@@ -461,8 +462,9 @@ class Coo2Crs {
        * keys: %p, values: %p\n", row_idx, row_start, row_len, pow2_row_len,
        * (void *) keys, (void *) values); */
     }
+
     KOKKOS_INLINE_FUNCTION
-    void operator()(const typename phase2Tags::s7Copy &,
+    void operator()(const typename phase2Tags::s7CopyCoo &,
                     const s7MemberType &member) const {
       // Partitions into coo tuples
       unsigned n = member.league_rank() == member.league_size() - 1
@@ -590,6 +592,63 @@ class Coo2Crs {
                       col_id, val, used_size);
             }
           });
+    }
+  };
+
+  struct phase3Tags {
+    struct s8CopyCrs {};
+  };
+
+  using s8Policy = Kokkos::TeamPolicy<typename phase3Tags::s8CopyCrs, CrsET>;
+
+  class __Phase3Functor {
+   private:
+    using s8MemberType = typename s8Policy::member_type;
+
+    OrdinalType __nrows;
+    OrdinalType __ncols;
+
+    CrsValsViewType __crs_vals_in;
+    CrsRowMapViewType __crs_row_map_in;
+    CrsColIdViewType __crs_col_ids_in;
+    SizeType __nnz;
+    CrsValsViewType __crs_vals_out;
+    CrsRowMapViewType __crs_row_map_out;
+    CrsColIdViewType __crs_col_ids_out;
+
+   public:
+    __Phase3Functor(OrdinalType nrows, OrdinalType ncols,
+                    CrsValsViewType crs_vals_in,
+                    CrsRowMapViewType crs_row_map_in,
+                    CrsColIdViewType crs_col_ids_in, SizeType nnz,
+                    CrsValsViewType crs_vals_out,
+                    CrsRowMapViewType crs_row_map_out,
+                    CrsColIdViewType crs_col_ids_out)
+        : __nrows(nrows),
+          __ncols(ncols),
+          __crs_vals_in(crs_vals_in),
+          __crs_row_map_in(crs_row_map_in),
+          __crs_col_ids_in(crs_col_ids_in),
+          __nnz(nnz),
+          __crs_vals_out(crs_vals_out),
+          __crs_row_map_out(crs_row_map_out),
+          __crs_col_ids_out(crs_col_ids_out){};
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(const typename phase3Tags::s8CopyCrs &,
+                    const s8MemberType &member) const {
+      unsigned team_row_out_start = __crs_row_map_out(member.league_rank());
+      unsigned team_row_in_start  = __crs_row_map_in(member.league_rank());
+      unsigned team_row_in_stop   = __crs_row_map_in(member.league_rank() + 1);
+      unsigned row_len            = team_row_in_stop - team_row_in_start;
+
+      Kokkos::parallel_for(Kokkos::TeamVectorRange(member, 0, row_len),
+                           [&](const int &tid) {
+                             __crs_col_ids_out(tid + team_row_out_start) =
+                                 __crs_col_ids_in(tid + team_row_in_start);
+                             __crs_vals_out(tid + team_row_out_start) =
+                                 __crs_vals_in(tid + team_row_in_start);
+                           });
     }
   };
 
@@ -837,9 +896,23 @@ class Coo2Crs {
 
     s7p = s7Policy(__n_teams, __suggested_team_size);
     s7p.set_scratch_size(0, Kokkos::PerTeam(s7_shmem_size));
-    Kokkos::parallel_for("Coo2Crs::Phase2Tags::s7Copy", s7p, functor);
+    Kokkos::parallel_for("Coo2Crs::Phase2Tags::s7CopyCoo", s7p, functor);
     CrsET().fence();
     return;
+  }
+
+  template <class FunctorType>
+  void __runPhase3(FunctorType &functor) {
+    s8Policy s8p;
+
+    __suggested_team_size =
+        __team_size == 0
+            ? s8p.team_size_recommended(functor, Kokkos::ParallelForTag())
+            : __team_size;
+
+    s8p = s8Policy(__nrows, __suggested_team_size);
+    Kokkos::parallel_for("Coo2Crs::Phase3Tags::s8CopyCrs", s8p, functor);
+    CrsET().fence();
   }
 
  public:
@@ -872,38 +945,47 @@ class Coo2Crs {
     }
 #endif
 
-    // Allocate and populate crs.
+    // Allocate and compute tight crs.
     {
       namespace KE = Kokkos::Experimental;
       CrsET crsET;
 
-      __crs_row_map = CrsRowMapViewType(
-          Kokkos::view_alloc(Kokkos::WithoutInitializing, "__crs_row_map"),
-          __nrows + 1);
+      __crs_row_map_tight =
+          CrsRowMapViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing,
+                                               "__crs_row_map_tight"),
+                            __nrows + 1);
       KE::exclusive_scan(crsET, KE::cbegin(__crs_row_cnt),
-                         KE::cend(__crs_row_cnt), KE::begin(__crs_row_map), 0);
+                         KE::cend(__crs_row_cnt),
+                         KE::begin(__crs_row_map_tight), 0);
       CrsET().fence();
 
-      __nnz = __crs_row_map(__nrows);
+      __nnz = __crs_row_map_tight(__nrows);
 
 #if 0
       for (int i = 0; i <= __nrows; i++)
-        printf("__crs_row_map(%d) = %lu\n", i, __crs_row_map(i));
+        printf("__crs_row_map_tight(%d) = %lu\n", i, __crs_row_map_tight(i));
       std::cout << "__nnz: = " << __nnz << std::endl;
 #endif
 
-      __crs_vals = CrsValsViewType(
-          Kokkos::view_alloc(Kokkos::WithoutInitializing, "__crs_vals"), __nnz);
-      __crs_col_ids = CrsColIdViewType(
-          Kokkos::view_alloc(Kokkos::WithoutInitializing, "__crs_col_ids"),
+      __crs_vals_tight = CrsValsViewType(
+          Kokkos::view_alloc(Kokkos::WithoutInitializing, "__crs_vals_tight"),
           __nnz);
+      __crs_col_ids_tight =
+          CrsColIdViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing,
+                                              "__crs_col_ids_tight"),
+                           __nnz);
 
       __Phase2Functor phase2Functor(
-          row, col, data, __nrows, __ncols, __nnz, __crs_vals, __crs_row_map,
-          __crs_col_ids, phase1_max_row_cnt, phase1_max_n_unique_rows,
-          phase1_pow2_max_n_unique_rows);
+          row, col, data, __nrows, __ncols, __nnz, __crs_vals_tight,
+          __crs_row_map_tight, __crs_col_ids_tight, phase1_max_row_cnt,
+          phase1_max_n_unique_rows, phase1_pow2_max_n_unique_rows);
 
       __runPhase2(phase2Functor);
+
+      // Setup exact row map
+      __crs_row_map = CrsRowMapViewType(
+          Kokkos::view_alloc(Kokkos::WithoutInitializing, "__crs_row_map"),
+          __nrows + 1);
 
       // Find populate the exact row map and nnz
       KE::exclusive_scan(crsET,
@@ -911,10 +993,23 @@ class Coo2Crs {
                          KE::cend(phase2Functor.global_hmap_used_sizes),
                          KE::begin(__crs_row_map), 0);
       CrsET().fence();
+    }
 
+    // Allocate and populate exact crs
+    {
       __nnz = __crs_row_map(__nrows);
 
-      // TODO: resize and shift vals and col ids to match the final row map.
+      __crs_vals = CrsValsViewType(
+          Kokkos::view_alloc(Kokkos::WithoutInitializing, "__crs_vals"), __nnz);
+      __crs_col_ids = CrsColIdViewType(
+          Kokkos::view_alloc(Kokkos::WithoutInitializing, "__crs_col_ids"),
+          __nnz);
+
+      __Phase3Functor phase3Functor(
+          __nrows, __ncols, __crs_vals_tight, __crs_row_map_tight,
+          __crs_col_ids_tight, __nnz, __crs_vals, __crs_row_map, __crs_col_ids);
+
+      __runPhase3(phase3Functor);
     }
   }
 
