@@ -456,11 +456,6 @@ class Coo2Crs {
       unsigned start_n = teams_work * member.league_rank();
       unsigned stop_n  = start_n + n;
 
-#if 1
-      printf("%d-%d-%d-%d-%d\n", member.league_rank(), member.league_size(), n,
-             start_n, stop_n);
-#endif
-
       // Top-level hashmap that point to l0 hashmaps
       KeyViewScratch l1_hmap_keys(member.team_scratch(0), max_n_unique_rows);
       L0HmapIdxViewScratch l1_hmap_values(member.team_scratch(0),
@@ -552,7 +547,6 @@ class Coo2Crs {
 
       member.team_barrier();
 
-      printf("%d - Accumulate into global hashmap...\n", member.league_rank());
       // Accumulate into crs matrix via __global_hmap
       Kokkos::parallel_for(
           Kokkos::TeamVectorRange(member, 0, *l1_hmap_used_size),
@@ -572,7 +566,6 @@ class Coo2Crs {
                       col_id, val, used_size);
             }
           });
-      printf("%d - done\n", member.league_rank());
     }
   };
 
@@ -809,16 +802,6 @@ class Coo2Crs {
     s7_shmem_size += s7_shmem_per_row * functor.max_n_unique_rows;
     // clang-format: on
 
-    printf("__n_teams: %d, __suggested_team_size: %d\n", __n_teams,
-           __suggested_team_size);
-    printf("functors.teams_work: %d, functor.last_teams_work: %d\n",
-           functor.teams_work, functor.last_teams_work);
-    printf(
-        "functor.max_row_cnt: %lld, functor.max_n_unique_rows: %lld, "
-        "functor.pow2_max_row_cnt: %lld, functor.pow2_max_n_unique_rows: "
-        "%lld\n",
-        functor.max_row_cnt, functor.max_n_unique_rows,
-        functor.pow2_max_row_cnt, functor.pow2_max_n_unique_rows);
     s7p = s7Policy(__n_teams, __suggested_team_size);
     s7p.set_scratch_size(0, Kokkos::PerTeam(s7_shmem_size));
     Kokkos::parallel_for("Coo2Crs::Phase2Tags::s7CopyCoo", s7p, functor);
@@ -898,10 +881,6 @@ class Coo2Crs {
       __crs_row_map = CrsRowMapViewType(
           Kokkos::view_alloc(Kokkos::WithoutInitializing, "__crs_row_map"),
           __nrows + 1);
-
-      for (int i = 0; i < __nrows + 1; i++)
-        printf("global_hmap_used_size(%d) = %d\n", i,
-               phase2Functor.global_hmap_used_sizes(i));
 
       // Find populate the exact row map and nnz
       KE::exclusive_scan(crsET,
