@@ -107,15 +107,6 @@ CrsType vanilla_coo2crs(size_t m, size_t n, RowType row, ColType col,
     delete my_row;
   }
 
-  /*   printf("vanilla_row_map:\n");
-    for (uint64_t i = 0; i < m; i++) printf("%lu ", row_map(i));
-    printf("\n");
-    printf("vanilla_col_ids:\n");
-    for (int i = 0; i < nnz; i++) printf("%lld ", col_ids(i));
-    printf("\n");
-    for (int i = 0; i < nnz; i++) printf("%g ", values(i));
-    printf("\n"); */
-
   return CrsType("vanilla_coo2csr", m, n, nnz, values, row_map, col_ids);
 }
 
@@ -195,8 +186,8 @@ void check_crs_matrix(CrsType crsMat, RowType row, ColType col, DataType data) {
       // We sum at most m x n values.
       auto eps =
           crsMatRef.numCols() * crsMatRef.numRows() * 10e1 * ats::epsilon();
-      ASSERT_NEAR(crs_vals_ref(j), crs_vals(k), eps)
-          << fail_msg + " mismatched values!";
+      EXPECT_NEAR_KK(crs_vals_ref(j), crs_vals(k), eps,
+                     fail_msg + " mismatched values!");
     }
   }
 }
@@ -209,11 +200,6 @@ void doCoo2Crs(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
   auto randCol  = cooMat.get_col();
   auto randData = cooMat.get_data();
 
-  /*   for (size_t i = 0; i < randData.extent(0); i++) {
-      std::cout << "(" << randRow(i) << ", " << randCol(i) << ", " <<
-    randData(i)
-                << ")" << std::endl;
-    } */
   auto crsMat = KokkosSparse::coo2crs(m, n, randRow, randCol, randData);
   check_crs_matrix(crsMat, randRow, randCol, randData);
 }
@@ -221,16 +207,14 @@ void doCoo2Crs(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
 template <class LayoutType, class ExeSpaceType>
 void doAllScalarsCoo2Crs(size_t m, size_t n, int min, int max) {
   doCoo2Crs<float, LayoutType, ExeSpaceType>(m, n, min, max);
-  /* doCoo2Crs<double, LayoutType, ExeSpaceType>(m, n, min, max); */
-  /* doCoo2Crs<Kokkos::complex<float>, LayoutType, ExeSpaceType>(m, n, min,
-  max);
+  doCoo2Crs<double, LayoutType, ExeSpaceType>(m, n, min, max);
+  doCoo2Crs<Kokkos::complex<float>, LayoutType, ExeSpaceType>(m, n, min, max);
   doCoo2Crs<Kokkos::complex<double>, LayoutType, ExeSpaceType>(m, n, min, max);
-*/
 }
 
 template <class ExeSpaceType>
 void doAllLayoutsCoo2Crs(size_t m, size_t n, int min, int max) {
-  // doAllScalarsCoo2Crs<Kokkos::LayoutLeft, ExeSpaceType>(m, n, min, max);
+  doAllScalarsCoo2Crs<Kokkos::LayoutLeft, ExeSpaceType>(m, n, min, max);
   doAllScalarsCoo2Crs<Kokkos::LayoutRight, ExeSpaceType>(m, n, min, max);
 }
 
@@ -242,19 +226,14 @@ void doAllCoo2crs(size_t m, size_t n) {
 
 TEST_F(TestCategory, sparse_coo2crs) {
   // Square cases
-  for (size_t dim = 4; dim < 8 /* 1024 */; dim *= 4)
+  for (size_t dim = 4; dim < 1024; dim *= 4)
     doAllCoo2crs<TestExecSpace>(dim, dim);
 
   // Non-square cases
-  /* for (size_t dim = 1; dim < 1024; dim *= 4) {
+  for (size_t dim = 1; dim < 1024; dim *= 4) {
     doAllCoo2crs<TestExecSpace>(dim * 3, dim);
     doAllCoo2crs<TestExecSpace>(dim, dim * 3);
-  } */
-
-  // Fully sparse
-  /* doCoo2Crs<float, Kokkos::LayoutLeft, TestExecSpace>(5, 5, 1, 10, true);
-  doCoo2Crs<double, Kokkos::LayoutRight, TestExecSpace>(50, 10, 10, 100, true);
-*/
+  }
 }
 
 TEST_F(TestCategory, sparse_coo2crs_staticMatrix_edgeCases) {
@@ -275,13 +254,14 @@ TEST_F(TestCategory, sparse_coo2crs_staticMatrix_edgeCases) {
   }
 
   // Even partitions with multiple threads
-  // auto crsMatTs4 = KokkosSparse::coo2crs(m, n, row, col, data, 4);
-  // check_crs_matrix(crsMatTs4, row, col, data);
-  //
-  //// Uneven partitions with multiple threads
-  // auto crsMatTs3 = KokkosSparse::coo2crs(m, n, row, col, data, 3);
-  // check_crs_matrix(crsMatTs3, row, col, data);
+  auto crsMatTs4 = KokkosSparse::coo2crs(m, n, row, col, data, 4);
+  check_crs_matrix(crsMatTs4, row, col, data);
 
+  // Uneven partitions with multiple threads
+  auto crsMatTs3 = KokkosSparse::coo2crs(m, n, row, col, data, 3);
+  check_crs_matrix(crsMatTs3, row, col, data);
+
+  // Even partitions, single thread, fully sparse row
   long long staticRowTs1[16]{0, 3, 0, 2, 2, 3, 0, 3, 2, 0, 0, 0, 0, 3, 3, 0};
   long long staticColTs1[16]{3, 1, 3, 1, 2, 2, 1, 1, 2, 3, 3, 1, 1, 0, 0, 0};
   float staticDataTs1[16]{6.1355,  6.53989, 8.58559, 6.37476, 4.18964, 2.41146,
@@ -292,9 +272,16 @@ TEST_F(TestCategory, sparse_coo2crs_staticMatrix_edgeCases) {
     col(i)  = staticColTs1[i];
     data(i) = staticDataTs1[i];
   }
-  // Even partitions, single thread, fully sparse row
   auto crsMatTs1 = KokkosSparse::coo2crs(m, n, row, col, data, 1);
   check_crs_matrix(crsMatTs1, row, col, data);
+
+  // Fully sparse
+  for (int i = 0; i < 16; i++) {
+    row(i) = -staticRowTs1[i];
+    col(i) = -staticColTs1[i];
+  }
+  auto crsMatFsTs1 = KokkosSparse::coo2crs(m, n, row, col, data, 1);
+  check_crs_matrix(crsMatFsTs1, row, col, data);
 }
 
 // Reading III.D of https://ieeexplore.ieee.org/abstract/document/7965111/

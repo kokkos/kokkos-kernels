@@ -914,8 +914,10 @@ class Coo2Crs {
   }
 };
 }  // namespace Impl
+
+// clang-format: off
 ///
-/// \brief Converts a coo matrix to a CrsMatrix.
+/// \brief Blocking function that converts a CooMatrix to a CrsMatrix.
 /// \tparam DimType the dimension type
 /// \tparam RowViewType The row array view type
 /// \tparam ColViewType The column array view type
@@ -926,8 +928,11 @@ class Coo2Crs {
 /// \param col the array of col ids
 /// \param data the array of data
 /// \param team_size the requested team_size. By default, team_size = 0 uses the
-/// recommended team size. \param insert_mode whether to insert values. By
-/// default, values are added. \return A KokkosSparse::CrsMatrix.
+/// recommended team size.
+/// \param insert_mode whether to insert values. By
+/// default, values are added.
+/// \return A KokkosSparse::CrsMatrix.
+// clang-format: on
 template <class DimType, class RowViewType, class ColViewType,
           class DataViewType>
 auto coo2crs(DimType m, DimType n, RowViewType row, ColViewType col,
@@ -957,6 +962,8 @@ auto coo2crs(DimType m, DimType n, RowViewType row, ColViewType col,
 
   if (row.extent(0) != col.extent(0) || row.extent(0) != data.extent(0))
     Kokkos::abort("row.extent(0) = col.extent(0) = data.extent(0) required.");
+
+  if (m <= 0 || n <= 0) Kokkos::abort("m > 0 and n > 0 required.");
 
   using Coo2crsType =
       Impl::Coo2Crs<DimType, RowViewType, ColViewType, DataViewType>;
