@@ -408,7 +408,7 @@ class Coo2Crs {
           __nrows);
       global_hmap_used_sizes =
           SizeTypeView("global_hmap_used_sizes", __nrows + 1);
-      pow2_max_row_cnt = 1;
+      pow2_max_row_cnt = 2;
       while (pow2_max_row_cnt < max_row_cnt) pow2_max_row_cnt *= 2;
 
       __global_hmap_begins =
@@ -425,17 +425,24 @@ class Coo2Crs {
     KOKKOS_INLINE_FUNCTION
     void operator()(const typename phase2Tags::s6GlobalHmapSetup &,
                     const int &row_idx) const {
-      auto row_start                 = __crs_row_map(row_idx);
-      auto row_len                   = __crs_row_map(row_idx + 1) - row_start;
-      decltype(row_len) pow2_row_len = 1;
-      while (pow2_row_len < row_len) pow2_row_len *= 2;
+      auto row_start = __crs_row_map(row_idx);
+      auto row_len   = __crs_row_map(row_idx + 1) - row_start;
+      // To use this for each hmap begins and nexts, you would
+      // need to store the previous pow2_row_len for offsetting
+      // below. That would require coordination across threads.
+      // Since we already allocate pow2_max_row_cnt * nrows space
+      // and max_row_cnt * nrows for hmap_begins and hmap_nexts,
+      // let's just use it.
+      // decltype(row_len) pow2_row_len = 2;
+      // while (pow2_row_len < row_len) pow2_row_len *= 2;
 
-      auto hmap_begins = __global_hmap_begins.data() + pow2_row_len * row_idx;
-      auto hmap_nexts  = __global_hmap_nexts.data() + row_start;
-      auto keys        = __crs_col_ids.data() + row_start;
-      auto values      = __crs_vals.data() + row_start;
-      GlobalHmapType hmap(row_len, pow2_row_len - 1, hmap_begins, hmap_nexts,
-                          keys, values);
+      auto hmap_begins =
+          __global_hmap_begins.data() + pow2_max_row_cnt * row_idx;
+      auto hmap_nexts = __global_hmap_nexts.data() + max_row_cnt * row_idx;
+      auto keys       = __crs_col_ids.data() + row_start;
+      auto values     = __crs_vals.data() + row_start;
+      GlobalHmapType hmap(row_len, pow2_max_row_cnt - 1, hmap_begins,
+                          hmap_nexts, keys, values);
       __global_hmap(row_idx) = hmap;
     }
 
@@ -448,6 +455,11 @@ class Coo2Crs {
                        : teams_work;
       unsigned start_n = teams_work * member.league_rank();
       unsigned stop_n  = start_n + n;
+
+#if 1
+      printf("%d-%d-%d-%d-%d\n", member.league_rank(), member.league_size(), n,
+             start_n, stop_n);
+#endif
 
       // Top-level hashmap that point to l0 hashmaps
       KeyViewScratch l1_hmap_keys(member.team_scratch(0), max_n_unique_rows);
@@ -540,6 +552,7 @@ class Coo2Crs {
 
       member.team_barrier();
 
+      printf("%d - Accumulate into global hashmap...\n", member.league_rank());
       // Accumulate into crs matrix via __global_hmap
       Kokkos::parallel_for(
           Kokkos::TeamVectorRange(member, 0, *l1_hmap_used_size),
@@ -559,6 +572,7 @@ class Coo2Crs {
                       col_id, val, used_size);
             }
           });
+      printf("%d - done\n", member.league_rank());
     }
   };
 
@@ -638,7 +652,7 @@ class Coo2Crs {
       // Reset to 0 for s4RowCnt
       Kokkos::deep_copy(__crs_row_cnt, 0);
 
-      functor.pow2_max_row_cnt = 1;
+      functor.pow2_max_row_cnt = 2;
       while (functor.pow2_max_row_cnt < functor.max_row_cnt)
         functor.pow2_max_row_cnt *= 2;
 
@@ -689,7 +703,7 @@ class Coo2Crs {
               ? s4p.team_size_recommended(functor, Kokkos::ParallelForTag())
               : __team_size;
 
-      functor.pow2_max_n_unique_rows = 1;
+      functor.pow2_max_n_unique_rows = 2;
       while (functor.pow2_max_n_unique_rows < functor.max_n_unique_rows)
         functor.pow2_max_n_unique_rows *= 2;
 
@@ -795,6 +809,16 @@ class Coo2Crs {
     s7_shmem_size += s7_shmem_per_row * functor.max_n_unique_rows;
     // clang-format: on
 
+    printf("__n_teams: %d, __suggested_team_size: %d\n", __n_teams,
+           __suggested_team_size);
+    printf("functors.teams_work: %d, functor.last_teams_work: %d\n",
+           functor.teams_work, functor.last_teams_work);
+    printf(
+        "functor.max_row_cnt: %lld, functor.max_n_unique_rows: %lld, "
+        "functor.pow2_max_row_cnt: %lld, functor.pow2_max_n_unique_rows: "
+        "%lld\n",
+        functor.max_row_cnt, functor.max_n_unique_rows,
+        functor.pow2_max_row_cnt, functor.pow2_max_n_unique_rows);
     s7p = s7Policy(__n_teams, __suggested_team_size);
     s7p.set_scratch_size(0, Kokkos::PerTeam(s7_shmem_size));
     Kokkos::parallel_for("Coo2Crs::Phase2Tags::s7CopyCoo", s7p, functor);
@@ -874,6 +898,10 @@ class Coo2Crs {
       __crs_row_map = CrsRowMapViewType(
           Kokkos::view_alloc(Kokkos::WithoutInitializing, "__crs_row_map"),
           __nrows + 1);
+
+      for (int i = 0; i < __nrows + 1; i++)
+        printf("global_hmap_used_size(%d) = %d\n", i,
+               phase2Functor.global_hmap_used_sizes(i));
 
       // Find populate the exact row map and nnz
       KE::exclusive_scan(crsET,
