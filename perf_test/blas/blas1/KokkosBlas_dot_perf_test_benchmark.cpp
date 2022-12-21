@@ -48,7 +48,6 @@
 #include "KokkosBlas_dot_perf_test.hpp"
 #include <benchmark/benchmark.h>
 
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // The Level 1 BLAS perform scalar, vector and vector-vector operations;
 //
@@ -76,8 +75,7 @@
 
 template <class ExecSpace>
 static void run(benchmark::State& state) {
-
-  const auto m = state.range(0);
+  const auto m      = state.range(0);
   const auto repeat = state.range(1);
   // Declare type aliases
   using Scalar   = double;
@@ -132,11 +130,10 @@ static void run(benchmark::State& state) {
         benchmark::Counter(avg, benchmark::Counter::kDefaults);
     state.counters["Avg DOT FLOP/s:"] =
         benchmark::Counter(flopsPerRun / avg, benchmark::Counter::kDefaults);
-    }
+  }
 }
 
 BENCHMARK(run<Kokkos::DefaultExecutionSpace>)
-    ->ArgNames({"m","repeat"})
-    ->Args({100000,1})
+    ->ArgNames({"m", "repeat"})
+    ->Args({100000, 1})
     ->UseManualTime();
-
