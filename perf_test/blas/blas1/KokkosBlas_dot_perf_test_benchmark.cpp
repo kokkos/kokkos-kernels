@@ -45,9 +45,7 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
 
-// For RPS implementation
 #include "KokkosBlas_dot_perf_test.hpp"
-#include "KokkosKernels_TestUtils.hpp"
 #include <benchmark/benchmark.h>
 
 
@@ -130,14 +128,15 @@ static void run(benchmark::State& state) {
     printf("Avg DOT FLOP/s: %.3e\n", flopsPerRun / avg);
     state.SetIterationTime(timer.seconds());
 
-    state.counters["Avg DOT time:"] =
+    state.counters["Avg DOT time (s):"] =
         benchmark::Counter(avg, benchmark::Counter::kDefaults);
     state.counters["Avg DOT FLOP/s:"] =
         benchmark::Counter(flopsPerRun / avg, benchmark::Counter::kDefaults);
     }
 }
 
-BENCHMARK(run<Kokkos::Serial>)
+BENCHMARK(run<Kokkos::DefaultExecutionSpace>)
     ->ArgNames({"m","repeat"})
     ->Args({100000,1})
     ->UseManualTime();
+
