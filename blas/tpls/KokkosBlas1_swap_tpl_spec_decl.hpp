@@ -163,8 +163,8 @@ namespace Impl {
     using YVector = Kokkos::View<Kokkos::complex<float>*, LAYOUT,              \
                                  Kokkos::Device<EXECSPACE, Kokkos::HostSpace>, \
                                  Kokkos::MemoryTraits<Kokkos::Unmanaged>>;     \
-    static void rot(EXECSPACE const& /*space*/, XVector const& X,              \
-                    YVector const& Y) {                                        \
+    static void swap(EXECSPACE const& /*space*/, XVector const& X,             \
+                     YVector const& Y) {                                       \
       Kokkos::Profiling::pushRegion(                                           \
           "KokkosBlas::swap[TPL_BLAS,complex<float>]");                        \
       HostBlas<std::complex<float>>::swap(                                     \
@@ -325,8 +325,8 @@ namespace Impl {
     using YVector = Kokkos::View<Kokkos::complex<float>, LAYOUT,            \
                                  Kokkos::Device<EXECSPACE, MEMSPACE>,       \
                                  Kokkos::MemoryTraits<Kokkos::Unmanaged>>;  \
-    static void rot(EXECSPACE const& space, XVector const& X,               \
-                    YVector const& Y) {                                     \
+    static void swap(EXECSPACE const& space, XVector const& X,              \
+                     YVector const& Y) {                                    \
       Kokkos::Profiling::pushRegion(                                        \
           "KokkosBlas::swap[TPL_CUBLAS,complex<float>]");                   \
       swap_print_specialization<EXECSPACE, XVector, YVector>();             \
