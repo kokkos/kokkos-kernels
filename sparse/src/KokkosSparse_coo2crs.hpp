@@ -77,8 +77,8 @@ class Coo2Crs {
   using ValueType        = typename DataViewType::value_type;
   using ScratchSpaceType = typename CrsET::scratch_memory_space;
 
-  // Unordered set types. KeyViewScratch and SizeViewScratch types are used for
-  // the hashmaps too.
+  // Unordered set types.
+  // KeyViewScratch and SizeViewScratch types are used for hmaps too.
   using L0HmapType = KokkosKernels::Experimental::HashmapAccumulator<
       SizeType, KeyType, ValueType,
       KokkosKernels::Experimental::HashOpType::bitwiseAnd>;
@@ -136,10 +136,9 @@ class Coo2Crs {
   using s4Policy = Kokkos::TeamPolicy<typename phase1Tags::s4RowCnt, CrsET>;
 
   /**
-   * @brief A functor used for parsing the coo matrix and determining how to
-   * allocate the crs matrix. The output of this class is: __crs_row_cnt,
-   * max_row_cnt, pow2_max_row_cnt, max_n_unique_rows, and
-   * pow2_max_n_unique_rows.
+   * @brief A functor used for parsing the coo matrix and estimating
+   * the sparsity of the resulting crs matrix. This functor has 5
+   * operators, see Coo2Crs::phase1Tags above.
    */
   class __Phase1Functor {
    private:
@@ -347,8 +346,6 @@ class Coo2Crs {
       member.team_barrier();
 
       // Add up the "tight" row count
-      // Can we use a thread's unique_col_count safely here? We have to
-      // increment used_size anyways, so let's use that instead.
       Kokkos::parallel_for(Kokkos::TeamVectorRange(member, 0, *hmap_used_size),
                            [&](const int &i) {
                              auto uset_idx  = hmap_values(i);
@@ -367,6 +364,10 @@ class Coo2Crs {
 
   using s7Policy = Kokkos::TeamPolicy<typename phase2Tags::s7CopyCoo, CrsET>;
 
+  /**
+   * @brief A functor used for populating the "tight" crs matrix.
+   * This functor has 2 operators, see Coo2Crs::phase2Tags above.
+   */
   class __Phase2Functor {
    private:
     using s7MemberType = typename s7Policy::member_type;
@@ -439,12 +440,12 @@ class Coo2Crs {
                     const int &row_idx) const {
       auto row_start = __crs_row_map(row_idx);
       auto row_len   = __crs_row_map(row_idx + 1) - row_start;
-      // To use this for each hmap begins and nexts, you would
+      // To use this for each hmap begins and nexts, one would
       // need to store the previous pow2_row_len for offsetting
       // below. That would require coordination across threads.
       // Since we already allocate pow2_max_row_cnt * nrows space
       // and max_row_cnt * nrows for hmap_begins and hmap_nexts,
-      // let's just use it.
+      // just use the space.
       // decltype(row_len) pow2_row_len = 2;
       // while (pow2_row_len < row_len) pow2_row_len *= 2;
 
@@ -587,6 +588,10 @@ class Coo2Crs {
 
   using s8Policy = Kokkos::TeamPolicy<typename phase3Tags::s8CopyCrs, CrsET>;
 
+  /**
+   * @brief A functor used for copying the "tight" crs into the "exact" crs.
+   * This functor has one operator, see Coo2Crs::s8CopyCrs above.
+   */
   class __Phase3Functor {
    private:
     using s8MemberType = typename s8Policy::member_type;
@@ -930,27 +935,19 @@ class Coo2Crs {
 
 // clang-format: off
 ///
-/// \brief Blocking function that converts a CooMatrix to a CrsMatrix.
-/// \tparam DimType the dimension type
-/// \tparam RowViewType The row array view type
-/// \tparam ColViewType The column array view type
-/// \tparam DataViewType The data array view type
-/// \param m the number of rows
-/// \param n the number of columns
-/// \param row the array of row ids
-/// \param col the array of col ids
-/// \param data the array of data
-/// \param team_size the requested team_size. By default, team_size = 0 uses the
-/// recommended team size.
-/// \param insert_mode whether to insert values. By
-/// default, values are added.
-/// \return A KokkosSparse::CrsMatrix.
+/// \brief Blocking function that converts a CooMatrix to a CrsMatrix. Values
+/// are summed. \tparam DimType the dimension type \tparam RowViewType The row
+/// array view type \tparam ColViewType The column array view type \tparam
+/// DataViewType The data array view type \param m the number of rows \param n
+/// the number of columns \param row the array of row ids \param col the array
+/// of col ids \param data the array of data \param team_size the requested
+/// team_size. By default, team_size = 0 uses the recommended team size. \return
+/// A KokkosSparse::CrsMatrix.
 // clang-format: on
 template <class DimType, class RowViewType, class ColViewType,
           class DataViewType>
 auto coo2crs(DimType m, DimType n, RowViewType row, ColViewType col,
-             DataViewType data, unsigned team_size = 0,
-             bool insert_mode = false) {
+             DataViewType data, unsigned team_size = 0) {
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
   static_assert(Kokkos::is_view<RowViewType>::value,
                 "RowViewType must be a Kokkos::View.");
@@ -971,8 +968,6 @@ auto coo2crs(DimType m, DimType n, RowViewType row, ColViewType col,
   static_assert(std::is_integral<typename ColViewType::value_type>::value,
                 "ColViewType::value_type must be an integral.");
 
-  if (insert_mode) Kokkos::abort("insert_mode not supported yet.");
-
   if (row.extent(0) != col.extent(0) || row.extent(0) != data.extent(0))
     Kokkos::abort("row.extent(0) = col.extent(0) = data.extent(0) required.");
 
@@ -980,27 +975,8 @@ auto coo2crs(DimType m, DimType n, RowViewType row, ColViewType col,
 
   using Coo2crsType =
       Impl::Coo2Crs<DimType, RowViewType, ColViewType, DataViewType>;
-  Coo2crsType Coo2Crs(m, n, row, col, data, team_size, insert_mode);
+  Coo2crsType Coo2Crs(m, n, row, col, data, team_size, false);
   return Coo2Crs.get_crsMat();
 }
-
-#if 0
-/// \brief Inserts new values into the given CrsMatrix.
-/// \tparam DimType the dimension type
-/// \tparam RowViewType The row array view type
-/// \tparam ColViewType The column array view type
-/// \tparam DataViewType The data array view type
-/// \param m the number of rows
-/// \param n the number of columns
-/// \param row the array of row ids
-/// \param col the array of col ids
-/// \param data the array of data
-/// \param insert_mode whether to insert values. By default, values are added.
-/// \return A KokkosSparse::CrsMatrix.
-template <class DimType, class RowViewType, class ColViewType, class DataViewType, class CrsMatrixType>
-auto coo2crs(DimType m, DimType n, RowViewType row, ColViewType col, DataViewType data, CrsMatrixType crsMatrix) {
-  // TODO: Run phase2 only.
-}
-#endif
 }  // namespace KokkosSparse
 #endif  //  _KOKKOSSPARSE_COO2CRS_HPP

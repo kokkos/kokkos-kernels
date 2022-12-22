@@ -21,6 +21,10 @@ ccs2crs
 .. doxygenfunction:: KokkosSparse::ccs2crs(OrdinalType nrows, OrdinalType ncols, SizeType nnz, ValViewType vals, ColMapViewType col_map, RowIdViewType row_ids)
 .. doxygenfunction:: KokkosSparse::ccs2crs(KokkosSparse::CcsMatrix<ScalarType, OrdinalType, DeviceType, MemoryTraitsType, SizeType> &ccsMatrix)
 
+coo2crs
+-------
+.. doxygenfunction:: KokkosSparse::coo2crs(DimType, DimType, RowViewType, ColViewType, DataViewType, unsigned)
+
 spmv
 ----
 
