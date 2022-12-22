@@ -684,14 +684,12 @@ class Coo2Crs {
                                  "n_unique_rows_per_team"),
               __n_teams);
 
-      // clang-format: off
       int s3_shmem_size =
           KeyViewScratch::shmem_size(functor.max_row_cnt) +  // keys
           SizeViewScratch::shmem_size(__n_teams) +           // used_sizes
           SizeViewScratch::shmem_size(
               functor.pow2_max_row_cnt +
               functor.max_row_cnt);  // hash_begins and hash_nexts
-                                     // clang-format: on
 
       s3p = s3Policy(__n_teams, __suggested_team_size);
       s3p.set_scratch_size(0, Kokkos::PerTeam(s3_shmem_size));
@@ -717,7 +715,6 @@ class Coo2Crs {
       while (functor.pow2_max_n_unique_rows < functor.max_n_unique_rows)
         functor.pow2_max_n_unique_rows *= 2;
 
-      // clang-format: off
       // Calculate size of each team's outer hashmap to row unordered sets
       int s4_shmem_size =
           KeyViewScratch::shmem_size(functor.max_n_unique_rows) +  // keys
@@ -737,7 +734,6 @@ class Coo2Crs {
               functor.max_row_cnt);  // hash_begins and hash_nexts
       // Each team has up to max_n_unique_rows with up to max_row_cnt columns
       s4_shmem_size += s4_shmem_per_row * functor.max_n_unique_rows;
-      // clang-format: on
 
       functor.n_unique_rows_per_team =
           typename __Phase1Functor::RowViewScalarTypeView(
@@ -798,7 +794,6 @@ class Coo2Crs {
         Kokkos::view_alloc(Kokkos::WithoutInitializing, "uset_used_sizes"),
         __n_teams, functor.max_n_unique_rows);
 
-    // clang-format: off
     // Calculate size of each team's outer hashmap to row unordered sets
     int s7_shmem_size =
         KeyViewScratch::shmem_size(functor.max_n_unique_rows) +        // keys
@@ -817,7 +812,6 @@ class Coo2Crs {
             functor.max_row_cnt);  // hash_begins and hash_nexts
     // Each team has up to max_n_unique_rows with up to max_row_cnt columns
     s7_shmem_size += s7_shmem_per_row * functor.max_n_unique_rows;
-    // clang-format: on
 
     s7p = s7Policy(__n_teams, __suggested_team_size);
     s7p.set_scratch_size(0, Kokkos::PerTeam(s7_shmem_size));
@@ -933,17 +927,22 @@ class Coo2Crs {
 };
 }  // namespace Impl
 
-// clang-format: off
+// clang-format off
 ///
-/// \brief Blocking function that converts a CooMatrix to a CrsMatrix. Values
-/// are summed. \tparam DimType the dimension type \tparam RowViewType The row
-/// array view type \tparam ColViewType The column array view type \tparam
-/// DataViewType The data array view type \param m the number of rows \param n
-/// the number of columns \param row the array of row ids \param col the array
-/// of col ids \param data the array of data \param team_size the requested
-/// team_size. By default, team_size = 0 uses the recommended team size. \return
-/// A KokkosSparse::CrsMatrix.
-// clang-format: on
+/// \brief Blocking function that converts a CooMatrix to a CrsMatrix. Values are
+/// \tparam DimType the dimension type
+/// \tparam RowViewType The row array view type
+/// \tparam ColViewType The column array view type
+/// \tparam DataViewType The data array view type
+/// \param m the number of rows
+/// \param n the number of columns
+/// \param row the array of row ids
+/// \param col the array of col ids
+/// \param data the array of data
+/// \param team_size the requested team_size. By default, team_size = 0 uses the
+/// recommended team size.
+/// \return A KokkosSparse::CrsMatrix.
+// clang-format on
 template <class DimType, class RowViewType, class ColViewType,
           class DataViewType>
 auto coo2crs(DimType m, DimType n, RowViewType row, ColViewType col,
