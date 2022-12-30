@@ -107,7 +107,7 @@ static void run(benchmark::State& state) {
 
   for (auto _ : state) {
     // do a warm up run of dot:
-      KokkosBlas::dot(result, x, y);
+    KokkosBlas::dot(result, x, y);
 
     // The live test of dot:
 
@@ -126,7 +126,7 @@ static void run(benchmark::State& state) {
     size_t flopsPerRun = (size_t)2 * m * n;
     printf("Avg DOT time: %f s.\n", avg);
     printf("Avg DOT FLOP/s: %.3e\n", flopsPerRun / avg);
-        state.SetIterationTime(timer.seconds());
+    state.SetIterationTime(timer.seconds());
 
     state.counters["Avg DOT time (s):"] =
         benchmark::Counter(avg, benchmark::Counter::kDefaults);
