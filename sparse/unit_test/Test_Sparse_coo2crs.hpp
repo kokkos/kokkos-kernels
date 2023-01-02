@@ -331,7 +331,7 @@ TEST_F(TestCategory, sparse_coo2crs_staticMatrix_edgeCases) {
 // bucket.
 //
 // This test will fail if the same key appears twice in the hashmap.
-namespace HashmapAccumulator_RaceToInsert {
+namespace HashmapAccumulatorRaceToInsert {
 struct myFunctor {
   using PolicyType = Kokkos::TeamPolicy<TestExecSpace>;
   using MemberType = typename PolicyType::member_type;
@@ -394,14 +394,14 @@ struct myFunctor {
     });
   }
 };
-}  // namespace HashmapAccumulator_RaceToInsert
+}  // namespace HashmapAccumulatorRaceToInsert
 TEST_F(TestCategory, HashmapAccumulator_RaceToInsertion) {
-  using namespace Test::HashmapAccumulator_RaceToInsert;
-  myFunctor functor;
+  using functorType = typename HashmapAccumulatorRaceToInsert::myFunctor;
+  functorType functor;
 
   int team_size, n_teams;
   team_size = n_teams = 4;
-  typename myFunctor::PolicyType policy(n_teams, team_size);
+  functorType::PolicyType policy(n_teams, team_size);
 
   int team_size_max = policy.team_size_max(functor, Kokkos::ParallelForTag());
 
@@ -410,38 +410,38 @@ TEST_F(TestCategory, HashmapAccumulator_RaceToInsertion) {
     n_teams   = 16;
   }
 
-  policy = typename myFunctor::PolicyType(n_teams, team_size);
+  policy = functorType::PolicyType(n_teams, team_size);
 
   functor.keys_inserted =
-      myFunctor::KeyViewType2("keys_inserted", n_teams, functor.key_len);
-  functor.key_count = myFunctor::KeyViewType("key_count", n_teams);
+      functorType::KeyViewType2("keys_inserted", n_teams, functor.key_len);
+  functor.key_count = functorType::KeyViewType("key_count", n_teams);
   functor.keys_to_insert =
-      myFunctor::KeyViewType("keys_to_insert", functor.key_len);
+      functorType::KeyViewType("keys_to_insert", functor.key_len);
 
-  typename myFunctor::KeyViewType::HostMirror kti =
+  typename functorType::KeyViewType::HostMirror kti =
       Kokkos::create_mirror_view(functor.keys_to_insert);
   kti(0) = 0;
   kti(1) = 0;
   kti(2) = 2;
   kti(3) = 2;
   Kokkos::deep_copy(functor.keys_to_insert, kti);
-  typename myFunctor::KeyViewType2::HostMirror ki =
+  typename functorType::KeyViewType2::HostMirror ki =
       Kokkos::create_mirror_view(functor.keys_inserted);
   for (int i = 0; i < n_teams; i++) {
     for (int j = 0; j < functor.key_len; j++) ki(i, j) = -1;
   }
   Kokkos::deep_copy(functor.keys_inserted, ki);
 
-  int scratch = myFunctor::KeyViewScratch::shmem_size(functor.key_len) +
-                myFunctor::SizeViewScratch::shmem_size(n_teams) +
-                myFunctor::SizeViewScratch::shmem_size(functor.pow2_key_len +
-                                                       functor.key_len);
+  int scratch = functorType::KeyViewScratch::shmem_size(functor.key_len) +
+                functorType::SizeViewScratch::shmem_size(n_teams) +
+                functorType::SizeViewScratch::shmem_size(functor.pow2_key_len +
+                                                         functor.key_len);
   policy.set_scratch_size(0, Kokkos::PerTeam(scratch));
   Kokkos::parallel_for("Test::HashmapAccumulator_RaceToInsert", policy,
                        functor);
   TestExecSpace().fence();
   Kokkos::deep_copy(ki, functor.keys_inserted);
-  typename myFunctor::KeyViewType::HostMirror kc =
+  typename functorType::KeyViewType::HostMirror kc =
       Kokkos::create_mirror_view(functor.key_count);
   Kokkos::deep_copy(kc, functor.key_count);
 
