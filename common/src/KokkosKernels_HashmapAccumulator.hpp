@@ -731,19 +731,22 @@ struct HashmapAccumulator {
     }
   }
 
-  KOKKOS_INLINE_FUNCTION
   /**
    * This is a copy of vector_atomic_insert_into_hash modified to count
-   * new keys exactly once.
+   * new keys exactly once. Parallel insertions are performed for distinct
+   * hashes.
    *
    * @brief This function behaves kind of like a thread-safe std::unordered_set.
-   * This is used by coo2csr to count the number of unique row or col indexes
-   * in a given team's coo partition. See coo2csr phase1Tags::s3UniqRows.
+   * This is used by coo2crs to count the number of unique row or col indexes
+   * in a given team's coo partition. See Coo2Crs::phase1Tags::s3UniqRows.
    *
    * @param key: The key to insert.
-   * @return __insert_success when a new key is inserted; otherwise,
+   * @param used_size_: The number of unique keys inserted.
+   * @return __insert_success when a new key is inserted or already found;
+   * otherwise,
    * __insert_full.
    */
+  KOKKOS_INLINE_FUNCTION
   int vector_atomic_insert_into_hash_KeyCounter(
       const key_type &key, volatile size_type *used_size_) {
     size_type hash, my_write_index, i, head;
@@ -794,17 +797,21 @@ struct HashmapAccumulator {
   }
 
   /**
-   * This is a copy of vector_atomic_insert_into_hash modified to insert each
-   * key exactly once.
+   * This is a copy of vector_atomic_insert_into_hash_KeyCounter modified to
+   * count new key value pairs exactly once. Parallel insertions are performed
+   * for distinct hashes.
    *
-   * @brief This is used by coo2csr to associate a row id with another instance
+   * @brief This is used by coo2crs to associate a row id with another instance
    * of the hashmap accumulator that is treated like an unordered set. With this
-   * two level structure (a hashmap key'd on row ids to unordered sets) coo2csr
-   * counts the number of column ids per row.  See coo2csr phase1Tags::s4RowCnt.
+   * two level structure (a hashmap key'd on row ids to unordered sets) coo2crs
+   * determines the sparsity of the coo matrix by counting the number of column
+   * ids per row. See Coo2Crs::phase1Tags::s4RowCnt.
    *
    * @param key: The key to insert.
-   * @return The index of the k,v pair in the keys and values arrays.
+   * @param used_size_: The number of unique keys inserted.
+   * @return The value inserted, which is the atomic index into keys and values.
    */
+  KOKKOS_INLINE_FUNCTION
   int vector_atomic_insert_into_hash_once(const key_type &key,
                                           volatile size_type *used_size_) {
     size_type hash, my_write_index, i, head;
@@ -855,18 +862,22 @@ struct HashmapAccumulator {
     return my_write_index;
   }
 
-  KOKKOS_INLINE_FUNCTION
   /**
-   * This is a copy of vector_atomic_insert_into_hash modified to insert
-   * new keys exactly once and add values to already inserted keys.
+   * This is a copy of vector_atomic_insert_into_hash_once modified to
+   * accumulate duplicate key value pairs. Parallel insertions are performed for
+   * distinct hashes. Atomics are used for parallel accumulations.
    *
    * @brief This is used by coo2csr to compute values and indexes
-   * in a given team's coo partition. See coo2csr phase2Tags::s7Copy.
+   * in a given team's coo partition. See Coo2Crs::phase2Tags::s7CopyCoo.
    *
    * @param key: The key to insert.
-   * @return __insert_success when a new key is inserted; otherwise,
+   * @param value: The value to insert or accumulate (if key already inserted).
+   * @param used_size_: The number of unique keys inserted.
+   * @return __insert_success when a new key is inserted or already found;
+   * otherwise,
    * __insert_full.
    */
+  KOKKOS_INLINE_FUNCTION
   int vector_atomic_insert_into_hash_once_mergeAtomicAdd(
       const key_type &key, const value_type &value,
       volatile size_type *used_size_) {
