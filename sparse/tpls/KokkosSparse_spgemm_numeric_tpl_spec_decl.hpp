@@ -161,6 +161,9 @@ void spgemm_numeric_cusparse(
     const ConstEntriesType &entriesB, const ConstValuesType &valuesB,
     const ConstRowMapType &row_mapC, const EntriesType &entriesC,
     const ValuesType &valuesC) {
+  (void)m;
+  (void)n;
+  (void)k;
   using scalar_type = typename KernelHandle::nnz_scalar_t;
   auto h            = handle->get_cusparse_spgemm_handle();
   KOKKOS_CUSPARSE_SAFE_CALL(

@@ -123,7 +123,9 @@ void check_crs_matrix(CrsType crsMat, RowType row, ColType col, DataType data) {
   typename DataType::HostMirror data_h = Kokkos::create_mirror_view(data);
   Kokkos::deep_copy(data_h, data);
 
-  auto crsMatRef = vanilla_coo2crs<CrsType, RowType, ColType, DataType>(
+  auto crsMatRef = vanilla_coo2crs<CrsType, typename RowType::HostMirror,
+                                   typename ColType::HostMirror,
+                                   typename DataType::HostMirror>(
       crsMat.numRows(), crsMat.numCols(), row_h, col_h, data_h);
 
   auto crs_col_ids_ref = crsMatRef.graph.entries;
@@ -400,6 +402,15 @@ TEST_F(TestCategory, HashmapAccumulator_RaceToInsertion) {
   int team_size, n_teams;
   team_size = n_teams = 4;
   typename myFunctor::PolicyType policy(n_teams, team_size);
+
+  int team_size_max = policy.team_size_max(functor, Kokkos::ParallelForTag());
+
+  if (team_size > team_size_max) {
+    team_size = 1;
+    n_teams   = 16;
+  }
+
+  policy = typename myFunctor::PolicyType(n_teams, team_size);
 
   functor.keys_inserted =
       myFunctor::KeyViewType2("keys_inserted", n_teams, functor.key_len);
