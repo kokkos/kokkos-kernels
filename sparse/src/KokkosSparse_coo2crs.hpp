@@ -643,6 +643,18 @@ class Coo2Crs {
     }
   };
 
+  template <class PolicyType, class FunctorType>
+  inline int __get_suggested_team_size(PolicyType &policy,
+                                       FunctorType &functor) {
+    unsigned int team_size_max = static_cast<unsigned int>(
+        policy.team_size_max(functor, Kokkos::ParallelForTag()));
+    if (__team_size == 0 || __team_size > __n_tuples ||
+        __team_size > team_size_max)
+      return policy.team_size_recommended(functor, Kokkos::ParallelForTag());
+    else
+      return __team_size;
+  }
+
   template <class FunctorType>
   void __runPhase1(FunctorType &functor) {
     {
@@ -667,10 +679,7 @@ class Coo2Crs {
         functor.pow2_max_row_cnt *= 2;
 
       s3Policy s3p;
-      __suggested_team_size =
-          __team_size == 0
-              ? s3p.team_size_recommended(functor, Kokkos::ParallelForTag())
-              : __team_size;
+      __suggested_team_size   = __get_suggested_team_size(s3p, functor);
       __n_teams               = __n_tuples / __suggested_team_size;
       functor.teams_work      = __n_tuples / __n_teams;
       functor.last_teams_work = __n_tuples - (functor.teams_work * __n_teams);
@@ -706,10 +715,7 @@ class Coo2Crs {
       // since the coo partitions are the same. We do need new scratch
       // memory allocations and suggested team sizes though.
       s4Policy s4p;
-      __suggested_team_size =
-          __team_size == 0
-              ? s4p.team_size_recommended(functor, Kokkos::ParallelForTag())
-              : __team_size;
+      __suggested_team_size = __get_suggested_team_size(s4p, functor);
 
       functor.pow2_max_n_unique_rows = 2;
       while (functor.pow2_max_n_unique_rows < functor.max_n_unique_rows)
@@ -775,10 +781,7 @@ class Coo2Crs {
     CrsET().fence();
 
     s7Policy s7p;
-    __suggested_team_size =
-        __team_size == 0
-            ? s7p.team_size_recommended(functor, Kokkos::ParallelForTag())
-            : __team_size;
+    __suggested_team_size   = __get_suggested_team_size(s7p, functor);
     __n_teams               = __n_tuples / __suggested_team_size;
     functor.teams_work      = __n_tuples / __n_teams;
     functor.last_teams_work = __n_tuples - (functor.teams_work * __n_teams);
@@ -824,10 +827,7 @@ class Coo2Crs {
   void __runPhase3(FunctorType &functor) {
     s8Policy s8p;
 
-    __suggested_team_size =
-        __team_size == 0
-            ? s8p.team_size_recommended(functor, Kokkos::ParallelForTag())
-            : __team_size;
+    __suggested_team_size = __get_suggested_team_size(s8p, functor);
 
     s8p = s8Policy(__nrows, __suggested_team_size);
     Kokkos::parallel_for("Coo2Crs::Phase3Tags::s8CopyCrs", s8p, functor);

@@ -270,6 +270,11 @@ TEST_F(TestCategory, sparse_coo2crs_staticMatrix_edgeCases) {
   auto crsMatTs3 = KokkosSparse::coo2crs(m, n, row, col, data, 3);
   check_crs_matrix(crsMatTs3, row, col, data);
 
+  // Team size too large
+  auto crsMatTsTooLarge =
+      KokkosSparse::coo2crs(m, n, row, col, data, UINT32_MAX);
+  check_crs_matrix(crsMatTsTooLarge, row, col, data);
+
   // Even partitions, single thread, fully sparse row
   long long staticRowTs1[16]{0, 3, 0, 2, 2, 3, 0, 3, 2, 0, 0, 0, 0, 3, 3, 0};
   long long staticColTs1[16]{3, 1, 3, 1, 2, 2, 1, 1, 2, 3, 3, 1, 1, 0, 0, 0};
