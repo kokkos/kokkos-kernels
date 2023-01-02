@@ -86,26 +86,37 @@ CrsType vanilla_coo2crs(size_t m, size_t n, RowType row, ColType col,
   typename CrsType::staticcrsgraph_type::entries_type col_ids("vanilla_col_ids",
                                                               nnz);
 
+  typename CrsType::row_map_type::non_const_type::HostMirror row_map_h =
+      Kokkos::create_mirror_view(row_map);
+  typename CrsType::values_type::HostMirror values_h =
+      Kokkos::create_mirror_view(values);
+  typename CrsType::staticcrsgraph_type::entries_type::HostMirror col_ids_h =
+      Kokkos::create_mirror_view(col_ids);
+
   int row_len = 0;
   for (uint64_t i = 0; i < m; i++) {
     if (umap.find(i) != umap.end()) row_len += umap.at(i)->size();
-    row_map(i + 1) = row_len;
+    row_map_h(i + 1) = row_len;
   }
 
   for (uint64_t i = 0; i < m; i++) {
     if (umap.find(i) == umap.end())  // Fully sparse row
       continue;
 
-    auto row_start = row_map(i);
-    auto row_end   = row_map(i + 1);
+    auto row_start = row_map_h(i);
+    auto row_end   = row_map_h(i + 1);
     auto my_row    = umap.at(i);
     auto iter      = my_row->begin();
     for (uint64_t j = row_start; j < row_end; j++, iter++) {
-      col_ids(j) = iter->first;
-      values(j)  = iter->second;
+      col_ids_h(j) = iter->first;
+      values_h(j)  = iter->second;
     }
     delete my_row;
   }
+
+  Kokkos::deep_copy(row_map, row_map_h);
+  Kokkos::deep_copy(col_ids, col_ids_h);
+  Kokkos::deep_copy(values, values_h);
 
   return CrsType("vanilla_coo2csr", m, n, nnz, values, row_map, col_ids);
 }
@@ -258,24 +269,35 @@ TEST_F(TestCategory, sparse_coo2crs_staticMatrix_edgeCases) {
   Kokkos::View<long long *, TestExecSpace> row("coo row", 16);
   Kokkos::View<long long *, TestExecSpace> col("coo col", 16);
   Kokkos::View<float *, TestExecSpace> data("coo data", 16);
+
+  typename Kokkos::View<long long *, TestExecSpace>::HostMirror row_h =
+      Kokkos::create_mirror_view(row);
+  typename Kokkos::View<long long *, TestExecSpace>::HostMirror col_h =
+      Kokkos::create_mirror_view(col);
+  typename Kokkos::View<float *, TestExecSpace>::HostMirror data_h =
+      Kokkos::create_mirror_view(data);
   for (int i = 0; i < 16; i++) {
-    row(i)  = staticRow[i];
-    col(i)  = staticCol[i];
-    data(i) = staticData[i];
+    row_h(i)  = staticRow[i];
+    col_h(i)  = staticCol[i];
+    data_h(i) = staticData[i];
   }
+
+  Kokkos::deep_copy(row, row_h);
+  Kokkos::deep_copy(col, col_h);
+  Kokkos::deep_copy(data, data_h);
 
   // Even partitions with multiple threads
   auto crsMatTs4 = KokkosSparse::coo2crs(m, n, row, col, data, 4);
-  check_crs_matrix(crsMatTs4, row, col, data);
+  check_crs_matrix(crsMatTs4, row_h, col_h, data_h);
 
   // Uneven partitions with multiple threads
   auto crsMatTs3 = KokkosSparse::coo2crs(m, n, row, col, data, 3);
-  check_crs_matrix(crsMatTs3, row, col, data);
+  check_crs_matrix(crsMatTs3, row_h, col_h, data_h);
 
   // Team size too large
   auto crsMatTsTooLarge =
       KokkosSparse::coo2crs(m, n, row, col, data, UINT32_MAX);
-  check_crs_matrix(crsMatTsTooLarge, row, col, data);
+  check_crs_matrix(crsMatTsTooLarge, row_h, col_h, data_h);
 
   // Even partitions, single thread, fully sparse row
   long long staticRowTs1[16]{0, 3, 0, 2, 2, 3, 0, 3, 2, 0, 0, 0, 0, 3, 3, 0};
@@ -284,20 +306,27 @@ TEST_F(TestCategory, sparse_coo2crs_staticMatrix_edgeCases) {
                           1.82177, 1.4249,  1.52659, 5.50521, 8.0484,  3.98874,
                           6.74709, 3.35072, 7.81944, 5.83494};
   for (int i = 0; i < 16; i++) {
-    row(i)  = staticRowTs1[i];
-    col(i)  = staticColTs1[i];
-    data(i) = staticDataTs1[i];
+    row_h(i)  = staticRowTs1[i];
+    col_h(i)  = staticColTs1[i];
+    data_h(i) = staticDataTs1[i];
   }
+  Kokkos::deep_copy(row, row_h);
+  Kokkos::deep_copy(col, col_h);
+  Kokkos::deep_copy(data, data_h);
+
   auto crsMatTs1 = KokkosSparse::coo2crs(m, n, row, col, data, 1);
-  check_crs_matrix(crsMatTs1, row, col, data);
+  check_crs_matrix(crsMatTs1, row_h, col_h, data_h);
 
   // Fully sparse
   for (int i = 0; i < 16; i++) {
-    row(i) = -staticRowTs1[i];
-    col(i) = -staticColTs1[i];
+    row_h(i) = -staticRowTs1[i];
+    col_h(i) = -staticColTs1[i];
   }
+  Kokkos::deep_copy(row, row_h);
+  Kokkos::deep_copy(col, col_h);
+
   auto crsMatFsTs1 = KokkosSparse::coo2crs(m, n, row, col, data, 1);
-  check_crs_matrix(crsMatFsTs1, row, col, data);
+  check_crs_matrix(crsMatFsTs1, row_h, col_h, data);
 }
 
 // Reading III.D of https://ieeexplore.ieee.org/abstract/document/7965111/
