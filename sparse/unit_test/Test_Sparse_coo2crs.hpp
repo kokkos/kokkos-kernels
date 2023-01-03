@@ -446,7 +446,7 @@ TEST_F(TestCategory, HashmapAccumulator_RaceToInsertion) {
 
   int team_size, n_teams;
   team_size = n_teams = 4;
-  functorType::PolicyType policy(n_teams, team_size);
+  functorType::PolicyType policy(1, 1);
 
   int team_size_max = policy.team_size_max(functor, Kokkos::ParallelForTag());
 
@@ -454,9 +454,6 @@ TEST_F(TestCategory, HashmapAccumulator_RaceToInsertion) {
     team_size = 1;
     n_teams   = 16;
   }
-
-  printf("team_size: %d, n_teams: %d, team_size_max: %d\n", team_size, n_teams,
-         team_size_max);
 
   policy = functorType::PolicyType(n_teams, team_size);
 
