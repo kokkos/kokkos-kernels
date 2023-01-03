@@ -49,6 +49,7 @@ namespace Test {
 template <class CrsType, class RowType, class ColType, class DataType>
 CrsType vanilla_coo2crs(size_t m, size_t n, RowType row, ColType col,
                         DataType data) {
+  // TODO: speed this up on device with a kokkos unordered_map
   using RowIndexType = typename RowType::value_type;
   using ColIndexType = typename ColType::value_type;
   using ValueType    = typename DataType::value_type;
@@ -139,9 +140,24 @@ void check_crs_matrix(CrsType crsMat, RowType row, ColType col, DataType data) {
                                    typename DataType::HostMirror>(
       crsMat.numRows(), crsMat.numCols(), row_h, col_h, data_h);
 
-  auto crs_col_ids_ref = crsMatRef.graph.entries;
-  auto crs_row_map_ref = crsMatRef.graph.row_map;
-  auto crs_vals_ref    = crsMatRef.values;
+  auto crs_col_ids_ref_d = crsMatRef.graph.entries;
+  auto crs_row_map_ref_d = crsMatRef.graph.row_map;
+  auto crs_vals_ref_d    = crsMatRef.values;
+
+  using ViewTypeCrsColIdsRef = decltype(crs_col_ids_ref_d);
+  using ViewTypeCrsRowMapRef = decltype(crs_row_map_ref_d);
+  using ViewTypeCrsValsRef   = decltype(crs_vals_ref_d);
+
+  // Copy crs to host
+  typename ViewTypeCrsColIdsRef::HostMirror crs_col_ids_ref =
+      Kokkos::create_mirror_view(crs_col_ids_ref_d);
+  Kokkos::deep_copy(crs_col_ids_ref, crs_col_ids_ref_d);
+  typename ViewTypeCrsRowMapRef::HostMirror crs_row_map_ref =
+      Kokkos::create_mirror_view(crs_row_map_ref_d);
+  Kokkos::deep_copy(crs_row_map_ref, crs_row_map_ref_d);
+  typename ViewTypeCrsValsRef::HostMirror crs_vals_ref =
+      Kokkos::create_mirror_view(crs_vals_ref_d);
+  Kokkos::deep_copy(crs_vals_ref, crs_vals_ref_d);
 
   auto crs_col_ids_d = crsMat.graph.entries;
   auto crs_row_map_d = crsMat.graph.row_map;
@@ -438,6 +454,9 @@ TEST_F(TestCategory, HashmapAccumulator_RaceToInsertion) {
     team_size = 1;
     n_teams   = 16;
   }
+
+  printf("team_size: %d, n_teams: %d, team_size_max: %d\n", team_size, n_teams,
+         team_size_max);
 
   policy = functorType::PolicyType(n_teams, team_size);
 
