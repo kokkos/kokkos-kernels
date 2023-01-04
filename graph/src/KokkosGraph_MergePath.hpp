@@ -144,19 +144,19 @@ struct StepperContext {
 */
 enum class StepDirection { a, b };
 
-/*! \brief Follow a merge path for two sorted input views and apply a stepper function to each element.
-    \tparam AView Type of the first input view.
-    \tparam BView Type of the second input view.
-    \tparam Stepper Type of the stepper function.
-    \tparam Ctxs Types of the optional contexts passed to the stepper function.
-    \param a First sorted input view.
-    \param b Second sorted input view.
-    \param pathLength Maximum merge path length to process
-    \param stepper Function to call for each path segment
-    \param ctxs Optional contexts to pass to the stepper function.
+/*! \brief Follow a merge path for two sorted input views and apply a stepper
+   function to each element. \tparam AView Type of the first input view. \tparam
+   BView Type of the second input view. \tparam Stepper Type of the stepper
+   function. \tparam Ctxs Types of the optional contexts passed to the stepper
+   function. \param a First sorted input view. \param b Second sorted input
+   view. \param pathLength Maximum merge path length to process \param stepper
+   Function to call for each path segment \param ctxs Optional contexts to pass
+   to the stepper function.
 
-    Follow a merge path for two sorted input views a and b and applies a stepper function at most pathLength elements.
-    The stepper function should be invokable with a StepDirection enum value, followed by 0, 1, 2 StepperContext arguments.
+    Follow a merge path for two sorted input views a and b and applies a stepper
+   function at most pathLength elements. The stepper function should be
+   invokable with a StepDirection enum value, followed by 0, 1, 2 StepperContext
+   arguments.
 
     This generates the `step` StepperContext for each step of the merge path.
     The stepper will be invoked as stepper(StepDirection, step, ctx...)
@@ -210,8 +210,8 @@ KOKKOS_INLINE_FUNCTION void merge_path_thread(const AView &a, const BView &b,
   }
 }
 
-/*! \brief Collaboratively follow a merge path for two sorted input views and apply a stepper function to each element.
-    \tparam AView A Kokkos::View
+/*! \brief Collaboratively follow a merge path for two sorted input views and
+   apply a stepper function to each element. \tparam AView A Kokkos::View
     \tparam BViewLike A Kokkos::View or KokkosKernels::Impl::Iota
     \tparam Stepper Type of the stepper function.
     \tparam Ctxs Types of the optional contexts passed to the stepper function.
@@ -222,8 +222,9 @@ KOKKOS_INLINE_FUNCTION void merge_path_thread(const AView &a, const BView &b,
     \param ctxs Optional contexts to pass to the stepper function.
     \param threadPathLength Maximum length each thread will process
 
-    Collaboartively calls merge_path_thread on subsegments, adding a `thread` context
-    to the stepper call that says where along the merge path that thread's processing begins
+    Collaboartively calls merge_path_thread on subsegments, adding a `thread`
+   context to the stepper call that says where along the merge path that
+   thread's processing begins
 */
 template <typename TeamHandle, typename AView, typename BViewLike,
           typename Stepper>
