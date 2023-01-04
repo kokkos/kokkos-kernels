@@ -123,6 +123,8 @@ class SPILUKHandle {
   size_type level_maxrows;  // max. number of rows among levels
   size_type
       level_maxrowsperchunk;  // max.number of rows among chunks among levels
+  size_type
+      level_maxnnzperrow;  // max.number of nnz per row among levels
 
   bool symbolic_complete;
 
@@ -147,6 +149,7 @@ class SPILUKHandle {
         nnzU(nnzU_),
         level_maxrows(0),
         level_maxrowsperchunk(0),
+        level_maxnnzperrow(0),
         symbolic_complete(symbolic_complete_),
         algm(choice),
         team_size(-1),
@@ -160,6 +163,7 @@ class SPILUKHandle {
     set_nnzU(nnzU_);
     set_level_maxrows(0);
     set_level_maxrowsperchunk(0);
+    set_level_maxnnzperrow(0);
     level_list          = nnz_row_view_t("level_list", nrows_),
     level_idx           = nnz_lno_view_t("level_idx", nrows_),
     level_ptr           = nnz_lno_view_t("level_ptr", nrows_ + 1),
@@ -240,6 +244,14 @@ class SPILUKHandle {
   KOKKOS_INLINE_FUNCTION
   void set_level_maxrowsperchunk(const size_type level_maxrowsperchunk_) {
     this->level_maxrowsperchunk = level_maxrowsperchunk_;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  size_type get_level_maxnnzperrow() const { return level_maxnnzperrow; }
+
+  KOKKOS_INLINE_FUNCTION
+  void set_level_maxnnzperrow(const size_type level_maxnnzperrow_) {
+    this->level_maxnnzperrow = level_maxnnzperrow_;
   }
 
   bool is_symbolic_complete() const { return symbolic_complete; }
