@@ -264,14 +264,18 @@ void resize_and_merge_into(CView &c, const AView &a, const BView &b) {
 
 /*! \brief Global merge sorted a and b
 
-    \tparam ExecSpace A Kokkos execution space
     \tparam CView Rank-1 Kokkos::View
+    \tparam ExecSpace Execution space used for the merge operation.
     \tparam AView Rank-1 Kokkos::View
     \tparam BView Rank-1 Kokkos::View
-    \returns A CView of merged \c a and \c b, size a.size() + b.size()
     \param[in] space the execution space instance to work in
     \param[in] a sorted view to merge
     \param[in] b sorted view to merge
+    \return A CView of merged \c a and \c b, size a.size() + b.size()
+
+    Merges two sorted input views a and b into a single sorted output view c.
+    The output view is allocated and returned to the caller.
+    The input views must be rank-1.
 */
 template <typename CView, typename ExecSpace, typename AView, typename BView>
 CView merge(const ExecSpace &space, const AView &a, const BView &b) {
@@ -296,9 +300,11 @@ CView merge(const ExecSpace &space, const AView &a, const BView &b) {
     \tparam CView Rank-1 Kokkos::View
     \tparam AView Rank-1 Kokkos::View
     \tparam BView Rank-1 Kokkos::View
-    \returns A CView of merged \c a and \c b, size a.size() + b.size()
     \param[in] a sorted view to merge
     \param[in] b sorted view to merge
+    \return A CView of merged \c a and \c b, size a.size() + b.size()
+
+    Merge two sorted input views a and b and returns a sorted view.
 */
 template <typename CView, typename AView, typename BView>
 CView merge(const AView &a, const BView &b) {
