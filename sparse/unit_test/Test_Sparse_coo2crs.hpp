@@ -108,7 +108,7 @@ CrsType vanilla_coo2crs(size_t m, size_t n, RowType row, ColType col,
     auto row_end   = row_map_h(i + 1);
     auto my_row    = umap.at(i);
     auto iter      = my_row->begin();
-    for (uint64_t j = row_start; j < row_end; j++, iter++) {
+    for (auto j = row_start; j < row_end; j++, iter++) {
       col_ids_h(j) = iter->first;
       values_h(j)  = iter->second;
     }

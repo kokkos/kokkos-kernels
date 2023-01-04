@@ -754,28 +754,42 @@ struct HashmapAccumulator {
     hash = __compute_hash(key, __hashOpRHS);
 
     // Busy wait until hash_begins[hash] is populated or we have the first key
-    while ((head = Kokkos::atomic_compare_exchange(&hash_begins[hash], -1,
-                                                   -key - 2))) {
-      if (head == -1 || head >= 0) break;
+    while (true) {
+      head = Kokkos::atomic_compare_exchange(&hash_begins[hash], -1, -2);
+      if (head >= -1) break;
     }
 
-    for (i = head; i != -1; i = hash_nexts[i]) {
-      if (keys[i] == key) {
+    for (i = head; i != -1; i = Kokkos::volatile_load(&hash_nexts[i])) {
+      if (Kokkos::volatile_load(&keys[i]) == key) {
         return __insert_success;
       }
     }
 
-    // Insert either a new or collided key
+    // Insert either a new or collided key. Relaxed memory order is OK. We have
+    // RAW dependencies below.
     my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
 
     if (my_write_index >= __max_value_size) {
+#ifdef HASHMAPACCUMULATOR_ASSERT_ENABLED
+      for (i = 0; i < __max_value_size; i++) {
+        if (Kokkos::volatile_load(&keys[i]) == key) {
+          printf("head: %d, i: %d, key: %lld\n", head, i, key);
+          Kokkos::abort(
+              "vector_atomic_insert_into_hash_KeyCounter: keys duplicated!");
+        }
+      }
+#endif  // HASHMAPACCUMULATOR_ASSERT_ENABLED
       Kokkos::abort(
           "vector_atomic_insert_into_hash_KeyCounter: keys size exceeded.\n");
     } else {
-      keys[my_write_index] = key;
-      // The key is the value in an unordered set.
-      Kokkos::atomic_store(hash_begins + hash, my_write_index);
-      hash_nexts[my_write_index] = head;
+      Kokkos::volatile_store(&keys[my_write_index], key);
+      Kokkos::volatile_store(&hash_nexts[my_write_index], head);
+      // Land writes before proceeding with key search
+      // Key search (with writes landed) is required to handle collisions.
+      desul::atomic_thread_fence(desul::MemoryOrderSeqCst(),
+                                 desul::MemoryScopeDevice());
+      Kokkos::volatile_store(&hash_begins[hash],
+                             my_write_index);  // Release the lock
     }
     return __insert_success;
   }
@@ -803,29 +817,44 @@ struct HashmapAccumulator {
     hash = __compute_hash(key, __hashOpRHS);
 
     // Busy wait until hash_begins[hash] is populated or we have the first key
-    while ((head = Kokkos::atomic_compare_exchange(&hash_begins[hash], -1,
-                                                   -key - 2))) {
-      if (head == -1 || head >= 0) break;
+    while (true) {
+      head = Kokkos::atomic_compare_exchange(&hash_begins[hash], -1, -2);
+      if (head >= -1) break;
     }
 
-    for (i = head; i != -1; i = hash_nexts[i]) {
-      if (keys[i] == key) {
+    for (i = head; i != -1; i = Kokkos::volatile_load(&hash_nexts[i])) {
+      if (Kokkos::volatile_load(&keys[i]) == key) {
         return i;
       }
     }
 
-    // Insert either a new or collided key
+    // Insert either a new or collided key. Relaxed memory order is OK. We have
+    // RAW dependencies below.
     my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
 
     if (my_write_index >= __max_value_size) {
+#ifdef HASHMAPACCUMULATOR_ASSERT_ENABLED
+      for (i = 0; i < __max_value_size; i++) {
+        if (Kokkos::volatile_load(&keys[i]) == key) {
+          printf("head: %d, i: %d, key: %lld\n", head, i, key);
+          Kokkos::abort(
+              "vector_atomic_insert_into_hash_once: keys duplicated!");
+        }
+      }
+#endif  // HASHMAPACCUMULATOR_ASSERT_ENABLED
       Kokkos::abort(
           "vector_atomic_insert_into_hash_once: keys size exceeded.\n");
     } else {
-      keys[my_write_index] = key;
+      Kokkos::volatile_store(&keys[my_write_index], key);
       // If memory bound, remove values and use hash_begins[hash] instead.
-      values[my_write_index] = my_write_index;
-      Kokkos::atomic_store(hash_begins + hash, my_write_index);
-      hash_nexts[my_write_index] = head;
+      values[my_write_index] = static_cast<value_type>(my_write_index);
+      Kokkos::volatile_store(&hash_nexts[my_write_index], head);
+      // Land writes before proceeding with key search
+      // Key search (with writes landed) is required to handle collisions.
+      desul::atomic_thread_fence(desul::MemoryOrderSeqCst(),
+                                 desul::MemoryScopeDevice());
+      Kokkos::volatile_store(&hash_begins[hash],
+                             my_write_index);  // Release the lock
     }
     return my_write_index;
   }
@@ -854,30 +883,47 @@ struct HashmapAccumulator {
     hash = __compute_hash(key, __hashOpRHS);
 
     // Busy wait until hash_begins[hash] is populated or we have the first key
-    while ((head = Kokkos::atomic_compare_exchange(&hash_begins[hash], -1,
-                                                   -key - 2))) {
-      if (head == -1 || head >= 0) break;
+    while (true) {
+      head = Kokkos::atomic_compare_exchange(&hash_begins[hash], -1, -2);
+      if (head >= -1) break;
     }
 
-    for (i = head; i != -1; i = hash_nexts[i]) {
-      if (keys[i] == key) {
+    for (i = head; i != -1; i = Kokkos::volatile_load(&hash_nexts[i])) {
+      if (Kokkos::volatile_load(&keys[i]) == key) {
+        // Order doesn't matter, relaxed memory order is fine here.
         Kokkos::atomic_add(values + i, value);
         return __insert_success;
       }
     }
 
-    // Insert either a new or collided key
+    // Insert either a new or collided key. Relaxed memory order is OK. We have
+    // RAW dependencies below.
     my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
 
     if (my_write_index >= __max_value_size) {
+#ifdef HASHMAPACCUMULATOR_ASSERT_ENABLED
+      for (i = 0; i < __max_value_size; i++) {
+        if (Kokkos::volatile_load(&keys[i]) == key) {
+          printf("head: %d, i: %d, key: %lld\n", head, i, key);
+          Kokkos::abort(
+              "vector_atomic_insert_into_hash_once_mergeAtomicAdd: keys "
+              "duplicated!");
+        }
+      }
+#endif  // HASHMAPACCUMULATOR_ASSERT_ENABLED
       Kokkos::abort(
-          "vector_atomic_insert_into_hash_once: keys size exceeded.\n");
+          "vector_atomic_insert_into_hash_once_mergeAtomicAdd: keys size "
+          "exceeded.\n");
     } else {
-      keys[my_write_index] = key;
-      // If memory bound, remove values and use hash_begins[hash] instead.
-      values[my_write_index] = value;
-      Kokkos::atomic_store(hash_begins + hash, my_write_index);
-      hash_nexts[my_write_index] = head;
+      Kokkos::volatile_store(&keys[my_write_index], key);
+      Kokkos::atomic_store(&values[my_write_index], value);
+      Kokkos::volatile_store(&hash_nexts[my_write_index], head);
+      // Land writes before proceeding with key search
+      // Key search (with writes landed) is required to handle collisions.
+      desul::atomic_thread_fence(desul::MemoryOrderSeqCst(),
+                                 desul::MemoryScopeDevice());
+      Kokkos::volatile_store(&hash_begins[hash],
+                             my_write_index);  // Release the lock
     }
     return __insert_success;
   }
@@ -1056,10 +1102,10 @@ struct HashmapAccumulator {
                 std::size_t>::type = 0>
   KOKKOS_INLINE_FUNCTION int __compute_hash(size_type key, size_type bitmask) {
     size_type hash = key & bitmask;
-    //#ifdef HASHMAPACCUMULATOR_ASSERT_ENABLED
+#ifdef HASHMAPACCUMULATOR_ASSERT_ENABLED
     if (hash == -1) Kokkos::abort("__compute_hash: hash = -1");
     if (key == -1) Kokkos::abort("__compute_hash: key = -1");
-    //#endif  // HASHMAPACCUMULATOR_ASSERT_ENABLED
+#endif  // HASHMAPACCUMULATOR_ASSERT_ENABLED
     return hash;
   }
 
