@@ -582,6 +582,8 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
   size_type nlevels = thandle.get_num_levels();
   size_type maxnnzperrow = thandle.get_level_maxnnzperrow();
   int team_size = thandle.get_team_size();
+
+#ifdef KOKKOS_ARCH_VOLTA
   if (thandle.get_algorithm() ==
                  KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1) {
     if (team_size == -1) {
@@ -597,6 +599,9 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
       printf("power_maxnnzperrow %lld --> SEQLVLSCHD_TP1 uses team_size %d\n", power_maxnnzperrow, team_size);	
     }
   }
+#else
+  printf("SEQLVLSCHD_TP1 uses team_size %d (not KOKKOS_ARCH_VOLTA)\n", team_size);	
+#endif
 
   // Keep these as host View, create device version and copy back to host
   HandleDeviceEntriesType level_ptr = thandle.get_level_ptr();
@@ -672,8 +677,18 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
                    L_values, U_row_map, U_entries, U_values, level_idx, level_list, iw,
                    lev_start + lvl_rowid_start, lvl);
 
+#ifdef KOKKOS_ARCH_VOLTA
           Kokkos::parallel_for("parfor_tp1",
                                policy_type(lvl_nrows_chunk, team_size), tstf);
+#else
+          if (team_size == -1)
+            Kokkos::parallel_for("parfor_tp1",
+                                 policy_type(lvl_nrows_chunk, Kokkos::AUTO),
+                                 tstf);
+          else
+            Kokkos::parallel_for("parfor_tp1",
+                                 policy_type(lvl_nrows_chunk, team_size), tstf);
+#endif
           //Kokkos::parallel_for("tp1populate",
           //                     policy_type1(lvl_nrows_chunk, Kokkos::AUTO),
           //                     tstf);
