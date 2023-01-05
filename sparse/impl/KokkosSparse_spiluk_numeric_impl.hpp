@@ -59,9 +59,6 @@ namespace Impl {
 namespace Experimental {
 
 // struct UnsortedTag {};
-struct TP1PopulateTag {};
-struct TP1EliminateTag {};
-struct TP1ResetTag {};
 
 template <class ARowMapType, class AEntriesType, class AValuesType,
           class LRowMapType, class LEntriesType, class LValuesType,
@@ -201,8 +198,7 @@ struct ILUKLvlSchedRPNumericFunctor {
 template <class ARowMapType, class AEntriesType, class AValuesType,
           class LRowMapType, class LEntriesType, class LValuesType,
           class URowMapType, class UEntriesType, class UValuesType,
-          //class LevelViewType, class WorkViewType, class nnz_lno_t>
-          class LevelViewType, class LevelListViewType, class WorkViewType, class nnz_lno_t>
+          class LevelViewType, class WorkViewType, class nnz_lno_t>
 struct ILUKLvlSchedTP1NumericFunctor {
   using execution_space = typename ARowMapType::execution_space;
   using policy_type     = Kokkos::TeamPolicy<execution_space>;
@@ -221,20 +217,16 @@ struct ILUKLvlSchedTP1NumericFunctor {
   UEntriesType U_entries;
   UValuesType U_values;
   LevelViewType level_idx;
-  LevelListViewType level_list;
   WorkViewType iw;
   nnz_lno_t lev_start;
-  size_type curr_lvl;
 
   ILUKLvlSchedTP1NumericFunctor(
       const ARowMapType &A_row_map_, const AEntriesType &A_entries_,
       const AValuesType &A_values_, const LRowMapType &L_row_map_,
       const LEntriesType &L_entries_, LValuesType &L_values_,
       const URowMapType &U_row_map_, const UEntriesType &U_entries_,
-      //UValuesType &U_values_, const LevelViewType &level_idx_,
-      //WorkViewType &iw_, const nnz_lno_t &lev_start_)
-      UValuesType &U_values_, const LevelViewType &level_idx_, const LevelListViewType &level_list_,
-      WorkViewType &iw_, const nnz_lno_t &lev_start_, const size_type &curr_lvl_)
+      UValuesType &U_values_, const LevelViewType &level_idx_,
+      WorkViewType &iw_, const nnz_lno_t &lev_start_)
       : A_row_map(A_row_map_),
         A_entries(A_entries_),
         A_values(A_values_),
@@ -245,9 +237,8 @@ struct ILUKLvlSchedTP1NumericFunctor {
         U_entries(U_entries_),
         U_values(U_values_),
         level_idx(level_idx_),
-        level_list(level_list_),
         iw(iw_),
-        lev_start(lev_start_), curr_lvl(curr_lvl_) {}
+        lev_start(lev_start_) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const member_type &team) const {
@@ -389,177 +380,6 @@ struct ILUKLvlSchedTP1NumericFunctor {
                            iw(my_team, col) = -1;
                          });
   }
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()(const TP1PopulateTag&, const member_type &team) const {
-    nnz_lno_t my_team = static_cast<nnz_lno_t>(team.league_rank());
-    nnz_lno_t rowid =
-        static_cast<nnz_lno_t>(level_idx(my_team + lev_start));  // map to rowid
-
-    size_type k1 = static_cast<size_type>(L_row_map(rowid));
-    size_type k2 = static_cast<size_type>(L_row_map(rowid + 1));
-#ifdef KEEP_DIAG
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2 - 1),
-                         [&](const size_type k) {
-                           nnz_lno_t col = static_cast<nnz_lno_t>(L_entries(k));
-                           L_values(k)   = 0.0;
-                           iw(my_team, col) = static_cast<nnz_lno_t>(k);
-                         });
-#else
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2),
-                         [&](const size_type k) {
-                           nnz_lno_t col = static_cast<nnz_lno_t>(L_entries(k));
-                           L_values(k)   = 0.0;
-                           iw(my_team, col) = static_cast<nnz_lno_t>(k);
-                         });
-#endif
-
-#ifdef KEEP_DIAG
-    // if (my_thread == 0) L_values(k2 - 1) = scalar_t(1.0);
-    Kokkos::single(Kokkos::PerTeam(team),
-                   [&]() { L_values(k2 - 1) = scalar_t(1.0); });
-#endif
-
-    team.team_barrier();
-
-    k1 = static_cast<size_type>(U_row_map(rowid));
-    k2 = static_cast<size_type>(U_row_map(rowid + 1));
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2),
-                         [&](const size_type k) {
-                           nnz_lno_t col = static_cast<nnz_lno_t>(U_entries(k));
-                           U_values(k)   = 0.0;
-                           iw(my_team, col) = static_cast<nnz_lno_t>(k);
-                         });
-
-    team.team_barrier();
-
-    // Unpack the ith row of A
-    k1 = static_cast<size_type>(A_row_map(rowid));
-    k2 = static_cast<size_type>(A_row_map(rowid + 1));
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2),
-                         [&](const size_type k) {
-                           nnz_lno_t col = static_cast<nnz_lno_t>(A_entries(k));
-                           nnz_lno_t ipos = iw(my_team, col);
-                           if (col < rowid)
-                             L_values(ipos) = A_values(k);
-                           else
-                             U_values(ipos) = A_values(k);
-                         });
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  //__device__
-  void operator()(const TP1EliminateTag&, const member_type &team) const {
-    nnz_lno_t my_team = static_cast<nnz_lno_t>(team.league_rank());
-    nnz_lno_t rowid =
-        static_cast<nnz_lno_t>(level_idx(my_team + lev_start));  // map to rowid
-
-    //if (curr_lvl == (level_list(rowid)-1))
-    //    Kokkos::single(Kokkos::PerTeam(team), [&]() { printf("row %d (level %d), row %d (same level from level_list %d)\n", rowid, static_cast<nnz_lno_t>(curr_lvl), rowid, static_cast<nnz_lno_t>(level_list(rowid)-1)); });
-
-    // Eliminate prev rows
-    size_type k1 = static_cast<size_type>(L_row_map(rowid));
-    size_type k2 = static_cast<size_type>(L_row_map(rowid + 1));
-#ifdef KEEP_DIAG
-    for (size_type k = k1; k < k2 - 1; k++)
-#else
-    for (size_type k = k1; k < k2; k++)
-#endif
-    {
-      nnz_lno_t prev_row = L_entries(k);
-	  if (curr_lvl <= (level_list(prev_row)-1))
-        Kokkos::single(Kokkos::PerTeam(team), [&]() { printf("row %d (level %d), prev_row %d (level %d)\n", rowid, static_cast<nnz_lno_t>(curr_lvl), prev_row, static_cast<nnz_lno_t>(level_list(prev_row)-1)); });
-
-#ifdef KEEP_DIAG
-      scalar_t fact = L_values(k) / U_values(U_row_map(prev_row));
-#else
-      scalar_t fact = L_values(k) * U_values(U_row_map(prev_row));
-#endif
-      // if (my_thread == 0) L_values(k) = fact;
-      Kokkos::single(Kokkos::PerTeam(team), [&]() { L_values(k) = fact; });
-      //L_values(k) = fact;//same results as above
-
-      team.team_barrier();
-      //__syncthreads();
-
-      Kokkos::parallel_for(
-          Kokkos::TeamThreadRange(team, U_row_map(prev_row) + 1,
-                                  U_row_map(prev_row + 1)),
-          [&](const size_type kk) {
-            nnz_lno_t col  = static_cast<nnz_lno_t>(U_entries(kk));
-            nnz_lno_t ipos = iw(my_team, col);
-            auto lxu       = -U_values(kk) * fact;
-            if (ipos != -1) {
-              if (col < rowid)
-                Kokkos::atomic_add(&L_values(ipos), lxu);
-                //L_values(ipos) += lxu;
-              else
-                Kokkos::atomic_add(&U_values(ipos), lxu);
-                //U_values(ipos) += lxu;
-            }
-            ////More nonconsistency
-            //if (col < rowid) {
-            //  if (ipos != -1) Kokkos::atomic_add(&L_values(ipos), lxu);
-            //}
-            //else {
-            //  if (ipos != -1) Kokkos::atomic_add(&U_values(ipos), lxu);
-            //}
-          });  // end for kk
-
-      team.team_barrier();
-      //__syncthreads();
-    }  // end for k
-
-// Temporarily comment out below:
-//    // if (my_thread == 0) {
-//    Kokkos::single(Kokkos::PerTeam(team), [&]() {
-//      nnz_lno_t ipos = iw(my_team, rowid);
-//#ifdef KEEP_DIAG
-//      if (U_values(ipos) == 0.0) {
-//        U_values(ipos) = 1e6;
-//      }
-//#else
-//      if (U_values(ipos) == 0.0) {
-//        U_values(ipos) = 1e6;
-//      } else {
-//        U_values(ipos) = 1.0 / U_values(ipos);
-//      }
-//#endif
-//    });
-//    //}
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()(const TP1ResetTag&, const member_type &team) const {
-    nnz_lno_t my_team = static_cast<nnz_lno_t>(team.league_rank());
-    nnz_lno_t rowid =
-        static_cast<nnz_lno_t>(level_idx(my_team + lev_start));  // map to rowid
-
-    // Reset
-    size_type k1 = static_cast<size_type>(L_row_map(rowid));
-    size_type k2 = static_cast<size_type>(L_row_map(rowid + 1));
-#ifdef KEEP_DIAG
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2 - 1),
-                         [&](const size_type k) {
-                           nnz_lno_t col = static_cast<nnz_lno_t>(L_entries(k));
-                           iw(my_team, col) = -1;
-                         });
-#else
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2),
-                         [&](const size_type k) {
-                           nnz_lno_t col = static_cast<nnz_lno_t>(L_entries(k));
-                           iw(my_team, col) = -1;
-                         });
-#endif
-
-    k1 = static_cast<size_type>(U_row_map(rowid));
-    k2 = static_cast<size_type>(U_row_map(rowid + 1));
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2),
-                         [&](const size_type k) {
-                           nnz_lno_t col = static_cast<nnz_lno_t>(U_entries(k));
-                           iw(my_team, col) = -1;
-                         });
-  }
 };
 
 template <class IlukHandle, class ARowMapType, class AEntriesType,
@@ -580,10 +400,10 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
   using LevelHostViewType       = typename IlukHandle::nnz_lno_view_host_t;
 
   size_type nlevels = thandle.get_num_levels();
-  size_type maxnnzperrow = thandle.get_level_maxnnzperrow();
   int team_size = thandle.get_team_size();
 
 #ifdef KOKKOS_ARCH_VOLTA
+  size_type maxnnzperrow = thandle.get_level_maxnnzperrow();
   if (thandle.get_algorithm() ==
                  KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1) {
     if (team_size == -1) {
@@ -599,8 +419,6 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
       printf("power_maxnnzperrow %lld --> SEQLVLSCHD_TP1 uses team_size %d\n", power_maxnnzperrow, team_size);	
     }
   }
-#else
-  printf("SEQLVLSCHD_TP1 uses team_size %d (not KOKKOS_ARCH_VOLTA)\n", team_size);	
 #endif
 
   // Keep these as host View, create device version and copy back to host
@@ -649,9 +467,6 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
       } else if (thandle.get_algorithm() ==
                  KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1) {
         using policy_type = Kokkos::TeamPolicy<execution_space>;
-        using policy_type1= Kokkos::TeamPolicy<execution_space, TP1PopulateTag>;
-        using policy_type2= Kokkos::TeamPolicy<execution_space, TP1EliminateTag>;
-        using policy_type3= Kokkos::TeamPolicy<execution_space, TP1ResetTag>;
 
         nnz_lno_t lvl_rowid_start = 0;
         nnz_lno_t lvl_nrows_chunk;
@@ -662,20 +477,13 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
           else
             lvl_nrows_chunk = level_nrowsperchunk_h(lvl);
 
-          //ILUKLvlSchedTP1NumericFunctor<
-          //    ARowMapType, AEntriesType, AValuesType, LRowMapType, LEntriesType,
-          //    LValuesType, URowMapType, UEntriesType, UValuesType,
-          //    HandleDeviceEntriesType, WorkViewType, nnz_lno_t>
-          //    tstf(A_row_map, A_entries, A_values, L_row_map, L_entries,
-          //         L_values, U_row_map, U_entries, U_values, level_idx, iw,
-          //         lev_start + lvl_rowid_start);
           ILUKLvlSchedTP1NumericFunctor<
               ARowMapType, AEntriesType, AValuesType, LRowMapType, LEntriesType,
               LValuesType, URowMapType, UEntriesType, UValuesType,
-              HandleDeviceEntriesType, HandleDeviceRowMapType, WorkViewType, nnz_lno_t>
+              HandleDeviceEntriesType, WorkViewType, nnz_lno_t>
               tstf(A_row_map, A_entries, A_values, L_row_map, L_entries,
-                   L_values, U_row_map, U_entries, U_values, level_idx, level_list, iw,
-                   lev_start + lvl_rowid_start, lvl);
+                   L_values, U_row_map, U_entries, U_values, level_idx, iw,
+                   lev_start + lvl_rowid_start);
 
 #ifdef KOKKOS_ARCH_VOLTA
           Kokkos::parallel_for("parfor_tp1",
@@ -689,17 +497,6 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
             Kokkos::parallel_for("parfor_tp1",
                                  policy_type(lvl_nrows_chunk, team_size), tstf);
 #endif
-          //Kokkos::parallel_for("tp1populate",
-          //                     policy_type1(lvl_nrows_chunk, Kokkos::AUTO),
-          //                     tstf);
-          //Kokkos::fence();
-          //Kokkos::parallel_for("tp1eliminate",
-          //                     policy_type2(lvl_nrows_chunk, team_size),
-          //                     tstf);
-          //Kokkos::fence();
-          //Kokkos::parallel_for("tp1reset",
-          //                     policy_type3(lvl_nrows_chunk, Kokkos::AUTO),
-          //                     tstf);
           Kokkos::fence();
           lvl_rowid_start += lvl_nrows_chunk;
         }
