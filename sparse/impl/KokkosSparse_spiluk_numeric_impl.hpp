@@ -337,10 +337,8 @@ struct ILUKLvlSchedTP1NumericFunctor {
             if (ipos != -1) {
               if (col < rowid)
                 Kokkos::atomic_add(&L_values(ipos), lxu);
-                //L_values(ipos) += lxu;
               else
                 Kokkos::atomic_add(&U_values(ipos), lxu);
-                //U_values(ipos) += lxu;
             }
           });  // end for kk
 
@@ -595,7 +593,7 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
       else if (power_maxnnzperrow >= 128)
         team_size = 768;
       else
-        team_size = power_maxnnzperrow;
+        team_size = 32;
       printf("power_maxnnzperrow %lld --> SEQLVLSCHD_TP1 uses team_size %d\n", power_maxnnzperrow, team_size);	
     }
   }
