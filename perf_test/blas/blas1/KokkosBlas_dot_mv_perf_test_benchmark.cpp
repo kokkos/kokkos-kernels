@@ -136,6 +136,7 @@ static void run(benchmark::State& state) {
 }
 
 BENCHMARK(run<Kokkos::DefaultExecutionSpace>)
+    ->Name("KokkosBlas_dot_mv")
     ->ArgNames({"m", "n", "repeat"})
     ->Args({100000, 5, 20})
     ->UseManualTime();

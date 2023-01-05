@@ -140,6 +140,7 @@ static void run(benchmark::State& state) {
 }
 
 BENCHMARK(run<Kokkos::DefaultExecutionSpace>)
+    ->Name("KokkosBlas_team_dot/run<Kokkos::DefaultExecutionSpace>")
     ->ArgNames({"m", "repeat"})
     ->Args({100000, 1})
     ->UseManualTime();
