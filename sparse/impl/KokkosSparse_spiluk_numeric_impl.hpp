@@ -336,11 +336,11 @@ struct ILUKLvlSchedTP1NumericFunctor {
             auto lxu       = -U_values(kk) * fact;
             if (ipos != -1) {
               if (col < rowid)
-                //Kokkos::atomic_add(&L_values(ipos), lxu);
-                L_values(ipos) += lxu;
+                Kokkos::atomic_add(&L_values(ipos), lxu);
+                //L_values(ipos) += lxu;
               else
-                //Kokkos::atomic_add(&U_values(ipos), lxu);
-                U_values(ipos) += lxu;
+                Kokkos::atomic_add(&U_values(ipos), lxu);
+                //U_values(ipos) += lxu;
             }
           });  // end for kk
 
