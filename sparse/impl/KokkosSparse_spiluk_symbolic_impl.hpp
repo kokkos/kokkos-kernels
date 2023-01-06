@@ -123,7 +123,11 @@ void level_sched(IlukHandle& thandle, const RowMapType row_map,
 template <class IlukHandle, class RowMapType, class EntriesType,
           class LevelType1, class LevelType2, class size_type>
 void level_sched_tp(IlukHandle& thandle, const RowMapType row_map,
-                    const EntriesType entries, const RowMapType U_row_map, LevelType1& level_list,
+                    const EntriesType entries,
+#ifdef KOKKOS_ARCH_VOLTA
+                    const RowMapType U_row_map,
+#endif
+                    LevelType1& level_list,
                     LevelType2& level_ptr, LevelType2& level_idx,
                     size_type& nlevels) {
   // Scheduling currently compute on host
@@ -186,7 +190,9 @@ void level_sched_tp(IlukHandle& thandle, const RowMapType row_map,
 
   size_type maxrows         = 0;
   size_type maxrowsperchunk = 0;
+#ifdef KOKKOS_ARCH_VOLTA
   size_type maxnnzperrow    = 0;
+#endif
   for (size_type i = 0; i < nlevels; ++i) {
     size_type lnrows = level_ptr(i + 1) - level_ptr(i);
     if (maxrows < lnrows) {
@@ -200,6 +206,7 @@ void level_sched_tp(IlukHandle& thandle, const RowMapType row_map,
       lnrowsperchunk(i) = (lnrows % lnchunks(i) == 0)
                               ? (lnrows / lnchunks(i))
                               : (lnrows / lnchunks(i) + 1);
+#ifdef KOKKOS_ARCH_VOLTA
       nnz_lno_t lvl_rowid_start = 0;
       nnz_lno_t lvl_nrows_chunk;
       for (nnz_lno_t chunkid = 0; chunkid < lnchunks(i); chunkid++) {
@@ -218,11 +225,13 @@ void level_sched_tp(IlukHandle& thandle, const RowMapType row_map,
         }
         lvl_rowid_start += lvl_nrows_chunk;
       }
+#endif
     } else
 #endif
     {
       lnchunks(i)       = 1;
       lnrowsperchunk(i) = lnrows;
+#ifdef KOKKOS_ARCH_VOLTA
       // Determine the number of non-zeros in each level
       for (nnz_lno_t r = 0; r < lnrows; r++) {  // Look at each row in the chunk
         auto rid       = level_idx(r + level_ptr(i));// get actual rowid
@@ -232,6 +241,7 @@ void level_sched_tp(IlukHandle& thandle, const RowMapType row_map,
           maxnnzperrow = static_cast<size_type>(rnnzU);
         }
       }
+#endif
     }
     if (maxrowsperchunk < static_cast<size_type>(lnrowsperchunk(i))) {
       maxrowsperchunk = lnrowsperchunk(i);
@@ -241,7 +251,9 @@ void level_sched_tp(IlukHandle& thandle, const RowMapType row_map,
   thandle.set_num_levels(nlevels);
   thandle.set_level_maxrows(maxrows);
   thandle.set_level_maxrowsperchunk(maxrowsperchunk);
+#ifdef KOKKOS_ARCH_VOLTA
   thandle.set_level_maxnnzperrow(maxnnzperrow);
+#endif
 }
 
 // Linear Search for the smallest row index
@@ -490,8 +502,11 @@ void iluk_symbolic(IlukHandle& thandle,
     // Level scheduling on L
     if (thandle.get_algorithm() ==
         KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1) {
-      level_sched_tp(thandle, L_row_map, L_entries, U_row_map, level_list, level_ptr,
-                     level_idx, nlev);
+      level_sched_tp(thandle, L_row_map, L_entries,
+#ifdef KOKKOS_ARCH_VOLTA
+                     U_row_map,
+#endif
+                     level_list, level_ptr, level_idx, nlev);
       thandle.alloc_iw(thandle.get_level_maxrowsperchunk(), nrows);
     } else {
       level_sched(thandle, L_row_map, L_entries, level_list, level_ptr,

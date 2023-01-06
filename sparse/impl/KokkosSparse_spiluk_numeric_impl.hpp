@@ -395,7 +395,6 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
   using size_type               = typename IlukHandle::size_type;
   using nnz_lno_t               = typename IlukHandle::nnz_lno_t;
   using HandleDeviceEntriesType = typename IlukHandle::nnz_lno_view_t;
-  using HandleDeviceRowMapType  = typename IlukHandle::nnz_row_view_t;
   using WorkViewType            = typename IlukHandle::work_view_t;
   using LevelHostViewType       = typename IlukHandle::nnz_lno_view_host_t;
 
@@ -416,7 +415,6 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
         team_size = 768;
       else
         team_size = 32;
-      printf("power_maxnnzperrow %lld --> SEQLVLSCHD_TP1 uses team_size %d\n", power_maxnnzperrow, team_size);	
     }
   }
 #endif
@@ -424,7 +422,6 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
   // Keep these as host View, create device version and copy back to host
   HandleDeviceEntriesType level_ptr = thandle.get_level_ptr();
   HandleDeviceEntriesType level_idx = thandle.get_level_idx();
-  HandleDeviceRowMapType  level_list= thandle.get_level_list();
 
   // Make level_ptr_h a separate allocation, since it will be accessed on host
   // between kernel launches. If a mirror were used and level_ptr is in UVM
