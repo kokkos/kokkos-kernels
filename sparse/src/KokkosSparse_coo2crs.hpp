@@ -493,7 +493,7 @@ class Coo2Crs {
               auto col_id = uset.keys[j];
               auto val    = uset.values[j];
               __global_hmap(row_id)
-                  .vector_atomic_insert_into_hash_once_mergeAtomicAdd(
+                  .vector_atomic_insert_into_hash_once_mergeAtomicAdd_globalMem(
                       col_id, val, used_size);
             }
           });
