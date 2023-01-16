@@ -773,15 +773,15 @@ struct HashmapAccumulator {
     // RAW dependencies below.
     my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
 
-    /*     for (i = 0; i < my_write_index; i++) {
-          if (Kokkos::volatile_load(&keys[i]) == key) {
-            printf(
-                "vector_atomic_insert_into_hash_KeyCounter - head: %d, i: %d,
-       key: "
-                "%lld\n",
-                head, i, key);
-          }
-        } */
+// clang-format off
+#if 0
+    for (i = 0; head != -1 && i < my_write_index; i++) {
+      if (Kokkos::volatile_load(&keys[i]) == key) {
+        printf("vector_atomic_insert_into_hash_KeyCounter - head: %d, i: %d, key: %lld\n", head, i, key);
+      }
+    }
+#endif
+    // clang-format on
 
     if (my_write_index >= __max_value_size) {
 #ifdef HASHMAPACCUMULATOR_ASSERT_ENABLED
@@ -850,14 +850,15 @@ struct HashmapAccumulator {
     // RAW dependencies below.
     my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
 
-    /*     for (i = 0; i < my_write_index; i++) {
-          if (Kokkos::volatile_load(&keys[i]) == key) {
-            printf(
-                "vector_atomic_insert_into_hash_once - head: %d, i: %d, key: "
-                "%lld\n",
-                head, i, key);
-          }
-        } */
+// clang-format off
+#if 0
+    for (i = 0; head != -1 && i < my_write_index; i++) {
+      if (Kokkos::volatile_load(&keys[i]) == key) {
+        printf("vector_atomic_insert_into_hash_once - head: %d, i: %d, key: %lld\n", head, i, key);
+      }
+    }
+#endif
+    // clang-format on
 
     if (my_write_index >= __max_value_size) {
 #ifdef HASHMAPACCUMULATOR_ASSERT_ENABLED
@@ -931,15 +932,15 @@ struct HashmapAccumulator {
     // RAW dependencies below.
     my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
 
-    /*     for (i = 0; i < my_write_index; i++) {
-          if (Kokkos::volatile_load(&keys[i]) == key) {
-            printf(
-                "vector_atomic_insert_into_hash_once_mergeAtomicAdd - head: %d,
-       i: "
-                "%d, key: %lld\n",
-                head, i, key);
-          }
-        } */
+// clang-format off
+#if 0
+    for (i = 0; head != -1 && i < my_write_index; i++) {
+      if (Kokkos::volatile_load(&keys[i]) == key) {
+        printf("vector_atomic_insert_into_hash_once_mergeAtomicAdd - head: %d, i: %d, key: %lld\n", head, i, key);
+      }
+    }
+#endif
+    // clang-format on
 
     if (my_write_index >= __max_value_size) {
 #ifdef HASHMAPACCUMULATOR_ASSERT_ENABLED
@@ -1014,13 +1015,15 @@ struct HashmapAccumulator {
     // RAW dependencies below.
     my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
 
-    /*     for (i = 0; i < my_write_index; i++) {
-          if (Kokkos::volatile_load(&keys[i]) == key) {
-            printf(
-                "vector_atomic_insert_into_hash_once_mergeAtomicAdd_globalMem -
-       " "head: %d, i: %d, key: %lld\n", head, i, key);
-          }
-        } */
+// clang-format off
+#if 0
+    for (i = 0; head != -1 && i < my_write_index; i++) {
+      if (Kokkos::volatile_load(&keys[i]) == key) {
+        printf("vector_atomic_insert_into_hash_once_mergeAtomicAdd_globalMem - head: %d, i: %d, key: %lld\n", head, i, key);
+      }
+    }
+#endif
+    // clang-format on
 
     if (my_write_index >= __max_value_size) {
 #ifdef HASHMAPACCUMULATOR_ASSERT_ENABLED

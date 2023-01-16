@@ -817,7 +817,7 @@ class Coo2Crs {
 
 // clang-format off
 ///
-/// \brief Blocking function that converts a CooMatrix to a CrsMatrix. Values are
+/// \brief Blocking function that converts a CooMatrix to a CrsMatrix. Values are summed.
 /// \tparam DimType the dimension type
 /// \tparam RowViewType The row array view type
 /// \tparam ColViewType The column array view type
