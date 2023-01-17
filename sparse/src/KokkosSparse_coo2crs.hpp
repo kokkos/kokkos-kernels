@@ -452,15 +452,16 @@ class Coo2Crs {
 
       // Level 0 hashmaps
       KeyViewScratch l0_hmap_keys(member.team_scratch(l0_scratch_level),
-                                  teams_work * max_row_cnt);
+                                  max_unique_rows * max_row_cnt);
       ValViewScratch l0_hmap_values(member.team_scratch(l0_scratch_level),
-                                    teams_work * max_row_cnt);
+                                    max_unique_rows * max_row_cnt);
       SizeViewScratch l0_hmap_ll(
           member.team_scratch(l0_scratch_level),
-          teams_work * (pow2_max_row_cnt + max_row_cnt + 1));
+          max_unique_rows * (pow2_max_row_cnt + max_row_cnt + 1));
 
       Kokkos::parallel_for(
-          Kokkos::TeamVectorRange(member, 0, teams_work), [&](const int &i) {
+          Kokkos::TeamVectorRange(member, 0, max_unique_rows),
+          [&](const int &i) {
             size_t ll_stride     = (pow2_max_row_cnt + max_row_cnt + 1) * i;
             SizeType *used_size  = l0_hmap_ll.data() + ll_stride;
             auto *l0_hmap_begins = l0_hmap_ll.data() + ll_stride + 1;
@@ -517,25 +518,23 @@ class Coo2Crs {
 
       int nrows_per_team = *l1_hmap_used_size;
       // Accumulate into crs matrix via __global_hmap
-      if (nrows_per_team > 0) {
-        Kokkos::parallel_for(
-            Kokkos::TeamVectorRange(member, 0, nrows_per_team),
-            [&](const int &i) {
-              auto l0_hmap_idx = l1_hmap_values(i);
-              auto col_count =
-                  l0_hmap_used_sizes(member.league_rank(), l0_hmap_idx).ptr[0];
-              auto uset           = l0_hmaps(member.league_rank(), l0_hmap_idx);
-              auto row_id         = l1_hmap_keys(i);
-              SizeType *used_size = &global_hmap_used_sizes.data()[row_id];
-              for (int j = 0; j < col_count; j++) {
-                auto col_id = uset.keys[j];
-                auto val    = uset.values[j];
-                __global_hmap(row_id)
-                    .vector_atomic_insert_into_hash_once_mergeAtomicAdd(
-                        col_id, val, used_size);
-              }
-            });
-      }
+      Kokkos::parallel_for(
+          Kokkos::TeamVectorRange(member, 0, nrows_per_team),
+          [&](const int &i) {
+            auto l0_hmap_idx = l1_hmap_values(i);
+            int col_count =
+                l0_hmap_used_sizes(member.league_rank(), l0_hmap_idx).ptr[0];
+            auto uset           = l0_hmaps(member.league_rank(), l0_hmap_idx);
+            auto row_id         = l1_hmap_keys(i);
+            SizeType *used_size = &global_hmap_used_sizes.data()[row_id];
+            for (int j = 0; j < col_count; j++) {
+              auto col_id = uset.keys[j];
+              auto val    = uset.values[j];
+              __global_hmap(row_id)
+                  .vector_atomic_insert_into_hash_once_mergeAtomicAdd(
+                      col_id, val, used_size);
+            }
+          });
     }
   };
 
@@ -746,10 +745,10 @@ class Coo2Crs {
 
     functor.l0_hmaps =
         L0HmapView(Kokkos::view_alloc(Kokkos::WithoutInitializing, "usets"),
-                   __n_teams, functor.teams_work);
+                   __n_teams, functor.max_unique_rows);
     functor.l0_hmap_used_sizes = UsedSizePtrView(
         Kokkos::view_alloc(Kokkos::WithoutInitializing, "l0_hmap_used_sizes"),
-        __n_teams, functor.teams_work);
+        __n_teams, functor.max_unique_rows);
 
     // Calculate size of each team's outer hashmap to row unordered sets
     unsigned l1_s4_shmem_size =
