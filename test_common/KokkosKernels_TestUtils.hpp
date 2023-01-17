@@ -592,10 +592,10 @@ class RandCooMat {
     Kokkos::Random_XorShift64_Pool<ExeSpaceType> random(ticks);
 
     __row_d = RowViewTypeD("RandCooMat.RowViewType", n_tuples);
-    Kokkos::fill_random(__row_d, random, 0, m);
+    Kokkos::fill_random(__row_d, random, -m, m);
 
     __col_d = ColViewTypeD("RandCooMat.ColViewType", n_tuples);
-    Kokkos::fill_random(__col_d, random, 0, n);
+    Kokkos::fill_random(__col_d, random, -n, n);
 
     __data_d = DataViewTypeD("RandCooMat.DataViewType", n_tuples);
     Kokkos::fill_random(__data_d, random, min_val, max_val);
