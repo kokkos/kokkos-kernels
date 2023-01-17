@@ -747,63 +747,48 @@ struct HashmapAccumulator {
    * __insert_full.
    */
   KOKKOS_INLINE_FUNCTION
-  int vector_atomic_insert_into_hash_KeyCounter(
-      const key_type &key, volatile size_type *used_size_) {
+  int vector_atomic_insert_into_hash_KeyCounter(const key_type &key,
+                                                size_type *used_size_) {
     size_type hash, my_write_index, i, head;
 
     hash = __compute_hash(key, __hashOpRHS);
 
     // Busy wait until hash_begins[hash] is populated or we have the first key
     while (true) {
-      head = Kokkos::atomic_compare_exchange(&hash_begins[hash], -1, -2);
+      head = desul::atomic_compare_exchange(&hash_begins[hash], -1, -2,
+                                            desul::MemoryOrderAcquire(),
+                                            desul::MemoryScopeDevice());
       if (head >= -1) break;
     }
 
-    desul::atomic_thread_fence(desul::MemoryOrderSeqCst(),
-                               desul::MemoryScopeDevice());
-
     // Ok for empty keys list, head would be -1 in this case.
-    for (i = head; i != -1; i = Kokkos::volatile_load(&hash_nexts[i])) {
-      if (Kokkos::volatile_load(&keys[i]) == key) {
+    for (i = head; i != -1;
+         i = desul::atomic_load(&hash_nexts[i], desul::MemoryOrderAcqRel(),
+                                desul::MemoryScopeDevice())) {
+      if (desul::atomic_load(&keys[i], desul::MemoryOrderAcqRel(),
+                             desul::MemoryScopeDevice()) == key) {
         return __insert_success;
       }
     }
 
-    // Insert either a new or collided key. Relaxed memory order is OK. We have
-    // RAW dependencies below.
-    my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
-
-// clang-format off
-#if 0
-    for (i = 0; head != -1 && i < my_write_index; i++) {
-      if (Kokkos::volatile_load(&keys[i]) == key) {
-        printf("vector_atomic_insert_into_hash_KeyCounter - head: %d, i: %d, key: %lld\n", head, i, key);
-      }
-    }
-#endif
-    // clang-format on
+    // Insert either a new or collided key.
+    my_write_index = desul::atomic_fetch_add(used_size_, size_type(1),
+                                             desul::MemoryOrderRelaxed(),
+                                             desul::MemoryScopeDevice());
 
     if (my_write_index >= __max_value_size) {
-#ifdef HASHMAPACCUMULATOR_ASSERT_ENABLED
-      for (i = 0; i < __max_value_size; i++) {
-        if (Kokkos::volatile_load(&keys[i]) == key) {
-          printf("head: %d, i: %d, key: %lld\n", head, i, key);
-          Kokkos::abort(
-              "vector_atomic_insert_into_hash_KeyCounter: keys duplicated!");
-        }
-      }
-#endif  // HASHMAPACCUMULATOR_ASSERT_ENABLED
       Kokkos::abort(
           "vector_atomic_insert_into_hash_KeyCounter: keys size exceeded.\n");
     } else {
-      Kokkos::volatile_store(&keys[my_write_index], key);
-      Kokkos::volatile_store(&hash_nexts[my_write_index], head);
-      // Land writes before proceeding with key search
-      // Key search (with writes landed) is required to handle collisions.
-      desul::atomic_thread_fence(desul::MemoryOrderSeqCst(),
-                                 desul::MemoryScopeDevice());
-      Kokkos::volatile_store(&hash_begins[hash],
-                             my_write_index);  // Release the lock
+      desul::atomic_store(&keys[my_write_index], key,
+                          desul::MemoryOrderAcqRel(),
+                          desul::MemoryScopeDevice());
+      desul::atomic_store(&hash_nexts[my_write_index], head,
+                          desul::MemoryOrderAcqRel(),
+                          desul::MemoryScopeDevice());
+      desul::atomic_store(&hash_begins[hash], my_write_index,
+                          desul::MemoryOrderRelease(),
+                          desul::MemoryScopeDevice());  // Release the lock
     }
     return __insert_success;
   }
@@ -825,64 +810,48 @@ struct HashmapAccumulator {
    */
   KOKKOS_INLINE_FUNCTION
   int vector_atomic_insert_into_hash_once(const key_type &key,
-                                          volatile size_type *used_size_) {
+                                          size_type *used_size_) {
     size_type hash, my_write_index, i, head;
 
     hash = __compute_hash(key, __hashOpRHS);
 
     // Busy wait until hash_begins[hash] is populated or we have the first key
     while (true) {
-      head = Kokkos::atomic_compare_exchange(&hash_begins[hash], -1, -2);
+      head = desul::atomic_compare_exchange(&hash_begins[hash], -1, -2,
+                                            desul::MemoryOrderAcquire(),
+                                            desul::MemoryScopeDevice());
       if (head >= -1) break;
     }
 
-    desul::atomic_thread_fence(desul::MemoryOrderSeqCst(),
-                               desul::MemoryScopeDevice());
-
     // Ok for empty keys list, head would be -1 in this case.
-    for (i = head; i != -1; i = Kokkos::volatile_load(&hash_nexts[i])) {
-      if (Kokkos::volatile_load(&keys[i]) == key) {
+    for (i = head; i != -1;
+         i = desul::atomic_load(&hash_nexts[i], desul::MemoryOrderAcqRel(),
+                                desul::MemoryScopeDevice())) {
+      if (desul::atomic_load(&keys[i], desul::MemoryOrderAcqRel(),
+                             desul::MemoryScopeDevice()) == key) {
         return i;
       }
     }
 
-    // Insert either a new or collided key. Relaxed memory order is OK. We have
-    // RAW dependencies below.
-    my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
-
-// clang-format off
-#if 0
-    for (i = 0; head != -1 && i < my_write_index; i++) {
-      if (Kokkos::volatile_load(&keys[i]) == key) {
-        printf("vector_atomic_insert_into_hash_once - head: %d, i: %d, key: %lld\n", head, i, key);
-      }
-    }
-#endif
-    // clang-format on
+    // Insert either a new or collided key.
+    my_write_index = desul::atomic_fetch_add(used_size_, size_type(1),
+                                             desul::MemoryOrderRelaxed(),
+                                             desul::MemoryScopeDevice());
 
     if (my_write_index >= __max_value_size) {
-#ifdef HASHMAPACCUMULATOR_ASSERT_ENABLED
-      for (i = 0; i < __max_value_size; i++) {
-        if (Kokkos::volatile_load(&keys[i]) == key) {
-          printf("head: %d, i: %d, key: %lld\n", head, i, key);
-          Kokkos::abort(
-              "vector_atomic_insert_into_hash_once: keys duplicated!");
-        }
-      }
-#endif  // HASHMAPACCUMULATOR_ASSERT_ENABLED
       Kokkos::abort(
-          "vector_atomic_insert_into_hash_once: keys size exceeded.\n");
+          "vector_atomic_insert_into_hash_KeyCounter: keys size exceeded.\n");
     } else {
-      Kokkos::volatile_store(&keys[my_write_index], key);
-      // If memory bound, remove values and use hash_begins[hash] instead.
-      values[my_write_index] = static_cast<value_type>(my_write_index);
-      Kokkos::volatile_store(&hash_nexts[my_write_index], head);
-      // Land writes before proceeding with key search
-      // Key search (with writes landed) is required to handle collisions.
-      desul::atomic_thread_fence(desul::MemoryOrderSeqCst(),
-                                 desul::MemoryScopeDevice());
-      Kokkos::volatile_store(&hash_begins[hash],
-                             my_write_index);  // Release the lock
+      desul::atomic_store(&keys[my_write_index], key,
+                          desul::MemoryOrderAcqRel(),
+                          desul::MemoryScopeDevice());
+      desul::atomic_store(&hash_nexts[my_write_index], head,
+                          desul::MemoryOrderAcqRel(),
+                          desul::MemoryScopeDevice());
+      values[my_write_index] = my_write_index;
+      desul::atomic_store(&hash_begins[hash], my_write_index,
+                          desul::MemoryOrderRelease(),
+                          desul::MemoryScopeDevice());  // Release the lock
     }
     return my_write_index;
   }
@@ -904,153 +873,52 @@ struct HashmapAccumulator {
    */
   KOKKOS_INLINE_FUNCTION
   int vector_atomic_insert_into_hash_once_mergeAtomicAdd(
-      const key_type &key, const value_type &value,
-      volatile size_type *used_size_) {
+      const key_type &key, const value_type &value, size_type *used_size_) {
     size_type hash, my_write_index, i, head;
 
     hash = __compute_hash(key, __hashOpRHS);
 
     // Busy wait until hash_begins[hash] is populated or we have the first key
     while (true) {
-      head = Kokkos::atomic_compare_exchange(&hash_begins[hash], -1, -2);
+      head = desul::atomic_compare_exchange(&hash_begins[hash], -1, -2,
+                                            desul::MemoryOrderAcquire(),
+                                            desul::MemoryScopeDevice());
       if (head >= -1) break;
     }
 
-    desul::atomic_thread_fence(desul::MemoryOrderSeqCst(),
-                               desul::MemoryScopeDevice());
-
     // Ok for empty keys list, head would be -1 in this case.
-    for (i = head; i != -1; i = Kokkos::volatile_load(&hash_nexts[i])) {
-      if (Kokkos::volatile_load(&keys[i]) == key) {
-        // Order doesn't matter, relaxed memory order is fine here.
-        Kokkos::atomic_add(values + i, value);
+    for (i = head; i != -1;
+         i = desul::atomic_load(&hash_nexts[i], desul::MemoryOrderAcqRel(),
+                                desul::MemoryScopeDevice())) {
+      if (desul::atomic_load(&keys[i], desul::MemoryOrderAcqRel(),
+                             desul::MemoryScopeDevice()) == key) {
+        desul::atomic_add(values + i, value, desul::MemoryOrderRelaxed(),
+                          desul::MemoryScopeDevice());
         return __insert_success;
       }
     }
 
-    // Insert either a new or collided key. Relaxed memory order is OK. We have
-    // RAW dependencies below.
-    my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
-
-// clang-format off
-#if 0
-    for (i = 0; head != -1 && i < my_write_index; i++) {
-      if (Kokkos::volatile_load(&keys[i]) == key) {
-        printf("vector_atomic_insert_into_hash_once_mergeAtomicAdd - head: %d, i: %d, key: %lld\n", head, i, key);
-      }
-    }
-#endif
-    // clang-format on
+    // Insert either a new or collided key.
+    my_write_index = desul::atomic_fetch_add(used_size_, size_type(1),
+                                             desul::MemoryOrderRelaxed(),
+                                             desul::MemoryScopeDevice());
 
     if (my_write_index >= __max_value_size) {
-#ifdef HASHMAPACCUMULATOR_ASSERT_ENABLED
-      for (i = 0; i < __max_value_size; i++) {
-        if (Kokkos::volatile_load(&keys[i]) == key) {
-          printf("head: %d, i: %d, key: %lld\n", head, i, key);
-          Kokkos::abort(
-              "vector_atomic_insert_into_hash_once_mergeAtomicAdd: keys "
-              "duplicated!");
-        }
-      }
-#endif  // HASHMAPACCUMULATOR_ASSERT_ENABLED
       Kokkos::abort(
-          "vector_atomic_insert_into_hash_once_mergeAtomicAdd: keys size "
-          "exceeded.\n");
+          "vector_atomic_insert_into_hash_KeyCounter: keys size exceeded.\n");
     } else {
-      Kokkos::volatile_store(&keys[my_write_index], key);
-      Kokkos::atomic_store(&values[my_write_index], value);
-      Kokkos::volatile_store(&hash_nexts[my_write_index], head);
-      // Land writes before proceeding with key search
-      // Key search (with writes landed) is required to handle collisions.
-      desul::atomic_thread_fence(desul::MemoryOrderSeqCst(),
-                                 desul::MemoryScopeDevice());
-      Kokkos::volatile_store(&hash_begins[hash],
-                             my_write_index);  // Release the lock
-    }
-    return __insert_success;
-  }
-
-  /**
-   * This is an exact copy of
-   * vector_atomic_insert_into_hash_once_mergeAtomicAdd. This is simply used to
-   * gather data on a suspect bug in atomics with scratch memory.
-   *
-   * @brief This is used by coo2csr to compute values and indexes
-   * in a given team's coo partition. See Coo2Crs::phase2Tags::s7CopyCoo.
-   *
-   * @param key: The key to insert.
-   * @param value: The value to insert or accumulate (if key already inserted).
-   * @param used_size_: The number of unique keys inserted.
-   * @return __insert_success when a new key is inserted or already found;
-   * otherwise,
-   * __insert_full.
-   */
-  KOKKOS_INLINE_FUNCTION
-  int vector_atomic_insert_into_hash_once_mergeAtomicAdd_globalMem(
-      const key_type &key, const value_type &value,
-      volatile size_type *used_size_) {
-    size_type hash, my_write_index, i, head;
-
-    hash = __compute_hash(key, __hashOpRHS);
-
-    // Busy wait until hash_begins[hash] is populated or we have the first key
-    while (true) {
-      head = Kokkos::atomic_compare_exchange(&hash_begins[hash], -1, -2);
-      if (head >= -1) break;
-    }
-
-    desul::atomic_thread_fence(desul::MemoryOrderSeqCst(),
-                               desul::MemoryScopeDevice());
-
-    // Ok for empty keys list, head would be -1 in this case.
-    for (i = head; i != -1; i = Kokkos::volatile_load(&hash_nexts[i])) {
-      if (Kokkos::volatile_load(&keys[i]) == key) {
-        // Order doesn't matter, relaxed memory order is fine here.
-        Kokkos::atomic_add(values + i, value);
-        return __insert_success;
-      }
-    }
-
-    // Insert either a new or collided key. Relaxed memory order is OK. We have
-    // RAW dependencies below.
-    my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
-
-// clang-format off
-#if 0
-    for (i = 0; head != -1 && i < my_write_index; i++) {
-      if (Kokkos::volatile_load(&keys[i]) == key) {
-        printf("vector_atomic_insert_into_hash_once_mergeAtomicAdd_globalMem - head: %d, i: %d, key: %lld\n", head, i, key);
-      }
-    }
-#endif
-    // clang-format on
-
-    if (my_write_index >= __max_value_size) {
-#ifdef HASHMAPACCUMULATOR_ASSERT_ENABLED
-      for (i = 0; i < __max_value_size; i++) {
-        if (Kokkos::volatile_load(&keys[i]) == key) {
-          printf("head: %d, i: %d, key: %lld\n", head, i, key);
-          Kokkos::abort(
-              "vector_atomic_insert_into_hash_once_mergeAtomicAdd_globalMem: "
-              "keys "
-              "duplicated!");
-        }
-      }
-#endif  // HASHMAPACCUMULATOR_ASSERT_ENABLED
-      Kokkos::abort(
-          "vector_atomic_insert_into_hash_once_mergeAtomicAdd_globalMem: keys "
-          "size "
-          "exceeded.\n");
-    } else {
-      Kokkos::volatile_store(&keys[my_write_index], key);
-      Kokkos::atomic_store(&values[my_write_index], value);
-      Kokkos::volatile_store(&hash_nexts[my_write_index], head);
-      // Land writes before proceeding with key search
-      // Key search (with writes landed) is required to handle collisions.
-      desul::atomic_thread_fence(desul::MemoryOrderSeqCst(),
-                                 desul::MemoryScopeDevice());
-      Kokkos::volatile_store(&hash_begins[hash],
-                             my_write_index);  // Release the lock
+      desul::atomic_store(&keys[my_write_index], key,
+                          desul::MemoryOrderAcqRel(),
+                          desul::MemoryScopeDevice());
+      desul::atomic_store(&hash_nexts[my_write_index], head,
+                          desul::MemoryOrderAcqRel(),
+                          desul::MemoryScopeDevice());
+      desul::atomic_store(values + my_write_index, value,
+                          desul::MemoryOrderRelaxed(),
+                          desul::MemoryScopeDevice());
+      desul::atomic_store(&hash_begins[hash], my_write_index,
+                          desul::MemoryOrderRelease(),
+                          desul::MemoryScopeDevice());  // Release the lock
     }
     return __insert_success;
   }
