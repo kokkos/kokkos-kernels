@@ -840,7 +840,7 @@ struct HashmapAccumulator {
 
     if (my_write_index >= __max_value_size) {
       Kokkos::abort(
-          "vector_atomic_insert_into_hash_KeyCounter: keys size exceeded.\n");
+          "vector_atomic_insert_into_hash_once: keys size exceeded.\n");
     } else {
       desul::atomic_store(&keys[my_write_index], key,
                           desul::MemoryOrderAcqRel(),
@@ -905,7 +905,8 @@ struct HashmapAccumulator {
 
     if (my_write_index >= __max_value_size) {
       Kokkos::abort(
-          "vector_atomic_insert_into_hash_KeyCounter: keys size exceeded.\n");
+          "vector_atomic_insert_into_hash_once_mergeAtomicAdd: keys size "
+          "exceeded.\n");
     } else {
       desul::atomic_store(&keys[my_write_index], key,
                           desul::MemoryOrderAcqRel(),

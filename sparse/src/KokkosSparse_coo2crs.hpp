@@ -134,7 +134,7 @@ class Coo2Crs {
   struct phase1Tags {
     struct s1RowCnt {};
     struct s2MaxRowCnt {};
-    // struct s3MaxUniqueRows {};
+    struct s3MaxUniqueRows {};
   };
 
   using s1Policy = Kokkos::TeamPolicy<typename phase1Tags::s1RowCnt, CrsET>;
@@ -156,12 +156,15 @@ class Coo2Crs {
     DataViewType __data;
 
    public:
-    // using RowViewScalarTypeView = Kokkos::View<RowViewScalarType *, CrsET>;
-    unsigned teams_work, pow2_teams_work, last_teams_work, scratch_level;
+    using RowViewScalarTypeView = Kokkos::View<RowViewScalarType *, CrsET>;
+    unsigned teams_work, pow2_teams_work, last_teams_work, l1_scratch_level,
+        l0_scratch_level;
     ColViewScalarType max_row_cnt;
     RowViewScalarType pow2_max_row_cnt;
+    RowViewScalarType max_unique_rows;
     L0HmapView usets;
     UsedSizePtrView uset_used_sizes;
+    RowViewScalarTypeView n_unique_rows_per_team;
 
     __Phase1Functor(OrdinalType nrows, OrdinalType ncols, RowViewType row,
                     ColViewType col, DataViewType data,
@@ -187,11 +190,11 @@ class Coo2Crs {
       unsigned stop_n  = start_n + n;
 
       // Top-level hashmap
-      // TODO: place in level 0 scratch
-      KeyViewScratch hmap_keys(member.team_scratch(scratch_level), teams_work);
-      L0HmapIdxViewScratch hmap_values(member.team_scratch(scratch_level),
+      KeyViewScratch hmap_keys(member.team_scratch(l1_scratch_level),
+                               teams_work);
+      L0HmapIdxViewScratch hmap_values(member.team_scratch(l1_scratch_level),
                                        teams_work);
-      SizeViewScratch hmap_ll(member.team_scratch(scratch_level),
+      SizeViewScratch hmap_ll(member.team_scratch(l1_scratch_level),
                               pow2_teams_work + teams_work + 1);
       SizeType *hmap_used_size = hmap_ll.data();
       auto *hmap_begins        = hmap_ll.data() + 1;
@@ -208,9 +211,9 @@ class Coo2Crs {
       L1HmapType hmap(teams_work, pow2_teams_work - 1, hmap_begins, hmap_nexts,
                       hmap_keys.data(), hmap_values.data());
 
-      KeyViewScratch uset_keys(member.team_scratch(scratch_level),
+      KeyViewScratch uset_keys(member.team_scratch(l0_scratch_level),
                                teams_work * teams_work);
-      SizeViewScratch uset_ll(member.team_scratch(scratch_level),
+      SizeViewScratch uset_ll(member.team_scratch(l0_scratch_level),
                               teams_work * (pow2_teams_work + teams_work + 1));
 
       Kokkos::parallel_for(
@@ -241,8 +244,11 @@ class Coo2Crs {
       Kokkos::parallel_for(
           Kokkos::TeamVectorRange(member, start_n, stop_n),
           [&](const int &tid) {
-            KeyType i = __row(tid);
-            auto j    = __col(tid);
+            auto i = __row(tid);
+            auto j = __col(tid);
+
+            assert(i < __nrows && "row id exceeds __nrows");
+            assert(j < __ncols && "column id exceeds __ncols");
 
             if (i >= 0 && j >= 0) {
               // Possibly insert a new row id, i, if it hasn't already been
@@ -264,11 +270,7 @@ class Coo2Crs {
 
       member.team_barrier();
 
-// Using this sparsity metric results in hmap overflow during s4CopyCoo on
-// Volta. It is not clear what's causing this. Assuming the unique rows count
-// per team is correct, there may be a data race where the same keys get
-// inserted multiple times in vector_atomic_insert_into_hash_once.
-#if 0
+#ifndef KOKKOS_ARCH_VOLTA
       Kokkos::single(Kokkos::PerTeam(member), [&]() {
         n_unique_rows_per_team[member.league_rank()] = *hmap_used_size;
       });
@@ -293,7 +295,6 @@ class Coo2Crs {
       if (__crs_row_cnt(row_idx) > value) value = __crs_row_cnt(row_idx);
     }
 
-#if 0
     KOKKOS_INLINE_FUNCTION
     void operator()(const typename phase1Tags::s3MaxUniqueRows,
                     const unsigned long &thread_id,
@@ -301,7 +302,6 @@ class Coo2Crs {
       if (n_unique_rows_per_team(thread_id) > value)
         value = n_unique_rows_per_team(thread_id);
     }
-#endif
   };
 
   struct phase2Tags {
@@ -335,11 +335,11 @@ class Coo2Crs {
     GlobalHmapView __global_hmap;
 
    public:
-    unsigned teams_work, pow2_teams_work, last_teams_work, scratch_level;
+    unsigned teams_work, pow2_teams_work, last_teams_work, l1_scratch_level,
+        l0_scratch_level;
     RowViewScalarType max_row_cnt;       //, max_row_len;
     RowViewScalarType pow2_max_row_cnt;  //, pow2_max_row_len;
-    // Using hashmaps sized to this metric results in hashmap overflow on Volta
-    // RowViewScalarType max_unique_rows, pow2_max_unique_rows;
+    RowViewScalarType max_unique_rows, pow2_max_unique_rows;
     L0HmapView l0_hmaps;
     UsedSizePtrView l0_hmap_used_sizes;
     SizeTypeView global_hmap_used_sizes;
@@ -350,7 +350,8 @@ class Coo2Crs {
                     CrsColIdViewType crs_col_ids,
                     RowViewScalarType teams_work_in,
                     RowViewScalarType pow2_teams_work_in,
-                    RowViewScalarType max_row_cnt_in)
+                    RowViewScalarType max_row_cnt_in,
+                    RowViewScalarType max_unique_rows_in)
         : __row(row),
           __col(col),
           __data(data),
@@ -362,7 +363,8 @@ class Coo2Crs {
           __crs_col_ids(crs_col_ids),
           teams_work(teams_work_in),
           pow2_teams_work(pow2_teams_work_in),
-          max_row_cnt(max_row_cnt_in) {
+          max_row_cnt(max_row_cnt_in),
+          max_unique_rows(max_unique_rows_in) {
       __global_hmap = GlobalHmapView(
           Kokkos::view_alloc(Kokkos::WithoutInitializing, "__global_hmap"),
           __nrows);
@@ -384,6 +386,9 @@ class Coo2Crs {
           SizeView(Kokkos::view_alloc(Kokkos::WithoutInitializing,
                                       "__global_hmap_nexts"),
                    max_row_cnt * __nrows);
+
+      pow2_max_unique_rows = 2;
+      while (pow2_max_unique_rows < max_unique_rows) pow2_max_unique_rows *= 2;
     };
 
     KOKKOS_INLINE_FUNCTION
@@ -421,36 +426,37 @@ class Coo2Crs {
       unsigned stop_n  = start_n + n;
 
       // Top-level hashmap that point to l0 hashmaps
-      // TODO: place in level 0 scratch
-      KeyViewScratch l1_hmap_keys(member.team_scratch(scratch_level),
-                                  teams_work);
-      L0HmapIdxViewScratch l1_hmap_values(member.team_scratch(scratch_level),
-                                          teams_work);
-      SizeViewScratch l1_hmap_ll(member.team_scratch(scratch_level),
+      KeyViewScratch l1_hmap_keys(member.team_scratch(l1_scratch_level),
+                                  max_unique_rows);
+      L0HmapIdxViewScratch l1_hmap_values(member.team_scratch(l1_scratch_level),
+                                          max_unique_rows);
+      SizeViewScratch l1_hmap_ll(member.team_scratch(l1_scratch_level),
                                  pow2_teams_work + teams_work + 1);
       SizeType *l1_hmap_used_size = l1_hmap_ll.data();
       auto *l1_hmap_begins        = l1_hmap_ll.data() + 1;
       auto *l1_hmap_nexts =
-          l1_hmap_begins + pow2_teams_work;  // hash_nexts is teams_work long
+          l1_hmap_begins +
+          pow2_max_unique_rows;  // hash_nexts is max_unique_rows long
 
       // Initialize hash_begins to -1
-      Kokkos::parallel_for(Kokkos::TeamVectorRange(member, 0, pow2_teams_work),
-                           [&](const int &tid) { l1_hmap_begins[tid] = -1; });
+      Kokkos::parallel_for(
+          Kokkos::TeamVectorRange(member, 0, pow2_max_unique_rows),
+          [&](const int &tid) { l1_hmap_begins[tid] = -1; });
       *l1_hmap_used_size = 0;
 
       // This is a hashmap key'd on row ids. Each value is a unordered set of
       // column ids.
-      L1HmapType l1_hmap(teams_work, pow2_teams_work - 1, l1_hmap_begins,
-                         l1_hmap_nexts, l1_hmap_keys.data(),
+      L1HmapType l1_hmap(max_unique_rows, pow2_max_unique_rows - 1,
+                         l1_hmap_begins, l1_hmap_nexts, l1_hmap_keys.data(),
                          l1_hmap_values.data());
 
       // Level 0 hashmaps
-      KeyViewScratch l0_hmap_keys(member.team_scratch(scratch_level),
+      KeyViewScratch l0_hmap_keys(member.team_scratch(l0_scratch_level),
                                   teams_work * max_row_cnt);
-      ValViewScratch l0_hmap_values(member.team_scratch(scratch_level),
+      ValViewScratch l0_hmap_values(member.team_scratch(l0_scratch_level),
                                     teams_work * max_row_cnt);
       SizeViewScratch l0_hmap_ll(
-          member.team_scratch(scratch_level),
+          member.team_scratch(l0_scratch_level),
           teams_work * (pow2_max_row_cnt + max_row_cnt + 1));
 
       Kokkos::parallel_for(
@@ -485,9 +491,9 @@ class Coo2Crs {
       Kokkos::parallel_for(
           Kokkos::TeamVectorRange(member, start_n, stop_n),
           [&](const int &tid) {
-            KeyType i = __row(tid);
-            auto j    = __col(tid);
-            auto v    = __data(tid);
+            auto i = __row(tid);
+            auto j = __col(tid);
+            auto v = __data(tid);
 
             if (i >= 0 && j >= 0) {
               // Possibly insert a new row id, i, if it hasn't already been
@@ -509,27 +515,27 @@ class Coo2Crs {
 
       member.team_barrier();
 
+      int nrows_per_team = *l1_hmap_used_size;
       // Accumulate into crs matrix via __global_hmap
-      Kokkos::parallel_for(
-          Kokkos::TeamVectorRange(member, 0, *l1_hmap_used_size),
-          [&](const int &i) {
-            auto l0_hmap_idx = l1_hmap_values(i);
-            auto col_count =
-                l0_hmap_used_sizes(member.league_rank(), l0_hmap_idx).ptr[0];
-            auto uset           = l0_hmaps(member.league_rank(), l0_hmap_idx);
-            auto row_id         = l1_hmap_keys(i);
-            SizeType *used_size = &global_hmap_used_sizes.data()[row_id];
-            for (int j = 0; j < col_count; j++) {
-              auto col_id = uset.keys[j];
-              auto val    = uset.values[j];
-              // Duplicate key insertions due to a suspected data race when
-              // using the hashmap accumulator with scratch memory on Volta
-              // are summed with each other here.
-              __global_hmap(row_id)
-                  .vector_atomic_insert_into_hash_once_mergeAtomicAdd(
-                      col_id, val, used_size);
-            }
-          });
+      if (nrows_per_team > 0) {
+        Kokkos::parallel_for(
+            Kokkos::TeamVectorRange(member, 0, nrows_per_team),
+            [&](const int &i) {
+              auto l0_hmap_idx = l1_hmap_values(i);
+              auto col_count =
+                  l0_hmap_used_sizes(member.league_rank(), l0_hmap_idx).ptr[0];
+              auto uset           = l0_hmaps(member.league_rank(), l0_hmap_idx);
+              auto row_id         = l1_hmap_keys(i);
+              SizeType *used_size = &global_hmap_used_sizes.data()[row_id];
+              for (int j = 0; j < col_count; j++) {
+                auto col_id = uset.keys[j];
+                auto val    = uset.values[j];
+                __global_hmap(row_id)
+                    .vector_atomic_insert_into_hash_once_mergeAtomicAdd(
+                        col_id, val, used_size);
+              }
+            });
+      }
     }
   };
 
@@ -637,7 +643,7 @@ class Coo2Crs {
         functor.pow2_teams_work *= 2;
 
       // Calculate size of each team's outer hashmap to row unordered sets
-      unsigned s1_shmem_size =
+      unsigned l1_s1_shmem_size =
           KeyViewScratch::shmem_size(functor.teams_work) +        // keys
           L0HmapIdxViewScratch::shmem_size(functor.teams_work) +  // values
           SizeViewScratch::shmem_size(__n_teams) +                // used_sizes
@@ -646,17 +652,18 @@ class Coo2Crs {
               functor.teams_work);  // hash_begins and hash_nexts
       // Calculate size of each team's unordered sets for counting unique
       // columns
-      unsigned s1_shmem_per_row =
+      unsigned l0_s1_shmem_per_row =
           KeyViewScratch::shmem_size(functor.teams_work) +  // keys
           SizeViewScratch::shmem_size(__n_teams) +          // used_sizes
           SizeViewScratch::shmem_size(
               functor.pow2_teams_work +
               functor.teams_work);  // hash_begins and hash_nexts
-      // Each team has up to teams_work with up to teams_work columns
-      s1_shmem_size += s1_shmem_per_row * functor.teams_work;
+      unsigned l0_s1_shmem_size = (l0_s1_shmem_per_row * functor.teams_work);
 
-      functor.scratch_level =
-          s1_shmem_size >= s1p.scratch_size_max(0) / __n_teams ? 1 : 0;
+      functor.l1_scratch_level =
+          l1_s1_shmem_size >= s1p.scratch_size_max(0) / __n_teams ? 1 : 0;
+      functor.l0_scratch_level =
+          l0_s1_shmem_size >= s1p.scratch_size_max(0) / __n_teams ? 1 : 0;
 
       functor.usets =
           L0HmapView(Kokkos::view_alloc(Kokkos::WithoutInitializing, "usets"),
@@ -665,17 +672,25 @@ class Coo2Crs {
           Kokkos::view_alloc(Kokkos::WithoutInitializing, "uset_used_sizes"),
           __n_teams, functor.teams_work);
 
-#if 0
       functor.n_unique_rows_per_team =
           typename __Phase1Functor::RowViewScalarTypeView(
               Kokkos::view_alloc(Kokkos::WithoutInitializing,
                                  "n_unique_rows_per_team"),
               __n_teams);
-#endif
 
       s1p = s1Policy(__n_teams, __suggested_team_size, __suggested_vector_size);
-      s1p.set_scratch_size(functor.scratch_level,
-                           Kokkos::PerTeam(s1_shmem_size));
+
+      if (functor.l1_scratch_level == functor.l0_scratch_level) {
+        s1p.set_scratch_size(
+            functor.l1_scratch_level,
+            Kokkos::PerTeam(l1_s1_shmem_size + l0_s1_shmem_size));
+      } else {
+        s1p.set_scratch_size(functor.l1_scratch_level,
+                             Kokkos::PerTeam(l1_s1_shmem_size));
+        s1p.set_scratch_size(functor.l0_scratch_level,
+                             Kokkos::PerTeam(l0_s1_shmem_size));
+      }
+
       Kokkos::parallel_for("Coo2Crs::phase1Tags::s1RowCnt", s1p, functor);
       CrsET().fence();
 
@@ -686,13 +701,23 @@ class Coo2Crs {
           functor, Kokkos::Max<ColViewScalarType>(functor.max_row_cnt));
       CrsET().fence();
 
-#if 0
+#ifndef KOKKOS_ARCH_VOLTA
       functor.max_unique_rows = 0;
       Kokkos::parallel_reduce(
-          Kokkos::RangePolicy<CrsET, typename phase1Tags::s3MaxUniqueRows>(0,
-                                                                       __n_teams),
+          Kokkos::RangePolicy<CrsET, typename phase1Tags::s3MaxUniqueRows>(
+              0, __n_teams),
           functor, Kokkos::Max<RowViewScalarType>(functor.max_unique_rows));
       CrsET().fence();
+#else
+      // This is a workaround for a data race on Volta. It is not
+      // clear what is causing the data race.
+      // Without this, we sometimes overflow the keys/values arrays
+      // in s4CopyCoo during
+      // HashmapAccumulator::vector_atomic_insert_into_hash_once.
+      // MemoryScopeNode does not "address" the data race.
+      // Ensuring the scratch level = 1 (i.e. global memory)
+      // does not "address" the data race.
+      functor.max_unique_rows = functor.teams_work;
 #endif
     }
     return;
@@ -727,13 +752,13 @@ class Coo2Crs {
         __n_teams, functor.teams_work);
 
     // Calculate size of each team's outer hashmap to row unordered sets
-    unsigned s4_shmem_size =
-        KeyViewScratch::shmem_size(functor.teams_work) +        // keys
-        L0HmapIdxViewScratch::shmem_size(functor.teams_work) +  // values
-        SizeViewScratch::shmem_size(__n_teams) +                // used_sizes
+    unsigned l1_s4_shmem_size =
+        KeyViewScratch::shmem_size(functor.max_unique_rows) +        // keys
+        L0HmapIdxViewScratch::shmem_size(functor.max_unique_rows) +  // values
+        SizeViewScratch::shmem_size(__n_teams) +  // used_sizes
         SizeViewScratch::shmem_size(
-            functor.pow2_teams_work +
-            functor.teams_work);  // hash_begins and hash_nexts
+            functor.pow2_max_unique_rows +
+            functor.max_unique_rows);  // hash_begins and hash_nexts
     // Calculate size of each team's unordered sets
     unsigned s4_shmem_size_per_row =
         KeyViewScratch::shmem_size(functor.max_row_cnt) +  // keys
@@ -742,14 +767,28 @@ class Coo2Crs {
         SizeViewScratch::shmem_size(
             functor.pow2_max_row_cnt +
             functor.max_row_cnt);  // hash_begins and hash_nexts
-    // Each team has up to teams_work with up to max_row_cnt columns
-    s4_shmem_size += s4_shmem_size_per_row * functor.teams_work;
 
-    functor.scratch_level =
-        s4_shmem_size >= s4p.scratch_size_max(0) / __n_teams ? 1 : 0;
+    // Each team has up to max_unique_rows with up to max_row_cnt columns
+    unsigned l0_s4_shmem_size = s4_shmem_size_per_row * functor.max_unique_rows;
+
+    functor.l1_scratch_level =
+        l1_s4_shmem_size >= s4p.scratch_size_max(0) / __n_teams ? 1 : 0;
+    functor.l0_scratch_level =
+        l0_s4_shmem_size >= s4p.scratch_size_max(0) / __n_teams ? 1 : 0;
 
     s4p = s4Policy(__n_teams, __suggested_team_size, __suggested_vector_size);
-    s4p.set_scratch_size(functor.scratch_level, Kokkos::PerTeam(s4_shmem_size));
+
+    if (functor.l1_scratch_level == functor.l0_scratch_level) {
+      s4p.set_scratch_size(
+          functor.l0_scratch_level,
+          Kokkos::PerTeam(l1_s4_shmem_size + l0_s4_shmem_size));
+    } else {
+      s4p.set_scratch_size(functor.l1_scratch_level,
+                           Kokkos::PerTeam(l1_s4_shmem_size));
+      s4p.set_scratch_size(functor.l0_scratch_level,
+                           Kokkos::PerTeam(l0_s4_shmem_size));
+    }
+
     Kokkos::parallel_for("Coo2Crs::Phase2Tags::s4CopyCoo", s4p, functor);
     CrsET().fence();
     return;
@@ -780,7 +819,7 @@ class Coo2Crs {
 
     // Scalar results passed to phase2.
     RowViewScalarType phase1_max_row_cnt, phase1_teams_work,
-        phase1_pow2_teams_work;
+        phase1_pow2_teams_work, phase1_max_unique_rows;
 
     // Get an estimate of the number of columns per row.
     {
@@ -791,6 +830,7 @@ class Coo2Crs {
       phase1_max_row_cnt     = phase1Functor.max_row_cnt;
       phase1_teams_work      = phase1Functor.teams_work;
       phase1_pow2_teams_work = phase1Functor.pow2_teams_work;
+      phase1_max_unique_rows = phase1Functor.max_unique_rows;
     }
 
     // Allocate and compute tight crs.
@@ -819,10 +859,10 @@ class Coo2Crs {
                                               "__crs_col_ids_tight"),
                            __nnz);
 
-      __Phase2Functor phase2Functor(row, col, data, __nrows, __ncols, __nnz,
-                                    __crs_vals_tight, __crs_row_map_tight,
-                                    __crs_col_ids_tight, phase1_teams_work,
-                                    phase1_pow2_teams_work, phase1_max_row_cnt);
+      __Phase2Functor phase2Functor(
+          row, col, data, __nrows, __ncols, __nnz, __crs_vals_tight,
+          __crs_row_map_tight, __crs_col_ids_tight, phase1_teams_work,
+          phase1_pow2_teams_work, phase1_max_row_cnt, phase1_max_unique_rows);
 
       __runPhase2(phase2Functor);
 
