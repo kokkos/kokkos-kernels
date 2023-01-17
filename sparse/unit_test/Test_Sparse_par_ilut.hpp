@@ -63,6 +63,20 @@ using namespace KokkosKernels::Experimental;
 
 namespace Test {
 
+namespace ParIlut {
+
+template <class T>
+struct TolMeta {
+  static constexpr T value = 1e-8;
+};
+
+template <>
+struct TolMeta<float> {
+  static constexpr float value = 1e-5;  // Lower tolerance for floats
+};
+
+}
+
 template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
 std::vector<std::vector<scalar_t>> decompress_matrix(
@@ -300,6 +314,109 @@ void run_test_par_ilut() {
 #endif
 }
 
+template <typename scalar_t, typename lno_t, typename size_type,
+          typename device>
+void run_test_par_ilut_precond() {
+  // Test using par_ilut as a preconditioner
+  // Does (LU)^inv Ax = (LU)^inv b converge faster than solving Ax=b?
+  using exe_space    = typename device::execution_space;
+  using mem_space    = typename device::memory_space;
+  using RowMapType   = Kokkos::View<size_type*, device>;
+  using EntriesType  = Kokkos::View<lno_t*, device>;
+  using ValuesType   = Kokkos::View<scalar_t*, device>;
+  using sp_matrix_type =
+      KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>;
+  using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<
+      size_type, lno_t, scalar_t, exe_space, mem_space, mem_space>;
+  using float_t = typename Kokkos::ArithTraits<scalar_t>::mag_type;
+
+  // Create a diagonally dominant sparse matrix to test:
+  constexpr auto n             = 5000;
+  constexpr auto m             = 15;
+  constexpr auto tol           = ParIlut::TolMeta<float_t>::value;
+  constexpr auto numRows       = n;
+  constexpr auto numCols       = n;
+  constexpr auto diagDominance = 1;
+  constexpr bool verbose       = false;
+
+  typename sp_matrix_type::non_const_size_type nnz = 10 * numRows;
+  auto A = KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<
+      sp_matrix_type>(numRows, numCols, nnz, 0, lno_t(0.01 * numRows),
+                      diagDominance);
+
+  // Make kernel handles
+  KernelHandle kh;
+  kh.create_gmres_handle(m, tol);
+  auto gmres_handle = kh.get_gmres_handle();
+  using GMRESHandle =
+      typename std::remove_reference<decltype(*gmres_handle)>::type;
+  using ViewVectorType = typename GMRESHandle::nnz_value_view_t;
+
+  kh.create_par_ilut_handle(numRows);
+  auto par_ilut_handle = kh.get_par_ilut_handle();
+
+  // Pull out views from CRS
+  auto row_map = A.graph.row_map;
+  auto entries = A.graph.entries;
+  auto values  = A.values;
+
+  // Allocate L and U CRS views as outputs
+  RowMapType  L_row_map ("L_row_map", numRows + 1);
+  RowMapType  U_row_map ("U_row_map", numRows + 1);
+  RowMapType  LU_row_map("LU_row_map", numRows + 1);
+  EntriesType LU_entries("LU_entries");
+  ValuesType  LU_values ("LU_values");
+
+  // Initial L/U approximations for A
+  par_ilut_symbolic(&kh, row_map, entries, L_row_map, U_row_map);
+
+  const size_type nnzL = par_ilut_handle->get_nnzL();
+  const size_type nnzU = par_ilut_handle->get_nnzU();
+
+  EntriesType L_entries("L_entries", nnzL);
+  ValuesType L_values("L_values", nnzL);
+  EntriesType U_entries("U_entries", nnzU);
+  ValuesType U_values("U_values", nnzU);
+
+  par_ilut_numeric(&kh, row_map, entries, values, L_row_map, L_entries,
+                   L_values, U_row_map, U_entries, U_values,
+#ifdef KOKKOS_ENABLE_SERIAL
+                   true /*deterministic*/
+#else
+                   false /*cannot ask for determinism*/
+#endif
+  );
+
+  // Create LU^inv
+  {
+    std::string myalg("SPGEMM_KK_MEMORY");
+    KokkosSparse::SPGEMMAlgorithm spgemm_algorithm =
+      KokkosSparse::StringToSPGEMMAlgorithm(myalg);
+    kh.create_spgemm_handle(spgemm_algorithm);
+    kh.create_spadd_handle(true /*we expect inputs to be sorted*/);
+
+    KokkosSparse::Experimental::spgemm_symbolic(
+      &kh, numRows, numRows, numRows, L_row_map, L_entries, false, U_row_map,
+      U_entries, false, LU_row_map);
+
+    const size_type lu_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
+    Kokkos::resize(LU_entries, lu_nnz_size);
+    Kokkos::resize(LU_values, lu_nnz_size);
+
+    KokkosSparse::Experimental::spgemm_numeric(
+        &kh, numRows, numRows, numRows, L_row_map, L_entries, L_values, false,
+        U_row_map, U_entries, U_values, false, LU_row_map, LU_entries,
+        LU_values);
+
+    // Need to sort LU CRS if on CUDA!
+    KokkosSparse::sort_crs_matrix<exe_space>(LU_row_map, LU_entries, LU_values);
+
+    kh.destroy_spgemm_handle();
+  }
+
+  
+}
+
 }  // namespace Test
 
 template <typename scalar_t, typename lno_t, typename size_type,
@@ -308,10 +425,21 @@ void test_par_ilut() {
   Test::run_test_par_ilut<scalar_t, lno_t, size_type, device>();
 }
 
-#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)          \
-  TEST_F(TestCategory,                                                       \
+template <typename scalar_t, typename lno_t, typename size_type,
+          typename device>
+void test_par_ilut_precond() {
+  Test::run_test_par_ilut_precond<scalar_t, lno_t, size_type, device>();
+}
+
+
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)     \
+  TEST_F(TestCategory,                                                  \
          sparse##_##par_ilut##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
-    test_par_ilut<SCALAR, ORDINAL, OFFSET, DEVICE>();                        \
+    test_par_ilut<SCALAR, ORDINAL, OFFSET, DEVICE>();                   \
+  }                                                                     \
+  TEST_F(TestCategory,                                                  \
+         sparse##_##par_ilut_precond##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
+    test_par_ilut_precond<SCALAR, ORDINAL, OFFSET, DEVICE>();           \
   }
 
 #define NO_TEST_COMPLEX
