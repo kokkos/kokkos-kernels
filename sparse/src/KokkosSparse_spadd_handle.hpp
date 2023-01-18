@@ -76,11 +76,9 @@ class SPADDHandle {
   nnz_lno_view_t b_pos;
 
  public:
-  /**
-   * \brief sets the result nnz size.
-   * \param result_nnz_size: size of the output matrix.
-   */
-
+  /// \brief sets the result nnz size.
+  /// \param a_pos_in
+  /// \param b_pos_in
   void set_a_b_pos(const nnz_lno_view_t& a_pos_in,
                    const nnz_lno_view_t& b_pos_in) {
     a_pos = a_pos_in;
@@ -91,10 +89,8 @@ class SPADDHandle {
 
   nnz_lno_view_t get_b_pos() { return b_pos; }
 
-  /**
-   * \brief sets the result nnz size.
-   * \param result_nnz_size: size of the output matrix.
-   */
+  /// \brief sets the result nnz size.
+  /// \param result_nnz_size_ size of the output matrix.
   void set_c_nnz(size_type result_nnz_size_) {
     this->result_nnz_size = result_nnz_size_;
   }

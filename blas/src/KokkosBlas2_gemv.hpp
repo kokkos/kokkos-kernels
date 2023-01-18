@@ -44,7 +44,7 @@
 #ifndef KOKKOSBLAS2_GEMV_HPP_
 #define KOKKOSBLAS2_GEMV_HPP_
 
-/// \file Kokkos_Blas2_MV.hpp
+/// \file KokkosBlas2_gemv.hpp
 /// \brief BLAS 2 kernels specifically optimized for typical
 ///   Tpetra::MultiVector use cases.
 

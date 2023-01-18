@@ -45,7 +45,7 @@
 #ifndef KOKKOSSPARSE_IMPL_TRSM_HPP_
 #define KOKKOSSPARSE_IMPL_TRSM_HPP_
 
-/// \file Kokkos_Sparse_impl_trsm.hpp
+/// \file KokkosSparse_impl_trsm.hpp
 /// \brief Implementation(s) of sparse triangular solve.
 
 #include <KokkosKernels_config.h>

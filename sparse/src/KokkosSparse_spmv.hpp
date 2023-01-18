@@ -1323,12 +1323,15 @@ void spmv_struct(const char mode[], const int stencil_type,
 /// entries of y; if alpha == 0, ignore the entries of A and x.
 ///
 /// \param mode [in] "N" for no transpose, "T" for transpose, or "C"
-///   for conjugate transpose.
+///             for conjugate transpose.
+/// \param stencil_type
 /// \param structure [in] this 1D view stores the # rows in each dimension
-/// (i,j,k) \param alpha [in] Scalar multiplier for the matrix A. \param A [in]
-/// The sparse matrix; KokkosSparse::CrsMatrix instance. \param x [in] Either a
-/// single vector (rank-1 Kokkos::View) or
-///   multivector (rank-2 Kokkos::View).
+///                  (i,j,k)
+/// \param alpha [in] Scalar multiplier for the matrix A.
+/// \param A [in] The sparse matrix; KokkosSparse::CrsMatrix instance.
+/// \param x [in] Either a
+///                single vector (rank-1 Kokkos::View) or
+///                multivector (rank-2 Kokkos::View).
 /// \param beta [in] Scalar multiplier for the (multi)vector y.
 /// \param y [in/out] Either a single vector (rank-1 Kokkos::View) or
 ///   multivector (rank-2 Kokkos::View).  It must have the same number

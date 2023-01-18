@@ -413,10 +413,8 @@ class SPGEMMHandle {
     num_used_colors  = num_used_colors_;
   }
 
-  /**
-   * \brief sets the result nnz size.
-   * \param result_nnz_size: size of the output matrix.
-   */
+  /// \brief sets the result nnz size.
+  /// \param result_nnz_size_ size of the output matrix.
   void set_c_nnz(size_type result_nnz_size_) {
     this->result_nnz_size = result_nnz_size_;
   }

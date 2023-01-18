@@ -42,7 +42,7 @@
 //@HEADER
 */
 
-/// \file Kokkos_Sparse_BsrMatrix.hpp
+/// \file KokkosSparse_BsrMatrix.hpp
 /// \brief Local sparse matrix interface
 ///
 /// This file provides KokkosSparse::Experimental::BsrMatrix.
@@ -186,7 +186,6 @@ struct BsrRowView {
   /// \brief Return offset into colidx_ for the requested block idx
   ///        If none found, return Kokkos::Details::ArithTraits::max
   /// \param idx_to_match [in] local block idx within block-row
-  /// \param is_sorted [in] defaulted to false; no usage at this time
   KOKKOS_INLINE_FUNCTION
   ordinal_type findRelBlockOffset(const ordinal_type idx_to_match,
                                   bool /*is_sorted*/ = false) const {
@@ -241,6 +240,7 @@ struct BsrRowViewConst {
   ///
   /// \param values [in] Array of the row's values.
   /// \param colidx [in] Array of the row's column indices.
+  /// \param blockDim
   /// \param count [in] Number of entries in the row.
   /// \param start [in] Offset into values and colidx of the desired block-row
   /// start.
@@ -322,7 +322,6 @@ struct BsrRowViewConst {
   /// \brief Return offset into colidx_ for the requested block idx
   ///        If none found, return Kokkos::Details::ArithTraits::max
   /// \param idx_to_match [in] local block idx within block-row
-  /// \param is_sorted [in] defaulted to false; no usage at this time
   KOKKOS_INLINE_FUNCTION
   ordinal_type findRelBlockOffset(const ordinal_type& idx_to_match,
                                   bool /*is_sorted*/ = false) const {
@@ -499,6 +498,7 @@ class BsrMatrix {
   ///   val[k].
   /// \param cols [in] The column indices.  cols[k] is the column
   ///   index of val[k].
+  /// \param blockdim [in] The block dimensions.
   /// \param pad [in] If true, pad the sparse matrix's storage with
   ///   zeros in order to improve cache alignment and / or
   ///   vectorization.
@@ -619,14 +619,14 @@ class BsrMatrix {
   /// The matrix will store and use the row map, indices, and values
   /// directly (by view, not by deep copy).
   ///
-  /// \param label [in] The sparse matrix's label.
   /// \param nrows [in] The number of rows.
   /// \param ncols [in] The number of columns.
-  /// \param annz [in] The number of entries.
+  /// \param size_type [in] Filler for annz
   /// \param vals [in/out] The entries.
   /// \param rows [in/out] The row map (containing the offsets to the
   ///   data in each row).
   /// \param cols [in/out] The column indices.
+  /// \param blockDimIn [in] The block dimensions.
   BsrMatrix(const std::string& /*label*/, const OrdinalType nrows,
             const OrdinalType ncols, const size_type /*annz*/,
             const values_type& vals, const row_map_type& rows,
@@ -669,11 +669,10 @@ class BsrMatrix {
   /// The matrix will store and use the row map, indices, and values
   /// directly (by view, not by deep copy).
   ///
-  /// \param[in] label  The sparse matrix's label.
-  /// \param[in] ncols  The number of columns.
-  /// \param[in] vals   The entries.
-  /// \param[in] graph_ The graph between the blocks.
-  /// \param[in] blockDimIn  The block size.
+  /// \param ncols [in]  The number of columns.
+  /// \param vals [in]   The entries.
+  /// \param graph_ [in] The graph between the blocks.
+  /// \param blockDimIn [in]  The block size.
   BsrMatrix(const std::string& /*label*/, const OrdinalType& ncols,
             const values_type& vals, const staticcrsgraph_type& graph_,
             const OrdinalType& blockDimIn)
@@ -803,17 +802,19 @@ class BsrMatrix {
 
   /// \brief Given an array of blocks, sum the values into corresponding
   ///        block in BsrMatrix
-  /// \param[in] rowi    is a block-row index
-  /// \param[in] ncol  is number of blocks referenced in cols[] array
-  /// \param[in] cols[] are block colidxs within the block-row to be summed
-  /// into ncol entries
-  /// \param[in] vals[] array containing 'block' of values
+  /// \param rowi   [in] is a block-row index
+  /// \param cols[] [in] are block colidxs within the block-row to be summed
+  ///               into ncol entries
+  /// \param ncol   [in] is number of blocks referenced in cols[] array
+  /// \param vals[] [in] array containing 'block' of values
   ///        ncol*block_size*block_size entries
   ///        assume vals block is provided in 'LayoutRight' or 'Row Major'
   ///        format, that is e.g. 2x2 block [ a b ; c d ] provided as flattened
   ///        1d array as [a b c d] Assume that each block is stored contiguously
   ///        in vals: [a b; c d] [e f; g h] -> [a b c d e f g h] If so, then i
   ///        in [0, ncols) for cols[] maps to i*block_size*block_size in vals[]
+  /// \param is_sorted [in]
+  /// \param force_atomic [in]
   KOKKOS_INLINE_FUNCTION
   OrdinalType sumIntoValues(const OrdinalType rowi, const OrdinalType cols[],
                             const OrdinalType ncol, const ScalarType vals[],
@@ -825,17 +826,20 @@ class BsrMatrix {
 
   /// \brief Given an array of blocks, replace the values of corresponding
   ///        blocks in BsrMatrix
-  /// \param[in] rowi    is a block-row index
-  /// \param[in] ncol is number of blocks referenced in cols[] array
-  /// \param[in] cols[] are block colidxs within the block-row to be summed
+  /// \param rowi   [in]    is a block-row index
+  /// \param cols[] [in] are block colidxs within the block-row to be summed
   /// into ncol entries
+  /// \param ncol   [in] is number of blocks referenced in cols[] array
   /// \param vals[] [in] array containing 'block' of values
-  //        ncol*block_size*block_size entries
-  //        assume vals block is provided in 'LayoutRight' or 'Row Major'
-  //        format, that is e.g. 2x2 block [ a b ; c d ] provided as flattened
-  //        1d array as [a b c d] Assume that each block is stored contiguously
-  //        in vals: [a b; c d] [e f; g h] -> [a b c d e f g h] If so, then i in
-  //        [0, ncols) for cols[] maps to i*block_size*block_size in vals[]
+  ///               ncol*block_size*block_size entries
+  ///               assume vals block is provided in 'LayoutRight' or 'Row
+  ///               Major' format, that is e.g. 2x2 block [ a b ; c d ] provided
+  ///               as flattened 1d array as [a b c d] Assume that each block is
+  ///               stored contiguously in vals: [a b; c d] [e f; g h] -> [a b c
+  ///               d e f g h] If so, then i in [0, ncols) for cols[] maps to
+  ///               i*block_size*block_size in vals[]
+  /// \param is_sorted [in]
+  /// \param force_atomic [in]
   KOKKOS_INLINE_FUNCTION
   OrdinalType replaceValues(const OrdinalType rowi, const OrdinalType cols[],
                             const OrdinalType ncol, const ScalarType vals[],
@@ -970,17 +974,21 @@ class BsrMatrix {
 
   /// \brief Given an array of blocks, operate on the values of corresponding
   ///        blocks in BsrMatrix
-  /// \param[in] rowi    is a block-row index
-  /// \param[in] ncol is number of blocks referenced in cols[] array
-  /// \param[in] cols[] are block colidxs within the block-row to be op-ed
+  /// \param op
+  /// \param rowi   [in]    is a block-row index
+  /// \param ncol   [in] is number of blocks referenced in cols[] array
+  /// \param cols[] [in] are block colidxs within the block-row to be op-ed
   /// into ncol entries
   /// \param vals[] [in] array containing 'block' of values
-  //        ncol*block_size*block_size entries
-  //        assume vals block is provided in 'LayoutRight' or 'Row Major'
-  //        format, that is e.g. 2x2 block [ a b ; c d ] provided as flattened
-  //        1d array as [a b c d] Assume that each block is stored contiguously
-  //        in vals: [a b; c d] [e f; g h] -> [a b c d e f g h] If so, then i in
-  //        [0, ncols) for cols[] maps to i*block_size*block_size in vals[]
+  ///               ncol*block_size*block_size entries
+  ///               assume vals block is provided in 'LayoutRight' or 'Row
+  ///               Major' format, that is e.g. 2x2 block [ a b ; c d ] provided
+  ///               as flattened 1d array as [a b c d] Assume that each block is
+  ///               stored contiguously in vals: [a b; c d] [e f; g h] -> [a b c
+  ///               d e f g h] If so, then i in [0, ncols) for cols[] maps to
+  ///               i*block_size*block_size in vals[]
+  /// \param is_sorted [in]
+  /// \param force_atomic [in]
   KOKKOS_INLINE_FUNCTION
   OrdinalType operateValues(const BsrMatrix::valueOperation op,
                             const OrdinalType rowi, const OrdinalType cols[],

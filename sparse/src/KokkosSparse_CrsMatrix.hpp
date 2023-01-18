@@ -187,29 +187,28 @@ struct SparseRowView {
  public:
   /// \brief Constructor
   ///
-  /// \param values [in] Array of the row's values.
-  /// \param colidx [in] Array of the row's column indices.
-  /// \param stride [in] (Constant) stride between matrix entries in
+  /// \param values   [in] Array of the row's values.
+  /// \param colidx__ [in] Array of the row's column indices.
+  /// \param stride   [in] (Constant) stride between matrix entries in
   ///   each of the above arrays.
-  /// \param count [in] Number of entries in the row.
+  /// \param count    [in] Number of entries in the row.
   KOKKOS_INLINE_FUNCTION
   SparseRowView(value_type* const values, ordinal_type* const colidx__,
                 const ordinal_type& stride, const ordinal_type& count)
       : values_(values), colidx_(colidx__), stride_(stride), length(count) {}
 
   /// \brief Constructor with offset into \c colidx array
-  ///
-  /// \param values [in] Array of the row's values.
-  /// \param colidx [in] Array of the row's column indices.
-  /// \param stride [in] (Constant) stride between matrix entries in
-  ///   each of the above arrays.
-  /// \param count [in] Number of entries in the row.
-  /// \param idx [in] Start offset into \c colidx array
-  ///
   /// \tparam OffsetType The type of \c idx (see above).  Must be a
   ///   built-in integer type.  This may differ from ordinal_type.
   ///   For example, the matrix may have dimensions that fit in int,
   ///   but a number of entries that does not fit in int.
+  ///
+  /// \param values   [in] Array of the row's values.
+  /// \param colidx__ [in] Array of the row's column indices.
+  /// \param stride   [in] (Constant) stride between matrix entries in
+  ///                 each of the above arrays.
+  /// \param count    [in] Number of entries in the row.
+  /// \param idx      [in] Start offset into \c colidx array
   template <class OffsetType>
   KOKKOS_INLINE_FUNCTION SparseRowView(
       const typename MatrixType::values_type& values,
@@ -287,11 +286,11 @@ struct SparseRowViewConst {
  public:
   /// \brief Constructor
   ///
-  /// \param values [in] Array of the row's values.
-  /// \param colidx [in] Array of the row's column indices.
-  /// \param stride [in] (Constant) stride between matrix entries in
-  ///   each of the above arrays.
-  /// \param count [in] Number of entries in the row.
+  /// \param values   [in] Array of the row's values.
+  /// \param colidx__ [in] Array of the row's column indices.
+  /// \param stride   [in] (Constant) stride between matrix entries in
+  ///                 each of the above arrays.
+  /// \param count    [in] Number of entries in the row.
   KOKKOS_INLINE_FUNCTION
   SparseRowViewConst(value_type* const values, ordinal_type* const colidx__,
                      const ordinal_type& stride, const ordinal_type& count)
@@ -299,17 +298,16 @@ struct SparseRowViewConst {
 
   /// \brief Constructor with offset into \c colidx array
   ///
-  /// \param values [in] Array of the row's values.
-  /// \param colidx [in] Array of the row's column indices.
-  /// \param stride [in] (Constant) stride between matrix entries in
-  ///   each of the above arrays.
-  /// \param count [in] Number of entries in the row.
-  /// \param idx [in] Start offset into \c colidx array
-  ///
   /// \tparam OffsetType The type of \c idx (see above).  Must be a
   ///   built-in integer type.  This may differ from ordinal_type.
   ///   For example, the matrix may have dimensions that fit in int,
   ///   but a number of entries that does not fit in int.
+  /// \param values   [in] Array of the row's values.
+  /// \param colidx__ [in] Array of the row's column indices.
+  /// \param stride   [in] (Constant) stride between matrix entries in
+  ///                 each of the above arrays.
+  /// \param count    [in] Number of entries in the row.
+  /// \param idx      [in] Start offset into \c colidx array
   template <class OffsetType>
   KOKKOS_INLINE_FUNCTION SparseRowViewConst(
       const typename MatrixType::values_type& values,
@@ -533,8 +531,9 @@ class CrsMatrix {
   /// The matrix will store and use the row map, indices
   /// (by view, not by deep copy) and allocate the values view.
   ///
-  /// \param label [in] The sparse matrix's label.
-  /// \param ncols [in] The number of columns.
+  /// \param label  [in] The sparse matrix's label.
+  /// \param graph_ [in]
+  /// \param ncols  [in] The number of columns.
   template <typename InOrdinal, typename InLayout, typename InDevice,
             typename InMemTraits, typename InSizeType>
   CrsMatrix(const std::string& label,
@@ -550,14 +549,9 @@ class CrsMatrix {
   /// The matrix will store and use the row map, indices, and values
   /// directly (by view, not by deep copy).
   ///
-  /// \param label [in] The sparse matrix's label.
-  /// \param nrows [in] The number of rows.
   /// \param ncols [in] The number of columns.
-  /// \param annz [in] The number of entries.
   /// \param vals [in/out] The entries.
-  /// \param rows [in/out] The row map (containing the offsets to the
-  ///   data in each row).
-  /// \param cols [in/out] The column indices.
+  /// \param graph_
   template <typename InOrdinal, typename InLayout, typename InDevice,
             typename InMemTraits, typename InSizeType>
   CrsMatrix(const std::string&, const OrdinalType& ncols,
@@ -577,7 +571,6 @@ class CrsMatrix {
   /// This constructor is mainly useful for benchmarking or for
   /// reading the sparse matrix's data from a file.
   ///
-  /// \param label [in] The sparse matrix's label.
   /// \param nrows [in] The number of rows.
   /// \param ncols [in] The number of columns.
   /// \param annz [in] The number of entries.
@@ -635,7 +628,6 @@ class CrsMatrix {
   /// The matrix will store and use the row map, indices, and values
   /// directly (by view, not by deep copy).
   ///
-  /// \param label [in] The sparse matrix's label.
   /// \param nrows [in] The number of rows.
   /// \param ncols [in] The number of columns.
   /// \param annz [in] The number of entries.

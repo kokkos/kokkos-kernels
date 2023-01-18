@@ -42,7 +42,7 @@
 //@HEADER
 */
 
-/// \file Kokkos_Sparse_trsv.hpp
+/// \file KokkosSparse_trsv.hpp
 /// \brief Local sparse triangular solve
 ///
 /// This file provides KokkosSparse::trsv.  This function performs a
