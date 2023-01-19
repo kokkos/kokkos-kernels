@@ -1,3 +1,5 @@
+message("CMAKE_CXX_COMPILER_ID : ${CMAKE_CXX_COMPILER_ID}")
+
 IF (CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
   TRY_COMPILE(KOKKOSKERNELS_HAS_MKL_ARG
     ${KOKKOSKERNELS_TOP_BUILD_DIR}/tpl_tests
@@ -21,6 +23,10 @@ ELSEIF(WIN32)
     )
   ENDIF()
 ELSE()
+
+#find_package(mkl)
+  #V1: old version plus small modif on header :
+#   ${MKL_ROOT}/include => ${MKL_ROOT}/include/mkl
   IF (NOT DEFINED ENV{MKLROOT})
     SET(NO_MKL_ROOT_GIVEN "MKL-NOTFOUND")
     MESSAGE(WARNING "No MKLROOT environment variable specified - must source mklvars.sh to configure MKL path")
@@ -44,7 +50,7 @@ ELSE()
       HEADER
         mkl.h
       HEADER_PATHS
-        ${MKL_ROOT}/include
+        ${MKL_ROOT}/include/mkl
     )
   ENDIF()
 ENDIF()
