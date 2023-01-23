@@ -158,6 +158,9 @@ endif()
 * KokkosKernels_ENABLE_DOCS: BOOL
   * Whether to build docs.
   * Default: OFF
+* KokkosKernels_ENABLE_COVERASGE: BOOL
+  * Whether to collect coverage reports.
+  * Default: OFF
 * KokkosKernels_ENABLE_TPL_BLAS: BOOL
   * Whether to enable BLAS
   * Default: OFF

@@ -55,6 +55,12 @@ KOKKOSKERNELS_PACKAGE()
 IF (NOT KOKKOSKERNELS_HAS_TRILINOS)
   SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/")
   KOKKOSKERNELS_ADD_OPTION(
+          "ENABLE_COVERAGE"
+          OFF
+          BOOL
+          "Whether to collect coverage reports. Default: OFF"
+  )
+  KOKKOSKERNELS_ADD_OPTION(
           "ENABLE_EXAMPLES"
           OFF
           BOOL
@@ -431,4 +437,11 @@ ELSE()
   IF (KokkosKernels_ENABLE_DOCS)
     ADD_SUBDIRECTORY(docs)
   ENDIF ()
+
+  IF(KokkosKernels_ENABLE_COVERAGE)
+    # -fprofile-arcs -ftest-coverage
+    MESSAGE(STATUS "Enabling coverage collection.")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage -O0" CACHE STRING "" FORCE)
+    SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage" CACHE STRING "" FORCE)
+  ENDIF()
 ENDIF()
