@@ -50,7 +50,7 @@
 
 #if defined(KOKKOS_ENABLE_SYCL) && defined(KOKKOS_ARCH_INTEL_GPU)
 #include <level_zero/zes_api.h>
-#include <CL/sycl/backend/level_zero.hpp>
+#include <sycl/ext/oneapi/backend/level_zero.hpp>
 #endif
 
 namespace KokkosKernels {
@@ -225,25 +225,29 @@ inline void kk_get_free_total_memory<Kokkos::Experimental::SYCLDeviceUSMSpace>(
   uint32_t n_memory_modules = 0;
   zesDeviceEnumMemoryModules(level_zero_handle, &n_memory_modules, nullptr);
 
-  if (n_memory_modules != 1) {
-    std::ostringstream oss;
-    oss << "Error: number of memory modules for the SYCL backend: "
-        << n_memory_modules
-        << ". We only support querying free/total memory if exactly one memory "
-           "module was found. Make sure that ZES_ENABLE_SYSMAN=1 is set at run "
-           "time if no memeory modules were found!";
-    throw std::runtime_error(oss.str());
+  if (n_memory_modules == 0) {
+    throw std::runtime_error(
+        "Error: No memory modules for the SYCL backend found. Make sure that "
+        "ZES_ENABLE_SYSMAN=1 is set at run time!");
   }
 
-  zes_mem_handle_t memory_module_handle;
+  total_mem = 0;
+  free_mem  = 0;
+  std::vector<zes_mem_handle_t> mem_handles(n_memory_modules);
   zesDeviceEnumMemoryModules(level_zero_handle, &n_memory_modules,
-                             &memory_module_handle);
-  zes_mem_state_t memory_properties{
-      ZES_STRUCTURE_TYPE_MEM_PROPERTIES,
-  };
-  zesMemoryGetState(memory_module_handle, &memory_properties);
-  total_mem = memory_properties.size;
-  free_mem  = memory_properties.free;
+                             mem_handles.data());
+
+  for (auto& mem_handle : mem_handles) {
+    zes_mem_properties_t memory_properties{ZES_STRUCTURE_TYPE_MEM_PROPERTIES};
+    zesMemoryGetProperties(mem_handle, &memory_properties);
+    // Only report HBM which zeMemAllocDevice allocates from.
+    if (memory_properties.type != ZES_MEM_TYPE_HBM) continue;
+
+    zes_mem_state_t memory_states{ZES_STRUCTURE_TYPE_MEM_STATE};
+    zesMemoryGetState(mem_handle, &memory_states);
+    total_mem += memory_states.size;
+    free_mem += memory_states.free;
+  }
 }
 
 template <>
