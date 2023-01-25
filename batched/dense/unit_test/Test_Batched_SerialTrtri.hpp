@@ -22,6 +22,8 @@
 
 #include "KokkosKernels_TestUtils.hpp"
 
+#include <chrono>
+
 #define PRINT_MAT 0
 
 using namespace KokkosBatched;
@@ -161,7 +163,8 @@ void impl_test_batched_trtri(const int N, const int K) {
   typename ViewType::HostMirror I_host = Kokkos::create_mirror_view(A_I);
   typename ViewType::HostMirror A_host = Kokkos::create_mirror_view(A);
 
-  uint64_t seed = Kokkos::Impl::clock_tic();
+  uint64_t seed =
+      std::chrono::high_resolution_clock::now().time_since_epoch().count();
 
   using ViewTypeSubA =
       decltype(Kokkos::subview(A, 0, Kokkos::ALL(), Kokkos::ALL()));

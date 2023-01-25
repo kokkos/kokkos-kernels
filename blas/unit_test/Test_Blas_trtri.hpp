@@ -19,6 +19,8 @@
 #include <KokkosBlas_trtri.hpp>
 #include <KokkosKernels_TestUtils.hpp>
 
+#include <chrono>
+
 namespace Test {
 
 template <class ViewTypeA, class ExecutionSpace>
@@ -109,8 +111,9 @@ int impl_test_trtri(int bad_diag_idx, const char* uplo, const char* diag,
   ViewTypeA A("A", M, N);
   ViewTypeA A_original("A_original", M, N);
   ViewTypeA A_I("A_I", M, N);  // is I taken...?
-  uint64_t seed = Kokkos::Impl::clock_tic();
-  ScalarA beta  = ScalarA(0);
+  uint64_t seed =
+      std::chrono::high_resolution_clock::now().time_since_epoch().count();
+  ScalarA beta = ScalarA(0);
   ScalarA cur_check_val;  // Either 1 or 0, to check A_I
 
   // const int As0 = A.stride(0), As1 = A.stride(1);

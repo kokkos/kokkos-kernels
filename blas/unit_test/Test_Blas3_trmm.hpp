@@ -19,6 +19,8 @@
 #include <KokkosBlas3_trmm.hpp>
 #include <KokkosKernels_TestUtils.hpp>
 
+#include <chrono>
+
 namespace Test {
 
 template <class ViewTypeA, class ExecutionSpace>
@@ -110,8 +112,9 @@ void impl_test_trmm(const char* side, const char* uplo, const char* trans,
   ViewTypeA A("A", K, K);
   ViewTypeB B("B", M, N);
   ViewTypeB B_expected("B_expected", M, N);
-  uint64_t seed = Kokkos::Impl::clock_tic();
-  ScalarA beta  = ScalarA(0);
+  uint64_t seed =
+      std::chrono::high_resolution_clock::now().time_since_epoch().count();
+  ScalarA beta = ScalarA(0);
 
   // printf("KokkosBlas::trmm test for alpha %g, %c %c %c %c, M %d, N %d, eps
   // %g, ViewType: %s\n",
