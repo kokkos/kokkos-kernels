@@ -11,6 +11,11 @@ ccsmatrix
 .. doxygenclass::    KokkosSparse::CcsMatrix
     :members:
 
+coomatrix
+---------
+.. doxygenclass::    KokkosSparse::CooMatrix
+    :members:
+
 crs2ccs
 -------
 .. doxygenfunction:: KokkosSparse::crs2ccs(OrdinalType nrows, OrdinalType ncols, SizeType nnz, ValViewType vals, RowMapViewType row_map, ColIdViewType col_ids)
@@ -20,6 +25,16 @@ ccs2crs
 -------
 .. doxygenfunction:: KokkosSparse::ccs2crs(OrdinalType nrows, OrdinalType ncols, SizeType nnz, ValViewType vals, ColMapViewType col_map, RowIdViewType row_ids)
 .. doxygenfunction:: KokkosSparse::ccs2crs(KokkosSparse::CcsMatrix<ScalarType, OrdinalType, DeviceType, MemoryTraitsType, SizeType> &ccsMatrix)
+
+coo2crs
+-------
+.. doxygenfunction:: KokkosSparse::coo2crs(DimType, DimType, RowViewType, ColViewType, DataViewType)
+.. doxygenfunction:: KokkosSparse::coo2crs(KokkosSparse::CooMatrix<RowViewType, ColViewType, DataViewType, DeviceType> &cooMatrix)
+
+crs2coo
+-------
+.. doxygenfunction:: KokkosSparse::crs2coo(OrdinalType, OrdinalType, SizeType, ValViewType, RowMapViewType, ColIdViewType)
+.. doxygenfunction:: KokkosSparse::crs2coo(KokkosSparse::CrsMatrix<ScalarType, OrdinalType, DeviceType, MemoryTraitsType, SizeType> &crsMatrix)
 
 spmv
 ----

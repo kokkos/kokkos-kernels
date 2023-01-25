@@ -45,7 +45,7 @@ void doCsMat(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
   ASSERT_EQ(vals.extent(0), cm.get_nnz() + 1) << cm.info;
 
   auto row_ids = cm.get_ids();
-  ASSERT_EQ(row_ids.extent(0), cm.get_dim1() * cm.get_dim2() + 1) << cm.info;
+  ASSERT_EQ(row_ids.extent(0), cm.get_nnz()) << cm.info;
 
   auto col_map = cm.get_map();
   ASSERT_EQ(col_map.extent(0), cm.get_dim1() + 1);

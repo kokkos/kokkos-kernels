@@ -829,6 +829,7 @@ struct D2_MIS_FixedPriority {
                          InitWorklistFunctor(worklist1));
     lno_t workRemain = numVerts;
     int numIter      = 0;
+    (void)numIter;
     while (workRemain) {
       // do another iteration
       Kokkos::parallel_for(
