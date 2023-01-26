@@ -259,7 +259,6 @@ class GraphColorDistance2 {
     lno_t numUncoloredPreviousIter = this->nr + 1;
 
     double time;
-    double total_time = 0.0;
     Kokkos::Timer timer;
 
     int iter = 0;
@@ -296,7 +295,6 @@ class GraphColorDistance2 {
 
       if (this->_ticToc) {
         time = timer.seconds();
-        total_time += time;
         std::cout << "\tIteration: " << iter << std::endl
                   << "\t  - Time speculative greedy phase : " << time
                   << std::endl
@@ -327,7 +325,6 @@ class GraphColorDistance2 {
 
       if (_ticToc) {
         time = timer.seconds();
-        total_time += time;
         std::cout << "\t  - Time conflict detection       : " << time
                   << std::endl;
         std::cout << "\t  - Num Uncolored (conflicts)     : " << numUncolored
@@ -369,7 +366,6 @@ class GraphColorDistance2 {
 
     if (_ticToc) {
       time = timer.seconds();
-      total_time += time;
       std::cout << "\tTime serial conflict resolution   : " << time
                 << std::endl;
       gc_handle->add_to_overall_coloring_time_phase3(time);
