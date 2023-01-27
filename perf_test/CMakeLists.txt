@@ -26,7 +26,7 @@ if (KokkosKernels_ENABLE_PERFTESTS)
     #Gtest minimally requires C++ 11
     TARGET_COMPILE_FEATURES(kokkoskernelsperf_gtest PUBLIC cxx_std_11)
 
-    include_directories(sparse)
+    KOKKOSKERNELS_INCLUDE_DIRECTORIES(sparse)
     
     if(Kokkos_ENABLE_TESTS_AND_PERFSUITE)
         #Add RPS implementations of KK perf tests here
