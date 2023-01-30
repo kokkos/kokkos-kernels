@@ -53,6 +53,8 @@
 #include "KokkosBlas1_nrm2.hpp"
 #include "KokkosSparse_spmv.hpp"
 #include "KokkosSparse_par_ilut.hpp"
+#include "KokkosSparse_gmres.hpp"
+#include "KokkosSparse_LUPrec.hpp"
 
 #include <gtest/gtest.h>
 
@@ -109,6 +111,27 @@ std::vector<std::vector<scalar_t>> decompress_matrix(
 
   return result;
 }
+
+template <typename scalar_t, typename lno_t, typename size_type,
+          typename device>
+void decompress_matrix(
+    Kokkos::View<size_type*, device>& row_map,
+    Kokkos::View<lno_t*, device>& entries,
+    Kokkos::View<scalar_t*, device>& values,
+    Kokkos::View<scalar_t**, device>& output) {
+  const size_type nrows = row_map.size() - 1;
+
+  Kokkos::parallel_for(nrows, KOKKOS_LAMBDA (const int& row_idx) {
+    const size_type row_nnz_begin = row_map(row_idx);
+    const size_type row_nnz_end   = row_map(row_idx + 1);
+    for (size_type row_nnz = row_nnz_begin; row_nnz < row_nnz_end; ++row_nnz) {
+      const lno_t col_idx      = entries(row_nnz);
+      const scalar_t value     = values(row_nnz);
+      output(row_idx, col_idx) = value;
+    }
+  });
+}
+
 
 template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
@@ -387,34 +410,68 @@ void run_test_par_ilut_precond() {
 #endif
   );
 
-  // Create LU^inv
+  // Convert L, U parILUT outputs to uncompressed 2d views as required
+  // by LUPrec
+  Kokkos::View<scalar_t**, device>
+    L_uncompressed("L_uncompressed", numRows, numRows),
+    U_uncompressed("U_uncompressed", numRows, numRows);
+  decompress_matrix<scalar_t, lno_t, size_type, device>(L_row_map, L_entries, L_values, L_uncompressed);
+  decompress_matrix<scalar_t, lno_t, size_type, device>(U_row_map, U_entries, U_values, U_uncompressed);
+
+  // Set initial vectors:
+  ViewVectorType X("X", n);    // Solution and initial guess
+  ViewVectorType Wj("Wj", n);  // For checking residuals at end.
+  ViewVectorType B(Kokkos::view_alloc(Kokkos::WithoutInitializing, "B"),
+                   n);  // right-hand side vec
+  // Make rhs ones so that results are repeatable:
+  Kokkos::deep_copy(B, 1.0);
+
+  int num_iters_plain(0), num_iters_precond(0);
+
+  // Solve Ax = b
   {
-    std::string myalg("SPGEMM_KK_MEMORY");
-    KokkosSparse::SPGEMMAlgorithm spgemm_algorithm =
-      KokkosSparse::StringToSPGEMMAlgorithm(myalg);
-    kh.create_spgemm_handle(spgemm_algorithm);
-    kh.create_spadd_handle(true /*we expect inputs to be sorted*/);
+    gmres(&kh, A, B, X);
 
-    KokkosSparse::Experimental::spgemm_symbolic(
-      &kh, numRows, numRows, numRows, L_row_map, L_entries, false, U_row_map,
-      U_entries, false, LU_row_map);
+    // Double check residuals at end of solve:
+    float_t nrmB = KokkosBlas::nrm2(B);
+    KokkosSparse::spmv("N", 1.0, A, X, 0.0, Wj);  // wj = Ax
+    KokkosBlas::axpy(-1.0, Wj, B);                // b = b-Ax.
+    float_t endRes = KokkosBlas::nrm2(B) / nrmB;
 
-    const size_type lu_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
-    Kokkos::resize(LU_entries, lu_nnz_size);
-    Kokkos::resize(LU_values, lu_nnz_size);
+    const auto conv_flag = gmres_handle->get_conv_flag_val();
+    num_iters_plain = gmres_handle->get_num_iters();
 
-    KokkosSparse::Experimental::spgemm_numeric(
-        &kh, numRows, numRows, numRows, L_row_map, L_entries, L_values, false,
-        U_row_map, U_entries, U_values, false, LU_row_map, LU_entries,
-        LU_values);
-
-    // Need to sort LU CRS if on CUDA!
-    KokkosSparse::sort_crs_matrix<exe_space>(LU_row_map, LU_entries, LU_values);
-
-    kh.destroy_spgemm_handle();
+    EXPECT_LT(endRes, gmres_handle->get_tol());
+    EXPECT_EQ(conv_flag, GMRESHandle::Flag::Conv);
   }
 
-  
+  // Solve Ax = b with LU preconditioner
+  {
+    gmres_handle->reset_handle(m, tol);
+    gmres_handle->set_verbose(verbose);
+
+    // Make precond
+    KokkosSparse::Experimental::LUPrec<sp_matrix_type> myPrec(L_uncompressed, U_uncompressed);
+
+    // reset X for next gmres call
+    Kokkos::deep_copy(X, 0.0);
+
+    gmres(&kh, A, B, X, &myPrec);
+
+    // Double check residuals at end of solve:
+    float_t nrmB = KokkosBlas::nrm2(B);
+    KokkosSparse::spmv("N", 1.0, A, X, 0.0, Wj);  // wj = Ax
+    KokkosBlas::axpy(-1.0, Wj, B);                // b = b-Ax.
+    float_t endRes = KokkosBlas::nrm2(B) / nrmB;
+
+    const auto conv_flag = gmres_handle->get_conv_flag_val();
+    num_iters_precond = gmres_handle->get_num_iters();
+
+    EXPECT_LT(endRes, gmres_handle->get_tol());
+    EXPECT_EQ(conv_flag, GMRESHandle::Flag::Conv);
+    EXPECT_LT(num_iters_precond, num_iters_plain);
+  }
+
 }
 
 }  // namespace Test

@@ -41,49 +41,49 @@
 // ************************************************************************
 //@HEADER
 */
-/// @file KokkosKernels_MatrixPrec.hpp
+/// @file KokkosKernels_LUPrec.hpp
 
-#ifndef KK_MATRIX_PREC_HPP
-#define KK_MATRIX_PREC_HPP
+#ifndef KK_LU_PREC_HPP
+#define KK_LU_PREC_HPP
 
 #include <KokkosSparse_Preconditioner.hpp>
 #include <Kokkos_Core.hpp>
 #include <KokkosBlas.hpp>
 #include <KokkosSparse_spmv.hpp>
+#include <KokkosBlas3_trsm_impl.hpp>
 
 namespace KokkosSparse {
 
 namespace Experimental {
 
-/// \class MatrixPrec
-/// \brief  This is a simple class to use if one
-///         already has a matrix representation of their
-///         preconditioner M.  The class applies an
-///         SpMV with M as the preconditioning step.
-/// \tparam CRS the type of compressed matrix
+/// \class LUPrec
+/// \brief  This class is for applying LU preconditioning.
+///         It takes L and U and the apply method returns U^inv L^inv x
+/// \tparam CRS the CRS type of L and U
 ///
-/// MatrixPrec provides the following methods
-///   - initialize() Does nothing; Matrix initialized upon object construction.
+/// Preconditioner provides the following methods
+///   - initialize() Does nothing; members initialized upon object construction.
 ///   - isInitialized() returns true
-///   - compute() Does nothing; Matrix initialized upon object construction.
+///   - compute() Does nothing; members initialized upon object construction.
 ///   - isComputed() returns true
 ///
 template <class CRS>
-class MatrixPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
- private:
-  CRS _A;
-
+class LUPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
  public:
   using ScalarType = typename std::remove_const<typename CRS::value_type>::type;
   using EXSP       = typename CRS::execution_space;
   using karith     = typename Kokkos::ArithTraits<ScalarType>;
 
+ private:
+  Kokkos::View<ScalarType**> _L, _U, _tmp;
+
+ public:
   //! Constructor:
-  template <class CRSArg>
-  MatrixPrec(const CRSArg &mat) : _A(mat) {}
+  template <class ViewArg>
+  LUPrec(const ViewArg &L, const ViewArg &U) : _L(L), _U(U), _tmp("LUPrec::_tmp", _L.extent(0), 1) {}
 
   //! Destructor.
-  virtual ~MatrixPrec() {}
+  virtual ~LUPrec() {}
 
   ///// \brief Apply the preconditioner to X, putting the result in Y.
   /////
@@ -106,7 +106,15 @@ class MatrixPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
                      const char transM[] = "N",
                      ScalarType alpha    = karith::one(),
                      ScalarType beta     = karith::zero()) const {
-    KokkosSparse::spmv(transM, alpha, _A, X, beta, Y);
+
+
+    // tmp = trsm(L, x); //Apply L^inv to x
+    // y = trsm(U, tmp); //Apply U^inv to tmp
+    auto tmpsv = Kokkos::subview(_tmp, Kokkos::ALL, 0);
+    Kokkos::deep_copy(tmpsv, X);
+    KokkosBlas::Impl::SerialTrsm_Invoke("L", "L", transM, "N", alpha, _L, _tmp);
+    KokkosBlas::Impl::SerialTrsm_Invoke("L", "U", transM, "N", alpha, _U, _tmp);
+    Kokkos::deep_copy(Y, tmpsv);
   }
   //@}
 
