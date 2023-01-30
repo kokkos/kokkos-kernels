@@ -54,7 +54,7 @@
 #include "KokkosBatched_Givens_Serial_Internal.hpp"
 #include "KokkosBatched_Trsm_Decl.hpp"
 #include "KokkosBatched_Identity.hpp"
-#include "KokkosBlas2_serial_gemv_impl.hpp"
+#include "KokkosBlas2_gemv.hpp"
 
 namespace KokkosBatched {
 

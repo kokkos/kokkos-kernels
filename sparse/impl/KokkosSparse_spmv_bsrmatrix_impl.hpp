@@ -539,7 +539,7 @@ struct BsrMatrixSpMVTensorCoreDispatcher {
 
 #include "KokkosBlas.hpp"
 #include "KokkosBlas2_serial_gemv_internal.hpp"
-#include "KokkosBlas2_team_gemv_impl.hpp"
+#include "KokkosBlas2_team_gemv_internal.hpp"
 #include "KokkosBatched_Gemm_Serial_Internal.hpp"
 #include "KokkosBatched_Gemm_TeamVector_Internal.hpp"
 #include "KokkosBlas1_team_scal_impl.hpp"
@@ -947,7 +947,7 @@ struct BSR_GEMV_Transpose_Functor {
         const auto A_cur = myRow.block(jBlock);
         //
         KokkosBlas::TeamVectorGemv<
-            team_member, KokkosBlas::Trans::ConjTranspose,
+            KokkosBlas::Trans::ConjTranspose,
             KokkosBlas::Algo::Gemv::Default>::invoke(dev, alpha, A_cur, X_cur,
                                                      val_zero, shared_view);
         //
