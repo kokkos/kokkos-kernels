@@ -14,7 +14,6 @@
 //
 //@HEADER
 
-
 // Created by David Poliakoff and Amy Powell on 6/15/2021
 
 #ifndef KOKKOSKERNELS_KOKKOSBLAS_DOT_TEST_RPS_HPP

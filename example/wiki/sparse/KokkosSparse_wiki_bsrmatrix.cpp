@@ -35,10 +35,10 @@ int main() {
       typename Kokkos::DefaultExecutionSpace::memory_space>;
   using matrix_type =
       typename KokkosSparse::CrsMatrix<Scalar, Ordinal, device_type, void,
-      Offset>;
+                                       Offset>;
   using b_matrix_type =
-      typename KokkosSparse::Experimental::BsrMatrix<Scalar, Ordinal, device_type, void,
-      Offset>;
+      typename KokkosSparse::Experimental::BsrMatrix<Scalar, Ordinal,
+                                                     device_type, void, Offset>;
   using graph_type   = typename matrix_type::staticcrsgraph_type;
   using row_map_type = typename graph_type::row_map_type;
   using entries_type = typename graph_type::entries_type;
@@ -82,7 +82,7 @@ int main() {
       if (row_map_h(numRows) != numNNZ) {
         std::ostringstream error_msg;
         error_msg << "error: row_map(numRows) != numNNZ, row_map_h(numRows)="
-        << row_map_h(numRows) << ", numNNZ=" << numNNZ;
+                  << row_map_h(numRows) << ", numNNZ=" << numNNZ;
         throw std::runtime_error(error_msg.str());
       }
 
@@ -120,14 +120,14 @@ int main() {
     graph_type myGraph(entries, row_map);
     matrix_type myMatrix("test matrix", numRows, values, myGraph);
     std::cout << "myMatrix has been created successfully:" << std::endl
-    << "  - numRows=" << myMatrix.numRows() << std::endl
-    << "  - numCols=" << myMatrix.numCols() << std::endl
-    << "  - numNNZ= " << myMatrix.nnz() << std::endl;
+              << "  - numRows=" << myMatrix.numRows() << std::endl
+              << "  - numCols=" << myMatrix.numCols() << std::endl
+              << "  - numNNZ= " << myMatrix.nnz() << std::endl;
     b_matrix_type blockMatrix(myMatrix, 2);
     std::cout << "blockMatrix has been created successfully:" << std::endl
-    << "  - numRows=" << blockMatrix.numRows() << std::endl
-    << "  - numCols=" << blockMatrix.numCols() << std::endl
-    << "  - numNNZ= " << blockMatrix.nnz() << std::endl;
+              << "  - numRows=" << blockMatrix.numRows() << std::endl
+              << "  - numCols=" << blockMatrix.numCols() << std::endl
+              << "  - numNNZ= " << blockMatrix.nnz() << std::endl;
   }
 
   Kokkos::finalize();

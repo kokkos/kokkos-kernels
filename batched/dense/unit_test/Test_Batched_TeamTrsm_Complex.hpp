@@ -14,7 +14,6 @@
 //
 //@HEADER
 
-
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
 TEST_F(TestCategory, batched_scalar_team_trsm_l_l_nt_u_dcomplex_dcomplex) {
   typedef ::Test::TeamTrsm::ParamTag<Side::Left, Uplo::Lower,

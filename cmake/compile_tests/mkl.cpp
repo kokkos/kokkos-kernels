@@ -15,7 +15,4 @@
 //@HEADER
 #include <mkl.h>
 
-int main(void) {
-  return 0;
-}
-
+int main(void) { return 0; }

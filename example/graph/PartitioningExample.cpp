@@ -30,8 +30,7 @@ using std::vector;
 
 //#include "../../src/sparse/impl/KokkosSparse_partitioning_impl.hpp"
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char* argv[]) {
   /*
     const int device_id   = 0;
 
@@ -43,78 +42,71 @@ int main(int argc, char *argv[])
     }
     */
 
-    //Generate a square 2D mesh in serial, with edges in both diagonals
-    const int xy = 31;
-    const int nnodes = (xy + 1) * (xy + 1);
-    vector<bool> adjMat(nnodes * nnodes, false);
-    //Number of nodes is (n+1)^2
-    for(int cellX = 0; cellX < xy; cellX++)
-    {
-      for(int cellY = 0; cellY < xy; cellY++)
-      {
-        int upLeft =    cellX     + (xy + 1) * cellY;
-        int upRight =   cellX + 1 + (xy + 1) * cellY;
-        int downLeft =  cellX     + (xy + 1) * (cellY + 1);
-        int downRight = cellX + 1 + (xy + 1) * (cellY + 1);
-        #define CONNECT(n1, n2) \
-          adjMat[n1 + n2 * nnodes] = true; \
-          adjMat[n2 + n1 * nnodes] = true;
-        //Form this pattern in each cell:
-        //
-        //    +------+
-        //    |\    /|
-        //    | \  / |
-        //    |  \/  |
-        //    |  /\  |
-        //    | /  \ |
-        //    |/    \|
-        //    +------+
-        //
-        CONNECT(upLeft, upRight);
-        CONNECT(upLeft, downLeft);
-        CONNECT(upLeft, downRight);
-        CONNECT(upRight, downRight);
-        CONNECT(downLeft, downRight);
-        CONNECT(downLeft, upRight);
-      }
+  // Generate a square 2D mesh in serial, with edges in both diagonals
+  const int xy     = 31;
+  const int nnodes = (xy + 1) * (xy + 1);
+  vector<bool> adjMat(nnodes * nnodes, false);
+  // Number of nodes is (n+1)^2
+  for (int cellX = 0; cellX < xy; cellX++) {
+    for (int cellY = 0; cellY < xy; cellY++) {
+      int upLeft    = cellX + (xy + 1) * cellY;
+      int upRight   = cellX + 1 + (xy + 1) * cellY;
+      int downLeft  = cellX + (xy + 1) * (cellY + 1);
+      int downRight = cellX + 1 + (xy + 1) * (cellY + 1);
+#define CONNECT(n1, n2)            \
+  adjMat[n1 + n2 * nnodes] = true; \
+  adjMat[n2 + n1 * nnodes] = true;
+      // Form this pattern in each cell:
+      //
+      //    +------+
+      //    |\    /|
+      //    | \  / |
+      //    |  \/  |
+      //    |  /\  |
+      //    | /  \ |
+      //    |/    \|
+      //    +------+
+      //
+      CONNECT(upLeft, upRight);
+      CONNECT(upLeft, downLeft);
+      CONNECT(upLeft, downRight);
+      CONNECT(upRight, downRight);
+      CONNECT(downLeft, downRight);
+      CONNECT(downLeft, upRight);
     }
-    
-    //Build a sparse (CRS) graph from the dense adjacency matrix
-    int numEdges = 0;
-    for(size_t i = 0; i < adjMat.size(); i++)
-      numEdges += (adjMat[i] ? 1 : 0);
+  }
 
-    /*
-    Kokkos::View<int*, Kokkos::HostSpace> rowmap("Rowmap", nnodes + 1);
-    Kokkos::View<int*, Kokkos::HostSpace> entries("Entries", numEdges);
-    int accum = 0;
-    for(int r = 0; r <= nnodes; r++)
-    {
-      rowmap(r) = accum;
-      if(r == nnodes)
-        break;
-      for(int c = 0; c < nnodes; c++)
-      {
-        if(adjMat[c + r * nnodes])
-          entries(accum++) = c;
-      }
-    }
-    */
+  // Build a sparse (CRS) graph from the dense adjacency matrix
+  int numEdges = 0;
+  for (size_t i = 0; i < adjMat.size(); i++) numEdges += (adjMat[i] ? 1 : 0);
 
-    //Dump the graph to a graphviz file
-    FILE* g = fopen("graph.dot", "w");
-    fprintf(g, "graph {\n");
-    for(int r = 0; r < nnodes; r++)
+  /*
+  Kokkos::View<int*, Kokkos::HostSpace> rowmap("Rowmap", nnodes + 1);
+  Kokkos::View<int*, Kokkos::HostSpace> entries("Entries", numEdges);
+  int accum = 0;
+  for(int r = 0; r <= nnodes; r++)
+  {
+    rowmap(r) = accum;
+    if(r == nnodes)
+      break;
+    for(int c = 0; c < nnodes; c++)
     {
-      for(int c = r; c < nnodes; c++)
-      {
-        if(adjMat[c + r * nnodes])
-          fprintf(g, "n%d -- n%d\n", r, c);
-      }
+      if(adjMat[c + r * nnodes])
+        entries(accum++) = c;
     }
-    fprintf(g, "}\n");
-    fclose(g);
-    //Kokkos::finalize();
-    return 0;
+  }
+  */
+
+  // Dump the graph to a graphviz file
+  FILE* g = fopen("graph.dot", "w");
+  fprintf(g, "graph {\n");
+  for (int r = 0; r < nnodes; r++) {
+    for (int c = r; c < nnodes; c++) {
+      if (adjMat[c + r * nnodes]) fprintf(g, "n%d -- n%d\n", r, c);
+    }
+  }
+  fprintf(g, "}\n");
+  fclose(g);
+  // Kokkos::finalize();
+  return 0;
 }
-

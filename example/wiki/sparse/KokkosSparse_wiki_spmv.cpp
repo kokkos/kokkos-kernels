@@ -66,7 +66,7 @@ int main() {
     // BCs in that direction, BC=0 means Neumann BC is applied,
     // BC=1 means Dirichlet BC is applied by zeroing out the row and putting
     // one on the diagonal.
-    Kokkos::View<Ordinal* [3], Kokkos::HostSpace> mat_structure(
+    Kokkos::View<Ordinal * [3], Kokkos::HostSpace> mat_structure(
         "Matrix Structure", 2);
     mat_structure(0, 0) = 10;  // Request 10 grid point in 'x' direction
     mat_structure(0, 1) = 0;   // Add BC to the left

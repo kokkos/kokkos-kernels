@@ -47,7 +47,7 @@ int main() {
     // In each row the first entry is the number of grid point in
     // that direction, the second and third entries are used to apply
     // BCs in that direction.
-    Kokkos::View<Ordinal* [3], Kokkos::HostSpace> mat_structure(
+    Kokkos::View<Ordinal * [3], Kokkos::HostSpace> mat_structure(
         "Matrix Structure", 2);
     mat_structure(0, 0) = 10;  // Request 10 grid point in 'x' direction
     mat_structure(0, 1) = 1;   // Add BC to the left
