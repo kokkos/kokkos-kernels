@@ -179,7 +179,11 @@ void spmv_mv_cusparse(const KokkosKernels::Experimental::Controls &controls,
   cusparseOperation_t opB =
       xIsLL ? CUSPARSE_OPERATION_NON_TRANSPOSE : CUSPARSE_OPERATION_TRANSPOSE;
 
+#if CUDA_VERSION < 12000
   const cusparseSpMMAlg_t alg = CUSPARSE_MM_ALG_DEFAULT;
+#else
+  const cusparseSpMMAlg_t alg = CUSPARSE_SPMM_ALG_DEFAULT;
+#endif
 
   // the precision of the SpMV
   const cudaDataType computeType =
