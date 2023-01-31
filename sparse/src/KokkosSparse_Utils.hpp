@@ -940,7 +940,7 @@ struct ColorChecker {
 /// \param num_rows num rows in input graph
 /// \param xadj     row pointers of the input graph
 /// \param adj      column indices of the input graphw
-/// \param v_colors
+/// \param v_colors The colors at each vertex in the graph.
 template <typename in_row_view_t, typename in_nnz_view_t,
           typename in_color_view_t, typename MyExecSpace>
 inline size_t kk_is_d1_coloring_valid(

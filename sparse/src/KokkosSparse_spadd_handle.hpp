@@ -77,8 +77,8 @@ class SPADDHandle {
 
  public:
   /// \brief sets the result nnz size.
-  /// \param a_pos_in
-  /// \param b_pos_in
+  /// \param a_pos_in The offset into a.
+  /// \param b_pos_in The offset into b.
   void set_a_b_pos(const nnz_lno_view_t& a_pos_in,
                    const nnz_lno_view_t& b_pos_in) {
     a_pos = a_pos_in;

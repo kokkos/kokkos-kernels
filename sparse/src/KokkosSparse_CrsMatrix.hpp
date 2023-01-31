@@ -532,7 +532,7 @@ class CrsMatrix {
   /// (by view, not by deep copy) and allocate the values view.
   ///
   /// \param label  [in] The sparse matrix's label.
-  /// \param graph_ [in]
+  /// \param graph_ [in] The graph for storing the rowmap and col ids.
   /// \param ncols  [in] The number of columns.
   template <typename InOrdinal, typename InLayout, typename InDevice,
             typename InMemTraits, typename InSizeType>
@@ -551,7 +551,7 @@ class CrsMatrix {
   ///
   /// \param ncols [in] The number of columns.
   /// \param vals [in/out] The entries.
-  /// \param graph_
+  /// \param graph_ The graph for storing the rowmap and col ids.
   template <typename InOrdinal, typename InLayout, typename InDevice,
             typename InMemTraits, typename InSizeType>
   CrsMatrix(const std::string&, const OrdinalType& ncols,

@@ -240,7 +240,7 @@ struct BsrRowViewConst {
   ///
   /// \param values [in] Array of the row's values.
   /// \param colidx [in] Array of the row's column indices.
-  /// \param blockDim
+  /// \param blockDim [in] The block dimensions.
   /// \param count [in] Number of entries in the row.
   /// \param start [in] Offset into values and colidx of the desired block-row
   /// start.
@@ -672,7 +672,7 @@ class BsrMatrix {
   /// \param ncols [in]  The number of columns.
   /// \param vals [in]   The entries.
   /// \param graph_ [in] The graph between the blocks.
-  /// \param blockDimIn [in]  The block size.
+  /// \param blockDimIn [in]  The block dimensions.
   BsrMatrix(const std::string& /*label*/, const OrdinalType& ncols,
             const values_type& vals, const staticcrsgraph_type& graph_,
             const OrdinalType& blockDimIn)
