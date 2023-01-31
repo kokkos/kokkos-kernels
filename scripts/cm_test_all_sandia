@@ -764,8 +764,6 @@ elif [ "$MACHINE" = "blake" ]; then
   fi
   SPACK_HOST_ARCH="+skx"
 elif [ "$MACHINE" = "solo" ]; then
-  ###MODULE_ENVIRONMENT="source /etc/profile.d/modules.sh"
-  ###eval "$MODULE_ENVIRONMENT"
   SKIP_HWLOC=True
   export SLURM_TASKS_PER_NODE=32
 
