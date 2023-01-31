@@ -114,7 +114,7 @@ class KrylovHandle {
     Kokkos::deep_copy(first_index, first_index_host);
     Kokkos::deep_copy(last_index, last_index_host);
 
-    // Default Classical GS
+    // Default modified GS
     ortho_strategy        = 1;
     scratch_pad_level     = 0;
     compute_last_residual = true;
