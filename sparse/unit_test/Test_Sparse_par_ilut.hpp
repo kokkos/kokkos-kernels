@@ -386,9 +386,6 @@ void run_test_par_ilut_precond() {
   // Allocate L and U CRS views as outputs
   RowMapType  L_row_map ("L_row_map", numRows + 1);
   RowMapType  U_row_map ("U_row_map", numRows + 1);
-  RowMapType  LU_row_map("LU_row_map", numRows + 1);
-  EntriesType LU_entries("LU_entries");
-  ValuesType  LU_values ("LU_values");
 
   // Initial L/U approximations for A
   par_ilut_symbolic(&kh, row_map, entries, L_row_map, U_row_map);
@@ -415,8 +412,8 @@ void run_test_par_ilut_precond() {
   Kokkos::View<scalar_t**, device>
     L_uncompressed("L_uncompressed", numRows, numRows),
     U_uncompressed("U_uncompressed", numRows, numRows);
-  decompress_matrix<scalar_t, lno_t, size_type, device>(L_row_map, L_entries, L_values, L_uncompressed);
-  decompress_matrix<scalar_t, lno_t, size_type, device>(U_row_map, U_entries, U_values, U_uncompressed);
+  decompress_matrix(L_row_map, L_entries, L_values, L_uncompressed);
+  decompress_matrix(U_row_map, U_entries, U_values, U_uncompressed);
 
   // Set initial vectors:
   ViewVectorType X("X", n);    // Solution and initial guess
