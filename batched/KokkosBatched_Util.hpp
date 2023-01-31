@@ -1,3 +1,18 @@
+//@HEADER
+// ************************************************************************
+//
+//                        Kokkos v. 4.0
+//       Copyright (2022) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
+//
+// Under the terms of Contract DE-NA0003525 with NTESS,
+// the U.S. Government retains certain rights in this software.
+//
+// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
+// See https://kokkos.org/LICENSE for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//@HEADER
 #ifndef __KOKKOSBATCHED_UTIL_HPP__
 #define __KOKKOSBATCHED_UTIL_HPP__
 
@@ -612,8 +627,7 @@ KOKKOS_INLINE_FUNCTION auto subview_wrapper(ViewType v, IdxType1 i1,
 }
 template <class ViewType, class IdxType1>
 KOKKOS_INLINE_FUNCTION auto subview_wrapper(ViewType v, IdxType1 i1,
-                                            Kokkos::Impl::ALL_t i2,
-                                            Kokkos::Impl::ALL_t i3,
+                                            Kokkos::ALL_t i2, Kokkos::ALL_t i3,
                                             const BatchLayout::Left &layout_tag,
                                             const Trans::Transpose) {
   auto sv_nt = subview_wrapper(v, i1, i3, i2, layout_tag);
@@ -645,7 +659,7 @@ KOKKOS_INLINE_FUNCTION auto subview_wrapper(
 }
 template <class ViewType, class IdxType1>
 KOKKOS_INLINE_FUNCTION auto subview_wrapper(
-    ViewType v, IdxType1 i1, Kokkos::Impl::ALL_t i2, Kokkos::Impl::ALL_t i3,
+    ViewType v, IdxType1 i1, Kokkos::ALL_t i2, Kokkos::ALL_t i3,
     const BatchLayout::Right &layout_tag, const Trans::Transpose &) {
   auto sv_nt = subview_wrapper(v, i1, i3, i2, layout_tag);
 

@@ -1,46 +1,18 @@
-/*
 //@HEADER
 // ************************************************************************
 //
-//                        Kokkos v. 3.0
-//       Copyright (2020) National Technology & Engineering
+//                        Kokkos v. 4.0
+//       Copyright (2022) National Technology & Engineering
 //               Solutions of Sandia, LLC (NTESS).
 //
 // Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
+// See https://kokkos.org/LICENSE for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
-//
-// ************************************************************************
 //@HEADER
-*/
 
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
@@ -407,6 +379,70 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth,
 
 template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
+void test_spgemm_symbolic(bool callSymbolicFirst, bool testEmpty) {
+  using crsMat_t       = CrsMatrix<scalar_t, lno_t, device, void, size_type>;
+  using graph_t        = typename crsMat_t::StaticCrsGraphType;
+  using values_t       = typename crsMat_t::values_type;
+  using entries_t      = typename graph_t::entries_type;
+  using rowmap_t       = typename graph_t::row_map_type::non_const_type;
+  using const_rowmap_t = typename graph_t::row_map_type;
+  using KernelHandle   = KokkosKernels::Experimental::KokkosKernelsHandle<
+      size_type, lno_t, scalar_t, typename device::execution_space,
+      typename device::memory_space, typename device::memory_space>;
+  // A is m*n, B is n*k, C is m*k
+  int m = 100;
+  int n = 300;
+  int k = 200;
+  crsMat_t A, B;
+  // Target 1000 total nonzeros in both A and B.
+  if (testEmpty) {
+    // Create A,B with the same dimensions, but zero entries
+    values_t emptyValues;
+    entries_t emptyEntries;
+    // Initialize these to 0
+    rowmap_t A_rowmap("A rowmap", m + 1);
+    rowmap_t B_rowmap("B rowmap", n + 1);
+    A = crsMat_t("A", m, n, 0, emptyValues, A_rowmap, emptyEntries);
+    B = crsMat_t("B", n, k, 0, emptyValues, B_rowmap, emptyEntries);
+  } else {
+    size_type nnz = 1000;
+    A   = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(m, n, nnz, 10,
+                                                                50);
+    nnz = 1000;
+    B   = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(n, k, nnz, 10,
+                                                                50);
+    KokkosSparse::sort_crs_matrix(A);
+    KokkosSparse::sort_crs_matrix(B);
+  }
+  // Call reference impl to get complete product
+  crsMat_t C_reference;
+  Test::run_spgemm<crsMat_t, device>(A, B, SPGEMM_DEBUG, C_reference, false);
+  // Now call just symbolic, and specifically request that rowptrs be populated
+  // Make sure this never depends on C_rowmap being initialized
+  rowmap_t C_rowmap(Kokkos::view_alloc(Kokkos::WithoutInitializing, "rowmapC"),
+                    m + 1);
+  Kokkos::deep_copy(C_rowmap, size_type(123));
+  KernelHandle kh;
+  kh.create_spgemm_handle();
+  if (callSymbolicFirst) {
+    KokkosSparse::Experimental::spgemm_symbolic(
+        &kh, m, n, k, A.graph.row_map, A.graph.entries, false, B.graph.row_map,
+        B.graph.entries, false, C_rowmap);
+  }
+  KokkosSparse::Experimental::spgemm_symbolic(
+      &kh, m, n, k, A.graph.row_map, A.graph.entries, false, B.graph.row_map,
+      B.graph.entries, false, C_rowmap, true);
+  kh.destroy_spgemm_handle();
+  bool isCorrect = KokkosKernels::Impl::kk_is_identical_view<
+      const_rowmap_t, const_rowmap_t, size_type,
+      typename device::execution_space>(C_rowmap, C_reference.graph.row_map, 0);
+  EXPECT_TRUE(isCorrect)
+      << " spgemm_symbolic produced incorrect rowptrs - callSymbolicFirst = "
+      << callSymbolicFirst << ", empty A/B = " << testEmpty;
+}
+
+template <typename scalar_t, typename lno_t, typename size_type,
+          typename device>
 void test_issue402() {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
   {
@@ -502,6 +538,10 @@ void test_issue402() {
     test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 0, 0, 10, 10, true);  \
     test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 10, 0, 0, 0, false);  \
     test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 10, 0, 0, 0, true);   \
+    test_spgemm_symbolic<SCALAR, ORDINAL, OFFSET, DEVICE>(true, true);         \
+    test_spgemm_symbolic<SCALAR, ORDINAL, OFFSET, DEVICE>(false, true);        \
+    test_spgemm_symbolic<SCALAR, ORDINAL, OFFSET, DEVICE>(true, false);        \
+    test_spgemm_symbolic<SCALAR, ORDINAL, OFFSET, DEVICE>(false, false);       \
     test_issue402<SCALAR, ORDINAL, OFFSET, DEVICE>();                          \
   }
 

@@ -1,3 +1,18 @@
+//@HEADER
+// ************************************************************************
+//
+//                        Kokkos v. 4.0
+//       Copyright (2022) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
+//
+// Under the terms of Contract DE-NA0003525 with NTESS,
+// the U.S. Government retains certain rights in this software.
+//
+// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
+// See https://kokkos.org/LICENSE for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//@HEADER
 #include <KokkosBlas1_rotmg.hpp>
 
 namespace Test {
@@ -13,7 +28,8 @@ void test_rotmg_impl(View0& d1, View0& d2, View0& x1, View0& y1, PView& param,
 
   const scalar_type eps = Kokkos::ArithTraits<scalar_type>::eps();
   const scalar_type tol =
-#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
+#if defined(KOKKOSKERNELS_ENABLE_TPL_BLAS) || \
+    defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
       100 *
       eps;  // Guessing MKL implements sin/cos differently so need larger tol
 #else
