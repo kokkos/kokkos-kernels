@@ -43,6 +43,7 @@ jobs:
           -DKokkos_ENABLE_COMPILER_WARNINGS=ON \
           -DKokkos_ENABLE_DEPRECATED_CODE_3=OFF \
           -DKokkos_ENABLE_TESTS=OFF \
+	  -DKokkos_ENABLE_DEPRECATED_CODE_4=OFF \
           ..
 
       - name: build_and_install_kokkos
