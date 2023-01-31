@@ -14,7 +14,7 @@
 //
 //@HEADER
 
-/// @file KokkosKernels_MatrixPrec.hpp
+/// @file KokkosSparse_MatrixPrec.hpp
 
 #ifndef KK_MATRIX_PREC_HPP
 #define KK_MATRIX_PREC_HPP

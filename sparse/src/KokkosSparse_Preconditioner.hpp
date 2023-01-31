@@ -14,7 +14,7 @@
 //
 //@HEADER
 
-/// @file KokkosKernels_Preconditioner.hpp
+/// @file KokkosSparse_Preconditioner.hpp
 
 #ifndef KK_PREC_HPP
 #define KK_PREC_HPP
