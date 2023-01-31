@@ -409,7 +409,7 @@ class KrylovHandle {
   /// \brief set_norm
   ///   Store the norm of one of the system at one of the iteration
   ///
-  /// \param batchedteam_id [in]: Team ID
+  /// \param team_id [in]: Team ID
   /// \param batched_id [in]: Local batched ID (local ID within the team)
   /// \param iteration_id [in]: Iteration ID
   /// \param norm_i [in]: Norm to store
@@ -436,9 +436,8 @@ class KrylovHandle {
   /// \brief set_last_norm
   ///   Store the last norm of one system
   ///
-  /// \param batchedteam_id [in]: Team ID
+  /// \param team_id [in]: Team ID
   /// \param batched_id [in]: Local batched ID (local ID within the team)
-  /// \param batched_id [in]: Global batched ID
   /// \param norm_i [in]: Norm to store
 
   KOKKOS_INLINE_FUNCTION
@@ -461,7 +460,7 @@ class KrylovHandle {
   /// \brief set_iteration
   ///   Store the number of iteration after convergence for one system
   ///
-  /// \param batchedteam_id [in]: Team ID
+  /// \param team_id [in]: Team ID
   /// \param batched_id [in]: Local batched ID (local ID within the team)
   /// \param iteration_id [in]: Iteration ID
 

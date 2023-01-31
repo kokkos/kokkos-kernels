@@ -56,44 +56,44 @@ enum GEMM_KOKKOS_BATCHED_ALGOS : int {
 // clang-format off
 /// \brief Handle for selecting runtime behavior of the BatchedGemm interface.
 ///
-/// \var kernelAlgoType  Specifies which algorithm to use for invocation (default, SQUARE).
+/// \param kernelAlgoType  Specifies which algorithm to use for invocation (default, SQUARE).
 ///
-///                    Specifies whether to select optimal invocations based on inputs and
-///                    heuristics:
-///                      SQUARE select invocations based on square matrix heuristics where M=N
-///                      TALL   select invocations based on tall   matrix heuristics where M>N
-///                      WIDE   select invocations based on wide   matrix heuristics where M<N
-///
-///                    Specifies which cmake-enabled TPL algorithm to invoke:
-///                      ARMPL    Invoke the ArmPL TPL interface  (Currently UNSUPPORTED)
-///                      MKL      Invoke the MKL TPL interface    (Currently UNSUPPORTED)
-///                      CUBLAS   Invoke the CuBLAS TPL interface (Currently UNSUPPORTED)
-///                      MAGMA    Invoke the Magma TPL interface  (Currently UNSUPPORTED)
-///                    Note: Requires that input views for A, B, and C reside on either host
-///                          or device depending on the TPL selected.
-///                    Note: If the user selects a TPL, an error will be thrown if:
-///                            1. The TPL is not enabled via cmake
-///                            2. The input views do not reside on the host/device as needed
-///
-///                    Specifies which kokkos-kernels (KK) algorithm to invoke:
-///                      KK_SERIAL       Invoke SerialGemm     via RangePolicy(BatchSz)
-///                      KK_TEAM         Invoke TeamGemm       via TeamPolicy(BatchSz)
-///                      KK_TEAMVECTOR   Invoke TeamVectorGemm via TeamPolicy(BatchSz)
-///                      KK_SERIALSIMD   Invoke SerialGemm     via TeamPolicy(BatchSz)
-///                      KK_TEAMSIMD     Invoke TeamGemm       via TeamPolicy(BatchSz)
-///                      KK_SERIAL_RANK0 Invoke SerialGemm     via RangePolicy(BatchSz*N*M)
-///                                      Each thread computes one element of C.
-///                      KK_SERIAL_SHMEM Invoke SerialGemm     via TeamPolicy(BatchSz)
-///                                      Copies A and B to shared memory before GEMM.
-///                                      Each vector lane solves one element of C via SerialGemm.
-///                      KK_DBLBUF       Solve GEMM            via TeamPolicy(BatchSz*TILES)
-///                                      Uses a tuned functor with tiling and double buffering
-///                                      via shared memory and register buffers.
-///                                      KK_DBLBUF generally performs better on GPUs when M, N >= 24.
-/// \var teamSz        Specifies the team size that will affect any KK algorithm which uses
+///                        Specifies whether to select optimal invocations based on inputs and
+///                        heuristics:
+///                          SQUARE select invocations based on square matrix heuristics where M=N
+///                          TALL   select invocations based on tall   matrix heuristics where M>N
+///                          WIDE   select invocations based on wide   matrix heuristics where M<N
+///    
+///                        Specifies which cmake-enabled TPL algorithm to invoke:
+///                          ARMPL    Invoke the ArmPL TPL interface  (Currently UNSUPPORTED)
+///                          MKL      Invoke the MKL TPL interface    (Currently UNSUPPORTED)
+///                          CUBLAS   Invoke the CuBLAS TPL interface (Currently UNSUPPORTED)
+///                          MAGMA    Invoke the Magma TPL interface  (Currently UNSUPPORTED)
+///                        Note: Requires that input views for A, B, and C reside on either host
+///                              or device depending on the TPL selected.
+///                        Note: If the user selects a TPL, an error will be thrown if:
+///                                1. The TPL is not enabled via cmake
+///                                2. The input views do not reside on the host/device as needed
+///    
+///                        Specifies which kokkos-kernels (KK) algorithm to invoke:
+///                          KK_SERIAL       Invoke SerialGemm     via RangePolicy(BatchSz)
+///                          KK_TEAM         Invoke TeamGemm       via TeamPolicy(BatchSz)
+///                          KK_TEAMVECTOR   Invoke TeamVectorGemm via TeamPolicy(BatchSz)
+///                          KK_SERIALSIMD   Invoke SerialGemm     via TeamPolicy(BatchSz)
+///                          KK_TEAMSIMD     Invoke TeamGemm       via TeamPolicy(BatchSz)
+///                          KK_SERIAL_RANK0 Invoke SerialGemm     via RangePolicy(BatchSz*N*M)
+///                                          Each thread computes one element of C.
+///                          KK_SERIAL_SHMEM Invoke SerialGemm     via TeamPolicy(BatchSz)
+///                                          Copies A and B to shared memory before GEMM.
+///                                          Each vector lane solves one element of C via SerialGemm.
+///                          KK_DBLBUF       Solve GEMM            via TeamPolicy(BatchSz*TILES)
+///                                          Uses a tuned functor with tiling and double buffering
+///                                          via shared memory and register buffers.
+///                                          KK_DBLBUF generally performs better on GPUs when M, N >= 24.
+/// \param teamSz      Specifies the team size that will affect any KK algorithm which uses
 ///                    TeamPolicy (default, Kokkos::AUTO).
 ///                    Note: Only applied if useAlgo_type == KK_*
-/// \var vecLen        Specifies the vector length that will affect any KK algorithm which
+/// \param vecLen      Specifies the vector length that will affect any KK algorithm which
 ///                    uses TeamPolicy and Kokkos::ThreadVectorRange or Kokkos::TeamVectorRange
 ///                    (default, Kokkos::AUTO).
 ///                    Note: Only applied if useAlgo_type == KK_*

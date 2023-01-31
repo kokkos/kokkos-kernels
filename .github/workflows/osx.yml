@@ -72,6 +72,7 @@ jobs:
           -DKokkos_ENABLE_COMPILER_WARNINGS=ON \
           -DKokkos_ENABLE_DEBUG_BOUNDS_CHECK:BOOL=${{ matrix.debug_bounds_check }} \
           -DKokkos_ENABLE_DEPRECATED_CODE_3=OFF \
+          -DKokkos_ENABLE_TESTS=OFF \
           -DKokkos_ENABLE_DEPRECATED_CODE_4=OFF \
           -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} \
           -DCMAKE_INSTALL_PREFIX=$PWD/../install \
