@@ -1,46 +1,18 @@
-/*
 //@HEADER
 // ************************************************************************
 //
-//                        Kokkos v. 3.0
-//       Copyright (2020) National Technology & Engineering
+//                        Kokkos v. 4.0
+//       Copyright (2022) National Technology & Engineering
 //               Solutions of Sandia, LLC (NTESS).
 //
 // Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
+// See https://kokkos.org/LICENSE for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
-//
-// ************************************************************************
 //@HEADER
-*/
 
 #ifndef _KOKKOSKERNELSUTILSEXECSPACEUTILS_HPP
 #define _KOKKOSKERNELSUTILSEXECSPACEUTILS_HPP
@@ -50,7 +22,7 @@
 
 #if defined(KOKKOS_ENABLE_SYCL) && defined(KOKKOS_ARCH_INTEL_GPU)
 #include <level_zero/zes_api.h>
-#include <CL/sycl/backend/level_zero.hpp>
+#include <sycl/ext/oneapi/backend/level_zero.hpp>
 #endif
 
 namespace KokkosKernels {
@@ -225,25 +197,29 @@ inline void kk_get_free_total_memory<Kokkos::Experimental::SYCLDeviceUSMSpace>(
   uint32_t n_memory_modules = 0;
   zesDeviceEnumMemoryModules(level_zero_handle, &n_memory_modules, nullptr);
 
-  if (n_memory_modules != 1) {
-    std::ostringstream oss;
-    oss << "Error: number of memory modules for the SYCL backend: "
-        << n_memory_modules
-        << ". We only support querying free/total memory if exactly one memory "
-           "module was found. Make sure that ZES_ENABLE_SYSMAN=1 is set at run "
-           "time if no memeory modules were found!";
-    throw std::runtime_error(oss.str());
+  if (n_memory_modules == 0) {
+    throw std::runtime_error(
+        "Error: No memory modules for the SYCL backend found. Make sure that "
+        "ZES_ENABLE_SYSMAN=1 is set at run time!");
   }
 
-  zes_mem_handle_t memory_module_handle;
+  total_mem = 0;
+  free_mem  = 0;
+  std::vector<zes_mem_handle_t> mem_handles(n_memory_modules);
   zesDeviceEnumMemoryModules(level_zero_handle, &n_memory_modules,
-                             &memory_module_handle);
-  zes_mem_state_t memory_properties{
-      ZES_STRUCTURE_TYPE_MEM_PROPERTIES,
-  };
-  zesMemoryGetState(memory_module_handle, &memory_properties);
-  total_mem = memory_properties.size;
-  free_mem  = memory_properties.free;
+                             mem_handles.data());
+
+  for (auto& mem_handle : mem_handles) {
+    zes_mem_properties_t memory_properties{ZES_STRUCTURE_TYPE_MEM_PROPERTIES};
+    zesMemoryGetProperties(mem_handle, &memory_properties);
+    // Only report HBM which zeMemAllocDevice allocates from.
+    if (memory_properties.type != ZES_MEM_TYPE_HBM) continue;
+
+    zes_mem_state_t memory_states{ZES_STRUCTURE_TYPE_MEM_STATE};
+    zesMemoryGetState(mem_handle, &memory_states);
+    total_mem += memory_states.size;
+    free_mem += memory_states.free;
+  }
 }
 
 template <>
