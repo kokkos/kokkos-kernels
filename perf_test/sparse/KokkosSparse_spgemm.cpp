@@ -27,10 +27,14 @@ void print_options() {
       << "\t[Required] INPUT MATRIX: '--amtx [left_hand_side.mtx]' -- for C=AxA"
       << std::endl;
 
-  std::cerr << "\t[Optional] BACKEND: '--threads [numThreads]' | '--openmp "
-               "[numThreads]' | '--cuda [cudaDeviceIndex]' | '--hip "
-               "[hipDeviceIndex]' --> if none are specified, Serial is used "
-               "(if enabled)"
+  std::cerr << "\t[Optional] BACKEND:\n"
+               "\t\t'--threads [numThreads]' |\n"
+               "\t\t'--openmp [numThreads]' |\n"
+               "\t\t'--cuda [deviceIndex]' |\n"
+               "\t\t'--hip [deviceIndex]' |\n"
+               "\t\t'--sycl [deviceIndex]' |\n"
+               "\t\t'--openmptarget [deviceIndex]'\n"
+               "\t\tIf none are specified, Serial is used (if enabled)"
             << std::endl;
   std::cerr
       << "\t[Optional] '--algorithm "
@@ -54,10 +58,15 @@ void print_options() {
          "HBM. A and B will be stored DDR. To use this enable multilevel "
          "memory in Kokkos, check generate_makefile.sh"
       << std::endl;
-  std::cerr << "\tLoop scheduling: '--dynamic': Use this for dynamic "
-               "scheduling of the loops. (Better performance most of the time)"
+  std::cerr << "\t[Optional] '--dynamic': Use this for dynamic "
+               "loop scheduling. (Better performance most of the time)"
             << std::endl;
-  std::cerr << "\tVerbose Output: '--verbose'" << std::endl;
+  std::cerr << "\t[Optional] '--verbose': detailed output about SpGEMM and the "
+               "output matrix"
+            << std::endl;
+  std::cerr << "\t[Optional] '--checkoutput': verify result against serial "
+               "reference implementation"
+            << std::endl;
 }
 
 static char* getNextArg(int& i, int argc, char** argv) {
@@ -80,6 +89,10 @@ int parse_inputs(KokkosKernels::Experiment::Parameters& params, int argc,
       params.use_cuda = atoi(getNextArg(i, argc, argv)) + 1;
     } else if (0 == Test::string_compare_no_case(argv[i], "--hip")) {
       params.use_hip = atoi(getNextArg(i, argc, argv)) + 1;
+    } else if (0 == Test::string_compare_no_case(argv[i], "--sycl")) {
+      params.use_sycl = atoi(getNextArg(i, argc, argv)) + 1;
+    } else if (0 == Test::string_compare_no_case(argv[i], "--openmptarget")) {
+      params.use_openmptarget = atoi(getNextArg(i, argc, argv)) + 1;
     } else if (0 == Test::string_compare_no_case(argv[i], "--repeat")) {
       params.repeat = atoi(getNextArg(i, argc, argv));
     } else if (0 == Test::string_compare_no_case(argv[i], "--hashscale")) {
@@ -224,8 +237,11 @@ int parse_inputs(KokkosKernels::Experiment::Parameters& params, int argc,
         return 1;
       }
     } else {
-      std::cerr << "Unrecognized command line argument #" << i << ": "
-                << argv[i] << std::endl;
+      if (Test::string_compare_no_case(argv[i], "--help") &&
+          Test::string_compare_no_case(argv[i], "-h")) {
+        std::cerr << "Unrecognized command line argument #" << i << ": "
+                  << argv[i] << std::endl;
+      }
       print_options();
       return 1;
     }
@@ -261,6 +277,8 @@ int main(int argc, char** argv) {
                          .set_device_id(device_id));
   Kokkos::print_configuration(std::cout);
 
+  bool ran = false;
+
 #if defined(KOKKOS_ENABLE_OPENMP)
 
   if (params.use_openmp) {
@@ -273,6 +291,7 @@ int main(int argc, char** argv) {
         size_type, lno_t, scalar_t, Kokkos::OpenMP,
         Kokkos::OpenMP::memory_space, Kokkos::OpenMP::memory_space>(params);
 #endif
+    ran = true;
   }
 #endif
 
@@ -288,14 +307,36 @@ int main(int argc, char** argv) {
         Kokkos::Cuda::memory_space>(params);
 
 #endif
+    ran = true;
   }
 #endif
 
 #if defined(KOKKOS_ENABLE_HIP)
   if (params.use_hip) {
     KokkosKernels::Experiment::run_multi_mem_spgemm<
-        size_type, lno_t, scalar_t, Kokkos::Experimental::HIP,
-        Kokkos::Experimental::HIPSpace, Kokkos::Experimental::HIPSpace>(params);
+        size_type, lno_t, scalar_t, Kokkos::HIP, Kokkos::HIPSpace,
+        Kokkos::HIPSpace>(params);
+    ran = true;
+  }
+#endif
+
+#if defined(KOKKOS_ENABLE_SYCL)
+  if (params.use_sycl) {
+    KokkosKernels::Experiment::run_multi_mem_spgemm<
+        size_type, lno_t, scalar_t, Kokkos::Experimental::SYCL,
+        Kokkos::Experimental::SYCLDeviceUSMSpace,
+        Kokkos::Experimental::SYCLDeviceUSMSpace>(params);
+    ran = true;
+  }
+#endif
+
+#if defined(KOKKOS_ENABLE_OPENMPTARGET)
+  if (params.use_openmptarget) {
+    KokkosKernels::Experiment::run_multi_mem_spgemm<
+        size_type, lno_t, scalar_t, Kokkos::Experimental::OpenMPTarget,
+        Kokkos::Experimental::OpenMPTargetSpace,
+        Kokkos::Experimental::OpenMPTargetSpace>(params);
+    ran = true;
   }
 #endif
 
@@ -306,13 +347,14 @@ int main(int argc, char** argv) {
     KokkosKernels::Experiment::run_multi_mem_spgemm<
         size_type, lno_t, scalar_t, Kokkos::Threads, Kokkos::HostSpace,
         Kokkos::HostSpace>(params);
+    ran = true;
   }
 #endif
 
 #if defined(KOKKOS_ENABLE_SERIAL)
   // If only serial is enabled (or no other device was specified), run with
   // serial
-  if (!params.use_openmp && !params.use_cuda && !params.use_threads) {
+  if (!ran) {
     KokkosKernels::Experiment::run_multi_mem_spgemm<
         size_type, lno_t, scalar_t, Kokkos::Serial, Kokkos::HostSpace,
         Kokkos::HostSpace>(params);

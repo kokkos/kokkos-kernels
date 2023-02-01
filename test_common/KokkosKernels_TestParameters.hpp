@@ -45,6 +45,8 @@ struct Parameters {
   int use_openmp;
   int use_cuda;
   int use_hip;
+  int use_sycl;
+  int use_openmptarget;
   int use_serial;
   int a_mem_space, b_mem_space, c_mem_space, work_mem_space;
 

@@ -17,6 +17,8 @@
 #include "KokkosSparse_spgemm.hpp"
 #include "KokkosKernels_TestParameters.hpp"
 #include "KokkosSparse_SortCrs.hpp"
+#include "KokkosBlas1_nrminf.hpp"
+#include "KokkosBlas1_axpby.hpp"
 
 #define TRANPOSEFIRST false
 #define TRANPOSESECOND false
@@ -25,58 +27,65 @@ namespace KokkosKernels {
 
 namespace Experiment {
 template <typename crsMat_t, typename device>
-bool is_same_matrix(crsMat_t output_mat1, crsMat_t output_mat2) {
+bool is_same_matrix(crsMat_t output_mat_actual, crsMat_t output_mat_reference) {
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type lno_view_t;
   typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
 
-  size_t nrows1    = output_mat1.graph.row_map.extent(0);
-  size_t nentries1 = output_mat1.graph.entries.extent(0);
-  size_t nvals1    = output_mat1.values.extent(0);
+  size_t nrows1    = output_mat_actual.graph.row_map.extent(0);
+  size_t ncols1    = output_mat_actual.graph.row_map.extent(0);
+  size_t nentries1 = output_mat_actual.graph.entries.extent(0);
+  size_t nvals1    = output_mat_actual.values.extent(0);
 
-  size_t nrows2    = output_mat2.graph.row_map.extent(0);
-  size_t nentries2 = output_mat2.graph.entries.extent(0);
-  size_t nvals2    = output_mat2.values.extent(0);
+  size_t nrows2    = output_mat_reference.graph.row_map.extent(0);
+  size_t ncols2    = output_mat_reference.graph.row_map.extent(0);
+  size_t nentries2 = output_mat_reference.graph.entries.extent(0);
+  size_t nvals2    = output_mat_reference.values.extent(0);
 
-  KokkosSparse::sort_crs_matrix(output_mat1);
-
-  if (nrows1 != nrows2) {
-    std::cerr << "row count is different" << std::endl;
+  if (nrows1 != nrows2 || ncols1 != ncols2) {
+    std::cerr << "Wrong dimensions: is " << nrows1 << 'x' << ncols1
+              << " but should be " << nrows2 << 'x' << ncols2 << '\n';
     return false;
   }
   if (nentries1 != nentries2) {
-    std::cerr << "nentries2 is different" << std::endl;
+    std::cerr << "Wrong number of entries: " << nentries1
+              << ", but should have " << nentries2 << '\n';
     return false;
   }
   if (nvals1 != nvals2) {
-    std::cerr << "nvals1 is different" << std::endl;
+    std::cerr << "Wrong number of values: " << nvals1 << ", but should have "
+              << nvals2 << '\n';
     return false;
   }
-
-  KokkosSparse::sort_crs_matrix(output_mat2);
 
   bool is_identical = true;
   is_identical      = KokkosKernels::Impl::kk_is_identical_view<
       typename graph_t::row_map_type, typename graph_t::row_map_type,
       typename lno_view_t::value_type, typename device::execution_space>(
-      output_mat1.graph.row_map, output_mat2.graph.row_map, 0);
+      output_mat_actual.graph.row_map, output_mat_reference.graph.row_map, 0);
   if (!is_identical) {
-    std::cerr << "rowmaps differ" << std::endl;
+    std::cerr << "Wrong rowmap:\n";
+    KokkosKernels::Impl::print_1Dview(std::cerr,
+                                      output_mat_actual.graph.row_map);
+    std::cerr << "but should be:\n";
+    KokkosKernels::Impl::print_1Dview(std::cerr,
+                                      output_mat_reference.graph.row_map);
     return false;
   }
 
   is_identical = KokkosKernels::Impl::kk_is_identical_view<
       lno_nnz_view_t, lno_nnz_view_t, typename lno_nnz_view_t::value_type,
-      typename device::execution_space>(output_mat1.graph.entries,
-                                        output_mat2.graph.entries, 0);
+      typename device::execution_space>(output_mat_actual.graph.entries,
+                                        output_mat_reference.graph.entries, 0);
   if (!is_identical) {
     for (size_t i = 0; i < nrows1; ++i) {
-      size_t rb      = output_mat1.graph.row_map(i);
-      size_t re      = output_mat1.graph.row_map(i + 1);
+      size_t rb      = output_mat_actual.graph.row_map(i);
+      size_t re      = output_mat_actual.graph.row_map(i + 1);
       bool incorrect = false;
       for (size_t j = rb; j < re; ++j) {
-        if (output_mat1.graph.entries(j) != output_mat2.graph.entries(j)) {
+        if (output_mat_actual.graph.entries(j) !=
+            output_mat_reference.graph.entries(j)) {
           incorrect = true;
           break;
         }
@@ -84,23 +93,27 @@ bool is_same_matrix(crsMat_t output_mat1, crsMat_t output_mat2) {
       if (incorrect) {
         for (size_t j = rb; j < re; ++j) {
           std::cerr << "row:" << i << " j:" << j
-                    << " h_ent1(j):" << output_mat1.graph.entries(j)
-                    << " h_ent2(j):" << output_mat2.graph.entries(j)
+                    << " h_ent1(j):" << output_mat_actual.graph.entries(j)
+                    << " h_ent2(j):" << output_mat_reference.graph.entries(j)
                     << " rb:" << rb << " re:" << re << std::endl;
         }
       }
     }
-    std::cerr << "entries differ" << std::endl;
+    std::cerr << "Wrong entries, see above." << std::endl;
     return false;
   }
 
-  is_identical = KokkosKernels::Impl::kk_is_identical_view<
-      scalar_view_t, scalar_view_t, typename scalar_view_t::value_type,
-      typename device::execution_space>(output_mat1.values, output_mat2.values,
-                                        0.000001);
-  if (!is_identical) {
-    std::cerr << "Incorret values" << std::endl;
-  }
+  scalar_view_t valueDiff(
+      Kokkos::view_alloc(Kokkos::WithoutInitializing, "spgemm values diff"),
+      output_mat_actual.values.extent(0));
+  Kokkos::deep_copy(valueDiff, output_mat_actual.values);
+  KokkosBlas::axpy(-1.0, output_mat_reference.values, valueDiff);
+  auto maxDiff = KokkosBlas::nrminf(valueDiff);
+
+  std::cout
+      << "Absolute maximum difference between actual and reference C values: "
+      << maxDiff << '\n';
+
   return true;
 }
 
@@ -288,10 +301,10 @@ crsMat_t3 run_experiment(crsMat_t crsMat, crsMat_t2 crsMat2,
     bool is_identical =
         is_same_matrix<crsMat_t3, device_t>(Ccrsmat_result, Ccrsmat_ref);
     if (!is_identical) {
-      std::cerr << "Result differs. If values are differing, might be floating "
-                   "point order error."
-                << std::endl;
+      std::cerr << "SpGEMM result differs with reference implementation.\n";
       exit(1);
+    } else {
+      std::cerr << "SpGEMM result matches reference implementation.\n";
     }
   }
   return Ccrsmat_result;
