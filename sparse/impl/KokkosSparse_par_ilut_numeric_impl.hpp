@@ -331,11 +331,19 @@ struct IlutWrap {
             const auto out_val = lpu_col == col_idx ? lpu_val : r_val / diag;
             // store output entries
             if (row_idx >= col_idx) {
+              if (l_new_nnz >= L_new_row_map(row_idx+1)) {
+                throw std::runtime_error(std::string("Overflowed L_new in row ") + std::to_string(row_idx) +
+                                         std::string(", is your A matrix sorted?"));
+              }
               L_new_entries(l_new_nnz) = col_idx;
               L_new_values(l_new_nnz)  = row_idx == col_idx ? 1. : out_val;
               ++l_new_nnz;
             }
             if (row_idx <= col_idx) {
+              if (u_new_nnz >= U_new_row_map(row_idx+1)) {
+                throw std::runtime_error(std::string("Overflowed U_new in row ") + std::to_string(row_idx) +
+                                         std::string(", is your A matrix sorted?"));
+              }
               U_new_entries(u_new_nnz) = col_idx;
               U_new_values(u_new_nnz)  = out_val;
               ++u_new_nnz;

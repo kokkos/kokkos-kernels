@@ -27,6 +27,7 @@
 #include "KokkosSparse_par_ilut.hpp"
 #include "KokkosSparse_gmres.hpp"
 #include "KokkosSparse_LUPrec.hpp"
+#include "KokkosSparse_SortCrs.hpp"
 
 #include <gtest/gtest.h>
 
@@ -339,6 +340,8 @@ void run_test_par_ilut_precond() {
       sp_matrix_type>(numRows, numCols, nnz, 0, lno_t(0.01 * numRows),
                       diagDominance);
 
+  KokkosSparse::sort_crs_matrix(A);
+
   // Make kernel handles
   KernelHandle kh;
   kh.create_gmres_handle(m, tol);
@@ -372,11 +375,11 @@ void run_test_par_ilut_precond() {
 
   par_ilut_numeric(&kh, row_map, entries, values, L_row_map, L_entries,
                    L_values, U_row_map, U_entries, U_values,
-#ifdef KOKKOS_ENABLE_SERIAL
-                   true /*deterministic*/
-#else
-                   false /*cannot ask for determinism*/
-#endif
+// #ifdef KOKKOS_ENABLE_SERIAL
+                    true /*deterministic*/
+// #else
+//                   false /*problem is too big for determinism?*/
+// #endif
   );
 
   // Convert L, U parILUT outputs to uncompressed 2d views as required
