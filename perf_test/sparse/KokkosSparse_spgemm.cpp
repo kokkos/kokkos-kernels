@@ -269,7 +269,7 @@ int main(int argc, char** argv) {
   }
 
   const int num_threads = std::max(params.use_openmp, params.use_threads);
-  int device_id;
+  int device_id         = -1;
   if (params.use_cuda)
     device_id = params.use_cuda - 1;
   else if (params.use_hip)
