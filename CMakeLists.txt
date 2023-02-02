@@ -66,7 +66,7 @@ IF (NOT KOKKOSKERNELS_HAS_TRILINOS)
           "ENABLE_PERFTESTS"
           ON
           BOOL
-          "Whether to build performance tests. Default: OFF"
+          "Whether to build performance tests. Default: ON"
   )
   KOKKOSKERNELS_ADD_OPTION(
           "ENABLE_TESTS_AND_PERFSUITE"
@@ -383,9 +383,22 @@ ELSE()
     KOKKOSKERNELS_ADD_TEST_DIRECTORIES(sparse/unit_test)
   ENDIF()
   IF (KokkosKernels_ENABLE_ALL_COMPONENTS)
-    KOKKOSKERNELS_ADD_TEST_DIRECTORIES(perf_test)
-    KOKKOSKERNELS_ADD_EXAMPLE_DIRECTORIES(example)
+    IF (KokkosKernels_ENABLE_PERFTESTS)
+      MESSAGE(STATUS "Enabling perf tests.")
+      KOKKOSKERNELS_ADD_TEST_DIRECTORIES(perf_test)
+    ENDIF ()
+    IF (KokkosKernels_ENABLE_EXAMPLES)
+      MESSAGE(STATUS "Enabling examples.")
+      KOKKOSKERNELS_ADD_EXAMPLE_DIRECTORIES(example)
+    ENDIF ()
   ENDIF()
+
+  IF (NOT KokkosKernels_ENABLE_ALL_COMPONENTS AND KokkosKernels_ENABLE_PERFTESTS)
+    MESSAGE(STATUS "Could not enable perf tests because KokkosKernels_ENABLE_ALL_COMPONENTS=OFF")
+  ENDIF ()
+  IF (NOT KokkosKernels_ENABLE_ALL_COMPONENTS AND KokkosKernels_ENABLE_EXAMPLES)
+    MESSAGE(STATUS "Could not enable examples because KokkosKernels_ENABLE_ALL_COMPONENTS=OFF")
+  ENDIF ()
 
   KOKKOSKERNELS_PACKAGE_POSTPROCESS()
   IF (KokkosKernels_ENABLE_DOCS)
