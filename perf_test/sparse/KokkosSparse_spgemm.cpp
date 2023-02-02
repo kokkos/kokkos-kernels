@@ -269,8 +269,15 @@ int main(int argc, char** argv) {
   }
 
   const int num_threads = std::max(params.use_openmp, params.use_threads);
-  const int device_id =
-      params.use_cuda ? params.use_cuda - 1 : params.use_hip - 1;
+  int device_id;
+  if (params.use_cuda)
+    device_id = params.use_cuda - 1;
+  else if (params.use_hip)
+    device_id = params.use_hip - 1;
+  else if (params.use_sycl)
+    device_id = params.use_sycl - 1;
+  else if (params.use_openmptarget)
+    device_id = params.use_openmptarget - 1;
 
   Kokkos::initialize(Kokkos::InitializationSettings()
                          .set_num_threads(num_threads)
