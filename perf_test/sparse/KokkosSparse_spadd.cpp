@@ -496,6 +496,7 @@ int main(int argc, char** argv) {
     ran = true;
 #else
     std::cout << "ERROR: OpenMP requested, but not available.\n";
+    Kokkos::finalize();
     return 1;
 #endif
   }
@@ -508,6 +509,7 @@ int main(int argc, char** argv) {
     ran = true;
 #else
     std::cout << "ERROR: Threads requested, but not available.\n";
+    Kokkos::finalize();
     return 1;
 #endif
   }
@@ -520,6 +522,7 @@ int main(int argc, char** argv) {
     ran = true;
 #else
     std::cout << "ERROR: CUDA requested, but not available.\n";
+    Kokkos::finalize();
     return 1;
 #endif
   }
@@ -532,6 +535,7 @@ int main(int argc, char** argv) {
     ran = true;
 #else
     std::cout << "ERROR: HIP requested, but not available.\n";
+    Kokkos::finalize();
     return 1;
 #endif
   }
@@ -545,6 +549,7 @@ int main(int argc, char** argv) {
     ran = true;
 #else
     std::cout << "ERROR: SYCL requested, but not available.\n";
+    Kokkos::finalize();
     return 1;
 #endif
   }
@@ -558,6 +563,7 @@ int main(int argc, char** argv) {
 #else
     std::cout << "ERROR: Tried to run on Serial device (as no parallel "
                  "backends requested), but Serial is not enabled.\n";
+    Kokkos::finalize();
     return 1;
 #endif
   }
