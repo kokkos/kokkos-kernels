@@ -32,12 +32,10 @@
 #include <mkl_spblas.h>
 #endif
 
-#if defined(KOKKOSKERNELS_INST_DOUBLE) &&     \
-    defined(KOKKOSKERNELS_INST_OFFSET_INT) && \
-    defined(KOKKOSKERNELS_INST_ORDINAL_INT)
-
 struct Params {
   int use_cuda     = 0;
+  int use_hip      = 0;
+  int use_sycl     = 0;
   int use_openmp   = 0;
   int use_threads  = 0;
   int use_mkl      = 0;
@@ -75,7 +73,6 @@ void run_experiment(const Params& params) {
   using entries_t = typename graph_t::entries_type::non_const_type;
   using values_t  = typename crsMat_t::values_type::non_const_type;
 
-  std::cout << "************************************* \n";
   std::cout << "************************************* \n";
   crsMat_t A;
   crsMat_t B;
@@ -335,10 +332,14 @@ void run_experiment(const Params& params) {
 void print_options() {
   std::cerr << "Options\n" << std::endl;
 
-  std::cerr
-      << "\t[Required] BACKEND: '--threads[numThreads]' | '--openmp "
-         "[numThreads]' | '--cuda [cudaDeviceIndex]' | '--hip [hipDeviceIndex]'"
-      << std::endl;
+  std::cerr << "\t[Required] BACKEND:\n"
+            << "\t\t'--threads [numThreads]' |\n"
+            << "\t\t'--openmp [numThreads]' |\n"
+            << "\t\t'--cuda [deviceIndex]' |\n"
+            << "\t\t'--hip [deviceIndex]' |\n"
+            << "\t\t'--sycl [deviceIndex]'\n\n"
+            << "\tIf no parallel backend is requested, Serial will be used "
+               "(if enabled)\n\n";
 
   std::cerr << "\t[Optional] --amtx <path> :: 1st input matrix" << std::endl;
   std::cerr << "\t[Optional] --bmtx <path> :: 2nd input matrix" << std::endl;
@@ -381,6 +382,12 @@ int parse_inputs(Params& params, int argc, char** argv) {
       params.use_threads = atoi(argv[++i]);
     } else if (0 == Test::string_compare_no_case(argv[i], "--openmp")) {
       params.use_openmp = atoi(argv[++i]);
+    } else if (0 == Test::string_compare_no_case(argv[i], "--cuda")) {
+      params.use_cuda = atoi(argv[++i]) + 1;
+    } else if (0 == Test::string_compare_no_case(argv[i], "--hip")) {
+      params.use_hip = atoi(argv[++i]) + 1;
+    } else if (0 == Test::string_compare_no_case(argv[i], "--sycl")) {
+      params.use_sycl = atoi(argv[++i]) + 1;
     } else if (0 == Test::string_compare_no_case(argv[i], "--cuda")) {
       params.use_cuda = atoi(argv[++i]) + 1;
     } else if (0 == Test::string_compare_no_case(argv[i], "--mkl")) {
@@ -435,15 +442,26 @@ int main(int argc, char** argv) {
   if (parse_inputs(params, argc, argv)) {
     return 1;
   }
-  const int num_threads =
-      params.use_openmp;  // Assumption is that use_openmp variable is provided
-                          // as number of threads
-  const int device_id = params.use_cuda - 1;
+  // Assumption is that use_openmp/use_threads variables are provided
+  // as numbers of threads
+  int num_threads = 1;
+  if (params.use_openmp)
+    num_threads = params.use_openmp;
+  else if (params.use_threads)
+    num_threads = params.use_threads;
+  int device_id = 0;
+  if (params.use_cuda)
+    device_id = params.use_cuda - 1;
+  else if (params.use_hip)
+    device_id = params.use_hip - 1;
+  else if (params.use_sycl)
+    device_id = params.use_sycl - 1;
 
   Kokkos::initialize(Kokkos::InitializationSettings()
                          .set_num_threads(num_threads)
                          .set_device_id(device_id));
-  // Kokkos::print_configuration(std::cout);
+  Kokkos::print_configuration(std::cout);
+  std::cout << '\n';
 
   // First, make sure that requested TPL (if any) is actually available
 #if !defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
@@ -457,10 +475,7 @@ int main(int argc, char** argv) {
         "To run cuSPARSE SpAdd, must enable the cuSPARSE TPL in cmake");
 #endif
 
-  bool useOMP  = params.use_openmp != 0;
-  bool useCUDA = params.use_cuda != 0;
-
-  if (params.use_cusparse && !useCUDA) {
+  if (params.use_cusparse && !params.use_cuda) {
     throw std::invalid_argument(
         "To run cuSPARSE SpAdd, must supply the '--cuda <device id>' flag");
   }
@@ -470,56 +485,82 @@ int main(int argc, char** argv) {
         "If running MKL, can't output the result to file");
   }
 
-  bool useSerial = !useOMP && !useCUDA;
+  bool ran = false;
 
-  if (useOMP) {
+  if (params.use_openmp) {
 #if defined(KOKKOS_ENABLE_OPENMP)
+    std::cout << "Running on OpenMP backend.\n";
     using crsMat_t =
         KokkosSparse::CrsMatrix<double, int, Kokkos::OpenMP, void, int>;
     run_experiment<crsMat_t>(params);
+    ran = true;
 #else
     std::cout << "ERROR: OpenMP requested, but not available.\n";
     return 1;
 #endif
   }
-  if (useCUDA) {
+  if (params.use_threads) {
+#if defined(KOKKOS_ENABLE_THREADS)
+    std::cout << "Running on Threads backend.\n";
+    using crsMat_t =
+        KokkosSparse::CrsMatrix<double, int, Kokkos::Threads, void, int>;
+    run_experiment<crsMat_t>(params);
+    ran = true;
+#else
+    std::cout << "ERROR: Threads requested, but not available.\n";
+    return 1;
+#endif
+  }
+  if (params.use_cuda) {
 #if defined(KOKKOS_ENABLE_CUDA)
+    std::cout << "Running on Cuda backend.\n";
     using crsMat_t =
         KokkosSparse::CrsMatrix<double, int, Kokkos::Cuda, void, int>;
     run_experiment<crsMat_t>(params);
+    ran = true;
 #else
     std::cout << "ERROR: CUDA requested, but not available.\n";
     return 1;
 #endif
   }
-  if (useSerial) {
+  if (params.use_hip) {
+#if defined(KOKKOS_ENABLE_HIP)
+    std::cout << "Running on HIP backend.\n";
+    using crsMat_t =
+        KokkosSparse::CrsMatrix<double, int, Kokkos::HIP, void, int>;
+    run_experiment<crsMat_t>(params);
+    ran = true;
+#else
+    std::cout << "ERROR: HIP requested, but not available.\n";
+    return 1;
+#endif
+  }
+  if (params.use_sycl) {
+#if defined(KOKKOS_ENABLE_SYCL)
+    std::cout << "Running on SYCL backend.\n";
+    using crsMat_t =
+        KokkosSparse::CrsMatrix<double, int, Kokkos::Experimental::SYCL, void,
+                                int>;
+    run_experiment<crsMat_t>(params);
+    ran = true;
+#else
+    std::cout << "ERROR: SYCL requested, but not available.\n";
+    return 1;
+#endif
+  }
+  if (!ran) {
+    // lastly
 #if defined(KOKKOS_ENABLE_SERIAL)
+    std::cout << "Running on Serial backend.\n";
     using crsMat_t =
         KokkosSparse::CrsMatrix<double, int, Kokkos::Serial, void, int>;
     run_experiment<crsMat_t>(params);
 #else
-    std::cout << "ERROR: Serial device requested, but not available.\n";
+    std::cout << "ERROR: Tried to run on Serial device (as no parallel "
+                 "backends requested), but Serial is not enabled.\n";
     return 1;
 #endif
   }
   Kokkos::finalize();
   return 0;
 }
-
-#else
-int main() {
-#if !defined(KOKKOSKERNELS_INST_DOUBLE)
-  std::cout << " not defined KOKKOSKERNELS_INST_DOUBLE" << std::endl;
-#endif
-
-#if !defined(KOKKOSKERNELS_INST_OFFSET_INT)
-  std::cout << " not defined KOKKOSKERNELS_INST_OFFSET_INT" << std::endl;
-
-#endif
-
-#if !defined(KOKKOSKERNELS_INST_ORDINAL_INT)
-  std::cout << " not defined KOKKOSKERNELS_INST_ORDINAL_INT" << std::endl;
-
-#endif
-}
-#endif
