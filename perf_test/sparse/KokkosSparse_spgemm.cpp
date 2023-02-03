@@ -291,9 +291,8 @@ int main(int argc, char** argv) {
 
   bool ran = false;
 
-#if defined(KOKKOS_ENABLE_OPENMP)
-
   if (params.use_openmp) {
+#if defined(KOKKOS_ENABLE_OPENMP)
     std::cout << "Running on OpenMP backend.\n";
 #ifdef KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE
     KokkosKernels::Experiment::run_multi_mem_spgemm<
@@ -305,11 +304,15 @@ int main(int argc, char** argv) {
         Kokkos::OpenMP::memory_space, Kokkos::OpenMP::memory_space>(params);
 #endif
     ran = true;
-  }
+#else
+    std::cerr << "OpenMP backend requested, but is not available.\n";
+    Kokkos::finalize();
+    return 1;
 #endif
+  }
 
-#if defined(KOKKOS_ENABLE_CUDA)
   if (params.use_cuda) {
+#if defined(KOKKOS_ENABLE_CUDA)
     std::cout << "Running on Cuda backend.\n";
 #ifdef KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE
     KokkosKernels::Experiment::run_multi_mem_spgemm<
@@ -322,52 +325,70 @@ int main(int argc, char** argv) {
 
 #endif
     ran = true;
-  }
+#else
+    std::cerr << "Cuda backend requested, but is not available.\n";
+    Kokkos::finalize();
+    return 1;
 #endif
+  }
 
-#if defined(KOKKOS_ENABLE_HIP)
   if (params.use_hip) {
+#if defined(KOKKOS_ENABLE_HIP)
     std::cout << "Running on HIP backend.\n";
     KokkosKernels::Experiment::run_multi_mem_spgemm<
         size_type, lno_t, scalar_t, Kokkos::HIP, Kokkos::HIPSpace,
         Kokkos::HIPSpace>(params);
     ran = true;
-  }
+#else
+    std::cerr << "HIP backend requested, but is not available.\n";
+    Kokkos::finalize();
+    return 1;
 #endif
+  }
 
-#if defined(KOKKOS_ENABLE_SYCL)
   if (params.use_sycl) {
+#if defined(KOKKOS_ENABLE_SYCL)
     std::cout << "Running on SYCL backend.\n";
     KokkosKernels::Experiment::run_multi_mem_spgemm<
         size_type, lno_t, scalar_t, Kokkos::Experimental::SYCL,
         Kokkos::Experimental::SYCLDeviceUSMSpace,
         Kokkos::Experimental::SYCLDeviceUSMSpace>(params);
     ran = true;
-  }
+#else
+    std::cerr << "SYCL backend requested, but is not available.\n";
+    Kokkos::finalize();
+    return 1;
 #endif
+  }
 
-#if defined(KOKKOS_ENABLE_OPENMPTARGET)
   if (params.use_openmptarget) {
+#if defined(KOKKOS_ENABLE_OPENMPTARGET)
     std::cout << "Running on OpenMPTarget backend.\n";
     KokkosKernels::Experiment::run_multi_mem_spgemm<
         size_type, lno_t, scalar_t, Kokkos::Experimental::OpenMPTarget,
         Kokkos::Experimental::OpenMPTargetSpace,
         Kokkos::Experimental::OpenMPTargetSpace>(params);
     ran = true;
-  }
+#else
+    std::cerr << "OpenMPTarget backend requested, but is not available.\n";
+    Kokkos::finalize();
+    return 1;
 #endif
+  }
 
-#if defined(KOKKOS_ENABLE_THREADS)
-  // If only serial is enabled (or no other device was specified), run with
-  // serial
   if (params.use_threads) {
+#if defined(KOKKOS_ENABLE_THREADS)
     std::cout << "Running on Threads backend.\n";
     KokkosKernels::Experiment::run_multi_mem_spgemm<
         size_type, lno_t, scalar_t, Kokkos::Threads, Kokkos::HostSpace,
         Kokkos::HostSpace>(params);
     ran = true;
-  }
+#else
+    std::cerr << "Threads backend requested, but is not available.\n";
+    Kokkos::finalize();
+    return 1;
 #endif
+  }
 
 #if defined(KOKKOS_ENABLE_SERIAL)
   // If only serial is enabled (or no other device was specified), run with
@@ -378,6 +399,11 @@ int main(int argc, char** argv) {
         size_type, lno_t, scalar_t, Kokkos::Serial, Kokkos::HostSpace,
         Kokkos::HostSpace>(params);
   }
+#else
+  std::cerr << "No backend requested and Serial is not enabled, so SpGEMM was "
+               "not run.\n";
+  Kokkos::finalize();
+  return 1;
 #endif
 
   Kokkos::finalize();
