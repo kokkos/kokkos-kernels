@@ -287,12 +287,14 @@ int main(int argc, char** argv) {
                          .set_num_threads(num_threads)
                          .set_device_id(device_id));
   Kokkos::print_configuration(std::cout);
+  std::cout << '\n';
 
   bool ran = false;
 
 #if defined(KOKKOS_ENABLE_OPENMP)
 
   if (params.use_openmp) {
+    std::cout << "Running on OpenMP backend.\n";
 #ifdef KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE
     KokkosKernels::Experiment::run_multi_mem_spgemm<
         size_type, lno_t, scalar_t, Kokkos::OpenMP,
@@ -308,6 +310,7 @@ int main(int argc, char** argv) {
 
 #if defined(KOKKOS_ENABLE_CUDA)
   if (params.use_cuda) {
+    std::cout << "Running on Cuda backend.\n";
 #ifdef KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE
     KokkosKernels::Experiment::run_multi_mem_spgemm<
         size_type, lno_t, scalar_t, Kokkos::Cuda, Kokkos::Cuda::memory_space,
@@ -324,6 +327,7 @@ int main(int argc, char** argv) {
 
 #if defined(KOKKOS_ENABLE_HIP)
   if (params.use_hip) {
+    std::cout << "Running on HIP backend.\n";
     KokkosKernels::Experiment::run_multi_mem_spgemm<
         size_type, lno_t, scalar_t, Kokkos::HIP, Kokkos::HIPSpace,
         Kokkos::HIPSpace>(params);
@@ -333,6 +337,7 @@ int main(int argc, char** argv) {
 
 #if defined(KOKKOS_ENABLE_SYCL)
   if (params.use_sycl) {
+    std::cout << "Running on SYCL backend.\n";
     KokkosKernels::Experiment::run_multi_mem_spgemm<
         size_type, lno_t, scalar_t, Kokkos::Experimental::SYCL,
         Kokkos::Experimental::SYCLDeviceUSMSpace,
@@ -343,6 +348,7 @@ int main(int argc, char** argv) {
 
 #if defined(KOKKOS_ENABLE_OPENMPTARGET)
   if (params.use_openmptarget) {
+    std::cout << "Running on OpenMPTarget backend.\n";
     KokkosKernels::Experiment::run_multi_mem_spgemm<
         size_type, lno_t, scalar_t, Kokkos::Experimental::OpenMPTarget,
         Kokkos::Experimental::OpenMPTargetSpace,
@@ -355,6 +361,7 @@ int main(int argc, char** argv) {
   // If only serial is enabled (or no other device was specified), run with
   // serial
   if (params.use_threads) {
+    std::cout << "Running on Threads backend.\n";
     KokkosKernels::Experiment::run_multi_mem_spgemm<
         size_type, lno_t, scalar_t, Kokkos::Threads, Kokkos::HostSpace,
         Kokkos::HostSpace>(params);
@@ -366,6 +373,7 @@ int main(int argc, char** argv) {
   // If only serial is enabled (or no other device was specified), run with
   // serial
   if (!ran) {
+    std::cout << "Running on Serial backend.\n";
     KokkosKernels::Experiment::run_multi_mem_spgemm<
         size_type, lno_t, scalar_t, Kokkos::Serial, Kokkos::HostSpace,
         Kokkos::HostSpace>(params);
