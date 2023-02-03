@@ -268,8 +268,12 @@ int main(int argc, char** argv) {
     std::cout << "B is not provided. Multiplying AxA." << std::endl;
   }
 
-  const int num_threads = std::max(params.use_openmp, params.use_threads);
-  int device_id         = -1;
+  int num_threads = 1;
+  if (params.use_openmp)
+    num_threads = params.use_openmp;
+  else if (params.use_threads)
+    num_threads = params.use_threads;
+  int device_id = 0;
   if (params.use_cuda)
     device_id = params.use_cuda - 1;
   else if (params.use_hip)
