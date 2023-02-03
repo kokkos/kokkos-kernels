@@ -28,7 +28,6 @@
 #include <KokkosBlas3_trsm_impl.hpp>
 
 namespace KokkosSparse {
-
 namespace Experimental {
 
 /// \class LUPrec
@@ -50,7 +49,7 @@ class LUPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
   using karith     = typename Kokkos::ArithTraits<ScalarType>;
 
  private:
-  Kokkos::View<ScalarType**> _L, _U, _tmp;
+  Kokkos::View<ScalarType**, EXSP> _L, _U, _tmp;
 
  public:
   //! Constructor:
@@ -109,6 +108,7 @@ class LUPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
   //! True if the preconditioner implements a transpose operator apply.
   bool hasTransposeApply() const { return true; }
 };
+
 }  // namespace Experimental
 }  // End namespace KokkosSparse
 

@@ -92,9 +92,11 @@ void decompress_matrix(
     Kokkos::View<lno_t*, device>& entries,
     Kokkos::View<scalar_t*, device>& values,
     Kokkos::View<scalar_t**, device>& output) {
+  using exe_space = typename device::execution_space;
+
   const size_type nrows = row_map.size() - 1;
 
-  Kokkos::parallel_for(nrows, KOKKOS_LAMBDA (const int& row_idx) {
+  Kokkos::parallel_for(Kokkos::RangePolicy<exe_space>(0, nrows), KOKKOS_LAMBDA (const int& row_idx) {
     const size_type row_nnz_begin = row_map(row_idx);
     const size_type row_nnz_end   = row_map(row_idx + 1);
     for (size_type row_nnz = row_nnz_begin; row_nnz < row_nnz_end; ++row_nnz) {
@@ -443,7 +445,6 @@ void run_test_par_ilut_precond() {
     EXPECT_EQ(conv_flag, GMRESHandle::Flag::Conv);
     EXPECT_LT(num_iters_precond, num_iters_plain);
   }
-
 }
 
 }  // namespace Test
