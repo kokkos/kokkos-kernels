@@ -47,14 +47,23 @@ class LUPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
   using ScalarType = typename std::remove_const<typename CRS::value_type>::type;
   using EXSP       = typename CRS::execution_space;
   using karith     = typename Kokkos::ArithTraits<ScalarType>;
+  using View2dD    = typename Kokkos::View<ScalarType**, EXSP>;
+  using View2dH    = typename View2dD::HostMirror;
 
  private:
-  Kokkos::View<ScalarType**, EXSP> _L, _U, _tmp;
+  // trsm takes host views
+  View2dH _L, _U, _tmp;
 
  public:
   //! Constructor:
   template <class ViewArg>
-  LUPrec(const ViewArg &L, const ViewArg &U) : _L(L), _U(U), _tmp("LUPrec::_tmp", _L.extent(0), 1) {}
+  LUPrec(const ViewArg &L, const ViewArg &U) :
+    _L("LUPrec::_L", L.extent(0), L.extent(1)),
+    _U("LUPrec::_U", U.extent(0), U.extent(1)),
+    _tmp("LUPrec::_tmp", L.extent(0), 1) {
+    Kokkos::deep_copy(_L, L);
+    Kokkos::deep_copy(_U, U);
+  }
 
   //! Destructor.
   virtual ~LUPrec() {}

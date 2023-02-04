@@ -117,7 +117,4 @@ inline void hip_internal_safe_call(hipError_t e, const char *name,
 #define KK_ERROR_MSG(msg)                           KK_REQUIRE_MSG(false, msg)
 #define KK_KERNEL_ERROR_MSG(msg)                    KK_KERNEL_REQUIRE_MSG(false, msg)
 
-#undef IMPL_THROW
-#undef IMPL_KERNEL_THROW
-
 #endif  // KOKKOSKERNELS_ERROR_HPP
