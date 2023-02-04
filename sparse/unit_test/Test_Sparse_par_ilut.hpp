@@ -50,7 +50,7 @@ struct TolMeta<float> {
   static constexpr float value = 1e-5;  // Lower tolerance for floats
 };
 
-}
+}  // namespace ParIlut
 
 template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
@@ -87,26 +87,27 @@ std::vector<std::vector<scalar_t>> decompress_matrix(
 
 template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
-void decompress_matrix(
-    Kokkos::View<size_type*, device>& row_map,
-    Kokkos::View<lno_t*, device>& entries,
-    Kokkos::View<scalar_t*, device>& values,
-    Kokkos::View<scalar_t**, device>& output) {
+void decompress_matrix(Kokkos::View<size_type*, device>& row_map,
+                       Kokkos::View<lno_t*, device>& entries,
+                       Kokkos::View<scalar_t*, device>& values,
+                       Kokkos::View<scalar_t**, device>& output) {
   using exe_space = typename device::execution_space;
 
   const size_type nrows = row_map.size() - 1;
 
-  Kokkos::parallel_for(Kokkos::RangePolicy<exe_space>(0, nrows), KOKKOS_LAMBDA (const int& row_idx) {
-    const size_type row_nnz_begin = row_map(row_idx);
-    const size_type row_nnz_end   = row_map(row_idx + 1);
-    for (size_type row_nnz = row_nnz_begin; row_nnz < row_nnz_end; ++row_nnz) {
-      const lno_t col_idx      = entries(row_nnz);
-      const scalar_t value     = values(row_nnz);
-      output(row_idx, col_idx) = value;
-    }
-  });
+  Kokkos::parallel_for(
+      Kokkos::RangePolicy<exe_space>(0, nrows),
+      KOKKOS_LAMBDA(const int& row_idx) {
+        const size_type row_nnz_begin = row_map(row_idx);
+        const size_type row_nnz_end   = row_map(row_idx + 1);
+        for (size_type row_nnz = row_nnz_begin; row_nnz < row_nnz_end;
+             ++row_nnz) {
+          const lno_t col_idx      = entries(row_nnz);
+          const scalar_t value     = values(row_nnz);
+          output(row_idx, col_idx) = value;
+        }
+      });
 }
-
 
 template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
@@ -317,11 +318,11 @@ template <typename scalar_t, typename lno_t, typename size_type,
 void run_test_par_ilut_precond() {
   // Test using par_ilut as a preconditioner
   // Does (LU)^inv Ax = (LU)^inv b converge faster than solving Ax=b?
-  using exe_space    = typename device::execution_space;
-  using mem_space    = typename device::memory_space;
-  using RowMapType   = Kokkos::View<size_type*, device>;
-  using EntriesType  = Kokkos::View<lno_t*, device>;
-  using ValuesType   = Kokkos::View<scalar_t*, device>;
+  using exe_space   = typename device::execution_space;
+  using mem_space   = typename device::memory_space;
+  using RowMapType  = Kokkos::View<size_type*, device>;
+  using EntriesType = Kokkos::View<lno_t*, device>;
+  using ValuesType  = Kokkos::View<scalar_t*, device>;
   using sp_matrix_type =
       KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>;
   using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<
@@ -361,8 +362,8 @@ void run_test_par_ilut_precond() {
   auto values  = A.values;
 
   // Allocate L and U CRS views as outputs
-  RowMapType  L_row_map ("L_row_map", numRows + 1);
-  RowMapType  U_row_map ("U_row_map", numRows + 1);
+  RowMapType L_row_map("L_row_map", numRows + 1);
+  RowMapType U_row_map("U_row_map", numRows + 1);
 
   // Initial L/U approximations for A
   par_ilut_symbolic(&kh, row_map, entries, L_row_map, U_row_map);
@@ -375,20 +376,21 @@ void run_test_par_ilut_precond() {
   EntriesType U_entries("U_entries", nnzU);
   ValuesType U_values("U_values", nnzU);
 
-  par_ilut_numeric(&kh, row_map, entries, values, L_row_map, L_entries,
-                   L_values, U_row_map, U_entries, U_values,
-// #ifdef KOKKOS_ENABLE_SERIAL
-                    true /*deterministic*/
-// #else
-//                   false /*problem is too big for determinism?*/
-// #endif
+  par_ilut_numeric(
+      &kh, row_map, entries, values, L_row_map, L_entries, L_values, U_row_map,
+      U_entries, U_values,
+      // #ifdef KOKKOS_ENABLE_SERIAL
+      true /*deterministic*/
+           // #else
+           //                   false /*problem is too big for determinism?*/
+           // #endif
   );
 
   // Convert L, U parILUT outputs to uncompressed 2d views as required
   // by LUPrec
-  Kokkos::View<scalar_t**, device>
-    L_uncompressed("L_uncompressed", numRows, numRows),
-    U_uncompressed("U_uncompressed", numRows, numRows);
+  Kokkos::View<scalar_t**, device> L_uncompressed("L_uncompressed", numRows,
+                                                  numRows),
+      U_uncompressed("U_uncompressed", numRows, numRows);
   decompress_matrix(L_row_map, L_entries, L_values, L_uncompressed);
   decompress_matrix(U_row_map, U_entries, U_values, U_uncompressed);
 
@@ -413,7 +415,7 @@ void run_test_par_ilut_precond() {
     float_t endRes = KokkosBlas::nrm2(B) / nrmB;
 
     const auto conv_flag = gmres_handle->get_conv_flag_val();
-    num_iters_plain = gmres_handle->get_num_iters();
+    num_iters_plain      = gmres_handle->get_num_iters();
 
     EXPECT_LT(endRes, gmres_handle->get_tol());
     EXPECT_EQ(conv_flag, GMRESHandle::Flag::Conv);
@@ -425,7 +427,8 @@ void run_test_par_ilut_precond() {
     gmres_handle->set_verbose(verbose);
 
     // Make precond
-    KokkosSparse::Experimental::LUPrec<sp_matrix_type> myPrec(L_uncompressed, U_uncompressed);
+    KokkosSparse::Experimental::LUPrec<sp_matrix_type> myPrec(L_uncompressed,
+                                                              U_uncompressed);
 
     // reset X for next gmres call
     Kokkos::deep_copy(X, 0.0);
@@ -439,7 +442,7 @@ void run_test_par_ilut_precond() {
     float_t endRes = KokkosBlas::nrm2(B) / nrmB;
 
     const auto conv_flag = gmres_handle->get_conv_flag_val();
-    num_iters_precond = gmres_handle->get_num_iters();
+    num_iters_precond    = gmres_handle->get_num_iters();
 
     EXPECT_LT(endRes, gmres_handle->get_tol());
     EXPECT_EQ(conv_flag, GMRESHandle::Flag::Conv);
@@ -461,15 +464,15 @@ void test_par_ilut_precond() {
   Test::run_test_par_ilut_precond<scalar_t, lno_t, size_type, device>();
 }
 
-
-#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)     \
-  TEST_F(TestCategory,                                                  \
-         sparse##_##par_ilut##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
-    test_par_ilut<SCALAR, ORDINAL, OFFSET, DEVICE>();                   \
-  }                                                                     \
-  TEST_F(TestCategory,                                                  \
-         sparse##_##par_ilut_precond##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
-    test_par_ilut_precond<SCALAR, ORDINAL, OFFSET, DEVICE>();           \
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)               \
+  TEST_F(TestCategory,                                                            \
+         sparse##_##par_ilut##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {      \
+    test_par_ilut<SCALAR, ORDINAL, OFFSET, DEVICE>();                             \
+  }                                                                               \
+  TEST_F(                                                                         \
+      TestCategory,                                                               \
+      sparse##_##par_ilut_precond##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
+    test_par_ilut_precond<SCALAR, ORDINAL, OFFSET, DEVICE>();                     \
   }
 
 #define NO_TEST_COMPLEX

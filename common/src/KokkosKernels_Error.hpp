@@ -68,53 +68,56 @@ inline void hip_internal_safe_call(hipError_t e, const char *name,
 // Internal do not call directly
 #define IMPL_THROW(condition, msg, exception_type)                      \
   do {                                                                  \
-    if ( ! (condition) ) {                                              \
+    if (!(condition)) {                                                 \
       std::stringstream _ss_;                                           \
       _ss_ << __FILE__ << ":" << __LINE__ << ": FAIL:\n" << #condition; \
       _ss_ << "\n" << msg;                                              \
       throw exception_type(_ss_.str());                                 \
     }                                                                   \
-  } while(0)
+  } while (0)
 
 // SYCL cannot printf like the other backends quite yet
 #ifdef __SYCL_DEVICE_ONLY__
-#define IMPL_KERNEL_THROW(condition, msg)				\
-  do {									\
-    if ( ! (condition) ) {						\
-      const __attribute__((opencl_constant)) char format[] = "KERNEL CHECK FAILED:\n   %s %s\n"; \
-      sycl::ext::oneapi::experimental::printf(format,#condition,msg);	\
-      Kokkos::abort("");						\
-    }									\
+#define IMPL_KERNEL_THROW(condition, msg)                               \
+  do {                                                                  \
+    if (!(condition)) {                                                 \
+      const __attribute__((opencl_constant)) char format[] =            \
+          "KERNEL CHECK FAILED:\n   %s %s\n";                           \
+      sycl::ext::oneapi::experimental::printf(format, #condition, msg); \
+      Kokkos::abort("");                                                \
+    }                                                                   \
   } while (0)
 #else
-#define IMPL_KERNEL_THROW(condition, msg)				\
-  do {									\
-    if ( ! (condition) ) {						\
-      printf("KERNEL CHECK FAILED:\n   %s\n   %s\n",#condition,msg);	\
-      Kokkos::abort("");						\
-    }									\
+#define IMPL_KERNEL_THROW(condition, msg)                              \
+  do {                                                                 \
+    if (!(condition)) {                                                \
+      printf("KERNEL CHECK FAILED:\n   %s\n   %s\n", #condition, msg); \
+      Kokkos::abort("");                                               \
+    }                                                                  \
   } while (0)
 #endif
 
 #ifndef NDEBUG
-#define KK_ASSERT(condition)                      IMPL_THROW(condition, "",  std::logic_error)
-#define KK_ASSERT_MSG(condition, msg)             IMPL_THROW(condition, msg, std::logic_error)
-#define KK_KERNEL_ASSERT(condition)               IMPL_KERNEL_THROW(condition, "")
-#define KK_KERNEL_ASSERT_MSG(condition, msg)      IMPL_KERNEL_THROW(condition, msg)
+#define KK_ASSERT(condition) IMPL_THROW(condition, "", std::logic_error)
+#define KK_ASSERT_MSG(condition, msg) \
+  IMPL_THROW(condition, msg, std::logic_error)
+#define KK_KERNEL_ASSERT(condition) IMPL_KERNEL_THROW(condition, "")
+#define KK_KERNEL_ASSERT_MSG(condition, msg) IMPL_KERNEL_THROW(condition, msg)
 #else
-#define KK_ASSERT(condition)  ((void) (0))
-#define KK_ASSERT_MSG(condition, msg)  ((void) (0))
-#define KK_KERNEL_ASSERT(condition) ((void) (0))
-#define KK_KERNEL_ASSERT_MSG(condition, msg) ((void) (0))
+#define KK_ASSERT(condition) ((void)(0))
+#define KK_ASSERT_MSG(condition, msg) ((void)(0))
+#define KK_KERNEL_ASSERT(condition) ((void)(0))
+#define KK_KERNEL_ASSERT_MSG(condition, msg) ((void)(0))
 #endif
 
-#define KK_REQUIRE(condition)                       IMPL_THROW(condition, "", std::logic_error)
-#define KK_REQUIRE_MSG(condition, msg)              IMPL_THROW(condition, msg, std::logic_error)
+#define KK_REQUIRE(condition) IMPL_THROW(condition, "", std::logic_error)
+#define KK_REQUIRE_MSG(condition, msg) \
+  IMPL_THROW(condition, msg, std::logic_error)
 
-#define KK_KERNEL_REQUIRE(condition)                IMPL_KERNEL_THROW(condition, "")
-#define KK_KERNEL_REQUIRE_MSG(condition, msg)       IMPL_KERNEL_THROW(condition, msg)
+#define KK_KERNEL_REQUIRE(condition) IMPL_KERNEL_THROW(condition, "")
+#define KK_KERNEL_REQUIRE_MSG(condition, msg) IMPL_KERNEL_THROW(condition, msg)
 
-#define KK_ERROR_MSG(msg)                           KK_REQUIRE_MSG(false, msg)
-#define KK_KERNEL_ERROR_MSG(msg)                    KK_KERNEL_REQUIRE_MSG(false, msg)
+#define KK_ERROR_MSG(msg) KK_REQUIRE_MSG(false, msg)
+#define KK_KERNEL_ERROR_MSG(msg) KK_KERNEL_REQUIRE_MSG(false, msg)
 
 #endif  // KOKKOSKERNELS_ERROR_HPP

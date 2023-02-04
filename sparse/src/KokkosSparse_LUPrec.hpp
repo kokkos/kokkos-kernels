@@ -47,7 +47,7 @@ class LUPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
   using ScalarType = typename std::remove_const<typename CRS::value_type>::type;
   using EXSP       = typename CRS::execution_space;
   using karith     = typename Kokkos::ArithTraits<ScalarType>;
-  using View2dD    = typename Kokkos::View<ScalarType**, EXSP>;
+  using View2dD    = typename Kokkos::View<ScalarType **, EXSP>;
   using View2dH    = typename View2dD::HostMirror;
 
  private:
@@ -57,10 +57,10 @@ class LUPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
  public:
   //! Constructor:
   template <class ViewArg>
-  LUPrec(const ViewArg &L, const ViewArg &U) :
-    _L("LUPrec::_L", L.extent(0), L.extent(1)),
-    _U("LUPrec::_U", U.extent(0), U.extent(1)),
-    _tmp("LUPrec::_tmp", L.extent(0), 1) {
+  LUPrec(const ViewArg &L, const ViewArg &U)
+      : _L("LUPrec::_L", L.extent(0), L.extent(1)),
+        _U("LUPrec::_U", U.extent(0), U.extent(1)),
+        _tmp("LUPrec::_tmp", L.extent(0), 1) {
     Kokkos::deep_copy(_L, L);
     Kokkos::deep_copy(_U, U);
   }
@@ -89,8 +89,6 @@ class LUPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
                      const char transM[] = "N",
                      ScalarType alpha    = karith::one(),
                      ScalarType beta     = karith::zero()) const {
-
-
     // tmp = trsm(L, x); //Apply L^inv to x
     // y = trsm(U, tmp); //Apply U^inv to tmp
     auto tmpsv = Kokkos::subview(_tmp, Kokkos::ALL, 0);

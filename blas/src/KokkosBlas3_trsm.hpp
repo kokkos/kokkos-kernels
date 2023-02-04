@@ -43,7 +43,8 @@ namespace KokkosBlas {
 ///                   other part is not referenced
 /// \param trans [in] "N" or "n" for non-transpose, "T" or "t" for transpose,
 /// "C" or "c" for conjugate transpose.
-/// \param diag  [in] "U" or "u" indicates the diagonal of A is assumed to be unit
+/// \param diag  [in] "U" or "u" indicates the diagonal of A is assumed to be
+/// unit
 //                    "N" or "n" indicated the diagonal of A is assumed to be
 //                    non-unit
 /// \param alpha [in] Input coefficient used for multiplication with B
