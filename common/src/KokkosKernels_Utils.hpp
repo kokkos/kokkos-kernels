@@ -1416,20 +1416,30 @@ void init_view_withscalar(
   MyExecSpace().fence();
 }
 
-// A sum-reduction scalar representing a fixed-size array.
 template <typename scalar_t, int N>
 struct array_sum_reduce {
+  static_assert(N <= 8, "array_sum_reduce has only been tested up to N=8");
   using ValueType = array_sum_reduce<scalar_t, N>;
+  // Workaround for https://github.com/kokkos/kokkos/issues/5860
+  static constexpr int N_internal =
+      ((N == 3 || N == 5 || N == 7) &&
+       std::is_same<scalar_t, Kokkos::Experimental::half_t>::value &&
+       sizeof(Kokkos::Experimental::half_t) == 2)
+          ? (N + 1)
+          : N;
 
-  scalar_t data[N];
+  scalar_t data[N_internal];
   KOKKOS_INLINE_FUNCTION
   array_sum_reduce() {
-    for (int i = 0; i < N; i++) data[i] = scalar_t();
+    // Initialize all the elements, even those at index >= N (prevent valgrind
+    // warnings, etc.)
+    for (int i = 0; i < N_internal; i++) data[i] = scalar_t();
   }
 
   KOKKOS_INLINE_FUNCTION  // add operator
       array_sum_reduce &
       operator+=(const ValueType &src) {
+    // Don't bother summing elements >= N though as they will never be used
     for (int i = 0; i < N; i++) data[i] += src.data[i];
     return *this;
   }
