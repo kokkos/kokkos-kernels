@@ -290,6 +290,8 @@ int main(int argc, char** argv) {
   std::cout << '\n';
 
   bool ran = false;
+  (void)ran;  // If serial backend is not enabled, this variable will be
+              // set-but-unused
 
   if (params.use_openmp) {
 #if defined(KOKKOS_ENABLE_OPENMP)
