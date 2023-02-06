@@ -421,7 +421,10 @@ void run_test_par_ilut_precond() {
     EXPECT_EQ(conv_flag, GMRESHandle::Flag::Conv);
   }
 
-  // Solve Ax = b with LU preconditioner
+  // Solve Ax = b with LU preconditioner. Currently only works
+  // when deterministic mode in par_ilut is on, which is only
+  // possible when Kokkos::Serial has been enabled.
+#ifdef KOKKOS_ENABLE_SERIAL
   {
     gmres_handle->reset_handle(m, tol);
     gmres_handle->set_verbose(verbose);
@@ -448,6 +451,7 @@ void run_test_par_ilut_precond() {
     EXPECT_EQ(conv_flag, GMRESHandle::Flag::Conv);
     EXPECT_LT(num_iters_precond, num_iters_plain);
   }
+#endif
 }
 
 }  // namespace Test
