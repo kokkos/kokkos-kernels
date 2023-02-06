@@ -23,7 +23,7 @@
 
 namespace KokkosKernels {
 namespace Impl {
-void print_enabled_tpls(std::ostream& os) {
+inline void print_enabled_tpls(std::ostream& os) {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK
   os << "  " << "KOKKOSKERNELS_ENABLE_TPL_LAPACK: yes\n";
 #else
@@ -97,7 +97,7 @@ void print_enabled_tpls(std::ostream& os) {
 
 }
 
-void print_version(std::ostream& os) {
+inline void print_version(std::ostream& os) {
     // KOKKOSKERNELS_VERSION is used because MAJOR, MINOR and PATCH macros
     // are not available in Kernels
     os << "  "<<"Kernels Version: "<< KOKKOSKERNELS_VERSION <<'\n';
@@ -105,7 +105,7 @@ void print_version(std::ostream& os) {
 
 }  // namespace Impl
 
-void print_configuration(std::ostream& os) {
+inline void print_configuration(std::ostream& os) {
     Impl::print_version(os);
 
     os << "TPLs: \n";
