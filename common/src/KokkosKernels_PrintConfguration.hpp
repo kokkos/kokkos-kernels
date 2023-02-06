@@ -20,79 +20,96 @@
 #include "KokkosKernels_config.h"
 
 #include <iostream>
-#include <list>
 
 namespace KokkosKernels {
-constexpr std::string_view KernelsVersionKey= "Kernels Version";
-constexpr std::string_view EnabledTPLsNamesKey= "Enabled TPLs names";
-
-namespace {
+namespace Impl {
 void print_enabled_tpls(std::ostream& os) {
-  std::list<std::string> tpls;
 #ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK
-  tpls.emplace_back("LAPACK");
+  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_LAPACK: yes\n";
+#else
+  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_LAPACK: no\n";
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
-  tpls.emplace_back("BLAS");
+  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_BLAS: yes\n";
+#else
+  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_BLAS: no\n";
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CBLAS
-  tpls.emplace_back("CBLAS");
+  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_CBLAS: yes\n";
+#else
+  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_CBLAS: no\n";
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACKE
-  tpls.emplace_back("LAPACKE");
+  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_LAPACKE: yes\n";
+#else
+  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_LAPACKE: no\n";
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_SUPERLU
-  tpls.emplace_back("SUPERLU");
+  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_SUPERLU: yes\n";
+#else
+  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_SUPERLU: no\n";
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CHOLMOD
-  tpls.emplace_back("CHOLMOD");
+  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_CHOLMOD: yes\n";
+#else
+  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_CHOLMOD: no\n";
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
-  tpls.emplace_back("MKL");
+  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_MKL: yes\n";
+#else
+  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_MKL: no\n";
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
-  tpls.emplace_back("CUBLAS");
+  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_CUBLAS: yes\n";
+#else
+  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_CUBLAS: no\n";
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-  tpls.emplace_back("CUSPARSE");
+  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_CUSPARSE: yes\n";
+#else
+  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_CUSPARSE: no\n";
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
-  tpls.emplace_back("ROCBLAS");
+  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_ROCBLAS: yes\n";
+#else
+  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_ROCBLAS: no\n";
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCPARSE
-  tpls.emplace_back("ROCPARSE");
+  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_ROCPARSE: yes\n";
+#else
+  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_ROCPARSE: no\n";
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_METIS
-  tpls.emplace_back("METIS");
+  os << "KOKKOSKERNELS_ENABLE_TPL_METIS: yes\n";
+#else
+  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_METIS: no\n";
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ARMPL
-  tpls.emplace_back("ARMPL");
+  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_ARMPL: yes\n";
+#else
+  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_ARMPL: no\n";
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
-  tpls.emplace_back("MAGMA");
+  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_MAGMA: yes\n";
+#else
+  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_MAGMA: no\n";
 #endif
-  if(!tpls.empty()){
-    auto tplsIte = tpls.cbegin();
-    os << *tplsIte;
-    ++tplsIte;
-    for(; tplsIte != tpls.cend(); ++tplsIte) {
-      os << ";" << *tplsIte ;
-    }
-  }
+
 }
 
 void print_version(std::ostream& os) {
-    os << KernelsVersionKey<< ": "<< KOKKOSKERNELS_VERSION <<'\n';
+    // KOKKOSKERNELS_VERSION is used because MAJOR, MINOR and PATCH macros
+    // are not available in Kernels
+    os << "  "<<"Kernels Version: "<< KOKKOSKERNELS_VERSION <<'\n';
 }
 
-}  // namespace
+}  // namespace Impl
 
 void print_configuration(std::ostream& os) {
-    print_version(os);
+    Impl::print_version(os);
 
-    os << EnabledTPLsNamesKey << ": ";
-    print_enabled_tpls(os);
-    os << "\n";
+    os << "TPLs: \n";
+    Impl::print_enabled_tpls(os);
 }
 
 }  // namespace KokkosKernels

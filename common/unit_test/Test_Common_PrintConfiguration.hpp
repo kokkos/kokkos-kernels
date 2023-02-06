@@ -36,10 +36,10 @@ void check_print_configuration(std::ostream& os) {
     auto found = line.find_first_of(':');
     if (found != std::string::npos) {
       auto currentKey = line.substr(0, found);
-      if (currentKey == KokkosKernels::KernelsVersionKey) {
+      if (currentKey == "Kernels Version") {
           kernelsVersionKeyFound = true;
       }
-      else if (currentKey == KokkosKernels::EnabledTPLsNamesKey) {
+      else if (currentKey == "TPLs") {
           enabledTPLsNamesKeyFound = true;
       }
     }
