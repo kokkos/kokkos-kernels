@@ -87,7 +87,7 @@ class LUPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
                      const Kokkos::View<ScalarType *, EXSP> &Y,
                      const char transM[] = "N",
                      ScalarType alpha    = karith::one(),
-                     ScalarType beta     = karith::zero()) const {
+                     ScalarType          = karith::zero()) const {
     // tmp = trsm(L, x); //Apply L^inv to x
     // y = trsm(U, tmp); //Apply U^inv to tmp
     auto tmpsv = Kokkos::subview(_tmp, Kokkos::ALL, 0);

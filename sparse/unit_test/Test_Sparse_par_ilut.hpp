@@ -349,6 +349,7 @@ void run_test_par_ilut_precond() {
   KernelHandle kh;
   kh.create_gmres_handle(m, tol);
   auto gmres_handle = kh.get_gmres_handle();
+  gmres_handle->set_verbose(verbose);
   using GMRESHandle =
       typename std::remove_reference<decltype(*gmres_handle)>::type;
   using ViewVectorType = typename GMRESHandle::nnz_value_view_t;
@@ -417,6 +418,7 @@ void run_test_par_ilut_precond() {
     const auto conv_flag = gmres_handle->get_conv_flag_val();
     num_iters_plain      = gmres_handle->get_num_iters();
 
+    EXPECT_GT(num_iters_plain, 0);
     EXPECT_LT(endRes, gmres_handle->get_tol());
     EXPECT_EQ(conv_flag, GMRESHandle::Flag::Conv);
   }
@@ -451,6 +453,8 @@ void run_test_par_ilut_precond() {
     EXPECT_EQ(conv_flag, GMRESHandle::Flag::Conv);
     EXPECT_LT(num_iters_precond, num_iters_plain);
   }
+#else
+  EXPECT_EQ(num_iters_precond, 0);
 #endif
 }
 
