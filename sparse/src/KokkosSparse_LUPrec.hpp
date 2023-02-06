@@ -16,7 +16,7 @@
 // ************************************************************************
 //@HEADER
 */
-/// @file KokkosKernels_LUPrec.hpp
+/// @file KokkosSparse_LUPrec.hpp
 
 #ifndef KK_LU_PREC_HPP
 #define KK_LU_PREC_HPP
