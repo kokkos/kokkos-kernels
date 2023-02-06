@@ -114,7 +114,7 @@ class KrylovHandle {
     Kokkos::deep_copy(first_index, first_index_host);
     Kokkos::deep_copy(last_index, last_index_host);
 
-    // Default Classical GS
+    // Default modified GS
     ortho_strategy        = 1;
     scratch_pad_level     = 0;
     compute_last_residual = true;
@@ -409,7 +409,7 @@ class KrylovHandle {
   /// \brief set_norm
   ///   Store the norm of one of the system at one of the iteration
   ///
-  /// \param batchedteam_id [in]: Team ID
+  /// \param team_id [in]: Team ID
   /// \param batched_id [in]: Local batched ID (local ID within the team)
   /// \param iteration_id [in]: Iteration ID
   /// \param norm_i [in]: Norm to store
@@ -436,9 +436,8 @@ class KrylovHandle {
   /// \brief set_last_norm
   ///   Store the last norm of one system
   ///
-  /// \param batchedteam_id [in]: Team ID
+  /// \param team_id [in]: Team ID
   /// \param batched_id [in]: Local batched ID (local ID within the team)
-  /// \param batched_id [in]: Global batched ID
   /// \param norm_i [in]: Norm to store
 
   KOKKOS_INLINE_FUNCTION
@@ -461,7 +460,7 @@ class KrylovHandle {
   /// \brief set_iteration
   ///   Store the number of iteration after convergence for one system
   ///
-  /// \param batchedteam_id [in]: Team ID
+  /// \param team_id [in]: Team ID
   /// \param batched_id [in]: Local batched ID (local ID within the team)
   /// \param iteration_id [in]: Iteration ID
 

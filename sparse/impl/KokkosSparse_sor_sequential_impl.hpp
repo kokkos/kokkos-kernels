@@ -17,7 +17,7 @@
 #ifndef KOKKOSSPARSE_IMPL_SOR_HPP
 #define KOKKOSSPARSE_IMPL_SOR_HPP
 
-/// \file Kokkos_Sparse_impl_sor.hpp
+/// \file KokkosSparse_impl_sor.hpp
 /// \brief Sequential implementations of Gauss-Seidel and SOR.
 ///
 /// This file exists mainly as a temporary porting aid.  Until we can

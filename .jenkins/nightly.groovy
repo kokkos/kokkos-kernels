@@ -18,12 +18,13 @@ pipeline {
                         }
                     }
                     steps {
-                        sh '''rm -rf kokkos &&
+                        sh '''. /opt/intel/oneapi/setvars.sh --include-intel-llvm && \
+                              rm -rf kokkos &&
                               git clone -b develop https://github.com/kokkos/kokkos.git && cd kokkos && \
                               mkdir build && cd build && \
                               cmake \
                                 -DCMAKE_BUILD_TYPE=Release \
-                                -DCMAKE_CXX_COMPILER=clang++ \
+                                -DCMAKE_CXX_COMPILER=/opt/intel/oneapi/compiler/2023.0.0/linux/bin-llvm/clang++ \
                                 -DKokkos_ARCH_VOLTA70=ON \
                                 -DKokkos_ENABLE_DEPRECATED_CODE_3=OFF \
                                 -DKokkos_ENABLE_SYCL=ON \
@@ -32,10 +33,11 @@ pipeline {
                               .. && \
                               make -j8 && make install && \
                               cd ../.. && rm -rf kokkos'''
-                        sh '''rm -rf build && mkdir -p build && cd build && \
+                        sh '''. /opt/intel/oneapi/setvars.sh --include-intel-llvm && \
+                              rm -rf build && mkdir -p build && cd build && \
                               cmake \
                                 -DCMAKE_BUILD_TYPE=Release \
-                                -DCMAKE_CXX_COMPILER=clang++ \
+                                -DCMAKE_CXX_COMPILER=/opt/intel/oneapi/compiler/2023.0.0/linux/bin-llvm/clang++ \
                                 -DKokkosKernels_ENABLE_TESTS=ON \
                                 -DKokkosKernels_ENABLE_EXAMPLES=ON \
                                 -DKokkosKernels_INST_DOUBLE=ON \

@@ -28,6 +28,7 @@ namespace KokkosBlas {
 /// \tparam XVector Type of the first vector x; a 1-D Kokkos::View.
 ///
 /// \param x [in] Input 1-D View.
+/// \param w [in] Input weights (1-D View).
 ///
 /// \return The nrm2w product result; a single value.
 template <class XVector>
