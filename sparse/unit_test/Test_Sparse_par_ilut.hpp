@@ -380,11 +380,11 @@ void run_test_par_ilut_precond() {
   par_ilut_numeric(
       &kh, row_map, entries, values, L_row_map, L_entries, L_values, U_row_map,
       U_entries, U_values,
-      // #ifdef KOKKOS_ENABLE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
       true /*deterministic*/
-           // #else
-           //                   false /*problem is too big for determinism?*/
-           // #endif
+#else
+      false /*cannot ask for determinism*/
+#endif
   );
 
   // Convert L, U parILUT outputs to uncompressed 2d views as required
