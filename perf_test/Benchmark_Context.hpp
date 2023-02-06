@@ -42,7 +42,7 @@ std::string remove_unwanted_characters(std::string str) {
   return str.substr(from, to + 1);
 }
 
-/// \brief Extract all key:value pairs from kokkos configuration and add it to
+/// \brief Extract all key:value pairs from kernels configuration and add it to
 /// the benchmark context
 void add_kernels_configuration(bool verbose) {
   std::ostringstream msg;
