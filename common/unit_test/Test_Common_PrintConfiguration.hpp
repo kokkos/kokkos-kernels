@@ -26,7 +26,6 @@
 void check_print_configuration(std::ostream& os) {
   std::ostringstream msg;
   KokkosKernels::print_configuration(msg);
-  KokkosKernels::print_configuration(std::cout);
 
   bool kernelsVersionKeyFound = false;
   bool enabledTPLsNamesKeyFound = false;
@@ -36,7 +35,7 @@ void check_print_configuration(std::ostream& os) {
     auto found = line.find_first_of(':');
     if (found != std::string::npos) {
       auto currentKey = line.substr(0, found);
-      if (currentKey == "Kernels Version") {
+      if (currentKey == "  Kernels Version") {
           kernelsVersionKeyFound = true;
       }
       else if (currentKey == "TPLs") {
