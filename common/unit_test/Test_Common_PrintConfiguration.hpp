@@ -27,7 +27,7 @@ void check_print_configuration(std::ostream& os) {
   std::ostringstream msg;
   KokkosKernels::print_configuration(msg);
 
-  bool kernelsVersionKeyFound = false;
+  bool kernelsVersionKeyFound   = false;
   bool enabledTPLsNamesKeyFound = false;
   // Iterate over lines returned from kokkos and extract key:value pairs
   std::stringstream ss{msg.str()};
@@ -36,18 +36,17 @@ void check_print_configuration(std::ostream& os) {
     if (found != std::string::npos) {
       auto currentKey = line.substr(0, found);
       if (currentKey == "  Kernels Version") {
-          kernelsVersionKeyFound = true;
-      }
-      else if (currentKey == "TPLs") {
-          enabledTPLsNamesKeyFound = true;
+        kernelsVersionKeyFound = true;
+      } else if (currentKey == "TPLs") {
+        enabledTPLsNamesKeyFound = true;
       }
     }
   }
   EXPECT_TRUE(kernelsVersionKeyFound && enabledTPLsNamesKeyFound);
-
 }
 
-/// \brief Verify that print_configuration print the expected keys from kernels configuration
+/// \brief Verify that print_configuration print the expected keys from kernels
+/// configuration
 template <typename exec_space>
 void testPrintConfiguration() {
   std::ostringstream out;
@@ -55,6 +54,8 @@ void testPrintConfiguration() {
   check_print_configuration(out);
 }
 
-TEST_F(TestCategory, common_print_configuration) { testPrintConfiguration<TestExecSpace>(); }
+TEST_F(TestCategory, common_print_configuration) {
+  testPrintConfiguration<TestExecSpace>();
+}
 
 #endif  // KOKKOSKERNELS_PRINTCONFIGURATION_HPP

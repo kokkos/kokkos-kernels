@@ -25,92 +25,119 @@ namespace KokkosKernels {
 namespace Impl {
 inline void print_enabled_tpls(std::ostream& os) {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK
-  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_LAPACK: yes\n";
+  os << "  "
+     << "KOKKOSKERNELS_ENABLE_TPL_LAPACK: yes\n";
 #else
-  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_LAPACK: no\n";
+  os << "  "
+     << "KOKKOSKERNELS_ENABLE_TPL_LAPACK: no\n";
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
-  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_BLAS: yes\n";
+  os << "  "
+     << "KOKKOSKERNELS_ENABLE_TPL_BLAS: yes\n";
 #else
-  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_BLAS: no\n";
+  os << "  "
+     << "KOKKOSKERNELS_ENABLE_TPL_BLAS: no\n";
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CBLAS
-  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_CBLAS: yes\n";
+  os << "  "
+     << "KOKKOSKERNELS_ENABLE_TPL_CBLAS: yes\n";
 #else
-  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_CBLAS: no\n";
+  os << "  "
+     << "KOKKOSKERNELS_ENABLE_TPL_CBLAS: no\n";
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACKE
-  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_LAPACKE: yes\n";
+  os << "  "
+     << "KOKKOSKERNELS_ENABLE_TPL_LAPACKE: yes\n";
 #else
-  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_LAPACKE: no\n";
+  os << "  "
+     << "KOKKOSKERNELS_ENABLE_TPL_LAPACKE: no\n";
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_SUPERLU
-  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_SUPERLU: yes\n";
+  os << "  "
+     << "KOKKOSKERNELS_ENABLE_TPL_SUPERLU: yes\n";
 #else
-  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_SUPERLU: no\n";
+  os << "  "
+     << "KOKKOSKERNELS_ENABLE_TPL_SUPERLU: no\n";
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CHOLMOD
-  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_CHOLMOD: yes\n";
+  os << "  "
+     << "KOKKOSKERNELS_ENABLE_TPL_CHOLMOD: yes\n";
 #else
-  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_CHOLMOD: no\n";
+  os << "  "
+     << "KOKKOSKERNELS_ENABLE_TPL_CHOLMOD: no\n";
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
-  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_MKL: yes\n";
+  os << "  "
+     << "KOKKOSKERNELS_ENABLE_TPL_MKL: yes\n";
 #else
-  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_MKL: no\n";
+  os << "  "
+     << "KOKKOSKERNELS_ENABLE_TPL_MKL: no\n";
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
-  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_CUBLAS: yes\n";
+  os << "  "
+     << "KOKKOSKERNELS_ENABLE_TPL_CUBLAS: yes\n";
 #else
-  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_CUBLAS: no\n";
+  os << "  "
+     << "KOKKOSKERNELS_ENABLE_TPL_CUBLAS: no\n";
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_CUSPARSE: yes\n";
+  os << "  "
+     << "KOKKOSKERNELS_ENABLE_TPL_CUSPARSE: yes\n";
 #else
-  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_CUSPARSE: no\n";
+  os << "  "
+     << "KOKKOSKERNELS_ENABLE_TPL_CUSPARSE: no\n";
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
-  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_ROCBLAS: yes\n";
+  os << "  "
+     << "KOKKOSKERNELS_ENABLE_TPL_ROCBLAS: yes\n";
 #else
-  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_ROCBLAS: no\n";
+  os << "  "
+     << "KOKKOSKERNELS_ENABLE_TPL_ROCBLAS: no\n";
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCPARSE
-  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_ROCPARSE: yes\n";
+  os << "  "
+     << "KOKKOSKERNELS_ENABLE_TPL_ROCPARSE: yes\n";
 #else
-  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_ROCPARSE: no\n";
+  os << "  "
+     << "KOKKOSKERNELS_ENABLE_TPL_ROCPARSE: no\n";
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_METIS
   os << "KOKKOSKERNELS_ENABLE_TPL_METIS: yes\n";
 #else
-  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_METIS: no\n";
+  os << "  "
+     << "KOKKOSKERNELS_ENABLE_TPL_METIS: no\n";
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ARMPL
-  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_ARMPL: yes\n";
+  os << "  "
+     << "KOKKOSKERNELS_ENABLE_TPL_ARMPL: yes\n";
 #else
-  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_ARMPL: no\n";
+  os << "  "
+     << "KOKKOSKERNELS_ENABLE_TPL_ARMPL: no\n";
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
-  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_MAGMA: yes\n";
+  os << "  "
+     << "KOKKOSKERNELS_ENABLE_TPL_MAGMA: yes\n";
 #else
-  os << "  " << "KOKKOSKERNELS_ENABLE_TPL_MAGMA: no\n";
+  os << "  "
+     << "KOKKOSKERNELS_ENABLE_TPL_MAGMA: no\n";
 #endif
-
 }
 
 inline void print_version(std::ostream& os) {
-    // KOKKOSKERNELS_VERSION is used because MAJOR, MINOR and PATCH macros
-    // are not available in Kernels
-    os << "  "<<"Kernels Version: "<< KOKKOSKERNELS_VERSION <<'\n';
+  // KOKKOSKERNELS_VERSION is used because MAJOR, MINOR and PATCH macros
+  // are not available in Kernels
+  os << "  "
+     << "Kernels Version: " << KOKKOSKERNELS_VERSION << '\n';
 }
 
 }  // namespace Impl
 
 inline void print_configuration(std::ostream& os) {
-    Impl::print_version(os);
+  Impl::print_version(os);
 
-    os << "TPLs: \n";
-    Impl::print_enabled_tpls(os);
+  os << "TPLs: \n";
+  Impl::print_enabled_tpls(os);
 }
 
 }  // namespace KokkosKernels
-#endif // _KOKKOSKERNELS_PRINT_CONFIGURATION_HPP
+#endif  // _KOKKOSKERNELS_PRINT_CONFIGURATION_HPP

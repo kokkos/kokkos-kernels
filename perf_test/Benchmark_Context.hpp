@@ -24,7 +24,6 @@
 #include <benchmark/benchmark.h>
 
 #include <Kokkos_Core.hpp>
-#include <kokkoskernels_print_configuration.hpp>
 
 namespace KokkosKernelsBenchmark {
 
@@ -42,12 +41,11 @@ std::string remove_unwanted_characters(std::string str) {
   return str.substr(from, to + 1);
 }
 
-/// \brief Extract all key:value pairs from kernels configuration and add it to
+/// \brief Extract all key:value pairs from kokkos configuration and add it to
 /// the benchmark context
-void add_kernels_configuration(bool verbose) {
+void add_kokkos_configuration(bool verbose) {
   std::ostringstream msg;
   Kokkos::print_configuration(msg, verbose);
-  KokkosKernels::print_configuration(msg);
 
   // Iterate over lines returned from kokkos and extract key:value pairs
   std::stringstream ss{msg.str()};
@@ -66,8 +64,8 @@ void add_kernels_configuration(bool verbose) {
 
 /// \brief Gather all context information and add it to benchmark context data
 void add_benchmark_context(bool verbose = false) {
-  // Add Kokkos and kernerls configuration to benchmark context data
-  add_kernels_configuration(verbose);
+  // Add Kokkos configuration to benchmark context data
+  add_kokkos_configuration(verbose);
 }
 
 }  // namespace KokkosKernelsBenchmark
