@@ -377,13 +377,12 @@ void run_test_par_ilut_precond() {
   EntriesType U_entries("U_entries", nnzU);
   ValuesType U_values("U_values", nnzU);
 
-  par_ilut_numeric(
-      &kh, row_map, entries, values, L_row_map, L_entries, L_values, U_row_map,
-      U_entries, U_values,
+  par_ilut_numeric(&kh, row_map, entries, values, L_row_map, L_entries,
+                   L_values, U_row_map, U_entries, U_values,
 #ifdef KOKKOS_ENABLE_SERIAL
-      true /*deterministic*/
+                   true /*deterministic*/
 #else
-      false /*cannot ask for determinism*/
+                   false /*cannot ask for determinism*/
 #endif
   );
 
