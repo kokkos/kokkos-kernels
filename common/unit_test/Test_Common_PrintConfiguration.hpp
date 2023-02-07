@@ -17,16 +17,14 @@
 /// \file Test_Common_PrintConfiguration.hpp
 /// \brief Tests for print configuration
 
-#ifndef KOKKOSKERNELS_PRINTCONFIGURATION_HPP
-#define KOKKOSKERNELS_PRINTCONFIGURATION_HPP
+#ifndef KOKKOSKERNELS_PRINTCONFIGURATIONTEST_HPP
+#define KOKKOSKERNELS_PRINTCONFIGURATIONTEST_HPP
 
-#include "KokkosKernels_PrintConfguration.hpp"
+#include "KokkosKernels_PrintConfiguration.hpp"
 
-/// \brief Verify that all keys from kernels configuration and check their value
-void check_print_configuration(std::ostream& os) {
-  std::ostringstream msg;
-  KokkosKernels::print_configuration(msg);
-
+/// \brief Verify that all keys from kernels configuration and check their
+/// values
+void check_print_configuration(const std::ostringstream& msg) {
   bool kernelsVersionKeyFound   = false;
   bool enabledTPLsNamesKeyFound = false;
   // Iterate over lines returned from kokkos and extract key:value pairs
@@ -35,7 +33,7 @@ void check_print_configuration(std::ostream& os) {
     auto found = line.find_first_of(':');
     if (found != std::string::npos) {
       auto currentKey = line.substr(0, found);
-      if (currentKey == "  Kernels Version") {
+      if (currentKey == "  KokkosKernels Version") {
         kernelsVersionKeyFound = true;
       } else if (currentKey == "TPLs") {
         enabledTPLsNamesKeyFound = true;
@@ -45,10 +43,14 @@ void check_print_configuration(std::ostream& os) {
   EXPECT_TRUE(kernelsVersionKeyFound && enabledTPLsNamesKeyFound);
 }
 
-/// \brief Verify that print_configuration print the expected keys from kernels
+/// \brief Verify that print_configuration prints the expected keys from Kernels
 /// configuration
 template <typename exec_space>
 void testPrintConfiguration() {
+  // First, print this to cout in order to see what it looks like
+  KokkosKernels::print_configuration(std::cout);
+  // Then, run the actual test which prints the string to "out" and verifies
+  // that out has meet some expected behavior
   std::ostringstream out;
   KokkosKernels::print_configuration(out);
   check_print_configuration(out);
@@ -58,4 +60,4 @@ TEST_F(TestCategory, common_print_configuration) {
   testPrintConfiguration<TestExecSpace>();
 }
 
-#endif  // KOKKOSKERNELS_PRINTCONFIGURATION_HPP
+#endif  // KOKKOSKERNELS_PRINTCONFIGURATIONTEST_HPP
