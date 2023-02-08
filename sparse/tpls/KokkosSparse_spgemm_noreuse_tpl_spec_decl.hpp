@@ -187,15 +187,15 @@ Matrix spgemm_noreuse_cusparse(const MatrixConst &A, const MatrixConst &B) {
       cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
       CUSPARSE_OPERATION_NON_TRANSPOSE, m, k, n, generalDescr, A.nnz(),
       A.graph.row_map.data(), A.graph.entries.data(), generalDescr, B.nnz(),
-      B.graph.row_map.data(), B.graph.entries.data(), generalDescr, row_mapC.data(),
-      nnzTotalDevHostPtr));
+      B.graph.row_map.data(), B.graph.entries.data(), generalDescr,
+      row_mapC.data(), nnzTotalDevHostPtr));
   if (nullptr != nnzTotalDevHostPtr) {
     nnzC = *nnzTotalDevHostPtr;
   } else {
-    KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMemcpy(
-        &nnzC, row_mapC.data() + m, sizeof(int), cudaMemcpyDeviceToHost));
-    KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMemcpy(
-        &baseC, row_mapC.data(), sizeof(int), cudaMemcpyDeviceToHost));
+    KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMemcpy(&nnzC, row_mapC.data() + m,
+                                          sizeof(int), cudaMemcpyDeviceToHost));
+    KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMemcpy(&baseC, row_mapC.data(), sizeof(int),
+                                          cudaMemcpyDeviceToHost));
     nnzC -= baseC;
   }
 
@@ -208,9 +208,10 @@ Matrix spgemm_noreuse_cusparse(const MatrixConst &A, const MatrixConst &B) {
   KOKKOS_CUSPARSE_SAFE_CALL(cusparseXcsrgemm_noreuse(
       cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
       CUSPARSE_OPERATION_NON_TRANSPOSE, m, k, n, generalDescr, A.nnz(),
-      A.values.data(), A.graph.row_map.data(), A.graph.entries.data(), generalDescr, B.nnz(),
-      B.values.data(), B.graph.row_map.data(), B.graph.entries.data(), generalDescr,
-      valuesC.data(), row_mapC.data(), entriesC.data()));
+      A.values.data(), A.graph.row_map.data(), A.graph.entries.data(),
+      generalDescr, B.nnz(), B.values.data(), B.graph.row_map.data(),
+      B.graph.entries.data(), generalDescr, valuesC.data(), row_mapC.data(),
+      entriesC.data()));
   KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyMatDescr(generalDescr));
   return Matrix("C", m, k, nnzC, valuesC, row_mapC, entriesC);
 }

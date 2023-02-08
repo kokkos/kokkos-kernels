@@ -56,7 +56,7 @@ void spmv_cusparse(const KokkosKernels::Experimental::Controls& controls,
 
 #if defined(CUSPARSE_VERSION) && (10300 <= CUSPARSE_VERSION)
 
-  using entry_type  = typename AMatrix::non_const_ordinal_type;
+  using entry_type = typename AMatrix::non_const_ordinal_type;
   /* Check that cusparse can handle the types of the input Kokkos::CrsMatrix */
   const cusparseIndexType_t myCusparseOffsetType =
       cusparse_index_type_t_from<offset_type>();
