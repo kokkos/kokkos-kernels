@@ -45,7 +45,7 @@ class LUPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
   using ScalarType = typename std::remove_const<typename CRS::value_type>::type;
   using EXSP       = typename CRS::execution_space;
   using karith     = typename Kokkos::ArithTraits<ScalarType>;
-  using View1d     = typename Kokkos::View<ScalarType*, EXSP>;
+  using View1d     = typename Kokkos::View<ScalarType*, typename CRS::device_type>;
 
  private:
   // trsm takes host views

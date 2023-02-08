@@ -77,25 +77,13 @@ inline void hip_internal_safe_call(hipError_t e, const char *name,
   } while (0)
 
 // SYCL cannot printf like the other backends quite yet
-#ifdef __SYCL_DEVICE_ONLY__
-#define IMPL_KERNEL_THROW(condition, msg)                               \
-  do {                                                                  \
-    if (!(condition)) {                                                 \
-      const __attribute__((opencl_constant)) char format[] =            \
-          "KERNEL CHECK FAILED:\n   %s %s\n";                           \
-      sycl::ext::oneapi::experimental::printf(format, #condition, msg); \
-      Kokkos::abort("");                                                \
-    }                                                                   \
-  } while (0)
-#else
 #define IMPL_KERNEL_THROW(condition, msg)                              \
   do {                                                                 \
     if (!(condition)) {                                                \
-      printf("KERNEL CHECK FAILED:\n   %s\n   %s\n", #condition, msg); \
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("KERNEL CHECK FAILED:\n   %s\n   %s\n", #condition, msg); \
       Kokkos::abort("");                                               \
     }                                                                  \
   } while (0)
-#endif
 
 #ifndef NDEBUG
 #define KK_ASSERT(condition) IMPL_THROW(condition, "", std::logic_error)

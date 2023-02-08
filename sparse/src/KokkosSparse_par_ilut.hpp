@@ -348,6 +348,9 @@ void par_ilut_numeric(KernelHandle* handle, ARowMapType& A_rowmap,
     KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
+  KK_REQUIRE_MSG(KokkosSparse::Impl::isCrsGraphSorted(L_rowmap, L_entries), "L is not sorted");
+  KK_REQUIRE_MSG(KokkosSparse::Impl::isCrsGraphSorted(U_rowmap, U_entries), "U is not sorted");
+
   using c_size_t   = typename KernelHandle::const_size_type;
   using c_lno_t    = typename KernelHandle::const_nnz_lno_t;
   using c_scalar_t = typename KernelHandle::const_nnz_scalar_t;
