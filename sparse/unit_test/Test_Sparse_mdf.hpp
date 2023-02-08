@@ -32,6 +32,8 @@ void run_test_mdf() {
   using values_type     = typename crs_matrix_type::values_type::non_const_type;
   using value_type      = typename crs_matrix_type::value_type;
 
+  const value_type four = static_cast<value_type>(4.0);
+
   constexpr ordinal_type numRows  = 16;
   constexpr ordinal_type numCols  = 16;
   constexpr size_type numNonZeros = 64;
@@ -70,8 +72,8 @@ void run_test_mdf() {
 
   KokkosSparse::Experimental::MDF_handle<crs_matrix_type> handle(A);
   handle.set_verbosity(0);
-  mdf_symbolic_phase(A, handle);
-  mdf_numeric_phase(A, handle);
+  KokkosSparse::Experimental::mdf_symbolic(A, handle);
+  KokkosSparse::Experimental::mdf_numeric(A, handle);
 
   col_ind_type permutation = handle.get_permutation();
 
@@ -83,20 +85,97 @@ void run_test_mdf() {
                                           7, 11, 13, 14, 5, 6, 9, 10};
   printf("MDF ordering: { ");
   for (ordinal_type idx = 0; idx < A.numRows(); ++idx) {
-    ;
     printf("%d ", static_cast<int>(permutation_h(idx)));
     if (permutation_h(idx) != permutation_ref[idx]) {
       success = false;
     }
   }
   printf("}\n");
-
   EXPECT_TRUE(success)
       << "The permutation computed is different from the reference solution!";
 
+  // Check the factors L and U
   handle.sort_factors();
   crs_matrix_type U = handle.getU();
   crs_matrix_type L = handle.getL();
+
+  EXPECT_TRUE(U.numRows() == 16);
+  EXPECT_TRUE(U.nnz() == 40);
+
+  {
+    auto row_map_U = Kokkos::create_mirror(U.graph.row_map);
+    Kokkos::deep_copy(row_map_U, U.graph.row_map);
+    auto entries_U = Kokkos::create_mirror(U.graph.entries);
+    Kokkos::deep_copy(entries_U, U.graph.entries);
+    auto values_U = Kokkos::create_mirror(U.values);
+    Kokkos::deep_copy(values_U, U.values);
+
+    const size_type row_map_U_ref[17]    = {0,  3,  6,  9,  12, 15, 17, 20, 22,
+                                         25, 27, 30, 32, 35, 37, 39, 40};
+    const ordinal_type entries_U_ref[40] = {
+        0,  4,  6,  1,  5,  8,  2,  7,  10, 3,  9,  11, 4,  5,
+        12, 5,  13, 6,  7,  12, 7,  14, 8,  9,  13, 9,  15, 10,
+        11, 14, 11, 15, 12, 13, 14, 13, 15, 14, 15, 15};
+
+    const scalar_type val0 = static_cast<scalar_type>(15. / 4.);
+    const scalar_type val1 = static_cast<scalar_type>(val0 - 1 / val0);
+    const scalar_type val2 = static_cast<scalar_type>(4 - 2 / val0);
+    const scalar_type val3 =
+        static_cast<scalar_type>(4 - 1 / val0 - 1 / val1 - 1 / val2);
+    const scalar_type val4 = static_cast<scalar_type>(4 - 2 / val1 - 2 / val3);
+    const scalar_type values_U_ref[40] = {
+        4,    -1, -1,   4,  -1, -1,   4,  -1,   -1, 4,   -1,   -1, val0, -1, -1,
+        val1, -1, val0, -1, -1, val1, -1, val0, -1, -1,  val1, -1, val0, -1, -1,
+        val1, -1, val2, -1, -1, val3, -1, val3, -1, val4};
+
+    for (int idx = 0; idx < 17; ++idx) {
+      EXPECT_TRUE(row_map_U_ref[idx] == row_map_U(idx))
+          << "rowmap_U(" << idx << ") is wrong!";
+    }
+    for (int idx = 0; idx < 40; ++idx) {
+      EXPECT_TRUE(entries_U_ref[idx] == entries_U(idx))
+          << "entries_U(" << idx << ") is wrong!";
+      EXPECT_NEAR_KK(values_U_ref[idx], values_U(idx),
+                     10 * Kokkos::ArithTraits<scalar_type>::eps(),
+                     "An entry in U.values is wrong!");
+    }
+
+    auto row_map_L = Kokkos::create_mirror(L.graph.row_map);
+    Kokkos::deep_copy(row_map_L, L.graph.row_map);
+    auto entries_L = Kokkos::create_mirror(L.graph.entries);
+    Kokkos::deep_copy(entries_L, L.graph.entries);
+    auto values_L = Kokkos::create_mirror(L.values);
+    Kokkos::deep_copy(values_L, L.values);
+
+    const size_type row_map_L_ref[17]    = {0,  1,  2,  3,  4,  6,  9,  11, 14,
+                                         16, 19, 21, 24, 27, 31, 35, 40};
+    const ordinal_type entries_L_ref[40] = {
+        0, 1,  2,  3, 0,  4,  1,  4, 5,  0,  6,  2, 6,  7,
+        1, 8,  3,  8, 9,  2,  10, 3, 10, 11, 4,  6, 12, 5,
+        8, 12, 13, 7, 10, 12, 14, 9, 11, 13, 14, 15};
+    const scalar_type values_L_ref[40] = {
+        1,         1,         1,         1,         -1 / four, 1,
+        -1 / four, -1 / val0, 1,         -1 / four, 1,         -1 / four,
+        -1 / val0, 1,         -1 / four, 1,         -1 / four, -1 / val0,
+        1,         -1 / four, 1,         -1 / four, -1 / val0, 1,
+        -1 / val0, -1 / val0, 1,         -1 / val1, -1 / val0, -1 / val2,
+        1,         -1 / val1, -1 / val0, -1 / val2, 1,         -1 / val1,
+        -1 / val1, -1 / val3, -1 / val3, 1};
+
+    for (int idx = 0; idx < 17; ++idx) {
+      EXPECT_TRUE(row_map_L_ref[idx] == row_map_L(idx))
+          << "rowmap_L(" << idx << ")=" << row_map_L(idx) << " is wrong!";
+    }
+    for (int idx = 0; idx < 40; ++idx) {
+      EXPECT_TRUE(entries_L_ref[idx] == entries_L(idx))
+          << "entries_L(" << idx << ")=" << entries_L(idx)
+          << " is wrong, entries_L_ref[" << idx << "]=" << entries_L_ref[idx]
+          << "!";
+      EXPECT_NEAR_KK(values_L_ref[idx], values_L(idx),
+                     10 * Kokkos::ArithTraits<scalar_type>::eps(),
+                     "An entry in L.values is wrong!");
+    }
+  }
 }
 
 }  // namespace Test
