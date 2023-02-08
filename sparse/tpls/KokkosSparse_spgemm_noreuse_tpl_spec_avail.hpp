@@ -30,7 +30,7 @@ struct spgemm_noreuse_tpl_spec_avail {
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 // For cuSparse 11 and up, use the non-reuse generic interface.
-// For cuSparse 10, there is only one interface
+// But for cuSparse 10, there is only one interface
 // so just let KokkosSparse::spgemm call the symbolic and numeric wrappers.
 
 #if (CUDA_VERSION >= 11000)
@@ -59,30 +59,6 @@ SPGEMM_NOREUSE_AVAIL_CUSPARSE_S(Kokkos::complex<float>)
 SPGEMM_NOREUSE_AVAIL_CUSPARSE_S(Kokkos::complex<double>)
 
 #endif
-#endif
-
-#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
-#define SPGEMM_NOREUSE_AVAIL_ROCSPARSE(SCALAR)                               \
-  template <>                                                                \
-  struct spgemm_noreuse_tpl_spec_avail<                                      \
-      KokkosSparse::CrsMatrix<SCALAR, int,                                   \
-                              Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>, \
-                              void, int>,                                    \
-      KokkosSparse::CrsMatrix<const SCALAR, const int,                       \
-                              Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>, \
-                              Kokkos::MemoryTraits<Kokkos::Unmanaged>,       \
-                              const int>,                                    \
-      KokkosSparse::CrsMatrix<const SCALAR, const int,                       \
-                              Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>, \
-                              Kokkos::MemoryTraits<Kokkos::Unmanaged>,       \
-                              const int>> {                                  \
-    enum : bool { value = true };                                            \
-  };
-
-SPGEMM_NOREUSE_AVAIL_ROCSPARSE(float)
-SPGEMM_NOREUSE_AVAIL_ROCSPARSE(double)
-SPGEMM_NOREUSE_AVAIL_ROCSPARSE(Kokkos::complex<float>)
-SPGEMM_NOREUSE_AVAIL_ROCSPARSE(Kokkos::complex<double>)
 #endif
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL

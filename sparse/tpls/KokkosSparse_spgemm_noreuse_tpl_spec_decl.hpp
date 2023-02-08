@@ -24,11 +24,6 @@
 #include "KokkosSparse_Utils_cusparse.hpp"
 #endif
 
-#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
-#include "rocsparse/rocsparse.h"
-#include "KokkosSparse_Utils_rocsparse.hpp"
-#endif
-
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
 #include "KokkosSparse_Utils_mkl.hpp"
 #include "mkl_spblas.h"
@@ -173,123 +168,92 @@ SPGEMM_NOREUSE_DECL_CUSPARSE_S(Kokkos::complex<float>, false)
 SPGEMM_NOREUSE_DECL_CUSPARSE_S(Kokkos::complex<double>, false)
 #endif
 
-/*
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
-template <
-  typename KernelHandle, typename ain_row_index_view_type,
-  typename ain_nonzero_index_view_type, typename ain_nonzero_value_view_type,
-  typename bin_row_index_view_type, typename bin_nonzero_index_view_type,
-  typename bin_nonzero_value_view_type, typename cin_row_index_view_type,
-  typename cin_nonzero_index_view_type, typename cin_nonzero_value_view_type>
-void spgemm_noreuse_mkl(
-  KernelHandle *handle, typename KernelHandle::nnz_lno_t m,
-  typename KernelHandle::nnz_lno_t n, typename KernelHandle::nnz_lno_t k,
-  ain_row_index_view_type rowptrA, ain_nonzero_index_view_type colidxA,
-  ain_nonzero_value_view_type valuesA, bin_row_index_view_type rowptrB,
-  bin_nonzero_index_view_type colidxB, bin_nonzero_value_view_type valuesB,
-  cin_row_index_view_type rowptrC, cin_nonzero_index_view_type colidxC,
-  cin_nonzero_value_view_type valuesC) {
-using ExecSpace   = typename KernelHandle::HandleExecSpace;
-using index_type  = typename KernelHandle::nnz_lno_t;
-using size_type   = typename KernelHandle::size_type;
-using scalar_type = typename KernelHandle::nnz_scalar_t;
-using MKLMatrix   = MKLSparseMatrix<scalar_type>;
-size_type c_nnz   = handle->get_c_nnz();
-if (c_nnz == size_type(0)) {
-  handle->set_computed_entries();
-  handle->set_call_numeric();
-  return;
-}
-MKLMatrix A(m, n, const_cast<size_type *>(rowptrA.data()),
-            const_cast<index_type *>(colidxA.data()),
-            const_cast<scalar_type *>(valuesA.data()));
-MKLMatrix B(n, k, const_cast<size_type *>(rowptrB.data()),
-            const_cast<index_type *>(colidxB.data()),
-            const_cast<scalar_type *>(valuesB.data()));
-auto mklSpgemmHandle = handle->get_mkl_spgemm_handle();
-bool computedEntries = false;
-matrix_descr generalDescr;
-generalDescr.type = SPARSE_MATRIX_TYPE_GENERAL;
-generalDescr.mode = SPARSE_FILL_MODE_FULL;
-generalDescr.diag = SPARSE_DIAG_NON_UNIT;
-KOKKOSKERNELS_MKL_SAFE_CALL(
-    mkl_sparse_sp2m(SPARSE_OPERATION_NON_TRANSPOSE, generalDescr, A,
-                    SPARSE_OPERATION_NON_TRANSPOSE, generalDescr, B,
-                    SPARSE_STAGE_FINALIZE_MULT_NO_VAL, &mklSpgemmHandle->C));
-KOKKOSKERNELS_MKL_SAFE_CALL(
-    mkl_sparse_sp2m(SPARSE_OPERATION_NON_TRANSPOSE, generalDescr, A,
-                    SPARSE_OPERATION_NON_TRANSPOSE, generalDescr, B,
-                    SPARSE_STAGE_FINALIZE_MULT, &mklSpgemmHandle->C));
-KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_order(mklSpgemmHandle->C));
-MKLMatrix wrappedC(mklSpgemmHandle->C);
-MKL_INT nrows = 0, ncols = 0;
-MKL_INT *rowptrRaw     = nullptr;
-MKL_INT *colidxRaw     = nullptr;
-scalar_type *valuesRaw = nullptr;
-wrappedC.export_data(nrows, ncols, rowptrRaw, colidxRaw, valuesRaw);
-Kokkos::View<index_type *, Kokkos::HostSpace,
-             Kokkos::MemoryTraits<Kokkos::Unmanaged>>
-    colidxRawView(colidxRaw, c_nnz);
-Kokkos::View<scalar_type *, Kokkos::HostSpace,
-             Kokkos::MemoryTraits<Kokkos::Unmanaged>>
-    valuesRawView(valuesRaw, c_nnz);
-Kokkos::deep_copy(ExecSpace(), colidxC, colidxRawView);
-Kokkos::deep_copy(ExecSpace(), valuesC, valuesRawView);
-handle->set_call_numeric();
-handle->set_computed_entries();
+template <typename Matrix, typename MatrixConst>
+Matrix spgemm_noreuse_mkl(const MatrixConst &A, const MatrixConst &B) {
+  using size_type = typename Matrix::non_const_size_type;
+  using index_type = typename Matrix::non_const_ordinal_type;
+  using scalar_type = typename Matrix::non_const_value_type;
+  using ExecSpace = typename Matrix::execution_space;
+  using MKLMatrix   = MKLSparseMatrix<scalar_type>;
+  auto m = A.numRows();
+  auto n = A.numCols();
+  auto k = B.numCols();
+  MKLMatrix Amkl(m, n, const_cast<size_type *>(A.graph.row_map.data()),
+              const_cast<index_type *>(A.graph.entries.data()),
+              const_cast<scalar_type *>(A.values.data()));
+  MKLMatrix Bmkl(n, k, const_cast<size_type *>(B.graph.row_map.data()),
+              const_cast<index_type *>(B.graph.entries.data()),
+              const_cast<scalar_type *>(B.values.data()));
+  sparse_matrix_t C;
+  matrix_descr generalDescr;
+  generalDescr.type = SPARSE_MATRIX_TYPE_GENERAL;
+  generalDescr.mode = SPARSE_FILL_MODE_FULL;
+  generalDescr.diag = SPARSE_DIAG_NON_UNIT;
+  KOKKOSKERNELS_MKL_SAFE_CALL(
+      mkl_sparse_spmm(SPARSE_OPERATION_NON_TRANSPOSE, Amkl, Bmkl, &C));
+  KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_order(C));
+  MKLMatrix wrappedC(C);
+  MKL_INT nrows = 0, ncols = 0;
+  MKL_INT *rowmapRaw     = nullptr;
+  MKL_INT *entriesRaw = nullptr;
+  scalar_type *valuesRaw = nullptr;
+  wrappedC.export_data(nrows, ncols, rowmapRaw, entriesRaw, valuesRaw);
+  if(nrows != m || ncols != k)
+    throw std::runtime_error("KokkosSparse::spgemm: matrix returned by MKL has incorrect dimensions");
+  MKL_INT c_nnz = rowmapRaw[m];
+  Kokkos::View<size_type *, Kokkos::HostSpace,
+               Kokkos::MemoryTraits<Kokkos::Unmanaged>>
+      rowmapRawView(rowmapRaw, m + 1);
+  Kokkos::View<index_type *, Kokkos::HostSpace,
+               Kokkos::MemoryTraits<Kokkos::Unmanaged>>
+      entriesRawView(entriesRaw, c_nnz);
+  Kokkos::View<scalar_type *, Kokkos::HostSpace,
+               Kokkos::MemoryTraits<Kokkos::Unmanaged>>
+      valuesRawView(valuesRaw, c_nnz);
+
+  typename Matrix::row_map_type::non_const_type row_mapC(
+      Kokkos::view_alloc(Kokkos::WithoutInitializing, "C rowmap"), m + 1);
+  typename Matrix::index_type entriesC(
+      Kokkos::view_alloc(Kokkos::WithoutInitializing, "C entries"), c_nnz);
+  typename Matrix::values_type valuesC(
+      Kokkos::view_alloc(Kokkos::WithoutInitializing, "C values"), c_nnz);
+
+  Kokkos::deep_copy(ExecSpace(), row_mapC, rowmapRawView);
+  Kokkos::deep_copy(ExecSpace(), entriesC, entriesRawView);
+  Kokkos::deep_copy(ExecSpace(), valuesC, valuesRawView);
+  // Now, done with the copy of C owned by MKL
+  wrappedC.destroy();
+  return Matrix("C", m, k, c_nnz, valuesC, row_mapC, entriesC);
 }
 
 #define SPGEMM_NOREUSE_DECL_MKL(SCALAR, EXEC, TPL_AVAIL)                       \
 template <>                                                                  \
-struct SPGEMM_NOREUSE<KokkosKernels::Experimental::KokkosKernelsHandle<      \
-                          const int, const int, const SCALAR, EXEC,          \
-                          Kokkos::HostSpace, Kokkos::HostSpace>,             \
-                      Kokkos::View<const int *, default_layout,              \
-                                   Kokkos::Device<EXEC, Kokkos::HostSpace>,  \
-                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-                      Kokkos::View<const int *, default_layout,              \
-                                   Kokkos::Device<EXEC, Kokkos::HostSpace>,  \
-                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-                      Kokkos::View<const SCALAR *, default_layout,           \
-                                   Kokkos::Device<EXEC, Kokkos::HostSpace>,  \
-                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-                      Kokkos::View<const int *, default_layout,              \
-                                   Kokkos::Device<EXEC, Kokkos::HostSpace>,  \
-                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-                      Kokkos::View<const int *, default_layout,              \
-                                   Kokkos::Device<EXEC, Kokkos::HostSpace>,  \
-                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-                      Kokkos::View<const SCALAR *, default_layout,           \
-                                   Kokkos::Device<EXEC, Kokkos::HostSpace>,  \
-                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-                      Kokkos::View<const int *, default_layout,              \
-                                   Kokkos::Device<EXEC, Kokkos::HostSpace>,  \
-                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-                      Kokkos::View<int *, default_layout,                    \
-                                   Kokkos::Device<EXEC, Kokkos::HostSpace>,  \
-                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-                      Kokkos::View<SCALAR *, default_layout,                 \
-                                   Kokkos::Device<EXEC, Kokkos::HostSpace>,  \
-                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
+struct SPGEMM_NOREUSE< \
+      KokkosSparse::CrsMatrix<                                               \
+          SCALAR, int, Kokkos::Device<EXEC, Kokkos::HostSpace>, void, int>,   \
+      KokkosSparse::CrsMatrix<                                               \
+          const SCALAR, const int, Kokkos::Device<EXEC, Kokkos::HostSpace>,   \
+          Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>,               \
+      KokkosSparse::CrsMatrix<                                               \
+          const SCALAR, const int, Kokkos::Device<EXEC, Kokkos::HostSpace>,   \
+          Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>,               \
                       true, TPL_AVAIL> {                                     \
-  static void spgemm_noreuse(KernelHandle *handle,                           \
-                             typename KernelHandle::nnz_lno_t m,             \
-                             typename KernelHandle::nnz_lno_t n,             \
-                             typename KernelHandle::nnz_lno_t k,             \
-                             c_int_view_t row_mapA, c_int_view_t entriesA,   \
-                             c_scalar_view_t valuesA, bool,                  \
-                             c_int_view_t row_mapB, c_int_view_t entriesB,   \
-                             c_scalar_view_t valuesB, bool,                  \
-                             c_int_view_t row_mapC, int_view_t entriesC,     \
-                             scalar_view_t valuesC) {                        \
-    std::string label = "KokkosSparse::spgemm_noreuse[TPL_MKL," +            \
-                        Kokkos::ArithTraits<SCALAR>::name() + "]";           \
-    Kokkos::Profiling::pushRegion(label);                                    \
-    spgemm_noreuse_mkl(handle->get_spgemm_handle(), m, n, k, row_mapA,       \
-                       entriesA, valuesA, row_mapB, entriesB, valuesB,       \
-                       row_mapC, entriesC, valuesC);                         \
-    Kokkos::Profiling::popRegion();                                          \
-  }                                                                          \
+  using Matrix = KokkosSparse::CrsMatrix<                                  \
+      SCALAR, int, Kokkos::Device<EXEC, Kokkos::HostSpace>, void, int>;     \
+  using ConstMatrix = KokkosSparse::CrsMatrix<                             \
+      const SCALAR, const int, Kokkos::Device<EXEC, Kokkos::HostSpace>,     \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>;                 \
+  static KokkosSparse::CrsMatrix<                                          \
+      SCALAR, int, Kokkos::Device<EXEC, Kokkos::HostSpace>, void, int>      \
+  spgemm_noreuse(const ConstMatrix &A, bool, const ConstMatrix &B, bool) { \
+    std::string label = "KokkosSparse::spgemm_noreuse[TPL_MKL," +     \
+                        Kokkos::ArithTraits<SCALAR>::name() + "]";         \
+    Kokkos::Profiling::pushRegion(label);                                  \
+    Matrix C = spgemm_noreuse_mkl<Matrix>(A, B);                      \
+    Kokkos::Profiling::popRegion();                                        \
+    return C;                                                              \
+  }                                                                        \
 };
 
 #define SPGEMM_NOREUSE_DECL_MKL_SE(SCALAR, EXEC) \
@@ -309,7 +273,6 @@ SPGEMM_NOREUSE_DECL_MKL_E(Kokkos::Serial)
 SPGEMM_NOREUSE_DECL_MKL_E(Kokkos::OpenMP)
 #endif
 #endif
-*/
 
 }  // namespace Impl
 }  // namespace KokkosSparse
