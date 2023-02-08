@@ -29,11 +29,11 @@ struct spgemm_noreuse_tpl_spec_avail {
 };
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-// NOTE: all versions of cuSPARSE 10.x and 11.x support exactly the same matrix
-// types, so there is no ifdef'ing on versions needed in avail. Offset and
-// Ordinal must both be 32-bit. Even though the "generic" API lets you specify
-// offsets and ordinals independently as either 16, 32 or 64-bit, SpGEMM will
-// just fail at runtime if you don't use 32 for both.
+// For cuSparse 11 and up, use the non-reuse generic interface.
+// For cuSparse 10, there is only one interface
+// so just let KokkosSparse::spgemm call the symbolic and numeric wrappers.
+
+#if (CUDA_VERSION >= 11000)
 
 #define SPGEMM_NOREUSE_AVAIL_CUSPARSE(SCALAR, MEMSPACE)                    \
   template <>                                                              \
@@ -58,6 +58,7 @@ SPGEMM_NOREUSE_AVAIL_CUSPARSE_S(double)
 SPGEMM_NOREUSE_AVAIL_CUSPARSE_S(Kokkos::complex<float>)
 SPGEMM_NOREUSE_AVAIL_CUSPARSE_S(Kokkos::complex<double>)
 
+#endif
 #endif
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
