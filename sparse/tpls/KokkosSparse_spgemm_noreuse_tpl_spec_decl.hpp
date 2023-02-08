@@ -129,13 +129,12 @@ Matrix spgemm_noreuse_cusparse(const MatrixConst &A, const MatrixConst &B) {
 
 #else
 
-/*
 // Generic (using overloads) wrapper for cusparseXcsrgemm (where X is S, D, C,
 // or Z). Accepts Kokkos types (e.g. Kokkos::complex<float>) for Scalar and
 // handles casting to cuSparse types internally.
 
 #define CUSPARSE_XCSRGEMM_SPEC(KokkosType, CusparseType, Abbreviation)     \
-  inline cusparseStatus_t cusparseXcsrgemm(                                \
+  inline cusparseStatus_t cusparseXcsrgemm_noreuse(                        \
       cusparseHandle_t handle, cusparseOperation_t transA,                 \
       cusparseOperation_t transB, int m, int n, int k,                     \
       const cusparseMatDescr_t descrA, const int nnzA,                     \
@@ -162,34 +161,59 @@ CUSPARSE_XCSRGEMM_SPEC(Kokkos::complex<double>, cuDoubleComplex, Z)
 
 #undef CUSPARSE_XCSRGEMM_SPEC
 
-// 10.x supports the pre-generic interface.
-template <typename KernelHandle, typename lno_t, typename ConstRowMapType,
-          typename ConstEntriesType, typename ConstValuesType,
-          typename EntriesType, typename ValuesType>
-void spgemm_noreuse_cusparse(
-    lno_t m, lno_t n, lno_t k,
-    const ConstRowMapType &row_mapA, const ConstEntriesType &entriesA,
-    const ConstValuesType &valuesA, const ConstRowMapType &row_mapB,
-    const ConstEntriesType &entriesB, const ConstValuesType &valuesB,
-    const RowMapType &row_mapC, EntriesType &entriesC, ValuesType &valuesC) {
-  auto h = handle->get_cusparse_spgemm_handle();
+template <typename Matrix, typename MatrixConst>
+Matrix spgemm_noreuse_cusparse(const MatrixConst &A, const MatrixConst &B) {
+  auto m = A.numRows();
+  auto n = A.numCols();
+  auto k = B.numCols();
+  // Descriptor for any general matrix with index base 0
+  cusparseMatDescr_t generalDescr;
+  // Get singleton cusparse handle from default controls
+  KokkosKernels::Experimental::Controls kkControls;
+  cusparseHandle_t cusparseHandle = kkControls.getCusparseHandle();
+  KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&generalDescr));
+  KOKKOS_CUSPARSE_SAFE_CALL(
+      cusparseSetMatType(generalDescr, CUSPARSE_MATRIX_TYPE_GENERAL));
+  KOKKOS_CUSPARSE_SAFE_CALL(
+      cusparseSetMatIndexBase(generalDescr, CUSPARSE_INDEX_BASE_ZERO));
 
-  int nnzA = entriesA.extent(0);
-  int nnzB = entriesB.extent(0);
+  int baseC, nnzC;
+  int *nnzTotalDevHostPtr = &nnzC;
+
+  typename Matrix::row_map_type::non_const_type row_mapC(
+      Kokkos::view_alloc(Kokkos::WithoutInitializing, "C rowmap"), m + 1);
+
+  KOKKOS_CUSPARSE_SAFE_CALL(cusparseXcsrgemmNnz(
+      cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
+      CUSPARSE_OPERATION_NON_TRANSPOSE, m, k, n, generalDescr, A.nnz(),
+      A.graph.row_map.data(), A.graph.entries.data(), generalDescr, B.nnz(),
+      B.graph.row_map.data(), B.graph.entries.data(), generalDescr, row_mapC.data(),
+      nnzTotalDevHostPtr));
+  if (nullptr != nnzTotalDevHostPtr) {
+    nnzC = *nnzTotalDevHostPtr;
+  } else {
+    KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMemcpy(
+        &nnzC, row_mapC.data() + m, sizeof(int), cudaMemcpyDeviceToHost));
+    KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMemcpy(
+        &baseC, row_mapC.data(), sizeof(int), cudaMemcpyDeviceToHost));
+    nnzC -= baseC;
+  }
+
+  typename Matrix::index_type entriesC(
+      Kokkos::view_alloc(Kokkos::WithoutInitializing, "C entries"), nnzC);
+  typename Matrix::values_type valuesC(
+      Kokkos::view_alloc(Kokkos::WithoutInitializing, "C values"), nnzC);
 
   // Only call numeric if C actually has entries
-  if (handle->get_c_nnz()) {
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseXcsrgemm(
-        h->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
-        CUSPARSE_OPERATION_NON_TRANSPOSE, m, k, n, h->generalDescr, nnzA,
-        valuesA.data(), row_mapA.data(), entriesA.data(), h->generalDescr, nnzB,
-        valuesB.data(), row_mapB.data(), entriesB.data(), h->generalDescr,
-        valuesC.data(), row_mapC.data(), entriesC.data()));
-  }
-  handle->set_computed_entries();
-  handle->set_call_numeric();
+  KOKKOS_CUSPARSE_SAFE_CALL(cusparseXcsrgemm_noreuse(
+      cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
+      CUSPARSE_OPERATION_NON_TRANSPOSE, m, k, n, generalDescr, A.nnz(),
+      A.values.data(), A.graph.row_map.data(), A.graph.entries.data(), generalDescr, B.nnz(),
+      B.values.data(), B.graph.row_map.data(), B.graph.entries.data(), generalDescr,
+      valuesC.data(), row_mapC.data(), entriesC.data()));
+  KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyMatDescr(generalDescr));
+  return Matrix("C", m, k, nnzC, valuesC, row_mapC, entriesC);
 }
-*/
 
 #endif
 
