@@ -87,30 +87,6 @@ std::vector<std::vector<scalar_t>> decompress_matrix(
 
 template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
-void decompress_matrix(Kokkos::View<size_type*, device>& row_map,
-                       Kokkos::View<lno_t*, device>& entries,
-                       Kokkos::View<scalar_t*, device>& values,
-                       Kokkos::View<scalar_t**, device>& output) {
-  using exe_space = typename device::execution_space;
-
-  const size_type nrows = row_map.size() - 1;
-
-  Kokkos::parallel_for(
-      Kokkos::RangePolicy<exe_space>(0, nrows),
-      KOKKOS_LAMBDA(const int& row_idx) {
-        const size_type row_nnz_begin = row_map(row_idx);
-        const size_type row_nnz_end   = row_map(row_idx + 1);
-        for (size_type row_nnz = row_nnz_begin; row_nnz < row_nnz_end;
-             ++row_nnz) {
-          const lno_t col_idx      = entries(row_nnz);
-          const scalar_t value     = values(row_nnz);
-          output(row_idx, col_idx) = value;
-        }
-      });
-}
-
-template <typename scalar_t, typename lno_t, typename size_type,
-          typename device>
 void check_matrix(const std::string& name,
                   Kokkos::View<size_type*, device>& row_map,
                   Kokkos::View<lno_t*, device>& entries,
@@ -386,13 +362,10 @@ void run_test_par_ilut_precond() {
 #endif
   );
 
-  // Convert L, U parILUT outputs to uncompressed 2d views as required
-  // by LUPrec
-  Kokkos::View<scalar_t**, device> L_uncompressed("L_uncompressed", numRows,
-                                                  numRows),
-      U_uncompressed("U_uncompressed", numRows, numRows);
-  decompress_matrix(L_row_map, L_entries, L_values, L_uncompressed);
-  decompress_matrix(U_row_map, U_entries, U_values, U_uncompressed);
+  // Create CRSs
+  sp_matrix_type
+    L("L", numRows, numCols, L_values.extent(0), L_values, L_row_map, L_entries),
+    U("U", numRows, numCols, U_values.extent(0), U_values, U_row_map, U_entries);
 
   // Set initial vectors:
   ViewVectorType X("X", n);    // Solution and initial guess
@@ -431,8 +404,7 @@ void run_test_par_ilut_precond() {
     gmres_handle->set_verbose(verbose);
 
     // Make precond
-    KokkosSparse::Experimental::LUPrec<sp_matrix_type> myPrec(L_uncompressed,
-                                                              U_uncompressed);
+    KokkosSparse::Experimental::LUPrec<sp_matrix_type, KernelHandle> myPrec(L, U);
 
     // reset X for next gmres call
     Kokkos::deep_copy(X, 0.0);

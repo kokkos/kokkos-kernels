@@ -22,9 +22,8 @@
 
 #include <KokkosSparse_Preconditioner.hpp>
 #include <Kokkos_Core.hpp>
-#include <KokkosBlas.hpp>
 #include <KokkosSparse_spmv.hpp>
-#include <KokkosBlas3_trsm_impl.hpp>
+#include <KokkosSparse_sptrsv.hpp>
 
 namespace KokkosSparse {
 namespace Experimental {
@@ -40,32 +39,43 @@ namespace Experimental {
 ///   - compute() Does nothing; members initialized upon object construction.
 ///   - isComputed() returns true
 ///
-template <class CRS>
+template <class CRS, class KernelHandle>
 class LUPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
  public:
   using ScalarType = typename std::remove_const<typename CRS::value_type>::type;
   using EXSP       = typename CRS::execution_space;
   using karith     = typename Kokkos::ArithTraits<ScalarType>;
-  using View2dD    = typename Kokkos::View<ScalarType **, EXSP>;
-  using View2dH    = typename View2dD::HostMirror;
+  using View1d     = typename Kokkos::View<ScalarType*, EXSP>;
 
  private:
   // trsm takes host views
-  View2dH _L, _U, _tmp;
+  CRS _L, _U;
+  View1d _tmp;
+  mutable KernelHandle _khL;
+  mutable KernelHandle _khU;
 
  public:
   //! Constructor:
-  template <class ViewArg>
-  LUPrec(const ViewArg &L, const ViewArg &U)
-      : _L("LUPrec::_L", L.extent(0), L.extent(1)),
-        _U("LUPrec::_U", U.extent(0), U.extent(1)),
-        _tmp("LUPrec::_tmp", L.extent(0), 1) {
-    Kokkos::deep_copy(_L, L);
-    Kokkos::deep_copy(_U, U);
+  template <class CRSArg>
+  LUPrec(const CRSArg &L, const CRSArg &U) :
+    _L(L),
+    _U(U),
+    _tmp("LUPrec::_tmp", L.numRows()),
+    _khL(),
+    _khU()
+  {
+    KK_REQUIRE_MSG(L.numRows() == U.numRows(), "LUPrec: L.numRows() != U.numRows()");
+
+    _khL.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1, L.numRows(), true);
+    _khU.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1, U.numRows(), false);
   }
 
   //! Destructor.
-  virtual ~LUPrec() {}
+  virtual ~LUPrec()
+  {
+    _khL.destroy_sptrsv_handle();
+    _khU.destroy_sptrsv_handle();
+  }
 
   ///// \brief Apply the preconditioner to X, putting the result in Y.
   /////
@@ -76,25 +86,22 @@ class LUPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
   /////   for conjugate transpose.  All characters after the first are
   /////   ignored.  This works just like the BLAS routines.
   ///// \param alpha [in] Input coefficient of M*x
-  ///// \param beta [in] Input coefficient of Y
+  ///// \param beta [in] Not used.
   /////
-  ///// If the result of applying this preconditioner to a vector X is
-  ///// \f$M \cdot X\f$, then this method computes \f$Y = \beta Y + \alpha M
-  ///\cdot X\f$.
-  ///// The typical case is \f$\beta = 0\f$ and \f$\alpha = 1\f$.
+  ///// It takes L and U and the stores U^inv L^inv X in Y
   //
   virtual void apply(const Kokkos::View<const ScalarType *, EXSP> &X,
                      const Kokkos::View<ScalarType *, EXSP> &Y,
                      const char transM[] = "N",
                      ScalarType alpha    = karith::one(),
                      ScalarType          = karith::zero()) const {
-    // tmp = trsm(L, x); //Apply L^inv to x
-    // y = trsm(U, tmp); //Apply U^inv to tmp
-    auto tmpsv = Kokkos::subview(_tmp, Kokkos::ALL, 0);
-    Kokkos::deep_copy(tmpsv, X);
-    KokkosBlas::Impl::SerialTrsm_Invoke("L", "L", transM, "N", alpha, _L, _tmp);
-    KokkosBlas::Impl::SerialTrsm_Invoke("L", "U", transM, "N", alpha, _U, _tmp);
-    Kokkos::deep_copy(Y, tmpsv);
+    // tmp = trsv(L, x); //Apply L^inv to x
+    // y = trsv(U, tmp); //Apply U^inv to tmp
+    sptrsv_symbolic( &_khL, _L.graph.row_map, _L.graph.entries );
+    sptrsv_solve( &_khL, _L.graph.row_map, _L.graph.entries, _L.values, X, _tmp );
+
+    sptrsv_symbolic( &_khU, _U.graph.row_map, _U.graph.entries );
+    sptrsv_solve( &_khU, _U.graph.row_map, _U.graph.entries, _U.values, _tmp, Y );
   }
   //@}
 
