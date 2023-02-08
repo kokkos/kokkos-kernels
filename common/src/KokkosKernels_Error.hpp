@@ -77,12 +77,13 @@ inline void hip_internal_safe_call(hipError_t e, const char *name,
   } while (0)
 
 // SYCL cannot printf like the other backends quite yet
-#define IMPL_KERNEL_THROW(condition, msg)                              \
-  do {                                                                 \
-    if (!(condition)) {                                                \
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF("KERNEL CHECK FAILED:\n   %s\n   %s\n", #condition, msg); \
-      Kokkos::abort("");                                               \
-    }                                                                  \
+#define IMPL_KERNEL_THROW(condition, msg)                                   \
+  do {                                                                      \
+    if (!(condition)) {                                                     \
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("KERNEL CHECK FAILED:\n   %s\n   %s\n", \
+                                    #condition, msg);                       \
+      Kokkos::abort("");                                                    \
+    }                                                                       \
   } while (0)
 
 #ifndef NDEBUG

@@ -363,9 +363,10 @@ void run_test_par_ilut_precond() {
   );
 
   // Create CRSs
-  sp_matrix_type
-    L("L", numRows, numCols, L_values.extent(0), L_values, L_row_map, L_entries),
-    U("U", numRows, numCols, U_values.extent(0), U_values, U_row_map, U_entries);
+  sp_matrix_type L("L", numRows, numCols, L_values.extent(0), L_values,
+                   L_row_map, L_entries),
+      U("U", numRows, numCols, U_values.extent(0), U_values, U_row_map,
+        U_entries);
 
   // Set initial vectors:
   ViewVectorType X("X", n);    // Solution and initial guess
@@ -404,7 +405,8 @@ void run_test_par_ilut_precond() {
     gmres_handle->set_verbose(verbose);
 
     // Make precond
-    KokkosSparse::Experimental::LUPrec<sp_matrix_type, KernelHandle> myPrec(L, U);
+    KokkosSparse::Experimental::LUPrec<sp_matrix_type, KernelHandle> myPrec(L,
+                                                                            U);
 
     // reset X for next gmres call
     Kokkos::deep_copy(X, 0.0);

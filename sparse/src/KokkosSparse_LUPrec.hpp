@@ -45,7 +45,7 @@ class LUPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
   using ScalarType = typename std::remove_const<typename CRS::value_type>::type;
   using EXSP       = typename CRS::execution_space;
   using karith     = typename Kokkos::ArithTraits<ScalarType>;
-  using View1d     = typename Kokkos::View<ScalarType*, typename CRS::device_type>;
+  using View1d = typename Kokkos::View<ScalarType *, typename CRS::device_type>;
 
  private:
   // trsm takes host views
@@ -57,22 +57,19 @@ class LUPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
  public:
   //! Constructor:
   template <class CRSArg>
-  LUPrec(const CRSArg &L, const CRSArg &U) :
-    _L(L),
-    _U(U),
-    _tmp("LUPrec::_tmp", L.numRows()),
-    _khL(),
-    _khU()
-  {
-    KK_REQUIRE_MSG(L.numRows() == U.numRows(), "LUPrec: L.numRows() != U.numRows()");
+  LUPrec(const CRSArg &L, const CRSArg &U)
+      : _L(L), _U(U), _tmp("LUPrec::_tmp", L.numRows()), _khL(), _khU() {
+    KK_REQUIRE_MSG(L.numRows() == U.numRows(),
+                   "LUPrec: L.numRows() != U.numRows()");
 
-    _khL.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1, L.numRows(), true);
-    _khU.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1, U.numRows(), false);
+    _khL.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1, L.numRows(),
+                              true);
+    _khU.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1, U.numRows(),
+                              false);
   }
 
   //! Destructor.
-  virtual ~LUPrec()
-  {
+  virtual ~LUPrec() {
     _khL.destroy_sptrsv_handle();
     _khU.destroy_sptrsv_handle();
   }
@@ -97,11 +94,11 @@ class LUPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
                      ScalarType          = karith::zero()) const {
     // tmp = trsv(L, x); //Apply L^inv to x
     // y = trsv(U, tmp); //Apply U^inv to tmp
-    sptrsv_symbolic( &_khL, _L.graph.row_map, _L.graph.entries );
-    sptrsv_solve( &_khL, _L.graph.row_map, _L.graph.entries, _L.values, X, _tmp );
+    sptrsv_symbolic(&_khL, _L.graph.row_map, _L.graph.entries);
+    sptrsv_solve(&_khL, _L.graph.row_map, _L.graph.entries, _L.values, X, _tmp);
 
-    sptrsv_symbolic( &_khU, _U.graph.row_map, _U.graph.entries );
-    sptrsv_solve( &_khU, _U.graph.row_map, _U.graph.entries, _U.values, _tmp, Y );
+    sptrsv_symbolic(&_khU, _U.graph.row_map, _U.graph.entries);
+    sptrsv_solve(&_khU, _U.graph.row_map, _U.graph.entries, _U.values, _tmp, Y);
   }
   //@}
 
