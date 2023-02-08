@@ -49,6 +49,16 @@ typedef Kokkos::complex<float> kokkos_complex_float;
 
 namespace Test {
 
+// 3 ways to call SpGEMM:
+// - symbolic/numeric with Views
+// - symbolic/numeric with CrsMatrices
+// - non-reuse with CrsMatrices
+enum spgemm_call_mode {
+  spgemm_reuse_view,
+  spgemm_reuse_matrix,
+  spgemm_noreuse
+};
+
 // Randomize matrix values again from the same uniform distribution as
 // kk_generate_sparse_matrix uses.
 template <typename Values>
@@ -58,6 +68,11 @@ void randomize_matrix_values(const Values &v) {
   KokkosKernels::Impl::getRandomBounds(50.0, randStart, randEnd);
   Kokkos::Random_XorShift64_Pool<typename Values::execution_space> pool(13718);
   Kokkos::fill_random(v, pool, randStart, randEnd);
+}
+
+template <typename crsMat_t>
+void run_spgemm_noreuse(crsMat_t A, crsMat_t B, crsMat_t &C) {
+  C = KokkosSparse::spgemm<crsMat_t>(A, false, B, false);
 }
 
 template <typename crsMat_t, typename device>
@@ -275,7 +290,7 @@ bool is_same_matrix(crsMat_t output_mat_actual, crsMat_t output_mat_reference) {
 template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
 void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth,
-                 lno_t row_size_variance, bool oldInterface = false,
+                 lno_t row_size_variance, Test::spgemm_call_mode callMode,
                  bool testReuse = false) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
   {
@@ -313,10 +328,17 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth,
     run_spgemm<crsMat_t, device>(A, B, SPGEMM_DEBUG, output_mat2, false);
   }
 
-  std::vector<SPGEMMAlgorithm> algorithms = {
-      SPGEMM_KK, SPGEMM_KK_LP, SPGEMM_KK_MEMORY /* alias SPGEMM_KK_MEMSPEED */,
-      SPGEMM_KK_SPEED /* alias SPGEMM_KK_DENSE */
-  };
+  std::vector<SPGEMMAlgorithm> algorithms;
+  if (callMode == spgemm_noreuse) {
+    // No-reuse interface always uses the default algorithm
+    algorithms = {SPGEMM_KK};
+  } else {
+    algorithms = {
+        SPGEMM_KK, SPGEMM_KK_LP,
+        SPGEMM_KK_MEMORY /* alias SPGEMM_KK_MEMSPEED */,
+        SPGEMM_KK_SPEED /* alias SPGEMM_KK_DENSE */
+    };
+  }
 
   for (auto spgemm_algorithm : algorithms) {
     std::string algo         = "UNKNOWN";
@@ -337,12 +359,17 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth,
     bool failed = false;
     int res     = 0;
     try {
-      if (oldInterface)
-        res = run_spgemm_old_interface<crsMat_t, device>(A, B, spgemm_algorithm,
-                                                         output_mat, testReuse);
-      else
-        res = run_spgemm<crsMat_t, device>(A, B, spgemm_algorithm, output_mat,
-                                           testReuse);
+      switch (callMode) {
+        case spgemm_reuse_view:
+          res = run_spgemm_old_interface<crsMat_t, device>(
+              A, B, spgemm_algorithm, output_mat, testReuse);
+          break;
+        case spgemm_reuse_matrix:
+          res = run_spgemm<crsMat_t, device>(A, B, spgemm_algorithm, output_mat,
+                                             testReuse);
+          break;
+        case spgemm_noreuse: run_spgemm_noreuse(A, B, output_mat); break;
+      }
     } catch (const char *message) {
       EXPECT_TRUE(is_expected_to_fail) << algo << ": " << message;
       failed = true;
@@ -522,22 +549,43 @@ void test_issue402() {
 #define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)            \
   TEST_F(TestCategory,                                                         \
          sparse##_##spgemm##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {     \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10000, 8000, 6000, 8000 * 20, \
-                                                 500, 10, false);              \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10000, 8000, 6000, 8000 * 20, \
-                                                 500, 10, true);               \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(1000, 500, 1600, 1000 * 20,   \
-                                                 500, 10, false, true);        \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(1000, 500, 1600, 1000 * 20,   \
-                                                 500, 10, true, true);         \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 0, 0, 0, 10, 10, false);   \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 0, 0, 0, 10, 10, true);    \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 12, 5, 0, 10, 0, false);   \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 12, 5, 0, 10, 0, true);    \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 0, 0, 10, 10, false); \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 0, 0, 10, 10, true);  \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 10, 0, 0, 0, false);  \
-    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 10, 0, 0, 0, true);   \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(                              \
+        10000, 8000, 6000, 8000 * 20, 500, 10, ::Test::spgemm_reuse_matrix);   \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(                              \
+        10000, 8000, 6000, 8000 * 20, 500, 10, ::Test::spgemm_reuse_view);     \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(                              \
+        1000, 500, 1600, 1000 * 20, 500, 10, ::Test::spgemm_reuse_matrix,      \
+        true);                                                                 \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(                              \
+        1000, 500, 1600, 1000 * 20, 500, 10, ::Test::spgemm_reuse_view, true); \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 0, 0, 0, 10, 10,           \
+                                                 ::Test::spgemm_reuse_matrix); \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 0, 0, 0, 10, 10,           \
+                                                 ::Test::spgemm_reuse_view);   \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 12, 5, 0, 10, 0,           \
+                                                 ::Test::spgemm_reuse_matrix); \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 12, 5, 0, 10, 0,           \
+                                                 ::Test::spgemm_reuse_view);   \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 0, 0, 10, 10,         \
+                                                 ::Test::spgemm_reuse_matrix); \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 0, 0, 10, 10,         \
+                                                 ::Test::spgemm_reuse_view);   \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 10, 0, 0, 0,          \
+                                                 ::Test::spgemm_reuse_matrix); \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 10, 0, 0, 0,          \
+                                                 ::Test::spgemm_reuse_view);   \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(                              \
+        10000, 8000, 6000, 8000 * 20, 500, 10, ::Test::spgemm_noreuse);        \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(                              \
+        1000, 500, 1600, 1000 * 20, 500, 10, ::Test::spgemm_noreuse);          \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 0, 0, 0, 10, 10,           \
+                                                 ::Test::spgemm_noreuse);      \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(0, 12, 5, 0, 10, 0,           \
+                                                 ::Test::spgemm_noreuse);      \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 0, 0, 10, 10,         \
+                                                 ::Test::spgemm_noreuse);      \
+    test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 10, 10, 0, 0, 0,          \
+                                                 ::Test::spgemm_noreuse);      \
     test_spgemm_symbolic<SCALAR, ORDINAL, OFFSET, DEVICE>(true, true);         \
     test_spgemm_symbolic<SCALAR, ORDINAL, OFFSET, DEVICE>(false, true);        \
     test_spgemm_symbolic<SCALAR, ORDINAL, OFFSET, DEVICE>(true, false);        \
