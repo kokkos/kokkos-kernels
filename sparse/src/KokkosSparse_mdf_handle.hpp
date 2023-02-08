@@ -60,6 +60,8 @@ struct MDF_handle {
 
   int verbosity;
 
+  crs_matrix_type L, U;
+
   MDF_handle(const crs_matrix_type A)
       : numRows(A.numRows()),
         permutation(col_ind_type("row permutation", A.numRows())),
@@ -74,31 +76,28 @@ struct MDF_handle {
     entriesL = col_ind_type("entries L", nnzL);
     valuesL  = values_type("values L", nnzL);
 
+    L = crs_matrix_type("L", numRows, numRows, nnzL, valuesL, row_mapL,
+                        entriesL);
+
     // Allocate U
     row_mapU = row_map_type("row map U", numRows + 1);
     entriesU = col_ind_type("entries U", nnzU);
     valuesU  = values_type("values U", nnzU);
+
+    U = crs_matrix_type("U", numRows, numRows, nnzU, valuesU, row_mapU,
+                        entriesU);
   }
 
   col_ind_type get_permutation() { return permutation; }
 
   void sort_factors() {
-    KokkosSparse::sort_crs_matrix<execution_space, row_map_type, col_ind_type,
-                                  values_type>(row_mapL, entriesL, valuesL);
-    KokkosSparse::sort_crs_matrix<execution_space, row_map_type, col_ind_type,
-                                  values_type>(row_mapU, entriesU, valuesU);
+    KokkosSparse::sort_crs_matrix<crs_matrix_type>(L);
+    KokkosSparse::sort_crs_matrix<crs_matrix_type>(U);
   }
 
-  crs_matrix_type getL() {
-    return KokkosSparse::Impl::transpose_matrix<crs_matrix_type>(
-        crs_matrix_type("L", numRows, numRows, entriesL.extent(0), valuesL,
-                        row_mapL, entriesL));
-  }
+  crs_matrix_type getL() { return L; }
 
-  crs_matrix_type getU() {
-    return crs_matrix_type("U", numRows, numRows, entriesU.extent(0), valuesU,
-                           row_mapU, entriesU);
-  }
+  crs_matrix_type getU() { return U; }
 };
 
 }  // namespace Experimental
