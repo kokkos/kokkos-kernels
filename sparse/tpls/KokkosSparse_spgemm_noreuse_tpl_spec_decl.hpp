@@ -171,20 +171,20 @@ SPGEMM_NOREUSE_DECL_CUSPARSE_S(Kokkos::complex<double>, false)
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
 template <typename Matrix, typename MatrixConst>
 Matrix spgemm_noreuse_mkl(const MatrixConst &A, const MatrixConst &B) {
-  using size_type = typename Matrix::non_const_size_type;
-  using index_type = typename Matrix::non_const_ordinal_type;
+  using size_type   = typename Matrix::non_const_size_type;
+  using index_type  = typename Matrix::non_const_ordinal_type;
   using scalar_type = typename Matrix::non_const_value_type;
-  using ExecSpace = typename Matrix::execution_space;
+  using ExecSpace   = typename Matrix::execution_space;
   using MKLMatrix   = MKLSparseMatrix<scalar_type>;
-  auto m = A.numRows();
-  auto n = A.numCols();
-  auto k = B.numCols();
+  auto m            = A.numRows();
+  auto n            = A.numCols();
+  auto k            = B.numCols();
   MKLMatrix Amkl(m, n, const_cast<size_type *>(A.graph.row_map.data()),
-              const_cast<index_type *>(A.graph.entries.data()),
-              const_cast<scalar_type *>(A.values.data()));
+                 const_cast<index_type *>(A.graph.entries.data()),
+                 const_cast<scalar_type *>(A.values.data()));
   MKLMatrix Bmkl(n, k, const_cast<size_type *>(B.graph.row_map.data()),
-              const_cast<index_type *>(B.graph.entries.data()),
-              const_cast<scalar_type *>(B.values.data()));
+                 const_cast<index_type *>(B.graph.entries.data()),
+                 const_cast<scalar_type *>(B.values.data()));
   sparse_matrix_t C;
   matrix_descr generalDescr;
   generalDescr.type = SPARSE_MATRIX_TYPE_GENERAL;
@@ -196,11 +196,13 @@ Matrix spgemm_noreuse_mkl(const MatrixConst &A, const MatrixConst &B) {
   MKLMatrix wrappedC(C);
   MKL_INT nrows = 0, ncols = 0;
   MKL_INT *rowmapRaw     = nullptr;
-  MKL_INT *entriesRaw = nullptr;
+  MKL_INT *entriesRaw    = nullptr;
   scalar_type *valuesRaw = nullptr;
   wrappedC.export_data(nrows, ncols, rowmapRaw, entriesRaw, valuesRaw);
-  if(nrows != m || ncols != k)
-    throw std::runtime_error("KokkosSparse::spgemm: matrix returned by MKL has incorrect dimensions");
+  if (nrows != m || ncols != k)
+    throw std::runtime_error(
+        "KokkosSparse::spgemm: matrix returned by MKL has incorrect "
+        "dimensions");
   MKL_INT c_nnz = rowmapRaw[m];
   Kokkos::View<size_type *, Kokkos::HostSpace,
                Kokkos::MemoryTraits<Kokkos::Unmanaged>>
@@ -227,44 +229,44 @@ Matrix spgemm_noreuse_mkl(const MatrixConst &A, const MatrixConst &B) {
   return Matrix("C", m, k, c_nnz, valuesC, row_mapC, entriesC);
 }
 
-#define SPGEMM_NOREUSE_DECL_MKL(SCALAR, EXEC, TPL_AVAIL)                       \
-template <>                                                                  \
-struct SPGEMM_NOREUSE< \
+#define SPGEMM_NOREUSE_DECL_MKL(SCALAR, EXEC, TPL_AVAIL)                     \
+  template <>                                                                \
+  struct SPGEMM_NOREUSE<                                                     \
       KokkosSparse::CrsMatrix<                                               \
-          SCALAR, int, Kokkos::Device<EXEC, Kokkos::HostSpace>, void, int>,   \
+          SCALAR, int, Kokkos::Device<EXEC, Kokkos::HostSpace>, void, int>,  \
       KokkosSparse::CrsMatrix<                                               \
-          const SCALAR, const int, Kokkos::Device<EXEC, Kokkos::HostSpace>,   \
+          const SCALAR, const int, Kokkos::Device<EXEC, Kokkos::HostSpace>,  \
           Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>,               \
       KokkosSparse::CrsMatrix<                                               \
-          const SCALAR, const int, Kokkos::Device<EXEC, Kokkos::HostSpace>,   \
+          const SCALAR, const int, Kokkos::Device<EXEC, Kokkos::HostSpace>,  \
           Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>,               \
-                      true, TPL_AVAIL> {                                     \
-  using Matrix = KokkosSparse::CrsMatrix<                                  \
-      SCALAR, int, Kokkos::Device<EXEC, Kokkos::HostSpace>, void, int>;     \
-  using ConstMatrix = KokkosSparse::CrsMatrix<                             \
-      const SCALAR, const int, Kokkos::Device<EXEC, Kokkos::HostSpace>,     \
-      Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>;                 \
-  static KokkosSparse::CrsMatrix<                                          \
-      SCALAR, int, Kokkos::Device<EXEC, Kokkos::HostSpace>, void, int>      \
-  spgemm_noreuse(const ConstMatrix &A, bool, const ConstMatrix &B, bool) { \
-    std::string label = "KokkosSparse::spgemm_noreuse[TPL_MKL," +     \
-                        Kokkos::ArithTraits<SCALAR>::name() + "]";         \
-    Kokkos::Profiling::pushRegion(label);                                  \
-    Matrix C = spgemm_noreuse_mkl<Matrix>(A, B);                      \
-    Kokkos::Profiling::popRegion();                                        \
-    return C;                                                              \
-  }                                                                        \
-};
+      true, TPL_AVAIL> {                                                     \
+    using Matrix = KokkosSparse::CrsMatrix<                                  \
+        SCALAR, int, Kokkos::Device<EXEC, Kokkos::HostSpace>, void, int>;    \
+    using ConstMatrix = KokkosSparse::CrsMatrix<                             \
+        const SCALAR, const int, Kokkos::Device<EXEC, Kokkos::HostSpace>,    \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>;                 \
+    static KokkosSparse::CrsMatrix<                                          \
+        SCALAR, int, Kokkos::Device<EXEC, Kokkos::HostSpace>, void, int>     \
+    spgemm_noreuse(const ConstMatrix &A, bool, const ConstMatrix &B, bool) { \
+      std::string label = "KokkosSparse::spgemm_noreuse[TPL_MKL," +          \
+                          Kokkos::ArithTraits<SCALAR>::name() + "]";         \
+      Kokkos::Profiling::pushRegion(label);                                  \
+      Matrix C = spgemm_noreuse_mkl<Matrix>(A, B);                           \
+      Kokkos::Profiling::popRegion();                                        \
+      return C;                                                              \
+    }                                                                        \
+  };
 
 #define SPGEMM_NOREUSE_DECL_MKL_SE(SCALAR, EXEC) \
-SPGEMM_NOREUSE_DECL_MKL(SCALAR, EXEC, true)    \
-SPGEMM_NOREUSE_DECL_MKL(SCALAR, EXEC, false)
+  SPGEMM_NOREUSE_DECL_MKL(SCALAR, EXEC, true)    \
+  SPGEMM_NOREUSE_DECL_MKL(SCALAR, EXEC, false)
 
 #define SPGEMM_NOREUSE_DECL_MKL_E(EXEC)                    \
-SPGEMM_NOREUSE_DECL_MKL_SE(float, EXEC)                  \
-SPGEMM_NOREUSE_DECL_MKL_SE(double, EXEC)                 \
-SPGEMM_NOREUSE_DECL_MKL_SE(Kokkos::complex<float>, EXEC) \
-SPGEMM_NOREUSE_DECL_MKL_SE(Kokkos::complex<double>, EXEC)
+  SPGEMM_NOREUSE_DECL_MKL_SE(float, EXEC)                  \
+  SPGEMM_NOREUSE_DECL_MKL_SE(double, EXEC)                 \
+  SPGEMM_NOREUSE_DECL_MKL_SE(Kokkos::complex<float>, EXEC) \
+  SPGEMM_NOREUSE_DECL_MKL_SE(Kokkos::complex<double>, EXEC)
 
 #ifdef KOKKOS_ENABLE_SERIAL
 SPGEMM_NOREUSE_DECL_MKL_E(Kokkos::Serial)
