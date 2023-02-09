@@ -42,11 +42,11 @@ void test_version_info() {
   static_assert(false, "KOKKOSKERNELS_VERSION_PATCH macro is not defined!");
 #endif
 
-  static_assert(KOKKOSKERNELS_VERSION == (KOKKOSKERNELS_VERSION_MAJOR*10000 + KOKKOSKERNELS_VERSION_MINOR*100 + KOKKOSKERNELS_VERSION_PATCH));
+  static_assert(KOKKOSKERNELS_VERSION == (KOKKOSKERNELS_VERSION_MAJOR * 10000 +
+                                          KOKKOSKERNELS_VERSION_MINOR * 100 +
+                                          KOKKOSKERNELS_VERSION_PATCH));
 }
 
-TEST_F(TestCategory, common_version) {
-  test_version_info();
-}
+TEST_F(TestCategory, common_version) { test_version_info(); }
 
-#endif // TEST_COMMON_VERSION_HPP
+#endif  // TEST_COMMON_VERSION_HPP
