@@ -27,7 +27,12 @@ IF(NOT KOKKOSKERNELS_HAS_TRILINOS)
   SET(KokkosKernels_VERSION_MINOR 0)
   SET(KokkosKernels_VERSION_PATCH 99)
   SET(KokkosKernels_VERSION "${KokkosKernels_VERSION_MAJOR}.${KokkosKernels_VERSION_MINOR}.${KokkosKernels_VERSION_PATCH}")
+
+  #Set variables for config file
   MATH(EXPR KOKKOSKERNELS_VERSION "${KokkosKernels_VERSION_MAJOR} * 10000 + ${KokkosKernels_VERSION_MINOR} * 100 + ${KokkosKernels_VERSION_PATCH}")
+  MATH(EXPR KOKKOSKERNELS_VERSION_MAJOR "${KOKKOSKERNELS_VERSION} / 10000")
+  MATH(EXPR KOKKOSKERNELS_VERSION_MINOR "${KOKKOSKERNELS_VERSION} / 100 % 100")
+  MATH(EXPR KOKKOSKERNELS_VERSION_PATCH "${KOKKOSKERNELS_VERSION} % 100")
 ENDIF()
 
 INCLUDE(GNUInstallDirs)
@@ -214,7 +219,9 @@ ELSE()
   # CMake Summary
   # ==================================================================
   MESSAGE("")
-  MESSAGE("=======================")
+  MESSAGE("================================")
+  MESSAGE("Kokkos Kernels version: ${KokkosKernels_VERSION_MAJOR}.${KokkosKernels_VERSION_MINOR}.${KokkosKernels_VERSION_PATCH}")
+  MESSAGE("================================")
   MESSAGE("Kokkos Kernels ETI Types")
   MESSAGE("   Devices:  ${DEVICE_LIST}")
   MESSAGE("   Scalars:  ${SCALAR_LIST}")
@@ -238,7 +245,7 @@ ELSE()
   ELSE()
      MESSAGE("   (None)")
   ENDIF()
-  MESSAGE("=======================")
+  MESSAGE("================================")
   MESSAGE("")
 
 
