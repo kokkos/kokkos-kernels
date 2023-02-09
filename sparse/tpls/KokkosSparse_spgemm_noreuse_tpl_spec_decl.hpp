@@ -32,9 +32,7 @@
 namespace KokkosSparse {
 namespace Impl {
 
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-
-#if (CUDA_VERSION >= 11000)
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && (CUDA_VERSION >= 11000)
 
 template <typename Matrix, typename MatrixConst>
 Matrix spgemm_noreuse_cusparse(const MatrixConst &A, const MatrixConst &B) {
@@ -122,8 +120,6 @@ Matrix spgemm_noreuse_cusparse(const MatrixConst &A, const MatrixConst &B) {
   return Matrix("C", m, k, c_nnz, valuesC, row_mapC, entriesC);
 }
 
-#endif
-
 #define SPGEMM_NOREUSE_DECL_CUSPARSE(SCALAR, MEMSPACE, TPL_AVAIL)            \
   template <>                                                                \
   struct SPGEMM_NOREUSE<                                                     \
@@ -166,6 +162,7 @@ SPGEMM_NOREUSE_DECL_CUSPARSE_S(float, false)
 SPGEMM_NOREUSE_DECL_CUSPARSE_S(double, false)
 SPGEMM_NOREUSE_DECL_CUSPARSE_S(Kokkos::complex<float>, false)
 SPGEMM_NOREUSE_DECL_CUSPARSE_S(Kokkos::complex<double>, false)
+
 #endif
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL

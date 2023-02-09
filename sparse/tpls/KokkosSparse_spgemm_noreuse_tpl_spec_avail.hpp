@@ -28,12 +28,10 @@ struct spgemm_noreuse_tpl_spec_avail {
   enum : bool { value = false };
 };
 
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && (CUDA_VERSION >= 11000)
 // For cuSparse 11 and up, use the non-reuse generic interface.
 // But for cuSparse 10, there is only one interface
 // so just let KokkosSparse::spgemm call the symbolic and numeric wrappers.
-
-#if (CUDA_VERSION >= 11000)
 
 #define SPGEMM_NOREUSE_AVAIL_CUSPARSE(SCALAR, MEMSPACE)                    \
   template <>                                                              \
@@ -58,7 +56,6 @@ SPGEMM_NOREUSE_AVAIL_CUSPARSE_S(double)
 SPGEMM_NOREUSE_AVAIL_CUSPARSE_S(Kokkos::complex<float>)
 SPGEMM_NOREUSE_AVAIL_CUSPARSE_S(Kokkos::complex<double>)
 
-#endif
 #endif
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
