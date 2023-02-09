@@ -175,11 +175,11 @@ struct SerialDot<Trans::Transpose> {
                   "KokkosBatched::dot: YViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<NormViewType>::value,
                   "KokkosBatched::dot: NormViewType is not a Kokkos::View.");
-    static_assert(XViewType::Rank == 2,
+    static_assert(XViewType::rank == 2,
                   "KokkosBatched::dot: XViewType must have rank 2.");
-    static_assert(YViewType::Rank == 2,
+    static_assert(YViewType::rank == 2,
                   "KokkosBatched::dot: YViewType must have rank 2.");
-    static_assert(NormViewType::Rank == 1,
+    static_assert(NormViewType::rank == 1,
                   "KokkosBatched::dot: NormViewType must have rank 1.");
 
     // Check compatibility of dimensions at run time.
@@ -221,11 +221,11 @@ struct SerialDot<Trans::NoTranspose> {
                   "KokkosBatched::dot: YViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<NormViewType>::value,
                   "KokkosBatched::dot: NormViewType is not a Kokkos::View.");
-    static_assert(XViewType::Rank == 2,
+    static_assert(XViewType::rank == 2,
                   "KokkosBatched::dot: XViewType must have rank 2.");
-    static_assert(YViewType::Rank == 2,
+    static_assert(YViewType::rank == 2,
                   "KokkosBatched::dot: YViewType must have rank 2.");
-    static_assert(NormViewType::Rank == 1,
+    static_assert(NormViewType::rank == 1,
                   "KokkosBatched::dot: NormViewType must have rank 1.");
 
     // Check compatibility of dimensions at run time.
@@ -270,11 +270,11 @@ struct TeamDot<MemberType, Trans::Transpose> {
                   "KokkosBatched::dot: YViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<NormViewType>::value,
                   "KokkosBatched::dot: NormViewType is not a Kokkos::View.");
-    static_assert(XViewType::Rank == 2,
+    static_assert(XViewType::rank == 2,
                   "KokkosBatched::dot: XViewType must have rank 2.");
-    static_assert(YViewType::Rank == 2,
+    static_assert(YViewType::rank == 2,
                   "KokkosBatched::dot: YViewType must have rank 2.");
-    static_assert(NormViewType::Rank == 1,
+    static_assert(NormViewType::rank == 1,
                   "KokkosBatched::dot: NormViewType must have rank 1.");
 
     // Check compatibility of dimensions at run time.
@@ -317,11 +317,11 @@ struct TeamDot<MemberType, Trans::NoTranspose> {
                   "KokkosBatched::dot: YViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<NormViewType>::value,
                   "KokkosBatched::dot: NormViewType is not a Kokkos::View.");
-    static_assert(XViewType::Rank == 2,
+    static_assert(XViewType::rank == 2,
                   "KokkosBatched::dot: XViewType must have rank 2.");
-    static_assert(YViewType::Rank == 2,
+    static_assert(YViewType::rank == 2,
                   "KokkosBatched::dot: YViewType must have rank 2.");
-    static_assert(NormViewType::Rank == 1,
+    static_assert(NormViewType::rank == 1,
                   "KokkosBatched::dot: NormViewType must have rank 1.");
 
     // Check compatibility of dimensions at run time.
@@ -366,11 +366,11 @@ struct TeamVectorDot<MemberType, Trans::Transpose> {
                   "KokkosBatched::dot: YViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<NormViewType>::value,
                   "KokkosBatched::dot: NormViewType is not a Kokkos::View.");
-    static_assert(XViewType::Rank == 2,
+    static_assert(XViewType::rank == 2,
                   "KokkosBatched::dot: XViewType must have rank 2.");
-    static_assert(YViewType::Rank == 2,
+    static_assert(YViewType::rank == 2,
                   "KokkosBatched::dot: YViewType must have rank 2.");
-    static_assert(NormViewType::Rank == 1,
+    static_assert(NormViewType::rank == 1,
                   "KokkosBatched::dot: NormViewType must have rank 1.");
 
     // Check compatibility of dimensions at run time.
@@ -413,11 +413,11 @@ struct TeamVectorDot<MemberType, Trans::NoTranspose> {
                   "KokkosBatched::dot: YViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<NormViewType>::value,
                   "KokkosBatched::dot: NormViewType is not a Kokkos::View.");
-    static_assert(XViewType::Rank == 2,
+    static_assert(XViewType::rank == 2,
                   "KokkosBatched::dot: XViewType must have rank 2.");
-    static_assert(YViewType::Rank == 2,
+    static_assert(YViewType::rank == 2,
                   "KokkosBatched::dot: YViewType must have rank 2.");
-    static_assert(NormViewType::Rank == 1,
+    static_assert(NormViewType::rank == 1,
                   "KokkosBatched::dot: NormViewType must have rank 1.");
 
     // Check compatibility of dimensions at run time.

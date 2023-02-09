@@ -188,11 +188,11 @@ KOKKOS_INLINE_FUNCTION int SerialAxpy::invoke(const alphaViewType& alpha,
                 "KokkosBatched::axpy: YViewType is not a Kokkos::View.");
   static_assert(Kokkos::is_view<alphaViewType>::value,
                 "KokkosBatched::axpy: alphaViewType is not a Kokkos::View.");
-  static_assert(XViewType::Rank == 2,
+  static_assert(XViewType::rank == 2,
                 "KokkosBatched::axpy: XViewType must have rank 2.");
-  static_assert(YViewType::Rank == 2,
+  static_assert(YViewType::rank == 2,
                 "KokkosBatched::axpy: YViewType must have rank 2.");
-  static_assert(alphaViewType::Rank == 1,
+  static_assert(alphaViewType::rank == 1,
                 "KokkosBatched::axpy: alphaViewType must have rank 1.");
 
   // Check compatibility of dimensions at run time.
@@ -235,11 +235,11 @@ KOKKOS_INLINE_FUNCTION int TeamAxpy<MemberType>::invoke(
                 "KokkosBatched::axpy: YViewType is not a Kokkos::View.");
   static_assert(Kokkos::is_view<alphaViewType>::value,
                 "KokkosBatched::axpy: alphaViewType is not a Kokkos::View.");
-  static_assert(XViewType::Rank == 2,
+  static_assert(XViewType::rank == 2,
                 "KokkosBatched::axpy: XViewType must have rank 2.");
-  static_assert(YViewType::Rank == 2,
+  static_assert(YViewType::rank == 2,
                 "KokkosBatched::axpy: YViewType must have rank 2.");
-  static_assert(alphaViewType::Rank == 1,
+  static_assert(alphaViewType::rank == 1,
                 "KokkosBatched::axpy: alphaViewType must have rank 1.");
 
   // Check compatibility of dimensions at run time.
@@ -283,11 +283,11 @@ KOKKOS_INLINE_FUNCTION int TeamVectorAxpy<MemberType>::invoke(
                 "KokkosBatched::axpy: YViewType is not a Kokkos::View.");
   static_assert(Kokkos::is_view<alphaViewType>::value,
                 "KokkosBatched::axpy: alphaViewType is not a Kokkos::View.");
-  static_assert(XViewType::Rank == 2,
+  static_assert(XViewType::rank == 2,
                 "KokkosBatched::axpy: XViewType must have rank 2.");
-  static_assert(YViewType::Rank == 2,
+  static_assert(YViewType::rank == 2,
                 "KokkosBatched::axpy: YViewType must have rank 2.");
-  static_assert(alphaViewType::Rank == 1,
+  static_assert(alphaViewType::rank == 1,
                 "KokkosBatched::axpy: alphaViewType must have rank 1.");
 
   // Check compatibility of dimensions at run time.

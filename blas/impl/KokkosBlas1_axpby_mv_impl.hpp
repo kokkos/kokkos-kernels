@@ -74,16 +74,16 @@ struct Axpby_MV_Functor {
                   "KokkosBlas::Impl::Axpby_MV_Functor: Y is const.  "
                   "It must be nonconst, because it is an output argument "
                   "(we have to be able to write to its entries).");
-    static_assert((int)YMV::Rank == (int)XMV::Rank,
+    static_assert((int)YMV::rank == (int)XMV::rank,
                   "KokkosBlas::Impl::Axpby_MV_Functor: "
                   "X and Y must have the same rank.");
-    static_assert(YMV::Rank == 2,
+    static_assert(YMV::rank == 2,
                   "KokkosBlas::Impl::Axpby_MV_Functor: "
                   "XMV and YMV must have rank 2.");
-    static_assert(AV::Rank == 1,
+    static_assert(AV::rank == 1,
                   "KokkosBlas::Impl::Axpby_MV_Functor: "
                   "AV must have rank 1.");
-    static_assert(BV::Rank == 1,
+    static_assert(BV::rank == 1,
                   "KokkosBlas::Impl::Axpby_MV_Functor: "
                   "BV must have rank 1.");
   }
@@ -311,10 +311,10 @@ struct Axpby_MV_Functor<typename XMV::non_const_value_type, XMV,
                   "KokkosBlas::Impl::Axpby_MV_Functor: Y is const.  "
                   "It must be nonconst, because it is an output argument "
                   "(we have to be able to write to its entries).");
-    static_assert((int)YMV::Rank == (int)XMV::Rank,
+    static_assert((int)YMV::rank == (int)XMV::rank,
                   "KokkosBlas::Impl::"
                   "Axpby_MV_Functor: X and Y must have the same rank.");
-    static_assert(YMV::Rank == 2,
+    static_assert(YMV::rank == 2,
                   "KokkosBlas::Impl::Axpby_MV_Functor: "
                   "XMV and YMV must have rank 2.");
   }
@@ -529,16 +529,16 @@ struct Axpby_MV_Unroll_Functor {
                   "KokkosBlas::Impl::Axpby_MV_Unroll_Functor: Y is const.  "
                   "It must be nonconst, because it is an output argument "
                   "(we have to be able to write to its entries).");
-    static_assert((int)YMV::Rank == (int)XMV::Rank,
+    static_assert((int)YMV::rank == (int)XMV::rank,
                   "KokkosBlas::Impl::Axpby_MV_Unroll_Functor: "
                   "X and Y must have the same rank.");
-    static_assert(YMV::Rank == 2,
+    static_assert(YMV::rank == 2,
                   "KokkosBlas::Impl::Axpby_MV_Unroll_Functor: "
                   "XMV and YMV must have rank 2.");
-    static_assert(AV::Rank == 1,
+    static_assert(AV::rank == 1,
                   "KokkosBlas::Impl::Axpby_MV_Unroll_Functor: "
                   "AV must have rank 1.");
-    static_assert(BV::Rank == 1,
+    static_assert(BV::rank == 1,
                   "KokkosBlas::Impl::Axpby_MV_Unroll_Functor: "
                   "BV must have rank 1.");
 
@@ -753,10 +753,10 @@ struct Axpby_MV_Unroll_Functor<typename XMV::non_const_value_type, XMV,
                   "KokkosBlas::Impl::Axpby_MV_Unroll_Functor: Y is const.  "
                   "It must be nonconst, because it is an output argument "
                   "(we have to be able to write to its entries).");
-    static_assert((int)YMV::Rank == (int)XMV::Rank,
+    static_assert((int)YMV::rank == (int)XMV::rank,
                   "KokkosBlas::Impl::"
                   "Axpby_MV_Unroll_Functor: X and Y must have the same rank.");
-    static_assert(YMV::Rank == 2,
+    static_assert(YMV::rank == 2,
                   "KokkosBlas::Impl::Axpby_MV_Unroll_Functor: "
                   "XMV and YMV must have rank 2.");
   }
@@ -965,10 +965,10 @@ void Axpby_MV_Unrolled(const AV& av, const XMV& x, const BV& bv, const YMV& y,
                 "KokkosBlas::Impl::Axpby_MV_Unrolled: Y is const.  "
                 "It must be nonconst, because it is an output argument "
                 "(we have to be able to write to its entries).");
-  static_assert((int)YMV::Rank == (int)XMV::Rank,
+  static_assert((int)YMV::rank == (int)XMV::rank,
                 "KokkosBlas::Impl::"
                 "Axpby_MV_Unrolled: X and Y must have the same rank.");
-  static_assert(YMV::Rank == 2,
+  static_assert(YMV::rank == 2,
                 "KokkosBlas::Impl::Axpby_MV_Unrolled: "
                 "XMV and YMV must have rank 2.");
 
@@ -1120,10 +1120,10 @@ void Axpby_MV_Generic(const AV& av, const XMV& x, const BV& bv, const YMV& y,
                 "KokkosBlas::Impl::Axpby_MV_Generic: Y is const.  "
                 "It must be nonconst, because it is an output argument "
                 "(we have to be able to write to its entries).");
-  static_assert((int)YMV::Rank == (int)XMV::Rank,
+  static_assert((int)YMV::rank == (int)XMV::rank,
                 "KokkosBlas::Impl::"
                 "Axpby_MV_Generic: X and Y must have the same rank.");
-  static_assert(YMV::Rank == 2,
+  static_assert(YMV::rank == 2,
                 "KokkosBlas::Impl::Axpby_MV_Generic: "
                 "XMV and YMV must have rank 2.");
 
@@ -1260,10 +1260,10 @@ struct Axpby_MV_Invoke_Left {
                   "KokkosBlas::Impl::Axpby_MV_Invoke_Left: Y is const.  "
                   "It must be nonconst, because it is an output argument "
                   "(we have to be able to write to its entries).");
-    static_assert((int)YMV::Rank == (int)XMV::Rank,
+    static_assert((int)YMV::rank == (int)XMV::rank,
                   "KokkosBlas::Impl::"
                   "Axpby_MV_Invoke_Left: X and Y must have the same rank.");
-    static_assert(YMV::Rank == 2,
+    static_assert(YMV::rank == 2,
                   "KokkosBlas::Impl::Axpby_MV_Invoke_Left: "
                   "X and Y must have rank 2.");
 
@@ -1341,10 +1341,10 @@ struct Axpby_MV_Invoke_Right {
                   "KokkosBlas::Impl::Axpby_MV_Invoke_Right: Y is const.  "
                   "It must be nonconst, because it is an output argument "
                   "(we have to be able to write to its entries).");
-    static_assert((int)YMV::Rank == (int)XMV::Rank,
+    static_assert((int)YMV::rank == (int)XMV::rank,
                   "KokkosBlas::Impl::"
                   "Axpby_MV_Invoke_Right: X and Y must have the same rank.");
-    static_assert(YMV::Rank == 2,
+    static_assert(YMV::rank == 2,
                   "KokkosBlas::Impl::Axpby_MV_Invoke_Right: "
                   "X and Y must have rank 2.");
 

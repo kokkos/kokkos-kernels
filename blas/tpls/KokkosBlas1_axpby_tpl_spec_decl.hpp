@@ -69,7 +69,7 @@ namespace Impl {
         int one = 1;                                                           \
         HostBlas<double>::axpy(N, alpha, X.data(), one, Y.data(), one);        \
       } else                                                                   \
-        Axpby<AV, XV, BV, YV, YV::Rank, false, ETI_SPEC_AVAIL>::axpby(         \
+        Axpby<AV, XV, BV, YV, YV::rank, false, ETI_SPEC_AVAIL>::axpby(         \
             alpha, X, beta, Y);                                                \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
@@ -104,7 +104,7 @@ namespace Impl {
         int one = 1;                                                          \
         HostBlas<float>::axpy(N, alpha, X.data(), one, Y.data(), one);        \
       } else                                                                  \
-        Axpby<AV, XV, BV, YV, YV::Rank, false, ETI_SPEC_AVAIL>::axpby(        \
+        Axpby<AV, XV, BV, YV, YV::rank, false, ETI_SPEC_AVAIL>::axpby(        \
             alpha, X, beta, Y);                                               \
       Kokkos::Profiling::popRegion();                                         \
     }                                                                         \
@@ -146,7 +146,7 @@ namespace Impl {
             reinterpret_cast<const std::complex<double>*>(X.data()), one, \
             reinterpret_cast<std::complex<double>*>(Y.data()), one);      \
       } else                                                              \
-        Axpby<AV, XV, BV, YV, YV::Rank, false, ETI_SPEC_AVAIL>::axpby(    \
+        Axpby<AV, XV, BV, YV, YV::rank, false, ETI_SPEC_AVAIL>::axpby(    \
             alpha, X, beta, Y);                                           \
       Kokkos::Profiling::popRegion();                                     \
     }                                                                     \
@@ -188,7 +188,7 @@ namespace Impl {
             reinterpret_cast<const std::complex<float>*>(X.data()), one, \
             reinterpret_cast<std::complex<float>*>(Y.data()), one);      \
       } else                                                             \
-        Axpby<AV, XV, BV, YV, YV::Rank, false, ETI_SPEC_AVAIL>::axpby(   \
+        Axpby<AV, XV, BV, YV, YV::rank, false, ETI_SPEC_AVAIL>::axpby(   \
             alpha, X, beta, Y);                                          \
       Kokkos::Profiling::popRegion();                                    \
     }                                                                    \
@@ -255,7 +255,7 @@ namespace Impl {
             KokkosBlas::Impl::CudaBlasSingleton::singleton();                  \
         cublasDaxpy(s.handle, N, &alpha, X.data(), one, Y.data(), one);        \
       } else                                                                   \
-        Axpby<AV, XV, BV, YV, YV::Rank, false, ETI_SPEC_AVAIL>::axpby(         \
+        Axpby<AV, XV, BV, YV, YV::rank, false, ETI_SPEC_AVAIL>::axpby(         \
             alpha, X, beta, Y);                                                \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
@@ -294,7 +294,7 @@ namespace Impl {
             KokkosBlas::Impl::CudaBlasSingleton::singleton();                 \
         cublasSaxpy(s.handle, N, &alpha, X.data(), one, Y.data(), one);       \
       } else                                                                  \
-        Axpby<AV, XV, BV, YV, YV::Rank, false, ETI_SPEC_AVAIL>::axpby(        \
+        Axpby<AV, XV, BV, YV, YV::rank, false, ETI_SPEC_AVAIL>::axpby(        \
             alpha, X, beta, Y);                                               \
       Kokkos::Profiling::popRegion();                                         \
     }                                                                         \
@@ -339,7 +339,7 @@ namespace Impl {
                     reinterpret_cast<const cuDoubleComplex*>(X.data()), one, \
                     reinterpret_cast<cuDoubleComplex*>(Y.data()), one);      \
       } else                                                                 \
-        Axpby<AV, XV, BV, YV, YV::Rank, false, ETI_SPEC_AVAIL>::axpby(       \
+        Axpby<AV, XV, BV, YV, YV::rank, false, ETI_SPEC_AVAIL>::axpby(       \
             alpha, X, beta, Y);                                              \
       Kokkos::Profiling::popRegion();                                        \
     }                                                                        \
@@ -383,7 +383,7 @@ namespace Impl {
                     reinterpret_cast<const cuComplex*>(X.data()), one,       \
                     reinterpret_cast<cuComplex*>(Y.data()), one);            \
       } else                                                                 \
-        Axpby<AV, XV, BV, YV, YV::Rank, false, ETI_SPEC_AVAIL>::axpby(       \
+        Axpby<AV, XV, BV, YV, YV::rank, false, ETI_SPEC_AVAIL>::axpby(       \
             alpha, X, beta, Y);                                              \
       Kokkos::Profiling::popRegion();                                        \
     }                                                                        \
