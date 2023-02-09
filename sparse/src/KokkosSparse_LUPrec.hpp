@@ -79,18 +79,16 @@ class LUPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
   ///// \tparam XViewType Input vector, as a 1-D Kokkos::View
   ///// \tparam YViewType Output vector, as a nonconst 1-D Kokkos::View
   /////
-  ///// \param transM [in] "N" for non-transpose, "T" for transpose, "C"
-  /////   for conjugate transpose.  All characters after the first are
-  /////   ignored.  This works just like the BLAS routines.
-  ///// \param alpha [in] Input coefficient of M*x
+  ///// \param transM [in] Not used.
+  ///// \param alpha [in] Not used
   ///// \param beta [in] Not used.
   /////
   ///// It takes L and U and the stores U^inv L^inv X in Y
   //
   virtual void apply(const Kokkos::View<const ScalarType *, EXSP> &X,
                      const Kokkos::View<ScalarType *, EXSP> &Y,
-                     const char transM[] = "N",
-                     ScalarType alpha    = karith::one(),
+                     const char[]        = "N",
+                     ScalarType          = karith::one(),
                      ScalarType          = karith::zero()) const {
     // tmp = trsv(L, x); //Apply L^inv to x
     // y = trsv(U, tmp); //Apply U^inv to tmp
