@@ -20,7 +20,7 @@
 namespace KokkosBlas {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class AV, class XMV, class BV, class YMV, int rank = YMV::Rank>
+template <class AV, class XMV, class BV, class YMV, int rank = YMV::rank>
 struct axpby_tpl_spec_avail {
   enum : bool { value = false };
 };

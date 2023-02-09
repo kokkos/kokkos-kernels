@@ -176,17 +176,17 @@ struct TeamSpmv<MemberType, Trans::NoTranspose> {
     static_assert(Kokkos::is_view<betaViewType>::value,
                   "KokkosBatched::spmv: betaViewType is not a Kokkos::View.");
 
-    static_assert(ValuesViewType::Rank == 2,
+    static_assert(ValuesViewType::rank == 2,
                   "KokkosBatched::spmv: ValuesViewType must have rank 2.");
-    static_assert(IntView::Rank == 1,
+    static_assert(IntView::rank == 1,
                   "KokkosBatched::spmv: IntView must have rank 2.");
-    static_assert(xViewType::Rank == 2,
+    static_assert(xViewType::rank == 2,
                   "KokkosBatched::spmv: xViewType must have rank 2.");
-    static_assert(yViewType::Rank == 2,
+    static_assert(yViewType::rank == 2,
                   "KokkosBatched::spmv: yViewType must have rank 2.");
-    static_assert(alphaViewType::Rank == 1,
+    static_assert(alphaViewType::rank == 1,
                   "KokkosBatched::spmv: alphaViewType must have rank 1.");
-    static_assert(betaViewType::Rank == 1,
+    static_assert(betaViewType::rank == 1,
                   "KokkosBatched::spmv: betaViewType must have rank 1.");
 
     // Check compatibility of dimensions at run time.
@@ -271,13 +271,13 @@ struct TeamSpmv<MemberType, Trans::NoTranspose> {
     static_assert(Kokkos::is_view<yViewType>::value,
                   "KokkosBatched::spmv: yViewType is not a Kokkos::View.");
 
-    static_assert(ValuesViewType::Rank == 2,
+    static_assert(ValuesViewType::rank == 2,
                   "KokkosBatched::spmv: ValuesViewType must have rank 2.");
-    static_assert(IntView::Rank == 1,
+    static_assert(IntView::rank == 1,
                   "KokkosBatched::spmv: IntView must have rank 2.");
-    static_assert(xViewType::Rank == 2,
+    static_assert(xViewType::rank == 2,
                   "KokkosBatched::spmv: xViewType must have rank 2.");
-    static_assert(yViewType::Rank == 2,
+    static_assert(yViewType::rank == 2,
                   "KokkosBatched::spmv: yViewType must have rank 2.");
 
     // Check compatibility of dimensions at run time.

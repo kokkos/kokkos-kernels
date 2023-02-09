@@ -376,9 +376,9 @@ struct SerialGesv<Gesv::StaticPivoting> {
                   "KokkosBatched::gesv: MatrixType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<VectorType>::value,
                   "KokkosBatched::gesv: VectorType is not a Kokkos::View.");
-    static_assert(MatrixType::Rank == 2,
+    static_assert(MatrixType::rank == 2,
                   "KokkosBatched::gesv: MatrixType must have rank 2.");
-    static_assert(VectorType::Rank == 1,
+    static_assert(VectorType::rank == 1,
                   "KokkosBatched::gesv: VectorType must have rank 1.");
 
     // Check compatibility of dimensions at run time.
@@ -449,9 +449,9 @@ struct SerialGesv<Gesv::NoPivoting> {
                   "KokkosBatched::gesv: MatrixType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<VectorType>::value,
                   "KokkosBatched::gesv: VectorType is not a Kokkos::View.");
-    static_assert(MatrixType::Rank == 2,
+    static_assert(MatrixType::rank == 2,
                   "KokkosBatched::gesv: MatrixType must have rank 2.");
-    static_assert(VectorType::Rank == 1,
+    static_assert(VectorType::rank == 1,
                   "KokkosBatched::gesv: VectorType must have rank 1.");
 
     // Check compatibility of dimensions at run time.
@@ -501,9 +501,9 @@ struct TeamGesv<MemberType, Gesv::StaticPivoting> {
                   "KokkosBatched::gesv: MatrixType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<VectorType>::value,
                   "KokkosBatched::gesv: VectorType is not a Kokkos::View.");
-    static_assert(MatrixType::Rank == 2,
+    static_assert(MatrixType::rank == 2,
                   "KokkosBatched::gesv: MatrixType must have rank 2.");
-    static_assert(VectorType::Rank == 1,
+    static_assert(VectorType::rank == 1,
                   "KokkosBatched::gesv: VectorType must have rank 1.");
 
     // Check compatibility of dimensions at run time.
@@ -579,9 +579,9 @@ struct TeamGesv<MemberType, Gesv::NoPivoting> {
                   "KokkosBatched::gesv: MatrixType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<VectorType>::value,
                   "KokkosBatched::gesv: VectorType is not a Kokkos::View.");
-    static_assert(MatrixType::Rank == 2,
+    static_assert(MatrixType::rank == 2,
                   "KokkosBatched::gesv: MatrixType must have rank 2.");
-    static_assert(VectorType::Rank == 1,
+    static_assert(VectorType::rank == 1,
                   "KokkosBatched::gesv: VectorType must have rank 1.");
 
     // Check compatibility of dimensions at run time.
@@ -637,9 +637,9 @@ struct TeamVectorGesv<MemberType, Gesv::StaticPivoting> {
                   "KokkosBatched::gesv: MatrixType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<VectorType>::value,
                   "KokkosBatched::gesv: VectorType is not a Kokkos::View.");
-    static_assert(MatrixType::Rank == 2,
+    static_assert(MatrixType::rank == 2,
                   "KokkosBatched::gesv: MatrixType must have rank 2.");
-    static_assert(VectorType::Rank == 1,
+    static_assert(VectorType::rank == 1,
                   "KokkosBatched::gesv: VectorType must have rank 1.");
 
     // Check compatibility of dimensions at run time.
@@ -716,9 +716,9 @@ struct TeamVectorGesv<MemberType, Gesv::NoPivoting> {
                   "KokkosBatched::gesv: MatrixType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<VectorType>::value,
                   "KokkosBatched::gesv: VectorType is not a Kokkos::View.");
-    static_assert(MatrixType::Rank == 2,
+    static_assert(MatrixType::rank == 2,
                   "KokkosBatched::gesv: MatrixType must have rank 2.");
-    static_assert(VectorType::Rank == 1,
+    static_assert(VectorType::rank == 1,
                   "KokkosBatched::gesv: VectorType must have rank 1.");
 
     // Check compatibility of dimensions at run time.

@@ -45,7 +45,7 @@ struct TeamGemv<MemberType, Trans::NoTranspose, Algo::Gemv::Unblocked> {
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType &member, const ScalarType alpha, const AViewType &A,
       const xViewType &x, const ScalarType beta, const yViewType &y) {
-    static_assert(AViewType::Rank == 3,
+    static_assert(AViewType::rank == 3,
                   "Batched TeamGemv requires rank-3 A matrix (use "
                   "KokkosBlas::TeamGemv for regular rank-2 matrix)");
     return TeamGemvInternal<Algo::Gemv::Unblocked>::template invoke<
@@ -67,7 +67,7 @@ struct TeamGemv<MemberType, Trans::NoTranspose, Algo::Gemv::Blocked> {
                                            const xViewType & /*x*/,
                                            const ScalarType /*beta*/,
                                            const yViewType & /*y*/) {
-    static_assert(AViewType::Rank == 3,
+    static_assert(AViewType::rank == 3,
                   "Batched TeamGemv requires rank-3 A matrix (use "
                   "KokkosBlas::TeamGemv for regular rank-2 matrix)");
     Kokkos::abort(
@@ -87,7 +87,7 @@ struct TeamGemv<MemberType, Trans::Transpose, Algo::Gemv::Unblocked> {
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType &member, const ScalarType alpha, const AViewType &A,
       const xViewType &x, const ScalarType beta, const yViewType &y) {
-    static_assert(AViewType::Rank == 3,
+    static_assert(AViewType::rank == 3,
                   "Batched TeamGemv requires rank-3 A matrix (use "
                   "KokkosBlas::TeamGemv for regular rank-2 matrix)");
     return TeamGemvInternal<Algo::Gemv::Unblocked>::template invoke<
@@ -109,7 +109,7 @@ struct TeamGemv<MemberType, Trans::Transpose, Algo::Gemv::Blocked> {
                                            const xViewType & /*x*/,
                                            const ScalarType /*beta*/,
                                            const yViewType & /*y*/) {
-    static_assert(AViewType::Rank == 3,
+    static_assert(AViewType::rank == 3,
                   "Batched TeamGemv requires rank-3 A matrix (use "
                   "KokkosBlas::TeamGemv for regular rank-2 matrix)");
     Kokkos::abort(

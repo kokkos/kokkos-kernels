@@ -140,7 +140,7 @@ serial_nrm2(const XMV X) {
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
   static_assert(Kokkos::is_view<XMV>::value,
                 "KokkosBlas::serial_nrm2: XMV is not a Kokkos::View");
-  static_assert(XMV::Rank == 1,
+  static_assert(XMV::rank == 1,
                 "KokkosBlas::serial_nrm2: XMV must have rank 1");
 #endif  // KOKKOSKERNELS_DEBUG_LEVEL
 

@@ -43,10 +43,10 @@ void axpby(const AV& a, const XMV& X, const BV& b, const YMV& Y) {
                 "KokkosBlas::axpby: Y is const.  It must be nonconst, "
                 "because it is an output argument "
                 "(we must be able to write to its entries).");
-  static_assert(int(YMV::Rank) == int(XMV::Rank),
+  static_assert(int(YMV::rank) == int(XMV::rank),
                 "KokkosBlas::axpby: "
                 "X and Y must have the same rank.");
-  static_assert(YMV::Rank == 1 || YMV::Rank == 2,
+  static_assert(YMV::rank == 1 || YMV::rank == 2,
                 "KokkosBlas::axpby: "
                 "XMV and YMV must either have rank 1 or rank 2.");
 
@@ -107,10 +107,10 @@ KOKKOS_FUNCTION void serial_axpy(const scalar_type alpha, const XMV X, YMV Y) {
                 "KokkosBlas::serial_axpy: XMV is not a Kokkos::View");
   static_assert(Kokkos::is_view<YMV>::value,
                 "KokkosBlas::serial_axpy: YMV is not a Kokkos::View");
-  static_assert(XMV::Rank == 1 || XMV::Rank == 2,
+  static_assert(XMV::rank == 1 || XMV::rank == 2,
                 "KokkosBlas::serial_axpy: XMV must have rank 1 or 2.");
   static_assert(
-      XMV::Rank == YMV::Rank,
+      XMV::rank == YMV::rank,
       "KokkosBlas::serial_axpy: XMV and YMV must have the same rank.");
 
   if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {

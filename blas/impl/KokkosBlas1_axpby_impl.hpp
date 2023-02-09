@@ -75,10 +75,10 @@ struct Axpby_Functor {
                   "KokkosBlas::Impl::Axpby_Functor: Y is const.  "
                   "It must be nonconst, because it is an output argument "
                   "(we have to be able to write to its entries).");
-    static_assert((int)YV::Rank == (int)XV::Rank,
+    static_assert((int)YV::rank == (int)XV::rank,
                   "KokkosBlas::Impl::"
                   "Axpby_Functor: X and Y must have the same rank.");
-    static_assert(YV::Rank == 1,
+    static_assert(YV::rank == 1,
                   "KokkosBlas::Impl::Axpby_Functor: "
                   "XV and YV must have rank 1.");
 
@@ -211,10 +211,10 @@ struct Axpby_Functor<typename XV::non_const_value_type, XV,
                   "KokkosBlas::Impl::Axpby_Functor: R is const.  "
                   "It must be nonconst, because it is an output argument "
                   "(we have to be able to write to its entries).");
-    static_assert((int)YV::Rank == (int)XV::Rank,
+    static_assert((int)YV::rank == (int)XV::rank,
                   "KokkosBlas::Impl::"
                   "Axpby_Functor: X and Y must have the same rank.");
-    static_assert(YV::Rank == 1,
+    static_assert(YV::rank == 1,
                   "KokkosBlas::Impl::Axpby_Functor: "
                   "XV and YV must have rank 1.");
   }
@@ -316,10 +316,10 @@ void Axpby_Generic(const AV& av, const XV& x, const BV& bv, const YV& y,
                 "KokkosBlas::Impl::Axpby_Generic: Y is const.  "
                 "It must be nonconst, because it is an output argument "
                 "(we have to be able to write to its entries).");
-  static_assert((int)YV::Rank == (int)XV::Rank,
+  static_assert((int)YV::rank == (int)XV::rank,
                 "KokkosBlas::Impl::"
                 "Axpby_Generic: X and Y must have the same rank.");
-  static_assert(YV::Rank == 1,
+  static_assert(YV::rank == 1,
                 "KokkosBlas::Impl::Axpby_Generic: "
                 "XV and YV must have rank 1.");
 

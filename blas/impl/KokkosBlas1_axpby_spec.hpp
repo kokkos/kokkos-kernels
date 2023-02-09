@@ -28,7 +28,7 @@
 namespace KokkosBlas {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class AV, class XMV, class BV, class YMV, int rank = YMV::Rank>
+template <class AV, class XMV, class BV, class YMV, int rank = YMV::rank>
 struct axpby_eti_spec_avail {
   enum : bool { value = false };
 };
@@ -127,7 +127,7 @@ namespace Impl {
 /// Any <i>scalar</i> coefficient of zero has BLAS semantics of
 /// ignoring the corresponding (multi)vector entry.  This does NOT
 /// apply to coefficients in av and bv vectors, if they are used.
-template <class AV, class XMV, class BV, class YMV, int rank = YMV::Rank,
+template <class AV, class XMV, class BV, class YMV, int rank = YMV::rank,
           bool tpl_spec_avail = axpby_tpl_spec_avail<AV, XMV, BV, YMV>::value,
           bool eti_spec_avail = axpby_eti_spec_avail<AV, XMV, BV, YMV>::value>
 struct Axpby {
@@ -138,7 +138,7 @@ template <class AV, class XMV, class BV, class YMV>
 struct Axpby<AV, XMV, BV, YMV, 0, true, true> {
   static void axpby(const AV& /* av */, const XMV& /* X */, const BV& /* bv */,
                     const YMV& /* Y */) {
-    static_assert(YMV::Rank == 0, "Oh My God");
+    static_assert(YMV::rank == 0, "Oh My God");
   }
 };
 
@@ -160,10 +160,10 @@ struct Axpby<AV, XMV, BV, YMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
                   "KokkosBlas::Impl::Axpby<rank-2>::axpby: Y is const.  "
                   "It must be nonconst, because it is an output argument "
                   "(we have to be able to write to its entries).");
-    static_assert((int)YMV::Rank == (int)XMV::Rank,
+    static_assert((int)YMV::rank == (int)XMV::rank,
                   "KokkosBlas::Impl::Axpby<rank-2>::axpby (MV): "
                   "X and Y must have the same rank.");
-    static_assert(YMV::Rank == 2,
+    static_assert(YMV::rank == 2,
                   "KokkosBlas::Impl::Axpby<rank-2>::axpby: "
                   "X and Y must have rank 2.");
     Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
@@ -241,10 +241,10 @@ struct Axpby<typename XMV::non_const_value_type, XMV,
                   "KokkosBlas::Impl::Axpby::axpby (MV): Y is const.  "
                   "It must be nonconst, because it is an output argument "
                   "(we have to be able to write to its entries).");
-    static_assert((int)YMV::Rank == (int)XMV::Rank,
+    static_assert((int)YMV::rank == (int)XMV::rank,
                   "KokkosBlas::Impl::Axpby::axpby (MV): "
                   "X and Y must have the same rank.");
-    static_assert(YMV::Rank == 2,
+    static_assert(YMV::rank == 2,
                   "KokkosBlas::Impl::Axpby::axpby (MV): "
                   "X and Y must have rank 2.");
     Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
@@ -342,10 +342,10 @@ struct Axpby<typename XV::non_const_value_type, XV,
                   "KokkosBlas::Impl::Axpby<rank-1>::axpby: Y is const.  "
                   "It must be nonconst, because it is an output argument "
                   "(we have to be able to write to its entries).");
-    static_assert((int)YV::Rank == (int)XV::Rank,
+    static_assert((int)YV::rank == (int)XV::rank,
                   "KokkosBlas::Impl::"
                   "Axpby<rank-1>::axpby: X and Y must have the same rank.");
-    static_assert(YV::Rank == 1,
+    static_assert(YV::rank == 1,
                   "KokkosBlas::Impl::Axpby<rank-1>::axpby: "
                   "X and Y must have rank 1.");
 
