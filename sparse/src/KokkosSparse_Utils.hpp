@@ -2108,6 +2108,199 @@ bool isCrsGraphSorted(const Rowmap &rowmap, const Entries &entries) {
   return totalFallingEdges == rowBoundaryFallingEdges;
 }
 
+template <typename Values, typename Mag, typename Offset>
+struct CountDroppedEntriesFunctor {
+  using Scalar = typename Values::non_const_value_type;
+  CountDroppedEntriesFunctor(const Values &values_, Mag tol_)
+      : values(values_), tol(tol_) {}
+
+  KOKKOS_INLINE_FUNCTION void operator()(int64_t i, Offset &lcount) const {
+    if (Kokkos::ArithTraits<Scalar>::abs(values(i)) <= tol) lcount++;
+  }
+
+  Values values;
+  Mag tol;
+};
+
+template <typename Bitset, typename Rowmap>
+struct MarkFinalRowEntries {
+  MarkFinalRowEntries(const Bitset &rowEndMarkers_, const Rowmap &rowmap_)
+      : rowEndMarkers(rowEndMarkers_), rowmap(rowmap_) {}
+
+  KOKKOS_INLINE_FUNCTION void operator()(int64_t i) const {
+    auto index = rowmap(i);
+    if (index) rowEndMarkers.set(index - 1);
+  }
+
+  Bitset rowEndMarkers;
+  Rowmap rowmap;
+};
+
+template <typename Offset>
+struct DropEntriesScanner {
+  KOKKOS_DEFAULTED_FUNCTION DropEntriesScanner() = default;
+  KOKKOS_INLINE_FUNCTION DropEntriesScanner(Offset i_out_, Offset row_)
+      : i_out(i_out_), row(row_) {}
+
+  KOKKOS_INLINE_FUNCTION void operator+=(
+      const DropEntriesScanner<Offset> &rhs) {
+    i_out += rhs.i_out;
+    row += rhs.row;
+  }
+
+  Offset i_out;  // The index to write in output entries/values
+  Offset row;    // The row index (ignoring rows which were empty in input)
+};
+
+template <typename Bitset, typename RowmapIn, typename EntriesIn,
+          typename ValuesIn, typename RowmapOut, typename EntriesOut,
+          typename ValuesOut, typename Mag>
+struct DropEntriesFunctor {
+  using Offset = typename RowmapIn::non_const_value_type;
+  using Scalar = typename ValuesIn::non_const_value_type;
+
+  DropEntriesFunctor(const Bitset &rowEndMarkers_, const RowmapIn &rowmapIn_,
+                     const EntriesIn &entriesIn_, const ValuesIn &valuesIn_,
+                     const RowmapOut &compactRowmapOut_,
+                     const EntriesOut &entriesOut_, const ValuesOut &valuesOut_,
+                     Mag tol_)
+      : rowEndMarkers(rowEndMarkers_),
+        rowmapIn(rowmapIn_),
+        entriesIn(entriesIn_),
+        valuesIn(valuesIn_),
+        compactRowmapOut(compactRowmapOut_),
+        entriesOut(entriesOut_),
+        valuesOut(valuesOut_),
+        tol(tol_) {}
+
+  KOKKOS_INLINE_FUNCTION void operator()(int64_t i_in,
+                                         DropEntriesScanner<Offset> &scanval,
+                                         bool finalPass) const {
+    // i_in is the index of the input entry being processed
+    // i_out (if finalPass == true) is the index of where that same entry goes
+    // in the filtered matrix
+    bool filter   = Kokkos::ArithTraits<Scalar>::abs(valuesIn(i_in)) <= tol;
+    bool isRowEnd = rowEndMarkers.test(i_in);
+    if (finalPass) {
+      if (!filter) {
+        // Keeping this entry, so copy it to the output.
+        entriesOut(scanval.i_out) = entriesIn(i_in);
+        valuesOut(scanval.i_out)  = valuesIn(i_in);
+      }
+      if (isRowEnd) {
+        // Entry i_in was the last in its row of the input matrix.
+        // We now know where that filtered row ends, so mark it in
+        // compactRowmapOut.
+        compactRowmapOut(scanval.row + 1) = scanval.i_out + (filter ? 0 : 1);
+      }
+      // Also, make one thread responsible for initializing first compact rowmap
+      // entry
+      if (i_in == 0) compactRowmapOut(0) = 0;
+    }
+    if (!filter) scanval.i_out++;
+    if (isRowEnd) scanval.row++;
+  }
+
+  Bitset rowEndMarkers;
+  RowmapIn rowmapIn;
+  EntriesIn entriesIn;
+  ValuesIn valuesIn;
+  RowmapOut compactRowmapOut;
+  EntriesOut entriesOut;
+  ValuesOut valuesOut;
+  Mag tol;
+};
+
+template <typename RowmapIn, typename RowmapOut, typename Ordinal>
+struct ExpandRowmapFunctor {
+  using Offset = typename RowmapIn::non_const_value_type;
+
+  ExpandRowmapFunctor(const RowmapIn &rowmapIn_,
+                      const RowmapOut &compactRowmapOut_,
+                      const RowmapOut &rowmapOut_)
+      : rowmapIn(rowmapIn_),
+        compactRowmapOut(compactRowmapOut_),
+        rowmapOut(rowmapOut_) {}
+
+  KOKKOS_INLINE_FUNCTION void operator()(Ordinal row, Ordinal &compactRow,
+                                         bool finalPass) const {
+    if (finalPass) {
+      rowmapOut(row) = compactRowmapOut(compactRow);
+    }
+    if (row + 1 < rowmapIn.extent_int(0) && rowmapIn(row + 1) != rowmapIn(row))
+      compactRow++;
+  }
+
+  RowmapIn rowmapIn;
+  RowmapOut compactRowmapOut;
+  RowmapOut rowmapOut;
+};
+
+// Given a CrsMatrix A, filter out all entries Aij where |Aij| <= tol.
+// If there are no entries to remove, A is returned.
+// Otherwise a new matrix is returned.
+template <typename Matrix>
+Matrix removeCrsMatrixZeros(
+    const Matrix &A,
+    typename Kokkos::ArithTraits<typename Matrix::value_type>::mag_type tol =
+        0) {
+  using Ordinal   = typename Matrix::non_const_ordinal_type;
+  using Offset    = typename Matrix::non_const_size_type;
+  using Device    = typename Matrix::device_type;
+  using ExecSpace = typename Device::execution_space;
+  using Mag       = decltype(tol);
+  using RangePol  = Kokkos::RangePolicy<ExecSpace>;
+  // First, count the number of entries to remove
+  Offset entriesToRemove;
+  Kokkos::parallel_reduce(
+      RangePol(0, A.nnz()),
+      CountDroppedEntriesFunctor<typename Matrix::values_type, Mag, Offset>(
+          A.values, tol),
+      entriesToRemove);
+  if (entriesToRemove == Offset(0)) {
+    // The matrix has no zeros to remove, so just return it as-is
+    return A;
+  }
+  // Actually have to make the new matrix with (near-)zeros removed.
+  // To help construct the new rowmap, for each original entry record whether
+  // it's at the end of its row.
+  Kokkos::Bitset<Device> rowEndMarkersNonconst(A.nnz());
+  Kokkos::parallel_for(
+      RangePol(0, A.graph.row_map.extent(0)),
+      MarkFinalRowEntries(rowEndMarkersNonconst, A.graph.row_map));
+  Offset filteredNNZ = A.nnz() - entriesToRemove;
+  typename Matrix::values_type::non_const_type filteredValues(
+      Kokkos::view_alloc(Kokkos::WithoutInitializing, "Afiltered values"),
+      filteredNNZ);
+  typename Matrix::index_type::non_const_type filteredEntries(
+      Kokkos::view_alloc(Kokkos::WithoutInitializing, "Afiltered entries"),
+      filteredNNZ);
+  typename Matrix::row_map_type::non_const_type compactFilteredRowmap(
+      Kokkos::view_alloc(Kokkos::WithoutInitializing,
+                         "Afiltered rowmap (compact)"),
+      A.numRows() + 1);
+  typename Matrix::row_map_type::non_const_type filteredRowmap(
+      Kokkos::view_alloc(Kokkos::WithoutInitializing, "Afiltered rowmap"),
+      A.numRows() + 1);
+  // Using a parallel scan, compact the non-filtered entries and partially fill
+  // in the rowmap (only marking row begins for rows which were originally
+  // non-empty) The rest can be filled in with a max-scan.
+  Kokkos::ConstBitset<Device> rowEndMarkers(rowEndMarkersNonconst);
+  Kokkos::parallel_scan(
+      RangePol(0, A.nnz()),
+      DropEntriesFunctor(rowEndMarkers, A.graph.row_map, A.graph.entries,
+                         A.values, compactFilteredRowmap, filteredEntries,
+                         filteredValues, tol));
+  Kokkos::parallel_scan(
+      RangePol(0, A.numRows() + 1),
+      ExpandRowmapFunctor<typename Matrix::row_map_type,
+                          typename Matrix::row_map_type::non_const_type,
+                          Ordinal>(A.graph.row_map, compactFilteredRowmap,
+                                   filteredRowmap));
+  return Matrix("A filtered", A.numRows(), A.numCols(), filteredNNZ,
+                filteredValues, filteredRowmap, filteredEntries);
+}
+
 template <typename Rowmap, typename Entries, typename Values>
 void validateCrsMatrix(int m, int n, const Rowmap &rowmapIn,
                        const Entries &entriesIn, const Values &valuesIn) {
@@ -2136,6 +2329,10 @@ void validateCrsMatrix(int m, int n, const Rowmap &rowmapIn,
 }
 
 }  // namespace Impl
+
+using Impl::isCrsGraphSorted;
+using Impl::removeCrsMatrixZeros;
+
 }  // namespace KokkosSparse
 
 #endif
