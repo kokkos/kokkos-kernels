@@ -1,3 +1,18 @@
+//@HEADER
+// ************************************************************************
+//
+//                        Kokkos v. 4.0
+//       Copyright (2022) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
+//
+// Under the terms of Contract DE-NA0003525 with NTESS,
+// the U.S. Government retains certain rights in this software.
+//
+// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
+// See https://kokkos.org/LICENSE for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//@HEADER
 #include "gtest/gtest.h"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Random.hpp"
@@ -6,6 +21,8 @@
 #include "KokkosBatched_Trmm_Serial_Impl.hpp"
 
 #include "KokkosKernels_TestUtils.hpp"
+
+#include <chrono>
 
 using namespace KokkosBatched;
 
@@ -150,7 +167,8 @@ void impl_test_batched_trmm(const int N, const int nRows, const int nCols,
       Kokkos::create_mirror_view(B_actual);
   typename ViewType::HostMirror B_expected_host =
       Kokkos::create_mirror_view(B_expected);
-  uint64_t seed = Kokkos::Impl::clock_tic();
+  uint64_t seed =
+      std::chrono::high_resolution_clock::now().time_since_epoch().count();
 
   using ViewTypeSubA =
       decltype(Kokkos::subview(A, 0, Kokkos::ALL(), Kokkos::ALL()));

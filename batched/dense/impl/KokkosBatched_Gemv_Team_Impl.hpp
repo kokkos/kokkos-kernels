@@ -1,3 +1,18 @@
+//@HEADER
+// ************************************************************************
+//
+//                        Kokkos v. 4.0
+//       Copyright (2022) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
+//
+// Under the terms of Contract DE-NA0003525 with NTESS,
+// the U.S. Government retains certain rights in this software.
+//
+// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
+// See https://kokkos.org/LICENSE for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//@HEADER
 #ifndef __KOKKOSBATCHED_GEMV_TEAM_IMPL_HPP__
 #define __KOKKOSBATCHED_GEMV_TEAM_IMPL_HPP__
 
@@ -30,7 +45,7 @@ struct TeamGemv<MemberType, Trans::NoTranspose, Algo::Gemv::Unblocked> {
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType &member, const ScalarType alpha, const AViewType &A,
       const xViewType &x, const ScalarType beta, const yViewType &y) {
-    static_assert(AViewType::Rank == 3,
+    static_assert(AViewType::rank == 3,
                   "Batched TeamGemv requires rank-3 A matrix (use "
                   "KokkosBlas::TeamGemv for regular rank-2 matrix)");
     return TeamGemvInternal<Algo::Gemv::Unblocked>::template invoke<
@@ -52,7 +67,7 @@ struct TeamGemv<MemberType, Trans::NoTranspose, Algo::Gemv::Blocked> {
                                            const xViewType & /*x*/,
                                            const ScalarType /*beta*/,
                                            const yViewType & /*y*/) {
-    static_assert(AViewType::Rank == 3,
+    static_assert(AViewType::rank == 3,
                   "Batched TeamGemv requires rank-3 A matrix (use "
                   "KokkosBlas::TeamGemv for regular rank-2 matrix)");
     Kokkos::abort(
@@ -72,7 +87,7 @@ struct TeamGemv<MemberType, Trans::Transpose, Algo::Gemv::Unblocked> {
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType &member, const ScalarType alpha, const AViewType &A,
       const xViewType &x, const ScalarType beta, const yViewType &y) {
-    static_assert(AViewType::Rank == 3,
+    static_assert(AViewType::rank == 3,
                   "Batched TeamGemv requires rank-3 A matrix (use "
                   "KokkosBlas::TeamGemv for regular rank-2 matrix)");
     return TeamGemvInternal<Algo::Gemv::Unblocked>::template invoke<
@@ -94,7 +109,7 @@ struct TeamGemv<MemberType, Trans::Transpose, Algo::Gemv::Blocked> {
                                            const xViewType & /*x*/,
                                            const ScalarType /*beta*/,
                                            const yViewType & /*y*/) {
-    static_assert(AViewType::Rank == 3,
+    static_assert(AViewType::rank == 3,
                   "Batched TeamGemv requires rank-3 A matrix (use "
                   "KokkosBlas::TeamGemv for regular rank-2 matrix)");
     Kokkos::abort(

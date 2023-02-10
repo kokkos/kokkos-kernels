@@ -1,8 +1,25 @@
+//@HEADER
+// ************************************************************************
+//
+//                        Kokkos v. 4.0
+//       Copyright (2022) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
+//
+// Under the terms of Contract DE-NA0003525 with NTESS,
+// the U.S. Government retains certain rights in this software.
+//
+// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
+// See https://kokkos.org/LICENSE for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//@HEADER
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
 #include <KokkosBlas3_gemm.hpp>
 #include <KokkosKernels_TestUtils.hpp>
+
+#include <chrono>
 
 namespace Test {
 
@@ -76,7 +93,8 @@ void build_matrices(const int M, const int N, const int K,
 
   // (SA 11 Dec 2019) Max (previously: 10) increased to detect the bug in
   // Trilinos issue #6418
-  const uint64_t seed = Kokkos::Impl::clock_tic();
+  const uint64_t seed =
+      std::chrono::high_resolution_clock::now().time_since_epoch().count();
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(seed);
   Kokkos::fill_random(A, rand_pool,
                       Kokkos::rand<typename Kokkos::Random_XorShift64_Pool<
@@ -169,7 +187,8 @@ void impl_test_gemm(const char* TA, const char* TB, int M, int N, int K,
   ViewTypeC C("C", M, N);
   ViewTypeC C2("C", M, N);
 
-  const uint64_t seed = Kokkos::Impl::clock_tic();
+  const uint64_t seed =
+      std::chrono::high_resolution_clock::now().time_since_epoch().count();
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(seed);
 
   // (SA 11 Dec 2019) Max (previously: 10) increased to detect the bug in

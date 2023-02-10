@@ -2,43 +2,17 @@
 //@HEADER
 // ************************************************************************
 //
-//                        Kokkos v. 3.0
-//       Copyright (2020) National Technology & Engineering
+//                        Kokkos v. 4.0
+//       Copyright (2022) National Technology & Engineering
 //               Solutions of Sandia, LLC (NTESS).
 //
 // Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
+// See https://kokkos.org/LICENSE for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
-//
-// ************************************************************************
 //@HEADER
 */
 
@@ -206,84 +180,118 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k,
                               const ConstEntriesType &entriesA,
                               const ConstRowMapType &row_mapB,
                               const ConstEntriesType &entriesB,
-                              const RowMapType &row_mapC,
-                              bool /* computeRowptrs */) {
-  using scalar_type = typename KernelHandle::nnz_scalar_t;
-  using Offset      = typename KernelHandle::size_type;
-  if (handle->is_symbolic_called() && handle->are_rowptrs_computed()) return;
-  handle->create_cusparse_spgemm_handle(false, false);
-  auto h = handle->get_cusparse_spgemm_handle();
+                              const RowMapType &row_mapC, bool computeRowptrs) {
+  using scalar_type      = typename KernelHandle::nnz_scalar_t;
+  using ordinal_type     = typename KernelHandle::nnz_lno_t;
+  const auto alpha       = Kokkos::ArithTraits<scalar_type>::one();
+  const auto beta        = Kokkos::ArithTraits<scalar_type>::zero();
+  void *dummyValues_AB   = nullptr;
+  bool firstSymbolicCall = false;
+  if (!handle->is_symbolic_called()) {
+    handle->create_cusparse_spgemm_handle(false, false);
+    auto h = handle->get_cusparse_spgemm_handle();
 
-  // Follow
-  // https://github.com/NVIDIA/CUDALibrarySamples/blob/master/cuSPARSE/spgemm
+    // Follow
+    // https://github.com/NVIDIA/CUDALibrarySamples/blob/master/cuSPARSE/spgemm
 
-  const auto alpha = Kokkos::ArithTraits<scalar_type>::one();
-  const auto beta  = Kokkos::ArithTraits<scalar_type>::zero();
+    // In non-reuse interface, forced to give A,B dummy values to
+    // cusparseSpGEMM_compute. And it actually reads them, so they must be
+    // allocated and of the correct type. This compute will be called again in
+    // numeric with the real values.
+    //
+    // The dummy values can be uninitialized. cusparseSpGEMM_compute does
+    // not remove numerical zeros from the sparsity pattern.
+    KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc(
+        &dummyValues_AB, sizeof(scalar_type) *
+                             std::max(entriesA.extent(0), entriesB.extent(0))));
 
-  // In non-reuse interface, forced to give A,B dummy values to
-  // cusparseSpGEMM_compute. And it actually reads them, so they must be
-  // allocated and of the correct type. This compute will be called again in
-  // numeric with the real values.
-  //
-  // The dummy values can be uninitialized. cusparseSpGEMM_compute does
-  // not remove numerical zeros from the sparsity pattern.
-  void *dummyValues;
-  KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc(
-      &dummyValues,
-      sizeof(scalar_type) * std::max(entriesA.extent(0), entriesB.extent(0))));
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateCsr(
+        &h->descr_A, m, n, entriesA.extent(0), (void *)row_mapA.data(),
+        (void *)entriesA.data(), dummyValues_AB, CUSPARSE_INDEX_32I,
+        CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO, h->scalarType));
 
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateCsr(
-      &h->descr_A, m, n, entriesA.extent(0), (void *)row_mapA.data(),
-      (void *)entriesA.data(), dummyValues, CUSPARSE_INDEX_32I,
-      CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO, h->scalarType));
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateCsr(
+        &h->descr_B, n, k, entriesB.extent(0), (void *)row_mapB.data(),
+        (void *)entriesB.data(), dummyValues_AB, CUSPARSE_INDEX_32I,
+        CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO, h->scalarType));
 
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateCsr(
-      &h->descr_B, n, k, entriesB.extent(0), (void *)row_mapB.data(),
-      (void *)entriesB.data(), dummyValues, CUSPARSE_INDEX_32I,
-      CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO, h->scalarType));
+    KOKKOS_CUSPARSE_SAFE_CALL(
+        cusparseCreateCsr(&h->descr_C, m, k, 0, row_mapC.data(), nullptr,
+                          nullptr, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
+                          CUSPARSE_INDEX_BASE_ZERO, h->scalarType));
 
-  KOKKOS_CUSPARSE_SAFE_CALL(
-      cusparseCreateCsr(&h->descr_C, m, k, 0, row_mapC.data(), nullptr, nullptr,
-                        CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
-                        CUSPARSE_INDEX_BASE_ZERO, h->scalarType));
+    //----------------------------------------------------------------------
+    // query workEstimation buffer size, allocate, then call again with buffer.
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMM_workEstimation(
+        h->cusparseHandle, h->opA, h->opB, &alpha, h->descr_A, h->descr_B,
+        &beta, h->descr_C, h->scalarType, h->alg, h->spgemmDescr,
+        &h->bufferSize3, nullptr));
+    KOKKOS_IMPL_CUDA_SAFE_CALL(
+        cudaMalloc((void **)&h->buffer3, h->bufferSize3));
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMM_workEstimation(
+        h->cusparseHandle, h->opA, h->opB, &alpha, h->descr_A, h->descr_B,
+        &beta, h->descr_C, h->scalarType, h->alg, h->spgemmDescr,
+        &h->bufferSize3, h->buffer3));
 
-  //----------------------------------------------------------------------
-  // query workEstimation buffer size, allocate, then call again with buffer.
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMM_workEstimation(
-      h->cusparseHandle, h->opA, h->opB, &alpha, h->descr_A, h->descr_B, &beta,
-      h->descr_C, h->scalarType, h->alg, h->spgemmDescr, &h->bufferSize3,
-      nullptr));
-  KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc((void **)&h->buffer3, h->bufferSize3));
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMM_workEstimation(
-      h->cusparseHandle, h->opA, h->opB, &alpha, h->descr_A, h->descr_B, &beta,
-      h->descr_C, h->scalarType, h->alg, h->spgemmDescr, &h->bufferSize3,
-      h->buffer3));
-  cudaFree(h->buffer3);
-  h->buffer3 = nullptr;
+    //----------------------------------------------------------------------
+    // query compute buffer size, allocate, then call again with buffer.
 
-  //----------------------------------------------------------------------
-  // query compute buffer size, allocate, then call again with buffer.
-
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMM_compute(
-      h->cusparseHandle, h->opA, h->opB, &alpha, h->descr_A, h->descr_B, &beta,
-      h->descr_C, h->scalarType, CUSPARSE_SPGEMM_DEFAULT, h->spgemmDescr,
-      &h->bufferSize4, nullptr));
-  KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc((void **)&h->buffer4, h->bufferSize4));
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMM_compute(
-      h->cusparseHandle, h->opA, h->opB, &alpha, h->descr_A, h->descr_B, &beta,
-      h->descr_C, h->scalarType, CUSPARSE_SPGEMM_DEFAULT, h->spgemmDescr,
-      &h->bufferSize4, h->buffer4));
-  KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(dummyValues));
-
-  int64_t C_nrow, C_ncol, C_nnz;
-  KOKKOS_CUSPARSE_SAFE_CALL(
-      cusparseSpMatGetSize(h->descr_C, &C_nrow, &C_ncol, &C_nnz));
-  if (C_nnz > std::numeric_limits<int>::max()) {
-    throw std::runtime_error("nnz of C overflowed over 32-bit int\n");
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMM_compute(
+        h->cusparseHandle, h->opA, h->opB, &alpha, h->descr_A, h->descr_B,
+        &beta, h->descr_C, h->scalarType, CUSPARSE_SPGEMM_DEFAULT,
+        h->spgemmDescr, &h->bufferSize4, nullptr));
+    KOKKOS_IMPL_CUDA_SAFE_CALL(
+        cudaMalloc((void **)&h->buffer4, h->bufferSize4));
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMM_compute(
+        h->cusparseHandle, h->opA, h->opB, &alpha, h->descr_A, h->descr_B,
+        &beta, h->descr_C, h->scalarType, CUSPARSE_SPGEMM_DEFAULT,
+        h->spgemmDescr, &h->bufferSize4, h->buffer4));
+    int64_t C_nrow, C_ncol, C_nnz;
+    KOKKOS_CUSPARSE_SAFE_CALL(
+        cusparseSpMatGetSize(h->descr_C, &C_nrow, &C_ncol, &C_nnz));
+    if (C_nnz > std::numeric_limits<int>::max()) {
+      throw std::runtime_error("nnz of C overflowed over 32-bit int\n");
+    }
+    handle->set_c_nnz(C_nnz);
+    handle->set_call_symbolic();
+    firstSymbolicCall = true;
   }
-  handle->set_c_nnz(C_nnz);
-  handle->set_call_symbolic();
-  handle->set_computed_rowptrs();
+
+  if (computeRowptrs && !handle->are_rowptrs_computed()) {
+    auto h     = handle->get_cusparse_spgemm_handle();
+    auto C_nnz = handle->get_c_nnz();
+    if (!firstSymbolicCall) {
+      // This is not the first call to symbolic, so dummyValues_AB was not
+      // allocated above. But, descr_A and descr_B will have been saved in the
+      // handle, so we can reuse those.
+      KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc(
+          &dummyValues_AB, sizeof(scalar_type) * std::max(entriesA.extent(0),
+                                                          entriesB.extent(0))));
+      KOKKOS_CUSPARSE_SAFE_CALL(
+          cusparseCsrSetPointers(h->descr_A, (void *)row_mapA.data(),
+                                 (void *)entriesA.data(), dummyValues_AB));
+      KOKKOS_CUSPARSE_SAFE_CALL(
+          cusparseCsrSetPointers(h->descr_B, (void *)row_mapB.data(),
+                                 (void *)entriesB.data(), dummyValues_AB));
+    }
+    void *dummyEntries_C, *dummyValues_C;
+    KOKKOS_IMPL_CUDA_SAFE_CALL(
+        cudaMalloc(&dummyEntries_C, sizeof(ordinal_type) * C_nnz));
+    KOKKOS_IMPL_CUDA_SAFE_CALL(
+        cudaMalloc(&dummyValues_C, sizeof(scalar_type) * C_nnz));
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCsrSetPointers(
+        h->descr_C, (void *)row_mapC.data(), dummyEntries_C, dummyValues_C));
+
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMM_copy(
+        h->cusparseHandle, h->opA, h->opB, &alpha, h->descr_A, h->descr_B,
+        &beta, h->descr_C, h->scalarType, CUSPARSE_SPGEMM_DEFAULT,
+        h->spgemmDescr));
+
+    KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(dummyValues_C));
+    KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(dummyEntries_C));
+    handle->set_computed_rowptrs();
+  }
+  KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(dummyValues_AB));
 }
 
 #else

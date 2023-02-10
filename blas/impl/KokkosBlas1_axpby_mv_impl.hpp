@@ -1,46 +1,18 @@
-/*
 //@HEADER
 // ************************************************************************
 //
-//                        Kokkos v. 3.0
-//       Copyright (2020) National Technology & Engineering
+//                        Kokkos v. 4.0
+//       Copyright (2022) National Technology & Engineering
 //               Solutions of Sandia, LLC (NTESS).
 //
 // Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
+// See https://kokkos.org/LICENSE for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
-//
-// ************************************************************************
 //@HEADER
-*/
 #ifndef KOKKOSBLAS1_AXPBY_MV_IMPL_HPP_
 #define KOKKOSBLAS1_AXPBY_MV_IMPL_HPP_
 
@@ -102,16 +74,16 @@ struct Axpby_MV_Functor {
                   "KokkosBlas::Impl::Axpby_MV_Functor: Y is const.  "
                   "It must be nonconst, because it is an output argument "
                   "(we have to be able to write to its entries).");
-    static_assert((int)YMV::Rank == (int)XMV::Rank,
+    static_assert((int)YMV::rank == (int)XMV::rank,
                   "KokkosBlas::Impl::Axpby_MV_Functor: "
                   "X and Y must have the same rank.");
-    static_assert(YMV::Rank == 2,
+    static_assert(YMV::rank == 2,
                   "KokkosBlas::Impl::Axpby_MV_Functor: "
                   "XMV and YMV must have rank 2.");
-    static_assert(AV::Rank == 1,
+    static_assert(AV::rank == 1,
                   "KokkosBlas::Impl::Axpby_MV_Functor: "
                   "AV must have rank 1.");
-    static_assert(BV::Rank == 1,
+    static_assert(BV::rank == 1,
                   "KokkosBlas::Impl::Axpby_MV_Functor: "
                   "BV must have rank 1.");
   }
@@ -339,10 +311,10 @@ struct Axpby_MV_Functor<typename XMV::non_const_value_type, XMV,
                   "KokkosBlas::Impl::Axpby_MV_Functor: Y is const.  "
                   "It must be nonconst, because it is an output argument "
                   "(we have to be able to write to its entries).");
-    static_assert((int)YMV::Rank == (int)XMV::Rank,
+    static_assert((int)YMV::rank == (int)XMV::rank,
                   "KokkosBlas::Impl::"
                   "Axpby_MV_Functor: X and Y must have the same rank.");
-    static_assert(YMV::Rank == 2,
+    static_assert(YMV::rank == 2,
                   "KokkosBlas::Impl::Axpby_MV_Functor: "
                   "XMV and YMV must have rank 2.");
   }
@@ -557,16 +529,16 @@ struct Axpby_MV_Unroll_Functor {
                   "KokkosBlas::Impl::Axpby_MV_Unroll_Functor: Y is const.  "
                   "It must be nonconst, because it is an output argument "
                   "(we have to be able to write to its entries).");
-    static_assert((int)YMV::Rank == (int)XMV::Rank,
+    static_assert((int)YMV::rank == (int)XMV::rank,
                   "KokkosBlas::Impl::Axpby_MV_Unroll_Functor: "
                   "X and Y must have the same rank.");
-    static_assert(YMV::Rank == 2,
+    static_assert(YMV::rank == 2,
                   "KokkosBlas::Impl::Axpby_MV_Unroll_Functor: "
                   "XMV and YMV must have rank 2.");
-    static_assert(AV::Rank == 1,
+    static_assert(AV::rank == 1,
                   "KokkosBlas::Impl::Axpby_MV_Unroll_Functor: "
                   "AV must have rank 1.");
-    static_assert(BV::Rank == 1,
+    static_assert(BV::rank == 1,
                   "KokkosBlas::Impl::Axpby_MV_Unroll_Functor: "
                   "BV must have rank 1.");
 
@@ -781,10 +753,10 @@ struct Axpby_MV_Unroll_Functor<typename XMV::non_const_value_type, XMV,
                   "KokkosBlas::Impl::Axpby_MV_Unroll_Functor: Y is const.  "
                   "It must be nonconst, because it is an output argument "
                   "(we have to be able to write to its entries).");
-    static_assert((int)YMV::Rank == (int)XMV::Rank,
+    static_assert((int)YMV::rank == (int)XMV::rank,
                   "KokkosBlas::Impl::"
                   "Axpby_MV_Unroll_Functor: X and Y must have the same rank.");
-    static_assert(YMV::Rank == 2,
+    static_assert(YMV::rank == 2,
                   "KokkosBlas::Impl::Axpby_MV_Unroll_Functor: "
                   "XMV and YMV must have rank 2.");
   }
@@ -993,10 +965,10 @@ void Axpby_MV_Unrolled(const AV& av, const XMV& x, const BV& bv, const YMV& y,
                 "KokkosBlas::Impl::Axpby_MV_Unrolled: Y is const.  "
                 "It must be nonconst, because it is an output argument "
                 "(we have to be able to write to its entries).");
-  static_assert((int)YMV::Rank == (int)XMV::Rank,
+  static_assert((int)YMV::rank == (int)XMV::rank,
                 "KokkosBlas::Impl::"
                 "Axpby_MV_Unrolled: X and Y must have the same rank.");
-  static_assert(YMV::Rank == 2,
+  static_assert(YMV::rank == 2,
                 "KokkosBlas::Impl::Axpby_MV_Unrolled: "
                 "XMV and YMV must have rank 2.");
 
@@ -1148,10 +1120,10 @@ void Axpby_MV_Generic(const AV& av, const XMV& x, const BV& bv, const YMV& y,
                 "KokkosBlas::Impl::Axpby_MV_Generic: Y is const.  "
                 "It must be nonconst, because it is an output argument "
                 "(we have to be able to write to its entries).");
-  static_assert((int)YMV::Rank == (int)XMV::Rank,
+  static_assert((int)YMV::rank == (int)XMV::rank,
                 "KokkosBlas::Impl::"
                 "Axpby_MV_Generic: X and Y must have the same rank.");
-  static_assert(YMV::Rank == 2,
+  static_assert(YMV::rank == 2,
                 "KokkosBlas::Impl::Axpby_MV_Generic: "
                 "XMV and YMV must have rank 2.");
 
@@ -1288,10 +1260,10 @@ struct Axpby_MV_Invoke_Left {
                   "KokkosBlas::Impl::Axpby_MV_Invoke_Left: Y is const.  "
                   "It must be nonconst, because it is an output argument "
                   "(we have to be able to write to its entries).");
-    static_assert((int)YMV::Rank == (int)XMV::Rank,
+    static_assert((int)YMV::rank == (int)XMV::rank,
                   "KokkosBlas::Impl::"
                   "Axpby_MV_Invoke_Left: X and Y must have the same rank.");
-    static_assert(YMV::Rank == 2,
+    static_assert(YMV::rank == 2,
                   "KokkosBlas::Impl::Axpby_MV_Invoke_Left: "
                   "X and Y must have rank 2.");
 
@@ -1369,10 +1341,10 @@ struct Axpby_MV_Invoke_Right {
                   "KokkosBlas::Impl::Axpby_MV_Invoke_Right: Y is const.  "
                   "It must be nonconst, because it is an output argument "
                   "(we have to be able to write to its entries).");
-    static_assert((int)YMV::Rank == (int)XMV::Rank,
+    static_assert((int)YMV::rank == (int)XMV::rank,
                   "KokkosBlas::Impl::"
                   "Axpby_MV_Invoke_Right: X and Y must have the same rank.");
-    static_assert(YMV::Rank == 2,
+    static_assert(YMV::rank == 2,
                   "KokkosBlas::Impl::Axpby_MV_Invoke_Right: "
                   "X and Y must have rank 2.");
 

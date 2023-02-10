@@ -1,46 +1,18 @@
-/*
 //@HEADER
 // ************************************************************************
 //
-//                        Kokkos v. 3.0
-//       Copyright (2020) National Technology & Engineering
+//                        Kokkos v. 4.0
+//       Copyright (2022) National Technology & Engineering
 //               Solutions of Sandia, LLC (NTESS).
 //
 // Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
+// See https://kokkos.org/LICENSE for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
-//
-// ************************************************************************
 //@HEADER
-*/
 
 /// \file KokkosSparse_spiluk.hpp
 /// \brief Parallel Minimum Discarded Fill method
@@ -88,6 +60,8 @@ struct MDF_handle {
 
   int verbosity;
 
+  crs_matrix_type L, U;
+
   MDF_handle(const crs_matrix_type A)
       : numRows(A.numRows()),
         permutation(col_ind_type("row permutation", A.numRows())),
@@ -102,31 +76,28 @@ struct MDF_handle {
     entriesL = col_ind_type("entries L", nnzL);
     valuesL  = values_type("values L", nnzL);
 
+    L = crs_matrix_type("L", numRows, numRows, nnzL, valuesL, row_mapL,
+                        entriesL);
+
     // Allocate U
     row_mapU = row_map_type("row map U", numRows + 1);
     entriesU = col_ind_type("entries U", nnzU);
     valuesU  = values_type("values U", nnzU);
+
+    U = crs_matrix_type("U", numRows, numRows, nnzU, valuesU, row_mapU,
+                        entriesU);
   }
 
   col_ind_type get_permutation() { return permutation; }
 
   void sort_factors() {
-    KokkosSparse::sort_crs_matrix<execution_space, row_map_type, col_ind_type,
-                                  values_type>(row_mapL, entriesL, valuesL);
-    KokkosSparse::sort_crs_matrix<execution_space, row_map_type, col_ind_type,
-                                  values_type>(row_mapU, entriesU, valuesU);
+    KokkosSparse::sort_crs_matrix<crs_matrix_type>(L);
+    KokkosSparse::sort_crs_matrix<crs_matrix_type>(U);
   }
 
-  crs_matrix_type getL() {
-    return KokkosSparse::Impl::transpose_matrix<crs_matrix_type>(
-        crs_matrix_type("L", numRows, numRows, entriesL.extent(0), valuesL,
-                        row_mapL, entriesL));
-  }
+  crs_matrix_type getL() { return L; }
 
-  crs_matrix_type getU() {
-    return crs_matrix_type("U", numRows, numRows, entriesU.extent(0), valuesU,
-                           row_mapU, entriesU);
-  }
+  crs_matrix_type getU() { return U; }
 };
 
 }  // namespace Experimental

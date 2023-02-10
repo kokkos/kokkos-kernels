@@ -1,46 +1,18 @@
-/*
 //@HEADER
 // ************************************************************************
 //
-//                        Kokkos v. 3.0
-//       Copyright (2020) National Technology & Engineering
+//                        Kokkos v. 4.0
+//       Copyright (2022) National Technology & Engineering
 //               Solutions of Sandia, LLC (NTESS).
 //
 // Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
+// See https://kokkos.org/LICENSE for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
-//
-// ************************************************************************
 //@HEADER
-*/
 #ifndef _KOKKOSKERNELS_SPARSEUTILS_HPP
 #define _KOKKOSKERNELS_SPARSEUTILS_HPP
 #include <vector>
@@ -752,26 +724,27 @@ struct Reverse_Map_Functor {
   }
 };
 
-/**
- * \brief Utility function to obtain a reverse map given a map.
- * Input is a map with the number of elements within the map.
- * forward_map[c] = i, where c is a forward element and forward_map has a size
- * of num_forward_elements. i is the value that c is mapped in the forward map,
- * and the range of that is num_reverse_elements. Output is the reverse_map_xadj
- * and reverse_map_adj such that, all c, forward_map[c] = i, will appear in
- * reverse_map_adj[ reverse_map_xadj[i]: reverse_map_xadj[i+1]) \param:
- * num_forward_elements: the number of elements in the forward map, the size of
- * the forward map. \param: num_reverse_elements: the number of elements that
- * forward map is mapped to. It is the value of max i. \param: forward_map:
- * input forward_map, where forward_map[c] = i. \param: reverse_map_xadj:
- * reverse map xadj, that is it will hold the beginning and end indices on
- * reverse_map_adj such that all values mapped to i will be [
- * reverse_map_xadj[i]: reverse_map_xadj[i+1]) its size will be
- * num_reverse_elements + 1. NO NEED TO INITIALIZE. \param: reverse_map_adj:
- * reverse map adj, holds the values of reverse maps. Its size is
- * num_forward_elements.
- *
- */
+/// \brief Utility function to obtain a reverse map given a map.
+/// Input is a map with the number of elements within the map.
+/// forward_map[c] = i, where c is a forward element and forward_map has a size
+/// of num_forward_elements. i is the value that c is mapped in the forward map,
+/// and the range of that is num_reverse_elements. Output is the
+/// reverse_map_xadj and reverse_map_adj such that, all c, forward_map[c] = i,
+/// will appear in reverse_map_adj[ reverse_map_xadj[i]: reverse_map_xadj[i+1])
+
+/// \param num_forward_elements the number of elements in the forward map,
+///        the size of the forward map.
+/// \param num_reverse_elements the number of elements that
+///        forward map is mapped to. It is the value of max i.
+/// \param forward_map input forward_map, where forward_map[c] = i.
+/// \param reverse_map_xadj
+///          reverse map xadj, that is it will hold the beginning and
+///          end indices on reverse_map_adj such that all values mapped
+///          to i will be [reverse_map_xadj[i]: reverse_map_xadj[i+1])
+//           its size will be num_reverse_elements + 1.
+///          NO NEED TO INITIALIZE.
+/// \param reverse_map_adj reverse map adj, holds the values of reverse
+///        maps. Its size is num_forward_elements.
 template <typename forward_array_type, typename reverse_array_type,
           typename MyExecSpace>
 void kk_create_reverse_map(
@@ -933,25 +906,13 @@ struct ColorChecker {
   }
 };
 
-/**
- * \brief given a graph and a coloring function returns true or false if
- distance-1 coloring is valid or not.
- * \param num_rows: num rows in input graph
- * \param num_cols: num cols in input graph
- * \param xadj: row pointers of the input graph
- * \param adj: column indices of the input graph
- * \param t_xadj: output, the row indices of the output graph. MUST BE
- INITIALIZED WITH ZEROES.
-
- * \param vector_size: suggested vector size, optional. if -1, kernel will
- decide.
- * \param suggested_team_size: suggested team size, optional. if -1, kernel will
- decide.
- * \param team_work_chunk_size: suggested work size of a team, optional. if -1,
- kernel will decide.
- * \param use_dynamic_scheduling: whether to use dynamic scheduling. Default is
- true.
- */
+/// \brief given a graph and a coloring function returns true or false if
+///        distance-1 coloring is valid or not.
+///
+/// \param num_rows num rows in input graph
+/// \param xadj     row pointers of the input graph
+/// \param adj      column indices of the input graphw
+/// \param v_colors The colors at each vertex in the graph.
 template <typename in_row_view_t, typename in_nnz_view_t,
           typename in_color_view_t, typename MyExecSpace>
 inline size_t kk_is_d1_coloring_valid(

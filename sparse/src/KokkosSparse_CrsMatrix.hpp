@@ -1,46 +1,18 @@
-/*
 //@HEADER
 // ************************************************************************
 //
-//                        Kokkos v. 3.0
-//       Copyright (2020) National Technology & Engineering
+//                        Kokkos v. 4.0
+//       Copyright (2022) National Technology & Engineering
 //               Solutions of Sandia, LLC (NTESS).
 //
 // Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
+// See https://kokkos.org/LICENSE for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
-//
-// ************************************************************************
 //@HEADER
-*/
 
 /// \file KokkosSparse_CrsMatrix.hpp
 /// \brief Local sparse matrix interface
@@ -187,29 +159,28 @@ struct SparseRowView {
  public:
   /// \brief Constructor
   ///
-  /// \param values [in] Array of the row's values.
-  /// \param colidx [in] Array of the row's column indices.
-  /// \param stride [in] (Constant) stride between matrix entries in
+  /// \param values   [in] Array of the row's values.
+  /// \param colidx__ [in] Array of the row's column indices.
+  /// \param stride   [in] (Constant) stride between matrix entries in
   ///   each of the above arrays.
-  /// \param count [in] Number of entries in the row.
+  /// \param count    [in] Number of entries in the row.
   KOKKOS_INLINE_FUNCTION
   SparseRowView(value_type* const values, ordinal_type* const colidx__,
                 const ordinal_type& stride, const ordinal_type& count)
       : values_(values), colidx_(colidx__), stride_(stride), length(count) {}
 
   /// \brief Constructor with offset into \c colidx array
-  ///
-  /// \param values [in] Array of the row's values.
-  /// \param colidx [in] Array of the row's column indices.
-  /// \param stride [in] (Constant) stride between matrix entries in
-  ///   each of the above arrays.
-  /// \param count [in] Number of entries in the row.
-  /// \param idx [in] Start offset into \c colidx array
-  ///
   /// \tparam OffsetType The type of \c idx (see above).  Must be a
   ///   built-in integer type.  This may differ from ordinal_type.
   ///   For example, the matrix may have dimensions that fit in int,
   ///   but a number of entries that does not fit in int.
+  ///
+  /// \param values   [in] Array of the row's values.
+  /// \param colidx__ [in] Array of the row's column indices.
+  /// \param stride   [in] (Constant) stride between matrix entries in
+  ///                 each of the above arrays.
+  /// \param count    [in] Number of entries in the row.
+  /// \param idx      [in] Start offset into \c colidx array
   template <class OffsetType>
   KOKKOS_INLINE_FUNCTION SparseRowView(
       const typename MatrixType::values_type& values,
@@ -287,11 +258,11 @@ struct SparseRowViewConst {
  public:
   /// \brief Constructor
   ///
-  /// \param values [in] Array of the row's values.
-  /// \param colidx [in] Array of the row's column indices.
-  /// \param stride [in] (Constant) stride between matrix entries in
-  ///   each of the above arrays.
-  /// \param count [in] Number of entries in the row.
+  /// \param values   [in] Array of the row's values.
+  /// \param colidx__ [in] Array of the row's column indices.
+  /// \param stride   [in] (Constant) stride between matrix entries in
+  ///                 each of the above arrays.
+  /// \param count    [in] Number of entries in the row.
   KOKKOS_INLINE_FUNCTION
   SparseRowViewConst(value_type* const values, ordinal_type* const colidx__,
                      const ordinal_type& stride, const ordinal_type& count)
@@ -299,17 +270,16 @@ struct SparseRowViewConst {
 
   /// \brief Constructor with offset into \c colidx array
   ///
-  /// \param values [in] Array of the row's values.
-  /// \param colidx [in] Array of the row's column indices.
-  /// \param stride [in] (Constant) stride between matrix entries in
-  ///   each of the above arrays.
-  /// \param count [in] Number of entries in the row.
-  /// \param idx [in] Start offset into \c colidx array
-  ///
   /// \tparam OffsetType The type of \c idx (see above).  Must be a
   ///   built-in integer type.  This may differ from ordinal_type.
   ///   For example, the matrix may have dimensions that fit in int,
   ///   but a number of entries that does not fit in int.
+  /// \param values   [in] Array of the row's values.
+  /// \param colidx__ [in] Array of the row's column indices.
+  /// \param stride   [in] (Constant) stride between matrix entries in
+  ///                 each of the above arrays.
+  /// \param count    [in] Number of entries in the row.
+  /// \param idx      [in] Start offset into \c colidx array
   template <class OffsetType>
   KOKKOS_INLINE_FUNCTION SparseRowViewConst(
       const typename MatrixType::values_type& values,
@@ -426,7 +396,8 @@ class CrsMatrix {
   //! Nonconst version of the type of row offsets in the sparse matrix.
   typedef typename row_map_type::non_const_value_type non_const_size_type;
   //! Kokkos Array type of the entries (values) in the sparse matrix.
-  typedef Kokkos::View<value_type*, default_layout, device_type, MemoryTraits>
+  typedef Kokkos::View<value_type*, Kokkos::LayoutRight, device_type,
+                       MemoryTraits>
       values_type;
   //! Const version of the type of the entries in the sparse matrix.
   typedef typename values_type::const_value_type const_value_type;
@@ -533,8 +504,9 @@ class CrsMatrix {
   /// The matrix will store and use the row map, indices
   /// (by view, not by deep copy) and allocate the values view.
   ///
-  /// \param label [in] The sparse matrix's label.
-  /// \param ncols [in] The number of columns.
+  /// \param label  [in] The sparse matrix's label.
+  /// \param graph_ [in] The graph for storing the rowmap and col ids.
+  /// \param ncols  [in] The number of columns.
   template <typename InOrdinal, typename InLayout, typename InDevice,
             typename InMemTraits, typename InSizeType>
   CrsMatrix(const std::string& label,
@@ -550,14 +522,9 @@ class CrsMatrix {
   /// The matrix will store and use the row map, indices, and values
   /// directly (by view, not by deep copy).
   ///
-  /// \param label [in] The sparse matrix's label.
-  /// \param nrows [in] The number of rows.
   /// \param ncols [in] The number of columns.
-  /// \param annz [in] The number of entries.
   /// \param vals [in/out] The entries.
-  /// \param rows [in/out] The row map (containing the offsets to the
-  ///   data in each row).
-  /// \param cols [in/out] The column indices.
+  /// \param graph_ The graph for storing the rowmap and col ids.
   template <typename InOrdinal, typename InLayout, typename InDevice,
             typename InMemTraits, typename InSizeType>
   CrsMatrix(const std::string&, const OrdinalType& ncols,
@@ -577,7 +544,6 @@ class CrsMatrix {
   /// This constructor is mainly useful for benchmarking or for
   /// reading the sparse matrix's data from a file.
   ///
-  /// \param label [in] The sparse matrix's label.
   /// \param nrows [in] The number of rows.
   /// \param ncols [in] The number of columns.
   /// \param annz [in] The number of entries.
@@ -635,7 +601,6 @@ class CrsMatrix {
   /// The matrix will store and use the row map, indices, and values
   /// directly (by view, not by deep copy).
   ///
-  /// \param label [in] The sparse matrix's label.
   /// \param nrows [in] The number of rows.
   /// \param ncols [in] The number of columns.
   /// \param annz [in] The number of entries.

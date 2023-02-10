@@ -1,52 +1,25 @@
-/*
 //@HEADER
 // ************************************************************************
 //
-//                        Kokkos v. 3.0
-//       Copyright (2020) National Technology & Engineering
+//                        Kokkos v. 4.0
+//       Copyright (2022) National Technology & Engineering
 //               Solutions of Sandia, LLC (NTESS).
 //
 // Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
+// See https://kokkos.org/LICENSE for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
-//
-// ************************************************************************
 //@HEADER
-*/
 #ifndef _KOKKOS_SPGEMM_HPP
 #define _KOKKOS_SPGEMM_HPP
 
 #include "KokkosSparse_spgemm_numeric.hpp"
 #include "KokkosSparse_spgemm_symbolic.hpp"
 #include "KokkosSparse_spgemm_jacobi.hpp"
+#include "KokkosSparse_spgemm_noreuse_spec.hpp"
 
 namespace KokkosSparse {
 
@@ -153,20 +126,58 @@ void block_spgemm_numeric(KernelHandle& kh, const AMatrix& A, const bool Amode,
 template <class CMatrix, class AMatrix, class BMatrix>
 CMatrix spgemm(const AMatrix& A, const bool Amode, const BMatrix& B,
                const bool Bmode) {
-  using device_t  = typename CMatrix::device_type;
-  using scalar_t  = typename CMatrix::value_type;
-  using ordinal_t = typename CMatrix::ordinal_type;
-  using size_type = typename CMatrix::size_type;
-  using KKH       = KokkosKernels::Experimental::KokkosKernelsHandle<
-      size_type, ordinal_t, scalar_t, typename device_t::execution_space,
-      typename device_t::memory_space, typename device_t::memory_space>;
-  KKH kh;
-  kh.create_spgemm_handle();
-  CMatrix C;
-  spgemm_symbolic(kh, A, Amode, B, Bmode, C);
-  spgemm_numeric(kh, A, Amode, B, Bmode, C);
-  kh.destroy_spgemm_handle();
-  return C;
+  // Canonicalize the matrix types:
+  //  - Make A,B have const values and entries.
+  //  - Make all views in A,B unmanaged, but otherwise default memory traits
+  //  - C must have managed memory since its views are allocated in this
+  //  function
+  using AMatrix_Internal = KokkosSparse::CrsMatrix<
+      typename AMatrix::const_value_type, typename AMatrix::const_ordinal_type,
+      typename AMatrix::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+      typename AMatrix::const_size_type>;
+  using BMatrix_Internal = KokkosSparse::CrsMatrix<
+      typename BMatrix::const_value_type, typename BMatrix::const_ordinal_type,
+      typename BMatrix::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+      typename BMatrix::const_size_type>;
+  using CMatrix_Internal =
+      KokkosSparse::CrsMatrix<typename CMatrix::non_const_value_type,
+                              typename CMatrix::non_const_ordinal_type,
+                              typename CMatrix::device_type, void,
+                              typename CMatrix::non_const_size_type>;
+  // Check now that A, B dimensions are compatible to multiply
+  auto opACols = Amode ? A.numRows() : A.numCols();
+  auto opBRows = Bmode ? B.numCols() : B.numRows();
+  if (Amode || Bmode)
+    throw std::invalid_argument(
+        "KokkosSparse::spgemm: transposing A and/or B is not yet supported");
+  if (opACols != opBRows)
+    throw std::invalid_argument(
+        "KokkosSparse::spgemm: op(A) and op(B) have incompatible dimensions "
+        "for multiplication");
+  // Make sure C has managed memory. If its memory traits are void (default),
+  // then that also means it's managed.
+  if constexpr (!std::is_same<typename CMatrix::memory_traits, void>::value) {
+    if (CMatrix::memory_traits::is_unmanaged)
+      throw std::invalid_argument(
+          "KokkosSparse::spgemm: C must not have the Unmanaged memory trait, "
+          "because spgemm needs to allocate its Views");
+  }
+  AMatrix_Internal A_internal(A);
+  BMatrix_Internal B_internal(B);
+  // Intercept empty C case here so that TPL wrappers don't have to deal with it
+  if (!A.numRows() || !A.numCols() || !B.numCols() || !A.nnz() || !B.nnz()) {
+    auto Crows = Amode ? A.numCols() : A.numRows();
+    auto Ccols = Bmode ? B.numRows() : B.numCols();
+    typename CMatrix::row_map_type::non_const_type row_mapC("C rowmap",
+                                                            Crows + 1);
+    typename CMatrix::index_type entriesC;
+    typename CMatrix::values_type valuesC;
+    return CMatrix("C", Crows, Ccols, 0, valuesC, row_mapC, entriesC);
+  }
+  return CMatrix(KokkosSparse::Impl::SPGEMM_NOREUSE<
+                 CMatrix_Internal, AMatrix_Internal,
+                 BMatrix_Internal>::spgemm_noreuse(A_internal, Amode,
+                                                   B_internal, Bmode));
 }
 
 }  // namespace KokkosSparse

@@ -1,8 +1,25 @@
+//@HEADER
+// ************************************************************************
+//
+//                        Kokkos v. 4.0
+//       Copyright (2022) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
+//
+// Under the terms of Contract DE-NA0003525 with NTESS,
+// the U.S. Government retains certain rights in this software.
+//
+// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
+// See https://kokkos.org/LICENSE for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//@HEADER
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
 #include <KokkosBlas3_trsm.hpp>
 #include <KokkosKernels_TestUtils.hpp>
+
+#include <chrono>
 
 namespace Test {
 
@@ -106,7 +123,8 @@ void impl_test_trsm(const char* side, const char* uplo, const char* trans,
   typename ViewTypeB::HostMirror h_B  = Kokkos::create_mirror_view(B);
   typename ViewTypeB::HostMirror h_X0 = Kokkos::create_mirror_view(X0);
 
-  uint64_t seed = Kokkos::Impl::clock_tic();
+  uint64_t seed =
+      std::chrono::high_resolution_clock::now().time_since_epoch().count();
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(seed);
 
   if ((diag[0] == 'U') || (diag[0] == 'u')) {
