@@ -43,16 +43,15 @@ Matrix removeMatrixZerosReference(const Matrix& A) {
       Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.values);
   // First, create the filtered rowmap (the CrsMatrix constructor taking host
   // pointers does expect rowmap to be in Ordinal)
-  std::vector<Ordinal> filteredRowmap;
-  Offset filteredNNZ = 0;
-  for (Ordinal i = 0; i <= A.numRows(); i++) {
-    filteredRowmap.push_back(filteredNNZ);
-    if (i == A.numRows()) break;
+  Ordinal filteredNNZ                 = 0;
+  std::vector<Ordinal> filteredRowmap = {0};  // first row begins at 0
+  for (Ordinal i = 0; i < A.numRows(); i++) {
     for (Offset j = rowmapHost(i); j < rowmapHost(i + 1); j++) {
       if (valuesHost(j) != KAT::zero()) {
         filteredNNZ++;
       }
     }
+    filteredRowmap.push_back(filteredNNZ);
   }
   // Then allocate and fill in the filtered entries and values
   std::vector<Ordinal> filteredEntries;
@@ -91,80 +90,146 @@ Matrix loadMatrixFromVectors(int numRows, int numCols,
 }
 
 template <typename Matrix>
-Matrix getTestInput(int test) {
+void getTestInput(int test, Matrix& A, Matrix& Afiltered_ref) {
   using Offset = typename Matrix::size_type;
+  using Device =
+      Kokkos::Device<TestExecSpace, typename TestExecSpace::memory_space>;
+  bool haveHardcodedReference = true;
   switch (test) {
     case 0: {
       // No entries, but nonzero dimensions.
       std::vector<int> rowmap = {0, 0, 0, 0, 0};
       std::vector<int> entries;
       std::vector<double> values;
-      return loadMatrixFromVectors<Matrix>(4, 4, rowmap, entries, values);
+      A = loadMatrixFromVectors<Matrix>(4, 4, rowmap, entries, values);
+      Afiltered_ref =
+          loadMatrixFromVectors<Matrix>(4, 4, rowmap, entries, values);
+      break;
     }
     case 1: {
       // Some empty rows, and some zero values
       std::vector<int> rowmap    = {0, 0, 3, 3, 5};
       std::vector<int> entries   = {0, 1, 3, 1, 2};
       std::vector<double> values = {1, 3, 0, 0, 2};
-      return loadMatrixFromVectors<Matrix>(4, 4, rowmap, entries, values);
+      A = loadMatrixFromVectors<Matrix>(4, 4, rowmap, entries, values);
+      std::vector<int> rowmapFilt    = {0, 0, 2, 2, 3};
+      std::vector<int> entriesFilt   = {0, 1, 2};
+      std::vector<double> valuesFilt = {1, 3, 2};
+      Afiltered_ref = loadMatrixFromVectors<Matrix>(4, 4, rowmapFilt,
+                                                    entriesFilt, valuesFilt);
+      break;
     }
     case 2: {
       // Zero-row matrix, length-0 rowmap
       typename Matrix::row_map_type rowmap;
       typename Matrix::index_type entries;
       typename Matrix::values_type values;
-      return Matrix("A empty", 0, 0, 0, values, rowmap, entries);
+      A             = Matrix("A empty", 0, 0, 0, values, rowmap, entries);
+      Afiltered_ref = A;
+      break;
     }
     case 3: {
       // Zero-row matrix, length-1 rowmap
       std::vector<int> rowmap = {0};
       std::vector<int> entries;
       std::vector<double> values;
-      return loadMatrixFromVectors<Matrix>(0, 0, rowmap, entries, values);
+      A = loadMatrixFromVectors<Matrix>(0, 0, rowmap, entries, values);
+      Afiltered_ref = A;
+      break;
     }
     case 4: {
       // A row of all zeros that will be filtered
       std::vector<int> rowmap    = {0, 3, 6};
       std::vector<int> entries   = {0, 1, 2, 3, 4, 5};
       std::vector<double> values = {0, 0, 0, 1, 1, 1};
-      return loadMatrixFromVectors<Matrix>(2, 6, rowmap, entries, values);
+      A = loadMatrixFromVectors<Matrix>(2, 6, rowmap, entries, values);
+      std::vector<int> rowmapFilt    = {0, 0, 3};
+      std::vector<int> entriesFilt   = {3, 4, 5};
+      std::vector<double> valuesFilt = {1, 1, 1};
+      Afiltered_ref = loadMatrixFromVectors<Matrix>(2, 6, rowmapFilt,
+                                                    entriesFilt, valuesFilt);
+      break;
     }
     case 5: {
       // One zero in each row that will be filtered
       std::vector<int> rowmap    = {0, 2, 4, 7};
       std::vector<int> entries   = {0, 1, 1, 2, 0, 1, 2};
       std::vector<double> values = {0, 1, 1, 0, 0, 3, -3};
-      return loadMatrixFromVectors<Matrix>(3, 3, rowmap, entries, values);
+      A = loadMatrixFromVectors<Matrix>(3, 3, rowmap, entries, values);
+      std::vector<int> rowmapFilt    = {0, 1, 2, 4};
+      std::vector<int> entriesFilt   = {1, 1, 1, 2};
+      std::vector<double> valuesFilt = {1, 1, 3, -3};
+      Afiltered_ref = loadMatrixFromVectors<Matrix>(3, 3, rowmapFilt,
+                                                    entriesFilt, valuesFilt);
+      break;
     }
     case 6: {
       // First and last rows empty
       std::vector<int> rowmap    = {0, 0, 2, 2};
       std::vector<int> entries   = {0, 1};
       std::vector<double> values = {0, 3.14};
-      return loadMatrixFromVectors<Matrix>(3, 2, rowmap, entries, values);
+      A = loadMatrixFromVectors<Matrix>(3, 2, rowmap, entries, values);
+      std::vector<int> rowmapFilt    = {0, 0, 1, 1};
+      std::vector<int> entriesFilt   = {1};
+      std::vector<double> valuesFilt = {3.14};
+      Afiltered_ref = loadMatrixFromVectors<Matrix>(3, 2, rowmapFilt,
+                                                    entriesFilt, valuesFilt);
+      break;
     }
     case 7: {
       // First and last rows nonempty, but will be empty after filtering
       std::vector<int> rowmap    = {0, 2, 4, 6};
       std::vector<int> entries   = {0, 1, 1, 2, 0, 3};
       std::vector<double> values = {0, 0, 1, -1, 0, 0};
-      return loadMatrixFromVectors<Matrix>(3, 4, rowmap, entries, values);
+      A = loadMatrixFromVectors<Matrix>(3, 4, rowmap, entries, values);
+      std::vector<int> rowmapFilt    = {0, 0, 2, 2};
+      std::vector<int> entriesFilt   = {1, 2};
+      std::vector<double> valuesFilt = {1, -1};
+      Afiltered_ref = loadMatrixFromVectors<Matrix>(3, 4, rowmapFilt,
+                                                    entriesFilt, valuesFilt);
+      break;
     }
     case 8: {
       // Large, random matrix with 30% of values converted to zero
       Offset nnz = 40 * 10000;
-      Matrix A   = KokkosSparse::Impl::kk_generate_sparse_matrix<Matrix>(
-          10000, 10000, nnz, 10, 5000);
+      A = KokkosSparse::Impl::kk_generate_sparse_matrix<Matrix>(10000, 10000,
+                                                                nnz, 10, 5000);
       auto valuesHost = Kokkos::create_mirror_view(A.values);
       Kokkos::deep_copy(valuesHost, A.values);
       for (Offset i = 0; i < A.nnz(); i++) {
         if (rand() % 10 < 3) valuesHost(i) = 0.0;
       }
       Kokkos::deep_copy(A.values, valuesHost);
-      return A;
+      Afiltered_ref          = removeMatrixZerosReference(A);
+      haveHardcodedReference = false;
+      break;
     }
+    case 9: {
+      // Large, sparser random matrix with 99% of values converted to zero
+      Offset nnz = 10 * 40000;
+      A = KokkosSparse::Impl::kk_generate_sparse_matrix<Matrix>(40000, 40000,
+                                                                nnz, 10, 10000);
+      auto valuesHost = Kokkos::create_mirror_view(A.values);
+      Kokkos::deep_copy(valuesHost, A.values);
+      for (Offset i = 0; i < A.nnz(); i++) {
+        if (rand() % 100 != 99) valuesHost(i) = 0.0;
+      }
+      Kokkos::deep_copy(A.values, valuesHost);
+      Afiltered_ref          = removeMatrixZerosReference(A);
+      haveHardcodedReference = false;
+      break;
+    }
+    default: throw std::invalid_argument("Test case number of out bounds");
   }
-  throw std::invalid_argument("Test case number of out bounds");
+  // If we have a hardcoded reference, check that the reference impl is correct
+  // on this case
+  if (haveHardcodedReference) {
+    Matrix Afiltered_refimpl = removeMatrixZerosReference(A);
+    bool referenceImplMatchesHardcoded =
+        Test::is_same_matrix<Matrix, Device>(Afiltered_ref, Afiltered_refimpl);
+    ASSERT_TRUE(referenceImplMatchesHardcoded)
+        << "Test case " << test << ": reference impl gave wrong answer!";
+  }
 }
 
 }  // namespace TestRemoveCrsMatrixZeros
@@ -175,9 +240,9 @@ void testRemoveCrsMatrixZeros(int testCase) {
       Kokkos::Device<TestExecSpace, typename TestExecSpace::memory_space>;
   using Matrix = KokkosSparse::CrsMatrix<default_scalar, default_lno_t, Device,
                                          void, default_size_type>;
-  Matrix A     = getTestInput<Matrix>(testCase);
+  Matrix A, Afiltered_ref;
+  getTestInput<Matrix>(testCase, A, Afiltered_ref);
   Matrix Afiltered_actual = KokkosSparse::removeCrsMatrixZeros(A);
-  Matrix Afiltered_ref    = removeMatrixZerosReference(A);
   bool matches =
       Test::is_same_matrix<Matrix, Device>(Afiltered_actual, Afiltered_ref);
   EXPECT_TRUE(matches)
@@ -186,7 +251,7 @@ void testRemoveCrsMatrixZeros(int testCase) {
 }
 
 TEST_F(TestCategory, sparse_remove_crs_zeros) {
-  for (int testCase = 0; testCase < 9; testCase++)
+  for (int testCase = 0; testCase < 10; testCase++)
     testRemoveCrsMatrixZeros(testCase);
 }
 
