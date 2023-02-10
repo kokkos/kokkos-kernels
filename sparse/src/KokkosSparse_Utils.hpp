@@ -24,6 +24,7 @@
 #include "KokkosKernels_PrintUtils.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosSparse_BsrMatrix.hpp"
+#include "Kokkos_Bitset.hpp"
 
 #ifdef KOKKOSKERNELS_HAVE_PARALLEL_GNUSORT
 #include <parallel/algorithm>
