@@ -50,7 +50,7 @@ class LUPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
  private:
   // trsm takes host views
   CRS _L, _U;
-  View1d _tmp;
+  View1d _tmp, _tmp2;
   mutable KernelHandle _khL;
   mutable KernelHandle _khU;
 
@@ -58,7 +58,7 @@ class LUPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
   //! Constructor:
   template <class CRSArg>
   LUPrec(const CRSArg &L, const CRSArg &U)
-      : _L(L), _U(U), _tmp("LUPrec::_tmp", L.numRows()), _khL(), _khU() {
+    : _L(L), _U(U), _tmp("LUPrec::_tmp", L.numRows()), _tmp2("LUPrec::_tmp", L.numRows()), _khL(), _khU() {
     KK_REQUIRE_MSG(L.numRows() == U.numRows(),
                    "LUPrec: L.numRows() != U.numRows()");
 
@@ -87,16 +87,21 @@ class LUPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
   //
   virtual void apply(const Kokkos::View<const ScalarType *, EXSP> &X,
                      const Kokkos::View<ScalarType *, EXSP> &Y,
-                     const char[]        = "N",
-                     ScalarType          = karith::one(),
-                     ScalarType          = karith::zero()) const {
+                     const char transM[] = "N",
+                     ScalarType alpha    = karith::one(),
+                     ScalarType beta     = karith::zero()) const {
     // tmp = trsv(L, x); //Apply L^inv to x
     // y = trsv(U, tmp); //Apply U^inv to tmp
+
+    KK_REQUIRE_MSG(transM[0] == NoTranspose[0], "LUPrec::apply only supports 'N' for transM");
+
     sptrsv_symbolic(&_khL, _L.graph.row_map, _L.graph.entries);
     sptrsv_solve(&_khL, _L.graph.row_map, _L.graph.entries, _L.values, X, _tmp);
 
     sptrsv_symbolic(&_khU, _U.graph.row_map, _U.graph.entries);
-    sptrsv_solve(&_khU, _U.graph.row_map, _U.graph.entries, _U.values, _tmp, Y);
+    sptrsv_solve(&_khU, _U.graph.row_map, _U.graph.entries, _U.values, _tmp, _tmp2);
+
+    KokkosBlas::axpby(alpha, _tmp2, beta, Y);
   }
   //@}
 
