@@ -235,7 +235,7 @@ struct ILUKLvlSchedTP1NumericFunctor {
                            iw(my_team, col) = static_cast<nnz_lno_t>(k);
                          });
 #endif
-team.team_barrier();
+
 #ifdef KEEP_DIAG
     // if (my_thread == 0) L_values(k2 - 1) = scalar_t(1.0);
     Kokkos::single(Kokkos::PerTeam(team),
