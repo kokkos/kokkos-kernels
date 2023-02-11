@@ -83,6 +83,9 @@ class SPILUKHandle {
   nnz_lno_view_t level_idx;   // the list of rows in each level
   nnz_lno_view_t
       level_ptr;  // the starting index (into the view level_idx) of each level
+  // Make hlevel_ptr a separate allocation, since it will be accessed on host
+  // between kernel launches.
+  nnz_lno_view_host_t hlevel_ptr;
   nnz_lno_view_host_t level_nchunks;  // number of chunks of rows at each level
   nnz_lno_view_host_t
       level_nrowsperchunk;  // maximum number of rows among chunks at each level
@@ -110,6 +113,7 @@ class SPILUKHandle {
       : level_list(),
         level_idx(),
         level_ptr(),
+        hlevel_ptr(),
         level_nchunks(),
         level_nrowsperchunk(),
         iw(),
@@ -135,6 +139,7 @@ class SPILUKHandle {
     level_list          = nnz_row_view_t("level_list", nrows_),
     level_idx           = nnz_lno_view_t("level_idx", nrows_),
     level_ptr           = nnz_lno_view_t("level_ptr", nrows_ + 1),
+    hlevel_ptr          = nnz_lno_view_host_t("hlevel_ptr", nrows_ + 1),
     level_nchunks       = nnz_lno_view_host_t(),
     level_nrowsperchunk = nnz_lno_view_host_t(), reset_symbolic_complete(),
     iw                  = work_view_t();
@@ -154,6 +159,9 @@ class SPILUKHandle {
 
   KOKKOS_INLINE_FUNCTION
   nnz_lno_view_t get_level_ptr() const { return level_ptr; }
+
+  inline 
+  nnz_lno_view_host_t get_host_level_ptr() const { return hlevel_ptr; }
 
   KOKKOS_INLINE_FUNCTION
   nnz_lno_view_host_t get_level_nchunks() const { return level_nchunks; }

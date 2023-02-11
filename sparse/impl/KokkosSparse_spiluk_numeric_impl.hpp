@@ -374,21 +374,11 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
   size_type nlevels = thandle.get_num_levels();
   int team_size = thandle.get_team_size();
 
-  // Keep these as host View, create device version and copy back to host
-  HandleDeviceEntriesType level_ptr = thandle.get_level_ptr();
+  LevelHostViewType level_ptr_h = thandle.get_host_level_ptr();
   HandleDeviceEntriesType level_idx = thandle.get_level_idx();
 
-  // Make level_ptr_h a separate allocation, since it will be accessed on host
-  // between kernel launches. If a mirror were used and level_ptr is in UVM
-  // space, a fence would be required before each access since UVM views can
-  // share pages.
-  LevelHostViewType level_ptr_h, level_nchunks_h, level_nrowsperchunk_h;
+  LevelHostViewType level_nchunks_h, level_nrowsperchunk_h;
   WorkViewType iw;
-
-  level_ptr_h = LevelHostViewType(
-      Kokkos::view_alloc(Kokkos::WithoutInitializing, "Host level pointers"),
-      level_ptr.extent(0));
-  Kokkos::deep_copy(level_ptr_h, level_ptr);
 
   //{
   if (thandle.get_algorithm() ==
