@@ -235,7 +235,7 @@ struct ILUKLvlSchedTP1NumericFunctor {
                            iw(my_team, col) = static_cast<nnz_lno_t>(k);
                          });
 #endif
-
+team.team_barrier();
 #ifdef KEEP_DIAG
     // if (my_thread == 0) L_values(k2 - 1) = scalar_t(1.0);
     Kokkos::single(Kokkos::PerTeam(team),
@@ -280,15 +280,16 @@ struct ILUKLvlSchedTP1NumericFunctor {
 #endif
     {
       nnz_lno_t prev_row = L_entries(k);
-#ifdef KEEP_DIAG
-      scalar_t fact = L_values(k) / U_values(U_row_map(prev_row));
-#else
-      scalar_t fact = L_values(k) * U_values(U_row_map(prev_row));
-#endif
-      // if (my_thread == 0) L_values(k) = fact;
-      Kokkos::single(Kokkos::PerTeam(team), [&]() { L_values(k) = fact; });
 
-      team.team_barrier();
+      scalar_t fact;
+      Kokkos::single(Kokkos::PerTeam(team), [&](scalar_t& tmp_fact) {
+#ifdef KEEP_DIAG
+        tmp_fact = L_values(k) / U_values(U_row_map(prev_row));
+#else
+        tmp_fact = L_values(k) * U_values(U_row_map(prev_row));
+#endif
+        L_values(k) = tmp_fact;
+      }, fact);
 
       Kokkos::parallel_for(
           Kokkos::TeamThreadRange(team, U_row_map(prev_row) + 1,
@@ -299,9 +300,9 @@ struct ILUKLvlSchedTP1NumericFunctor {
             auto lxu       = -U_values(kk) * fact;
             if (ipos != -1) {
               if (col < rowid)
-                Kokkos::atomic_add(&L_values(ipos), lxu);
+                L_values(ipos) += lxu;
               else
-                Kokkos::atomic_add(&U_values(ipos), lxu);
+                U_values(ipos) += lxu;
             }
           });  // end for kk
 
@@ -373,24 +374,6 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
   size_type nlevels = thandle.get_num_levels();
   int team_size = thandle.get_team_size();
 
-#ifdef KOKKOS_ARCH_VOLTA
-  size_type maxnnzperrow = thandle.get_level_maxnnzperrow();
-  if (thandle.get_algorithm() ==
-                 KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1) {
-    if (team_size == -1) {
-      // Round up maxnnzperrow to closest power of 2
-      size_type power_maxnnzperrow = 1;
-      while (power_maxnnzperrow < maxnnzperrow) power_maxnnzperrow *= 2;
-      if (power_maxnnzperrow > 1024)
-        team_size = 1024;
-      else if (power_maxnnzperrow >= 128)
-        team_size = 768;
-      else
-        team_size = 32;
-    }
-  }
-#endif
-
   // Keep these as host View, create device version and copy back to host
   HandleDeviceEntriesType level_ptr = thandle.get_level_ptr();
   HandleDeviceEntriesType level_idx = thandle.get_level_idx();
@@ -454,10 +437,6 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
                    L_values, U_row_map, U_entries, U_values, level_idx, iw,
                    lev_start + lvl_rowid_start);
 
-#ifdef KOKKOS_ARCH_VOLTA
-          Kokkos::parallel_for("parfor_tp1",
-                               policy_type(lvl_nrows_chunk, team_size), tstf);
-#else
           if (team_size == -1)
             Kokkos::parallel_for("parfor_tp1",
                                  policy_type(lvl_nrows_chunk, Kokkos::AUTO),
@@ -465,7 +444,6 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
           else
             Kokkos::parallel_for("parfor_tp1",
                                  policy_type(lvl_nrows_chunk, team_size), tstf);
-#endif
           Kokkos::fence();
           lvl_rowid_start += lvl_nrows_chunk;
         }
