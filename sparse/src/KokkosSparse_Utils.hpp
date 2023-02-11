@@ -2298,6 +2298,7 @@ Matrix removeCrsMatrixZeros(
                           typename Matrix::row_map_type::non_const_type,
                           Ordinal>(A.graph.row_map, compactFilteredRowmap,
                                    filteredRowmap));
+  ExecSpace().fence();
   return Matrix("A filtered", A.numRows(), A.numCols(), filteredNNZ,
                 filteredValues, filteredRowmap, filteredEntries);
 }
