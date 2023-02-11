@@ -160,8 +160,7 @@ class SPILUKHandle {
   KOKKOS_INLINE_FUNCTION
   nnz_lno_view_t get_level_ptr() const { return level_ptr; }
 
-  inline 
-  nnz_lno_view_host_t get_host_level_ptr() const { return hlevel_ptr; }
+  inline nnz_lno_view_host_t get_host_level_ptr() const { return hlevel_ptr; }
 
   KOKKOS_INLINE_FUNCTION
   nnz_lno_view_host_t get_level_nchunks() const { return level_nchunks; }

@@ -282,14 +282,17 @@ struct ILUKLvlSchedTP1NumericFunctor {
       nnz_lno_t prev_row = L_entries(k);
 
       scalar_t fact;
-      Kokkos::single(Kokkos::PerTeam(team), [&](scalar_t& tmp_fact) {
+      Kokkos::single(
+          Kokkos::PerTeam(team),
+          [&](scalar_t &tmp_fact) {
 #ifdef KEEP_DIAG
-        tmp_fact = L_values(k) / U_values(U_row_map(prev_row));
+            tmp_fact = L_values(k) / U_values(U_row_map(prev_row));
 #else
-        tmp_fact = L_values(k) * U_values(U_row_map(prev_row));
+            tmp_fact = L_values(k) * U_values(U_row_map(prev_row));
 #endif
-        L_values(k) = tmp_fact;
-      }, fact);
+            L_values(k) = tmp_fact;
+          },
+          fact);
 
       Kokkos::parallel_for(
           Kokkos::TeamThreadRange(team, U_row_map(prev_row) + 1,
@@ -372,9 +375,9 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
   using LevelHostViewType       = typename IlukHandle::nnz_lno_view_host_t;
 
   size_type nlevels = thandle.get_num_levels();
-  int team_size = thandle.get_team_size();
+  int team_size     = thandle.get_team_size();
 
-  LevelHostViewType level_ptr_h = thandle.get_host_level_ptr();
+  LevelHostViewType level_ptr_h     = thandle.get_host_level_ptr();
   HandleDeviceEntriesType level_idx = thandle.get_level_idx();
 
   LevelHostViewType level_nchunks_h, level_nrowsperchunk_h;
@@ -428,9 +431,8 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
                    lev_start + lvl_rowid_start);
 
           if (team_size == -1)
-            Kokkos::parallel_for("parfor_tp1",
-                                 policy_type(lvl_nrows_chunk, Kokkos::AUTO),
-                                 tstf);
+            Kokkos::parallel_for(
+                "parfor_tp1", policy_type(lvl_nrows_chunk, Kokkos::AUTO), tstf);
           else
             Kokkos::parallel_for("parfor_tp1",
                                  policy_type(lvl_nrows_chunk, team_size), tstf);

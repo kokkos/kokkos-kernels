@@ -33,8 +33,7 @@ namespace Impl {
 namespace Experimental {
 
 template <class IlukHandle, class RowMapType, class EntriesType,
-          class LevelType1, class LevelType2, class LevelType3,
-          class size_type>
+          class LevelType1, class LevelType2, class LevelType3, class size_type>
 void level_sched(IlukHandle& thandle, const RowMapType row_map,
                  const EntriesType entries, LevelType1& level_list,
                  LevelType2& level_ptr, LevelType3& level_idx,
@@ -94,8 +93,7 @@ void level_sched(IlukHandle& thandle, const RowMapType row_map,
 
 // SEQLVLSCHD_TP1 algorithm (chunks)
 template <class IlukHandle, class RowMapType, class EntriesType,
-          class LevelType1, class LevelType2, class LevelType3,
-          class size_type>
+          class LevelType1, class LevelType2, class LevelType3, class size_type>
 void level_sched_tp(IlukHandle& thandle, const RowMapType row_map,
                     const EntriesType entries, LevelType1& level_list,
                     LevelType2& level_ptr, LevelType3& level_idx,
@@ -266,7 +264,7 @@ void iluk_symbolic(IlukHandle& thandle,
         Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), dlevel_list);
 
     HandleDeviceEntriesType dlevel_ptr = thandle.get_level_ptr();
-    auto level_ptr = thandle.get_host_level_ptr();
+    auto level_ptr                     = thandle.get_host_level_ptr();
 
     HandleDeviceEntriesType dlevel_idx = thandle.get_level_idx();
     auto level_idx =
