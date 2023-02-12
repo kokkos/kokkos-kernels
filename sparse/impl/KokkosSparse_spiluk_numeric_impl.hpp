@@ -281,7 +281,7 @@ struct ILUKLvlSchedTP1NumericFunctor {
     {
       nnz_lno_t prev_row = L_entries(k);
 
-      scalar_t fact;
+      scalar_t fact = scalar_t(0.0);
       Kokkos::single(
           Kokkos::PerTeam(team),
           [&](scalar_t &tmp_fact) {
