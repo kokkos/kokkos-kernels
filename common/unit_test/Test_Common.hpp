@@ -22,5 +22,6 @@
 #include <Test_Common_Sorting.hpp>
 #include <Test_Common_IOUtils.hpp>
 #include <Test_Common_Error.hpp>
+#include <Test_Common_Version.hpp>
 
 #endif  // TEST_COMMON_HPP
