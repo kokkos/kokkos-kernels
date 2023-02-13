@@ -19,6 +19,8 @@
 
 #include "KokkosSparse_Utils.hpp"
 #include "KokkosSparse_SortCrs.hpp"
+// For Test::is_same_matrix
+#include "Test_Sparse_Utils.hpp"
 #include <string>
 #include <stdexcept>
 
@@ -202,86 +204,6 @@ int run_spgemm_old_interface(crsMat_t A, crsMat_t B,
   }
   kh.destroy_spgemm_handle();
   return 0;
-}
-
-template <typename crsMat_t, typename device>
-bool is_same_matrix(crsMat_t output_mat_actual, crsMat_t output_mat_reference) {
-  typedef typename crsMat_t::StaticCrsGraphType graph_t;
-  typedef typename graph_t::row_map_type::non_const_type lno_view_t;
-  typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
-  typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
-
-  size_t nrows_actual    = output_mat_actual.numRows();
-  size_t nentries_actual = output_mat_actual.graph.entries.extent(0);
-  size_t nvals_actual    = output_mat_actual.values.extent(0);
-
-  size_t nrows_reference    = output_mat_reference.numRows();
-  size_t nentries_reference = output_mat_reference.graph.entries.extent(0);
-  size_t nvals_reference    = output_mat_reference.values.extent(0);
-
-  if (nrows_actual != nrows_reference) {
-    std::cout << "nrows_actual:" << nrows_actual
-              << " nrows_reference:" << nrows_reference << std::endl;
-    return false;
-  }
-  if (nentries_actual != nentries_reference) {
-    std::cout << "nentries_actual:" << nentries_actual
-              << " nentries_reference:" << nentries_reference << std::endl;
-    return false;
-  }
-  if (nvals_actual != nvals_reference) {
-    std::cout << "nvals_actual:" << nvals_actual
-              << " nvals_reference:" << nvals_reference << std::endl;
-    return false;
-  }
-
-  // Do not sort the actual product matrix - test that it's already sorted
-  KokkosSparse::sort_crs_matrix(output_mat_reference);
-
-  bool is_identical = true;
-  is_identical      = KokkosKernels::Impl::kk_is_identical_view<
-      typename graph_t::row_map_type, typename graph_t::row_map_type,
-      typename lno_view_t::value_type, typename device::execution_space>(
-      output_mat_actual.graph.row_map, output_mat_reference.graph.row_map, 0);
-
-  if (!is_identical) {
-    std::cout << "rowmaps are different." << std::endl;
-    std::cout << "Actual rowmap:\n";
-    KokkosKernels::Impl::kk_print_1Dview(output_mat_actual.graph.row_map, true);
-    std::cout << "Correct rowmap (SPGEMM_DEBUG):\n";
-    KokkosKernels::Impl::kk_print_1Dview(output_mat_reference.graph.row_map,
-                                         true);
-    return false;
-  }
-
-  is_identical = KokkosKernels::Impl::kk_is_identical_view<
-      lno_nnz_view_t, lno_nnz_view_t, typename lno_nnz_view_t::value_type,
-      typename device::execution_space>(output_mat_actual.graph.entries,
-                                        output_mat_reference.graph.entries, 0);
-
-  if (!is_identical) {
-    std::cout << "entries are different." << std::endl;
-    KokkosKernels::Impl::kk_print_1Dview(output_mat_actual.graph.entries);
-    KokkosKernels::Impl::kk_print_1Dview(output_mat_reference.graph.entries);
-    return false;
-  }
-
-  typedef typename Kokkos::Details::ArithTraits<
-      typename scalar_view_t::non_const_value_type>::mag_type eps_type;
-  eps_type eps = std::is_same<eps_type, float>::value ? 3.7e-3 : 1e-7;
-
-  is_identical = KokkosKernels::Impl::kk_is_relatively_identical_view<
-      scalar_view_t, scalar_view_t, eps_type, typename device::execution_space>(
-      output_mat_actual.values, output_mat_reference.values, eps);
-
-  if (!is_identical) {
-    std::cout << "values are different." << std::endl;
-    KokkosKernels::Impl::kk_print_1Dview(output_mat_actual.values);
-    KokkosKernels::Impl::kk_print_1Dview(output_mat_reference.values);
-
-    return false;
-  }
-  return true;
 }
 }  // namespace Test
 
