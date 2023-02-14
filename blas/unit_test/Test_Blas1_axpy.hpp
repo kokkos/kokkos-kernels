@@ -44,7 +44,7 @@ void impl_test_axpy(int N) {
   const MagnitudeB max_val = 10;
   const MagnitudeB eps     = Kokkos::ArithTraits<ScalarB>::epsilon();
   const MagnitudeB max_error =
-      (static_cast<MagnitudeB>(Kokkos::ArithTrairs<ScalarA>::abs(a)) * max_val +
+      (static_cast<MagnitudeB>(Kokkos::ArithTraits<ScalarA>::abs(a)) * max_val +
        max_val) *
       eps;
 
