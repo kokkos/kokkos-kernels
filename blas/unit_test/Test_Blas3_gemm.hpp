@@ -406,7 +406,7 @@ void test_gemm_mixed_scalars() {
   Matrix1 C("C", dim2, dim1);
   Matrix2 D("D", dim2, dim1);
 
-  Kokkos::deep_copy(A, Kokkos::ArithTraits<scalar2>::one());
+  Kokkos::deep_copy(A, Kokkos::ArithTraits<scalar1>::one());
   Kokkos::deep_copy(B, Kokkos::ArithTraits<scalar1>::one());
   Kokkos::deep_copy(C, Kokkos::ArithTraits<scalar1>::one());
 
