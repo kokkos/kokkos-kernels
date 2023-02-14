@@ -23,30 +23,30 @@
 namespace Test {
 template <class ViewTypeA, class ViewTypeB, class Device>
 void impl_test_axpy(int N) {
-  typedef typename ViewTypeA::value_type ScalarA;
-  typedef typename ViewTypeB::value_type ScalarB;
+  using ScalarA    = typename ViewTypeA::value_type;
+  using ScalarB    = typename ViewTypeB::value_type;
+  using MagnitudeB = typename Kokkos::ArithTraits<ScalarB>::mag_type;
 
-  typedef Kokkos::View<
+  using BaseTypeA = Kokkos::View<
       ScalarA * [2],
       typename std::conditional<std::is_same<typename ViewTypeA::array_layout,
                                              Kokkos::LayoutStride>::value,
                                 Kokkos::LayoutRight, Kokkos::LayoutLeft>::type,
-      Device>
-      BaseTypeA;
-  typedef Kokkos::View<
+      Device>;
+  using BaseTypeB = Kokkos::View<
       ScalarB * [2],
       typename std::conditional<std::is_same<typename ViewTypeB::array_layout,
                                              Kokkos::LayoutStride>::value,
                                 Kokkos::LayoutRight, Kokkos::LayoutLeft>::type,
-      Device>
-      BaseTypeB;
+      Device>;
 
-  using MagnitudeA = typename Kokkos::ArithTraits<ScalarA>::mag_type;
-
-  ScalarA a              = 3;
-  const double eps       = Kokkos::ArithTraits<MagnitudeA>::epsilon();
-  const double max_val   = 10;
-  const double max_error = (a * max_val + max_val) * eps;
+  ScalarA a                = 3;
+  const MagnitudeB max_val = 10;
+  const MagnitudeB eps     = Kokkos::ArithTraits<ScalarB>::epsilon();
+  const MagnitudeB max_error =
+      (static_cast<MagnitudeB>(Kokkos::ArithTrairs<ScalarA>::abs(a)) * max_val +
+       max_val) *
+      eps;
 
   BaseTypeA b_x("X", N);
   BaseTypeB b_y("Y", N);
@@ -103,8 +103,9 @@ void impl_test_axpy(int N) {
 
 template <class ViewTypeA, class ViewTypeB, class Device>
 void impl_test_axpy_mv(int N, int K) {
-  typedef typename ViewTypeA::value_type ScalarA;
-  typedef typename ViewTypeB::value_type ScalarB;
+  using ScalarA    = typename ViewTypeA::value_type;
+  using ScalarB    = typename ViewTypeB::value_type;
+  using MagnitudeB = typename Kokkos::ArithTraits<ScalarB>::mag_type;
 
   typedef multivector_layout_adapter<ViewTypeA> vfA_type;
   typedef multivector_layout_adapter<ViewTypeB> vfB_type;
@@ -125,10 +126,13 @@ void impl_test_axpy_mv(int N, int K) {
   typename ViewTypeA::HostMirror h_x = h_vfA_type::view(h_b_x);
   typename ViewTypeB::HostMirror h_y = h_vfB_type::view(h_b_y);
 
-  const double eps       = Kokkos::ArithTraits<ScalarA>::epsilon();
-  const double max_val   = 10;
-  ScalarA a              = 3;
-  const double max_error = (3 * max_val + max_val) * eps;
+  ScalarA a                = 3;
+  const MagnitudeB eps     = Kokkos::ArithTraits<ScalarB>::epsilon();
+  const MagnitudeB max_val = 10;
+  const MagnitudeB max_error =
+      (static_cast<MagnitudeB>(Kokkos::ArithTraits<ScalarA>::abs(a)) * max_val +
+       max_val) *
+      eps;
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
       13718);
