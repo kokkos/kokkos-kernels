@@ -43,8 +43,9 @@ void impl_test_axpby(int N) {
   ScalarB b = 5;
   // eps should probably be based on ScalarB since that is the type
   // in which the result is computed.
-  const double eps = Kokkos::ArithTraits<ScalarB>::
-      epsilon();  // std::is_same<ScalarB, float>::value ? 2 * 1e-5 : 1e-7;
+  const double eps       = Kokkos::ArithTraits<ScalarB>::epsilon();
+  const double max_val   = 10;
+  const double max_error = (a + b) * max_val * eps;
 
   BaseTypeA b_x("X", N);
   BaseTypeB b_y("Y", N);
@@ -68,12 +69,12 @@ void impl_test_axpby(int N) {
 
   {
     ScalarA randStart, randEnd;
-    Test::getRandomBounds(10.0, randStart, randEnd);
+    Test::getRandomBounds(max_val, randStart, randEnd);
     Kokkos::fill_random(b_x, rand_pool, randStart, randEnd);
   }
   {
     ScalarB randStart, randEnd;
-    Test::getRandomBounds(10.0, randStart, randEnd);
+    Test::getRandomBounds(max_val, randStart, randEnd);
     Kokkos::fill_random(b_y, rand_pool, randStart, randEnd);
   }
 
@@ -87,7 +88,7 @@ void impl_test_axpby(int N) {
   Kokkos::deep_copy(h_b_y, b_y);
   for (int i = 0; i < N; i++) {
     EXPECT_NEAR_KK(static_cast<ScalarB>(a * h_x(i) + b * h_b_org_y(i, 0)),
-                   h_y(i), eps);
+                   h_y(i), 2 * max_error);
   }
 
   Kokkos::deep_copy(b_y, b_org_y);
@@ -96,7 +97,7 @@ void impl_test_axpby(int N) {
   Kokkos::deep_copy(h_b_y, b_y);
   for (int i = 0; i < N; i++) {
     EXPECT_NEAR_KK(static_cast<ScalarB>(a * h_x(i) + b * h_b_org_y(i, 0)),
-                   h_y(i), eps);
+                   h_y(i), 2 * max_error);
   }
 }
 
