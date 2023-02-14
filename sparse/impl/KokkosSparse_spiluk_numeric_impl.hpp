@@ -280,15 +280,19 @@ struct ILUKLvlSchedTP1NumericFunctor {
 #endif
     {
       nnz_lno_t prev_row = L_entries(k);
-#ifdef KEEP_DIAG
-      scalar_t fact = L_values(k) / U_values(U_row_map(prev_row));
-#else
-      scalar_t fact = L_values(k) * U_values(U_row_map(prev_row));
-#endif
-      // if (my_thread == 0) L_values(k) = fact;
-      Kokkos::single(Kokkos::PerTeam(team), [&]() { L_values(k) = fact; });
 
-      team.team_barrier();
+      scalar_t fact = scalar_t(0.0);
+      Kokkos::single(
+          Kokkos::PerTeam(team),
+          [&](scalar_t &tmp_fact) {
+#ifdef KEEP_DIAG
+            tmp_fact = L_values(k) / U_values(U_row_map(prev_row));
+#else
+            tmp_fact = L_values(k) * U_values(U_row_map(prev_row));
+#endif
+            L_values(k) = tmp_fact;
+          },
+          fact);
 
       Kokkos::parallel_for(
           Kokkos::TeamThreadRange(team, U_row_map(prev_row) + 1,
@@ -299,9 +303,9 @@ struct ILUKLvlSchedTP1NumericFunctor {
             auto lxu       = -U_values(kk) * fact;
             if (ipos != -1) {
               if (col < rowid)
-                Kokkos::atomic_add(&L_values(ipos), lxu);
+                L_values(ipos) += lxu;
               else
-                Kokkos::atomic_add(&U_values(ipos), lxu);
+                U_values(ipos) += lxu;
             }
           });  // end for kk
 
@@ -371,22 +375,13 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
   using LevelHostViewType       = typename IlukHandle::nnz_lno_view_host_t;
 
   size_type nlevels = thandle.get_num_levels();
+  int team_size     = thandle.get_team_size();
 
-  // Keep these as host View, create device version and copy back to host
-  HandleDeviceEntriesType level_ptr = thandle.get_level_ptr();
+  LevelHostViewType level_ptr_h     = thandle.get_host_level_ptr();
   HandleDeviceEntriesType level_idx = thandle.get_level_idx();
 
-  // Make level_ptr_h a separate allocation, since it will be accessed on host
-  // between kernel launches. If a mirror were used and level_ptr is in UVM
-  // space, a fence would be required before each access since UVM views can
-  // share pages.
-  LevelHostViewType level_ptr_h, level_nchunks_h, level_nrowsperchunk_h;
+  LevelHostViewType level_nchunks_h, level_nrowsperchunk_h;
   WorkViewType iw;
-
-  level_ptr_h = LevelHostViewType(
-      Kokkos::view_alloc(Kokkos::WithoutInitializing, "Host level pointers"),
-      level_ptr.extent(0));
-  Kokkos::deep_copy(level_ptr_h, level_ptr);
 
   //{
   if (thandle.get_algorithm() ==
@@ -417,7 +412,6 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
       } else if (thandle.get_algorithm() ==
                  KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1) {
         using policy_type = Kokkos::TeamPolicy<execution_space>;
-        int team_size     = thandle.get_team_size();
 
         nnz_lno_t lvl_rowid_start = 0;
         nnz_lno_t lvl_nrows_chunk;
@@ -437,11 +431,10 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
                    lev_start + lvl_rowid_start);
 
           if (team_size == -1)
-            Kokkos::parallel_for("parfor_l_team",
-                                 policy_type(lvl_nrows_chunk, Kokkos::AUTO),
-                                 tstf);
+            Kokkos::parallel_for(
+                "parfor_tp1", policy_type(lvl_nrows_chunk, Kokkos::AUTO), tstf);
           else
-            Kokkos::parallel_for("parfor_l_team",
+            Kokkos::parallel_for("parfor_tp1",
                                  policy_type(lvl_nrows_chunk, team_size), tstf);
           Kokkos::fence();
           lvl_rowid_start += lvl_nrows_chunk;
