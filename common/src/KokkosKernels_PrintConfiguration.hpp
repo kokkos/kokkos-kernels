@@ -94,12 +94,12 @@ inline void print_enabled_tpls(std::ostream& os) {
   os << "  "
      << "KOKKOSKERNELS_ENABLE_TPL_ROCBLAS: no\n";
 #endif
-#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCPARSE
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
   os << "  "
-     << "KOKKOSKERNELS_ENABLE_TPL_ROCPARSE: yes\n";
+     << "KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE: yes\n";
 #else
   os << "  "
-     << "KOKKOSKERNELS_ENABLE_TPL_ROCPARSE: no\n";
+     << "KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE: no\n";
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_METIS
   os << "KOKKOSKERNELS_ENABLE_TPL_METIS: yes\n";
