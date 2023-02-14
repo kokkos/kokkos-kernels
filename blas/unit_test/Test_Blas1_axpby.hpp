@@ -125,10 +125,10 @@ void impl_test_axpby_mv(int N, int K) {
   typename ViewTypeA::HostMirror h_x = h_vfA_type::view(h_b_x);
   typename ViewTypeB::HostMirror h_y = h_vfB_type::view(h_b_y);
 
-  const double eps = Kokkos::ArithTraits<ScalarA>::epsilon();
-  const double max_val = 10;
-  ScalarA a = 3;
-  ScalarB b = 5;
+  const double eps       = Kokkos::ArithTraits<ScalarA>::epsilon();
+  const double max_val   = 10;
+  ScalarA a              = 3;
+  ScalarB b              = 5;
   const double max_error = (a + b) * max_val * eps;
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
@@ -163,7 +163,7 @@ void impl_test_axpby_mv(int N, int K) {
   for (int i = 0; i < N; i++) {
     for (int j = 0; j < K; j++) {
       EXPECT_NEAR_KK(static_cast<ScalarB>(a * h_x(i, j) + b * h_org_y(i, j)),
-                     h_y(i, j), 2*max_error);
+                     h_y(i, j), 2 * max_error);
     }
   }
 
@@ -174,7 +174,7 @@ void impl_test_axpby_mv(int N, int K) {
   for (int i = 0; i < N; i++) {
     for (int j = 0; j < K; j++) {
       EXPECT_NEAR_KK(static_cast<ScalarB>(a * h_x(i, j) + b * h_org_y(i, j)),
-                     h_y(i, j), 2*max_error);
+                     h_y(i, j), 2 * max_error);
     }
   }
 }

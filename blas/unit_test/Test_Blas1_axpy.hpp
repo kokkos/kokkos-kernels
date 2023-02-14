@@ -43,8 +43,10 @@ void impl_test_axpy(int N) {
 
   using MagnitudeA = typename Kokkos::ArithTraits<ScalarA>::mag_type;
 
-  ScalarA a  = 3;
-  double eps = std::is_same<MagnitudeA, float>::value ? 2e-5 : 1e-7;
+  ScalarA a              = 3;
+  const double eps       = Kokkos::ArithTraits<MagnitudeA>::epsilon();
+  const double max_val   = 10;
+  const double max_error = (a * max_val + max_val) * eps;
 
   BaseTypeA b_x("X", N);
   BaseTypeB b_y("Y", N);
@@ -66,12 +68,12 @@ void impl_test_axpy(int N) {
 
   {
     ScalarA randStart, randEnd;
-    Test::getRandomBounds(10.0, randStart, randEnd);
+    Test::getRandomBounds(max_val, randStart, randEnd);
     Kokkos::fill_random(x, rand_pool, randStart, randEnd);
   }
   {
     ScalarB randStart, randEnd;
-    Test::getRandomBounds(10.0, randStart, randEnd);
+    Test::getRandomBounds(max_val, randStart, randEnd);
     Kokkos::fill_random(y, rand_pool, randStart, randEnd);
   }
 
@@ -86,7 +88,7 @@ void impl_test_axpy(int N) {
 
   for (int i = 0; i < N; i++) {
     ScalarB expected = a * h_x(i) + h_b_org_y(i, 0);
-    EXPECT_NEAR_KK(expected, h_y(i), eps);
+    EXPECT_NEAR_KK(expected, h_y(i), 2 * max_error);
   }
 
   // reset y to orig, and run again with const-valued x
@@ -95,7 +97,7 @@ void impl_test_axpy(int N) {
   Kokkos::deep_copy(h_b_y, b_y);
   for (int i = 0; i < N; i++) {
     ScalarB expected = a * h_x(i) + h_b_org_y(i, 0);
-    EXPECT_NEAR_KK(expected, h_y(i), eps);
+    EXPECT_NEAR_KK(expected, h_y(i), 2 * max_error);
   }
 }
 
@@ -123,17 +125,22 @@ void impl_test_axpy_mv(int N, int K) {
   typename ViewTypeA::HostMirror h_x = h_vfA_type::view(h_b_x);
   typename ViewTypeB::HostMirror h_y = h_vfB_type::view(h_b_y);
 
+  const double eps       = Kokkos::ArithTraits<ScalarA>::epsilon();
+  const double max_val   = 10;
+  ScalarA a              = 3;
+  const double max_error = (3 * max_val + max_val) * eps;
+
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
       13718);
 
   {
     ScalarA randStart, randEnd;
-    Test::getRandomBounds(10.0, randStart, randEnd);
+    Test::getRandomBounds(max_val, randStart, randEnd);
     Kokkos::fill_random(b_x, rand_pool, randStart, randEnd);
   }
   {
     ScalarB randStart, randEnd;
-    Test::getRandomBounds(10.0, randStart, randEnd);
+    Test::getRandomBounds(max_val, randStart, randEnd);
     Kokkos::fill_random(b_y, rand_pool, randStart, randEnd);
   }
 
@@ -145,17 +152,14 @@ void impl_test_axpy_mv(int N, int K) {
   Kokkos::deep_copy(h_b_x, b_x);
   Kokkos::deep_copy(h_b_y, b_y);
 
-  ScalarA a                          = 3;
   typename ViewTypeA::const_type c_x = x;
-
-  double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 : 1e-7;
 
   KokkosBlas::axpy(a, x, y);
   Kokkos::deep_copy(h_b_y, b_y);
   for (int i = 0; i < N; i++) {
     for (int j = 0; j < K; j++) {
       EXPECT_NEAR_KK(static_cast<ScalarB>(a * h_x(i, j) + h_org_y(i, j)),
-                     h_y(i, j), eps);
+                     h_y(i, j), 2 * max_error);
     }
   }
 
@@ -165,7 +169,7 @@ void impl_test_axpy_mv(int N, int K) {
   for (int i = 0; i < N; i++) {
     for (int j = 0; j < K; j++) {
       EXPECT_NEAR_KK(static_cast<ScalarB>(a * h_x(i, j) + h_org_y(i, j)),
-                     h_y(i, j), eps);
+                     h_y(i, j), 2 * max_error);
     }
   }
 }
