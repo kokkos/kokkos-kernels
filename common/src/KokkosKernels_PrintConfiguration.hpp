@@ -127,7 +127,9 @@ inline void print_version(std::ostream& os) {
   // KOKKOSKERNELS_VERSION is used because MAJOR, MINOR and PATCH macros
   // are not available in Kernels
   os << "  "
-     << "KokkosKernels Version: " << KOKKOSKERNELS_VERSION << '\n';
+     << "KokkosKernels Version: " << KOKKOSKERNELS_VERSION_MAJOR << "."
+     << KOKKOSKERNELS_VERSION_MINOR << "." << KOKKOSKERNELS_VERSION_PATCH
+     << '\n';
 }
 
 }  // namespace Impl
