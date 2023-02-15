@@ -31,8 +31,6 @@
 
 #include <limits>
 
-//#define NUMERIC_OUTPUT_INFO
-
 namespace KokkosSparse {
 namespace Impl {
 namespace Experimental {
@@ -931,8 +929,10 @@ struct IlutWrap {
         const index_t l_nnz = L_new_values.extent(0);
         const index_t u_nnz = U_new_values.extent(0);
 
-        const auto l_filter_rank = std::max(0, l_nnz - l_nnz_limit - 1);
-        const auto u_filter_rank = std::max(0, u_nnz - u_nnz_limit - 1);
+        const auto l_filter_rank =
+            std::max(static_cast<index_t>(0), l_nnz - l_nnz_limit - 1);
+        const auto u_filter_rank =
+            std::max(static_cast<index_t>(0), u_nnz - u_nnz_limit - 1);
 
         const auto l_threshold =
             threshold_select(L_new_values, l_filter_rank, V_copy);

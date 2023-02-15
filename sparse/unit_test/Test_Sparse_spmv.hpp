@@ -1000,7 +1000,7 @@ void test_github_issue_101() {
     constexpr double ONE_d  = static_cast<double>(1.0);
     constexpr double TWO_d  = static_cast<double>(2.0);
 
-    double_matrix_type A_d("A_d", G);
+    double_matrix_type A_d("A_d", G, numCols);
     auto A_d_val_h = Kokkos::create_mirror_view(A_d.values);
     A_d_val_h[0]   = ONE_d;
     // This cast is deliberate; we want to use float eps here, but as
@@ -1048,7 +1048,7 @@ void test_github_issue_101() {
     constexpr float TWO_f   = static_cast<float>(2.0);
     constexpr double ZERO_d = static_cast<double>(0.0);
 
-    float_matrix_type A_f("A_f", G);
+    float_matrix_type A_f("A_f", G, numCols);
     auto A_f_val_h = Kokkos::create_mirror_view(A_f.values);
     A_f_val_h[0]   = ONE_f;
     A_f_val_h[1]   = EPS_f / TWO_f;

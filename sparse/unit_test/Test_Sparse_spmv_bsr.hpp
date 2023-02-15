@@ -513,11 +513,10 @@ void testSpMVBsrMatrix() {
       Test_Bsr::check_bsrm_times_v<scalar_t, lno_t, size_type, device>(
           &mode, alpha_s, beta_s, bMax, num_errors);
       if (num_errors > 0) {
-        printf(
-            "KokkosSparse::Test::spmv_bsr: %i errors of %i with params: "
-            "%c %lf %lf\n",
-            num_errors, bMax, mode, Kokkos::ArithTraits<scalar_t>::abs(alpha_s),
-            Kokkos::ArithTraits<scalar_t>::abs(beta_s));
+        std::cout << "KokkosSparse::Test::spmv_bsr: " << num_errors
+                  << " errors of %i with params: " << bMax << " " << mode << " "
+                  << Kokkos::ArithTraits<scalar_t>::abs(alpha_s) << " "
+                  << Kokkos::ArithTraits<scalar_t>::abs(beta_s) << std::endl;
       }
       EXPECT_TRUE(num_errors == 0);
     }
@@ -555,11 +554,10 @@ void testBsrMatrix_SpM_MV() {
       Test_Bsr::check_bsrm_times_mv<scalar_t, lno_t, size_type, layout, device>(
           &mode, alpha_s, beta_s, bMax, num_errors);
       if (num_errors > 0) {
-        printf(
-            "KokkosSparse::Test::spm_mv_bsr: %i errors of %i with params: "
-            "%c %lf %lf\n",
-            num_errors, bMax, mode, Kokkos::ArithTraits<scalar_t>::abs(alpha_s),
-            Kokkos::ArithTraits<scalar_t>::abs(beta_s));
+        std::cout << "KokkosSparse::Test::spm_mv_bsr: " << num_errors
+                  << " errors of " << bMax << " with params: " << mode << " "
+                  << Kokkos::ArithTraits<scalar_t>::abs(alpha_s) << " "
+                  << Kokkos::ArithTraits<scalar_t>::abs(beta_s) << std::endl;
       }
       EXPECT_TRUE(num_errors == 0);
     }

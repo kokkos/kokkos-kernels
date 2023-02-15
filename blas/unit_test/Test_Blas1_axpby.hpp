@@ -23,27 +23,33 @@
 namespace Test {
 template <class ViewTypeA, class ViewTypeB, class Device>
 void impl_test_axpby(int N) {
-  typedef typename ViewTypeA::value_type ScalarA;
-  typedef typename ViewTypeB::value_type ScalarB;
+  using ScalarA    = typename ViewTypeA::value_type;
+  using ScalarB    = typename ViewTypeB::value_type;
+  using MagnitudeB = typename Kokkos::ArithTraits<ScalarB>::mag_type;
 
-  typedef Kokkos::View<
+  using BaseTypeA = Kokkos::View<
       ScalarA * [2],
       typename std::conditional<std::is_same<typename ViewTypeA::array_layout,
                                              Kokkos::LayoutStride>::value,
                                 Kokkos::LayoutRight, Kokkos::LayoutLeft>::type,
-      Device>
-      BaseTypeA;
-  typedef Kokkos::View<
+      Device>;
+  using BaseTypeB = Kokkos::View<
       ScalarB * [2],
       typename std::conditional<std::is_same<typename ViewTypeB::array_layout,
                                              Kokkos::LayoutStride>::value,
                                 Kokkos::LayoutRight, Kokkos::LayoutLeft>::type,
-      Device>
-      BaseTypeB;
+      Device>;
 
-  ScalarA a  = 3;
-  ScalarB b  = 5;
-  double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 : 1e-7;
+  ScalarA a = 3;
+  ScalarB b = 5;
+  // eps should probably be based on ScalarB since that is the type
+  // in which the result is computed.
+  const MagnitudeB eps     = Kokkos::ArithTraits<ScalarB>::epsilon();
+  const MagnitudeB max_val = 10;
+  const MagnitudeB max_error =
+      (static_cast<MagnitudeB>(Kokkos::ArithTraits<ScalarA>::abs(a)) +
+       Kokkos::ArithTraits<ScalarB>::abs(b)) *
+      max_val * eps;
 
   BaseTypeA b_x("X", N);
   BaseTypeB b_y("Y", N);
@@ -67,12 +73,12 @@ void impl_test_axpby(int N) {
 
   {
     ScalarA randStart, randEnd;
-    Test::getRandomBounds(10.0, randStart, randEnd);
+    Test::getRandomBounds(max_val, randStart, randEnd);
     Kokkos::fill_random(b_x, rand_pool, randStart, randEnd);
   }
   {
     ScalarB randStart, randEnd;
-    Test::getRandomBounds(10.0, randStart, randEnd);
+    Test::getRandomBounds(max_val, randStart, randEnd);
     Kokkos::fill_random(b_y, rand_pool, randStart, randEnd);
   }
 
@@ -85,7 +91,8 @@ void impl_test_axpby(int N) {
   KokkosBlas::axpby(a, x, b, y);
   Kokkos::deep_copy(h_b_y, b_y);
   for (int i = 0; i < N; i++) {
-    EXPECT_NEAR_KK(a * h_x(i) + b * h_b_org_y(i, 0), h_y(i), eps);
+    EXPECT_NEAR_KK(static_cast<ScalarB>(a * h_x(i) + b * h_b_org_y(i, 0)),
+                   h_y(i), 2 * max_error);
   }
 
   Kokkos::deep_copy(b_y, b_org_y);
@@ -93,14 +100,16 @@ void impl_test_axpby(int N) {
   KokkosBlas::axpby(a, c_x, b, y);
   Kokkos::deep_copy(h_b_y, b_y);
   for (int i = 0; i < N; i++) {
-    EXPECT_NEAR_KK(a * h_x(i) + b * h_b_org_y(i, 0), h_y(i), eps);
+    EXPECT_NEAR_KK(static_cast<ScalarB>(a * h_x(i) + b * h_b_org_y(i, 0)),
+                   h_y(i), 2 * max_error);
   }
 }
 
 template <class ViewTypeA, class ViewTypeB, class Device>
 void impl_test_axpby_mv(int N, int K) {
-  typedef typename ViewTypeA::value_type ScalarA;
-  typedef typename ViewTypeB::value_type ScalarB;
+  using ScalarA    = typename ViewTypeA::value_type;
+  using ScalarB    = typename ViewTypeB::value_type;
+  using MagnitudeB = typename Kokkos::ArithTraits<ScalarB>::mag_type;
 
   typedef multivector_layout_adapter<ViewTypeA> vfA_type;
   typedef multivector_layout_adapter<ViewTypeB> vfB_type;
@@ -121,6 +130,15 @@ void impl_test_axpby_mv(int N, int K) {
   typename ViewTypeA::HostMirror h_x = h_vfA_type::view(h_b_x);
   typename ViewTypeB::HostMirror h_y = h_vfB_type::view(h_b_y);
 
+  ScalarA a                = 3;
+  ScalarB b                = 5;
+  const MagnitudeB eps     = Kokkos::ArithTraits<ScalarB>::epsilon();
+  const MagnitudeB max_val = 10;
+  const MagnitudeB max_error =
+      (static_cast<MagnitudeB>(Kokkos::ArithTraits<ScalarA>::abs(a)) +
+       Kokkos::ArithTraits<ScalarB>::abs(b)) *
+      max_val * eps;
+
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
       13718);
 
@@ -136,17 +154,14 @@ void impl_test_axpby_mv(int N, int K) {
   }
 
   Kokkos::deep_copy(b_org_y, b_y);
-  auto h_b_org_y =
-      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), b_org_y);
+  ViewTypeB org_y = vfB_type::view(b_org_y);
+  auto h_org_y =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), org_y);
 
   Kokkos::deep_copy(h_b_x, b_x);
   Kokkos::deep_copy(h_b_y, b_y);
 
-  ScalarA a                          = 3;
-  ScalarB b                          = 5;
   typename ViewTypeA::const_type c_x = x;
-
-  double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 : 1e-7;
 
   Kokkos::View<ScalarB*, Kokkos::HostSpace> r("Dot::Result", K);
 
@@ -155,7 +170,8 @@ void impl_test_axpby_mv(int N, int K) {
 
   for (int i = 0; i < N; i++) {
     for (int j = 0; j < K; j++) {
-      EXPECT_NEAR_KK(a * h_x(i, j) + b * h_b_org_y(i, j), h_y(i, j), eps);
+      EXPECT_NEAR_KK(static_cast<ScalarB>(a * h_x(i, j) + b * h_org_y(i, j)),
+                     h_y(i, j), 2 * max_error);
     }
   }
 
@@ -165,7 +181,8 @@ void impl_test_axpby_mv(int N, int K) {
 
   for (int i = 0; i < N; i++) {
     for (int j = 0; j < K; j++) {
-      EXPECT_NEAR_KK(a * h_x(i, j) + b * h_b_org_y(i, j), h_y(i, j), eps);
+      EXPECT_NEAR_KK(static_cast<ScalarB>(a * h_x(i, j) + b * h_org_y(i, j)),
+                     h_y(i, j), 2 * max_error);
     }
   }
 }
