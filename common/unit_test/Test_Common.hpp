@@ -23,5 +23,6 @@
 #include <Test_Common_IOUtils.hpp>
 #include <Test_Common_Error.hpp>
 #include <Test_Common_Version.hpp>
+#include <Test_Common_PrintConfiguration.hpp>
 
 #endif  // TEST_COMMON_HPP
