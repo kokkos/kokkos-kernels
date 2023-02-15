@@ -102,8 +102,8 @@ void impl_test_team_update(int N) {
 
   ScalarA expected_result = 0;
   for (int i = 0; i < N; i++)
-    expected_result += ScalarB(c * h_z(i) + a * h_x(i) + b * h_y(i)) *
-                       ScalarB(c * h_z(i) + a * h_x(i) + b * h_y(i));
+    expected_result += ScalarC(c * h_z(i) + a * h_x(i) + b * h_y(i)) *
+                       ScalarC(c * h_z(i) + a * h_x(i) + b * h_y(i));
 
   // KokkosBlas::update(a,x,b,y,c,z);
   Kokkos::parallel_for(

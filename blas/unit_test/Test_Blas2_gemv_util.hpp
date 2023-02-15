@@ -276,7 +276,7 @@ struct GEMVTest {
     // fetch GEMV functor from the factory
     using op_type =
         typename GemvFunc::template functor_type<AlgoTag, ViewTypeA, ViewTypeX,
-                                                 ViewTypeY, Device, ScalarCoef>;
+                                                 ViewTypeY, Device, ScalarType>;
 
     op_type gemv_op(trans, alpha, A, x, beta, y);
     Kokkos::parallel_for(Kokkos::TeamPolicy<Device>(1, 1), gemv_op);
