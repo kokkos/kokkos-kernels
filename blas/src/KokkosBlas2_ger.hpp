@@ -124,6 +124,6 @@ void ger( const typename AViewType::const_value_type & alpha
   ger(space, alpha, x, y, A);
 }
 
-}  // namespace KokkosBlas
+} // namespace KokkosBlas
 
-#endif  // KOKKOSBLAS2_GER_HPP_
+#endif // KOKKOSBLAS2_GER_HPP_
