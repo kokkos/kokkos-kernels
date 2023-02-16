@@ -16,8 +16,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOSBLAS1_GER_TPL_SPEC_DECL_HPP_
-#define KOKKOSBLAS1_GER_TPL_SPEC_DECL_HPP_
+#ifndef KOKKOSBLAS2_GER_TPL_SPEC_DECL_HPP_
+#define KOKKOSBLAS2_GER_TPL_SPEC_DECL_HPP_
 
 // EEP
 
@@ -44,7 +44,7 @@ inline void ger_print_specialization() {
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS1_DGER_TPL_SPEC_DECL_BLAS(LAYOUT, EXECSPACE,                \
+#define KOKKOSBLAS2_DGER_TPL_SPEC_DECL_BLAS(LAYOUT, EXECSPACE,                \
                                              ETI_SPEC_AVAIL)                   \
   template <>                                                                  \
   struct Ger<EXECSPACE,                                                       \
@@ -69,7 +69,7 @@ namespace Impl {
     }                                                                          \
   };
 
-#define KOKKOSBLAS1_SGER_TPL_SPEC_DECL_BLAS(LAYOUT, EXECSPACE,                \
+#define KOKKOSBLAS2_SGER_TPL_SPEC_DECL_BLAS(LAYOUT, EXECSPACE,                \
                                              ETI_SPEC_AVAIL)                   \
   template <>                                                                  \
   struct Ger<EXECSPACE,                                                       \
@@ -94,7 +94,7 @@ namespace Impl {
     }                                                                          \
   };
 
-#define KOKKOSBLAS1_ZGER_TPL_SPEC_DECL_BLAS(LAYOUT, EXECSPACE,                \
+#define KOKKOSBLAS2_ZGER_TPL_SPEC_DECL_BLAS(LAYOUT, EXECSPACE,                \
                                              ETI_SPEC_AVAIL)                   \
   template <>                                                                  \
   struct Ger<EXECSPACE,                                                       \
@@ -122,7 +122,7 @@ namespace Impl {
     }                                                                          \
   };
 
-#define KOKKOSBLAS1_CGER_TPL_SPEC_DECL_BLAS(LAYOUT, EXECSPACE,                \
+#define KOKKOSBLAS2_CGER_TPL_SPEC_DECL_BLAS(LAYOUT, EXECSPACE,                \
                                              ETI_SPEC_AVAIL)                   \
   template <>                                                                  \
   struct Ger<EXECSPACE,                                                       \
@@ -151,31 +151,31 @@ namespace Impl {
   };
 
 #ifdef KOKKOS_ENABLE_SERIAL
-KOKKOSBLAS1_DGER_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::Serial, true)
-KOKKOSBLAS1_DGER_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::Serial, false)
+KOKKOSBLAS2_DGER_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::Serial, true)
+KOKKOSBLAS2_DGER_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::Serial, false)
 
-KOKKOSBLAS1_SGER_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::Serial, true)
-KOKKOSBLAS1_SGER_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::Serial, false)
+KOKKOSBLAS2_SGER_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::Serial, true)
+KOKKOSBLAS2_SGER_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::Serial, false)
 
-KOKKOSBLAS1_ZGER_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::Serial, true)
-KOKKOSBLAS1_ZGER_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::Serial, false)
+KOKKOSBLAS2_ZGER_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::Serial, true)
+KOKKOSBLAS2_ZGER_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::Serial, false)
 
-KOKKOSBLAS1_CGER_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::Serial, true)
-KOKKOSBLAS1_CGER_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::Serial, false)
+KOKKOSBLAS2_CGER_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::Serial, true)
+KOKKOSBLAS2_CGER_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::Serial, false)
 #endif
 
 #ifdef KOKKOS_ENABLE_OPENMP
-KOKKOSBLAS1_DGER_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::OpenMP, true)
-KOKKOSBLAS1_DGER_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::OpenMP, false)
+KOKKOSBLAS2_DGER_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::OpenMP, true)
+KOKKOSBLAS2_DGER_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::OpenMP, false)
 
-KOKKOSBLAS1_SGER_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::OpenMP, true)
-KOKKOSBLAS1_SGER_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::OpenMP, false)
+KOKKOSBLAS2_SGER_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::OpenMP, true)
+KOKKOSBLAS2_SGER_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::OpenMP, false)
 
-KOKKOSBLAS1_ZGER_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::OpenMP, true)
-KOKKOSBLAS1_ZGER_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::OpenMP, false)
+KOKKOSBLAS2_ZGER_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::OpenMP, true)
+KOKKOSBLAS2_ZGER_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::OpenMP, false)
 
-KOKKOSBLAS1_CGER_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::OpenMP, true)
-KOKKOSBLAS1_CGER_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::OpenMP, false)
+KOKKOSBLAS2_CGER_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::OpenMP, true)
+KOKKOSBLAS2_CGER_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::OpenMP, false)
 #endif
 
 }  // namespace Impl
@@ -190,7 +190,7 @@ KOKKOSBLAS1_CGER_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::OpenMP, false)
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS1_DGER_TPL_SPEC_DECL_CUBLAS(LAYOUT, EXECSPACE, MEMSPACE, \
+#define KOKKOSBLAS2_DGER_TPL_SPEC_DECL_CUBLAS(LAYOUT, EXECSPACE, MEMSPACE, \
                                                ETI_SPEC_AVAIL)              \
   template <>                                                               \
   struct Ger<                                                              \
@@ -220,7 +220,7 @@ namespace Impl {
     }                                                                       \
   };
 
-#define KOKKOSBLAS1_SGER_TPL_SPEC_DECL_CUBLAS(LAYOUT, EXECSPACE, MEMSPACE, \
+#define KOKKOSBLAS2_SGER_TPL_SPEC_DECL_CUBLAS(LAYOUT, EXECSPACE, MEMSPACE, \
                                                ETI_SPEC_AVAIL)              \
   template <>                                                               \
   struct Ger<                                                              \
@@ -250,7 +250,7 @@ namespace Impl {
     }                                                                       \
   };
 
-#define KOKKOSBLAS1_ZGER_TPL_SPEC_DECL_CUBLAS(LAYOUT, EXECSPACE, MEMSPACE, \
+#define KOKKOSBLAS2_ZGER_TPL_SPEC_DECL_CUBLAS(LAYOUT, EXECSPACE, MEMSPACE, \
                                                ETI_SPEC_AVAIL)              \
   template <>                                                               \
   struct Ger<EXECSPACE,                                                    \
@@ -284,7 +284,7 @@ namespace Impl {
     }                                                                       \
   };
 
-#define KOKKOSBLAS1_CGER_TPL_SPEC_DECL_CUBLAS(LAYOUT, EXECSPACE, MEMSPACE, \
+#define KOKKOSBLAS2_CGER_TPL_SPEC_DECL_CUBLAS(LAYOUT, EXECSPACE, MEMSPACE, \
                                                ETI_SPEC_AVAIL)              \
   template <>                                                               \
   struct Ger<EXECSPACE,                                                    \
@@ -318,72 +318,72 @@ namespace Impl {
     }                                                                       \
   };
 
-KOKKOSBLAS1_DGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
+KOKKOSBLAS2_DGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
                                        Kokkos::CudaSpace, true)
-KOKKOSBLAS1_DGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
+KOKKOSBLAS2_DGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
                                        Kokkos::CudaSpace, false)
-KOKKOSBLAS1_DGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
+KOKKOSBLAS2_DGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
                                        Kokkos::CudaSpace, true)
-KOKKOSBLAS1_DGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
+KOKKOSBLAS2_DGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
                                        Kokkos::CudaSpace, false)
-KOKKOSBLAS1_DGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
+KOKKOSBLAS2_DGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
                                        Kokkos::CudaUVMSpace, true)
-KOKKOSBLAS1_DGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
+KOKKOSBLAS2_DGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
                                        Kokkos::CudaUVMSpace, false)
-KOKKOSBLAS1_DGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
+KOKKOSBLAS2_DGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
                                        Kokkos::CudaUVMSpace, true)
-KOKKOSBLAS1_DGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
-                                       Kokkos::CudaUVMSpace, false)
-
-KOKKOSBLAS1_SGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
-                                       Kokkos::CudaSpace, true)
-KOKKOSBLAS1_SGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
-                                       Kokkos::CudaSpace, false)
-KOKKOSBLAS1_SGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
-                                       Kokkos::CudaSpace, true)
-KOKKOSBLAS1_SGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
-                                       Kokkos::CudaSpace, false)
-KOKKOSBLAS1_SGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
-                                       Kokkos::CudaUVMSpace, true)
-KOKKOSBLAS1_SGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
-                                       Kokkos::CudaUVMSpace, false)
-KOKKOSBLAS1_SGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
-                                       Kokkos::CudaUVMSpace, true)
-KOKKOSBLAS1_SGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
+KOKKOSBLAS2_DGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
                                        Kokkos::CudaUVMSpace, false)
 
-KOKKOSBLAS1_ZGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
+KOKKOSBLAS2_SGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
                                        Kokkos::CudaSpace, true)
-KOKKOSBLAS1_ZGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
+KOKKOSBLAS2_SGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
                                        Kokkos::CudaSpace, false)
-KOKKOSBLAS1_ZGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
+KOKKOSBLAS2_SGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
                                        Kokkos::CudaSpace, true)
-KOKKOSBLAS1_ZGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
+KOKKOSBLAS2_SGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
                                        Kokkos::CudaSpace, false)
-KOKKOSBLAS1_ZGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
+KOKKOSBLAS2_SGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
                                        Kokkos::CudaUVMSpace, true)
-KOKKOSBLAS1_ZGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
+KOKKOSBLAS2_SGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
                                        Kokkos::CudaUVMSpace, false)
-KOKKOSBLAS1_ZGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
+KOKKOSBLAS2_SGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
                                        Kokkos::CudaUVMSpace, true)
-KOKKOSBLAS1_ZGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
+KOKKOSBLAS2_SGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
                                        Kokkos::CudaUVMSpace, false)
 
-KOKKOSBLAS1_CGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
+KOKKOSBLAS2_ZGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
                                        Kokkos::CudaSpace, true)
-KOKKOSBLAS1_CGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
+KOKKOSBLAS2_ZGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
                                        Kokkos::CudaSpace, false)
-KOKKOSBLAS1_CGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
+KOKKOSBLAS2_ZGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
                                        Kokkos::CudaSpace, true)
-KOKKOSBLAS1_CGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
+KOKKOSBLAS2_ZGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
                                        Kokkos::CudaSpace, false)
-KOKKOSBLAS1_CGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
+KOKKOSBLAS2_ZGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
                                        Kokkos::CudaUVMSpace, true)
-KOKKOSBLAS1_CGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
+KOKKOSBLAS2_ZGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
                                        Kokkos::CudaUVMSpace, false)
-KOKKOSBLAS1_CGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
+KOKKOSBLAS2_ZGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
                                        Kokkos::CudaUVMSpace, true)
-KOKKOSBLAS1_CGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
+KOKKOSBLAS2_ZGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
+                                       Kokkos::CudaUVMSpace, false)
+
+KOKKOSBLAS2_CGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
+                                       Kokkos::CudaSpace, true)
+KOKKOSBLAS2_CGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
+                                       Kokkos::CudaSpace, false)
+KOKKOSBLAS2_CGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
+                                       Kokkos::CudaSpace, true)
+KOKKOSBLAS2_CGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
+                                       Kokkos::CudaSpace, false)
+KOKKOSBLAS2_CGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
+                                       Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS2_CGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda,
+                                       Kokkos::CudaUVMSpace, false)
+KOKKOSBLAS2_CGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
+                                       Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS2_CGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
                                        Kokkos::CudaUVMSpace, false)
 }  // namespace Impl
 }  // namespace KokkosBlas
@@ -396,7 +396,7 @@ KOKKOSBLAS1_CGER_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda,
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS1_DGER_TPL_SPEC_DECL_ROCBLAS(LAYOUT, EXECSPACE, MEMSPACE, \
+#define KOKKOSBLAS2_DGER_TPL_SPEC_DECL_ROCBLAS(LAYOUT, EXECSPACE, MEMSPACE, \
                                                 ETI_SPEC_AVAIL)              \
   template <>                                                                \
   struct Ger<                                                               \
@@ -426,7 +426,7 @@ namespace Impl {
     }                                                                        \
   };
 
-#define KOKKOSBLAS1_SGER_TPL_SPEC_DECL_ROCBLAS(LAYOUT, EXECSPACE, MEMSPACE, \
+#define KOKKOSBLAS2_SGER_TPL_SPEC_DECL_ROCBLAS(LAYOUT, EXECSPACE, MEMSPACE, \
                                                 ETI_SPEC_AVAIL)              \
   template <>                                                                \
   struct Ger<                                                               \
@@ -456,7 +456,7 @@ namespace Impl {
     }                                                                        \
   };
 
-#define KOKKOSBLAS1_ZGER_TPL_SPEC_DECL_ROCBLAS(LAYOUT, EXECSPACE, MEMSPACE, \
+#define KOKKOSBLAS2_ZGER_TPL_SPEC_DECL_ROCBLAS(LAYOUT, EXECSPACE, MEMSPACE, \
                                                 ETI_SPEC_AVAIL)              \
   template <>                                                                \
   struct Ger<EXECSPACE,                                                     \
@@ -490,7 +490,7 @@ namespace Impl {
     }                                                                        \
   };
 
-#define KOKKOSBLAS1_CGER_TPL_SPEC_DECL_ROCBLAS(LAYOUT, EXECSPACE, MEMSPACE, \
+#define KOKKOSBLAS2_CGER_TPL_SPEC_DECL_ROCBLAS(LAYOUT, EXECSPACE, MEMSPACE, \
                                                 ETI_SPEC_AVAIL)              \
   template <>                                                                \
   struct Ger<EXECSPACE,                                                     \
@@ -524,40 +524,40 @@ namespace Impl {
     }                                                                        \
   };
 
-KOKKOSBLAS1_DGER_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP,
+KOKKOSBLAS2_DGER_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP,
                                         Kokkos::HIPSpace, true)
-KOKKOSBLAS1_DGER_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP,
+KOKKOSBLAS2_DGER_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP,
                                         Kokkos::HIPSpace, false)
-KOKKOSBLAS1_DGER_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP,
+KOKKOSBLAS2_DGER_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP,
                                         Kokkos::HIPSpace, true)
-KOKKOSBLAS1_DGER_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP,
-                                        Kokkos::HIPSpace, false)
-
-KOKKOSBLAS1_SGER_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP,
-                                        Kokkos::HIPSpace, true)
-KOKKOSBLAS1_SGER_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP,
-                                        Kokkos::HIPSpace, false)
-KOKKOSBLAS1_SGER_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP,
-                                        Kokkos::HIPSpace, true)
-KOKKOSBLAS1_SGER_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP,
+KOKKOSBLAS2_DGER_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP,
                                         Kokkos::HIPSpace, false)
 
-KOKKOSBLAS1_ZGER_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP,
+KOKKOSBLAS2_SGER_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP,
                                         Kokkos::HIPSpace, true)
-KOKKOSBLAS1_ZGER_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP,
+KOKKOSBLAS2_SGER_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP,
                                         Kokkos::HIPSpace, false)
-KOKKOSBLAS1_ZGER_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP,
+KOKKOSBLAS2_SGER_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP,
                                         Kokkos::HIPSpace, true)
-KOKKOSBLAS1_ZGER_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP,
+KOKKOSBLAS2_SGER_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP,
                                         Kokkos::HIPSpace, false)
 
-KOKKOSBLAS1_CGER_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP,
+KOKKOSBLAS2_ZGER_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP,
                                         Kokkos::HIPSpace, true)
-KOKKOSBLAS1_CGER_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP,
+KOKKOSBLAS2_ZGER_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP,
                                         Kokkos::HIPSpace, false)
-KOKKOSBLAS1_CGER_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP,
+KOKKOSBLAS2_ZGER_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP,
                                         Kokkos::HIPSpace, true)
-KOKKOSBLAS1_CGER_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP,
+KOKKOSBLAS2_ZGER_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP,
+                                        Kokkos::HIPSpace, false)
+
+KOKKOSBLAS2_CGER_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP,
+                                        Kokkos::HIPSpace, true)
+KOKKOSBLAS2_CGER_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP,
+                                        Kokkos::HIPSpace, false)
+KOKKOSBLAS2_CGER_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP,
+                                        Kokkos::HIPSpace, true)
+KOKKOSBLAS2_CGER_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP,
                                         Kokkos::HIPSpace, false)
 }  // namespace Impl
 }  // namespace KokkosBlas

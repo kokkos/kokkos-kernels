@@ -1,4 +1,4 @@
-#include "KokkosBlas1_ger.hpp"
+#include "KokkosBlas2_ger.hpp"
 
 namespace Test {
 namespace Impl {
