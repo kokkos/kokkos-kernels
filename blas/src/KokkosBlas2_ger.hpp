@@ -25,23 +25,24 @@ namespace KokkosBlas {
 
 /// \brief Rank-1 update of a general matrix: A = A + alpha * x * y^t.
 ///
-/// \tparam AViewType Input matrix, as a 2-D Kokkos::View
+/// \tparam AViewType Input/Output matrix, as a 2-D Kokkos::View
 /// \tparam XViewType Input vector, as a 1-D Kokkos::View
-/// \tparam YViewType Output vector, as a nonconst 1-D Kokkos::View
-/// \tparam AlphaCoeffType Type of input coefficient alpha
+/// \tparam YViewType Input vector, as a 1-D Kokkos::View
 ///
-/// \param space [in] execution space instance on which to run the
-///   kernel. This may contain information about which stream to
-///   run on.
-/// \param alpha [in] Input coefficient of A*x
-/// \param A [in] Input matrix, as a 2-D Kokkos::View
-/// \param x [in] Input vector, as a 1-D Kokkos::View
-/// \param y [in/out] Output vector, as a nonconst 1-D Kokkos::View
+/// \param space [in]     Execution space instance on which to run the
+///                       kernel. This may contain information about
+///                       which stream to run on.
+/// \param alpha [in]     Input coefficient of x * y^t
+/// \param x     [in]     Input matrix, as a 1-D Kokkos::View
+/// \param y     [in]     Input vector, as a 1-D Kokkos::View
+/// \param A     [in/out] Output matrix, as a nonconst 2-D Kokkos::View
 template <class AViewType, class XViewType, class YViewType>
-void ger(const typename AViewType::execution_space& space,
-         typename AViewType::const_value_type& alpha, const AViewType& A,
-         const XViewType& x,
-         const YViewType& y) {
+void ger( const typename AViewType::execution_space  & space
+        , const typename AViewType::const_value_type & alpha
+        , const          XViewType                   & x
+        , const          YViewType                   & y
+        , const          AViewType                   & A
+        ) {
   static_assert(Kokkos::is_view<AViewType>::value,
                 "AViewType must be a Kokkos::View.");
   static_assert(Kokkos::is_view<XViewType>::value,
@@ -55,27 +56,72 @@ void ger(const typename AViewType::execution_space& space,
   static_assert(static_cast<int>(YViewType::rank) == 1,
                 "YViewType must have rank 1.");
 
-  // EEP
+  // Check compatibility of dimensions at run time.
+  if (A.extent(0) != x.extent(0) || A.extent(1) != y.extent(0)) {
+    std::ostringstream os;
+    os << "KokkosBlas::ger: Dimensions of A, x, and y do not match: "
+       << "A is " << A.extent(0) << " by " << A.extent(1)
+       << ", x has size " << x.extent(0)
+       << ", y has size " << y.extent(0);
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
+  }
+
+  using ALayout = typename AViewType::array_layout;
+
+  // Minimize the number of Impl::GER instantiations, by
+  // standardizing on particular View specializations for its template
+  // parameters.
+  typedef Kokkos::View<typename AViewType::const_value_type**, ALayout,
+                       typename AViewType::device_type,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+      AVT;
+  typedef Kokkos::View<typename XViewType::const_value_type*,
+                       typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<
+                           XViewType, ALayout>::array_layout,
+                       typename XViewType::device_type,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+      XVT;
+  typedef Kokkos::View<typename YViewType::non_const_value_type*,
+                       typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<
+                           YViewType, ALayout>::array_layout,
+                       typename YViewType::device_type,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+      YVT;
+
+  // Degenerate case is essentially same as scal - use fallback impl
+  // to avoid potential (unlikely?) circular dependence issues by including
+  // other KokkosBlas headers
+  bool useFallback = A.extent(0) == 0 || A.extent(1) == 0;
+  if (useFallback) {
+    const bool eti_spec_avail = KokkosBlas::Impl::ger_eti_spec_avail<AVT, XVT, YVT>::value;
+    typedef Impl::GER<AVT, XVT, YVT, false, eti_spec_avail> fallback_impl_type;
+    fallback_impl_type::ger(space, alpha, x, y, A);
+  }
+  else {
+    typedef Impl::GER<AVT, XVT, YVT> impl_type;
+    impl_type::ger(space, alpha, x, y, A);
+  }
 }
 
 /// \brief Rank-1 update of a general matrix: A = A + alpha * x * y^t.
 ///
-/// \tparam AViewType Input matrix, as a 2-D Kokkos::View
+/// \tparam AViewType Input/Output matrix, as a 2-D Kokkos::View
 /// \tparam XViewType Input vector, as a 1-D Kokkos::View
-/// \tparam YViewType Output vector, as a nonconst 1-D Kokkos::View
-/// \tparam AlphaCoeffType Type of input coefficient alpha
+/// \tparam YViewType Input vector, as a 1-D Kokkos::View
 ///
-/// \param alpha [in] Input coefficient of A*x
-/// \param A [in] Input matrix, as a 2-D Kokkos::View
-/// \param x [in] Input vector, as a 1-D Kokkos::View
-/// \param y [in/out] Output vector, as a nonconst 1-D Kokkos::View
+/// \param alpha [in]     Input coefficient of x * y^t
+/// \param x     [in]     Input matrix, as a 1-D Kokkos::View
+/// \param y     [in]     Input vector, as a 1-D Kokkos::View
+/// \param A     [in/out] Output matrix, as a nonconst 2-D Kokkos::View
 template <class AViewType, class XViewType, class YViewType>
-void ger(typename AViewType::const_value_type& alpha,
-         const AViewType& A, const XViewType& x,
-         const YViewType& y) {
+void ger( const typename AViewType::const_value_type & alpha
+        , const          XViewType                   & x
+        , const          YViewType                   & y
+        , const          AViewType                   & A
+        ) {
   const typename AViewType::execution_space space =
       typename AViewType::execution_space();
-  ger(space, trans, alpha, A, x, y);
+  ger(space, alpha, x, y, A);
 }
 
 }  // namespace KokkosBlas
