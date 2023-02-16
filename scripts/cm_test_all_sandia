@@ -77,6 +77,8 @@ print_help() {
   echo ""
   echo "--no-default-eti:  Do not include default ETI types for Kokkos Kernels"
   echo ""
+  echo "--disable-test-eti-only:  Do not restrict testing to ETI types for Kokkos Kernels"
+  echo ""
   echo "--with-spaces=SPACES:       Set spaces to be instantiated."
   echo "                                Options: hostspace, cudaspace, cudauvmspace"
   echo ""
@@ -224,6 +226,7 @@ SKIP_HWLOC=False
 SPOT_CHECK=False
 NO_DEFAULT_ETI=False
 ENABLE_PERFTESTS=True
+ENABLE_TEST_ETI_ONLY=True
 
 PRINT_HELP=False
 OPT_FLAG=""
@@ -387,6 +390,9 @@ do
       ;;
     --no-default-eti*)
       NO_DEFAULT_ETI=True
+      ;;
+    --disable-test-eti-only*)
+      ENABLE_TEST_ETI_ONLY=False
       ;;
     --disable-perftests*)
       ENABLE_PERFTESTS=False
@@ -1171,6 +1177,10 @@ single_build_and_test() {
 
   if [ "${NO_DEFAULT_ETI}" = "True" ]; then
     local extra_args="$extra_args --no-default-eti"
+  fi
+
+  if [ "${ENABLE_TEST_ETI_ONLY}" = "False" ]; then
+    local extra_args="$extra_args --disable-test-eti-only"
   fi
 
   if [ "${ENABLE_PERFTESTS}" = "False" ]; then
