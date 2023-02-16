@@ -41,6 +41,7 @@
 #include "Test_Blas1_scal.hpp"
 #include "Test_Blas1_sum.hpp"
 #include "Test_Blas1_swap.hpp"
+#include "Test_Blas1_ger.hpp"
 #include "Test_Blas1_update.hpp"
 
 // Serial Blas 1
