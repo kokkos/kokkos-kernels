@@ -16,8 +16,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOSBLAS1_GER_TPL_SPEC_AVAIL_HPP_
-#define KOKKOSBLAS1_GER_TPL_SPEC_AVAIL_HPP_
+#ifndef KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_HPP_
+#define KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_HPP_
 
 // EEP
 
@@ -36,7 +36,7 @@ namespace Impl {
 
 // Generic Host side BLAS (could be MKL or whatever)
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
-#define KOKKOSBLAS1_GER_TPL_SPEC_AVAIL_BLAS(SCALAR, LAYOUT, EXECSPACE) \
+#define KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_BLAS(SCALAR, LAYOUT, EXECSPACE) \
   template <>                                                           \
   struct ger_tpl_spec_avail<                                           \
       EXECSPACE,                                                        \
@@ -50,27 +50,27 @@ namespace Impl {
   };
 
 #ifdef KOKKOS_ENABLE_SERIAL
-KOKKOSBLAS1_GER_TPL_SPEC_AVAIL_BLAS(double, Kokkos::LayoutLeft, Kokkos::Serial)
-KOKKOSBLAS1_GER_TPL_SPEC_AVAIL_BLAS(float, Kokkos::LayoutLeft, Kokkos::Serial)
-KOKKOSBLAS1_GER_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<double>,
+KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_BLAS(double, Kokkos::LayoutLeft, Kokkos::Serial)
+KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_BLAS(float, Kokkos::LayoutLeft, Kokkos::Serial)
+KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<double>,
                                      Kokkos::LayoutLeft, Kokkos::Serial)
-KOKKOSBLAS1_GER_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>, Kokkos::LayoutLeft,
+KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>, Kokkos::LayoutLeft,
                                      Kokkos::Serial)
 #endif
 
 #ifdef KOKKOS_ENABLE_OPENMP
-KOKKOSBLAS1_GER_TPL_SPEC_AVAIL_BLAS(double, Kokkos::LayoutLeft, Kokkos::OpenMP)
-KOKKOSBLAS1_GER_TPL_SPEC_AVAIL_BLAS(float, Kokkos::LayoutLeft, Kokkos::OpenMP)
-KOKKOSBLAS1_GER_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<double>,
+KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_BLAS(double, Kokkos::LayoutLeft, Kokkos::OpenMP)
+KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_BLAS(float, Kokkos::LayoutLeft, Kokkos::OpenMP)
+KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<double>,
                                      Kokkos::LayoutLeft, Kokkos::OpenMP)
-KOKKOSBLAS1_GER_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>, Kokkos::LayoutLeft,
+KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>, Kokkos::LayoutLeft,
                                      Kokkos::OpenMP)
 #endif
 #endif
 
 // cuBLAS
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
-#define KOKKOSBLAS1_GER_TPL_SPEC_AVAIL_CUBLAS(SCALAR, LAYOUT, EXECSPACE, \
+#define KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_CUBLAS(SCALAR, LAYOUT, EXECSPACE, \
                                                MEMSPACE)                  \
   template <>                                                             \
   struct ger_tpl_spec_avail<                                             \
@@ -82,54 +82,54 @@ KOKKOSBLAS1_GER_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>, Kokkos::LayoutLeft,
     enum : bool { value = true };                                         \
   };
 
-KOKKOSBLAS1_GER_TPL_SPEC_AVAIL_CUBLAS(double, Kokkos::LayoutLeft, Kokkos::Cuda,
+KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_CUBLAS(double, Kokkos::LayoutLeft, Kokkos::Cuda,
                                        Kokkos::CudaSpace)
-KOKKOSBLAS1_GER_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::LayoutLeft, Kokkos::Cuda,
+KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::LayoutLeft, Kokkos::Cuda,
                                        Kokkos::CudaSpace)
-KOKKOSBLAS1_GER_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>,
+KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>,
                                        Kokkos::LayoutLeft, Kokkos::Cuda,
                                        Kokkos::CudaSpace)
-KOKKOSBLAS1_GER_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>,
+KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>,
                                        Kokkos::LayoutLeft, Kokkos::Cuda,
                                        Kokkos::CudaSpace)
 
-KOKKOSBLAS1_GER_TPL_SPEC_AVAIL_CUBLAS(double, Kokkos::LayoutRight,
+KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_CUBLAS(double, Kokkos::LayoutRight,
                                        Kokkos::Cuda, Kokkos::CudaSpace)
-KOKKOSBLAS1_GER_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::LayoutRight, Kokkos::Cuda,
+KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::LayoutRight, Kokkos::Cuda,
                                        Kokkos::CudaSpace)
-KOKKOSBLAS1_GER_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>,
+KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>,
                                        Kokkos::LayoutRight, Kokkos::Cuda,
                                        Kokkos::CudaSpace)
-KOKKOSBLAS1_GER_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>,
+KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>,
                                        Kokkos::LayoutRight, Kokkos::Cuda,
                                        Kokkos::CudaSpace)
 
-KOKKOSBLAS1_GER_TPL_SPEC_AVAIL_CUBLAS(double, Kokkos::LayoutLeft, Kokkos::Cuda,
+KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_CUBLAS(double, Kokkos::LayoutLeft, Kokkos::Cuda,
                                        Kokkos::CudaUVMSpace)
-KOKKOSBLAS1_GER_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::LayoutLeft, Kokkos::Cuda,
+KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::LayoutLeft, Kokkos::Cuda,
                                        Kokkos::CudaUVMSpace)
-KOKKOSBLAS1_GER_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>,
+KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>,
                                        Kokkos::LayoutLeft, Kokkos::Cuda,
                                        Kokkos::CudaUVMSpace)
-KOKKOSBLAS1_GER_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>,
+KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>,
                                        Kokkos::LayoutLeft, Kokkos::Cuda,
                                        Kokkos::CudaUVMSpace)
 
-KOKKOSBLAS1_GER_TPL_SPEC_AVAIL_CUBLAS(double, Kokkos::LayoutRight,
+KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_CUBLAS(double, Kokkos::LayoutRight,
                                        Kokkos::Cuda, Kokkos::CudaUVMSpace)
-KOKKOSBLAS1_GER_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::LayoutRight, Kokkos::Cuda,
+KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::LayoutRight, Kokkos::Cuda,
                                        Kokkos::CudaUVMSpace)
-KOKKOSBLAS1_GER_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>,
+KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>,
                                        Kokkos::LayoutRight, Kokkos::Cuda,
                                        Kokkos::CudaUVMSpace)
-KOKKOSBLAS1_GER_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>,
+KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>,
                                        Kokkos::LayoutRight, Kokkos::Cuda,
                                        Kokkos::CudaUVMSpace)
 #endif
 
 // rocBLAS
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
-#define KOKKOSBLAS1_GER_TPL_SPEC_AVAIL_ROCBLAS(SCALAR, LAYOUT, EXECSPACE, \
+#define KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_ROCBLAS(SCALAR, LAYOUT, EXECSPACE, \
                                                 MEMSPACE)                  \
   template <>                                                              \
   struct ger_tpl_spec_avail<                                              \
@@ -141,29 +141,29 @@ KOKKOSBLAS1_GER_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>,
     enum : bool { value = true };                                          \
   };
 
-KOKKOSBLAS1_GER_TPL_SPEC_AVAIL_ROCBLAS(double, Kokkos::LayoutLeft, Kokkos::HIP,
+KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_ROCBLAS(double, Kokkos::LayoutLeft, Kokkos::HIP,
                                         Kokkos::HIPSpace)
-KOKKOSBLAS1_GER_TPL_SPEC_AVAIL_ROCBLAS(float, Kokkos::LayoutLeft, Kokkos::HIP,
+KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_ROCBLAS(float, Kokkos::LayoutLeft, Kokkos::HIP,
                                         Kokkos::HIPSpace)
-KOKKOSBLAS1_GER_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<double>,
+KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<double>,
                                         Kokkos::LayoutLeft, Kokkos::HIP,
                                         Kokkos::HIPSpace)
-KOKKOSBLAS1_GER_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<float>,
+KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<float>,
                                         Kokkos::LayoutLeft, Kokkos::HIP,
                                         Kokkos::HIPSpace)
 
-KOKKOSBLAS1_GER_TPL_SPEC_AVAIL_ROCBLAS(double, Kokkos::LayoutRight,
+KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_ROCBLAS(double, Kokkos::LayoutRight,
                                         Kokkos::HIP, Kokkos::HIPSpace)
-KOKKOSBLAS1_GER_TPL_SPEC_AVAIL_ROCBLAS(float, Kokkos::LayoutRight, Kokkos::HIP,
+KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_ROCBLAS(float, Kokkos::LayoutRight, Kokkos::HIP,
                                         Kokkos::HIPSpace)
-KOKKOSBLAS1_GER_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<double>,
+KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<double>,
                                         Kokkos::LayoutRight, Kokkos::HIP,
                                         Kokkos::HIPSpace)
-KOKKOSBLAS1_GER_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<float>,
+KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<float>,
                                         Kokkos::LayoutRight, Kokkos::HIP,
                                         Kokkos::HIPSpace)
 #endif
 
 }  // namespace Impl
 }  // namespace KokkosBlas
-#endif  // KOKKOSBLAS1_GER_TPL_SPEC_AVAIL_HPP_
+#endif  // KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_HPP_

@@ -19,10 +19,10 @@
 
 #define KOKKOSKERNELS_IMPL_COMPILE_LIBRARY true
 #include "KokkosKernels_config.h"
-#include "KokkosBlas1_ger_spec.hpp"
+#include "KokkosBlas2_ger_spec.hpp"
 
 namespace KokkosBlas {
 namespace Impl {
-@BLAS1_GER_ETI_INST_BLOCK@
+@BLAS2_GER_ETI_INST_BLOCK@
 } //IMPL
 } //Kokkos

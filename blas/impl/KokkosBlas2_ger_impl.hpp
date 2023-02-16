@@ -15,8 +15,8 @@
 //
 //@HEADER
 */
-#ifndef KOKKOSBLAS1_GER_IMPL_HPP_
-#define KOKKOSBLAS1_GER_IMPL_HPP_
+#ifndef KOKKOSBLAS2_GER_IMPL_HPP_
+#define KOKKOSBLAS2_GER_IMPL_HPP_
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
@@ -29,4 +29,4 @@ namespace Impl {
 }  // namespace Impl
 }  // namespace KokkosBlas
 
-#endif  // KOKKOSBLAS1_GER_IMPL_HPP_
+#endif  // KOKKOSBLAS2_GER_IMPL_HPP_

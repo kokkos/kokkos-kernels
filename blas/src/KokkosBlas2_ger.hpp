@@ -16,10 +16,10 @@
 //@HEADER
 */
 
-#ifndef KOKKOSBLAS1_GER_HPP_
-#define KOKKOSBLAS1_GER_HPP_
+#ifndef KOKKOSBLAS2_GER_HPP_
+#define KOKKOSBLAS2_GER_HPP_
 
-#include <KokkosBlas1_ger_spec.hpp>
+#include <KokkosBlas2_ger_spec.hpp>
 
 namespace KokkosBlas {
 
@@ -27,4 +27,4 @@ namespace KokkosBlas {
 
 }  // namespace KokkosBlas
 
-#endif  // KOKKOSBLAS1_GER_HPP_
+#endif  // KOKKOSBLAS2_GER_HPP_

@@ -16,15 +16,15 @@
 //@HEADER
 */
 
-#ifndef KOKKOSBLAS1_GER_SPEC_HPP_
-#define KOKKOSBLAS1_GER_SPEC_HPP_
+#ifndef KOKKOSBLAS2_GER_SPEC_HPP_
+#define KOKKOSBLAS2_GER_SPEC_HPP_
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
 
 // Include the actual functors
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
-#include <KokkosBlas1_ger_impl.hpp>
+#include <KokkosBlas2_ger_impl.hpp>
 #endif
 
 namespace KokkosBlas {
@@ -32,7 +32,7 @@ namespace Impl {
 
   // EEP
 
-#include <KokkosBlas1_ger_tpl_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosBlas1_ger_eti_spec_decl.hpp>
+#include <KokkosBlas2_ger_tpl_spec_decl.hpp>
+#include <generated_specializations_hpp/KokkosBlas2_ger_eti_spec_decl.hpp>
 
-#endif  // KOKKOSBLAS1_GER_SPEC_HPP_
+#endif  // KOKKOSBLAS2_GER_SPEC_HPP_
