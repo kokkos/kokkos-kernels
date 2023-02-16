@@ -357,6 +357,25 @@ KOKKOS_INLINE_FUNCTION void vanillaGEMV(char mode, AlphaType alpha,
   }
 }
 
+template <class AlphaType, class ViewTypeA, class ViewTypeX, class BetaType, class ViewTypeY>
+KOKKOS_INLINE_FUNCTION void vanillaGER( AlphaType         alpha
+                                      , const ViewTypeX & x
+                                      , const ViewTypeY & y
+                                      , const ViewTypeA & A
+                                      ) {
+  const bool has_alpha = alpha != Kokkos::ArithTraits<AlphaType>::zero();
+  if (has_alpha) {
+    using ScalarA = typename ViewTypeA::non_const_value_type;
+    int M = A.extent(0);
+    int N = A.extent(1);
+    for (int i = 0; i < M; i++) {
+      for (int j = 0; j < N; j++) {
+        A(i,j) += alpha * x(i) * y(j);
+      }
+    }
+  }
+}
+
 template <class T>
 class epsilon {
  public:
