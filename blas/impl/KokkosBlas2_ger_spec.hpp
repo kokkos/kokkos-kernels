@@ -30,9 +30,127 @@
 namespace KokkosBlas {
 namespace Impl {
 
-  // EEP
+// Specialization struct which defines whether a specialization exists
+template <class XMV, class YMV, class ZMV>
+struct ger_eti_spec_avail {
+  enum : bool { value = false };
+};
+}  // namespace Impl
+}  // namespace KokkosBlas
+
+//
+// Macro for declaration of full specialization availability KokkosBlas::Impl::GER.
+// This is NOT for users!!!
+// All the declarations of full specializations go in this header file.
+// We may spread out definitions (see _INST macro below) across one or more .cpp files.
+//
+#define KOKKOSBLAS2_GER_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
+  template <>                                                                 \
+  struct ger_eti_spec_avail<                                                  \
+      Kokkos::View<const SCALAR**, LAYOUT,                                    \
+                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                     \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
+      Kokkos::View<const SCALAR*, LAYOUT,                                     \
+                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                     \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
+      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,    \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {              \
+    enum : bool { value = true };                                             \
+  };
+
+// Include the actual specialization declarations
+#include <KokkosBlas2_ger_tpl_spec_avail.hpp>
+#include <generated_specializations_hpp/KokkosBlas2_ger_eti_spec_avail.hpp>
+
+namespace KokkosBlas {
+namespace Impl {
+
+//
+// ger
+//
+
+// Implementation of KokkosBlas::ger.
+template <class AViewType, class XViewType, class YViewType,
+          bool tpl_spec_avail = ger_tpl_spec_avail<AViewType, XViewType, YViewType>::value,
+          bool eti_spec_avail = ger_eti_spec_avail<AViewType, XViewType, YViewType>::value>
+struct GER {
+  static void ger( const typename AViewType::execution_space  & space
+                 , const typename AViewType::const_value_type & alpha
+                 , const          XViewType                   & x
+                 , const          YViewType                   & y
+                 , const          AViewType                   & A
+                 )
+#if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
+  {
+    static_assert(Kokkos::is_view<AViewType>::value,
+                  "AViewType must be a Kokkos::View.");
+    static_assert(Kokkos::is_view<XViewType>::value,
+                  "XViewType must be a Kokkos::View.");
+    static_assert(Kokkos::is_view<YViewType>::value,
+                  "YViewType must be a Kokkos::View.");
+    static_assert(static_cast<int>(AViewType::rank) == 2,
+                  "AViewType must have rank 2.");
+    static_assert(static_cast<int>(XViewType::rank) == 1,
+                  "XViewType must have rank 1.");
+    static_assert(static_cast<int>(YViewType::rank) == 1,
+                  "YViewType must have rank 1.");
+
+    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY ? "KokkosBlas::ger[ETI]" : "KokkosBlas::ger[noETI]");
+
+    typedef typename AViewType::size_type size_type;
+    const size_type numRows = A.extent(0);
+    const size_type numCols = A.extent(1);
+
+    // Prefer int as the index type, but use a larger type if needed.
+    if (numRows < static_cast<size_type>(INT_MAX) &&
+        numCols < static_cast<size_type>(INT_MAX)) {
+      generalGerImpl<AViewType, XViewType, YViewType, int>(space, alpha, x, y, A);
+    }
+    else {
+      generalGerImpl<AViewType, XViewType, YViewType, int64_t>(space, alpha, x, y, A);
+    }
+
+    Kokkos::Profiling::popRegion();
+  }
+#else
+  ;
+#endif // if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
+};
+
+}  // namespace Impl
+}  // namespace KokkosBlas
+
+//
+// Macro for declaration of full specialization of KokkosBlas::Impl::GER.
+// This is NOT for users!!!
+// All the declarations of full specializations go in this header file.
+// We may spread out definitions (see _DEF macro below) across one or more .cpp files.
+//
+#define KOKKOSBLAS2_GER_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
+  extern template struct GER<                                                \
+      Kokkos::View<const SCALAR**, LAYOUT,                                   \
+                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                    \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
+      Kokkos::View<const SCALAR*, LAYOUT,                                    \
+                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                    \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
+      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,   \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
+      false, true>;
+
+#define KOKKOSBLAS2_GER_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
+  template struct GER<                                                       \
+      Kokkos::View<const SCALAR**, LAYOUT,                                   \
+                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                    \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
+      Kokkos::View<const SCALAR*, LAYOUT,                                    \
+                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                    \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
+      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,   \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
+      false, true>;
 
 #include <KokkosBlas2_ger_tpl_spec_decl.hpp>
 #include <generated_specializations_hpp/KokkosBlas2_ger_eti_spec_decl.hpp>
 
-#endif  // KOKKOSBLAS2_GER_SPEC_HPP_
+#endif // KOKKOSBLAS2_GER_SPEC_HPP_
