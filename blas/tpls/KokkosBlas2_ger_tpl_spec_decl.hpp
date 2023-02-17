@@ -32,126 +32,126 @@ namespace Impl {
   constexpr int one = 1;                                                     \
   const int LDA     = A_is_lr ? A.stride(0) : A.stride(1);
 
-#define KOKKOSBLAS2_DGER_BLAS(LAYOUTX, LAYOUTY, LAYOUTA, MEM_SPACE,          \
-                               ETI_SPEC_AVAIL)                               \
-  template <class ExecSpace>                                                 \
-  struct GER<                                                                \
-      Kokkos::View<const double**, LAYOUTA,                                  \
-                   Kokkos::Device<ExecSpace, MEM_SPACE>,                     \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
-      Kokkos::View<const double*, LAYOUTX,                                   \
-                   Kokkos::Device<ExecSpace, MEM_SPACE>,                     \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
-      Kokkos::View<double*, LAYOUTY, Kokkos::Device<ExecSpace, MEM_SPACE>,   \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
-      true, ETI_SPEC_AVAIL> {                                                \
-    typedef double SCALAR;                                                   \
-    typedef Kokkos::View<const SCALAR**, LAYOUTA,                            \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,               \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >           \
-        AViewType;                                                           \
-    typedef Kokkos::View<const SCALAR*, LAYOUTX,                             \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,               \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >           \
-        XViewType;                                                           \
-    typedef Kokkos::View<SCALAR*, LAYOUTY,                                   \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,               \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >           \
-        YViewType;                                                           \
-                                                                             \
+#define KOKKOSBLAS2_DGER_BLAS(LAYOUTX, LAYOUTY, LAYOUTA, MEM_SPACE,         \
+                              ETI_SPEC_AVAIL)                               \
+  template <class ExecSpace>                                                \
+  struct GER<Kokkos::View<const double*, LAYOUTX,                           \
+                          Kokkos::Device<ExecSpace, MEM_SPACE>,             \
+                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >,        \
+             Kokkos::View<const double*, LAYOUTY,                           \
+                          Kokkos::Device<ExecSpace, MEM_SPACE>,             \
+                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >,        \
+             Kokkos::View<double**, LAYOUTA,                                \
+                          Kokkos::Device<ExecSpace, MEM_SPACE>,             \
+                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >,        \
+             true, ETI_SPEC_AVAIL> {                                        \
+    typedef double SCALAR;                                                  \
+    typedef Kokkos::View<const SCALAR*, LAYOUTX,                            \
+                         Kokkos::Device<ExecSpace, MEM_SPACE>,              \
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >          \
+        XViewType;                                                          \
+    typedef Kokkos::View<const SCALAR*, LAYOUTY,                            \
+                         Kokkos::Device<ExecSpace, MEM_SPACE>,              \
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >          \
+        YViewType;                                                          \
+    typedef Kokkos::View<SCALAR**, LAYOUTA,                                 \
+                         Kokkos::Device<ExecSpace, MEM_SPACE>,              \
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >          \
+        AViewType;                                                          \
+                                                                            \
     static void ger(const typename AViewType::execution_space& /* space */, \
-                     typename AViewType::const_value_type& alpha,            \
-                     const AViewType& A, const XViewType& X,                 \
-                     const YViewType& Y) {                                   \
+                     typename AViewType::const_value_type& alpha,           \
+                     const XViewType& X, const YViewType& Y,                \
+                     const AViewType& A) {                                  \
       Kokkos::Profiling::pushRegion("KokkosBlas::ger[TPL_BLAS,double]");    \
       KOKKOSBLAS2_GER_DETERMINE_ARGS(LAYOUTA);                              \
-      HostBlas<double>::ger(M, N, alpha, X.data(), one, Y.data(), one,       \
-                            A.data(), LDA);                                  \
-      Kokkos::Profiling::popRegion();                                        \
-    }                                                                        \
+      HostBlas<double>::ger(M, N, alpha, X.data(), one, Y.data(), one,      \
+                            A.data(), LDA);                                 \
+      Kokkos::Profiling::popRegion();                                       \
+    }                                                                       \
   };
 
-#define KOKKOSBLAS2_SGER_BLAS(LAYOUTX, LAYOUTY, LAYOUTA, MEM_SPACE,           \
-                               ETI_SPEC_AVAIL)                                 \
-  template <class ExecSpace>                                                   \
-  struct GER<                                                                 \
-      Kokkos::View<const float**, LAYOUTA,                                     \
-                   Kokkos::Device<ExecSpace, MEM_SPACE>,                       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      Kokkos::View<const float*, LAYOUTX,                                      \
-                   Kokkos::Device<ExecSpace, MEM_SPACE>,                       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      Kokkos::View<float*, LAYOUTY, Kokkos::Device<ExecSpace, MEM_SPACE>,      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      true, ETI_SPEC_AVAIL> {                                                  \
-    typedef float SCALAR;                                                      \
-    typedef Kokkos::View<const SCALAR**, LAYOUTA,                              \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,                 \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
-        AViewType;                                                             \
-    typedef Kokkos::View<const SCALAR*, LAYOUTX,                               \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,                 \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
-        XViewType;                                                             \
-    typedef Kokkos::View<SCALAR*, LAYOUTY,                                     \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,                 \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
-        YViewType;                                                             \
-                                                                               \
-    static void ger(const typename AViewType::execution_space& /* space */,   \
-                     typename AViewType::const_value_type& alpha,              \
-                     const AViewType& A, const XViewType& X,                   \
-                     const YViewType& Y) {                                     \
-      Kokkos::Profiling::pushRegion("KokkosBlas::ger[TPL_BLAS,float]");       \
-      KOKKOSBLAS2_GER_DETERMINE_ARGS(LAYOUTA);                                \
-      HostBlas<float>::ger(M, N, alpha, A.data(), LDA, X.data(), one, \
-                           Y.data(), one);                              \
-      Kokkos::Profiling::popRegion();                                          \
-    }                                                                          \
+#define KOKKOSBLAS2_SGER_BLAS(LAYOUTX, LAYOUTY, LAYOUTA, MEM_SPACE,         \
+                              ETI_SPEC_AVAIL)                               \
+  template <class ExecSpace>                                                \
+  struct GER<Kokkos::View<const float*, LAYOUTX,                            \
+                          Kokkos::Device<ExecSpace, MEM_SPACE>,             \
+                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >,        \
+             Kokkos::View<const float*, LAYOUTY,                            \
+                          Kokkos::Device<ExecSpace, MEM_SPACE>,		    \
+                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >,        \
+             Kokkos::View<float**, LAYOUTA,                                 \
+                          Kokkos::Device<ExecSpace, MEM_SPACE>,             \
+                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >,        \
+             true, ETI_SPEC_AVAIL> {                                        \
+    typedef float SCALAR;                                                   \
+    typedef Kokkos::View<const SCALAR*, LAYOUTX,                            \
+                         Kokkos::Device<ExecSpace, MEM_SPACE>,              \
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >          \
+        XViewType;                                                          \
+    typedef Kokkos::View<const SCALAR*, LAYOUTY,                            \
+                         Kokkos::Device<ExecSpace, MEM_SPACE>,              \
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >          \
+        YViewType;                                                          \
+    typedef Kokkos::View<SCALAR**, LAYOUTA,                                 \
+                         Kokkos::Device<ExecSpace, MEM_SPACE>,              \
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >          \
+        AViewType;                                                          \
+                                                                            \
+    static void ger(const typename AViewType::execution_space& /* space */, \
+                    typename AViewType::const_value_type& alpha,            \
+                    const XViewType& X, const YViewType& Y,                 \
+                    const AViewType& A) {                                   \
+      Kokkos::Profiling::pushRegion("KokkosBlas::ger[TPL_BLAS,float]");     \
+      KOKKOSBLAS2_GER_DETERMINE_ARGS(LAYOUTA);                              \
+      HostBlas<float>::ger(M, N, alpha, X.data(), one, Y.data(), one,       \
+                           A.data(), LDA);                                  \
+      Kokkos::Profiling::popRegion();                                       \
+    }                                                                       \
   };
 
 #define KOKKOSBLAS2_ZGER_BLAS(LAYOUTX, LAYOUTY, LAYOUTA, MEM_SPACE,         \
-                               ETI_SPEC_AVAIL)                               \
-  template <class ExecSpace>                                                 \
-  struct GER<Kokkos::View<const Kokkos::complex<double>**, LAYOUTA,         \
-                           Kokkos::Device<ExecSpace, MEM_SPACE>,             \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,        \
-              Kokkos::View<const Kokkos::complex<double>*, LAYOUTX,          \
-                           Kokkos::Device<ExecSpace, MEM_SPACE>,             \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,        \
-              Kokkos::View<Kokkos::complex<double>*, LAYOUTY,                \
-                           Kokkos::Device<ExecSpace, MEM_SPACE>,             \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,        \
-              true, ETI_SPEC_AVAIL> {                                        \
-    typedef Kokkos::complex<double> SCALAR;                                  \
-    typedef Kokkos::View<const SCALAR**, LAYOUTA,                            \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,               \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >           \
-        AViewType;                                                           \
-    typedef Kokkos::View<const SCALAR*, LAYOUTX,                             \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,               \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >           \
-        XViewType;                                                           \
-    typedef Kokkos::View<SCALAR*, LAYOUTY,                                   \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,               \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >           \
-        YViewType;                                                           \
-                                                                             \
+                              ETI_SPEC_AVAIL)                               \
+  template <class ExecSpace>                                                \
+  struct GER<Kokkos::View<const Kokkos::complex<double>*, LAYOUTX,          \
+                          Kokkos::Device<ExecSpace, MEM_SPACE>,             \
+                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >,        \
+             Kokkos::View<const Kokkos::complex<double>*, LAYOUTY,          \
+                          Kokkos::Device<ExecSpace, MEM_SPACE>,             \
+                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >,        \
+             Kokkos::View<Kokkos::complex<double>**, LAYOUTA,               \
+                          Kokkos::Device<ExecSpace, MEM_SPACE>,             \
+                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >,        \
+             true, ETI_SPEC_AVAIL> {                                        \
+    typedef Kokkos::complex<double> SCALAR;                                 \
+    typedef Kokkos::View<const SCALAR*, LAYOUTX,                            \
+                         Kokkos::Device<ExecSpace, MEM_SPACE>,              \
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >          \
+        XViewType;                                                          \
+    typedef Kokkos::View<const SCALAR*, LAYOUTY,                            \
+                         Kokkos::Device<ExecSpace, MEM_SPACE>,              \
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >          \
+        YViewType;                                                          \
+    typedef Kokkos::View<SCALAR**, LAYOUTA,                                 \
+                         Kokkos::Device<ExecSpace, MEM_SPACE>,              \
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >          \
+        AViewType;                                                          \
+                                                                            \
     static void ger(const typename AViewType::execution_space& /* space */, \
-                     typename AViewType::const_value_type& alpha,            \
-                     const AViewType& A, const XViewType& X,                 \
-                     const YViewType& Y) {                                   \
-      Kokkos::Profiling::pushRegion(                                         \
+                    typename AViewType::const_value_type& alpha,            \
+                    const XViewType& X, const YViewType& Y,                 \
+                    const AViewType& A) {                                   \
+      Kokkos::Profiling::pushRegion(                                        \
           "KokkosBlas::ger[TPL_BLAS,complex<double>]");                     \
       KOKKOSBLAS2_GER_DETERMINE_ARGS(LAYOUTA);                              \
       const std::complex<double> alpha_val = alpha;                         \
       HostBlas<std::complex<double> >::ger(                                 \
-          M, N, alpha_val,                                           \
-          reinterpret_cast<const std::complex<double>*>(A.data()), LDA,      \
-          reinterpret_cast<const std::complex<double>*>(X.data()), one,      \
-          reinterpret_cast<std::complex<double>*>(Y.data()), one);           \
-      Kokkos::Profiling::popRegion();                                        \
-    }                                                                        \
+          M, N, alpha_val,                                                  \
+          reinterpret_cast<const std::complex<double>*>(X.data()), one,     \
+          reinterpret_cast<const std::complex<double>*>(Y.data()), one,     \
+          reinterpret_cast<std::complex<double>*>(A.data()), LDA);          \
+      Kokkos::Profiling::popRegion();                                       \
+    }                                                                       \
   };
 
 #define KOKKOSBLAS2_CGER_BLAS(LAYOUTX, LAYOUTY, LAYOUTA, MEM_SPACE,         \
