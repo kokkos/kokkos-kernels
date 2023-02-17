@@ -64,6 +64,10 @@ struct HostBlas {
                    int lda, const T *b, int ldb, const T beta,
                    /* */ T *c, int ldc);
 
+  static void ger(int m, int n, const T alpha, const T *x,
+                  int incx, const T *y, int incy,
+                  /* */ T *a, int lda);
+  
   static void trsv(const char uplo, const char transa, const char diag, int m,
                    const T *a, int lda,
                    /* */ T *b, int ldb);

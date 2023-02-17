@@ -69,7 +69,7 @@ private:
   AlphaCoeffType                 alpha_;
   typename XViewType::const_type x_;
   typename YViewType::const_type y_;
-  AViewTypee                     A_;
+  AViewType                      A_;
 };
 
 // Single-level parallel version of GER.
@@ -184,7 +184,7 @@ private:
   AlphaCoeffType                 alpha_;
   typename XViewType::const_type x_;
   typename YViewType::const_type y_;
-  AViewTypee                     A_;
+  AViewType                      A_;
 };
 
 // Two-level parallel version of GER.
