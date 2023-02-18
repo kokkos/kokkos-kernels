@@ -20,13 +20,15 @@
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
+#include "KokkosKernels_ExecSpaceUtils.hpp"
+#include "Kokkos_ArithTraits.hpp"
 
 namespace KokkosBlas {
 namespace Impl {
 
 // Functor for a single-level parallel_for version of nontranspose GER.
 // The functor parallelizes over rows of the input matrix A.
-template <class AViewType, class XViewType, class YViewType,
+template <class XViewType, class YViewType, class AViewType,
           class IndexType = typename AViewType::size_type>
 struct SingleLevelGER {
   using AlphaCoeffType = typename AViewType::non_const_value_type;
@@ -62,7 +64,10 @@ struct SingleLevelGER {
                   "IndexType must be an integer.");
   }
 
-  KOKKOS_INLINE_FUNCTION void operator()(const IndexType & i, const IndexType & j) const {
+  KOKKOS_INLINE_FUNCTION void operator()(const IndexType & i) const { // EEP
+    if ((i == 0)) {
+      printf("Aqui 001\n");
+    }
   }
 
 private:
@@ -73,7 +78,7 @@ private:
 };
 
 // Single-level parallel version of GER.
-template <class AViewType, class XViewType, class YViewType,
+template <class XViewType, class YViewType, class AViewType,
           class IndexType = typename AViewType::size_type>
 void singleLevelGer( const typename AViewType::execution_space  & space
                    , const typename AViewType::const_value_type & alpha
@@ -96,6 +101,9 @@ void singleLevelGer( const typename AViewType::execution_space  & space
   static_assert(std::is_integral<IndexType>::value,
                 "IndexType must be an integer");
 
+  using Kokkos::Details::ArithTraits;
+  using AlphaKAT = ArithTraits<typename XViewType::non_const_value_type>;
+
   if (y.extent(0) == 0) {
     // no entries to update
   }
@@ -106,10 +114,11 @@ void singleLevelGer( const typename AViewType::execution_space  & space
     // no entries to update
   }
   else {
+    using execution_space = typename AViewType::execution_space;
     using policy_type = Kokkos::RangePolicy<execution_space, IndexType>;
     policy_type range(space, 0, A.extent(0));
 
-    using functor_type = SingleLevelGER<AViewType, XViewType, YViewType, IndexType>;
+    using functor_type = SingleLevelGER<XViewType, YViewType, AViewType, IndexType>;
     functor_type functor(alpha, x, y, A);
     Kokkos::parallel_for("KokkosBlas::ger[SingleLevel]", range, functor);
   }
@@ -122,7 +131,7 @@ struct TwoLevelGER_LayoutRightTag {};
 
 // Functor for a two-level parallel_reduce version of GER, designed for performance on GPU.
 // Kernel depends on the layout of A.
-template <class AViewType, class XViewType, class YViewType, class IndexType = typename AViewType::size_type>
+template <class XViewType, class YViewType, class AViewType, class IndexType = typename AViewType::size_type>
 struct TwoLevelGER {
   using y_value_type   = typename YViewType::non_const_value_type;
   using AlphaCoeffType = typename AViewType::non_const_value_type;
@@ -170,12 +179,18 @@ struct TwoLevelGER {
   KOKKOS_INLINE_FUNCTION void operator()( TwoLevelGER_LayoutLeftTag
                                         , const member_type & team
                                         ) const {
+    // Allocate a Scalar in shared for each thread
+    AccumScalar* blockResult = (AccumScalar*)team.team_shmem().get_shmem(32 * sizeof(AccumScalar));
   }
 
   // LayoutRight version: one team per row
   KOKKOS_INLINE_FUNCTION void operator()( TwoLevelGER_LayoutRightTag
                                         , const member_type & team
                                         ) const {
+    const int i       = team.league_rank();  // batch id
+    if (i == 0) {
+      printf("Aqui 002\n");
+    }
   }
 
   IndexType columnsPerThread;
@@ -188,7 +203,7 @@ private:
 };
 
 // Two-level parallel version of GER.
-template <class AViewType, class XViewType, class YViewType,
+template <class XViewType, class YViewType, class AViewType,
           class IndexType = typename AViewType::size_type>
 void twoLevelGer( const typename AViewType::execution_space  & space
                 , const typename AViewType::const_value_type & alpha
@@ -213,11 +228,11 @@ void twoLevelGer( const typename AViewType::execution_space  & space
 
   using y_value_type      = typename YViewType::non_const_value_type;
   using execution_space   = typename AViewType::execution_space;
-  using team_policy_type  = Kokkos::TeamPolicy<execution_space>;
-  using range_policy_type = Kokkos::RangePolicy<execution_space, IndexType>;
+  //using team_policy_type  = Kokkos::TeamPolicy<execution_space>;
+  //using range_policy_type = Kokkos::RangePolicy<execution_space, IndexType>;
 
   using Kokkos::Details::ArithTraits;
-  using KAT      = ArithTraits<typename AViewType::non_const_value_type>;
+  //using KAT      = ArithTraits<typename AViewType::non_const_value_type>;
   using AlphaKAT = ArithTraits<typename XViewType::non_const_value_type>;
 
   if (y.extent(0) == 0) {
@@ -237,7 +252,7 @@ void twoLevelGer( const typename AViewType::execution_space  & space
     // Both kernels work for both layouts - the only difference is access pattern.
     using layout_tag = typename std::conditional<isLayoutLeft, TwoLevelGER_LayoutLeftTag, TwoLevelGER_LayoutRightTag>::type;
     using tagged_policy = Kokkos::TeamPolicy<execution_space, layout_tag>;
-    using functor_type  = TwoLevelGER<AViewType, XViewType, YViewType, IndexType>;
+    using functor_type  = TwoLevelGER<XViewType, YViewType, AViewType, IndexType>;
     functor_type functor(alpha, x, y, A);
     tagged_policy team;
     if (isLayoutLeft) {
@@ -278,9 +293,9 @@ void twoLevelGer( const typename AViewType::execution_space  & space
 // depending on whether execution space is CPU or GPU.
 // The 'enable_if' makes sure unused kernels are not instantiated.
 
-template < class AViewType
-         , class XViewType
+template < class XViewType
          , class YViewType
+         , class AViewType
          , class IndexType
          , typename std::enable_if<!KokkosKernels::Impl::kk_is_gpu_exec_space< typename AViewType::execution_space>() >::type* = nullptr
          >
@@ -293,9 +308,9 @@ void generalGerImpl( const typename AViewType::execution_space  & space
   singleLevelGer(space, alpha, x, y, A);
 }
 
-template < class AViewType
-         , class XViewType
+template < class XViewType
          , class YViewType
+         , class AViewType
          , class IndexType
          , typename std::enable_if<KokkosKernels::Impl::kk_is_gpu_exec_space< typename AViewType::execution_space>()>::type* = nullptr
          >
