@@ -67,7 +67,7 @@ struct SingleLevelGER {
   }
 
   KOKKOS_INLINE_FUNCTION void operator()(const IndexType & i) const { // EEP
-    using AlphaKAT = ArithTraits<typename XViewType::non_const_value_type>;
+    using AlphaKAT = Kokkos::Details::ArithTraits<typename XViewType::non_const_value_type>;
 
     if (alpha_ == AlphaKAT::zero()) {
       // Nothing to do
@@ -111,8 +111,7 @@ void singleLevelGer( const typename AViewType::execution_space  & space
   static_assert(std::is_integral<IndexType>::value,
                 "IndexType must be an integer");
 
-  using Kokkos::Details::ArithTraits;
-  using AlphaKAT = ArithTraits<typename XViewType::non_const_value_type>;
+  using AlphaKAT = Kokkos::Details::ArithTraits<typename XViewType::non_const_value_type>;
 
   if (y.extent(0) == 0) {
     // no entries to update
@@ -241,9 +240,8 @@ void twoLevelGer( const typename AViewType::execution_space  & space
   //using team_policy_type  = Kokkos::TeamPolicy<execution_space>;
   //using range_policy_type = Kokkos::RangePolicy<execution_space, IndexType>;
 
-  using Kokkos::Details::ArithTraits;
-  //using KAT      = ArithTraits<typename AViewType::non_const_value_type>;
-  using AlphaKAT = ArithTraits<typename XViewType::non_const_value_type>;
+  //using KAT      = Kokkos::Details::ArithTraits<typename AViewType::non_const_value_type>;
+  using AlphaKAT = Kokkos::Details::ArithTraits<typename XViewType::non_const_value_type>;
 
   if (y.extent(0) == 0) {
     // no entries to update
