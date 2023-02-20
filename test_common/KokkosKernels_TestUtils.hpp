@@ -357,7 +357,7 @@ KOKKOS_INLINE_FUNCTION void vanillaGEMV(char mode, AlphaType alpha,
   }
 }
 
-template <class AlphaType, class ViewTypeA, class ViewTypeX, class BetaType, class ViewTypeY>
+template <class AlphaType, class ViewTypeX, class ViewTypeY, class ViewTypeA>
 KOKKOS_INLINE_FUNCTION void vanillaGER( AlphaType         alpha
                                       , const ViewTypeX & x
                                       , const ViewTypeY & y

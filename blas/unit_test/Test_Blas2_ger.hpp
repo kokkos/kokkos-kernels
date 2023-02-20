@@ -22,13 +22,13 @@
 #include <KokkosKernels_TestUtils.hpp>
 
 namespace Test {
-template <class ViewTypeA, class ViewTypeX, class ViewTypeY, class Device>
+template <class ViewTypeX, class ViewTypeY, class ViewTypeA, class Device>
 void impl_test_ger(int M, int N) {
-  typedef typename ViewTypeX::value_type                  ScalarX;
-  typedef typename ViewTypeY::value_type                  ScalarY;
-  typedef typename ViewTypeA::value_type                  ScalarA;
-  typedef          Kokkos::ArithTraits<ScalarA>           KAT_A;
-  typedef           multivector_layout_adapter<ViewTypeA> vfA_type;
+  typedef typename ViewTypeX::value_type                 ScalarX;
+  typedef typename ViewTypeY::value_type                 ScalarY;
+  typedef typename ViewTypeA::value_type                 ScalarA;
+  typedef          Kokkos::ArithTraits<ScalarA>          KAT_A;
+  typedef          multivector_layout_adapter<ViewTypeA> vfA_type;
 
   ScalarA alpha = 3;
   double  eps   = (std::is_same<typename KAT_A::mag_type, float>::value ? 1e-2 : 5e-10);
