@@ -38,7 +38,7 @@ void impl_test_ger(int M, int N) {
   ViewTypeY                   y    ("Y", N);
   ViewTypeA                   org_A("Org_A", M, N);
 
-  ViewType A = vfA_type::view(b_A);
+  ViewTypeA A = vfA_type::view(b_A);
 
   typedef multivector_layout_adapter<typename ViewTypeA::HostMirror> h_vfA_type;
 
@@ -107,6 +107,7 @@ int test_ger() {
   Test::impl_test_ger<view_type_x_ll, view_type_y_ll, view_type_a_ll, Device>(50, 40);
   Test::impl_test_ger<view_type_x_ll, view_type_y_ll, view_type_a_ll, Device>(1024, 1024);
   Test::impl_test_ger<view_type_x_ll, view_type_y_ll, view_type_a_ll, Device>(2131, 2131);
+#endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
