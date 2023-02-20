@@ -33,7 +33,9 @@ template <class XViewType, class YViewType, class AViewType,
 struct SingleLevelGER {
   using AlphaCoeffType = typename AViewType::non_const_value_type;
   using y_value_type   = typename YViewType::non_const_value_type;
-  using AccumScalar    = typename std::conditional< std::is_same<y_value_type, Kokkos::Experimental::half_t>::value || std::is_same<y_value_type, Kokkos::Experimental::bhalf_t>::value
+  using AccumScalar    = typename std::conditional< std::is_same<y_value_type, Kokkos::Experimental::half_t>::value
+                                                    ||
+                                                    std::is_same<y_value_type, Kokkos::Experimental::bhalf_t>::value
                                                   , float
                                                   , y_value_type
                                                   >::type;
@@ -65,8 +67,16 @@ struct SingleLevelGER {
   }
 
   KOKKOS_INLINE_FUNCTION void operator()(const IndexType & i) const { // EEP
-    if ((i == 0)) {
-      printf("Aqui 001\n");
+    using AlphaKAT = ArithTraits<typename XViewType::non_const_value_type>;
+
+    if (alpha_ == AlphaKAT::zero()) {
+      // Nothing to do
+    }
+    else {
+      const IndexType numCols = A_.extent(1);
+      for (IndexType j = 0; j < numCols; ++j) {
+	A_(i,j) = x_(i) * y_(j);
+      }
     }
   }
 
@@ -176,7 +186,7 @@ struct TwoLevelGER {
   //  -Each team handles block rows.
   //  -Groups of 32 threads handle N/teamsize columns sequentially, placing results into shared.
   //  -Then individual thread results are combined with parallel_reduce.
-  KOKKOS_INLINE_FUNCTION void operator()( TwoLevelGER_LayoutLeftTag
+  KOKKOS_INLINE_FUNCTION void operator()( TwoLevelGER_LayoutLeftTag // EEP
                                         , const member_type & team
                                         ) const {
     // Allocate a Scalar in shared for each thread
@@ -184,7 +194,7 @@ struct TwoLevelGER {
   }
 
   // LayoutRight version: one team per row
-  KOKKOS_INLINE_FUNCTION void operator()( TwoLevelGER_LayoutRightTag
+  KOKKOS_INLINE_FUNCTION void operator()( TwoLevelGER_LayoutRightTag // EEP
                                         , const member_type & team
                                         ) const {
     const int i       = team.league_rank();  // batch id
