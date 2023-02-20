@@ -24,20 +24,19 @@
 namespace Test {
 template <class ViewTypeA, class ViewTypeX, class ViewTypeY, class Device>
 void impl_test_ger(int M, int N) {
-  typedef typename ViewTypeX::value_type ScalarX;
-  typedef typename ViewTypeY::value_type ScalarY;
-  typedef typename ViewTypeA::value_type ScalarA;
-  typedef Kokkos::ArithTraits<ScalarA> KAT_A;
-
-  typedef multivector_layout_adapter<ViewTypeA> vfA_type;
+  typedef typename ViewTypeX::value_type                  ScalarX;
+  typedef typename ViewTypeY::value_type                  ScalarY;
+  typedef typename ViewTypeA::value_type                  ScalarA;
+  typedef          Kokkos::ArithTraits<ScalarA>           KAT_A;
+  typedef           multivector_layout_adapter<ViewTypeA> vfA_type;
 
   ScalarA alpha = 3;
   double  eps   = (std::is_same<typename KAT_A::mag_type, float>::value ? 1e-2 : 5e-10);
 
-  typename vfA_type::BaseType b_A("A", M, N);
-  ViewTypeX x("X", M);
-  ViewTypeY y("Y", N);
-  ViewTypeA org_A("Org_A", M, N);
+  typename vfA_type::BaseType b_A  ("A", M, N);
+  ViewTypeX                   x    ("X", M);
+  ViewTypeY                   y    ("Y", N);
+  ViewTypeA                   org_A("Org_A", M, N);
 
   ViewType A = vfA_type::view(b_A);
 
@@ -78,16 +77,16 @@ void impl_test_ger(int M, int N) {
   vanillaGER(alpha, h_x, h_y, expected);
 
   KokkosBlas::ger(alpha, x, y, A);
-  Kokkos::deep_copy(h_y, y);
+  Kokkos::deep_copy(h_A, A);
   int numErrors(0);
   for (int i(0); i < M; ++i) {
     for (int j(0); j < N; ++j) {
-      if (KAT_A::abs(expected(i,j) - h_y(i,j)) > KAT_A::abs(eps * expected(i,j))) {
+      if (KAT_A::abs(expected(i,j) - h_A(i,j)) > KAT_A::abs(eps * expected(i,j))) {
         numErrors++;
       }
     }	 
   }
-  EXPECT_EQ(numErrors, 0) << "Nonconst input, " << M << " by " << N
+  EXPECT_EQ(numErrors, 0) << "A is " << M << " by " << N
                           << ", alpha = " << alpha
                           << ": ger incorrect";
 
