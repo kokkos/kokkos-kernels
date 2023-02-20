@@ -365,7 +365,6 @@ KOKKOS_INLINE_FUNCTION void vanillaGER( AlphaType         alpha
                                       ) {
   const bool has_alpha = alpha != Kokkos::ArithTraits<AlphaType>::zero();
   if (has_alpha) {
-    using ScalarA = typename ViewTypeA::non_const_value_type;
     int M = A.extent(0);
     int N = A.extent(1);
     for (int i = 0; i < M; i++) {
