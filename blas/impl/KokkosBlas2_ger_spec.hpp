@@ -72,8 +72,8 @@ namespace Impl {
 
 // Implementation of KokkosBlas::ger.
 template <class XViewType, class YViewType, class AViewType,
-          bool tpl_spec_avail = ger_tpl_spec_avail<AViewType, XViewType, YViewType>::value,
-          bool eti_spec_avail = ger_eti_spec_avail<AViewType, XViewType, YViewType>::value>
+          bool tpl_spec_avail = ger_tpl_spec_avail<XViewType, YViewType, AViewType>::value,
+          bool eti_spec_avail = ger_eti_spec_avail<XViewType, YViewType, AViewType>::value>
 struct GER {
   static void ger( const typename AViewType::execution_space  & space
                  , const typename AViewType::const_value_type & alpha
