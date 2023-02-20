@@ -71,18 +71,17 @@ void ger( const typename AViewType::execution_space  & space
   // Minimize the number of Impl::GER instantiations, by standardizing 
   // on particular View specializations for its template parameters.
   typedef Kokkos::View<typename XViewType::const_value_type*,
-                       typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<
-                           XViewType, ALayout>::array_layout,
+                       typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<XViewType, ALayout>::array_layout,
                        typename XViewType::device_type,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       XVT;
-  typedef Kokkos::View<typename YViewType::non_const_value_type*,
-                       typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<
-                           YViewType, ALayout>::array_layout,
+  typedef Kokkos::View<typename YViewType::const_value_type*,
+                       typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<YViewType, ALayout>::array_layout,
                        typename YViewType::device_type,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       YVT;
-  typedef Kokkos::View<typename AViewType::const_value_type**, ALayout,
+  typedef Kokkos::View<typename AViewType::non_const_value_type**,
+		       ALayout,
                        typename AViewType::device_type,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       AVT;
@@ -92,7 +91,7 @@ void ger( const typename AViewType::execution_space  & space
   // other KokkosBlas headers
   bool useFallback = A.extent(0) == 0 || A.extent(1) == 0;
   if (useFallback) {
-    const bool eti_spec_avail = KokkosBlas::Impl::ger_eti_spec_avail<AVT, XVT, YVT>::value;
+    const bool eti_spec_avail = KokkosBlas::Impl::ger_eti_spec_avail<XVT, YVT, AVT>::value;
     typedef Impl::GER<XVT, YVT, AVT, false, eti_spec_avail> fallback_impl_type;
     fallback_impl_type::ger(space, alpha, x, y, A);
   }
