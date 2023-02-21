@@ -326,53 +326,53 @@ namespace Impl {
     }                                                                         \
   };
 
-#define KOKKOSBLAS2_ZGER_CUBLAS(LAYOUTX, LAYOUTY, LAYOUTA, MEM_SPACE,         \
-                                ETI_SPEC_AVAIL)                               \
-  template <class ExecSpace>                                                  \
-  struct GER<Kokkos::View<const Kokkos::complex<double>*, LAYOUTX,            \
-                          Kokkos::Device<ExecSpace, MEM_SPACE>,               \
-                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >,          \
-             Kokkos::View<const Kokkos::complex<double>*, LAYOUTY,            \
-                          Kokkos::Device<ExecSpace, MEM_SPACE>,               \
-                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >,          \
-             Kokkos::View<Kokkos::complex<double>**, LAYOUTA,                 \
-                          Kokkos::Device<ExecSpace, MEM_SPACE>,               \
-                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >,          \
-             true, ETI_SPEC_AVAIL> {                                          \
-    typedef Kokkos::complex<double> SCALAR;                                   \
-    typedef Kokkos::View<const SCALAR*, LAYOUTX,                              \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,                \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >            \
-        XViewType;                                                            \
-    typedef Kokkos::View<const SCALAR*, LAYOUTY,                              \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,                \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >            \
-        YViewType;                                                            \
-    typedef Kokkos::View<SCALAR**, LAYOUTA,                                   \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,                \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >            \
-        AViewType;                                                            \
-                                                                              \
-    static void ger(const typename AViewType::execution_space& space,         \
-                     typename AViewType::const_value_type& alpha,             \
-                     const XViewType& X, const YViewType& Y,                  \
-                     const AViewType& A) {                                    \
-      Kokkos::Profiling::pushRegion(                                          \
-          "KokkosBlas::ger[TPL_CUBLAS,complex<double>]");                     \
-      KOKKOSBLAS2_GER_CUBLAS_DETERMINE_ARGS(LAYOUTA);                         \
-      KokkosBlas::Impl::CudaBlasSingleton& s =                                \
-          KokkosBlas::Impl::CudaBlasSingleton::singleton();                   \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                           \
-          cublasSetStream(s.handle, space.cuda_stream()));                    \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                           \
-          cublasZger(s.handle, M, N,                                          \
-                     reinterpret_cast<const cuDoubleComplex*>(&alpha),        \
-                     reinterpret_cast<const cuDoubleComplex*>(X.data()), one, \
-                     reinterpret_cast<const cuDoubleComplex*>(Y.data()), one, \
-                     reinterpret_cast<cuDoubleComplex*>(A.data()), LDA));     \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(s.handle, NULL));          \
-      Kokkos::Profiling::popRegion();                                         \
-    }                                                                         \
+#define KOKKOSBLAS2_ZGER_CUBLAS(LAYOUTX, LAYOUTY, LAYOUTA, MEM_SPACE,          \
+                                ETI_SPEC_AVAIL)                                \
+  template <class ExecSpace>                                                   \
+  struct GER<Kokkos::View<const Kokkos::complex<double>*, LAYOUTX,             \
+                          Kokkos::Device<ExecSpace, MEM_SPACE>,                \
+                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >,           \
+             Kokkos::View<const Kokkos::complex<double>*, LAYOUTY,             \
+                          Kokkos::Device<ExecSpace, MEM_SPACE>,                \
+                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >,           \
+             Kokkos::View<Kokkos::complex<double>**, LAYOUTA,                  \
+                          Kokkos::Device<ExecSpace, MEM_SPACE>,                \
+                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >,           \
+             true, ETI_SPEC_AVAIL> {                                           \
+    typedef Kokkos::complex<double> SCALAR;                                    \
+    typedef Kokkos::View<const SCALAR*, LAYOUTX,                               \
+                         Kokkos::Device<ExecSpace, MEM_SPACE>,                 \
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
+        XViewType;                                                             \
+    typedef Kokkos::View<const SCALAR*, LAYOUTY,                               \
+                         Kokkos::Device<ExecSpace, MEM_SPACE>,                 \
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
+        YViewType;                                                             \
+    typedef Kokkos::View<SCALAR**, LAYOUTA,                                    \
+                         Kokkos::Device<ExecSpace, MEM_SPACE>,                 \
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
+        AViewType;                                                             \
+                                                                               \
+    static void ger(const typename AViewType::execution_space& space,          \
+                     typename AViewType::const_value_type& alpha,              \
+                     const XViewType& X, const YViewType& Y,                   \
+                     const AViewType& A) {                                     \
+      Kokkos::Profiling::pushRegion(                                           \
+          "KokkosBlas::ger[TPL_CUBLAS,complex<double>]");                      \
+      KOKKOSBLAS2_GER_CUBLAS_DETERMINE_ARGS(LAYOUTA);                          \
+      KokkosBlas::Impl::CudaBlasSingleton& s =                                 \
+          KokkosBlas::Impl::CudaBlasSingleton::singleton();                    \
+      KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                            \
+          cublasSetStream(s.handle, space.cuda_stream()));                     \
+      KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                            \
+          cublasZgeru(s.handle, M, N,                                          \
+                      reinterpret_cast<const cuDoubleComplex*>(&alpha),        \
+                      reinterpret_cast<const cuDoubleComplex*>(X.data()), one, \
+                      reinterpret_cast<const cuDoubleComplex*>(Y.data()), one, \
+                      reinterpret_cast<cuDoubleComplex*>(A.data()), LDA));     \
+      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(s.handle, NULL));           \
+      Kokkos::Profiling::popRegion();                                          \
+    }                                                                          \
   };
 
 #define KOKKOSBLAS2_CGER_CUBLAS(LAYOUTX, LAYOUTY, LAYOUTA, MEM_SPACE,         \
@@ -413,11 +413,12 @@ namespace Impl {
           KokkosBlas::Impl::CudaBlasSingleton::singleton();                   \
       KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                           \
           cublasSetStream(s.handle, space.cuda_stream()));                    \
-      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasCger(                                \
-          s.handle, M, N, reinterpret_cast<const cuComplex*>(&alpha),         \
-          reinterpret_cast<const cuComplex*>(X.data()), one,                  \
-          reinterpret_cast<const cuComplex*>(Y.data()), one,                  \
-          reinterpret_cast<cuComplex*>(A.data()), LDA));                      \
+      KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                           \
+          cublasCgeru(s.handle, M, N,                                         \
+                      reinterpret_cast<const cuComplex*>(&alpha),             \
+                      reinterpret_cast<const cuComplex*>(X.data()), one,      \
+                      reinterpret_cast<const cuComplex*>(Y.data()), one,      \
+                      reinterpret_cast<cuComplex*>(A.data()), LDA));          \
       KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(s.handle, NULL));          \
       Kokkos::Profiling::popRegion();                                         \
     }                                                                         \

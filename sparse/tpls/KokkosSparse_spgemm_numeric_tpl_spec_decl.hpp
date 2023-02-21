@@ -45,7 +45,7 @@ template <typename KernelHandle, typename lno_t, typename ConstRowMapType,
           typename ConstEntriesType, typename ConstValuesType,
           typename EntriesType, typename ValuesType>
 void spgemm_numeric_cusparse(
-    KernelHandle *handle, lno_t m, lno_t n, lno_t k,
+    KernelHandle *handle, lno_t /* m */, lno_t /* n */, lno_t /* k */,
     const ConstRowMapType &row_mapA, const ConstEntriesType &entriesA,
     const ConstValuesType &valuesA, const ConstRowMapType &row_mapB,
     const ConstEntriesType &entriesB, const ConstValuesType &valuesB,
