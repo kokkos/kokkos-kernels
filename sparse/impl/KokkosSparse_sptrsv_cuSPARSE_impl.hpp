@@ -286,9 +286,9 @@ template <
     typename b_values_scalar_view_type, typename x_values_scalar_view_type>
 void sptrsvcuSPARSE_solve(KernelHandle* sptrsv_handle,
                           typename KernelHandle::nnz_lno_t nrows,
-                          ain_row_index_view_type row_map,
-                          ain_nonzero_index_view_type entries,
-                          ain_values_scalar_view_type values,
+                          ain_row_index_view_type /* row_map */,
+                          ain_nonzero_index_view_type /* entries */,
+                          ain_values_scalar_view_type /* values */,
                           b_values_scalar_view_type rhs,
                           x_values_scalar_view_type lhs, bool /*trans*/
 ) {
