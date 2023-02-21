@@ -22,8 +22,9 @@
 namespace Test {
 template <class ViewTypeA, class Device>
 void impl_test_nrm2w_squared(int N) {
-  typedef typename ViewTypeA::value_type ScalarA;
-  typedef Kokkos::ArithTraits<ScalarA> AT;
+  using ScalarA    = typename ViewTypeA::value_type;
+  using AT         = Kokkos::ArithTraits<ScalarA>;
+  using MagnitudeA = typename AT::mag_type;
 
   ViewTypeA a("A", N);
   ViewTypeA w("W", N);
@@ -31,18 +32,20 @@ void impl_test_nrm2w_squared(int N) {
   typename ViewTypeA::HostMirror h_a = Kokkos::create_mirror_view(a);
   typename ViewTypeA::HostMirror h_w = Kokkos::create_mirror_view(w);
 
+  const MagnitudeA max_val   = 10;
+  const MagnitudeA eps       = AT::epsilon();
+  const MagnitudeA max_error = max_val * max_val * N * eps;
+
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
       13718);
 
   ScalarA randStart, randEnd;
-  Test::getRandomBounds(1.0, randStart, randEnd);
+  Test::getRandomBounds(max_val, randStart, randEnd);
   Kokkos::fill_random(a, rand_pool, randStart, randEnd);
-  Kokkos::fill_random(w, rand_pool, randStart, randEnd);
+  Kokkos::fill_random(w, rand_pool, AT::one(), randEnd);  // Avoid divide by 0
 
   Kokkos::deep_copy(h_a, a);
   Kokkos::deep_copy(h_w, w);
-
-  double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 : 1e-7;
 
   typename AT::mag_type expected_result = 0;
   for (int i = 0; i < N; i++) {
@@ -51,15 +54,16 @@ void impl_test_nrm2w_squared(int N) {
   }
 
   typename AT::mag_type nonconst_result = KokkosBlas::nrm2w_squared(a, w);
-  EXPECT_NEAR_KK(nonconst_result, expected_result, eps * expected_result);
+  EXPECT_NEAR_KK(nonconst_result, expected_result, max_error);
 }
 
 template <class ViewTypeA, class Device>
 void impl_test_nrm2w_squared_mv(int N, int K) {
-  typedef typename ViewTypeA::value_type ScalarA;
-  typedef Kokkos::ArithTraits<ScalarA> AT;
+  using ScalarA    = typename ViewTypeA::value_type;
+  using AT         = Kokkos::ArithTraits<ScalarA>;
+  using MagnitudeA = typename AT::mag_type;
 
-  typedef multivector_layout_adapter<ViewTypeA> vfA_type;
+  using vfA_type = multivector_layout_adapter<ViewTypeA>;
 
   typename vfA_type::BaseType b_a("A", N, K);
   typename vfA_type::BaseType b_w("W", N, K);
@@ -67,7 +71,7 @@ void impl_test_nrm2w_squared_mv(int N, int K) {
   ViewTypeA a = vfA_type::view(b_a);
   ViewTypeA w = vfA_type::view(b_w);
 
-  typedef multivector_layout_adapter<typename ViewTypeA::HostMirror> h_vfA_type;
+  using h_vfA_type = multivector_layout_adapter<typename ViewTypeA::HostMirror>;
 
   typename h_vfA_type::BaseType h_b_a = Kokkos::create_mirror_view(b_a);
   typename h_vfA_type::BaseType h_b_w = Kokkos::create_mirror_view(b_w);
@@ -75,13 +79,17 @@ void impl_test_nrm2w_squared_mv(int N, int K) {
   typename ViewTypeA::HostMirror h_a = h_vfA_type::view(h_b_a);
   typename ViewTypeA::HostMirror h_w = h_vfA_type::view(h_b_w);
 
+  const MagnitudeA max_val   = 10;
+  const MagnitudeA eps       = AT::epsilon();
+  const MagnitudeA max_error = max_val * max_val * N * eps;
+
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
       13718);
 
   ScalarA randStart, randEnd;
-  Test::getRandomBounds(1.0, randStart, randEnd);
+  Test::getRandomBounds(max_val, randStart, randEnd);
   Kokkos::fill_random(b_a, rand_pool, randStart, randEnd);
-  Kokkos::fill_random(b_w, rand_pool, randStart, randEnd);
+  Kokkos::fill_random(b_w, rand_pool, AT::one(), randEnd);
 
   Kokkos::deep_copy(h_b_a, b_a);
   Kokkos::deep_copy(h_b_w, b_w);
@@ -95,16 +103,13 @@ void impl_test_nrm2w_squared_mv(int N, int K) {
     }
   }
 
-  double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 : 1e-7;
-
   Kokkos::View<typename AT::mag_type*, Device> r("Dot::Result", K);
   KokkosBlas::nrm2w_squared(r, a, w);
   auto r_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), r);
 
   for (int k = 0; k < K; k++) {
     typename AT::mag_type nonconst_result = r_host(k);
-    EXPECT_NEAR_KK(nonconst_result, expected_result[k],
-                   eps * expected_result[k]);
+    EXPECT_NEAR_KK(nonconst_result, expected_result[k], max_error);
   }
 
   delete[] expected_result;

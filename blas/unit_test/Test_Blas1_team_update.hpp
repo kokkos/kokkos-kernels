@@ -249,7 +249,7 @@ void impl_test_team_update_mv(int N, int K) {
           ScalarC(a * h_x(i, j) + b * h_y(i, j) + c * h_z(i, j));
   }
 
-  double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 : 1e-7;
+  double eps = std::is_same<ScalarC, float>::value ? 2 * 1e-5 : 1e-7;
 
   Kokkos::View<ScalarC *, Kokkos::HostSpace> r("Dot::Result", K);
 
