@@ -75,7 +75,7 @@ struct SingleLevelGER {
     else {
       const IndexType numCols = A_.extent(1);
       for (IndexType j = 0; j < numCols; ++j) {
-	A_(i,j) = x_(i) * y_(j);
+	A_(i,j) += alpha_ * x_(i) * y_(j);
       }
     }
   }
