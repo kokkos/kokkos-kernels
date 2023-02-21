@@ -354,9 +354,9 @@ namespace Impl {
         AViewType;                                                             \
                                                                                \
     static void ger(const typename AViewType::execution_space& space,          \
-                     typename AViewType::const_value_type& alpha,              \
-                     const XViewType& X, const YViewType& Y,                   \
-                     const AViewType& A) {                                     \
+                    typename AViewType::const_value_type& alpha,               \
+                    const XViewType& X, const YViewType& Y,                    \
+                    const AViewType& A) {                                      \
       Kokkos::Profiling::pushRegion(                                           \
           "KokkosBlas::ger[TPL_CUBLAS,complex<double>]");                      \
       KOKKOSBLAS2_GER_CUBLAS_DETERMINE_ARGS(LAYOUTA);                          \
