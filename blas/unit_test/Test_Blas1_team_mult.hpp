@@ -240,24 +240,6 @@ void impl_test_team_mult_mv(int N, int K) {
   typename ViewTypeA::const_type c_x = x;
   typename ViewTypeB::const_type c_y = y;
 
-  std::cout << "Input values:" << std::endl;
-  std::cout << "\ta=" << a << ", b=" << b << std::endl;
-  std::cout << "\tx: { ";
-  for (int i = 0; i < static_cast<int>(h_b_x.extent(0)); ++i) {
-    std::cout << h_b_x(i, 0) << " ";
-  }
-  std::cout << "}" << std::endl;
-  std::cout << "\ty: { ";
-  for (int i = 0; i < static_cast<int>(h_b_y.extent(0)); ++i) {
-    std::cout << h_b_y(i, 0) << " ";
-  }
-  std::cout << "}" << std::endl;
-  std::cout << "\tz: { ";
-  for (int i = 0; i < static_cast<int>(h_b_z.extent(0)); ++i) {
-    std::cout << h_b_z(i, 0) << " ";
-  }
-  std::cout << "}" << std::endl;
-
   typename Kokkos::ArithTraits<ScalarC>::mag_type const eps =
       Kokkos::ArithTraits<ScalarC>::epsilon();
 
@@ -276,13 +258,6 @@ void impl_test_team_mult_mv(int N, int K) {
   Kokkos::deep_copy(h_b_z_res, b_z);
   typename h_vfC_type::BaseType h_b_org_z = Kokkos::create_mirror_view(b_org_z);
   Kokkos::deep_copy(h_b_org_z, b_org_z);
-
-  std::cout << "Output values:" << std::endl;
-  std::cout << "\tz: { ";
-  for (int i = 0; i < static_cast<int>(h_b_z_res.extent(0)); ++i) {
-    std::cout << h_b_z_res(i, 0) << " ";
-  }
-  std::cout << "}" << std::endl;
 
   for (int j = 0; j < K; j++) {
     for (int i = 0; i < N; i++) {
