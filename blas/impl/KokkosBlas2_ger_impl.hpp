@@ -199,7 +199,15 @@ struct TwoLevelGER {
     else {
       const IndexType i = team.league_rank();
       const IndexType j = team.team_rank();
+#if 1
+      for ( IndexType row = i; row < A_.extent(0); row += team.league_size() ) {
+	for ( IndexType col = j; col < A_.extent(1); col += team.team_size() ) {
+          A_(row,col) += A_value_type( alpha_ * x_(row) * y_(col) );
+	}
+      }
+#else
       A_(i,j) += A_value_type( alpha_ * x_(i) * y_(j) );
+#endif
     }
   }
 
