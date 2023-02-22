@@ -32,6 +32,7 @@ template <class XViewType, class YViewType, class AViewType,
           class IndexType = typename AViewType::size_type>
 struct SingleLevelGER {
   using AlphaCoeffType = typename AViewType::non_const_value_type;
+  using A_value_type   = typename AViewType::non_const_value_type;
 
   SingleLevelGER( const AlphaCoeffType & alpha
                 , const XViewType      & x
@@ -132,8 +133,8 @@ struct TwoLevelGER_LayoutRightTag {};
 // Kernel depends on the layout of A.
 template <class XViewType, class YViewType, class AViewType, class IndexType = typename AViewType::size_type>
 struct TwoLevelGER {
-  using AlphaCoeffType = typename YViewType::non_const_value_type;
-  using A_value_type   = typename YViewType::non_const_value_type;
+  using AlphaCoeffType = typename AViewType::non_const_value_type;
+  using A_value_type   = typename AViewType::non_const_value_type;
 
   using execution_space = typename AViewType::execution_space;
   using policy_type     = Kokkos::TeamPolicy<execution_space>;
