@@ -32,13 +32,6 @@ template <class XViewType, class YViewType, class AViewType,
           class IndexType = typename AViewType::size_type>
 struct SingleLevelGER {
   using AlphaCoeffType = typename AViewType::non_const_value_type;
-  using y_value_type   = typename YViewType::non_const_value_type;
-  using AccumScalar    = typename std::conditional< std::is_same<y_value_type, Kokkos::Experimental::half_t>::value
-                                                    ||
-                                                    std::is_same<y_value_type, Kokkos::Experimental::bhalf_t>::value
-                                                  , float
-                                                  , y_value_type
-                                                  >::type;
 
   SingleLevelGER( const AlphaCoeffType & alpha
                 , const XViewType      & x
@@ -75,7 +68,7 @@ struct SingleLevelGER {
     else {
       const IndexType numCols = A_.extent(1);
       for (IndexType j = 0; j < numCols; ++j) {
-	A_(i,j) += alpha_ * x_(i) * y_(j);
+	A_(i,j) += A_value_type( alpha_ * x_(i) * y_(j) );
       }
     }
   }
@@ -124,12 +117,9 @@ void singleLevelGer( const typename AViewType::execution_space  & space
   }
   else {
     using execution_space = typename AViewType::execution_space;
-    using policy_type = Kokkos::RangePolicy<execution_space, IndexType>;
-    policy_type range(space, 0, A.extent(0));
-
-    using functor_type = SingleLevelGER<XViewType, YViewType, AViewType, IndexType>;
-    functor_type functor(alpha, x, y, A);
-    Kokkos::parallel_for("KokkosBlas::ger[SingleLevel]", range, functor);
+    Kokkos::RangePolicy<execution_space, IndexType>            rangePolicy(space, 0, A.extent(0));
+    SingleLevelGER<XViewType, YViewType, AViewType, IndexType> functor    (alpha, x, y, A);
+    Kokkos::parallel_for("KokkosBlas::ger[SingleLevel]", rangePolicy, functor);
   }
 }
 
@@ -142,13 +132,8 @@ struct TwoLevelGER_LayoutRightTag {};
 // Kernel depends on the layout of A.
 template <class XViewType, class YViewType, class AViewType, class IndexType = typename AViewType::size_type>
 struct TwoLevelGER {
-  using y_value_type   = typename YViewType::non_const_value_type;
-  using AlphaCoeffType = typename AViewType::non_const_value_type;
-  using BetaCoeffType  = typename YViewType::non_const_value_type;
-  using AccumScalar    = typename std::conditional< std::is_same<y_value_type, Kokkos::Experimental::half_t>::value || std::is_same<y_value_type, Kokkos::Experimental::bhalf_t>::value
-                                                  , float
-                                                  , y_value_type
-                                                  >::type;
+  using AlphaCoeffType = typename YViewType::non_const_value_type;
+  using A_value_type   = typename YViewType::non_const_value_type;
 
   using execution_space = typename AViewType::execution_space;
   using policy_type     = Kokkos::TeamPolicy<execution_space>;
@@ -183,22 +168,37 @@ struct TwoLevelGER {
  public:
   // LayoutLeft version: 32xK blocks.
   //  -Each team handles block rows.
-  //  -Groups of 32 threads handle N/teamsize columns sequentially, placing results into shared.
-  //  -Then individual thread results are combined with parallel_reduce.
+  //  -Groups of 32 threads handle N/teamsize columns sequentially
   KOKKOS_INLINE_FUNCTION void operator()( TwoLevelGER_LayoutLeftTag // EEP
                                         , const member_type & team
                                         ) const {
-    // Allocate a Scalar in shared for each thread
-    AccumScalar* blockResult = (AccumScalar*)team.team_shmem().get_shmem(32 * sizeof(AccumScalar));
+    // Which block this thread will work on
+    int block = team.team_rank() / 32;
+    // Which row in the block this thread will work on
+    IndexType row           = team.league_rank() * 32 + team.team_rank() % 32;
+    IndexType blockColStart = columnsPerThread * block;
+    // Compute local sum
+    if (row < (IndexType)A_.extent(0)) {
+      for (IndexType col = blockColStart; (col < blockColStart + columnsPerThread) && (col < A_.extent(1)); ++col) {
+        A_(row, col) += A_value_type( alpha_ * x_(row) * y_(col) );
+      }
+    }
+    team.team_barrier();
   }
 
   // LayoutRight version: one team per row
   KOKKOS_INLINE_FUNCTION void operator()( TwoLevelGER_LayoutRightTag // EEP
                                         , const member_type & team
                                         ) const {
-    const int i       = team.league_rank();  // batch id
-    if (i == 0) {
-      printf("Aqui 002\n");
+    using AlphaKAT = Kokkos::Details::ArithTraits<typename XViewType::non_const_value_type>;
+
+    if (alpha_ == AlphaKAT::zero()) {
+      // Nothing to do
+    }
+    else {
+      const IndexType i = team.league_rank();
+      const IndexType j = team.team_rank();
+      A_(i,j) += A_value_type( alpha_ * x_(i) * y_(j) );
     }
   }
 
@@ -235,12 +235,9 @@ void twoLevelGer( const typename AViewType::execution_space  & space
   static_assert(std::is_integral<IndexType>::value,
                 "IndexType must be an integer");
 
-  using y_value_type      = typename YViewType::non_const_value_type;
-  using execution_space   = typename AViewType::execution_space;
-  //using team_policy_type  = Kokkos::TeamPolicy<execution_space>;
-  //using range_policy_type = Kokkos::RangePolicy<execution_space, IndexType>;
+  using A_value_type    = typename AViewType::non_const_value_type;
+  using execution_space = typename AViewType::execution_space;
 
-  //using KAT      = Kokkos::Details::ArithTraits<typename AViewType::non_const_value_type>;
   using AlphaKAT = Kokkos::Details::ArithTraits<typename XViewType::non_const_value_type>;
 
   if (y.extent(0) == 0) {
@@ -256,43 +253,43 @@ void twoLevelGer( const typename AViewType::execution_space  & space
     return;
   }
 
-    constexpr bool isLayoutLeft = std::is_same<typename AViewType::array_layout, Kokkos::LayoutLeft>::value;
-    // Both kernels work for both layouts - the only difference is access pattern.
-    using layout_tag = typename std::conditional<isLayoutLeft, TwoLevelGER_LayoutLeftTag, TwoLevelGER_LayoutRightTag>::type;
-    using tagged_policy = Kokkos::TeamPolicy<execution_space, layout_tag>;
-    using functor_type  = TwoLevelGER<XViewType, YViewType, AViewType, IndexType>;
-    functor_type functor(alpha, x, y, A);
-    tagged_policy team;
-    if (isLayoutLeft) {
-      using AccumScalar = typename std::conditional< std::is_same<y_value_type, Kokkos::Experimental::half_t>::value || std::is_same<y_value_type, Kokkos::Experimental::bhalf_t>::value
-                                                   , float
-                                                   , y_value_type
-                                                   >::type;
-      size_t sharedPerTeam = 32 * sizeof(AccumScalar);
-      IndexType numTeams   = (A.extent(0) + 31) / 32;
-      tagged_policy temp(1, 1);
-      temp.set_scratch_size(0, Kokkos::PerTeam(sharedPerTeam));
-      int teamSize = temp.team_size_recommended(functor, Kokkos::ParallelForTag());
-      // make sure teamSize is a multiple of 32
-      teamSize -= teamSize % 32;
-      // don't make teamSize larger than what's useful
-      if ((size_t)teamSize > 32 * A.extent(1)) teamSize = 32 * A.extent(1);
-        // FIXME SYCL: team_size_recommended() returns too big of a team size.
-        // Kernel hangs with 1024 threads on XEHP.
+  constexpr bool isLayoutLeft = std::is_same<typename AViewType::array_layout, Kokkos::LayoutLeft>::value;
+  // Both kernels work for both layouts - the only difference is access pattern.
+  using layout_tag  = typename std::conditional<isLayoutLeft, TwoLevelGER_LayoutLeftTag, TwoLevelGER_LayoutRightTag>::type;
+  using TeamPolicyType = Kokkos::TeamPolicy<execution_space, layout_tag>;
+
+  TwoLevelGER<XViewType, YViewType, AViewType, IndexType> functor(alpha, x, y, A);
+
+  TeamPolicyType teamPolicy;
+  if (isLayoutLeft) {
+    size_t sharedPerTeam = 32 * sizeof(A_value_type);
+    IndexType numTeams   = (A.extent(0) + 31) / 32;
+
+    TeamPolicyType tempPolicy(1, 1);
+    tempPolicy.set_scratch_size(0, Kokkos::PerTeam(sharedPerTeam));
+    int teamSize = tempPolicy.team_size_recommended(functor, Kokkos::ParallelForTag());
+    // make sure teamSize is a multiple of 32
+    teamSize -= teamSize % 32;
+    // don't make teamSize larger than what's useful
+    if ((size_t)teamSize > 32 * A.extent(1)) teamSize = 32 * A.extent(1);
+
+    // FIXME SYCL: team_size_recommended() returns too big of a team size.
+    // Kernel hangs with 1024 threads on XEHP.
 #ifdef KOKKOS_ENABLE_SYCL
-      if (std::is_same<execution_space, Kokkos::Experimental::SYCL>::value) {
-        if (teamSize > 256) teamSize = 256;
-      }
+    if (std::is_same<execution_space, Kokkos::Experimental::SYCL>::value) {
+      if (teamSize > 256) teamSize = 256;
+    }
 #endif
-      int numBlocks            = teamSize / 32;
-      functor.columnsPerThread = (A.extent(1) + numBlocks - 1) / numBlocks;
-      team                     = tagged_policy(space, numTeams, teamSize).set_scratch_size(0, Kokkos::PerTeam(sharedPerTeam));
-    }
-    else {
-      // LayoutRight: one team per row
-      team = tagged_policy(space, A.extent(0), Kokkos::AUTO);
-    }
-    Kokkos::parallel_for("KokkosBlas::ger[twoLevel]", team, functor);
+    int numBlocks            = teamSize / 32;
+    functor.columnsPerThread = (A.extent(1) + numBlocks - 1) / numBlocks;
+    teamPolicy               = TeamPolicyType(space, numTeams, teamSize).set_scratch_size(0, Kokkos::PerTeam(sharedPerTeam));
+  }
+  else {
+    // LayoutRight: one team per row
+    teamPolicy = TeamPolicyType(space, A.extent(0), Kokkos::AUTO);
+  }
+
+  Kokkos::parallel_for("KokkosBlas::ger[twoLevel]", teamPolicy, functor);
 }
 
 // ---------------------------------------------------------------------------------------------
