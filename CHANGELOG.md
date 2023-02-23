@@ -15,16 +15,19 @@
 - SWAP: adding implementation of level 1 BLAS function [\#1612](https://github.com/kokkos/kokkos-kernels/pull/1612)
 
 #### New incomplete factorization algorithms:
-- MDF implementation in parallel [\#1393](https://github.com/kokkos/kokkos-kernels/pull/1393)
+- MDF implementation in parallel [\#1393](https://github.com/kokkos/kokkos-kernels/pull/1393) and [\#1624](https://github.com/kokkos/kokkos-kernels/pull/1624)
 - Jgfouca/par ilut [\#1506](https://github.com/kokkos/kokkos-kernels/pull/1506)
 
 #### New additional features
+- Add utility `KokkosSparse::removeCrsMatrixZeros` [\#1681](https://github.com/kokkos/kokkos-kernels/pull/1681)
 - Add spgemm TPL support for cuSparse and rocSparse [\#1513](https://github.com/kokkos/kokkos-kernels/pull/1513)
 - Add csr2csc [\#1446](https://github.com/kokkos/kokkos-kernels/pull/1446)
 - Adding my weighted graph coarsening code into kokkos-kernels [\#1043](https://github.com/kokkos/kokkos-kernels/pull/1043)
 - VBD/VBDBIT D1 coloring: support distributed graphs [\#1598](https://github.com/kokkos/kokkos-kernels/pull/1598)
 
 ### Implemented enhancements:
+- New tests for mixed-precision GEMM, some fixes for BLAS tests with non-ETI types [\#1615](https://github.com/kokkos/kokkos-kernels/pull/1615)
+- Spgemm non-reuse: unification layer and TPLs [\#1678](https://github.com/kokkos/kokkos-kernels/pull/1678)
 - Remove "slow mem space" device ETI [\#1619](https://github.com/kokkos/kokkos-kernels/pull/1619)
 - First phase of SpGEMM TPL refactor [\#1582](https://github.com/kokkos/kokkos-kernels/pull/1582)
 - Spgemm TPL refactor [\#1618](https://github.com/kokkos/kokkos-kernels/pull/1618)
@@ -45,8 +48,9 @@
 - Move SerialGEMV to KokkosBlas [\#1433](https://github.com/kokkos/kokkos-kernels/pull/1433)
 
 ### Build System:
+- CMake: export version and subversion to config file [\#1680](https://github.com/kokkos/kokkos-kernels/pull/1680)
 - CMake: update package COMPATIBILITY mode in anticipation of release 4.0 [\#1645](https://github.com/kokkos/kokkos-kernels/pull/1645)
-- FindTPLMKL.cmake: fix naming of mkl arg to FIND_PACKAGE_HANDLE_STANDA… [\#1644](https://github.com/kokkos/kokkos-kernels/pull/1644)
+- FindTPLMKL.cmake: fix naming of mkl arg to FIND_PACKAGE_HANDLE_STANDARD_ARGS [\#1644](https://github.com/kokkos/kokkos-kernels/pull/1644)
 - KokkosKernels: Use KOKKOSKERNELS_INCLUDE_DIRECTORIES() (TriBITSPub/TriBITS#429) [\#1635](https://github.com/kokkos/kokkos-kernels/pull/1635)
 - Fix docs build [\#1569](https://github.com/kokkos/kokkos-kernels/pull/1569)
 - KokkosKernels: Remove listing of undefined TPL deps (trilinos/Trilinos#11152) [\#1568](https://github.com/kokkos/kokkos-kernels/pull/1568)
@@ -66,6 +70,8 @@
 - .github/workflows: use c++17 [\#1484](https://github.com/kokkos/kokkos-kernels/pull/1484)
 
 ### Bug Fixes:
+- Workaround for array_sum_reduce if scalar is half_t and N is 3, 5 or 7 [\#1675](https://github.com/kokkos/kokkos-kernels/pull/1675)
+- Fix the nondeterministic issue in SPILUK numeric [\#1683](https://github.com/kokkos/kokkos-kernels/pull/1683)
 - Fix an error in Krylov Handle documentation [\#1659](https://github.com/kokkos/kokkos-kernels/pull/1659)
 - ROTMG: loosen unit-test tolerance for Host TPLs [\#1638](https://github.com/kokkos/kokkos-kernels/pull/1638)
 - SWAP: fixing obvious mistake in TPL layer : ( [\#1637](https://github.com/kokkos/kokkos-kernels/pull/1637)
