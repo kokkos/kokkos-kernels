@@ -6,17 +6,23 @@
 ### Features:
 - Copyright update 4.0 [\#1657](https://github.com/kokkos/kokkos-kernels/pull/1657)
 - Added google benchmark to kokkos kernel and to the CI [\#1626](https://github.com/kokkos/kokkos-kernels/pull/1626)
-- SWAP: adding implementation of level 1 BLAS function [\#1612](https://github.com/kokkos/kokkos-kernels/pull/1612)
-- VBD/VBDBIT D1 coloring: support distributed graphs [\#1598](https://github.com/kokkos/kokkos-kernels/pull/1598)
-- ROTM: adding blas 1 function for modified rotation [\#1583](https://github.com/kokkos/kokkos-kernels/pull/1583)
+
+#### Completing BLAS Level 1:
+- ROTG: implementation of BLAS level1 rotg [\#1529](https://github.com/kokkos/kokkos-kernels/pull/1529)
 - ROT: adding function to rotate two vector using Givens rotation coefficients [\#1581](https://github.com/kokkos/kokkos-kernels/pull/1581)
 - ROTMG: adding rotmg implementation to KokkosBlas [\#1560](https://github.com/kokkos/kokkos-kernels/pull/1560)
-- Rotg: implementation of BLAS level1 rotg [\#1529](https://github.com/kokkos/kokkos-kernels/pull/1529)
-- Add spgemm TPL support for cuSparse and rocSparse [\#1513](https://github.com/kokkos/kokkos-kernels/pull/1513)
-- Jgfouca/par ilut [\#1506](https://github.com/kokkos/kokkos-kernels/pull/1506)
-- Add csr2csc [\#1446](https://github.com/kokkos/kokkos-kernels/pull/1446)
+- ROTM: adding blas 1 function for modified rotation [\#1583](https://github.com/kokkos/kokkos-kernels/pull/1583)
+- SWAP: adding implementation of level 1 BLAS function [\#1612](https://github.com/kokkos/kokkos-kernels/pull/1612)
+
+#### New incomplete factorization algorithms:
 - MDF implementation in parallel [\#1393](https://github.com/kokkos/kokkos-kernels/pull/1393)
+- Jgfouca/par ilut [\#1506](https://github.com/kokkos/kokkos-kernels/pull/1506)
+
+#### New additional features
+- Add spgemm TPL support for cuSparse and rocSparse [\#1513](https://github.com/kokkos/kokkos-kernels/pull/1513)
+- Add csr2csc [\#1446](https://github.com/kokkos/kokkos-kernels/pull/1446)
 - Adding my weighted graph coarsening code into kokkos-kernels [\#1043](https://github.com/kokkos/kokkos-kernels/pull/1043)
+- VBD/VBDBIT D1 coloring: support distributed graphs [\#1598](https://github.com/kokkos/kokkos-kernels/pull/1598)
 
 ### Implemented enhancements:
 - Remove "slow mem space" device ETI [\#1619](https://github.com/kokkos/kokkos-kernels/pull/1619)
