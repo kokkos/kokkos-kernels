@@ -32,8 +32,8 @@ void impl_test_nrm2w(int N) {
   typename ViewTypeA::HostMirror h_a = Kokkos::create_mirror_view(a);
   typename ViewTypeA::HostMirror h_w = Kokkos::create_mirror_view(w);
 
-  const MagnitudeA max_val = 10;
-  const MagnitudeA eps     = AT::epsilon();
+  constexpr MagnitudeA max_val = 10;
+  const MagnitudeA eps         = AT::epsilon();
   const MagnitudeA max_error =
       max_val * std::sqrt(static_cast<MagnitudeA>(N)) * eps;
 
@@ -82,8 +82,8 @@ void impl_test_nrm2w_mv(int N, int K) {
   typename ViewTypeA::HostMirror h_a = h_vfA_type::view(h_b_a);
   typename ViewTypeA::HostMirror h_w = h_vfA_type::view(h_b_w);
 
-  const MagnitudeA max_val = 10;
-  const MagnitudeA eps     = AT::epsilon();
+  constexpr MagnitudeA max_val = 10;
+  const MagnitudeA eps         = AT::epsilon();
   const MagnitudeA max_error =
       max_val * std::sqrt(static_cast<MagnitudeA>(N)) * eps;
 

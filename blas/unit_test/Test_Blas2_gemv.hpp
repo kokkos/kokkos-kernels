@@ -30,7 +30,7 @@ void impl_test_gemv(const char* mode, int M, int N) {
 
   typedef multivector_layout_adapter<ViewTypeA> vfA_type;
 
-  ScalarA alpha                      = 3;
+  const ScalarA alpha                = 3;
   ScalarY beta                       = 5;
   typename KAT_Y::mag_type const eps = KAT_Y::epsilon();
 
@@ -63,9 +63,9 @@ void impl_test_gemv(const char* mode, int M, int N) {
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
       13718);
 
-  const double max_valX = 1;
-  const double max_valY = 1;
-  const double max_valA = 1;
+  constexpr double max_valX = 1;
+  constexpr double max_valY = 1;
+  constexpr double max_valA = 1;
   {
     ScalarX randStart, randEnd;
     Test::getRandomBounds(max_valX, randStart, randEnd);

@@ -225,9 +225,10 @@ void impl_test_team_mult_mv(int N, int K) {
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
       13718);
 
-  Kokkos::fill_random(b_x, rand_pool, ScalarA(10));
-  Kokkos::fill_random(b_y, rand_pool, ScalarB(10));
-  Kokkos::fill_random(b_z, rand_pool, ScalarC(10));
+  typename Kokkos::ArithTraits<ScalarC>::mag_type const max_val = 10;
+  Kokkos::fill_random(b_x, rand_pool, ScalarA(max_val));
+  Kokkos::fill_random(b_y, rand_pool, ScalarB(max_val));
+  Kokkos::fill_random(b_z, rand_pool, ScalarC(max_val));
 
   Kokkos::deep_copy(b_org_z, b_z);
 
@@ -242,6 +243,8 @@ void impl_test_team_mult_mv(int N, int K) {
 
   typename Kokkos::ArithTraits<ScalarC>::mag_type const eps =
       Kokkos::ArithTraits<ScalarC>::epsilon();
+  typename Kokkos::ArithTraits<ScalarC>::mag_type const max_error =
+      3 * max_val * max_val * eps;
 
   // KokkosBlas::mult(b,z,a,x,y);
   Kokkos::parallel_for(
@@ -262,7 +265,7 @@ void impl_test_team_mult_mv(int N, int K) {
   for (int j = 0; j < K; j++) {
     for (int i = 0; i < N; i++) {
       temp = ScalarC(b * h_b_org_z(i, j) + a * h_x(i) * h_y(i, j));
-      EXPECT_NEAR_KK(temp, h_b_z_res(i, j), 10 * eps);
+      EXPECT_NEAR_KK(temp, h_b_z_res(i, j), max_error);
     }
   }
 
@@ -281,7 +284,7 @@ void impl_test_team_mult_mv(int N, int K) {
   for (int k = 0; k < K; k++) {
     for (int i = 0; i < N; ++i) {
       temp = ScalarC(b * h_b_org_z(i, k) + a * h_x(i) * h_y(i, k));
-      EXPECT_NEAR_KK(temp, h_b_z_res(i, k), 10 * eps);
+      EXPECT_NEAR_KK(temp, h_b_z_res(i, k), max_error);
     }
   }
 }
@@ -366,7 +369,6 @@ int test_team_mult_mv() {
   // view_type_c_ll, Device>(132231,5);
 #endif
 
-  /*
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&       \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -382,7 +384,6 @@ int test_team_mult_mv() {
   // Test::impl_test_team_mult_mv<view_type_a_lr, view_type_b_lr,
   // view_type_c_lr, Device>(132231,5);
 #endif
-  */
 
   /*
 #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \

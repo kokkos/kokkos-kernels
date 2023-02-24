@@ -32,9 +32,9 @@ void impl_test_nrm2w_squared(int N) {
   typename ViewTypeA::HostMirror h_a = Kokkos::create_mirror_view(a);
   typename ViewTypeA::HostMirror h_w = Kokkos::create_mirror_view(w);
 
-  const MagnitudeA max_val   = 10;
-  const MagnitudeA eps       = AT::epsilon();
-  const MagnitudeA max_error = max_val * max_val * N * eps;
+  constexpr MagnitudeA max_val = 10;
+  const MagnitudeA eps         = AT::epsilon();
+  const MagnitudeA max_error   = max_val * max_val * N * eps;
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
       13718);
@@ -79,9 +79,9 @@ void impl_test_nrm2w_squared_mv(int N, int K) {
   typename ViewTypeA::HostMirror h_a = h_vfA_type::view(h_b_a);
   typename ViewTypeA::HostMirror h_w = h_vfA_type::view(h_b_w);
 
-  const MagnitudeA max_val   = 10;
-  const MagnitudeA eps       = AT::epsilon();
-  const MagnitudeA max_error = max_val * max_val * N * eps;
+  constexpr MagnitudeA max_val = 10;
+  const MagnitudeA eps         = AT::epsilon();
+  const MagnitudeA max_error   = max_val * max_val * N * eps;
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
       13718);
