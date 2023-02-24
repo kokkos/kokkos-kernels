@@ -343,6 +343,7 @@ KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int64_t, size_t,
 // rocSPARSE
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE)
 #include <rocsparse/rocsparse.h>
+#include <rocm_version.h>
 #include "KokkosSparse_Utils_rocsparse.hpp"
 
 namespace KokkosSparse {
@@ -421,13 +422,24 @@ void spmv_rocsparse(const KokkosKernels::Experimental::Controls& controls,
     else if (algName == "merge")
       alg = rocsparse_spmv_alg_csr_stream;
   }
+
+#if KOKKOSSPARSE_IMPL_ROCM_VERSION >= 50400
+  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_spmv_ex(
+      handle, myRocsparseOperation, &alpha, Aspmat, vecX, &beta, vecY,
+      compute_type, alg, rocsparse_spmv_stage_auto, &buffer_size, tmp_buffer));
+  KOKKOS_IMPL_HIP_SAFE_CALL(hipMalloc(&tmp_buffer, buffer_size));
+  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_spmv_ex(
+      handle, myRocsparseOperation, &alpha, Aspmat, vecX, &beta, vecY,
+      compute_type, alg, rocsparse_spmv_stage_auto, &buffer_size, tmp_buffer));
+#else
   KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(
       rocsparse_spmv(handle, myRocsparseOperation, &alpha, Aspmat, vecX, &beta,
                      vecY, compute_type, alg, &buffer_size, tmp_buffer));
   KOKKOS_IMPL_HIP_SAFE_CALL(hipMalloc(&tmp_buffer, buffer_size));
-  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(
-      rocsparse_spmv(handle, myRocsparseOperation, &alpha, Aspmat, vecX, &beta,
-                     vecY, compute_type, alg, &buffer_size, tmp_buffer));
+  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_spmv_ex(
+      handle, myRocsparseOperation, &alpha, Aspmat, vecX, &beta, vecY,
+      compute_type, alg, &buffer_size, tmp_buffer));
+#endif
   KOKKOS_IMPL_HIP_SAFE_CALL(hipFree(tmp_buffer));
 
   KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_destroy_dnvec_descr(vecY));
