@@ -44,18 +44,18 @@ struct SingleLevelGER {
       , y_    (y)
       , A_    (A)
   {
-    static_assert(Kokkos::is_view<AViewType>::value,
-                  "AViewType must be a Kokkos::View.");
     static_assert(Kokkos::is_view<XViewType>::value,
                   "XViewType must be a Kokkos::View.");
     static_assert(Kokkos::is_view<YViewType>::value,
                   "YViewType must be a Kokkos::View.");
-    static_assert(static_cast<int>(AViewType::rank) == 2,
-                  "AViewType must have rank 2.");
+    static_assert(Kokkos::is_view<AViewType>::value,
+                  "AViewType must be a Kokkos::View.");
     static_assert(static_cast<int>(XViewType::rank) == 1,
                   "XViewType must have rank 1.");
     static_assert(static_cast<int>(YViewType::rank) == 1,
                   "YViewType must have rank 1.");
+    static_assert(static_cast<int>(AViewType::rank) == 2,
+                  "AViewType must have rank 2.");
     static_assert(std::is_integral<IndexType>::value,
                   "IndexType must be an integer.");
   }
@@ -91,22 +91,29 @@ void singleLevelGer( const typename AViewType::execution_space  & space
                    , const          YViewType                   & y
                    , const          AViewType                   & A
                    ) {
-  static_assert(Kokkos::is_view<AViewType>::value,
-                "AViewType must be a Kokkos::View.");
+  std::cout << "Entering singleLevelGer()"
+            << ": alpha = "       << alpha
+            << ", x.extent(0) = " << x.extent(0)
+            << ", y.extent(0) = " << y.extent(0)
+            << ", A.extent(0) = " << A.extent(0)
+            << ", A.extent(1) = " << A.extent(1)
+            << std::endl;
   static_assert(Kokkos::is_view<XViewType>::value,
                 "XViewType must be a Kokkos::View.");
   static_assert(Kokkos::is_view<YViewType>::value,
                 "YViewType must be a Kokkos::View.");
-  static_assert(static_cast<int>(AViewType::rank) == 2,
-                "AViewType must have rank 2.");
+  static_assert(Kokkos::is_view<AViewType>::value,
+                "AViewType must be a Kokkos::View.");
   static_assert(static_cast<int>(XViewType::rank) == 1,
                 "XViewType must have rank 1.");
   static_assert(static_cast<int>(YViewType::rank) == 1,
                 "YViewType must have rank 1.");
+  static_assert(static_cast<int>(AViewType::rank) == 2,
+                "AViewType must have rank 2.");
   static_assert(std::is_integral<IndexType>::value,
                 "IndexType must be an integer");
 
-  using AlphaKAT = Kokkos::Details::ArithTraits<typename XViewType::non_const_value_type>;
+  using AlphaKAT = Kokkos::Details::ArithTraits<typename AViewType::non_const_value_type>;
 
   if (y.extent(0) == 0) {
     // no entries to update
@@ -151,18 +158,18 @@ struct TwoLevelGER {
       , y_    (y)
       , A_    (A)
   {
-    static_assert(Kokkos::is_view<AViewType>::value,
-                  "AViewType must be a Kokkos::View.");
     static_assert(Kokkos::is_view<XViewType>::value,
                   "XViewType must be a Kokkos::View.");
     static_assert(Kokkos::is_view<YViewType>::value,
                   "YViewType must be a Kokkos::View.");
-    static_assert(static_cast<int>(AViewType::rank) == 2,
-                  "AViewType must have rank 2.");
+    static_assert(Kokkos::is_view<AViewType>::value,
+                  "AViewType must be a Kokkos::View.");
     static_assert(static_cast<int>(XViewType::rank) == 1,
                   "XViewType must have rank 1.");
     static_assert(static_cast<int>(YViewType::rank) == 1,
                   "YViewType must have rank 1.");
+    static_assert(static_cast<int>(AViewType::rank) == 2,
+                  "AViewType must have rank 2.");
     static_assert(std::is_integral<IndexType>::value,
                   "IndexType must be an integer.");
   }
@@ -172,7 +179,7 @@ struct TwoLevelGER {
   KOKKOS_INLINE_FUNCTION void operator()( TwoLevelGER_LayoutLeftTag // EEP
                                         , const member_type & team
                                         ) const {
-    using AlphaKAT = Kokkos::Details::ArithTraits<typename XViewType::non_const_value_type>;
+    using AlphaKAT = Kokkos::Details::ArithTraits<typename AViewType::non_const_value_type>;
 
     if (alpha_ == AlphaKAT::zero()) {
       // Nothing to do
@@ -181,7 +188,7 @@ struct TwoLevelGER {
       const IndexType    M      ( A_.extent(0) );
       const IndexType    j      ( team.league_rank() );
       const A_value_type y_fixed( y_(j) );
-      Kokkos::parallel_for(Kokkos::TeamThreadRange(team, M), [&](const IndexType i) {
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(team, M), [=](const IndexType i) {
         A_(i,j) += A_value_type( alpha_ * x_(i) * y_fixed );
       });
     }
@@ -191,16 +198,16 @@ struct TwoLevelGER {
   KOKKOS_INLINE_FUNCTION void operator()( TwoLevelGER_LayoutRightTag // EEP
                                         , const member_type & team
                                         ) const {
-    using AlphaKAT = Kokkos::Details::ArithTraits<typename XViewType::non_const_value_type>;
+    using AlphaKAT = Kokkos::Details::ArithTraits<typename AViewType::non_const_value_type>;
 
     if (alpha_ == AlphaKAT::zero()) {
       // Nothing to do
     }
     else {
-      const IndexType    i      ( team.league_rank() );
       const IndexType    N      ( A_.extent(1) );
+      const IndexType    i      ( team.league_rank() );
       const A_value_type x_fixed( x_(i) );
-      Kokkos::parallel_for(Kokkos::TeamThreadRange(team, N), [&](const IndexType j) {
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(team, N), [=](const IndexType j) {
         A_(i,j) += A_value_type( alpha_ * x_fixed * y_(j) );
       });
     }
@@ -223,22 +230,29 @@ void twoLevelGer( const typename AViewType::execution_space  & space
                 , const          YViewType                   & y
                 , const          AViewType                   & A
                 ) {
-  static_assert(Kokkos::is_view<AViewType>::value,
-                "AViewType must be a Kokkos::View.");
+  std::cout << "Entering twoLevelGer()"
+            << ": alpha = "       << alpha
+            << ", x.extent(0) = " << x.extent(0)
+            << ", y.extent(0) = " << y.extent(0)
+            << ", A.extent(0) = " << A.extent(0)
+            << ", A.extent(1) = " << A.extent(1)
+            << std::endl;
   static_assert(Kokkos::is_view<XViewType>::value,
                 "XViewType must be a Kokkos::View.");
   static_assert(Kokkos::is_view<YViewType>::value,
                 "YViewType must be a Kokkos::View.");
-  static_assert(static_cast<int>(AViewType::rank) == 2,
-                "AViewType must have rank 2.");
+  static_assert(Kokkos::is_view<AViewType>::value,
+                "AViewType must be a Kokkos::View.");
   static_assert(static_cast<int>(XViewType::rank) == 1,
                 "XViewType must have rank 1.");
   static_assert(static_cast<int>(YViewType::rank) == 1,
                 "YViewType must have rank 1.");
+  static_assert(static_cast<int>(AViewType::rank) == 2,
+                "AViewType must have rank 2.");
   static_assert(std::is_integral<IndexType>::value,
                 "IndexType must be an integer");
 
-  using AlphaKAT = Kokkos::Details::ArithTraits<typename XViewType::non_const_value_type>;
+  using AlphaKAT = Kokkos::Details::ArithTraits<typename AViewType::non_const_value_type>;
 
   if (y.extent(0) == 0) {
     // no entries to update
