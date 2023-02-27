@@ -249,7 +249,7 @@ void impl_test_team_mult_mv(int N, int K) {
   typename Kokkos::ArithTraits<ScalarC>::mag_type const eps =
       Kokkos::ArithTraits<ScalarC>::epsilon();
   typename Kokkos::ArithTraits<ScalarC>::mag_type const max_error =
-      a * max_val * max_val * eps;
+    Kokkos::ArithTraits<ScalarC>::abs(a) * max_val * max_val * eps;
 
   // KokkosBlas::mult(b,z,a,x,y);
   Kokkos::parallel_for(
