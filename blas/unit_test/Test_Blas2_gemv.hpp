@@ -30,10 +30,9 @@ void impl_test_gemv(const char* mode, int M, int N) {
 
   typedef multivector_layout_adapter<ViewTypeA> vfA_type;
 
-  ScalarA alpha = 3;
-  ScalarY beta  = 5;
-  double eps =
-      (std::is_same<typename KAT_Y::mag_type, float>::value ? 1e-2 : 5e-10);
+  const ScalarA alpha                = 3;
+  ScalarY beta                       = 5;
+  typename KAT_Y::mag_type const eps = KAT_Y::epsilon();
 
   int ldx;
   int ldy;
@@ -64,21 +63,29 @@ void impl_test_gemv(const char* mode, int M, int N) {
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
       13718);
 
+  constexpr double max_valX = 1;
+  constexpr double max_valY = 1;
+  constexpr double max_valA = 1;
   {
     ScalarX randStart, randEnd;
-    Test::getRandomBounds(1.0, randStart, randEnd);
+    Test::getRandomBounds(max_valX, randStart, randEnd);
     Kokkos::fill_random(x, rand_pool, randStart, randEnd);
   }
   {
     ScalarY randStart, randEnd;
-    Test::getRandomBounds(1.0, randStart, randEnd);
+    Test::getRandomBounds(max_valY, randStart, randEnd);
     Kokkos::fill_random(y, rand_pool, randStart, randEnd);
   }
   {
     ScalarA randStart, randEnd;
-    Test::getRandomBounds(1.0, randStart, randEnd);
+    Test::getRandomBounds(max_valA, randStart, randEnd);
     Kokkos::fill_random(b_A, rand_pool, randStart, randEnd);
   }
+
+  const typename KAT_Y::mag_type max_error =
+      KAT_Y::abs(alpha * max_valA * max_valX * ldx + beta * max_valY);
+  const typename KAT_Y::mag_type tol =
+      max_error * eps * 2;  // adding small fudge factor of 2
 
   Kokkos::deep_copy(org_y, y);
   auto h_org_y =
@@ -96,8 +103,12 @@ void impl_test_gemv(const char* mode, int M, int N) {
   Kokkos::deep_copy(h_y, y);
   int numErrors = 0;
   for (int i = 0; i < ldy; i++) {
-    if (KAT_Y::abs(expected(i) - h_y(i)) > KAT_Y::abs(eps * expected(i)))
+    if (KAT_Y::abs(expected(i) - h_y(i)) > tol) {
       numErrors++;
+      std::cerr << __FILE__ << ":" << __LINE__
+                << ": expected(i)=" << expected(i) << ", h_y(i)=" << h_y(i)
+                << std::endl;
+    }
   }
   EXPECT_EQ(numErrors, 0) << "Nonconst input, " << M << 'x' << N
                           << ", alpha = " << alpha << ", beta = " << beta
@@ -108,8 +119,7 @@ void impl_test_gemv(const char* mode, int M, int N) {
   Kokkos::deep_copy(h_y, y);
   numErrors = 0;
   for (int i = 0; i < ldy; i++) {
-    if (KAT_Y::abs(expected(i) - h_y(i)) > KAT_Y::abs(eps * expected(i)))
-      numErrors++;
+    if (KAT_Y::abs(expected(i) - h_y(i)) > tol) numErrors++;
   }
   EXPECT_EQ(numErrors, 0) << "Const vector input, " << M << 'x' << N
                           << ", alpha = " << alpha << ", beta = " << beta
@@ -120,8 +130,7 @@ void impl_test_gemv(const char* mode, int M, int N) {
   Kokkos::deep_copy(h_y, y);
   numErrors = 0;
   for (int i = 0; i < ldy; i++) {
-    if (KAT_Y::abs(expected(i) - h_y(i)) > KAT_Y::abs(eps * expected(i)))
-      numErrors++;
+    if (KAT_Y::abs(expected(i) - h_y(i)) > tol) numErrors++;
   }
   EXPECT_EQ(numErrors, 0) << "Const matrix/vector input, " << M << 'x' << N
                           << ", alpha = " << alpha << ", beta = " << beta
@@ -137,8 +146,14 @@ void impl_test_gemv(const char* mode, int M, int N) {
   numErrors = 0;
   for (int i = 0; i < ldy; i++) {
     if (KAT_Y::isNan(h_y(i)) ||
-        KAT_Y::abs(expected(i) - h_y(i)) > KAT_Y::abs(eps * expected(i)))
+        KAT_Y::abs(expected(i) - h_y(i)) >
+            KAT_Y::abs(alpha * max_valA * max_valX * ldx * eps * 2)) {
       numErrors++;
+      std::cerr << __FILE__ << ":" << __LINE__ << ": expected(" << i
+                << ")=" << expected(i) << ", h_y(" << i << ")=" << h_y(i)
+                << ", eps=" << eps
+                << ", 1024*2*eps=" << 1024 * 2 * KAT_Y::epsilon() << std::endl;
+    }
   }
   EXPECT_EQ(numErrors, 0) << "beta = 0, input contains NaN, A is " << M << 'x'
                           << N << ", mode " << mode << ": gemv incorrect";

@@ -23,9 +23,11 @@
 namespace Test {
 template <class ViewTypeA, class ViewTypeB, class Device>
 void impl_test_reciprocal(int N) {
-  typedef typename ViewTypeA::value_type ScalarA;
-  typedef typename ViewTypeB::value_type ScalarB;
-  typedef Kokkos::Details::ArithTraits<ScalarA> AT;
+  using ScalarA    = typename ViewTypeA::value_type;
+  using ScalarB    = typename ViewTypeB::value_type;
+  using AT         = Kokkos::Details::ArithTraits<ScalarA>;
+  using MagnitudeA = typename AT::mag_type;
+  using MagnitudeB = typename Kokkos::ArithTraits<ScalarB>::mag_type;
 
   typedef Kokkos::View<
       ScalarA * [2],
@@ -42,9 +44,9 @@ void impl_test_reciprocal(int N) {
       Device>
       BaseTypeB;
 
-  typename AT::mag_type eps  = AT::epsilon() * 2000;
-  typename AT::mag_type zero = AT::abs(AT::zero());
-  typename AT::mag_type one  = AT::abs(AT::one());
+  const MagnitudeB eps     = Kokkos::ArithTraits<ScalarB>::epsilon();
+  const MagnitudeA one     = AT::abs(AT::one());
+  const MagnitudeA max_val = 10;
 
   BaseTypeA b_x("X", N);
   BaseTypeB b_y("Y", N);
@@ -65,12 +67,12 @@ void impl_test_reciprocal(int N) {
 
   {
     ScalarA randStart, randEnd;
-    Test::getRandomBounds(1.0, randStart, randEnd);
-    Kokkos::fill_random(b_x, rand_pool, randStart, randEnd);
+    Test::getRandomBounds(max_val, randStart, randEnd);
+    Kokkos::fill_random(b_x, rand_pool, one, randEnd);
   }
   {
     ScalarB randStart, randEnd;
-    Test::getRandomBounds(1.0, randStart, randEnd);
+    Test::getRandomBounds(10, randStart, randEnd);
     Kokkos::fill_random(b_y, rand_pool, randStart, randEnd);
   }
 
@@ -79,32 +81,24 @@ void impl_test_reciprocal(int N) {
   Kokkos::deep_copy(h_b_x, b_x);
   Kokkos::deep_copy(h_b_y, b_y);
 
-  ScalarA expected_result(0);
-  for (int i = 0; i < N; i++) {
-    expected_result +=
-        AT::abs(AT::one() / h_x(i)) * AT::abs(AT::one() / h_x(i));
-  }
-
   KokkosBlas::reciprocal(y, x);
-  ScalarB nonconst_nonconst_result = KokkosBlas::dot(y, y);
-  typename AT::mag_type divisor =
-      AT::abs(expected_result) == zero ? one : AT::abs(expected_result);
-  typename AT::mag_type diff =
-      AT::abs(nonconst_nonconst_result - expected_result) / divisor;
-  EXPECT_NEAR_KK(diff, zero, eps);
+  Kokkos::deep_copy(h_b_y, b_y);
+  for (int i = 0; i < N; ++i) {
+    EXPECT_NEAR_KK(h_b_y(i, 0), ScalarB(one / h_b_x(i, 0)), 2 * eps);
+  }
 
   Kokkos::deep_copy(b_y, b_org_y);
   KokkosBlas::reciprocal(y, c_x);
-  ScalarB const_nonconst_result = KokkosBlas::dot(y, y);
-  diff = AT::abs(const_nonconst_result - expected_result) / divisor;
-  EXPECT_NEAR_KK(diff, zero, eps);
+  Kokkos::deep_copy(h_b_y, b_y);
+  for (int i = 0; i < N; ++i) {
+    EXPECT_NEAR_KK(h_b_y(i, 0), ScalarB(one / h_b_x(i, 0)), 2 * eps);
+  }
 }
 
 template <class ViewTypeA, class ViewTypeB, class Device>
 void impl_test_reciprocal_mv(int N, int K) {
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
-  typedef Kokkos::Details::ArithTraits<ScalarA> AT;
 
   typedef multivector_layout_adapter<ViewTypeA> vfA_type;
   typedef multivector_layout_adapter<ViewTypeB> vfB_type;
@@ -130,12 +124,13 @@ void impl_test_reciprocal_mv(int N, int K) {
 
   {
     ScalarA randStart, randEnd;
-    Test::getRandomBounds(1.0, randStart, randEnd);
-    Kokkos::fill_random(b_x, rand_pool, randStart, randEnd);
+    Test::getRandomBounds(10, randStart, randEnd);
+    Kokkos::fill_random(b_x, rand_pool, Kokkos::ArithTraits<ScalarA>::one(),
+                        randEnd);
   }
   {
     ScalarB randStart, randEnd;
-    Test::getRandomBounds(1.0, randStart, randEnd);
+    Test::getRandomBounds(10, randStart, randEnd);
     Kokkos::fill_random(b_y, rand_pool, randStart, randEnd);
   }
 
@@ -146,45 +141,26 @@ void impl_test_reciprocal_mv(int N, int K) {
 
   typename ViewTypeA::const_type c_x = x;
 
-  ScalarA* expected_result = new ScalarA[K];
-  for (int j = 0; j < K; j++) {
-    expected_result[j] = ScalarA();
-    for (int i = 0; i < N; i++) {
-      expected_result[j] +=
-          AT::abs(AT::one() / h_x(i, j)) * AT::abs(AT::one() / h_x(i, j));
-    }
-  }
-
-  typename AT::mag_type eps  = AT::epsilon() * 2000;
-  typename AT::mag_type zero = AT::abs(AT::zero());
-  typename AT::mag_type one  = AT::abs(AT::one());
-
-  Kokkos::View<ScalarB*, Kokkos::HostSpace> r("Dot::Result", K);
-
   KokkosBlas::reciprocal(y, x);
-  KokkosBlas::dot(r, y, y);
-  for (int k = 0; k < K; k++) {
-    ScalarA nonconst_result = r(k);
-    typename AT::mag_type divisor =
-        AT::abs(expected_result[k]) == zero ? one : AT::abs(expected_result[k]);
-    typename AT::mag_type diff =
-        AT::abs(nonconst_result - expected_result[k]) / divisor;
-    EXPECT_NEAR_KK(diff, zero, eps);
+  Kokkos::deep_copy(h_b_y, b_y);
+  for (int j = 0; j < K; ++j) {
+    for (int i = 0; i < N; ++i) {
+      EXPECT_NEAR_KK(h_b_y(i, j),
+                     Kokkos::ArithTraits<ScalarB>::one() / ScalarB(h_b_x(i, j)),
+                     2 * Kokkos::ArithTraits<ScalarB>::epsilon());
+    }
   }
 
   Kokkos::deep_copy(b_y, b_org_y);
   KokkosBlas::reciprocal(y, c_x);
-  KokkosBlas::dot(r, y, y);
-  for (int k = 0; k < K; k++) {
-    ScalarA const_result = r(k);
-    typename AT::mag_type divisor =
-        AT::abs(expected_result[k]) == zero ? one : AT::abs(expected_result[k]);
-    typename AT::mag_type diff =
-        AT::abs(const_result - expected_result[k]) / divisor;
-    EXPECT_NEAR_KK(diff, zero, eps);
+  Kokkos::deep_copy(h_b_y, b_y);
+  for (int j = 0; j < K; j++) {
+    for (int i = 0; i < N; ++i) {
+      EXPECT_NEAR_KK(h_b_y(i, j),
+                     Kokkos::ArithTraits<ScalarB>::one() / ScalarB(h_b_x(i, j)),
+                     2 * Kokkos::ArithTraits<ScalarB>::epsilon());
+    }
   }
-
-  delete[] expected_result;
 }
 }  // namespace Test
 
