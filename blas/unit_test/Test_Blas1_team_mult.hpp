@@ -241,10 +241,15 @@ void impl_test_team_mult_mv(int N, int K) {
   typename ViewTypeA::const_type c_x = x;
   typename ViewTypeB::const_type c_y = y;
 
+  // In the operation z = (b*z) + (a*x*y) we estimate
+  // the largest rounding error to be dominated by max(b*z, a*x*y)
+  // Since b and a are known and the largest value in z, x and y
+  // is set by the variables max_val, the error upper bound will be
+  //         max_error = a * max_val * max_val
   typename Kokkos::ArithTraits<ScalarC>::mag_type const eps =
       Kokkos::ArithTraits<ScalarC>::epsilon();
   typename Kokkos::ArithTraits<ScalarC>::mag_type const max_error =
-      3 * max_val * max_val * eps;
+      a * max_val * max_val * eps;
 
   // KokkosBlas::mult(b,z,a,x,y);
   Kokkos::parallel_for(

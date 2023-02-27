@@ -105,7 +105,8 @@ void impl_test_gemv(const char* mode, int M, int N) {
   for (int i = 0; i < ldy; i++) {
     if (KAT_Y::abs(expected(i) - h_y(i)) > tol) {
       numErrors++;
-      std::cout << "expected(i)=" << expected(i) << ", h_y(i)=" << h_y(i)
+      std::cerr << __FILE__ << ":" << __LINE__
+                << ": expected(i)=" << expected(i) << ", h_y(i)=" << h_y(i)
                 << std::endl;
     }
   }
@@ -148,8 +149,9 @@ void impl_test_gemv(const char* mode, int M, int N) {
         KAT_Y::abs(expected(i) - h_y(i)) >
             KAT_Y::abs(alpha * max_valA * max_valX * ldx * eps * 2)) {
       numErrors++;
-      std::cout << "expected(" << i << ")=" << expected(i) << ", h_y(" << i
-                << ")=" << h_y(i) << ", eps=" << eps
+      std::cerr << __FILE__ << ":" << __LINE__ << ": expected(" << i
+                << ")=" << expected(i) << ", h_y(" << i << ")=" << h_y(i)
+                << ", eps=" << eps
                 << ", 1024*2*eps=" << 1024 * 2 * KAT_Y::epsilon() << std::endl;
     }
   }
