@@ -91,13 +91,13 @@ void singleLevelGer( const typename AViewType::execution_space  & space
                    , const          YViewType                   & y
                    , const          AViewType                   & A
                    ) {
-  std::cout << "Entering singleLevelGer()"
-            << ": alpha = "       << alpha
-            << ", x.extent(0) = " << x.extent(0)
-            << ", y.extent(0) = " << y.extent(0)
-            << ", A.extent(0) = " << A.extent(0)
-            << ", A.extent(1) = " << A.extent(1)
-            << std::endl;
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Entering singleLevelGer(): alpha = %f, x.extent(0) = %d, y.extent(0) = %d, A.extent(0) = %d, A.extent(1) = %d\n"
+                               , alpha
+                               , static_cast<int>(x.extent(0))
+                               , static_cast<int>(y.extent(0))
+                               , static_cast<int>(A.extent(0))
+                               , static_cast<int>(A.extent(1))
+                               );
   static_assert(Kokkos::is_view<XViewType>::value,
                 "XViewType must be a Kokkos::View.");
   static_assert(Kokkos::is_view<YViewType>::value,
@@ -174,7 +174,7 @@ struct TwoLevelGER {
                   "IndexType must be an integer.");
   }
 
- public:
+public:
   // LayoutLeft version: one team per column
   KOKKOS_INLINE_FUNCTION void operator()( TwoLevelGER_LayoutLeftTag // EEP
                                         , const member_type & team
@@ -188,7 +188,7 @@ struct TwoLevelGER {
       const IndexType    M      ( A_.extent(0) );
       const IndexType    j      ( team.league_rank() );
       const A_value_type y_fixed( y_(j) );
-      Kokkos::parallel_for(Kokkos::TeamThreadRange(team, M), [=](const IndexType i) {
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(team, M), [&](const IndexType & i) {
         A_(i,j) += A_value_type( alpha_ * x_(i) * y_fixed );
       });
     }
@@ -207,7 +207,7 @@ struct TwoLevelGER {
       const IndexType    N      ( A_.extent(1) );
       const IndexType    i      ( team.league_rank() );
       const A_value_type x_fixed( x_(i) );
-      Kokkos::parallel_for(Kokkos::TeamThreadRange(team, N), [=](const IndexType j) {
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(team, N), [&](const IndexType & j) {
         A_(i,j) += A_value_type( alpha_ * x_fixed * y_(j) );
       });
     }
@@ -230,13 +230,13 @@ void twoLevelGer( const typename AViewType::execution_space  & space
                 , const          YViewType                   & y
                 , const          AViewType                   & A
                 ) {
-  std::cout << "Entering twoLevelGer()"
-            << ": alpha = "       << alpha
-            << ", x.extent(0) = " << x.extent(0)
-            << ", y.extent(0) = " << y.extent(0)
-            << ", A.extent(0) = " << A.extent(0)
-            << ", A.extent(1) = " << A.extent(1)
-            << std::endl;
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Entering twoLevelGer(): alpha = %f, x.extent(0) = %d, y.extent(0) = %d, A.extent(0) = %d, A.extent(1) = %d\n"
+                               , alpha
+                               , static_cast<int>(x.extent(0))
+                               , static_cast<int>(y.extent(0))
+                               , static_cast<int>(A.extent(0))
+                               , static_cast<int>(A.extent(1))
+                               );
   static_assert(Kokkos::is_view<XViewType>::value,
                 "XViewType must be a Kokkos::View.");
   static_assert(Kokkos::is_view<YViewType>::value,
@@ -303,6 +303,13 @@ void generalGerImpl( const typename AViewType::execution_space  & space
                    , const          YViewType                   & y
                    , const          AViewType                   & A
                    ) {
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Entering generalGerImpl(CPU): alpha = %f, x.extent(0) = %d, y.extent(0) = %d, A.extent(0) = %d, A.extent(1) = %d\n"
+                               , alpha
+                               , static_cast<int>(x.extent(0))
+                               , static_cast<int>(y.extent(0))
+                               , static_cast<int>(A.extent(0))
+                               , static_cast<int>(A.extent(1))
+                               );
   singleLevelGer(space, alpha, x, y, A);
 }
 
@@ -318,6 +325,13 @@ void generalGerImpl( const typename AViewType::execution_space  & space
                    , const          YViewType                   & y
                    , const          AViewType                   & A
                    ) {
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Entering generalGerImpl(GPU): alpha = %f, x.extent(0) = %d, y.extent(0) = %d, A.extent(0) = %d, A.extent(1) = %d\n"
+                               , alpha
+                               , static_cast<int>(x.extent(0))
+                               , static_cast<int>(y.extent(0))
+                               , static_cast<int>(A.extent(0))
+                               , static_cast<int>(A.extent(1))
+                               );
   twoLevelGer(space, alpha, x, y, A);
 }
 
