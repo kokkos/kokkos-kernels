@@ -60,6 +60,19 @@ void impl_test_ger(int M, int N) {
     Kokkos::deep_copy(y, h_y);
     Kokkos::deep_copy(b_A, h_b_A);
   }
+  else if ((M == 1) && (N == 2)) {
+    h_x[0] = 2;
+
+    h_y[0] = 3;
+    h_y[1] = 4;
+
+    h_b_A(0,0) = 7;
+    h_b_A(0,1) = -6;
+
+    Kokkos::deep_copy(x, h_x);
+    Kokkos::deep_copy(y, h_y);
+    Kokkos::deep_copy(b_A, h_b_A);
+  }
   else if ((M == 2) && (N == 2)) {
     h_x[0] = 2;
     h_x[1] = 9;
@@ -103,8 +116,43 @@ void impl_test_ger(int M, int N) {
 
   Kokkos::View<ScalarA**, Kokkos::HostSpace> expected("expected A += alpha * x * y^t", M ,N);
   Kokkos::deep_copy(expected, h_org_A);
+  if ((M <= 2) && (N <= 2)) {
+    for (int i(0); i < M; ++i) {
+      for (int j(0); j < N; ++j) {
+        std::cout << "Before 'vanillaGer()': expected(" << i << "," << j << ") = " << expected(i,j)
+                  << std::endl;
+      }
+    }
+    for (int i(0); i < M; ++i) {
+      std::cout << "Before 'vanillaGer()': h_x[" << i << "] = " << h_x[i]
+                << std::endl;
+    }
+    for (int j(0); j < N; ++j) {
+      std::cout << "Before 'vanillaGer()': h_y[" << j << "] = " << h_y[j]
+                << std::endl;
+    }
+  }
   vanillaGER(alpha, h_x, h_y, expected);
 
+  Kokkos::deep_copy(h_A, A);
+  Kokkos::deep_copy(h_x, x);
+  Kokkos::deep_copy(h_y, y);
+  if ((M <= 2) && (N <= 2)) {
+    for (int i(0); i < M; ++i) {
+      for (int j(0); j < N; ++j) {
+        std::cout << "Before 'KokkosBlass::ger()': h_A(" << i << "," << j << ") = " << h_A(i,j)
+                  << std::endl;
+      }
+    }
+    for (int i(0); i < M; ++i) {
+      std::cout << "Before 'vanillaGer()': h_x[" << i << "] = " << h_x[i]
+                << std::endl;
+    }
+    for (int j(0); j < N; ++j) {
+      std::cout << "Before 'vanillaGer()': h_y[" << j << "] = " << h_y[j]
+                << std::endl;
+    }
+  }
   KokkosBlas::ger(alpha, x, y, A);
   Kokkos::deep_copy(h_A, A);
 
@@ -112,8 +160,8 @@ void impl_test_ger(int M, int N) {
     for (int i(0); i < M; ++i) {
       for (int j(0); j < N; ++j) {
         std::cout << "expected(" << i << "," << j << ") = " << expected(i,j)
-		  << "; h_A("    << i << "," << j << ") = " << h_A(i,j)
-		  << std::endl;
+                  << "; h_A("    << i << "," << j << ") = " << h_A(i,j)
+                  << std::endl;
       }
     }
   }
@@ -124,7 +172,7 @@ void impl_test_ger(int M, int N) {
       if (KAT_A::abs(expected(i,j) - h_A(i,j)) > KAT_A::abs(eps * expected(i,j))) {
         numErrors++;
       }
-    }	 
+    }
   }
   std::cout << "A is " << M << " by " << N
             << ", alpha = " << alpha
@@ -163,6 +211,7 @@ int test_ger() {
   //Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(1024, 0);
   Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(1, 1);
   Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(2, 2);
+  Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(1, 2);
   //Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(13, 13);
   //Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(13, 1024);
   //Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(50, 40);

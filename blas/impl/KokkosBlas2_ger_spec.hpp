@@ -75,14 +75,21 @@ template <class XViewType, class YViewType, class AViewType,
           bool tpl_spec_avail = ger_tpl_spec_avail<XViewType, YViewType, AViewType>::value,
           bool eti_spec_avail = ger_eti_spec_avail<XViewType, YViewType, AViewType>::value>
 struct GER {
+#if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
   static void ger( const typename AViewType::execution_space  & space
                  , const typename AViewType::const_value_type & alpha
                  , const          XViewType                   & x
                  , const          YViewType                   & y
                  , const          AViewType                   & A
                  )
-#if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
   {
+    KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Entering KokkosBlas::Impl::Ger::ger(1): alpha = %f, x.extent(0) = %d, y.extent(0) = %d, A.extent(0) = %d, A.extent(1) = %d\n"
+                                 , alpha
+                                 , static_cast<int>(x.extent(0))
+                                 , static_cast<int>(y.extent(0))
+                                 , static_cast<int>(A.extent(0))
+                                 , static_cast<int>(A.extent(1))
+                                 );
     static_assert(Kokkos::is_view<AViewType>::value,
                   "AViewType must be a Kokkos::View.");
     static_assert(Kokkos::is_view<XViewType>::value,
@@ -114,7 +121,32 @@ struct GER {
     Kokkos::Profiling::popRegion();
   }
 #else
-  ;
+  static void ger( const typename AViewType::execution_space  & //space
+                 , const typename AViewType::const_value_type & alpha
+                 , const          XViewType                   & x
+                 , const          YViewType                   & y
+                 , const          AViewType                   & A
+                 )
+  {
+    bool b1 = false;
+#if defined(KOKKOSKERNELS_ETI_ONLY)
+    b1 = true;
+#endif
+    bool b2 = false;
+#if KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
+    b2 = true;
+#endif
+    KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Entering KokkosBlas::Impl::Ger::ger(2): ETI_ONLY_IS_DEFINED=%d, IMPL_COMPILE_LIB=%d, alpha = %f, x.extent(0) = %d, y.extent(0) = %d, A.extent(0) = %d, A.extent(1) = %d\n"
+                                 , static_cast<int>(b1)
+                                 , static_cast<int>(b2)
+                                 , alpha
+                                 , static_cast<int>(x.extent(0))
+                                 , static_cast<int>(y.extent(0))
+                                 , static_cast<int>(A.extent(0))
+                                 , static_cast<int>(A.extent(1))
+                                 );
+  }
+  //;
 #endif // if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 };
 
