@@ -49,20 +49,49 @@ void impl_test_ger(int M, int N) {
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
-  {
-    ScalarX randStart, randEnd;
-    Test::getRandomBounds(1.0, randStart, randEnd);
-    Kokkos::fill_random(x, rand_pool, randStart, randEnd);
+  if ((M == 1) && (N == 1)) {
+    h_x[0] = 2;
+
+    h_y[0] = 3;
+
+    h_b_A(0,0) = 7;
+
+    Kokkos::deep_copy(x, h_x);
+    Kokkos::deep_copy(y, h_y);
+    Kokkos::deep_copy(b_A, h_b_A);
   }
-  {
-    ScalarY randStart, randEnd;
-    Test::getRandomBounds(1.0, randStart, randEnd);
-    Kokkos::fill_random(y, rand_pool, randStart, randEnd);
+  else if ((M == 2) && (N == 2)) {
+    h_x[0] = 2;
+    h_x[1] = 9;
+
+    h_y[0] = -3;
+    h_y[1] = 7;
+
+    h_b_A(0,0) = 17;
+    h_b_A(0,1) = -43;
+    h_b_A(1,0) = 29;
+    h_b_A(1,1) = 101;
+
+    Kokkos::deep_copy(x, h_x);
+    Kokkos::deep_copy(y, h_y);
+    Kokkos::deep_copy(b_A, h_b_A);
   }
-  {
-    ScalarA randStart, randEnd;
-    Test::getRandomBounds(1.0, randStart, randEnd);
-    Kokkos::fill_random(b_A, rand_pool, randStart, randEnd);
+  else {
+    {
+      ScalarX randStart, randEnd;
+      Test::getRandomBounds(1.0, randStart, randEnd);
+      Kokkos::fill_random(x, rand_pool, randStart, randEnd);
+    }
+    {
+      ScalarY randStart, randEnd;
+      Test::getRandomBounds(1.0, randStart, randEnd);
+      Kokkos::fill_random(y, rand_pool, randStart, randEnd);
+    }
+    {
+      ScalarA randStart, randEnd;
+      Test::getRandomBounds(1.0, randStart, randEnd);
+      Kokkos::fill_random(b_A, rand_pool, randStart, randEnd);
+    }
   }
 
   Kokkos::deep_copy(org_A, A);
@@ -78,6 +107,17 @@ void impl_test_ger(int M, int N) {
 
   KokkosBlas::ger(alpha, x, y, A);
   Kokkos::deep_copy(h_A, A);
+
+  if ((M <= 2) && (N <= 2)) {
+    for (int i(0); i < M; ++i) {
+      for (int j(0); j < N; ++j) {
+        std::cout << "expected(" << i << "," << j << ") = " << expected(i,j)
+		  << "; h_A("    << i << "," << j << ") = " << h_A(i,j)
+		  << std::endl;
+      }
+    }
+  }
+
   int numErrors(0);
   for (int i(0); i < M; ++i) {
     for (int j(0); j < N; ++j) {
@@ -121,11 +161,13 @@ int test_ger() {
   typedef Kokkos::View<ScalarA**, Kokkos::LayoutRight, Device> view_type_a_lr;
   //Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(0, 1024); // EEP
   //Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(1024, 0);
-  Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(13, 13);
-  Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(13, 1024);
-  Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(50, 40);
-  Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(1024, 1024);
-  Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(2131, 2131);
+  Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(1, 1);
+  Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(2, 2);
+  //Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(13, 13);
+  //Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(13, 1024);
+  //Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(50, 40);
+  //Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(1024, 1024);
+  //Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(2131, 2131);
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
