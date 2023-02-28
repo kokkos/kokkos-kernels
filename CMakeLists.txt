@@ -221,7 +221,7 @@ ELSE()
   # ==================================================================
   MESSAGE("")
   MESSAGE("================================")
-  MESSAGE("Kokkos Kernels version: ${KokkosKernels_VERSION_MAJOR}.${KokkosKernels_VERSION_MINOR}.${KokkosKernels_VERSION_PATCH}")
+  MESSAGE("Kokkos Kernels version: ${KOKKOSKERNELS_VERSION_MAJOR}.${KOKKOSKERNELS_VERSION_MINOR}.${KOKKOSKERNELS_VERSION_PATCH}")
   MESSAGE("================================")
   MESSAGE("Kokkos Kernels ETI Types")
   MESSAGE("   Devices:  ${DEVICE_LIST}")
