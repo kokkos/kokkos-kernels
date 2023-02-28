@@ -602,12 +602,6 @@ HIDE_SCOPE_NAMES       = NO
 
 HIDE_COMPOUND_REFERENCE= NO
 
-# If the SHOW_HEADERFILE tag is set to YES then the documentation for a class
-# will show which file needs to be included to use the class.
-# The default value is: YES.
-
-SHOW_HEADERFILE        = YES
-
 # If the SHOW_INCLUDE_FILES tag is set to YES then doxygen will put a list of
 # the files that are included by a file in the documentation of that file.
 # The default value is: YES.
@@ -818,13 +812,6 @@ WARN_IF_UNDOCUMENTED   = YES
 # The default value is: YES.
 
 WARN_IF_DOC_ERROR      = YES
-
-# If WARN_IF_INCOMPLETE_DOC is set to YES, doxygen will warn about incomplete
-# function parameter documentation. If set to NO, doxygen will accept that some
-# parameters have no documentation without warning.
-# The default value is: YES.
-
-WARN_IF_INCOMPLETE_DOC = YES
 
 # This WARN_NO_PARAMDOC option can be enabled to get warnings for functions that
 # are documented, but have no documentation for their parameters or return
@@ -1561,18 +1548,6 @@ DISABLE_INDEX          = NO
 
 GENERATE_TREEVIEW      = NO
 
-# When both GENERATE_TREEVIEW and DISABLE_INDEX are set to YES, then the
-# FULL_SIDEBAR option determines if the side bar is limited to only the treeview
-# area (value NO) or if it should extend to the full height of the window (value
-# YES). Setting this to YES gives a layout similar to
-# https://docs.readthedocs.io with more room for contents, but less room for the
-# project logo, title, and description. If either GENERATOR_TREEVIEW or
-# DISABLE_INDEX is set to NO, this option has no effect.
-# The default value is: NO.
-# This tag requires that the tag GENERATE_HTML is set to YES.
-
-FULL_SIDEBAR           = NO
-
 # The ENUM_VALUES_PER_LINE tag can be used to set the number of enum values that
 # doxygen will group on one line in the generated HTML documentation.
 #
@@ -1644,17 +1619,6 @@ FORMULA_MACROFILE      =
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
 USE_MATHJAX            = NO
-
-# With MATHJAX_VERSION it is possible to specify the MathJax version to be used.
-# Note that the different versions of MathJax have different requirements with
-# regards to the different settings, so it is possible that also other MathJax
-# settings have to be changed when switching between the different MathJax
-# versions.
-# Possible values are: MathJax_2 and MathJax_3.
-# The default value is: MathJax_2.
-# This tag requires that the tag USE_MATHJAX is set to YES.
-
-MATHJAX_VERSION        = MathJax_2
 
 # When MathJax is enabled you can set the default output format to be used for
 # the MathJax output. For more details about the output format see MathJax
