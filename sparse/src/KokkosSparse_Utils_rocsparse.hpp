@@ -18,6 +18,7 @@
 #define _KOKKOSKERNELS_SPARSEUTILS_ROCSPARSE_HPP
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+#include <rocm_version.h>
 #include "rocsparse/rocsparse.h"
 
 namespace KokkosSparse {
@@ -163,6 +164,9 @@ template <>
 struct kokkos_to_rocsparse_type<Kokkos::complex<double>> {
   using type = rocsparse_double_complex;
 };
+
+#define KOKKOSSPARSE_IMPL_ROCM_VERSION \
+  ROCM_VERSION_MAJOR * 10000 + ROCM_VERSION_MINOR * 100 + ROCM_VERSION_PATCH
 
 }  // namespace Impl
 
