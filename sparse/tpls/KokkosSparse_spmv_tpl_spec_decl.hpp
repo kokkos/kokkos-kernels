@@ -436,9 +436,9 @@ void spmv_rocsparse(const KokkosKernels::Experimental::Controls& controls,
       rocsparse_spmv(handle, myRocsparseOperation, &alpha, Aspmat, vecX, &beta,
                      vecY, compute_type, alg, &buffer_size, tmp_buffer));
   KOKKOS_IMPL_HIP_SAFE_CALL(hipMalloc(&tmp_buffer, buffer_size));
-  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_spmv_ex(
-      handle, myRocsparseOperation, &alpha, Aspmat, vecX, &beta, vecY,
-      compute_type, alg, &buffer_size, tmp_buffer));
+  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(
+      rocsparse_spmv(handle, myRocsparseOperation, &alpha, Aspmat, vecX, &beta,
+                     vecY, compute_type, alg, &buffer_size, tmp_buffer));
 #endif
   KOKKOS_IMPL_HIP_SAFE_CALL(hipFree(tmp_buffer));
 
