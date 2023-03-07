@@ -521,7 +521,7 @@ struct SPMV_Struct_Functor {
           const size_type rowOffset = m_A.graph.row_map(rowIdx);
 
           y_value_type sum(0.0);
-#if defined(KOKKOS_IF_ON_HOST)
+
           // clang-format off
           KOKKOS_IF_ON_HOST((
           for (ordinal_type idx = 0; idx < 27; ++idx) {
@@ -540,25 +540,7 @@ struct SPMV_Struct_Functor {
               },
               sum);
           ))
-      // clang-format on
-#elif defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)  // FIXME remove when
-                                                          // requiring minimum
-                                                          // version of
-                                                          // Kokkos 3.6
-          for (ordinal_type idx = 0; idx < 27; ++idx) {
-            sum +=
-                m_A.values(rowOffset + idx) * m_x(rowIdx + columnOffsets(idx));
-          }
-#else
-          Kokkos::parallel_reduce(
-              Kokkos::ThreadVectorRange(dev, 27),
-              [&](const ordinal_type& idx, y_value_type& lclSum) {
-                lclSum += (conjugate ? ATV::conj(m_A.values(rowOffset + idx))
-                                     : m_A.values(rowOffset + idx)) *
-                          m_x(rowIdx + columnOffsets(idx));
-              },
-              sum);
-#endif
+          // clang-format on
 
           Kokkos::single(Kokkos::PerThread(dev), [&]() {
             m_y(rowIdx) = beta * m_y(rowIdx) + alpha * sum;
