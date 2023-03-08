@@ -46,7 +46,7 @@ void spiluk_symbolic(KernelHandle* handle,
                      typename KernelHandle::const_nnz_lno_t fill_lev,
                      ARowMapType& A_rowmap, AEntriesType& A_entries,
                      LRowMapType& L_rowmap, LEntriesType& L_entries,
-                     URowMapType& U_rowmap, UEntriesType& U_entries) {
+                     URowMapType& U_rowmap, UEntriesType& U_entries, int nstreams = 1) {
   typedef typename KernelHandle::size_type size_type;
   typedef typename KernelHandle::nnz_lno_t ordinal_type;
 
@@ -240,7 +240,7 @@ void spiluk_symbolic(KernelHandle* handle,
       LEntries_Internal, URowMap_Internal,
       UEntries_Internal>::spiluk_symbolic(&tmp_handle, fill_lev, A_rowmap_i,
                                           A_entries_i, L_rowmap_i, L_entries_i,
-                                          U_rowmap_i, U_entries_i);
+                                          U_rowmap_i, U_entries_i, nstreams);
 
 }  // spiluk_symbolic
 
