@@ -43,6 +43,7 @@ void ger( const typename AViewType::execution_space  & space
         , const          YViewType                   & y
         , const          AViewType                   & A
         ) {
+#if 0
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Entering KokkosBlas::ger(): alpha = %f, x.extent(0) = %d, y.extent(0) = %d, A.extent(0) = %d, A.extent(1) = %d\n"
                                , alpha
                                , static_cast<int>(x.extent(0))
@@ -50,7 +51,7 @@ void ger( const typename AViewType::execution_space  & space
                                , static_cast<int>(A.extent(0))
                                , static_cast<int>(A.extent(1))
                                );
-
+#endif
   static_assert(Kokkos::is_view<AViewType>::value,
                 "AViewType must be a Kokkos::View.");
   static_assert(Kokkos::is_view<XViewType>::value,
@@ -99,10 +100,16 @@ void ger( const typename AViewType::execution_space  & space
   // other KokkosBlas headers
   bool useFallback = A.extent(0) == 0 || A.extent(1) == 0;
 
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "In KokkosBlas::ger(): useFallback = %d\n"
+#if 0
+  const bool tmp_eti_spec_avail = KokkosBlas::Impl::ger_eti_spec_avail<XVT, YVT, AVT>::value;
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "In KokkosBlas::ger(): useFallback = %d, typeid(XVT).name() = %s, typeid(YVT).name() = %s, typeid(AVT).name() = %s, tmp_eti_spec_avail = %d\n"
                                , static_cast<int>(useFallback)
+                               , typeid(XVT).name()
+                               , typeid(YVT).name()
+                               , typeid(AVT).name()
+                               , static_cast<int>(tmp_eti_spec_avail)
                                );
-
+#endif
   if (useFallback) {
     const bool eti_spec_avail = KokkosBlas::Impl::ger_eti_spec_avail<XVT, YVT, AVT>::value;
     typedef Impl::GER<XVT, YVT, AVT, false, eti_spec_avail> fallback_impl_type;

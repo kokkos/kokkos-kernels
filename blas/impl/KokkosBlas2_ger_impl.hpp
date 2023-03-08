@@ -18,8 +18,8 @@
 #ifndef KOKKOSBLAS2_GER_IMPL_HPP_
 #define KOKKOSBLAS2_GER_IMPL_HPP_
 
-#include <KokkosKernels_config.h>
-#include <Kokkos_Core.hpp>
+#include "KokkosKernels_config.h"
+#include "Kokkos_Core.hpp"
 #include "KokkosKernels_ExecSpaceUtils.hpp"
 #include "Kokkos_ArithTraits.hpp"
 
@@ -91,8 +91,7 @@ void singleLevelGer( const typename AViewType::execution_space  & space
                    , const          YViewType                   & y
                    , const          AViewType                   & A
                    ) {
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Entering singleLevelGer(): alpha = %f, x.extent(0) = %d, y.extent(0) = %d, A.extent(0) = %d, A.extent(1) = %d\n"
-                               , alpha
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Entering singleLevelGer(): x.extent(0) = %d, y.extent(0) = %d, A.extent(0) = %d, A.extent(1) = %d\n"
                                , static_cast<int>(x.extent(0))
                                , static_cast<int>(y.extent(0))
                                , static_cast<int>(A.extent(0))
@@ -230,8 +229,7 @@ void twoLevelGer( const typename AViewType::execution_space  & space
                 , const          YViewType                   & y
                 , const          AViewType                   & A
                 ) {
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Entering twoLevelGer(): alpha = %f, x.extent(0) = %d, y.extent(0) = %d, A.extent(0) = %d, A.extent(1) = %d\n"
-                               , alpha
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Entering twoLevelGer(): x.extent(0) = %d, y.extent(0) = %d, A.extent(0) = %d, A.extent(1) = %d\n"
                                , static_cast<int>(x.extent(0))
                                , static_cast<int>(y.extent(0))
                                , static_cast<int>(A.extent(0))
@@ -303,8 +301,7 @@ void generalGerImpl( const typename AViewType::execution_space  & space
                    , const          YViewType                   & y
                    , const          AViewType                   & A
                    ) {
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Entering generalGerImpl(CPU): alpha = %f, x.extent(0) = %d, y.extent(0) = %d, A.extent(0) = %d, A.extent(1) = %d\n"
-                               , alpha
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Entering generalGerImpl(CPU): x.extent(0) = %d, y.extent(0) = %d, A.extent(0) = %d, A.extent(1) = %d\n"
                                , static_cast<int>(x.extent(0))
                                , static_cast<int>(y.extent(0))
                                , static_cast<int>(A.extent(0))
@@ -325,8 +322,7 @@ void generalGerImpl( const typename AViewType::execution_space  & space
                    , const          YViewType                   & y
                    , const          AViewType                   & A
                    ) {
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Entering generalGerImpl(GPU): alpha = %f, x.extent(0) = %d, y.extent(0) = %d, A.extent(0) = %d, A.extent(1) = %d\n"
-                               , alpha
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Entering generalGerImpl(GPU): x.extent(0) = %d, y.extent(0) = %d, A.extent(0) = %d, A.extent(1) = %d\n"
                                , static_cast<int>(x.extent(0))
                                , static_cast<int>(y.extent(0))
                                , static_cast<int>(A.extent(0))

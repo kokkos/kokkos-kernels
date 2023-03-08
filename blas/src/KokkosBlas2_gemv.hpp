@@ -144,6 +144,14 @@ void gemv(const typename AViewType::execution_space& space, const char trans[],
                                 std::is_same<typename AViewType::memory_space,
                                              Kokkos::HostSpace>::value);
 #endif
+
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "In KokkosBlas::gemv(): useFallback = %d, typeid(XVT).name() = %s, typeid(YVT).name() = %s, typeid(AVT).name() = %s\n"
+                               , static_cast<int>(useFallback)
+                               , typeid(XVT).name()
+                               , typeid(YVT).name()
+                               , typeid(AVT).name()
+                               );
+
   if (useFallback) {
     const bool eti_spec_avail =
         KokkosBlas::Impl::gemv_eti_spec_avail<AVT, XVT, YVT>::value;
