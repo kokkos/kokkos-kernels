@@ -103,15 +103,15 @@ namespace Impl {
 template <class ExecutionSpace, class KernelHandle, class ARowMapType,
           class AEntriesType, class AValuesType, class LRowMapType,
           class LEntriesType, class LValuesType, class URowMapType,
-          class UEntriesType,  class UValuesType,
-          bool tpl_spec_avail = spiluk_numeric_tpl_spec_avail<ExecutionSpace,
-              KernelHandle, ARowMapType, AEntriesType, AValuesType, LRowMapType,
-              LEntriesType, LValuesType, URowMapType, UEntriesType,
-              UValuesType>::value,
-          bool eti_spec_avail = spiluk_numeric_eti_spec_avail<ExecutionSpace,
-              KernelHandle, ARowMapType, AEntriesType, AValuesType, LRowMapType,
-              LEntriesType, LValuesType, URowMapType, UEntriesType,
-              UValuesType>::value>
+          class UEntriesType, class UValuesType,
+          bool tpl_spec_avail = spiluk_numeric_tpl_spec_avail<
+              ExecutionSpace, KernelHandle, ARowMapType, AEntriesType,
+              AValuesType, LRowMapType, LEntriesType, LValuesType, URowMapType,
+              UEntriesType, UValuesType>::value,
+          bool eti_spec_avail = spiluk_numeric_eti_spec_avail<
+              ExecutionSpace, KernelHandle, ARowMapType, AEntriesType,
+              AValuesType, LRowMapType, LEntriesType, LValuesType, URowMapType,
+              UEntriesType, UValuesType>::value>
 struct SPILUK_NUMERIC {
   static void spiluk_numeric(
       KernelHandle *handle,
@@ -121,17 +121,17 @@ struct SPILUK_NUMERIC {
       LEntriesType &L_entries, LValuesType &L_values, URowMapType &U_row_map,
       UEntriesType &U_entries, UValuesType &U_values);
   static void spiluk_numeric_streams(
-      const std::vector<ExecutionSpace>& execspace_v,
-            std::vector<KernelHandle>& handle_v,
-      const std::vector<ARowMapType>& A_row_map_v,
-      const std::vector<AEntriesType>& A_entries_v,
-      const std::vector<AValuesType>& A_values_v,
-      const std::vector<LRowMapType>& L_row_map_v,
-      const std::vector<LEntriesType>& L_entries_v,
-            std::vector<LValuesType>& L_values_v,
-      const std::vector<URowMapType>& U_row_map_v,
-      const std::vector<UEntriesType>& U_entries_v,
-            std::vector<UValuesType>& U_values_v);
+      const std::vector<ExecutionSpace> &execspace_v,
+      std::vector<KernelHandle> &handle_v,
+      const std::vector<ARowMapType> &A_row_map_v,
+      const std::vector<AEntriesType> &A_entries_v,
+      const std::vector<AValuesType> &A_values_v,
+      const std::vector<LRowMapType> &L_row_map_v,
+      const std::vector<LEntriesType> &L_entries_v,
+      std::vector<LValuesType> &L_values_v,
+      const std::vector<URowMapType> &U_row_map_v,
+      const std::vector<UEntriesType> &U_entries_v,
+      std::vector<UValuesType> &U_values_v);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
@@ -161,23 +161,27 @@ struct SPILUK_NUMERIC<ExecutionSpace, KernelHandle, ARowMapType, AEntriesType,
   }
 
   static void spiluk_numeric_streams(
-      const std::vector<ExecutionSpace>& execspace_v,
-            std::vector<KernelHandle>&   handle_v,
-      const std::vector<ARowMapType>&    A_row_map_v,
-      const std::vector<AEntriesType>&   A_entries_v,
-      const std::vector<AValuesType>&    A_values_v,
-      const std::vector<LRowMapType>&    L_row_map_v,
-      const std::vector<LEntriesType>&   L_entries_v,
-            std::vector<LValuesType>&    L_values_v,
-      const std::vector<URowMapType>&    U_row_map_v,
-      const std::vector<UEntriesType>&   U_entries_v,
-            std::vector<UValuesType>&    U_values_v) {
-    std::vector<typename KernelHandle::SPILUKHandleType*> spiluk_handle_v(execspace_v.size());
+      const std::vector<ExecutionSpace> &execspace_v,
+      std::vector<KernelHandle> &handle_v,
+      const std::vector<ARowMapType> &A_row_map_v,
+      const std::vector<AEntriesType> &A_entries_v,
+      const std::vector<AValuesType> &A_values_v,
+      const std::vector<LRowMapType> &L_row_map_v,
+      const std::vector<LEntriesType> &L_entries_v,
+      std::vector<LValuesType> &L_values_v,
+      const std::vector<URowMapType> &U_row_map_v,
+      const std::vector<UEntriesType> &U_entries_v,
+      std::vector<UValuesType> &U_values_v) {
+    std::vector<typename KernelHandle::SPILUKHandleType *> spiluk_handle_v(
+        execspace_v.size());
     for (int i = 0; i < static_cast<int>(execspace_v.size()); i++) {
       spiluk_handle_v[i] = handle_v[i].get_spiluk_handle();
     }
 
-    Experimental::iluk_numeric_streams(execspace_v, spiluk_handle_v, A_row_map_v, A_entries_v, A_values_v, L_row_map_v, L_entries_v, L_values_v, U_row_map_v, U_entries_v, U_values_v);
+    Experimental::iluk_numeric_streams(execspace_v, spiluk_handle_v,
+                                       A_row_map_v, A_entries_v, A_values_v,
+                                       L_row_map_v, L_entries_v, L_values_v,
+                                       U_row_map_v, U_entries_v, U_values_v);
   }
 };
 

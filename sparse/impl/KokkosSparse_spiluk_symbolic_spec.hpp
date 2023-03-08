@@ -120,7 +120,9 @@ struct SPILUK_SYMBOLIC<KernelHandle, ARowMapType, AEntriesType, LRowMapType,
       UEntriesType &U_entries, int nstreams = 1) {
     auto spiluk_handle = handle->get_spiluk_handle();
 
-    Experimental::iluk_symbolic(*spiluk_handle, fill_lev, A_row_map, A_entries, L_row_map, L_entries, U_row_map, U_entries, nstreams);
+    Experimental::iluk_symbolic(*spiluk_handle, fill_lev, A_row_map, A_entries,
+                                L_row_map, L_entries, U_row_map, U_entries,
+                                nstreams);
     spiluk_handle->set_symbolic_complete();
   }
 };

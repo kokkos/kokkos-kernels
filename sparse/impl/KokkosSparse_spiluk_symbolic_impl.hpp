@@ -152,7 +152,8 @@ void level_sched_tp(IlukHandle& thandle, const RowMapType row_map,
     size_t free_byte, total_byte;
     KokkosKernels::Impl::kk_get_free_total_memory<memory_space>(free_byte,
                                                                 total_byte);
-    avail_byte = static_cast<size_t>(0.85 * static_cast<double>(free_byte) / static_cast<double>(nstreams));
+    avail_byte = static_cast<size_t>(0.85 * static_cast<double>(free_byte) /
+                                     static_cast<double>(nstreams));
   }
 #endif
 
@@ -435,12 +436,18 @@ void iluk_symbolic(IlukHandle& thandle,
       level_sched_tp(thandle, L_row_map, L_entries, level_list, level_ptr,
                      level_idx, nlev, nstreams);
       thandle.alloc_iw(thandle.get_level_maxrowsperchunk(), nrows);
-      printf("spiluk_symbolic: iw (%d x %d) size %lu bytes\n", thandle.get_level_maxrowsperchunk(), nrows, (size_t)(nrows)*(size_t)(thandle.get_level_maxrowsperchunk())*sizeof(nnz_lno_t));
+      printf("spiluk_symbolic: iw (%d x %d) size %lu bytes\n",
+             thandle.get_level_maxrowsperchunk(), nrows,
+             (size_t)(nrows) * (size_t)(thandle.get_level_maxrowsperchunk()) *
+                 sizeof(nnz_lno_t));
     } else {
       level_sched(thandle, L_row_map, L_entries, level_list, level_ptr,
                   level_idx, nlev);
       thandle.alloc_iw(thandle.get_level_maxrows(), nrows);
-      printf("spiluk_symbolic: iw (%d x %d) size %lu bytes\n", thandle.get_level_maxrows(), nrows, (size_t)(nrows)*(size_t)(thandle.get_level_maxrows())*sizeof(nnz_lno_t));
+      printf("spiluk_symbolic: iw (%d x %d) size %lu bytes\n",
+             thandle.get_level_maxrows(), nrows,
+             (size_t)(nrows) * (size_t)(thandle.get_level_maxrows()) *
+                 sizeof(nnz_lno_t));
     }
 
     Kokkos::deep_copy(dlevel_ptr, level_ptr);
