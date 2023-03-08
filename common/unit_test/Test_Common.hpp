@@ -24,5 +24,6 @@
 #include <Test_Common_Error.hpp>
 #include <Test_Common_Version.hpp>
 #include <Test_Common_PrintConfiguration.hpp>
+#include <Test_Common_Iota.hpp>
 
 #endif  // TEST_COMMON_HPP
