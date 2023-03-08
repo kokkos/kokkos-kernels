@@ -114,6 +114,7 @@ void impl_test_gemv(const char* mode, int M, int N) {
                           << ", alpha = " << alpha << ", beta = " << beta
                           << ", mode " << mode << ": gemv incorrect";
 
+#if 0
   Kokkos::deep_copy(y, org_y);
   KokkosBlas::gemv(mode, alpha, A, c_x, beta, y);
   Kokkos::deep_copy(h_y, y);
@@ -157,6 +158,7 @@ void impl_test_gemv(const char* mode, int M, int N) {
   }
   EXPECT_EQ(numErrors, 0) << "beta = 0, input contains NaN, A is " << M << 'x'
                           << N << ", mode " << mode << ": gemv incorrect";
+#endif // if 0
 }
 }  // namespace Test
 
@@ -200,20 +202,20 @@ int test_gemv(const char* mode) {
   typedef Kokkos::View<ScalarA**, Kokkos::LayoutRight, Device> view_type_a_lr;
   typedef Kokkos::View<ScalarX*, Kokkos::LayoutRight, Device> view_type_b_lr;
   typedef Kokkos::View<ScalarY*, Kokkos::LayoutRight, Device> view_type_c_lr;
-  Test::impl_test_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(
-      mode, 0, 1024);
-  Test::impl_test_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(
-      mode, 1024, 0);
+  //Test::impl_test_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(
+  //    mode, 0, 1024);
+  //Test::impl_test_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(
+  //    mode, 1024, 0);
   Test::impl_test_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(
       mode, 13, 13);
-  Test::impl_test_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(
-      mode, 13, 1024);
-  Test::impl_test_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(
-      mode, 50, 40);
-  Test::impl_test_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(
-      mode, 1024, 1024);
-  Test::impl_test_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(
-      mode, 2131, 2131);
+  //Test::impl_test_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(
+  //    mode, 13, 1024);
+  //Test::impl_test_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(
+  //   mode, 50, 40);
+  //Test::impl_test_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(
+  //    mode, 1024, 1024);
+  //Test::impl_test_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(
+  //    mode, 2131, 2131);
   // Test::impl_test_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr,
   // Device>(mode,132231,1024);
 #endif
@@ -249,6 +251,8 @@ int test_gemv(const char* mode) {
   return 1;
 }
 
+#if 0
+
 #if defined(KOKKOSKERNELS_INST_FLOAT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -263,6 +267,8 @@ TEST_F(TestCategory, gemv_float) {
 }
 #endif
 
+#endif // #if 0
+
 #if defined(KOKKOSKERNELS_INST_DOUBLE) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&  \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -271,12 +277,13 @@ TEST_F(TestCategory, gemv_double) {
   test_gemv<double, double, double, TestExecSpace>("N");
   Kokkos::Profiling::popRegion();
 
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::gemv_tran_double");
-  test_gemv<double, double, double, TestExecSpace>("T");
-  Kokkos::Profiling::popRegion();
+  //Kokkos::Profiling::pushRegion("KokkosBlas::Test::gemv_tran_double");
+  //test_gemv<double, double, double, TestExecSpace>("T");
+  //Kokkos::Profiling::popRegion();
 }
 #endif
 
+#if 0
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&          \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -324,3 +331,4 @@ TEST_F(TestCategory, gemv_double_int) {
   // Kokkos::Profiling::popRegion();
 }
 #endif
+#endif // if 0

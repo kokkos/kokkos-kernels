@@ -81,6 +81,22 @@ struct GEMV {
                    const YViewType& y)
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
   {
+    KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Entering KokkosBlas::Impl::Gemv::gemv(1): alpha = %f, x.extent(0) = %d, y.extent(0) = %d, A.extent(0) = %d, A.extent(1) = %d\n"
+                                 , alpha
+                                 , static_cast<int>(x.extent(0))
+                                 , static_cast<int>(y.extent(0))
+                                 , static_cast<int>(A.extent(0))
+                                 , static_cast<int>(A.extent(1))
+                                 );
+    KOKKOS_IMPL_DO_NOT_USE_PRINTF( "In KokkosBlas::Impl::Gemv::gemv(1): alpha.type = %s, x.type = %s, y.type = %s, A.type = %s, tpl_spec_avail = %d, eti_spec_avail = %d\n"
+                                 , typeid(alpha).name()
+                                 , typeid(x).name()
+                                 , typeid(y).name()
+                                 , typeid(A).name()
+                                 , static_cast<int>(tpl_spec_avail)
+                                 , static_cast<int>(eti_spec_avail)
+                                 );
+
     static_assert(Kokkos::is_view<AViewType>::value,
                   "AViewType must be a Kokkos::View.");
     static_assert(Kokkos::is_view<XViewType>::value,
