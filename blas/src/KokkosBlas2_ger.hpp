@@ -43,7 +43,7 @@ void ger( const typename AViewType::execution_space  & space
         , const          YViewType                   & y
         , const          AViewType                   & A
         ) {
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Entering SRC KokkosBlas::ger(), AViewType = %d\n", typeid(AViewType).name() );
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Entering SRC KokkosBlas::ger(), AViewType = %s\n", typeid(AViewType).name() );
   static_assert(Kokkos::is_view<AViewType>::value,
                 "AViewType must be a Kokkos::View.");
   static_assert(Kokkos::is_view<XViewType>::value,

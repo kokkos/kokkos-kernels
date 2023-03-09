@@ -146,7 +146,7 @@ void impl_test_ger(int M, int N) {
 template <class ScalarX, class ScalarY, class ScalarA, class Device>
 int test_ger( const std::string & caseName ) {
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "+==========================================================================\n" );
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Starting %s ...\n", caseName );
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Starting %s ...\n", caseName.c_str() );
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) ||				\
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
