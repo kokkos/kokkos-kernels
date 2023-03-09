@@ -27,7 +27,7 @@ if (KokkosKernels_ENABLE_PERFTESTS)
     TARGET_COMPILE_FEATURES(kokkoskernelsperf_gtest PUBLIC cxx_std_11)
 
     KOKKOSKERNELS_INCLUDE_DIRECTORIES(sparse)
-    
+
     if(KokkosKernels_ENABLE_TESTS_AND_PERFSUITE)
         #Add RPS implementations of KK perf tests here
         KOKKOSKERNELS_ADD_EXECUTABLE(
@@ -116,7 +116,7 @@ IF(KokkosKernels_ENABLE_BENCHMARK)
       )
       TARGET_LINK_LIBRARIES(
         ${BENCHMARK_NAME}
-        PRIVATE benchmark::benchmark Kokkos::kokkoskernels
+        PRIVATE benchmark::benchmark Kokkos::kokkoskernels impl_git_version
       )
       FOREACH(SOURCE_FILE ${BENCHMARK_SOURCES})
         SET_SOURCE_FILES_PROPERTIES(
