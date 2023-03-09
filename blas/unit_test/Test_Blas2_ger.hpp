@@ -115,69 +115,14 @@ void impl_test_ger(int M, int N) {
 
   Kokkos::View<ScalarA**, Kokkos::HostSpace> expected("expected A += alpha * x * y^t", M ,N);
   Kokkos::deep_copy(expected, h_org_A);
-#if 0  
-  if ((M <= 2) && (N <= 2)) {
-    for (int i(0); i < M; ++i) {
-      for (int j(0); j < N; ++j) {
-        std::cout << "Before 'vanillaGer()': expected(" << i << "," << j << ") = " << expected(i,j)
-                  << std::endl;
-      }
-    }
-    for (int i(0); i < M; ++i) {
-      std::cout << "Before 'vanillaGer()': h_x[" << i << "] = " << h_x[i]
-                << std::endl;
-    }
-    for (int j(0); j < N; ++j) {
-      std::cout << "Before 'vanillaGer()': h_y[" << j << "] = " << h_y[j]
-                << std::endl;
-    }
-  }
-#endif
   vanillaGER(alpha, h_x, h_y, expected);
 
   Kokkos::deep_copy(h_A, A);
   Kokkos::deep_copy(h_x, x);
   Kokkos::deep_copy(h_y, y);
-#if 0
-  if ((M <= 2) && (N <= 2)) {
-    for (int i(0); i < M; ++i) {
-      for (int j(0); j < N; ++j) {
-        std::cout << "Before 'KokkosBlass::ger()': h_A(" << i << "," << j << ") = " << h_A(i,j)
-                  << std::endl;
-      }
-    }
-    for (int i(0); i < M; ++i) {
-      std::cout << "Before 'vanillaGer()': h_x[" << i << "] = " << h_x[i]
-                << std::endl;
-    }
-    for (int j(0); j < N; ++j) {
-      std::cout << "Before 'vanillaGer()': h_y[" << j << "] = " << h_y[j]
-                << std::endl;
-    }
-  }
-#endif
-  //KOKKOS_IMPL_DO_NOT_USE_PRINTF( "In Test_Blas2_ger.hpp, right before calling KokkosBlas::ger(): alpha.type = %s, x.type = %s, y.type = %s, A.type = %s\n"
-  //                             , typeid(alpha).name()
-  //                             , typeid(x).name()
-  //                             , typeid(y).name()
-  //                             , typeid(A).name()
-  //                             );
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "ViewTypeA = %s\n", typeid(ViewTypeA).name() );
-  //KOKKOS_IMPL_DO_NOT_USE_PRINTF( "ScalarA type = %s\n", typeid(ScalarA).name() );
-  //KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Device type = %s\n", typeid(Device).name() );
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "In Test_Blas2_ger.hpp, right before calling KokkosBlas::ger(): ViewType = %s\n", typeid(ViewTypeA).name() );
   KokkosBlas::ger(alpha, x, y, A);
   Kokkos::deep_copy(h_A, A);
-#if 0
-  if ((M <= 2) && (N <= 2)) {
-    for (int i(0); i < M; ++i) {
-      for (int j(0); j < N; ++j) {
-        std::cout << "expected(" << i << "," << j << ") = " << expected(i,j)
-                  << "; h_A("    << i << "," << j << ") = " << h_A(i,j)
-                  << std::endl;
-      }
-    }
-  }
-#endif
   int numErrors(0);
   for (int i(0); i < M; ++i) {
     for (int j(0); j < N; ++j) {
@@ -199,9 +144,14 @@ void impl_test_ger(int M, int N) {
 } // namespace Test
 
 template <class ScalarX, class ScalarY, class ScalarA, class Device>
-int test_ger() {
-#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
+int test_ger( const std::string & caseName ) {
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "+==========================================================================\n" );
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Starting %s ...\n", caseName );
+
+#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) ||				\
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "+--------------------------------------------------------------------------\n" );
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Starting %s for LAYOUTLEFT ...\n", caseName.c_str() );
   typedef Kokkos::View<ScalarX*, Kokkos::LayoutLeft, Device> view_type_x_ll;
   typedef Kokkos::View<ScalarY*, Kokkos::LayoutLeft, Device> view_type_y_ll;
   typedef Kokkos::View<ScalarA**, Kokkos::LayoutLeft, Device> view_type_a_ll;
@@ -212,14 +162,18 @@ int test_ger() {
   Test::impl_test_ger<view_type_x_ll, view_type_y_ll, view_type_a_ll, Device>(50, 40);
   Test::impl_test_ger<view_type_x_ll, view_type_y_ll, view_type_a_ll, Device>(1024, 1024);
   Test::impl_test_ger<view_type_x_ll, view_type_y_ll, view_type_a_ll, Device>(2131, 2131);
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Finished %s for LAYOUTLEFT\n", caseName.c_str() );
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "+--------------------------------------------------------------------------\n" );
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "+--------------------------------------------------------------------------\n" );
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Starting %s for LAYOUTRIGHT ...\n", caseName.c_str() );
   typedef Kokkos::View<ScalarX*, Kokkos::LayoutRight, Device> view_type_x_lr;
   typedef Kokkos::View<ScalarY*, Kokkos::LayoutRight, Device> view_type_y_lr;
   typedef Kokkos::View<ScalarA**, Kokkos::LayoutRight, Device> view_type_a_lr;
-  Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(0, 1024); // EEP
+  Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(0, 1024);
   Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(1024, 0);
   Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(1, 1);
   Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(2, 2);
@@ -229,10 +183,14 @@ int test_ger() {
   Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(50, 40);
   Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(1024, 1024);
   Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(2131, 2131);
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Finished %s for LAYOUTRIGHT\n", caseName.c_str() );
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "+--------------------------------------------------------------------------\n" );
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "+--------------------------------------------------------------------------\n" );
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Starting %s for LAYOUTSTRIDE ...\n", caseName.c_str() );
   typedef Kokkos::View<ScalarX*, Kokkos::LayoutStride, Device> view_type_x_ls;
   typedef Kokkos::View<ScalarY*, Kokkos::LayoutStride, Device> view_type_y_ls;
   typedef Kokkos::View<ScalarA**, Kokkos::LayoutStride, Device> view_type_a_ls;
@@ -243,32 +201,39 @@ int test_ger() {
   Test::impl_test_ger<view_type_x_ls, view_type_y_ls, view_type_a_ls, Device>(50, 40);
   Test::impl_test_ger<view_type_x_ls, view_type_y_ls, view_type_a_ls, Device>(1024, 1024);
   Test::impl_test_ger<view_type_x_ls, view_type_y_ls, view_type_a_ls, Device>(2131, 2131);
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Finished %s for LAYOUTSTRIDE\n", caseName.c_str() );
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "+--------------------------------------------------------------------------\n" );
 #endif
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
-  //Test::impl_test_ger<view_type_x_ls, view_type_y_ll, view_type_a_lr, Device>(1024, 1024);
-  //Test::impl_test_ger<view_type_x_ll, view_type_y_ls, view_type_a_lr, Device>(1024, 1024);
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "+--------------------------------------------------------------------------\n" );
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Starting %s for MIXED LAYOUTS ...\n", caseName.c_str() );
+  Test::impl_test_ger<view_type_x_ls, view_type_y_ll, view_type_a_lr, Device>(1024, 1024);
+  Test::impl_test_ger<view_type_x_ll, view_type_y_ls, view_type_a_lr, Device>(1024, 1024);
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Finished %s for MIXED LAYOUTS\n", caseName.c_str() );
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "+--------------------------------------------------------------------------\n" );
 #endif
+
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Finished %s\n", caseName.c_str() );
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "+==========================================================================\n" );
 
   return 1;
 }
 
-#if 1
 #if defined(KOKKOSKERNELS_INST_FLOAT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, ger_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::ger_float");
-  test_ger<float, float, float, TestExecSpace>();
+  test_ger<float, float, float, TestExecSpace>( "test case ger_float" );
   Kokkos::Profiling::popRegion();
 }
 #endif
-#endif // if 0
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, ger_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::ger_double");
-  test_ger<double, double, double, TestExecSpace>();
+  test_ger<double, double, double, TestExecSpace>( "test case ger_double" );
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -277,17 +242,16 @@ TEST_F(TestCategory, ger_double) {
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, ger_complex_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::ger_complex_double");
-  test_ger<Kokkos::complex<double>, Kokkos::complex<double>, Kokkos::complex<double>, TestExecSpace>();
+  test_ger<Kokkos::complex<double>, Kokkos::complex<double>, Kokkos::complex<double>, TestExecSpace>( "test case ger_complex_double" );
   Kokkos::Profiling::popRegion();
 }
 #endif
 
-#if 1
 #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, ger_complex_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::ger_complex_float");
-  test_ger<Kokkos::complex<float>, Kokkos::complex<float>, Kokkos::complex<float>, TestExecSpace>();
+  test_ger<Kokkos::complex<float>, Kokkos::complex<float>, Kokkos::complex<float>, TestExecSpace>( "test case ger_complex_float" );
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -296,7 +260,7 @@ TEST_F(TestCategory, ger_complex_float) {
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, ger_int) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::ger_int");
-  test_ger<int, int, int, TestExecSpace>();
+  test_ger<int, int, int, TestExecSpace>( "test case ger_int" );
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -305,8 +269,7 @@ TEST_F(TestCategory, ger_int) {
     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
 TEST_F(TestCategory, ger_double_int) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::ger_double_int");
-  test_ger<double, int, float, TestExecSpace>();
+  test_ger<double, int, float, TestExecSpace>( "test case ger_mixed_types" );
   Kokkos::Profiling::popRegion();
 }
 #endif
-#endif // if 0
