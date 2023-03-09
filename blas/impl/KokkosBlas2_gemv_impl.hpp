@@ -209,13 +209,6 @@ void singleLevelGemv(const typename AViewType::execution_space& space,
                      const AViewType& A, const XViewType& x,
                      typename YViewType::const_value_type& beta,
                      const YViewType& y) {
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Entering singleLevelGemv(): alpha = %f, x.extent(0) = %d, y.extent(0) = %d, A.extent(0) = %d, A.extent(1) = %d\n"
-                               , alpha
-                               , static_cast<int>(x.extent(0))
-                               , static_cast<int>(y.extent(0))
-                               , static_cast<int>(A.extent(0))
-                               , static_cast<int>(A.extent(1))
-                               );
   static_assert(Kokkos::is_view<AViewType>::value,
                 "AViewType must be a Kokkos::View.");
   static_assert(Kokkos::is_view<XViewType>::value,
@@ -657,13 +650,6 @@ void twoLevelGemv(const typename AViewType::execution_space& space,
                   const AViewType& A, const XViewType& x,
                   typename YViewType::const_value_type& beta,
                   const YViewType& y) {
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Entering twoLevelGemv(): alpha = %f, x.extent(0) = %d, y.extent(0) = %d, A.extent(0) = %d, A.extent(1) = %d\n"
-                               , alpha
-                               , static_cast<int>(x.extent(0))
-                               , static_cast<int>(y.extent(0))
-                               , static_cast<int>(A.extent(0))
-                               , static_cast<int>(A.extent(1))
-                               );
   static_assert(Kokkos::is_view<AViewType>::value,
                 "AViewType must be a Kokkos::View.");
   static_assert(Kokkos::is_view<XViewType>::value,
