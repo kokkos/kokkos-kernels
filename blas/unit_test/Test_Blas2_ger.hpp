@@ -127,6 +127,13 @@ void impl_test_ger(int M, int N) {
   for (int i(0); i < M; ++i) {
     for (int j(0); j < N; ++j) {
       if (KAT_A::abs(expected(i,j) - h_A(i,j)) > KAT_A::abs(eps * expected(i,j))) {
+        std::cout << "ERROR, i = " << i
+                  << ", j = "      << j
+                  << ": expected(i,j) = " << expected(i,j)
+                  << ", h_A(i,j) = "      << h_A(i,j)
+                  << ", KAT_A::abs(expected(i,j) - h_A(i,j)) = " << KAT_A::abs(expected(i,j) - h_A(i,j))
+                  << ", KAT_A::abs(eps * expected(i,j)) = "      << KAT_A::abs(eps * expected(i,j))
+                  << std::endl;
         numErrors++;
       }
     }
