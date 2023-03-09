@@ -404,7 +404,7 @@ void run_test_spiluk_streams(int test_algo, int nstreams) {
     // Symbolic phase
     spiluk_symbolic(kh_ptr_v[i], fill_lev, A_row_map_v[i], A_entries_v[i],
                     L_row_map_v[i], L_entries_v[i], U_row_map_v[i],
-                    U_entries_v[i]);
+                    U_entries_v[i], nstreams);
 
     Kokkos::fence();
 
@@ -412,7 +412,7 @@ void run_test_spiluk_streams(int test_algo, int nstreams) {
     Kokkos::resize(L_values_v[i], spiluk_handle->get_nnzL());
     Kokkos::resize(U_entries_v[i], spiluk_handle->get_nnzU());
     Kokkos::resize(U_values_v[i], spiluk_handle->get_nnzU());
-  }
+  } // Done handle creation and spiluk_symbolic on all streams
 
   // Numeric phase
   spiluk_numeric_streams(instances, kh_ptr_v, fill_lev, A_row_map_v,
