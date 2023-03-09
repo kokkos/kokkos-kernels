@@ -925,7 +925,7 @@ void spiluk_numeric_streams(const std::vector<ExecutionSpace>& execspace_v,
       Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
   using LEntries_Internal = Kokkos::View<
-      typename LEntriesType::const_value_type*,
+      typename LEntriesType::non_const_value_type*,
       typename KokkosKernels::Impl::GetUnifiedLayout<
           LEntriesType>::array_layout,
       typename LEntriesType::device_type,
@@ -944,7 +944,7 @@ void spiluk_numeric_streams(const std::vector<ExecutionSpace>& execspace_v,
       Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
   using UEntries_Internal = Kokkos::View<
-      typename UEntriesType::const_value_type*,
+      typename UEntriesType::non_const_value_type*,
       typename KokkosKernels::Impl::GetUnifiedLayout<
           UEntriesType>::array_layout,
       typename UEntriesType::device_type,

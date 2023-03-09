@@ -531,10 +531,6 @@ void iluk_numeric_streams(const std::vector<ExecutionSpace> &execspace_v,
     if (nlevels_max < nlevels_v[i]) nlevels_max = nlevels_v[i];
   }
 
-  std::cout << "iluk_numeric_streams--Max. number of levels among streams "
-               "(nlevels_max): "
-            << nlevels_max << std::endl;
-
   // Assume all streams use the same algorithm
   if (thandle_v[0]->get_algorithm() ==
       KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_RP) {
