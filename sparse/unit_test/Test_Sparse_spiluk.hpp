@@ -265,17 +265,18 @@ void run_test_spiluk() {
 template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
 void run_test_spiluk_streams(int test_algo, int nstreams) {
-  using RowMapType = Kokkos::View<size_type*, device>;
-  using EntriesType = Kokkos::View<lno_t*, device>;
-  using ValuesType = Kokkos::View<scalar_t*, device>;
-  using RowMapType_hostmirror = typename RowMapType::HostMirror;
+  using RowMapType             = Kokkos::View<size_type*, device>;
+  using EntriesType            = Kokkos::View<lno_t*, device>;
+  using ValuesType             = Kokkos::View<scalar_t*, device>;
+  using RowMapType_hostmirror  = typename RowMapType::HostMirror;
   using EntriesType_hostmirror = typename EntriesType::HostMirror;
-  using ValuesType_hostmirror = typename ValuesType::HostMirror;
-  using execution_space = typename device::execution_space;
-  using memory_space = typename device::memory_space;
-  using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, scalar_t, execution_space, memory_space, memory_space>;
+  using ValuesType_hostmirror  = typename ValuesType::HostMirror;
+  using execution_space        = typename device::execution_space;
+  using memory_space           = typename device::memory_space;
+  using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<
+      size_type, lno_t, scalar_t, execution_space, memory_space, memory_space>;
   using crsMat_t = CrsMatrix<scalar_t, lno_t, device, void, size_type>;
-  using AT = Kokkos::Details::ArithTraits<scalar_t>;
+  using AT       = Kokkos::Details::ArithTraits<scalar_t>;
 
   const size_type nrows = 9;
   const size_type nnz   = 21;
@@ -284,9 +285,11 @@ void run_test_spiluk_streams(int test_algo, int nstreams) {
   if (nstreams == 2)
     instances = Kokkos::Experimental::partition_space(execution_space(), 1, 1);
   else if (nstreams == 3)
-    instances = Kokkos::Experimental::partition_space(execution_space(), 1, 1, 1);
+    instances =
+        Kokkos::Experimental::partition_space(execution_space(), 1, 1, 1);
   else
-    instances = Kokkos::Experimental::partition_space(execution_space(), 1, 1, 1, 1);
+    instances =
+        Kokkos::Experimental::partition_space(execution_space(), 1, 1, 1, 1);
 
   std::vector<KernelHandle> kh_v(nstreams);
   std::vector<KernelHandle*> kh_ptr_v(nstreams);
@@ -379,9 +382,11 @@ void run_test_spiluk_streams(int test_algo, int nstreams) {
     // Create handle
     kh_v[i] = KernelHandle();
     if (test_algo == 0)
-      kh_v[i].create_spiluk_handle(SPILUKAlgorithm::SEQLVLSCHD_RP, nrows, 4 * nrows, 4 * nrows);
+      kh_v[i].create_spiluk_handle(SPILUKAlgorithm::SEQLVLSCHD_RP, nrows,
+                                   4 * nrows, 4 * nrows);
     else if (test_algo == 1)
-      kh_v[i].create_spiluk_handle(SPILUKAlgorithm::SEQLVLSCHD_TP1, nrows, 4 * nrows, 4 * nrows);
+      kh_v[i].create_spiluk_handle(SPILUKAlgorithm::SEQLVLSCHD_TP1, nrows,
+                                   4 * nrows, 4 * nrows);
     kh_ptr_v[i] = &kh_v[i];
 
     auto spiluk_handle = kh_v[i].get_spiluk_handle();
@@ -397,7 +402,9 @@ void run_test_spiluk_streams(int test_algo, int nstreams) {
     U_values_v[i]  = ValuesType("U_values", spiluk_handle->get_nnzU());
 
     // Symbolic phase
-    spiluk_symbolic(kh_ptr_v[i], fill_lev, A_row_map_v[i], A_entries_v[i], L_row_map_v[i], L_entries_v[i], U_row_map_v[i], U_entries_v[i]);
+    spiluk_symbolic(kh_ptr_v[i], fill_lev, A_row_map_v[i], A_entries_v[i],
+                    L_row_map_v[i], L_entries_v[i], U_row_map_v[i],
+                    U_entries_v[i]);
 
     Kokkos::fence();
 
@@ -408,17 +415,21 @@ void run_test_spiluk_streams(int test_algo, int nstreams) {
   }
 
   // Numeric phase
-  spiluk_numeric_streams(instances, kh_ptr_v, fill_lev, A_row_map_v, A_entries_v, A_values_v, L_row_map_v, L_entries_v, L_values_v, U_row_map_v, U_entries_v, U_values_v);
+  spiluk_numeric_streams(instances, kh_ptr_v, fill_lev, A_row_map_v,
+                         A_entries_v, A_values_v, L_row_map_v, L_entries_v,
+                         L_values_v, U_row_map_v, U_entries_v, U_values_v);
 
-  for (int i = 0; i < nstreams; i++)
-    instances[i].fence();
+  for (int i = 0; i < nstreams; i++) instances[i].fence();
 
   // Checking
   for (int i = 0; i < nstreams; i++) {
     auto spiluk_handle = kh_v[i].get_spiluk_handle();
-    crsMat_t A("A_Mtx", nrows, nrows, nnz, A_values_v[i], A_row_map_v[i], A_entries_v[i]);
-    crsMat_t L("L_Mtx", nrows, nrows, spiluk_handle->get_nnzL(), L_values_v[i], L_row_map_v[i], L_entries_v[i]);
-    crsMat_t U("U_Mtx", nrows, nrows, spiluk_handle->get_nnzU(), U_values_v[i], U_row_map_v[i], U_entries_v[i]);
+    crsMat_t A("A_Mtx", nrows, nrows, nnz, A_values_v[i], A_row_map_v[i],
+               A_entries_v[i]);
+    crsMat_t L("L_Mtx", nrows, nrows, spiluk_handle->get_nnzL(), L_values_v[i],
+               L_row_map_v[i], L_entries_v[i]);
+    crsMat_t U("U_Mtx", nrows, nrows, spiluk_handle->get_nnzU(), U_values_v[i],
+               U_row_map_v[i], U_entries_v[i]);
 
     // Create a reference view e set to all 1's
     ValuesType e_one("e_one", nrows);
