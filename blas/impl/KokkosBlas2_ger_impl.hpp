@@ -91,7 +91,7 @@ void singleLevelGer( const typename AViewType::execution_space  & space
                    , const          YViewType                   & y
                    , const          AViewType                   & A
                    ) {
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Entering IMPL singleLevelGer(), AViewType = %d\n", typeid(AViewType).name() );
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Entering IMPL singleLevelGer(), AViewType = %s\n", typeid(AViewType).name() );
   static_assert(Kokkos::is_view<XViewType>::value,
                 "XViewType must be a Kokkos::View.");
   static_assert(Kokkos::is_view<YViewType>::value,
@@ -224,7 +224,7 @@ void twoLevelGer( const typename AViewType::execution_space  & space
                 , const          YViewType                   & y
                 , const          AViewType                   & A
                 ) {
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Entering IMPL twoLevelGer(), AViewType = %d\n", typeid(AViewType).name() );
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Entering IMPL twoLevelGer(), AViewType = %s\n", typeid(AViewType).name() );
   static_assert(Kokkos::is_view<XViewType>::value,
                 "XViewType must be a Kokkos::View.");
   static_assert(Kokkos::is_view<YViewType>::value,
@@ -291,7 +291,7 @@ void generalGerImpl( const typename AViewType::execution_space  & space
                    , const          YViewType                   & y
                    , const          AViewType                   & A
                    ) {
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Entering IMPL generalGerImpl(CPU), AViewType = %d\n", typeid(AViewType).name() );
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Entering IMPL generalGerImpl(CPU), AViewType = %s\n", typeid(AViewType).name() );
   singleLevelGer(space, alpha, x, y, A);
 }
 
@@ -307,7 +307,7 @@ void generalGerImpl( const typename AViewType::execution_space  & space
                    , const          YViewType                   & y
                    , const          AViewType                   & A
                    ) {
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Entering IMPL generalGerImpl(GPU), AViewType = %d\n", typeid(AViewType).name() );
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Entering IMPL generalGerImpl(GPU), AViewType = %s\n", typeid(AViewType).name() );
   twoLevelGer(space, alpha, x, y, A);
 }
 
