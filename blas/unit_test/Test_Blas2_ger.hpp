@@ -18,34 +18,56 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
 #include <KokkosBlas2_ger.hpp>
-#include <KokkosKernels_TestUtils.hpp>
+//#include <KokkosKernels_TestUtils.hpp>
 
 namespace Test {
 
 template <class ViewTypeX, class ViewTypeY, class ViewTypeA, class Device>
-void impl_test_ger(int M, int N) {
-  typedef typename ViewTypeX::value_type        ScalarX;
-  typedef typename ViewTypeY::value_type        ScalarY;
-  typedef typename ViewTypeA::value_type        ScalarA;
-  typedef          Kokkos::ArithTraits<ScalarA> KAT_A;
-
-  ScalarA alpha = 3;
+void impl_test_ger(int M, int N, bool useAnalyticalResults = false) {
+  typedef typename ViewTypeX::value_type ScalarX;
+  typedef typename ViewTypeY::value_type ScalarY;
+  typedef typename ViewTypeA::value_type ScalarA;
 
   ViewTypeX x("X", M);
   ViewTypeY y("Y", N);
   ViewTypeA A("A", M, N);
 
-  typedef typename ViewTypeX::HostMirror MirrorViewTypeX;
-  typedef typename ViewTypeY::HostMirror MirrorViewTypeY;
-  typedef typename ViewTypeA::HostMirror MirrorViewTypeA;
+  typename ViewTypeX::HostMirror h_x = Kokkos::create_mirror_view(x);
+  typename ViewTypeY::HostMirror h_y = Kokkos::create_mirror_view(y);
+  typename ViewTypeA::HostMirror h_A = Kokkos::create_mirror_view(A);
 
-  MirrorViewTypeX h_x = Kokkos::create_mirror_view(x);
-  MirrorViewTypeY h_y = Kokkos::create_mirror_view(y);
-  MirrorViewTypeA h_A = Kokkos::create_mirror_view(A);
+  Kokkos::View<ScalarA**, Kokkos::HostSpace> expectedResult("expected A += alpha * x * y^t", M ,N);
+  bool expectedResultIsKnown = false;
 
-  Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
+  ScalarA alpha = 3;
 
-  if ((M == 1) && (N == 1)) {
+  if (useAnalyticalResults) {
+    for (int i = 0; i < M; i++) {
+      h_x[i] = sin(i);
+    }
+
+    for (int j = 0; j < N; j++) {
+      h_y[j] = cos(j);
+    }
+
+    for (int i = 0; i < M; i++) {
+      for (int j = 0; j < N; j++) {
+        h_A(i,j) = 3 * cos(i) * sin(j);
+      }
+    }
+
+    Kokkos::deep_copy(x, h_x);
+    Kokkos::deep_copy(y, h_y);
+    Kokkos::deep_copy(A, h_A);
+
+    for (int i = 0; i < M; i++) {
+      for (int j = 0; j < N; j++) {
+        expectedResult(i,j) = 3 * sin(i+j);
+      }
+    }
+    expectedResultIsKnown = true;
+  }
+  else if ((M == 1) && (N == 1)) {
     h_x[0] = 2;
 
     h_y[0] = 3;
@@ -55,6 +77,9 @@ void impl_test_ger(int M, int N) {
     Kokkos::deep_copy(x, h_x);
     Kokkos::deep_copy(y, h_y);
     Kokkos::deep_copy(A, h_A);
+
+    expectedResult(0,0) = 25;
+    expectedResultIsKnown = true;
   }
   else if ((M == 1) && (N == 2)) {
     h_x[0] = 2;
@@ -68,6 +93,10 @@ void impl_test_ger(int M, int N) {
     Kokkos::deep_copy(x, h_x);
     Kokkos::deep_copy(y, h_y);
     Kokkos::deep_copy(A, h_A);
+
+    expectedResult(0,0) = 25;
+    expectedResult(0,1) = 18;
+    expectedResultIsKnown = true;
   }
   else if ((M == 2) && (N == 2)) {
     h_x[0] = 2;
@@ -84,82 +113,134 @@ void impl_test_ger(int M, int N) {
     Kokkos::deep_copy(x, h_x);
     Kokkos::deep_copy(y, h_y);
     Kokkos::deep_copy(A, h_A);
+
+    expectedResult(0,0) = -1;
+    expectedResult(0,1) = -1;
+    expectedResult(1,0) = -52;
+    expectedResult(1,1) = 290;
+    expectedResultIsKnown = true;
   }
   else {
+    Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
+
     {
       ScalarX randStart, randEnd;
       Test::getRandomBounds(1.0, randStart, randEnd);
       Kokkos::fill_random(x, rand_pool, randStart, randEnd);
     }
+
     {
       ScalarY randStart, randEnd;
       Test::getRandomBounds(1.0, randStart, randEnd);
       Kokkos::fill_random(y, rand_pool, randStart, randEnd);
     }
+
     {
       ScalarA randStart, randEnd;
       Test::getRandomBounds(1.0, randStart, randEnd);
       Kokkos::fill_random(A, rand_pool, randStart, randEnd);
     }
+
+    Kokkos::deep_copy(h_x, x);
+    Kokkos::deep_copy(h_y, y);
+    Kokkos::deep_copy(h_A, A);
   }
 
-  Kokkos::deep_copy(h_x, x);
-  Kokkos::deep_copy(h_y, y);
-  Kokkos::deep_copy(h_A, A);
+  Kokkos::View<ScalarA**, Kokkos::HostSpace> vanillaResult("vanilla = A + alpha * x * y^t", M ,N);
+  {
+    KOKKOS_IMPL_DO_NOT_USE_PRINTF( "In Test_Blas2_ger.hpp, computing vanilla A with alpha type = %s\n", typeid(alpha).name() );
+    bool testIsGpu = KokkosKernels::Impl::kk_is_gpu_exec_space< typename ViewTypeA::execution_space >();
+    bool A_is_lr = std::is_same< typename ViewTypeA::array_layout, Kokkos::LayoutRight >::value;
 
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "In Test_Blas2_ger.hpp, computing expected A with alpha type = %s\n", typeid(alpha).name() );
-  Kokkos::View<ScalarA**, Kokkos::HostSpace> expected("expected A += alpha * x * y^t", M ,N);
-
-  bool test_is_gpu = KokkosKernels::Impl::kk_is_gpu_exec_space< typename ViewTypeA::execution_space >();
-
-  bool A_is_lr = std::is_same< typename ViewTypeA::array_layout, Kokkos::LayoutRight >::value;
-
-  if ( test_is_gpu && A_is_lr ) {
-    for (int i = 0; i < M; i++) {
-      for (int j = 0; j < N; j++) {
-        expected(i,j) = h_A(i,j) + alpha * h_y(j) * h_x(i);
+    if ( testIsGpu && A_is_lr ) {
+      for (int i = 0; i < M; i++) {
+        for (int j = 0; j < N; j++) {
+          vanillaResult(i,j) = h_A(i,j) + alpha * h_y(j) * h_x(i);
+        }
       }
+    }
+    else {
+      for (int i = 0; i < M; i++) {
+        for (int j = 0; j < N; j++) {
+          vanillaResult(i,j) = h_A(i,j) + alpha * h_x(i) * h_y(j);
+        }
+      }
+    }
+  }
+
+  typedef Kokkos::ArithTraits<ScalarA> KAT_A;
+  double eps = (std::is_same<typename KAT_A::mag_type, float>::value ? 2.e-2 : 5e-10);
+  if (expectedResultIsKnown) {
+    // ******************************************************************
+    // Compare vanillaResult against expectedResult
+    // ******************************************************************
+    int numErrors(0);
+    if (useAnalyticalResults) {
+      for (int i(0); i < M; ++i) {
+        for (int j(0); j < N; ++j) {
+          if (KAT_A::abs(expectedResult(i,j) - vanillaResult(i,j)) > KAT_A::abs(eps * expectedResult(i,j))) {
+            std::cout << "ERROR, i = " << i
+                      << ", j = "      << j
+                      << ": expectedResult(i,j) = " << expectedResult(i,j)
+                      << ", vanillaResult(i,j) = "  << vanillaResult(i,j)
+                      << ", KAT_A::abs(expectedResult(i,j) - vanillaResult(i,j)) = " << KAT_A::abs(expectedResult(i,j) - vanillaResult(i,j))
+                      << ", KAT_A::abs(eps * expectedResult(i,j)) = "                << KAT_A::abs(eps * expectedResult(i,j))
+                      << std::endl;
+            numErrors++;
+          }
+        } // for j
+      } // for i
+      EXPECT_EQ(numErrors, 0) << "A is " << M << " by " << N
+                              << ": vanilla differs from analytical";
+    }
+    else {
+      for (int i(0); i < M; ++i) {
+        for (int j(0); j < N; ++j) {
+          if ( expectedResult(i,j) != vanillaResult(i,j) ) {
+            std::cout << "ERROR, i = " << i
+                      << ", j = "      << j
+                      << ": expectedResult(i,j) = " << expectedResult(i,j)
+                      << ", vanillaResult(i,j) = "  << vanillaResult(i,j)
+                      << std::endl;
+            numErrors++;
+          }
+        } // for j
+      } // for i
+      EXPECT_EQ(numErrors, 0) << "A is " << M << " by " << N
+                              << ": vanilla result is incorrect";
     }
   }
   else {
-    for (int i = 0; i < M; i++) {
-      for (int j = 0; j < N; j++) {
-        expected(i,j) = h_A(i,j) + alpha * h_x(i) * h_y(j);
-      }
-    }
+    // ******************************************************************
+    // Copy vanillaResult to expectedResult
+    // ******************************************************************
+    Kokkos::deep_copy(expectedResult, vanillaResult);
   }
-
-  Kokkos::deep_copy(h_A, A);
-  Kokkos::deep_copy(h_x, x);
-  Kokkos::deep_copy(h_y, y);
+  
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "In Test_Blas2_ger.hpp, right before calling KokkosBlas::ger(): ViewType = %s\n", typeid(ViewTypeA).name() );
   KokkosBlas::ger(alpha, x, y, A);
   Kokkos::deep_copy(h_A, A);
 
-  double eps = (std::is_same<typename KAT_A::mag_type, float>::value ? 2.e-2 : 5e-10);
   int numErrors(0);
   for (int i(0); i < M; ++i) {
     for (int j(0); j < N; ++j) {
-      if (KAT_A::abs(expected(i,j) - h_A(i,j)) > KAT_A::abs(eps * expected(i,j))) {
+      if (KAT_A::abs(expectedResult(i,j) - h_A(i,j)) > KAT_A::abs(eps * expectedResult(i,j))) {
         std::cout << "ERROR, i = " << i
                   << ", j = "      << j
-                  << ": expected(i,j) = " << expected(i,j)
-                  << ", h_A(i,j) = "      << h_A(i,j)
-                  << ", KAT_A::abs(expected(i,j) - h_A(i,j)) = " << KAT_A::abs(expected(i,j) - h_A(i,j))
-                  << ", KAT_A::abs(eps * expected(i,j)) = "      << KAT_A::abs(eps * expected(i,j))
+                  << ": expectedResult(i,j) = " << expectedResult(i,j)
+                  << ", h_A(i,j) = "            << h_A(i,j)
+                  << ", KAT_A::abs(expectedResult(i,j) - h_A(i,j)) = " << KAT_A::abs(expectedResult(i,j) - h_A(i,j))
+                  << ", KAT_A::abs(eps * expectedResult(i,j)) = "      << KAT_A::abs(eps * expectedResult(i,j))
                   << std::endl;
         numErrors++;
       }
-    }
-  }
+    } // for j
+  } // for i
   std::cout << "A is " << M << " by " << N
-            << ", alpha = " << alpha
-            << ": M*N = "   << M*N
             << ", numErrors = " << numErrors
             << std::endl;
   EXPECT_EQ(numErrors, 0) << "A is " << M << " by " << N
-                          << ", alpha = " << alpha
-                          << ": ger incorrect";
+                          << ": ger result is incorrect";
 
 }
 } // namespace Test
@@ -169,7 +250,7 @@ int test_ger( const std::string & caseName ) {
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "+==========================================================================\n" );
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Starting %s ...\n", caseName.c_str() );
 
-#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) ||				\
+#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "+--------------------------------------------------------------------------\n" );
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Starting %s for LAYOUTLEFT ...\n", caseName.c_str() );
@@ -180,9 +261,11 @@ int test_ger( const std::string & caseName ) {
   Test::impl_test_ger<view_type_x_ll, view_type_y_ll, view_type_a_ll, Device>(1024, 0);
   Test::impl_test_ger<view_type_x_ll, view_type_y_ll, view_type_a_ll, Device>(13, 13);
   Test::impl_test_ger<view_type_x_ll, view_type_y_ll, view_type_a_ll, Device>(13, 1024);
+  Test::impl_test_ger<view_type_x_ll, view_type_y_ll, view_type_a_ll, Device>(13, 1024, true);
   Test::impl_test_ger<view_type_x_ll, view_type_y_ll, view_type_a_ll, Device>(50, 40);
   Test::impl_test_ger<view_type_x_ll, view_type_y_ll, view_type_a_ll, Device>(1024, 1024);
   Test::impl_test_ger<view_type_x_ll, view_type_y_ll, view_type_a_ll, Device>(2131, 2131);
+  Test::impl_test_ger<view_type_x_ll, view_type_y_ll, view_type_a_ll, Device>(2131, 2131, true);
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Finished %s for LAYOUTLEFT\n", caseName.c_str() );
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "+--------------------------------------------------------------------------\n" );
 #endif
@@ -201,9 +284,11 @@ int test_ger( const std::string & caseName ) {
   Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(1, 2);
   Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(13, 13);
   Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(13, 1024);
+  Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(13, 1024, true);
   Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(50, 40);
   Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(1024, 1024);
   Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(2131, 2131);
+  Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(2131, 2131, true);
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Finished %s for LAYOUTRIGHT\n", caseName.c_str() );
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "+--------------------------------------------------------------------------\n" );
 #endif
@@ -219,9 +304,11 @@ int test_ger( const std::string & caseName ) {
   Test::impl_test_ger<view_type_x_ls, view_type_y_ls, view_type_a_ls, Device>(1024, 0);
   Test::impl_test_ger<view_type_x_ls, view_type_y_ls, view_type_a_ls, Device>(13, 13);
   Test::impl_test_ger<view_type_x_ls, view_type_y_ls, view_type_a_ls, Device>(13, 1024);
+  Test::impl_test_ger<view_type_x_ls, view_type_y_ls, view_type_a_ls, Device>(13, 1024, true);
   Test::impl_test_ger<view_type_x_ls, view_type_y_ls, view_type_a_ls, Device>(50, 40);
   Test::impl_test_ger<view_type_x_ls, view_type_y_ls, view_type_a_ls, Device>(1024, 1024);
   Test::impl_test_ger<view_type_x_ls, view_type_y_ls, view_type_a_ls, Device>(2131, 2131);
+  Test::impl_test_ger<view_type_x_ls, view_type_y_ls, view_type_a_ls, Device>(2131, 2131, true);
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Finished %s for LAYOUTSTRIDE\n", caseName.c_str() );
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "+--------------------------------------------------------------------------\n" );
 #endif
@@ -230,6 +317,7 @@ int test_ger( const std::string & caseName ) {
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "+--------------------------------------------------------------------------\n" );
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Starting %s for MIXED LAYOUTS ...\n", caseName.c_str() );
   Test::impl_test_ger<view_type_x_ls, view_type_y_ll, view_type_a_lr, Device>(1024, 1024);
+  Test::impl_test_ger<view_type_x_ls, view_type_y_ll, view_type_a_lr, Device>(1024, 1024, true);
   Test::impl_test_ger<view_type_x_ll, view_type_y_ls, view_type_a_lr, Device>(1024, 1024);
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Finished %s for MIXED LAYOUTS\n", caseName.c_str() );
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "+--------------------------------------------------------------------------\n" );
