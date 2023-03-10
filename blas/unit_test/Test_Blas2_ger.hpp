@@ -21,30 +21,27 @@
 #include <KokkosKernels_TestUtils.hpp>
 
 namespace Test {
+
 template <class ViewTypeX, class ViewTypeY, class ViewTypeA, class Device>
 void impl_test_ger(int M, int N) {
-  typedef typename ViewTypeX::value_type                 ScalarX;
-  typedef typename ViewTypeY::value_type                 ScalarY;
-  typedef typename ViewTypeA::value_type                 ScalarA;
-  typedef          Kokkos::ArithTraits<ScalarA>          KAT_A;
-  typedef          multivector_layout_adapter<ViewTypeA> vfA_type;
+  typedef typename ViewTypeX::value_type        ScalarX;
+  typedef typename ViewTypeY::value_type        ScalarY;
+  typedef typename ViewTypeA::value_type        ScalarA;
+  typedef          Kokkos::ArithTraits<ScalarA> KAT_A;
 
   ScalarA alpha = 3;
-  double  eps   = (std::is_same<typename KAT_A::mag_type, float>::value ? 1e-2 : 5e-10);
 
-  typename vfA_type::BaseType b_A  ("A", M, N);
-  ViewTypeX                   x    ("X", M);
-  ViewTypeY                   y    ("Y", N);
-  ViewTypeA                   org_A("Org_A", M, N);
+  ViewTypeX x("X", M);
+  ViewTypeY y("Y", N);
+  ViewTypeA A("A", M, N);
 
-  ViewTypeA A = vfA_type::view(b_A);
+  typedef typename ViewTypeX::HostMirror MirrorViewTypeX;
+  typedef typename ViewTypeY::HostMirror MirrorViewTypeY;
+  typedef typename ViewTypeA::HostMirror MirrorViewTypeA;
 
-  typedef multivector_layout_adapter<typename ViewTypeA::HostMirror> h_vfA_type;
-
-  typename h_vfA_type::BaseType  h_b_A = Kokkos::create_mirror_view(b_A);
-  typename ViewTypeX::HostMirror h_x   = Kokkos::create_mirror_view(x);
-  typename ViewTypeY::HostMirror h_y   = Kokkos::create_mirror_view(y);
-  typename ViewTypeA::HostMirror h_A   = h_vfA_type::view(h_b_A);
+  MirrorViewTypeX h_x = Kokkos::create_mirror_view(x);
+  MirrorViewTypeY h_y = Kokkos::create_mirror_view(y);
+  MirrorViewTypeA h_A = Kokkos::create_mirror_view(A);
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
@@ -53,11 +50,11 @@ void impl_test_ger(int M, int N) {
 
     h_y[0] = 3;
 
-    h_b_A(0,0) = 7;
+    h_A(0,0) = 7;
 
     Kokkos::deep_copy(x, h_x);
     Kokkos::deep_copy(y, h_y);
-    Kokkos::deep_copy(b_A, h_b_A);
+    Kokkos::deep_copy(A, h_A);
   }
   else if ((M == 1) && (N == 2)) {
     h_x[0] = 2;
@@ -65,12 +62,12 @@ void impl_test_ger(int M, int N) {
     h_y[0] = 3;
     h_y[1] = 4;
 
-    h_b_A(0,0) = 7;
-    h_b_A(0,1) = -6;
+    h_A(0,0) = 7;
+    h_A(0,1) = -6;
 
     Kokkos::deep_copy(x, h_x);
     Kokkos::deep_copy(y, h_y);
-    Kokkos::deep_copy(b_A, h_b_A);
+    Kokkos::deep_copy(A, h_A);
   }
   else if ((M == 2) && (N == 2)) {
     h_x[0] = 2;
@@ -79,14 +76,14 @@ void impl_test_ger(int M, int N) {
     h_y[0] = -3;
     h_y[1] = 7;
 
-    h_b_A(0,0) = 17;
-    h_b_A(0,1) = -43;
-    h_b_A(1,0) = 29;
-    h_b_A(1,1) = 101;
+    h_A(0,0) = 17;
+    h_A(0,1) = -43;
+    h_A(1,0) = 29;
+    h_A(1,1) = 101;
 
     Kokkos::deep_copy(x, h_x);
     Kokkos::deep_copy(y, h_y);
-    Kokkos::deep_copy(b_A, h_b_A);
+    Kokkos::deep_copy(A, h_A);
   }
   else {
     {
@@ -102,20 +99,35 @@ void impl_test_ger(int M, int N) {
     {
       ScalarA randStart, randEnd;
       Test::getRandomBounds(1.0, randStart, randEnd);
-      Kokkos::fill_random(b_A, rand_pool, randStart, randEnd);
+      Kokkos::fill_random(A, rand_pool, randStart, randEnd);
     }
   }
 
-  Kokkos::deep_copy(org_A, A);
-  auto h_org_A = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), org_A);
-
   Kokkos::deep_copy(h_x, x);
   Kokkos::deep_copy(h_y, y);
-  Kokkos::deep_copy(h_b_A, b_A);
+  Kokkos::deep_copy(h_A, A);
 
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "In Test_Blas2_ger.hpp, computing expected A with alpha type = %s\n", typeid(alpha).name() );
   Kokkos::View<ScalarA**, Kokkos::HostSpace> expected("expected A += alpha * x * y^t", M ,N);
-  Kokkos::deep_copy(expected, h_org_A);
-  vanillaGER(alpha, h_x, h_y, expected);
+
+  bool test_is_gpu = KokkosKernels::Impl::kk_is_gpu_exec_space< typename ViewTypeA::execution_space >();
+
+  bool A_is_lr = std::is_same< typename ViewTypeA::array_layout, Kokkos::LayoutRight >::value;
+
+  if ( test_is_gpu && A_is_lr ) {
+    for (int i = 0; i < M; i++) {
+      for (int j = 0; j < N; j++) {
+        expected(i,j) = h_A(i,j) + alpha * h_y(j) * h_x(i);
+      }
+    }
+  }
+  else {
+    for (int i = 0; i < M; i++) {
+      for (int j = 0; j < N; j++) {
+        expected(i,j) = h_A(i,j) + alpha * h_x(i) * h_y(j);
+      }
+    }
+  }
 
   Kokkos::deep_copy(h_A, A);
   Kokkos::deep_copy(h_x, x);
@@ -123,6 +135,8 @@ void impl_test_ger(int M, int N) {
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "In Test_Blas2_ger.hpp, right before calling KokkosBlas::ger(): ViewType = %s\n", typeid(ViewTypeA).name() );
   KokkosBlas::ger(alpha, x, y, A);
   Kokkos::deep_copy(h_A, A);
+
+  double eps = (std::is_same<typename KAT_A::mag_type, float>::value ? 2.e-2 : 5e-10);
   int numErrors(0);
   for (int i(0); i < M; ++i) {
     for (int j(0); j < N; ++j) {
