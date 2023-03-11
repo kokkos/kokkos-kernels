@@ -144,7 +144,6 @@ void gemv(const typename AViewType::execution_space& space, const char trans[],
                                 std::is_same<typename AViewType::memory_space,
                                              Kokkos::HostSpace>::value);
 #endif
-
   if (useFallback) {
     const bool eti_spec_avail =
         KokkosBlas::Impl::gemv_eti_spec_avail<AVT, XVT, YVT>::value;

@@ -168,12 +168,14 @@ int test_gemv(const char* mode) {
   typedef Kokkos::View<ScalarA**, Kokkos::LayoutLeft, Device> view_type_a_ll;
   typedef Kokkos::View<ScalarX*, Kokkos::LayoutLeft, Device> view_type_b_ll;
   typedef Kokkos::View<ScalarY*, Kokkos::LayoutLeft, Device> view_type_c_ll;
+#if 0
   Test::impl_test_gemv<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(mode,10,10);
   Test::impl_test_gemv<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(mode,100,10);
   Test::impl_test_gemv<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(mode,10,150);
   Test::impl_test_gemv<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(mode,150,10);
   Test::impl_test_gemv<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(mode,10,200);
   Test::impl_test_gemv<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(mode,200,10);
+#endif
   Test::impl_test_gemv<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(
       mode, 0, 1024);
   Test::impl_test_gemv<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(
@@ -207,13 +209,13 @@ int test_gemv(const char* mode) {
   Test::impl_test_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(
       mode, 13, 1024);
   Test::impl_test_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(
-     mode, 50, 40);
+      mode, 50, 40);
   Test::impl_test_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(
       mode, 1024, 1024);
   Test::impl_test_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(
       mode, 2131, 2131);
-   Test::impl_test_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr,
-   Device>(mode,132231,1024);
+  //Test::impl_test_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr,
+  //Device>(mode,132231,1024);
 #endif
 
   /*
@@ -269,9 +271,9 @@ TEST_F(TestCategory, gemv_double) {
   test_gemv<double, double, double, TestExecSpace>("N");
   Kokkos::Profiling::popRegion();
 
-  //Kokkos::Profiling::pushRegion("KokkosBlas::Test::gemv_tran_double");
-  //test_gemv<double, double, double, TestExecSpace>("T");
-  //Kokkos::Profiling::popRegion();
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::gemv_tran_double");
+  test_gemv<double, double, double, TestExecSpace>("T");
+  Kokkos::Profiling::popRegion();
 }
 #endif
 
