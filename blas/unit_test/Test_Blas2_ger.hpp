@@ -218,7 +218,7 @@ void impl_test_ger(int M, int N, bool useAnalyticalResults = false) {
   }
   
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "In Test_Blas2_ger.hpp, right before calling KokkosBlas::ger(): ViewType = %s\n", typeid(ViewTypeA).name() );
-  KokkosBlas::ger(alpha, x, y, A);
+  KokkosBlas::ger("T", alpha, x, y, A);
   Kokkos::deep_copy(h_A, A);
 
   int numErrors(0);

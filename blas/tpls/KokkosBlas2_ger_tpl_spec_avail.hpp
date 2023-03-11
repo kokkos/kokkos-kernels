@@ -72,7 +72,7 @@ KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>,  Kokkos::LayoutRight
                                          , Kokkos::MemoryTraits<Kokkos::Unmanaged>         \
                                          >                                                 \
                            , Kokkos::View< const SCALAR*                                   \
-                                         , LAYOUTY,                                        \
+                                         , LAYOUTY                                         \
                                          , Kokkos::Device<ExecSpace, MEMSPACE>             \
                                          , Kokkos::MemoryTraits<Kokkos::Unmanaged>         \
                                          >                                                 \
