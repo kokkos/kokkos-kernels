@@ -32,7 +32,6 @@ namespace Impl {
   bool justTranspose = true;                                                 \
   if (( trans[0] == 'T' ) ||                                                 \
       ( trans[0] == 't' )) {                                                 \
-    /* Ok */                                                                 \  
   }                                                                          \
   else if (( trans[0] == 'H' ) ||                                            \
            ( trans[0] == 'h' )) {                                            \
@@ -48,17 +47,17 @@ namespace Impl {
                           , LAYOUTX                                                 \
                           , Kokkos::Device<ExecSpace, MEM_SPACE>                    \
                           , Kokkos::MemoryTraits<Kokkos::Unmanaged>                 \
-                          >                                                         \ 
+                          >                                                         \
 	    , Kokkos::View< const double*                                           \
                           , LAYOUTY                                                 \
                           , Kokkos::Device<ExecSpace, MEM_SPACE>                    \
                           , Kokkos::MemoryTraits<Kokkos::Unmanaged>                 \
-                          >                                                         \ 
+                          >                                                         \
             , Kokkos::View< double**                                                \
                           , LAYOUTA                                                 \
                           , Kokkos::Device<ExecSpace, MEM_SPACE>                    \
                           , Kokkos::MemoryTraits<Kokkos::Unmanaged>                 \
-                          >                                                         \ 
+                          >                                                         \
             , true                                                                  \
             , ETI_SPEC_AVAIL                                                        \
             > {                                                                     \
@@ -277,7 +276,6 @@ namespace Impl {
   bool justTranspose = true;                                                 \
   if (( trans[0] == 'T' ) ||                                                 \
       ( trans[0] == 't' )) {                                                 \
-    /* Ok */                                                                 \  
   }                                                                          \
   else if (( trans[0] == 'H' ) ||                                            \
            ( trans[0] == 'h' )) {                                            \
@@ -553,7 +551,6 @@ namespace Impl {
   bool justTranspose = true;                                                 \
   if (( trans[0] == 'T' ) ||                                                 \
       ( trans[0] == 't' )) {                                                 \
-    /* Ok */                                                                 \  
   }                                                                          \
   else if (( trans[0] == 'H' ) ||                                            \
            ( trans[0] == 'h' )) {                                            \
