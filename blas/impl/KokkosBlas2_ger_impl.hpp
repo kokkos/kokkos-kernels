@@ -286,6 +286,7 @@ template < class XViewType
          , typename std::enable_if<!KokkosKernels::Impl::kk_is_gpu_exec_space< typename AViewType::execution_space>() >::type* = nullptr
          >
 void generalGerImpl( const typename AViewType::execution_space  & space
+                   , const          char                          trans[]
                    , const typename AViewType::const_value_type & alpha
                    , const          XViewType                   & x
                    , const          YViewType                   & y
@@ -302,6 +303,7 @@ template < class XViewType
          , typename std::enable_if<KokkosKernels::Impl::kk_is_gpu_exec_space< typename AViewType::execution_space>()>::type* = nullptr
          >
 void generalGerImpl( const typename AViewType::execution_space  & space
+                   , const          char                          trans[]
                    , const typename AViewType::const_value_type & alpha
                    , const          XViewType                   & x
                    , const          YViewType                   & y

@@ -1,4 +1,3 @@
-/*
 //@HEADER
 // ************************************************************************
 //
@@ -14,7 +13,6 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-*/
 
 #ifndef KOKKOSBLAS2_GER_TPL_SPEC_DECL_HPP_
 #define KOKKOSBLAS2_GER_TPL_SPEC_DECL_HPP_
