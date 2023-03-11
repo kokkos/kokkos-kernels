@@ -199,8 +199,8 @@ int test_gemv(const char* mode) {
       mode, 1024, 1024);
   Test::impl_test_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(
       mode, 2131, 2131);
-  //Test::impl_test_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr,
-  //Device>(mode,132231,1024);
+  // Test::impl_test_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr,
+  // Device>(mode,132231,1024);
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
