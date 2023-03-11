@@ -76,7 +76,6 @@ namespace Impl {
                      const AViewType& A, const XViewType& X,                 \
                      typename YViewType::const_value_type& beta,             \
                      const YViewType& Y) {                                   \
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing throuhg tpl-dgemv-blas\n" );   \
       Kokkos::Profiling::pushRegion("KokkosBlas::gemv[TPL_BLAS,double]");    \
       KOKKOSBLAS2_GEMV_DETERMINE_ARGS(LAYOUTA);                              \
       HostBlas<double>::gemv(transa, M, N, alpha, A.data(), LDA, X.data(),   \
@@ -318,7 +317,6 @@ namespace Impl {
                      const AViewType& A, const XViewType& X,                   \
                      typename YViewType::const_value_type& beta,               \
                      const YViewType& Y) {                                     \
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing throuhg tpl-dgemv-cublas\n" );   \
       Kokkos::Profiling::pushRegion("KokkosBlas::gemv[TPL_CUBLAS,double]");    \
       KOKKOSBLAS2_GEMV_CUBLAS_DETERMINE_ARGS(LAYOUTA);                         \
       KokkosBlas::Impl::CudaBlasSingleton& s =                                 \
