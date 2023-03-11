@@ -41,7 +41,7 @@ namespace KokkosBlas {
 /// This function is non-blocking unless the underlying TPL requested
 /// at compile time is itself blocking
 template <class execution_space, class XVector, class YVector>
-void swap(execution_space const& space, XVector const& x, YVector const& y) {
+void swap(execution_space const& /* space */, XVector const& x, YVector const& y) { // Aqui
   // Assert properties of XVector
   static_assert(Kokkos::is_view<XVector>::value,
                 "KokkosBlas::swap: XVector must be a Kokkos::View.");
@@ -93,8 +93,10 @@ void swap(execution_space const& space, XVector const& x, YVector const& y) {
   Kokkos::Profiling::pushRegion("KokkosBlas::swap");
   // If X.extent(0) == 0, do nothing
   if (X.extent(0) != 0) {
+#if 0 // Aqui
     Impl::Swap<execution_space, XVector_Internal, YVector_Internal>::swap(space,
                                                                           X, Y);
+#endif
   }
   Kokkos::Profiling::popRegion();
 }
