@@ -96,7 +96,6 @@ void swap(execution_space const& space, XVector const& x, YVector const& y) {
     Impl::Swap<execution_space, XVector_Internal, YVector_Internal>::swap(space,
                                                                           X, Y);
   }
-
   Kokkos::Profiling::popRegion();
 }
 
