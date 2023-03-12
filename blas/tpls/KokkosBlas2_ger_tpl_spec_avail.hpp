@@ -42,7 +42,7 @@ struct ger_tpl_spec_avail {
                                          >                                               \
                            , Kokkos::View< SCALAR**                                      \
                                          , LAYOUTA                                       \
-                                         , Kokkos::Device<ExecSpace, MEMSPACE>,	         \
+                                         , Kokkos::Device<ExecSpace, MEMSPACE>           \
                                          , Kokkos::MemoryTraits<Kokkos::Unmanaged>       \
                                          >                                               \
                            > {                                                           \

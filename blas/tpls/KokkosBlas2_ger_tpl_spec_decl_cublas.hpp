@@ -34,7 +34,7 @@ namespace Impl {
       ( trans[0] == 'h' )) {                                                 \
   }                                                                          \
   else {                                                                     \
-    throw std::runtime_error( "Error: invalid 'trans' for cudaBlas::ger()"); \
+    throw std::runtime_error("Error: invalid 'trans' for cudaBlas::ger()");  \
   }
 
 #define KOKKOSBLAS2_DGER_CUBLAS(LAYOUTX, LAYOUTY, LAYOUTA, MEM_SPACE, ETI_SPEC_AVAIL)             \
@@ -267,7 +267,7 @@ namespace Impl {
                                       );                                                                \
         }                                                                                               \
 	else {                                                                                          \
-          throw std::runtime_error( "Error: cublasZgec() requires LayoutLeft views.");                  \
+          throw std::runtime_error("Error: cublasZgec() requires LayoutLeft views.");                   \
 	}                                                                                               \
       }                                                                                                 \
       else {                                                                                            \
@@ -371,7 +371,7 @@ namespace Impl {
                                       );                                                          \
         }                                                                                         \
 	else {                                                                                    \
-          throw std::runtime_error( "Error: cublasCgec() requires LayoutLeft views.");            \
+          throw std::runtime_error("Error: cublasCgec() requires LayoutLeft views.");             \
 	}                                                                                         \
       }                                                                                           \
       else {                                                                                      \
