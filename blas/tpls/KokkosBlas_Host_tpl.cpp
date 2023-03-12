@@ -248,26 +248,46 @@ void F77_BLAS_MANGLE(dger, DGER)( int*
                                 , double*
                                 , int*
                                 );
-void F77_BLAS_MANGLE(cger, CGER)( int*
-                                , int*
-                                , const std::complex<float>*
-                                , const std::complex<float>*
-                                , int*
-                                , const std::complex<float>*
-                                , int*
-                                , std::complex<float>*
-                                , int*
-                                );
-void F77_BLAS_MANGLE(zger, ZGER)( int*
-                                , int*
-                                , const std::complex<double>*
-                                , const std::complex<double>*
-                                , int*
-                                , const std::complex<double>*
-                                , int*
-                                , std::complex<double>*
-                                , int*
-                                );
+void F77_BLAS_MANGLE(cgeru, CGERU)( int*
+                                  , int*
+                                  , const std::complex<float>*
+                                  , const std::complex<float>*
+                                  , int*
+                                  , const std::complex<float>*
+                                  , int*
+                                  , std::complex<float>*
+                                  , int*
+                                  );
+void F77_BLAS_MANGLE(cgerc, CGERC)( int*
+                                  , int*
+                                  , const std::complex<float>*
+                                  , const std::complex<float>*
+                                  , int*
+                                  , const std::complex<float>*
+                                  , int*
+                                  , std::complex<float>*
+                                  , int*
+                                  );
+void F77_BLAS_MANGLE(zgeru, ZGERU)( int*
+                                  , int*
+                                  , const std::complex<double>*
+                                  , const std::complex<double>*
+                                  , int*
+                                  , const std::complex<double>*
+                                  , int*
+                                  , std::complex<double>*
+                                  , int*
+                                  );
+void F77_BLAS_MANGLE(zgerc, ZGERC)( int*
+                                  , int*
+                                  , const std::complex<double>*
+                                  , const std::complex<double>*
+                                  , int*
+                                  , const std::complex<double>*
+                                  , int*
+                                  , std::complex<double>*
+                                  , int*
+                                  );
 
 ///
 /// Trsv
@@ -483,10 +503,12 @@ void F77_BLAS_MANGLE(zscal,
 #define F77_FUNC_CGEMV F77_BLAS_MANGLE(cgemv, CGEMV)
 #define F77_FUNC_ZGEMV F77_BLAS_MANGLE(zgemv, ZGEMV)
 
-#define F77_FUNC_SGER F77_BLAS_MANGLE(sger, SGER)
-#define F77_FUNC_DGER F77_BLAS_MANGLE(dger, DGER)
-#define F77_FUNC_CGER F77_BLAS_MANGLE(cger, CGER)
-#define F77_FUNC_ZGER F77_BLAS_MANGLE(zger, ZGER)
+#define F77_FUNC_SGER  F77_BLAS_MANGLE(sger, SGER)
+#define F77_FUNC_DGER  F77_BLAS_MANGLE(dger, DGER)
+#define F77_FUNC_CGERU F77_BLAS_MANGLE(cgeru, CGERU)
+#define F77_FUNC_CGERC F77_BLAS_MANGLE(cgerc, CGERC)
+#define F77_FUNC_ZGERU F77_BLAS_MANGLE(zgeru, ZGERU)
+#define F77_FUNC_ZGERC F77_BLAS_MANGLE(zgerc, ZGERC)
 
 #define F77_FUNC_STRSV F77_BLAS_MANGLE(strsv, STRSV)
 #define F77_FUNC_DTRSV F77_BLAS_MANGLE(dtrsv, DTRSV)
@@ -733,7 +755,7 @@ void HostBlas<double>::ger( int m
                           , int incy
                           , double* a
                           , int lda
-                          z) {
+                          ) {
   F77_FUNC_DGER( &m
                , &n
                , &alpha
@@ -874,26 +896,48 @@ void HostBlas<std::complex<float> >::gemv(const char trans, int m, int n,
                  (std::complex<float>*)c, &ldc);
 }
 template <>
-void HostBlas<std::complex<float> >::ger( int m
-                                        , int n
-                                        , const std::complex<float> alpha
-                                        , const std::complex<float>* x
-                                        , int incx
-                                        , const std::complex<float>* y
-                                        , int incy
-                                        , std::complex<float>* a
-                                        , int lda
-                                        ) {
-  F77_FUNC_CGER( &m
-               , &n
-               , &alpha
-               , (const std::complex<float>*)x
-               , &incx
-               , (const std::complex<float>*)y
-               , &incy
-               , (std::complex<float>*)a
-               , &lda
-               );
+void HostBlas<std::complex<float> >::geru( int m
+                                         , int n
+                                         , const std::complex<float> alpha
+                                         , const std::complex<float>* x
+                                         , int incx
+                                         , const std::complex<float>* y
+                                         , int incy
+                                         , std::complex<float>* a
+                                         , int lda
+                                         ) {
+  F77_FUNC_CGERU( &m
+                , &n
+                , &alpha
+                , (const std::complex<float>*)x
+                , &incx
+                , (const std::complex<float>*)y
+                , &incy
+                , (std::complex<float>*)a
+                , &lda
+                );
+}
+template <>
+void HostBlas<std::complex<float> >::gerc( int m
+                                         , int n
+                                         , const std::complex<float> alpha
+                                         , const std::complex<float>* x
+                                         , int incx
+                                         , const std::complex<float>* y
+                                         , int incy
+                                         , std::complex<float>* a
+                                         , int lda
+                                         ) {
+  F77_FUNC_CGERC( &m
+                , &n
+                , &alpha
+                , (const std::complex<float>*)x
+                , &incx
+                , (const std::complex<float>*)y
+                , &incy
+                , (std::complex<float>*)a
+                , &lda
+                );
 }
 template <>
 void HostBlas<std::complex<float> >::trsv(const char uplo, const char transa,
@@ -1048,26 +1092,48 @@ void HostBlas<std::complex<double> >::gemv(
                  (std::complex<double>*)c, &ldc);
 }
 template <>
-void HostBlas<std::complex<double> >::ger( int m
-                                         , int n
-                                         , const std::complex<double> alpha
-                                         , const std::complex<double>* x
-                                         , int incx
-                                         , const std::complex<double>* y
-                                         , int incy
-                                         , std::complex<double>* a
-                                         , int lda
-                                         ) {
-  F77_FUNC_ZGER( &m
-               , &n
-               , &alpha
-               , (const std::complex<double>*)x
-               , &incx
-               , (const std::complex<double>*)y
-               , &incy
-               , (std::complex<double>*)a
-               , &lda
-               );
+void HostBlas<std::complex<double> >::geru( int m
+                                          , int n
+                                          , const std::complex<double> alpha
+                                          , const std::complex<double>* x
+                                          , int incx
+                                          , const std::complex<double>* y
+                                          , int incy
+                                          , std::complex<double>* a
+                                          , int lda
+                                          ) {
+  F77_FUNC_ZGERU( &m
+                , &n
+                , &alpha
+                , (const std::complex<double>*)x
+                , &incx
+                , (const std::complex<double>*)y
+                , &incy
+                , (std::complex<double>*)a
+                , &lda
+                );
+}
+template <>
+void HostBlas<std::complex<double> >::gerc( int m
+                                          , int n
+                                          , const std::complex<double> alpha
+                                          , const std::complex<double>* x
+                                          , int incx
+                                          , const std::complex<double>* y
+                                          , int incy
+                                          , std::complex<double>* a
+                                          , int lda
+                                          ) {
+  F77_FUNC_ZGERC( &m
+                , &n
+                , &alpha
+                , (const std::complex<double>*)x
+                , &incx
+                , (const std::complex<double>*)y
+                , &incy
+                , (std::complex<double>*)a
+                , &lda
+                );
 }
 template <>
 void HostBlas<std::complex<double> >::trsv(const char uplo, const char transa,
