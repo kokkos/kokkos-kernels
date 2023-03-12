@@ -80,9 +80,9 @@ void ger( const typename AViewType::execution_space  & space
                       , Kokkos::MemoryTraits<Kokkos::Unmanaged>
                       > YVT;
 
-  typedef Kokkos::View< typename AViewType::non_const_value_type**,
-		      , ALayout,
-                      , typename AViewType::device_type,
+  typedef Kokkos::View< typename AViewType::non_const_value_type**
+                      , ALayout
+                      , typename AViewType::device_type
                       , Kokkos::MemoryTraits<Kokkos::Unmanaged>
                       > AVT;
 
