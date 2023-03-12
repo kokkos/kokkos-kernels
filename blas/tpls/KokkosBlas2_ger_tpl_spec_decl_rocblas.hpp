@@ -14,8 +14,9 @@
 //
 //@HEADER
 
-// rocBLAS
-#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
+#ifndef KOKKOSBLAS2_GER_TPL_SPEC_DECL_ROCBLAS_HPP_
+#define KOKKOSBLAS2_GER_TPL_SPEC_DECL_ROCBLAS_HPP_
+
 #include <KokkosBlas_tpl_spec.hpp>
 
 namespace KokkosBlas {
@@ -39,50 +40,85 @@ namespace Impl {
     throw std::runtime_error( "Error: invalid 'trans' for rocBlas::ger()");  \
   }
 
-#define KOKKOSBLAS2_DGER_ROCBLAS(LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)            \
-  template <>                                                                  \
-  struct GER<                                                                  \
-      Kokkos::View<const double*, LAYOUT,                                      \
-                   Kokkos::Device<Kokkos::Experimental::HIP, MEM_SPACE>,       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      Kokkos::View<const double*, LAYOUT,                                      \
-                   Kokkos::Device<Kokkos::Experimental::HIP, MEM_SPACE>,       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      Kokkos::View<double**, LAYOUT,                                           \
-                   Kokkos::Device<Kokkos::Experimental::HIP, MEM_SPACE>,       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      true, ETI_SPEC_AVAIL> {                                                  \
-    typedef double SCALAR;                                                     \
-    typedef Kokkos::View<const SCALAR*, LAYOUT,                                \
-                         Kokkos::Device<Kokkos::Experimental::HIP, MEM_SPACE>, \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
-        XViewType;                                                             \
-    typedef Kokkos::View<const SCALAR*, LAYOUT,                                \
-                         Kokkos::Device<Kokkos::Experimental::HIP, MEM_SPACE>, \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
-        YViewType;                                                             \
-    typedef Kokkos::View<SCALAR**, LAYOUT,                                     \
-                         Kokkos::Device<Kokkos::Experimental::HIP, MEM_SPACE>, \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
-        AViewType;                                                             \
-                                                                               \
-    static void ger(const typename AViewType::execution_space& space          \
-                   , const          char                          trans[]   \
-                   , typename AViewType::const_value_type& alpha,               \
-                    const XViewType& X, const YViewType& Y,                    \
-                    const AViewType& A) {                                      \
-      Kokkos::Profiling::pushRegion("KokkosBlas::ger[TPL_ROCBLAS,double]");    \
-      KOKKOSBLAS2_GER_ROCBLAS_DETERMINE_ARGS(LAYOUT);                          \
-      KokkosBlas::Impl::RocBlasSingleton& s =                                  \
-          KokkosBlas::Impl::RocBlasSingleton::singleton();                     \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                           \
-          rocblas_set_stream(s.handle, space.hip_stream()));                   \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                           \
-          rocblas_dger(s.handle, M, N, &alpha, X.data(), one, Y.data(), one,   \
-                       A.data(), LDA));                                        \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));       \
-      Kokkos::Profiling::popRegion();                                          \
-    }                                                                          \
+#define KOKKOSBLAS2_DGER_ROCBLAS(LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)                      \
+  template <>                                                                            \
+  struct GER< Kokkos::View< const double*                                                \
+                          , LAYOUT                                                       \
+                          , Kokkos::Device<Kokkos::Experimental::HIP, MEM_SPACE>         \
+                          , Kokkos::MemoryTraits<Kokkos::Unmanaged>                      \
+                          >                                                              \
+	    , Kokkos::View< const double*                                                \
+                          , LAYOUT                                                       \
+                          , Kokkos::Device<Kokkos::Experimental::HIP, MEM_SPACE>         \
+                          , Kokkos::MemoryTraits<Kokkos::Unmanaged>                      \
+                          >                                                              \
+            , Kokkos::View< double**                                                     \
+                          , LAYOUT                                                       \
+                          , Kokkos::Device<Kokkos::Experimental::HIP, MEM_SPACE>         \
+                          , Kokkos::MemoryTraits<Kokkos::Unmanaged>                      \
+                          >                                                              \
+            , true                                                                       \
+            , ETI_SPEC_AVAIL                                                             \
+            > {                                                                          \
+    typedef double SCALAR;                                                               \
+    typedef Kokkos::View< const SCALAR*                                                  \
+                        , LAYOUT                                                         \
+                        , Kokkos::Device<Kokkos::Experimental::HIP, MEM_SPACE>	         \
+                        , Kokkos::MemoryTraits<Kokkos::Unmanaged>                        \
+                        > XViewType;                                                     \
+    typedef Kokkos::View< const SCALAR*                                                  \
+                        , LAYOUT                                                         \
+                        , Kokkos::Device<Kokkos::Experimental::HIP, MEM_SPACE>           \
+                        , Kokkos::MemoryTraits<Kokkos::Unmanaged>                        \
+                        > YViewType;                                                     \
+    typedef Kokkos::View< SCALAR**                                                       \
+                        , LAYOUT                                                         \
+                        , Kokkos::Device<Kokkos::Experimental::HIP, MEM_SPACE>           \
+                        , Kokkos::MemoryTraits<Kokkos::Unmanaged>                        \
+                        > AViewType;                                                     \
+                                                                                         \
+    static void ger( const typename AViewType::execution_space  & space                  \
+                   , const          char                          trans[]                \
+                   , typename       AViewType::const_value_type & alpha                  \
+                   , const          XViewType                   & X                      \
+                   , const          YViewType                   & Y                      \
+                   , const          AViewType                   & A                      \
+                   ) {                                                                   \
+      Kokkos::Profiling::pushRegion("KokkosBlas::ger[TPL_ROCBLAS,double]");              \
+      KOKKOSBLAS2_GER_ROCBLAS_DETERMINE_ARGS(LAYOUT);                                    \
+      KokkosBlas::Impl::RocBlasSingleton& s = KokkosBlas::Impl::RocBlasSingleton::singleton(); \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_set_stream(s.handle, space.hip_stream()) ); \
+      if (A_is_lr) {                                                                     \
+        KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_dger( s.handle                            \
+                                                   , M                                   \
+                                                   , N                                   \
+                                                   , &alpha                              \
+                                                   , Y.data()                            \
+                                                   , one                                 \
+                                                   , X.data()                            \
+                                                   , one                                 \
+                                                   , A.data()                            \
+                                                   , LDA                                 \
+                                                   )                                     \
+                                     );                                                  \
+      }                                                                                  \
+      else {                                                                             \
+        KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblasDger( s.handle                             \
+                                                  , M                                    \
+                                                  , N                                    \
+                                                  , &alpha                               \
+                                                  , X.data()                             \
+                                                  , one                                  \
+                                                  , Y.data()                             \
+                                                  , one                                  \
+                                                  , A.data()                             \
+                                                  , LDA                                  \
+                                                  )                                      \
+                                     );                                                  \
+      }                                                                                  \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_set_stream(s.handle, NULL) );               \
+      Kokkos::Profiling::popRegion();                                                    \
+    }                                                                                    \
   };
 
 #define KOKKOSBLAS2_SGER_ROCBLAS(LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)            \
@@ -253,4 +289,5 @@ KOKKOSBLAS2_CGER_ROCBLAS(Kokkos::LayoutRight, Kokkos::Experimental::HIPSpace, fa
 
 }  // namespace Impl
 }  // namespace KokkosBlas
-#endif  // KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
+
+#endif

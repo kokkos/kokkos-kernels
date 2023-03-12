@@ -14,7 +14,9 @@
 //
 //@HEADER
 
-#ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
+#ifndef KOKKOSBLAS2_GER_TPL_SPEC_DECL_BLAS_HPP_
+#define KOKKOSBLAS2_GER_TPL_SPEC_DECL_BLAS_HPP_
+
 #include "KokkosBlas_Host_tpl.hpp"
 
 namespace KokkosBlas {
@@ -61,21 +63,21 @@ namespace Impl {
     typedef double SCALAR;                                                          \
     typedef Kokkos::View< const SCALAR*                                             \
                         , LAYOUTX                                                   \
-                        , Kokkos::Device<ExecSpace, MEM_SPACE>,	                    \
+                        , Kokkos::Device<ExecSpace, MEM_SPACE>                      \
                         , Kokkos::MemoryTraits<Kokkos::Unmanaged>                   \
                         > XViewType;                                                \
-    typedef Kokkos::View< const SCALAR*,                                            \
+    typedef Kokkos::View< const SCALAR*                                             \
                         , LAYOUTY                                                   \
-                        , Kokkos::Device<ExecSpace, MEM_SPACE>,                     \
+                        , Kokkos::Device<ExecSpace, MEM_SPACE>                      \
                         , Kokkos::MemoryTraits<Kokkos::Unmanaged>                   \
                         > YViewType;                                                \
-    typedef Kokkos::View< SCALAR**,                                                 \
+    typedef Kokkos::View< SCALAR**                                                  \
                         , LAYOUTA                                                   \
-                        , Kokkos::Device<ExecSpace, MEM_SPACE>,                     \
+                        , Kokkos::Device<ExecSpace, MEM_SPACE>                      \
                         , Kokkos::MemoryTraits<Kokkos::Unmanaged>                   \
                         > AViewType;                                                \
                                                                                     \
-    static void ger( const typename AViewType::execution_space  & /*space*/         \
+    static void ger( const typename AViewType::execution_space  & /* space */       \
                    , const          char                          trans[]           \
                    , typename       AViewType::const_value_type & alpha             \
                    , const          XViewType                   & X                 \
@@ -251,4 +253,5 @@ KOKKOSBLAS2_CGER_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRi
 
 }  // namespace Impl
 }  // namespace KokkosBlas
-#endif  // KOKKOSKERNELS_ENABLE_TPL_BLAS
+
+#endif
