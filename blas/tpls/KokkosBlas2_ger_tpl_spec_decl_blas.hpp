@@ -44,7 +44,7 @@ namespace Impl {
                           , Kokkos::Device<ExecSpace, MEM_SPACE>                    \
                           , Kokkos::MemoryTraits<Kokkos::Unmanaged>                 \
                           >                                                         \
-	    , Kokkos::View< const double*                                           \
+            , Kokkos::View< const double*                                           \
                           , LAYOUTY                                                 \
                           , Kokkos::Device<ExecSpace, MEM_SPACE>                    \
                           , Kokkos::MemoryTraits<Kokkos::Unmanaged>                 \
@@ -105,7 +105,7 @@ namespace Impl {
                           , Kokkos::Device<ExecSpace, MEM_SPACE>                    \
                           , Kokkos::MemoryTraits<Kokkos::Unmanaged>                 \
                           >                                                         \
-	    , Kokkos::View< const float*                                            \
+            , Kokkos::View< const float*                                            \
                           , LAYOUTY                                                 \
                           , Kokkos::Device<ExecSpace, MEM_SPACE>                    \
                           , Kokkos::MemoryTraits<Kokkos::Unmanaged>                 \
@@ -248,56 +248,107 @@ namespace Impl {
                                               );                                                         \
         }                                                                                                \
         else {                                                                                           \
-          throw std::runtime_error("Error: blasZgec() requires LayoutRightviews.");                      \
+          throw std::runtime_error("Error: blasZgec() requires LayoutRight views.");                     \
         }                                                                                                \
       }                                                                                                  \
       Kokkos::Profiling::popRegion();                                                                    \
     }                                                                                                    \
   };
 
-#define KOKKOSBLAS2_CGER_BLAS(LAYOUTX, LAYOUTY, LAYOUTA, MEM_SPACE, ETI_SPEC_AVAIL) \
-  template <class ExecSpace>                                                \
-  struct GER<Kokkos::View<const Kokkos::complex<float>*, LAYOUTX,           \
-                          Kokkos::Device<ExecSpace, MEM_SPACE>,             \
-                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >,        \
-             Kokkos::View<const Kokkos::complex<float>*, LAYOUTY,           \
-                          Kokkos::Device<ExecSpace, MEM_SPACE>,             \
-                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >,        \
-             Kokkos::View<Kokkos::complex<float>**, LAYOUTA,                \
-                          Kokkos::Device<ExecSpace, MEM_SPACE>,             \
-                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >,        \
-             true, ETI_SPEC_AVAIL> {                                        \
-    typedef Kokkos::complex<float> SCALAR;                                  \
-    typedef Kokkos::View<const SCALAR*, LAYOUTX,                            \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,              \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >          \
-        XViewType;                                                          \
-    typedef Kokkos::View<const SCALAR*, LAYOUTY,                            \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,              \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >          \
-        YViewType;                                                          \
-    typedef Kokkos::View<SCALAR**, LAYOUTA,                                 \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,              \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >          \
-        AViewType;                                                          \
-                                                                            \
-    static void ger(const typename AViewType::execution_space& /* space */  \
-                   , const          char                          trans[]   \
-                   , typename AViewType::const_value_type& alpha,           \
-                    const XViewType& X, const YViewType& Y,                 \
-                    const AViewType& A) {                                   \
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing throuhg tpl-cger-blas\n" );   \
-      Kokkos::Profiling::pushRegion(                                        \
-          "KokkosBlas::ger[TPL_BLAS,complex<float>]");                      \
-      KOKKOSBLAS2_GER_DETERMINE_ARGS(LAYOUTA);                              \
-      const std::complex<float> alpha_val = alpha;                          \
-      HostBlas<std::complex<float> >::geru(                                 \
-          M, N, alpha_val,                                                  \
-          reinterpret_cast<const std::complex<float>*>(X.data()), one,      \
-          reinterpret_cast<const std::complex<float>*>(Y.data()), one,      \
-          reinterpret_cast<std::complex<float>*>(A.data()), LDA);           \
-      Kokkos::Profiling::popRegion();                                       \
-    }                                                                       \
+#define KOKKOSBLAS2_CGER_BLAS(LAYOUTX, LAYOUTY, LAYOUTA, MEM_SPACE, ETI_SPEC_AVAIL)                   \
+  template <class ExecSpace>                                                                          \
+  struct GER< Kokkos::View< const Kokkos::complex<float>*                                             \
+                          , LAYOUTX                                                                   \
+                          , Kokkos::Device<ExecSpace, MEM_SPACE>                                      \
+                          , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                   \
+                          >                                                                           \
+            , Kokkos::View< const Kokkos::complex<float>*                                             \
+                          , LAYOUTY                                                                   \
+                          , Kokkos::Device<ExecSpace, MEM_SPACE>                                      \
+                          , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                   \
+                          >                                                                           \
+            , Kokkos::View< Kokkos::complex<float>**                                                  \
+                          , LAYOUTA                                                                   \
+                          , Kokkos::Device<ExecSpace, MEM_SPACE>                                      \
+                          , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                   \
+                          >                                                                           \
+            , true                                                                                    \
+            , ETI_SPEC_AVAIL                                                                          \
+            > {                                                                                       \
+    typedef Kokkos::complex<float> SCALAR;                                                            \
+    typedef Kokkos::View< const SCALAR*                                                               \
+                        , LAYOUTX                                                                     \
+                        , Kokkos::Device<ExecSpace, MEM_SPACE>                                        \
+                        , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                     \
+                        > XViewType;                                                                  \
+    typedef Kokkos::View< const SCALAR*                                                               \
+                        , LAYOUTY                                                                     \
+                        , Kokkos::Device<ExecSpace, MEM_SPACE>                                        \
+                        , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                     \
+                        > YViewType;                                                                  \
+    typedef Kokkos::View< SCALAR**                                                                    \
+                        , LAYOUTA                                                                     \
+                        , Kokkos::Device<ExecSpace, MEM_SPACE>                                        \
+                        , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                     \
+                        > AViewType;                                                                  \
+                                                                                                      \
+    static void ger( const typename AViewType::execution_space  & /* space */                         \
+                   , const          char                          trans[]                             \
+                   , typename       AViewType::const_value_type & alpha                               \
+                   , const          XViewType                   & X                                   \
+                   , const          YViewType                   & Y                                   \
+                   , const          AViewType                   & A                                   \
+                   ) {                                                                                \
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing throuhg tpl-cger-blas\n" );                             \
+      Kokkos::Profiling::pushRegion("KokkosBlas::ger[TPL_BLAS,complex<float>");                       \
+      KOKKOSBLAS2_GER_DETERMINE_ARGS(LAYOUTA);                                                        \
+      const std::complex<float> alpha_val = static_cast<const std::complex<float>>(alpha);            \
+      bool justTranspose = (trans[0] == 'T') || (trans[0] == 't');                                    \
+      if (A_is_lr) {                                                                                  \
+        if (justTranspose) {                                                                          \
+          HostBlas<std::complex<float>>::geru( M                                                      \
+                                             , N                                                      \
+                                             , alpha_val                                              \
+                                             , reinterpret_cast<const std::complex<float>*>(X.data()) \
+                                             , one                                                    \
+                                             , reinterpret_cast<const std::complex<float>*>(Y.data()) \
+                                             , one                                                    \
+                                             , reinterpret_cast<std::complex<float>*>(A.data())       \
+                                             , LDA                                                    \
+                                             );                                                       \
+        }                                                                                             \
+        else {                                                                                        \
+          HostBlas<std::complex<float>>::gerc( M                                                      \
+                                             , N                                                      \
+                                             , alpha_val                                              \
+                                             , reinterpret_cast<const std::complex<float>*>(X.data()) \
+                                             , one                                                    \
+                                             , reinterpret_cast<const std::complex<float>*>(Y.data()) \
+                                             , one                                                    \
+                                             , reinterpret_cast<std::complex<float>*>(A.data())       \
+                                             , LDA                                                    \
+                                             );                                                       \
+        }                                                                                             \
+      }                                                                                               \
+      else {                                                                                          \
+        if (justTranspose) {                                                                          \
+          HostBlas<std::complex<float>>::geru( M                                                      \
+                                             , N                                                      \
+                                             , alpha_val                                              \
+                                             , reinterpret_cast<const std::complex<float>*>(Y.data()) \
+                                             , one                                                    \
+                                             , reinterpret_cast<const std::complex<float>*>(X.data()) \
+                                             , one                                                    \
+                                             , reinterpret_cast<std::complex<float>*>(A.data())       \
+                                             , LDA                                                    \
+                                             );                                                       \
+        }                                                                                             \
+        else {                                                                                        \
+          throw std::runtime_error("Error: blasCgec() requires LayoutRight views.");                  \
+        }                                                                                             \
+      }                                                                                               \
+      Kokkos::Profiling::popRegion();                                                                 \
+    }                                                                                                 \
   };
 
 KOKKOSBLAS2_DGER_BLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::HostSpace, true )
