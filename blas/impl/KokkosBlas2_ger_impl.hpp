@@ -33,16 +33,17 @@ struct SingleLevelGER {
   using AlphaCoeffType = typename AViewType::non_const_value_type;
   using A_value_type   = typename AViewType::non_const_value_type;
 
-  SingleLevelGER( const bool             /*justTranspose*/ // Aqui
+  SingleLevelGER( const bool             justTranspose
                 , const AlphaCoeffType & alpha
                 , const XViewType      & x
                 , const YViewType      & y
                 , const AViewType      & A
                 )
-      : alpha_(alpha)
-      , x_    (x)
-      , y_    (y)
-      , A_    (A)
+      : justTranspose_(justTranspose)
+      , alpha_        (alpha)
+      , x_            (x)
+      , y_            (y)
+      , A_            (A)
   {
     static_assert(Kokkos::is_view<XViewType>::value, "XViewType must be a Kokkos::View.");
     static_assert(Kokkos::is_view<YViewType>::value, "YViewType must be a Kokkos::View.");
@@ -56,21 +57,30 @@ struct SingleLevelGER {
   }
 
   KOKKOS_INLINE_FUNCTION void operator()(const IndexType & i) const { // EEP
-    using AlphaKAT = Kokkos::Details::ArithTraits<typename XViewType::non_const_value_type>;
+    using KAT = Kokkos::Details::ArithTraits<typename AViewType::non_const_value_type>;
 
-    if (alpha_ == AlphaKAT::zero()) {
+    if (alpha_ == KAT::zero()) {
       // Nothing to do
     }
     else {
       const IndexType    N      ( A_.extent(1) );
       const A_value_type x_fixed( x_(i) );
-      for (IndexType j = 0; j < N; ++j) {
-	A_(i,j) += A_value_type( alpha_ * x_fixed * y_(j) );
+
+      if (justTranspose_) {
+        for (IndexType j = 0; j < N; ++j) {
+          A_(i,j) += A_value_type( alpha_ * x_fixed * y_(j) );
+        }
+      }
+      else {
+        for (IndexType j = 0; j < N; ++j) {
+          A_(i,j) += A_value_type( alpha_ * x_fixed * KAT::conj( y_(j) ) );
+        }
       }
     }
   }
 
 private:
+  bool                           justTranspose_;
   AlphaCoeffType                 alpha_;
   typename XViewType::const_type x_;
   typename YViewType::const_type y_;
@@ -81,7 +91,7 @@ private:
 template <class XViewType, class YViewType, class AViewType,
           class IndexType = typename AViewType::size_type>
 void singleLevelGer( const typename AViewType::execution_space  & space
-                   , const          char                          trans[] // Aqui
+                   , const          char                          trans[]
                    , const typename AViewType::const_value_type & alpha
                    , const          XViewType                   & x
                    , const          YViewType                   & y
@@ -98,7 +108,7 @@ void singleLevelGer( const typename AViewType::execution_space  & space
 
   static_assert(std::is_integral<IndexType>::value, "IndexType must be an integer");
 
-  using AlphaKAT = Kokkos::Details::ArithTraits<typename AViewType::non_const_value_type>;
+  using KAT = Kokkos::Details::ArithTraits<typename AViewType::non_const_value_type>;
 
   if (y.extent(0) == 0) {
     // no entries to update
@@ -106,13 +116,18 @@ void singleLevelGer( const typename AViewType::execution_space  & space
   else if (x.extent(0) == 0) {
     // no entries to update
   }
-  else if (alpha == AlphaKAT::zero()) {
+  else if (alpha == KAT::zero()) {
     // no entries to update
   }
   else {
     using execution_space = typename AViewType::execution_space;
     Kokkos::RangePolicy<execution_space, IndexType>            rangePolicy(space, 0, A.extent(0));
-    SingleLevelGER<XViewType, YViewType, AViewType, IndexType> functor    (trans[0] == 'T', alpha, x, y, A); // Aqui
+    SingleLevelGER<XViewType, YViewType, AViewType, IndexType> functor( (trans[0] == 'T') || (trans[0] == 't')
+                                                                      , alpha
+                                                                      , x
+                                                                      , y
+                                                                      , A
+                                                                      );
     Kokkos::parallel_for("KokkosBlas::ger[SingleLevel]", rangePolicy, functor);
   }
 }
@@ -133,16 +148,17 @@ struct TwoLevelGER {
   using policy_type     = Kokkos::TeamPolicy<execution_space>;
   using member_type     = typename policy_type::member_type;
 
-  TwoLevelGER( const bool             /*justTranspose*/ // Aqui
+  TwoLevelGER( const bool             justTranspose
              , const AlphaCoeffType & alpha
              , const XViewType      & x
              , const YViewType      & y
              , const AViewType      & A
              )
-      : alpha_(alpha)
-      , x_    (x)
-      , y_    (y)
-      , A_    (A)
+      : justTranspose_(justTranspose)
+      , alpha_        (alpha)
+      , x_            (x)
+      , y_            (y)
+      , A_            (A)
   {
     static_assert(Kokkos::is_view<XViewType>::value, "XViewType must be a Kokkos::View.");
     static_assert(Kokkos::is_view<YViewType>::value, "YViewType must be a Kokkos::View.");
@@ -160,18 +176,26 @@ public:
   KOKKOS_INLINE_FUNCTION void operator()( TwoLevelGER_LayoutLeftTag // EEP
                                         , const member_type & team
                                         ) const {
-    using AlphaKAT = Kokkos::Details::ArithTraits<typename AViewType::non_const_value_type>;
+    using KAT = Kokkos::Details::ArithTraits<typename AViewType::non_const_value_type>;
 
-    if (alpha_ == AlphaKAT::zero()) {
+    if (alpha_ == KAT::zero()) {
       // Nothing to do
     }
     else {
-      const IndexType    M      ( A_.extent(0) );
-      const IndexType    j      ( team.league_rank() );
-      const A_value_type y_fixed( y_(j) );
-      Kokkos::parallel_for(Kokkos::TeamThreadRange(team, M), [&](const IndexType & i) {
-        A_(i,j) += A_value_type( alpha_ * x_(i) * y_fixed );
-      });
+      const IndexType M ( A_.extent(0) );
+      const IndexType j ( team.league_rank() );
+      if (justTranspose_) {
+        const A_value_type y_fixed( y_(j) );
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(team, M), [&](const IndexType & i) {
+          A_(i,j) += A_value_type( alpha_ * x_(i) * y_fixed );
+        });
+      }
+      else {
+        const A_value_type y_fixed( KAT::conj( y_(j) ) );
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(team, M), [&](const IndexType & i) {
+          A_(i,j) += A_value_type( alpha_ * x_(i) * y_fixed );
+        });
+      }
     }
   }
 
@@ -179,23 +203,31 @@ public:
   KOKKOS_INLINE_FUNCTION void operator()( TwoLevelGER_LayoutRightTag // EEP
                                         , const member_type & team
                                         ) const {
-    using AlphaKAT = Kokkos::Details::ArithTraits<typename AViewType::non_const_value_type>;
+    using KAT = Kokkos::Details::ArithTraits<typename AViewType::non_const_value_type>;
 
-    if (alpha_ == AlphaKAT::zero()) {
+    if (alpha_ == KAT::zero()) {
       // Nothing to do
     }
     else {
       const IndexType    N      ( A_.extent(1) );
       const IndexType    i      ( team.league_rank() );
       const A_value_type x_fixed( x_(i) );
-      Kokkos::parallel_for(Kokkos::TeamThreadRange(team, N), [&](const IndexType & j) {
-        A_(i,j) += A_value_type( alpha_ * x_fixed * y_(j) );
-      });
+      if (justTranspose_) {
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(team, N), [&](const IndexType & j) {
+          A_(i,j) += A_value_type( alpha_ * x_fixed * y_(j) );
+        });
+      }
+      else {
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(team, N), [&](const IndexType & j) {
+          A_(i,j) += A_value_type( alpha_ * x_fixed * KAT::conj( y_(j) ) );
+        });
+      }
     }
     team.team_barrier();
   }
 
 private:
+  bool                           justTranspose_;
   AlphaCoeffType                 alpha_;
   typename XViewType::const_type x_;
   typename YViewType::const_type y_;
@@ -223,7 +255,7 @@ void twoLevelGer( const typename AViewType::execution_space  & space
 
   static_assert(std::is_integral<IndexType>::value, "IndexType must be an integer");
 
-  using AlphaKAT = Kokkos::Details::ArithTraits<typename AViewType::non_const_value_type>;
+  using KAT = Kokkos::Details::ArithTraits<typename AViewType::non_const_value_type>;
 
   if (y.extent(0) == 0) {
     // no entries to update
@@ -233,7 +265,7 @@ void twoLevelGer( const typename AViewType::execution_space  & space
     // no entries to update
     return;
   }
-  else if (alpha == AlphaKAT::zero()) {
+  else if (alpha == KAT::zero()) {
     // no entries to update
     return;
   }
@@ -252,7 +284,12 @@ void twoLevelGer( const typename AViewType::execution_space  & space
     teamPolicy = TeamPolicyType(space, A.extent(0), Kokkos::AUTO);
   }
 
-  TwoLevelGER<XViewType, YViewType, AViewType, IndexType> functor(trans[0] == 'T', alpha, x, y, A); // Aqui
+  TwoLevelGER<XViewType, YViewType, AViewType, IndexType> functor( (trans[0] == 'T') || (trans[0] == 't')
+                                                                 , alpha
+                                                                 , x
+                                                                 , y
+                                                                 , A
+                                                                 );
   Kokkos::parallel_for("KokkosBlas::ger[twoLevel]", teamPolicy, functor);
 }
 

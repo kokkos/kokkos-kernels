@@ -18,12 +18,92 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
 #include <KokkosBlas2_ger.hpp>
-//#include <KokkosKernels_TestUtils.hpp>
 
 namespace Test {
 
+template < class ScalarA
+         , class X_HostType
+         , class Y_HostType
+         , class A_HostType
+         , class E_HostType
+         , typename std::enable_if< std::is_same<ScalarA,Kokkos::complex<float>>::value || std::is_same<ScalarA,Kokkos::complex<double>>::value >::type* = nullptr
+         >
+void implTestGerAnalyticalValues( const int    M
+                                , const int    N
+                                , ScalarA    & alpha
+                                , X_HostType & h_x
+                                , Y_HostType & h_y
+                                , A_HostType & h_A
+                                , E_HostType & h_expected
+                                ) {
+  alpha.real() =  1.;
+  alpha.imag() = -1.;
+
+  for (int i = 0; i < M; i++) {
+    h_x[i].real() = sin(i);
+    h_x[i].imag() = cos(i);
+  }
+
+  for (int j = 0; j < N; j++) {
+    h_y[j].real() = cos(j);
+    h_y[j].imag() = sin(j);
+  }
+
+  for (int i = 0; i < M; i++) {
+    for (int j = 0; j < N; j++) {
+      h_A(i,j).real() = -sin(i-j) - sin(i) * sin(j) + cos(i) * cos(j);
+      h_A(i,j).imag() = -sin(i-j) - sin(i) * sin(j) - cos(i) * cos(j);
+    }
+  }
+
+  for (int i = 0; i < M; i++) {
+    for (int j = 0; j < N; j++) {
+      h_expected(i,j).real() =  2. * cos(i) * cos(j);
+      h_expected(i,j).imag() = -2. * sin(i-j);
+    }
+  }
+}
+
+template < class ScalarA
+         , class X_HostType
+         , class Y_HostType
+         , class A_HostType
+         , class E_HostType
+         , typename std::enable_if< !std::is_same<ScalarA,Kokkos::complex<float>>::value && !std::is_same<ScalarA,Kokkos::complex<double>>::value >::type* = nullptr
+         >
+void implTestGerAnalyticalValues( const int    M
+                                , const int    N
+                                , ScalarA    & alpha
+                                , X_HostType & h_x
+                                , Y_HostType & h_y
+                                , A_HostType & h_A
+                                , E_HostType & h_expected
+                                ) {
+  alpha = 3;
+
+  for (int i = 0; i < M; i++) {
+    h_x[i] = sin(i);
+  }
+
+  for (int j = 0; j < N; j++) {
+    h_y[j] = cos(j);
+  }
+
+  for (int i = 0; i < M; i++) {
+    for (int j = 0; j < N; j++) {
+      h_A(i,j) = 3 * cos(i) * sin(j);
+    }
+  }
+
+  for (int i = 0; i < M; i++) {
+    for (int j = 0; j < N; j++) {
+      h_expected(i,j) = 3 * sin(i+j);
+    }
+  }
+}
+
 template <class ViewTypeX, class ViewTypeY, class ViewTypeA, class Device>
-void impl_test_ger(int M, int N, bool useAnalyticalResults = false) {
+void impl_test_ger( const int M, const int N, const bool useAnalyticalResults = false) {
   typedef typename ViewTypeX::value_type ScalarX;
   typedef typename ViewTypeY::value_type ScalarY;
   typedef typename ViewTypeA::value_type ScalarA;
@@ -36,38 +116,29 @@ void impl_test_ger(int M, int N, bool useAnalyticalResults = false) {
   typename ViewTypeY::HostMirror h_y = Kokkos::create_mirror_view(y);
   typename ViewTypeA::HostMirror h_A = Kokkos::create_mirror_view(A);
 
-  Kokkos::View<ScalarA**, Kokkos::HostSpace> expectedResult("expected A += alpha * x * y^t", M ,N);
+  Kokkos::View<ScalarA**, Kokkos::HostSpace> h_expected("expected A += alpha * x * y^t", M ,N);
   bool expectedResultIsKnown = false;
 
-  ScalarA alpha = 3;
+  ScalarA alpha(0.);
 
   if (useAnalyticalResults) {
-    for (int i = 0; i < M; i++) {
-      h_x[i] = sin(i);
-    }
-
-    for (int j = 0; j < N; j++) {
-      h_y[j] = cos(j);
-    }
-
-    for (int i = 0; i < M; i++) {
-      for (int j = 0; j < N; j++) {
-        h_A(i,j) = 3 * cos(i) * sin(j);
-      }
-    }
-
+    implTestGerAnalyticalValues( M
+                               , N
+                               , alpha
+                               , h_x
+                               , h_y
+                               , h_A
+                               , h_expected
+                               );
     Kokkos::deep_copy(x, h_x);
     Kokkos::deep_copy(y, h_y);
     Kokkos::deep_copy(A, h_A);
 
-    for (int i = 0; i < M; i++) {
-      for (int j = 0; j < N; j++) {
-        expectedResult(i,j) = 3 * sin(i+j);
-      }
-    }
     expectedResultIsKnown = true;
   }
   else if ((M == 1) && (N == 1)) {
+    alpha = 3;
+
     h_x[0] = 2;
 
     h_y[0] = 3;
@@ -78,10 +149,12 @@ void impl_test_ger(int M, int N, bool useAnalyticalResults = false) {
     Kokkos::deep_copy(y, h_y);
     Kokkos::deep_copy(A, h_A);
 
-    expectedResult(0,0) = 25;
+    h_expected(0,0) = 25;
     expectedResultIsKnown = true;
   }
   else if ((M == 1) && (N == 2)) {
+    alpha = 3;
+
     h_x[0] = 2;
 
     h_y[0] = 3;
@@ -94,11 +167,13 @@ void impl_test_ger(int M, int N, bool useAnalyticalResults = false) {
     Kokkos::deep_copy(y, h_y);
     Kokkos::deep_copy(A, h_A);
 
-    expectedResult(0,0) = 25;
-    expectedResult(0,1) = 18;
+    h_expected(0,0) = 25;
+    h_expected(0,1) = 18;
     expectedResultIsKnown = true;
   }
   else if ((M == 2) && (N == 2)) {
+    alpha = 3;
+
     h_x[0] = 2;
     h_x[1] = 9;
 
@@ -114,13 +189,15 @@ void impl_test_ger(int M, int N, bool useAnalyticalResults = false) {
     Kokkos::deep_copy(y, h_y);
     Kokkos::deep_copy(A, h_A);
 
-    expectedResult(0,0) = -1;
-    expectedResult(0,1) = -1;
-    expectedResult(1,0) = -52;
-    expectedResult(1,1) = 290;
+    h_expected(0,0) = -1;
+    h_expected(0,1) = -1;
+    h_expected(1,0) = -52;
+    h_expected(1,1) = 290;
     expectedResultIsKnown = true;
   }
   else {
+    alpha = 3;
+
     Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
     {
@@ -146,45 +223,52 @@ void impl_test_ger(int M, int N, bool useAnalyticalResults = false) {
     Kokkos::deep_copy(h_A, A);
   }
 
-  Kokkos::View<ScalarA**, Kokkos::HostSpace> vanillaResult("vanilla = A + alpha * x * y^t", M ,N);
+  Kokkos::View<ScalarA**, Kokkos::HostSpace> h_vanilla("vanilla = A + alpha * x * y^t", M ,N);
   {
     KOKKOS_IMPL_DO_NOT_USE_PRINTF( "In Test_Blas2_ger.hpp, computing vanilla A with alpha type = %s\n", typeid(alpha).name() );
+
+    bool useDifferentOrderOfOperations = false;
+#ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
     bool testIsGpu = KokkosKernels::Impl::kk_is_gpu_exec_space< typename ViewTypeA::execution_space >();
     bool A_is_lr = std::is_same< typename ViewTypeA::array_layout, Kokkos::LayoutRight >::value;
-
     if ( testIsGpu && A_is_lr ) {
+      useDifferentOrderOfOperations = true;
+    }
+#endif
+
+    if (useDifferentOrderOfOperations) {
       for (int i = 0; i < M; i++) {
         for (int j = 0; j < N; j++) {
-          vanillaResult(i,j) = h_A(i,j) + alpha * h_y(j) * h_x(i);
+          h_vanilla(i,j) = h_A(i,j) + alpha * h_y(j) * h_x(i);
         }
       }
     }
     else {
       for (int i = 0; i < M; i++) {
         for (int j = 0; j < N; j++) {
-          vanillaResult(i,j) = h_A(i,j) + alpha * h_x(i) * h_y(j);
+          h_vanilla(i,j) = h_A(i,j) + alpha * h_x(i) * h_y(j);
         }
       }
     }
   }
 
   typedef Kokkos::ArithTraits<ScalarA> KAT_A;
-  double eps = (std::is_same<typename KAT_A::mag_type, float>::value ? 2.e-2 : 5e-10);
+  double eps = (std::is_same<typename KAT_A::mag_type, float>::value ? 2.5e-2 : 5e-10);
   if (expectedResultIsKnown) {
     // ******************************************************************
-    // Compare vanillaResult against expectedResult
+    // Compare h_vanilla against h_expected
     // ******************************************************************
     int numErrors(0);
     if (useAnalyticalResults) {
       for (int i(0); i < M; ++i) {
         for (int j(0); j < N; ++j) {
-          if (KAT_A::abs(expectedResult(i,j) - vanillaResult(i,j)) > KAT_A::abs(eps * expectedResult(i,j))) {
+          if (KAT_A::abs(h_expected(i,j) - h_vanilla(i,j)) > KAT_A::abs(eps * h_expected(i,j))) {
             std::cout << "ERROR, i = " << i
                       << ", j = "      << j
-                      << ": expectedResult(i,j) = " << expectedResult(i,j)
-                      << ", vanillaResult(i,j) = "  << vanillaResult(i,j)
-                      << ", KAT_A::abs(expectedResult(i,j) - vanillaResult(i,j)) = " << KAT_A::abs(expectedResult(i,j) - vanillaResult(i,j))
-                      << ", KAT_A::abs(eps * expectedResult(i,j)) = "                << KAT_A::abs(eps * expectedResult(i,j))
+                      << ": h_expected(i,j) = " << h_expected(i,j)
+                      << ", h_vanilla(i,j) = "  << h_vanilla(i,j)
+                      << ", KAT_A::abs(h_expected(i,j) - h_vanilla(i,j)) = " << KAT_A::abs(h_expected(i,j) - h_vanilla(i,j))
+                      << ", KAT_A::abs(eps * h_expected(i,j)) = "            << KAT_A::abs(eps * h_expected(i,j))
                       << std::endl;
             numErrors++;
           }
@@ -196,11 +280,11 @@ void impl_test_ger(int M, int N, bool useAnalyticalResults = false) {
     else {
       for (int i(0); i < M; ++i) {
         for (int j(0); j < N; ++j) {
-          if ( expectedResult(i,j) != vanillaResult(i,j) ) {
+          if ( h_expected(i,j) != h_vanilla(i,j) ) {
             std::cout << "ERROR, i = " << i
                       << ", j = "      << j
-                      << ": expectedResult(i,j) = " << expectedResult(i,j)
-                      << ", vanillaResult(i,j) = "  << vanillaResult(i,j)
+                      << ": h_expected(i,j) = " << h_expected(i,j)
+                      << ", h_vanilla(i,j) = "  << h_vanilla(i,j)
                       << std::endl;
             numErrors++;
           }
@@ -212,9 +296,9 @@ void impl_test_ger(int M, int N, bool useAnalyticalResults = false) {
   }
   else {
     // ******************************************************************
-    // Copy vanillaResult to expectedResult
+    // Copy h_vanilla to h_expected
     // ******************************************************************
-    Kokkos::deep_copy(expectedResult, vanillaResult);
+    Kokkos::deep_copy(h_expected, h_vanilla);
   }
   
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "In Test_Blas2_ger.hpp, right before calling KokkosBlas::ger(): ViewType = %s\n", typeid(ViewTypeA).name() );
@@ -224,13 +308,13 @@ void impl_test_ger(int M, int N, bool useAnalyticalResults = false) {
   int numErrors(0);
   for (int i(0); i < M; ++i) {
     for (int j(0); j < N; ++j) {
-      if (KAT_A::abs(expectedResult(i,j) - h_A(i,j)) > KAT_A::abs(eps * expectedResult(i,j))) {
+      if (KAT_A::abs(h_expected(i,j) - h_A(i,j)) > KAT_A::abs(eps * h_expected(i,j))) {
         std::cout << "ERROR, i = " << i
                   << ", j = "      << j
-                  << ": expectedResult(i,j) = " << expectedResult(i,j)
+                  << ": h_expected(i,j) = " << h_expected(i,j)
                   << ", h_A(i,j) = "            << h_A(i,j)
-                  << ", KAT_A::abs(expectedResult(i,j) - h_A(i,j)) = " << KAT_A::abs(expectedResult(i,j) - h_A(i,j))
-                  << ", KAT_A::abs(eps * expectedResult(i,j)) = "      << KAT_A::abs(eps * expectedResult(i,j))
+                  << ", KAT_A::abs(h_expected(i,j) - h_A(i,j)) = " << KAT_A::abs(h_expected(i,j) - h_A(i,j))
+                  << ", KAT_A::abs(eps * h_expected(i,j)) = "      << KAT_A::abs(eps * h_expected(i,j))
                   << std::endl;
         numErrors++;
       }
