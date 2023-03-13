@@ -28,14 +28,15 @@ template < class ScalarA
          , class E_HostType
          , typename std::enable_if< std::is_same<ScalarA,Kokkos::complex<float>>::value || std::is_same<ScalarA,Kokkos::complex<double>>::value >::type* = nullptr
          >
-void implTestGerAnalyticalValues( const int    M
-                                , const int    N
-                                , ScalarA    & alpha
-                                , X_HostType & h_x
-                                , Y_HostType & h_y
-                                , A_HostType & h_A
-                                , E_HostType & h_expected
-                                ) {
+void implTestGer_populateAnalyticalValues( const int    M
+                                         , const int    N
+                                         , const bool   useHermitianOption
+                                         , ScalarA    & alpha
+                                         , X_HostType & h_x
+                                         , Y_HostType & h_y
+                                         , A_HostType & h_A
+                                         , E_HostType & h_expected
+                                         ) {
   alpha.real() =  1.;
   alpha.imag() = -1.;
 
@@ -71,14 +72,15 @@ template < class ScalarA
          , class E_HostType
          , typename std::enable_if< !std::is_same<ScalarA,Kokkos::complex<float>>::value && !std::is_same<ScalarA,Kokkos::complex<double>>::value >::type* = nullptr
          >
-void implTestGerAnalyticalValues( const int    M
-                                , const int    N
-                                , ScalarA    & alpha
-                                , X_HostType & h_x
-                                , Y_HostType & h_y
-                                , A_HostType & h_A
-                                , E_HostType & h_expected
-                                ) {
+void implTestGer_populateAnalyticalValues( const int    M
+                                         , const int    N
+                                         , const bool   useHermitianOption
+                                         , ScalarA    & alpha
+                                         , X_HostType & h_x
+                                         , Y_HostType & h_y
+                                         , A_HostType & h_A
+                                         , E_HostType & h_expected
+                                         ) {
   alpha = 3;
 
   for (int i = 0; i < M; i++) {
@@ -103,7 +105,14 @@ void implTestGerAnalyticalValues( const int    M
 }
 
 template <class ViewTypeX, class ViewTypeY, class ViewTypeA, class Device>
-void impl_test_ger( const int M, const int N, const bool useAnalyticalResults = false) {
+void impl_test_ger( const int M
+                  , const int N
+                  , const bool useAnalyticalResults = false
+                  , const bool useHermitianOption   = false
+                  ) {
+  // ********************************************************************
+  // Step 1 of 7: declare main types and variables
+  // ********************************************************************
   typedef typename ViewTypeX::value_type ScalarX;
   typedef typename ViewTypeY::value_type ScalarY;
   typedef typename ViewTypeA::value_type ScalarA;
@@ -116,20 +125,24 @@ void impl_test_ger( const int M, const int N, const bool useAnalyticalResults = 
   typename ViewTypeY::HostMirror h_y = Kokkos::create_mirror_view(y);
   typename ViewTypeA::HostMirror h_A = Kokkos::create_mirror_view(A);
 
-  Kokkos::View<ScalarA**, Kokkos::HostSpace> h_expected("expected A += alpha * x * y^t", M ,N);
+  Kokkos::View<ScalarA**, Kokkos::HostSpace> h_expected("expected A += alpha * x * y^t", M, N);
   bool expectedResultIsKnown = false;
 
   ScalarA alpha(0.);
 
+  // ********************************************************************
+  // Step 2 of 7: populate alpha, h_x, h_y, h_A, h_expected, x, y, A
+  // ********************************************************************
   if (useAnalyticalResults) {
-    implTestGerAnalyticalValues( M
-                               , N
-                               , alpha
-                               , h_x
-                               , h_y
-                               , h_A
-                               , h_expected
-                               );
+    implTestGer_populateAnalyticalValues( M
+                                        , N
+                                        , useHermitianOption
+                                        , alpha
+                                        , h_x
+                                        , h_y
+                                        , h_A
+                                        , h_expected
+                                        );
     Kokkos::deep_copy(x, h_x);
     Kokkos::deep_copy(y, h_y);
     Kokkos::deep_copy(A, h_A);
@@ -223,7 +236,10 @@ void impl_test_ger( const int M, const int N, const bool useAnalyticalResults = 
     Kokkos::deep_copy(h_A, A);
   }
 
-  Kokkos::View<ScalarA**, Kokkos::HostSpace> h_vanilla("vanilla = A + alpha * x * y^t", M ,N);
+  // ********************************************************************
+  // Step 3 of 7: populate h_vanilla
+  // ********************************************************************
+  Kokkos::View<ScalarA**, Kokkos::HostSpace> h_vanilla("vanilla = A + alpha * x * y^t", M, N);
   {
     KOKKOS_IMPL_DO_NOT_USE_PRINTF( "In Test_Blas2_ger.hpp, computing vanilla A with alpha type = %s\n", typeid(alpha).name() );
 
@@ -236,7 +252,7 @@ void impl_test_ger( const int M, const int N, const bool useAnalyticalResults = 
     }
 #endif
 
-    if (useDifferentOrderOfOperations) {
+    if (useDifferentOrderOfOperations) { // Aqui
       for (int i = 0; i < M; i++) {
         for (int j = 0; j < N; j++) {
           h_vanilla(i,j) = h_A(i,j) + alpha * h_y(j) * h_x(i);
@@ -252,14 +268,25 @@ void impl_test_ger( const int M, const int N, const bool useAnalyticalResults = 
     }
   }
 
-  typedef Kokkos::ArithTraits<ScalarA> KAT_A;
-  double eps = (std::is_same<typename KAT_A::mag_type, float>::value ? 2.5e-2 : 5e-10);
-  if (expectedResultIsKnown) {
+  // ********************************************************************
+  // Step 4 of 7: set 'eps' (relative comparison threshold) according to current test
+  // ********************************************************************
+  double eps = 0.;
+  {
+    typedef Kokkos::ArithTraits<ScalarA> KAT_A;
+    eps = (std::is_same<typename KAT_A::mag_type, float>::value ? 2.5e-2 : 5e-10);
+  }
+
+  // ********************************************************************
+  // Step 5 of 7: use h_vanilla and h_expected as appropriate
+  // ********************************************************************
+  if (expectedResultIsKnown) { // Aqui
     // ******************************************************************
     // Compare h_vanilla against h_expected
     // ******************************************************************
     int numErrors(0);
     if (useAnalyticalResults) {
+      typedef Kokkos::ArithTraits<ScalarA> KAT_A;
       for (int i(0); i < M; ++i) {
         for (int j(0); j < N; ++j) {
           if (KAT_A::abs(h_expected(i,j) - h_vanilla(i,j)) > KAT_A::abs(eps * h_expected(i,j))) {
@@ -301,10 +328,18 @@ void impl_test_ger( const int M, const int N, const bool useAnalyticalResults = 
     Kokkos::deep_copy(h_expected, h_vanilla);
   }
   
+  // ********************************************************************
+  // Step 6 of 7: update h_A with the results computed with KokkosKernels
+  // ********************************************************************
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "In Test_Blas2_ger.hpp, right before calling KokkosBlas::ger(): ViewType = %s\n", typeid(ViewTypeA).name() );
-  KokkosBlas::ger("T", alpha, x, y, A);
+  char trans = useHermitianOptions ? 'T' : 'T'; // Aqui
+  KokkosBlas::ger(trans, alpha, x, y, A);
   Kokkos::deep_copy(h_A, A);
 
+  // ********************************************************************
+  // Step 7 of 7: compare KokkosKernels results against the expected ones
+  // ********************************************************************
+  typedef Kokkos::ArithTraits<ScalarA> KAT_A; // Aqui
   int numErrors(0);
   for (int i(0); i < M; ++i) {
     for (int j(0); j < N; ++j) {
@@ -345,11 +380,13 @@ int test_ger( const std::string & caseName ) {
   Test::impl_test_ger<view_type_x_ll, view_type_y_ll, view_type_a_ll, Device>(1024, 0);
   Test::impl_test_ger<view_type_x_ll, view_type_y_ll, view_type_a_ll, Device>(13, 13);
   Test::impl_test_ger<view_type_x_ll, view_type_y_ll, view_type_a_ll, Device>(13, 1024);
-  Test::impl_test_ger<view_type_x_ll, view_type_y_ll, view_type_a_ll, Device>(13, 1024, true);
+  Test::impl_test_ger<view_type_x_ll, view_type_y_ll, view_type_a_ll, Device>(13, 1024, true, false);
+  Test::impl_test_ger<view_type_x_ll, view_type_y_ll, view_type_a_ll, Device>(13, 1024, true, true);
   Test::impl_test_ger<view_type_x_ll, view_type_y_ll, view_type_a_ll, Device>(50, 40);
   Test::impl_test_ger<view_type_x_ll, view_type_y_ll, view_type_a_ll, Device>(1024, 1024);
   Test::impl_test_ger<view_type_x_ll, view_type_y_ll, view_type_a_ll, Device>(2131, 2131);
-  Test::impl_test_ger<view_type_x_ll, view_type_y_ll, view_type_a_ll, Device>(2131, 2131, true);
+  Test::impl_test_ger<view_type_x_ll, view_type_y_ll, view_type_a_ll, Device>(2131, 2131, true, false);
+  Test::impl_test_ger<view_type_x_ll, view_type_y_ll, view_type_a_ll, Device>(2131, 2131, true, true);
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Finished %s for LAYOUTLEFT\n", caseName.c_str() );
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "+--------------------------------------------------------------------------\n" );
 #endif
@@ -368,11 +405,13 @@ int test_ger( const std::string & caseName ) {
   Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(1, 2);
   Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(13, 13);
   Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(13, 1024);
-  Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(13, 1024, true);
+  Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(13, 1024, true, false);
+  Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(13, 1024, true, true);
   Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(50, 40);
   Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(1024, 1024);
   Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(2131, 2131);
-  Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(2131, 2131, true);
+  Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(2131, 2131, true, false);
+  Test::impl_test_ger<view_type_x_lr, view_type_y_lr, view_type_a_lr, Device>(2131, 2131, true, true);
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Finished %s for LAYOUTRIGHT\n", caseName.c_str() );
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "+--------------------------------------------------------------------------\n" );
 #endif
@@ -388,11 +427,13 @@ int test_ger( const std::string & caseName ) {
   Test::impl_test_ger<view_type_x_ls, view_type_y_ls, view_type_a_ls, Device>(1024, 0);
   Test::impl_test_ger<view_type_x_ls, view_type_y_ls, view_type_a_ls, Device>(13, 13);
   Test::impl_test_ger<view_type_x_ls, view_type_y_ls, view_type_a_ls, Device>(13, 1024);
-  Test::impl_test_ger<view_type_x_ls, view_type_y_ls, view_type_a_ls, Device>(13, 1024, true);
+  Test::impl_test_ger<view_type_x_ls, view_type_y_ls, view_type_a_ls, Device>(13, 1024, true, false);
+  Test::impl_test_ger<view_type_x_ls, view_type_y_ls, view_type_a_ls, Device>(13, 1024, true, true);
   Test::impl_test_ger<view_type_x_ls, view_type_y_ls, view_type_a_ls, Device>(50, 40);
   Test::impl_test_ger<view_type_x_ls, view_type_y_ls, view_type_a_ls, Device>(1024, 1024);
   Test::impl_test_ger<view_type_x_ls, view_type_y_ls, view_type_a_ls, Device>(2131, 2131);
-  Test::impl_test_ger<view_type_x_ls, view_type_y_ls, view_type_a_ls, Device>(2131, 2131, true);
+  Test::impl_test_ger<view_type_x_ls, view_type_y_ls, view_type_a_ls, Device>(2131, 2131, true, false);
+  Test::impl_test_ger<view_type_x_ls, view_type_y_ls, view_type_a_ls, Device>(2131, 2131, true, true);
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Finished %s for LAYOUTSTRIDE\n", caseName.c_str() );
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "+--------------------------------------------------------------------------\n" );
 #endif
@@ -401,7 +442,8 @@ int test_ger( const std::string & caseName ) {
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "+--------------------------------------------------------------------------\n" );
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Starting %s for MIXED LAYOUTS ...\n", caseName.c_str() );
   Test::impl_test_ger<view_type_x_ls, view_type_y_ll, view_type_a_lr, Device>(1024, 1024);
-  Test::impl_test_ger<view_type_x_ls, view_type_y_ll, view_type_a_lr, Device>(1024, 1024, true);
+  Test::impl_test_ger<view_type_x_ls, view_type_y_ll, view_type_a_lr, Device>(1024, 1024, true, false);
+  Test::impl_test_ger<view_type_x_ls, view_type_y_ll, view_type_a_lr, Device>(1024, 1024, true, true);
   Test::impl_test_ger<view_type_x_ll, view_type_y_ls, view_type_a_lr, Device>(1024, 1024);
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Finished %s for MIXED LAYOUTS\n", caseName.c_str() );
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "+--------------------------------------------------------------------------\n" );
@@ -431,20 +473,20 @@ TEST_F(TestCategory, ger_double) {
 }
 #endif
 
-#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-TEST_F(TestCategory, ger_complex_double) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::ger_complex_double");
-  test_ger<Kokkos::complex<double>, Kokkos::complex<double>, Kokkos::complex<double>, TestExecSpace>( "test case ger_complex_double" );
-  Kokkos::Profiling::popRegion();
-}
-#endif
-
 #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, ger_complex_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::ger_complex_float");
   test_ger<Kokkos::complex<float>, Kokkos::complex<float>, Kokkos::complex<float>, TestExecSpace>( "test case ger_complex_float" );
+  Kokkos::Profiling::popRegion();
+}
+#endif
+
+#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+TEST_F(TestCategory, ger_complex_double) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::ger_complex_double");
+  test_ger<Kokkos::complex<double>, Kokkos::complex<double>, Kokkos::complex<double>, TestExecSpace>( "test case ger_complex_double" );
   Kokkos::Profiling::popRegion();
 }
 #endif

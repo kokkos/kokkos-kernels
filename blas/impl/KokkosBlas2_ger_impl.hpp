@@ -56,7 +56,7 @@ struct SingleLevelGER {
     static_assert(std::is_integral<IndexType>::value, "IndexType must be an integer.");
   }
 
-  KOKKOS_INLINE_FUNCTION void operator()(const IndexType & i) const { // EEP
+  KOKKOS_INLINE_FUNCTION void operator()(const IndexType & i) const {
     using KAT = Kokkos::Details::ArithTraits<typename AViewType::non_const_value_type>;
 
     if (alpha_ == KAT::zero()) {
@@ -173,7 +173,7 @@ struct TwoLevelGER {
 
 public:
   // LayoutLeft version: one team per column
-  KOKKOS_INLINE_FUNCTION void operator()( TwoLevelGER_LayoutLeftTag // EEP
+  KOKKOS_INLINE_FUNCTION void operator()( TwoLevelGER_LayoutLeftTag
                                         , const member_type & team
                                         ) const {
     using KAT = Kokkos::Details::ArithTraits<typename AViewType::non_const_value_type>;
@@ -200,7 +200,7 @@ public:
   }
 
   // LayoutRight version: one team per row
-  KOKKOS_INLINE_FUNCTION void operator()( TwoLevelGER_LayoutRightTag // EEP
+  KOKKOS_INLINE_FUNCTION void operator()( TwoLevelGER_LayoutRightTag
                                         , const member_type & team
                                         ) const {
     using KAT = Kokkos::Details::ArithTraits<typename AViewType::non_const_value_type>;
