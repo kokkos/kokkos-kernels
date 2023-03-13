@@ -41,5 +41,8 @@ jobs:
             git --no-pager diff --patch --cached
             echo "==== End Format Patch ===="
 
+            echo "To automate formatting, see:"
+            echo "    https://kokkos-kernels.readthedocs.io/en/latest/developer/style.html#id1"
+
             exit 1
           fi
