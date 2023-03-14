@@ -3,11 +3,8 @@
 find_package(Git QUIET)
 
 SET(CURRENT_LIST_DIR ${CMAKE_CURRENT_LIST_DIR})
-SET(pre_configure_dir ${CMAKE_CURRENT_LIST_DIR})
-SET(post_configure_dir ${CMAKE_BINARY_DIR}/generated)
-
-SET(pre_configure_file ${pre_configure_dir}/KokkosKernels_Version_Info.cpp.in)
-SET(post_configure_file ${post_configure_dir}/KokkosKernels_Version_Info.cpp)
+SET(pre_configure_file ${CURRENT_LIST_DIR}/KokkosKernels_Version_Info.hpp.in)
+SET(post_configure_file ${CMAKE_BINARY_DIR}/KokkosKernels_Version_Info.hpp)
 
 FUNCTION(check_git_write git_hash git_clean_status)
   FILE(
@@ -29,12 +26,6 @@ FUNCTION(check_git_read git_hash)
 ENDFUNCTION()
 
 FUNCTION(check_git_version)
-  IF(NOT EXISTS ${post_configure_dir}/KokkosKernels_Version_Info.hpp)
-    FILE(
-      COPY ${pre_configure_dir}/KokkosKernels_Version_Info.hpp
-      DESTINATION ${post_configure_dir})
-  ENDIF()
-
   IF(NOT Git_FOUND OR NOT EXISTS ${KOKKOSKERNELS_TOP_SOURCE_DIR}/.git)
     configure_file(${pre_configure_file} ${post_configure_file} @ONLY)
     return()
@@ -83,11 +74,7 @@ FUNCTION(check_git_version)
 
   check_git_read(GIT_HASH_CACHE)
 
-  IF(NOT EXISTS ${post_configure_dir})
-    file(MAKE_DIRECTORY ${post_configure_dir})
-  ENDIF()
-
-  # Only update the git_version.cpp if the hash has changed. This will
+  # Only update the version header if the hash has changed. This will
   # prevent us from rebuilding the project more than we need to.
   IF(NOT "${GIT_COMMIT_HASH}-${GIT_CLEAN_STATUS}" STREQUAL ${GIT_HASH_CACHE}
     OR NOT EXISTS ${post_configure_file})
@@ -108,11 +95,7 @@ FUNCTION(check_git_setup)
     -P ${CURRENT_LIST_DIR}/kokkoskernels_git_info.cmake
     BYPRODUCTS ${post_configure_file})
 
-  add_library(impl_git_version ${CMAKE_BINARY_DIR}/generated/KokkosKernels_Version_Info.cpp)
-  target_include_directories(impl_git_version PUBLIC ${CMAKE_BINARY_DIR}/generated)
-  target_compile_features(impl_git_version PRIVATE cxx_raw_string_literals)
-  add_dependencies(impl_git_version AlwaysCheckGit)
-
+  add_dependencies(kokkoskernels AlwaysCheckGit)
   check_git_version()
 ENDFUNCTION()
 

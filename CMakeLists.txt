@@ -49,10 +49,6 @@ ELSE()
 ENDIF()
 INCLUDE(cmake/fake_tribits.cmake)
 INCLUDE(cmake/kokkoskernels_tribits.cmake)
-IF(NOT KOKKOSKERNELS_HAS_TRILINOS)
-  INCLUDE(cmake/kokkoskernels_git_info.cmake)
-  check_git_setup()
-ENDIF()
 
 OPTION(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 
@@ -325,6 +321,11 @@ ELSE()
     ENDFOREACH()
     TARGET_INCLUDE_DIRECTORIES(kokkoskernels PUBLIC
       $<INSTALL_INTERFACE:${KOKKOSKERNELS_HEADER_INSTALL_DIR}>)
+  ENDIF()
+
+  IF(NOT KOKKOSKERNELS_HAS_TRILINOS)
+    INCLUDE(cmake/kokkoskernels_git_info.cmake)
+    check_git_setup()
   ENDIF()
 
   # FIXME_SYCL waiting for compiler support
