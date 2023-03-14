@@ -24,7 +24,7 @@
 namespace KokkosKernels {
 namespace Impl {
 
-inline void print_cublas_version(std::ostream& os) {
+inline void print_cublas_version_if_enabled(std::ostream& os) {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
   os << "  "
      << "KOKKOSKERNELS_ENABLE_TPL_CUBLAS: " << get_cublas_version() << "\n";
@@ -34,7 +34,7 @@ inline void print_cublas_version(std::ostream& os) {
 #endif
 }
 
-inline void print_cusparse_version(std::ostream& os) {
+inline void print_cusparse_version_if_enabled(std::ostream& os) {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
   os << "  "
      << "KOKKOSKERNELS_ENABLE_TPL_CUSPARSE: " << get_cusparse_version() << "\n";
@@ -93,8 +93,8 @@ inline void print_enabled_tpls(std::ostream& os) {
   os << "  "
      << "KOKKOSKERNELS_ENABLE_TPL_MKL: no\n";
 #endif
-  print_cublas_version(os);
-  print_cusparse_version(os);
+  print_cublas_version_if_enabled(os);
+  print_cusparse_version_if_enabled(os);
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
   os << "  "
      << "KOKKOSKERNELS_ENABLE_TPL_ROCBLAS: yes\n";
