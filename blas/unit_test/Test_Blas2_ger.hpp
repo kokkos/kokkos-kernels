@@ -51,18 +51,28 @@ void implTestGer_populateAnalyticalValues( const int    M
     h_y[j].imag() = sin(j);
   }
 
-  for (int i = 0; i < M; i++) {
-    for (int j = 0; j < N; j++) {
-      h_A(i,j).real() = -sin(i-j) - sin(i) * sin(j) + cos(i) * cos(j);
-      h_A(i,j).imag() = -sin(i-j) - sin(i) * sin(j) - cos(i) * cos(j);
+  if (useHermitianOption) { // Aqui
+    for (int i = 0; i < M; i++) {
+      for (int j = 0; j < N; j++) {
+        h_A(i,j).real() = -sin(i+j) - sin(i) * sin(j) - cos(i) * cos(j);
+        h_A(i,j).imag() = -sin(i+j) - sin(i) * sin(j) + cos(i) * cos(j);
+      }
+    }
+  }
+  else {
+    for (int i = 0; i < M; i++) {
+      for (int j = 0; j < N; j++) {
+        h_A(i,j).real() = -sin(i-j) - sin(i) * sin(j) + cos(i) * cos(j);
+        h_A(i,j).imag() = -sin(i-j) - sin(i) * sin(j) - cos(i) * cos(j);
+      }
     }
   }
 
   if (useHermitianOption) { // Aqui
     for (int i = 0; i < M; i++) {
       for (int j = 0; j < N; j++) {
-        h_expected(i,j).real() =  2. * cos(i) * cos(j);
-        h_expected(i,j).imag() = -2. * sin(i-j);
+        h_expected(i,j).real() = -2. * sin(i) * sin(j);
+        h_expected(i,j).imag() = -2. * sin(i+j);
       }
     }
   }
@@ -204,16 +214,119 @@ void implTestGer_populateVanillaValues( const int          M
   }
 }
 
-// Code for complex values // Aqui
+// Code for complex values
 template < class ScalarA
          , class E_HostType
          , class Eps_Type
          , typename std::enable_if< std::is_same<ScalarA,Kokkos::complex<float>>::value || std::is_same<ScalarA,Kokkos::complex<double>>::value >::type* = nullptr
          >
-void implTestGer_compareVanillaExpected( const int          M
+void implTestGer_compareVanillaExpected( const bool         A_is_lr
+                                       , const int          M
                                        , const int          N
                                        , const bool         useAnalyticalResults
-                                       , const ScalarA    & /* alpha */
+                                       , const bool         useHermitianOption
+                                       , const ScalarA    & alpha
+                                       , const E_HostType & h_vanilla
+                                       , const E_HostType & h_expected
+                                       , const Eps_Type     eps
+                                       ) {
+  int numErrorsReal(0);
+  int numErrorsImag(0);
+  if (useAnalyticalResults) {
+    typedef Kokkos::ArithTraits<ScalarA> KAT_A;
+    for (int i(0); i < M; ++i) {
+      for (int j(0); j < N; ++j) {
+        if ( KAT_A::abs(h_expected(i,j).real() - h_vanilla(i,j).real()) > KAT_A::abs(eps * h_expected(i,j).real()) ) {
+          if (numErrorsReal == 0) {
+            std::cout << "ERROR, i = " << i
+                      << ", j = "      << j
+                      << ": h_expected(i,j).real() = " << h_expected(i,j).real()
+                      << ", h_vanilla(i,j).real() = "  << h_vanilla(i,j).real()
+                      << ", KAT_A::abs(h_expected(i,j).real() - h_vanilla(i,j).real()) = " << KAT_A::abs(h_expected(i,j).real() - h_vanilla(i,j).real())
+                      << ", KAT_A::abs(eps * h_expected(i,j).real()) = "            << KAT_A::abs(eps * h_expected(i,j).real())
+                      << std::endl;
+          }
+          numErrorsReal++;
+        }
+        if ( KAT_A::abs(h_expected(i,j).imag() - h_vanilla(i,j).imag()) > KAT_A::abs(eps * h_expected(i,j).imag()) ) {
+          if (numErrorsImag == 0) {
+            std::cout << "ERROR, i = " << i
+                      << ", j = "      << j
+                      << ": h_expected(i,j).imag() = " << h_expected(i,j).imag()
+                      << ", h_vanilla(i,j).imag() = "  << h_vanilla(i,j).imag()
+                      << ", KAT_A::abs(h_expected(i,j).imag() - h_vanilla(i,j).imag()) = " << KAT_A::abs(h_expected(i,j).imag() - h_vanilla(i,j).imag())
+                      << ", KAT_A::abs(eps * h_expected(i,j).imag()) = "            << KAT_A::abs(eps * h_expected(i,j).imag())
+                      << std::endl;
+          }
+          numErrorsImag++;
+        }
+      } // for j
+    } // for i
+    EXPECT_EQ(numErrorsReal, 0) << "A is " << M << " by " << N
+                                << ", A_is_lr = "            << A_is_lr
+                                << ", alpha type = "         << typeid(alpha).name()
+                                << ", useHermitianOption = " << useHermitianOption
+                                << ": vanilla differs too much from analytical on real components"
+                                << ", numErrorsReal = " << numErrorsReal;
+    EXPECT_EQ(numErrorsImag, 0) << "A is " << M << " by " << N
+                                << ", A_is_lr = "            << A_is_lr
+                                << ", alpha type = "         << typeid(alpha).name()
+                                << ", useHermitianOption = " << useHermitianOption
+                                << ": vanilla differs too much from analytical on imag components"
+                                << ", numErrorsImag = " << numErrorsImag;
+  }
+  else {
+    for (int i(0); i < M; ++i) {
+      for (int j(0); j < N; ++j) {
+        if ( h_expected(i,j).real() != h_vanilla(i,j).real() ) {
+          if (numErrorsReal == 0) {
+            std::cout << "ERROR, i = " << i
+                      << ", j = "      << j
+                      << ": h_expected(i,j).real() = " << h_expected(i,j).real()
+                      << ", h_vanilla(i,j).real() = "  << h_vanilla(i,j).real()
+                      << std::endl;
+          }
+          numErrorsReal++;
+        }
+        if ( h_expected(i,j).imag() != h_vanilla(i,j).imag() ) {
+          if (numErrorsImag == 0) {
+            std::cout << "ERROR, i = " << i
+                      << ", j = "      << j
+                      << ": h_expected(i,j).imag() = " << h_expected(i,j).imag()
+                      << ", h_vanilla(i,j).imag() = "  << h_vanilla(i,j).imag()
+                      << std::endl;
+          }
+          numErrorsImag++;
+        }
+      } // for j
+    } // for i
+    EXPECT_EQ(numErrorsReal, 0) << "A is " << M << " by " << N
+                                << ", A_is_lr = "            << A_is_lr
+                                << ", alpha type = "         << typeid(alpha).name()
+                                << ", useHermitianOption = " << useHermitianOption
+                                << ": vanilla result is incorrect on real components"
+                                << ", numErrorsReal = " << numErrorsReal;
+    EXPECT_EQ(numErrorsImag, 0) << "A is " << M << " by " << N
+                                << ", A_is_lr = "            << A_is_lr
+                                << ", alpha type = "         << typeid(alpha).name()
+                                << ", useHermitianOption = " << useHermitianOption
+                                << ": vanilla result is incorrect on imag components"
+                                << ", numErrorsImag = " << numErrorsImag;
+  }
+}
+  
+// Code for non-complex values
+template < class ScalarA
+         , class E_HostType
+         , class Eps_Type
+         , typename std::enable_if< !std::is_same<ScalarA,Kokkos::complex<float>>::value && !std::is_same<ScalarA,Kokkos::complex<double>>::value >::type* = nullptr
+         >
+void implTestGer_compareVanillaExpected( const bool         A_is_lr
+                                       , const int          M
+                                       , const int          N
+                                       , const bool         useAnalyticalResults
+                                       , const bool         useHermitianOption
+                                       , const ScalarA    & alpha
                                        , const E_HostType & h_vanilla
                                        , const E_HostType & h_expected
                                        , const Eps_Type     eps
@@ -224,125 +337,116 @@ void implTestGer_compareVanillaExpected( const int          M
     for (int i(0); i < M; ++i) {
       for (int j(0); j < N; ++j) {
         if (KAT_A::abs(h_expected(i,j) - h_vanilla(i,j)) > KAT_A::abs(eps * h_expected(i,j))) {
-          std::cout << "ERROR, i = " << i
-                    << ", j = "      << j
-                    << ": h_expected(i,j) = " << h_expected(i,j)
-                    << ", h_vanilla(i,j) = "  << h_vanilla(i,j)
-                    << ", KAT_A::abs(h_expected(i,j) - h_vanilla(i,j)) = " << KAT_A::abs(h_expected(i,j) - h_vanilla(i,j))
-                    << ", KAT_A::abs(eps * h_expected(i,j)) = "            << KAT_A::abs(eps * h_expected(i,j))
-                    << std::endl;
+          if (numErrors == 0) {
+            std::cout << "ERROR, i = " << i
+                      << ", j = "      << j
+                      << ": h_expected(i,j) = " << h_expected(i,j)
+                      << ", h_vanilla(i,j) = "  << h_vanilla(i,j)
+                      << ", KAT_A::abs(h_expected(i,j) - h_vanilla(i,j)) = " << KAT_A::abs(h_expected(i,j) - h_vanilla(i,j))
+                      << ", KAT_A::abs(eps * h_expected(i,j)) = "            << KAT_A::abs(eps * h_expected(i,j))
+                      << std::endl;
+          }
           numErrors++;
         }
       } // for j
     } // for i
     EXPECT_EQ(numErrors, 0) << "A is " << M << " by " << N
-                            << ": vanilla differs too much from analytical";
+                            << ", A_is_lr = "            << A_is_lr
+                            << ", alpha type = "         << typeid(alpha).name()
+                            << ", useHermitianOption = " << useHermitianOption
+                            << ": vanilla differs too much from analytical"
+                            << ", numErrors = " << numErrors;
   }
   else {
     for (int i(0); i < M; ++i) {
       for (int j(0); j < N; ++j) {
         if ( h_expected(i,j) != h_vanilla(i,j) ) {
-          std::cout << "ERROR, i = " << i
-                    << ", j = "      << j
-                    << ": h_expected(i,j) = " << h_expected(i,j)
-                    << ", h_vanilla(i,j) = "  << h_vanilla(i,j)
-                    << std::endl;
+          if (numErrors == 0) {
+            std::cout << "ERROR, i = " << i
+                      << ", j = "      << j
+                      << ": h_expected(i,j) = " << h_expected(i,j)
+                      << ", h_vanilla(i,j) = "  << h_vanilla(i,j)
+                      << std::endl;
+          }
           numErrors++;
         }
       } // for j
     } // for i
     EXPECT_EQ(numErrors, 0) << "A is " << M << " by " << N
-                            << ": vanilla result is incorrect";
+                            << ", A_is_lr = "            << A_is_lr
+                            << ", alpha type = "         << typeid(alpha).name()
+                            << ", useHermitianOption = " << useHermitianOption
+                            << ": vanilla result is incorrect"
+                            << ", numErrors = " << numErrors;
   }
 }
   
-// Code for non-complex values
-template < class ScalarA
-         , class E_HostType
-         , class Eps_Type
-         , typename std::enable_if< !std::is_same<ScalarA,Kokkos::complex<float>>::value && !std::is_same<ScalarA,Kokkos::complex<double>>::value >::type* = nullptr
-         >
-void implTestGer_compareVanillaExpected( const int          M
-                                       , const int          N
-                                       , const bool         useAnalyticalResults
-                                       , const ScalarA    & /* alpha */
-                                       , const E_HostType & h_vanilla
-                                       , const E_HostType & h_expected
-                                       , const Eps_Type     eps
-                                       ) {
-  int numErrors(0);
-  if (useAnalyticalResults) {
-    typedef Kokkos::ArithTraits<ScalarA> KAT_A;
-    for (int i(0); i < M; ++i) {
-      for (int j(0); j < N; ++j) {
-        if (KAT_A::abs(h_expected(i,j) - h_vanilla(i,j)) > KAT_A::abs(eps * h_expected(i,j))) {
-          std::cout << "ERROR, i = " << i
-                    << ", j = "      << j
-                    << ": h_expected(i,j) = " << h_expected(i,j)
-                    << ", h_vanilla(i,j) = "  << h_vanilla(i,j)
-                    << ", KAT_A::abs(h_expected(i,j) - h_vanilla(i,j)) = " << KAT_A::abs(h_expected(i,j) - h_vanilla(i,j))
-                    << ", KAT_A::abs(eps * h_expected(i,j)) = "            << KAT_A::abs(eps * h_expected(i,j))
-                    << std::endl;
-          numErrors++;
-        }
-      } // for j
-    } // for i
-    EXPECT_EQ(numErrors, 0) << "A is " << M << " by " << N
-                            << ": vanilla differs too much from analytical";
-  }
-  else {
-    for (int i(0); i < M; ++i) {
-      for (int j(0); j < N; ++j) {
-        if ( h_expected(i,j) != h_vanilla(i,j) ) {
-          std::cout << "ERROR, i = " << i
-                    << ", j = "      << j
-                    << ": h_expected(i,j) = " << h_expected(i,j)
-                    << ", h_vanilla(i,j) = "  << h_vanilla(i,j)
-                    << std::endl;
-          numErrors++;
-        }
-      } // for j
-    } // for i
-    EXPECT_EQ(numErrors, 0) << "A is " << M << " by " << N
-                            << ": vanilla result is incorrect";
-  }
-}
-  
-// Code for complex values // Aqui
+// Code for complex values
 template < class ScalarA
          , class A_HostType
          , class E_HostType
          , class Eps_Type
          , typename std::enable_if< std::is_same<ScalarA,Kokkos::complex<float>>::value || std::is_same<ScalarA,Kokkos::complex<double>>::value >::type* = nullptr
          >
-void implTestGer_compareKokkosExpected( const int          M
+void implTestGer_compareKokkosExpected( const bool         A_is_lr
+                                      , const int          M
                                       , const int          N
-                                      , const ScalarA    & /* alpha */
+                                      , const bool         useHermitianOption
+                                      , const ScalarA    & alpha
                                       , const A_HostType & h_A
                                       , const E_HostType & h_expected
                                       , const Eps_Type     eps
                                       ) {
   typedef Kokkos::ArithTraits<ScalarA> KAT_A;
-  int numErrors(0);
+  int numErrorsReal(0);
+  int numErrorsImag(0);
   for (int i(0); i < M; ++i) {
     for (int j(0); j < N; ++j) {
-      if (KAT_A::abs(h_expected(i,j) - h_A(i,j)) > KAT_A::abs(eps * h_expected(i,j))) {
-        std::cout << "ERROR, i = " << i
-                  << ", j = "      << j
-                  << ": h_expected(i,j) = " << h_expected(i,j)
-                  << ", h_A(i,j) = "            << h_A(i,j)
-                  << ", KAT_A::abs(h_expected(i,j) - h_A(i,j)) = " << KAT_A::abs(h_expected(i,j) - h_A(i,j))
-                  << ", KAT_A::abs(eps * h_expected(i,j)) = "      << KAT_A::abs(eps * h_expected(i,j))
-                  << std::endl;
-        numErrors++;
+      if (KAT_A::abs(h_expected(i,j).real() - h_A(i,j).real()) > KAT_A::abs(eps * h_expected(i,j).real())) {
+        if (numErrorsReal == 0) {
+          std::cout << "ERROR, i = " << i
+                    << ", j = "      << j
+                    << ": h_expected(i,j).real() = " << h_expected(i,j).real()
+                    << ", h_A(i,j).real() = "        << h_A(i,j).real()
+                    << ", KAT_A::abs(h_expected(i,j).real() - h_A(i,j).real()) = " << KAT_A::abs(h_expected(i,j).real() - h_A(i,j).real())
+                    << ", KAT_A::abs(eps * h_expected(i,j).real()) = "             << KAT_A::abs(eps * h_expected(i,j).real())
+                    << std::endl;
+        } 
+        numErrorsReal++;
+      }
+      if (KAT_A::abs(h_expected(i,j).imag() - h_A(i,j).imag()) > KAT_A::abs(eps * h_expected(i,j).imag())) {
+        if (numErrorsImag == 0) {
+          std::cout << "ERROR, i = " << i
+                    << ", j = "      << j
+                    << ": h_expected(i,j).imag() = " << h_expected(i,j).imag()
+                    << ", h_A(i,j).imag() = "        << h_A(i,j).imag()
+                    << ", KAT_A::abs(h_expected(i,j).imag() - h_A(i,j).imag()) = " << KAT_A::abs(h_expected(i,j).imag() - h_A(i,j).imag())
+                    << ", KAT_A::abs(eps * h_expected(i,j).imag()) = "             << KAT_A::abs(eps * h_expected(i,j).imag())
+                    << std::endl;
+        }
+        numErrorsImag++;
       }
     } // for j
   } // for i
   std::cout << "A is " << M << " by " << N
-            << ", numErrors = " << numErrors
+            << ", A_is_lr = "            << A_is_lr
+            << ", alpha type = "         << typeid(alpha).name()
+            << ", useHermitianOption = " << useHermitianOption
+            << ", numErrorsReal = " << numErrorsReal
+            << ", numErrorsImag = " << numErrorsImag
             << std::endl;
-  EXPECT_EQ(numErrors, 0) << "A is " << M << " by " << N
-                          << ": ger result is incorrect";
+  EXPECT_EQ(numErrorsReal, 0) << "A is " << M << " by " << N
+                              << ", A_is_lr = "            << A_is_lr
+                              << ", alpha type = "         << typeid(alpha).name()
+                              << ", useHermitianOption = " << useHermitianOption
+                              << ": ger result is incorrect on real components"
+                              << ", numErrorsReal = " << numErrorsReal;
+  EXPECT_EQ(numErrorsImag, 0) << "A is " << M << " by " << N
+                              << ", A_is_lr = "            << A_is_lr
+                              << ", alpha type = "         << typeid(alpha).name()
+                              << ", useHermitianOption = " << useHermitianOption
+                              << ": ger result is incorrect on imag components"
+                              << ", numErrorsImag = " << numErrorsImag;
 }
   
 // Code for non-complex values
@@ -352,9 +456,11 @@ template < class ScalarA
          , class Eps_Type
          , typename std::enable_if< !std::is_same<ScalarA,Kokkos::complex<float>>::value && !std::is_same<ScalarA,Kokkos::complex<double>>::value >::type* = nullptr
          >
-void implTestGer_compareKokkosExpected( const int          M
+void implTestGer_compareKokkosExpected( const bool         A_is_lr
+                                      , const int          M
                                       , const int          N
-                                      , const ScalarA    & /* alpha */
+                                      , const bool         useHermitianOption
+                                      , const ScalarA    & alpha
                                       , const A_HostType & h_A
                                       , const E_HostType & h_expected
                                       , const Eps_Type     eps
@@ -364,22 +470,31 @@ void implTestGer_compareKokkosExpected( const int          M
   for (int i(0); i < M; ++i) {
     for (int j(0); j < N; ++j) {
       if (KAT_A::abs(h_expected(i,j) - h_A(i,j)) > KAT_A::abs(eps * h_expected(i,j))) {
-        std::cout << "ERROR, i = " << i
-                  << ", j = "      << j
-                  << ": h_expected(i,j) = " << h_expected(i,j)
-                  << ", h_A(i,j) = "            << h_A(i,j)
-                  << ", KAT_A::abs(h_expected(i,j) - h_A(i,j)) = " << KAT_A::abs(h_expected(i,j) - h_A(i,j))
-                  << ", KAT_A::abs(eps * h_expected(i,j)) = "      << KAT_A::abs(eps * h_expected(i,j))
-                  << std::endl;
+        if (numErrors == 0) {
+          std::cout << "ERROR, i = " << i
+                    << ", j = "      << j
+                    << ": h_expected(i,j) = " << h_expected(i,j)
+                    << ", h_A(i,j) = "            << h_A(i,j)
+                    << ", KAT_A::abs(h_expected(i,j) - h_A(i,j)) = " << KAT_A::abs(h_expected(i,j) - h_A(i,j))
+                    << ", KAT_A::abs(eps * h_expected(i,j)) = "      << KAT_A::abs(eps * h_expected(i,j))
+                    << std::endl;
+        }
         numErrors++;
       }
     } // for j
   } // for i
   std::cout << "A is " << M << " by " << N
+            << ", A_is_lr = "            << A_is_lr
+            << ", alpha type = "         << typeid(alpha).name()
+            << ", useHermitianOption = " << useHermitianOption
             << ", numErrors = " << numErrors
             << std::endl;
   EXPECT_EQ(numErrors, 0) << "A is " << M << " by " << N
-                          << ": ger result is incorrect";
+                          << ", A_is_lr = "            << A_is_lr
+                          << ", alpha type = "         << typeid(alpha).name()
+                          << ", useHermitianOption = " << useHermitianOption
+                          << ": ger result is incorrect"
+                          << ", numErrors = " << numErrors;
 }
   
 template <class ViewTypeX, class ViewTypeY, class ViewTypeA, class Device>
@@ -518,12 +633,12 @@ void impl_test_ger( const int M
   // Step 3 of 7: populate h_vanilla
   // ********************************************************************
   Kokkos::View<ScalarA**, Kokkos::HostSpace> h_vanilla("vanilla = A + alpha * x * y^t", M, N);
+  bool A_is_lr = std::is_same< typename ViewTypeA::array_layout, Kokkos::LayoutRight >::value;
   {
     KOKKOS_IMPL_DO_NOT_USE_PRINTF( "In Test_Blas2_ger.hpp, computing vanilla A with alpha type = %s\n", typeid(alpha).name() );
     bool useDifferentOrderOfOperations = false;
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
     bool testIsGpu = KokkosKernels::Impl::kk_is_gpu_exec_space< typename ViewTypeA::execution_space >();
-    bool A_is_lr = std::is_same< typename ViewTypeA::array_layout, Kokkos::LayoutRight >::value;
     if ( testIsGpu && A_is_lr ) {
       useDifferentOrderOfOperations = true;
     }
@@ -557,9 +672,11 @@ void impl_test_ger( const int M
     // ******************************************************************
     // Compare h_vanilla against h_expected
     // ******************************************************************
-    implTestGer_compareVanillaExpected( M
+    implTestGer_compareVanillaExpected( A_is_lr
+                                      , M
                                       , N
                                       , useAnalyticalResults
+                                      , useHermitianOption
                                       , alpha
                                       , h_vanilla
                                       , h_expected
@@ -577,15 +694,17 @@ void impl_test_ger( const int M
   // Step 6 of 7: update h_A with the results computed with KokkosKernels
   // ********************************************************************
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "In Test_Blas2_ger.hpp, right before calling KokkosBlas::ger(): ViewType = %s\n", typeid(ViewTypeA).name() );
-  std::string trans = useHermitianOption ? "T" : "T"; // Aqui
+  std::string trans = useHermitianOption ? "H" : "T";
   KokkosBlas::ger(trans.c_str(), alpha, x, y, A);
   Kokkos::deep_copy(h_A, A);
 
   // ********************************************************************
   // Step 7 of 7: compare KokkosKernels results against the expected ones
   // ********************************************************************
-  implTestGer_compareKokkosExpected( M
+  implTestGer_compareKokkosExpected( A_is_lr
+                                   , M
                                    , N
+                                   , useHermitianOption
                                    , alpha
                                    , h_A
                                    , h_expected
