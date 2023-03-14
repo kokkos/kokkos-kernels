@@ -116,7 +116,7 @@ IF(KokkosKernels_ENABLE_BENCHMARK)
       )
       TARGET_LINK_LIBRARIES(
         ${BENCHMARK_NAME}
-        PRIVATE benchmark::benchmark Kokkos::kokkoskernels impl_git_version
+        PRIVATE benchmark::benchmark Kokkos::kokkoskernels
       )
       FOREACH(SOURCE_FILE ${BENCHMARK_SOURCES})
         SET_SOURCE_FILES_PROPERTIES(
