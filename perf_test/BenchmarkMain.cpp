@@ -21,8 +21,6 @@
 #include <Benchmark_Context.hpp>
 #include <Kokkos_Core.hpp>
 
-#include <KokkosKernels_Version_Info.hpp>
-
 static void BM_StringCreation(benchmark::State& state) {
   for (auto _ : state) std::string empty_string;
 }

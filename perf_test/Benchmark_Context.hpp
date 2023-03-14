@@ -69,15 +69,17 @@ void add_kokkos_configuration(bool verbose) {
 
 inline void add_git_info() {
   if (!KokkosKernels::Impl::GIT_BRANCH.empty()) {
-    benchmark::AddCustomContext("GIT_BRANCH", KokkosKernels::Impl::GIT_BRANCH);
-    benchmark::AddCustomContext("GIT_COMMIT_HASH",
-                                KokkosKernels::Impl::GIT_COMMIT_HASH);
-    benchmark::AddCustomContext("GIT_CLEAN_STATUS",
-                                KokkosKernels::Impl::GIT_CLEAN_STATUS);
-    benchmark::AddCustomContext("GIT_COMMIT_DESCRIPTION",
-                                KokkosKernels::Impl::GIT_COMMIT_DESCRIPTION);
-    benchmark::AddCustomContext("GIT_COMMIT_DATE",
-                                KokkosKernels::Impl::GIT_COMMIT_DATE);
+    benchmark::AddCustomContext("GIT_BRANCH",
+                                std::string(KokkosKernels::Impl::GIT_BRANCH));
+    benchmark::AddCustomContext(
+        "GIT_COMMIT_HASH", std::string(KokkosKernels::Impl::GIT_COMMIT_HASH));
+    benchmark::AddCustomContext(
+        "GIT_CLEAN_STATUS", std::string(KokkosKernels::Impl::GIT_CLEAN_STATUS));
+    benchmark::AddCustomContext(
+        "GIT_COMMIT_DESCRIPTION",
+        std::string(KokkosKernels::Impl::GIT_COMMIT_DESCRIPTION));
+    benchmark::AddCustomContext(
+        "GIT_COMMIT_DATE", std::string(KokkosKernels::Impl::GIT_COMMIT_DATE));
   }
 }
 
