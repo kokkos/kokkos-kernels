@@ -30,7 +30,8 @@ namespace KokkosBlas {
 /// \param space [in]     Execution space instance on which to run the kernel.
 ///                       This may contain information about which stream to
 ///                       run on.
-/// \param trans [in]     "T" or "t" for transpose, "H" or "h" for Hermitian
+/// \param trans [in]     "T" or "t" for transpose, "H" or "h" for Hermitian.
+///                       Only the first character is taken into account.
 /// \param alpha [in]     Input coefficient of x * y^{T,H}
 /// \param x     [in]     Input vector, as a 1-D Kokkos::View
 /// \param y     [in]     Input vector, as a 1-D Kokkos::View
@@ -117,7 +118,8 @@ void ger( const typename AViewType::execution_space  & space
 /// \tparam YViewType Input vector, as a 1-D Kokkos::View
 /// \tparam AViewType Input/Output matrix, as a 2-D Kokkos::View
 ///
-/// \param trans [in]     "T" or "t" for transpose, "H" or "h" for Hermitian
+/// \param trans [in]     "T" or "t" for transpose, "H" or "h" for Hermitian.
+///                       Only the first character is taken into account.
 /// \param alpha [in]     Input coefficient of x * y^{T,H}
 /// \param x     [in]     Input vector, as a 1-D Kokkos::View
 /// \param y     [in]     Input vector, as a 1-D Kokkos::View
