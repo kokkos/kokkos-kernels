@@ -175,7 +175,8 @@ void level_sched_tp(IlukHandle& thandle, const RowMapType row_map,
     } else
 #endif
     {
-      lnchunks(i)       = 1;
+      // Workaround to fix unused-parameter nstreams error
+      lnchunks(i)       = static_cast<nnz_lno_t>(nstreams / nstreams);
       lnrowsperchunk(i) = lnrows;
     }
     if (maxrowsperchunk < static_cast<size_type>(lnrowsperchunk(i))) {
