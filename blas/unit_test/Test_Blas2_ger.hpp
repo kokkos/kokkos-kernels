@@ -41,27 +41,45 @@ void implTestGer_populateAnalyticalValues( const int    M
   alpha.real() =  1.;
   alpha.imag() = -1.;
 
+<<<<<<< HEAD
   for (int i = 0; i < M; ++i) {
+=======
+  for (int i = 0; i < M; i++) {
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
     h_x[i].real() = sin(i);
     h_x[i].imag() = cos(i);
   }
 
+<<<<<<< HEAD
   for (int j = 0; j < N; ++j) {
+=======
+  for (int j = 0; j < N; j++) {
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
     h_y[j].real() = cos(j);
     h_y[j].imag() = sin(j);
   }
 
   if (useHermitianOption) { // Aqui
+<<<<<<< HEAD
     for (int i = 0; i < M; ++i) {
       for (int j = 0; j < N; ++j) {
+=======
+    for (int i = 0; i < M; i++) {
+      for (int j = 0; j < N; j++) {
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
         h_A(i,j).real() = -sin(i+j) - sin(i) * sin(j) - cos(i) * cos(j);
         h_A(i,j).imag() = -sin(i+j) - sin(i) * sin(j) + cos(i) * cos(j);
       }
     }
   }
   else {
+<<<<<<< HEAD
     for (int i = 0; i < M; ++i) {
       for (int j = 0; j < N; ++j) {
+=======
+    for (int i = 0; i < M; i++) {
+      for (int j = 0; j < N; j++) {
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
         h_A(i,j).real() = -sin(i-j) - sin(i) * sin(j) + cos(i) * cos(j);
         h_A(i,j).imag() = -sin(i-j) - sin(i) * sin(j) - cos(i) * cos(j);
       }
@@ -69,16 +87,28 @@ void implTestGer_populateAnalyticalValues( const int    M
   }
 
   if (useHermitianOption) { // Aqui
+<<<<<<< HEAD
     for (int i = 0; i < M; ++i) {
       for (int j = 0; j < N; ++j) {
         h_expected(i,j).real() = -2. * sin(i) * sin(j);
         h_expected(i,j).imag() = 2. * (cos(i+j) - sin(i+j));
+=======
+    for (int i = 0; i < M; i++) {
+      for (int j = 0; j < N; j++) {
+        h_expected(i,j).real() = -2. * sin(i) * sin(j);
+        h_expected(i,j).imag() = -2. * sin(i+j);
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
       }
     }
   }
   else {
+<<<<<<< HEAD
     for (int i = 0; i < M; ++i) {
       for (int j = 0; j < N; ++j) {
+=======
+    for (int i = 0; i < M; i++) {
+      for (int j = 0; j < N; j++) {
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
         h_expected(i,j).real() =  2. * cos(i) * cos(j);
         h_expected(i,j).imag() = -2. * sin(i-j);
       }
@@ -105,6 +135,7 @@ void implTestGer_populateAnalyticalValues( const int    M
                                          ) {
   alpha = 3;
 
+<<<<<<< HEAD
   for (int i = 0; i < M; ++i) {
     h_x[i] = sin(i);
   }
@@ -115,12 +146,29 @@ void implTestGer_populateAnalyticalValues( const int    M
 
   for (int i = 0; i < M; ++i) {
     for (int j = 0; j < N; ++j) {
+=======
+  for (int i = 0; i < M; i++) {
+    h_x[i] = sin(i);
+  }
+
+  for (int j = 0; j < N; j++) {
+    h_y[j] = cos(j);
+  }
+
+  for (int i = 0; i < M; i++) {
+    for (int j = 0; j < N; j++) {
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
       h_A(i,j) = 3 * cos(i) * sin(j);
     }
   }
 
+<<<<<<< HEAD
   for (int i = 0; i < M; ++i) {
     for (int j = 0; j < N; ++j) {
+=======
+  for (int i = 0; i < M; i++) {
+    for (int j = 0; j < N; j++) {
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
       h_expected(i,j) = 3 * sin(i+j);
     }
   }
@@ -147,15 +195,25 @@ void implTestGer_populateVanillaValues( const int          M
   if (useDifferentOrderOfOperations) {
     if (useHermitianOption) {
       typedef Kokkos::ArithTraits<ScalarA> KAT_A;
+<<<<<<< HEAD
       for (int i = 0; i < M; ++i) {
         for (int j = 0; j < N; ++j) {
+=======
+      for (int i = 0; i < M; i++) {
+        for (int j = 0; j < N; j++) {
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
           h_vanilla(i,j) = h_A(i,j) + alpha * KAT_A::conj( h_y(j) ) * h_x(i);
         }
       }
     }
     else {
+<<<<<<< HEAD
       for (int i = 0; i < M; ++i) {
         for (int j = 0; j < N; ++j) {
+=======
+      for (int i = 0; i < M; i++) {
+        for (int j = 0; j < N; j++) {
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
           h_vanilla(i,j) = h_A(i,j) + alpha * h_y(j) * h_x(i);
         }
       }
@@ -164,15 +222,25 @@ void implTestGer_populateVanillaValues( const int          M
   else {
     if (useHermitianOption) {
       typedef Kokkos::ArithTraits<ScalarA> KAT_A;
+<<<<<<< HEAD
       for (int i = 0; i < M; ++i) {
         for (int j = 0; j < N; ++j) {
+=======
+      for (int i = 0; i < M; i++) {
+        for (int j = 0; j < N; j++) {
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
           h_vanilla(i,j) = h_A(i,j) + alpha * h_x(i) * KAT_A::conj( h_y(j) );
         }
       }
     }
     else {
+<<<<<<< HEAD
       for (int i = 0; i < M; ++i) {
         for (int j = 0; j < N; ++j) {
+=======
+      for (int i = 0; i < M; i++) {
+        for (int j = 0; j < N; j++) {
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
           h_vanilla(i,j) = h_A(i,j) + alpha * h_x(i) * h_y(j);
         }
       }
@@ -199,15 +267,25 @@ void implTestGer_populateVanillaValues( const int          M
                                       , E_HostType       & h_vanilla
                                       ) {
   if (useDifferentOrderOfOperations) {
+<<<<<<< HEAD
     for (int i = 0; i < M; ++i) {
       for (int j = 0; j < N; ++j) {
+=======
+    for (int i = 0; i < M; i++) {
+      for (int j = 0; j < N; j++) {
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
         h_vanilla(i,j) = h_A(i,j) + alpha * h_y(j) * h_x(i);
       }
     }
   }
   else {
+<<<<<<< HEAD
     for (int i = 0; i < M; ++i) {
       for (int j = 0; j < N; ++j) {
+=======
+    for (int i = 0; i < M; i++) {
+      for (int j = 0; j < N; j++) {
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
         h_vanilla(i,j) = h_A(i,j) + alpha * h_x(i) * h_y(j);
       }
     }
@@ -228,16 +306,24 @@ void implTestGer_compareVanillaExpected( const bool         A_is_lr
                                        , const ScalarA    & alpha
                                        , const E_HostType & h_vanilla
                                        , const E_HostType & h_expected
+<<<<<<< HEAD
                                        , const Eps_Type     epsRel
                                        , const Eps_Type     epsAbs
                                        ) {
   int numErrorsReal(0);
   int numErrorsImag(0);
   Eps_Type diffThreshold(0.);
+=======
+                                       , const Eps_Type     eps
+                                       ) {
+  int numErrorsReal(0);
+  int numErrorsImag(0);
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
   if (useAnalyticalResults) {
     typedef Kokkos::ArithTraits<ScalarA> KAT_A;
     for (int i(0); i < M; ++i) {
       for (int j(0); j < N; ++j) {
+<<<<<<< HEAD
         if (h_expected(i,j).real() == 0.) {
           diffThreshold = KAT_A::abs(epsAbs);
         }
@@ -245,17 +331,25 @@ void implTestGer_compareVanillaExpected( const bool         A_is_lr
           diffThreshold = KAT_A::abs(epsRel * h_expected(i,j).real());
         }
         if ( KAT_A::abs(h_expected(i,j).real() - h_vanilla(i,j).real()) > diffThreshold ) {
+=======
+        if ( KAT_A::abs(h_expected(i,j).real() - h_vanilla(i,j).real()) > KAT_A::abs(eps * h_expected(i,j).real()) ) {
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
           if (numErrorsReal == 0) {
             std::cout << "ERROR, i = " << i
                       << ", j = "      << j
                       << ": h_expected(i,j).real() = " << h_expected(i,j).real()
                       << ", h_vanilla(i,j).real() = "  << h_vanilla(i,j).real()
                       << ", KAT_A::abs(h_expected(i,j).real() - h_vanilla(i,j).real()) = " << KAT_A::abs(h_expected(i,j).real() - h_vanilla(i,j).real())
+<<<<<<< HEAD
                       << ", diffThreshold = "                                              << diffThreshold
+=======
+                      << ", KAT_A::abs(eps * h_expected(i,j).real()) = "            << KAT_A::abs(eps * h_expected(i,j).real())
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
                       << std::endl;
           }
           numErrorsReal++;
         }
+<<<<<<< HEAD
 
         if (h_expected(i,j).imag() == 0.) {
           diffThreshold = KAT_A::abs(epsAbs);
@@ -264,28 +358,43 @@ void implTestGer_compareVanillaExpected( const bool         A_is_lr
           diffThreshold = KAT_A::abs(epsRel * h_expected(i,j).imag());
         }
         if ( KAT_A::abs(h_expected(i,j).imag() - h_vanilla(i,j).imag()) > diffThreshold ) {
+=======
+        if ( KAT_A::abs(h_expected(i,j).imag() - h_vanilla(i,j).imag()) > KAT_A::abs(eps * h_expected(i,j).imag()) ) {
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
           if (numErrorsImag == 0) {
             std::cout << "ERROR, i = " << i
                       << ", j = "      << j
                       << ": h_expected(i,j).imag() = " << h_expected(i,j).imag()
                       << ", h_vanilla(i,j).imag() = "  << h_vanilla(i,j).imag()
                       << ", KAT_A::abs(h_expected(i,j).imag() - h_vanilla(i,j).imag()) = " << KAT_A::abs(h_expected(i,j).imag() - h_vanilla(i,j).imag())
+<<<<<<< HEAD
                       << ", diffThreshold = "                                              << diffThreshold
+=======
+                      << ", KAT_A::abs(eps * h_expected(i,j).imag()) = "            << KAT_A::abs(eps * h_expected(i,j).imag())
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
                       << std::endl;
           }
           numErrorsImag++;
         }
       } // for j
     } // for i
+<<<<<<< HEAD
     EXPECT_EQ(numErrorsReal, 0) << "Failed test"
                                 << ", A is " << M << " by " << N
+=======
+    EXPECT_EQ(numErrorsReal, 0) << "A is " << M << " by " << N
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
                                 << ", A_is_lr = "            << A_is_lr
                                 << ", alpha type = "         << typeid(alpha).name()
                                 << ", useHermitianOption = " << useHermitianOption
                                 << ": vanilla differs too much from analytical on real components"
                                 << ", numErrorsReal = " << numErrorsReal;
+<<<<<<< HEAD
     EXPECT_EQ(numErrorsImag, 0) << "Failed test"
                                 << ", A is " << M << " by " << N
+=======
+    EXPECT_EQ(numErrorsImag, 0) << "A is " << M << " by " << N
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
                                 << ", A_is_lr = "            << A_is_lr
                                 << ", alpha type = "         << typeid(alpha).name()
                                 << ", useHermitianOption = " << useHermitianOption
@@ -317,15 +426,23 @@ void implTestGer_compareVanillaExpected( const bool         A_is_lr
         }
       } // for j
     } // for i
+<<<<<<< HEAD
     EXPECT_EQ(numErrorsReal, 0) << "Failed test"
                                 << ", A is " << M << " by " << N
+=======
+    EXPECT_EQ(numErrorsReal, 0) << "A is " << M << " by " << N
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
                                 << ", A_is_lr = "            << A_is_lr
                                 << ", alpha type = "         << typeid(alpha).name()
                                 << ", useHermitianOption = " << useHermitianOption
                                 << ": vanilla result is incorrect on real components"
                                 << ", numErrorsReal = " << numErrorsReal;
+<<<<<<< HEAD
     EXPECT_EQ(numErrorsImag, 0) << "Failed test"
                                 << ", A is " << M << " by " << N
+=======
+    EXPECT_EQ(numErrorsImag, 0) << "A is " << M << " by " << N
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
                                 << ", A_is_lr = "            << A_is_lr
                                 << ", alpha type = "         << typeid(alpha).name()
                                 << ", useHermitianOption = " << useHermitianOption
@@ -348,15 +465,22 @@ void implTestGer_compareVanillaExpected( const bool         A_is_lr
                                        , const ScalarA    & alpha
                                        , const E_HostType & h_vanilla
                                        , const E_HostType & h_expected
+<<<<<<< HEAD
                                        , const Eps_Type     epsRel
                                        , const Eps_Type     epsAbs
                                        ) {
   int numErrors(0);
   Eps_Type diffThreshold(0.);
+=======
+                                       , const Eps_Type     eps
+                                       ) {
+  int numErrors(0);
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
   if (useAnalyticalResults) {
     typedef Kokkos::ArithTraits<ScalarA> KAT_A;
     for (int i(0); i < M; ++i) {
       for (int j(0); j < N; ++j) {
+<<<<<<< HEAD
         if (h_expected(i,j) == 0.) {
           diffThreshold = KAT_A::abs(epsAbs);
         }
@@ -364,25 +488,40 @@ void implTestGer_compareVanillaExpected( const bool         A_is_lr
           diffThreshold = KAT_A::abs(epsRel * h_expected(i,j));
         }
         if (KAT_A::abs(h_expected(i,j) - h_vanilla(i,j)) > diffThreshold) {
+=======
+        if (KAT_A::abs(h_expected(i,j) - h_vanilla(i,j)) > KAT_A::abs(eps * h_expected(i,j))) {
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
           if (numErrors == 0) {
             std::cout << "ERROR, i = " << i
                       << ", j = "      << j
                       << ": h_expected(i,j) = " << h_expected(i,j)
                       << ", h_vanilla(i,j) = "  << h_vanilla(i,j)
                       << ", KAT_A::abs(h_expected(i,j) - h_vanilla(i,j)) = " << KAT_A::abs(h_expected(i,j) - h_vanilla(i,j))
+<<<<<<< HEAD
                       << ", diffThreshold = "                                << diffThreshold
+=======
+                      << ", KAT_A::abs(eps * h_expected(i,j)) = "            << KAT_A::abs(eps * h_expected(i,j))
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
                       << std::endl;
           }
           numErrors++;
         }
       } // for j
     } // for i
+<<<<<<< HEAD
     EXPECT_EQ(numErrors, 0) << "Failed test"
                             << ", A is " << M << " by " << N
                             << ", A_is_lr = "            << A_is_lr
                             << ", alpha type = "         << typeid(alpha).name()
                             << ", useHermitianOption = " << useHermitianOption
                             << ": vanilla differs too much from expected"
+=======
+    EXPECT_EQ(numErrors, 0) << "A is " << M << " by " << N
+                            << ", A_is_lr = "            << A_is_lr
+                            << ", alpha type = "         << typeid(alpha).name()
+                            << ", useHermitianOption = " << useHermitianOption
+                            << ": vanilla differs too much from analytical"
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
                             << ", numErrors = " << numErrors;
   }
   else {
@@ -400,8 +539,12 @@ void implTestGer_compareVanillaExpected( const bool         A_is_lr
         }
       } // for j
     } // for i
+<<<<<<< HEAD
     EXPECT_EQ(numErrors, 0) << "Failed test"
                             << ", A is " << M << " by " << N
+=======
+    EXPECT_EQ(numErrors, 0) << "A is " << M << " by " << N
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
                             << ", A_is_lr = "            << A_is_lr
                             << ", alpha type = "         << typeid(alpha).name()
                             << ", useHermitianOption = " << useHermitianOption
@@ -424,12 +567,17 @@ void implTestGer_compareKokkosExpected( const bool         A_is_lr
                                       , const ScalarA    & alpha
                                       , const A_HostType & h_A
                                       , const E_HostType & h_expected
+<<<<<<< HEAD
                                       , const Eps_Type     epsRel
                                       , const Eps_Type     epsAbs
+=======
+                                      , const Eps_Type     eps
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
                                       ) {
   typedef Kokkos::ArithTraits<ScalarA> KAT_A;
   int numErrorsReal(0);
   int numErrorsImag(0);
+<<<<<<< HEAD
   Eps_Type diffThreshold(0.);
   for (int i(0); i < M; ++i) {
     for (int j(0); j < N; ++j) {
@@ -440,17 +588,27 @@ void implTestGer_compareKokkosExpected( const bool         A_is_lr
         diffThreshold = KAT_A::abs(epsRel * h_expected(i,j).real());
       }
       if (KAT_A::abs(h_expected(i,j).real() - h_A(i,j).real()) > diffThreshold) {
+=======
+  for (int i(0); i < M; ++i) {
+    for (int j(0); j < N; ++j) {
+      if (KAT_A::abs(h_expected(i,j).real() - h_A(i,j).real()) > KAT_A::abs(eps * h_expected(i,j).real())) {
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
         if (numErrorsReal == 0) {
           std::cout << "ERROR, i = " << i
                     << ", j = "      << j
                     << ": h_expected(i,j).real() = " << h_expected(i,j).real()
                     << ", h_A(i,j).real() = "        << h_A(i,j).real()
                     << ", KAT_A::abs(h_expected(i,j).real() - h_A(i,j).real()) = " << KAT_A::abs(h_expected(i,j).real() - h_A(i,j).real())
+<<<<<<< HEAD
                     << ", diffThreshold = "                                        << diffThreshold
+=======
+                    << ", KAT_A::abs(eps * h_expected(i,j).real()) = "             << KAT_A::abs(eps * h_expected(i,j).real())
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
                     << std::endl;
         } 
         numErrorsReal++;
       }
+<<<<<<< HEAD
       if (h_expected(i,j).imag() == 0.) {
         diffThreshold = KAT_A::abs(epsAbs);
       }
@@ -458,13 +616,20 @@ void implTestGer_compareKokkosExpected( const bool         A_is_lr
         diffThreshold = KAT_A::abs(epsRel * h_expected(i,j).imag());
       }
       if (KAT_A::abs(h_expected(i,j).imag() - h_A(i,j).imag()) > diffThreshold) {
+=======
+      if (KAT_A::abs(h_expected(i,j).imag() - h_A(i,j).imag()) > KAT_A::abs(eps * h_expected(i,j).imag())) {
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
         if (numErrorsImag == 0) {
           std::cout << "ERROR, i = " << i
                     << ", j = "      << j
                     << ": h_expected(i,j).imag() = " << h_expected(i,j).imag()
                     << ", h_A(i,j).imag() = "        << h_A(i,j).imag()
                     << ", KAT_A::abs(h_expected(i,j).imag() - h_A(i,j).imag()) = " << KAT_A::abs(h_expected(i,j).imag() - h_A(i,j).imag())
+<<<<<<< HEAD
                     << ", diffThreshold = "                                        << diffThreshold
+=======
+                    << ", KAT_A::abs(eps * h_expected(i,j).imag()) = "             << KAT_A::abs(eps * h_expected(i,j).imag())
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
                     << std::endl;
         }
         numErrorsImag++;
@@ -478,15 +643,23 @@ void implTestGer_compareKokkosExpected( const bool         A_is_lr
             << ", numErrorsReal = " << numErrorsReal
             << ", numErrorsImag = " << numErrorsImag
             << std::endl;
+<<<<<<< HEAD
   EXPECT_EQ(numErrorsReal, 0) << "Failed test"
                               << ", A is " << M << " by " << N
+=======
+  EXPECT_EQ(numErrorsReal, 0) << "A is " << M << " by " << N
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
                               << ", A_is_lr = "            << A_is_lr
                               << ", alpha type = "         << typeid(alpha).name()
                               << ", useHermitianOption = " << useHermitianOption
                               << ": ger result is incorrect on real components"
                               << ", numErrorsReal = " << numErrorsReal;
+<<<<<<< HEAD
   EXPECT_EQ(numErrorsImag, 0) << "Failed test"
                               << ", A is " << M << " by " << N
+=======
+  EXPECT_EQ(numErrorsImag, 0) << "A is " << M << " by " << N
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
                               << ", A_is_lr = "            << A_is_lr
                               << ", alpha type = "         << typeid(alpha).name()
                               << ", useHermitianOption = " << useHermitianOption
@@ -508,6 +681,7 @@ void implTestGer_compareKokkosExpected( const bool         A_is_lr
                                       , const ScalarA    & alpha
                                       , const A_HostType & h_A
                                       , const E_HostType & h_expected
+<<<<<<< HEAD
                                       , const Eps_Type     epsRel
                                       , const Eps_Type     epsAbs
                                       ) {
@@ -523,13 +697,28 @@ void implTestGer_compareKokkosExpected( const bool         A_is_lr
         diffThreshold = KAT_A::abs(epsRel * h_expected(i,j));
       }
       if (KAT_A::abs(h_expected(i,j) - h_A(i,j)) > diffThreshold) {
+=======
+                                      , const Eps_Type     eps
+                                      ) {
+  typedef Kokkos::ArithTraits<ScalarA> KAT_A;
+  int numErrors(0);
+  for (int i(0); i < M; ++i) {
+    for (int j(0); j < N; ++j) {
+      if (KAT_A::abs(h_expected(i,j) - h_A(i,j)) > KAT_A::abs(eps * h_expected(i,j))) {
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
         if (numErrors == 0) {
           std::cout << "ERROR, i = " << i
                     << ", j = "      << j
                     << ": h_expected(i,j) = " << h_expected(i,j)
+<<<<<<< HEAD
                     << ", h_A(i,j) = "        << h_A(i,j)
                     << ", KAT_A::abs(h_expected(i,j) - h_A(i,j)) = " << KAT_A::abs(h_expected(i,j) - h_A(i,j))
                     << ", diffThreshold = "                          << diffThreshold
+=======
+                    << ", h_A(i,j) = "            << h_A(i,j)
+                    << ", KAT_A::abs(h_expected(i,j) - h_A(i,j)) = " << KAT_A::abs(h_expected(i,j) - h_A(i,j))
+                    << ", KAT_A::abs(eps * h_expected(i,j)) = "      << KAT_A::abs(eps * h_expected(i,j))
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
                     << std::endl;
         }
         numErrors++;
@@ -542,8 +731,12 @@ void implTestGer_compareKokkosExpected( const bool         A_is_lr
             << ", useHermitianOption = " << useHermitianOption
             << ", numErrors = " << numErrors
             << std::endl;
+<<<<<<< HEAD
   EXPECT_EQ(numErrors, 0) << "Failed test"
                           << ", A is " << M << " by " << N
+=======
+  EXPECT_EQ(numErrors, 0) << "A is " << M << " by " << N
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
                           << ", A_is_lr = "            << A_is_lr
                           << ", alpha type = "         << typeid(alpha).name()
                           << ", useHermitianOption = " << useHermitianOption
@@ -714,11 +907,17 @@ void impl_test_ger( const int M
   // ********************************************************************
   typedef Kokkos::ArithTraits<ScalarA> KAT_A;
   typedef typename KAT_A::mag_type EPS_TYPE;
+<<<<<<< HEAD
   EPS_TYPE epsAbs( 0. );
   EPS_TYPE epsRel( 0. );
   {
     epsAbs = (std::is_same<EPS_TYPE, float>::value ? 1.0e-6 : 1.0e-9);
     epsRel = (std::is_same<EPS_TYPE, float>::value ? 2.5e-2 : 1.0e-6);
+=======
+  EPS_TYPE eps( 0. );
+  {
+    eps = (std::is_same<EPS_TYPE, float>::value ? 2.5e-2 : 5e-10);
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
   }
 
   // ********************************************************************
@@ -736,8 +935,12 @@ void impl_test_ger( const int M
                                       , alpha
                                       , h_vanilla
                                       , h_expected
+<<<<<<< HEAD
                                       , epsRel
                                       , epsAbs
+=======
+                                      , eps
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
                                       );
   }
   else {
@@ -765,8 +968,12 @@ void impl_test_ger( const int M
                                    , alpha
                                    , h_A
                                    , h_expected
+<<<<<<< HEAD
                                    , epsRel
                                    , epsAbs
+=======
+                                   , eps
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
                                    );
 }
 } // namespace Test
@@ -862,8 +1069,11 @@ int test_ger( const std::string & caseName ) {
   return 1;
 }
 
+<<<<<<< HEAD
 #if 0
 
+=======
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
 #if defined(KOKKOSKERNELS_INST_FLOAT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, ger_float) {
@@ -891,8 +1101,11 @@ TEST_F(TestCategory, ger_complex_float) {
 }
 #endif
 
+<<<<<<< HEAD
 #endif // if 0
 
+=======
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, ger_complex_double) {
@@ -902,8 +1115,11 @@ TEST_F(TestCategory, ger_complex_double) {
 }
 #endif
 
+<<<<<<< HEAD
 #if 0
 
+=======
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
 #if defined(KOKKOSKERNELS_INST_INT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, ger_int) {
@@ -921,5 +1137,8 @@ TEST_F(TestCategory, ger_double_int) {
   Kokkos::Profiling::popRegion();
 }
 #endif
+<<<<<<< HEAD
 
 #endif // if 0
+=======
+>>>>>>> 40359f58cda102ab5c76321b2e99ab9ee3c02e29
