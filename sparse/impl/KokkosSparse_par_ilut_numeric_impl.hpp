@@ -80,7 +80,6 @@ struct IlutWrap {
       const URowMapType& U_row_map, const UEntriesType& U_entries,
       const UValuesType& U_values, LURowMapType& LU_row_map,
       LUEntriesType& LU_entries, LUValuesType& LU_values) {
-
     std::string myalg("SPGEMM_KK_MEMORY");
     KokkosSparse::SPGEMMAlgorithm spgemm_algorithm =
         KokkosSparse::StringToSPGEMMAlgorithm(myalg);
