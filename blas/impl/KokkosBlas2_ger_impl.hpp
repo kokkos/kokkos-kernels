@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-=======
-/*
->>>>>>> d868047b (Renamed files)
 //@HEADER
 // ************************************************************************
 //
@@ -17,7 +13,6 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-<<<<<<< HEAD
 
 #ifndef KOKKOSBLAS2_GER_IMPL_HPP_
 #define KOKKOSBLAS2_GER_IMPL_HPP_
@@ -26,19 +21,10 @@
 #include "Kokkos_Core.hpp"
 #include "KokkosKernels_ExecSpaceUtils.hpp"
 #include "Kokkos_ArithTraits.hpp"
-=======
-*/
-#ifndef KOKKOSBLAS1_GER_IMPL_HPP_
-#define KOKKOSBLAS1_GER_IMPL_HPP_
-
-#include <KokkosKernels_config.h>
-#include <Kokkos_Core.hpp>
->>>>>>> d868047b (Renamed files)
 
 namespace KokkosBlas {
 namespace Impl {
 
-<<<<<<< HEAD
 // Functor for a single-level parallel_for version of nontranspose GER.
 // The functor parallelizes over rows of the input matrix A.
 template <class XViewType, class YViewType, class AViewType,
@@ -346,15 +332,8 @@ void generalGerImpl( const typename AViewType::execution_space  & space
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Entering IMPL generalGerImpl(GPU), AViewType = %s\n", typeid(AViewType).name() );
   twoLevelGer(space, trans, alpha, x, y, A);
 }
-=======
-  // EEP
->>>>>>> d868047b (Renamed files)
 
 }  // namespace Impl
 }  // namespace KokkosBlas
 
-<<<<<<< HEAD
 #endif  // KOKKOSBLAS2_GER_IMPL_HPP_
-=======
-#endif  // KOKKOSBLAS1_GER_IMPL_HPP_
->>>>>>> d868047b (Renamed files)

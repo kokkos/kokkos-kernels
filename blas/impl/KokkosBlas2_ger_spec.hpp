@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-=======
-/*
->>>>>>> d868047b (Renamed files)
 //@HEADER
 // ************************************************************************
 //
@@ -17,7 +13,7 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-<<<<<<< HEAD
+
 #ifndef KOKKOSBLAS2_GER_SPEC_HPP_
 #define KOKKOSBLAS2_GER_SPEC_HPP_
 
@@ -26,24 +22,10 @@
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 #include <KokkosBlas2_ger_impl.hpp>
-=======
-*/
-
-#ifndef KOKKOSBLAS1_GER_SPEC_HPP_
-#define KOKKOSBLAS1_GER_SPEC_HPP_
-
-#include <KokkosKernels_config.h>
-#include <Kokkos_Core.hpp>
-
-// Include the actual functors
-#if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
-#include <KokkosBlas1_ger_impl.hpp>
->>>>>>> d868047b (Renamed files)
 #endif
 
 namespace KokkosBlas {
 namespace Impl {
-<<<<<<< HEAD
 // Specialization struct which defines whether a specialization exists
 template <class XMV, class YMV, class ZMV>
 struct ger_eti_spec_avail {
@@ -230,12 +212,3 @@ struct GER {
 #include <generated_specializations_hpp/KokkosBlas2_ger_eti_spec_decl.hpp>
 
 #endif // KOKKOSBLAS2_GER_SPEC_HPP_
-=======
-
-  // EEP
-
-#include <KokkosBlas1_ger_tpl_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosBlas1_ger_eti_spec_decl.hpp>
-
-#endif  // KOKKOSBLAS1_GER_SPEC_HPP_
->>>>>>> d868047b (Renamed files)

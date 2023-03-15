@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-=======
-/*
->>>>>>> d868047b (Renamed files)
 //@HEADER
 // ************************************************************************
 //
@@ -17,7 +13,6 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-<<<<<<< HEAD
 
 #ifndef KOKKOSBLAS2_GER_HPP_
 #define KOKKOSBLAS2_GER_HPP_
@@ -149,19 +144,3 @@ void ger( const          char                          trans[]
 } // namespace KokkosBlas
 
 #endif // KOKKOSBLAS2_GER_HPP_
-=======
-*/
-
-#ifndef KOKKOSBLAS1_GER_HPP_
-#define KOKKOSBLAS1_GER_HPP_
-
-#include <KokkosBlas1_ger_spec.hpp>
-
-namespace KokkosBlas {
-
-  // EEP
-
-}  // namespace KokkosBlas
-
-#endif  // KOKKOSBLAS1_GER_HPP_
->>>>>>> d868047b (Renamed files)
