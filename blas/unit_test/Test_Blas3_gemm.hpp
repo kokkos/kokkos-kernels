@@ -258,8 +258,8 @@ void impl_test_gemm(const char* TA, const char* TB, int M, int N, int K,
 }
 
 template <typename Scalar, typename Layout>
-void impl_test_stream_gemm(const int M, const int N, const int K,
-                           const Scalar alpha, const Scalar beta) {
+void impl_test_stream_gemm_psge2(const int M, const int N, const int K,
+                                 const Scalar alpha, const Scalar beta) {
   using execution_space = TestExecSpace;
   using ViewTypeA       = Kokkos::View<Scalar**, Layout, TestExecSpace>;
   using ViewTypeB       = Kokkos::View<Scalar**, Layout, TestExecSpace>;
@@ -372,12 +372,17 @@ void test_gemm() {
       }
     }
   }
-  Test::impl_test_stream_gemm<Scalar, Layout>(53, 42, 17, 4.5,
-                                              3.0);  // General code path
-  Test::impl_test_stream_gemm<Scalar, Layout>(
-      13, 1, 17, 4.5, 3.0);  // gemv based gemm code path
-  Test::impl_test_stream_gemm<Scalar, Layout>(7, 13, 17, 4.5,
-                                              3.0);  // dot based gemm code path
+  auto pool_size = execution_space().impl_thread_pool_size();
+  if (pool_size >= 2) {
+    Test::impl_test_stream_gemm_psge2<Scalar, Layout>(
+        53, 42, 17, 4.5,
+        3.0);  // General code path
+    Test::impl_test_stream_gemm_psge2<Scalar, Layout>(
+        13, 1, 17, 4.5, 3.0);  // gemv based gemm code path
+    Test::impl_test_stream_gemm_psge2<Scalar, Layout>(
+        7, 13, 17, 4.5,
+        3.0);  // dot based gemm code path
+  }
 }
 
 template <typename Scalar>
