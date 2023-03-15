@@ -35,8 +35,7 @@ inline std::string get_cublas_version() {
   // Print version
   std::stringstream ss;
 
-  ss << CUBLAS_VER_MAJOR << "." << CUBLAS_VER_MINOR << "." << CUBLAS_VER_PATCH
-     << CUBLAS_VER_BUILD;
+  ss << CUBLAS_VER_MAJOR << "." << CUBLAS_VER_MINOR << "." << CUBLAS_VER_PATCH;
 
   return ss.str();
 }
