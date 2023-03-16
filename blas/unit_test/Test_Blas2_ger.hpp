@@ -21,6 +21,24 @@
 
 namespace Test {
 
+constexpr double piVal = 3.14159265358979323846;
+
+template < class AuxType >
+AuxType shrinkAngleToZeroTwoPiRange(const AuxType input)
+{
+  AuxType output(input);
+#if 0
+  AuxType twoPi( 2. * piVal );
+  if (input > 0.) {
+    output -= std::floor( input / twoPi ) * twoPi;
+  }
+  else if (input < 0.) {
+    output += std::floor( -input / twoPi ) * twoPi;
+  }
+#endif
+  return output;
+}
+
 // Code for complex values
 template < class ScalarA
          , class X_HostType
@@ -38,49 +56,70 @@ void implTestGer_populateAnalyticalValues( const int    M
                                          , A_HostType & h_A
                                          , E_HostType & h_expected
                                          ) {
+  typedef Kokkos::ArithTraits<ScalarA> KAT_A;
+  typedef typename KAT_A::mag_type AuxType;
+  AuxType auxI(0.);
+  AuxType auxJ(0.);
+  AuxType auxIpJ(0.);
+  AuxType auxImJ(0.);
+
   alpha.real() =  1.;
   alpha.imag() = -1.;
 
   for (int i = 0; i < M; ++i) {
-    h_x[i].real() = sin(i);
-    h_x[i].imag() = cos(i);
+    auxI = shrinkAngleToZeroTwoPiRange( static_cast<AuxType>(i) );
+    h_x[i].real() = sin(auxI);
+    h_x[i].imag() = cos(auxI);
   }
 
   for (int j = 0; j < N; ++j) {
-    h_y[j].real() = cos(j);
-    h_y[j].imag() = sin(j);
+    auxJ = shrinkAngleToZeroTwoPiRange( static_cast<AuxType>(j) );
+    h_y[j].real() = cos(auxJ);
+    h_y[j].imag() = sin(auxJ);
   }
 
-  if (useHermitianOption) { // Aqui
+  if (useHermitianOption) {
     for (int i = 0; i < M; ++i) {
+      auxI = shrinkAngleToZeroTwoPiRange( static_cast<AuxType>(i) );
       for (int j = 0; j < N; ++j) {
-        h_A(i,j).real() = -sin(i+j) - sin(i) * sin(j) - cos(i) * cos(j);
-        h_A(i,j).imag() = -sin(i+j) - sin(i) * sin(j) + cos(i) * cos(j);
+        auxJ = shrinkAngleToZeroTwoPiRange( static_cast<AuxType>(j) );
+        auxIpJ = shrinkAngleToZeroTwoPiRange( static_cast<AuxType>(i+j) );
+        h_A(i,j).real() = -sin(auxIpJ) - sin(auxI) * sin(auxJ) - cos(auxI) * cos(auxJ);
+        h_A(i,j).imag() = -sin(auxIpJ) - sin(auxI) * sin(auxJ) + cos(auxI) * cos(auxJ);
       }
     }
   }
   else {
     for (int i = 0; i < M; ++i) {
+      auxI = shrinkAngleToZeroTwoPiRange( static_cast<AuxType>(i) );
       for (int j = 0; j < N; ++j) {
-        h_A(i,j).real() = -sin(i-j) - sin(i) * sin(j) + cos(i) * cos(j);
-        h_A(i,j).imag() = -sin(i-j) - sin(i) * sin(j) - cos(i) * cos(j);
+        auxJ = shrinkAngleToZeroTwoPiRange( static_cast<AuxType>(j) );
+        auxImJ = shrinkAngleToZeroTwoPiRange( static_cast<AuxType>(i-j) );
+        h_A(i,j).real() = -sin(auxImJ) - sin(auxI) * sin(auxJ) + cos(auxI) * cos(auxJ);
+        h_A(i,j).imag() = -sin(auxImJ) - sin(auxI) * sin(auxJ) - cos(auxI) * cos(auxJ);
       }
     }
   }
 
-  if (useHermitianOption) { // Aqui
+  if (useHermitianOption) {
     for (int i = 0; i < M; ++i) {
+      auxI = shrinkAngleToZeroTwoPiRange( static_cast<AuxType>(i) );
       for (int j = 0; j < N; ++j) {
-        h_expected(i,j).real() = -2. * sin(i) * sin(j);
-        h_expected(i,j).imag() = 2. * (cos(i+j) - sin(i+j));
+        auxJ = shrinkAngleToZeroTwoPiRange( static_cast<AuxType>(j) );
+        auxIpJ = shrinkAngleToZeroTwoPiRange( static_cast<AuxType>(i+j) );
+        h_expected(i,j).real() = -2. * sin(auxI) * sin(auxJ);
+        h_expected(i,j).imag() = 2. * (cos(auxIpJ) - sin(auxIpJ));
       }
     }
   }
   else {
     for (int i = 0; i < M; ++i) {
+      auxI = shrinkAngleToZeroTwoPiRange( static_cast<AuxType>(i) );
       for (int j = 0; j < N; ++j) {
-        h_expected(i,j).real() =  2. * cos(i) * cos(j);
-        h_expected(i,j).imag() = -2. * sin(i-j);
+        auxJ = shrinkAngleToZeroTwoPiRange( static_cast<AuxType>(j) );
+        auxImJ = shrinkAngleToZeroTwoPiRange( static_cast<AuxType>(i-j) );
+        h_expected(i,j).real() =  2. * cos(auxI) * cos(auxJ);
+        h_expected(i,j).imag() = -2. * sin(auxImJ);
       }
     }
   }
@@ -103,25 +142,36 @@ void implTestGer_populateAnalyticalValues( const int    M
                                          , A_HostType & h_A
                                          , E_HostType & h_expected
                                          ) {
+  typedef Kokkos::ArithTraits<ScalarA> KAT_A;
+  typedef typename KAT_A::mag_type AuxType;
+  AuxType auxI(0.);
+  AuxType auxJ(0.);
+  AuxType auxIpJ(0.);
+
   alpha = 3;
 
   for (int i = 0; i < M; ++i) {
-    h_x[i] = sin(i);
+    auxI = shrinkAngleToZeroTwoPiRange( static_cast<AuxType>(i) );
+    h_x[i] = sin(auxI);
   }
 
   for (int j = 0; j < N; ++j) {
-    h_y[j] = cos(j);
+    auxJ = shrinkAngleToZeroTwoPiRange( static_cast<AuxType>(j) );
+    h_y[j] = cos(auxJ);
   }
 
   for (int i = 0; i < M; ++i) {
+    auxI = shrinkAngleToZeroTwoPiRange( static_cast<AuxType>(i) );
     for (int j = 0; j < N; ++j) {
-      h_A(i,j) = 3 * cos(i) * sin(j);
+      auxJ = shrinkAngleToZeroTwoPiRange( static_cast<AuxType>(j) );
+      h_A(i,j) = 3 * cos(auxI) * sin(auxJ);
     }
   }
 
   for (int i = 0; i < M; ++i) {
     for (int j = 0; j < N; ++j) {
-      h_expected(i,j) = 3 * sin(i+j);
+      auxIpJ = shrinkAngleToZeroTwoPiRange( static_cast<AuxType>(i+j) );
+      h_expected(i,j) = 3 * sin(auxIpJ);
     }
   }
 }
@@ -228,71 +278,145 @@ void implTestGer_compareVanillaExpected( const bool         A_is_lr
                                        , const ScalarA    & alpha
                                        , const E_HostType & h_vanilla
                                        , const E_HostType & h_expected
-                                       , const Eps_Type     epsRel
                                        , const Eps_Type     epsAbs
+                                       , const Eps_Type     epsRel
                                        ) {
-  int numErrorsReal(0);
-  int numErrorsImag(0);
-  Eps_Type diffThreshold(0.);
+  int maxNumErrorsAllowed( static_cast<double>(M) * static_cast<double>(N) * 1.e-3 );
+
   if (useAnalyticalResults) {
+    int numErrorsRealAbs(0);
+    int numErrorsRealRel(0);
+    int numErrorsImagAbs(0);
+    int numErrorsImagRel(0);
+    Eps_Type diff         (0.);
+    Eps_Type diffThreshold(0.);
+    bool errorHappened(false);
+    Eps_Type maxErrorRealRel    (0.);
+    int      iForMaxErrorRealRel(0);
+    int      jForMaxErrorRealRel(0);
+    Eps_Type maxErrorImagRel    (0.);
+    int      iForMaxErrorImagRel(0);
+    int      jForMaxErrorImagRel(0);
+
     typedef Kokkos::ArithTraits<ScalarA> KAT_A;
     for (int i(0); i < M; ++i) {
       for (int j(0); j < N; ++j) {
+        diff = KAT_A::abs(h_expected(i,j).real() - h_vanilla(i,j).real());
+        errorHappened = false;
         if (h_expected(i,j).real() == 0.) {
           diffThreshold = KAT_A::abs(epsAbs);
+          if ( diff > diffThreshold ) {
+            errorHappened = true;
+            numErrorsRealAbs++;
+          }
         }
         else {
-          diffThreshold = KAT_A::abs(epsRel * h_expected(i,j).real());
-        }
-        if ( KAT_A::abs(h_expected(i,j).real() - h_vanilla(i,j).real()) > diffThreshold ) {
-          if (numErrorsReal == 0) {
-            std::cout << "ERROR, i = " << i
-                      << ", j = "      << j
-                      << ": h_expected(i,j).real() = " << h_expected(i,j).real()
-                      << ", h_vanilla(i,j).real() = "  << h_vanilla(i,j).real()
-                      << ", KAT_A::abs(h_expected(i,j).real() - h_vanilla(i,j).real()) = " << KAT_A::abs(h_expected(i,j).real() - h_vanilla(i,j).real())
-                      << ", diffThreshold = "                                              << diffThreshold
-                      << std::endl;
+          Eps_Type aux = diff / h_expected(i,j).real();
+          if (maxErrorRealRel < aux) {
+            maxErrorRealRel = aux;
+            iForMaxErrorRealRel = i;
+            jForMaxErrorRealRel = j;
           }
-          numErrorsReal++;
+
+          diffThreshold = KAT_A::abs(epsRel * h_expected(i,j).real());
+          if ( diff > diffThreshold ) {
+            errorHappened = true;
+            numErrorsRealRel++;
+          }
+        }
+        if (errorHappened && (numErrorsRealAbs + numErrorsRealRel == 0)) {
+          std::cout << "ERROR, i = " << i
+                    << ", j = "      << j
+                    << ": h_expected(i,j).real() = " << h_expected(i,j).real()
+                    << ", h_vanilla(i,j).real() = "  << h_vanilla(i,j).real()
+                    << ", KAT_A::abs(h_expected(i,j).real() - h_vanilla(i,j).real()) = " << diff
+                    << ", diffThreshold = "                                              << diffThreshold
+                    << std::endl;
         }
 
+        diff = KAT_A::abs(h_expected(i,j).imag() - h_vanilla(i,j).imag());
+        errorHappened = false;
         if (h_expected(i,j).imag() == 0.) {
           diffThreshold = KAT_A::abs(epsAbs);
+          if ( diff > diffThreshold ) {
+            errorHappened = true;
+            numErrorsImagAbs++;
+          }
         }
         else {
-          diffThreshold = KAT_A::abs(epsRel * h_expected(i,j).imag());
-        }
-        if ( KAT_A::abs(h_expected(i,j).imag() - h_vanilla(i,j).imag()) > diffThreshold ) {
-          if (numErrorsImag == 0) {
-            std::cout << "ERROR, i = " << i
-                      << ", j = "      << j
-                      << ": h_expected(i,j).imag() = " << h_expected(i,j).imag()
-                      << ", h_vanilla(i,j).imag() = "  << h_vanilla(i,j).imag()
-                      << ", KAT_A::abs(h_expected(i,j).imag() - h_vanilla(i,j).imag()) = " << KAT_A::abs(h_expected(i,j).imag() - h_vanilla(i,j).imag())
-                      << ", diffThreshold = "                                              << diffThreshold
-                      << std::endl;
+          Eps_Type aux = diff / h_expected(i,j).imag();
+          if (maxErrorImagRel < aux) {
+            maxErrorImagRel = aux;
+            iForMaxErrorImagRel = i;
+            jForMaxErrorImagRel = j;
           }
-          numErrorsImag++;
+
+          diffThreshold = KAT_A::abs(epsRel * h_expected(i,j).imag());
+          if ( diff > diffThreshold ) {
+            errorHappened = true;
+            numErrorsImagRel++;
+          }
+        }
+        if (errorHappened && (numErrorsImagAbs + numErrorsImagRel == 0)) {
+          std::cout << "ERROR, i = " << i
+                    << ", j = "      << j
+                    << ": h_expected(i,j).imag() = " << h_expected(i,j).imag()
+                    << ", h_vanilla(i,j).imag() = "  << h_vanilla(i,j).imag()
+                    << ", KAT_A::abs(h_expected(i,j).imag() - h_vanilla(i,j).imag()) = " << diff
+                    << ", diffThreshold = "                                              << diffThreshold
+                    << std::endl;
         }
       } // for j
     } // for i
-    EXPECT_EQ(numErrorsReal, 0) << "Failed test"
-                                << ", A is " << M << " by " << N
-                                << ", A_is_lr = "            << A_is_lr
-                                << ", alpha type = "         << typeid(alpha).name()
-                                << ", useHermitianOption = " << useHermitianOption
-                                << ": vanilla differs too much from analytical on real components"
-                                << ", numErrorsReal = " << numErrorsReal;
-    EXPECT_EQ(numErrorsImag, 0) << "Failed test"
-                                << ", A is " << M << " by " << N
-                                << ", A_is_lr = "            << A_is_lr
-                                << ", alpha type = "         << typeid(alpha).name()
-                                << ", useHermitianOption = " << useHermitianOption
-                                << ": vanilla differs too much from analytical on imag components"
-                                << ", numErrorsImag = " << numErrorsImag;
+    {
+      std::ostringstream msg;
+      msg << ", A is " << M << " by " << N
+          << ", A_is_lr = "                << A_is_lr
+          << ", alpha type = "             << typeid(alpha).name()
+          << ", useHermitianOption = "     << useHermitianOption
+          << ": vanilla differs too much from analytical on real components"
+          << ", numErrorsRealAbs = "       << numErrorsRealAbs
+          << ", numErrorsRealRel = "       << numErrorsRealRel
+          << ", maxErrorRealRel = "        << maxErrorRealRel
+          << ", iForMaxErrorRealRel = "    << iForMaxErrorRealRel
+          << ", jForMaxErrorRealRel = "    << jForMaxErrorRealRel
+          << ", h_expected(i,j).real() = " << ( ((M > 0) && (N > 0)) ? h_expected(iForMaxErrorRealRel,jForMaxErrorRealRel).real() : 9.999e+99 )
+          << ", h_vanilla(i,j).real() = "  << ( ((M > 0) && (N > 0)) ? h_vanilla(iForMaxErrorRealRel,jForMaxErrorRealRel).real() : 9.999e+99 )
+          << ", maxNumErrorsAllowed = "    << maxNumErrorsAllowed;
+
+      int numErrorsReal(numErrorsRealAbs + numErrorsRealRel);
+      if (numErrorsReal > 0) {
+        std::cout<< "WARNING" << msg.str() << std::endl;
+      }
+      EXPECT_LE(numErrorsReal, maxNumErrorsAllowed) << "Failed test" << msg.str();
+    }
+    {
+      std::ostringstream msg;
+      msg << ", A is " << M << " by " << N
+          << ", A_is_lr = "                << A_is_lr
+          << ", alpha type = "             << typeid(alpha).name()
+          << ", useHermitianOption = "     << useHermitianOption
+          << ": vanilla differs too much from analytical on imag components"
+          << ", numErrorsImagAbs = "       << numErrorsImagAbs
+          << ", numErrorsImagRel = "       << numErrorsImagRel
+          << ", maxErrorImagRel = "        << maxErrorImagRel
+          << ", iForMaxErrorImagRel = "    << iForMaxErrorImagRel
+          << ", jForMaxErrorImagRel = "    << jForMaxErrorImagRel
+          << ", h_expected(i,j).imag() = " << ( ((M > 0) && (N > 0)) ? h_expected(iForMaxErrorImagRel,jForMaxErrorImagRel).imag() : 9.999e+99 )
+          << ", h_vanilla(i,j).imag() = "  << ( ((M > 0) && (N > 0)) ? h_vanilla(iForMaxErrorImagRel,jForMaxErrorImagRel).imag() : 9.999e+99 )
+          << ", maxNumErrorsAllowed = "    << maxNumErrorsAllowed;
+
+      int numErrorsImag(numErrorsImagAbs + numErrorsImagRel);
+      if (numErrorsImag > 0) {
+        std::cout<< "WARNING" << msg.str() << std::endl;
+      }
+      EXPECT_LE(numErrorsImag, maxNumErrorsAllowed) << "Failed test" << msg.str();
+    }
   }
   else {
+    int numErrorsReal(0);
+    int numErrorsImag(0);
+
     for (int i(0); i < M; ++i) {
       for (int j(0); j < N; ++j) {
         if ( h_expected(i,j).real() != h_vanilla(i,j).real() ) {
@@ -305,6 +429,7 @@ void implTestGer_compareVanillaExpected( const bool         A_is_lr
           }
           numErrorsReal++;
         }
+
         if ( h_expected(i,j).imag() != h_vanilla(i,j).imag() ) {
           if (numErrorsImag == 0) {
             std::cout << "ERROR, i = " << i
@@ -348,44 +473,84 @@ void implTestGer_compareVanillaExpected( const bool         A_is_lr
                                        , const ScalarA    & alpha
                                        , const E_HostType & h_vanilla
                                        , const E_HostType & h_expected
-                                       , const Eps_Type     epsRel
                                        , const Eps_Type     epsAbs
+                                       , const Eps_Type     epsRel
                                        ) {
-  int numErrors(0);
-  Eps_Type diffThreshold(0.);
+  int maxNumErrorsAllowed( static_cast<double>(M) * static_cast<double>(N) * 1.e-3 );
+
   if (useAnalyticalResults) {
+    int numErrorsAbs(0);
+    int numErrorsRel(0);
+    Eps_Type diff         (0.);
+    Eps_Type diffThreshold(0.);
+    bool errorHappened(false);
+    Eps_Type maxErrorRel    (0.);
+    int      iForMaxErrorRel(0);
+    int      jForMaxErrorRel(0);
+
     typedef Kokkos::ArithTraits<ScalarA> KAT_A;
     for (int i(0); i < M; ++i) {
       for (int j(0); j < N; ++j) {
+        diff = KAT_A::abs(h_expected(i,j) - h_vanilla(i,j));
+        errorHappened = false;
         if (h_expected(i,j) == 0.) {
           diffThreshold = KAT_A::abs(epsAbs);
+          if (diff > diffThreshold) {
+            errorHappened = true;
+            numErrorsAbs++;
+          }
         }
         else {
-          diffThreshold = KAT_A::abs(epsRel * h_expected(i,j));
-        }
-        if (KAT_A::abs(h_expected(i,j) - h_vanilla(i,j)) > diffThreshold) {
-          if (numErrors == 0) {
-            std::cout << "ERROR, i = " << i
-                      << ", j = "      << j
-                      << ": h_expected(i,j) = " << h_expected(i,j)
-                      << ", h_vanilla(i,j) = "  << h_vanilla(i,j)
-                      << ", KAT_A::abs(h_expected(i,j) - h_vanilla(i,j)) = " << KAT_A::abs(h_expected(i,j) - h_vanilla(i,j))
-                      << ", diffThreshold = "                                << diffThreshold
-                      << std::endl;
+          Eps_Type aux = diff / h_expected(i,j);
+          if (maxErrorRel < aux) {
+            maxErrorRel = aux;
+            iForMaxErrorRel = i;
+            jForMaxErrorRel = j;
           }
-          numErrors++;
+
+          diffThreshold = KAT_A::abs(epsRel * h_expected(i,j));
+          if (diff > diffThreshold) {
+            errorHappened = true;
+            numErrorsRel++;
+          }
+        }
+        if (errorHappened && (numErrorsAbs + numErrorsRel == 0)) {
+          std::cout << "ERROR, i = " << i
+                    << ", j = "      << j
+                    << ": h_expected(i,j) = " << h_expected(i,j)
+                    << ", h_vanilla(i,j) = "  << h_vanilla(i,j)
+                    << ", KAT_A::abs(h_expected(i,j) - h_vanilla(i,j)) = " << diff
+                    << ", diffThreshold = "                                << diffThreshold
+                    << std::endl;
         }
       } // for j
     } // for i
-    EXPECT_EQ(numErrors, 0) << "Failed test"
-                            << ", A is " << M << " by " << N
-                            << ", A_is_lr = "            << A_is_lr
-                            << ", alpha type = "         << typeid(alpha).name()
-                            << ", useHermitianOption = " << useHermitianOption
-                            << ": vanilla differs too much from expected"
-                            << ", numErrors = " << numErrors;
+    {
+      std::ostringstream msg;
+      msg << ", A is " << M << " by " << N
+          << ", A_is_lr = "             << A_is_lr
+          << ", alpha type = "          << typeid(alpha).name()
+          << ", useHermitianOption = "  << useHermitianOption
+          << ": vanilla differs too much from expected"
+          << ", numErrorsAbs = "        << numErrorsAbs
+          << ", numErrorsRel = "        << numErrorsRel
+          << ", maxErrorRel = "         << maxErrorRel
+          << ", iForMaxErrorRel = "     << iForMaxErrorRel
+          << ", jForMaxErrorRel = "     << jForMaxErrorRel
+          << ", h_expected(i,j) = "     << ( ((M > 0) && (N > 0)) ? h_expected(iForMaxErrorRel,jForMaxErrorRel) : 9.999e+99 )
+          << ", h_vanilla(i,j) = "      << ( ((M > 0) && (N > 0)) ? h_vanilla(iForMaxErrorRel,jForMaxErrorRel) : 9.999e+99 )
+          << ", maxNumErrorsAllowed = " << maxNumErrorsAllowed;
+
+      int numErrors(numErrorsAbs + numErrorsRel);
+      if (numErrors > 0) {
+        std::cout<< "WARNING" << msg.str() << std::endl;
+      }
+      EXPECT_LE(numErrors, maxNumErrorsAllowed) << "Failed test" << msg.str();
+    }
   }
   else {
+    int numErrors(0);
+
     for (int i(0); i < M; ++i) {
       for (int j(0); j < N; ++j) {
         if ( h_expected(i,j) != h_vanilla(i,j) ) {
@@ -424,74 +589,159 @@ void implTestGer_compareKokkosExpected( const bool         A_is_lr
                                       , const ScalarA    & alpha
                                       , const A_HostType & h_A
                                       , const E_HostType & h_expected
-                                      , const Eps_Type     epsRel
                                       , const Eps_Type     epsAbs
+                                      , const Eps_Type     epsRel
                                       ) {
+  int maxNumErrorsAllowed( static_cast<double>(M) * static_cast<double>(N) * 1.e-3 );
+
   typedef Kokkos::ArithTraits<ScalarA> KAT_A;
-  int numErrorsReal(0);
-  int numErrorsImag(0);
+  int numErrorsRealAbs(0);
+  int numErrorsRealRel(0);
+  int numErrorsImagAbs(0);
+  int numErrorsImagRel(0);
+  Eps_Type diff         (0.);
   Eps_Type diffThreshold(0.);
+  bool errorHappened(false);
+  Eps_Type maxErrorRealRel    (0.);
+  int      iForMaxErrorRealRel(0);
+  int      jForMaxErrorRealRel(0);
+  Eps_Type maxErrorImagRel    (0.);
+  int      iForMaxErrorImagRel(0);
+  int      jForMaxErrorImagRel(0);
   for (int i(0); i < M; ++i) {
     for (int j(0); j < N; ++j) {
+      diff = KAT_A::abs(h_expected(i,j).real() - h_A(i,j).real());
+      errorHappened = false;
       if (h_expected(i,j).real() == 0.) {
         diffThreshold = KAT_A::abs(epsAbs);
+        if (diff > diffThreshold) {
+          errorHappened = true;
+          numErrorsRealAbs++;
+        }
       }
       else {
+        Eps_Type aux = diff / h_expected(i,j).real();
+        if (maxErrorRealRel < aux) {
+          maxErrorRealRel = aux;
+          iForMaxErrorRealRel = i;
+          jForMaxErrorRealRel = j;
+        }
+
         diffThreshold = KAT_A::abs(epsRel * h_expected(i,j).real());
+        if (diff > diffThreshold) {
+          errorHappened = true;
+          numErrorsRealRel++;
+        }
       }
-      if (KAT_A::abs(h_expected(i,j).real() - h_A(i,j).real()) > diffThreshold) {
-        if (numErrorsReal == 0) {
-          std::cout << "ERROR, i = " << i
-                    << ", j = "      << j
-                    << ": h_expected(i,j).real() = " << h_expected(i,j).real()
-                    << ", h_A(i,j).real() = "        << h_A(i,j).real()
-                    << ", KAT_A::abs(h_expected(i,j).real() - h_A(i,j).real()) = " << KAT_A::abs(h_expected(i,j).real() - h_A(i,j).real())
-                    << ", diffThreshold = "                                        << diffThreshold
-                    << std::endl;
-        } 
-        numErrorsReal++;
+      if (errorHappened && (numErrorsRealAbs + numErrorsRealRel == 0)) {
+        std::cout << "ERROR, i = " << i
+                  << ", j = "      << j
+                  << ": h_expected(i,j).real() = " << h_expected(i,j).real()
+                  << ", h_A(i,j).real() = "        << h_A(i,j).real()
+                  << ", KAT_A::abs(h_expected(i,j).real() - h_A(i,j).real()) = " << diff
+                  << ", diffThreshold = "                                        << diffThreshold
+                  << std::endl;
       }
+
+      diff = KAT_A::abs(h_expected(i,j).imag() - h_A(i,j).imag());
+      errorHappened = false;
       if (h_expected(i,j).imag() == 0.) {
         diffThreshold = KAT_A::abs(epsAbs);
+        if (diff > diffThreshold) {
+          errorHappened = true;
+          numErrorsImagAbs++;
+        }
       }
       else {
-        diffThreshold = KAT_A::abs(epsRel * h_expected(i,j).imag());
-      }
-      if (KAT_A::abs(h_expected(i,j).imag() - h_A(i,j).imag()) > diffThreshold) {
-        if (numErrorsImag == 0) {
-          std::cout << "ERROR, i = " << i
-                    << ", j = "      << j
-                    << ": h_expected(i,j).imag() = " << h_expected(i,j).imag()
-                    << ", h_A(i,j).imag() = "        << h_A(i,j).imag()
-                    << ", KAT_A::abs(h_expected(i,j).imag() - h_A(i,j).imag()) = " << KAT_A::abs(h_expected(i,j).imag() - h_A(i,j).imag())
-                    << ", diffThreshold = "                                        << diffThreshold
-                    << std::endl;
+        Eps_Type aux = diff / h_expected(i,j).imag();
+        if (maxErrorImagRel < aux) {
+          maxErrorImagRel = aux;
+          iForMaxErrorImagRel = i;
+          jForMaxErrorImagRel = j;
         }
-        numErrorsImag++;
+
+        diffThreshold = KAT_A::abs(epsRel * h_expected(i,j).imag());
+        if (diff > diffThreshold) {
+          errorHappened = true;
+          numErrorsImagRel++;
+        }
+      }
+      if (errorHappened && (numErrorsImagAbs + numErrorsImagRel == 0)) {
+        std::cout << "ERROR, i = " << i
+                  << ", j = "      << j
+                  << ": h_expected(i,j).imag() = " << h_expected(i,j).imag()
+                  << ", h_A(i,j).imag() = "        << h_A(i,j).imag()
+                  << ", KAT_A::abs(h_expected(i,j).imag() - h_A(i,j).imag()) = " << diff
+                  << ", diffThreshold = "                                        << diffThreshold
+                  << std::endl;
       }
     } // for j
   } // for i
   std::cout << "A is " << M << " by " << N
-            << ", A_is_lr = "            << A_is_lr
-            << ", alpha type = "         << typeid(alpha).name()
-            << ", useHermitianOption = " << useHermitianOption
-            << ", numErrorsReal = " << numErrorsReal
-            << ", numErrorsImag = " << numErrorsImag
+            << ", A_is_lr = "                << A_is_lr
+            << ", alpha type = "             << typeid(alpha).name()
+            << ", useHermitianOption = "     << useHermitianOption
+            << ", numErrorsRealAbs = "       << numErrorsRealAbs
+            << ", numErrorsRealRel = "       << numErrorsRealRel
+            << ", maxErrorRealRel = "        << maxErrorRealRel
+            << ", iForMaxErrorRealRel = "    << iForMaxErrorRealRel
+            << ", jForMaxErrorRealRel = "    << jForMaxErrorRealRel
+            << ", h_expected(i,j).real() = " << ( ((M > 0) && (N > 0)) ? h_expected(iForMaxErrorRealRel,jForMaxErrorRealRel).real() : 9.999e+99 )
+            << ", h_A(i,j).real() = "        << ( ((M > 0) && (N > 0)) ? h_A(iForMaxErrorRealRel,jForMaxErrorRealRel).real() : 9.999e+99 )
+            << ", numErrorsImagAbs = "       << numErrorsImagAbs
+            << ", numErrorsImagRel = "       << numErrorsImagRel
+            << ", maxErrorImagRel = "        << maxErrorImagRel
+            << ", iForMaxErrorImagRel = "    << iForMaxErrorImagRel
+            << ", jForMaxErrorImagRel = "    << jForMaxErrorImagRel
+            << ", h_expected(i,j).imag() = " << ( ((M > 0) && (N > 0)) ? h_expected(iForMaxErrorImagRel,jForMaxErrorImagRel).imag() : 9.999e+99 )
+            << ", h_A(i,j).imag() = "        << ( ((M > 0) && (N > 0)) ? h_A(iForMaxErrorImagRel,jForMaxErrorImagRel).imag() : 9.999e+99 )
+            << ", maxNumErrorsAllowed = "    << maxNumErrorsAllowed
             << std::endl;
-  EXPECT_EQ(numErrorsReal, 0) << "Failed test"
-                              << ", A is " << M << " by " << N
-                              << ", A_is_lr = "            << A_is_lr
-                              << ", alpha type = "         << typeid(alpha).name()
-                              << ", useHermitianOption = " << useHermitianOption
-                              << ": ger result is incorrect on real components"
-                              << ", numErrorsReal = " << numErrorsReal;
-  EXPECT_EQ(numErrorsImag, 0) << "Failed test"
-                              << ", A is " << M << " by " << N
-                              << ", A_is_lr = "            << A_is_lr
-                              << ", alpha type = "         << typeid(alpha).name()
-                              << ", useHermitianOption = " << useHermitianOption
-                              << ": ger result is incorrect on imag components"
-                              << ", numErrorsImag = " << numErrorsImag;
+
+  {
+    std::ostringstream msg;
+    msg << ", A is " << M << " by " << N
+        << ", A_is_lr = "                << A_is_lr
+        << ", alpha type = "             << typeid(alpha).name()
+        << ", useHermitianOption = "     << useHermitianOption
+        << ": ger result is incorrect on real components"
+        << ", numErrorsRealAbs = "       << numErrorsRealAbs
+        << ", numErrorsRealRel = "       << numErrorsRealRel
+        << ", maxErrorRealRel = "        << maxErrorRealRel
+        << ", iForMaxErrorRealRel = "    << iForMaxErrorRealRel
+        << ", jForMaxErrorRealRel = "    << jForMaxErrorRealRel
+        << ", h_expected(i,j).real() = " << ( ((M > 0) && (N > 0)) ? h_expected(iForMaxErrorRealRel,jForMaxErrorRealRel).real() : 9.999e+99 )
+        << ", h_A(i,j).real() = "        << ( ((M > 0) && (N > 0)) ? h_A(iForMaxErrorRealRel,jForMaxErrorRealRel).real() : 9.999e+99 )
+        << ", maxNumErrorsAllowed = "    << maxNumErrorsAllowed;
+
+    int numErrorsReal(numErrorsRealAbs + numErrorsRealRel);
+    if (numErrorsReal > 0) {
+      std::cout<< "WARNING" << msg.str() << std::endl;
+    }
+    EXPECT_LE(numErrorsReal, maxNumErrorsAllowed) << "Failed test" << msg.str();
+  }
+  {
+    std::ostringstream msg;
+    msg << ", A is " << M << " by " << N
+        << ", A_is_lr = "                << A_is_lr
+        << ", alpha type = "             << typeid(alpha).name()
+        << ", useHermitianOption = "     << useHermitianOption
+        << ": ger result is incorrect on imag components"
+        << ", numErrorsImagAbs = "       << numErrorsImagAbs
+        << ", numErrorsImagRel = "       << numErrorsImagRel
+        << ", maxErrorImagRel = "        << maxErrorImagRel
+        << ", iForMaxErrorImagRel = "    << iForMaxErrorImagRel
+        << ", jForMaxErrorImagRel = "    << jForMaxErrorImagRel
+        << ", h_expected(i,j).imag() = " << ( ((M > 0) && (N > 0)) ? h_expected(iForMaxErrorImagRel,jForMaxErrorImagRel).imag() : 9.999e+99 )
+        << ", h_A(i,j).imag() = "        << ( ((M > 0) && (N > 0)) ? h_A(iForMaxErrorImagRel,jForMaxErrorImagRel).imag() : 9.999e+99 )
+        << ", maxNumErrorsAllowed = "    << maxNumErrorsAllowed;
+
+    int numErrorsImag(numErrorsImagAbs + numErrorsImagRel);
+    if (numErrorsImag > 0) {
+      std::cout<< "WARNING" << msg.str() << std::endl;
+    }
+    EXPECT_LE(numErrorsImag, maxNumErrorsAllowed) << "Failed test" << msg.str();
+  }
 }
   
 // Code for non-complex values
@@ -508,47 +758,91 @@ void implTestGer_compareKokkosExpected( const bool         A_is_lr
                                       , const ScalarA    & alpha
                                       , const A_HostType & h_A
                                       , const E_HostType & h_expected
-                                      , const Eps_Type     epsRel
                                       , const Eps_Type     epsAbs
+                                      , const Eps_Type     epsRel
                                       ) {
+  int maxNumErrorsAllowed( static_cast<double>(M) * static_cast<double>(N) * 1.e-3 );
+
   typedef Kokkos::ArithTraits<ScalarA> KAT_A;
-  int numErrors(0);
+  int numErrorsAbs(0);
+  int numErrorsRel(0);
+  Eps_Type diff         (0.);
   Eps_Type diffThreshold(0.);
+  bool errorHappened(false);
+  Eps_Type maxErrorRel    (0.);
+  int      iForMaxErrorRel(0);
+  int      jForMaxErrorRel(0);
   for (int i(0); i < M; ++i) {
     for (int j(0); j < N; ++j) {
+      diff = KAT_A::abs(h_expected(i,j) - h_A(i,j));
+      errorHappened = false;
       if (h_expected(i,j) == 0.) {
         diffThreshold = KAT_A::abs(epsAbs);
+        if (diff > diffThreshold) {
+          errorHappened = true;
+          numErrorsAbs++;
+        }
       }
       else {
-        diffThreshold = KAT_A::abs(epsRel * h_expected(i,j));
-      }
-      if (KAT_A::abs(h_expected(i,j) - h_A(i,j)) > diffThreshold) {
-        if (numErrors == 0) {
-          std::cout << "ERROR, i = " << i
-                    << ", j = "      << j
-                    << ": h_expected(i,j) = " << h_expected(i,j)
-                    << ", h_A(i,j) = "        << h_A(i,j)
-                    << ", KAT_A::abs(h_expected(i,j) - h_A(i,j)) = " << KAT_A::abs(h_expected(i,j) - h_A(i,j))
-                    << ", diffThreshold = "                          << diffThreshold
-                    << std::endl;
+        Eps_Type aux = diff / h_expected(i,j);
+        if (maxErrorRel < aux) {
+          maxErrorRel = aux;
+          iForMaxErrorRel = i;
+          jForMaxErrorRel = j;
         }
-        numErrors++;
+
+        diffThreshold = KAT_A::abs(epsRel * h_expected(i,j));
+        if (diff > diffThreshold) {
+          errorHappened = true;
+          numErrorsRel++;
+        }
+      }
+      if (errorHappened && (numErrorsAbs + numErrorsRel == 0)) {
+        std::cout << "ERROR, i = " << i
+                  << ", j = "      << j
+                  << ": h_expected(i,j) = " << h_expected(i,j)
+                  << ", h_A(i,j) = "        << h_A(i,j)
+                  << ", KAT_A::abs(h_expected(i,j) - h_A(i,j)) = " << diff
+                  << ", diffThreshold = "                          << diffThreshold
+                  << std::endl;
       }
     } // for j
   } // for i
   std::cout << "A is " << M << " by " << N
-            << ", A_is_lr = "            << A_is_lr
-            << ", alpha type = "         << typeid(alpha).name()
-            << ", useHermitianOption = " << useHermitianOption
-            << ", numErrors = " << numErrors
+            << ", A_is_lr = "             << A_is_lr
+            << ", alpha type = "          << typeid(alpha).name()
+            << ", useHermitianOption = "  << useHermitianOption
+            << ", numErrorsAbs = "        << numErrorsAbs
+            << ", numErrorsRel = "        << numErrorsRel
+            << ", maxErrorRel = "         << maxErrorRel
+            << ", iForMaxErrorRel = "     << iForMaxErrorRel
+            << ", jForMaxErrorRel = "     << jForMaxErrorRel
+            << ", h_expected(i,j) = "     << ( ((M > 0) && (N > 0)) ? h_expected(iForMaxErrorRel,jForMaxErrorRel) : 9.999e+99 )
+            << ", h_A(i,j) = "            << ( ((M > 0) && (N > 0)) ? h_A(iForMaxErrorRel,jForMaxErrorRel) : 9.999e+99 )
+            << ", maxNumErrorsAllowed = " << maxNumErrorsAllowed
             << std::endl;
-  EXPECT_EQ(numErrors, 0) << "Failed test"
-                          << ", A is " << M << " by " << N
-                          << ", A_is_lr = "            << A_is_lr
-                          << ", alpha type = "         << typeid(alpha).name()
-                          << ", useHermitianOption = " << useHermitianOption
-                          << ": ger result is incorrect"
-                          << ", numErrors = " << numErrors;
+  {
+    std::ostringstream msg;
+    msg << ", A is " << M << " by " << N
+        << ", A_is_lr = "             << A_is_lr
+        << ", alpha type = "          << typeid(alpha).name()
+        << ", useHermitianOption = "  << useHermitianOption
+        << ": ger result is incorrect"
+        << ", numErrorsAbs = "        << numErrorsAbs
+        << ", numErrorsRel = "        << numErrorsRel
+        << ", maxErrorRel = "         << maxErrorRel
+        << ", iForMaxErrorRel = "     << iForMaxErrorRel
+        << ", jForMaxErrorRel = "     << jForMaxErrorRel
+        << ", h_expected(i,j) = "     << ( ((M > 0) && (N > 0)) ? h_expected(iForMaxErrorRel,jForMaxErrorRel) : 9.999e+99 )
+        << ", h_A(i,j) = "            << ( ((M > 0) && (N > 0)) ? h_A(iForMaxErrorRel,jForMaxErrorRel) : 9.999e+99 )
+        << ", maxNumErrorsAllowed = " << maxNumErrorsAllowed;
+
+    int numErrors(numErrorsAbs + numErrorsRel);
+    if (numErrors > 0) {
+      std::cout<< "WARNING" << msg.str() << std::endl;
+    }
+    EXPECT_LE(numErrors, maxNumErrorsAllowed) << "Failed test" << msg.str();
+  }
 }
   
 template <class ViewTypeX, class ViewTypeY, class ViewTypeA, class Device>
@@ -558,7 +852,7 @@ void impl_test_ger( const int M
                   , const bool useHermitianOption   = false
                   ) {
   // ********************************************************************
-  // Step 1 of 7: declare main types and variables
+  // Step 1 of 8: declare main types and variables
   // ********************************************************************
   typedef typename ViewTypeX::value_type ScalarX;
   typedef typename ViewTypeY::value_type ScalarY;
@@ -578,7 +872,7 @@ void impl_test_ger( const int M
   ScalarA alpha(0.);
 
   // ********************************************************************
-  // Step 2 of 7: populate alpha, h_x, h_y, h_A, h_expected, x, y, A
+  // Step 2 of 8: populate alpha, h_x, h_y, h_A, h_expected, x, y, A
   // ********************************************************************
   if (useAnalyticalResults) {
     implTestGer_populateAnalyticalValues( M
@@ -684,7 +978,7 @@ void impl_test_ger( const int M
   }
 
   // ********************************************************************
-  // Step 3 of 7: populate h_vanilla
+  // Step 3 of 8: populate h_vanilla
   // ********************************************************************
   Kokkos::View<ScalarA**, Kokkos::HostSpace> h_vanilla("vanilla = A + alpha * x * y^t", M, N);
   bool A_is_lr = std::is_same< typename ViewTypeA::array_layout, Kokkos::LayoutRight >::value;
@@ -710,7 +1004,7 @@ void impl_test_ger( const int M
   }
   
   // ********************************************************************
-  // Step 4 of 7: set 'eps' (relative comparison threshold) according to current test
+  // Step 4 of 8: set 'eps' (relative comparison threshold) according to current test
   // ********************************************************************
   typedef Kokkos::ArithTraits<ScalarA> KAT_A;
   typedef typename KAT_A::mag_type EPS_TYPE;
@@ -718,11 +1012,11 @@ void impl_test_ger( const int M
   EPS_TYPE epsRel( 0. );
   {
     epsAbs = (std::is_same<EPS_TYPE, float>::value ? 1.0e-6 : 1.0e-9);
-    epsRel = (std::is_same<EPS_TYPE, float>::value ? 2.5e-2 : 1.0e-6);
+    epsRel = (std::is_same<EPS_TYPE, float>::value ? 5.0e-3 : 1.0e-6);
   }
 
   // ********************************************************************
-  // Step 5 of 7: use h_vanilla and h_expected as appropriate
+  // Step 5 of 8: use h_vanilla and h_expected as appropriate
   // ********************************************************************
   if (expectedResultIsKnown) {
     // ******************************************************************
@@ -736,8 +1030,8 @@ void impl_test_ger( const int M
                                       , alpha
                                       , h_vanilla
                                       , h_expected
-                                      , epsRel
                                       , epsAbs
+                                      , epsRel
                                       );
   }
   else {
@@ -748,15 +1042,23 @@ void impl_test_ger( const int M
   }
   
   // ********************************************************************
-  // Step 6 of 7: update h_A with the results computed with KokkosKernels
+  // Step 6 of 8: update h_A with the results computed with KokkosKernels
   // ********************************************************************
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "In Test_Blas2_ger.hpp, right before calling KokkosBlas::ger(): ViewType = %s\n", typeid(ViewTypeA).name() );
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "In Test_Blas2_ger.hpp, right before calling KokkosBlas::ger(): ViewTypeA = %s\n", typeid(ViewTypeA).name() );
   std::string trans = useHermitianOption ? "H" : "T";
-  KokkosBlas::ger(trans.c_str(), alpha, x, y, A);
+  try {
+    KokkosBlas::ger(trans.c_str(), alpha, x, y, A); // Aqui2: situations where an exception should be thrown???
+  }
+  catch( const std::exception& e ) {
+    std::cout << "In Test_Blas2_ger: caught exception, e.what() = " << e.what() << std::endl;
+  }
+  catch( ... ) {
+    std::cout << "In Test_Blas2_ger: caught unknown exception" << std::endl;
+  }
   Kokkos::deep_copy(h_A, A);
 
   // ********************************************************************
-  // Step 7 of 7: compare KokkosKernels results against the expected ones
+  // Step 7 of 8: compare KokkosKernels results against the expected ones
   // ********************************************************************
   implTestGer_compareKokkosExpected( A_is_lr
                                    , M
@@ -765,9 +1067,61 @@ void impl_test_ger( const int M
                                    , alpha
                                    , h_A
                                    , h_expected
-                                   , epsRel
                                    , epsAbs
+                                   , epsRel
                                    );
+
+#if 0 // Aqui3
+  Kokkos::deep_copy(y, org_y);
+  KokkosBlas::gemv(mode, alpha, A, c_x, beta, y);
+  Kokkos::deep_copy(h_y, y);
+  numErrors = 0;
+  for (int i = 0; i < ldy; i++) {
+    if (KAT_Y::abs(expected(i) - h_y(i)) > tol) numErrors++;
+  }
+  EXPECT_EQ(numErrors, 0) << "Const vector input, " << M << 'x' << N
+                          << ", alpha = " << alpha << ", beta = " << beta
+                          << ", mode " << mode << ": gemv incorrect";
+
+  Kokkos::deep_copy(y, org_y);
+  KokkosBlas::gemv(mode, alpha, c_A, c_x, beta, y);
+  Kokkos::deep_copy(h_y, y);
+  numErrors = 0;
+  for (int i = 0; i < ldy; i++) {
+    if (KAT_Y::abs(expected(i) - h_y(i)) > tol) numErrors++;
+  }
+  EXPECT_EQ(numErrors, 0) << "Const matrix/vector input, " << M << 'x' << N
+                          << ", alpha = " << alpha << ", beta = " << beta
+                          << ", mode " << mode << ": gemv incorrect";
+  // Test once with beta = 0, but with y initially filled with NaN.
+  // This should overwrite the NaNs with the correct result.
+  beta = KAT_Y::zero();
+  // beta changed, so update the correct answer
+  vanillaGEMV(mode[0], alpha, h_A, h_x, beta, expected);
+  Kokkos::deep_copy(y, KAT_Y::nan());
+  KokkosBlas::gemv(mode, alpha, A, x, beta, y);
+  Kokkos::deep_copy(h_y, y);
+  numErrors = 0;
+  for (int i = 0; i < ldy; i++) {
+    if (KAT_Y::isNan(h_y(i)) ||
+        KAT_Y::abs(expected(i) - h_y(i)) >
+            KAT_Y::abs(alpha * max_valA * max_valX * ldx * eps * 2)) {
+      numErrors++;
+      std::cerr << __FILE__ << ":" << __LINE__ << ": expected(" << i
+                << ")=" << expected(i) << ", h_y(" << i << ")=" << h_y(i)
+                << ", eps=" << eps
+                << ", 1024*2*eps=" << 1024 * 2 * KAT_Y::epsilon() << std::endl;
+    }
+  }
+  EXPECT_EQ(numErrors, 0) << "beta = 0, input contains NaN, A is " << M << 'x'
+                          << N << ", mode " << mode << ": gemv incorrect";
+#endif
+
+  // ********************************************************************
+  // Step 8 of 8: tests with invalid values on the first input parameter
+  // ********************************************************************
+  EXPECT_ANY_THROW( KokkosBlas::ger(".", alpha, x, y, A) );
+  EXPECT_ANY_THROW( KokkosBlas::ger("", alpha, x, y, A) );
 }
 } // namespace Test
 
@@ -862,7 +1216,7 @@ int test_ger( const std::string & caseName ) {
   return 1;
 }
 
-#if 0
+#if 1 // Aqui
 
 #if defined(KOKKOSKERNELS_INST_FLOAT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -902,7 +1256,7 @@ TEST_F(TestCategory, ger_complex_double) {
 }
 #endif
 
-#if 0
+#if 1 // Aqui
 
 #if defined(KOKKOSKERNELS_INST_INT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))

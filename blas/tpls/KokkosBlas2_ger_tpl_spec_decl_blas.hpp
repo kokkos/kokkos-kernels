@@ -248,7 +248,8 @@ namespace Impl {
                                               );                                                         \
         }                                                                                                \
         else {                                                                                           \
-          throw std::runtime_error("Error: blasZgec() requires LayoutRight views.");                     \
+          KOKKOS_IMPL_DO_NOT_USE_PRINTF("blasZgerc() requires LayoutRight: throwing exception\n");       \
+          throw std::runtime_error("Error: blasZgerc() requires LayoutRight views.");                    \
         }                                                                                                \
       }                                                                                                  \
       Kokkos::Profiling::popRegion();                                                                    \
@@ -344,7 +345,8 @@ namespace Impl {
                                              );                                                       \
         }                                                                                             \
         else {                                                                                        \
-          throw std::runtime_error("Error: blasCgec() requires LayoutRight views.");                  \
+          KOKKOS_IMPL_DO_NOT_USE_PRINTF("blasCgerc() requires LayoutRight: throwing exception\n");    \
+          throw std::runtime_error("Error: blasCgerc() requires LayoutRight views.");                 \
         }                                                                                             \
       }                                                                                               \
       Kokkos::Profiling::popRegion();                                                                 \

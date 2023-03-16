@@ -267,7 +267,8 @@ namespace Impl {
                                        );                                                                         \
         }                                                                                                         \
         else {                                                                                                    \
-          throw std::runtime_error("Error: rocblasZgec() requires LayoutLeft views.");                            \
+          KOKKOS_IMPL_DO_NOT_USE_PRINTF("rocblasZgerc() requires LayoutLeft: throwing exception\n");              \
+          throw std::runtime_error("Error: rocblasZgerc() requires LayoutLeft views.");                           \
         }                                                                                                         \
       }                                                                                                           \
       else {                                                                                                      \
@@ -371,6 +372,7 @@ namespace Impl {
                                        );                                                                        \
         }                                                                                                        \
         else {                                                                                                   \
+          KOKKOS_IMPL_DO_NOT_USE_PRINTF("rocblasCgerc() requires LayoutLeft: throwing exception\n");             \
           throw std::runtime_error("Error: rocblasCgec() requires LayoutLeft views.");                           \
         }                                                                                                        \
       }                                                                                                          \
