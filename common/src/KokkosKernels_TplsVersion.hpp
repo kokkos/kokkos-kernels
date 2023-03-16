@@ -18,7 +18,7 @@
 #define _KOKKOSKERNELS_TPLS_VERSIONS_HPP
 
 #include "KokkosKernels_config.h"
-#include <iostream>
+#include <sstream>
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
 #include "cublas_v2.h"
@@ -31,7 +31,7 @@
 namespace KokkosKernels {
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
-inline std::string get_cublas_version() {
+inline std::string cublas_version_string() {
   // Print version
   std::stringstream ss;
 
@@ -42,12 +42,12 @@ inline std::string get_cublas_version() {
 #endif
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
-inline std::string get_cusparse_version() {
+inline std::string cusparse_version_string() {
   // Print version
   std::stringstream ss;
 
   ss << CUSPARSE_VER_MAJOR << "." << CUSPARSE_VER_MINOR << "."
-     << CUSPARSE_VER_PATCH << CUSPARSE_VER_BUILD;
+     << CUSPARSE_VER_PATCH << "." << CUSPARSE_VER_BUILD;
 
   return ss.str();
 }
