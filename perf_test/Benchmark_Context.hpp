@@ -19,6 +19,8 @@
 #ifndef KOKKOSKERNELS_PERFTEST_BENCHMARK_CONTEXT_HPP
 #define KOKKOSKERNELS_PERFTEST_BENCHMARK_CONTEXT_HPP
 
+#include "KokkosKernels_PrintConfiguration.hpp"
+
 #include <string>
 
 #include <benchmark/benchmark.h>
@@ -46,6 +48,7 @@ std::string remove_unwanted_characters(std::string str) {
 void add_kokkos_configuration(bool verbose) {
   std::ostringstream msg;
   Kokkos::print_configuration(msg, verbose);
+  KokkosKernels::print_configuration(msg);
 
   // Iterate over lines returned from kokkos and extract key:value pairs
   std::stringstream ss{msg.str()};
