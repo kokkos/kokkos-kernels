@@ -21,12 +21,6 @@
 #include <Benchmark_Context.hpp>
 #include <Kokkos_Core.hpp>
 
-static void BM_StringCreation(benchmark::State& state) {
-  for (auto _ : state) std::string empty_string;
-}
-
-BENCHMARK(BM_StringCreation)->ArgNames({"N", "R"})->Args({100'000, 1'000});
-
 int main(int argc, char** argv) {
   Kokkos::initialize(argc, argv);
   benchmark::Initialize(&argc, argv);
