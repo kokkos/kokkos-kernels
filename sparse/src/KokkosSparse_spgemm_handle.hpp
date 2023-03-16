@@ -810,8 +810,7 @@ class SPGEMMHandle {
       const void *ArowptrsIn, const void *AentriesIn, const void *BrowptrsIn,
       const void *BentriesIn, const void *CrowptrsIn, const void *CentriesIn) {
     // A, B rowptrs and entries will have already been set.
-    // If this is the first numeric call, assign the pointer Centries and the
-    // values pointers of each matrix
+    // If this is the first numeric call, assign the pointer Centries
     if (!Centries) Centries = CentriesIn;
     // Then make sure they all match
     if (Arowptrs != ArowptrsIn || Aentries != AentriesIn) return false;
