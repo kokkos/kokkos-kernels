@@ -122,6 +122,25 @@ void kk_diagonally_dominant_sparseMatrix_generate(
   // Set a hard limit to the actual entries in any one row, so that the
   // loop to find a column not already taken will terminate quickly.
   OrdinalType max_elements_per_row = 0.7 * bandwidth;
+  OrdinalType requested_max_elements_per_row =
+      elements_per_row + 0.5 * row_size_variance;
+  if (requested_max_elements_per_row > max_elements_per_row) {
+    std::cerr
+        << "kk_diagonally_dominant_sparseMatrix_generate: given the bandwidth ("
+        << bandwidth << "),\n";
+    std::cerr << "  can insert a maximum of " << max_elements_per_row
+              << " entries per row (0.7*bandwidth).\n";
+    std::cerr << "  But given the requested average entries per row of "
+              << elements_per_row << " and variance of " << row_size_variance
+              << ",\n";
+    std::cerr << "  there should be up to " << requested_max_elements_per_row
+              << " entries per row.\n";
+    std::cerr << "  Increase the bandwidth, or decrease nnz and/or "
+                 "row_size_variance.\n";
+    throw std::invalid_argument(
+        "kk_diagonally_dominant_sparseMatrix_generate: requested too many "
+        "entries per row for the given bandwidth.");
+  }
   srand(13721);
   rowPtr[0] = 0;
   for (int row = 0; row < nrows; row++) {
