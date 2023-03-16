@@ -27,7 +27,7 @@ namespace Impl {
 inline void print_cublas_version_if_enabled(std::ostream& os) {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
   os << "  "
-     << "KOKKOSKERNELS_ENABLE_TPL_CUBLAS: " << get_cublas_version() << "\n";
+     << "KOKKOSKERNELS_ENABLE_TPL_CUBLAS: " << cublas_version_string() << "\n";
 #else
   os << "  "
      << "KOKKOSKERNELS_ENABLE_TPL_CUBLAS: no\n";
@@ -37,7 +37,8 @@ inline void print_cublas_version_if_enabled(std::ostream& os) {
 inline void print_cusparse_version_if_enabled(std::ostream& os) {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
   os << "  "
-     << "KOKKOSKERNELS_ENABLE_TPL_CUSPARSE: " << get_cusparse_version() << "\n";
+     << "KOKKOSKERNELS_ENABLE_TPL_CUSPARSE: " << cusparse_version_string()
+     << "\n";
 #else
   os << "  "
      << "KOKKOSKERNELS_ENABLE_TPL_CUSPARSE: no\n";
