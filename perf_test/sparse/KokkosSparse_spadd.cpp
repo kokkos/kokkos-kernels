@@ -20,8 +20,12 @@
 #include "KokkosSparse_IOUtils.hpp"
 #include "KokkosSparse_Utils_cusparse.hpp"
 #include "KokkosSparse_Utils_mkl.hpp"
-#include "KokkosSparse_spadd.hpp"
 #include "KokkosKernels_TestUtils.hpp"
+#include "KokkosKernels_perf_test_utilities.hpp"
+
+#include "KokkosSparse_spadd.hpp"
+
+using perf_test::CommonInputParams;
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 #include <cusparse.h>
@@ -32,15 +36,10 @@
 #include <mkl_spblas.h>
 #endif
 
-struct Params {
-  int use_cuda     = 0;
-  int use_hip      = 0;
-  int use_sycl     = 0;
-  int use_openmp   = 0;
-  int use_threads  = 0;
-  int use_mkl      = 0;
-  int use_cusparse = 0;
-  bool sorted      = true;
+struct LocalParams {
+  bool use_mkl      = false;
+  bool use_cusparse = false;
+  bool sorted       = true;
   std::string amtx;
   std::string bmtx;
   std::string cmtx;
@@ -53,17 +52,113 @@ struct Params {
   int numericRepeat = 1;  // how many times to call numeric per overall run
 };
 
-template <typename crsMat_t>
-void run_experiment(const Params& params) {
+void print_options() {
+  std::cerr << "Options\n" << std::endl;
+
+  std::cerr << perf_test::list_common_options();
+
+  std::cerr << "\t[Optional] --amtx <path> :: 1st input matrix" << std::endl;
+  std::cerr << "\t[Optional] --bmtx <path> :: 2nd input matrix" << std::endl;
+  std::cerr << "\t[Optional] --cmtx <path> :: output matrix for C = A+B"
+            << std::endl;
+  std::cerr << "\t[Optional] --mkl         :: run SpAdd from MKL" << std::endl;
+  std::cerr << "\t[Optional] --cusparse    :: run SpAdd from cuSPARSE "
+            << std::endl;
+  std::cerr << "\t[Optional] --sorted      :: sort rows of inputs, and run the "
+               "sorted algorithm"
+            << std::endl;
+  std::cerr << "\t[Optional] --unsorted    :: run the unsorted algorithm"
+            << std::endl;
+  std::cerr << "\t[Optional] --repeat      :: how many times to repeat overall "
+               "spadd (symbolic + repeated numeric)"
+            << std::endl;
+  std::cerr << "\t[Optional] --numeric-repeat :: how many times to repeat "
+               "numeric per symbolic"
+            << std::endl;
+  std::cerr << "\t[Optional] --verbose     :: enable verbose output"
+            << std::endl;
+  std::cerr << "\nSettings for randomly generated A/B matrices" << std::endl;
+  std::cerr << "\t[Optional] --m           :: number of rows to generate"
+            << std::endl;
+  std::cerr << "\t[Optional] --n           :: number of cols to generate"
+            << std::endl;
+  std::cerr
+      << "\t[Optional] --nnz         :: number of entries per row to generate"
+      << std::endl;
+  std::cerr << "\t[Optional] --bdiag       :: generate B as a diagonal matrix"
+            << std::endl;
+}
+
+int parse_inputs(LocalParams& params, int argc, char** argv) {
+  bool printHelp = false;
+  bool discard;
+  for (int i = 1; i < argc; ++i) {
+    // if (perf_test::check_arg_str(i, argc, argv, "--amtx", params.amtx)) {
+    //  ++i;
+    if (perf_test::check_arg_bool(i, argc, argv, "--mkl", params.use_mkl)) {
+    } else if (perf_test::check_arg_bool(i, argc, argv, "--cusparse",
+                                         params.use_cusparse)) {
+    } else if (perf_test::check_arg_bool(i, argc, argv, "--sorted",
+                                         params.sorted)) {
+    } else if (perf_test::check_arg_bool(i, argc, argv, "--unsorted",
+                                         discard)) {
+      params.sorted = false;
+    } else if (perf_test::check_arg_str(i, argc, argv, "--amtx", params.amtx)) {
+      // A at C=AxB
+      ++i;
+    } else if (perf_test::check_arg_str(i, argc, argv, "--bmtx", params.bmtx)) {
+      // B at C=AxB.
+      // if not provided, C = AxA will be performed.
+      ++i;
+    } else if (perf_test::check_arg_str(i, argc, argv, "--cmtx", params.cmtx)) {
+      // if provided, C will be written to given file.
+      ++i;
+    } else if (perf_test::check_arg_int(i, argc, argv, "--m", params.m)) {
+      ++i;
+    } else if (perf_test::check_arg_int(i, argc, argv, "--n", params.n)) {
+      ++i;
+    } else if (perf_test::check_arg_int(i, argc, argv, "--nnz",
+                                        params.nnzPerRow)) {
+      ++i;
+    } else if (perf_test::check_arg_bool(i, argc, argv, "--bdiag",
+                                         params.bDiag)) {
+    } else if (perf_test::check_arg_int(i, argc, argv, "--repeat",
+                                        params.repeat)) {
+      ++i;
+    } else if (perf_test::check_arg_int(i, argc, argv, "--numeric-repeat",
+                                        params.numericRepeat)) {
+      // Reuse the symbolic step this many times.
+      ++i;
+    } else if (perf_test::check_arg_bool(i, argc, argv, "--verbose",
+                                         params.verbose)) {
+    } else if (perf_test::check_arg_bool(i, argc, argv, "-h", printHelp)) {
+    } else if (perf_test::check_arg_bool(i, argc, argv, "--help", printHelp)) {
+    } else {
+      std::cerr << "Unrecognized command line argument #" << i << ": "
+                << argv[i] << std::endl;
+      print_options();
+      return 1;
+    }
+  }
+  if (printHelp) {
+    print_options();
+    return 1;
+  }
+  return 0;
+}
+
+template <typename exec_space>
+void run_experiment(int argc, char** argv, CommonInputParams) {
   using namespace KokkosSparse;
   using namespace KokkosSparse::Experimental;
 
-  using size_type  = typename crsMat_t::size_type;
-  using lno_t      = typename crsMat_t::ordinal_type;
-  using scalar_t   = typename crsMat_t::value_type;
-  using device_t   = typename crsMat_t::device_type;
-  using exec_space = typename device_t::execution_space;
-  using mem_space  = typename device_t::memory_space;
+  using mem_space = typename exec_space::memory_space;
+  using device_t  = typename Kokkos::Device<exec_space, mem_space>;
+  using size_type = default_size_type;
+  using lno_t     = default_lno_t;
+  using scalar_t  = default_scalar;
+  using crsMat_t =
+      KokkosSparse::CrsMatrix<scalar_t, lno_t, device_t, void, size_type>;
 
   using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<
       size_type, lno_t, scalar_t, exec_space, mem_space, mem_space>;
@@ -72,6 +167,30 @@ void run_experiment(const Params& params) {
   using rowmap_t  = typename graph_t::row_map_type::non_const_type;
   using entries_t = typename graph_t::entries_type::non_const_type;
   using values_t  = typename crsMat_t::values_type::non_const_type;
+
+  LocalParams params;
+  if (parse_inputs(params, argc, argv)) return;
+
+    // First, make sure that requested TPL (if any) is actually available
+#if !defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
+  if (params.use_mkl)
+    throw std::invalid_argument(
+        "To run MKL SpAdd, must enable the MKL TPL in cmake");
+#endif
+#if !defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
+  if (params.use_cusparse)
+    throw std::invalid_argument(
+        "To run cuSPARSE SpAdd, must enable the cuSPARSE TPL in cmake");
+#else
+  if (params.use_cusparse && !std::is_same<exec_space, Kokkos::Cuda>::value)
+    throw std::invalid_argument(
+        "To run cuSPARSE SpAdd, must select the Cuda backend");
+#endif
+
+  if (params.cmtx.length() && params.use_mkl) {
+    throw std::invalid_argument(
+        "If running MKL, can't output the result to file");
+  }
 
   std::cout << "************************************* \n";
   crsMat_t A;
@@ -329,244 +448,8 @@ void run_experiment(const Params& params) {
   }
 }
 
-void print_options() {
-  std::cerr << "Options\n" << std::endl;
-
-  std::cerr << "\t[Required] BACKEND:\n"
-            << "\t\t'--threads [numThreads]' |\n"
-            << "\t\t'--openmp [numThreads]' |\n"
-            << "\t\t'--cuda [deviceIndex]' |\n"
-            << "\t\t'--hip [deviceIndex]' |\n"
-            << "\t\t'--sycl [deviceIndex]'\n\n"
-            << "\tIf no parallel backend is requested, Serial will be used "
-               "(if enabled)\n\n";
-
-  std::cerr << "\t[Optional] --amtx <path> :: 1st input matrix" << std::endl;
-  std::cerr << "\t[Optional] --bmtx <path> :: 2nd input matrix" << std::endl;
-  std::cerr << "\t[Optional] --cmtx <path> :: output matrix for C = A+B"
-            << std::endl;
-  std::cerr << "\t[Optional] --mkl         :: run SpAdd from MKL" << std::endl;
-  std::cerr << "\t[Optional] --cusparse    :: run SpAdd from cuSPARSE "
-            << std::endl;
-  std::cerr << "\t[Optional] --sorted      :: sort rows of inputs, and run the "
-               "sorted algorithm"
-            << std::endl;
-  std::cerr << "\t[Optional] --unsorted    :: run the unsorted algorithm"
-            << std::endl;
-  std::cerr << "\t[Optional] --repeat      :: how many times to repeat overall "
-               "spadd (symbolic + repeated numeric)"
-            << std::endl;
-  std::cerr << "\t[Optional] --numeric-repeat :: how many times to repeat "
-               "numeric per symbolic"
-            << std::endl;
-  std::cerr << "\t[Optional] --verbose     :: enable verbose output"
-            << std::endl;
-  std::cerr << "\nSettings for randomly generated A/B matrices" << std::endl;
-  std::cerr << "\t[Optional] --m           :: number of rows to generate"
-            << std::endl;
-  std::cerr << "\t[Optional] --n           :: number of cols to generate"
-            << std::endl;
-  std::cerr
-      << "\t[Optional] --nnz         :: number of entries per row to generate"
-      << std::endl;
-  std::cerr
-      << "\t[Optional] --nnz         :: number of entries per row to generate"
-      << std::endl;
-  std::cerr << "\t[Optional] --bdiag       :: generate B as a diagonal matrix"
-            << std::endl;
-}
-
-int parse_inputs(Params& params, int argc, char** argv) {
-  for (int i = 1; i < argc; ++i) {
-    if (0 == Test::string_compare_no_case(argv[i], "--threads")) {
-      params.use_threads = atoi(argv[++i]);
-    } else if (0 == Test::string_compare_no_case(argv[i], "--openmp")) {
-      params.use_openmp = atoi(argv[++i]);
-    } else if (0 == Test::string_compare_no_case(argv[i], "--cuda")) {
-      params.use_cuda = atoi(argv[++i]) + 1;
-    } else if (0 == Test::string_compare_no_case(argv[i], "--hip")) {
-      params.use_hip = atoi(argv[++i]) + 1;
-    } else if (0 == Test::string_compare_no_case(argv[i], "--sycl")) {
-      params.use_sycl = atoi(argv[++i]) + 1;
-    } else if (0 == Test::string_compare_no_case(argv[i], "--cuda")) {
-      params.use_cuda = atoi(argv[++i]) + 1;
-    } else if (0 == Test::string_compare_no_case(argv[i], "--mkl")) {
-      params.use_mkl = 1;
-    } else if (0 == Test::string_compare_no_case(argv[i], "--cusparse")) {
-      params.use_cusparse = 1;
-    } else if (0 == Test::string_compare_no_case(argv[i], "--sorted")) {
-      params.sorted = true;
-    } else if (0 == Test::string_compare_no_case(argv[i], "--unsorted")) {
-      params.sorted = false;
-    } else if (0 == Test::string_compare_no_case(argv[i], "--amtx")) {
-      // A at C=AxB
-      params.amtx = argv[++i];
-    } else if (0 == Test::string_compare_no_case(argv[i], "--bmtx")) {
-      // B at C=AxB.
-      // if not provided, C = AxA will be performed.
-      params.bmtx = argv[++i];
-    } else if (0 == Test::string_compare_no_case(argv[i], "--cmtx")) {
-      // if provided, C will be written to given file.
-      // has to have ".bin", or ".crs" extension.
-      params.cmtx = argv[++i];
-    } else if (0 == Test::string_compare_no_case(argv[i], "--m")) {
-      params.m = atoi(argv[++i]);
-    } else if (0 == Test::string_compare_no_case(argv[i], "--n")) {
-      params.n = atoi(argv[++i]);
-    } else if (0 == Test::string_compare_no_case(argv[i], "--nnz")) {
-      params.nnzPerRow = atoi(argv[++i]);
-    } else if (0 == Test::string_compare_no_case(argv[i], "--bdiag")) {
-      params.bDiag = true;
-    } else if (0 == Test::string_compare_no_case(argv[i], "--repeat")) {
-      // if provided, C will be written to given file.
-      // has to have ".bin", or ".crs" extension.
-      params.repeat = atoi(argv[++i]);
-    } else if (0 == Test::string_compare_no_case(argv[i], "--numeric-repeat")) {
-      // Reuse the symbolic step this many times.
-      params.numericRepeat = atoi(argv[++i]);
-    } else if (0 == Test::string_compare_no_case(argv[i], "--verbose")) {
-      params.verbose = true;
-    } else {
-      std::cerr << "Unrecognized command line argument #" << i << ": "
-                << argv[i] << std::endl;
-      print_options();
-      return 1;
-    }
-  }
-  return 0;
-}
-
+#define KOKKOSKERNELS_PERF_TEST_NAME run_experiment
+#include "KokkosKernels_perf_test_instantiation.hpp"
 int main(int argc, char** argv) {
-  Params params;
-
-  if (parse_inputs(params, argc, argv)) {
-    return 1;
-  }
-  // Assumption is that use_openmp/use_threads variables are provided
-  // as numbers of threads
-  int num_threads = 1;
-  if (params.use_openmp)
-    num_threads = params.use_openmp;
-  else if (params.use_threads)
-    num_threads = params.use_threads;
-  int device_id = 0;
-  if (params.use_cuda)
-    device_id = params.use_cuda - 1;
-  else if (params.use_hip)
-    device_id = params.use_hip - 1;
-  else if (params.use_sycl)
-    device_id = params.use_sycl - 1;
-
-  Kokkos::initialize(Kokkos::InitializationSettings()
-                         .set_num_threads(num_threads)
-                         .set_device_id(device_id));
-  Kokkos::print_configuration(std::cout);
-  std::cout << '\n';
-
-  // First, make sure that requested TPL (if any) is actually available
-#if !defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
-  if (params.use_mkl)
-    throw std::invalid_argument(
-        "To run MKL SpAdd, must enable the MKL TPL in cmake");
-#endif
-#if !defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
-  if (params.use_cusparse)
-    throw std::invalid_argument(
-        "To run cuSPARSE SpAdd, must enable the cuSPARSE TPL in cmake");
-#endif
-
-  if (params.use_cusparse && !params.use_cuda) {
-    throw std::invalid_argument(
-        "To run cuSPARSE SpAdd, must supply the '--cuda <device id>' flag");
-  }
-
-  if (params.cmtx.length() && params.use_mkl) {
-    throw std::invalid_argument(
-        "If running MKL, can't output the result to file");
-  }
-
-  bool ran = false;
-
-  if (params.use_openmp) {
-#if defined(KOKKOS_ENABLE_OPENMP)
-    std::cout << "Running on OpenMP backend.\n";
-    using crsMat_t =
-        KokkosSparse::CrsMatrix<double, int, Kokkos::OpenMP, void, int>;
-    run_experiment<crsMat_t>(params);
-    ran = true;
-#else
-    std::cout << "ERROR: OpenMP requested, but not available.\n";
-    Kokkos::finalize();
-    return 1;
-#endif
-  }
-  if (params.use_threads) {
-#if defined(KOKKOS_ENABLE_THREADS)
-    std::cout << "Running on Threads backend.\n";
-    using crsMat_t =
-        KokkosSparse::CrsMatrix<double, int, Kokkos::Threads, void, int>;
-    run_experiment<crsMat_t>(params);
-    ran = true;
-#else
-    std::cout << "ERROR: Threads requested, but not available.\n";
-    Kokkos::finalize();
-    return 1;
-#endif
-  }
-  if (params.use_cuda) {
-#if defined(KOKKOS_ENABLE_CUDA)
-    std::cout << "Running on Cuda backend.\n";
-    using crsMat_t =
-        KokkosSparse::CrsMatrix<double, int, Kokkos::Cuda, void, int>;
-    run_experiment<crsMat_t>(params);
-    ran = true;
-#else
-    std::cout << "ERROR: CUDA requested, but not available.\n";
-    Kokkos::finalize();
-    return 1;
-#endif
-  }
-  if (params.use_hip) {
-#if defined(KOKKOS_ENABLE_HIP)
-    std::cout << "Running on HIP backend.\n";
-    using crsMat_t =
-        KokkosSparse::CrsMatrix<double, int, Kokkos::HIP, void, int>;
-    run_experiment<crsMat_t>(params);
-    ran = true;
-#else
-    std::cout << "ERROR: HIP requested, but not available.\n";
-    Kokkos::finalize();
-    return 1;
-#endif
-  }
-  if (params.use_sycl) {
-#if defined(KOKKOS_ENABLE_SYCL)
-    std::cout << "Running on SYCL backend.\n";
-    using crsMat_t =
-        KokkosSparse::CrsMatrix<double, int, Kokkos::Experimental::SYCL, void,
-                                int>;
-    run_experiment<crsMat_t>(params);
-    ran = true;
-#else
-    std::cout << "ERROR: SYCL requested, but not available.\n";
-    Kokkos::finalize();
-    return 1;
-#endif
-  }
-  if (!ran) {
-    // lastly
-#if defined(KOKKOS_ENABLE_SERIAL)
-    std::cout << "Running on Serial backend.\n";
-    using crsMat_t =
-        KokkosSparse::CrsMatrix<double, int, Kokkos::Serial, void, int>;
-    run_experiment<crsMat_t>(params);
-#else
-    std::cout << "ERROR: Tried to run on Serial device (as no parallel "
-                 "backends requested), but Serial is not enabled.\n";
-    Kokkos::finalize();
-    return 1;
-#endif
-  }
-  Kokkos::finalize();
-  return 0;
-}
+  return main_instantiation(argc, argv);
+}  // main
