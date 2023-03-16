@@ -776,6 +776,49 @@ class SPGEMMHandle {
   }
 
   bool get_compression_step() { return is_compression_single_step; }
+
+ private:
+  // An SpGEMM handle can be reused for multiple products C = A*B, but only if
+  // the sparsity patterns of A and B do not change. Enforce this by recording
+  // the raw data pointers of the matrices' rowptrs and entries during symbolic
+  // and numeric, and make sure they never change.
+  const void *Arowptrs = nullptr, *Aentries = nullptr;
+  const void *Browptrs = nullptr, *Bentries = nullptr;
+  const void *Crowptrs = nullptr, *Centries = nullptr;
+
+ public:
+  bool checkMatrixIdentitiesSymbolic(const void *ArowptrsIn,
+                                     const void *AentriesIn,
+                                     const void *BrowptrsIn,
+                                     const void *BentriesIn,
+                                     const void *CrowptrsIn) {
+    // If this is the first symbolic call, assign the handle's CRS pointers to
+    // check against later
+    if (!Arowptrs) Arowptrs = ArowptrsIn;
+    if (!Browptrs) Browptrs = BrowptrsIn;
+    if (!Aentries) Aentries = AentriesIn;
+    if (!Bentries) Bentries = BentriesIn;
+    if (!Crowptrs) Crowptrs = CrowptrsIn;
+    // Then make sure they all match
+    if (Arowptrs != ArowptrsIn || Aentries != AentriesIn) return false;
+    if (Browptrs != BrowptrsIn || Bentries != BentriesIn) return false;
+    if (Crowptrs != CrowptrsIn) return false;
+    return true;
+  }
+
+  bool checkMatrixIdentitiesNumeric(
+      const void *ArowptrsIn, const void *AentriesIn, const void *BrowptrsIn,
+      const void *BentriesIn, const void *CrowptrsIn, const void *CentriesIn) {
+    // A, B rowptrs and entries will have already been set.
+    // If this is the first numeric call, assign the pointer Centries and the
+    // values pointers of each matrix
+    if (!Centries) Centries = CentriesIn;
+    // Then make sure they all match
+    if (Arowptrs != ArowptrsIn || Aentries != AentriesIn) return false;
+    if (Browptrs != BrowptrsIn || Bentries != BentriesIn) return false;
+    if (Crowptrs != CrowptrsIn || Centries != CentriesIn) return false;
+    return true;
+  }
 };
 
 inline SPGEMMAlgorithm StringToSPGEMMAlgorithm(std::string &name) {

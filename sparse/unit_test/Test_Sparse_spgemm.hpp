@@ -78,12 +78,13 @@ void run_spgemm_noreuse(crsMat_t A, crsMat_t B, crsMat_t &C) {
 }
 
 template <typename crsMat_t, typename device>
-int run_spgemm(crsMat_t A, crsMat_t B,
+int run_spgemm(crsMat_t &A, crsMat_t &B,
                KokkosSparse::SPGEMMAlgorithm spgemm_algorithm, crsMat_t &C,
                bool testReuse) {
   typedef typename crsMat_t::size_type size_type;
   typedef typename crsMat_t::ordinal_type lno_t;
   typedef typename crsMat_t::value_type scalar_t;
+  typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
 
   typedef KokkosKernels::Experimental::KokkosKernelsHandle<
       size_type, lno_t, scalar_t, typename device::execution_space,
@@ -113,7 +114,14 @@ int run_spgemm(crsMat_t A, crsMat_t B,
     EXPECT_TRUE(sh->is_numeric_called());
 
     if (testReuse) {
-      // Give A and B completely new random values, and re-run just numeric
+      // Give A and B completely new random values (changing both the pointer
+      // and contents), and re-run just numeric.
+      A.values = scalar_view_t(
+          Kokkos::view_alloc(Kokkos::WithoutInitializing, "new A values"),
+          A.nnz());
+      B.values = scalar_view_t(
+          Kokkos::view_alloc(Kokkos::WithoutInitializing, "new B values"),
+          B.nnz());
       randomize_matrix_values(A.values);
       randomize_matrix_values(B.values);
       KokkosSparse::spgemm_numeric(kh, A, false, B, false, C);
@@ -127,7 +135,7 @@ int run_spgemm(crsMat_t A, crsMat_t B,
 }
 
 template <typename crsMat_t, typename device>
-int run_spgemm_old_interface(crsMat_t A, crsMat_t B,
+int run_spgemm_old_interface(crsMat_t &A, crsMat_t &B,
                              KokkosSparse::SPGEMMAlgorithm spgemm_algorithm,
                              crsMat_t &result, bool testReuse) {
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
@@ -188,7 +196,14 @@ int run_spgemm_old_interface(crsMat_t A, crsMat_t B,
     EXPECT_TRUE(sh->is_numeric_called());
 
     if (testReuse) {
-      // Give A and B completely new random values, and re-run just numeric
+      // Give A and B completely new random values (changing both the pointer
+      // and contents), and re-run just numeric.
+      A.values = scalar_view_t(
+          Kokkos::view_alloc(Kokkos::WithoutInitializing, "new A values"),
+          A.nnz());
+      B.values = scalar_view_t(
+          Kokkos::view_alloc(Kokkos::WithoutInitializing, "new B values"),
+          B.nnz());
       randomize_matrix_values(A.values);
       randomize_matrix_values(B.values);
       KokkosSparse::Experimental::spgemm_numeric(

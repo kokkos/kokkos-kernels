@@ -151,7 +151,25 @@ void spgemm_symbolic(KernelHandle *handle,
         "rows. May use KokkosSparse::sort_crs_matrix to sort it.");
 #endif
 
-  auto algo = tmp_handle.get_spgemm_handle()->get_algorithm_type();
+  auto spgemmHandle = tmp_handle.get_spgemm_handle();
+
+  if (!spgemmHandle) {
+    throw std::invalid_argument(
+        "KokkosSparse::spgemm_symbolic: the given KernelHandle does not have "
+        "an SpGEMM handle associated with it.");
+  }
+
+  if (!spgemmHandle->checkMatrixIdentitiesSymbolic(
+          const_a_r.data(), const_a_l.data(), const_b_r.data(),
+          const_b_l.data(), c_r.data())) {
+    throw std::invalid_argument(
+        "KokkosSparse::spgemm_symbolic: once used, an spgemm handle cannot be "
+        "reused for a product with a different sparsity pattern.\n"
+        "The rowptrs and entries of A, B and C must be identical to those "
+        "passed to the first spgemm_symbolic call.");
+  }
+
+  auto algo = spgemmHandle->get_algorithm_type();
 
   if (algo == SPGEMM_DEBUG || algo == SPGEMM_SERIAL) {
     // Never call a TPL if serial/debug is requested (this is needed for
