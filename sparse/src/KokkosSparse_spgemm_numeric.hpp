@@ -244,9 +244,9 @@ void spgemm_numeric(KernelHandle *handle,
         "an SpGEMM handle associated with it.");
   }
 
-  if (!spgemmHandle->checkMatrixIdentitiesNumeric(
-          const_a_r.data(), const_a_l.data(), const_b_r.data(),
-          const_b_l.data(), const_c_r.data(), nonconst_c_l.data())) {
+  if (!spgemmHandle->checkMatrixIdentitiesNumeric(const_a_r, const_a_l,
+                                                  const_b_r, const_b_l,
+                                                  const_c_r, nonconst_c_l)) {
     throw std::invalid_argument(
         "KokkosSparse::spgemm_numeric: once used, an spgemm handle cannot be "
         "reused for a product with a different sparsity pattern.\n"
