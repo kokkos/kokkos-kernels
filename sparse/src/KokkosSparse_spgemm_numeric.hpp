@@ -245,12 +245,11 @@ void spgemm_numeric(KernelHandle *handle,
   }
 
   if (!spgemmHandle->checkMatrixIdentitiesNumeric(const_a_r, const_a_l,
-                                                  const_b_r, const_b_l,
-                                                  const_c_r, nonconst_c_l)) {
+                                                  const_b_r, const_b_l)) {
     throw std::invalid_argument(
         "KokkosSparse::spgemm_numeric: once used, an spgemm handle cannot be "
         "reused for a product with a different sparsity pattern.\n"
-        "The rowptrs and entries of A, B and C must be identical to those "
+        "The rowptrs and entries of A and B must be identical to those "
         "passed to the first spgemm_symbolic and spgemm_numeric calls.");
   }
 

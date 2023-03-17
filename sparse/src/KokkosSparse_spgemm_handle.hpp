@@ -779,18 +779,12 @@ class SPGEMMHandle {
 
  private:
   // An SpGEMM handle can be reused for multiple products C = A*B, but only if
-  // the sparsity patterns of A and B do not change. Enforce this by recording
-  // the raw data pointers of the matrices' rowptrs and entries during symbolic
-  // and numeric, and make sure they never change.
-  const void *a_rowptrs = nullptr, *a_entries = nullptr;
-  const void *b_rowptrs = nullptr, *b_entries = nullptr;
-  const void *c_rowptrs = nullptr, *c_entries = nullptr;
-  // In a debug build, also hash A,B rowptrs/entries to make sure their actual
-  // contents do not change.
-#ifndef NDEBUG
-  uint32_t a_graph_hash = 0U;
-  uint32_t b_graph_hash = 0U;
-#endif
+  // the sparsity patterns of A and B do not change. Enforce this (in debug
+  // builds only) by recording hashes of the graphs, and then checking they
+  // match in later calls.
+  bool computedInputHashes = false;
+  uint32_t a_graph_hash    = 0U;
+  uint32_t b_graph_hash    = 0U;
 
  public:
   template <typename a_rowptrs_t, typename a_entries_t, typename b_rowptrs_t,
@@ -800,59 +794,33 @@ class SPGEMMHandle {
                                      const b_rowptrs_t &b_rowptrsIn,
                                      const b_entries_t &b_entriesIn,
                                      const c_rowptrs_t &c_rowptrsIn) {
+#ifndef NDEBUG
     // If this is the first symbolic call, assign the handle's CRS pointers to
     // check against later
-    if (!a_rowptrs) {
-      a_rowptrs = a_rowptrsIn.data();
-      b_rowptrs = b_rowptrsIn.data();
-      a_entries = a_entriesIn.data();
-      b_entries = b_entriesIn.data();
-      c_rowptrs = c_rowptrsIn.data();
-#ifndef NDEBUG
+    if (!computedInputHashes) {
       a_graph_hash = KokkosKernels::Impl::hashView(a_rowptrsIn) ^
                      KokkosKernels::Impl::hashView(a_entriesIn);
       b_graph_hash = KokkosKernels::Impl::hashView(b_rowptrsIn) ^
                      KokkosKernels::Impl::hashView(b_entriesIn);
-#endif
+      computedInputHashes = true;
     } else {
-      // Not the first call: make sure all views match what was passed to the
-      // first call
-      if (a_rowptrs != a_rowptrsIn.data() || a_entries != a_entriesIn.data())
-        return false;
-      if (b_rowptrs != b_rowptrsIn.data() || b_entries != b_entriesIn.data())
-        return false;
-      if (c_rowptrs != c_rowptrsIn.data()) return false;
-#ifndef NDEBUG
       if (a_graph_hash != (KokkosKernels::Impl::hashView(a_rowptrsIn) ^
                            KokkosKernels::Impl::hashView(a_entriesIn)))
         return false;
       if (b_graph_hash != (KokkosKernels::Impl::hashView(b_rowptrsIn) ^
                            KokkosKernels::Impl::hashView(b_entriesIn)))
         return false;
-#endif
     }
+#endif
     return true;
   }
 
   template <typename a_rowptrs_t, typename a_entries_t, typename b_rowptrs_t,
-            typename b_entries_t, typename c_rowptrs_t, typename c_entries_t>
+            typename b_entries_t>
   bool checkMatrixIdentitiesNumeric(const a_rowptrs_t &a_rowptrsIn,
                                     const a_entries_t &a_entriesIn,
                                     const b_rowptrs_t &b_rowptrsIn,
-                                    const b_entries_t &b_entriesIn,
-                                    const c_rowptrs_t &c_rowptrsIn,
-                                    const c_entries_t &c_entriesIn) {
-    // A, B rowptrs and entries (pointers and hashes) will have already been
-    // set. If this is the first numeric call, assign the pointer c_entries
-    if (!c_entries) {
-      c_entries = c_entriesIn.data();
-    }
-    if (a_rowptrs != a_rowptrsIn.data() || a_entries != a_entriesIn.data())
-      return false;
-    if (b_rowptrs != b_rowptrsIn.data() || b_entries != b_entriesIn.data())
-      return false;
-    if (c_rowptrs != c_rowptrsIn.data() || c_entries != c_entriesIn.data())
-      return false;
+                                    const b_entries_t &b_entriesIn) {
 #ifndef NDEBUG
     if (a_graph_hash != (KokkosKernels::Impl::hashView(a_rowptrsIn) ^
                          KokkosKernels::Impl::hashView(a_entriesIn)))

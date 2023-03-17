@@ -164,7 +164,7 @@ void spgemm_symbolic(KernelHandle *handle,
     throw std::invalid_argument(
         "KokkosSparse::spgemm_symbolic: once used, an spgemm handle cannot be "
         "reused for a product with a different sparsity pattern.\n"
-        "The rowptrs and entries of A, B and C must be identical to those "
+        "The rowptrs and entries of A and B must be identical to those "
         "passed to the first spgemm_symbolic call.");
   }
 

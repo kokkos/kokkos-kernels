@@ -487,44 +487,30 @@ template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
 void test_issue1738() {
   // Make sure that std::invalid_argument is thrown if you:
-  //  - try to reuse an SPGEMM handle on a different product
-  //  - call symbolic and then numeric with different matrices
-  //  - (in a debug build) call numeric where the contents (but not pointers) of
-  //  an input matrix's entries have changed
+  //  - call numeric where an input matrix's entries have changed.
+  //  - try to reuse an spgemm handle by calling symbolic with new input
+  //  matrices
+  // This check is only enabled in debug builds.
+#ifndef NDEBUG
   using crsMat_t     = CrsMatrix<scalar_t, lno_t, device, void, size_type>;
   using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<
       size_type, lno_t, scalar_t, typename device::execution_space,
       typename device::memory_space, typename device::memory_space>;
   crsMat_t A1 = KokkosSparse::Impl::kk_generate_diag_matrix<crsMat_t>(100);
   crsMat_t B1 = KokkosSparse::Impl::kk_generate_diag_matrix<crsMat_t>(100);
-  crsMat_t A2 = KokkosSparse::Impl::kk_generate_diag_matrix<crsMat_t>(100);
-  crsMat_t B2 = KokkosSparse::Impl::kk_generate_diag_matrix<crsMat_t>(100);
+  crsMat_t A2 = KokkosSparse::Impl::kk_generate_diag_matrix<crsMat_t>(50);
+  crsMat_t B2 = KokkosSparse::Impl::kk_generate_diag_matrix<crsMat_t>(50);
   {
-    // Test 1: reusing handle on a completely different product
     KernelHandle kh;
-    // First, multiply A1*B1 using an SpGEMM handle
     kh.create_spgemm_handle();
     crsMat_t C1;
     KokkosSparse::spgemm_symbolic(kh, A1, false, B1, false, C1);
     KokkosSparse::spgemm_numeric(kh, A1, false, B1, false, C1);
-    // Then try to do A2*B2
     crsMat_t C2;
     EXPECT_THROW(KokkosSparse::spgemm_symbolic(kh, A2, false, B2, false, C2),
                  std::invalid_argument);
   }
   {
-    // Test 2: passing different B matrices to symbolic and numeric
-    KernelHandle kh;
-    kh.create_spgemm_handle();
-    crsMat_t C1;
-    KokkosSparse::spgemm_symbolic(kh, A1, false, B1, false, C1);
-    EXPECT_THROW(KokkosSparse::spgemm_numeric(kh, A1, false, B2, false, C1),
-                 std::invalid_argument);
-  }
-#ifndef NDEBUG
-  {
-    // Test 3: contents of input matrix's entries have changed.
-    // This check is only enabled in a debug build.
     KernelHandle kh;
     kh.create_spgemm_handle();
     crsMat_t C1;
