@@ -67,6 +67,26 @@ void process_arg_int(char const* str_val, int& val) {
   }
 }
 
+void process_arg_double(char const* str_val, double& val) {
+  errno = 0;
+  char* ptr_end;
+  val = std::strtod(str_val, &ptr_end);
+
+  if (str_val == ptr_end) {
+    std::stringstream ss;
+    ss << "Error: cannot convert command line argument '" << str_val
+       << "' to a double.\n";
+    throw std::invalid_argument(ss.str());
+  }
+
+  if (errno == ERANGE) {
+    std::stringstream ss;
+    ss << "Error: converted value for command line argument '" << str_val
+       << "' falls out of range.\n";
+    throw std::invalid_argument(ss.str());
+  }
+}
+
 bool check_arg_int(int const i, int const argc, char** argv, char const* name,
                    int& val) {
   if (0 != Test::string_compare_no_case(argv[i], name)) {
@@ -78,6 +98,22 @@ bool check_arg_int(int const i, int const argc, char** argv, char const* name,
   } else {
     std::stringstream msg;
     msg << name << " input argument needs to be followed by an int";
+    throw std::invalid_argument(msg.str());
+  }
+  return true;
+}
+
+bool check_arg_double(int const i, int const argc, char** argv,
+                      char const* name, double& val) {
+  if (0 != Test::string_compare_no_case(argv[i], name)) {
+    return false;
+  }
+
+  if (i < argc - 1) {
+    process_arg_double(argv[i + 1], val);
+  } else {
+    std::stringstream msg;
+    msg << name << " input argument needs to be followed by a real number";
     throw std::invalid_argument(msg.str());
   }
   return true;
