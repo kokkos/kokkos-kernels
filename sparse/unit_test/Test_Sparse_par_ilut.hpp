@@ -355,12 +355,7 @@ void run_test_par_ilut_precond() {
 
   par_ilut_numeric(&kh, row_map, entries, values, L_row_map, L_entries,
                    L_values, U_row_map, U_entries, U_values,
-#ifdef KOKKOS_ENABLE_SERIAL
-                   true /*deterministic*/
-#else
-                   false /*cannot ask for determinism*/
-#endif
-  );
+                   false /* non-deterministic*/);
 
   // Create CRSs
   sp_matrix_type L("L", numRows, numCols, L_values.extent(0), L_values,
@@ -396,10 +391,7 @@ void run_test_par_ilut_precond() {
     EXPECT_EQ(conv_flag, GMRESHandle::Flag::Conv);
   }
 
-  // Solve Ax = b with LU preconditioner. Currently only works
-  // when deterministic mode in par_ilut is on, which is only
-  // possible when Kokkos::Serial has been enabled.
-#ifdef KOKKOS_ENABLE_SERIAL
+  // Solve Ax = b with LU preconditioner.
   {
     gmres_handle->reset_handle(m, tol);
     gmres_handle->set_verbose(verbose);
@@ -426,9 +418,6 @@ void run_test_par_ilut_precond() {
     EXPECT_EQ(conv_flag, GMRESHandle::Flag::Conv);
     EXPECT_LT(num_iters_precond, num_iters_plain);
   }
-#else
-  EXPECT_EQ(num_iters_precond, 0);
-#endif
 }
 
 }  // namespace Test
