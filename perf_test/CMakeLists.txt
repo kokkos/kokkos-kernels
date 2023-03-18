@@ -27,7 +27,7 @@ if (KokkosKernels_ENABLE_PERFTESTS)
     TARGET_COMPILE_FEATURES(kokkoskernelsperf_gtest PUBLIC cxx_std_11)
 
     KOKKOSKERNELS_INCLUDE_DIRECTORIES(sparse)
-    
+
     if(KokkosKernels_ENABLE_TESTS_AND_PERFSUITE)
         #Add RPS implementations of KK perf tests here
         KOKKOSKERNELS_ADD_EXECUTABLE(

@@ -26,6 +26,8 @@
 #include <benchmark/benchmark.h>
 
 #include <Kokkos_Core.hpp>
+#include <KokkosKernels_PrintConfiguration.hpp>
+#include <KokkosKernels_Version_Info.hpp>
 
 namespace KokkosKernelsBenchmark {
 
@@ -65,10 +67,28 @@ void add_kokkos_configuration(bool verbose) {
   }
 }
 
+inline void add_git_info() {
+  if (!KokkosKernels::Impl::GIT_BRANCH.empty()) {
+    benchmark::AddCustomContext("GIT_BRANCH",
+                                std::string(KokkosKernels::Impl::GIT_BRANCH));
+    benchmark::AddCustomContext(
+        "GIT_COMMIT_HASH", std::string(KokkosKernels::Impl::GIT_COMMIT_HASH));
+    benchmark::AddCustomContext(
+        "GIT_CLEAN_STATUS", std::string(KokkosKernels::Impl::GIT_CLEAN_STATUS));
+    benchmark::AddCustomContext(
+        "GIT_COMMIT_DESCRIPTION",
+        std::string(KokkosKernels::Impl::GIT_COMMIT_DESCRIPTION));
+    benchmark::AddCustomContext(
+        "GIT_COMMIT_DATE", std::string(KokkosKernels::Impl::GIT_COMMIT_DATE));
+  }
+}
+
 /// \brief Gather all context information and add it to benchmark context data
 void add_benchmark_context(bool verbose = false) {
   // Add Kokkos configuration to benchmark context data
   add_kokkos_configuration(verbose);
+
+  add_git_info();
 }
 
 }  // namespace KokkosKernelsBenchmark

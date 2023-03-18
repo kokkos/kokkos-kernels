@@ -323,6 +323,11 @@ ELSE()
       $<INSTALL_INTERFACE:${KOKKOSKERNELS_HEADER_INSTALL_DIR}>)
   ENDIF()
 
+  IF(NOT KOKKOSKERNELS_HAS_TRILINOS)
+    INCLUDE(cmake/kokkoskernels_git_info.cmake)
+    check_git_setup()
+  ENDIF()
+
   # FIXME_SYCL waiting for compiler support
   IF (KOKKOS_ENABLE_SYCL)
     SET(KOKKOSKERNELS_INTEL_ARCHS ${Kokkos_ARCH})
