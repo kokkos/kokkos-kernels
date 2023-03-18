@@ -519,7 +519,6 @@ void spgemm_numeric_mkl(
               const_cast<index_type *>(colidxB.data()),
               const_cast<scalar_type *>(valuesB.data()));
   auto mklSpgemmHandle = handle->get_mkl_spgemm_handle();
-  bool computedEntries = false;
   matrix_descr generalDescr;
   generalDescr.type = SPARSE_MATRIX_TYPE_GENERAL;
   generalDescr.mode = SPARSE_FILL_MODE_FULL;
