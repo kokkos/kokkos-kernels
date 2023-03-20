@@ -107,3 +107,8 @@ BENCHMARK(KokkosBlas2_gemv<double, Kokkos::LayoutLeft>)
     ->ArgNames({"m", "n", Kokkos::DefaultExecutionSpace::name()})
     ->Args({5000, 5000, 1})
     ->UseManualTime();
+
+BENCHMARK(KokkosBlas2_gemv<double, Kokkos::LayoutRight>)
+    ->ArgNames({"m", "n", Kokkos::DefaultExecutionSpace::name()})
+    ->Args({5000, 5000, 1})
+    ->UseManualTime();
