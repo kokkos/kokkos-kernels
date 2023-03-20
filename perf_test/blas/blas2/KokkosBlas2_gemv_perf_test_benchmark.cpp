@@ -98,8 +98,8 @@ static void KokkosBlas2_gemv(benchmark::State& state) {
 
     state.counters["Avg GEMV time (s):"] =
         benchmark::Counter(time, benchmark::Counter::kDefaults);
-    state.counters["Avg GEMV FLOP/s:"] =
-        benchmark::Counter(flopsPerRun / time, benchmark::Counter::kDefaults);
+    state.counters["Avg GEMV FLOP/s:"] = benchmark::Counter(
+        flopsPerRun, benchmark::Counter::kIsIterationInvariantRate);
   }
 }
 
