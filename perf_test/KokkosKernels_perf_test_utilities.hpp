@@ -111,6 +111,9 @@ bool check_arg_str(int const i, int const argc, char** argv, char const* name,
 void parse_common_options(int& argc, char** argv, CommonInputParams& params) {
   // Skip the program name, start with argIdx=1
   int argIdx = 1;
+  // Note: after parsing a GPU device ID, always add 1 to it.
+  // If e.g. params.use_cuda is 0, that means CUDA will not be used at all.
+  // But if it's N, then it means run on CUDA device N-1.
   while (argIdx < argc) {
     bool remove_flag = false;
     if (check_arg_int(argIdx, argc, argv, "--threads", params.use_threads)) {
@@ -119,10 +122,13 @@ void parse_common_options(int& argc, char** argv, CommonInputParams& params) {
                              params.use_openmp)) {
       remove_flag = true;
     } else if (check_arg_int(argIdx, argc, argv, "--cuda", params.use_cuda)) {
+      params.use_cuda++;
       remove_flag = true;
     } else if (check_arg_int(argIdx, argc, argv, "--hip", params.use_hip)) {
+      params.use_hip++;
       remove_flag = true;
     } else if (check_arg_int(argIdx, argc, argv, "--sycl", params.use_sycl)) {
+      params.use_sycl++;
       remove_flag = true;
     }
 
