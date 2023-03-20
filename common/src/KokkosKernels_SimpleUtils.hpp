@@ -400,10 +400,16 @@ struct ViewHashFunctor {
   const uint8_t *data;
 };
 
-// Compute a hash of a contiguous view's data.
+/// \brief Compute a hash of a view.
+/// \param v: the view to hash. Must be contiguous, and its element type must
+/// not contain any padding bytes.
 template <typename View>
 uint32_t hashView(const View &v) {
   assert(v.span_is_contiguous());
+  static_assert(std::has_unique_object_representations<
+                    typename View::non_const_value_type>::value,
+                "KokkosKernels::Impl::hashView: the view's element type must "
+                "not have any padding bytes.");
   size_t nbytes = v.span() * sizeof(typename View::value_type);
   uint32_t h;
   Kokkos::parallel_reduce(
