@@ -779,6 +779,7 @@ elif [ "$MACHINE" = "solo" ]; then
   if [ "$SPOT_CHECK" = "True" ]; then
     COMPILERS=(
                "gnu/10.2.1 $BASE_MODULE_LIST "Threads_Serial,OpenMP" g++ $GNU_WARNING_FLAGS"
+               "llvm/10.0.1 $BASE_MODULE_LIST "Threads_Serial" clang++ $CLANG_WARNING_FLAGS"
     )
   elif [ "$SPOT_CHECK_TPLS" = "True" ]; then
     COMPILERS=("intel/19.0.5.281 $BASE_MODULE_LIST_INTEL,mkl/19.0.5.281 "OpenMP,Threads" icpc $INTEL_WARNING_FLAGS"
