@@ -48,14 +48,13 @@
 #include "KokkosBlas2_gemv.hpp"
 #include <benchmark/benchmark.h>
 
-template <typename Layout>
+template <typename Scalar, typename Layout>
 static void KokkosBlas2_gemv(benchmark::State& state) {
   const auto m = state.range(0);
   const auto n = state.range(1);
 
   // Declare type aliases
   using ExecSpace = Kokkos::DefaultExecutionSpace;
-  using Scalar    = double;
   using MemSpace  = typename ExecSpace::memory_space;
   using Device    = Kokkos::Device<ExecSpace, MemSpace>;
 
@@ -104,7 +103,7 @@ static void KokkosBlas2_gemv(benchmark::State& state) {
   }
 }
 
-BENCHMARK(KokkosBlas2_gemv<Kokkos::LayoutLeft>)
+BENCHMARK(KokkosBlas2_gemv<double, Kokkos::LayoutLeft>)
     ->ArgNames({"m", "n", Kokkos::DefaultExecutionSpace::name()})
     ->Args({5000, 5000, 1})
     ->UseManualTime();
