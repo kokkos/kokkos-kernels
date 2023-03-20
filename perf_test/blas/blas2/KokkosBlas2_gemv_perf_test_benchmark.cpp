@@ -48,22 +48,16 @@
 #include "KokkosBlas2_gemv.hpp"
 #include <benchmark/benchmark.h>
 
-template <class ExecSpace, typename Layout>
-static void run(benchmark::State& state) {
+template <typename Layout>
+static void KokkosBlas2_gemv(benchmark::State& state) {
   const auto m      = state.range(0);
   const auto n      = state.range(1);
   const auto repeat = state.range(2);
   // Declare type aliases
+  using ExecSpace = Kokkos::DefaultExecutionSpace;
   using Scalar   = double;
   using MemSpace = typename ExecSpace::memory_space;
   using Device   = Kokkos::Device<ExecSpace, MemSpace>;
-
-  std::cout << "Running BLAS Level 1 DOT perfomrance experiment ("
-            << ExecSpace::name() << ")\n";
-
-  std::cout << "Each test input vector has a length of " << m << std::endl;
-
-  std::cout << "Running GEMV experiment (" << ExecSpace::name() << ")\n";
 
   // Create a View containing a 2D matrix; allocate KokkosView with template
   // args of Scalar**, a layout, and
@@ -104,8 +98,6 @@ static void run(benchmark::State& state) {
     double avg   = total / repeat;
     // Flops calculation
     size_t flopsPerRun = (size_t)2 * m * n;
-    printf("Avg GEMV time: %f s.\n", avg);
-    printf("Avg GEMV FLOP/s: %.3e\n", flopsPerRun / avg);
     state.SetIterationTime(timer.seconds());
 
     state.counters["Avg GEMV time (s):"] =
@@ -115,8 +107,7 @@ static void run(benchmark::State& state) {
   }
 }
 
-BENCHMARK(run<Kokkos::DefaultExecutionSpace, Kokkos::LayoutLeft>)
-    ->Name("KokkosBlas2_gemv")
-    ->ArgNames({"m", "n", "repeat"})
-    ->Args({5000, 5000, 1})
+BENCHMARK(KokkosBlas2_gemv<Kokkos::LayoutLeft>)
+    ->ArgNames({"m", "n", "repeat", Kokkos::DefaultExecutionSpace::name()})
+    ->Args({5000, 5000, 1, 1})
     ->UseManualTime();
