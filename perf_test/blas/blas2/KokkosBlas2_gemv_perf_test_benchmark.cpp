@@ -50,14 +50,14 @@
 
 template <typename Layout>
 static void KokkosBlas2_gemv(benchmark::State& state) {
-  const auto m      = state.range(0);
-  const auto n      = state.range(1);
-  const auto repeat = state.range(2);
+  const auto m = state.range(0);
+  const auto n = state.range(1);
+
   // Declare type aliases
   using ExecSpace = Kokkos::DefaultExecutionSpace;
-  using Scalar   = double;
-  using MemSpace = typename ExecSpace::memory_space;
-  using Device   = Kokkos::Device<ExecSpace, MemSpace>;
+  using Scalar    = double;
+  using MemSpace  = typename ExecSpace::memory_space;
+  using Device    = Kokkos::Device<ExecSpace, MemSpace>;
 
   // Create a View containing a 2D matrix; allocate KokkosView with template
   // args of Scalar**, a layout, and
@@ -88,26 +88,23 @@ static void KokkosBlas2_gemv(benchmark::State& state) {
     // Start timing
     Kokkos::fence();
     Kokkos::Timer timer;
-    for (int i = 0; i < repeat; i++) {
-      KokkosBlas::gemv("N", 1.0, A, x, 0.0, y);
-      ExecSpace().fence();
-    }
+    KokkosBlas::gemv("N", 1.0, A, x, 0.0, y);
+    ExecSpace().fence();
 
     // Kokkos Timer set up
-    double total = timer.seconds();
-    double avg   = total / repeat;
+    double time = timer.seconds();
     // Flops calculation
     size_t flopsPerRun = (size_t)2 * m * n;
     state.SetIterationTime(timer.seconds());
 
     state.counters["Avg GEMV time (s):"] =
-        benchmark::Counter(avg, benchmark::Counter::kDefaults);
+        benchmark::Counter(time, benchmark::Counter::kDefaults);
     state.counters["Avg GEMV FLOP/s:"] =
-        benchmark::Counter(flopsPerRun / avg, benchmark::Counter::kDefaults);
+        benchmark::Counter(flopsPerRun / time, benchmark::Counter::kDefaults);
   }
 }
 
 BENCHMARK(KokkosBlas2_gemv<Kokkos::LayoutLeft>)
-    ->ArgNames({"m", "n", "repeat", Kokkos::DefaultExecutionSpace::name()})
-    ->Args({5000, 5000, 1, 1})
+    ->ArgNames({"m", "n", Kokkos::DefaultExecutionSpace::name()})
+    ->Args({5000, 5000, 1})
     ->UseManualTime();
