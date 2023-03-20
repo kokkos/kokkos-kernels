@@ -34,7 +34,8 @@
 
 template <typename exec_space>
 void testSortCRS(default_lno_t numRows, default_lno_t numCols,
-                 default_size_type nnz, bool doValues, bool doStructInterface) {
+                 default_size_type nnz, bool doValues, bool doStructInterface,
+                 bool useExecInstance) {
   using scalar_t  = default_scalar;
   using lno_t     = default_lno_t;
   using size_type = default_size_type;
@@ -89,17 +90,36 @@ void testSortCRS(default_lno_t numRows, default_lno_t numCols,
   // call the actual sort routine being tested
   if (doValues) {
     if (doStructInterface) {
-      KokkosSparse::sort_crs_matrix(A);
+      if (useExecInstance) {
+        KokkosSparse::sort_crs_matrix(exec_space(), A);
+      } else {
+        KokkosSparse::sort_crs_matrix(A);
+      }
     } else {
-      KokkosSparse::sort_crs_matrix<exec_space, rowmap_t, entries_t, values_t>(
-          A.graph.row_map, A.graph.entries, A.values);
+      if (useExecInstance) {
+        KokkosSparse::sort_crs_matrix(exec_space(), A.graph.row_map,
+                                      A.graph.entries, A.values);
+      } else {
+        KokkosSparse::sort_crs_matrix<exec_space, rowmap_t, entries_t,
+                                      values_t>(A.graph.row_map,
+                                                A.graph.entries, A.values);
+      }
     }
   } else {
     if (doStructInterface) {
-      KokkosSparse::sort_crs_graph(A.graph);
+      if (useExecInstance) {
+        KokkosSparse::sort_crs_graph(exec_space(), A.graph);
+      } else {
+        KokkosSparse::sort_crs_graph(A.graph);
+      }
     } else {
-      KokkosSparse::sort_crs_graph<exec_space, rowmap_t, entries_t>(
-          A.graph.row_map, A.graph.entries);
+      if (useExecInstance) {
+        KokkosSparse::sort_crs_graph(exec_space(), A.graph.row_map,
+                                     A.graph.entries);
+      } else {
+        KokkosSparse::sort_crs_graph<exec_space, rowmap_t, entries_t>(
+            A.graph.row_map, A.graph.entries);
+      }
     }
   }
   // Copy to host and compare
@@ -166,7 +186,7 @@ void testSortCRSUnmanaged(bool doValues, bool doStructInterface) {
 }
 
 template <typename exec_space>
-void testSortAndMerge() {
+void testSortAndMerge(bool useExecInstance) {
   using size_type = default_size_type;
   using lno_t     = default_lno_t;
   using scalar_t  = default_scalar;
@@ -214,7 +234,12 @@ void testSortAndMerge() {
   Kokkos::deep_copy(devInValues, hostInValues);
   crsMat_t input("Input", nrows, ncols, nnz, devInValues, devInRowmap,
                  devInEntries);
-  crsMat_t output = KokkosSparse::sort_and_merge_matrix(input);
+  crsMat_t output;
+  if (useExecInstance) {
+    output = KokkosSparse::sort_and_merge_matrix(exec_space(), input);
+  } else {
+    output = KokkosSparse::sort_and_merge_matrix(input);
+  }
   exec_space().fence();
   EXPECT_EQ(output.numRows(), nrows);
   EXPECT_EQ(output.numCols(), ncols);
@@ -254,29 +279,42 @@ void testSortAndMerge() {
 
 TEST_F(TestCategory, common_sort_crsgraph) {
   for (int doStructInterface = 0; doStructInterface < 2; doStructInterface++) {
-    testSortCRS<TestExecSpace>(10, 10, 20, false, doStructInterface);
-    testSortCRS<TestExecSpace>(100, 100, 2000, false, doStructInterface);
-    testSortCRS<TestExecSpace>(1000, 1000, 30000, false, doStructInterface);
+    for (int useExecInstance = 0; useExecInstance < 2; useExecInstance++) {
+      testSortCRS<TestExecSpace>(10, 10, 20, false, doStructInterface,
+                                 useExecInstance);
+      testSortCRS<TestExecSpace>(100, 100, 2000, false, doStructInterface,
+                                 useExecInstance);
+      testSortCRS<TestExecSpace>(1000, 1000, 30000, false, doStructInterface,
+                                 useExecInstance);
+    }
     testSortCRSUnmanaged<TestExecSpace>(false, doStructInterface);
   }
 }
 
 TEST_F(TestCategory, common_sort_crsmatrix) {
   for (int doStructInterface = 0; doStructInterface < 2; doStructInterface++) {
-    testSortCRS<TestExecSpace>(10, 10, 20, true, doStructInterface);
-    testSortCRS<TestExecSpace>(100, 100, 2000, true, doStructInterface);
-    testSortCRS<TestExecSpace>(1000, 1000, 30000, true, doStructInterface);
+    for (int useExecInstance = 0; useExecInstance < 2; useExecInstance++) {
+      testSortCRS<TestExecSpace>(10, 10, 20, true, doStructInterface,
+                                 useExecInstance);
+      testSortCRS<TestExecSpace>(100, 100, 2000, true, doStructInterface,
+                                 useExecInstance);
+      testSortCRS<TestExecSpace>(1000, 1000, 30000, true, doStructInterface,
+                                 useExecInstance);
+    }
     testSortCRSUnmanaged<TestExecSpace>(true, doStructInterface);
   }
 }
 
 TEST_F(TestCategory, common_sort_crs_longrows) {
-  testSortCRS<TestExecSpace>(1, 50000, 10000, false, false);
-  testSortCRS<TestExecSpace>(1, 50000, 10000, true, false);
+  testSortCRS<TestExecSpace>(1, 50000, 10000, false, false, false);
+  testSortCRS<TestExecSpace>(1, 50000, 10000, true, false, false);
+  testSortCRS<TestExecSpace>(1, 50000, 10000, false, false, true);
+  testSortCRS<TestExecSpace>(1, 50000, 10000, true, false, true);
 }
 
 TEST_F(TestCategory, common_sort_merge_crsmatrix) {
-  testSortAndMerge<TestExecSpace>();
+  testSortAndMerge<TestExecSpace>(false);
+  testSortAndMerge<TestExecSpace>(true);
 }
 
 #endif  // KOKKOSSPARSE_SORTCRSTEST_HPP
