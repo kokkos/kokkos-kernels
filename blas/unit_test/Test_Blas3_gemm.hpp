@@ -371,7 +371,7 @@ void test_gemm() {
       }
     }
   }
-  auto pool_size = TestExecSpace().impl_thread_pool_size();
+  auto pool_size = TestExecSpace().concurrency();
   if (pool_size >= 2) {
     Test::impl_test_stream_gemm_psge2<Scalar, Layout, TestExecSpace>(
         53, 42, 17, 4.5,
