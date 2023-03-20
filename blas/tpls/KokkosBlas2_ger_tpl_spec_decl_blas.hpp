@@ -84,16 +84,30 @@ namespace Impl {
       KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing throuhg tpl-dger-blas\n" );           \
       Kokkos::Profiling::pushRegion("KokkosBlas::ger[TPL_BLAS,double]");            \
       KOKKOSBLAS2_GER_DETERMINE_ARGS(LAYOUTA);                                      \
-      HostBlas<SCALAR>::ger( M                                                      \
-                           , N                                                      \
-                           , alpha                                                  \
-                           , X.data()                                               \
-                           , one                                                    \
-                           , Y.data()                                               \
-                           , one                                                    \
-                           , A.data()                                               \
-                           , LDA                                                    \
-                           );                                                       \
+      if (A_is_lr) {                                                                \
+        HostBlas<SCALAR>::ger( M                                                    \
+                             , N                                                    \
+                             , alpha                                                \
+                             , X.data()                                             \
+                             , one                                                  \
+                             , Y.data()                                             \
+                             , one                                                  \
+                             , A.data()                                             \
+                             , LDA                                                  \
+                             );                                                     \
+      }                                                                             \
+      else {                                                                        \
+        HostBlas<SCALAR>::ger( M                                                    \
+                             , N                                                    \
+                             , alpha                                                \
+                             , Y.data()                                             \
+                             , one                                                  \
+                             , X.data()                                             \
+                             , one                                                  \
+                             , A.data()                                             \
+                             , LDA                                                  \
+                             );                                                     \
+      }                                                                             \
       Kokkos::Profiling::popRegion();                                               \
     }                                                                               \
   };
@@ -145,16 +159,30 @@ namespace Impl {
       KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing throuhg tpl-sger-blas\n" );           \
       Kokkos::Profiling::pushRegion("KokkosBlas::ger[TPL_BLAS,float]");             \
       KOKKOSBLAS2_GER_DETERMINE_ARGS(LAYOUTA);                                      \
-      HostBlas<SCALAR>::ger( M                                                      \
-                           , N                                                      \
-                           , alpha                                                  \
-                           , X.data()                                               \
-                           , one                                                    \
-                           , Y.data()                                               \
-                           , one                                                    \
-                           , A.data()                                               \
-                           , LDA                                                    \
-                           );                                                       \
+      if (A_is_lr) {                                                                \
+        HostBlas<SCALAR>::ger( M                                                    \
+                             , N                                                    \
+                             , alpha                                                \
+                             , X.data()                                             \
+                             , one                                                  \
+                             , Y.data()                                             \
+                             , one                                                  \
+                             , A.data()                                             \
+                             , LDA                                                  \
+                             );                                                     \
+      }                                                                             \
+      else {                                                                        \
+        HostBlas<SCALAR>::ger( M                                                    \
+                             , N                                                    \
+                             , alpha                                                \
+                             , Y.data()                                             \
+                             , one                                                  \
+                             , X.data()                                             \
+                             , one                                                  \
+                             , A.data()                                             \
+                             , LDA                                                  \
+                             );                                                     \
+      }                                                                             \
       Kokkos::Profiling::popRegion();                                               \
     }                                                                               \
   };

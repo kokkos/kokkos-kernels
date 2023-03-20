@@ -23,6 +23,7 @@ namespace KokkosBlas {
 namespace Impl {
 
 #define KOKKOSBLAS2_GER_ROCBLAS_DETERMINE_ARGS(LAYOUT)                       \
+  bool A_is_ll      = std::is_same<Kokkos::LayoutLeft, LAYOUTA>::value;      \
   bool A_is_lr      = std::is_same<Kokkos::LayoutRight, LAYOUT>::value;      \
   const int M       = static_cast<int>(A_is_lr ? A.extent(1) : A.extent(0)); \
   const int N       = static_cast<int>(A_is_lr ? A.extent(0) : A.extent(1)); \
@@ -86,14 +87,14 @@ namespace Impl {
       KOKKOSBLAS2_GER_ROCBLAS_DETERMINE_ARGS(LAYOUT);                                          \
       KokkosBlas::Impl::RocBlasSingleton& s = KokkosBlas::Impl::RocBlasSingleton::singleton(); \
       KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_set_stream(s.handle, space.hip_stream()) );       \
-      if (A_is_lr) {                                                                           \
+      if (A_is_ll) {                                                                           \
         KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_dger( s.handle                                  \
                                                    , M                                         \
                                                    , N                                         \
                                                    , &alpha                                    \
-                                                   , Y.data()                                  \
-                                                   , one                                       \
                                                    , X.data()                                  \
+                                                   , one                                       \
+                                                   , Y.data()                                  \
                                                    , one                                       \
                                                    , A.data()                                  \
                                                    , LDA                                       \
@@ -105,9 +106,9 @@ namespace Impl {
                                                    , M                                         \
                                                    , N                                         \
                                                    , &alpha                                    \
-                                                   , X.data()                                  \
-                                                   , one                                       \
                                                    , Y.data()                                  \
+                                                   , one                                       \
+                                                   , X.data()                                  \
                                                    , one                                       \
                                                    , A.data()                                  \
                                                    , LDA                                       \
@@ -168,14 +169,14 @@ namespace Impl {
       KOKKOSBLAS2_GER_ROCBLAS_DETERMINE_ARGS(LAYOUT);                                          \
       KokkosBlas::Impl::RocBlasSingleton& s = KokkosBlas::Impl::RocBlasSingleton::singleton(); \
       KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_set_stream(s.handle, space.hip_stream()) );       \
-      if (A_is_lr) {                                                                           \
+      if (A_is_ll) {                                                                           \
         KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_sger( s.handle                                  \
                                                    , M                                         \
                                                    , N                                         \
                                                    , &alpha                                    \
-                                                   , Y.data()                                  \
-                                                   , one                                       \
                                                    , X.data()                                  \
+                                                   , one                                       \
+                                                   , Y.data()                                  \
                                                    , one                                       \
                                                    , A.data()                                  \
                                                    , LDA                                       \
@@ -187,9 +188,9 @@ namespace Impl {
                                                    , M                                         \
                                                    , N                                         \
                                                    , &alpha                                    \
-                                                   , X.data()                                  \
-                                                   , one                                       \
                                                    , Y.data()                                  \
+                                                   , one                                       \
+                                                   , X.data()                                  \
                                                    , one                                       \
                                                    , A.data()                                  \
                                                    , LDA                                       \
@@ -251,27 +252,7 @@ namespace Impl {
       bool justTranspose = (trans[0] == 'T') || (trans[0] == 't');                                                \
       KokkosBlas::Impl::RocBlasSingleton& s = KokkosBlas::Impl::RocBlasSingleton::singleton();                    \
       KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_set_stream(s.handle, space.hip_stream()) );                          \
-      if (A_is_lr) {                                                                                              \
-        if (justTranspose) {                                                                                      \
-          KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_zgeru( s.handle                                                  \
-                                                      , M                                                         \
-                                                      , N                                                         \
-                                                      , reinterpret_cast<const rocblas_double_complex*>(&alpha)   \
-                                                      , reinterpret_cast<const rocblas_double_complex*>(Y.data()) \
-                                                      , one                                                       \
-                                                      , reinterpret_cast<const rocblas_double_complex*>(X.data()) \
-                                                      , one                                                       \
-                                                      , reinterpret_cast<rocblas_double_complex*>(A.data())       \
-                                                      , LDA                                                       \
-                                                      )                                                           \
-                                       );                                                                         \
-        }                                                                                                         \
-        else {                                                                                                    \
-          KOKKOS_IMPL_DO_NOT_USE_PRINTF("rocblasZgerc() requires LayoutLeft: throwing exception\n");              \
-          throw std::runtime_error("Error: rocblasZgerc() requires LayoutLeft views.");                           \
-        }                                                                                                         \
-      }                                                                                                           \
-      else {                                                                                                      \
+      if (A_is_ll) {                                                                                              \
         if (justTranspose) {                                                                                      \
           KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_zgeru( s.handle                                                  \
                                                       , M                                                         \
@@ -299,6 +280,26 @@ namespace Impl {
                                                       , LDA                                                       \
                                                       )                                                           \
                                        );                                                                         \
+        }                                                                                                         \
+      }                                                                                                           \
+      else {                                                                                                      \
+        if (justTranspose) {                                                                                      \
+          KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_zgeru( s.handle                                                  \
+                                                      , M                                                         \
+                                                      , N                                                         \
+                                                      , reinterpret_cast<const rocblas_double_complex*>(&alpha)   \
+                                                      , reinterpret_cast<const rocblas_double_complex*>(Y.data()) \
+                                                      , one                                                       \
+                                                      , reinterpret_cast<const rocblas_double_complex*>(X.data()) \
+                                                      , one                                                       \
+                                                      , reinterpret_cast<rocblas_double_complex*>(A.data())       \
+                                                      , LDA                                                       \
+                                                      )                                                           \
+                                       );                                                                         \
+        }                                                                                                         \
+        else {                                                                                                    \
+          KOKKOS_IMPL_DO_NOT_USE_PRINTF("rocblasZgerc() requires LayoutLeft: throwing exception\n");              \
+          throw std::runtime_error("Error: rocblasZgerc() requires LayoutLeft views.");                           \
         }                                                                                                         \
       }                                                                                                           \
       KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));                                          \
@@ -356,27 +357,7 @@ namespace Impl {
       bool justTranspose = (trans[0] == 'T') || (trans[0] == 't');                                               \
       KokkosBlas::Impl::RocBlasSingleton& s = KokkosBlas::Impl::RocBlasSingleton::singleton();                   \
       KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_set_stream(s.handle, space.hip_stream()) );                         \
-      if (A_is_lr) {                                                                                             \
-        if (justTranspose) {                                                                                     \
-          KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_cgeru( s.handle                                                 \
-                                                      , M                                                        \
-                                                      , N                                                        \
-                                                      , reinterpret_cast<const rocblas_float_complex*>(&alpha)   \
-                                                      , reinterpret_cast<const rocblas_float_complex*>(Y.data()) \
-                                                      , one                                                      \
-                                                      , reinterpret_cast<const rocblas_float_complex*>(X.data()) \
-                                                      , one                                                      \
-                                                      , reinterpret_cast<rocblas_float_complex*>(A.data())       \
-                                                      , LDA                                                      \
-                                                      )                                                          \
-                                       );                                                                        \
-        }                                                                                                        \
-        else {                                                                                                   \
-          KOKKOS_IMPL_DO_NOT_USE_PRINTF("rocblasCgerc() requires LayoutLeft: throwing exception\n");             \
-          throw std::runtime_error("Error: rocblasCgec() requires LayoutLeft views.");                           \
-        }                                                                                                        \
-      }                                                                                                          \
-      else {                                                                                                     \
+      if (A_is_ll) {                                                                                             \
         if (justTranspose) {                                                                                     \
           KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_cgeru( s.handle                                                 \
                                                       , M                                                        \
@@ -404,6 +385,26 @@ namespace Impl {
                                                       , LDA                                                      \
                                                       )                                                          \
                                        );                                                                        \
+        }                                                                                                        \
+      }                                                                                                          \
+      else {                                                                                                     \
+        if (justTranspose) {                                                                                     \
+          KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_cgeru( s.handle                                                 \
+                                                      , M                                                        \
+                                                      , N                                                        \
+                                                      , reinterpret_cast<const rocblas_float_complex*>(&alpha)   \
+                                                      , reinterpret_cast<const rocblas_float_complex*>(Y.data()) \
+                                                      , one                                                      \
+                                                      , reinterpret_cast<const rocblas_float_complex*>(X.data()) \
+                                                      , one                                                      \
+                                                      , reinterpret_cast<rocblas_float_complex*>(A.data())       \
+                                                      , LDA                                                      \
+                                                      )                                                          \
+                                       );                                                                        \
+        }                                                                                                        \
+        else {                                                                                                   \
+          KOKKOS_IMPL_DO_NOT_USE_PRINTF("rocblasCgerc() requires LayoutLeft: throwing exception\n");             \
+          throw std::runtime_error("Error: rocblasCgec() requires LayoutLeft views.");                           \
         }                                                                                                        \
       }                                                                                                          \
       KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));                                         \

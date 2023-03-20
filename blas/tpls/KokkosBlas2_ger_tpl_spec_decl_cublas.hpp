@@ -23,6 +23,7 @@ namespace KokkosBlas {
 namespace Impl {
 
 #define KOKKOSBLAS2_GER_CUBLAS_DETERMINE_ARGS(LAYOUTA)                       \
+  bool A_is_ll      = std::is_same<Kokkos::LayoutLeft, LAYOUTA>::value;      \
   bool A_is_lr      = std::is_same<Kokkos::LayoutRight, LAYOUTA>::value;     \
   const int M       = static_cast<int>(A_is_lr ? A.extent(1) : A.extent(0)); \
   const int N       = static_cast<int>(A_is_lr ? A.extent(0) : A.extent(1)); \
@@ -86,14 +87,14 @@ namespace Impl {
       KOKKOSBLAS2_GER_CUBLAS_DETERMINE_ARGS(LAYOUTA);                                             \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
       KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasSetStream(s.handle, space.cuda_stream()) );             \
-      if (A_is_lr) {                                                                              \
+      if (A_is_ll) {                                                                              \
         KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasDger( s.handle                                        \
                                                 , M                                               \
                                                 , N                                               \
                                                 , &alpha                                          \
-                                                , Y.data()                                        \
-                                                , one                                             \
                                                 , X.data()                                        \
+                                                , one                                             \
+                                                , Y.data()                                        \
                                                 , one                                             \
                                                 , A.data()                                        \
                                                 , LDA                                             \
@@ -105,9 +106,9 @@ namespace Impl {
                                                 , M                                               \
                                                 , N                                               \
                                                 , &alpha                                          \
-                                                , X.data()                                        \
-                                                , one                                             \
                                                 , Y.data()                                        \
+                                                , one                                             \
+                                                , X.data()                                        \
                                                 , one                                             \
                                                 , A.data()                                        \
                                                 , LDA                                             \
@@ -168,14 +169,14 @@ namespace Impl {
       KOKKOSBLAS2_GER_CUBLAS_DETERMINE_ARGS(LAYOUTA);                                             \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
       KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasSetStream(s.handle, space.cuda_stream()) );             \
-      if (A_is_lr) {                                                                              \
+      if (A_is_ll) {                                                                              \
         KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasSger( s.handle                                        \
                                                 , M                                               \
                                                 , N                                               \
                                                 , &alpha                                          \
-                                                , Y.data()                                        \
-                                                , one                                             \
                                                 , X.data()                                        \
+                                                , one                                             \
+                                                , Y.data()                                        \
                                                 , one                                             \
                                                 , A.data()                                        \
                                                 , LDA                                             \
@@ -187,9 +188,9 @@ namespace Impl {
                                                 , M                                               \
                                                 , N                                               \
                                                 , &alpha                                          \
-                                                , X.data()                                        \
-                                                , one                                             \
                                                 , Y.data()                                        \
+                                                , one                                             \
+                                                , X.data()                                        \
                                                 , one                                             \
                                                 , A.data()                                        \
                                                 , LDA                                             \
@@ -251,27 +252,7 @@ namespace Impl {
       bool justTranspose = (trans[0] == 'T') || (trans[0] == 't');                                      \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton();       \
       KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasSetStream(s.handle, space.cuda_stream()) );                   \
-      if (A_is_lr) {                                                                                    \
-	if (justTranspose) {                                                                            \
-          KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasZgeru( s.handle                                           \
-                                                   , M                                                  \
-                                                   , N                                                  \
-                                                   , reinterpret_cast<const cuDoubleComplex*>(&alpha)   \
-                                                   , reinterpret_cast<const cuDoubleComplex*>(Y.data()) \
-                                                   , one                                                \
-                                                   , reinterpret_cast<const cuDoubleComplex*>(X.data()) \
-                                                   , one                                                \
-                                                   , reinterpret_cast<cuDoubleComplex*>(A.data())       \
-                                                   , LDA                                                \
-                                                   )                                                    \
-                                      );                                                                \
-        }                                                                                               \
-	else {                                                                                          \
-          KOKKOS_IMPL_DO_NOT_USE_PRINTF("cublasZgerc() requires LayoutLeft: throwing exception\n");     \
-          throw std::runtime_error("Error: cublasZgerc() requires LayoutLeft views.");                  \
-	}                                                                                               \
-      }                                                                                                 \
-      else {                                                                                            \
+      if (A_is_ll) {                                                                                    \
 	if (justTranspose) {                                                                            \
           KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasZgeru( s.handle                                           \
                                                    , M                                                  \
@@ -299,6 +280,26 @@ namespace Impl {
                                                    , LDA                                                \
                                                    )                                                    \
                                       );                                                                \
+	}                                                                                               \
+      }                                                                                                 \
+      else {                                                                                            \
+	if (justTranspose) {                                                                            \
+          KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasZgeru( s.handle                                           \
+                                                   , M                                                  \
+                                                   , N                                                  \
+                                                   , reinterpret_cast<const cuDoubleComplex*>(&alpha)   \
+                                                   , reinterpret_cast<const cuDoubleComplex*>(Y.data()) \
+                                                   , one                                                \
+                                                   , reinterpret_cast<const cuDoubleComplex*>(X.data()) \
+                                                   , one                                                \
+                                                   , reinterpret_cast<cuDoubleComplex*>(A.data())       \
+                                                   , LDA                                                \
+                                                   )                                                    \
+                                      );                                                                \
+        }                                                                                               \
+	else {                                                                                          \
+          KOKKOS_IMPL_DO_NOT_USE_PRINTF("cublasZgerc() requires LayoutLeft: throwing exception\n");     \
+          throw std::runtime_error("Error: cublasZgerc() requires LayoutLeft views.");                  \
 	}                                                                                               \
       }                                                                                                 \
       KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasSetStream(s.handle, NULL) );                                  \
@@ -356,27 +357,7 @@ namespace Impl {
       bool justTranspose = (trans[0] == 'T') || (trans[0] == 't');                                  \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton();   \
       KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasSetStream(s.handle, space.cuda_stream()) );               \
-      if (A_is_lr) {                                                                                \
-	if (justTranspose) {                                                                        \
-          KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasCgeru( s.handle                                       \
-                                                   , M                                              \
-                                                   , N                                              \
-                                                   , reinterpret_cast<const cuComplex*>(&alpha)     \
-                                                   , reinterpret_cast<const cuComplex*>(Y.data())   \
-                                                   , one                                            \
-                                                   , reinterpret_cast<const cuComplex*>(X.data())   \
-                                                   , one                                            \
-                                                   , reinterpret_cast<cuComplex*>(A.data())         \
-                                                   , LDA                                            \
-                                                   )                                                \
-                                      );                                                            \
-        }                                                                                           \
-	else {                                                                                      \
-          KOKKOS_IMPL_DO_NOT_USE_PRINTF("cublasCgerc() requires LayoutLeft: throwing exception\n"); \
-          throw std::runtime_error("Error: cublasCgerc() requires LayoutLeft views.");              \
-	}                                                                                           \
-      }                                                                                             \
-      else {                                                                                        \
+      if (A_is_ll) {                                                                                \
 	if (justTranspose) {                                                                        \
           KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasCgeru( s.handle                                       \
                                                    , M                                              \
@@ -404,6 +385,26 @@ namespace Impl {
                                                    , LDA                                            \
                                                    )                                                \
                                       );                                                            \
+	}                                                                                           \
+      }                                                                                             \
+      else {                                                                                        \
+	if (justTranspose) {                                                                        \
+          KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasCgeru( s.handle                                       \
+                                                   , M                                              \
+                                                   , N                                              \
+                                                   , reinterpret_cast<const cuComplex*>(&alpha)     \
+                                                   , reinterpret_cast<const cuComplex*>(Y.data())   \
+                                                   , one                                            \
+                                                   , reinterpret_cast<const cuComplex*>(X.data())   \
+                                                   , one                                            \
+                                                   , reinterpret_cast<cuComplex*>(A.data())         \
+                                                   , LDA                                            \
+                                                   )                                                \
+                                      );                                                            \
+        }                                                                                           \
+	else {                                                                                      \
+          KOKKOS_IMPL_DO_NOT_USE_PRINTF("cublasCgerc() requires LayoutLeft: throwing exception\n"); \
+          throw std::runtime_error("Error: cublasCgerc() requires LayoutLeft views.");              \
 	}                                                                                           \
       }                                                                                             \
       KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasSetStream(s.handle, NULL) );                              \
