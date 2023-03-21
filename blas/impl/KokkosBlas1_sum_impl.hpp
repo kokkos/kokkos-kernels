@@ -40,7 +40,7 @@ struct V_Sum_Functor {
   typedef SizeType size_type;
   typedef typename XV::non_const_value_type xvalue_type;
   typedef Kokkos::Details::InnerProductSpaceTraits<xvalue_type> IPT;
-  typedef Kokkos::Details::ArithTraits<typename IPT::mag_type> AT;
+  typedef Kokkos::ArithTraits<typename IPT::mag_type> AT;
   typedef typename RV::non_const_value_type value_type;
 
   typename XV::const_type m_x;

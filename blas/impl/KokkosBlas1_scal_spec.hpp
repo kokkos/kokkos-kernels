@@ -113,7 +113,7 @@ struct Scal<RV, typename XV::non_const_value_type, XV, 1, false,
             KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef typename XV::non_const_value_type AV;
   typedef typename XV::size_type size_type;
-  typedef Kokkos::Details::ArithTraits<typename XV::non_const_value_type> ATA;
+  typedef Kokkos::ArithTraits<typename XV::non_const_value_type> ATA;
 
   static void scal(const RV& R, const AV& alpha, const XV& X) {
     static_assert(Kokkos::is_view<RV>::value,
@@ -172,7 +172,7 @@ struct Scal<RV, typename XV::non_const_value_type, XV, 1, false,
 template <class RMV, class AV, class XMV>
 struct Scal<RMV, AV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef typename XMV::size_type size_type;
-  typedef Kokkos::Details::ArithTraits<typename XMV::non_const_value_type> ATA;
+  typedef Kokkos::ArithTraits<typename XMV::non_const_value_type> ATA;
 
   static void scal(const RMV& R, const AV& av, const XMV& X) {
     static_assert(Kokkos::is_view<RMV>::value,
@@ -232,7 +232,7 @@ struct Scal<RMV, typename XMV::non_const_value_type, XMV, 2, false,
             KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef typename XMV::non_const_value_type AV;
   typedef typename XMV::size_type size_type;
-  typedef Kokkos::Details::ArithTraits<typename XMV::non_const_value_type> ATA;
+  typedef Kokkos::ArithTraits<typename XMV::non_const_value_type> ATA;
 
   static void scal(const RMV& R, const AV& alpha, const XMV& X) {
     static_assert(Kokkos::is_view<RMV>::value,

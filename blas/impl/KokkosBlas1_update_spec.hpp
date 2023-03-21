@@ -117,9 +117,9 @@ struct Update {
 template <class XMV, class YMV, class ZMV>
 struct Update<XMV, YMV, ZMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef typename XMV::size_type size_type;
-  typedef Kokkos::Details::ArithTraits<typename XMV::non_const_value_type> ATA;
-  typedef Kokkos::Details::ArithTraits<typename YMV::non_const_value_type> ATB;
-  typedef Kokkos::Details::ArithTraits<typename ZMV::non_const_value_type> ATC;
+  typedef Kokkos::ArithTraits<typename XMV::non_const_value_type> ATA;
+  typedef Kokkos::ArithTraits<typename YMV::non_const_value_type> ATB;
+  typedef Kokkos::ArithTraits<typename ZMV::non_const_value_type> ATC;
 
   static void update(const typename XMV::non_const_value_type& alpha,
                      const XMV& X,
@@ -222,9 +222,9 @@ struct Update<XMV, YMV, ZMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 template <class XV, class YV, class ZV>
 struct Update<XV, YV, ZV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef typename XV::size_type size_type;
-  typedef Kokkos::Details::ArithTraits<typename XV::non_const_value_type> ATA;
-  typedef Kokkos::Details::ArithTraits<typename YV::non_const_value_type> ATB;
-  typedef Kokkos::Details::ArithTraits<typename ZV::non_const_value_type> ATC;
+  typedef Kokkos::ArithTraits<typename XV::non_const_value_type> ATA;
+  typedef Kokkos::ArithTraits<typename YV::non_const_value_type> ATB;
+  typedef Kokkos::ArithTraits<typename ZV::non_const_value_type> ATC;
 
   static void update(const typename XV::non_const_value_type& alpha,
                      const XV& X, const typename YV::non_const_value_type& beta,

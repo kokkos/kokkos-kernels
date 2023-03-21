@@ -46,7 +46,7 @@ template <class RV, class AV, class XV, int scalar_x, class SizeType>
 struct V_Scal_Functor {
   typedef typename RV::execution_space execution_space;
   typedef SizeType size_type;
-  typedef Kokkos::Details::ArithTraits<typename RV::non_const_value_type> ATS;
+  typedef Kokkos::ArithTraits<typename RV::non_const_value_type> ATS;
 
   RV m_r;
   XV m_x;
@@ -103,7 +103,7 @@ struct V_Scal_Functor<RV, typename XV::non_const_value_type, XV, scalar_x,
                       SizeType> {
   typedef typename RV::execution_space execution_space;
   typedef SizeType size_type;
-  typedef Kokkos::Details::ArithTraits<typename RV::non_const_value_type> ATS;
+  typedef Kokkos::ArithTraits<typename RV::non_const_value_type> ATS;
 
   RV m_r;
   XV m_x;

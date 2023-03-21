@@ -55,7 +55,7 @@ struct VanillaGEMM {
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
   typedef typename ViewTypeC::value_type ScalarC;
-  typedef Kokkos::Details::ArithTraits<ScalarC> APT;
+  typedef Kokkos::ArithTraits<ScalarC> APT;
   typedef typename APT::mag_type mag_type;
   ScalarA alpha;
   ScalarC beta;
@@ -101,7 +101,7 @@ int impl_test_trtri(int bad_diag_idx, const char* uplo, const char* diag,
                     const int M, const int N) {
   using execution_space = typename ViewTypeA::device_type::execution_space;
   using ScalarA         = typename ViewTypeA::value_type;
-  using APT             = Kokkos::Details::ArithTraits<ScalarA>;
+  using APT             = Kokkos::ArithTraits<ScalarA>;
   using mag_type        = typename APT::mag_type;
 
   double machine_eps         = APT::epsilon();

@@ -35,7 +35,7 @@ void impl_test_team_nrm2(int N, int K) {
   const team_policy policy(K, Kokkos::AUTO);
 
   typedef typename ViewTypeA::value_type ScalarA;
-  typedef Kokkos::Details::ArithTraits<ScalarA> AT;
+  typedef Kokkos::ArithTraits<ScalarA> AT;
 
   typedef multivector_layout_adapter<ViewTypeA> vfA_type;
 
@@ -64,8 +64,7 @@ void impl_test_team_nrm2(int N, int K) {
     for (int i = 0; i < N; i++)
       expected_result[j] += AT::abs(h_a(i, j)) * AT::abs(h_a(i, j));
     expected_result[j] =
-        Kokkos::Details::ArithTraits<typename AT::mag_type>::sqrt(
-            expected_result[j]);
+        Kokkos::ArithTraits<typename AT::mag_type>::sqrt(expected_result[j]);
   }
 
   double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 : 1e-7;

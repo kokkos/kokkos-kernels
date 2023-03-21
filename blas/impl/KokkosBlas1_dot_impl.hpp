@@ -56,7 +56,7 @@ struct DotFunctor {
   }
 
   KOKKOS_INLINE_FUNCTION void init(value_type& update) const {
-    update = Kokkos::Details::ArithTraits<value_type>::zero();
+    update = Kokkos::ArithTraits<value_type>::zero();
   }
 
   KOKKOS_INLINE_FUNCTION void join(value_type& update,

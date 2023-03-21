@@ -65,7 +65,7 @@ template <class TeamHandle, class ViewTypeScratch, class ViewType, class Layout,
 struct impl_deep_copy_matrix_block<TeamHandle, ViewTypeScratch, ViewType,
                                    Layout, blockDim_i, blockDim_j, 0> {
   typedef typename ViewType::non_const_value_type value_type;
-  typedef Kokkos::Details::ArithTraits<value_type> ATV;
+  typedef Kokkos::ArithTraits<value_type> ATV;
 
   KOKKOS_INLINE_FUNCTION
   static void copy(const TeamHandle& team, const ViewTypeScratch& A_scr,
@@ -115,7 +115,7 @@ struct impl_deep_copy_matrix_block<TeamHandle, ViewTypeScratch, ViewType,
                                    Kokkos::LayoutRight, blockDim_i, blockDim_j,
                                    0> {
   typedef typename ViewType::non_const_value_type value_type;
-  typedef Kokkos::Details::ArithTraits<value_type> ATV;
+  typedef Kokkos::ArithTraits<value_type> ATV;
 
   KOKKOS_INLINE_FUNCTION
   static void copy(const TeamHandle& team, const ViewTypeScratch& A_scr,
@@ -159,7 +159,7 @@ template <class TeamHandle, class ViewTypeScratch, class ViewType, class Layout,
 struct impl_deep_copy_matrix_block<TeamHandle, ViewTypeScratch, ViewType,
                                    Layout, blockDim_i, blockDim_j, 1> {
   typedef typename ViewType::non_const_value_type value_type;
-  typedef Kokkos::Details::ArithTraits<value_type> ATV;
+  typedef Kokkos::ArithTraits<value_type> ATV;
 
   KOKKOS_INLINE_FUNCTION
   static void copy(const TeamHandle& team, const ViewTypeScratch& A_scr,
@@ -209,7 +209,7 @@ struct impl_deep_copy_matrix_block<TeamHandle, ViewTypeScratch, ViewType,
                                    Kokkos::LayoutRight, blockDim_i, blockDim_j,
                                    1> {
   typedef typename ViewType::non_const_value_type value_type;
-  typedef Kokkos::Details::ArithTraits<value_type> ATV;
+  typedef Kokkos::ArithTraits<value_type> ATV;
 
   KOKKOS_INLINE_FUNCTION
   static void copy(const TeamHandle& team, const ViewTypeScratch& A_scr,
@@ -258,7 +258,7 @@ template <class TeamHandle, class ViewTypeScratch, class ViewType, class Layout,
 struct impl_deep_copy_matrix_block<TeamHandle, ViewTypeScratch, ViewType,
                                    Layout, blockDim_i, blockDim_j, 2> {
   typedef typename ViewType::non_const_value_type value_type;
-  typedef Kokkos::Details::ArithTraits<value_type> ATV;
+  typedef Kokkos::ArithTraits<value_type> ATV;
 
   KOKKOS_INLINE_FUNCTION
   static void copy(const TeamHandle& team, const ViewTypeScratch& A_scr,
@@ -308,7 +308,7 @@ struct impl_deep_copy_matrix_block<TeamHandle, ViewTypeScratch, ViewType,
                                    Kokkos::LayoutRight, blockDim_i, blockDim_j,
                                    2> {
   typedef typename ViewType::non_const_value_type value_type;
-  typedef Kokkos::Details::ArithTraits<value_type> ATV;
+  typedef Kokkos::ArithTraits<value_type> ATV;
 
   KOKKOS_INLINE_FUNCTION
   static void copy(const TeamHandle& team, const ViewTypeScratch& A_scr,
@@ -356,7 +356,7 @@ template <class TeamHandle, class ViewType, class ViewTypeScratch, class Layout,
           int blockDim_i, int blockDim_j>
 struct impl_update_matrix_block {
   typedef typename ViewType::non_const_value_type value_type;
-  typedef Kokkos::Details::ArithTraits<value_type> ATV;
+  typedef Kokkos::ArithTraits<value_type> ATV;
 
   KOKKOS_INLINE_FUNCTION
   static void update(const TeamHandle& team, const value_type& beta,
@@ -417,7 +417,7 @@ template <class TeamHandle, class ViewType, class ViewTypeScratch,
 struct impl_update_matrix_block<TeamHandle, ViewType, ViewTypeScratch,
                                 Kokkos::LayoutRight, blockDim_i, blockDim_j> {
   typedef typename ViewType::non_const_value_type value_type;
-  typedef Kokkos::Details::ArithTraits<value_type> ATV;
+  typedef Kokkos::ArithTraits<value_type> ATV;
 
   KOKKOS_INLINE_FUNCTION
   static void update(const TeamHandle& team, const value_type& beta,

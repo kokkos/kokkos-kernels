@@ -106,8 +106,8 @@ struct multivector_layout_adapter<ViewType, false> {
 template <class Scalar1, class Scalar2, class Scalar3>
 void EXPECT_NEAR_KK(Scalar1 val1, Scalar2 val2, Scalar3 tol,
                     std::string msg = "") {
-  typedef Kokkos::Details::ArithTraits<Scalar1> AT1;
-  typedef Kokkos::Details::ArithTraits<Scalar3> AT3;
+  typedef Kokkos::ArithTraits<Scalar1> AT1;
+  typedef Kokkos::ArithTraits<Scalar3> AT3;
   EXPECT_LE((double)AT1::abs(val1 - val2), (double)AT3::abs(tol)) << msg;
 }
 
@@ -116,8 +116,8 @@ void EXPECT_NEAR_KK_REL(Scalar1 val1, Scalar2 val2, Scalar3 tol,
                         std::string msg = "") {
   typedef typename std::remove_reference<decltype(val1)>::type hv1_type;
   typedef typename std::remove_reference<decltype(val2)>::type hv2_type;
-  const auto ahv1 = Kokkos::Details::ArithTraits<hv1_type>::abs(val1);
-  const auto ahv2 = Kokkos::Details::ArithTraits<hv2_type>::abs(val2);
+  const auto ahv1 = Kokkos::ArithTraits<hv1_type>::abs(val1);
+  const auto ahv2 = Kokkos::ArithTraits<hv2_type>::abs(val2);
   EXPECT_NEAR_KK(val1, val2, tol * Kokkos::max(ahv1, ahv2), msg);
 }
 
@@ -205,7 +205,7 @@ struct SharedVanillaGEMM {
   typedef Kokkos::View<ScalarB*, Kokkos::LayoutStride,
                        typename ViewTypeB::device_type>
       SubviewTypeB;
-  typedef Kokkos::Details::ArithTraits<ScalarC> APT;
+  typedef Kokkos::ArithTraits<ScalarC> APT;
   typedef typename APT::mag_type mag_type;
   ScalarA alpha;
   ScalarC beta;

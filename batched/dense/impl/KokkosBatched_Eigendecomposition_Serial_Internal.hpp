@@ -72,7 +72,7 @@ struct SerialEigendecompositionInternal {
                   "Serial eigendecomposition on device and/or without LAPACK "
                   "is not implemented yet");
     //       typedef RealType real_type;
-    //       typedef Kokkos::Details::ArithTraits<real_type> ats;
+    //       typedef Kokkos::ArithTraits<real_type> ats;
 
     //       const real_type one(1), zero(0), tol = 1e2*ats::epsilon();
     //       //const Kokkos::pair<real_type,real_type> identity(one, zero);
