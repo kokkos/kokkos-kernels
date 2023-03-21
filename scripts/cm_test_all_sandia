@@ -157,7 +157,6 @@ fi
 
 if [[ "$HOSTNAME" == *solo* ]]; then # Warning: very generic name
   MACHINE=solo
-  module use /projects/netpub/openblas/modulefiles
   module use /projects/netpub/clang/modulefiles
 fi
 
