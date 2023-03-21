@@ -160,7 +160,7 @@ void spgemm_symbolic(KernelHandle *handle,
   }
 
   if (!spgemmHandle->checkMatrixIdentitiesSymbolic(const_a_r, const_a_l,
-                                                   const_b_r, const_b_l, c_r)) {
+                                                   const_b_r, const_b_l)) {
     throw std::invalid_argument(
         "KokkosSparse::spgemm_symbolic: once used, an spgemm handle cannot be "
         "reused for a product with a different sparsity pattern.\n"

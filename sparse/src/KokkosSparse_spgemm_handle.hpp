@@ -788,12 +788,11 @@ class SPGEMMHandle {
 
  public:
   template <typename a_rowptrs_t, typename a_entries_t, typename b_rowptrs_t,
-            typename b_entries_t, typename c_rowptrs_t>
+            typename b_entries_t>
   bool checkMatrixIdentitiesSymbolic(const a_rowptrs_t &a_rowptrsIn,
                                      const a_entries_t &a_entriesIn,
                                      const b_rowptrs_t &b_rowptrsIn,
-                                     const b_entries_t &b_entriesIn,
-                                     const c_rowptrs_t &c_rowptrsIn) {
+                                     const b_entries_t &b_entriesIn) {
 #ifndef NDEBUG
     // If this is the first symbolic call, assign the handle's CRS pointers to
     // check against later
