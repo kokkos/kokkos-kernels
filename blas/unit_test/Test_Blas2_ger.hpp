@@ -133,6 +133,16 @@ private:
   template <class T>
   T shrinkAngleToZeroTwoPiRange(const T input);
 
+  template <class TX, class TY>
+  void callKkGerAndCompareAgainstExpected( const ScalarA           & alpha
+                                         , TX                      & x
+                                         , TY                      & y
+                                         , _ViewTypeA              & A
+                                         , const _HostViewTypeA    & h_A
+                                         , const _ViewTypeExpected & h_expected
+                                         , const std::string       & situation
+                                         );
+
   const bool     _A_is_complex;
   const bool     _A_is_lr;
   const bool     _A_is_ll;
@@ -203,8 +213,17 @@ void GerTester< ScalarX
 {
   std::cout << "Entering GerTester::test()... - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - " << std::endl;
 
+  std::cout << "_A_is_complex = "                     << _A_is_complex
+            << ", _A_is_lr = "                        << _A_is_lr
+            << ", _A_is_ll = "                        << _A_is_ll
+            << ", _testIsGpu = "                      << _testIsGpu
+            << ", _vanillaUsesDifferentOrderOfOps = " << _vanillaUsesDifferentOrderOfOps
+            << ", _epsAbs = "                         << _epsAbs
+            << ", _epsRel = "                         << _epsRel
+            << std::endl;
+  
   // ********************************************************************
-  // Step 1 of 10: declare main types and variables
+  // Step 1 of 9: declare main types and variables
   // ********************************************************************
   _M = M;
   _N = N;
@@ -212,9 +231,10 @@ void GerTester< ScalarX
   _useHermitianOption   = useHermitianOption;
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
+  _kkGerShouldThrowException = false;
   if (_A_is_complex && _useHermitianOption) {
     if ((_testIsGpu == false) &&
-        (_A_is_lr   == false)) {
+        (_A_is_ll   == false)) {
       _kkGerShouldThrowException = true;
     }
     else if ((_testIsGpu == true ) &&
@@ -241,7 +261,7 @@ void GerTester< ScalarX
   ScalarA alpha(0.);
 
   // ********************************************************************
-  // Step 2 of 10: populate alpha, h_x, h_y, h_A, h_expected, x, y, A
+  // Step 2 of 9: populate alpha, h_x, h_y, h_A, h_expected, x, y, A
   // ********************************************************************
   if (_useAnalyticalResults) {
     this->populateAnalyticalValues( alpha
@@ -344,7 +364,7 @@ void GerTester< ScalarX
   }
 
   // ********************************************************************
-  // Step 3 of 10: populate h_vanilla
+  // Step 3 of 9: populate h_vanilla
   // ********************************************************************
   _ViewTypeExpected h_vanilla("vanilla = A + alpha * x * y^{t,h}", _M, _N);
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "In Test_Blas2_ger.hpp, computing vanilla A with alpha type = %s\n", typeid(alpha).name() );
@@ -356,7 +376,7 @@ void GerTester< ScalarX
                              );
   
   // ********************************************************************
-  // Step 4 of 10: use h_vanilla and h_expected as appropriate
+  // Step 4 of 9: use h_vanilla and h_expected as appropriate
   // ********************************************************************
   if (expectedResultIsKnown) {
     // ******************************************************************
@@ -375,144 +395,64 @@ void GerTester< ScalarX
   }
   
   // ********************************************************************
-  // Step 5 of 10: update h_A with the results computed with KokkosKernels
+  // Step 5 of 9: test with 'non const x' and 'non const y'
   // ********************************************************************
   _ViewTypeA org_A("Org_A", _M, _N);
   Kokkos::deep_copy(org_A, A);
-  
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "In Test_Blas2_ger.hpp, right before calling KokkosBlas::ger(): ViewTypeA = %s, _kkGerShouldThrowException=%d\n", typeid(_ViewTypeA).name(), _kkGerShouldThrowException );
-  std::string mode = _useHermitianOption ? "H" : "T";
-  bool gotStdException    (false);
-  bool gotUnknownException(false);
-  try {
-    KokkosBlas::ger(mode.c_str(), alpha, x, y, A);
-  }
-  catch( const std::exception& e ) {
-    std::cout << "In Test_Blas2_ger: caught exception, e.what() = " << e.what() << std::endl;
-    gotStdException = true;
-  }
-  catch( ... ) {
-    std::cout << "In Test_Blas2_ger: caught unknown exception" << std::endl;
-    gotUnknownException = true;
-  }
 
-  EXPECT_EQ(gotUnknownException, false) << "Failed test: unknown exception should not have happened";
-
-  EXPECT_EQ(gotStdException, _kkGerShouldThrowException) << "Failed test: kk ger() should"
-                                                         << (_kkGerShouldThrowException ? " " : " not ")
-                                                         << "have thrown a std::exception";
-
-  Kokkos::deep_copy(h_A, A);
+  this->callKkGerAndCompareAgainstExpected( alpha
+                                          , x
+                                          , y
+                                          , A
+                                          , h_A
+                                          , h_expected
+                                          , "non const {x,y}"
+                                          );
 
   // ********************************************************************
-  // Step 6 of 10: compare KokkosKernels results against the expected ones
-  // ********************************************************************
-  this->compareKokkosExpected( alpha
-                             , h_A
-                             , h_expected
-                             );
-
-  // ********************************************************************
-  // Step 7 of 10: test with const x
+  // Step 6 of 9: test with const x
   // ********************************************************************
   Kokkos::deep_copy(A, org_A);
   
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "In Test_Blas2_ger.hpp, right before calling KokkosBlas::ger(): const x\n" );
-  gotStdException     = false;
-  gotUnknownException = false;
-  try {
-    KokkosBlas::ger(mode.c_str(), alpha, c_x, y, A);
-  }
-  catch( const std::exception& e ) {
-    std::cout << "In Test_Blas2_ger, const x: caught exception, e.what() = " << e.what() << std::endl;
-    gotStdException = true;
-  }
-  catch( ... ) {
-    std::cout << "In Test_Blas2_ger, const x: caught unknown exception" << std::endl;
-    gotUnknownException = true;
-  }
-
-  EXPECT_EQ(gotUnknownException, false) << "Failed test: const x, unknown exception should not have happened";
-
-  EXPECT_EQ(gotStdException, _kkGerShouldThrowException) << "Failed test: const x, kk ger() should"
-                                                         << (_kkGerShouldThrowException ? " " : " not ")
-                                                         << "have thrown a std::exception";
-
-  Kokkos::deep_copy(h_A, A);
-
-  this->compareKokkosExpected( alpha
-                             , h_A
-                             , h_expected
-                             );
+  this->callKkGerAndCompareAgainstExpected( alpha
+                                          , c_x
+                                          , y
+                                          , A
+                                          , h_A
+                                          , h_expected
+                                          , "const x"
+                                          );
 
   // ********************************************************************
-  // Step 8 of 10: test with const y
+  // Step 7 of 9: test with const y
   // ********************************************************************
   Kokkos::deep_copy(A, org_A);
   
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "In Test_Blas2_ger.hpp, right before calling KokkosBlas::ger(): const y\n" );
-  gotStdException     = false;
-  gotUnknownException = false;
-  try {
-    KokkosBlas::ger(mode.c_str(), alpha, x, c_y, A);
-  }
-  catch( const std::exception& e ) {
-    std::cout << "In Test_Blas2_ger, const y: caught exception, e.what() = " << e.what() << std::endl;
-    gotStdException = true;
-  }
-  catch( ... ) {
-    std::cout << "In Test_Blas2_ger, const y: caught unknown exception" << std::endl;
-    gotUnknownException = true;
-  }
-
-  EXPECT_EQ(gotUnknownException, false) << "Failed test: const y, unknown exception should not have happened";
-
-  EXPECT_EQ(gotStdException, _kkGerShouldThrowException) << "Failed test: const y, kk ger() should"
-                                                         << (_kkGerShouldThrowException ? " " : " not ")
-                                                         << "have thrown a std::exception";
-
-  Kokkos::deep_copy(h_A, A);
-
-  this->compareKokkosExpected( alpha
-                             , h_A
-                             , h_expected
-                             );
+  this->callKkGerAndCompareAgainstExpected( alpha
+                                          , x
+                                          , c_y
+                                          , A
+                                          , h_A
+                                          , h_expected
+                                          , "const y"
+                                          );
 
   // ********************************************************************
-  // Step 9 of 10: test with const x and y
+  // Step 8 of 9: test with const x and const y
   // ********************************************************************
   Kokkos::deep_copy(A, org_A);
   
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "In Test_Blas2_ger.hpp, right before calling KokkosBlas::ger(): const x and y\n" );
-  gotStdException     = false;
-  gotUnknownException = false;
-  try {
-    KokkosBlas::ger(mode.c_str(), alpha, c_x, c_y, A);
-  }
-  catch( const std::exception& e ) {
-    std::cout << "In Test_Blas2_ger, const x and y: caught exception, e.what() = " << e.what() << std::endl;
-    gotStdException = true;
-  }
-  catch( ... ) {
-    std::cout << "In Test_Blas2_ger, const x and y: caught unknown exception" << std::endl;
-    gotUnknownException = true;
-  }
-
-  EXPECT_EQ(gotUnknownException, false) << "Failed test: const x and y, unknown exception should not have happened";
-
-  EXPECT_EQ(gotStdException, _kkGerShouldThrowException) << "Failed test: const x and y, kk ger() should"
-                                                         << (_kkGerShouldThrowException ? " " : " not ")
-                                                         << "have thrown a std::exception";
-
-  Kokkos::deep_copy(h_A, A);
-
-  this->compareKokkosExpected( alpha
-                             , h_A
-                             , h_expected
-                             );
+  this->callKkGerAndCompareAgainstExpected( alpha
+                                          , c_x
+                                          , c_y
+                                          , A
+                                          , h_A
+                                          , h_expected
+                                          , "const {x,y}"
+                                          );
 
   // ********************************************************************
-  // Step 10 of 10: tests with invalid values on the first input parameter
+  // Step 9 of 9: tests with invalid values on the first input parameter
   // ********************************************************************
   EXPECT_ANY_THROW( KokkosBlas::ger(".", alpha, x, y, A) ) << "Failed test: kk ger should have thrown an exception for mode '.'";
   EXPECT_ANY_THROW( KokkosBlas::ger("", alpha, x, y, A) ) << "Failed test: kk ger should have thrown an exception for mode ''";
@@ -815,7 +755,7 @@ GerTester< ScalarX
           }
         }
         else {
-          _AuxType aux = diff / h_expected(i,j).real();
+          _AuxType aux = diff / _KAT_A::abs(h_expected(i,j).real());
           if (maxErrorRealRel < aux) {
             maxErrorRealRel = aux;
             iForMaxErrorRealRel = i;
@@ -828,7 +768,7 @@ GerTester< ScalarX
             numErrorsRealRel++;
           }
         }
-        if (errorHappened && (numErrorsRealAbs + numErrorsRealRel == 0)) {
+        if (errorHappened && (numErrorsRealAbs + numErrorsRealRel == 1)) {
           std::cout << "ERROR, i = " << i
                     << ", j = "      << j
                     << ": h_expected(i,j).real() = " << h_expected(i,j).real()
@@ -848,7 +788,7 @@ GerTester< ScalarX
           }
         }
         else {
-          _AuxType aux = diff / h_expected(i,j).imag();
+          _AuxType aux = diff / _KAT_A::abs(h_expected(i,j).imag());
           if (maxErrorImagRel < aux) {
             maxErrorImagRel = aux;
             iForMaxErrorImagRel = i;
@@ -861,7 +801,7 @@ GerTester< ScalarX
             numErrorsImagRel++;
           }
         }
-        if (errorHappened && (numErrorsImagAbs + numErrorsImagRel == 0)) {
+        if (errorHappened && (numErrorsImagAbs + numErrorsImagRel == 1)) {
           std::cout << "ERROR, i = " << i
                     << ", j = "      << j
                     << ": h_expected(i,j).imag() = " << h_expected(i,j).imag()
@@ -1008,7 +948,7 @@ GerTester< ScalarX
           }
         }
         else {
-          _AuxType aux = diff / h_expected(i,j);
+          _AuxType aux = diff / _KAT_A::abs(h_expected(i,j));
           if (maxErrorRel < aux) {
             maxErrorRel = aux;
             iForMaxErrorRel = i;
@@ -1021,7 +961,7 @@ GerTester< ScalarX
             numErrorsRel++;
           }
         }
-        if (errorHappened && (numErrorsAbs + numErrorsRel == 0)) {
+        if (errorHappened && (numErrorsAbs + numErrorsRel == 1)) {
           std::cout << "ERROR, i = " << i
                     << ", j = "      << j
                     << ": h_expected(i,j) = " << h_expected(i,j)
@@ -1128,7 +1068,7 @@ GerTester< ScalarX
         }
       }
       else {
-        _AuxType aux = diff / h_expected(i,j).real();
+        _AuxType aux = diff / _KAT_A::abs(h_expected(i,j).real());
         if (maxErrorRealRel < aux) {
           maxErrorRealRel = aux;
           iForMaxErrorRealRel = i;
@@ -1141,7 +1081,7 @@ GerTester< ScalarX
           numErrorsRealRel++;
         }
       }
-      if (errorHappened && (numErrorsRealAbs + numErrorsRealRel == 0)) {
+      if (errorHappened && (numErrorsRealAbs + numErrorsRealRel == 1)) {
         std::cout << "ERROR, i = " << i
                   << ", j = "      << j
                   << ": h_expected(i,j).real() = " << h_expected(i,j).real()
@@ -1161,7 +1101,7 @@ GerTester< ScalarX
         }
       }
       else {
-        _AuxType aux = diff / h_expected(i,j).imag();
+        _AuxType aux = diff / _KAT_A::abs(h_expected(i,j).imag());
         if (maxErrorImagRel < aux) {
           maxErrorImagRel = aux;
           iForMaxErrorImagRel = i;
@@ -1174,7 +1114,7 @@ GerTester< ScalarX
           numErrorsImagRel++;
         }
       }
-      if (errorHappened && (numErrorsImagAbs + numErrorsImagRel == 0)) {
+      if (errorHappened && (numErrorsImagAbs + numErrorsImagRel == 1)) {
         std::cout << "ERROR, i = " << i
                   << ", j = "      << j
                   << ": h_expected(i,j).imag() = " << h_expected(i,j).imag()
@@ -1314,7 +1254,7 @@ GerTester< ScalarX
         }
       }
       else {
-        _AuxType aux = diff / h_expected(i,j);
+        _AuxType aux = diff / _KAT_A::abs(h_expected(i,j));
         if (maxErrorRel < aux) {
           maxErrorRel = aux;
           iForMaxErrorRel = i;
@@ -1327,7 +1267,7 @@ GerTester< ScalarX
           numErrorsRel++;
         }
       }
-      if (errorHappened && (numErrorsAbs + numErrorsRel == 0)) {
+      if (errorHappened && (numErrorsAbs + numErrorsRel == 1)) {
         std::cout << "ERROR, i = " << i
                   << ", j = "      << j
                   << ": h_expected(i,j) = " << h_expected(i,j)
@@ -1377,6 +1317,57 @@ GerTester< ScalarX
   }
 }
 
+template <class ScalarX, class tLayoutX, class ScalarY, class tLayoutY, class ScalarA, class tLayoutA, class Device>
+template <class TX, class TY>
+void GerTester< ScalarX
+              , tLayoutX
+              , ScalarY
+              , tLayoutY
+              , ScalarA
+              , tLayoutA
+              , Device
+              >::callKkGerAndCompareAgainstExpected( const ScalarA           & alpha
+                                                   , TX                      & x
+                                                   , TY                      & y
+                                                   , _ViewTypeA              & A
+                                                   , const _HostViewTypeA    & h_A
+                                                   , const _ViewTypeExpected & h_expected
+                                                   , const std::string       & situation
+                                                   )
+{
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "In Test_Blas2_ger.hpp, right before calling KokkosBlas::ger(): ViewTypeA = %s, _kkGerShouldThrowException=%d\n", typeid(_ViewTypeA).name(), _kkGerShouldThrowException );
+  std::string mode = _useHermitianOption ? "H" : "T";
+  bool gotStdException    (false);
+  bool gotUnknownException(false);
+  try {
+    KokkosBlas::ger(mode.c_str(), alpha, x, y, A);
+  }
+  catch( const std::exception& e ) {
+    std::cout << "In Test_Blas2_ger, '" << situation << "': caught exception, e.what() = " << e.what() << std::endl;
+    gotStdException = true;
+  }
+  catch( ... ) {
+    std::cout << "In Test_Blas2_ger, '" << situation << "': caught unknown exception" << std::endl;
+    gotUnknownException = true;
+  }
+
+  EXPECT_EQ(gotUnknownException, false) << "Failed test, '" << situation << "': unknown exception should not have happened";
+
+  EXPECT_EQ(gotStdException, _kkGerShouldThrowException) << "Failed test, '" << situation << "': kk ger() should"
+                                                         << (_kkGerShouldThrowException ? " " : " not ")
+                                                         << "have thrown a std::exception";
+
+  if (( gotStdException     == false ) &&
+      ( gotUnknownException == false )) {
+    Kokkos::deep_copy(h_A, A);
+
+    this->compareKokkosExpected( alpha
+                               , h_A
+                               , h_expected
+                               );
+  }
+}
+
 } // namespace Test
 
 template <class ScalarX, class ScalarY, class ScalarA, class Device>
@@ -1393,6 +1384,9 @@ int test_ger( const std::string & caseName ) {
     Test::GerTester<ScalarX, Kokkos::LayoutLeft, ScalarY, Kokkos::LayoutLeft, ScalarA, Kokkos::LayoutLeft, Device> tester;
     tester.test( 13, 13 );
     tester.test(1024, 0);
+    tester.test(1, 1);
+    tester.test(2, 2);
+    tester.test(1, 2);
     tester.test(13, 13);
     tester.test(13, 1024);
     tester.test(13, 1024, true, false);
@@ -1494,16 +1488,7 @@ TEST_F(TestCategory, ger_float) {
 }
 #endif
 
-#if 1 // Aqui
-
-#if defined(KOKKOSKERNELS_INST_DOUBLE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-TEST_F(TestCategory, ger_double) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::ger_double");
-  test_ger<double, double, double, TestExecSpace>( "test case ger_double" );
-  Kokkos::Profiling::popRegion();
-}
-#endif
+#if 1
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -1514,9 +1499,14 @@ TEST_F(TestCategory, ger_complex_float) {
 }
 #endif
 
-#endif // if 0
-
-#if 1 // Aqui
+#if defined(KOKKOSKERNELS_INST_DOUBLE) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+TEST_F(TestCategory, ger_double) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::ger_double");
+  test_ger<double, double, double, TestExecSpace>( "test case ger_double" );
+  Kokkos::Profiling::popRegion();
+}
+#endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -1545,4 +1535,4 @@ TEST_F(TestCategory, ger_double_int) {
 }
 #endif
 
-#endif // if 0
+#endif // if 1

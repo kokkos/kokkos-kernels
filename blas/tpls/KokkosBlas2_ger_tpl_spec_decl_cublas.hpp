@@ -82,7 +82,7 @@ namespace Impl {
                    , const          YViewType                   & Y                               \
                    , const          AViewType                   & A                               \
                    ) {                                                                            \
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing throuhg tpl-dger-cublas\n" );                       \
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing through tpl-dger-cublas\n" );                       \
       Kokkos::Profiling::pushRegion("KokkosBlas::ger[TPL_CUBLAS,double]");                        \
       KOKKOSBLAS2_GER_CUBLAS_DETERMINE_ARGS(LAYOUTA);                                             \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
@@ -164,7 +164,7 @@ namespace Impl {
                    , const          YViewType                   & Y                               \
                    , const          AViewType                   & A                               \
                    ) {                                                                            \
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing throuhg tpl-sger-cublas\n" );                       \
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing through tpl-sger-cublas\n" );                       \
       Kokkos::Profiling::pushRegion("KokkosBlas::ger[TPL_CUBLAS,float]");                         \
       KOKKOSBLAS2_GER_CUBLAS_DETERMINE_ARGS(LAYOUTA);                                             \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
@@ -246,7 +246,7 @@ namespace Impl {
                    , const          YViewType                   & Y                                     \
                    , const          AViewType                   & A                                     \
                    ) {                                                                                  \
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing throuhg tpl-zger-cublas\n" );                             \
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing through tpl-zger-cublas\n" );                             \
       Kokkos::Profiling::pushRegion("KokkosBlas::ger[TPL_CUBLAS,complex<double>]");                     \
       KOKKOSBLAS2_GER_CUBLAS_DETERMINE_ARGS(LAYOUTA);                                                   \
       bool justTranspose = (trans[0] == 'T') || (trans[0] == 't');                                      \
@@ -351,7 +351,7 @@ namespace Impl {
                    , const          YViewType                   & Y                                 \
                    , const          AViewType                   & A                                 \
                    ) {                                                                              \
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing throuhg tpl-cger-cublas\n" );                         \
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing through tpl-cger-cublas\n" );                         \
       Kokkos::Profiling::pushRegion("KokkosBlas::ger[TPL_CUBLAS,complex<float>]");                  \
       KOKKOSBLAS2_GER_CUBLAS_DETERMINE_ARGS(LAYOUTA);                                               \
       bool justTranspose = (trans[0] == 'T') || (trans[0] == 't');                                  \

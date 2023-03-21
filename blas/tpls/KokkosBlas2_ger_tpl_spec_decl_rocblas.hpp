@@ -82,7 +82,7 @@ namespace Impl {
                    , const          YViewType                   & Y                            \
                    , const          AViewType                   & A                            \
                    ) {                                                                         \
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing throuhg tpl-dger-rocblas\n" );                   \
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing through tpl-dger-rocblas\n" );                   \
       Kokkos::Profiling::pushRegion("KokkosBlas::ger[TPL_ROCBLAS,double]");                    \
       KOKKOSBLAS2_GER_ROCBLAS_DETERMINE_ARGS(LAYOUT);                                          \
       KokkosBlas::Impl::RocBlasSingleton& s = KokkosBlas::Impl::RocBlasSingleton::singleton(); \
@@ -164,7 +164,7 @@ namespace Impl {
                    , const          YViewType                   & Y                            \
                    , const          AViewType                   & A                            \
                    ) {                                                                         \
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing throuhg tpl-sger-rocblas\n" );                   \
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing through tpl-sger-rocblas\n" );                   \
       Kokkos::Profiling::pushRegion("KokkosBlas::ger[TPL_ROCBLAS,float]");                     \
       KOKKOSBLAS2_GER_ROCBLAS_DETERMINE_ARGS(LAYOUT);                                          \
       KokkosBlas::Impl::RocBlasSingleton& s = KokkosBlas::Impl::RocBlasSingleton::singleton(); \
@@ -246,7 +246,7 @@ namespace Impl {
                    , const          YViewType                   & Y                                               \
                    , const          AViewType                   & A                                               \
                    ) {                                                                                            \
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing throuhg tpl-zger-rocblas\n" );                                      \
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing through tpl-zger-rocblas\n" );                                      \
       Kokkos::Profiling::pushRegion("KokkosBlas::ger[TPL_ROCBLAS,complex<double>]");                              \
       KOKKOSBLAS2_GER_ROCBLAS_DETERMINE_ARGS(LAYOUT);                                                             \
       bool justTranspose = (trans[0] == 'T') || (trans[0] == 't');                                                \
@@ -351,7 +351,7 @@ namespace Impl {
                    , const          YViewType                   & Y                                              \
                    , const          AViewType                   & A                                              \
                    ) {                                                                                           \
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing throuhg tpl-cger-rocblas\n" );                                     \
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing through tpl-cger-rocblas\n" );                                     \
       Kokkos::Profiling::pushRegion("KokkosBlas::ger[TPL_ROCBLAS,complex<float>]");                              \
       KOKKOSBLAS2_GER_ROCBLAS_DETERMINE_ARGS(LAYOUT);                                                            \
       bool justTranspose = (trans[0] == 'T') || (trans[0] == 't');                                               \

@@ -23,6 +23,7 @@ namespace KokkosBlas {
 namespace Impl {
 
 #define KOKKOSBLAS2_GER_DETERMINE_ARGS(LAYOUTA)                              \
+  bool A_is_ll      = std::is_same<Kokkos::LayoutLeft, LAYOUTA>::value;      \
   bool A_is_lr      = std::is_same<Kokkos::LayoutRight, LAYOUTA>::value;     \
   const int M       = static_cast<int>(A_is_lr ? A.extent(1) : A.extent(0)); \
   const int N       = static_cast<int>(A_is_lr ? A.extent(0) : A.extent(1)); \
@@ -81,10 +82,10 @@ namespace Impl {
                    , const          YViewType                   & Y                 \
                    , const          AViewType                   & A                 \
                    ) {                                                              \
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing throuhg tpl-dger-blas\n" );           \
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing through tpl-dger-blas\n" );           \
       Kokkos::Profiling::pushRegion("KokkosBlas::ger[TPL_BLAS,double]");            \
       KOKKOSBLAS2_GER_DETERMINE_ARGS(LAYOUTA);                                      \
-      if (A_is_lr) {                                                                \
+      if (A_is_ll) {                                                                \
         HostBlas<SCALAR>::ger( M                                                    \
                              , N                                                    \
                              , alpha                                                \
@@ -156,10 +157,10 @@ namespace Impl {
                    , const          YViewType                   & Y                 \
                    , const          AViewType                   & A                 \
                    ) {                                                              \
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing throuhg tpl-sger-blas\n" );           \
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing through tpl-sger-blas\n" );           \
       Kokkos::Profiling::pushRegion("KokkosBlas::ger[TPL_BLAS,float]");             \
       KOKKOSBLAS2_GER_DETERMINE_ARGS(LAYOUTA);                                      \
-      if (A_is_lr) {                                                                \
+      if (A_is_ll) {                                                                \
         HostBlas<SCALAR>::ger( M                                                    \
                              , N                                                    \
                              , alpha                                                \
@@ -231,12 +232,12 @@ namespace Impl {
                    , const          YViewType                   & Y                                      \
                    , const          AViewType                   & A                                      \
                    ) {                                                                                   \
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing throuhg tpl-zger-blas\n" );                                \
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing through tpl-zger-blas\n" );                                \
       Kokkos::Profiling::pushRegion("KokkosBlas::ger[TPL_BLAS,complex<double>");                         \
       KOKKOSBLAS2_GER_DETERMINE_ARGS(LAYOUTA);                                                           \
       const std::complex<double> alpha_val = static_cast<const std::complex<double>>(alpha);             \
       bool justTranspose = (trans[0] == 'T') || (trans[0] == 't');                                       \
-      if (A_is_lr) {                                                                                     \
+      if (A_is_ll) {                                                                                     \
         if (justTranspose) {                                                                             \
           HostBlas<std::complex<double>>::geru( M                                                        \
                                               , N                                                        \
@@ -276,8 +277,8 @@ namespace Impl {
                                               );                                                         \
         }                                                                                                \
         else {                                                                                           \
-          KOKKOS_IMPL_DO_NOT_USE_PRINTF("blasZgerc() requires LayoutRight: throwing exception\n");       \
-          throw std::runtime_error("Error: blasZgerc() requires LayoutRight views.");                    \
+          KOKKOS_IMPL_DO_NOT_USE_PRINTF("blasZgerc() requires LayoutLeft: throwing exception\n");        \
+          throw std::runtime_error("Error: blasZgerc() requires LayoutLeft views.");                     \
         }                                                                                                \
       }                                                                                                  \
       Kokkos::Profiling::popRegion();                                                                    \
@@ -328,12 +329,12 @@ namespace Impl {
                    , const          YViewType                   & Y                                   \
                    , const          AViewType                   & A                                   \
                    ) {                                                                                \
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing throuhg tpl-cger-blas\n" );                             \
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing through tpl-cger-blas\n" );                             \
       Kokkos::Profiling::pushRegion("KokkosBlas::ger[TPL_BLAS,complex<float>");                       \
       KOKKOSBLAS2_GER_DETERMINE_ARGS(LAYOUTA);                                                        \
       const std::complex<float> alpha_val = static_cast<const std::complex<float>>(alpha);            \
       bool justTranspose = (trans[0] == 'T') || (trans[0] == 't');                                    \
-      if (A_is_lr) {                                                                                  \
+      if (A_is_ll) {                                                                                  \
         if (justTranspose) {                                                                          \
           HostBlas<std::complex<float>>::geru( M                                                      \
                                              , N                                                      \
@@ -373,8 +374,8 @@ namespace Impl {
                                              );                                                       \
         }                                                                                             \
         else {                                                                                        \
-          KOKKOS_IMPL_DO_NOT_USE_PRINTF("blasCgerc() requires LayoutRight: throwing exception\n");    \
-          throw std::runtime_error("Error: blasCgerc() requires LayoutRight views.");                 \
+          KOKKOS_IMPL_DO_NOT_USE_PRINTF("blasCgerc() requires LayoutLeft: throwing exception\n");     \
+          throw std::runtime_error("Error: blasCgerc() requires LayoutLeft views.");                  \
         }                                                                                             \
       }                                                                                               \
       Kokkos::Profiling::popRegion();                                                                 \
