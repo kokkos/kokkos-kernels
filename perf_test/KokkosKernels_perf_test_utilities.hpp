@@ -20,6 +20,8 @@
 #ifndef KOKKOSKERNELS_PERF_TEST_UTILITIES_HPP
 #define KOKKOSKERNELS_PERF_TEST_UTILITIES_HPP
 
+#include "KokkosKernels_TestUtils.hpp"  // for string_compare_no_case
+
 // Namepsace that defines common utilities
 // for performance tests
 namespace perf_test {
