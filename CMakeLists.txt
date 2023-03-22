@@ -88,6 +88,9 @@ IF (NOT KOKKOSKERNELS_HAS_TRILINOS)
     include_directories(tpls/rajaperf/src)
     set(KokkosKernels_ENABLE_PERFTESTS ON CACHE BOOL "Whether to build tests including Perfsuite. Default: OFF" FORCE)
   ENDIF()
+  IF(KokkosKernels_ENABLE_BENCHMARK)
+    INCLUDE(cmake/kokkoskernels_benchmarks.cmake)
+  ENDIF()
 ENDIF ()
 
 KOKKOSKERNELS_ADD_OPTION(
