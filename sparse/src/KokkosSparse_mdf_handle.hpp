@@ -89,6 +89,7 @@ struct MDF_handle {
   }
 
   col_ind_type get_permutation() { return permutation; }
+  col_ind_type get_permutation_inv() { return permutation_inv; }
 
   void sort_factors() {
     KokkosSparse::sort_crs_matrix<crs_matrix_type>(L);
