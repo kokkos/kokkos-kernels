@@ -33,7 +33,7 @@ namespace KokkosKernelsBenchmark {
 
 /// \brief Remove unwanted spaces and colon signs from input string. In case of
 /// invalid input it will return an empty string.
-std::string remove_unwanted_characters(std::string str) {
+inline std::string remove_unwanted_characters(std::string str) {
   auto from = str.find_first_not_of(" :");
   auto to   = str.find_last_not_of(" :");
 
@@ -47,7 +47,7 @@ std::string remove_unwanted_characters(std::string str) {
 
 /// \brief Extract all key:value pairs from kokkos configuration and add it to
 /// the benchmark context
-void add_kokkos_configuration(bool verbose) {
+inline void add_kokkos_configuration(bool verbose) {
   std::ostringstream msg;
   Kokkos::print_configuration(msg, verbose);
   KokkosKernels::print_configuration(msg);
@@ -88,7 +88,7 @@ inline void add_version_info() {
 }
 
 /// \brief Gather all context information and add it to benchmark context data
-void add_benchmark_context(bool verbose = false) {
+inline void add_benchmark_context(bool verbose = false) {
   // Add Kokkos configuration to benchmark context data
   add_kokkos_configuration(verbose);
 
