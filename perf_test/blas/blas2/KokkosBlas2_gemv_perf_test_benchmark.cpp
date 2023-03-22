@@ -66,7 +66,7 @@ static void KokkosBlas2_gemv(benchmark::State& state) {
     double time = timer.seconds();
     // Flops calculation
     size_t flopsPerRun = (size_t)2 * m * n;
-    state.SetIterationTime(timer.seconds());
+    state.SetIterationTime(time);
 
     state.counters["Avg GEMV time (s):"] =
         benchmark::Counter(time, benchmark::Counter::kDefaults);
