@@ -67,6 +67,8 @@ inline void add_kokkos_configuration(bool verbose) {
   }
 }
 
+/// \brief Add Kokkos Kernels git info and google benchmark release to
+/// benchmark context.
 inline void add_version_info() {
   using namespace KokkosKernels::Impl;
 
@@ -87,11 +89,9 @@ inline void add_version_info() {
   }
 }
 
-/// \brief Gather all context information and add it to benchmark context data
+/// \brief Gather all context information and add it to benchmark context
 inline void add_benchmark_context(bool verbose = false) {
-  // Add Kokkos configuration to benchmark context data
   add_kokkos_configuration(verbose);
-
   add_version_info();
 }
 
