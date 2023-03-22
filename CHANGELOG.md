@@ -1,5 +1,13 @@
 # Change Log
 
+## [3.7.02](https://github.com/kokkos/kokkos-kernels/tree/3.7.01) (2023-03-22)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/3.7.01...3.7.02)
+
+### Bug Fixes:
+- MIS2 aggregation: fix bug with uninitialized memory [\#1528](https://github.com/kokkos/kokkos-kernels/pull/1528)
+- Fix valgrind uninitialized errors in EB coloring [\#1530](https://github.com/kokkos/kokkos-kernels/pull/1530)
+- Use CRS matrix sort, instead of Kokkos::sort on each row [\#1553](https://github.com/kokkos/kokkos-kernels/pull/1553)
+
 ## [3.7.01](https://github.com/kokkos/kokkos-kernels/tree/3.7.01) (2022-12-01)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/3.7.00...3.7.01)
 
