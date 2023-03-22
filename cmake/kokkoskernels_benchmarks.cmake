@@ -17,9 +17,10 @@ ELSE()
 
     # Note: recent bug (google/benchmark#1441) is preventing us from using
     # the latest benchmark release.
+    SET(BENCHMARK_VERSION 1.6.2)
     FetchContent_Declare(
         googlebenchmark
-        URL https://github.com/google/benchmark/archive/refs/tags/v1.6.2.tar.gz
+        URL https://github.com/google/benchmark/archive/refs/tags/v${BENCHMARK_VERSION}.tar.gz
         URL_HASH MD5=14d14849e075af116143a161bc3b927b
     )
     FetchContent_MakeAvailable(googlebenchmark)

@@ -324,11 +324,11 @@ ELSE()
     ENDFOREACH()
     TARGET_INCLUDE_DIRECTORIES(kokkoskernels PUBLIC
       $<INSTALL_INTERFACE:${KOKKOSKERNELS_HEADER_INSTALL_DIR}>)
-  ENDIF()
 
-  IF(NOT KOKKOSKERNELS_HAS_TRILINOS)
-    INCLUDE(cmake/kokkoskernels_git_info.cmake)
-    check_git_setup()
+    IF(KokkosKernels_ENABLE_BENCHMARK)
+      INCLUDE(cmake/kokkoskernels_version_info.cmake)
+      check_version_info()
+    ENDIF()
   ENDIF()
 
   # FIXME_SYCL waiting for compiler support

@@ -87,12 +87,14 @@ FUNCTION(check_git_version)
   ENDIF()
 ENDFUNCTION()
 
-FUNCTION(check_git_setup)
+# Pass BENCHMARK_VERSION variable to configure benchmark library version
+FUNCTION(check_version_info)
   add_custom_target(
     AlwaysCheckGit COMMAND ${CMAKE_COMMAND}
     -DRUN_CHECK_GIT_VERSION=1
     -DKOKKOSKERNELS_TOP_SOURCE_DIR=${KOKKOSKERNELS_TOP_SOURCE_DIR}
-    -P ${CURRENT_LIST_DIR}/kokkoskernels_git_info.cmake
+    -DBENCHMARK_VERSION=${BENCHMARK_VERSION}
+    -P ${CURRENT_LIST_DIR}/kokkoskernels_version_info.cmake
     BYPRODUCTS ${post_configure_file})
 
   add_dependencies(kokkoskernels AlwaysCheckGit)

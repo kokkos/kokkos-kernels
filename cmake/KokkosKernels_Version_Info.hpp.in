@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef KOKKOSKERNELS_GIT_VERSION_INFO_H
-#define KOKKOSKERNELS_GIT_VERSION_INFO_H
+#ifndef KOKKOSKERNELS_VERSION_INFO_HPP
+#define KOKKOSKERNELS_VERSION_INFO_HPP
 
 #include <string_view>
 
@@ -27,9 +27,10 @@ constexpr std::string_view GIT_COMMIT_HASH  = "@GIT_COMMIT_HASH@";
 constexpr std::string_view GIT_CLEAN_STATUS = "@GIT_CLEAN_STATUS@";
 constexpr std::string_view GIT_COMMIT_DESCRIPTION =
     R"message(@GIT_COMMIT_DESCRIPTION@)message";
-constexpr std::string_view GIT_COMMIT_DATE = "@GIT_COMMIT_DATE@";
+constexpr std::string_view GIT_COMMIT_DATE   = "@GIT_COMMIT_DATE@";
+constexpr std::string_view BENCHMARK_VERSION = "@BENCHMARK_VERSION@";
 
 }  // namespace Impl
 }  // namespace KokkosKernels
 
-#endif
+#endif  // KOKKOSKERNELS_VERSION_INFO_HPP

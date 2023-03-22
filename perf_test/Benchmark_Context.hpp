@@ -67,19 +67,23 @@ void add_kokkos_configuration(bool verbose) {
   }
 }
 
-inline void add_git_info() {
-  if (!KokkosKernels::Impl::GIT_BRANCH.empty()) {
-    benchmark::AddCustomContext("GIT_BRANCH",
-                                std::string(KokkosKernels::Impl::GIT_BRANCH));
-    benchmark::AddCustomContext(
-        "GIT_COMMIT_HASH", std::string(KokkosKernels::Impl::GIT_COMMIT_HASH));
-    benchmark::AddCustomContext(
-        "GIT_CLEAN_STATUS", std::string(KokkosKernels::Impl::GIT_CLEAN_STATUS));
-    benchmark::AddCustomContext(
-        "GIT_COMMIT_DESCRIPTION",
-        std::string(KokkosKernels::Impl::GIT_COMMIT_DESCRIPTION));
-    benchmark::AddCustomContext(
-        "GIT_COMMIT_DATE", std::string(KokkosKernels::Impl::GIT_COMMIT_DATE));
+inline void add_version_info() {
+  using namespace KokkosKernels::Impl;
+
+  if (!GIT_BRANCH.empty()) {
+    benchmark::AddCustomContext("GIT_BRANCH", std::string(GIT_BRANCH));
+    benchmark::AddCustomContext("GIT_COMMIT_HASH",
+                                std::string(GIT_COMMIT_HASH));
+    benchmark::AddCustomContext("GIT_CLEAN_STATUS",
+                                std::string(GIT_CLEAN_STATUS));
+    benchmark::AddCustomContext("GIT_COMMIT_DESCRIPTION",
+                                std::string(GIT_COMMIT_DESCRIPTION));
+    benchmark::AddCustomContext("GIT_COMMIT_DATE",
+                                std::string(GIT_COMMIT_DATE));
+  }
+  if (!BENCHMARK_VERSION.empty()) {
+    benchmark::AddCustomContext("GOOGLE_BENCHMARK_VERSION",
+                                std::string(BENCHMARK_VERSION));
   }
 }
 
@@ -88,7 +92,7 @@ void add_benchmark_context(bool verbose = false) {
   // Add Kokkos configuration to benchmark context data
   add_kokkos_configuration(verbose);
 
-  add_git_info();
+  add_version_info();
 }
 
 }  // namespace KokkosKernelsBenchmark
