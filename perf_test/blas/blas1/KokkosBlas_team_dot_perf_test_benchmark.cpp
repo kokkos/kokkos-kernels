@@ -79,7 +79,7 @@ struct teamDotFunctor {
 };
 
 template <class ExecSpace>
-static void run(benchmark::State& state) {
+static void Blas1_team_dot(benchmark::State& state) {
   const auto m      = state.range(0);
   const auto repeat = state.range(1);
   // Declare type aliases
@@ -98,12 +98,6 @@ static void run(benchmark::State& state) {
   // and Y
   Kokkos::deep_copy(x, 3.0);
   Kokkos::deep_copy(y, 2.0);
-
-  std::cout << "Running BLAS Level 1 Kokkos Teams-based implementation DOT "
-               "performance experiment ("
-            << ExecSpace::name() << ")\n";
-
-  std::cout << "Each test input vector has a length of " << m << std::endl;
 
   for (auto _ : state) {
     // Warm up run of dot:
@@ -128,9 +122,7 @@ static void run(benchmark::State& state) {
     double avg   = total / repeat;
     // Flops calculation for a 1D matrix dot product per test run;
     size_t flopsPerRun = (size_t)2 * m;
-    printf("Avg DOT time: %f s.\n", avg);
-    printf("Avg DOT FLOP/s: %.3e\n", flopsPerRun / avg);
-    state.SetIterationTime(timer.seconds());
+    state.SetIterationTime(total);
 
     state.counters["Avg DOT time (s):"] =
         benchmark::Counter(avg, benchmark::Counter::kDefaults);
@@ -139,8 +131,7 @@ static void run(benchmark::State& state) {
   }
 }
 
-BENCHMARK(run<Kokkos::DefaultExecutionSpace>)
-    ->Name("KokkosBlas_team_dot/run<Kokkos::DefaultExecutionSpace>")
+BENCHMARK(Blas1_team_dot<Kokkos::DefaultExecutionSpace>)
     ->ArgNames({"m", "repeat"})
     ->Args({100000, 1})
     ->UseManualTime();

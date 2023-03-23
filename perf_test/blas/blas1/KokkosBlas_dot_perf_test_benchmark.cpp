@@ -74,18 +74,13 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 template <class ExecSpace>
-static void run(benchmark::State& state) {
+static void Blas1_dot(benchmark::State& state) {
   const auto m      = state.range(0);
   const auto repeat = state.range(1);
   // Declare type aliases
   using Scalar   = double;
   using MemSpace = typename ExecSpace::memory_space;
   using Device   = Kokkos::Device<ExecSpace, MemSpace>;
-
-  std::cout << "Running BLAS Level 1 DOT perfomrance experiment ("
-            << ExecSpace::name() << ")\n";
-
-  std::cout << "Each test input vector has a length of " << m << std::endl;
 
   // Create 1D view w/ Device as the ExecSpace; this is an input vector
   // A(view_alloc(WithoutInitializing, "label"), m, n);
@@ -122,9 +117,7 @@ static void run(benchmark::State& state) {
     double avg   = total / repeat;
     // Flops calculation for a 1D matrix dot product per test run;
     size_t flopsPerRun = (size_t)2 * m;
-    printf("Avg DOT time: %f s.\n", avg);
-    printf("Avg DOT FLOP/s: %.3e\n", flopsPerRun / avg);
-    state.SetIterationTime(timer.seconds());
+    state.SetIterationTime(total);
 
     state.counters["Avg DOT time (s):"] =
         benchmark::Counter(avg, benchmark::Counter::kDefaults);
@@ -133,8 +126,7 @@ static void run(benchmark::State& state) {
   }
 }
 
-BENCHMARK(run<Kokkos::DefaultExecutionSpace>)
-    ->Name("KokkosBlas_dot")
+BENCHMARK(Blas1_dot<Kokkos::DefaultExecutionSpace>)
     ->ArgNames({"m", "repeat"})
     ->Args({100000, 1})
     ->UseManualTime();
