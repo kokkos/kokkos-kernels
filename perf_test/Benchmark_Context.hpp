@@ -95,6 +95,21 @@ inline void add_benchmark_context(bool verbose = false) {
   add_version_info();
 }
 
+struct Params {
+  static std::map<std::string, int> params_;
+
+  static void parse_inputs(int argc, char** argv) {
+    for (int i = 1; i < argc; i += 2) {
+      params_[argv[i]] = std::atoi(argv[i + 1]);
+    }
+  }
+
+  static int get_param_or_default(std::string param, int default_value) {
+    return (params_.find(param) != params_.end()) ? params_[param]
+                                                  : default_value;
+  }
+};
+
 }  // namespace KokkosKernelsBenchmark
 
 #endif

@@ -21,11 +21,15 @@
 #include <Benchmark_Context.hpp>
 #include <Kokkos_Core.hpp>
 
+std::map<std::string, int> KokkosKernelsBenchmark::Params::params_;
+
 int main(int argc, char** argv) {
   Kokkos::initialize(argc, argv);
   benchmark::Initialize(&argc, argv);
   benchmark::SetDefaultTimeUnit(benchmark::kSecond);
+
   KokkosKernelsBenchmark::add_benchmark_context(true);
+  KokkosKernelsBenchmark::Params::parse_inputs(argc, argv);
 
   benchmark::RunSpecifiedBenchmarks();
 

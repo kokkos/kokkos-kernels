@@ -46,7 +46,44 @@
 #include <Kokkos_Random.hpp>
 
 #include "KokkosBlas_dot_perf_test.hpp"
+#include "Benchmark_Context.hpp"
 #include <benchmark/benchmark.h>
+
+using KokkosKernelsBenchmark::Params;
+
+struct Blas1_Params {
+  Blas1_Params(benchmark::State& state)
+      : use_cuda(Params::get_param_or_default("--use_cuda", 0)),
+        use_hip(Params::get_param_or_default("--use_hip", 0)),
+        use_sycl(Params::get_param_or_default("--use_sycl", 0)),
+        use_openmp(Params::get_param_or_default("--use_openmp", 0)),
+        use_threads(Params::get_param_or_default("--use_threads", 0)),
+        m(Params::get_param_or_default("--m", 100000)),
+        n(Params::get_param_or_default("--n", 5)),
+        repeat(Params::get_param_or_default("--repeat", 20)) {
+    report(state);
+  };
+
+  void report(benchmark::State& state) {
+    state.counters["Params::use_cuda"]    = use_cuda;
+    state.counters["Params::use_hip"]     = use_hip;
+    state.counters["Params::use_sycl"]    = use_sycl;
+    state.counters["Params::use_openmp"]  = use_openmp;
+    state.counters["Params::use_threads"] = use_threads;
+    state.counters["Params::m"]           = m;
+    state.counters["Params::n"]           = n;
+    state.counters["Params::repeat"]      = repeat;
+  }
+
+  const int use_cuda;
+  const int use_hip;
+  const int use_sycl;
+  const int use_openmp;
+  const int use_threads;
+  const int m;  // vector length
+  const int n;  // number of columns
+  const int repeat;
+};
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // The Level 1 BLAS perform scalar, vector and vector-vector operations;
@@ -73,24 +110,22 @@
 // "m" is used here, because code from another test was adapted for this test.
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-template <class ExecSpace>
-static void Blas1_dot_mv(benchmark::State& state) {
-  const auto m      = state.range(0);
-  const auto n      = state.range(1);
-  const auto repeat = state.range(2);
+template <class Scalar, class ExecSpace>
+static void run(benchmark::State& state, const Blas1_Params& params) {
+  state.counters[ExecSpace::name()] = 1;
+
   // Declare type aliases
-  using Scalar   = double;
   using MemSpace = typename ExecSpace::memory_space;
   using Device   = Kokkos::Device<ExecSpace, MemSpace>;
 
   Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device> x(
-      Kokkos::view_alloc(Kokkos::WithoutInitializing, "x"), m, n);
+      Kokkos::view_alloc(Kokkos::WithoutInitializing, "x"), params.m, params.n);
 
   Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device> y(
-      Kokkos::view_alloc(Kokkos::WithoutInitializing, "y"), m, n);
+      Kokkos::view_alloc(Kokkos::WithoutInitializing, "y"), params.m, params.n);
 
   Kokkos::View<Scalar*, Device> result(
-      Kokkos::view_alloc(Kokkos::WithoutInitializing, "x dot y"), n);
+      Kokkos::view_alloc(Kokkos::WithoutInitializing, "x dot y"), params.n);
 
   // Declaring variable pool w/ a seeded random number;
   // a parallel random number generator, so you
@@ -109,26 +144,78 @@ static void Blas1_dot_mv(benchmark::State& state) {
     Kokkos::fence();
     Kokkos::Timer timer;
 
-    for (int i = 0; i < repeat; i++) {
+    for (int i = 0; i < params.repeat; i++) {
       KokkosBlas::dot(result, x, y);
       ExecSpace().fence();
     }
 
     // Kokkos Timer set up
     double total = timer.seconds();
-    double avg   = total / repeat;
+    double avg   = total / params.repeat;
     // Flops calculation for a 1D matrix dot product per test run;
-    size_t flopsPerRun = (size_t)2 * m * n;
+    size_t flopsPerRun = (size_t)2 * params.m * params.n;
     state.SetIterationTime(total);
 
-    state.counters["Avg DOT time (s):"] =
-        benchmark::Counter(avg, benchmark::Counter::kDefaults);
-    state.counters["Avg DOT FLOP/s:"] =
-        benchmark::Counter(flopsPerRun / avg, benchmark::Counter::kDefaults);
+    state.counters["Avg DOT time (s):"] = avg;
+    state.counters["Avg DOT FLOP/s:"]   = flopsPerRun / avg;
   }
 }
 
-BENCHMARK(Blas1_dot_mv<Kokkos::DefaultExecutionSpace>)
-    ->ArgNames({"m", "n", "repeat"})
-    ->Args({100000, 5, 20})
-    ->UseManualTime();
+template <class Scalar>
+static void Blas1_dot_mv(benchmark::State& state) {
+  Blas1_Params params(state);
+
+  if (params.use_threads != 0) {
+#if defined(KOKKOS_ENABLE_THREADS)
+    run<Kokkos::Threads>(state, params);
+    return;
+#else
+    state.SkipWithError(" PThreads requested, but not available.");
+#endif
+  }
+
+  if (params.use_openmp != 0) {
+#if defined(KOKKOS_ENABLE_OPENMP)
+    run<double, Kokkos::OpenMP>(state, params);
+    return;
+#else
+    state.SkipWithError("OpenMP requested, but not available.");
+#endif
+  }
+
+  if (params.use_cuda != 0) {
+#if defined(KOKKOS_ENABLE_CUDA)
+    run<double, Kokkos::Cuda>(state, params);
+    return;
+#else
+    state.SkipWithError("CUDA requested, but not available.");
+#endif
+  }
+  if (params.use_hip != 0) {
+#if defined(KOKKOS_ENABLE_HIP)
+    run<double, Kokkos::Experimental::HIP>(state, params);
+    return;
+#else
+    state.SkipWithError("HIP requested, but not available.");
+#endif
+  }
+  if (params.use_sycl != 0) {
+#if defined(KOKKOS_ENABLE_SYCL)
+    run<double, Kokkos::Experimental::SYCL>(state, params);
+    return;
+#else
+    state.SkipWithError("SYCL requested, but not available.");
+#endif
+  }
+  if (!params.use_threads && !params.use_openmp && !params.use_cuda &&
+      !params.use_hip && !params.use_sycl) {
+#if defined(KOKKOS_ENABLE_SERIAL)
+    run<double, Kokkos::Serial>(state, params);
+    return;
+#else
+    state.SkipWithError("Serial device requested, but not available.");
+#endif
+  }
+}
+
+BENCHMARK(Blas1_dot_mv<double>)->UseManualTime();
