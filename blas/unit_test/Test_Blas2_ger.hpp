@@ -31,8 +31,9 @@ public:
 
   ~GerTester();
 
-  void test( const int M
-           , const int N
+  void test( const int  M
+           , const int  N
+           , const int  nonConstConstCombinations
            , const bool useAnalyticalResults = false
            , const bool useHermitianOption   = false
            );
@@ -49,6 +50,17 @@ private:
 
   typedef Kokkos::ArithTraits<ScalarA> _KAT_A;
   typedef typename _KAT_A::mag_type    _AuxType;
+
+  void populateVariables( ScalarA           & alpha
+                        , _HostViewTypeX    & h_x
+                        , _HostViewTypeY    & h_y
+                        , _HostViewTypeA    & h_A
+                        , _ViewTypeExpected & h_expected
+                        , _ViewTypeX        & x
+                        , _ViewTypeY        & y
+                        , _ViewTypeA        & A
+                        , bool              & expectedResultIsKnown
+                        );
 
   template <class T>
   typename std::enable_if< std::is_same<T,Kokkos::complex<float>>::value || std::is_same<T,Kokkos::complex<double>>::value
@@ -150,11 +162,11 @@ private:
   const bool     _vanillaUsesDifferentOrderOfOps;
   const _AuxType _epsAbs;
   const _AuxType _epsRel;
-  bool           _kkGerShouldThrowException;
   int            _M;
   int            _N;
   bool           _useAnalyticalResults;
   bool           _useHermitianOption;
+  bool           _kkGerShouldThrowException;
 };
 
 template <class ScalarX, class tLayoutX, class ScalarY, class tLayoutY, class ScalarA, class tLayoutA, class Device>
@@ -177,11 +189,11 @@ GerTester< ScalarX
 #endif
   , _epsAbs                        (std::is_same<_AuxType, float>::value ? 1.0e-6 : 1.0e-9)
   , _epsRel                        (std::is_same<_AuxType, float>::value ? 5.0e-3 : 1.0e-6)
-  , _kkGerShouldThrowException     (false)
   , _M                             (-1) 
   , _N                             (-1)
   , _useAnalyticalResults          (false)
   , _useHermitianOption            (false)
+  , _kkGerShouldThrowException     (false)
 {
 }
 
@@ -195,6 +207,7 @@ GerTester< ScalarX
          , Device
          >::~GerTester()
 {
+  // Nothing to do
 }
 
 template <class ScalarX, class tLayoutX, class ScalarY, class tLayoutY, class ScalarA, class tLayoutA, class Device>
@@ -207,6 +220,7 @@ void GerTester< ScalarX
               , Device
               >::test( const int  M
                      , const int  N
+                     , const int  nonConstConstCombinations
                      , const bool useAnalyticalResults
                      , const bool useHermitianOption
                      )
@@ -244,6 +258,29 @@ void GerTester< ScalarX
   }
 #endif
 
+  bool test_x_y  (false);
+  bool test_cx_y (false);
+  bool test_x_cy (false);
+  bool test_cx_cy(false);
+  if (nonConstConstCombinations == 0) {
+    test_x_y = true;
+  }
+  else if (nonConstConstCombinations == 1) {
+    test_cx_y = true;
+  }
+  else if (nonConstConstCombinations == 2) {
+    test_x_cy = true;
+  }
+  else if (nonConstConstCombinations == 3) {
+    test_cx_cy = true;
+  }
+  else {
+    test_x_y   = true;
+    test_cx_y  = true;
+    test_x_cy  = true;
+    test_cx_cy = true;
+  }
+
   _ViewTypeX x("X", _M);
   _ViewTypeY y("Y", _N);
   _ViewTypeA A("A", _M, _N);
@@ -263,6 +300,143 @@ void GerTester< ScalarX
   // ********************************************************************
   // Step 2 of 9: populate alpha, h_x, h_y, h_A, h_expected, x, y, A
   // ********************************************************************
+  this->populateVariables( alpha
+                         , h_x
+                         , h_y
+                         , h_A
+                         , h_expected
+                         , x
+                         , y
+                         , A
+                         , expectedResultIsKnown
+                         );
+
+  // ********************************************************************
+  // Step 3 of 9: populate h_vanilla
+  // ********************************************************************
+  _ViewTypeExpected h_vanilla("vanilla = A + alpha * x * y^{t,h}", _M, _N);
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "In Test_Blas2_ger.hpp, computing vanilla A with alpha type = %s\n", typeid(alpha).name() );
+  this->populateVanillaValues( alpha
+                             , h_x
+                             , h_y
+                             , h_A
+                             , h_vanilla
+                             );
+  
+  // ********************************************************************
+  // Step 4 of 9: use h_vanilla and h_expected as appropriate
+  // ********************************************************************
+  if (expectedResultIsKnown) {
+    // ******************************************************************
+    // Compare h_vanilla against h_expected
+    // ******************************************************************
+    this->compareVanillaExpected( alpha
+                                , h_vanilla
+                                , h_expected
+                                );
+  }
+  else {
+    // ******************************************************************
+    // Copy h_vanilla to h_expected
+    // ******************************************************************
+    Kokkos::deep_copy(h_expected, h_vanilla);
+  }
+  
+  // ********************************************************************
+  // Step 5 of 9: test with 'non const x' and 'non const y'
+  // ********************************************************************
+  _ViewTypeA org_A("Org_A", _M, _N);
+  Kokkos::deep_copy(org_A, A);
+
+  if (test_x_y) {
+    this->callKkGerAndCompareAgainstExpected( alpha
+                                            , x
+                                            , y
+                                            , A
+                                            , h_A
+                                            , h_expected
+                                            , "non const {x,y}"
+                                            );
+  }
+
+  // ********************************************************************
+  // Step 6 of 9: test with const x
+  // ********************************************************************
+  if (test_cx_y) {
+    Kokkos::deep_copy(A, org_A);
+  
+    this->callKkGerAndCompareAgainstExpected( alpha
+                                            , c_x
+                                            , y
+                                            , A
+                                            , h_A
+                                            , h_expected
+                                            , "const x"
+                                            );
+  }
+
+  // ********************************************************************
+  // Step 7 of 9: test with const y
+  // ********************************************************************
+  if (test_x_cy) {
+    Kokkos::deep_copy(A, org_A);
+  
+    this->callKkGerAndCompareAgainstExpected( alpha
+                                            , x
+                                            , c_y
+                                            , A
+                                            , h_A
+                                            , h_expected
+                                            , "const y"
+                                            );
+  }
+
+  // ********************************************************************
+  // Step 8 of 9: test with const x and const y
+  // ********************************************************************
+  if (test_cx_cy) {
+    Kokkos::deep_copy(A, org_A);
+  
+    this->callKkGerAndCompareAgainstExpected( alpha
+                                            , c_x
+                                            , c_y
+                                            , A
+                                            , h_A
+                                            , h_expected
+                                            , "const {x,y}"
+                                            );
+  }
+
+  // ********************************************************************
+  // Step 9 of 9: tests with invalid values on the first input parameter
+  // ********************************************************************
+  EXPECT_ANY_THROW( KokkosBlas::ger(".", alpha, x, y, A) ) << "Failed test: kk ger should have thrown an exception for mode '.'";
+  EXPECT_ANY_THROW( KokkosBlas::ger("", alpha, x, y, A) ) << "Failed test: kk ger should have thrown an exception for mode ''";
+
+  std::cout << "Leaving GerTester::test() - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - " << std::endl;
+}
+
+template <class ScalarX, class tLayoutX, class ScalarY, class tLayoutY, class ScalarA, class tLayoutA, class Device>
+void GerTester< ScalarX
+              , tLayoutX
+              , ScalarY
+              , tLayoutY
+              , ScalarA
+              , tLayoutA
+              , Device
+              >::populateVariables( ScalarA           & alpha
+                                  , _HostViewTypeX    & h_x
+                                  , _HostViewTypeY    & h_y
+                                  , _HostViewTypeA    & h_A
+                                  , _ViewTypeExpected & h_expected
+                                  , _ViewTypeX        & x
+                                  , _ViewTypeY        & y
+                                  , _ViewTypeA        & A
+                                  , bool              & expectedResultIsKnown
+                                  )
+{
+  expectedResultIsKnown = false;
+
   if (_useAnalyticalResults) {
     this->populateAnalyticalValues( alpha
                                   , h_x
@@ -362,102 +536,6 @@ void GerTester< ScalarX
     Kokkos::deep_copy(h_y, y);
     Kokkos::deep_copy(h_A, A);
   }
-
-  // ********************************************************************
-  // Step 3 of 9: populate h_vanilla
-  // ********************************************************************
-  _ViewTypeExpected h_vanilla("vanilla = A + alpha * x * y^{t,h}", _M, _N);
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "In Test_Blas2_ger.hpp, computing vanilla A with alpha type = %s\n", typeid(alpha).name() );
-  this->populateVanillaValues( alpha
-                             , h_x
-                             , h_y
-                             , h_A
-                             , h_vanilla
-                             );
-  
-  // ********************************************************************
-  // Step 4 of 9: use h_vanilla and h_expected as appropriate
-  // ********************************************************************
-  if (expectedResultIsKnown) {
-    // ******************************************************************
-    // Compare h_vanilla against h_expected
-    // ******************************************************************
-    this->compareVanillaExpected( alpha
-                                , h_vanilla
-                                , h_expected
-                                );
-  }
-  else {
-    // ******************************************************************
-    // Copy h_vanilla to h_expected
-    // ******************************************************************
-    Kokkos::deep_copy(h_expected, h_vanilla);
-  }
-  
-  // ********************************************************************
-  // Step 5 of 9: test with 'non const x' and 'non const y'
-  // ********************************************************************
-  _ViewTypeA org_A("Org_A", _M, _N);
-  Kokkos::deep_copy(org_A, A);
-
-  this->callKkGerAndCompareAgainstExpected( alpha
-                                          , x
-                                          , y
-                                          , A
-                                          , h_A
-                                          , h_expected
-                                          , "non const {x,y}"
-                                          );
-
-  // ********************************************************************
-  // Step 6 of 9: test with const x
-  // ********************************************************************
-  Kokkos::deep_copy(A, org_A);
-  
-  this->callKkGerAndCompareAgainstExpected( alpha
-                                          , c_x
-                                          , y
-                                          , A
-                                          , h_A
-                                          , h_expected
-                                          , "const x"
-                                          );
-
-  // ********************************************************************
-  // Step 7 of 9: test with const y
-  // ********************************************************************
-  Kokkos::deep_copy(A, org_A);
-  
-  this->callKkGerAndCompareAgainstExpected( alpha
-                                          , x
-                                          , c_y
-                                          , A
-                                          , h_A
-                                          , h_expected
-                                          , "const y"
-                                          );
-
-  // ********************************************************************
-  // Step 8 of 9: test with const x and const y
-  // ********************************************************************
-  Kokkos::deep_copy(A, org_A);
-  
-  this->callKkGerAndCompareAgainstExpected( alpha
-                                          , c_x
-                                          , c_y
-                                          , A
-                                          , h_A
-                                          , h_expected
-                                          , "const {x,y}"
-                                          );
-
-  // ********************************************************************
-  // Step 9 of 9: tests with invalid values on the first input parameter
-  // ********************************************************************
-  EXPECT_ANY_THROW( KokkosBlas::ger(".", alpha, x, y, A) ) << "Failed test: kk ger should have thrown an exception for mode '.'";
-  EXPECT_ANY_THROW( KokkosBlas::ger("", alpha, x, y, A) ) << "Failed test: kk ger should have thrown an exception for mode ''";
-
-  std::cout << "Leaving GerTester::test() - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - " << std::endl;
 }
 
 // Code for complex values
@@ -1382,20 +1460,20 @@ int test_ger( const std::string & caseName ) {
 
   if (true) {
     Test::GerTester<ScalarX, Kokkos::LayoutLeft, ScalarY, Kokkos::LayoutLeft, ScalarA, Kokkos::LayoutLeft, Device> tester;
-    tester.test( 13, 13 );
-    tester.test(1024, 0);
-    tester.test(1, 1);
-    tester.test(2, 2);
-    tester.test(1, 2);
-    tester.test(13, 13);
-    tester.test(13, 1024);
-    tester.test(13, 1024, true, false);
-    tester.test(13, 1024, true, true);
-    tester.test(50, 40);
-    tester.test(1024, 1024);
-    tester.test(2131, 2131);
-    tester.test(2131, 2131, true, false);
-    tester.test(2131, 2131, true, true);
+    tester.test(0, 13, 0);
+    tester.test(1024, 0, 0);
+    tester.test(1, 1, 0);
+    tester.test(2, 2, 0);
+    tester.test(1, 2, 0);
+    tester.test(13, 13, 0);
+    tester.test(13, 1024, 0);
+    tester.test(13, 1024, 0 , true, false);
+    tester.test(13, 1024, 0 , true, true);
+    tester.test(50, 40, 4 );
+    tester.test(1024, 1024, 0);
+    tester.test(2131, 2131, 0);
+    tester.test(2131, 2131, 0 , true, false);
+    tester.test(2131, 2131, 0 , true, true);
   }
 
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Finished %s for LAYOUTLEFT\n", caseName.c_str() );
@@ -1409,20 +1487,20 @@ int test_ger( const std::string & caseName ) {
 
   if (true) {
     Test::GerTester<ScalarX, Kokkos::LayoutRight, ScalarY, Kokkos::LayoutRight, ScalarA, Kokkos::LayoutRight, Device> tester;
-    tester.test( 13, 13 );
-    tester.test(1024, 0);
-    tester.test(1, 1);
-    tester.test(2, 2);
-    tester.test(1, 2);
-    tester.test(13, 13);
-    tester.test(13, 1024);
-    tester.test(13, 1024, true, false);
-    tester.test(13, 1024, true, true);
-    tester.test(50, 40);
-    tester.test(1024, 1024);
-    tester.test(2131, 2131);
-    tester.test(2131, 2131, true, false);
-    tester.test(2131, 2131, true, true);
+    tester.test(0, 13, 0);
+    tester.test(1024, 0, 0);
+    tester.test(1, 1, 0);
+    tester.test(2, 2, 0);
+    tester.test(1, 2, 0);
+    tester.test(13, 13, 0);
+    tester.test(13, 1024, 0);
+    tester.test(13, 1024, 0, true, false);
+    tester.test(13, 1024, 0, true, true);
+    tester.test(50, 40, 4);
+    tester.test(1024, 1024, 0);
+    tester.test(2131, 2131, 0);
+    tester.test(2131, 2131, 0, true, false);
+    tester.test(2131, 2131, 0, true, true);
   }
 
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Finished %s for LAYOUTRIGHT\n", caseName.c_str() );
@@ -1436,17 +1514,17 @@ int test_ger( const std::string & caseName ) {
 
   if (true) {
     Test::GerTester<ScalarX, Kokkos::LayoutStride, ScalarY, Kokkos::LayoutStride, ScalarA, Kokkos::LayoutStride, Device> tester;
-    tester.test( 13, 13 );
-    tester.test(1024, 0);
-    tester.test(13, 13);
-    tester.test(13, 1024);
-    tester.test(13, 1024, true, false);
-    tester.test(13, 1024, true, true);
-    tester.test(50, 40);
-    tester.test(1024, 1024);
-    tester.test(2131, 2131);
-    tester.test(2131, 2131, true, false);
-    tester.test(2131, 2131, true, true);
+    tester.test(0, 13, 0 );
+    tester.test(1024, 0, 0);
+    tester.test(13, 13, 0);
+    tester.test(13, 1024, 0);
+    tester.test(13, 1024, 0, true, false);
+    tester.test(13, 1024, 0, true, true);
+    tester.test(50, 40, 4);
+    tester.test(1024, 1024, 0);
+    tester.test(2131, 2131, 0);
+    tester.test(2131, 2131, 0, true, false);
+    tester.test(2131, 2131, 0, true, true);
   }
 
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Finished %s for LAYOUTSTRIDE\n", caseName.c_str() );
@@ -1459,14 +1537,14 @@ int test_ger( const std::string & caseName ) {
 
   if (true) {
     Test::GerTester<ScalarX, Kokkos::LayoutStride, ScalarY, Kokkos::LayoutLeft, ScalarA, Kokkos::LayoutRight, Device> tester;
-    tester.test(1024, 1024);
-    tester.test(1024, 1024, true, false);
-    tester.test(1024, 1024, true, true);
+    tester.test(1024, 1024, 0);
+    tester.test(1024, 1024, 0, true, false);
+    tester.test(1024, 1024, 0, true, true);
   }
 
   if (true) {
     Test::GerTester<ScalarX, Kokkos::LayoutLeft, ScalarY, Kokkos::LayoutStride, ScalarA, Kokkos::LayoutRight, Device> tester;
-    tester.test(1024, 1024);
+    tester.test(1024, 1024, 0);
   }
   
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Finished %s for MIXED LAYOUTS\n", caseName.c_str() );
