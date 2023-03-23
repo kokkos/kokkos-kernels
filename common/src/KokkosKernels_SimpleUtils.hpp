@@ -406,10 +406,15 @@ struct ViewHashFunctor {
 template <typename View>
 uint32_t hashView(const View &v) {
   assert(v.span_is_contiguous());
+  // Note: This type trait is supposed to be part of C++17,
+  // but it's not defined on Intel 19 (with GCC 7.2.0 standard library).
+  // So just check if it's available before using.
+#ifdef __cpp_lib_has_unique_object_representations
   static_assert(std::has_unique_object_representations<
                     typename View::non_const_value_type>::value,
                 "KokkosKernels::Impl::hashView: the view's element type must "
                 "not have any padding bytes.");
+#endif
   size_t nbytes = v.span() * sizeof(typename View::value_type);
   uint32_t h;
   Kokkos::parallel_reduce(
