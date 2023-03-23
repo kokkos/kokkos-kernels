@@ -33,7 +33,7 @@ namespace KokkosKernelsBenchmark {
 
 /// \brief Remove unwanted spaces and colon signs from input string. In case of
 /// invalid input it will return an empty string.
-std::string remove_unwanted_characters(std::string str) {
+inline std::string remove_unwanted_characters(std::string str) {
   auto from = str.find_first_not_of(" :");
   auto to   = str.find_last_not_of(" :");
 
@@ -47,7 +47,7 @@ std::string remove_unwanted_characters(std::string str) {
 
 /// \brief Extract all key:value pairs from kokkos configuration and add it to
 /// the benchmark context
-void add_kokkos_configuration(bool verbose) {
+inline void add_kokkos_configuration(bool verbose) {
   std::ostringstream msg;
   Kokkos::print_configuration(msg, verbose);
   KokkosKernels::print_configuration(msg);
@@ -67,28 +67,32 @@ void add_kokkos_configuration(bool verbose) {
   }
 }
 
-inline void add_git_info() {
-  if (!KokkosKernels::Impl::GIT_BRANCH.empty()) {
-    benchmark::AddCustomContext("GIT_BRANCH",
-                                std::string(KokkosKernels::Impl::GIT_BRANCH));
-    benchmark::AddCustomContext(
-        "GIT_COMMIT_HASH", std::string(KokkosKernels::Impl::GIT_COMMIT_HASH));
-    benchmark::AddCustomContext(
-        "GIT_CLEAN_STATUS", std::string(KokkosKernels::Impl::GIT_CLEAN_STATUS));
-    benchmark::AddCustomContext(
-        "GIT_COMMIT_DESCRIPTION",
-        std::string(KokkosKernels::Impl::GIT_COMMIT_DESCRIPTION));
-    benchmark::AddCustomContext(
-        "GIT_COMMIT_DATE", std::string(KokkosKernels::Impl::GIT_COMMIT_DATE));
+/// \brief Add Kokkos Kernels git info and google benchmark release to
+/// benchmark context.
+inline void add_version_info() {
+  using namespace KokkosKernels::Impl;
+
+  if (!GIT_BRANCH.empty()) {
+    benchmark::AddCustomContext("GIT_BRANCH", std::string(GIT_BRANCH));
+    benchmark::AddCustomContext("GIT_COMMIT_HASH",
+                                std::string(GIT_COMMIT_HASH));
+    benchmark::AddCustomContext("GIT_CLEAN_STATUS",
+                                std::string(GIT_CLEAN_STATUS));
+    benchmark::AddCustomContext("GIT_COMMIT_DESCRIPTION",
+                                std::string(GIT_COMMIT_DESCRIPTION));
+    benchmark::AddCustomContext("GIT_COMMIT_DATE",
+                                std::string(GIT_COMMIT_DATE));
+  }
+  if (!BENCHMARK_VERSION.empty()) {
+    benchmark::AddCustomContext("GOOGLE_BENCHMARK_VERSION",
+                                std::string(BENCHMARK_VERSION));
   }
 }
 
-/// \brief Gather all context information and add it to benchmark context data
-void add_benchmark_context(bool verbose = false) {
-  // Add Kokkos configuration to benchmark context data
+/// \brief Gather all context information and add it to benchmark context
+inline void add_benchmark_context(bool verbose = false) {
   add_kokkos_configuration(verbose);
-
-  add_git_info();
+  add_version_info();
 }
 
 }  // namespace KokkosKernelsBenchmark
