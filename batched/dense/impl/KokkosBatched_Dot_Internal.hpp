@@ -19,6 +19,7 @@
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "KokkosBatched_Util.hpp"
+#include "KokkosBlas1_team_dot.hpp"
 
 namespace KokkosBatched {
 
@@ -162,6 +163,7 @@ struct TeamVectorDotInternal {
 ///
 /// Serial Impl
 /// ===========
+
 template <>
 struct SerialDot<Trans::Transpose> {
   template <typename XViewType, typename YViewType, typename NormViewType>
@@ -256,6 +258,7 @@ struct SerialDot<Trans::NoTranspose> {
 ///
 /// Team Impl
 /// ===============
+
 template <typename MemberType>
 struct TeamDot<MemberType, Trans::Transpose> {
   template <typename XViewType, typename YViewType, typename NormViewType>
@@ -295,6 +298,14 @@ struct TeamDot<MemberType, Trans::Transpose> {
       return 1;
     }
 #endif
+
+    if (X.extent(1) == 1) {
+      dot(0) = KokkosBlas::Experimental::dot(
+          member, Kokkos::subview(X, Kokkos::ALL, 0),
+          Kokkos::subview(Y, Kokkos::ALL, 0));
+      return 0;
+    }
+
     return TeamDotInternal::template invoke<
         MemberType, typename XViewType::non_const_value_type,
         typename NormViewType::non_const_value_type>(
@@ -341,6 +352,14 @@ struct TeamDot<MemberType, Trans::NoTranspose> {
       return 1;
     }
 #endif
+
+    if (X.extent(0) == 1) {
+      dot(0) = KokkosBlas::Experimental::dot(
+          member, Kokkos::subview(X, 0, Kokkos::ALL),
+          Kokkos::subview(Y, 0, Kokkos::ALL));
+      return 0;
+    }
+
     return TeamDotInternal::template invoke<
         MemberType, typename XViewType::non_const_value_type,
         typename NormViewType::non_const_value_type>(
@@ -352,6 +371,7 @@ struct TeamDot<MemberType, Trans::NoTranspose> {
 ///
 /// TeamVector Impl
 /// ===============
+
 template <typename MemberType>
 struct TeamVectorDot<MemberType, Trans::Transpose> {
   template <typename XViewType, typename YViewType, typename NormViewType>
@@ -391,6 +411,14 @@ struct TeamVectorDot<MemberType, Trans::Transpose> {
       return 1;
     }
 #endif
+
+    if (X.extent(1) == 1) {
+      dot(0) = KokkosBlas::Experimental::dot(
+          member, Kokkos::subview(X, Kokkos::ALL, 0),
+          Kokkos::subview(Y, Kokkos::ALL, 0));
+      return 0;
+    }
+
     return TeamVectorDotInternal::template invoke<
         MemberType, typename XViewType::non_const_value_type,
         typename NormViewType::non_const_value_type>(
@@ -437,6 +465,14 @@ struct TeamVectorDot<MemberType, Trans::NoTranspose> {
       return 1;
     }
 #endif
+
+    if (X.extent(0) == 1) {
+      dot(0) = KokkosBlas::Experimental::dot(
+          member, Kokkos::subview(X, 0, Kokkos::ALL),
+          Kokkos::subview(Y, 0, Kokkos::ALL));
+      return 0;
+    }
+
     return TeamVectorDotInternal::template invoke<
         MemberType, typename XViewType::non_const_value_type,
         typename NormViewType::non_const_value_type>(
