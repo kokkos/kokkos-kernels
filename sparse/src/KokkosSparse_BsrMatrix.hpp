@@ -156,12 +156,12 @@ struct BsrRowView {
   }
 
   /// \brief Return offset into colidx_ for the requested block idx
-  ///        If none found, return Kokkos::Details::ArithTraits::max
+  ///        If none found, return Kokkos::ArithTraits::max
   /// \param idx_to_match [in] local block idx within block-row
   KOKKOS_INLINE_FUNCTION
   ordinal_type findRelBlockOffset(const ordinal_type idx_to_match,
                                   bool /*is_sorted*/ = false) const {
-    ordinal_type offset = Kokkos::Details::ArithTraits<ordinal_type>::max();
+    ordinal_type offset = Kokkos::ArithTraits<ordinal_type>::max();
     for (ordinal_type blk_offset = 0; blk_offset < length; ++blk_offset) {
       ordinal_type idx = colidx_[blk_offset];
       if (idx == idx_to_match) {
@@ -292,14 +292,14 @@ struct BsrRowViewConst {
   }
 
   /// \brief Return offset into colidx_ for the requested block idx
-  ///        If none found, return Kokkos::Details::ArithTraits::max
+  ///        If none found, return Kokkos::ArithTraits::max
   /// \param idx_to_match [in] local block idx within block-row
   KOKKOS_INLINE_FUNCTION
   ordinal_type findRelBlockOffset(const ordinal_type& idx_to_match,
                                   bool /*is_sorted*/ = false) const {
     typedef typename std::remove_cv<ordinal_type>::type non_const_ordinal_type;
     non_const_ordinal_type offset =
-        Kokkos::Details::ArithTraits<non_const_ordinal_type>::max();
+        Kokkos::ArithTraits<non_const_ordinal_type>::max();
     for (non_const_ordinal_type blk_offset = 0; blk_offset < length;
          ++blk_offset) {
       ordinal_type idx = colidx_[blk_offset];
@@ -979,7 +979,7 @@ class BsrMatrix {
       // + 1] (not global offset) colidx_ and values_ are already offset to the
       // beginning of blockrow rowi
       auto blk_offset = row_view.findRelBlockOffset(cols[i], is_sorted);
-      if (blk_offset != Kokkos::Details::ArithTraits<ordinal_type>::max()) {
+      if (blk_offset != Kokkos::ArithTraits<ordinal_type>::max()) {
         ordinal_type offset_into_vals =
             i * block_size *
             block_size;  // stride == 1 assumed between elements

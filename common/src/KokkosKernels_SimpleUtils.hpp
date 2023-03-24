@@ -22,7 +22,7 @@
 #define KOKKOSKERNELS_MACRO_MIN(x, y) ((x) < (y) ? (x) : (y))
 #define KOKKOSKERNELS_MACRO_MAX(x, y) ((x) < (y) ? (y) : (x))
 #define KOKKOSKERNELS_MACRO_ABS(x) \
-  Kokkos::Details::ArithTraits<typename std::decay<decltype(x)>::type>::abs(x)
+  Kokkos::ArithTraits<typename std::decay<decltype(x)>::type>::abs(x)
 
 namespace KokkosKernels {
 
@@ -38,7 +38,7 @@ class SquareRootFunctor {
 
   KOKKOS_INLINE_FUNCTION void operator()(const size_type i) const {
     typedef typename ViewType::value_type value_type;
-    theView_(i) = Kokkos::Details::ArithTraits<value_type>::sqrt(theView_(i));
+    theView_(i) = Kokkos::ArithTraits<value_type>::sqrt(theView_(i));
   }
 
  private:
@@ -219,7 +219,7 @@ inline void kk_reduce_view2(size_t num_elements, view_t arr,
 }
 
 template <typename view_type1, typename view_type2,
-          typename eps_type = typename Kokkos::Details::ArithTraits<
+          typename eps_type = typename Kokkos::ArithTraits<
               typename view_type2::non_const_value_type>::mag_type>
 struct IsIdenticalFunctor {
   view_type1 view1;
@@ -232,7 +232,7 @@ struct IsIdenticalFunctor {
   KOKKOS_INLINE_FUNCTION
   void operator()(const size_t &i, size_t &is_equal) const {
     typedef typename view_type2::non_const_value_type val_type;
-    typedef Kokkos::Details::ArithTraits<val_type> KAT;
+    typedef Kokkos::ArithTraits<val_type> KAT;
     typedef typename KAT::mag_type mag_type;
     const mag_type val_diff = KAT::abs(view1(i) - view2(i));
 
@@ -266,7 +266,7 @@ bool kk_is_identical_view(view_type1 view1, view_type2 view2, eps_type eps) {
 }
 
 template <typename view_type1, typename view_type2,
-          typename eps_type = typename Kokkos::Details::ArithTraits<
+          typename eps_type = typename Kokkos::ArithTraits<
               typename view_type2::non_const_value_type>::mag_type>
 struct IsRelativelyIdenticalFunctor {
   view_type1 view1;

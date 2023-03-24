@@ -225,8 +225,8 @@ struct Axpby<typename XMV::non_const_value_type, XMV,
   typedef typename XMV::non_const_value_type AV;
   typedef typename YMV::non_const_value_type BV;
   typedef typename YMV::size_type size_type;
-  typedef Kokkos::Details::ArithTraits<typename XMV::non_const_value_type> ATA;
-  typedef Kokkos::Details::ArithTraits<typename YMV::non_const_value_type> ATB;
+  typedef Kokkos::ArithTraits<typename XMV::non_const_value_type> ATA;
+  typedef Kokkos::ArithTraits<typename YMV::non_const_value_type> ATB;
 
   static void axpby(const AV& alpha, const XMV& X, const BV& beta,
                     const YMV& Y) {
@@ -327,8 +327,8 @@ struct Axpby<typename XV::non_const_value_type, XV,
   typedef typename XV::non_const_value_type AV;
   typedef typename YV::non_const_value_type BV;
   typedef typename YV::size_type size_type;
-  typedef Kokkos::Details::ArithTraits<typename XV::non_const_value_type> ATA;
-  typedef Kokkos::Details::ArithTraits<typename YV::non_const_value_type> ATB;
+  typedef Kokkos::ArithTraits<typename XV::non_const_value_type> ATA;
+  typedef Kokkos::ArithTraits<typename YV::non_const_value_type> ATB;
 
   static void axpby(const AV& alpha, const XV& X, const BV& beta, const YV& Y) {
     static_assert(Kokkos::is_view<XV>::value,

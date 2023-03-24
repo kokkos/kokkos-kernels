@@ -215,11 +215,11 @@ struct SerialSpmv<Trans::NoTranspose> {
   template <typename ValuesViewType, typename IntView, typename xViewType,
             typename yViewType, int dobeta>
   KOKKOS_INLINE_FUNCTION static int invoke(
-      const typename Kokkos::Details::ArithTraits<
+      const typename Kokkos::ArithTraits<
           typename ValuesViewType::non_const_value_type>::mag_type& alpha,
       const ValuesViewType& values, const IntView& row_ptr,
       const IntView& colIndices, const xViewType& X,
-      const typename Kokkos::Details::ArithTraits<
+      const typename Kokkos::ArithTraits<
           typename ValuesViewType::non_const_value_type>::mag_type& beta,
       const yViewType& Y) {
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
@@ -277,7 +277,7 @@ struct SerialSpmv<Trans::NoTranspose> {
 #endif
 
     return SerialSpmvInternal::template invoke<
-        typename Kokkos::Details::ArithTraits<
+        typename Kokkos::ArithTraits<
             typename ValuesViewType::non_const_value_type>::mag_type,
         typename ValuesViewType::non_const_value_type,
         typename IntView::non_const_value_type,

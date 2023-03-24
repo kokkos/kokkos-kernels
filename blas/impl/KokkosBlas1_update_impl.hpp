@@ -45,7 +45,7 @@ template <class XMV, class YMV, class ZMV, int scalar_x, int scalar_y,
 struct MV_Update_Functor {
   typedef typename ZMV::execution_space execution_space;
   typedef SizeType size_type;
-  typedef Kokkos::Details::ArithTraits<typename ZMV::non_const_value_type> ATS;
+  typedef Kokkos::ArithTraits<typename ZMV::non_const_value_type> ATS;
 
   const size_type numCols;
   const typename XMV::non_const_value_type alpha_;
@@ -215,7 +215,7 @@ template <class XV, class YV, class ZV, int scalar_x, int scalar_y,
 struct V_Update_Functor {
   typedef typename ZV::execution_space execution_space;
   typedef SizeType size_type;
-  typedef Kokkos::Details::ArithTraits<typename ZV::non_const_value_type> ATS;
+  typedef Kokkos::ArithTraits<typename ZV::non_const_value_type> ATS;
 
   const size_type numCols;
   const typename XV::non_const_value_type alpha_;

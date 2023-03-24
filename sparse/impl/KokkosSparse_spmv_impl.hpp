@@ -58,7 +58,7 @@ struct SPMV_Transpose_Functor {
   typedef typename AMatrix::non_const_value_type value_type;
   typedef typename Kokkos::TeamPolicy<execution_space> team_policy;
   typedef typename team_policy::member_type team_member;
-  typedef Kokkos::Details::ArithTraits<value_type> ATV;
+  typedef Kokkos::ArithTraits<value_type> ATV;
   typedef typename YVector::non_const_value_type coefficient_type;
   typedef typename YVector::non_const_value_type y_value_type;
 
@@ -118,7 +118,7 @@ struct SPMV_Functor {
   typedef typename AMatrix::non_const_value_type value_type;
   typedef typename Kokkos::TeamPolicy<execution_space> team_policy;
   typedef typename team_policy::member_type team_member;
-  typedef Kokkos::Details::ArithTraits<value_type> ATV;
+  typedef Kokkos::ArithTraits<value_type> ATV;
 
   const value_type alpha;
   AMatrix m_A;
@@ -515,7 +515,7 @@ static void spmv_beta_transpose(typename YVector::const_value_type& alpha,
     if (execution_space().concurrency() == 1) {
       /// serial impl
       typedef typename AMatrix::non_const_value_type value_type;
-      typedef Kokkos::Details::ArithTraits<value_type> ATV;
+      typedef Kokkos::ArithTraits<value_type> ATV;
       const size_type* KOKKOS_RESTRICT row_map_ptr    = A.graph.row_map.data();
       const ordinal_type* KOKKOS_RESTRICT col_idx_ptr = A.graph.entries.data();
       const value_type* KOKKOS_RESTRICT values_ptr    = A.values.data();
@@ -701,8 +701,7 @@ struct SPMV_MV_Transpose_Functor {
 
     for (ordinal_type iEntry = 0; iEntry < row_length; iEntry++) {
       const A_value_type val =
-          conjugate ? Kokkos::Details::ArithTraits<A_value_type>::conj(
-                          row.value(iEntry))
+          conjugate ? Kokkos::ArithTraits<A_value_type>::conj(row.value(iEntry))
                     : row.value(iEntry);
       const ordinal_type ind = row.colidx(iEntry);
 
@@ -744,10 +743,9 @@ struct SPMV_MV_Transpose_Functor {
               Kokkos::ThreadVectorRange(dev, row_length),
               [&](ordinal_type iEntry) {
                 const A_value_type val =
-                    conjugate
-                        ? Kokkos::Details::ArithTraits<A_value_type>::conj(
-                              row.value(iEntry))
-                        : row.value(iEntry);
+                    conjugate ? Kokkos::ArithTraits<A_value_type>::conj(
+                                    row.value(iEntry))
+                              : row.value(iEntry);
                 const ordinal_type ind = row.colidx(iEntry);
 
                 if (doalpha != 1) {
@@ -821,7 +819,7 @@ struct SPMV_MV_LayoutLeft_Functor {
 #pragma unroll
 #endif
     for (int k = 0; k < UNROLL; ++k) {
-      sum[k] = Kokkos::Details::ArithTraits<y_value_type>::zero();
+      sum[k] = Kokkos::ArithTraits<y_value_type>::zero();
     }
 
     const auto row = m_A.rowConst(iRow);
@@ -834,9 +832,9 @@ struct SPMV_MV_LayoutLeft_Functor {
     Kokkos::parallel_for(
         Kokkos::ThreadVectorRange(dev, row.length), [&](ordinal_type iEntry) {
           const A_value_type val =
-              conjugate ? Kokkos::Details::ArithTraits<A_value_type>::conj(
-                              row.value(iEntry))
-                        : row.value(iEntry);
+              conjugate
+                  ? Kokkos::ArithTraits<A_value_type>::conj(row.value(iEntry))
+                  : row.value(iEntry);
           const ordinal_type ind = row.colidx(iEntry);
 #ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
@@ -911,7 +909,7 @@ struct SPMV_MV_LayoutLeft_Functor {
 #pragma unroll
 #endif
     for (int k = 0; k < UNROLL; ++k) {
-      sum[k] = Kokkos::Details::ArithTraits<y_value_type>::zero();
+      sum[k] = Kokkos::ArithTraits<y_value_type>::zero();
     }
 
     const auto row = m_A.rowConst(iRow);
@@ -923,8 +921,7 @@ struct SPMV_MV_LayoutLeft_Functor {
 
     for (ordinal_type iEntry = 0; iEntry < row.length; iEntry++) {
       const A_value_type val =
-          conjugate ? Kokkos::Details::ArithTraits<A_value_type>::conj(
-                          row.value(iEntry))
+          conjugate ? Kokkos::ArithTraits<A_value_type>::conj(row.value(iEntry))
                     : row.value(iEntry);
       const ordinal_type ind = row.colidx(iEntry);
 #ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
@@ -968,9 +965,9 @@ struct SPMV_MV_LayoutLeft_Functor {
         Kokkos::ThreadVectorRange(dev, row.length),
         [&](ordinal_type iEntry, y_value_type& lsum) {
           const A_value_type val =
-              conjugate ? Kokkos::Details::ArithTraits<A_value_type>::conj(
-                              row.value(iEntry))
-                        : row.value(iEntry);
+              conjugate
+                  ? Kokkos::ArithTraits<A_value_type>::conj(row.value(iEntry))
+                  : row.value(iEntry);
           lsum += val * m_x(row.colidx(iEntry), 0);
         },
         sum);
@@ -1004,8 +1001,7 @@ struct SPMV_MV_LayoutLeft_Functor {
     y_value_type sum = y_value_type();
     for (ordinal_type iEntry = 0; iEntry < row.length; iEntry++) {
       const A_value_type val =
-          conjugate ? Kokkos::Details::ArithTraits<A_value_type>::conj(
-                          row.value(iEntry))
+          conjugate ? Kokkos::ArithTraits<A_value_type>::conj(row.value(iEntry))
                     : row.value(iEntry);
       sum += val * m_x(row.colidx(iEntry), 0);
     }
@@ -1488,7 +1484,7 @@ void spmv_alpha_mv(const char mode[],
                    const typename YVector::non_const_value_type& beta,
                    const YVector& y) {
   typedef typename YVector::non_const_value_type coefficient_type;
-  typedef Kokkos::Details::ArithTraits<coefficient_type> KAT;
+  typedef Kokkos::ArithTraits<coefficient_type> KAT;
 
   if (beta == KAT::zero()) {
     spmv_alpha_beta_mv<AMatrix, XVector, YVector, doalpha, 0>(mode, alpha, A, x,

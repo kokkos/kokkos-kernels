@@ -177,8 +177,7 @@ void kk_diagonally_dominant_sparseMatrix_generate(
           entriesInRow.insert(pos);
           colInd[k] = pos;
           values[k] = 100.0 * rand() / RAND_MAX - 50.0;
-          total_values +=
-              Kokkos::Details::ArithTraits<ScalarType>::abs(values[k]);
+          total_values += Kokkos::ArithTraits<ScalarType>::abs(values[k]);
           break;
         }
       }

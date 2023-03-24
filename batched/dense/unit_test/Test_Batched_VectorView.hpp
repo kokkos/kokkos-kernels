@@ -67,7 +67,7 @@ void impl_verify_vector_view(
     const SimdViewAccess<VectorViewType, PackDim<0> >& b) {
   typedef typename VectorViewType::value_type vector_type;
   constexpr int vl = vector_type::vector_length;
-  typedef Kokkos::Details::ArithTraits<typename vector_type::value_type> ats;
+  typedef Kokkos::ArithTraits<typename vector_type::value_type> ats;
   const typename ats::mag_type eps = 1.0e3 * ats::epsilon();
   TEST_LOOP
   EXPECT_NEAR_KK(a.access(i0 / vl, i1, i2, i3, i4, i5, i6, i7)[i0 % vl],
@@ -79,7 +79,7 @@ void impl_verify_vector_view(
     const SimdViewAccess<VectorViewType, PackDim<1> >& b) {
   typedef typename VectorViewType::value_type vector_type;
   constexpr int vl = vector_type::vector_length;
-  typedef Kokkos::Details::ArithTraits<typename vector_type::value_type> ats;
+  typedef Kokkos::ArithTraits<typename vector_type::value_type> ats;
   const typename ats::mag_type eps = 1.0e3 * ats::epsilon();
   TEST_LOOP
   EXPECT_NEAR_KK(a.access(i0, i1 / vl, i2, i3, i4, i5, i6, i7)[i1 % vl],
@@ -91,7 +91,7 @@ void impl_verify_vector_view(
     const SimdViewAccess<VectorViewType, PackDim<2> >& b) {
   typedef typename VectorViewType::value_type vector_type;
   constexpr int vl = vector_type::vector_length;
-  typedef Kokkos::Details::ArithTraits<typename vector_type::value_type> ats;
+  typedef Kokkos::ArithTraits<typename vector_type::value_type> ats;
   const typename ats::mag_type eps = 1.0e3 * ats::epsilon();
   TEST_LOOP
   EXPECT_NEAR_KK(a.access(i0, i1, i2 / vl, i3, i4, i5, i6, i7)[i2 % vl],
@@ -103,7 +103,7 @@ void impl_verify_vector_view(
     const SimdViewAccess<VectorViewType, PackDim<3> >& b) {
   typedef typename VectorViewType::value_type vector_type;
   constexpr int vl = vector_type::vector_length;
-  typedef Kokkos::Details::ArithTraits<typename vector_type::value_type> ats;
+  typedef Kokkos::ArithTraits<typename vector_type::value_type> ats;
   const typename ats::mag_type eps = 1.0e3 * ats::epsilon();
   TEST_LOOP
   EXPECT_NEAR_KK(a.access(i0, i1, i2, i3 / vl, i4, i5, i6, i7)[i3 % vl],
@@ -115,7 +115,7 @@ void impl_verify_vector_view(
     const SimdViewAccess<VectorViewType, PackDim<4> >& b) {
   typedef typename VectorViewType::value_type vector_type;
   constexpr int vl = vector_type::vector_length;
-  typedef Kokkos::Details::ArithTraits<typename vector_type::value_type> ats;
+  typedef Kokkos::ArithTraits<typename vector_type::value_type> ats;
   const typename ats::mag_type eps = 1.0e3 * ats::epsilon();
   TEST_LOOP
   EXPECT_NEAR_KK(a.access(i0, i1, i2, i3, i4 / vl, i5, i6, i7)[i4 % vl],
@@ -127,7 +127,7 @@ void impl_verify_vector_view(
     const SimdViewAccess<VectorViewType, PackDim<5> >& b) {
   typedef typename VectorViewType::value_type vector_type;
   constexpr int vl = vector_type::vector_length;
-  typedef Kokkos::Details::ArithTraits<typename vector_type::value_type> ats;
+  typedef Kokkos::ArithTraits<typename vector_type::value_type> ats;
   const typename ats::mag_type eps = 1.0e3 * ats::epsilon();
   TEST_LOOP
   EXPECT_NEAR_KK(a.access(i0, i1, i2, i3, i4, i5 / vl, i6, i7)[i5 % vl],
@@ -139,7 +139,7 @@ void impl_verify_vector_view(
     const SimdViewAccess<VectorViewType, PackDim<6> >& b) {
   typedef typename VectorViewType::value_type vector_type;
   constexpr int vl = vector_type::vector_length;
-  typedef Kokkos::Details::ArithTraits<typename vector_type::value_type> ats;
+  typedef Kokkos::ArithTraits<typename vector_type::value_type> ats;
   const typename ats::mag_type eps = 1.0e3 * ats::epsilon();
   TEST_LOOP
   EXPECT_NEAR_KK(a.access(i0, i1, i2, i3, i4, i5, i6 / vl, i7)[i6 % vl],
@@ -151,7 +151,7 @@ void impl_verify_vector_view(
     const SimdViewAccess<VectorViewType, PackDim<7> >& b) {
   typedef typename VectorViewType::value_type vector_type;
   constexpr int vl = vector_type::vector_length;
-  typedef Kokkos::Details::ArithTraits<typename vector_type::value_type> ats;
+  typedef Kokkos::ArithTraits<typename vector_type::value_type> ats;
   const typename ats::mag_type eps = 1.0e3 * ats::epsilon();
   TEST_LOOP
   EXPECT_NEAR_KK(a.access(i0, i1, i2, i3, i4, i5, i6, i7 / vl)[i7 % vl],
