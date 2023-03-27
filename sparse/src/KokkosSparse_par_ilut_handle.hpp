@@ -89,7 +89,7 @@ class PAR_ILUTHandle {
         nnzL(nnzL_),
         nnzU(nnzU_),
         max_iter(max_iter_),
-        residual_norm_delta_stop(1e-15),
+        residual_norm_delta_stop(1e-2),
         symbolic_complete(false),
         team_size(-1),
         vector_size(-1),
@@ -104,7 +104,7 @@ class PAR_ILUTHandle {
     set_nrows(nrows_);
     set_nnzL(nnzL_);
     set_nnzU(nnzU_);
-    set_residual_norm_delta_stop(1e-15);
+    set_residual_norm_delta_stop(1e-2);
     reset_symbolic_complete();
     set_fill_in_limit(0.75);
     set_verbose(false);

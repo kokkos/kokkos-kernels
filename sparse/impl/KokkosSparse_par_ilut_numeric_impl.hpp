@@ -555,7 +555,8 @@ struct IlutWrap {
           "available");
 #endif
     } else {
-      const auto policy = ih.get_default_team_policy();
+      const size_type nrows = ih.get_nrows();
+      policy_type policy(nrows, 1); // Team parallelism breaks the algorithm
 
       Kokkos::parallel_for(
           "compute_l_u_factors", policy,
@@ -904,7 +905,6 @@ struct IlutWrap {
     size_type itr          = 0;
     scalar_t curr_residual = std::numeric_limits<scalar_t>::max();
     scalar_t prev_residual = std::numeric_limits<scalar_t>::max();
-    bool converged         = false;
 
     // Set the initial L/U values for the initial approximation
     initialize_LU(thandle, A_row_map, A_entries, A_values, L_row_map, L_entries,
@@ -985,15 +985,15 @@ struct IlutWrap {
         }
 
         const auto curr_delta = karith::abs(prev_residual - curr_residual);
-        if (curr_residual > prev_residual) {
+        // if (curr_residual > prev_residual) {
+        //   if (verbose) {
+        //     std::cout << "  Residuals are going backwards, stop" << std::endl;
+        //   }
+        //   stop = true;
+        // }
+        if (curr_delta <= residual_norm_delta_stop) {
           if (verbose) {
-            std::cout << "  Residuals are going backwards, stop" << std::endl;
-          }
-          stop = true;
-        }
-        else if (curr_delta <= residual_norm_delta_stop) {
-          if (verbose) {
-            std::cout << "  Itr-to-itr residual improvement has dropped below residual_norm_delta_stop, stop" << std::endl;
+            std::cout << "  Itr-to-itr residual change has dropped below residual_norm_delta_stop, stop" << std::endl;
           }
           stop = true;
         }
