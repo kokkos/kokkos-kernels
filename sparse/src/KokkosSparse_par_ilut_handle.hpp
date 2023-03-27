@@ -96,8 +96,7 @@ class PAR_ILUTHandle {
         fill_in_limit(0.75),
         verbose(false),
         num_iters(-1),
-        end_rel_res(-1)
- {}
+        end_rel_res(-1) {}
 
   void reset_handle(const size_type nrows_, const size_type nnzL_,
                     const size_type nnzU_) {
@@ -108,8 +107,8 @@ class PAR_ILUTHandle {
     reset_symbolic_complete();
     set_fill_in_limit(0.75);
     set_verbose(false);
-    num_iters     = -1;
-    end_rel_res   = -1;
+    num_iters   = -1;
+    end_rel_res = -1;
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -147,8 +146,7 @@ class PAR_ILUTHandle {
   void set_max_iter(const size_type max_iter_) { this->max_iter = max_iter_; }
   int get_max_iter() const { return this->max_iter; }
 
-  void set_residual_norm_delta_stop(
-      const float_t residual_norm_delta_stop_) {
+  void set_residual_norm_delta_stop(const float_t residual_norm_delta_stop_) {
     this->residual_norm_delta_stop = residual_norm_delta_stop_;
   }
   float_t get_residual_norm_delta_stop() const {
@@ -172,19 +170,14 @@ class PAR_ILUTHandle {
     }
   }
 
-  int get_num_iters() const {
-    return num_iters;
-  }
+  int get_num_iters() const { return num_iters; }
 
-  float_t get_end_rel_res() const {
-    return end_rel_res;
-  }
+  float_t get_end_rel_res() const { return end_rel_res; }
 
   void set_stats(int num_iters_, float_t end_rel_res_) {
-    num_iters     = num_iters_;
-    end_rel_res   = end_rel_res_;
+    num_iters   = num_iters_;
+    end_rel_res = end_rel_res_;
   }
-
 };
 
 }  // namespace Experimental

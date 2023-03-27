@@ -556,7 +556,7 @@ struct IlutWrap {
 #endif
     } else {
       const size_type nrows = ih.get_nrows();
-      policy_type policy(nrows, 1); // Team parallelism breaks the algorithm
+      policy_type policy(nrows, 1);  // Team parallelism breaks the algorithm
 
       Kokkos::parallel_for(
           "compute_l_u_factors", policy,
@@ -855,7 +855,6 @@ struct IlutWrap {
                            LEntriesType& L_entries, LValuesType& L_values,
                            URowMapType& U_row_map, UEntriesType& U_entries,
                            UValuesType& U_values, bool deterministic) {
-
     // Get config settings from handle
     const size_type nrows    = thandle.get_nrows();
     const auto fill_in_limit = thandle.get_fill_in_limit();
@@ -875,7 +874,8 @@ struct IlutWrap {
       std::cout << "  num_rows:            " << nrows << std::endl;
       std::cout << "  fill_in_limit:       " << fill_in_limit << std::endl;
       std::cout << "  max_iter:            " << max_iter << std::endl;
-      std::cout << "  res_norm_delta_stop: " << residual_norm_delta_stop << std::endl;
+      std::cout << "  res_norm_delta_stop: " << residual_norm_delta_stop
+                << std::endl;
     }
 
     kh.create_spadd_handle(true /*we expect inputs to be sorted*/);
@@ -981,23 +981,26 @@ struct IlutWrap {
             R_values, LU_row_map, LU_entries, LU_values);
 
         if (verbose) {
-          std::cout << "Completed itr " << itr << ", residual is: " << curr_residual << std::endl;
+          std::cout << "Completed itr " << itr
+                    << ", residual is: " << curr_residual << std::endl;
         }
 
         const auto curr_delta = karith::abs(prev_residual - curr_residual);
         // if (curr_residual > prev_residual) {
         //   if (verbose) {
-        //     std::cout << "  Residuals are going backwards, stop" << std::endl;
+        //     std::cout << "  Residuals are going backwards, stop" <<
+        //     std::endl;
         //   }
         //   stop = true;
         // }
         if (curr_delta <= residual_norm_delta_stop) {
           if (verbose) {
-            std::cout << "  Itr-to-itr residual change has dropped below residual_norm_delta_stop, stop" << std::endl;
+            std::cout << "  Itr-to-itr residual change has dropped below "
+                         "residual_norm_delta_stop, stop"
+                      << std::endl;
           }
           stop = true;
-        }
-        else {
+        } else {
           prev_residual = curr_residual;
         }
       }
@@ -1006,7 +1009,8 @@ struct IlutWrap {
     }
 
     if (verbose) {
-      std::cout << "PAR_ILUT stopped in " << itr << " iterations with residual " << curr_residual << std::endl;
+      std::cout << "PAR_ILUT stopped in " << itr << " iterations with residual "
+                << curr_residual << std::endl;
     }
     thandle.set_stats(itr, curr_residual);
 
