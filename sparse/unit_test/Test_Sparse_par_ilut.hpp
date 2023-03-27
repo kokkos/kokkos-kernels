@@ -332,6 +332,7 @@ void run_test_par_ilut_precond() {
 
   kh.create_par_ilut_handle(numRows);
   auto par_ilut_handle = kh.get_par_ilut_handle();
+  par_ilut_handle->set_verbose(verbose);
 
   // Pull out views from CRS
   auto row_map = A.graph.row_map;

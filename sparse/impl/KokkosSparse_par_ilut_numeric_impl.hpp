@@ -854,6 +854,8 @@ struct IlutWrap {
                            LEntriesType& L_entries, LValuesType& L_values,
                            URowMapType& U_row_map, UEntriesType& U_entries,
                            UValuesType& U_values, bool deterministic) {
+
+    // Get config settings from handle
     const size_type nrows    = thandle.get_nrows();
     const auto fill_in_limit = thandle.get_fill_in_limit();
     const auto l_nnz_limit =
@@ -864,6 +866,16 @@ struct IlutWrap {
     const auto residual_norm_delta_stop =
         thandle.get_residual_norm_delta_stop();
     const size_type max_iter = thandle.get_max_iter();
+
+    const auto verbose = thandle.get_verbose();
+
+    if (verbose) {
+      std::cout << "Starting PARILUT with..." << std::endl;
+      std::cout << "  num_rows:            " << nrows << std::endl;
+      std::cout << "  fill_in_limit:       " << fill_in_limit << std::endl;
+      std::cout << "  max_iter:            " << max_iter << std::endl;
+      std::cout << "  res_norm_delta_stop: " << residual_norm_delta_stop << std::endl;
+    }
 
     kh.create_spadd_handle(true /*we expect inputs to be sorted*/);
 
@@ -890,6 +902,7 @@ struct IlutWrap {
     auto V_copy = Kokkos::create_mirror_view(V_copy_d);
 
     size_type itr          = 0;
+    scalar_t curr_residual = std::numeric_limits<scalar_t>::max();
     scalar_t prev_residual = std::numeric_limits<scalar_t>::max();
     bool converged         = false;
 
@@ -900,7 +913,8 @@ struct IlutWrap {
     //
     // main loop
     //
-    while (!converged && itr < max_iter) {
+    bool stop = false;
+    while (!stop && itr < max_iter) {
       // LU = L*U
       if (prev_residual == std::numeric_limits<scalar_t>::max()) {
         multiply_matrices(kh, thandle, L_row_map, L_entries, L_values,
@@ -959,23 +973,42 @@ struct IlutWrap {
                           Ut_new_row_map, Ut_new_entries, Ut_new_values,
                           deterministic);
 
-      // Compute residual and terminate if converged
+      // Compute residual and check stop conditions
       {
-        const auto curr_residual = compute_residual_norm(
+        curr_residual = compute_residual_norm(
             kh, thandle, A_row_map, A_entries, A_values, L_row_map, L_entries,
             L_values, U_row_map, U_entries, U_values, R_row_map, R_entries,
             R_values, LU_row_map, LU_entries, LU_values);
 
-        if (karith::abs(prev_residual - curr_residual) <=
-            karith::abs(residual_norm_delta_stop)) {
-          converged = true;
-        } else {
+        if (verbose) {
+          std::cout << "Completed itr " << itr << ", residual is: " << curr_residual << std::endl;
+        }
+
+        const auto curr_delta = karith::abs(prev_residual - curr_residual);
+        if (curr_residual > prev_residual) {
+          if (verbose) {
+            std::cout << "  Residuals are going backwards, stop" << std::endl;
+          }
+          stop = true;
+        }
+        else if (curr_delta <= residual_norm_delta_stop) {
+          if (verbose) {
+            std::cout << "  Itr-to-itr residual improvement has dropped below residual_norm_delta_stop, stop" << std::endl;
+          }
+          stop = true;
+        }
+        else {
           prev_residual = curr_residual;
         }
       }
 
       ++itr;
     }
+
+    if (verbose) {
+      std::cout << "PAR_ILUT stopped in " << itr << " iterations with residual " << curr_residual << std::endl;
+    }
+    thandle.set_stats(itr, curr_residual);
 
     kh.destroy_spadd_handle();
   }  // end ilut_numeric

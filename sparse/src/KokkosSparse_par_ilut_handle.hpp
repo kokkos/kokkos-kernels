@@ -66,40 +66,50 @@ class PAR_ILUTHandle {
                    typename nnz_row_view_t::memory_traits>;
 
  private:
+  // Inputs
   size_type nrows;
   size_type nnzL;
   size_type nnzU;
   size_type max_iter;
-  nnz_scalar_t residual_norm_delta_stop;
-
+  float_t residual_norm_delta_stop;
   bool symbolic_complete;
-
   int team_size;
   int vector_size;
-
   float_t fill_in_limit;
+  bool verbose;
+
+  // Outputs
+  int num_iters;
+  float_t end_rel_res;
 
  public:
   PAR_ILUTHandle(const size_type nrows_, const size_type nnzL_ = 0,
-                 const size_type nnzU_ = 0, const size_type max_iter_ = 1)
+                 const size_type nnzU_ = 0, const size_type max_iter_ = 50)
       : nrows(nrows_),
         nnzL(nnzL_),
         nnzU(nnzU_),
         max_iter(max_iter_),
-        residual_norm_delta_stop(0.),
+        residual_norm_delta_stop(1e-15),
         symbolic_complete(false),
         team_size(-1),
         vector_size(-1),
-        fill_in_limit(0.75) {}
+        fill_in_limit(0.75),
+        verbose(false),
+        num_iters(-1),
+        end_rel_res(-1)
+ {}
 
   void reset_handle(const size_type nrows_, const size_type nnzL_,
                     const size_type nnzU_) {
     set_nrows(nrows_);
     set_nnzL(nnzL_);
     set_nnzU(nnzU_);
-    set_residual_norm_delta_stop(0.);
+    set_residual_norm_delta_stop(1e-15);
     reset_symbolic_complete();
     set_fill_in_limit(0.75);
+    set_verbose(false);
+    num_iters     = -1;
+    end_rel_res   = -1;
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -138,10 +148,10 @@ class PAR_ILUTHandle {
   int get_max_iter() const { return this->max_iter; }
 
   void set_residual_norm_delta_stop(
-      const nnz_scalar_t residual_norm_delta_stop_) {
+      const float_t residual_norm_delta_stop_) {
     this->residual_norm_delta_stop = residual_norm_delta_stop_;
   }
-  nnz_scalar_t get_residual_norm_delta_stop() const {
+  float_t get_residual_norm_delta_stop() const {
     return this->residual_norm_delta_stop;
   }
 
@@ -150,6 +160,10 @@ class PAR_ILUTHandle {
   }
   float_t get_fill_in_limit() const { return this->fill_in_limit; }
 
+  bool get_verbose() const { return verbose; }
+
+  void set_verbose(const bool verbose_) { this->verbose = verbose_; }
+
   TeamPolicy get_default_team_policy() const {
     if (team_size == -1) {
       return TeamPolicy(nrows, Kokkos::AUTO);
@@ -157,6 +171,20 @@ class PAR_ILUTHandle {
       return TeamPolicy(nrows, team_size);
     }
   }
+
+  int get_num_iters() const {
+    return num_iters;
+  }
+
+  float_t get_end_rel_res() const {
+    return end_rel_res;
+  }
+
+  void set_stats(int num_iters_, float_t end_rel_res_) {
+    num_iters     = num_iters_;
+    end_rel_res   = end_rel_res_;
+  }
+
 };
 
 }  // namespace Experimental
