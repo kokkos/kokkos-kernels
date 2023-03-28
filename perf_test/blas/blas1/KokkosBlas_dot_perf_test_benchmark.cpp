@@ -122,6 +122,8 @@ static void run(benchmark::State& state) {
     double avg   = total / repeat;
     // Flops calculation for a 1D matrix dot product per test run;
     size_t flopsPerRun = (size_t)2 * m;
+    printf("Avg DOT time: %f s.\n", avg);
+    printf("Avg DOT FLOP/s: %.3e\n", flopsPerRun / avg);
     state.SetIterationTime(timer.seconds());
 
     state.counters["Avg DOT time (s):"] =
