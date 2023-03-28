@@ -1,5 +1,23 @@
 # Change Log
 
+## [4.0.01](https://github.com/kokkos/kokkos-kernels/tree/4.0.01) (2023-28-03)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.0.0...4.0.01)
+
+### Bug Fixes:
+- Use the options ENABLE_PERFTEST, ENABLE_EXAMPLES [\#1667](https://github.com/kokkos/kokkos-kernels/pull/1667)
+- Introduce KOKKOSKERNELS_ALL_COMPONENTS_ENABLED variable [\#1691](https://github.com/kokkos/kokkos-kernels/pull/1691)
+- Kokkos Kernels version: need to use upper case variables [\#1707](https://github.com/kokkos/kokkos-kernels/pull/1707)
+- GMRES: fixing some type issues related to memory space instantiation (partial) [\#1719](https://github.com/kokkos/kokkos-kernels/pull/1719)
+- CUSPARSE_MM_ALG_DEFAULT deprecated by cuSparse 11.1 [\#1698](https://github.com/kokkos/kokkos-kernels/pull/1698)
+- blas1: Fix a couple documentation typos [\#1704](https://github.com/kokkos/kokkos-kernels/pull/1704)
+- CUDA 11.4: fixing some -Werror [\#1727](https://github.com/kokkos/kokkos-kernels/pull/1727)
+- Remove unused variable in KokkosSparse_spgemm_numeric_tpl_spec_decl.hpp [\#1734](https://github.com/kokkos/kokkos-kernels/pull/1734)
+- ParIlut: create and destroy spgemm handle for each usage [\#1736](https://github.com/kokkos/kokkos-kernels/pull/1736)
+- Reduce BatchedGemm test coverage time [\#1737](https://github.com/kokkos/kokkos-kernels/pull/1737)
+- Fix kk_generate_diagonally_dominant_sparse_matrix hang [\#1689](https://github.com/kokkos/kokkos-kernels/pull/1689)
+- Temporary spgemm workaround matching Trilinos 11663 [\#1757](https://github.com/kokkos/kokkos-kernels/pull/1757)
+
+
 ## [4.0.0](https://github.com/kokkos/kokkos-kernels/tree/4.0.0) (2023-21-02)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/3.7.01...4.0.0)
 
