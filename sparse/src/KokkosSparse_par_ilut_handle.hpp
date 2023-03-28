@@ -80,7 +80,7 @@ class PAR_ILUTHandle {
 
   // Outputs
   int num_iters;
-  float_t end_rel_res;
+  nnz_scalar_t end_rel_res;
 
  public:
   PAR_ILUTHandle(const size_type nrows_, const size_type nnzL_ = 0,
@@ -172,9 +172,9 @@ class PAR_ILUTHandle {
 
   int get_num_iters() const { return num_iters; }
 
-  float_t get_end_rel_res() const { return end_rel_res; }
+  nnz_scalar_t get_end_rel_res() const { return end_rel_res; }
 
-  void set_stats(int num_iters_, float_t end_rel_res_) {
+  void set_stats(int num_iters_, nnz_scalar_t end_rel_res_) {
     num_iters   = num_iters_;
     end_rel_res = end_rel_res_;
   }
