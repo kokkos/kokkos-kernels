@@ -50,7 +50,7 @@ void run_test_spiluk() {
   typedef Kokkos::View<size_type*, device> RowMapType;
   typedef Kokkos::View<lno_t*, device> EntriesType;
   typedef Kokkos::View<scalar_t*, device> ValuesType;
-  typedef Kokkos::Details::ArithTraits<scalar_t> AT;
+  typedef Kokkos::ArithTraits<scalar_t> AT;
 
   const size_type nrows = 9;
   const size_type nnz   = 21;

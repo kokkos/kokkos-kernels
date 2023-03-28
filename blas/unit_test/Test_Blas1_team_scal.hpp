@@ -39,7 +39,7 @@ void impl_test_team_scal(int N) {
 
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
-  typedef Kokkos::Details::ArithTraits<ScalarA> AT;
+  typedef Kokkos::ArithTraits<ScalarA> AT;
 
   typedef Kokkos::View<
       ScalarA * [2],
@@ -157,7 +157,7 @@ void impl_test_team_scal_mv(int N, int K) {
 
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
-  typedef Kokkos::Details::ArithTraits<ScalarA> AT;
+  typedef Kokkos::ArithTraits<ScalarA> AT;
 
   typedef multivector_layout_adapter<ViewTypeA> vfA_type;
   typedef multivector_layout_adapter<ViewTypeB> vfB_type;

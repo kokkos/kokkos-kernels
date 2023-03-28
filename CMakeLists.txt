@@ -88,6 +88,9 @@ IF (NOT KOKKOSKERNELS_HAS_TRILINOS)
     include_directories(tpls/rajaperf/src)
     set(KokkosKernels_ENABLE_PERFTESTS ON CACHE BOOL "Whether to build tests including Perfsuite. Default: OFF" FORCE)
   ENDIF()
+  IF(KokkosKernels_ENABLE_BENCHMARK)
+    INCLUDE(cmake/kokkoskernels_benchmarks.cmake)
+  ENDIF()
 ENDIF ()
 
 KOKKOSKERNELS_ADD_OPTION(
@@ -321,6 +324,11 @@ ELSE()
     ENDFOREACH()
     TARGET_INCLUDE_DIRECTORIES(kokkoskernels PUBLIC
       $<INSTALL_INTERFACE:${KOKKOSKERNELS_HEADER_INSTALL_DIR}>)
+
+    IF(KokkosKernels_ENABLE_BENCHMARK)
+      INCLUDE(cmake/kokkoskernels_version_info.cmake)
+      check_version_info()
+    ENDIF()
   ENDIF()
 
   # FIXME_SYCL waiting for compiler support

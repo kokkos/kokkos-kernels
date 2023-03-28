@@ -40,7 +40,7 @@ struct V_Nrm2w_Functor {
   typedef SizeType size_type;
   typedef typename XV::non_const_value_type xvalue_type;
   typedef Kokkos::Details::InnerProductSpaceTraits<xvalue_type> IPT;
-  typedef Kokkos::Details::ArithTraits<typename IPT::mag_type> AT;
+  typedef Kokkos::ArithTraits<typename IPT::mag_type> AT;
   typedef typename IPT::mag_type value_type;
 
   typename XV::const_type m_x, m_w;
@@ -83,8 +83,7 @@ struct V_Nrm2w_Functor {
   KOKKOS_INLINE_FUNCTION void final(value_type& update) const {
     if (m_take_sqrt)
       update =
-          Kokkos::Details::ArithTraits<typename RV::non_const_value_type>::sqrt(
-              update);
+          Kokkos::ArithTraits<typename RV::non_const_value_type>::sqrt(update);
   }
 };
 
@@ -93,7 +92,7 @@ struct Nrm2w_MV_Functor {
   typedef typename RV::non_const_value_type rvalue_type;
   typedef typename XV::non_const_value_type xvalue_type;
   typedef Kokkos::Details::InnerProductSpaceTraits<xvalue_type> IPT;
-  typedef Kokkos::Details::ArithTraits<typename IPT::mag_type> AT;
+  typedef Kokkos::ArithTraits<typename IPT::mag_type> AT;
   typedef typename IPT::mag_type value_type;
 
   using TeamMem = typename Kokkos::TeamPolicy<ExecSpace>::member_type;

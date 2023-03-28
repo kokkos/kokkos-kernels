@@ -92,8 +92,7 @@ void axpby(const AV& a, const XMV& X, const BV& b, const YMV& Y) {
 
 template <class AV, class XMV, class YMV>
 void axpy(const AV& a, const XMV& X, const YMV& Y) {
-  axpby(a, X,
-        Kokkos::Details::ArithTraits<typename YMV::non_const_value_type>::one(),
+  axpby(a, X, Kokkos::ArithTraits<typename YMV::non_const_value_type>::one(),
         Y);
 }
 

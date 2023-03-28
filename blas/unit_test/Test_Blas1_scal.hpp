@@ -25,7 +25,7 @@ template <class ViewTypeA, class ViewTypeB, class Device>
 void impl_test_scal(int N) {
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
-  typedef Kokkos::Details::ArithTraits<ScalarA> AT;
+  typedef Kokkos::ArithTraits<ScalarA> AT;
 
   ScalarA a(3);
   typename AT::mag_type eps = AT::epsilon() * 1000;
@@ -76,7 +76,7 @@ template <class ViewTypeA, class ViewTypeB, class Device>
 void impl_test_scal_mv(int N, int K) {
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
-  typedef Kokkos::Details::ArithTraits<ScalarA> AT;
+  typedef Kokkos::ArithTraits<ScalarA> AT;
 
   typedef multivector_layout_adapter<ViewTypeA> vfA_type;
   typedef multivector_layout_adapter<ViewTypeB> vfB_type;

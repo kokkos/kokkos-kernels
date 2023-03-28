@@ -45,7 +45,7 @@ template <class AV, class XMV, class BV, class YMV, int scalar_x, int scalar_y,
 struct Axpby_MV_Functor {
   typedef typename YMV::execution_space execution_space;
   typedef SizeType size_type;
-  typedef Kokkos::Details::ArithTraits<typename YMV::non_const_value_type> ATS;
+  typedef Kokkos::ArithTraits<typename YMV::non_const_value_type> ATS;
 
   const size_type numCols;
   XMV m_x;
@@ -288,7 +288,7 @@ struct Axpby_MV_Functor<typename XMV::non_const_value_type, XMV,
                         scalar_y, SizeType> {
   typedef typename YMV::execution_space execution_space;
   typedef SizeType size_type;
-  typedef Kokkos::Details::ArithTraits<typename YMV::non_const_value_type> ATS;
+  typedef Kokkos::ArithTraits<typename YMV::non_const_value_type> ATS;
 
   const size_type numCols;
   XMV m_x;
@@ -502,7 +502,7 @@ template <class AV, class XMV, class BV, class YMV, int scalar_x, int scalar_y,
 struct Axpby_MV_Unroll_Functor {
   typedef typename YMV::execution_space execution_space;
   typedef SizeType size_type;
-  typedef Kokkos::Details::ArithTraits<typename YMV::non_const_value_type> ATS;
+  typedef Kokkos::ArithTraits<typename YMV::non_const_value_type> ATS;
 
   XMV m_x;
   YMV m_y;
@@ -730,7 +730,7 @@ struct Axpby_MV_Unroll_Functor<typename XMV::non_const_value_type, XMV,
                                scalar_x, scalar_y, UNROLL, SizeType> {
   typedef typename YMV::execution_space execution_space;
   typedef SizeType size_type;
-  typedef Kokkos::Details::ArithTraits<typename YMV::non_const_value_type> ATS;
+  typedef Kokkos::ArithTraits<typename YMV::non_const_value_type> ATS;
 
   XMV m_x;
   YMV m_y;

@@ -403,11 +403,11 @@ struct TeamVectorSpmv<MemberType, Trans::NoTranspose, N_team> {
             typename yViewType, int dobeta>
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType& member,
-      const typename Kokkos::Details::ArithTraits<
+      const typename Kokkos::ArithTraits<
           typename ValuesViewType::non_const_value_type>::mag_type& alpha,
       const ValuesViewType& values, const IntView& row_ptr,
       const IntView& colIndices, const xViewType& X,
-      const typename Kokkos::Details::ArithTraits<
+      const typename Kokkos::ArithTraits<
           typename ValuesViewType::non_const_value_type>::mag_type& beta,
       const yViewType& Y) {
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
@@ -466,7 +466,7 @@ struct TeamVectorSpmv<MemberType, Trans::NoTranspose, N_team> {
 
     return TeamVectorSpmvInternal::template invoke<
         MemberType,
-        typename Kokkos::Details::ArithTraits<
+        typename Kokkos::ArithTraits<
             typename ValuesViewType::non_const_value_type>::mag_type,
         typename ValuesViewType::non_const_value_type,
         typename IntView::non_const_value_type,

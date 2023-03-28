@@ -78,6 +78,11 @@ struct IlutWrap {
       const URowMapType& U_row_map, const UEntriesType& U_entries,
       const UValuesType& U_values, LURowMapType& LU_row_map,
       LUEntriesType& LU_entries, LUValuesType& LU_values) {
+    std::string myalg("SPGEMM_KK_MEMORY");
+    KokkosSparse::SPGEMMAlgorithm spgemm_algorithm =
+        KokkosSparse::StringToSPGEMMAlgorithm(myalg);
+    kh.create_spgemm_handle(spgemm_algorithm);
+
     const size_type nrows = ih.get_nrows();
 
     KokkosSparse::Experimental::spgemm_symbolic(
@@ -95,6 +100,8 @@ struct IlutWrap {
 
     // Need to sort LU CRS if on CUDA!
     sort_crs_matrix<execution_space>(LU_row_map, LU_entries, LU_values);
+
+    kh.destroy_spgemm_handle();
   }
 
   /**
@@ -722,6 +729,8 @@ struct IlutWrap {
       RRowMapType& R_row_map, REntriesType& R_entries, RValuesType& R_values,
       LURowMapType& LU_row_map, LUEntriesType& LU_entries,
       LUValuesType& LU_values) {
+    scalar_t result;
+
     multiply_matrices(kh, ih, L_row_map, L_entries, L_values, U_row_map,
                       U_entries, U_values, LU_row_map, LU_entries, LU_values);
 
@@ -736,8 +745,6 @@ struct IlutWrap {
     KokkosSparse::Experimental::spadd_numeric(
         &kh, A_row_map, A_entries, A_values, 1., LU_row_map, LU_entries,
         LU_values, -1., R_row_map, R_entries, R_values);
-
-    scalar_t result;
 
     auto policy = ih.get_default_team_policy();
 
@@ -858,11 +865,6 @@ struct IlutWrap {
         thandle.get_residual_norm_delta_stop();
     const size_type max_iter = thandle.get_max_iter();
 
-    std::string myalg("SPGEMM_KK_MEMORY");
-    KokkosSparse::SPGEMMAlgorithm spgemm_algorithm =
-        KokkosSparse::StringToSPGEMMAlgorithm(myalg);
-    kh.create_spgemm_handle(spgemm_algorithm);
-
     kh.create_spadd_handle(true /*we expect inputs to be sorted*/);
 
     //
@@ -975,7 +977,6 @@ struct IlutWrap {
       ++itr;
     }
 
-    kh.destroy_spgemm_handle();
     kh.destroy_spadd_handle();
   }  // end ilut_numeric
 
