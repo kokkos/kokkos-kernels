@@ -32,7 +32,7 @@ template <class RMV, class XMV, class SizeType = typename RMV::size_type>
 struct MV_Abs_Functor {
   typedef typename RMV::execution_space execution_space;
   typedef SizeType size_type;
-  typedef Kokkos::Details::ArithTraits<typename XMV::non_const_value_type> ATS;
+  typedef Kokkos::ArithTraits<typename XMV::non_const_value_type> ATS;
 
   const size_type numCols;
   RMV R_;
@@ -70,7 +70,7 @@ template <class RMV, class SizeType = typename RMV::size_type>
 struct MV_AbsSelf_Functor {
   typedef typename RMV::execution_space execution_space;
   typedef SizeType size_type;
-  typedef Kokkos::Details::ArithTraits<typename RMV::non_const_value_type> ATS;
+  typedef Kokkos::ArithTraits<typename RMV::non_const_value_type> ATS;
 
   const size_type numCols;
   RMV R_;
@@ -100,7 +100,7 @@ template <class RV, class XV, class SizeType = typename RV::size_type>
 struct V_Abs_Functor {
   typedef typename RV::execution_space execution_space;
   typedef SizeType size_type;
-  typedef Kokkos::Details::ArithTraits<typename XV::non_const_value_type> ATS;
+  typedef Kokkos::ArithTraits<typename XV::non_const_value_type> ATS;
 
   RV R_;
   XV X_;
@@ -130,7 +130,7 @@ template <class RV, class SizeType = typename RV::size_type>
 struct V_AbsSelf_Functor {
   typedef typename RV::execution_space execution_space;
   typedef SizeType size_type;
-  typedef Kokkos::Details::ArithTraits<typename RV::non_const_value_type> ATS;
+  typedef Kokkos::ArithTraits<typename RV::non_const_value_type> ATS;
 
   RV R_;
 

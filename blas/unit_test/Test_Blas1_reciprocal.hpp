@@ -25,7 +25,7 @@ template <class ViewTypeA, class ViewTypeB, class Device>
 void impl_test_reciprocal(int N) {
   using ScalarA    = typename ViewTypeA::value_type;
   using ScalarB    = typename ViewTypeB::value_type;
-  using AT         = Kokkos::Details::ArithTraits<ScalarA>;
+  using AT         = Kokkos::ArithTraits<ScalarA>;
   using MagnitudeA = typename AT::mag_type;
   using MagnitudeB = typename Kokkos::ArithTraits<ScalarB>::mag_type;
 

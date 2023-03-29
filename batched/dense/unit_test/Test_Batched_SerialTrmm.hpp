@@ -61,7 +61,7 @@ struct VanillaGEMM {
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
   typedef typename ViewTypeC::value_type ScalarC;
-  typedef Kokkos::Details::ArithTraits<ScalarC> APT;
+  typedef Kokkos::ArithTraits<ScalarC> APT;
   typedef typename APT::mag_type mag_type;
   ScalarA alpha;
   ScalarC beta;
@@ -150,7 +150,7 @@ void impl_test_batched_trmm(const int N, const int nRows, const int nCols,
                             const char* trans) {
   typedef typename ViewType::value_type value_type;
   typedef typename DeviceType::execution_space execution_space;
-  typedef Kokkos::Details::ArithTraits<value_type> ats;
+  typedef Kokkos::ArithTraits<value_type> ats;
 
   ScalarType alpha(1.0);
   ScalarType beta(0.0);

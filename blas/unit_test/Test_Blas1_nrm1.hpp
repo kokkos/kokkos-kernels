@@ -66,7 +66,7 @@ void impl_test_nrm1(int N) {
 template <class ViewTypeA, class Device>
 void impl_test_nrm1_mv(int N, int K) {
   typedef typename ViewTypeA::value_type ScalarA;
-  typedef Kokkos::Details::ArithTraits<ScalarA> AT;
+  typedef Kokkos::ArithTraits<ScalarA> AT;
   typedef typename AT::mag_type mag_type;
   typedef Kokkos::ArithTraits<mag_type> MAT;
 

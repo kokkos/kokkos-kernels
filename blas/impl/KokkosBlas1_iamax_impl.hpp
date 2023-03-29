@@ -82,7 +82,7 @@ struct V_Iamax_Functor {
 template <class RV, class XV, class SizeType>
 void V_Iamax_Invoke(const RV& r, const XV& X) {
   using execution_space = typename XV::execution_space;
-  using AT = Kokkos::Details::ArithTraits<typename XV::non_const_value_type>;
+  using AT       = Kokkos::ArithTraits<typename XV::non_const_value_type>;
   using mag_type = typename AT::mag_type;
 
   const SizeType numRows = static_cast<SizeType>(X.extent(0));

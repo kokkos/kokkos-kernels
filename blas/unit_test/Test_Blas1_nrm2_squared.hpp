@@ -23,7 +23,7 @@ namespace Test {
 template <class ViewTypeA, class Device>
 void impl_test_nrm2_squared(int N) {
   typedef typename ViewTypeA::value_type ScalarA;
-  typedef Kokkos::Details::ArithTraits<ScalarA> AT;
+  typedef Kokkos::ArithTraits<ScalarA> AT;
 
   typedef Kokkos::View<
       ScalarA * [2],
@@ -68,7 +68,7 @@ void impl_test_nrm2_squared(int N) {
 template <class ViewTypeA, class Device>
 void impl_test_nrm2_squared_mv(int N, int K) {
   typedef typename ViewTypeA::value_type ScalarA;
-  typedef Kokkos::Details::ArithTraits<ScalarA> AT;
+  typedef Kokkos::ArithTraits<ScalarA> AT;
 
   typedef multivector_layout_adapter<ViewTypeA> vfA_type;
 

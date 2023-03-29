@@ -23,7 +23,7 @@ namespace Test {
 template <class ViewTypeA, class Device>
 void impl_test_nrm2(int N) {
   typedef typename ViewTypeA::value_type ScalarA;
-  typedef Kokkos::Details::ArithTraits<ScalarA> AT;
+  typedef Kokkos::ArithTraits<ScalarA> AT;
 
   ViewTypeA a("A", N);
 
@@ -45,8 +45,8 @@ void impl_test_nrm2(int N) {
   for (int i = 0; i < N; i++) {
     expected_result += AT::abs(h_a(i)) * AT::abs(h_a(i));
   }
-  expected_result = Kokkos::Details::ArithTraits<typename AT::mag_type>::sqrt(
-      expected_result);
+  expected_result =
+      Kokkos::ArithTraits<typename AT::mag_type>::sqrt(expected_result);
 
   typename AT::mag_type nonconst_result = KokkosBlas::nrm2(a);
   EXPECT_NEAR_KK(nonconst_result, expected_result, eps * expected_result);
@@ -58,7 +58,7 @@ void impl_test_nrm2(int N) {
 template <class ViewTypeA, class Device>
 void impl_test_nrm2_mv(int N, int K) {
   typedef typename ViewTypeA::value_type ScalarA;
-  typedef Kokkos::Details::ArithTraits<ScalarA> AT;
+  typedef Kokkos::ArithTraits<ScalarA> AT;
 
   typedef multivector_layout_adapter<ViewTypeA> vfA_type;
 
@@ -90,8 +90,7 @@ void impl_test_nrm2_mv(int N, int K) {
       expected_result[j] += AT::abs(h_a(i, j)) * AT::abs(h_a(i, j));
     }
     expected_result[j] =
-        Kokkos::Details::ArithTraits<typename AT::mag_type>::sqrt(
-            expected_result[j]);
+        Kokkos::ArithTraits<typename AT::mag_type>::sqrt(expected_result[j]);
   }
 
   double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 : 1e-7;

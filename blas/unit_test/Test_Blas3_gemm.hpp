@@ -35,7 +35,7 @@ struct gemm_VanillaGEMM {
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
   typedef typename ViewTypeC::value_type ScalarC;
-  typedef Kokkos::Details::ArithTraits<ScalarC> APT;
+  typedef Kokkos::ArithTraits<ScalarC> APT;
   typedef typename APT::mag_type mag_type;
   ScalarA alpha;
   ScalarC beta;
@@ -142,7 +142,7 @@ struct DiffGEMM {
   ViewTypeC C, C2;
 
   typedef typename ViewTypeC::value_type ScalarC;
-  typedef Kokkos::Details::ArithTraits<ScalarC> APT;
+  typedef Kokkos::ArithTraits<ScalarC> APT;
   typedef typename APT::mag_type mag_type;
 
   KOKKOS_INLINE_FUNCTION
@@ -177,7 +177,7 @@ void impl_test_gemm(const char* TA, const char* TB, int M, int N, int K,
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
   typedef typename ViewTypeC::value_type ScalarC;
-  typedef Kokkos::Details::ArithTraits<ScalarC> APT;
+  typedef Kokkos::ArithTraits<ScalarC> APT;
   typedef typename APT::mag_type mag_type;
 
   double machine_eps = APT::epsilon();

@@ -54,7 +54,7 @@ template <class AV, class XV, class BV, class YV, int scalar_x, int scalar_y,
 struct Axpby_Functor {
   typedef typename YV::execution_space execution_space;
   typedef SizeType size_type;
-  typedef Kokkos::Details::ArithTraits<typename YV::non_const_value_type> ATS;
+  typedef Kokkos::ArithTraits<typename YV::non_const_value_type> ATS;
 
   XV m_x;
   YV m_y;
@@ -188,7 +188,7 @@ struct Axpby_Functor<typename XV::non_const_value_type, XV,
                      SizeType> {
   typedef typename YV::execution_space execution_space;
   typedef SizeType size_type;
-  typedef Kokkos::Details::ArithTraits<typename YV::non_const_value_type> ATS;
+  typedef Kokkos::ArithTraits<typename YV::non_const_value_type> ATS;
 
   XV m_x;
   YV m_y;

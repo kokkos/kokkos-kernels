@@ -36,7 +36,7 @@ template <class ViewTypeA, class ViewTypeB, class Device>
 void impl_test_gesv(const char* mode, const char* padding, int N) {
   typedef typename Device::execution_space execution_space;
   typedef typename ViewTypeA::value_type ScalarA;
-  typedef Kokkos::Details::ArithTraits<ScalarA> ats;
+  typedef Kokkos::ArithTraits<ScalarA> ats;
 
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
 
@@ -141,7 +141,7 @@ void impl_test_gesv_mrhs(const char* mode, const char* padding, int N,
                          int nrhs) {
   typedef typename Device::execution_space execution_space;
   typedef typename ViewTypeA::value_type ScalarA;
-  typedef Kokkos::Details::ArithTraits<ScalarA> ats;
+  typedef Kokkos::ArithTraits<ScalarA> ats;
 
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
 

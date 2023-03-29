@@ -39,7 +39,7 @@ template <class CMV, class AV, class BMV, int scalar_ab, int scalar_c,
 struct MV_MultFunctor {
   typedef typename CMV::execution_space execution_space;
   typedef SizeType size_type;
-  typedef Kokkos::Details::ArithTraits<typename CMV::non_const_value_type> ATS;
+  typedef Kokkos::ArithTraits<typename CMV::non_const_value_type> ATS;
 
   const size_type m_n;
   typename CMV::const_value_type m_c;
@@ -107,7 +107,7 @@ template <class CV, class AV, class BV, int scalar_ab, int scalar_c,
 struct V_MultFunctor {
   typedef typename CV::execution_space execution_space;
   typedef SizeType size_type;
-  typedef Kokkos::Details::ArithTraits<typename CV::non_const_value_type> ATS;
+  typedef Kokkos::ArithTraits<typename CV::non_const_value_type> ATS;
 
   typename CV::const_value_type m_c;
   CV m_C;
@@ -152,8 +152,8 @@ void V_Mult_Generic(typename CV::const_value_type& c, const CV& C,
                     const BV& B) {
   using Kokkos::ALL;
   using Kokkos::subview;
-  typedef Kokkos::Details::ArithTraits<typename AV::non_const_value_type> ATA;
-  typedef Kokkos::Details::ArithTraits<typename CV::non_const_value_type> ATC;
+  typedef Kokkos::ArithTraits<typename AV::non_const_value_type> ATA;
+  typedef Kokkos::ArithTraits<typename CV::non_const_value_type> ATC;
   typedef typename CV::execution_space execution_space;
 
   const SizeType numRows = C.extent(0);
@@ -197,8 +197,8 @@ template <class CMV, class AV, class BMV, class SizeType>
 void MV_Mult_Generic(typename CMV::const_value_type& c, const CMV& C,
                      typename AV::const_value_type& ab, const AV& A,
                      const BMV& B) {
-  typedef Kokkos::Details::ArithTraits<typename AV::non_const_value_type> ATA;
-  typedef Kokkos::Details::ArithTraits<typename CMV::non_const_value_type> ATC;
+  typedef Kokkos::ArithTraits<typename AV::non_const_value_type> ATA;
+  typedef Kokkos::ArithTraits<typename CMV::non_const_value_type> ATC;
   typedef typename CMV::execution_space execution_space;
 
   if (C.extent(1) == 1) {

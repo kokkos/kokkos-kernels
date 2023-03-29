@@ -198,12 +198,9 @@ struct SPMV_MV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
       if (controls.getParameter("algorithm") == "experimental_bsr_tc")
         method = Method::TensorCores;
       // can't use tensor cores for complex
-      if (Kokkos::Details::ArithTraits<YScalar>::is_complex)
-        method = Method::Fallback;
-      if (Kokkos::Details::ArithTraits<XScalar>::is_complex)
-        method = Method::Fallback;
-      if (Kokkos::Details::ArithTraits<AScalar>::is_complex)
-        method = Method::Fallback;
+      if (Kokkos::ArithTraits<YScalar>::is_complex) method = Method::Fallback;
+      if (Kokkos::ArithTraits<XScalar>::is_complex) method = Method::Fallback;
+      if (Kokkos::ArithTraits<AScalar>::is_complex) method = Method::Fallback;
       // can't use tensor cores outside GPU
       if (!KokkosKernels::Impl::kk_is_gpu_exec_space<
               typename AMatrix::execution_space>())

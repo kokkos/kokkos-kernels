@@ -193,7 +193,7 @@ void impl_test_team_axpby_mv(int N, int K) {
 
   Kokkos::View<ScalarB *, Kokkos::HostSpace> r("Dot::Result", K);
 
-  typedef Kokkos::Details::ArithTraits<ScalarA> AT;
+  typedef Kokkos::ArithTraits<ScalarA> AT;
 
   // KokkosBlas::axpby(a,x,b,y);
   Kokkos::parallel_for(
