@@ -20,9 +20,4 @@ if(KOKKOSKERNELS_ENABLE_BENCHMARK)
       NAME ${BENCHMARK_NAME}
       COMMAND ${BENCHMARK_NAME}
   )
-else()
-  KOKKOSKERNELS_ADD_EXECUTABLE(
-    ${PACKAGE_NAME}_ode_runge_kutta
-    SOURCES KokkosODE_RK.cpp       
-  )
 endif()

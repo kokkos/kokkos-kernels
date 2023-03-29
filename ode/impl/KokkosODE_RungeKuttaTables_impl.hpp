@@ -26,15 +26,16 @@ namespace Impl {
 //=====================================================================
 
 // Methods supported:
+// Forward Euler (RKFE)
 // Euler-Heun Method (RKEH)
-// Fehlberg 1-2 (RK12)
-// Bogacki-Shampine (BS)
+// Fehlberg 1-2 (RKF12)
+// Bogacki-Shampine (RKBS)
+// Runge-Kutta 4th order (RK4)
 // Fehlberg Method (RKF45)
-// Cash-Karp Method (CashKarp)
-// Dormand-Prince Method (DormandPrince)
+// Cash-Karp Method (RKCK)
+// Dormand-Prince Method (RKDP)
 
 // Format follows form of Butcher Tableau
-
 // c1| a00
 // c2| a10 a11
 // c3| a20 a21 a22
@@ -57,19 +58,25 @@ namespace Impl {
 // e contains coefficient for error estimation
 
 template <int order, int nstages, int variant = 0>
-struct ButcherTableau { };
+struct ButcherTableau {};
 
 template <>
-struct ButcherTableau<0, 0> // Forward Euler
+struct ButcherTableau<0, 0>  // Forward Euler
 {
   static constexpr int order   = 1;
   static constexpr int nstages = 1;
 
-  Kokkos::Array<double, 1>a{{1}};
+  Kokkos::Array<double, 1> a{{1}};
   Kokkos::Array<double, nstages> b{{1}};
   Kokkos::Array<double, nstages> c{{0}};
+  Kokkos::Array<double, nstages> e{{0}};
 };
 
+// Coefficients obtained from: (see page 39)
+// Iserles, A.
+// A First Course in the Numerical Analysis of Differential Equations."
+// Cambridge: Cambridge University Press. (2008).
+// https://doi:10.1017/CBO9780511995569
 template <>
 struct ButcherTableau<1, 1>  // Euler-Heun Method
 {
@@ -83,6 +90,11 @@ struct ButcherTableau<1, 1>  // Euler-Heun Method
   Kokkos::Array<double, nstages> e{{-0.5, 0.5}};
 };
 
+// Coefficients obtained from:
+// Fehlberg, E.
+// "Klassische Runge-Kutta-Formeln vierter und niedrigerer Ordnung mit
+// Schrittweiten-Kontrolle und ihre Anwendung auf Wärmeleitungsprobleme."
+// Computing 6, 61–71 (1970). https://doi.org/10.1007/BF02241732
 template <>
 struct ButcherTableau<1, 2>  // Known as Fehlberg 1-2 method
 {
@@ -96,6 +108,11 @@ struct ButcherTableau<1, 2>  // Known as Fehlberg 1-2 method
       {1.0 / 256.0 - 1.0 / 512.0, 0.0, -1.0 / 512.0}};
 };
 
+// Coefficients obtained from:
+// P. Bogacki, L.F. Shampine,
+// "A 3(2) pair of Runge - Kutta formulas,"
+// Applied Mathematics Letters, Volume 2, Issue 4, 1989,
+// https://doi.org/10.1016/0893-9659(89)90079-7.
 template <>
 struct ButcherTableau<2, 3>  // Bogacki-Shampine method
 {
@@ -110,6 +127,28 @@ struct ButcherTableau<2, 3>  // Bogacki-Shampine method
                                     4.0 / 9.0 - 1.0 / 3.0, -1.0 / 8.0}};
 };
 
+// Coefficients obtained from:
+// Hull, David G.
+// "Fourth-order Runge-Kutta integration with stepsize control."
+// AIAA Journal 15.10 (1977): 1505-1507.
+template <>
+struct ButcherTableau<3, 3>  // RK4
+{
+  static constexpr int order   = 4;
+  static constexpr int nstages = 4;
+  Kokkos::Array<double, (nstages * nstages + nstages) / 2> a{
+      {0.0, 0.5, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 1.0, 0.0}};
+  Kokkos::Array<double, nstages> b{
+      {1.0 / 6.0, 1.0 / 3.0, 1.0 / 3.0, 1.0 / 6.0}};
+  Kokkos::Array<double, nstages> c{{0.0, 0.5, 0.5, 1.0}};
+  Kokkos::Array<double, nstages> e{{1.0 / 6.0, 0.0, -1.0 / 3.0, 1.0 / 6.0}};
+};
+
+// Coefficients obtained from:
+// Fehlberg, E.
+// "Klassische Runge-Kutta-Formeln vierter und niedrigerer Ordnung mit
+// Schrittweiten-Kontrolle und ihre Anwendung auf Wärmeleitungsprobleme."
+// Computing 6, 61–71 (1970). https://doi.org/10.1007/BF02241732
 template <>
 struct ButcherTableau<4, 5>  // Fehlberg Method
 {
@@ -146,6 +185,11 @@ struct ButcherTableau<4, 5>  // Fehlberg Method
        28561.0 / 56430.0 - 2197.0 / 4104.0, -9.0 / 50.0 + 0.2, 2.0 / 55.0}};
 };
 
+// Coefficients obtained from:
+// J. R. Cash and Alan H. Karp.
+// "A variable order Runge-Kutta method for initial value problems with rapidly
+// varying right-hand sides." ACM Trans. Math. Softw. 16, 3 (Sept. 1990),
+// 201–222. https://doi.org/10.1145/79505.79507
 template <>
 struct ButcherTableau<4, 5, 1>  // Cash-Karp
 {
@@ -182,8 +226,13 @@ struct ButcherTableau<4, 5, 1>  // Cash-Karp
                                     -277.0 / 14336.0, 512.0 / 1771.0 - 0.25}};
 };
 
+// Coefficients obtained from:
+// J.R. Dormand, P.J. Prince,
+// "A family of embedded Runge-Kutta formulae",
+// Journal of Computational and Applied Mathematics, Volume 6, Issue 1, 1980,
+// https://doi.org/10.1016/0771-050X(80)90013-3.
 template <>
-struct ButcherTableau<4, 6> // Referred to as DOPRI5 or RKDP
+struct ButcherTableau<4, 6>  // Referred to as DOPRI5 or RKDP
 {
   static constexpr int order   = 5;
   static constexpr int nstages = 7;
@@ -228,4 +277,4 @@ struct ButcherTableau<4, 6> // Referred to as DOPRI5 or RKDP
 }  // namespace Impl
 }  // namespace KokkosODE
 
-#endif // KOKKOSBLAS_RUNGEKUTTATABLES_IMPL_HPP
+#endif  // KOKKOSBLAS_RUNGEKUTTATABLES_IMPL_HPP
