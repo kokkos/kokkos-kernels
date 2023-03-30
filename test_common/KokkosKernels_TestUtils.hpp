@@ -520,6 +520,10 @@ int string_compare_no_case(const char* str1, const char* str2) {
   return strcmp(str1_s.c_str(), str2_s.c_str());
 }
 
+int string_compare_no_case(const std::string& str1, const std::string& str2) {
+  return string_compare_no_case(str1.c_str(), str2.c_str());
+}
+
 /// /brief Cs (Compressed Sparse) matrix class for testing purposes.
 /// This class is for testing purposes only and will generate a random
 /// Crs / Ccs matrix when instantiated. The class is intentionally written

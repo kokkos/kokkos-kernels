@@ -64,7 +64,7 @@ bool is_same_graph(crsGraph_t output_mat1, crsGraph_t output_mat2) {
   if (!is_identical) return false;
 
   if (!is_identical) {
-    std::cout << "Incorret values" << std::endl;
+    std::cout << "Incorrect values" << std::endl;
   }
   return true;
 }
