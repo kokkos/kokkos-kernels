@@ -445,18 +445,19 @@ struct IlutWrap {
       UtEntriesType& Ut_entries, UtValuesType& Ut_values, const size_t row_idx,
       const bool async_update) {
     const auto l_row_nnz_begin = L_row_map(row_idx);
-    const auto l_row_nnz_end   = L_row_map(row_idx + 1) - 1; // skip diagonal for L
+    const auto l_row_nnz_end =
+        L_row_map(row_idx + 1) - 1;  // skip diagonal for L
 
     for (size_t l_nnz = l_row_nnz_begin; l_nnz < l_row_nnz_end; ++l_nnz) {
       const auto col_idx = L_entries(l_nnz);
       const auto u_diag  = Ut_values(Ut_row_map(col_idx + 1) - 1);
       if (u_diag != 0.0) {
         const auto new_val =
-          compute_sum(row_idx, col_idx, A_row_map, A_entries, A_values,
-                      L_row_map, L_entries, L_values, Ut_row_map,
-                      Ut_entries, Ut_values)
-          .first /
-          u_diag;
+            compute_sum(row_idx, col_idx, A_row_map, A_entries, A_values,
+                        L_row_map, L_entries, L_values, Ut_row_map, Ut_entries,
+                        Ut_values)
+                .first /
+            u_diag;
         L_values(l_nnz) = new_val;
       }
     }
@@ -466,7 +467,7 @@ struct IlutWrap {
 
     for (size_t u_nnz = u_row_nnz_begin; u_nnz < u_row_nnz_end; ++u_nnz) {
       const auto col_idx = U_entries(u_nnz);
-      const auto sum = compute_sum(row_idx, col_idx, A_row_map, A_entries,
+      const auto sum     = compute_sum(row_idx, col_idx, A_row_map, A_entries,
                                    A_values, L_row_map, L_entries, L_values,
                                    Ut_row_map, Ut_entries, Ut_values);
       const auto new_val = sum.first;
@@ -534,13 +535,13 @@ struct IlutWrap {
       Kokkos::deep_copy(Ut_values_h, Ut_values);
 
       Kokkos::parallel_for(
-        "compute_l_u_factors", spolicy_type(0, nrows),
-        KOKKOS_LAMBDA(const size_type row_idx) {
-          compute_l_u_factors_impl(
-            A_row_map_h, A_entries_h, A_values_h, L_row_map_h, L_entries_h,
-            L_values_h, U_row_map_h, U_entries_h, U_values_h, Ut_row_map_h,
-            Ut_entries_h, Ut_values_h, row_idx, true);
-      });
+          "compute_l_u_factors", spolicy_type(0, nrows),
+          KOKKOS_LAMBDA(const size_type row_idx) {
+            compute_l_u_factors_impl(
+                A_row_map_h, A_entries_h, A_values_h, L_row_map_h, L_entries_h,
+                L_values_h, U_row_map_h, U_entries_h, U_values_h, Ut_row_map_h,
+                Ut_entries_h, Ut_values_h, row_idx, true);
+          });
 
       Kokkos::deep_copy(L_values, L_values_h);
       Kokkos::deep_copy(U_values, U_values_h);
@@ -552,15 +553,15 @@ struct IlutWrap {
 #endif
     } else {
       constexpr bool on_gpu =
-        KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>();
+          KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>();
       Kokkos::parallel_for(
-        "compute_l_u_factors", range_policy(0, nrows),
-        KOKKOS_LAMBDA(const size_type row_idx) {
-          compute_l_u_factors_impl(A_row_map, A_entries, A_values, L_row_map,
-                                   L_entries, L_values, U_row_map, U_entries,
-                                   U_values, Ut_row_map, Ut_entries,
-                                   Ut_values, row_idx, !on_gpu);
-      });
+          "compute_l_u_factors", range_policy(0, nrows),
+          KOKKOS_LAMBDA(const size_type row_idx) {
+            compute_l_u_factors_impl(A_row_map, A_entries, A_values, L_row_map,
+                                     L_entries, L_values, U_row_map, U_entries,
+                                     U_values, Ut_row_map, Ut_entries,
+                                     Ut_values, row_idx, !on_gpu);
+          });
     }
   }
 
