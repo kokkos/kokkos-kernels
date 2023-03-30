@@ -367,7 +367,6 @@ display_help_text() {
       echo "--disable-perftests: Do not build Kokkos Kernels performance tests"
       echo "--enable-perftests: build Kokkos Kernels performance tests (default)"
       echo "--deprecated-code             Enable deprecated code (disabled by default)"
-      echo "--enable-perfsuite: build Kokkos Kernels performance tests with RAJAPerf Suite"
       echo "--export-compile-commands: export cmake compile_commands.json file"
 
 
