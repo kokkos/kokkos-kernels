@@ -19,6 +19,7 @@
 /// \author Kim Liegeois (knliege@sandia.gov)
 
 #include "KokkosBatched_Util.hpp"
+#include "KokkosBlas2_team_spmv.hpp"
 
 namespace KokkosBatched {
 
@@ -237,6 +238,13 @@ struct TeamSpmv<MemberType, Trans::NoTranspose> {
       return 1;
     }
 #endif
+    if (values.extent(0) == 1) {
+      KokkosBlas::Experimental::team_spmv<MemberType>(
+          member, alpha.data()[0], Kokkos::subview(values, 0, Kokkos::ALL),
+          row_ptr, colIndices, Kokkos::subview(X, 0, Kokkos::ALL),
+          beta.data()[0], Kokkos::subview(Y, 0, Kokkos::ALL), dobeta);
+      return 0;
+    }
 
     return TeamSpmvInternal::template invoke<
         MemberType, typename alphaViewType::non_const_value_type,
@@ -314,6 +322,13 @@ struct TeamSpmv<MemberType, Trans::NoTranspose> {
       return 1;
     }
 #endif
+    if (values.extent(0) == 1) {
+      KokkosBlas::Experimental::team_spmv<MemberType>(
+          member, alpha, Kokkos::subview(values, 0, Kokkos::ALL), row_ptr,
+          colIndices, Kokkos::subview(X, 0, Kokkos::ALL), beta,
+          Kokkos::subview(Y, 0, Kokkos::ALL), dobeta);
+      return 0;
+    }
 
     return TeamSpmvInternal::template invoke<
         MemberType,
