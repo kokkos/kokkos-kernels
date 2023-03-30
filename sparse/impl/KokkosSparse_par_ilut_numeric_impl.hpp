@@ -436,53 +436,51 @@ struct IlutWrap {
   template <class ARowMapType, class AEntriesType, class AValuesType,
             class LRowMapType, class LEntriesType, class LValuesType,
             class URowMapType, class UEntriesType, class UValuesType,
-            class UtRowMapType, class UtEntriesType, class UtValuesType,
-            class MemberType>
+            class UtRowMapType, class UtEntriesType, class UtValuesType>
   KOKKOS_FUNCTION static void compute_l_u_factors_impl(
       const ARowMapType& A_row_map, const AEntriesType& A_entries,
       const AValuesType& A_values, LRowMapType& L_row_map,
       LEntriesType& L_entries, LValuesType& L_values, URowMapType& U_row_map,
       UEntriesType& U_entries, UValuesType& U_values, UtRowMapType& Ut_row_map,
-      UtEntriesType& Ut_entries, UtValuesType& Ut_values, MemberType& team) {
-    const auto row_idx = team.league_rank();
-
+      UtEntriesType& Ut_entries, UtValuesType& Ut_values, const size_t row_idx,
+      const bool async_update) {
     const auto l_row_nnz_begin = L_row_map(row_idx);
-    const auto l_row_nnz_end   = L_row_map(row_idx + 1);
+    const auto l_row_nnz_end   = L_row_map(row_idx + 1) - 1; // skip diagonal for L
 
-    Kokkos::parallel_for(
-        Kokkos::TeamThreadRange(team, l_row_nnz_begin, l_row_nnz_end - 1),
-        [&](const size_type l_nnz) {
-          const auto col_idx = L_entries(l_nnz);
-          const auto u_diag  = Ut_values(Ut_row_map(col_idx + 1) - 1);
-          if (u_diag != 0.0) {
-            const auto new_val =
-                compute_sum(row_idx, col_idx, A_row_map, A_entries, A_values,
-                            L_row_map, L_entries, L_values, Ut_row_map,
-                            Ut_entries, Ut_values)
-                    .first /
-                u_diag;
-            L_values(l_nnz) = new_val;
-          }
-        });
-
-    team.team_barrier();
+    for (size_t l_nnz = l_row_nnz_begin; l_nnz < l_row_nnz_end; ++l_nnz) {
+      const auto col_idx = L_entries(l_nnz);
+      const auto u_diag  = Ut_values(Ut_row_map(col_idx + 1) - 1);
+      if (u_diag != 0.0) {
+        const auto new_val =
+          compute_sum(row_idx, col_idx, A_row_map, A_entries, A_values,
+                      L_row_map, L_entries, L_values, Ut_row_map,
+                      Ut_entries, Ut_values)
+          .first /
+          u_diag;
+        L_values(l_nnz) = new_val;
+      }
+    }
 
     const auto u_row_nnz_begin = U_row_map(row_idx);
     const auto u_row_nnz_end   = U_row_map(row_idx + 1);
 
-    Kokkos::parallel_for(
-        Kokkos::TeamThreadRange(team, u_row_nnz_begin, u_row_nnz_end),
-        [&](const size_type u_nnz) {
-          const auto col_idx = U_entries(u_nnz);
-          const auto sum = compute_sum(row_idx, col_idx, A_row_map, A_entries,
-                                       A_values, L_row_map, L_entries, L_values,
-                                       Ut_row_map, Ut_entries, Ut_values);
-          const auto new_val = sum.first;
-          const auto ut_nnz  = sum.second;
-          U_values(u_nnz)    = new_val;
-          Ut_values(ut_nnz)  = new_val;  // ut_nnz is not guarateed to fail into
-                                         // range used exclusively by this team
-        });
+    for (size_t u_nnz = u_row_nnz_begin; u_nnz < u_row_nnz_end; ++u_nnz) {
+      const auto col_idx = U_entries(u_nnz);
+      const auto sum = compute_sum(row_idx, col_idx, A_row_map, A_entries,
+                                   A_values, L_row_map, L_entries, L_values,
+                                   Ut_row_map, Ut_entries, Ut_values);
+      const auto new_val = sum.first;
+      const auto ut_nnz  = sum.second;
+      U_values(u_nnz)    = new_val;
+
+      // ut_nnz is not guarateed to fail into range used exclusively
+      // by this thread. Updating it here opens up potential race
+      // conditions that cause problems on GPU but usually causes
+      // faster convergence.
+      if (async_update) {
+        Ut_values(ut_nnz) = new_val;
+      }
+    }
   }
 
   /**
@@ -503,13 +501,11 @@ struct IlutWrap {
       URowMapType& U_row_map, UEntriesType& U_entries, UValuesType& U_values,
       UtRowMapType& Ut_row_map, UtEntriesType& Ut_entries,
       UtValuesType& Ut_values, bool deterministic) {
+    const size_type nrows = ih.get_nrows();
+
     if (deterministic) {
 #ifdef KOKKOS_ENABLE_SERIAL
-      using spolicy_type = Kokkos::TeamPolicy<Kokkos::Serial>;
-      using smember_type = typename spolicy_type::member_type;
-
-      const size_type nrows = ih.get_nrows();
-      spolicy_type policy(nrows, 1);
+      using spolicy_type = Kokkos::RangePolicy<Kokkos::Serial>;
 
       auto A_row_map_h  = Kokkos::create_mirror_view(A_row_map);
       auto A_entries_h  = Kokkos::create_mirror_view(A_entries);
@@ -538,13 +534,13 @@ struct IlutWrap {
       Kokkos::deep_copy(Ut_values_h, Ut_values);
 
       Kokkos::parallel_for(
-          "compute_l_u_factors", policy,
-          KOKKOS_LAMBDA(const smember_type& team) {
-            compute_l_u_factors_impl(
-                A_row_map_h, A_entries_h, A_values_h, L_row_map_h, L_entries_h,
-                L_values_h, U_row_map_h, U_entries_h, U_values_h, Ut_row_map_h,
-                Ut_entries_h, Ut_values_h, team);
-          });
+        "compute_l_u_factors", spolicy_type(0, nrows),
+        KOKKOS_LAMBDA(const size_type row_idx) {
+          compute_l_u_factors_impl(
+            A_row_map_h, A_entries_h, A_values_h, L_row_map_h, L_entries_h,
+            L_values_h, U_row_map_h, U_entries_h, U_values_h, Ut_row_map_h,
+            Ut_entries_h, Ut_values_h, row_idx, true);
+      });
 
       Kokkos::deep_copy(L_values, L_values_h);
       Kokkos::deep_copy(U_values, U_values_h);
@@ -555,17 +551,16 @@ struct IlutWrap {
           "available");
 #endif
     } else {
-      const size_type nrows = ih.get_nrows();
-      policy_type policy(nrows, 1);  // Team parallelism breaks the algorithm
-
+      constexpr bool on_gpu =
+        KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>();
       Kokkos::parallel_for(
-          "compute_l_u_factors", policy,
-          KOKKOS_LAMBDA(const member_type& team) {
-            compute_l_u_factors_impl(A_row_map, A_entries, A_values, L_row_map,
-                                     L_entries, L_values, U_row_map, U_entries,
-                                     U_values, Ut_row_map, Ut_entries,
-                                     Ut_values, team);
-          });
+        "compute_l_u_factors", range_policy(0, nrows),
+        KOKKOS_LAMBDA(const size_type row_idx) {
+          compute_l_u_factors_impl(A_row_map, A_entries, A_values, L_row_map,
+                                   L_entries, L_values, U_row_map, U_entries,
+                                   U_values, Ut_row_map, Ut_entries,
+                                   Ut_values, row_idx, !on_gpu);
+      });
     }
   }
 
