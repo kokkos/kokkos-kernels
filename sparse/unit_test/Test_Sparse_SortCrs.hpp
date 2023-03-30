@@ -186,7 +186,8 @@ void testSortCRSUnmanaged(bool doValues, bool doStructInterface) {
 }
 
 template <typename exec_space>
-void testSortAndMerge(bool useExecInstance) {
+void testSortAndMerge(bool justGraph, bool useExecInstance,
+                      bool doStructInterface, int testCase) {
   using size_type = default_size_type;
   using lno_t     = default_lno_t;
   using scalar_t  = default_scalar;
@@ -194,86 +195,206 @@ void testSortAndMerge(bool useExecInstance) {
   using device_t  = Kokkos::Device<exec_space, mem_space>;
   using crsMat_t =
       KokkosSparse::CrsMatrix<scalar_t, lno_t, device_t, void, size_type>;
+  using graph_t   = typename crsMat_t::staticcrsgraph_type;
   using rowmap_t  = typename crsMat_t::row_map_type::non_const_type;
   using entries_t = typename crsMat_t::index_type;
   using values_t  = typename crsMat_t::values_type;
   using Kokkos::HostSpace;
   using Kokkos::MemoryTraits;
   using Kokkos::Unmanaged;
-  // Create a small CRS matrix on host
-  std::vector<size_type> inRowmap = {0, 4, 4, 5, 7, 10};
-  std::vector<lno_t> inEntries    = {
-      4, 3, 5, 3,  // row 0
-                   // row 1 has no entries
-      6,           // row 2
-      2, 2,        // row 3
-      0, 1, 2      // row 4
-  };
-  // note: choosing values that can be represented exactly by float
-  std::vector<scalar_t> inValues = {
-      1.5, 4, 1, -3,  // row 0
-                      // row 1
-      2,              // row 2
-      -1, -2,         // row 3
-      0, 3.5, -2.25   // row 4
-  };
-  lno_t nrows   = 5;
-  lno_t ncols   = 7;
+  // Select a test case: matrices and correct ouptut are hardcoded for each
+  std::vector<size_type> inRowmap;
+  std::vector<lno_t> inEntries;
+  std::vector<scalar_t> inValues;
+  std::vector<size_type> goldRowmap;
+  std::vector<lno_t> goldEntries;
+  std::vector<scalar_t> goldValues;
+  lno_t nrows = 0;
+  lno_t ncols = 0;
+  switch (testCase) {
+    case 0: {
+      // Two merges take place, and one depends on sorting being done correctly
+      nrows     = 5;
+      ncols     = 7;
+      inRowmap  = {0, 4, 4, 5, 7, 10};
+      inEntries = {
+          4, 3, 5, 3,  // row 0
+                       // row 1 has no entries
+          6,           // row 2
+          2, 2,        // row 3
+          0, 1, 2      // row 4
+      };
+      // note: choosing values that can be represented exactly by float
+      inValues = {
+          1.5, 4, 1, -3,  // row 0
+                          // row 1
+          2,              // row 2
+          -1, -2,         // row 3
+          0, 3.5, -2.25   // row 4
+      };
+      // Expect 2 merges to have taken place
+      goldRowmap  = {0, 3, 3, 4, 5, 8};
+      goldEntries = {
+          3, 4, 5,  // row 0
+                    // row 1 has no entries
+          6,        // row 2
+          2,        // row 3
+          0, 1, 2   // row 4
+      };
+      goldValues = {
+          1, 1.5, 1,     // row 0
+                         // row 1
+          2,             // row 2
+          -3,            // row 3
+          0, 3.5, -2.25  // row 4
+      };
+      break;
+    }
+    case 1: {
+      // Same as above, but no merges take place
+      nrows     = 5;
+      ncols     = 7;
+      inRowmap  = {0, 3, 3, 4, 5, 8};
+      inEntries = {
+          4, 5, 3,  // row 0
+                    // row 1 has no entries
+          6,        // row 2
+          2,        // row 3
+          0, 1, 2   // row 4
+      };
+      inValues = {
+          1.5, 4, 1,     // row 0
+                         // row 1
+          2,             // row 2
+          -1,            // row 3
+          0, 3.5, -2.25  // row 4
+      };
+      // Expect 2 merges to have taken place
+      goldRowmap  = {0, 3, 3, 4, 5, 8};
+      goldEntries = {
+          3, 4, 5,  // row 0
+                    // row 1 has no entries
+          6,        // row 2
+          2,        // row 3
+          0, 1, 2   // row 4
+      };
+      goldValues = {
+          1, 1.5, 4,     // row 0
+                         // row 1
+          2,             // row 2
+          -1,            // row 3
+          0, 3.5, -2.25  // row 4
+      };
+      break;
+    }
+    case 2: {
+      // Nonzero dimensions but no entries
+      nrows      = 5;
+      ncols      = 7;
+      inRowmap   = {0, 0, 0, 0, 0, 0};
+      goldRowmap = inRowmap;
+      break;
+    }
+    case 3: {
+      // Zero rows, length-zero rowmap
+      break;
+    }
+    case 4: {
+      // Zero rows, length-one rowmap
+      inRowmap   = {0};
+      goldRowmap = {0};
+      break;
+    }
+  }
   size_type nnz = inEntries.size();
   Kokkos::View<size_type*, HostSpace, MemoryTraits<Unmanaged>> hostInRowmap(
-      inRowmap.data(), nrows + 1);
+      inRowmap.data(), inRowmap.size());
   Kokkos::View<lno_t*, HostSpace, MemoryTraits<Unmanaged>> hostInEntries(
       inEntries.data(), nnz);
   Kokkos::View<scalar_t*, HostSpace, MemoryTraits<Unmanaged>> hostInValues(
       inValues.data(), nnz);
-  rowmap_t devInRowmap("", nrows + 1);
-  entries_t devInEntries("", nnz);
-  values_t devInValues("", nnz);
+  rowmap_t devInRowmap("in rowmap", inRowmap.size());
+  entries_t devInEntries("in entries", nnz);
+  values_t devInValues("in values", nnz);
   Kokkos::deep_copy(devInRowmap, hostInRowmap);
   Kokkos::deep_copy(devInEntries, hostInEntries);
   Kokkos::deep_copy(devInValues, hostInValues);
   crsMat_t input("Input", nrows, ncols, nnz, devInValues, devInRowmap,
                  devInEntries);
   crsMat_t output;
-  if (useExecInstance) {
-    output = KokkosSparse::sort_and_merge_matrix(exec_space(), input);
+  if (justGraph) {
+    graph_t outputGraph;
+    // Testing sort_and_merge_graph
+    if (doStructInterface) {
+      if (useExecInstance) {
+        outputGraph =
+            KokkosSparse::sort_and_merge_graph(exec_space(), input.graph);
+      } else {
+        outputGraph = KokkosSparse::sort_and_merge_graph(input.graph);
+      }
+    } else {
+      rowmap_t devOutRowmap;
+      entries_t devOutEntries;
+      if (useExecInstance) {
+        KokkosSparse::sort_and_merge_graph(exec_space(), input.graph.row_map,
+                                           input.graph.entries, devOutRowmap,
+                                           devOutEntries);
+      } else {
+        KokkosSparse::sort_and_merge_graph<exec_space>(
+            input.graph.row_map, input.graph.entries, devOutRowmap,
+            devOutEntries);
+      }
+      outputGraph = graph_t(devOutEntries, devOutRowmap);
+    }
+    // Construct output using the output graph, leaving values zero-initialized
+    output = crsMat_t("Output", outputGraph, ncols);
   } else {
-    output = KokkosSparse::sort_and_merge_matrix(input);
+    // Testing sort_and_merge_matrix
+    if (doStructInterface) {
+      if (useExecInstance) {
+        output = KokkosSparse::sort_and_merge_matrix(exec_space(), input);
+      } else {
+        output = KokkosSparse::sort_and_merge_matrix(input);
+      }
+    } else {
+      rowmap_t devOutRowmap;
+      entries_t devOutEntries;
+      values_t devOutValues;
+      if (useExecInstance) {
+        KokkosSparse::sort_and_merge_matrix(
+            exec_space(), input.graph.row_map, input.graph.entries,
+            input.values, devOutRowmap, devOutEntries, devOutValues);
+      } else {
+        KokkosSparse::sort_and_merge_matrix<exec_space>(
+            input.graph.row_map, input.graph.entries, input.values,
+            devOutRowmap, devOutEntries, devOutValues);
+      }
+      // and then construct output from views
+      output = crsMat_t("Output", nrows, ncols, devOutValues.extent(0),
+                        devOutValues, devOutRowmap, devOutEntries);
+    }
+    EXPECT_EQ(output.numRows(), nrows);
+    EXPECT_EQ(output.numCols(), ncols);
   }
-  exec_space().fence();
-  EXPECT_EQ(output.numRows(), nrows);
-  EXPECT_EQ(output.numCols(), ncols);
   auto outRowmap  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
                                                        output.graph.row_map);
   auto outEntries = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
                                                         output.graph.entries);
   auto outValues =
       Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), output.values);
-  // Expect 2 merges to have taken place
-  std::vector<size_type> goldRowmap = {0, 3, 3, 4, 5, 8};
-  std::vector<lno_t> goldEntries    = {
-      3, 4, 5,  // row 0
-                // row 1 has no entries
-      6,        // row 2
-      2,        // row 3
-      0, 1, 2   // row 4
-  };
-  // note: choosing values that can be represented exactly by float
-  std::vector<scalar_t> goldValues = {
-      1, 1.5, 1,     // row 0
-                     // row 1
-      2,             // row 2
-      -3,            // row 3
-      0, 3.5, -2.25  // row 4
-  };
   EXPECT_EQ(goldRowmap.size(), outRowmap.extent(0));
   EXPECT_EQ(goldEntries.size(), outEntries.extent(0));
-  EXPECT_EQ(goldValues.size(), outValues.extent(0));
-  EXPECT_EQ(goldValues.size(), output.nnz());
-  for (lno_t i = 0; i < nrows + 1; i++) EXPECT_EQ(goldRowmap[i], outRowmap(i));
-  for (size_type i = 0; i < output.nnz(); i++) {
+  if (!justGraph) {
+    EXPECT_EQ(goldValues.size(), outValues.extent(0));
+    EXPECT_EQ(goldValues.size(), output.nnz());
+  }
+  for (size_t i = 0; i < goldRowmap.size(); i++)
+    EXPECT_EQ(goldRowmap[i], outRowmap(i));
+  for (size_t i = 0; i < goldEntries.size(); i++) {
     EXPECT_EQ(goldEntries[i], outEntries(i));
-    EXPECT_EQ(goldValues[i], outValues(i));
+    if (!justGraph) {
+      EXPECT_EQ(goldValues[i], outValues(i));
+    }
   }
 }
 
@@ -313,8 +434,21 @@ TEST_F(TestCategory, common_sort_crs_longrows) {
 }
 
 TEST_F(TestCategory, common_sort_merge_crsmatrix) {
-  testSortAndMerge<TestExecSpace>(false);
-  testSortAndMerge<TestExecSpace>(true);
+  for (int testCase = 0; testCase < 5; testCase++) {
+    testSortAndMerge<TestExecSpace>(false, false, false, testCase);
+    testSortAndMerge<TestExecSpace>(false, false, true, testCase);
+    testSortAndMerge<TestExecSpace>(false, true, false, testCase);
+    testSortAndMerge<TestExecSpace>(false, true, true, testCase);
+  }
+}
+
+TEST_F(TestCategory, common_sort_merge_crsgraph) {
+  for (int testCase = 0; testCase < 5; testCase++) {
+    testSortAndMerge<TestExecSpace>(true, false, false, testCase);
+    testSortAndMerge<TestExecSpace>(true, false, true, testCase);
+    testSortAndMerge<TestExecSpace>(true, true, false, testCase);
+    testSortAndMerge<TestExecSpace>(true, true, true, testCase);
+  }
 }
 
 #endif  // KOKKOSSPARSE_SORTCRSTEST_HPP

@@ -95,7 +95,9 @@ void sort_crs_graph(const typename crsGraph_t::execution_space& exec,
 // sort_and_merge_matrix produces a new matrix which is equivalent to A but is
 // sorted and has no duplicated entries: each (i, j) is unique. Values for
 // duplicated entries are summed. Each version either takes an execution space
-// instance as a parameter, or uses the default instance.
+// instance as a parameter, or uses the default instance. If there are no
+// duplicated entries in A, A is sorted and returned (instead of a newly
+// allocated matrix).
 
 template <typename crsMat_t>
 crsMat_t sort_and_merge_matrix(const crsMat_t& A);
@@ -103,6 +105,21 @@ crsMat_t sort_and_merge_matrix(const crsMat_t& A);
 template <typename crsMat_t>
 crsMat_t sort_and_merge_matrix(const typename crsMat_t::execution_space& exec,
                                const crsMat_t& A);
+
+template <typename exec_space, typename rowmap_t, typename entries_t,
+          typename values_t>
+void sort_and_merge_matrix(const exec_space& exec,
+                           const typename rowmap_t::const_type& rowmap_in,
+                           const entries_t& entries_in,
+                           const values_t& values_in, rowmap_t& rowmap_out,
+                           entries_t& entries_out, values_t& values_out);
+
+template <typename exec_space, typename rowmap_t, typename entries_t,
+          typename values_t>
+void sort_and_merge_matrix(const typename rowmap_t::const_type& rowmap_in,
+                           const entries_t& entries_in,
+                           const values_t& values_in, rowmap_t& rowmap_out,
+                           entries_t& entries_out, values_t& values_out);
 
 template <typename crsGraph_t>
 crsGraph_t sort_and_merge_graph(const crsGraph_t& G);
@@ -267,8 +284,8 @@ struct MatrixMergedEntriesFunctor {
   using scalar_t  = typename values_t::non_const_value_type;
 
   // Precondition: entries are sorted within each row
-  MatrixMergedEntriesFunctor(const rowmap_t& rowmap_, const entries_t& entries_,
-                             const values_t& values_,
+  MatrixMergedEntriesFunctor(const typename rowmap_t::const_type& rowmap_,
+                             const entries_t& entries_, const values_t& values_,
                              const rowmap_t& mergedRowmap_,
                              const entries_t& mergedEntries_,
                              const values_t& mergedValues_)
@@ -308,7 +325,7 @@ struct MatrixMergedEntriesFunctor {
     mergedEntries(insertPos) = accumCol;
   }
 
-  rowmap_t rowmap;
+  typename rowmap_t::const_type rowmap;
   entries_t entries;
   values_t values;
   rowmap_t mergedRowmap;
@@ -322,7 +339,8 @@ struct GraphMergedEntriesFunctor {
   using lno_t     = typename entries_t::non_const_value_type;
 
   // Precondition: entries are sorted within each row
-  GraphMergedEntriesFunctor(const rowmap_t& rowmap_, const entries_t& entries_,
+  GraphMergedEntriesFunctor(const typename rowmap_t::const_type& rowmap_,
+                            const entries_t& entries_,
                             const rowmap_t& mergedRowmap_,
                             const entries_t& mergedEntries_)
       : rowmap(rowmap_),
@@ -352,7 +370,7 @@ struct GraphMergedEntriesFunctor {
     mergedEntries(insertPos) = accumCol;
   }
 
-  rowmap_t rowmap;
+  typename rowmap_t::const_type rowmap;
   entries_t entries;
   rowmap_t mergedRowmap;
   entries_t mergedEntries;
@@ -566,41 +584,19 @@ void sort_crs_graph(const crsGraph_t& G) {
 template <typename crsMat_t>
 crsMat_t sort_and_merge_matrix(const typename crsMat_t::execution_space& exec,
                                const crsMat_t& A) {
-  using c_rowmap_t = typename crsMat_t::row_map_type;
-  using rowmap_t   = typename crsMat_t::row_map_type::non_const_type;
-  using entries_t  = typename crsMat_t::index_type::non_const_type;
-  using values_t   = typename crsMat_t::values_type::non_const_type;
-  using size_type  = typename rowmap_t::non_const_value_type;
-  using exec_space = typename crsMat_t::execution_space;
-  using range_t    = Kokkos::RangePolicy<exec_space>;
-  sort_crs_matrix(exec, A);
-  // Count entries per row into a new rowmap, in terms of merges that can be
-  // done
-  rowmap_t mergedRowmap(Kokkos::view_alloc(exec, Kokkos::WithoutInitializing,
-                                           "SortedMerged rowmap"),
-                        A.numRows() + 1);
-  size_type numCompressedEntries = 0;
-  Kokkos::parallel_reduce(range_t(exec, 0, A.numRows()),
-                          Impl::MergedRowmapFunctor<rowmap_t, entries_t>(
-                              mergedRowmap, A.graph.row_map, A.graph.entries),
-                          numCompressedEntries);
-  // Prefix sum to get rowmap
-  KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<rowmap_t, exec_space>(
-      exec, A.numRows() + 1, mergedRowmap);
-  entries_t mergedEntries(Kokkos::view_alloc(exec, "SortedMerged entries"),
-                          numCompressedEntries);
-  values_t mergedValues(Kokkos::view_alloc(exec, "SortedMerged values"),
-                        numCompressedEntries);
-  // Compute merged entries and values
-  Kokkos::parallel_for(
-      range_t(exec, 0, A.numRows()),
-      Impl::MatrixMergedEntriesFunctor<c_rowmap_t, entries_t, values_t>(
-          A.graph.row_map, A.graph.entries, A.values, mergedRowmap,
-          mergedEntries, mergedValues));
-  // Finally, construct the new compressed matrix
+  using rowmap_t  = typename crsMat_t::row_map_type;
+  using entries_t = typename crsMat_t::index_type;
+  using values_t  = typename crsMat_t::values_type;
+
+  rowmap_t rowmap_out;
+  entries_t entries_out;
+  values_t values_out;
+
+  sort_and_merge_matrix(exec, A.graph.row_map, A.graph.entries, A.values,
+                        rowmap_out, entries_out, values_out);
+
   return crsMat_t("SortedMerged", A.numRows(), A.numCols(),
-                  numCompressedEntries, mergedValues, mergedRowmap,
-                  mergedEntries);
+                  values_out.extent(0), values_out, rowmap_out, entries_out);
 }
 
 template <typename crsMat_t>
@@ -608,46 +604,151 @@ crsMat_t sort_and_merge_matrix(const crsMat_t& A) {
   return sort_and_merge_matrix(typename crsMat_t::execution_space(), A);
 }
 
+template <typename exec_space, typename rowmap_t, typename entries_t,
+          typename values_t>
+void sort_and_merge_matrix(const exec_space& exec,
+                           const typename rowmap_t::const_type& rowmap_in,
+                           const entries_t& entries_in,
+                           const values_t& values_in, rowmap_t& rowmap_out,
+                           entries_t& entries_out, values_t& values_out) {
+  using nc_rowmap_t = typename rowmap_t::non_const_type;
+  using size_type   = typename nc_rowmap_t::value_type;
+  using ordinal_t   = typename entries_t::value_type;
+  using range_t     = Kokkos::RangePolicy<exec_space>;
+  static_assert(!std::is_const_v<typename entries_t::value_type>,
+                "sort_and_merge_matrix: entries_t must not be const-valued");
+  static_assert(!std::is_const_v<typename values_t::value_type>,
+                "sort_and_merge_matrix: values_t must not be const-valued");
+
+  ordinal_t numRows =
+      rowmap_in.extent(0) ? ordinal_t(rowmap_in.extent(0) - 1) : ordinal_t(0);
+  size_type nnz = entries_in.extent(0);
+
+  if (numRows == 0) {
+    rowmap_out  = typename rowmap_t::non_const_type("SortedMerged rowmap",
+                                                   rowmap_in.extent(0));
+    entries_out = entries_t();
+    values_out  = values_t();
+    return;
+  }
+
+  sort_crs_matrix(exec, rowmap_in, entries_in, values_in);
+
+  // Count entries per row into a new rowmap, in terms of merges that can be
+  // done
+  nc_rowmap_t nc_rowmap_out(
+      Kokkos::view_alloc(exec, Kokkos::WithoutInitializing,
+                         "SortedMerged rowmap"),
+      numRows + 1);
+  size_type numCompressedEntries = 0;
+  Kokkos::parallel_reduce(range_t(exec, 0, numRows),
+                          Impl::MergedRowmapFunctor<nc_rowmap_t, entries_t>(
+                              nc_rowmap_out, rowmap_in, entries_in),
+                          numCompressedEntries);
+  if (nnz == numCompressedEntries) {
+    // No merges to do, so just return A. Save the time of allocating and
+    // filling a copy.
+    if constexpr (std::is_const_v<typename rowmap_t::value_type>) {
+      rowmap_out = rowmap_in;
+    } else {
+      // rowmap_t is non-const, so we can't directly assign rowmap_in to
+      // rowmap_out. Forced to deep copy it to maintain const-correctness.
+      Kokkos::deep_copy(exec, nc_rowmap_out, rowmap_in);
+      rowmap_out = nc_rowmap_out;
+    }
+    entries_out = entries_in;
+    values_out  = values_in;
+    return;
+  }
+  // Prefix sum to get rowmap
+  KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<nc_rowmap_t,
+                                                        exec_space>(
+      exec, numRows + 1, nc_rowmap_out);
+  rowmap_out  = nc_rowmap_out;
+  entries_out = entries_t(Kokkos::view_alloc(exec, Kokkos::WithoutInitializing,
+                                             "SortedMerged entries"),
+                          numCompressedEntries);
+  values_out  = values_t(Kokkos::view_alloc(exec, Kokkos::WithoutInitializing,
+                                           "SortedMerged values"),
+                        numCompressedEntries);
+  // Compute merged entries and values
+  Kokkos::parallel_for(
+      range_t(exec, 0, numRows),
+      Impl::MatrixMergedEntriesFunctor<rowmap_t, entries_t, values_t>(
+          rowmap_in, entries_in, values_in, rowmap_out, entries_out,
+          values_out));
+}
+
+template <typename exec_space, typename rowmap_t, typename entries_t,
+          typename values_t>
+void sort_and_merge_matrix(const typename rowmap_t::const_type& rowmap_in,
+                           const entries_t& entries_in,
+                           const values_t& values_in, rowmap_t& rowmap_out,
+                           entries_t& entries_out, values_t& values_out) {
+  sort_and_merge_matrix(exec_space(), rowmap_in, entries_in, values_in,
+                        rowmap_out, entries_out, values_out);
+}
+
 template <typename exec_space, typename rowmap_t, typename entries_t>
 void sort_and_merge_graph(const exec_space& exec,
                           const typename rowmap_t::const_type& rowmap_in,
                           const entries_t& entries_in, rowmap_t& rowmap_out,
                           entries_t& entries_out) {
-  using size_type      = typename rowmap_t::non_const_value_type;
-  using lno_t          = typename entries_t::non_const_value_type;
-  using range_t        = Kokkos::RangePolicy<exec_space>;
-  using const_rowmap_t = typename rowmap_t::const_type;
-  lno_t numRows        = rowmap_in.extent(0);
-  if (numRows <= 1) {
-    // Matrix has zero rows
-    rowmap_out  = rowmap_t();
+  using size_type   = typename rowmap_t::non_const_value_type;
+  using lno_t       = typename entries_t::value_type;
+  using range_t     = Kokkos::RangePolicy<exec_space>;
+  using nc_rowmap_t = typename rowmap_t::non_const_type;
+  static_assert(!std::is_const_v<typename entries_t::value_type>,
+                "sort_and_merge_graph: entries_t must not be const-valued");
+  lno_t numRows = rowmap_in.extent(0) ? rowmap_in.extent(0) - 1 : 0;
+  if (numRows == 0) {
+    rowmap_out  = typename rowmap_t::non_const_type("SortedMerged rowmap",
+                                                   rowmap_in.extent(0));
     entries_out = entries_t();
     return;
   }
-  numRows--;
   // Sort in place
-  sort_crs_graph<exec_space, const_rowmap_t, entries_t>(exec, rowmap_in,
-                                                        entries_in);
+  sort_crs_graph(exec, rowmap_in, entries_in);
   // Count entries per row into a new rowmap, in terms of merges that can be
   // done
-  rowmap_out = rowmap_t(Kokkos::view_alloc(exec, Kokkos::WithoutInitializing,
-                                           "SortedMerged rowmap"),
-                        numRows + 1);
+  nc_rowmap_t nc_rowmap_out(
+      Kokkos::view_alloc(exec, Kokkos::WithoutInitializing,
+                         "SortedMerged rowmap"),
+      numRows + 1);
   size_type numCompressedEntries = 0;
   Kokkos::parallel_reduce(range_t(exec, 0, numRows),
                           Impl::MergedRowmapFunctor<rowmap_t, entries_t>(
-                              rowmap_out, rowmap_in, entries_in),
+                              nc_rowmap_out, rowmap_in, entries_in),
                           numCompressedEntries);
-  // Prefix sum to get rowmap
-  KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<rowmap_t, exec_space>(
-      exec, numRows + 1, rowmap_out);
-  entries_out = entries_t(Kokkos::view_alloc(exec, "SortedMerged entries"),
+  if (entries_in.extent(0) == size_t(numCompressedEntries)) {
+    // No merges to perform, so the output rowmap is unchanged and we can just
+    // return the now-sorted entries_in.
+    if constexpr (std::is_const_v<typename rowmap_t::value_type>) {
+      rowmap_out = rowmap_in;
+    } else {
+      // rowmap_t is non-const, so we can't directly assign rowmap_in to
+      // rowmap_out. Forced to deep copy it to maintain const-correctness.
+      Kokkos::deep_copy(exec, nc_rowmap_out, rowmap_in);
+      rowmap_out = nc_rowmap_out;
+    }
+    entries_out = entries_in;
+    return;
+  }
+  // Prefix sum to get rowmap.
+  // In the case where the output rowmap is the same as the input, we could just
+  // assign "rowmap_out = rowmap_in" except that would break const-correctness.
+  // Can skip filling the entries, however.
+  KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<nc_rowmap_t,
+                                                        exec_space>(
+      exec, numRows + 1, nc_rowmap_out);
+  rowmap_out  = nc_rowmap_out;
+  entries_out = entries_t(Kokkos::view_alloc(exec, Kokkos::WithoutInitializing,
+                                             "SortedMerged entries"),
                           numCompressedEntries);
   // Compute merged entries and values
-  Kokkos::parallel_for(
-      range_t(exec, 0, numRows),
-      Impl::GraphMergedEntriesFunctor<const_rowmap_t, entries_t>(
-          rowmap_in, entries_in, rowmap_out, entries_out));
+  Kokkos::parallel_for(range_t(exec, 0, numRows),
+                       Impl::GraphMergedEntriesFunctor<rowmap_t, entries_t>(
+                           rowmap_in, entries_in, rowmap_out, entries_out));
 }
 
 template <typename exec_space, typename rowmap_t, typename entries_t>
@@ -668,9 +769,7 @@ crsGraph_t sort_and_merge_graph(
       "sort_and_merge_graph requires StaticCrsGraph entries to be non-const.");
   rowmap_t mergedRowmap;
   entries_t mergedEntries;
-  sort_and_merge_graph<typename crsGraph_t::execution_space, rowmap_t,
-                       entries_t>(exec, G.row_map, G.entries, mergedRowmap,
-                                  mergedEntries);
+  sort_and_merge_graph(exec, G.row_map, G.entries, mergedRowmap, mergedEntries);
   return crsGraph_t(mergedEntries, mergedRowmap);
 }
 
