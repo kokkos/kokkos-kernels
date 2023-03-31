@@ -44,17 +44,27 @@ namespace Experimental {
   std::is_same<typename std::remove_const<A>::type, \
                typename std::remove_const<B>::type>::value
 
-/// @brief
-/// @tparam KernelHandle
-/// @tparam ARowMapType
-/// @tparam AEntriesType
-/// @tparam LRowMapType
-/// @tparam URowMapType
-/// @param handle
-/// @param A_rowmap
-/// @param A_entries
-/// @param L_rowmap
-/// @param U_rowmap
+/// @brief Performs the symbolic phase of par_ilut (non-blocking).
+///
+/// The sparsity pattern of A will be analyzed and L_rowmap and U_rowmap will be
+/// populated with the L (lower triangular) and U (upper triagular) non-zero
+/// counts respectively. Having a separate symbolic phase allows for reuse when
+/// dealing with multiple matrices with the same sparsity pattern. This routine
+/// will set some values on handle for symbolic info (row count, nnz counts).
+///
+/// @tparam KernelHandle Template for the KernelHandle type
+/// @tparam ARowMapType Template for A_rowmap type
+/// @tparam AEntriesType Template for A_entries type
+/// @tparam LRowMapType Template for L_rowmap type
+/// @tparam URowMapType Template for U_rowmap type
+/// @param handle The kernel handle. It is expected that create_par_ilut_handle
+/// has been called on it
+/// @param A_rowmap The row map (row nnz offsets) for the A CSR (Input)
+/// @param A_entries The entries (column ids) for the A CSR (Input)
+/// @param L_rowmap The row map for the L CSR, should already be sized correctly
+/// (numRows+1) (Output)
+/// @param U_rowmap The row map for the U CSR, should already be sized correctly
+/// (numRows+1) (Output)
 template <typename KernelHandle, typename ARowMapType, typename AEntriesType,
           typename LRowMapType, typename URowMapType>
 void par_ilut_symbolic(KernelHandle* handle, ARowMapType& A_rowmap,
