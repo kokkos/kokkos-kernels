@@ -389,6 +389,11 @@ class BsrMatrix {
   //! Nonconst version of the type of the entries in the sparse matrix.
   typedef typename values_type::non_const_value_type non_const_value_type;
 
+  // block values are actually a 1-D view, however they are implicitly
+  // arranged in LayoutRight, e.g. consecutive entries in the values view
+  // are consecutive entries within a row inside a block
+  using block_layout = Kokkos::LayoutRight;
+
   /// \name Storage of the actual sparsity structure and values.
   ///
   /// BsrMatrix uses the compressed sparse row (CSR) storage format to
