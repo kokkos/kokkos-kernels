@@ -19,11 +19,11 @@
 namespace Test {
 template <class ScalarType, class LayoutType, class ExeSpaceType>
 void doCsMat(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
-  auto expected_min    = ScalarType(1.0);
-  int64_t expected_nnz = 0;
+  auto expected_min   = ScalarType(1.0);
+  size_t expected_nnz = 0;
   RandCsMatrix<ScalarType, LayoutType, ExeSpaceType> cm(m, n, min_val, max_val);
 
-  for (int64_t i = 0; i < cm.get_nnz(); ++i)
+  for (size_t i = 0; i < cm.get_nnz(); ++i)
     ASSERT_GE(cm(i), expected_min) << cm.info;
 
   auto map_d = cm.get_map();

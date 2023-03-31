@@ -150,14 +150,13 @@ struct SPMV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM, false,
       const YScalar &alpha, const AMatrix &A, const XVector &X,
       const YScalar &beta, const YVector &Y) {
     //
-    if ((mode[0] == KokkosSparse::NoTranspose[0]) ||
-        (mode[0] == KokkosSparse::Conjugate[0])) {
-      bool useConjugate = (mode[0] == KokkosSparse::Conjugate[0]);
+    if ((mode[0] == NoTranspose[0]) || (mode[0] == Conjugate[0])) {
+      bool useConjugate = (mode[0] == Conjugate[0]);
       return Bsr::spMatVec_no_transpose(controls, alpha, A, X, beta, Y,
                                         useConjugate);
-    } else if ((mode[0] == KokkosSparse::Transpose[0]) ||
-               (mode[0] == KokkosSparse::ConjugateTranspose[0])) {
-      bool useConjugate = (mode[0] == KokkosSparse::ConjugateTranspose[0]);
+    } else if ((mode[0] == Transpose[0]) ||
+               (mode[0] == ConjugateTranspose[0])) {
+      bool useConjugate = (mode[0] == ConjugateTranspose[0]);
       return Bsr::spMatVec_transpose(controls, alpha, A, X, beta, Y,
                                      useConjugate);
     }
@@ -292,14 +291,13 @@ struct SPMV_MV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
     }
 #endif  // KOKKOS_ARCH
 
-    if ((mode[0] == KokkosSparse::NoTranspose[0]) ||
-        (mode[0] == KokkosSparse::Conjugate[0])) {
-      bool useConjugate = (mode[0] == KokkosSparse::Conjugate[0]);
+    if ((mode[0] == NoTranspose[0]) || (mode[0] == Conjugate[0])) {
+      bool useConjugate = (mode[0] == Conjugate[0]);
       return Bsr::spMatMultiVec_no_transpose(controls, alpha, A, X, beta, Y,
                                              useConjugate);
-    } else if ((mode[0] == KokkosSparse::Transpose[0]) ||
-               (mode[0] == KokkosSparse::ConjugateTranspose[0])) {
-      bool useConjugate = (mode[0] == KokkosSparse::ConjugateTranspose[0]);
+    } else if ((mode[0] == Transpose[0]) ||
+               (mode[0] == ConjugateTranspose[0])) {
+      bool useConjugate = (mode[0] == ConjugateTranspose[0]);
       return Bsr::spMatMultiVec_transpose(controls, alpha, A, X, beta, Y,
                                           useConjugate);
     }

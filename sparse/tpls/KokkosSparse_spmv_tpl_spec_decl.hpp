@@ -506,6 +506,8 @@ KOKKOSSPARSE_SPMV_ROCSPARSE(Kokkos::complex<float>, Kokkos::LayoutLeft,
 KOKKOSSPARSE_SPMV_ROCSPARSE(Kokkos::complex<float>, Kokkos::LayoutRight,
                             KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
 
+#undef KOKKOSSPARSE_SPMV_ROCSPARSE
+
 }  // namespace Impl
 }  // namespace KokkosSparse
 #endif  // KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE

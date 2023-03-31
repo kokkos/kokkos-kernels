@@ -638,18 +638,27 @@ class RandCooMat {
 /// dim2 refers to either columns for a Crs matrix or rows for a Ccs matrix.
 /// \tparam ScalarType
 /// \tparam LayoutType
-/// \tparam ExeSpaceType
-template <class ScalarType, class LayoutType, class ExeSpaceType>
+/// \tparam Device
+template <class ScalarType, class LayoutType, class Device,
+          typename Ordinal = int64_t,
+          typename Size    = typename Kokkos::ViewTraits<Ordinal*, Device, void,
+                                                      void>::size_type>
 class RandCsMatrix {
  public:
-  using ValViewTypeD = Kokkos::View<ScalarType*, LayoutType, ExeSpaceType>;
-  using IdViewTypeD  = Kokkos::View<int64_t*, LayoutType, ExeSpaceType>;
-  using MapViewTypeD = Kokkos::View<int64_t*, LayoutType, ExeSpaceType>;
+  using value_type   = ScalarType;
+  using array_layout = LayoutType;
+  using device_type  = Device;
+  using ordinal_type = Ordinal;
+  using size_type    = Size;
 
  private:
-  int64_t __dim2;
-  int64_t __dim1;
-  int64_t __nnz = 0;
+  using execution_space = typename Device::execution_space;
+  using ValViewTypeD    = Kokkos::View<ScalarType*, LayoutType, Device>;
+  using IdViewTypeD     = Kokkos::View<Ordinal*, LayoutType, Device>;
+  using MapViewTypeD    = Kokkos::View<Size*, LayoutType, Device>;
+  Ordinal __dim2;
+  Ordinal __dim1;
+  Size __nnz = 0;
   MapViewTypeD __map_d;
   IdViewTypeD __ids_d;
   ValViewTypeD __vals_d;
@@ -668,19 +677,19 @@ class RandCsMatrix {
   ///  4. __map(i) - col_map(i - 1) is in [0, m]
   void __populate_random_cs_mat(uint64_t ticks) {
     std::srand(ticks);
-    for (int64_t col_idx = 0; col_idx < __dim1; col_idx++) {
-      int64_t r = std::rand() % (__dim2 + 1);
+    for (Ordinal col_idx = 0; col_idx < __dim1; col_idx++) {
+      Ordinal r = std::rand() % (__dim2 + 1);
       if (r == 0 || __fully_sparse) {  // 100% sparse vector
         __map(col_idx) = __nnz;
       } else {  // sparse vector with r elements
         // Populate r row ids
-        std::vector<int64_t> v(r);
+        std::vector<Ordinal> v(r);
 
-        for (int64_t i = 0; i < r; i++) v.at(i) = i;
+        for (Ordinal i = 0; i < r; i++) v.at(i) = i;
 
         std::shuffle(v.begin(), v.end(), std::mt19937(std::random_device()()));
 
-        for (int64_t i = 0; i < r; i++) __ids(i + __nnz) = v.at(i);
+        for (Ordinal i = 0; i < r; i++) __ids(i + __nnz) = v.at(i);
 
         // Point to new column and accumulate number of non zeros
         __map(col_idx) = __nnz;
@@ -693,6 +702,7 @@ class RandCsMatrix {
 
     // Copy to device
     Kokkos::deep_copy(__map_d, __map);
+<<<<<<< HEAD
     IdViewTypeD tight_ids(Kokkos::view_alloc(Kokkos::WithoutInitializing,
                                              "RandCsMatrix.IdViewTypeD"),
                           __nnz);
@@ -701,6 +711,10 @@ class RandCsMatrix {
         Kokkos::subview(__ids, Kokkos::make_pair(0, static_cast<int>(__nnz))));
     ExeSpaceType().fence();
     __ids_d = tight_ids;
+=======
+    Kokkos::deep_copy(__ids_d, __ids);
+    execution_space().fence();
+>>>>>>> 3111b39b9 (Add rocSparse TPL for BsrMatrix SpMV, rewrite BsrMatrix SpMV unit tests.)
   }
 
   template <class T>
@@ -708,7 +722,7 @@ class RandCsMatrix {
     T dst(std::string("RandCsMatrix.") + typeid(T).name() + " copy",
           src.extent(0));
     Kokkos::deep_copy(dst, src);
-    ExeSpaceType().fence();
+    execution_space().fence();
     return dst;
   }
 
@@ -719,7 +733,7 @@ class RandCsMatrix {
   /// \param dim2 The second dimension: columns for Crs or rows for Ccs
   /// \param min_val The minimum scalar value in the matrix.
   /// \param max_val The maximum scalar value in the matrix.
-  RandCsMatrix(int64_t dim1, int64_t dim2, ScalarType min_val,
+  RandCsMatrix(Ordinal dim1, Ordinal dim2, ScalarType min_val,
                ScalarType max_val, bool fully_sparse = false) {
     __dim1         = dim1;
     __dim2         = dim2;
@@ -736,8 +750,8 @@ class RandCsMatrix {
 
     info = std::string(
         std::string("RandCsMatrix<") + typeid(ScalarType).name() + ", " +
-        typeid(LayoutType).name() + ", " + typeid(ExeSpaceType).name() + ">(" +
-        std::to_string(dim2) + ", " + std::to_string(dim1) +
+        typeid(LayoutType).name() + ", " + typeid(execution_space).name() +
+        ">(" + std::to_string(dim2) + ", " + std::to_string(dim1) +
         "...): rand seed: " + std::to_string(ticks) +
         ", fully sparse: " + (__fully_sparse ? "true" : "false") + "\n");
     Kokkos::Random_XorShift64_Pool<Kokkos::HostSpace> random(ticks);
@@ -751,17 +765,17 @@ class RandCsMatrix {
 
     // Copy to device
     Kokkos::deep_copy(__vals_d, __vals);
-    ExeSpaceType().fence();
+    execution_space().fence();
   }
 
   // O(c), where c is a constant.
-  ScalarType operator()(int64_t idx) { return __vals(idx); }
-  int64_t get_nnz() { return __nnz; }
+  ScalarType operator()(Size idx) { return __vals(idx); }
+  size_t get_nnz() { return size_t(__nnz); }
   // dimension2: This is either columns for a Crs matrix or rows for a Ccs
   // matrix.
-  int64_t get_dim2() { return __dim2; }
+  Ordinal get_dim2() { return __dim2; }
   // dimension1: This is either rows for Crs matrix or columns for a Ccs matrix.
-  int64_t get_dim1() { return __dim1; }
+  Ordinal get_dim1() { return __dim1; }
   ValViewTypeD get_vals() { return __getter_copy_helper(__vals_d); }
   IdViewTypeD get_ids() { return __getter_copy_helper(__ids_d); }
   MapViewTypeD get_map() { return __getter_copy_helper(__map_d); }
