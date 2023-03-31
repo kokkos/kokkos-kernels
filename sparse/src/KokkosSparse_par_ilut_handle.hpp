@@ -25,8 +25,8 @@ namespace KokkosSparse {
 namespace Experimental {
 
 /**
- * Handle for par_ilut. Contains useful types, par_ilut configuration settings, symbolic settings
- * and scalar output info.
+ * Handle for par_ilut. Contains useful types, par_ilut configuration settings,
+ * symbolic settings and scalar output info.
  *
  * For more info, see KokkosSparse_par_ilut.hpp doxygen
  */
@@ -73,29 +73,43 @@ class PAR_ILUTHandle {
 
  private:
   // User inputs
-  size_type max_iter;               /// Hard cap on the number of par_ilut iterations
-  float_t residual_norm_delta_stop; /// When the change in residual from iteration to iteration drops below this, the algorithm will stop (even if max_iters has not been hit)
-  float_t fill_in_limit;            /// The threshold for the ILU factorization
-  bool async_update;                /// Whether compute LU factors should do asychronous updates. When ON, the algorithm will usually converge faster but it makes the algorithm non-deterministic. This will always be OFF for GPU since it doesn't work there.
-  bool verbose;                     /// Print information while executing par_ilut
+  size_type max_iter;  /// Hard cap on the number of par_ilut iterations
+  float_t residual_norm_delta_stop;  /// When the change in residual from
+                                     /// iteration to iteration drops below
+                                     /// this, the algorithm will stop (even if
+                                     /// max_iters has not been hit)
+  float_t fill_in_limit;             /// The threshold for the ILU factorization
+  bool async_update;  /// Whether compute LU factors should do asychronous
+                      /// updates. When ON, the algorithm will usually converge
+                      /// faster but it makes the algorithm non-deterministic.
+                      /// This will always be OFF for GPU since it doesn't work
+                      /// there.
+  bool verbose;       /// Print information while executing par_ilut
 
   // Stored by parent KokkosKernelsHandle
-  int team_size;   /// Kokkos team size. Set by the parent handle. -1 implies AUTO
-  int vector_size; /// Kokkos vector size. Set by the parent handle.
+  int team_size;    /// Kokkos team size. Set by the parent handle. -1 implies
+                    /// AUTO
+  int vector_size;  /// Kokkos vector size. Set by the parent handle.
 
   // Stored by symbolic phase
-  size_type nrows;        /// Number of rows in the CSRs given to the symbolic par_ilut
-  size_type nnzL;         /// Number of non-zero entries in the L part of A in the CSRs given to the symbolic par_ilut
-  size_type nnzU;         /// Number of non-zero entries in the U part of A in the CSRs given to the symbolic par_ilut
-  bool symbolic_complete; /// Whether symbolic par_ilut has been called
+  size_type
+      nrows;       /// Number of rows in the CSRs given to the symbolic par_ilut
+  size_type nnzL;  /// Number of non-zero entries in the L part of A in the CSRs
+                   /// given to the symbolic par_ilut
+  size_type nnzU;  /// Number of non-zero entries in the U part of A in the CSRs
+                   /// given to the symbolic par_ilut
+  bool symbolic_complete;  /// Whether symbolic par_ilut has been called
 
   // Outputs
-  int num_iters;            /// The number of iterations par_ilut took to finish
-  nnz_scalar_t end_rel_res; /// The A - LU residual norm at the time the algorithm finished
+  int num_iters;  /// The number of iterations par_ilut took to finish
+  nnz_scalar_t end_rel_res;  /// The A - LU residual norm at the time the
+                             /// algorithm finished
 
  public:
-  // See KokkosKernelsHandle::create_par_ilut_handle for default user input values
-  PAR_ILUTHandle(const size_type max_iter_, const float_t residual_norm_delta_stop_,
+  // See KokkosKernelsHandle::create_par_ilut_handle for default user input
+  // values
+  PAR_ILUTHandle(const size_type max_iter_,
+                 const float_t residual_norm_delta_stop_,
                  const float_t fill_in_limit_, const bool async_update_,
                  const bool verbose_)
       : max_iter(max_iter_),
@@ -165,7 +179,9 @@ class PAR_ILUTHandle {
 
   bool get_async_update() const { return async_update; }
 
-  void set_async_update(const bool async_update_) { this->async_update = async_update_; }
+  void set_async_update(const bool async_update_) {
+    this->async_update = async_update_;
+  }
 
   TeamPolicy get_default_team_policy() const {
     if (team_size == -1) {

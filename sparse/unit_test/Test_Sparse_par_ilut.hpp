@@ -294,7 +294,8 @@ void run_test_par_ilut_precond() {
   using float_t = typename Kokkos::ArithTraits<scalar_t>::mag_type;
 
   // Create a diagonally dominant sparse matrix to test:
-  //  par_ilut settings max_iters, res_delta_stop, fill_in_limit, and async_update are all left as defaults
+  //  par_ilut settings max_iters, res_delta_stop, fill_in_limit, and
+  //  async_update are all left as defaults
   constexpr auto n             = 5000;
   constexpr auto m             = 15;
   constexpr auto tol           = ParIlut::TolMeta<float_t>::value;

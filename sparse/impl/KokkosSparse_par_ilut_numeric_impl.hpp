@@ -453,47 +453,47 @@ struct IlutWrap {
       UtValuesType& Ut_values, const bool async_update) {
     const size_type nrows = ih.get_nrows();
     Kokkos::parallel_for(
-      "compute_l_u_factors", range_policy(0, nrows),
-      KOKKOS_LAMBDA(const size_type row_idx) {
-        const auto l_row_nnz_begin = L_row_map(row_idx);
-        const auto l_row_nnz_end =
-          L_row_map(row_idx + 1) - 1;  // skip diagonal for L
+        "compute_l_u_factors", range_policy(0, nrows),
+        KOKKOS_LAMBDA(const size_type row_idx) {
+          const auto l_row_nnz_begin = L_row_map(row_idx);
+          const auto l_row_nnz_end =
+              L_row_map(row_idx + 1) - 1;  // skip diagonal for L
 
-        for (auto l_nnz = l_row_nnz_begin; l_nnz < l_row_nnz_end; ++l_nnz) {
-          const auto col_idx = L_entries(l_nnz);
-          const auto u_diag  = Ut_values(Ut_row_map(col_idx + 1) - 1);
-          if (u_diag != 0.0) {
-            const auto new_val =
-              compute_sum(row_idx, col_idx, A_row_map, A_entries, A_values,
-                          L_row_map, L_entries, L_values, Ut_row_map, Ut_entries,
-                          Ut_values)
-              .first /
-              u_diag;
-            L_values(l_nnz) = new_val;
+          for (auto l_nnz = l_row_nnz_begin; l_nnz < l_row_nnz_end; ++l_nnz) {
+            const auto col_idx = L_entries(l_nnz);
+            const auto u_diag  = Ut_values(Ut_row_map(col_idx + 1) - 1);
+            if (u_diag != 0.0) {
+              const auto new_val =
+                  compute_sum(row_idx, col_idx, A_row_map, A_entries, A_values,
+                              L_row_map, L_entries, L_values, Ut_row_map,
+                              Ut_entries, Ut_values)
+                      .first /
+                  u_diag;
+              L_values(l_nnz) = new_val;
+            }
           }
-        }
 
-        const auto u_row_nnz_begin = U_row_map(row_idx);
-        const auto u_row_nnz_end   = U_row_map(row_idx + 1);
+          const auto u_row_nnz_begin = U_row_map(row_idx);
+          const auto u_row_nnz_end   = U_row_map(row_idx + 1);
 
-        for (auto u_nnz = u_row_nnz_begin; u_nnz < u_row_nnz_end; ++u_nnz) {
-          const auto col_idx = U_entries(u_nnz);
-          const auto sum     = compute_sum(row_idx, col_idx, A_row_map, A_entries,
-                                           A_values, L_row_map, L_entries, L_values,
-                                           Ut_row_map, Ut_entries, Ut_values);
-          const auto new_val = sum.first;
-          const auto ut_nnz  = sum.second;
-          U_values(u_nnz)    = new_val;
+          for (auto u_nnz = u_row_nnz_begin; u_nnz < u_row_nnz_end; ++u_nnz) {
+            const auto col_idx = U_entries(u_nnz);
+            const auto sum     = compute_sum(
+                row_idx, col_idx, A_row_map, A_entries, A_values, L_row_map,
+                L_entries, L_values, Ut_row_map, Ut_entries, Ut_values);
+            const auto new_val = sum.first;
+            const auto ut_nnz  = sum.second;
+            U_values(u_nnz)    = new_val;
 
-          // ut_nnz is not guarateed to fail into range used exclusively
-          // by this thread. Updating it here opens up potential race
-          // conditions that cause problems on GPU but usually causes
-          // faster convergence.
-          if (async_update) {
-            Ut_values(ut_nnz) = new_val;
+            // ut_nnz is not guarateed to fail into range used exclusively
+            // by this thread. Updating it here opens up potential race
+            // conditions that cause problems on GPU but usually causes
+            // faster convergence.
+            if (async_update) {
+              Ut_values(ut_nnz) = new_val;
+            }
           }
-        }
-      });
+        });
   }
 
   /**
@@ -796,7 +796,7 @@ struct IlutWrap {
 
     const auto verbose = thandle.get_verbose();
     constexpr bool on_gpu =
-      KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>();
+        KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>();
     const auto async_update = !on_gpu && thandle.get_async_update();
 
     if (verbose) {
@@ -804,7 +804,8 @@ struct IlutWrap {
       std::cout << "  num_rows:            " << nrows << std::endl;
       std::cout << "  fill_in_limit:       " << fill_in_limit << std::endl;
       std::cout << "  max_iter:            " << max_iter << std::endl;
-      std::cout << "  res_norm_delta_stop: " << residual_norm_delta_stop << std::endl;
+      std::cout << "  res_norm_delta_stop: " << residual_norm_delta_stop
+                << std::endl;
       std::cout << "  async_update:        " << async_update << std::endl;
     }
 
