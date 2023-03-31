@@ -44,6 +44,17 @@ namespace Experimental {
   std::is_same<typename std::remove_const<A>::type, \
                typename std::remove_const<B>::type>::value
 
+/// @brief
+/// @tparam KernelHandle
+/// @tparam ARowMapType
+/// @tparam AEntriesType
+/// @tparam LRowMapType
+/// @tparam URowMapType
+/// @param handle
+/// @param A_rowmap
+/// @param A_entries
+/// @param L_rowmap
+/// @param U_rowmap
 template <typename KernelHandle, typename ARowMapType, typename AEntriesType,
           typename LRowMapType, typename URowMapType>
 void par_ilut_symbolic(KernelHandle* handle, ARowMapType& A_rowmap,
@@ -165,6 +176,28 @@ void par_ilut_symbolic(KernelHandle* handle, ARowMapType& A_rowmap,
 
 }  // par_ilut_symbolic
 
+/// @brief
+/// @tparam KernelHandle
+/// @tparam ARowMapType
+/// @tparam AEntriesType
+/// @tparam AValuesType
+/// @tparam LRowMapType
+/// @tparam LEntriesType
+/// @tparam LValuesType
+/// @tparam URowMapType
+/// @tparam UEntriesType
+/// @tparam UValuesType
+/// @param handle
+/// @param A_rowmap
+/// @param A_entries
+/// @param A_values
+/// @param L_rowmap
+/// @param L_entries
+/// @param L_values
+/// @param U_rowmap
+/// @param U_entries
+/// @param U_values
+/// @param deterministic
 template <typename KernelHandle, typename ARowMapType, typename AEntriesType,
           typename AValuesType, typename LRowMapType, typename LEntriesType,
           typename LValuesType, typename URowMapType, typename UEntriesType,

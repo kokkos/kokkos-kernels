@@ -24,6 +24,14 @@ In general, we prefer that the prototype has the doxygen style comment rather th
         KOKKOS_INLINE_FUNCTION ViewValueType
         access_view_bounds_check(ViewType v, int m, int n, const BoundsCheck::Yes &);
 
+**NOTE:** To have vscode generate the "\\\\\\" style stubs:
+
+1. install the C/C++ IntelliSense, debugging, and code browsing extention.
+
+2. go to Settings, Extensions, C/C++, Doxygen Documentation Generator Settings, and ensure the setting for Doxdocgen is "\\\\\\".
+
+3. place your cursor on the line above `template ...` and type "\\\\\\".
+
 Library policies
 ----------------
 
