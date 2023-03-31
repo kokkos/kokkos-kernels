@@ -179,6 +179,7 @@ void run_test_par_ilut() {
   kh.create_par_ilut_handle();
 
   auto par_ilut_handle = kh.get_par_ilut_handle();
+  par_ilut_handle->set_async_update(false);
 
   // Allocate L and U CRS views as outputs
   RowMapType L_row_map("L_row_map", nrows + 1);
@@ -190,8 +191,8 @@ void run_test_par_ilut() {
   const size_type nnzL = par_ilut_handle->get_nnzL();
   const size_type nnzU = par_ilut_handle->get_nnzU();
 
-  EXPECT_EQ(nnzL, 10);
-  EXPECT_EQ(nnzU, 8);
+  ASSERT_EQ(nnzL, 10);
+  ASSERT_EQ(nnzU, 8);
 
   EntriesType L_entries("L_entries", nnzL);
   ValuesType L_values("L_values", nnzL);
@@ -199,13 +200,7 @@ void run_test_par_ilut() {
   ValuesType U_values("U_values", nnzU);
 
   par_ilut_numeric(&kh, row_map, entries, values, L_row_map, L_entries,
-                   L_values, U_row_map, U_entries, U_values,
-#ifdef KOKKOS_ENABLE_SERIAL
-                   true /*deterministic*/
-#else
-                   false /*cannot ask for determinism*/
-#endif
-  );
+                   L_values, U_row_map, U_entries, U_values);
 
   // Use this to check LU
   // std::vector<std::vector<scalar_t> > expected_LU = {
@@ -259,10 +254,6 @@ void run_test_par_ilut() {
   // check_matrix("U numeric", U_row_map, U_entries, U_values,
   // expected_U_candidates);
 
-  // Serial is required for deterministic mode and the checks below cannot
-  // reliably pass without determinism.
-#ifdef KOKKOS_ENABLE_SERIAL
-
   // Use these fixtures to test full numeric
   std::vector<std::vector<scalar_t>> expected_L_candidates = {
       {1., 0., 0., 0.},
@@ -283,10 +274,7 @@ void run_test_par_ilut() {
   check_matrix("U numeric", U_row_map, U_entries, U_values,
                expected_U_candidates);
 
-  // Checking
-
   kh.destroy_par_ilut_handle();
-#endif
 }
 
 template <typename scalar_t, typename lno_t, typename size_type,
@@ -355,8 +343,7 @@ void run_test_par_ilut_precond() {
   ValuesType U_values("U_values", nnzU);
 
   par_ilut_numeric(&kh, row_map, entries, values, L_row_map, L_entries,
-                   L_values, U_row_map, U_entries, U_values,
-                   false /* non-deterministic*/);
+                   L_values, U_row_map, U_entries, U_values);
 
   // Create CRSs
   sp_matrix_type L("L", numRows, numCols, L_values.extent(0), L_values,
