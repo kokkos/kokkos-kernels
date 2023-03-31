@@ -135,6 +135,8 @@ template <typename... P>
 struct is_iota<Iota<P...>> : public std::true_type {};
 template <typename... P>
 struct is_iota<const Iota<P...>> : public std::true_type {};
+template <typename... P>
+inline constexpr bool is_iota_v = is_iota<P...>::value;
 
 }  // namespace Impl
 }  // namespace KokkosKernels
