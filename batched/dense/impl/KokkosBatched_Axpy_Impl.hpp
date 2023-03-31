@@ -19,6 +19,7 @@
 /// \author Kim Liegeois (knliege@sandia.gov)
 
 #include "KokkosBatched_Util.hpp"
+#include "KokkosBlas1_team_axpby.hpp"
 
 namespace KokkosBatched {
 
@@ -177,6 +178,7 @@ struct TeamVectorAxpyInternal {
 ///
 /// Serial Impl
 /// ===========
+
 template <typename XViewType, typename YViewType, typename alphaViewType>
 KOKKOS_INLINE_FUNCTION int SerialAxpy::invoke(const alphaViewType& alpha,
                                               const XViewType& X,
@@ -211,6 +213,9 @@ KOKKOS_INLINE_FUNCTION int SerialAxpy::invoke(const alphaViewType& alpha,
     return 1;
   }
 #endif
+
+  // No need to check if X.extent(0)==1 in the serial case as we don't
+  // parallelize the kernel anyway.
 
   return SerialAxpyInternal::template invoke<
       typename alphaViewType::non_const_value_type,
@@ -259,6 +264,13 @@ KOKKOS_INLINE_FUNCTION int TeamAxpy<MemberType>::invoke(
   }
 #endif
 
+  if (X.extent(0) == 1) {
+    KokkosBlas::Experimental::axpy<MemberType>(
+        member, alpha.data()[0], Kokkos::subview(X, 0, Kokkos::ALL),
+        Kokkos::subview(Y, 0, Kokkos::ALL));
+    return 0;
+  }
+
   return TeamAxpyInternal::template invoke<
       MemberType, typename alphaViewType::non_const_value_type,
       typename XViewType::non_const_value_type>(
@@ -306,6 +318,13 @@ KOKKOS_INLINE_FUNCTION int TeamVectorAxpy<MemberType>::invoke(
     return 1;
   }
 #endif
+
+  if (X.extent(0) == 1) {
+    KokkosBlas::Experimental::axpy<MemberType>(
+        member, alpha.data()[0], Kokkos::subview(X, 0, Kokkos::ALL),
+        Kokkos::subview(Y, 0, Kokkos::ALL));
+    return 0;
+  }
 
   return TeamVectorAxpyInternal::invoke<
       MemberType, typename alphaViewType::non_const_value_type,
