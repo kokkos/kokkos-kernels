@@ -117,12 +117,12 @@ class PAR_ILUTHandle {
         fill_in_limit(fill_in_limit_),
         async_update(async_update_),
         verbose(verbose_),
+        team_size(-1),
+        vector_size(-1),
         nrows(0),
         nnzL(0),
         nnzU(0),
         symbolic_complete(false),
-        team_size(-1),
-        vector_size(-1),
         num_iters(-1),
         end_rel_res(-1) {}
 
