@@ -176,7 +176,7 @@ void run_test_par_ilut() {
   // Make kernel handle
   KernelHandle kh;
 
-  kh.create_par_ilut_handle(nrows);
+  kh.create_par_ilut_handle();
 
   auto par_ilut_handle = kh.get_par_ilut_handle();
 
@@ -330,7 +330,7 @@ void run_test_par_ilut_precond() {
       typename std::remove_reference<decltype(*gmres_handle)>::type;
   using ViewVectorType = typename GMRESHandle::nnz_value_view_t;
 
-  kh.create_par_ilut_handle(numRows);
+  kh.create_par_ilut_handle();
   auto par_ilut_handle = kh.get_par_ilut_handle();
   par_ilut_handle->set_verbose(verbose);
 

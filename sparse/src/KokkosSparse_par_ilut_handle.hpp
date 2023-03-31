@@ -24,6 +24,8 @@
 namespace KokkosSparse {
 namespace Experimental {
 
+// Handle for par_ilut. Contains useful types, par_ilut configuration settings, symbolic settings
+// and scalar output info.
 template <class size_type_, class lno_t_, class scalar_t_, class ExecutionSpace,
           class TemporaryMemorySpace, class PersistentMemorySpace>
 class PAR_ILUTHandle {
@@ -66,50 +68,42 @@ class PAR_ILUTHandle {
                    typename nnz_row_view_t::memory_traits>;
 
  private:
-  // Inputs
+  // User inputs
+  size_type max_iter;
+  float_t residual_norm_delta_stop;
+  float_t fill_in_limit;
+  bool verbose;
+
+  // Stored by parent KokkosKernelsHandle
+  int team_size;
+  int vector_size;
+
+  // Stored by symbolic phase
   size_type nrows;
   size_type nnzL;
   size_type nnzU;
-  size_type max_iter;
-  float_t residual_norm_delta_stop;
   bool symbolic_complete;
-  int team_size;
-  int vector_size;
-  float_t fill_in_limit;
-  bool verbose;
 
   // Outputs
   int num_iters;
   nnz_scalar_t end_rel_res;
 
  public:
-  PAR_ILUTHandle(const size_type nrows_, const size_type nnzL_ = 0,
-                 const size_type nnzU_ = 0, const size_type max_iter_ = 50)
-      : nrows(nrows_),
-        nnzL(nnzL_),
-        nnzU(nnzU_),
-        max_iter(max_iter_),
-        residual_norm_delta_stop(1e-2),
+  // See KokkosKernelsHandle::create_par_ilut_handle for default user input values
+  PAR_ILUTHandle(const size_type max_iter_, const float_t residual_norm_delta_stop_,
+                 const float_t fill_in_limit_, const bool verbose_)
+      : max_iter(max_iter_),
+        residual_norm_delta_stop(residual_norm_delta_stop_),
+        fill_in_limit(fill_in_limit_),
+        verbose(verbose_),
+        nrows(0),
+        nnzL(0),
+        nnzU(0),
         symbolic_complete(false),
         team_size(-1),
         vector_size(-1),
-        fill_in_limit(0.75),
-        verbose(false),
         num_iters(-1),
         end_rel_res(-1) {}
-
-  void reset_handle(const size_type nrows_, const size_type nnzL_,
-                    const size_type nnzU_) {
-    set_nrows(nrows_);
-    set_nnzL(nnzL_);
-    set_nnzU(nnzU_);
-    set_residual_norm_delta_stop(1e-2);
-    reset_symbolic_complete();
-    set_fill_in_limit(0.75);
-    set_verbose(false);
-    num_iters   = -1;
-    end_rel_res = -1;
-  }
 
   KOKKOS_INLINE_FUNCTION
   ~PAR_ILUTHandle() {}

@@ -22,7 +22,9 @@
 /// compressed row sparse ("Crs") format. It is expected that symbolic
 /// is called before numeric. The numeric function offers a deterministic
 /// flag that will force the function to have deterministic results. This
-/// is useful for testing but incurs a big performance penalty.
+/// is useful for testing but incurs a big performance penalty. The par_ilut
+/// algorithm will repeat (iterate) until max_iters is hit or the improvement
+/// in the residual from iter to iter drops below a certain threshold.
 ///
 /// This algorithm is described in the paper:
 /// PARILUT - A New Parallel Threshold ILU Factorization - Anzt, Chow, Dongarra
@@ -113,6 +115,9 @@ void par_ilut_symbolic(KernelHandle* handle, ARowMapType& A_rowmap,
           typename KernelHandle::PAR_ILUTHandleType::execution_space>::value,
       "par_ilut_symbolic: KernelHandle and Views have different execution "
       "spaces.");
+
+  KK_REQUIRE_MSG(A_rowmap.extent(0) == L_rowmap.extent(0), "L row map size does not match A row map");
+  KK_REQUIRE_MSG(A_rowmap.extent(0) == U_rowmap.extent(0), "U row map size does not match A row map");
 
   using c_size_t   = typename KernelHandle::const_size_type;
   using c_lno_t    = typename KernelHandle::const_nnz_lno_t;

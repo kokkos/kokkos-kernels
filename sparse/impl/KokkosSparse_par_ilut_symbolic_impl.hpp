@@ -83,8 +83,11 @@ void ilut_symbolic(IlutHandle& thandle, const ARowMapType& A_row_map_d,
   const size_type nnzsL = Ilut::prefix_sum(L_row_map_d);
   const size_type nnzsU = Ilut::prefix_sum(U_row_map_d);
 
+  // Set symbolic info on handle
+  thandle.set_nrows(A_row_map_d.extent(0) - 1);
   thandle.set_nnzL(nnzsL);
   thandle.set_nnzU(nnzsU);
+  thandle.set_symbolic_complete();
 
 }  // end ilut_symbolic
 
