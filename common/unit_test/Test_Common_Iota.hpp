@@ -86,7 +86,16 @@ void test_iota_subview() {
 }
 
 template <typename T, typename Size>
+void test_is_iota() {
+  static_assert(KokkosKernels::Impl::is_iota_v<Iota<T, Size>>,
+                "Iota should be an Iota");
+  static_assert(!KokkosKernels::Impl::is_iota_v<int>,
+                "int should not be an Iota");
+}
+
+template <typename T, typename Size>
 void test_iota() {
+  test_is_iota<T, Size>();
   test_iota_constructor<T, Size>();
   test_iota_rank<T, Size>();
   test_iota_subview<T, Size>();

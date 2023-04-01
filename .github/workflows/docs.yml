@@ -21,12 +21,12 @@ jobs:
           pip install sphinx-rtd-theme
 
       - name: checkout_kokkos_kernels
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           path: kokkos-kernels
 
       - name: checkout_kokkos
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: kokkos/kokkos
           ref: develop
