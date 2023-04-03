@@ -276,7 +276,7 @@ void run_test_spiluk_streams(int test_algo, int nstreams) {
   using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<
       size_type, lno_t, scalar_t, execution_space, memory_space, memory_space>;
   using crsMat_t = CrsMatrix<scalar_t, lno_t, device, void, size_type>;
-  using AT       = Kokkos::Details::ArithTraits<scalar_t>;
+  using AT       = Kokkos::ArithTraits<scalar_t>;
 
   const size_type nrows = 9;
   const size_type nnz   = 21;
