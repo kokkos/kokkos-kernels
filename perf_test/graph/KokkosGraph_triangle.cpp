@@ -373,16 +373,16 @@ void run_experiment(int argc, char **argv, perf_test::CommonInputParams) {
       if (params.apply_compression) {
         KokkosGraph::Experimental::triangle_generic(
             &kh, m, crsGraph.row_map, crsGraph.entries,
-            KOKKOS_LAMBDA(const lno_t &row, const lno_t &col_set_index,
-                          const lno_t &col_set, const lno_t &thread_id) {
+            KOKKOS_LAMBDA(const lno_t &row, const lno_t & /* col_set_index */,
+                          const lno_t &col_set, const lno_t & /* thread_id */) {
               row_mapC(row) += KokkosKernels::Impl::pop_count(col_set);
             });
       } else {
         KokkosGraph::Experimental::triangle_generic(
             &kh, m, crsGraph.row_map, crsGraph.entries,
-            KOKKOS_LAMBDA(const lno_t &row, const lno_t &col_set_index,
-                          const lno_t &col_set,
-                          const lno_t &thread_id) { row_mapC(row)++; });
+            KOKKOS_LAMBDA(const lno_t &row, const lno_t & /*col_set_index*/,
+                          const lno_t & /*col_set*/,
+                          const lno_t & /*thread_id*/) { row_mapC(row)++; });
       }
 
       size_t num_triangles = 0;
