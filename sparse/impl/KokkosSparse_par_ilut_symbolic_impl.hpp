@@ -44,7 +44,9 @@ void ilut_symbolic(IlutHandle& thandle, const ARowMapType& A_row_map_d,
   using size_type       = typename IlutHandle::size_type;
   using Ilut            = IlutWrap<IlutHandle>;
 
-  thandle.set_nrows(A_row_map_d.extent(0) - 1);
+  const size_type a_nrows = A_row_map_d.extent(0);
+  const size_type nrows = a_nrows > 0 ? (a_nrows - 1) : 0;
+  thandle.set_nrows(nrows);
 
   const auto policy = thandle.get_default_team_policy();
 

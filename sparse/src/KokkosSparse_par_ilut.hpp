@@ -118,10 +118,12 @@ void par_ilut_symbolic(KernelHandle* handle, ARowMapType& A_rowmap,
       "par_ilut_symbolic: KernelHandle and Views have different execution "
       "spaces.");
 
-  KK_REQUIRE_MSG(A_rowmap.extent(0) == L_rowmap.extent(0),
-                 "L row map size does not match A row map");
-  KK_REQUIRE_MSG(A_rowmap.extent(0) == U_rowmap.extent(0),
-                 "U row map size does not match A row map");
+  if (A_rowmap.extent(0) != 0) {
+    KK_REQUIRE_MSG(A_rowmap.extent(0) == L_rowmap.extent(0),
+                   "L row map size does not match A row map");
+    KK_REQUIRE_MSG(A_rowmap.extent(0) == U_rowmap.extent(0),
+                   "U row map size does not match A row map");
+  }
 
   using c_size_t   = typename KernelHandle::const_size_type;
   using c_lno_t    = typename KernelHandle::const_nnz_lno_t;

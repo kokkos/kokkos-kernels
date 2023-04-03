@@ -410,6 +410,65 @@ void run_test_par_ilut_precond() {
   }
 }
 
+template <typename scalar_t, typename lno_t, typename size_type,
+          typename device>
+void run_test_par_ilut_zerorow_A() {
+  using RowMapType   = Kokkos::View<size_type*, device>;
+  using EntriesType  = Kokkos::View<lno_t*, device>;
+  using ValuesType   = Kokkos::View<scalar_t*, device>;
+  using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<
+      size_type, lno_t, scalar_t, typename device::execution_space,
+      typename device::memory_space, typename device::memory_space>;
+
+  const size_type nrows = 0;
+
+  // Allocate device CRS views for A
+  RowMapType row_map("row_map", 0);
+  EntriesType entries("entries", 0);
+  ValuesType values("values", 0);
+
+  // Create host mirror views for CRS A
+  auto hrow_map = Kokkos::create_mirror_view(row_map);
+  auto hentries = Kokkos::create_mirror_view(entries);
+  auto hvalues  = Kokkos::create_mirror_view(values);
+
+  // Make kernel handle
+  KernelHandle kh;
+
+  kh.create_par_ilut_handle();
+
+  auto par_ilut_handle = kh.get_par_ilut_handle();
+
+  // Allocate L and U CRS views as outputs
+  RowMapType L_row_map("L_row_map", nrows + 1);
+  RowMapType U_row_map("U_row_map", nrows + 1);
+
+  // Initial L/U approximations for A
+  par_ilut_symbolic(&kh, row_map, entries, L_row_map, U_row_map);
+
+  const size_type nnzL = par_ilut_handle->get_nnzL();
+  const size_type nnzU = par_ilut_handle->get_nnzU();
+
+  ASSERT_EQ(nnzL, 0);
+  ASSERT_EQ(nnzU, 0);
+
+  EntriesType L_entries("L_entries", nnzL);
+  ValuesType L_values("L_values", nnzL);
+  EntriesType U_entries("U_entries", nnzU);
+  ValuesType U_values("U_values", nnzU);
+
+  par_ilut_numeric(&kh, row_map, entries, values, L_row_map, L_entries,
+                   L_values, U_row_map, U_entries, U_values);
+
+  const auto itrs        = par_ilut_handle->get_num_iters();
+  const auto end_rel_res = par_ilut_handle->get_end_rel_res();
+
+  EXPECT_EQ(itrs, 0);
+  EXPECT_EQ(end_rel_res, scalar_t(0.));
+
+  kh.destroy_par_ilut_handle();
+}
+
 }  // namespace Test
 
 template <typename scalar_t, typename lno_t, typename size_type,
@@ -424,10 +483,21 @@ void test_par_ilut_precond() {
   Test::run_test_par_ilut_precond<scalar_t, lno_t, size_type, device>();
 }
 
+template <typename scalar_t, typename lno_t, typename size_type,
+          typename device>
+void test_par_ilut_zerorow_A() {
+  Test::run_test_par_ilut_zerorow_A<scalar_t, lno_t, size_type, device>();
+}
+
+
 #define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)               \
   TEST_F(TestCategory,                                                            \
          sparse##_##par_ilut##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {      \
     test_par_ilut<SCALAR, ORDINAL, OFFSET, DEVICE>();                             \
+  }                                                                               \
+  TEST_F(TestCategory,                                                            \
+         sparse##_##par_ilut_zerorow_A##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
+    test_par_ilut_zerorow_A<SCALAR, ORDINAL, OFFSET, DEVICE>();                   \
   }                                                                               \
   TEST_F(                                                                         \
       TestCategory,                                                               \

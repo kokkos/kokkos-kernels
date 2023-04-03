@@ -844,7 +844,7 @@ struct IlutWrap {
     //
     // main loop
     //
-    bool stop = false;
+    bool stop = nrows == 0; // Don't iterate at all if nrows=0
     while (!stop && itr < max_iter) {
       // LU = L*U
       if (prev_residual == std::numeric_limits<scalar_t>::max()) {
@@ -917,13 +917,6 @@ struct IlutWrap {
         }
 
         const auto curr_delta = karith::abs(prev_residual - curr_residual);
-        // if (curr_residual > prev_residual) {
-        //   if (verbose) {
-        //     std::cout << "  Residuals are going backwards, stop" <<
-        //     std::endl;
-        //   }
-        //   stop = true;
-        // }
         if (curr_delta <= residual_norm_delta_stop) {
           if (verbose) {
             std::cout << "  Itr-to-itr residual change has dropped below "
@@ -939,6 +932,7 @@ struct IlutWrap {
       ++itr;
     }
 
+    curr_residual = nrows == 0 ? scalar_t(0.) : curr_residual;
     if (verbose) {
       std::cout << "PAR_ILUT stopped in " << itr << " iterations with residual "
                 << curr_residual << std::endl;
