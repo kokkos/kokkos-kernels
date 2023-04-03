@@ -489,20 +489,20 @@ void test_par_ilut_zerorow_A() {
   Test::run_test_par_ilut_zerorow_A<scalar_t, lno_t, size_type, device>();
 }
 
-
-#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)               \
-  TEST_F(TestCategory,                                                            \
-         sparse##_##par_ilut##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {      \
-    test_par_ilut<SCALAR, ORDINAL, OFFSET, DEVICE>();                             \
-  }                                                                               \
-  TEST_F(TestCategory,                                                            \
-         sparse##_##par_ilut_zerorow_A##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
-    test_par_ilut_zerorow_A<SCALAR, ORDINAL, OFFSET, DEVICE>();                   \
-  }                                                                               \
-  TEST_F(                                                                         \
-      TestCategory,                                                               \
-      sparse##_##par_ilut_precond##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
-    test_par_ilut_precond<SCALAR, ORDINAL, OFFSET, DEVICE>();                     \
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                 \
+  TEST_F(TestCategory,                                                              \
+         sparse##_##par_ilut##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {        \
+    test_par_ilut<SCALAR, ORDINAL, OFFSET, DEVICE>();                               \
+  }                                                                                 \
+  TEST_F(                                                                           \
+      TestCategory,                                                                 \
+      sparse##_##par_ilut_zerorow_A##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
+    test_par_ilut_zerorow_A<SCALAR, ORDINAL, OFFSET, DEVICE>();                     \
+  }                                                                                 \
+  TEST_F(                                                                           \
+      TestCategory,                                                                 \
+      sparse##_##par_ilut_precond##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {   \
+    test_par_ilut_precond<SCALAR, ORDINAL, OFFSET, DEVICE>();                       \
   }
 
 #define NO_TEST_COMPLEX

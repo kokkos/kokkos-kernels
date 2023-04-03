@@ -844,7 +844,7 @@ struct IlutWrap {
     //
     // main loop
     //
-    bool stop = nrows == 0; // Don't iterate at all if nrows=0
+    bool stop = nrows == 0;  // Don't iterate at all if nrows=0
     while (!stop && itr < max_iter) {
       // LU = L*U
       if (prev_residual == std::numeric_limits<scalar_t>::max()) {
