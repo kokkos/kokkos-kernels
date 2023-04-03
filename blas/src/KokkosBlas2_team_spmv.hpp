@@ -16,7 +16,7 @@
 #ifndef KOKKOSBLAS2_TEAM_SPMV_HPP_
 #define KOKKOSBLAS2_TEAM_SPMV_HPP_
 
-/// \file KokkosBlas2_spmv.hpp
+/// \file KokkosBlas2_team_spmv.hpp
 
 #include <KokkosKernels_helpers.hpp>
 #include <KokkosKernels_Error.hpp>
