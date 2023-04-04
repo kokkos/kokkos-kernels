@@ -55,7 +55,7 @@ struct SingleLevelSYR {
   }
 
   KOKKOS_INLINE_FUNCTION void operator()(const IndexType & i) const { // AquiEEP
-    using KAT = Kokkos::Details::ArithTraits<typename AViewType::non_const_value_type>;
+    using KAT = Kokkos::ArithTraits<typename AViewType::non_const_value_type>;
 
     if (alpha_ == KAT::zero()) {
       // Nothing to do
@@ -110,7 +110,7 @@ void singleLevelSyr( const typename AViewType::execution_space  & space
 
   static_assert(std::is_integral<IndexType>::value, "IndexType must be an integer");
 
-  using KAT = Kokkos::Details::ArithTraits<typename AViewType::non_const_value_type>;
+  using KAT = Kokkos::ArithTraits<typename AViewType::non_const_value_type>;
 
   if (x.extent(0) == 0) {
     // no entries to update
@@ -173,7 +173,7 @@ public:
   KOKKOS_INLINE_FUNCTION void operator()( TwoLevelSYR_LayoutLeftTag // AquiEEP
                                         , const member_type & team
                                         ) const {
-    using KAT = Kokkos::Details::ArithTraits<typename AViewType::non_const_value_type>;
+    using KAT = Kokkos::ArithTraits<typename AViewType::non_const_value_type>;
 
     if (alpha_ == KAT::zero()) {
       // Nothing to do
@@ -206,7 +206,7 @@ public:
   KOKKOS_INLINE_FUNCTION void operator()( TwoLevelSYR_LayoutRightTag // AquiEEP
                                         , const member_type & team
                                         ) const {
-    using KAT = Kokkos::Details::ArithTraits<typename AViewType::non_const_value_type>;
+    using KAT = Kokkos::ArithTraits<typename AViewType::non_const_value_type>;
 
     if (alpha_ == KAT::zero()) {
       // Nothing to do
@@ -262,7 +262,7 @@ void twoLevelSyr( const typename AViewType::execution_space  & space
 
   static_assert(std::is_integral<IndexType>::value, "IndexType must be an integer");
 
-  using KAT = Kokkos::Details::ArithTraits<typename AViewType::non_const_value_type>;
+  using KAT = Kokkos::ArithTraits<typename AViewType::non_const_value_type>;
 
   if (x.extent(0) == 0) {
     // no entries to update
