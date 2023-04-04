@@ -1,0 +1,133 @@
+//@HEADER
+// ************************************************************************
+//
+//                        Kokkos v. 4.0
+//       Copyright (2022) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
+//
+// Under the terms of Contract DE-NA0003525 with NTESS,
+// the U.S. Government retains certain rights in this software.
+//
+// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
+// See https://kokkos.org/LICENSE for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//@HEADER
+
+#ifndef KOKKOSBLAS2_SYR_HPP_
+#define KOKKOSBLAS2_SYR_HPP_
+
+#include <KokkosBlas2_syr_spec.hpp>
+
+namespace KokkosBlas {
+
+/// \brief Rank-1 update of a general matrix: A = A + alpha * x * x^{T,H}.
+///
+/// \tparam XViewType Input vector, as a 1-D Kokkos::View
+/// \tparam AViewType Input/Output matrix, as a 2-D Kokkos::View
+///
+/// \param space [in]     Execution space instance on which to run the kernel.
+///                       This may contain information about which stream to
+///                       run on.
+/// \param trans [in]     "T" or "t" for transpose, "H" or "h" for Hermitian.
+///                       Only the first character is taken into account.
+/// \param alpha [in]     Input coefficient of x * x^{T,H}
+/// \param x     [in]     Input vector, as a 1-D Kokkos::View
+/// \param A     [in/out] Output matrix, as a nonconst 2-D Kokkos::View
+template <class XViewType, class AViewType>
+void syr( const typename AViewType::execution_space  & space
+        , const          char                          trans[]
+        , const          char                          uplo[]
+        , const typename AViewType::const_value_type & alpha
+        , const          XViewType                   & x
+        , const          AViewType                   & A
+        ) {
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Entering SRC KokkosBlas::syr(), AViewType = %s\n", typeid(AViewType).name() );
+
+  static_assert( Kokkos::is_view<AViewType>::value, "AViewType must be a Kokkos::View." );
+  static_assert( Kokkos::is_view<XViewType>::value, "XViewType must be a Kokkos::View." );
+
+  static_assert( static_cast<int>(AViewType::rank) == 2, "AViewType must have rank 2." );
+  static_assert( static_cast<int>(XViewType::rank) == 1, "XViewType must have rank 1." );
+
+  // Check compatibility of dimensions at run time.
+  if (( A.extent(0) != x.extent(0) ) ||
+      ( A.extent(1) != x.extent(0) )) {
+    std::ostringstream os;
+    os << "KokkosBlas::syr: Dimensions of A, x: "
+       << "A is " << A.extent(0) << " by " << A.extent(1)
+       << ", x has size " << x.extent(0);
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
+  }
+
+  using ALayout = typename AViewType::array_layout;
+
+  // Minimize the number of Impl::SYR instantiations, by standardizing 
+  // on particular View specializations for its template parameters.
+  typedef Kokkos::View< typename XViewType::const_value_type*
+                      , typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<XViewType, ALayout>::array_layout
+                      , typename XViewType::device_type
+                      , Kokkos::MemoryTraits<Kokkos::Unmanaged>
+                      > XVT;
+
+  typedef Kokkos::View< typename AViewType::non_const_value_type**
+                      , ALayout
+                      , typename AViewType::device_type
+                      , Kokkos::MemoryTraits<Kokkos::Unmanaged>
+                      > AVT;
+
+  if (( A.extent(0) == 0 ) ||
+      ( A.extent(1) == 0 )) {
+    // For degenerate cases, use fallback implementation to avoid potential
+    // (unlikely?) circular dependence issues by including other KokkosBlas
+    // headers.
+    const bool eti_spec_avail = KokkosBlas::Impl::syr_eti_spec_avail<XVT, AVT>::value;
+    Impl::SYR<XVT, AVT, false, eti_spec_avail>::syr( space
+                                                   , trans
+                                                   , uplo
+                                                   , alpha
+                                                   , x
+                                                   , A
+                                                   );
+  }
+  else {
+    Impl::SYR<XVT, AVT>::syr( space
+                            , trans
+                            , uplo
+                            , alpha
+                            , x
+                            , A
+                            );
+  }
+}
+
+/// \brief Rank-1 update of a general matrix: A = A + alpha * x * x^{T,H}.
+///
+/// \tparam XViewType Input vector, as a 1-D Kokkos::View
+/// \tparam AViewType Input/Output matrix, as a 2-D Kokkos::View
+///
+/// \param trans [in]     "T" or "t" for transpose, "H" or "h" for Hermitian.
+///                       Only the first character is taken into account.
+/// \param alpha [in]     Input coefficient of x * x^{T,H}
+/// \param x     [in]     Input vector, as a 1-D Kokkos::View
+/// \param A     [in/out] Output matrix, as a nonconst 2-D Kokkos::View
+template <class XViewType, class AViewType>
+void syr( const          char                          trans[]
+        , const          char                          uplo[]
+        , const typename AViewType::const_value_type & alpha
+        , const          XViewType                   & x
+        , const          AViewType                   & A
+        ) {
+  const typename AViewType::execution_space space = typename AViewType::execution_space();
+  syr( space
+     , trans
+     , uplo
+     , alpha
+     , x
+     , A
+     );
+}
+
+} // namespace KokkosBlas
+
+#endif // KOKKOSBLAS2_SYR_HPP_
