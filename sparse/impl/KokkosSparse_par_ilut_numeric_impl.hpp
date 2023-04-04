@@ -433,64 +433,12 @@ struct IlutWrap {
     return Kokkos::make_pair(a_val - sum, ut_nnz);
   }
 
-  template <class ARowMapType, class AEntriesType, class AValuesType,
-            class LRowMapType, class LEntriesType, class LValuesType,
-            class URowMapType, class UEntriesType, class UValuesType,
-            class UtRowMapType, class UtEntriesType, class UtValuesType,
-            class MemberType>
-  KOKKOS_FUNCTION static void compute_l_u_factors_impl(
-      const ARowMapType& A_row_map, const AEntriesType& A_entries,
-      const AValuesType& A_values, LRowMapType& L_row_map,
-      LEntriesType& L_entries, LValuesType& L_values, URowMapType& U_row_map,
-      UEntriesType& U_entries, UValuesType& U_values, UtRowMapType& Ut_row_map,
-      UtEntriesType& Ut_entries, UtValuesType& Ut_values, MemberType& team) {
-    const auto row_idx = team.league_rank();
-
-    const auto l_row_nnz_begin = L_row_map(row_idx);
-    const auto l_row_nnz_end   = L_row_map(row_idx + 1);
-
-    Kokkos::parallel_for(
-        Kokkos::TeamThreadRange(team, l_row_nnz_begin, l_row_nnz_end - 1),
-        [&](const size_type l_nnz) {
-          const auto col_idx = L_entries(l_nnz);
-          const auto u_diag  = Ut_values(Ut_row_map(col_idx + 1) - 1);
-          if (u_diag != 0.0) {
-            const auto new_val =
-                compute_sum(row_idx, col_idx, A_row_map, A_entries, A_values,
-                            L_row_map, L_entries, L_values, Ut_row_map,
-                            Ut_entries, Ut_values)
-                    .first /
-                u_diag;
-            L_values(l_nnz) = new_val;
-          }
-        });
-
-    team.team_barrier();
-
-    const auto u_row_nnz_begin = U_row_map(row_idx);
-    const auto u_row_nnz_end   = U_row_map(row_idx + 1);
-
-    Kokkos::parallel_for(
-        Kokkos::TeamThreadRange(team, u_row_nnz_begin, u_row_nnz_end),
-        [&](const size_type u_nnz) {
-          const auto col_idx = U_entries(u_nnz);
-          const auto sum = compute_sum(row_idx, col_idx, A_row_map, A_entries,
-                                       A_values, L_row_map, L_entries, L_values,
-                                       Ut_row_map, Ut_entries, Ut_values);
-          const auto new_val = sum.first;
-          const auto ut_nnz  = sum.second;
-          U_values(u_nnz)    = new_val;
-          Ut_values(ut_nnz)  = new_val;  // ut_nnz is not guarateed to fail into
-                                         // range used exclusively by this team
-        });
-  }
-
   /**
    * Implements a single iteration/sweep of the fixed-point ILU algorithm.
    * The results of this function are non-deterministic due to concurrent
-   * reading and writing of Ut values. deterministic can be set to true to
-   * make this function determistic, but it will be run in Serial exe space
-   * if so.
+   * reading and writing of Ut values. async_update can be set to false to
+   * make this function determistic, but that could cause par_ilut
+   * to take longer (more iterations) to converge.
    */
   template <class ARowMapType, class AEntriesType, class AValuesType,
             class LRowMapType, class LEntriesType, class LValuesType,
@@ -502,70 +450,50 @@ struct IlutWrap {
       LRowMapType& L_row_map, LEntriesType& L_entries, LValuesType& L_values,
       URowMapType& U_row_map, UEntriesType& U_entries, UValuesType& U_values,
       UtRowMapType& Ut_row_map, UtEntriesType& Ut_entries,
-      UtValuesType& Ut_values, bool deterministic) {
-    if (deterministic) {
-#ifdef KOKKOS_ENABLE_SERIAL
-      using spolicy_type = Kokkos::TeamPolicy<Kokkos::Serial>;
-      using smember_type = typename spolicy_type::member_type;
+      UtValuesType& Ut_values, const bool async_update) {
+    const size_type nrows = ih.get_nrows();
+    Kokkos::parallel_for(
+        "compute_l_u_factors", range_policy(0, nrows),
+        KOKKOS_LAMBDA(const size_type row_idx) {
+          const auto l_row_nnz_begin = L_row_map(row_idx);
+          const auto l_row_nnz_end =
+              L_row_map(row_idx + 1) - 1;  // skip diagonal for L
 
-      const size_type nrows = ih.get_nrows();
-      spolicy_type policy(nrows, 1);
+          for (auto l_nnz = l_row_nnz_begin; l_nnz < l_row_nnz_end; ++l_nnz) {
+            const auto col_idx = L_entries(l_nnz);
+            const auto u_diag  = Ut_values(Ut_row_map(col_idx + 1) - 1);
+            if (u_diag != 0.0) {
+              const auto new_val =
+                  compute_sum(row_idx, col_idx, A_row_map, A_entries, A_values,
+                              L_row_map, L_entries, L_values, Ut_row_map,
+                              Ut_entries, Ut_values)
+                      .first /
+                  u_diag;
+              L_values(l_nnz) = new_val;
+            }
+          }
 
-      auto A_row_map_h  = Kokkos::create_mirror_view(A_row_map);
-      auto A_entries_h  = Kokkos::create_mirror_view(A_entries);
-      auto A_values_h   = Kokkos::create_mirror_view(A_values);
-      auto L_row_map_h  = Kokkos::create_mirror_view(L_row_map);
-      auto L_entries_h  = Kokkos::create_mirror_view(L_entries);
-      auto L_values_h   = Kokkos::create_mirror_view(L_values);
-      auto U_row_map_h  = Kokkos::create_mirror_view(U_row_map);
-      auto U_entries_h  = Kokkos::create_mirror_view(U_entries);
-      auto U_values_h   = Kokkos::create_mirror_view(U_values);
-      auto Ut_row_map_h = Kokkos::create_mirror_view(Ut_row_map);
-      auto Ut_entries_h = Kokkos::create_mirror_view(Ut_entries);
-      auto Ut_values_h  = Kokkos::create_mirror_view(Ut_values);
+          const auto u_row_nnz_begin = U_row_map(row_idx);
+          const auto u_row_nnz_end   = U_row_map(row_idx + 1);
 
-      Kokkos::deep_copy(A_row_map_h, A_row_map);
-      Kokkos::deep_copy(A_entries_h, A_entries);
-      Kokkos::deep_copy(A_values_h, A_values);
-      Kokkos::deep_copy(L_row_map_h, L_row_map);
-      Kokkos::deep_copy(L_entries_h, L_entries);
-      Kokkos::deep_copy(L_values_h, L_values);
-      Kokkos::deep_copy(U_row_map_h, U_row_map);
-      Kokkos::deep_copy(U_entries_h, U_entries);
-      Kokkos::deep_copy(U_values_h, U_values);
-      Kokkos::deep_copy(Ut_row_map_h, Ut_row_map);
-      Kokkos::deep_copy(Ut_entries_h, Ut_entries);
-      Kokkos::deep_copy(Ut_values_h, Ut_values);
+          for (auto u_nnz = u_row_nnz_begin; u_nnz < u_row_nnz_end; ++u_nnz) {
+            const auto col_idx = U_entries(u_nnz);
+            const auto sum     = compute_sum(
+                row_idx, col_idx, A_row_map, A_entries, A_values, L_row_map,
+                L_entries, L_values, Ut_row_map, Ut_entries, Ut_values);
+            const auto new_val = sum.first;
+            const auto ut_nnz  = sum.second;
+            U_values(u_nnz)    = new_val;
 
-      Kokkos::parallel_for(
-          "compute_l_u_factors", policy,
-          KOKKOS_LAMBDA(const smember_type& team) {
-            compute_l_u_factors_impl(
-                A_row_map_h, A_entries_h, A_values_h, L_row_map_h, L_entries_h,
-                L_values_h, U_row_map_h, U_entries_h, U_values_h, Ut_row_map_h,
-                Ut_entries_h, Ut_values_h, team);
-          });
-
-      Kokkos::deep_copy(L_values, L_values_h);
-      Kokkos::deep_copy(U_values, U_values_h);
-      Kokkos::deep_copy(Ut_values, Ut_values_h);
-#else
-      throw std::runtime_error(
-          "compute_l_u factors cannot be deterministic without Kokkos::Serial "
-          "available");
-#endif
-    } else {
-      const auto policy = ih.get_default_team_policy();
-
-      Kokkos::parallel_for(
-          "compute_l_u_factors", policy,
-          KOKKOS_LAMBDA(const member_type& team) {
-            compute_l_u_factors_impl(A_row_map, A_entries, A_values, L_row_map,
-                                     L_entries, L_values, U_row_map, U_entries,
-                                     U_values, Ut_row_map, Ut_entries,
-                                     Ut_values, team);
-          });
-    }
+            // ut_nnz is not guarateed to fail into range used exclusively
+            // by this thread. Updating it here opens up potential race
+            // conditions that cause problems on GPU but usually causes
+            // faster convergence.
+            if (async_update) {
+              Ut_values(ut_nnz) = new_val;
+            }
+          }
+        });
   }
 
   /**
@@ -853,7 +781,8 @@ struct IlutWrap {
                            const AValuesType& A_values, LRowMapType& L_row_map,
                            LEntriesType& L_entries, LValuesType& L_values,
                            URowMapType& U_row_map, UEntriesType& U_entries,
-                           UValuesType& U_values, bool deterministic) {
+                           UValuesType& U_values) {
+    // Get config settings from handle
     const size_type nrows    = thandle.get_nrows();
     const auto fill_in_limit = thandle.get_fill_in_limit();
     const auto l_nnz_limit =
@@ -864,6 +793,21 @@ struct IlutWrap {
     const auto residual_norm_delta_stop =
         thandle.get_residual_norm_delta_stop();
     const size_type max_iter = thandle.get_max_iter();
+
+    const auto verbose = thandle.get_verbose();
+    constexpr bool on_gpu =
+        KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>();
+    const auto async_update = !on_gpu && thandle.get_async_update();
+
+    if (verbose) {
+      std::cout << "Starting PARILUT with..." << std::endl;
+      std::cout << "  num_rows:            " << nrows << std::endl;
+      std::cout << "  fill_in_limit:       " << fill_in_limit << std::endl;
+      std::cout << "  max_iter:            " << max_iter << std::endl;
+      std::cout << "  res_norm_delta_stop: " << residual_norm_delta_stop
+                << std::endl;
+      std::cout << "  async_update:        " << async_update << std::endl;
+    }
 
     kh.create_spadd_handle(true /*we expect inputs to be sorted*/);
 
@@ -890,8 +834,8 @@ struct IlutWrap {
     auto V_copy = Kokkos::create_mirror_view(V_copy_d);
 
     size_type itr          = 0;
+    scalar_t curr_residual = std::numeric_limits<scalar_t>::max();
     scalar_t prev_residual = std::numeric_limits<scalar_t>::max();
-    bool converged         = false;
 
     // Set the initial L/U values for the initial approximation
     initialize_LU(thandle, A_row_map, A_entries, A_values, L_row_map, L_entries,
@@ -900,7 +844,8 @@ struct IlutWrap {
     //
     // main loop
     //
-    while (!converged && itr < max_iter) {
+    bool stop = nrows == 0;  // Don't iterate at all if nrows=0
+    while (!stop && itr < max_iter) {
       // LU = L*U
       if (prev_residual == std::numeric_limits<scalar_t>::max()) {
         multiply_matrices(kh, thandle, L_row_map, L_entries, L_values,
@@ -923,7 +868,7 @@ struct IlutWrap {
       compute_l_u_factors(
           thandle, A_row_map, A_entries, A_values, L_new_row_map, L_new_entries,
           L_new_values, U_new_row_map, U_new_entries, U_new_values,
-          Ut_new_row_map, Ut_new_entries, Ut_new_values, deterministic);
+          Ut_new_row_map, Ut_new_entries, Ut_new_values, async_update);
 
       // Filter smallest elements from L_new and U_new. Store result back
       // in L and U.
@@ -957,18 +902,28 @@ struct IlutWrap {
       compute_l_u_factors(thandle, A_row_map, A_entries, A_values, L_row_map,
                           L_entries, L_values, U_row_map, U_entries, U_values,
                           Ut_new_row_map, Ut_new_entries, Ut_new_values,
-                          deterministic);
+                          async_update);
 
-      // Compute residual and terminate if converged
+      // Compute residual and check stop conditions
       {
-        const auto curr_residual = compute_residual_norm(
+        curr_residual = compute_residual_norm(
             kh, thandle, A_row_map, A_entries, A_values, L_row_map, L_entries,
             L_values, U_row_map, U_entries, U_values, R_row_map, R_entries,
             R_values, LU_row_map, LU_entries, LU_values);
 
-        if (karith::abs(prev_residual - curr_residual) <=
-            karith::abs(residual_norm_delta_stop)) {
-          converged = true;
+        if (verbose) {
+          std::cout << "Completed itr " << itr
+                    << ", residual is: " << curr_residual << std::endl;
+        }
+
+        const auto curr_delta = karith::abs(prev_residual - curr_residual);
+        if (curr_delta <= residual_norm_delta_stop) {
+          if (verbose) {
+            std::cout << "  Itr-to-itr residual change has dropped below "
+                         "residual_norm_delta_stop, stop"
+                      << std::endl;
+          }
+          stop = true;
         } else {
           prev_residual = curr_residual;
         }
@@ -976,6 +931,13 @@ struct IlutWrap {
 
       ++itr;
     }
+
+    curr_residual = nrows == 0 ? scalar_t(0.) : curr_residual;
+    if (verbose) {
+      std::cout << "PAR_ILUT stopped in " << itr << " iterations with residual "
+                << curr_residual << std::endl;
+    }
+    thandle.set_stats(itr, curr_residual);
 
     kh.destroy_spadd_handle();
   }  // end ilut_numeric
