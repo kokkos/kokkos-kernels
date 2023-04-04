@@ -44,7 +44,8 @@ namespace Experimental {
   std::is_same<typename std::remove_const<A>::type, \
                typename std::remove_const<B>::type>::value
 
-/// @brief Performs the symbolic phase of par_ilut (non-blocking).
+/// @brief Performs the symbolic phase of par_ilut.
+///        This is a non-blocking function.
 ///
 /// The sparsity pattern of A will be analyzed and L_rowmap and U_rowmap will be
 /// populated with the L (lower triangular) and U (upper triagular) non-zero
@@ -186,28 +187,34 @@ void par_ilut_symbolic(KernelHandle* handle, ARowMapType& A_rowmap,
 
 }  // par_ilut_symbolic
 
-/// @brief
-/// @tparam KernelHandle
-/// @tparam ARowMapType
-/// @tparam AEntriesType
-/// @tparam AValuesType
-/// @tparam LRowMapType
-/// @tparam LEntriesType
-/// @tparam LValuesType
-/// @tparam URowMapType
-/// @tparam UEntriesType
-/// @tparam UValuesType
-/// @param handle
-/// @param A_rowmap
-/// @param A_entries
-/// @param A_values
-/// @param L_rowmap
-/// @param L_entries
-/// @param L_values
-/// @param U_rowmap
-/// @param U_entries
-/// @param U_values
-/// @param deterministic
+/// @brief Performs the numeric phase (for specific CSRs, not reusable) of the
+/// par_ilut
+///        algorithm (described in the header). This is a non-blocking
+///        functions. It is expected that par_ilut_symbolic has already been
+///        called for the
+//         provided KernelHandle.
+///
+/// @tparam KernelHandle Template for the handle type
+/// @tparam ARowMapType Template for the A_rowmap type
+/// @tparam AEntriesType Template for the A_entries type
+/// @tparam AValuesType Template for the A_values type
+/// @tparam LRowMapType Template for the L_rowmap type
+/// @tparam LEntriesType Template for the L_entries type
+/// @tparam LValuesType Template for the L_values type
+/// @tparam URowMapType Template for the U_rowmap type
+/// @tparam UEntriesType Template for the U_entries type
+/// @tparam UValuesType Template for the U_values type
+/// @param handle The kernel handle. It is expected that create_par_ilut_handle
+/// has been called on it
+/// @param A_rowmap The row map (row nnz offsets) for the A CSR (Input)
+/// @param A_entries The entries (column ids) for the A CSR (Input)
+/// @param A_values The values (non-zero matrix values) for the A CSR (Input)
+/// @param L_rowmap The row map (row nnz offsets) for the L CSR (Input/Output)
+/// @param L_entries The entries (column ids) for the L CSR (Output)
+/// @param L_values The values (non-zero matrix values) for the L CSR (Output)
+/// @param U_rowmap The row map (row nnz offsets) for the U CSR (Input/Output)
+/// @param U_entries The entries (column ids) for the U CSR (Output)
+/// @param U_values The values (non-zero matrix values) for the U CSR (Output)
 template <typename KernelHandle, typename ARowMapType, typename AEntriesType,
           typename AValuesType, typename LRowMapType, typename LEntriesType,
           typename LValuesType, typename URowMapType, typename UEntriesType,
