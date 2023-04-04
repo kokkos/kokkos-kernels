@@ -1,6 +1,6 @@
 # Change Log
 
-## [4.0.01](https://github.com/kokkos/kokkos-kernels/tree/4.0.01) (2023-28-03)
+## [4.0.01](https://github.com/kokkos/kokkos-kernels/tree/4.0.01) (2023-03-04)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.0.0...4.0.01)
 
 ### Bug Fixes:
@@ -16,6 +16,9 @@
 - Reduce BatchedGemm test coverage time [\#1737](https://github.com/kokkos/kokkos-kernels/pull/1737)
 - Fix kk_generate_diagonally_dominant_sparse_matrix hang [\#1689](https://github.com/kokkos/kokkos-kernels/pull/1689)
 - Temporary spgemm workaround matching Trilinos 11663 [\#1757](https://github.com/kokkos/kokkos-kernels/pull/1757)
+- MDF: Minor changes to interface for ifpack2 impl [\#1759](https://github.com/kokkos/kokkos-kernels/pull/1759)
+- Rocm TPL support upgrade [\#1763](https://github.com/kokkos/kokkos-kernels/pull/1763)
+- Fix BLAS cmake check for complex types [\#1762](https://github.com/kokkos/kokkos-kernels/pull/1762)
 
 
 ## [4.0.0](https://github.com/kokkos/kokkos-kernels/tree/4.0.0) (2023-21-02)
