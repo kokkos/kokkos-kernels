@@ -68,6 +68,7 @@ par_ilut
 .. doxygenfunction:: par_ilut_numeric(KernelHandle* handle, ARowMapType& A_rowmap, AEntriesType& A_entries, AValuesType& A_values, LRowMapType& L_rowmap, LEntriesType& L_entries, LValuesType& L_values, URowMapType& U_rowmap, UEntriesType& U_entries, UValuesType& U_values, bool deterministic)
 .. doxygenclass::    KokkosSparse::PAR_ILUTHandle
     :members:
+
 gmres
 -----
 .. doxygenfunction:: gmres(KernelHandle* handle, AMatrix& A, BType& B, XType& X, Preconditioner<AMatrix>* precond)
