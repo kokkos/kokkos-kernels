@@ -412,6 +412,49 @@ KOKKOS_FORCEINLINE_FUNCTION Value xorshiftHash(Value v) {
              : static_cast<Value>(x * 2685821657736338717ULL - 1);
 }
 
+struct ViewHashFunctor {
+  ViewHashFunctor(const uint8_t *data_) : data(data_) {}
+
+  KOKKOS_INLINE_FUNCTION void operator()(size_t i, uint32_t &lhash) const {
+    // Compute a hash/digest of both the index i, and data[i]. Then add that to
+    // overall hash.
+    uint32_t x = uint32_t(i);
+    x ^= x << 13;
+    x ^= x >> 17;
+    x ^= x << 5;
+    x ^= uint32_t(data[i]);
+    x ^= x << 13;
+    x ^= x >> 17;
+    x ^= x << 5;
+    lhash += x;
+  }
+
+  const uint8_t *data;
+};
+
+/// \brief Compute a hash of a view.
+/// \param v: the view to hash. Must be contiguous, and its element type must
+/// not contain any padding bytes.
+template <typename View>
+uint32_t hashView(const View &v) {
+  assert(v.span_is_contiguous());
+  // Note: This type trait is supposed to be part of C++17,
+  // but it's not defined on Intel 19 (with GCC 7.2.0 standard library).
+  // So just check if it's available before using.
+#ifdef __cpp_lib_has_unique_object_representations
+  static_assert(std::has_unique_object_representations<
+                    typename View::non_const_value_type>::value,
+                "KokkosKernels::Impl::hashView: the view's element type must "
+                "not have any padding bytes.");
+#endif
+  size_t nbytes = v.span() * sizeof(typename View::value_type);
+  uint32_t h;
+  Kokkos::parallel_reduce(
+      Kokkos::RangePolicy<typename View::execution_space, size_t>(0, nbytes),
+      ViewHashFunctor(reinterpret_cast<const uint8_t *>(v.data())), h);
+  return h;
+}
+
 template <typename V>
 struct SequentialFillFunctor {
   using size_type = typename V::size_type;
