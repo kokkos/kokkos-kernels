@@ -38,7 +38,7 @@ auto create_mag_mirror_view(const Kokkos::View<T, Args...>& v) {
   using src_view_t = Kokkos::View<T, Args...>;
   using KAS = Kokkos::ArithTraits<typename src_view_t::non_const_value_type>;
   using mag_type  = typename KAS::mag_type;
-  using data_type = typename add_N_pointers<mag_type, src_view_t::Rank>::type;
+  using data_type = typename add_N_pointers<mag_type, src_view_t::rank()>::type;
   return Kokkos::View<data_type, Args...>(
       Kokkos::ViewAllocateWithoutInitializing(v.label() + "::Magnitude"),
       v.layout());
