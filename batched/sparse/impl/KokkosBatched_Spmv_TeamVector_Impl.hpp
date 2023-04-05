@@ -19,7 +19,7 @@
 /// \author Kim Liegeois (knliege@sandia.gov)
 
 #include "KokkosBatched_Util.hpp"
-#include "KokkosBlas2_team_spmv.hpp"
+#include "KokkosSparse_spmv_team.hpp"
 
 namespace KokkosBatched {
 

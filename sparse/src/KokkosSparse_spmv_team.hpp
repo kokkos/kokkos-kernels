@@ -13,16 +13,16 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef KOKKOSBLAS2_TEAM_SPMV_HPP_
-#define KOKKOSBLAS2_TEAM_SPMV_HPP_
+#ifndef KOKKOSSPARSE_SPMV_TEAM_HPP_
+#define KOKKOSSPARSE_SPMV_TEAM_HPP_
 
-/// \file KokkosBlas2_team_spmv.hpp
+/// \file KokkosSparse_spmv_team.hpp
 
 #include <KokkosKernels_helpers.hpp>
 #include <KokkosKernels_Error.hpp>
 #include <sstream>
 #include <type_traits>  // requires C++11, but so does Kokkos
-#include <KokkosBlas2_team_spmv_spec.hpp>
+#include <KokkosSparse_spmv_team_spec.hpp>
 
 namespace KokkosBlas {
 namespace Experimental {

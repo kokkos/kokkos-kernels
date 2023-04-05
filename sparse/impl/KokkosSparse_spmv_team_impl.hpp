@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef KOKKOSBLAS2_TEAM_SPMV_IMPL_HPP_
-#define KOKKOSBLAS2_TEAM_SPMV_IMPL_HPP_
+#ifndef KOKKOSSPARSE_SPMV_TEAM_IMPL_HPP_
+#define KOKKOSSPARSE_SPMV_TEAM_IMPL_HPP_
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>

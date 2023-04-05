@@ -14,14 +14,14 @@
 //
 //@HEADER
 
-#ifndef KOKKOSBLAS2_TEAM_SPMV_SPEC_HPP_
-#define KOKKOSBLAS2_TEAM_SPMV_SPEC_HPP_
+#ifndef KOKKOSSPARSE_SPMV_TEAM_SPEC_HPP_
+#define KOKKOSSPARSE_SPMV_TEAM_SPEC_HPP_
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_ArithTraits.hpp>
 #include <Kokkos_InnerProductSpaceTraits.hpp>
-#include <KokkosBlas2_team_spmv_impl.hpp>
+#include <KokkosSparse_spmv_team_impl.hpp>
 
 namespace KokkosBlas {
 
