@@ -290,11 +290,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorStaticPivoting<MemberType>::invoke(
 
   for (size_t i = 0; i < n; ++i) {
     int row_index, col_index;
-    reducer_value_type value;
-    // Note: reduction_identity<value_type>::max() returns
-    // the samllest representable value of type value_type
-    value.val = Kokkos::reduction_identity<value_type>::max();
-    value.loc = Kokkos::reduction_identity<int>::min();
+    reducer_value_type value{};
     Kokkos::MaxLoc<value_type, int> reducer_value(value);
     Kokkos::parallel_reduce(
         Kokkos::TeamVectorRange(member, n),
