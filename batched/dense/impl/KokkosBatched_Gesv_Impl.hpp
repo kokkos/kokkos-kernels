@@ -291,6 +291,8 @@ KOKKOS_INLINE_FUNCTION int TeamVectorStaticPivoting<MemberType>::invoke(
   for (size_t i = 0; i < n; ++i) {
     int row_index, col_index;
     reducer_value_type value;
+    value.val = Kokkos::reduction_identity<value_type>::max();
+    value.loc = Kokkos::reduction_identity<int>::min();
     Kokkos::MaxLoc<value_type, int> reducer_value(value);
     Kokkos::parallel_reduce(
         Kokkos::TeamVectorRange(member, n),
