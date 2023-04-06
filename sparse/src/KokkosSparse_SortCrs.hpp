@@ -857,44 +857,6 @@ template <typename exec_space, typename rowmap_t, typename entries_t>
                                      entries_out);
 }
 
-// For backward compatibility: keep the public interface accessible in
-// KokkosKernels::Impl::
-namespace Impl {
-template <typename execution_space, typename rowmap_t, typename entries_t>
-[[deprecated]] void sort_crs_graph(const rowmap_t& rowmap,
-                                   const entries_t& entries) {
-  KokkosKernels::sort_crs_graph<execution_space, rowmap_t, entries_t>(rowmap,
-                                                                      entries);
-}
-
-template <typename execution_space, typename rowmap_t, typename entries_t,
-          typename values_t>
-[[deprecated]] void sort_crs_matrix(const rowmap_t& rowmap,
-                                    const entries_t& entries,
-                                    const values_t& values) {
-  KokkosKernels::sort_crs_matrix<execution_space, rowmap_t, entries_t,
-                                 values_t>(rowmap, entries, values);
-}
-
-template <typename crsMat_t>
-[[deprecated]] void sort_crs_matrix(const crsMat_t& A) {
-  KokkosKernels::sort_crs_matrix(A);
-}
-
-template <typename exec_space, typename rowmap_t, typename entries_t>
-[[deprecated]] void sort_and_merge_graph(
-    const typename rowmap_t::const_type& rowmap_in, const entries_t& entries_in,
-    rowmap_t& rowmap_out, entries_t& entries_out) {
-  KokkosKernels::sort_and_merge_graph<exec_space, rowmap_t, entries_t>(
-      rowmap_in, entries_in, rowmap_out, entries_out);
-}
-
-template <typename crsMat_t>
-[[deprecated]] crsMat_t sort_and_merge_matrix(const crsMat_t& A) {
-  return KokkosKernels::sort_and_merge_matrix(A);
-}
-
-}  // namespace Impl
 }  // namespace KokkosKernels
 
 #endif  // _KOKKOSSPARSE_SORTCRS_HPP
