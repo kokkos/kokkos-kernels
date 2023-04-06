@@ -61,83 +61,12 @@ void sort_bsr_matrix(const typename bsrMat_t::execution_space& exec,
 // ascending order. Each version either takes an execution space instance as a
 // parameter, or uses the default instance.
 
-template <typename execution_space, typename rowmap_t, typename entries_t,
-          typename values_t>
-void sort_crs_matrix(const rowmap_t& rowmap, const entries_t& entries,
-                     const values_t& values);
-
-template <typename execution_space, typename rowmap_t, typename entries_t,
-          typename values_t>
-void sort_crs_matrix(const execution_space& exec, const rowmap_t& rowmap,
-                     const entries_t& entries, const values_t& values);
-
-template <typename crsMat_t>
-void sort_crs_matrix(const crsMat_t& A);
-
-template <typename crsMat_t>
-void sort_crs_matrix(const typename crsMat_t::execution_space& exec,
-                     const crsMat_t& A);
-
-template <typename execution_space, typename rowmap_t, typename entries_t>
-void sort_crs_graph(const rowmap_t& rowmap, const entries_t& entries);
-
-template <typename execution_space, typename rowmap_t, typename entries_t>
-void sort_crs_graph(const execution_space& exec, const rowmap_t& rowmap,
-                    const entries_t& entries);
-
-template <typename crsGraph_t>
-void sort_crs_graph(const crsGraph_t& G);
-
-template <typename crsGraph_t>
-void sort_crs_graph(const typename crsGraph_t::execution_space& exec,
-                    const crsGraph_t& G);
-
 // sort_and_merge_matrix produces a new matrix which is equivalent to A but is
 // sorted and has no duplicated entries: each (i, j) is unique. Values for
 // duplicated entries are summed. Each version either takes an execution space
 // instance as a parameter, or uses the default instance. If there are no
 // duplicated entries in A, A is sorted and returned (instead of a newly
 // allocated matrix).
-
-template <typename crsMat_t>
-crsMat_t sort_and_merge_matrix(const crsMat_t& A);
-
-template <typename crsMat_t>
-crsMat_t sort_and_merge_matrix(const typename crsMat_t::execution_space& exec,
-                               const crsMat_t& A);
-
-template <typename exec_space, typename rowmap_t, typename entries_t,
-          typename values_t>
-void sort_and_merge_matrix(const exec_space& exec,
-                           const typename rowmap_t::const_type& rowmap_in,
-                           const entries_t& entries_in,
-                           const values_t& values_in, rowmap_t& rowmap_out,
-                           entries_t& entries_out, values_t& values_out);
-
-template <typename exec_space, typename rowmap_t, typename entries_t,
-          typename values_t>
-void sort_and_merge_matrix(const typename rowmap_t::const_type& rowmap_in,
-                           const entries_t& entries_in,
-                           const values_t& values_in, rowmap_t& rowmap_out,
-                           entries_t& entries_out, values_t& values_out);
-
-template <typename crsGraph_t>
-crsGraph_t sort_and_merge_graph(const crsGraph_t& G);
-
-template <typename crsGraph_t>
-crsGraph_t sort_and_merge_graph(
-    const typename crsGraph_t::execution_space& exec, const crsGraph_t& G);
-
-template <typename exec_space, typename rowmap_t, typename entries_t>
-void sort_and_merge_graph(const typename rowmap_t::const_type& rowmap_in,
-                          const entries_t& entries_in, rowmap_t& rowmap_out,
-                          entries_t& entries_out);
-
-template <typename exec_space, typename rowmap_t, typename entries_t>
-void sort_and_merge_graph(const exec_space& exec,
-                          const typename rowmap_t::const_type& rowmap_in,
-                          const entries_t& entries_in, rowmap_t& rowmap_out,
-                          entries_t& entries_out);
 
 namespace Impl {
 
@@ -467,6 +396,12 @@ void sort_crs_matrix(const rowmap_t& rowmap, const entries_t& entries,
   sort_crs_matrix(execution_space(), rowmap, entries, values);
 }
 
+template <typename rowmap_t, typename entries_t, typename values_t>
+void sort_crs_matrix(const rowmap_t& rowmap, const entries_t& entries,
+                     const values_t& values) {
+  sort_crs_matrix(typename entries_t::execution_space(), rowmap, entries, values);
+}
+
 template <typename crsMat_t>
 void sort_crs_matrix(const typename crsMat_t::execution_space& exec,
                      const crsMat_t& A) {
@@ -566,42 +501,26 @@ void sort_crs_graph(const rowmap_t& rowmap, const entries_t& entries) {
   sort_crs_graph(execution_space(), rowmap, entries);
 }
 
-template <typename crsGraph_t>
-void sort_crs_graph(const typename crsGraph_t::execution_space& exec,
-                    const crsGraph_t& G) {
-  static_assert(
-      !std::is_const<typename crsGraph_t::entries_type::value_type>::value,
-      "sort_crs_graph requires StaticCrsGraph entries to be non-const.");
-  sort_crs_graph(exec, G.row_map, G.entries);
+// This overload covers 2 cases, while allowing all template args to be deduced:
+//  - sort_crs_graph(exec, G)
+//  - sort_crs_graph(rowmap, entries)
+template <typename Arg1, typename Arg2>
+void sort_crs_graph(const Arg1& a1, const Arg2& a2) {
+  if constexpr(Kokkos::is_execution_space_v<Arg1>) {
+    // a1 is an exec instance, a2 is a graph
+    sort_crs_graph(a1, a2.row_map, a2.entries);
+  }
+  else if constexpr(Kokkos::is_view_v<Arg1>) {
+    // a1 is rowmap, a2 is entries
+    sort_crs_graph(typename Arg2::execution_space(), a1, a2);
+  } else {
+    static_assert(Arg1::doesnthavethisthing, "sort_crs_graph(arg1, arg2): expect either (exec, G) or (rowmap, entries)");
+  }
 }
 
 template <typename crsGraph_t>
 void sort_crs_graph(const crsGraph_t& G) {
   sort_crs_graph(typename crsGraph_t::execution_space(), G);
-}
-
-// Sort the rows of matrix, and merge duplicate entries.
-template <typename crsMat_t>
-crsMat_t sort_and_merge_matrix(const typename crsMat_t::execution_space& exec,
-                               const crsMat_t& A) {
-  using rowmap_t  = typename crsMat_t::row_map_type;
-  using entries_t = typename crsMat_t::index_type;
-  using values_t  = typename crsMat_t::values_type;
-
-  rowmap_t rowmap_out;
-  entries_t entries_out;
-  values_t values_out;
-
-  sort_and_merge_matrix(exec, A.graph.row_map, A.graph.entries, A.values,
-                        rowmap_out, entries_out, values_out);
-
-  return crsMat_t("SortedMerged", A.numRows(), A.numCols(),
-                  values_out.extent(0), values_out, rowmap_out, entries_out);
-}
-
-template <typename crsMat_t>
-crsMat_t sort_and_merge_matrix(const crsMat_t& A) {
-  return sort_and_merge_matrix(typename crsMat_t::execution_space(), A);
 }
 
 template <typename exec_space, typename rowmap_t, typename entries_t,
@@ -679,6 +598,30 @@ void sort_and_merge_matrix(const exec_space& exec,
           values_out));
 }
 
+// Sort the rows of matrix, and merge duplicate entries.
+template <typename crsMat_t>
+crsMat_t sort_and_merge_matrix(const typename crsMat_t::execution_space& exec,
+                               const crsMat_t& A) {
+  using rowmap_t  = typename crsMat_t::row_map_type;
+  using entries_t = typename crsMat_t::index_type;
+  using values_t  = typename crsMat_t::values_type;
+
+  rowmap_t rowmap_out;
+  entries_t entries_out;
+  values_t values_out;
+
+  sort_and_merge_matrix(exec, A.graph.row_map, A.graph.entries, A.values,
+                        rowmap_out, entries_out, values_out);
+
+  return crsMat_t("SortedMerged", A.numRows(), A.numCols(),
+                  values_out.extent(0), values_out, rowmap_out, entries_out);
+}
+
+template <typename crsMat_t>
+crsMat_t sort_and_merge_matrix(const crsMat_t& A) {
+  return sort_and_merge_matrix(typename crsMat_t::execution_space(), A);
+}
+
 template <typename exec_space, typename rowmap_t, typename entries_t,
           typename values_t>
 void sort_and_merge_matrix(const typename rowmap_t::const_type& rowmap_in,
@@ -686,6 +629,16 @@ void sort_and_merge_matrix(const typename rowmap_t::const_type& rowmap_in,
                            const values_t& values_in, rowmap_t& rowmap_out,
                            entries_t& entries_out, values_t& values_out) {
   sort_and_merge_matrix(exec_space(), rowmap_in, entries_in, values_in,
+                        rowmap_out, entries_out, values_out);
+}
+
+template <typename rowmap_t, typename entries_t,
+          typename values_t>
+void sort_and_merge_matrix(const typename rowmap_t::const_type& rowmap_in,
+                           const entries_t& entries_in,
+                           const values_t& values_in, rowmap_t& rowmap_out,
+                           entries_t& entries_out, values_t& values_out) {
+  sort_and_merge_matrix(typename entries_t::execution_space(), rowmap_in, entries_in, values_in,
                         rowmap_out, entries_out, values_out);
 }
 
@@ -756,6 +709,14 @@ void sort_and_merge_graph(const typename rowmap_t::const_type& rowmap_in,
                           const entries_t& entries_in, rowmap_t& rowmap_out,
                           entries_t& entries_out) {
   return sort_and_merge_graph(exec_space(), rowmap_in, entries_in, rowmap_out,
+                              entries_out);
+}
+
+template <typename rowmap_t, typename entries_t>
+void sort_and_merge_graph(const typename rowmap_t::const_type& rowmap_in,
+                          const entries_t& entries_in, rowmap_t& rowmap_out,
+                          entries_t& entries_out) {
+  return sort_and_merge_graph(typename entries_t::execution_space(), rowmap_in, entries_in, rowmap_out,
                               entries_out);
 }
 

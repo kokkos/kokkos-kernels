@@ -32,10 +32,19 @@
 #include <Kokkos_Complex.hpp>
 #include <cstdlib>
 
+namespace SortCrsTest
+{
+  enum : int {
+           Instance,      //Passing in an instance, and deducing template args
+           ExplicitType,  //Using default instance, but specifying type with template arg
+           ImplicitType   //Using default instance, and deducing type based on view
+         };
+}
+
 template <typename exec_space>
 void testSortCRS(default_lno_t numRows, default_lno_t numCols,
                  default_size_type nnz, bool doValues, bool doStructInterface,
-                 bool useExecInstance) {
+                 int howExecSpecified) {
   using scalar_t  = default_scalar;
   using lno_t     = default_lno_t;
   using size_type = default_size_type;
@@ -90,35 +99,50 @@ void testSortCRS(default_lno_t numRows, default_lno_t numCols,
   // call the actual sort routine being tested
   if (doValues) {
     if (doStructInterface) {
-      if (useExecInstance) {
-        KokkosSparse::sort_crs_matrix(exec_space(), A);
-      } else {
-        KokkosSparse::sort_crs_matrix(A);
+      switch(howExecSpecified) {
+        case SortCrsTest::Instance:
+          KokkosSparse::sort_crs_matrix(exec_space(), A);
+          break;
+        case SortCrsTest::ExplicitType:
+          throw std::logic_error("Should not get here");
+        case SortCrsTest::ImplicitType:
+          KokkosSparse::sort_crs_matrix(A);
       }
     } else {
-      if (useExecInstance) {
-        KokkosSparse::sort_crs_matrix(exec_space(), A.graph.row_map,
-                                      A.graph.entries, A.values);
-      } else {
-        KokkosSparse::sort_crs_matrix<exec_space, rowmap_t, entries_t,
-                                      values_t>(A.graph.row_map,
-                                                A.graph.entries, A.values);
+      switch(howExecSpecified) {
+        case SortCrsTest::Instance:
+          KokkosSparse::sort_crs_matrix(exec_space(), A.graph.row_map,
+              A.graph.entries, A.values);
+          break;
+        case SortCrsTest::ExplicitType:
+          KokkosSparse::sort_crs_matrix<exec_space>(A.graph.row_map,
+                                             A.graph.entries, A.values);
+          break;
+        case SortCrsTest::ImplicitType:
+          KokkosSparse::sort_crs_matrix(A.graph.row_map, A.graph.entries, A.values);
       }
     }
   } else {
     if (doStructInterface) {
-      if (useExecInstance) {
-        KokkosSparse::sort_crs_graph(exec_space(), A.graph);
-      } else {
-        KokkosSparse::sort_crs_graph(A.graph);
+      switch(howExecSpecified) {
+        case SortCrsTest::Instance:
+          KokkosSparse::sort_crs_graph(exec_space(), A.graph);
+          break;
+        case SortCrsTest::ExplicitType:
+          throw std::logic_error("Should not get here");
+        case SortCrsTest::ImplicitType:
+          KokkosSparse::sort_crs_graph(A.graph);
       }
     } else {
-      if (useExecInstance) {
-        KokkosSparse::sort_crs_graph(exec_space(), A.graph.row_map,
-                                     A.graph.entries);
-      } else {
-        KokkosSparse::sort_crs_graph<exec_space, rowmap_t, entries_t>(
-            A.graph.row_map, A.graph.entries);
+      switch(howExecSpecified) {
+        case SortCrsTest::Instance:
+          KokkosSparse::sort_crs_graph(exec_space(), A.graph.row_map, A.graph.entries);
+          break;
+        case SortCrsTest::ExplicitType:
+          KokkosSparse::sort_crs_graph<exec_space>(A.graph.row_map, A.graph.entries);
+          break;
+        case SortCrsTest::ImplicitType:
+          KokkosSparse::sort_crs_graph(A.graph.row_map, A.graph.entries);
       }
     }
   }
@@ -186,7 +210,7 @@ void testSortCRSUnmanaged(bool doValues, bool doStructInterface) {
 }
 
 template <typename exec_space>
-void testSortAndMerge(bool justGraph, bool useExecInstance,
+void testSortAndMerge(bool justGraph, int howExecSpecified,
                       bool doStructInterface, int testCase) {
   using size_type = default_size_type;
   using lno_t     = default_lno_t;
@@ -326,23 +350,34 @@ void testSortAndMerge(bool justGraph, bool useExecInstance,
     graph_t outputGraph;
     // Testing sort_and_merge_graph
     if (doStructInterface) {
-      if (useExecInstance) {
-        outputGraph =
+      switch(howExecSpecified) {
+        case SortCrsTest::Instance:
+          outputGraph =
             KokkosSparse::sort_and_merge_graph(exec_space(), input.graph);
-      } else {
-        outputGraph = KokkosSparse::sort_and_merge_graph(input.graph);
+          break;
+        case SortCrsTest::ExplicitType:
+          throw std::logic_error("Should not get here");
+        case SortCrsTest::ImplicitType:
+          outputGraph = KokkosSparse::sort_and_merge_graph(input.graph);
       }
     } else {
       rowmap_t devOutRowmap;
       entries_t devOutEntries;
-      if (useExecInstance) {
-        KokkosSparse::sort_and_merge_graph(exec_space(), input.graph.row_map,
-                                           input.graph.entries, devOutRowmap,
-                                           devOutEntries);
-      } else {
-        KokkosSparse::sort_and_merge_graph<exec_space>(
-            input.graph.row_map, input.graph.entries, devOutRowmap,
-            devOutEntries);
+      switch(howExecSpecified) {
+        case SortCrsTest::Instance:
+          KokkosSparse::sort_and_merge_graph(exec_space(), input.graph.row_map,
+              input.graph.entries, devOutRowmap,
+              devOutEntries);
+          break;
+        case SortCrsTest::ExplicitType:
+          KokkosSparse::sort_and_merge_graph<exec_space>(
+              input.graph.row_map, input.graph.entries, devOutRowmap,
+              devOutEntries);
+          break;
+        case SortCrsTest::ImplicitType:
+          KokkosSparse::sort_and_merge_graph(
+              input.graph.row_map, input.graph.entries, devOutRowmap,
+              devOutEntries);
       }
       outputGraph = graph_t(devOutEntries, devOutRowmap);
     }
@@ -351,23 +386,34 @@ void testSortAndMerge(bool justGraph, bool useExecInstance,
   } else {
     // Testing sort_and_merge_matrix
     if (doStructInterface) {
-      if (useExecInstance) {
-        output = KokkosSparse::sort_and_merge_matrix(exec_space(), input);
-      } else {
-        output = KokkosSparse::sort_and_merge_matrix(input);
+      switch(howExecSpecified) {
+        case SortCrsTest::Instance:
+          output = KokkosSparse::sort_and_merge_matrix(exec_space(), input);
+          break;
+        case SortCrsTest::ExplicitType:
+          throw std::logic_error("Should not get here");
+        case SortCrsTest::ImplicitType:
+          output = KokkosSparse::sort_and_merge_matrix(input);
       }
     } else {
       rowmap_t devOutRowmap;
       entries_t devOutEntries;
       values_t devOutValues;
-      if (useExecInstance) {
-        KokkosSparse::sort_and_merge_matrix(
-            exec_space(), input.graph.row_map, input.graph.entries,
-            input.values, devOutRowmap, devOutEntries, devOutValues);
-      } else {
-        KokkosSparse::sort_and_merge_matrix<exec_space>(
-            input.graph.row_map, input.graph.entries, input.values,
-            devOutRowmap, devOutEntries, devOutValues);
+      switch(howExecSpecified) {
+        case SortCrsTest::Instance:
+          KokkosSparse::sort_and_merge_matrix(
+              exec_space(), input.graph.row_map, input.graph.entries,
+              input.values, devOutRowmap, devOutEntries, devOutValues);
+          break;
+        case SortCrsTest::ExplicitType:
+          KokkosSparse::sort_and_merge_matrix<exec_space>(
+              input.graph.row_map, input.graph.entries, input.values,
+              devOutRowmap, devOutEntries, devOutValues);
+          break;
+        case SortCrsTest::ImplicitType:
+          KokkosSparse::sort_and_merge_matrix(
+              input.graph.row_map, input.graph.entries, input.values,
+              devOutRowmap, devOutEntries, devOutValues);
       }
       // and then construct output from views
       output = crsMat_t("Output", nrows, ncols, devOutValues.extent(0),
@@ -400,13 +446,17 @@ void testSortAndMerge(bool justGraph, bool useExecInstance,
 
 TEST_F(TestCategory, common_sort_crsgraph) {
   for (int doStructInterface = 0; doStructInterface < 2; doStructInterface++) {
-    for (int useExecInstance = 0; useExecInstance < 2; useExecInstance++) {
+    for (int howExecSpecified = 0; howExecSpecified < 3; howExecSpecified++) {
+      // If using the struct interface (StaticCrsGraph), cannot use ExplicitType because
+      // the exec space type is determined from the graph.
+      if(doStructInterface && howExecSpecified == SortCrsTest::ExplicitType)
+        continue;
       testSortCRS<TestExecSpace>(10, 10, 20, false, doStructInterface,
-                                 useExecInstance);
+                                 howExecSpecified);
       testSortCRS<TestExecSpace>(100, 100, 2000, false, doStructInterface,
-                                 useExecInstance);
+                                 howExecSpecified);
       testSortCRS<TestExecSpace>(1000, 1000, 30000, false, doStructInterface,
-                                 useExecInstance);
+                                 howExecSpecified);
     }
     testSortCRSUnmanaged<TestExecSpace>(false, doStructInterface);
   }
@@ -414,40 +464,51 @@ TEST_F(TestCategory, common_sort_crsgraph) {
 
 TEST_F(TestCategory, common_sort_crsmatrix) {
   for (int doStructInterface = 0; doStructInterface < 2; doStructInterface++) {
-    for (int useExecInstance = 0; useExecInstance < 2; useExecInstance++) {
+    // howExecSpecified: Instance, ExplicitType, ImplicitType
+    for (int howExecSpecified = 0; howExecSpecified < 3; howExecSpecified++) {
+      // If using the struct interface (CrsMatrix), cannot use ExplicitType because
+      // the exec space type is determined from the matrix.
+      if(doStructInterface && howExecSpecified == SortCrsTest::ExplicitType)
+        continue;
       testSortCRS<TestExecSpace>(10, 10, 20, true, doStructInterface,
-                                 useExecInstance);
+                                 howExecSpecified);
       testSortCRS<TestExecSpace>(100, 100, 2000, true, doStructInterface,
-                                 useExecInstance);
+                                 howExecSpecified);
       testSortCRS<TestExecSpace>(1000, 1000, 30000, true, doStructInterface,
-                                 useExecInstance);
+                                 howExecSpecified);
     }
     testSortCRSUnmanaged<TestExecSpace>(true, doStructInterface);
   }
 }
 
 TEST_F(TestCategory, common_sort_crs_longrows) {
-  testSortCRS<TestExecSpace>(1, 50000, 10000, false, false, false);
-  testSortCRS<TestExecSpace>(1, 50000, 10000, true, false, false);
-  testSortCRS<TestExecSpace>(1, 50000, 10000, false, false, true);
-  testSortCRS<TestExecSpace>(1, 50000, 10000, true, false, true);
+  // Matrix/graph with one very long row
+  // Just test this once with graph, and once with matrix
+  testSortCRS<TestExecSpace>(1, 50000, 10000, false, false, SortCrsTest::ImplicitType);
+  testSortCRS<TestExecSpace>(1, 50000, 10000, true, false, SortCrsTest::ImplicitType);
 }
 
 TEST_F(TestCategory, common_sort_merge_crsmatrix) {
   for (int testCase = 0; testCase < 5; testCase++) {
-    testSortAndMerge<TestExecSpace>(false, false, false, testCase);
-    testSortAndMerge<TestExecSpace>(false, false, true, testCase);
-    testSortAndMerge<TestExecSpace>(false, true, false, testCase);
-    testSortAndMerge<TestExecSpace>(false, true, true, testCase);
+    for (int doStructInterface = 0; doStructInterface < 2; doStructInterface++) {
+      for (int howExecSpecified = 0; howExecSpecified < 3; howExecSpecified++) {
+        if(doStructInterface && howExecSpecified == SortCrsTest::ExplicitType)
+          continue;
+        testSortAndMerge<TestExecSpace>(false, howExecSpecified, doStructInterface, testCase);
+      }
+    }
   }
 }
 
 TEST_F(TestCategory, common_sort_merge_crsgraph) {
   for (int testCase = 0; testCase < 5; testCase++) {
-    testSortAndMerge<TestExecSpace>(true, false, false, testCase);
-    testSortAndMerge<TestExecSpace>(true, false, true, testCase);
-    testSortAndMerge<TestExecSpace>(true, true, false, testCase);
-    testSortAndMerge<TestExecSpace>(true, true, true, testCase);
+    for (int doStructInterface = 0; doStructInterface < 2; doStructInterface++) {
+      for (int howExecSpecified = 0; howExecSpecified < 3; howExecSpecified++) {
+        if(doStructInterface && howExecSpecified == SortCrsTest::ExplicitType)
+          continue;
+        testSortAndMerge<TestExecSpace>(true, howExecSpecified, doStructInterface, testCase);
+      }
+    }
   }
 }
 
