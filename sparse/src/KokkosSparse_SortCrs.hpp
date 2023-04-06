@@ -360,6 +360,25 @@ template <typename execution_space, typename rowmap_t, typename entries_t,
           typename values_t>
 void sort_crs_matrix(const execution_space& exec, const rowmap_t& rowmap,
                      const entries_t& entries, const values_t& values) {
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename rowmap_t::memory_space>::accessible,
+      "sort_crs_matrix: rowmap_t is not accessible from the given execution "
+      "space");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename entries_t::memory_space>::accessible,
+      "sort_crs_matrix: entries_t is not accessible from the given execution "
+      "space");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename entries_t::memory_space>::accessible,
+      "sort_crs_matrix: values_t is not accessible from the given execution "
+      "space");
+  static_assert(!std::is_const_v<typename entries_t::value_type>,
+                "sort_crs_matrix: entries_t must not be const-valued");
+  static_assert(!std::is_const_v<typename values_t::value_type>,
+                "sort_crs_matrix: value_t must not be const-valued");
   using lno_t    = typename entries_t::non_const_value_type;
   using team_pol = Kokkos::TeamPolicy<execution_space>;
   bool useRadix = !KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>();
@@ -399,7 +418,8 @@ void sort_crs_matrix(const rowmap_t& rowmap, const entries_t& entries,
 template <typename rowmap_t, typename entries_t, typename values_t>
 void sort_crs_matrix(const rowmap_t& rowmap, const entries_t& entries,
                      const values_t& values) {
-  sort_crs_matrix(typename entries_t::execution_space(), rowmap, entries, values);
+  sort_crs_matrix(typename entries_t::execution_space(), rowmap, entries,
+                  values);
 }
 
 template <typename crsMat_t>
@@ -468,6 +488,18 @@ void sort_crs_graph(const execution_space& exec, const rowmap_t& rowmap,
                     const entries_t& entries) {
   using lno_t    = typename entries_t::non_const_value_type;
   using team_pol = Kokkos::TeamPolicy<execution_space>;
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename rowmap_t::memory_space>::accessible,
+      "sort_crs_graph: rowmap_t is not accessible from the given execution "
+      "space");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename entries_t::memory_space>::accessible,
+      "sort_crs_graph: entries_t is not accessible from the given execution "
+      "space");
+  static_assert(!std::is_const_v<typename entries_t::value_type>,
+                "sort_crs_graph: entries_t must not be const-valued");
   bool useRadix = !KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>();
   lno_t numRows = rowmap.extent(0) ? rowmap.extent(0) - 1 : 0;
   if (numRows == 0) return;
@@ -506,15 +538,16 @@ void sort_crs_graph(const rowmap_t& rowmap, const entries_t& entries) {
 //  - sort_crs_graph(rowmap, entries)
 template <typename Arg1, typename Arg2>
 void sort_crs_graph(const Arg1& a1, const Arg2& a2) {
-  if constexpr(Kokkos::is_execution_space_v<Arg1>) {
+  if constexpr (Kokkos::is_execution_space_v<Arg1>) {
     // a1 is an exec instance, a2 is a graph
     sort_crs_graph(a1, a2.row_map, a2.entries);
-  }
-  else if constexpr(Kokkos::is_view_v<Arg1>) {
+  } else if constexpr (Kokkos::is_view_v<Arg1>) {
     // a1 is rowmap, a2 is entries
     sort_crs_graph(typename Arg2::execution_space(), a1, a2);
   } else {
-    static_assert(Arg1::doesnthavethisthing, "sort_crs_graph(arg1, arg2): expect either (exec, G) or (rowmap, entries)");
+    static_assert(Arg1::doesnthavethisthing,
+                  "sort_crs_graph(arg1, arg2): expect either (exec, G) or "
+                  "(rowmap, entries)");
   }
 }
 
@@ -534,10 +567,25 @@ void sort_and_merge_matrix(const exec_space& exec,
   using size_type   = typename nc_rowmap_t::value_type;
   using ordinal_t   = typename entries_t::value_type;
   using range_t     = Kokkos::RangePolicy<exec_space>;
+  static_assert(
+      Kokkos::SpaceAccessibility<exec_space,
+                                 typename rowmap_t::memory_space>::accessible,
+      "sort_and_merge_matrix: rowmap_t is not accessible from the given "
+      "execution space");
+  static_assert(
+      Kokkos::SpaceAccessibility<exec_space,
+                                 typename entries_t::memory_space>::accessible,
+      "sort_and_merge_matrix: entries_t is not accessible from the given "
+      "execution space");
+  static_assert(
+      Kokkos::SpaceAccessibility<exec_space,
+                                 typename entries_t::memory_space>::accessible,
+      "sort_and_merge_matrix: values_t is not accessible from the given "
+      "execution space");
   static_assert(!std::is_const_v<typename entries_t::value_type>,
                 "sort_and_merge_matrix: entries_t must not be const-valued");
   static_assert(!std::is_const_v<typename values_t::value_type>,
-                "sort_and_merge_matrix: values_t must not be const-valued");
+                "sort_and_merge_matrix: value_t must not be const-valued");
 
   ordinal_t numRows =
       rowmap_in.extent(0) ? ordinal_t(rowmap_in.extent(0) - 1) : ordinal_t(0);
@@ -632,14 +680,14 @@ void sort_and_merge_matrix(const typename rowmap_t::const_type& rowmap_in,
                         rowmap_out, entries_out, values_out);
 }
 
-template <typename rowmap_t, typename entries_t,
-          typename values_t>
+template <typename rowmap_t, typename entries_t, typename values_t>
 void sort_and_merge_matrix(const typename rowmap_t::const_type& rowmap_in,
                            const entries_t& entries_in,
                            const values_t& values_in, rowmap_t& rowmap_out,
                            entries_t& entries_out, values_t& values_out) {
-  sort_and_merge_matrix(typename entries_t::execution_space(), rowmap_in, entries_in, values_in,
-                        rowmap_out, entries_out, values_out);
+  sort_and_merge_matrix(typename entries_t::execution_space(), rowmap_in,
+                        entries_in, values_in, rowmap_out, entries_out,
+                        values_out);
 }
 
 template <typename exec_space, typename rowmap_t, typename entries_t>
@@ -651,8 +699,19 @@ void sort_and_merge_graph(const exec_space& exec,
   using lno_t       = typename entries_t::value_type;
   using range_t     = Kokkos::RangePolicy<exec_space>;
   using nc_rowmap_t = typename rowmap_t::non_const_type;
+  static_assert(
+      Kokkos::SpaceAccessibility<exec_space,
+                                 typename rowmap_t::memory_space>::accessible,
+      "sort_and_merge_graph: rowmap_t is not accessible from the given "
+      "execution space");
+  static_assert(
+      Kokkos::SpaceAccessibility<exec_space,
+                                 typename entries_t::memory_space>::accessible,
+      "sort_and_merge_graph: entries_t is not accessible from the given "
+      "execution space");
   static_assert(!std::is_const_v<typename entries_t::value_type>,
                 "sort_and_merge_graph: entries_t must not be const-valued");
+
   lno_t numRows = rowmap_in.extent(0) ? rowmap_in.extent(0) - 1 : 0;
   if (numRows == 0) {
     rowmap_out  = typename rowmap_t::non_const_type("SortedMerged rowmap",
@@ -716,8 +775,8 @@ template <typename rowmap_t, typename entries_t>
 void sort_and_merge_graph(const typename rowmap_t::const_type& rowmap_in,
                           const entries_t& entries_in, rowmap_t& rowmap_out,
                           entries_t& entries_out) {
-  return sort_and_merge_graph(typename entries_t::execution_space(), rowmap_in, entries_in, rowmap_out,
-                              entries_out);
+  return sort_and_merge_graph(typename entries_t::execution_space(), rowmap_in,
+                              entries_in, rowmap_out, entries_out);
 }
 
 template <typename crsGraph_t>
