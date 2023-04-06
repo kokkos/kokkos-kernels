@@ -31,7 +31,7 @@ struct chem_model_1 {
   // constexpr static double alpha = 1e-6*1.85e10;
   constexpr static double alpha = 1.85e10;
   constexpr static double beta  = 15618;
-  constexpr static double gamma = 1 - 10 ^ -9;
+  constexpr static double gamma = 1 - 10e-9;
 
   const double tstart, tend, T0, T1;
 

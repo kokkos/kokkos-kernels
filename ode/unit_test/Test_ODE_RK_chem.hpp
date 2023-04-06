@@ -100,7 +100,6 @@ void test_chem() {
     chem_model_1 chem_model;
     const int neqs      = chem_model.neqs;
     const int num_steps = 15000;
-    const double dt     = 0.1;
 
     KokkosODE::Experimental::ODE_params params(num_steps);
     vec_type tmp("tmp vector", neqs);
