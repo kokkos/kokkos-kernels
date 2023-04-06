@@ -24,28 +24,15 @@
 namespace KokkosSparse {
 namespace Impl {
 
-template <typename T, std::size_t N>
-struct add_N_pointers {
-  using type = typename add_N_pointers<std::add_pointer_t<T>, N - 1>::type;
+template <typename crs_matrix_type>
+struct MDF_types {
+  using scalar_type     = typename crs_matrix_type::value_type;
+  using KAS             = typename Kokkos::ArithTraits<scalar_type>;
+  using scalar_mag_type = typename KAS::mag_type;
+  using values_mag_type = Kokkos::View<scalar_mag_type*, Kokkos::LayoutRight,
+                                       typename crs_matrix_type::device_type,
+                                       typename crs_matrix_type::memory_traits>;
 };
-template <typename T>
-struct add_N_pointers<T, std::size_t(0)> {
-  using type = T;
-};
-
-template <typename T, typename... Args>
-auto create_mag_mirror_view(const Kokkos::View<T, Args...>& v) {
-  using src_view_t = Kokkos::View<T, Args...>;
-  using KAS = Kokkos::ArithTraits<typename src_view_t::non_const_value_type>;
-  using mag_type  = typename KAS::mag_type;
-  using data_type = typename add_N_pointers<mag_type, src_view_t::rank()>::type;
-  return Kokkos::View<data_type, Args...>(
-      Kokkos::ViewAllocateWithoutInitializing(v.label() + "::Magnitude"),
-      v.layout());
-}
-
-template <typename SrcView>
-using mag_mirror_view_t = decltype(create_mag_mirror_view(SrcView()));
 
 template <class crs_matrix_type>
 struct MDF_count_lower {
@@ -82,15 +69,13 @@ struct MDF_discarded_fill_norm {
   using col_ind_type =
       typename static_crs_graph_type::entries_type::non_const_type;
   using values_type     = typename crs_matrix_type::values_type::non_const_type;
-  using values_mag_type = KokkosSparse::Impl::mag_mirror_view_t<values_type>;
+  using values_mag_type = typename MDF_types<crs_matrix_type>::values_mag_type;
   using size_type       = typename crs_matrix_type::size_type;
   using ordinal_type    = typename crs_matrix_type::ordinal_type;
   using scalar_type     = typename crs_matrix_type::value_type;
   using KAS             = typename Kokkos::ArithTraits<scalar_type>;
   using scalar_mag_type = typename KAS::mag_type;
   using KAM             = typename Kokkos::ArithTraits<scalar_mag_type>;
-
-  const scalar_mag_type zero = KAM::zero();
 
   crs_matrix_type A, At;
   ordinal_type factorization_step;
@@ -116,8 +101,8 @@ struct MDF_discarded_fill_norm {
   KOKKOS_INLINE_FUNCTION
   void operator()(const ordinal_type i) const {
     ordinal_type rowIdx          = permutation(i);
-    scalar_mag_type discard_norm = zero;
-    scalar_type diag_val         = zero;
+    scalar_mag_type discard_norm = KAM::zero();
+    scalar_type diag_val         = KAS::zero();
     bool entryIsDiscarded        = true;
     ordinal_type numFillEntries  = 0;
     for (size_type alphaIdx = At.graph.row_map(rowIdx);
@@ -217,9 +202,7 @@ struct MDF_selective_discarded_fill_norm {
   using KAS             = typename Kokkos::ArithTraits<scalar_type>;
   using scalar_mag_type = typename KAS::mag_type;
   using KAM             = typename Kokkos::ArithTraits<scalar_mag_type>;
-  using values_mag_type = KokkosSparse::Impl::mag_mirror_view_t<values_type>;
-
-  const scalar_mag_type zero = KAS::abs(KAS::zero());
+  using values_mag_type = typename MDF_types<crs_matrix_type>::values_mag_type;
 
   crs_matrix_type A, At;
   ordinal_type factorization_step;
@@ -248,8 +231,8 @@ struct MDF_selective_discarded_fill_norm {
   KOKKOS_INLINE_FUNCTION
   void operator()(const ordinal_type i) const {
     ordinal_type rowIdx          = permutation(update_list(i));
-    scalar_mag_type discard_norm = zero;
-    scalar_type diag_val         = zero;
+    scalar_mag_type discard_norm = KAM::zero();
+    scalar_type diag_val         = KAS::zero();
     bool entryIsDiscarded        = true;
     ordinal_type numFillEntries  = 0;
     for (size_type alphaIdx = At.graph.row_map(rowIdx);
@@ -350,7 +333,7 @@ struct MDF_select_row {
   using size_type       = typename crs_matrix_type::size_type;
   using ordinal_type    = typename crs_matrix_type::ordinal_type;
   using scalar_type     = typename crs_matrix_type::value_type;
-  using values_mag_type = KokkosSparse::Impl::mag_mirror_view_t<values_type>;
+  using values_mag_type = typename MDF_types<crs_matrix_type>::values_mag_type;
 
   // type used to perform the reduction
   // do not confuse it with scalar_type!
@@ -462,7 +445,7 @@ struct MDF_factorize_row {
   using ordinal_type    = typename crs_matrix_type::ordinal_type;
   using size_type       = typename crs_matrix_type::size_type;
   using value_type      = typename crs_matrix_type::value_type;
-  using values_mag_type = KokkosSparse::Impl::mag_mirror_view_t<values_type>;
+  using values_mag_type = typename MDF_types<crs_matrix_type>::values_mag_type;
   using value_mag_type  = typename values_mag_type::value_type;
 
   crs_matrix_type A, At;

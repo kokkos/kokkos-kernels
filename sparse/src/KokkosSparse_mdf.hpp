@@ -66,10 +66,10 @@ template <class crs_matrix_type, class MDF_handle>
 void mdf_numeric(const crs_matrix_type& A, MDF_handle& handle) {
   using col_ind_type = typename crs_matrix_type::StaticCrsGraphType::
       entries_type::non_const_type;
-  using values_type     = typename crs_matrix_type::values_type::non_const_type;
-  using values_mag_type = KokkosSparse::Impl::mag_mirror_view_t<values_type>;
-  using ordinal_type    = typename crs_matrix_type::ordinal_type;
-  using value_mag_type  = typename values_mag_type::value_type;
+  using values_mag_type =
+      typename KokkosSparse::Impl::MDF_types<crs_matrix_type>::values_mag_type;
+  using ordinal_type   = typename crs_matrix_type::ordinal_type;
+  using value_mag_type = typename values_mag_type::value_type;
 
   using execution_space   = typename crs_matrix_type::execution_space;
   using range_policy_type = Kokkos::RangePolicy<ordinal_type, execution_space>;
