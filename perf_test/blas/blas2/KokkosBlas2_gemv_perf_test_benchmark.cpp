@@ -115,24 +115,39 @@ static void KokkosBlas2_gemv(benchmark::State& state) {
       flopsPerRun, benchmark::Counter::kIsIterationInvariantRate);
 }
 
+void register_benchmark(const char* name, void (*func)(benchmark::State&),
+                        std::vector<std::string> arg_names,
+                        std::vector<int64_t> args, int repeat) {
+  if (repeat > 0) {
+    benchmark::RegisterBenchmark(name, func)
+        ->ArgNames(arg_names)
+        ->Args(args)
+        ->UseManualTime()
+        ->Iterations(repeat);
+  } else {
+    benchmark::RegisterBenchmark(name, func)
+        ->ArgNames(arg_names)
+        ->Args(args)
+        ->UseManualTime();
+  }
+}
+
 int main(int argc, char** argv) {
   Kokkos::initialize(argc, argv);
   benchmark::Initialize(&argc, argv);
   benchmark::SetDefaultTimeUnit(benchmark::kSecond);
   KokkosKernelsBenchmark::add_benchmark_context(true);
 
+  const auto name      = "KokkosBlas2_gemv";
   const auto params    = parse_blas2_gemv_options(argc, argv);
   const auto arg_names = std::vector<std::string>{"m", "n"};
   const auto args      = std::vector<int64_t>{params.m, params.n};
 
   if (params.use_openmp) {
 #if defined(KOKKOS_ENABLE_OPENMP)
-    benchmark::RegisterBenchmark(
-        "KokkosBlas2_gemv",
-        KokkosBlas2_gemv<double, Kokkos::LayoutRight, Kokkos::OpenMP>)
-        ->ArgNames(arg_names)
-        ->Args(args)
-        ->UseManualTime();
+    register_benchmark(
+        name, KokkosBlas2_gemv<double, Kokkos::LayoutRight, Kokkos::OpenMP>,
+        arg_names, args, params.repeat);
 #else
     std::cout << "ERROR: OpenMP requested, but not available.\n";
     return 1;
@@ -141,12 +156,9 @@ int main(int argc, char** argv) {
 
   if (params.use_cuda) {
 #if defined(KOKKOS_ENABLE_CUDA)
-    benchmark::RegisterBenchmark(
-        "KokkosBlas2_gemv",
-        KokkosBlas2_gemv<double, Kokkos::LayoutRight, Kokkos::Cuda>)
-        ->ArgNames(arg_names)
-        ->Args(args)
-        ->UseManualTime();
+    register_benchmark(
+        name, KokkosBlas2_gemv<double, Kokkos::LayoutRight, Kokkos::Cuda>,
+        arg_names, args, params.repeat);
 #else
     std::cout << "ERROR: CUDA requested, but not available.\n";
     return 1;
@@ -155,12 +167,9 @@ int main(int argc, char** argv) {
 
   if (true) {  // serial
 #if defined(KOKKOS_ENABLE_SERIAL)
-    benchmark::RegisterBenchmark(
-        "KokkosBlas2_gemv",
-        KokkosBlas2_gemv<double, Kokkos::LayoutRight, Kokkos::Serial>)
-        ->ArgNames({"m", "n"})
-        ->Args({params.m, params.n})
-        ->UseManualTime();
+    register_benchmark(
+        name, KokkosBlas2_gemv<double, Kokkos::LayoutRight, Kokkos::Serial>,
+        arg_names, args, params.repeat);
 #else
     std::cout << "ERROR: Serial device requested, but not available.\n";
     return 1;
