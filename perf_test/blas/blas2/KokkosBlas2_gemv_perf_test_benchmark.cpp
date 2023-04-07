@@ -53,24 +53,24 @@ static void KokkosBlas2_gemv(benchmark::State& state) {
   Kokkos::fill_random(A, pool, 10.0);
   Kokkos::fill_random(x, pool, 10.0);
 
-  for (auto _ : state) {
-    // Do a warm-up run
-    KokkosBlas::gemv("N", 1.0, A, x, 0.0, y);
+  // Do a warm-up run
+  KokkosBlas::gemv("N", 1.0, A, x, 0.0, y);
+  Kokkos::fence();
+  double total_time = 0.0;
 
+  for (auto _ : state) {
     // Start timing
-    Kokkos::fence();
     Kokkos::Timer timer;
     KokkosBlas::gemv("N", 1.0, A, x, 0.0, y);
     ExecSpace().fence();
 
-    // Kokkos Timer set up
     double time = timer.seconds();
-    // Flops calculation
+    total_time += time;
     size_t flopsPerRun = (size_t)2 * m * n;
-    state.SetIterationTime(time);
 
+    state.SetIterationTime(time);
     state.counters["Avg GEMV time (s):"] =
-        benchmark::Counter(time, benchmark::Counter::kDefaults);
+        benchmark::Counter(total_time, benchmark::Counter::kAvgIterations);
     state.counters["Avg GEMV FLOP/s:"] = benchmark::Counter(
         flopsPerRun, benchmark::Counter::kIsIterationInvariantRate);
   }
