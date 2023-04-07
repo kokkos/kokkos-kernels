@@ -18,6 +18,10 @@
 #include <Kokkos_Random.hpp>
 
 #include "KokkosBlas2_gemv.hpp"
+
+#include "KokkosKernels_TestUtils.hpp"
+#include "KokkosKernels_perf_test_utilities.hpp"
+
 #include <Benchmark_Context.hpp>
 #include <benchmark/benchmark.h>
 
@@ -91,6 +95,15 @@ int main(int argc, char** argv) {
   benchmark::Initialize(&argc, argv);
   benchmark::SetDefaultTimeUnit(benchmark::kSecond);
   KokkosKernelsBenchmark::add_benchmark_context(true);
+
+  perf_test::CommonInputParams common_params;
+  perf_test::parse_common_options(argc, argv, common_params);
+
+  benchmark::RegisterBenchmark("KokkosBlas2_gemv",
+                               KokkosBlas2_gemv<double, Kokkos::LayoutRight>)
+      ->ArgNames({"m", "n", Kokkos::DefaultExecutionSpace::name()})
+      ->Args({5000, 5000, 1})
+      ->UseManualTime();
 
   benchmark::RunSpecifiedBenchmarks();
 
