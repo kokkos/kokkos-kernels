@@ -18,6 +18,7 @@
 #include <Kokkos_Random.hpp>
 
 #include "KokkosBlas2_gemv.hpp"
+#include <Benchmark_Context.hpp>
 #include <benchmark/benchmark.h>
 
 template <typename Scalar, typename Layout>
@@ -84,3 +85,16 @@ BENCHMARK(KokkosBlas2_gemv<double, Kokkos::LayoutRight>)
     ->ArgNames({"m", "n", Kokkos::DefaultExecutionSpace::name()})
     ->Args({5000, 5000, 1})
     ->UseManualTime();
+
+int main(int argc, char** argv) {
+  Kokkos::initialize(argc, argv);
+  benchmark::Initialize(&argc, argv);
+  benchmark::SetDefaultTimeUnit(benchmark::kSecond);
+  KokkosKernelsBenchmark::add_benchmark_context(true);
+
+  benchmark::RunSpecifiedBenchmarks();
+
+  benchmark::Shutdown();
+  Kokkos::finalize();
+  return 0;
+}
