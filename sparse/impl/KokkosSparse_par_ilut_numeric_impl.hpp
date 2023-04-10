@@ -28,7 +28,6 @@
 #include <KokkosSparse_Utils.hpp>
 #include <KokkosSparse_SortCrs.hpp>
 #include <KokkosKernels_Utils.hpp>
-#include <Kokkos_Atomic.hpp>
 
 #include <limits>
 
