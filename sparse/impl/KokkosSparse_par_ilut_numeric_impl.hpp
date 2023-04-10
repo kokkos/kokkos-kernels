@@ -454,10 +454,10 @@ struct IlutWrap {
       UtValuesType& Ut_values_arg, const bool async_update) {
     // Use an atomic view for Ut_values due to race condition
     using UtValuesAtomic = Kokkos::View<
-      typename UtValuesType::non_const_value_type*,
-      typename UtValuesType::array_layout,
-      typename UtValuesType::device_type,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess | Kokkos::Atomic> >;
+        typename UtValuesType::non_const_value_type*,
+        typename UtValuesType::array_layout, typename UtValuesType::device_type,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess |
+                             Kokkos::Atomic> >;
 
     UtValuesAtomic Ut_values = Ut_values_arg;
 
