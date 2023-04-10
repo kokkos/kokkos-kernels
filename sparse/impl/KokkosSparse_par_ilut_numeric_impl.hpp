@@ -420,7 +420,8 @@ struct IlutWrap {
       const auto l_col = L_entries(l_row_nnz);
       const auto u_row = Ut_entries(ut_row_nnz);
       if (l_col == u_row && l_col < last_entry) {
-        sum += L_values(l_row_nnz) * Ut_values(ut_row_nnz);
+        const scalar_t ut_val = Ut_values(ut_row_nnz);
+        sum += L_values(l_row_nnz) * ut_val;
       }
       if (static_cast<size_type>(u_row) == row_idx) {
         ut_nnz = ut_row_nnz;
@@ -470,7 +471,7 @@ struct IlutWrap {
 
           for (auto l_nnz = l_row_nnz_begin; l_nnz < l_row_nnz_end; ++l_nnz) {
             const auto col_idx = L_entries(l_nnz);
-            const auto u_diag  = Ut_values(Ut_row_map(col_idx + 1) - 1);
+            const scalar_t u_diag  = Ut_values(Ut_row_map(col_idx + 1) - 1);
             if (u_diag != 0.0) {
               const auto new_val =
                   compute_sum(row_idx, col_idx, A_row_map, A_entries, A_values,
