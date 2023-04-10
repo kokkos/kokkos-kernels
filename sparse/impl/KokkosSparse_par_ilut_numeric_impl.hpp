@@ -804,10 +804,8 @@ struct IlutWrap {
         thandle.get_residual_norm_delta_stop();
     const size_type max_iter = thandle.get_max_iter();
 
-    const auto verbose = thandle.get_verbose();
-    constexpr bool on_gpu =
-        KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>();
-    const auto async_update = !on_gpu && thandle.get_async_update();
+    const auto verbose      = thandle.get_verbose();
+    const auto async_update = thandle.get_async_update();
 
     if (verbose) {
       std::cout << "Starting PARILUT with..." << std::endl;
