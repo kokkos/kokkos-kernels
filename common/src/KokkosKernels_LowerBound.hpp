@@ -168,7 +168,8 @@ KOKKOS_INLINE_FUNCTION typename ViewLike::size_type lower_bound_thread(
     Pred pred = Pred()) {
   static_assert(1 == ViewLike::rank,
                 "lower_bound_thread requires rank-1 views");
-  static_assert(is_iota_v<ViewLike> || Kokkos::is_view<ViewLike>::value,
+  static_assert(KokkosKernels::Impl::is_iota_v<ViewLike> ||
+                    Kokkos::is_view<ViewLike>::value,
                 "lower_bound_thread requires a "
                 "KokkosKernels::Impl::Iota or a Kokkos::View");
   /*
@@ -448,7 +449,8 @@ KOKKOS_INLINE_FUNCTION typename ViewLike::size_type lower_bound_team(
     const TeamMember &handle, const ViewLike &view,
     const typename ViewLike::non_const_value_type &value, Pred pred = Pred()) {
   static_assert(1 == ViewLike::rank, "lower_bound_team requires rank-1 views");
-  static_assert(is_iota_v<ViewLike> || Kokkos::is_view<ViewLike>::value,
+  static_assert(KokkosKernels::Impl::is_iota_v<ViewLike> ||
+                    Kokkos::is_view<ViewLike>::value,
                 "lower_bound_team requires a "
                 "KokkosKernels::Impl::Iota or a Kokkos::View");
 
