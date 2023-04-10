@@ -470,8 +470,8 @@ struct IlutWrap {
               L_row_map(row_idx + 1) - 1;  // skip diagonal for L
 
           for (auto l_nnz = l_row_nnz_begin; l_nnz < l_row_nnz_end; ++l_nnz) {
-            const auto col_idx = L_entries(l_nnz);
-            const scalar_t u_diag  = Ut_values(Ut_row_map(col_idx + 1) - 1);
+            const auto col_idx    = L_entries(l_nnz);
+            const scalar_t u_diag = Ut_values(Ut_row_map(col_idx + 1) - 1);
             if (u_diag != 0.0) {
               const auto new_val =
                   compute_sum(row_idx, col_idx, A_row_map, A_entries, A_values,
