@@ -496,8 +496,7 @@ struct IlutWrap {
 
             // ut_nnz is not guarateed to fail into range used exclusively
             // by this thread. Updating it here opens up potential race
-            // conditions that cause problems on GPU but usually causes
-            // faster convergence.
+            // conditions but usually causes faster convergence.
             if (async_update) {
               Ut_values(ut_nnz) = new_val;
             }
