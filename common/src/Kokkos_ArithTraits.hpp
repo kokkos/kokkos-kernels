@@ -196,8 +196,7 @@ KOKKOS_FORCEINLINE_FUNCTION IntType intPowUnsigned(const IntType x,
 namespace Kokkos {
 
 // Macro to automate the wrapping of Kokkos Mathematical Functions
-// in the ArithTraits struct for real floating point types, hopefully
-// this can be expanded to Kokkos::half_t and Kokkos::bhalf_t
+// in the ArithTraits struct for real floating point types.
 #define KOKKOSKERNELS_ARITHTRAITS_REAL_FP(FUNC_QUAL)                           \
   static FUNC_QUAL val_type zero() { return static_cast<val_type>(0); }        \
   static FUNC_QUAL val_type one() { return static_cast<val_type>(1); }         \
@@ -926,9 +925,8 @@ class ArithTraits<Kokkos::Experimental::half_t> {
   static constexpr bool has_infinity   = true;
 
   // Backwards compatibility with Teuchos::ScalarTraits.
-  using magnitudeType = mag_type;
-  using halfPrecision =
-      Kokkos::Experimental::half_t;  // Should we switch to Kokkos::half_t
+  using magnitudeType   = mag_type;
+  using halfPrecision   = Kokkos::Experimental::half_t;
   using doublePrecision = float;
 
   static constexpr bool isComplex            = false;
@@ -958,8 +956,10 @@ class ArithTraits<Kokkos::Experimental::bhalf_t> {
 
   // Backwards compatibility with Teuchos::ScalarTraits.
   using magnitudeType = mag_type;
-  using halfPrecision =
-      Kokkos::Experimental::bhalf_t;  // Should we switch to Kokkos::half_t
+  using halfPrecision = Kokkos::Experimental::bhalf_t;
+
+  // There is no type that has twice the precision as bhalf_t.
+  // The closest type would be float.
   using doublePrecision = void;
 
   static constexpr bool isComplex            = false;
