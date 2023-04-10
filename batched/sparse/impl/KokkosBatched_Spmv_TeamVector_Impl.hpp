@@ -388,11 +388,10 @@ struct TeamVectorSpmv<MemberType, Trans::NoTranspose, N_team> {
     }
 #endif
     if (values.extent(0) == 1) {
-      KokkosBlas::Experimental::team_vector_spmv<MemberType>(
+      return KokkosSparse::Experimental::team_vector_spmv<MemberType>(
           member, alpha.data()[0], Kokkos::subview(values, 0, Kokkos::ALL),
           row_ptr, colIndices, Kokkos::subview(X, 0, Kokkos::ALL),
           beta.data()[0], Kokkos::subview(Y, 0, Kokkos::ALL), dobeta);
-      return 0;
     }
 
     return TeamVectorSpmvInternal::template invoke<
@@ -472,11 +471,10 @@ struct TeamVectorSpmv<MemberType, Trans::NoTranspose, N_team> {
     }
 #endif
     if (values.extent(0) == 1) {
-      KokkosBlas::Experimental::team_vector_spmv<MemberType>(
+      return KokkosSparse::Experimental::team_vector_spmv<MemberType>(
           member, alpha, Kokkos::subview(values, 0, Kokkos::ALL), row_ptr,
           colIndices, Kokkos::subview(X, 0, Kokkos::ALL), beta,
           Kokkos::subview(Y, 0, Kokkos::ALL), dobeta);
-      return 0;
     }
 
     return TeamVectorSpmvInternal::template invoke<

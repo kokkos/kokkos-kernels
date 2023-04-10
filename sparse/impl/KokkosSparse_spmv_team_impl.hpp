@@ -22,13 +22,13 @@
 #include <Kokkos_ArithTraits.hpp>
 #include <Kokkos_InnerProductSpaceTraits.hpp>
 
-namespace KokkosBlas {
+namespace KokkosSparse {
 namespace Impl {
 
 struct TeamSpmvInternal {
   template <typename MemberType, typename ScalarType, typename ValueType,
             typename OrdinalType, int dobeta>
-  KOKKOS_INLINE_FUNCTION static void invoke(
+  KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType& member, const OrdinalType numRows,
       const ScalarType alpha, const ValueType* KOKKOS_RESTRICT values,
       const OrdinalType valuess0, const OrdinalType* KOKKOS_RESTRICT row_ptr,
@@ -42,7 +42,7 @@ struct TeamSpmvInternal {
 struct TeamVectorSpmvInternal {
   template <typename MemberType, typename ScalarType, typename ValueType,
             typename OrdinalType, int dobeta>
-  KOKKOS_INLINE_FUNCTION static void invoke(
+  KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType& member, const OrdinalType numRows,
       const ScalarType alpha, const ValueType* KOKKOS_RESTRICT values,
       const OrdinalType valuess0, const OrdinalType* KOKKOS_RESTRICT row_ptr,
@@ -55,7 +55,7 @@ struct TeamVectorSpmvInternal {
 
 template <typename MemberType, typename ScalarType, typename ValueType,
           typename OrdinalType, int dobeta>
-KOKKOS_INLINE_FUNCTION void TeamSpmvInternal::invoke(
+KOKKOS_INLINE_FUNCTION int TeamSpmvInternal::invoke(
     const MemberType& member, const OrdinalType numRows, const ScalarType alpha,
     const ValueType* KOKKOS_RESTRICT values, const OrdinalType valuess0,
     const OrdinalType* KOKKOS_RESTRICT row_ptr, const OrdinalType row_ptrs0,
@@ -87,11 +87,12 @@ KOKKOS_INLINE_FUNCTION void TeamSpmvInternal::invoke(
           y[iRow * ys0] = beta * y[iRow * ys0] + sum;
         }
       });
+  return 0;
 }
 
 template <typename MemberType, typename ScalarType, typename ValueType,
           typename OrdinalType, int dobeta>
-KOKKOS_INLINE_FUNCTION void TeamVectorSpmvInternal::invoke(
+KOKKOS_INLINE_FUNCTION int TeamVectorSpmvInternal::invoke(
     const MemberType& member, const OrdinalType numRows, const ScalarType alpha,
     const ValueType* KOKKOS_RESTRICT values, const OrdinalType valuess0,
     const OrdinalType* KOKKOS_RESTRICT row_ptr, const OrdinalType row_ptrs0,
@@ -124,9 +125,10 @@ KOKKOS_INLINE_FUNCTION void TeamVectorSpmvInternal::invoke(
           y[iRow * ys0] = beta * y[iRow * ys0] + sum;
         }
       });
+  return 0;
 }
 
 }  // namespace Impl
-}  // namespace KokkosBlas
+}  // namespace KokkosSparse
 
 #endif

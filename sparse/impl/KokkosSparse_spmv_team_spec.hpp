@@ -23,18 +23,18 @@
 #include <Kokkos_InnerProductSpaceTraits.hpp>
 #include <KokkosSparse_spmv_team_impl.hpp>
 
-namespace KokkosBlas {
+namespace KokkosSparse {
 
 template <typename MemberType>
 struct TeamSpmv {
   template <typename ScalarType, typename ValuesViewType, typename IntView,
             typename xViewType, typename yViewType, int dobeta>
-  KOKKOS_INLINE_FUNCTION static void invoke(
+  KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType& member, const ScalarType alpha,
       const ValuesViewType& values, const IntView& row_ptr,
       const IntView& colIndices, const xViewType& x, const ScalarType beta,
       const yViewType& y) {
-    Impl::TeamSpmvInternal::invoke<
+    return Impl::TeamSpmvInternal::invoke<
         MemberType, ScalarType, typename ValuesViewType::non_const_value_type,
         typename IntView::non_const_value_type, dobeta>(
         member, x.extent(0), alpha, values.data(), values.stride_0(),
@@ -48,12 +48,12 @@ template <typename MemberType>
 struct TeamVectorSpmv {
   template <typename ScalarType, typename ValuesViewType, typename IntView,
             typename xViewType, typename yViewType, int dobeta>
-  KOKKOS_INLINE_FUNCTION static void invoke(
+  KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType& member, const ScalarType alpha,
       const ValuesViewType& values, const IntView& row_ptr,
       const IntView& colIndices, const xViewType& x, const ScalarType beta,
       const yViewType& y) {
-    Impl::TeamVectorSpmvInternal::invoke<
+    return Impl::TeamVectorSpmvInternal::invoke<
         MemberType, ScalarType, typename ValuesViewType::non_const_value_type,
         typename IntView::non_const_value_type, dobeta>(
         member, x.extent(0), alpha, values.data(), values.stride_0(),
@@ -63,6 +63,6 @@ struct TeamVectorSpmv {
   }
 };
 
-}  // namespace KokkosBlas
+}  // namespace KokkosSparse
 
 #endif

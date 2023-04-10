@@ -24,14 +24,14 @@
 #include <type_traits>  // requires C++11, but so does Kokkos
 #include <KokkosSparse_spmv_team_spec.hpp>
 
-namespace KokkosBlas {
+namespace KokkosSparse {
 namespace Experimental {
 
 /// \brief Sparse matrix-vector multiply: y = beta*y + alpha*A*x.
 ///
 template <class TeamType, class ScalarType, class ValuesViewType, class IntView,
           class xViewType, class yViewType>
-void KOKKOS_INLINE_FUNCTION team_spmv(
+int KOKKOS_INLINE_FUNCTION team_spmv(
     const TeamType &team, const ScalarType &alpha, const ValuesViewType &values,
     const IntView &row_ptr, const IntView &colIndices, const xViewType &x,
     const ScalarType &beta, const yViewType &y, const int dobeta) {
@@ -55,28 +55,28 @@ void KOKKOS_INLINE_FUNCTION team_spmv(
 
   // Check compatibility of dimensions at run time.
   if (values.extent(0) != colIndices.extent(0)) {
-    std::ostringstream os;
-    os << "KokkosBlas::spmv: Dimensions of values and colIndices do not match: "
-       << "values: " << values.extent(0)
-       << ", colIndices: " << colIndices.extent(0);
-    KokkosKernels::Impl::throw_runtime_exception(os.str());
+    KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+        "KokkosSparse::spmv: Dimensions of values and colIndices do not match: "
+        "values: %d, colIndices: %d",
+        (int)values.extent(0), (int)colIndices.extent(0));
+    return 1;
   }
 
   if (x.extent(0) != y.extent(0) || (x.extent(0) + 1) != row_ptr.extent(0)) {
-    std::ostringstream os;
-    os << "KokkosBlas::spmv: Dimensions of x, y, and row_ptr do not match: "
-       << "x: " << x.extent(0) << ", y: " << y.extent(0)
-       << ", row_ptr: " << row_ptr.extent(0);
-    KokkosKernels::Impl::throw_runtime_exception(os.str());
+    KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+        "KokkosSparse::spmv: Dimensions of x, y, and row_ptr do not match: "
+        "x: %d, y: %d, row_ptr: %d",
+        (int)x.extent(0), (int)y.extent(0), (int)row_ptr.extent(0));
+    return 1;
   }
 #endif  // KOKKOSKERNELS_DEBUG_LEVEL
 
   if (dobeta == 1)
-    KokkosBlas::TeamSpmv<TeamType>::template invoke<
+    return KokkosSparse::TeamSpmv<TeamType>::template invoke<
         ScalarType, ValuesViewType, IntView, xViewType, yViewType, 1>(
         team, alpha, values, row_ptr, colIndices, x, beta, y);
   else
-    KokkosBlas::TeamSpmv<TeamType>::template invoke<
+    return KokkosSparse::TeamSpmv<TeamType>::template invoke<
         ScalarType, ValuesViewType, IntView, xViewType, yViewType, 0>(
         team, alpha, values, row_ptr, colIndices, x, beta, y);
 }
@@ -85,7 +85,7 @@ void KOKKOS_INLINE_FUNCTION team_spmv(
 ///
 template <class TeamType, class ScalarType, class ValuesViewType, class IntView,
           class xViewType, class yViewType>
-void KOKKOS_INLINE_FUNCTION team_vector_spmv(
+int KOKKOS_INLINE_FUNCTION team_vector_spmv(
     const TeamType &team, const ScalarType &alpha, const ValuesViewType &values,
     const IntView &row_ptr, const IntView &colIndices, const xViewType &x,
     const ScalarType &beta, const yViewType &y, const int dobeta) {
@@ -109,33 +109,33 @@ void KOKKOS_INLINE_FUNCTION team_vector_spmv(
 
   // Check compatibility of dimensions at run time.
   if (values.extent(0) != colIndices.extent(0)) {
-    std::ostringstream os;
-    os << "KokkosBlas::spmv: Dimensions of values and colIndices do not match: "
-       << "values: " << values.extent(0)
-       << ", colIndices: " << colIndices.extent(0);
-    KokkosKernels::Impl::throw_runtime_exception(os.str());
+    KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+        "KokkosSparse::spmv: Dimensions of values and colIndices do not match: "
+        "values: %d, colIndices: %d",
+        (int)values.extent(0), (int)colIndices.extent(0));
+    return 1;
   }
 
   if (x.extent(0) != y.extent(0) || (x.extent(0) + 1) != row_ptr.extent(0)) {
-    std::ostringstream os;
-    os << "KokkosBlas::spmv: Dimensions of x, y, and row_ptr do not match: "
-       << "x: " << x.extent(0) << ", y: " << y.extent(0)
-       << ", row_ptr: " << row_ptr.extent(0);
-    KokkosKernels::Impl::throw_runtime_exception(os.str());
+    KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+        "KokkosSparse::spmv: Dimensions of x, y, and row_ptr do not match: "
+        "x: %d, y: %d, row_ptr: %d",
+        (int)x.extent(0), (int)y.extent(0), (int)row_ptr.extent(0));
+    return 1;
   }
 #endif  // KOKKOSKERNELS_DEBUG_LEVEL
 
   if (dobeta == 1)
-    KokkosBlas::TeamVectorSpmv<TeamType>::template invoke<
+    return KokkosSparse::TeamVectorSpmv<TeamType>::template invoke<
         ScalarType, ValuesViewType, IntView, xViewType, yViewType, 1>(
         team, alpha, values, row_ptr, colIndices, x, beta, y);
   else
-    KokkosBlas::TeamVectorSpmv<TeamType>::template invoke<
+    return KokkosSparse::TeamVectorSpmv<TeamType>::template invoke<
         ScalarType, ValuesViewType, IntView, xViewType, yViewType, 0>(
         team, alpha, values, row_ptr, colIndices, x, beta, y);
 }
 
 }  // namespace Experimental
-}  // namespace KokkosBlas
+}  // namespace KokkosSparse
 
 #endif  // KOKKOS_BLAS2_MV_HPP_

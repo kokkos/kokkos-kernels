@@ -239,11 +239,10 @@ struct TeamSpmv<MemberType, Trans::NoTranspose> {
     }
 #endif
     if (values.extent(0) == 1) {
-      KokkosBlas::Experimental::team_spmv<MemberType>(
+      return KokkosSparse::Experimental::team_spmv<MemberType>(
           member, alpha.data()[0], Kokkos::subview(values, 0, Kokkos::ALL),
           row_ptr, colIndices, Kokkos::subview(X, 0, Kokkos::ALL),
           beta.data()[0], Kokkos::subview(Y, 0, Kokkos::ALL), dobeta);
-      return 0;
     }
 
     return TeamSpmvInternal::template invoke<
@@ -323,11 +322,10 @@ struct TeamSpmv<MemberType, Trans::NoTranspose> {
     }
 #endif
     if (values.extent(0) == 1) {
-      KokkosBlas::Experimental::team_spmv<MemberType>(
+      return KokkosSparse::Experimental::team_spmv<MemberType>(
           member, alpha, Kokkos::subview(values, 0, Kokkos::ALL), row_ptr,
           colIndices, Kokkos::subview(X, 0, Kokkos::ALL), beta,
           Kokkos::subview(Y, 0, Kokkos::ALL), dobeta);
-      return 0;
     }
 
     return TeamSpmvInternal::template invoke<
