@@ -28,6 +28,7 @@
 #include <KokkosSparse_Utils.hpp>
 #include <KokkosSparse_SortCrs.hpp>
 #include <KokkosKernels_Utils.hpp>
+#include <Kokkos_Atomic.hpp>
 
 #include <limits>
 
@@ -450,7 +451,16 @@ struct IlutWrap {
       LRowMapType& L_row_map, LEntriesType& L_entries, LValuesType& L_values,
       URowMapType& U_row_map, UEntriesType& U_entries, UValuesType& U_values,
       UtRowMapType& Ut_row_map, UtEntriesType& Ut_entries,
-      UtValuesType& Ut_values, const bool async_update) {
+      UtValuesType& Ut_values_arg, const bool async_update) {
+    // Use an atomic view for Ut_values due to race condition
+    using UtValuesAtomic = Kokkos::View<
+      typename UtValuesType::non_const_value_type*,
+      typename UtValuesType::array_layout,
+      typename UtValuesType::device_type,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess | Kokkos::Atomic> >;
+
+    UtValuesAtomic Ut_values = Ut_values_arg;
+
     const size_type nrows = ih.get_nrows();
     Kokkos::parallel_for(
         "compute_l_u_factors", range_policy(0, nrows),
