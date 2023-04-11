@@ -43,8 +43,9 @@ struct ThreadUpperBoundFunctor {
     if (0 == i) {
       hv_size_type idx = KokkosKernels::upper_bound_thread(haystack_, needle_);
       if (idx != expected_) {
-        printf("%s:%d thread %d expected %d got %d\n", __FILE__, __LINE__,
-               int(i), int(expected_), int(idx));
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("%s:%d thread %d expected %d got %d\n",
+                                      __FILE__, __LINE__, int(i),
+                                      int(expected_), int(idx));
         ++lerrCount;
       }
     }
@@ -99,8 +100,9 @@ struct TeamUpperBoundFunctor {
     hv_size_type idx =
         KokkosKernels::upper_bound_team(handle, haystack_, needle_);
     if (idx != expected_) {
-      printf("%s:%d thread %d expected %d got %d\n", __FILE__, __LINE__,
-             int(handle.team_rank()), int(expected_), int(idx));
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF("%s:%d thread %d expected %d got %d\n",
+                                    __FILE__, __LINE__, int(handle.team_rank()),
+                                    int(expected_), int(idx));
       ++lerrCount;
     }
   }
