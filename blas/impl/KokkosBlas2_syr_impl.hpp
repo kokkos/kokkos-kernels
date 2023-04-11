@@ -27,11 +27,11 @@ namespace Impl {
 
 // Functor for a single-level parallel_for version of nontranspose SYR.
 // The functor parallelizes over rows of the input matrix A.
-template <class XViewType, class AViewType,
-          class IndexType = typename AViewType::size_type>
+template <class XViewType, class AViewType, class IndexType>
 struct SingleLevelSYR {
   using AlphaCoeffType = typename AViewType::non_const_value_type;
-  using A_value_type   = typename AViewType::non_const_value_type;
+  using XComponentType = typename XViewType::non_const_value_type;
+  using AComponentType = typename AViewType::non_const_value_type;
 
   SingleLevelSYR( const bool             justTranspose
                 , const bool             justUp
@@ -45,30 +45,22 @@ struct SingleLevelSYR {
       , x_            (x)
       , A_            (A)
   {
-    static_assert(Kokkos::is_view<XViewType>::value, "XViewType must be a Kokkos::View.");
-    static_assert(Kokkos::is_view<AViewType>::value, "AViewType must be a Kokkos::View.");
-
-    static_assert(static_cast<int>(XViewType::rank) == 1, "XViewType must have rank 1.");
-    static_assert(static_cast<int>(AViewType::rank) == 2, "AViewType must have rank 2.");
-
-    static_assert(std::is_integral<IndexType>::value, "IndexType must be an integer.");
+    // Nothing to do
   }
 
   KOKKOS_INLINE_FUNCTION void operator()(const IndexType & i) const { // AquiEEP
-    using KAT = Kokkos::ArithTraits<typename AViewType::non_const_value_type>;
-
-    if (alpha_ == KAT::zero()) {
+    if (alpha_ == Kokkos::ArithTraits<AlphaCoeffType>::zero()) {
       // Nothing to do
     }
     else {
-      const IndexType    N      ( A_.extent(1) );
-      const A_value_type x_fixed( x_(i) );
+      const IndexType      N      ( A_.extent(1) );
+      const XComponentType x_fixed( x_(i) );
 
       if (justTranspose_) {
         for (IndexType j = 0; j < N; ++j) {
           if (( (justUp_ == true ) && (i <= j) ) ||
               ( (justUp_ == false) && (i >= j) )) {
-            A_(i,j) += A_value_type( alpha_ * x_fixed * x_(j) );
+            A_(i,j) += AComponentType( alpha_ * x_fixed * x_(j) );
           }
         }
       }
@@ -76,7 +68,7 @@ struct SingleLevelSYR {
         for (IndexType j = 0; j < N; ++j) {
           if (( (justUp_ == true ) && (i <= j) ) ||
               ( (justUp_ == false) && (i >= j) )) {
-            A_(i,j) += A_value_type( alpha_ * x_fixed * KAT::conj( x_(j) ) );
+            A_(i,j) += AComponentType( alpha_ * x_fixed * Kokkos::ArithTraits<XComponentType>::conj( x_(j) ) );
           }
         }
       }
@@ -92,9 +84,9 @@ private:
 };
 
 // Single-level parallel version of SYR.
-template <class XViewType, class AViewType,
+template <class ExecutionSpace, class XViewType, class AViewType,
           class IndexType = typename AViewType::size_type>
-void singleLevelSyr( const typename AViewType::execution_space  & space
+void singleLevelSyr( const          ExecutionSpace              & space
                    , const          char                          trans[]
                    , const          char                          uplo[]
                    , const typename AViewType::const_value_type & alpha
@@ -102,25 +94,19 @@ void singleLevelSyr( const typename AViewType::execution_space  & space
                    , const          AViewType                   & A
                    ) {
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Entering IMPL singleLevelSyr(), AViewType = %s\n", typeid(AViewType).name() );
-  static_assert(Kokkos::is_view<XViewType>::value, "XViewType must be a Kokkos::View.");
-  static_assert(Kokkos::is_view<AViewType>::value, "AViewType must be a Kokkos::View.");
-
-  static_assert(static_cast<int>(XViewType::rank) == 1, "XViewType must have rank 1.");
-  static_assert(static_cast<int>(AViewType::rank) == 2, "AViewType must have rank 2.");
 
   static_assert(std::is_integral<IndexType>::value, "IndexType must be an integer");
 
-  using KAT = Kokkos::ArithTraits<typename AViewType::non_const_value_type>;
+  using AlphaCoeffType = typename AViewType::non_const_value_type;
 
   if (x.extent(0) == 0) {
     // no entries to update
   }
-  else if (alpha == KAT::zero()) {
+  else if (alpha == Kokkos::ArithTraits<AlphaCoeffType>::zero()) {
     // no entries to update
   }
   else {
-    using execution_space = typename AViewType::execution_space;
-    Kokkos::RangePolicy<execution_space, IndexType> rangePolicy(space, 0, A.extent(0));
+    Kokkos::RangePolicy<ExecutionSpace, IndexType> rangePolicy(space, 0, A.extent(0));
     SingleLevelSYR<XViewType, AViewType, IndexType> functor( (trans[0] == 'T') || (trans[0] == 't')
                                                            , (uplo[0] == 'U') || (uplo[0] == 'u')
                                                            , alpha
@@ -138,14 +124,14 @@ struct TwoLevelSYR_LayoutRightTag {};
 
 // Functor for a two-level parallel_reduce version of SYR, designed for performance on GPU.
 // Kernel depends on the layout of A.
-template <class XViewType, class AViewType, class IndexType = typename AViewType::size_type>
+template <class ExecutionSpace, class XViewType, class AViewType, class IndexType>
 struct TwoLevelSYR {
   using AlphaCoeffType = typename AViewType::non_const_value_type;
-  using A_value_type   = typename AViewType::non_const_value_type;
+  using XComponentType = typename XViewType::non_const_value_type;
+  using AComponentType = typename AViewType::non_const_value_type;
 
-  using execution_space = typename AViewType::execution_space;
-  using policy_type     = Kokkos::TeamPolicy<execution_space>;
-  using member_type     = typename policy_type::member_type;
+  using policy_type    = Kokkos::TeamPolicy<ExecutionSpace>;
+  using member_type    = typename policy_type::member_type;
 
   TwoLevelSYR( const bool             justTranspose
              , const bool             justUp
@@ -159,13 +145,7 @@ struct TwoLevelSYR {
       , x_            (x)
       , A_            (A)
   {
-    static_assert(Kokkos::is_view<XViewType>::value, "XViewType must be a Kokkos::View.");
-    static_assert(Kokkos::is_view<AViewType>::value, "AViewType must be a Kokkos::View.");
-
-    static_assert(static_cast<int>(XViewType::rank) == 1, "XViewType must have rank 1.");
-    static_assert(static_cast<int>(AViewType::rank) == 2, "AViewType must have rank 2.");
-
-    static_assert(std::is_integral<IndexType>::value, "IndexType must be an integer.");
+    // Nothing to do
   }
 
 public:
@@ -173,29 +153,27 @@ public:
   KOKKOS_INLINE_FUNCTION void operator()( TwoLevelSYR_LayoutLeftTag // AquiEEP
                                         , const member_type & team
                                         ) const {
-    using KAT = Kokkos::ArithTraits<typename AViewType::non_const_value_type>;
-
-    if (alpha_ == KAT::zero()) {
+    if (alpha_ == Kokkos::ArithTraits<AlphaCoeffType>::zero()) {
       // Nothing to do
     }
     else {
       const IndexType M ( A_.extent(0) );
       const IndexType j ( team.league_rank() );
       if (justTranspose_) {
-        const A_value_type x_fixed( x_(j) );
+        const XComponentType x_fixed( x_(j) );
         Kokkos::parallel_for(Kokkos::TeamThreadRange(team, M), [&](const IndexType & i) {
           if (( (justUp_ == true ) && (i <= j) ) ||
               ( (justUp_ == false) && (i >= j) )) {
-            A_(i,j) += A_value_type( alpha_ * x_(i) * x_fixed );
+            A_(i,j) += AComponentType( alpha_ * x_(i) * x_fixed );
           }
         });
       }
       else {
-        const A_value_type x_fixed( KAT::conj( x_(j) ) );
+        const XComponentType x_fixed( Kokkos::ArithTraits<XComponentType>::conj( x_(j) ) );
         Kokkos::parallel_for(Kokkos::TeamThreadRange(team, M), [&](const IndexType & i) {
           if (( (justUp_ == true ) && (i <= j) ) ||
               ( (justUp_ == false) && (i >= j) )) {
-            A_(i,j) += A_value_type( alpha_ * x_(i) * x_fixed );
+            A_(i,j) += AComponentType( alpha_ * x_(i) * x_fixed );
           }
         });
       }
@@ -206,20 +184,18 @@ public:
   KOKKOS_INLINE_FUNCTION void operator()( TwoLevelSYR_LayoutRightTag // AquiEEP
                                         , const member_type & team
                                         ) const {
-    using KAT = Kokkos::ArithTraits<typename AViewType::non_const_value_type>;
-
-    if (alpha_ == KAT::zero()) {
+    if (alpha_ == Kokkos::ArithTraits<AlphaCoeffType>::zero()) {
       // Nothing to do
     }
     else {
-      const IndexType    N      ( A_.extent(1) );
-      const IndexType    i      ( team.league_rank() );
-      const A_value_type x_fixed( x_(i) );
+      const IndexType      N      ( A_.extent(1) );
+      const IndexType      i      ( team.league_rank() );
+      const XComponentType x_fixed( x_(i) );
       if (justTranspose_) {
         Kokkos::parallel_for(Kokkos::TeamThreadRange(team, N), [&](const IndexType & j) {
           if (( (justUp_ == true ) && (i <= j) ) ||
               ( (justUp_ == false) && (i >= j) )) {
-            A_(i,j) += A_value_type( alpha_ * x_fixed * x_(j) );
+            A_(i,j) += AComponentType( alpha_ * x_fixed * x_(j) );
           }
         });
       }
@@ -227,7 +203,7 @@ public:
         Kokkos::parallel_for(Kokkos::TeamThreadRange(team, N), [&](const IndexType & j) {
           if (( (justUp_ == true ) && (i <= j) ) ||
               ( (justUp_ == false) && (i >= j) )) {
-            A_(i,j) += A_value_type( alpha_ * x_fixed * KAT::conj( x_(j) ) );
+            A_(i,j) += AComponentType( alpha_ * x_fixed * Kokkos::ArithTraits<XComponentType>::conj( x_(j) ) );
           }
         });
       }
@@ -244,9 +220,9 @@ private:
 };
 
 // Two-level parallel version of SYR.
-template <class XViewType, class AViewType,
+template <class ExecutionSpace, class XViewType, class AViewType,
           class IndexType = typename AViewType::size_type>
-void twoLevelSyr( const typename AViewType::execution_space  & space
+void twoLevelSyr( const          ExecutionSpace              & space
                 , const          char                          trans[]
                 , const          char                          uplo[]
                 , const typename AViewType::const_value_type & alpha
@@ -254,29 +230,23 @@ void twoLevelSyr( const typename AViewType::execution_space  & space
                 , const          AViewType                   & A
                 ) {
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Entering IMPL twoLevelSyr(), AViewType = %s\n", typeid(AViewType).name() );
-  static_assert(Kokkos::is_view<XViewType>::value, "XViewType must be a Kokkos::View.");
-  static_assert(Kokkos::is_view<AViewType>::value, "AViewType must be a Kokkos::View.");
-
-  static_assert(static_cast<int>(XViewType::rank) == 1, "XViewType must have rank 1.");
-  static_assert(static_cast<int>(AViewType::rank) == 2, "AViewType must have rank 2.");
 
   static_assert(std::is_integral<IndexType>::value, "IndexType must be an integer");
 
-  using KAT = Kokkos::ArithTraits<typename AViewType::non_const_value_type>;
+  using AlphaCoeffType = typename AViewType::non_const_value_type;
 
   if (x.extent(0) == 0) {
     // no entries to update
     return;
   }
-  else if (alpha == KAT::zero()) {
+  else if (alpha == Kokkos::ArithTraits<AlphaCoeffType>::zero()) {
     // no entries to update
     return;
   }
 
-  using execution_space = typename AViewType::execution_space;
   constexpr bool isLayoutLeft = std::is_same<typename AViewType::array_layout, Kokkos::LayoutLeft>::value;
   using layout_tag  = typename std::conditional<isLayoutLeft, TwoLevelSYR_LayoutLeftTag, TwoLevelSYR_LayoutRightTag>::type;
-  using TeamPolicyType = Kokkos::TeamPolicy<execution_space, layout_tag>;
+  using TeamPolicyType = Kokkos::TeamPolicy<ExecutionSpace, layout_tag>;
   TeamPolicyType teamPolicy;
   if (isLayoutLeft) {
     // LayoutLeft: one team per column
@@ -287,12 +257,12 @@ void twoLevelSyr( const typename AViewType::execution_space  & space
     teamPolicy = TeamPolicyType(space, A.extent(0), Kokkos::AUTO);
   }
 
-  TwoLevelSYR<XViewType, AViewType, IndexType> functor( (trans[0] == 'T') || (trans[0] == 't')
-                                                      , (uplo[0] == 'U') || (uplo[0] == 'u')
-                                                      , alpha
-                                                      , x
-                                                      , A
-                                                      );
+  TwoLevelSYR<ExecutionSpace, XViewType, AViewType, IndexType> functor( (trans[0] == 'T') || (trans[0] == 't')
+                                                                      , (uplo[0] == 'U') || (uplo[0] == 'u')
+                                                                      , alpha
+                                                                      , x
+                                                                      , A
+                                                                      );
   Kokkos::parallel_for("KokkosBlas::syr[twoLevel]", teamPolicy, functor);
 }
 
@@ -302,12 +272,13 @@ void twoLevelSyr( const typename AViewType::execution_space  & space
 // depending on whether execution space is CPU or GPU.
 // The 'enable_if' makes sure unused kernels are not instantiated.
 
-template < class XViewType
+template < class ExecutionSpace
+         , class XViewType
          , class AViewType
          , class IndexType
-         , typename std::enable_if<!KokkosKernels::Impl::kk_is_gpu_exec_space< typename AViewType::execution_space>() >::type* = nullptr
+         , typename std::enable_if<!KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>() >::type* = nullptr
          >
-void generalSyrImpl( const typename AViewType::execution_space  & space
+void generalSyrImpl( const          ExecutionSpace              & space
                    , const          char                          trans[]
                    , const          char                          uplo[]
                    , const typename AViewType::const_value_type & alpha
@@ -318,12 +289,13 @@ void generalSyrImpl( const typename AViewType::execution_space  & space
   singleLevelSyr(space, trans, uplo, alpha, x, A);
 }
 
-template < class XViewType
+template < class ExecutionSpace
+         , class XViewType
          , class AViewType
          , class IndexType
-         , typename std::enable_if<KokkosKernels::Impl::kk_is_gpu_exec_space< typename AViewType::execution_space>()>::type* = nullptr
+         , typename std::enable_if<KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>()>::type* = nullptr
          >
-void generalSyrImpl( const typename AViewType::execution_space  & space
+void generalSyrImpl( const          ExecutionSpace              & space
                    , const          char                          trans[]
                    , const          char                          uplo[]
                    , const typename AViewType::const_value_type & alpha

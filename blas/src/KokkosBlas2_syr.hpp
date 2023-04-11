@@ -23,8 +23,9 @@ namespace KokkosBlas {
 
 /// \brief Rank-1 update of a general matrix: A = A + alpha * x * x^{T,H}.
 ///
-/// \tparam XViewType Input vector, as a 1-D Kokkos::View
-/// \tparam AViewType Input/Output matrix, as a 2-D Kokkos::View
+/// \tparam ExecutionSpace The type of execution space
+/// \tparam XViewType      Input vector, as a 1-D Kokkos::View
+/// \tparam AViewType      Input/Output matrix, as a 2-D Kokkos::View
 ///
 /// \param space [in]     Execution space instance on which to run the kernel.
 ///                       This may contain information about which stream to
@@ -34,8 +35,8 @@ namespace KokkosBlas {
 /// \param alpha [in]     Input coefficient of x * x^{T,H}
 /// \param x     [in]     Input vector, as a 1-D Kokkos::View
 /// \param A     [in/out] Output matrix, as a nonconst 2-D Kokkos::View
-template <class XViewType, class AViewType>
-void syr( const typename AViewType::execution_space  & space
+template <class ExecutionSpace, class XViewType, class AViewType>
+void syr( const          ExecutionSpace              & space
         , const          char                          trans[]
         , const          char                          uplo[]
         , const typename AViewType::const_value_type & alpha
@@ -43,6 +44,15 @@ void syr( const typename AViewType::execution_space  & space
         , const          AViewType                   & A
         ) {
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Entering SRC KokkosBlas::syr(), AViewType = %s\n", typeid(AViewType).name() );
+
+  static_assert(
+      Kokkos::SpaceAccessibility<ExecutionSpace,
+                                 typename AViewType::memory_space>::accessible,
+      "AViewType memory space must be compatible with ExecutionSpace");
+  static_assert(
+      Kokkos::SpaceAccessibility<ExecutionSpace,
+                                 typename XViewType::memory_space>::accessible,
+      "XViewType memory space must be compatible with ExecutionSpace");
 
   static_assert( Kokkos::is_view<AViewType>::value, "AViewType must be a Kokkos::View." );
   static_assert( Kokkos::is_view<XViewType>::value, "XViewType must be a Kokkos::View." );
@@ -58,6 +68,33 @@ void syr( const typename AViewType::execution_space  & space
        << "A is " << A.extent(0) << " by " << A.extent(1)
        << ", x has size " << x.extent(0);
     KokkosKernels::Impl::throw_runtime_exception(os.str());
+  }
+
+  if ((trans[0] == 'T') || (trans[0] == 't') || (trans[0] == 'H') ||
+      (trans[0] == 'h')) {
+    // Ok
+  } else {
+    std::ostringstream os;
+    os << "KokkosBlas2::syr(): invalid trans[0] = '" << trans[0]
+       << "'. It must be equalt to 'T' or 't' or 'H' or 'h'";
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
+  }
+
+  if ((uplo[0] == 'U') ||
+      (uplo[0] == 'u') ||
+      (uplo[0] == 'L') ||
+      (uplo[0] == 'l')) {
+    // Ok
+  }
+  else {
+    std::ostringstream oss;
+    oss << "KokkosBlas2::syr(): invalid uplo[0] = " << uplo[0]
+        << "'. It must be equalt to 'U' or 'u' or 'L' or 'l'";
+    throw std::runtime_error(oss.str());
+  }
+
+  if ((A.extent(0) == 0) || (A.extent(1) == 0)) {
+    return;
   }
 
   using ALayout = typename AViewType::array_layout;
@@ -76,29 +113,13 @@ void syr( const typename AViewType::execution_space  & space
                       , Kokkos::MemoryTraits<Kokkos::Unmanaged>
                       > AVT;
 
-  if (( A.extent(0) == 0 ) ||
-      ( A.extent(1) == 0 )) {
-    // For degenerate cases, use fallback implementation to avoid potential
-    // (unlikely?) circular dependence issues by including other KokkosBlas
-    // headers.
-    const bool eti_spec_avail = KokkosBlas::Impl::syr_eti_spec_avail<XVT, AVT>::value;
-    Impl::SYR<XVT, AVT, false, eti_spec_avail>::syr( space
-                                                   , trans
-                                                   , uplo
-                                                   , alpha
-                                                   , x
-                                                   , A
-                                                   );
-  }
-  else {
-    Impl::SYR<XVT, AVT>::syr( space
-                            , trans
-                            , uplo
-                            , alpha
-                            , x
-                            , A
-                            );
-  }
+  Impl::SYR<ExecutionSpace, XVT, AVT>::syr( space
+                                          , trans
+                                          , uplo
+                                          , alpha
+                                          , x
+                                          , A
+                                          );
 }
 
 /// \brief Rank-1 update of a general matrix: A = A + alpha * x * x^{T,H}.
@@ -119,13 +140,13 @@ void syr( const          char                          trans[]
         , const          AViewType                   & A
         ) {
   const typename AViewType::execution_space space = typename AViewType::execution_space();
-  syr( space
-     , trans
-     , uplo
-     , alpha
-     , x
-     , A
-     );
+  syr<typename AViewType::execution_space, XViewType, AViewType>( space
+                                                                , trans
+                                                                , uplo
+                                                                , alpha
+                                                                , x
+                                                                , A
+                                                                );
 }
 
 } // namespace KokkosBlas

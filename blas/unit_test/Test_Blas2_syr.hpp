@@ -18,6 +18,7 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
 #include <KokkosBlas2_syr.hpp>
+#include <Kokkos_MathematicalConstants.hpp>
 
 namespace Test {
 
@@ -264,8 +265,8 @@ void SyrTester< ScalarX
 
   typename _ViewTypeX::const_type c_x = x;
 
-  _HostViewTypeX h_x = Kokkos::create_mirror_view(x);
-  _HostViewTypeA h_A = Kokkos::create_mirror_view(A);
+  _HostViewTypeX h_x = Kokkos::create_mirror(x);
+  _HostViewTypeA h_A = Kokkos::create_mirror(A);
 
   _ViewTypeExpected h_expected("expected A += alpha * x * x^{t,h}", _M, _N);
   bool expectedResultIsKnown = false;
@@ -714,7 +715,7 @@ T SyrTester< ScalarX
 {
   T output(input);
 #if 0
-  T twoPi( 2. * piVal );
+  T twoPi( 2. * Kokkos::numbers::pi );
   if (input > 0.) {
     output -= std::floor( input / twoPi ) * twoPi;
   }

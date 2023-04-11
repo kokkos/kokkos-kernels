@@ -28,23 +28,7 @@ namespace Impl {
   const int M       = static_cast<int>(A_is_lr ? A.extent(1) : A.extent(0)); \
   const int N       = static_cast<int>(A_is_lr ? A.extent(0) : A.extent(1)); \
   constexpr int one = 1;                                                     \
-  const int LDA     = A_is_lr ? A.stride(0) : A.stride(1);                   \
-  if (( trans[0] == 'T' ) ||                                                 \
-      ( trans[0] == 't' ) ||                                                 \
-      ( trans[0] == 'H' ) ||                                                 \
-      ( trans[0] == 'h' )) {                                                 \
-  }                                                                          \
-  else {                                                                     \
-    throw std::runtime_error("Error: invalid 'trans' for HostBlas::syr()");  \
-  }                                                                          \
-  if (( uplo[0] == 'U' ) ||                                                  \
-      ( uplo[0] == 'u' ) ||                                                  \
-      ( uplo[0] == 'L' ) ||                                                  \
-      ( uplo[0] == 'l' )) {                                                  \
-  }                                                                          \
-  else {                                                                     \
-    throw std::runtime_error("Error: invalid 'uplo' for HostBlas::syr()");   \
-  }
+  const int LDA     = A_is_lr ? A.stride(0) : A.stride(1);
 
 #define KOKKOSBLAS2_DSYR_BLAS(LAYOUTX, LAYOUTA, MEM_SPACE, ETI_SPEC_AVAIL) \
   template <class ExecSpace>                                                        \
@@ -330,25 +314,25 @@ namespace Impl {
     }                                                                                                 \
   };
 
-KOKKOSBLAS2_DSYR_BLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::HostSpace, true )
-KOKKOSBLAS2_DSYR_BLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::HostSpace, false)
-KOKKOSBLAS2_DSYR_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace, true )
-KOKKOSBLAS2_DSYR_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace, false)
+KOKKOSBLAS2_DSYR_BLAS(Kokkos::LayoutLeft,  Kokkos::HostSpace, true )
+KOKKOSBLAS2_DSYR_BLAS(Kokkos::LayoutLeft,  Kokkos::HostSpace, false)
+KOKKOSBLAS2_DSYR_BLAS(Kokkos::LayoutRight, Kokkos::HostSpace, true )
+KOKKOSBLAS2_DSYR_BLAS(Kokkos::LayoutRight, Kokkos::HostSpace, false)
 
-KOKKOSBLAS2_SSYR_BLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::HostSpace, true )
-KOKKOSBLAS2_SSYR_BLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::HostSpace, false)
-KOKKOSBLAS2_SSYR_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace, true )
-KOKKOSBLAS2_SSYR_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace, false)
+KOKKOSBLAS2_SSYR_BLAS(Kokkos::LayoutLeft,  Kokkos::HostSpace, true )
+KOKKOSBLAS2_SSYR_BLAS(Kokkos::LayoutLeft,  Kokkos::HostSpace, false)
+KOKKOSBLAS2_SSYR_BLAS(Kokkos::LayoutRight, Kokkos::HostSpace, true )
+KOKKOSBLAS2_SSYR_BLAS(Kokkos::LayoutRight, Kokkos::HostSpace, false)
 
-KOKKOSBLAS2_ZSYR_BLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::HostSpace, true )
-KOKKOSBLAS2_ZSYR_BLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::HostSpace, false)
-KOKKOSBLAS2_ZSYR_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace, true )
-KOKKOSBLAS2_ZSYR_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace, false)
+KOKKOSBLAS2_ZSYR_BLAS(Kokkos::LayoutLeft,  Kokkos::HostSpace, true )
+KOKKOSBLAS2_ZSYR_BLAS(Kokkos::LayoutLeft,  Kokkos::HostSpace, false)
+KOKKOSBLAS2_ZSYR_BLAS(Kokkos::LayoutRight, Kokkos::HostSpace, true )
+KOKKOSBLAS2_ZSYR_BLAS(Kokkos::LayoutRight, Kokkos::HostSpace, false)
 
-KOKKOSBLAS2_CSYR_BLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::HostSpace, true )
-KOKKOSBLAS2_CSYR_BLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::HostSpace, false)
-KOKKOSBLAS2_CSYR_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace, true )
-KOKKOSBLAS2_CSYR_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace, false)
+KOKKOSBLAS2_CSYR_BLAS(Kokkos::LayoutLeft,  Kokkos::HostSpace, true )
+KOKKOSBLAS2_CSYR_BLAS(Kokkos::LayoutLeft,  Kokkos::HostSpace, false)
+KOKKOSBLAS2_CSYR_BLAS(Kokkos::LayoutRight, Kokkos::HostSpace, true )
+KOKKOSBLAS2_CSYR_BLAS(Kokkos::LayoutRight, Kokkos::HostSpace, false)
 
 }  // namespace Impl
 }  // namespace KokkosBlas

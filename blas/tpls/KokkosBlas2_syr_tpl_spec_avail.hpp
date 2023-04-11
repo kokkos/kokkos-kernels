@@ -28,15 +28,15 @@ struct syr_tpl_spec_avail {
 // Generic Host side BLAS (could be MKL or whatever)
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
 
-#define KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_BLAS(SCALAR, LAYOUTX, LAYOUTA, MEMSPACE) \
+#define KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_BLAS(SCALAR, LAYOUT, MEMSPACE) \
   template <class ExecSpace>                                                             \
   struct syr_tpl_spec_avail< Kokkos::View< const SCALAR*                                 \
-                                         , LAYOUTX                                       \
+                                         , LAYOUT                                        \
                                          , Kokkos::Device<ExecSpace, MEMSPACE>           \
                                          , Kokkos::MemoryTraits<Kokkos::Unmanaged>       \
                                          >                                               \
                            , Kokkos::View< SCALAR**                                      \
-                                         , LAYOUTA                                       \
+                                         , LAYOUT                                        \
                                          , Kokkos::Device<ExecSpace, MEMSPACE>           \
                                          , Kokkos::MemoryTraits<Kokkos::Unmanaged>       \
                                          >                                               \
@@ -44,30 +44,30 @@ struct syr_tpl_spec_avail {
     enum : bool { value = true };                                                        \
   };
 
-KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_BLAS(double,                  Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::HostSpace)
-KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_BLAS(float,                   Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::HostSpace)
-KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::HostSpace)
-KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>,  Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::HostSpace)
+KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_BLAS(double,                  Kokkos::LayoutLeft, Kokkos::HostSpace)
+KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_BLAS(float,                   Kokkos::LayoutLeft, Kokkos::HostSpace)
+KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::HostSpace)
+KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>,  Kokkos::LayoutLeft, Kokkos::HostSpace)
 
-KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_BLAS(double,                  Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace)
-KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_BLAS(float,                   Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace)
-KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<double>, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace)
-KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>,  Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace)
+KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_BLAS(double,                  Kokkos::LayoutRight, Kokkos::HostSpace)
+KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_BLAS(float,                   Kokkos::LayoutRight, Kokkos::HostSpace)
+KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<double>, Kokkos::LayoutRight, Kokkos::HostSpace)
+KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>,  Kokkos::LayoutRight, Kokkos::HostSpace)
 
 #endif
 
 // cuBLAS
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
 
-#define KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_CUBLAS(SCALAR, LAYOUTX, LAYOUTA, MEMSPACE) \
+#define KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_CUBLAS(SCALAR, LAYOUT, MEMSPACE) \
   template <class ExecSpace>                                                               \
   struct syr_tpl_spec_avail< Kokkos::View< const SCALAR*                                   \
-                                         , LAYOUTX                                         \
+                                         , LAYOUT                                          \
                                          , Kokkos::Device<ExecSpace, MEMSPACE>             \
                                          , Kokkos::MemoryTraits<Kokkos::Unmanaged>         \
                                          >                                                 \
                            , Kokkos::View< SCALAR**                                        \
-                                         , LAYOUTA                                         \
+                                         , LAYOUT                                          \
                                          , Kokkos::Device<ExecSpace, MEMSPACE>             \
                                          , Kokkos::MemoryTraits<Kokkos::Unmanaged>         \
                                          >                                                 \
@@ -75,15 +75,25 @@ KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>,  Kokkos::LayoutRight
     enum : bool { value = true };                                                          \
   };
 
-KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_CUBLAS(double,                  Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaSpace)
-KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_CUBLAS(float,                   Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaSpace)
-KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaSpace)
-KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>,  Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaSpace)
+KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_CUBLAS(double,                  Kokkos::LayoutLeft, Kokkos::CudaSpace)
+KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_CUBLAS(float,                   Kokkos::LayoutLeft, Kokkos::CudaSpace)
+KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::CudaSpace)
+KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>,  Kokkos::LayoutLeft, Kokkos::CudaSpace)
 
-KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_CUBLAS(double,                  Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace)
-KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_CUBLAS(float,                   Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace)
-KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace)
-KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>,  Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace)
+KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_CUBLAS(double,                  Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
+KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_CUBLAS(float,                   Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
+KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
+KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>,  Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
+
+KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_CUBLAS(double,                  Kokkos::LayoutRight, Kokkos::CudaSpace)
+KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_CUBLAS(float,                   Kokkos::LayoutRight, Kokkos::CudaSpace)
+KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>, Kokkos::LayoutRight, Kokkos::CudaSpace)
+KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>,  Kokkos::LayoutRight, Kokkos::CudaSpace)
+
+KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_CUBLAS(double,                  Kokkos::LayoutRight, Kokkos::CudaUVMSpace)
+KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_CUBLAS(float,                   Kokkos::LayoutRight, Kokkos::CudaUVMSpace)
+KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>, Kokkos::LayoutRight, Kokkos::CudaUVMSpace)
+KOKKOSBLAS2_SYR_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>,  Kokkos::LayoutRight, Kokkos::CudaUVMSpace)
 
 #endif
 
