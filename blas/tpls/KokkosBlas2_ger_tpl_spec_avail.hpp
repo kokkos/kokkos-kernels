@@ -65,20 +65,20 @@ KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>,  Kokkos::LayoutRight
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
 
 #define KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_CUBLAS(SCALAR, LAYOUTX, LAYOUTY, LAYOUTA, MEMSPACE) \
-  template <class ExecSpace>                                                               \
+  template <>                                                                              \
   struct ger_tpl_spec_avail< Kokkos::View< const SCALAR*                                   \
                                          , LAYOUTX                                         \
-                                         , Kokkos::Device<ExecSpace, MEMSPACE>             \
+                                         , Kokkos::Device<Kokkos::Cuda, MEMSPACE>          \
                                          , Kokkos::MemoryTraits<Kokkos::Unmanaged>         \
                                          >                                                 \
                            , Kokkos::View< const SCALAR*                                   \
                                          , LAYOUTY                                         \
-                                         , Kokkos::Device<ExecSpace, MEMSPACE>             \
+                                         , Kokkos::Device<Kokkos::Cuda, MEMSPACE>          \
                                          , Kokkos::MemoryTraits<Kokkos::Unmanaged>         \
                                          >                                                 \
                            , Kokkos::View< SCALAR**                                        \
                                          , LAYOUTA                                         \
-                                         , Kokkos::Device<ExecSpace, MEMSPACE>             \
+                                         , Kokkos::Device<Kokkos::Cuda, MEMSPACE>          \
                                          , Kokkos::MemoryTraits<Kokkos::Unmanaged>         \
                                          >                                                 \
                            > {                                                             \
@@ -104,31 +104,31 @@ KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>,  Kokkos::LayoutRig
 // rocBLAS
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
 
-#define KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_ROCBLAS(SCALAR, LAYOUT)                            \
-  template <>                                                                             \
-  struct ger_tpl_spec_avail< Kokkos::View< const SCALAR*                                  \
-                                         , LAYOUT                                         \
-                                         , Kokkos::Device< Kokkos::Experimental::HIP,     \
-                                                         , Kokkos::Experimental::HIPSpace \
-                                                         >                                \
-                                         , Kokkos::MemoryTraits<Kokkos::Unmanaged>        \
-                                         >                                                \
-                           , Kokkos::View< const SCALAR*                                  \
-                                         , LAYOUT                                         \
-                                         , Kokkos::Device< Kokkos::Experimental::HIP      \
-                                                         , Kokkos::Experimental::HIPSpace \
-                                                         >                                \
-                                         , Kokkos::MemoryTraits<Kokkos::Unmanaged>        \
-                                         >                                                \
-                           , Kokkos::View< SCALAR**                                       \
-                                         , LAYOUT                                         \
-                                         , Kokkos::Device< Kokkos::Experimental::HIP      \
-                                                         , Kokkos::Experimental::HIPSpace \
-                                                         >                                \
-                                         , Kokkos::MemoryTraits<Kokkos::Unmanaged>        \
-                                         >                                                \
-                           > {                                                            \
-    enum : bool { value = true };                                                         \
+#define KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_ROCBLAS(SCALAR, LAYOUT)                     \
+  template <>                                                                      \
+  struct ger_tpl_spec_avail< Kokkos::View< const SCALAR*                           \
+                                         , LAYOUT                                  \
+                                         , Kokkos::Device< Kokkos::HIP             \
+                                                         , Kokkos::HIPSpace        \
+                                                         >                         \
+                                         , Kokkos::MemoryTraits<Kokkos::Unmanaged> \
+                                         >                                         \
+                           , Kokkos::View< const SCALAR*                           \
+                                         , LAYOUT                                  \
+                                         , Kokkos::Device< Kokkos::HIP             \
+                                                         , Kokkos::HIPSpace        \
+                                                         >                         \
+                                         , Kokkos::MemoryTraits<Kokkos::Unmanaged> \
+                                         >                                         \
+                           , Kokkos::View< SCALAR**                                \
+                                         , LAYOUT                                  \
+                                         , Kokkos::Device< Kokkos::HIP             \
+                                                         , Kokkos::HIPSpace        \
+                                                         >                         \
+                                         , Kokkos::MemoryTraits<Kokkos::Unmanaged> \
+                                         >                                         \
+                           > {                                                     \
+    enum : bool { value = true };                                                  \
   };
 
 KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_ROCBLAS(double,                  Kokkos::LayoutLeft)

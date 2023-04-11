@@ -22,36 +22,28 @@
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS2_GER_DETERMINE_ARGS(LAYOUTA)                              \
-  bool A_is_ll      = std::is_same<Kokkos::LayoutLeft, LAYOUTA>::value;      \
-  bool A_is_lr      = std::is_same<Kokkos::LayoutRight, LAYOUTA>::value;     \
+#define KOKKOSBLAS2_GER_DETERMINE_ARGS(LAYOUT)                               \
+  bool A_is_ll      = std::is_same<Kokkos::LayoutLeft, LAYOUT>::value;       \
+  bool A_is_lr      = std::is_same<Kokkos::LayoutRight, LAYOUT>::value;      \
   const int M       = static_cast<int>(A_is_lr ? A.extent(1) : A.extent(0)); \
   const int N       = static_cast<int>(A_is_lr ? A.extent(0) : A.extent(1)); \
   constexpr int one = 1;                                                     \
-  const int LDA     = A_is_lr ? A.stride(0) : A.stride(1);                   \
-  if (( trans[0] == 'T' ) ||                                                 \
-      ( trans[0] == 't' ) ||                                                 \
-      ( trans[0] == 'H' ) ||                                                 \
-      ( trans[0] == 'h' )) {                                                 \
-  }                                                                          \
-  else {                                                                     \
-    throw std::runtime_error("Error: invalid 'trans' for HostBlas::ger()");  \
-  }
+  const int LDA     = A_is_lr ? A.stride(0) : A.stride(1);
 
-#define KOKKOSBLAS2_DGER_BLAS(LAYOUTX, LAYOUTY, LAYOUTA, MEM_SPACE, ETI_SPEC_AVAIL) \
+#define KOKKOSBLAS2_DGER_BLAS(LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)                    \
   template <class ExecSpace>                                                        \
   struct GER< Kokkos::View< const double*                                           \
-                          , LAYOUTX                                                 \
+                          , LAYOUT                                                  \
                           , Kokkos::Device<ExecSpace, MEM_SPACE>                    \
                           , Kokkos::MemoryTraits<Kokkos::Unmanaged>                 \
                           >                                                         \
             , Kokkos::View< const double*                                           \
-                          , LAYOUTY                                                 \
+                          , LAYOUT                                                  \
                           , Kokkos::Device<ExecSpace, MEM_SPACE>                    \
                           , Kokkos::MemoryTraits<Kokkos::Unmanaged>                 \
                           >                                                         \
             , Kokkos::View< double**                                                \
-                          , LAYOUTA                                                 \
+                          , LAYOUT                                                  \
                           , Kokkos::Device<ExecSpace, MEM_SPACE>                    \
                           , Kokkos::MemoryTraits<Kokkos::Unmanaged>                 \
                           >                                                         \
@@ -60,17 +52,17 @@ namespace Impl {
             > {                                                                     \
     typedef double SCALAR;                                                          \
     typedef Kokkos::View< const SCALAR*                                             \
-                        , LAYOUTX                                                   \
+                        , LAYOUT                                                    \
                         , Kokkos::Device<ExecSpace, MEM_SPACE>                      \
                         , Kokkos::MemoryTraits<Kokkos::Unmanaged>                   \
                         > XViewType;                                                \
     typedef Kokkos::View< const SCALAR*                                             \
-                        , LAYOUTY                                                   \
+                        , LAYOUT                                                    \
                         , Kokkos::Device<ExecSpace, MEM_SPACE>                      \
                         , Kokkos::MemoryTraits<Kokkos::Unmanaged>                   \
                         > YViewType;                                                \
     typedef Kokkos::View< SCALAR**                                                  \
-                        , LAYOUTA                                                   \
+                        , LAYOUT                                                    \
                         , Kokkos::Device<ExecSpace, MEM_SPACE>                      \
                         , Kokkos::MemoryTraits<Kokkos::Unmanaged>                   \
                         > AViewType;                                                \
@@ -82,9 +74,8 @@ namespace Impl {
                    , const          YViewType                   & Y                 \
                    , const          AViewType                   & A                 \
                    ) {                                                              \
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing through tpl-dger-blas\n" );           \
       Kokkos::Profiling::pushRegion("KokkosBlas::ger[TPL_BLAS,double]");            \
-      KOKKOSBLAS2_GER_DETERMINE_ARGS(LAYOUTA);                                      \
+      KOKKOSBLAS2_GER_DETERMINE_ARGS(LAYOUT);                                       \
       if (A_is_ll) {                                                                \
         HostBlas<SCALAR>::ger( M                                                    \
                              , N                                                    \
@@ -113,20 +104,20 @@ namespace Impl {
     }                                                                               \
   };
 
-#define KOKKOSBLAS2_SGER_BLAS(LAYOUTX, LAYOUTY, LAYOUTA, MEM_SPACE, ETI_SPEC_AVAIL) \
+#define KOKKOSBLAS2_SGER_BLAS(LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)                    \
   template <class ExecSpace>                                                        \
   struct GER< Kokkos::View< const float*                                            \
-                          , LAYOUTX                                                 \
+                          , LAYOUT                                                  \
                           , Kokkos::Device<ExecSpace, MEM_SPACE>                    \
                           , Kokkos::MemoryTraits<Kokkos::Unmanaged>                 \
                           >                                                         \
             , Kokkos::View< const float*                                            \
-                          , LAYOUTY                                                 \
+                          , LAYOUT                                                  \
                           , Kokkos::Device<ExecSpace, MEM_SPACE>                    \
                           , Kokkos::MemoryTraits<Kokkos::Unmanaged>                 \
                           >                                                         \
             , Kokkos::View< float**                                                 \
-                          , LAYOUTA                                                 \
+                          , LAYOUT                                                  \
                           , Kokkos::Device<ExecSpace, MEM_SPACE>                    \
                           , Kokkos::MemoryTraits<Kokkos::Unmanaged>                 \
                           >                                                         \
@@ -135,17 +126,17 @@ namespace Impl {
             > {                                                                     \
     typedef float SCALAR;                                                           \
     typedef Kokkos::View< const SCALAR*                                             \
-                        , LAYOUTX                                                   \
+                        , LAYOUT                                                    \
                         , Kokkos::Device<ExecSpace, MEM_SPACE>                      \
                         , Kokkos::MemoryTraits<Kokkos::Unmanaged>                   \
                         > XViewType;                                                \
     typedef Kokkos::View< const SCALAR*                                             \
-                        , LAYOUTY                                                   \
+                        , LAYOUT                                                    \
                         , Kokkos::Device<ExecSpace, MEM_SPACE>                      \
                         , Kokkos::MemoryTraits<Kokkos::Unmanaged>                   \
                         > YViewType;                                                \
     typedef Kokkos::View< SCALAR**                                                  \
-                        , LAYOUTA                                                   \
+                        , LAYOUT                                                    \
                         , Kokkos::Device<ExecSpace, MEM_SPACE>                      \
                         , Kokkos::MemoryTraits<Kokkos::Unmanaged>                   \
                         > AViewType;                                                \
@@ -157,9 +148,8 @@ namespace Impl {
                    , const          YViewType                   & Y                 \
                    , const          AViewType                   & A                 \
                    ) {                                                              \
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing through tpl-sger-blas\n" );           \
       Kokkos::Profiling::pushRegion("KokkosBlas::ger[TPL_BLAS,float]");             \
-      KOKKOSBLAS2_GER_DETERMINE_ARGS(LAYOUTA);                                      \
+      KOKKOSBLAS2_GER_DETERMINE_ARGS(LAYOUT);                                       \
       if (A_is_ll) {                                                                \
         HostBlas<SCALAR>::ger( M                                                    \
                              , N                                                    \
@@ -188,20 +178,20 @@ namespace Impl {
     }                                                                               \
   };
 
-#define KOKKOSBLAS2_ZGER_BLAS(LAYOUTX, LAYOUTY, LAYOUTA, MEM_SPACE, ETI_SPEC_AVAIL)                      \
+#define KOKKOSBLAS2_ZGER_BLAS(LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)                                         \
   template <class ExecSpace>                                                                             \
   struct GER< Kokkos::View< const Kokkos::complex<double>*                                               \
-                          , LAYOUTX                                                                      \
+                          , LAYOUT                                                                       \
                           , Kokkos::Device<ExecSpace, MEM_SPACE>                                         \
                           , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                      \
                           >                                                                              \
             , Kokkos::View< const Kokkos::complex<double>*                                               \
-                          , LAYOUTY                                                                      \
+                          , LAYOUT                                                                       \
                           , Kokkos::Device<ExecSpace, MEM_SPACE>                                         \
                           , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                      \
                           >                                                                              \
             , Kokkos::View< Kokkos::complex<double>**                                                    \
-                          , LAYOUTA                                                                      \
+                          , LAYOUT                                                                       \
                           , Kokkos::Device<ExecSpace, MEM_SPACE>                                         \
                           , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                      \
                           >                                                                              \
@@ -210,17 +200,17 @@ namespace Impl {
             > {                                                                                          \
     typedef Kokkos::complex<double> SCALAR;                                                              \
     typedef Kokkos::View< const SCALAR*                                                                  \
-                        , LAYOUTX                                                                        \
+                        , LAYOUT                                                                         \
                         , Kokkos::Device<ExecSpace, MEM_SPACE>                                           \
                         , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                        \
                         > XViewType;                                                                     \
     typedef Kokkos::View< const SCALAR*                                                                  \
-                        , LAYOUTY                                                                        \
+                        , LAYOUT                                                                         \
                         , Kokkos::Device<ExecSpace, MEM_SPACE>                                           \
                         , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                        \
                         > YViewType;                                                                     \
     typedef Kokkos::View< SCALAR**                                                                       \
-                        , LAYOUTA                                                                        \
+                        , LAYOUT                                                                         \
                         , Kokkos::Device<ExecSpace, MEM_SPACE>                                           \
                         , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                        \
                         > AViewType;                                                                     \
@@ -232,9 +222,8 @@ namespace Impl {
                    , const          YViewType                   & Y                                      \
                    , const          AViewType                   & A                                      \
                    ) {                                                                                   \
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing through tpl-zger-blas\n" );                                \
       Kokkos::Profiling::pushRegion("KokkosBlas::ger[TPL_BLAS,complex<double>");                         \
-      KOKKOSBLAS2_GER_DETERMINE_ARGS(LAYOUTA);                                                           \
+      KOKKOSBLAS2_GER_DETERMINE_ARGS(LAYOUT);                                                            \
       const std::complex<double> alpha_val = static_cast<const std::complex<double>>(alpha);             \
       bool justTranspose = (trans[0] == 'T') || (trans[0] == 't');                                       \
       if (A_is_ll) {                                                                                     \
@@ -277,7 +266,6 @@ namespace Impl {
                                               );                                                         \
         }                                                                                                \
         else {                                                                                           \
-          KOKKOS_IMPL_DO_NOT_USE_PRINTF("blasZgerc() requires LayoutLeft: throwing exception\n");        \
           throw std::runtime_error("Error: blasZgerc() requires LayoutLeft views.");                     \
         }                                                                                                \
       }                                                                                                  \
@@ -285,20 +273,20 @@ namespace Impl {
     }                                                                                                    \
   };
 
-#define KOKKOSBLAS2_CGER_BLAS(LAYOUTX, LAYOUTY, LAYOUTA, MEM_SPACE, ETI_SPEC_AVAIL)                   \
+#define KOKKOSBLAS2_CGER_BLAS(LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)                                      \
   template <class ExecSpace>                                                                          \
   struct GER< Kokkos::View< const Kokkos::complex<float>*                                             \
-                          , LAYOUTX                                                                   \
+                          , LAYOUT                                                                    \
                           , Kokkos::Device<ExecSpace, MEM_SPACE>                                      \
                           , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                   \
                           >                                                                           \
             , Kokkos::View< const Kokkos::complex<float>*                                             \
-                          , LAYOUTY                                                                   \
+                          , LAYOUT                                                                    \
                           , Kokkos::Device<ExecSpace, MEM_SPACE>                                      \
                           , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                   \
                           >                                                                           \
             , Kokkos::View< Kokkos::complex<float>**                                                  \
-                          , LAYOUTA                                                                   \
+                          , LAYOUT                                                                    \
                           , Kokkos::Device<ExecSpace, MEM_SPACE>                                      \
                           , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                   \
                           >                                                                           \
@@ -307,17 +295,17 @@ namespace Impl {
             > {                                                                                       \
     typedef Kokkos::complex<float> SCALAR;                                                            \
     typedef Kokkos::View< const SCALAR*                                                               \
-                        , LAYOUTX                                                                     \
+                        , LAYOUT                                                                      \
                         , Kokkos::Device<ExecSpace, MEM_SPACE>                                        \
                         , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                     \
                         > XViewType;                                                                  \
     typedef Kokkos::View< const SCALAR*                                                               \
-                        , LAYOUTY                                                                     \
+                        , LAYOUT                                                                      \
                         , Kokkos::Device<ExecSpace, MEM_SPACE>                                        \
                         , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                     \
                         > YViewType;                                                                  \
     typedef Kokkos::View< SCALAR**                                                                    \
-                        , LAYOUTA                                                                     \
+                        , LAYOUT                                                                      \
                         , Kokkos::Device<ExecSpace, MEM_SPACE>                                        \
                         , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                     \
                         > AViewType;                                                                  \
@@ -329,9 +317,8 @@ namespace Impl {
                    , const          YViewType                   & Y                                   \
                    , const          AViewType                   & A                                   \
                    ) {                                                                                \
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing through tpl-cger-blas\n" );                             \
       Kokkos::Profiling::pushRegion("KokkosBlas::ger[TPL_BLAS,complex<float>");                       \
-      KOKKOSBLAS2_GER_DETERMINE_ARGS(LAYOUTA);                                                        \
+      KOKKOSBLAS2_GER_DETERMINE_ARGS(LAYOUT);                                                         \
       const std::complex<float> alpha_val = static_cast<const std::complex<float>>(alpha);            \
       bool justTranspose = (trans[0] == 'T') || (trans[0] == 't');                                    \
       if (A_is_ll) {                                                                                  \
@@ -374,7 +361,6 @@ namespace Impl {
                                              );                                                       \
         }                                                                                             \
         else {                                                                                        \
-          KOKKOS_IMPL_DO_NOT_USE_PRINTF("blasCgerc() requires LayoutLeft: throwing exception\n");     \
           throw std::runtime_error("Error: blasCgerc() requires LayoutLeft views.");                  \
         }                                                                                             \
       }                                                                                               \

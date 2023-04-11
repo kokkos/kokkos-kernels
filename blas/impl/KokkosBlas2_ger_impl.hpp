@@ -27,11 +27,12 @@ namespace Impl {
 
 // Functor for a single-level parallel_for version of nontranspose GER.
 // The functor parallelizes over rows of the input matrix A.
-template <class XViewType, class YViewType, class AViewType,
-          class IndexType = typename AViewType::size_type>
+template <class XViewType, class YViewType, class AViewType, class IndexType>
 struct SingleLevelGER {
   using AlphaCoeffType = typename AViewType::non_const_value_type;
-  using A_value_type   = typename AViewType::non_const_value_type;
+  using XComponentType = typename XViewType::non_const_value_type;
+  using YComponentType = typename YViewType::non_const_value_type;
+  using AComponentType = typename AViewType::non_const_value_type;
 
   SingleLevelGER( const bool             justTranspose
                 , const AlphaCoeffType & alpha
@@ -45,35 +46,25 @@ struct SingleLevelGER {
       , y_            (y)
       , A_            (A)
   {
-    static_assert(Kokkos::is_view<XViewType>::value, "XViewType must be a Kokkos::View.");
-    static_assert(Kokkos::is_view<YViewType>::value, "YViewType must be a Kokkos::View.");
-    static_assert(Kokkos::is_view<AViewType>::value, "AViewType must be a Kokkos::View.");
-
-    static_assert(static_cast<int>(XViewType::rank) == 1, "XViewType must have rank 1.");
-    static_assert(static_cast<int>(YViewType::rank) == 1, "YViewType must have rank 1.");
-    static_assert(static_cast<int>(AViewType::rank) == 2, "AViewType must have rank 2.");
-
-    static_assert(std::is_integral<IndexType>::value, "IndexType must be an integer.");
+    // Nothing to do
   }
 
   KOKKOS_INLINE_FUNCTION void operator()(const IndexType & i) const {
-    using KAT = Kokkos::ArithTraits<typename AViewType::non_const_value_type>;
-
-    if (alpha_ == KAT::zero()) {
+    if (alpha_ == Kokkos::ArithTraits<AlphaCoeffType>::zero()) {
       // Nothing to do
     }
     else {
-      const IndexType    N      ( A_.extent(1) );
-      const A_value_type x_fixed( x_(i) );
+      const IndexType      N      ( A_.extent(1) );
+      const XComponentType x_fixed( x_(i) );
 
       if (justTranspose_) {
         for (IndexType j = 0; j < N; ++j) {
-          A_(i,j) += A_value_type( alpha_ * x_fixed * y_(j) );
+          A_(i,j) += AComponentType( alpha_ * x_fixed * y_(j) );
         }
       }
       else {
         for (IndexType j = 0; j < N; ++j) {
-          A_(i,j) += A_value_type( alpha_ * x_fixed * KAT::conj( y_(j) ) );
+          A_(i,j) += AComponentType( alpha_ * x_fixed * Kokkos::ArithTraits<YComponentType>::conj( y_(j) ) );
         }
       }
     }
@@ -88,27 +79,18 @@ private:
 };
 
 // Single-level parallel version of GER.
-template <class XViewType, class YViewType, class AViewType,
+template <class ExecutionSpace, class XViewType, class YViewType, class AViewType,
           class IndexType = typename AViewType::size_type>
-void singleLevelGer( const typename AViewType::execution_space  & space
+void singleLevelGer( const          ExecutionSpace              & space
                    , const          char                          trans[]
                    , const typename AViewType::const_value_type & alpha
                    , const          XViewType                   & x
                    , const          YViewType                   & y
                    , const          AViewType                   & A
                    ) {
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Entering IMPL singleLevelGer(), AViewType = %s\n", typeid(AViewType).name() );
-  static_assert(Kokkos::is_view<XViewType>::value, "XViewType must be a Kokkos::View.");
-  static_assert(Kokkos::is_view<YViewType>::value, "YViewType must be a Kokkos::View.");
-  static_assert(Kokkos::is_view<AViewType>::value, "AViewType must be a Kokkos::View.");
-
-  static_assert(static_cast<int>(XViewType::rank) == 1, "XViewType must have rank 1.");
-  static_assert(static_cast<int>(YViewType::rank) == 1, "YViewType must have rank 1.");
-  static_assert(static_cast<int>(AViewType::rank) == 2, "AViewType must have rank 2.");
-
   static_assert(std::is_integral<IndexType>::value, "IndexType must be an integer");
 
-  using KAT = Kokkos::ArithTraits<typename AViewType::non_const_value_type>;
+  using AlphaCoeffType = typename AViewType::non_const_value_type;
 
   if (y.extent(0) == 0) {
     // no entries to update
@@ -116,12 +98,11 @@ void singleLevelGer( const typename AViewType::execution_space  & space
   else if (x.extent(0) == 0) {
     // no entries to update
   }
-  else if (alpha == KAT::zero()) {
+  else if (alpha == Kokkos::ArithTraits<AlphaCoeffType>::zero()) {
     // no entries to update
   }
   else {
-    using execution_space = typename AViewType::execution_space;
-    Kokkos::RangePolicy<execution_space, IndexType>            rangePolicy(space, 0, A.extent(0));
+    Kokkos::RangePolicy<ExecutionSpace, IndexType> rangePolicy(space, 0, A.extent(0));
     SingleLevelGER<XViewType, YViewType, AViewType, IndexType> functor( (trans[0] == 'T') || (trans[0] == 't')
                                                                       , alpha
                                                                       , x
@@ -139,14 +120,15 @@ struct TwoLevelGER_LayoutRightTag {};
 
 // Functor for a two-level parallel_reduce version of GER, designed for performance on GPU.
 // Kernel depends on the layout of A.
-template <class XViewType, class YViewType, class AViewType, class IndexType = typename AViewType::size_type>
+template <class ExecutionSpace, class XViewType, class YViewType, class AViewType, class IndexType>
 struct TwoLevelGER {
   using AlphaCoeffType = typename AViewType::non_const_value_type;
-  using A_value_type   = typename AViewType::non_const_value_type;
+  using XComponentType = typename XViewType::non_const_value_type;
+  using YComponentType = typename YViewType::non_const_value_type;
+  using AComponentType   = typename AViewType::non_const_value_type;
 
-  using execution_space = typename AViewType::execution_space;
-  using policy_type     = Kokkos::TeamPolicy<execution_space>;
-  using member_type     = typename policy_type::member_type;
+  using policy_type    = Kokkos::TeamPolicy<ExecutionSpace>;
+  using member_type    = typename policy_type::member_type;
 
   TwoLevelGER( const bool             justTranspose
              , const AlphaCoeffType & alpha
@@ -160,15 +142,7 @@ struct TwoLevelGER {
       , y_            (y)
       , A_            (A)
   {
-    static_assert(Kokkos::is_view<XViewType>::value, "XViewType must be a Kokkos::View.");
-    static_assert(Kokkos::is_view<YViewType>::value, "YViewType must be a Kokkos::View.");
-    static_assert(Kokkos::is_view<AViewType>::value, "AViewType must be a Kokkos::View.");
-
-    static_assert(static_cast<int>(XViewType::rank) == 1, "XViewType must have rank 1.");
-    static_assert(static_cast<int>(YViewType::rank) == 1, "YViewType must have rank 1.");
-    static_assert(static_cast<int>(AViewType::rank) == 2, "AViewType must have rank 2.");
-
-    static_assert(std::is_integral<IndexType>::value, "IndexType must be an integer.");
+    // Nothing to do
   }
 
 public:
@@ -176,24 +150,22 @@ public:
   KOKKOS_INLINE_FUNCTION void operator()( TwoLevelGER_LayoutLeftTag
                                         , const member_type & team
                                         ) const {
-    using KAT = Kokkos::ArithTraits<typename AViewType::non_const_value_type>;
-
-    if (alpha_ == KAT::zero()) {
+    if (alpha_ == Kokkos::ArithTraits<AlphaCoeffType>::zero()) {
       // Nothing to do
     }
     else {
       const IndexType M ( A_.extent(0) );
       const IndexType j ( team.league_rank() );
       if (justTranspose_) {
-        const A_value_type y_fixed( y_(j) );
+        const YComponentType y_fixed( y_(j) );
         Kokkos::parallel_for(Kokkos::TeamThreadRange(team, M), [&](const IndexType & i) {
-          A_(i,j) += A_value_type( alpha_ * x_(i) * y_fixed );
+          A_(i,j) += AComponentType( alpha_ * x_(i) * y_fixed );
         });
       }
       else {
-        const A_value_type y_fixed( KAT::conj( y_(j) ) );
+        const YComponentType y_fixed( Kokkos::ArithTraits<YComponentType>::conj( y_(j) ) );
         Kokkos::parallel_for(Kokkos::TeamThreadRange(team, M), [&](const IndexType & i) {
-          A_(i,j) += A_value_type( alpha_ * x_(i) * y_fixed );
+          A_(i,j) += AComponentType( alpha_ * x_(i) * y_fixed );
         });
       }
     }
@@ -203,23 +175,21 @@ public:
   KOKKOS_INLINE_FUNCTION void operator()( TwoLevelGER_LayoutRightTag
                                         , const member_type & team
                                         ) const {
-    using KAT = Kokkos::ArithTraits<typename AViewType::non_const_value_type>;
-
-    if (alpha_ == KAT::zero()) {
+    if (alpha_ == Kokkos::ArithTraits<AlphaCoeffType>::zero()) {
       // Nothing to do
     }
     else {
-      const IndexType    N      ( A_.extent(1) );
-      const IndexType    i      ( team.league_rank() );
-      const A_value_type x_fixed( x_(i) );
+      const IndexType      N      ( A_.extent(1) );
+      const IndexType      i      ( team.league_rank() );
+      const XComponentType x_fixed( x_(i) );
       if (justTranspose_) {
         Kokkos::parallel_for(Kokkos::TeamThreadRange(team, N), [&](const IndexType & j) {
-          A_(i,j) += A_value_type( alpha_ * x_fixed * y_(j) );
+          A_(i,j) += AComponentType( alpha_ * x_fixed * y_(j) );
         });
       }
       else {
         Kokkos::parallel_for(Kokkos::TeamThreadRange(team, N), [&](const IndexType & j) {
-          A_(i,j) += A_value_type( alpha_ * x_fixed * KAT::conj( y_(j) ) );
+          A_(i,j) += AComponentType( alpha_ * x_fixed * Kokkos::ArithTraits<AlphaCoeffType>::conj( y_(j) ) );
         });
       }
     }
@@ -235,27 +205,18 @@ private:
 };
 
 // Two-level parallel version of GER.
-template <class XViewType, class YViewType, class AViewType,
+template <class ExecutionSpace, class XViewType, class YViewType, class AViewType,
           class IndexType = typename AViewType::size_type>
-void twoLevelGer( const typename AViewType::execution_space  & space
+void twoLevelGer( const          ExecutionSpace              & space
                 , const          char                          trans[]
                 , const typename AViewType::const_value_type & alpha
                 , const          XViewType                   & x
                 , const          YViewType                   & y
                 , const          AViewType                   & A
                 ) {
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Entering IMPL twoLevelGer(), AViewType = %s\n", typeid(AViewType).name() );
-  static_assert(Kokkos::is_view<XViewType>::value, "XViewType must be a Kokkos::View.");
-  static_assert(Kokkos::is_view<YViewType>::value, "YViewType must be a Kokkos::View.");
-  static_assert(Kokkos::is_view<AViewType>::value, "AViewType must be a Kokkos::View.");
-
-  static_assert(static_cast<int>(XViewType::rank) == 1, "XViewType must have rank 1.");
-  static_assert(static_cast<int>(YViewType::rank) == 1, "YViewType must have rank 1.");
-  static_assert(static_cast<int>(AViewType::rank) == 2, "AViewType must have rank 2.");
-
   static_assert(std::is_integral<IndexType>::value, "IndexType must be an integer");
 
-  using KAT = Kokkos::ArithTraits<typename AViewType::non_const_value_type>;
+  using AlphaCoeffType = typename AViewType::non_const_value_type;
 
   if (y.extent(0) == 0) {
     // no entries to update
@@ -265,15 +226,14 @@ void twoLevelGer( const typename AViewType::execution_space  & space
     // no entries to update
     return;
   }
-  else if (alpha == KAT::zero()) {
+  else if (alpha == Kokkos::ArithTraits<AlphaCoeffType>::zero()) {
     // no entries to update
     return;
   }
 
-  using execution_space = typename AViewType::execution_space;
   constexpr bool isLayoutLeft = std::is_same<typename AViewType::array_layout, Kokkos::LayoutLeft>::value;
   using layout_tag  = typename std::conditional<isLayoutLeft, TwoLevelGER_LayoutLeftTag, TwoLevelGER_LayoutRightTag>::type;
-  using TeamPolicyType = Kokkos::TeamPolicy<execution_space, layout_tag>;
+  using TeamPolicyType = Kokkos::TeamPolicy<ExecutionSpace, layout_tag>;
   TeamPolicyType teamPolicy;
   if (isLayoutLeft) {
     // LayoutLeft: one team per column
@@ -284,12 +244,12 @@ void twoLevelGer( const typename AViewType::execution_space  & space
     teamPolicy = TeamPolicyType(space, A.extent(0), Kokkos::AUTO);
   }
 
-  TwoLevelGER<XViewType, YViewType, AViewType, IndexType> functor( (trans[0] == 'T') || (trans[0] == 't')
-                                                                 , alpha
-                                                                 , x
-                                                                 , y
-                                                                 , A
-                                                                 );
+  TwoLevelGER<ExecutionSpace, XViewType, YViewType, AViewType, IndexType> functor( (trans[0] == 'T') || (trans[0] == 't')
+                                                                                 , alpha
+                                                                                 , x
+                                                                                 , y
+                                                                                 , A
+                                                                                 );
   Kokkos::parallel_for("KokkosBlas::ger[twoLevel]", teamPolicy, functor);
 }
 
@@ -299,37 +259,37 @@ void twoLevelGer( const typename AViewType::execution_space  & space
 // depending on whether execution space is CPU or GPU.
 // The 'enable_if' makes sure unused kernels are not instantiated.
 
-template < class XViewType
+template < class ExecutionSpace
+         , class XViewType
          , class YViewType
          , class AViewType
          , class IndexType
-         , typename std::enable_if<!KokkosKernels::Impl::kk_is_gpu_exec_space< typename AViewType::execution_space>() >::type* = nullptr
+         , typename std::enable_if<!KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>()>::type* = nullptr
          >
-void generalGerImpl( const typename AViewType::execution_space  & space
+void generalGerImpl( const          ExecutionSpace              & space
                    , const          char                          trans[]
                    , const typename AViewType::const_value_type & alpha
                    , const          XViewType                   & x
                    , const          YViewType                   & y
                    , const          AViewType                   & A
                    ) {
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Entering IMPL generalGerImpl(CPU), AViewType = %s\n", typeid(AViewType).name() );
   singleLevelGer(space, trans, alpha, x, y, A);
 }
 
-template < class XViewType
+template < class ExecutionSpace
+         , class XViewType
          , class YViewType
          , class AViewType
          , class IndexType
-         , typename std::enable_if<KokkosKernels::Impl::kk_is_gpu_exec_space< typename AViewType::execution_space>()>::type* = nullptr
+         , typename std::enable_if<KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>()>::type* = nullptr
          >
-void generalGerImpl( const typename AViewType::execution_space  & space
+void generalGerImpl( const          ExecutionSpace              & space
                    , const          char                          trans[]
                    , const typename AViewType::const_value_type & alpha
                    , const          XViewType                   & x
                    , const          YViewType                   & y
                    , const          AViewType                   & A
                    ) {
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Entering IMPL generalGerImpl(GPU), AViewType = %s\n", typeid(AViewType).name() );
   twoLevelGer(space, trans, alpha, x, y, A);
 }
 

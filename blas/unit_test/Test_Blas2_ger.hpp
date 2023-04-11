@@ -18,10 +18,9 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
 #include <KokkosBlas2_ger.hpp>
+#include <Kokkos_MathematicalConstants.hpp>
 
 namespace Test {
-
-constexpr double piVal = 3.14159265358979323846;
 
 template <class ScalarX, class tLayoutX, class ScalarY, class tLayoutY, class ScalarA, class tLayoutA, class Device>
 class GerTester
@@ -288,9 +287,9 @@ void GerTester< ScalarX
   typename _ViewTypeX::const_type c_x = x;
   typename _ViewTypeY::const_type c_y = y;
 
-  _HostViewTypeX h_x = Kokkos::create_mirror_view(x);
-  _HostViewTypeY h_y = Kokkos::create_mirror_view(y);
-  _HostViewTypeA h_A = Kokkos::create_mirror_view(A);
+  _HostViewTypeX h_x = Kokkos::create_mirror(x);
+  _HostViewTypeY h_y = Kokkos::create_mirror(y);
+  _HostViewTypeA h_A = Kokkos::create_mirror(A);
 
   _ViewTypeExpected h_expected("expected A += alpha * x * y^{t,h}", _M, _N);
   bool expectedResultIsKnown = false;
@@ -776,7 +775,7 @@ T GerTester< ScalarX
 {
   T output(input);
 #if 0
-  T twoPi( 2. * piVal );
+  T twoPi( 2. * Kokkos::numbers::pi );
   if (input > 0.) {
     output -= std::floor( input / twoPi ) * twoPi;
   }

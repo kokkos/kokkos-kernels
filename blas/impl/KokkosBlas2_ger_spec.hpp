@@ -73,14 +73,15 @@ namespace Impl {
 //
 
 // Implementation of KokkosBlas::ger.
-template < class XViewType
+template < class ExecutionSpace
+         , class XViewType
          , class YViewType
          , class AViewType
          , bool tpl_spec_avail = ger_tpl_spec_avail<XViewType, YViewType, AViewType>::value
          , bool eti_spec_avail = ger_eti_spec_avail<XViewType, YViewType, AViewType>::value
          >
 struct GER {
-  static void ger( const typename AViewType::execution_space  & space
+  static void ger( const          ExecutionSpace              & space
                  , const          char                          trans[]
                  , const typename AViewType::const_value_type & alpha
                  , const          XViewType                   & x
@@ -89,42 +90,6 @@ struct GER {
                  )
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
   {
-    KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Entering KokkosBlas::Impl::Ger::ger()\n" );
-
-    static_assert(Kokkos::is_view<XViewType>::value, "XViewType must be a Kokkos::View.");
-    static_assert(Kokkos::is_view<YViewType>::value, "YViewType must be a Kokkos::View.");
-    static_assert(Kokkos::is_view<AViewType>::value, "AViewType must be a Kokkos::View.");
-
-    static_assert(static_cast<int>(XViewType::rank) == 1, "XViewType must have rank 1.");
-    static_assert(static_cast<int>(YViewType::rank) == 1, "YViewType must have rank 1.");
-    static_assert(static_cast<int>(AViewType::rank) == 2, "AViewType must have rank 2.");
-
-    if ((trans[0] == 'T') ||
-        (trans[0] == 't') ||
-        (trans[0] == 'H') ||
-        (trans[0] == 'h')) {
-      // Ok
-    }
-    else {
-      std::ostringstream oss;
-      oss << "In impl of KokkosBlas2::ger(): invalid trans[0] = " << trans[0];
-      throw std::runtime_error(oss.str());
-    }
-
-    if (A.extent(0) != x.extent(0)) {
-      std::ostringstream oss;
-      oss << "In impl of KokkosBlas2::ger(): A.extent(0) = " << A.extent(0)
-	  << ", but x.extent(0) = " << x.extent(0);
-      throw std::runtime_error(oss.str());
-    }
-
-    if (A.extent(1) != y.extent(0)) {
-      std::ostringstream oss;
-      oss << "In impl of KokkosBlas2::ger(): A.extent(1) = " << A.extent(1)
-	  << ", but y.extent(0) = " << y.extent(0);
-      throw std::runtime_error(oss.str());
-    }
-
     Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY ? "KokkosBlas::ger[ETI]" : "KokkosBlas::ger[noETI]");
 
     typedef typename AViewType::size_type size_type;
@@ -134,22 +99,22 @@ struct GER {
     // Prefer int as the index type, but use a larger type if needed.
     if (( numRows < static_cast<size_type>(INT_MAX) ) &&
         ( numCols < static_cast<size_type>(INT_MAX) )) {
-      generalGerImpl<XViewType, YViewType, AViewType, int>( space
-                                                          , trans
-                                                          , alpha
-                                                          , x
-                                                          , y
-                                                          , A
-                                                          );
+      generalGerImpl<ExecutionSpace, XViewType, YViewType, AViewType, int>( space
+                                                                          , trans
+                                                                          , alpha
+                                                                          , x
+                                                                          , y
+                                                                          , A
+                                                                          );
     }
     else {
-      generalGerImpl<XViewType, YViewType, AViewType, int64_t>( space
-                                                              , trans
-                                                              , alpha
-                                                              , x
-                                                              , y
-                                                              , A
-                                                              );
+      generalGerImpl<ExecutionSpace, XViewType, YViewType, AViewType, int64_t>( space
+                                                                              , trans
+                                                                              , alpha
+                                                                              , x
+                                                                              , y
+                                                                              , A
+                                                                              );
     }
 
     Kokkos::Profiling::popRegion();
@@ -169,7 +134,8 @@ struct GER {
 // We may spread out definitions (see _DEF macro below) across one or more .cpp files.
 //
 #define KOKKOSBLAS2_GER_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)        \
-  extern template struct GER< Kokkos::View< const SCALAR*                           \
+  extern template struct GER< EXEC_SPACE                                            \
+                            , Kokkos::View< const SCALAR*                           \
                                           , LAYOUT                                  \
                                           , Kokkos::Device<EXEC_SPACE, MEM_SPACE>   \
                                           , Kokkos::MemoryTraits<Kokkos::Unmanaged> \
@@ -189,7 +155,8 @@ struct GER {
                             >;
 
 #define KOKKOSBLAS2_GER_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
-  template struct GER< Kokkos::View< const SCALAR*                           \
+  template struct GER< EXEC_SPACE                                            \
+                     , Kokkos::View< const SCALAR*                           \
                                    , LAYOUT                                  \
                                    , Kokkos::Device<EXEC_SPACE, MEM_SPACE>   \
                                    , Kokkos::MemoryTraits<Kokkos::Unmanaged> \

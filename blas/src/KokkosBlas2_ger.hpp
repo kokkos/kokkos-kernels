@@ -23,9 +23,10 @@ namespace KokkosBlas {
 
 /// \brief Rank-1 update of a general matrix: A = A + alpha * x * y^{T,H}.
 ///
-/// \tparam XViewType Input vector, as a 1-D Kokkos::View
-/// \tparam YViewType Input vector, as a 1-D Kokkos::View
-/// \tparam AViewType Input/Output matrix, as a 2-D Kokkos::View
+/// \tparam ExecutionSpace The type of execution space
+/// \tparam XViewType      Input vector, as a 1-D Kokkos::View
+/// \tparam YViewType      Input vector, as a 1-D Kokkos::View
+/// \tparam AViewType      Input/Output matrix, as a 2-D Kokkos::View
 ///
 /// \param space [in]     Execution space instance on which to run the kernel.
 ///                       This may contain information about which stream to
@@ -36,15 +37,17 @@ namespace KokkosBlas {
 /// \param x     [in]     Input vector, as a 1-D Kokkos::View
 /// \param y     [in]     Input vector, as a 1-D Kokkos::View
 /// \param A     [in/out] Output matrix, as a nonconst 2-D Kokkos::View
-template <class XViewType, class YViewType, class AViewType>
-void ger( const typename AViewType::execution_space  & space
+template <class ExecutionSpace, class XViewType, class YViewType, class AViewType>
+void ger( const          ExecutionSpace              & space
         , const          char                          trans[]
         , const typename AViewType::const_value_type & alpha
         , const          XViewType                   & x
         , const          YViewType                   & y
         , const          AViewType                   & A
         ) {
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Entering SRC KokkosBlas::ger(), AViewType = %s\n", typeid(AViewType).name() );
+  static_assert(Kokkos::SpaceAccessibility<ExecutionSpace, typename AViewType::memory_space>::accessible, "AViewType memory space must be compatible with ExecutionSpace");
+  static_assert(Kokkos::SpaceAccessibility<ExecutionSpace, typename XViewType::memory_space>::accessible, "XViewType memory space must be compatible with ExecutionSpace");
+  static_assert(Kokkos::SpaceAccessibility<ExecutionSpace, typename YViewType::memory_space>::accessible, "YViewType memory space must be compatible with ExecutionSpace");
 
   static_assert( Kokkos::is_view<AViewType>::value, "AViewType must be a Kokkos::View." );
   static_assert( Kokkos::is_view<XViewType>::value, "XViewType must be a Kokkos::View." );
@@ -63,6 +66,25 @@ void ger( const typename AViewType::execution_space  & space
        << ", x has size " << x.extent(0)
        << ", y has size " << y.extent(0);
     KokkosKernels::Impl::throw_runtime_exception(os.str());
+  }
+
+
+  if ((trans[0] == 'T') ||
+      (trans[0] == 't') ||
+      (trans[0] == 'H') ||
+      (trans[0] == 'h')) {
+    // Ok
+  }
+  else {
+    std::ostringstream os;
+    os << "KokkosBlas::ger: invalid trans[0] = '" << trans[0]
+       << "'. It must be equalt to 'T' or 't' or 'H' or 'h'";
+    KokkosKernels::Impl::throw_runtime_exception(os.str());
+  }
+
+  if (( A.extent(0) == 0 ) ||
+      ( A.extent(1) == 0 )) {
+    return;
   }
 
   using ALayout = typename AViewType::array_layout;
@@ -87,29 +109,13 @@ void ger( const typename AViewType::execution_space  & space
                       , Kokkos::MemoryTraits<Kokkos::Unmanaged>
                       > AVT;
 
-  if (( A.extent(0) == 0 ) ||
-      ( A.extent(1) == 0 )) {
-    // For degenerate cases, use fallback implementation to avoid potential
-    // (unlikely?) circular dependence issues by including other KokkosBlas
-    // headers.
-    const bool eti_spec_avail = KokkosBlas::Impl::ger_eti_spec_avail<XVT, YVT, AVT>::value;
-    Impl::GER<XVT, YVT, AVT, false, eti_spec_avail>::ger( space
-                                                        , trans
-                                                        , alpha
-                                                        , x
-                                                        , y
-                                                        , A
-                                                        );
-  }
-  else {
-    Impl::GER<XVT, YVT, AVT>::ger( space
-                                 , trans
-                                 , alpha
-                                 , x
-                                 , y
-                                 , A
-                                 );
-  }
+  Impl::GER<ExecutionSpace, XVT, YVT, AVT>::ger( space
+                                               , trans
+                                               , alpha
+                                               , x
+                                               , y
+                                               , A
+                                               );
 }
 
 /// \brief Rank-1 update of a general matrix: A = A + alpha * x * y^{T,H}.
@@ -132,13 +138,17 @@ void ger( const          char                          trans[]
         , const          AViewType                   & A
         ) {
   const typename AViewType::execution_space space = typename AViewType::execution_space();
-  ger( space
-     , trans
-     , alpha
-     , x
-     , y
-     , A
-     );
+  ger< typename AViewType::execution_space
+     , XViewType
+     , YViewType
+     , AViewType
+     > ( space
+       , trans
+       , alpha
+       , x
+       , y
+       , A
+       );
 }
 
 } // namespace KokkosBlas
