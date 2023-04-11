@@ -20,6 +20,7 @@
 
 #include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Gemv_TeamVector_Internal.hpp"
+#include "KokkosBlas2_team_gemv.hpp"
 
 namespace KokkosBatched {
 
@@ -48,6 +49,17 @@ struct TeamVectorGemv<MemberType, Trans::NoTranspose, Algo::Gemv::Unblocked> {
     static_assert(AViewType::rank == 3,
                   "Batched TeamVectorGemv requires rank-3 A matrix (use "
                   "KokkosBlas::TeamVectorGemv for regular rank-2 matrix)");
+    if (A.extent(0) == 1) {
+      KokkosBlas::TeamVectorGemv<
+          MemberType, Trans::NoTranspose,
+          Algo::Gemv::Unblocked>::invoke(member, alpha,
+                                         Kokkos::subview(A, 0, Kokkos::ALL,
+                                                         Kokkos::ALL),
+                                         Kokkos::subview(x, 0, Kokkos::ALL),
+                                         beta,
+                                         Kokkos::subview(y, 0, Kokkos::ALL));
+      return 0;
+    }
     return TeamVectorGemvInternal<Algo::Gemv::Unblocked>::template invoke<
         MemberType, ScalarType, typename AViewType::array_layout,
         typename AViewType::non_const_value_type>(

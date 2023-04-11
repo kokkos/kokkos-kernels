@@ -20,6 +20,8 @@
 #ifndef KOKKOSKERNELS_PERF_TEST_UTILITIES_HPP
 #define KOKKOSKERNELS_PERF_TEST_UTILITIES_HPP
 
+#include "KokkosKernels_TestUtils.hpp"  // for string_compare_no_case
+
 // Namepsace that defines common utilities
 // for performance tests
 namespace perf_test {
@@ -30,6 +32,8 @@ struct CommonInputParams {
   int use_sycl    = 0;
   int use_openmp  = 0;
   int use_threads = 0;
+
+  int repeat = 0;
 };
 
 std::string list_common_options() {
@@ -165,6 +169,8 @@ void parse_common_options(int& argc, char** argv, CommonInputParams& params) {
       remove_flag = true;
     } else if (check_arg_int(argIdx, argc, argv, "--sycl", params.use_sycl)) {
       params.use_sycl++;
+      remove_flag = true;
+    } else if (check_arg_int(argIdx, argc, argv, "--repeat", params.repeat)) {
       remove_flag = true;
     }
 
