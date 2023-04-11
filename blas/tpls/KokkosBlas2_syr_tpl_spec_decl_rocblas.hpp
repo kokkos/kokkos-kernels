@@ -23,7 +23,6 @@ namespace KokkosBlas {
 namespace Impl {
 
 #define KOKKOSBLAS2_SYR_ROCBLAS_DETERMINE_ARGS(LAYOUT)                       \
-  bool A_is_ll      = std::is_same<Kokkos::LayoutLeft, LAYOUT>::value;       \
   bool A_is_lr      = std::is_same<Kokkos::LayoutRight, LAYOUT>::value;      \
   const int M       = static_cast<int>(A_is_lr ? A.extent(1) : A.extent(0)); \
   const int N       = static_cast<int>(A_is_lr ? A.extent(0) : A.extent(1)); \
@@ -69,30 +68,16 @@ namespace Impl {
       KOKKOSBLAS2_SYR_ROCBLAS_DETERMINE_ARGS(LAYOUT);                                          \
       KokkosBlas::Impl::RocBlasSingleton& s = KokkosBlas::Impl::RocBlasSingleton::singleton(); \
       KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_set_stream(s.handle, space.hip_stream()) );       \
-      if (A_is_ll) {                                                                           \
-        KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_dsyr( s.handle                                  \
-                                                   , uplo                                      \
-                                                   , N                                         \
-                                                   , &alpha                                    \
-                                                   , X.data()                                  \
-                                                   , one                                       \
-                                                   , A.data()                                  \
-                                                   , LDA                                       \
-                                                   )                                           \
-                                     );                                                        \
-      }                                                                                        \
-      else {                                                                                   \
-        KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_dsyr( s.handle                                  \
-                                                   , uplo                                      \
-                                                   , N                                         \
-                                                   , &alpha                                    \
-                                                   , X.data()                                  \
-                                                   , one                                       \
-                                                   , A.data()                                  \
-                                                   , LDA                                       \
-                                                   )                                           \
-                                     );                                                        \
-      }                                                                                        \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_dsyr( s.handle                                    \
+                                                 , uplo                                        \
+                                                 , N                                           \
+                                                 , &alpha                                      \
+                                                 , X.data()                                    \
+                                                 , one                                         \
+                                                 , A.data()                                    \
+                                                 , LDA                                         \
+                                                 )                                             \
+                                   );                                                          \
       KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_set_stream(s.handle, NULL) );                     \
       Kokkos::Profiling::popRegion();                                                          \
     }                                                                                          \
@@ -142,30 +127,16 @@ namespace Impl {
       KOKKOSBLAS2_SYR_ROCBLAS_DETERMINE_ARGS(LAYOUT);                                          \
       KokkosBlas::Impl::RocBlasSingleton& s = KokkosBlas::Impl::RocBlasSingleton::singleton(); \
       KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_set_stream(s.handle, space.hip_stream()) );       \
-      if (A_is_ll) {                                                                           \
-        KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_ssyr( s.handle                                  \
-                                                   , uplo                                      \
-                                                   , N                                         \
-                                                   , &alpha                                    \
-                                                   , X.data()                                  \
-                                                   , one                                       \
-                                                   , A.data()                                  \
-                                                   , LDA                                       \
-                                                   )                                           \
-                                     );                                                        \
-      }                                                                                        \
-      else {                                                                                   \
-        KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_ssyr( s.handle                                  \
-                                                   , uplo                                      \
-                                                   , N                                         \
-                                                   , &alpha                                    \
-                                                   , X.data()                                  \
-                                                   , one                                       \
-                                                   , A.data()                                  \
-                                                   , LDA                                       \
-                                                   )                                           \
-                                     );                                                        \
-      }                                                                                        \
+      KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_ssyr( s.handle                                    \
+                                                 , uplo                                        \
+                                                 , N                                           \
+                                                 , &alpha                                      \
+                                                 , X.data()                                    \
+                                                 , one                                         \
+                                                 , A.data()                                    \
+                                                 , LDA                                         \
+                                                 )                                             \
+                                   );                                                          \
       KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_set_stream(s.handle, NULL) );                     \
       Kokkos::Profiling::popRegion();                                                          \
     }                                                                                          \
@@ -216,49 +187,22 @@ namespace Impl {
       bool justTranspose = (trans[0] == 'T') || (trans[0] == 't');                                                \
       KokkosBlas::Impl::RocBlasSingleton& s = KokkosBlas::Impl::RocBlasSingleton::singleton();                    \
       KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_set_stream(s.handle, space.hip_stream()) );                          \
-      if (A_is_ll) {                                                                                              \
-        if (justTranspose) {                                                                                      \
-          KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_zsyru( s.handle                                                  \
-                                                      , uplo                                                      \
-                                                      , N                                                         \
-                                                      , reinterpret_cast<const rocblas_double_complex*>(&alpha)   \
-                                                      , reinterpret_cast<const rocblas_double_complex*>(X.data()) \
-                                                      , one                                                       \
-                                                      , reinterpret_cast<rocblas_double_complex*>(A.data())       \
-                                                      , LDA                                                       \
-                                                      )                                                           \
-                                       );                                                                         \
-        }                                                                                                         \
-        else {                                                                                                    \
-          KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_zsyrc( s.handle                                                  \
-                                                      , uplo                                                      \
-                                                      , N                                                         \
-                                                      , reinterpret_cast<const rocblas_double_complex*>(&alpha)   \
-                                                      , reinterpret_cast<const rocblas_double_complex*>(X.data()) \
-                                                      , one                                                       \
-                                                      , reinterpret_cast<rocblas_double_complex*>(A.data())       \
-                                                      , LDA                                                       \
-                                                      )                                                           \
-                                       );                                                                         \
-        }                                                                                                         \
+      if (justTranspose) {                                                                                        \
+        kk_syr( space, trans, uplo, alpha, X, A);                                                                 \
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("rocblasZsyru() is not supported\n"); /* AquiEPP */                         \
+        throw std::runtime_error("Error: rocblasZsyru() is not supported.");                                      \
       }                                                                                                           \
       else {                                                                                                      \
-        if (justTranspose) {                                                                                      \
-          KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_zsyru( s.handle                                                  \
-                                                      , uplo                                                      \
-                                                      , N                                                         \
-                                                      , reinterpret_cast<const rocblas_double_complex*>(&alpha)   \
-                                                      , reinterpret_cast<const rocblas_double_complex*>(X.data()) \
-                                                      , one                                                       \
-                                                      , reinterpret_cast<rocblas_double_complex*>(A.data())       \
-                                                      , LDA                                                       \
-                                                      )                                                           \
-                                       );                                                                         \
-        }                                                                                                         \
-        else {                                                                                                    \
-          KOKKOS_IMPL_DO_NOT_USE_PRINTF("rocblasZsyrc() requires LayoutLeft: throwing exception\n");              \
-          throw std::runtime_error("Error: rocblasZsyrc() requires LayoutLeft views.");                           \
-        }                                                                                                         \
+        KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_zsyrc( s.handle                                                    \
+                                                    , uplo                                                        \
+                                                    , N                                                           \
+                                                    , reinterpret_cast<const rocblas_double_complex*>(&alpha)     \
+                                                    , reinterpret_cast<const rocblas_double_complex*>(X.data())   \
+                                                    , one                                                         \
+                                                    , reinterpret_cast<rocblas_double_complex*>(A.data())         \
+                                                    , LDA                                                         \
+                                                    )                                                             \
+                                     );                                                                           \
       }                                                                                                           \
       KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));                                          \
       Kokkos::Profiling::popRegion();                                                                             \
@@ -310,49 +254,22 @@ namespace Impl {
       bool justTranspose = (trans[0] == 'T') || (trans[0] == 't');                                               \
       KokkosBlas::Impl::RocBlasSingleton& s = KokkosBlas::Impl::RocBlasSingleton::singleton();                   \
       KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_set_stream(s.handle, space.hip_stream()) );                         \
-      if (A_is_ll) {                                                                                             \
-        if (justTranspose) {                                                                                     \
-          KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_csyru( s.handle                                                 \
-                                                      , uplo                                                     \
-                                                      , N                                                        \
-                                                      , reinterpret_cast<const rocblas_float_complex*>(&alpha)   \
-                                                      , reinterpret_cast<const rocblas_float_complex*>(X.data()) \
-                                                      , one                                                      \
-                                                      , reinterpret_cast<rocblas_float_complex*>(A.data())       \
-                                                      , LDA                                                      \
-                                                      )                                                          \
-                                       );                                                                        \
-        }                                                                                                        \
-        else {                                                                                                   \
-          KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_csyrc( s.handle                                                 \
-                                                      , uplo                                                     \
-                                                      , N                                                        \
-                                                      , reinterpret_cast<const rocblas_float_complex*>(&alpha)   \
-                                                      , reinterpret_cast<const rocblas_float_complex*>(X.data()) \
-                                                      , one                                                      \
-                                                      , reinterpret_cast<rocblas_float_complex*>(A.data())       \
-                                                      , LDA                                                      \
-                                                      )                                                          \
-                                       );                                                                        \
-        }                                                                                                        \
+      if (justTranspose) {                                                                                       \
+        kk_syr( space, trans, uplo, alpha, X, A);                                                                \
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("rocblasCsyru() is not supported\n"); /* AquiEPP */                        \
+        throw std::runtime_error("Error: rocblasCsyru() is not supported.");                                     \
       }                                                                                                          \
       else {                                                                                                     \
-        if (justTranspose) {                                                                                     \
-          KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_csyru( s.handle                                                 \
-                                                      , uplo                                                     \
-                                                      , N                                                        \
-                                                      , reinterpret_cast<const rocblas_float_complex*>(&alpha)   \
-                                                      , reinterpret_cast<const rocblas_float_complex*>(X.data()) \
-                                                      , one                                                      \
-                                                      , reinterpret_cast<rocblas_float_complex*>(A.data())       \
-                                                      , LDA                                                      \
-                                                      )                                                          \
-                                       );                                                                        \
-        }                                                                                                        \
-        else {                                                                                                   \
-          KOKKOS_IMPL_DO_NOT_USE_PRINTF("rocblasCsyrc() requires LayoutLeft: throwing exception\n");             \
-          throw std::runtime_error("Error: rocblasCgec() requires LayoutLeft views.");                           \
-        }                                                                                                        \
+        KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_csyrc( s.handle                                                   \
+                                                    , uplo                                                       \
+                                                    , N                                                          \
+                                                    , reinterpret_cast<const rocblas_float_complex*>(&alpha)     \
+                                                    , reinterpret_cast<const rocblas_float_complex*>(X.data())   \
+                                                    , one                                                        \
+                                                    , reinterpret_cast<rocblas_float_complex*>(A.data())         \
+                                                    , LDA                                                        \
+                                                    )                                                            \
+                                     );                                                                          \
       }                                                                                                          \
       KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));                                         \
       Kokkos::Profiling::popRegion();                                                                            \

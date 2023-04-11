@@ -23,7 +23,6 @@ namespace KokkosBlas {
 namespace Impl {
 
 #define KOKKOSBLAS2_SYR_CUBLAS_DETERMINE_ARGS(LAYOUT)                        \
-  bool A_is_ll      = std::is_same<Kokkos::LayoutLeft, LAYOUT>::value;       \
   bool A_is_lr      = std::is_same<Kokkos::LayoutRight, LAYOUT>::value;      \
   const int M       = static_cast<int>(A_is_lr ? A.extent(1) : A.extent(0)); \
   const int N       = static_cast<int>(A_is_lr ? A.extent(0) : A.extent(1)); \
@@ -69,30 +68,16 @@ namespace Impl {
       KOKKOSBLAS2_SYR_CUBLAS_DETERMINE_ARGS(LAYOUT);                                              \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
       KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasSetStream(s.handle, space.cuda_stream()) );             \
-      if (A_is_ll) {                                                                              \
-        KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasDsyr( s.handle                                        \
-                                                , uplo                                            \
-                                                , N                                               \
-                                                , &alpha                                          \
-                                                , X.data()                                        \
-                                                , one                                             \
-                                                , A.data()                                        \
-                                                , LDA                                             \
-                                                )                                                 \
+      KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasDsyr( s.handle                                          \
+                                              , uplo                                              \
+                                              , N                                                 \
+                                              , &alpha                                            \
+                                              , X.data()                                          \
+                                              , one                                               \
+                                              , A.data()                                          \
+                                              , LDA                                               \
+                                              )                                                   \
                                     );                                                            \
-      }                                                                                           \
-      else {                                                                                      \
-        KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasDsyr( s.handle                                        \
-                                                , uplo                                            \
-                                                , N                                               \
-                                                , &alpha                                          \
-                                                , X.data()                                        \
-                                                , one                                             \
-                                                , A.data()                                        \
-                                                , LDA                                             \
-                                                )                                                 \
-                                    );                                                            \
-      }                                                                                           \
       KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasSetStream(s.handle, NULL) );                            \
       Kokkos::Profiling::popRegion();                                                             \
     }                                                                                             \
@@ -137,30 +122,16 @@ namespace Impl {
       KOKKOSBLAS2_SYR_CUBLAS_DETERMINE_ARGS(LAYOUT);                                              \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
       KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasSetStream(s.handle, space.cuda_stream()) );             \
-      if (A_is_ll) {                                                                              \
-        KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasSsyr( s.handle                                        \
-                                                , uplo                                            \
-                                                , N                                               \
-                                                , &alpha                                          \
-                                                , X.data()                                        \
-                                                , one                                             \
-                                                , A.data()                                        \
-                                                , LDA                                             \
-                                                )                                                 \
-                                    );                                                            \
-      }                                                                                           \
-      else {                                                                                      \
-        KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasSsyr( s.handle                                        \
-                                                , uplo                                            \
-                                                , N                                               \
-                                                , &alpha                                          \
-                                                , X.data()                                        \
-                                                , one                                             \
-                                                , A.data()                                        \
-                                                , LDA                                             \
-                                                )                                                 \
-                                    );                                                            \
-      }                                                                                           \
+      KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasSsyr( s.handle                                          \
+                                              , uplo                                              \
+                                              , N                                                 \
+                                              , &alpha                                            \
+                                              , X.data()                                          \
+                                              , one                                               \
+                                              , A.data()                                          \
+                                              , LDA                                               \
+                                              )                                                   \
+                                  );                                                              \
       KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasSetStream(s.handle, NULL) );                            \
       Kokkos::Profiling::popRegion();                                                             \
     }                                                                                             \
@@ -206,49 +177,22 @@ namespace Impl {
       bool justTranspose = (trans[0] == 'T') || (trans[0] == 't');                                      \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton();       \
       KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasSetStream(s.handle, space.cuda_stream()) );                   \
-      if (A_is_ll) {                                                                                    \
-	if (justTranspose) {                                                                            \
-          KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasZsyru( s.handle                                           \
-                                                   , uplo                                               \
-                                                   , N                                                  \
-                                                   , reinterpret_cast<const cuDoubleComplex*>(&alpha)   \
-                                                   , reinterpret_cast<const cuDoubleComplex*>(X.data()) \
-                                                   , one                                                \
-                                                   , reinterpret_cast<cuDoubleComplex*>(A.data())       \
-                                                   , LDA                                                \
-                                                   )                                                    \
-                                      );                                                                \
-        }                                                                                               \
-	else {                                                                                          \
-          KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasZsyrc( s.handle                                           \
-                                                   , uplo                                               \
-                                                   , N                                                  \
-                                                   , reinterpret_cast<const cuDoubleComplex*>(&alpha)   \
-                                                   , reinterpret_cast<const cuDoubleComplex*>(X.data()) \
-                                                   , one                                                \
-                                                   , reinterpret_cast<cuDoubleComplex*>(A.data())       \
-                                                   , LDA                                                \
-                                                   )                                                    \
-                                      );                                                                \
-	}                                                                                               \
+      if (justTranspose) {                                                                              \
+        kk_syr( space, trans, uplo, alpha, X, A);                                                       \
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("cublasZsyru() is not supported\n"); /* AquiEPP */                \
+        throw std::runtime_error("Error: cublasZsyru() is not supported.");                             \
       }                                                                                                 \
       else {                                                                                            \
-	if (justTranspose) {                                                                            \
-          KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasZsyru( s.handle                                           \
-                                                   , uplo                                               \
-                                                   , N                                                  \
-                                                   , reinterpret_cast<const cuDoubleComplex*>(&alpha)   \
-                                                   , reinterpret_cast<const cuDoubleComplex*>(X.data()) \
-                                                   , one                                                \
-                                                   , reinterpret_cast<cuDoubleComplex*>(A.data())       \
-                                                   , LDA                                                \
-                                                   )                                                    \
-                                      );                                                                \
-        }                                                                                               \
-	else {                                                                                          \
-          KOKKOS_IMPL_DO_NOT_USE_PRINTF("cublasZsyrc() requires LayoutLeft: throwing exception\n");     \
-          throw std::runtime_error("Error: cublasZsyrc() requires LayoutLeft views.");                  \
-	}                                                                                               \
+        KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasZsyrc( s.handle                                             \
+                                                 , uplo                                                 \
+                                                 , N                                                    \
+                                                 , reinterpret_cast<const cuDoubleComplex*>(&alpha)     \
+                                                 , reinterpret_cast<const cuDoubleComplex*>(X.data())   \
+                                                 , one                                                  \
+                                                 , reinterpret_cast<cuDoubleComplex*>(A.data())         \
+                                                 , LDA                                                  \
+                                                 )                                                      \
+                                    );                                                                  \
       }                                                                                                 \
       KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasSetStream(s.handle, NULL) );                                  \
       Kokkos::Profiling::popRegion();                                                                   \
@@ -295,94 +239,67 @@ namespace Impl {
       bool justTranspose = (trans[0] == 'T') || (trans[0] == 't');                                  \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton();   \
       KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasSetStream(s.handle, space.cuda_stream()) );               \
-      if (A_is_ll) {                                                                                \
-	if (justTranspose) {                                                                        \
-          KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasCsyru( s.handle                                       \
-                                                   , uplo                                           \
-                                                   , N                                              \
-                                                   , reinterpret_cast<const cuComplex*>(&alpha)     \
-                                                   , reinterpret_cast<const cuComplex*>(X.data())   \
-                                                   , one                                            \
-                                                   , reinterpret_cast<cuComplex*>(A.data())         \
-                                                   , LDA                                            \
-                                                   )                                                \
-                                      );                                                            \
-        }                                                                                           \
-	else {                                                                                      \
-          KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasCsyrc( s.handle                                       \
-                                                   , uplo                                           \
-                                                   , N                                              \
-                                                   , reinterpret_cast<const cuComplex*>(&alpha)     \
-                                                   , reinterpret_cast<const cuComplex*>(X.data())   \
-                                                   , one                                            \
-                                                   , reinterpret_cast<cuComplex*>(A.data())         \
-                                                   , LDA                                            \
-                                                   )                                                \
-                                      );                                                            \
-	}                                                                                           \
+      if (justTranspose) {                                                                          \
+        kk_syr( space, trans, uplo, alpha, X, A);                                                   \
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("cublasCsyru() is not supported\n"); /* AquiEPP */            \
+        throw std::runtime_error("Error: cublasCsyru() is not supported.");                         \
       }                                                                                             \
       else {                                                                                        \
-	if (justTranspose) {                                                                        \
-          KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasCsyru( s.handle                                       \
-                                                   , uplo                                           \
-                                                   , N                                              \
-                                                   , reinterpret_cast<const cuComplex*>(&alpha)     \
-                                                   , reinterpret_cast<const cuComplex*>(X.data())   \
-                                                   , one                                            \
-                                                   , reinterpret_cast<cuComplex*>(A.data())         \
-                                                   , LDA                                            \
-                                                   )                                                \
-                                      );                                                            \
-        }                                                                                           \
-	else {                                                                                      \
-          KOKKOS_IMPL_DO_NOT_USE_PRINTF("cublasCsyrc() requires LayoutLeft: throwing exception\n"); \
-          throw std::runtime_error("Error: cublasCsyrc() requires LayoutLeft views.");              \
-	}                                                                                           \
+        KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasCsyrc( s.handle                                         \
+                                                 , uplo                                             \
+                                                 , N                                                \
+                                                 , reinterpret_cast<const cuComplex*>(&alpha)       \
+                                                 , reinterpret_cast<const cuComplex*>(X.data())     \
+                                                 , one                                              \
+                                                 , reinterpret_cast<cuComplex*>(A.data())           \
+                                                 , LDA                                              \
+                                                 )                                                  \
+                                    );                                                              \
       }                                                                                             \
       KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasSetStream(s.handle, NULL) );                              \
       Kokkos::Profiling::popRegion();                                                               \
     }                                                                                               \
   };
 
-KOKKOSBLAS2_DSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaSpace, true )
-KOKKOSBLAS2_DSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaSpace, false)
-KOKKOSBLAS2_DSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, true )
-KOKKOSBLAS2_DSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, false)
+KOKKOSBLAS2_DSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::CudaSpace, true )
+KOKKOSBLAS2_DSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::CudaSpace, false)
+KOKKOSBLAS2_DSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::CudaSpace, true )
+KOKKOSBLAS2_DSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::CudaSpace, false)
 
-KOKKOSBLAS2_DSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, true )
-KOKKOSBLAS2_DSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, false)
-KOKKOSBLAS2_DSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true )
-KOKKOSBLAS2_DSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, false)
+KOKKOSBLAS2_DSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, true )
+KOKKOSBLAS2_DSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, false)
+KOKKOSBLAS2_DSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true )
+KOKKOSBLAS2_DSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::CudaUVMSpace, false)
 
-KOKKOSBLAS2_SSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaSpace, true )
-KOKKOSBLAS2_SSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaSpace, false)
-KOKKOSBLAS2_SSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, true )
-KOKKOSBLAS2_SSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, false)
+KOKKOSBLAS2_SSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::CudaSpace, true )
+KOKKOSBLAS2_SSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::CudaSpace, false)
+KOKKOSBLAS2_SSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::CudaSpace, true )
+KOKKOSBLAS2_SSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::CudaSpace, false)
 
-KOKKOSBLAS2_SSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, true )
-KOKKOSBLAS2_SSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, false)
-KOKKOSBLAS2_SSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true )
-KOKKOSBLAS2_SSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, false)
+KOKKOSBLAS2_SSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, true )
+KOKKOSBLAS2_SSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, false)
+KOKKOSBLAS2_SSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true )
+KOKKOSBLAS2_SSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::CudaUVMSpace, false)
 
-KOKKOSBLAS2_ZSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaSpace, true )
-KOKKOSBLAS2_ZSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaSpace, false)
-KOKKOSBLAS2_ZSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, true )
-KOKKOSBLAS2_ZSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, false)
+KOKKOSBLAS2_ZSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::CudaSpace, true )
+KOKKOSBLAS2_ZSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::CudaSpace, false)
+KOKKOSBLAS2_ZSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::CudaSpace, true )
+KOKKOSBLAS2_ZSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::CudaSpace, false)
 
-KOKKOSBLAS2_ZSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, true )
-KOKKOSBLAS2_ZSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, false)
-KOKKOSBLAS2_ZSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true )
-KOKKOSBLAS2_ZSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, false)
+KOKKOSBLAS2_ZSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, true )
+KOKKOSBLAS2_ZSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, false)
+KOKKOSBLAS2_ZSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true )
+KOKKOSBLAS2_ZSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::CudaUVMSpace, false)
 
-KOKKOSBLAS2_CSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaSpace, true )
-KOKKOSBLAS2_CSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaSpace, false)
-KOKKOSBLAS2_CSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, true )
-KOKKOSBLAS2_CSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, false)
+KOKKOSBLAS2_CSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::CudaSpace, true )
+KOKKOSBLAS2_CSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::CudaSpace, false)
+KOKKOSBLAS2_CSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::CudaSpace, true )
+KOKKOSBLAS2_CSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::CudaSpace, false)
 
-KOKKOSBLAS2_CSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, true )
-KOKKOSBLAS2_CSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, false)
-KOKKOSBLAS2_CSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true )
-KOKKOSBLAS2_CSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, false)
+KOKKOSBLAS2_CSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, true )
+KOKKOSBLAS2_CSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, false)
+KOKKOSBLAS2_CSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true )
+KOKKOSBLAS2_CSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::CudaUVMSpace, false)
 
 }  // namespace Impl
 }  // namespace KokkosBlas
