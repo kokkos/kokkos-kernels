@@ -22,39 +22,23 @@
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS2_SYR_CUBLAS_DETERMINE_ARGS(LAYOUTA)                       \
-  bool A_is_ll      = std::is_same<Kokkos::LayoutLeft, LAYOUTA>::value;      \
-  bool A_is_lr      = std::is_same<Kokkos::LayoutRight, LAYOUTA>::value;     \
+#define KOKKOSBLAS2_SYR_CUBLAS_DETERMINE_ARGS(LAYOUT)                        \
+  bool A_is_ll      = std::is_same<Kokkos::LayoutLeft, LAYOUT>::value;       \
+  bool A_is_lr      = std::is_same<Kokkos::LayoutRight, LAYOUT>::value;      \
   const int M       = static_cast<int>(A_is_lr ? A.extent(1) : A.extent(0)); \
   const int N       = static_cast<int>(A_is_lr ? A.extent(0) : A.extent(1)); \
   constexpr int one = 1;                                                     \
-  const int LDA     = A_is_lr ? A.stride(0) : A.stride(1);                   \
-  if (( trans[0] == 'T' ) ||                                                 \
-      ( trans[0] == 't' ) ||                                                 \
-      ( trans[0] == 'H' ) ||                                                 \
-      ( trans[0] == 'h' )) {                                                 \
-  }                                                                          \
-  else {                                                                     \
-    throw std::runtime_error("Error: invalid 'trans' for cudaBlas::syr()");  \
-  }                                                                          \
-  if (( uplo[0] == 'U' ) ||                                                  \
-      ( uplo[0] == 'u' ) ||                                                  \
-      ( uplo[0] == 'L' ) ||                                                  \
-      ( uplo[0] == 'l' )) {                                                  \
-  }                                                                          \
-  else {                                                                     \
-    throw std::runtime_error("Error: invalid 'uplo' for cudaBlas::syr()");   \
-  }
+  const int LDA     = A_is_lr ? A.stride(0) : A.stride(1);
 
-#define KOKKOSBLAS2_DSYR_CUBLAS(LAYOUTX, LAYOUTA, MEM_SPACE, ETI_SPEC_AVAIL)             \
+#define KOKKOSBLAS2_DSYR_CUBLAS(LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)             \
   template <class ExecSpace>                                                                      \
   struct SYR< Kokkos::View< const double*                                                         \
-                          , LAYOUTX                                                               \
+                          , LAYOUT                                                                \
                           , Kokkos::Device<ExecSpace, MEM_SPACE>                                  \
                           , Kokkos::MemoryTraits<Kokkos::Unmanaged>                               \
                           >                                                                       \
             , Kokkos::View< double**                                                              \
-                          , LAYOUTA                                                               \
+                          , LAYOUT                                                                \
                           , Kokkos::Device<ExecSpace, MEM_SPACE>                                  \
                           , Kokkos::MemoryTraits<Kokkos::Unmanaged>                               \
                           >                                                                       \
@@ -63,12 +47,12 @@ namespace Impl {
             > {                                                                                   \
     typedef double SCALAR;                                                                        \
     typedef Kokkos::View< const SCALAR*                                                           \
-                        , LAYOUTX                                                                 \
+                        , LAYOUT                                                                  \
                         , Kokkos::Device<ExecSpace, MEM_SPACE>	                                  \
                         , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                 \
                         > XViewType;                                                              \
     typedef Kokkos::View< SCALAR**                                                                \
-                        , LAYOUTA                                                                 \
+                        , LAYOUT                                                                  \
                         , Kokkos::Device<ExecSpace, MEM_SPACE>                                    \
                         , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                 \
                         > AViewType;                                                              \
@@ -82,7 +66,7 @@ namespace Impl {
                    ) {                                                                            \
       KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing through tpl-dsyr-cublas\n" );                       \
       Kokkos::Profiling::pushRegion("KokkosBlas::syr[TPL_CUBLAS,double]");                        \
-      KOKKOSBLAS2_SYR_CUBLAS_DETERMINE_ARGS(LAYOUTA);                                             \
+      KOKKOSBLAS2_SYR_CUBLAS_DETERMINE_ARGS(LAYOUT);                                              \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
       KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasSetStream(s.handle, space.cuda_stream()) );             \
       if (A_is_ll) {                                                                              \
@@ -114,15 +98,15 @@ namespace Impl {
     }                                                                                             \
   };
 
-#define KOKKOSBLAS2_SSYR_CUBLAS(LAYOUTX, LAYOUTA, MEM_SPACE, ETI_SPEC_AVAIL)             \
+#define KOKKOSBLAS2_SSYR_CUBLAS(LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)             \
   template <class ExecSpace>                                                                      \
   struct SYR< Kokkos::View< const float*                                                          \
-                          , LAYOUTX                                                               \
+                          , LAYOUT                                                                \
                           , Kokkos::Device<ExecSpace, MEM_SPACE>                                  \
                           , Kokkos::MemoryTraits<Kokkos::Unmanaged>                               \
                           >                                                                       \
             , Kokkos::View< float**                                                               \
-                          , LAYOUTA                                                               \
+                          , LAYOUT                                                                \
                           , Kokkos::Device<ExecSpace, MEM_SPACE>                                  \
                           , Kokkos::MemoryTraits<Kokkos::Unmanaged>                               \
                           >                                                                       \
@@ -131,12 +115,12 @@ namespace Impl {
             > {                                                                                   \
     typedef float SCALAR;                                                                         \
     typedef Kokkos::View< const SCALAR*                                                           \
-                        , LAYOUTX                                                                 \
+                        , LAYOUT                                                                  \
                         , Kokkos::Device<ExecSpace, MEM_SPACE>	                                  \
                         , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                 \
                         > XViewType;                                                              \
     typedef Kokkos::View< SCALAR**                                                                \
-                        , LAYOUTA                                                                 \
+                        , LAYOUT                                                                  \
                         , Kokkos::Device<ExecSpace, MEM_SPACE>                                    \
                         , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                 \
                         > AViewType;                                                              \
@@ -150,7 +134,7 @@ namespace Impl {
                    ) {                                                                            \
       KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing through tpl-ssyr-cublas\n" );                       \
       Kokkos::Profiling::pushRegion("KokkosBlas::syr[TPL_CUBLAS,float]");                         \
-      KOKKOSBLAS2_SYR_CUBLAS_DETERMINE_ARGS(LAYOUTA);                                             \
+      KOKKOSBLAS2_SYR_CUBLAS_DETERMINE_ARGS(LAYOUT);                                              \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
       KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasSetStream(s.handle, space.cuda_stream()) );             \
       if (A_is_ll) {                                                                              \
@@ -182,15 +166,15 @@ namespace Impl {
     }                                                                                             \
   };
 
-#define KOKKOSBLAS2_ZSYR_CUBLAS(LAYOUTX, LAYOUTA, MEM_SPACE, ETI_SPEC_AVAIL)                   \
+#define KOKKOSBLAS2_ZSYR_CUBLAS(LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)                   \
   template <class ExecSpace>                                                                            \
   struct SYR< Kokkos::View< const Kokkos::complex<double>*                                              \
-                          , LAYOUTX                                                                     \
+                          , LAYOUT                                                                      \
                           , Kokkos::Device<ExecSpace, MEM_SPACE>                                        \
                           , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                     \
                           >                                                                             \
             , Kokkos::View< Kokkos::complex<double>**                                                   \
-                          , LAYOUTA                                                                     \
+                          , LAYOUT                                                                      \
                           , Kokkos::Device<ExecSpace, MEM_SPACE>                                        \
                           , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                     \
                           >                                                                             \
@@ -199,12 +183,12 @@ namespace Impl {
             > {                                                                                         \
     typedef Kokkos::complex<double> SCALAR;                                                             \
     typedef Kokkos::View< const SCALAR*                                                                 \
-                        , LAYOUTX                                                                       \
+                        , LAYOUT                                                                        \
                         , Kokkos::Device<ExecSpace, MEM_SPACE>	                                        \
                         , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                       \
                         > XViewType;                                                                    \
     typedef Kokkos::View< SCALAR**                                                                      \
-                        , LAYOUTA                                                                       \
+                        , LAYOUT                                                                        \
                         , Kokkos::Device<ExecSpace, MEM_SPACE>                                          \
                         , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                       \
                         > AViewType;                                                                    \
@@ -218,7 +202,7 @@ namespace Impl {
                    ) {                                                                                  \
       KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing through tpl-zsyr-cublas\n" );                             \
       Kokkos::Profiling::pushRegion("KokkosBlas::syr[TPL_CUBLAS,complex<double>]");                     \
-      KOKKOSBLAS2_SYR_CUBLAS_DETERMINE_ARGS(LAYOUTA);                                                   \
+      KOKKOSBLAS2_SYR_CUBLAS_DETERMINE_ARGS(LAYOUT);                                                    \
       bool justTranspose = (trans[0] == 'T') || (trans[0] == 't');                                      \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton();       \
       KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasSetStream(s.handle, space.cuda_stream()) );                   \
@@ -271,15 +255,15 @@ namespace Impl {
     }                                                                                                   \
   };
 
-#define KOKKOSBLAS2_CSYR_CUBLAS(LAYOUTX, LAYOUTA, MEM_SPACE, ETI_SPEC_AVAIL)               \
+#define KOKKOSBLAS2_CSYR_CUBLAS(LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)               \
   template <class ExecSpace>                                                                        \
   struct SYR< Kokkos::View< const Kokkos::complex<float>*                                           \
-                          , LAYOUTX                                                                 \
+                          , LAYOUT                                                                  \
                           , Kokkos::Device<ExecSpace, MEM_SPACE>                                    \
                           , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                 \
                           >                                                                         \
             , Kokkos::View< Kokkos::complex<float>**                                                \
-                          , LAYOUTA                                                                 \
+                          , LAYOUT                                                                  \
                           , Kokkos::Device<ExecSpace, MEM_SPACE>                                    \
                           , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                 \
                           >                                                                         \
@@ -288,12 +272,12 @@ namespace Impl {
             > {                                                                                     \
     typedef Kokkos::complex<float> SCALAR;                                                          \
     typedef Kokkos::View< const SCALAR*                                                             \
-                        , LAYOUTX                                                                   \
+                        , LAYOUT                                                                    \
                         , Kokkos::Device<ExecSpace, MEM_SPACE>	                                    \
                         , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                   \
                         > XViewType;                                                                \
     typedef Kokkos::View< SCALAR**                                                                  \
-                        , LAYOUTA                                                                   \
+                        , LAYOUT                                                                    \
                         , Kokkos::Device<ExecSpace, MEM_SPACE>                                      \
                         , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                   \
                         > AViewType;                                                                \
@@ -307,7 +291,7 @@ namespace Impl {
                    ) {                                                                              \
       KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing through tpl-csyr-cublas\n" );                         \
       Kokkos::Profiling::pushRegion("KokkosBlas::syr[TPL_CUBLAS,complex<float>]");                  \
-      KOKKOSBLAS2_SYR_CUBLAS_DETERMINE_ARGS(LAYOUTA);                                               \
+      KOKKOSBLAS2_SYR_CUBLAS_DETERMINE_ARGS(LAYOUT);                                                \
       bool justTranspose = (trans[0] == 'T') || (trans[0] == 't');                                  \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton();   \
       KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasSetStream(s.handle, space.cuda_stream()) );               \
@@ -365,20 +349,40 @@ KOKKOSBLAS2_DSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::Layout
 KOKKOSBLAS2_DSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, true )
 KOKKOSBLAS2_DSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, false)
 
+KOKKOSBLAS2_DSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, true )
+KOKKOSBLAS2_DSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, false)
+KOKKOSBLAS2_DSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true )
+KOKKOSBLAS2_DSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, false)
+
 KOKKOSBLAS2_SSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaSpace, true )
 KOKKOSBLAS2_SSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaSpace, false)
 KOKKOSBLAS2_SSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, true )
 KOKKOSBLAS2_SSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, false)
+
+KOKKOSBLAS2_SSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, true )
+KOKKOSBLAS2_SSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, false)
+KOKKOSBLAS2_SSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true )
+KOKKOSBLAS2_SSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, false)
 
 KOKKOSBLAS2_ZSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaSpace, true )
 KOKKOSBLAS2_ZSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaSpace, false)
 KOKKOSBLAS2_ZSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, true )
 KOKKOSBLAS2_ZSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, false)
 
+KOKKOSBLAS2_ZSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, true )
+KOKKOSBLAS2_ZSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, false)
+KOKKOSBLAS2_ZSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true )
+KOKKOSBLAS2_ZSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, false)
+
 KOKKOSBLAS2_CSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaSpace, true )
 KOKKOSBLAS2_CSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaSpace, false)
 KOKKOSBLAS2_CSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, true )
 KOKKOSBLAS2_CSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, false)
+
+KOKKOSBLAS2_CSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, true )
+KOKKOSBLAS2_CSYR_CUBLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, false)
+KOKKOSBLAS2_CSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true )
+KOKKOSBLAS2_CSYR_CUBLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, false)
 
 }  // namespace Impl
 }  // namespace KokkosBlas

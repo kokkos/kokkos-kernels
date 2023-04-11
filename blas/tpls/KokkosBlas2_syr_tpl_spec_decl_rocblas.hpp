@@ -28,23 +28,7 @@ namespace Impl {
   const int M       = static_cast<int>(A_is_lr ? A.extent(1) : A.extent(0)); \
   const int N       = static_cast<int>(A_is_lr ? A.extent(0) : A.extent(1)); \
   constexpr int one = 1;                                                     \
-  const int LDA     = A_is_lr ? A.stride(0) : A.stride(1);                   \
-  if (( trans[0] == 'T' ) ||                                                 \
-      ( trans[0] == 't' ) ||                                                 \
-      ( trans[0] == 'H' ) ||                                                 \
-      ( trans[0] == 'h' )) {                                                 \
-  }                                                                          \
-  else {                                                                     \
-    throw std::runtime_error( "Error: invalid 'trans' for rocBlas::syr()");  \
-  }                                                                          \
-  if (( uplo[0] == 'U' ) ||                                                  \
-      ( uplo[0] == 'u' ) ||                                                  \
-      ( uplo[0] == 'L' ) ||                                                  \
-      ( uplo[0] == 'l' )) {                                                  \
-  }                                                                          \
-  else {                                                                     \
-    throw std::runtime_error( "Error: invalid 'uplo' for rocBlas::syr()");   \
-  }
+  const int LDA     = A_is_lr ? A.stride(0) : A.stride(1);
 
 #define KOKKOSBLAS2_DSYR_ROCBLAS(LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)                            \
   template <>                                                                                  \
