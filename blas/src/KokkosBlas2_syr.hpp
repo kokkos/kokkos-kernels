@@ -46,13 +46,17 @@ void syr( const          ExecutionSpace              & space
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Entering SRC KokkosBlas::syr(), AViewType = %s\n", typeid(AViewType).name() );
 
   static_assert(
+      Kokkos::SpaceAccessibility<typename AViewType::memory_space,
+                                 typename XViewType::memory_space>::assignable,
+      "AViewType memory space must be assignable from XViewType");
+  static_assert(
       Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename AViewType::memory_space>::accessible,
-      "AViewType memory space must be compatible with ExecutionSpace");
+      "AViewType memory space must be accessible from the ExecutionSpace");
   static_assert(
       Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename XViewType::memory_space>::accessible,
-      "XViewType memory space must be compatible with ExecutionSpace");
+      "XViewType memory space must be accessible from the ExecutionSpace");
 
   static_assert( Kokkos::is_view<AViewType>::value, "AViewType must be a Kokkos::View." );
   static_assert( Kokkos::is_view<XViewType>::value, "XViewType must be a Kokkos::View." );
