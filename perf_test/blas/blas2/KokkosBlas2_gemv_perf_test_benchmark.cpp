@@ -77,7 +77,7 @@ struct blas2_gemv_params : public perf_test::CommonInputParams {
 };
 
 template <typename Scalar, typename Layout, typename ExecSpace>
-static void KokkosBlas2_gemv(benchmark::State& state) {
+static void KokkosBlas2_GEMV(benchmark::State& state) {
   const auto m = state.range(0);
   const auto n = state.range(1);
 
@@ -131,28 +131,37 @@ static void KokkosBlas2_gemv(benchmark::State& state) {
       flopsPerRun, benchmark::Counter::kIsIterationInvariantRate);
 }
 
+template <typename ExecSpace>
+void run(const blas2_gemv_params& params) {
+  using Scalar = double;
+
+  const auto name      = "KokkosBlas2_GEMV";
+  const auto arg_names = std::vector<std::string>{
+      "m", "n", params.layoutLeft ? "LayoutLeft" : "LayoutRight"};
+  const auto args = std::vector<int64_t>{params.m, params.n, 1};
+
+  if (params.layoutLeft) {
+    KokkosKernelsBenchmark::register_benchmark(
+        name, KokkosBlas2_GEMV<Scalar, Kokkos::LayoutLeft, ExecSpace>,
+        arg_names, args, params.repeat);
+  } else {
+    KokkosKernelsBenchmark::register_benchmark(
+        name, KokkosBlas2_GEMV<Scalar, Kokkos::LayoutRight, ExecSpace>,
+        arg_names, args, params.repeat);
+  }
+}
+
 int main(int argc, char** argv) {
   Kokkos::initialize(argc, argv);
   benchmark::Initialize(&argc, argv);
   benchmark::SetDefaultTimeUnit(benchmark::kSecond);
   KokkosKernelsBenchmark::add_benchmark_context(true);
 
-  const auto name      = "KokkosBlas2_gemv";
-  const auto params    = blas2_gemv_params::get_params(argc, argv);
-  const auto arg_names = std::vector<std::string>{
-      "m", "n", params.layoutLeft ? "LayoutLeft" : "LayoutRight"};
-  const auto args = std::vector<int64_t>{params.m, params.n, 1};
+  const auto params = blas2_gemv_params::get_params(argc, argv);
 
   if (params.use_threads) {
 #if defined(KOKKOS_ENABLE_THREADS)
-    if (params.layoutLeft)
-      KokkosKernelsBenchmark::register_benchmark(
-          name, KokkosBlas2_gemv<double, Kokkos::LayoutLeft, Kokkos::Threads>,
-          arg_names, args, params.repeat);
-    else
-      KokkosKernelsBenchmark::register_benchmark(
-          name, KokkosBlas2_gemv<double, Kokkos::LayoutRight, Kokkos::Threads>,
-          arg_names, args, params.repeat);
+    run<Kokkos::Threads>(params);
 #else
     std::cout << "ERROR:  PThreads requested, but not available.\n";
     return 1;
@@ -161,14 +170,7 @@ int main(int argc, char** argv) {
 
   if (params.use_openmp) {
 #if defined(KOKKOS_ENABLE_OPENMP)
-    if (params.layoutLeft)
-      KokkosKernelsBenchmark::register_benchmark(
-          name, KokkosBlas2_gemv<double, Kokkos::LayoutLeft, Kokkos::OpenMP>,
-          arg_names, args, params.repeat);
-    else
-      KokkosKernelsBenchmark::register_benchmark(
-          name, KokkosBlas2_gemv<double, Kokkos::LayoutRight, Kokkos::OpenMP>,
-          arg_names, args, params.repeat);
+    run<Kokkos::OpenMP>(params);
 #else
     std::cout << "ERROR: OpenMP requested, but not available.\n";
     return 1;
@@ -177,14 +179,7 @@ int main(int argc, char** argv) {
 
   if (params.use_cuda) {
 #if defined(KOKKOS_ENABLE_CUDA)
-    if (params.layoutLeft)
-      KokkosKernelsBenchmark::register_benchmark(
-          name, KokkosBlas2_gemv<double, Kokkos::LayoutLeft, Kokkos::Cuda>,
-          arg_names, args, params.repeat);
-    else
-      KokkosKernelsBenchmark::register_benchmark(
-          name, KokkosBlas2_gemv<double, Kokkos::LayoutRight, Kokkos::Cuda>,
-          arg_names, args, params.repeat);
+    run<Kokkos::Cuda>(params);
 #else
     std::cout << "ERROR: CUDA requested, but not available.\n";
     return 1;
@@ -193,18 +188,7 @@ int main(int argc, char** argv) {
 
   if (params.use_hip) {
 #if defined(KOKKOS_ENABLE_HIP)
-    if (params.layoutLeft)
-      KokkosKernelsBenchmark::register_benchmark(
-          name,
-          KokkosBlas2_gemv<double, Kokkos::LayoutLeft,
-                           Kokkos::Experimental::HIP>,
-          arg_names, args, params.repeat);
-    else
-      KokkosKernelsBenchmark::register_benchmark(
-          name,
-          KokkosBlas2_gemv<double, Kokkos::LayoutRight,
-                           Kokkos::Experimental::HIP>,
-          arg_names, args, params.repeat);
+    run<Kokkos::Experimental::HIP>(params);
 #else
     std::cout << "ERROR: HIP requested, but not available.\n";
     return 1;
@@ -213,18 +197,7 @@ int main(int argc, char** argv) {
 
   if (params.use_sycl) {
 #if defined(KOKKOS_ENABLE_SYCL)
-    if (params.layoutLeft)
-      KokkosKernelsBenchmark::register_benchmark(
-          name,
-          KokkosBlas2_gemv<double, Kokkos::LayoutLeft,
-                           Kokkos::Experimental::SYCL>,
-          arg_names, args, params.repeat);
-    else
-      KokkosKernelsBenchmark::register_benchmark(
-          name,
-          KokkosBlas2_gemv<double, Kokkos::LayoutRight,
-                           Kokkos::Experimental::SYCL>,
-          arg_names, args, params.repeat);
+    run<Kokkos::Experimental::SYCL>(params);
 #else
     std::cout << "ERROR: SYCL requested, but not available.\n";
     return 1;
@@ -235,14 +208,7 @@ int main(int argc, char** argv) {
   if (!params.use_cuda and !params.use_hip and !params.use_openmp and
       !params.use_sycl and !params.use_threads) {
 #if defined(KOKKOS_ENABLE_SERIAL)
-    if (params.layoutLeft)
-      KokkosKernelsBenchmark::register_benchmark(
-          name, KokkosBlas2_gemv<double, Kokkos::LayoutLeft, Kokkos::Serial>,
-          arg_names, args, params.repeat);
-    else
-      KokkosKernelsBenchmark::register_benchmark(
-          name, KokkosBlas2_gemv<double, Kokkos::LayoutRight, Kokkos::Serial>,
-          arg_names, args, params.repeat);
+    run<Kokkos::Serial>(params);
 #else
     std::cout << "ERROR: Serial device requested, but not available.\n";
     return 1;
