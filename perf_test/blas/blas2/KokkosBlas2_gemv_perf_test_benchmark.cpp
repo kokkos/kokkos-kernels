@@ -66,8 +66,8 @@ static void KokkosBlas2_gemv(benchmark::State& state) {
   const auto n = state.range(1);
 
   // Declare type aliases
-  using MemSpace  = typename ExecSpace::memory_space;
-  using Device    = Kokkos::Device<ExecSpace, MemSpace>;
+  using MemSpace = typename ExecSpace::memory_space;
+  using Device   = Kokkos::Device<ExecSpace, MemSpace>;
 
   // Create a View containing a 2D matrix; allocate KokkosView with template
   // args of Scalar**, a layout, and
