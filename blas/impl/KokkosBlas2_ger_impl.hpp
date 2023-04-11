@@ -165,7 +165,7 @@ struct TwoLevelGER {
             Kokkos::TeamThreadRange(team, N), [&](const IndexType& j) {
               A_(i, j) += AComponentType(
                   alpha_ * x_fixed *
-                  Kokkos::ArithTraits<AlphaCoeffType>::conj(y_(j)));
+                  Kokkos::ArithTraits<YComponentType>::conj(y_(j)));
             });
       }
     }
