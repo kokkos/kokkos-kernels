@@ -19,7 +19,7 @@
 
 namespace KokkosBlas {
 namespace Impl {
-@BLAS2_GER_ETI_AVAIL_BLOCK @
+@BLAS2_GER_ETI_AVAIL_BLOCK@
 }  // namespace Impl
 }  // namespace KokkosBlas
 #endif
