@@ -95,6 +95,24 @@ inline void add_benchmark_context(bool verbose = false) {
   add_version_info();
 }
 
+inline void register_benchmark(const char* name,
+                               void (*func)(benchmark::State&),
+                               std::vector<std::string> arg_names,
+                               std::vector<int64_t> args, int repeat) {
+  if (repeat > 0) {
+    benchmark::RegisterBenchmark(name, func)
+        ->ArgNames(arg_names)
+        ->Args(args)
+        ->UseManualTime()
+        ->Iterations(repeat);
+  } else {
+    benchmark::RegisterBenchmark(name, func)
+        ->ArgNames(arg_names)
+        ->Args(args)
+        ->UseManualTime();
+  }
+}
+
 }  // namespace KokkosKernelsBenchmark
 
 #endif

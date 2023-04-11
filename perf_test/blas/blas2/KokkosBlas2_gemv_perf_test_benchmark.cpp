@@ -26,39 +26,55 @@
 #include <benchmark/benchmark.h>
 
 struct blas2_gemv_params : public perf_test::CommonInputParams {
-  int m = 5000;
-  int n = 5000;
-  // bool layoutLeft = true;
-};
+  int m           = 5000;
+  int n           = 5000;
+  bool layoutLeft = true;
 
-void print_options() {
-  std::cerr << "Options\n" << std::endl;
-  std::cerr << perf_test::list_common_options();
+  static blas2_gemv_params get_params(int& argc, char** argv) {
+    blas2_gemv_params params;
+    perf_test::parse_common_options(argc, argv, params);
 
-  std::cerr << "\t[Optional] --m      :: number of rows to generate"
-            << std::endl;
-  std::cerr << "\t[Optional] --n      :: number of cols to generate"
-            << std::endl;
-}
-
-blas2_gemv_params parse_blas2_gemv_options(int& argc, char** argv) {
-  blas2_gemv_params params;
-  perf_test::parse_common_options(argc, argv, params);
-
-  for (int i = 1; i < argc; ++i) {
-    if (perf_test::check_arg_int(i, argc, argv, "--m", params.m)) {
-      ++i;
-    } else if (perf_test::check_arg_int(i, argc, argv, "--n", params.n)) {
-      ++i;
-    } else {
-      std::cerr << "Unrecognized command line argument #" << i << ": "
-                << argv[i] << std::endl;
-      print_options();
-      return params;
+    for (int i = 1; i < argc; ++i) {
+      if (perf_test::check_arg_int(i, argc, argv, "--m", params.m)) {
+        ++i;
+      } else if (perf_test::check_arg_int(i, argc, argv, "--n", params.n)) {
+        ++i;
+      } else if (std::string layout;
+                 perf_test::check_arg_str(i, argc, argv, "--layout", layout)) {
+        if (0 == Test::string_compare_no_case(layout, "left"))
+          params.layoutLeft = true;
+        else if (0 == Test::string_compare_no_case(layout, "right"))
+          params.layoutLeft = false;
+        else {
+          std::cerr << "Invalid layout: must be 'left' or 'right'.\n";
+          exit(1);
+        }
+        ++i;
+      } else {
+        std::cerr << "Unrecognized command line argument #" << i << ": "
+                  << argv[i] << std::endl;
+        print_options();
+        exit(1);
+      }
     }
+    return params;
   }
-  return params;
-}
+
+  static void print_options() {
+    std::cerr << "Options\n" << std::endl;
+    std::cerr << perf_test::list_common_options();
+
+    std::cerr
+        << "\t[Optional] --m      :: number of rows to generate (default 5000)"
+        << std::endl;
+    std::cerr
+        << "\t[Optional] --n      :: number of cols to generate (default 5000)"
+        << std::endl;
+    std::cerr << "\t[Optional] --layout :: matrix layout ('left' or 'right', "
+                 "default 'left')"
+              << std::endl;
+  }
+};
 
 template <typename Scalar, typename Layout, typename ExecSpace>
 static void KokkosBlas2_gemv(benchmark::State& state) {
@@ -115,23 +131,6 @@ static void KokkosBlas2_gemv(benchmark::State& state) {
       flopsPerRun, benchmark::Counter::kIsIterationInvariantRate);
 }
 
-void register_benchmark(const char* name, void (*func)(benchmark::State&),
-                        std::vector<std::string> arg_names,
-                        std::vector<int64_t> args, int repeat) {
-  if (repeat > 0) {
-    benchmark::RegisterBenchmark(name, func)
-        ->ArgNames(arg_names)
-        ->Args(args)
-        ->UseManualTime()
-        ->Iterations(repeat);
-  } else {
-    benchmark::RegisterBenchmark(name, func)
-        ->ArgNames(arg_names)
-        ->Args(args)
-        ->UseManualTime();
-  }
-}
-
 int main(int argc, char** argv) {
   Kokkos::initialize(argc, argv);
   benchmark::Initialize(&argc, argv);
@@ -139,15 +138,37 @@ int main(int argc, char** argv) {
   KokkosKernelsBenchmark::add_benchmark_context(true);
 
   const auto name      = "KokkosBlas2_gemv";
-  const auto params    = parse_blas2_gemv_options(argc, argv);
-  const auto arg_names = std::vector<std::string>{"m", "n"};
-  const auto args      = std::vector<int64_t>{params.m, params.n};
+  const auto params    = blas2_gemv_params::get_params(argc, argv);
+  const auto arg_names = std::vector<std::string>{
+      "m", "n", params.layoutLeft ? "LayoutLeft" : "LayoutRight"};
+  const auto args = std::vector<int64_t>{params.m, params.n, 1};
+
+  if (params.use_threads) {
+#if defined(KOKKOS_ENABLE_THREADS)
+    if (params.layoutLeft)
+      KokkosKernelsBenchmark::register_benchmark(
+          name, KokkosBlas2_gemv<double, Kokkos::LayoutLeft, Kokkos::Threads>,
+          arg_names, args, params.repeat);
+    else
+      KokkosKernelsBenchmark::register_benchmark(
+          name, KokkosBlas2_gemv<double, Kokkos::LayoutRight, Kokkos::Threads>,
+          arg_names, args, params.repeat);
+#else
+    std::cout << "ERROR:  PThreads requested, but not available.\n";
+    return 1;
+#endif
+  }
 
   if (params.use_openmp) {
 #if defined(KOKKOS_ENABLE_OPENMP)
-    register_benchmark(
-        name, KokkosBlas2_gemv<double, Kokkos::LayoutRight, Kokkos::OpenMP>,
-        arg_names, args, params.repeat);
+    if (params.layoutLeft)
+      KokkosKernelsBenchmark::register_benchmark(
+          name, KokkosBlas2_gemv<double, Kokkos::LayoutLeft, Kokkos::OpenMP>,
+          arg_names, args, params.repeat);
+    else
+      KokkosKernelsBenchmark::register_benchmark(
+          name, KokkosBlas2_gemv<double, Kokkos::LayoutRight, Kokkos::OpenMP>,
+          arg_names, args, params.repeat);
 #else
     std::cout << "ERROR: OpenMP requested, but not available.\n";
     return 1;
@@ -156,20 +177,72 @@ int main(int argc, char** argv) {
 
   if (params.use_cuda) {
 #if defined(KOKKOS_ENABLE_CUDA)
-    register_benchmark(
-        name, KokkosBlas2_gemv<double, Kokkos::LayoutRight, Kokkos::Cuda>,
-        arg_names, args, params.repeat);
+    if (params.layoutLeft)
+      KokkosKernelsBenchmark::register_benchmark(
+          name, KokkosBlas2_gemv<double, Kokkos::LayoutLeft, Kokkos::Cuda>,
+          arg_names, args, params.repeat);
+    else
+      KokkosKernelsBenchmark::register_benchmark(
+          name, KokkosBlas2_gemv<double, Kokkos::LayoutRight, Kokkos::Cuda>,
+          arg_names, args, params.repeat);
 #else
     std::cout << "ERROR: CUDA requested, but not available.\n";
     return 1;
 #endif
   }
 
-  if (true) {  // serial
+  if (params.use_hip) {
+#if defined(KOKKOS_ENABLE_HIP)
+    if (params.layoutLeft)
+      KokkosKernelsBenchmark::register_benchmark(
+          name,
+          KokkosBlas2_gemv<double, Kokkos::LayoutLeft,
+                           Kokkos::Experimental::HIP>,
+          arg_names, args, params.repeat);
+    else
+      KokkosKernelsBenchmark::register_benchmark(
+          name,
+          KokkosBlas2_gemv<double, Kokkos::LayoutRight,
+                           Kokkos::Experimental::HIP>,
+          arg_names, args, params.repeat);
+#else
+    std::cout << "ERROR: HIP requested, but not available.\n";
+    return 1;
+#endif
+  }
+
+  if (params.use_sycl) {
+#if defined(KOKKOS_ENABLE_SYCL)
+    if (params.layoutLeft)
+      KokkosKernelsBenchmark::register_benchmark(
+          name,
+          KokkosBlas2_gemv<double, Kokkos::LayoutLeft,
+                           Kokkos::Experimental::SYCL>,
+          arg_names, args, params.repeat);
+    else
+      KokkosKernelsBenchmark::register_benchmark(
+          name,
+          KokkosBlas2_gemv<double, Kokkos::LayoutRight,
+                           Kokkos::Experimental::SYCL>,
+          arg_names, args, params.repeat);
+#else
+    std::cout << "ERROR: SYCL requested, but not available.\n";
+    return 1;
+#endif
+  }
+
+  // use serial if no backend is specified
+  if (!params.use_cuda and !params.use_hip and !params.use_openmp and
+      !params.use_sycl and !params.use_threads) {
 #if defined(KOKKOS_ENABLE_SERIAL)
-    register_benchmark(
-        name, KokkosBlas2_gemv<double, Kokkos::LayoutRight, Kokkos::Serial>,
-        arg_names, args, params.repeat);
+    if (params.layoutLeft)
+      KokkosKernelsBenchmark::register_benchmark(
+          name, KokkosBlas2_gemv<double, Kokkos::LayoutLeft, Kokkos::Serial>,
+          arg_names, args, params.repeat);
+    else
+      KokkosKernelsBenchmark::register_benchmark(
+          name, KokkosBlas2_gemv<double, Kokkos::LayoutRight, Kokkos::Serial>,
+          arg_names, args, params.repeat);
 #else
     std::cout << "ERROR: Serial device requested, but not available.\n";
     return 1;
