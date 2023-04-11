@@ -103,6 +103,16 @@ static void KokkosBlas3_GEMM(benchmark::State& state) {
   size_t flopsPerRun                   = (size_t)2 * m * n * k;
   state.counters["Avg GEMM (FLOP/s):"] = benchmark::Counter(
       flopsPerRun, benchmark::Counter::kIsIterationInvariantRate);
+  if constexpr (std::is_same_v<ALayout, Kokkos::LayoutLeft>) {
+    state.counters["Memory Layout in A: LayoutLeft"] = 1;
+  } else {
+    state.counters["Memory Layout in A: LayoutRight"] = 1;
+  }
+  if constexpr (std::is_same_v<BLayout, Kokkos::LayoutLeft>) {
+    state.counters["Memory Layout in B: LayoutLeft"] = 1;
+  } else {
+    state.counters["Memory Layout in B: LayoutRight"] = 1;
+  }
 }
 
 template <typename ExecSpace>
