@@ -128,7 +128,6 @@ int test_sum() {
   // Test::impl_test_sum<view_type_a_lr, Device>(132231);
 #endif
 
-  /*
   #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
       (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
        !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -138,7 +137,6 @@ int test_sum() {
     Test::impl_test_sum<view_type_a_ls, Device>(1024);
     // Test::impl_test_sum<view_type_a_ls, Device>(132231);
   #endif
-  */
 
   return 1;
 }
@@ -167,7 +165,6 @@ int test_sum_mv() {
   // Test::impl_test_sum_mv<view_type_a_lr, Device>(132231,5);
 #endif
 
-  /*
   #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
       (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
        !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -178,7 +175,6 @@ int test_sum_mv() {
     Test::impl_test_sum_mv<view_type_a_ls, Device>(789, 1);
     // Test::impl_test_sum_mv<view_type_a_ls, Device>(132231,5);
   #endif
-  */
 
   return 1;
 }
