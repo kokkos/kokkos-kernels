@@ -18,6 +18,7 @@
 #include "KokkosBatched_SVD_Decl.hpp"             //For testing overall kernel
 #include "KokkosBatched_SVD_Serial_Internal.hpp"  //For unit testing individual components
 #include "KokkosBatched_SetIdentity_Decl.hpp"
+#include "KokkosBlas1_nrm2.hpp"
 
 namespace Test {
 template <typename Scalar>
@@ -36,45 +37,19 @@ float svdEpsilon() {
 }
 }  // namespace Test
 
-template <typename Vector>
-double simpleNorm2(const Vector& v) {
-  using Scalar = typename Vector::non_const_value_type;
-  using KAT    = Kokkos::ArithTraits<Scalar>;
-  auto vhost   = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), v);
-  double d     = 0;
-  for (size_t i = 0; i < v.extent(0); i++) {
-    double m = KAT::abs(vhost(i));
-    d += m * m;
-  }
-  return std::sqrt(d);
-}
-
-template <typename V1, typename V2>
-typename V1::non_const_value_type simpleDot(const V1& v1, const V2& v2) {
-  using Scalar = typename V1::non_const_value_type;
-  using KAT    = Kokkos::ArithTraits<Scalar>;
-  auto v1host  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), v1);
-  auto v2host  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), v2);
-  typename V1::non_const_value_type val = KAT::zero();
-  for (size_t i = 0; i < v1.extent(0); i++) {
-    val += v1host(i) * v2host(i);
-  }
-  return val;
-}
-
 // Check that all columns of X are unit length and pairwise orthogonal
 template <typename Mat>
 void verifyOrthogonal(const Mat& X) {
-  using value_type = typename Mat::non_const_value_type;
+  using Scalar = typename Mat::non_const_value_type;
   int k            = X.extent(1);
   for (int i = 0; i < k; i++) {
     auto col1  = Kokkos::subview(X, Kokkos::ALL(), i);
-    double len = simpleNorm2(col1);
-    Test::EXPECT_NEAR_KK(len, 1.0, Test::svdEpsilon<value_type>());
+    double len = KokkosBlas::nrm2(col1);
+    Test::EXPECT_NEAR_KK(len, 1.0, Test::svdEpsilon<Scalar>());
     for (int j = 0; j < i; j++) {
       auto col2 = Kokkos::subview(X, Kokkos::ALL(), j);
-      double d  = Kokkos::ArithTraits<value_type>::abs(simpleDot(col1, col2));
-      Test::EXPECT_NEAR_KK(d, 0.0, Test::svdEpsilon<value_type>());
+      double d  = Kokkos::ArithTraits<Scalar>::abs(KokkosBlas::dot(col1, col2));
+      Test::EXPECT_NEAR_KK(d, 0.0, Test::svdEpsilon<Scalar>());
     }
   }
 }
@@ -82,8 +57,8 @@ void verifyOrthogonal(const Mat& X) {
 template <typename AView, typename UView, typename VtView, typename SigmaView>
 void verifySVD(const AView& A, const UView& U, const VtView& Vt,
                const SigmaView& sigma) {
-  using value_type = typename AView::non_const_value_type;
-  using KAT        = Kokkos::ArithTraits<value_type>;
+  using Scalar = typename AView::non_const_value_type;
+  using KAT        = Kokkos::ArithTraits<Scalar>;
   // Check that U/V columns are unit length and orthogonal, and that U *
   // diag(sigma) * V^T == A
   int m       = A.extent(0);
@@ -93,7 +68,7 @@ void verifySVD(const AView& A, const UView& U, const VtView& Vt,
   // NOTE: V^T being square and orthonormal implies that V is, so we don't have
   // to transpose it here.
   verifyOrthogonal(Vt);
-  AView usvt("USV^T", m, n);
+  Kokkos::View<Scalar**, typename AView::device_type> usvt("USV^T", m, n);
   for (int i = 0; i < maxrank; i++) {
     auto Ucol =
         Kokkos::subview(U, Kokkos::ALL(), Kokkos::make_pair<int>(i, i + 1));
@@ -103,7 +78,7 @@ void verifySVD(const AView& A, const UView& U, const VtView& Vt,
   }
   for (int i = 0; i < m; i++) {
     for (int j = 0; j < n; j++) {
-      Test::EXPECT_NEAR_KK(usvt(i, j), A(i, j), Test::svdEpsilon<value_type>());
+      Test::EXPECT_NEAR_KK(usvt(i, j), A(i, j), Test::svdEpsilon<Scalar>());
     }
   }
   // Make sure all singular values are positive
@@ -389,11 +364,87 @@ void testSVD() {
   testSerialSVDSingularValuesOnly<Scalar, Layout, Device>(10, 8);
 }
 
+template <typename ViewT>
+KOKKOS_INLINE_FUNCTION constexpr auto Determinant(ViewT F)
+    -> std::enable_if_t<Kokkos::is_view<ViewT>::value && ViewT::rank == 2,
+                        double>
+{
+    return (F(0, 0) * F(1, 1) * F(2, 2) + F(0, 1) * F(1, 2) * F(2, 0) +
+            F(0, 2) * F(1, 0) * F(2, 1) -
+            (F(0, 2) * F(1, 1) * F(2, 0) + F(0, 1) * F(1, 0) * F(2, 2) +
+             F(0, 0) * F(1, 2) * F(2, 1)));
+}
+
+template <typename ExeSpace, typename ViewT>
+void GenerateTestData(ViewT data) {
+  using memory_space = typename ExeSpace::memory_space;
+  // finite difference should return dPK2dU. So, we can analyze two cases.
+  Kokkos::Random_XorShift64_Pool<memory_space> random(13718);
+  Kokkos::fill_random(data, random, 1.0);
+  Kokkos::parallel_for(Kokkos::RangePolicy<ExeSpace>(0, data.extent(0)), KOKKOS_LAMBDA(int i) {
+        auto data_i = Kokkos::subview(data, i, Kokkos::ALL(), Kokkos::ALL());
+        while (Determinant(data_i) < 0.5)
+        {
+          data_i(0, 0) += 1.0;
+          data_i(1, 1) += 1.0;
+          data_i(2, 2) += 1.0;
+        }
+      });
+}
+
+template <typename Scalar, typename Layout, typename ExeSpace, int N=3>
+void testIssue1786()
+{
+    using memory_space = typename ExeSpace::memory_space;
+    constexpr int num_tests = 4;
+    Kokkos::View<Scalar * [3][3], Layout, Kokkos::CudaSpace> matrices("data", num_tests);
+    std::cout << "4 matrices to decompose, each 3x3.\n";
+    std::cout << "matrices extents: " << matrices.extent_int(0) << "x" << matrices.extent_int(1) << "x" << matrices.extent_int(2) << '\n';
+    GenerateTestData<ExeSpace>(matrices);
+    Kokkos::View<Scalar * [N][N], Layout, memory_space> Us("Us", matrices.extent(0));
+    Kokkos::View<Scalar * [N], Layout, memory_space> Ss("Ss", matrices.extent(0));
+    Kokkos::View<Scalar * [N][N], Layout, memory_space> Vts("Vts", matrices.extent(0));
+    Kokkos::View<Scalar * [N], Layout, memory_space> works("works", matrices.extent(0));
+    Kokkos::View<Scalar * [N][N], Layout, memory_space> matrices_copy("matrices_copy", matrices.extent(0));
+    // make a copy of the input data to avoid overwriting it
+    Kokkos::deep_copy(matrices_copy, matrices);
+    auto policy = Kokkos::RangePolicy<ExeSpace>(0, matrices.extent(0));
+    Kokkos::parallel_for(
+        "polar decomposition", policy, KOKKOS_LAMBDA(int i) {
+          auto matrix_copy =
+              Kokkos::subview(matrices_copy, i, Kokkos::ALL(), Kokkos::ALL());
+          auto U = Kokkos::subview(Us, i, Kokkos::ALL(), Kokkos::ALL());
+          auto S = Kokkos::subview(Ss, i, Kokkos::ALL());
+          auto Vt = Kokkos::subview(Vts, i, Kokkos::ALL(), Kokkos::ALL());
+          auto work = Kokkos::subview(works, i, Kokkos::ALL());
+          KokkosBatched::SerialSVD::invoke(KokkosBatched::SVD_USV_Tag{},
+                                           matrix_copy, U, S, Vt, work);
+    });
+
+    std::cout << "Ran batched svd on " << ExeSpace().name() << ". Verifying...\n";
+    auto Us_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, Us);
+    auto Ss_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{},Ss);
+    auto Vts_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{},Vts);
+    auto matrices_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{},matrices);
+    for(int i = 0 ; i < num_tests; i++)
+    {
+      std::cout << "  Matrix " << i << '\n';
+      auto A = Kokkos::subview(matrices, i, Kokkos::ALL(), Kokkos::ALL());
+      auto U = Kokkos::subview(Us, i, Kokkos::ALL(), Kokkos::ALL());
+      auto S = Kokkos::subview(Ss, i, Kokkos::ALL());
+      auto Vt = Kokkos::subview(Vts, i, Kokkos::ALL(), Kokkos::ALL());
+      verifySVD(A, U, Vt, S);
+    }
+    std::cout << "Verified factorizations.\n";
+}
+
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
 TEST_F(TestCategory, batched_scalar_serial_svd_double) {
   // Test general SVD on a few different input sizes (full rank randomized)
   testSVD<double, Kokkos::LayoutLeft, TestExecSpace>();
   testSVD<double, Kokkos::LayoutRight, TestExecSpace>();
+  testIssue1786<double, Kokkos::LayoutLeft, TestExecSpace>();
+  testIssue1786<double, Kokkos::LayoutRight, TestExecSpace>();
 }
 #endif
 
@@ -402,5 +453,7 @@ TEST_F(TestCategory, batched_scalar_serial_svd_float) {
   // Test general SVD on a few different input sizes (full rank randomized)
   testSVD<float, Kokkos::LayoutLeft, TestExecSpace>();
   testSVD<float, Kokkos::LayoutRight, TestExecSpace>();
+  testIssue1786<float, Kokkos::LayoutLeft, TestExecSpace>();
+  testIssue1786<float, Kokkos::LayoutRight, TestExecSpace>();
 }
 #endif
