@@ -35,6 +35,28 @@ namespace KokkosSparse {
 namespace Impl {
 namespace Experimental {
 
+namespace ParIlutOnly {
+
+template <bool async_update>
+struct UtViewType
+{
+  template <class UtValuesType>
+  using UtValuesViewType = UtValuesType;
+};
+
+template <>
+struct UtViewType<true>
+{
+  template <class UtValuesType>
+  using UtValuesViewType = Kokkos::View<
+    typename UtValuesType::non_const_value_type*,
+    typename UtValuesType::array_layout, typename UtValuesType::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess |
+                         Kokkos::Atomic> >;
+};
+
+}
+
 template <class IlutHandle>
 struct IlutWrap {
   //
@@ -832,7 +854,7 @@ struct IlutWrap {
     const size_type max_iter = thandle.get_max_iter();
 
     const auto verbose      = thandle.get_verbose();
-    const auto async_update = thandle.get_async_update();
+    const auto async_update = false; //thandle.get_async_update();
 
     if (verbose) {
       std::cout << "Starting PARILUT with..." << std::endl;
