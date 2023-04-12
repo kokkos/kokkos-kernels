@@ -52,11 +52,11 @@ void syr( const          ExecutionSpace              & space
   static_assert(
       Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename AViewType::memory_space>::accessible,
-      "AViewType memory space must be accessible from the ExecutionSpace");
+      "AViewType memory space must be accessible from ExecutionSpace");
   static_assert(
       Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename XViewType::memory_space>::accessible,
-      "XViewType memory space must be accessible from the ExecutionSpace");
+      "XViewType memory space must be accessible from ExecutionSpace");
 
   static_assert( Kokkos::is_view<AViewType>::value, "AViewType must be a Kokkos::View." );
   static_assert( Kokkos::is_view<XViewType>::value, "XViewType must be a Kokkos::View." );
