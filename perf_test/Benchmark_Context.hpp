@@ -95,18 +95,21 @@ inline void add_benchmark_context(bool verbose = false) {
   add_version_info();
 }
 
-inline void register_benchmark(const char* name,
-                               void (*func)(benchmark::State&),
+template <class FuncType, class... ArgsToCallOp>
+inline void register_benchmark(const char* name, FuncType func,
                                std::vector<std::string> arg_names,
-                               std::vector<int64_t> args, int repeat) {
+                               std::vector<int64_t> args, int repeat,
+                               ArgsToCallOp&&... func_args) {
   if (repeat > 0) {
-    benchmark::RegisterBenchmark(name, func)
+    benchmark::RegisterBenchmark(name, func,
+                                 std::forward<ArgsToCallOp>(func_args)...)
         ->ArgNames(arg_names)
         ->Args(args)
         ->UseManualTime()
         ->Iterations(repeat);
   } else {
-    benchmark::RegisterBenchmark(name, func)
+    benchmark::RegisterBenchmark(name, func,
+                                 std::forward<ArgsToCallOp>(func_args)...)
         ->ArgNames(arg_names)
         ->Args(args)
         ->UseManualTime();
