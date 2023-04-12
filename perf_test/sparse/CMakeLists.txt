@@ -1,6 +1,15 @@
 KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
+
+set(USE_GINKGO On)
+set(GINKGO_INSTALL_DIR "/ascldap/users/jgfouca/ginkgo/install")
+
+if (USE_GINKGO)
+  add_compile_definitions("-DUSE_GINKGO")
+  KOKKOSKERNELS_INCLUDE_DIRECTORIES("${GINKGO_INSTALL_DIR}/include")
+endif()
+
 IF(KOKKOSKERNELS_INST_DOUBLE)
   KOKKOSKERNELS_ADD_EXECUTABLE(
           sparse_pcg
@@ -112,6 +121,20 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
 )
 
 KOKKOSKERNELS_ADD_EXECUTABLE(
+        sparse_par_ilut
+        SOURCES KokkosSparse_par_ilut.cpp
+)
+
+KOKKOSKERNELS_ADD_EXECUTABLE(
         sparse_mdf
         SOURCES KokkosSparse_mdf.cpp
 )
+
+if (USE_GINKGO)
+  link_libraries("${GINKGO_INSTALL_DIR}/lib64/libginkgod.so")
+  link_libraries("${GINKGO_INSTALL_DIR}/lib64/libginkgo_ompd.so")
+  link_libraries("${GINKGO_INSTALL_DIR}/lib64/libginkgo_cudad.so")
+  link_libraries("${GINKGO_INSTALL_DIR}/lib64/libginkgo_hipd.so")
+  link_libraries("${GINKGO_INSTALL_DIR}/lib64/libginkgo_dpcppd.so")
+  link_libraries("${GINKGO_INSTALL_DIR}/lib64/libginkgo_deviced.so")
+endif()
