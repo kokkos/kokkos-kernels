@@ -844,7 +844,7 @@ struct IlutWrap {
         thandle.get_residual_norm_delta_stop();
     const size_type max_iter = thandle.get_max_iter();
 
-    const auto verbose = thandle.get_verbose();
+    const auto verbose      = thandle.get_verbose();
     const auto async_update = false;  // thandle.get_async_update();
 
     if (verbose) {
