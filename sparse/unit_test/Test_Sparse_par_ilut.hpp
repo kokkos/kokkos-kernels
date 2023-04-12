@@ -302,7 +302,7 @@ void run_test_par_ilut_precond() {
   constexpr auto numRows       = n;
   constexpr auto numCols       = n;
   constexpr auto diagDominance = 1;
-  constexpr bool verbose       = true;
+  constexpr bool verbose       = false;
 
   typename sp_matrix_type::non_const_size_type nnz = 10 * numRows;
   auto A = KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<
