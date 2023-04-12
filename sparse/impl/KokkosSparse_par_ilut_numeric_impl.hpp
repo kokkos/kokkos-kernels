@@ -455,9 +455,15 @@ struct IlutWrap {
       UtValuesType& Ut_values_arg) {
     // UtValues needs to be Atomic if async updates are on. Otherwise,
     // non-atomic is fine.
-    using UtValuesSafeType = std::conditional_t<async_update,
-      Kokkos::View<typename UtValuesType::non_const_value_type*, typename UtValuesType::array_layout, typename UtValuesType::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess | Kokkos::Atomic> >,
-      UtValuesType>;
+    using UtValuesSafeType = std::conditional_t<
+        async_update,
+        Kokkos::View<
+            typename UtValuesType::non_const_value_type*,
+            typename UtValuesType::array_layout,
+            typename UtValuesType::device_type,
+            Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess |
+                                 Kokkos::Atomic> >,
+        UtValuesType>;
 
     UtValuesSafeType Ut_values = Ut_values_arg;
 
