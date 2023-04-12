@@ -35,26 +35,6 @@ namespace KokkosSparse {
 namespace Impl {
 namespace Experimental {
 
-namespace ParIlutOnly {
-
-template <bool async_update>
-struct UtViewType {
-  template <class UtValuesType>
-  using UtValuesViewType = UtValuesType;
-};
-
-template <>
-struct UtViewType<true> {
-  template <class UtValuesType>
-  using UtValuesViewType = Kokkos::View<
-      typename UtValuesType::non_const_value_type*,
-      typename UtValuesType::array_layout, typename UtValuesType::device_type,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess |
-                           Kokkos::Atomic> >;
-};
-
-}  // namespace ParIlutOnly
-
 template <class IlutHandle>
 struct IlutWrap {
   //
