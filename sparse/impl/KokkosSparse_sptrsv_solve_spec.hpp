@@ -102,7 +102,7 @@ struct SPTRSV_SOLVE {
 
   static void sptrsv_solve_streams(
       const std::vector<ExecutionSpace> &execspace_v,
-      std::vector<KernelHandle> &handle_v,
+      const std::vector<KernelHandle> &handle_v,
       const std::vector<RowMapType> &row_map_v,
       const std::vector<EntriesType> &entries_v,
       const std::vector<ValuesType> &values_v,
@@ -170,7 +170,7 @@ struct SPTRSV_SOLVE<ExecutionSpace, KernelHandle, RowMapType, EntriesType,
 
   static void sptrsv_solve_streams(
       const std::vector<ExecutionSpace> &execspace_v,
-      std::vector<KernelHandle> &handle_v,
+      const std::vector<KernelHandle> &handle_v,
       const std::vector<RowMapType> &row_map_v,
       const std::vector<EntriesType> &entries_v,
       const std::vector<ValuesType> &values_v,

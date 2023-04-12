@@ -461,7 +461,6 @@ void sptrsv_solve_streams(const std::vector<ExecutionSpace>& execspace_v,
   using c_persist_t = typename KernelHandle::HandlePersistentMemorySpace;
 
   using const_handle_type = typename KokkosKernels::Experimental::KokkosKernelsHandle<c_size_t, c_lno_t, c_scalar_t, c_exec_t, c_temp_t, c_persist_t>;
-  const_handle_type tmp_handle(*handle);
 
   using RowMap_Internal = Kokkos::View<
       typename lno_row_view_t_::const_value_type *,
@@ -508,25 +507,19 @@ void sptrsv_solve_streams(const std::vector<ExecutionSpace>& execspace_v,
     x_i_v[i] = x_v[i];
   }
 
-  //auto sptrsv_handle = handle->get_sptrsv_handle();
-  //if (sptrsv_handle->get_algorithm() ==
-  //    KokkosSparse::Experimental::SPTRSVAlgorithm::SPTRSV_CUSPARSE) {
-  //  typedef typename KernelHandle::SPTRSVHandleType sptrsvHandleType;
-  //  sptrsvHandleType *sh = handle->get_sptrsv_handle();
-  //  auto nrows           = sh->get_nrows();
-  //
-  //  KokkosSparse::Impl::sptrsvcuSPARSE_solve<sptrsvHandleType, RowMap_Internal,
-  //                                           Entries_Internal, Values_Internal,
-  //                                           BType_Internal, XType_Internal>(
-  //      sh, nrows, rowmap_i, entries_i, values_i, b_i, x_i, false);
-  //
-  //} else {
+  auto sptrsv_handle = handle_v[0]->get_sptrsv_handle();
+  if (handle_v[0]->get_sptrsv_handle()->get_algorithm() ==
+      KokkosSparse::Experimental::SPTRSVAlgorithm::SPTRSV_CUSPARSE) {
+    // NOTE: assume all streams use the same SPTRSV_CUSPARSE algo.
+    KokkosSparse::Impl::sptrsvcuSPARSE_solve_streams<
+        ExecutionSpace, const_handle_type, RowMap_Internal, Entries_Internal,
+        Values_Internal, BType_Internal, XType_Internal>(execspace_v, handle_i_v, rowmap_i_v, entries_i_v, values_i_v, b_i_v, x_i_v, false);
+  
+  } else {
     KokkosSparse::Impl::SPTRSV_SOLVE<
         ExecutionSpace, const_handle_type, RowMap_Internal, Entries_Internal,
-        Values_Internal, BType_Internal, XType_Internal>::sptrsv_solve_streams(execspace_v, handle_i_v,
-                                                                               rowmap_i_v, entries_i_v, values_i_v,
-                                                                               b_i_v, x_i_v);
-  //}
+        Values_Internal, BType_Internal, XType_Internal>::sptrsv_solve_streams(execspace_v, handle_i_v, rowmap_i_v, entries_i_v, values_i_v, b_i_v, x_i_v);
+  }
 
 }  // sptrsv_solve_streams
 

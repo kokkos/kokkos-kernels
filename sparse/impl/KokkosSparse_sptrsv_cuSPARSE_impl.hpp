@@ -436,6 +436,171 @@ void sptrsvcuSPARSE_solve(KernelHandle* sptrsv_handle,
 #endif
 }
 
+// --------------------------------
+// Stream interface
+// --------------------------------
+
+template <class ExecutionSpace, class KernelHandle,
+          class ain_row_index_view_type, class ain_nonzero_index_view_type,
+          class ain_values_scalar_view_type, class b_values_scalar_view_type,
+          class x_values_scalar_view_type>
+void sptrsvcuSPARSE_solve_streams(
+    const std::vector<ExecutionSpace> &execspace_v,
+    const std::vector<KernelHandle> &handle_v,
+    const std::vector<ain_row_index_view_type> &row_map_v,
+    const std::vector<ain_nonzero_index_view_type> &entries_v,
+    const std::vector<ain_values_scalar_view_type> &values_v,
+    const std::vector<b_values_scalar_view_type> &rhs_v,
+    std::vector<x_values_scalar_view_type> &lhs_v, bool /*trans*/
+) {
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+  using idx_type     = typename KernelHandle::nnz_lno_t;
+  using size_type    = typename KernelHandle::size_type;
+  using scalar_type  = typename KernelHandle::nnz_scalar_t;
+  using memory_space = typename KernelHandle::HandlePersistentMemorySpace;
+  using sptrsvHandleType         = typename KernelHandle::SPTRSVHandleType;
+  usinf sptrsvCuSparseHandleType = typename sptrsvHandleType::SPTRSVcuSparseHandleType;
+
+  int nstreams = execspace_v.size();
+#if (CUDA_VERSION >= 11030)
+  (void)row_map_v;
+  (void)entries_v;
+  (void)values_v;
+
+  const bool is_cuda_space =
+      std::is_same<memory_space, Kokkos::CudaSpace>::value ||
+      std::is_same<memory_space, Kokkos::CudaUVMSpace>::value ||
+      std::is_same<memory_space, Kokkos::CudaHostPinnedSpace>::value;
+
+  const bool is_idx_type_supported = std::is_same<idx_type, int>::value ||
+                                     std::is_same<idx_type, int64_t>::value;
+
+  if (!is_cuda_space) {
+    throw std::runtime_error(
+        "KokkosKernels sptrsvcuSPARSE_solve_streams: MEMORY IS NOT ALLOCATED IN GPU DEVICE for CUSPARSE\n");
+  } else if (!is_idx_type_supported) {
+    throw std::runtime_error(
+        "CUSPARSE requires local ordinals to be integer (32 bits or 64 bits).\n");
+  } else {
+    const scalar_type alpha = scalar_type(1.0);
+
+    cudaDataType cudaValueType = cuda_data_type_from<scalar_type>();
+ 
+    std::vector<sptrsvCuSparseHandleType *> h_v(nstreams);
+	
+    for (int i = 0; i < nstreams; i++) {
+      sptrsvHandleType *sptrsv_handle = handle_v[i].get_sptrsv_handle();
+      h_v[i] = sptrsv_handle->get_cuSparseHandle();
+
+      // Bind cuspare handle to a stream
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetStream(h_v[i]->handle, execspace_v[i].cuda_stream()));
+
+      int64_t nrows = static_cast<int64_t>(sptrsv_handle->get_nrows());
+
+      // Create dense vector B (RHS)
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateDnVec(&(h_v[i]->vecBDescr), nrows, (void*)rhs_v[i].data(), cudaValueType));
+
+      // Create dense vector X (LHS)
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateDnVec(&(h_v[i]->vecXDescr), nrows, (void*)lhs_v[i].data(), cudaValueType));
+    }
+
+    // Solve
+    for (int i = 0; i < nstreams; i++) {
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpSV_solve(h_v[i]->handle, h_v[i]->transpose, &alpha, h_v[i]->matDescr, h_v[i]->vecBDescr, h_v[i]->vecXDescr, cudaValueType, CUSPARSE_SPSV_ALG_DEFAULT, h_v[i]->spsvDescr));
+    }
+
+    // Destroy dense vector descriptors
+    for (int i = 0; i < nstreams; i++) {
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(h_v[i]->vecBDescr));
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(h_v[i]->vecXDescr));
+    }
+  }
+#else  // CUDA_VERSION < 11030
+//  if (std::is_same<idx_type, int>::value) {
+//    cusparseStatus_t status;
+//
+//    typename KernelHandle::SPTRSVcuSparseHandleType* h =
+//        sptrsv_handle->get_cuSparseHandle();
+//
+//    int nnz = entries.extent_int(0);
+//
+//    const int* rm = !std::is_same<size_type, int>::value
+//                        ? sptrsv_handle->get_int_rowmap_ptr()
+//                        : (const int*)row_map.data();
+//    const int* ent          = (const int*)entries.data();
+//    const scalar_type* vals = values.data();
+//    const scalar_type* bv   = rhs.data();
+//    scalar_type* xv         = lhs.data();
+//
+//    if (std::is_same<scalar_type, double>::value) {
+//      if (h->pBuffer == nullptr) {
+//        std::cout << "  pBuffer invalid" << std::endl;
+//      }
+//      const double alpha = double(1);
+//
+//      status = cusparseDcsrsv2_solve(h->handle, h->transpose, nrows, nnz,
+//                                     &alpha, h->descr, (double*)vals, (int*)rm,
+//                                     (int*)ent, h->info, (double*)bv,
+//                                     (double*)xv, h->policy, h->pBuffer);
+//
+//      if (CUSPARSE_STATUS_SUCCESS != status)
+//        std::cout << "solve status error name " << (status) << std::endl;
+//    } else if (std::is_same<scalar_type, float>::value) {
+//      if (h->pBuffer == nullptr) {
+//        std::cout << "  pBuffer invalid" << std::endl;
+//      }
+//      const float alpha = float(1);
+//
+//      status = cusparseScsrsv2_solve(h->handle, h->transpose, nrows, nnz,
+//                                     &alpha, h->descr, (float*)vals, (int*)rm,
+//                                     (int*)ent, h->info, (float*)bv, (float*)xv,
+//                                     h->policy, h->pBuffer);
+//
+//      if (CUSPARSE_STATUS_SUCCESS != status)
+//        std::cout << "solve status error name " << (status) << std::endl;
+//    } else if (std::is_same<scalar_type, Kokkos::complex<double> >::value) {
+//      cuDoubleComplex cualpha;
+//      cualpha.x = 1.0;
+//      cualpha.y = 0.0;
+//      status    = cusparseZcsrsv2_solve(
+//          h->handle, h->transpose, nrows, nnz, &cualpha, h->descr,
+//          (cuDoubleComplex*)vals, (int*)rm, (int*)ent, h->info,
+//          (cuDoubleComplex*)bv, (cuDoubleComplex*)xv, h->policy, h->pBuffer);
+//
+//      if (CUSPARSE_STATUS_SUCCESS != status)
+//        std::cout << "solve status error name " << (status) << std::endl;
+//    } else if (std::is_same<scalar_type, Kokkos::complex<float> >::value) {
+//      cuComplex cualpha;
+//      cualpha.x = 1.0;
+//      cualpha.y = 0.0;
+//      status    = cusparseCcsrsv2_solve(
+//          h->handle, h->transpose, nrows, nnz, &cualpha, h->descr,
+//          (cuComplex*)vals, (int*)rm, (int*)ent, h->info, (cuComplex*)bv,
+//          (cuComplex*)xv, h->policy, h->pBuffer);
+//
+//      if (CUSPARSE_STATUS_SUCCESS != status)
+//        std::cout << "solve status error name " << (status) << std::endl;
+//    } else {
+//      throw std::runtime_error("CUSPARSE wrapper error: unsupported type.\n");
+//    }
+//
+//  } else {
+//    throw std::runtime_error(
+//        "CUSPARSE requires local ordinals to be integer.\n");
+//  }
+#endif
+#else
+  (void)execspace_v;
+  (void)handle_v;
+  (void)row_map_v;
+  (void)entries_v;
+  (void)values_v;
+  (void)rhs_v;
+  (void)lhs_v;
+  throw std::runtime_error("CUSPARSE IS NOT DEFINED\n");
+#endif
+}
+
 }  // namespace Impl
 }  // namespace KokkosSparse
 
