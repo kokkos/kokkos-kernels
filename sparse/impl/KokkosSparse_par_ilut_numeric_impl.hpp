@@ -478,7 +478,7 @@ struct IlutWrap {
 
     // UtValues needs to be Atomic if async updates are on. Otherwise,
     // non-atomic is fine.
-    using UtValuesSafeType = typename ParIlutOnly::UtViewType<async_update>::UtValuesViewType<UtValuesType>;
+    using UtValuesSafeType = typename ParIlutOnly::UtViewType<async_update>::template UtValuesViewType<UtValuesType>;
 
     UtValuesSafeType Ut_values = Ut_values_arg;
 
