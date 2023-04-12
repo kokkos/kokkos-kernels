@@ -177,7 +177,7 @@ struct SPTRSV_SOLVE<ExecutionSpace, KernelHandle, RowMapType, EntriesType,
       const std::vector<BType> &b_v,
       std::vector<XType> &x_v) {
     // Call specific algorithm type
-    // NOTE: Only support SEQLVLSCHD_TP1 for now
+    // NOTE: Only support SEQLVLSCHD_RP and SEQLVLSCHD_TP1 at this moment
     //       Assume streams have the same either lower or upper matrix type
     std::vector<typename KernelHandle::SPTRSVHandleType *> sptrsv_handle_v(execspace_v.size());
     for (int i = 0; i < static_cast<int>(execspace_v.size()); i++) {

@@ -4033,6 +4033,7 @@ void lower_tri_solve_streams(const std::vector<ExecutionSpace> &execspace_v,
                              const std::vector<ValuesType> &values_v,
                              const std::vector<RHSType> &rhs_v,
                                    std::vector<LHSType> &lhs_v) {
+  // NOTE: Only support SEQLVLSCHD_RP and SEQLVLSCHD_TP1 at this moment
   using size_type = typename TriSolveHandle::size_type;
   using NGBLType  = typename TriSolveHandle::nnz_lno_view_t;
   using nodes_per_level_type = typename TriSolveHandle::hostspace_nnz_lno_view_t;
@@ -4063,20 +4064,20 @@ void lower_tri_solve_streams(const std::vector<ExecutionSpace> &execspace_v,
       if (lvl < nlevels_v[i]) {
         size_type lvl_nodes = hnodes_per_level_v[i](lvl);
         if (lvl_nodes != 0) {
-          if (thandle_v[0]->get_algorithm() == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_RP) {
-            Kokkos::parallel_for("parfor_fixed_lvl", Kokkos::RangePolicy<ExecutionSpace>(node_count_v[i], node_count_v[i] + lvl_nodes), LowerTriLvlSchedRPSolverFunctor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, NGBLType>(row_map_v[i], entries_v[i], values_v[i], lhs_v[i], rhs_v[i], nodes_grouped_by_level_v[i]));
-          } else if (thandle_v[0]->get_algorithm() == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1) {
+          if (thandle_v[i]->get_algorithm() == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_RP) {
+            Kokkos::parallel_for("parfor_fixed_lvl", Kokkos::RangePolicy<ExecutionSpace>(execspace_v[i], node_count_v[i], node_count_v[i] + lvl_nodes), LowerTriLvlSchedRPSolverFunctor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, NGBLType>(row_map_v[i], entries_v[i], values_v[i], lhs_v[i], rhs_v[i], nodes_grouped_by_level_v[i]));
+          } else if (thandle_v[i]->get_algorithm() == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1) {
             using policy_type = Kokkos::TeamPolicy<ExecutionSpace>;
-            int team_size = thandle_v[0]->get_team_size();
+            int team_size = thandle_v[i]->get_team_size();
 #ifdef KOKKOSKERNELS_SPTRSV_TRILVLSCHED
             TriLvlSchedTP1SolverFunctor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, NGBLType> tstf(row_map_v[i], entries_v[i], values_v[i], lhs_v[i], rhs_v[i], nodes_grouped_by_level_v[i], true, node_count_v[i]);
 #else
             LowerTriLvlSchedTP1SolverFunctor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, NGBLType> tstf(row_map_v[i], entries_v[i], values_v[i], lhs_v[i], rhs_v[i], nodes_grouped_by_level_v[i], node_count_v[i]);
 #endif
             if (team_size == -1)
-              Kokkos::parallel_for("parfor_l_team", policy_type(lvl_nodes, Kokkos::AUTO), tstf);
+              Kokkos::parallel_for("parfor_l_team", policy_type(execspace_v[i], lvl_nodes, Kokkos::AUTO), tstf);
             else
-              Kokkos::parallel_for("parfor_l_team", policy_type(lvl_nodes, team_size), tstf);
+              Kokkos::parallel_for("parfor_l_team", policy_type(execspace_v[i], lvl_nodes, team_size), tstf);
           }
           node_count_v[i] += lvl_nodes;
         }  // end if (lvl_nodes != 0)
@@ -4099,6 +4100,7 @@ void upper_tri_solve_streams(const std::vector<ExecutionSpace> &execspace_v,
                              const std::vector<ValuesType> &values_v,
                              const std::vector<RHSType> &rhs_v,
                                    std::vector<LHSType> &lhs_v) {
+  // NOTE: Only support SEQLVLSCHD_RP and SEQLVLSCHD_TP1 at this moment
   using size_type = typename TriSolveHandle::size_type;
   using NGBLType  = typename TriSolveHandle::nnz_lno_view_t;
   using nodes_per_level_type = typename TriSolveHandle::hostspace_nnz_lno_view_t;
@@ -4129,20 +4131,20 @@ void upper_tri_solve_streams(const std::vector<ExecutionSpace> &execspace_v,
       if (lvl < nlevels_v[i]) {
         size_type lvl_nodes = hnodes_per_level_v[i](lvl);
         if (lvl_nodes != 0) {
-          if (thandle_v[0]->get_algorithm() == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_RP) {
-            Kokkos::parallel_for("parfor_fixed_lvl", Kokkos::RangePolicy<ExecutionSpace>(node_count_v[i], node_count_v[i] + lvl_nodes), UpperTriLvlSchedRPSolverFunctor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, NGBLType>(row_map_v[i], entries_v[i], values_v[i], lhs_v[i], rhs_v[i], nodes_grouped_by_level_v[i]));
-          } else if (thandle_v[0]->get_algorithm() == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1) {
+          if (thandle_v[i]->get_algorithm() == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_RP) {
+            Kokkos::parallel_for("parfor_fixed_lvl", Kokkos::RangePolicy<ExecutionSpace>(execspace_v[i], node_count_v[i], node_count_v[i] + lvl_nodes), UpperTriLvlSchedRPSolverFunctor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, NGBLType>(row_map_v[i], entries_v[i], values_v[i], lhs_v[i], rhs_v[i], nodes_grouped_by_level_v[i]));
+          } else if (thandle_v[i]->get_algorithm() == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1) {
             using policy_type = Kokkos::TeamPolicy<ExecutionSpace>;
-            int team_size = thandle_v[0]->get_team_size();
+            int team_size = thandle_v[i]->get_team_size();
 #ifdef KOKKOSKERNELS_SPTRSV_TRILVLSCHED
             TriLvlSchedTP1SolverFunctor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, NGBLType> tstf(row_map_v[i], entries_v[i], values_v[i], lhs_v[i], rhs_v[i], nodes_grouped_by_level_v[i], false, node_count_v[i]);
 #else
             UpperTriLvlSchedTP1SolverFunctor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, NGBLType> tstf(row_map_v[i], entries_v[i], values_v[i], lhs_v[i], rhs_v[i], nodes_grouped_by_level_v[i], node_count_v[i]);
 #endif
             if (team_size == -1)
-              Kokkos::parallel_for("parfor_l_team", policy_type(lvl_nodes, Kokkos::AUTO), tstf);
+              Kokkos::parallel_for("parfor_l_team", policy_type(execspace_v[i], lvl_nodes, Kokkos::AUTO), tstf);
             else
-              Kokkos::parallel_for("parfor_l_team", policy_type(lvl_nodes, team_size), tstf);
+              Kokkos::parallel_for("parfor_l_team", policy_type(execspace_v[i], lvl_nodes, team_size), tstf);
           }
           node_count_v[i] += lvl_nodes;
         }  // end if (lvl_nodes != 0)
