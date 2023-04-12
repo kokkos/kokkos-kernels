@@ -38,24 +38,22 @@ namespace Experimental {
 namespace ParIlutOnly {
 
 template <bool async_update>
-struct UtViewType
-{
+struct UtViewType {
   template <class UtValuesType>
   using UtValuesViewType = UtValuesType;
 };
 
 template <>
-struct UtViewType<true>
-{
+struct UtViewType<true> {
   template <class UtValuesType>
   using UtValuesViewType = Kokkos::View<
-    typename UtValuesType::non_const_value_type*,
-    typename UtValuesType::array_layout, typename UtValuesType::device_type,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess |
-                         Kokkos::Atomic> >;
+      typename UtValuesType::non_const_value_type*,
+      typename UtValuesType::array_layout, typename UtValuesType::device_type,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess |
+                           Kokkos::Atomic> >;
 };
 
-}
+}  // namespace ParIlutOnly
 
 template <class IlutHandle>
 struct IlutWrap {
@@ -463,11 +461,11 @@ struct IlutWrap {
    * make this function determistic, but that could cause par_ilut
    * to take longer (more iterations) to converge.
    */
-  template <bool async_update,
-    class ARowMapType, class AEntriesType, class AValuesType,
-    class LRowMapType, class LEntriesType, class LValuesType,
-    class URowMapType, class UEntriesType, class UValuesType,
-    class UtRowMapType, class UtEntriesType, class UtValuesType>
+  template <bool async_update, class ARowMapType, class AEntriesType,
+            class AValuesType, class LRowMapType, class LEntriesType,
+            class LValuesType, class URowMapType, class UEntriesType,
+            class UValuesType, class UtRowMapType, class UtEntriesType,
+            class UtValuesType>
   static void compute_l_u_factors_impl(
       IlutHandle& ih, const ARowMapType& A_row_map,
       const AEntriesType& A_entries, const AValuesType& A_values,
@@ -475,10 +473,10 @@ struct IlutWrap {
       URowMapType& U_row_map, UEntriesType& U_entries, UValuesType& U_values,
       UtRowMapType& Ut_row_map, UtEntriesType& Ut_entries,
       UtValuesType& Ut_values_arg) {
-
     // UtValues needs to be Atomic if async updates are on. Otherwise,
     // non-atomic is fine.
-    using UtValuesSafeType = typename ParIlutOnly::UtViewType<async_update>::template UtValuesViewType<UtValuesType>;
+    using UtValuesSafeType = typename ParIlutOnly::UtViewType<
+        async_update>::template UtValuesViewType<UtValuesType>;
 
     UtValuesSafeType Ut_values = Ut_values_arg;
 
@@ -526,10 +524,10 @@ struct IlutWrap {
         });
   }
 
-  template<class ARowMapType, class AEntriesType, class AValuesType,
-           class LRowMapType, class LEntriesType, class LValuesType,
-           class URowMapType, class UEntriesType, class UValuesType,
-           class UtRowMapType, class UtEntriesType, class UtValuesType>
+  template <class ARowMapType, class AEntriesType, class AValuesType,
+            class LRowMapType, class LEntriesType, class LValuesType,
+            class URowMapType, class UEntriesType, class UValuesType,
+            class UtRowMapType, class UtEntriesType, class UtValuesType>
   static void compute_l_u_factors(
       IlutHandle& ih, const ARowMapType& A_row_map,
       const AEntriesType& A_entries, const AValuesType& A_values,
@@ -538,17 +536,15 @@ struct IlutWrap {
       UtRowMapType& Ut_row_map, UtEntriesType& Ut_entries,
       UtValuesType& Ut_values, const bool async_update) {
     if (async_update) {
-      compute_l_u_factors_impl<true>(ih, A_row_map, A_entries, A_values, L_row_map, L_entries,
-                                     L_values, U_row_map, U_entries, U_values,
-                                     Ut_row_map, Ut_entries, Ut_values);
-    }
-    else {
-      compute_l_u_factors_impl<false>(ih, A_row_map, A_entries, A_values, L_row_map, L_entries,
-                                      L_values, U_row_map, U_entries, U_values,
-                                      Ut_row_map, Ut_entries, Ut_values);
+      compute_l_u_factors_impl<true>(
+          ih, A_row_map, A_entries, A_values, L_row_map, L_entries, L_values,
+          U_row_map, U_entries, U_values, Ut_row_map, Ut_entries, Ut_values);
+    } else {
+      compute_l_u_factors_impl<false>(
+          ih, A_row_map, A_entries, A_values, L_row_map, L_entries, L_values,
+          U_row_map, U_entries, U_values, Ut_row_map, Ut_entries, Ut_values);
     }
   }
-
 
   /**
    * Select threshold based on filter rank. Do all this on host
@@ -848,8 +844,8 @@ struct IlutWrap {
         thandle.get_residual_norm_delta_stop();
     const size_type max_iter = thandle.get_max_iter();
 
-    const auto verbose      = thandle.get_verbose();
-    const auto async_update = false; //thandle.get_async_update();
+    const auto verbose = thandle.get_verbose();
+    const auto async_update = false;  // thandle.get_async_update();
 
     if (verbose) {
       std::cout << "Starting PARILUT with..." << std::endl;
