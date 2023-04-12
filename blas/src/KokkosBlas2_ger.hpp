@@ -43,17 +43,26 @@ void ger(const ExecutionSpace& space, const char trans[],
          const typename AViewType::const_value_type& alpha, const XViewType& x,
          const YViewType& y, const AViewType& A) {
   static_assert(
+      Kokkos::SpaceAccessibility<typename AViewType::memory_space,
+                                 typename XViewType::memory_space>::assignable,
+      "AViewType memory space must be assignable from XViewType");
+  static_assert(
+      Kokkos::SpaceAccessibility<typename AViewType::memory_space,
+                                 typename YViewType::memory_space>::assignable,
+      "AViewType memory space must be assignable from YViewType");
+
+  static_assert(
       Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename AViewType::memory_space>::accessible,
-      "AViewType memory space must be compatible with ExecutionSpace");
+      "AViewType memory space must be accessible from ExecutionSpace");
   static_assert(
       Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename XViewType::memory_space>::accessible,
-      "XViewType memory space must be compatible with ExecutionSpace");
+      "XViewType memory space must be accessible from ExecutionSpace");
   static_assert(
       Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename YViewType::memory_space>::accessible,
-      "YViewType memory space must be compatible with ExecutionSpace");
+      "YViewType memory space must be accessible from ExecutionSpace");
 
   static_assert(Kokkos::is_view<AViewType>::value,
                 "AViewType must be a Kokkos::View.");
