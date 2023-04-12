@@ -28,19 +28,16 @@ struct ger_tpl_spec_avail {
 // Generic Host side BLAS (could be MKL or whatever)
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
 
-#define KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_BLAS(SCALAR, LAYOUT,               \
-                                            MEMSPACE)                     \
-  template <class ExecSpace>                                              \
-  struct ger_tpl_spec_avail<                                              \
-      Kokkos::View<const SCALAR*, LAYOUT,                                 \
-                   Kokkos::Device<ExecSpace, MEMSPACE>,                   \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
-      Kokkos::View<const SCALAR*, LAYOUT,                                 \
-                   Kokkos::Device<ExecSpace, MEMSPACE>,                   \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
-      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {          \
-    enum : bool { value = true };                                         \
+#define KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_BLAS(SCALAR, LAYOUT, MEMSPACE)          \
+  template <class ExecSpace>                                                   \
+  struct ger_tpl_spec_avail<                                                   \
+      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
+      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,      \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {               \
+    enum : bool { value = true };                                              \
   };
 
 KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_BLAS(double, Kokkos::LayoutLeft,
@@ -66,8 +63,7 @@ KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>, Kokkos::LayoutRight,
 // cuBLAS
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
 
-#define KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_CUBLAS(SCALAR, LAYOUT,                \
-                                              MEMSPACE)                      \
+#define KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_CUBLAS(SCALAR, LAYOUT, MEMSPACE)      \
   template <>                                                                \
   struct ger_tpl_spec_avail<                                                 \
       Kokkos::View<const SCALAR*, LAYOUT,                                    \
