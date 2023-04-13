@@ -810,6 +810,11 @@ class SPGEMMHandle {
                            KokkosKernels::Impl::hashView(b_entriesIn)))
         return false;
     }
+#else
+    (void)a_rowptrsIn;
+    (void)a_entriesIn;
+    (void)b_rowptrsIn;
+    (void)b_entriesIn;
 #endif
     return true;
   }
@@ -827,6 +832,11 @@ class SPGEMMHandle {
     if (b_graph_hash != (KokkosKernels::Impl::hashView(b_rowptrsIn) ^
                          KokkosKernels::Impl::hashView(b_entriesIn)))
       return false;
+#else
+    (void)a_rowptrsIn;
+    (void)a_entriesIn;
+    (void)b_rowptrsIn;
+    (void)b_entriesIn;
 #endif
     return true;
   }
