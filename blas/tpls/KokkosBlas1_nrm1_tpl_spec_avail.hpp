@@ -36,6 +36,7 @@ namespace Impl {
 #define KOKKOSBLAS1_NRM1_TPL_SPEC_AVAIL_BLAS(SCALAR, LAYOUT, MEMSPACE)         \
   template <class ExecSpace>                                                   \
   struct nrm1_tpl_spec_avail<                                                  \
+			     ExecSpace, \
       Kokkos::View<                                                            \
           typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type, \
           LAYOUT, Kokkos::HostSpace,                                           \
@@ -63,6 +64,7 @@ KOKKOSBLAS1_NRM1_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>, Kokkos::LayoutLeft,
 #define KOKKOSBLAS1_NRM1_TPL_SPEC_AVAIL_CUBLAS(SCALAR, LAYOUT, MEMSPACE)       \
   template <class ExecSpace>                                                   \
   struct nrm1_tpl_spec_avail<                                                  \
+      ExecSpace,                                                               \
       Kokkos::View<                                                            \
           typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type, \
           LAYOUT, Kokkos::HostSpace,                                           \
@@ -89,6 +91,7 @@ KOKKOSBLAS1_NRM1_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>,
 #define KOKKOSBLAS1_NRM1_TPL_SPEC_AVAIL_ROCBLAS(SCALAR, LAYOUT, MEMSPACE)      \
   template <class ExecSpace>                                                   \
   struct nrm1_tpl_spec_avail<                                                  \
+      ExecSpace,                                                               \
       Kokkos::View<                                                            \
           typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type, \
           LAYOUT, Kokkos::HostSpace,                                           \

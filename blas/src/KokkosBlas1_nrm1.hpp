@@ -106,8 +106,6 @@ void nrm1(const execution_space& space, const RV& R, const XMV& X,
                 "RV and XMV must either have rank 0 and 1 or rank 1 and 2.");
   static_assert(Kokkos::SpaceAccessibility<execution_space, typename XMV::memory_space>::accessible,
 		"KokkosBlas::nrm1: execution_space cannot access data in XMV");
-  static_assert(Kokkos::SpaceAccessibility<execution_space, typename RV::memory_space>::accessible,
-		"KokkosBlas::nrm1: execution_space cannot access data in RV");
 
   typedef typename Kokkos::Details::InnerProductSpaceTraits<
       typename XMV::non_const_value_type>::mag_type mag_type;

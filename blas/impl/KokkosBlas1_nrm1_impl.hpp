@@ -164,7 +164,7 @@ void MV_Nrm1_Invoke(
       tempResult(
           Kokkos::view_alloc(Kokkos::WithoutInitializing, "Nrm1 temp result"),
           r.extent(0));
-  MV_Nrm1_Invoke<execution_space, decltype(tempResult), XV, size_type>(tempResult, x);
+  MV_Nrm1_Invoke<execution_space, decltype(tempResult), XV, size_type>(space, tempResult, x);
   Kokkos::deep_copy(space, r, tempResult);
 }
 
