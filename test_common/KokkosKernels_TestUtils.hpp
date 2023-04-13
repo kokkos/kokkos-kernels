@@ -68,8 +68,8 @@ namespace Test {
 // actually noncontiguous, and host-device transfers for checking results on
 // host.
 //
-// Constructed with extent, and then provides 4 views as members:
-//  - d_view
+// Constructed with label and extent(s), and then provides 5 views as members:
+//  - d_view, and a const-valued alias d_view_const
 //  - h_view
 //  - d_base
 //  - h_base
