@@ -184,6 +184,7 @@ void check_spmv(
   using y_value_trait    = Kokkos::ArithTraits<y_value_type>;
   using y_value_mag_type = typename y_value_trait::mag_type;
 
+  // TODO: explain factor of 10
   const y_value_mag_type eps =
       10 * Kokkos::ArithTraits<y_value_mag_type>::eps();
   bool transposed = (mode == 'T') || (mode == 'H');
@@ -234,6 +235,7 @@ void check_spmv_mv(
   // y is the quantity being tested here,
   // so let us use y_value_type to determine
   // the appropriate tolerance precision.
+  // TODO: explain factor of 10
   const y_value_mag_type eps =
       10 * Kokkos::ArithTraits<y_value_mag_type>::eps();
 
@@ -391,6 +393,7 @@ void check_spmv_controls(
   // y is the quantity being tested here,
   // so let us use y_value_type to determine
   // the appropriate tolerance precision.
+  // TODO: explain 2e-3 and 1e-7
   const y_value_mag_type eps =
       std::is_same<y_value_mag_type, float>::value ? 2 * 1e-3 : 1e-7;
   const size_t nr = input_mat.numRows();
