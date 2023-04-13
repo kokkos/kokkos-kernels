@@ -20,7 +20,7 @@
 namespace KokkosBlas {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class AV, class XMV, int Xrank = XMV::rank>
+template <class execution_space, class AV, class XMV, int Xrank = XMV::rank>
 struct nrminf_tpl_spec_avail {
   enum : bool { value = false };
 };
@@ -34,8 +34,9 @@ namespace Impl {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
 // double
 #define KOKKOSBLAS1_NRMINF_TPL_SPEC_AVAIL_BLAS(SCALAR, LAYOUT, MEMSPACE)       \
-  template <class ExecSpace>                                                   \
+  template <class ExecSpace>						       \
   struct nrminf_tpl_spec_avail<                                                \
+      ExecSpace,                                                               \
       Kokkos::View<                                                            \
           typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type, \
           LAYOUT, Kokkos::HostSpace,                                           \
