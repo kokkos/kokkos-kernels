@@ -62,45 +62,75 @@
 #endif
 
 namespace Test {
-template <class ViewType,
-          bool strided = std::is_same<typename ViewType::array_layout,
-                                      Kokkos::LayoutStride>::value>
-struct multivector_layout_adapter;
 
+  // Utility class for testing kernels with rank-1 and rank-2 views that may be LayoutStride.
+  // Simplifies making a LayoutStride view of a given size that is actually noncontiguous,
+  // and host-device transfers for checking results on host.
+  //
+  // Constructed with extent, and then provides 4 views as members:
+  //  - d_view
+  //  - h_view
+  //  - d_base
+  //  - h_base
+  // d_view is of type ViewType, and has the extents passed to the constructor.
+  // h_view is a mirror of d_view.
+  // d_base (and its mirror h_base) are contiguous views, so they can be deep-copied to each other.
+  // d_view aliases d_base, and h_view aliases h_base. This means that copying between d_base and h_base
+  //    also copies between d_view and h_view.
 template <class ViewType>
-struct multivector_layout_adapter<ViewType, true> {
-  typedef typename ViewType::value_type Scalar;
-  typedef typename ViewType::device_type Device;
-  typedef Kokkos::View<Scalar* * [2], Kokkos::LayoutRight, Device>
-      BaseTypeRight;
-  typedef Kokkos::View<Scalar**, typename ViewType::array_layout, Device>
-      BaseTypeDefault;
-  typedef
-      typename std::conditional<std::is_same<typename ViewType::array_layout,
-                                             Kokkos::LayoutStride>::value,
-                                BaseTypeRight, BaseTypeDefault>::type BaseType;
+struct view_stride_adapter
+{
+  static_assert(Kokkos::is_view_v<ViewType>, "view_stride_adapter: ViewType must be a Kokkos::View");
+  static_assert(ViewType::rank >= 1 && ViewType::rank <= 2, "view_stride_adapter: ViewType must be rank 1 or rank 2");
 
-  static ViewType view(const BaseType& v) {
-    return Kokkos::subview(v, Kokkos::ALL, Kokkos::ALL, 0);
-  };
-};
+  static constexpr bool strided = std::is_same<typename ViewType::array_layout, Kokkos::LayoutStride>::value;
+  static constexpr int rank = ViewType::rank;
 
-template <class ViewType>
-struct multivector_layout_adapter<ViewType, false> {
-  typedef typename ViewType::value_type Scalar;
-  typedef typename ViewType::device_type Device;
-  typedef Kokkos::View<Scalar* * [2], Kokkos::LayoutRight, Device>
-      BaseTypeRight;
-  typedef Kokkos::View<Scalar**, typename ViewType::array_layout, Device>
-      BaseTypeDefault;
-  typedef
-      typename std::conditional<std::is_same<typename ViewType::array_layout,
-                                             Kokkos::LayoutStride>::value,
-                                BaseTypeRight, BaseTypeDefault>::type BaseType;
+  using DView = ViewType;
+  using HView = typename DView::HostMirror;
+  //If not strided, the base view types are the same as DView/HView.
+  //But if strided, the base views have one additional dimension, so that d_view/h_view have stride > 1 between consecutive elements.
+  using DViewBase = std::conditional_t<strided, Kokkos::View<typename ViewType::data_type*, Kokkos::LayoutRight, typename ViewType::device_type>, DView>;
+  using HViewBase = typename DViewBase::HostMirror;
 
-  static ViewType view(const BaseType& v) {
-    return Kokkos::subview(v, Kokkos::ALL, Kokkos::ALL);
-  };
+  view_stride_adapter(const std::string& label, int m, int n = 1)
+  {
+    if constexpr(rank == 1) {
+      if constexpr(strided) {
+        d_base = DViewBase(label, m, 2);
+        h_base = Kokkos::create_mirror_view(d_base);
+        d_view = Kokkos::subview(d_base, Kokkos::ALL(), 0);
+        h_view = Kokkos::subview(h_base, Kokkos::ALL(), 0);
+      } else {
+        d_base = DViewBase(label, m);
+        h_base = Kokkos::create_mirror(d_base);
+        d_view = d_base;
+        h_view = h_base;
+      }
+    }
+    else {
+      if constexpr(strided) {
+        d_base = DViewBase(label, m, n, 2);
+        h_base = Kokkos::create_mirror_view(d_base);
+        d_view = Kokkos::subview(d_base, Kokkos::ALL(), Kokkos::make_pair(0, n), 0);
+        h_view = Kokkos::subview(h_base, Kokkos::ALL(), Kokkos::make_pair(0, n), 0);
+      }
+      else {
+        d_base = DViewBase(label, m, n);
+        h_base = Kokkos::create_mirror(d_base);
+        d_view = d_base;
+        h_view = h_base;
+      }
+    }
+    d_view_const = d_view;
+  }
+
+  // Have both const and nonconst versions of d_view, since we test BLAS with both
+  DView d_view;
+  typename DView::const_type d_view_const;
+  HView h_view;
+  DViewBase d_base;
+  HViewBase h_base;
 };
 
 template <class Scalar1, class Scalar2, class Scalar3>
