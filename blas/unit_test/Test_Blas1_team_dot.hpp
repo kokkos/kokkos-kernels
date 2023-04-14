@@ -286,8 +286,7 @@ int test_team_dot() {
   // Test::impl_test_team_dot<view_type_a_lr, view_type_b_lr, Device>(132231);
 #endif
 
-#if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
+#if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA *, Kokkos::LayoutStride, Device> view_type_a_ls;
   typedef Kokkos::View<ScalarB *, Kokkos::LayoutStride, Device> view_type_b_ls;
@@ -332,8 +331,7 @@ int test_team_dot_mv() {
   // Device>(132231,5);
 #endif
 
-#if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
+#if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA **, Kokkos::LayoutStride, Device> view_type_a_ls;
   typedef Kokkos::View<ScalarB **, Kokkos::LayoutStride, Device> view_type_b_ls;

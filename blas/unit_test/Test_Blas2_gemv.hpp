@@ -201,33 +201,36 @@ int test_gemv(const char* mode) {
   // Device>(mode,132231,1024);
 #endif
 
-  /*
-  #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
-      (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
-       !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-    typedef Kokkos::View<ScalarA**, Kokkos::LayoutStride, Device>
-  view_type_a_ls; typedef Kokkos::View<ScalarX*, Kokkos::LayoutStride, Device>
-  view_type_b_ls; typedef Kokkos::View<ScalarY*, Kokkos::LayoutStride, Device>
-  view_type_c_ls; Test::impl_test_gemv<view_type_a_ls, view_type_b_ls,
-  view_type_c_ls, Device>( mode, 0, 1024); Test::impl_test_gemv<view_type_a_ls,
-  view_type_b_ls, view_type_c_ls, Device>( mode, 1024, 0);
-    Test::impl_test_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls,
-  Device>( mode, 13, 13); Test::impl_test_gemv<view_type_a_ls, view_type_b_ls,
-  view_type_c_ls, Device>( mode, 13, 1024); Test::impl_test_gemv<view_type_a_ls,
-  view_type_b_ls, view_type_c_ls, Device>( mode, 50, 40);
-    Test::impl_test_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls,
-  Device>( mode, 1024, 1024); Test::impl_test_gemv<view_type_a_ls,
-  view_type_b_ls, view_type_c_ls, Device>( mode, 2131, 2131);
-    // Test::impl_test_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls,
-    // Device>(mode,132231,1024);
-  #endif
+#if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  typedef Kokkos::View<ScalarA**, Kokkos::LayoutStride, Device> view_type_a_ls;
+  typedef Kokkos::View<ScalarX*, Kokkos::LayoutStride, Device> view_type_b_ls;
+  typedef Kokkos::View<ScalarY*, Kokkos::LayoutStride, Device> view_type_c_ls;
+  Test::impl_test_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(
+      mode, 0, 1024);
+  Test::impl_test_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(
+      mode, 1024, 0);
+  Test::impl_test_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(
+      mode, 13, 13);
+  Test::impl_test_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(
+      mode, 13, 1024);
+  Test::impl_test_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(
+      mode, 50, 40);
+  Test::impl_test_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(
+      mode, 1024, 1024);
+  Test::impl_test_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(
+      mode, 2131, 2131);
+  // Test::impl_test_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls,
+  // Device>(mode,132231,1024);
+#endif
 
-  #if !defined(KOKKOSKERNELS_ETI_ONLY) && \
-      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
-    Test::impl_test_gemv<view_type_a_ls, view_type_b_ll, view_type_c_lr,
-  Device>( mode, 1024, 1024); Test::impl_test_gemv<view_type_a_ll,
-  view_type_b_ls, view_type_c_lr, Device>( mode, 1024, 1024); #endif
-  */
+#if !defined(KOKKOSKERNELS_ETI_ONLY) && \
+    !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
+  Test::impl_test_gemv<view_type_a_ls, view_type_b_ll, view_type_c_lr, Device>(
+      mode, 1024, 1024);
+  Test::impl_test_gemv<view_type_a_ll, view_type_b_ls, view_type_c_lr, Device>(
+      mode, 1024, 1024);
+#endif
 
   return 1;
 }

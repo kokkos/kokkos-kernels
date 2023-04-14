@@ -81,8 +81,7 @@ int test_asum() {
   // Test::impl_test_asum<view_type_a_lr, Device>(132231);
 #endif
 
-#if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
+#if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA*, Kokkos::LayoutStride, Device> view_type_a_ls;
   Test::impl_test_asum<view_type_a_ls, Device>(0);

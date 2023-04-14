@@ -115,8 +115,7 @@ int test_team_nrm2() {
   // Test::impl_test_team_nrm2<view_type_a_lr, Device>(132231,5);
 #endif
 
-#if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
+#if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA **, Kokkos::LayoutStride, Device> view_type_a_ls;
   Test::impl_test_team_nrm2<view_type_a_ls, Device>(0, 5);
