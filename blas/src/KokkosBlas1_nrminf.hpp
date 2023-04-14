@@ -100,8 +100,6 @@ void nrminf(
   static_assert(Kokkos::is_view<RV>::value,
                 "KokkosBlas::nrminf: "
                 "R is not a Kokkos::View.");
-  static_assert(Kokkos::SpaceAccessibility<execution_space, typename RV::memory_space>::accessible,
-		"KokkosBlas::nrminf: R is not accessible from execution_space");
   static_assert(Kokkos::is_view<XMV>::value,
                 "KokkosBlas::nrminf: "
                 "X is not a Kokkos::View.");
