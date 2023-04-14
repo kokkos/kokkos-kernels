@@ -872,7 +872,7 @@ class KokkosKernelsHandle {
       const typename PAR_ILUTHandleType::float_t residual_norm_delta_stop =
           1e-2,
       const typename PAR_ILUTHandleType::float_t fill_in_limit = 0.75,
-      const bool async_update = true, const bool verbose = false) {
+      const bool async_update = false, const bool verbose = false) {
     this->destroy_par_ilut_handle();
     this->is_owner_of_the_par_ilut_handle = true;
     this->par_ilutHandle =
