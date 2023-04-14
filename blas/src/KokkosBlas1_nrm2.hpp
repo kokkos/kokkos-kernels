@@ -101,8 +101,6 @@ void nrm2(const execution_space& space, const RV& R, const XMV& X,
   static_assert(Kokkos::is_view<RV>::value,
                 "KokkosBlas::nrm2: "
                 "R is not a Kokkos::View.");
-  static_assert(Kokkos::SpaceAccessibility<execution_space, typename RV::memory_space>::accessible,
-		"KokkosBlas::nrm2: R cannot be accessed from execution_space.");
   static_assert(Kokkos::is_view<XMV>::value,
                 "KokkosBlas::nrm2: "
                 "X is not a Kokkos::View.");

@@ -68,7 +68,7 @@ KOKKOSBLAS1_NRM2_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>, Kokkos::LayoutLeft,
           typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type, \
           LAYOUT, Kokkos::HostSpace,                                           \
           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                           \
-      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
       1> {                                                                     \
     enum : bool { value = true };                                              \

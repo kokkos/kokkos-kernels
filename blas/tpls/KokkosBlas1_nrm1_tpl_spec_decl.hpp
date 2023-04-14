@@ -232,7 +232,11 @@ namespace Impl {
         constexpr int one = 1;                                                 \
         KokkosBlas::Impl::CudaBlasSingleton& s =                               \
             KokkosBlas::Impl::CudaBlasSingleton::singleton();                  \
-        cublasDasum(s.handle, N, X.data(), one, R.data());                     \
+	KOKKOS_CUBLAS_SAFE_CALL_IMPL(					       \
+	   cublasSetStream(s.handle, space.cuda_stream()));                    \
+	KOKKOS_CUBLAS_SAFE_CALL_IMPL(					       \
+	   cublasDasum(s.handle, N, X.data(), one, R.data()));                 \
+	KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(s.handle, NULL));         \
       } else {                                                                 \
         Nrm1<execution_space, RV, XV, 1, false, ETI_SPEC_AVAIL>::nrm1(space, R, X); \
       }                                                                        \
@@ -269,7 +273,11 @@ namespace Impl {
         constexpr int one = 1;                                                \
         KokkosBlas::Impl::CudaBlasSingleton& s =                              \
             KokkosBlas::Impl::CudaBlasSingleton::singleton();                 \
-        cublasSasum(s.handle, N, X.data(), one, R.data());                    \
+	KOKKOS_CUBLAS_SAFE_CALL_IMPL(					      \
+	   cublasSetStream(s.handle, space.cuda_stream()));                   \
+	KOKKOS_CUBLAS_SAFE_CALL_IMPL(					      \
+	  cublasSasum(s.handle, N, X.data(), one, R.data()));                 \
+	KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(s.handle, NULL));        \
       } else {                                                                \
         Nrm1<execution_space, RV, XV, 1, false, ETI_SPEC_AVAIL>::nrm1(space, R, X); \
       }                                                                       \
@@ -308,9 +316,13 @@ namespace Impl {
         constexpr int one = 1;                                                \
         KokkosBlas::Impl::CudaBlasSingleton& s =                              \
             KokkosBlas::Impl::CudaBlasSingleton::singleton();                 \
+	KOKKOS_CUBLAS_SAFE_CALL_IMPL(					      \
+	   cublasSetStream(s.handle, space.cuda_stream()));                   \
+	KOKKOS_CUBLAS_SAFE_CALL_IMPL(					      \
         cublasDzasum(s.handle, N,                                             \
                      reinterpret_cast<const cuDoubleComplex*>(X.data()), one, \
-                     R.data());                                               \
+                     R.data()));					      \
+	KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(s.handle, NULL));        \
       } else {                                                                \
         Nrm1<execution_space, RV, XV, 1, false, ETI_SPEC_AVAIL>::nrm1(space, R, X); \
       }                                                                       \
@@ -349,9 +361,13 @@ namespace Impl {
         constexpr int one = 1;                                          \
         KokkosBlas::Impl::CudaBlasSingleton& s =                        \
             KokkosBlas::Impl::CudaBlasSingleton::singleton();           \
+	KOKKOS_CUBLAS_SAFE_CALL_IMPL(					\
+	   cublasSetStream(s.handle, space.cuda_stream()));             \
+	KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                   \
         cublasScasum(s.handle, N,                                       \
                      reinterpret_cast<const cuComplex*>(X.data()), one, \
-                     R.data());                                         \
+                     R.data()));				        \
+	KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(s.handle, NULL));  \
       } else {                                                          \
         Nrm1<execution_space, RV, XV, 1, false, ETI_SPEC_AVAIL>::nrm1(space, R, X); \
       }                                                                 \
