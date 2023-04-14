@@ -420,7 +420,8 @@ struct IlutWrap {
       const auto l_col = L_entries(l_row_nnz);
       const auto u_row = Ut_entries(ut_row_nnz);
       if (l_col == u_row && l_col < last_entry) {
-        sum += L_values(l_row_nnz) * Ut_values(ut_row_nnz);
+        const scalar_t ut_val = Ut_values(ut_row_nnz);
+        sum += L_values(l_row_nnz) * ut_val;
       }
       if (static_cast<size_type>(u_row) == row_idx) {
         ut_nnz = ut_row_nnz;
@@ -440,17 +441,32 @@ struct IlutWrap {
    * make this function determistic, but that could cause par_ilut
    * to take longer (more iterations) to converge.
    */
-  template <class ARowMapType, class AEntriesType, class AValuesType,
-            class LRowMapType, class LEntriesType, class LValuesType,
-            class URowMapType, class UEntriesType, class UValuesType,
-            class UtRowMapType, class UtEntriesType, class UtValuesType>
-  static void compute_l_u_factors(
+  template <bool async_update, class ARowMapType, class AEntriesType,
+            class AValuesType, class LRowMapType, class LEntriesType,
+            class LValuesType, class URowMapType, class UEntriesType,
+            class UValuesType, class UtRowMapType, class UtEntriesType,
+            class UtValuesType>
+  static void compute_l_u_factors_impl(
       IlutHandle& ih, const ARowMapType& A_row_map,
       const AEntriesType& A_entries, const AValuesType& A_values,
       LRowMapType& L_row_map, LEntriesType& L_entries, LValuesType& L_values,
       URowMapType& U_row_map, UEntriesType& U_entries, UValuesType& U_values,
       UtRowMapType& Ut_row_map, UtEntriesType& Ut_entries,
-      UtValuesType& Ut_values, const bool async_update) {
+      UtValuesType& Ut_values_arg) {
+    // UtValues needs to be Atomic if async updates are on. Otherwise,
+    // non-atomic is fine.
+    using UtValuesSafeType = std::conditional_t<
+        async_update,
+        Kokkos::View<
+            typename UtValuesType::non_const_value_type*,
+            typename UtValuesType::array_layout,
+            typename UtValuesType::device_type,
+            Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess |
+                                 Kokkos::Atomic> >,
+        UtValuesType>;
+
+    UtValuesSafeType Ut_values = Ut_values_arg;
+
     const size_type nrows = ih.get_nrows();
     Kokkos::parallel_for(
         "compute_l_u_factors", range_policy(0, nrows),
@@ -460,8 +476,8 @@ struct IlutWrap {
               L_row_map(row_idx + 1) - 1;  // skip diagonal for L
 
           for (auto l_nnz = l_row_nnz_begin; l_nnz < l_row_nnz_end; ++l_nnz) {
-            const auto col_idx = L_entries(l_nnz);
-            const auto u_diag  = Ut_values(Ut_row_map(col_idx + 1) - 1);
+            const auto col_idx    = L_entries(l_nnz);
+            const scalar_t u_diag = Ut_values(Ut_row_map(col_idx + 1) - 1);
             if (u_diag != 0.0) {
               const auto new_val =
                   compute_sum(row_idx, col_idx, A_row_map, A_entries, A_values,
@@ -487,13 +503,34 @@ struct IlutWrap {
 
             // ut_nnz is not guarateed to fail into range used exclusively
             // by this thread. Updating it here opens up potential race
-            // conditions that cause problems on GPU but usually causes
-            // faster convergence.
+            // conditions but usually causes faster convergence.
             if (async_update) {
               Ut_values(ut_nnz) = new_val;
             }
           }
         });
+  }
+
+  template <class ARowMapType, class AEntriesType, class AValuesType,
+            class LRowMapType, class LEntriesType, class LValuesType,
+            class URowMapType, class UEntriesType, class UValuesType,
+            class UtRowMapType, class UtEntriesType, class UtValuesType>
+  static void compute_l_u_factors(
+      IlutHandle& ih, const ARowMapType& A_row_map,
+      const AEntriesType& A_entries, const AValuesType& A_values,
+      LRowMapType& L_row_map, LEntriesType& L_entries, LValuesType& L_values,
+      URowMapType& U_row_map, UEntriesType& U_entries, UValuesType& U_values,
+      UtRowMapType& Ut_row_map, UtEntriesType& Ut_entries,
+      UtValuesType& Ut_values, const bool async_update) {
+    if (async_update) {
+      compute_l_u_factors_impl<true>(
+          ih, A_row_map, A_entries, A_values, L_row_map, L_entries, L_values,
+          U_row_map, U_entries, U_values, Ut_row_map, Ut_entries, Ut_values);
+    } else {
+      compute_l_u_factors_impl<false>(
+          ih, A_row_map, A_entries, A_values, L_row_map, L_entries, L_values,
+          U_row_map, U_entries, U_values, Ut_row_map, Ut_entries, Ut_values);
+    }
   }
 
   /**
@@ -794,10 +831,8 @@ struct IlutWrap {
         thandle.get_residual_norm_delta_stop();
     const size_type max_iter = thandle.get_max_iter();
 
-    const auto verbose = thandle.get_verbose();
-    constexpr bool on_gpu =
-        KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>();
-    const auto async_update = !on_gpu && thandle.get_async_update();
+    const auto verbose      = thandle.get_verbose();
+    const auto async_update = false;  // thandle.get_async_update();
 
     if (verbose) {
       std::cout << "Starting PARILUT with..." << std::endl;

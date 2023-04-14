@@ -82,8 +82,6 @@ class PAR_ILUTHandle {
   bool async_update;  /// Whether compute LU factors should do asychronous
                       /// updates. When ON, the algorithm will usually converge
                       /// faster but it makes the algorithm non-deterministic.
-                      /// This will always be OFF for GPU since it doesn't work
-                      /// there.
   bool verbose;       /// Print information while executing par_ilut
 
   // Stored by parent KokkosKernelsHandle
