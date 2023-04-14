@@ -410,8 +410,8 @@ template <typename Scalar, typename Layout, typename ExeSpace, int N = 3>
 void testIssue1786() {
   using memory_space      = typename ExeSpace::memory_space;
   constexpr int num_tests = 4;
-  Kokkos::View<Scalar * [3][3], Layout, Kokkos::CudaSpace> matrices("data",
-                                                                    num_tests);
+  Kokkos::View<Scalar * [3][3], Layout, memory_space> matrices("data",
+                                                               num_tests);
   GenerateTestData<ExeSpace>(matrices);
   Kokkos::View<Scalar * [N][N], Layout, memory_space> Us("Us",
                                                          matrices.extent(0));
