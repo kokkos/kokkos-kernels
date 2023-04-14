@@ -31,12 +31,18 @@ namespace KokkosBlas {
 /// \param x [in] Input 1-D View.
 ///
 /// \return The nrm2 product result; a single value.
-template <class XVector>
+template <class execution_space, class XVector,
+          typename std::enable_if<Kokkos::is_execution_space<execution_space>::value, int>::type = 0>
 typename Kokkos::Details::InnerProductSpaceTraits<
     typename XVector::non_const_value_type>::mag_type
-nrm2(const XVector& x) {
+nrm2(const execution_space& space, const XVector& x) {
+  static_assert(Kokkos::is_execution_space<execution_space>::value,
+		"KokkosBlas::nrm2: execution_space must be a valid"
+		" Kokkos execution space.");
   static_assert(Kokkos::is_view<XVector>::value,
                 "KokkosBlas::nrm2: XVector must be a Kokkos::View.");
+  static_assert(Kokkos::SpaceAccessibility<execution_space, typename XVector::memory_space>::accessible,
+		"KokkosBlas::nrm2: XVector must be accessible from execution_space");
   static_assert(XVector::rank == 1,
                 "KokkosBlas::nrm2: "
                 "XVector must have rank 1.");
@@ -59,9 +65,23 @@ nrm2(const XVector& x) {
   RVector_Internal R = RVector_Internal(&result, layout_t());
   XVector_Internal X = x;
 
-  Impl::Nrm2<RVector_Internal, XVector_Internal>::nrm2(R, X, true);
+  Impl::Nrm2<execution_space, RVector_Internal, XVector_Internal>::nrm2(space, R, X, true);
   Kokkos::fence();
   return result;
+}
+
+/// \brief Return the nrm2 of the vector x.
+///
+/// \tparam XVector Type of the first vector x; a 1-D Kokkos::View.
+///
+/// \param x [in] Input 1-D View.
+///
+/// \return The nrm2 product result; a single value.
+template <class XVector>
+typename Kokkos::Details::InnerProductSpaceTraits<
+    typename XVector::non_const_value_type>::mag_type
+nrm2(const XVector& x) {
+  return nrm2(typename XVector::execution_space{}, x);
 }
 
 /// \brief R(i,j) = nrm2(X(i,j))
@@ -73,15 +93,21 @@ nrm2(const XVector& x) {
 /// \tparam XMV 1-D or 2-D Kokkos::View specialization.  It must have
 ///   the same rank as RMV, and its entries must be assignable to
 ///   those of RMV.
-template <class RV, class XMV>
-void nrm2(const RV& R, const XMV& X,
+template <class execution_space, class RV, class XMV>
+void nrm2(const execution_space& space, const RV& R, const XMV& X,
           typename std::enable_if<Kokkos::is_view<RV>::value, int>::type = 0) {
+  static_assert(Kokkos::is_execution_space<execution_space>::value,
+		"KokkosBlas::nrm2: space is not a Kokkos execution space.");
   static_assert(Kokkos::is_view<RV>::value,
                 "KokkosBlas::nrm2: "
                 "R is not a Kokkos::View.");
+  static_assert(Kokkos::SpaceAccessibility<execution_space, typename RV::memory_space>::accessible,
+		"KokkosBlas::nrm2: R cannot be accessed from execution_space.");
   static_assert(Kokkos::is_view<XMV>::value,
                 "KokkosBlas::nrm2: "
                 "X is not a Kokkos::View.");
+  static_assert(Kokkos::SpaceAccessibility<execution_space, typename XMV::memory_space>::accessible,
+		"KokkosBlas::nrm2: X cannot be accessed from execution_space.");
   static_assert(std::is_same<typename RV::value_type,
                              typename RV::non_const_value_type>::value,
                 "KokkosBlas::nrm2: R is const.  "
@@ -128,7 +154,22 @@ void nrm2(const RV& R, const XMV& X,
   RV_Internal R_internal  = R;
   XMV_Internal X_internal = X;
 
-  Impl::Nrm2<RV_Internal, XMV_Internal>::nrm2(R_internal, X_internal, true);
+  Impl::Nrm2<execution_space, RV_Internal, XMV_Internal>::nrm2(space, R_internal, X_internal, true);
+}
+
+/// \brief R(i,j) = nrm2(X(i,j))
+///
+/// Replace each entry in R with the nrm2olute value (magnitude) of the
+/// corresponding entry in X.
+///
+/// \tparam RMV 1-D or 2-D Kokkos::View specialization.
+/// \tparam XMV 1-D or 2-D Kokkos::View specialization.  It must have
+///   the same rank as RMV, and its entries must be assignable to
+///   those of RMV.
+template <class RV, class XMV>
+void nrm2(const RV& R, const XMV& X,
+          typename std::enable_if<Kokkos::is_view<RV>::value, int>::type = 0) {
+  nrm2(typename XMV::execution_space{}, R, X);
 }
 
 ///
