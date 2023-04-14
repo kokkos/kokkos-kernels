@@ -3,18 +3,18 @@ KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 
 set(USE_GINKGO On)
-set(GINKGO_INSTALL_DIR "/ascldap/users/jgfouca/ginkgo/install")
+set(GINKGO_INSTALL_DIR "/ascldap/users/jgfouca/ginkgo/install-release")
 
 if (USE_GINKGO)
   add_compile_definitions("USE_GINKGO")
   KOKKOSKERNELS_INCLUDE_DIRECTORIES("${GINKGO_INSTALL_DIR}/include")
 
-  link_libraries("${GINKGO_INSTALL_DIR}/lib64/libginkgod.so")
-  link_libraries("${GINKGO_INSTALL_DIR}/lib64/libginkgo_ompd.so")
-  link_libraries("${GINKGO_INSTALL_DIR}/lib64/libginkgo_cudad.so")
-  link_libraries("${GINKGO_INSTALL_DIR}/lib64/libginkgo_hipd.so")
-  link_libraries("${GINKGO_INSTALL_DIR}/lib64/libginkgo_dpcppd.so")
-  link_libraries("${GINKGO_INSTALL_DIR}/lib64/libginkgo_deviced.so")
+  link_libraries("${GINKGO_INSTALL_DIR}/lib64/libginkgo.so")
+  link_libraries("${GINKGO_INSTALL_DIR}/lib64/libginkgo_omp.so")
+  link_libraries("${GINKGO_INSTALL_DIR}/lib64/libginkgo_cuda.so")
+  link_libraries("${GINKGO_INSTALL_DIR}/lib64/libginkgo_hip.so")
+  link_libraries("${GINKGO_INSTALL_DIR}/lib64/libginkgo_dpcpp.so")
+  link_libraries("${GINKGO_INSTALL_DIR}/lib64/libginkgo_device.so")
 endif()
 
 IF(KOKKOSKERNELS_INST_DOUBLE)
