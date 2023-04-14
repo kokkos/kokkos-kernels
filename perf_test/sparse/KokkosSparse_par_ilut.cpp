@@ -211,6 +211,7 @@ void run_spiluk_test(KernelHandle& kh, const sp_matrix_type& A,
   const size_type handle_nnz = EXPAND_FACT * A.nnz() * (fill_lev + 1);
   kh.create_spiluk_handle(SPILUKAlgorithm::SEQLVLSCHD_TP1, rows, handle_nnz, handle_nnz);
   auto spiluk_handle = kh.get_spiluk_handle();
+  spiluk_handle->set_team_size(team_size);
 
   // Pull out views from CRS
   auto A_row_map = A.graph.row_map;
