@@ -353,8 +353,7 @@ int main(int argc, char** argv) {
         run_benchmark_wrapper<Kokkos::DefaultExecutionSpace>, argc, argv)
         ->UseRealTime()
         ->ArgNames({"n", "model"})
-        ->Args({1000, 1})
-        ->Iterations(common_params.repeat);
+        ->Args({1000, 1});
   }
 
   benchmark::RunSpecifiedBenchmarks();

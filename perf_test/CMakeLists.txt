@@ -61,5 +61,6 @@ if(KokkosKernels_ENABLE_BENCHMARK)
         blas/blas1/KokkosBlas_dot_perf_test_benchmark.cpp
         blas/blas1/KokkosBlas_dot_mv_perf_test_benchmark.cpp
         blas/blas1/KokkosBlas_team_dot_perf_test_benchmark.cpp
+        BenchmarkMain.cpp
     )
 endif()
