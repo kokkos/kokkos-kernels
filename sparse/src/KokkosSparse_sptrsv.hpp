@@ -453,7 +453,7 @@ void sptrsv_solve_streams(const std::vector<ExecutionSpace>& execspace_v,
     KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
-  using c_size_t    = typename KernelHandle::const_size_type c_size_t;
+  using c_size_t    = typename KernelHandle::const_size_type;
   using c_lno_t     = typename KernelHandle::const_nnz_lno_t;
   using c_scalar_t  = typename KernelHandle::const_nnz_scalar_t;
   using c_exec_t    = typename KernelHandle::HandleExecSpace;
