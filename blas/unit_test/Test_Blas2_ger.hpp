@@ -1318,7 +1318,8 @@ int test_ger(const std::string& caseName) {
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
       "+======================================================================="
       "===\n");
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF("Starting %s ...\n", caseName.c_str());
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF("Starting %s, device = %s ...\n",
+                                caseName.c_str(), typeid(Device).name());
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&      \

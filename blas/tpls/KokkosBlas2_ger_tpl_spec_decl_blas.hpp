@@ -254,41 +254,25 @@ namespace Impl {
     }                                                                      \
   };
 
-KOKKOSBLAS2_DGER_BLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft,
-                      Kokkos::LayoutLeft, Kokkos::HostSpace, true)
-KOKKOSBLAS2_DGER_BLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft,
-                      Kokkos::LayoutLeft, Kokkos::HostSpace, false)
-KOKKOSBLAS2_DGER_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight,
-                      Kokkos::LayoutRight, Kokkos::HostSpace, true)
-KOKKOSBLAS2_DGER_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight,
-                      Kokkos::LayoutRight, Kokkos::HostSpace, false)
+KOKKOSBLAS2_DGER_BLAS(Kokkos::LayoutLeft, Kokkos::HostSpace, true)
+KOKKOSBLAS2_DGER_BLAS(Kokkos::LayoutLeft, Kokkos::HostSpace, false)
+KOKKOSBLAS2_DGER_BLAS(Kokkos::LayoutRight, Kokkos::HostSpace, true)
+KOKKOSBLAS2_DGER_BLAS(Kokkos::LayoutRight, Kokkos::HostSpace, false)
 
-KOKKOSBLAS2_SGER_BLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft,
-                      Kokkos::LayoutLeft, Kokkos::HostSpace, true)
-KOKKOSBLAS2_SGER_BLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft,
-                      Kokkos::LayoutLeft, Kokkos::HostSpace, false)
-KOKKOSBLAS2_SGER_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight,
-                      Kokkos::LayoutRight, Kokkos::HostSpace, true)
-KOKKOSBLAS2_SGER_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight,
-                      Kokkos::LayoutRight, Kokkos::HostSpace, false)
+KOKKOSBLAS2_SGER_BLAS(Kokkos::LayoutLeft, Kokkos::HostSpace, true)
+KOKKOSBLAS2_SGER_BLAS(Kokkos::LayoutLeft, Kokkos::HostSpace, false)
+KOKKOSBLAS2_SGER_BLAS(Kokkos::LayoutRight, Kokkos::HostSpace, true)
+KOKKOSBLAS2_SGER_BLAS(Kokkos::LayoutRight, Kokkos::HostSpace, false)
 
-KOKKOSBLAS2_ZGER_BLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft,
-                      Kokkos::LayoutLeft, Kokkos::HostSpace, true)
-KOKKOSBLAS2_ZGER_BLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft,
-                      Kokkos::LayoutLeft, Kokkos::HostSpace, false)
-KOKKOSBLAS2_ZGER_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight,
-                      Kokkos::LayoutRight, Kokkos::HostSpace, true)
-KOKKOSBLAS2_ZGER_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight,
-                      Kokkos::LayoutRight, Kokkos::HostSpace, false)
+KOKKOSBLAS2_ZGER_BLAS(Kokkos::LayoutLeft, Kokkos::HostSpace, true)
+KOKKOSBLAS2_ZGER_BLAS(Kokkos::LayoutLeft, Kokkos::HostSpace, false)
+KOKKOSBLAS2_ZGER_BLAS(Kokkos::LayoutRight, Kokkos::HostSpace, true)
+KOKKOSBLAS2_ZGER_BLAS(Kokkos::LayoutRight, Kokkos::HostSpace, false)
 
-KOKKOSBLAS2_CGER_BLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft,
-                      Kokkos::LayoutLeft, Kokkos::HostSpace, true)
-KOKKOSBLAS2_CGER_BLAS(Kokkos::LayoutLeft, Kokkos::LayoutLeft,
-                      Kokkos::LayoutLeft, Kokkos::HostSpace, false)
-KOKKOSBLAS2_CGER_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight,
-                      Kokkos::LayoutRight, Kokkos::HostSpace, true)
-KOKKOSBLAS2_CGER_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight,
-                      Kokkos::LayoutRight, Kokkos::HostSpace, false)
+KOKKOSBLAS2_CGER_BLAS(Kokkos::LayoutLeft, Kokkos::HostSpace, true)
+KOKKOSBLAS2_CGER_BLAS(Kokkos::LayoutLeft, Kokkos::HostSpace, false)
+KOKKOSBLAS2_CGER_BLAS(Kokkos::LayoutRight, Kokkos::HostSpace, true)
+KOKKOSBLAS2_CGER_BLAS(Kokkos::LayoutRight, Kokkos::HostSpace, false)
 
 }  // namespace Impl
 }  // namespace KokkosBlas
