@@ -1,22 +1,6 @@
 KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-
-set(USE_GINKGO On)
-set(GINKGO_INSTALL_DIR "$ENV{HOME}/ginkgo/install-release-cuda-omp")
-
-if (USE_GINKGO)
-  add_compile_definitions("USE_GINKGO")
-  KOKKOSKERNELS_INCLUDE_DIRECTORIES("${GINKGO_INSTALL_DIR}/include")
-
-  link_libraries("${GINKGO_INSTALL_DIR}/lib64/libginkgo.so")
-  link_libraries("${GINKGO_INSTALL_DIR}/lib64/libginkgo_omp.so")
-  link_libraries("${GINKGO_INSTALL_DIR}/lib64/libginkgo_cuda.so")
-  link_libraries("${GINKGO_INSTALL_DIR}/lib64/libginkgo_hip.so")
-  link_libraries("${GINKGO_INSTALL_DIR}/lib64/libginkgo_dpcpp.so")
-  link_libraries("${GINKGO_INSTALL_DIR}/lib64/libginkgo_device.so")
-endif()
-
 IF(KOKKOSKERNELS_INST_DOUBLE)
   KOKKOSKERNELS_ADD_EXECUTABLE(
           sparse_pcg
@@ -136,3 +120,13 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
         sparse_mdf
         SOURCES KokkosSparse_mdf.cpp
 )
+
+# Provide -DGinkgo_DIR to cmake to enable the ginkgo test in sparse_par_ilut. Ginkgo_DIR should
+# point to the dir in the ginkgo install area that contains the GinkgoConfig.cmake file.
+# For me, this was $gingko_install_dir/lib64/cmake/Ginkgo
+if (Ginkgo_DIR)
+  find_package(Ginkgo REQUIRED)
+
+  target_compile_definitions(sparse_par_ilut PRIVATE "USE_GINKGO")
+  target_link_libraries(sparse_par_ilut PRIVATE Ginkgo::ginkgo)
+endif()
