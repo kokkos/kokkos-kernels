@@ -35,11 +35,11 @@ namespace Impl {
 /// \tparam SizeType Index type.  Use int (32 bits) if possible.
 template <class RV, class XV, class SizeType = typename XV::size_type>
 struct V_Nrm1_Functor {
-  using size_type = SizeType;
+  using size_type   = SizeType;
   using xvalue_type = typename XV::non_const_value_type;
-  using XAT = Kokkos::ArithTraits<xvalue_type>;
-  using value_type = typename XAT::mag_type;
-  using MAT = Kokkos::ArithTraits<value_type>;
+  using XAT         = Kokkos::ArithTraits<xvalue_type>;
+  using value_type  = typename XAT::mag_type;
+  using MAT         = Kokkos::ArithTraits<value_type>;
 
   typename XV::const_type m_x;
 
@@ -71,9 +71,9 @@ template <class ExecSpace, class RV, class XV, class size_type>
 struct Nrm1_MV_Functor {
   using rvalue_type = typename RV::non_const_value_type;
   using xvalue_type = typename XV::non_const_value_type;
-  using XAT = Kokkos::ArithTraits<xvalue_type>;
-  using value_type = typename XAT::mag_type;
-  using MAT = Kokkos::ArithTraits<value_type>;
+  using XAT         = Kokkos::ArithTraits<xvalue_type>;
+  using value_type  = typename XAT::mag_type;
+  using MAT         = Kokkos::ArithTraits<value_type>;
 
   using TeamMem = typename Kokkos::TeamPolicy<ExecSpace>::member_type;
 
@@ -129,8 +129,8 @@ template <class execution_space, class RV, class XV, class size_type>
 void MV_Nrm1_Invoke(
     const execution_space& space, const RV& r, const XV& x,
     typename std::enable_if<Kokkos::SpaceAccessibility<
-        execution_space,
-        typename RV::memory_space>::accessible>::type* = nullptr) {
+        execution_space, typename RV::memory_space>::accessible>::type* =
+        nullptr) {
   if (r.extent(0) != x.extent(1)) {
     std::ostringstream oss;
     oss << "KokkosBlas::nrm1 (rank-2): result vector has wrong length ("
@@ -139,8 +139,7 @@ void MV_Nrm1_Invoke(
   }
   // Zero out the result vector
   Kokkos::deep_copy(
-      space, r,
-      Kokkos::ArithTraits<typename RV::non_const_value_type>::zero());
+      space, r, Kokkos::ArithTraits<typename RV::non_const_value_type>::zero());
   size_type teamsPerVec;
   KokkosBlas::Impl::multipleReductionWorkDistribution<execution_space,
                                                       size_type>(
@@ -158,14 +157,19 @@ template <class execution_space, class RV, class XV, class size_type>
 void MV_Nrm1_Invoke(
     const execution_space& space, const RV& r, const XV& x,
     typename std::enable_if<!Kokkos::SpaceAccessibility<
-        execution_space,
-        typename RV::memory_space>::accessible>::type* = nullptr) {
+        execution_space, typename RV::memory_space>::accessible>::type* =
+        nullptr) {
   Kokkos::View<typename RV::non_const_value_type*, typename XV::memory_space>
       tempResult(
           Kokkos::view_alloc(Kokkos::WithoutInitializing, "Nrm1 temp result"),
           r.extent(0));
-  MV_Nrm1_Invoke<execution_space, decltype(tempResult), XV, size_type>(space, tempResult, x);
+  MV_Nrm1_Invoke<execution_space, decltype(tempResult), XV, size_type>(
+      space, tempResult, x);
   Kokkos::deep_copy(space, r, tempResult);
+  // Fence needed to ensure that the deep_copy
+  // above finishes before we exit this function
+  // and tempResult runs out of scope...
+  space.fence();
 }
 
 }  // namespace Impl

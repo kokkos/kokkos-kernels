@@ -36,7 +36,7 @@ namespace Impl {
 #define KOKKOSBLAS1_NRM1_TPL_SPEC_AVAIL_BLAS(SCALAR, LAYOUT, MEMSPACE)         \
   template <class ExecSpace>                                                   \
   struct nrm1_tpl_spec_avail<                                                  \
-			     ExecSpace, \
+      ExecSpace,                                                               \
       Kokkos::View<                                                            \
           typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type, \
           LAYOUT, Kokkos::HostSpace,                                           \
@@ -86,7 +86,7 @@ KOKKOSBLAS1_NRM1_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>,
 
 #endif
 
-//rocBLAS
+// rocBLAS
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
 #define KOKKOSBLAS1_NRM1_TPL_SPEC_AVAIL_ROCBLAS(SCALAR, LAYOUT, MEMSPACE)      \
   template <class ExecSpace>                                                   \
@@ -103,7 +103,7 @@ KOKKOSBLAS1_NRM1_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>,
   };
 
 KOKKOSBLAS1_NRM1_TPL_SPEC_AVAIL_ROCUBLAS(double, Kokkos::LayoutLeft,
-                                        Kokkos::HIPSpace)
+                                         Kokkos::HIPSpace)
 KOKKOSBLAS1_NRM1_TPL_SPEC_AVAIL_ROCBLAS(float, Kokkos::LayoutLeft,
                                         Kokkos::HIPSpace)
 KOKKOSBLAS1_NRM1_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<double>,
@@ -111,8 +111,7 @@ KOKKOSBLAS1_NRM1_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<double>,
 KOKKOSBLAS1_NRM1_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<float>,
                                         Kokkos::LayoutLeft, Kokkos::HIPSpace)
 
-
-#endif // KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
+#endif  // KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
 
 }  // namespace Impl
 }  // namespace KokkosBlas

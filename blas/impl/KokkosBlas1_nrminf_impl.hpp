@@ -96,7 +96,8 @@ void MV_NrmInf_Invoke(const execution_space& space, const RV& r, const XMV& X) {
   for (size_t i = 0; i < X.extent(1); i++) {
     auto ri = Kokkos::subview(r, i);
     auto Xi = Kokkos::subview(X, Kokkos::ALL(), i);
-    V_NrmInf_Invoke<execution_space, decltype(ri), decltype(Xi), SizeType>(space, ri, Xi);
+    V_NrmInf_Invoke<execution_space, decltype(ri), decltype(Xi), SizeType>(
+        space, ri, Xi);
   }
 }
 

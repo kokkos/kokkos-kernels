@@ -94,8 +94,10 @@ namespace Impl {
 
 // Unification layer
 template <class execution_space, class RMV, class XMV, int rank = XMV::rank,
-          bool tpl_spec_avail = nrminf_tpl_spec_avail<execution_space, RMV, XMV>::value,
-          bool eti_spec_avail = nrminf_eti_spec_avail<execution_space, RMV, XMV>::value>
+          bool tpl_spec_avail =
+              nrminf_tpl_spec_avail<execution_space, RMV, XMV>::value,
+          bool eti_spec_avail =
+              nrminf_eti_spec_avail<execution_space, RMV, XMV>::value>
 struct NrmInf {
   static void nrminf(const execution_space& space, const RMV& R, const XMV& X);
 };
@@ -103,7 +105,8 @@ struct NrmInf {
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 //! Full specialization of NrmInf for single vectors (1-D Views).
 template <class execution_space, class RMV, class XMV>
-struct NrmInf<execution_space, RMV, XMV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+struct NrmInf<execution_space, RMV, XMV, 1, false,
+              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef typename XMV::size_type size_type;
 
   static void nrminf(const execution_space& space, const RMV& R, const XMV& X) {
@@ -144,7 +147,8 @@ struct NrmInf<execution_space, RMV, XMV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LI
 };
 
 template <class execution_space, class RV, class XMV>
-struct NrmInf<execution_space, RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+struct NrmInf<execution_space, RV, XMV, 2, false,
+              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef typename XMV::size_type size_type;
 
   static void nrminf(const execution_space& space, const RV& R, const XMV& X) {
@@ -238,7 +242,7 @@ struct NrmInf<execution_space, RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIB
 #define KOKKOSBLAS1_NRMINF_MV_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, \
                                             MEM_SPACE)                  \
   extern template struct NrmInf<                                        \
-      EXEC_SPACE,                                                              \
+      EXEC_SPACE,                                                       \
       Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits<   \
                        SCALAR>::mag_type*,                              \
                    LAYOUT,                                              \
@@ -258,7 +262,7 @@ struct NrmInf<execution_space, RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIB
 #define KOKKOSBLAS1_NRMINF_MV_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, \
                                             MEM_SPACE)                  \
   template struct NrmInf<                                               \
-      EXEC_SPACE,                                                              \
+      EXEC_SPACE,                                                       \
       Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits<   \
                        SCALAR>::mag_type*,                              \
                    LAYOUT,                                              \

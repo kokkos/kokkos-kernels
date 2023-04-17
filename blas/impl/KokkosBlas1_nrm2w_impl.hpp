@@ -135,8 +135,8 @@ struct Nrm2w_MV_Functor {
 /// \brief Compute the 2-norm (or its square) of the single vector (1-D
 ///   View) X, and store the result in the 0-D View r.
 template <class execution_space, class RV, class XV, class SizeType>
-void V_Nrm2w_Invoke(const execution_space& space, const RV& r, const XV& X, const XV& W,
-                    const bool& take_sqrt) {
+void V_Nrm2w_Invoke(const execution_space& space, const RV& r, const XV& X,
+                    const XV& W, const bool& take_sqrt) {
   const SizeType numRows = static_cast<SizeType>(X.extent(0));
   Kokkos::RangePolicy<execution_space, SizeType> policy(space, 0, numRows);
 
@@ -151,10 +151,11 @@ void V_Nrm2w_Invoke(const execution_space& space, const RV& r, const XV& X, cons
 // be computed in-place
 template <class execution_space, class RV, class XV, class size_type>
 void MV_Nrm2w_Invoke(
-    const execution_space& space, const RV& r, const XV& x, const XV& w, bool take_sqrt,
+    const execution_space& space, const RV& r, const XV& x, const XV& w,
+    bool take_sqrt,
     typename std::enable_if<Kokkos::SpaceAccessibility<
-        execution_space,
-        typename XV::memory_space>::accessible>::type* = nullptr) {
+        execution_space, typename XV::memory_space>::accessible>::type* =
+        nullptr) {
   if (r.extent(0) != x.extent(1)) {
     std::ostringstream oss;
     oss << "KokkosBlas::nrm2w (rank-2): result vector has wrong length ("
@@ -163,8 +164,7 @@ void MV_Nrm2w_Invoke(
   }
   // Zero out the result vector
   Kokkos::deep_copy(
-      space, r,
-      Kokkos::ArithTraits<typename RV::non_const_value_type>::zero());
+      space, r, Kokkos::ArithTraits<typename RV::non_const_value_type>::zero());
   size_type teamsPerVec;
   KokkosBlas::Impl::multipleReductionWorkDistribution<execution_space,
                                                       size_type>(
@@ -175,9 +175,10 @@ void MV_Nrm2w_Invoke(
                        Nrm2w_MV_Functor<execution_space, RV, XV, size_type>(
                            r, x, w, teamsPerVec));
   if (take_sqrt) {
-    Kokkos::parallel_for("KokkosBlas1::Nrm2w::Sqrt",
-                         Kokkos::RangePolicy<execution_space>(space, 0, r.extent(0)),
-                         TakeSqrtFunctor<RV>(r));
+    Kokkos::parallel_for(
+        "KokkosBlas1::Nrm2w::Sqrt",
+        Kokkos::RangePolicy<execution_space>(space, 0, r.extent(0)),
+        TakeSqrtFunctor<RV>(r));
   }
 }
 
@@ -185,10 +186,11 @@ void MV_Nrm2w_Invoke(
 // the other version)
 template <class execution_space, class RV, class XV, class size_type>
 void MV_Nrm2w_Invoke(
-    const execution_space& space, const RV& r, const XV& x, const XV& w, bool take_sqrt,
+    const execution_space& space, const RV& r, const XV& x, const XV& w,
+    bool take_sqrt,
     typename std::enable_if<!Kokkos::SpaceAccessibility<
-        execution_space,
-        typename XV::memory_space>::accessible>::type* = nullptr) {
+        execution_space, typename XV::memory_space>::accessible>::type* =
+        nullptr) {
   Kokkos::View<typename RV::non_const_value_type*, typename XV::memory_space>
       tempResult(
           Kokkos::view_alloc(Kokkos::WithoutInitializing, "Nrm2w temp result"),
@@ -196,6 +198,7 @@ void MV_Nrm2w_Invoke(
   MV_Nrm2w_Invoke<decltype(tempResult), XV, size_type>(space, tempResult, x, w,
                                                        take_sqrt);
   Kokkos::deep_copy(space, r, tempResult);
+  space.fence();
 }
 
 }  // namespace Impl

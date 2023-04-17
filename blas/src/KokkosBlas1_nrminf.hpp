@@ -33,8 +33,10 @@ namespace KokkosBlas {
 /// \param x [in] Input 1-D View.
 ///
 /// \return The nrminf product result; a single value.
-template <class execution_space, class XVector,
-	  typename std::enable_if<Kokkos::is_execution_space<execution_space>::value, int>::type = 0>
+template <
+    class execution_space, class XVector,
+    typename std::enable_if<Kokkos::is_execution_space<execution_space>::value,
+                            int>::type = 0>
 typename Kokkos::Details::InnerProductSpaceTraits<
     typename XVector::non_const_value_type>::mag_type
 nrminf(const execution_space& space, const XVector& x) {
@@ -62,8 +64,9 @@ nrminf(const execution_space& space, const XVector& x) {
   RVector_Internal R = RVector_Internal(&result, layout_t());
   XVector_Internal X = x;
 
-  Impl::NrmInf<execution_space, RVector_Internal, XVector_Internal>::nrminf(space, R, X);
-  Kokkos::fence();
+  Impl::NrmInf<execution_space, RVector_Internal, XVector_Internal>::nrminf(
+      space, R, X);
+  space.fence();
   return result;
 }
 
@@ -96,15 +99,17 @@ void nrminf(
     const execution_space& space, const RV& R, const XMV& X,
     typename std::enable_if<Kokkos::is_view<RV>::value, int>::type = 0) {
   static_assert(Kokkos::is_execution_space<execution_space>::value,
-		"KokkosBlas::nrminf: space is not an execution space instance");
+                "KokkosBlas::nrminf: space is not an execution space instance");
   static_assert(Kokkos::is_view<RV>::value,
                 "KokkosBlas::nrminf: "
                 "R is not a Kokkos::View.");
   static_assert(Kokkos::is_view<XMV>::value,
                 "KokkosBlas::nrminf: "
                 "X is not a Kokkos::View.");
-  static_assert(Kokkos::SpaceAccessibility<execution_space, typename XMV::memory_space>::accessible,
-		"KokkosBlas::nrminf: X is not accessible from execution_space");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename XMV::memory_space>::accessible,
+      "KokkosBlas::nrminf: X is not accessible from execution_space");
   static_assert(std::is_same<typename RV::value_type,
                              typename RV::non_const_value_type>::value,
                 "KokkosBlas::nrminf: R is const.  "
@@ -155,7 +160,8 @@ void nrminf(
   RV_Internal R_internal  = R;
   XMV_Internal X_internal = X;
 
-  Impl::NrmInf<execution_space, RV_Internal, XMV_Internal>::nrminf(space, R_internal, X_internal);
+  Impl::NrmInf<execution_space, RV_Internal, XMV_Internal>::nrminf(
+      space, R_internal, X_internal);
 }
 
 /// \brief R(j) = nrminf(X(i,j))
