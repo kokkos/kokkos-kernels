@@ -278,7 +278,7 @@ void run_spiluk_test(KernelHandle& kh, const sp_matrix_type& A,
 
 ///////////////////////////////////////////////////////////////////////////////
 int test_par_ilut_perf(const int rows, const int nnz_per_row, const int bandwidth_per_nnz,
-                       const int team_size, const int loop)
+                       const int team_size, const int loop, const int test)
 ///////////////////////////////////////////////////////////////////////////////
 {
   KernelHandle kh;
@@ -312,13 +312,20 @@ int test_par_ilut_perf(const int rows, const int nnz_per_row, const int bandwidt
             << "\n  loop=" << loop
             << std::endl;
 
-  const auto num_iters = run_par_ilut_test(kh, A, rows, team_size, loop);
+  int num_iters = 6;
+  if (test == 0 || test == 1) {
+    num_iters = run_par_ilut_test(kh, A, rows, team_size, loop);
+  }
 
 #ifdef USE_GINKGO
-  run_par_ilut_test_ginkgo(kh, A, rows, team_size, loop, num_iters);
+  if (test == 0 || test == 2) {
+    run_par_ilut_test_ginkgo(kh, A, rows, team_size, loop, num_iters);
+  }
 #endif
 
-  run_spiluk_test(kh, A, rows, team_size, loop);
+  if (test == 0 || test == 3) {
+    run_spiluk_test(kh, A, rows, team_size, loop);
+  }
 
   return 0;
 }
@@ -338,7 +345,8 @@ void print_help_par_ilut()
   printf("  -b [B]  : bandwidth nnz multiplier. Default is 5.\n");
   printf("  -ts [T] : Number of threads per team. Default is 1 on OpenMP, nnz_per_row on CUDA\n");
   //printf("  -vl [V] : Vector-length (i.e. how many Cuda threads are a Kokkos 'thread').\n");
-  printf("  -l [L]  : How many runs to aggregate average time. Default is 10\n\n");
+  printf("  -l [L]  : How many runs to aggregate average time. Default is 4\n\n");
+  printf("  -t [T]  : Which tests to run. 0 => run all, 1 => par_ilut, 2 => ginkgo, 3 => spiluk. Default is 0\n\n");
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -364,14 +372,16 @@ int main(int argc, char **argv)
   int nnz_per_row   = -1; // depends on other options, so don't set to default yet
   int band_per_nnz  = 5;
   int team_size     = -1;
-  int loop          = 10;
+  int loop          = 4;
+  int test          = 0;
 
   std::map<std::string, int*> option_map = {
     {"-n" , &rows},
     {"-z" , &nnz_per_row},
     {"-b" , &band_per_nnz},
     {"-ts", &team_size},
-    {"-l" , &loop}
+    {"-l" , &loop},
+    {"-t" , &test}
   };
 
   if (argc == 1) {
@@ -404,7 +414,7 @@ int main(int argc, char **argv)
 
   Kokkos::initialize(argc, argv);
   {
-    test_par_ilut_perf(rows, nnz_per_row, band_per_nnz, team_size, loop);
+    test_par_ilut_perf(rows, nnz_per_row, band_per_nnz, team_size, loop, test);
   }
   Kokkos::finalize();
   return 0;
