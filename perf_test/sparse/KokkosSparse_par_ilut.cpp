@@ -183,9 +183,7 @@ void run_par_ilut_test_ginkgo(KernelHandle& kh, const sp_matrix_type& A,
   // ginkgo does not differentiate between index type and size type. We need
   // to convert A_row_map to lno_t.
   EntriesType A_row_map_cp("A_row_map_cp", rows+1);
-  for (size_type i = 0; i < A_row_map.extent(0); ++i) {
-    A_row_map_cp(i) = A_row_map(i);
-  }
+  Kokkos::deep_copy(A_row_map_cp, A_row_map);
 
   // Populate mtx
   auto a_mtx_uniq = mtx::create_const(
@@ -335,17 +333,17 @@ int test_par_ilut_perf(const int rows, const int nnz_per_row, const int bandwidt
             << std::endl;
 
   int num_iters = 6;
-  if (test == 0 || test == 1) {
+  if (test & 1) {
     num_iters = run_par_ilut_test(kh, A, rows, team_size, loop);
   }
 
 #ifdef USE_GINKGO
-  if (test == 0 || test == 2) {
+  if (test & 2) {
     run_par_ilut_test_ginkgo(kh, A, rows, team_size, loop, num_iters);
   }
 #endif
 
-  if (test == 0 || test == 3) {
+  if (test & 4) {
     run_spiluk_test(kh, A, rows, team_size, loop);
   }
 
@@ -368,7 +366,7 @@ void print_help_par_ilut()
   printf("  -ts [T] : Number of threads per team. Default is 1 on OpenMP, nnz_per_row on CUDA\n");
   //printf("  -vl [V] : Vector-length (i.e. how many Cuda threads are a Kokkos 'thread').\n");
   printf("  -l [L]  : How many runs to aggregate average time. Default is 4\n\n");
-  printf("  -t [T]  : Which tests to run. 0 => run all, 1 => par_ilut, 2 => ginkgo, 3 => spiluk. Default is 0\n\n");
+  printf("  -t [T]  : Which tests to run. Bitwise. e.g. 7 => run all, 1 => par_ilut, 2 => ginkgo, 4 => spiluk,. Default is 7\n\n");
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -395,7 +393,7 @@ int main(int argc, char **argv)
   int band_per_nnz  = 5;
   int team_size     = -1;
   int loop          = 4;
-  int test          = 0;
+  int test          = 7;
 
   std::map<std::string, int*> option_map = {
     {"-n" , &rows},
