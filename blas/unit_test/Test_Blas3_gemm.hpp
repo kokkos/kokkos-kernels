@@ -264,7 +264,7 @@ void impl_test_stream_gemm_psge2(const int M, const int N, const int K,
   using ViewTypeB = Kokkos::View<Scalar**, Layout, TestExecSpace>;
   using ViewTypeC = Kokkos::View<Scalar**, Layout, TestExecSpace>;
   using ScalarC   = typename ViewTypeC::value_type;
-  using APT       = Kokkos::Details::ArithTraits<ScalarC>;
+  using APT       = Kokkos::ArithTraits<ScalarC>;
   using mag_type  = typename APT::mag_type;
 
   const char tA[]          = {"N"};
