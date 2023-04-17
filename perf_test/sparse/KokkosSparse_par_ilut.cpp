@@ -144,6 +144,27 @@ int run_par_ilut_test(KernelHandle& kh, const sp_matrix_type& A,
 
 #ifdef USE_GINKGO
 ///////////////////////////////////////////////////////////////////////////////
+using ginkgo_exec = std::conditional_t<
+  KokkosKernels::Impl::kk_is_gpu_exec_space<exe_space>(),
+  gko::CudaExecutor,
+  gko::OmpExecutor>;
+
+template <typename GinkgoT>
+std::shared_ptr<GinkgoT> get_ginkgo_exec()
+{
+  return GinkgoT::create();
+}
+
+template <>
+std::shared_ptr<gko::CudaExecutor> get_ginkgo_exec<gko::CudaExecutor>()
+{
+  auto ref_exec = gko::OmpExecutor::create();
+  return gko::CudaExecutor::create(0 /*device id*/, ref_exec);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////
 void run_par_ilut_test_ginkgo(KernelHandle& kh, const sp_matrix_type& A,
                               const int rows, const int team_size, const int loop, const int num_iters)
 ///////////////////////////////////////////////////////////////////////////////
@@ -156,7 +177,8 @@ void run_par_ilut_test_ginkgo(KernelHandle& kh, const sp_matrix_type& A,
   auto A_values  = A.values;
 
   using mtx = gko::matrix::Csr<scalar_t, lno_t>;
-  auto exec = gko::OmpExecutor::create();
+
+  auto exec = get_ginkgo_exec<ginkgo_exec>();
 
   // ginkgo does not differentiate between index type and size type. We need
   // to convert A_row_map to lno_t.
@@ -308,7 +330,7 @@ int test_par_ilut_perf(const int rows, const int nnz_per_row, const int bandwidt
             << "\n  total nnz=" << A.nnz()
             << "\n  league_size=" << default_policy.league_size()
             << "\n  team_size=" << default_policy.team_size()
-            << "\n  concurrent teams=" << exe_space::concurrency() / default_policy.team_size()
+            << "\n  concurrent teams=" << exe_space().concurrency() / default_policy.team_size()
             << "\n  loop=" << loop
             << std::endl;
 
@@ -341,7 +363,7 @@ void print_help_par_ilut()
   //     "  -f [file]       : Read in Matrix Market formatted text file. Not yet supported "
   //     "'file'.\n");
   printf("  -n [N]  : generate a semi-random banded NxN matrix. Default 10000.\n");
-  printf("  -z [Z]  : number nnz per row. Default is 1% of N.\n");
+  printf("  -z [Z]  : number nnz per row. Default is 1%% of N.\n");
   printf("  -b [B]  : bandwidth nnz multiplier. Default is 5.\n");
   printf("  -ts [T] : Number of threads per team. Default is 1 on OpenMP, nnz_per_row on CUDA\n");
   //printf("  -vl [V] : Vector-length (i.e. how many Cuda threads are a Kokkos 'thread').\n");

@@ -3,7 +3,7 @@ KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 
 set(USE_GINKGO On)
-set(GINKGO_INSTALL_DIR "/ascldap/users/jgfouca/ginkgo/install-release")
+set(GINKGO_INSTALL_DIR "$ENV{HOME}/ginkgo/install-release-cuda-omp")
 
 if (USE_GINKGO)
   add_compile_definitions("USE_GINKGO")
