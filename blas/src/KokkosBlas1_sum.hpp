@@ -44,14 +44,15 @@ typename XVector::non_const_value_type sum(const XVector& x) {
       typename XVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       XVector_Internal;
 
-  typedef Kokkos::View<typename XVector::non_const_value_type,
-                       typename XVector_Internal::array_layout,
+  using layout_t = typename XVector_Internal::array_layout;
+
+  typedef Kokkos::View<typename XVector::non_const_value_type, layout_t,
                        Kokkos::HostSpace,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       RVector_Internal;
 
   typename XVector::non_const_value_type result;
-  RVector_Internal R = RVector_Internal(&result);
+  RVector_Internal R = RVector_Internal(&result, layout_t());
   XVector_Internal X = x;
 
   Impl::Sum<RVector_Internal, XVector_Internal>::sum(R, X);
