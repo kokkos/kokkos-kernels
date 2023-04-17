@@ -157,7 +157,6 @@ fi
 
 if [[ "$HOSTNAME" == *solo* ]]; then # Warning: very generic name
   MACHINE=solo
-  module use /projects/netpub/clang/modulefiles
 fi
 
 if [[ "$HOSTNAME" == kokkos-dev-2* ]]; then
@@ -770,6 +769,7 @@ elif [ "$MACHINE" = "solo" ]; then
   module load cmake/3.22.3
 
   BASE_MODULE_LIST="cmake/3.22.3,<COMPILER_NAME>/<COMPILER_VERSION>"
+  BASE_MODULE_LIST_LLVM="cmake/3.22.3,<COMPILER_NAME>/<COMPILER_VERSION>,gnu/10.2.1"
   BASE_MODULE_LIST_INTEL="cmake/3.22.3,gnu/8.2.1,<COMPILER_NAME>/<COMPILER_VERSION>"
   ONEAPI_WARNING_FLAGS=""
 
@@ -778,7 +778,7 @@ elif [ "$MACHINE" = "solo" ]; then
   if [ "$SPOT_CHECK" = "True" ]; then
     COMPILERS=(
                "gnu/10.2.1 $BASE_MODULE_LIST "Threads_Serial,OpenMP" g++ $GNU_WARNING_FLAGS"
-               "llvm/10.0.1 $BASE_MODULE_LIST "Threads_Serial" clang++ $CLANG_WARNING_FLAGS"
+               "llvm/10.0.1 $BASE_MODULE_LIST_LLVM "Threads_Serial" clang++ $CLANG_WARNING_FLAGS"
     )
   elif [ "$SPOT_CHECK_TPLS" = "True" ]; then
     COMPILERS=("intel/19.0.5.281 $BASE_MODULE_LIST_INTEL,mkl/19.0.5.281 "OpenMP,Threads" icpc $INTEL_WARNING_FLAGS"
