@@ -28,7 +28,7 @@
 namespace KokkosBlas {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class AV, class XMV, class BV, class YMV, int rank = YMV::rank>
+template <class execution_space, class AV, class XMV, class BV, class YMV, int rank = YMV::rank>
 struct axpby_eti_spec_avail {
   enum : bool { value = false };
 };
@@ -46,6 +46,7 @@ struct axpby_eti_spec_avail {
                                          MEM_SPACE)                        \
   template <>                                                              \
   struct axpby_eti_spec_avail<                                             \
+      EXEC_SPACE,                                                          \
       SCALAR,                                                              \
       Kokkos::View<const SCALAR*, LAYOUT,                                  \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                  \
@@ -68,6 +69,7 @@ struct axpby_eti_spec_avail {
                                             MEM_SPACE)                      \
   template <>                                                               \
   struct axpby_eti_spec_avail<                                              \
+      EXEC_SPACE,                                                           \
       SCALAR,                                                               \
       Kokkos::View<const SCALAR**, LAYOUT,                                  \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                   \
@@ -80,6 +82,7 @@ struct axpby_eti_spec_avail {
   };                                                                        \
   template <>                                                               \
   struct axpby_eti_spec_avail<                                              \
+      EXEC_SPACE,                                                           \
       Kokkos::View<const SCALAR*, Kokkos::LayoutLeft,                       \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                   \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,               \
@@ -127,16 +130,16 @@ namespace Impl {
 /// Any <i>scalar</i> coefficient of zero has BLAS semantics of
 /// ignoring the corresponding (multi)vector entry.  This does NOT
 /// apply to coefficients in av and bv vectors, if they are used.
-template <class AV, class XMV, class BV, class YMV, int rank = YMV::rank,
-          bool tpl_spec_avail = axpby_tpl_spec_avail<AV, XMV, BV, YMV>::value,
-          bool eti_spec_avail = axpby_eti_spec_avail<AV, XMV, BV, YMV>::value>
+template <class execution_space, class AV, class XMV, class BV, class YMV, int rank = YMV::rank,
+          bool tpl_spec_avail = axpby_tpl_spec_avail<execution_space, AV, XMV, BV, YMV>::value,
+          bool eti_spec_avail = axpby_eti_spec_avail<execution_space, AV, XMV, BV, YMV>::value>
 struct Axpby {
-  static void axpby(const AV& av, const XMV& X, const BV& bv, const YMV& Y);
+  static void axpby(const execution_space& space, const AV& av, const XMV& X, const BV& bv, const YMV& Y);
 };
 
-template <class AV, class XMV, class BV, class YMV>
-struct Axpby<AV, XMV, BV, YMV, 0, true, true> {
-  static void axpby(const AV& /* av */, const XMV& /* X */, const BV& /* bv */,
+template <class execution_space, class AV, class XMV, class BV, class YMV>
+struct Axpby<execution_space, AV, XMV, BV, YMV, 0, true, true> {
+  static void axpby(const execution_space& /*space*/, const AV& /* av */, const XMV& /* X */, const BV& /* bv */,
                     const YMV& /* Y */) {
     static_assert(YMV::rank == 0, "Oh My God");
   }
@@ -144,11 +147,11 @@ struct Axpby<AV, XMV, BV, YMV, 0, true, true> {
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 // Full specialization for XMV and YMV rank-2 Views.
-template <class AV, class XMV, class BV, class YMV>
-struct Axpby<AV, XMV, BV, YMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+template <class execution_space, class AV, class XMV, class BV, class YMV>
+struct Axpby<execution_space, AV, XMV, BV, YMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef typename YMV::size_type size_type;
 
-  static void axpby(const AV& av, const XMV& X, const BV& bv, const YMV& Y) {
+  static void axpby(const execution_space& space, const AV& av, const XMV& X, const BV& bv, const YMV& Y) {
     static_assert(Kokkos::is_view<XMV>::value,
                   "KokkosBlas::Impl::"
                   "Axpby<rank-2>::axpby: X is not a Kokkos::View.");
@@ -199,18 +202,18 @@ struct Axpby<AV, XMV, BV, YMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
       typedef int index_type;
       typedef typename std::conditional<
           std::is_same<typename XMV::array_layout, Kokkos::LayoutLeft>::value,
-          Axpby_MV_Invoke_Right<AV, XMV, BV, YMV, index_type>,
-          Axpby_MV_Invoke_Left<AV, XMV, BV, YMV, index_type> >::type
+	Axpby_MV_Invoke_Right<execution_space, AV, XMV, BV, YMV, index_type>,
+	Axpby_MV_Invoke_Left<execution_space, AV, XMV, BV, YMV, index_type> >::type
           Axpby_MV_Invoke_Layout;
-      Axpby_MV_Invoke_Layout::run(av, X, bv, Y, a, b);
+      Axpby_MV_Invoke_Layout::run(space, av, X, bv, Y, a, b);
     } else {
       typedef typename XMV::size_type index_type;
       typedef typename std::conditional<
           std::is_same<typename XMV::array_layout, Kokkos::LayoutLeft>::value,
-          Axpby_MV_Invoke_Right<AV, XMV, BV, YMV, index_type>,
-          Axpby_MV_Invoke_Left<AV, XMV, BV, YMV, index_type> >::type
+	Axpby_MV_Invoke_Right<execution_space, AV, XMV, BV, YMV, index_type>,
+	Axpby_MV_Invoke_Left<execution_space, AV, XMV, BV, YMV, index_type> >::type
           Axpby_MV_Invoke_Layout;
-      Axpby_MV_Invoke_Layout::run(av, X, bv, Y, a, b);
+      Axpby_MV_Invoke_Layout::run(space, av, X, bv, Y, a, b);
     }
     Kokkos::Profiling::popRegion();
   }
@@ -218,8 +221,8 @@ struct Axpby<AV, XMV, BV, YMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 
 // Partial specialization for XMV, and YMV rank-2 Views,
 // and AV and BV scalars.
-template <class XMV, class YMV>
-struct Axpby<typename XMV::non_const_value_type, XMV,
+template <class execution_space, class XMV, class YMV>
+struct Axpby<execution_space, typename XMV::non_const_value_type, XMV,
              typename YMV::non_const_value_type, YMV, 2, false,
              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef typename XMV::non_const_value_type AV;
@@ -228,7 +231,7 @@ struct Axpby<typename XMV::non_const_value_type, XMV,
   typedef Kokkos::ArithTraits<typename XMV::non_const_value_type> ATA;
   typedef Kokkos::ArithTraits<typename YMV::non_const_value_type> ATB;
 
-  static void axpby(const AV& alpha, const XMV& X, const BV& beta,
+  static void axpby(const execution_space& space, const AV& alpha, const XMV& X, const BV& beta,
                     const YMV& Y) {
     static_assert(Kokkos::is_view<XMV>::value,
                   "KokkosBlas::Impl::Axpby::axpby (MV): "
@@ -301,18 +304,18 @@ struct Axpby<typename XMV::non_const_value_type, XMV,
       typedef int index_type;
       typedef typename std::conditional<
           std::is_same<typename XMV::array_layout, Kokkos::LayoutLeft>::value,
-          Axpby_MV_Invoke_Right<AV, XMV, BV, YMV, index_type>,
-          Axpby_MV_Invoke_Left<AV, XMV, BV, YMV, index_type> >::type
+	Axpby_MV_Invoke_Right<execution_space, AV, XMV, BV, YMV, index_type>,
+	Axpby_MV_Invoke_Left<execution_space, AV, XMV, BV, YMV, index_type> >::type
           Axpby_MV_Invoke_Layout;
-      Axpby_MV_Invoke_Layout::run(alpha, X, beta, Y, a, b);
+      Axpby_MV_Invoke_Layout::run(space, alpha, X, beta, Y, a, b);
     } else {
       typedef typename XMV::size_type index_type;
       typedef typename std::conditional<
           std::is_same<typename XMV::array_layout, Kokkos::LayoutLeft>::value,
-          Axpby_MV_Invoke_Right<AV, XMV, BV, YMV, index_type>,
-          Axpby_MV_Invoke_Left<AV, XMV, BV, YMV, index_type> >::type
+	Axpby_MV_Invoke_Right<execution_space, AV, XMV, BV, YMV, index_type>,
+	Axpby_MV_Invoke_Left<execution_space, AV, XMV, BV, YMV, index_type> >::type
           Axpby_MV_Invoke_Layout;
-      Axpby_MV_Invoke_Layout::run(alpha, X, beta, Y, a, b);
+      Axpby_MV_Invoke_Layout::run(space, alpha, X, beta, Y, a, b);
     }
     Kokkos::Profiling::popRegion();
   }
@@ -320,8 +323,8 @@ struct Axpby<typename XMV::non_const_value_type, XMV,
 
 // Partial specialization for XV and YV rank-1 Views,
 // and AV and BV scalars.
-template <class XV, class YV>
-struct Axpby<typename XV::non_const_value_type, XV,
+template <class execution_space, class XV, class YV>
+struct Axpby<execution_space, typename XV::non_const_value_type, XV,
              typename YV::non_const_value_type, YV, 1, false,
              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef typename XV::non_const_value_type AV;
@@ -330,7 +333,7 @@ struct Axpby<typename XV::non_const_value_type, XV,
   typedef Kokkos::ArithTraits<typename XV::non_const_value_type> ATA;
   typedef Kokkos::ArithTraits<typename YV::non_const_value_type> ATB;
 
-  static void axpby(const AV& alpha, const XV& X, const BV& beta, const YV& Y) {
+  static void axpby(const execution_space& space, const AV& alpha, const XV& X, const BV& beta, const YV& Y) {
     static_assert(Kokkos::is_view<XV>::value,
                   "KokkosBlas::Impl::"
                   "Axpby<rank-1>::axpby: X is not a Kokkos::View.");
@@ -394,14 +397,12 @@ struct Axpby<typename XV::non_const_value_type, XV,
 
     if (numRows < static_cast<size_type>(INT_MAX)) {
       typedef int index_type;
-      Axpby_Generic<typename XV::non_const_value_type, XV,
-                    typename YV::non_const_value_type, YV, index_type>(
-          alpha, X, beta, Y, 0, a, b);
+      Axpby_Generic<execution_space, typename XV::non_const_value_type, XV,
+                    typename YV::non_const_value_type, YV, index_type>(space, alpha, X, beta, Y, 0, a, b);
     } else {
       typedef typename XV::size_type index_type;
-      Axpby_Generic<typename XV::non_const_value_type, XV,
-                    typename YV::non_const_value_type, YV, index_type>(
-          alpha, X, beta, Y, 0, a, b);
+      Axpby_Generic<execution_space, typename XV::non_const_value_type, XV,
+                    typename YV::non_const_value_type, YV, index_type>(space, alpha, X, beta, Y, 0, a, b);
     }
     Kokkos::Profiling::popRegion();
   }
@@ -422,6 +423,7 @@ struct Axpby<typename XV::non_const_value_type, XV,
 
 #define KOKKOSBLAS1_AXPBY_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
   extern template struct Axpby<                                                \
+      EXEC_SPACE,                                                              \
       SCALAR,                                                                  \
       Kokkos::View<const SCALAR*, LAYOUT,                                      \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                      \
@@ -433,6 +435,7 @@ struct Axpby<typename XV::non_const_value_type, XV,
 
 #define KOKKOSBLAS1_AXPBY_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
   template struct Axpby<                                                       \
+      EXEC_SPACE,                                                              \
       SCALAR,                                                                  \
       Kokkos::View<const SCALAR*, LAYOUT,                                      \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                      \
@@ -453,6 +456,7 @@ struct Axpby<typename XV::non_const_value_type, XV,
 #define KOKKOSBLAS1_AXPBY_MV_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE,      \
                                            MEM_SPACE)                       \
   extern template struct Axpby<                                             \
+      EXEC_SPACE,                                                           \
       SCALAR,                                                               \
       Kokkos::View<const SCALAR**, LAYOUT,                                  \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                   \
@@ -462,6 +466,7 @@ struct Axpby<typename XV::non_const_value_type, XV,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,               \
       2, false, true>;                                                      \
   extern template struct Axpby<                                             \
+      EXEC_SPACE,                                                           \
       Kokkos::View<const SCALAR*, LAYOUT,                                   \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                   \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,               \
@@ -478,6 +483,7 @@ struct Axpby<typename XV::non_const_value_type, XV,
 #define KOKKOSBLAS1_AXPBY_MV_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE,      \
                                            MEM_SPACE)                       \
   template struct Axpby<                                                    \
+      EXEC_SPACE,                                                           \
       SCALAR,                                                               \
       Kokkos::View<const SCALAR**, LAYOUT,                                  \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                   \
@@ -487,6 +493,7 @@ struct Axpby<typename XV::non_const_value_type, XV,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,               \
       2, false, true>;                                                      \
   template struct Axpby<                                                    \
+      EXEC_SPACE,                                                           \
       Kokkos::View<const SCALAR*, LAYOUT,                                   \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                   \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,               \
