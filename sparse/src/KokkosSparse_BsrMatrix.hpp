@@ -494,12 +494,19 @@ class BsrMatrix {
       KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
 
-    if ((ncols % blockDim_ != 0) || (nrows % blockDim_ != 0)) {
-      assert(
-          (ncols % blockDim_ == 0) &&
-          "BsrMatrix: input CrsMatrix columns is not a multiple of block size");
-      assert((nrows % blockDim_ == 0) &&
-             "BsrMatrix: input CrsMatrix rows is not a multiple of block size");
+    if (ncols % blockDim_) {
+      std::ostringstream os;
+      os << "BsrMatrix: " << ncols
+         << " input CrsMatrix columns is not a multiple of block size "
+         << blockDim_;
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
+    }
+    if (nrows % blockDim_) {
+      std::ostringstream os;
+      os << "BsrMatrix: " << nrows
+         << " input CrsMatrix rows is not a multiple of block size "
+         << blockDim_;
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
     if (annz % (blockDim_ * blockDim_)) {
       throw std::runtime_error(
