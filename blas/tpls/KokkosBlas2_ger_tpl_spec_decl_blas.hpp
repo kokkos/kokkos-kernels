@@ -57,7 +57,7 @@ namespace Impl {
                          Kokkos::MemoryTraits<Kokkos::Unmanaged>>            \
         AViewType;                                                           \
                                                                              \
-    static void ger(const EXEC_SPACE & /* space */                           \
+    static void ger(const EXEC_SPACE& /* space */                            \
                     ,                                                        \
                     const char /*trans*/[],                                  \
                     typename AViewType::const_value_type& alpha,             \
@@ -103,7 +103,7 @@ namespace Impl {
                          Kokkos::MemoryTraits<Kokkos::Unmanaged>>            \
         AViewType;                                                           \
                                                                              \
-    static void ger(const EXEC_SPACE & /* space */                           \
+    static void ger(const EXEC_SPACE& /* space */                            \
                     ,                                                        \
                     const char /*trans*/[],                                  \
                     typename AViewType::const_value_type& alpha,             \
@@ -149,7 +149,7 @@ namespace Impl {
                          Kokkos::MemoryTraits<Kokkos::Unmanaged>>            \
         AViewType;                                                           \
                                                                              \
-    static void ger(const EXEC_SPACE & /* space */                           \
+    static void ger(const EXEC_SPACE& /* space */                            \
                     ,                                                        \
                     const char trans[],                                      \
                     typename AViewType::const_value_type& alpha,             \
@@ -218,7 +218,7 @@ namespace Impl {
                          Kokkos::MemoryTraits<Kokkos::Unmanaged>>            \
         AViewType;                                                           \
                                                                              \
-    static void ger(const EXEC_SPACE & /* space */                           \
+    static void ger(const EXEC_SPACE& /* space */                            \
                     ,                                                        \
                     const char trans[],                                      \
                     typename AViewType::const_value_type& alpha,             \
@@ -261,79 +261,79 @@ namespace Impl {
   };
 
 #ifdef KOKKOS_ENABLE_SERIAL
-KOKKOSBLAS2_DGER_BLAS(Kokkos::LayoutLeft, Kokkos::Serial
-                     , Kokkos::HostSpace, true)
-KOKKOSBLAS2_DGER_BLAS(Kokkos::LayoutLeft, Kokkos::Serial
-                     , Kokkos::HostSpace, false)
-KOKKOSBLAS2_DGER_BLAS(Kokkos::LayoutRight, Kokkos::Serial
-                     , Kokkos::HostSpace, true)
-KOKKOSBLAS2_DGER_BLAS(Kokkos::LayoutRight, Kokkos::Serial
-                     , Kokkos::HostSpace, false)
+KOKKOSBLAS2_DGER_BLAS(Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace,
+                      true)
+KOKKOSBLAS2_DGER_BLAS(Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace,
+                      false)
+KOKKOSBLAS2_DGER_BLAS(Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace,
+                      true)
+KOKKOSBLAS2_DGER_BLAS(Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace,
+                      false)
 
-KOKKOSBLAS2_SGER_BLAS(Kokkos::LayoutLeft, Kokkos::Serial
-                     , Kokkos::HostSpace, true)
-KOKKOSBLAS2_SGER_BLAS(Kokkos::LayoutLeft, Kokkos::Serial
-                     , Kokkos::HostSpace, false)
-KOKKOSBLAS2_SGER_BLAS(Kokkos::LayoutRight, Kokkos::Serial
-                     , Kokkos::HostSpace, true)
-KOKKOSBLAS2_SGER_BLAS(Kokkos::LayoutRight, Kokkos::Serial
-                     , Kokkos::HostSpace, false)
+KOKKOSBLAS2_SGER_BLAS(Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace,
+                      true)
+KOKKOSBLAS2_SGER_BLAS(Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace,
+                      false)
+KOKKOSBLAS2_SGER_BLAS(Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace,
+                      true)
+KOKKOSBLAS2_SGER_BLAS(Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace,
+                      false)
 
-KOKKOSBLAS2_ZGER_BLAS(Kokkos::LayoutLeft, Kokkos::Serial
-                     , Kokkos::HostSpace, true)
-KOKKOSBLAS2_ZGER_BLAS(Kokkos::LayoutLeft, Kokkos::Serial
-                     , Kokkos::HostSpace, false)
-KOKKOSBLAS2_ZGER_BLAS(Kokkos::LayoutRight, Kokkos::Serial
-                     , Kokkos::HostSpace, true)
-KOKKOSBLAS2_ZGER_BLAS(Kokkos::LayoutRight, Kokkos::Serial
-                     , Kokkos::HostSpace, false)
+KOKKOSBLAS2_ZGER_BLAS(Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace,
+                      true)
+KOKKOSBLAS2_ZGER_BLAS(Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace,
+                      false)
+KOKKOSBLAS2_ZGER_BLAS(Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace,
+                      true)
+KOKKOSBLAS2_ZGER_BLAS(Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace,
+                      false)
 
-KOKKOSBLAS2_CGER_BLAS(Kokkos::LayoutLeft, Kokkos::Serial
-                     , Kokkos::HostSpace, true)
-KOKKOSBLAS2_CGER_BLAS(Kokkos::LayoutLeft, Kokkos::Serial
-                     , Kokkos::HostSpace, false)
-KOKKOSBLAS2_CGER_BLAS(Kokkos::LayoutRight, Kokkos::Serial
-                     , Kokkos::HostSpace, true)
-KOKKOSBLAS2_CGER_BLAS(Kokkos::LayoutRight, Kokkos::Serial
-                     , Kokkos::HostSpace, false)
+KOKKOSBLAS2_CGER_BLAS(Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace,
+                      true)
+KOKKOSBLAS2_CGER_BLAS(Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace,
+                      false)
+KOKKOSBLAS2_CGER_BLAS(Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace,
+                      true)
+KOKKOSBLAS2_CGER_BLAS(Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace,
+                      false)
 #endif
 
 #ifdef KOKKOS_ENABLE_OPENMP
-KOKKOSBLAS2_DGER_BLAS(Kokkos::LayoutLeft, Kokkos::OpenMP
-                     , Kokkos::HostSpace, true)
-KOKKOSBLAS2_DGER_BLAS(Kokkos::LayoutLeft, Kokkos::OpenMP
-                     , Kokkos::HostSpace, false)
-KOKKOSBLAS2_DGER_BLAS(Kokkos::LayoutRight, Kokkos::OpenMP
-                     , Kokkos::HostSpace, true)
-KOKKOSBLAS2_DGER_BLAS(Kokkos::LayoutRight, Kokkos::OpenMP
-                     , Kokkos::HostSpace, false)
+KOKKOSBLAS2_DGER_BLAS(Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace,
+                      true)
+KOKKOSBLAS2_DGER_BLAS(Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace,
+                      false)
+KOKKOSBLAS2_DGER_BLAS(Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace,
+                      true)
+KOKKOSBLAS2_DGER_BLAS(Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace,
+                      false)
 
-KOKKOSBLAS2_SGER_BLAS(Kokkos::LayoutLeft, Kokkos::OpenMP
-                     , Kokkos::HostSpace, true)
-KOKKOSBLAS2_SGER_BLAS(Kokkos::LayoutLeft, Kokkos::OpenMP
-                     , Kokkos::HostSpace, false)
-KOKKOSBLAS2_SGER_BLAS(Kokkos::LayoutRight, Kokkos::OpenMP
-                     , Kokkos::HostSpace, true)
-KOKKOSBLAS2_SGER_BLAS(Kokkos::LayoutRight, Kokkos::OpenMP
-                     , Kokkos::HostSpace, false)
+KOKKOSBLAS2_SGER_BLAS(Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace,
+                      true)
+KOKKOSBLAS2_SGER_BLAS(Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace,
+                      false)
+KOKKOSBLAS2_SGER_BLAS(Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace,
+                      true)
+KOKKOSBLAS2_SGER_BLAS(Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace,
+                      false)
 
-KOKKOSBLAS2_ZGER_BLAS(Kokkos::LayoutLeft, Kokkos::OpenMP
-                     , Kokkos::HostSpace, true)
-KOKKOSBLAS2_ZGER_BLAS(Kokkos::LayoutLeft, Kokkos::OpenMP
-                     , Kokkos::HostSpace, false)
-KOKKOSBLAS2_ZGER_BLAS(Kokkos::LayoutRight, Kokkos::OpenMP
-                     , Kokkos::HostSpace, true)
-KOKKOSBLAS2_ZGER_BLAS(Kokkos::LayoutRight, Kokkos::OpenMP
-                     , Kokkos::HostSpace, false)
+KOKKOSBLAS2_ZGER_BLAS(Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace,
+                      true)
+KOKKOSBLAS2_ZGER_BLAS(Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace,
+                      false)
+KOKKOSBLAS2_ZGER_BLAS(Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace,
+                      true)
+KOKKOSBLAS2_ZGER_BLAS(Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace,
+                      false)
 
-KOKKOSBLAS2_CGER_BLAS(Kokkos::LayoutLeft, Kokkos::OpenMP
-                     , Kokkos::HostSpace, true)
-KOKKOSBLAS2_CGER_BLAS(Kokkos::LayoutLeft, Kokkos::OpenMP
-                     , Kokkos::HostSpace, false)
-KOKKOSBLAS2_CGER_BLAS(Kokkos::LayoutRight, Kokkos::OpenMP
-                     , Kokkos::HostSpace, true)
-KOKKOSBLAS2_CGER_BLAS(Kokkos::LayoutRight, Kokkos::OpenMP
-                     , Kokkos::HostSpace, false)
+KOKKOSBLAS2_CGER_BLAS(Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace,
+                      true)
+KOKKOSBLAS2_CGER_BLAS(Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace,
+                      false)
+KOKKOSBLAS2_CGER_BLAS(Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace,
+                      true)
+KOKKOSBLAS2_CGER_BLAS(Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace,
+                      false)
 #endif
 
 }  // namespace Impl

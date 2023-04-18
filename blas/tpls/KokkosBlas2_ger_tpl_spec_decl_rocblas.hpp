@@ -58,8 +58,7 @@ namespace Impl {
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >          \
         AViewType;                                                          \
                                                                             \
-    static void ger(const EXEC_SPACE & space,                               \
-                    const char /*trans*/[],                                 \
+    static void ger(const EXEC_SPACE& space, const char /*trans*/[],        \
                     typename AViewType::const_value_type& alpha,            \
                     const XViewType& X, const YViewType& Y,                 \
                     const AViewType& A) {                                   \
@@ -111,8 +110,7 @@ namespace Impl {
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >          \
         AViewType;                                                          \
                                                                             \
-    static void ger(const EXEC_SPACE & space,                               \
-                    const char /*trans*/[],                                 \
+    static void ger(const EXEC_SPACE& space, const char /*trans*/[],        \
                     typename AViewType::const_value_type& alpha,            \
                     const XViewType& X, const YViewType& Y,                 \
                     const AViewType& A) {                                   \
@@ -164,8 +162,7 @@ namespace Impl {
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >            \
         AViewType;                                                            \
                                                                               \
-    static void ger(const EXEC_SPACE & space,                                 \
-                    const char trans[],                                       \
+    static void ger(const EXEC_SPACE& space, const char trans[],              \
                     typename AViewType::const_value_type& alpha,              \
                     const XViewType& X, const YViewType& Y,                   \
                     const AViewType& A) {                                     \
@@ -239,8 +236,7 @@ namespace Impl {
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >           \
         AViewType;                                                           \
                                                                              \
-    static void ger(const EXEC_SPACE & space,                                \
-                    const char trans[],                                      \
+    static void ger(const EXEC_SPACE& space, const char trans[],             \
                     typename AViewType::const_value_type& alpha,             \
                     const XViewType& X, const YViewType& Y,                  \
                     const AViewType& A) {                                    \
@@ -286,41 +282,41 @@ namespace Impl {
     }                                                                        \
   };
 
-KOKKOSBLAS2_DGER_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP,
-                         Kokkos::HIPSpace, true)
-KOKKOSBLAS2_DGER_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP,
-                         Kokkos::HIPSpace, false)
-KOKKOSBLAS2_DGER_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP,
-                         Kokkos::HIPSpace, true)
-KOKKOSBLAS2_DGER_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP,
-                         Kokkos::HIPSpace, false)
+KOKKOSBLAS2_DGER_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::HIPSpace,
+                         true)
+KOKKOSBLAS2_DGER_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::HIPSpace,
+                         false)
+KOKKOSBLAS2_DGER_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP, Kokkos::HIPSpace,
+                         true)
+KOKKOSBLAS2_DGER_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP, Kokkos::HIPSpace,
+                         false)
 
-KOKKOSBLAS2_SGER_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP,
-                         Kokkos::HIPSpace, true)
-KOKKOSBLAS2_SGER_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP,
-                         Kokkos::HIPSpace, false)
-KOKKOSBLAS2_SGER_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP,
-                         Kokkos::HIPSpace, true)
-KOKKOSBLAS2_SGER_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP,
-                         Kokkos::HIPSpace, false)
+KOKKOSBLAS2_SGER_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::HIPSpace,
+                         true)
+KOKKOSBLAS2_SGER_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::HIPSpace,
+                         false)
+KOKKOSBLAS2_SGER_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP, Kokkos::HIPSpace,
+                         true)
+KOKKOSBLAS2_SGER_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP, Kokkos::HIPSpace,
+                         false)
 
-KOKKOSBLAS2_ZGER_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP,
-                         Kokkos::HIPSpace, true)
-KOKKOSBLAS2_ZGER_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP,
-                         Kokkos::HIPSpace, false)
-KOKKOSBLAS2_ZGER_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP,
-                         Kokkos::HIPSpace, true)
-KOKKOSBLAS2_ZGER_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP,
-                         Kokkos::HIPSpace, false)
+KOKKOSBLAS2_ZGER_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::HIPSpace,
+                         true)
+KOKKOSBLAS2_ZGER_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::HIPSpace,
+                         false)
+KOKKOSBLAS2_ZGER_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP, Kokkos::HIPSpace,
+                         true)
+KOKKOSBLAS2_ZGER_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP, Kokkos::HIPSpace,
+                         false)
 
-KOKKOSBLAS2_CGER_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP,
-                         Kokkos::HIPSpace, true)
-KOKKOSBLAS2_CGER_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP,
-                         Kokkos::HIPSpace, false)
-KOKKOSBLAS2_CGER_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP,
-                         Kokkos::HIPSpace, true)
-KOKKOSBLAS2_CGER_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP,
-                         Kokkos::HIPSpace, false)
+KOKKOSBLAS2_CGER_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::HIPSpace,
+                         true)
+KOKKOSBLAS2_CGER_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::HIPSpace,
+                         false)
+KOKKOSBLAS2_CGER_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP, Kokkos::HIPSpace,
+                         true)
+KOKKOSBLAS2_CGER_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP, Kokkos::HIPSpace,
+                         false)
 
 }  // namespace Impl
 }  // namespace KokkosBlas
