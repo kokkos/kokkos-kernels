@@ -69,7 +69,7 @@ using float_t = typename Kokkos::ArithTraits<scalar_t>::mag_type;
 
 ///////////////////////////////////////////////////////////////////////////////
 int run_par_ilut_test(KernelHandle& kh, const sp_matrix_type& A,
-                      const int rows, const int team_size, const int loop)
+                      const int rows, const int loop)
 ///////////////////////////////////////////////////////////////////////////////
 {
   auto par_ilut_handle = kh.get_par_ilut_handle();
@@ -166,7 +166,7 @@ std::shared_ptr<gko::CudaExecutor> get_ginkgo_exec<gko::CudaExecutor>()
 
 ///////////////////////////////////////////////////////////////////////////////
 void run_par_ilut_test_ginkgo(KernelHandle& kh, const sp_matrix_type& A,
-                              const int rows, const int team_size, const int loop, const int num_iters)
+                              const int rows, const int loop, const int num_iters)
 ///////////////////////////////////////////////////////////////////////////////
 {
   auto par_ilut_handle = kh.get_par_ilut_handle();
@@ -334,12 +334,12 @@ int test_par_ilut_perf(const int rows, const int nnz_per_row, const int bandwidt
 
   int num_iters = 6;
   if (test & 1) {
-    num_iters = run_par_ilut_test(kh, A, rows, team_size, loop);
+    num_iters = run_par_ilut_test(kh, A, rows, loop);
   }
 
 #ifdef USE_GINKGO
   if (test & 2) {
-    run_par_ilut_test_ginkgo(kh, A, rows, team_size, loop, num_iters);
+    run_par_ilut_test_ginkgo(kh, A, rows, loop, num_iters);
   }
 #endif
 
