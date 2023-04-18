@@ -602,8 +602,8 @@ class BsrMatrix {
       ++bi;
     }
     // complete row map if last blocks are empty
-    for (; row < numRows; ++row) {
-      row_map_host(row + 1) = bi;
+    for (; row < numRows + 1; ++row) {
+      row_map_host(row) = bi;
     }
 
     // move graph data to the requested device
