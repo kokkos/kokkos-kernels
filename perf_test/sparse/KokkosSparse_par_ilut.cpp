@@ -158,7 +158,7 @@ std::shared_ptr<GinkgoT> get_ginkgo_exec()
 template <>
 std::shared_ptr<gko::CudaExecutor> get_ginkgo_exec<gko::CudaExecutor>()
 {
-  auto ref_exec = gko::OmpExecutor::create();
+  auto ref_exec = gko::ReferenceExecutor::create();
   return gko::CudaExecutor::create(0 /*device id*/, ref_exec);
 }
 
