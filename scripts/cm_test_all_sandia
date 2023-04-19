@@ -1183,6 +1183,9 @@ single_build_and_test() {
   fi
   echo "        module purge" &>> reload_modules.sh
   echo "        module load $compiler_modules_list" &>> reload_modules.sh
+  echo "        export OMP_NUM_THREADS=$omp_num_threads" &>> reload_modules.sh
+  echo "        export OMP_PROC_BIND=$omp_proc_bind" &>> reload_modules.sh
+  echo "        export OMP_PLACES=$omp_places" &>> reload_modules.sh
   echo "" &>> reload_modules.sh
   chmod +x reload_modules.sh
 
