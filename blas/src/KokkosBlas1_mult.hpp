@@ -37,15 +37,26 @@ namespace KokkosBlas {
 /// \param X [in]     The X vector.
 ///
 /// \return Y = gamma * Y + alpha * A * X.
-template <class YMV, class AV, class XMV>
-void mult(typename YMV::const_value_type& gamma, const YMV& Y,
+template <class execution_space, class YMV, class AV, class XMV>
+void mult(const execution_space& space, typename YMV::const_value_type& gamma, const YMV& Y,
           typename AV::const_value_type& alpha, const AV& A, const XMV& X) {
+  static_assert(Kokkos::is_execution_space_v<execution_space>,
+		"KokkosBlas::mult: execution_space must be a valid Kokkos execution space.");
   static_assert(Kokkos::is_view<YMV>::value,
                 "KokkosBlas::mult: "
                 "Y is not a Kokkos::View.");
+  static_assert(Kokkos::SpaceAccessibility<execution_space, typename YMV::memory_space>::accessible,
+		"KokkosBlas::mult: YMV must be accessible from execution_space.");
   static_assert(Kokkos::is_view<AV>::value,
                 "KokkosBlas::mult: "
                 "A is not a Kokkos::View.");
+  static_assert(Kokkos::SpaceAccessibility<execution_space, typename AV::memory_space>::accessible,
+		"KokkosBlas::mult: AV must be accessible from execution_space.");
+  static_assert(Kokkos::is_view<XMV>::value,
+                "KokkosBlas::mult: "
+                "X is not a Kokkos::View.");
+  static_assert(Kokkos::SpaceAccessibility<execution_space, typename XMV::memory_space>::accessible,
+		"KokkosBlas::mult: AV must be accessible from execution_space.");
   static_assert(std::is_same<typename YMV::value_type,
                              typename YMV::non_const_value_type>::value,
                 "KokkosBlas::mult: Y is const.  "
@@ -95,8 +106,28 @@ void mult(typename YMV::const_value_type& gamma, const YMV& Y,
   AV_Internal A_internal  = A;
   XMV_Internal X_internal = X;
 
-  Impl::Mult<YMV_Internal, AV_Internal, XMV_Internal>::mult(
-      gamma, Y_internal, alpha, A_internal, X_internal);
+  Impl::Mult<execution_space, YMV_Internal, AV_Internal, XMV_Internal>::mult(
+									     space, gamma, Y_internal, alpha, A_internal, X_internal);
+}
+
+/// \brief Element wise multiplication of two vectors:
+///        Y[i] = gamma * Y[i] + alpha * A[i] * X[i]
+///
+/// \tparam YMV Type of the first vector Y; a 1-D or 2-D Kokkos::View.
+/// \tparam AV  Type of the second vector A; a 1-D Kokkos::View.
+/// \tparam XMV Type of the third vector X; a 1-D or 2-D Kokkos::View.
+///
+/// \param gamma [in] The scalar to apply to Y.
+/// \param Y [in/out] The Y vector.
+/// \param alpha [in] The scalar to apply to A.
+/// \param A [in]     The vector to apply to X.
+/// \param X [in]     The X vector.
+///
+/// \return Y = gamma * Y + alpha * A * X.
+template <class YMV, class AV, class XMV>
+void mult(typename YMV::const_value_type& gamma, const YMV& Y,
+          typename AV::const_value_type& alpha, const AV& A, const XMV& X) {
+  mult(typename YMV::execution_space{}, gamma, Y, alpha, A, X);
 }
 
 }  // namespace KokkosBlas
