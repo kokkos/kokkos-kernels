@@ -332,6 +332,10 @@ class BsrMatrix {
   static_assert(
       std::is_signed<OrdinalType>::value,
       "BsrMatrix requires that OrdinalType is a signed integer type.");
+  static_assert(Kokkos::is_memory_traits_v<MemoryTraits> ||
+                    std::is_void_v<MemoryTraits>,
+                "BsrMatrix: MemoryTraits (4th template param) must be a Kokkos "
+                "MemoryTraits or void");
 
  private:
   typedef
