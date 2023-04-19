@@ -106,26 +106,26 @@ struct view_stride_adapter {
     if constexpr (rank == 1) {
       if constexpr (strided) {
         d_base = DViewBase(label, m, 2);
-        h_base = Kokkos::create_mirror_view(Kokkos::HostSpace(), d_base);
+        h_base = Kokkos::create_mirror_view(d_base);
         d_view = Kokkos::subview(d_base, Kokkos::ALL(), 0);
         h_view = Kokkos::subview(h_base, Kokkos::ALL(), 0);
       } else {
         d_base = DViewBase(label, m);
-        h_base = Kokkos::create_mirror_view(Kokkos::HostSpace(), d_base);
+        h_base = Kokkos::create_mirror_view(d_base);
         d_view = d_base;
         h_view = h_base;
       }
     } else {
       if constexpr (strided) {
         d_base = DViewBase(label, m, n, 2);
-        h_base = Kokkos::create_mirror_view(Kokkos::HostSpace(), d_base);
+        h_base = Kokkos::create_mirror_view(d_base);
         d_view =
             Kokkos::subview(d_base, Kokkos::ALL(), Kokkos::make_pair(0, n), 0);
         h_view =
             Kokkos::subview(h_base, Kokkos::ALL(), Kokkos::make_pair(0, n), 0);
       } else {
         d_base = DViewBase(label, m, n);
-        h_base = Kokkos::create_mirror_view(Kokkos::HostSpace(), d_base);
+        h_base = Kokkos::create_mirror_view(d_base);
         d_view = d_base;
         h_view = h_base;
       }
