@@ -52,6 +52,7 @@ class Coo2Crs {
   using UmapEqualToType = typename Kokkos::pod_equal_to<CrsOT>;
   using UmapType = Kokkos::UnorderedMap<CrsOT, CrsST, CrsET, UmapHasherType,
                                         UmapEqualToType>;
+  using UmapMemorySpace = typename UmapType::device_type::memory_space;
 
   // Public for kokkos policies
   struct coo2crsRp1 {};
@@ -190,15 +191,14 @@ class Coo2Crs {
     //   the host before using a host-callable method.
 
     // Setup a nrows length array of Unordered Maps
-    m_umaps = reinterpret_cast<UmapType *>(
-        Kokkos::kokkos_malloc("m_umaps", m_nrows * sizeof(UmapType)));
+    m_umaps =
+        reinterpret_cast<UmapType *>(Kokkos::kokkos_malloc<UmapMemorySpace>(
+            "m_umaps", m_nrows * sizeof(UmapType)));
 
     using shallow_copy_to_device =
-        Kokkos::Impl::DeepCopy<typename UmapType::device_type::memory_space,
-                               typename Kokkos::HostSpace>;
+        Kokkos::Impl::DeepCopy<UmapMemorySpace, typename Kokkos::HostSpace>;
 
     UmapType **umap_ptrs = new UmapType *[m_nrows];
-
     // TODO: use host-level parallel_for with tag rowmapRp1
     for (int i = 0; i < m_nrows; i++) {
       umap_ptrs[i] = new UmapType(arg_capacity_hint, arg_hasher, arg_equal_to);
@@ -263,7 +263,7 @@ class Coo2Crs {
       delete umap_ptrs[i];
     }
     delete[] umap_ptrs;
-    Kokkos::kokkos_free(m_umaps);
+    Kokkos::kokkos_free<UmapMemorySpace>(m_umaps);
   }
 
   CrsType get_crsMat() {
