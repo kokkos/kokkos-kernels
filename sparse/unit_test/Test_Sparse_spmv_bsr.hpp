@@ -108,8 +108,13 @@ Bsr bsr_random(const int blockSize, const int blockRows, const int blockCols) {
   Test::RandCsMatrix<scalar_type, Kokkos::LayoutLeft, typename Bsr::device_type,
                      ordinal_type, size_type>
       rcs(blockRows, blockCols, scalar_type(0), max_a<scalar_type>());
-  Graph graph(rcs.get_ids(), rcs.get_map());
-  Crs crs("crs", blockCols, rcs.get_vals(), graph);
+
+  const auto colids =
+      Kokkos::subview(rcs.get_ids(), Kokkos::pair{size_t(0), rcs.get_nnz()});
+  const auto vals =
+      Kokkos::subview(rcs.get_vals(), Kokkos::pair{size_t(0), rcs.get_nnz()});
+  Graph graph(colids, rcs.get_map());
+  Crs crs("crs", blockCols, vals, graph);
 
   // expand to Bsr matrix
   return KokkosSparse::Impl::expand_crs_to_bsr<Bsr>(crs, blockSize);
@@ -126,6 +131,7 @@ void reference_spmv(const char *mode, const Alpha &alpha, const Bsr &a,
       typename Bsr::non_const_value_type, typename Bsr::non_const_ordinal_type,
       typename Bsr::device_type, void, typename Bsr::non_const_size_type>;
   const Crs crs = KokkosSparse::Impl::bsr_to_crs<Crs>(a);
+
   KokkosSparse::spmv(mode, alpha, crs, x, beta, y);
 }
 
@@ -332,20 +338,7 @@ std::tuple<Bsr, typename VectorTypeFor<Bsr>::type,
            typename VectorTypeFor<Bsr>::type>
 spmv_random(const char *mode, const int blockSize, const int blockRows,
             const int blockCols) {
-  using scalar_type  = typename Bsr::non_const_value_type;
-  using ordinal_type = typename Bsr::non_const_ordinal_type;
-  using size_type    = typename Bsr::size_type;
-  using Crs =
-      KokkosSparse::CrsMatrix<scalar_type, ordinal_type,
-                              typename Bsr::device_type, void, size_type>;
-  using Graph = typename Crs::staticcrsgraph_type;
-
-  // construct a random Crs Matrix
-  Test::RandCsMatrix<scalar_type, Kokkos::LayoutLeft, typename Bsr::device_type,
-                     ordinal_type, size_type>
-      rcs(blockRows, blockCols, scalar_type(0), max_a<scalar_type>());
-  Graph graph(rcs.get_ids(), rcs.get_map());
-  Crs crs("crs", blockCols, rcs.get_vals(), graph);
+  using scalar_type = typename Bsr::non_const_value_type;
 
   // expand to Bsr matrix
   Bsr a = bsr_random<Bsr>(blockSize, blockRows, blockCols);
