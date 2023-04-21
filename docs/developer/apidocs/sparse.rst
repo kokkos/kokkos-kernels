@@ -65,7 +65,7 @@ block_gauss_seidel
 par_ilut
 --------
 .. doxygenfunction:: par_ilut_symbolic(KernelHandle* handle, ARowMapType& A_rowmap, AEntriesType& A_entries, LRowMapType& L_rowmap, URowMapType& U_rowmap)
-.. doxygenfunction:: par_ilut_numeric(KernelHandle* handle, ARowMapType& A_rowmap, AEntriesType& A_entries, AValuesType& A_values, LRowMapType& L_rowmap, LEntriesType& L_entries, LValuesType& L_values, URowMapType& U_rowmap, UEntriesType& U_entries, UValuesType& U_values, bool deterministic)
+.. doxygenfunction:: par_ilut_numeric(KernelHandle* handle, ARowMapType& A_rowmap, AEntriesType& A_entries, AValuesType& A_values, LRowMapType& L_rowmap, LEntriesType& L_entries, LValuesType& L_values, URowMapType& U_rowmap, UEntriesType& U_entries, UValuesType& U_values)
 .. doxygenclass::    KokkosSparse::PAR_ILUTHandle
     :members:
 
