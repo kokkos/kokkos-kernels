@@ -38,25 +38,33 @@ namespace KokkosBlas {
 ///
 /// \return Y = gamma * Y + alpha * A * X.
 template <class execution_space, class YMV, class AV, class XMV>
-void mult(const execution_space& space, typename YMV::const_value_type& gamma, const YMV& Y,
-          typename AV::const_value_type& alpha, const AV& A, const XMV& X) {
+void mult(const execution_space& space, typename YMV::const_value_type& gamma,
+          const YMV& Y, typename AV::const_value_type& alpha, const AV& A,
+          const XMV& X) {
   static_assert(Kokkos::is_execution_space_v<execution_space>,
-		"KokkosBlas::mult: execution_space must be a valid Kokkos execution space.");
+                "KokkosBlas::mult: execution_space must be a valid Kokkos "
+                "execution space.");
   static_assert(Kokkos::is_view<YMV>::value,
                 "KokkosBlas::mult: "
                 "Y is not a Kokkos::View.");
-  static_assert(Kokkos::SpaceAccessibility<execution_space, typename YMV::memory_space>::accessible,
-		"KokkosBlas::mult: YMV must be accessible from execution_space.");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename YMV::memory_space>::accessible,
+      "KokkosBlas::mult: YMV must be accessible from execution_space.");
   static_assert(Kokkos::is_view<AV>::value,
                 "KokkosBlas::mult: "
                 "A is not a Kokkos::View.");
-  static_assert(Kokkos::SpaceAccessibility<execution_space, typename AV::memory_space>::accessible,
-		"KokkosBlas::mult: AV must be accessible from execution_space.");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename AV::memory_space>::accessible,
+      "KokkosBlas::mult: AV must be accessible from execution_space.");
   static_assert(Kokkos::is_view<XMV>::value,
                 "KokkosBlas::mult: "
                 "X is not a Kokkos::View.");
-  static_assert(Kokkos::SpaceAccessibility<execution_space, typename XMV::memory_space>::accessible,
-		"KokkosBlas::mult: AV must be accessible from execution_space.");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename XMV::memory_space>::accessible,
+      "KokkosBlas::mult: AV must be accessible from execution_space.");
   static_assert(std::is_same<typename YMV::value_type,
                              typename YMV::non_const_value_type>::value,
                 "KokkosBlas::mult: Y is const.  "
@@ -107,7 +115,7 @@ void mult(const execution_space& space, typename YMV::const_value_type& gamma, c
   XMV_Internal X_internal = X;
 
   Impl::Mult<execution_space, YMV_Internal, AV_Internal, XMV_Internal>::mult(
-									     space, gamma, Y_internal, alpha, A_internal, X_internal);
+      space, gamma, Y_internal, alpha, A_internal, X_internal);
 }
 
 /// \brief Element wise multiplication of two vectors:

@@ -148,7 +148,8 @@ struct V_ReciprocalSelf_Functor {
 // Invoke the "generic" (not unrolled) multivector functor that
 // computes entry-wise reciprocalolute value.
 template <class execution_space, class RMV, class XMV, class SizeType>
-void MV_Reciprocal_Generic(const execution_space& space, const RMV& R, const XMV& X) {
+void MV_Reciprocal_Generic(const execution_space& space, const RMV& R,
+                           const XMV& X) {
   static_assert(Kokkos::is_view<RMV>::value,
                 "KokkosBlas::Impl::"
                 "MV_Reciprocal_Generic: RMV is not a Kokkos::View.");
@@ -176,7 +177,8 @@ void MV_Reciprocal_Generic(const execution_space& space, const RMV& R, const XMV
 
 // Variant of MV_Reciprocal_Generic for single vectors (1-D Views) R and X.
 template <class execution_space, class RV, class XV, class SizeType>
-void V_Reciprocal_Generic(const execution_space& space, const RV& R, const XV& X) {
+void V_Reciprocal_Generic(const execution_space& space, const RV& R,
+                          const XV& X) {
   static_assert(Kokkos::is_view<RV>::value,
                 "KokkosBlas::Impl::"
                 "V_Reciprocal_Generic: RV is not a Kokkos::View.");

@@ -30,21 +30,29 @@
 namespace KokkosBlas {
 
 template <class execution_space, class RMV, class AV, class XMV>
-void scal(const execution_space& space, const RMV& R, const AV& a, const XMV& X) {
+void scal(const execution_space& space, const RMV& R, const AV& a,
+          const XMV& X) {
   static_assert(Kokkos::is_execution_space_v<execution_space>,
-		"KokkosBlas::scal: execution_space must be a valid Kokkos execution space");
+                "KokkosBlas::scal: execution_space must be a valid Kokkos "
+                "execution space");
   static_assert(Kokkos::is_view<RMV>::value,
                 "KokkosBlas::scal: "
                 "R is not a Kokkos::View.");
-  static_assert(Kokkos::SpaceAccessibility<execution_space, typename RMV::memory_space>::accessible,
-		"KokkosBlas::scal: RMV must be accessible from execution_space.");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename RMV::memory_space>::accessible,
+      "KokkosBlas::scal: RMV must be accessible from execution_space.");
   static_assert(Kokkos::is_view<XMV>::value,
                 "KokkosBlas::scal: "
                 "X is not a Kokkos::View.");
-  static_assert(Kokkos::SpaceAccessibility<execution_space, typename XMV::memory_space>::accessible,
-		"KokkosBlas::scal: XMV must be accessible from execution_space");
-  static_assert(Kokkos::SpaceAccessibility<typename RMV::memory_space, typename XMV::memory_space>::assignable,
-		"KokkosBlas::scal: XMV must be assignable to RMV");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename XMV::memory_space>::accessible,
+      "KokkosBlas::scal: XMV must be accessible from execution_space");
+  static_assert(
+      Kokkos::SpaceAccessibility<typename RMV::memory_space,
+                                 typename XMV::memory_space>::assignable,
+      "KokkosBlas::scal: XMV must be assignable to RMV");
   static_assert(std::is_same<typename RMV::value_type,
                              typename RMV::non_const_value_type>::value,
                 "KokkosBlas::scal: R is const.  "
@@ -75,21 +83,22 @@ void scal(const execution_space& space, const RMV& R, const AV& a, const XMV& X)
   // Create unmanaged versions of the input Views.  RMV and XMV may be
   // rank 1 or rank 2.  AV may be either a rank-1 View, or a scalar
   // value.
-  using RMV_Internal = Kokkos::View<typename RMV::non_const_data_type, UnifiedRLayout,
-                       typename RMV::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
-  using XMV_Internal = Kokkos::View<typename XMV::const_data_type, UnifiedXLayout,
-                       typename XMV::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
-  using AV_Internal = typename KokkosKernels::Impl::GetUnifiedScalarViewType<
-      AV, XMV_Internal, true>::type;
+  using RMV_Internal = Kokkos::View<typename RMV::non_const_data_type,
+                                    UnifiedRLayout, typename RMV::device_type,
+                                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+  using XMV_Internal = Kokkos::View<typename XMV::const_data_type,
+                                    UnifiedXLayout, typename XMV::device_type,
+                                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+  using AV_Internal =
+      typename KokkosKernels::Impl::GetUnifiedScalarViewType<AV, XMV_Internal,
+                                                             true>::type;
 
   RMV_Internal R_internal = R;
   AV_Internal a_internal  = a;
   XMV_Internal X_internal = X;
 
   Impl::Scal<execution_space, RMV_Internal, AV_Internal, XMV_Internal>::scal(
-									     space, R_internal, a_internal, X_internal);
+      space, R_internal, a_internal, X_internal);
 }
 
 template <class RMV, class AV, class XMV>

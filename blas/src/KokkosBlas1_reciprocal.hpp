@@ -35,17 +35,22 @@ namespace KokkosBlas {
 template <class execution_space, class RMV, class XMV>
 void reciprocal(const execution_space& space, const RMV& R, const XMV& X) {
   static_assert(Kokkos::is_execution_space_v<execution_space>,
-		"KokkosBlas::reciprocal: execution_space must be a valid Kokkos execition space.");
+                "KokkosBlas::reciprocal: execution_space must be a valid "
+                "Kokkos execition space.");
   static_assert(Kokkos::is_view<RMV>::value,
                 "KokkosBlas::reciprocal: "
                 "R is not a Kokkos::View.");
-  static_assert(Kokkos::SpaceAccessibility<execution_space, typename RMV::memory_space>::accessible,
-		"KokkosBlas::reciprocal: RMV must be accessible from execution_space");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename RMV::memory_space>::accessible,
+      "KokkosBlas::reciprocal: RMV must be accessible from execution_space");
   static_assert(Kokkos::is_view<XMV>::value,
                 "KokkosBlas::reciprocal: "
                 "X is not a Kokkos::View.");
-  static_assert(Kokkos::SpaceAccessibility<execution_space, typename XMV::memory_space>::accessible,
-		"KokkosBlas::reciprocal: XMV must be accessible from execution_space");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename XMV::memory_space>::accessible,
+      "KokkosBlas::reciprocal: XMV must be accessible from execution_space");
   static_assert(std::is_same<typename RMV::value_type,
                              typename RMV::non_const_value_type>::value,
                 "KokkosBlas::reciprocal: R is const.  "
@@ -86,9 +91,8 @@ void reciprocal(const execution_space& space, const RMV& R, const XMV& X) {
   RMV_Internal R_internal = R;
   XMV_Internal X_internal = X;
 
-  Impl::Reciprocal<execution_space, RMV_Internal, XMV_Internal>::reciprocal(space,
-									    R_internal,
-									    X_internal);
+  Impl::Reciprocal<execution_space, RMV_Internal, XMV_Internal>::reciprocal(
+      space, R_internal, X_internal);
 }
 
 /// \brief R(i,j) = reciprocal(X(i,j))

@@ -145,7 +145,8 @@ struct V_MultFunctor {
 /// C(i) = c * C(i) + ab * A(i) * B(i), subject to the usual BLAS
 /// update rules.
 template <class execution_space, class CV, class AV, class BV, class SizeType>
-void V_Mult_Generic(const execution_space& space, typename CV::const_value_type& c, const CV& C,
+void V_Mult_Generic(const execution_space& space,
+                    typename CV::const_value_type& c, const CV& C,
                     typename AV::const_value_type& ab, const AV& A,
                     const BV& B) {
   using Kokkos::ALL;
@@ -191,7 +192,8 @@ void V_Mult_Generic(const execution_space& space, typename CV::const_value_type&
 /// C(i,j) = c * C(i,j) + ab * A(i) * B(i,j), subject to the usual
 /// BLAS update rules.
 template <class execution_space, class CMV, class AV, class BMV, class SizeType>
-void MV_Mult_Generic(const execution_space& space, typename CMV::const_value_type& c, const CMV& C,
+void MV_Mult_Generic(const execution_space& space,
+                     typename CMV::const_value_type& c, const CMV& C,
                      typename AV::const_value_type& ab, const AV& A,
                      const BMV& B) {
   typedef Kokkos::ArithTraits<typename AV::non_const_value_type> ATA;
@@ -203,7 +205,8 @@ void MV_Mult_Generic(const execution_space& space, typename CMV::const_value_typ
     typedef decltype(C_0) CV;
     typedef decltype(B_0) BV;
 
-    V_Mult_Generic<execution_space, CV, AV, BV, SizeType>(space, c, C_0, ab, A, B_0);
+    V_Mult_Generic<execution_space, CV, AV, BV, SizeType>(space, c, C_0, ab, A,
+                                                          B_0);
     return;
   }
 

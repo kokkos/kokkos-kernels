@@ -319,10 +319,11 @@ struct MV_Scal_Unroll_Functor<RMV, typename XMV::non_const_value_type, XMV,
 // Any literal coefficient of zero has BLAS semantics of ignoring the
 // corresponding (multi)vector entry.  This does NOT apply to
 // coefficient(s) in av, if used.
-template <class execution_space, class RMV, class aVector, class XMV, int UNROLL, class SizeType>
-void MV_Scal_Unrolled(const execution_space& space, const RMV& r, const aVector& av, const XMV& x,
+template <class execution_space, class RMV, class aVector, class XMV,
+          int UNROLL, class SizeType>
+void MV_Scal_Unrolled(const execution_space& space, const RMV& r,
+                      const aVector& av, const XMV& x,
                       const SizeType startingColumn, int a = 2) {
-
   if (a == 0) {
     MV_Scal_Unroll_Functor<RMV, aVector, XMV, 0, UNROLL, SizeType> op(
         r, x, av, startingColumn);
@@ -370,8 +371,10 @@ void MV_Scal_Unrolled(const execution_space& space, const RMV& r, const aVector&
 // Any literal coefficient of zero has BLAS semantics of ignoring the
 // corresponding (multi)vector entry.  This does NOT apply to
 // coefficient(s) in av, if used.
-template <class execution_space, class RVector, class aVector, class XVector, class SizeType>
-void MV_Scal_Generic(const execution_space& space, const RVector& r, const aVector& av, const XVector& x,
+template <class execution_space, class RVector, class aVector, class XVector,
+          class SizeType>
+void MV_Scal_Generic(const execution_space& space, const RVector& r,
+                     const aVector& av, const XVector& x,
                      const SizeType startingColumn, int a = 2) {
   const SizeType numRows = x.extent(0);
   Kokkos::RangePolicy<execution_space, SizeType> policy(space, 0, numRows);
@@ -416,7 +419,8 @@ void MV_Scal_Generic(const execution_space& space, const RVector& r, const aVect
 // corresponding (multi)vector entry.  This does NOT apply to
 // coefficient(s) in av, if used.
 template <class execution_space, class RMV, class AV, class XMV, class SizeType>
-void MV_Scal_Invoke_Left(const execution_space& space, const RMV& r, const AV& av, const XMV& x, int a = 2) {
+void MV_Scal_Invoke_Left(const execution_space& space, const RMV& r,
+                         const AV& av, const XMV& x, int a = 2) {
   const SizeType numCols = x.extent(1);
 
 #if KOKKOSBLAS_OPTIMIZATION_LEVEL_SCAL <= 2
@@ -433,7 +437,8 @@ void MV_Scal_Invoke_Left(const execution_space& space, const RMV& r, const AV& a
     typedef decltype(X_cur) XMV2D;
     typedef decltype(R_cur) RMV2D;
 
-    MV_Scal_Unrolled<execution_space, RMV2D, AV, XMV2D, 8, SizeType>(space, R_cur, av, X_cur, j, a);
+    MV_Scal_Unrolled<execution_space, RMV2D, AV, XMV2D, 8, SizeType>(
+        space, R_cur, av, X_cur, j, a);
   }
   for (; j + 4 <= numCols; j += 4) {
     const std::pair<SizeType, SizeType> rng(j, j + 4);
@@ -442,7 +447,8 @@ void MV_Scal_Invoke_Left(const execution_space& space, const RMV& r, const AV& a
     typedef decltype(X_cur) XMV2D;
     typedef decltype(R_cur) RMV2D;
 
-    MV_Scal_Unrolled<execution_space, RMV2D, AV, XMV2D, 4, SizeType>(space, R_cur, av, X_cur, j, a);
+    MV_Scal_Unrolled<execution_space, RMV2D, AV, XMV2D, 4, SizeType>(
+        space, R_cur, av, X_cur, j, a);
   }
   for (; j < numCols; ++j) {
     // RMV and XMV need to turn 1-D.
@@ -451,7 +457,8 @@ void MV_Scal_Invoke_Left(const execution_space& space, const RMV& r, const AV& a
     typedef decltype(r_cur) RV;
     typedef decltype(x_cur) XV;
 
-    V_Scal_Generic<execution_space, RV, AV, XV, SizeType>(space, r_cur, av, x_cur, j, a);
+    V_Scal_Generic<execution_space, RV, AV, XV, SizeType>(space, r_cur, av,
+                                                          x_cur, j, a);
   }
 
 #else  // KOKKOSBLAS_OPTIMIZATION_LEVEL_SCAL > 2
@@ -463,39 +470,73 @@ void MV_Scal_Invoke_Left(const execution_space& space, const RMV& r, const AV& a
       typedef decltype(r_0) RV;
       typedef decltype(x_0) XV;
 
-      V_Scal_Generic<execution_space, RV, AV, XV, SizeType>(space, r_0, av, x_0, 0, a);
+      V_Scal_Generic<execution_space, RV, AV, XV, SizeType>(space, r_0, av, x_0,
+                                                            0, a);
       break;
     }
-    case 2: MV_Scal_Unrolled<execution_space, RMV, AV, XMV, 2, SizeType>(space, r, av, x, 0, a); break;
-    case 3: MV_Scal_Unrolled<execution_space, RMV, AV, XMV, 3, SizeType>(space, r, av, x, 0, a); break;
-    case 4: MV_Scal_Unrolled<execution_space, RMV, AV, XMV, 4, SizeType>(space, r, av, x, 0, a); break;
-    case 5: MV_Scal_Unrolled<execution_space, RMV, AV, XMV, 5, SizeType>(space, r, av, x, 0, a); break;
-    case 6: MV_Scal_Unrolled<execution_space, RMV, AV, XMV, 6, SizeType>(space, r, av, x, 0, a); break;
-    case 7: MV_Scal_Unrolled<execution_space, RMV, AV, XMV, 7, SizeType>(space, r, av, x, 0, a); break;
-    case 8: MV_Scal_Unrolled<execution_space, RMV, AV, XMV, 8, SizeType>(space, r, av, x, 0, a); break;
-    case 9: MV_Scal_Unrolled<execution_space, RMV, AV, XMV, 9, SizeType>(space, r, av, x, 0, a); break;
+    case 2:
+      MV_Scal_Unrolled<execution_space, RMV, AV, XMV, 2, SizeType>(space, r, av,
+                                                                   x, 0, a);
+      break;
+    case 3:
+      MV_Scal_Unrolled<execution_space, RMV, AV, XMV, 3, SizeType>(space, r, av,
+                                                                   x, 0, a);
+      break;
+    case 4:
+      MV_Scal_Unrolled<execution_space, RMV, AV, XMV, 4, SizeType>(space, r, av,
+                                                                   x, 0, a);
+      break;
+    case 5:
+      MV_Scal_Unrolled<execution_space, RMV, AV, XMV, 5, SizeType>(space, r, av,
+                                                                   x, 0, a);
+      break;
+    case 6:
+      MV_Scal_Unrolled<execution_space, RMV, AV, XMV, 6, SizeType>(space, r, av,
+                                                                   x, 0, a);
+      break;
+    case 7:
+      MV_Scal_Unrolled<execution_space, RMV, AV, XMV, 7, SizeType>(space, r, av,
+                                                                   x, 0, a);
+      break;
+    case 8:
+      MV_Scal_Unrolled<execution_space, RMV, AV, XMV, 8, SizeType>(space, r, av,
+                                                                   x, 0, a);
+      break;
+    case 9:
+      MV_Scal_Unrolled<execution_space, RMV, AV, XMV, 9, SizeType>(space, r, av,
+                                                                   x, 0, a);
+      break;
     case 10:
-      MV_Scal_Unrolled<execution_space, RMV, AV, XMV, 10, SizeType>(space, r, av, x, 0, a);
+      MV_Scal_Unrolled<execution_space, RMV, AV, XMV, 10, SizeType>(
+          space, r, av, x, 0, a);
       break;
     case 11:
-      MV_Scal_Unrolled<execution_space, RMV, AV, XMV, 11, SizeType>(space, r, av, x, 0, a);
+      MV_Scal_Unrolled<execution_space, RMV, AV, XMV, 11, SizeType>(
+          space, r, av, x, 0, a);
       break;
     case 12:
-      MV_Scal_Unrolled<execution_space, RMV, AV, XMV, 12, SizeType>(space, r, av, x, 0, a);
+      MV_Scal_Unrolled<execution_space, RMV, AV, XMV, 12, SizeType>(
+          space, r, av, x, 0, a);
       break;
     case 13:
-      MV_Scal_Unrolled<execution_space, RMV, AV, XMV, 13, SizeType>(space, r, av, x, 0, a);
+      MV_Scal_Unrolled<execution_space, RMV, AV, XMV, 13, SizeType>(
+          space, r, av, x, 0, a);
       break;
     case 14:
-      MV_Scal_Unrolled<execution_space, RMV, AV, XMV, 14, SizeType>(space, r, av, x, 0, a);
+      MV_Scal_Unrolled<execution_space, RMV, AV, XMV, 14, SizeType>(
+          space, r, av, x, 0, a);
       break;
     case 15:
-      MV_Scal_Unrolled<execution_space, RMV, AV, XMV, 15, SizeType>(space, r, av, x, 0, a);
+      MV_Scal_Unrolled<execution_space, RMV, AV, XMV, 15, SizeType>(
+          space, r, av, x, 0, a);
       break;
     case 16:
-      MV_Scal_Unrolled<execution_space, RMV, AV, XMV, 16, SizeType>(space, r, av, x, 0, a);
+      MV_Scal_Unrolled<execution_space, RMV, AV, XMV, 16, SizeType>(
+          space, r, av, x, 0, a);
       break;
-    default: MV_Scal_Generic<execution_space, RMV, AV, XMV, SizeType>(space, r, av, x, 0, a);
+    default:
+      MV_Scal_Generic<execution_space, RMV, AV, XMV, SizeType>(space, r, av, x,
+                                                               0, a);
   }
 
 #endif  // KOKKOSBLAS_OPTIMIZATION_LEVEL_SCAL
@@ -515,9 +556,10 @@ void MV_Scal_Invoke_Left(const execution_space& space, const RMV& r, const AV& a
 // Any literal coefficient of zero has BLAS semantics of ignoring the
 // corresponding (multi)vector entry.  This does NOT apply to
 // coefficient(s) in av, if used.
-template <class execution_space, class RMV, class aVector, class XMV, class SizeType>
-void MV_Scal_Invoke_Right(const execution_space& space, const RMV& r, const aVector& av, const XMV& x,
-                          int a = 2) {
+template <class execution_space, class RMV, class aVector, class XMV,
+          class SizeType>
+void MV_Scal_Invoke_Right(const execution_space& space, const RMV& r,
+                          const aVector& av, const XMV& x, int a = 2) {
   const SizeType numCols = x.extent(1);
 
   if (numCols == 1) {
@@ -530,9 +572,11 @@ void MV_Scal_Invoke_Right(const execution_space& space, const RMV& r, const aVec
 
     RV r_0 = Kokkos::subview(r, Kokkos::ALL(), 0);
     XV x_0 = Kokkos::subview(x, Kokkos::ALL(), 0);
-    V_Scal_Generic<execution_space, RMV, aVector, XMV, 1, SizeType>(space, r_0, av, x_0, a);
+    V_Scal_Generic<execution_space, RMV, aVector, XMV, 1, SizeType>(space, r_0,
+                                                                    av, x_0, a);
   } else {
-    MV_Scal_Generic<execution_space, RMV, aVector, XMV, SizeType>(space, r, av, x, a);
+    MV_Scal_Generic<execution_space, RMV, aVector, XMV, SizeType>(space, r, av,
+                                                                  x, a);
   }
 }
 

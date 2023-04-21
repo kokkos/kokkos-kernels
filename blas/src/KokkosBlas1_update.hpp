@@ -35,11 +35,12 @@ namespace KokkosBlas {
 ///   ZMV.
 template <class execution_space, class XMV, class YMV, class ZMV>
 void update(const execution_space& space,
-	    const typename XMV::non_const_value_type& alpha, const XMV& X,
+            const typename XMV::non_const_value_type& alpha, const XMV& X,
             const typename YMV::non_const_value_type& beta, const YMV& Y,
             const typename ZMV::non_const_value_type& gamma, const ZMV& Z) {
   static_assert(Kokkos::is_execution_space_v<execution_space>,
-		"KokkosBlas::update: execution_space must be a valid Kokkos execution space.");
+                "KokkosBlas::update: execution_space must be a valid Kokkos "
+                "execution space.");
   static_assert(Kokkos::is_view<XMV>::value,
                 "KokkosBlas::update: "
                 "X is not a Kokkos::View.");
@@ -49,12 +50,18 @@ void update(const execution_space& space,
   static_assert(Kokkos::is_view<ZMV>::value,
                 "KokkosBlas::update: "
                 "Z is not a Kokkos::View.");
-  static_assert(Kokkos::SpaceAccessibility<execution_space, typename XMV::memory_space>::accessible,
-		"KokkosBlas::update: XMV must be accessible from execution_space.");
-  static_assert(Kokkos::SpaceAccessibility<execution_space, typename YMV::memory_space>::accessible,
-		"KokkosBlas::update: YMV must be accessible from execution_space.");
-  static_assert(Kokkos::SpaceAccessibility<execution_space, typename ZMV::memory_space>::accessible,
-		"KokkosBlas::update: ZMV must be accessible from execution_space.");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename XMV::memory_space>::accessible,
+      "KokkosBlas::update: XMV must be accessible from execution_space.");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename YMV::memory_space>::accessible,
+      "KokkosBlas::update: YMV must be accessible from execution_space.");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename ZMV::memory_space>::accessible,
+      "KokkosBlas::update: ZMV must be accessible from execution_space.");
   static_assert(std::is_same<typename ZMV::value_type,
                              typename ZMV::non_const_value_type>::value,
                 "KokkosBlas::update: Z is const.  "
@@ -117,8 +124,9 @@ void update(const execution_space& space,
        << endl;
 #endif  // KOKKOSKERNELS_PRINT_DEMANGLED_TYPE_INFO
 
-  Impl::Update<execution_space, XMV_Internal, YMV_Internal, ZMV_Internal>::update(
-										  space, alpha, X_internal, beta, Y_internal, gamma, Z_internal);
+  Impl::Update<execution_space, XMV_Internal, YMV_Internal,
+               ZMV_Internal>::update(space, alpha, X_internal, beta, Y_internal,
+                                     gamma, Z_internal);
 }
 
 /// \brief Compute Z := alpha*X + beta*Y + gamma*Z.

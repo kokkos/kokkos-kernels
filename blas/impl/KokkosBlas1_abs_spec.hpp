@@ -85,9 +85,10 @@ namespace KokkosBlas {
 namespace Impl {
 
 // Unification layer
-template <class execution_space, class RMV, class XMV, int rank = RMV::rank,
-          bool tpl_spec_avail = abs_tpl_spec_avail<execution_space, RMV, XMV>::value,
-          bool eti_spec_avail = abs_eti_spec_avail<execution_space, RMV, XMV>::value>
+template <
+    class execution_space, class RMV, class XMV, int rank = RMV::rank,
+    bool tpl_spec_avail = abs_tpl_spec_avail<execution_space, RMV, XMV>::value,
+    bool eti_spec_avail = abs_eti_spec_avail<execution_space, RMV, XMV>::value>
 struct Abs {
   static void abs(const execution_space& space, const RMV& R, const XMV& X);
 };
@@ -95,7 +96,8 @@ struct Abs {
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 //! Full specialization of Abs for single vectors (1-D Views).
 template <class execution_space, class RMV, class XMV>
-struct Abs<execution_space, RMV, XMV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+struct Abs<execution_space, RMV, XMV, 1, false,
+           KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   using size_type = typename XMV::size_type;
 
   static void abs(const execution_space& space, const RMV& R, const XMV& X) {
@@ -137,7 +139,8 @@ struct Abs<execution_space, RMV, XMV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRA
 };
 
 template <class execution_space, class RMV, class XMV>
-struct Abs<execution_space, RMV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+struct Abs<execution_space, RMV, XMV, 2, false,
+           KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   using size_type = typename XMV::size_type;
 
   static void abs(const execution_space& space, const RMV& R, const XMV& X) {

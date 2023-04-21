@@ -27,7 +27,8 @@
 namespace KokkosBlas {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class execution_space, class YMV, class AV, class XMV, int rank = XMV::rank>
+template <class execution_space, class YMV, class AV, class XMV,
+          int rank = XMV::rank>
 struct mult_eti_spec_avail {
   enum : bool { value = false };
 };
@@ -100,11 +101,15 @@ namespace Impl {
 /// Y(i,j) = alpha*A(i,j)*X(i,j) + gamma*Y(i,j)
 ///
 /// with special cases for alpha, or gamma = 0.
-template <class execution_space, class YMV, class AV, class XMV, int rank = XMV::rank,
-          bool tpl_spec_avail = mult_tpl_spec_avail<execution_space, YMV, AV, XMV>::value,
-          bool eti_spec_avail = mult_eti_spec_avail<execution_space, YMV, AV, XMV>::value>
+template <class execution_space, class YMV, class AV, class XMV,
+          int rank = XMV::rank,
+          bool tpl_spec_avail =
+              mult_tpl_spec_avail<execution_space, YMV, AV, XMV>::value,
+          bool eti_spec_avail =
+              mult_eti_spec_avail<execution_space, YMV, AV, XMV>::value>
 struct Mult {
-  static void mult(const execution_space& space, const typename YMV::non_const_value_type& gamma,
+  static void mult(const execution_space& space,
+                   const typename YMV::non_const_value_type& gamma,
                    const YMV& Y,
                    const typename XMV::non_const_value_type& alpha, const AV& A,
                    const XMV& X);
@@ -113,13 +118,15 @@ struct Mult {
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 // Partial specialization for YMV, AV, and XMV rank-2 Views.
 template <class execution_space, class YMV, class AV, class XMV>
-struct Mult<execution_space, YMV, AV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+struct Mult<execution_space, YMV, AV, XMV, 2, false,
+            KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef typename YMV::size_type size_type;
   typedef typename YMV::non_const_value_type YMV_scalar;
   typedef typename XMV::non_const_value_type XMV_scalar;
 
-  static void mult(const execution_space& space, const YMV_scalar& gamma, const YMV& Y,
-                   const XMV_scalar& alpha, const AV& A, const XMV& X) {
+  static void mult(const execution_space& space, const YMV_scalar& gamma,
+                   const YMV& Y, const XMV_scalar& alpha, const AV& A,
+                   const XMV& X) {
     static_assert(Kokkos::is_view<YMV>::value,
                   "KokkosBlas::Impl::"
                   "Mult<rank 2>::mult: Y is not a Kokkos::View.");
@@ -162,9 +169,11 @@ struct Mult<execution_space, YMV, AV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_
 
     if (numRows < static_cast<int>(INT_MAX) &&
         numRows * numCols < static_cast<int>(INT_MAX)) {
-      MV_Mult_Generic<execution_space, YMV, AV, XMV, int>(space, gamma, Y, alpha, A, X);
+      MV_Mult_Generic<execution_space, YMV, AV, XMV, int>(space, gamma, Y,
+                                                          alpha, A, X);
     } else {
-      MV_Mult_Generic<execution_space, YMV, AV, XMV, int64_t>(space, gamma, Y, alpha, A, X);
+      MV_Mult_Generic<execution_space, YMV, AV, XMV, int64_t>(space, gamma, Y,
+                                                              alpha, A, X);
     }
     Kokkos::Profiling::popRegion();
   }
@@ -172,13 +181,15 @@ struct Mult<execution_space, YMV, AV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_
 
 // Partial specialization for YV, AV, and XV rank-1 Views.
 template <class execution_space, class YV, class AV, class XV>
-struct Mult<execution_space, YV, AV, XV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+struct Mult<execution_space, YV, AV, XV, 1, false,
+            KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef typename YV::size_type size_type;
   typedef typename YV::non_const_value_type YV_scalar;
   typedef typename XV::non_const_value_type XV_scalar;
 
-  static void mult(const execution_space& space, const YV_scalar& gamma, const YV& Y, const XV_scalar& alpha,
-                   const AV& A, const XV& X) {
+  static void mult(const execution_space& space, const YV_scalar& gamma,
+                   const YV& Y, const XV_scalar& alpha, const AV& A,
+                   const XV& X) {
     // YV, AV, and XV must be Kokkos::View specializations.
     static_assert(Kokkos::is_view<YV>::value,
                   "KokkosBlas::Impl::"
@@ -214,9 +225,11 @@ struct Mult<execution_space, YV, AV, XV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LI
 
     const size_type numRows = Y.extent(0);
     if (numRows < static_cast<int>(INT_MAX)) {
-      V_Mult_Generic<execution_space, YV, AV, XV, int>(space, gamma, Y, alpha, A, X);
+      V_Mult_Generic<execution_space, YV, AV, XV, int>(space, gamma, Y, alpha,
+                                                       A, X);
     } else {
-      V_Mult_Generic<execution_space, YV, AV, XV, int64_t>(space, gamma, Y, alpha, A, X);
+      V_Mult_Generic<execution_space, YV, AV, XV, int64_t>(space, gamma, Y,
+                                                           alpha, A, X);
     }
     Kokkos::Profiling::popRegion();
   }

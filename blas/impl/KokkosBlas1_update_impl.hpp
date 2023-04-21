@@ -314,9 +314,10 @@ struct V_Update_Functor {
 //
 // Any literal coefficient of zero has BLAS semantics of ignoring the
 // corresponding multivector entry.
-template <class execution_space, class XMV, class YMV, class ZMV, class SizeType>
+template <class execution_space, class XMV, class YMV, class ZMV,
+          class SizeType>
 void MV_Update_Generic(const execution_space& space,
-		       const typename XMV::non_const_value_type& alpha,
+                       const typename XMV::non_const_value_type& alpha,
                        const XMV& X,
                        const typename YMV::non_const_value_type& beta,
                        const YMV& Y,
@@ -417,7 +418,7 @@ void MV_Update_Generic(const execution_space& space,
 // corresponding vector entry.
 template <class execution_space, class XV, class YV, class ZV, class SizeType>
 void V_Update_Generic(const execution_space& space,
-		      const typename XV::non_const_value_type& alpha,
+                      const typename XV::non_const_value_type& alpha,
                       const XV& X,
                       const typename YV::non_const_value_type& beta,
                       const YV& Y,

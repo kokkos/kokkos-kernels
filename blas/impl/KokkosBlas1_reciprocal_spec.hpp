@@ -87,19 +87,24 @@ namespace Impl {
 
 // Unification layer
 template <class execution_space, class RMV, class XMV, int rank = RMV::rank,
-          bool tpl_spec_avail = reciprocal_tpl_spec_avail<execution_space, RMV, XMV>::value,
-          bool eti_spec_avail = reciprocal_eti_spec_avail<execution_space, RMV, XMV>::value>
+          bool tpl_spec_avail =
+              reciprocal_tpl_spec_avail<execution_space, RMV, XMV>::value,
+          bool eti_spec_avail =
+              reciprocal_eti_spec_avail<execution_space, RMV, XMV>::value>
 struct Reciprocal {
-  static void reciprocal(const execution_space& space, const RMV& R, const XMV& X);
+  static void reciprocal(const execution_space& space, const RMV& R,
+                         const XMV& X);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 //! Full specialization of Reciprocal for single vectors (1-D Views).
 template <class execution_space, class RMV, class XMV>
-struct Reciprocal<execution_space, RMV, XMV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+struct Reciprocal<execution_space, RMV, XMV, 1, false,
+                  KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef typename XMV::size_type size_type;
 
-  static void reciprocal(const execution_space& space, const RMV& R, const XMV& X) {
+  static void reciprocal(const execution_space& space, const RMV& R,
+                         const XMV& X) {
     static_assert(Kokkos::is_view<RMV>::value,
                   "KokkosBlas::Impl::"
                   "Reciprocal<1-D>: RMV is not a Kokkos::View.");
@@ -139,10 +144,12 @@ struct Reciprocal<execution_space, RMV, XMV, 1, false, KOKKOSKERNELS_IMPL_COMPIL
 };
 
 template <class execution_space, class RMV, class XMV>
-struct Reciprocal<execution_space, RMV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+struct Reciprocal<execution_space, RMV, XMV, 2, false,
+                  KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef typename XMV::size_type size_type;
 
-  static void reciprocal(const execution_space& space, const RMV& R, const XMV& X) {
+  static void reciprocal(const execution_space& space, const RMV& R,
+                         const XMV& X) {
     static_assert(Kokkos::is_view<RMV>::value,
                   "KokkosBlas::Impl::"
                   "Reciprocal<2-D>: RMV is not a Kokkos::View.");

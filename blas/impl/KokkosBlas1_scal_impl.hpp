@@ -133,8 +133,8 @@ struct V_Scal_Functor<RV, typename XV::non_const_value_type, XV, scalar_x,
 // As above, av is either a 1-D View (and only its first entry will be
 // read), or a scalar.
 template <class execution_space, class RV, class AV, class XV, class SizeType>
-void V_Scal_Generic(const execution_space& space, const RV& r, const AV& av, const XV& x,
-                    const SizeType startingColumn, int a = 2) {
+void V_Scal_Generic(const execution_space& space, const RV& r, const AV& av,
+                    const XV& x, const SizeType startingColumn, int a = 2) {
   static_assert(Kokkos::is_view<RV>::value,
                 "V_Scal_Generic: RV is not a Kokkos::View.");
   static_assert(Kokkos::is_view<XV>::value,

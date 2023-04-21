@@ -248,9 +248,9 @@ namespace KokkosBlas {
 namespace Impl {
 
 #define KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_ROCBLAS(                               \
-    SCALAR_TYPE, ROCBLAS_SCALAR_TYPE, ROCBLAS_FN, LAYOUT, EXECSPACE, MEMSPACE  \
-    ETI_SPEC_AVAIL)                                                            \
-  template <>								\
+    SCALAR_TYPE, ROCBLAS_SCALAR_TYPE, ROCBLAS_FN, LAYOUT, EXECSPACE,           \
+    MEMSPACE ETI_SPEC_AVAIL)                                                   \
+  template <>                                                                  \
   struct Scal<                                                                 \
       EXECSPACE,                                                               \
       Kokkos::View<SCALAR_TYPE*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,  \
@@ -273,7 +273,7 @@ namespace Impl {
     typedef typename XV::size_type size_type;                                  \
                                                                                \
     static void scal(const execution_space& space, const RV& R,                \
-		     const AS& alpha, const XV& X) {			       \
+                     const AS& alpha, const XV& X) {                           \
       Kokkos::Profiling::pushRegion(                                           \
           "KokkosBlas::scal[TPL_ROCBLAS," #SCALAR_TYPE "]");                   \
       const size_type numElems = X.extent(0);                                  \
@@ -284,18 +284,18 @@ namespace Impl {
         constexpr int one = 1;                                                 \
         KokkosBlas::Impl::RocBlasSingleton& s =                                \
             KokkosBlas::Impl::RocBlasSingleton::singleton();                   \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                           \
-          rocblas_set_stream(s.handle, space.hip_stream()));                   \
-      rocblas_pointer_mode pointer_mode;                                       \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                           \
-          rocblas_get_pointer_mode(s.handle, &pointer_mode));                  \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                           \
-          rocblas_set_pointer_mode(s.handle, rocblas_pointer_mode_device));    \
+        KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                         \
+            rocblas_set_stream(s.handle, space.hip_stream()));                 \
+        rocblas_pointer_mode pointer_mode;                                     \
+        KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                         \
+            rocblas_get_pointer_mode(s.handle, &pointer_mode));                \
+        KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                         \
+            rocblas_set_pointer_mode(s.handle, rocblas_pointer_mode_device));  \
         KOKKOS_ROCBLAS_SAFE_CALL_IMPL(ROCBLAS_FN(                              \
             s.handle, N, reinterpret_cast<const ROCBLAS_SCALAR_TYPE*>(&alpha), \
             reinterpret_cast<ROCBLAS_SCALAR_TYPE*>(R.data()), one));           \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                           \
-          rocblas_set_pointer_mode(s.handle, pointer_mode));                   \
+        KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                         \
+            rocblas_set_pointer_mode(s.handle, pointer_mode));                 \
       } else {                                                                 \
         Scal<RV, AS, XV, 1, false, ETI_SPEC_AVAIL>::scal(R, alpha, X);         \
       }                                                                        \
@@ -303,25 +303,25 @@ namespace Impl {
     }                                                                          \
   };
 
-#define KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_ROCBLAS(LAYOUT, EXECSPACE, \
-						MEMSPACE,	   \
-                                                ETI_SPEC_AVAIL)          \
-  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_ROCBLAS(double, double, rocblas_dscal, \
-                                          LAYOUT, EXECSPACE, MEMSPACE, ETI_SPEC_AVAIL)
+#define KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_ROCBLAS(LAYOUT, EXECSPACE, MEMSPACE, \
+                                                ETI_SPEC_AVAIL)              \
+  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_ROCBLAS(double, double, rocblas_dscal,     \
+                                          LAYOUT, EXECSPACE, MEMSPACE,       \
+                                          ETI_SPEC_AVAIL)
 
-#define KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_ROCBLAS(LAYOUT, EXECSPACE, MEMSPACE \
-                                                ETI_SPEC_AVAIL)                \
+#define KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_ROCBLAS(LAYOUT, EXECSPACE,             \
+                                                MEMSPACE ETI_SPEC_AVAIL)       \
   KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_ROCBLAS(float, float, rocblas_sscal, LAYOUT, \
                                           EXECSPACE, MEMSPACE, ETI_SPEC_AVAIL)
 
-#define KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_ROCBLAS(LAYOUT, EXECSPACE, MEMSPACE \
-                                                ETI_SPEC_AVAIL)               \
+#define KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_ROCBLAS(LAYOUT, EXECSPACE,            \
+                                                MEMSPACE ETI_SPEC_AVAIL)      \
   KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_ROCBLAS(                                    \
       Kokkos::complex<double>, rocblas_double_complex, rocblas_zscal, LAYOUT, \
       EXECSPACE, MEMSPACE, ETI_SPEC_AVAIL)
 
-#define KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_ROCBLAS(LAYOUT, EXECSPACE, MEMSPACE \
-                                                ETI_SPEC_AVAIL)             \
+#define KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_ROCBLAS(LAYOUT, EXECSPACE,          \
+                                                MEMSPACE ETI_SPEC_AVAIL)    \
   KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_ROCBLAS(                                  \
       Kokkos::complex<float>, rocblas_float_complex, rocblas_cscal, LAYOUT, \
       EXECSPACE, MEMSPACE, ETI_SPEC_AVAIL)

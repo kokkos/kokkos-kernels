@@ -36,17 +36,22 @@ namespace KokkosBlas {
 template <class execution_space, class RMV, class XMV>
 void abs(const execution_space& space, const RMV& R, const XMV& X) {
   static_assert(Kokkos::is_execution_space_v<execution_space>,
-		"KokkosBlas::abs: execution_space must be a valid Kokkos execution space.");
+                "KokkosBlas::abs: execution_space must be a valid Kokkos "
+                "execution space.");
   static_assert(Kokkos::is_view<RMV>::value,
                 "KokkosBlas::abs: "
                 "R is not a Kokkos::View.");
-  static_assert(Kokkos::SpaceAccessibility<execution_space, typename RMV::memory_space>::accessible,
-		"KokkosBlas::abs: RMV must be accessible from execution space");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename RMV::memory_space>::accessible,
+      "KokkosBlas::abs: RMV must be accessible from execution space");
   static_assert(Kokkos::is_view<XMV>::value,
                 "KokkosBlas::abs: "
                 "X is not a Kokkos::View.");
-  static_assert(Kokkos::SpaceAccessibility<execution_space, typename XMV::memory_space>::accessible,
-		"KokkosBlas::abs: XMV must be accessible from execution space");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename XMV::memory_space>::accessible,
+      "KokkosBlas::abs: XMV must be accessible from execution space");
   static_assert(std::is_same<typename RMV::value_type,
                              typename RMV::non_const_value_type>::value,
                 "KokkosBlas::abs: R is const.  "
@@ -85,7 +90,8 @@ void abs(const execution_space& space, const RMV& R, const XMV& X) {
   RMV_Internal R_internal = R;
   XMV_Internal X_internal = X;
 
-  Impl::Abs<execution_space, RMV_Internal, XMV_Internal>::abs(space, R_internal, X_internal);
+  Impl::Abs<execution_space, RMV_Internal, XMV_Internal>::abs(space, R_internal,
+                                                              X_internal);
 }
 
 /// \brief R(i,j) = abs(X(i,j))

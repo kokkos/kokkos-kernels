@@ -20,7 +20,8 @@
 namespace KokkosBlas {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class execution_space, class RV, class AV, class XV, int Xrank = XV::rank>
+template <class execution_space, class RV, class AV, class XV,
+          int Xrank = XV::rank>
 struct scal_tpl_spec_avail {
   enum : bool { value = false };
 };
@@ -59,9 +60,9 @@ KOKKOSBLAS1_SCAL_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>, Kokkos::LayoutLeft,
 // cuBLAS
 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
 // double
-#define KOKKOSBLAS1_SCAL_TPL_SPEC_AVAIL_CUBLAS(SCALAR, LAYOUT, EXECSPACE, \
-					       MEMSPACE)		\
-  template <>                                                   \
+#define KOKKOSBLAS1_SCAL_TPL_SPEC_AVAIL_CUBLAS(SCALAR, LAYOUT, EXECSPACE,      \
+                                               MEMSPACE)                       \
+  template <>                                                                  \
   struct scal_tpl_spec_avail<                                                  \
       EXECSPACE,                                                               \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,       \
@@ -73,32 +74,36 @@ KOKKOSBLAS1_SCAL_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>, Kokkos::LayoutLeft,
     enum : bool { value = true };                                              \
   };
 
-KOKKOSBLAS1_SCAL_TPL_SPEC_AVAIL_CUBLAS(double, Kokkos::LayoutLeft,
-                                       Kokkos::Cuda, Kokkos::CudaSpace)
-KOKKOSBLAS1_SCAL_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::LayoutLeft,
-                                       Kokkos::Cuda, Kokkos::CudaSpace)
+KOKKOSBLAS1_SCAL_TPL_SPEC_AVAIL_CUBLAS(double, Kokkos::LayoutLeft, Kokkos::Cuda,
+                                       Kokkos::CudaSpace)
+KOKKOSBLAS1_SCAL_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::LayoutLeft, Kokkos::Cuda,
+                                       Kokkos::CudaSpace)
 KOKKOSBLAS1_SCAL_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>,
-                                       Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
+                                       Kokkos::LayoutLeft, Kokkos::Cuda,
+                                       Kokkos::CudaSpace)
 KOKKOSBLAS1_SCAL_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>,
-                                       Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
+                                       Kokkos::LayoutLeft, Kokkos::Cuda,
+                                       Kokkos::CudaSpace)
 
-KOKKOSBLAS1_SCAL_TPL_SPEC_AVAIL_CUBLAS(double, Kokkos::LayoutLeft,
-                                       Kokkos::Cuda, Kokkos::CudaUVMSpace)
-KOKKOSBLAS1_SCAL_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::LayoutLeft,
-                                       Kokkos::Cuda, Kokkos::CudaUVMSpace)
+KOKKOSBLAS1_SCAL_TPL_SPEC_AVAIL_CUBLAS(double, Kokkos::LayoutLeft, Kokkos::Cuda,
+                                       Kokkos::CudaUVMSpace)
+KOKKOSBLAS1_SCAL_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::LayoutLeft, Kokkos::Cuda,
+                                       Kokkos::CudaUVMSpace)
 KOKKOSBLAS1_SCAL_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>,
-                                       Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+                                       Kokkos::LayoutLeft, Kokkos::Cuda,
+                                       Kokkos::CudaUVMSpace)
 KOKKOSBLAS1_SCAL_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>,
-                                       Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace)
+                                       Kokkos::LayoutLeft, Kokkos::Cuda,
+                                       Kokkos::CudaUVMSpace)
 
 #endif
 
 // rocBLAS
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ROCBLAS)
 
-#define KOKKOSBLAS1_SCAL_TPL_SPEC_AVAIL_ROCBLAS(SCALAR, LAYOUT, EXECSPACE,\
-						MEMSPACE)		\
-  template <>                                                   \
+#define KOKKOSBLAS1_SCAL_TPL_SPEC_AVAIL_ROCBLAS(SCALAR, LAYOUT, EXECSPACE,     \
+                                                MEMSPACE)                      \
+  template <>                                                                  \
   struct scal_tpl_spec_avail<                                                  \
       EXECSPACE,                                                               \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,       \
@@ -110,16 +115,16 @@ KOKKOSBLAS1_SCAL_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>,
     enum : bool { value = true };                                              \
   };
 
-KOKKOSBLAS1_SCAL_TPL_SPEC_AVAIL_ROCBLAS(double, Kokkos::LayoutLeft,
-                                        Kokkos::HIP, Kokkos::HIPSpace)
-KOKKOSBLAS1_SCAL_TPL_SPEC_AVAIL_ROCBLAS(float, Kokkos::LayoutLeft,
-                                        Kokkos::HIP, Kokkos::HIPSpace)
+KOKKOSBLAS1_SCAL_TPL_SPEC_AVAIL_ROCBLAS(double, Kokkos::LayoutLeft, Kokkos::HIP,
+                                        Kokkos::HIPSpace)
+KOKKOSBLAS1_SCAL_TPL_SPEC_AVAIL_ROCBLAS(float, Kokkos::LayoutLeft, Kokkos::HIP,
+                                        Kokkos::HIPSpace)
 KOKKOSBLAS1_SCAL_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<double>,
-                                        Kokkos::LayoutLeft,
-                                        Kokkos::HIP, Kokkos::HIPSpace)
+                                        Kokkos::LayoutLeft, Kokkos::HIP,
+                                        Kokkos::HIPSpace)
 KOKKOSBLAS1_SCAL_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<float>,
-                                        Kokkos::LayoutLeft,
-                                        Kokkos::HIP, Kokkos::HIPSpace)
+                                        Kokkos::LayoutLeft, Kokkos::HIP,
+                                        Kokkos::HIPSpace)
 
 #endif
 
