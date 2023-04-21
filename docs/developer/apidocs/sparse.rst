@@ -29,7 +29,7 @@ ccs2crs
 coo2crs
 -------
 .. doxygenfunction:: KokkosSparse::coo2crs(DimType, DimType, RowViewType, ColViewType, DataViewType)
-.. doxygenfunction:: KokkosSparse::coo2crs(KokkosSparse::CooMatrix<RowViewType, ColViewType, DataViewType, DeviceType> &cooMatrix)
+.. doxygenfunction:: KokkosSparse::coo2crs(KokkosSparse::CooMatrix<ScalarType, OrdinalType, DeviceType, MemoryTraitsType, SizeType> &cooMatrix)
 
 crs2coo
 -------

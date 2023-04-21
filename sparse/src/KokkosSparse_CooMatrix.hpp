@@ -34,39 +34,68 @@ namespace KokkosSparse {
 ///
 /// \brief Coordinate format implementation of a sparse matrix.
 ///
-/// \tparam RowView    The type of row index view.
-/// \tparam ColumnView The type of column index view.
-/// \tparam DataView   The type of data view.
-/// \tparam Device     The Kokkos Device type.
+/// \tparam ScalarType The type of scalar entries in the sparse matrix.
+/// \tparam OrdinalType The type of index entries in the sparse matrix.
+/// \tparam Device The Kokkos Device type.
 /// \tparam MemoryTraits Traits describing how Kokkos manages and
 ///   accesses data.  The default parameter suffices for most users.
-///
 /// "Coo" stands for "coordinate format".
-template <class RowView, class ColumnView, class DataView, class Device>
+template <class ScalarType, class OrdinalType, class Device,
+          class MemoryTraits = void,
+          class SizeType     = typename Kokkos::ViewTraits<OrdinalType*, Device,
+                                                       void, void>::size_type>
 class CooMatrix {
  public:
-  using execution_space   = typename Device::execution_space;
-  using memory_space      = typename Device::memory_space;
-  using data_type         = typename DataView::non_const_value_type;
-  using const_data_type   = typename DataView::const_value_type;
-  using row_type          = typename RowView::non_const_value_type;
-  using const_row_type    = typename RowView::const_value_type;
-  using column_type       = typename ColumnView::non_const_value_type;
-  using const_column_type = typename ColumnView::const_value_type;
-  using size_type         = size_t;
+  //! Type of each value in the matrix
+  using scalar_type = ScalarType;
+  //! Type of each value in the const matrix
+  using const_scalar_type = const std::remove_const_t<scalar_type>;
+  //! Non constant scalar type
+  using non_const_scalar_type = std::remove_const_t<scalar_type>;
+  //! Type of each index in the matrix
+  using ordinal_type = OrdinalType;
+  //! Type of each value in the const matrix
+  using const_ordinal_type = const std::remove_const_t<ordinal_type>;
+  //! Non constant ordinal type
+  using non_const_ordinal_type = std::remove_const_t<ordinal_type>;
+  //! Type of each row index in the matrix
+  using row_type = ordinal_type;
+  //! Type of each column index in the matrix
+  using column_type = ordinal_type;
+  //! Type of the Kokkos::Device
+  using device_type = Device;
+  //! Type of the Kokkos::Device::execution_space
+  using execution_space = typename device_type::execution_space;
+  //! Type of the Kokkos::Device::memory_space
+  using memory_space = typename device_type::memory_space;
+  //! Type of the Kokkos::MemoryTraits
+  using memory_traits = MemoryTraits;
+  //! Type of all integral class members
+  using size_type = SizeType;
 
-  static_assert(std::is_integral_v<row_type>,
-                "RowView::value_type must be an integral.");
-  static_assert(std::is_integral_v<column_type>,
-                "ColumnView::value_type must be an integral.");
+  static_assert(std::is_integral_v<OrdinalType>,
+                "OrdinalType must be an integral.");
+
+  using row_view =
+      Kokkos::View<row_type*, Kokkos::LayoutRight, device_type, memory_traits>;
+  using column_view = Kokkos::View<column_type*, Kokkos::LayoutRight,
+                                   device_type, memory_traits>;
+  using scalar_view = Kokkos::View<scalar_type*, Kokkos::LayoutRight,
+                                   device_type, memory_traits>;
+
+  using const_type = CooMatrix<const_scalar_type, const_ordinal_type,
+                               device_type, memory_traits, size_type>;
 
  private:
   size_type m_num_rows, m_num_cols;
 
  public:
-  RowView row;
-  ColumnView col;
-  DataView data;
+  //! The row indexes of the matrix
+  row_view row;
+  //! The column indexes of the matrix
+  column_view col;
+  //! The scalar values of the matrix
+  scalar_view data;
 
   /// \brief Default constructor; constructs an empty sparse matrix.
   KOKKOS_INLINE_FUNCTION
@@ -85,8 +114,8 @@ class CooMatrix {
   /// \param col_in  [in] The column indexes.
   /// \param data_in [in] The values.
   // clang-format on
-  CooMatrix(size_type nrows, size_type ncols, RowView row_in, ColumnView col_in,
-            DataView data_in)
+  CooMatrix(size_type nrows, size_type ncols, row_view row_in,
+            column_view col_in, scalar_view data_in)
       : m_num_rows(nrows),
         m_num_cols(ncols),
         row(row_in),
@@ -108,11 +137,7 @@ class CooMatrix {
   KOKKOS_INLINE_FUNCTION size_type numRows() const { return m_num_rows; }
 
   //! The number of stored entries in the sparse matrix, including zeros.
-  KOKKOS_INLINE_FUNCTION size_type nnz() const {
-    assert(data.extent(0) == row.extent(0) == col.extent(0) &&
-           "Error lengths of RowView != ColView != DataView");
-    return data.extent(0);
-  }
+  KOKKOS_INLINE_FUNCTION size_type nnz() const { return data.extent(0); }
 };
 
 /// \class is_coo_matrix

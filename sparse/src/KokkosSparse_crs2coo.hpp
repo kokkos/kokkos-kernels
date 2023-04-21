@@ -27,22 +27,32 @@ template <class OrdinalType, class SizeType, class ValViewType,
           class DeviceType = typename ValViewType::execution_space>
 class Crs2Coo {
  private:
-  using non_const_ordinal_type = std::remove_const_t<OrdinalType>;
-  using non_const_size_type    = std::remove_const_t<SizeType>;
-  using coo_row_view =
-      typename Kokkos::View<non_const_ordinal_type *, DeviceType>;
-  using coo_col_view  = coo_row_view;
-  using coo_data_view = typename ValViewType::non_const_type;
-  using coo_type =
-      CooMatrix<coo_row_view, coo_col_view, coo_data_view, DeviceType>;
+  using scalar_type           = typename ValViewType::value_type;
+  using const_scalar_type     = const std::remove_const_t<scalar_type>;
+  using non_const_scalar_type = std::remove_const_t<scalar_type>;
+
+  using ordinal_type           = OrdinalType;
+  using const_ordinal_type     = const std::remove_const_t<ordinal_type>;
+  using non_const_ordinal_type = std::remove_const_t<ordinal_type>;
+
+  using size_type           = SizeType;
+  using const_size_type     = const std::remove_const_t<size_type>;
+  using non_const_size_type = std::remove_const_t<size_type>;
+
+  using device_type = DeviceType;
+
+  using row_view = typename Kokkos::View<ordinal_type *, device_type>;
+  using col_view = row_view;
+  using non_const_coo_data_view = typename ValViewType::non_const_type;
+  using coo_type = CooMatrix<scalar_type, ordinal_type, device_type>;
 
   non_const_ordinal_type m_nrows;
   non_const_ordinal_type m_ncols;
   non_const_size_type m_nnz;
 
-  coo_data_view m_data;
-  coo_col_view m_col;
-  coo_row_view m_row;
+  non_const_coo_data_view m_data;
+  col_view m_col;
+  row_view m_row;
 
   ValViewType m_vals;
   RowMapViewType m_row_map;
@@ -60,12 +70,12 @@ class Crs2Coo {
         m_vals(vals),
         m_row_map(row_map),
         m_col_ids(col_ids) {
-    m_data = coo_data_view(
+    m_data = non_const_coo_data_view(
         Kokkos::view_alloc(Kokkos::WithoutInitializing, "m_data"), nnz);
-    m_col = coo_col_view(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "m_col"), nnz);
-    m_row = coo_row_view(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "m_row"), nnz);
+    m_col =
+        col_view(Kokkos::view_alloc(Kokkos::WithoutInitializing, "m_col"), nnz);
+    m_row =
+        row_view(Kokkos::view_alloc(Kokkos::WithoutInitializing, "m_row"), nnz);
 
     copy_tp1_pt policy(m_nrows, 1, 1);
     {

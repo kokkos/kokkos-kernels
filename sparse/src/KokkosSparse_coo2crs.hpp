@@ -325,18 +325,17 @@ auto coo2crs(DimType m, DimType n, RowViewType row, ColViewType col,
 // clang-format off
 ///
 /// \brief Blocking function that converts a CooMatrix into a CrsMatrix. Values are summed.
-/// \tparam DimType      The dimension type
-/// \tparam RowViewType  The row array view type
-/// \tparam ColViewType  The column array view type
-/// \tparam DataViewType The data array view type
-/// \tparam DeviceType   The cooMatrix::execution_space
+/// \tparam ScalarType   The `KokkosSparse::CooMatrix::scalar_type`
+/// \tparam OrdinalType  The KokkosSparse::CooMatrix::ordinal_type
+/// \tparam DeviceType   The KokkosSparse::CooMatrix::device_type
+/// \tparam MemoryTraits The KokkosSparse::CooMatrix::memory_traits
+/// \tparam SizeType     The KokkosSparse::CooMatrix::size_type
 /// \param cooMatrix     The sparse matrix stored in coordinate ("Coo") format.
 /// \return A KokkosSparse::CrsMatrix.
-// clang-format on
-template <class DimType, class RowViewType, class ColViewType,
-          class DataViewType, class DeviceType>
-auto coo2crs(KokkosSparse::CooMatrix<RowViewType, ColViewType, DataViewType,
-                                     DeviceType> &cooMatrix) {
+template <typename ScalarType, typename OrdinalType, class DeviceType,
+          class MemoryTraitsType, typename SizeType>
+auto coo2crs(KokkosSparse::CooMatrix<ScalarType, OrdinalType, DeviceType,
+                                     MemoryTraitsType, SizeType> &cooMatrix) {
   return coo2crs(cooMatrix.numRows(), cooMatrix.numCols(), cooMatrix.row,
                  cooMatrix.col, cooMatrix.data);
 }
