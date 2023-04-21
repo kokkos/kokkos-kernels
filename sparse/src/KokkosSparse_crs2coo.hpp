@@ -99,7 +99,7 @@ class Crs2Coo {
     auto row_end   = row_start + row_len;
 
     Kokkos::parallel_for(Kokkos::TeamVectorRange(member, row_start, row_end),
-                         [&](const int &id) {
+                         [&](const size_type &id) {
                            m_data(id) = m_vals(id);
                            m_col(id)  = m_col_ids(id);
                            m_row(id)  = i;

@@ -64,13 +64,15 @@ class Coo2Crs {
   using copyTp1MemberType = typename copyTp1Pt::member_type;
 
  private:
-  using BmapViewType = Kokkos::View<bool *, CrsET>;
-
   using CrsRowMapView = Kokkos::View<CrsOT *, CrsET>;
   using CrsRowMapAtomicView =
       Kokkos::View<CrsOT *, CrsET, Kokkos::MemoryTraits<Kokkos::Atomic>>;
   using CrsValuesView = Kokkos::View<CrsST *, CrsET>;
   using CrsColIdsView = Kokkos::View<CrsSzT *, CrsET>;
+
+  // Needed since Kokkos::Bitset cannot be accessed on the host
+  using BmapViewType = Kokkos::View<bool *, CrsET>;
+  using Bitset       = Kokkos::Bitset<CrsET>;
 
   CrsRowMapView m_crs_row_map;
   CrsRowMapAtomicView m_crs_row_map_tmp;
@@ -78,7 +80,7 @@ class Coo2Crs {
   CrsColIdsView m_crs_col_ids;
   UmapType *m_umaps;
   BmapViewType m_capacity_bmap;
-  BmapViewType m_tuple_bmap;
+  Bitset m_tuple_bmap;
   UmapOpType m_insert_op;
   CrsOT m_nrows;
   CrsOT m_ncols;
@@ -94,7 +96,7 @@ class Coo2Crs {
   void operator()(const coo2crsRp1 &, const int &idx) const {
     auto i           = m_row(idx);
     auto j           = m_col(idx);
-    auto is_inserted = m_tuple_bmap(idx);
+    auto is_inserted = m_tuple_bmap.test(idx);
 
     if (i >= m_nrows || j >= m_ncols) {
       Kokkos::abort("tuple is out of bounds");
@@ -102,7 +104,7 @@ class Coo2Crs {
       if (m_umaps[i].insert(j, m_data(idx), m_insert_op).failed()) {
         m_capacity_bmap(i) = true;  // hmap at index i reached capacity
       } else {
-        m_tuple_bmap(idx) = true;  // checklist of inserted tuples
+        m_tuple_bmap.set(idx);  // checklist of inserted tuples
       }
     }
   }
@@ -139,7 +141,7 @@ class Coo2Crs {
     auto cpy_len = cpy_end - cpy_beg;
 
     Kokkos::parallel_for(Kokkos::TeamVectorRange(member, 0, cpy_len),
-                         [&](const int &i) {
+                         [&](const CrsOT &i) {
                            auto offset           = i + cpy_beg;
                            m_crs_vals(offset)    = m_umaps[i].value_at(i);
                            m_crs_col_ids(offset) = m_umaps[i].key_at(i);
@@ -155,15 +157,19 @@ class Coo2Crs {
     m_col      = col;
     m_data     = data;
 
-    typename UmapType::size_type arg_capacity_hint = m_n_tuples / m_nrows / 4;
+    typename UmapType::size_type arg_capacity_hint =
+        m_nrows > 0 ? (m_n_tuples / m_nrows / 4) : 16;
     typename UmapType::hasher_type arg_hasher;
     typename UmapType::equal_to_type arg_equal_to;
     arg_capacity_hint = arg_capacity_hint < 16 ? 16 : arg_capacity_hint;
 
+    // Record of whether capacity was reached in any unordered map
     m_capacity_bmap = BmapViewType("m_capacity_bmap", m_nrows);
     typename BmapViewType::HostMirror m_capacity_bmap_mirror =
         Kokkos::create_mirror_view(m_capacity_bmap);
-    m_tuple_bmap = BmapViewType("m_tuple_bmap", m_n_tuples);
+
+    // Track which tuples have been processed
+    m_tuple_bmap = Bitset(m_n_tuples);
 
     m_crs_row_map = CrsRowMapView(
         Kokkos::view_alloc(Kokkos::WithoutInitializing, "m_crs_row_map"),
@@ -314,7 +320,7 @@ auto coo2crs(DimType m, DimType n, RowViewType row, ColViewType col,
   if (row.extent(0) != col.extent(0) || row.extent(0) != data.extent(0))
     Kokkos::abort("row.extent(0) = col.extent(0) = data.extent(0) required.");
 
-  if (m <= 0 || n <= 0) Kokkos::abort("m > 0 and n > 0 required.");
+  if (m < 0 || n < 0) Kokkos::abort("m >= 0 and n >= 0 required.");
 
   using Coo2crsType =
       Impl::Coo2Crs<DimType, RowViewType, ColViewType, DataViewType, true>;

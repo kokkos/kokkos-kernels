@@ -242,6 +242,8 @@ TEST_F(TestCategory, sparse_coo2crs) {
       UINT32_MAX;
   std::srand(ticks);
 
+  doAllCoo2Crs<TestExecSpace>(0, 0);
+
   // Square cases
   for (size_t i = 1; i < 256; i *= 4) {
     size_t dim = (std::rand() % 511) + 1;
