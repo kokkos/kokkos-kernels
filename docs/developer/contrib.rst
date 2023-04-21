@@ -54,7 +54,7 @@ In general, we prefer that the prototype has the doxygen style comment rather th
 
 **NOTE:** To have vscode generate the "\\\\\\" style stubs:
 
-1. install the C/C++ IntelliSense, debugging, and code browsing extention.
+1. install the C/C++ IntelliSense, debugging, and code browsing extension.
 
 2. go to Settings, Extensions, C/C++, Doxygen Documentation Generator Settings, and ensure the setting for Doxdocgen is "\\\\\\".
 
