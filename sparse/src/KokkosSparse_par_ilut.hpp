@@ -215,7 +215,6 @@ void par_ilut_symbolic(KernelHandle* handle, ARowMapType& A_rowmap,
 /// @param U_rowmap The row map (row nnz offsets) for the U CSR (Input/Output)
 /// @param U_entries The entries (column ids) for the U CSR (Output)
 /// @param U_values The values (non-zero matrix values) for the U CSR (Output)
-/// @param deterministic Please ignore. This parameter will be removed soon.
 template <typename KernelHandle, typename ARowMapType, typename AEntriesType,
           typename AValuesType, typename LRowMapType, typename LEntriesType,
           typename LValuesType, typename URowMapType, typename UEntriesType,
