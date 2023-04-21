@@ -71,8 +71,9 @@ class Coo2Crs {
   using CrsColIdsView = Kokkos::View<CrsSzT *, CrsET>;
 
   // Needed since Kokkos::Bitset cannot be accessed on the host
-  using BmapViewType = Kokkos::View<bool *, CrsET>;
-  using Bitset       = Kokkos::Bitset<CrsET>;
+  using BmapViewType =
+      Kokkos::View<bool *, CrsET, Kokkos::MemoryTraits<Kokkos::RandomAccess>>;
+  using Bitset = Kokkos::Bitset<CrsET>;
 
   CrsRowMapView m_crs_row_map;
   CrsRowMapAtomicView m_crs_row_map_tmp;
