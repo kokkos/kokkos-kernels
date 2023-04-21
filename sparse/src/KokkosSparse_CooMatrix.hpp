@@ -76,13 +76,16 @@ class CooMatrix {
   static_assert(std::is_integral_v<OrdinalType>,
                 "OrdinalType must be an integral.");
 
+  //! The type of the row index view in the matrix
   using row_view =
       Kokkos::View<row_type*, Kokkos::LayoutRight, device_type, memory_traits>;
+  //! The type of the column index view in the matrix
   using column_view = Kokkos::View<column_type*, Kokkos::LayoutRight,
                                    device_type, memory_traits>;
+  //! The type of the scalar values view in the matrix
   using scalar_view = Kokkos::View<scalar_type*, Kokkos::LayoutRight,
                                    device_type, memory_traits>;
-
+  //! The type of a constant CooMatrix
   using const_type = CooMatrix<const_scalar_type, const_ordinal_type,
                                device_type, memory_traits, size_type>;
 
