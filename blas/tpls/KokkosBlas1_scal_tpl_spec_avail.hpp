@@ -37,6 +37,7 @@ namespace Impl {
 #define KOKKOSBLAS1_SCAL_TPL_SPEC_AVAIL_BLAS(SCALAR, LAYOUT, MEMSPACE)         \
   template <class ExecSpace>                                                   \
   struct scal_tpl_spec_avail<                                                  \
+      ExecSpace,                                                               \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,       \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
       SCALAR,                                                                  \

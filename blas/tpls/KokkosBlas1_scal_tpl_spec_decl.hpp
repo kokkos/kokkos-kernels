@@ -42,6 +42,7 @@ namespace Impl {
                                              LAYOUT, MEMSPACE, ETI_SPEC_AVAIL) \
   template <class ExecSpace>                                                   \
   struct Scal<                                                                 \
+      ExecSpace,                                                               \
       Kokkos::View<SCALAR_TYPE*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,  \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
       SCALAR_TYPE,                                                             \
@@ -60,7 +61,7 @@ namespace Impl {
         XV;                                                                    \
     typedef typename XV::size_type size_type;                                  \
                                                                                \
-    static void scal(const RV& R, const AS& alpha, const XV& X) {              \
+    static void scal(const ExecSpace& space, const RV& R, const AS& alpha, const XV& X) { \
       Kokkos::Profiling::pushRegion("KokkosBlas::scal[TPL_BLAS," #SCALAR_TYPE  \
                                     "]");                                      \
       const size_type numElems = X.extent(0);                                  \
@@ -73,7 +74,7 @@ namespace Impl {
         HostBlas<BASE_SCALAR_TYPE>::scal(                                      \
             N, alpha_b, reinterpret_cast<BASE_SCALAR_TYPE*>(R.data()), one);   \
       } else {                                                                 \
-        Scal<RV, AS, XV, 1, false, ETI_SPEC_AVAIL>::scal(R, alpha, X);         \
+        Scal<ExecSpace, RV, AS, XV, 1, false, ETI_SPEC_AVAIL>::scal(space, R, alpha, X); \
       }                                                                        \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
