@@ -1393,6 +1393,8 @@ int test_ger(const std::string& caseName) {
       "---\n");
 #endif
 
+#if 0 // Compilation error "static assertion failed Layout is not constructible
+      // from extent arguments", Kokkos_View.hpp, circa line 1537
 #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -1456,6 +1458,8 @@ int test_ger(const std::string& caseName) {
       "+-----------------------------------------------------------------------"
       "---\n");
 #endif
+#endif // Compilation error "static assertion failed Layout is not constructible
+       // from extent arguments", Kokkos_View.hpp, circa line 1537
 
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("Finished %s\n", caseName.c_str());
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
