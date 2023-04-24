@@ -135,21 +135,6 @@ void reference_spmv(const char *mode, const Alpha &alpha, const Bsr &a,
   KokkosSparse::spmv(mode, alpha, crs, x, beta, y);
 }
 
-template <typename Bsr>
-struct MaxNnzPerRow {
-  MaxNnzPerRow(const Bsr &bsr) : bsr_(bsr) {}
-
-  KOKKOS_INLINE_FUNCTION void operator()(const size_t &i, size_t &lmax) const {
-    size_t nnz =
-        (bsr_.graph.row_map(i + 1) - bsr_.graph.row_map(i)) * bsr_.blockDim();
-    if (nnz >= lmax) {
-      lmax = nnz;
-    }
-  }
-
-  Bsr bsr_;
-};
-
 /*! \brief test a specific spmv
 
 */
@@ -194,13 +179,15 @@ void test_spmv(const char *alg, const char *mode, const Alpha &alpha,
   size_t maxNnzPerRow;
   if (mode_is_transpose(mode)) {
     auto at = KokkosSparse::Impl::transpose_bsr_matrix(a);
-    Kokkos::RangePolicy<execution_space> policy(0, at.numRows());
-    MaxNnzPerRow op(at);
-    Kokkos::parallel_reduce(policy, op, Kokkos::Max<size_t>(maxNnzPerRow));
+    maxNnzPerRow =
+        at.blockDim() *
+        KokkosSparse::Impl::graph_max_degree<execution_space, ordinal_type>(
+            at.graph.row_map);
   } else {
-    Kokkos::RangePolicy<execution_space> policy(0, a.numRows());
-    MaxNnzPerRow op(a);
-    Kokkos::parallel_reduce(policy, op, Kokkos::Max<size_t>(maxNnzPerRow));
+    maxNnzPerRow =
+        a.blockDim() *
+        KokkosSparse::Impl::graph_max_degree<execution_space, ordinal_type>(
+            a.graph.row_map);
   }
 
   /* assume that any floating-point op may introduce eps() error
@@ -491,13 +478,15 @@ void test_spm_mv(const char *alg, const char *mode, const Alpha &alpha,
   size_t maxNnzPerRow;
   if (mode_is_transpose(mode)) {
     auto at = KokkosSparse::Impl::transpose_bsr_matrix(a);
-    Kokkos::RangePolicy<execution_space> policy(0, at.numRows());
-    MaxNnzPerRow op(at);
-    Kokkos::parallel_reduce(policy, op, Kokkos::Max<size_t>(maxNnzPerRow));
+    maxNnzPerRow =
+        at.blockDim() *
+        KokkosSparse::Impl::graph_max_degree<execution_space, ordinal_type>(
+            at.graph.row_map);
   } else {
-    Kokkos::RangePolicy<execution_space> policy(0, a.numRows());
-    MaxNnzPerRow op(a);
-    Kokkos::parallel_reduce(policy, op, Kokkos::Max<size_t>(maxNnzPerRow));
+    maxNnzPerRow =
+        a.blockDim() *
+        KokkosSparse::Impl::graph_max_degree<execution_space, ordinal_type>(
+            a.graph.row_map);
   }
 
   /* assume that any floating-point op may introduce eps() error
