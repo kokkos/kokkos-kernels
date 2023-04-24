@@ -26,17 +26,21 @@ namespace KokkosSparse {
 namespace Experimental {
 
 ///
-/// @brief
+/// @brief Gauss-Seidel preconditioner setup (first phase, based on sparsity
+/// pattern only)
 ///
-/// @tparam KernelHandle
-/// @tparam lno_row_view_t_
-/// @tparam lno_nnz_view_t_
-/// @param handle
-/// @param num_rows
-/// @param num_cols
-/// @param row_map
-/// @param entries
-/// @param is_graph_symmetric
+/// @tparam KernelHandle A specialization of
+/// KokkosKernels::Experimental::KokkosKernelsHandle
+/// @tparam lno_row_view_t_ The matrix's rowmap type
+/// @tparam lno_nnz_view_t_ The matrix's entries type
+/// @param handle KernelHandle instance
+/// @param num_rows Number of rows in the matrix
+/// @param num_cols Number of columns in the matrix
+/// @param row_map The matrix's rowmap
+/// @param entries The matrix's entries
+/// @param is_graph_symmetric Whether the upper-left <tt>num_rows x
+/// num_rows</tt> submatrix of A is structurally symmetric
+/// @pre   <tt>handle->create_gs_handle(...)</tt> has been called previously
 ///
 template <typename KernelHandle, typename lno_row_view_t_,
           typename lno_nnz_view_t_>
@@ -99,19 +103,22 @@ void gauss_seidel_symbolic(KernelHandle *handle,
 }
 
 ///
-/// @brief
+/// @brief Block Gauss-Seidel preconditioner setup (first phase, based on
+/// sparsity pattern only)
 ///
-/// @tparam KernelHandle
-/// @tparam lno_row_view_t_
-/// @tparam lno_nnz_view_t_
-/// @param handle
-/// @param num_rows
-/// @param num_cols
-/// @param block_size
-/// @param row_map
-/// @param entries
-/// @param is_graph_symmetric
-///
+/// @tparam KernelHandle A specialization of
+/// KokkosKernels::Experimental::KokkosKernelsHandle
+/// @tparam lno_row_view_t_ The matrix's rowmap type
+/// @tparam lno_nnz_view_t_ The matrix's entries type
+/// @param handle KernelHandle instance
+/// @param num_rows Number of rows in the matrix
+/// @param num_cols Number of columns in the matrix
+/// @param block_size The number of degrees of freedom per block
+/// @param row_map The matrix's rowmap
+/// @param entries The matrix's entries
+/// @param is_graph_symmetric Whether the upper-left <tt>num_rows x
+/// num_rows</tt> submatrix of A is structurally symmetric
+/// @pre   <tt>handle->create_gs_handle(...)</tt> has been called previously
 template <typename KernelHandle, typename lno_row_view_t_,
           typename lno_nnz_view_t_>
 void block_gauss_seidel_symbolic(
@@ -132,20 +139,23 @@ void block_gauss_seidel_symbolic(
 }
 
 ///
-/// @brief
+/// @brief Gauss-Seidel preconditioner setup (second phase, based on matrix's
+/// numeric values)
 ///
-/// @tparam format
-/// @tparam KernelHandle
-/// @tparam lno_row_view_t_
-/// @tparam lno_nnz_view_t_
-/// @tparam scalar_nnz_view_t_
-/// @param handle
-/// @param num_rows
-/// @param num_cols
-/// @param row_map
-/// @param entries
-/// @param values
-/// @param is_graph_symmetric
+/// @tparam format The matrix storage format, CRS or BSR
+/// @tparam KernelHandle A specialization of
+/// KokkosKernels::Experimental::KokkosKernelsHandle
+/// @tparam lno_row_view_t_ The matrix's rowmap type
+/// @tparam lno_nnz_view_t_ The matrix's entries type
+/// @tparam scalar_nnz_view_t_ The matrix's values type
+/// @param handle KernelHandle instance
+/// @param num_rows Number of rows in the matrix
+/// @param num_cols Number of columns in the matrix
+/// @param row_map The matrix's rowmap
+/// @param entries The matrix's entries
+/// @param values The matrix's values
+/// @param is_graph_symmetric Whether the upper-left <tt>num_rows x
+/// num_rows</tt> submatrix of A is structurally symmetric
 ///
 template <KokkosSparse::SparseMatrixFormat format =
               KokkosSparse::SparseMatrixFormat::CRS,
@@ -224,22 +234,30 @@ void gauss_seidel_numeric(KernelHandle *handle,
 }
 
 ///
-/// @brief
+/// @brief Gauss-Seidel preconditioner setup (second phase, based on matrix's
+/// numeric values). This version accepts the matrix's inverse diagonal from the
+/// user.
 ///
-/// @tparam format
-/// @tparam KernelHandle
-/// @tparam lno_row_view_t_
-/// @tparam lno_nnz_view_t_
-/// @tparam scalar_nnz_view_t_
-/// @param handle
-/// @param num_rows
-/// @param num_cols
-/// @param row_map
-/// @param entries
-/// @param values
-/// @param given_inverse_diagonal
-/// @param is_graph_symmetric
-///
+/// @tparam format The matrix storage format, CRS or BSR
+/// @tparam KernelHandle A specialization of
+/// KokkosKernels::Experimental::KokkosKernelsHandle
+/// @tparam lno_row_view_t_ The matrix's rowmap type
+/// @tparam lno_nnz_view_t_ The matrix's entries type
+/// @tparam scalar_nnz_view_t_ The matrix's values type. The user-provided
+/// inverse diagonal must share this type.
+/// @param handle KernelHandle instance
+/// @param num_rows Number of rows in the matrix
+/// @param num_cols Number of columns in the matrix
+/// @param row_map The matrix's rowmap
+/// @param entries The matrix's entries
+/// @param values The matrix's values
+/// @param given_inverse_diagonal The inverse (reciprocal) of diagonal
+/// @param is_graph_symmetric Whether the upper-left <tt>num_rows x
+/// num_rows</tt> submatrix of A is structurally symmetric
+/// @remark If the inverse diagonal is not already available, it's best to call
+/// the version of <tt>gauss_seidel_numeric</tt> that
+///         doesn't take it as an argument. The inverse diagonal will be
+///         computed internally.
 template <KokkosSparse::SparseMatrixFormat format =
               KokkosSparse::SparseMatrixFormat::CRS,
           typename KernelHandle, typename lno_row_view_t_,
@@ -321,21 +339,24 @@ void gauss_seidel_numeric(KernelHandle *handle,
 }
 
 ///
-/// @brief
+/// @brief Block Gauss-Seidel preconditioner setup (second phase, based on
+/// matrix's numeric values)
 ///
-/// @tparam format
-/// @tparam KernelHandle
-/// @tparam lno_row_view_t_
-/// @tparam lno_nnz_view_t_
-/// @tparam scalar_nnz_view_t_
-/// @param handle
-/// @param num_rows
-/// @param num_cols
-/// @param block_size
-/// @param row_map
-/// @param entries
-/// @param values
-/// @param is_graph_symmetric
+/// @tparam format The matrix storage format, CRS or BSR
+/// @tparam KernelHandle A specialization of
+/// KokkosKernels::Experimental::KokkosKernelsHandle
+/// @tparam lno_row_view_t_ The matrix's rowmap type
+/// @tparam lno_nnz_view_t_ The matrix's entries type
+/// @tparam scalar_nnz_view_t_ The matrix's values type
+/// @param handle handle A KokkosKernelsHandle instance
+/// @param num_rows Number of rows in the matrix
+/// @param num_cols Number of columns in the matrix
+/// @param block_size The number of degrees of freedom per block
+/// @param row_map The matrix's rowmap
+/// @param entries The matrix's entries
+/// @param values The matrix's values
+/// @param is_graph_symmetric Whether the upper-left <tt>num_rows x
+/// num_rows</tt> submatrix of A is structurally symmetric
 ///
 template <KokkosSparse::SparseMatrixFormat format =
               KokkosSparse::SparseMatrixFormat::BSR,
@@ -360,27 +381,34 @@ void block_gauss_seidel_numeric(
 }
 
 ///
-/// @brief
+/// @brief Apply symmetric (forward + backward) Gauss-Seidel preconditioner to
+/// system AX=Y
 ///
-/// @tparam format
-/// @tparam KernelHandle
-/// @tparam lno_row_view_t_
-/// @tparam lno_nnz_view_t_
-/// @tparam scalar_nnz_view_t_
-/// @tparam x_scalar_view_t
-/// @tparam y_scalar_view_t
-/// @param handle
-/// @param num_rows
-/// @param num_cols
-/// @param row_map
-/// @param entries
-/// @param values
-/// @param x_lhs_output_vec
-/// @param y_rhs_input_vec
-/// @param init_zero_x_vector
-/// @param update_y_vector
-/// @param omega
-/// @param numIter
+/// @tparam format The matrix storage format, CRS or BSR
+/// @tparam KernelHandle A specialization of
+/// KokkosKernels::Experimental::KokkosKernelsHandle
+/// @tparam lno_row_view_t_ The matrix's rowmap type
+/// @tparam lno_nnz_view_t_ The matrix's entries type
+/// @tparam scalar_nnz_view_t_ The matrix's values type
+/// @tparam x_scalar_view_t The type of the X (left-hand side, unknown) vector.
+/// May be rank-1 or rank-2 View.
+/// @tparam y_scalar_view_t The type of the Y (right-hand side) vector. May be
+/// rank-1 or rank-2 View.
+/// @param handle handle A KokkosKernelsHandle instance
+/// @param num_rows Number of rows in the matrix
+/// @param num_cols Number of columns in the matrix
+/// @param row_map The matrix's rowmap
+/// @param entries The matrix's entries
+/// @param values The matrix's values
+/// @param x_lhs_output_vec The X (left-hand side, unknown) vector
+/// @param y_rhs_input_vec The Y (right-hand side) vector
+/// @param init_zero_x_vector Whether to zero out X before applying
+/// @param update_y_vector Whether Y has changed since the last call to apply
+/// @param omega The damping factor for successive over-relaxation
+/// @param numIter How many iterations to run (forward and backward counts as 1)
+/// @pre   <tt>x_lhs_output_vec.extent(0) == num_cols</tt>
+/// @pre   <tt>y_rhs_input_vec.extent(0) == num_rows</tt>
+/// @pre   <tt>x_lhs_output_vec.extent(1) == y_rhs_input_vec.extent(1)</tt>
 ///
 template <KokkosSparse::SparseMatrixFormat format =
               KokkosSparse::SparseMatrixFormat::CRS,
@@ -514,28 +542,35 @@ void symmetric_gauss_seidel_apply(
 }
 
 ///
-/// @brief
+/// @brief Apply symmetric (forward + backward) Block Gauss-Seidel
+/// preconditioner to system AX=Y
 ///
-/// @tparam format
-/// @tparam KernelHandle
-/// @tparam lno_row_view_t_
-/// @tparam lno_nnz_view_t_
-/// @tparam scalar_nnz_view_t_
-/// @tparam x_scalar_view_t
-/// @tparam y_scalar_view_t
-/// @param handle
-/// @param num_rows
-/// @param num_cols
-/// @param block_size
-/// @param row_map
-/// @param entries
-/// @param values
-/// @param x_lhs_output_vec
-/// @param y_rhs_input_vec
-/// @param init_zero_x_vector
-/// @param update_y_vector
-/// @param omega
-/// @param numIter
+/// @tparam format The matrix storage format, CRS or BSR
+/// @tparam KernelHandle A specialization of
+/// KokkosKernels::Experimental::KokkosKernelsHandle
+/// @tparam lno_row_view_t_ The matrix's rowmap type
+/// @tparam lno_nnz_view_t_ The matrix's entries type
+/// @tparam scalar_nnz_view_t_ The matrix's values type
+/// @tparam x_scalar_view_t The type of the X (left-hand side, unknown) vector.
+/// May be rank-1 or rank-2 View.
+/// @tparam y_scalar_view_t The type of the Y (right-hand side) vector. May be
+/// rank-1 or rank-2 View.
+/// @param handle handle A KokkosKernelsHandle instance.
+/// @param num_rows Number of rows in the matrix
+/// @param num_cols Number of columns in the matrix
+/// @param block_size The number of degrees of freedom per block
+/// @param row_map The matrix's rowmap
+/// @param entries The matrix's entries
+/// @param values The matrix's values
+/// @param x_lhs_output_vec The X (left-hand side, unknown) vector
+/// @param y_rhs_input_vec The Y (right-hand side) vector
+/// @param init_zero_x_vector Whether to zero out X before applying
+/// @param update_y_vector Whether Y has changed since the last call to apply
+/// @param omega The damping factor for successive over-relaxation
+/// @param numIter How many iterations to run (forward and backward counts as 1)
+/// @pre   <tt>x_lhs_output_vec.extent(0) == num_cols</tt>
+/// @pre   <tt>y_rhs_input_vec.extent(0) == num_rows</tt>
+/// @pre   <tt>x_lhs_output_vec.extent(1) == y_rhs_input_vec.extent(1)</tt>
 ///
 template <KokkosSparse::SparseMatrixFormat format =
               KokkosSparse::SparseMatrixFormat::BSR,
@@ -574,27 +609,33 @@ void symmetric_block_gauss_seidel_apply(
 }
 
 ///
-/// @brief
+/// @brief Apply forward Gauss-Seidel preconditioner to system AX=Y
 ///
-/// @tparam format
-/// @tparam KernelHandle
-/// @tparam lno_row_view_t_
-/// @tparam lno_nnz_view_t_
-/// @tparam scalar_nnz_view_t_
-/// @tparam x_scalar_view_t
-/// @tparam y_scalar_view_t
-/// @param handle
-/// @param num_rows
-/// @param num_cols
-/// @param row_map
-/// @param entries
-/// @param values
-/// @param x_lhs_output_vec
-/// @param y_rhs_input_vec
-/// @param init_zero_x_vector
-/// @param update_y_vector
-/// @param omega
-/// @param numIter
+/// @tparam format The matrix storage format, CRS or BSR
+/// @tparam KernelHandle A specialization of
+/// KokkosKernels::Experimental::KokkosKernelsHandle
+/// @tparam lno_row_view_t_ The matrix's rowmap type
+/// @tparam lno_nnz_view_t_ The matrix's entries type
+/// @tparam scalar_nnz_view_t_ The matrix's values type
+/// @tparam x_scalar_view_t The type of the X (left-hand side, unknown) vector.
+/// May be rank-1 or rank-2 View.
+/// @tparam y_scalar_view_t The type of the Y (right-hand side) vector. May be
+/// rank-1 or rank-2 View.
+/// @param handle KernelHandle instance
+/// @param num_rows Number of rows in the matrix
+/// @param num_cols Number of columns in the matrix
+/// @param row_map The matrix's rowmap
+/// @param entries The matrix's entries
+/// @param values The matrix's values
+/// @param x_lhs_output_vec The X (left-hand side, unknown) vector
+/// @param y_rhs_input_vec The Y (right-hand side) vector
+/// @param init_zero_x_vector Whether to zero out X before applying
+/// @param update_y_vector Whether Y has changed since the last call to apply
+/// @param omega The damping factor for successive over-relaxation
+/// @param numIter How many iterations to run
+/// @pre   <tt>x_lhs_output_vec.extent(0) == num_cols</tt>
+/// @pre   <tt>y_rhs_input_vec.extent(0) == num_rows</tt>
+/// @pre   <tt>x_lhs_output_vec.extent(1) == y_rhs_input_vec.extent(1)</tt>
 ///
 template <KokkosSparse::SparseMatrixFormat format =
               KokkosSparse::SparseMatrixFormat::CRS,
@@ -730,28 +771,34 @@ void forward_sweep_gauss_seidel_apply(
 }
 
 ///
-/// @brief
+/// @brief Apply forward Block Gauss-Seidel preconditioner to system AX=Y
 ///
-/// @tparam format
-/// @tparam KernelHandle
-/// @tparam lno_row_view_t_
-/// @tparam lno_nnz_view_t_
-/// @tparam scalar_nnz_view_t_
-/// @tparam x_scalar_view_t
-/// @tparam y_scalar_view_t
-/// @param handle
-/// @param num_rows
-/// @param num_cols
-/// @param block_size
-/// @param row_map
-/// @param entries
-/// @param values
-/// @param x_lhs_output_vec
-/// @param y_rhs_input_vec
-/// @param init_zero_x_vector
-/// @param update_y_vector
-/// @param omega
-/// @param numIter
+/// @tparam format The matrix storage format, CRS or BSR
+/// @tparam KernelHandle A specialization of
+/// KokkosKernels::Experimental::KokkosKernelsHandle
+/// @tparam lno_row_view_t_ The matrix's rowmap type
+/// @tparam lno_nnz_view_t_ The matrix's entries type
+/// @tparam scalar_nnz_view_t_ The matrix's values type
+/// @tparam x_scalar_view_t The type of the X (left-hand side, unknown) vector.
+/// May be rank-1 or rank-2 View.
+/// @tparam y_scalar_view_t The type of the Y (right-hand side) vector. May be
+/// rank-1 or rank-2 View.
+/// @param handle KernelHandle instance
+/// @param num_rows Number of rows in the matrix
+/// @param num_cols Number of columns in the matrix
+/// @param block_size The number of degrees of freedom per block
+/// @param row_map The matrix's rowmap
+/// @param entries The matrix's entries
+/// @param values The matrix's values
+/// @param x_lhs_output_vec The X (left-hand side, unknown) vector
+/// @param y_rhs_input_vec The Y (right-hand side) vector
+/// @param init_zero_x_vector Whether to zero out X before applying
+/// @param update_y_vector Whether Y has changed since the last call to apply
+/// @param omega The damping factor for successive over-relaxation
+/// @param numIter How many iterations to run
+/// @pre   <tt>x_lhs_output_vec.extent(0) == num_cols</tt>
+/// @pre   <tt>y_rhs_input_vec.extent(0) == num_rows</tt>
+/// @pre   <tt>x_lhs_output_vec.extent(1) == y_rhs_input_vec.extent(1)</tt>
 ///
 template <KokkosSparse::SparseMatrixFormat format =
               KokkosSparse::SparseMatrixFormat::BSR,
@@ -790,27 +837,33 @@ void forward_sweep_block_gauss_seidel_apply(
 }
 
 ///
-/// @brief
+/// @brief Apply backward Gauss-Seidel preconditioner to system AX=Y
 ///
-/// @tparam format
-/// @tparam KernelHandle
-/// @tparam lno_row_view_t_
-/// @tparam lno_nnz_view_t_
-/// @tparam scalar_nnz_view_t_
-/// @tparam x_scalar_view_t
-/// @tparam y_scalar_view_t
-/// @param handle
-/// @param num_rows
-/// @param num_cols
-/// @param row_map
-/// @param entries
-/// @param values
-/// @param x_lhs_output_vec
-/// @param y_rhs_input_vec
-/// @param init_zero_x_vector
-/// @param update_y_vector
-/// @param omega
-/// @param numIter
+/// @tparam format The matrix storage format, CRS or BSR
+/// @tparam KernelHandle A specialization of
+/// KokkosKernels::Experimental::KokkosKernelsHandle
+/// @tparam lno_row_view_t_ The matrix's rowmap type
+/// @tparam lno_nnz_view_t_ The matrix's entries type
+/// @tparam scalar_nnz_view_t_ The matrix's values type
+/// @tparam x_scalar_view_t The type of the X (left-hand side, unknown) vector.
+/// May be rank-1 or rank-2 View.
+/// @tparam y_scalar_view_t The type of the Y (right-hand side) vector. May be
+/// rank-1 or rank-2 View.
+/// @param handle KernelHandle instance
+/// @param num_rows Number of rows in the matrix
+/// @param num_cols Number of columns in the matrix
+/// @param row_map The matrix's rowmap
+/// @param entries The matrix's entries
+/// @param values The matrix's values
+/// @param x_lhs_output_vec The X (left-hand side, unknown) vector
+/// @param y_rhs_input_vec The Y (right-hand side) vector
+/// @param init_zero_x_vector Whether to zero out X before applying
+/// @param update_y_vector Whether Y has changed since the last call to apply
+/// @param omega The damping factor for successive over-relaxation
+/// @param numIter How many iterations to run
+/// @pre   <tt>x_lhs_output_vec.extent(0) == num_cols</tt>
+/// @pre   <tt>y_rhs_input_vec.extent(0) == num_rows</tt>
+/// @pre   <tt>x_lhs_output_vec.extent(1) == y_rhs_input_vec.extent(1)</tt>
 ///
 template <KokkosSparse::SparseMatrixFormat format =
               KokkosSparse::SparseMatrixFormat::CRS,
@@ -946,28 +999,34 @@ void backward_sweep_gauss_seidel_apply(
 }
 
 ///
-/// @brief
+/// @brief Apply backward Block Gauss-Seidel preconditioner to system AX=Y
 ///
-/// @tparam format
-/// @tparam KernelHandle
-/// @tparam lno_row_view_t_
-/// @tparam lno_nnz_view_t_
-/// @tparam scalar_nnz_view_t_
-/// @tparam x_scalar_view_t
-/// @tparam y_scalar_view_t
-/// @param handle
-/// @param num_rows
-/// @param num_cols
-/// @param block_size
-/// @param row_map
-/// @param entries
-/// @param values
-/// @param x_lhs_output_vec
-/// @param y_rhs_input_vec
-/// @param init_zero_x_vector
-/// @param update_y_vector
-/// @param omega
-/// @param numIter
+/// @tparam format The matrix storage format, CRS or BSR
+/// @tparam KernelHandle A specialization of
+/// KokkosKernels::Experimental::KokkosKernelsHandle
+/// @tparam lno_row_view_t_ The matrix's rowmap type
+/// @tparam lno_nnz_view_t_ The matrix's entries type
+/// @tparam scalar_nnz_view_t_ The matrix's values type
+/// @tparam x_scalar_view_t The type of the X (left-hand side, unknown) vector.
+/// May be rank-1 or rank-2 View.
+/// @tparam y_scalar_view_t The type of the Y (right-hand side) vector. May be
+/// rank-1 or rank-2 View.
+/// @param handle KernelHandle instance
+/// @param num_rows Number of rows in the matrix
+/// @param num_cols Number of columns in the matrix
+/// @param block_size The number of degrees of freedom per block
+/// @param row_map The matrix's rowmap
+/// @param entries The matrix's entries
+/// @param values The matrix's values
+/// @param x_lhs_output_vec The X (left-hand side, unknown) vector
+/// @param y_rhs_input_vec The Y (right-hand side) vector
+/// @param init_zero_x_vector Whether to zero out X before applying
+/// @param update_y_vector Whether Y has changed since the last call to apply
+/// @param omega The damping factor for successive over-relaxation
+/// @param numIter How many iterations to run
+/// @pre   <tt>x_lhs_output_vec.extent(0) == num_cols</tt>
+/// @pre   <tt>y_rhs_input_vec.extent(0) == num_rows</tt>
+/// @pre   <tt>x_lhs_output_vec.extent(1) == y_rhs_input_vec.extent(1)</tt>
 ///
 template <KokkosSparse::SparseMatrixFormat format =
               KokkosSparse::SparseMatrixFormat::BSR,
