@@ -321,7 +321,9 @@ auto coo2crs(DimType m, DimType n, RowViewType row, ColViewType col,
   if (row.extent(0) != col.extent(0) || row.extent(0) != data.extent(0))
     Kokkos::abort("row.extent(0) = col.extent(0) = data.extent(0) required.");
 
-  if (m < 0 || n < 0) Kokkos::abort("m >= 0 and n >= 0 required.");
+  if constexpr (std::is_signed_v<DimType>) {
+    if (m < 0 || n < 0) Kokkos::abort("m >= 0 and n >= 0 required.");
+  }
 
   using Coo2crsType =
       Impl::Coo2Crs<DimType, RowViewType, ColViewType, DataViewType, true>;
