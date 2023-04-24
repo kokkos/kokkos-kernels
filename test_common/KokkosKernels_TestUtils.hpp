@@ -650,12 +650,12 @@ class RandCsMatrix {
   using device_type  = Device;
   using ordinal_type = Ordinal;
   using size_type    = Size;
+  using ValViewTypeD = Kokkos::View<ScalarType*, LayoutType, Device>;
+  using IdViewTypeD  = Kokkos::View<Ordinal*, LayoutType, Device>;
+  using MapViewTypeD = Kokkos::View<Size*, LayoutType, Device>;
 
  private:
   using execution_space = typename Device::execution_space;
-  using ValViewTypeD    = Kokkos::View<ScalarType*, LayoutType, Device>;
-  using IdViewTypeD     = Kokkos::View<Ordinal*, LayoutType, Device>;
-  using MapViewTypeD    = Kokkos::View<Size*, LayoutType, Device>;
   Ordinal __dim2;
   Ordinal __dim1;
   Size __nnz = 0;
@@ -702,19 +702,13 @@ class RandCsMatrix {
 
     // Copy to device
     Kokkos::deep_copy(__map_d, __map);
-<<<<<<< HEAD
     IdViewTypeD tight_ids(Kokkos::view_alloc(Kokkos::WithoutInitializing,
                                              "RandCsMatrix.IdViewTypeD"),
                           __nnz);
     Kokkos::deep_copy(
         tight_ids,
         Kokkos::subview(__ids, Kokkos::make_pair(0, static_cast<int>(__nnz))));
-    ExeSpaceType().fence();
     __ids_d = tight_ids;
-=======
-    Kokkos::deep_copy(__ids_d, __ids);
-    execution_space().fence();
->>>>>>> 3111b39b9 (Add rocSparse TPL for BsrMatrix SpMV, rewrite BsrMatrix SpMV unit tests.)
   }
 
   template <class T>
@@ -722,7 +716,6 @@ class RandCsMatrix {
     T dst(std::string("RandCsMatrix.") + typeid(T).name() + " copy",
           src.extent(0));
     Kokkos::deep_copy(dst, src);
-    execution_space().fence();
     return dst;
   }
 
@@ -765,7 +758,6 @@ class RandCsMatrix {
 
     // Copy to device
     Kokkos::deep_copy(__vals_d, __vals);
-    execution_space().fence();
   }
 
   // O(c), where c is a constant.
