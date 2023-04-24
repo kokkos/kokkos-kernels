@@ -137,6 +137,7 @@ namespace Impl {
                                                ETI_SPEC_AVAIL)                \
   template <class ExecSpace>                                                  \
   struct Scal<                                                                \
+      ExecSpace,							      \
       Kokkos::View<SCALAR_TYPE*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
       SCALAR_TYPE,                                                            \
@@ -155,7 +156,8 @@ namespace Impl {
         XV;                                                                   \
     typedef typename XV::size_type size_type;                                 \
                                                                               \
-    static void scal(const RV& R, const AS& alpha, const XV& X) {             \
+    static void scal(const ExecSpace& space, const RV& R, const AS& alpha,    \
+		     const XV& X) {					      \
       Kokkos::Profiling::pushRegion(                                          \
           "KokkosBlas::scal[TPL_CUBLAS," #SCALAR_TYPE "]");                   \
       const size_type numElems = X.extent(0);                                 \
@@ -166,11 +168,15 @@ namespace Impl {
         constexpr int one = 1;                                                \
         KokkosBlas::Impl::CudaBlasSingleton& s =                              \
             KokkosBlas::Impl::CudaBlasSingleton::singleton();                 \
+      KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                           \
+          cublasSetStream(s.handle, space.cuda_stream()));                    \
         KOKKOS_CUBLAS_SAFE_CALL_IMPL(CUBLAS_FN(                               \
             s.handle, N, reinterpret_cast<const CUDA_SCALAR_TYPE*>(&alpha),   \
             reinterpret_cast<CUDA_SCALAR_TYPE*>(R.data()), one));             \
+      KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                           \
+          cublasSetStream(s.handle, NULL));                                   \
       } else {                                                                \
-        Scal<RV, AS, XV, 1, false, ETI_SPEC_AVAIL>::scal(R, alpha, X);        \
+        Scal<ExecSpace, RV, AS, XV, 1, false, ETI_SPEC_AVAIL>::scal(space, R, alpha, X); \
       }                                                                       \
       Kokkos::Profiling::popRegion();                                         \
     }                                                                         \
