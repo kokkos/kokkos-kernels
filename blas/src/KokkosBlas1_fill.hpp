@@ -23,8 +23,11 @@ namespace KokkosBlas {
 
 /// \brief Fill the multivector or single vector X with the given value.
 ///
+/// \tparam execution_space a Kokkos execution space
 /// \tparam XMV 1-D or 2-D output View
 ///
+/// \param space [in] A Kokkos instance of execution_space on which the
+///                   kernel will run.
 /// \param X [out] Output View (1-D or 2-D).
 /// \param val [in] Value with which to fill the entries of X.
 template <class execution_space, class XMV>

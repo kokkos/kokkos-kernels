@@ -26,10 +26,13 @@ namespace KokkosBlas {
 /// \brief Element wise multiplication of two vectors:
 ///        Y[i] = gamma * Y[i] + alpha * A[i] * X[i]
 ///
+/// \tparam execution_type a Kokkos execution space type.
 /// \tparam YMV Type of the first vector Y; a 1-D or 2-D Kokkos::View.
 /// \tparam AV  Type of the second vector A; a 1-D Kokkos::View.
 /// \tparam XMV Type of the third vector X; a 1-D or 2-D Kokkos::View.
 ///
+/// \param space [in] An instance of execution_space on which the kernel
+///                   will run (it may specify an execution stream/queue).
 /// \param gamma [in] The scalar to apply to Y.
 /// \param Y [in/out] The Y vector.
 /// \param alpha [in] The scalar to apply to A.
