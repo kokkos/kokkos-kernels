@@ -49,13 +49,14 @@ nrm2(const XVector& x) {
       typename XVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       XVector_Internal;
 
-  typedef Kokkos::View<mag_type, typename XVector_Internal::array_layout,
-                       Kokkos::HostSpace,
+  using layout_t = typename XVector_Internal::array_layout;
+
+  typedef Kokkos::View<mag_type, layout_t, Kokkos::HostSpace,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       RVector_Internal;
 
   mag_type result;
-  RVector_Internal R = RVector_Internal(&result);
+  RVector_Internal R = RVector_Internal(&result, layout_t());
   XVector_Internal X = x;
 
   Impl::Nrm2<RVector_Internal, XVector_Internal>::nrm2(R, X, true);

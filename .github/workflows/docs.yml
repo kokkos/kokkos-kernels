@@ -15,7 +15,8 @@ jobs:
     steps:
       - name: Install Dependencies
         run: |
-          sudo apt install --no-install-recommends doxygen-latex
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends doxygen-latex
           pip install sphinx
           pip install breathe
           pip install sphinx-rtd-theme

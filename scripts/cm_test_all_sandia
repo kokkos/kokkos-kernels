@@ -155,6 +155,10 @@ if [[ "$HOSTNAME" == *blake* ]]; then # Warning: very generic name
   module load git
 fi
 
+if [[ "$HOSTNAME" == *solo* ]]; then # Warning: very generic name
+  MACHINE=solo
+fi
+
 if [[ "$HOSTNAME" == kokkos-dev-2* ]]; then
   MACHINE=kokkos-dev-2
 fi
@@ -758,6 +762,40 @@ elif [ "$MACHINE" = "blake" ]; then
     ARCH_FLAG="--arch=SKX"
   fi
   SPACK_HOST_ARCH="+skx"
+elif [ "$MACHINE" = "solo" ]; then
+  SKIP_HWLOC=True
+  export SLURM_TASKS_PER_NODE=32
+
+  module load cmake/3.22.3
+
+  BASE_MODULE_LIST="cmake/3.22.3,<COMPILER_NAME>/<COMPILER_VERSION>"
+  BASE_MODULE_LIST_LLVM="cmake/3.22.3,<COMPILER_NAME>/<COMPILER_VERSION>,gnu/10.2.1"
+  BASE_MODULE_LIST_INTEL="cmake/3.22.3,gnu/8.2.1,<COMPILER_NAME>/<COMPILER_VERSION>"
+  ONEAPI_WARNING_FLAGS=""
+
+  GNU102_MODULE_TPL_LIST="$BASE_MODULE_LIST,openblas/0.3.21"
+
+  if [ "$SPOT_CHECK" = "True" ]; then
+    COMPILERS=(
+               "gnu/10.2.1 $BASE_MODULE_LIST "Threads_Serial,OpenMP" g++ $GNU_WARNING_FLAGS"
+               "llvm/10.0.1 $BASE_MODULE_LIST_LLVM "Threads_Serial" clang++ $CLANG_WARNING_FLAGS"
+    )
+  elif [ "$SPOT_CHECK_TPLS" = "True" ]; then
+    COMPILERS=("intel/19.0.5.281 $BASE_MODULE_LIST_INTEL,mkl/19.0.5.281 "OpenMP,Threads" icpc $INTEL_WARNING_FLAGS"
+               "gnu/10.2.1 $GNU102_MODULE_TPL_LIST "OpenMP_Serial" g++ $GNU_WARNING_FLAGS"
+    )
+  else
+      ###"clang/10.0.1 $BASE_MODULE_LIST $CLANG_BUILD_LIST clang++ $CLANG_WARNING_FLAGS"
+    COMPILERS=(
+               "gnu/10.2.1 $BASE_MODULE_LIST $GNU_BUILD_LIST g++ $GNU_WARNING_FLAGS"
+    )
+
+  fi
+
+  if [ -z "$ARCH_FLAG" ]; then
+    ARCH_FLAG="--arch=BDW"
+  fi
+  SPACK_HOST_ARCH="+bdw"
 elif [ "$MACHINE" = "kokkos-dev-2" ]; then
   MODULE_ENVIRONMENT="source /projects/sems/modulefiles/utils/sems-archive-modules-init.sh ; module use /home/projects/x86-64/modulefiles/local"
   eval "$MODULE_ENVIRONMENT"
@@ -1145,6 +1183,9 @@ single_build_and_test() {
   fi
   echo "        module purge" &>> reload_modules.sh
   echo "        module load $compiler_modules_list" &>> reload_modules.sh
+  echo "        export OMP_NUM_THREADS=$omp_num_threads" &>> reload_modules.sh
+  echo "        export OMP_PROC_BIND=$omp_proc_bind" &>> reload_modules.sh
+  echo "        export OMP_PLACES=$omp_places" &>> reload_modules.sh
   echo "" &>> reload_modules.sh
   chmod +x reload_modules.sh
 

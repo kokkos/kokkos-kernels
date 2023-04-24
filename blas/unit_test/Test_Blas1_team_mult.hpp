@@ -41,68 +41,33 @@ void impl_test_team_mult(int N) {
   typedef typename ViewTypeB::value_type ScalarB;
   typedef typename ViewTypeC::value_type ScalarC;
 
-  typedef Kokkos::View<
-      ScalarA * [2],
-      typename std::conditional<std::is_same<typename ViewTypeA::array_layout,
-                                             Kokkos::LayoutStride>::value,
-                                Kokkos::LayoutRight, Kokkos::LayoutLeft>::type,
-      Device>
-      BaseTypeA;
-  typedef Kokkos::View<
-      ScalarB * [2],
-      typename std::conditional<std::is_same<typename ViewTypeB::array_layout,
-                                             Kokkos::LayoutStride>::value,
-                                Kokkos::LayoutRight, Kokkos::LayoutLeft>::type,
-      Device>
-      BaseTypeB;
-  typedef Kokkos::View<
-      ScalarC * [2],
-      typename std::conditional<std::is_same<typename ViewTypeC::array_layout,
-                                             Kokkos::LayoutStride>::value,
-                                Kokkos::LayoutRight, Kokkos::LayoutLeft>::type,
-      Device>
-      BaseTypeC;
-
   ScalarA a  = 3;
   ScalarB b  = 5;
   double eps = std::is_same<ScalarC, float>::value ? 2 * 1e-5 : 1e-7;
 
-  BaseTypeA b_x("X", N);
-  BaseTypeB b_y("Y", N);
-  BaseTypeC b_z("Y", N);
-  BaseTypeC b_org_z("Org_Z", N);
-
-  ViewTypeA x                        = Kokkos::subview(b_x, Kokkos::ALL(), 0);
-  ViewTypeB y                        = Kokkos::subview(b_y, Kokkos::ALL(), 0);
-  ViewTypeC z                        = Kokkos::subview(b_z, Kokkos::ALL(), 0);
-  typename ViewTypeA::const_type c_x = x;
-  typename ViewTypeB::const_type c_y = y;
-
-  typename BaseTypeA::HostMirror h_b_x = Kokkos::create_mirror_view(b_x);
-  typename BaseTypeB::HostMirror h_b_y = Kokkos::create_mirror_view(b_y);
-  typename BaseTypeC::HostMirror h_b_z = Kokkos::create_mirror_view(b_z);
-
-  typename ViewTypeA::HostMirror h_x = Kokkos::subview(h_b_x, Kokkos::ALL(), 0);
-  typename ViewTypeB::HostMirror h_y = Kokkos::subview(h_b_y, Kokkos::ALL(), 0);
-  typename ViewTypeC::HostMirror h_z = Kokkos::subview(h_b_z, Kokkos::ALL(), 0);
+  view_stride_adapter<ViewTypeA> x("X", N);
+  view_stride_adapter<ViewTypeB> y("Y", N);
+  view_stride_adapter<ViewTypeC> z("Z", N);
+  view_stride_adapter<ViewTypeC> org_z("Org_Z", N);
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
       13718);
 
-  Kokkos::fill_random(b_x, rand_pool, ScalarA(10));
-  Kokkos::fill_random(b_y, rand_pool, ScalarB(10));
-  Kokkos::fill_random(b_z, rand_pool, ScalarC(10));
+  Kokkos::fill_random(x.d_view, rand_pool, ScalarA(10));
+  Kokkos::fill_random(y.d_view, rand_pool, ScalarB(10));
+  Kokkos::fill_random(z.d_view, rand_pool, ScalarC(10));
 
-  Kokkos::deep_copy(b_org_z, b_z);
+  Kokkos::deep_copy(org_z.h_base, z.d_base);
 
-  Kokkos::deep_copy(h_b_x, b_x);
-  Kokkos::deep_copy(h_b_y, b_y);
-  Kokkos::deep_copy(h_b_z, b_z);
+  Kokkos::deep_copy(x.h_base, x.d_base);
+  Kokkos::deep_copy(y.h_base, y.d_base);
+  Kokkos::deep_copy(z.h_base, z.d_base);
 
   ScalarA expected_result = 0;
   for (int i = 0; i < N; i++)
-    expected_result += ScalarC(b * h_z(i) + a * h_x(i) * h_y(i)) *
-                       ScalarC(b * h_z(i) + a * h_x(i) * h_y(i));
+    expected_result +=
+        ScalarC(b * z.h_view(i) + a * x.h_view(i) * y.h_view(i)) *
+        ScalarC(b * z.h_view(i) + a * x.h_view(i) * y.h_view(i));
 
   // KokkosBlas::mult(b,z,a,x,y);
   Kokkos::parallel_for(
@@ -112,24 +77,28 @@ void impl_test_team_mult(int N) {
         KokkosBlas::Experimental::mult(
             teamMember, b,
             Kokkos::subview(
-                z, Kokkos::make_pair(
-                       teamId * team_data_siz,
-                       (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)),
+                z.d_view,
+                Kokkos::make_pair(
+                    teamId * team_data_siz,
+                    (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)),
             a,
             Kokkos::subview(
-                x, Kokkos::make_pair(
-                       teamId * team_data_siz,
-                       (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)),
+                x.d_view,
+                Kokkos::make_pair(
+                    teamId * team_data_siz,
+                    (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)),
             Kokkos::subview(
-                y, Kokkos::make_pair(
-                       teamId * team_data_siz,
-                       (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)));
+                y.d_view,
+                Kokkos::make_pair(
+                    teamId * team_data_siz,
+                    (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)));
       });
-  ScalarC nonconst_nonconst_result = KokkosBlas::dot(z, z);
+  ScalarC nonconst_nonconst_result = KokkosBlas::dot(z.d_view, z.d_view);
   EXPECT_NEAR_KK(nonconst_nonconst_result, expected_result,
                  eps * expected_result);
 
-  Kokkos::deep_copy(b_z, b_org_z);
+  // Reset z on device to orig and run again with const-valued y
+  Kokkos::deep_copy(z.d_base, org_z.h_base);
   // KokkosBlas::mult(b,z,a,x,c_y);
   Kokkos::parallel_for(
       "KokkosBlas::Test::TeamMult", policy,
@@ -138,23 +107,27 @@ void impl_test_team_mult(int N) {
         KokkosBlas::Experimental::mult(
             teamMember, b,
             Kokkos::subview(
-                z, Kokkos::make_pair(
-                       teamId * team_data_siz,
-                       (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)),
+                z.d_view,
+                Kokkos::make_pair(
+                    teamId * team_data_siz,
+                    (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)),
             a,
             Kokkos::subview(
-                x, Kokkos::make_pair(
-                       teamId * team_data_siz,
-                       (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)),
+                x.d_view,
+                Kokkos::make_pair(
+                    teamId * team_data_siz,
+                    (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)),
             Kokkos::subview(
-                c_y, Kokkos::make_pair(
-                         teamId * team_data_siz,
-                         (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)));
+                y.d_view_const,
+                Kokkos::make_pair(
+                    teamId * team_data_siz,
+                    (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)));
       });
-  ScalarC const_nonconst_result = KokkosBlas::dot(z, z);
+  ScalarC const_nonconst_result = KokkosBlas::dot(z.d_view, z.d_view);
   EXPECT_NEAR_KK(const_nonconst_result, expected_result, eps * expected_result);
 
-  Kokkos::deep_copy(b_z, b_org_z);
+  // Reset z again to orig, and run with both x and y const
+  Kokkos::deep_copy(z.d_base, org_z.h_base);
   // KokkosBlas::mult(b,z,a,c_x,c_y);
   Kokkos::parallel_for(
       "KokkosBlas::Test::TeamMult", policy,
@@ -163,20 +136,23 @@ void impl_test_team_mult(int N) {
         KokkosBlas::Experimental::mult(
             teamMember, b,
             Kokkos::subview(
-                z, Kokkos::make_pair(
-                       teamId * team_data_siz,
-                       (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)),
+                z.d_view,
+                Kokkos::make_pair(
+                    teamId * team_data_siz,
+                    (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)),
             a,
             Kokkos::subview(
-                c_x, Kokkos::make_pair(
-                         teamId * team_data_siz,
-                         (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)),
+                x.d_view_const,
+                Kokkos::make_pair(
+                    teamId * team_data_siz,
+                    (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)),
             Kokkos::subview(
-                c_y, Kokkos::make_pair(
-                         teamId * team_data_siz,
-                         (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)));
+                y.d_view_const,
+                Kokkos::make_pair(
+                    teamId * team_data_siz,
+                    (teamId < M - 1) ? (teamId + 1) * team_data_siz : N)));
       });
-  ScalarC const_const_result = KokkosBlas::dot(z, z);
+  ScalarC const_const_result = KokkosBlas::dot(z.d_view, z.d_view);
   EXPECT_NEAR_KK(const_const_result, expected_result, eps * expected_result);
 }
 
@@ -192,54 +168,27 @@ void impl_test_team_mult_mv(int N, int K) {
   typedef typename ViewTypeB::value_type ScalarB;
   typedef typename ViewTypeC::value_type ScalarC;
 
-  typedef Kokkos::View<
-      ScalarA * [2],
-      typename std::conditional<std::is_same<typename ViewTypeA::array_layout,
-                                             Kokkos::LayoutStride>::value,
-                                Kokkos::LayoutRight, Kokkos::LayoutLeft>::type,
-      Device>
-      BaseTypeA;
-  typedef multivector_layout_adapter<ViewTypeB> vfB_type;
-  typedef multivector_layout_adapter<ViewTypeC> vfC_type;
-
-  BaseTypeA b_x("X", N);
-  typename vfB_type::BaseType b_y("Y", N, K);
-  typename vfC_type::BaseType b_z("Z", N, K);
-  typename vfC_type::BaseType b_org_z("Z", N, K);
-
-  ViewTypeA x = Kokkos::subview(b_x, Kokkos::ALL(), 0);
-  ViewTypeB y = vfB_type::view(b_y);
-  ViewTypeC z = vfC_type::view(b_z);
-
-  typedef multivector_layout_adapter<typename ViewTypeB::HostMirror> h_vfB_type;
-  typedef multivector_layout_adapter<typename ViewTypeC::HostMirror> h_vfC_type;
-
-  typename BaseTypeA::HostMirror h_b_x = Kokkos::create_mirror_view(b_x);
-  typename h_vfB_type::BaseType h_b_y  = Kokkos::create_mirror_view(b_y);
-  typename h_vfC_type::BaseType h_b_z  = Kokkos::create_mirror_view(b_z);
-
-  typename ViewTypeA::HostMirror h_x = Kokkos::subview(h_b_x, Kokkos::ALL(), 0);
-  typename ViewTypeB::HostMirror h_y = h_vfB_type::view(h_b_y);
-  typename ViewTypeC::HostMirror h_z = h_vfC_type::view(h_b_z);
+  // x is rank-1, all others are rank-2
+  view_stride_adapter<ViewTypeA> x("X", N);
+  view_stride_adapter<ViewTypeB> y("Y", N, K);
+  view_stride_adapter<ViewTypeC> z("Z", N, K);
+  view_stride_adapter<ViewTypeC> org_z("Org_Z", N, K);
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
       13718);
 
   typename Kokkos::ArithTraits<ScalarC>::mag_type const max_val = 10;
-  Kokkos::fill_random(b_x, rand_pool, ScalarA(max_val));
-  Kokkos::fill_random(b_y, rand_pool, ScalarB(max_val));
-  Kokkos::fill_random(b_z, rand_pool, ScalarC(max_val));
+  Kokkos::fill_random(x.d_view, rand_pool, ScalarA(max_val));
+  Kokkos::fill_random(y.d_view, rand_pool, ScalarB(max_val));
+  Kokkos::fill_random(z.d_view, rand_pool, ScalarC(max_val));
 
-  Kokkos::deep_copy(b_org_z, b_z);
+  Kokkos::deep_copy(org_z.h_base, z.d_base);
 
-  Kokkos::deep_copy(h_b_x, b_x);
-  Kokkos::deep_copy(h_b_y, b_y);
-  Kokkos::deep_copy(h_b_z, b_z);
+  Kokkos::deep_copy(x.h_base, x.d_base);
+  Kokkos::deep_copy(y.h_base, y.d_base);
 
-  ScalarA a                          = 3;
-  ScalarB b                          = 5;
-  typename ViewTypeA::const_type c_x = x;
-  typename ViewTypeB::const_type c_y = y;
+  ScalarA a = 3;
+  ScalarB b = 5;
 
   // In the operation z = (b*z) + (a*x*y) we estimate
   // the largest rounding error to be dominated by max(b*z, a*x*y)
@@ -257,39 +206,37 @@ void impl_test_team_mult_mv(int N, int K) {
       KOKKOS_LAMBDA(const team_member &teamMember) {
         const int teamId = teamMember.league_rank();
         KokkosBlas::Experimental::mult(
-            teamMember, b, Kokkos::subview(z, Kokkos::ALL(), teamId), a, x,
-            Kokkos::subview(y, Kokkos::ALL(), teamId));
+            teamMember, b, Kokkos::subview(z.d_view, Kokkos::ALL(), teamId), a,
+            x.d_view, Kokkos::subview(y.d_view, Kokkos::ALL(), teamId));
       });
 
-  ScalarC temp;
-  typename h_vfC_type::BaseType h_b_z_res = Kokkos::create_mirror_view(b_z);
-  Kokkos::deep_copy(h_b_z_res, b_z);
-  typename h_vfC_type::BaseType h_b_org_z = Kokkos::create_mirror_view(b_org_z);
-  Kokkos::deep_copy(h_b_org_z, b_org_z);
+  Kokkos::deep_copy(z.h_base, z.d_base);
 
+  ScalarC temp;
   for (int j = 0; j < K; j++) {
     for (int i = 0; i < N; i++) {
-      temp = ScalarC(b * h_b_org_z(i, j) + a * h_x(i) * h_y(i, j));
-      EXPECT_NEAR_KK(temp, h_b_z_res(i, j), max_error);
+      temp = ScalarC(b * org_z.h_view(i, j) + a * x.h_view(i) * y.h_view(i, j));
+      EXPECT_NEAR_KK(temp, z.h_view(i, j), max_error);
     }
   }
 
-  Kokkos::deep_copy(b_z, b_org_z);
+  // Reset z on device and run again with const y
+  Kokkos::deep_copy(z.d_base, org_z.h_base);
   // KokkosBlas::mult(b,z,a,x,c_y);
   Kokkos::parallel_for(
       "KokkosBlas::Test::TeamMult", policy,
       KOKKOS_LAMBDA(const team_member &teamMember) {
         const int teamId = teamMember.league_rank();
         KokkosBlas::Experimental::mult(
-            teamMember, b, Kokkos::subview(z, Kokkos::ALL(), teamId), a, x,
-            Kokkos::subview(c_y, Kokkos::ALL(), teamId));
+            teamMember, b, Kokkos::subview(z.d_view, Kokkos::ALL(), teamId), a,
+            x.d_view, Kokkos::subview(y.d_view_const, Kokkos::ALL(), teamId));
       });
-  Kokkos::deep_copy(h_b_z_res, b_z);
+  Kokkos::deep_copy(z.h_base, z.d_base);
 
   for (int k = 0; k < K; k++) {
     for (int i = 0; i < N; ++i) {
-      temp = ScalarC(b * h_b_org_z(i, k) + a * h_x(i) * h_y(i, k));
-      EXPECT_NEAR_KK(temp, h_b_z_res(i, k), max_error);
+      temp = ScalarC(b * org_z.h_view(i, k) + a * x.h_view(i) * y.h_view(i, k));
+      EXPECT_NEAR_KK(temp, z.h_view(i, k), max_error);
     }
   }
 }
@@ -329,8 +276,7 @@ int test_team_mult() {
   // Device>(132231);
 #endif
 
-#if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
+#if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA *, Kokkos::LayoutStride, Device> view_type_a_ls;
   typedef Kokkos::View<ScalarB *, Kokkos::LayoutStride, Device> view_type_b_ls;
@@ -390,9 +336,7 @@ int test_team_mult_mv() {
   // view_type_c_lr, Device>(132231,5);
 #endif
 
-  /*
-#if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
+#if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA *, Kokkos::LayoutStride, Device> view_type_a_ls;
   typedef Kokkos::View<ScalarB **, Kokkos::LayoutStride, Device> view_type_b_ls;
@@ -414,7 +358,6 @@ int test_team_mult_mv() {
   Test::impl_test_team_mult_mv<view_type_a_ll, view_type_b_ls, view_type_c_lr,
                                Device>(124, 5);
 #endif
-  */
 
   return 1;
 }
