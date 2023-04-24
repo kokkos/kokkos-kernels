@@ -29,6 +29,18 @@
 
 namespace KokkosBlas {
 
+/// \brief Computes R := alpha*X
+///
+/// \tparam execution_space a Kokkos execution space where the kernel will run.
+/// \tparam RMV 1-D or 2-D Kokkos::View specialization.
+/// \tparam XMV 1-D or 2-D Kokkos::View specialization. It must have
+///   the same rank as RMV.
+/// \tparam AV 1-D or 2-D Kokkos::View specialization.
+///
+/// \param space [in] the execution space instance on which the kernel will run.
+/// \param R [in/out] view of type RMV in which the results will be stored.
+/// \param a [in] view of type AV, scaling parameter for X.
+/// \param X [in] input view of type XMV.
 template <class execution_space, class RMV, class AV, class XMV>
 void scal(const execution_space& space, const RMV& R, const AV& a,
           const XMV& X) {
@@ -101,6 +113,16 @@ void scal(const execution_space& space, const RMV& R, const AV& a,
       space, R_internal, a_internal, X_internal);
 }
 
+/// \brief Computes R := alpha*X
+///
+/// \tparam RMV 1-D or 2-D Kokkos::View specialization.
+/// \tparam XMV 1-D or 2-D Kokkos::View specialization. It must have
+///   the same rank as RMV.
+/// \tparam AV 1-D or 2-D Kokkos::View specialization.
+///
+/// \param R [in/out] view of type RMV in which the results will be stored.
+/// \param a [in] view of type AV, scaling parameter for X.
+/// \param X [in] input view of type XMV.
 template <class RMV, class AV, class XMV>
 void scal(const RMV& R, const AV& a, const XMV& X) {
   scal(typename RMV::execution_space{}, R, a, X);

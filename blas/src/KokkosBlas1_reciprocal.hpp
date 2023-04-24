@@ -28,10 +28,15 @@ namespace KokkosBlas {
 /// Replace each entry in R with the absolute value (magnitude), of the
 /// reciprocal of the corresponding entry in X.
 ///
+/// \tparam execution_space a Kokkos execution space
 /// \tparam RMV 1-D or 2-D Kokkos::View specialization.
 /// \tparam XMV 1-D or 2-D Kokkos::View specialization.  It must have
 ///   the same rank as RMV, and its entries must be assignable to
 ///   those of RMV.
+///
+/// \param space [in] an instance of execution space where the kernel will run
+/// \param R [out] a view of type RMV that contains the inverse of the values in X.
+/// \param X [in] a view of type XMV that contains the values to invert.
 template <class execution_space, class RMV, class XMV>
 void reciprocal(const execution_space& space, const RMV& R, const XMV& X) {
   static_assert(Kokkos::is_execution_space_v<execution_space>,

@@ -33,6 +33,10 @@ namespace KokkosBlas {
 /// \tparam XMV 1-D or 2-D Kokkos::View specialization.  It must have
 ///   the same rank as RMV, and its entries must be assignable to
 ///   those of RMV.
+///
+/// \param space [in] an execution_space instance where the kernel will run.
+/// \param R [out] view of type RMV that contains the absolute value X on output.
+/// \param X [in] view of type XMV.
 template <class execution_space, class RMV, class XMV>
 void abs(const execution_space& space, const RMV& R, const XMV& X) {
   static_assert(Kokkos::is_execution_space_v<execution_space>,
@@ -103,6 +107,9 @@ void abs(const execution_space& space, const RMV& R, const XMV& X) {
 /// \tparam XMV 1-D or 2-D Kokkos::View specialization.  It must have
 ///   the same rank as RMV, and its entries must be assignable to
 ///   those of RMV.
+///
+/// \param R [out] view of type RMV that contains the absolute value X on output.
+/// \param X [in] view of type XMV.
 template <class RMV, class XMV>
 void abs(const RMV& R, const XMV& X) {
   abs(typename RMV::execution_space{}, R, X);

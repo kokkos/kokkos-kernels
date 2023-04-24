@@ -1,9 +1,15 @@
 BLAS1 -- KokkosKernels blas1 interfaces
 =======================================
 
+abs
+___
+.. doxygenfunction:: KokkosBlas::abs(const execution_space& space, const RMV& R, const XMV& X)
+.. doxygenfunction:: KokkosBlas::abs(const RMV& R, const XMV& X)
+
 axpby
 -----
-.. doxygenfunction:: KokkosBlas::axpby
+.. doxygenfunction:: KokkosBlas::axpby(const execution_space& space, const AV& a, const XMV& X, const BV& b, const YMV& Y)
+.. doxygenfunction:: KokkosBlas::axpby(const AV& a, const XMV& X, const BV& b, const YMV& Y)
 
 dot
 ---
@@ -12,11 +18,13 @@ dot
 
 fill
 ----
-.. doxygenfunction:: KokkosBlas::fill
+.. doxygenfunction:: KokkosBlas::fill(const execution_space& space, const XMV& X, const typename XMV::non_const_value_type& val)
+.. doxygenfunction:: KokkosBlas::fill(const XMV& X, const typename XMV::non_const_value_type& val)
 
 mult
 ----
-.. doxygenfunction:: KokkosBlas::mult
+.. doxygenfunction:: KokkosBlas::mult(const execution_space& space, typename YMV::const_value_type& gamma, const YMV& Y, typename AV::const_value_type& alpha, const AV& A, const XMV& X)
+.. doxygenfunction:: KokkosBlas::mult(typename YMV::const_value_type& gamma, const YMV& Y, typename AV::const_value_type& alpha, const AV& A, const XMV& X)
 
 nrm1
 ----
@@ -40,11 +48,13 @@ nrminf
 
 reciprocal
 ----------
-.. doxygenfunction:: KokkosBlas::reciprocal
+.. doxygenfunction:: KokkosBlas::reciprocal(const execution_space& space, const RMV& R, const XMV& X)
+.. doxygenfunction:: KokkosBlas::reciprocal(const RMV& R, const XMV& X)
 
 scal
 ----
-.. doxygenfunction:: KokkosBlas::scal
+.. doxygenfunction:: KokkosBlas::scal(const execution_space& space, const RMV& R, const AV& a, const XMV& X)
+.. doxygenfunction:: KokkosBlas::scal(const RMV& R, const AV& a, const XMV& X)
 
 sum
 ---
@@ -57,4 +67,5 @@ swap
 
 update
 ------
-.. doxygenfunction:: KokkosBlas::update
+.. doxygenfunction:: KokkosBlas::update(const execution_space& space, const typename XMV::non_const_value_type& alpha, const XMV& X, const typename YMV::non_const_value_type& beta, const YMV& Y, const typename ZMV::non_const_value_type& gamma, const ZMV& Z)
+.. doxygenfunction:: KokkosBlas::update(const typename XMV::non_const_value_type& alpha, const XMV& X, const typename YMV::non_const_value_type& beta, const YMV& Y, const typename ZMV::non_const_value_type& gamma, const ZMV& Z)
