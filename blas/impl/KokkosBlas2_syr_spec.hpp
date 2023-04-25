@@ -27,7 +27,7 @@
 namespace KokkosBlas {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class XMV, class ZMV>
+template <class EXEC_SPACE, class XMV, class ZMV>
 struct syr_eti_spec_avail {
   enum : bool { value = false };
 };
@@ -42,7 +42,8 @@ struct syr_eti_spec_avail {
 //
 #define KOKKOSBLAS2_SYR_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)      \
   template <>                                                                      \
-  struct syr_eti_spec_avail< Kokkos::View< const SCALAR*                           \
+  struct syr_eti_spec_avail< EXEC_SPACE                                            \
+                           , Kokkos::View< const SCALAR*                           \
                                          , LAYOUT                                  \
                                          , Kokkos::Device<EXEC_SPACE, MEM_SPACE>   \
                                          , Kokkos::MemoryTraits<Kokkos::Unmanaged> \
@@ -115,8 +116,8 @@ static void kk_syr( const          ExecutionSpace              & space
 template < class ExecutionSpace
          , class XViewType
          , class AViewType
-         , bool tpl_spec_avail = syr_tpl_spec_avail<XViewType, AViewType>::value
-         , bool eti_spec_avail = syr_eti_spec_avail<XViewType, AViewType>::value
+         , bool tpl_spec_avail = syr_tpl_spec_avail<ExecutionSpace, XViewType, AViewType>::value
+         , bool eti_spec_avail = syr_eti_spec_avail<ExecutionSpace, XViewType, AViewType>::value
          >
 struct SYR {
   static void syr( const          ExecutionSpace              & space
