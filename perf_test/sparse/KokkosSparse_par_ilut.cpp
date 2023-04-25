@@ -255,14 +255,25 @@ void run_spiluk_test(KernelHandle& kh, const sp_matrix_type& A, const int rows,
   ValuesType U_values("U_values", handle_nnz);
 
   Kokkos::Timer timer;
+  double min_time_s = std::numeric_limits<double>::infinity();
+  double max_time_s = 0.0;
+  double ave_time_s = 0.0;
+
   double min_time = std::numeric_limits<double>::infinity();
   double max_time = 0.0;
   double ave_time = 0.0;
+
   for (int i = 0; i < loop; ++i) {
     // Run par_ilut
     timer.reset();
-    spiluk_symbolic(&kh, fill_lev, A_row_map, A_entries, L_row_map, L_entries,
-                    U_row_map, U_entries);
+    spiluk_symbolic(&kh, fill_lev, A_row_map, A_entries, L_row_map, L_entries, U_row_map, U_entries);
+    Kokkos::fence();
+
+    // Measure symbolic time
+    double time_s = timer.seconds();
+    ave_time_s += time_s;
+    if (time_s > max_time_s) max_time_s = time_s;
+    if (time_s < min_time_s) min_time_s = time_s;
 
     const size_type nnzL = spiluk_handle->get_nnzL();
     const size_type nnzU = spiluk_handle->get_nnzU();
@@ -272,11 +283,12 @@ void run_spiluk_test(KernelHandle& kh, const sp_matrix_type& A, const int rows,
     Kokkos::resize(L_values, nnzL);
     Kokkos::resize(U_values, nnzU);
 
-    spiluk_numeric(&kh, fill_lev, A_row_map, A_entries, A_values, L_row_map,
-                   L_entries, L_values, U_row_map, U_entries, U_values);
+    timer.reset();
+    spiluk_numeric(&kh, fill_lev, A_row_map, A_entries, A_values, L_row_map, L_entries,
+                   L_values, U_row_map, U_entries, U_values);
     Kokkos::fence();
 
-    // Measure time
+    // Measure numeric time
     double time = timer.seconds();
     ave_time += time;
     if (time > max_time) max_time = time;
@@ -295,19 +307,22 @@ void run_spiluk_test(KernelHandle& kh, const sp_matrix_type& A, const int rows,
     spiluk_handle->reset_handle(rows, handle_nnz, handle_nnz);
 
     // Report run so user knows something is happening
-    std::cout << "SPILUK Finished a run in:  " << time << " seconds"
-              << std::endl;
+    std::cout << "SPILUK_SYM Finished a run in:  " << time_s << " seconds" << std::endl;
+    std::cout << "SPILUK_NUM Finished a run in:  " << time << " seconds" << std::endl;
   }
 
-  std::cout << "SPILUK LOOP_AVG_TIME:  " << ave_time / loop << std::endl;
-  std::cout << "SPILUK LOOP_MAX_TIME:  " << max_time << std::endl;
-  std::cout << "SPILUK LOOP_MIN_TIME:  " << min_time << std::endl;
+  std::cout << "SPILUK_SYM LOOP_AVG_TIME:  " << ave_time_s / loop << std::endl;
+  std::cout << "SPILUK_SYM LOOP_MAX_TIME:  " << max_time_s << std::endl;
+  std::cout << "SPILUK_SYM LOOP_MIN_TIME:  " << min_time_s << std::endl;
+
+  std::cout << "SPILUK_NUM LOOP_AVG_TIME:  " << ave_time / loop << std::endl;
+  std::cout << "SPILUK_NUM LOOP_MAX_TIME:  " << max_time << std::endl;
+  std::cout << "SPILUK_NUM LOOP_MIN_TIME:  " << min_time << std::endl;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-int test_par_ilut_perf(const int rows, const int nnz_per_row,
-                       const int bandwidth_per_nnz, const int team_size,
-                       const int loop, const int test)
+int test_par_ilut_perf(const int rows, const int nnz_per_row, const int bandwidth,
+                       const int team_size, const int loop, const int test)
 ///////////////////////////////////////////////////////////////////////////////
 {
   KernelHandle kh;
@@ -321,8 +336,7 @@ int test_par_ilut_perf(const int rows, const int nnz_per_row,
   const auto default_policy = par_ilut_handle->get_default_team_policy();
 
   // Generate A
-  size_type nnz                 = rows * nnz_per_row;
-  const lno_t bandwidth         = nnz_per_row * bandwidth_per_nnz;
+  size_type nnz   = rows * nnz_per_row;
   const lno_t row_size_variance = 0;
   const scalar_t diag_dominance = 1;
   auto A = KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<
@@ -334,7 +348,7 @@ int test_par_ilut_perf(const int rows, const int nnz_per_row,
   // Report test config
   std::cout << "Testing par_ilut with rows=" << rows
             << "\n  nnz_per_row=" << nnz_per_row
-            << "\n  bandwidth_per_nnz=" << bandwidth_per_nnz
+            << "\n  bandwidth=" << bandwidth
             << "\n  total nnz=" << A.nnz()
             << "\n  league_size=" << default_policy.league_size()
             << "\n  team_size=" << default_policy.team_size()
@@ -371,20 +385,13 @@ void print_help_par_ilut()
   //     "  -f [file]       : Read in Matrix Market formatted text file. Not yet
   //     supported "
   //     "'file'.\n");
-  printf(
-      "  -n [N]  : generate a semi-random banded NxN matrix. Default 10000.\n");
-  printf("  -z [Z]  : number nnz per row. Default is 1%% of N.\n");
-  printf("  -b [B]  : bandwidth nnz multiplier. Default is 5.\n");
-  printf(
-      "  -ts [T] : Number of threads per team. Default is 1 on OpenMP, "
-      "nnz_per_row on CUDA\n");
-  // printf("  -vl [V] : Vector-length (i.e. how many Cuda threads are a Kokkos
-  // 'thread').\n");
-  printf(
-      "  -l [L]  : How many runs to aggregate average time. Default is 4\n\n");
-  printf(
-      "  -t [T]  : Which tests to run. Bitwise. e.g. 7 => run all, 1 => "
-      "par_ilut, 2 => ginkgo, 4 => spiluk,. Default is 7\n\n");
+  printf("  -n [N]  : generate a semi-random banded NxN matrix. Default 10000.\n");
+  printf("  -z [Z]  : number nnz per row. Default is min(1%% of N, 50).\n");
+  printf("  -b [B]  : bandwidth per row. Default is max(2 * n^(1/2), nnz).\n");
+  printf("  -ts [T] : Number of threads per team. Default is 1 on OpenMP, nnz_per_row on CUDA\n");
+  //printf("  -vl [V] : Vector-length (i.e. how many Cuda threads are a Kokkos 'thread').\n");
+  printf("  -l [L]  : How many runs to aggregate average time. Default is 4\n\n");
+  printf("  -t [T]  : Which tests to run. Bitwise. e.g. 7 => run all, 1 => par_ilut, 2 => ginkgo, 4 => spiluk,. Default is 7\n\n");
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -408,17 +415,21 @@ void handle_int_arg(int argc, char** argv, int& i,
 int main(int argc, char** argv)
 ///////////////////////////////////////////////////////////////////////////////
 {
-  int rows = 10000;
-  int nnz_per_row =
-      -1;  // depends on other options, so don't set to default yet
-  int band_per_nnz = 5;
-  int team_size    = -1;
-  int loop         = 4;
-  int test         = 7;
+  int rows          = 10000;
+  int nnz_per_row   = -1; // depends on other options, so don't set to default yet
+  int bandwidth     = -1;
+  int team_size     = -1;
+  int loop          = 4;
+  int test          = 7;
 
   std::map<std::string, int*> option_map = {
-      {"-n", &rows},       {"-z", &nnz_per_row}, {"-b", &band_per_nnz},
-      {"-ts", &team_size}, {"-l", &loop},        {"-t", &test}};
+    {"-n" , &rows},
+    {"-z" , &nnz_per_row},
+    {"-b" , &bandwidth},
+    {"-ts", &team_size},
+    {"-l" , &loop},
+    {"-t" , &test}
+  };
 
   if (argc == 1) {
     print_help_par_ilut();
@@ -441,7 +452,10 @@ int main(int argc, char** argv)
 
   // Set dependent defaults
   if (nnz_per_row == -1) {
-    nnz_per_row = rows / 100;
+    nnz_per_row = std::min(rows / 100, 50);
+  }
+  if (bandwidth == -1) {
+    bandwidth = std::max(2 * (int)std::sqrt(rows), nnz_per_row);
   }
   if (team_size == -1) {
     team_size = KokkosKernels::Impl::kk_is_gpu_exec_space<exe_space>()
@@ -451,7 +465,7 @@ int main(int argc, char** argv)
 
   Kokkos::initialize(argc, argv);
   {
-    test_par_ilut_perf(rows, nnz_per_row, band_per_nnz, team_size, loop, test);
+    test_par_ilut_perf(rows, nnz_per_row, bandwidth, team_size, loop, test);
   }
   Kokkos::finalize();
   return 0;
