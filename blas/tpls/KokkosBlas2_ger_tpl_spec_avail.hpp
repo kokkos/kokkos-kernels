@@ -28,20 +28,20 @@ struct ger_tpl_spec_avail {
 // Generic Host side BLAS (could be MKL or whatever)
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
 
-#define KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_BLAS(SCALAR, LAYOUT, EXEC_SPACE,    \
-                                            MEM_SPACE)                     \
-  template <>                                                              \
-  struct ger_tpl_spec_avail<                                               \
-      EXEC_SPACE,                                                          \
-      Kokkos::View<const SCALAR*, LAYOUT,                                  \
-                   Kokkos::Device<ExecSpace, MEM_SPACE>,                   \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,              \
-      Kokkos::View<const SCALAR*, LAYOUT,                                  \
-                   Kokkos::Device<ExecSpace, MEM_SPACE>,                   \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,              \
-      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {           \
-    enum : bool { value = true };                                          \
+#define KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_BLAS(SCALAR, LAYOUT, EXEC_SPACE,     \
+                                            MEM_SPACE)                      \
+  template <>                                                               \
+  struct ger_tpl_spec_avail<                                                \
+      EXEC_SPACE,                                                           \
+      Kokkos::View<const SCALAR*, LAYOUT,                                   \
+                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                   \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,               \
+      Kokkos::View<const SCALAR*, LAYOUT,                                   \
+                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                   \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,               \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {            \
+    enum : bool { value = true };                                           \
   };
 
 #ifdef KOKKOS_ENABLE_SERIAL
