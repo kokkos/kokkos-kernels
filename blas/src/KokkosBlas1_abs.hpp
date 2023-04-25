@@ -25,14 +25,19 @@ namespace KokkosBlas {
 
 /// \brief R(i,j) = abs(X(i,j))
 ///
-/// Replace each entry in R with the absolute value (magnitude) of the
-/// corresponding entry in X.
+/// Non-blocking function to replace each entry in R with the absolute value
+/// (magnitude) of the corresponding entry in X.
 ///
 /// \tparam execution_space a Kokkos execution space to run the kernels on.
 /// \tparam RMV 1-D or 2-D Kokkos::View specialization.
 /// \tparam XMV 1-D or 2-D Kokkos::View specialization.  It must have
 ///   the same rank as RMV, and its entries must be assignable to
 ///   those of RMV.
+///
+/// \param space [in] an execution_space instance where the kernel will run.
+/// \param R [out] view of type RMV that contains the absolute value X on
+/// output.
+/// \param X [in] view of type XMV.
 template <class execution_space, class RMV, class XMV>
 void abs(const execution_space& space, const RMV& R, const XMV& X) {
   static_assert(Kokkos::is_execution_space_v<execution_space>,
@@ -96,13 +101,18 @@ void abs(const execution_space& space, const RMV& R, const XMV& X) {
 
 /// \brief R(i,j) = abs(X(i,j))
 ///
-/// Replace each entry in R with the absolute value (magnitude) of the
-/// corresponding entry in X.
+/// Non-blocking function to replace each entry in R with the absolute value
+/// (magnitude) of the corresponding entry in X. The kernel is executed in the
+/// default stream/queue associated with the execution space of RMV.
 ///
 /// \tparam RMV 1-D or 2-D Kokkos::View specialization.
 /// \tparam XMV 1-D or 2-D Kokkos::View specialization.  It must have
 ///   the same rank as RMV, and its entries must be assignable to
 ///   those of RMV.
+///
+/// \param R [out] view of type RMV that contains the absolute value X on
+/// output.
+/// \param X [in] view of type XMV.
 template <class RMV, class XMV>
 void abs(const RMV& R, const XMV& X) {
   abs(typename RMV::execution_space{}, R, X);

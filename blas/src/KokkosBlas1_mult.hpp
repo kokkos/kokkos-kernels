@@ -26,6 +26,8 @@ namespace KokkosBlas {
 /// \brief Element wise multiplication of two vectors:
 ///        Y[i] = gamma * Y[i] + alpha * A[i] * X[i]
 ///
+/// This function is non-blocking and thread-safe
+///
 /// \tparam execution_type a Kokkos execution space type.
 /// \tparam YMV Type of the first vector Y; a 1-D or 2-D Kokkos::View.
 /// \tparam AV  Type of the second vector A; a 1-D Kokkos::View.
@@ -123,6 +125,10 @@ void mult(const execution_space& space, typename YMV::const_value_type& gamma,
 
 /// \brief Element wise multiplication of two vectors:
 ///        Y[i] = gamma * Y[i] + alpha * A[i] * X[i]
+///
+/// This function is non-blocking and thread-safe
+/// The kernel is executed in the default stream/queue
+/// associated with the execution space of YMV.
 ///
 /// \tparam YMV Type of the first vector Y; a 1-D or 2-D Kokkos::View.
 /// \tparam AV  Type of the second vector A; a 1-D Kokkos::View.

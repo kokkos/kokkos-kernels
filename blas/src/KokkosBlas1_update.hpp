@@ -25,6 +25,8 @@ namespace KokkosBlas {
 
 /// \brief Compute Z := alpha*X + beta*Y + gamma*Z.
 ///
+/// This function is non-blocking and thread-safe
+///
 /// \tparam execution_space a Kokkos execution space where the kernel will run.
 /// \tparam XMV 1-D or 2-D Kokkos::View specialization.
 /// \tparam YMV 1-D or 2-D Kokkos::View specialization.  It must have
@@ -33,6 +35,14 @@ namespace KokkosBlas {
 ///   the same rank as XMV and YMV, and it must make sense to add up
 ///   the entries of XMV and YMV and assign them to the entries of
 ///   ZMV.
+///
+/// \param space [in] the execution space instance on which the kernel will run.
+/// \param alpha [in] scaling parameter for X
+/// \param X [in] input view of type XMV
+/// \param beta [in] scaling parameter for Y
+/// \param Y [in] input view of type YMV
+/// \param gamma [in] scaling parameter for Z
+/// \param Z [in/out] view of type ZMV in which the results will be stored.
 template <class execution_space, class XMV, class YMV, class ZMV>
 void update(const execution_space& space,
             const typename XMV::non_const_value_type& alpha, const XMV& X,
@@ -131,6 +141,10 @@ void update(const execution_space& space,
 
 /// \brief Compute Z := alpha*X + beta*Y + gamma*Z.
 ///
+/// This function is non-blocking and thread-safe
+/// The kernel is executed in the default stream/queue
+/// associated with the execution space of ZMV.
+///
 /// \tparam XMV 1-D or 2-D Kokkos::View specialization.
 /// \tparam YMV 1-D or 2-D Kokkos::View specialization.  It must have
 ///   the same rank as XMV.
@@ -138,6 +152,13 @@ void update(const execution_space& space,
 ///   the same rank as XMV and YMV, and it must make sense to add up
 ///   the entries of XMV and YMV and assign them to the entries of
 ///   ZMV.
+///
+/// \param alpha [in] scaling parameter for X
+/// \param X [in] input view of type XMV
+/// \param beta [in] scaling parameter for Y
+/// \param Y [in] input view of type YMV
+/// \param gamma [in] scaling parameter for Z
+/// \param Z [in/out] view of type ZMV in which the results will be stored.
 template <class XMV, class YMV, class ZMV>
 void update(const typename XMV::non_const_value_type& alpha, const XMV& X,
             const typename YMV::non_const_value_type& beta, const YMV& Y,

@@ -30,6 +30,22 @@
 
 namespace KokkosBlas {
 
+/// \brief Computes Y := a*X + b*Y
+///
+/// This function is non-blocking and thread safe.
+///
+/// \tparam execution_space a Kokkos execution space where the kernel will run.
+/// \tparam AV 1-D or 2-D Kokkos::View specialization.
+/// \tparam XMV 1-D or 2-D Kokkos::View specialization.
+/// \tparam BV 1-D or 2-D Kokkos::View specialization.
+/// \tparam YMV 1-D or 2-D Kokkos::View specialization. It must have
+///   the same rank as XMV.
+///
+/// \param space [in] the execution space instance on which the kernel will run.
+/// \param a [in] view of type AV, scaling parameter for X.
+/// \param X [in] input view of type XMV.
+/// \param b [in] view of type BV, scaling parameter for Y.
+/// \param Y [in/out] view of type YMV in which the results will be stored.
 template <class execution_space, class AV, class XMV, class BV, class YMV>
 void axpby(const execution_space& space, const AV& a, const XMV& X, const BV& b,
            const YMV& Y) {
@@ -103,11 +119,41 @@ void axpby(const execution_space& space, const AV& a, const XMV& X, const BV& b,
                                    Y_internal);
 }
 
+/// \brief Computes Y := a*X + b*Y
+///
+/// This function is non-blocking and thread-safe
+/// The kernel is executed in the default stream/queue
+/// associated with the execution space of XMV.
+///
+/// \tparam AV 1-D or 2-D Kokkos::View specialization.
+/// \tparam XMV 1-D or 2-D Kokkos::View specialization.
+/// \tparam BV 1-D or 2-D Kokkos::View specialization.
+/// \tparam YMV 1-D or 2-D Kokkos::View specialization. It must have
+///   the same rank as XMV.
+///
+/// \param a [in] view of type AV, scaling parameter for X.
+/// \param X [in] input view of type XMV.
+/// \param b [in] view of type BV, scaling parameter for Y.
+/// \param Y [in/out] view of type YMV in which the results will be stored.
 template <class AV, class XMV, class BV, class YMV>
 void axpby(const AV& a, const XMV& X, const BV& b, const YMV& Y) {
   axpby(typename XMV::execution_space{}, a, X, b, Y);
 }
 
+/// \brief Computes Y := a*X + Y
+///
+/// This function is non-blocking and thread-safe
+///
+/// \tparam execution_space a Kokkos execution space where the kernel will run.
+/// \tparam AV 1-D or 2-D Kokkos::View specialization.
+/// \tparam XMV 1-D or 2-D Kokkos::View specialization.
+/// \tparam YMV 1-D or 2-D Kokkos::View specialization. It must have
+///   the same rank as XMV.
+///
+/// \param space [in] the execution space instance on which the kernel will run.
+/// \param a [in] view of type AV, scaling parameter for X.
+/// \param X [in] input view of type XMV.
+/// \param Y [in/out] view of type YMV in which the results will be stored.
 template <class execution_space, class AV, class XMV, class YMV>
 void axpy(const execution_space& space, const AV& a, const XMV& X,
           const YMV& Y) {
@@ -115,6 +161,20 @@ void axpy(const execution_space& space, const AV& a, const XMV& X,
         Kokkos::ArithTraits<typename YMV::non_const_value_type>::one(), Y);
 }
 
+/// \brief Computes Y := a*X + Y
+///
+/// This function is non-blocking and thread-safe
+/// The kernel is executed in the default stream/queue
+/// associated with the execution space of XMV.
+///
+/// \tparam AV 1-D or 2-D Kokkos::View specialization.
+/// \tparam XMV 1-D or 2-D Kokkos::View specialization.
+/// \tparam YMV 1-D or 2-D Kokkos::View specialization. It must have
+///   the same rank as XMV.
+///
+/// \param a [in] view of type AV, scaling parameter for X.
+/// \param X [in] input view of type XMV.
+/// \param Y [in/out] view of type YMV in which the results will be stored.
 template <class AV, class XMV, class YMV>
 void axpy(const AV& a, const XMV& X, const YMV& Y) {
   axpy(typename XMV::execution_space{}, a, X, Y);
