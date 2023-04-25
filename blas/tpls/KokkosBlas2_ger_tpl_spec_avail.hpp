@@ -66,22 +66,22 @@ KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>, Kokkos::LayoutRight,
 #endif
 
 #ifdef KOKKOS_ENABLE_OPENMP
-KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_BLAS(double, Kokkos::LayoutLeft,
-                                    Kokkos::OpenMP, Kokkos::HostSpace)
-KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_BLAS(float, Kokkos::LayoutLeft,
-                                    Kokkos::OpenMP, Kokkos::HostSpace)
+KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_BLAS(double, Kokkos::LayoutLeft, Kokkos::OpenMP,
+                                    Kokkos::HostSpace)
+KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_BLAS(float, Kokkos::LayoutLeft, Kokkos::OpenMP,
+                                    Kokkos::HostSpace)
 KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<double>, Kokkos::LayoutLeft,
                                     Kokkos::OpenMP, Kokkos::HostSpace)
 KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>, Kokkos::LayoutLeft,
                                     Kokkos::OpenMP, Kokkos::HostSpace)
 
-KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_BLAS(double, Kokkos::LayoutRight,
-                                    Kokkos::OpenMP, Kokkos::HostSpace)
-KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_BLAS(float, Kokkos::LayoutRight,
-                                    Kokkos::OpenMP, Kokkos::HostSpace)
+KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_BLAS(double, Kokkos::LayoutRight, Kokkos::OpenMP,
+                                    Kokkos::HostSpace)
+KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_BLAS(float, Kokkos::LayoutRight, Kokkos::OpenMP,
+                                    Kokkos::HostSpace)
 KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<double>,
-                                    Kokkos::LayoutRight,
-                                    Kokkos::OpenMP, Kokkos::HostSpace)
+                                    Kokkos::LayoutRight, Kokkos::OpenMP,
+                                    Kokkos::HostSpace)
 KOKKOSBLAS2_GER_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>, Kokkos::LayoutRight,
                                     Kokkos::OpenMP, Kokkos::HostSpace)
 #endif
