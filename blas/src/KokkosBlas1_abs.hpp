@@ -25,8 +25,8 @@ namespace KokkosBlas {
 
 /// \brief R(i,j) = abs(X(i,j))
 ///
-/// Non-blocking function to replace each entry in R with the absolute value (magnitude) of the
-/// corresponding entry in X.
+/// Non-blocking function to replace each entry in R with the absolute value
+/// (magnitude) of the corresponding entry in X.
 ///
 /// \tparam execution_space a Kokkos execution space to run the kernels on.
 /// \tparam RMV 1-D or 2-D Kokkos::View specialization.
@@ -35,7 +35,8 @@ namespace KokkosBlas {
 ///   those of RMV.
 ///
 /// \param space [in] an execution_space instance where the kernel will run.
-/// \param R [out] view of type RMV that contains the absolute value X on output.
+/// \param R [out] view of type RMV that contains the absolute value X on
+/// output.
 /// \param X [in] view of type XMV.
 template <class execution_space, class RMV, class XMV>
 void abs(const execution_space& space, const RMV& R, const XMV& X) {
@@ -109,7 +110,8 @@ void abs(const execution_space& space, const RMV& R, const XMV& X) {
 ///   the same rank as RMV, and its entries must be assignable to
 ///   those of RMV.
 ///
-/// \param R [out] view of type RMV that contains the absolute value X on output.
+/// \param R [out] view of type RMV that contains the absolute value X on
+/// output.
 /// \param X [in] view of type XMV.
 template <class RMV, class XMV>
 void abs(const RMV& R, const XMV& X) {

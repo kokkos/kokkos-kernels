@@ -36,7 +36,8 @@ namespace KokkosBlas {
 ///   those of RMV.
 ///
 /// \param space [in] an instance of execution space where the kernel will run
-/// \param R [out] a view of type RMV that contains the inverse of the values in X.
+/// \param R [out] a view of type RMV that contains the inverse of the values in
+/// X.
 /// \param X [in] a view of type XMV that contains the values to invert.
 template <class execution_space, class RMV, class XMV>
 void reciprocal(const execution_space& space, const RMV& R, const XMV& X) {
