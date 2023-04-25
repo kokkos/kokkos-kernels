@@ -25,7 +25,7 @@ namespace KokkosBlas {
 
 /// \brief R(i,j) = abs(X(i,j))
 ///
-/// Replace each entry in R with the absolute value (magnitude) of the
+/// Non-blocking function to replace each entry in R with the absolute value (magnitude) of the
 /// corresponding entry in X.
 ///
 /// \tparam execution_space a Kokkos execution space to run the kernels on.
@@ -100,8 +100,9 @@ void abs(const execution_space& space, const RMV& R, const XMV& X) {
 
 /// \brief R(i,j) = abs(X(i,j))
 ///
-/// Replace each entry in R with the absolute value (magnitude) of the
-/// corresponding entry in X.
+/// Non-blocking function to replace each entry in R with the absolute value
+/// (magnitude) of the corresponding entry in X. The kernel is executed in the
+/// default stream/queue associated with the execution space of RMV.
 ///
 /// \tparam RMV 1-D or 2-D Kokkos::View specialization.
 /// \tparam XMV 1-D or 2-D Kokkos::View specialization.  It must have

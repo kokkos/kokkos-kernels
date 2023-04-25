@@ -31,6 +31,8 @@ namespace KokkosBlas {
 
 /// \brief Computes R := alpha*X
 ///
+/// This function is non-blocking and thread-safe
+///
 /// \tparam execution_space a Kokkos execution space where the kernel will run.
 /// \tparam RMV 1-D or 2-D Kokkos::View specialization.
 /// \tparam XMV 1-D or 2-D Kokkos::View specialization. It must have
@@ -114,6 +116,10 @@ void scal(const execution_space& space, const RMV& R, const AV& a,
 }
 
 /// \brief Computes R := alpha*X
+///
+/// This function is non-blocking and thread-safe
+/// The kernel is executed in the default stream/queue
+/// associated with the execution space of YMV.
 ///
 /// \tparam RMV 1-D or 2-D Kokkos::View specialization.
 /// \tparam XMV 1-D or 2-D Kokkos::View specialization. It must have

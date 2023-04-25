@@ -23,6 +23,8 @@ namespace KokkosBlas {
 
 /// \brief Fill the multivector or single vector X with the given value.
 ///
+/// This function is non-blocking and thread-safe
+///
 /// \tparam execution_space a Kokkos execution space
 /// \tparam XMV 1-D or 2-D output View
 ///
@@ -39,6 +41,10 @@ void fill(const execution_space& space, const XMV& X,
 }
 
 /// \brief Fill the multivector or single vector X with the given value.
+///
+/// This function is non-blocking and thread-safe
+/// The kernel is executed in the default stream/queue
+/// associated with the execution space of XMV.
 ///
 /// \tparam XMV 1-D or 2-D output View
 ///

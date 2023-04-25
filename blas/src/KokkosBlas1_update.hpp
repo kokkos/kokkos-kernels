@@ -25,6 +25,8 @@ namespace KokkosBlas {
 
 /// \brief Compute Z := alpha*X + beta*Y + gamma*Z.
 ///
+/// This function is non-blocking and thread-safe
+///
 /// \tparam execution_space a Kokkos execution space where the kernel will run.
 /// \tparam XMV 1-D or 2-D Kokkos::View specialization.
 /// \tparam YMV 1-D or 2-D Kokkos::View specialization.  It must have
@@ -138,6 +140,10 @@ void update(const execution_space& space,
 }
 
 /// \brief Compute Z := alpha*X + beta*Y + gamma*Z.
+///
+/// This function is non-blocking and thread-safe
+/// The kernel is executed in the default stream/queue
+/// associated with the execution space of ZMV.
 ///
 /// \tparam XMV 1-D or 2-D Kokkos::View specialization.
 /// \tparam YMV 1-D or 2-D Kokkos::View specialization.  It must have

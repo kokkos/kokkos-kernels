@@ -32,6 +32,8 @@ namespace KokkosBlas {
 
 /// \brief Computes Y := a*X + b*Y
 ///
+/// This function is non-blocking and thread safe.
+///
 /// \tparam execution_space a Kokkos execution space where the kernel will run.
 /// \tparam AV 1-D or 2-D Kokkos::View specialization.
 /// \tparam XMV 1-D or 2-D Kokkos::View specialization.
@@ -119,6 +121,10 @@ void axpby(const execution_space& space, const AV& a, const XMV& X, const BV& b,
 
 /// \brief Computes Y := a*X + b*Y
 ///
+/// This function is non-blocking and thread-safe
+/// The kernel is executed in the default stream/queue
+/// associated with the execution space of XMV.
+///
 /// \tparam AV 1-D or 2-D Kokkos::View specialization.
 /// \tparam XMV 1-D or 2-D Kokkos::View specialization.
 /// \tparam BV 1-D or 2-D Kokkos::View specialization.
@@ -135,6 +141,8 @@ void axpby(const AV& a, const XMV& X, const BV& b, const YMV& Y) {
 }
 
 /// \brief Computes Y := a*X + Y
+///
+/// This function is non-blocking and thread-safe
 ///
 /// \tparam execution_space a Kokkos execution space where the kernel will run.
 /// \tparam AV 1-D or 2-D Kokkos::View specialization.
@@ -154,6 +162,10 @@ void axpy(const execution_space& space, const AV& a, const XMV& X,
 }
 
 /// \brief Computes Y := a*X + Y
+///
+/// This function is non-blocking and thread-safe
+/// The kernel is executed in the default stream/queue
+/// associated with the execution space of XMV.
 ///
 /// \tparam AV 1-D or 2-D Kokkos::View specialization.
 /// \tparam XMV 1-D or 2-D Kokkos::View specialization.

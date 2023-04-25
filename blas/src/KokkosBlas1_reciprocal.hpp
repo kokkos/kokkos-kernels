@@ -27,6 +27,7 @@ namespace KokkosBlas {
 ///
 /// Replace each entry in R with the absolute value (magnitude), of the
 /// reciprocal of the corresponding entry in X.
+/// This function is non-blocking and thread-safe
 ///
 /// \tparam execution_space a Kokkos execution space
 /// \tparam RMV 1-D or 2-D Kokkos::View specialization.
@@ -104,6 +105,9 @@ void reciprocal(const execution_space& space, const RMV& R, const XMV& X) {
 ///
 /// Replace each entry in R with the absolute value (magnitude), of the
 /// reciprocal of the corresponding entry in X.
+/// This function is non-blocking and thread-safe
+/// The kernel is executed in the default stream/queue
+/// associated with the execution space of RMV.
 ///
 /// \tparam RMV 1-D or 2-D Kokkos::View specialization.
 /// \tparam XMV 1-D or 2-D Kokkos::View specialization.  It must have
