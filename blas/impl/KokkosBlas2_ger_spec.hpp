@@ -27,7 +27,7 @@
 namespace KokkosBlas {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class XMV, class YMV, class ZMV>
+template <class EXEC_SPACE, class XMV, class YMV, class ZMV>
 struct ger_eti_spec_avail {
   enum : bool { value = false };
 };
@@ -43,6 +43,7 @@ struct ger_eti_spec_avail {
 #define KOKKOSBLAS2_GER_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
   template <>                                                                 \
   struct ger_eti_spec_avail<                                                  \
+      EXEC_SPACE,                                                             \
       Kokkos::View<const SCALAR*, LAYOUT,                                     \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                     \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
@@ -69,9 +70,9 @@ namespace Impl {
 template <class ExecutionSpace, class XViewType, class YViewType,
           class AViewType,
           bool tpl_spec_avail =
-              ger_tpl_spec_avail<XViewType, YViewType, AViewType>::value,
+              ger_tpl_spec_avail<ExecutionSpace, XViewType, YViewType, AViewType>::value,
           bool eti_spec_avail =
-              ger_eti_spec_avail<XViewType, YViewType, AViewType>::value>
+              ger_eti_spec_avail<ExecutionSpace, XViewType, YViewType, AViewType>::value>
 struct GER {
   static void ger(const ExecutionSpace& space, const char trans[],
                   const typename AViewType::const_value_type& alpha,
