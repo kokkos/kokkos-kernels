@@ -56,19 +56,25 @@ namespace Test_Spmv_Bsr {
 /*! \brief Maximum value used to fill A */
 template <typename T>
 constexpr T max_a() {
-  return T(10.0);
+  T discard, maxVal;
+  KokkosKernels::Impl::getRandomBounds(10.0, discard, maxVal);
+  return maxVal;
 }
 
 /*! \brief Maximum value used to fill X */
 template <typename T>
 constexpr T max_x() {
-  return T(10.0);
+  T discard, maxVal;
+  KokkosKernels::Impl::getRandomBounds(10.0, discard, maxVal);
+  return maxVal;
 }
 
 /*! \brief Maximum value used to fill Y */
 template <typename T>
 constexpr T max_y() {
-  return T(10.0);
+  T discard, maxVal;
+  KokkosKernels::Impl::getRandomBounds(10.0, discard, maxVal);
+  return maxVal;
 }
 
 /*! \brief whether the mode transposes the matrix*/
