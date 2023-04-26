@@ -96,7 +96,7 @@ void doCrs2Coo(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
                     crsMat.get_nnz(), crsMat.get_vals(), map, ids);
 
   auto cooMat = KokkosSparse::crs2coo(crsMatrix);
-  check_coo_matrix(crsMatrix, cooMat.row, cooMat.col, cooMat.data);
+  check_coo_matrix(crsMatrix, cooMat.row(), cooMat.col(), cooMat.data());
 }
 
 template <class LayoutType, class ExeSpaceType>

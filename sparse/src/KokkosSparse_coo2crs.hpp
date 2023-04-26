@@ -110,15 +110,6 @@ class Coo2Crs {
     }
   }
 
-  // TODO: umap.size cannot be called in a kernel.
-  // Requires updating Kokkos::BitSet::count() to be
-  // a host device function.
-  /* KOKKOS_INLINE_FUNCTION
-  void operator()(const rowmapRp1 &, const int &row_idx) const {
-    auto i = row_idx - 1;
-    m_crs_row_map(row_idx) = m_crs_row_map(i) + m_umaps[i].ptr->size();
-  } */
-
   KOKKOS_INLINE_FUNCTION
   void operator()(const copyRp1 &, const int &i) const {
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)

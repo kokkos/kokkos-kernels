@@ -91,15 +91,11 @@ class CooMatrix {
 
  private:
   size_type m_num_rows, m_num_cols;
+  row_view m_row;
+  column_view m_col;
+  scalar_view m_data;
 
  public:
-  //! The row indexes of the matrix
-  row_view row;
-  //! The column indexes of the matrix
-  column_view col;
-  //! The scalar values of the matrix
-  scalar_view data;
-
   /// \brief Default constructor; constructs an empty sparse matrix.
   KOKKOS_INLINE_FUNCTION
   CooMatrix() : m_num_rows(0), m_num_cols(0) {}
@@ -121,14 +117,15 @@ class CooMatrix {
             column_view col_in, scalar_view data_in)
       : m_num_rows(nrows),
         m_num_cols(ncols),
-        row(row_in),
-        col(col_in),
-        data(data_in) {
-    if (data.extent(0) != row.extent(0) || row.extent(0) != col.extent(0)) {
+        m_row(row_in),
+        m_col(col_in),
+        m_data(data_in) {
+    if (m_data.extent(0) != m_row.extent(0) ||
+        m_row.extent(0) != m_col.extent(0)) {
       std::ostringstream os;
-      os << "data.extent(0): " << data.extent(0) << " != "
-         << "row.extent(0): " << row.extent(0) << " != "
-         << "col.extent(0): " << col.extent(0) << ".";
+      os << "data.extent(0): " << m_data.extent(0) << " != "
+         << "row.extent(0): " << m_row.extent(0) << " != "
+         << "col.extent(0): " << m_col.extent(0) << ".";
       KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
   }
@@ -140,7 +137,16 @@ class CooMatrix {
   KOKKOS_INLINE_FUNCTION size_type numRows() const { return m_num_rows; }
 
   //! The number of stored entries in the sparse matrix, including zeros.
-  KOKKOS_INLINE_FUNCTION size_type nnz() const { return data.extent(0); }
+  KOKKOS_INLINE_FUNCTION size_type nnz() const { return m_data.extent(0); }
+
+  //! The row indexes of the matrix
+  KOKKOS_INLINE_FUNCTION row_view row() const { return m_row; }
+
+  //! The column indexes of the matrix
+  KOKKOS_INLINE_FUNCTION column_view col() const { return m_col; }
+
+  //! The scalar values of the matrix
+  KOKKOS_INLINE_FUNCTION scalar_view data() const { return m_data; }
 };
 
 /// \class is_coo_matrix

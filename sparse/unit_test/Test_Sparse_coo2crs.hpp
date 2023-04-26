@@ -264,7 +264,8 @@ TEST_F(TestCategory, sparse_coo2crs) {
                                          cooMat.get_col(), cooMat.get_data());
   auto cooMatrix = KokkosSparse::crs2coo(crsMatrix);
 
-  check_crs_matrix(crsMatrix, cooMatrix.row, cooMatrix.col, cooMatrix.data);
+  check_crs_matrix(crsMatrix, cooMatrix.row(), cooMatrix.col(),
+                   cooMatrix.data());
 }
 
 TEST_F(TestCategory, sparse_coo2crs_staticMatrix_edgeCases) {
