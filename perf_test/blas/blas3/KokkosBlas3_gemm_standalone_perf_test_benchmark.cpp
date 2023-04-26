@@ -126,16 +126,16 @@ void run(const blas3_gemm_params& params) {
   const auto args      = std::vector<int64_t>{params.m, params.n, params.k};
 
   KokkosKernelsBenchmark::register_benchmark(
-      name, KokkosBlas3_GEMM<Kokkos::OpenMP, Scalar, LL, LL>, arg_names, args,
+      name, KokkosBlas3_GEMM<ExecSpace, Scalar, LL, LL>, arg_names, args,
       params.repeat);
   KokkosKernelsBenchmark::register_benchmark(
-      name, KokkosBlas3_GEMM<Kokkos::OpenMP, Scalar, LL, LR>, arg_names, args,
+      name, KokkosBlas3_GEMM<ExecSpace, Scalar, LL, LR>, arg_names, args,
       params.repeat);
   KokkosKernelsBenchmark::register_benchmark(
-      name, KokkosBlas3_GEMM<Kokkos::OpenMP, Scalar, LR, LL>, arg_names, args,
+      name, KokkosBlas3_GEMM<ExecSpace, Scalar, LR, LL>, arg_names, args,
       params.repeat);
   KokkosKernelsBenchmark::register_benchmark(
-      name, KokkosBlas3_GEMM<Kokkos::OpenMP, Scalar, LR, LR>, arg_names, args,
+      name, KokkosBlas3_GEMM<ExecSpace, Scalar, LR, LR>, arg_names, args,
       params.repeat);
 }
 

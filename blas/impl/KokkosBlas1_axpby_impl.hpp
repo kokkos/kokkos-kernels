@@ -302,9 +302,11 @@ struct Axpby_Functor<typename XV::non_const_value_type, XV,
 //
 // This takes the starting column, so that if av and bv are both 1-D
 // Views, then the functor can take a subview if appropriate.
-template <class AV, class XV, class BV, class YV, class SizeType>
-void Axpby_Generic(const AV& av, const XV& x, const BV& bv, const YV& y,
-                   const SizeType startingColumn, int a = 2, int b = 2) {
+template <class execution_space, class AV, class XV, class BV, class YV,
+          class SizeType>
+void Axpby_Generic(const execution_space& space, const AV& av, const XV& x,
+                   const BV& bv, const YV& y, const SizeType startingColumn,
+                   int a = 2, int b = 2) {
   static_assert(Kokkos::is_view<XV>::value,
                 "KokkosBlas::Impl::"
                 "Axpby_Generic: X is not a Kokkos::View.");
@@ -323,9 +325,8 @@ void Axpby_Generic(const AV& av, const XV& x, const BV& bv, const YV& y,
                 "KokkosBlas::Impl::Axpby_Generic: "
                 "XV and YV must have rank 1.");
 
-  typedef typename YV::execution_space execution_space;
   const SizeType numRows = x.extent(0);
-  Kokkos::RangePolicy<execution_space, SizeType> policy(0, numRows);
+  Kokkos::RangePolicy<execution_space, SizeType> policy(space, 0, numRows);
 
   if (a == 0 && b == 0) {
     Axpby_Functor<AV, XV, BV, YV, 0, 0, SizeType> op(x, y, av, bv,

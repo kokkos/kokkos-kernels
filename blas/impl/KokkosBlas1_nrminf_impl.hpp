@@ -69,9 +69,8 @@ struct V_NrmInf_Functor {
 
 /// \brief Compute the 2-norm (or its square) of the single vector (1-D
 ///   View) X, and store the result in the 0-D View r.
-template <class RV, class XV, class SizeType>
-void V_NrmInf_Invoke(const RV& r, const XV& X) {
-  typedef typename XV::execution_space execution_space;
+template <class execution_space, class RV, class XV, class SizeType>
+void V_NrmInf_Invoke(const execution_space& space, const RV& r, const XV& X) {
   typedef Kokkos::ArithTraits<typename RV::non_const_value_type> AT;
 
   const SizeType numRows = static_cast<SizeType>(X.extent(0));
@@ -82,7 +81,7 @@ void V_NrmInf_Invoke(const RV& r, const XV& X) {
     return;
   }
 
-  Kokkos::RangePolicy<execution_space, SizeType> policy(0, numRows);
+  Kokkos::RangePolicy<execution_space, SizeType> policy(space, 0, numRows);
 
   typedef V_NrmInf_Functor<RV, XV, SizeType> functor_type;
   functor_type op(X);
@@ -92,12 +91,13 @@ void V_NrmInf_Invoke(const RV& r, const XV& X) {
 
 /// \brief Compute the 2-norms (or their square) of the columns of the
 ///   multivector (2-D View) X, and store result(s) in the 1-D View r.
-template <class RV, class XMV, class SizeType>
-void MV_NrmInf_Invoke(const RV& r, const XMV& X) {
+template <class execution_space, class RV, class XMV, class SizeType>
+void MV_NrmInf_Invoke(const execution_space& space, const RV& r, const XMV& X) {
   for (size_t i = 0; i < X.extent(1); i++) {
     auto ri = Kokkos::subview(r, i);
     auto Xi = Kokkos::subview(X, Kokkos::ALL(), i);
-    V_NrmInf_Invoke<decltype(ri), decltype(Xi), SizeType>(ri, Xi);
+    V_NrmInf_Invoke<execution_space, decltype(ri), decltype(Xi), SizeType>(
+        space, ri, Xi);
   }
 }
 
