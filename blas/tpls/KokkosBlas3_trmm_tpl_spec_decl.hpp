@@ -27,7 +27,9 @@ namespace Impl {
 #define KOKKOSBLAS3_TRMM_BLAS(SCALAR_TYPE, BASE_SCALAR_TYPE, LAYOUTA, LAYOUTB, \
                               MEM_SPACE, ETI_SPEC_AVAIL)                       \
   template <class ExecSpace>                                                   \
-  struct TRMM<Kokkos::View<const SCALAR_TYPE**, LAYOUTA,                       \
+  struct TRMM<								       \
+	      ExecSpace,                                                       \
+	      Kokkos::View<const SCALAR_TYPE**, LAYOUTA,		       \
                            Kokkos::Device<ExecSpace, MEM_SPACE>,               \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,          \
               Kokkos::View<SCALAR_TYPE**, LAYOUTB,                             \
@@ -44,7 +46,8 @@ namespace Impl {
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
         BViewType;                                                             \
                                                                                \
-    static void trmm(const char side[], const char uplo[], const char trans[], \
+    static void trmm(const ExecSpace& /*space*/, const char side[],	       \
+		     const char uplo[], const char trans[],		       \
                      const char diag[],                                        \
                      typename BViewType::const_value_type& alpha,              \
                      const AViewType& A, const BViewType& B) {                 \
@@ -168,7 +171,9 @@ namespace Impl {
 #define KOKKOSBLAS3_TRMM_CUBLAS(SCALAR_TYPE, CUDA_SCALAR_TYPE, CUBLAS_FN,      \
                                 LAYOUTA, LAYOUTB, MEM_SPACE, ETI_SPEC_AVAIL)   \
   template <class ExecSpace>                                                   \
-  struct TRMM<Kokkos::View<const SCALAR_TYPE**, LAYOUTA,                       \
+  struct TRMM<								       \
+	      ExecSpace,                                                       \
+	      Kokkos::View<const SCALAR_TYPE**, LAYOUTA,		       \
                            Kokkos::Device<ExecSpace, MEM_SPACE>,               \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,          \
               Kokkos::View<SCALAR_TYPE**, LAYOUTB,                             \
@@ -185,7 +190,8 @@ namespace Impl {
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
         BViewType;                                                             \
                                                                                \
-    static void trmm(const char side[], const char uplo[], const char trans[], \
+    static void trmm(const ExecSpace& space, const char side[],                \
+		     const char uplo[], const char trans[],		       \
                      const char diag[],                                        \
                      typename BViewType::const_value_type& alpha,              \
                      const AViewType& A, const BViewType& B) {                 \
@@ -242,18 +248,24 @@ namespace Impl {
                                                                                \
       KokkosBlas::Impl::CudaBlasSingleton& s =                                 \
           KokkosBlas::Impl::CudaBlasSingleton::singleton();                    \
-      if (A_is_layout_left)                                                    \
-        CUBLAS_FN(s.handle, side_, uplo_, trans_, diag_, M, N,                 \
-                  reinterpret_cast<const CUDA_SCALAR_TYPE*>(&alpha),           \
-                  reinterpret_cast<const CUDA_SCALAR_TYPE*>(A.data()), LDA,    \
-                  reinterpret_cast<CUDA_SCALAR_TYPE*>(B.data()), LDB,          \
-                  reinterpret_cast<CUDA_SCALAR_TYPE*>(B.data()), LDB);         \
-      else                                                                     \
+      KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                            \
+          cublasSetStream(s.handle, space.cuda_stream()));                     \
+      if (A_is_layout_left) {						       \
+        KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                          \
+            CUBLAS_FN(s.handle, side_, uplo_, trans_, diag_, M, N,             \
+		      reinterpret_cast<const CUDA_SCALAR_TYPE*>(&alpha),       \
+		      reinterpret_cast<const CUDA_SCALAR_TYPE*>(A.data()), LDA,\
+		      reinterpret_cast<CUDA_SCALAR_TYPE*>(B.data()), LDB,      \
+		      reinterpret_cast<CUDA_SCALAR_TYPE*>(B.data()), LDB));    \
+      } else {								       \
+        KOKKOS_CUBLAS_SAFE_CALL_IMPL(                                          \
         CUBLAS_FN(s.handle, side_, uplo_, trans_, diag_, N, M,                 \
                   reinterpret_cast<const CUDA_SCALAR_TYPE*>(&alpha),           \
                   reinterpret_cast<const CUDA_SCALAR_TYPE*>(A.data()), LDA,    \
                   reinterpret_cast<CUDA_SCALAR_TYPE*>(B.data()), LDB,          \
-                  reinterpret_cast<CUDA_SCALAR_TYPE*>(B.data()), LDB);         \
+                  reinterpret_cast<CUDA_SCALAR_TYPE*>(B.data()), LDB));	\
+      }                                                                        \
+      KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(s.handle, NULL));           \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };
