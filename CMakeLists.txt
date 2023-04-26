@@ -54,6 +54,8 @@ OPTION(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 
 KOKKOSKERNELS_PACKAGE()
 
+
+
 IF (NOT KOKKOSKERNELS_HAS_TRILINOS)
   SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/")
   KOKKOSKERNELS_ADD_OPTION(
@@ -140,6 +142,17 @@ ELSE()
 
   # If building in debug mode, define the HAVE_KOKKOSKERNELS_DEBUG macro.
   KOKKOSKERNELS_ADD_DEBUG_OPTION()
+
+  # add default compiler warnings
+  KOKKOSKERNELS_ADD_OPTION(
+    "ENABLE_COMPILER_WARNINGS"
+    OFF
+    BOOL
+    "Override CMAKE_CXX_FLAGS with the default warnings for supported compilers"
+  )
+  IF (KokkosKernels_ENABLE_COMPILER_WARNINGS)
+  INCLUDE(cmake/kokkoskernels_compiler_warnings.cmake)
+  ENDIF()
 
   #
   # "Optimization level" for KokkosKernels computational kernels.  The
