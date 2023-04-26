@@ -226,9 +226,9 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
     test_cx_cy = true;
   }
 
-  _ViewTypeX x("X", _M);
-  _ViewTypeY y("Y", _N);
-  _ViewTypeA A("A", _M, _N);
+  view_stride_adapater<_ViewTypeX> x("X", _M);
+  view_stride_adapater<_ViewTypeY> y("Y", _N);
+  view_stride_adapater<_ViewTypeA> A("A", _M, _N);
 
   typename _ViewTypeX::const_type c_x = x;
   typename _ViewTypeY::const_type c_y = y;
@@ -1480,8 +1480,6 @@ TEST_F(TestCategory, ger_float) {
 }
 #endif
 
-#if 1
-
 #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&         \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -1534,5 +1532,3 @@ TEST_F(TestCategory, ger_double_int) {
   Kokkos::Profiling::popRegion();
 }
 #endif
-
-#endif  // if 1
