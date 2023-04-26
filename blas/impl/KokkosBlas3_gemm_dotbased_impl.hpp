@@ -68,7 +68,7 @@ struct DotBasedGEMM {
         numCcols(C.extent(1)),
         dotSize(A.extent(0)) {}
 
-  void run(const typename CV::execution_space& space, bool conjugateTranspose) {
+  void run(const ExecSpace& space, bool conjugateTranspose) {
     multipleReductionWorkDistribution<ExecSpace, size_C>(
         dotSize, numCrows * numCcols, numDivPerDot);
     const size_C ndots = numCrows * numCcols;  // Number of dot products
@@ -77,12 +77,12 @@ struct DotBasedGEMM {
     // Initialize C matrix if beta != 1
     if (beta == CVT::zero()) {
       Kokkos::MDRangePolicy<TagZero, ExecSpace, Kokkos::Rank<2>> policyInit(
-          {0, 0}, {numCrows, numCcols});
+	  space, {0, 0}, {numCrows, numCcols});
       Kokkos::parallel_for("Initialize C for Dot Product Based GEMM",
                            policyInit, *this);
     } else if (beta != CVT::one()) {
       Kokkos::MDRangePolicy<TagInit, ExecSpace, Kokkos::Rank<2>> policyInit(
-          {0, 0}, {numCrows, numCcols});
+          space, {0, 0}, {numCrows, numCcols});
       Kokkos::parallel_for("Initialize C for Dot Product Based GEMM",
                            policyInit, *this);
     }
