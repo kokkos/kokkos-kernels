@@ -202,10 +202,10 @@ void test_spmv(const char *alg, const char *mode, const Alpha &alpha,
 
      10x means same order of magnitude
   */
-  const mag_type tolerance = KATS::eps() * KATS::abs(beta) * max_y<mag_type>() +
-                             10 * KATS::eps() * maxNnzPerRow *
-                                 KATS::abs(alpha) * max_a<mag_type>() *
-                                 max_x<mag_type>();
+  const mag_type tolerance =
+      KATS::eps() * KATS::abs(beta) * KATS::abs(max_y<scalar_type>()) +
+      10 * KATS::eps() * maxNnzPerRow * KATS::abs(alpha) *
+          KATS::abs(max_a<scalar_type>()) * KATS::abs(max_x<scalar_type>());
 
   std::vector<ordinal_type> errIdx;
 
@@ -254,24 +254,11 @@ struct VectorTypeFor {
 template <typename Bsr>
 std::tuple<Bsr, typename VectorTypeFor<Bsr>::type,
            typename VectorTypeFor<Bsr>::type>
-spmv_corner_case_0_by_0(const char *mode, const int blockSize) {
-  using vector_type     = typename VectorTypeFor<Bsr>::type;
-  using execution_space = typename Bsr::execution_space;
-  using scalar_type     = typename Bsr::non_const_value_type;
-  Bsr a                 = bsr_corner_case_0_by_0<Bsr>(blockSize);
-
-  size_t nx = a.numCols() * a.blockDim();
-  size_t ny = a.numRows() * a.blockDim();
-  if (mode_is_transpose(mode)) {
-    std::swap(nx, ny);
-  }
-  vector_type x("x", nx);
-  vector_type y("y", ny);
-
-  Kokkos::Random_XorShift64_Pool<execution_space> random(13718);
-  Kokkos::fill_random(x, random, max_x<scalar_type>());
-  Kokkos::fill_random(y, random, max_y<scalar_type>());
-
+spmv_corner_case_0_by_0(const char * /*mode*/, const int blockSize) {
+  using vector_type = typename VectorTypeFor<Bsr>::type;
+  Bsr a             = bsr_corner_case_0_by_0<Bsr>(blockSize);
+  vector_type x("x", 0);
+  vector_type y("y", 0);
   return std::make_tuple(a, x, y);
 }
 
@@ -499,10 +486,10 @@ void test_spm_mv(const char *alg, const char *mode, const Alpha &alpha,
      scaling y is one op
      dot product of x is two ops per entry (mul and add)
   */
-  const mag_type tolerance = KATS::eps() * KATS::abs(beta) * max_y<mag_type>() +
-                             10 * KATS::eps() * maxNnzPerRow *
-                                 KATS::abs(alpha) * max_a<mag_type>() *
-                                 max_x<mag_type>();
+  const mag_type tolerance =
+      KATS::eps() * KATS::abs(beta) * KATS::abs(max_y<scalar_type>()) +
+      10 * KATS::eps() * maxNnzPerRow * KATS::abs(alpha) *
+          KATS::abs(max_a<scalar_type>()) * KATS::abs(max_x<scalar_type>());
 
   std::vector<std::pair<ordinal_type, ordinal_type>> errIdx;
 
