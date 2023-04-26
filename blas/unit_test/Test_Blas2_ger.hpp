@@ -226,16 +226,9 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
     test_cx_cy = true;
   }
 
-  view_stride_adapater<_ViewTypeX> x("X", _M);
-  view_stride_adapater<_ViewTypeY> y("Y", _N);
-  view_stride_adapater<_ViewTypeA> A("A", _M, _N);
-
-  typename _ViewTypeX::const_type c_x = x;
-  typename _ViewTypeY::const_type c_y = y;
-
-  _HostViewTypeX h_x = Kokkos::create_mirror(x);
-  _HostViewTypeY h_y = Kokkos::create_mirror(y);
-  _HostViewTypeA h_A = Kokkos::create_mirror(A);
+  view_stride_adapter<_ViewTypeX> x("X", _M);
+  view_stride_adapter<_ViewTypeY> y("Y", _N);
+  view_stride_adapter<_ViewTypeA> A("A", _M, _N);
 
   _ViewTypeExpected h_expected("expected A += alpha * x * y^{t,h}", _M, _N);
   bool expectedResultIsKnown = false;
@@ -245,7 +238,7 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
   // ********************************************************************
   // Step 2 of 9: populate alpha, h_x, h_y, h_A, h_expected, x, y, A
   // ********************************************************************
-  this->populateVariables(alpha, h_x, h_y, h_A, h_expected, x, y, A,
+  this->populateVariables(alpha, x.h_view, y.h_view, A.h_view, h_expected, x.d_view, y.d_view, A.d_view,
                           expectedResultIsKnown);
 
   // ********************************************************************
@@ -255,7 +248,7 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
       "In Test_Blas2_ger.hpp, computing vanilla A with alpha type = %s\n",
       typeid(alpha).name());
-  this->populateVanillaValues(alpha, h_x, h_y, h_A, h_vanilla);
+  this->populateVanillaValues(alpha, x.h_view, y.h_view, A.h_view, h_vanilla);
 
   // ********************************************************************
   // Step 4 of 9: use h_vanilla and h_expected as appropriate
@@ -275,11 +268,11 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
   // ********************************************************************
   // Step 5 of 9: test with 'non const x' and 'non const y'
   // ********************************************************************
-  _ViewTypeA org_A("Org_A", _M, _N);
-  Kokkos::deep_copy(org_A, A);
+  view_stride_adapter<_ViewTypeA> org_A("Org_A", _M, _N);
+  Kokkos::deep_copy(org_A.d_base, A.d_base);
 
   if (test_x_y) {
-    this->callKkGerAndCompareAgainstExpected(alpha, x, y, A, h_A, h_expected,
+    this->callKkGerAndCompareAgainstExpected(alpha, x.d_view, y.d_view, A.d_view, A.h_view, h_expected,
                                              "non const {x,y}");
   }
 
@@ -287,9 +280,9 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
   // Step 6 of 9: test with const x
   // ********************************************************************
   if (test_cx_y) {
-    Kokkos::deep_copy(A, org_A);
+    Kokkos::deep_copy(A.d_base, org_A.d_base);
 
-    this->callKkGerAndCompareAgainstExpected(alpha, c_x, y, A, h_A, h_expected,
+    this->callKkGerAndCompareAgainstExpected(alpha, x.d_view_const, y.d_view, A.d_view, A.h_view, h_expected,
                                              "const x");
   }
 
@@ -297,9 +290,9 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
   // Step 7 of 9: test with const y
   // ********************************************************************
   if (test_x_cy) {
-    Kokkos::deep_copy(A, org_A);
+    Kokkos::deep_copy(A.d_base, org_A.d_base);
 
-    this->callKkGerAndCompareAgainstExpected(alpha, x, c_y, A, h_A, h_expected,
+    this->callKkGerAndCompareAgainstExpected(alpha, x.d_view, y.d_view_const, A.d_view, A.h_view, h_expected,
                                              "const y");
   }
 
@@ -307,18 +300,18 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
   // Step 8 of 9: test with const x and const y
   // ********************************************************************
   if (test_cx_cy) {
-    Kokkos::deep_copy(A, org_A);
+    Kokkos::deep_copy(A.d_base, org_A.d_base);
 
-    this->callKkGerAndCompareAgainstExpected(alpha, c_x, c_y, A, h_A,
+    this->callKkGerAndCompareAgainstExpected(alpha, x.d_view_const, y.d_view_const, A.d_view, A.h_view,
                                              h_expected, "const {x,y}");
   }
 
   // ********************************************************************
   // Step 9 of 9: tests with invalid values on the first input parameter
   // ********************************************************************
-  EXPECT_ANY_THROW(KokkosBlas::ger(".", alpha, x, y, A))
+  EXPECT_ANY_THROW(KokkosBlas::ger(".", alpha, x.d_view, y.d_view, A.d_view))
       << "Failed test: kk ger should have thrown an exception for mode '.'";
-  EXPECT_ANY_THROW(KokkosBlas::ger("", alpha, x, y, A))
+  EXPECT_ANY_THROW(KokkosBlas::ger("", alpha, x.d_view, y.d_view, A.d_view))
       << "Failed test: kk ger should have thrown an exception for mode ''";
 
   std::cout << "Leaving GerTester::test() - - - - - - - - - - - - - - - - - - "
@@ -1393,7 +1386,7 @@ int test_ger(const std::string& caseName) {
       "---\n");
 #endif
 
-#if 0  // Compilation error "static assertion failed Layout is not constructible
+#if 1  // Compilation error "static assertion failed Layout is not constructible
        // from extent arguments", Kokkos_View.hpp, circa line 1537
 #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
