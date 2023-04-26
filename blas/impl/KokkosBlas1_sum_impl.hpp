@@ -158,6 +158,7 @@ void MV_Sum_Invoke(
   MV_Sum_Invoke<execution_space, decltype(tempResult), XV, size_type>(
       space, tempResult, x);
   Kokkos::deep_copy(space, r, tempResult);
+  space.fence();
 }
 
 }  // namespace Impl

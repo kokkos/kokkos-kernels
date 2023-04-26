@@ -129,6 +129,7 @@ void MV_Dot_Invoke(
   MV_Dot_Invoke<execution_space, decltype(tempResult), XV, YV, size_type>(
       space, tempResult, x, y);
   Kokkos::deep_copy(space, r, tempResult);
+  space.fence();
 }
 
 }  // namespace Impl
