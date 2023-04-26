@@ -148,7 +148,7 @@ ELSE()
     "ENABLE_COMPILER_WARNINGS"
     OFF
     BOOL
-    "Override CMAKE_CXX_FLAGS with the default warnings for supported compilers"
+    "Add default warnings for supported compilers to CMAKE_CXX_FLAGS"
   )
   IF (KokkosKernels_ENABLE_COMPILER_WARNINGS)
   INCLUDE(cmake/kokkoskernels_compiler_warnings.cmake)
