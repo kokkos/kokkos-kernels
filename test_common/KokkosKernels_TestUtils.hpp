@@ -743,8 +743,8 @@ class RandCsMatrix {
 
     info = std::string(
         std::string("RandCsMatrix<") + typeid(ScalarType).name() + ", " +
-        typeid(LayoutType).name() + ", " + typeid(execution_space).name() +
-        ">(" + std::to_string(dim2) + ", " + std::to_string(dim1) +
+        typeid(LayoutType).name() + ", " + execution_space().name() + ">(" +
+        std::to_string(dim2) + ", " + std::to_string(dim1) +
         "...): rand seed: " + std::to_string(ticks) +
         ", fully sparse: " + (__fully_sparse ? "true" : "false") + "\n");
     Kokkos::Random_XorShift64_Pool<Kokkos::HostSpace> random(ticks);
