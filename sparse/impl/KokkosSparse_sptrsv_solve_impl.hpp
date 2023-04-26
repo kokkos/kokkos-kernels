@@ -398,7 +398,7 @@ struct LowerTriLvlSchedRPSolverFunctor {
                                   const EntriesType &entries_,
                                   const ValuesType &values_, LHSType &lhs_,
                                   const RHSType &rhs_,
-                                  NGBLType nodes_grouped_by_level_)
+                                  const NGBLType &nodes_grouped_by_level_)
       : row_map(row_map_),
         entries(entries_),
         values(values_),
@@ -412,11 +412,11 @@ struct LowerTriLvlSchedRPSolverFunctor {
     // Assuming indices are sorted per row, diag entry is final index in the
     // list
 
-    auto soffset   = row_map(rowid);
-    auto eoffset   = row_map(rowid + 1);
+    long soffset   = row_map(rowid);
+    long eoffset   = row_map(rowid + 1);
     auto rhs_rowid = rhs(rowid);
 
-    for (auto ptr = soffset; ptr < eoffset; ++ptr) {
+    for (long ptr = soffset; ptr < eoffset; ++ptr) {
       auto colid = entries(ptr);
       auto val   = values(ptr);
       if (colid != rowid) {
@@ -430,12 +430,12 @@ struct LowerTriLvlSchedRPSolverFunctor {
   KOKKOS_INLINE_FUNCTION
   void operator()(const UnsortedTag &, const lno_t i) const {
     auto rowid     = nodes_grouped_by_level(i);
-    auto soffset   = row_map(rowid);
-    auto eoffset   = row_map(rowid + 1);
+    long soffset   = row_map(rowid);
+    long eoffset   = row_map(rowid + 1);
     auto rhs_rowid = rhs(rowid);
     auto diag      = -1;
 
-    for (auto ptr = soffset; ptr < eoffset; ++ptr) {
+    for (long ptr = soffset; ptr < eoffset; ++ptr) {
       auto colid = entries(ptr);
       auto val   = values(ptr);
       if (colid != rowid) {
