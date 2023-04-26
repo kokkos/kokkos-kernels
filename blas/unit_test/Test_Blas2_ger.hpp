@@ -238,8 +238,8 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
   // ********************************************************************
   // Step 2 of 9: populate alpha, h_x, h_y, h_A, h_expected, x, y, A
   // ********************************************************************
-  this->populateVariables(alpha, x.h_view, y.h_view, A.h_view, h_expected, x.d_view, y.d_view, A.d_view,
-                          expectedResultIsKnown);
+  this->populateVariables(alpha, x.h_view, y.h_view, A.h_view, h_expected,
+                          x.d_view, y.d_view, A.d_view, expectedResultIsKnown);
 
   // ********************************************************************
   // Step 3 of 9: populate h_vanilla
@@ -272,7 +272,8 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
   Kokkos::deep_copy(org_A.d_base, A.d_base);
 
   if (test_x_y) {
-    this->callKkGerAndCompareAgainstExpected(alpha, x.d_view, y.d_view, A.d_view, A.h_view, h_expected,
+    this->callKkGerAndCompareAgainstExpected(alpha, x.d_view, y.d_view,
+                                             A.d_view, A.h_view, h_expected,
                                              "non const {x,y}");
   }
 
@@ -282,7 +283,8 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
   if (test_cx_y) {
     Kokkos::deep_copy(A.d_base, org_A.d_base);
 
-    this->callKkGerAndCompareAgainstExpected(alpha, x.d_view_const, y.d_view, A.d_view, A.h_view, h_expected,
+    this->callKkGerAndCompareAgainstExpected(alpha, x.d_view_const, y.d_view,
+                                             A.d_view, A.h_view, h_expected,
                                              "const x");
   }
 
@@ -292,7 +294,8 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
   if (test_x_cy) {
     Kokkos::deep_copy(A.d_base, org_A.d_base);
 
-    this->callKkGerAndCompareAgainstExpected(alpha, x.d_view, y.d_view_const, A.d_view, A.h_view, h_expected,
+    this->callKkGerAndCompareAgainstExpected(alpha, x.d_view, y.d_view_const,
+                                             A.d_view, A.h_view, h_expected,
                                              "const y");
   }
 
@@ -302,7 +305,8 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
   if (test_cx_cy) {
     Kokkos::deep_copy(A.d_base, org_A.d_base);
 
-    this->callKkGerAndCompareAgainstExpected(alpha, x.d_view_const, y.d_view_const, A.d_view, A.h_view,
+    this->callKkGerAndCompareAgainstExpected(alpha, x.d_view_const,
+                                             y.d_view_const, A.d_view, A.h_view,
                                              h_expected, "const {x,y}");
   }
 
