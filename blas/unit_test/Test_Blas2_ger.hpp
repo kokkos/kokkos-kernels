@@ -226,9 +226,9 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
     test_cx_cy = true;
   }
 
-  view_stride_adapter<_ViewTypeX> x("X", _M);
-  view_stride_adapter<_ViewTypeY> y("Y", _N);
-  view_stride_adapter<_ViewTypeA> A("A", _M, _N);
+  view_stride_adapter<_ViewTypeX, false> x("X", _M);
+  view_stride_adapter<_ViewTypeY, false> y("Y", _N);
+  view_stride_adapter<_ViewTypeA, false> A("A", _M, _N);
 
   _ViewTypeExpected h_expected("expected A += alpha * x * y^{t,h}", _M, _N);
   bool expectedResultIsKnown = false;
@@ -268,7 +268,7 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
   // ********************************************************************
   // Step 5 of 9: test with 'non const x' and 'non const y'
   // ********************************************************************
-  view_stride_adapter<_ViewTypeA> org_A("Org_A", _M, _N);
+  view_stride_adapter<_ViewTypeA, false> org_A("Org_A", _M, _N);
   Kokkos::deep_copy(org_A.d_base, A.d_base);
 
   if (test_x_y) {
