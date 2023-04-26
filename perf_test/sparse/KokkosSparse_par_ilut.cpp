@@ -455,7 +455,7 @@ int main(int argc, char** argv)
     nnz_per_row = std::min(rows / 100, 50);
   }
   if (bandwidth == -1) {
-    bandwidth = std::max(2 * (int)std::sqrt(rows), nnz_per_row);
+    bandwidth = std::max(2 * (int)std::sqrt(rows), 2 * nnz_per_row);
   }
   if (team_size == -1) {
     team_size = KokkosKernels::Impl::kk_is_gpu_exec_space<exe_space>()
