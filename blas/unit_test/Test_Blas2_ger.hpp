@@ -262,7 +262,7 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
     // ******************************************************************
     // Copy h_vanilla to h_expected
     // ******************************************************************
-    Kokkos::deep_copy(h_expected.h_base, h_vanilla.h_base);
+    Kokkos::deep_copy(h_expected.d_base, h_vanilla.d_base);
   }
 
   // ********************************************************************
@@ -1318,6 +1318,20 @@ int test_ger(const std::string& caseName) {
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("Starting %s, device = %s ...\n",
                                 caseName.c_str(), typeid(Device).name());
 
+  bool xBool =  std::is_same<ScalarX,float>::value
+             || std::is_same<ScalarX,double>::value
+             || std::is_same<ScalarX,Kokkos::complex<float>>::value
+             || std::is_same<ScalarX,Kokkos::complex<double>>::value;
+  bool yBool =  std::is_same<ScalarY,float>::value
+             || std::is_same<ScalarY,double>::value
+             || std::is_same<ScalarY,Kokkos::complex<float>>::value
+             || std::is_same<ScalarY,Kokkos::complex<double>>::value;
+  bool aBool =  std::is_same<ScalarA,float>::value
+             || std::is_same<ScalarA,double>::value
+             || std::is_same<ScalarA,Kokkos::complex<float>>::value
+             || std::is_same<ScalarA,Kokkos::complex<double>>::value;
+  bool useAnalyticalResults = xBool && yBool && aBool;
+
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&      \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -1338,13 +1352,23 @@ int test_ger(const std::string& caseName) {
     tester.test(1, 2, 0);
     tester.test(13, 13, 0);
     tester.test(13, 1024, 0);
-    tester.test(13, 1024, 0, true, false);
-    tester.test(13, 1024, 0, true, true);
+    if (useAnalyticalResults) {
+      tester.test(13, 1024, 0, true, false);
+      tester.test(13, 1024, 0, true, true);
+    }
+    else {
+      tester.test(13, 1024, 0, false, true);
+    }
     tester.test(50, 40, 4);
     tester.test(1024, 1024, 0);
     tester.test(2131, 2131, 0);
-    tester.test(2131, 2131, 0, true, false);
-    tester.test(2131, 2131, 0, true, true);
+    if (useAnalyticalResults) {
+      tester.test(2131, 2131, 0, true, false);
+      tester.test(2131, 2131, 0, true, true);
+    }
+    else {
+      tester.test(2131, 2131, 0, false, true);
+    }
   }
 
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("Finished %s for LAYOUTLEFT\n",
@@ -1374,13 +1398,23 @@ int test_ger(const std::string& caseName) {
     tester.test(1, 2, 0);
     tester.test(13, 13, 0);
     tester.test(13, 1024, 0);
-    tester.test(13, 1024, 0, true, false);
-    tester.test(13, 1024, 0, true, true);
+    if (useAnalyticalResults) {
+      tester.test(13, 1024, 0, true, false);
+      tester.test(13, 1024, 0, true, true);
+    }
+    else {
+      tester.test(13, 1024, 0, false, true);
+    }
     tester.test(50, 40, 4);
     tester.test(1024, 1024, 0);
     tester.test(2131, 2131, 0);
-    tester.test(2131, 2131, 0, true, false);
-    tester.test(2131, 2131, 0, true, true);
+    if (useAnalyticalResults) {
+      tester.test(2131, 2131, 0, true, false);
+      tester.test(2131, 2131, 0, true, true);
+    }
+    else {
+      tester.test(2131, 2131, 0, false, true);
+    }
   }
 
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("Finished %s for LAYOUTRIGHT\n",
@@ -1390,10 +1424,7 @@ int test_ger(const std::string& caseName) {
       "---\n");
 #endif
 
-#if 1  // Compilation error "static assertion failed Layout is not constructible
-       // from extent arguments", Kokkos_View.hpp, circa line 1537
-#if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
+#if (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
       "+-----------------------------------------------------------------------"
@@ -1409,13 +1440,23 @@ int test_ger(const std::string& caseName) {
     tester.test(1024, 0, 0);
     tester.test(13, 13, 0);
     tester.test(13, 1024, 0);
-    tester.test(13, 1024, 0, true, false);
-    tester.test(13, 1024, 0, true, true);
+    if (useAnalyticalResults) {
+      tester.test(13, 1024, 0, true, false);
+      tester.test(13, 1024, 0, true, true);
+    }
+    else {
+      tester.test(13, 1024, 0, false, true);
+    }
     tester.test(50, 40, 4);
     tester.test(1024, 1024, 0);
     tester.test(2131, 2131, 0);
-    tester.test(2131, 2131, 0, true, false);
-    tester.test(2131, 2131, 0, true, true);
+    if (useAnalyticalResults) {
+      tester.test(2131, 2131, 0, true, false);
+      tester.test(2131, 2131, 0, true, true);
+    }
+    else {
+      tester.test(2131, 2131, 0, false, true);
+    }
   }
 
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("Finished %s for LAYOUTSTRIDE\n",
@@ -1438,8 +1479,13 @@ int test_ger(const std::string& caseName) {
                     ScalarA, Kokkos::LayoutRight, Device>
         tester;
     tester.test(1024, 1024, 0);
-    tester.test(1024, 1024, 0, true, false);
-    tester.test(1024, 1024, 0, true, true);
+    if (useAnalyticalResults) {
+      tester.test(1024, 1024, 0, true, false);
+      tester.test(1024, 1024, 0, true, true);
+    }
+    else {
+      tester.test(1024, 1024, 0, false, true);
+    }
   }
 
   if (true) {
@@ -1455,9 +1501,6 @@ int test_ger(const std::string& caseName) {
       "+-----------------------------------------------------------------------"
       "---\n");
 #endif
-#endif  // Compilation error "static assertion failed Layout is not
-        // constructible from extent arguments", Kokkos_View.hpp, circa line
-        // 1537
 
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("Finished %s\n", caseName.c_str());
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
@@ -1523,8 +1566,8 @@ TEST_F(TestCategory, ger_int) {
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) && \
     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
-TEST_F(TestCategory, ger_double_int) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::ger_double_int");
+TEST_F(TestCategory, ger_double_int_float) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::ger_double_int_float");
   test_ger<double, int, float, TestExecSpace>("test case ger_mixed_types");
   Kokkos::Profiling::popRegion();
 }
