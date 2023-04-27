@@ -79,6 +79,11 @@ namespace Test {
 // deep-copied to each other. d_view aliases d_base, and h_view aliases h_base.
 // This means that copying between d_base and h_base
 //    also copies between d_view and h_view.
+//
+// If the Boolean template parameter 'createMirrorView' is:
+// - 'true' (default value), then this utility class will use
+//   Kokkos::create_mirror_view();
+// - 'false', then this utility class will use Kokkos::create_mirror()
 template <class ViewType, bool createMirrorView = true>
 struct view_stride_adapter {
   static_assert(Kokkos::is_view_v<ViewType>,
