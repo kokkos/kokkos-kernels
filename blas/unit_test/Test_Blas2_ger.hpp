@@ -42,7 +42,7 @@ class GerTester {
   typedef typename _ViewTypeX::HostMirror _HostViewTypeX;
   typedef typename _ViewTypeY::HostMirror _HostViewTypeY;
   typedef typename _ViewTypeA::HostMirror _HostViewTypeA;
-  typedef Kokkos::View<ScalarA**, Kokkos::HostSpace> _ViewTypeExpected;
+  typedef Kokkos::View<ScalarA**, tLayoutA, Kokkos::HostSpace> _ViewTypeExpected;
 
   typedef Kokkos::ArithTraits<ScalarA> _KAT_A;
   typedef typename _KAT_A::mag_type _AuxType;
@@ -230,7 +230,7 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
   view_stride_adapter<_ViewTypeY, false> y("Y", _N);
   view_stride_adapter<_ViewTypeA, false> A("A", _M, _N);
 
-  _ViewTypeExpected h_expected("expected A += alpha * x * y^{t,h}", _M, _N);
+  view_stride_adapter<_ViewTypeExpected, true> h_expected("expected A += alpha * x * y^{t,h}", _M, _N);
   bool expectedResultIsKnown = false;
 
   ScalarA alpha(0.);
@@ -238,17 +238,17 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
   // ********************************************************************
   // Step 2 of 9: populate alpha, h_x, h_y, h_A, h_expected, x, y, A
   // ********************************************************************
-  this->populateVariables(alpha, x.h_view, y.h_view, A.h_view, h_expected,
+  this->populateVariables(alpha, x.h_view, y.h_view, A.h_view, h_expected.d_view,
                           x.d_view, y.d_view, A.d_view, expectedResultIsKnown);
 
   // ********************************************************************
   // Step 3 of 9: populate h_vanilla
   // ********************************************************************
-  _ViewTypeExpected h_vanilla("vanilla = A + alpha * x * y^{t,h}", _M, _N);
+  view_stride_adapter<_ViewTypeExpected, true> h_vanilla("vanilla = A + alpha * x * y^{t,h}", _M, _N);
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
       "In Test_Blas2_ger.hpp, computing vanilla A with alpha type = %s\n",
       typeid(alpha).name());
-  this->populateVanillaValues(alpha, x.h_view, y.h_view, A.h_view, h_vanilla);
+  this->populateVanillaValues(alpha, x.h_view, y.h_view, A.h_view, h_vanilla.d_view);
 
   // ********************************************************************
   // Step 4 of 9: use h_vanilla and h_expected as appropriate
@@ -257,12 +257,12 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
     // ******************************************************************
     // Compare h_vanilla against h_expected
     // ******************************************************************
-    this->compareVanillaExpected(alpha, h_vanilla, h_expected);
+    this->compareVanillaExpected(alpha, h_vanilla.d_view, h_expected.d_view);
   } else {
     // ******************************************************************
     // Copy h_vanilla to h_expected
     // ******************************************************************
-    Kokkos::deep_copy(h_expected, h_vanilla);
+    Kokkos::deep_copy(h_expected.h_base, h_vanilla.h_base);
   }
 
   // ********************************************************************
@@ -273,7 +273,7 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
 
   if (test_x_y) {
     this->callKkGerAndCompareAgainstExpected(alpha, x.d_view, y.d_view,
-                                             A.d_view, A.h_view, h_expected,
+                                             A.d_view, A.h_view, h_expected.d_view,
                                              "non const {x,y}");
   }
 
@@ -284,7 +284,7 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
     Kokkos::deep_copy(A.d_base, org_A.d_base);
 
     this->callKkGerAndCompareAgainstExpected(alpha, x.d_view_const, y.d_view,
-                                             A.d_view, A.h_view, h_expected,
+                                             A.d_view, A.h_view, h_expected.d_view,
                                              "const x");
   }
 
@@ -295,7 +295,7 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
     Kokkos::deep_copy(A.d_base, org_A.d_base);
 
     this->callKkGerAndCompareAgainstExpected(alpha, x.d_view, y.d_view_const,
-                                             A.d_view, A.h_view, h_expected,
+                                             A.d_view, A.h_view, h_expected.d_view,
                                              "const y");
   }
 
@@ -307,7 +307,7 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
 
     this->callKkGerAndCompareAgainstExpected(alpha, x.d_view_const,
                                              y.d_view_const, A.d_view, A.h_view,
-                                             h_expected, "const {x,y}");
+                                             h_expected.d_view, "const {x,y}");
   }
 
   // ********************************************************************
