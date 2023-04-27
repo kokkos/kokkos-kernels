@@ -42,7 +42,8 @@ class GerTester {
   typedef typename _ViewTypeX::HostMirror _HostViewTypeX;
   typedef typename _ViewTypeY::HostMirror _HostViewTypeY;
   typedef typename _ViewTypeA::HostMirror _HostViewTypeA;
-  typedef Kokkos::View<ScalarA**, tLayoutA, Kokkos::HostSpace> _ViewTypeExpected;
+  typedef Kokkos::View<ScalarA**, tLayoutA, Kokkos::HostSpace>
+      _ViewTypeExpected;
 
   typedef Kokkos::ArithTraits<ScalarA> _KAT_A;
   typedef typename _KAT_A::mag_type _AuxType;
@@ -230,7 +231,8 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
   view_stride_adapter<_ViewTypeY, false> y("Y", _N);
   view_stride_adapter<_ViewTypeA, false> A("A", _M, _N);
 
-  view_stride_adapter<_ViewTypeExpected, true> h_expected("expected A += alpha * x * y^{t,h}", _M, _N);
+  view_stride_adapter<_ViewTypeExpected, true> h_expected(
+      "expected A += alpha * x * y^{t,h}", _M, _N);
   bool expectedResultIsKnown = false;
 
   ScalarA alpha(0.);
@@ -238,17 +240,20 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
   // ********************************************************************
   // Step 2 of 9: populate alpha, h_x, h_y, h_A, h_expected, x, y, A
   // ********************************************************************
-  this->populateVariables(alpha, x.h_view, y.h_view, A.h_view, h_expected.d_view,
-                          x.d_view, y.d_view, A.d_view, expectedResultIsKnown);
+  this->populateVariables(alpha, x.h_view, y.h_view, A.h_view,
+                          h_expected.d_view, x.d_view, y.d_view, A.d_view,
+                          expectedResultIsKnown);
 
   // ********************************************************************
   // Step 3 of 9: populate h_vanilla
   // ********************************************************************
-  view_stride_adapter<_ViewTypeExpected, true> h_vanilla("vanilla = A + alpha * x * y^{t,h}", _M, _N);
+  view_stride_adapter<_ViewTypeExpected, true> h_vanilla(
+      "vanilla = A + alpha * x * y^{t,h}", _M, _N);
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
       "In Test_Blas2_ger.hpp, computing vanilla A with alpha type = %s\n",
       typeid(alpha).name());
-  this->populateVanillaValues(alpha, x.h_view, y.h_view, A.h_view, h_vanilla.d_view);
+  this->populateVanillaValues(alpha, x.h_view, y.h_view, A.h_view,
+                              h_vanilla.d_view);
 
   // ********************************************************************
   // Step 4 of 9: use h_vanilla and h_expected as appropriate
@@ -272,9 +277,9 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
   Kokkos::deep_copy(org_A.d_base, A.d_base);
 
   if (test_x_y) {
-    this->callKkGerAndCompareAgainstExpected(alpha, x.d_view, y.d_view,
-                                             A.d_view, A.h_view, h_expected.d_view,
-                                             "non const {x,y}");
+    this->callKkGerAndCompareAgainstExpected(
+        alpha, x.d_view, y.d_view, A.d_view, A.h_view, h_expected.d_view,
+        "non const {x,y}");
   }
 
   // ********************************************************************
@@ -284,8 +289,8 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
     Kokkos::deep_copy(A.d_base, org_A.d_base);
 
     this->callKkGerAndCompareAgainstExpected(alpha, x.d_view_const, y.d_view,
-                                             A.d_view, A.h_view, h_expected.d_view,
-                                             "const x");
+                                             A.d_view, A.h_view,
+                                             h_expected.d_view, "const x");
   }
 
   // ********************************************************************
@@ -295,8 +300,8 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
     Kokkos::deep_copy(A.d_base, org_A.d_base);
 
     this->callKkGerAndCompareAgainstExpected(alpha, x.d_view, y.d_view_const,
-                                             A.d_view, A.h_view, h_expected.d_view,
-                                             "const y");
+                                             A.d_view, A.h_view,
+                                             h_expected.d_view, "const y");
   }
 
   // ********************************************************************
@@ -1318,18 +1323,18 @@ int test_ger(const std::string& caseName) {
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("Starting %s, device = %s ...\n",
                                 caseName.c_str(), typeid(Device).name());
 
-  bool xBool =  std::is_same<ScalarX,float>::value
-             || std::is_same<ScalarX,double>::value
-             || std::is_same<ScalarX,Kokkos::complex<float>>::value
-             || std::is_same<ScalarX,Kokkos::complex<double>>::value;
-  bool yBool =  std::is_same<ScalarY,float>::value
-             || std::is_same<ScalarY,double>::value
-             || std::is_same<ScalarY,Kokkos::complex<float>>::value
-             || std::is_same<ScalarY,Kokkos::complex<double>>::value;
-  bool aBool =  std::is_same<ScalarA,float>::value
-             || std::is_same<ScalarA,double>::value
-             || std::is_same<ScalarA,Kokkos::complex<float>>::value
-             || std::is_same<ScalarA,Kokkos::complex<double>>::value;
+  bool xBool = std::is_same<ScalarX, float>::value ||
+               std::is_same<ScalarX, double>::value ||
+               std::is_same<ScalarX, Kokkos::complex<float>>::value ||
+               std::is_same<ScalarX, Kokkos::complex<double>>::value;
+  bool yBool = std::is_same<ScalarY, float>::value ||
+               std::is_same<ScalarY, double>::value ||
+               std::is_same<ScalarY, Kokkos::complex<float>>::value ||
+               std::is_same<ScalarY, Kokkos::complex<double>>::value;
+  bool aBool = std::is_same<ScalarA, float>::value ||
+               std::is_same<ScalarA, double>::value ||
+               std::is_same<ScalarA, Kokkos::complex<float>>::value ||
+               std::is_same<ScalarA, Kokkos::complex<double>>::value;
   bool useAnalyticalResults = xBool && yBool && aBool;
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
@@ -1355,8 +1360,7 @@ int test_ger(const std::string& caseName) {
     if (useAnalyticalResults) {
       tester.test(13, 1024, 0, true, false);
       tester.test(13, 1024, 0, true, true);
-    }
-    else {
+    } else {
       tester.test(13, 1024, 0, false, true);
     }
     tester.test(50, 40, 4);
@@ -1365,8 +1369,7 @@ int test_ger(const std::string& caseName) {
     if (useAnalyticalResults) {
       tester.test(2131, 2131, 0, true, false);
       tester.test(2131, 2131, 0, true, true);
-    }
-    else {
+    } else {
       tester.test(2131, 2131, 0, false, true);
     }
   }
@@ -1401,8 +1404,7 @@ int test_ger(const std::string& caseName) {
     if (useAnalyticalResults) {
       tester.test(13, 1024, 0, true, false);
       tester.test(13, 1024, 0, true, true);
-    }
-    else {
+    } else {
       tester.test(13, 1024, 0, false, true);
     }
     tester.test(50, 40, 4);
@@ -1411,8 +1413,7 @@ int test_ger(const std::string& caseName) {
     if (useAnalyticalResults) {
       tester.test(2131, 2131, 0, true, false);
       tester.test(2131, 2131, 0, true, true);
-    }
-    else {
+    } else {
       tester.test(2131, 2131, 0, false, true);
     }
   }
@@ -1424,7 +1425,7 @@ int test_ger(const std::string& caseName) {
       "---\n");
 #endif
 
-#if (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
+#if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
       "+-----------------------------------------------------------------------"
@@ -1443,8 +1444,7 @@ int test_ger(const std::string& caseName) {
     if (useAnalyticalResults) {
       tester.test(13, 1024, 0, true, false);
       tester.test(13, 1024, 0, true, true);
-    }
-    else {
+    } else {
       tester.test(13, 1024, 0, false, true);
     }
     tester.test(50, 40, 4);
@@ -1453,8 +1453,7 @@ int test_ger(const std::string& caseName) {
     if (useAnalyticalResults) {
       tester.test(2131, 2131, 0, true, false);
       tester.test(2131, 2131, 0, true, true);
-    }
-    else {
+    } else {
       tester.test(2131, 2131, 0, false, true);
     }
   }
@@ -1482,8 +1481,7 @@ int test_ger(const std::string& caseName) {
     if (useAnalyticalResults) {
       tester.test(1024, 1024, 0, true, false);
       tester.test(1024, 1024, 0, true, true);
-    }
-    else {
+    } else {
       tester.test(1024, 1024, 0, false, true);
     }
   }
