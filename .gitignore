@@ -8,3 +8,8 @@
 .project
 *.o
 TAGS
+
+#Clangd indexing
+compile_commands.json
+.cache/
+.vscode/

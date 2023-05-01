@@ -27,11 +27,7 @@ namespace Experimental {
 
 /// \class Preconditioner
 /// \brief Interface for KokkosKernels preconditioners
-/// \tparam ScalarType Type of the matrix's entries
-/// \tparam Layout Kokkos layout of vectors X and Y to which
-///         the preconditioner is applied
-/// \tparam EXSP Execution space for the preconditioner apply
-/// \tparam Ordinal Type of the matrix's indices;
+/// \tparam CRS Type of the compressed matrix
 ///
 /// Preconditioner provides the following methods
 ///   - initialize() performs all operations based on the graph of the
@@ -56,6 +52,7 @@ class Preconditioner {
  public:
   using ScalarType = typename std::remove_const<typename CRS::value_type>::type;
   using EXSP       = typename CRS::execution_space;
+  using MEMSP      = typename CRS::memory_space;
   using karith     = typename Kokkos::ArithTraits<ScalarType>;
 
   //! Constructor:
@@ -80,11 +77,11 @@ class Preconditioner {
   ///\cdot X\f$.
   ///// The typical case is \f$\beta = 0\f$ and \f$\alpha = 1\f$.
   //
-  virtual void apply(const Kokkos::View<const ScalarType *, EXSP> &X,
-                     const Kokkos::View<ScalarType *, EXSP> &Y,
-                     const char transM[] = "N",
-                     ScalarType alpha    = karith::one(),
-                     ScalarType beta     = karith::zero()) const = 0;
+  virtual void apply(
+      const Kokkos::View<const ScalarType *, Kokkos::Device<EXSP, MEMSP>> &X,
+      const Kokkos::View<ScalarType *, Kokkos::Device<EXSP, MEMSP>> &Y,
+      const char transM[] = "N", ScalarType alpha = karith::one(),
+      ScalarType beta = karith::zero()) const = 0;
   //@}
 
   //! Set this preconditioner's parameters.
