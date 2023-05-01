@@ -51,7 +51,7 @@ void doCsMat(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
   auto col_map = cm.get_map();
   ASSERT_EQ(col_map.extent(0), cm.get_dim1() + 1);
 
-  ASSERT_EQ(col_map(cm.get_dim1()), expected_nnz) << cm.info;
+  ASSERT_EQ(map(cm.get_dim1()), expected_nnz) << cm.info;
 }
 
 template <class ExeSpaceType>
