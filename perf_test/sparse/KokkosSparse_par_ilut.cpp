@@ -321,35 +321,48 @@ void run_spiluk_test(KernelHandle& kh, const sp_matrix_type& A, const int rows,
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-int test_par_ilut_perf(const int rows, const int nnz_per_row, const int bandwidth,
+int test_par_ilut_perf(const std::string& matrix_file,
+                       int rows, const int nnz_per_row, const int bandwidth,
                        const int team_size, const int loop, const int test)
 ///////////////////////////////////////////////////////////////////////////////
 {
   KernelHandle kh;
   kh.create_par_ilut_handle();
 
-  // Report test config to user
+  // Generate or read A
+  sp_matrix_type A;
+  if (matrix_file == "") {
+    size_type nnz   = rows * nnz_per_row;
+    const lno_t row_size_variance = 0;
+    const scalar_t diag_dominance = 1;
+    A = KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<
+      sp_matrix_type>(rows, rows, nnz, row_size_variance, bandwidth,
+                      diag_dominance);
+  }
+  else {
+    A = KokkosSparse::Impl::read_kokkos_crst_matrix<sp_matrix_type>(matrix_file.c_str());
+    rows = A.numRows();
+  }
+
+  KokkosSparse::sort_crs_matrix(A);
+
+  // Make handles
   auto par_ilut_handle = kh.get_par_ilut_handle();
   par_ilut_handle->set_team_size(team_size);
   par_ilut_handle->set_nrows(rows);
 
   const auto default_policy = par_ilut_handle->get_default_team_policy();
 
-  // Generate A
-  size_type nnz   = rows * nnz_per_row;
-  const lno_t row_size_variance = 0;
-  const scalar_t diag_dominance = 1;
-  auto A = KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<
-      sp_matrix_type>(rows, rows, nnz, row_size_variance, bandwidth,
-                      diag_dominance);
-
-  KokkosSparse::sort_crs_matrix(A);
-
-  // Report test config
-  std::cout << "Testing par_ilut with rows=" << rows
-            << "\n  nnz_per_row=" << nnz_per_row
-            << "\n  bandwidth=" << bandwidth
-            << "\n  total nnz=" << A.nnz()
+  // Report test config to user
+  if (matrix_file == "") {
+    std::cout << "Testing par_ilut with rows=" << rows
+              << "\n  nnz_per_row=" << nnz_per_row
+              << "\n  bandwidth=" << bandwidth;
+  }
+  else {
+    std::cout << "Testing par_ilut with input matrix=" << matrix_file;
+  }
+  std::cout << "\n  total nnz=" << A.nnz()
             << "\n  league_size=" << default_policy.league_size()
             << "\n  team_size=" << default_policy.team_size()
             << "\n  concurrent teams="
@@ -381,11 +394,8 @@ void print_help_par_ilut()
 ///////////////////////////////////////////////////////////////////////////////
 {
   printf("Options:\n");
-  // printf(
-  //     "  -f [file]       : Read in Matrix Market formatted text file. Not yet
-  //     supported "
-  //     "'file'.\n");
-  printf("  -n [N]  : generate a semi-random banded NxN matrix. Default 10000.\n");
+  printf("  -f [F]  : Read in Matrix Market formatted text file.\n");
+  printf("  -n [N]  : generate a semi-random banded NxN matrix.\n");
   printf("  -z [Z]  : number nnz per row. Default is min(1%% of N, 50).\n");
   printf("  -b [B]  : bandwidth per row. Default is max(2 * n^(1/2), nnz).\n");
   printf("  -ts [T] : Number of threads per team. Default is 1 on OpenMP, nnz_per_row on CUDA\n");
@@ -415,7 +425,8 @@ void handle_int_arg(int argc, char** argv, int& i,
 int main(int argc, char** argv)
 ///////////////////////////////////////////////////////////////////////////////
 {
-  int rows          = 10000;
+  std::string mfile = "";
+  int rows          = -1;
   int nnz_per_row   = -1; // depends on other options, so don't set to default yet
   int bandwidth     = -1;
   int team_size     = -1;
@@ -441,13 +452,30 @@ int main(int argc, char** argv)
     if ((strcmp(argv[i], "--help") == 0) || (strcmp(argv[i], "-h") == 0)) {
       print_help_par_ilut();
       return 0;
-    } else {
+    }
+    else if ((strcmp(argv[i], "-f") == 0)) {
+      mfile = argv[++i];
+    }
+    else {
       handle_int_arg(argc, argv, i, option_map);
     }
   }
 
-  if (rows < 100) {
-    throw std::runtime_error("Need to have at least 100 rows");
+  // Determine where A is coming from
+  if (rows != -1) {
+    // We are randomly generating the input A
+    if (rows < 100) {
+      throw std::runtime_error("Need to have at least 100 rows");
+    }
+    if (mfile != "") {
+      throw std::runtime_error("Need provide either -n or -f argument to this program, not both");
+    }
+  }
+  else {
+    // We are reading A from a file
+    if (mfile == "") {
+      throw std::runtime_error("Need provide either -n or -f argument to this program");
+    }
   }
 
   // Set dependent defaults
@@ -465,7 +493,7 @@ int main(int argc, char** argv)
 
   Kokkos::initialize(argc, argv);
   {
-    test_par_ilut_perf(rows, nnz_per_row, bandwidth, team_size, loop, test);
+    test_par_ilut_perf(mfile, rows, nnz_per_row, bandwidth, team_size, loop, test);
   }
   Kokkos::finalize();
   return 0;
