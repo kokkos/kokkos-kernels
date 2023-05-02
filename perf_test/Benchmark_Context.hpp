@@ -143,14 +143,14 @@ inline auto register_benchmark_real_time(const char* name, FuncType func,
                                          std::vector<int64_t> args, int repeat,
                                          ArgsToCallOp&&... func_args) {
   if (repeat > 0) {
-    benchmark::RegisterBenchmark(name, func,
+    return benchmark::RegisterBenchmark(name, func,
                                  std::forward<ArgsToCallOp>(func_args)...)
         ->ArgNames(arg_names)
         ->Args(args)
         ->UseRealTime()
         ->Iterations(repeat);
   } else {
-    benchmark::RegisterBenchmark(name, func,
+    return benchmark::RegisterBenchmark(name, func,
                                  std::forward<ArgsToCallOp>(func_args)...)
         ->ArgNames(arg_names)
         ->Args(args)
