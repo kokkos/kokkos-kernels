@@ -28,7 +28,7 @@
 namespace KokkosBlas {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class AVT, class BVT>
+template <class execution_space, class AVT, class BVT>
 struct trsm_eti_spec_avail {
   enum : bool { value = false };
 };
@@ -46,6 +46,7 @@ struct trsm_eti_spec_avail {
                                                EXEC_SPACE, MEM_SPACE)        \
   template <>                                                                \
   struct trsm_eti_spec_avail<                                                \
+      EXEC_SPACE,							     \
       Kokkos::View<const SCALAR**, LAYOUTA,                                  \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                    \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
@@ -71,11 +72,11 @@ namespace Impl {
 
 // Unification layer
 template <
-    class AViewType, class BViewType,
-    bool tpl_spec_avail = trsm_tpl_spec_avail<AViewType, BViewType>::value,
-    bool eti_spec_avail = trsm_eti_spec_avail<AViewType, BViewType>::value>
+    class execution_space, class AViewType, class BViewType,
+    bool tpl_spec_avail = trsm_tpl_spec_avail<execution_space, AViewType, BViewType>::value,
+    bool eti_spec_avail = trsm_eti_spec_avail<execution_space, AViewType, BViewType>::value>
 struct TRSM {
-  static void trsm(const char side[], const char uplo[], const char trans[],
+  static void trsm(const execution_space& space, const char side[], const char uplo[], const char trans[],
                    const char diag[],
                    typename BViewType::const_value_type& alpha,
                    const AViewType& A, const BViewType& B);
@@ -83,9 +84,9 @@ struct TRSM {
 
 // Implementation of KokkosBlas::trsm.
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
-template <class AViewType, class BViewType>
-struct TRSM<AViewType, BViewType, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
-  static void trsm(const char side[], const char uplo[], const char trans[],
+template <class execution_space, class AViewType, class BViewType>
+struct TRSM<execution_space, AViewType, BViewType, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+  static void trsm(const execution_space& /*space*/, const char side[], const char uplo[], const char trans[],
                    const char diag[],
                    typename BViewType::const_value_type& alpha,
                    const AViewType& A, const BViewType& B) {
@@ -134,6 +135,7 @@ struct TRSM<AViewType, BViewType, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 #define KOKKOSBLAS3_TRSM_ETI_SPEC_DECL_LAYOUTS(SCALAR, LAYOUTA, LAYOUTB,     \
                                                EXEC_SPACE, MEM_SPACE)        \
   extern template struct TRSM<                                               \
+      EXEC_SPACE,							     \
       Kokkos::View<const SCALAR**, LAYOUTA,                                  \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                    \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
@@ -144,6 +146,7 @@ struct TRSM<AViewType, BViewType, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 #define KOKKOSBLAS3_TRSM_ETI_SPEC_INST_LAYOUTS(SCALAR, LAYOUTA, LAYOUTB,     \
                                                EXEC_SPACE, MEM_SPACE)        \
   template struct TRSM<                                                      \
+      EXEC_SPACE,							     \
       Kokkos::View<const SCALAR**, LAYOUTA,                                  \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                    \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \

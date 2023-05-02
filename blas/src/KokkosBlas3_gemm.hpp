@@ -209,7 +209,7 @@ void gemm(const execution_space& space, const char transA[],
                        typename CViewType::device_type,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>
       CVT;
-  typedef Impl::GEMM<AVT, BVT, CVT> impl_type;
+  typedef Impl::GEMM<execution_space, AVT, BVT, CVT> impl_type;
   impl_type::gemm(space, transA, transB, alpha, A, B, beta, C);
 }
 
