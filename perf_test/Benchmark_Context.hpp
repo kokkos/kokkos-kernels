@@ -138,7 +138,7 @@ inline auto register_benchmark(const char* name, FuncType func,
 }
 
 template <class FuncType, class... ArgsToCallOp>
-inline void register_benchmark_real_time(const char* name, FuncType func,
+inline auto register_benchmark_real_time(const char* name, FuncType func,
                                          std::vector<std::string> arg_names,
                                          std::vector<int64_t> args, int repeat,
                                          ArgsToCallOp&&... func_args) {
