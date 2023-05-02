@@ -446,7 +446,7 @@ template <class ExecutionSpace, class KernelHandle,
           class x_values_scalar_view_type>
 void sptrsvcuSPARSE_solve_streams(
     const std::vector<ExecutionSpace> &execspace_v,
-    const std::vector<KernelHandle> &handle_v,
+    std::vector<KernelHandle> &handle_v,
     const std::vector<ain_row_index_view_type> &row_map_v,
     const std::vector<ain_nonzero_index_view_type> &entries_v,
     const std::vector<ain_values_scalar_view_type> &values_v,
@@ -459,7 +459,7 @@ void sptrsvcuSPARSE_solve_streams(
   using scalar_type  = typename KernelHandle::nnz_scalar_t;
   using memory_space = typename KernelHandle::HandlePersistentMemorySpace;
   using sptrsvHandleType         = typename KernelHandle::SPTRSVHandleType;
-  usinf sptrsvCuSparseHandleType = typename sptrsvHandleType::SPTRSVcuSparseHandleType;
+  using sptrsvCuSparseHandleType = typename sptrsvHandleType::SPTRSVcuSparseHandleType;
 
   int nstreams = execspace_v.size();
 #if (CUDA_VERSION >= 11030)
