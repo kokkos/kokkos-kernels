@@ -463,6 +463,7 @@ void sptrsvcuSPARSE_solve_streams(
 
   int nstreams = execspace_v.size();
 #if (CUDA_VERSION >= 11030)
+  printf("CUSPARSE VERSION >= 11030\n");
   (void)row_map_v;
   (void)entries_v;
   (void)values_v;
@@ -516,78 +517,69 @@ void sptrsvcuSPARSE_solve_streams(
     }
   }
 #else  // CUDA_VERSION < 11030
-//  if (std::is_same<idx_type, int>::value) {
-//    cusparseStatus_t status;
-//
-//    typename KernelHandle::SPTRSVcuSparseHandleType* h =
-//        sptrsv_handle->get_cuSparseHandle();
-//
-//    int nnz = entries.extent_int(0);
-//
-//    const int* rm = !std::is_same<size_type, int>::value
-//                        ? sptrsv_handle->get_int_rowmap_ptr()
-//                        : (const int*)row_map.data();
-//    const int* ent          = (const int*)entries.data();
-//    const scalar_type* vals = values.data();
-//    const scalar_type* bv   = rhs.data();
-//    scalar_type* xv         = lhs.data();
-//
-//    if (std::is_same<scalar_type, double>::value) {
-//      if (h->pBuffer == nullptr) {
-//        std::cout << "  pBuffer invalid" << std::endl;
-//      }
-//      const double alpha = double(1);
-//
-//      status = cusparseDcsrsv2_solve(h->handle, h->transpose, nrows, nnz,
-//                                     &alpha, h->descr, (double*)vals, (int*)rm,
-//                                     (int*)ent, h->info, (double*)bv,
-//                                     (double*)xv, h->policy, h->pBuffer);
-//
-//      if (CUSPARSE_STATUS_SUCCESS != status)
-//        std::cout << "solve status error name " << (status) << std::endl;
-//    } else if (std::is_same<scalar_type, float>::value) {
-//      if (h->pBuffer == nullptr) {
-//        std::cout << "  pBuffer invalid" << std::endl;
-//      }
-//      const float alpha = float(1);
-//
-//      status = cusparseScsrsv2_solve(h->handle, h->transpose, nrows, nnz,
-//                                     &alpha, h->descr, (float*)vals, (int*)rm,
-//                                     (int*)ent, h->info, (float*)bv, (float*)xv,
-//                                     h->policy, h->pBuffer);
-//
-//      if (CUSPARSE_STATUS_SUCCESS != status)
-//        std::cout << "solve status error name " << (status) << std::endl;
-//    } else if (std::is_same<scalar_type, Kokkos::complex<double> >::value) {
-//      cuDoubleComplex cualpha;
-//      cualpha.x = 1.0;
-//      cualpha.y = 0.0;
-//      status    = cusparseZcsrsv2_solve(
-//          h->handle, h->transpose, nrows, nnz, &cualpha, h->descr,
-//          (cuDoubleComplex*)vals, (int*)rm, (int*)ent, h->info,
-//          (cuDoubleComplex*)bv, (cuDoubleComplex*)xv, h->policy, h->pBuffer);
-//
-//      if (CUSPARSE_STATUS_SUCCESS != status)
-//        std::cout << "solve status error name " << (status) << std::endl;
-//    } else if (std::is_same<scalar_type, Kokkos::complex<float> >::value) {
-//      cuComplex cualpha;
-//      cualpha.x = 1.0;
-//      cualpha.y = 0.0;
-//      status    = cusparseCcsrsv2_solve(
-//          h->handle, h->transpose, nrows, nnz, &cualpha, h->descr,
-//          (cuComplex*)vals, (int*)rm, (int*)ent, h->info, (cuComplex*)bv,
-//          (cuComplex*)xv, h->policy, h->pBuffer);
-//
-//      if (CUSPARSE_STATUS_SUCCESS != status)
-//        std::cout << "solve status error name " << (status) << std::endl;
-//    } else {
-//      throw std::runtime_error("CUSPARSE wrapper error: unsupported type.\n");
-//    }
-//
-//  } else {
-//    throw std::runtime_error(
-//        "CUSPARSE requires local ordinals to be integer.\n");
-//  }
+  printf("CUSPARSE VERSION < 11030\n");
+  if (!std::is_same<idx_type, int>::value) {
+    throw std::runtime_error(
+        "CUSPARSE requires local ordinals to be integer.\n");
+    }
+  else {
+    cusparseStatus_t status;
+    std::vector<sptrsvCuSparseHandleType *> h_v(nstreams);
+
+    for (int i = 0; i < nstreams; i++) {
+      sptrsvHandleType *sptrsv_handle = handle_v[i].get_sptrsv_handle();
+      h_v[i] = sptrsv_handle->get_cuSparseHandle();
+
+      int nnz = entries_v[i].extent_int(0);
+      int nrows = static_cast<int>(sptrsv_handle->get_nrows());
+
+      const int* rm = !std::is_same<size_type, int>::value
+                          ? sptrsv_handle->get_int_rowmap_ptr()
+                          : (const int*)row_map_v[i].data();
+      const int* ent          = (const int*)entries_v[i].data();
+      const scalar_type* vals = values_v[i].data();
+      const scalar_type* bv   = rhs_v[i].data();
+      scalar_type* xv         = lhs_v[i].data();
+
+      if (h_v[i]->pBuffer == nullptr) {
+        std::cout << "  pBuffer invalid on stream " << i << std::endl;
+      }
+
+      if (std::is_same<scalar_type, double>::value) {
+        const double alpha = double(1);
+  
+        status = cusparseDcsrsv2_solve(h_v[i]->handle, h_v[i]->transpose, nrows, nnz, &alpha, h_v[i]->descr, (double*)vals, (int*)rm, (int*)ent, h_v[i]->info, (double*)bv, (double*)xv, h_v[i]->policy, h_v[i]->pBuffer);
+  
+        if (CUSPARSE_STATUS_SUCCESS != status)
+          std::cout << "solve status error name " << (status) << " on stream " << i << std::endl;
+      } else if (std::is_same<scalar_type, float>::value) {
+        const float alpha = float(1);
+
+        status = cusparseScsrsv2_solve(h_v[i]->handle, h_v[i]->transpose, nrows, nnz, &alpha, h_v[i]->descr, (float*)vals, (int*)rm, (int*)ent, h_v[i]->info, (float*)bv, (float*)xv, h_v[i]->policy, h_v[i]->pBuffer);
+
+        if (CUSPARSE_STATUS_SUCCESS != status)
+          std::cout << "solve status error name " << (status) << " on stream " << i << std::endl;
+      } else if (std::is_same<scalar_type, Kokkos::complex<double> >::value) {
+        cuDoubleComplex cualpha;
+        cualpha.x = 1.0;
+        cualpha.y = 0.0;
+        status    = cusparseZcsrsv2_solve(h_v[i]->handle, h_v[i]->transpose, nrows, nnz, &cualpha, h_v[i]->descr, (cuDoubleComplex*)vals, (int*)rm, (int*)ent, h_v[i]->info, (cuDoubleComplex*)bv, (cuDoubleComplex*)xv, h_v[i]->policy, h_v[i]->pBuffer);
+  
+        if (CUSPARSE_STATUS_SUCCESS != status)
+          std::cout << "solve status error name " << (status) << " on stream " << i << std::endl;
+      } else if (std::is_same<scalar_type, Kokkos::complex<float> >::value) {
+        cuComplex cualpha;
+        cualpha.x = 1.0;
+        cualpha.y = 0.0;
+        status    = cusparseCcsrsv2_solve(h_v[i]->handle, h_v[i]->transpose, nrows, nnz, &cualpha, h_v[i]->descr, (cuComplex*)vals, (int*)rm, (int*)ent, h_v[i]->info, (cuComplex*)bv, (cuComplex*)xv, h_v[i]->policy, h_v[i]->pBuffer);
+  
+        if (CUSPARSE_STATUS_SUCCESS != status)
+          std::cout << "solve status error name " << (status) << " on stream " << i << std::endl;
+      } else {
+        throw std::runtime_error("CUSPARSE wrapper error: unsupported type.\n");
+      }
+    }
+  }
 #endif
 #else
   (void)execspace_v;
