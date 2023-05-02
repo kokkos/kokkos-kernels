@@ -69,20 +69,25 @@ namespace Impl {
 
 // Unification layer
 template <class execution_space, class AVIT, class BVIT,
-          bool tpl_spec_avail = trmm_tpl_spec_avail<execution_space, AVIT, BVIT>::value,
-          bool eti_spec_avail = trmm_eti_spec_avail<execution_space, AVIT, BVIT>::value>
+          bool tpl_spec_avail =
+              trmm_tpl_spec_avail<execution_space, AVIT, BVIT>::value,
+          bool eti_spec_avail =
+              trmm_eti_spec_avail<execution_space, AVIT, BVIT>::value>
 struct TRMM {
-  static void trmm(const execution_space& space, const char side[], const char uplo[], const char trans[],
-                   const char diag[], typename BVIT::const_value_type& alpha,
-                   const AVIT& A, const BVIT& B);
+  static void trmm(const execution_space& space, const char side[],
+                   const char uplo[], const char trans[], const char diag[],
+                   typename BVIT::const_value_type& alpha, const AVIT& A,
+                   const BVIT& B);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 template <class execution_space, class AVIT, class BVIT>
-struct TRMM<execution_space, AVIT, BVIT, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
-  static void trmm(const execution_space& /*space*/, const char side[], const char uplo[], const char trans[],
-                   const char diag[], typename BVIT::const_value_type& alpha,
-                   const AVIT& A, const BVIT& B) {
+struct TRMM<execution_space, AVIT, BVIT, false,
+            KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+  static void trmm(const execution_space& /*space*/, const char side[],
+                   const char uplo[], const char trans[], const char diag[],
+                   typename BVIT::const_value_type& alpha, const AVIT& A,
+                   const BVIT& B) {
     static_assert(Kokkos::is_view<AVIT>::value, "AVIT must be a Kokkos::View.");
     static_assert(Kokkos::is_view<BVIT>::value, "BVIT must be a Kokkos::View.");
     static_assert(static_cast<int>(AVIT::rank) == 2, "AVIT must have rank 2.");

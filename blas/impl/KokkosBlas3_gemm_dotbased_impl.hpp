@@ -77,7 +77,7 @@ struct DotBasedGEMM {
     // Initialize C matrix if beta != 1
     if (beta == CVT::zero()) {
       Kokkos::MDRangePolicy<TagZero, ExecSpace, Kokkos::Rank<2>> policyInit(
-	  space, {0, 0}, {numCrows, numCcols});
+          space, {0, 0}, {numCrows, numCcols});
       Kokkos::parallel_for("Initialize C for Dot Product Based GEMM",
                            policyInit, *this);
     } else if (beta != CVT::one()) {

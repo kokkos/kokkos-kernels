@@ -85,14 +85,15 @@ namespace Impl {
 //
 
 // Implementation of KokkosBlas::gemm.
-template <class execution_space, class AViewType, class BViewType, class CViewType,
-          bool tpl_spec_avail =
-              gemm_tpl_spec_avail<execution_space, AViewType, BViewType, CViewType>::value,
-          bool eti_spec_avail =
-              gemm_eti_spec_avail<execution_space, AViewType, BViewType, CViewType>::value>
+template <
+    class execution_space, class AViewType, class BViewType, class CViewType,
+    bool tpl_spec_avail = gemm_tpl_spec_avail<execution_space, AViewType,
+                                              BViewType, CViewType>::value,
+    bool eti_spec_avail = gemm_eti_spec_avail<execution_space, AViewType,
+                                              BViewType, CViewType>::value>
 struct GEMM {
-  static void gemm(const execution_space& space,
-                   const char transA[], const char transB[],
+  static void gemm(const execution_space& space, const char transA[],
+                   const char transB[],
                    typename AViewType::const_value_type& alpha,
                    const AViewType& A, const BViewType& B,
                    typename CViewType::const_value_type& beta,
@@ -145,8 +146,8 @@ struct GEMM {
       // call dot-based GEMM, only for C := beta * C + alpha * A^T * B, on
       // device
       bool A_is_conj = ((transA[0] == 'C') || (transA[0] == 'c'));
-      DotBasedGEMM<execution_space, AViewType, BViewType, CViewType> dotBasedGemm(
-          alpha, A, B, beta, C);
+      DotBasedGEMM<execution_space, AViewType, BViewType, CViewType>
+          dotBasedGemm(alpha, A, B, beta, C);
       dotBasedGemm.run(space, A_is_conj);
 
     } else {
@@ -168,15 +169,15 @@ struct GEMM {
                        24000)
                           ? 4
                           : 16;
-      int vector_length     = blockB1 / 4;
-      int max_vector_length = KokkosKernels::Impl::kk_get_max_vector_size<
-          execution_space>();
+      int vector_length = blockB1 / 4;
+      int max_vector_length =
+          KokkosKernels::Impl::kk_get_max_vector_size<execution_space>();
       if (vector_length > max_vector_length) vector_length = max_vector_length;
 
       // Compute scratch space size
-      typedef KokkosBlas::Impl::GEMMImpl<execution_space,
-                                         AViewType, BViewType, CViewType,
-                                         blockA0, blockA1, blockB1, 0, 0>
+      typedef KokkosBlas::Impl::GEMMImpl<execution_space, AViewType, BViewType,
+                                         CViewType, blockA0, blockA1, blockB1,
+                                         0, 0>
           gemm_dummy_type;
       const int scratch_memory_size =
           gemm_dummy_type::ViewTypeAScratch::required_allocation_size() +
@@ -187,96 +188,83 @@ struct GEMM {
       // Figure out Team Sizes
       int team_size = 1;
 #if defined(KOKKOS_ENABLE_CUDA)
-      if (std::is_same<execution_space,
-                       Kokkos::Cuda>::value)
+      if (std::is_same<execution_space, Kokkos::Cuda>::value)
         team_size = blockA0;
 #endif
 #if defined(KOKKOS_ENABLE_HIP)
-      if (std::is_same<execution_space,
-                       Kokkos::Experimental::HIP>::value)
+      if (std::is_same<execution_space, Kokkos::Experimental::HIP>::value)
         team_size = blockA0;
 #endif
 #if defined(KOKKOS_ENABLE_ROCM)
-      if (std::is_same<execution_space,
-                       Kokkos::ROCm>::value)
+      if (std::is_same<execution_space, Kokkos::ROCm>::value)
         team_size = blockA0;
 #endif
 #if defined(KOKKOS_ENABLE_SYCL)
-      if (std::is_same<execution_space,
-                       Kokkos::Experimental::SYCL>::value)
+      if (std::is_same<execution_space, Kokkos::Experimental::SYCL>::value)
         team_size = blockA0;
 #endif
 
       // Call the correct kernel
       if ((transA[0] == 'N' || transA[0] == 'n') &&
           (transB[0] == 'N' || transB[0] == 'n')) {
-        KokkosBlas::Impl::GEMMImpl<execution_space,
-                                   AViewType, BViewType, CViewType, blockA0,
-                                   blockA1, blockB1, 0, 0>
+        KokkosBlas::Impl::GEMMImpl<execution_space, AViewType, BViewType,
+                                   CViewType, blockA0, blockA1, blockB1, 0, 0>
             gemm(alpha, A, B, beta, C);
         gemm.run(space, team_size, vector_length, scratch_level);
       }
       if ((transA[0] == 'T' || transA[0] == 't') &&
           (transB[0] == 'N' || transB[0] == 'n')) {
-        KokkosBlas::Impl::GEMMImpl<execution_space,
-                                   AViewType, BViewType, CViewType, blockA0,
-                                   blockA1, blockB1, 1, 0>
+        KokkosBlas::Impl::GEMMImpl<execution_space, AViewType, BViewType,
+                                   CViewType, blockA0, blockA1, blockB1, 1, 0>
             gemm(alpha, A, B, beta, C);
         gemm.run(space, team_size, vector_length, scratch_level);
       }
       if ((transA[0] == 'C' || transA[0] == 'c') &&
           (transB[0] == 'N' || transB[0] == 'n')) {
-        KokkosBlas::Impl::GEMMImpl<execution_space,
-                                   AViewType, BViewType, CViewType, blockA0,
-                                   blockA1, blockB1, 2, 0>
+        KokkosBlas::Impl::GEMMImpl<execution_space, AViewType, BViewType,
+                                   CViewType, blockA0, blockA1, blockB1, 2, 0>
             gemm(alpha, A, B, beta, C);
         gemm.run(space, team_size, vector_length, scratch_level);
       }
       if ((transA[0] == 'N' || transA[0] == 'n') &&
           (transB[0] == 'T' || transB[0] == 't')) {
-        KokkosBlas::Impl::GEMMImpl<execution_space,
-                                   AViewType, BViewType, CViewType, blockA0,
-                                   blockA1, blockB1, 0, 1>
+        KokkosBlas::Impl::GEMMImpl<execution_space, AViewType, BViewType,
+                                   CViewType, blockA0, blockA1, blockB1, 0, 1>
             gemm(alpha, A, B, beta, C);
         gemm.run(space, team_size, vector_length, scratch_level);
       }
       if ((transA[0] == 'T' || transA[0] == 't') &&
           (transB[0] == 'T' || transB[0] == 't')) {
-        KokkosBlas::Impl::GEMMImpl<execution_space,
-                                   AViewType, BViewType, CViewType, blockA0,
-                                   blockA1, blockB1, 1, 1>
+        KokkosBlas::Impl::GEMMImpl<execution_space, AViewType, BViewType,
+                                   CViewType, blockA0, blockA1, blockB1, 1, 1>
             gemm(alpha, A, B, beta, C);
         gemm.run(space, team_size, vector_length, scratch_level);
       }
       if ((transA[0] == 'C' || transA[0] == 'c') &&
           (transB[0] == 'T' || transB[0] == 't')) {
-        KokkosBlas::Impl::GEMMImpl<execution_space,
-                                   AViewType, BViewType, CViewType, blockA0,
-                                   blockA1, blockB1, 2, 1>
+        KokkosBlas::Impl::GEMMImpl<execution_space, AViewType, BViewType,
+                                   CViewType, blockA0, blockA1, blockB1, 2, 1>
             gemm(alpha, A, B, beta, C);
         gemm.run(space, team_size, vector_length, scratch_level);
       }
       if ((transA[0] == 'N' || transA[0] == 'n') &&
           (transB[0] == 'C' || transB[0] == 'c')) {
-        KokkosBlas::Impl::GEMMImpl<execution_space,
-                                   AViewType, BViewType, CViewType, blockA0,
-                                   blockA1, blockB1, 0, 2>
+        KokkosBlas::Impl::GEMMImpl<execution_space, AViewType, BViewType,
+                                   CViewType, blockA0, blockA1, blockB1, 0, 2>
             gemm(alpha, A, B, beta, C);
         gemm.run(space, team_size, vector_length, scratch_level);
       }
       if ((transA[0] == 'T' || transA[0] == 't') &&
           (transB[0] == 'C' || transB[0] == 'c')) {
-        KokkosBlas::Impl::GEMMImpl<execution_space,
-                                   AViewType, BViewType, CViewType, blockA0,
-                                   blockA1, blockB1, 1, 2>
+        KokkosBlas::Impl::GEMMImpl<execution_space, AViewType, BViewType,
+                                   CViewType, blockA0, blockA1, blockB1, 1, 2>
             gemm(alpha, A, B, beta, C);
         gemm.run(space, team_size, vector_length, scratch_level);
       }
       if ((transA[0] == 'C' || transA[0] == 'c') &&
           (transB[0] == 'C' || transB[0] == 'c')) {
-        KokkosBlas::Impl::GEMMImpl<execution_space,
-                                   AViewType, BViewType, CViewType, blockA0,
-                                   blockA1, blockB1, 2, 2>
+        KokkosBlas::Impl::GEMMImpl<execution_space, AViewType, BViewType,
+                                   CViewType, blockA0, blockA1, blockB1, 2, 2>
             gemm(alpha, A, B, beta, C);
         gemm.run(space, team_size, vector_length, scratch_level);
       }

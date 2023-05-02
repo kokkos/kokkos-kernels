@@ -39,8 +39,8 @@ namespace KokkosBlas {
 /// Kokkos::View
 ///
 /// \param space [in] an execution space instance that may contain a stream
-/// or a queue to execute the kernel on, this only works with TPLs at the moment.
-/// \param side  [in] "L" or "l" indicates matrix A is on the left of X
+/// or a queue to execute the kernel on, this only works with TPLs at the
+/// moment. \param side  [in] "L" or "l" indicates matrix A is on the left of X
 ///                   "R" or "r" indicates matrix A is on the right of X
 /// \param uplo  [in] "U" or "u" indicates matrix A upper part is stored, the
 /// other part is not referenced
@@ -60,9 +60,10 @@ namespace KokkosBlas {
 ///                   On entry, M-by-N matrix of multile RHS
 ///                   On exit, overwritten with the solution X
 template <class execution_space, class AViewType, class BViewType>
-void trsm(const execution_space& space, const char side[], const char uplo[], const char trans[],
-          const char diag[], typename BViewType::const_value_type& alpha,
-          const AViewType& A, const BViewType& B) {
+void trsm(const execution_space& space, const char side[], const char uplo[],
+          const char trans[], const char diag[],
+          typename BViewType::const_value_type& alpha, const AViewType& A,
+          const BViewType& B) {
   static_assert(Kokkos::is_view<AViewType>::value,
                 "AViewType must be a Kokkos::View.");
   static_assert(Kokkos::is_view<BViewType>::value,
@@ -146,7 +147,8 @@ void trsm(const execution_space& space, const char side[], const char uplo[], co
                            typename BViewType::device_type,
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
-  KokkosBlas::Impl::TRSM<execution_space, AVT, BVT>::trsm(space, side, uplo, trans, diag, alpha, A, B);
+  KokkosBlas::Impl::TRSM<execution_space, AVT, BVT>::trsm(
+      space, side, uplo, trans, diag, alpha, A, B);
 }
 
 /// \brief Solve triangular linear system with multiple RHSs:
@@ -180,7 +182,8 @@ template <class AViewType, class BViewType>
 void trsm(const char side[], const char uplo[], const char trans[],
           const char diag[], typename BViewType::const_value_type& alpha,
           const AViewType& A, const BViewType& B) {
-  trsm(typename AViewType::execution_space{}, side, uplo, trans, diag, alpha, A, B);
+  trsm(typename AViewType::execution_space{}, side, uplo, trans, diag, alpha, A,
+       B);
 }
 }  // namespace KokkosBlas
 

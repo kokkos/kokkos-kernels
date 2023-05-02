@@ -33,7 +33,7 @@ struct trmm_tpl_spec_avail {
                                              MEMSPACE)                     \
   template <class ExecSpace>                                               \
   struct trmm_tpl_spec_avail<                                              \
-      ExecSpace,							   \
+      ExecSpace,                                                           \
       Kokkos::View<const SCALAR**, LAYOUTA,                                \
                    Kokkos::Device<ExecSpace, MEMSPACE>,                    \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,              \

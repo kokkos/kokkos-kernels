@@ -49,13 +49,15 @@ namespace KokkosBlas {
 /// \param x [in] Input vector, as a 1-D Kokkos::View
 /// \param beta [in] Input coefficient of y
 /// \param y [in/out] Output vector, as a nonconst 1-D Kokkos::View
-template <class execution_space, class AViewType, class XViewType, class YViewType>
+template <class execution_space, class AViewType, class XViewType,
+          class YViewType>
 void gemv(const execution_space& space, const char trans[],
           typename AViewType::const_value_type& alpha, const AViewType& A,
           const XViewType& x, typename YViewType::const_value_type& beta,
           const YViewType& y) {
   static_assert(Kokkos::is_execution_space_v<execution_space>,
-		"KokkosBlas::gemv: execution_space must be a valid Kokkos execution space.");
+                "KokkosBlas::gemv: execution_space must be a valid Kokkos "
+                "execution space.");
   static_assert(Kokkos::is_view<AViewType>::value,
                 "KokkosBlas::gemv: AViewType must be a Kokkos::View.");
   static_assert(Kokkos::is_view<XViewType>::value,
@@ -68,16 +70,26 @@ void gemv(const execution_space& space, const char trans[],
                 "KokkosBlas::gemv: XViewType must have rank 1.");
   static_assert(static_cast<int>(YViewType::rank) == 1,
                 "KokkosBlas::gemv: YViewType must have rank 1.");
-  static_assert(Kokkos::SpaceAccessibility<execution_space, typename AViewType::memory_space>::accessible,
-		"KokkosBlas::gemv: AViewType must be accessible from execution_space");
-  static_assert(Kokkos::SpaceAccessibility<execution_space, typename XViewType::memory_space>::accessible,
-		"KokkosBlas::gemv: XViewType must be accessible from execution_space");
-  static_assert(Kokkos::SpaceAccessibility<execution_space, typename YViewType::memory_space>::accessible,
-		"KokkosBlas::gemv: YViewType must be accessible from execution_space");
-  static_assert(Kokkos::SpaceAccessibility<typename YViewType::memory_space, typename AViewType::memory_space>::assignable,
-		"KokkosBlas::gemv: AViewType must be assignable to YViewType");
-  static_assert(Kokkos::SpaceAccessibility<typename YViewType::memory_space, typename XViewType::memory_space>::assignable,
-		"KokkosBlas::gemv: XViewType must be assignable to YViewType");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename AViewType::memory_space>::accessible,
+      "KokkosBlas::gemv: AViewType must be accessible from execution_space");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename XViewType::memory_space>::accessible,
+      "KokkosBlas::gemv: XViewType must be accessible from execution_space");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename YViewType::memory_space>::accessible,
+      "KokkosBlas::gemv: YViewType must be accessible from execution_space");
+  static_assert(
+      Kokkos::SpaceAccessibility<typename YViewType::memory_space,
+                                 typename AViewType::memory_space>::assignable,
+      "KokkosBlas::gemv: AViewType must be assignable to YViewType");
+  static_assert(
+      Kokkos::SpaceAccessibility<typename YViewType::memory_space,
+                                 typename XViewType::memory_space>::assignable,
+      "KokkosBlas::gemv: XViewType must be assignable to YViewType");
 
   // Check compatibility of dimensions at run time.
   if (trans[0] == 'N' || trans[0] == 'n') {
