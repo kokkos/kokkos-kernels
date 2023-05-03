@@ -90,11 +90,11 @@ namespace Impl {
 template <class ExecutionSpace, class KernelHandle, class RowMapType,
           class EntriesType, class ValuesType, class BType, class XType,
           bool tpl_spec_avail = sptrsv_solve_tpl_spec_avail<
-              ExecutionSpace, KernelHandle, RowMapType, EntriesType,
-              ValuesType, BType, XType>::value,
+              ExecutionSpace, KernelHandle, RowMapType, EntriesType, ValuesType,
+              BType, XType>::value,
           bool eti_spec_avail = sptrsv_solve_eti_spec_avail<
-              ExecutionSpace, KernelHandle, RowMapType, EntriesType,
-              ValuesType, BType, XType>::value>
+              ExecutionSpace, KernelHandle, RowMapType, EntriesType, ValuesType,
+              BType, XType>::value>
 struct SPTRSV_SOLVE {
   static void sptrsv_solve(KernelHandle *handle, const RowMapType row_map,
                            const EntriesType entries, const ValuesType values,
@@ -105,8 +105,7 @@ struct SPTRSV_SOLVE {
       std::vector<KernelHandle> &handle_v,
       const std::vector<RowMapType> &row_map_v,
       const std::vector<EntriesType> &entries_v,
-      const std::vector<ValuesType> &values_v,
-      const std::vector<BType> &b_v,
+      const std::vector<ValuesType> &values_v, const std::vector<BType> &b_v,
       std::vector<XType> &x_v);
 };
 
@@ -173,13 +172,13 @@ struct SPTRSV_SOLVE<ExecutionSpace, KernelHandle, RowMapType, EntriesType,
       std::vector<KernelHandle> &handle_v,
       const std::vector<RowMapType> &row_map_v,
       const std::vector<EntriesType> &entries_v,
-      const std::vector<ValuesType> &values_v,
-      const std::vector<BType> &b_v,
+      const std::vector<ValuesType> &values_v, const std::vector<BType> &b_v,
       std::vector<XType> &x_v) {
     // Call specific algorithm type
     // NOTE: Only support SEQLVLSCHD_RP and SEQLVLSCHD_TP1 at this moment
     //       Assume streams have the same either lower or upper matrix type
-    std::vector<typename KernelHandle::SPTRSVHandleType *> sptrsv_handle_v(execspace_v.size());
+    std::vector<typename KernelHandle::SPTRSVHandleType *> sptrsv_handle_v(
+        execspace_v.size());
     for (int i = 0; i < static_cast<int>(execspace_v.size()); i++) {
       sptrsv_handle_v[i] = handle_v[i].get_sptrsv_handle();
     }
@@ -189,17 +188,23 @@ struct SPTRSV_SOLVE<ExecutionSpace, KernelHandle, RowMapType, EntriesType,
     if (sptrsv_handle_v[0]->is_lower_tri()) {
       for (int i = 0; i < static_cast<int>(execspace_v.size()); i++) {
         if (sptrsv_handle_v[i]->is_symbolic_complete() == false) {
-          Experimental::lower_tri_symbolic(*(sptrsv_handle_v[i]), row_map_v[i], entries_v[i]);
+          Experimental::lower_tri_symbolic(*(sptrsv_handle_v[i]), row_map_v[i],
+                                           entries_v[i]);
         }
       }
-      Experimental::lower_tri_solve_streams(execspace_v, sptrsv_handle_v, row_map_v, entries_v, values_v, b_v, x_v);
+      Experimental::lower_tri_solve_streams(execspace_v, sptrsv_handle_v,
+                                            row_map_v, entries_v, values_v, b_v,
+                                            x_v);
     } else {
       for (int i = 0; i < static_cast<int>(execspace_v.size()); i++) {
         if (sptrsv_handle_v[i]->is_symbolic_complete() == false) {
-          Experimental::upper_tri_symbolic(*(sptrsv_handle_v[i]), row_map_v[i], entries_v[i]);
+          Experimental::upper_tri_symbolic(*(sptrsv_handle_v[i]), row_map_v[i],
+                                           entries_v[i]);
         }
       }
-      Experimental::upper_tri_solve_streams(execspace_v, sptrsv_handle_v, row_map_v, entries_v, values_v, b_v, x_v);
+      Experimental::upper_tri_solve_streams(execspace_v, sptrsv_handle_v,
+                                            row_map_v, entries_v, values_v, b_v,
+                                            x_v);
     }
     Kokkos::Profiling::popRegion();
   }

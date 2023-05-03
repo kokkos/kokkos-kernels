@@ -4021,7 +4021,6 @@ void tri_solve_chain(TriSolveHandle &thandle, const RowMapType row_map,
 
 }  // end tri_solve_chain
 
-
 // --------------------------------
 // Stream interfaces
 // --------------------------------
@@ -4034,11 +4033,12 @@ void lower_tri_solve_streams(const std::vector<ExecutionSpace> &execspace_v,
                              const std::vector<EntriesType> &entries_v,
                              const std::vector<ValuesType> &values_v,
                              const std::vector<RHSType> &rhs_v,
-                                   std::vector<LHSType> &lhs_v) {
+                             std::vector<LHSType> &lhs_v) {
   // NOTE: Only support SEQLVLSCHD_RP and SEQLVLSCHD_TP1 at this moment
   using size_type = typename TriSolveHandle::size_type;
   using NGBLType  = typename TriSolveHandle::nnz_lno_view_t;
-  using nodes_per_level_type = typename TriSolveHandle::hostspace_nnz_lno_view_t;
+  using nodes_per_level_type =
+      typename TriSolveHandle::hostspace_nnz_lno_view_t;
   using nodes_grouped_by_level_type = typename TriSolveHandle::nnz_lno_view_t;
 
   // Create vectors for handles' data in streams
@@ -4051,14 +4051,14 @@ void lower_tri_solve_streams(const std::vector<ExecutionSpace> &execspace_v,
   // Retrieve data from handles and find max. number of levels among streams
   size_type nlevels_max = 0;
   for (int i = 0; i < nstreams; i++) {
-    nlevels_v[i] = thandle_v[i]->get_num_levels();
-    hnodes_per_level_v[i] = thandle_v[i]->get_host_nodes_per_level();
+    nlevels_v[i]                = thandle_v[i]->get_num_levels();
+    hnodes_per_level_v[i]       = thandle_v[i]->get_host_nodes_per_level();
     nodes_grouped_by_level_v[i] = thandle_v[i]->get_nodes_grouped_by_level();
-    node_count_v[i] = 0;
+    node_count_v[i]             = 0;
     if (nlevels_max < nlevels_v[i]) nlevels_max = nlevels_v[i];
   }
 
-  // Main loop must be performed sequential  
+  // Main loop must be performed sequential
   for (size_type lvl = 0; lvl < nlevels_max; lvl++) {
     // 1. Launch work on all streams
     for (int i = 0; i < nstreams; i++) {
@@ -4066,29 +4066,52 @@ void lower_tri_solve_streams(const std::vector<ExecutionSpace> &execspace_v,
       if (lvl < nlevels_v[i]) {
         size_type lvl_nodes = hnodes_per_level_v[i](lvl);
         if (lvl_nodes != 0) {
-          if (thandle_v[i]->get_algorithm() == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_RP) {
-            Kokkos::parallel_for("parfor_fixed_lvl", Kokkos::RangePolicy<ExecutionSpace>(execspace_v[i], node_count_v[i], node_count_v[i] + lvl_nodes), LowerTriLvlSchedRPSolverFunctor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, NGBLType>(row_map_v[i], entries_v[i], values_v[i], lhs_v[i], rhs_v[i], nodes_grouped_by_level_v[i]));
-          } else if (thandle_v[i]->get_algorithm() == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1) {
+          if (thandle_v[i]->get_algorithm() ==
+              KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_RP) {
+            Kokkos::parallel_for(
+                "parfor_fixed_lvl",
+                Kokkos::RangePolicy<ExecutionSpace>(
+                    execspace_v[i], node_count_v[i],
+                    node_count_v[i] + lvl_nodes),
+                LowerTriLvlSchedRPSolverFunctor<RowMapType, EntriesType,
+                                                ValuesType, LHSType, RHSType,
+                                                NGBLType>(
+                    row_map_v[i], entries_v[i], values_v[i], lhs_v[i], rhs_v[i],
+                    nodes_grouped_by_level_v[i]));
+          } else if (thandle_v[i]->get_algorithm() ==
+                     KokkosSparse::Experimental::SPTRSVAlgorithm::
+                         SEQLVLSCHD_TP1) {
             using policy_type = Kokkos::TeamPolicy<ExecutionSpace>;
-            int team_size = thandle_v[i]->get_team_size();
+            int team_size     = thandle_v[i]->get_team_size();
 #ifdef KOKKOSKERNELS_SPTRSV_TRILVLSCHED
-            TriLvlSchedTP1SolverFunctor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, NGBLType> tstf(row_map_v[i], entries_v[i], values_v[i], lhs_v[i], rhs_v[i], nodes_grouped_by_level_v[i], true, node_count_v[i]);
+            TriLvlSchedTP1SolverFunctor<RowMapType, EntriesType, ValuesType,
+                                        LHSType, RHSType, NGBLType>
+                tstf(row_map_v[i], entries_v[i], values_v[i], lhs_v[i],
+                     rhs_v[i], nodes_grouped_by_level_v[i], true,
+                     node_count_v[i]);
 #else
-            LowerTriLvlSchedTP1SolverFunctor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, NGBLType> tstf(row_map_v[i], entries_v[i], values_v[i], lhs_v[i], rhs_v[i], nodes_grouped_by_level_v[i], node_count_v[i]);
+            LowerTriLvlSchedTP1SolverFunctor<
+                RowMapType, EntriesType, ValuesType, LHSType, RHSType, NGBLType>
+                tstf(row_map_v[i], entries_v[i], values_v[i], lhs_v[i],
+                     rhs_v[i], nodes_grouped_by_level_v[i], node_count_v[i]);
 #endif
             if (team_size == -1)
-              Kokkos::parallel_for("parfor_l_team", policy_type(execspace_v[i], lvl_nodes, Kokkos::AUTO), tstf);
+              Kokkos::parallel_for(
+                  "parfor_l_team",
+                  policy_type(execspace_v[i], lvl_nodes, Kokkos::AUTO), tstf);
             else
-              Kokkos::parallel_for("parfor_l_team", policy_type(execspace_v[i], lvl_nodes, team_size), tstf);
+              Kokkos::parallel_for(
+                  "parfor_l_team",
+                  policy_type(execspace_v[i], lvl_nodes, team_size), tstf);
           }
           node_count_v[i] += lvl_nodes;
         }  // end if (lvl_nodes != 0)
-      }  // end if (lvl < nlevels_v[i])
-    }  // end for streams
+      }    // end if (lvl < nlevels_v[i])
+    }      // end for streams
 
     // 2. Wait for all streams finished
     //    note: not needed here unlike in the spiluk case
-    //for (int i = 0; i < nstreams; i++) {
+    // for (int i = 0; i < nstreams; i++) {
     //  execspace_v[i].fence();
     //}  // end for streams
   }  // end for lvl
@@ -4102,11 +4125,12 @@ void upper_tri_solve_streams(const std::vector<ExecutionSpace> &execspace_v,
                              const std::vector<EntriesType> &entries_v,
                              const std::vector<ValuesType> &values_v,
                              const std::vector<RHSType> &rhs_v,
-                                   std::vector<LHSType> &lhs_v) {
+                             std::vector<LHSType> &lhs_v) {
   // NOTE: Only support SEQLVLSCHD_RP and SEQLVLSCHD_TP1 at this moment
   using size_type = typename TriSolveHandle::size_type;
   using NGBLType  = typename TriSolveHandle::nnz_lno_view_t;
-  using nodes_per_level_type = typename TriSolveHandle::hostspace_nnz_lno_view_t;
+  using nodes_per_level_type =
+      typename TriSolveHandle::hostspace_nnz_lno_view_t;
   using nodes_grouped_by_level_type = typename TriSolveHandle::nnz_lno_view_t;
 
   // Create vectors for handles' data in streams
@@ -4119,14 +4143,14 @@ void upper_tri_solve_streams(const std::vector<ExecutionSpace> &execspace_v,
   // Retrieve data from handles and find max. number of levels among streams
   size_type nlevels_max = 0;
   for (int i = 0; i < nstreams; i++) {
-    nlevels_v[i] = thandle_v[i]->get_num_levels();
-    hnodes_per_level_v[i] = thandle_v[i]->get_host_nodes_per_level();
+    nlevels_v[i]                = thandle_v[i]->get_num_levels();
+    hnodes_per_level_v[i]       = thandle_v[i]->get_host_nodes_per_level();
     nodes_grouped_by_level_v[i] = thandle_v[i]->get_nodes_grouped_by_level();
-    node_count_v[i] = 0;
+    node_count_v[i]             = 0;
     if (nlevels_max < nlevels_v[i]) nlevels_max = nlevels_v[i];
   }
 
-  // Main loop must be performed sequential  
+  // Main loop must be performed sequential
   for (size_type lvl = 0; lvl < nlevels_max; lvl++) {
     // 1. Launch work on all streams
     for (int i = 0; i < nstreams; i++) {
@@ -4134,29 +4158,52 @@ void upper_tri_solve_streams(const std::vector<ExecutionSpace> &execspace_v,
       if (lvl < nlevels_v[i]) {
         size_type lvl_nodes = hnodes_per_level_v[i](lvl);
         if (lvl_nodes != 0) {
-          if (thandle_v[i]->get_algorithm() == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_RP) {
-            Kokkos::parallel_for("parfor_fixed_lvl", Kokkos::RangePolicy<ExecutionSpace>(execspace_v[i], node_count_v[i], node_count_v[i] + lvl_nodes), UpperTriLvlSchedRPSolverFunctor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, NGBLType>(row_map_v[i], entries_v[i], values_v[i], lhs_v[i], rhs_v[i], nodes_grouped_by_level_v[i]));
-          } else if (thandle_v[i]->get_algorithm() == KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1) {
+          if (thandle_v[i]->get_algorithm() ==
+              KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_RP) {
+            Kokkos::parallel_for(
+                "parfor_fixed_lvl",
+                Kokkos::RangePolicy<ExecutionSpace>(
+                    execspace_v[i], node_count_v[i],
+                    node_count_v[i] + lvl_nodes),
+                UpperTriLvlSchedRPSolverFunctor<RowMapType, EntriesType,
+                                                ValuesType, LHSType, RHSType,
+                                                NGBLType>(
+                    row_map_v[i], entries_v[i], values_v[i], lhs_v[i], rhs_v[i],
+                    nodes_grouped_by_level_v[i]));
+          } else if (thandle_v[i]->get_algorithm() ==
+                     KokkosSparse::Experimental::SPTRSVAlgorithm::
+                         SEQLVLSCHD_TP1) {
             using policy_type = Kokkos::TeamPolicy<ExecutionSpace>;
-            int team_size = thandle_v[i]->get_team_size();
+            int team_size     = thandle_v[i]->get_team_size();
 #ifdef KOKKOSKERNELS_SPTRSV_TRILVLSCHED
-            TriLvlSchedTP1SolverFunctor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, NGBLType> tstf(row_map_v[i], entries_v[i], values_v[i], lhs_v[i], rhs_v[i], nodes_grouped_by_level_v[i], false, node_count_v[i]);
+            TriLvlSchedTP1SolverFunctor<RowMapType, EntriesType, ValuesType,
+                                        LHSType, RHSType, NGBLType>
+                tstf(row_map_v[i], entries_v[i], values_v[i], lhs_v[i],
+                     rhs_v[i], nodes_grouped_by_level_v[i], false,
+                     node_count_v[i]);
 #else
-            UpperTriLvlSchedTP1SolverFunctor<RowMapType, EntriesType, ValuesType, LHSType, RHSType, NGBLType> tstf(row_map_v[i], entries_v[i], values_v[i], lhs_v[i], rhs_v[i], nodes_grouped_by_level_v[i], node_count_v[i]);
+            UpperTriLvlSchedTP1SolverFunctor<
+                RowMapType, EntriesType, ValuesType, LHSType, RHSType, NGBLType>
+                tstf(row_map_v[i], entries_v[i], values_v[i], lhs_v[i],
+                     rhs_v[i], nodes_grouped_by_level_v[i], node_count_v[i]);
 #endif
             if (team_size == -1)
-              Kokkos::parallel_for("parfor_l_team", policy_type(execspace_v[i], lvl_nodes, Kokkos::AUTO), tstf);
+              Kokkos::parallel_for(
+                  "parfor_l_team",
+                  policy_type(execspace_v[i], lvl_nodes, Kokkos::AUTO), tstf);
             else
-              Kokkos::parallel_for("parfor_l_team", policy_type(execspace_v[i], lvl_nodes, team_size), tstf);
+              Kokkos::parallel_for(
+                  "parfor_l_team",
+                  policy_type(execspace_v[i], lvl_nodes, team_size), tstf);
           }
           node_count_v[i] += lvl_nodes;
         }  // end if (lvl_nodes != 0)
-      }  // end if (lvl < nlevels_v[i])
-    }  // end for streams
+      }    // end if (lvl < nlevels_v[i])
+    }      // end for streams
 
     // 2. Wait for all streams finished
     //    note: not needed here unlike in the spiluk case
-    //for (int i = 0; i < nstreams; i++) {
+    // for (int i = 0; i < nstreams; i++) {
     //  execspace_v[i].fence();
     //}  // end for streams
   }  // end for lvl
