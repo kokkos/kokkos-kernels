@@ -463,7 +463,6 @@ void sptrsvcuSPARSE_solve_streams(
 
   int nstreams = execspace_v.size();
 #if (CUDA_VERSION >= 11030)
-  printf("CUSPARSE VERSION >= 11030\n");
   (void)row_map_v;
   (void)entries_v;
   (void)values_v;
@@ -517,64 +516,48 @@ void sptrsvcuSPARSE_solve_streams(
     }
   }
 #else  // CUDA_VERSION < 11030
-  printf("CUSPARSE VERSION < 11030\n");
   if (!std::is_same<idx_type, int>::value) {
     throw std::runtime_error(
         "CUSPARSE requires local ordinals to be integer.\n");
-    }
+  }
   else {
-    cusparseStatus_t status;
+    const scalar_type alpha = scalar_type(1.0);
+    std::vector<sptrsvHandleType *> sptrsv_handle_v(nstreams);
     std::vector<sptrsvCuSparseHandleType *> h_v(nstreams);
+    std::vector<const int*> rm_v(nstreams);
+    std::vector<const int*> ent_v(nstreams);
+    std::vector<const scalar_type*> vals_v(nstreams);
+    std::vector<const scalar_type*> bv_v(nstreams);
+    std::vector<scalar_type*> xv_v(nstreams);
 
     for (int i = 0; i < nstreams; i++) {
-      sptrsvHandleType *sptrsv_handle = handle_v[i].get_sptrsv_handle();
-      h_v[i] = sptrsv_handle->get_cuSparseHandle();
+      sptrsv_handle_v[i] = handle_v[i].get_sptrsv_handle();
+      h_v[i] = sptrsv_handle_v[i]->get_cuSparseHandle();
 
-      int nnz = entries_v[i].extent_int(0);
-      int nrows = static_cast<int>(sptrsv_handle->get_nrows());
-
-      const int* rm = !std::is_same<size_type, int>::value
-                          ? sptrsv_handle->get_int_rowmap_ptr()
-                          : (const int*)row_map_v[i].data();
-      const int* ent          = (const int*)entries_v[i].data();
-      const scalar_type* vals = values_v[i].data();
-      const scalar_type* bv   = rhs_v[i].data();
-      scalar_type* xv         = lhs_v[i].data();
+      // Bind cuspare handle to a stream
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetStream(h_v[i]->handle, execspace_v[i].cuda_stream()));
 
       if (h_v[i]->pBuffer == nullptr) {
         std::cout << "  pBuffer invalid on stream " << i << std::endl;
       }
+      rm_v[i] = !std::is_same<size_type, int>::value ? sptrsv_handle_v[i]->get_int_rowmap_ptr() : reinterpret_cast<const int*>(row_map_v[i].data());
+      ent_v[i]= reinterpret_cast<const int*>(entries_v[i].data());
+      vals_v[i] = values_v[i].data();
+      bv_v[i]   = rhs_v[i].data();
+      xv_v[i]   = lhs_v[i].data();
+    }
 
+    for (int i = 0; i < nstreams; i++) {
+      int nnz = entries_v[i].extent_int(0);
+      int nrows = static_cast<int>(sptrsv_handle_v[i]->get_nrows());
       if (std::is_same<scalar_type, double>::value) {
-        const double alpha = double(1);
-  
-        status = cusparseDcsrsv2_solve(h_v[i]->handle, h_v[i]->transpose, nrows, nnz, &alpha, h_v[i]->descr, (double*)vals, (int*)rm, (int*)ent, h_v[i]->info, (double*)bv, (double*)xv, h_v[i]->policy, h_v[i]->pBuffer);
-  
-        if (CUSPARSE_STATUS_SUCCESS != status)
-          std::cout << "solve status error name " << (status) << " on stream " << i << std::endl;
+        KOKKOS_CUSPARSE_SAFE_CALL(cusparseDcsrsv2_solve(h_v[i]->handle, h_v[i]->transpose, nrows, nnz, reinterpret_cast<const double*>(&alpha), h_v[i]->descr, reinterpret_cast<const double*>(vals_v[i]), reinterpret_cast<const int*>(rm_v[i]), reinterpret_cast<const int*>(ent_v[i]), h_v[i]->info, reinterpret_cast<const double*>(bv_v[i]), reinterpret_cast<double*>(xv_v[i]), h_v[i]->policy, h_v[i]->pBuffer));
       } else if (std::is_same<scalar_type, float>::value) {
-        const float alpha = float(1);
-
-        status = cusparseScsrsv2_solve(h_v[i]->handle, h_v[i]->transpose, nrows, nnz, &alpha, h_v[i]->descr, (float*)vals, (int*)rm, (int*)ent, h_v[i]->info, (float*)bv, (float*)xv, h_v[i]->policy, h_v[i]->pBuffer);
-
-        if (CUSPARSE_STATUS_SUCCESS != status)
-          std::cout << "solve status error name " << (status) << " on stream " << i << std::endl;
+        KOKKOS_CUSPARSE_SAFE_CALL(cusparseScsrsv2_solve(h_v[i]->handle, h_v[i]->transpose, nrows, nnz, reinterpret_cast<const float*>(&alpha), h_v[i]->descr, reinterpret_cast<const float*>(vals_v[i]), reinterpret_cast<const int*>(rm_v[i]), reinterpret_cast<const int*>(ent_v[i]), h_v[i]->info, reinterpret_cast<const float*>(bv_v[i]), reinterpret_cast<float*>(xv_v[i]), h_v[i]->policy, h_v[i]->pBuffer));
       } else if (std::is_same<scalar_type, Kokkos::complex<double> >::value) {
-        cuDoubleComplex cualpha;
-        cualpha.x = 1.0;
-        cualpha.y = 0.0;
-        status    = cusparseZcsrsv2_solve(h_v[i]->handle, h_v[i]->transpose, nrows, nnz, &cualpha, h_v[i]->descr, (cuDoubleComplex*)vals, (int*)rm, (int*)ent, h_v[i]->info, (cuDoubleComplex*)bv, (cuDoubleComplex*)xv, h_v[i]->policy, h_v[i]->pBuffer);
-  
-        if (CUSPARSE_STATUS_SUCCESS != status)
-          std::cout << "solve status error name " << (status) << " on stream " << i << std::endl;
+        KOKKOS_CUSPARSE_SAFE_CALL(cusparseZcsrsv2_solve(h_v[i]->handle, h_v[i]->transpose, nrows, nnz, reinterpret_cast<const cuDoubleComplex*>(&alpha), h_v[i]->descr, reinterpret_cast<const cuDoubleComplex*>(vals_v[i]), reinterpret_cast<const int*>(rm_v[i]), reinterpret_cast<const int*>(ent_v[i]), h_v[i]->info, reinterpret_cast<const cuDoubleComplex*>(bv_v[i]), reinterpret_cast<cuDoubleComplex*>(xv_v[i]), h_v[i]->policy, h_v[i]->pBuffer));
       } else if (std::is_same<scalar_type, Kokkos::complex<float> >::value) {
-        cuComplex cualpha;
-        cualpha.x = 1.0;
-        cualpha.y = 0.0;
-        status    = cusparseCcsrsv2_solve(h_v[i]->handle, h_v[i]->transpose, nrows, nnz, &cualpha, h_v[i]->descr, (cuComplex*)vals, (int*)rm, (int*)ent, h_v[i]->info, (cuComplex*)bv, (cuComplex*)xv, h_v[i]->policy, h_v[i]->pBuffer);
-  
-        if (CUSPARSE_STATUS_SUCCESS != status)
-          std::cout << "solve status error name " << (status) << " on stream " << i << std::endl;
+        KOKKOS_CUSPARSE_SAFE_CALL(cusparseCcsrsv2_solve(h_v[i]->handle, h_v[i]->transpose, nrows, nnz, reinterpret_cast<const cuComplex*>(&alpha), h_v[i]->descr, reinterpret_cast<const cuComplex*>(vals_v[i]), reinterpret_cast<const int*>(rm_v[i]), reinterpret_cast<const int*>(ent_v[i]), h_v[i]->info, reinterpret_cast<const cuComplex*>(bv_v[i]), reinterpret_cast<cuComplex*>(xv_v[i]), h_v[i]->policy, h_v[i]->pBuffer));
       } else {
         throw std::runtime_error("CUSPARSE wrapper error: unsupported type.\n");
       }
