@@ -336,6 +336,7 @@ struct BatchedGemmWrapperInner {
         typename exec_space::memory_space>();
     constexpr bool on_a64fx = KokkosKernels::Impl::kk_is_a64fx_mem_space<
         typename exec_space::memory_space>();
+    bool out_of_range = false;
 
     if (handle->enableDebug) {
       std::cout << "view_scalar_type:" << typeid(view_scalar_type).name()
@@ -384,55 +385,63 @@ struct BatchedGemmWrapperInner {
                     << std::endl;
         }
 
-        if constexpr (on_gpu &&
-                      ((std::is_same<layout_type, Kokkos::LayoutLeft>::value)
-                           ? (c_m >= 16)
-                           : (c_m >= 24 && c_m <= 32) || c_m >= 40)) {
-          handle->teamSz = handle->vecLen = 8;
-          constexpr int tile_m = Impl::kk_gemm_dlb_buf_tile_m<exec_space>();
-          constexpr int tile_n = Impl::kk_gemm_dlb_buf_tile_n<exec_space>();
-          constexpr int tile_k = Impl::kk_gemm_dlb_buf_tile_k<exec_space>();
-          constexpr size_t alpha_in_fma_thresh =
-              Impl::kk_gemm_dbl_buf_alpha_in_fma_thresh();
+        if constexpr (on_gpu) {
+          if (((std::is_same<layout_type, Kokkos::LayoutLeft>::value)
+                   ? (c_m >= 16)
+                   : (c_m >= 24 && c_m <= 32) || c_m >= 40)) {
+            handle->teamSz = handle->vecLen = 8;
+            constexpr int tile_m = Impl::kk_gemm_dlb_buf_tile_m<exec_space>();
+            constexpr int tile_n = Impl::kk_gemm_dlb_buf_tile_n<exec_space>();
+            constexpr int tile_k = Impl::kk_gemm_dlb_buf_tile_k<exec_space>();
+            constexpr size_t alpha_in_fma_thresh =
+                Impl::kk_gemm_dbl_buf_alpha_in_fma_thresh();
 
-          if (c_m % 32 == 0) {                 // No bounds checking
-            if (c_m >= alpha_in_fma_thresh) {  // apply alpha in fma
-              ret = Impl::BatchedDblBufGemm<ArgTransA, ArgTransB, ArgBatchSzDim,
+            if (c_m % 32 == 0) {                 // No bounds checking
+              if (c_m >= alpha_in_fma_thresh) {  // apply alpha in fma
+                ret =
+                    Impl::BatchedDblBufGemm<ArgTransA, ArgTransB, ArgBatchSzDim,
                                             BatchedGemmHandleType, ScalarType,
                                             AViewType, BViewType, CViewType,
                                             BoundsCheck::No, AlphaTag::Yes,
                                             tile_m, tile_n, tile_k>(
                         handle, alpha, A, B, beta, C)
                         .invoke();
-            } else {  // apply alpha in mul
-              ret = Impl::BatchedDblBufGemm<ArgTransA, ArgTransB, ArgBatchSzDim,
+              } else {  // apply alpha in mul
+                ret =
+                    Impl::BatchedDblBufGemm<ArgTransA, ArgTransB, ArgBatchSzDim,
                                             BatchedGemmHandleType, ScalarType,
                                             AViewType, BViewType, CViewType,
                                             BoundsCheck::No, AlphaTag::No,
                                             tile_m, tile_n, tile_k>(
                         handle, alpha, A, B, beta, C)
                         .invoke();
-            }
-          } else {                             // bounds checking
-            if (c_m >= alpha_in_fma_thresh) {  // apply alpha in fma
-              ret = Impl::BatchedDblBufGemm<ArgTransA, ArgTransB, ArgBatchSzDim,
+              }
+            } else {                             // bounds checking
+              if (c_m >= alpha_in_fma_thresh) {  // apply alpha in fma
+                ret =
+                    Impl::BatchedDblBufGemm<ArgTransA, ArgTransB, ArgBatchSzDim,
                                             BatchedGemmHandleType, ScalarType,
                                             AViewType, BViewType, CViewType,
                                             BoundsCheck::Yes, AlphaTag::Yes,
                                             tile_m, tile_n, tile_k>(
                         handle, alpha, A, B, beta, C)
                         .invoke();
-            } else {  // apply alpha in mul
-              ret = Impl::BatchedDblBufGemm<ArgTransA, ArgTransB, ArgBatchSzDim,
+              } else {  // apply alpha in mul
+                ret =
+                    Impl::BatchedDblBufGemm<ArgTransA, ArgTransB, ArgBatchSzDim,
                                             BatchedGemmHandleType, ScalarType,
                                             AViewType, BViewType, CViewType,
                                             BoundsCheck::Yes, AlphaTag::No,
                                             tile_m, tile_n, tile_k>(
                         handle, alpha, A, B, beta, C)
                         .invoke();
+              }
             }
+          } else {
+            out_of_range = true;
           }
-        } else {
+        }
+        if (!on_gpu || out_of_range) {
           ret = Impl::BatchedSerialGemm<ArgTransA, ArgTransB, bsgModeType,
                                         ArgBatchSzDim, bsgResultsPerThread,
                                         ScalarType, AViewType, BViewType,
