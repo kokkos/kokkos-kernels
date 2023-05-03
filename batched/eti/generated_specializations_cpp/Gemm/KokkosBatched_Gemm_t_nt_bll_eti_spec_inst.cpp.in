@@ -13,27 +13,11 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef TEST_OPENMP_HPP
-#define TEST_OPENMP_HPP
-
-#include <gtest/gtest.h>
-#include <Kokkos_Core.hpp>
-#include <KokkosKernels_config.h>
-
-#if defined(KOKKOSKERNELS_TEST_ETI_ONLY) && !defined(KOKKOSKERNELS_ETI_ONLY)
-#define KOKKOSKERNELS_ETI_ONLY
-#endif
-
-class openmp : public ::testing::Test {
- protected:
-  static void SetUpTestCase() {}
-
-  static void TearDownTestCase() {}
-};
-
-#define TestCategory openmp
-#define TestExecSpace Kokkos::OpenMP
-#define TestDeviceType \
-  Kokkos::Device<TestExecSpace, TestExecSpace::memory_space>
-
-#endif  // TEST_OPENMP_HPP
+#define KOKKOSKERNELS_IMPL_COMPILE_LIBRARY true
+#include "KokkosBatched_Gemm_Decl.hpp"
+namespace KokkosBatched {
+namespace Impl {
+using KokkosBlas::Trans;
+@BATCHED_GEMM_T_NT_BLL_ETI_INST_BLOCK@
+}  // namespace Impl
+}  // namespace KokkosBatched

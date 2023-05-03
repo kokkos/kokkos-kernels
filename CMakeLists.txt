@@ -308,7 +308,6 @@ ELSE()
   # This doesn't change pre-existing behavior before the ETI changes
   #LIST(APPEND HEADERS ${ETI_HEADERS})
   #-----------------------------------------------------------------------------
-
   KOKKOSKERNELS_ADD_LIBRARY(
     kokkoskernels
     HEADERS ${HEADERS}

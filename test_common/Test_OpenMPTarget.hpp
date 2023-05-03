@@ -33,5 +33,7 @@ class openmptarget : public ::testing::Test {
 
 #define TestCategory openmptarget
 #define TestExecSpace Kokkos::Experimental::OpenMPTarget
+#define TestDeviceType \
+  Kokkos::Device<TestExecSpace, TestExecSpace::memory_space>
 
 #endif  // TEST_OPENMPTARGET_HPP

@@ -36,7 +36,6 @@ void impl_test_batched_gemm_with_handle(BatchedGemmHandle* batchedGemmHandle,
   using transA          = typename ParamTagType::transA;
   using transB          = typename ParamTagType::transB;
   using batchLayout     = typename ParamTagType::batchLayout;
-  using view_layout     = typename ViewType::array_layout;
   using ats             = Kokkos::ArithTraits<ScalarType>;
 
   int ret        = 0;
@@ -127,11 +126,6 @@ void impl_test_batched_gemm_with_handle(BatchedGemmHandle* batchedGemmHandle,
         batchedGemmHandle, alpha, a_actual, b_actual, beta,
         c_actual);  // Compute c_actual
   } catch (const std::runtime_error& error) {
-    bool is_invalid_layout =
-        (std::is_same<view_layout, Kokkos::LayoutLeft>::value &&
-         std::is_same<batchLayout, BatchLayout::Left>::value) ||
-        (std::is_same<view_layout, Kokkos::LayoutRight>::value &&
-         std::is_same<batchLayout, BatchLayout::Right>::value);
     std::string error_msg = error.what();
     if (algo_type == BaseHeuristicAlgos::SQUARE && matCdim1 != matCdim2) {
       ;
@@ -140,17 +134,14 @@ void impl_test_batched_gemm_with_handle(BatchedGemmHandle* batchedGemmHandle,
       auto ninter = batchedGemmHandle->get_tpl_params()[0];
       // No runtime errors expected since layout is valid, double is a supported
       // type, and ninter != 0
-      if (!is_invalid_layout &&
-          std::is_same<typename ViewType::value_type, double>::value &&
+      if (std::is_same<typename ViewType::value_type, double>::value &&
           ninter != 0) {
         FAIL() << (error_msg + fmsg + fmsg_rhs);
       }
 #else
       ;  // We expect a runtime error if the ARMPL TPL is not enabled
 #endif
-    } else if (!is_invalid_layout) {
-      // No runtime errors expected since we only support certain BatchLayouts
-      // for LayoutLeft and LayoutRight.
+    } else {
       FAIL() << (error_msg + fmsg + fmsg_rhs);
     }
     return;
@@ -290,11 +281,13 @@ void impl_test_batched_gemm(const int N, const int matAdim1, const int matAdim2,
             ViewType a_actual("a_actual", N, matAdim1, matAdim2);
             ViewType b_actual("b_actual", N, matBdim1, matBdim2);
             ViewType c_actual("c_actual", N, matCdim1, matCdim2);
-            using ta = typename ParamTagType::transA;
-            using tb = typename ParamTagType::transB;
-            using bl = typename ParamTagType::batchLayout;
-            BatchedGemm<ta, tb, bl>(&batchedGemmHandle, 0.34, a_actual,
-                                    b_actual, 0.43, c_actual);
+            using ta         = typename ParamTagType::transA;
+            using tb         = typename ParamTagType::transB;
+            using bl         = typename ParamTagType::batchLayout;
+            ScalarType alpha = 0.34;
+            ScalarType beta  = 0.43;
+            BatchedGemm<ta, tb, bl>(&batchedGemmHandle, alpha, a_actual,
+                                    b_actual, beta, c_actual);
             std::string fmsg = kk_failure_str(__FILE__, __FUNCTION__, __LINE__);
             FAIL() << fmsg;
           } catch (const std::runtime_error& error) {
@@ -382,31 +375,43 @@ template <typename DeviceType, typename ValueType, typename ScalarType,
           typename ParamTagType>
 int test_batched_gemm() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
-  typedef Kokkos::View<ValueType***, Kokkos::LayoutLeft, DeviceType> llVt;
-  test_batched_gemm_with_layout<llVt, DeviceType, ValueType, ScalarType,
-                                ParamTagType>(0);
-  test_batched_gemm_with_layout<llVt, DeviceType, ValueType, ScalarType,
-                                ParamTagType>(1);
-  test_batched_gemm_with_layout<llVt, DeviceType, ValueType, ScalarType,
-                                ParamTagType>(4);
-  test_batched_gemm_with_layout<llVt, DeviceType, ValueType, ScalarType,
-                                ParamTagType>(8);
-  test_batched_gemm_with_layout<llVt, DeviceType, ValueType, ScalarType,
-                                ParamTagType>(16);
+  if constexpr (std::is_same_v<typename ParamTagType::batchLayout,
+                               typename BatchLayout::Left>) {
+    using param_tag_type = ::Test::SharedParamTag<typename ParamTagType::transA,
+                                                  typename ParamTagType::transB,
+                                                  BatchLayout::Right>;
+    typedef Kokkos::View<ValueType***, Kokkos::LayoutLeft, DeviceType> llVt;
+    test_batched_gemm_with_layout<llVt, DeviceType, ValueType, ScalarType,
+                                  param_tag_type>(0);
+    test_batched_gemm_with_layout<llVt, DeviceType, ValueType, ScalarType,
+                                  param_tag_type>(1);
+    test_batched_gemm_with_layout<llVt, DeviceType, ValueType, ScalarType,
+                                  param_tag_type>(4);
+    test_batched_gemm_with_layout<llVt, DeviceType, ValueType, ScalarType,
+                                  param_tag_type>(8);
+    test_batched_gemm_with_layout<llVt, DeviceType, ValueType, ScalarType,
+                                  param_tag_type>(16);
+  }
 #endif  // KOKKOSKERNELS_INST_LAYOUTLEFT
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
-  typedef Kokkos::View<ValueType***, Kokkos::LayoutRight, DeviceType> lrVt;
-  test_batched_gemm_with_layout<lrVt, DeviceType, ValueType, ScalarType,
-                                ParamTagType>(0);
-  test_batched_gemm_with_layout<lrVt, DeviceType, ValueType, ScalarType,
-                                ParamTagType>(1);
-  test_batched_gemm_with_layout<lrVt, DeviceType, ValueType, ScalarType,
-                                ParamTagType>(4);
-  test_batched_gemm_with_layout<lrVt, DeviceType, ValueType, ScalarType,
-                                ParamTagType>(8);
-  test_batched_gemm_with_layout<lrVt, DeviceType, ValueType, ScalarType,
-                                ParamTagType>(16);
+  if constexpr (std::is_same_v<typename ParamTagType::batchLayout,
+                               typename BatchLayout::Left>) {
+    using param_tag_type = ::Test::SharedParamTag<typename ParamTagType::transA,
+                                                  typename ParamTagType::transB,
+                                                  BatchLayout::Left>;
+    typedef Kokkos::View<ValueType***, Kokkos::LayoutRight, DeviceType> lrVt;
+    test_batched_gemm_with_layout<lrVt, DeviceType, ValueType, ScalarType,
+                                  param_tag_type>(0);
+    test_batched_gemm_with_layout<lrVt, DeviceType, ValueType, ScalarType,
+                                  param_tag_type>(1);
+    test_batched_gemm_with_layout<lrVt, DeviceType, ValueType, ScalarType,
+                                  param_tag_type>(4);
+    test_batched_gemm_with_layout<lrVt, DeviceType, ValueType, ScalarType,
+                                  param_tag_type>(8);
+    test_batched_gemm_with_layout<lrVt, DeviceType, ValueType, ScalarType,
+                                  param_tag_type>(16);
+  }
 #endif  // KOKKOSKERNELS_INST_LAYOUTRIGHT
   return 0;
 }
