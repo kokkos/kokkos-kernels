@@ -2962,6 +2962,7 @@ void lower_tri_solve(TriSolveHandle &thandle, const RowMapType row_map,
   Kokkos::Timer sptrsv_timer;
   sptrsv_timer.reset();
 #endif
+
   for (size_type lvl = 0; lvl < nlevels; ++lvl) {
     {
       size_type lvl_nodes = hnodes_per_level(lvl);
@@ -3252,6 +3253,7 @@ void lower_tri_solve(TriSolveHandle &thandle, const RowMapType row_map,
     }    // scope for if-block
 
   }  // end for lvl
+
 #ifdef profile_supernodal_etree
   Kokkos::fence();
   double sptrsv_time_seconds = sptrsv_timer.seconds();
@@ -4085,9 +4087,10 @@ void lower_tri_solve_streams(const std::vector<ExecutionSpace> &execspace_v,
     }  // end for streams
 
     // 2. Wait for all streams finished
-    for (int i = 0; i < nstreams; i++) {
-      execspace_v[i].fence();
-    }  // end for streams
+    //    note: not needed here unlike in the spiluk case
+    //for (int i = 0; i < nstreams; i++) {
+    //  execspace_v[i].fence();
+    //}  // end for streams
   }  // end for lvl
 }  // end lower_tri_solve_streams
 
@@ -4152,9 +4155,10 @@ void upper_tri_solve_streams(const std::vector<ExecutionSpace> &execspace_v,
     }  // end for streams
 
     // 2. Wait for all streams finished
-    for (int i = 0; i < nstreams; i++) {
-      execspace_v[i].fence();
-    }  // end for streams
+    //    note: not needed here unlike in the spiluk case
+    //for (int i = 0; i < nstreams; i++) {
+    //  execspace_v[i].fence();
+    //}  // end for streams
   }  // end for lvl
 }  // end upper_tri_solve_streams
 
