@@ -71,7 +71,8 @@ using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<
 using float_t = typename Kokkos::ArithTraits<scalar_t>::mag_type;
 
 ///////////////////////////////////////////////////////////////////////////////
-void run_par_ilut_test(benchmark::State& state, KernelHandle& kh, const sp_matrix_type& A, int& num_iters)
+void run_par_ilut_test(benchmark::State& state, KernelHandle& kh,
+                       const sp_matrix_type& A, int& num_iters)
 ///////////////////////////////////////////////////////////////////////////////
 {
   const int rows = state.range(0);
@@ -93,8 +94,8 @@ void run_par_ilut_test(benchmark::State& state, KernelHandle& kh, const sp_matri
   EntriesType U_entries("U_entries", 0);
   ValuesType U_values("U_values", 0);
 
-  size_type nnzL  = 0;
-  size_type nnzU  = 0;
+  size_type nnzL = 0;
+  size_type nnzU = 0;
   for (auto _ : state) {
     // Run par_ilut
     state.ResumeTiming();
@@ -151,8 +152,8 @@ std::shared_ptr<gko::CudaExecutor> get_ginkgo_exec<gko::CudaExecutor>() {
 ///////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////
-void run_par_ilut_test_ginkgo(benchmark::State& state, KernelHandle& kh, const sp_matrix_type& A,
-                              const int& num_iters)
+void run_par_ilut_test_ginkgo(benchmark::State& state, KernelHandle& kh,
+                              const sp_matrix_type& A, const int& num_iters)
 ///////////////////////////////////////////////////////////////////////////////
 {
   auto par_ilut_handle = kh.get_par_ilut_handle();
@@ -198,8 +199,9 @@ void run_par_ilut_test_ginkgo(benchmark::State& state, KernelHandle& kh, const s
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////
-void run_spiluk_test(benchmark::State& state, KernelHandle& kh, const sp_matrix_type& A,
-                     const int& team_size, const bool measure_symbolic)
+void run_spiluk_test(benchmark::State& state, KernelHandle& kh,
+                     const sp_matrix_type& A, const int& team_size,
+                     const bool measure_symbolic)
 ///////////////////////////////////////////////////////////////////////////////
 {
   const int rows = state.range(0);
@@ -233,7 +235,8 @@ void run_spiluk_test(benchmark::State& state, KernelHandle& kh, const sp_matrix_
     if (measure_symbolic) {
       state.ResumeTiming();
     }
-    spiluk_symbolic(&kh, fill_lev, A_row_map, A_entries, L_row_map, L_entries, U_row_map, U_entries);
+    spiluk_symbolic(&kh, fill_lev, A_row_map, A_entries, L_row_map, L_entries,
+                    U_row_map, U_entries);
     Kokkos::fence();
     state.PauseTiming();
 
@@ -248,8 +251,8 @@ void run_spiluk_test(benchmark::State& state, KernelHandle& kh, const sp_matrix_
     if (!measure_symbolic) {
       state.ResumeTiming();
     }
-    spiluk_numeric(&kh, fill_lev, A_row_map, A_entries, A_values, L_row_map, L_entries,
-                   L_values, U_row_map, U_entries, U_values);
+    spiluk_numeric(&kh, fill_lev, A_row_map, A_entries, A_values, L_row_map,
+                   L_entries, L_values, U_row_map, U_entries, U_values);
     Kokkos::fence();
     state.PauseTiming();
 
@@ -270,8 +273,8 @@ void run_spiluk_test(benchmark::State& state, KernelHandle& kh, const sp_matrix_
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-int test_par_ilut_perf(const std::string& matrix_file,
-                       int rows, const int nnz_per_row, const int bandwidth,
+int test_par_ilut_perf(const std::string& matrix_file, int rows,
+                       const int nnz_per_row, const int bandwidth,
                        const int team_size, const int loop, const int test)
 ///////////////////////////////////////////////////////////////////////////////
 {
@@ -281,15 +284,15 @@ int test_par_ilut_perf(const std::string& matrix_file,
   // Generate or read A
   sp_matrix_type A;
   if (matrix_file == "") {
-    size_type nnz   = rows * nnz_per_row;
+    size_type nnz                 = rows * nnz_per_row;
     const lno_t row_size_variance = 0;
     const scalar_t diag_dominance = 1;
     A = KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<
-      sp_matrix_type>(rows, rows, nnz, row_size_variance, bandwidth,
-                      diag_dominance);
-  }
-  else {
-    A = KokkosSparse::Impl::read_kokkos_crst_matrix<sp_matrix_type>(matrix_file.c_str());
+        sp_matrix_type>(rows, rows, nnz, row_size_variance, bandwidth,
+                        diag_dominance);
+  } else {
+    A = KokkosSparse::Impl::read_kokkos_crst_matrix<sp_matrix_type>(
+        matrix_file.c_str());
     rows = A.numRows();
   }
 
@@ -307,8 +310,7 @@ int test_par_ilut_perf(const std::string& matrix_file,
     std::cout << "Testing par_ilut with rows=" << rows
               << "\n  nnz_per_row=" << nnz_per_row
               << "\n  bandwidth=" << bandwidth;
-  }
-  else {
+  } else {
     std::cout << "Testing par_ilut with input matrix=" << matrix_file;
   }
   std::cout << "\n  total nnz=" << A.nnz()
@@ -318,37 +320,45 @@ int test_par_ilut_perf(const std::string& matrix_file,
             << exe_space().concurrency() / default_policy.team_size()
             << "\n  loop=" << loop << std::endl;
 
-  std::string name = "KokkosSparse_par_ilut";
-  int num_iters = 6;
+  std::string name     = "KokkosSparse_par_ilut";
+  int num_iters        = 6;
   const auto arg_names = std::vector<std::string>{"rows"};
   const auto args      = std::vector<int64_t>{rows};
 
   if (test & 1) {
-    auto plambda = [&](benchmark::State& state) { run_par_ilut_test(state, kh, A, num_iters); };
-    KokkosKernelsBenchmark::register_benchmark(
-      (name + "_par_ilut").c_str(), plambda, arg_names, args,
-      loop)->UseRealTime();
+    auto plambda = [&](benchmark::State& state) {
+      run_par_ilut_test(state, kh, A, num_iters);
+    };
+    KokkosKernelsBenchmark::register_benchmark((name + "_par_ilut").c_str(),
+                                               plambda, arg_names, args, loop)
+        ->UseRealTime();
   }
 
 #ifdef USE_GINKGO
   if (test & 2) {
-    auto glambda = [&](benchmark::State& state) { run_par_ilut_test_ginkgo(state, kh, A, num_iters); };
-    KokkosKernelsBenchmark::register_benchmark(
-      (name + "_gingko").c_str(), glambda, arg_names, args,
-      loop)->UseRealTime();
+    auto glambda = [&](benchmark::State& state) {
+      run_par_ilut_test_ginkgo(state, kh, A, num_iters);
+    };
+    KokkosKernelsBenchmark::register_benchmark((name + "_gingko").c_str(),
+                                               glambda, arg_names, args, loop)
+        ->UseRealTime();
   }
 #endif
 
   if (test & 4) {
-    auto s1lambda = [&](benchmark::State& state) { run_spiluk_test(state, kh, A, team_size, true); };
-    auto s2lambda = [&](benchmark::State& state) { run_spiluk_test(state, kh, A, team_size, false); };
+    auto s1lambda = [&](benchmark::State& state) {
+      run_spiluk_test(state, kh, A, team_size, true);
+    };
+    auto s2lambda = [&](benchmark::State& state) {
+      run_spiluk_test(state, kh, A, team_size, false);
+    };
     KokkosKernelsBenchmark::register_benchmark(
-      (name + "_spiluk_symbolic").c_str(), s1lambda, arg_names, args,
-      loop)->UseRealTime();
+        (name + "_spiluk_symbolic").c_str(), s1lambda, arg_names, args, loop)
+        ->UseRealTime();
 
     KokkosKernelsBenchmark::register_benchmark(
-      (name + "_spiluk_numeric").c_str(), s2lambda, arg_names, args,
-      loop)->UseRealTime();
+        (name + "_spiluk_numeric").c_str(), s2lambda, arg_names, args, loop)
+        ->UseRealTime();
   }
 
   // Need to run before vars used by lambdas go out of scope
@@ -368,10 +378,16 @@ void print_help_par_ilut()
   printf("  -n [N]  : generate a semi-random banded NxN matrix.\n");
   printf("  -z [Z]  : number nnz per row. Default is min(1%% of N, 50).\n");
   printf("  -b [B]  : bandwidth per row. Default is max(2 * n^(1/2), nnz).\n");
-  printf("  -ts [T] : Number of threads per team. Default is 1 on OpenMP, nnz_per_row on CUDA\n");
-  //printf("  -vl [V] : Vector-length (i.e. how many Cuda threads are a Kokkos 'thread').\n");
-  printf("  -l [L]  : How many runs to aggregate average time. Default is 4\n\n");
-  printf("  -t [T]  : Which tests to run. Bitwise. e.g. 7 => run all, 1 => par_ilut, 2 => ginkgo, 4 => spiluk,. Default is 7\n\n");
+  printf(
+      "  -ts [T] : Number of threads per team. Default is 1 on OpenMP, "
+      "nnz_per_row on CUDA\n");
+  // printf("  -vl [V] : Vector-length (i.e. how many Cuda threads are a Kokkos
+  // 'thread').\n");
+  printf(
+      "  -l [L]  : How many runs to aggregate average time. Default is 4\n\n");
+  printf(
+      "  -t [T]  : Which tests to run. Bitwise. e.g. 7 => run all, 1 => "
+      "par_ilut, 2 => ginkgo, 4 => spiluk,. Default is 7\n\n");
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -397,20 +413,16 @@ int main(int argc, char** argv)
 {
   std::string mfile = "";
   int rows          = -1;
-  int nnz_per_row   = -1; // depends on other options, so don't set to default yet
-  int bandwidth     = -1;
-  int team_size     = -1;
-  int loop          = 4;
-  int test          = 7;
+  int nnz_per_row =
+      -1;  // depends on other options, so don't set to default yet
+  int bandwidth = -1;
+  int team_size = -1;
+  int loop      = 4;
+  int test      = 7;
 
   std::map<std::string, int*> option_map = {
-    {"-n" , &rows},
-    {"-z" , &nnz_per_row},
-    {"-b" , &bandwidth},
-    {"-ts", &team_size},
-    {"-l" , &loop},
-    {"-t" , &test}
-  };
+      {"-n", &rows},       {"-z", &nnz_per_row}, {"-b", &bandwidth},
+      {"-ts", &team_size}, {"-l", &loop},        {"-t", &test}};
 
   if (argc == 1) {
     print_help_par_ilut();
@@ -422,11 +434,9 @@ int main(int argc, char** argv)
     if ((strcmp(argv[i], "--help") == 0) || (strcmp(argv[i], "-h") == 0)) {
       print_help_par_ilut();
       return 0;
-    }
-    else if ((strcmp(argv[i], "-f") == 0)) {
+    } else if ((strcmp(argv[i], "-f") == 0)) {
       mfile = argv[++i];
-    }
-    else {
+    } else {
       handle_int_arg(argc, argv, i, option_map);
     }
   }
@@ -438,13 +448,14 @@ int main(int argc, char** argv)
       throw std::runtime_error("Need to have at least 100 rows");
     }
     if (mfile != "") {
-      throw std::runtime_error("Need provide either -n or -f argument to this program, not both");
+      throw std::runtime_error(
+          "Need provide either -n or -f argument to this program, not both");
     }
-  }
-  else {
+  } else {
     // We are reading A from a file
     if (mfile == "") {
-      throw std::runtime_error("Need provide either -n or -f argument to this program");
+      throw std::runtime_error(
+          "Need provide either -n or -f argument to this program");
     }
   }
 
@@ -467,7 +478,8 @@ int main(int argc, char** argv)
     benchmark::SetDefaultTimeUnit(benchmark::kSecond);
     KokkosKernelsBenchmark::add_benchmark_context(true);
 
-    test_par_ilut_perf(mfile, rows, nnz_per_row, bandwidth, team_size, loop, test);
+    test_par_ilut_perf(mfile, rows, nnz_per_row, bandwidth, team_size, loop,
+                       test);
 
     benchmark::Shutdown();
   }
