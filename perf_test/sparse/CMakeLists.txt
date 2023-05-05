@@ -115,3 +115,20 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
         sparse_mdf
         SOURCES KokkosSparse_mdf.cpp
 )
+
+if (KokkosKernels_ENABLE_BENCHMARK)
+  KOKKOSKERNELS_ADD_BENCHMARK(
+    sparse_par_ilut
+    SOURCES KokkosSparse_par_ilut.cpp
+  )
+
+  # Provide -DGinkgo_DIR to cmake to enable the ginkgo test in sparse_par_ilut. Ginkgo_DIR should
+  # point to the dir in the ginkgo install area that contains the GinkgoConfig.cmake file.
+  # For me, this was $gingko_install_dir/lib64/cmake/Ginkgo
+  if (Ginkgo_DIR)
+    find_package(Ginkgo REQUIRED)
+
+    target_compile_definitions(sparse_par_ilut PRIVATE "USE_GINKGO")
+    target_link_libraries(sparse_par_ilut PRIVATE Ginkgo::ginkgo)
+  endif()
+endif()
