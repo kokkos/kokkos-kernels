@@ -71,6 +71,35 @@ using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<
 using float_t = typename Kokkos::ArithTraits<scalar_t>::mag_type;
 
 ///////////////////////////////////////////////////////////////////////////////
+template <typename L, typename State>
+void time_call(L& lam, State& state, const std::string& name)
+///////////////////////////////////////////////////////////////////////////////
+{
+  Kokkos::Timer timer;
+  double min_time = std::numeric_limits<double>::infinity();
+  double max_time = 0.0;
+  double ave_time = 0.0;
+
+  for (auto _ : state) {
+    // Run timable thing
+    double time = lam();
+
+    // Record time
+    ave_time += time;
+    if (time > max_time) max_time = time;
+    if (time < min_time) min_time = time;
+    state.SetIterationTime(time);
+
+    // Report run so user knows something is happening
+    std::cout << name << " Finished a run in:  " << time << " seconds" << std::endl;
+  }
+
+  std::cout << name << " LOOP_AVG_TIME:  " << ave_time / state.iterations() << std::endl;
+  std::cout << name << " LOOP_MAX_TIME:  " << max_time << std::endl;
+  std::cout << name << " LOOP_MIN_TIME:  " << min_time << std::endl;
+}
+
+///////////////////////////////////////////////////////////////////////////////
 void run_par_ilut_test(benchmark::State& state, KernelHandle& kh,
                        const sp_matrix_type& A, int& num_iters)
 ///////////////////////////////////////////////////////////////////////////////
@@ -94,15 +123,13 @@ void run_par_ilut_test(benchmark::State& state, KernelHandle& kh,
   EntriesType U_entries("U_entries", 0);
   ValuesType U_values("U_values", 0);
 
-  size_type nnzL = 0;
-  size_type nnzU = 0;
-  for (auto _ : state) {
-    // Run par_ilut
-    state.ResumeTiming();
+  auto plambda = [&]() {
+    Kokkos::Timer timer;
+    timer.reset();
     par_ilut_symbolic(&kh, A_row_map, A_entries, L_row_map, U_row_map);
 
-    nnzL = par_ilut_handle->get_nnzL();
-    nnzU = par_ilut_handle->get_nnzU();
+    size_type nnzL = par_ilut_handle->get_nnzL();
+    size_type nnzU = par_ilut_handle->get_nnzU();
 
     Kokkos::resize(L_entries, nnzL);
     Kokkos::resize(U_entries, nnzU);
@@ -116,8 +143,7 @@ void run_par_ilut_test(benchmark::State& state, KernelHandle& kh,
     par_ilut_numeric(&kh, A_row_map, A_entries, A_values, L_row_map, L_entries,
                      L_values, U_row_map, U_entries, U_values);
     Kokkos::fence();
-
-    state.PauseTiming();
+    const double time = timer.seconds();
 
     // Check worked
     num_iters = par_ilut_handle->get_num_iters();
@@ -128,8 +154,11 @@ void run_par_ilut_test(benchmark::State& state, KernelHandle& kh,
     Kokkos::deep_copy(L_row_map, 0);
     Kokkos::deep_copy(U_row_map, 0);
 
-    std::cout << "Finished par_ilut run" << std::endl;
-  }
+    // Return time
+    return time;
+  };
+
+  time_call(plambda, state, "PAR_ILUT");
 }
 
 #ifdef USE_GINKGO
@@ -156,6 +185,8 @@ void run_par_ilut_test_ginkgo(benchmark::State& state, KernelHandle& kh,
                               const sp_matrix_type& A, const int& num_iters)
 ///////////////////////////////////////////////////////////////////////////////
 {
+  const int rows = state.range(0);
+
   auto par_ilut_handle = kh.get_par_ilut_handle();
 
   // Pull out views from CRS
@@ -184,7 +215,10 @@ void run_par_ilut_test_ginkgo(benchmark::State& state, KernelHandle& kh,
 
   std::shared_ptr<const mtx> a_mtx = std::move(a_mtx_uniq);
 
-  for (auto _ : state) {
+  auto plambda = [&]() {
+    Kokkos::Timer timer;
+    timer.reset();
+
     auto fact = gko::factorization::ParIlut<scalar_t, lno_t>::build()
                     .with_fill_in_limit(par_ilut_handle->get_fill_in_limit())
                     .with_approximate_select(false)
@@ -192,9 +226,11 @@ void run_par_ilut_test_ginkgo(benchmark::State& state, KernelHandle& kh,
                     .on(exec)
                     ->generate(a_mtx);
 
-    // Report run so user knows something is happening
-    std::cout << "GINKGO Finished a run " << std::endl;
-  }
+    // Return time
+    return timer.seconds();
+  };
+
+  time_call(plambda, state, "GINKGO");
 }
 #endif
 
@@ -229,16 +265,16 @@ void run_spiluk_test(benchmark::State& state, KernelHandle& kh,
   EntriesType U_entries("U_entries", handle_nnz);
   ValuesType U_values("U_values", handle_nnz);
 
-  for (auto _ : state) {
-    state.PauseTiming();
-
-    if (measure_symbolic) {
-      state.ResumeTiming();
-    }
+  auto plambda = [&]() {
+    Kokkos::Timer timer;
+    double time;
+    timer.reset();
     spiluk_symbolic(&kh, fill_lev, A_row_map, A_entries, L_row_map, L_entries,
                     U_row_map, U_entries);
     Kokkos::fence();
-    state.PauseTiming();
+    if (measure_symbolic) {
+      time = timer.seconds();
+    }
 
     const size_type nnzL = spiluk_handle->get_nnzL();
     const size_type nnzU = spiluk_handle->get_nnzU();
@@ -249,12 +285,12 @@ void run_spiluk_test(benchmark::State& state, KernelHandle& kh,
     Kokkos::resize(U_values, nnzU);
 
     if (!measure_symbolic) {
-      state.ResumeTiming();
+      timer.reset();
+      spiluk_numeric(&kh, fill_lev, A_row_map, A_entries, A_values, L_row_map,
+                     L_entries, L_values, U_row_map, U_entries, U_values);
+      Kokkos::fence();
+      time = timer.seconds();
     }
-    spiluk_numeric(&kh, fill_lev, A_row_map, A_entries, A_values, L_row_map,
-                   L_entries, L_values, U_row_map, U_entries, U_values);
-    Kokkos::fence();
-    state.PauseTiming();
 
     // Reset inputs
     Kokkos::deep_copy(L_row_map, 0);
@@ -268,14 +304,17 @@ void run_spiluk_test(benchmark::State& state, KernelHandle& kh,
 
     spiluk_handle->reset_handle(rows, handle_nnz, handle_nnz);
 
-    std::cout << "Finished spiluk run" << std::endl;
-  }
+    return time;
+  };
+
+  std::string name = std::string("SPILUK_") + (measure_symbolic ? "SYM" : "NUM");
+  time_call(plambda, state, name);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 int test_par_ilut_perf(const std::string& matrix_file, int rows,
-                       const int nnz_per_row, const int bandwidth,
-                       const int team_size, const int loop, const int test)
+                       int nnz_per_row, const int bandwidth,
+                       int team_size, const int loop, const int test)
 ///////////////////////////////////////////////////////////////////////////////
 {
   KernelHandle kh;
@@ -294,6 +333,14 @@ int test_par_ilut_perf(const std::string& matrix_file, int rows,
     A = KokkosSparse::Impl::read_kokkos_crst_matrix<sp_matrix_type>(
         matrix_file.c_str());
     rows = A.numRows();
+    nnz_per_row = A.nnz() / rows;
+  }
+
+  // Now that we have A, we can set team_size
+  if (team_size == -1) {
+    team_size = KokkosKernels::Impl::kk_is_gpu_exec_space<exe_space>()
+                    ? nnz_per_row
+                    : 1;
   }
 
   KokkosSparse::sort_crs_matrix(A);
@@ -330,8 +377,7 @@ int test_par_ilut_perf(const std::string& matrix_file, int rows,
       run_par_ilut_test(state, kh, A, num_iters);
     };
     KokkosKernelsBenchmark::register_benchmark((name + "_par_ilut").c_str(),
-                                               plambda, arg_names, args, loop)
-        ->UseRealTime();
+                                               plambda, arg_names, args, loop);
   }
 
 #ifdef USE_GINKGO
@@ -340,8 +386,7 @@ int test_par_ilut_perf(const std::string& matrix_file, int rows,
       run_par_ilut_test_ginkgo(state, kh, A, num_iters);
     };
     KokkosKernelsBenchmark::register_benchmark((name + "_gingko").c_str(),
-                                               glambda, arg_names, args, loop)
-        ->UseRealTime();
+                                               glambda, arg_names, args, loop);
   }
 #endif
 
@@ -353,12 +398,10 @@ int test_par_ilut_perf(const std::string& matrix_file, int rows,
       run_spiluk_test(state, kh, A, team_size, false);
     };
     KokkosKernelsBenchmark::register_benchmark(
-        (name + "_spiluk_symbolic").c_str(), s1lambda, arg_names, args, loop)
-        ->UseRealTime();
+      (name + "_spiluk_symbolic").c_str(), s1lambda, arg_names, args, loop);
 
     KokkosKernelsBenchmark::register_benchmark(
-        (name + "_spiluk_numeric").c_str(), s2lambda, arg_names, args, loop)
-        ->UseRealTime();
+      (name + "_spiluk_numeric").c_str(), s2lambda, arg_names, args, loop);
   }
 
   // Need to run before vars used by lambdas go out of scope
@@ -459,17 +502,13 @@ int main(int argc, char** argv)
     }
   }
 
-  // Set dependent defaults
+  // Set dependent defaults. Default team_size cannot be set
+  // until we know more about A
   if (nnz_per_row == -1) {
     nnz_per_row = std::min(rows / 100, 50);
   }
   if (bandwidth == -1) {
     bandwidth = std::max(2 * (int)std::sqrt(rows), 2 * nnz_per_row);
-  }
-  if (team_size == -1) {
-    team_size = KokkosKernels::Impl::kk_is_gpu_exec_space<exe_space>()
-                    ? nnz_per_row
-                    : 1;
   }
 
   Kokkos::initialize(argc, argv);
