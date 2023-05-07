@@ -91,10 +91,12 @@ void time_call(L& lam, State& state, const std::string& name)
     state.SetIterationTime(time);
 
     // Report run so user knows something is happening
-    std::cout << name << " Finished a run in:  " << time << " seconds" << std::endl;
+    std::cout << name << " Finished a run in:  " << time << " seconds"
+              << std::endl;
   }
 
-  std::cout << name << " LOOP_AVG_TIME:  " << ave_time / state.iterations() << std::endl;
+  std::cout << name << " LOOP_AVG_TIME:  " << ave_time / state.iterations()
+            << std::endl;
   std::cout << name << " LOOP_MAX_TIME:  " << max_time << std::endl;
   std::cout << name << " LOOP_MIN_TIME:  " << min_time << std::endl;
 }
@@ -307,14 +309,15 @@ void run_spiluk_test(benchmark::State& state, KernelHandle& kh,
     return time;
   };
 
-  std::string name = std::string("SPILUK_") + (measure_symbolic ? "SYM" : "NUM");
+  std::string name =
+      std::string("SPILUK_") + (measure_symbolic ? "SYM" : "NUM");
   time_call(plambda, state, name);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 int test_par_ilut_perf(const std::string& matrix_file, int rows,
-                       int nnz_per_row, const int bandwidth,
-                       int team_size, const int loop, const int test)
+                       int nnz_per_row, const int bandwidth, int team_size,
+                       const int loop, const int test)
 ///////////////////////////////////////////////////////////////////////////////
 {
   KernelHandle kh;
@@ -332,7 +335,7 @@ int test_par_ilut_perf(const std::string& matrix_file, int rows,
   } else {
     A = KokkosSparse::Impl::read_kokkos_crst_matrix<sp_matrix_type>(
         matrix_file.c_str());
-    rows = A.numRows();
+    rows        = A.numRows();
     nnz_per_row = A.nnz() / rows;
   }
 
@@ -398,10 +401,10 @@ int test_par_ilut_perf(const std::string& matrix_file, int rows,
       run_spiluk_test(state, kh, A, team_size, false);
     };
     KokkosKernelsBenchmark::register_benchmark(
-      (name + "_spiluk_symbolic").c_str(), s1lambda, arg_names, args, loop);
+        (name + "_spiluk_symbolic").c_str(), s1lambda, arg_names, args, loop);
 
     KokkosKernelsBenchmark::register_benchmark(
-      (name + "_spiluk_numeric").c_str(), s2lambda, arg_names, args, loop);
+        (name + "_spiluk_numeric").c_str(), s2lambda, arg_names, args, loop);
   }
 
   // Need to run before vars used by lambdas go out of scope
