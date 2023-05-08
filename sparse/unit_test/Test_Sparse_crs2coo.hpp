@@ -87,11 +87,11 @@ void doCrs2Coo(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
   using RandCrsMatType = RandCsMatrix<ScalarType, LayoutType, ExeSpaceType>;
   RandCrsMatType crsMat(m, n, min_val, max_val, m == 0 || n == 0);
 
-  using CrsOT   = typename RandCrsMatType::IdViewTypeD::value_type;
-  using CrsType = typename KokkosSparse::CrsMatrix<ScalarType, CrsOT,
-                                                   ExeSpaceType, void, CrsOT>;
-  auto map      = crsMat.get_map();
-  auto ids      = crsMat.get_ids();
+  using CrsOT = typename RandCrsMatType::IdViewTypeD::value_type;
+  using CrsType =
+      typename KokkosSparse::CrsMatrix<ScalarType, CrsOT, ExeSpaceType>;
+  auto map = crsMat.get_map();
+  auto ids = crsMat.get_ids();
   CrsType crsMatrix("doCrs2Coo", crsMat.get_dim1(), crsMat.get_dim2(),
                     crsMat.get_nnz(), crsMat.get_vals(), map, ids);
 
