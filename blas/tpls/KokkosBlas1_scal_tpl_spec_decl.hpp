@@ -262,21 +262,21 @@ namespace Impl {
   template <>                                                                  \
   struct Scal<                                                                 \
       EXECSPACE,                                                               \
-      Kokkos::View<SCALAR_TYPE*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,  \
+      Kokkos::View<SCALAR_TYPE*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,  \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
       SCALAR_TYPE,                                                             \
       Kokkos::View<const SCALAR_TYPE*, LAYOUT,                                 \
-                   Kokkos::Device<ExecSpace, MEMSPACE>,                        \
+                   Kokkos::Device<EXECSPACE, MEMSPACE>,                        \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
       1, true, ETI_SPEC_AVAIL> {                                               \
     using execution_space = EXECSPACE;                                         \
     typedef Kokkos::View<SCALAR_TYPE*, LAYOUT,                                 \
-                         Kokkos::Device<ExecSpace, MEMSPACE>,                  \
+                         Kokkos::Device<EXECSPACE, MEMSPACE>,                  \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
         RV;                                                                    \
     typedef SCALAR_TYPE AS;                                                    \
     typedef Kokkos::View<const SCALAR_TYPE*, LAYOUT,                           \
-                         Kokkos::Device<ExecSpace, MEMSPACE>,                  \
+                         Kokkos::Device<EXECSPACE, MEMSPACE>,                  \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
         XV;                                                                    \
     typedef typename XV::size_type size_type;                                  \
@@ -306,7 +306,7 @@ namespace Impl {
         KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                         \
             rocblas_set_pointer_mode(s.handle, pointer_mode));                 \
       } else {                                                                 \
-        Scal<RV, AS, XV, 1, false, ETI_SPEC_AVAIL>::scal(R, alpha, X);         \
+        Scal<EXECSPACE, RV, AS, XV, 1, false, ETI_SPEC_AVAIL>::scal(space, R, alpha, X); \
       }                                                                        \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \

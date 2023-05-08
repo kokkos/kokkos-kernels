@@ -102,7 +102,7 @@ KOKKOSBLAS1_NRM1_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>,
     enum : bool { value = true };                                              \
   };
 
-KOKKOSBLAS1_NRM1_TPL_SPEC_AVAIL_ROCUBLAS(double, Kokkos::LayoutLeft,
+KOKKOSBLAS1_NRM1_TPL_SPEC_AVAIL_ROCBLAS(double, Kokkos::LayoutLeft,
                                          Kokkos::HIPSpace)
 KOKKOSBLAS1_NRM1_TPL_SPEC_AVAIL_ROCBLAS(float, Kokkos::LayoutLeft,
                                         Kokkos::HIPSpace)

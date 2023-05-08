@@ -415,6 +415,7 @@ namespace Impl {
                                                 ETI_SPEC_AVAIL)                \
   template <class ExecSpace>                                                   \
   struct Nrm1<                                                                 \
+      ExecSpace,                                                               \
       Kokkos::View<double, LAYOUT, Kokkos::HostSpace,                          \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
       Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
@@ -444,7 +445,7 @@ namespace Impl {
             rocblas_dasum(s.handle, N, X.data(), one, R.data()));              \
         KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));     \
       } else {                                                                 \
-        Nrm1<RV, XV, 1, false, ETI_SPEC_AVAIL>::nrm1(R, X);                    \
+        Nrm1<ExecSpace, RV, XV, 1, false, ETI_SPEC_AVAIL>::nrm1(space, R, X);                    \
       }                                                                        \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
@@ -454,6 +455,7 @@ namespace Impl {
                                                 ETI_SPEC_AVAIL)               \
   template <class ExecSpace>                                                  \
   struct Nrm1<                                                                \
+      ExecSpace,                                                              \
       Kokkos::View<float, LAYOUT, Kokkos::HostSpace,                          \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
       Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
@@ -483,7 +485,7 @@ namespace Impl {
             rocblas_sasum(s.handle, N, X.data(), one, R.data()));             \
         KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));    \
       } else {                                                                \
-        Nrm1<RV, XV, 1, false, ETI_SPEC_AVAIL>::nrm1(R, X);                   \
+        Nrm1<ExecSpace, RV, XV, 1, false, ETI_SPEC_AVAIL>::nrm1(space, R, X);                   \
       }                                                                       \
       Kokkos::Profiling::popRegion();                                         \
     }                                                                         \
@@ -492,7 +494,7 @@ namespace Impl {
 #define KOKKOSBLAS1_ZNRM1_TPL_SPEC_DECL_ROCBLAS(LAYOUT, MEMSPACE,           \
                                                 ETI_SPEC_AVAIL)             \
   template <class ExecSpace>                                                \
-  struct Nrm1<Kokkos::View<double, LAYOUT, Kokkos::HostSpace,               \
+  struct Nrm1<ExecSpace, Kokkos::View<double, LAYOUT, Kokkos::HostSpace,               \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,       \
               Kokkos::View<const Kokkos::complex<double>*, LAYOUT,          \
                            Kokkos::Device<ExecSpace, MEMSPACE>,             \
@@ -525,7 +527,7 @@ namespace Impl {
             R.data()));                                                     \
         KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));  \
       } else {                                                              \
-        Nrm1<RV, XV, 1, false, ETI_SPEC_AVAIL>::nrm1(R, X);                 \
+        Nrm1<ExecSpace, RV, XV, 1, false, ETI_SPEC_AVAIL>::nrm1(space, R, X);                 \
       }                                                                     \
       Kokkos::Profiling::popRegion();                                       \
     }                                                                       \
@@ -534,7 +536,7 @@ namespace Impl {
 #define KOKKOSBLAS1_CNRM1_TPL_SPEC_DECL_ROCBLAS(LAYOUT, MEMSPACE,          \
                                                 ETI_SPEC_AVAIL)            \
   template <class ExecSpace>                                               \
-  struct Nrm1<Kokkos::View<float, LAYOUT, Kokkos::HostSpace,               \
+  struct Nrm1<ExecSpace, Kokkos::View<float, LAYOUT, Kokkos::HostSpace,               \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >,      \
               Kokkos::View<const Kokkos::complex<float>*, LAYOUT,          \
                            Kokkos::Device<ExecSpace, MEMSPACE>,            \
@@ -567,7 +569,7 @@ namespace Impl {
             R.data()));                                                    \
         KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL)); \
       } else {                                                             \
-        Nrm1<RV, XV, 1, false, ETI_SPEC_AVAIL>::nrm1(R, X);                \
+        Nrm1<ExecSpace, RV, XV, 1, false, ETI_SPEC_AVAIL>::nrm1(space, R, X);                \
       }                                                                    \
       Kokkos::Profiling::popRegion();                                      \
     }                                                                      \
