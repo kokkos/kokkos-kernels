@@ -1052,9 +1052,9 @@ void run_test_sptrsv() {
 template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
 void run_test_sptrsv_streams(int test_algo, int nstreams) {
-  using RowMapType = Kokkos::View<size_type *, device>;
-  using EntriesType = Kokkos::View<lno_t *, device>;
-  using ValuesType = Kokkos::View<scalar_t *, device>;
+  using RowMapType             = Kokkos::View<size_type *, device>;
+  using EntriesType            = Kokkos::View<lno_t *, device>;
+  using ValuesType             = Kokkos::View<scalar_t *, device>;
   using RowMapType_hostmirror  = typename RowMapType::HostMirror;
   using EntriesType_hostmirror = typename EntriesType::HostMirror;
   using ValuesType_hostmirror  = typename ValuesType::HostMirror;
@@ -1076,12 +1076,12 @@ void run_test_sptrsv_streams(int test_algo, int nstreams) {
   else if (nstreams == 3)
     instances =
         Kokkos::Experimental::partition_space(execution_space(), 1, 1, 1);
-  else // (nstreams == 4)
+  else  // (nstreams == 4)
     instances =
         Kokkos::Experimental::partition_space(execution_space(), 1, 1, 1, 1);
 
   std::vector<KernelHandle> kh_v(nstreams);
-  std::vector<KernelHandle*> kh_ptr_v(nstreams);
+  std::vector<KernelHandle *> kh_ptr_v(nstreams);
   std::vector<RowMapType> row_map_v(nstreams);
   std::vector<EntriesType> entries_v(nstreams);
   std::vector<ValuesType> values_v(nstreams);
@@ -1134,10 +1134,10 @@ void run_test_sptrsv_streams(int test_algo, int nstreams) {
       Kokkos::deep_copy(known_lhs, ONE);
 
       // Solution to find
-      lhs_v[i]  = ValuesType("lhs", nrows);
+      lhs_v[i] = ValuesType("lhs", nrows);
 
       // A*known_lhs generates rhs: rhs is dense, use spmv
-      rhs_v[i]  = ValuesType("rhs", nrows);
+      rhs_v[i] = ValuesType("rhs", nrows);
 
       crsMat_t triMtx("triMtx", nrows, nrows, nnz, values_v[i], row_map_v[i],
                       entries_v[i]);
@@ -1146,7 +1146,7 @@ void run_test_sptrsv_streams(int test_algo, int nstreams) {
       Kokkos::fence();
 
       // Create handle
-      kh_v[i] = KernelHandle();
+      kh_v[i]           = KernelHandle();
       bool is_lower_tri = false;
       if (test_algo == 0)
         kh_v[i].create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_RP, nrows,
@@ -1161,19 +1161,23 @@ void run_test_sptrsv_streams(int test_algo, int nstreams) {
       kh_ptr_v[i] = &kh_v[i];
 
       // Symbolic phase
-      sptrsv_symbolic( kh_ptr_v[i], row_map_v[i], entries_v[i], values_v[i] );
+      sptrsv_symbolic(kh_ptr_v[i], row_map_v[i], entries_v[i], values_v[i]);
       Kokkos::fence();
     }  // Done handle creation and sptrsv_symbolic on all streams
 
     // Solve phase
-    sptrsv_solve_streams( instances, kh_ptr_v, row_map_v, entries_v, values_v, rhs_v, lhs_v );
+    sptrsv_solve_streams(instances, kh_ptr_v, row_map_v, entries_v, values_v,
+                         rhs_v, lhs_v);
 
     for (int i = 0; i < nstreams; i++) instances[i].fence();
 
     // Checking
     for (int i = 0; i < nstreams; i++) {
       scalar_t sum = 0.0;
-      Kokkos::parallel_reduce(Kokkos::RangePolicy<typename device::execution_space>(0, lhs_v[i].extent(0)), ReductionCheck<ValuesType, scalar_t, lno_t>(lhs_v[i]), sum);
+      Kokkos::parallel_reduce(
+          Kokkos::RangePolicy<typename device::execution_space>(
+              0, lhs_v[i].extent(0)),
+          ReductionCheck<ValuesType, scalar_t, lno_t>(lhs_v[i]), sum);
       if (sum != lhs_v[i].extent(0)) {
         std::cout << "Upper Tri Solve FAILURE on stream " << i << std::endl;
         kh_v[i].get_sptrsv_handle()->print_algorithm();
@@ -1226,10 +1230,10 @@ void run_test_sptrsv_streams(int test_algo, int nstreams) {
       Kokkos::deep_copy(known_lhs, ONE);
 
       // Solution to find
-      lhs_v[i]  = ValuesType("lhs", nrows);
+      lhs_v[i] = ValuesType("lhs", nrows);
 
       // A*known_lhs generates rhs: rhs is dense, use spmv
-      rhs_v[i]  = ValuesType("rhs", nrows);
+      rhs_v[i] = ValuesType("rhs", nrows);
 
       crsMat_t triMtx("triMtx", nrows, nrows, nnz, values_v[i], row_map_v[i],
                       entries_v[i]);
@@ -1238,7 +1242,7 @@ void run_test_sptrsv_streams(int test_algo, int nstreams) {
       Kokkos::fence();
 
       // Create handle
-      kh_v[i] = KernelHandle();
+      kh_v[i]           = KernelHandle();
       bool is_lower_tri = true;
       if (test_algo == 0)
         kh_v[i].create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_RP, nrows,
@@ -1253,19 +1257,23 @@ void run_test_sptrsv_streams(int test_algo, int nstreams) {
       kh_ptr_v[i] = &kh_v[i];
 
       // Symbolic phase
-      sptrsv_symbolic( kh_ptr_v[i], row_map_v[i], entries_v[i], values_v[i] );
+      sptrsv_symbolic(kh_ptr_v[i], row_map_v[i], entries_v[i], values_v[i]);
       Kokkos::fence();
     }  // Done handle creation and sptrsv_symbolic on all streams
 
     // Solve phase
-    sptrsv_solve_streams( instances, kh_ptr_v, row_map_v, entries_v, values_v, rhs_v, lhs_v );
+    sptrsv_solve_streams(instances, kh_ptr_v, row_map_v, entries_v, values_v,
+                         rhs_v, lhs_v);
 
     for (int i = 0; i < nstreams; i++) instances[i].fence();
 
     // Checking
     for (int i = 0; i < nstreams; i++) {
       scalar_t sum = 0.0;
-      Kokkos::parallel_reduce(Kokkos::RangePolicy<typename device::execution_space>(0, lhs_v[i].extent(0)), ReductionCheck<ValuesType, scalar_t, lno_t>(lhs_v[i]), sum);
+      Kokkos::parallel_reduce(
+          Kokkos::RangePolicy<typename device::execution_space>(
+              0, lhs_v[i].extent(0)),
+          ReductionCheck<ValuesType, scalar_t, lno_t>(lhs_v[i]), sum);
       if (sum != lhs_v[i].extent(0)) {
         std::cout << "Lower Tri Solve FAILURE on stream " << i << std::endl;
         kh_v[i].get_sptrsv_handle()->print_algorithm();
@@ -1308,7 +1316,8 @@ void test_sptrsv_streams() {
   Test::run_test_sptrsv_streams<scalar_t, lno_t, size_type, device>(1, 4);
 
 #if defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
-  if (std::is_same<lno_t, int>::value && std::is_same<typename device::execution_space, Kokkos::Cuda>::value) {
+  if (std::is_same<lno_t, int>::value &&
+      std::is_same<typename device::execution_space, Kokkos::Cuda>::value) {
     std::cout << "SPTRSVAlgorithm::SPTRSV_CUSPARSE: 2 streams" << std::endl;
     Test::run_test_sptrsv_streams<scalar_t, lno_t, size_type, device>(2, 2);
 
