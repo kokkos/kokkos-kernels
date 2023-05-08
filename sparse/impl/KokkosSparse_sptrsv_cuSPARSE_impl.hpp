@@ -476,11 +476,11 @@ void sptrsvcuSPARSE_solve_streams(
   const bool is_idx_type_supported = std::is_same<idx_type, int>::value ||
                                      std::is_same<idx_type, int64_t>::value;
 
-  if (!is_cuda_space) {
+  if constexpr(!is_cuda_space) {
     throw std::runtime_error(
         "KokkosKernels sptrsvcuSPARSE_solve_streams: MEMORY IS NOT ALLOCATED "
         "IN GPU DEVICE for CUSPARSE\n");
-  } else if (!is_idx_type_supported) {
+  } else if constexpr(!is_idx_type_supported) {
     throw std::runtime_error(
         "CUSPARSE requires local ordinals to be integer (32 bits or 64 "
         "bits).\n");
@@ -525,7 +525,16 @@ void sptrsvcuSPARSE_solve_streams(
     }
   }
 #else  // CUDA_VERSION < 11030
-  if (!std::is_same<idx_type, int>::value) {
+  const bool is_cuda_space =
+      std::is_same<memory_space, Kokkos::CudaSpace>::value ||
+      std::is_same<memory_space, Kokkos::CudaUVMSpace>::value ||
+      std::is_same<memory_space, Kokkos::CudaHostPinnedSpace>::value;
+
+  if constexpr(!is_cuda_space) {
+    throw std::runtime_error(
+        "KokkosKernels sptrsvcuSPARSE_solve_streams: MEMORY IS NOT ALLOCATED "
+        "IN GPU DEVICE for CUSPARSE\n");
+  } else if constexpr(!std::is_same<idx_type, int>::value) {
     throw std::runtime_error(
         "CUSPARSE requires local ordinals to be integer.\n");
   } else {
