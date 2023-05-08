@@ -117,23 +117,44 @@ inline void add_benchmark_context(bool verbose = false) {
 }
 
 template <class FuncType, class... ArgsToCallOp>
-inline void register_benchmark(const char* name, FuncType func,
+inline auto register_benchmark(const char* name, FuncType func,
                                std::vector<std::string> arg_names,
                                std::vector<int64_t> args, int repeat,
                                ArgsToCallOp&&... func_args) {
   if (repeat > 0) {
-    benchmark::RegisterBenchmark(name, func,
-                                 std::forward<ArgsToCallOp>(func_args)...)
+    return benchmark::RegisterBenchmark(
+               name, func, std::forward<ArgsToCallOp>(func_args)...)
         ->ArgNames(arg_names)
         ->Args(args)
         ->UseManualTime()
         ->Iterations(repeat);
   } else {
-    benchmark::RegisterBenchmark(name, func,
-                                 std::forward<ArgsToCallOp>(func_args)...)
+    return benchmark::RegisterBenchmark(
+               name, func, std::forward<ArgsToCallOp>(func_args)...)
         ->ArgNames(arg_names)
         ->Args(args)
         ->UseManualTime();
+  }
+}
+
+template <class FuncType, class... ArgsToCallOp>
+inline auto register_benchmark_real_time(const char* name, FuncType func,
+                                         std::vector<std::string> arg_names,
+                                         std::vector<int64_t> args, int repeat,
+                                         ArgsToCallOp&&... func_args) {
+  if (repeat > 0) {
+    return benchmark::RegisterBenchmark(
+               name, func, std::forward<ArgsToCallOp>(func_args)...)
+        ->ArgNames(arg_names)
+        ->Args(args)
+        ->UseRealTime()
+        ->Iterations(repeat);
+  } else {
+    return benchmark::RegisterBenchmark(
+               name, func, std::forward<ArgsToCallOp>(func_args)...)
+        ->ArgNames(arg_names)
+        ->Args(args)
+        ->UseRealTime();
   }
 }
 

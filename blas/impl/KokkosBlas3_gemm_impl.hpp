@@ -611,10 +611,10 @@ struct GEMMImpl {
                               ViewTypeCScratch::shmem_size();
 
 #if defined(KOKKOS_ENABLE_HIP)
-    // Note lbv, 10/29/20: The LaunchBounds<384,2> leads
+    // Note lbv, 10/29/20: The LaunchBounds<384, 2> leads
     // to an error with HIP as the heuristics on that platform
     // yield an optimal_num_blocks=0 which means no ressources
-    // are allocated... Switching to LaunchBounds<384,2> fixes
+    // are allocated... Switching to LaunchBounds<384, 0> fixes
     // that problem but I'm not sure if that it a good perf
     // parameter or why it is set to 2 for Cuda?
     Kokkos::TeamPolicy<ExecSpace, Kokkos::LaunchBounds<384, 0>> policy(

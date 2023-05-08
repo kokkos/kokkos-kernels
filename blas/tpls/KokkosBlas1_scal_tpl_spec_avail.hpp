@@ -107,10 +107,10 @@ KOKKOSBLAS1_SCAL_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>,
   template <>                                                                  \
   struct scal_tpl_spec_avail<                                                  \
       EXECSPACE,                                                               \
-      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,       \
+      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,       \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
       SCALAR,                                                                  \
-      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
       1> {                                                                     \
     enum : bool { value = true };                                              \
