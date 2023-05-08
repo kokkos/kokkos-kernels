@@ -290,7 +290,7 @@ struct DotSpecialAccumulator<execution_space, RV, XV, YV,
   static_assert(Kokkos::is_view<YV>::value,
                 "KokkosBlas::Impl::"
                 "DotSpecialAccumulator: YV is not a Kokkos::View.");
-  static_assert(XV::rank == YV::rank,
+  static_assert(static_cast<int>(XV::rank) == static_cast<int>(YV::rank),
                 "KokkosBlas::Impl::"
                 "DotSpecialAccumulator: X and Y have different ranks.");
   static_assert(XV::rank == 1,
