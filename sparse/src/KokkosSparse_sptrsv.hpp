@@ -567,7 +567,6 @@ void sptrsv_solve_streams(const std::vector<ExecutionSpace> &execspace_v,
     x_i_v[i]       = x_v[i];
   }
 
-  auto sptrsv_handle = handle_v[0]->get_sptrsv_handle();
   if (handle_v[0]->get_sptrsv_handle()->get_algorithm() ==
       KokkosSparse::Experimental::SPTRSVAlgorithm::SPTRSV_CUSPARSE) {
     // NOTE: assume all streams use the same SPTRSV_CUSPARSE algo.
