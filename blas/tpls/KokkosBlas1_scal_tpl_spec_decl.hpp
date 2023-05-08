@@ -257,8 +257,8 @@ namespace KokkosBlas {
 namespace Impl {
 
 #define KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_ROCBLAS(                               \
-    SCALAR_TYPE, ROCBLAS_SCALAR_TYPE, ROCBLAS_FN, LAYOUT, EXECSPACE,           \
-    MEMSPACE, ETI_SPEC_AVAIL)                                                  \
+    SCALAR_TYPE, ROCBLAS_SCALAR_TYPE, ROCBLAS_FN, LAYOUT, EXECSPACE, MEMSPACE, \
+    ETI_SPEC_AVAIL)                                                            \
   template <>                                                                  \
   struct Scal<                                                                 \
       EXECSPACE,                                                               \
@@ -318,21 +318,21 @@ namespace Impl {
                                           LAYOUT, EXECSPACE, MEMSPACE,       \
                                           ETI_SPEC_AVAIL)
 
-#define KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_ROCBLAS(LAYOUT, EXECSPACE,             \
-                                                MEMSPACE, ETI_SPEC_AVAIL)      \
+#define KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_ROCBLAS(LAYOUT, EXECSPACE, MEMSPACE,   \
+                                                ETI_SPEC_AVAIL)                \
   KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_ROCBLAS(float, float, rocblas_sscal, LAYOUT, \
                                           EXECSPACE, MEMSPACE, ETI_SPEC_AVAIL)
 
-#define KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_ROCBLAS(LAYOUT, EXECSPACE,            \
-                                                MEMSPACE, ETI_SPEC_AVAIL)     \
+#define KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_ROCBLAS(LAYOUT, EXECSPACE, MEMSPACE,  \
+                                                ETI_SPEC_AVAIL)               \
   KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_ROCBLAS(                                    \
       Kokkos::complex<double>, rocblas_double_complex, rocblas_zscal, LAYOUT, \
       EXECSPACE, MEMSPACE, ETI_SPEC_AVAIL)
 
-#define KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_ROCBLAS(LAYOUT, EXECSPACE,          \
-                                                MEMSPACE, ETI_SPEC_AVAIL)   \
-  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_ROCBLAS(                                  \
-      Kokkos::complex<float>, rocblas_float_complex, rocblas_cscal, LAYOUT, \
+#define KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_ROCBLAS(LAYOUT, EXECSPACE, MEMSPACE, \
+                                                ETI_SPEC_AVAIL)              \
+  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_ROCBLAS(                                   \
+      Kokkos::complex<float>, rocblas_float_complex, rocblas_cscal, LAYOUT,  \
       EXECSPACE, MEMSPACE, ETI_SPEC_AVAIL)
 
 KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP,
