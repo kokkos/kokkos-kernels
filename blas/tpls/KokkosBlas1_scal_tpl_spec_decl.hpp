@@ -306,7 +306,8 @@ namespace Impl {
         KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                         \
             rocblas_set_pointer_mode(s.handle, pointer_mode));                 \
       } else {                                                                 \
-        Scal<EXECSPACE, RV, AS, XV, 1, false, ETI_SPEC_AVAIL>::scal(space, R, alpha, X); \
+        Scal<EXECSPACE, RV, AS, XV, 1, false, ETI_SPEC_AVAIL>::scal(space, R,  \
+                                                                    alpha, X); \
       }                                                                        \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \

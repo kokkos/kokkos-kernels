@@ -103,7 +103,7 @@ KOKKOSBLAS1_NRM1_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>,
   };
 
 KOKKOSBLAS1_NRM1_TPL_SPEC_AVAIL_ROCBLAS(double, Kokkos::LayoutLeft,
-                                         Kokkos::HIPSpace)
+                                        Kokkos::HIPSpace)
 KOKKOSBLAS1_NRM1_TPL_SPEC_AVAIL_ROCBLAS(float, Kokkos::LayoutLeft,
                                         Kokkos::HIPSpace)
 KOKKOSBLAS1_NRM1_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<double>,
