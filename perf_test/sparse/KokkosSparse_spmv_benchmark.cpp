@@ -52,10 +52,13 @@ void print_options() {
   std::cerr
       << "\t[Optional] --repeat      :: how many times to repeat overall test"
       << std::endl;
-  std::cerr << "  -s [N]          :: generate a semi-random banded (band size 0.01xN)\n"
-    "NxN matrix with average of 10 entries per row." << std::endl;
-  std::cerr << "\t[Optional] --alg           :: the algorithm to run (native, merge)"
+  std::cerr << "  -s [N]          :: generate a semi-random banded (band size "
+               "0.01xN)\n"
+               "NxN matrix with average of 10 entries per row."
             << std::endl;
+  std::cerr
+      << "\t[Optional] --alg           :: the algorithm to run (native, merge)"
+      << std::endl;
   std::cerr
       << "\t[Optional] --alg           :: the algorithm to run (classic, merge)"
       << std::endl;
@@ -75,10 +78,11 @@ int parse_inputs(int argc, char** argv, spmv_parameters& params) {
   for (int i = 1; i < argc; ++i) {
     if (perf_test::check_arg_int(i, argc, argv, "-n", params.N)) {
       ++i;
-    } else if (perf_test::check_arg_str(i, argc, argv, "--alg",
-                                        params.alg)) {
-      if((params.alg != "") && (params.alg != "native") && (params.alg != "merge")) {
-	throw std::runtime_error("--alg can only be an empty string, `native` or `merge`!");
+    } else if (perf_test::check_arg_str(i, argc, argv, "--alg", params.alg)) {
+      if ((params.alg != "") && (params.alg != "native") &&
+          (params.alg != "merge")) {
+        throw std::runtime_error(
+            "--alg can only be an empty string, `native` or `merge`!");
       }
       ++i;
     } else if (perf_test::check_arg_str(i, argc, argv, "--TPL", params.tpl)) {
@@ -111,7 +115,7 @@ void run_spmv(benchmark::State& state, int argc, char** argv) {
   parse_inputs(argc, argv, inputs);
 
   KokkosKernels::Experimental::Controls controls;
-  if(inputs.alg == "native") {
+  if (inputs.alg == "native") {
     controls.setParameter("algorithm", "native");
   }
 
@@ -120,7 +124,7 @@ void run_spmv(benchmark::State& state, int argc, char** argv) {
   matrix_type A;
   if (inputs.filename == "") {
     int nnz = 10 * inputs.N;
-    A = KokkosSparse::Impl::kk_generate_sparse_matrix<matrix_type>(
+    A       = KokkosSparse::Impl::kk_generate_sparse_matrix<matrix_type>(
         inputs.N, inputs.N, nnz, 0, 0.01 * inputs.N);
   } else {
     A = KokkosSparse::Impl::read_kokkos_crst_matrix<matrix_type>(
