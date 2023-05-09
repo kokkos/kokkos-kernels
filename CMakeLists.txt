@@ -141,6 +141,17 @@ ELSE()
   # If building in debug mode, define the HAVE_KOKKOSKERNELS_DEBUG macro.
   KOKKOSKERNELS_ADD_DEBUG_OPTION()
 
+  # add default compiler warnings
+  KOKKOSKERNELS_ADD_OPTION(
+    "ENABLE_COMPILER_WARNINGS"
+    OFF
+    BOOL
+    "Add default warnings for supported compilers to CMAKE_CXX_FLAGS"
+  )
+  IF (KokkosKernels_ENABLE_COMPILER_WARNINGS)
+  INCLUDE(cmake/kokkoskernels_compiler_warnings.cmake)
+  ENDIF()
+
   #
   # "Optimization level" for KokkosKernels computational kernels.  The
   # higher the level, the more code variants get generated, and thus the
