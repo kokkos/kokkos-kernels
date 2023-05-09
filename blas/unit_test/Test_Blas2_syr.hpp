@@ -43,9 +43,9 @@ private:
   typedef Kokkos::View<ScalarX*,  tLayoutX, Device> _ViewTypeX;
   typedef Kokkos::View<ScalarA**, tLayoutA, Device> _ViewTypeA;
 
-  typedef typename _ViewTypeX::HostMirror            _HostViewTypeX;
-  typedef typename _ViewTypeA::HostMirror            _HostViewTypeA;
-  typedef Kokkos::View<ScalarA**, Kokkos::HostSpace> _ViewTypeExpected;
+  typedef typename _ViewTypeX::HostMirror                      _HostViewTypeX;
+  typedef typename _ViewTypeA::HostMirror                      _HostViewTypeA;
+  typedef Kokkos::View<ScalarA**, tLayoutA, Kokkos::HostSpace> _ViewTypeExpected;
 
   typedef Kokkos::ArithTraits<ScalarA> _KAT_A;
   typedef typename _KAT_A::mag_type    _AuxType;
@@ -260,15 +260,10 @@ void SyrTester< ScalarX
     test_cx = true;
   }
 
-  _ViewTypeX x("X", _M);
-  _ViewTypeA A("A", _M, _N);
+  view_stride_adapter<_ViewTypeX, false> x("X", _M);
+  view_stride_adapter<_ViewTypeA, false> A("A", _M, _N);
 
-  typename _ViewTypeX::const_type c_x = x;
-
-  _HostViewTypeX h_x = Kokkos::create_mirror(x);
-  _HostViewTypeA h_A = Kokkos::create_mirror(A);
-
-  _ViewTypeExpected h_expected("expected A += alpha * x * x^{t,h}", _M, _N);
+  view_stride_adapter<_ViewTypeExpected, true> h_expected("expected A += alpha * x * x^{t,h}", _M, _N);
   bool expectedResultIsKnown = false;
 
   ScalarA alpha(0.);
@@ -277,23 +272,23 @@ void SyrTester< ScalarX
   // Step 2 of 7: populate alpha, h_x, h_A, h_expected, x, A
   // ********************************************************************
   this->populateVariables( alpha
-                         , h_x
-                         , h_A
-                         , h_expected
-                         , x
-                         , A
+                         , x.h_view
+                         , A.h_view
+                         , h_expected.d_view
+                         , x.d_view
+                         , A.d_view
                          , expectedResultIsKnown
                          );
 
   // ********************************************************************
   // Step 3 of 7: populate h_vanilla
   // ********************************************************************
-  _ViewTypeExpected h_vanilla("vanilla = A + alpha * x * x^{t,h}", _M, _N);
+  view_stride_adapter<_ViewTypeExpected, true> h_vanilla("vanilla = A + alpha * x * x^{t,h}", _M, _N);
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "In Test_Blas2_syr.hpp, computing vanilla A with alpha type = %s\n", typeid(alpha).name() );
   this->populateVanillaValues( alpha
-                             , h_x
-                             , h_A
-                             , h_vanilla
+                             , x.h_view
+                             , A.h_view
+                             , h_vanilla.d_view
                              );
   
   // ********************************************************************
@@ -304,29 +299,29 @@ void SyrTester< ScalarX
     // Compare h_vanilla against h_expected
     // ******************************************************************
     this->compareVanillaExpected( alpha
-                                , h_vanilla
-                                , h_expected
+                                , h_vanilla.d_view
+                                , h_expected.d_view
                                 );
   }
   else {
     // ******************************************************************
     // Copy h_vanilla to h_expected
     // ******************************************************************
-    Kokkos::deep_copy(h_expected, h_vanilla);
+    Kokkos::deep_copy(h_expected.d_base, h_vanilla.d_base);
   }
   
   // ********************************************************************
   // Step 5 of 7: test with 'non const x'
   // ********************************************************************
-  _ViewTypeA org_A("Org_A", _M, _N);
-  Kokkos::deep_copy(org_A, A);
+  view_stride_adapter<_ViewTypeA, false> org_A("Org_A", _M, _N); // AquiEEP (see ger as well)
+  Kokkos::deep_copy(org_A.d_base, A.d_base);
 
   if (test_x) {
     this->callKkSyrAndCompareAgainstExpected( alpha
-                                            , x
-                                            , A
-                                            , h_A
-                                            , h_expected
+                                            , x.d_view
+                                            , A.d_view
+                                            , A.h_view
+                                            , h_expected.d_view
                                             , "non const x"
                                             );
   }
@@ -335,13 +330,13 @@ void SyrTester< ScalarX
   // Step 6 of 7: test with const x
   // ********************************************************************
   if (test_cx) {
-    Kokkos::deep_copy(A, org_A);
+    Kokkos::deep_copy(A.d_base, org_A.d_base);
   
     this->callKkSyrAndCompareAgainstExpected( alpha
-                                            , c_x
-                                            , A
-                                            , h_A
-                                            , h_expected
+                                            , x.d_view_const
+                                            , A.d_view
+                                            , A.h_view
+                                            , h_expected.d_view
                                             , "const x"
                                             );
   }
@@ -349,10 +344,10 @@ void SyrTester< ScalarX
   // ********************************************************************
   // Step 7 of 7: tests with invalid values on the first input parameter
   // ********************************************************************
-  EXPECT_ANY_THROW( KokkosBlas::syr(".", "U", alpha, x, A) ) << "Failed test: kk syr should have thrown an exception for mode '.'";
-  EXPECT_ANY_THROW( KokkosBlas::syr("", "U", alpha, x, A) ) << "Failed test: kk syr should have thrown an exception for mode ''";
-  EXPECT_ANY_THROW( KokkosBlas::syr("T", ".", alpha, x, A) ) << "Failed test: kk syr should have thrown an exception for uplo '.'";
-  EXPECT_ANY_THROW( KokkosBlas::syr("T", "", alpha, x, A) ) << "Failed test: kk syr should have thrown an exception for uplo ''";
+  EXPECT_ANY_THROW( KokkosBlas::syr(".", "U", alpha, x.d_view, A.d_view) ) << "Failed test: kk syr should have thrown an exception for mode '.'";
+  EXPECT_ANY_THROW( KokkosBlas::syr( "", "U", alpha, x.d_view, A.d_view) ) << "Failed test: kk syr should have thrown an exception for mode ''";
+  EXPECT_ANY_THROW( KokkosBlas::syr("T", ".", alpha, x.d_view, A.d_view) ) << "Failed test: kk syr should have thrown an exception for uplo '.'";
+  EXPECT_ANY_THROW( KokkosBlas::syr("T",  "", alpha, x.d_view, A.d_view) ) << "Failed test: kk syr should have thrown an exception for uplo ''";
 
   std::cout << "Leaving SyrTester::test() - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - " << std::endl;
 }

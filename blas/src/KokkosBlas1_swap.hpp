@@ -93,8 +93,10 @@ void swap(execution_space const& space, XVector const& x, YVector const& y) {
   Kokkos::Profiling::pushRegion("KokkosBlas::swap");
   // If X.extent(0) == 0, do nothing
   if (X.extent(0) != 0) {
+#if 0 // AquiEEP    
     Impl::Swap<execution_space, XVector_Internal, YVector_Internal>::swap(space,
                                                                           X, Y);
+#endif
   }
   Kokkos::Profiling::popRegion();
 }

@@ -58,7 +58,7 @@ namespace Impl {
                         > AViewType;                                         \
                                                                              \
     static void syr( const typename AViewType::execution_space  & /*space*/  \
-                   , const          char                          trans[]    \
+                   , const          char                        /*trans[]*/  \
                    , const          char                          uplo[]     \
                    , typename       AViewType::const_value_type & alpha      \
                    , const          XViewType                   & X          \
@@ -67,7 +67,7 @@ namespace Impl {
       KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing through tpl-dsyr-blas\n" );    \
       Kokkos::Profiling::pushRegion("KokkosBlas::syr[TPL_BLAS,double]");     \
       KOKKOSBLAS2_SYR_DETERMINE_ARGS(LAYOUT);                                \
-      HostBlas<SCALAR>::syr( uplo                                            \
+      HostBlas<SCALAR>::syr( uplo[0]                                         \
                            , N                                               \
                            , alpha                                           \
                            , X.data()                                        \
@@ -108,7 +108,7 @@ namespace Impl {
                         > AViewType;                                         \
                                                                              \
     static void syr( const typename AViewType::execution_space  & /*space*/  \
-                   , const          char                          trans[]    \
+                   , const          char                        /*trans[]*/  \
                    , const          char                          uplo[]     \
                    , typename       AViewType::const_value_type & alpha      \
                    , const          XViewType                   & X          \
@@ -117,7 +117,7 @@ namespace Impl {
       KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing through tpl-ssyr-blas\n" );    \
       Kokkos::Profiling::pushRegion("KokkosBlas::syr[TPL_BLAS,float]");      \
       KOKKOSBLAS2_SYR_DETERMINE_ARGS(LAYOUT);                                \
-      HostBlas<SCALAR>::syr( uplo                                            \
+      HostBlas<SCALAR>::syr( uplo[0]                                         \
                            , N                                               \
                            , alpha                                           \
                            , X.data()                                        \
@@ -157,7 +157,7 @@ namespace Impl {
                         , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                     \
                         > AViewType;                                                                  \
                                                                                                       \
-    static void syr( const typename AViewType::execution_space  & /* space */                         \
+    static void syr( const typename AViewType::execution_space  & space                               \
                    , const          char                          trans[]                             \
                    , const          char                          uplo[]                              \
                    , typename       AViewType::const_value_type & alpha                               \
@@ -175,7 +175,7 @@ namespace Impl {
         throw std::runtime_error("Error: blasZsyru() is not supported.");                             \
       }                                                                                               \
       else {                                                                                          \
-        HostBlas<std::complex<double>>::syrc( uplo                                                    \
+        HostBlas<std::complex<double>>::syrc( uplo[0]                                                 \
                                             , N                                                       \
                                             , alpha_val                                               \
                                             , reinterpret_cast<const std::complex<double>*>(X.data()) \
@@ -216,7 +216,7 @@ namespace Impl {
                         , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                   \
                         > AViewType;                                                                \
                                                                                                     \
-    static void syr( const typename AViewType::execution_space  & /* space */                       \
+    static void syr( const typename AViewType::execution_space  & space                             \
                    , const          char                          trans[]                           \
                    , const          char                          uplo[]                            \
                    , typename       AViewType::const_value_type & alpha                             \
@@ -234,7 +234,7 @@ namespace Impl {
         throw std::runtime_error("Error: blasCsyru() is not supported");                            \
       }                                                                                             \
       else {                                                                                        \
-        HostBlas<std::complex<float>>::syrc( uplo                                                   \
+        HostBlas<std::complex<float>>::syrc( uplo[0]                                                \
                                            , N                                                      \
                                            , alpha_val                                              \
                                            , reinterpret_cast<const std::complex<float>*>(X.data()) \
