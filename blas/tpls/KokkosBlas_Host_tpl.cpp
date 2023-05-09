@@ -268,6 +268,7 @@ void F77_BLAS_MANGLE(dsyr, DSYR)( const char*
                                 , double*
                                 , int*
                                 );
+#if 0 // AquiEEP
 void F77_BLAS_MANGLE(csyru, CSYRU)( const char*
                                   , int*
                                   , const std::complex<float>*
@@ -298,6 +299,7 @@ void F77_BLAS_MANGLE(zsyrc, ZSYRC)( int*
                                   , std::complex<double>*
                                   , int*
                                   );
+#endif
 
 ///
 /// Trsv
@@ -522,10 +524,12 @@ void F77_BLAS_MANGLE(zscal,
 
 #define F77_FUNC_SSYR  F77_BLAS_MANGLE(ssyr, SSYR)
 #define F77_FUNC_DSYR  F77_BLAS_MANGLE(dsyr, DSYR)
+#if 0 // AquiEEP
 #define F77_FUNC_CSYRU F77_BLAS_MANGLE(csyru, CSYRU)
 #define F77_FUNC_CSYRC F77_BLAS_MANGLE(csyrc, CSYRC)
 #define F77_FUNC_ZSYRU F77_BLAS_MANGLE(zsyru, ZSYRU)
 #define F77_FUNC_ZSYRC F77_BLAS_MANGLE(zsyrc, ZSYRC)
+#endif
 
 #define F77_FUNC_STRSV F77_BLAS_MANGLE(strsv, STRSV)
 #define F77_FUNC_DTRSV F77_BLAS_MANGLE(dtrsv, DTRSV)
@@ -934,6 +938,7 @@ void HostBlas<std::complex<float> >::gerc(
                  (const std::complex<float>*)y, &incy, (std::complex<float>*)a,
                  &lda);
 }
+#if 0 // AquiEEP
 template <>
 void HostBlas<std::complex<float> >::syru( const char uplo
                                          , int n
@@ -943,7 +948,7 @@ void HostBlas<std::complex<float> >::syru( const char uplo
                                          , std::complex<float>* a
                                          , int lda
                                          ) {
-  F77_FUNC_CSYRU( &uplo // AquiEEP
+  F77_FUNC_CSYRU( &uplo
                 , &n
                 , &alpha
                 , (const std::complex<float>*)x
@@ -952,6 +957,8 @@ void HostBlas<std::complex<float> >::syru( const char uplo
                 , &lda
                 );
 }
+#endif
+#if 0 // AquiEEP
 template <>
 void HostBlas<std::complex<float> >::syrc( const char uplo
                                          , int n
@@ -961,7 +968,7 @@ void HostBlas<std::complex<float> >::syrc( const char uplo
                                          , std::complex<float>* a
                                          , int lda
                                          ) {
-  F77_FUNC_CSYRC( &uplo // AquiEEP
+  F77_FUNC_CSYRC( &uplo
                 , &n
                 , &alpha
                 , (const std::complex<float>*)x
@@ -970,6 +977,7 @@ void HostBlas<std::complex<float> >::syrc( const char uplo
                 , &lda
                 );
 }
+#endif
 template <>
 void HostBlas<std::complex<float> >::trsv(const char uplo, const char transa,
                                           const char diag, int m,
@@ -1140,6 +1148,7 @@ void HostBlas<std::complex<double> >::gerc(
                  (const std::complex<double>*)y, &incy,
                  (std::complex<double>*)a, &lda);
 }
+#if 0 // AquiEEP
 template <>
 void HostBlas<std::complex<double> >::syru( const char /*uplo*/
                                           , int n
@@ -1149,7 +1158,7 @@ void HostBlas<std::complex<double> >::syru( const char /*uplo*/
                                           , std::complex<double>* a
                                           , int lda
                                           ) {
-  F77_FUNC_ZSYRU( /*&uplo,*/ // AquiEEP
+  F77_FUNC_ZSYRU( /*&uplo,*/
                   &n
                 , &alpha
                 , (const std::complex<double>*)x
@@ -1158,6 +1167,8 @@ void HostBlas<std::complex<double> >::syru( const char /*uplo*/
                 , &lda
                 );
 }
+#endif
+#if 0 // AquiEEP
 template <>
 void HostBlas<std::complex<double> >::syrc( const char /*uplo*/
                                           , int n
@@ -1167,7 +1178,7 @@ void HostBlas<std::complex<double> >::syrc( const char /*uplo*/
                                           , std::complex<double>* a
                                           , int lda
                                           ) {
-  F77_FUNC_ZSYRC( /*&uplo,*/ // AquiEEP
+  F77_FUNC_ZSYRC( /*&uplo,*/
                   &n
                 , &alpha
                 , (const std::complex<double>*)x
@@ -1176,6 +1187,7 @@ void HostBlas<std::complex<double> >::syrc( const char /*uplo*/
                 , &lda
                 );
 }
+#endif
 template <>
 void HostBlas<std::complex<double> >::trsv(const char uplo, const char transa,
                                            const char diag, int m,

@@ -59,7 +59,7 @@ namespace Impl {
                         > AViewType;                                                              \
                                                                                                   \
     static void syr( const typename AViewType::execution_space  & space                           \
-                   , const          char                        /*trans[]*/                       \
+                   , const          char                        /*trans*/[]                       \
                    , const          char                          uplo[]                          \
                    , typename       AViewType::const_value_type & alpha                           \
                    , const          XViewType                   & X                               \
@@ -114,7 +114,7 @@ namespace Impl {
                         > AViewType;                                                              \
                                                                                                   \
     static void syr( const typename AViewType::execution_space  & space                           \
-                   , const          char                        /*trans[]*/                       \
+                   , const          char                        /*trans*/[]                       \
                    , const          char                          uplo[]                          \
                    , typename       AViewType::const_value_type & alpha                           \
                    , const          XViewType                   & X                               \

@@ -26,7 +26,6 @@ namespace Impl {
   bool A_is_lr      = std::is_same<Kokkos::LayoutRight, LAYOUT>::value;      \
   const int M       = static_cast<int>(A_is_lr ? A.extent(1) : A.extent(0)); \
   const int N       = static_cast<int>(A_is_lr ? A.extent(0) : A.extent(1)); \
-  constexpr int one = 1;                                                     \
   const int LDA     = A_is_lr ? A.stride(0) : A.stride(1);
 
 #define KOKKOSBLAS2_DSYR_BLAS(LAYOUT, EXEC_SPACE, MEM_SPACE, ETI_SPEC_AVAIL) \
@@ -58,7 +57,7 @@ namespace Impl {
                         > AViewType;                                         \
                                                                              \
     static void syr( const typename AViewType::execution_space  & /*space*/  \
-                   , const          char                        /*trans[]*/  \
+                   , const          char                        /*trans*/[]  \
                    , const          char                          uplo[]     \
                    , typename       AViewType::const_value_type & alpha      \
                    , const          XViewType                   & X          \
@@ -67,6 +66,7 @@ namespace Impl {
       KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing through tpl-dsyr-blas\n" );    \
       Kokkos::Profiling::pushRegion("KokkosBlas::syr[TPL_BLAS,double]");     \
       KOKKOSBLAS2_SYR_DETERMINE_ARGS(LAYOUT);                                \
+      constexpr int one = 1;                                                 \
       HostBlas<SCALAR>::syr( uplo[0]                                         \
                            , N                                               \
                            , alpha                                           \
@@ -108,7 +108,7 @@ namespace Impl {
                         > AViewType;                                         \
                                                                              \
     static void syr( const typename AViewType::execution_space  & /*space*/  \
-                   , const          char                        /*trans[]*/  \
+                   , const          char                        /*trans*/[]  \
                    , const          char                          uplo[]     \
                    , typename       AViewType::const_value_type & alpha      \
                    , const          XViewType                   & X          \
@@ -117,6 +117,7 @@ namespace Impl {
       KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing through tpl-ssyr-blas\n" );    \
       Kokkos::Profiling::pushRegion("KokkosBlas::syr[TPL_BLAS,float]");      \
       KOKKOSBLAS2_SYR_DETERMINE_ARGS(LAYOUT);                                \
+      constexpr int one = 1;                                                 \
       HostBlas<SCALAR>::syr( uplo[0]                                         \
                            , N                                               \
                            , alpha                                           \
@@ -167,7 +168,6 @@ namespace Impl {
       KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing through tpl-zsyr-blas\n" );                             \
       Kokkos::Profiling::pushRegion("KokkosBlas::syr[TPL_BLAS,complex<double>");                      \
       KOKKOSBLAS2_SYR_DETERMINE_ARGS(LAYOUT);                                                         \
-      const std::complex<double> alpha_val = static_cast<const std::complex<double>>(alpha);          \
       bool justTranspose = (trans[0] == 'T') || (trans[0] == 't');                                    \
       if (justTranspose) {                                                                            \
         kk_syr( space, trans, uplo, alpha, X, A);                                                     \
@@ -175,14 +175,9 @@ namespace Impl {
         throw std::runtime_error("Error: blasZsyru() is not supported.");                             \
       }                                                                                               \
       else {                                                                                          \
-        HostBlas<std::complex<double>>::syrc( uplo[0]                                                 \
-                                            , N                                                       \
-                                            , alpha_val                                               \
-                                            , reinterpret_cast<const std::complex<double>*>(X.data()) \
-                                            , one                                                     \
-                                            , reinterpret_cast<std::complex<double>*>(A.data())       \
-                                            , LDA                                                     \
-                                            );                                                        \
+        kk_syr( space, trans, uplo, alpha, X, A);                                                     \
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("blasZsyrc() is not supported\n"); /* AquiEPP */                \
+        throw std::runtime_error("Error: blasZsyrc() is not supported.");                             \
       }                                                                                               \
       Kokkos::Profiling::popRegion();                                                                 \
     }                                                                                                 \
@@ -226,7 +221,6 @@ namespace Impl {
       KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing through tpl-csyr-blas\n" );                           \
       Kokkos::Profiling::pushRegion("KokkosBlas::syr[TPL_BLAS,complex<float>");                     \
       KOKKOSBLAS2_SYR_DETERMINE_ARGS(LAYOUT);                                                       \
-      const std::complex<float> alpha_val = static_cast<const std::complex<float>>(alpha);          \
       bool justTranspose = (trans[0] == 'T') || (trans[0] == 't');                                  \
       if (justTranspose) {                                                                          \
         kk_syr( space, trans, uplo, alpha, X, A);                                                   \
@@ -234,14 +228,9 @@ namespace Impl {
         throw std::runtime_error("Error: blasCsyru() is not supported");                            \
       }                                                                                             \
       else {                                                                                        \
-        HostBlas<std::complex<float>>::syrc( uplo[0]                                                \
-                                           , N                                                      \
-                                           , alpha_val                                              \
-                                           , reinterpret_cast<const std::complex<float>*>(X.data()) \
-                                           , one                                                    \
-                                           , reinterpret_cast<std::complex<float>*>(A.data())       \
-                                           , LDA                                                    \
-                                           );                                                       \
+        kk_syr( space, trans, uplo, alpha, X, A);                                                   \
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("blasCsyrc() is not supported\n"); /* AquiEPP */              \
+        throw std::runtime_error("Error: blasCsyrc() is not supported");                            \
       }                                                                                             \
       Kokkos::Profiling::popRegion();                                                               \
     }                                                                                               \
