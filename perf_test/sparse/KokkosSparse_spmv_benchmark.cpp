@@ -52,9 +52,9 @@ void print_options() {
   std::cerr
       << "\t[Optional] --repeat      :: how many times to repeat overall test"
       << std::endl;
-  std::cerr << "  -s [N]          :: generate a semi-random banded (band size "
-               "0.01xN)\n"
-               "NxN matrix with average of 10 entries per row."
+  std::cerr << "  -s [N]          :: generate a semi-random banded (band size 0.01xN)\n"
+    "NxN matrix with average of 10 entries per row." << std::endl;
+  std::cerr << "\t[Optional] --alg           :: the algorithm to run (native, merge)"
             << std::endl;
   std::cerr
       << "\t[Optional] --alg           :: the algorithm to run (classic, merge)"
@@ -75,7 +75,11 @@ int parse_inputs(int argc, char** argv, spmv_parameters& params) {
   for (int i = 1; i < argc; ++i) {
     if (perf_test::check_arg_int(i, argc, argv, "-n", params.N)) {
       ++i;
-    } else if (perf_test::check_arg_str(i, argc, argv, "--alg", params.alg)) {
+    } else if (perf_test::check_arg_str(i, argc, argv, "--alg",
+                                        params.alg)) {
+      if((params.alg != "") && (params.alg != "native") && (params.alg != "merge")) {
+	throw std::runtime_error("--alg can only be an empty string, `native` or `merge`!");
+      }
       ++i;
     } else if (perf_test::check_arg_str(i, argc, argv, "--TPL", params.tpl)) {
       ++i;
@@ -102,15 +106,20 @@ void run_spmv(benchmark::State& state, int argc, char** argv) {
       KokkosSparse::CrsMatrix<double, int, execution_space, void, int>;
   using mv_type = Kokkos::View<double*, execution_space>;
 
+  // Set input parameters
   spmv_parameters inputs(state.range(0));
   parse_inputs(argc, argv, inputs);
 
+  KokkosKernels::Experimental::Controls controls;
+  if(inputs.alg == "native") {
+    controls.setParameter("algorithm", "native");
+  }
+
+  // Create test matrix
   srand(17312837);
   matrix_type A;
   if (inputs.filename == "") {
     int nnz = 10 * inputs.N;
-    // note: the help text says the bandwidth is fixed at 0.01 * numRows
-    // CAVEAT:  small problem sizes are problematic, b/c of 0.01*numRows
     A = KokkosSparse::Impl::kk_generate_sparse_matrix<matrix_type>(
         inputs.N, inputs.N, nnz, 0, 0.01 * inputs.N);
   } else {
@@ -118,6 +127,7 @@ void run_spmv(benchmark::State& state, int argc, char** argv) {
         inputs.filename.c_str());
   }
 
+  // Create input vectors
   mv_type x("X", A.numRows());
   mv_type y("Y", A.numCols());
 
@@ -125,6 +135,7 @@ void run_spmv(benchmark::State& state, int argc, char** argv) {
   Kokkos::fill_random(x, rand_pool, 10);
   Kokkos::fill_random(y, rand_pool, 10);
 
+  // Run the actual experiments
   for (auto _ : state) {
     (void)_;
     KokkosSparse::spmv(KokkosSparse::NoTranspose, 1.0, A, x, 0.0, y);
