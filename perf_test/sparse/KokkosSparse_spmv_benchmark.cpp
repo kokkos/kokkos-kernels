@@ -35,14 +35,13 @@
 namespace {
 
 struct spmv_parameters {
-
   int N, offset;
   std::string filename;
   std::string alg;
   std::string tpl;
 
-  spmv_parameters(const int N_) : N(N_), offset(0), filename(""), alg(""), tpl("") {}
-
+  spmv_parameters(const int N_)
+      : N(N_), offset(0), filename(""), alg(""), tpl("") {}
 };
 
 void print_options() {
@@ -53,33 +52,37 @@ void print_options() {
   std::cerr
       << "\t[Optional] --repeat      :: how many times to repeat overall test"
       << std::endl;
-  std::cerr << "  -s [N]          :: generate a semi-random banded (band size 0.01xN)\n"
-    "NxN matrix with average of 10 entries per row." << std::endl;
-  std::cerr << "\t[Optional] --alg           :: the algorithm to run (classic, merge)"
+  std::cerr << "  -s [N]          :: generate a semi-random banded (band size "
+               "0.01xN)\n"
+               "NxN matrix with average of 10 entries per row."
             << std::endl;
   std::cerr
-      << "\t[Optional] --TPL       :: when available and compatible with alg, a TPL can be used (cusparse, rocsparse, MKL)"
+      << "\t[Optional] --alg           :: the algorithm to run (classic, merge)"
       << std::endl;
-  std::cerr << "  -f [file]       : Read in Matrix Market formatted text file 'file'." << std::endl;
+  std::cerr << "\t[Optional] --TPL       :: when available and compatible with "
+               "alg, a TPL can be used (cusparse, rocsparse, MKL)"
+            << std::endl;
+  std::cerr
+      << "  -f [file]       : Read in Matrix Market formatted text file 'file'."
+      << std::endl;
   std::cerr << "  --offset [O]    : Subtract O from every index.\n"
-	    << "                    Useful in case the matrix market file is not 0 based." << std::endl;
+            << "                    Useful in case the matrix market file is "
+               "not 0 based."
+            << std::endl;
 }  // print_options
 
 int parse_inputs(int argc, char** argv, spmv_parameters& params) {
   for (int i = 1; i < argc; ++i) {
     if (perf_test::check_arg_int(i, argc, argv, "-n", params.N)) {
       ++i;
-    } else if (perf_test::check_arg_str(i, argc, argv, "--alg",
-                                        params.alg)) {
+    } else if (perf_test::check_arg_str(i, argc, argv, "--alg", params.alg)) {
       ++i;
-    } else if (perf_test::check_arg_str(i, argc, argv, "--TPL",
-                                        params.tpl)) {
+    } else if (perf_test::check_arg_str(i, argc, argv, "--TPL", params.tpl)) {
       ++i;
-    } else if (perf_test::check_arg_str(i, argc, argv, "-f",
-					params.filename)) {
+    } else if (perf_test::check_arg_str(i, argc, argv, "-f", params.filename)) {
       ++i;
     } else if (perf_test::check_arg_int(i, argc, argv, "--offset",
-					params.offset)) {
+                                        params.offset)) {
       ++i;
     } else {
       std::cerr << "Unrecognized command line argument #" << i << ": "
@@ -95,9 +98,8 @@ int parse_inputs(int argc, char** argv, spmv_parameters& params) {
 
 template <class execution_space>
 void run_spmv(benchmark::State& state, int argc, char** argv) {
-  using matrix_type = KokkosSparse::CrsMatrix<double, int,
-					      execution_space,
-					      void, int>;
+  using matrix_type =
+      KokkosSparse::CrsMatrix<double, int, execution_space, void, int>;
   using mv_type = Kokkos::View<double*, execution_space>;
 
   spmv_parameters inputs(state.range(0));
@@ -112,7 +114,8 @@ void run_spmv(benchmark::State& state, int argc, char** argv) {
     A = KokkosSparse::Impl::kk_generate_sparse_matrix<matrix_type>(
         inputs.N, inputs.N, nnz, 0, 0.01 * inputs.N);
   } else {
-    A = KokkosSparse::Impl::read_kokkos_crst_matrix<matrix_type>(inputs.filename.c_str());
+    A = KokkosSparse::Impl::read_kokkos_crst_matrix<matrix_type>(
+        inputs.filename.c_str());
   }
 
   mv_type x("X", A.numRows());
@@ -143,16 +146,14 @@ int main(int argc, char** argv) {
 
   if (0 < common_params.repeat) {
     benchmark::RegisterBenchmark(
-        bench_name.c_str(),
-        run_spmv<Kokkos::DefaultExecutionSpace>, argc, argv)
+        bench_name.c_str(), run_spmv<Kokkos::DefaultExecutionSpace>, argc, argv)
         ->UseRealTime()
         ->ArgNames({"n"})
         ->Args({100000})
         ->Iterations(common_params.repeat);
   } else {
     benchmark::RegisterBenchmark(
-        bench_name.c_str(),
-        run_spmv<Kokkos::DefaultExecutionSpace>, argc, argv)
+        bench_name.c_str(), run_spmv<Kokkos::DefaultExecutionSpace>, argc, argv)
         ->UseRealTime()
         ->ArgNames({"n"})
         ->Args({100000});
