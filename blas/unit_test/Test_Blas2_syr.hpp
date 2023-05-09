@@ -1390,6 +1390,16 @@ int test_syr( const std::string & caseName ) {
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "+==========================================================================\n" );
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Starting %s ...\n", caseName.c_str() );
 
+  bool xBool = std::is_same<ScalarX, float>::value ||
+               std::is_same<ScalarX, double>::value ||
+               std::is_same<ScalarX, Kokkos::complex<float>>::value ||
+               std::is_same<ScalarX, Kokkos::complex<double>>::value;
+  bool aBool = std::is_same<ScalarA, float>::value ||
+               std::is_same<ScalarA, double>::value ||
+               std::is_same<ScalarA, Kokkos::complex<float>>::value ||
+               std::is_same<ScalarA, Kokkos::complex<double>>::value;
+  bool useAnalyticalResults = xBool && aBool;
+
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "+--------------------------------------------------------------------------\n" );
@@ -1402,15 +1412,28 @@ int test_syr( const std::string & caseName ) {
     tester.test(2, 0);
     tester.test(13, 0);
     tester.test(1024, 0);
+    if (useAnalyticalResults) {
     //tester.test(1024, 0 , true, false, false);
     //tester.test(1024, 0 , true, false, true);
     //tester.test(1024, 0 , true, true, false);
     //tester.test(1024, 0 , true, true, true);
+    }
+    else {
+    //tester.test(1024, 0 , false, false, true);
+    //tester.test(1024, 0 , false, true, false);
+    //tester.test(1024, 0 , false, true, true);
+    }
     tester.test(50, 4 );
     tester.test(1024, 0);
     tester.test(2131, 0);
+    if (useAnalyticalResults) {
     //tester.test(2131, 0 , true, false, true);
     //tester.test(2131, 0 , true, true, true);
+    }
+    else {
+    //tester.test(2131, 0 , false, false, true);
+    //tester.test(2131, 0 , false, true, true);
+    }
   }
 
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Finished %s for LAYOUTLEFT\n", caseName.c_str() );
@@ -1429,15 +1452,28 @@ int test_syr( const std::string & caseName ) {
     tester.test(2, 0);
     tester.test(13, 0);
     tester.test(1024, 0);
+    if (useAnalyticalResults) {
     //tester.test(1024, 0, true, false, false);
     //tester.test(1024, 0, true, false, true);
     //tester.test(1024, 0, true, true, false);
     //tester.test(1024, 0, true, true, true);
+    }
+    else {
+    //tester.test(1024, 0, false, false, true);
+    //tester.test(1024, 0, false, true, false);
+    //tester.test(1024, 0, false, true, true);
+    }
     tester.test(50, 4);
     tester.test(1024, 0);
     tester.test(2131, 0);
+    if (useAnalyticalResults) {
     //tester.test(2131, 0, true, false, true);
     //tester.test(2131, 0, true, true, true);
+    }
+    else {
+    //tester.test(2131, 0, false, false, true);
+    //tester.test(2131, 0, false, true, true);
+    }
   }
 
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Finished %s for LAYOUTRIGHT\n", caseName.c_str() );
@@ -1454,15 +1490,28 @@ int test_syr( const std::string & caseName ) {
     tester.test(0, 0);
     tester.test(13, 0);
     tester.test(1024, 0);
+    if (useAnalyticalResults) {
     //tester.test(1024, 0, true, false, false);
     //tester.test(1024, 0, true, false, true);
     //tester.test(1024, 0, true, true, false);
     //tester.test(1024, 0, true, true, true);
+    }
+    else {
+    //tester.test(1024, 0, false, false, true);
+    //tester.test(1024, 0, false, true, false);
+    //tester.test(1024, 0, false, true, true);
+    }
     tester.test(50, 4);
     tester.test(1024, 0);
     tester.test(2131, 0);
+    if (useAnalyticalResults) {
     //tester.test(2131, 0, true, false, true);
     //tester.test(2131, 0, true, true, true);
+    }
+    else {
+    //tester.test(2131, 0, false, false, true);
+    //tester.test(2131, 0, false, true, true);
+    }
   }
 
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Finished %s for LAYOUTSTRIDE\n", caseName.c_str() );
@@ -1476,8 +1525,14 @@ int test_syr( const std::string & caseName ) {
   if (true) {
     Test::SyrTester<ScalarX, Kokkos::LayoutStride, ScalarA, Kokkos::LayoutRight, Device> tester;
     tester.test(1024, 0);
+    if (useAnalyticalResults) {
     //tester.test(1024, 0, true, false, true);
     //tester.test(1024, 0, true, true, true);
+    }
+    else {
+    //tester.test(1024, 0, false, false, true);
+    //tester.test(1024, 0, false, true, true);
+    }
   }
 
   if (true) {
@@ -1503,8 +1558,6 @@ TEST_F(TestCategory, syr_float) {
   Kokkos::Profiling::popRegion();
 }
 #endif
-
-#if 1
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -1550,5 +1603,3 @@ TEST_F(TestCategory, syr_double_int) {
   Kokkos::Profiling::popRegion();
 }
 #endif
-
-#endif // if 1
