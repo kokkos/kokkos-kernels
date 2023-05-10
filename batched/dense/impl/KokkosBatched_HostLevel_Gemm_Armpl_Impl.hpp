@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef __KOKKOSBATCHED_GEMM_ARMPL_IMPL_HPP__
-#define __KOKKOSBATCHED_GEMM_ARMPL_IMPL_HPP__
+#ifndef __KOKKOSBATCHED_HOSTLEVEL_GEMM_ARMPL_IMPL_HPP__
+#define __KOKKOSBATCHED_HOSTLEVEL_GEMM_ARMPL_IMPL_HPP__
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL) && ARMPL_BUILD >= 1058
 #include "KokkosBatched_Util.hpp"
 #include "KokkosKernels_Error.hpp"

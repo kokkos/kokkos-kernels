@@ -680,9 +680,7 @@ struct BatchedGemmWrapper<ArgTransA, ArgTransB, ArgBatchSzDim,
 
 }  // namespace Impl
 }  // namespace KokkosBatched
-#include "KokkosBatched_Gemm_Serial_Impl.hpp"
-#include "KokkosBatched_Gemm_Team_Impl.hpp"
-#include "KokkosBatched_Gemm_TeamVector_Impl.hpp"
-#include "KokkosBatched_Gemm_DblBuf_Impl.hpp"
-#include "KokkosBatched_Gemm_Armpl_Impl.hpp"
+#include "KokkosBatched_HostLevel_Gemm_Serial_Impl.hpp"
+#include "KokkosBatched_HostLevel_Gemm_DblBuf_Impl.hpp"
+#include "KokkosBatched_HostLevel_Gemm_Armpl_Impl.hpp"
 #endif  // __KOKKOSBATCHED_HOSTLEVEL_GEMM_IMPL_HPP__
