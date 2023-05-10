@@ -63,7 +63,21 @@ jobs:
 
       - name: build_kokkos_kernels_doxygen
         working-directory: kokkos-kernels/build
-        run: make Doxygen
+        run: |
+         echo "Redirecting full output to doxygen.out..."
+         make Doxygen > doxygen.out 2>&1 || true
+         error_ret=$(grep 'Error' doxygen.out | head -c 1) || true
+         if [ ! -z $error_ret ]; then
+          echo "---- BEGIN: Summary of errors ---- "
+          cat doxygen.out | grep -i 'error:' || true
+          echo "---- END: Summary of errors ---- "
+          echo
+          echo
+          echo "---- BEGIN: Summary of warnings ---- "
+          cat doxygen.out | grep -i 'warning:' || true
+          echo "---- END: Summary of warnings ---- "
+          exit 1
+         fi
 
       - name: build_kokkos_kernels_sphinx
         working-directory: kokkos-kernels/build
