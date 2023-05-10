@@ -592,7 +592,6 @@ struct BatchedGemmWrapper<ArgTransA, ArgTransB, ArgBatchSzDim,
 };
 #endif
 
-// TODO: Include MEM_SPACE in Kokkos::View below?
 #define KOKKOSBATCHED_GEMM_ETI_SPEC_INST_INNER(ARG_TRANS_A, ARG_TRANS_B,       \
                                                ARG_BATCH_LAYOUT, SCALAR,       \
                                                LAYOUT, EXEC_SPACE, MEM_SPACE)  \

@@ -157,7 +157,7 @@ inline int BatchedGemm(BatchedGemmHandleType *const handle,
                        const CViewType &C) {
   // If either this is being processed by a *.cpp.in file or KK ETI_ONLY
   // is defined, use the ETI specialization. Defer till link time
-  // for which specilization will be used from
+  // for which specialization will be used from
   // KokkosBatched_HostLevel_Gemm_Impl.hpp.
 #if defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
   return Impl::BatchedGemmWrapper<ArgTransA, ArgTransB, ArgBatchSzDim,
