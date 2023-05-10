@@ -349,6 +349,14 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
   }
 #endif
 
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+  // rocSparse does not support the modes (C), (T), (H)
+  if constexpr (std::is_same_v<typename AMatrix_Internal::memory_space,
+                               Kokkos::HIPSpace>) {
+    useFallback = useFallback || (mode[0] != NoTranspose[0]);
+  }
+#endif
+
   if (useFallback) {
     // Explicitly call the non-TPL SPMV_BSRMATRIX implementation
     std::string label =

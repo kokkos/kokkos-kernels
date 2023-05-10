@@ -248,6 +248,69 @@ KOKKOSSPARSE_SPMV_MV_BSRMATRIX_TPL_SPEC_AVAIL_MKL(Kokkos::complex<double>,
 
 #endif
 
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE)
+
+#include "KokkosSparse_Utils_rocsparse.hpp"
+
+#define KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_AVAIL_ROCSPARSE(                  \
+    SCALAR, ORDINAL, OFFSET, LAYOUT, MEMSPACE)                                 \
+  template <>                                                                  \
+  struct spmv_bsrmatrix_tpl_spec_avail<                                        \
+      const SCALAR, const ORDINAL, Kokkos::Device<Kokkos::HIP, MEMSPACE>,      \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET, const SCALAR*,    \
+      LAYOUT, Kokkos::Device<Kokkos::HIP, MEMSPACE>,                           \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>, SCALAR*, \
+      LAYOUT, Kokkos::Device<Kokkos::HIP, MEMSPACE>,                           \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> > {                              \
+    enum : bool { value = true };                                              \
+  };
+
+// These things may also be valid before 5.4, but I haven't tested it.
+#if KOKKOSSPARSE_IMPL_ROCM_VERSION >= 50400
+
+KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_AVAIL_ROCSPARSE(float, rocsparse_int,
+                                                     rocsparse_int,
+                                                     Kokkos::LayoutLeft,
+                                                     Kokkos::HIPSpace)
+KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_AVAIL_ROCSPARSE(double, rocsparse_int,
+                                                     rocsparse_int,
+                                                     Kokkos::LayoutLeft,
+                                                     Kokkos::HIPSpace)
+KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_AVAIL_ROCSPARSE(float, rocsparse_int,
+                                                     rocsparse_int,
+                                                     Kokkos::LayoutRight,
+                                                     Kokkos::HIPSpace)
+KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_AVAIL_ROCSPARSE(double, rocsparse_int,
+                                                     rocsparse_int,
+                                                     Kokkos::LayoutRight,
+                                                     Kokkos::HIPSpace)
+KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_AVAIL_ROCSPARSE(Kokkos::complex<float>,
+                                                     rocsparse_int,
+                                                     rocsparse_int,
+                                                     Kokkos::LayoutLeft,
+                                                     Kokkos::HIPSpace)
+KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_AVAIL_ROCSPARSE(Kokkos::complex<double>,
+                                                     rocsparse_int,
+                                                     rocsparse_int,
+                                                     Kokkos::LayoutLeft,
+                                                     Kokkos::HIPSpace)
+KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_AVAIL_ROCSPARSE(Kokkos::complex<float>,
+                                                     rocsparse_int,
+                                                     rocsparse_int,
+                                                     Kokkos::LayoutRight,
+                                                     Kokkos::HIPSpace)
+KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_AVAIL_ROCSPARSE(Kokkos::complex<double>,
+                                                     rocsparse_int,
+                                                     rocsparse_int,
+                                                     Kokkos::LayoutRight,
+                                                     Kokkos::HIPSpace)
+
+#endif  // KOKKOSSPARSE_IMPL_ROCM_VERSION >= 50400
+
+#undef KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_AVAIL_ROCSPARSE
+
+#endif  // defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE)
+
 }  // namespace Impl
 }  // namespace Experimental
 }  // namespace KokkosSparse
