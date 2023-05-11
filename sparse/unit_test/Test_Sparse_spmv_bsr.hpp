@@ -116,10 +116,12 @@ Bsr bsr_random(const int blockSize, const int blockRows, const int blockCols) {
                      ordinal_type, size_type>
       rcs(blockRows, blockCols, scalar_type(0), max_a<scalar_type>());
 
-  const auto colids =
-      Kokkos::subview(rcs.get_ids(), Kokkos::pair{size_t(0), rcs.get_nnz()});
-  const auto vals =
-      Kokkos::subview(rcs.get_vals(), Kokkos::pair{size_t(0), rcs.get_nnz()});
+  const auto colids = Kokkos::subview(
+      rcs.get_ids(),
+      Kokkos::pair<size_t, decltype(rcs.get_nnz())>{size_t(0), rcs.get_nnz()});
+  const auto vals = Kokkos::subview(
+      rcs.get_vals(),
+      Kokkos::pair<size_t, decltype(rcs.get_nnz())>{size_t(0), rcs.get_nnz()});
   Graph graph(colids, rcs.get_map());
   Crs crs("crs", blockCols, vals, graph);
 
