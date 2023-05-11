@@ -33,6 +33,7 @@
 
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
+#include <Kokkos_Pair.hpp>
 
 #include <KokkosKernels_TestUtils.hpp>
 #include <KokkosKernels_Test_Structured_Matrix.hpp>

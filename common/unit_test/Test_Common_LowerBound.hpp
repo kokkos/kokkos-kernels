@@ -196,6 +196,8 @@ void test_lower_bound() {
     } else {
       return T(rand()) % n;
     }
+    // this avoids a gcc warning
+    return T(0);
   };
 
   T maxEntry         = 20;
