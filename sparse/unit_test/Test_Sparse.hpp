@@ -18,7 +18,7 @@
 
 #if KOKKOS_VERSION >= 40099
 #include "Test_Sparse_coo2crs.hpp"
-#endif // KOKKOS_VERSION >= 40099
+#endif  // KOKKOS_VERSION >= 40099
 #include "Test_Sparse_crs2coo.hpp"
 #include "Test_Sparse_block_gauss_seidel.hpp"
 #include "Test_Sparse_Controls.hpp"

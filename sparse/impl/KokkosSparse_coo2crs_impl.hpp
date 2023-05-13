@@ -273,8 +273,8 @@ class Coo2Crs {
   }
 };
 }  // namespace Impl
-}
+}  // namespace KokkosSparse
 
-#endif // KOKKOS_VERSION >= 40099
+#endif  // KOKKOS_VERSION >= 40099
 
-#endif // KOKKOSSPARSE_COO2CRS_IMPL_HPP
+#endif  // KOKKOSSPARSE_COO2CRS_IMPL_HPP
