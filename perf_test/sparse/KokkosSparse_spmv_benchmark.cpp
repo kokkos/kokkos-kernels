@@ -57,7 +57,7 @@ void print_options() {
                "NxN matrix with average of 10 entries per row."
             << std::endl;
   std::cerr
-      << "\t[Optional] --alg           :: the algorithm to run (native, merge)"
+      << "\t[Optional] --alg           :: the algorithm to run (default, native, merge)"
       << std::endl;
   std::cerr
       << "\t[Optional] --alg           :: the algorithm to run (classic, merge)"
@@ -79,10 +79,10 @@ int parse_inputs(int argc, char** argv, spmv_parameters& params) {
     if (perf_test::check_arg_int(i, argc, argv, "-n", params.N)) {
       ++i;
     } else if (perf_test::check_arg_str(i, argc, argv, "--alg", params.alg)) {
-      if ((params.alg != "") && (params.alg != "native") &&
-          (params.alg != "merge")) {
+      if ((params.alg != "") && (params.alg != "default") &&
+	  (params.alg != "native") && (params.alg != "merge")) {
         throw std::runtime_error(
-            "--alg can only be an empty string, `native` or `merge`!");
+            "--alg can only be an empty string, `default`, `native` or `merge`!");
       }
       ++i;
     } else if (perf_test::check_arg_str(i, argc, argv, "--TPL", params.tpl)) {
@@ -115,8 +115,9 @@ void run_spmv(benchmark::State& state, int argc, char** argv) {
   parse_inputs(argc, argv, inputs);
 
   KokkosKernels::Experimental::Controls controls;
-  if (inputs.alg == "native") {
-    controls.setParameter("algorithm", "native");
+  if ((inputs.alg == "default") || (inputs.alg == "native")
+      || (inputs.alg == "merge")) {
+    controls.setParameter("algorithm", inputs.alg);
   }
 
   // Create test matrix
@@ -141,8 +142,7 @@ void run_spmv(benchmark::State& state, int argc, char** argv) {
 
   // Run the actual experiments
   for (auto _ : state) {
-    (void)_;
-    KokkosSparse::spmv(KokkosSparse::NoTranspose, 1.0, A, x, 0.0, y);
+    KokkosSparse::spmv(controls, KokkosSparse::NoTranspose, 1.0, A, x, 0.0, y);
     Kokkos::fence();
   }
 }
