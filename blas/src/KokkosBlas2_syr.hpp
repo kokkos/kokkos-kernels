@@ -49,6 +49,7 @@ void syr( const          ExecutionSpace              & space
       Kokkos::SpaceAccessibility<typename AViewType::memory_space,
                                  typename XViewType::memory_space>::assignable,
       "AViewType memory space must be assignable from XViewType");
+
   static_assert(
       Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename AViewType::memory_space>::accessible,

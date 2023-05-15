@@ -236,14 +236,14 @@ void F77_BLAS_MANGLE(cgeru, CGERU)(int*, int*, const std::complex<float>*,
                                    const std::complex<float>*, int*,
                                    const std::complex<float>*, int*,
                                    std::complex<float>*, int*);
-void F77_BLAS_MANGLE(cgerc, CGERC)(int*, int*, const std::complex<float>*,
-                                   const std::complex<float>*, int*,
-                                   const std::complex<float>*, int*,
-                                   std::complex<float>*, int*);
 void F77_BLAS_MANGLE(zgeru, ZGERU)(int*, int*, const std::complex<double>*,
                                    const std::complex<double>*, int*,
                                    const std::complex<double>*, int*,
                                    std::complex<double>*, int*);
+void F77_BLAS_MANGLE(cgerc, CGERC)(int*, int*, const std::complex<float>*,
+                                   const std::complex<float>*, int*,
+                                   const std::complex<float>*, int*,
+                                   std::complex<float>*, int*);
 void F77_BLAS_MANGLE(zgerc, ZGERC)(int*, int*, const std::complex<double>*,
                                    const std::complex<double>*, int*,
                                    const std::complex<double>*, int*,
@@ -268,38 +268,30 @@ void F77_BLAS_MANGLE(dsyr, DSYR)( const char*
                                 , double*
                                 , int*
                                 );
-#if 0 // AquiEEP
-void F77_BLAS_MANGLE(csyru, CSYRU)( const char*
-                                  , int*
-                                  , const std::complex<float>*
-                                  , const std::complex<float>*
-                                  , int*
-                                  , std::complex<float>*
-                                  , int*
-                                  );
-void F77_BLAS_MANGLE(csyrc, CSYRC)( const char*
-                                  , int*
-                                  , const std::complex<float>*
-                                  , const std::complex<float>*
-                                  , int*
-                                  , std::complex<float>*
-                                  , int*
-                                  );
-void F77_BLAS_MANGLE(zsyru, ZSYRU)( int*
-                                  , const std::complex<double>*
-                                  , const std::complex<double>*
-                                  , int*
-                                  , std::complex<double>*
-                                  , int*
-                                  );
-void F77_BLAS_MANGLE(zsyrc, ZSYRC)( int*
-                                  , const std::complex<double>*
-                                  , const std::complex<double>*
-                                  , int*
-                                  , std::complex<double>*
-                                  , int*
-                                  );
-#endif
+// Although there is a cgeru, there is no csyru
+// Although there is a zgeru, there is no zsyru
+// Although there is a cgerc, there is no csyrc, but there is cher (see below)
+// Although there is a zgerc, there is no zsyrc, but there is zher (see below)
+
+///
+/// Her
+///
+
+void F77_BLAS_MANGLE(cher, CHER)( const char*
+                                , int*
+                                , const std::complex<float>*
+                                , const std::complex<float>*
+                                , int*
+                                , std::complex<float>*
+                                , int*
+                                );
+void F77_BLAS_MANGLE(zher, ZHER)( int*
+                                , const std::complex<double>*
+                                , const std::complex<double>*
+                                , int*
+                                , std::complex<double>*
+                                , int*
+                                );
 
 ///
 /// Trsv
@@ -518,18 +510,15 @@ void F77_BLAS_MANGLE(zscal,
 #define F77_FUNC_SGER F77_BLAS_MANGLE(sger, SGER)
 #define F77_FUNC_DGER F77_BLAS_MANGLE(dger, DGER)
 #define F77_FUNC_CGERU F77_BLAS_MANGLE(cgeru, CGERU)
-#define F77_FUNC_CGERC F77_BLAS_MANGLE(cgerc, CGERC)
 #define F77_FUNC_ZGERU F77_BLAS_MANGLE(zgeru, ZGERU)
+#define F77_FUNC_CGERC F77_BLAS_MANGLE(cgerc, CGERC)
 #define F77_FUNC_ZGERC F77_BLAS_MANGLE(zgerc, ZGERC)
 
 #define F77_FUNC_SSYR  F77_BLAS_MANGLE(ssyr, SSYR)
 #define F77_FUNC_DSYR  F77_BLAS_MANGLE(dsyr, DSYR)
-#if 0 // AquiEEP
-#define F77_FUNC_CSYRU F77_BLAS_MANGLE(csyru, CSYRU)
-#define F77_FUNC_CSYRC F77_BLAS_MANGLE(csyrc, CSYRC)
-#define F77_FUNC_ZSYRU F77_BLAS_MANGLE(zsyru, ZSYRU)
-#define F77_FUNC_ZSYRC F77_BLAS_MANGLE(zsyrc, ZSYRC)
-#endif
+
+#define F77_FUNC_CHER  F77_BLAS_MANGLE(cher, CHER)
+#define F77_FUNC_ZHER  F77_BLAS_MANGLE(zher, ZHER)
 
 #define F77_FUNC_STRSV F77_BLAS_MANGLE(strsv, STRSV)
 #define F77_FUNC_DTRSV F77_BLAS_MANGLE(dtrsv, DTRSV)
@@ -938,9 +927,8 @@ void HostBlas<std::complex<float> >::gerc(
                  (const std::complex<float>*)y, &incy, (std::complex<float>*)a,
                  &lda);
 }
-#if 0 // AquiEEP
 template <>
-void HostBlas<std::complex<float> >::syru( const char uplo
+void HostBlas<std::complex<float> >::cher( const char uplo
                                          , int n
                                          , const std::complex<float> alpha
                                          , const std::complex<float>* x
@@ -948,36 +936,15 @@ void HostBlas<std::complex<float> >::syru( const char uplo
                                          , std::complex<float>* a
                                          , int lda
                                          ) {
-  F77_FUNC_CSYRU( &uplo
-                , &n
-                , &alpha
-                , (const std::complex<float>*)x
-                , &incx
-                , (std::complex<float>*)a
-                , &lda
-                );
+  F77_FUNC_CHER( &uplo
+               , &n
+               , &alpha
+               , (const std::complex<float>*)x
+               , &incx
+               , (std::complex<float>*)a
+               , &lda
+               );
 }
-#endif
-#if 0 // AquiEEP
-template <>
-void HostBlas<std::complex<float> >::syrc( const char uplo
-                                         , int n
-                                         , const std::complex<float> alpha
-                                         , const std::complex<float>* x
-                                         , int incx
-                                         , std::complex<float>* a
-                                         , int lda
-                                         ) {
-  F77_FUNC_CSYRC( &uplo
-                , &n
-                , &alpha
-                , (const std::complex<float>*)x
-                , &incx
-                , (std::complex<float>*)a
-                , &lda
-                );
-}
-#endif
 template <>
 void HostBlas<std::complex<float> >::trsv(const char uplo, const char transa,
                                           const char diag, int m,
@@ -1148,9 +1115,8 @@ void HostBlas<std::complex<double> >::gerc(
                  (const std::complex<double>*)y, &incy,
                  (std::complex<double>*)a, &lda);
 }
-#if 0 // AquiEEP
 template <>
-void HostBlas<std::complex<double> >::syru( const char /*uplo*/
+void HostBlas<std::complex<double> >::zher( const char uplo
                                           , int n
                                           , const std::complex<double> alpha
                                           , const std::complex<double>* x
@@ -1158,36 +1124,15 @@ void HostBlas<std::complex<double> >::syru( const char /*uplo*/
                                           , std::complex<double>* a
                                           , int lda
                                           ) {
-  F77_FUNC_ZSYRU( /*&uplo,*/
-                  &n
-                , &alpha
-                , (const std::complex<double>*)x
-                , &incx
-                , (std::complex<double>*)a
-                , &lda
-                );
+  F77_FUNC_ZHER( &uplo,
+               , &n
+               , &alpha
+               , (const std::complex<double>*)x
+               , &incx
+               , (std::complex<double>*)a
+               , &lda
+               );
 }
-#endif
-#if 0 // AquiEEP
-template <>
-void HostBlas<std::complex<double> >::syrc( const char /*uplo*/
-                                          , int n
-                                          , const std::complex<double> alpha
-                                          , const std::complex<double>* x
-                                          , int incx
-                                          , std::complex<double>* a
-                                          , int lda
-                                          ) {
-  F77_FUNC_ZSYRC( /*&uplo,*/
-                  &n
-                , &alpha
-                , (const std::complex<double>*)x
-                , &incx
-                , (std::complex<double>*)a
-                , &lda
-                );
-}
-#endif
 template <>
 void HostBlas<std::complex<double> >::trsv(const char uplo, const char transa,
                                            const char diag, int m,
