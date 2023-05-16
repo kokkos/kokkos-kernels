@@ -332,6 +332,10 @@ class BsrMatrix {
   static_assert(
       std::is_signed<OrdinalType>::value,
       "BsrMatrix requires that OrdinalType is a signed integer type.");
+  static_assert(Kokkos::is_memory_traits_v<MemoryTraits> ||
+                    std::is_void_v<MemoryTraits>,
+                "BsrMatrix: MemoryTraits (4th template param) must be a Kokkos "
+                "MemoryTraits or void");
 
  private:
   typedef
@@ -388,6 +392,11 @@ class BsrMatrix {
   typedef typename values_type::const_value_type const_value_type;
   //! Nonconst version of the type of the entries in the sparse matrix.
   typedef typename values_type::non_const_value_type non_const_value_type;
+
+  // block values are actually a 1-D view, however they are implicitly
+  // arranged in LayoutRight, e.g. consecutive entries in the values view
+  // are consecutive entries within a row inside a block
+  using block_layout = Kokkos::LayoutRight;
 
   /// \name Storage of the actual sparsity structure and values.
   ///
@@ -489,12 +498,19 @@ class BsrMatrix {
       KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
 
-    if ((ncols % blockDim_ != 0) || (nrows % blockDim_ != 0)) {
-      assert(
-          (ncols % blockDim_ == 0) &&
-          "BsrMatrix: input CrsMatrix columns is not a multiple of block size");
-      assert((nrows % blockDim_ == 0) &&
-             "BsrMatrix: input CrsMatrix rows is not a multiple of block size");
+    if (ncols % blockDim_) {
+      std::ostringstream os;
+      os << "BsrMatrix: " << ncols
+         << " input CrsMatrix columns is not a multiple of block size "
+         << blockDim_;
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
+    }
+    if (nrows % blockDim_) {
+      std::ostringstream os;
+      os << "BsrMatrix: " << nrows
+         << " input CrsMatrix rows is not a multiple of block size "
+         << blockDim_;
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
     if (annz % (blockDim_ * blockDim_)) {
       throw std::runtime_error(
@@ -597,8 +613,8 @@ class BsrMatrix {
       ++bi;
     }
     // complete row map if last blocks are empty
-    for (; row < numRows; ++row) {
-      row_map_host(row + 1) = bi;
+    for (; row < numRows + 1; ++row) {
+      row_map_host(row) = bi;
     }
 
     // move graph data to the requested device
