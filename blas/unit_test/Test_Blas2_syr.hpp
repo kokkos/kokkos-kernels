@@ -239,16 +239,6 @@ void SyrTester< ScalarX
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
   _kkSyrShouldThrowException = false;
-  if (_A_is_complex && _useHermitianOption) {
-    if ((_testIsGpu == false) &&
-        (_A_is_ll   == false)) {
-      _kkSyrShouldThrowException = true;
-    }
-    else if ((_testIsGpu == true ) &&
-             (_A_is_ll   == false)) {
-      _kkSyrShouldThrowException = true;
-    }
-  }
 #endif
 
   bool test_x (false);
