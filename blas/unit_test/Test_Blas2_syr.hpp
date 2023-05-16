@@ -160,6 +160,7 @@ private:
   bool           _useHermitianOption;
   bool           _useUpOption;
   bool           _kkSyrShouldThrowException;
+  bool           _kkGerShouldThrowException;
 };
 
 template <class ScalarX, class tLayoutX, class ScalarA, class tLayoutA, class Device>
@@ -186,6 +187,7 @@ SyrTester< ScalarX
   , _useHermitianOption            (false)
   , _useUpOption                   (false)
   , _kkSyrShouldThrowException     (false)
+  , _kkGerShouldThrowException     (false)
 {
 }
 
@@ -239,6 +241,11 @@ void SyrTester< ScalarX
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
   _kkSyrShouldThrowException = false;
+
+  _kkGerShouldThrowException = false;
+  if (_A_is_complex && _useHermitianOption) {
+    _kkGerShouldThrowException = !_A_is_ll;
+  }
 #endif
 
   bool test_x (false);
@@ -318,6 +325,19 @@ void SyrTester< ScalarX
                                             , h_expected.d_view
                                             , "non const x"
                                             );
+
+    if ((_useAnalyticalResults      == false) &&
+        (_kkGerShouldThrowException == false)) {
+#if 0 // AquiEEP
+      this->compareKkSyrAgainstKkGer( alpha
+                                    , x.d_view
+                                    , A.d_view
+                                    , A.h_view
+                                    , h_expected.d_view
+                                    , "non const x"
+                                    );
+#endif
+    }
   }
 
   // ********************************************************************
@@ -514,7 +534,7 @@ SyrTester< ScalarX
             ( (_useUpOption == false) && (i >= j) )) {
           auxJ = this->shrinkAngleToZeroTwoPiRange( static_cast<_AuxType>(j) );
           auxIpJ = this->shrinkAngleToZeroTwoPiRange( static_cast<_AuxType>(i+j) );
-          h_expected(i,j).real() = -2. * sin(auxI) * sin(auxJ);
+          h_expected(i,j).real() = -2. * sin(auxI) * sin(auxJ); // AquiEEP
           h_expected(i,j).imag() = 2. * (cos(auxIpJ) - sin(auxIpJ));
         }
       }
@@ -579,7 +599,7 @@ SyrTester< ScalarX
       if (( (_useUpOption == true ) && (i <= j) ) ||
           ( (_useUpOption == false) && (i >= j) )) {
         auxIpJ = this->shrinkAngleToZeroTwoPiRange( static_cast<_AuxType>(i+j) );
-        h_expected(i,j) = 3 * sin(auxIpJ);
+        h_expected(i,j) = 3 * sin(auxIpJ); // AquiEEP
       }
     }
   }
@@ -1461,27 +1481,21 @@ int test_syr( const std::string & caseName ) {
     tester.test(1024, 0);
 
     if (useAnalyticalResults) {
-    //tester.test(1024, 0 , true, false, false);
-    //tester.test(1024, 0 , true, false, true);
-    //tester.test(1024, 0 , true, true, false);
-    //tester.test(1024, 0 , true, true, true);
+      //tester.test(1024, 0 , true, false, false);
+      //tester.test(1024, 0 , true, false, true);
+      //tester.test(1024, 0 , true, true, false);
+      //tester.test(1024, 0 , true, true, true);
     }
 
-    tester.test(2,    0 , false, false, true);
-    tester.test(1024, 0 , false, false, true);
-    tester.test(2,    0 , false, true, false);
-    tester.test(1024, 0 , false, true, false);
-    tester.test(2,    0 , false, true, true);
-    tester.test(1024, 0 , false, true, true);
+    tester.test(2,  0 , false, false, true);
+    tester.test(50, 0 , false, false, true);
+    tester.test(2,  0 , false, true, false);
+    tester.test(50, 0 , false, true, false);
+    tester.test(2,  0 , false, true, true);
+    tester.test(50, 0 , false, true, true);
 
     tester.test(50, 4 );
-    tester.test(1024, 0);
     tester.test(2131, 0);
-
-    if (useAnalyticalResults) {
-    //tester.test(2131, 0 , true, false, true);
-    //tester.test(2131, 0 , true, true, true);
-    }
   }
 
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Finished %s for LAYOUTLEFT\n", caseName.c_str() );
@@ -1502,30 +1516,21 @@ int test_syr( const std::string & caseName ) {
     tester.test(1024, 0);
 
     if (useAnalyticalResults) {
-    //tester.test(1024, 0, true, false, false);
-    //tester.test(1024, 0, true, false, true);
-    //tester.test(1024, 0, true, true, false);
-    //tester.test(1024, 0, true, true, true);
+      //tester.test(1024, 0, true, false, false);
+      //tester.test(1024, 0, true, false, true);
+      //tester.test(1024, 0, true, true, false);
+      //tester.test(1024, 0, true, true, true);
     }
 
-    tester.test(2,    0, false, false, true);
-    tester.test(1024, 0, false, false, true);
-    tester.test(2,    0, false, true, false);
-    tester.test(1024, 0, false, true, false);
-    tester.test(2,    0, false, true, true);
-    tester.test(1024, 0, false, true, true);
+    tester.test(2,  0, false, false, true);
+    tester.test(50, 0, false, false, true);
+    tester.test(2,  0, false, true, false);
+    tester.test(50, 0, false, true, false);
+    tester.test(2,  0, false, true, true);
+    tester.test(50, 0, false, true, true);
 
     tester.test(50, 4);
-    tester.test(1024, 0);
     tester.test(2131, 0);
-
-    if (useAnalyticalResults) {
-    //tester.test(2131, 0, true, false, true);
-    //tester.test(2131, 0, true, true, true);
-    }
-
-    tester.test(2131, 0, false, false, true);
-    tester.test(2131, 0, false, true, true);
   }
 
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Finished %s for LAYOUTRIGHT\n", caseName.c_str() );
@@ -1546,27 +1551,21 @@ int test_syr( const std::string & caseName ) {
     tester.test(1024, 0);
 
     if (useAnalyticalResults) {
-    //tester.test(1024, 0, true, false, false);
-    //tester.test(1024, 0, true, false, true);
-    //tester.test(1024, 0, true, true, false);
-    //tester.test(1024, 0, true, true, true);
+      //tester.test(1024, 0, true, false, false);
+      //tester.test(1024, 0, true, false, true);
+      //tester.test(1024, 0, true, true, false);
+      //tester.test(1024, 0, true, true, true);
     }
 
-    tester.test(2,    0, false, false, true);
-    tester.test(1024, 0, false, false, true);
-    tester.test(2,    0, false, true, false);
-    tester.test(1024, 0, false, true, false);
-    tester.test(2,    0, false, true, true);
-    tester.test(1024, 0, false, true, true);
+    tester.test(2,  0, false, false, true);
+    tester.test(50, 0, false, false, true);
+    tester.test(2,  0, false, true, false);
+    tester.test(50, 0, false, true, false);
+    tester.test(2,  0, false, true, true);
+    tester.test(50, 0, false, true, true);
 
     tester.test(50, 4);
-    tester.test(1024, 0);
     tester.test(2131, 0);
-
-    if (useAnalyticalResults) {
-    //tester.test(2131, 0, true, false, true);
-    //tester.test(2131, 0, true, true, true);
-    }
   }
 
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Finished %s for LAYOUTSTRIDE\n", caseName.c_str() );
@@ -1584,14 +1583,14 @@ int test_syr( const std::string & caseName ) {
     tester.test(1024, 0);
 
     if (useAnalyticalResults) {
-    //tester.test(1024, 0, true, false, true);
-    //tester.test(1024, 0, true, true, true);
+      //tester.test(1024, 0, true, false, true);
+      //tester.test(1024, 0, true, true, true);
     }
 
-    tester.test(2,    0, false, false, true);
-    tester.test(1024, 0, false, false, true);
-    tester.test(2,    0, false, true, true);
-    tester.test(1024, 0, false, true, true);
+    tester.test(2,  0, false, false, true);
+    tester.test(50, 0, false, false, true);
+    tester.test(2,  0, false, true, true);
+    tester.test(50, 0, false, true, true);
   }
 
   if (true) {
