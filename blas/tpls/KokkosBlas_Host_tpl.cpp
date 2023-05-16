@@ -285,7 +285,8 @@ void F77_BLAS_MANGLE(cher, CHER)( const char*
                                 , std::complex<float>*
                                 , int*
                                 );
-void F77_BLAS_MANGLE(zher, ZHER)( int*
+void F77_BLAS_MANGLE(zher, ZHER)( const char*
+                                , int*
                                 , const std::complex<double>*
                                 , const std::complex<double>*
                                 , int*
@@ -1124,7 +1125,7 @@ void HostBlas<std::complex<double> >::zher( const char uplo
                                           , std::complex<double>* a
                                           , int lda
                                           ) {
-  F77_FUNC_ZHER( &uplo,
+  F77_FUNC_ZHER( &uplo
                , &n
                , &alpha
                , (const std::complex<double>*)x

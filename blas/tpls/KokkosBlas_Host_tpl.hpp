@@ -82,7 +82,7 @@ struct HostBlas {
                  , int lda
                  );
 
-  static void syru( const char uplo
+  static void cher( const char uplo
                   , int n
                   , const T alpha
                   , const T* x
@@ -91,7 +91,7 @@ struct HostBlas {
                   , int lda
                   );
 
-  static void syrc( const char uplo
+  static void zher( const char uplo
                   , int n
                   , const T alpha
                   , const T* x
