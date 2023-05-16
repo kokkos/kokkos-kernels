@@ -103,15 +103,13 @@ struct TriLvlSchedTP1SolverFunctor {
 
   long node_count;  // like "block" offset into ngbl, my_league is the "local"
                     // offset
-  long dense_nrows;
 
   TriLvlSchedTP1SolverFunctor(const RowMapType &row_map_,
                               const EntriesType &entries_,
                               const ValuesType &values_, LHSType &lhs_,
                               const RHSType &rhs_,
                               const NGBLType &nodes_grouped_by_level_,
-                              const bool is_lowertri_, long node_count_,
-                              long dense_nrows_ = 0)
+                              const bool &is_lowertri_, const long &node_count_)
       : row_map(row_map_),
         entries(entries_),
         values(values_),
@@ -119,8 +117,7 @@ struct TriLvlSchedTP1SolverFunctor {
         rhs(rhs_),
         nodes_grouped_by_level(nodes_grouped_by_level_),
         is_lowertri(is_lowertri_),
-        node_count(node_count_),
-        dense_nrows(dense_nrows_) {}
+        node_count(node_count_) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const member_type &team) const {
@@ -4108,12 +4105,6 @@ void lower_tri_solve_streams(const std::vector<ExecutionSpace> &execspace_v,
         }  // end if (lvl_nodes != 0)
       }    // end if (lvl < nlevels_v[i])
     }      // end for streams
-
-    // 2. Wait for all streams finished
-    //    note: not needed here unlike in the spiluk case
-    // for (int i = 0; i < nstreams; i++) {
-    //  execspace_v[i].fence();
-    //}  // end for streams
   }  // end for lvl
 }  // end lower_tri_solve_streams
 
@@ -4200,12 +4191,6 @@ void upper_tri_solve_streams(const std::vector<ExecutionSpace> &execspace_v,
         }  // end if (lvl_nodes != 0)
       }    // end if (lvl < nlevels_v[i])
     }      // end for streams
-
-    // 2. Wait for all streams finished
-    //    note: not needed here unlike in the spiluk case
-    // for (int i = 0; i < nstreams; i++) {
-    //  execspace_v[i].fence();
-    //}  // end for streams
   }  // end for lvl
 }  // end upper_tri_solve_streams
 

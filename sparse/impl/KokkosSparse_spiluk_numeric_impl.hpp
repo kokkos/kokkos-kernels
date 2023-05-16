@@ -570,11 +570,6 @@ void iluk_numeric_streams(const std::vector<ExecutionSpace> &execspace_v,
               tstf);
         }  // end if (stream_have_level_v[i])
       }    // end for streams
-
-      // 2. Wait for all streams finished
-      for (int i = 0; i < nstreams; i++) {
-        if (stream_have_level_v[i]) execspace_v[i].fence();
-      }  // end for streams
     }    // end for lvl
   }      // end SEQLVLSCHD_RP
   else if (thandle_v[0]->get_algorithm() ==
@@ -656,12 +651,6 @@ void iluk_numeric_streams(const std::vector<ExecutionSpace> &execspace_v,
             }  // end if (chunkid < lvl_nchunks_h_v[i](lvl))
           }    // end if (stream_have_level_v[i])
         }      // end for streams
-
-        // 2. Wait for all streams finishing
-        for (int i = 0; i < nstreams; i++) {
-          if (stream_have_level_v[i])
-            if (chunkid < lvl_nchunks_h_v[i](lvl)) execspace_v[i].fence();
-        }  // end for streams
       }    // end for chunkid
     }      // end for lvl
   }        // end SEQLVLSCHD_TP1
