@@ -4105,7 +4105,7 @@ void lower_tri_solve_streams(const std::vector<ExecutionSpace> &execspace_v,
         }  // end if (lvl_nodes != 0)
       }    // end if (lvl < nlevels_v[i])
     }      // end for streams
-  }  // end for lvl
+  }        // end for lvl
 }  // end lower_tri_solve_streams
 
 template <class ExecutionSpace, class TriSolveHandle, class RowMapType,
@@ -4191,7 +4191,7 @@ void upper_tri_solve_streams(const std::vector<ExecutionSpace> &execspace_v,
         }  // end if (lvl_nodes != 0)
       }    // end if (lvl < nlevels_v[i])
     }      // end for streams
-  }  // end for lvl
+  }        // end for lvl
 }  // end upper_tri_solve_streams
 
 }  // namespace Experimental

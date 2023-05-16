@@ -570,8 +570,8 @@ void iluk_numeric_streams(const std::vector<ExecutionSpace> &execspace_v,
               tstf);
         }  // end if (stream_have_level_v[i])
       }    // end for streams
-    }    // end for lvl
-  }      // end SEQLVLSCHD_RP
+    }      // end for lvl
+  }        // end SEQLVLSCHD_RP
   else if (thandle_v[0]->get_algorithm() ==
            KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1) {
     using policy_type = Kokkos::TeamPolicy<ExecutionSpace>;
@@ -651,9 +651,9 @@ void iluk_numeric_streams(const std::vector<ExecutionSpace> &execspace_v,
             }  // end if (chunkid < lvl_nchunks_h_v[i](lvl))
           }    // end if (stream_have_level_v[i])
         }      // end for streams
-      }    // end for chunkid
-    }      // end for lvl
-  }        // end SEQLVLSCHD_TP1
+      }        // end for chunkid
+    }          // end for lvl
+  }            // end SEQLVLSCHD_TP1
 
 }  // end iluk_numeric_streams
 
