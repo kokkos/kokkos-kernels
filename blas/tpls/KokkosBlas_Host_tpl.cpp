@@ -279,7 +279,7 @@ void F77_BLAS_MANGLE(dsyr, DSYR)( const char*
 
 void F77_BLAS_MANGLE(cher, CHER)( const char*
                                 , int*
-                                , const std::complex<float>*
+                                , const float*
                                 , const std::complex<float>*
                                 , int*
                                 , std::complex<float>*
@@ -287,7 +287,7 @@ void F77_BLAS_MANGLE(cher, CHER)( const char*
                                 );
 void F77_BLAS_MANGLE(zher, ZHER)( const char*
                                 , int*
-                                , const std::complex<double>*
+                                , const double*
                                 , const std::complex<double>*
                                 , int*
                                 , std::complex<double>*
@@ -937,9 +937,10 @@ void HostBlas<std::complex<float> >::cher( const char uplo
                                          , std::complex<float>* a
                                          , int lda
                                          ) {
+  const float alphaVal = alpha.real();
   F77_FUNC_CHER( &uplo
                , &n
-               , &alpha
+               , &alphaVal
                , (const std::complex<float>*)x
                , &incx
                , (std::complex<float>*)a
@@ -1125,9 +1126,10 @@ void HostBlas<std::complex<double> >::zher( const char uplo
                                           , std::complex<double>* a
                                           , int lda
                                           ) {
+  const double alphaVal = alpha.real();
   F77_FUNC_ZHER( &uplo
                , &n
-               , &alpha
+               , &alphaVal
                , (const std::complex<double>*)x
                , &incx
                , (std::complex<double>*)a

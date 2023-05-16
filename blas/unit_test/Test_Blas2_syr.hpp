@@ -175,7 +175,7 @@ SyrTester< ScalarX
   , _A_is_ll                       ( std::is_same< tLayoutA, Kokkos::LayoutLeft >::value )
   , _testIsGpu                     ( KokkosKernels::Impl::kk_is_gpu_exec_space< typename Device::execution_space >() )
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
-  , _vanillaUsesDifferentOrderOfOps( _A_is_lr && _testIsGpu )
+  , _vanillaUsesDifferentOrderOfOps( _A_is_lr && _testIsGpu ) // AquiEEP
 #else
   , _vanillaUsesDifferentOrderOfOps( false )
 #endif
@@ -1416,6 +1416,7 @@ void SyrTester< ScalarX
                                                    , const std::string       & situation
                                                    )
 {
+  std::cout << "In Test_Blas2_syr, '" << situation << "', alpha = " << alpha << std::endl;
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "In Test_Blas2_syr.hpp, right before calling KokkosBlas::syr(): ViewTypeA = %s, _kkSyrShouldThrowException=%d\n", typeid(_ViewTypeA).name(), _kkSyrShouldThrowException );
   std::string mode = _useHermitianOption ? "H" : "T";
   std::string uplo = _useUpOption ? "U" : "L";
