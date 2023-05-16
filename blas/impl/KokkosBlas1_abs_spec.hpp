@@ -254,7 +254,5 @@ struct Abs<execution_space, RMV, XMV, 2, false,
       2, false, true>;
 
 #include <KokkosBlas1_abs_tpl_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosBlas1_abs_eti_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosBlas1_abs_mv_eti_spec_decl.hpp>
 
 #endif  // KOKKOS_BLAS1_MV_IMPL_ABS_HPP_

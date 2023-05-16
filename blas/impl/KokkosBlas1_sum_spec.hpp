@@ -272,7 +272,5 @@ struct Sum<execution_space, RV, XMV, 2, false,
       2, false, true>;
 
 #include <KokkosBlas1_sum_tpl_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosBlas1_sum_eti_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosBlas1_sum_mv_eti_spec_decl.hpp>
 
 #endif  // KOKKOSBLAS1_SUM_SPEC_HPP_

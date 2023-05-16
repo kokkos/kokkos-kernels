@@ -357,7 +357,5 @@ struct SPMV_MV_STRUCT<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM, true,
       true>;
 
 #include <KokkosSparse_spmv_struct_tpl_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosSparse_spmv_struct_eti_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosSparse_spmv_mv_struct_eti_spec_decl.hpp>
 
 #endif  // KOKKOSSPARSE_IMPL_SPMV_STRUCT_SPEC_HPP_

@@ -285,7 +285,5 @@ struct Nrm2w<execution_space, RV, XMV, 2, false,
       2, false, true>;
 
 #include <KokkosBlas1_nrm2w_tpl_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosBlas1_nrm2w_eti_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosBlas1_nrm2w_mv_eti_spec_decl.hpp>
 
 #endif  // KOKKOSBLAS1_NRM2W_SPEC_HPP_

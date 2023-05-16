@@ -165,6 +165,5 @@ struct TRSM<execution_space, AViewType, BViewType, false,
                                          MEM_SPACE)
 
 #include <KokkosBlas3_trsm_tpl_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosBlas3_trsm_eti_spec_decl.hpp>
 
 #endif  // KOKKOSBLAS3_TRSM_SPEC_HPP_
