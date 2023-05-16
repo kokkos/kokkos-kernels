@@ -222,6 +222,10 @@ void SyrTester< ScalarX
             << ", _vanillaUsesDifferentOrderOfOps = " << _vanillaUsesDifferentOrderOfOps
             << ", _epsAbs = "                         << _epsAbs
             << ", _epsRel = "                         << _epsRel
+            << ", nonConstConstCombinations = "       << nonConstConstCombinations
+            << ", useAnalyticalResults = "            << useAnalyticalResults
+            << ", useHermitianOption = "              << useHermitianOption
+            << ", useUpOption = "                     << useUpOption
             << std::endl;
   
   // ********************************************************************
@@ -441,6 +445,16 @@ void SyrTester< ScalarX
     Kokkos::deep_copy(h_x, x);
     Kokkos::deep_copy(h_A, A);
   }
+
+  if (_N <= 2) {
+    for (int i(0); i < _M; ++i) {
+      for (int j(0); j < _N; ++j) {
+        std::cout << "h_origA("   << i << "," << j << ")=" << h_A(i,j)
+                  << std::endl;
+      }
+    }
+  }
+
 }
 
 // Code for complex values
@@ -736,6 +750,16 @@ SyrTester< ScalarX
                                   , const _ViewTypeExpected & h_vanilla
                                   , const _ViewTypeExpected & h_expected
                                   ) {
+  if (_N <= 2) {
+    for (int i(0); i < _M; ++i) {
+      for (int j(0); j < _N; ++j) {
+        std::cout << "h_exp("   << i << "," << j << ")=" << h_expected(i,j)
+                  << ", h_van(" << i << "," << j << ")=" << h_vanilla(i,j)
+                  << std::endl;
+      }
+    }
+  }
+
   int maxNumErrorsAllowed( static_cast<double>(_M) * static_cast<double>(_N) * 1.e-3 );
 
   if (_useAnalyticalResults) {
@@ -822,6 +846,7 @@ SyrTester< ScalarX
         }
       } // for j
     } // for i
+
     {
       std::ostringstream msg;
       msg << ", A is " << _M << " by " << _N
@@ -936,6 +961,16 @@ SyrTester< ScalarX
                                   , const _ViewTypeExpected & h_vanilla
                                   , const _ViewTypeExpected & h_expected
                                   ) {
+  if (_N <= 2) {
+    for (int i(0); i < _M; ++i) {
+      for (int j(0); j < _N; ++j) {
+        std::cout << "h_exp("   << i << "," << j << ")=" << h_expected(i,j)
+                  << ", h_van(" << i << "," << j << ")=" << h_vanilla(i,j)
+                  << std::endl;
+      }
+    }
+  }
+
   int maxNumErrorsAllowed( static_cast<double>(_M) * static_cast<double>(_N) * 1.e-3 );
 
   if (_useAnalyticalResults) {
@@ -984,6 +1019,7 @@ SyrTester< ScalarX
         }
       } // for j
     } // for i
+
     {
       std::ostringstream msg;
       msg << ", A is " << _M << " by " << _N
@@ -1053,6 +1089,16 @@ SyrTester< ScalarX
                                  , const _HostViewTypeA    & h_A
                                  , const _ViewTypeExpected & h_expected
                                  ) {
+  if (_N <= 2) {
+    for (int i(0); i < _M; ++i) {
+      for (int j(0); j < _N; ++j) {
+        std::cout << "h_exp(" << i << "," << j << ")=" << h_expected(i,j)
+                  << ", h_A(" << i << "," << j << ")=" << h_A(i,j)
+                  << std::endl;
+      }
+    }
+  }
+
   int maxNumErrorsAllowed( static_cast<double>(_M) * static_cast<double>(_N) * 1.e-3 );
 
   int      numErrorsRealAbs   (0);
@@ -1137,6 +1183,7 @@ SyrTester< ScalarX
       }
     } // for j
   } // for i
+
   std::cout << "A is " << _M << " by " << _N
             << ", _A_is_lr = "               << _A_is_lr
             << ", _A_is_ll = "               << _A_is_ll
@@ -1247,6 +1294,16 @@ SyrTester< ScalarX
                                  , const _HostViewTypeA    & h_A
                                  , const _ViewTypeExpected & h_expected
                                  ) {
+  if (_N <= 2) {
+    for (int i(0); i < _M; ++i) {
+      for (int j(0); j < _N; ++j) {
+        std::cout << "h_exp(" << i << "," << j << ")=" << h_expected(i,j)
+                  << ", h_A(" << i << "," << j << ")=" << h_A(i,j)
+                  << std::endl;
+      }
+    }
+  }
+
   int maxNumErrorsAllowed( static_cast<double>(_M) * static_cast<double>(_N) * 1.e-3 );
 
   int      numErrorsAbs   (0);
@@ -1412,27 +1469,28 @@ int test_syr( const std::string & caseName ) {
     tester.test(2, 0);
     tester.test(13, 0);
     tester.test(1024, 0);
+
     if (useAnalyticalResults) {
     //tester.test(1024, 0 , true, false, false);
     //tester.test(1024, 0 , true, false, true);
     //tester.test(1024, 0 , true, true, false);
     //tester.test(1024, 0 , true, true, true);
     }
-    else {
-    //tester.test(1024, 0 , false, false, true);
-    //tester.test(1024, 0 , false, true, false);
-    //tester.test(1024, 0 , false, true, true);
-    }
+
+    tester.test(2,    0 , false, false, true);
+    tester.test(1024, 0 , false, false, true);
+    tester.test(2,    0 , false, true, false);
+    tester.test(1024, 0 , false, true, false);
+    tester.test(2,    0 , false, true, true);
+    tester.test(1024, 0 , false, true, true);
+
     tester.test(50, 4 );
     tester.test(1024, 0);
     tester.test(2131, 0);
+
     if (useAnalyticalResults) {
     //tester.test(2131, 0 , true, false, true);
     //tester.test(2131, 0 , true, true, true);
-    }
-    else {
-    //tester.test(2131, 0 , false, false, true);
-    //tester.test(2131, 0 , false, true, true);
     }
   }
 
@@ -1452,28 +1510,32 @@ int test_syr( const std::string & caseName ) {
     tester.test(2, 0);
     tester.test(13, 0);
     tester.test(1024, 0);
+
     if (useAnalyticalResults) {
     //tester.test(1024, 0, true, false, false);
     //tester.test(1024, 0, true, false, true);
     //tester.test(1024, 0, true, true, false);
     //tester.test(1024, 0, true, true, true);
     }
-    else {
-    //tester.test(1024, 0, false, false, true);
-    //tester.test(1024, 0, false, true, false);
-    //tester.test(1024, 0, false, true, true);
-    }
+
+    tester.test(2,    0, false, false, true);
+    tester.test(1024, 0, false, false, true);
+    tester.test(2,    0, false, true, false);
+    tester.test(1024, 0, false, true, false);
+    tester.test(2,    0, false, true, true);
+    tester.test(1024, 0, false, true, true);
+
     tester.test(50, 4);
     tester.test(1024, 0);
     tester.test(2131, 0);
+
     if (useAnalyticalResults) {
     //tester.test(2131, 0, true, false, true);
     //tester.test(2131, 0, true, true, true);
     }
-    else {
-    //tester.test(2131, 0, false, false, true);
-    //tester.test(2131, 0, false, true, true);
-    }
+
+    tester.test(2131, 0, false, false, true);
+    tester.test(2131, 0, false, true, true);
   }
 
   KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Finished %s for LAYOUTRIGHT\n", caseName.c_str() );
@@ -1488,29 +1550,32 @@ int test_syr( const std::string & caseName ) {
   if (true) {
     Test::SyrTester<ScalarX, Kokkos::LayoutStride, ScalarA, Kokkos::LayoutStride, Device> tester;
     tester.test(0, 0);
+    tester.test(1, 0);
+    tester.test(2, 0);
     tester.test(13, 0);
     tester.test(1024, 0);
+
     if (useAnalyticalResults) {
     //tester.test(1024, 0, true, false, false);
     //tester.test(1024, 0, true, false, true);
     //tester.test(1024, 0, true, true, false);
     //tester.test(1024, 0, true, true, true);
     }
-    else {
-    //tester.test(1024, 0, false, false, true);
-    //tester.test(1024, 0, false, true, false);
-    //tester.test(1024, 0, false, true, true);
-    }
+
+    tester.test(2,    0, false, false, true);
+    tester.test(1024, 0, false, false, true);
+    tester.test(2,    0, false, true, false);
+    tester.test(1024, 0, false, true, false);
+    tester.test(2,    0, false, true, true);
+    tester.test(1024, 0, false, true, true);
+
     tester.test(50, 4);
     tester.test(1024, 0);
     tester.test(2131, 0);
+
     if (useAnalyticalResults) {
     //tester.test(2131, 0, true, false, true);
     //tester.test(2131, 0, true, true, true);
-    }
-    else {
-    //tester.test(2131, 0, false, false, true);
-    //tester.test(2131, 0, false, true, true);
     }
   }
 
@@ -1524,15 +1589,19 @@ int test_syr( const std::string & caseName ) {
 
   if (true) {
     Test::SyrTester<ScalarX, Kokkos::LayoutStride, ScalarA, Kokkos::LayoutRight, Device> tester;
+    tester.test(1, 0);
+    tester.test(2, 0);
     tester.test(1024, 0);
+
     if (useAnalyticalResults) {
     //tester.test(1024, 0, true, false, true);
     //tester.test(1024, 0, true, true, true);
     }
-    else {
-    //tester.test(1024, 0, false, false, true);
-    //tester.test(1024, 0, false, true, true);
-    }
+
+    tester.test(2,    0, false, false, true);
+    tester.test(1024, 0, false, false, true);
+    tester.test(2,    0, false, true, true);
+    tester.test(1024, 0, false, true, true);
   }
 
   if (true) {
