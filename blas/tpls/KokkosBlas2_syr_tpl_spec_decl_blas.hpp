@@ -65,7 +65,6 @@ namespace Impl {
                    , const          XViewType                   & X          \
                    , const          AViewType                   & A          \
                    ) {                                                       \
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing through tpl-dsyr-blas\n" );    \
       Kokkos::Profiling::pushRegion("KokkosBlas::syr[TPL_BLAS,double]");     \
       KOKKOSBLAS2_SYR_DETERMINE_ARGS(LAYOUT);                                \
       if (A_is_ll) {                                                         \
@@ -80,7 +79,6 @@ namespace Impl {
       }                                                                      \
       else {                                                                 \
         /* blasDsyr() + ~A_ll => call kk_syr() */                            \
-        KOKKOS_IMPL_DO_NOT_USE_PRINTF("blasDsyr() + ~A_ll => call kk_syr\n"); /*AquiEPP*/ \
         kk_syr(space, trans, uplo, alpha, X, A);                             \
       }                                                                      \
       Kokkos::Profiling::popRegion();                                        \
@@ -122,7 +120,6 @@ namespace Impl {
                    , const          XViewType                   & X          \
                    , const          AViewType                   & A          \
                    ) {                                                       \
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing through tpl-ssyr-blas\n" );    \
       Kokkos::Profiling::pushRegion("KokkosBlas::syr[TPL_BLAS,float]");      \
       KOKKOSBLAS2_SYR_DETERMINE_ARGS(LAYOUT);                                \
       if (A_is_ll) {                                                         \
@@ -137,22 +134,84 @@ namespace Impl {
       }                                                                      \
       else {                                                                 \
         /* blasSsyr() + ~A_ll => call kk_syr() */                            \
-        KOKKOS_IMPL_DO_NOT_USE_PRINTF("blasSsyr() + ~A_ll => call kk_syr\n"); /*AquiEPP*/ \
         kk_syr(space, trans, uplo, alpha, X, A);                             \
       }                                                                      \
       Kokkos::Profiling::popRegion();                                        \
     }                                                                        \
   };
 
-#define KOKKOSBLAS2_ZSYR_BLAS(LAYOUT, EXEC_SPACE, MEM_SPACE, ETI_SPEC_AVAIL)                          \
+#define KOKKOSBLAS2_ZSYR_BLAS(LAYOUT, EXEC_SPACE, MEM_SPACE, ETI_SPEC_AVAIL)                            \
+  template <>                                                                                           \
+  struct SYR< EXEC_SPACE                                                                                \
+            , Kokkos::View< const Kokkos::complex<double>*                                              \
+                          , LAYOUT                                                                      \
+                          , Kokkos::Device<EXEC_SPACE, MEM_SPACE>                                       \
+                          , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                     \
+                          >                                                                             \
+            , Kokkos::View< Kokkos::complex<double>**                                                   \
+                          , LAYOUT                                                                      \
+                          , Kokkos::Device<EXEC_SPACE, MEM_SPACE>                                       \
+                          , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                     \
+                          >                                                                             \
+            , true                                                                                      \
+            , ETI_SPEC_AVAIL                                                                            \
+            > {                                                                                         \
+    typedef Kokkos::complex<double> SCALAR;                                                             \
+    typedef Kokkos::View< const SCALAR*                                                                 \
+                        , LAYOUT                                                                        \
+                        , Kokkos::Device<EXEC_SPACE, MEM_SPACE>                                         \
+                        , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                       \
+                        > XViewType;                                                                    \
+    typedef Kokkos::View< SCALAR**                                                                      \
+                        , LAYOUT                                                                        \
+                        , Kokkos::Device<EXEC_SPACE, MEM_SPACE>                                         \
+                        , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                       \
+                        > AViewType;                                                                    \
+                                                                                                        \
+    static void syr( const typename AViewType::execution_space  & space                                 \
+                   , const          char                          trans[]                               \
+                   , const          char                          uplo[]                                \
+                   , typename       AViewType::const_value_type & alpha                                 \
+                   , const          XViewType                   & X                                     \
+                   , const          AViewType                   & A                                     \
+                   ) {                                                                                  \
+      Kokkos::Profiling::pushRegion("KokkosBlas::syr[TPL_BLAS,complex<double>");                        \
+      KOKKOSBLAS2_SYR_DETERMINE_ARGS(LAYOUT);                                                           \
+      bool justTranspose = (trans[0] == 'T') || (trans[0] == 't');                                      \
+      if (justTranspose) {                                                                              \
+        /* No blasZsyr() => call kk_syr() */                                                            \
+        kk_syr(space, trans, uplo, alpha, X, A);                                                        \
+      }                                                                                                 \
+      else {                                                                                            \
+        if (A_is_ll) {                                                                                  \
+          const std::complex<double> alpha_val = static_cast<const std::complex<double>>(alpha);        \
+          HostBlas<std::complex<double>>::zher( uplo[0]                                                 \
+                                              , N                                                       \
+                                              , alpha_val /*AquiEEP*/                                   \
+                                              , reinterpret_cast<const std::complex<double>*>(X.data()) \
+                                              , one                                                     \
+                                              , reinterpret_cast<std::complex<double>*>(A.data())       \
+                                              , LDA                                                     \
+                                              );                                                        \
+        }                                                                                               \
+        else {                                                                                          \
+          /* blasZher() + ~A_ll => call kk_syr() */                                                     \
+          kk_syr(space, trans, uplo, alpha, X, A);                                                      \
+        }                                                                                               \
+      }                                                                                                 \
+      Kokkos::Profiling::popRegion();                                                                   \
+    }                                                                                                   \
+  };
+
+#define KOKKOSBLAS2_CSYR_BLAS(LAYOUT, EXEC_SPACE, MEM_SPACE, ETI_SPEC_AVAIL)                          \
   template <>                                                                                         \
   struct SYR< EXEC_SPACE                                                                              \
-            , Kokkos::View< const Kokkos::complex<double>*                                            \
+            , Kokkos::View< const Kokkos::complex<float>*                                             \
                           , LAYOUT                                                                    \
                           , Kokkos::Device<EXEC_SPACE, MEM_SPACE>                                     \
                           , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                   \
                           >                                                                           \
-            , Kokkos::View< Kokkos::complex<double>**                                                 \
+            , Kokkos::View< Kokkos::complex<float>**                                                  \
                           , LAYOUT                                                                    \
                           , Kokkos::Device<EXEC_SPACE, MEM_SPACE>                                     \
                           , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                   \
@@ -160,7 +219,7 @@ namespace Impl {
             , true                                                                                    \
             , ETI_SPEC_AVAIL                                                                          \
             > {                                                                                       \
-    typedef Kokkos::complex<double> SCALAR;                                                           \
+    typedef Kokkos::complex<float> SCALAR;                                                            \
     typedef Kokkos::View< const SCALAR*                                                               \
                         , LAYOUT                                                                      \
                         , Kokkos::Device<EXEC_SPACE, MEM_SPACE>                                       \
@@ -179,103 +238,32 @@ namespace Impl {
                    , const          XViewType                   & X                                   \
                    , const          AViewType                   & A                                   \
                    ) {                                                                                \
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing through tpl-zsyr-blas\n" );                             \
-      Kokkos::Profiling::pushRegion("KokkosBlas::syr[TPL_BLAS,complex<double>");                      \
+      Kokkos::Profiling::pushRegion("KokkosBlas::syr[TPL_BLAS,complex<float>");                       \
       KOKKOSBLAS2_SYR_DETERMINE_ARGS(LAYOUT);                                                         \
       bool justTranspose = (trans[0] == 'T') || (trans[0] == 't');                                    \
       if (justTranspose) {                                                                            \
-        /* No blasZsyr() => call kk_syr() */                                                          \
-        KOKKOS_IMPL_DO_NOT_USE_PRINTF("No blasZsyr(); calling kk_syr\n"); /*AquiEPP*/                 \
+        /* No blasCsyr() => call kk_syr() */                                                          \
         kk_syr(space, trans, uplo, alpha, X, A);                                                      \
       }                                                                                               \
       else {                                                                                          \
         if (A_is_ll) {                                                                                \
-          KOKKOS_IMPL_DO_NOT_USE_PRINTF("Calling blasZher() with A_is_ll = true\n"); /*AquiEPP*/        \
-          const std::complex<double> alpha_val = static_cast<const std::complex<double>>(alpha);        \
-          HostBlas<std::complex<double>>::zher( uplo[0]                                                 \
-                                              , N                                                       \
-                                              , alpha_val                                               \
-                                              , reinterpret_cast<const std::complex<double>*>(X.data()) \
-                                              , one                                                     \
-                                              , reinterpret_cast<std::complex<double>*>(A.data())       \
-                                              , LDA                                                     \
-                                              );                                                        \
-	}                                                                                               \
-        else {                                                                                          \
-          /* blasZher() + ~A_ll => call kk_syr() */                                                     \
-          KOKKOS_IMPL_DO_NOT_USE_PRINTF("blasZher() + ~A_ll => call kk_syr\n"); /*AquiEPP*/             \
-          kk_syr(space, trans, uplo, alpha, X, A);                                                      \
-        }                                                                                               \
-      }                                                                                               \
-      Kokkos::Profiling::popRegion();                                                                 \
-    }                                                                                                 \
-  };
-
-#define KOKKOSBLAS2_CSYR_BLAS(LAYOUT, EXEC_SPACE, MEM_SPACE, ETI_SPEC_AVAIL)                        \
-  template <>                                                                                       \
-  struct SYR< EXEC_SPACE                                                                            \
-            , Kokkos::View< const Kokkos::complex<float>*                                           \
-                          , LAYOUT                                                                  \
-                          , Kokkos::Device<EXEC_SPACE, MEM_SPACE>                                   \
-                          , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                 \
-                          >                                                                         \
-            , Kokkos::View< Kokkos::complex<float>**                                                \
-                          , LAYOUT                                                                  \
-                          , Kokkos::Device<EXEC_SPACE, MEM_SPACE>                                   \
-                          , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                 \
-                          >                                                                         \
-            , true                                                                                  \
-            , ETI_SPEC_AVAIL                                                                        \
-            > {                                                                                     \
-    typedef Kokkos::complex<float> SCALAR;                                                          \
-    typedef Kokkos::View< const SCALAR*                                                             \
-                        , LAYOUT                                                                    \
-                        , Kokkos::Device<EXEC_SPACE, MEM_SPACE>                                     \
-                        , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                   \
-                        > XViewType;                                                                \
-    typedef Kokkos::View< SCALAR**                                                                  \
-                        , LAYOUT                                                                    \
-                        , Kokkos::Device<EXEC_SPACE, MEM_SPACE>                                     \
-                        , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                   \
-                        > AViewType;                                                                \
-                                                                                                    \
-    static void syr( const typename AViewType::execution_space  & space                             \
-                   , const          char                          trans[]                           \
-                   , const          char                          uplo[]                            \
-                   , typename       AViewType::const_value_type & alpha                             \
-                   , const          XViewType                   & X                                 \
-                   , const          AViewType                   & A                                 \
-                   ) {                                                                              \
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing through tpl-csyr-blas\n" );                           \
-      Kokkos::Profiling::pushRegion("KokkosBlas::syr[TPL_BLAS,complex<float>");                     \
-      KOKKOSBLAS2_SYR_DETERMINE_ARGS(LAYOUT);                                                       \
-      bool justTranspose = (trans[0] == 'T') || (trans[0] == 't');                                  \
-      if (justTranspose) {                                                                          \
-        /* No blasCsyr() => call kk_syr() */                                                        \
-        KOKKOS_IMPL_DO_NOT_USE_PRINTF("No blasCsyr(); calling kk_syr\n"); /*AquiEPP*/               \
-        kk_syr(space, trans, uplo, alpha, X, A);                                                    \
-      }                                                                                             \
-      else {                                                                                        \
-        if (A_is_ll) {                                                                              \
-          KOKKOS_IMPL_DO_NOT_USE_PRINTF("Calling blasCher() with A_is_ll = true\n"); /*AquiEPP*/      \
           const std::complex<float> alpha_val = static_cast<const std::complex<float>>(alpha);        \
           HostBlas<std::complex<float>>::cher( uplo[0]                                                \
                                              , N                                                      \
-                                             , alpha_val                                              \
+                                             , alpha_val /*AquiEEP*/                                  \
                                              , reinterpret_cast<const std::complex<float>*>(X.data()) \
                                              , one                                                    \
                                              , reinterpret_cast<std::complex<float>*>(A.data())       \
                                              , LDA                                                    \
                                              );                                                       \
-	}                                                                                             \
+        }                                                                                             \
         else {                                                                                        \
           /* blasCher() + ~A_ll => call kk_syr() */                                                   \
-          KOKKOS_IMPL_DO_NOT_USE_PRINTF("blasCher() + ~A_ll => call kk_syr\n"); /*AquiEPP*/           \
           kk_syr(space, trans, uplo, alpha, X, A);                                                    \
         }                                                                                             \
-      }                                                                                             \
-      Kokkos::Profiling::popRegion();                                                               \
-    }                                                                                               \
+      }                                                                                               \
+      Kokkos::Profiling::popRegion();                                                                 \
+    }                                                                                                 \
   };
 
 #ifdef KOKKOS_ENABLE_SERIAL

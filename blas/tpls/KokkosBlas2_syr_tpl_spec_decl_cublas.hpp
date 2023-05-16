@@ -22,13 +22,14 @@
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS2_SYR_CUBLAS_DETERMINE_ARGS(LAYOUT, uploChar)              \
-  bool A_is_lr      = std::is_same<Kokkos::LayoutRight, LAYOUT>::value;      \
-  const int M       = static_cast<int>(A_is_lr ? A.extent(1) : A.extent(0)); \
-  const int N       = static_cast<int>(A_is_lr ? A.extent(0) : A.extent(1)); \
-  constexpr int one = 1;                                                     \
-  const int LDA     = A_is_lr ? A.stride(0) : A.stride(1);                   \
-  cublasFillMode_t fillMode = (uploChar == 'L' || uploChar == 'l') ? CUBLAS_FILL_MODE_LOWER : CUBLAS_FILL_MODE_UPPER;
+#define KOKKOSBLAS2_SYR_CUBLAS_DETERMINE_ARGS(LAYOUT, uploChar)                \
+  bool A_is_lr      = std::is_same<Kokkos::LayoutRight, LAYOUT>::value;        \
+  const int M       = static_cast<int>(A_is_lr ? A.extent(1) : A.extent(0));   \
+  const int N       = static_cast<int>(A_is_lr ? A.extent(0) : A.extent(1));   \
+  constexpr int one = 1;                                                       \
+  const int LDA     = A_is_lr ? A.stride(0) : A.stride(1);                     \
+  cublasFillMode_t fillMode = (uploChar == 'L' || uploChar == 'l')             \
+                            ? CUBLAS_FILL_MODE_LOWER : CUBLAS_FILL_MODE_UPPER;
 
 #define KOKKOSBLAS2_DSYR_CUBLAS(LAYOUT, EXEC_SPACE, MEM_SPACE, ETI_SPEC_AVAIL)                    \
   template <>                                                                                     \
@@ -65,7 +66,6 @@ namespace Impl {
                    , const          XViewType                   & X                               \
                    , const          AViewType                   & A                               \
                    ) {                                                                            \
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing through tpl-dsyr-cublas\n" );                       \
       Kokkos::Profiling::pushRegion("KokkosBlas::syr[TPL_CUBLAS,double]");                        \
       KOKKOSBLAS2_SYR_CUBLAS_DETERMINE_ARGS(LAYOUT, uplo[0]);                                     \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
@@ -79,7 +79,7 @@ namespace Impl {
                                               , A.data()                                          \
                                               , LDA                                               \
                                               )                                                   \
-                                    );                                                            \
+                                  );                                                              \
       KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasSetStream(s.handle, NULL) );                            \
       Kokkos::Profiling::popRegion();                                                             \
     }                                                                                             \
@@ -120,7 +120,6 @@ namespace Impl {
                    , const          XViewType                   & X                               \
                    , const          AViewType                   & A                               \
                    ) {                                                                            \
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing through tpl-ssyr-cublas\n" );                       \
       Kokkos::Profiling::pushRegion("KokkosBlas::syr[TPL_CUBLAS,float]");                         \
       KOKKOSBLAS2_SYR_CUBLAS_DETERMINE_ARGS(LAYOUT, uplo[0]);                                     \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
@@ -175,22 +174,29 @@ namespace Impl {
                    , const          XViewType                   & X                                  \
                    , const          AViewType                   & A                                  \
                    ) {                                                                               \
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing through tpl-zsyr-cublas\n" );                          \
       Kokkos::Profiling::pushRegion("KokkosBlas::syr[TPL_CUBLAS,complex<double>]");                  \
       KOKKOSBLAS2_SYR_CUBLAS_DETERMINE_ARGS(LAYOUT, uplo[0]);                                        \
       bool justTranspose = (trans[0] == 'T') || (trans[0] == 't');                                   \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton();    \
       KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasSetStream(s.handle, space.cuda_stream()) );                \
       if (justTranspose) {                                                                           \
-        kk_syr( space, trans, uplo, alpha, X, A);                                                    \
-        KOKKOS_IMPL_DO_NOT_USE_PRINTF("cublasZsyru() is not supported\n"); /* AquiEPP */             \
-        throw std::runtime_error("Error: cublasZsyru() is not supported.");                          \
-      }                                                                                              \
-      else {                                                                                         \
-        KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasZsyr( s.handle /*AquiEEP*/                               \
+        KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasZsyr( s.handle                                           \
                                                 , fillMode                                           \
                                                 , N                                                  \
                                                 , reinterpret_cast<const cuDoubleComplex*>(&alpha)   \
+                                                , reinterpret_cast<const cuDoubleComplex*>(X.data()) \
+                                                , one                                                \
+                                                , reinterpret_cast<cuDoubleComplex*>(A.data())       \
+                                                , LDA                                                \
+                                                )                                                    \
+                                    );                                                               \
+      }                                                                                              \
+      else {                                                                                         \
+        const double alpha_val = alpha.real();                                                       \
+        KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasZher( s.handle                                           \
+                                                , fillMode                                           \
+                                                , N                                                  \
+                                                , &alpha_val /*AquiEEP*/                             \
                                                 , reinterpret_cast<const cuDoubleComplex*>(X.data()) \
                                                 , one                                                \
                                                 , reinterpret_cast<cuDoubleComplex*>(A.data())       \
@@ -238,22 +244,29 @@ namespace Impl {
                    , const          XViewType                   & X                               \
                    , const          AViewType                   & A                               \
                    ) {                                                                            \
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing through tpl-csyr-cublas\n" );                       \
       Kokkos::Profiling::pushRegion("KokkosBlas::syr[TPL_CUBLAS,complex<float>]");                \
       KOKKOSBLAS2_SYR_CUBLAS_DETERMINE_ARGS(LAYOUT, uplo[0]);                                     \
       bool justTranspose = (trans[0] == 'T') || (trans[0] == 't');                                \
       KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
       KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasSetStream(s.handle, space.cuda_stream()) );             \
       if (justTranspose) {                                                                        \
-        kk_syr( space, trans, uplo, alpha, X, A);                                                 \
-        KOKKOS_IMPL_DO_NOT_USE_PRINTF("cublasCsyru() is not supported\n"); /* AquiEPP */          \
-        throw std::runtime_error("Error: cublasCsyru() is not supported.");                       \
-      }                                                                                           \
-      else {                                                                                      \
-        KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasCsyr( s.handle /*AquiEEP*/                            \
+        KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasCsyr( s.handle                                        \
                                                 , fillMode                                        \
                                                 , N                                               \
                                                 , reinterpret_cast<const cuComplex*>(&alpha)      \
+                                                , reinterpret_cast<const cuComplex*>(X.data())    \
+                                                , one                                             \
+                                                , reinterpret_cast<cuComplex*>(A.data())          \
+                                                , LDA                                             \
+                                                )                                                 \
+                                    );                                                            \
+      }                                                                                           \
+      else {                                                                                      \
+        const float alpha_val = alpha.real();                                                     \
+        KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasCher( s.handle                                        \
+                                                , fillMode                                        \
+                                                , N                                               \
+                                                , &alpha_val /*AquiEEP*/                          \
                                                 , reinterpret_cast<const cuComplex*>(X.data())    \
                                                 , one                                             \
                                                 , reinterpret_cast<cuComplex*>(A.data())          \
