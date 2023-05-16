@@ -587,30 +587,16 @@ elif [ "$MACHINE" = "inouye" ]; then
 
   SPACK_HOST_ARCH="+a64fx"
 elif [ "$MACHINE" = "weaver" ]; then
-  MODULE_ENVIRONMENT="source /etc/profile.d/modules.sh"
+  # Use the legacy env for now until all modules are part of the new system
+  MODULE_ENVIRONMENT="source /projects/ppc64le-pwr9-rhel8/legacy-env.sh"
   eval "$MODULE_ENVIRONMENT"
   SKIP_HWLOC=True
 
-# used with rhel7W queue
-  BASE_MODULE_LIST="cmake/3.23.1,<COMPILER_NAME>/<COMPILER_VERSION>"
-  CUDA_MODULE_LIST="cmake/3.23.1,<COMPILER_NAME>/<COMPILER_VERSION>,ibm/xl/16.1.1,gcc/7.2.0"
-  CUDA10_MODULE_LIST="cmake/3.23.1,<COMPILER_NAME>/<COMPILER_VERSION>,ibm/xl/16.1.1,gcc/7.4.0"
-
-  GCC72_MODULE_TPL_LIST="cmake/3.23.1,<COMPILER_NAME>/<COMPILER_VERSION>,openblas/0.2.20/gcc/7.2.0"
-  GCC74_MODULE_TPL_LIST="cmake/3.23.1,<COMPILER_NAME>/<COMPILER_VERSION>,openblas/0.2.20/gcc/7.2.0,gcc/7.4.0"
   GCC93_MODULE_TPL_LIST="cmake/3.23.1,<COMPILER_NAME>/<COMPILER_VERSION>,openblas/0.3.20/gcc/9.3.0,gcc/9.3.0"
-  CUDA_MODULE_TPL_LIST="cmake/3.23.1,<COMPILER_NAME>/<COMPILER_VERSION>,gcc/7.2.0,netlib/3.8.0/gcc/7.2.0"
-  CUDA10_MODULE_TPL_LIST="cmake/3.23.1,<COMPILER_NAME>/<COMPILER_VERSION>,gcc/7.2.0,openblas/0.2.20/gcc/7.2.0"
-
-    # Issues finding CUBLAS with cuda/10.1.243 module at configure
-    # "Could NOT find TPLCUBLAS (missing: CUDA_CUBLAS_LIBRARIES)"
-    # Once resolved add the compiler + modules below to the SPOT_CHECK_TPLS
-#               "cuda/10.1.243 $CUDA10_MODULE_TPL_LIST "Cuda_OpenMP" ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
   CLANG13_MODULE_TPL_LIST="cmake/3.23.1,<COMPILER_NAME>/<COMPILER_VERSION>,openblas/0.3.20/gcc/9.3.0,cuda/10.1.243"
 
-# used with rhel8 queue
-  RHEL8_BASE_MODULE_LIST="cmake/3.23.1,<COMPILER_NAME>/<COMPILER_VERSION>"
-  # Cuda/11 modules available only on the dev queue (rhel8 OS); gcc/8.3.1 load by default
+  BASE_MODULE_LIST="cmake/3.23.1,<COMPILER_NAME>/<COMPILER_VERSION>"
+  # Cuda/11 modules available rhel8 queue (rhel8 OS); gcc/8.3.1 load by default
   RHEL8_CUDA11_MODULE_LIST="cmake/3.23.1,<COMPILER_NAME>/<COMPILER_VERSION>,openblas/0.3.20/gcc/9.3.0"
 
   # Don't do Threads on weaver
@@ -618,31 +604,19 @@ elif [ "$MACHINE" = "weaver" ]; then
 
   if [ "$SPOT_CHECK" = "True" ]; then
     # Format: (compiler module-list build-list exe-name warning-flag)
-    COMPILERS=("gcc/7.2.0 $BASE_MODULE_LIST $GCC_IBM_BUILD_LIST g++ $GCC_WARNING_FLAGS"
-               "cuda/10.1.243 $CUDA10_MODULE_LIST "Cuda_OpenMP" ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
-               "cuda/11.2.2 $RHEL8_CUDA11_MODULE_LIST "Cuda_OpenMP" ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+    COMPILERS=("cuda/11.2.2 $RHEL8_CUDA11_MODULE_LIST "Cuda_OpenMP" ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
                "gcc/9.3.0 $BASE_MODULE_LIST $GCC_IBM_BUILD_LIST g++ $GCC_WARNING_FLAGS"
     )
   elif [ "$SPOT_CHECK_TPLS" = "True" ]; then
     # Format: (compiler module-list build-list exe-name warning-flag)
-    COMPILERS=("gcc/7.2.0 $GCC72_MODULE_TPL_LIST "Serial,OpenMP" g++ $GCC_WARNING_FLAGS"
-               "gcc/7.4.0 $GCC74_MODULE_TPL_LIST "OpenMP" g++ $GCC_WARNING_FLAGS"
-               "cuda/9.2.88 $CUDA_MODULE_TPL_LIST "Cuda_OpenMP" ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
-               "cuda/10.1.243 $CUDA10_MODULE_TPL_LIST "Cuda_Serial" ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
-               "cuda/11.2.2 $RHEL8_CUDA11_MODULE_LIST "Cuda_Serial" ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+    COMPILERS=("cuda/11.2.2 $RHEL8_CUDA11_MODULE_LIST "Cuda_Serial" ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
                "gcc/9.3.0 $GCC93_MODULE_TPL_LIST "OpenMP,Serial" g++ $GCC_WARNING_FLAGS"
                "clang/13.0.0 $CLANG13_MODULE_TPL_LIST "Cuda" clang++ $CUDA_WARNING_FLAGS"
     )
   else
     # Format: (compiler module-list build-list exe-name warning-flag)
-    COMPILERS=("gcc/7.2.0 $BASE_MODULE_LIST $GCC_IBM_BUILD_LIST g++ $GCC_WARNING_FLAGS"
-               "gcc/7.4.0 $BASE_MODULE_LIST $GCC_IBM_BUILD_LIST g++ $GCC_WARNING_FLAGS"
-               "gcc/8.3.1 $RHEL8_BASE_MODULE_LIST $GCC_IBM_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+    COMPILERS=("gcc/8.3.1 $BASE_MODULE_LIST $GCC_IBM_BUILD_LIST g++ $GCC_WARNING_FLAGS"
                "gcc/9.3.0 $BASE_MODULE_LIST $GCC_IBM_BUILD_LIST g++ $GCC_WARNING_FLAGS"
-               "cuda/10.0.130 $CUDA10_MODULE_LIST $CUDA_IBM_BUILD_LIST ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
-               "cuda/10.1.105 $CUDA10_MODULE_LIST $CUDA_IBM_BUILD_LIST ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
-               "cuda/10.1.243 $CUDA10_MODULE_LIST $CUDA_IBM_BUILD_LIST ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
-               "cuda/10.2.089 $CUDA10_MODULE_LIST $CUDA_IBM_BUILD_LIST ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
                "cuda/11.2.2 $RHEL8_CUDA11_MODULE_LIST $CUDA_IBM_BUILD_LIST ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
                "clang/13.0.0 $CLANG13_MODULE_TPL_LIST $CUDA_IBM_BUILD_LIST clang++ $CUDA_WARNING_FLAGS"
     )
