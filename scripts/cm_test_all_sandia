@@ -597,19 +597,19 @@ elif [ "$MACHINE" = "weaver" ]; then
 
   BASE_MODULE_LIST="cmake/3.23.1,<COMPILER_NAME>/<COMPILER_VERSION>"
   # Cuda/11 modules available rhel8 queue (rhel8 OS); gcc/8.3.1 load by default
-  RHEL8_CUDA11_MODULE_LIST="cmake/3.23.1,<COMPILER_NAME>/<COMPILER_VERSION>,openblas/0.3.20/gcc/9.3.0"
+  RHEL8_CUDA11_MODULE_LIST="cmake/3.23.1,cuda/11.2.2/gcc/8.3.1,openblas/0.3.18/gcc/8.3.1"
 
   # Don't do Threads on weaver
   GCC_IBM_BUILD_LIST="OpenMP,Serial,OpenMP_Serial"
 
   if [ "$SPOT_CHECK" = "True" ]; then
     # Format: (compiler module-list build-list exe-name warning-flag)
-    COMPILERS=("cuda/11.2.2 $RHEL8_CUDA11_MODULE_LIST "Cuda_OpenMP" ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+    COMPILERS=("cuda/11.2.2/gcc/8.3.1 $RHEL8_CUDA11_MODULE_LIST "Cuda_OpenMP" ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
                "gcc/9.3.0 $BASE_MODULE_LIST $GCC_IBM_BUILD_LIST g++ $GCC_WARNING_FLAGS"
     )
   elif [ "$SPOT_CHECK_TPLS" = "True" ]; then
     # Format: (compiler module-list build-list exe-name warning-flag)
-    COMPILERS=("cuda/11.2.2 $RHEL8_CUDA11_MODULE_LIST "Cuda_Serial" ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+    COMPILERS=("cuda/11.2.2/gcc/8.3.1 $RHEL8_CUDA11_MODULE_LIST "Cuda_Serial" ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
                "gcc/9.3.0 $GCC93_MODULE_TPL_LIST "OpenMP,Serial" g++ $GCC_WARNING_FLAGS"
                "clang/13.0.0 $CLANG13_MODULE_TPL_LIST "Cuda" clang++ $CUDA_WARNING_FLAGS"
     )
@@ -617,7 +617,7 @@ elif [ "$MACHINE" = "weaver" ]; then
     # Format: (compiler module-list build-list exe-name warning-flag)
     COMPILERS=("gcc/8.3.1 $BASE_MODULE_LIST $GCC_IBM_BUILD_LIST g++ $GCC_WARNING_FLAGS"
                "gcc/9.3.0 $BASE_MODULE_LIST $GCC_IBM_BUILD_LIST g++ $GCC_WARNING_FLAGS"
-               "cuda/11.2.2 $RHEL8_CUDA11_MODULE_LIST $CUDA_IBM_BUILD_LIST ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+               "cuda/11.2.2/gcc/8.3.1 $RHEL8_CUDA11_MODULE_LIST $CUDA_IBM_BUILD_LIST ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
                "clang/13.0.0 $CLANG13_MODULE_TPL_LIST $CUDA_IBM_BUILD_LIST clang++ $CUDA_WARNING_FLAGS"
     )
   fi
