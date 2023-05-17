@@ -14,7 +14,7 @@
 //
 //@HEADER
 #define KOKKOSKERNELS_IMPL_COMPILE_LIBRARY true
-#include "KokkosBatched_Gemm_Decl.hpp"
+#include "KokkosBatched_HostLevel_Gemm.hpp"
 namespace KokkosBatched {
 namespace Impl {
 using KokkosBlas::Trans;
