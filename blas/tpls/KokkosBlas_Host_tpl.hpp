@@ -82,18 +82,20 @@ struct HostBlas {
                  , int lda
                  );
 
+  template< typename tAlpha >
   static void cher( const char uplo
                   , int n
-                  , const T alpha
+                  , const tAlpha alpha
                   , const T* x
                   , int incx
                   , T* a
                   , int lda
                   );
 
+  template< typename tAlpha >
   static void zher( const char uplo
                   , int n
-                  , const T alpha
+                  , const tAlpha alpha
                   , const T* x
                   , int incx
                   , T* a

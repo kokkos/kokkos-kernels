@@ -929,18 +929,18 @@ void HostBlas<std::complex<float> >::gerc(
                  &lda);
 }
 template <>
-void HostBlas<std::complex<float> >::cher( const char uplo
-                                         , int n
-                                         , const std::complex<float> alpha
-                                         , const std::complex<float>* x
-                                         , int incx
-                                         , std::complex<float>* a
-                                         , int lda
-                                         ) {
-  const float alphaVal = alpha.real();
+template <>
+void HostBlas<std::complex<float> >::cher<float>( const char uplo
+                                                , int n
+                                                , const float alpha
+                                                , const std::complex<float>* x
+                                                , int incx
+                                                , std::complex<float>* a
+                                                , int lda
+                                                ) {
   F77_FUNC_CHER( &uplo
                , &n
-               , &alphaVal
+               , &alpha
                , (const std::complex<float>*)x
                , &incx
                , (std::complex<float>*)a
@@ -1118,18 +1118,18 @@ void HostBlas<std::complex<double> >::gerc(
                  (std::complex<double>*)a, &lda);
 }
 template <>
-void HostBlas<std::complex<double> >::zher( const char uplo
-                                          , int n
-                                          , const std::complex<double> alpha
-                                          , const std::complex<double>* x
-                                          , int incx
-                                          , std::complex<double>* a
-                                          , int lda
-                                          ) {
-  const double alphaVal = alpha.real();
+template <>
+void HostBlas<std::complex<double> >::zher<double>( const char uplo
+                                                  , int n
+                                                  , const double alpha
+                                                  , const std::complex<double>* x
+                                                  , int incx
+                                                  , std::complex<double>* a
+                                                  , int lda
+                                                  ) {
   F77_FUNC_ZHER( &uplo
                , &n
-               , &alphaVal
+               , &alpha
                , (const std::complex<double>*)x
                , &incx
                , (std::complex<double>*)a

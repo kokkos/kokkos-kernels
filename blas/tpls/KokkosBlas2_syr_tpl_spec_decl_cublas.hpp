@@ -219,7 +219,7 @@ namespace Impl {
           KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasZher( s.handle                                           \
                                                   , fillMode                                           \
                                                   , N                                                  \
-                                                  , &alpha_val /*AquiEEP*/                             \
+                                                  , &alpha_val                                         \
                                                   , reinterpret_cast<const cuDoubleComplex*>(X.data()) \
                                                   , one                                                \
                                                   , reinterpret_cast<cuDoubleComplex*>(A.data())       \
@@ -304,7 +304,7 @@ namespace Impl {
           KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasCher( s.handle                                          \
                                                   , fillMode                                          \
                                                   , N                                                 \
-                                                  , &alpha_val /*AquiEEP*/                            \
+                                                  , &alpha_val                                        \
                                                   , reinterpret_cast<const cuComplex*>(X.data())      \
                                                   , one                                               \
                                                   , reinterpret_cast<cuComplex*>(A.data())            \
