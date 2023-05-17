@@ -682,6 +682,9 @@ SyrTester< ScalarX
           }
         }
       }
+      for (int i = 0; i < _N; ++i) {
+        h_vanilla(i,i).imag() = 0.;
+      }
     }
     else {
       for (int i = 0; i < _M; ++i) {
@@ -709,6 +712,9 @@ SyrTester< ScalarX
             h_vanilla(i,j) = h_A(i,j);
           }
         }
+      }
+      for (int i = 0; i < _N; ++i) {
+        h_vanilla(i,i).imag() = 0.;
       }
     }
     else {
