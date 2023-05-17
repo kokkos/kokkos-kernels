@@ -78,7 +78,7 @@ namespace Impl {
                              );                                              \
       }                                                                      \
       else {                                                                 \
-        /* blasDsyr() + ~A_ll => call kk_syr() */                            \
+        /* blasDsyr() + ~A_ll => call kokkos-kernels' implementation */      \
         kk_syr(space, trans, uplo, alpha, X, A);                             \
       }                                                                      \
       Kokkos::Profiling::popRegion();                                        \
@@ -133,7 +133,7 @@ namespace Impl {
                              );                                              \
       }                                                                      \
       else {                                                                 \
-        /* blasSsyr() + ~A_ll => call kk_syr() */                            \
+        /* blasSsyr() + ~A_ll => call kokkos-kernels' implementation */      \
         kk_syr(space, trans, uplo, alpha, X, A);                             \
       }                                                                      \
       Kokkos::Profiling::popRegion();                                        \
@@ -179,7 +179,7 @@ namespace Impl {
       KOKKOSBLAS2_SYR_DETERMINE_ARGS(LAYOUT);                                                                   \
       bool justTranspose = (trans[0] == 'T') || (trans[0] == 't');                                              \
       if (justTranspose) {                                                                                      \
-        /* No blasZsyr() => call kk_syr() */                                                                    \
+        /* No blasZsyr() => call kokkos-kernels' implementation */                                              \
         kk_syr(space, trans, uplo, alpha, X, A);                                                                \
       }                                                                                                         \
       else {                                                                                                    \
@@ -194,7 +194,7 @@ namespace Impl {
                                                       );                                                        \
         }                                                                                                       \
         else {                                                                                                  \
-          /* blasZher() + [~A_ll or ~real alpha] => call kk_syr() */                                            \
+          /* blasZher() + [~A_ll or ~real alpha] => call kokkos-kernels' implementation */                      \
           kk_syr(space, trans, uplo, alpha, X, A);                                                              \
         }                                                                                                       \
       }                                                                                                         \
@@ -241,7 +241,7 @@ namespace Impl {
       KOKKOSBLAS2_SYR_DETERMINE_ARGS(LAYOUT);                                                                \
       bool justTranspose = (trans[0] == 'T') || (trans[0] == 't');                                           \
       if (justTranspose) {                                                                                   \
-        /* No blasCsyr() => call kk_syr() */                                                                 \
+        /* No blasCsyr() => call kokkos-kernels' implementation */                                           \
         kk_syr(space, trans, uplo, alpha, X, A);                                                             \
       }                                                                                                      \
       else {                                                                                                 \
@@ -256,7 +256,7 @@ namespace Impl {
                                                     );                                                       \
         }                                                                                                    \
         else {                                                                                               \
-          /* blasCher() + [~A_ll or ~real alpha] => call kk_syr() */                                         \
+          /* blasCher() + [~A_ll or ~real alpha] => call kokkos-kernels' implementation */                   \
           kk_syr(space, trans, uplo, alpha, X, A);                                                           \
         }                                                                                                    \
       }                                                                                                      \

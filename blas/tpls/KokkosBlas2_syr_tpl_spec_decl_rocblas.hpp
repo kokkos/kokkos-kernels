@@ -23,131 +23,229 @@ namespace KokkosBlas {
 namespace Impl {
 
 #define KOKKOSBLAS2_SYR_ROCBLAS_DETERMINE_ARGS(LAYOUT)                       \
+  bool A_is_ll      = std::is_same<Kokkos::LayoutLeft, LAYOUT>::value;       \
   bool A_is_lr      = std::is_same<Kokkos::LayoutRight, LAYOUT>::value;      \
   const int M       = static_cast<int>(A_is_lr ? A.extent(1) : A.extent(0)); \
   const int N       = static_cast<int>(A_is_lr ? A.extent(0) : A.extent(1)); \
   constexpr int one = 1;                                                     \
-  const int LDA     = A_is_lr ? A.stride(0) : A.stride(1);
+  const int LDA     = A_is_lr ? A.stride(0) : A.stride(1);                   \
+  rocblas_fill fillMode = (uploChar == 'L' || uploChar == 'l')               \
+                        ? rocblas_fill_lower : rocblas_fill_upper;
 
-#define KOKKOSBLAS2_DSYR_ROCBLAS(LAYOUT, EXEC_SPACE, MEM_SPACE, ETI_SPEC_AVAIL)                \
-  template <>                                                                                  \
-  struct SYR< EXEC_SPACE                                                                       \
-            , Kokkos::View< const double*                                                      \
-                          , LAYOUT                                                             \
-                          , Kokkos::Device<EXEC_SPACE, MEM_SPACE>                              \
-                          , Kokkos::MemoryTraits<Kokkos::Unmanaged>                            \
-                          >                                                                    \
-            , Kokkos::View< double**                                                           \
-                          , LAYOUT                                                             \
-                          , Kokkos::Device<EXEC_SPACE, MEM_SPACE>                              \
-                          , Kokkos::MemoryTraits<Kokkos::Unmanaged>                            \
-                          >                                                                    \
-            , true                                                                             \
-            , ETI_SPEC_AVAIL                                                                   \
-            > {                                                                                \
-    typedef double SCALAR;                                                                     \
-    typedef Kokkos::View< const SCALAR*                                                        \
-                        , LAYOUT                                                               \
-                        , Kokkos::Device<EXEC_SPACE, MEM_SPACE>                                \
-                        , Kokkos::MemoryTraits<Kokkos::Unmanaged>                              \
-                        > XViewType;                                                           \
-    typedef Kokkos::View< SCALAR**                                                             \
-                        , LAYOUT                                                               \
-                        , Kokkos::Device<EXEC_SPACE, MEM_SPACE>                                \
-                        , Kokkos::MemoryTraits<Kokkos::Unmanaged>                              \
-                        > AViewType;                                                           \
-                                                                                               \
-    static void syr( const typename AViewType::execution_space  & space                        \
-                   , const          char                          trans[]                      \
-                   , const          char                          uplo[]                       \
-                   , typename       AViewType::const_value_type & alpha                        \
-                   , const          XViewType                   & X                            \
-                   , const          AViewType                   & A                            \
-                   ) {                                                                         \
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing through tpl-dsyr-rocblas\n" );                   \
-      Kokkos::Profiling::pushRegion("KokkosBlas::syr[TPL_ROCBLAS,double]");                    \
-      KOKKOSBLAS2_SYR_ROCBLAS_DETERMINE_ARGS(LAYOUT);                                          \
-      KokkosBlas::Impl::RocBlasSingleton& s = KokkosBlas::Impl::RocBlasSingleton::singleton(); \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_set_stream(s.handle, space.hip_stream()) );       \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_dsyr( s.handle                                    \
-                                                 , uplo                                        \
-                                                 , N                                           \
-                                                 , &alpha                                      \
-                                                 , X.data()                                    \
-                                                 , one                                         \
-                                                 , A.data()                                    \
-                                                 , LDA                                         \
-                                                 )                                             \
-                                   );                                                          \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_set_stream(s.handle, NULL) );                     \
-      Kokkos::Profiling::popRegion();                                                          \
-    }                                                                                          \
+#define KOKKOSBLAS2_DSYR_ROCBLAS(LAYOUT, EXEC_SPACE, MEM_SPACE, ETI_SPEC_AVAIL)                  \
+  template <>                                                                                    \
+  struct SYR< EXEC_SPACE                                                                         \
+            , Kokkos::View< const double*                                                        \
+                          , LAYOUT                                                               \
+                          , Kokkos::Device<EXEC_SPACE, MEM_SPACE>                                \
+                          , Kokkos::MemoryTraits<Kokkos::Unmanaged>                              \
+                          >                                                                      \
+            , Kokkos::View< double**                                                             \
+                          , LAYOUT                                                               \
+                          , Kokkos::Device<EXEC_SPACE, MEM_SPACE>                                \
+                          , Kokkos::MemoryTraits<Kokkos::Unmanaged>                              \
+                          >                                                                      \
+            , true                                                                               \
+            , ETI_SPEC_AVAIL                                                                     \
+            > {                                                                                  \
+    typedef double SCALAR;                                                                       \
+    typedef Kokkos::View< const SCALAR*                                                          \
+                        , LAYOUT                                                                 \
+                        , Kokkos::Device<EXEC_SPACE, MEM_SPACE>                                  \
+                        , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                \
+                        > XViewType;                                                             \
+    typedef Kokkos::View< SCALAR**                                                               \
+                        , LAYOUT                                                                 \
+                        , Kokkos::Device<EXEC_SPACE, MEM_SPACE>                                  \
+                        , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                \
+                        > AViewType;                                                             \
+                                                                                                 \
+    static void syr( const typename AViewType::execution_space  & space                          \
+                   , const          char                          trans[]                        \
+                   , const          char                          uplo[]                         \
+                   , typename       AViewType::const_value_type & alpha                          \
+                   , const          XViewType                   & X                              \
+                   , const          AViewType                   & A                              \
+                   ) {                                                                           \
+      Kokkos::Profiling::pushRegion("KokkosBlas::syr[TPL_ROCBLAS,double]");                      \
+      KOKKOSBLAS2_SYR_ROCBLAS_DETERMINE_ARGS(LAYOUT);                                            \
+      if (A_is_ll) {                                                                             \
+        KokkosBlas::Impl::RocBlasSingleton& s = KokkosBlas::Impl::RocBlasSingleton::singleton(); \
+        KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_set_stream(s.handle, space.hip_stream()) );       \
+        KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_dsyr( s.handle                                    \
+                                                   , uplo                                        \
+                                                   , N                                           \
+                                                   , &alpha                                      \
+                                                   , X.data()                                    \
+                                                   , one                                         \
+                                                   , A.data()                                    \
+                                                   , LDA                                         \
+                                                   )                                             \
+                                     );                                                          \
+        KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_set_stream(s.handle, NULL) );                     \
+      }                                                                                          \
+      else {                                                                                     \
+        /* rocblas_dsyr() + ~A_ll => call kokkos-kernels' implementation */                      \
+        kk_syr(space, trans, uplo, alpha, X, A);                                                 \
+      }                                                                                          \
+      Kokkos::Profiling::popRegion();                                                            \
+    }                                                                                            \
   };
 
-#define KOKKOSBLAS2_SSYR_ROCBLAS(LAYOUT, EXEC_SPACE, MEM_SPACE, ETI_SPEC_AVAIL)                \
-  template <>                                                                                  \
-  struct SYR< EXEC_SPACE                                                                       \
-            , Kokkos::View< const float*                                                       \
-                          , LAYOUT                                                             \
-                          , Kokkos::Device<EXEC_SPACE, MEM_SPACE>                              \
-                          , Kokkos::MemoryTraits<Kokkos::Unmanaged>                            \
-                          >                                                                    \
-            , Kokkos::View< float**                                                            \
-                          , LAYOUT                                                             \
-                          , Kokkos::Device<EXEC_SPACE, MEM_SPACE>                              \
-                          , Kokkos::MemoryTraits<Kokkos::Unmanaged>                            \
-                          >                                                                    \
-            , true                                                                             \
-            , ETI_SPEC_AVAIL                                                                   \
-            > {                                                                                \
-    typedef float SCALAR;                                                                      \
-    typedef Kokkos::View< const SCALAR*                                                        \
-                        , LAYOUT                                                               \
-                        , Kokkos::Device<EXEC_SPACE, MEM_SPACE>                                \
-                        , Kokkos::MemoryTraits<Kokkos::Unmanaged>                              \
-                        > XViewType;                                                           \
-    typedef Kokkos::View< SCALAR**                                                             \
-                        , LAYOUT                                                               \
-                        , Kokkos::Device<EXEC_SPACE, MEM_SPACE>                                \
-                        , Kokkos::MemoryTraits<Kokkos::Unmanaged>                              \
-                        > AViewType;                                                           \
-                                                                                               \
-    static void syr( const typename AViewType::execution_space  & space                        \
-                   , const          char                          trans[]                      \
-                   , const          char                          uplo[]                       \
-                   , typename       AViewType::const_value_type & alpha                        \
-                   , const          XViewType                   & X                            \
-                   , const          AViewType                   & A                            \
-                   ) {                                                                         \
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing through tpl-ssyr-rocblas\n" );                   \
-      Kokkos::Profiling::pushRegion("KokkosBlas::syr[TPL_ROCBLAS,float]");                     \
-      KOKKOSBLAS2_SYR_ROCBLAS_DETERMINE_ARGS(LAYOUT);                                          \
-      KokkosBlas::Impl::RocBlasSingleton& s = KokkosBlas::Impl::RocBlasSingleton::singleton(); \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_set_stream(s.handle, space.hip_stream()) );       \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_ssyr( s.handle                                    \
-                                                 , uplo                                        \
-                                                 , N                                           \
-                                                 , &alpha                                      \
-                                                 , X.data()                                    \
-                                                 , one                                         \
-                                                 , A.data()                                    \
-                                                 , LDA                                         \
-                                                 )                                             \
-                                   );                                                          \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_set_stream(s.handle, NULL) );                     \
-      Kokkos::Profiling::popRegion();                                                          \
-    }                                                                                          \
+#define KOKKOSBLAS2_SSYR_ROCBLAS(LAYOUT, EXEC_SPACE, MEM_SPACE, ETI_SPEC_AVAIL)                  \
+  template <>                                                                                    \
+  struct SYR< EXEC_SPACE                                                                         \
+            , Kokkos::View< const float*                                                         \
+                          , LAYOUT                                                               \
+                          , Kokkos::Device<EXEC_SPACE, MEM_SPACE>                                \
+                          , Kokkos::MemoryTraits<Kokkos::Unmanaged>                              \
+                          >                                                                      \
+            , Kokkos::View< float**                                                              \
+                          , LAYOUT                                                               \
+                          , Kokkos::Device<EXEC_SPACE, MEM_SPACE>                                \
+                          , Kokkos::MemoryTraits<Kokkos::Unmanaged>                              \
+                          >                                                                      \
+            , true                                                                               \
+            , ETI_SPEC_AVAIL                                                                     \
+            > {                                                                                  \
+    typedef float SCALAR;                                                                        \
+    typedef Kokkos::View< const SCALAR*                                                          \
+                        , LAYOUT                                                                 \
+                        , Kokkos::Device<EXEC_SPACE, MEM_SPACE>                                  \
+                        , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                \
+                        > XViewType;                                                             \
+    typedef Kokkos::View< SCALAR**                                                               \
+                        , LAYOUT                                                                 \
+                        , Kokkos::Device<EXEC_SPACE, MEM_SPACE>                                  \
+                        , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                \
+                        > AViewType;                                                             \
+                                                                                                 \
+    static void syr( const typename AViewType::execution_space  & space                          \
+                   , const          char                          trans[]                        \
+                   , const          char                          uplo[]                         \
+                   , typename       AViewType::const_value_type & alpha                          \
+                   , const          XViewType                   & X                              \
+                   , const          AViewType                   & A                              \
+                   ) {                                                                           \
+      Kokkos::Profiling::pushRegion("KokkosBlas::syr[TPL_ROCBLAS,float]");                       \
+      KOKKOSBLAS2_SYR_ROCBLAS_DETERMINE_ARGS(LAYOUT);                                            \
+      if (A_is_ll) {                                                                             \
+        KokkosBlas::Impl::RocBlasSingleton& s = KokkosBlas::Impl::RocBlasSingleton::singleton(); \
+        KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_set_stream(s.handle, space.hip_stream()) );       \
+        KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_ssyr( s.handle                                    \
+                                                   , uplo                                        \
+                                                   , N                                           \
+                                                   , &alpha                                      \
+                                                   , X.data()                                    \
+                                                   , one                                         \
+                                                   , A.data()                                    \
+                                                   , LDA                                         \
+                                                   )                                             \
+                                     );                                                          \
+        KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_set_stream(s.handle, NULL) );                     \
+      }                                                                                          \
+      else {                                                                                     \
+        /* rocblas_ssyr() + ~A_ll => call kokkos-kernels' implementation */                      \
+        kk_syr(space, trans, uplo, alpha, X, A);                                                 \
+      }                                                                                          \
+      Kokkos::Profiling::popRegion();                                                            \
+    }                                                                                            \
   };
 
-#define KOKKOSBLAS2_ZSYR_ROCBLAS(LAYOUT, EXEC_SPACE, MEM_SPACE, ETI_SPEC_AVAIL)                                 \
+#define KOKKOSBLAS2_ZSYR_ROCBLAS(LAYOUT, EXEC_SPACE, MEM_SPACE, ETI_SPEC_AVAIL)                                  \
+  template <>                                                                                                    \
+  struct SYR< EXEC_SPACE                                                                                         \
+            , Kokkos::View< const Kokkos::complex<double>*                                                       \
+                          , LAYOUT                                                                               \
+                          , Kokkos::Device<EXEC_SPACE, MEM_SPACE>                                                \
+                          , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                              \
+                          >                                                                                      \
+            , Kokkos::View< Kokkos::complex<double>**                                                            \
+                          , LAYOUT                                                                               \
+                          , Kokkos::Device<EXEC_SPACE, MEM_SPACE>                                                \
+                          , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                              \
+                          >                                                                                      \
+            , true                                                                                               \
+            , ETI_SPEC_AVAIL                                                                                     \
+            > {                                                                                                  \
+    typedef Kokkos::complex<double> SCALAR;                                                                      \
+    typedef Kokkos::View< const SCALAR*                                                                          \
+                        , LAYOUT                                                                                 \
+                        , Kokkos::Device<EXEC_SPACE, MEM_SPACE>                                                  \
+                        , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                                \
+                        > XViewType;                                                                             \
+    typedef Kokkos::View< SCALAR**                                                                               \
+                        , LAYOUT                                                                                 \
+                        , Kokkos::Device<EXEC_SPACE, MEM_SPACE>                                                  \
+                        , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                                \
+                        > AViewType;                                                                             \
+                                                                                                                 \
+    static void syr( const typename AViewType::execution_space  & space                                          \
+                   , const          char                          trans[]                                        \
+                   , const          char                          uplo[]                                         \
+                   , typename       AViewType::const_value_type & alpha                                          \
+                   , const          XViewType                   & X                                              \
+                   , const          AViewType                   & A                                              \
+                   ) {                                                                                           \
+      Kokkos::Profiling::pushRegion("KokkosBlas::syr[TPL_ROCBLAS,complex<double>]");                             \
+      KOKKOSBLAS2_SYR_ROCBLAS_DETERMINE_ARGS(LAYOUT);                                                            \
+      bool justTranspose = (trans[0] == 'T') || (trans[0] == 't');                                               \
+      if (justTranspose) {                                                                                       \
+        if (A_is_ll) {                                                                                           \
+          KokkosBlas::Impl::RocBlasSingleton& s = KokkosBlas::Impl::RocBlasSingleton::singleton();               \
+          KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_set_stream(s.handle, space.hip_stream()) );                     \
+          KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_zsyr( s.handle                                                  \
+                                                     , uplo                                                      \
+                                                     , N                                                         \
+                                                     , reinterpret_cast<const rocblas_double_complex*>(&alpha)   \
+                                                     , reinterpret_cast<const rocblas_double_complex*>(X.data()) \
+                                                     , one                                                       \
+                                                     , reinterpret_cast<rocblas_double_complex*>(A.data())       \
+                                                     , LDA                                                       \
+                                                     )                                                           \
+                                       );                                                                        \
+          KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));                                     \
+        }                                                                                                        \
+        else {                                                                                                   \
+          /* rocblas_zsyr() + ~A_ll => call kokkos-kernels' implementation */                                    \
+          kk_syr(space, trans, uplo, alpha, X, A);                                                               \
+        }                                                                                                        \
+      }                                                                                                          \
+      else {                                                                                                     \
+        if (A_is_ll && (alpha.imag() == 0.)) {                                                                   \
+          const double alpha_val = alpha.real();                                                                 \
+          KokkosBlas::Impl::RocBlasSingleton& s = KokkosBlas::Impl::RocBlasSingleton::singleton();               \
+          KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_set_stream(s.handle, space.hip_stream()) );                     \
+          KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_zher( s.handle                                                  \
+                                                     , uplo                                                      \
+                                                     , N                                                         \
+                                                     , &alpha_val                                                \
+                                                     , reinterpret_cast<const rocblas_double_complex*>(X.data()) \
+                                                     , one                                                       \
+                                                     , reinterpret_cast<rocblas_double_complex*>(A.data())       \
+                                                     , LDA                                                       \
+                                                     )                                                           \
+                                       );                                                                        \
+          KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));                                     \
+        }                                                                                                        \
+        else {                                                                                                   \
+          /* rocblas_zher() + [~A_ll or ~real alpha]=> call kokkos-kernels' implementation */                    \
+          kk_syr(space, trans, uplo, alpha, X, A);                                                               \
+        }                                                                                                        \
+      }                                                                                                          \
+      Kokkos::Profiling::popRegion();                                                                            \
+    }                                                                                                            \
+  };
+
+#define KOKKOSBLAS2_CSYR_ROCBLAS(LAYOUT, EXEC_SPACE, MEM_SPACE, ETI_SPEC_AVAIL)                                 \
   template <>                                                                                                   \
   struct SYR< EXEC_SPACE                                                                                        \
-            , Kokkos::View< const Kokkos::complex<double>*                                                      \
+            , Kokkos::View< const Kokkos::complex<float>*                                                       \
                           , LAYOUT                                                                              \
                           , Kokkos::Device<EXEC_SPACE, MEM_SPACE>                                               \
                           , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                             \
                           >                                                                                     \
-            , Kokkos::View< Kokkos::complex<double>**                                                           \
+            , Kokkos::View< Kokkos::complex<float>**                                                            \
                           , LAYOUT                                                                              \
                           , Kokkos::Device<EXEC_SPACE, MEM_SPACE>                                               \
                           , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                             \
@@ -155,7 +253,7 @@ namespace Impl {
             , true                                                                                              \
             , ETI_SPEC_AVAIL                                                                                    \
             > {                                                                                                 \
-    typedef Kokkos::complex<double> SCALAR;                                                                     \
+    typedef Kokkos::complex<float> SCALAR;                                                                      \
     typedef Kokkos::View< const SCALAR*                                                                         \
                         , LAYOUT                                                                                \
                         , Kokkos::Device<EXEC_SPACE, MEM_SPACE>                                                 \
@@ -174,95 +272,54 @@ namespace Impl {
                    , const          XViewType                   & X                                             \
                    , const          AViewType                   & A                                             \
                    ) {                                                                                          \
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing through tpl-zsyr-rocblas\n" );                                    \
-      Kokkos::Profiling::pushRegion("KokkosBlas::syr[TPL_ROCBLAS,complex<double>]");                            \
+      Kokkos::Profiling::pushRegion("KokkosBlas::syr[TPL_ROCBLAS,complex<float>]");                             \
       KOKKOSBLAS2_SYR_ROCBLAS_DETERMINE_ARGS(LAYOUT);                                                           \
       bool justTranspose = (trans[0] == 'T') || (trans[0] == 't');                                              \
-      KokkosBlas::Impl::RocBlasSingleton& s = KokkosBlas::Impl::RocBlasSingleton::singleton();                  \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_set_stream(s.handle, space.hip_stream()) );                        \
       if (justTranspose) {                                                                                      \
-        kk_syr( space, trans, uplo, alpha, X, A);                                                               \
-        KOKKOS_IMPL_DO_NOT_USE_PRINTF("rocblasZsyru() is not supported\n"); /* AquiEPP */                       \
-        throw std::runtime_error("Error: rocblasZsyru() is not supported.");                                    \
+        if (A_is_ll) {                                                                                          \
+          KokkosBlas::Impl::RocBlasSingleton& s = KokkosBlas::Impl::RocBlasSingleton::singleton();              \
+          KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_set_stream(s.handle, space.hip_stream()) );                    \
+          KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_csyr( s.handle                                                 \
+                                                     , uplo                                                     \
+                                                     , N                                                        \
+                                                     , reinterpret_cast<const rocblas_float_complex*>(&alpha)   \
+                                                     , reinterpret_cast<const rocblas_float_complex*>(X.data()) \
+                                                     , one                                                      \
+                                                     , reinterpret_cast<rocblas_float_complex*>(A.data())       \
+                                                     , LDA                                                      \
+                                                     )                                                          \
+                                       );                                                                       \
+          KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));                                    \
+        }                                                                                                       \
+        else {                                                                                                  \
+          /* rocblas_csyr() + ~A_ll => call kokkos-kernels' implementation */                                   \
+          kk_syr(space, trans, uplo, alpha, X, A);                                                              \
+        }                                                                                                       \
       }                                                                                                         \
       else {                                                                                                    \
-        KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_zsyrc( s.handle                                                  \
-                                                    , uplo                                                      \
-                                                    , N                                                         \
-                                                    , reinterpret_cast<const rocblas_double_complex*>(&alpha)   \
-                                                    , reinterpret_cast<const rocblas_double_complex*>(X.data()) \
-                                                    , one                                                       \
-                                                    , reinterpret_cast<rocblas_double_complex*>(A.data())       \
-                                                    , LDA                                                       \
-                                                    )                                                           \
-                                     );                                                                         \
+        if (A_is_ll && (alpha.imag() == 0.)) {                                                                  \
+          const float alpha_val = alpha.real();                                                                 \
+          KokkosBlas::Impl::RocBlasSingleton& s = KokkosBlas::Impl::RocBlasSingleton::singleton();              \
+          KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_set_stream(s.handle, space.hip_stream()) );                    \
+          KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_cher( s.handle                                                 \
+                                                     , uplo                                                     \
+                                                     , N                                                        \
+                                                     , &alpha_val                                               \
+                                                     , reinterpret_cast<const rocblas_float_complex*>(X.data()) \
+                                                     , one                                                      \
+                                                     , reinterpret_cast<rocblas_float_complex*>(A.data())       \
+                                                     , LDA                                                      \
+                                                     )                                                          \
+                                       );                                                                       \
+          KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));                                    \
+        }                                                                                                       \
+        else {                                                                                                  \
+          /* rocblas_cher() + [~A_ll or ~real alpha]=> call kokkos-kernels' implementation */                   \
+          kk_syr(space, trans, uplo, alpha, X, A);                                                              \
+        }                                                                                                       \
       }                                                                                                         \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));                                        \
       Kokkos::Profiling::popRegion();                                                                           \
     }                                                                                                           \
-  };
-
-#define KOKKOSBLAS2_CSYR_ROCBLAS(LAYOUT, EXEC_SPACE, MEM_SPACE, ETI_SPEC_AVAIL)                                \
-  template <>                                                                                                  \
-  struct SYR< EXEC_SPACE                                                                                       \
-            , Kokkos::View< const Kokkos::complex<float>*                                                      \
-                          , LAYOUT                                                                             \
-                          , Kokkos::Device<EXEC_SPACE, MEM_SPACE>                                              \
-                          , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                            \
-                          >                                                                                    \
-            , Kokkos::View< Kokkos::complex<float>**                                                           \
-                          , LAYOUT                                                                             \
-                          , Kokkos::Device<EXEC_SPACE, MEM_SPACE>                                              \
-                          , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                            \
-                          >                                                                                    \
-            , true                                                                                             \
-            , ETI_SPEC_AVAIL                                                                                   \
-            > {                                                                                                \
-    typedef Kokkos::complex<float> SCALAR;                                                                     \
-    typedef Kokkos::View< const SCALAR*                                                                        \
-                        , LAYOUT                                                                               \
-                        , Kokkos::Device<EXEC_SPACE, MEM_SPACE>                                                \
-                        , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                              \
-                        > XViewType;                                                                           \
-    typedef Kokkos::View< SCALAR**                                                                             \
-                        , LAYOUT                                                                               \
-                        , Kokkos::Device<EXEC_SPACE, MEM_SPACE>                                                \
-                        , Kokkos::MemoryTraits<Kokkos::Unmanaged>                                              \
-                        > AViewType;                                                                           \
-                                                                                                               \
-    static void syr( const typename AViewType::execution_space  & space                                        \
-                   , const          char                          trans[]                                      \
-                   , const          char                          uplo[]                                       \
-                   , typename       AViewType::const_value_type & alpha                                        \
-                   , const          XViewType                   & X                                            \
-                   , const          AViewType                   & A                                            \
-                   ) {                                                                                         \
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Passing through tpl-csyr-rocblas\n" );                                   \
-      Kokkos::Profiling::pushRegion("KokkosBlas::syr[TPL_ROCBLAS,complex<float>]");                            \
-      KOKKOSBLAS2_SYR_ROCBLAS_DETERMINE_ARGS(LAYOUT);                                                          \
-      bool justTranspose = (trans[0] == 'T') || (trans[0] == 't');                                             \
-      KokkosBlas::Impl::RocBlasSingleton& s = KokkosBlas::Impl::RocBlasSingleton::singleton();                 \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_set_stream(s.handle, space.hip_stream()) );                       \
-      if (justTranspose) {                                                                                     \
-        kk_syr( space, trans, uplo, alpha, X, A);                                                              \
-        KOKKOS_IMPL_DO_NOT_USE_PRINTF("rocblasCsyru() is not supported\n"); /* AquiEPP */                      \
-        throw std::runtime_error("Error: rocblasCsyru() is not supported.");                                   \
-      }                                                                                                        \
-      else {                                                                                                   \
-        KOKKOS_ROCBLAS_SAFE_CALL_IMPL( rocblas_csyrc( s.handle                                                 \
-                                                    , uplo                                                     \
-                                                    , N                                                        \
-                                                    , reinterpret_cast<const rocblas_float_complex*>(&alpha)   \
-                                                    , reinterpret_cast<const rocblas_float_complex*>(X.data()) \
-                                                    , one                                                      \
-                                                    , reinterpret_cast<rocblas_float_complex*>(A.data())       \
-                                                    , LDA                                                      \
-                                                    )                                                          \
-                                     );                                                                        \
-      }                                                                                                        \
-      KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));                                       \
-      Kokkos::Profiling::popRegion();                                                                          \
-    }                                                                                                          \
   };
 
 KOKKOSBLAS2_DSYR_ROCBLAS(Kokkos::LayoutLeft,  Kokkos::HIP, Kokkos::HIPSpace, true )

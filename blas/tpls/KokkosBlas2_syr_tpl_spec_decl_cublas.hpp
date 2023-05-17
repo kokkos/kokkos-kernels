@@ -85,7 +85,7 @@ namespace Impl {
         KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasSetStream(s.handle, NULL) );                            \
       }                                                                                             \
       else {                                                                                        \
-        /* cublasDsyr() + ~A_ll => call kk_syr() */                                                 \
+        /* cublasDsyr() + ~A_ll => call kokkos-kernels' implementation */                           \
         kk_syr(space, trans, uplo, alpha, X, A);                                                    \
       }                                                                                             \
       Kokkos::Profiling::popRegion();                                                               \
@@ -145,7 +145,7 @@ namespace Impl {
         KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasSetStream(s.handle, NULL) );                            \
       }                                                                                             \
       else {                                                                                        \
-        /* cublasSsyr() + ~A_ll => call kk_syr() */                                                 \
+        /* cublasSsyr() + ~A_ll => call kokkos-kernels' implementation */                           \
         kk_syr(space, trans, uplo, alpha, X, A);                                                    \
       }                                                                                             \
       Kokkos::Profiling::popRegion();                                                               \
@@ -207,7 +207,7 @@ namespace Impl {
           KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasSetStream(s.handle, NULL) );                             \
         }                                                                                              \
         else {                                                                                         \
-          /* cublasZsyr() + ~A_ll => call kk_syr() */                                                  \
+          /* cublasZsyr() + ~A_ll => call kokkos-kernels' implementation */                            \
           kk_syr(space, trans, uplo, alpha, X, A);                                                     \
         }                                                                                              \
       }                                                                                                \
@@ -229,7 +229,7 @@ namespace Impl {
           KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasSetStream(s.handle, NULL) );                             \
         }                                                                                              \
         else {                                                                                         \
-          /* cublasZher() + [~A_ll or ~real alpha]=> call kk_syr() */                                  \
+          /* cublasZher() + [~A_ll or ~real alpha]=> call kokkos-kernels' implementation */            \
           kk_syr(space, trans, uplo, alpha, X, A);                                                     \
         }                                                                                              \
       }                                                                                                \
@@ -292,7 +292,7 @@ namespace Impl {
           KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasSetStream(s.handle, NULL) );                            \
         }                                                                                             \
         else {                                                                                        \
-          /* cublasCsyr() + ~A_ll => call kk_syr() */                                                 \
+          /* cublasCsyr() + ~A_ll => call kokkos-kernels' implementation */                           \
           kk_syr(space, trans, uplo, alpha, X, A);                                                    \
         }                                                                                             \
       }                                                                                               \
@@ -314,7 +314,7 @@ namespace Impl {
           KOKKOS_CUBLAS_SAFE_CALL_IMPL( cublasSetStream(s.handle, NULL) );                            \
         }                                                                                             \
         else {                                                                                        \
-          /* cublasCher() + [~A_ll or ~real alpha]=> call kk_syr() */                                 \
+          /* cublasCher() + [~A_ll or ~real alpha]=> call kokkos-kernels' implementation */           \
           kk_syr(space, trans, uplo, alpha, X, A);                                                    \
         }                                                                                             \
       }                                                                                               \
