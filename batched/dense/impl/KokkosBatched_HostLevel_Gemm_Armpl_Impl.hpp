@@ -22,6 +22,51 @@
 namespace KokkosBatched {
 namespace Impl {
 /********************* BEGIN non-functor-level routines *********************/
+
+// clang-format off
+/// \brief Blocking general matrix multiply on a batch of uniform matrices.
+///
+///
+///        C = alpha * op(A) * op(B) + beta * C
+///
+/// \tparam ArgTransA           Specifies what op does to A:
+///                             Trans::NoTranspose   for non-transpose
+///                             Trans::Transpose     for transpose
+///                             Trans::ConjTranspose for conjugate transpose (unsupported)
+/// \tparam ArgTransB           Specifies what op does to B:
+///                             Trans::NoTranspose   for non-transpose
+///                             Trans::Transpose     for transpose
+///                             Trans::ConjTranspose for conjugate transpose (unsupported)
+/// \tparam HandleType          Specifies the handle type of the kernel handle
+/// \tparam ScalarType          Specifies the scalar type of alpha and beta
+/// \tparam AViewType           Input matrix, as a 3-rank Kokkos::View
+/// \tparam BViewType           Input matrix, as a 3-rank Kokkos::View
+/// \tparam CViewType           Input(RHS)/Output(LHS) matrix, as a 3-rank
+///                             Kokkos::View
+///
+///                             See struct BatchedGemmHandle for details
+/// \param handle [in]          A handle which specifies how to invoke the batched
+///                             gemm. handle->get_tpl_params() returns &ninter.
+///                             ninter: The number of matrices to interleave.
+/// \param alpha [in]           Input coefficient used for multiplication with A
+/// \param A [in]               Input matrix, as a 3-rank Kokkos::View
+///                             If ArgBatchSzDim == "BatchSzDim::Right", matrix A is MxKxB
+///                             If ArgBatchSzDim == "BatchSzDim::Left",  matrix A is BxMxK
+/// \param B [in]               Input matrix, as a 3-rank Kokkos::View
+///                             If ArgBatchSzDim == "BatchSzDim::Right", matrix B is KxNxB
+///                             If ArgBatchSzDim == "BatchSzDim::Left",  matrix B is BxKxN
+/// \param beta [in]            Input coefficient used for multiplication with C
+/// \param C [in/out]           Input/Output matrix, as a 3-rank Kokkos::View
+///                             If ArgBatchSzDim == "BatchSzDim::Right", matrix C is MxNxB
+///                             If ArgBatchSzDim == "BatchSzDim::Left",  matrix C is BxMxN
+/// \return 0 upon success, non-zero otherwise
+///
+
+/// Usage Example:
+///   BatchedArmplGemm<ArgTransA, ArgTransB, ArgBatchSzDim, HandleType,
+///                     ScalarType, AViewType, BViewType, CViewType>
+///                     (handle, alpha, A, B, beta, C).invoke();
+// clang-format on
 template <class ArgTransA, class ArgTransB, class ArgBatchSzDim,
           class HandleType, class ScalarType, class AViewType, class BViewType,
           class CViewType>

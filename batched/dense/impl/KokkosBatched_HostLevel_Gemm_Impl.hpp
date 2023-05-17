@@ -21,145 +21,12 @@
 #include <KokkosKernels_ExecSpaceUtils.hpp>
 #include <KokkosKernels_Error.hpp>
 
+#include "KokkosBatched_HostLevel_Gemm_Serial_Impl.hpp"
+#include "KokkosBatched_HostLevel_Gemm_DblBuf_Impl.hpp"
+#include "KokkosBatched_HostLevel_Gemm_Armpl_Impl.hpp"
+
 namespace KokkosBatched {
 namespace Impl {
-/********************* BEGIN forward declarations *********************/
-// clang-format off
-/// \brief Non-blocking general matrix multiply on a batch of
-/// uniform matrices.
-///
-///
-///        C = alpha * op(A) * op(B) + beta * C
-///
-/// \tparam ArgTransA           Specifies what op does to A:
-///                             Trans::NoTranspose   for non-transpose
-///                             Trans::Transpose     for transpose
-///                             Trans::ConjTranspose for conjugate transpose
-/// \tparam ArgTransB           Specifies what op does to B:
-///                             Trans::NoTranspose   for non-transpose
-///                             Trans::Transpose     for transpose
-///                             Trans::ConjTranspose for conjugate transpose
-/// \tparam ArgMode             Specifies algorithm mode to use for serial work:
-///                             Algo::Gemm::Unblocked  for no register blocking
-///                             Algo::Gemm::Blocked    for register blocking
-///                             Algo::Gemm::CompactMKL for mkl compact tpl interface
-/// \tparam ArgBatchSzDim       Specifies where the batch dimension is allocated in
-///                             AViewType, BViewType, and CViewType:
-///                             BatchSzDim::Left  Batch dimension is leftmost
-///                             BatchSzDim::Right  Batch dimension is rightmost
-/// \tparam ArgResultsPerThread Specifies how to divide work among threads. For
-///                             this serial interface, each rank specifies how
-///                             much work to assign a single thread.
-///                             ResultsPerThread::Rank0 Each thread computes a scalar of C
-///                             ResultsPerThread::Rank1 Each thread computes a 1-rank chunk of C
-///                             ResultsPerThread::Rank2 Each thread computes a 2-rank chunk of C
-/// \tparam ScalarType          Specifies the scalar type of alpha and beta
-/// \tparam AViewType           Input matrix, as either a 3-rank Kokkos::View or a
-///                             4-rank Kokkos::View for SIMD operations.
-/// \tparam BViewType           Input matrix, as either a 3-rank Kokkos::View or a
-///                             4-rank Kokkos::View for SIMD operations.
-/// \tparam CViewType           Input(RHS)/Output(LHS) matrix, as either a 3-rank
-///                             Kokkos::View or a 4-rank Kokkos::View for SIMD
-///                             operations.
-///
-///                             See struct BatchedGemmHandle for details.
-/// \param alpha [in]           Input coefficient used for multiplication with A
-/// \param A [in]               Input matrix, as a 3-rank Kokkos::View
-///                             If ArgBatchSzDim == "BatchSzDim::Right", matrix A is MxKxB
-///                             If ArgBatchSzDim == "BatchSzDim::Left",  matrix A is BxMxK
-/// \param B [in]               Input matrix, as a 3-rank Kokkos::View
-///                             If ArgBatchSzDim == "BatchSzDim::Right", matrix B is KxNxB
-///                             If ArgBatchSzDim == "BatchSzDim::Left",  matrix B is BxKxN
-/// \param beta [in]            Input coefficient used for multiplication with C
-/// \param C [in/out]           Input/Output matrix, as a 3-rank Kokkos::View
-///                             If ArgBatchSzDim == "BatchSzDim::Right", matrix C is MxNxB
-///                             If ArgBatchSzDim == "BatchSzDim::Left",  matrix C is BxMxN
-/// \return 0 upon success, non-zero otherwise
-///
-/// Usage Example:
-///   BatchedSerialGemm<ArgTransA, ArgTransB, ArgMode, ArgBatchSzDim,
-///                     ArgResultsPerThread, ScalarType, AViewType,
-///                     BViewType, CViewType>(alpha, A, B, beta, C).invoke();
-// clang-format on
-template <class ArgTransA, class ArgTransB, class ArgMode, class ArgBatchSzDim,
-          class ArgResultsPerThread, class ScalarType, class AViewType,
-          class BViewType, class CViewType>
-class BatchedSerialGemm;
-
-// clang-format off
-/// \brief Non-blocking general matrix multiply on a batch of
-/// uniform matrices with an algorithm based on:
-///   B. P. D. J. Kunkel, Julian, “Performance, design, and autotuning of batched gemm for GPUs,”
-///   in Lecture Notes in Computer Science, ser. ISC High Performance Computing ’16, vol. 9697, 06 2016.
-///
-///
-///        C = alpha * op(A) * op(B) + beta * C
-///
-/// \tparam ArgTransA           Specifies what op does to A:
-///                             Trans::NoTranspose   for non-transpose
-///                             Trans::Transpose     for transpose
-///                             Trans::ConjTranspose for conjugate transpose (unsupported)
-/// \tparam ArgTransB           Specifies what op does to B:
-///                             Trans::NoTranspose   for non-transpose
-///                             Trans::Transpose     for transpose
-///                             Trans::ConjTranspose for conjugate transpose (unsupported)
-/// \tparam ArgBatchSzDim       Specifies where the batch dimension is allocated in
-///                             AViewType, BViewType, and CViewType:
-///                             BatchSzDim::Left  Batch dimension is leftmost
-///                             BatchSzDim::Right Batch dimension is rightmost
-/// \tparam ArgResultsPerThread Specifies how to divide work among threads. For
-///                             this serial interface, each rank specifies how
-///                             much work to assign a single thread.
-///                             ResultsPerThread::Rank0 Each thread computes a scalar of C
-///                             ResultsPerThread::Rank1 Each thread computes a 1-rank chunk of C
-///                             ResultsPerThread::Rank2 Each thread computes a 2-rank chunk of C
-/// \tparam HandleType          Specifies the handle type of the kernel handle
-/// \tparam ScalarType          Specifies the scalar type of alpha and beta
-/// \tparam AViewType           Input matrix, as either a 3-rank Kokkos::View or a
-///                             4-rank Kokkos::View for SIMD operations.
-/// \tparam BViewType           Input matrix, as either a 3-rank Kokkos::View or a
-///                             4-rank Kokkos::View for SIMD operations.
-/// \tparam CViewType           Input(RHS)/Output(LHS) matrix, as either a 3-rank
-///                             Kokkos::View or a 4-rank Kokkos::View for SIMD
-///                             operations.
-/// \tparam ArgBoundsCheck      Specifies whether to perform global memory access
-///                             bounds checks within the functor. Bounds checks
-///                             are required when matrix sizes are not evenly divisible
-///                             by tile sizes.
-///                             BoundsCheck::Yes The functor will     perform bound checks (recommended)
-///                             BoundsCheck::No  The functor will NOT perform bound checks
-/// \tparam ArgAlphaFmaTag      Specifies whether to apply alpha during fmas.
-///                             AlphaFmaTag::Yes alpha will be applied during fma (C = C * alpha + AB).
-///                             AlphaFmaTag::No  alpha will be applied during mul (A * B * alpha).
-/// \tparam TILE_M              Specifies the number of rows in each tile.
-/// \tparam TILE_N              Specifies the number of cols in each tile.
-/// \tparam TILE_K              Specifies the number of cols or rows in a tile of A or tile of B, respectively.
-///
-///                             See struct BatchedGemmHandle for details.
-/// \param alpha [in]           Input coefficient used for multiplication with A
-/// \param A [in]               Input matrix, as a 3-rank Kokkos::View
-///                             If ArgBatchSzDim == "BatchSzDim::Right", matrix A is MxKxB
-///                             If ArgBatchSzDim == "BatchSzDim::Left",  matrix A is BxMxK
-/// \param B [in]               Input matrix, as a 3-rank Kokkos::View
-///                             If ArgBatchSzDim == "BatchSzDim::Right", matrix B is KxNxB
-///                             If ArgBatchSzDim == "BatchSzDim::Left",  matrix B is BxKxN
-/// \param beta [in]            Input coefficient used for multiplication with C
-/// \param C [in/out]           Input/Output matrix, as a 3-rank Kokkos::View
-///                             If ArgBatchSzDim == "BatchSzDim::Right", matrix C is MxNxB
-///                             If ArgBatchSzDim == "BatchSzDim::Left",  matrix C is BxMxN
-/// \return 0 upon success, non-zero otherwise
-///
-/// Usage Example:
-///   BatchedSerialGemm<ArgTransA, ArgTransB, ArgMode, ArgBatchSzDim,
-///                     ScalarType, AViewType, BViewType, CViewType
-///                     ArgBoundsCheck, tile_m, tile_n, tile_k>(alpha, A, B, beta, C).invoke();
-// clang-format on
-template <class ArgTransA, class ArgTransB, class ArgBatchSzDim,
-          class HandleType, class ScalarType, class AViewType, class BViewType,
-          class CViewType, class ArgBoundsCheck, class ArgAlphaFmaTag,
-          int tile_m, int tile_n, int tile_k>
-class BatchedDblBufGemm;
-
 //////////////////////////////// tile_m //////////////////////////////////
 template <typename ExecutionSpace>
 constexpr KOKKOS_INLINE_FUNCTION int kk_gemm_dlb_buf_tile_m() {
@@ -195,56 +62,6 @@ constexpr KOKKOS_INLINE_FUNCTION size_t kk_gemm_dbl_buf_alpha_in_fma_thresh() {
   return 64;
 #endif  // __CUDAACC_RDC__
 }
-
-// clang-format off
-/// \brief Blocking general matrix multiply on a batch of uniform matrices.
-///
-///
-///        C = alpha * op(A) * op(B) + beta * C
-///
-/// \tparam ArgTransA           Specifies what op does to A:
-///                             Trans::NoTranspose   for non-transpose
-///                             Trans::Transpose     for transpose
-///                             Trans::ConjTranspose for conjugate transpose (unsupported)
-/// \tparam ArgTransB           Specifies what op does to B:
-///                             Trans::NoTranspose   for non-transpose
-///                             Trans::Transpose     for transpose
-///                             Trans::ConjTranspose for conjugate transpose (unsupported)
-/// \tparam HandleType          Specifies the handle type of the kernel handle
-/// \tparam ScalarType          Specifies the scalar type of alpha and beta
-/// \tparam AViewType           Input matrix, as a 3-rank Kokkos::View
-/// \tparam BViewType           Input matrix, as a 3-rank Kokkos::View
-/// \tparam CViewType           Input(RHS)/Output(LHS) matrix, as a 3-rank
-///                             Kokkos::View
-///
-///                             See struct BatchedGemmHandle for details
-/// \param handle [in]          A handle which specifies how to invoke the batched
-///                             gemm. handle->get_tpl_params() returns &ninter.
-///                             ninter: The number of matrices to interleave.
-/// \param alpha [in]           Input coefficient used for multiplication with A
-/// \param A [in]               Input matrix, as a 3-rank Kokkos::View
-///                             If ArgBatchSzDim == "BatchSzDim::Right", matrix A is MxKxB
-///                             If ArgBatchSzDim == "BatchSzDim::Left",  matrix A is BxMxK
-/// \param B [in]               Input matrix, as a 3-rank Kokkos::View
-///                             If ArgBatchSzDim == "BatchSzDim::Right", matrix B is KxNxB
-///                             If ArgBatchSzDim == "BatchSzDim::Left",  matrix B is BxKxN
-/// \param beta [in]            Input coefficient used for multiplication with C
-/// \param C [in/out]           Input/Output matrix, as a 3-rank Kokkos::View
-///                             If ArgBatchSzDim == "BatchSzDim::Right", matrix C is MxNxB
-///                             If ArgBatchSzDim == "BatchSzDim::Left",  matrix C is BxMxN
-/// \return 0 upon success, non-zero otherwise
-///
-
-/// Usage Example:
-///   BatchedArmplGemm<ArgTransA, ArgTransB, ArgBatchSzDim, HandleType,
-///                     ScalarType, AViewType, BViewType, CViewType>
-///                     (handle, alpha, A, B, beta, C).invoke();
-// clang-format on
-template <class ArgTransA, class ArgTransB, class ArgBatchSzDim,
-          class HandleType, class ScalarType, class AViewType, class BViewType,
-          class CViewType>
-class BatchedArmplGemm;
-/********************* END forward declarations *********************/
 
 template <typename ArgTransA, typename ArgTransB, typename ArgBatchSzDim,
           typename BatchedGemmHandleType, typename ScalarType,
@@ -680,7 +497,4 @@ struct BatchedGemmWrapper<ArgTransA, ArgTransB, ArgBatchSzDim,
 
 }  // namespace Impl
 }  // namespace KokkosBatched
-#include "KokkosBatched_HostLevel_Gemm_Serial_Impl.hpp"
-#include "KokkosBatched_HostLevel_Gemm_DblBuf_Impl.hpp"
-#include "KokkosBatched_HostLevel_Gemm_Armpl_Impl.hpp"
 #endif  // __KOKKOSBATCHED_HOSTLEVEL_GEMM_IMPL_HPP__
