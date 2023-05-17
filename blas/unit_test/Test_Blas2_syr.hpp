@@ -450,6 +450,7 @@ void SyrTester< ScalarX
       ScalarA randStart, randEnd;
       Test::getRandomBounds(1.0, randStart, randEnd);
       Kokkos::fill_random(A, rand_pool, randStart, randEnd);
+      // AquiEEP: make A symmetric or hermitian
     }
 
     Kokkos::deep_copy(h_x, x);
