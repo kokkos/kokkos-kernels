@@ -374,7 +374,9 @@ void test_batched_gemm_with_layout(int N) {
 template <typename DeviceType, typename ValueType, typename ScalarType,
           typename ParamTagType>
 int test_batched_gemm() {
-#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
+#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&      \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   if constexpr (std::is_same_v<typename ParamTagType::batchLayout,
                                typename BatchLayout::Left>) {
     using param_tag_type = ::Test::SharedParamTag<typename ParamTagType::transA,
@@ -394,7 +396,9 @@ int test_batched_gemm() {
   }
 #endif  // KOKKOSKERNELS_INST_LAYOUTLEFT
 
-#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
+#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&       \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   if constexpr (std::is_same_v<typename ParamTagType::batchLayout,
                                typename BatchLayout::Left>) {
     using param_tag_type = ::Test::SharedParamTag<typename ParamTagType::transA,
