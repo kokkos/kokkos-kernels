@@ -59,6 +59,10 @@ private:
                         , bool              & expectedResultIsKnown
                         );
 
+  void makeMatrixSymmetric(_HostViewTypeA & h_A);
+
+  void makeMatrixHermitian(_HostViewTypeA & h_A);
+  
   template <class T>
   typename std::enable_if< std::is_same<T,Kokkos::complex<float>>::value || std::is_same<T,Kokkos::complex<double>>::value
                          , void
@@ -450,11 +454,18 @@ void SyrTester< ScalarX
       ScalarA randStart, randEnd;
       Test::getRandomBounds(1.0, randStart, randEnd);
       Kokkos::fill_random(A, rand_pool, randStart, randEnd);
-      // AquiEEP: make A symmetric or hermitian
     }
 
     Kokkos::deep_copy(h_x, x);
     Kokkos::deep_copy(h_A, A);
+
+    if (_useHermitianOption && _A_is_complex) {
+      this->makeMatrixHermitian(h_A);
+    }
+    else {
+      this->makeMatrixSymmetric(h_A);
+    }
+    Kokkos::deep_copy(A, h_A);
   }
 
   if (_N <= 2) {
@@ -468,6 +479,42 @@ void SyrTester< ScalarX
 
 }
 
+template <class ScalarX, class tLayoutX, class ScalarA, class tLayoutA, class Device>
+void
+SyrTester< ScalarX
+         , tLayoutX
+         , ScalarA
+         , tLayoutA
+         , Device
+         >::makeMatrixSymmetric(_HostViewTypeA & h_A)
+{
+  for (int i(0); i < _N; ++i) {
+    for (int j(i+1); j < _N; ++j) {
+      h_A(i,j) = h_A(j,i);
+    }
+  }
+}
+
+template <class ScalarX, class tLayoutX, class ScalarA, class tLayoutA, class Device>
+void
+SyrTester< ScalarX
+         , tLayoutX
+         , ScalarA
+         , tLayoutA
+         , Device
+         >::makeMatrixHermitian(_HostViewTypeA & h_A)
+{
+  for (int i(0); i < _N; ++i) {
+    for (int j(i+1); j < _N; ++j) {
+      h_A(i,j) = _KAT_A::conj( h_A(j,i) );
+    }
+  }
+
+  for (int i(0); i < _N; ++i) {
+    h_A(i,i) = 0.5 * ( h_A(i,i) + _KAT_A::conj( h_A(i,i) ) );
+  }
+}
+  
 // Code for complex values
 template <class ScalarX, class tLayoutX, class ScalarA, class tLayoutA, class Device>
 template <class T>
