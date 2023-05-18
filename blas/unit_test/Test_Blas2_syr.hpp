@@ -461,7 +461,9 @@ void SyrTester< ScalarX
     Kokkos::deep_copy(h_A, A);
 
     if (_useHermitianOption && _A_is_complex) {
+      // ****************************************************************
       // Make h_A Hermitian
+      // ****************************************************************
       for (int i(0); i < _N; ++i) {
         for (int j(i+1); j < _N; ++j) {
           h_A(i,j) = _KAT_A::conj( h_A(j,i) );
@@ -473,7 +475,9 @@ void SyrTester< ScalarX
       }
     }
     else {
+      // ****************************************************************
       // Make h_A symmetric
+      // ****************************************************************
       for (int i(0); i < _N; ++i) {
         for (int j(i+1); j < _N; ++j) {
           h_A(i,j) = h_A(j,i);
@@ -1540,6 +1544,11 @@ void SyrTester< ScalarX
       else {
         h_ger_reference.d_view(i,j) = h_A_orig(i,j);
       }
+    }
+  }
+  if (_useHermitianOption && _A_is_complex) {
+    for (int i(0); i < _N; ++i) {
+      h_ger_reference.d_view(i,i) = 0.5 * ( h_ger_reference.d_view(i,i) + _KAT_A::conj( h_ger_reference.d_view(i,i) ) );
     }
   }
 
