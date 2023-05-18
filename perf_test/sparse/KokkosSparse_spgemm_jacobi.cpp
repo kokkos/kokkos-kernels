@@ -253,15 +253,9 @@ int main(int argc, char** argv) {
 
 #if defined(KOKKOS_ENABLE_CUDA)
   if (params.use_cuda) {
-#ifdef KOKKOSKERNELS_INST_MEMSPACE_CUDAHOSTPINNEDSPACE
-    KokkosKernels::Experiment::run_spgemm_jacobi<
-        size_type, lno_t, scalar_t, Kokkos::Cuda, Kokkos::Cuda::memory_space,
-        Kokkos::CudaHostPinnedSpace>(params);
-#else
     KokkosKernels::Experiment::run_spgemm_jacobi<
         size_type, lno_t, scalar_t, Kokkos::Cuda, Kokkos::Cuda::memory_space,
         Kokkos::Cuda::memory_space>(params);
-#endif
   }
 #endif
 
