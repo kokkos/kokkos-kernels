@@ -85,7 +85,12 @@ namespace Impl {
       }                                                                                          \
       else {                                                                                     \
         /* rocblas_dsyr() + ~A_ll => call kokkos-kernels' implementation */                      \
-        kk_syr(space, trans, uplo, alpha, X, A);                                                 \
+        SYR< EXEC_SPACE                                                                          \
+           , XViewType                                                                           \
+           , AViewType                                                                           \
+           , false                                                                               \
+           , ETI_SPEC_AVAIL                                                                      \
+           >::syr( space, trans, uplo, alpha, X, A );                                            \
       }                                                                                          \
       Kokkos::Profiling::popRegion();                                                            \
     }                                                                                            \
@@ -145,7 +150,12 @@ namespace Impl {
       }                                                                                          \
       else {                                                                                     \
         /* rocblas_ssyr() + ~A_ll => call kokkos-kernels' implementation */                      \
-        kk_syr(space, trans, uplo, alpha, X, A);                                                 \
+        SYR< EXEC_SPACE                                                                          \
+           , XViewType                                                                           \
+           , AViewType                                                                           \
+           , false                                                                               \
+           , ETI_SPEC_AVAIL                                                                      \
+           >::syr( space, trans, uplo, alpha, X, A );                                            \
       }                                                                                          \
       Kokkos::Profiling::popRegion();                                                            \
     }                                                                                            \
@@ -207,7 +217,12 @@ namespace Impl {
         }                                                                                                        \
         else {                                                                                                   \
           /* rocblas_zsyr() + ~A_ll => call kokkos-kernels' implementation */                                    \
-          kk_syr(space, trans, uplo, alpha, X, A);                                                               \
+          SYR< EXEC_SPACE                                                                                        \
+             , XViewType                                                                                         \
+             , AViewType                                                                                         \
+             , false                                                                                             \
+             , ETI_SPEC_AVAIL                                                                                    \
+             >::syr( space, trans, uplo, alpha, X, A );                                                          \
         }                                                                                                        \
       }                                                                                                          \
       else {                                                                                                     \
@@ -229,7 +244,12 @@ namespace Impl {
         }                                                                                                        \
         else {                                                                                                   \
           /* rocblas_zher() + [~A_ll or ~real alpha]=> call kokkos-kernels' implementation */                    \
-          kk_syr(space, trans, uplo, alpha, X, A);                                                               \
+          SYR< EXEC_SPACE                                                                                        \
+             , XViewType                                                                                         \
+             , AViewType                                                                                         \
+             , false                                                                                             \
+             , ETI_SPEC_AVAIL                                                                                    \
+             >::syr( space, trans, uplo, alpha, X, A );                                                          \
         }                                                                                                        \
       }                                                                                                          \
       Kokkos::Profiling::popRegion();                                                                            \
@@ -292,7 +312,12 @@ namespace Impl {
         }                                                                                                       \
         else {                                                                                                  \
           /* rocblas_csyr() + ~A_ll => call kokkos-kernels' implementation */                                   \
-          kk_syr(space, trans, uplo, alpha, X, A);                                                              \
+          SYR< EXEC_SPACE                                                                                       \
+             , XViewType                                                                                        \
+             , AViewType                                                                                        \
+             , false                                                                                            \
+             , ETI_SPEC_AVAIL                                                                                   \
+             >::syr( space, trans, uplo, alpha, X, A );                                                         \
         }                                                                                                       \
       }                                                                                                         \
       else {                                                                                                    \
@@ -314,7 +339,12 @@ namespace Impl {
         }                                                                                                       \
         else {                                                                                                  \
           /* rocblas_cher() + [~A_ll or ~real alpha]=> call kokkos-kernels' implementation */                   \
-          kk_syr(space, trans, uplo, alpha, X, A);                                                              \
+          SYR< EXEC_SPACE                                                                                       \
+             , XViewType                                                                                        \
+             , AViewType                                                                                        \
+             , false                                                                                            \
+             , ETI_SPEC_AVAIL                                                                                   \
+             >::syr( space, trans, uplo, alpha, X, A );                                                         \
         }                                                                                                       \
       }                                                                                                         \
       Kokkos::Profiling::popRegion();                                                                           \

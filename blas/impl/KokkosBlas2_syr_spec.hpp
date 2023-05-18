@@ -20,9 +20,9 @@
 #include "KokkosKernels_config.h"
 #include "Kokkos_Core.hpp"
 
-//#if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY // AquiEEP
+#if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 #include <KokkosBlas2_syr_impl.hpp>
-//#endif
+#endif
 
 namespace KokkosBlas {
 namespace Impl {
@@ -68,20 +68,23 @@ namespace Impl {
 // syr
 //
 
+// Implementation of KokkosBlas::syr.
 template < class ExecutionSpace
          , class XViewType
          , class AViewType
+         , bool tpl_spec_avail = syr_tpl_spec_avail<ExecutionSpace, XViewType, AViewType>::value
+         , bool eti_spec_avail = syr_eti_spec_avail<ExecutionSpace, XViewType, AViewType>::value
          >
-static void kk_syr( const          ExecutionSpace              & space
-                  , const          char                          trans[]
-                  , const          char                          uplo[]
-                  , const typename AViewType::const_value_type & alpha
-                  , const          XViewType                   & x
-                  , const          AViewType                   & A
-                  )
-{
-    KOKKOS_IMPL_DO_NOT_USE_PRINTF( "Entering KokkosBlas::Impl::Syr::syr()\n" );
-
+struct SYR {
+  static void syr( const          ExecutionSpace              & space
+                 , const          char                          trans[]
+                 , const          char                          uplo[]
+                 , const typename AViewType::const_value_type & alpha
+                 , const          XViewType                   & x
+                 , const          AViewType                   & A
+                 )
+#if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
+  {
     Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY ? "KokkosBlas::syr[ETI]" : "KokkosBlas::syr[noETI]");
 
     typedef typename AViewType::size_type size_type;
@@ -110,26 +113,6 @@ static void kk_syr( const          ExecutionSpace              & space
     }
 
     Kokkos::Profiling::popRegion();
-}
-  
-// Implementation of KokkosBlas::syr.
-template < class ExecutionSpace
-         , class XViewType
-         , class AViewType
-         , bool tpl_spec_avail = syr_tpl_spec_avail<ExecutionSpace, XViewType, AViewType>::value
-         , bool eti_spec_avail = syr_eti_spec_avail<ExecutionSpace, XViewType, AViewType>::value
-         >
-struct SYR {
-  static void syr( const          ExecutionSpace              & space
-                 , const          char                          trans[]
-                 , const          char                          uplo[]
-                 , const typename AViewType::const_value_type & alpha
-                 , const          XViewType                   & x
-                 , const          AViewType                   & A
-                 )
-#if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
-  {
-    kk_syr(space, trans, uplo, alpha, x, A);
   }
 #else
   ;

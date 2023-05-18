@@ -48,7 +48,7 @@ struct SingleLevelSYR {
     // Nothing to do
   }
 
-  KOKKOS_INLINE_FUNCTION void operator()(const IndexType & i) const { // AquiEEP
+  KOKKOS_INLINE_FUNCTION void operator()(const IndexType & i) const {
     if (alpha_ == Kokkos::ArithTraits<AlphaCoeffType>::zero()) {
       // Nothing to do
     }
@@ -150,7 +150,7 @@ struct TwoLevelSYR {
 
 public:
   // LayoutLeft version: one team per column
-  KOKKOS_INLINE_FUNCTION void operator()( TwoLevelSYR_LayoutLeftTag // AquiEEP
+  KOKKOS_INLINE_FUNCTION void operator()( TwoLevelSYR_LayoutLeftTag
                                         , const member_type & team
                                         ) const {
     if (alpha_ == Kokkos::ArithTraits<AlphaCoeffType>::zero()) {
@@ -181,7 +181,7 @@ public:
   }
 
   // LayoutRight version: one team per row
-  KOKKOS_INLINE_FUNCTION void operator()( TwoLevelSYR_LayoutRightTag // AquiEEP
+  KOKKOS_INLINE_FUNCTION void operator()( TwoLevelSYR_LayoutRightTag
                                         , const member_type & team
                                         ) const {
     if (alpha_ == Kokkos::ArithTraits<AlphaCoeffType>::zero()) {

@@ -35,14 +35,14 @@ namespace KokkosBlas {
 ///        even if a complex alpha is supplied in Hermitian cases. Moreover,
 ///        this routine will always compute either the lower portion or the
 ///        upper portion (per user's request) of the final matrix A. So, in
-///        order to have meaningful results, the user must make sure to
+///        order to obtain meaningful results, the user must make sure to
 ///        follow the conditions specied in the "important note 1" above.
 ///
 ///        Important note 3: if TPL is enabled, this routine will call the
 ///        third party library BLAS routines whenever the parameters passed
 ///        are consistent with the parameters expected by the corresponding
 ///        TPL routine. If not, then this routine will route the execution
-///        to the kokkos-kernels implementation, thus honorning all
+///        to the kokkos-kernels implementation, thus honoring all
 ///        parameters passed, as stated in the "important note 2" above.
 ///
 /// \tparam ExecutionSpace The type of execution space
@@ -166,14 +166,14 @@ void syr( const          ExecutionSpace              & space
 ///        even if a complex alpha is supplied in Hermitian cases. Moreover,
 ///        this routine will always compute either the lower portion or the
 ///        upper portion (per user's request) of the final matrix A. So, in
-///        order to have meaningful results, the user must make sure to
+///        order to obtain meaningful results, the user must make sure to
 ///        follow the conditions specied in the "important note 1" above.
 ///
 ///        Important note 3: if TPL is enabled, this routine will call the
 ///        third party library BLAS routines whenever the parameters passed
 ///        are consistent with the parameters expected by the corresponding
 ///        TPL routine. If not, then this routine will route the execution
-///        to the kokkos-kernels implementation, thus honorning all
+///        to the kokkos-kernels implementation, thus honoring all
 ///        parameters passed, as stated in the "important note 2" above.
 ///
 /// \tparam XViewType Input vector, as a 1-D Kokkos::View
