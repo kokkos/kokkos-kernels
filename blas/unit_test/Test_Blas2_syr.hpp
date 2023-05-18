@@ -59,10 +59,6 @@ private:
                         , bool              & expectedResultIsKnown
                         );
 
-  void makeMatrixSymmetric(_HostViewTypeA & h_A);
-
-  void makeMatrixHermitian(_HostViewTypeA & h_A);
-  
   template <class T>
   typename std::enable_if< std::is_same<T,Kokkos::complex<float>>::value || std::is_same<T,Kokkos::complex<double>>::value
                          , void
@@ -107,37 +103,37 @@ private:
   typename std::enable_if< std::is_same<T,Kokkos::complex<float>>::value || std::is_same<T,Kokkos::complex<double>>::value
                          , void
                          >::type
-  compareVanillaExpected( const T                 & alpha
-                        , const _ViewTypeExpected & h_vanilla
-                        , const _ViewTypeExpected & h_expected
-                        );
+  compareVanillaAgainstExpected( const T                 & alpha
+                               , const _ViewTypeExpected & h_vanilla
+                               , const _ViewTypeExpected & h_expected
+                               );
 
   template <class T>
   typename std::enable_if< !std::is_same<T,Kokkos::complex<float>>::value && !std::is_same<T,Kokkos::complex<double>>::value
                          , void
                          >::type
-  compareVanillaExpected( const T                 & alpha
-                        , const _ViewTypeExpected & h_vanilla
-                        , const _ViewTypeExpected & h_expected
-                        );
+  compareVanillaAgainstExpected( const T                 & alpha
+                               , const _ViewTypeExpected & h_vanilla
+                               , const _ViewTypeExpected & h_expected
+                               );
 
   template <class T>
   typename std::enable_if< std::is_same<T,Kokkos::complex<float>>::value || std::is_same<T,Kokkos::complex<double>>::value
                          , void
                          >::type
-  compareKokkosExpected( const T                 & alpha
-                       , const _HostViewTypeA    & h_A
-                       , const _ViewTypeExpected & h_expected
-                       );
+  compareKkSyrAgainstReference( const T                 & alpha
+                              , const _HostViewTypeA    & h_A
+                              , const _ViewTypeExpected & h_reference
+                              );
 
   template <class T>
   typename std::enable_if< !std::is_same<T,Kokkos::complex<float>>::value && !std::is_same<T,Kokkos::complex<double>>::value
                          , void
                          >::type
-  compareKokkosExpected( const T                 & alpha
-                       , const _HostViewTypeA    & h_A
-                       , const _ViewTypeExpected & h_expected
-                       );
+  compareKkSyrAgainstReference( const T                 & alpha
+                              , const _HostViewTypeA    & h_A
+                              , const _ViewTypeExpected & h_reference
+                              );
 
   template <class T>
   T shrinkAngleToZeroTwoPiRange(const T input);
@@ -151,6 +147,14 @@ private:
                                          , const std::string       & situation
                                          );
 
+  template <class TX>
+  void callKkGerAndCompareKkSyrAgainstIt( const ScalarA           & alpha
+                                        , TX                      & x
+                                        , _ViewTypeA              & h_A_orig
+                                        , const _ViewTypeExpected & h_A_syr
+                                        , const std::string       & situation
+                                        );
+  
   const bool     _A_is_complex;
   const bool     _A_is_lr;
   const bool     _A_is_ll;
@@ -179,7 +183,7 @@ SyrTester< ScalarX
   , _A_is_ll                       ( std::is_same< tLayoutA, Kokkos::LayoutLeft >::value )
   , _testIsGpu                     ( KokkosKernels::Impl::kk_is_gpu_exec_space< typename Device::execution_space >() )
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
-  , _vanillaUsesDifferentOrderOfOps( _A_is_lr && _testIsGpu ) // AquiEEP
+  , _vanillaUsesDifferentOrderOfOps( _A_is_lr ) // && _testIsGpu ) // AquiEEP
 #else
   , _vanillaUsesDifferentOrderOfOps( false )
 #endif
@@ -303,10 +307,10 @@ void SyrTester< ScalarX
     // ******************************************************************
     // Compare h_vanilla against h_expected
     // ******************************************************************
-    this->compareVanillaExpected( alpha
-                                , h_vanilla.d_view
-                                , h_expected.d_view
-                                );
+    this->compareVanillaAgainstExpected( alpha
+                                       , h_vanilla.d_view
+                                       , h_expected.d_view
+                                       );
   }
   else {
     // ******************************************************************
@@ -318,7 +322,7 @@ void SyrTester< ScalarX
   // ********************************************************************
   // Step 5 of 7: test with 'non const x'
   // ********************************************************************
-  view_stride_adapter<_ViewTypeA, false> org_A("Org_A", _M, _N); // AquiEEP (see ger as well)
+  view_stride_adapter<_ViewTypeA, false> org_A("Org_A", _M, _N);
   Kokkos::deep_copy(org_A.d_base, A.d_base);
 
   if (test_x) {
@@ -330,17 +334,14 @@ void SyrTester< ScalarX
                                             , "non const x"
                                             );
 
-    if ((_useAnalyticalResults      == false) &&
+    if ((_useAnalyticalResults      == false) && // Just to save run time
         (_kkGerShouldThrowException == false)) {
-#if 0 // AquiEEP
-      this->compareKkSyrAgainstKkGer( alpha
-                                    , x.d_view
-                                    , A.d_view
-                                    , A.h_view
-                                    , h_expected.d_view
-                                    , "non const x"
-                                    );
-#endif
+      this->callKkGerAndCompareKkSyrAgainstIt( alpha
+                                             , x.d_view
+                                             , org_A.d_view
+                                             , A.h_view
+                                             , "non const x"
+                                             );
     }
   }
 
@@ -460,10 +461,24 @@ void SyrTester< ScalarX
     Kokkos::deep_copy(h_A, A);
 
     if (_useHermitianOption && _A_is_complex) {
-      this->makeMatrixHermitian(h_A);
+      // Make h_A Hermitian
+      for (int i(0); i < _N; ++i) {
+        for (int j(i+1); j < _N; ++j) {
+          h_A(i,j) = _KAT_A::conj( h_A(j,i) );
+        }
+      }
+
+      for (int i(0); i < _N; ++i) {
+        h_A(i,i) = 0.5 * ( h_A(i,i) + _KAT_A::conj( h_A(i,i) ) );
+      }
     }
     else {
-      this->makeMatrixSymmetric(h_A);
+      // Make h_A symmetric
+      for (int i(0); i < _N; ++i) {
+        for (int j(i+1); j < _N; ++j) {
+          h_A(i,j) = h_A(j,i);
+        }
+      }
     }
     Kokkos::deep_copy(A, h_A);
   }
@@ -479,42 +494,6 @@ void SyrTester< ScalarX
 
 }
 
-template <class ScalarX, class tLayoutX, class ScalarA, class tLayoutA, class Device>
-void
-SyrTester< ScalarX
-         , tLayoutX
-         , ScalarA
-         , tLayoutA
-         , Device
-         >::makeMatrixSymmetric(_HostViewTypeA & h_A)
-{
-  for (int i(0); i < _N; ++i) {
-    for (int j(i+1); j < _N; ++j) {
-      h_A(i,j) = h_A(j,i);
-    }
-  }
-}
-
-template <class ScalarX, class tLayoutX, class ScalarA, class tLayoutA, class Device>
-void
-SyrTester< ScalarX
-         , tLayoutX
-         , ScalarA
-         , tLayoutA
-         , Device
-         >::makeMatrixHermitian(_HostViewTypeA & h_A)
-{
-  for (int i(0); i < _N; ++i) {
-    for (int j(i+1); j < _N; ++j) {
-      h_A(i,j) = _KAT_A::conj( h_A(j,i) );
-    }
-  }
-
-  for (int i(0); i < _N; ++i) {
-    h_A(i,i) = 0.5 * ( h_A(i,i) + _KAT_A::conj( h_A(i,i) ) );
-  }
-}
-  
 // Code for complex values
 template <class ScalarX, class tLayoutX, class ScalarA, class tLayoutA, class Device>
 template <class T>
@@ -810,10 +789,10 @@ SyrTester< ScalarX
          , ScalarA
          , tLayoutA
          , Device
-         >::compareVanillaExpected( const T                 & alpha
-                                  , const _ViewTypeExpected & h_vanilla
-                                  , const _ViewTypeExpected & h_expected
-                                  ) {
+         >::compareVanillaAgainstExpected( const T                 & alpha
+                                         , const _ViewTypeExpected & h_vanilla
+                                         , const _ViewTypeExpected & h_expected
+                                         ) {
   if (_N <= 2) {
     for (int i(0); i < _M; ++i) {
       for (int j(0); j < _N; ++j) {
@@ -1021,10 +1000,10 @@ SyrTester< ScalarX
          , ScalarA
          , tLayoutA
          , Device
-         >::compareVanillaExpected( const T                 & alpha
-                                  , const _ViewTypeExpected & h_vanilla
-                                  , const _ViewTypeExpected & h_expected
-                                  ) {
+         >::compareVanillaAgainstExpected( const T                 & alpha
+                                         , const _ViewTypeExpected & h_vanilla
+                                         , const _ViewTypeExpected & h_expected
+                                         ) {
   if (_N <= 2) {
     for (int i(0); i < _M; ++i) {
       for (int j(0); j < _N; ++j) {
@@ -1149,14 +1128,14 @@ SyrTester< ScalarX
          , ScalarA
          , tLayoutA
          , Device
-         >::compareKokkosExpected( const T                 & alpha
-                                 , const _HostViewTypeA    & h_A
-                                 , const _ViewTypeExpected & h_expected
-                                 ) {
+         >::compareKkSyrAgainstReference( const T                 & alpha
+                                        , const _HostViewTypeA    & h_A
+                                        , const _ViewTypeExpected & h_reference
+                                        ) {
   if (_N <= 2) {
     for (int i(0); i < _M; ++i) {
       for (int j(0); j < _N; ++j) {
-        std::cout << "h_exp(" << i << "," << j << ")=" << h_expected(i,j)
+        std::cout << "h_exp(" << i << "," << j << ")=" << h_reference(i,j)
                   << ", h_A(" << i << "," << j << ")=" << h_A(i,j)
                   << std::endl;
       }
@@ -1180,9 +1159,9 @@ SyrTester< ScalarX
   int      jForMaxErrorImagRel(0);
   for (int i(0); i < _M; ++i) {
     for (int j(0); j < _N; ++j) {
-      diff = _KAT_A::abs(h_expected(i,j).real() - h_A(i,j).real());
+      diff = _KAT_A::abs(h_reference(i,j).real() - h_A(i,j).real());
       errorHappened = false;
-      if (h_expected(i,j).real() == 0.) {
+      if (h_reference(i,j).real() == 0.) {
         diffThreshold = _KAT_A::abs(_epsAbs);
         if (diff > diffThreshold) {
           errorHappened = true;
@@ -1190,14 +1169,14 @@ SyrTester< ScalarX
         }
       }
       else {
-        _AuxType aux = diff / _KAT_A::abs(h_expected(i,j).real());
+        _AuxType aux = diff / _KAT_A::abs(h_reference(i,j).real());
         if (maxErrorRealRel < aux) {
           maxErrorRealRel = aux;
           iForMaxErrorRealRel = i;
           jForMaxErrorRealRel = j;
         }
 
-        diffThreshold = _KAT_A::abs(_epsRel * h_expected(i,j).real());
+        diffThreshold = _KAT_A::abs(_epsRel * h_reference(i,j).real());
         if (diff > diffThreshold) {
           errorHappened = true;
           numErrorsRealRel++;
@@ -1206,16 +1185,16 @@ SyrTester< ScalarX
       if (errorHappened && (numErrorsRealAbs + numErrorsRealRel == 1)) {
         std::cout << "ERROR, i = " << i
                   << ", j = "      << j
-                  << ": h_expected(i,j).real() = " << h_expected(i,j).real()
-                  << ", h_A(i,j).real() = "        << h_A(i,j).real()
-                  << ", _KAT_A::abs(h_expected(i,j).real() - h_A(i,j).real()) = " << diff
-                  << ", diffThreshold = "                                         << diffThreshold
+                  << ": h_reference(i,j).real() = " << h_reference(i,j).real()
+                  << ", h_A(i,j).real() = "         << h_A(i,j).real()
+                  << ", _KAT_A::abs(h_reference(i,j).real() - h_A(i,j).real()) = " << diff
+                  << ", diffThreshold = "                                          << diffThreshold
                   << std::endl;
       }
 
-      diff = _KAT_A::abs(h_expected(i,j).imag() - h_A(i,j).imag());
+      diff = _KAT_A::abs(h_reference(i,j).imag() - h_A(i,j).imag());
       errorHappened = false;
-      if (h_expected(i,j).imag() == 0.) {
+      if (h_reference(i,j).imag() == 0.) {
         diffThreshold = _KAT_A::abs(_epsAbs);
         if (diff > diffThreshold) {
           errorHappened = true;
@@ -1223,14 +1202,14 @@ SyrTester< ScalarX
         }
       }
       else {
-        _AuxType aux = diff / _KAT_A::abs(h_expected(i,j).imag());
+        _AuxType aux = diff / _KAT_A::abs(h_reference(i,j).imag());
         if (maxErrorImagRel < aux) {
           maxErrorImagRel = aux;
           iForMaxErrorImagRel = i;
           jForMaxErrorImagRel = j;
         }
 
-        diffThreshold = _KAT_A::abs(_epsRel * h_expected(i,j).imag());
+        diffThreshold = _KAT_A::abs(_epsRel * h_reference(i,j).imag());
         if (diff > diffThreshold) {
           errorHappened = true;
           numErrorsImagRel++;
@@ -1239,48 +1218,38 @@ SyrTester< ScalarX
       if (errorHappened && (numErrorsImagAbs + numErrorsImagRel == 1)) {
         std::cout << "ERROR, i = " << i
                   << ", j = "      << j
-                  << ": h_expected(i,j).imag() = " << h_expected(i,j).imag()
-                  << ", h_A(i,j).imag() = "        << h_A(i,j).imag()
-                  << ", _KAT_A::abs(h_expected(i,j).imag() - h_A(i,j).imag()) = " << diff
-                  << ", diffThreshold = "                                         << diffThreshold
+                  << ": h_reference(i,j).imag() = " << h_reference(i,j).imag()
+                  << ", h_A(i,j).imag() = "         << h_A(i,j).imag()
+                  << ", _KAT_A::abs(h_reference(i,j).imag() - h_A(i,j).imag()) = " << diff
+                  << ", diffThreshold = "                                          << diffThreshold
                   << std::endl;
       }
     } // for j
   } // for i
 
   std::cout << "A is " << _M << " by " << _N
-            << ", _A_is_lr = "               << _A_is_lr
-            << ", _A_is_ll = "               << _A_is_ll
-            << ", alpha type = "             << typeid(alpha).name()
-            << ", _useHermitianOption = "    << _useHermitianOption
-            << ", _useUpOption = "           << _useUpOption
-            << ", numErrorsRealAbs = "       << numErrorsRealAbs
-            << ", numErrorsRealRel = "       << numErrorsRealRel
-            << ", maxErrorRealRel = "        << maxErrorRealRel
-            << ", iForMaxErrorRealRel = "    << iForMaxErrorRealRel
-            << ", jForMaxErrorRealRel = "    << jForMaxErrorRealRel
-            << ", h_expected(i,j).real() = " << ( ((_M > 0) && (_N > 0)) ? h_expected(iForMaxErrorRealRel,jForMaxErrorRealRel).real() : 9.999e+99 )
-            << ", h_A(i,j).real() = "        << ( ((_M > 0) && (_N > 0)) ? h_A(iForMaxErrorRealRel,jForMaxErrorRealRel).real() : 9.999e+99 )
-            << ", numErrorsImagAbs = "       << numErrorsImagAbs
-            << ", numErrorsImagRel = "       << numErrorsImagRel
-            << ", maxErrorImagRel = "        << maxErrorImagRel
-            << ", iForMaxErrorImagRel = "    << iForMaxErrorImagRel
-            << ", jForMaxErrorImagRel = "    << jForMaxErrorImagRel
-            << ", h_expected(i,j).imag() = " << ( ((_M > 0) && (_N > 0)) ? h_expected(iForMaxErrorImagRel,jForMaxErrorImagRel).imag() : 9.999e+99 )
-            << ", h_A(i,j).imag() = "        << ( ((_M > 0) && (_N > 0)) ? h_A(iForMaxErrorImagRel,jForMaxErrorImagRel).imag() : 9.999e+99 )
-            << ", maxNumErrorsAllowed = "    << maxNumErrorsAllowed
+            << ", _A_is_lr = "                << _A_is_lr
+            << ", _A_is_ll = "                << _A_is_ll
+            << ", alpha type = "              << typeid(alpha).name()
+            << ", _useHermitianOption = "     << _useHermitianOption
+            << ", _useUpOption = "            << _useUpOption
+            << ", numErrorsRealAbs = "        << numErrorsRealAbs
+            << ", numErrorsRealRel = "        << numErrorsRealRel
+            << ", maxErrorRealRel = "         << maxErrorRealRel
+            << ", iForMaxErrorRealRel = "     << iForMaxErrorRealRel
+            << ", jForMaxErrorRealRel = "     << jForMaxErrorRealRel
+            << ", h_reference(i,j).real() = " << ( ((_M > 0) && (_N > 0)) ? h_reference(iForMaxErrorRealRel,jForMaxErrorRealRel).real() : 9.999e+99 )
+            << ", h_A(i,j).real() = "         << ( ((_M > 0) && (_N > 0)) ? h_A(iForMaxErrorRealRel,jForMaxErrorRealRel).real() : 9.999e+99 )
+            << ", numErrorsImagAbs = "        << numErrorsImagAbs
+            << ", numErrorsImagRel = "        << numErrorsImagRel
+            << ", maxErrorImagRel = "         << maxErrorImagRel
+            << ", iForMaxErrorImagRel = "     << iForMaxErrorImagRel
+            << ", jForMaxErrorImagRel = "     << jForMaxErrorImagRel
+            << ", h_reference(i,j).imag() = " << ( ((_M > 0) && (_N > 0)) ? h_reference(iForMaxErrorImagRel,jForMaxErrorImagRel).imag() : 9.999e+99 )
+            << ", h_A(i,j).imag() = "         << ( ((_M > 0) && (_N > 0)) ? h_A(iForMaxErrorImagRel,jForMaxErrorImagRel).imag() : 9.999e+99 )
+            << ", maxNumErrorsAllowed = "     << maxNumErrorsAllowed
             << std::endl;
   if ((_M == 2131) && (_N == 2131)) {
-    std::cout << "Information"
-              << ": A is " << _M << " by " << _N
-              << ", _A_is_lr = "              << _A_is_lr
-              << ", _A_is_ll = "              << _A_is_ll
-              << ", alpha type = "            << typeid(alpha).name()
-              << ", _useHermitianOption = "   << _useHermitianOption
-              << ", _useUpOption = "          << _useUpOption
-              << ", h_expected(11, 2119) = (" << h_expected(11,2119).real() << ", " << h_expected(11,2119).imag() << ")"
-              << ", h_A(11, 2119) = ("        << h_A(11,2119).real()        << ", " << h_A(11,2119).imag()        << ")"
-              << std::endl;
     std::cout << "Information"
               << ": A is " << _M << " by " << _N
               << ", _A_is_lr = "               << _A_is_lr
@@ -1288,28 +1257,38 @@ SyrTester< ScalarX
               << ", alpha type = "             << typeid(alpha).name()
               << ", _useHermitianOption = "    << _useHermitianOption
               << ", _useUpOption = "           << _useUpOption
-              << ", h_expected(710, 1065) = (" << h_expected(710,1065).real() << ", " << h_expected(710,1065).imag() << ")"
-              << ", h_A(710, 1065) = ("        << h_A(710,1065).real()        << ", " << h_A(710,1065).imag()        << ")"
+              << ", h_reference(11, 2119) = (" << h_reference(11,2119).real() << ", " << h_reference(11,2119).imag() << ")"
+              << ", h_A(11, 2119) = ("         << h_A(11,2119).real()        << ", " << h_A(11,2119).imag()        << ")"
+              << std::endl;
+    std::cout << "Information"
+              << ": A is " << _M << " by " << _N
+              << ", _A_is_lr = "                << _A_is_lr
+              << ", _A_is_ll = "                << _A_is_ll
+              << ", alpha type = "              << typeid(alpha).name()
+              << ", _useHermitianOption = "     << _useHermitianOption
+              << ", _useUpOption = "            << _useUpOption
+              << ", h_reference(710, 1065) = (" << h_reference(710,1065).real() << ", " << h_reference(710,1065).imag() << ")"
+              << ", h_A(710, 1065) = ("         << h_A(710,1065).real()        << ", " << h_A(710,1065).imag()        << ")"
               << std::endl;
   }
 
   {
     std::ostringstream msg;
     msg << ", A is " << _M << " by " << _N
-        << ", _A_is_lr = "               << _A_is_lr
-        << ", _A_is_ll = "               << _A_is_ll
-        << ", alpha type = "             << typeid(alpha).name()
-        << ", _useHermitianOption = "    << _useHermitianOption
-        << ", _useUpOption = "           << _useUpOption
+        << ", _A_is_lr = "                << _A_is_lr
+        << ", _A_is_ll = "                << _A_is_ll
+        << ", alpha type = "              << typeid(alpha).name()
+        << ", _useHermitianOption = "     << _useHermitianOption
+        << ", _useUpOption = "            << _useUpOption
         << ": syr result is incorrect on real components"
-        << ", numErrorsRealAbs = "       << numErrorsRealAbs
-        << ", numErrorsRealRel = "       << numErrorsRealRel
-        << ", maxErrorRealRel = "        << maxErrorRealRel
-        << ", iForMaxErrorRealRel = "    << iForMaxErrorRealRel
-        << ", jForMaxErrorRealRel = "    << jForMaxErrorRealRel
-        << ", h_expected(i,j).real() = " << ( ((_M > 0) && (_N > 0)) ? h_expected(iForMaxErrorRealRel,jForMaxErrorRealRel).real() : 9.999e+99 )
-        << ", h_A(i,j).real() = "        << ( ((_M > 0) && (_N > 0)) ? h_A(iForMaxErrorRealRel,jForMaxErrorRealRel).real() : 9.999e+99 )
-        << ", maxNumErrorsAllowed = "    << maxNumErrorsAllowed;
+        << ", numErrorsRealAbs = "        << numErrorsRealAbs
+        << ", numErrorsRealRel = "        << numErrorsRealRel
+        << ", maxErrorRealRel = "         << maxErrorRealRel
+        << ", iForMaxErrorRealRel = "     << iForMaxErrorRealRel
+        << ", jForMaxErrorRealRel = "     << jForMaxErrorRealRel
+        << ", h_reference(i,j).real() = " << ( ((_M > 0) && (_N > 0)) ? h_reference(iForMaxErrorRealRel,jForMaxErrorRealRel).real() : 9.999e+99 )
+        << ", h_A(i,j).real() = "         << ( ((_M > 0) && (_N > 0)) ? h_A(iForMaxErrorRealRel,jForMaxErrorRealRel).real() : 9.999e+99 )
+        << ", maxNumErrorsAllowed = "     << maxNumErrorsAllowed;
 
     int numErrorsReal(numErrorsRealAbs + numErrorsRealRel);
     if (numErrorsReal > 0) {
@@ -1320,20 +1299,20 @@ SyrTester< ScalarX
   {
     std::ostringstream msg;
     msg << ", A is " << _M << " by " << _N
-        << ", _A_is_lr = "               << _A_is_lr
-        << ", _A_is_ll = "               << _A_is_ll
-        << ", alpha type = "             << typeid(alpha).name()
-        << ", _useHermitianOption = "    << _useHermitianOption
-        << ", _useUpOption = "           << _useUpOption
+        << ", _A_is_lr = "                << _A_is_lr
+        << ", _A_is_ll = "                << _A_is_ll
+        << ", alpha type = "              << typeid(alpha).name()
+        << ", _useHermitianOption = "     << _useHermitianOption
+        << ", _useUpOption = "            << _useUpOption
         << ": syr result is incorrect on imag components"
-        << ", numErrorsImagAbs = "       << numErrorsImagAbs
-        << ", numErrorsImagRel = "       << numErrorsImagRel
-        << ", maxErrorImagRel = "        << maxErrorImagRel
-        << ", iForMaxErrorImagRel = "    << iForMaxErrorImagRel
-        << ", jForMaxErrorImagRel = "    << jForMaxErrorImagRel
-        << ", h_expected(i,j).imag() = " << ( ((_M > 0) && (_N > 0)) ? h_expected(iForMaxErrorImagRel,jForMaxErrorImagRel).imag() : 9.999e+99 )
-        << ", h_A(i,j).imag() = "        << ( ((_M > 0) && (_N > 0)) ? h_A(iForMaxErrorImagRel,jForMaxErrorImagRel).imag() : 9.999e+99 )
-        << ", maxNumErrorsAllowed = "    << maxNumErrorsAllowed;
+        << ", numErrorsImagAbs = "        << numErrorsImagAbs
+        << ", numErrorsImagRel = "        << numErrorsImagRel
+        << ", maxErrorImagRel = "         << maxErrorImagRel
+        << ", iForMaxErrorImagRel = "     << iForMaxErrorImagRel
+        << ", jForMaxErrorImagRel = "     << jForMaxErrorImagRel
+        << ", h_reference(i,j).imag() = " << ( ((_M > 0) && (_N > 0)) ? h_reference(iForMaxErrorImagRel,jForMaxErrorImagRel).imag() : 9.999e+99 )
+        << ", h_A(i,j).imag() = "         << ( ((_M > 0) && (_N > 0)) ? h_A(iForMaxErrorImagRel,jForMaxErrorImagRel).imag() : 9.999e+99 )
+        << ", maxNumErrorsAllowed = "     << maxNumErrorsAllowed;
 
     int numErrorsImag(numErrorsImagAbs + numErrorsImagRel);
     if (numErrorsImag > 0) {
@@ -1354,14 +1333,14 @@ SyrTester< ScalarX
          , ScalarA
          , tLayoutA
          , Device
-         >::compareKokkosExpected( const T                 & alpha
-                                 , const _HostViewTypeA    & h_A
-                                 , const _ViewTypeExpected & h_expected
-                                 ) {
+         >::compareKkSyrAgainstReference( const T                 & alpha
+                                        , const _HostViewTypeA    & h_A
+                                        , const _ViewTypeExpected & h_reference
+                                        ) {
   if (_N <= 2) {
     for (int i(0); i < _M; ++i) {
       for (int j(0); j < _N; ++j) {
-        std::cout << "h_exp(" << i << "," << j << ")=" << h_expected(i,j)
+        std::cout << "h_exp(" << i << "," << j << ")=" << h_reference(i,j)
                   << ", h_A(" << i << "," << j << ")=" << h_A(i,j)
                   << std::endl;
       }
@@ -1380,9 +1359,9 @@ SyrTester< ScalarX
   int      jForMaxErrorRel(0);
   for (int i(0); i < _M; ++i) {
     for (int j(0); j < _N; ++j) {
-      diff = _KAT_A::abs(h_expected(i,j) - h_A(i,j));
+      diff = _KAT_A::abs(h_reference(i,j) - h_A(i,j));
       errorHappened = false;
-      if (h_expected(i,j) == 0.) {
+      if (h_reference(i,j) == 0.) {
         diffThreshold = _KAT_A::abs(_epsAbs);
         if (diff > diffThreshold) {
           errorHappened = true;
@@ -1390,14 +1369,14 @@ SyrTester< ScalarX
         }
       }
       else {
-        _AuxType aux = diff / _KAT_A::abs(h_expected(i,j));
+        _AuxType aux = diff / _KAT_A::abs(h_reference(i,j));
         if (maxErrorRel < aux) {
           maxErrorRel = aux;
           iForMaxErrorRel = i;
           jForMaxErrorRel = j;
         }
 
-        diffThreshold = _KAT_A::abs(_epsRel * h_expected(i,j));
+        diffThreshold = _KAT_A::abs(_epsRel * h_reference(i,j));
         if (diff > diffThreshold) {
           errorHappened = true;
           numErrorsRel++;
@@ -1406,10 +1385,10 @@ SyrTester< ScalarX
       if (errorHappened && (numErrorsAbs + numErrorsRel == 1)) {
         std::cout << "ERROR, i = " << i
                   << ", j = "      << j
-                  << ": h_expected(i,j) = " << h_expected(i,j)
-                  << ", h_A(i,j) = "        << h_A(i,j)
-                  << ", _KAT_A::abs(h_expected(i,j) - h_A(i,j)) = " << diff
-                  << ", diffThreshold = "                           << diffThreshold
+                  << ": h_reference(i,j) = " << h_reference(i,j)
+                  << ", h_A(i,j) = "         << h_A(i,j)
+                  << ", _KAT_A::abs(h_reference(i,j) - h_A(i,j)) = " << diff
+                  << ", diffThreshold = "                            << diffThreshold
                   << std::endl;
       }
     } // for j
@@ -1425,7 +1404,7 @@ SyrTester< ScalarX
             << ", maxErrorRel = "         << maxErrorRel
             << ", iForMaxErrorRel = "     << iForMaxErrorRel
             << ", jForMaxErrorRel = "     << jForMaxErrorRel
-            << ", h_expected(i,j) = "     << ( ((_M > 0) && (_N > 0)) ? h_expected(iForMaxErrorRel,jForMaxErrorRel) : 9.999e+99 )
+            << ", h_reference(i,j) = "    << ( ((_M > 0) && (_N > 0)) ? h_reference(iForMaxErrorRel,jForMaxErrorRel) : 9.999e+99 )
             << ", h_A(i,j) = "            << ( ((_M > 0) && (_N > 0)) ? h_A(iForMaxErrorRel,jForMaxErrorRel) : 9.999e+99 )
             << ", maxNumErrorsAllowed = " << maxNumErrorsAllowed
             << std::endl;
@@ -1443,7 +1422,7 @@ SyrTester< ScalarX
         << ", maxErrorRel = "         << maxErrorRel
         << ", iForMaxErrorRel = "     << iForMaxErrorRel
         << ", jForMaxErrorRel = "     << jForMaxErrorRel
-        << ", h_expected(i,j) = "     << ( ((_M > 0) && (_N > 0)) ? h_expected(iForMaxErrorRel,jForMaxErrorRel) : 9.999e+99 )
+        << ", h_reference(i,j) = "    << ( ((_M > 0) && (_N > 0)) ? h_reference(iForMaxErrorRel,jForMaxErrorRel) : 9.999e+99 )
         << ", h_A(i,j) = "            << ( ((_M > 0) && (_N > 0)) ? h_A(iForMaxErrorRel,jForMaxErrorRel) : 9.999e+99 )
         << ", maxNumErrorsAllowed = " << maxNumErrorsAllowed;
 
@@ -1497,12 +1476,80 @@ void SyrTester< ScalarX
   if (( gotStdException     == false ) &&
       ( gotUnknownException == false )) {
     Kokkos::deep_copy(h_A, A);
-
-    this->compareKokkosExpected( alpha
-                               , h_A
-                               , h_expected
-                               );
+    this->compareKkSyrAgainstReference( alpha
+                                      , h_A
+                                      , h_expected
+                                      );
   }
+}
+
+template <class ScalarX, class tLayoutX, class ScalarA, class tLayoutA, class Device>
+template <class TX>
+void SyrTester< ScalarX
+              , tLayoutX
+              , ScalarA
+              , tLayoutA
+              , Device
+              >::callKkGerAndCompareKkSyrAgainstIt( const ScalarA           & alpha
+                                                  , TX                      & x
+                                                  , _ViewTypeA              & h_A_orig
+                                                  , const _ViewTypeExpected & h_A_syr
+                                                  , const std::string       & situation
+                                                  )
+{
+  view_stride_adapter<_ViewTypeA, false> A_ger("A_ger", _M, _N);
+  Kokkos::deep_copy(A_ger.d_base, h_A_orig);
+
+  // ********************************************************************
+  // Call ger()
+  // ********************************************************************
+  std::cout << "In Test_Blas2_syr, '" << situation << "', alpha = " << alpha << std::endl;
+  KOKKOS_IMPL_DO_NOT_USE_PRINTF( "In Test_Blas2_syr.hpp, right before calling KokkosBlas::ger(): ViewTypeA = %s, _kkGerShouldThrowException=%d\n", typeid(_ViewTypeA).name(), _kkGerShouldThrowException );
+  std::string mode = _useHermitianOption ? "H" : "T";
+  bool gotStdException    (false);
+  bool gotUnknownException(false);
+  try {
+    KokkosBlas::ger(mode.c_str(), alpha, x, x, A_ger.d_view);
+  }
+  catch( const std::exception& e ) {
+    std::cout << "In Test_Blas2_syr, '" << situation << "', ger() call: caught exception, e.what() = " << e.what() << std::endl;
+    gotStdException = true;
+  }
+  catch( ... ) {
+    std::cout << "In Test_Blas2_syr, '" << situation << "', ger() call: caught unknown exception" << std::endl;
+    gotUnknownException = true;
+  }
+
+  EXPECT_EQ(gotUnknownException, false) << "Failed test, '" << situation << "': unknown exception should not have happened for ger() call";
+
+  EXPECT_EQ(gotStdException, false) << "Failed test, '" << situation << "': kk ger() should not have thrown a std::exception";
+
+  // ********************************************************************
+  // Prepare h_ger_reference to be compared against h_A_syr
+  // ********************************************************************
+  view_stride_adapter<_ViewTypeExpected, true> h_ger_reference("h_ger_reference", _M, _N);
+  Kokkos::deep_copy(h_ger_reference.d_base, A_ger.d_base);
+
+  std::string uplo = _useUpOption ? "U" : "L"; // Aqui
+  for (int i = 0; i < _M; ++i) {
+    for (int j = 0; j < _N; ++j) {
+      if (( (_useUpOption == true ) && (i <= j) ) ||
+          ( (_useUpOption == false) && (i >= j) )) {
+        // Keep h_ger_reference as already computed
+      }
+      else {
+        h_ger_reference.d_view(i,j) = h_A_orig(i,j);
+      }
+    }
+  }
+
+  // ********************************************************************
+  // Compare
+  // ********************************************************************
+  this->compareKkSyrAgainstReference( alpha
+                                    , h_A_syr
+                                    , h_ger_reference.d_view
+                                    );
 }
 
 } // namespace Test

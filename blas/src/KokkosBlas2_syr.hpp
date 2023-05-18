@@ -21,7 +21,7 @@
 
 namespace KokkosBlas {
 
-/// \brief Rank-1 update of a general matrix: A = A + alpha * x * x^{T,H}.
+/// \brief Rank-1 update of a general matrix: A = A + alpha * x * x^{T,H}. // AquiEEP
 ///
 /// \tparam ExecutionSpace The type of execution space
 /// \tparam XViewType      Input vector, as a 1-D Kokkos::View
@@ -127,7 +127,7 @@ void syr( const          ExecutionSpace              & space
                                           );
 }
 
-/// \brief Rank-1 update of a general matrix: A = A + alpha * x * x^{T,H}.
+/// \brief Rank-1 update of a general matrix: A = A + alpha * x * x^{T,H}. // AquiEEP
 ///
 /// \tparam XViewType Input vector, as a 1-D Kokkos::View
 /// \tparam AViewType Input/Output matrix, as a 2-D Kokkos::View
