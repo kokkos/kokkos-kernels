@@ -150,7 +150,7 @@ private:
   template <class TX>
   void callKkGerAndCompareKkSyrAgainstIt( const ScalarA           & alpha
                                         , TX                      & x
-                                        , _ViewTypeA              & h_A_orig
+                                        , _HostViewTypeA          & h_A_orig
                                         , const _ViewTypeExpected & h_A_syr
                                         , const std::string       & situation
                                         );
@@ -183,7 +183,7 @@ SyrTester< ScalarX
   , _A_is_ll                       ( std::is_same< tLayoutA, Kokkos::LayoutLeft >::value )
   , _testIsGpu                     ( KokkosKernels::Impl::kk_is_gpu_exec_space< typename Device::execution_space >() )
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
-  , _vanillaUsesDifferentOrderOfOps( _A_is_lr ) // && _testIsGpu ) // AquiEEP
+  , _vanillaUsesDifferentOrderOfOps( _A_is_lr )
 #else
   , _vanillaUsesDifferentOrderOfOps( false )
 #endif
@@ -336,9 +336,10 @@ void SyrTester< ScalarX
 
     if ((_useAnalyticalResults      == false) && // Just to save run time
         (_kkGerShouldThrowException == false)) {
+      Kokkos::deep_copy(org_A.h_view, org_A.d_base);
       this->callKkGerAndCompareKkSyrAgainstIt( alpha
                                              , x.d_view
-                                             , org_A.d_view
+                                             , org_A.h_view
                                              , A.h_view
                                              , "non const x"
                                              );
@@ -1496,7 +1497,7 @@ void SyrTester< ScalarX
               , Device
               >::callKkGerAndCompareKkSyrAgainstIt( const ScalarA           & alpha
                                                   , TX                      & x
-                                                  , _ViewTypeA              & h_A_orig
+                                                  , _HostViewTypeA          & h_A_orig
                                                   , const _ViewTypeExpected & h_A_syr
                                                   , const std::string       & situation
                                                   )
