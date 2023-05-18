@@ -1534,7 +1534,7 @@ void SyrTester< ScalarX
   view_stride_adapter<_ViewTypeExpected, true> h_ger_reference("h_ger_reference", _M, _N);
   Kokkos::deep_copy(h_ger_reference.d_base, A_ger.d_base);
 
-  std::string uplo = _useUpOption ? "U" : "L"; // Aqui
+  std::string uplo = _useUpOption ? "U" : "L";
   for (int i = 0; i < _M; ++i) {
     for (int j = 0; j < _N; ++j) {
       if (( (_useUpOption == true ) && (i <= j) ) ||

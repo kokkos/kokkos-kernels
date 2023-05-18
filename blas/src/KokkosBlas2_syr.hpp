@@ -21,7 +21,21 @@
 
 namespace KokkosBlas {
 
-/// \brief Rank-1 update of a general matrix: A = A + alpha * x * x^{T,H}. // AquiEEP
+/// \brief Rank-1 update (just lower portion or just upper portion) of a
+///        symmetric/Hermitian matrix: A = A + alpha * x * x^{T,H}.
+///
+///        Important note 1: this routine has the purpose of updating a
+///        symmetric (or Hermitian) matrix A in such a way that it continues
+///        to be symmetric (or Hermitian). Therefore, in Hermitian cases,
+///        the parameter alpha must be real.
+///
+///        Important note 2: however, this routine will honor all parameters
+///        passed to it, even if A is not symmetric or not Hermitian, and
+///        even if a complex alpha is supplied in Hermitian cases. Moreover,
+///        this routine will always compute either the lower portion or the
+///        upper portion (per user's request) of the final matrix A. So, in
+///        order to have meaningful results, the user must make sure to
+///        follow the conditions specied in the "important note 1" above.
 ///
 /// \tparam ExecutionSpace The type of execution space
 /// \tparam XViewType      Input vector, as a 1-D Kokkos::View
@@ -32,6 +46,9 @@ namespace KokkosBlas {
 ///                       run on.
 /// \param trans [in]     "T" or "t" for transpose, "H" or "h" for Hermitian.
 ///                       Only the first character is taken into account.
+/// \param uplo  [in]     "U" or "u" for upper portion, "L" or "l" for lower
+///                       portion. Only the first character is taken into
+///                       account.
 /// \param alpha [in]     Input coefficient of x * x^{T,H}
 /// \param x     [in]     Input vector, as a 1-D Kokkos::View
 /// \param A     [in/out] Output matrix, as a nonconst 2-D Kokkos::View
@@ -127,13 +144,30 @@ void syr( const          ExecutionSpace              & space
                                           );
 }
 
-/// \brief Rank-1 update of a general matrix: A = A + alpha * x * x^{T,H}. // AquiEEP
+/// \brief Rank-1 update (just lower portion or just upper portion) of a
+///        symmetric/Hermitian matrix: A = A + alpha * x * x^{T,H}.
+///
+///        Important note 1: this routine has the purpose of updating a
+///        symmetric (or Hermitian) matrix A in such a way that it continues
+///        to be symmetric (or Hermitian). Therefore, in Hermitian cases,
+///        the parameter alpha must be real.
+///
+///        Important note 2: however, this routine will honor all parameters
+///        passed to it, even if A is not symmetric or not Hermitian, and
+///        even if a complex alpha is supplied in Hermitian cases. Moreover,
+///        this routine will always compute either the lower portion or the
+///        upper portion (per user's request) of the final matrix A. So, in
+///        order to have meaningful results, the user must make sure to
+///        follow the conditions specied in the "important note 1" above.
 ///
 /// \tparam XViewType Input vector, as a 1-D Kokkos::View
 /// \tparam AViewType Input/Output matrix, as a 2-D Kokkos::View
 ///
 /// \param trans [in]     "T" or "t" for transpose, "H" or "h" for Hermitian.
 ///                       Only the first character is taken into account.
+/// \param uplo  [in]     "U" or "u" for upper portion, "L" or "l" for lower
+///                       portion. Only the first character is taken into
+///                       account.
 /// \param alpha [in]     Input coefficient of x * x^{T,H}
 /// \param x     [in]     Input vector, as a 1-D Kokkos::View
 /// \param A     [in/out] Output matrix, as a nonconst 2-D Kokkos::View
