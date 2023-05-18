@@ -24,10 +24,11 @@ namespace KokkosBlas {
 /// \brief Rank-1 update (just lower portion or just upper portion) of a
 ///        symmetric/Hermitian matrix: A = A + alpha * x * x^{T,H}.
 ///
-///        Important note 1: this routine has the purpose of updating a
-///        symmetric (or Hermitian) matrix A in such a way that it continues
-///        to be symmetric (or Hermitian). Therefore, in Hermitian cases,
-///        the parameter alpha must be real.
+///        Important note 1: this routine encapsulates the syr() and her()
+///        routines specified in BLAS documentations. It has the purpose of
+///        updating a symmetric (or Hermitian) matrix A in such a way that
+///        it continues to be symmetric (or Hermitian). Therefore, in
+///        Hermitian cases, the parameter alpha must be real.
 ///
 ///        Important note 2: however, this routine will honor all parameters
 ///        passed to it, even if A is not symmetric or not Hermitian, and
@@ -36,6 +37,13 @@ namespace KokkosBlas {
 ///        upper portion (per user's request) of the final matrix A. So, in
 ///        order to have meaningful results, the user must make sure to
 ///        follow the conditions specied in the "important note 1" above.
+///
+///        Important note 3: if TPL is enabled, this routine will call the
+///        third party library BLAS routines whenever the parameters passed
+///        are consistent with the parameters expected by the corresponding
+///        TPL routine. If not, then this routine will route the execution
+///        to the kokkos-kernels implementation, thus honorning all
+///        parameters passed, as stated in the "important note 2" above.
 ///
 /// \tparam ExecutionSpace The type of execution space
 /// \tparam XViewType      Input vector, as a 1-D Kokkos::View
@@ -147,10 +155,11 @@ void syr( const          ExecutionSpace              & space
 /// \brief Rank-1 update (just lower portion or just upper portion) of a
 ///        symmetric/Hermitian matrix: A = A + alpha * x * x^{T,H}.
 ///
-///        Important note 1: this routine has the purpose of updating a
-///        symmetric (or Hermitian) matrix A in such a way that it continues
-///        to be symmetric (or Hermitian). Therefore, in Hermitian cases,
-///        the parameter alpha must be real.
+///        Important note 1: this routine encapsulates the syr() and her()
+///        routines specified in BLAS documentations. It has the purpose of
+///        updating a symmetric (or Hermitian) matrix A in such a way that
+///        it continues to be symmetric (or Hermitian). Therefore, in
+///        Hermitian cases, the parameter alpha must be real.
 ///
 ///        Important note 2: however, this routine will honor all parameters
 ///        passed to it, even if A is not symmetric or not Hermitian, and
@@ -159,6 +168,13 @@ void syr( const          ExecutionSpace              & space
 ///        upper portion (per user's request) of the final matrix A. So, in
 ///        order to have meaningful results, the user must make sure to
 ///        follow the conditions specied in the "important note 1" above.
+///
+///        Important note 3: if TPL is enabled, this routine will call the
+///        third party library BLAS routines whenever the parameters passed
+///        are consistent with the parameters expected by the corresponding
+///        TPL routine. If not, then this routine will route the execution
+///        to the kokkos-kernels implementation, thus honorning all
+///        parameters passed, as stated in the "important note 2" above.
 ///
 /// \tparam XViewType Input vector, as a 1-D Kokkos::View
 /// \tparam AViewType Input/Output matrix, as a 2-D Kokkos::View

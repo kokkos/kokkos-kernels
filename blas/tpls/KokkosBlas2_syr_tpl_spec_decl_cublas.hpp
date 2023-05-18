@@ -25,7 +25,6 @@ namespace Impl {
 #define KOKKOSBLAS2_SYR_CUBLAS_DETERMINE_ARGS(LAYOUT, uploChar)                \
   bool A_is_ll      = std::is_same<Kokkos::LayoutLeft, LAYOUT>::value;         \
   bool A_is_lr      = std::is_same<Kokkos::LayoutRight, LAYOUT>::value;        \
-  const int M       = static_cast<int>(A_is_lr ? A.extent(1) : A.extent(0));   \
   const int N       = static_cast<int>(A_is_lr ? A.extent(0) : A.extent(1));   \
   constexpr int one = 1;                                                       \
   const int LDA     = A_is_lr ? A.stride(0) : A.stride(1);                     \

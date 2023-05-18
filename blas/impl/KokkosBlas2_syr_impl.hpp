@@ -54,7 +54,7 @@ struct SingleLevelSYR {
     }
     else {
       const IndexType      N      ( A_.extent(1) );
-      const XComponentType x_fixed( x_(i) );
+      const XComponentType x_fixed( x_(i) ); // Aqui: performance improvement
 
       if (justTranspose_) {
         for (IndexType j = 0; j < N; ++j) {
@@ -160,7 +160,7 @@ public:
       const IndexType M ( A_.extent(0) );
       const IndexType j ( team.league_rank() );
       if (justTranspose_) {
-        const XComponentType x_fixed( x_(j) );
+        const XComponentType x_fixed( x_(j) ); // Aqui: performance improvement
         Kokkos::parallel_for(Kokkos::TeamThreadRange(team, M), [&](const IndexType & i) {
           if (( (justUp_ == true ) && (i <= j) ) ||
               ( (justUp_ == false) && (i >= j) )) {
@@ -169,7 +169,7 @@ public:
         });
       }
       else {
-        const XComponentType x_fixed( Kokkos::ArithTraits<XComponentType>::conj( x_(j) ) );
+        const XComponentType x_fixed( Kokkos::ArithTraits<XComponentType>::conj( x_(j) ) ); // Aqui: performance improvement
         Kokkos::parallel_for(Kokkos::TeamThreadRange(team, M), [&](const IndexType & i) {
           if (( (justUp_ == true ) && (i <= j) ) ||
               ( (justUp_ == false) && (i >= j) )) {
@@ -190,7 +190,7 @@ public:
     else {
       const IndexType      N      ( A_.extent(1) );
       const IndexType      i      ( team.league_rank() );
-      const XComponentType x_fixed( x_(i) );
+      const XComponentType x_fixed( x_(i) ); // Aqui: performance improvement
       if (justTranspose_) {
         Kokkos::parallel_for(Kokkos::TeamThreadRange(team, N), [&](const IndexType & j) {
           if (( (justUp_ == true ) && (i <= j) ) ||
