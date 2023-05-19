@@ -515,73 +515,75 @@ SyrTester< ScalarX
                                     , _HostViewTypeA    & h_A
                                     , _ViewTypeExpected & h_expected
                                     ) {
-  _AuxType auxI(0.);
-  _AuxType auxJ(0.);
-  _AuxType auxIpJ(0.);
-  _AuxType auxImJ(0.);
-
-  alpha.real() =  1.;
-  alpha.imag() = -1.;
+  if (_useHermitianOption) {
+    alpha.real() = 1.;
+    alpha.imag() = 0.;
+  }
+  else {
+    alpha.real() =  1.;
+    alpha.imag() = -1.;
+  }
 
   for (int i = 0; i < _M; ++i) {
-    auxI = this->shrinkAngleToZeroTwoPiRange( static_cast<_AuxType>(i) );
+    _AuxType auxI = this->shrinkAngleToZeroTwoPiRange( static_cast<_AuxType>(i) );
     h_x[i].real() = sin(auxI);
     h_x[i].imag() = cos(auxI);
   }
 
   if (_useHermitianOption) {
     for (int i = 0; i < _M; ++i) {
-      auxI = this->shrinkAngleToZeroTwoPiRange( static_cast<_AuxType>(i) );
       for (int j = 0; j < _N; ++j) {
+        _AuxType auxImJ = this->shrinkAngleToZeroTwoPiRange( static_cast<_AuxType>(i-j) );
         if (( (_useUpOption == true ) && (i <= j) ) ||
             ( (_useUpOption == false) && (i >= j) )) {
-            auxJ = this->shrinkAngleToZeroTwoPiRange( static_cast<_AuxType>(j) );
-            auxIpJ = this->shrinkAngleToZeroTwoPiRange( static_cast<_AuxType>(i+j) );
-            h_A(i,j).real() = -sin(auxIpJ) - sin(auxI) * sin(auxJ) - cos(auxI) * cos(auxJ);
-            h_A(i,j).imag() = -sin(auxIpJ) - sin(auxI) * sin(auxJ) + cos(auxI) * cos(auxJ);
+          h_A(i,j).real() = cos(auxImJ);
+          h_A(i,j).imag() = -sin(auxImJ);
+        }
+        else {
+          h_A(i,j).real() = cos(auxImJ);
+          h_A(i,j).imag() = sin(auxImJ);
         }
       }
     }
   }
   else {
     for (int i = 0; i < _M; ++i) {
-      auxI = this->shrinkAngleToZeroTwoPiRange( static_cast<_AuxType>(i) );
       for (int j = 0; j < _N; ++j) {
-        if (( (_useUpOption == true ) && (i <= j) ) ||
-            ( (_useUpOption == false) && (i >= j) )) {
-          auxJ = this->shrinkAngleToZeroTwoPiRange( static_cast<_AuxType>(j) );
-          auxImJ = this->shrinkAngleToZeroTwoPiRange( static_cast<_AuxType>(i-j) );
-          h_A(i,j).real() = -sin(auxImJ) - sin(auxI) * sin(auxJ) + cos(auxI) * cos(auxJ);
-          h_A(i,j).imag() = -sin(auxImJ) - sin(auxI) * sin(auxJ) - cos(auxI) * cos(auxJ);
-        }
+        _AuxType auxIpJ = this->shrinkAngleToZeroTwoPiRange( static_cast<_AuxType>(i+j) );
+        h_A(i,j).real() = sin(auxIpJ) + cos(auxIpJ);
+        h_A(i,j).imag() = sin(auxIpJ) - cos(auxIpJ);
       }
     }
   }
 
   if (_useHermitianOption) {
     for (int i = 0; i < _M; ++i) {
-      auxI = this->shrinkAngleToZeroTwoPiRange( static_cast<_AuxType>(i) );
       for (int j = 0; j < _N; ++j) {
         if (( (_useUpOption == true ) && (i <= j) ) ||
             ( (_useUpOption == false) && (i >= j) )) {
-          auxJ = this->shrinkAngleToZeroTwoPiRange( static_cast<_AuxType>(j) );
-          auxIpJ = this->shrinkAngleToZeroTwoPiRange( static_cast<_AuxType>(i+j) );
-          h_expected(i,j).real() = -2. * sin(auxI) * sin(auxJ); // AquiEEP
-          h_expected(i,j).imag() = 2. * (cos(auxIpJ) - sin(auxIpJ));
+          _AuxType auxImJ = this->shrinkAngleToZeroTwoPiRange( static_cast<_AuxType>(i-j) );
+          h_expected(i,j).real() =  2. * cos(auxImJ);
+          h_expected(i,j).imag() = -2. * sin(auxImJ);
+        }
+        else {
+          h_expected(i,j).real() = h_A(i,j).real();
+          h_expected(i,j).imag() = h_A(i,j).imag();
         }
       }
     }
   }
   else {
     for (int i = 0; i < _M; ++i) {
-      auxI = this->shrinkAngleToZeroTwoPiRange( static_cast<_AuxType>(i) );
       for (int j = 0; j < _N; ++j) {
         if (( (_useUpOption == true ) && (i <= j) ) ||
             ( (_useUpOption == false) && (i >= j) )) {
-          auxJ = this->shrinkAngleToZeroTwoPiRange( static_cast<_AuxType>(j) );
-          auxImJ = this->shrinkAngleToZeroTwoPiRange( static_cast<_AuxType>(i-j) );
-          h_expected(i,j).real() =  2. * cos(auxI) * cos(auxJ);
-          h_expected(i,j).imag() = -2. * sin(auxImJ);
+          _AuxType auxIpJ = this->shrinkAngleToZeroTwoPiRange( static_cast<_AuxType>(i+j) );
+          h_expected(i,j).real() = 2. * sin(auxIpJ);
+          h_expected(i,j).imag() = 2. * sin(auxIpJ);
+        }
+        else {
+          h_expected(i,j).real() = h_A(i,j).real();
+          h_expected(i,j).imag() = h_A(i,j).imag();
         }
       }
     }
@@ -604,25 +606,18 @@ SyrTester< ScalarX
                                     , _HostViewTypeA    & h_A
                                     , _ViewTypeExpected & h_expected
                                     ) {
-  _AuxType auxI(0.);
-  _AuxType auxJ(0.);
-  _AuxType auxIpJ(0.);
-
-  alpha = 3;
+  alpha = 2;
 
   for (int i = 0; i < _M; ++i) {
-    auxI = this->shrinkAngleToZeroTwoPiRange( static_cast<_AuxType>(i) );
+    _AuxType auxI = this->shrinkAngleToZeroTwoPiRange( static_cast<_AuxType>(i) );
     h_x[i] = sin(auxI);
   }
 
   for (int i = 0; i < _M; ++i) {
-    auxI = this->shrinkAngleToZeroTwoPiRange( static_cast<_AuxType>(i) );
+    _AuxType auxI = this->shrinkAngleToZeroTwoPiRange( static_cast<_AuxType>(i) );
     for (int j = 0; j < _N; ++j) {
-      if (( (_useUpOption == true ) && (i <= j) ) ||
-          ( (_useUpOption == false) && (i >= j) )) {
-        auxJ = this->shrinkAngleToZeroTwoPiRange( static_cast<_AuxType>(j) );
-        h_A(i,j) = 3 * cos(auxI) * sin(auxJ);
-      }
+      _AuxType auxJ = this->shrinkAngleToZeroTwoPiRange( static_cast<_AuxType>(j) );
+      h_A(i,j) = 2 * cos(auxI) * cos(auxJ);
     }
   }
 
@@ -630,8 +625,11 @@ SyrTester< ScalarX
     for (int j = 0; j < _N; ++j) {
       if (( (_useUpOption == true ) && (i <= j) ) ||
           ( (_useUpOption == false) && (i >= j) )) {
-        auxIpJ = this->shrinkAngleToZeroTwoPiRange( static_cast<_AuxType>(i+j) );
-        h_expected(i,j) = 3 * sin(auxIpJ); // AquiEEP
+        _AuxType auxImJ = this->shrinkAngleToZeroTwoPiRange( static_cast<_AuxType>(i-j) );
+        h_expected(i,j) = 2 * cos(auxImJ);
+      }
+      else {
+        h_expected(i,j) = h_A(i,j);
       }
     }
   }
@@ -1593,10 +1591,10 @@ int test_syr( const std::string & caseName ) {
     tester.test(1024, 0);
 
     if (useAnalyticalResults) {
-      //tester.test(1024, 0 , true, false, false);
-      //tester.test(1024, 0 , true, false, true);
-      //tester.test(1024, 0 , true, true, false);
-      //tester.test(1024, 0 , true, true, true);
+      tester.test(1024, 0 , true, false, false);
+      tester.test(1024, 0 , true, false, true);
+      tester.test(1024, 0 , true, true, false);
+      tester.test(1024, 0 , true, true, true);
     }
 
     tester.test(2,  0 , false, false, true);
@@ -1628,10 +1626,10 @@ int test_syr( const std::string & caseName ) {
     tester.test(1024, 0);
 
     if (useAnalyticalResults) {
-      //tester.test(1024, 0, true, false, false);
-      //tester.test(1024, 0, true, false, true);
-      //tester.test(1024, 0, true, true, false);
-      //tester.test(1024, 0, true, true, true);
+      tester.test(1024, 0, true, false, false);
+      tester.test(1024, 0, true, false, true);
+      tester.test(1024, 0, true, true, false);
+      tester.test(1024, 0, true, true, true);
     }
 
     tester.test(2,  0, false, false, true);
@@ -1663,10 +1661,10 @@ int test_syr( const std::string & caseName ) {
     tester.test(1024, 0);
 
     if (useAnalyticalResults) {
-      //tester.test(1024, 0, true, false, false);
-      //tester.test(1024, 0, true, false, true);
-      //tester.test(1024, 0, true, true, false);
-      //tester.test(1024, 0, true, true, true);
+      tester.test(1024, 0, true, false, false);
+      tester.test(1024, 0, true, false, true);
+      tester.test(1024, 0, true, true, false);
+      tester.test(1024, 0, true, true, true);
     }
 
     tester.test(2,  0, false, false, true);
@@ -1695,8 +1693,8 @@ int test_syr( const std::string & caseName ) {
     tester.test(1024, 0);
 
     if (useAnalyticalResults) {
-      //tester.test(1024, 0, true, false, true);
-      //tester.test(1024, 0, true, true, true);
+      tester.test(1024, 0, true, false, true);
+      tester.test(1024, 0, true, true, true);
     }
 
     tester.test(2,  0, false, false, true);
