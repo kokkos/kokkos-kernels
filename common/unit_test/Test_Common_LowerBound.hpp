@@ -190,12 +190,14 @@ void test_lower_bound() {
   test_lower_bound<T, Device>({0, 1, T(2.5), 3, 4, 5}, T(5));
   test_lower_bound<T, Device>({0, 1, T(2.5), 3, 4, 5}, T(6));
 
-  auto randn = [](T n) {
+  auto randn = [](T n) -> T {
+    T ret;
     if constexpr (std::is_floating_point_v<T>) {
-      return T(rand()) / T(RAND_MAX) * n;
+      ret = T(rand()) / T(RAND_MAX) * n;
     } else {
-      return T(rand()) % n;
+      ret = T(rand()) % n;
     }
+    return ret;
   };
 
   T maxEntry         = 20;
