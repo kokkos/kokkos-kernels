@@ -624,7 +624,7 @@ KOKKOS_INLINE_FUNCTION auto subview_wrapper(ViewType v, IdxType1 i1,
                                             const Trans::NoTranspose) {
   return subview_wrapper(v, i1, i2, i3, layout_tag);
 }
-#if KOKKOS_VERSION <= 40000
+#if KOKKOS_VERSION < 40099
 template <class ViewType, class IdxType1>
 KOKKOS_INLINE_FUNCTION auto subview_wrapper(ViewType v, IdxType1 i1,
                                             Kokkos::Impl::ALL_t i2,
@@ -669,7 +669,7 @@ KOKKOS_INLINE_FUNCTION auto subview_wrapper(
     const BatchLayout::Right &layout_tag, const Trans::NoTranspose &) {
   return subview_wrapper(v, i1, i2, i3, layout_tag);
 }
-#if KOKKOS_VERSION <= 40000
+#if KOKKOS_VERSION < 40099
 template <class ViewType, class IdxType1>
 KOKKOS_INLINE_FUNCTION auto subview_wrapper(
     ViewType v, IdxType1 i1, Kokkos::Impl::ALL_t i2, Kokkos::Impl::ALL_t i3,
