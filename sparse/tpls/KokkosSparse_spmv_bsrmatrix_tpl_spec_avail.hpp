@@ -265,8 +265,7 @@ KOKKOSSPARSE_SPMV_MV_BSRMATRIX_TPL_SPEC_AVAIL_MKL(Kokkos::complex<double>,
     enum : bool { value = true };                                              \
   };
 
-// These things may also be valid before 5.4, but I haven't tested it.
-#if KOKKOSSPARSE_IMPL_ROCM_VERSION >= 50400
+#if KOKKOSSPARSE_IMPL_ROCM_VERSION >= 50200
 
 KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_AVAIL_ROCSPARSE(float, rocsparse_int,
                                                      rocsparse_int,
@@ -305,7 +304,7 @@ KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_AVAIL_ROCSPARSE(Kokkos::complex<double>,
                                                      Kokkos::LayoutRight,
                                                      Kokkos::HIPSpace)
 
-#endif  // KOKKOSSPARSE_IMPL_ROCM_VERSION >= 50400
+#endif  // KOKKOSSPARSE_IMPL_ROCM_VERSION >= 50200
 
 #undef KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_AVAIL_ROCSPARSE
 
