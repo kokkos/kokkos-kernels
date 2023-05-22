@@ -162,6 +162,5 @@ struct TRMM<execution_space, AVIT, BVIT, false,
                                          MEM_SPACE)
 
 #include <KokkosBlas3_trmm_tpl_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosBlas3_trmm_eti_spec_decl.hpp>
 
 #endif  // KOKKOSBLAS3_TRMM_SPEC_HPP_

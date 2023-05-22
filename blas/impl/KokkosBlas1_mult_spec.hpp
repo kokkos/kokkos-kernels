@@ -311,7 +311,5 @@ struct Mult<execution_space, YV, AV, XV, 1, false,
       2, false, true>;
 
 #include <KokkosBlas1_mult_tpl_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosBlas1_mult_eti_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosBlas1_mult_mv_eti_spec_decl.hpp>
 
 #endif  // KOKKOSBLAS1_MULT_SPEC_HPP_

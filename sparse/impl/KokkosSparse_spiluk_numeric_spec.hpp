@@ -289,6 +289,5 @@ struct SPILUK_NUMERIC<ExecutionSpace, KernelHandle, ARowMapType, AEntriesType,
       false, true>;
 
 #include <KokkosSparse_spiluk_numeric_tpl_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosSparse_spiluk_numeric_eti_spec_decl.hpp>
 
 #endif

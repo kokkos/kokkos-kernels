@@ -225,6 +225,5 @@ struct SPTRSV_SOLVE<KernelHandle, RowMapType, EntriesType, ValuesType, BType,
       false, true>;
 
 #include <KokkosSparse_sptrsv_solve_tpl_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosSparse_sptrsv_solve_eti_spec_decl.hpp>
 
 #endif

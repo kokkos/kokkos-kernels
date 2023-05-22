@@ -619,7 +619,5 @@ struct Dot<execution_space, RV, XV, YV, X_Rank, Y_Rank, false,
       1, 2, false, true>;
 
 #include <KokkosBlas1_dot_tpl_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosBlas1_dot_eti_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosBlas1_dot_mv_eti_spec_decl.hpp>
 
 #endif  // KOKKOS_BLAS1_MV_IMPL_DOT_HPP_

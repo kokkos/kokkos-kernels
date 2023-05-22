@@ -513,7 +513,5 @@ struct Axpby<execution_space, typename XV::non_const_value_type, XV,
       2, false, true>;
 
 #include <KokkosBlas1_axpby_tpl_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosBlas1_axpby_eti_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosBlas1_axpby_mv_eti_spec_decl.hpp>
 
 #endif  // KOKKOS_BLAS1_MV_IMPL_AXPBY_HPP_

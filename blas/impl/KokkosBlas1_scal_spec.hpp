@@ -390,7 +390,5 @@ struct Scal<execution_space, RMV, typename XMV::non_const_value_type, XMV, 2,
       2, false, true>;
 
 #include <KokkosBlas1_scal_tpl_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosBlas1_scal_eti_spec_decl.hpp>
-#include <generated_specializations_hpp/KokkosBlas1_scal_mv_eti_spec_decl.hpp>
 
 #endif  // KOKKOS_BLAS1_MV_IMPL_SCAL_HPP_
