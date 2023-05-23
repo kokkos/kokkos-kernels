@@ -76,6 +76,9 @@ struct HostBlas {
   static void syr(const char uplo, int n, const T alpha, const T *x, int incx,
                   T *a, int lda);
 
+  static void syr2(const char uplo, int n, const T alpha, const T *x, int incx,
+                   const T *y, int incy, T *a, int lda);
+
   template <typename tAlpha>
   static void cher(const char uplo, int n, const tAlpha alpha, const T *x,
                    int incx, T *a, int lda);
@@ -83,6 +86,12 @@ struct HostBlas {
   template <typename tAlpha>
   static void zher(const char uplo, int n, const tAlpha alpha, const T *x,
                    int incx, T *a, int lda);
+
+  static void cher2(const char uplo, int n, const T alpha, const T *x, int incx,
+                    const T *y, int incy, T *a, int lda);
+
+  static void zher2(const char uplo, int n, const T alpha, const T *x, int incx,
+                    const T *y, int incy, T *a, int lda);
 
   static void trsv(const char uplo, const char transa, const char diag, int m,
                    const T *a, int lda,
