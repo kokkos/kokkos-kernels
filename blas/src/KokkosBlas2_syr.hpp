@@ -36,7 +36,7 @@ namespace KokkosBlas {
 ///        this routine will always compute either the lower portion or the
 ///        upper portion (per user's request) of the final matrix A. So, in
 ///        order to obtain meaningful results, the user must make sure to
-///        follow the conditions specied in the "important note 1" above.
+///        follow the conditions specified in the "important note 1" above.
 ///
 ///        Important note 3: if TPL is enabled, this routine will call the
 ///        third party library BLAS routines whenever the parameters passed
@@ -159,7 +159,7 @@ void syr(const ExecutionSpace& space, const char trans[], const char uplo[],
 ///        this routine will always compute either the lower portion or the
 ///        upper portion (per user's request) of the final matrix A. So, in
 ///        order to obtain meaningful results, the user must make sure to
-///        follow the conditions specied in the "important note 1" above.
+///        follow the conditions specified in the "important note 1" above.
 ///
 ///        Important note 3: if TPL is enabled, this routine will call the
 ///        third party library BLAS routines whenever the parameters passed
