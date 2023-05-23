@@ -176,6 +176,14 @@ if [[ "$HOSTNAME" == caraway* ]]; then # Warning: very generic name
   MACHINE=caraway
 fi
 
+if [[ "$HOSTNAME" == fat* ]]; then # Caraway MI250 queues
+  MACHINE=caraway
+fi
+
+if [[ "$HOSTNAME" == lean* ]]; then # Caraway MI210 queues
+  MACHINE=caraway
+fi
+
 if [[ "$HOSTNAME" == kokkos-dev\.sandia\.gov* ]]; then
   MACHINE=kokkos-dev
 fi
