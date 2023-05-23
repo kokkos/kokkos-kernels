@@ -341,6 +341,7 @@ struct BatchedGemmWrapperInner {
 };
 
 // Specialization struct which defines whether a specialization exists
+// This struct is currently never specialized.
 template <class ArgTransA, class ArgTransB, class ArgBatchSzDim,
           class BatchedGemmHandleType, class ScalarType, class AViewType,
           class BViewType, class CViewType>
@@ -348,6 +349,7 @@ struct batched_gemm_tpl_spec_avail {
   enum : bool { value = false };
 };
 
+// Specialization struct which defines whether a specialization exists
 template <class ArgTransA, class ArgTransB, class ArgBatchSzDim,
           class BatchedGemmHandleType, class ScalarType, class AViewType,
           class BViewType, class CViewType>
