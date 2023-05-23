@@ -125,10 +125,10 @@ class SyrTester {
                                           const std::string& situation);
 
   template <class TX>
-  void callKkGerAndCompareKkSyrAgainstIt(const ScalarA& alpha, TX& x,
-                                         view_stride_adapter<_ViewTypeA, false>& org_A,
-                                         const _ViewTypeExpected& h_A_syr,
-                                         const std::string& situation);
+  void callKkGerAndCompareKkSyrAgainstIt(
+      const ScalarA& alpha, TX& x,
+      view_stride_adapter<_ViewTypeA, false>& org_A,
+      const _ViewTypeExpected& h_A_syr, const std::string& situation);
 
   const bool _A_is_complex;
   const bool _A_is_lr;
@@ -285,8 +285,8 @@ void SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::test(
 
     if ((_useAnalyticalResults == false) &&  // Just to save run time
         (_kkGerShouldThrowException == false)) {
-      this->callKkGerAndCompareKkSyrAgainstIt(alpha, x.d_view, org_A,
-                                              A.h_view, "non const x");
+      this->callKkGerAndCompareKkSyrAgainstIt(alpha, x.d_view, org_A, A.h_view,
+                                              "non const x");
     }
   }
 
@@ -1391,10 +1391,10 @@ template <class ScalarX, class tLayoutX, class ScalarA, class tLayoutA,
           class Device>
 template <class TX>
 void SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
-    callKkGerAndCompareKkSyrAgainstIt(const ScalarA& alpha, TX& x,
-                                      view_stride_adapter<_ViewTypeA, false>& org_A,
-                                      const _ViewTypeExpected& h_A_syr,
-                                      const std::string& situation) {
+    callKkGerAndCompareKkSyrAgainstIt(
+        const ScalarA& alpha, TX& x,
+        view_stride_adapter<_ViewTypeA, false>& org_A,
+        const _ViewTypeExpected& h_A_syr, const std::string& situation) {
   view_stride_adapter<_ViewTypeA, false> A_ger("A_ger", _M, _N);
   Kokkos::deep_copy(A_ger.d_base, org_A.d_base);
 
