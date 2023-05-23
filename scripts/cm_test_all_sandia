@@ -1052,6 +1052,9 @@ setup_env() {
       NEW_TPL_LIST="cublas,cusparse,"
       export KOKKOS_CUDA_OPTIONS="${KOKKOS_CUDA_OPTIONS},enable_lambda"
     fi
+    if [[ "$compiler" == rocm* ]]; then
+      NEW_TPL_LIST="rocblas,rocsparse,"
+    fi
     # host tpls - use mkl with intel, else use host blas
     if [[ "$compiler" == intel* ]]; then
       NEW_TPL_LIST="mkl,"
