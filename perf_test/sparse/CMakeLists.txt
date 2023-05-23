@@ -116,7 +116,7 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
         SOURCES KokkosSparse_mdf.cpp
 )
 
-# if (KokkosKernels_ENABLE_BENCHMARK)
+if (KokkosKernels_ENABLE_BENCHMARK)
 #   KOKKOSKERNELS_ADD_BENCHMARK(
 #     sparse_par_ilut
 #     SOURCES KokkosSparse_par_ilut.cpp
@@ -131,4 +131,8 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
 #     target_compile_definitions(KokkosKernels_sparse_par_ilut PRIVATE "USE_GINKGO")
 #     target_link_libraries(KokkosKernels_sparse_par_ilut PRIVATE Ginkgo::ginkgo)
 #   endif()
-# endif()
+
+  KOKKOSKERNELS_ADD_BENCHMARK(
+    sparse_spmv_benchmark SOURCES KokkosSparse_spmv_benchmark.cpp
+  )
+endif()
