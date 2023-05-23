@@ -126,7 +126,7 @@ class SyrTester {
 
   template <class TX>
   void callKkGerAndCompareKkSyrAgainstIt(const ScalarA& alpha, TX& x,
-                                         _HostViewTypeA& h_A_orig,
+                                         view_stride_adapter<_ViewTypeA, false>& org_A,
                                          const _ViewTypeExpected& h_A_syr,
                                          const std::string& situation);
 
@@ -277,6 +277,7 @@ void SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::test(
   // ********************************************************************
   view_stride_adapter<_ViewTypeA, false> org_A("Org_A", _M, _N);
   Kokkos::deep_copy(org_A.d_base, A.d_base);
+  Kokkos::deep_copy(org_A.h_view, A.h_view);
 
   if (test_x) {
     this->callKkSyrAndCompareAgainstExpected(
@@ -284,8 +285,7 @@ void SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::test(
 
     if ((_useAnalyticalResults == false) &&  // Just to save run time
         (_kkGerShouldThrowException == false)) {
-      Kokkos::deep_copy(org_A.h_view, org_A.d_base);
-      this->callKkGerAndCompareKkSyrAgainstIt(alpha, x.d_view, org_A.h_view,
+      this->callKkGerAndCompareKkSyrAgainstIt(alpha, x.d_view, org_A,
                                               A.h_view, "non const x");
     }
   }
@@ -1392,11 +1392,11 @@ template <class ScalarX, class tLayoutX, class ScalarA, class tLayoutA,
 template <class TX>
 void SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
     callKkGerAndCompareKkSyrAgainstIt(const ScalarA& alpha, TX& x,
-                                      _HostViewTypeA& h_A_orig,
+                                      view_stride_adapter<_ViewTypeA, false>& org_A,
                                       const _ViewTypeExpected& h_A_syr,
                                       const std::string& situation) {
   view_stride_adapter<_ViewTypeA, false> A_ger("A_ger", _M, _N);
-  Kokkos::deep_copy(A_ger.d_base, h_A_orig);
+  Kokkos::deep_copy(A_ger.d_base, org_A.d_base);
 
   // ********************************************************************
   // Call ger()
@@ -1445,7 +1445,7 @@ void SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
           ((_useUpOption == false) && (i >= j))) {
         // Keep h_ger_reference as already computed
       } else {
-        h_ger_reference.d_view(i, j) = h_A_orig(i, j);
+        h_ger_reference.d_view(i, j) = org_A.h_view(i, j);
       }
     }
   }
