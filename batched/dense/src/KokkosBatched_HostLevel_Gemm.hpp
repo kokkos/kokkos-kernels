@@ -93,26 +93,10 @@ inline int BatchedGemm(BatchedGemmHandleType *const handle,
                                   typename CViewType::device_type,
                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
-  // If either this is being processed by a *.cpp.in file or KK ETI_ONLY
-  // is defined, use the ETI specialization. Defer till link time
-  // for which specialization will be used from
-  // KokkosBatched_HostLevel_Gemm_Impl.hpp.
-#if defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
   return Impl::BatchedGemmWrapper<ArgTransA, ArgTransB, ArgBatchSzDim,
                                   BatchedGemmHandleType, ScalarType, UnifiedAVT,
-                                  UnifiedBVT, UnifiedCVT, true>::run(handle,
-                                                                     alpha, A,
-                                                                     B, beta,
-                                                                     C);
-#else
-  // Use the non-ETI specialization.
-  return Impl::BatchedGemmWrapper<ArgTransA, ArgTransB, ArgBatchSzDim,
-                                  BatchedGemmHandleType, ScalarType, UnifiedAVT,
-                                  UnifiedBVT, UnifiedCVT, false>::run(handle,
-                                                                      alpha, A,
-                                                                      B, beta,
-                                                                      C);
-#endif  // KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
+                                  UnifiedBVT, UnifiedCVT>::run(handle, alpha, A,
+                                                               B, beta, C);
 }
 }  // namespace KokkosBatched
 #endif  // __KOKKOSBATCHED_HOSTLEVEL_GEMM_DECL_HPP__
