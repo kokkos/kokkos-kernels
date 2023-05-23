@@ -79,23 +79,39 @@ inline int BatchedGemm(BatchedGemmHandleType *const handle,
                        const ScalarType alpha, const AViewType &A,
                        const BViewType &B, const ScalarType beta,
                        const CViewType &C) {
+  // Minimize the number of ImplBatchedGemmWrapper instantiations, by
+  // standardizing on particular View specializations for its template
+  // parameters.
+  using UnifiedAVT = Kokkos::View<
+      typename AViewType::value_type ***, typename AViewType::array_layout,
+      typename AViewType::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using UnifiedBVT = Kokkos::View<
+      typename BViewType::value_type ***, typename BViewType::array_layout,
+      typename BViewType::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using UnifiedCVT = Kokkos::View<typename CViewType::non_const_value_type ***,
+                                  typename CViewType::array_layout,
+                                  typename CViewType::device_type,
+                                  Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+
   // If either this is being processed by a *.cpp.in file or KK ETI_ONLY
   // is defined, use the ETI specialization. Defer till link time
   // for which specialization will be used from
   // KokkosBatched_HostLevel_Gemm_Impl.hpp.
 #if defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
   return Impl::BatchedGemmWrapper<ArgTransA, ArgTransB, ArgBatchSzDim,
-                                  BatchedGemmHandleType, ScalarType, AViewType,
-                                  BViewType, CViewType, true>::run(handle,
-                                                                   alpha, A, B,
-                                                                   beta, C);
+                                  BatchedGemmHandleType, ScalarType, UnifiedAVT,
+                                  UnifiedBVT, UnifiedCVT, true>::run(handle,
+                                                                     alpha, A,
+                                                                     B, beta,
+                                                                     C);
 #else
   // Use the non-ETI specialization.
   return Impl::BatchedGemmWrapper<ArgTransA, ArgTransB, ArgBatchSzDim,
-                                  BatchedGemmHandleType, ScalarType, AViewType,
-                                  BViewType, CViewType, false>::run(handle,
-                                                                    alpha, A, B,
-                                                                    beta, C);
+                                  BatchedGemmHandleType, ScalarType, UnifiedAVT,
+                                  UnifiedBVT, UnifiedCVT, false>::run(handle,
+                                                                      alpha, A,
+                                                                      B, beta,
+                                                                      C);
 #endif  // KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 }
 }  // namespace KokkosBatched

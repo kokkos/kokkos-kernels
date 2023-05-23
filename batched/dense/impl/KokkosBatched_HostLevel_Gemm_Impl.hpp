@@ -409,14 +409,17 @@ struct BatchedGemmWrapper<ArgTransA, ArgTransB, ArgBatchSzDim,
 };
 #endif
 
-#define KOKKOSBATCHED_GEMM_ETI_SPEC_INST_INNER(ARG_TRANS_A, ARG_TRANS_B,       \
-                                               ARG_BATCH_LAYOUT, SCALAR,       \
-                                               LAYOUT, EXEC_SPACE, MEM_SPACE)  \
-  template struct BatchedGemmWrapper<                                          \
-      ARG_TRANS_A, ARG_TRANS_B, ARG_BATCH_LAYOUT, BatchedGemmHandle, SCALAR,   \
-      Kokkos::View<SCALAR ***, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>>, \
-      Kokkos::View<SCALAR ***, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>>, \
-      Kokkos::View<SCALAR ***, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>>, \
+#define KOKKOSBATCHED_GEMM_ETI_SPEC_INST_INNER(ARG_TRANS_A, ARG_TRANS_B,      \
+                                               ARG_BATCH_LAYOUT, SCALAR,      \
+                                               LAYOUT, EXEC_SPACE, MEM_SPACE) \
+  template struct BatchedGemmWrapper<                                         \
+      ARG_TRANS_A, ARG_TRANS_B, ARG_BATCH_LAYOUT, BatchedGemmHandle, SCALAR,  \
+      Kokkos::View<SCALAR ***, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
+      Kokkos::View<SCALAR ***, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
+      Kokkos::View<SCALAR ***, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
       true>;
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
