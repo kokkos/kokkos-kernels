@@ -64,10 +64,6 @@ template <class ExecutionSpace, class XViewType, class AViewType>
 void syr(const ExecutionSpace& space, const char trans[], const char uplo[],
          const typename AViewType::const_value_type& alpha, const XViewType& x,
          const AViewType& A) {
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF(
-      "Entering SRC KokkosBlas::syr(), AViewType = %s\n",
-      typeid(AViewType).name());
-
   static_assert(
       Kokkos::SpaceAccessibility<typename AViewType::memory_space,
                                  typename XViewType::memory_space>::assignable,

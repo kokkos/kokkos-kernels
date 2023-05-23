@@ -88,10 +88,6 @@ void singleLevelSyr(const ExecutionSpace& space, const char trans[],
                     const char uplo[],
                     const typename AViewType::const_value_type& alpha,
                     const XViewType& x, const AViewType& A) {
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF(
-      "Entering IMPL singleLevelSyr(), AViewType = %s\n",
-      typeid(AViewType).name());
-
   static_assert(std::is_integral<IndexType>::value,
                 "IndexType must be an integer");
 
@@ -226,9 +222,6 @@ void twoLevelSyr(const ExecutionSpace& space, const char trans[],
                  const char uplo[],
                  const typename AViewType::const_value_type& alpha,
                  const XViewType& x, const AViewType& A) {
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF("Entering IMPL twoLevelSyr(), AViewType = %s\n",
-                                typeid(AViewType).name());
-
   static_assert(std::is_integral<IndexType>::value,
                 "IndexType must be an integer");
 
@@ -277,9 +270,6 @@ void generalSyrImpl(const ExecutionSpace& space, const char trans[],
                     const char uplo[],
                     const typename AViewType::const_value_type& alpha,
                     const XViewType& x, const AViewType& A) {
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF(
-      "Entering IMPL generalSyrImpl(CPU), AViewType = %s\n",
-      typeid(AViewType).name());
   singleLevelSyr(space, trans, uplo, alpha, x, A);
 }
 
@@ -291,9 +281,6 @@ void generalSyrImpl(const ExecutionSpace& space, const char trans[],
                     const char uplo[],
                     const typename AViewType::const_value_type& alpha,
                     const XViewType& x, const AViewType& A) {
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF(
-      "Entering IMPL generalSyrImpl(GPU), AViewType = %s\n",
-      typeid(AViewType).name());
   twoLevelSyr(space, trans, uplo, alpha, x, A);
 }
 
