@@ -14,12 +14,8 @@
 //
 //@HEADER
 
-//
-// Created by Harvey, Evan on 7/13/21.
-//
-
-#ifndef KOKKOSKERNELS_KOKKOSBATCHED_GEMM_HANDLE_HPP
-#define KOKKOSKERNELS_KOKKOSBATCHED_GEMM_HANDLE_HPP
+#ifndef __KOKKOSBATCHED_HOSTLEVEL_GEMM_HANDLE_DECL_HPP__
+#define __KOKKOSBATCHED_HOSTLEVEL_GEMM_HANDLE_DECL_HPP__
 
 #include "KokkosBatched_Kernel_Handle.hpp"
 
@@ -166,4 +162,4 @@ class BatchedGemmHandle : public BatchedKernelHandle {
 
 }  // namespace KokkosBatched
 
-#endif  // KOKKOSKERNELS_KOKKOSBATCHED_GEMM_HANDLE_HPP
+#endif  // __KOKKOSBATCHED_HOSTLEVEL_GEMM_HANDLE_DECL_HPP__
