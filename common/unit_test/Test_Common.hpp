@@ -26,6 +26,7 @@
 #include <Test_Common_PrintConfiguration.hpp>
 #include <Test_Common_Iota.hpp>
 #include <Test_Common_LowerBound.hpp>
+#include <Test_Common_UnifiedScalarView.hpp>
 #include <Test_Common_UpperBound.hpp>
 
 #endif  // TEST_COMMON_HPP

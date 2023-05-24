@@ -69,6 +69,12 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
           const BetaType& beta, const YVector& y,
           [[maybe_unused]] const RANK_ONE& tag) {
 
+  std::cerr << __FILE__ << ":" << __LINE__ << " KokkosSparse::spmv("
+            << "A[" << A.numRows() << "," << A.numCols() << "]"
+            << ", x[" << x.size() << "]"
+            << ", y[" << y.size() << "]"
+            << ")\n";
+
   // Make sure that x and y have the same rank.
   static_assert(
       static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
@@ -135,10 +141,13 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
     // This is required to maintain semantics of KokkosKernels native SpMV:
     // if y contains NaN but beta = 0, the result y should be filled with 0.
     // For example, this is useful for passing in uninitialized y and beta=0.
-    if (beta == Kokkos::ArithTraits<BetaType>::zero())
+    if (beta == Kokkos::ArithTraits<BetaType>::zero()) {
+      std::cerr << __FILE__ << ":" << __LINE__ << " deep_copy y <- 0\n";
       Kokkos::deep_copy(y_i, Kokkos::ArithTraits<BetaType>::zero());
-    else
+    } else {
+      std::cerr << __FILE__ << ":" << __LINE__ << " scal y <- beta * y\n";
       KokkosBlas::scal(y_i, beta, y_i);
+    }
     return;
   }
 
@@ -184,6 +193,7 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
 #endif
 
   if (useFallback) {
+    std::cerr << __FILE__ << ":" << __LINE__ << " fallback!\n";
     // Explicitly call the non-TPL SPMV implementation
     std::string label =
         "KokkosSparse::spmv[NATIVE," +
@@ -211,6 +221,7 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
                                                                       y_i);
     Kokkos::Profiling::popRegion();
   } else {
+    std::cerr << __FILE__ << ":" << __LINE__ << " no fallback!\n";
     // note: the cuSPARSE spmv wrapper defines a profiling region, so one is not
     // needed here.
     Impl::SPMV<typename AMatrix_Internal::value_type,
@@ -243,6 +254,13 @@ template <class AlphaType, class AMatrix, class XVector, class BetaType,
 void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
           const BetaType& beta, const YVector& y, const RANK_ONE) {
+
+  std::cerr << __FILE__ << ":" << __LINE__ << " KokkosSparse::spmv("
+            << "A[" << A.numRows() << "," << A.numCols() << "]"
+            << ", x[" << x.size() << "]"
+            << ", y[" << y.size() << "]"
+            << ")\n";
+
   // Make sure that x and y have the same rank.
   static_assert(
       static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
@@ -534,6 +552,12 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
           const BetaType& beta, const YVector& y,
           [[maybe_unused]] const RANK_TWO& tag) {
 
+  std::cerr << __FILE__ << ":" << __LINE__ << " KokkosSparse::spmv("
+            << "A[" << A.numRows() << "," << A.numCols() << "]"
+            << ", x[" << x.size() << "]"
+            << ", y[" << y.size() << "]"
+            << ")\n";
+
   // Make sure that x and y have the same rank.
   static_assert(
       static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
@@ -680,6 +704,13 @@ template <class AlphaType, class AMatrix, class XVector, class BetaType,
 void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
           const BetaType& beta, const YVector& y, const RANK_TWO) {
+
+  std::cerr << __FILE__ << ":" << __LINE__ << " KokkosSparse::spmv("
+            << "A[" << A.numRows() << "," << A.numCols() << "]"
+            << ", x[" << x.size() << "]"
+            << ", y[" << y.size() << "]"
+            << ")\n";
+
   // Make sure that x and y have the same rank.
   static_assert(
       static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
@@ -904,6 +935,13 @@ template <class AlphaType, class AMatrix, class XVector, class BetaType,
 void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
           const BetaType& beta, const YVector& y) {
+
+  std::cerr << __FILE__ << ":" << __LINE__ << " KokkosSparse::spmv("
+            << "A[" << A.numRows() << "," << A.numCols() << "]"
+            << ", x[" << x.size() << "]"
+            << ", y[" << y.size() << "]"
+            << ")\n";
+
   // Make sure that both x and y have the same rank.
   static_assert(
       static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
@@ -950,10 +988,16 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
     // This is required to maintain semantics of KokkosKernels native SpMV:
     // if y contains NaN but beta = 0, the result y should be filled with 0.
     // For example, this is useful for passing in uninitialized y and beta=0.
-    if (beta == Kokkos::ArithTraits<BetaType>::zero())
+    if (beta == Kokkos::ArithTraits<BetaType>::zero()) {
+      std::cerr << __FILE__ << ":" << __LINE__ << " deep_copy\n";
       Kokkos::deep_copy(y, Kokkos::ArithTraits<BetaType>::zero());
-    else
+    } else {
+      std::cerr << __FILE__ << ":" << __LINE__ << " scal\n";
       KokkosBlas::scal(y, beta, y);
+      std::cerr << __FILE__ << ":" << __LINE__ << "...done scal!\n";
+    }
+
+    std::cerr << __FILE__ << ":" << __LINE__ << "return...\n";
     return;
   }
   //

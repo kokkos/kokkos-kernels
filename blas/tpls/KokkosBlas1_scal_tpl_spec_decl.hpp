@@ -256,6 +256,17 @@ KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::CudaUVMSpace,
 namespace KokkosBlas {
 namespace Impl {
 
+
+/* rocBLAS documentation:
+      "a rocBLAS handle always has one stream.""
+      "If the handle is switching from one non-default stream to another, the old
+      stream needs to be synchronized...next...rocblas_set_stream"
+   Basically this means if we're switching streams, we have to fence the old one
+   first.
+   We also set the handle's pointer mode appropriately before invoking BLAS.
+
+   // push_pointer_mode
+*/
 #define KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_ROCBLAS(                               \
     SCALAR_TYPE, ROCBLAS_SCALAR_TYPE, ROCBLAS_FN, LAYOUT, EXECSPACE, MEMSPACE, \
     ETI_SPEC_AVAIL)                                                            \
@@ -288,11 +299,18 @@ namespace Impl {
       const size_type numElems = X.extent(0);                                  \
       if ((numElems < static_cast<size_type>(INT_MAX)) &&                      \
           (R.data() == X.data())) {                                            \
+        std::cerr << __FILE__ << ":" << __LINE__ << " rocBLAS scal(1)!\n"; \
         scal_print_specialization<RV, AS, XV>();                               \
         const int N       = static_cast<int>(numElems);                        \
         constexpr int one = 1;                                                 \
         KokkosBlas::Impl::RocBlasSingleton& s =                                \
             KokkosBlas::Impl::RocBlasSingleton::singleton();                   \
+        hipStream_t cur; \
+        KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                         \
+            rocblas_get_stream(s.handle, &cur)); \
+        if (cur != space.hip_stream()) { \
+          execution_space(cur).fence(); \
+        } \
         KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                         \
             rocblas_set_stream(s.handle, space.hip_stream()));                 \
         rocblas_pointer_mode pointer_mode;                                     \
