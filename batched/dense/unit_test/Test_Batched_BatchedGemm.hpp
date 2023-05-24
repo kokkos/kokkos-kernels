@@ -18,6 +18,7 @@
 #include "Kokkos_Random.hpp"
 
 #include "KokkosBatched_HostLevel_Gemm.hpp"
+#include "KokkosBatched_HostLevel_Gemm_DblBuf_Impl.hpp"
 
 #include "KokkosKernels_TestUtils.hpp"
 

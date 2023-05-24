@@ -16,7 +16,11 @@
 #ifndef __KOKKOSBATCHED_HOSTLEVEL_GEMM_DECL_HPP__
 #define __KOKKOSBATCHED_HOSTLEVEL_GEMM_DECL_HPP__
 
-#include "KokkosBatched_HostLevel_Gemm_Impl.hpp"
+// Include explicit specializations of BatchedGemm.
+// If ETI_ONLY is disabled, the primary template will
+// be inlined into each caller's invocation using non-
+// ETI'd template arguments.
+#include "KokkosBatched_HostLevel_Gemm_Spec.hpp"
 
 namespace KokkosBatched {
 // clang-format off
@@ -93,10 +97,11 @@ inline int BatchedGemm(BatchedGemmHandleType *const handle,
                                   typename CViewType::device_type,
                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
-  return Impl::BatchedGemmWrapper<ArgTransA, ArgTransB, ArgBatchSzDim,
-                                  BatchedGemmHandleType, ScalarType, UnifiedAVT,
-                                  UnifiedBVT, UnifiedCVT>::run(handle, alpha, A,
-                                                               B, beta, C);
+  // Go through specialization layer in case ETI'd symbols are available.
+  return Impl::BatchedGemmSpec<ArgTransA, ArgTransB, ArgBatchSzDim,
+                               BatchedGemmHandleType, ScalarType, UnifiedAVT,
+                               UnifiedBVT, UnifiedCVT>::run(handle, alpha, A, B,
+                                                            beta, C);
 }
 }  // namespace KokkosBatched
 #endif  // __KOKKOSBATCHED_HOSTLEVEL_GEMM_DECL_HPP__
