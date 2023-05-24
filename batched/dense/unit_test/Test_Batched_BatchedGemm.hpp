@@ -378,7 +378,7 @@ int test_batched_gemm() {
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&      \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   if constexpr (std::is_same_v<typename ParamTagType::batchLayout,
-                               typename BatchLayout::Left>) {
+                               typename BatchLayout::Right>) {
     using param_tag_type = ::Test::SharedParamTag<typename ParamTagType::transA,
                                                   typename ParamTagType::transB,
                                                   BatchLayout::Right>;
