@@ -16,10 +16,13 @@
 #ifndef __KOKKOSBATCHED_HOSTLEVEL_GEMM_SPEC_HPP__
 #define __KOKKOSBATCHED_HOSTLEVEL_GEMM_SPEC_HPP__
 
+#include <Kokkos_Core.hpp>
+#include <KokkosKernels_config.h>
 #include <KokkosBatched_HostLevel_Gemm_Handle.hpp>  // BatchedGemmHandle
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 #include "KokkosBatched_HostLevel_Gemm_Impl.hpp"
+#include "KokkosKernels_ExecSpaceUtils.hpp"
 #endif
 
 namespace KokkosBatched {
