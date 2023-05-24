@@ -393,7 +393,11 @@ int test_batched_gemm() {
                                   param_tag_type>(8);
     test_batched_gemm_with_layout<llVt, DeviceType, ValueType, ScalarType,
                                   param_tag_type>(16);
+  } else {
+    std::cerr << "TEST SKIPPED since BatchLayout is not Right." << std::endl;
   }
+#else
+  std::cerr << "TEST SKIPPED since LayoutLeft is not ETI'd." << std::endl;
 #endif  // KOKKOSKERNELS_INST_LAYOUTLEFT
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || \
@@ -415,7 +419,11 @@ int test_batched_gemm() {
                                   param_tag_type>(8);
     test_batched_gemm_with_layout<lrVt, DeviceType, ValueType, ScalarType,
                                   param_tag_type>(16);
+  } else {
+    std::cerr << "TEST SKIPPED since BatchLayout is not Left." << std::endl;
   }
+#else
+  std::cerr << "TEST SKIPPED since LayoutRight is not ETI'd." << std::endl;
 #endif  // KOKKOSKERNELS_INST_LAYOUTRIGHT
   return 0;
 }
