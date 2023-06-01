@@ -28,24 +28,6 @@
 namespace KokkosKernels {
 namespace Impl {
 
-
-template <typename ScalarLike, typename = void>
-struct is_scalar : std::false_type {};
-
-// kokkos complex
-template <typename T>
-struct is_scalar<T, std::enable_if_t<is_kokkos_complex_v<T>>> : std::true_type {};
-
-// other scalars
-template <typename ScalarLike>
-struct is_scalar<ScalarLike, std::enable_if_t<std::is_integral_v<ScalarLike> || std::is_floating_point_v<ScalarLike>>> : std::true_type {};
-
-template <typename ScalarLike>
-inline constexpr bool is_scalar_v = is_scalar<ScalarLike>::value;
-
-
-
-
 template <typename ScalarLike, typename = void>
 struct is_scalar_view : std::false_type {};
 
