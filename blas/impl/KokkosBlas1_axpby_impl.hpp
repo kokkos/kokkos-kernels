@@ -21,11 +21,23 @@
 #include "Kokkos_InnerProductSpaceTraits.hpp"
 
 #ifndef KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY
-#define KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY 2
+#define KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY 3
 #endif  // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY
 
 namespace KokkosBlas {
 namespace Impl {
+
+template <class T>
+constexpr typename std::enable_if<Kokkos::is_view_v<T>, int>::type
+axpbyVarExtent(T& v) {
+  return v.extent(0);
+}
+
+template <class T>
+constexpr typename std::enable_if<!Kokkos::is_view_v<T>, int>::type
+axpbyVarExtent(T&) {
+  return 0;
+}
 
 //
 // axpby
@@ -61,9 +73,9 @@ struct Axpby_Functor {
   AV m_a;
   BV m_b;
 
-  Axpby_Functor(const XV& x, const YV& y, const AV& a, const BV& b,
+  Axpby_Functor(const XV& x, const YV& y, const AV& av, const BV& bv,
                 const SizeType startingColumn)
-      : m_x(x), m_y(y), m_a(a), m_b(b) {
+      : m_x(x), m_y(y), m_a(av), m_b(bv) {
     static_assert(Kokkos::is_view<XV>::value,
                   "KokkosBlas::Impl::"
                   "Axpby_Functor: X is not a Kokkos::View.");
@@ -81,12 +93,15 @@ struct Axpby_Functor {
     static_assert(YV::rank == 1,
                   "KokkosBlas::Impl::Axpby_Functor: "
                   "XV and YV must have rank 1.");
-
     if (startingColumn != 0) {
-      m_a = Kokkos::subview(
-          a, std::make_pair(startingColumn, SizeType(a.extent(0))));
-      m_b = Kokkos::subview(
-          b, std::make_pair(startingColumn, SizeType(b.extent(0))));
+      if (axpbyVarExtent(m_a) > 1) {
+        m_a = Kokkos::subview(
+            av, std::make_pair(startingColumn, SizeType(av.extent(0))));
+      }
+      if (axpbyVarExtent(m_b) > 1) {
+        m_b = Kokkos::subview(
+            bv, std::make_pair(startingColumn, SizeType(bv.extent(0))));
+      }
     }
   }
 
@@ -98,68 +113,77 @@ struct Axpby_Functor {
 
 #if KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY <= 2
 
-    if (scalar_x == 0 && scalar_y == 0) {
-      m_y(i) = ATS::zero();
-    }
-    if (scalar_x == 0 && scalar_y == 2) {
-      m_y(i) = m_b(0) * m_y(i);
-    }
-    if (scalar_x == 2 && scalar_y == 0) {
-      m_y(i) = m_a(0) * m_x(i);
-    }
-    if (scalar_x == 2 && scalar_y == 2) {
-      m_y(i) = m_a(0) * m_x(i) + m_b(0) * m_y(i);
+    if (scalar_x == 0) {
+      if (scalar_y == 0) {
+        m_y(i) = ATS::zero();
+      } else {  // (scalar_y == 2)
+        m_y(i) = m_b(0) * m_y(i);
+      }
+    } else {  // (scalar_x == 2)
+      if (scalar_y == 0) {
+        m_y(i) = m_a(0) * m_x(i);
+      } else {  // (scalar_y == 2)
+        m_y(i) = m_a(0) * m_x(i) + m_b(0) * m_y(i);
+      }
     }
 
 #else  // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
 
-    if (scalar_x == 0 && scalar_y == 0) {
-      m_y(i) = ATS::zero();
+    // **************************************************************
+    // Possibilities with 'scalar_x == 0'
+    // **************************************************************
+    if (scalar_x == 0) {
+      if (scalar_y == 0) {
+        m_y(i) = ATS::zero();
+      } else if (scalar_y == -1) {
+        m_y(i) = -m_y(i);
+      } else if (scalar_y == 1) {
+        // Nothing to do: m_y(i) = m_y(i);
+      } else {  // (scalar_y == 2)
+        m_y(i) = m_b(0) * m_y(i);
+      }
     }
-    if (scalar_x == 0 && scalar_y == -1) {
-      m_y(i) = -m_y(i);
+    // **************************************************************
+    // Possibilities with 'scalar_x == -1'
+    // **************************************************************
+    else if (scalar_x == -1) {
+      if (scalar_y == 0) {
+        m_y(i) = -m_x(i);
+      } else if (scalar_y == -1) {
+        m_y(i) = -m_x(i) - m_y(i);
+      } else if (scalar_y == 1) {
+        m_y(i) = -m_x(i) + m_y(i);
+      } else {  // (scalar_y == 2)
+        m_y(i) = -m_x(i) + m_b(0) * m_y(i);
+      }
     }
-    if (scalar_x == 0 && scalar_y == 1) {
-      return;  // m_y(i) = m_y(i);
+    // **************************************************************
+    // Possibilities with 'scalar_x == 1'
+    // **************************************************************
+    else if (scalar_x == 1) {
+      if (scalar_y == 0) {
+        m_y(i) = m_x(i);
+      } else if (scalar_y == -1) {
+        m_y(i) = m_x(i) - m_y(i);
+      } else if (scalar_y == 1) {
+        m_y(i) = m_x(i) + m_y(i);
+      } else {  // (scalar_y == 2)
+        m_y(i) = m_x(i) + m_b(0) * m_y(i);
+      }
     }
-    if (scalar_x == 0 && scalar_y == 2) {
-      m_y(i) = m_b(0) * m_y(i);
-    }
-    if (scalar_x == -1 && scalar_y == 0) {
-      m_y(i) = -m_x(i);
-    }
-    if (scalar_x == -1 && scalar_y == -1) {
-      m_y(i) = -m_x(i) - m_y(i);
-    }
-    if (scalar_x == -1 && scalar_y == 1) {
-      m_y(i) = -m_x(i) + m_y(i);
-    }
-    if (scalar_x == -1 && scalar_y == 2) {
-      m_y(i) = -m_x(i) + m_b(0) * m_y(i);
-    }
-    if (scalar_x == 1 && scalar_y == 0) {
-      m_y(i) = m_x(i);
-    }
-    if (scalar_x == 1 && scalar_y == -1) {
-      m_y(i) = m_x(i) - m_y(i);
-    }
-    if (scalar_x == 1 && scalar_y == 1) {
-      m_y(i) = m_x(i) + m_y(i);
-    }
-    if (scalar_x == 1 && scalar_y == 2) {
-      m_y(i) = m_x(i) + m_b(0) * m_y(i);
-    }
-    if (scalar_x == 2 && scalar_y == 0) {
-      m_y(i) = m_a(0) * m_x(i);
-    }
-    if (scalar_x == 2 && scalar_y == -1) {
-      m_y(i) = m_a(0) * m_x(i) - m_y(i);
-    }
-    if (scalar_x == 2 && scalar_y == 1) {
-      m_y(i) = m_a(0) * m_x(i) + m_y(i);
-    }
-    if (scalar_x == 2 && scalar_y == 2) {
-      m_y(i) = m_a(0) * m_x(i) + m_b(0) * m_y(i);
+    // **************************************************************
+    // Possibilities with 'scalar_x == 2'
+    // **************************************************************
+    else {  // (scalar_x == 2)
+      if (scalar_y == 0) {
+        m_y(i) = m_a(0) * m_x(i);
+      } else if (scalar_y == -1) {
+        m_y(i) = m_a(0) * m_x(i) - m_y(i);
+      } else if (scalar_y == 1) {
+        m_y(i) = m_a(0) * m_x(i) + m_y(i);
+      } else {  // (scalar_y == 2)
+        m_y(i) = m_a(0) * m_x(i) + m_b(0) * m_y(i);
+      }
     }
 
 #endif  // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY
@@ -227,69 +251,77 @@ struct Axpby_Functor<typename XV::non_const_value_type, XV,
 
 #if KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY <= 2
 
-    if (scalar_x == 0 && scalar_y == 0) {
-      m_y(i) = static_cast<typename YV::non_const_value_type>(ATS::zero());
+    if (scalar_x == 0) {
+      if (scalar_y == 0) {
+        m_y(i) = static_cast<typename YV::non_const_value_type>(ATS::zero());
+      } else {  // (scalar_y == 2)
+        m_y(i) = static_cast<typename YV::non_const_value_type>(m_b * m_y(i));
+      }
+    } else {  // (scalar_x == 2)
+      if (scalar_y == 0) {
+        m_y(i) = static_cast<typename YV::non_const_value_type>(m_a * m_x(i));
+      } else {  // (scalar_y == 2)
+        m_y(i) = static_cast<typename YV::non_const_value_type>(m_a * m_x(i) +
+                                                                m_b * m_y(i));
+      }
     }
-    if (scalar_x == 0 && scalar_y == 2) {
-      m_y(i) = static_cast<typename YV::non_const_value_type>(m_b * m_y(i));
-    }
-    if (scalar_x == 2 && scalar_y == 0) {
-      m_y(i) = static_cast<typename YV::non_const_value_type>(m_a * m_x(i));
-    }
-    if (scalar_x == 2 && scalar_y == 2) {
-      m_y(i) = static_cast<typename YV::non_const_value_type>(m_a * m_x(i) +
-                                                              m_b * m_y(i));
-    }
-
 #else  // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
 
-    if (scalar_x == 0 && scalar_y == 0) {
-      m_y(i) = ATS::zero();
+    // **************************************************************
+    // Possibilities with 'scalar_x == 0'
+    // **************************************************************
+    if (scalar_x == 0) {
+      if (scalar_y == 0) {
+        m_y(i) = ATS::zero();
+      } else if (scalar_y == -1) {
+        m_y(i) = -m_y(i);
+      } else if (scalar_y == 1) {
+        // Nothing to do: m_y(i) = m_y(i);
+      } else {  // (scalar_y == 2)
+        m_y(i) = m_b * m_y(i);
+      }
     }
-    if (scalar_x == 0 && scalar_y == -1) {
-      m_y(i) = -m_y(i);
+    // **************************************************************
+    // Possibilities with 'scalar_x == -1'
+    // **************************************************************
+    else if (scalar_x == -1) {
+      if (scalar_y == 0) {
+        m_y(i) = -m_x(i);
+      } else if (scalar_y == -1) {
+        m_y(i) = -m_x(i) - m_y(i);
+      } else if (scalar_y == 1) {
+        m_y(i) = -m_x(i) + m_y(i);
+      } else {  // (scalar_y == 2)
+        m_y(i) = -m_x(i) + m_b * m_y(i);
+      }
     }
-    if (scalar_x == 0 && scalar_y == 1) {
-      return;  // m_y(i) = m_y(i);
+    // **************************************************************
+    // Possibilities with 'scalar_x == 1'
+    // **************************************************************
+    else if (scalar_x == 1) {
+      if (scalar_y == 0) {
+        m_y(i) = m_x(i);
+      } else if (scalar_y == -1) {
+        m_y(i) = m_x(i) - m_y(i);
+      } else if (scalar_y == 1) {
+        m_y(i) = m_x(i) + m_y(i);
+      } else {  // (scalar_y == 2)
+        m_y(i) = m_x(i) + m_b * m_y(i);
+      }
     }
-    if (scalar_x == 0 && scalar_y == 2) {
-      m_y(i) = m_b * m_y(i);
-    }
-    if (scalar_x == -1 && scalar_y == 0) {
-      m_y(i) = -m_x(i);
-    }
-    if (scalar_x == -1 && scalar_y == -1) {
-      m_y(i) = -m_x(i) - m_y(i);
-    }
-    if (scalar_x == -1 && scalar_y == 1) {
-      m_y(i) = -m_x(i) + m_y(i);
-    }
-    if (scalar_x == -1 && scalar_y == 2) {
-      m_y(i) = -m_x(i) + m_b * m_y(i);
-    }
-    if (scalar_x == 1 && scalar_y == 0) {
-      m_y(i) = m_x(i);
-    }
-    if (scalar_x == 1 && scalar_y == -1) {
-      m_y(i) = m_x(i) - m_y(i);
-    }
-    if (scalar_x == 1 && scalar_y == 1) {
-      m_y(i) = m_x(i) + m_y(i);
-    }
-    if (scalar_x == 1 && scalar_y == 2) {
-      m_y(i) = m_x(i) + m_b * m_y(i);
-    }
-    if (scalar_x == 2 && scalar_y == 0) {
-      m_y(i) = m_a * m_x(i);
-    }
-    if (scalar_x == 2 && scalar_y == -1) {
-      m_y(i) = m_a * m_x(i) - m_y(i);
-    }
-    if (scalar_x == 2 && scalar_y == 1) {
-      m_y(i) = m_a * m_x(i) + m_y(i);
-    }
-    if (scalar_x == 2 && scalar_y == 2) {
-      m_y(i) = m_a * m_x(i) + m_b * m_y(i);
+    // **************************************************************
+    // Possibilities with 'scalar_x == 2'
+    // **************************************************************
+    else {  // (scalar_x == 2)
+      if (scalar_y == 0) {
+        m_y(i) = m_a * m_x(i);
+      } else if (scalar_y == -1) {
+        m_y(i) = m_a * m_x(i) - m_y(i);
+      } else if (scalar_y == 1) {
+        m_y(i) = m_a * m_x(i) + m_y(i);
+      } else {  // (scalar_y == 2)
+        m_y(i) = m_a * m_x(i) + m_b * m_y(i);
+      }
     }
 
 #endif  // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY
@@ -297,8 +329,9 @@ struct Axpby_Functor<typename XV::non_const_value_type, XV,
 };
 
 // Variant of Axpby_MV_Generic for single vectors (1-D Views) x and y.
-// As above, either av and bv are both 1-D Views (and only the first
-// entry of each will be read), or both av and bv are scalars.
+// As above, av and bv are either:
+// - both 1-D views (and only the first entry of each are read), or
+// - both scalars.
 //
 // This takes the starting column, so that if av and bv are both 1-D
 // Views, then the functor can take a subview if appropriate.
@@ -306,7 +339,7 @@ template <class execution_space, class AV, class XV, class BV, class YV,
           class SizeType>
 void Axpby_Generic(const execution_space& space, const AV& av, const XV& x,
                    const BV& bv, const YV& y, const SizeType startingColumn,
-                   int a = 2, int b = 2) {
+                   int scalar_x = 2, int scalar_y = 2) {
   static_assert(Kokkos::is_view<XV>::value,
                 "KokkosBlas::Impl::"
                 "Axpby_Generic: X is not a Kokkos::View.");
@@ -328,115 +361,104 @@ void Axpby_Generic(const execution_space& space, const AV& av, const XV& x,
   const SizeType numRows = x.extent(0);
   Kokkos::RangePolicy<execution_space, SizeType> policy(space, 0, numRows);
 
-  if (a == 0 && b == 0) {
-    Axpby_Functor<AV, XV, BV, YV, 0, 0, SizeType> op(x, y, av, bv,
-                                                     startingColumn);
-    Kokkos::parallel_for("KokkosBlas::Axpby::S0", policy, op);
-    return;
-  }
-
-#if KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
-  if (a == 0 && b == -1) {
-    Axpby_Functor<AV, XV, BV, YV, 0, -1, SizeType> op(x, y, av, bv,
-                                                      startingColumn);
-    Kokkos::parallel_for("KokkosBlas::Axpby::S1", policy, op);
-    return;
-  }
-  if (a == 0 && b == 1) {
-    Axpby_Functor<AV, XV, BV, YV, 0, 1, SizeType> op(x, y, av, bv,
-                                                     startingColumn);
-    Kokkos::parallel_for("KokkosBlas::Axpby::S2", policy, op);
-    return;
-  }
-#endif  // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
-
-  if (a == 0 && b == 2) {
-    Axpby_Functor<AV, XV, BV, YV, 0, 2, SizeType> op(x, y, av, bv,
-                                                     startingColumn);
-    Kokkos::parallel_for("KokkosBlas::Axpby::S3", policy, op);
-    return;
-  }
-
-#if KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
-  // a == -1
-  if (a == -1 && b == 0) {
-    Axpby_Functor<AV, XV, BV, YV, -1, 0, SizeType> op(x, y, av, bv,
-                                                      startingColumn);
-    Kokkos::parallel_for("KokkosBlas::Axpby::S4", policy, op);
-    return;
-  }
-  if (a == -1 && b == -1) {
-    Axpby_Functor<AV, XV, BV, YV, -1, -1, SizeType> op(x, y, av, bv,
+  // ****************************************************************
+  // Possibilities with 'scalar_x == 0'
+  // ****************************************************************
+  if (scalar_x == 0) {
+    if (scalar_y == 0) {
+      Axpby_Functor<AV, XV, BV, YV, 0, 0, SizeType> op(x, y, av, bv,
                                                        startingColumn);
-    Kokkos::parallel_for("KokkosBlas::Axpby::S5", policy, op);
-    return;
-  }
-  if (a == -1 && b == 1) {
-    Axpby_Functor<AV, XV, BV, YV, -1, 1, SizeType> op(x, y, av, bv,
-                                                      startingColumn);
-    Kokkos::parallel_for("KokkosBlas::Axpby::S6", policy, op);
-    return;
-  }
-  if (a == -1 && b == 2) {
-    Axpby_Functor<AV, XV, BV, YV, -1, 2, SizeType> op(x, y, av, bv,
-                                                      startingColumn);
-    Kokkos::parallel_for("KokkosBlas::Axpby::S7", policy, op);
-    return;
-  }
-  // a == 1
-  if (a == 1 && b == 0) {
-    Axpby_Functor<AV, XV, BV, YV, 1, 0, SizeType> op(x, y, av, bv,
-                                                     startingColumn);
-    Kokkos::parallel_for("KokkosBlas::Axpby::S8", policy, op);
-    return;
-  }
-  if (a == 1 && b == -1) {
-    Axpby_Functor<AV, XV, BV, YV, 1, -1, SizeType> op(x, y, av, bv,
-                                                      startingColumn);
-    Kokkos::parallel_for("KokkosBlas::Axpby::S9", policy, op);
-    return;
-  }
-  if (a == 1 && b == 1) {
-    Axpby_Functor<AV, XV, BV, YV, 1, 1, SizeType> op(x, y, av, bv,
-                                                     startingColumn);
-    Kokkos::parallel_for("KokkosBlas::Axpby::S10", policy, op);
-    return;
-  }
-  if (a == 1 && b == 2) {
-    Axpby_Functor<AV, XV, BV, YV, 1, 2, SizeType> op(x, y, av, bv,
-                                                     startingColumn);
-    Kokkos::parallel_for("KokkosBlas::Axpby::S11", policy, op);
-    return;
-  }
-#endif  // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
-
-  // a == 2
-  if (a == 2 && b == 0) {
-    Axpby_Functor<AV, XV, BV, YV, 2, 0, SizeType> op(x, y, av, bv,
-                                                     startingColumn);
-    Kokkos::parallel_for("KokkosBlas::Axpby::S12", policy, op);
-    return;
-  }
-
+      Kokkos::parallel_for("KokkosBlas::Axpby::S0", policy, op);
+    }
 #if KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
-  if (a == 2 && b == -1) {
-    Axpby_Functor<AV, XV, BV, YV, 2, -1, SizeType> op(x, y, av, bv,
-                                                      startingColumn);
-    Kokkos::parallel_for("KokkosBlas::Axpby::S13", policy, op);
-    return;
+    else if (scalar_y == -1) {
+      Axpby_Functor<AV, XV, BV, YV, 0, -1, SizeType> op(x, y, av, bv,
+                                                        startingColumn);
+      Kokkos::parallel_for("KokkosBlas::Axpby::S1", policy, op);
+    } else if (scalar_y == 1) {
+      Axpby_Functor<AV, XV, BV, YV, 0, 1, SizeType> op(x, y, av, bv,
+                                                       startingColumn);
+      Kokkos::parallel_for("KokkosBlas::Axpby::S2", policy, op);
+    }
+#endif      // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
+    else {  // (scalar_y == 2)
+      Axpby_Functor<AV, XV, BV, YV, 0, 2, SizeType> op(x, y, av, bv,
+                                                       startingColumn);
+      Kokkos::parallel_for("KokkosBlas::Axpby::S3", policy, op);
+    }
   }
-  if (a == 2 && b == 1) {
-    Axpby_Functor<AV, XV, BV, YV, 2, 1, SizeType> op(x, y, av, bv,
-                                                     startingColumn);
-    Kokkos::parallel_for("KokkosBlas::Axpby::S14", policy, op);
-    return;
+#if KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
+  // ****************************************************************
+  // Possibilities with 'scalar_x == -1'
+  // ****************************************************************
+  else if (scalar_x == -1) {
+    if (scalar_y == 0) {
+      Axpby_Functor<AV, XV, BV, YV, -1, 0, SizeType> op(x, y, av, bv,
+                                                        startingColumn);
+      Kokkos::parallel_for("KokkosBlas::Axpby::S4", policy, op);
+    } else if (scalar_y == -1) {
+      Axpby_Functor<AV, XV, BV, YV, -1, -1, SizeType> op(x, y, av, bv,
+                                                         startingColumn);
+      Kokkos::parallel_for("KokkosBlas::Axpby::S5", policy, op);
+    } else if (scalar_y == 1) {
+      Axpby_Functor<AV, XV, BV, YV, -1, 1, SizeType> op(x, y, av, bv,
+                                                        startingColumn);
+      Kokkos::parallel_for("KokkosBlas::Axpby::S6", policy, op);
+    } else {  // (scalar_y == 2)
+      Axpby_Functor<AV, XV, BV, YV, -1, 2, SizeType> op(x, y, av, bv,
+                                                        startingColumn);
+      Kokkos::parallel_for("KokkosBlas::Axpby::S7", policy, op);
+    }
+  }
+  // ****************************************************************
+  // Possibilities with 'scalar_x == 1'
+  // ****************************************************************
+  else if (scalar_x == 1) {
+    if (scalar_y == 0) {
+      Axpby_Functor<AV, XV, BV, YV, 1, 0, SizeType> op(x, y, av, bv,
+                                                       startingColumn);
+      Kokkos::parallel_for("KokkosBlas::Axpby::S8", policy, op);
+    } else if (scalar_y == -1) {
+      Axpby_Functor<AV, XV, BV, YV, 1, -1, SizeType> op(x, y, av, bv,
+                                                        startingColumn);
+      Kokkos::parallel_for("KokkosBlas::Axpby::S9", policy, op);
+    } else if (scalar_y == 1) {
+      Axpby_Functor<AV, XV, BV, YV, 1, 1, SizeType> op(x, y, av, bv,
+                                                       startingColumn);
+      Kokkos::parallel_for("KokkosBlas::Axpby::S10", policy, op);
+    } else {  // (scalar_y == 2)
+      Axpby_Functor<AV, XV, BV, YV, 1, 2, SizeType> op(x, y, av, bv,
+                                                       startingColumn);
+      Kokkos::parallel_for("KokkosBlas::Axpby::S11", policy, op);
+    }
   }
 #endif  // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
-
-  // a and b arbitrary (not -1, 0, or 1)
-  Axpby_Functor<AV, XV, BV, YV, 2, 2, SizeType> op(x, y, av, bv,
-                                                   startingColumn);
-  Kokkos::parallel_for("KokkosBlas::Axpby::S15", policy, op);
+  // ****************************************************************
+  // Possibilities with 'scalar_x == 2'
+  // ****************************************************************
+  else {  // (scalar_x == 2)
+    if (scalar_y == 0) {
+      Axpby_Functor<AV, XV, BV, YV, 2, 0, SizeType> op(x, y, av, bv,
+                                                       startingColumn);
+      Kokkos::parallel_for("KokkosBlas::Axpby::S12", policy, op);
+    }
+#if KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
+    else if (scalar_y == -1) {
+      Axpby_Functor<AV, XV, BV, YV, 2, -1, SizeType> op(x, y, av, bv,
+                                                        startingColumn);
+      Kokkos::parallel_for("KokkosBlas::Axpby::S13", policy, op);
+    } else if (scalar_y == 1) {
+      Axpby_Functor<AV, XV, BV, YV, 2, 1, SizeType> op(x, y, av, bv,
+                                                       startingColumn);
+      Kokkos::parallel_for("KokkosBlas::Axpby::S14", policy, op);
+    }
+#endif      // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
+    else {  // (scalar_y == 2)
+      Axpby_Functor<AV, XV, BV, YV, 2, 2, SizeType> op(x, y, av, bv,
+                                                       startingColumn);
+      Kokkos::parallel_for("KokkosBlas::Axpby::S15", policy, op);
+    }
+  }
 }
 
 }  // namespace Impl
