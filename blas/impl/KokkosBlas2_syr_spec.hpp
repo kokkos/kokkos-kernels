@@ -84,14 +84,53 @@ struct SYR {
     const size_type numRows = A.extent(0);
     const size_type numCols = A.extent(1);
 
+    bool justTranspose = (trans[0] == 'T') || (trans[0] == 't');
+    bool justUp = (uplo[0] == 'U') || (uplo[0] == 'u');
+
     // Prefer int as the index type, but use a larsyr type if needed.
     if ((numRows < static_cast<size_type>(INT_MAX)) &&
         (numCols < static_cast<size_type>(INT_MAX))) {
-      generalSyrImpl<ExecutionSpace, XViewType, AViewType, int>(
-          space, trans, uplo, alpha, x, A);
+      if (justTranspose) {
+        if (justUp) {
+          generalSyrImpl< ExecutionSpace, XViewType, AViewType, int
+                        , true, true>(space, alpha, x, A);
+        }
+        else {
+          generalSyrImpl< ExecutionSpace, XViewType, AViewType, int
+                        , true, false>(space, alpha, x, A);
+        }
+      }
+      else {
+        if (justUp) {
+          generalSyrImpl< ExecutionSpace, XViewType, AViewType, int
+                        , false, true>(space, alpha, x, A);
+        }
+        else {
+          generalSyrImpl< ExecutionSpace, XViewType, AViewType, int
+                        , false, false>(space, alpha, x, A);
+        }
+      }
     } else {
-      generalSyrImpl<ExecutionSpace, XViewType, AViewType, int64_t>(
-          space, trans, uplo, alpha, x, A);
+      if (justTranspose) {
+        if (justUp) {
+          generalSyrImpl< ExecutionSpace, XViewType, AViewType, int64_t
+                        , true, true>(space, alpha, x, A);
+        }
+        else {
+          generalSyrImpl< ExecutionSpace, XViewType, AViewType, int64_t
+                        , true, false>(space, alpha, x, A);
+        }
+      }
+      else {
+        if (justUp) {
+          generalSyrImpl< ExecutionSpace, XViewType, AViewType, int64_t
+                        , false, true>(space, alpha, x, A);
+        }
+        else {
+          generalSyrImpl< ExecutionSpace, XViewType, AViewType, int64_t
+                        , false, false>(space, alpha, x, A);
+        }
+      }
     }
 
     Kokkos::Profiling::popRegion();

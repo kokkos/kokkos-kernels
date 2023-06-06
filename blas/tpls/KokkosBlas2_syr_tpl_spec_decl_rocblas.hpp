@@ -65,7 +65,7 @@ namespace Impl {
         KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                      \
             rocblas_set_stream(s.handle, space.hip_stream()));              \
         KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_dsyr(                         \
-            s.handle, uplo, N, &alpha, X.data(), one, A.data(), LDA));      \
+            s.handle, fillMode, N, &alpha, X.data(), one, A.data(), LDA));  \
         KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));  \
       } else {                                                              \
         /* rocblas_dsyr() + ~A_ll => call kokkos-kernels' implementation */ \
@@ -109,7 +109,7 @@ namespace Impl {
         KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                      \
             rocblas_set_stream(s.handle, space.hip_stream()));              \
         KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_ssyr(                         \
-            s.handle, uplo, N, &alpha, X.data(), one, A.data(), LDA));      \
+            s.handle, fillMode, N, &alpha, X.data(), one, A.data(), LDA));  \
         KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));  \
       } else {                                                              \
         /* rocblas_ssyr() + ~A_ll => call kokkos-kernels' implementation */ \
@@ -156,7 +156,7 @@ namespace Impl {
           KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                      \
               rocblas_set_stream(s.handle, space.hip_stream()));              \
           KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_zsyr(                         \
-              s.handle, uplo, N,                                              \
+              s.handle, fillMode, N,                                          \
               reinterpret_cast<const rocblas_double_complex*>(&alpha),        \
               reinterpret_cast<const rocblas_double_complex*>(X.data()), one, \
               reinterpret_cast<rocblas_double_complex*>(A.data()), LDA));     \
@@ -174,7 +174,7 @@ namespace Impl {
           KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                      \
               rocblas_set_stream(s.handle, space.hip_stream()));              \
           KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_zher(                         \
-              s.handle, uplo, N, &alpha_val,                                  \
+              s.handle, fillMode, N, &alpha_val,                              \
               reinterpret_cast<const rocblas_double_complex*>(X.data()), one, \
               reinterpret_cast<rocblas_double_complex*>(A.data()), LDA));     \
           KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));  \
@@ -225,7 +225,7 @@ namespace Impl {
           KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                      \
               rocblas_set_stream(s.handle, space.hip_stream()));              \
           KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_csyr(                         \
-              s.handle, uplo, N,                                              \
+              s.handle, fillMode, N,                                          \
               reinterpret_cast<const rocblas_float_complex*>(&alpha),         \
               reinterpret_cast<const rocblas_float_complex*>(X.data()), one,  \
               reinterpret_cast<rocblas_float_complex*>(A.data()), LDA));      \
@@ -243,7 +243,7 @@ namespace Impl {
           KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                      \
               rocblas_set_stream(s.handle, space.hip_stream()));              \
           KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_cher(                         \
-              s.handle, uplo, N, &alpha_val,                                  \
+              s.handle, fillMode, N, &alpha_val,                              \
               reinterpret_cast<const rocblas_float_complex*>(X.data()), one,  \
               reinterpret_cast<rocblas_float_complex*>(A.data()), LDA));      \
           KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));  \

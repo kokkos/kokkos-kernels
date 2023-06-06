@@ -14,6 +14,35 @@
 //
 //@HEADER
 
+// **********************************************************************
+// The tests executed by the code below cover many combinations for
+// the operation A += alpha * x * x^{T,H}:
+// 01) Type of 'x' components: float, double, complex, ...
+// 02) Type of 'A' components: float, double, complex, ...
+// 03) Execution space: serial, threads, OpenMP, Cuda, ...
+// 04) Layout of 'x'
+// 05) Layout of 'A'
+// 06) Dimension of 'A'
+// 07) Options 'const' or 'non const' for x view, when calling syr()
+// 08) Usage of analytical results in the tests
+// 09) Options 'T' or 'H' when calling syr()
+// 10) Options 'U' or 'L' when calling syr()
+//
+// Choices (01)-(03) are selected in the routines TEST_F() at the
+// very bottom of the file, when calling test_syr<...>().
+//
+// Choices (04)-(10) are selected in routine test_syr<...>(),
+// when calling the method test() of class Test::SyrTester<...>.
+//
+// The class Test::SyrTester<...> represents the "core" of the test
+// logic, where all calculations, comparisons, and success/failure
+// decisions are performed.
+//
+// A high level explanation of method Test::SyrTester<...>::test()
+// is given by the 7 steps named "Step 1 of 7" to "Step 7 of 7"
+// in the code below.
+// **********************************************************************
+
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
@@ -21,8 +50,6 @@
 #include <Kokkos_MathematicalConstants.hpp>
 
 namespace Test {
-
-constexpr double piVal = 3.14159265358979323846;
 
 template <class ScalarX, class tLayoutX, class ScalarA, class tLayoutA,
           class Device>
@@ -38,16 +65,15 @@ class SyrTester {
             const bool useUpOption          = false);
 
  private:
-  typedef Kokkos::View<ScalarX*, tLayoutX, Device> _ViewTypeX;
-  typedef Kokkos::View<ScalarA**, tLayoutA, Device> _ViewTypeA;
+  using _ViewTypeX = Kokkos::View<ScalarX*, tLayoutX, Device>;
+  using _ViewTypeA = Kokkos::View<ScalarA**, tLayoutA, Device>;
 
-  typedef typename _ViewTypeX::HostMirror _HostViewTypeX;
-  typedef typename _ViewTypeA::HostMirror _HostViewTypeA;
-  typedef Kokkos::View<ScalarA**, tLayoutA, Kokkos::HostSpace>
-      _ViewTypeExpected;
+  using _HostViewTypeX = typename _ViewTypeX::HostMirror;
+  using _HostViewTypeA = typename _ViewTypeA::HostMirror;
+  using _ViewTypeExpected = Kokkos::View<ScalarA**, tLayoutA, Kokkos::HostSpace>;
 
-  typedef Kokkos::ArithTraits<ScalarA> _KAT_A;
-  typedef typename _KAT_A::mag_type _AuxType;
+  using _KAT_A = Kokkos::ArithTraits<ScalarA>;
+  using _AuxType = typename _KAT_A::mag_type;
 
   void populateVariables(ScalarA& alpha, _HostViewTypeX& h_x,
                          _HostViewTypeA& h_A, _ViewTypeExpected& h_expected,
@@ -135,8 +161,8 @@ class SyrTester {
   const bool _A_is_ll;
   const bool _testIsGpu;
   const bool _vanillaUsesDifferentOrderOfOps;
-  const _AuxType _epsAbs;
-  const _AuxType _epsRel;
+  const _AuxType _absTol;
+  const _AuxType _relTol;
   int _M;
   int _N;
   bool _useAnalyticalResults;
@@ -163,8 +189,16 @@ SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::SyrTester()
       _vanillaUsesDifferentOrderOfOps(false)
 #endif
       ,
-      _epsAbs(std::is_same<_AuxType, float>::value ? 1.0e-6 : 1.0e-9),
-      _epsRel(std::is_same<_AuxType, float>::value ? 5.0e-3 : 1.0e-6),
+      // ****************************************************************
+      // Tolerances for double can be tighter than tolerances for float.
+      //
+      // In the case of calculations with float, a small amount of
+      // discrepancies between reference results and CUDA results are
+      // large enough to require 'relTol' to value 5.0e-3. The same
+      // calculations show no discrepancies for calculations with double.
+      // ****************************************************************
+      _absTol(std::is_same<_AuxType, float>::value ? 1.0e-6 : 1.0e-9),
+      _relTol(std::is_same<_AuxType, float>::value ? 5.0e-3 : 1.0e-6),
       _M(-1),
       _N(-1),
       _useAnalyticalResults(false),
@@ -195,8 +229,8 @@ void SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::test(
             << ", _A_is_lr = " << _A_is_lr << ", _A_is_ll = " << _A_is_ll
             << ", _testIsGpu = " << _testIsGpu
             << ", _vanillaUsesDifferentOrderOfOps = "
-            << _vanillaUsesDifferentOrderOfOps << ", _epsAbs = " << _epsAbs
-            << ", _epsRel = " << _epsRel
+            << _vanillaUsesDifferentOrderOfOps << ", _absTol = " << _absTol
+            << ", _relTol = " << _relTol
             << ", nonConstConstCombinations = " << nonConstConstCombinations
             << ", useAnalyticalResults = " << useAnalyticalResults
             << ", useHermitianOption = " << useHermitianOption
@@ -238,7 +272,7 @@ void SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::test(
       "expected A += alpha * x * x^{t,h}", _M, _N);
   bool expectedResultIsKnown = false;
 
-  ScalarA alpha(0.);
+  ScalarA alpha(_KAT_A::zero());
 
   // ********************************************************************
   // Step 2 of 7: populate alpha, h_x, h_A, h_expected, x, A
@@ -717,7 +751,7 @@ SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
         diff = _KAT_A::abs(h_expected(i, j).real() - h_vanilla(i, j).real());
         errorHappened = false;
         if (h_expected(i, j).real() == 0.) {
-          diffThreshold = _KAT_A::abs(_epsAbs);
+          diffThreshold = _KAT_A::abs(_absTol);
           if (diff > diffThreshold) {
             errorHappened = true;
             numErrorsRealAbs++;
@@ -730,7 +764,7 @@ SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
             jForMaxErrorRealRel = j;
           }
 
-          diffThreshold = _KAT_A::abs(_epsRel * h_expected(i, j).real());
+          diffThreshold = _KAT_A::abs(_relTol * h_expected(i, j).real());
           if (diff > diffThreshold) {
             errorHappened = true;
             numErrorsRealRel++;
@@ -749,7 +783,7 @@ SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
         diff = _KAT_A::abs(h_expected(i, j).imag() - h_vanilla(i, j).imag());
         errorHappened = false;
         if (h_expected(i, j).imag() == 0.) {
-          diffThreshold = _KAT_A::abs(_epsAbs);
+          diffThreshold = _KAT_A::abs(_absTol);
           if (diff > diffThreshold) {
             errorHappened = true;
             numErrorsImagAbs++;
@@ -762,7 +796,7 @@ SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
             jForMaxErrorImagRel = j;
           }
 
-          diffThreshold = _KAT_A::abs(_epsRel * h_expected(i, j).imag());
+          diffThreshold = _KAT_A::abs(_relTol * h_expected(i, j).imag());
           if (diff > diffThreshold) {
             errorHappened = true;
             numErrorsImagRel++;
@@ -929,7 +963,7 @@ SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
         diff          = _KAT_A::abs(h_expected(i, j) - h_vanilla(i, j));
         errorHappened = false;
         if (h_expected(i, j) == 0.) {
-          diffThreshold = _KAT_A::abs(_epsAbs);
+          diffThreshold = _KAT_A::abs(_absTol);
           if (diff > diffThreshold) {
             errorHappened = true;
             numErrorsAbs++;
@@ -942,7 +976,7 @@ SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
             jForMaxErrorRel = j;
           }
 
-          diffThreshold = _KAT_A::abs(_epsRel * h_expected(i, j));
+          diffThreshold = _KAT_A::abs(_relTol * h_expected(i, j));
           if (diff > diffThreshold) {
             errorHappened = true;
             numErrorsRel++;
@@ -1055,7 +1089,7 @@ SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
       diff          = _KAT_A::abs(h_reference(i, j).real() - h_A(i, j).real());
       errorHappened = false;
       if (h_reference(i, j).real() == 0.) {
-        diffThreshold = _KAT_A::abs(_epsAbs);
+        diffThreshold = _KAT_A::abs(_absTol);
         if (diff > diffThreshold) {
           errorHappened = true;
           numErrorsRealAbs++;
@@ -1068,7 +1102,7 @@ SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
           jForMaxErrorRealRel = j;
         }
 
-        diffThreshold = _KAT_A::abs(_epsRel * h_reference(i, j).real());
+        diffThreshold = _KAT_A::abs(_relTol * h_reference(i, j).real());
         if (diff > diffThreshold) {
           errorHappened = true;
           numErrorsRealRel++;
@@ -1086,7 +1120,7 @@ SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
       diff          = _KAT_A::abs(h_reference(i, j).imag() - h_A(i, j).imag());
       errorHappened = false;
       if (h_reference(i, j).imag() == 0.) {
-        diffThreshold = _KAT_A::abs(_epsAbs);
+        diffThreshold = _KAT_A::abs(_absTol);
         if (diff > diffThreshold) {
           errorHappened = true;
           numErrorsImagAbs++;
@@ -1099,7 +1133,7 @@ SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
           jForMaxErrorImagRel = j;
         }
 
-        diffThreshold = _KAT_A::abs(_epsRel * h_reference(i, j).imag());
+        diffThreshold = _KAT_A::abs(_relTol * h_reference(i, j).imag());
         if (diff > diffThreshold) {
           errorHappened = true;
           numErrorsImagRel++;
@@ -1268,7 +1302,7 @@ SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
       diff          = _KAT_A::abs(h_reference(i, j) - h_A(i, j));
       errorHappened = false;
       if (h_reference(i, j) == 0.) {
-        diffThreshold = _KAT_A::abs(_epsAbs);
+        diffThreshold = _KAT_A::abs(_absTol);
         if (diff > diffThreshold) {
           errorHappened = true;
           numErrorsAbs++;
@@ -1281,7 +1315,7 @@ SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
           jForMaxErrorRel = j;
         }
 
-        diffThreshold = _KAT_A::abs(_epsRel * h_reference(i, j));
+        diffThreshold = _KAT_A::abs(_relTol * h_reference(i, j));
         if (diff > diffThreshold) {
           errorHappened = true;
           numErrorsRel++;
@@ -1719,7 +1753,7 @@ TEST_F(TestCategory, syr_int) {
     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
 TEST_F(TestCategory, syr_double_int) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::syr_double_int");
-  test_syr<int, float, TestExecSpace>("test case syr_mixed_types");
+  test_syr<int, float, TestExecSpace>("test case syr_double_int");
   Kokkos::Profiling::popRegion();
 }
 #endif

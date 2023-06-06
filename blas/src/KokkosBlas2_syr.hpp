@@ -103,7 +103,7 @@ void syr(const ExecutionSpace& space, const char trans[], const char uplo[],
   } else {
     std::ostringstream os;
     os << "KokkosBlas2::syr(): invalid trans[0] = '" << trans[0]
-       << "'. It must be equalt to 'T' or 't' or 'H' or 'h'";
+       << "'. It must be equal to 'T' or 't' or 'H' or 'h'";
     KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
@@ -113,7 +113,7 @@ void syr(const ExecutionSpace& space, const char trans[], const char uplo[],
   } else {
     std::ostringstream oss;
     oss << "KokkosBlas2::syr(): invalid uplo[0] = " << uplo[0]
-        << "'. It must be equalt to 'U' or 'u' or 'L' or 'l'";
+        << "'. It must be equal to 'U' or 'u' or 'L' or 'l'";
     throw std::runtime_error(oss.str());
   }
 
@@ -125,17 +125,15 @@ void syr(const ExecutionSpace& space, const char trans[], const char uplo[],
 
   // Minimize the number of Impl::SYR instantiations, by standardizing
   // on particular View specializations for its template parameters.
-  typedef Kokkos::View<typename XViewType::const_value_type*,
-                       typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<
-                           XViewType, ALayout>::array_layout,
-                       typename XViewType::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-      XVT;
+  using XVT = Kokkos::View<typename XViewType::const_value_type*,
+                           typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<
+                               XViewType, ALayout>::array_layout,
+                               typename XViewType::device_type,
+                               Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
-  typedef Kokkos::View<typename AViewType::non_const_value_type**, ALayout,
-                       typename AViewType::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-      AVT;
+  using AVT = Kokkos::View<typename AViewType::non_const_value_type**, ALayout,
+                           typename AViewType::device_type,
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
   Impl::SYR<ExecutionSpace, XVT, AVT>::syr(space, trans, uplo, alpha, x, A);
 }
