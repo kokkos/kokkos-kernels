@@ -70,9 +70,10 @@ class SyrTester {
 
   using _HostViewTypeX = typename _ViewTypeX::HostMirror;
   using _HostViewTypeA = typename _ViewTypeA::HostMirror;
-  using _ViewTypeExpected = Kokkos::View<ScalarA**, tLayoutA, Kokkos::HostSpace>;
+  using _ViewTypeExpected =
+      Kokkos::View<ScalarA**, tLayoutA, Kokkos::HostSpace>;
 
-  using _KAT_A = Kokkos::ArithTraits<ScalarA>;
+  using _KAT_A   = Kokkos::ArithTraits<ScalarA>;
   using _AuxType = typename _KAT_A::mag_type;
 
   void populateVariables(ScalarA& alpha, _HostViewTypeX& h_x,

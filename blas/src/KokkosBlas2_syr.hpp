@@ -125,11 +125,12 @@ void syr(const ExecutionSpace& space, const char trans[], const char uplo[],
 
   // Minimize the number of Impl::SYR instantiations, by standardizing
   // on particular View specializations for its template parameters.
-  using XVT = Kokkos::View<typename XViewType::const_value_type*,
-                           typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<
-                               XViewType, ALayout>::array_layout,
-                               typename XViewType::device_type,
-                               Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+  using XVT =
+      Kokkos::View<typename XViewType::const_value_type*,
+                   typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<
+                       XViewType, ALayout>::array_layout,
+                   typename XViewType::device_type,
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
   using AVT = Kokkos::View<typename AViewType::non_const_value_type**, ALayout,
                            typename AViewType::device_type,

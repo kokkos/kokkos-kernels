@@ -27,7 +27,8 @@ namespace Impl {
 
 // Functor for the thread parallel version of SYR.
 // This functor parallelizes over rows of the input matrix A.
-template <class XViewType, class AViewType, class IndexType, bool tJustTranspose, bool tJustUp>
+template <class XViewType, class AViewType, class IndexType,
+          bool tJustTranspose, bool tJustUp>
 struct ThreadParallelSYR {
   using AlphaCoeffType = typename AViewType::non_const_value_type;
   using XComponentType = typename XViewType::non_const_value_type;
@@ -35,9 +36,7 @@ struct ThreadParallelSYR {
 
   ThreadParallelSYR(const AlphaCoeffType& alpha, const XViewType& x,
                     const AViewType& A)
-      : alpha_(alpha),
-        x_(x),
-        A_(A) {
+      : alpha_(alpha), x_(x), A_(A) {
     // Nothing to do
   }
 
@@ -49,7 +48,7 @@ struct ThreadParallelSYR {
       const XComponentType x_fixed(x_(i));
       const IndexType N(A_.extent(1));
 
-      if constexpr(tJustTranspose) {
+      if constexpr (tJustTranspose) {
         for (IndexType j = 0; j < N; ++j) {
           if (((tJustUp == true) && (i <= j)) ||
               ((tJustUp == false) && (i >= j))) {
@@ -77,8 +76,7 @@ struct ThreadParallelSYR {
 
 // Thread parallel version of SYR.
 template <class ExecutionSpace, class XViewType, class AViewType,
-          class IndexType,
-          bool tJustTranspose, bool tJustUp>
+          class IndexType, bool tJustTranspose, bool tJustUp>
 void threadParallelSyr(const ExecutionSpace& space,
                        const typename AViewType::const_value_type& alpha,
                        const XViewType& x, const AViewType& A) {
@@ -94,8 +92,10 @@ void threadParallelSyr(const ExecutionSpace& space,
   } else {
     Kokkos::RangePolicy<ExecutionSpace, IndexType> rangePolicy(space, 0,
                                                                A.extent(0));
-    ThreadParallelSYR<XViewType, AViewType, IndexType, tJustTranspose, tJustUp> functor(alpha, x, A);
-    Kokkos::parallel_for("KokkosBlas::syr[thredParallel]", rangePolicy, functor);
+    ThreadParallelSYR<XViewType, AViewType, IndexType, tJustTranspose, tJustUp>
+        functor(alpha, x, A);
+    Kokkos::parallel_for("KokkosBlas::syr[thredParallel]", rangePolicy,
+                         functor);
   }
 }
 
@@ -107,8 +107,7 @@ struct TeamParallelSYR_LayoutRightTag {};
 // Functor for the team parallel version of SYR, designed for
 // performance on GPUs. The kernel depends on the layout of A.
 template <class ExecutionSpace, class XViewType, class AViewType,
-          class IndexType,
-          bool tJustTranspose, bool tJustUp>
+          class IndexType, bool tJustTranspose, bool tJustUp>
 struct TeamParallelSYR {
   using AlphaCoeffType = typename AViewType::non_const_value_type;
   using XComponentType = typename XViewType::non_const_value_type;
@@ -119,9 +118,7 @@ struct TeamParallelSYR {
 
   TeamParallelSYR(const AlphaCoeffType& alpha, const XViewType& x,
                   const AViewType& A)
-      : alpha_(alpha),
-        x_(x),
-        A_(A) {
+      : alpha_(alpha), x_(x), A_(A) {
     // Nothing to do
   }
 
@@ -135,7 +132,7 @@ struct TeamParallelSYR {
       // Nothing to do
     } else {
       const IndexType M(A_.extent(0));
-      if constexpr(tJustTranspose) {
+      if constexpr (tJustTranspose) {
         const XComponentType x_fixed(x_(j));
         Kokkos::parallel_for(
             Kokkos::TeamThreadRange(team, M), [&](const IndexType& i) {
@@ -168,7 +165,7 @@ struct TeamParallelSYR {
     } else {
       const IndexType N(A_.extent(1));
       const XComponentType x_fixed(x_(i));
-      if constexpr(tJustTranspose) {
+      if constexpr (tJustTranspose) {
         Kokkos::parallel_for(
             Kokkos::TeamThreadRange(team, N), [&](const IndexType& j) {
               if (((tJustUp == true) && (i <= j)) ||
@@ -198,8 +195,7 @@ struct TeamParallelSYR {
 
 // Team parallel version of SYR.
 template <class ExecutionSpace, class XViewType, class AViewType,
-          class IndexType,
-          bool tJustTranspose, bool tJustUp>
+          class IndexType, bool tJustTranspose, bool tJustUp>
 void teamParallelSyr(const ExecutionSpace& space,
                      const typename AViewType::const_value_type& alpha,
                      const XViewType& x, const AViewType& A) {
@@ -231,7 +227,9 @@ void teamParallelSyr(const ExecutionSpace& space,
     teamPolicy = TeamPolicyType(space, A.extent(0), Kokkos::AUTO);
   }
 
-  TeamParallelSYR<ExecutionSpace, XViewType, AViewType, IndexType, tJustTranspose, tJustUp> functor(alpha, x, A);
+  TeamParallelSYR<ExecutionSpace, XViewType, AViewType, IndexType,
+                  tJustTranspose, tJustUp>
+      functor(alpha, x, A);
   Kokkos::parallel_for("KokkosBlas::syr[teamParallel]", teamPolicy, functor);
 }
 
@@ -245,22 +243,24 @@ void teamParallelSyr(const ExecutionSpace& space,
 
 template <class ExecutionSpace, class XViewType, class AViewType,
           class IndexType, bool tJustTranspose, bool tJustUp,
-          typename std::enable_if<!KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>()>::type* = nullptr>
+          typename std::enable_if<!KokkosKernels::Impl::kk_is_gpu_exec_space<
+              ExecutionSpace>()>::type* = nullptr>
 void generalSyrImpl(const ExecutionSpace& space,
                     const typename AViewType::const_value_type& alpha,
                     const XViewType& x, const AViewType& A) {
-  threadParallelSyr< ExecutionSpace, XViewType, AViewType, IndexType
-                   , tJustTranspose, tJustUp>(space, alpha, x, A);
+  threadParallelSyr<ExecutionSpace, XViewType, AViewType, IndexType,
+                    tJustTranspose, tJustUp>(space, alpha, x, A);
 }
 
 template <class ExecutionSpace, class XViewType, class AViewType,
           class IndexType, bool tJustTranspose, bool tJustUp,
-          typename std::enable_if<KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>()>::type* = nullptr>
+          typename std::enable_if<KokkosKernels::Impl::kk_is_gpu_exec_space<
+              ExecutionSpace>()>::type* = nullptr>
 void generalSyrImpl(const ExecutionSpace& space,
                     const typename AViewType::const_value_type& alpha,
                     const XViewType& x, const AViewType& A) {
-  teamParallelSyr< ExecutionSpace, XViewType, AViewType, IndexType
-                 , tJustTranspose, tJustUp>(space, alpha, x, A);
+  teamParallelSyr<ExecutionSpace, XViewType, AViewType, IndexType,
+                  tJustTranspose, tJustUp>(space, alpha, x, A);
 }
 
 }  // namespace Impl
