@@ -321,6 +321,8 @@ ELSE()
     #no linking commands required - tribits does this
   ELSE()
     ADD_LIBRARY(Kokkos::kokkoskernels ALIAS kokkoskernels)
+    # Address kokkos/kokkos-kernels#1749
+    ADD_LIBRARY(KokkosKernels::kokkoskernels ALIAS kokkoskernels)
     TARGET_LINK_LIBRARIES(kokkoskernels PUBLIC Kokkos::kokkos)
     FOREACH(DIR ${KK_INCLUDE_DIRS})
       TARGET_INCLUDE_DIRECTORIES(kokkoskernels PUBLIC $<BUILD_INTERFACE:${DIR}>)
