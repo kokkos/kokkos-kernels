@@ -29,17 +29,17 @@ namespace KokkosBatched {
 namespace Impl {
 //////////////////////////////// tile_m //////////////////////////////////
 template <typename ExecutionSpace>
-constexpr KOKKOS_INLINE_FUNCTION int kk_gemm_dlb_buf_tile_m() {
+constexpr KOKKOS_INLINE_FUNCTION int kk_gemm_dbl_buf_tile_m() {
   return 32;
 }
 //////////////////////////////// tile_n //////////////////////////////////
 template <typename ExecutionSpace>
-constexpr KOKKOS_INLINE_FUNCTION int kk_gemm_dlb_buf_tile_n() {
+constexpr KOKKOS_INLINE_FUNCTION int kk_gemm_dbl_buf_tile_n() {
   return 32;
 }
 //////////////////////////////// tile_k //////////////////////////////////
 template <typename ExecutionSpace>
-constexpr KOKKOS_INLINE_FUNCTION int kk_gemm_dlb_buf_tile_k() {
+constexpr KOKKOS_INLINE_FUNCTION int kk_gemm_dbl_buf_tile_k() {
   return 8;
 }
 
@@ -50,7 +50,7 @@ constexpr KOKKOS_INLINE_FUNCTION int kk_gemm_dlb_buf_tile_k() {
 #if defined(KOKKOS_ENABLE_HIP) && defined(KOKKOS_ARCH_VEGA908)
 template <>
 constexpr KOKKOS_INLINE_FUNCTION int
-kk_gemm_dlb_buf_tile_k<Kokkos::Experimental::HIP>() {
+kk_gemm_dbl_buf_tile_k<Kokkos::Experimental::HIP>() {
   return 16;
 }
 #endif
@@ -94,12 +94,9 @@ int BatchedGemmImpl(BatchedGemmHandleType *const handle, const ScalarType alpha,
       case BaseKokkosBatchedAlgos::KK_SERIAL:
       case BaseHeuristicAlgos::SQUARE:
       case BaseTplAlgos::ARMPL:
-        static_assert(static_cast<int>(AViewType::rank) == 3,
-                      "AViewType must have rank 3.");
-        static_assert(static_cast<int>(BViewType::rank) == 3,
-                      "BViewType must have rank 3.");
-        static_assert(static_cast<int>(CViewType::rank) == 3,
-                      "CViewType must have rank 3.");
+        assert(A.rank_dynamic() == 3 && "AViewType must have rank 3.");
+        assert(B.rank_dynamic() == 3 && "BViewType must have rank 3.");
+        assert(C.rank_dynamic() == 3 && "CViewType must have rank 3.");
         break;
       default:
         std::ostringstream os;
@@ -178,9 +175,8 @@ int BatchedGemmImpl(BatchedGemmHandleType *const handle, const ScalarType alpha,
 
       // Select optimal resultsPerThread param for BatchedSerialGemm
       using bsgResultsPerThread =
-          typename std::conditional<!is_vector && on_gpu,
-                                    ResultsPerThread::Rank0,
-                                    ResultsPerThread::Rank2>::type;
+          std::conditional_t<!is_vector && on_gpu, ResultsPerThread::Rank0,
+                             ResultsPerThread::Rank2>;
 
       // Select optimal mode param for SerialGemm.
       using bsgModeType = typename std::conditional<
@@ -204,9 +200,9 @@ int BatchedGemmImpl(BatchedGemmHandleType *const handle, const ScalarType alpha,
                  ? (c_m >= 16)
                  : (c_m >= 24 && c_m <= 32) || c_m >= 40)) {
           handle->teamSz = handle->vecLen = 8;
-          constexpr int tile_m = Impl::kk_gemm_dlb_buf_tile_m<exec_space>();
-          constexpr int tile_n = Impl::kk_gemm_dlb_buf_tile_n<exec_space>();
-          constexpr int tile_k = Impl::kk_gemm_dlb_buf_tile_k<exec_space>();
+          constexpr int tile_m = Impl::kk_gemm_dbl_buf_tile_m<exec_space>();
+          constexpr int tile_n = Impl::kk_gemm_dbl_buf_tile_n<exec_space>();
+          constexpr int tile_k = Impl::kk_gemm_dbl_buf_tile_k<exec_space>();
           constexpr size_t alpha_in_fma_thresh =
               Impl::kk_gemm_dbl_buf_alpha_in_fma_thresh();
 
