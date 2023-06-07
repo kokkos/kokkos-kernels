@@ -52,7 +52,7 @@ void print_options() {
   std::cerr
       << "\t[Optional] --repeat      :: how many times to repeat overall test"
       << std::endl;
-  std::cerr << "  -s [N]          :: generate a semi-random banded (band size "
+  std::cerr << "  -n [N]          :: generate a semi-random banded (band size "
                "0.01xN)\n"
                "NxN matrix with average of 10 entries per row."
             << std::endl;
@@ -74,7 +74,7 @@ void print_options() {
             << std::endl;
 }  // print_options
 
-int parse_inputs(int argc, char** argv, spmv_parameters& params) {
+void parse_inputs(int argc, char** argv, spmv_parameters& params) {
   for (int i = 1; i < argc; ++i) {
     if (perf_test::check_arg_int(i, argc, argv, "-n", params.N)) {
       ++i;
@@ -94,26 +94,18 @@ int parse_inputs(int argc, char** argv, spmv_parameters& params) {
                                         params.offset)) {
       ++i;
     } else {
-      std::cerr << "Unrecognized command line argument #" << i << ": "
-                << argv[i] << std::endl;
       print_options();
-      return 1;
+      KK_USER_REQUIRE_MSG(false, "Unrecognized command line argument #"
+                                     << i << ": " << argv[i]);
     }
   }
-  return 0;
 }  // parse_inputs
 
-}  // namespace
-
 template <class execution_space>
-void run_spmv(benchmark::State& state, int argc, char** argv) {
+void run_spmv(benchmark::State& state, const spmv_parameters& inputs) {
   using matrix_type =
       KokkosSparse::CrsMatrix<double, int, execution_space, void, int>;
   using mv_type = Kokkos::View<double*, execution_space>;
-
-  // Set input parameters
-  spmv_parameters inputs(state.range(0));
-  parse_inputs(argc, argv, inputs);
 
   KokkosKernels::Experimental::Controls controls;
   if ((inputs.alg == "default") || (inputs.alg == "native") ||
@@ -148,6 +140,8 @@ void run_spmv(benchmark::State& state, int argc, char** argv) {
   }
 }
 
+}  // namespace
+
 int main(int argc, char** argv) {
   Kokkos::initialize(argc, argv);
 
@@ -160,21 +154,14 @@ int main(int argc, char** argv) {
 
   std::string bench_name = "KokkosSparse_spmv";
 
-  if (0 < common_params.repeat) {
-    benchmark::RegisterBenchmark(
-        bench_name.c_str(), run_spmv<Kokkos::DefaultExecutionSpace>, argc, argv)
-        ->UseRealTime()
-        ->ArgNames({"n"})
-        ->Args({100000})
-        ->Iterations(common_params.repeat);
-  } else {
-    benchmark::RegisterBenchmark(
-        bench_name.c_str(), run_spmv<Kokkos::DefaultExecutionSpace>, argc, argv)
-        ->UseRealTime()
-        ->ArgNames({"n"})
-        ->Args({100000});
-  }
+  // Set input parameters, default to random 100000x100000
+  spmv_parameters inputs(100000);
+  parse_inputs(argc, argv, inputs);
 
+  // Google benchmark will report the wrong n if an input file matrix is used.
+  KokkosKernelsBenchmark::register_benchmark_real_time(
+      bench_name.c_str(), run_spmv<Kokkos::DefaultExecutionSpace>, {"n"},
+      {inputs.N}, common_params.repeat, inputs);
   benchmark::RunSpecifiedBenchmarks();
 
   benchmark::Shutdown();
