@@ -33,7 +33,5 @@ class Cuda : public ::testing::Test {
 
 #define TestCategory Cuda
 #define TestExecSpace Kokkos::Cuda
-#define TestDeviceType \
-  Kokkos::Device<TestExecSpace, TestExecSpace::memory_space>
 
 #endif  // TEST_CUDA_HPP

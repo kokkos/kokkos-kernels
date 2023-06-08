@@ -33,7 +33,5 @@ class serial : public ::testing::Test {
 
 #define TestCategory serial
 #define TestExecSpace Kokkos::Serial
-#define TestDeviceType \
-  Kokkos::Device<TestExecSpace, TestExecSpace::memory_space>
 
 #endif  // TEST_SERIAL_HPP

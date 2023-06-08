@@ -30,5 +30,3 @@ class sycl_test : public ::testing::Test {
 
 #define TestCategory sycl_test
 #define TestExecSpace Kokkos::Experimental::SYCL
-#define TestDeviceType \
-  Kokkos::Device<TestExecSpace, TestExecSpace::memory_space>

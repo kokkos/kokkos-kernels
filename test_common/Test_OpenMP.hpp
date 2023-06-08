@@ -33,7 +33,5 @@ class openmp : public ::testing::Test {
 
 #define TestCategory openmp
 #define TestExecSpace Kokkos::OpenMP
-#define TestDeviceType \
-  Kokkos::Device<TestExecSpace, TestExecSpace::memory_space>
 
 #endif  // TEST_OPENMP_HPP
