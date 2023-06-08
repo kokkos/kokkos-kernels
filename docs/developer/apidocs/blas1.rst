@@ -63,7 +63,7 @@ sum
 swap
 ----
 .. doxygenfunction:: KokkosBlas::swap(execution_space const& space, XVector const& X, YVector const& Y)
-.. doxygenfunction:: KokkosBlas::swap(XVector const& X, YVector const& Y)
+.. doxygenfunction:: KokkosBlas::swap(const XVector&, const YVector&)
 
 update
 ------
