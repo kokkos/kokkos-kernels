@@ -53,7 +53,7 @@ struct RANK_TWO {};
 /// \param x [in] A vector.
 /// \param beta [in] Scalar multiplier for the multivector y.
 /// \param y [in/out] vector.
-/// \param RANK_ONE tag dispatch
+/// \param tag RANK_ONE dispatch
 ///
 #ifdef DOXY  // documentation version
 template <class AlphaType, class AMatrix, class XVector, class BetaType,
@@ -66,7 +66,8 @@ template <class AlphaType, class AMatrix, class XVector, class BetaType,
 #endif
 void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
-          const BetaType& beta, const YVector& y, const RANK_ONE) {
+          const BetaType& beta, const YVector& y,
+          [[maybe_unused]] const RANK_ONE& tag) {
 
   // Make sure that x and y have the same rank.
   static_assert(
@@ -510,8 +511,8 @@ struct SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector,
 /// \param A [in] The sparse matrix A.
 /// \param x [in] A multivector (rank-2 Kokkos::View).
 /// \param beta [in] Scalar multiplier for the multivector y.
-/// \param y [in/out] multivector (rank-2 Kokkos::View).
-/// \param RANK_TWO tag-dispatch
+/// \param y [in/out] multivector (exrank-2 Kokkos::View).
+/// \param tag RANK_TWO dispatch
 ///
 #ifdef DOXY
 template <class AlphaType, class AMatrix, class XVector, class BetaType,
@@ -524,7 +525,8 @@ template <class AlphaType, class AMatrix, class XVector, class BetaType,
 #endif
 void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
-          const BetaType& beta, const YVector& y, const RANK_TWO) {
+          const BetaType& beta, const YVector& y,
+          [[maybe_unused]] const RANK_TWO& tag) {
 
   // Make sure that x and y have the same rank.
   static_assert(
