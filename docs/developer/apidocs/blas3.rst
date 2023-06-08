@@ -11,6 +11,10 @@ trmm
 .. doxygenfunction:: KokkosBlas::trmm(const execution_space& space, const char side[], const char uplo[], const char trans[], const char diag[], typename BViewType::const_value_type& alpha, const AViewType& A, const BViewType& B)
 .. doxygenfunction:: KokkosBlas::trmm(const char side[], const char uplo[], const char trans[], const char diag[], typename BViewType::const_value_type& alpha, const AViewType& A, const BViewType& B)
 
+trtri
+-----
+.. doxygenfunction:: KokkosBlas::trtri
+
 trsm
 ----
 .. doxygenfunction:: KokkosBlas::trsm(const execution_space& space, const char side[], const char uplo[], const char trans[], const char diag[], typename BViewType::const_value_type& alpha, const AViewType& A, const BViewType& B)

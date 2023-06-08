@@ -27,9 +27,11 @@
 
 namespace KokkosBlas {
 
-/// \brief Solve triangular linear system with multiple RHSs:
+/// \brief Triangular matrix multiply:
+///
 ///        B = alpha * op(A) * B if side == "L" or "l"
 ///        B = alpha * B * op(A) if side == "R" or "r"
+///
 /// This function is currently blocking when running the native implementation
 /// which only has a serial implementation.
 ///
