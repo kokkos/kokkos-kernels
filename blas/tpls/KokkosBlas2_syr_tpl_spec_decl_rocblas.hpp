@@ -64,6 +64,8 @@ namespace Impl {
             KokkosBlas::Impl::RocBlasSingleton::singleton();                \
         KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                      \
             rocblas_set_stream(s.handle, space.hip_stream()));              \
+        KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                      \
+            rocblas_set_pointer_mode(s.handle, rocblas_pointer_mode_host)); \
         KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_dsyr(                         \
             s.handle, fillMode, N, &alpha, X.data(), one, A.data(), LDA));  \
         KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));  \
@@ -108,6 +110,8 @@ namespace Impl {
             KokkosBlas::Impl::RocBlasSingleton::singleton();                \
         KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                      \
             rocblas_set_stream(s.handle, space.hip_stream()));              \
+        KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                      \
+            rocblas_set_pointer_mode(s.handle, rocblas_pointer_mode_host)); \
         KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_ssyr(                         \
             s.handle, fillMode, N, &alpha, X.data(), one, A.data(), LDA));  \
         KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));  \
@@ -155,6 +159,8 @@ namespace Impl {
               KokkosBlas::Impl::RocBlasSingleton::singleton();                \
           KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                      \
               rocblas_set_stream(s.handle, space.hip_stream()));              \
+          KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                      \
+              rocblas_set_pointer_mode(s.handle, rocblas_pointer_mode_host)); \
           KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_zsyr(                         \
               s.handle, fillMode, N,                                          \
               reinterpret_cast<const rocblas_double_complex*>(&alpha),        \
@@ -173,6 +179,8 @@ namespace Impl {
               KokkosBlas::Impl::RocBlasSingleton::singleton();                \
           KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                      \
               rocblas_set_stream(s.handle, space.hip_stream()));              \
+          KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                      \
+              rocblas_set_pointer_mode(s.handle, rocblas_pointer_mode_host)); \
           KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_zher(                         \
               s.handle, fillMode, N, &alpha_val,                              \
               reinterpret_cast<const rocblas_double_complex*>(X.data()), one, \
@@ -224,6 +232,8 @@ namespace Impl {
               KokkosBlas::Impl::RocBlasSingleton::singleton();                \
           KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                      \
               rocblas_set_stream(s.handle, space.hip_stream()));              \
+          KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                      \
+              rocblas_set_pointer_mode(s.handle, rocblas_pointer_mode_host)); \
           KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_csyr(                         \
               s.handle, fillMode, N,                                          \
               reinterpret_cast<const rocblas_float_complex*>(&alpha),         \
@@ -242,6 +252,8 @@ namespace Impl {
               KokkosBlas::Impl::RocBlasSingleton::singleton();                \
           KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                      \
               rocblas_set_stream(s.handle, space.hip_stream()));              \
+          KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                      \
+              rocblas_set_pointer_mode(s.handle, rocblas_pointer_mode_host)); \
           KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_cher(                         \
               s.handle, fillMode, N, &alpha_val,                              \
               reinterpret_cast<const rocblas_float_complex*>(X.data()), one,  \
