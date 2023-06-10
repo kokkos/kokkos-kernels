@@ -382,9 +382,19 @@ TEST_F(TestCategory, batched_vector_view_simd_scomplex8) {
 TEST_F(TestCategory, batched_vector_view_simd_dcomplex2) {
   test_batched_vector_view<TestExecSpace, SIMD<Kokkos::complex<double> >, 2>();
 }
+
+#if defined(KOKKOS_COMPILER_INTEL) && \
+    ((KOKKOS_COMPILER_INTEL > 1900) && (KOKKOS_COMPILER_INTEL <= 2021))
+TEST_F(TestCategory, batched_vector_view_simd_dcomplex4) {
+  printf(
+      "Skipped: intel compiler version > 19.0.05 && <= 2021\n"
+      "See https://github.com/kokkos/kokkos-kernels/issues/1673.");
+}
+#else
 TEST_F(TestCategory, batched_vector_view_simd_dcomplex4) {
   test_batched_vector_view<TestExecSpace, SIMD<Kokkos::complex<double> >, 4>();
 }
-#endif
+#endif  // KOKKOS_COMPILER_INTEL
+#endif  // KOKKOSKERNELS_INST_COMPLEX_DOUBLE
 
 #endif  // check to not include this in a device test
