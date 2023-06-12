@@ -299,7 +299,7 @@ namespace Impl {
         KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                         \
             rocblas_get_pointer_mode(s.handle, &pointer_mode));                \
         KOKKOS_ROCBLAS_SAFE_CALL_IMPL(                                         \
-            rocblas_set_pointer_mode(s.handle, rocblas_pointer_mode_device));  \
+            rocblas_set_pointer_mode(s.handle, rocblas_pointer_mode_host));    \
         KOKKOS_ROCBLAS_SAFE_CALL_IMPL(ROCBLAS_FN(                              \
             s.handle, N, reinterpret_cast<const ROCBLAS_SCALAR_TYPE*>(&alpha), \
             reinterpret_cast<ROCBLAS_SCALAR_TYPE*>(R.data()), one));           \
