@@ -625,25 +625,31 @@ class BsrMatrix {
     graph = staticcrsgraph_type(entries_device, row_map_device);
   }
 
-  /// \brief Constructor that accepts a row map, column indices, and
-  ///   values.
-  ///
-  /// The matrix will store and use the row map, indices, and values
-  /// directly (by view, not by deep copy).
-  ///
-  /// \param label
-  /// \param nrows [in] The number of rows.
-  /// \param ncols [in] The number of columns.
-  /// \param annz  [in] Filler for annz.
-  /// \param vals [in/out] The entries.
-  /// \param rows [in/out] The row map (containing the offsets to the
-  ///   data in each row).
-  /// \param cols [in/out] The column indices.
-  /// \param blockDimIn [in] The block dimensions.
-  BsrMatrix([[maybe_unused]] const std::string& label, const OrdinalType nrows,
-            const OrdinalType ncols, [[maybe_unused]] const size_type annz,
-            const values_type& vals, const row_map_type& rows,
-            const index_type& cols, const OrdinalType blockDimIn)
+/// \brief Constructor that accepts a row map, column indices, and
+///   values.
+///
+/// The matrix will store and use the row map, indices, and values
+/// directly (by view, not by deep copy).
+///
+/// \param label
+/// \param nrows [in] The number of rows.
+/// \param ncols [in] The number of columns.
+/// \param annz  [in] Filler for annz.
+/// \param vals [in/out] The entries.
+/// \param rows [in/out] The row map (containing the offsets to the
+///   data in each row).
+/// \param cols [in/out] The column indices.
+/// \param blockDimIn [in] The block dimensions.
+#if defined(DOXY)
+  BsrMatrix([[maybe_unused]] const std::string& label,
+#else
+  // Work around https://gcc.gnu.org/bugzilla/show_bug.cgi?id=81429.
+  BsrMatrix(const std::string& label [[maybe_unused]],
+#endif
+            const OrdinalType nrows, const OrdinalType ncols,
+            [[maybe_unused]] const size_type annz, const values_type& vals,
+            const row_map_type& rows, const index_type& cols,
+            const OrdinalType blockDimIn)
       : graph(cols, rows),
         values(vals),
         numCols_(ncols),
