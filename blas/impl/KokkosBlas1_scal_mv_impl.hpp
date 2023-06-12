@@ -422,7 +422,7 @@ void MV_Scal_Generic(const execution_space& space, const RVector& r,
 template <class execution_space, class RMV, class AV, class XMV, class SizeType>
 void MV_Scal_Invoke_Left(const execution_space& space, const RMV& r,
                          const AV& av, const XMV& x,
-                         const KokkosKernels::Impl::ScalarHint &a = KokkosKernels::Impl::ScalarHint::none) {
+                         const KokkosKernels::Impl::ScalarHint &aHint = KokkosKernels::Impl::ScalarHint::none) {
   const SizeType numCols = x.extent(1);
 
 #if KOKKOSBLAS_OPTIMIZATION_LEVEL_SCAL <= 2
@@ -440,7 +440,7 @@ void MV_Scal_Invoke_Left(const execution_space& space, const RMV& r,
     typedef decltype(R_cur) RMV2D;
 
     MV_Scal_Unrolled<execution_space, RMV2D, AV, XMV2D, 8, SizeType>(
-        space, R_cur, av, X_cur, j, a);
+        space, R_cur, av, X_cur, j, aHint);
   }
   for (; j + 4 <= numCols; j += 4) {
     const std::pair<SizeType, SizeType> rng(j, j + 4);
@@ -450,7 +450,7 @@ void MV_Scal_Invoke_Left(const execution_space& space, const RMV& r,
     typedef decltype(R_cur) RMV2D;
 
     MV_Scal_Unrolled<execution_space, RMV2D, AV, XMV2D, 4, SizeType>(
-        space, R_cur, av, X_cur, j, a);
+        space, R_cur, av, X_cur, j, aHint);
   }
   for (; j < numCols; ++j) {
     // RMV and XMV need to turn 1-D.
@@ -459,8 +459,21 @@ void MV_Scal_Invoke_Left(const execution_space& space, const RMV& r,
     typedef decltype(r_cur) RV;
     typedef decltype(x_cur) XV;
 
-    V_Scal_Generic<execution_space, RV, AV, XV, SizeType>(space, r_cur, av,
-                                                          x_cur, j, a);
+    // If AV is a rank-one vector, get a rank-0 subview
+    // Otherwise, just pass along AV as-is
+    // can't short-circuit if constexpr :(
+    if constexpr (Kokkos::is_view_v<AV>) {
+      if constexpr (AV::rank == 1) {
+        auto a_cur = Kokkos::subview(av, j);
+        V_Scal_Generic<SizeType>(space, r_cur, a_cur, x_cur, aHint);
+      } else {
+        V_Scal_Generic<SizeType>(space, r_cur, av, x_cur, aHint);        
+      }
+    } else {
+      V_Scal_Generic<SizeType>(space, r_cur, av, x_cur, aHint);
+    }
+
+
   }
 
 #else  // KOKKOSBLAS_OPTIMIZATION_LEVEL_SCAL > 2
@@ -472,7 +485,7 @@ void MV_Scal_Invoke_Left(const execution_space& space, const RMV& r,
       typedef decltype(r_0) RV;
       typedef decltype(x_0) XV;
 
-      V_Scal_Generic<execution_space, RV, AV, XV, SizeType>(space, r_0, av, x_0,
+      V_Scal_Generic<SizeType>(space, r_0, av, x_0,
                                                             0, a);
       break;
     }
@@ -537,7 +550,7 @@ void MV_Scal_Invoke_Left(const execution_space& space, const RMV& r,
           space, r, av, x, 0, a);
       break;
     default:
-      MV_Scal_Generic<execution_space, RMV, AV, XMV, SizeType>(space, r, av, x,
+      MV_Scal_Generic<SizeType>(space, r, av, x,
                                                                0, a);
   }
 
@@ -574,11 +587,9 @@ void MV_Scal_Invoke_Right(const execution_space& space, const RMV& r,
 
     RV r_0 = Kokkos::subview(r, Kokkos::ALL(), 0);
     XV x_0 = Kokkos::subview(x, Kokkos::ALL(), 0);
-    V_Scal_Generic<execution_space, RMV, aVector, XMV, 1, SizeType>(space, r_0,
-                                                                    av, x_0, a);
+    V_Scal_Generic<SizeType>(space, r_0, av, x_0, a);
   } else {
-    MV_Scal_Generic<execution_space, RMV, aVector, XMV, SizeType>(space, r, av,
-                                                                  x, a);
+    MV_Scal_Generic<SizeType>(space, r, av, x, a);
   }
 }
 

@@ -39,11 +39,12 @@ struct scal_eti_spec_avail {
 
 //
 // Macro for declaration of full specialization availability
-// KokkosBlas::Impl::Scal for rank == 1.  This is NOT for users!!!  All
+// KokkosBlas::Impl::Scal for rank == 1 R and X.  This is NOT for users!!!  All
 // the declarations of full specializations go in this header file.
 // We may spread out definitions (see _INST macro below) across one or
 // more .cpp files.
 //
+// Alpha can either be scalar or rank 0
 #define KOKKOSBLAS1_SCAL_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
   template <>                                                                  \
   struct scal_eti_spec_avail<                                                  \
@@ -56,15 +57,28 @@ struct scal_eti_spec_avail {
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
       1> {                                                                     \
     enum : bool { value = true };                                              \
+  };                                                                           \
+  template <>                                                                  \
+  struct scal_eti_spec_avail<                                                  \
+      EXEC_SPACE,                                                              \
+      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,     \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
+      Kokkos::View<SCALAR, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,      \
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                   \
+      Kokkos::View<const SCALAR*, LAYOUT,                                      \
+                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                      \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
+      1> {                                                                     \
+    enum : bool { value = true };                                              \
   };
-
 //
 // Macro for declaration of full specialization availability
-// KokkosBlas::Impl::Scal for rank == 2.  This is NOT for users!!!  All
+// KokkosBlas::Impl::Scal for rank == 2 R and X. This is NOT for users!!!  All
 // the declarations of full specializations go in this header file.
 // We may spread out definitions (see _DEF macro below) across one or
 // more .cpp files.
 //
+// Alpha can either be rank 1, rank 0, or scalar
 #define KOKKOSBLAS1_SCAL_MV_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXEC_SPACE,      \
                                            MEM_SPACE)                       \
   template <>                                                               \
@@ -73,6 +87,20 @@ struct scal_eti_spec_avail {
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,               \
       Kokkos::View<const SCALAR*, LAYOUT,                                   \
+                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                   \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,               \
+      Kokkos::View<const SCALAR**, LAYOUT,                                  \
+                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                   \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,               \
+      2> {                                                                  \
+    enum : bool { value = true };                                           \
+  };                                                                        \
+  template <>                                                               \
+  struct scal_eti_spec_avail<                                               \
+      EXEC_SPACE,                                                           \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,               \
+      Kokkos::View<const SCALAR, LAYOUT,                                    \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                   \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,               \
       Kokkos::View<const SCALAR**, LAYOUT,                                  \
@@ -151,7 +179,7 @@ struct Scal<execution_space, RV, typename XV::non_const_value_type, XV, 1,
           typeid(RV).name(), typeid(AV).name(), typeid(XV).name());
 #endif
 
-    const size_type numRows = X.extent(0);
+    
     KokkosKernels::Impl::ScalarHint alphaHint = KokkosKernels::Impl::ScalarHint::none;
     if (alpha == ATA::zero()) {
       alphaHint = KokkosKernels::Impl::ScalarHint::zero;
@@ -161,25 +189,22 @@ struct Scal<execution_space, RV, typename XV::non_const_value_type, XV, 1,
       alphaHint = KokkosKernels::Impl::ScalarHint::pos_one;
     }
 
+    const size_type numRows = X.extent(0);
     if (numRows < static_cast<size_type>(INT_MAX)) {
-      typedef int index_type;
-      V_Scal_Generic<execution_space, RV, AV, XV, index_type>(space, R, alpha,
-                                                              X, 0, alphaHint);
+      V_Scal_Generic<int>(space, R, alpha, X, alphaHint);
     } else {
-      typedef typename XV::size_type index_type;
-      V_Scal_Generic<execution_space, RV, AV, XV, index_type>(space, R, alpha,
-                                                              X, 0, alphaHint);
+      V_Scal_Generic<typename XV::size_type>(space, R, alpha, X, alphaHint);
     }
     Kokkos::Profiling::popRegion();
   }
 };
 
-/// \brief Partial specialization of Scal for 2-D Views and 1-D View AV.
+/// \brief Partial specialization of Scal for 2-D Views and 1-D, 0-D, or scalar AV.
 ///
 /// Compute any of the following:
-///
-/// 1. R(i,j) = a*X(i,j) for a in -1,0,1
-/// 2. R(i,j) = alpha(j)*X(i,j)
+/// 1. R(i,j) = av    * X(i,j)
+/// 2. R(i,j) = av()  * X(i,j)
+/// 3. R(i,j) = av(j) * X(i,j)
 template <class execution_space, class RMV, class AV, class XMV>
 struct Scal<execution_space, RMV, AV, XMV, 2, false,
             KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
@@ -189,6 +214,9 @@ struct Scal<execution_space, RMV, AV, XMV, 2, false,
 
   static void scal(const execution_space& space, const RMV& R, const AV& av,
                    const XMV& X) {
+
+    // TODO: assert some things about AV
+
     static_assert(Kokkos::is_view<RMV>::value,
                   "KokkosBlas::Impl::"
                   "Scal<2-D>: RMV is not a Kokkos::View.");
@@ -201,9 +229,6 @@ struct Scal<execution_space, RMV, AV, XMV, 2, false,
     static_assert(RMV::rank == 2,
                   "KokkosBlas::Impl::Scal<2-D>: "
                   "RMV is not rank 2.");
-    static_assert(AV::rank == 1,
-                  "KokkosBlas::Impl::Scal<2-D>: "
-                  "AV is not rank 1.");
     static_assert(XMV::rank == 2,
                   "KokkosBlas::Impl::Scal<2-D>: "
                   "XMV is not rank 2.");
@@ -312,17 +337,29 @@ struct Scal<execution_space, RMV, typename XMV::non_const_value_type, XMV, 2,
 
 //
 // Macro for declaration of full specialization of
-// KokkosBlas::Impl::Scal for rank == 2.  This is NOT for users!!!  All
+// KokkosBlas::Impl::Scal for rank == 1.  This is NOT for users!!!  All
 // the declarations of full specializations go in this header file.
 // We may spread out definitions (see _DEF macro below) across one or
 // more .cpp files.
 //
+// alpha can be either scalar or rank 0
 #define KOKKOSBLAS1_SCAL_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE) \
   extern template struct Scal<                                                \
       EXEC_SPACE,                                                             \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,    \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
       SCALAR,                                                                 \
+      Kokkos::View<const SCALAR*, LAYOUT,                                     \
+                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                     \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
+      1, false, true>; \
+  extern template struct Scal<                                                \
+      EXEC_SPACE,                                                             \
+      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,    \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
+      Kokkos::View<const SCALAR, LAYOUT,                                     \
+                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                     \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
       Kokkos::View<const SCALAR*, LAYOUT,                                     \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                     \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
@@ -334,6 +371,17 @@ struct Scal<execution_space, RMV, typename XMV::non_const_value_type, XMV, 2,
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,    \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
       SCALAR,                                                                 \
+      Kokkos::View<const SCALAR*, LAYOUT,                                     \
+                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                     \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
+      1, false, true>; \
+  template struct Scal<                                                       \
+      EXEC_SPACE,                                                             \
+      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,    \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
+      Kokkos::View<const SCALAR, LAYOUT,                                     \
+                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                     \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
       Kokkos::View<const SCALAR*, LAYOUT,                                     \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                     \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \

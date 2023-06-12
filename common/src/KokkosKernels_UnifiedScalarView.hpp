@@ -17,6 +17,8 @@
 #ifndef KOKKOSKERNELS_UNIFIEDSCALARVIEW_HPP
 #define KOKKOSKERNELS_UNIFIEDSCALARVIEW_HPP
 
+#if 0
+
 #include <type_traits>
 
 #include <Kokkos_Core.hpp>
@@ -101,5 +103,7 @@ constexpr unified_scalar_t<Value> get_scalar(const Value &v) {
 
 } // namespace Impl
 } // namespace KokkosKernels
+
+#endif
 
 #endif // KOKKOSKERNELS_UNIFIEDSCALARVIEW_HPP
