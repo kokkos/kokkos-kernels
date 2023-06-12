@@ -640,7 +640,7 @@ class BsrMatrix {
   ///   data in each row).
   /// \param cols [in/out] The column indices.
   /// \param blockDimIn [in] The block dimensions.
-  BsrMatrix([[maybe_unused]] const std::string& label, const OrdinalType nrows,
+  BsrMatrix(const std::string& label [[maybe_unused]], const OrdinalType nrows,
             const OrdinalType ncols, [[maybe_unused]] const size_type annz,
             const values_type& vals, const row_map_type& rows,
             const index_type& cols, const OrdinalType blockDimIn)
