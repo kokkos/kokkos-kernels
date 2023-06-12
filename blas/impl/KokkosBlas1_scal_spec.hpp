@@ -152,23 +152,23 @@ struct Scal<execution_space, RV, typename XV::non_const_value_type, XV, 1,
 #endif
 
     const size_type numRows = X.extent(0);
-    int a                   = 2;
+    KokkosKernels::Impl::ScalarHint alphaHint = KokkosKernels::Impl::ScalarHint::none;
     if (alpha == ATA::zero()) {
-      a = 0;
+      alphaHint = KokkosKernels::Impl::ScalarHint::zero;
     } else if (alpha == -ATA::one()) {
-      a = -1;
+      alphaHint = KokkosKernels::Impl::ScalarHint::neg_one;
     } else if (alpha == ATA::one()) {
-      a = 1;
+      alphaHint = KokkosKernels::Impl::ScalarHint::pos_one;
     }
 
     if (numRows < static_cast<size_type>(INT_MAX)) {
       typedef int index_type;
       V_Scal_Generic<execution_space, RV, AV, XV, index_type>(space, R, alpha,
-                                                              X, a);
+                                                              X, 0, alphaHint);
     } else {
       typedef typename XV::size_type index_type;
       V_Scal_Generic<execution_space, RV, AV, XV, index_type>(space, R, alpha,
-                                                              X, a);
+                                                              X, 0, alphaHint);
     }
     Kokkos::Profiling::popRegion();
   }
@@ -183,6 +183,7 @@ struct Scal<execution_space, RV, typename XV::non_const_value_type, XV, 1,
 template <class execution_space, class RMV, class AV, class XMV>
 struct Scal<execution_space, RMV, AV, XMV, 2, false,
             KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+  using ScalarHint = KokkosKernels::Impl::ScalarHint;
   typedef typename XMV::size_type size_type;
   typedef Kokkos::ArithTraits<typename XMV::non_const_value_type> ATA;
 
@@ -221,16 +222,16 @@ struct Scal<execution_space, RMV, AV, XMV, 2, false,
 
     const size_type numRows = X.extent(0);
     const size_type numCols = X.extent(1);
-    const int a             = (av.extent(0) == 0) ? 0 : 2;
+    const ScalarHint alphaHint = (av.extent(0) == 0) ? ScalarHint::zero : ScalarHint::none;
     if (numRows < static_cast<size_type>(INT_MAX) &&
         numRows * numCols < static_cast<size_type>(INT_MAX)) {
       typedef int index_type;
       MV_Scal_Invoke_Left<execution_space, RMV, AV, XMV, index_type>(space, R,
-                                                                     av, X, a);
+                                                                     av, X, alphaHint);
     } else {
       typedef typename XMV::size_type index_type;
       MV_Scal_Invoke_Left<execution_space, RMV, AV, XMV, index_type>(space, R,
-                                                                     av, X, a);
+                                                                     av, X, alphaHint);
     }
     Kokkos::Profiling::popRegion();
   }
@@ -245,6 +246,7 @@ struct Scal<execution_space, RMV, AV, XMV, 2, false,
 template <class execution_space, class RMV, class XMV>
 struct Scal<execution_space, RMV, typename XMV::non_const_value_type, XMV, 2,
             false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+  using ScalarHint = KokkosKernels::Impl::ScalarHint;
   typedef typename XMV::non_const_value_type AV;
   typedef typename XMV::size_type size_type;
   typedef Kokkos::ArithTraits<typename XMV::non_const_value_type> ATA;
@@ -279,13 +281,13 @@ struct Scal<execution_space, RMV, typename XMV::non_const_value_type, XMV, 2,
 
     const size_type numRows = X.extent(0);
     const size_type numCols = X.extent(1);
-    int a                   = 2;
+    ScalarHint alphaHint    = ScalarHint::none;
     if (alpha == ATA::zero()) {
-      a = 0;
+      alphaHint = ScalarHint::zero;
     } else if (alpha == -ATA::one()) {
-      a = -1;
+      alphaHint = ScalarHint::neg_one;
     } else if (alpha == ATA::one()) {
-      a = 1;
+      alphaHint = ScalarHint::pos_one;
     }
 
     if (numRows < static_cast<size_type>(INT_MAX) &&
@@ -293,12 +295,12 @@ struct Scal<execution_space, RMV, typename XMV::non_const_value_type, XMV, 2,
       typedef int index_type;
       MV_Scal_Invoke_Left<execution_space, RMV,
                           typename XMV::non_const_value_type, XMV, index_type>(
-          space, R, alpha, X, a);
+          space, R, alpha, X, alphaHint);
     } else {
       typedef typename XMV::size_type index_type;
       MV_Scal_Invoke_Left<execution_space, RMV,
                           typename XMV::non_const_value_type, XMV, index_type>(
-          space, R, alpha, X, a);
+          space, R, alpha, X, alphaHint);
     }
     Kokkos::Profiling::popRegion();
   }

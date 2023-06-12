@@ -106,20 +106,19 @@ void scal(const execution_space& space, const RMV& R, const AV& a,
                                     UnifiedXLayout, typename XMV::device_type,
                                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
-#if 1
-  using AlphaUnifier = KokkosKernels::Impl::scal_unified_scalar_view<RMV_Internal, AV, XMV_Internal, execution_space>;
-  using AV_Internal = 
-  typename AlphaUnifier::alpha_type;
-  AV_Internal a_internal  = AlphaUnifier::from(a);
-#else
-  using AV_Internal =
+  // this promotes AV to be compatible with XMV, e.g. if XMV is complex<double>
+  // and AV is double, result will be complex<double>
+  using AV_PromotedToXMV =
       typename KokkosKernels::Impl::GetUnifiedScalarViewType<AV, XMV_Internal,
                                                         true>::type;
-  AV_Internal a_internal = a;
-#endif                                        
 
+  using AlphaUnifier = KokkosBlas::Impl::scal_unified_scalar_view<RMV_Internal, AV_PromotedToXMV, XMV_Internal>;
+  using AV_Internal = 
+  typename AlphaUnifier::alpha_type;
+  
   RMV_Internal R_internal = R;
   XMV_Internal X_internal = X;
+  AV_Internal a_internal  = AlphaUnifier::from(AV_PromotedToXMV(a));
 
   Impl::Scal<execution_space, RMV_Internal, AV_Internal, XMV_Internal>::scal(
       space, R_internal, a_internal, X_internal);

@@ -20,6 +20,9 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_InnerProductSpaceTraits.hpp>
 #include <KokkosBlas1_scal_spec.hpp>
+#include <KokkosKernels_AlwaysFalse.hpp>
+#include <KokkosBlas1_scal_unified_scalar_view_impl.hpp>
+#include <KokkosKernels_ScalarHint.hpp>
 
 #ifndef KOKKOSBLAS_OPTIMIZATION_LEVEL_SCAL
 #define KOKKOSBLAS_OPTIMIZATION_LEVEL_SCAL 2
@@ -28,7 +31,10 @@
 namespace KokkosBlas {
 namespace Impl {
 
-// Single-vector version of MV_Scal_Functor.  By default, a is still a
+
+// Single-vector version of MV_Scal_Functor.  
+// a has been unified into either a scalar or a 0D view
+
 // 1-D View.  Below is a partial specialization that lets a be a
 // scalar.  This functor computes any of the following:
 //
@@ -42,7 +48,7 @@ namespace Impl {
 // Any literal coefficient of zero has BLAS semantics of ignoring the
 // corresponding (multi)vector entry.  This does not apply to
 // coefficients in the a vector, if used.
-template <class RV, class AV, class XV, int scalar_x, class SizeType>
+template <class RV, class AV, class XV, KokkosKernels::Impl::ScalarHint ALPHA_HINT, class SizeType>
 struct V_Scal_Functor {
   typedef SizeType size_type;
   typedef Kokkos::ArithTraits<typename RV::non_const_value_type> ATS;
@@ -51,46 +57,55 @@ struct V_Scal_Functor {
   XV m_x;
   AV m_a;
 
-  V_Scal_Functor(const RV& r, const XV& x, const AV& a,
-                 const SizeType startingColumn)
+  V_Scal_Functor(const RV& r, const XV& x, const AV& a, const SizeType startingColumn)
       : m_r(r), m_x(x), m_a(a) {
     static_assert(Kokkos::is_view<RV>::value,
                   "V_Scal_Functor: RV is not a Kokkos::View.");
-    static_assert(Kokkos::is_view<AV>::value,
-                  "V_Scal_Functor: AV is not a Kokkos::View.");
+
+    // TODO: static assert truths about AV
+
     static_assert(Kokkos::is_view<XV>::value,
                   "V_Scal_Functor: XV is not a Kokkos::View.");
     static_assert(RV::rank == 1, "V_Scal_Functor: RV is not rank 1.");
-    static_assert(AV::rank == 1, "V_Scal_Functor: AV is not rank 1.");
     static_assert(XV::rank == 1, "V_Scal_Functor: XV is not rank 1.");
 
-    if (startingColumn != 0) {
+
+    if constexpr (Kokkos::is_view_v<AV>) {
+      if (startingColumn != 0) {
       m_a = Kokkos::subview(
           a,
           std::make_pair(startingColumn, static_cast<SizeType>(a.extent(0))));
+      }
     }
   }
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const size_type& i) const {
-    // scalar_x is a compile-time constant (since it is a template
+
+    using ScalarHint = KokkosKernels::Impl::ScalarHint;
+
+    // scalar_a is a compile-time constant (since it is a template
     // parameter), so the compiler should evaluate these branches at
     // compile time.
-    if (scalar_x == 0) {
+    if constexpr (ALPHA_HINT == ScalarHint::zero) {
       m_r(i) = ATS::zero();
     }
-    if (scalar_x == -1) {
+    else if constexpr (ALPHA_HINT == ScalarHint::neg_one) {
       m_r(i) = -m_x(i);
     }
-    if (scalar_x == 1) {
+    else if constexpr (ALPHA_HINT == ScalarHint::pos_one) {
       m_r(i) = m_x(i);
     }
-    if (scalar_x == 2) {
-      m_r(i) = m_a(0) * m_x(i);
+    else if constexpr (ALPHA_HINT == ScalarHint::none) {
+      m_r(i) = KokkosBlas::Impl::as_scalar(m_a) * m_x(i);
+    }
+    else {
+      static_assert(KokkosKernels::Impl::always_false_v<AV>, "Unexpected value for ALPHA_HINT");
     }
   }
 };
 
+#if 0
 // Partial specialization of V_Scal_Functor that lets a be a scalar
 // (rather than a 1-D View, as in the most general version above).
 // This functor computes any of the following:
@@ -128,13 +143,16 @@ struct V_Scal_Functor<RV, typename XV::non_const_value_type, XV, scalar_x,
     }
   }
 };
+#endif
 
 // Variant of MV_Scal_Generic for single vectors (1-D Views) r and x.
 // As above, av is either a 1-D View (and only its first entry will be
 // read), or a scalar.
 template <class execution_space, class RV, class AV, class XV, class SizeType>
 void V_Scal_Generic(const execution_space& space, const RV& r, const AV& av,
-                    const XV& x, const SizeType startingColumn, int a = 2) {
+                    const XV& x, 
+                    const SizeType startingColumn,
+                    const KokkosKernels::Impl::ScalarHint &alphaHint) {
   static_assert(Kokkos::is_view<RV>::value,
                 "V_Scal_Generic: RV is not a Kokkos::View.");
   static_assert(Kokkos::is_view<XV>::value,
@@ -145,24 +163,23 @@ void V_Scal_Generic(const execution_space& space, const RV& r, const AV& av,
   const SizeType numRows = x.extent(0);
   Kokkos::RangePolicy<execution_space, SizeType> policy(space, 0, numRows);
 
-  if (a == 0) {
-    V_Scal_Functor<RV, AV, XV, 0, SizeType> op(r, x, av, startingColumn);
+  if (alphaHint == KokkosKernels::Impl::ScalarHint::zero) {
+    V_Scal_Functor<RV, AV, XV, KokkosKernels::Impl::ScalarHint::zero, SizeType> op(r, x, av, startingColumn);
     Kokkos::parallel_for("KokkosBlas::Scal::S0", policy, op);
     return;
   }
-  if (a == -1) {
-    V_Scal_Functor<RV, AV, XV, -1, SizeType> op(r, x, av, startingColumn);
+  else if (alphaHint == KokkosKernels::Impl::ScalarHint::neg_one) {
+    V_Scal_Functor<RV, AV, XV, KokkosKernels::Impl::ScalarHint::neg_one, SizeType> op(r, x, av, startingColumn);
     Kokkos::parallel_for("KokkosBlas::Scal::S1", policy, op);
     return;
   }
-  if (a == 1) {
-    V_Scal_Functor<RV, AV, XV, 1, SizeType> op(r, x, av, startingColumn);
+  else if (alphaHint == KokkosKernels::Impl::ScalarHint::pos_one) {
+    V_Scal_Functor<RV, AV, XV, KokkosKernels::Impl::ScalarHint::pos_one, SizeType> op(r, x, av, startingColumn);
     Kokkos::parallel_for("KokkosBlas::Scal::S2", policy, op);
     return;
   }
 
-  // a arbitrary (not -1, 0, or 1)
-  V_Scal_Functor<RV, AV, XV, 2, SizeType> op(r, x, av, startingColumn);
+  V_Scal_Functor<RV, AV, XV, KokkosKernels::Impl::ScalarHint::none, SizeType> op(r, x, av, startingColumn);
   Kokkos::parallel_for("KokkosBlas::Scal::S3", policy, op);
 }
 

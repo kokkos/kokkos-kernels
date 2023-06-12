@@ -21,6 +21,7 @@
 #include <Kokkos_InnerProductSpaceTraits.hpp>
 #include <KokkosBlas1_scal_spec.hpp>
 #include <KokkosBlas1_scal_impl.hpp>
+#include <KokkosKernels_ScalarHint.hpp>
 
 #ifndef KOKKOSBLAS_OPTIMIZATION_LEVEL_SCAL
 #define KOKKOSBLAS_OPTIMIZATION_LEVEL_SCAL 2
@@ -323,8 +324,9 @@ template <class execution_space, class RMV, class aVector, class XMV,
           int UNROLL, class SizeType>
 void MV_Scal_Unrolled(const execution_space& space, const RMV& r,
                       const aVector& av, const XMV& x,
-                      const SizeType startingColumn, int a = 2) {
-  if (a == 0) {
+                      const SizeType startingColumn,
+                      const KokkosKernels::Impl::ScalarHint &a = KokkosKernels::Impl::ScalarHint::none) {
+  if (a == KokkosKernels::Impl::ScalarHint::zero) {
     MV_Scal_Unroll_Functor<RMV, aVector, XMV, 0, UNROLL, SizeType> op(
         r, x, av, startingColumn);
     const SizeType numRows = x.extent(0);
@@ -332,7 +334,7 @@ void MV_Scal_Unrolled(const execution_space& space, const RMV& r,
     Kokkos::parallel_for("KokkosBlas::Scal::MV::S0", policy, op);
     return;
   }
-  if (a == -1) {
+  if (a == KokkosKernels::Impl::ScalarHint::neg_one) {
     MV_Scal_Unroll_Functor<RMV, aVector, XMV, -1, UNROLL, SizeType> op(
         r, x, av, startingColumn);
     const SizeType numRows = x.extent(0);
@@ -340,7 +342,7 @@ void MV_Scal_Unrolled(const execution_space& space, const RMV& r,
     Kokkos::parallel_for("KokkosBlas::Scal::MV::S1", policy, op);
     return;
   }
-  if (a == 1) {
+  if (a == KokkosKernels::Impl::ScalarHint::pos_one) {
     MV_Scal_Unroll_Functor<RMV, aVector, XMV, 1, UNROLL, SizeType> op(
         r, x, av, startingColumn);
     const SizeType numRows = x.extent(0);
@@ -349,7 +351,6 @@ void MV_Scal_Unrolled(const execution_space& space, const RMV& r,
     return;
   }
 
-  // a arbitrary (not -1, 0, or 1)
   MV_Scal_Unroll_Functor<RMV, aVector, XMV, 2, UNROLL, SizeType> op(
       r, x, av, startingColumn);
   const SizeType numRows = x.extent(0);
@@ -420,7 +421,8 @@ void MV_Scal_Generic(const execution_space& space, const RVector& r,
 // coefficient(s) in av, if used.
 template <class execution_space, class RMV, class AV, class XMV, class SizeType>
 void MV_Scal_Invoke_Left(const execution_space& space, const RMV& r,
-                         const AV& av, const XMV& x, int a = 2) {
+                         const AV& av, const XMV& x,
+                         const KokkosKernels::Impl::ScalarHint &a = KokkosKernels::Impl::ScalarHint::none) {
   const SizeType numCols = x.extent(1);
 
 #if KOKKOSBLAS_OPTIMIZATION_LEVEL_SCAL <= 2
