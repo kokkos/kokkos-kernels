@@ -35,6 +35,7 @@
 #include "KokkosKernels_default_types.hpp"
 #include <KokkosKernels_IOUtils.hpp>
 #include <KokkosSparse_IOUtils.hpp>
+#include "KokkosKernels_perf_test_utilities.hpp"
 
 #include "Benchmark_Context.hpp"
 #include <benchmark/benchmark.h>
@@ -70,36 +71,8 @@ using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<
     size_type, lno_t, scalar_t, exe_space, mem_space, mem_space>;
 using float_t = typename Kokkos::ArithTraits<scalar_t>::mag_type;
 
-///////////////////////////////////////////////////////////////////////////////
-template <typename L, typename State>
-void time_call(L& lam, State& state, const std::string& name)
-///////////////////////////////////////////////////////////////////////////////
-{
-  Kokkos::Timer timer;
-  double min_time = std::numeric_limits<double>::infinity();
-  double max_time = 0.0;
-  double ave_time = 0.0;
-
-  for (auto _ : state) {
-    // Run timable thing
-    double time = lam();
-
-    // Record time
-    ave_time += time;
-    if (time > max_time) max_time = time;
-    if (time < min_time) min_time = time;
-    state.SetIterationTime(time);
-
-    // Report run so user knows something is happening
-    std::cout << name << " Finished a run in:  " << time << " seconds"
-              << std::endl;
-  }
-
-  std::cout << name << " LOOP_AVG_TIME:  " << ave_time / state.iterations()
-            << std::endl;
-  std::cout << name << " LOOP_MAX_TIME:  " << max_time << std::endl;
-  std::cout << name << " LOOP_MIN_TIME:  " << min_time << std::endl;
-}
+static constexpr bool IS_GPU =
+    KokkosKernels::Impl::kk_is_gpu_exec_space<exe_space>();
 
 ///////////////////////////////////////////////////////////////////////////////
 void run_par_ilut_test(benchmark::State& state, KernelHandle& kh,
@@ -125,9 +98,8 @@ void run_par_ilut_test(benchmark::State& state, KernelHandle& kh,
   EntriesType U_entries("U_entries", 0);
   ValuesType U_values("U_values", 0);
 
-  auto plambda = [&]() {
-    Kokkos::Timer timer;
-    timer.reset();
+  for (auto _ : state) {
+    state.ResumeTiming();
     par_ilut_symbolic(&kh, A_row_map, A_entries, L_row_map, U_row_map);
 
     size_type nnzL = par_ilut_handle->get_nnzL();
@@ -145,7 +117,7 @@ void run_par_ilut_test(benchmark::State& state, KernelHandle& kh,
     par_ilut_numeric(&kh, A_row_map, A_entries, A_values, L_row_map, L_entries,
                      L_values, U_row_map, U_entries, U_values);
     Kokkos::fence();
-    const double time = timer.seconds();
+    state.PauseTiming();
 
     // Check worked
     num_iters = par_ilut_handle->get_num_iters();
@@ -155,30 +127,26 @@ void run_par_ilut_test(benchmark::State& state, KernelHandle& kh,
     // Reset inputs
     Kokkos::deep_copy(L_row_map, 0);
     Kokkos::deep_copy(U_row_map, 0);
-
-    // Return time
-    return time;
-  };
-
-  time_call(plambda, state, "PAR_ILUT");
+  }
 }
 
 #ifdef USE_GINKGO
 ///////////////////////////////////////////////////////////////////////////////
 using ginkgo_exec =
-    std::conditional_t<KokkosKernels::Impl::kk_is_gpu_exec_space<exe_space>(),
-                       gko::CudaExecutor, gko::OmpExecutor>;
+    std::conditional_t<IS_GPU, gko::CudaExecutor, gko::OmpExecutor>;
 
 template <typename GinkgoT>
 std::shared_ptr<GinkgoT> get_ginkgo_exec() {
   return GinkgoT::create();
 }
 
+#ifdef KOKKOS_ENABLE_CUDA
 template <>
 std::shared_ptr<gko::CudaExecutor> get_ginkgo_exec<gko::CudaExecutor>() {
   auto ref_exec = gko::ReferenceExecutor::create();
   return gko::CudaExecutor::create(0 /*device id*/, ref_exec);
 }
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -217,22 +185,14 @@ void run_par_ilut_test_ginkgo(benchmark::State& state, KernelHandle& kh,
 
   std::shared_ptr<const mtx> a_mtx = std::move(a_mtx_uniq);
 
-  auto plambda = [&]() {
-    Kokkos::Timer timer;
-    timer.reset();
-
+  for (auto _ : state) {
     auto fact = gko::factorization::ParIlut<scalar_t, lno_t>::build()
                     .with_fill_in_limit(par_ilut_handle->get_fill_in_limit())
                     .with_approximate_select(false)
                     .with_iterations(num_iters)
                     .on(exec)
                     ->generate(a_mtx);
-
-    // Return time
-    return timer.seconds();
-  };
-
-  time_call(plambda, state, "GINKGO");
+  }
 }
 #endif
 
@@ -267,16 +227,14 @@ void run_spiluk_test(benchmark::State& state, KernelHandle& kh,
   EntriesType U_entries("U_entries", handle_nnz);
   ValuesType U_values("U_values", handle_nnz);
 
-  auto plambda = [&]() {
-    Kokkos::Timer timer;
-    double time;
-    timer.reset();
+  for (auto _ : state) {
+    if (measure_symbolic) {
+      state.ResumeTiming();
+    }
     spiluk_symbolic(&kh, fill_lev, A_row_map, A_entries, L_row_map, L_entries,
                     U_row_map, U_entries);
     Kokkos::fence();
-    if (measure_symbolic) {
-      time = timer.seconds();
-    }
+    state.PauseTiming();
 
     const size_type nnzL = spiluk_handle->get_nnzL();
     const size_type nnzU = spiluk_handle->get_nnzU();
@@ -287,11 +245,11 @@ void run_spiluk_test(benchmark::State& state, KernelHandle& kh,
     Kokkos::resize(U_values, nnzU);
 
     if (!measure_symbolic) {
-      timer.reset();
+      state.ResumeTiming();
       spiluk_numeric(&kh, fill_lev, A_row_map, A_entries, A_values, L_row_map,
                      L_entries, L_values, U_row_map, U_entries, U_values);
       Kokkos::fence();
-      time = timer.seconds();
+      state.PauseTiming();
     }
 
     // Reset inputs
@@ -305,13 +263,7 @@ void run_spiluk_test(benchmark::State& state, KernelHandle& kh,
     Kokkos::resize(U_entries, handle_nnz);
 
     spiluk_handle->reset_handle(rows, handle_nnz, handle_nnz);
-
-    return time;
-  };
-
-  std::string name =
-      std::string("SPILUK_") + (measure_symbolic ? "SYM" : "NUM");
-  time_call(plambda, state, name);
+  }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -379,8 +331,8 @@ int test_par_ilut_perf(const std::string& matrix_file, int rows,
     auto plambda = [&](benchmark::State& state) {
       run_par_ilut_test(state, kh, A, num_iters);
     };
-    KokkosKernelsBenchmark::register_benchmark((name + "_par_ilut").c_str(),
-                                               plambda, arg_names, args, loop);
+    KokkosKernelsBenchmark::register_benchmark_real_time(
+        (name + "_par_ilut").c_str(), plambda, arg_names, args, loop);
   }
 
 #ifdef USE_GINKGO
@@ -388,8 +340,8 @@ int test_par_ilut_perf(const std::string& matrix_file, int rows,
     auto glambda = [&](benchmark::State& state) {
       run_par_ilut_test_ginkgo(state, kh, A, num_iters);
     };
-    KokkosKernelsBenchmark::register_benchmark((name + "_gingko").c_str(),
-                                               glambda, arg_names, args, loop);
+    KokkosKernelsBenchmark::register_benchmark_real_time(
+        (name + "_gingko").c_str(), glambda, arg_names, args, loop);
   }
 #endif
 
@@ -400,10 +352,10 @@ int test_par_ilut_perf(const std::string& matrix_file, int rows,
     auto s2lambda = [&](benchmark::State& state) {
       run_spiluk_test(state, kh, A, team_size, false);
     };
-    KokkosKernelsBenchmark::register_benchmark(
+    KokkosKernelsBenchmark::register_benchmark_real_time(
         (name + "_spiluk_symbolic").c_str(), s1lambda, arg_names, args, loop);
 
-    KokkosKernelsBenchmark::register_benchmark(
+    KokkosKernelsBenchmark::register_benchmark_real_time(
         (name + "_spiluk_numeric").c_str(), s2lambda, arg_names, args, loop);
   }
 
@@ -412,8 +364,6 @@ int test_par_ilut_perf(const std::string& matrix_file, int rows,
 
   return 0;
 }
-
-}  // namespace
 
 ///////////////////////////////////////////////////////////////////////////////
 void print_help_par_ilut()
@@ -443,15 +393,12 @@ void handle_int_arg(int argc, char** argv, int& i,
 {
   std::string arg = argv[i];
   auto it         = option_map.find(arg);
-  if (it == option_map.end()) {
-    throw std::runtime_error(std::string("Unknown option: ") + arg);
-  }
-  if (i + 1 == argc) {
-    throw std::runtime_error(std::string("Missing option value for option: ") +
-                             arg);
-  }
+  KK_USER_REQUIRE_MSG(it != option_map.end(), "Unknown option: " << arg);
+  KK_USER_REQUIRE_MSG(i + 1 < argc, "Missing option value for option: " << arg);
   *(it->second) = atoi(argv[++i]);
 }
+
+}  // namespace
 
 ///////////////////////////////////////////////////////////////////////////////
 int main(int argc, char** argv)
@@ -463,17 +410,22 @@ int main(int argc, char** argv)
       -1;  // depends on other options, so don't set to default yet
   int bandwidth = -1;
   int team_size = -1;
-  int loop      = 4;
   int test      = 7;
 
-  std::map<std::string, int*> option_map = {
-      {"-n", &rows},       {"-z", &nnz_per_row}, {"-b", &bandwidth},
-      {"-ts", &team_size}, {"-l", &loop},        {"-t", &test}};
+  std::map<std::string, int*> option_map = {{"-n", &rows},
+                                            {"-z", &nnz_per_row},
+                                            {"-b", &bandwidth},
+                                            {"-ts", &team_size},
+                                            {"-t", &test}};
 
   if (argc == 1) {
     print_help_par_ilut();
     return 0;
   }
+
+  // Handle common params
+  perf_test::CommonInputParams common_params;
+  perf_test::parse_common_options(argc, argv, common_params);
 
   // Handle user options
   for (int i = 1; i < argc; i++) {
@@ -490,19 +442,16 @@ int main(int argc, char** argv)
   // Determine where A is coming from
   if (rows != -1) {
     // We are randomly generating the input A
-    if (rows < 100) {
-      throw std::runtime_error("Need to have at least 100 rows");
-    }
-    if (mfile != "") {
-      throw std::runtime_error(
-          "Need provide either -n or -f argument to this program, not both");
-    }
+    KK_USER_REQUIRE_MSG(rows >= 100, "Need to have at least 100 rows");
+
+    KK_USER_REQUIRE_MSG(
+        mfile == "",
+        "Need provide either -n or -f argument to this program, not both");
   } else {
     // We are reading A from a file
-    if (mfile == "") {
-      throw std::runtime_error(
-          "Need provide either -n or -f argument to this program");
-    }
+    KK_USER_REQUIRE_MSG(
+        mfile != "",
+        "Need provide either -n or -f argument to this program, not both");
   }
 
   // Set dependent defaults. Default team_size cannot be set
@@ -520,8 +469,8 @@ int main(int argc, char** argv)
     benchmark::SetDefaultTimeUnit(benchmark::kSecond);
     KokkosKernelsBenchmark::add_benchmark_context(true);
 
-    test_par_ilut_perf(mfile, rows, nnz_per_row, bandwidth, team_size, loop,
-                       test);
+    test_par_ilut_perf(mfile, rows, nnz_per_row, bandwidth, team_size,
+                       common_params.repeat, test);
 
     benchmark::Shutdown();
   }
