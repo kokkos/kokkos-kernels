@@ -278,19 +278,16 @@ void run_test_spiluk_streams(int test_algo, int nstreams) {
   using crsMat_t = CrsMatrix<scalar_t, lno_t, device, void, size_type>;
   using AT       = Kokkos::ArithTraits<scalar_t>;
 
-  // Workaround for OpenMP: skip tests if OMP_NUM_THREADS < nstreams because of
+  // Workaround for OpenMP: skip tests if concurrency < nstreams because of
   // not enough resource to partition
   bool run_streams_test = true;
 #ifdef KOKKOS_ENABLE_OPENMP
   if (std::is_same<typename device::execution_space, Kokkos::OpenMP>::value) {
-    const char *env_omp_num_threads = std::getenv("OMP_NUM_THREADS");
-    if (env_omp_num_threads != nullptr) {
-      int num_threads = std::atoi(env_omp_num_threads);
-      if (num_threads < nstreams) {
-        run_streams_test = false;
-        std::cout << "  Skip stream test: omp_num_threads = " << num_threads
-                  << std::endl;
-      }
+    int exec_concurrency = execution_space().concurrency();
+    if (exec_concurrency < nstreams) {
+      run_streams_test = false;
+      std::cout << "  Skip stream test: concurrency = " << exec_concurrency
+                << std::endl;
     }
   }
 #endif
