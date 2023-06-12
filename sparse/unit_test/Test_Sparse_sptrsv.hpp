@@ -1064,7 +1064,8 @@ void run_test_sptrsv_streams(int test_algo, int nstreams) {
       size_type, lno_t, scalar_t, execution_space, memory_space, memory_space>;
   using crsMat_t = CrsMatrix<scalar_t, lno_t, device, void, size_type>;
 
-  // Workaround for OpenMP: skip tests if OMP_NUM_THREADS < nstreams because of not enough resource to partition
+  // Workaround for OpenMP: skip tests if OMP_NUM_THREADS < nstreams because of
+  // not enough resource to partition
   bool run_streams_test = true;
 #ifdef KOKKOS_ENABLE_OPENMP
   if (std::is_same<typename device::execution_space, Kokkos::OpenMP>::value) {
@@ -1073,13 +1074,13 @@ void run_test_sptrsv_streams(int test_algo, int nstreams) {
       int num_threads = std::atoi(env_omp_num_threads);
       if (num_threads < nstreams) {
         run_streams_test = false;
-        std::cout << "  Skip stream test: omp_num_threads = " << num_threads << std::endl;
+        std::cout << "  Skip stream test: omp_num_threads = " << num_threads
+                  << std::endl;
       }
     }
   }
 #endif
-  if (!run_streams_test)
-    return;
+  if (!run_streams_test) return;
 
   scalar_t ZERO = scalar_t(0);
   scalar_t ONE  = scalar_t(1);

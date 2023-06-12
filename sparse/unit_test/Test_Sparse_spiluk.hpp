@@ -47,9 +47,9 @@ namespace Test {
 template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
 void run_test_spiluk() {
-  typedef Kokkos::View<size_type*, device> RowMapType;
-  typedef Kokkos::View<lno_t*, device> EntriesType;
-  typedef Kokkos::View<scalar_t*, device> ValuesType;
+  typedef Kokkos::View<size_type *, device> RowMapType;
+  typedef Kokkos::View<lno_t *, device> EntriesType;
+  typedef Kokkos::View<scalar_t *, device> ValuesType;
   typedef Kokkos::ArithTraits<scalar_t> AT;
 
   const size_type nrows = 9;
@@ -265,9 +265,9 @@ void run_test_spiluk() {
 template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
 void run_test_spiluk_streams(int test_algo, int nstreams) {
-  using RowMapType             = Kokkos::View<size_type*, device>;
-  using EntriesType            = Kokkos::View<lno_t*, device>;
-  using ValuesType             = Kokkos::View<scalar_t*, device>;
+  using RowMapType             = Kokkos::View<size_type *, device>;
+  using EntriesType            = Kokkos::View<lno_t *, device>;
+  using ValuesType             = Kokkos::View<scalar_t *, device>;
   using RowMapType_hostmirror  = typename RowMapType::HostMirror;
   using EntriesType_hostmirror = typename EntriesType::HostMirror;
   using ValuesType_hostmirror  = typename ValuesType::HostMirror;
@@ -278,7 +278,8 @@ void run_test_spiluk_streams(int test_algo, int nstreams) {
   using crsMat_t = CrsMatrix<scalar_t, lno_t, device, void, size_type>;
   using AT       = Kokkos::ArithTraits<scalar_t>;
 
-  // Workaround for OpenMP: skip tests if OMP_NUM_THREADS < nstreams because of not enough resource to partition
+  // Workaround for OpenMP: skip tests if OMP_NUM_THREADS < nstreams because of
+  // not enough resource to partition
   bool run_streams_test = true;
 #ifdef KOKKOS_ENABLE_OPENMP
   if (std::is_same<typename device::execution_space, Kokkos::OpenMP>::value) {
@@ -287,13 +288,13 @@ void run_test_spiluk_streams(int test_algo, int nstreams) {
       int num_threads = std::atoi(env_omp_num_threads);
       if (num_threads < nstreams) {
         run_streams_test = false;
-        std::cout << "  Skip stream test: omp_num_threads = " << num_threads << std::endl;
+        std::cout << "  Skip stream test: omp_num_threads = " << num_threads
+                  << std::endl;
       }
     }
   }
 #endif
-  if (!run_streams_test)
-    return;
+  if (!run_streams_test) return;
 
   const size_type nrows = 9;
   const size_type nnz   = 21;
@@ -309,7 +310,7 @@ void run_test_spiluk_streams(int test_algo, int nstreams) {
         Kokkos::Experimental::partition_space(execution_space(), 1, 1, 1, 1);
 
   std::vector<KernelHandle> kh_v(nstreams);
-  std::vector<KernelHandle*> kh_ptr_v(nstreams);
+  std::vector<KernelHandle *> kh_ptr_v(nstreams);
   std::vector<RowMapType> A_row_map_v(nstreams);
   std::vector<EntriesType> A_entries_v(nstreams);
   std::vector<ValuesType> A_values_v(nstreams);
