@@ -14,13 +14,10 @@
 //
 //@HEADER
 
-//
-// Created by Harvey, Evan on 7/13/21.
-//
-
 #ifndef KOKKOSKERNELS_KOKKOSBATCHED_KERNEL_HEADER_HPP
 #define KOKKOSKERNELS_KOKKOSBATCHED_KERNEL_HEADER_HPP
 
+#include <sstream>
 #include "KokkosKernels_Error.hpp"
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_MKL)

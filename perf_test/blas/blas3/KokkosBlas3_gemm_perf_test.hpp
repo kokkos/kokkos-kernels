@@ -25,10 +25,8 @@
 
 #include <KokkosBlas3_gemm.hpp>
 
+#include "KokkosBatched_HostLevel_Gemm.hpp"
 #include "KokkosBatched_Gemm_Decl.hpp"
-#include "KokkosBatched_Gemm_Serial_Impl.hpp"
-//#include "KokkosBatched_Gemm_Team_Impl.hpp"
-//#include "KokkosBatched_Gemm_TeamVector_Impl.hpp"
 #include "KokkosBatched_Util.hpp"
 #include "gtest/gtest.h"  // EXPECT_NEAR
 #include "KokkosKernels_TestUtils.hpp"
@@ -466,80 +464,99 @@ void __do_gemm_parallel_batched_heuristic_template(options_t options,
 
   STATUS;
   if (a == 'N' && b == 'N') {
-    if (options.blas_args.batch_size_last_dim)
-      if (options.use_simd)
+    if constexpr (std::is_same_v<typename vector_view_type_3d::array_layout,
+                                 Kokkos::LayoutLeft>) {
+      if (options.use_simd) {
         KokkosBatched::BatchedGemm<N, N, BatchLayout::Right>(
             &batchedGemmHandle, gemm_args.alpha, gemm_args.Av.vec_3d,
             gemm_args.Bv.vec_3d, gemm_args.beta, gemm_args.Cv.vec_3d);
-      else
+      } else if constexpr (std::is_same_v<typename view_type_3d::array_layout,
+                                          Kokkos::LayoutLeft>) {
         KokkosBatched::BatchedGemm<N, N, BatchLayout::Right>(
             &batchedGemmHandle, gemm_args.alpha, gemm_args.A, gemm_args.B,
             gemm_args.beta, gemm_args.C);
-    else if (options.use_simd)
+      }
+    } else if (options.use_simd) {
       KokkosBatched::BatchedGemm<N, N, BatchLayout::Left>(
           &batchedGemmHandle, gemm_args.alpha, gemm_args.Av.vec_3d,
           gemm_args.Bv.vec_3d, gemm_args.beta, gemm_args.Cv.vec_3d);
-    else
+    } else if constexpr (std::is_same_v<typename view_type_3d::array_layout,
+                                        Kokkos::LayoutRight>) {
       KokkosBatched::BatchedGemm<N, N, BatchLayout::Left>(
           &batchedGemmHandle, gemm_args.alpha, gemm_args.A, gemm_args.B,
           gemm_args.beta, gemm_args.C);
-
+    }
   } else if (a == 'N' && b == 'T') {
-    if (options.blas_args.batch_size_last_dim)
-      if (options.use_simd)
+    if constexpr (std::is_same_v<typename vector_view_type_3d::array_layout,
+                                 Kokkos::LayoutLeft>) {
+      if (options.use_simd) {
         KokkosBatched::BatchedGemm<N, T, BatchLayout::Right>(
             &batchedGemmHandle, gemm_args.alpha, gemm_args.Av.vec_3d,
             gemm_args.Bv.vec_3d, gemm_args.beta, gemm_args.Cv.vec_3d);
-      else
+      } else if constexpr (std::is_same_v<typename view_type_3d::array_layout,
+                                          Kokkos::LayoutLeft>) {
         KokkosBatched::BatchedGemm<N, T, BatchLayout::Right>(
             &batchedGemmHandle, gemm_args.alpha, gemm_args.A, gemm_args.B,
             gemm_args.beta, gemm_args.C);
-    else if (options.use_simd)
+      }
+    } else if (options.use_simd) {
       KokkosBatched::BatchedGemm<N, T, BatchLayout::Left>(
           &batchedGemmHandle, gemm_args.alpha, gemm_args.Av.vec_3d,
           gemm_args.Bv.vec_3d, gemm_args.beta, gemm_args.Cv.vec_3d);
-    else
+    } else if constexpr (std::is_same_v<typename view_type_3d::array_layout,
+                                        Kokkos::LayoutRight>) {
       KokkosBatched::BatchedGemm<N, T, BatchLayout::Left>(
           &batchedGemmHandle, gemm_args.alpha, gemm_args.A, gemm_args.B,
           gemm_args.beta, gemm_args.C);
+    }
     //} else if (a == 'N' && b == 'C') {
     //  __do_gemm_serial_batched_template<N, C, algo_type>(options, gemm_args);
   } else if (a == 'T' && b == 'N') {
-    if (options.blas_args.batch_size_last_dim)
-      if (options.use_simd)
+    if constexpr (std::is_same_v<typename vector_view_type_3d::array_layout,
+                                 Kokkos::LayoutLeft>) {
+      if (options.use_simd) {
         KokkosBatched::BatchedGemm<T, N, BatchLayout::Right>(
             &batchedGemmHandle, gemm_args.alpha, gemm_args.Av.vec_3d,
             gemm_args.Bv.vec_3d, gemm_args.beta, gemm_args.Cv.vec_3d);
-      else
+      } else if constexpr (std::is_same_v<typename view_type_3d::array_layout,
+                                          Kokkos::LayoutLeft>) {
         KokkosBatched::BatchedGemm<T, N, BatchLayout::Right>(
             &batchedGemmHandle, gemm_args.alpha, gemm_args.A, gemm_args.B,
             gemm_args.beta, gemm_args.C);
-    else if (options.use_simd)
+      }
+    } else if (options.use_simd) {
       KokkosBatched::BatchedGemm<T, N, BatchLayout::Left>(
           &batchedGemmHandle, gemm_args.alpha, gemm_args.Av.vec_3d,
           gemm_args.Bv.vec_3d, gemm_args.beta, gemm_args.Cv.vec_3d);
-    else
+    } else if constexpr (std::is_same_v<typename view_type_3d::array_layout,
+                                        Kokkos::LayoutRight>) {
       KokkosBatched::BatchedGemm<T, N, BatchLayout::Left>(
           &batchedGemmHandle, gemm_args.alpha, gemm_args.A, gemm_args.B,
           gemm_args.beta, gemm_args.C);
+    }
   } else if (a == 'T' && b == 'T') {
-    if (options.blas_args.batch_size_last_dim)
-      if (options.use_simd)
+    if constexpr (std::is_same_v<typename vector_view_type_3d::array_layout,
+                                 Kokkos::LayoutLeft>) {
+      if (options.use_simd) {
         KokkosBatched::BatchedGemm<T, T, BatchLayout::Right>(
             &batchedGemmHandle, gemm_args.alpha, gemm_args.Av.vec_3d,
             gemm_args.Bv.vec_3d, gemm_args.beta, gemm_args.Cv.vec_3d);
-      else
+      } else if constexpr (std::is_same_v<typename view_type_3d::array_layout,
+                                          Kokkos::LayoutLeft>) {
         KokkosBatched::BatchedGemm<T, T, BatchLayout::Right>(
             &batchedGemmHandle, gemm_args.alpha, gemm_args.A, gemm_args.B,
             gemm_args.beta, gemm_args.C);
-    else if (options.use_simd)
+      }
+    } else if (options.use_simd) {
       KokkosBatched::BatchedGemm<T, T, BatchLayout::Left>(
           &batchedGemmHandle, gemm_args.alpha, gemm_args.Av.vec_3d,
           gemm_args.Bv.vec_3d, gemm_args.beta, gemm_args.Cv.vec_3d);
-    else
+    } else if constexpr (std::is_same_v<typename view_type_3d::array_layout,
+                                        Kokkos::LayoutRight>) {
       KokkosBatched::BatchedGemm<T, T, BatchLayout::Left>(
           &batchedGemmHandle, gemm_args.alpha, gemm_args.A, gemm_args.B,
           gemm_args.beta, gemm_args.C);
+    }
     //} else if (a == 'T' && b == 'C') {
     //  __do_gemm_serial_batched_template<T, C, algo_type>(options, gemm_args);
     //} else if (a == 'C' && b == 'N') {
