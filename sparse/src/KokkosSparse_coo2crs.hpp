@@ -20,7 +20,7 @@
 // have not made it into Kokkos 4.0.00 pr 4.0.01 will
 // need to see if it happens in 4.1.00 to have a final
 // version check here.
-#if KOKKOS_VERSION >= 40099
+#if KOKKOS_VERSION >= 40099 || defined(DOXY)
 
 #include "KokkosSparse_CooMatrix.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
@@ -90,6 +90,7 @@ auto coo2crs(DimType m, DimType n, RowViewType row, ColViewType col,
 /// \tparam SizeType     The KokkosSparse::CooMatrix::size_type
 /// \param cooMatrix     The sparse matrix stored in coordinate ("Coo") format.
 /// \return A KokkosSparse::CrsMatrix.
+// clang-format on
 template <typename ScalarType, typename OrdinalType, class DeviceType,
           class MemoryTraitsType, typename SizeType>
 auto coo2crs(KokkosSparse::CooMatrix<ScalarType, OrdinalType, DeviceType,
@@ -98,5 +99,5 @@ auto coo2crs(KokkosSparse::CooMatrix<ScalarType, OrdinalType, DeviceType,
                  cooMatrix.col, cooMatrix.data);
 }
 }  // namespace KokkosSparse
-#endif // KOKKOS_VERSION >= 40099
-#endif //  _KOKKOSSPARSE_COO2CRS_HPP
+#endif  // KOKKOS_VERSION >= 40099 || defined(DOXY)
+#endif  //  _KOKKOSSPARSE_COO2CRS_HPP

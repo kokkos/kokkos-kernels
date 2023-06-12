@@ -422,9 +422,11 @@ class KokkosKernelsHandle {
   /// set_team_work_size, it will return the set value. Otherwise it will return
   /// the teamsize.
   /// \param team_size input, team size used by the kernel.
-  /// \param nnz_lno_t filler for overall_work_size
-  int get_team_work_size(const int team_size, const int /* concurrency */,
-                         const nnz_lno_t /* overall_work_size */) {
+  /// \param concurrency filler for concurrency
+  /// \param overall_work_size filler for overall_work_size
+  int get_team_work_size(const int team_size,
+                         [[maybe_unused]] const int concurrency,
+                         [[maybe_unused]] const nnz_lno_t overall_work_size) {
     if (this->team_work_size != -1) {
       return this->team_work_size;
     } else {

@@ -2,7 +2,7 @@ BLAS1 -- KokkosKernels blas1 interfaces
 =======================================
 
 abs
-___
+---
 .. doxygenfunction:: KokkosBlas::abs(const execution_space& space, const RMV& R, const XMV& X)
 .. doxygenfunction:: KokkosBlas::abs(const RMV& R, const XMV& X)
 
@@ -62,8 +62,8 @@ sum
 
 swap
 ----
-.. doxygenfunction:: KokkosBlas::swap(execution_space const& space, XVector const& X, YVector const& Y)
-.. doxygenfunction:: KokkosBlas::swap(XVector const& X, YVector const& Y)
+.. doxygenfunction:: KokkosBlas::swap(execution_space const&, XVector const&, YVector const&)
+.. doxygenfunction:: KokkosBlas::swap(const XVector&, const YVector&)
 
 update
 ------

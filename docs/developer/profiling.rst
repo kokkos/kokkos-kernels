@@ -14,7 +14,7 @@ Compile Times
 
   cp ./{sparse,blas}/unit_test/CMakeFiles/*.dir/backends/*.json ftime-trace-artifacts/
 
-7. Run `ClangBuildAnalyzer:
+7. Run `ClangBuildAnalyzer`:
 
 .. code-block::
 
