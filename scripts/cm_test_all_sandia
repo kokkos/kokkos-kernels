@@ -708,10 +708,9 @@ elif [ "$MACHINE" = "blake" ]; then
 
   BASE_MODULE_LIST="cmake/3.19.3,<COMPILER_NAME>/<COMPILER_VERSION>"
   BASE_MODULE_LIST_INTEL="cmake/3.19.3,<COMPILER_NAME>/compilers/<COMPILER_VERSION>"
-  BASE_MODULE_LIST_ONEAPI="cmake/3.19.3,<COMPILER_NAME>/oneAPI/base-toolkit/<COMPILER_VERSION>"
+  BASE_MODULE_LIST_ONEAPI="cmake/3.19.3,<COMPILER_NAME>/oneAPI/base-toolkit/<COMPILER_VERSION>,<COMPILER_NAME>/oneAPI/hpc-toolkit/<COMPILER_VERSION>"
   ONEAPI_WARNING_FLAGS=""
 
-  GCC72_MODULE_TPL_LIST="$BASE_MODULE_LIST,openblas/0.2.20/gcc/7.2.0"
   GCC102_MODULE_TPL_LIST="$BASE_MODULE_LIST,openblas/0.3.21/gcc/10.2.0"
 
   if [ "$SPOT_CHECK" = "True" ]; then
@@ -719,31 +718,26 @@ elif [ "$MACHINE" = "blake" ]; then
       # TODO: Failing toolchains:
       #"intel/18.1.163 $BASE_MODULE_LIST_INTEL $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
       #"pgi/18.7.0 $BASE_MODULE_LIST $GCC_BUILD_LIST pgc++ $PGI_WARNING_FLAGS"
-    COMPILERS=("intel/19.1.144 $BASE_MODULE_LIST_INTEL "OpenMP_Serial" icpc $INTEL_WARNING_FLAGS"
-               "gcc/7.2.0 $BASE_MODULE_LIST "Threads_Serial,OpenMP" g++ $GCC_WARNING_FLAGS"
-               "clang/10.0.1 $BASE_MODULE_LIST "Threads_Serial" clang++ $CLANG_WARNING_FLAGS"
+    COMPILERS=("clang/10.0.1 $BASE_MODULE_LIST "Threads_Serial" clang++ $CLANG_WARNING_FLAGS"
                "intel/19.5.281 $BASE_MODULE_LIST_INTEL "OpenMP,Threads" icpc $INTEL_WARNING_FLAGS"
                "gcc/10.2.0 $BASE_MODULE_LIST "Threads_Serial,OpenMP" g++ $GCC_WARNING_FLAGS"
                "gcc/11.2.0 $BASE_MODULE_LIST "Threads_Serial,OpenMP" g++ $GCC_WARNING_FLAGS"
     )
   elif [ "$SPOT_CHECK_TPLS" = "True" ]; then
       # Format: (compiler module-list build-list exe-name warning-flag)
-      # TODO: Failing toolchains:
-      #"pgi/18.7.0 $BASE_MODULE_LIST $GCC_BUILD_LIST pgc++ $PGI_WARNING_FLAGS"
-    COMPILERS=("gcc/7.2.0 $GCC72_MODULE_TPL_LIST "OpenMP_Serial" g++ $GCC_WARNING_FLAGS"
-               "intel/19.5.281 $BASE_MODULE_LIST_INTEL "OpenMP,Threads" icpc $INTEL_WARNING_FLAGS"
+    COMPILERS=("intel/19.5.281 $BASE_MODULE_LIST_INTEL "OpenMP,Threads" icpc $INTEL_WARNING_FLAGS"
                "gcc/10.2.0 $GCC102_MODULE_TPL_LIST "OpenMP_Serial" g++ $GCC_WARNING_FLAGS"
     )
   else
-    COMPILERS=("intel/19.1.144 $BASE_MODULE_LIST_INTEL $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
-               "intel/19.3.199 $BASE_MODULE_LIST_INTEL $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
-               "intel/19.5.281 $BASE_MODULE_LIST_INTEL $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
-               "intel/2021.1.1 $BASE_MODULE_LIST_ONEAPI $INTEL_BUILD_LIST icpx $ONEAPI_WARNING_FLAGS"
-               "gcc/7.2.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
-               "gcc/8.1.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+    COMPILERS=("intel/19.5.281 $BASE_MODULE_LIST_INTEL $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
+               "intel/2021.2.0 $BASE_MODULE_LIST_ONEAPI $INTEL_BUILD_LIST icpx $ONEAPI_WARNING_FLAGS"
+               "intel/2021.4.0 $BASE_MODULE_LIST_ONEAPI $INTEL_BUILD_LIST icpx $ONEAPI_WARNING_FLAGS"
+               "intel/2022.1.2 $BASE_MODULE_LIST_ONEAPI $INTEL_BUILD_LIST icpx $ONEAPI_WARNING_FLAGS"
                "gcc/8.2.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+               "gcc/8.3.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
                "gcc/9.2.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
                "gcc/10.2.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+               "gcc/11.2.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
                "clang/10.0.1 $BASE_MODULE_LIST $CLANG_BUILD_LIST clang++ $CLANG_WARNING_FLAGS"
     )
 
