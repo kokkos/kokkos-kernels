@@ -47,9 +47,9 @@ namespace Test {
 template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
 void run_test_spiluk() {
-  typedef Kokkos::View<size_type*, device> RowMapType;
-  typedef Kokkos::View<lno_t*, device> EntriesType;
-  typedef Kokkos::View<scalar_t*, device> ValuesType;
+  typedef Kokkos::View<size_type *, device> RowMapType;
+  typedef Kokkos::View<lno_t *, device> EntriesType;
+  typedef Kokkos::View<scalar_t *, device> ValuesType;
   typedef Kokkos::ArithTraits<scalar_t> AT;
 
   const size_type nrows = 9;
@@ -265,9 +265,9 @@ void run_test_spiluk() {
 template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
 void run_test_spiluk_streams(int test_algo, int nstreams) {
-  using RowMapType             = Kokkos::View<size_type*, device>;
-  using EntriesType            = Kokkos::View<lno_t*, device>;
-  using ValuesType             = Kokkos::View<scalar_t*, device>;
+  using RowMapType             = Kokkos::View<size_type *, device>;
+  using EntriesType            = Kokkos::View<lno_t *, device>;
+  using ValuesType             = Kokkos::View<scalar_t *, device>;
   using RowMapType_hostmirror  = typename RowMapType::HostMirror;
   using EntriesType_hostmirror = typename EntriesType::HostMirror;
   using ValuesType_hostmirror  = typename ValuesType::HostMirror;
@@ -278,11 +278,28 @@ void run_test_spiluk_streams(int test_algo, int nstreams) {
   using crsMat_t = CrsMatrix<scalar_t, lno_t, device, void, size_type>;
   using AT       = Kokkos::ArithTraits<scalar_t>;
 
+  // Workaround for OpenMP: skip tests if concurrency < nstreams because of
+  // not enough resource to partition
+  bool run_streams_test = true;
+#ifdef KOKKOS_ENABLE_OPENMP
+  if (std::is_same<typename device::execution_space, Kokkos::OpenMP>::value) {
+    int exec_concurrency = execution_space().concurrency();
+    if (exec_concurrency < nstreams) {
+      run_streams_test = false;
+      std::cout << "  Skip stream test: concurrency = " << exec_concurrency
+                << std::endl;
+    }
+  }
+#endif
+  if (!run_streams_test) return;
+
   const size_type nrows = 9;
   const size_type nnz   = 21;
 
   std::vector<execution_space> instances;
-  if (nstreams == 2)
+  if (nstreams == 1)
+    instances = Kokkos::Experimental::partition_space(execution_space(), 1);
+  else if (nstreams == 2)
     instances = Kokkos::Experimental::partition_space(execution_space(), 1, 1);
   else if (nstreams == 3)
     instances =
@@ -292,7 +309,7 @@ void run_test_spiluk_streams(int test_algo, int nstreams) {
         Kokkos::Experimental::partition_space(execution_space(), 1, 1, 1, 1);
 
   std::vector<KernelHandle> kh_v(nstreams);
-  std::vector<KernelHandle*> kh_ptr_v(nstreams);
+  std::vector<KernelHandle *> kh_ptr_v(nstreams);
   std::vector<RowMapType> A_row_map_v(nstreams);
   std::vector<EntriesType> A_entries_v(nstreams);
   std::vector<ValuesType> A_values_v(nstreams);
@@ -466,6 +483,9 @@ void test_spiluk() {
 template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
 void test_spiluk_streams() {
+  std::cout << "SPILUKAlgorithm::SEQLVLSCHD_RP: 1 stream" << std::endl;
+  Test::run_test_spiluk_streams<scalar_t, lno_t, size_type, device>(0, 1);
+
   std::cout << "SPILUKAlgorithm::SEQLVLSCHD_RP: 2 streams" << std::endl;
   Test::run_test_spiluk_streams<scalar_t, lno_t, size_type, device>(0, 2);
 
@@ -474,6 +494,9 @@ void test_spiluk_streams() {
 
   std::cout << "SPILUKAlgorithm::SEQLVLSCHD_RP: 4 streams" << std::endl;
   Test::run_test_spiluk_streams<scalar_t, lno_t, size_type, device>(0, 4);
+
+  std::cout << "SPILUKAlgorithm::SEQLVLSCHD_TP1: 1 stream" << std::endl;
+  Test::run_test_spiluk_streams<scalar_t, lno_t, size_type, device>(1, 1);
 
   std::cout << "SPILUKAlgorithm::SEQLVLSCHD_TP1: 2 streams" << std::endl;
   Test::run_test_spiluk_streams<scalar_t, lno_t, size_type, device>(1, 2);

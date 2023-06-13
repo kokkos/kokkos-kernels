@@ -1064,6 +1064,21 @@ void run_test_sptrsv_streams(int test_algo, int nstreams) {
       size_type, lno_t, scalar_t, execution_space, memory_space, memory_space>;
   using crsMat_t = CrsMatrix<scalar_t, lno_t, device, void, size_type>;
 
+  // Workaround for OpenMP: skip tests if concurrency < nstreams because of
+  // not enough resource to partition
+  bool run_streams_test = true;
+#ifdef KOKKOS_ENABLE_OPENMP
+  if (std::is_same<typename device::execution_space, Kokkos::OpenMP>::value) {
+    int exec_concurrency = execution_space().concurrency();
+    if (exec_concurrency < nstreams) {
+      run_streams_test = false;
+      std::cout << "  Skip stream test: concurrency = " << exec_concurrency
+                << std::endl;
+    }
+  }
+#endif
+  if (!run_streams_test) return;
+
   scalar_t ZERO = scalar_t(0);
   scalar_t ONE  = scalar_t(1);
 
@@ -1071,7 +1086,9 @@ void run_test_sptrsv_streams(int test_algo, int nstreams) {
   const size_type nnz   = 10;
 
   std::vector<execution_space> instances;
-  if (nstreams == 2)
+  if (nstreams == 1)
+    instances = Kokkos::Experimental::partition_space(execution_space(), 1);
+  else if (nstreams == 2)
     instances = Kokkos::Experimental::partition_space(execution_space(), 1, 1);
   else if (nstreams == 3)
     instances =
@@ -1297,6 +1314,9 @@ void test_sptrsv() {
 template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
 void test_sptrsv_streams() {
+  std::cout << "SPTRSVAlgorithm::SEQLVLSCHD_RP: 1 stream" << std::endl;
+  Test::run_test_sptrsv_streams<scalar_t, lno_t, size_type, device>(0, 1);
+
   std::cout << "SPTRSVAlgorithm::SEQLVLSCHD_RP: 2 streams" << std::endl;
   Test::run_test_sptrsv_streams<scalar_t, lno_t, size_type, device>(0, 2);
 
@@ -1305,6 +1325,9 @@ void test_sptrsv_streams() {
 
   std::cout << "SPTRSVAlgorithm::SEQLVLSCHD_RP: 4 streams" << std::endl;
   Test::run_test_sptrsv_streams<scalar_t, lno_t, size_type, device>(0, 4);
+
+  std::cout << "SPTRSVAlgorithm::SEQLVLSCHD_TP1: 1 stream" << std::endl;
+  Test::run_test_sptrsv_streams<scalar_t, lno_t, size_type, device>(1, 1);
 
   std::cout << "SPTRSVAlgorithm::SEQLVLSCHD_TP1: 2 streams" << std::endl;
   Test::run_test_sptrsv_streams<scalar_t, lno_t, size_type, device>(1, 2);
@@ -1318,6 +1341,9 @@ void test_sptrsv_streams() {
 #if defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
   if (std::is_same<lno_t, int>::value &&
       std::is_same<typename device::execution_space, Kokkos::Cuda>::value) {
+    std::cout << "SPTRSVAlgorithm::SPTRSV_CUSPARSE: 1 stream" << std::endl;
+    Test::run_test_sptrsv_streams<scalar_t, lno_t, size_type, device>(2, 1);
+
     std::cout << "SPTRSVAlgorithm::SPTRSV_CUSPARSE: 2 streams" << std::endl;
     Test::run_test_sptrsv_streams<scalar_t, lno_t, size_type, device>(2, 2);
 
