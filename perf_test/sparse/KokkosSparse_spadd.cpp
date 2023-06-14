@@ -338,7 +338,8 @@ void run_experiment(int argc, char** argv, CommonInputParams) {
           (int*)B.graph.row_map.data() + 1, B.graph.entries.data(),
           B.values.data()));
     } else {
-      throw std::runtime_error("MKL configured with long long int not supported in Kokkos Kernels");
+      throw std::runtime_error(
+          "MKL configured with long long int not supported in Kokkos Kernels");
     }
   }
 #endif

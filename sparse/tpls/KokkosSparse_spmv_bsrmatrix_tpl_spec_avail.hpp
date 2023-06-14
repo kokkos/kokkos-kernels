@@ -128,7 +128,8 @@ KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_AVAIL_CUSPARSE(Kokkos::complex<double>,
 #define KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_AVAIL_MKL(SCALAR, EXECSPACE)      \
   template <>                                                                  \
   struct spmv_bsrmatrix_tpl_spec_avail<                                        \
-      const SCALAR, const MKL_INT, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,\
+      const SCALAR, const MKL_INT,                                             \
+      Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,                            \
       Kokkos::MemoryTraits<Kokkos::Unmanaged>, const MKL_INT, const SCALAR*,   \
       Kokkos::LayoutLeft, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,        \
       Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>, SCALAR*, \

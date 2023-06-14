@@ -523,8 +523,9 @@ namespace Impl {
 // MKL 2018 and above: use new interface: sparse_matrix_t and mkl_sparse_?_mv()
 
 inline void spmv_mkl(sparse_operation_t op, float alpha, float beta, MKL_INT m,
-                     MKL_INT n, const MKL_INT* Arowptrs, const MKL_INT* Aentries,
-                     const float* Avalues, const float* x, float* y) {
+                     MKL_INT n, const MKL_INT* Arowptrs,
+                     const MKL_INT* Aentries, const float* Avalues,
+                     const float* x, float* y) {
   sparse_matrix_t A_mkl;
   matrix_descr A_descr;
   A_descr.type = SPARSE_MATRIX_TYPE_GENERAL;
@@ -538,9 +539,10 @@ inline void spmv_mkl(sparse_operation_t op, float alpha, float beta, MKL_INT m,
       mkl_sparse_s_mv(op, alpha, A_mkl, A_descr, x, beta, y));
 }
 
-inline void spmv_mkl(sparse_operation_t op, double alpha, double beta, MKL_INT m,
-                     MKL_INT n, const MKL_INT* Arowptrs, const MKL_INT* Aentries,
-                     const double* Avalues, const double* x, double* y) {
+inline void spmv_mkl(sparse_operation_t op, double alpha, double beta,
+                     MKL_INT m, MKL_INT n, const MKL_INT* Arowptrs,
+                     const MKL_INT* Aentries, const double* Avalues,
+                     const double* x, double* y) {
   sparse_matrix_t A_mkl;
   matrix_descr A_descr;
   A_descr.type = SPARSE_MATRIX_TYPE_GENERAL;
@@ -601,16 +603,17 @@ inline void spmv_mkl(sparse_operation_t op, Kokkos::complex<double> alpha,
 #define KOKKOSSPARSE_SPMV_MKL(SCALAR, EXECSPACE, COMPILE_LIBRARY)              \
   template <>                                                                  \
   struct SPMV<                                                                 \
-      SCALAR const, MKL_INT const, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,   \
-      Kokkos::MemoryTraits<Kokkos::Unmanaged>, MKL_INT const, SCALAR const*,       \
+      SCALAR const, MKL_INT const,                                             \
+      Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,                            \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged>, MKL_INT const, SCALAR const*,   \
       Kokkos::LayoutLeft, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,        \
       Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>, SCALAR*, \
       Kokkos::LayoutLeft, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,        \
       Kokkos::MemoryTraits<Kokkos::Unmanaged>, true, COMPILE_LIBRARY> {        \
     using device_type = Kokkos::Device<EXECSPACE, Kokkos::HostSpace>;          \
     using AMatrix =                                                            \
-        CrsMatrix<SCALAR const, MKL_INT const, device_type,                        \
-                  Kokkos::MemoryTraits<Kokkos::Unmanaged>, MKL_INT const>;         \
+        CrsMatrix<SCALAR const, MKL_INT const, device_type,                    \
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged>, MKL_INT const>;     \
     using XVector = Kokkos::View<                                              \
         SCALAR const*, Kokkos::LayoutLeft, device_type,                        \
         Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>;       \
@@ -697,16 +700,17 @@ inline void spmv_mkl(char mode, Kokkos::complex<double> alpha,
 #define KOKKOSSPARSE_SPMV_MKL(SCALAR, EXECSPACE, COMPILE_LIBRARY)              \
   template <>                                                                  \
   struct SPMV<                                                                 \
-      SCALAR const, MKL_INT const, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,   \
-      Kokkos::MemoryTraits<Kokkos::Unmanaged>, MKL_INT const, SCALAR const*,       \
+      SCALAR const, MKL_INT const,                                             \
+      Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,                            \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged>, MKL_INT const, SCALAR const*,   \
       Kokkos::LayoutLeft, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,        \
       Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>, SCALAR*, \
       Kokkos::LayoutLeft, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,        \
       Kokkos::MemoryTraits<Kokkos::Unmanaged>, true, COMPILE_LIBRARY> {        \
     using device_type = Kokkos::Device<EXECSPACE, Kokkos::HostSpace>;          \
     using AMatrix =                                                            \
-        CrsMatrix<SCALAR const, MKL_INT const, device_type,                        \
-                  Kokkos::MemoryTraits<Kokkos::Unmanaged>, MKL_INT const>;         \
+        CrsMatrix<SCALAR const, MKL_INT const, device_type,                    \
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged>, MKL_INT const>;     \
     using XVector = Kokkos::View<                                              \
         SCALAR const*, Kokkos::LayoutLeft, device_type,                        \
         Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>;       \

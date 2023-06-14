@@ -105,28 +105,28 @@ SPGEMM_SYMBOLIC_AVAIL_ROCSPARSE(Kokkos::complex<double>)
 #endif
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
-#define SPGEMM_SYMBOLIC_AVAIL_MKL(SCALAR, EXEC)                        \
-  template <>                                                          \
-  struct spgemm_symbolic_tpl_spec_avail<                               \
-      KokkosKernels::Experimental::KokkosKernelsHandle<                \
+#define SPGEMM_SYMBOLIC_AVAIL_MKL(SCALAR, EXEC)                                \
+  template <>                                                                  \
+  struct spgemm_symbolic_tpl_spec_avail<                                       \
+      KokkosKernels::Experimental::KokkosKernelsHandle<                        \
           const MKL_INT, const MKL_INT, const SCALAR, EXEC, Kokkos::HostSpace, \
-          Kokkos::HostSpace>,                                          \
-      Kokkos::View<const MKL_INT *, default_layout,                        \
-                   Kokkos::Device<EXEC, Kokkos::HostSpace>,            \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,          \
-      Kokkos::View<const MKL_INT *, default_layout,                        \
-                   Kokkos::Device<EXEC, Kokkos::HostSpace>,            \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,          \
-      Kokkos::View<const MKL_INT *, default_layout,                        \
-                   Kokkos::Device<EXEC, Kokkos::HostSpace>,            \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,          \
-      Kokkos::View<const MKL_INT *, default_layout,                        \
-                   Kokkos::Device<EXEC, Kokkos::HostSpace>,            \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,          \
-      Kokkos::View<MKL_INT *, default_layout,                              \
-                   Kokkos::Device<EXEC, Kokkos::HostSpace>,            \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {       \
-    enum : bool { value = true };                                      \
+          Kokkos::HostSpace>,                                                  \
+      Kokkos::View<const MKL_INT *, default_layout,                            \
+                   Kokkos::Device<EXEC, Kokkos::HostSpace>,                    \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
+      Kokkos::View<const MKL_INT *, default_layout,                            \
+                   Kokkos::Device<EXEC, Kokkos::HostSpace>,                    \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
+      Kokkos::View<const MKL_INT *, default_layout,                            \
+                   Kokkos::Device<EXEC, Kokkos::HostSpace>,                    \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
+      Kokkos::View<const MKL_INT *, default_layout,                            \
+                   Kokkos::Device<EXEC, Kokkos::HostSpace>,                    \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
+      Kokkos::View<MKL_INT *, default_layout,                                  \
+                   Kokkos::Device<EXEC, Kokkos::HostSpace>,                    \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {               \
+    enum : bool { value = true };                                              \
   };
 
 #define SPGEMM_SYMBOLIC_AVAIL_MKL_E(EXEC)                 \
