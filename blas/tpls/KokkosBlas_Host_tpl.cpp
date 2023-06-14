@@ -236,18 +236,41 @@ void F77_BLAS_MANGLE(cgeru, CGERU)(int*, int*, const std::complex<float>*,
                                    const std::complex<float>*, int*,
                                    const std::complex<float>*, int*,
                                    std::complex<float>*, int*);
-void F77_BLAS_MANGLE(cgerc, CGERC)(int*, int*, const std::complex<float>*,
-                                   const std::complex<float>*, int*,
-                                   const std::complex<float>*, int*,
-                                   std::complex<float>*, int*);
 void F77_BLAS_MANGLE(zgeru, ZGERU)(int*, int*, const std::complex<double>*,
                                    const std::complex<double>*, int*,
                                    const std::complex<double>*, int*,
                                    std::complex<double>*, int*);
+void F77_BLAS_MANGLE(cgerc, CGERC)(int*, int*, const std::complex<float>*,
+                                   const std::complex<float>*, int*,
+                                   const std::complex<float>*, int*,
+                                   std::complex<float>*, int*);
 void F77_BLAS_MANGLE(zgerc, ZGERC)(int*, int*, const std::complex<double>*,
                                    const std::complex<double>*, int*,
                                    const std::complex<double>*, int*,
                                    std::complex<double>*, int*);
+
+///
+/// Syr
+///
+void F77_BLAS_MANGLE(ssyr, SSYR)(const char*, int*, const float*, const float*,
+                                 int*, float*, int*);
+void F77_BLAS_MANGLE(dsyr, DSYR)(const char*, int*, const double*,
+                                 const double*, int*, double*, int*);
+// Although there is a cgeru, there is no csyru
+// Although there is a zgeru, there is no zsyru
+// Although there is a cgerc, there is no csyrc, but there is cher (see below)
+// Although there is a zgerc, there is no zsyrc, but there is zher (see below)
+
+///
+/// Her
+///
+
+void F77_BLAS_MANGLE(cher, CHER)(const char*, int*, const float*,
+                                 const std::complex<float>*, int*,
+                                 std::complex<float>*, int*);
+void F77_BLAS_MANGLE(zher, ZHER)(const char*, int*, const double*,
+                                 const std::complex<double>*, int*,
+                                 std::complex<double>*, int*);
 
 ///
 /// Trsv
@@ -466,9 +489,15 @@ void F77_BLAS_MANGLE(zscal,
 #define F77_FUNC_SGER F77_BLAS_MANGLE(sger, SGER)
 #define F77_FUNC_DGER F77_BLAS_MANGLE(dger, DGER)
 #define F77_FUNC_CGERU F77_BLAS_MANGLE(cgeru, CGERU)
-#define F77_FUNC_CGERC F77_BLAS_MANGLE(cgerc, CGERC)
 #define F77_FUNC_ZGERU F77_BLAS_MANGLE(zgeru, ZGERU)
+#define F77_FUNC_CGERC F77_BLAS_MANGLE(cgerc, CGERC)
 #define F77_FUNC_ZGERC F77_BLAS_MANGLE(zgerc, ZGERC)
+
+#define F77_FUNC_SSYR F77_BLAS_MANGLE(ssyr, SSYR)
+#define F77_FUNC_DSYR F77_BLAS_MANGLE(dsyr, DSYR)
+
+#define F77_FUNC_CHER F77_BLAS_MANGLE(cher, CHER)
+#define F77_FUNC_ZHER F77_BLAS_MANGLE(zher, ZHER)
 
 #define F77_FUNC_STRSV F77_BLAS_MANGLE(strsv, STRSV)
 #define F77_FUNC_DTRSV F77_BLAS_MANGLE(dtrsv, DTRSV)
@@ -575,6 +604,11 @@ void HostBlas<float>::ger(int m, int n, const float alpha, const float* x,
                           int incx, const float* y, int incy, float* a,
                           int lda) {
   F77_FUNC_SGER(&m, &n, &alpha, x, &incx, y, &incy, a, &lda);
+}
+template <>
+void HostBlas<float>::syr(const char uplo, int n, const float alpha,
+                          const float* x, int incx, float* a, int lda) {
+  F77_FUNC_SSYR(&uplo, &n, &alpha, x, &incx, a, &lda);
 }
 template <>
 void HostBlas<float>::trsv(const char uplo, const char transa, const char diag,
@@ -694,6 +728,11 @@ void HostBlas<double>::ger(int m, int n, const double alpha, const double* x,
                            int incx, const double* y, int incy, double* a,
                            int lda) {
   F77_FUNC_DGER(&m, &n, &alpha, x, &incx, y, &incy, a, &lda);
+}
+template <>
+void HostBlas<double>::syr(const char uplo, int n, const double alpha,
+                           const double* x, int incx, double* a, int lda) {
+  F77_FUNC_DSYR(&uplo, &n, &alpha, x, &incx, a, &lda);
 }
 template <>
 void HostBlas<double>::trsv(const char uplo, const char transa, const char diag,
@@ -840,6 +879,14 @@ void HostBlas<std::complex<float> >::gerc(
   F77_FUNC_CGERC(&m, &n, &alpha, (const std::complex<float>*)x, &incx,
                  (const std::complex<float>*)y, &incy, (std::complex<float>*)a,
                  &lda);
+}
+template <>
+template <>
+void HostBlas<std::complex<float> >::cher<float>(
+    const char uplo, int n, const float alpha, const std::complex<float>* x,
+    int incx, std::complex<float>* a, int lda) {
+  F77_FUNC_CHER(&uplo, &n, &alpha, (const std::complex<float>*)x, &incx,
+                (std::complex<float>*)a, &lda);
 }
 template <>
 void HostBlas<std::complex<float> >::trsv(const char uplo, const char transa,
@@ -1010,6 +1057,14 @@ void HostBlas<std::complex<double> >::gerc(
   F77_FUNC_ZGERC(&m, &n, &alpha, (const std::complex<double>*)x, &incx,
                  (const std::complex<double>*)y, &incy,
                  (std::complex<double>*)a, &lda);
+}
+template <>
+template <>
+void HostBlas<std::complex<double> >::zher<double>(
+    const char uplo, int n, const double alpha, const std::complex<double>* x,
+    int incx, std::complex<double>* a, int lda) {
+  F77_FUNC_ZHER(&uplo, &n, &alpha, (const std::complex<double>*)x, &incx,
+                (std::complex<double>*)a, &lda);
 }
 template <>
 void HostBlas<std::complex<double> >::trsv(const char uplo, const char transa,

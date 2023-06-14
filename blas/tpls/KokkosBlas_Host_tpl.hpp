@@ -73,6 +73,17 @@ struct HostBlas {
   static void gerc(int m, int n, const T alpha, const T *x, int incx,
                    const T *y, int incy, T *a, int lda);
 
+  static void syr(const char uplo, int n, const T alpha, const T *x, int incx,
+                  T *a, int lda);
+
+  template <typename tAlpha>
+  static void cher(const char uplo, int n, const tAlpha alpha, const T *x,
+                   int incx, T *a, int lda);
+
+  template <typename tAlpha>
+  static void zher(const char uplo, int n, const tAlpha alpha, const T *x,
+                   int incx, T *a, int lda);
+
   static void trsv(const char uplo, const char transa, const char diag, int m,
                    const T *a, int lda,
                    /* */ T *b, int ldb);
