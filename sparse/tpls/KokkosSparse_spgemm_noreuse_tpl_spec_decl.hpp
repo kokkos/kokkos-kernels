@@ -230,21 +230,21 @@ Matrix spgemm_noreuse_mkl(const MatrixConst &A, const MatrixConst &B) {
   template <>                                                                \
   struct SPGEMM_NOREUSE<                                                     \
       KokkosSparse::CrsMatrix<                                               \
-          SCALAR, int, Kokkos::Device<EXEC, Kokkos::HostSpace>, void, int>,  \
+          SCALAR, MKL_INT, Kokkos::Device<EXEC, Kokkos::HostSpace>, void, MKL_INT>,  \
       KokkosSparse::CrsMatrix<                                               \
-          const SCALAR, const int, Kokkos::Device<EXEC, Kokkos::HostSpace>,  \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>,               \
+          const SCALAR, const MKL_INT, Kokkos::Device<EXEC, Kokkos::HostSpace>,  \
+          Kokkos::MemoryTraits<Kokkos::Unmanaged>, const MKL_INT>,               \
       KokkosSparse::CrsMatrix<                                               \
-          const SCALAR, const int, Kokkos::Device<EXEC, Kokkos::HostSpace>,  \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>,               \
+          const SCALAR, const MKL_INT, Kokkos::Device<EXEC, Kokkos::HostSpace>,  \
+          Kokkos::MemoryTraits<Kokkos::Unmanaged>, const MKL_INT>,               \
       true, TPL_AVAIL> {                                                     \
     using Matrix = KokkosSparse::CrsMatrix<                                  \
-        SCALAR, int, Kokkos::Device<EXEC, Kokkos::HostSpace>, void, int>;    \
+        SCALAR, MKL_INT, Kokkos::Device<EXEC, Kokkos::HostSpace>, void, MKL_INT>;    \
     using ConstMatrix = KokkosSparse::CrsMatrix<                             \
-        const SCALAR, const int, Kokkos::Device<EXEC, Kokkos::HostSpace>,    \
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>;                 \
+        const SCALAR, const MKL_INT, Kokkos::Device<EXEC, Kokkos::HostSpace>,    \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>, const MKL_INT>;                 \
     static KokkosSparse::CrsMatrix<                                          \
-        SCALAR, int, Kokkos::Device<EXEC, Kokkos::HostSpace>, void, int>     \
+        SCALAR, MKL_INT, Kokkos::Device<EXEC, Kokkos::HostSpace>, void, MKL_INT>     \
     spgemm_noreuse(const ConstMatrix &A, bool, const ConstMatrix &B, bool) { \
       std::string label = "KokkosSparse::spgemm_noreuse[TPL_MKL," +          \
                           Kokkos::ArithTraits<SCALAR>::name() + "]";         \

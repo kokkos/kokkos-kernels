@@ -594,8 +594,8 @@ void spgemm_symbolic_mkl(
     handle->set_c_nnz(0);
     return;
   }
-  MKLMatrix A(m, n, (int *)rowptrA.data(), (int *)colidxA.data(), nullptr);
-  MKLMatrix B(n, k, (int *)rowptrB.data(), (int *)colidxB.data(), nullptr);
+  MKLMatrix A(m, n, (MKL_INT *)rowptrA.data(), (MKL_INT *)colidxA.data(), nullptr);
+  MKLMatrix B(n, k, (MKL_INT *)rowptrB.data(), (MKL_INT *)colidxB.data(), nullptr);
   sparse_matrix_t C;
   matrix_descr generalDescr;
   generalDescr.type = SPARSE_MATRIX_TYPE_GENERAL;
@@ -625,32 +625,32 @@ void spgemm_symbolic_mkl(
   template <>                                                                 \
   struct SPGEMM_SYMBOLIC<                                                     \
       KokkosKernels::Experimental::KokkosKernelsHandle<                       \
-          const int, const int, const SCALAR, EXEC, Kokkos::HostSpace,        \
+          const MKL_INT, const MKL_INT, const SCALAR, EXEC, Kokkos::HostSpace,        \
           Kokkos::HostSpace>,                                                 \
-      Kokkos::View<const int *, default_layout,                               \
+      Kokkos::View<const MKL_INT *, default_layout,                               \
                    Kokkos::Device<EXEC, Kokkos::HostSpace>,                   \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
-      Kokkos::View<const int *, default_layout,                               \
+      Kokkos::View<const MKL_INT *, default_layout,                               \
                    Kokkos::Device<EXEC, Kokkos::HostSpace>,                   \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
-      Kokkos::View<const int *, default_layout,                               \
+      Kokkos::View<const MKL_INT *, default_layout,                               \
                    Kokkos::Device<EXEC, Kokkos::HostSpace>,                   \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
-      Kokkos::View<const int *, default_layout,                               \
+      Kokkos::View<const MKL_INT *, default_layout,                               \
                    Kokkos::Device<EXEC, Kokkos::HostSpace>,                   \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
-      Kokkos::View<int *, default_layout,                                     \
+      Kokkos::View<MKL_INT *, default_layout,                                     \
                    Kokkos::Device<EXEC, Kokkos::HostSpace>,                   \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
       true, TPL_AVAIL> {                                                      \
     using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<    \
-        const int, const int, const SCALAR, EXEC, Kokkos::HostSpace,          \
+        const MKL_INT, const MKL_INT, const SCALAR, EXEC, Kokkos::HostSpace,          \
         Kokkos::HostSpace>;                                                   \
     using c_int_view_t =                                                      \
-        Kokkos::View<const int *, default_layout,                             \
+        Kokkos::View<const MKL_INT *, default_layout,                             \
                      Kokkos::Device<EXEC, Kokkos::HostSpace>,                 \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                \
-    using int_view_t = Kokkos::View<int *, default_layout,                    \
+    using int_view_t = Kokkos::View<MKL_INT *, default_layout,                    \
                                     Kokkos::Device<EXEC, Kokkos::HostSpace>,  \
                                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>; \
     static void spgemm_symbolic(KernelHandle *handle,                         \

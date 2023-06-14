@@ -328,14 +328,18 @@ void run_experiment(int argc, char** argv, CommonInputParams) {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
   sparse_matrix_t Amkl, Bmkl, Cmkl;
   if (params.use_mkl) {
-    KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_d_create_csr(
-        &Amkl, SPARSE_INDEX_BASE_ZERO, m, n, (int*)A.graph.row_map.data(),
-        (int*)A.graph.row_map.data() + 1, A.graph.entries.data(),
-        A.values.data()));
-    KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_d_create_csr(
-        &Bmkl, SPARSE_INDEX_BASE_ZERO, m, n, (int*)B.graph.row_map.data(),
-        (int*)B.graph.row_map.data() + 1, B.graph.entries.data(),
-        B.values.data()));
+    if constexpr (std::is_same_v<int, MKL_INT>) {
+      KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_d_create_csr(
+          &Amkl, SPARSE_INDEX_BASE_ZERO, m, n, (int*)A.graph.row_map.data(),
+          (int*)A.graph.row_map.data() + 1, A.graph.entries.data(),
+          A.values.data()));
+      KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_d_create_csr(
+          &Bmkl, SPARSE_INDEX_BASE_ZERO, m, n, (int*)B.graph.row_map.data(),
+          (int*)B.graph.row_map.data() + 1, B.graph.entries.data(),
+          B.values.data()));
+    } else {
+      throw std::runtime_error("MKL configured with long long int not supported in Kokkos Kernels");
+    }
   }
 #endif
 

@@ -19,6 +19,10 @@
 #ifndef KOKKOSPARSE_SPGEMM_NOREUSE_TPL_SPEC_AVAIL_HPP_
 #define KOKKOSPARSE_SPGEMM_NOREUSE_TPL_SPEC_AVAIL_HPP_
 
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
+#include "mkl.h"
+#endif
+
 namespace KokkosSparse {
 namespace Impl {
 
@@ -63,13 +67,13 @@ SPGEMM_NOREUSE_AVAIL_CUSPARSE_S(Kokkos::complex<double>)
   template <>                                                               \
   struct spgemm_noreuse_tpl_spec_avail<                                     \
       KokkosSparse::CrsMatrix<                                              \
-          SCALAR, int, Kokkos::Device<EXEC, Kokkos::HostSpace>, void, int>, \
+          SCALAR, MKL_INT, Kokkos::Device<EXEC, Kokkos::HostSpace>, void, MKL_INT>, \
       KokkosSparse::CrsMatrix<                                              \
-          const SCALAR, const int, Kokkos::Device<EXEC, Kokkos::HostSpace>, \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>,              \
+          const SCALAR, const MKL_INT, Kokkos::Device<EXEC, Kokkos::HostSpace>, \
+          Kokkos::MemoryTraits<Kokkos::Unmanaged>, const MKL_INT>,              \
       KokkosSparse::CrsMatrix<                                              \
-          const SCALAR, const int, Kokkos::Device<EXEC, Kokkos::HostSpace>, \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>> {            \
+          const SCALAR, const MKL_INT, Kokkos::Device<EXEC, Kokkos::HostSpace>, \
+          Kokkos::MemoryTraits<Kokkos::Unmanaged>, const MKL_INT>> {            \
     enum : bool { value = true };                                           \
   };
 
