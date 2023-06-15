@@ -121,8 +121,8 @@ inline void spm_mv_block_impl_mkl(sparse_operation_t op, float alpha,
                                   float beta, MKL_INT m, MKL_INT n, MKL_INT b,
                                   const MKL_INT* Arowptrs,
                                   const MKL_INT* Aentries, const float* Avalues,
-                                  const float* x, int colx, int ldx, float* y,
-                                  int ldy) {
+                                  const float* x, MKL_INT colx, MKL_INT ldx, float* y,
+                                  MKL_INT ldy) {
   sparse_matrix_t A_mkl;
   KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_s_create_bsr(
       &A_mkl, SPARSE_INDEX_BASE_ZERO, SPARSE_LAYOUT_ROW_MAJOR, m, n, b,
@@ -140,7 +140,7 @@ inline void spm_mv_block_impl_mkl(sparse_operation_t op, double alpha,
                                   const MKL_INT* Arowptrs,
                                   const MKL_INT* Aentries,
                                   const double* Avalues, const double* x,
-                                  int colx, int ldx, double* y, int ldy) {
+                                  MKL_INT colx, MKL_INT ldx, double* y, MKL_INT ldy) {
   sparse_matrix_t A_mkl;
   KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_d_create_bsr(
       &A_mkl, SPARSE_INDEX_BASE_ZERO, SPARSE_LAYOUT_ROW_MAJOR, m, n, b,
@@ -159,8 +159,8 @@ inline void spm_mv_block_impl_mkl(sparse_operation_t op,
                                   MKL_INT n, MKL_INT b, const MKL_INT* Arowptrs,
                                   const MKL_INT* Aentries,
                                   const Kokkos::complex<float>* Avalues,
-                                  const Kokkos::complex<float>* x, int colx,
-                                  int ldx, Kokkos::complex<float>* y, int ldy) {
+                                  const Kokkos::complex<float>* x, MKL_INT colx,
+                                  MKL_INT ldx, Kokkos::complex<float>* y, MKL_INT ldy) {
   sparse_matrix_t A_mkl;
   KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_c_create_bsr(
       &A_mkl, SPARSE_INDEX_BASE_ZERO, SPARSE_LAYOUT_ROW_MAJOR, m, n, b,
@@ -181,7 +181,7 @@ inline void spm_mv_block_impl_mkl(
     Kokkos::complex<double> beta, MKL_INT m, MKL_INT n, MKL_INT b,
     const MKL_INT* Arowptrs, const MKL_INT* Aentries,
     const Kokkos::complex<double>* Avalues, const Kokkos::complex<double>* x,
-    int colx, int ldx, Kokkos::complex<double>* y, int ldy) {
+    MKL_INT colx, MKL_INT ldx, Kokkos::complex<double>* y, MKL_INT ldy) {
   sparse_matrix_t A_mkl;
   KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_z_create_bsr(
       &A_mkl, SPARSE_INDEX_BASE_ZERO, SPARSE_LAYOUT_ROW_MAJOR, m, n, b,
@@ -255,8 +255,8 @@ inline void spmv_block_impl_mkl(char mode, Kokkos::complex<double> alpha,
 inline void spm_mv_block_impl_mkl(char mode, float alpha, float beta, MKL_INT m,
                                   MKL_INT n, MKL_INT b, const MKL_INT* Arowptrs,
                                   const MKL_INT* Aentries, const float* Avalues,
-                                  const float* x, int colx, int ldx, float* y,
-                                  int ldy) {
+                                  const float* x, MKL_INT colx, MKL_INT ldx, float* y,
+                                  MKL_INT ldy) {
   mkl_sbsrmm(&mode, &m, &n, &colx, &b, &alpha, "G**C", Avalues, Aentries,
              Arowptrs, Arowptrs + 1, x, &beta, y);
 }
@@ -266,7 +266,7 @@ inline void spm_mv_block_impl_mkl(char mode, double alpha, double beta,
                                   const MKL_INT* Arowptrs,
                                   const MKL_INT* Aentries,
                                   const double* Avalues, const double* x,
-                                  int colx, int ldx, double* y, int ldy) {
+                                  MKL_INT colx, MKL_INT ldx, double* y, MKL_INT ldy) {
   mkl_dbsrmm(&mode, &m, &n, &colx, &b, &alpha, "G**C", Avalues, Aentries,
              Arowptrs, Arowptrs + 1, x, ldx, &beta, y, ldy);
 }
@@ -276,8 +276,8 @@ inline void spm_mv_block_impl_mkl(char mode, Kokkos::complex<float> alpha,
                                   MKL_INT n, MKL_INT b, const MKL_INT* Arowptrs,
                                   const MKL_INT* Aentries,
                                   const Kokkos::complex<float>* Avalues,
-                                  const Kokkos::complex<float>* x, int colx,
-                                  int ldx, Kokkos::complex<float>* y, int ldy) {
+                                  const Kokkos::complex<float>* x, MKL_INT colx,
+                                  MKL_INT ldx, Kokkos::complex<float>* y, MKL_INT ldy) {
   const MKL_Complex8* alpha_mkl = reinterpret_cast<const MKL_Complex8*>(&alpha);
   const MKL_Complex8* beta_mkl  = reinterpret_cast<const MKL_Complex8*>(&beta);
   const MKL_Complex8* Avalues_mkl =
@@ -293,9 +293,9 @@ inline void spm_mv_block_impl_mkl(char mode, Kokkos::complex<double> alpha,
                                   MKL_INT n, MKL_INT b, const MKL_INT* Arowptrs,
                                   const MKL_INT* Aentries,
                                   const Kokkos::complex<double>* Avalues,
-                                  const Kokkos::complex<double>* x, int colx,
-                                  int ldx, Kokkos::complex<double>* y,
-                                  int ldy) {
+                                  const Kokkos::complex<double>* x, MKL_INT colx,
+                                  MKL_INT ldx, Kokkos::complex<double>* y,
+                                  MKL_INT ldy) {
   const MKL_Complex16* alpha_mkl =
       reinterpret_cast<const MKL_Complex16*>(&alpha);
   const MKL_Complex16* beta_mkl = reinterpret_cast<const MKL_Complex16*>(&beta);
@@ -396,9 +396,9 @@ KOKKOSSPARSE_SPMV_MKL(Kokkos::complex<double>, Kokkos::OpenMP,
       std::string label = "KokkosSparse::spmv[TPL_MKL,BSRMATRIX" +             \
                           Kokkos::ArithTraits<SCALAR>::name() + "]";           \
       Kokkos::Profiling::pushRegion(label);                                    \
-      int colx = static_cast<int>(X.extent(1));                                \
-      int ldx  = static_cast<int>(X.stride_1());                               \
-      int ldy  = static_cast<int>(Y.stride_1());                               \
+      MKL_INT colx = static_cast<MKL_INT>(X.extent(1));                                \
+      MKL_INT ldx  = static_cast<MKL_INT>(X.stride_1());                               \
+      MKL_INT ldy  = static_cast<MKL_INT>(Y.stride_1());                               \
       spm_mv_block_impl_mkl(mode_kk_to_mkl(mode[0]), alpha, beta, A.numRows(), \
                             A.numCols(), A.blockDim(), A.graph.row_map.data(), \
                             A.graph.entries.data(), A.values.data(), X.data(), \
