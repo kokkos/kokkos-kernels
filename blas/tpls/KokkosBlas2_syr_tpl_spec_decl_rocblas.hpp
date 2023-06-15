@@ -28,9 +28,8 @@ namespace Impl {
   const int N           = static_cast<int>(A_is_lr ? A.extent(0) : A.extent(1)); \
   constexpr int one     = 1;                                                     \
   const int LDA         = A_is_lr ? A.stride(0) : A.stride(1);                   \
-  rocblas_fill fillMode = (*uplo == 'L' || *uplo == 'l')                         \
-                              ? rocblas_fill_lower                               \
-                              : rocblas_fill_upper;
+  rocblas_fill fillMode = (*uplo == 'L' || *uplo == 'l') ? rocblas_fill_lower    \
+                                                         : rocblas_fill_upper;
 
 #define KOKKOSBLAS2_DSYR_ROCBLAS(LAYOUT, EXEC_SPACE, MEM_SPACE,             \
                                  ETI_SPEC_AVAIL)                            \
