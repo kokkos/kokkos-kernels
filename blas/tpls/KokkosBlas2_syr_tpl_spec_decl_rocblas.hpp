@@ -28,7 +28,7 @@ namespace Impl {
   const int N           = static_cast<int>(A_is_lr ? A.extent(0) : A.extent(1)); \
   constexpr int one     = 1;                                                     \
   const int LDA         = A_is_lr ? A.stride(0) : A.stride(1);                   \
-  rocblas_fill fillMode = (uploChar == 'L' || uploChar == 'l')                   \
+  rocblas_fill fillMode = (*uplo == 'L' || *uplo == 'l')                         \
                               ? rocblas_fill_lower                               \
                               : rocblas_fill_upper;
 
