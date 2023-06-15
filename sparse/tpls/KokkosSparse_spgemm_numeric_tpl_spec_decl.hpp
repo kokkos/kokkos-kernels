@@ -553,30 +553,30 @@ void spgemm_numeric_mkl(
 #define SPGEMM_NUMERIC_DECL_MKL(SCALAR, EXEC, TPL_AVAIL)                       \
   template <>                                                                  \
   struct SPGEMM_NUMERIC<KokkosKernels::Experimental::KokkosKernelsHandle<      \
-                            const int, const int, const SCALAR, EXEC,          \
+                            const MKL_INT, const MKL_INT, const SCALAR, EXEC,  \
                             Kokkos::HostSpace, Kokkos::HostSpace>,             \
-                        Kokkos::View<const int *, default_layout,              \
+                        Kokkos::View<const MKL_INT *, default_layout,          \
                                      Kokkos::Device<EXEC, Kokkos::HostSpace>,  \
                                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-                        Kokkos::View<const int *, default_layout,              \
-                                     Kokkos::Device<EXEC, Kokkos::HostSpace>,  \
-                                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-                        Kokkos::View<const SCALAR *, default_layout,           \
-                                     Kokkos::Device<EXEC, Kokkos::HostSpace>,  \
-                                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-                        Kokkos::View<const int *, default_layout,              \
-                                     Kokkos::Device<EXEC, Kokkos::HostSpace>,  \
-                                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-                        Kokkos::View<const int *, default_layout,              \
+                        Kokkos::View<const MKL_INT *, default_layout,          \
                                      Kokkos::Device<EXEC, Kokkos::HostSpace>,  \
                                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
                         Kokkos::View<const SCALAR *, default_layout,           \
                                      Kokkos::Device<EXEC, Kokkos::HostSpace>,  \
                                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-                        Kokkos::View<const int *, default_layout,              \
+                        Kokkos::View<const MKL_INT *, default_layout,          \
                                      Kokkos::Device<EXEC, Kokkos::HostSpace>,  \
                                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-                        Kokkos::View<int *, default_layout,                    \
+                        Kokkos::View<const MKL_INT *, default_layout,          \
+                                     Kokkos::Device<EXEC, Kokkos::HostSpace>,  \
+                                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
+                        Kokkos::View<const SCALAR *, default_layout,           \
+                                     Kokkos::Device<EXEC, Kokkos::HostSpace>,  \
+                                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
+                        Kokkos::View<const MKL_INT *, default_layout,          \
+                                     Kokkos::Device<EXEC, Kokkos::HostSpace>,  \
+                                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
+                        Kokkos::View<MKL_INT *, default_layout,                \
                                      Kokkos::Device<EXEC, Kokkos::HostSpace>,  \
                                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
                         Kokkos::View<SCALAR *, default_layout,                 \
@@ -584,13 +584,13 @@ void spgemm_numeric_mkl(
                                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
                         true, TPL_AVAIL> {                                     \
     using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<     \
-        const int, const int, const SCALAR, EXEC, Kokkos::HostSpace,           \
+        const MKL_INT, const MKL_INT, const SCALAR, EXEC, Kokkos::HostSpace,   \
         Kokkos::HostSpace>;                                                    \
     using c_int_view_t =                                                       \
-        Kokkos::View<const int *, default_layout,                              \
+        Kokkos::View<const MKL_INT *, default_layout,                          \
                      Kokkos::Device<EXEC, Kokkos::HostSpace>,                  \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                 \
-    using int_view_t = Kokkos::View<int *, default_layout,                     \
+    using int_view_t = Kokkos::View<MKL_INT *, default_layout,                 \
                                     Kokkos::Device<EXEC, Kokkos::HostSpace>,   \
                                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;  \
     using c_scalar_view_t =                                                    \
