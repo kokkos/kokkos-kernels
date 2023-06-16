@@ -26,29 +26,40 @@
   - Add exec instance support to sort/sort_and_merge utils [\#1744](https://github.com/kokkos/kokkos-kernels/pull/1744)
 - Add BsrMatrix SpMV in rocSparse TPL, rewrite BsrMatrix SpMV unit tests [\#1769](https://github.com/kokkos/kokkos-kernels/pull/1769)
 - sparse: Add coo2crs, crs2coo and CooMatrix [\#1686](https://github.com/kokkos/kokkos-kernels/pull/1686)
+- Adds team- and thread-based lower-bound and upper-bound search and predicates [\#1711](https://github.com/kokkos/kokkos-kernels/pull/1711)
+- Adds KokkosKernels::Impl::Iota, a view-like where iota(i) = i + offset [\#1710](https://github.com/kokkos/kokkos-kernels/pull/1710)
 
 #### Misc updates
 - ODE: explicit integration methods [\#1754](https://github.com/kokkos/kokkos-kernels/pull/1754)
 
 ### Enhancements:
-- batched/eti: ETI host-level interfaces [\#1783](https://github.com/kokkos/kokkos-kernels/pull/1783)
-- Add support for complex data types in MDF [\#1776](https://github.com/kokkos/kokkos-kernels/pull/1776)
-- Refactor MKL TPL for both CPU and GPU usage [\#1779](https://github.com/kokkos/kokkos-kernels/pull/1779)
-- Sort and merge improvements [\#1773](https://github.com/kokkos/kokkos-kernels/pull/1773)
+
+#### BLAS
 - refactor blas3 tests to use benchmark library [\#1751](https://github.com/kokkos/kokkos-kernels/pull/1751)
+
+#### Batched
+- batched/eti: ETI host-level interfaces [\#1783](https://github.com/kokkos/kokkos-kernels/pull/1783)
+- batched/dense: Add gesv DynRankView runtime checks [\#1850](https://github.com/kokkos/kokkos-kernels/pull/1850)
+
+#### Sparse
+- Add support for complex data types in MDF [\#1776](https://github.com/kokkos/kokkos-kernels/pull/1776)
+- Sort and merge improvements [\#1773](https://github.com/kokkos/kokkos-kernels/pull/1773)
 - spgemm handle: check that A,B,C graphs never change [\#1742](https://github.com/kokkos/kokkos-kernels/pull/1742)
-- add explicit tests of opt-in algorithms [\#1712](https://github.com/kokkos/kokkos-kernels/pull/1712)
-- Adds team- and thread-based lower-bound and upper-bound search and predicates [\#1711](https://github.com/kokkos/kokkos-kernels/pull/1711)
-- Adds KokkosKernels::Impl::Iota, a view-like where iota(i) = i + offset [\#1710](https://github.com/kokkos/kokkos-kernels/pull/1710)
-- Use rocsparse_spmv_ex for rocm >= 5.4.0 [\#1701](https://github.com/kokkos/kokkos-kernels/pull/1701)
-- Test mixed scalars: more fixes related to mixed scalar tests [\#1694](https://github.com/kokkos/kokkos-kernels/pull/1694)
-- PERF TESTS: adding utilities and instantiation wrapper [\#1676](https://github.com/kokkos/kokkos-kernels/pull/1676)
-- Added TplsVersion file and print methods [\#1693](https://github.com/kokkos/kokkos-kernels/pull/1693)
 - Fix/enhance backend issues on spadd perftest [\#1672](https://github.com/kokkos/kokkos-kernels/pull/1672)
 - Spgemm perf test enhancements [\#1664](https://github.com/kokkos/kokkos-kernels/pull/1664)
+- add explicit tests of opt-in algorithms in SpMV [\#1712](https://github.com/kokkos/kokkos-kernels/pull/1712)
+
+#### Common utilities
+- Added TplsVersion file and print methods [\#1693](https://github.com/kokkos/kokkos-kernels/pull/1693)
 - Add basis skeleton for KokkosKernels::print_configuration [\#1665](https://github.com/kokkos/kokkos-kernels/pull/1665)
+- Test mixed scalars: more fixes related to mixed scalar tests [\#1694](https://github.com/kokkos/kokkos-kernels/pull/1694)
+- PERF TESTS: adding utilities and instantiation wrapper [\#1676](https://github.com/kokkos/kokkos-kernels/pull/1676)
+
+#### TPL support
+- Refactor MKL TPL for both CPU and GPU usage [\#1779](https://github.com/kokkos/kokkos-kernels/pull/1779)
 - MKL: support indices properly [\#1868](https://github.com/kokkos/kokkos-kernels/pull/1868)
-- batched/dense: Add gesv DynRankView runtime checks [\#1850](https://github.com/kokkos/kokkos-kernels/pull/1850)
+- Use rocsparse_spmv_ex for rocm >= 5.4.0 [\#1701](https://github.com/kokkos/kokkos-kernels/pull/1701)
+
 
 ### Build System:
 - Do not change memory spaces instantiation defaults based on Kokkos_ENABLE_CUDA_UVM [\#1835](https://github.com/kokkos/kokkos-kernels/pull/1835)
