@@ -52,6 +52,7 @@
 #### Common utilities
 - Added TplsVersion file and print methods [\#1693](https://github.com/kokkos/kokkos-kernels/pull/1693)
 - Add basis skeleton for KokkosKernels::print_configuration [\#1665](https://github.com/kokkos/kokkos-kernels/pull/1665)
+- Add git information to benchmark context [\#1722](https://github.com/kokkos/kokkos-kernels/pull/1722)
 - Test mixed scalars: more fixes related to mixed scalar tests [\#1694](https://github.com/kokkos/kokkos-kernels/pull/1694)
 - PERF TESTS: adding utilities and instantiation wrapper [\#1676](https://github.com/kokkos/kokkos-kernels/pull/1676)
 
@@ -85,7 +86,6 @@
 - docs: Include BatchedGemm [\#1765](https://github.com/kokkos/kokkos-kernels/pull/1765)
 - .github: Automation reminder [\#1726](https://github.com/kokkos/kokkos-kernels/pull/1726)
 - Allow an HTML-only docs build [\#1723](https://github.com/kokkos/kokkos-kernels/pull/1723)
-- Add git information to benchmark context [\#1722](https://github.com/kokkos/kokkos-kernels/pull/1722)
 - SYCL CI: Specify the full path to the compiler [\#1670](https://github.com/kokkos/kokkos-kernels/pull/1670)
 - Add github DOCS ci check & disable Kokkos tests [\#1647](https://github.com/kokkos/kokkos-kernels/pull/1647)
 - Add rocsparse,rocblas, to enabled TPLs in cm_test_all_sandia when --spot-check-tpls [\#1841](https://github.com/kokkos/kokkos-kernels/pull/1841)
