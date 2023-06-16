@@ -171,10 +171,16 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
 #endif
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
-  if (std::is_same<typename AMatrix_Internal::memory_space,
-                   Kokkos::HostSpace>::value) {
+  if (std::is_same_v<typename AMatrix_Internal::memory_space,
+                     Kokkos::HostSpace>) {
     useFallback = useFallback || (mode[0] == Conjugate[0]);
   }
+#ifdef KOKKOS_ENABLE_SYCL
+  if (std::is_same_v<typename AMatrix_Internal::memory_space,
+                     Kokkos::Experimental::SYCLDeviceUSMSpace>) {
+    useFallback = useFallback || (mode[0] == Conjugate[0]);
+  }
+#endif
 #endif
 
   if (useFallback) {

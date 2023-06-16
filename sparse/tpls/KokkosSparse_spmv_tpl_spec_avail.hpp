@@ -242,6 +242,45 @@ KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_MKL(Kokkos::complex<float>, Kokkos::OpenMP)
 KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_MKL(Kokkos::complex<double>, Kokkos::OpenMP)
 #endif
 
+#ifdef KOKKOS_ENABLE_SYCL
+#define KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_ONEMKL(SCALAR, ORDINAL, MEMSPACE)     \
+  template <>                                                                  \
+  struct spmv_tpl_spec_avail<                                                  \
+      const SCALAR, const ORDINAL,                                             \
+      Kokkos::Device<Kokkos::Experimental::SYCL, MEMSPACE>,                    \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged>, const ORDINAL, const SCALAR*,   \
+      Kokkos::LayoutLeft,                                                      \
+      Kokkos::Device<Kokkos::Experimental::SYCL, MEMSPACE>,                    \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>, SCALAR*, \
+      Kokkos::LayoutLeft,                                                      \
+      Kokkos::Device<Kokkos::Experimental::SYCL, MEMSPACE>,                    \
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> > {                              \
+    enum : bool { value = true };                                              \
+  };
+
+KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_ONEMKL(
+    float, std::int32_t, Kokkos::Experimental::SYCLDeviceUSMSpace)
+KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_ONEMKL(
+    double, std::int32_t, Kokkos::Experimental::SYCLDeviceUSMSpace)
+KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_ONEMKL(
+    Kokkos::complex<float>, std::int32_t,
+    Kokkos::Experimental::SYCLDeviceUSMSpace)
+KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_ONEMKL(
+    Kokkos::complex<double>, std::int32_t,
+    Kokkos::Experimental::SYCLDeviceUSMSpace)
+
+KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_ONEMKL(
+    float, std::int64_t, Kokkos::Experimental::SYCLDeviceUSMSpace)
+KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_ONEMKL(
+    double, std::int64_t, Kokkos::Experimental::SYCLDeviceUSMSpace)
+KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_ONEMKL(
+    Kokkos::complex<float>, std::int64_t,
+    Kokkos::Experimental::SYCLDeviceUSMSpace)
+KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_ONEMKL(
+    Kokkos::complex<double>, std::int64_t,
+    Kokkos::Experimental::SYCLDeviceUSMSpace)
+#endif
+
 #endif  // KOKKOSKERNELS_ENABLE_TPL_MKL
 
 }  // namespace Impl
