@@ -3,20 +3,32 @@
 ## [4.1.00](https://github.com/kokkos/kokkos-kernels/tree/4.1.00) (2023-06-16)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.0.01...4.1.00)
 
-### Features:
-- Implement BLAS2 syr() and her() functionalities under kokkos-kernels syr() [\#1837](https://github.com/kokkos/kokkos-kernels/pull/1837)
-- Stream interface for SPTRSV solve [\#1820](https://github.com/kokkos/kokkos-kernels/pull/1820)
-- Blas2 and 3 on stream [\#1812](https://github.com/kokkos/kokkos-kernels/pull/1812)
-- Blas1 on stream [\#1803](https://github.com/kokkos/kokkos-kernels/pull/1803)
-- Norms on stream [\#1795](https://github.com/kokkos/kokkos-kernels/pull/1795)
-- Add calls to KokkosBlas Gemv and Spmv for team batched kernels when m==1 [\#1770](https://github.com/kokkos/kokkos-kernels/pull/1770)
+### New Features
+
+#### BLAS updates
+- Adding interface with execution space instance argument to support execution of BLAS on stream
+  - Norms on stream [\#1795](https://github.com/kokkos/kokkos-kernels/pull/1795)
+  - Blas1 on stream [\#1803](https://github.com/kokkos/kokkos-kernels/pull/1803)
+  - Blas2 and 3 on stream [\#1812](https://github.com/kokkos/kokkos-kernels/pull/1812)
+- Improving BLAS level 2 support by adding native implementation and TPL for GER, HER and SYR
+  - Implementation for BLAS2 ger [\#1756](https://github.com/kokkos/kokkos-kernels/pull/1756)
+  - Implement BLAS2 syr() and her() functionalities under kokkos-kernels syr() [\#1837](https://github.com/kokkos/kokkos-kernels/pull/1837)
+
+#### Batched updates
+- Optimizing algorithms for single input data
+  - Add calls to KokkosBlas Dot and Axpy for team batched kernels when m==1 [\#1753](https://github.com/kokkos/kokkos-kernels/pull/1753)
+  - Add calls to KokkosBlas Gemv and Spmv for team batched kernels when m==1 [\#1770](https://github.com/kokkos/kokkos-kernels/pull/1770)
+
+#### Sparse updates
+- Adding stream support to ILUK/SPTRSV and sort/merge
+  - Streams interface for SPILUK numeric [\#1728](https://github.com/kokkos/kokkos-kernels/pull/1728)
+  - Stream interface for SPTRSV solve [\#1820](https://github.com/kokkos/kokkos-kernels/pull/1820)
+  - Add exec instance support to sort/sort_and_merge utils [\#1744](https://github.com/kokkos/kokkos-kernels/pull/1744)
 - Add BsrMatrix SpMV in rocSparse TPL, rewrite BsrMatrix SpMV unit tests [\#1769](https://github.com/kokkos/kokkos-kernels/pull/1769)
-- Implementation for BLAS2 ger [\#1756](https://github.com/kokkos/kokkos-kernels/pull/1756)
-- ODE: explicit integration methods [\#1754](https://github.com/kokkos/kokkos-kernels/pull/1754)
-- Add calls to KokkosBlas Dot and Axpy for team batched kernels when m==1 [\#1753](https://github.com/kokkos/kokkos-kernels/pull/1753)
-- Add exec instance support to sort/sort_and_merge utils [\#1744](https://github.com/kokkos/kokkos-kernels/pull/1744)
-- Streams interface for SPILUK numeric [\#1728](https://github.com/kokkos/kokkos-kernels/pull/1728)
 - sparse: Add coo2crs, crs2coo and CooMatrix [\#1686](https://github.com/kokkos/kokkos-kernels/pull/1686)
+
+#### Misc updates
+- ODE: explicit integration methods [\#1754](https://github.com/kokkos/kokkos-kernels/pull/1754)
 
 ### Enhancements:
 - batched/eti: ETI host-level interfaces [\#1783](https://github.com/kokkos/kokkos-kernels/pull/1783)
