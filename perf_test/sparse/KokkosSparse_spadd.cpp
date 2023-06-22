@@ -90,7 +90,6 @@ void print_options() {
 }
 
 int parse_inputs(LocalParams& params, int argc, char** argv) {
-  bool printHelp = false;
   bool discard;
   for (int i = 1; i < argc; ++i) {
     // if (perf_test::check_arg_str(i, argc, argv, "--amtx", params.amtx)) {
@@ -131,18 +130,12 @@ int parse_inputs(LocalParams& params, int argc, char** argv) {
       ++i;
     } else if (perf_test::check_arg_bool(i, argc, argv, "--verbose",
                                          params.verbose)) {
-    } else if (perf_test::check_arg_bool(i, argc, argv, "-h", printHelp)) {
-    } else if (perf_test::check_arg_bool(i, argc, argv, "--help", printHelp)) {
     } else {
       std::cerr << "Unrecognized command line argument #" << i << ": "
                 << argv[i] << std::endl;
       print_options();
       return 1;
     }
-  }
-  if (printHelp) {
-    print_options();
-    return 1;
   }
   return 0;
 }
