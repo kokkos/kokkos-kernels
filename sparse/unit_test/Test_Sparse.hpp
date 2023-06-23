@@ -52,7 +52,6 @@
 // to actually define tests.
 
 #include "Test_Sparse_Utils_cusparse.hpp"
-
 #include "Test_Sparse_rocsparse.hpp"
 
 #endif  // TEST_SPARSE_HPP

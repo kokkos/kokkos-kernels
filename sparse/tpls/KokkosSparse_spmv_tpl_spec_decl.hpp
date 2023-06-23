@@ -755,6 +755,156 @@ KOKKOSSPARSE_SPMV_MKL(Kokkos::complex<double>, Kokkos::OpenMP,
 #endif
 
 #undef KOKKOSSPARSE_SPMV_MKL
+
+#ifdef KOKKOS_ENABLE_SYCL
+inline oneapi::mkl::transpose mode_kk_to_onemkl(char mode_kk) {
+  switch (toupper(mode_kk)) {
+    case 'N': return oneapi::mkl::transpose::nontrans;
+    case 'T': return oneapi::mkl::transpose::trans;
+    case 'H': return oneapi::mkl::transpose::conjtrans;
+    default:;
+  }
+  throw std::invalid_argument(
+      "Invalid mode for oneMKL (should be one of N, T, H)");
+}
+
+template <bool is_complex>
+struct spmv_onemkl_wrapper {};
+
+template <>
+struct spmv_onemkl_wrapper<false> {
+  template <class execution_space, class matrix_type, class xview_type,
+            class yview_type>
+  static void spmv(const execution_space& exec,
+                   oneapi::mkl::transpose const mkl_mode,
+                   typename matrix_type::non_const_value_type const alpha,
+                   const matrix_type& A, const xview_type& x,
+                   typename matrix_type::non_const_value_type const beta,
+                   const yview_type& y) {
+    using scalar_type  = typename matrix_type::non_const_value_type;
+    using ordinal_type = typename matrix_type::non_const_ordinal_type;
+
+    oneapi::mkl::sparse::matrix_handle_t handle = nullptr;
+    oneapi::mkl::sparse::init_matrix_handle(&handle);
+    auto ev_set = oneapi::mkl::sparse::set_csr_data(
+        exec.sycl_queue(), handle, A.numRows(), A.numCols(),
+        oneapi::mkl::index_base::zero,
+        const_cast<ordinal_type*>(A.graph.row_map.data()),
+        const_cast<ordinal_type*>(A.graph.entries.data()),
+        const_cast<scalar_type*>(A.values.data()));
+    auto ev_opt = oneapi::mkl::sparse::optimize_gemv(
+        exec.sycl_queue(), mkl_mode, handle, {ev_set});
+    auto ev_gemv =
+        oneapi::mkl::sparse::gemv(exec.sycl_queue(), mkl_mode, alpha, handle,
+                                  x.data(), beta, y.data(), {ev_opt});
+    auto ev_release = oneapi::mkl::sparse::release_matrix_handle(
+        exec.sycl_queue(), &handle, {ev_gemv});
+    ev_release.wait();
+  }
+};
+
+template <>
+struct spmv_onemkl_wrapper<true> {
+  template <class execution_space, class matrix_type, class xview_type,
+            class yview_type>
+  static void spmv(const execution_space& exec,
+                   oneapi::mkl::transpose const mkl_mode,
+                   typename matrix_type::non_const_value_type const alpha,
+                   const matrix_type& A, const xview_type& x,
+                   typename matrix_type::non_const_value_type const beta,
+                   const yview_type& y) {
+    using scalar_type  = typename matrix_type::non_const_value_type;
+    using ordinal_type = typename matrix_type::non_const_ordinal_type;
+    using mag_type     = typename Kokkos::ArithTraits<scalar_type>::mag_type;
+
+    oneapi::mkl::sparse::matrix_handle_t handle = nullptr;
+    oneapi::mkl::sparse::init_matrix_handle(&handle);
+    auto ev_set = oneapi::mkl::sparse::set_csr_data(
+        exec.sycl_queue(), handle, static_cast<ordinal_type>(A.numRows()),
+        static_cast<ordinal_type>(A.numCols()), oneapi::mkl::index_base::zero,
+        const_cast<ordinal_type*>(A.graph.row_map.data()),
+        const_cast<ordinal_type*>(A.graph.entries.data()),
+        reinterpret_cast<std::complex<mag_type>*>(
+            const_cast<scalar_type*>(A.values.data())));
+    auto ev_opt = oneapi::mkl::sparse::optimize_gemv(
+        exec.sycl_queue(), mkl_mode, handle, {ev_set});
+    auto ev_gemv = oneapi::mkl::sparse::gemv(
+        exec.sycl_queue(), mkl_mode, alpha, handle,
+        reinterpret_cast<std::complex<mag_type>*>(
+            const_cast<scalar_type*>(x.data())),
+        beta, reinterpret_cast<std::complex<mag_type>*>(y.data()), {ev_opt});
+    auto ev_release = oneapi::mkl::sparse::release_matrix_handle(
+        exec.sycl_queue(), &handle, {ev_gemv});
+    ev_release.wait();
+  }
+};
+
+#define KOKKOSSPARSE_SPMV_ONEMKL(SCALAR, ORDINAL, MEMSPACE, COMPILE_LIBRARY)  \
+  template <>                                                                 \
+  struct SPMV<SCALAR const, ORDINAL const,                                    \
+              Kokkos::Device<Kokkos::Experimental::SYCL, MEMSPACE>,           \
+              Kokkos::MemoryTraits<Kokkos::Unmanaged>, ORDINAL const,         \
+              SCALAR const*, Kokkos::LayoutLeft,                              \
+              Kokkos::Device<Kokkos::Experimental::SYCL, MEMSPACE>,           \
+              Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>, \
+              SCALAR*, Kokkos::LayoutLeft,                                    \
+              Kokkos::Device<Kokkos::Experimental::SYCL, MEMSPACE>,           \
+              Kokkos::MemoryTraits<Kokkos::Unmanaged>, true,                  \
+              COMPILE_LIBRARY> {                                              \
+    using execution_space = Kokkos::Experimental::SYCL;                       \
+    using device_type     = Kokkos::Device<execution_space, MEMSPACE>;        \
+    using AMatrix =                                                           \
+        CrsMatrix<SCALAR const, ORDINAL const, device_type,                   \
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged>, ORDINAL const>;    \
+    using XVector = Kokkos::View<                                             \
+        SCALAR const*, Kokkos::LayoutLeft, device_type,                       \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>;      \
+    using YVector = Kokkos::View<SCALAR*, Kokkos::LayoutLeft, device_type,    \
+                                 Kokkos::MemoryTraits<Kokkos::Unmanaged>>;    \
+    using coefficient_type = typename YVector::non_const_value_type;          \
+    using Controls         = KokkosKernels::Experimental::Controls;           \
+                                                                              \
+    static void spmv(const Controls&, const char mode[],                      \
+                     const coefficient_type& alpha, const AMatrix& A,         \
+                     const XVector& x, const coefficient_type& beta,          \
+                     const YVector& y) {                                      \
+      std::string label = "KokkosSparse::spmv[TPL_ONEMKL," +                  \
+                          Kokkos::ArithTraits<SCALAR>::name() + "]";          \
+      Kokkos::Profiling::pushRegion(label);                                   \
+      oneapi::mkl::transpose mkl_mode = mode_kk_to_onemkl(mode[0]);           \
+      execution_space exec{};                                                 \
+      spmv_onemkl_wrapper<Kokkos::ArithTraits<SCALAR>::is_complex>::spmv(     \
+          exec, mkl_mode, alpha, A, x, beta, y);                              \
+      Kokkos::Profiling::popRegion();                                         \
+    }                                                                         \
+  };
+
+KOKKOSSPARSE_SPMV_ONEMKL(float, std::int32_t,
+                         Kokkos::Experimental::SYCLDeviceUSMSpace,
+                         KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+KOKKOSSPARSE_SPMV_ONEMKL(double, std::int32_t,
+                         Kokkos::Experimental::SYCLDeviceUSMSpace,
+                         KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+KOKKOSSPARSE_SPMV_ONEMKL(Kokkos::complex<float>, std::int32_t,
+                         Kokkos::Experimental::SYCLDeviceUSMSpace,
+                         KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+KOKKOSSPARSE_SPMV_ONEMKL(Kokkos::complex<double>, std::int32_t,
+                         Kokkos::Experimental::SYCLDeviceUSMSpace,
+                         KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+
+KOKKOSSPARSE_SPMV_ONEMKL(float, std::int64_t,
+                         Kokkos::Experimental::SYCLDeviceUSMSpace,
+                         KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+KOKKOSSPARSE_SPMV_ONEMKL(double, std::int64_t,
+                         Kokkos::Experimental::SYCLDeviceUSMSpace,
+                         KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+KOKKOSSPARSE_SPMV_ONEMKL(Kokkos::complex<float>, std::int64_t,
+                         Kokkos::Experimental::SYCLDeviceUSMSpace,
+                         KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+KOKKOSSPARSE_SPMV_ONEMKL(Kokkos::complex<double>, std::int64_t,
+                         Kokkos::Experimental::SYCLDeviceUSMSpace,
+                         KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+#endif
 }  // namespace Impl
 }  // namespace KokkosSparse
 #endif
