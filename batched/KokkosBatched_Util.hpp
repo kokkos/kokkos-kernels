@@ -35,6 +35,7 @@
 #include "Kokkos_Complex.hpp"
 
 #include "KokkosKernels_config.h"
+#include "KokkosKernels_Macros.hpp"
 #include "KokkosKernels_SimpleUtils.hpp"
 #include "KokkosBlas_util.hpp"
 
