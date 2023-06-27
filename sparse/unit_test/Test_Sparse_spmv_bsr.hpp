@@ -373,7 +373,8 @@ void test_spmv_combos(const char *mode, const Bsr &a) {
 
   auto [x, y] = random_vecs_for_spmv(mode, a);
 
-  for (auto alg : {(const char *)(nullptr), "native", "experimental_tc_bsr"}) {
+  for (auto alg :
+       {(const char *)(nullptr), "native", "experimental_tc", "v4.1", "v4.2"}) {
     for (scalar_type alpha :
          {scalar_type(0), scalar_type(1), scalar_type(-1), scalar_type(3.7)}) {
       for (scalar_type beta : {scalar_type(0), scalar_type(1), scalar_type(-1),
@@ -569,8 +570,8 @@ void test_spm_mv_combos(const char *mode, const Bsr &a) {
 
   for (size_t numVecs : {1, 2, 7}) {  // num multivecs
     auto [x, y] = random_multivecs_for_spm_mv<Layout>(mode, a, numVecs);
-    for (auto alg :
-         {(const char *)(nullptr), "native", "experimental_tc_bsr"}) {
+    for (auto alg : {(const char *)(nullptr), "native", "experimental_tc",
+                     "v4.1", "v4.2"}) {
       for (scalar_type alpha : {scalar_type(0), scalar_type(1), scalar_type(-1),
                                 scalar_type(3.7)}) {
         for (scalar_type beta : {scalar_type(0), scalar_type(1),

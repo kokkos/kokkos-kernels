@@ -28,8 +28,7 @@
    for performance-sensitive use.
 */
 
-namespace KokkosSparse {
-namespace Impl {
+namespace KokkosSparse::Impl {
 
 /**
  * \class BlockPopulations
@@ -86,14 +85,14 @@ class BlockPopulations {
  * @return The largest block size that results in completely dense blocks
     The smallest valid block size is 1
     Since blocks must be dense, sqrt(nnz), num rows, num cols, and min nnz/row
- among non-empty rows are all easy upper bounds of the block size Block sizes
- are tested from 1 to the minimum of the above The matrix dimensions must divide
- evenly into a trial block size (otherwise a block would not be full)
- Furthermore, if a block size of N is not dense, any multiple of N will also not
- be dense, and can be skipped. This is because blocks of 2N contain blocks of N,
- at least one of which is already known not to be dense. In practice, this ends
- up testing only small composite factors and all prime factors up to the upper
- bound
+ among non-empty rows are all easy upper bounds of the block size.
+ Block sizes are tested from 1 to the minimum of the above.
+ The matrix dimensions must divide  evenly into a trial block size (otherwise a
+ block would not be full). Furthermore, if a block size of N is not dense, any
+ multiple of N will also not be dense, and can be skipped. This is because
+ blocks of 2N contain blocks of N, at least one of which is already known not to
+ be dense. In practice, this ends up testing only small composite factors and
+ all prime factors up to the upper bound.
 */
 template <typename Crs>
 size_t detect_block_size(const Crs &crs) {
@@ -124,12 +123,14 @@ size_t detect_block_size(const Crs &crs) {
   for (size_t trialSize = 2; trialSize <= upperBound; ++trialSize) {
     // trial size must be factor of rows / cols
     if ((crs.numRows() % trialSize) || (crs.numCols() % trialSize)) {
+      rejectedSizes.push_back(trialSize);
       continue;
     }
 
     // trial size must not be a multiple of previously-rejected size
     if (std::any_of(rejectedSizes.begin(), rejectedSizes.end(),
                     [&](size_t f) { return trialSize % f == 0; })) {
+      rejectedSizes.push_back(trialSize);
       continue;
     }
 
@@ -152,7 +153,6 @@ size_t detect_block_size(const Crs &crs) {
   return largestBlockSize;
 }
 
-}  // namespace Impl
-}  // namespace KokkosSparse
+}  // namespace KokkosSparse::Impl
 
 #endif  // KOKKOSSPARSE_CRS_DETECT_BLOCK_SIZE_HPP
