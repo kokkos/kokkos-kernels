@@ -1,0 +1,84 @@
+name: github-DOCS
+
+on:
+  pull_request:
+    branches:
+      - master
+      - develop
+
+permissions:
+  contents: none
+
+jobs:
+  docs-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends doxygen-latex
+          pip install sphinx
+          pip install breathe
+          pip install sphinx-rtd-theme
+
+      - name: checkout_kokkos_kernels
+        uses: actions/checkout@v3
+        with:
+          path: kokkos-kernels
+
+      - name: checkout_kokkos
+        uses: actions/checkout@v3
+        with:
+          repository: kokkos/kokkos
+          ref: develop
+          path: kokkos
+
+      - name: configure_kokkos
+        run: |
+          mkdir -p kokkos/{build,install}
+          cd kokkos/build
+          cmake \
+          -DCMAKE_CXX_FLAGS="-Werror" \
+          -DCMAKE_CXX_STANDARD=17 \
+          -DCMAKE_INSTALL_PREFIX=$PWD/../install \
+          -DKokkos_ENABLE_COMPILER_WARNINGS=ON \
+          -DKokkos_ENABLE_DEPRECATED_CODE_3=OFF \
+          -DKokkos_ENABLE_TESTS=OFF \
+          -DKokkos_ENABLE_DEPRECATED_CODE_4=OFF \
+          ..
+
+      - name: build_and_install_kokkos
+        working-directory: kokkos/build
+        run: make -j2 install
+
+      - name: configure_kokkos_kernels
+        run: |
+          mkdir -p kokkos-kernels/{build,install}
+          cd kokkos-kernels/build
+          cmake \
+          -DKokkos_DIR=$PWD/../../kokkos/install/lib/cmake/Kokkos \
+          -DCMAKE_INSTALL_PREFIX=$PWD/../install \
+          -DKokkosKernels_ENABLE_DOCS=ON \
+          ..
+
+      - name: build_kokkos_kernels_doxygen
+        working-directory: kokkos-kernels/build
+        run: |
+         echo "Redirecting full output to doxygen.out..."
+         make Doxygen > doxygen.out 2>&1 || true
+         error_ret=$(grep 'Error' doxygen.out | head -c 1) || true
+         if [ ! -z $error_ret ]; then
+          echo "---- BEGIN: Summary of errors ---- "
+          cat doxygen.out | grep -i 'error:' || true
+          echo "---- END: Summary of errors ---- "
+          echo
+          echo
+          echo "---- BEGIN: Summary of warnings ---- "
+          cat doxygen.out | grep -i 'warning:' || true
+          echo "---- END: Summary of warnings ---- "
+          exit 1
+         fi
+
+      - name: build_kokkos_kernels_sphinx
+        working-directory: kokkos-kernels/build
+        run: make Sphinx
