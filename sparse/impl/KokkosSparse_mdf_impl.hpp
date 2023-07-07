@@ -441,12 +441,13 @@ struct MDF_factorize_row {
     // Only one of the values will match selected so can just sum all contribs
     const auto rowView = A.rowConst(selected_row);
     value_type diag    = Kokkos::ArithTraits<value_type>::zero();
-    Kokkos::parallel_reduce(Kokkos::TeamVectorRange(team, rowView.length),
-                            [&](const size_type ind, value_type& running_diag) {
-                              if (rowView.colidx(ind) == selected_row)
-                                running_diag = rowView.value(ind);
-                            },
-                            Kokkos::Sum<value_type, execution_space>(diag));
+    Kokkos::parallel_reduce(
+        Kokkos::TeamVectorRange(team, rowView.length),
+        [&](const size_type ind, value_type& running_diag) {
+          if (rowView.colidx(ind) == selected_row)
+            running_diag = rowView.value(ind);
+        },
+        Kokkos::Sum<value_type, execution_space>(diag));
 
     // Extract alpha and beta vectors
     // Then insert alpha*beta/diag_val if the corresponding
