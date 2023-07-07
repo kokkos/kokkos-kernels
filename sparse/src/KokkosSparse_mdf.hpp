@@ -35,8 +35,7 @@ namespace Experimental {
 
 template <class crs_matrix_type, class MDF_handle>
 void mdf_symbolic(const crs_matrix_type& A, MDF_handle& handle) {
-  using size_type    = typename crs_matrix_type::size_type;
-  using ordinal_type = typename crs_matrix_type::ordinal_type;
+  using size_type = typename crs_matrix_type::size_type;
 
   using execution_space        = typename crs_matrix_type::execution_space;
   using team_range_policy_type = Kokkos::TeamPolicy<execution_space>;
