@@ -73,6 +73,7 @@ void mdf_numeric(const crs_matrix_type& A, MDF_handle& handle) {
 
   using execution_space   = typename crs_matrix_type::execution_space;
   using range_policy_type = Kokkos::RangePolicy<ordinal_type, execution_space>;
+  using team_range_policy_type = Kokkos::TeamPolicy<execution_space>;
 
   // Numerical phase:
   // loop over rows
@@ -85,19 +86,19 @@ void mdf_numeric(const crs_matrix_type& A, MDF_handle& handle) {
   KokkosSparse::sort_crs_matrix<crs_matrix_type>(At);
   values_mag_type discarded_fill("discarded fill", A.numRows());
   col_ind_type deficiency("deficiency", A.numRows());
-  col_ind_type update_list_length("update list length", 1);
-  typename col_ind_type::HostMirror update_list_length_host =
-      Kokkos::create_mirror_view(update_list_length);
+  ordinal_type update_list_len = 0;
   col_ind_type update_list("update list", A.numRows());
   col_ind_type factored("factored rows", A.numRows());
   Kokkos::deep_copy(discarded_fill, Kokkos::ArithTraits<value_mag_type>::max());
   Kokkos::deep_copy(deficiency, Kokkos::ArithTraits<ordinal_type>::max());
 
-  KokkosSparse::Impl::MDF_discarded_fill_norm<crs_matrix_type> MDF_df_norm(
-      Atmp, At, 0, handle.permutation, discarded_fill, deficiency,
-      verbosity_level);
-  Kokkos::parallel_for("MDF: initial fill computation",
-                       range_policy_type(0, Atmp.numRows()), MDF_df_norm);
+  KokkosSparse::Impl::MDF_discarded_fill_norm<crs_matrix_type, true>
+      MDF_df_norm(Atmp, At, 0, handle.permutation, discarded_fill, deficiency,
+                  verbosity_level);
+  Kokkos::parallel_for(
+      "MDF: initial fill computation",
+      team_range_policy_type(Atmp.numRows(), Kokkos::AUTO, Kokkos::AUTO),
+      MDF_df_norm);
 
   for (ordinal_type factorization_step = 0; factorization_step < A.numRows();
        ++factorization_step) {
@@ -106,36 +107,54 @@ void mdf_numeric(const crs_matrix_type& A, MDF_handle& handle) {
              static_cast<int>(factorization_step));
     }
 
-    Kokkos::deep_copy(update_list_length_host, update_list_length);
-    range_policy_type updatePolicy(0, update_list_length_host(0));
-    KokkosSparse::Impl::MDF_selective_discarded_fill_norm<crs_matrix_type>
-        MDF_update_df_norm(Atmp, At, factorization_step, handle.permutation,
-                           update_list, discarded_fill, deficiency,
-                           verbosity_level);
-    Kokkos::parallel_for("MDF: updating fill norms", updatePolicy,
-                         MDF_update_df_norm);
+    {
+      team_range_policy_type updatePolicy(update_list_len, Kokkos::AUTO,
+                                          Kokkos::AUTO);
+      KokkosSparse::Impl::MDF_discarded_fill_norm<crs_matrix_type, false>
+          MDF_update_df_norm(Atmp, At, factorization_step, handle.permutation,
+                             discarded_fill, deficiency, verbosity_level,
+                             update_list);
+      Kokkos::parallel_for("MDF: updating fill norms", updatePolicy,
+                           MDF_update_df_norm);
+    }
 
-    range_policy_type stepPolicy(factorization_step, Atmp.numRows());
     ordinal_type selected_row_idx = 0;
-    KokkosSparse::Impl::MDF_select_row<crs_matrix_type> MDF_row_selector(
-        factorization_step, discarded_fill, deficiency, Atmp.graph.row_map,
-        handle.permutation);
-    Kokkos::parallel_reduce("MDF: select pivot", stepPolicy, MDF_row_selector,
-                            selected_row_idx);
+    {
+      range_policy_type stepPolicy(factorization_step, Atmp.numRows());
+      KokkosSparse::Impl::MDF_select_row<crs_matrix_type> MDF_row_selector(
+          factorization_step, discarded_fill, deficiency, Atmp.graph.row_map,
+          handle.permutation);
+      Kokkos::parallel_reduce("MDF: select pivot", stepPolicy, MDF_row_selector,
+                              selected_row_idx);
+    }
 
-    KokkosSparse::Impl::MDF_compute_list_length<crs_matrix_type>
-        compute_list_length(selected_row_idx, Atmp, At, handle.permutation,
-                            factored, update_list_length, update_list);
-    Kokkos::parallel_for("MDF: compute update list", range_policy_type(0, 1),
-                         compute_list_length);
+    ordinal_type selected_row_len = 0;
+    {
+      team_range_policy_type updateListPolicy(
+          1, Kokkos::AUTO);  // (vector overloads required for scans to use
+                             // vector parallel not provided by kokkos yet)
+      KokkosSparse::Impl::MDF_compute_list_length<crs_matrix_type> updateList(
+          Atmp, At, handle.row_mapL, handle.entriesL, handle.valuesL,
+          handle.row_mapU, handle.entriesU, handle.valuesU, handle.permutation,
+          handle.permutation_inv, discarded_fill, factored, selected_row_idx,
+          factorization_step, update_list, verbosity_level);
+      update_list_len = 0;
+      Kokkos::parallel_reduce("MDF: compute update list", updateListPolicy,
+                              updateList, update_list_len, selected_row_len);
+    }
 
-    KokkosSparse::Impl::MDF_factorize_row<crs_matrix_type> factorize_row(
-        Atmp, At, handle.row_mapL, handle.entriesL, handle.valuesL,
-        handle.row_mapU, handle.entriesU, handle.valuesU, handle.permutation,
-        handle.permutation_inv, discarded_fill, factored, selected_row_idx,
-        factorization_step, verbosity_level);
-    Kokkos::parallel_for("MDF: factorize row", range_policy_type(0, 1),
-                         factorize_row);
+    // If this was the last row no need to update A and At!
+    if (factorization_step < A.numRows() - 1) {
+      team_range_policy_type factorizePolicy(selected_row_len, Kokkos::AUTO,
+                                             Kokkos::AUTO);
+      KokkosSparse::Impl::MDF_factorize_row<crs_matrix_type> factorize_row(
+          Atmp, At, handle.row_mapL, handle.entriesL, handle.valuesL,
+          handle.row_mapU, handle.entriesU, handle.valuesU, handle.permutation,
+          handle.permutation_inv, discarded_fill, factored, selected_row_idx,
+          factorization_step, update_list, verbosity_level);
+      Kokkos::parallel_for("MDF: factorize row", factorizePolicy,
+                           factorize_row);
+    }
 
     if (verbosity_level > 0) {
       printf("\n");
