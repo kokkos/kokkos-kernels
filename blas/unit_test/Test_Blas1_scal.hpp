@@ -72,30 +72,27 @@ void impl_test_scal_a_is_3(int N, const AV &a) {
     \tparam RANK if VIEW what rank is alpha?
     \tparam STATIC if VIEW and RANK=1, is the extent static?
 */
-template <typename ScalarX, typename ScalarY, typename ScalarA,  typename Layout, typename Device, bool VIEW, int RANK, bool STATIC>
+template <typename ScalarX, typename ScalarY, typename ScalarA, typename Layout, typename Device, int RANK, bool STATIC>
 void impl_test_scal_alpha_type(int N) {
 
   using XView = Kokkos::View<ScalarX*, Layout, Device>;
   using YView = Kokkos::View<ScalarY*, Layout, Device>;
 
-  if constexpr(VIEW) {
-    if constexpr (1 == RANK && STATIC) {
-      Kokkos::View<ScalarA[1], Layout, Device> a("View<A[1]>");
-      Kokkos::deep_copy(a, 3);
-      impl_test_scal_a_is_3<XView, YView, Device>(N, a);
-    } else if constexpr(1 == RANK) {
-      Kokkos::View<ScalarA*, Layout, Device> a("View<A*>", 1);
-      Kokkos::deep_copy(a, 3);
-      impl_test_scal_a_is_3<XView, YView, Device>(N, a);
-    } else if constexpr(0 == RANK) {
-      Kokkos::View<ScalarA, Layout, Device> a("View<A>");
-      Kokkos::deep_copy(a, 3);
-      impl_test_scal_a_is_3<XView, YView, Device>(N, a);
-    }
-  } else {
-    ScalarA a{3};
+
+  if constexpr (1 == RANK && STATIC) {
+    Kokkos::View<ScalarA[1], Layout, Device> a("View<A[1]>");
+    Kokkos::deep_copy(a, 3);
+    impl_test_scal_a_is_3<XView, YView, Device>(N, a);
+  } else if constexpr(1 == RANK) {
+    Kokkos::View<ScalarA*, Layout, Device> a("View<A*>", 1);
+    Kokkos::deep_copy(a, 3);
+    impl_test_scal_a_is_3<XView, YView, Device>(N, a);
+  } else if constexpr(0 == RANK) {
+    Kokkos::View<ScalarA, Layout, Device> a("View<A>");
+    Kokkos::deep_copy(a, 3);
     impl_test_scal_a_is_3<XView, YView, Device>(N, a);
   }
+
 
 }
 
@@ -229,20 +226,22 @@ int test_scal() {
   Test::impl_test_scal<view_type_a_ll, view_type_b_ll, Device>(1024);
   Test::impl_test_scal<view_type_a_ll, view_type_b_ll, Device>(132231);
 
-  Test::impl_test_scal_alpha_type<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, false, 0, false>(0);
-  Test::impl_test_scal_alpha_type<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, true, 0, false>(0);
-  Test::impl_test_scal_alpha_type<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, true, 1, false>(0);
-  Test::impl_test_scal_alpha_type<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, true, 1, true>(0);
+  /* Test that scal works for 0-rank and 1-rank views from the device. Host alphas are tested elsewhere */
+  
+  // clang-format off
+  //                                                                                     rank, static
+  Test::impl_test_scal_alpha_type<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, 0,    false>(0);
+  Test::impl_test_scal_alpha_type<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, 1,    false>(0);
+  Test::impl_test_scal_alpha_type<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, 1,    true >(0);
 
-  Test::impl_test_scal_alpha_type<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, false, 0, false>(13);
-  Test::impl_test_scal_alpha_type<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, true, 0, false>(13);
-  Test::impl_test_scal_alpha_type<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, true, 1, false>(13);
-  Test::impl_test_scal_alpha_type<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, true, 1, true>(13);
+  Test::impl_test_scal_alpha_type<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, 0, false>(13);
+  Test::impl_test_scal_alpha_type<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, 1, false>(13);
+  Test::impl_test_scal_alpha_type<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, 1, true >(13);
 
-  Test::impl_test_scal_alpha_type<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, false, 0, false>(1024);
-  Test::impl_test_scal_alpha_type<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, true, 0, false>(1024);
-  Test::impl_test_scal_alpha_type<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, true, 1, false>(1024);
-  Test::impl_test_scal_alpha_type<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, true, 1, true>(1024);
+  Test::impl_test_scal_alpha_type<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, 0, false>(1024);
+  Test::impl_test_scal_alpha_type<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, 1, false>(1024);
+  Test::impl_test_scal_alpha_type<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, 1, true >(1024);
+  // clang-format on
 
 #endif
 
