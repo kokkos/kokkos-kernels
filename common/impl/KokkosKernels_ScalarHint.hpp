@@ -19,45 +19,6 @@
 
 namespace KokkosKernels::Impl {
 
-#if 0
-class ScalarHint {
-public:
-  enum class Kind {
-    none,
-    zero,
-    pos_one,
-    neg_one
-  };
-
-  ScalarHint(const Kind &kind) : kind_(kind) {}
-  ScalarHint() : ScalarHint(Kind::none) {}
-
-  ScalarHint(const int a) {
-    if (a == -1) {
-      kind_ = Kind::neg_one;
-    } else if (a == 1) {
-      kind_ = Kind::pos_one;
-    } else {
-      kind_ = Kind::none;
-    }
-  }
-
-  static ScalarHint none;
-  static ScalarHint zero;
-  static ScalarHint pos_one;
-  static ScalarHint neg_one;
-
-private:
-  Kind kind_;
-
-};
-
-inline ScalarHint ScalarHint::none = ScalarHint(Kind::none);
-inline ScalarHint ScalarHint::zero = ScalarHint(Kind::zero);
-inline ScalarHint ScalarHint::pos_one = ScalarHint(Kind::pos_one);
-inline ScalarHint ScalarHint::neg_one = ScalarHint(Kind::neg_one);
-
-#else
 /*! An enum that can be used as a template param to optimize an implementation
 */
 enum class ScalarHint : int {
@@ -66,7 +27,6 @@ enum class ScalarHint : int {
   pos_one,
   neg_one
 };
-#endif
 
 } // namespace KokkosKernels::Impl
 
