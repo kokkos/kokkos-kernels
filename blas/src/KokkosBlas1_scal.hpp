@@ -110,12 +110,15 @@ void scal(const execution_space& space, const RMV& R, const AV& a,
   // and AV is double, result will be complex<double>
   using AV_PromotedToXMV =
       typename KokkosKernels::Impl::GetUnifiedScalarViewType<AV, XMV_Internal,
-                                                        true>::type;
+                                                             true>::type;
 
-  using AlphaUnifier = KokkosBlas::Impl::scal_unified_scalar_view<RMV_Internal, AV_PromotedToXMV, XMV_Internal>;
-  using AV_Internal = 
-  typename AlphaUnifier::alpha_type;
-  
+  // this canonicalizes the type of Alpha to be a particular flavor of scalar,
+  // 0D, or 1D views, depending on whether alpha lives on the host or device
+  using AlphaUnifier =
+      KokkosBlas::Impl::scal_unified_scalar_view<RMV_Internal, AV_PromotedToXMV,
+                                                 XMV_Internal>;
+  using AV_Internal = typename AlphaUnifier::alpha_type;
+
   RMV_Internal R_internal = R;
   XMV_Internal X_internal = X;
   AV_Internal a_internal  = AlphaUnifier::from(AV_PromotedToXMV(a));
