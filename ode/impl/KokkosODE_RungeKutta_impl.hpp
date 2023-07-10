@@ -97,20 +97,38 @@ KOKKOS_FUNCTION Experimental::ode_solver_status RKSolve(
     const vec_type& y, const vec_type& temp, const mv_type& k_vecs) {
   constexpr scalar_type error_threshold = 1;
   bool adapt                            = params.adaptivity;
+  bool dt_was_reduced;
   if (std::is_same_v<table_type, ButcherTableau<0, 0>>) {
     adapt = false;
   }
 
-  scalar_type dt = (t_end - t_start) / params.max_steps;
-  scalar_type t  = t_start;
-  for (int stepIdx = 0; (stepIdx < params.max_steps) && (t < t_end);
+  // Set current time and initial time step
+  scalar_type t_now = t_start;
+  scalar_type dt    = (t_end - t_start) / params.max_steps;
+
+  // Loop over time steps to integrate ODE
+  for (int stepIdx = 0; (stepIdx < params.max_steps) && (t_now <= t_end);
        ++stepIdx) {
-    // Set err to be arbitrarily larger than our threshold of 1
+    // Check that the step attempted is not putting
+    // the solution past t_end, otherwise shrink dt
+    if (t_end < t_now + dt) {
+      dt = t_end - t_now;
+    }
+
+    // Set error to be arbitrarily larger than our threshold
+    // so we can pass the initial check. Also reset
+    // dt_was_reduced to false for current time step.
     scalar_type error = 2 * error_threshold;
     scalar_type tol   = 0;
+    dt_was_reduced    = false;
+
+    // Take tentative steps until the requested error
+    // is met. This of course only works for adaptive
+    // solvers, for fix time steps we simply do not
+    // compute and check what error of the current step
     while (error_threshold < error) {
       // Take a step of Runge-Kutta integrator
-      RKStep(ode, table, adapt, t, dt, y0, y, temp, k_vecs);
+      RKStep(ode, table, adapt, t_now, dt, y0, y, temp, k_vecs);
 
       // Compute the largest error and decide on
       // the size of the next time step to take.
@@ -131,44 +149,34 @@ KOKKOS_FUNCTION Experimental::ode_solver_status RKSolve(
         // is rejected.
         if (error > 1) {
           dt = dt * Kokkos::max(0.2, 0.8 / Kokkos::pow(error, 1 / table.order));
+          dt_was_reduced = true;
         }
+
         if (dt < params.min_step_size)
           return Experimental::ode_solver_status::MIN_SIZE;
       }
     }
 
-    // Update y0 to stage the next time step.
+    // Update time and initial condition for next time step
+    t_now += dt;
     for (int eqIdx = 0; eqIdx < ode.neqs; ++eqIdx) {
       y0(eqIdx) = y(eqIdx);
     }
 
-    if (t < t_end) {
-      // We may want to print the evolution of the solution over time
-      // with something similar to the statement below but will need
-      // to generalize it and make it GPU friendly first, also it
-      // should be guarded when not doing a debug run, this prints
-      // a lot...
-      // std::cout << " step " << stepIdx << " t=" << t << ", y={";
-      // for(int eqIdx = 0; eqIdx < ode.neqs; ++eqIdx) {
-      //   std::cout << y(eqIdx) << " ";
-      // }
-      // std::cout << "}" << std::endl;
-      if (adapt) {
+    if (t_now < t_end) {
+      if (adapt && !dt_was_reduced && error < 0.5) {
         // Compute new time increment
         dt = dt *
              Kokkos::min(
                  10.0,
                  Kokkos::max(2.0, 0.9 * Kokkos::pow(error, 1 / table.order)));
-      } else {
-        // Use same increment
-        t += dt;
       }
     } else {
       return Experimental::ode_solver_status::SUCCESS;
     }
   }
 
-  if (t < t_end) return Experimental::ode_solver_status::MAX_STEP;
+  if (t_now < t_end) return Experimental::ode_solver_status::MAX_STEP;
 
   return Experimental::ode_solver_status::SUCCESS;
 }  // RKSolve
