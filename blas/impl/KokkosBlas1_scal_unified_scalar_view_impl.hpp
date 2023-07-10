@@ -77,8 +77,8 @@ struct is_dev : std::false_type {};
 template <typename T>
 struct is_dev<T, std::enable_if_t<Kokkos::is_view_v<T> &&
                                   !Kokkos::Impl::MemorySpaceAccess<
-                                       Kokkos::HostSpace,
-                                       typename T::memory_space>::accessible>>
+                                      Kokkos::HostSpace,
+                                      typename T::memory_space>::accessible>>
     : std::true_type {};
 template <typename T>
 constexpr inline bool is_dev_v = is_dev<T>::value;
@@ -115,7 +115,8 @@ struct is_rank_1_host_dynamic<
     T, std::enable_if_t<is_rank_1_host_v<T> && T::rank_dynamic == 1>>
     : std::true_type {};
 template <typename T>
-constexpr inline bool is_rank_1_host_dynamic_v = is_rank_1_host_dynamic<T>::value;
+constexpr inline bool is_rank_1_host_dynamic_v =
+    is_rank_1_host_dynamic<T>::value;
 
 template <typename T, typename Enable = void>
 struct is_rank_0_dev : std::false_type {};
@@ -177,7 +178,7 @@ template <typename RMV, typename AV, typename XMV>
 struct scal_unified_scalar_view<RMV, AV, XMV,
                                 std::enable_if_t<is_rank_0_dev_v<AV>>> {
   using alpha_type =
-      Kokkos::View<const typename AV::data_type, typename AV::memory_space,
+      Kokkos::View<const typename AV::data_type, typename AV::device_type,
                    Kokkos::MemoryUnmanaged>;
 
   static alpha_type from(const AV &av) { return alpha_type(av); }
@@ -197,12 +198,12 @@ struct scal_unified_scalar_view<RMV, AV, XMV,
 template <typename RMV, typename AV, typename XMV>
 struct scal_unified_scalar_view<
     RMV, AV, XMV,
-    std::enable_if_t<is_rank_1_host_dynamic_v<AV> && RMV::rank == 1 && XMV::rank == 1>> {
+    std::enable_if_t<is_rank_1_host_dynamic_v<AV> && RMV::rank == 1 &&
+                     XMV::rank == 1>> {
   using alpha_type = typename AV::non_const_value_type;
 
   static alpha_type from(const AV &av) { return av(0); }
 };
-
 
 // Row 10: AV is a rank 1 host view of unknown size, and we assume
 // each element is to scale a vector in RMV and XMV
@@ -213,7 +214,7 @@ struct scal_unified_scalar_view<
                      RMV::rank == 2>> {
   using alpha_type =
       Kokkos::View<typename AV::data_type, typename AV::array_layout,
-                   typename AV::memory_space, Kokkos::MemoryUnmanaged>;
+                   typename AV::device_type, Kokkos::MemoryUnmanaged>;
 
   static alpha_type from(const AV &av) { return av; }
 };
@@ -224,7 +225,7 @@ template <typename RMV, typename AV, typename XMV>
 struct scal_unified_scalar_view<RMV, AV, XMV,
                                 std::enable_if_t<is_rank_1_dev_dynamic_v<AV>>> {
   using alpha_type =
-      Kokkos::View<const typename AV::value_type, typename AV::memory_space,
+      Kokkos::View<const typename AV::value_type, typename AV::device_type,
                    Kokkos::MemoryUnmanaged>;
 
   static alpha_type from(const AV &av) { return Kokkos::subview(av, 0); }
@@ -236,7 +237,7 @@ template <typename RMV, typename AV, typename XMV>
 struct scal_unified_scalar_view<RMV, AV, XMV,
                                 std::enable_if_t<is_rank_1_dev_static_v<AV>>> {
   using alpha_type =
-      Kokkos::View<const typename AV::value_type, typename AV::memory_space,
+      Kokkos::View<const typename AV::value_type, typename AV::device_type,
                    Kokkos::MemoryUnmanaged>;
 
   static alpha_type from(const AV &av) { return Kokkos::subview(av, 0); }
@@ -251,11 +252,10 @@ struct scal_unified_scalar_view<
     std::enable_if_t<is_rank_1_dev_v<AV> && XMV::rank == 2 && RMV::rank == 2>> {
   using alpha_type =
       Kokkos::View<typename AV::data_type, typename AV::array_layout,
-                   typename AV::memory_space, Kokkos::MemoryUnmanaged>;
+                   typename AV::device_type, Kokkos::MemoryUnmanaged>;
 
   static alpha_type from(const AV &av) { return av; }
 };
-
 
 /*! \brief return av
 
