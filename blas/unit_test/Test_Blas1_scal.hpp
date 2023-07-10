@@ -66,14 +66,14 @@ void impl_test_scal_a_is_3(int N, const AV &a) {
 
 }
 
-/*! \brief test scal with alpha is a rank-1 scalar
+/*! \brief test scal with alpha as a rank-1, rank-0 or scalar
 
     \tparam VIEW is alpha a view?
     \tparam RANK if VIEW what rank is alpha?
     \tparam STATIC if VIEW and RANK=1, is the extent static?
 */
 template <typename ScalarX, typename ScalarY, typename ScalarA,  typename Layout, typename Device, bool VIEW, int RANK, bool STATIC>
-void impl_test_scal_alphas(int N) {
+void impl_test_scal_alpha_type(int N) {
 
   using XView = Kokkos::View<ScalarX*, Layout, Device>;
   using YView = Kokkos::View<ScalarY*, Layout, Device>;
@@ -221,28 +221,29 @@ int test_scal() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&      \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-  typedef Kokkos::View<ScalarA*, Kokkos::LayoutLeft, Device> view_type_a_ll;
-  typedef Kokkos::View<ScalarB*, Kokkos::LayoutLeft, Device> view_type_b_ll;
-#if 0
+  using view_type_a_ll = Kokkos::View<ScalarA*, Kokkos::LayoutLeft, Device>;
+  using view_type_b_ll = Kokkos::View<ScalarB*, Kokkos::LayoutLeft, Device>;
+
   Test::impl_test_scal<view_type_a_ll, view_type_b_ll, Device>(0);
   Test::impl_test_scal<view_type_a_ll, view_type_b_ll, Device>(13);
   Test::impl_test_scal<view_type_a_ll, view_type_b_ll, Device>(1024);
-#else
-  Test::impl_test_scal_alphas<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, false, 0, false>(0);
-  Test::impl_test_scal_alphas<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, true, 0, false>(0);
-  Test::impl_test_scal_alphas<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, true, 1, false>(0);
-  Test::impl_test_scal_alphas<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, true, 1, true>(0);
+  Test::impl_test_scal<view_type_a_ll, view_type_b_ll, Device>(132231);
 
-  Test::impl_test_scal_alphas<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, false, 0, false>(13);
-  Test::impl_test_scal_alphas<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, true, 0, false>(13);
-  Test::impl_test_scal_alphas<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, true, 1, false>(13);
-  Test::impl_test_scal_alphas<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, true, 1, true>(13);
+  Test::impl_test_scal_alpha_type<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, false, 0, false>(0);
+  Test::impl_test_scal_alpha_type<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, true, 0, false>(0);
+  Test::impl_test_scal_alpha_type<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, true, 1, false>(0);
+  Test::impl_test_scal_alpha_type<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, true, 1, true>(0);
 
-  Test::impl_test_scal_alphas<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, false, 0, false>(1024);
-  Test::impl_test_scal_alphas<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, true, 0, false>(1024);
-  Test::impl_test_scal_alphas<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, true, 1, false>(1024);
-  Test::impl_test_scal_alphas<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, true, 1, true>(1024);
-#endif
+  Test::impl_test_scal_alpha_type<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, false, 0, false>(13);
+  Test::impl_test_scal_alpha_type<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, true, 0, false>(13);
+  Test::impl_test_scal_alpha_type<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, true, 1, false>(13);
+  Test::impl_test_scal_alpha_type<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, true, 1, true>(13);
+
+  Test::impl_test_scal_alpha_type<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, false, 0, false>(1024);
+  Test::impl_test_scal_alpha_type<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, true, 0, false>(1024);
+  Test::impl_test_scal_alpha_type<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, true, 1, false>(1024);
+  Test::impl_test_scal_alpha_type<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, true, 1, true>(1024);
+
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || \
@@ -253,6 +254,7 @@ int test_scal() {
   Test::impl_test_scal<view_type_a_lr, view_type_b_lr, Device>(0);
   Test::impl_test_scal<view_type_a_lr, view_type_b_lr, Device>(13);
   Test::impl_test_scal<view_type_a_lr, view_type_b_lr, Device>(1024);
+  Test::impl_test_scal<view_type_a_lr, view_type_b_lr, Device>(132231);
 #endif
 
 #if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
@@ -262,6 +264,7 @@ int test_scal() {
   Test::impl_test_scal<view_type_a_ls, view_type_b_ls, Device>(0);
   Test::impl_test_scal<view_type_a_ls, view_type_b_ls, Device>(13);
   Test::impl_test_scal<view_type_a_ls, view_type_b_ls, Device>(1024);
+  Test::impl_test_scal<view_type_a_ls, view_type_b_ls, Device>(132231);
 #endif
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) && \
