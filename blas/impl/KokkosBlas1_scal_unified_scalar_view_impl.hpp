@@ -59,13 +59,15 @@ This canonicalization strategy avoids:
 * Interacting with device scalars in the host code
 */
 
+
+
 namespace KokkosBlas::Impl {
 
 template <typename T, typename Enable = void>
 struct is_host : std::false_type {};
 template <typename T>
 struct is_host<T, std::enable_if_t<Kokkos::is_view_v<T> &&
-                                   Kokkos::Impl::MemorySpaceAccess<
+                                   Kokkos::SpaceAccessibility<
                                        Kokkos::HostSpace,
                                        typename T::memory_space>::accessible>>
     : std::true_type {};
@@ -76,7 +78,7 @@ template <typename T, typename Enable = void>
 struct is_dev : std::false_type {};
 template <typename T>
 struct is_dev<T, std::enable_if_t<Kokkos::is_view_v<T> &&
-                                  !Kokkos::Impl::MemorySpaceAccess<
+                                  !Kokkos::SpaceAccessibility<
                                       Kokkos::HostSpace,
                                       typename T::memory_space>::accessible>>
     : std::true_type {};
