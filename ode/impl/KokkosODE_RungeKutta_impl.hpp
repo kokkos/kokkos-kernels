@@ -48,7 +48,7 @@ KOKKOS_FUNCTION void RKStep(ode_type& ode, const table_type& table,
   // now accumulate y_new += dt*b_i*k_i
   {
     // we always start with y_new += dt*b_0*k0
-    auto k0 = Kokkos::subview(k_vecs, Kokkos::ALL, 0);
+    auto k0 = Kokkos::subview(k_vecs, 0, Kokkos::ALL);
     ode.evaluate_function(t + table.c[0] * dt, dt, y_old, k0);
     for (int eqIdx = 0; eqIdx < neqs; ++eqIdx) {
       y_new(eqIdx) += dt * table.b[0] * k0(eqIdx);
@@ -65,12 +65,12 @@ KOKKOS_FUNCTION void RKStep(ode_type& ode, const table_type& table,
     for (int idx = 0; idx < stageIdx; ++idx) {
       for (int eqIdx = 0; eqIdx < neqs; ++eqIdx) {
         temp(eqIdx) +=
-            table.a[stageIdx * (stageIdx + 1) / 2 + idx] * k_vecs(eqIdx, idx);
+            table.a[stageIdx * (stageIdx + 1) / 2 + idx] * k_vecs(idx, eqIdx);
       }
     }
     KokkosBlas::SerialScale::invoke(dt, temp);
     KokkosBlas::serial_axpy(1, y_old, temp);
-    auto k = Kokkos::subview(k_vecs, Kokkos::ALL, stageIdx);
+    auto k = Kokkos::subview(k_vecs, stageIdx, Kokkos::ALL);
     ode.evaluate_function(t + table.c[stageIdx] * dt, dt, temp, k);
     for (int eqIdx = 0; eqIdx < neqs; ++eqIdx) {
       y_new(eqIdx) += dt * table.b[stageIdx] * k(eqIdx);
@@ -82,7 +82,7 @@ KOKKOS_FUNCTION void RKStep(ode_type& ode, const table_type& table,
     for (int eqIdx = 0; eqIdx < neqs; ++eqIdx) {
       temp(eqIdx) = 0;
       for (int stageIdx = 0; stageIdx < nstages; ++stageIdx) {
-        temp(eqIdx) += dt * table.e[stageIdx] * k_vecs(eqIdx, stageIdx);
+        temp(eqIdx) += dt * table.e[stageIdx] * k_vecs(stageIdx, eqIdx);
       }
     }
   }
