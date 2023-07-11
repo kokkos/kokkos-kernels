@@ -212,7 +212,7 @@ struct scal_unified_scalar_view<
 template <typename RMV, typename AV, typename XMV>
 struct scal_unified_scalar_view<
     RMV, AV, XMV,
-    std::enable_if_t<is_rank_1_host_v<AV> && XMV::rank == 2 &&
+    std::enable_if_t<is_rank_1_host_dynamic_v<AV> && XMV::rank == 2 &&
                      RMV::rank == 2>> {
   using alpha_type =
       Kokkos::View<typename AV::data_type, typename AV::array_layout,
