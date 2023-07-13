@@ -43,27 +43,39 @@ struct MDF_count_lower {
       entries_type::non_const_type;
   using size_type  = typename crs_matrix_type::ordinal_type;
   using value_type = typename crs_matrix_type::size_type;
+  using KAV        = typename Kokkos::ArithTraits<value_type>;
 
   crs_matrix_type A;
   col_ind_type permutation;
   col_ind_type permutation_inv;
+
+  using execution_space = typename crs_matrix_type::execution_space;
+  using team_policy_t   = Kokkos::TeamPolicy<execution_space>;
+  using team_member_t   = typename team_policy_t::member_type;
 
   MDF_count_lower(crs_matrix_type A_, col_ind_type permutation_,
                   col_ind_type permutation_inv_)
       : A(A_), permutation(permutation_), permutation_inv(permutation_inv_){};
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(const size_type rowIdx, value_type& update) const {
-    permutation(rowIdx)     = rowIdx;
-    permutation_inv(rowIdx) = rowIdx;
-    for (value_type entryIdx = A.graph.row_map(rowIdx);
-         entryIdx < A.graph.row_map(rowIdx + 1); ++entryIdx) {
-      if (A.graph.entries(entryIdx) <= rowIdx) {
-        update += 1;
-      }
-    }
-  }
+  void operator()(const team_member_t team, value_type& update) const {
+    const auto rowIdx  = team.league_rank();
+    const auto rowView = A.graph.rowConst(rowIdx);
 
+    value_type local_contrib = KAV::zero();
+    Kokkos::parallel_reduce(
+        Kokkos::TeamThreadRange(team, rowView.length),
+        [&](const size_type entryIdx, value_type& partial) {
+          if (rowView(entryIdx) <= rowIdx) partial += 1;
+        },
+        Kokkos::Sum<value_type, execution_space>(local_contrib));
+
+    Kokkos::single(Kokkos::PerTeam(team), [&] {
+      permutation(rowIdx)     = rowIdx;
+      permutation_inv(rowIdx) = rowIdx;
+      update += local_contrib;
+    });
+  }
 };  // MDF_count_lower
 
 template <class crs_matrix_type, bool is_initial_fill>

@@ -36,22 +36,20 @@ namespace Experimental {
 
 template <class crs_matrix_type, class MDF_handle>
 void mdf_symbolic(const crs_matrix_type& A, MDF_handle& handle) {
-  using size_type    = typename crs_matrix_type::size_type;
-  using ordinal_type = typename crs_matrix_type::ordinal_type;
+  using size_type = typename crs_matrix_type::size_type;
 
-  using execution_space   = typename crs_matrix_type::execution_space;
-  using range_policy_type = Kokkos::RangePolicy<ordinal_type, execution_space>;
+  using execution_space        = typename crs_matrix_type::execution_space;
+  using team_range_policy_type = Kokkos::TeamPolicy<execution_space>;
 
   // Symbolic phase:
   // compute transpose of A for easy access to columns of A
   // allocate temporaries
   // allocate L and U
   size_type nnzL = 0, nnzU = 0;
-  range_policy_type setupPolicy(0, A.numRows());
+  team_range_policy_type setupPolicy(A.numRows(), Kokkos::AUTO);
   KokkosSparse::Impl::MDF_count_lower<crs_matrix_type> compute_nnzL(
       A, handle.permutation, handle.permutation_inv);
-  Kokkos::parallel_reduce(range_policy_type(0, A.numRows()), compute_nnzL,
-                          nnzL);
+  Kokkos::parallel_reduce(setupPolicy, compute_nnzL, nnzL);
   nnzU = A.nnz() - nnzL + A.numRows();
   handle.allocate_data(nnzL, nnzU);
 
