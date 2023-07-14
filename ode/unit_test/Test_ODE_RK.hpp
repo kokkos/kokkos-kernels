@@ -463,19 +463,109 @@ void test_convergence_rate() {
   }
 }  // test_convergence_rate
 
+template <class execution_space>
+void test_adaptivity() {
+  using RK_type  = KokkosODE::Experimental::RK_type;
+  using vec_type = Kokkos::View<double*, execution_space>;
+  using mv_type  = Kokkos::View<double**, execution_space>;
+
+  duho my_oscillator(1, 1, 4);
+  const int neqs = my_oscillator.neqs;
+
+  vec_type y("solution", neqs), f("function", neqs);
+  auto y_h = Kokkos::create_mirror(y);
+  y_h(0)   = 1;
+  y_h(1)   = 0;
+  Kokkos::deep_copy(y, y_h);
+
+  constexpr double tstart = 0, tend = 1.024;
+  constexpr int maxSteps = 512, numSteps = 128;
+  constexpr double absTol = 1e-14, relTol = 1e-8, minStepSize = 0.001;
+  vec_type y_new("y new", neqs), y_old("y old", neqs);
+
+  // Since y_old_h will be reused to set initial conditions
+  // for each method tested we do not want to use
+  // create_mirror_view which would not do a copy
+  // when y_old is in HostSpace.
+  typename vec_type::HostMirror y_old_h = Kokkos::create_mirror(y_old);
+  y_old_h(0)                            = 1;
+  y_old_h(1)                            = 0;
+
+  // First compute analytical solution as reference
+  // and to evaluate the error from each RK method.
+  vec_type y_ref("reference value", neqs);
+  auto y_ref_h = Kokkos::create_mirror(y_ref);
+  {
+    Kokkos::deep_copy(y_old, y_old_h);
+    Kokkos::RangePolicy<execution_space> my_policy(0, 1);
+    solution_wrapper wrapper(my_oscillator, tend, y_old, y_ref);
+    Kokkos::parallel_for(my_policy, wrapper);
+
+    Kokkos::deep_copy(y_ref_h, y_ref);
+#if defined(HAVE_KOKKOSKERNELS_DEBUG)
+    std::cout << "\nAnalytical solution" << std::endl;
+    std::cout << "  y={" << y_ref_h(0) << ", " << y_ref_h(1) << "}"
+              << std::endl;
+#endif
+  }
+
+  vec_type tmp("tmp vector", neqs);
+  mv_type kstack(
+      "k stack", neqs,
+      KokkosODE::Experimental::RungeKutta<RK_type::RKF45>::num_stages());
+
+  Kokkos::RangePolicy<execution_space> my_policy(0, 1);
+  KokkosODE::Experimental::ODE_params params(numSteps, maxSteps, absTol, relTol,
+                                             minStepSize);
+  Kokkos::deep_copy(y_old, y_old_h);
+  Kokkos::deep_copy(y_new, y_old_h);
+  RKSolve_wrapper<duho, RK_type::RKF45, vec_type, mv_type, double>
+      solve_wrapper(my_oscillator, params, tstart, tend, y_old, y_new, tmp,
+                    kstack);
+  Kokkos::parallel_for(my_policy, solve_wrapper);
+
+  auto y_new_h = Kokkos::create_mirror(y_new);
+  Kokkos::deep_copy(y_new_h, y_new);
+#if defined(HAVE_KOKKOSKERNELS_DEBUG)
+  std::cout << "Results: " << std::endl;
+  std::cout << "  y_ref={ ";
+  for (int idx = 0; idx < y_ref_h.extent_int(0); ++idx) {
+    std::cout << y_ref_h(idx) << " ";
+  }
+  std::cout << "}" << std::endl;
+  std::cout << "  y_new={ ";
+  for (int idx = 0; idx < y_new_h.extent_int(0); ++idx) {
+    std::cout << y_new_h(idx) << " ";
+  }
+  std::cout << "}" << std::endl;
+  std::cout << "  error={ ";
+  double error;
+#endif
+
+  for (int idx = 0; idx < y_new_h.extent_int(0); ++idx) {
+#if defined(HAVE_KOKKOSKERNELS_DEBUG)
+    error =
+        Kokkos::abs(y_new_h(idx) - y_ref_h(idx)) / Kokkos::abs(y_ref_h(idx));
+    std::cout << error << " ";
+#endif
+    EXPECT_NEAR_KK_REL(y_new_h(idx), y_ref_h(idx), 1e-7);
+  }
+#if defined(HAVE_KOKKOSKERNELS_DEBUG)
+  std::cout << "}" << std::endl;
+#endif
+
+}  // test_adaptivity
+
 }  // namespace Test
 
-int test_RK() {
-  Test::test_RK<TestExecSpace>();
-  return 1;
-}
+void test_RK() { Test::test_RK<TestExecSpace>(); }
 
-int test_RK_conv_rate() {
-  Test::test_convergence_rate<TestExecSpace>();
-  return 1;
-}
+void test_RK_conv_rate() { Test::test_convergence_rate<TestExecSpace>(); }
+
+void test_RK_adaptivity() { Test::test_adaptivity<TestExecSpace>(); }
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
 TEST_F(TestCategory, RKSolve_serial) { test_RK(); }
 TEST_F(TestCategory, RK_conv_rate) { test_RK_conv_rate(); }
+TEST_F(TestCategory, RK_adaptivity) { test_RK_adaptivity(); }
 #endif
