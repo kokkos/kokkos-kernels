@@ -55,7 +55,7 @@ class Iota {
  public:
   using size_type            = SizeType;
   using value_type           = T;
-  using non_const_value_type = std::remove_const<value_type>;
+  using non_const_value_type = std::remove_const_t<value_type>;
   using device_type          = void;
   using data_type            = const value_type *;
 
