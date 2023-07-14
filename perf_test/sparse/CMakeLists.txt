@@ -135,4 +135,8 @@ if (KokkosKernels_ENABLE_BENCHMARK)
   KOKKOSKERNELS_ADD_BENCHMARK(
     sparse_spmv_benchmark SOURCES KokkosSparse_spmv_benchmark.cpp
   )
+
+  KOKKOSKERNELS_ADD_BENCHMARK(
+    sparse_spmv_bsr_benchmark SOURCES KokkosSparse_spmv_bsr_benchmark.cpp
+  )
 endif()
