@@ -84,6 +84,8 @@ class GaussSeidelHandle {
       nnz_lno_persistent_work_host_view_t;  // Host view type
 
  protected:
+  HandleExecSpace execution_space;
+
   GSAlgorithm algorithm_type;
 
   nnz_lno_persistent_work_host_view_t color_xadj;
@@ -101,7 +103,8 @@ class GaussSeidelHandle {
    * \brief Default constructor.
    */
   GaussSeidelHandle(GSAlgorithm gs)
-      : algorithm_type(gs),
+      : execution_space(HandleExecSpace()),
+        algorithm_type(gs),
         color_xadj(),
         color_adj(),
         numColors(0),
@@ -127,6 +130,10 @@ class GaussSeidelHandle {
   bool is_numeric_called() const { return this->called_numeric; }
 
   // setters
+  void set_execution_space(const HandleExecSpace exec_space) {
+    this->execution_space = exec_space;
+  }
+
   void set_algorithm_type(const GSAlgorithm sgs_algo) {
     this->algorithm_type  = sgs_algo;
     this->called_symbolic = false;
