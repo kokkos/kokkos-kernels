@@ -17,6 +17,8 @@
 #ifndef TEST_COMMON_MERGE_MATRIX
 #define TEST_COMMON_MERGE_MATRIX
 
+#include <vector>
+
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 
