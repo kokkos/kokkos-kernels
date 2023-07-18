@@ -84,7 +84,7 @@ class PointGaussSeidel {
   typedef typename HandleType::scalar_persistent_work_view_t
       scalar_persistent_work_view_t;
 
-  typedef Kokkos::RangePolicy<MyExecSpace> range_pol;
+  typedef Kokkos::RangePolicy<MyExecSpace> range_policy_t;
   typedef
       typename HandleType::GraphColoringHandleType::color_view_t color_view_t;
   typedef typename HandleType::GraphColoringHandleType::color_t color_t;
@@ -825,6 +825,7 @@ class PointGaussSeidel {
   void initialize_symbolic() {
     auto gsHandle                    = get_gs_handle();
     const size_type longRowThreshold = gsHandle->get_long_row_threshold();
+    const MyExecSpace my_exec_space  = gsHandle->get_execution_space();
 
     // Validate settings
     if (gsHandle->get_block_size() > 1 && longRowThreshold > 0)
@@ -838,6 +839,7 @@ class PointGaussSeidel {
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
     Kokkos::Timer timer;
 #endif
+    // TODO: Pass my_exec_space into KokkosGraph kernels
     typename HandleType::GraphColoringHandleType::color_view_t colors;
     color_t numColors;
     {
@@ -886,7 +888,8 @@ class PointGaussSeidel {
     for (int i = 0; i < num_rows; ++i) {
       h_colors(i) = i + 1;
     }
-    Kokkos::deep_copy(colors, h_colors);
+    Kokkos::deep_copy(my_exec_space, colors, h_colors);
+    my_exec_space.fence();
 #endif
     nnz_lno_persistent_work_view_t color_xadj;
     nnz_lno_persistent_work_view_t color_adj;
@@ -896,10 +899,10 @@ class PointGaussSeidel {
     KokkosKernels::Impl::create_reverse_map<
         typename HandleType::GraphColoringHandleType::color_view_t,
         nnz_lno_persistent_work_view_t, MyExecSpace>(
-        num_rows, numColors, colors, color_xadj, color_adj);
+        num_rows, numColors, colors, color_xadj, color_adj, my_exec_space);
 
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
-    MyExecSpace().fence();
+    my_exec_space.fence();
     std::cout << "CREATE_REVERSE_MAP:" << timer.seconds() << std::endl;
     timer.reset();
 #endif
@@ -909,7 +912,7 @@ class PointGaussSeidel {
     Kokkos::deep_copy(h_color_xadj, color_xadj);
 
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
-    MyExecSpace().fence();
+    my_exec_space.fence();
     std::cout << "DEEP_COPY:" << timer.seconds() << std::endl;
     timer.reset();
 #endif
@@ -930,21 +933,24 @@ class PointGaussSeidel {
           max_row_length_per_color);
       int sortLongRowsTeamSize = 1;
       {
-        team_policy_t temp(1, 1);
+        team_policy_t temp(my_exec_space, 1, 1);
         sortLongRowsTeamSize = temp.team_size_recommended(
             sortIntoLongRowsFunctor, Kokkos::ParallelReduceTag());
       }
-      Kokkos::parallel_reduce(team_policy_t(numColors, sortLongRowsTeamSize),
-                              sortIntoLongRowsFunctor,
-                              Kokkos::Max<nnz_lno_t>(mostLongRowsInColor));
+      Kokkos::parallel_reduce(
+          team_policy_t(my_exec_space, numColors, sortLongRowsTeamSize),
+          sortIntoLongRowsFunctor, Kokkos::Max<nnz_lno_t>(mostLongRowsInColor));
       auto host_long_rows_per_color =
           Kokkos::create_mirror_view(long_rows_per_color);
-      Kokkos::deep_copy(host_long_rows_per_color, long_rows_per_color);
+      Kokkos::deep_copy(my_exec_space, host_long_rows_per_color,
+                        long_rows_per_color);
+      my_exec_space.fence();
       gsHandle->set_long_rows_per_color(host_long_rows_per_color);
       auto host_max_row_length_per_color =
           Kokkos::create_mirror_view(max_row_length_per_color);
-      Kokkos::deep_copy(host_max_row_length_per_color,
+      Kokkos::deep_copy(my_exec_space, host_max_row_length_per_color,
                         max_row_length_per_color);
+      my_exec_space.fence();
       gsHandle->set_max_row_length_per_color(host_max_row_length_per_color);
       scalar_persistent_work_view_t long_row_x(
           Kokkos::view_alloc(Kokkos::WithoutInitializing, "long_row_x"),
@@ -953,10 +959,11 @@ class PointGaussSeidel {
     } else {
       // Just sort rows by ID.
       KokkosSparse::sort_crs_graph<MyExecSpace, decltype(color_xadj),
-                                   decltype(color_adj)>(color_xadj, color_adj);
+                                   decltype(color_adj)>(my_exec_space,
+                                                        color_xadj, color_adj);
     }
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
-    MyExecSpace().fence();
+    my_exec_space.fence();
     std::cout << "SORT_TIME:" << timer.seconds() << std::endl;
     timer.reset();
 #endif
@@ -968,29 +975,29 @@ class PointGaussSeidel {
 
     Kokkos::parallel_for(
         "KokkosSparse::PointGaussSeidel::create_permuted_xadj",
-        range_pol(0, num_rows),
+        range_policy_t(my_exec_space, 0, num_rows),
         create_permuted_xadj(color_adj, xadj, permuted_xadj, old_to_new_map));
     // std::cout << "create_permuted_xadj" << std::endl;
 
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
-    MyExecSpace().fence();
+    my_exec_space.fence();
     std::cout << "CREATE_PERMUTED_XADJ:" << timer.seconds() << std::endl;
 
     timer.reset();
 #endif
 
     KokkosKernels::Impl::inclusive_parallel_prefix_sum<
-        row_lno_persistent_work_view_t, MyExecSpace>(num_rows + 1,
-                                                     permuted_xadj);
+        row_lno_persistent_work_view_t, MyExecSpace>(
+        num_rows + 1, permuted_xadj, my_exec_space);
 
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
-    MyExecSpace().fence();
+    my_exec_space.fence();
     std::cout << "INCLUSIVE_PPS:" << timer.seconds() << std::endl;
     timer.reset();
 #endif
 
     Kokkos::parallel_for("KokkosSparse::PointGaussSeidel::fill_matrix_symbolic",
-                         range_pol(0, num_rows),
+                         range_policy_t(my_exec_space, 0, num_rows),
                          fill_matrix_symbolic(num_rows, color_adj, xadj, adj,
                                               // adj_vals,
                                               permuted_xadj, permuted_adj,
@@ -998,7 +1005,7 @@ class PointGaussSeidel {
                                               old_to_new_map));
 
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
-    MyExecSpace().fence();
+    my_exec_space.fence();
     std::cout << "SYMBOLIC_FILL:" << timer.seconds() << std::endl;
     timer.reset();
 #endif
@@ -1013,7 +1020,7 @@ class PointGaussSeidel {
       size_type max_row_size = 0;
       KokkosKernels::Impl::kk_view_reduce_max_row_size<size_type, MyExecSpace>(
           num_rows, permuted_xadj.data(), permuted_xadj.data() + 1,
-          max_row_size);
+          max_row_size, my_exec_space);
 
       nnz_lno_t brows = permuted_xadj.extent(0) - 1;
       size_type bnnz  = permuted_adj.extent(0) * block_size * block_size;
@@ -1079,15 +1086,17 @@ class PointGaussSeidel {
           size_type num_large_rows = 0;
           KokkosSparse::Impl::kk_reduce_numrows_larger_than_threshold<
               row_lno_persistent_work_view_t, MyExecSpace>(
-              brows, permuted_xadj, num_values_in_l1, num_large_rows);
+              brows, permuted_xadj, num_values_in_l1, num_large_rows,
+              my_exec_space);
           num_big_rows = KOKKOSKERNELS_MACRO_MIN(
               num_large_rows,
-              (size_type)(MyExecSpace().concurrency() / suggested_vector_size));
+              (size_type)(my_exec_space.concurrency() / suggested_vector_size));
           // std::cout << "num_big_rows:" << num_big_rows << std::endl;
 
           if (KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>()) {
             // check if we have enough memory for this. lower the concurrency if
             // we do not have enugh memory.
+            // TODO: Need to account for number of streams here?
             size_t free_byte;
             size_t total_byte;
             KokkosKernels::Impl::kk_get_free_total_memory<
@@ -1396,7 +1405,7 @@ class PointGaussSeidel {
                                 block_matrix_size));
       } else {
         Kokkos::parallel_for("KokkosSparse::GaussSeidel::fill_matrix_numeric",
-                             range_pol(0, num_rows),
+                             range_policy_t(0, num_rows),
                              fill_matrix_numeric(color_adj, xadj,
                                                  // adj,
                                                  adj_vals, newxadj_,
@@ -1427,7 +1436,7 @@ class PointGaussSeidel {
         } else {
           Kokkos::parallel_for(
               "KokkosSparse::GaussSeidel::get_matrix_diagonals",
-              range_pol(0, num_rows), gmd);
+              range_policy_t(0, num_rows), gmd);
         }
 
       } else {
@@ -1591,8 +1600,8 @@ class PointGaussSeidel {
     this->IterativePSGS(gs, numColors, h_color_xadj, numIter, apply_forward,
                         apply_backward);
 
-    // Kokkos::parallel_for( range_pol(0,nr), PermuteVector(x_lhs_output_vec,
-    // Permuted_Xvector, color_adj));
+    // Kokkos::parallel_for( range_policy_t(0,nr),
+    // PermuteVector(x_lhs_output_vec, Permuted_Xvector, color_adj));
 
     KokkosKernels::Impl::permute_block_vector<
         scalar_persistent_work_view2d_t, x_value_array_type,
@@ -1673,8 +1682,8 @@ class PointGaussSeidel {
                           apply_backward);
     }
 
-    // Kokkos::parallel_for( range_pol(0,nr), PermuteVector(x_lhs_output_vec,
-    // Permuted_Xvector, color_adj));
+    // Kokkos::parallel_for( range_policy_t(0,nr),
+    // PermuteVector(x_lhs_output_vec, Permuted_Xvector, color_adj));
 
     KokkosKernels::Impl::permute_vector<
         scalar_persistent_work_view2d_t, x_value_array_type,
@@ -1823,7 +1832,8 @@ class PointGaussSeidel {
                   gs);
               Kokkos::parallel_for(
                   "KokkosSparse::GaussSeidel::LongRows::x_update",
-                  range_pol(color_index_end - numLongRows, color_index_end),
+                  range_policy_t(color_index_end - numLongRows,
+                                 color_index_end),
                   LongRowUpdateFunctor<decltype(Xcol), decltype(Ycol)>(
                       Xcol, Ycol, long_row_x, gs._permuted_inverse_diagonal,
                       gs.omega, color_index_end - numLongRows));
@@ -1872,10 +1882,10 @@ class PointGaussSeidel {
           nnz_lno_t numRegularRows =
               color_index_end - color_index_begin - numLongRows;
           if (numRegularRows) {
-            Kokkos::parallel_for(
-                labelShort,
-                range_pol(color_index_begin, color_index_end - numLongRows),
-                gs);
+            Kokkos::parallel_for(labelShort,
+                                 range_policy_t(color_index_begin,
+                                                color_index_end - numLongRows),
+                                 gs);
           }
           if (numLongRows) {
             gs._color_set_begin   = color_index_end - numLongRows;
@@ -1896,7 +1906,8 @@ class PointGaussSeidel {
                                    gs);
               Kokkos::parallel_for(
                   "KokkosSparse::GaussSeidel::LongRows::x_update",
-                  range_pol(color_index_end - numLongRows, color_index_end),
+                  range_policy_t(color_index_end - numLongRows,
+                                 color_index_end),
                   LongRowUpdateFunctor<decltype(Xcol), decltype(Ycol)>(
                       Xcol, Ycol, long_row_x, gs._permuted_inverse_diagonal,
                       gs.omega, color_index_end - numLongRows));

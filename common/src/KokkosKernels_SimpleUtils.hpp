@@ -151,10 +151,10 @@ inline void kk_exclusive_parallel_prefix_sum(
 template <typename forward_array_type, typename MyExecSpace>
 void kk_inclusive_parallel_prefix_sum(
     typename forward_array_type::value_type num_elements,
-    forward_array_type arr) {
-  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
+    forward_array_type arr, MyExecSpace my_exec_space = MyExecSpace()) {
+  typedef Kokkos::RangePolicy<MyExecSpace> range_policy_t;
   Kokkos::parallel_scan("KokkosKernels::Common::PrefixSum",
-                        my_exec_space(0, num_elements),
+                        range_policy_t(my_exec_space, 0, num_elements),
                         InclusiveParallelPrefixSum<forward_array_type>(arr));
 }
 

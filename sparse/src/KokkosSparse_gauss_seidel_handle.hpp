@@ -116,6 +116,8 @@ class GaussSeidelHandle {
   virtual ~GaussSeidelHandle() = default;
 
   // getters
+  HandleExecSpace get_execution_space() const { return this->execution_space; }
+
   GSAlgorithm get_algorithm_type() const { return this->algorithm_type; }
 
   nnz_lno_persistent_work_host_view_t get_color_xadj() const {
@@ -131,7 +133,11 @@ class GaussSeidelHandle {
 
   // setters
   void set_execution_space(const HandleExecSpace exec_space) {
-    this->execution_space = exec_space;
+    static bool is_exec_space_set = false;
+    if (!is_exec_space_set) {
+      this->execution_space = exec_space;
+      is_exec_space_set     = true;
+    }
   }
 
   void set_algorithm_type(const GSAlgorithm sgs_algo) {

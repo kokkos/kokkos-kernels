@@ -457,9 +457,9 @@ struct Fill_Reverse_Map {
 template <typename forward_array_type, typename MyExecSpace>
 void inclusive_parallel_prefix_sum(
     typename forward_array_type::value_type num_elements,
-    forward_array_type arr) {
+    forward_array_type arr, MyExecSpace my_exec_space = MyExecSpace()) {
   kk_inclusive_parallel_prefix_sum<forward_array_type, MyExecSpace>(
-      num_elements, arr);
+      num_elements, arr, my_exec_space);
 }
 
 template <typename forward_array_type, typename MyExecSpace>
@@ -668,14 +668,15 @@ void create_reverse_map(
 
     const forward_array_type &forward_map,  // vertex to colors
     reverse_array_type &reverse_map_xadj,   // colors to vertex xadj
-    reverse_array_type &reverse_map_adj) {  // colros to vertex adj
+    reverse_array_type &reverse_map_adj,
+    MyExecSpace my_exec_space = MyExecSpace()) {  // colros to vertex adj
 
   typedef typename reverse_array_type::value_type lno_t;
   typedef typename forward_array_type::value_type reverse_lno_t;
 
   const lno_t MINIMUM_TO_ATOMIC = 64;
 
-  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
+  typedef Kokkos::RangePolicy<MyExecSpace> range_policy_t;
   reverse_map_xadj =
       reverse_array_type("Reverse Map Xadj", num_reverse_elements + 1);
   reverse_map_adj = reverse_array_type(
@@ -699,24 +700,27 @@ void create_reverse_map(
         forward_map, tmp_color_xadj, multiply_shift_for_scale,
         division_shift_for_bucket);
     Kokkos::parallel_for("KokkosKernels::Common::ReverseMapScaleInit",
-                         my_exec_space(0, num_forward_elements), rmi);
-    MyExecSpace().fence();
+                         range_policy_t(my_exec_space, 0, num_forward_elements),
+                         rmi);
+    my_exec_space.fence();
 
     inclusive_parallel_prefix_sum<reverse_array_type, MyExecSpace>(
         tmp_reverse_size + 1, tmp_color_xadj);
-    MyExecSpace().fence();
+    my_exec_space.fence();
 
-    Kokkos::parallel_for("KokkosKernels::Common::StridedCopy",
-                         my_exec_space(0, num_reverse_elements + 1),
-                         StridedCopy<reverse_array_type, reverse_array_type>(
-                             tmp_color_xadj, reverse_map_xadj, scale_size));
-    MyExecSpace().fence();
+    Kokkos::parallel_for(
+        "KokkosKernels::Common::StridedCopy",
+        range_policy_t(my_exec_space, 0, num_reverse_elements + 1),
+        StridedCopy<reverse_array_type, reverse_array_type>(
+            tmp_color_xadj, reverse_map_xadj, scale_size));
+    my_exec_space.fence();
     Fill_Reverse_Scale_Map<forward_array_type, reverse_array_type> frm(
         forward_map, tmp_color_xadj, reverse_map_adj, multiply_shift_for_scale,
         division_shift_for_bucket);
     Kokkos::parallel_for("KokkosKernels::Common::FillReverseMap",
-                         my_exec_space(0, num_forward_elements), frm);
-    MyExecSpace().fence();
+                         range_policy_t(my_exec_space, 0, num_forward_elements),
+                         frm);
+    my_exec_space.fence();
   } else
   // atomic implementation.
   {
@@ -728,20 +732,22 @@ void create_reverse_map(
         forward_map, reverse_map_xadj);
 
     Kokkos::parallel_for("KokkosKernels::Common::ReverseMapInit",
-                         my_exec_space(0, num_forward_elements), rmi);
-    MyExecSpace().fence();
+                         range_policy_t(my_exec_space, 0, num_forward_elements),
+                         rmi);
+    my_exec_space.fence();
     // print_1Dview(reverse_map_xadj);
 
     inclusive_parallel_prefix_sum<reverse_array_type, MyExecSpace>(
         num_reverse_elements + 1, reverse_map_xadj);
-    MyExecSpace().fence();
+    my_exec_space.fence();
     Kokkos::deep_copy(tmp_color_xadj, reverse_map_xadj);
-    MyExecSpace().fence();
+    my_exec_space.fence();
     Fill_Reverse_Map<forward_array_type, reverse_array_type> frm(
         forward_map, tmp_color_xadj, reverse_map_adj);
     Kokkos::parallel_for("KokkosKernels::Common::FillReverseMap",
-                         my_exec_space(0, num_forward_elements), frm);
-    MyExecSpace().fence();
+                         range_policy_t(my_exec_space, 0, num_forward_elements),
+                         frm);
+    my_exec_space.fence();
   }
 }
 
@@ -1253,10 +1259,12 @@ template <typename size_type, typename MyExecSpace>
 void kk_view_reduce_max_row_size(const size_t num_rows,
                                  const size_type *rowmap_view_begins,
                                  const size_type *rowmap_view_ends,
-                                 size_type &max_row_size) {
-  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
+                                 size_type &max_row_size,
+                                 MyExecSpace my_exec_space = MyExecSpace()) {
+  typedef Kokkos::RangePolicy<MyExecSpace> range_policy_t;
   Kokkos::parallel_reduce(
-      "KokkosKernels::Common::ViewReduceMaxRowSize", my_exec_space(0, num_rows),
+      "KokkosKernels::Common::ViewReduceMaxRowSize",
+      range_policy_t(my_exec_space, 0, num_rows),
       ReduceRowSizeFunctor<size_type>(rowmap_view_begins, rowmap_view_ends),
       max_row_size);
 }
