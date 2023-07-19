@@ -564,11 +564,6 @@ void test_RK_conv_rate() { Test::test_convergence_rate<TestExecSpace>(); }
 
 void test_RK_adaptivity() { Test::test_adaptivity<TestExecSpace>(); }
 
-int test_RK_adaptivity() {
-  Test::test_adaptivity<TestExecSpace>();
-  return 1;
-}
-
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
 TEST_F(TestCategory, RKSolve_serial) { test_RK(); }
 TEST_F(TestCategory, RK_conv_rate) { test_RK_conv_rate(); }
