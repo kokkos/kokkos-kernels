@@ -17,16 +17,21 @@
 #ifndef KOKKOSSPARSE_IMPL_SPMV_DEF_HPP_
 #define KOKKOSSPARSE_IMPL_SPMV_DEF_HPP_
 
+#include <sstream>
+
 #include "KokkosKernels_Controls.hpp"
 #include "Kokkos_InnerProductSpaceTraits.hpp"
 #include "KokkosBlas1_scal.hpp"
 #include "KokkosKernels_ExecSpaceUtils.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosSparse_spmv_impl_omp.hpp"
+#include "KokkosSparse_spmv_impl_merge.hpp"
 #include "KokkosKernels_Error.hpp"
 
 namespace KokkosSparse {
 namespace Impl {
+
+constexpr const char* KOKKOSSPARSE_ALG_MERGE = "merge";
 
 // This TransposeFunctor is functional, but not necessarily performant.
 template <class execution_space, class AMatrix, class XVector, class YVector,
@@ -629,11 +634,21 @@ static void spmv_beta(const execution_space& exec,
                       typename YVector::const_value_type& beta,
                       const YVector& y) {
   if (mode[0] == NoTranspose[0]) {
-    spmv_beta_no_transpose<execution_space, AMatrix, XVector, YVector, dobeta,
-                           false>(exec, controls, alpha, A, x, beta, y);
+    if (controls.getParameter("algorithm") == KOKKOSSPARSE_ALG_MERGE) {
+      SpmvMergeHierarchical<execution_space, AMatrix, XVector, YVector>::spmv(exec, mode, alpha, A, x,
+                                                             beta, y);
+    } else {
+      spmv_beta_no_transpose<execution_space, XVector, YVector, dobeta, false>(
+          exec, controls, alpha, A, x, beta, y);
+    }
   } else if (mode[0] == Conjugate[0]) {
-    spmv_beta_no_transpose<execution_space, AMatrix, XVector, YVector, dobeta,
-                           true>(exec, controls, alpha, A, x, beta, y);
+    if (controls.getParameter("algorithm") == KOKKOSSPARSE_ALG_MERGE) {
+      SpmvMergeHierarchical<execution_space, AMatrix, XVector, YVector>::spmv(exec, mode, alpha, A, x,
+                                                             beta, y);
+    } else {
+      spmv_beta_no_transpose<execution_space, AMatrix, XVector, YVector, dobeta, true>(
+          exec, controls, alpha, A, x, beta, y);
+    }
   } else if (mode[0] == Transpose[0]) {
     spmv_beta_transpose<execution_space, AMatrix, XVector, YVector, dobeta,
                         false>(exec, alpha, A, x, beta, y);
@@ -641,8 +656,10 @@ static void spmv_beta(const execution_space& exec,
     spmv_beta_transpose<execution_space, AMatrix, XVector, YVector, dobeta,
                         true>(exec, alpha, A, x, beta, y);
   } else {
-    KokkosKernels::Impl::throw_runtime_exception(
-        "Invalid Transpose Mode for KokkosSparse::spmv()");
+    std::stringstream ss;
+    ss << __FILE__ << ":" << __LINE__ << " Invalid transpose mode " << mode
+       << " for KokkosSparse::spmv()";
+    KokkosKernels::Impl::throw_runtime_exception(ss.str());
   }
 }
 
@@ -1460,8 +1477,10 @@ static void spmv_alpha_beta_mv(
                                  doalpha, dobeta, true>(exec, alpha, A, x, beta,
                                                         y);
   } else {
-    KokkosKernels::Impl::throw_runtime_exception(
-        "Invalid Transpose Mode for KokkosSparse::spmv()");
+    std::stringstream ss;
+    ss << __FILE__ << ":" << __LINE__ << " Invalid transpose mode " << mode
+       << " for KokkosSparse::spmv()";
+    KokkosKernels::Impl::throw_runtime_exception(ss.str());
   }
 }
 

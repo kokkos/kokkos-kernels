@@ -26,7 +26,7 @@
 #include <Kokkos_Core.hpp>
 
 #include "KokkosKernels_Iota.hpp"
-#include "KokkosSparse_MergeMatrix.hpp"
+#include "KokkosSparse_merge_matrix.hpp"
 
 namespace Test_Sparse_MergeMatrix {
 
@@ -85,8 +85,7 @@ template <typename AEntry, typename BEntry, typename ExecSpace>
 void view_view_empty_empty() {
   using AView = Kokkos::View<AEntry *, ExecSpace>;
   using BView = Kokkos::View<BEntry *, ExecSpace>;
-  using MMD =
-      KokkosSparse::Experimental::Impl::MergeMatrixDiagonal<AView, BView>;
+  using MMD   = KokkosSparse::Impl::MergeMatrixDiagonal<AView, BView>;
 
   AView a("view-view-empty-empty-a", 0);
   BView b("view-view-empty-empty-b", 0);
@@ -102,8 +101,7 @@ template <typename AEntry, typename BEntry, typename ExecSpace>
 void view_view_full_empty() {
   using AView = Kokkos::View<AEntry *, ExecSpace>;
   using BView = Kokkos::View<BEntry *, ExecSpace>;
-  using MMD =
-      KokkosSparse::Experimental::Impl::MergeMatrixDiagonal<AView, BView>;
+  using MMD   = KokkosSparse::Impl::MergeMatrixDiagonal<AView, BView>;
 
   size_t aNonzero = 5;
   AView a("view-view-full-empty-a", aNonzero);
@@ -123,8 +121,7 @@ template <typename AEntry, typename BEntry, typename ExecSpace>
 void view_view_empty_full() {
   using AView = Kokkos::View<AEntry *, ExecSpace>;
   using BView = Kokkos::View<BEntry *, ExecSpace>;
-  using MMD =
-      KokkosSparse::Experimental::Impl::MergeMatrixDiagonal<AView, BView>;
+  using MMD   = KokkosSparse::Impl::MergeMatrixDiagonal<AView, BView>;
 
   AView a("view-view-empty-full-a", 0);
   BView b = from_std_vec<BView>("view-view-empty-full-b", {0, 1, 2, 3});
@@ -284,10 +281,9 @@ std::tuple<AView, BView> view_view_case_5() {
 */
 template <typename AEntry, typename BEntry, typename ExecSpace>
 void view_view_full_full() {
-  using AView = Kokkos::View<AEntry *, ExecSpace>;
-  using BView = Kokkos::View<BEntry *, ExecSpace>;
-  using MMD =
-      KokkosSparse::Experimental::Impl::MergeMatrixDiagonal<AView, BView>;
+  using AView          = Kokkos::View<AEntry *, ExecSpace>;
+  using BView          = Kokkos::View<BEntry *, ExecSpace>;
+  using MMD            = KokkosSparse::Impl::MergeMatrixDiagonal<AView, BView>;
   using mmd_value_type = typename MMD::non_const_value_type;
 
   {
@@ -377,8 +373,7 @@ template <typename AEntry, typename BEntry, typename ExecSpace>
 void view_iota_empty_empty() {
   using AView = Kokkos::View<AEntry *, ExecSpace>;
   using BView = KokkosKernels::Impl::Iota<BEntry>;
-  using MMD =
-      KokkosSparse::Experimental::Impl::MergeMatrixDiagonal<AView, BView>;
+  using MMD   = KokkosSparse::Impl::MergeMatrixDiagonal<AView, BView>;
 
   AView a("view-iota-empty-empty-a", 0);
   BView b(0);
@@ -394,8 +389,7 @@ template <typename AEntry, typename BEntry, typename ExecSpace>
 void view_iota_full_empty() {
   using AView = Kokkos::View<AEntry *, ExecSpace>;
   using BView = KokkosKernels::Impl::Iota<BEntry>;
-  using MMD =
-      KokkosSparse::Experimental::Impl::MergeMatrixDiagonal<AView, BView>;
+  using MMD   = KokkosSparse::Impl::MergeMatrixDiagonal<AView, BView>;
 
   size_t aNonzero = 5;
   AView a("view-iota-full-empty-a", aNonzero);
@@ -415,8 +409,7 @@ template <typename AEntry, typename BEntry, typename ExecSpace>
 void view_iota_empty_full() {
   using AView = Kokkos::View<AEntry *, ExecSpace>;
   using BView = KokkosKernels::Impl::Iota<BEntry>;
-  using MMD =
-      KokkosSparse::Experimental::Impl::MergeMatrixDiagonal<AView, BView>;
+  using MMD   = KokkosSparse::Impl::MergeMatrixDiagonal<AView, BView>;
 
   AView a("view-iota-empty-full-a", 0);
   BView b(4);
@@ -487,10 +480,9 @@ std::tuple<AView, BView> view_iota_case_1() {
 */
 template <typename AEntry, typename BEntry, typename ExecSpace>
 void view_iota_full_full() {
-  using AView = Kokkos::View<AEntry *, ExecSpace>;
-  using BView = KokkosKernels::Impl::Iota<BEntry>;
-  using MMD =
-      KokkosSparse::Experimental::Impl::MergeMatrixDiagonal<AView, BView>;
+  using AView          = Kokkos::View<AEntry *, ExecSpace>;
+  using BView          = KokkosKernels::Impl::Iota<BEntry>;
+  using MMD            = KokkosSparse::Impl::MergeMatrixDiagonal<AView, BView>;
   using mmd_value_type = typename MMD::non_const_value_type;
 
   {
@@ -537,8 +529,7 @@ void test_rank() {
   {
     using AView = Kokkos::View<AEntry *, ExecSpace>;
     using BView = Kokkos::View<BEntry *, ExecSpace>;
-    using MMD =
-        KokkosSparse::Experimental::Impl::MergeMatrixDiagonal<AView, BView>;
+    using MMD   = KokkosSparse::Impl::MergeMatrixDiagonal<AView, BView>;
     static_assert(MMD::rank == 1,
                   "MergeMatrixDiagonal should look like a rank-1 view");
   }
@@ -546,8 +537,7 @@ void test_rank() {
   {
     using AView = Kokkos::View<AEntry *, ExecSpace>;
     using BView = KokkosKernels::Impl::Iota<BEntry>;
-    using MMD =
-        KokkosSparse::Experimental::Impl::MergeMatrixDiagonal<AView, BView>;
+    using MMD   = KokkosSparse::Impl::MergeMatrixDiagonal<AView, BView>;
     static_assert(MMD::rank == 1,
                   "MergeMatrixDiagonal should look like a rank-1 view");
   }

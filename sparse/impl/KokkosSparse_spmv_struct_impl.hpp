@@ -17,6 +17,8 @@
 #ifndef KOKKOSSPARSE_IMPL_SPMV_STRUCT_DEF_HPP_
 #define KOKKOSSPARSE_IMPL_SPMV_STRUCT_DEF_HPP_
 
+#include <sstream>
+
 #include "Kokkos_InnerProductSpaceTraits.hpp"
 #include "KokkosKernels_ExecSpaceUtils.hpp"
 #include "KokkosBlas1_scal.hpp"
@@ -923,8 +925,10 @@ static void spmv_struct_beta(
                                dobeta, true>(exec, stencil_type, structure,
                                              alpha, A, x, beta, y);
   } else {
-    KokkosKernels::Impl::throw_runtime_exception(
-        "Invalid Transpose Mode for KokkosSparse::spmv_struct()");
+    std::stringstream ss;
+    ss << __FILE__ << ":" << __LINE__ << " Invalid transpose mode " << mode
+       << " for KokkosSparse::spmv_struct()";
+    KokkosKernels::Impl::throw_runtime_exception(ss.str());
   }
 }
 
@@ -1454,8 +1458,10 @@ static void spmv_alpha_beta_mv_struct(
                                         YVector, doalpha, dobeta, true>(
         exec, alpha, A, x, beta, y);
   } else {
-    KokkosKernels::Impl::throw_runtime_exception(
-        "Invalid Transpose Mode for KokkosSparse::spmv()");
+    std::stringstream ss;
+    ss << __FILE__ << ":" << __LINE__ << " Invalid transpose mode " << mode
+       << " for KokkosSparse::spmv_struct()";
+    KokkosKernels::Impl::throw_runtime_exception(ss.str());
   }
 }
 
