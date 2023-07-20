@@ -14,15 +14,17 @@
 //
 //@HEADER
 
-#ifndef TEST_COMMON_MERGE_MATRIX
-#define TEST_COMMON_MERGE_MATRIX
+#ifndef TEST_COMMON_MERGE_MATRIX_HPP
+#define TEST_COMMON_MERGE_MATRIX_HPP
 
+#include <string>
+#include <tuple>
+#include <type_traits>
 #include <vector>
 
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 
-#include <type_traits>
 #include "KokkosKernels_Iota.hpp"
 #include "KokkosSparse_MergeMatrix.hpp"
 
@@ -293,7 +295,8 @@ void view_view_full_full() {
     for (size_t diagonal = 0; diagonal < a.size() + b.size() - 1; ++diagonal) {
       MMD mmd(a, b, diagonal);
       // every matrix entry on this diagonal is 0
-      expect_mmd_entries(mmd, std::vector(mmd.size(), mmd_value_type(0)));
+      expect_mmd_entries(
+          mmd, std::vector<mmd_value_type>(mmd.size(), mmd_value_type(0)));
     }
   }
   {
@@ -301,7 +304,8 @@ void view_view_full_full() {
     for (size_t diagonal = 0; diagonal < a.size() + b.size() - 1; ++diagonal) {
       MMD mmd(a, b, diagonal);
       // every matrix entry on this diagonal is 0
-      expect_mmd_entries(mmd, std::vector(mmd.size(), mmd_value_type(1)));
+      expect_mmd_entries(
+          mmd, std::vector<mmd_value_type>(mmd.size(), mmd_value_type(1)));
     }
   }
   {
@@ -494,7 +498,8 @@ void view_iota_full_full() {
     for (size_t diagonal = 0; diagonal < a.size() + b.size() - 1; ++diagonal) {
       MMD mmd(a, b, diagonal);
       // every matrix entry on this diagonal is 0
-      expect_mmd_entries(mmd, std::vector(mmd.size(), mmd_value_type(0)));
+      expect_mmd_entries(
+          mmd, std::vector<mmd_value_type>(mmd.size(), mmd_value_type(0)));
     }
   }
   {
@@ -502,7 +507,8 @@ void view_iota_full_full() {
     for (size_t diagonal = 0; diagonal < a.size() + b.size() - 1; ++diagonal) {
       MMD mmd(a, b, diagonal);
       // every matrix entry on this diagonal is 1
-      expect_mmd_entries(mmd, std::vector(mmd.size(), mmd_value_type(1)));
+      expect_mmd_entries(
+          mmd, std::vector<mmd_value_type>(mmd.size(), mmd_value_type(1)));
     }
   }
   {
@@ -591,4 +597,4 @@ TEST_F(TestCategory, common_merge_matrix) {
   // clang-format on
 }
 
-#endif  // TEST_COMMON_MERGE_MATRIX
+#endif  // TEST_COMMON_MERGE_MATRIX_HPP
