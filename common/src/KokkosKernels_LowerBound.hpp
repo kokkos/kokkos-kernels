@@ -1,62 +1,18 @@
-<<<<<<< HEAD
 //@HEADER
 // ************************************************************************
 //
 //                        Kokkos v. 4.0
 //       Copyright (2022) National Technology & Engineering
-=======
-/*
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 3.0
-//       Copyright (2020) National Technology & Engineering
->>>>>>> a7a482262 (Add parallel merge-path inspired algorithms)
 //               Solutions of Sandia, LLC (NTESS).
 //
 // Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
-<<<<<<< HEAD
 // Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
 // See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-=======
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
-//
-// ************************************************************************
-//@HEADER
- */
->>>>>>> a7a482262 (Add parallel merge-path inspired algorithms)
 
 #ifndef _KOKKOSKERNELS_LOWERBOUND_HPP
 #define _KOKKOSKERNELS_LOWERBOUND_HPP
@@ -138,16 +94,11 @@ lower_bound_sequential_thread(
     const ViewLike &view, const typename ViewLike::non_const_value_type &value,
     Pred pred = Pred()) {
   using size_type = typename ViewLike::size_type;
-<<<<<<< HEAD
   static_assert(1 == ViewLike::rank,
                 "lower_bound_sequential_thread requires rank-1 views");
   static_assert(is_iota_v<ViewLike> || Kokkos::is_view<ViewLike>::value,
                 "lower_bound_sequential_thread requires a "
                 "KokkosKernels::Impl::Iota or a Kokkos::View");
-=======
-  static_assert(1 == ViewLike::Rank,
-                "thread_lower_binary_thread requires rank-1 views");
->>>>>>> a7a482262 (Add parallel merge-path inspired algorithms)
 
   size_type i = 0;
   while (i < view.size() && pred(view(i), value)) {
@@ -170,7 +121,6 @@ lower_bound_sequential_thread(
 */
 template <typename ViewLike,
           typename Pred = LT<typename ViewLike::non_const_value_type>>
-<<<<<<< HEAD
 KOKKOS_INLINE_FUNCTION typename ViewLike::size_type lower_bound_binary_thread(
     const ViewLike &view, const typename ViewLike::non_const_value_type &value,
     Pred pred = Pred()) {
@@ -180,14 +130,6 @@ KOKKOS_INLINE_FUNCTION typename ViewLike::size_type lower_bound_binary_thread(
   static_assert(is_iota_v<ViewLike> || Kokkos::is_view<ViewLike>::value,
                 "lower_bound_binary_thread requires a "
                 "KokkosKernels::Impl::Iota or a Kokkos::View");
-=======
-KOKKOS_INLINE_FUNCTION typename ViewLike::size_type thread_lower_binary_thread(
-    const ViewLike &view, const typename ViewLike::non_const_value_type &value,
-    Pred pred = Pred()) {
-  using size_type = typename ViewLike::size_type;
-  static_assert(1 == ViewLike::Rank,
-                "thread_lower_binary_thread requires rank-1 views");
->>>>>>> a7a482262 (Add parallel merge-path inspired algorithms)
 
   size_type lo = 0;
   size_type hi = view.size();
@@ -224,18 +166,12 @@ template <typename ViewLike,
 KOKKOS_INLINE_FUNCTION typename ViewLike::size_type lower_bound_thread(
     const ViewLike &view, const typename ViewLike::non_const_value_type &value,
     Pred pred = Pred()) {
-<<<<<<< HEAD
   static_assert(1 == ViewLike::rank,
                 "lower_bound_thread requires rank-1 views");
   static_assert(KokkosKernels::Impl::is_iota_v<ViewLike> ||
                     Kokkos::is_view<ViewLike>::value,
                 "lower_bound_thread requires a "
                 "KokkosKernels::Impl::Iota or a Kokkos::View");
-=======
-  static_assert(1 == ViewLike::Rank,
-                "lower_bound_thread requires rank-1 views");
-
->>>>>>> a7a482262 (Add parallel merge-path inspired algorithms)
   /*
      sequential search makes on average 0.5 * view.size memory accesses
      binary search makes log2(view.size)+1 accesses
@@ -243,11 +179,7 @@ KOKKOS_INLINE_FUNCTION typename ViewLike::size_type lower_bound_thread(
      log2(x) <= 0.5x roughly when x >= 8
   */
   if (view.size() >= 8) {
-<<<<<<< HEAD
     return Impl::lower_bound_binary_thread(view, value, pred);
-=======
-    return Impl::thread_lower_binary_thread(view, value, pred);
->>>>>>> a7a482262 (Add parallel merge-path inspired algorithms)
   } else {
     return Impl::lower_bound_sequential_thread(view, value, pred);
   }
