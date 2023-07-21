@@ -21,6 +21,149 @@
 #include <KokkosKernels_TestUtils.hpp>
 
 namespace Test {
+
+/*! \brief Test scal will AV being a view or a scalar
+
+*/
+template <typename XView, typename YView, typename Device, typename AV>
+void impl_test_scal_a_is_3(int N, const AV &a) {
+
+  typedef typename XView::value_type ScalarX;
+  typedef typename YView::value_type ScalarY;
+  typedef Kokkos::ArithTraits<ScalarX> AT;
+
+  typename AT::mag_type eps = AT::epsilon() * 1000; // FIXME
+
+  view_stride_adapter<XView> x("X", N);
+  view_stride_adapter<YView> y("Y", N);
+
+  Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
+      13718);
+
+  {
+    ScalarX randStart, randEnd;
+    Test::getRandomBounds(1.0, randStart, randEnd);
+    Kokkos::fill_random(x.d_view, rand_pool, randStart, randEnd);
+  }
+
+  Kokkos::deep_copy(x.h_base, x.d_base);
+
+  KokkosBlas::scal(y.d_view, a, x.d_view);
+  Kokkos::deep_copy(y.h_base, y.d_base);
+  for (int i = 0; i < N; i++) {
+    // scaling factor is 3
+    EXPECT_NEAR_KK(static_cast<ScalarY>(3 * x.h_view(i)), y.h_view(i), eps);
+  }
+
+  // Zero out y again and run with const input
+  Kokkos::deep_copy(y.d_view, Kokkos::ArithTraits<ScalarY>::zero());
+  KokkosBlas::scal(y.d_view, a, x.d_view_const);
+  Kokkos::deep_copy(y.h_base, y.d_base);
+  for (int i = 0; i < N; i++) {
+    // scaling factor is three
+    EXPECT_NEAR_KK(static_cast<ScalarY>(3 * x.h_view(i)), y.h_view(i), eps);
+  }
+}
+
+/*! \brief test scal with alpha as a device view of rank 0 or rank 1
+
+    \tparam RANK if VIEW what rank is alpha?
+    \tparam STATIC if VIEW and RANK=1, is the extent static?
+*/
+template <typename ScalarX, typename ScalarY, typename ScalarA, typename Layout, typename Device, int RANK, bool STATIC>
+void impl_test_scal_device_alpha(int N) {
+
+  using XView = Kokkos::View<ScalarX*, Layout, Device>;
+  using YView = Kokkos::View<ScalarY*, Layout, Device>;
+
+  if constexpr (1 == RANK && STATIC) {
+    Kokkos::View<ScalarA[1], Layout, Device> a("View<A[1]>");
+    Kokkos::deep_copy(a, 3);
+    impl_test_scal_a_is_3<XView, YView, Device>(N, a);
+  } else if constexpr(1 == RANK) {
+    Kokkos::View<ScalarA*, Layout, Device> a("View<A*>", 1);
+    Kokkos::deep_copy(a, 3);
+    impl_test_scal_a_is_3<XView, YView, Device>(N, a);
+  } else if constexpr(0 == RANK) {
+    Kokkos::View<ScalarA, Layout, Device> a("View<A>");
+    Kokkos::deep_copy(a, 3);
+    impl_test_scal_a_is_3<XView, YView, Device>(N, a);
+  }
+}
+
+/*! \brief Test scal will AV being a view or a scalar
+
+*/
+template <typename XView, typename YView, typename Device, typename AV>
+void impl_test_scal_mv_a_is_3(const int N, const int K, const AV &a) {
+
+  using ScalarX = typename XView::value_type;
+  using ScalarY = typename YView::value_type;
+  typedef Kokkos::ArithTraits<ScalarX> AT;
+
+  typename AT::mag_type eps = AT::epsilon() * 1000; // FIXME
+
+  view_stride_adapter<XView> x("X", N, K);
+  view_stride_adapter<YView> y("Y", N, K);
+
+  Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
+      13718);
+
+  {
+    ScalarX randStart, randEnd;
+    Test::getRandomBounds(1.0, randStart, randEnd);
+    Kokkos::fill_random(x.d_view, rand_pool, randStart, randEnd);
+  }
+
+  Kokkos::deep_copy(x.h_base, x.d_base);
+
+  KokkosBlas::scal(y.d_view, a, x.d_view);
+  Kokkos::deep_copy(y.h_base, y.d_base);
+  for (int k = 0; k < K; ++k) {
+    for (int n = 0; n < N; ++n) {
+      // scaling factor is 3
+      EXPECT_NEAR_KK(static_cast<ScalarY>(3 * x.h_view(n,k)), y.h_view(n,k), eps);
+    }
+  }
+
+  // Zero out y again and run with const input
+  Kokkos::deep_copy(y.d_view, Kokkos::ArithTraits<ScalarY>::zero());
+  KokkosBlas::scal(y.d_view, a, x.d_view_const);
+  Kokkos::deep_copy(y.h_base, y.d_base);
+  for (int k = 0; k < K; ++k) {
+    for (int n = 0; n < N; ++n) {
+      // scaling factor is three
+      EXPECT_NEAR_KK(static_cast<ScalarY>(3 * x.h_view(n,k)), y.h_view(n,k), eps);
+    }
+  }
+}
+
+/*! \brief test scal with alpha as a device view of rank 0 or rank 1
+
+    \tparam RANK if VIEW what rank is alpha?
+    \tparam STATIC if VIEW and RANK=1, is the extent static?
+*/
+template <typename ScalarX, typename ScalarY, typename ScalarA, typename Layout, typename Device, int RANK, bool STATIC>
+void impl_test_scal_mv_device_alpha(const int N, const int K) {
+
+  using XView = Kokkos::View<ScalarX**, Layout, Device>;
+  using YView = Kokkos::View<ScalarY**, Layout, Device>;
+
+  if constexpr (1 == RANK && STATIC) {
+    Kokkos::View<ScalarA[1], Layout, Device> a("View<A[1]>");
+    Kokkos::deep_copy(a, 3);
+    impl_test_scal_mv_a_is_3<XView, YView, Device>(N, K, a);
+  } else if constexpr(1 == RANK) {
+    Kokkos::View<ScalarA*, Layout, Device> a("View<A*>", K);
+    Kokkos::deep_copy(a, 3);
+    impl_test_scal_mv_a_is_3<XView, YView, Device>(N, K, a);
+  } else if constexpr(0 == RANK) {
+    Kokkos::View<ScalarA, Layout, Device> a("View<A>");
+    Kokkos::deep_copy(a, 3);
+    impl_test_scal_mv_a_is_3<XView, YView, Device>(N, K, a);
+  }
+}
+
 template <class ViewTypeA, class ViewTypeB, class Device>
 void impl_test_scal(int N) {
   typedef typename ViewTypeA::value_type ScalarA;
@@ -58,6 +201,8 @@ void impl_test_scal(int N) {
     EXPECT_NEAR_KK(static_cast<ScalarB>(a * x.h_view(i)), y.h_view(i), eps);
   }
 }
+
+
 
 template <class ViewTypeA, class ViewTypeB, class Device>
 void impl_test_scal_mv(int N, int K) {
@@ -143,12 +288,30 @@ int test_scal() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&      \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-  typedef Kokkos::View<ScalarA*, Kokkos::LayoutLeft, Device> view_type_a_ll;
-  typedef Kokkos::View<ScalarB*, Kokkos::LayoutLeft, Device> view_type_b_ll;
+  using view_type_a_ll = Kokkos::View<ScalarA*, Kokkos::LayoutLeft, Device>;
+  using view_type_b_ll = Kokkos::View<ScalarB*, Kokkos::LayoutLeft, Device>;
+
   Test::impl_test_scal<view_type_a_ll, view_type_b_ll, Device>(0);
   Test::impl_test_scal<view_type_a_ll, view_type_b_ll, Device>(13);
   Test::impl_test_scal<view_type_a_ll, view_type_b_ll, Device>(1024);
-  // Test::impl_test_scal<view_type_a_ll, view_type_b_ll, Device>(132231);
+  Test::impl_test_scal<view_type_a_ll, view_type_b_ll, Device>(132231);
+
+  /* Test that scal works for 0-rank and 1-rank views from the device. Host alphas are tested elsewhere */
+  // clang-format off
+  //                                                                                       rank, static
+  Test::impl_test_scal_device_alpha<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, 0,    false>(0);
+  Test::impl_test_scal_device_alpha<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, 1,    false>(0);
+  Test::impl_test_scal_device_alpha<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, 1,    true >(0);
+
+  Test::impl_test_scal_device_alpha<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, 0, false>(13);
+  Test::impl_test_scal_device_alpha<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, 1, false>(13);
+  Test::impl_test_scal_device_alpha<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, 1, true >(13);
+
+  Test::impl_test_scal_device_alpha<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, 0, false>(1024);
+  Test::impl_test_scal_device_alpha<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, 1, false>(1024);
+  Test::impl_test_scal_device_alpha<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, 1, true >(1024);
+  // clang-format on
+
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || \
@@ -159,7 +322,7 @@ int test_scal() {
   Test::impl_test_scal<view_type_a_lr, view_type_b_lr, Device>(0);
   Test::impl_test_scal<view_type_a_lr, view_type_b_lr, Device>(13);
   Test::impl_test_scal<view_type_a_lr, view_type_b_lr, Device>(1024);
-  // Test::impl_test_scal<view_type_a_lr, view_type_b_lr, Device>(132231);
+  Test::impl_test_scal<view_type_a_lr, view_type_b_lr, Device>(132231);
 #endif
 
 #if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
@@ -169,7 +332,7 @@ int test_scal() {
   Test::impl_test_scal<view_type_a_ls, view_type_b_ls, Device>(0);
   Test::impl_test_scal<view_type_a_ls, view_type_b_ls, Device>(13);
   Test::impl_test_scal<view_type_a_ls, view_type_b_ls, Device>(1024);
-  // Test::impl_test_scal<view_type_a_ls, view_type_b_ls, Device>(132231);
+  Test::impl_test_scal<view_type_a_ls, view_type_b_ls, Device>(132231);
 #endif
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) && \
@@ -191,7 +354,24 @@ int test_scal_mv() {
   Test::impl_test_scal_mv<view_type_a_ll, view_type_b_ll, Device>(0, 5);
   Test::impl_test_scal_mv<view_type_a_ll, view_type_b_ll, Device>(13, 5);
   Test::impl_test_scal_mv<view_type_a_ll, view_type_b_ll, Device>(1024, 5);
-  // Test::impl_test_scal_mv<view_type_a_ll, view_type_b_ll, Device>(132231,5);
+  Test::impl_test_scal_mv<view_type_a_ll, view_type_b_ll, Device>(132231,5);
+
+  /* Test that scal works for 0-rank and 1-rank views from the device. Host alphas are tested elsewhere */
+  // clang-format off
+  //                                                                                          rank, static
+  Test::impl_test_scal_mv_device_alpha<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, 0,    false>(0, 5);
+  Test::impl_test_scal_mv_device_alpha<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, 1,    false>(0, 5);
+  Test::impl_test_scal_mv_device_alpha<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, 1,    true >(0, 5);
+
+  Test::impl_test_scal_mv_device_alpha<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, 0, false>(13, 5);
+  Test::impl_test_scal_mv_device_alpha<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, 1, false>(13, 5);
+  Test::impl_test_scal_mv_device_alpha<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, 1, true >(13, 5);
+
+  Test::impl_test_scal_mv_device_alpha<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, 0, false>(1024, 5);
+  Test::impl_test_scal_mv_device_alpha<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, 1, false>(1024, 5);
+  Test::impl_test_scal_mv_device_alpha<ScalarA, ScalarB, ScalarA, Kokkos::LayoutLeft, Device, 1, true >(1024, 5);
+  // clang-format on
+
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || \
@@ -202,7 +382,7 @@ int test_scal_mv() {
   Test::impl_test_scal_mv<view_type_a_lr, view_type_b_lr, Device>(0, 5);
   Test::impl_test_scal_mv<view_type_a_lr, view_type_b_lr, Device>(13, 5);
   Test::impl_test_scal_mv<view_type_a_lr, view_type_b_lr, Device>(1024, 5);
-  // Test::impl_test_scal_mv<view_type_a_lr, view_type_b_lr, Device>(132231,5);
+  Test::impl_test_scal_mv<view_type_a_lr, view_type_b_lr, Device>(132231,5);
 #endif
 
 #if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
@@ -212,7 +392,7 @@ int test_scal_mv() {
   Test::impl_test_scal_mv<view_type_a_ls, view_type_b_ls, Device>(0, 5);
   Test::impl_test_scal_mv<view_type_a_ls, view_type_b_ls, Device>(13, 5);
   Test::impl_test_scal_mv<view_type_a_ls, view_type_b_ls, Device>(1024, 5);
-  // Test::impl_test_scal_mv<view_type_a_ls, view_type_b_ls, Device>(132231,5);
+  Test::impl_test_scal_mv<view_type_a_ls, view_type_b_ls, Device>(132231,5);
 #endif
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) && \

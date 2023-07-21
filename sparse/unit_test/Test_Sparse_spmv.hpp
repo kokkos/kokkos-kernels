@@ -164,6 +164,14 @@ void check_spmv(
     typename y_vector_type::non_const_value_type beta, char mode,
     typename Kokkos::ArithTraits<typename crsMat_t::value_type>::mag_type
         max_val) {
+
+  std::cerr << __FILE__ << ":" << __LINE__ << " check_spmv("
+            << "alpha=" << alpha
+            << ", beta=" << beta
+            << ", mode=" << mode
+            << ", max_val=" << max_val
+            << ")\n";
+
   // typedef typename crsMat_t::StaticCrsGraphType graph_t;
   using ExecSpace        = typename crsMat_t::execution_space;
   using my_exec_space    = Kokkos::RangePolicy<ExecSpace>;
@@ -179,12 +187,16 @@ void check_spmv(
   Kokkos::deep_copy(expected_y, y);
   Kokkos::fence();
 
+  std::cerr << __FILE__ << ":" << __LINE__ << " sequential_spmv...\n";
   sequential_spmv(input_mat, x, expected_y, alpha, beta, mode);
   bool threw = false;
   std::string msg;
   try {
+    std::cerr << __FILE__ << ":" << __LINE__ << " KokkosSparse::spmv...\n";
     KokkosSparse::spmv(controls, &mode, alpha, input_mat, x, beta, y);
+    std::cerr << __FILE__ << ":" << __LINE__ << " fence...\n";
     Kokkos::fence();
+    std::cerr << __FILE__ << ":" << __LINE__ << " ...done fence!\n";
   } catch (std::exception &e) {
     threw = true;
     msg   = e.what();
@@ -193,6 +205,7 @@ void check_spmv(
                       << ": threw exception:\n"
                       << msg << '\n';
   int num_errors = 0;
+  std::cerr << __FILE__ << ":" << __LINE__ << " check result...\n";
   Kokkos::parallel_reduce(
       "KokkosSparse::Test::spmv", my_exec_space(0, y.extent(0)),
       fSPMV<y_vector_type, y_vector_type>(expected_y, y, eps, max_val),
@@ -447,14 +460,17 @@ void test_spmv(const Controls &controls, lno_t numRows, size_type nnz,
   const lno_t max_nnz_per_row =
       numRows ? (nnz / numRows + row_size_variance) : 0;
 
+  std::cerr << __FILE__ << ":" << __LINE__ << "\n";
   x_vector_type input_x("x", nc);
   y_vector_type output_y("y", nr);
   x_vector_type input_xt("x", nr);
   y_vector_type output_yt("y", nc);
 
+  std::cerr << __FILE__ << ":" << __LINE__ << "\n";
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
       13718);
 
+  std::cerr << __FILE__ << ":" << __LINE__ << "\n";
   Kokkos::fill_random(input_x, rand_pool, randomUpperBound<scalar_t>(max_x));
   Kokkos::fill_random(output_y, rand_pool, randomUpperBound<scalar_t>(max_y));
   Kokkos::fill_random(input_xt, rand_pool, randomUpperBound<scalar_t>(max_x));
@@ -463,6 +479,7 @@ void test_spmv(const Controls &controls, lno_t numRows, size_type nnz,
   // We also need to bound the values
   // in the matrix to bound the cancellations
   // coming from arithmetic operations.
+  std::cerr << __FILE__ << ":" << __LINE__ << "\n";
   Kokkos::fill_random(input_mat.values, rand_pool,
                       randomUpperBound<scalar_t>(max_val));
 
@@ -480,6 +497,7 @@ void test_spmv(const Controls &controls, lno_t numRows, size_type nnz,
       for (double beta : testAlphaBeta) {
         mag_t max_error =
             beta * max_y + alpha * max_nnz_per_row * max_val * max_x;
+        std::cerr << __FILE__ << ":" << __LINE__ << "\n";
         Test::check_spmv(controls, input_mat, input_x, output_y, alpha, beta,
                          mode, max_error);
       }
@@ -491,6 +509,7 @@ void test_spmv(const Controls &controls, lno_t numRows, size_type nnz,
         // hoping the transpose won't have a long column...
         mag_t max_error =
             beta * max_y + alpha * max_nnz_per_row * max_val * max_x;
+        std::cerr << __FILE__ << ":" << __LINE__ << "\n";
         Test::check_spmv(controls, input_mat, input_xt, output_yt, alpha, beta,
                          mode, max_error);
       }
@@ -503,12 +522,26 @@ template <typename scalar_t, typename lno_t, typename size_type,
 void test_spmv_algorithms(lno_t numRows, size_type nnz, lno_t bandwidth,
                           lno_t row_size_variance, bool heavy) {
   {
+    std::cerr << __FILE__ << ":" << __LINE__ 
+              << " test_spmv_algorithms[]("
+              << numRows << ", "
+              << nnz << ", "
+              << bandwidth  << ", "
+              << row_size_variance << ", "
+              << heavy << ")\n";
     Controls controls;
     test_spmv<scalar_t, lno_t, size_type, Device>(
         controls, numRows, nnz, bandwidth, row_size_variance, heavy);
   }
 
   {
+    std::cerr << __FILE__ << ":" << __LINE__ 
+              << " test_spmv_algorithms[algorithm=native]("
+              << numRows << ", "
+              << nnz << ", "
+              << bandwidth  << ", "
+              << row_size_variance << ", "
+              << heavy << ")\n";
     Controls controls;
     controls.setParameter("algorithm", "native");
     test_spmv<scalar_t, lno_t, size_type, Device>(
@@ -1597,24 +1630,32 @@ void test_spmv_bsrmatrix(lno_t blockSize, lno_t k, y_scalar_t alpha,
 
 #define EXECUTE_TEST_ISSUE_101(DEVICE)                                    \
   TEST_F(TestCategory, sparse##_##spmv_issue_101##_##OFFSET##_##DEVICE) { \
+    std::cerr << __FILE__ << ":" << __LINE__ << "(1)\n"; \
     test_github_issue_101<DEVICE>();                                      \
   }
 
 #define EXECUTE_TEST_FN(SCALAR, ORDINAL, OFFSET, DEVICE)                       \
   TEST_F(TestCategory,                                                         \
          sparse##_##spmv##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {       \
+         std::cerr << __FILE__ << ":" << __LINE__ << "(2)\n"; \
     test_spmv_algorithms<SCALAR, ORDINAL, OFFSET, DEVICE>(1000, 1000 * 3, 200, \
                                                           10, true);           \
+    std::cerr << __FILE__ << ":" << __LINE__ << "(3)\n"; \
     test_spmv_algorithms<SCALAR, ORDINAL, OFFSET, DEVICE>(1000, 1000 * 3, 100, \
                                                           10, true);           \
+    std::cerr << __FILE__ << ":" << __LINE__ << "(4)\n"; \
     test_spmv_algorithms<SCALAR, ORDINAL, OFFSET, DEVICE>(1000, 1000 * 20,     \
                                                           100, 5, true);       \
+    std::cerr << __FILE__ << ":" << __LINE__ << "(5)\n"; \
     test_spmv_algorithms<SCALAR, ORDINAL, OFFSET, DEVICE>(50000, 50000 * 3,    \
                                                           20, 10, false);      \
+    std::cerr << __FILE__ << ":" << __LINE__ << "(6)\n"; \
     test_spmv_algorithms<SCALAR, ORDINAL, OFFSET, DEVICE>(50000, 50000 * 3,    \
                                                           100, 10, false);     \
+    std::cerr << __FILE__ << ":" << __LINE__ << "(7)\n"; \
     test_spmv_algorithms<SCALAR, ORDINAL, OFFSET, DEVICE>(10000, 10000 * 2,    \
                                                           100, 5, false);      \
+    std::cerr << __FILE__ << ":" << __LINE__ << "(8)\n"; \
     test_spmv_controls<SCALAR, ORDINAL, OFFSET, DEVICE>(10000, 10000 * 20,     \
                                                         100, 5);               \
   }
@@ -1623,18 +1664,25 @@ void test_spmv_bsrmatrix(lno_t blockSize, lno_t k, y_scalar_t alpha,
   TEST_F(                                                                           \
       TestCategory,                                                                 \
       sparse##_##spmv_mv##_##SCALAR##_##ORDINAL##_##OFFSET##_##LAYOUT##_##DEVICE) { \
+    std::cerr << __FILE__ << ":" << __LINE__ << "(9)\n"; \
     test_spmv_mv<SCALAR, ORDINAL, OFFSET, Kokkos::LAYOUT, DEVICE>(                  \
         1000, 1000 * 3, 200, 10, true, 1);                                          \
+    std::cerr << __FILE__ << ":" << __LINE__ << "(10)\n"; \
     test_spmv_mv<SCALAR, ORDINAL, OFFSET, Kokkos::LAYOUT, DEVICE>(                  \
         1000, 1000 * 3, 100, 10, true, 5);                                          \
+    std::cerr << __FILE__ << ":" << __LINE__ << "(11)\n"; \
     test_spmv_mv<SCALAR, ORDINAL, OFFSET, Kokkos::LAYOUT, DEVICE>(                  \
         1000, 1000 * 2, 100, 5, true, 10);                                          \
+    std::cerr << __FILE__ << ":" << __LINE__ << "(12)\n"; \
     test_spmv_mv<SCALAR, ORDINAL, OFFSET, Kokkos::LAYOUT, DEVICE>(                  \
         50000, 50000 * 3, 20, 10, false, 1);                                        \
+    std::cerr << __FILE__ << ":" << __LINE__ << "(13)\n"; \
     test_spmv_mv<SCALAR, ORDINAL, OFFSET, Kokkos::LAYOUT, DEVICE>(                  \
         50000, 50000 * 3, 100, 10, false, 1);                                       \
+    std::cerr << __FILE__ << ":" << __LINE__ << "(14)\n"; \
     test_spmv_mv<SCALAR, ORDINAL, OFFSET, Kokkos::LAYOUT, DEVICE>(                  \
         10000, 10000 * 2, 100, 5, false, 5);                                        \
+    std::cerr << __FILE__ << ":" << __LINE__ << "(15)\n"; \
     test_spmv_mv_heavy<SCALAR, ORDINAL, OFFSET, Kokkos::LAYOUT, DEVICE>(            \
         200, 200 * 10, 60, 4, 30);                                                  \
   }
@@ -1643,14 +1691,23 @@ void test_spmv_bsrmatrix(lno_t blockSize, lno_t k, y_scalar_t alpha,
   TEST_F(                                                                      \
       TestCategory,                                                            \
       sparse##_##spmv_struct##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {   \
+    std::cerr << __FILE__ << ":" << __LINE__ << "()\n"; \
     test_spmv_struct_1D<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 1, 1);            \
+    std::cerr << __FILE__ << ":" << __LINE__ << "()\n"; \
     test_spmv_struct_2D<SCALAR, ORDINAL, OFFSET, DEVICE>(25, 21, 3, 3);        \
+    std::cerr << __FILE__ << ":" << __LINE__ << "()\n"; \
     test_spmv_struct_2D<SCALAR, ORDINAL, OFFSET, DEVICE>(20, 25, 3, 3);        \
+    std::cerr << __FILE__ << ":" << __LINE__ << "()\n"; \
     test_spmv_struct_2D<SCALAR, ORDINAL, OFFSET, DEVICE>(22, 22, 3, 3);        \
+    std::cerr << __FILE__ << ":" << __LINE__ << "()\n"; \
     test_spmv_struct_3D<SCALAR, ORDINAL, OFFSET, DEVICE>(20, 20, 20, 3, 3, 3); \
+    std::cerr << __FILE__ << ":" << __LINE__ << "()\n"; \
     test_spmv_struct_3D<SCALAR, ORDINAL, OFFSET, DEVICE>(22, 22, 22, 3, 3, 3); \
+    std::cerr << __FILE__ << ":" << __LINE__ << "()\n"; \
     test_spmv_struct_3D<SCALAR, ORDINAL, OFFSET, DEVICE>(25, 10, 20, 3, 3, 3); \
+    std::cerr << __FILE__ << ":" << __LINE__ << "()\n"; \
     test_spmv_struct_3D<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 20, 25, 3, 3, 3); \
+    std::cerr << __FILE__ << ":" << __LINE__ << "()\n"; \
     test_spmv_struct_3D<SCALAR, ORDINAL, OFFSET, DEVICE>(10, 24, 20, 3, 3, 3); \
   }
 
@@ -1658,8 +1715,10 @@ void test_spmv_bsrmatrix(lno_t blockSize, lno_t k, y_scalar_t alpha,
   TEST_F(                                                                                  \
       TestCategory,                                                                        \
       sparse##_##spmv_mv_struct##_##SCALAR##_##ORDINAL##_##OFFSET##_##LAYOUT##_##DEVICE) { \
+    std::cerr << __FILE__ << ":" << __LINE__ << "()\n"; \
     test_spmv_mv_struct_1D<SCALAR, ORDINAL, OFFSET, Kokkos::LAYOUT, DEVICE>(               \
         10, 1);                                                                            \
+    std::cerr << __FILE__ << ":" << __LINE__ << "()\n"; \
     test_spmv_mv_struct_1D<SCALAR, ORDINAL, OFFSET, Kokkos::LAYOUT, DEVICE>(               \
         10, 2);                                                                            \
   }
@@ -1673,50 +1732,70 @@ void test_spmv_bsrmatrix(lno_t blockSize, lno_t k, y_scalar_t alpha,
       TestCategory,                                                                                                   \
       sparse##_##spmv_tensor_core##_##ASCALAR##_##XSCALAR##_##YSCALAR##_##ORDINAL##_##OFFSET##_##LAYOUT##_##DEVICE) { \
     /* easy case with different alphas and betas*/                                                                    \
+    std::cerr << __FILE__ << ":" << __LINE__ << "()\n"; \
     test_spmv_bsrmatrix<ASCALAR, XSCALAR, YSCALAR, ORDINAL, OFFSET,                                                   \
                         Kokkos::LAYOUT, DEVICE>(16, 16, 0, 0);                                                        \
+    std::cerr << __FILE__ << ":" << __LINE__ << "()\n"; \
     test_spmv_bsrmatrix<ASCALAR, XSCALAR, YSCALAR, ORDINAL, OFFSET,                                                   \
                         Kokkos::LAYOUT, DEVICE>(16, 16, 1, 0);                                                        \
+    std::cerr << __FILE__ << ":" << __LINE__ << "()\n"; \
     test_spmv_bsrmatrix<ASCALAR, XSCALAR, YSCALAR, ORDINAL, OFFSET,                                                   \
                         Kokkos::LAYOUT, DEVICE>(16, 16, 0, 1);                                                        \
+    std::cerr << __FILE__ << ":" << __LINE__ << "()\n"; \
     test_spmv_bsrmatrix<ASCALAR, XSCALAR, YSCALAR, ORDINAL, OFFSET,                                                   \
                         Kokkos::LAYOUT, DEVICE>(16, 16, 1, 1);                                                        \
     /* easy case with a real alpha/beta */                                                                            \
+    std::cerr << __FILE__ << ":" << __LINE__ << "()\n"; \
     test_spmv_bsrmatrix<ASCALAR, XSCALAR, YSCALAR, ORDINAL, OFFSET,                                                   \
                         Kokkos::LAYOUT, DEVICE>(16, 16, 1.25, -2.73);                                                 \
     /* smaller block size with k < and > block size*/                                                                 \
+    std::cerr << __FILE__ << ":" << __LINE__ << "()\n"; \
     test_spmv_bsrmatrix<ASCALAR, XSCALAR, YSCALAR, ORDINAL, OFFSET,                                                   \
                         Kokkos::LAYOUT, DEVICE>(7, 6, 1.25, -2.73);                                                   \
+    std::cerr << __FILE__ << ":" << __LINE__ << "()\n"; \
     test_spmv_bsrmatrix<ASCALAR, XSCALAR, YSCALAR, ORDINAL, OFFSET,                                                   \
                         Kokkos::LAYOUT, DEVICE>(7, 7, 1.25, -2.73);                                                   \
+    std::cerr << __FILE__ << ":" << __LINE__ << "()\n"; \
     test_spmv_bsrmatrix<ASCALAR, XSCALAR, YSCALAR, ORDINAL, OFFSET,                                                   \
                         Kokkos::LAYOUT, DEVICE>(7, 8, 1.25, -2.73);                                                   \
     /* smaller block size with k < and > block size*/                                                                 \
+    std::cerr << __FILE__ << ":" << __LINE__ << "()\n"; \
     test_spmv_bsrmatrix<ASCALAR, XSCALAR, YSCALAR, ORDINAL, OFFSET,                                                   \
                         Kokkos::LAYOUT, DEVICE>(15, 14, 1.25, -2.73);                                                 \
+    std::cerr << __FILE__ << ":" << __LINE__ << "()\n"; \
     test_spmv_bsrmatrix<ASCALAR, XSCALAR, YSCALAR, ORDINAL, OFFSET,                                                   \
                         Kokkos::LAYOUT, DEVICE>(15, 15, 1.25, -2.73);                                                 \
+    std::cerr << __FILE__ << ":" << __LINE__ << "()\n"; \
     test_spmv_bsrmatrix<ASCALAR, XSCALAR, YSCALAR, ORDINAL, OFFSET,                                                   \
                         Kokkos::LAYOUT, DEVICE>(15, 16, 1.25, -2.73);                                                 \
     /* larger block size with k < and > block size*/                                                                  \
+    std::cerr << __FILE__ << ":" << __LINE__ << "()\n"; \
     test_spmv_bsrmatrix<ASCALAR, XSCALAR, YSCALAR, ORDINAL, OFFSET,                                                   \
                         Kokkos::LAYOUT, DEVICE>(17, 16, 1.25, -2.73);                                                 \
+    std::cerr << __FILE__ << ":" << __LINE__ << "()\n"; \
     test_spmv_bsrmatrix<ASCALAR, XSCALAR, YSCALAR, ORDINAL, OFFSET,                                                   \
                         Kokkos::LAYOUT, DEVICE>(17, 17, 1.25, -2.73);                                                 \
+    std::cerr << __FILE__ << ":" << __LINE__ << "()\n"; \
     test_spmv_bsrmatrix<ASCALAR, XSCALAR, YSCALAR, ORDINAL, OFFSET,                                                   \
                         Kokkos::LAYOUT, DEVICE>(17, 18, 1.25, -2.73);                                                 \
     /* larger block size with k < and > block size*/                                                                  \
+    std::cerr << __FILE__ << ":" << __LINE__ << "()\n"; \
     test_spmv_bsrmatrix<ASCALAR, XSCALAR, YSCALAR, ORDINAL, OFFSET,                                                   \
                         Kokkos::LAYOUT, DEVICE>(32, 31, 1.25, -2.73);                                                 \
+    std::cerr << __FILE__ << ":" << __LINE__ << "()\n"; \
     test_spmv_bsrmatrix<ASCALAR, XSCALAR, YSCALAR, ORDINAL, OFFSET,                                                   \
                         Kokkos::LAYOUT, DEVICE>(32, 32, 1.25, -2.73);                                                 \
+    std::cerr << __FILE__ << ":" << __LINE__ << "()\n"; \
     test_spmv_bsrmatrix<ASCALAR, XSCALAR, YSCALAR, ORDINAL, OFFSET,                                                   \
                         Kokkos::LAYOUT, DEVICE>(32, 33, 1.25, -2.73);                                                 \
     /* more than one team per block*/                                                                                 \
+    std::cerr << __FILE__ << ":" << __LINE__ << "()\n"; \
     test_spmv_bsrmatrix<ASCALAR, XSCALAR, YSCALAR, ORDINAL, OFFSET,                                                   \
                         Kokkos::LAYOUT, DEVICE>(33, 13, 1.25, -2.73);                                                 \
+    std::cerr << __FILE__ << ":" << __LINE__ << "()\n"; \
     test_spmv_bsrmatrix<ASCALAR, XSCALAR, YSCALAR, ORDINAL, OFFSET,                                                   \
                         Kokkos::LAYOUT, DEVICE>(33, 27, 1.25, -2.73);                                                 \
+    std::cerr << __FILE__ << ":" << __LINE__ << "()\n"; \
     test_spmv_bsrmatrix<ASCALAR, XSCALAR, YSCALAR, ORDINAL, OFFSET,                                                   \
                         Kokkos::LAYOUT, DEVICE>(33, 41, 1.25, -2.73);                                                 \
   }

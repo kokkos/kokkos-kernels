@@ -43,15 +43,19 @@ struct GetUnifiedLayout {
                                           default_layout>::array_layout;
 };
 
+/* If T is not a view, type is TX::non_const_value_type
+*/
 template <class T, class TX, bool do_const,
           bool isView = Kokkos::is_view<T>::value>
 struct GetUnifiedScalarViewType {
   typedef typename TX::non_const_value_type type;
 };
 
+/* If T is a view, type is T with unified layout & unmanaged
+*/
 template <class T, class TX>
 struct GetUnifiedScalarViewType<T, TX, false, true> {
-  typedef Kokkos::View<typename T::non_const_value_type*,
+  typedef Kokkos::View<typename T::non_const_data_type,
                        typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<
                            T, typename TX::array_layout>::array_layout,
                        typename T::device_type,
@@ -61,13 +65,14 @@ struct GetUnifiedScalarViewType<T, TX, false, true> {
 
 template <class T, class TX>
 struct GetUnifiedScalarViewType<T, TX, true, true> {
-  typedef Kokkos::View<typename T::const_value_type*,
+  typedef Kokkos::View<typename T::const_data_type,
                        typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<
                            T, typename TX::array_layout>::array_layout,
                        typename T::device_type,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       type;
 };
+
 
 template <class... Ts>
 struct are_integral : std::bool_constant<((std::is_integral_v<Ts> ||

@@ -13,20 +13,21 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef TEST_COMMON_HPP
-#define TEST_COMMON_HPP
 
-#include <Test_Common_ArithTraits.hpp>
-// #include<Test_Common_float128.hpp>
-#include <Test_Common_set_bit_count.hpp>
-#include <Test_Common_Sorting.hpp>
-#include <Test_Common_IOUtils.hpp>
-#include <Test_Common_Error.hpp>
-#include <Test_Common_Version.hpp>
-#include <Test_Common_PrintConfiguration.hpp>
-#include <Test_Common_Iota.hpp>
-#include <Test_Common_LowerBound.hpp>
-// #include <Test_Common_UnifiedScalarView.hpp>
-#include <Test_Common_UpperBound.hpp>
+#ifndef KOKKOSKERNELS_SCALARHINT_HPP
+#define KOKKOSKERNELS_SCALARHINT_HPP
 
-#endif  // TEST_COMMON_HPP
+namespace KokkosKernels::Impl {
+
+/*! An enum that can be used as a template param to optimize an implementation
+*/
+enum class ScalarHint : int {
+  none,
+  zero,
+  pos_one,
+  neg_one
+};
+
+} // namespace KokkosKernels::Impl
+
+#endif // KOKKOSKERNELS_SCALARHINT_HPP

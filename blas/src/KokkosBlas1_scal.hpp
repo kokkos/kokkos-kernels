@@ -23,6 +23,8 @@
 #include <KokkosKernels_helpers.hpp>
 #include <KokkosKernels_Error.hpp>
 
+#include <KokkosBlas1_scal_unified_scalar_view_impl.hpp>
+
 ///
 /// General/Host Scale
 ///
@@ -37,7 +39,7 @@ namespace KokkosBlas {
 /// \tparam RMV 1-D or 2-D Kokkos::View specialization.
 /// \tparam XMV 1-D or 2-D Kokkos::View specialization. It must have
 ///   the same rank as RMV.
-/// \tparam AV 1-D or 2-D Kokkos::View specialization.
+/// \tparam AV a scalar, 0-D, or 1-D Kokkos::View specialization.
 ///
 /// \param space [in] the execution space instance on which the kernel will run.
 /// \param R [in/out] view of type RMV in which the results will be stored.
@@ -103,13 +105,23 @@ void scal(const execution_space& space, const RMV& R, const AV& a,
   using XMV_Internal = Kokkos::View<typename XMV::const_data_type,
                                     UnifiedXLayout, typename XMV::device_type,
                                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
-  using AV_Internal =
+
+  // this promotes AV to be compatible with XMV, e.g. if XMV is complex<double>
+  // and AV is double, result will be complex<double>
+  using AV_PromotedToXMV =
       typename KokkosKernels::Impl::GetUnifiedScalarViewType<AV, XMV_Internal,
                                                              true>::type;
 
+  // this canonicalizes the type of Alpha to be a particular flavor of scalar,
+  // 0D, or 1D views, depending on whether alpha lives on the host or device
+  using AlphaUnifier =
+      KokkosBlas::Impl::scal_unified_scalar_view<RMV_Internal, AV_PromotedToXMV,
+                                                 XMV_Internal>;
+  using AV_Internal = typename AlphaUnifier::alpha_type;
+
   RMV_Internal R_internal = R;
-  AV_Internal a_internal  = a;
   XMV_Internal X_internal = X;
+  AV_Internal a_internal  = AlphaUnifier::from(AV_PromotedToXMV(a));
 
   Impl::Scal<execution_space, RMV_Internal, AV_Internal, XMV_Internal>::scal(
       space, R_internal, a_internal, X_internal);
