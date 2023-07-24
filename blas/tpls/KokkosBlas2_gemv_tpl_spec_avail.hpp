@@ -158,6 +158,47 @@ KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<float>,
                                         Kokkos::LayoutRight)
 
 #endif
+
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
+
+#ifdef KOKKOS_ENABLE_SYCL
+
+#define KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ONEMKL(SCALAR, LAYOUT)               \
+  template <>                                                                \
+  struct gemv_tpl_spec_avail<                                                \
+      Kokkos::View<const SCALAR**, LAYOUT,                                   \
+                   Kokkos::Device<Kokkos::Experimental::SYCL,                \
+                                  Kokkos::Experimental::SYCLDeviceUSMSpace>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
+      Kokkos::View<const SCALAR*, LAYOUT,                                    \
+                   Kokkos::Device<Kokkos::Experimental::SYCL,                \
+                                  Kokkos::Experimental::SYCLDeviceUSMSpace>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
+      Kokkos::View<SCALAR*, LAYOUT,                                          \
+                   Kokkos::Device<Kokkos::Experimental::SYCL,                \
+                                  Kokkos::Experimental::SYCLDeviceUSMSpace>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {             \
+    enum : bool { value = true };                                            \
+  };
+
+KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ONEMKL(double, Kokkos::LayoutLeft)
+KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ONEMKL(float, Kokkos::LayoutLeft)
+KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ONEMKL(Kokkos::complex<double>,
+                                       Kokkos::LayoutLeft)
+KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ONEMKL(Kokkos::complex<float>,
+                                       Kokkos::LayoutLeft)
+
+KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ONEMKL(double, Kokkos::LayoutRight)
+KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ONEMKL(float, Kokkos::LayoutRight)
+KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ONEMKL(Kokkos::complex<double>,
+                                       Kokkos::LayoutRight)
+KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ONEMKL(Kokkos::complex<float>,
+                                       Kokkos::LayoutRight)
+
+#endif
+
+#endif
+
 }  // namespace Impl
 }  // namespace KokkosBlas
 
