@@ -20,6 +20,7 @@
 /// \brief Mechanism to control internal behavior of kernels
 /// \author Luc Berger-Vergiat (lberge@sandia.gov)
 
+#include <string>
 #include <unordered_map>
 #include <string>
 #include "KokkosKernels_config.h"
