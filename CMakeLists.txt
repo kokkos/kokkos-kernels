@@ -126,7 +126,7 @@ ELSE()
   IF (NOT KOKKOSKERNELS_HAS_TRILINOS AND NOT KOKKOSKERNELS_HAS_PARENT)
    # This is a standalone build
    FIND_PACKAGE(Kokkos REQUIRED)
-   MESSAGE(STATUS "Found Kokkos at ${Kokkos_DIR}")
+   MESSAGE(STATUS "Found Kokkos version ${Kokkos_VERSION} at ${Kokkos_DIR}")
   ENDIF()
 
   INCLUDE(cmake/kokkos_backends.cmake)
