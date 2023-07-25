@@ -103,7 +103,7 @@ void test_chem() {
 
     KokkosODE::Experimental::ODE_params params(num_steps);
     vec_type tmp("tmp vector", neqs);
-    mv_type kstack("k stack", neqs, solver_type::num_stages());
+    mv_type kstack("k stack", solver_type::num_stages(), neqs);
 
     // Set initial conditions
     vec_type y_new("solution", neqs);
@@ -144,7 +144,7 @@ void test_chem() {
 
     KokkosODE::Experimental::ODE_params params(num_steps);
     vec_type tmp("tmp vector", neqs);
-    mv_type kstack("k stack", neqs, solver_type::num_stages());
+    mv_type kstack("k stack", solver_type::num_stages(), neqs);
 
     // Set initial conditions
     vec_type y_new("solution", neqs);

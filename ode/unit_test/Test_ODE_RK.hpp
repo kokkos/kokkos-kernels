@@ -130,7 +130,7 @@ void test_method(const std::string label, ode_type& my_ode,
 
   KokkosODE::Experimental::ODE_params params(num_steps);
   vec_type tmp("tmp vector", my_ode.neqs);
-  mv_type kstack("k stack", my_ode.neqs, solver_type::num_stages());
+  mv_type kstack("k stack", solver_type::num_stages(), my_ode.neqs);
 
   Kokkos::RangePolicy<execution_space> my_policy(0, 1);
   RKSolve_wrapper<ode_type, rk_type, vec_type, mv_type, scalar_type>
@@ -152,11 +152,11 @@ void test_method(const std::string label, ode_type& my_ode,
   (void)label;
 #endif
   for (int stageIdx = 0; stageIdx < solver_type::num_stages(); ++stageIdx) {
-    EXPECT_NEAR_KK(ks(0, stageIdx), kstack_h(0, stageIdx), 1e-8);
-    EXPECT_NEAR_KK(ks(1, stageIdx), kstack_h(1, stageIdx), 1e-8);
+    EXPECT_NEAR_KK(ks(0, stageIdx), kstack_h(stageIdx, 0), 1e-8);
+    EXPECT_NEAR_KK(ks(1, stageIdx), kstack_h(stageIdx, 1), 1e-8);
 #if defined(HAVE_KOKKOSKERNELS_DEBUG)
-    std::cout << "  k" << stageIdx << "={" << kstack_h(0, stageIdx) << ", "
-              << kstack_h(1, stageIdx) << "}" << std::endl;
+    std::cout << "  k" << stageIdx << "={" << kstack_h(stageIdx, 0) << ", "
+              << kstack_h(stageIdx, 1) << "}" << std::endl;
 #endif
   }
   EXPECT_NEAR_KK(sol(0), y_new_h(0), 1e-8);
@@ -322,7 +322,7 @@ void test_rate(ode_type& my_ode, const scalar_type& tstart,
   using solver_type     = KokkosODE::Experimental::RungeKutta<rk_type>;
 
   vec_type tmp("tmp vector", my_ode.neqs);
-  mv_type kstack("k stack", my_ode.neqs, solver_type::num_stages());
+  mv_type kstack("k stack", solver_type::num_stages(), my_ode.neqs);
 
   vec_type y_new("solution", my_ode.neqs);
   vec_type y_old("intial conditions", my_ode.neqs);
@@ -511,8 +511,8 @@ void test_adaptivity() {
 
   vec_type tmp("tmp vector", neqs);
   mv_type kstack(
-      "k stack", neqs,
-      KokkosODE::Experimental::RungeKutta<RK_type::RKF45>::num_stages());
+      "k stack",
+      KokkosODE::Experimental::RungeKutta<RK_type::RKF45>::num_stages(), neqs);
 
   Kokkos::RangePolicy<execution_space> my_policy(0, 1);
   KokkosODE::Experimental::ODE_params params(numSteps, maxSteps, absTol, relTol,
