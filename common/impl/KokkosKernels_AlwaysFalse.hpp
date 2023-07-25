@@ -17,23 +17,12 @@
 #ifndef KOKKOSKERNELS_ALWAYSFALSE_HPP
 #define KOKKOSKERNELS_ALWAYSFALSE_HPP
 
-#include <type_traits>
+namespace KokkosKernels::Impl {
 
-/*! \file KokkosKernels_AlwaysFalse.hpp
-    \brief A convenience type to be used in a static_assert that should always
-   fail
-*/
+// for use in static asserts
+template <typename...>
+inline constexpr bool always_false_v = false;
 
-namespace KokkosKernels {
-namespace Impl {
-
-template <typename T>
-using always_false = std::false_type;
-
-template <typename T>
-inline constexpr bool always_false_v = always_false<T>::value;
-
-}  // namespace Impl
-}  // namespace KokkosKernels
+}  // namespace KokkosKernels::Impl
 
 #endif  // KOKKOSKERNELS_ALWAYSFALSE_HPP

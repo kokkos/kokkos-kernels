@@ -145,7 +145,7 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
   // Whether to call KokkosKernel's native implementation, even if a TPL impl is
   // available
   bool useFallback = controls.isParameter("algorithm") &&
-                     controls.getParameter("algorithm") == "native";
+                     (controls.getParameter("algorithm") != "tpl");
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
   // cuSPARSE does not support the conjugate mode (C), and cuSPARSE 9 only
@@ -343,7 +343,7 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
   // Whether to call KokkosKernel's native implementation, even if a TPL impl is
   // available
   bool useFallback = controls.isParameter("algorithm") &&
-                     controls.getParameter("algorithm") == "native";
+                     (controls.getParameter("algorithm") != "tpl");
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
   // cuSPARSE does not support the modes (C), (T), (H)
@@ -634,7 +634,7 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
     useNative = useNative || (Conjugate[0] == mode[0]);
 #endif
     useNative = useNative || (controls.isParameter("algorithm") &&
-                              (controls.getParameter("algorithm") == "native"));
+                              (controls.getParameter("algorithm") != "tpl"));
 
     if (useNative) {
       return Impl::SPMV_MV<
@@ -798,10 +798,8 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
   //
   // Whether to call KokkosKernel's native implementation, even if a TPL impl is
   // available
-  bool useFallback =
-      controls.isParameter("algorithm") &&
-      (controls.getParameter("algorithm") == "native" ||
-       controls.getParameter("algorithm") == "experimental_bsr_tc");
+  bool useFallback = controls.isParameter("algorithm") &&
+                     (controls.getParameter("algorithm") != "tpl");
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
   // cuSPARSE does not support the modes (C), (T), (H)
