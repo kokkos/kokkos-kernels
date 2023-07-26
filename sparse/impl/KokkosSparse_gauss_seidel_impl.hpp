@@ -1787,25 +1787,31 @@ class PointGaussSeidel {
             if (block_size == 1) {
               Kokkos::parallel_for(
                   labelRegular,
-                  team_policy_t((numRegularRows + team_row_chunk_size - 1) /
-                                    team_row_chunk_size,
-                                suggested_team_size, vector_size),
+                  Kokkos::Experimental::require(
+                      team_policy_t((numRegularRows + team_row_chunk_size - 1) /
+                                        team_row_chunk_size,
+                                    suggested_team_size, vector_size),
+                      Kokkos::Experimental::WorkItemProperty::HintLightWeight),
                   gs);
             } else if (gs.num_max_vals_in_l2 == 0) {
               Kokkos::parallel_for(
                   labelBlock,
-                  block_apply_team_policy_t(
-                      (numRegularRows + team_row_chunk_size - 1) /
-                          team_row_chunk_size,
-                      suggested_team_size, vector_size),
+                  Kokkos::Experimental::require(
+                      block_apply_team_policy_t(
+                          (numRegularRows + team_row_chunk_size - 1) /
+                              team_row_chunk_size,
+                          suggested_team_size, vector_size),
+                      Kokkos::Experimental::WorkItemProperty::HintLightWeight),
                   gs);
             } else {
               Kokkos::parallel_for(
                   labelBigBlock,
-                  bigblock_apply_team_policy_t(
-                      (numRegularRows + team_row_chunk_size - 1) /
-                          team_row_chunk_size,
-                      suggested_team_size, vector_size),
+                  Kokkos::Experimental::require(
+                      bigblock_apply_team_policy_t(
+                          (numRegularRows + team_row_chunk_size - 1) /
+                              team_row_chunk_size,
+                          suggested_team_size, vector_size),
+                      Kokkos::Experimental::WorkItemProperty::HintLightWeight),
                   gs);
             }
           }
@@ -1827,13 +1833,17 @@ class PointGaussSeidel {
               Kokkos::deep_copy(long_row_x, nnz_scalar_t());
               Kokkos::parallel_for(
                   labelLong,
-                  longrow_apply_team_policy_t(numLongRows * teams_per_row,
-                                              longRowTeamSize),
+                  Kokkos::Experimental::require(
+                      longrow_apply_team_policy_t(numLongRows * teams_per_row,
+                                                  longRowTeamSize),
+                      Kokkos::Experimental::WorkItemProperty::HintLightWeight),
                   gs);
               Kokkos::parallel_for(
                   "KokkosSparse::GaussSeidel::LongRows::x_update",
-                  range_policy_t(color_index_end - numLongRows,
-                                 color_index_end),
+                  Kokkos::Experimental::require(
+                      range_policy_t(color_index_end - numLongRows,
+                                     color_index_end),
+                      Kokkos::Experimental::WorkItemProperty::HintLightWeight),
                   LongRowUpdateFunctor<decltype(Xcol), decltype(Ycol)>(
                       Xcol, Ycol, long_row_x, gs._permuted_inverse_diagonal,
                       gs.omega, color_index_end - numLongRows));
@@ -1882,10 +1892,13 @@ class PointGaussSeidel {
           nnz_lno_t numRegularRows =
               color_index_end - color_index_begin - numLongRows;
           if (numRegularRows) {
-            Kokkos::parallel_for(labelShort,
-                                 range_policy_t(color_index_begin,
-                                                color_index_end - numLongRows),
-                                 gs);
+            Kokkos::parallel_for(
+                labelShort,
+                Kokkos::Experimental::require(
+                    range_policy_t(color_index_begin,
+                                   color_index_end - numLongRows),
+                    Kokkos::Experimental::WorkItemProperty::HintLightWeight),
+                gs);
           }
           if (numLongRows) {
             gs._color_set_begin   = color_index_end - numLongRows;
@@ -1900,14 +1913,19 @@ class PointGaussSeidel {
                   Kokkos::subview(gs._Yvector, Kokkos::ALL(), long_row_col);
               gs._long_row_col = long_row_col;
               Kokkos::deep_copy(long_row_x, nnz_scalar_t());
-              Kokkos::parallel_for(labelLong,
-                                   Kokkos::RangePolicy<MyExecSpace, LongRowTag>(
-                                       0, numLongRows * par_per_row),
-                                   gs);
+              Kokkos::parallel_for(
+                  labelLong,
+                  Kokkos::Experimental::require(
+                      Kokkos::RangePolicy<MyExecSpace, LongRowTag>(
+                          0, numLongRows * par_per_row),
+                      Kokkos::Experimental::WorkItemProperty::HintLightWeight),
+                  gs);
               Kokkos::parallel_for(
                   "KokkosSparse::GaussSeidel::LongRows::x_update",
-                  range_policy_t(color_index_end - numLongRows,
-                                 color_index_end),
+                  Kokkos::Experimental::require(
+                      range_policy_t(color_index_end - numLongRows,
+                                     color_index_end),
+                      Kokkos::Experimental::WorkItemProperty::HintLightWeight),
                   LongRowUpdateFunctor<decltype(Xcol), decltype(Ycol)>(
                       Xcol, Ycol, long_row_x, gs._permuted_inverse_diagonal,
                       gs.omega, color_index_end - numLongRows));

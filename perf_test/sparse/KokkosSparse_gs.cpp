@@ -219,14 +219,22 @@ void runGS(const GS_Parameters& params) {
   KokkosSparse::Experimental::gauss_seidel_symbolic(
       &kh, nrows, nrows, A.graph.row_map, A.graph.entries,
       params.graph_symmetric);
-  double symbolicTime = timer.seconds();
-  std::cout << "\n*** Symbolic time: " << symbolicTime << '\n';
+  double symbolicLaunchTime = timer.seconds();
+  std::cout << "\n*** Symbolic launch time: " << symbolicLaunchTime << '\n';
+  timer.reset();
+  Kokkos::fence();
+  double symbolicComputeTime = timer.seconds();
+  std::cout << "\n*** Symbolic compute time: " << symbolicComputeTime << '\n';
   timer.reset();
   KokkosSparse::Experimental::gauss_seidel_numeric(
       &kh, nrows, nrows, A.graph.row_map, A.graph.entries, A.values,
       params.graph_symmetric);
-  double numericTime = timer.seconds();
-  std::cout << "\n*** Numeric time: " << numericTime << '\n';
+  double numericLaunchTime = timer.seconds();
+  std::cout << "\n*** Numeric launch time: " << numericLaunchTime << '\n';
+  timer.reset();
+  Kokkos::fence();
+  double numericComputeTime = timer.seconds();
+  std::cout << "\n*** Numeric compute time: " << numericComputeTime << '\n';
   timer.reset();
   // Last two parameters are damping factor (should be 1) and sweeps
   switch (params.direction) {
@@ -246,8 +254,14 @@ void runGS(const GS_Parameters& params) {
           true, true, 1.0, params.sweeps);
       break;
   }
-  double applyTime = timer.seconds();
-  std::cout << "\n*** Apply time: " << applyTime << '\n';
+
+  double applyLaunchTime = timer.seconds();
+  std::cout << "\n*** Apply launch time: " << applyLaunchTime << '\n';
+  timer.reset();
+  Kokkos::fence();
+  double applyComputeTime = timer.seconds();
+  std::cout << "\n*** Apply compute time: " << applyComputeTime << '\n';
+  timer.reset();
   kh.destroy_gs_handle();
   // Now, compute the 2-norm of residual
   scalar_view_t res("Ax-b", nrows);
