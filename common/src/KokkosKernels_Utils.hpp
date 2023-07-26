@@ -456,10 +456,19 @@ struct Fill_Reverse_Map {
 
 template <typename forward_array_type, typename MyExecSpace>
 void inclusive_parallel_prefix_sum(
+    MyExecSpace my_exec_space,
     typename forward_array_type::value_type num_elements,
-    forward_array_type arr, MyExecSpace my_exec_space = MyExecSpace()) {
-  kk_inclusive_parallel_prefix_sum<forward_array_type, MyExecSpace>(
-      num_elements, arr, my_exec_space);
+    forward_array_type arr) {
+  return kk_inclusive_parallel_prefix_sum<forward_array_type, MyExecSpace>(
+      my_exec_space, num_elements, arr);
+}
+
+template <typename forward_array_type, typename MyExecSpace>
+void inclusive_parallel_prefix_sum(
+    typename forward_array_type::value_type num_elements,
+    forward_array_type arr) {
+  MyExecSpace my_exec_space;
+  return inclusive_parallel_prefix_sum(my_exec_space, num_elements, arr);
 }
 
 template <typename forward_array_type, typename MyExecSpace>
@@ -661,6 +670,7 @@ struct StridedCopy {
 template <typename forward_array_type, typename reverse_array_type,
           typename MyExecSpace>
 void create_reverse_map(
+    MyExecSpace my_exec_space,
     const typename reverse_array_type::value_type
         &num_forward_elements,  // num_vertices
     const typename forward_array_type::value_type
@@ -668,8 +678,7 @@ void create_reverse_map(
 
     const forward_array_type &forward_map,  // vertex to colors
     reverse_array_type &reverse_map_xadj,   // colors to vertex xadj
-    reverse_array_type &reverse_map_adj,
-    MyExecSpace my_exec_space = MyExecSpace()) {  // colros to vertex adj
+    reverse_array_type &reverse_map_adj) {  // colros to vertex adj
 
   typedef typename reverse_array_type::value_type lno_t;
   typedef typename forward_array_type::value_type reverse_lno_t;
@@ -749,6 +758,23 @@ void create_reverse_map(
                          frm);
     my_exec_space.fence();
   }
+}
+
+template <typename forward_array_type, typename reverse_array_type,
+          typename MyExecSpace>
+void create_reverse_map(
+    const typename reverse_array_type::value_type
+        &num_forward_elements,  // num_vertices
+    const typename forward_array_type::value_type
+        &num_reverse_elements,  // num_colors
+
+    const forward_array_type &forward_map,  // vertex to colors
+    reverse_array_type &reverse_map_xadj,   // colors to vertex xadj
+    reverse_array_type &reverse_map_adj) {
+  MyExecSpace my_exec_space;
+  return create_reverse_map(my_exec_space, num_forward_elements,
+                            num_reverse_elements, forward_map, reverse_map_xadj,
+                            reverse_map_adj);
 }
 
 template <typename value_array_type, typename out_value_array_type,
@@ -1256,17 +1282,29 @@ struct ReduceRowSizeFunctor {
 
 // view has num_rows+1 elements.
 template <typename size_type, typename MyExecSpace>
-void kk_view_reduce_max_row_size(const size_t num_rows,
+void kk_view_reduce_max_row_size(MyExecSpace my_exec_space,
+                                 const size_t num_rows,
                                  const size_type *rowmap_view_begins,
                                  const size_type *rowmap_view_ends,
-                                 size_type &max_row_size,
-                                 MyExecSpace my_exec_space = MyExecSpace()) {
+                                 size_type &max_row_size) {
   typedef Kokkos::RangePolicy<MyExecSpace> range_policy_t;
   Kokkos::parallel_reduce(
       "KokkosKernels::Common::ViewReduceMaxRowSize",
       range_policy_t(my_exec_space, 0, num_rows),
       ReduceRowSizeFunctor<size_type>(rowmap_view_begins, rowmap_view_ends),
       max_row_size);
+}
+
+// view has num_rows+1 elements.
+template <typename size_type, typename MyExecSpace>
+void kk_view_reduce_max_row_size(const size_t num_rows,
+                                 const size_type *rowmap_view_begins,
+                                 const size_type *rowmap_view_ends,
+                                 size_type &max_row_size) {
+  MyExecSpace my_exec_space;
+  return kk_view_reduce_max_row_size(my_exec_space, num_rows,
+                                     rowmap_view_begins, rowmap_view_ends,
+                                     max_row_size);
 }
 
 template <typename view_type>

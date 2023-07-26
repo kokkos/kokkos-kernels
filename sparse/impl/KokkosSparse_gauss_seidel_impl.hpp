@@ -899,7 +899,7 @@ class PointGaussSeidel {
     KokkosKernels::Impl::create_reverse_map<
         typename HandleType::GraphColoringHandleType::color_view_t,
         nnz_lno_persistent_work_view_t, MyExecSpace>(
-        num_rows, numColors, colors, color_xadj, color_adj, my_exec_space);
+        my_exec_space, num_rows, numColors, colors, color_xadj, color_adj);
 
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
     my_exec_space.fence();
@@ -988,7 +988,7 @@ class PointGaussSeidel {
 
     KokkosKernels::Impl::inclusive_parallel_prefix_sum<
         row_lno_persistent_work_view_t, MyExecSpace>(
-        num_rows + 1, permuted_xadj, my_exec_space);
+        my_exec_space, num_rows + 1, permuted_xadj);
 
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
     my_exec_space.fence();
@@ -1096,7 +1096,7 @@ class PointGaussSeidel {
           if (KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>()) {
             // check if we have enough memory for this. lower the concurrency if
             // we do not have enugh memory.
-            // TODO: Need to account for number of streams here?
+            // TODO: account for number of streams via handle.nstreams
             size_t free_byte;
             size_t total_byte;
             KokkosKernels::Impl::kk_get_free_total_memory<
@@ -1600,9 +1600,6 @@ class PointGaussSeidel {
     this->IterativePSGS(gs, numColors, h_color_xadj, numIter, apply_forward,
                         apply_backward);
 
-    // Kokkos::parallel_for( range_policy_t(0,nr),
-    // PermuteVector(x_lhs_output_vec, Permuted_Xvector, color_adj));
-
     KokkosKernels::Impl::permute_block_vector<
         scalar_persistent_work_view2d_t, x_value_array_type,
         nnz_lno_persistent_work_view_t, MyExecSpace>(
@@ -1681,9 +1678,6 @@ class PointGaussSeidel {
       this->IterativePSGS(gs, numColors, h_color_xadj, numIter, apply_forward,
                           apply_backward);
     }
-
-    // Kokkos::parallel_for( range_policy_t(0,nr),
-    // PermuteVector(x_lhs_output_vec, Permuted_Xvector, color_adj));
 
     KokkosKernels::Impl::permute_vector<
         scalar_persistent_work_view2d_t, x_value_array_type,
