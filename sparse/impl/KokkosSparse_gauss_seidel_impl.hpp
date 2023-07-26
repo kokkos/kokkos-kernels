@@ -1019,8 +1019,8 @@ class PointGaussSeidel {
       // first calculate max row size.
       size_type max_row_size = 0;
       KokkosKernels::Impl::kk_view_reduce_max_row_size<size_type, MyExecSpace>(
-          num_rows, permuted_xadj.data(), permuted_xadj.data() + 1,
-          max_row_size, my_exec_space);
+          my_exec_space, num_rows, permuted_xadj.data(),
+          permuted_xadj.data() + 1, max_row_size);
 
       nnz_lno_t brows = permuted_xadj.extent(0) - 1;
       size_type bnnz  = permuted_adj.extent(0) * block_size * block_size;
