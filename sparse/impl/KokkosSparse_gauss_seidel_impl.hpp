@@ -826,6 +826,7 @@ class PointGaussSeidel {
     auto gsHandle                    = get_gs_handle();
     const size_type longRowThreshold = gsHandle->get_long_row_threshold();
     const MyExecSpace my_exec_space  = gsHandle->get_execution_space();
+    const int num_streams            = gsHandle->get_num_streams();
 
     // Validate settings
     if (gsHandle->get_block_size() > 1 && longRowThreshold > 0)
@@ -1096,12 +1097,11 @@ class PointGaussSeidel {
           if (KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>()) {
             // check if we have enough memory for this. lower the concurrency if
             // we do not have enugh memory.
-            // TODO: account for number of streams via handle.nstreams
             size_t free_byte;
             size_t total_byte;
             KokkosKernels::Impl::kk_get_free_total_memory<
-                typename pool_memory_space::memory_space>(free_byte,
-                                                          total_byte);
+                typename pool_memory_space::memory_space>(free_byte, total_byte,
+                                                          num_streams);
             size_t required_size = size_t(num_big_rows) * level_2_mem;
             if (required_size + num_big_rows * sizeof(int) > free_byte) {
               num_big_rows =

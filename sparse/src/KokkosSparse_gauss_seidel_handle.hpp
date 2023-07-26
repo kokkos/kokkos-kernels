@@ -131,6 +131,8 @@ class GaussSeidelHandle {
   virtual ~GaussSeidelHandle() = default;
 
   // getters
+  int get_num_streams() const { return num_streams; }
+
   HandleExecSpace get_execution_space() const { return this->execution_space; }
 
   GSAlgorithm get_algorithm_type() const { return this->algorithm_type; }
