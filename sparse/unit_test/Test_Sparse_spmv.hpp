@@ -452,8 +452,9 @@ Kokkos::complex<float> randomUpperBound<Kokkos::complex<float>>(int mag) {
 
 template <typename scalar_t, typename lno_t, typename size_type,
           typename Device>
-void test_spmv(const Controls &controls, lno_t numRows, size_type nnz,
-               lno_t bandwidth, lno_t row_size_variance, bool heavy) {
+void test_spmv(const KokkosKernels::Experimental::Controls &controls,
+               lno_t numRows, size_type nnz, lno_t bandwidth,
+               lno_t row_size_variance, bool heavy) {
   using crsMat_t = typename KokkosSparse::CrsMatrix<scalar_t, lno_t, Device,
                                                     void, size_type>;
   using scalar_view_t = typename crsMat_t::values_type::non_const_type;
@@ -953,7 +954,8 @@ void test_spmv_mv_struct_1D(lno_t nx, int numMV) {
 template <typename scalar_t, typename lno_t, typename size_type, class Device>
 void test_spmv_controls(lno_t numRows, size_type nnz, lno_t bandwidth,
                         lno_t row_size_variance,
-                        const Controls &controls = Controls()) {
+                        const KokkosKernels::Experimental::Controls &controls =
+                            KokkosKernels::Experimental::Controls()) {
   using crsMat_t = typename KokkosSparse::CrsMatrix<scalar_t, lno_t, Device,
                                                     void, size_type>;
   using scalar_view_t = typename crsMat_t::values_type::non_const_type;
@@ -996,7 +998,7 @@ void test_spmv_controls(lno_t numRows, size_type nnz, lno_t bandwidth,
 template <typename scalar_t, typename lno_t, typename size_type, class Device>
 void test_spmv_native(lno_t numRows, size_type nnz, lno_t bandwidth,
                       lno_t row_size_variance) {
-  Controls controls;
+  KokkosKernels::Experimental::Controls controls;
   controls.setParameter("algorithm", "native");
   test_spmv_controls(numRows, nnz, bandwidth, row_size_variance, controls);
 }  // test_spmv_native
