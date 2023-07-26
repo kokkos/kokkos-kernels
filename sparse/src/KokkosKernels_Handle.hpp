@@ -602,6 +602,7 @@ class KokkosKernelsHandle {
     return cgs;
   }
   void create_gs_handle(
+      HandleExecSpace handle_exec_space, int num_streams,
       KokkosSparse::GSAlgorithm gs_algorithm = KokkosSparse::GS_DEFAULT,
       KokkosGraph::ColoringAlgorithm coloring_algorithm =
           KokkosGraph::COLORING_DEFAULT) {
@@ -610,10 +611,20 @@ class KokkosKernelsHandle {
     // ---------------------------------------- //
     // Two-stage Gauss-Seidel
     if (gs_algorithm == KokkosSparse::GS_TWOSTAGE)
-      this->gsHandle = new TwoStageGaussSeidelHandleType();
-    else
       this->gsHandle =
-          new PointGaussSeidelHandleType(gs_algorithm, coloring_algorithm);
+          new TwoStageGaussSeidelHandleType(handle_exec_space, num_streams);
+    else
+      this->gsHandle = new PointGaussSeidelHandleType(
+          handle_exec_space, num_streams, gs_algorithm, coloring_algorithm);
+  }
+
+  void create_gs_handle(
+      KokkosSparse::GSAlgorithm gs_algorithm = KokkosSparse::GS_DEFAULT,
+      KokkosGraph::ColoringAlgorithm coloring_algorithm =
+          KokkosGraph::COLORING_DEFAULT) {
+    HandleExecSpace handle_exec_space;
+    return create_gs_handle(handle_exec_space, 1, gs_algorithm,
+                            coloring_algorithm);
   }
   // ---------------------------------------- //
   // Two-stage Gauss-Seidel handle
