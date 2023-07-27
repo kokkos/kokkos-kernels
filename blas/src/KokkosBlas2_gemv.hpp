@@ -160,6 +160,15 @@ void gemv(const execution_space& space, const char trans[],
                                 std::is_same<typename AViewType::memory_space,
                                              Kokkos::HostSpace>::value);
 #endif
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
+#ifdef KOKKOS_ENABLE_SYCL
+  // oneMKL supports both row-major and column-major of A
+  useFallback =
+      useFallback || !std::is_same_v<typename AViewType::memory_space,
+                                     Kokkos::Experimental::SYCLDeviceUSMSpace>;
+#endif
+#endif
+
   if (useFallback) {
     const bool eti_spec_avail =
         KokkosBlas::Impl::gemv_eti_spec_avail<AVT, XVT, YVT>::value;
