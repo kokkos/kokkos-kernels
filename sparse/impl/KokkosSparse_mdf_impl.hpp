@@ -356,9 +356,7 @@ struct MDF_select_row {
   }
 
   KOKKOS_INLINE_FUNCTION
-  void init(value_type& dst) const {
-    dst = Kokkos::ArithTraits<ordinal_type>::zero();
-  }
+  void init(value_type& dst) const { dst = factorization_step; }
 
 };  // MDF_select_row
 
@@ -567,15 +565,13 @@ struct MDF_compute_list_length {
   KOKKOS_INLINE_FUNCTION
   void operator()(const team_member_t team, ordinal_type& update_list_len,
                   ordinal_type& selected_row_len) const {
-    const ordinal_type selected_row = permutation(selected_row_idx);
-
-    const auto rowView = A.rowConst(selected_row);
-    const auto colView = At.rowConst(selected_row);
+    ordinal_type selected_row = 0;
 
     size_type U_entryIdx = row_mapU(factorization_step);
     size_type L_entryIdx = row_mapL(factorization_step);
 
     Kokkos::single(Kokkos::PerTeam(team), [&] {
+      selected_row                 = permutation(selected_row_idx);
       discarded_fill(selected_row) = Kokkos::ArithTraits<value_mag_type>::max();
 
       // Swap entries in permutation vectors
@@ -594,6 +590,11 @@ struct MDF_compute_list_length {
       assert(res.success());
     });
     ++L_entryIdx;
+
+    // Only one thread has the selected row
+    team.team_reduce(Kokkos::Max<ordinal_type, execution_space>(selected_row));
+    const auto rowView = A.rowConst(selected_row);
+    const auto colView = At.rowConst(selected_row);
 
     // Insert the upper part of the selected row in U
     // including the diagonal term.

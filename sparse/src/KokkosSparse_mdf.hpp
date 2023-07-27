@@ -61,10 +61,28 @@ void mdf_symbolic(const crs_matrix_type& A, MDF_handle& handle) {
   return;
 }  // mdf_symbolic
 
+template <class view_t, class ordinal_t = size_t>
+void mdf_print_joined_view(
+    const view_t& dev_view, const char* sep,
+    ordinal_t max_count = Kokkos::ArithTraits<ordinal_t>::max()) {
+  const auto host_view =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), dev_view);
+
+  max_count = max_count > (ordinal_t)host_view.extent(0)
+                  ? (ordinal_t)host_view.extent(0)
+                  : max_count;
+  for (ordinal_t i = 0; i < max_count; ++i) {
+    if (i) printf("%s", sep);
+    printf("%g", static_cast<double>(host_view[i]));
+  }
+}
+
 template <class crs_matrix_type, class MDF_handle>
 void mdf_numeric(const crs_matrix_type& A, MDF_handle& handle) {
   using col_ind_type = typename crs_matrix_type::StaticCrsGraphType::
       entries_type::non_const_type;
+  using scalar_mag_type =
+      typename KokkosSparse::Impl::MDF_types<crs_matrix_type>::scalar_mag_type;
   using values_mag_type =
       typename KokkosSparse::Impl::MDF_types<crs_matrix_type>::values_mag_type;
   using ordinal_type   = typename crs_matrix_type::ordinal_type;
@@ -107,11 +125,11 @@ void mdf_numeric(const crs_matrix_type& A, MDF_handle& handle) {
   for (ordinal_type factorization_step = 0; factorization_step < A.numRows();
        ++factorization_step) {
     if (verbosity_level > 0) {
-      printf("\n\nFactorization step %d\n\n",
+      printf("\n\nFactorization step %d\n",
              static_cast<int>(factorization_step));
     }
 
-    {
+    if (update_list_len > 0) {
       team_range_policy_type updatePolicy(update_list_len, Kokkos::AUTO,
                                           Kokkos::AUTO);
       KokkosSparse::Impl::MDF_discarded_fill_norm<crs_matrix_type, false>
@@ -120,6 +138,17 @@ void mdf_numeric(const crs_matrix_type& A, MDF_handle& handle) {
                              verbosity_level, update_list);
       Kokkos::parallel_for("MDF: updating fill norms", updatePolicy,
                            MDF_update_df_norm);
+    }
+
+    if (verbosity_level > 1) {
+      if constexpr (std::is_arithmetic_v<scalar_mag_type>) {
+        printf("  discarded_fill = {");
+        mdf_print_joined_view(discarded_fill, ", ");
+        printf("}\n");
+      }
+      printf("  deficiency = {");
+      mdf_print_joined_view(deficiency, ", ");
+      printf("}\n");
     }
 
     ordinal_type selected_row_idx = 0;
@@ -147,6 +176,24 @@ void mdf_numeric(const crs_matrix_type& A, MDF_handle& handle) {
                               updateList, update_list_len, selected_row_len);
     }
 
+    if (verbosity_level > 1) {
+      printf("  updateList = {");
+      mdf_print_joined_view(update_list, ", ", update_list_len);
+      printf("}\n  permutation = {");
+      mdf_print_joined_view(handle.permutation, ", ");
+      printf("}\n  permutation_inv = {");
+      mdf_print_joined_view(handle.permutation_inv, ", ");
+      printf("}\n");
+    }
+    if (verbosity_level > 0) {
+      printf(
+          "  Selected row idx %d with length %d. Requires update of %d fill "
+          "norms.\n",
+          static_cast<int>(selected_row_idx),
+          static_cast<int>(selected_row_len),
+          static_cast<int>(update_list_len));
+    }
+
     // If this was the last row no need to update A and At!
     if (factorization_step < A.numRows() - 1) {
       team_range_policy_type factorizePolicy(selected_row_len, Kokkos::AUTO,
@@ -158,10 +205,6 @@ void mdf_numeric(const crs_matrix_type& A, MDF_handle& handle) {
           selected_row_idx, factorization_step, update_list, verbosity_level);
       Kokkos::parallel_for("MDF: factorize row", factorizePolicy,
                            factorize_row);
-    }
-
-    if (verbosity_level > 0) {
-      printf("\n");
     }
   }  // Loop over factorization steps
 
