@@ -522,16 +522,6 @@ class BsrMatrix {
           "BsrMatrix:: annz should be a multiple of the number of entries in a "
           "block");
     }
-    if (annz % (blockDim_ * blockDim_)) {
-      throw std::runtime_error(
-          "BsrMatrix:: annz should be a multiple of the number of entries in a "
-          "block");
-    }
-    if (annz % (blockDim_ * blockDim_)) {
-      throw std::runtime_error(
-          "BsrMatrix:: annz should be a multiple of the number of entries in a "
-          "block");
-    }
 
     using Coord     = std::pair<OrdinalType, OrdinalType>;  // row, col
     using CoordComp = std::function<bool(
