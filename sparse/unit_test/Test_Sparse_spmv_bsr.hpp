@@ -16,7 +16,7 @@
 
 /*! \file Test_Sparse_spmv_bsr.hpp
 
-  Test the following 768 combos for at least a few matcies.
+  Test the following 256 combos for at least a few matcies.
 
   Algorithms              Alpha     Beta     Block Sizes    Modes
   (none)                  0         0        1              N
@@ -25,6 +25,8 @@
                           3.7       -1.5     9              H
 
   There are also a subset of tests on larger matrices
+
+  Multivector products are also tested for these cases with 1 and 7 vectors
 */
 
 #include <algorithm>
@@ -147,9 +149,10 @@ void reference_spmv(const char *mode, const Alpha &alpha, const Bsr &a,
 template <typename Bsr, typename XVector, typename YVector,
           typename Alpha = typename Bsr::non_const_value_type,
           typename Beta  = typename Bsr::non_const_value_type>
-void test_spmv(const char *alg, const char *mode, const Alpha &alpha,
-               const Beta &beta, const Bsr &a, const XVector &x,
-               const YVector &y) {
+void test_spmv(
+    const std::optional<KokkosKernels::Experimental::Controls> &controls,
+    const char *mode, const Alpha &alpha, const Beta &beta, const Bsr &a,
+    const XVector &x, const YVector &y) {
   using execution_space = typename Bsr::execution_space;
   using scalar_type     = typename Bsr::non_const_value_type;
   using ordinal_type    = typename Bsr::non_const_ordinal_type;
@@ -165,10 +168,8 @@ void test_spmv(const char *alg, const char *mode, const Alpha &alpha,
   YVector yAct("yAct", y.extent(0));
   Kokkos::deep_copy(yAct, y);
 
-  if (alg) {
-    KokkosKernels::Experimental::Controls controls;
-    controls.setParameter("algorithm", alg);
-    KokkosSparse::spmv(controls, mode, alpha, a, x, beta, yAct);
+  if (controls) {
+    KokkosSparse::spmv(*controls, mode, alpha, a, x, beta, yAct);
   } else {
     KokkosSparse::spmv(mode, alpha, a, x, beta, yAct);
   }
@@ -216,9 +217,16 @@ void test_spmv(const char *alg, const char *mode, const Alpha &alpha,
   }
 
   if (!errIdx.empty()) {
+    std::string alg;
+    if (controls) {
+      alg = controls->getParameter("algorithm", "<algorithm unset>");
+    } else {
+      alg = "<no controls provided>";
+    }
+
     std::cerr << __FILE__ << ":" << __LINE__ << " BsrMatrix SpMV failure!"
               << std::endl;
-    std::cerr << "alg:          " << (alg ? alg : "<none>") << std::endl;
+    std::cerr << "alg:          " << alg << std::endl;
     std::cerr << "mode:         " << mode << std::endl;
     std::cerr << "A:            " << a.numRows() << "x" << a.numCols()
               << std::endl;
@@ -369,17 +377,40 @@ auto random_vecs_for_spmv(const char *mode, const Bsr &a) {
  */
 template <typename Bsr>
 void test_spmv_combos(const char *mode, const Bsr &a) {
-  using scalar_type = typename Bsr::non_const_value_type;
+  using scalar_type     = typename Bsr::non_const_value_type;
+  using execution_space = typename Bsr::execution_space;
 
   auto [x, y] = random_vecs_for_spmv(mode, a);
 
-  for (auto alg :
-       {(const char *)(nullptr), "native", "experimental_tc", "v4.1", "v4.2"}) {
+  // cover a variety of controls
+  using Ctrls                 = KokkosKernels::Experimental::Controls;
+  using OptCtrls              = std::optional<Ctrls>;
+  std::vector<OptCtrls> ctrls = {
+      std::nullopt,  // no controls
+      OptCtrls(std::in_place, Ctrls()),
+      OptCtrls(std::in_place, Ctrls({{"algorithm", "tpl"}})),
+      OptCtrls(std::in_place, Ctrls({{"algorithm", "v4.1"}}))};
+
+  if constexpr (KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>()) {
+#if defined(KOKKOS_ENABLE_CUDA)
+    if constexpr (std::is_same_v<execution_space, Kokkos::Cuda>) {
+#if defined(KOKKOS_ARCH_AMPERE) || defined(KOKKOS_ARCH_VOLTA)
+      ctrls.push_back(Ctrls({{"algorithm", "experimental_tc"}}));
+#if defined(KOKKOS_ARCH_AMPERE)
+      ctrls.push_back(Ctrls(
+          {{"algorithm", "experimental_tc"}, {"tc_precision", "double"}}));
+#endif  // AMPERE
+#endif  // AMPERE || VOLTA
+    }
+#endif  // CUDA
+  }
+
+  for (const auto &ctrl : ctrls) {
     for (scalar_type alpha :
          {scalar_type(0), scalar_type(1), scalar_type(-1), scalar_type(3.7)}) {
       for (scalar_type beta : {scalar_type(0), scalar_type(1), scalar_type(-1),
                                scalar_type(-1.5)}) {
-        test_spmv(alg, mode, alpha, beta, a, x, y);
+        test_spmv(ctrl, mode, alpha, beta, a, x, y);
       }
     }
   }
@@ -434,9 +465,10 @@ void test_spmv() {
 
 template <typename Bsr, typename XVector, typename YVector, typename Alpha,
           typename Beta>
-void test_spm_mv(const char *alg, const char *mode, const Alpha &alpha,
-                 const Beta &beta, const Bsr &a, const XVector &x,
-                 const YVector &y) {
+void test_spm_mv(
+    const std::optional<KokkosKernels::Experimental::Controls> &controls,
+    const char *mode, const Alpha &alpha, const Beta &beta, const Bsr &a,
+    const XVector &x, const YVector &y) {
   using execution_space = typename Bsr::execution_space;
   using scalar_type     = typename Bsr::non_const_value_type;
   using ordinal_type    = typename Bsr::non_const_ordinal_type;
@@ -452,10 +484,8 @@ void test_spm_mv(const char *alg, const char *mode, const Alpha &alpha,
   YVector yAct("yAct", y.extent(0), y.extent(1));
   Kokkos::deep_copy(yAct, y);
 
-  if (alg) {
-    KokkosKernels::Experimental::Controls controls;
-    controls.setParameter("algorithm", alg);
-    KokkosSparse::spmv(controls, mode, alpha, a, x, beta, yAct);
+  if (controls) {
+    KokkosSparse::spmv(*controls, mode, alpha, a, x, beta, yAct);
   } else {
     KokkosSparse::spmv(mode, alpha, a, x, beta, yAct);
   }
@@ -503,9 +533,16 @@ void test_spm_mv(const char *alg, const char *mode, const Alpha &alpha,
   }
 
   if (!errIdx.empty()) {
+    std::string alg;
+    if (controls) {
+      alg = controls->getParameter("algorithm", "<algorithm unset>");
+    } else {
+      alg = "<no controls provided>";
+    }
+
     std::cerr << __FILE__ << ":" << __LINE__ << " BsrMatrix SpMMV failure!"
               << std::endl;
-    std::cerr << "alg:          " << (alg ? alg : "<none>") << std::endl;
+    std::cerr << "alg:          " << alg << std::endl;
     std::cerr << "mode:         " << mode << std::endl;
     std::cerr << "A:            " << a.numRows() << "x" << a.numCols()
               << std::endl;
@@ -566,17 +603,40 @@ auto random_multivecs_for_spm_mv(const char *mode, const Bsr &a,
 
 template <typename Layout, typename Bsr>
 void test_spm_mv_combos(const char *mode, const Bsr &a) {
-  using scalar_type = typename Bsr::non_const_value_type;
+  using execution_space = typename Bsr::execution_space;
+  using scalar_type     = typename Bsr::non_const_value_type;
 
-  for (size_t numVecs : {1, 2, 7}) {  // num multivecs
+  // cover a variety of controls
+  using Ctrls                 = KokkosKernels::Experimental::Controls;
+  using OptCtrls              = std::optional<Ctrls>;
+  std::vector<OptCtrls> ctrls = {
+      std::nullopt,  // no controls
+      OptCtrls(std::in_place, Ctrls()),
+      OptCtrls(std::in_place, Ctrls({{"algorithm", "tpl"}})),
+      OptCtrls(std::in_place, Ctrls({{"algorithm", "v4.1"}}))};
+
+  if constexpr (KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>()) {
+#if defined(KOKKOS_ENABLE_CUDA)
+    if constexpr (std::is_same_v<execution_space, Kokkos::Cuda>) {
+#if defined(KOKKOS_ARCH_AMPERE) || defined(KOKKOS_ARCH_VOLTA)
+      ctrls.push_back(Ctrls({{"algorithm", "experimental_tc"}}));
+#if defined(KOKKOS_ARCH_AMPERE)
+      ctrls.push_back(Ctrls(
+          {{"algorithm", "experimental_tc"}, {"tc_precision", "double"}}));
+#endif  // AMPERE
+#endif  // AMPERE || VOLTA
+    }
+#endif  // CUDA
+  }
+
+  for (size_t numVecs : {1, 7}) {  // num multivecs
     auto [x, y] = random_multivecs_for_spm_mv<Layout>(mode, a, numVecs);
-    for (auto alg : {(const char *)(nullptr), "native", "experimental_tc",
-                     "v4.1", "v4.2"}) {
+    for (const auto &ctrl : ctrls) {
       for (scalar_type alpha : {scalar_type(0), scalar_type(1), scalar_type(-1),
                                 scalar_type(3.7)}) {
         for (scalar_type beta : {scalar_type(0), scalar_type(1),
                                  scalar_type(-1), scalar_type(-1.5)}) {
-          test_spm_mv(alg, mode, alpha, beta, a, x, y);
+          test_spm_mv(ctrl, mode, alpha, beta, a, x, y);
         }
       }
     }
