@@ -25,7 +25,8 @@ using default_lno_t = int;
 #elif defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T)
 using default_lno_t     = int64_t;
 #else
-using default_lno_t     = int;
+// Non-ETI build: default to int
+using default_lno_t = int;
 #endif
 // Prefer int as the default offset type, because cuSPARSE doesn't support
 // size_t for rowptrs.
@@ -34,6 +35,7 @@ using default_size_type = int;
 #elif defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)
 using default_size_type = size_t;
 #else
+// Non-ETI build: default to int
 using default_size_type = int;
 #endif
 
