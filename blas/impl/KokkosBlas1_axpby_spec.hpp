@@ -219,14 +219,42 @@ struct Axpby<execution_space, AV, XMV, BV, YMV, 2, false,
     size_type const numRows = X.extent(0);
     size_type const numCols = X.extent(1);
 
-    int a(2);
-    if (av.extent(0) == 0) {
-      a = 0;
+    int scalar_x(2);
+    if constexpr (Kokkos::is_view_v<AV>) {
+      if constexpr (AV::rank == 1) {
+        if (av.extent(0) == 0) {
+          scalar_x = 0;
+        }
+      }
+    }
+    else {
+      using ATA = Kokkos::ArithTraits<AV>;
+      if (av == ATA::zero()) {
+        scalar_x = 0;
+      } else if (av == -ATA::one()) {
+        scalar_x = -1;
+      } else if (av == ATA::one()) {
+        scalar_x = 1;
+      }
     }
 
-    int b(2);
-    if (bv.extent(0) == 0) {
-      b = 0;
+    int scalar_y(2);
+    if constexpr (Kokkos::is_view_v<BV>) {
+      if constexpr (BV::rank == 1) {
+        if (bv.extent(0) == 0) {
+          scalar_y = 0;
+        }
+      }
+    }
+    else {
+      using ATB = Kokkos::ArithTraits<BV>;
+      if (bv == ATB::zero()) {
+        scalar_y = 0;
+      } else if (bv == -ATB::one()) {
+        scalar_y = -1;
+      } else if (bv == ATB::one()) {
+        scalar_y = 1;
+      }
     }
 
     if (numRows < static_cast<size_type>(INT_MAX) &&
@@ -237,7 +265,7 @@ struct Axpby<execution_space, AV, XMV, BV, YMV, 2, false,
           Axpby_MV_Invoke_Left<execution_space, AV, XMV, BV, YMV, index_type>,
           Axpby_MV_Invoke_Right<execution_space, AV, XMV, BV, YMV,
                                 index_type> >::type;
-      Axpby_MV_Invoke_Layout::run(space, av, X, bv, Y, a, b);
+      Axpby_MV_Invoke_Layout::run(space, av, X, bv, Y, scalar_x, scalar_y);
     } else {
       using index_type             = typename XMV::size_type;
       using Axpby_MV_Invoke_Layout = typename std::conditional<
@@ -245,7 +273,7 @@ struct Axpby<execution_space, AV, XMV, BV, YMV, 2, false,
           Axpby_MV_Invoke_Left<execution_space, AV, XMV, BV, YMV, index_type>,
           Axpby_MV_Invoke_Right<execution_space, AV, XMV, BV, YMV,
                                 index_type> >::type;
-      Axpby_MV_Invoke_Layout::run(space, av, X, bv, Y, a, b);
+      Axpby_MV_Invoke_Layout::run(space, av, X, bv, Y, scalar_x, scalar_y);
     }
     Kokkos::Profiling::popRegion();
   }
@@ -309,29 +337,23 @@ struct Axpby<execution_space, typename XMV::non_const_value_type, XMV,
     size_type const numRows = X.extent(0);
     size_type const numCols = X.extent(1);
 
-    int a(2);
+    int scalar_x(2);
     if (alpha == ATA::zero()) {
-      a = 0;
-    }
-#if KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
-    else if (alpha == -ATA::one()) {
-      a = -1;
+      scalar_x = 0;
+    } else if (alpha == -ATA::one()) {
+      scalar_x = -1;
     } else if (alpha == ATA::one()) {
-      a = 1;
+      scalar_x = 1;
     }
-#endif  // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
 
-    int b(2);
+    int scalar_y(2);
     if (beta == ATB::zero()) {
-      b = 0;
-    }
-#if KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
-    else if (beta == -ATB::one()) {
-      b = -1;
+      scalar_y = 0;
+    } else if (beta == -ATB::one()) {
+      scalar_y = -1;
     } else if (beta == ATB::one()) {
-      b = 1;
+      scalar_y = 1;
     }
-#endif  // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
 
     if (numRows < static_cast<size_type>(INT_MAX) &&
         numRows * numCols < static_cast<size_type>(INT_MAX)) {
@@ -341,7 +363,7 @@ struct Axpby<execution_space, typename XMV::non_const_value_type, XMV,
           Axpby_MV_Invoke_Left<execution_space, AV, XMV, BV, YMV, index_type>,
           Axpby_MV_Invoke_Right<execution_space, AV, XMV, BV, YMV,
                                 index_type> >::type;
-      Axpby_MV_Invoke_Layout::run(space, alpha, X, beta, Y, a, b);
+      Axpby_MV_Invoke_Layout::run(space, alpha, X, beta, Y, scalar_x, scalar_y);
     } else {
       using index_type             = typename XMV::size_type;
       using Axpby_MV_Invoke_Layout = typename std::conditional<
@@ -349,7 +371,7 @@ struct Axpby<execution_space, typename XMV::non_const_value_type, XMV,
           Axpby_MV_Invoke_Left<execution_space, AV, XMV, BV, YMV, index_type>,
           Axpby_MV_Invoke_Right<execution_space, AV, XMV, BV, YMV,
                                 index_type> >::type;
-      Axpby_MV_Invoke_Layout::run(space, alpha, X, beta, Y, a, b);
+      Axpby_MV_Invoke_Layout::run(space, alpha, X, beta, Y, scalar_x, scalar_y);
     }
     Kokkos::Profiling::popRegion();
   }
@@ -375,24 +397,52 @@ struct Axpby<execution_space, AV, XV, BV, YV, 1, false,
 
     size_type const numRows = X.extent(0);
 
-    int a(2);
-    if (av.extent(0) == 0) {
-      a = 0;
+    int scalar_x(2);
+    if constexpr (Kokkos::is_view_v<AV>) {
+      if constexpr (AV::rank == 1) {
+        if (av.extent(0) == 0) {
+          scalar_x = 0;
+        }
+      }
+    }
+    else {
+      using ATA = Kokkos::ArithTraits<AV>;
+      if (av == ATA::zero()) {
+        scalar_x = 0;
+      } else if (av == -ATA::one()) {
+        scalar_x = -1;
+      } else if (av == ATA::one()) {
+        scalar_x = 1;
+      }
     }
 
-    int b(2);
-    if (bv.extent(0) == 0) {
-      b = 0;
+    int scalar_y(2);
+    if constexpr (Kokkos::is_view_v<BV>) {
+      if constexpr (BV::rank == 1) {
+        if (bv.extent(0) == 0) {
+          scalar_y = 0;
+        }
+      }
+    }
+    else {
+      using ATB = Kokkos::ArithTraits<BV>;
+      if (bv == ATB::zero()) {
+        scalar_y = 0;
+      } else if (bv == -ATB::one()) {
+        scalar_y = -1;
+      } else if (bv == ATB::one()) {
+        scalar_y = 1;
+      }
     }
 
     if (numRows < static_cast<size_type>(INT_MAX)) {
       using index_type = int;
       Axpby_Generic<execution_space, AV, XV, BV, YV, index_type>(
-          space, av, X, bv, Y, 0, a, b);
+          space, av, X, bv, Y, 0, scalar_x, scalar_y);
     } else {
       using index_type = typename XV::size_type;
       Axpby_Generic<execution_space, AV, XV, BV, YV, index_type>(
-          space, av, X, bv, Y, 0, a, b);
+          space, av, X, bv, Y, 0, scalar_x, scalar_y);
     }
 
     Kokkos::Profiling::popRegion();
@@ -456,40 +506,34 @@ struct Axpby<execution_space, typename XV::non_const_value_type, XV,
 
     size_type const numRows = X.extent(0);
 
-    int a(2);
+    int scalar_x(2);
     if (alpha == ATA::zero()) {
-      a = 0;
-    }
-#if KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
-    else if (alpha == -ATA::one()) {
-      a = -1;
+      scalar_x = 0;
+    } else if (alpha == -ATA::one()) {
+      scalar_x = -1;
     } else if (alpha == ATA::one()) {
-      a = 1;
+      scalar_x = 1;
     }
-#endif  // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
 
-    int b(2);
+    int scalar_y(2);
     if (beta == ATB::zero()) {
-      b = 0;
-    }
-#if KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
-    else if (beta == -ATB::one()) {
-      b = -1;
+      scalar_y = 0;
+    } else if (beta == -ATB::one()) {
+      scalar_y = -1;
     } else if (beta == ATB::one()) {
-      b = 1;
+      scalar_y = 1;
     }
-#endif  // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
 
     if (numRows < static_cast<size_type>(INT_MAX)) {
       using index_type = int;
       Axpby_Generic<execution_space, typename XV::non_const_value_type, XV,
                     typename YV::non_const_value_type, YV, index_type>(
-          space, alpha, X, beta, Y, 0, a, b);
+          space, alpha, X, beta, Y, 0, scalar_x, scalar_y);
     } else {
       using index_type = typename XV::size_type;
       Axpby_Generic<execution_space, typename XV::non_const_value_type, XV,
                     typename YV::non_const_value_type, YV, index_type>(
-          space, alpha, X, beta, Y, 0, a, b);
+          space, alpha, X, beta, Y, 0, scalar_x, scalar_y);
     }
     Kokkos::Profiling::popRegion();
   }

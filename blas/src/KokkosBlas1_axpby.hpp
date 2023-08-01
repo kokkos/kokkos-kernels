@@ -43,7 +43,7 @@ namespace KokkosBlas {
 /// \tparam BV              Scalar or 0-D or 1-D Kokkos::View.
 /// \tparam YMV             1-D or 2-D Kokkos::View.
 ///
-/// \param pExecSpace [in] The execution space instance on which the kernel
+/// \param exec_space [in] The execution space instance on which the kernel
 ///                        will run.
 /// \param a          [in] Input of type AV:
 ///                        - scaling parameter for 1-D or 2-D X,
@@ -56,7 +56,7 @@ namespace KokkosBlas {
 /// \param Y      [in/out] View of type YMV in which the results will be
 ///                        stored.
 template <class execution_space, class AV, class XMV, class BV, class YMV>
-void axpby(const execution_space& pExecSpace, const AV& a, const XMV& X,
+void axpby(const execution_space& exec_space, const AV& a, const XMV& X,
            const BV& b, const YMV& Y) {
   using AxpbyTraits =
       Impl::AxpbyUnificationAttemptTraits<execution_space, AV, XMV, BV, YMV>;
@@ -84,7 +84,7 @@ void axpby(const execution_space& pExecSpace, const AV& a, const XMV& X,
                              BV, Impl::typeRank<BV>()>::getValue(b));
 
     Impl::Axpby<execution_space, InternalTypeA, InternalTypeX, InternalTypeB,
-                InternalTypeY>::axpby(pExecSpace, internal_a, internal_X,
+                InternalTypeY>::axpby(exec_space, internal_a, internal_X,
                                       internal_b, internal_Y);
   } else if constexpr (AxpbyTraits::internalTypesAB_bothViews) {
     constexpr bool internalLayoutA_isStride(
@@ -94,14 +94,14 @@ void axpby(const execution_space& pExecSpace, const AV& a, const XMV& X,
         std::is_same_v<typename InternalTypeB::array_layout,
                        Kokkos::LayoutStride>);
 
-    const size_t k_a(Impl::getAmountOfScalarsInCoefficient(a));
-    const size_t k_b(Impl::getAmountOfScalarsInCoefficient(b));
+    const size_t numScalarsA(Impl::getAmountOfScalarsInCoefficient(a));
+    const size_t numScalarsB(Impl::getAmountOfScalarsInCoefficient(b));
 
-    const size_t s_a(Impl::getStrideInCoefficient(a));
-    const size_t s_b(Impl::getStrideInCoefficient(b));
+    const size_t strideA(Impl::getStrideInCoefficient(a));
+    const size_t strideB(Impl::getStrideInCoefficient(b));
 
-    Kokkos::LayoutStride layoutStrideA{k_a, s_a};
-    Kokkos::LayoutStride layoutStrideB{k_b, s_b};
+    Kokkos::LayoutStride layoutStrideA{numScalarsA, strideA};
+    Kokkos::LayoutStride layoutStrideB{numScalarsB, strideB};
 
     InternalTypeA internal_a;
     InternalTypeB internal_b;
@@ -136,14 +136,15 @@ void axpby(const execution_space& pExecSpace, const AV& a, const XMV& X,
         // Call Impl::Axpby<...>::axpby(...)
         // ****************************************************************
         Impl::Axpby<execution_space, InternalTypeA, InternalTypeX,
-                    InternalTypeB, InternalTypeY>::axpby(pExecSpace, internal_a,
+                    InternalTypeB, InternalTypeY>::axpby(exec_space, internal_a,
                                                          internal_X, internal_b,
                                                          internal_Y);
       } else {
         // ****************************************************************
         // Prepare internal_b
         // ****************************************************************
-        typename AxpbyTraits::InternalTypeB_managed managed_b("managed_b", k_b);
+        typename AxpbyTraits::InternalTypeB_managed managed_b("managed_b",
+                                                              numScalarsB);
         if constexpr (AxpbyTraits::atInputLayoutB_isStride) {
           Kokkos::deep_copy(managed_b, b);
         } else {
@@ -155,16 +156,16 @@ void axpby(const execution_space& pExecSpace, const AV& a, const XMV& X,
         // Call Impl::Axpby<...>::axpby(...)
         // ****************************************************************
         Impl::Axpby<execution_space, InternalTypeA, InternalTypeX,
-                    InternalTypeB, InternalTypeY>::axpby(pExecSpace, internal_a,
+                    InternalTypeB, InternalTypeY>::axpby(exec_space, internal_a,
                                                          internal_X, internal_b,
                                                          internal_Y);
       }
-
     } else {
       // ******************************************************************
       // Prepare internal_a
       // ******************************************************************
-      typename AxpbyTraits::InternalTypeA_managed managed_a("managed_a", k_a);
+      typename AxpbyTraits::InternalTypeA_managed managed_a("managed_a",
+                                                            numScalarsA);
       if constexpr (AxpbyTraits::atInputLayoutA_isStride) {
         Kokkos::deep_copy(managed_a, a);
       } else {
@@ -189,14 +190,15 @@ void axpby(const execution_space& pExecSpace, const AV& a, const XMV& X,
         // Call Impl::Axpby<...>::axpby(...)
         // ****************************************************************
         Impl::Axpby<execution_space, InternalTypeA, InternalTypeX,
-                    InternalTypeB, InternalTypeY>::axpby(pExecSpace, internal_a,
+                    InternalTypeB, InternalTypeY>::axpby(exec_space, internal_a,
                                                          internal_X, internal_b,
                                                          internal_Y);
       } else {
         // ****************************************************************
         // Prepare internal_b
         // ****************************************************************
-        typename AxpbyTraits::InternalTypeB_managed managed_b("managed_b", k_b);
+        typename AxpbyTraits::InternalTypeB_managed managed_b("managed_b",
+                                                              numScalarsB);
         if constexpr (AxpbyTraits::atInputLayoutB_isStride) {
           Kokkos::deep_copy(managed_b, b);
         } else {
@@ -208,7 +210,7 @@ void axpby(const execution_space& pExecSpace, const AV& a, const XMV& X,
         // Call Impl::Axpby<...>::axpby(...)
         // ****************************************************************
         Impl::Axpby<execution_space, InternalTypeA, InternalTypeX,
-                    InternalTypeB, InternalTypeY>::axpby(pExecSpace, internal_a,
+                    InternalTypeB, InternalTypeY>::axpby(exec_space, internal_a,
                                                          internal_X, internal_b,
                                                          internal_Y);
       }
@@ -254,7 +256,7 @@ void axpby(const AV& a, const XMV& X, const BV& b, const YMV& Y) {
 ///                         the same rank as YMV.
 /// \tparam YMV             1-D or 2-D Kokkos::View.
 ///
-/// \param pExecSpace [in] The execution space instance on which the kernel
+/// \param exec_space [in] The execution space instance on which the kernel
 ///                        will run.
 /// \param a          [in] Input of type AV:
 ///                        - scaling parameter for 1-D or 2-D X,
@@ -264,9 +266,9 @@ void axpby(const AV& a, const XMV& X, const BV& b, const YMV& Y) {
 /// \param Y      [in/out] View of type YMV in which the results will be
 ///                        stored.
 template <class execution_space, class AV, class XMV, class YMV>
-void axpy(const execution_space& pExecSpace, const AV& a, const XMV& X,
+void axpy(const execution_space& exec_space, const AV& a, const XMV& X,
           const YMV& Y) {
-  axpby(pExecSpace, a, X,
+  axpby(exec_space, a, X,
         Kokkos::ArithTraits<typename YMV::non_const_value_type>::one(), Y);
 }
 
