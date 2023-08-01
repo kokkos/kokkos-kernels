@@ -61,9 +61,11 @@ struct Newton_params {
   int max_iters;
   double abs_tol, rel_tol;
 
-  // Constructor that only specify the desired number of steps.
-  // In this case no adaptivity is provided, the time step will
-  // be constant such that dt = (tend - tstart) / num_steps;
+  // Constructor that sets basic solver parameters
+  // used while solving the nonlinear system
+  // int max_iters_  [in]: maximum number of iterations allowed
+  // double abs_tol_ [in]: absolute tolerance to reach for successful solve
+  // double rel_tol_ [in]: relative tolerance to reach for successful solve
   KOKKOS_FUNCTION
   Newton_params(const int max_iters_, const double abs_tol_,
                 const double rel_tol_)

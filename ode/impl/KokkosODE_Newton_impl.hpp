@@ -41,7 +41,9 @@ KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
   // the norm of the residual.
   using norm_type = typename Kokkos::Details::InnerProductSpaceTraits<
       typename vec_type::non_const_value_type>::mag_type;
-  norm_type norm = Kokkos::ArithTraits<norm_type>::zero();
+  sys.residual(y0, rhs);
+  const norm_type norm0 = KokkosBlas::serial_nrm2(rhs);
+  norm_type norm        = Kokkos::ArithTraits<norm_type>::zero();
 
   // LBV - 07/24/2023: for now assume that we take
   // a full Newton step. Eventually this value can
@@ -59,7 +61,7 @@ KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
     // with J=du/dx, rhs=f(u_n+update)-f(u_n)
     norm = KokkosBlas::serial_nrm2(rhs);
 
-    if ((norm < params.rel_tol) ||
+    if ((norm < (params.rel_tol * norm0)) ||
         (it > 0 ? KokkosBlas::serial_nrm2(update) < params.abs_tol : false)) {
       return newton_solver_status::NLS_SUCCESS;
     }
