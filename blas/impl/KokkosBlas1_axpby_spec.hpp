@@ -226,8 +226,7 @@ struct Axpby<execution_space, AV, XMV, BV, YMV, 2, false,
           scalar_x = 0;
         }
       }
-    }
-    else {
+    } else {
       using ATA = Kokkos::ArithTraits<AV>;
       if (av == ATA::zero()) {
         scalar_x = 0;
@@ -245,8 +244,7 @@ struct Axpby<execution_space, AV, XMV, BV, YMV, 2, false,
           scalar_y = 0;
         }
       }
-    }
-    else {
+    } else {
       using ATB = Kokkos::ArithTraits<BV>;
       if (bv == ATB::zero()) {
         scalar_y = 0;
@@ -404,8 +402,7 @@ struct Axpby<execution_space, AV, XV, BV, YV, 1, false,
           scalar_x = 0;
         }
       }
-    }
-    else {
+    } else {
       using ATA = Kokkos::ArithTraits<AV>;
       if (av == ATA::zero()) {
         scalar_x = 0;
@@ -423,8 +420,7 @@ struct Axpby<execution_space, AV, XV, BV, YV, 1, false,
           scalar_y = 0;
         }
       }
-    }
-    else {
+    } else {
       using ATB = Kokkos::ArithTraits<BV>;
       if (bv == ATB::zero()) {
         scalar_y = 0;

@@ -90,8 +90,8 @@ struct Axpby_Functor {
     static_assert(YV::rank == 1,
                   "KokkosBlas::Impl::Axpby_Functor(ABgeneric)"
                   ": XV and YV must have rank 1.");
-    static_assert((-1 <= scalar_x) && (scalar_x <= 2) &&
-                  (-1 <= scalar_y) && (scalar_y <= 2),
+    static_assert((-1 <= scalar_x) && (scalar_x <= 2) && (-1 <= scalar_y) &&
+                      (scalar_y <= 2),
                   "KokkosBlas::Impl::Axpby_Functor(ABgeneric)"
                   ": scalar_x and/or scalar_y are out of range.");
     if (startingColumn != 0) {
@@ -222,8 +222,8 @@ struct Axpby_Functor<typename XV::non_const_value_type, XV,
     static_assert(YV::rank == 1,
                   "KokkosBlas::Impl::Axpby_Functor(ABscalars)"
                   "XV and YV must have rank 1.");
-    static_assert((-1 <= scalar_x) && (scalar_x <= 2) &&
-                  (-1 <= scalar_y) && (scalar_y <= 2),
+    static_assert((-1 <= scalar_x) && (scalar_x <= 2) && (-1 <= scalar_y) &&
+                      (scalar_y <= 2),
                   "KokkosBlas::Impl::Axpby_Functor(ABscalars)"
                   ": scalar_x and/or scalar_y are out of range.");
   }
@@ -323,13 +323,13 @@ void Axpby_Generic(const execution_space& space, const AV& av, const XV& x,
                 "KokkosBlas::Impl::Axpby_Generic: "
                 "XV and YV must have rank 1.");
 
-  if ((-1 <= scalar_x) && (scalar_x <= 2) &&
-      (-1 <= scalar_y) && (scalar_y <= 2)) {
+  if ((-1 <= scalar_x) && (scalar_x <= 2) && (-1 <= scalar_y) &&
+      (scalar_y <= 2)) {
     // Ok
   } else {
     KokkosKernels::Impl::throw_runtime_exception(
-         "KokkosBlas::Impl::Axpby_Generic()"
-         ": scalar_x and/or scalar_y are out of range.");
+        "KokkosBlas::Impl::Axpby_Generic()"
+        ": scalar_x and/or scalar_y are out of range.");
   }
 
   const SizeType numRows = x.extent(0);

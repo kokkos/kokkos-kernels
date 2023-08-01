@@ -104,23 +104,23 @@ struct AxpbyUnificationAttemptTraits {
   // - variable names begin with lower case letters
   // - type names begin with upper case letters
   // ********************************************************************
-private:
+ private:
   static constexpr bool onDevice =
       KokkosKernels::Impl::kk_is_gpu_exec_space<tExecSpace>();
   static constexpr bool onHost = !onDevice;
 
   static constexpr bool a_is_scalar = !Kokkos::is_view_v<AV>;
-  static constexpr bool a_is_r0  = Tr0_val<AV>();
-  static constexpr bool a_is_r1s = Tr1s_val<AV>();
-  static constexpr bool a_is_r1d = Tr1d_val<AV>();
+  static constexpr bool a_is_r0     = Tr0_val<AV>();
+  static constexpr bool a_is_r1s    = Tr1s_val<AV>();
+  static constexpr bool a_is_r1d    = Tr1d_val<AV>();
 
   static constexpr bool x_is_r1 = Kokkos::is_view_v<XMV> && (XMV::rank == 1);
   static constexpr bool x_is_r2 = Kokkos::is_view_v<XMV> && (XMV::rank == 2);
 
   static constexpr bool b_is_scalar = !Kokkos::is_view_v<BV>;
-  static constexpr bool b_is_r0  = Tr0_val<BV>();
-  static constexpr bool b_is_r1s = Tr1s_val<BV>();
-  static constexpr bool b_is_r1d = Tr1d_val<BV>();
+  static constexpr bool b_is_r0     = Tr0_val<BV>();
+  static constexpr bool b_is_r1s    = Tr1s_val<BV>();
+  static constexpr bool b_is_r1d    = Tr1d_val<BV>();
 
   static constexpr bool y_is_r1 = Kokkos::is_view_v<YMV> && (YMV::rank == 1);
   static constexpr bool y_is_r2 = Kokkos::is_view_v<YMV> && (YMV::rank == 2);
@@ -132,12 +132,14 @@ private:
   // Declare 'AtInputScalarTypeA_nonConst'
   // ********************************************************************
   using ScalarTypeA2_onDevice =
-      typename getScalarTypeFromView<AV, (a_is_r0 || a_is_r1s || a_is_r1d) && onDevice>::type;
+      typename getScalarTypeFromView<AV, (a_is_r0 || a_is_r1s || a_is_r1d) &&
+                                             onDevice>::type;
   using ScalarTypeA1_onDevice =
       std::conditional_t<a_is_scalar && onDevice, AV, ScalarTypeA2_onDevice>;
 
   using ScalarTypeA2_onHost =
-      typename getScalarTypeFromView<AV, (a_is_r0 || a_is_r1s || a_is_r1d) && onHost>::type;
+      typename getScalarTypeFromView<AV, (a_is_r0 || a_is_r1s || a_is_r1d) &&
+                                             onHost>::type;
   using ScalarTypeA1_onHost =
       std::conditional_t<a_is_scalar && onHost, AV, ScalarTypeA2_onHost>;
 
@@ -159,12 +161,14 @@ private:
   // Declare 'AtInputScalarTypeB_nonConst'
   // ********************************************************************
   using ScalarTypeB2_onDevice =
-      typename getScalarTypeFromView<BV, (b_is_r0 || b_is_r1s || b_is_r1d) && onDevice>::type;
+      typename getScalarTypeFromView<BV, (b_is_r0 || b_is_r1s || b_is_r1d) &&
+                                             onDevice>::type;
   using ScalarTypeB1_onDevice =
       std::conditional_t<b_is_scalar && onDevice, BV, ScalarTypeB2_onDevice>;
 
   using ScalarTypeB2_onHost =
-      typename getScalarTypeFromView<BV, (b_is_r0 || b_is_r1s || b_is_r1d) && onHost>::type;
+      typename getScalarTypeFromView<BV, (b_is_r0 || b_is_r1s || b_is_r1d) &&
+                                             onHost>::type;
   using ScalarTypeB1_onHost =
       std::conditional_t<b_is_scalar && onHost, BV, ScalarTypeB2_onHost>;
 
@@ -194,11 +198,14 @@ private:
   // ********************************************************************
   // Declare 'InternalTypeA_tmp'
   // ********************************************************************
-  using AtInputLayoutA = typename getLayoutFromView<AV, (a_is_r0 || a_is_r1s || a_is_r1d)>::type;
-public:
+  using AtInputLayoutA =
+      typename getLayoutFromView<AV, (a_is_r0 || a_is_r1s || a_is_r1d)>::type;
+
+ public:
   static constexpr bool atInputLayoutA_isStride =
       std::is_same_v<AtInputLayoutA, Kokkos::LayoutStride>;
-private:
+
+ private:
   using InternalLayoutA =
       std::conditional_t<(a_is_r1d || a_is_r1s) && atInputLayoutA_isStride,
                          AtInputLayoutA, InternalLayoutX>;
@@ -233,7 +240,7 @@ private:
   // ********************************************************************
   // Declare 'InternalTypeX'
   // ********************************************************************
-public:
+ public:
   using InternalTypeX = std::conditional_t<
       x_is_r2,
       Kokkos::View<const AtInputScalarTypeX_nonConst**, InternalLayoutX,
@@ -246,12 +253,15 @@ public:
   // ********************************************************************
   // Declare 'InternalTypeB_tmp'
   // ********************************************************************
-private:
-  using AtInputLayoutB = typename getLayoutFromView<BV, (b_is_r0 || b_is_r1s || b_is_r1d)>::type;
-public:
+ private:
+  using AtInputLayoutB =
+      typename getLayoutFromView<BV, (b_is_r0 || b_is_r1s || b_is_r1d)>::type;
+
+ public:
   static constexpr bool atInputLayoutB_isStride =
       std::is_same_v<AtInputLayoutB, Kokkos::LayoutStride>;
-private:
+
+ private:
   using InternalLayoutB =
       std::conditional_t<(b_is_r1d || b_is_r1s) && atInputLayoutB_isStride,
                          AtInputLayoutB, InternalLayoutY>;
@@ -286,7 +296,7 @@ private:
   // ********************************************************************
   // Declare 'InternalTypeY'
   // ********************************************************************
-public:
+ public:
   using InternalTypeY = std::conditional_t<
       y_is_r2,
       Kokkos::View<AtInputScalarTypeY_nonConst**, InternalLayoutY,
@@ -312,10 +322,11 @@ public:
   // Declare 'InternalTypeA_managed' with the same scalar type in
   // 'InternalTypeA'
   // ********************************************************************
-private:
+ private:
   using InternalLayoutA_managed = InternalLayoutA;
-public:
-  using InternalTypeA_managed   = std::conditional_t<
+
+ public:
+  using InternalTypeA_managed = std::conditional_t<
       Kokkos::is_view_v<InternalTypeA>,
       Kokkos::View<InternalScalarTypeA*, InternalLayoutA_managed,
                    typename XMV::device_type>,
@@ -337,10 +348,11 @@ public:
   // Declare 'InternalTypeB_managed' with the same scalar type in
   // 'InternalTypeB'
   // ********************************************************************
-private:
+ private:
   using InternalLayoutB_managed = InternalLayoutB;
-public:
-  using InternalTypeB_managed   = std::conditional_t<
+
+ public:
+  using InternalTypeB_managed = std::conditional_t<
       Kokkos::is_view_v<InternalTypeB>,
       Kokkos::View<InternalScalarTypeB*, InternalLayoutB_managed,
                    typename YMV::device_type>,
@@ -349,14 +361,16 @@ public:
   // ********************************************************************
   // Auxiliary Boolean results on internal types
   // ********************************************************************
-private:
-  static constexpr bool internalTypeA_is_scalar = !Kokkos::is_view_v<InternalTypeA>;
+ private:
+  static constexpr bool internalTypeA_is_scalar =
+      !Kokkos::is_view_v<InternalTypeA>;
   static constexpr bool internalTypeA_is_r1d = Tr1d_val<InternalTypeA>();
 
-  static constexpr bool internalTypeB_is_scalar = !Kokkos::is_view_v<InternalTypeB>;
+  static constexpr bool internalTypeB_is_scalar =
+      !Kokkos::is_view_v<InternalTypeB>;
   static constexpr bool internalTypeB_is_r1d = Tr1d_val<InternalTypeB>();
 
-public:
+ public:
   static constexpr bool internalTypesAB_bothScalars =
       (internalTypeA_is_scalar && internalTypeB_is_scalar);
   static constexpr bool internalTypesAB_bothViews =
@@ -370,34 +384,44 @@ public:
     // ******************************************************************
     // Check 1/6: General checks
     // ******************************************************************
-    static_assert(Kokkos::is_execution_space_v<tExecSpace>,
-                  "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
-                  ": tExecSpace must be a valid Kokkos execution space.");
+    static_assert(
+        Kokkos::is_execution_space_v<tExecSpace>,
+        "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
+        ": tExecSpace must be a valid Kokkos execution space.");
 
-    static_assert((xyRank1Case && !xyRank2Case) || (!xyRank1Case && xyRank2Case),
-                  "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
-                  ": one must have either both X and Y as rank 1, or both X and Y as rank 2");
+    static_assert(
+        (xyRank1Case && !xyRank2Case) || (!xyRank1Case && xyRank2Case),
+        "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
+        ": one must have either both X and Y as rank 1, or both X and Y as "
+        "rank 2");
 
-    if constexpr (Kokkos::ArithTraits<AtInputScalarTypeY_nonConst>::is_complex == false) {
-      static_assert((Kokkos::ArithTraits<AtInputScalarTypeA_nonConst>::is_complex == false) &&
-                    (Kokkos::ArithTraits<AtInputScalarTypeX_nonConst>::is_complex == false) &&
-                    (Kokkos::ArithTraits<AtInputScalarTypeB_nonConst>::is_complex == false),
-                    "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
-                    ": if Y is not complex, then A, X and B cannot be complex");
+    if constexpr (Kokkos::ArithTraits<
+                      AtInputScalarTypeY_nonConst>::is_complex == false) {
+      static_assert(
+          (Kokkos::ArithTraits<AtInputScalarTypeA_nonConst>::is_complex ==
+           false) &&
+              (Kokkos::ArithTraits<AtInputScalarTypeX_nonConst>::is_complex ==
+               false) &&
+              (Kokkos::ArithTraits<AtInputScalarTypeB_nonConst>::is_complex ==
+               false),
+          "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
+          ": if Y is not complex, then A, X and B cannot be complex");
     }
 
     // ******************************************************************
     // Check 2/6: YMV is valid
     // ******************************************************************
-    static_assert(Kokkos::is_view<YMV>::value,
-                  "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
-                  ": Y is not a Kokkos::View.");
-    static_assert(std::is_same<typename YMV::value_type,
-                               typename YMV::non_const_value_type>::value,
-                  "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
-                  ": Y is const.  It must be nonconst, "
-                  "because it is an output argument "
-                  "(we must be able to write to its entries).");
+    static_assert(
+        Kokkos::is_view<YMV>::value,
+        "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
+        ": Y is not a Kokkos::View.");
+    static_assert(
+        std::is_same<typename YMV::value_type,
+                     typename YMV::non_const_value_type>::value,
+        "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
+        ": Y is const.  It must be nonconst, "
+        "because it is an output argument "
+        "(we must be able to write to its entries).");
     static_assert(
         Kokkos::SpaceAccessibility<tExecSpace,
                                    typename YMV::memory_space>::accessible,
@@ -407,9 +431,10 @@ public:
     // ******************************************************************
     // Check 3/6: XMV is valid
     // ******************************************************************
-    static_assert(Kokkos::is_view<XMV>::value,
-                  "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
-                  ": X is not a Kokkos::View.");
+    static_assert(
+        Kokkos::is_view<XMV>::value,
+        "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
+        ": X is not a Kokkos::View.");
     static_assert(
         Kokkos::SpaceAccessibility<tExecSpace,
                                    typename XMV::memory_space>::accessible,
@@ -421,7 +446,8 @@ public:
         // Ok
       } else {
         std::ostringstream msg;
-        msg << "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
+        msg << "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks("
+               ")"
             << ", invalid rank-1 X extent"
             << ": X.extent(0) = " << X.extent(0)
             << ", Y.extent(0) = " << Y.extent(0);
@@ -432,7 +458,8 @@ public:
         // Ok
       } else {
         std::ostringstream msg;
-        msg << "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
+        msg << "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks("
+               ")"
             << ", invalid rank-2 X extents"
             << ": X.extent(0) = " << X.extent(0)
             << ", X.extent(1) = " << X.extent(1)
@@ -445,12 +472,14 @@ public:
     // ******************************************************************
     // Check 4/6: AV is valid
     // ******************************************************************
-    static_assert(( a_is_scalar && !a_is_r0 && !a_is_r1s && !a_is_r1d) ||
-                  (!a_is_scalar &&  a_is_r0 && !a_is_r1s && !a_is_r1d) ||
-                  (!a_is_scalar && !a_is_r0 &&  a_is_r1s && !a_is_r1d) ||
-                  (!a_is_scalar && !a_is_r0 && !a_is_r1s &&  a_is_r1d),
-                  "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
-                  ": 'a' must be either scalar or rank 0 or rank 1 static or rank 1 dynamic");
+    static_assert(
+        (a_is_scalar && !a_is_r0 && !a_is_r1s && !a_is_r1d) ||
+            (!a_is_scalar && a_is_r0 && !a_is_r1s && !a_is_r1d) ||
+            (!a_is_scalar && !a_is_r0 && a_is_r1s && !a_is_r1d) ||
+            (!a_is_scalar && !a_is_r0 && !a_is_r1s && a_is_r1d),
+        "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
+        ": 'a' must be either scalar or rank 0 or rank 1 static or rank 1 "
+        "dynamic");
 
     if constexpr (a_is_r1d || a_is_r1s) {
       if constexpr (xyRank1Case) {
@@ -458,7 +487,8 @@ public:
           // Ok
         } else {
           std::ostringstream msg;
-          msg << "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
+          msg << "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::"
+                 "performChecks()"
               << ": view 'a' must have extent(0) == 1 for xyRank1Case"
               << ", a.extent(0) = " << a.extent(0);
           KokkosKernels::Impl::throw_runtime_exception(msg.str());
@@ -469,7 +499,8 @@ public:
           // Ok
         } else {
           std::ostringstream msg;
-          msg << "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
+          msg << "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::"
+                 "performChecks()"
               << ": view 'a' must have extent(0) == 1 or Y.extent(1) for "
                  "xyRank2Case"
               << ", a.extent(0) = " << a.extent(0)
@@ -483,12 +514,14 @@ public:
     // ******************************************************************
     // Check 5/6: BV is valid
     // ******************************************************************
-    static_assert(( b_is_scalar && !b_is_r0 && !b_is_r1s && !b_is_r1d) ||
-                  (!b_is_scalar &&  b_is_r0 && !b_is_r1s && !b_is_r1d) ||
-                  (!b_is_scalar && !b_is_r0 &&  b_is_r1s && !b_is_r1d) ||
-                  (!b_is_scalar && !b_is_r0 && !b_is_r1s &&  b_is_r1d),
-                  "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
-                  ": 'b' must be either scalar or rank 0 or rank 1 static or rank 1 dynamic");
+    static_assert(
+        (b_is_scalar && !b_is_r0 && !b_is_r1s && !b_is_r1d) ||
+            (!b_is_scalar && b_is_r0 && !b_is_r1s && !b_is_r1d) ||
+            (!b_is_scalar && !b_is_r0 && b_is_r1s && !b_is_r1d) ||
+            (!b_is_scalar && !b_is_r0 && !b_is_r1s && b_is_r1d),
+        "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
+        ": 'b' must be either scalar or rank 0 or rank 1 static or rank 1 "
+        "dynamic");
 
     if constexpr (b_is_r1d || b_is_r1s) {
       if constexpr (xyRank1Case) {
@@ -496,7 +529,8 @@ public:
           // Ok
         } else {
           std::ostringstream msg;
-          msg << "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
+          msg << "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::"
+                 "performChecks()"
               << ": view 'b' must have extent(0) == 1 for xyRank1Case"
               << ", b.extent(0) = " << b.extent(0);
           KokkosKernels::Impl::throw_runtime_exception(msg.str());
@@ -506,7 +540,8 @@ public:
           // Ok
         } else {
           std::ostringstream msg;
-          msg << "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
+          msg << "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::"
+                 "performChecks()"
               << ": view 'b' must have extent(0) == 1 or Y.extent(1) for "
                  "xyRank2Case"
               << ", b.extent(0) = " << b.extent(0)
@@ -524,121 +559,137 @@ public:
       if constexpr (xyRank1Case) {
         constexpr bool internalTypeA_isOk =
             (internalTypeA_is_scalar || internalTypeA_is_r1d);
-        static_assert(internalTypeA_isOk,
-                      "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
-                      ", onHost, xyRank1Case: InternalTypeA is wrong");
+        static_assert(
+            internalTypeA_isOk,
+            "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
+            ", onHost, xyRank1Case: InternalTypeA is wrong");
 
         constexpr bool internalTypeX_isOk = std::is_same_v<
             InternalTypeX,
             Kokkos::View<const AtInputScalarTypeX_nonConst*, InternalLayoutX,
                          typename XMV::device_type,
                          Kokkos::MemoryTraits<Kokkos::Unmanaged>>>;
-        static_assert(internalTypeX_isOk,
-                      "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
-                      ", onHost, xyRank1Case: InternalTypeX is wrong");
+        static_assert(
+            internalTypeX_isOk,
+            "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
+            ", onHost, xyRank1Case: InternalTypeX is wrong");
 
         constexpr bool internalTypeB_isOk =
             (internalTypeB_is_scalar || internalTypeB_is_r1d);
-        static_assert(internalTypeB_isOk,
-                      "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
-                      ", onHost, xyRank1Case: InternalTypeB is wrong");
+        static_assert(
+            internalTypeB_isOk,
+            "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
+            ", onHost, xyRank1Case: InternalTypeB is wrong");
 
         constexpr bool internalTypeY_isOk = std::is_same_v<
             InternalTypeY,
             Kokkos::View<AtInputScalarTypeY_nonConst*, InternalLayoutY,
                          typename YMV::device_type,
                          Kokkos::MemoryTraits<Kokkos::Unmanaged>>>;
-        static_assert(internalTypeY_isOk,
-                      "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
-                      ", onHost, xyRank1Case: InternalTypeY is wrong");
+        static_assert(
+            internalTypeY_isOk,
+            "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
+            ", onHost, xyRank1Case: InternalTypeY is wrong");
       } else {
         constexpr bool internalTypeA_isOk =
             (internalTypeA_is_scalar || internalTypeA_is_r1d);
-        static_assert(internalTypeA_isOk,
-                      "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
-                      ", onHost, xyRank2Case: InternalTypeA is wrong");
+        static_assert(
+            internalTypeA_isOk,
+            "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
+            ", onHost, xyRank2Case: InternalTypeA is wrong");
 
         constexpr bool internalTypeX_isOk = std::is_same_v<
             InternalTypeX,
             Kokkos::View<const AtInputScalarTypeX_nonConst**, InternalLayoutX,
                          typename XMV::device_type,
                          Kokkos::MemoryTraits<Kokkos::Unmanaged>>>;
-        static_assert(internalTypeX_isOk,
-                      "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
-                      ", onHost, xyRank2Case: InternalTypeX is wrong");
+        static_assert(
+            internalTypeX_isOk,
+            "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
+            ", onHost, xyRank2Case: InternalTypeX is wrong");
 
         constexpr bool internalTypeB_isOk =
             (internalTypeB_is_scalar || internalTypeB_is_r1d);
-        static_assert(internalTypeB_isOk,
-                      "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
-                      ", onHost, xyRank2Case: InternalTypeB is wrong");
+        static_assert(
+            internalTypeB_isOk,
+            "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
+            ", onHost, xyRank2Case: InternalTypeB is wrong");
 
         constexpr bool internalTypeY_isOk = std::is_same_v<
             InternalTypeY,
             Kokkos::View<AtInputScalarTypeY_nonConst**, InternalLayoutY,
                          typename YMV::device_type,
                          Kokkos::MemoryTraits<Kokkos::Unmanaged>>>;
-        static_assert(internalTypeY_isOk, 
-                      "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
-                      ", onHost, xyRank2Case: InternalTypeY is wrong");
+        static_assert(
+            internalTypeY_isOk,
+            "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
+            ", onHost, xyRank2Case: InternalTypeY is wrong");
       }
     } else {
       if constexpr (xyRank1Case) {
         constexpr bool internalTypeA_isOk = internalTypeA_is_r1d;
-        static_assert(internalTypeA_isOk,
-                      "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
-                      ", onDevice, xyRank1Case: InternalTypeA is wrong");
+        static_assert(
+            internalTypeA_isOk,
+            "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
+            ", onDevice, xyRank1Case: InternalTypeA is wrong");
 
         constexpr bool internalTypeX_isOk = std::is_same_v<
             InternalTypeX,
             Kokkos::View<const AtInputScalarTypeX_nonConst*, InternalLayoutX,
                          typename XMV::device_type,
                          Kokkos::MemoryTraits<Kokkos::Unmanaged>>>;
-        static_assert(internalTypeX_isOk,
-                      "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
-                      ", onDevice, xyRank1Case: InternalTypeX is wrong");
+        static_assert(
+            internalTypeX_isOk,
+            "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
+            ", onDevice, xyRank1Case: InternalTypeX is wrong");
 
         constexpr bool internalTypeB_isOk = internalTypeB_is_r1d;
-        static_assert(internalTypeB_isOk,
-                      "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
-                      ", onDevice, xyRank1Case: InternalTypeB is wrong");
+        static_assert(
+            internalTypeB_isOk,
+            "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
+            ", onDevice, xyRank1Case: InternalTypeB is wrong");
 
         constexpr bool internalTypeY_isOk = std::is_same_v<
             InternalTypeY,
             Kokkos::View<AtInputScalarTypeY_nonConst*, InternalLayoutY,
                          typename YMV::device_type,
                          Kokkos::MemoryTraits<Kokkos::Unmanaged>>>;
-        static_assert(internalTypeY_isOk,
-                      "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
-                      ", onDevice, xyRank1Case: InternalTypeY is wrong");
+        static_assert(
+            internalTypeY_isOk,
+            "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
+            ", onDevice, xyRank1Case: InternalTypeY is wrong");
       } else {
         constexpr bool internalTypeA_isOk = internalTypeA_is_r1d;
-        static_assert(internalTypeA_isOk,
-                      "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
-                      ", onDevice, xyRank2Case: InternalTypeA is wrong");
+        static_assert(
+            internalTypeA_isOk,
+            "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
+            ", onDevice, xyRank2Case: InternalTypeA is wrong");
 
         constexpr bool internalTypeX_isOk = std::is_same_v<
             InternalTypeX,
             Kokkos::View<const AtInputScalarTypeX_nonConst**, InternalLayoutX,
                          typename XMV::device_type,
                          Kokkos::MemoryTraits<Kokkos::Unmanaged>>>;
-        static_assert(internalTypeX_isOk,
-                      "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
-                      ", onDevice, xyRank2Case: InternalTypeX is wrong");
+        static_assert(
+            internalTypeX_isOk,
+            "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
+            ", onDevice, xyRank2Case: InternalTypeX is wrong");
 
         constexpr bool internalTypeB_isOk = internalTypeB_is_r1d;
-        static_assert(internalTypeB_isOk,
-                      "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
-                      ", onDevice, xyRank2Case: InternalTypeB is wrong");
+        static_assert(
+            internalTypeB_isOk,
+            "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
+            ", onDevice, xyRank2Case: InternalTypeB is wrong");
 
         constexpr bool internalTypeY_isOk = std::is_same_v<
             InternalTypeY,
             Kokkos::View<AtInputScalarTypeY_nonConst**, InternalLayoutY,
                          typename YMV::device_type,
                          Kokkos::MemoryTraits<Kokkos::Unmanaged>>>;
-        static_assert(internalTypeY_isOk,
-                      "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
-                      ", onDevice, xyRank2Case: InternalTypeY is wrong");
+        static_assert(
+            internalTypeY_isOk,
+            "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
+            ", onDevice, xyRank2Case: InternalTypeY is wrong");
       }
     }
 
@@ -679,24 +730,28 @@ public:
           ", onDevice, invalid combination of types");
     }
 
-    if constexpr (xyRank2Case && (a_is_r1d || a_is_r1s) && atInputLayoutA_isStride) {
-      static_assert(std::is_same_v<
-                    typename getLayoutFromView<
-                        InternalTypeA, Kokkos::is_view_v<InternalTypeA>>::type,
-                    Kokkos::LayoutStride>,
-                    "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
-                    ", xyRank2Case: coeff 'a' is rank-1 and has LayoutStride at input"
-                    ", but no LayoutStride internally");
+    if constexpr (xyRank2Case && (a_is_r1d || a_is_r1s) &&
+                  atInputLayoutA_isStride) {
+      static_assert(
+          std::is_same_v<
+              typename getLayoutFromView<
+                  InternalTypeA, Kokkos::is_view_v<InternalTypeA>>::type,
+              Kokkos::LayoutStride>,
+          "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
+          ", xyRank2Case: coeff 'a' is rank-1 and has LayoutStride at input"
+          ", but no LayoutStride internally");
     }
 
-    if constexpr (xyRank2Case && (b_is_r1d || b_is_r1s) && atInputLayoutB_isStride) {
-      static_assert(std::is_same_v<
-                    typename getLayoutFromView<
-                        InternalTypeB, Kokkos::is_view_v<InternalTypeB>>::type,
-                    Kokkos::LayoutStride>,
-                    "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
-                    ", xyRank2Case: coeff 'b' is rank-1 and has LayoutStride at input"
-                    ", but no LayoutStride internally");
+    if constexpr (xyRank2Case && (b_is_r1d || b_is_r1s) &&
+                  atInputLayoutB_isStride) {
+      static_assert(
+          std::is_same_v<
+              typename getLayoutFromView<
+                  InternalTypeB, Kokkos::is_view_v<InternalTypeB>>::type,
+              Kokkos::LayoutStride>,
+          "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
+          ", xyRank2Case: coeff 'b' is rank-1 and has LayoutStride at input"
+          ", but no LayoutStride internally");
     }
   }  // Constructor
 
@@ -712,7 +767,8 @@ public:
        << ", AtInputScalarTypeA = " << typeid(AtInputScalarTypeA).name()
        << ", isConst = "
        << std::is_const_v<AtInputScalarTypeA> << ", isComplex = "
-       << Kokkos::ArithTraits<AtInputScalarTypeA_nonConst>::is_complex << ", AtInputScalarTypeA_nonConst = "
+       << Kokkos::ArithTraits<AtInputScalarTypeA_nonConst>::is_complex
+       << ", AtInputScalarTypeA_nonConst = "
        << typeid(AtInputScalarTypeA_nonConst).name()
        << ", InternalTypeA = " << typeid(InternalTypeA).name() << "\n"
        << ", InternalTypeA_managed = " << typeid(InternalTypeA_managed).name()
@@ -727,7 +783,8 @@ public:
        << typeid(typename XMV::non_const_data_type).name() << "\n"
        << "AtInputScalarTypeX = " << typeid(AtInputScalarTypeX).name() << "\n"
        << "isConst = " << std::is_const_v<AtInputScalarTypeX> << "\n"
-       << "isComplex = " << Kokkos::ArithTraits<AtInputScalarTypeX_nonConst>::is_complex << "\n"
+       << "isComplex = "
+       << Kokkos::ArithTraits<AtInputScalarTypeX_nonConst>::is_complex << "\n"
        << "AtInputScalarTypeX_nonConst = "
        << typeid(AtInputScalarTypeX_nonConst).name() << "\n"
        << "InternalTypeX = " << typeid(InternalTypeX).name() << "\n"
@@ -740,7 +797,8 @@ public:
        << ", AtInputScalarTypeB = " << typeid(AtInputScalarTypeB).name()
        << ", isConst = "
        << std::is_const_v<AtInputScalarTypeB> << ", isComplex = "
-       << Kokkos::ArithTraits<AtInputScalarTypeB_nonConst>::is_complex << ", AtInputScalarTypeB_nonConst = "
+       << Kokkos::ArithTraits<AtInputScalarTypeB_nonConst>::is_complex
+       << ", AtInputScalarTypeB_nonConst = "
        << typeid(AtInputScalarTypeB_nonConst).name()
        << ", InternalTypeB = " << typeid(InternalTypeB).name() << "\n"
        << ", InternalTypeB_managed = " << typeid(InternalTypeB_managed).name()
@@ -755,7 +813,8 @@ public:
        << typeid(typename YMV::non_const_data_type).name() << "\n"
        << "AtInputScalarTypeY = " << typeid(AtInputScalarTypeY).name() << "\n"
        << "isConst = " << std::is_const_v<AtInputScalarTypeY> << "\n"
-       << "isComplex = " << Kokkos::ArithTraits<AtInputScalarTypeY_nonConst>::is_complex << "\n"
+       << "isComplex = "
+       << Kokkos::ArithTraits<AtInputScalarTypeY_nonConst>::is_complex << "\n"
        << "AtInputScalarTypeY_nonConst = "
        << typeid(AtInputScalarTypeY_nonConst).name() << "\n"
        << "InternalTypeY = " << typeid(InternalTypeY).name() << "\n"

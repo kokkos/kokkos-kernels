@@ -83,8 +83,8 @@ struct Axpby_MV_Functor {
     static_assert(BV::rank == 1,
                   "KokkosBlas::Impl::Axpby_MV_Functor(ABgeneric)"
                   ": BV must have rank 1.");
-    static_assert((-1 <= scalar_x) && (scalar_x <= 2) &&
-                  (-1 <= scalar_y) && (scalar_y <= 2),
+    static_assert((-1 <= scalar_x) && (scalar_x <= 2) && (-1 <= scalar_y) &&
+                      (scalar_y <= 2),
                   "KokkosBlas::Impl::Axpby_MV_Functor(ABgeneric)"
                   ": scalar_x and/or scalar_y are out of range.");
   }
@@ -434,8 +434,8 @@ struct Axpby_MV_Functor<typename XMV::non_const_value_type, XMV,
     static_assert(YMV::rank == 2,
                   "KokkosBlas::Impl::Axpby_MV_Functor(ABscalars)"
                   ": XMV and YMV must have rank 2.");
-    static_assert((-1 <= scalar_x) && (scalar_x <= 2) &&
-                  (-1 <= scalar_y) && (scalar_y <= 2),
+    static_assert((-1 <= scalar_x) && (scalar_x <= 2) && (-1 <= scalar_y) &&
+                      (scalar_y <= 2),
                   "KokkosBlas::Impl::Axpby_MV_Functor(ABscalars)"
                   ": scalar_x and/or scalar_y are out of range.");
   }
@@ -670,8 +670,8 @@ struct Axpby_MV_Unroll_Functor {
     static_assert(BV::rank == 1,
                   "KokkosBlas::Impl::Axpby_MV_Unroll_Functor(ABgeneric)"
                   ": BV must have rank 1.");
-    static_assert((-1 <= scalar_x) && (scalar_x <= 2) &&
-                  (-1 <= scalar_y) && (scalar_y <= 2),
+    static_assert((-1 <= scalar_x) && (scalar_x <= 2) && (-1 <= scalar_y) &&
+                      (scalar_y <= 2),
                   "KokkosBlas::Impl::Axpby_MV_Unroll_Functor(ABgeneric)"
                   ": scalar_x and/or scalar_y are out of range.");
 
@@ -946,8 +946,8 @@ struct Axpby_MV_Unroll_Functor<typename XMV::non_const_value_type, XMV,
     static_assert(YMV::rank == 2,
                   "KokkosBlas::Impl::Axpby_MV_Unroll_Functor(ABscalars)"
                   ": XMV and YMV must have rank 2.");
-    static_assert((-1 <= scalar_x) && (scalar_x <= 2) &&
-                  (-1 <= scalar_y) && (scalar_y <= 2),
+    static_assert((-1 <= scalar_x) && (scalar_x <= 2) && (-1 <= scalar_y) &&
+                      (scalar_y <= 2),
                   "KokkosBlas::Impl::Axpby_MV_Unroll_Functor(ABscalars)"
                   ": scalar_x and/or scalar_y are out of range.");
   }
@@ -1134,15 +1134,15 @@ void Axpby_MV_Unrolled(const execution_space& space, const AV& av, const XMV& x,
   static_assert(YMV::rank == 2,
                 "KokkosBlas::Impl::Axpby_MV_Unrolled()"
                 ": XMV and YMV must have rank 2.");
-  if ((-1 <= scalar_x) && (scalar_x <= 2) &&
-      (-1 <= scalar_y) && (scalar_y <= 2)) {
+  if ((-1 <= scalar_x) && (scalar_x <= 2) && (-1 <= scalar_y) &&
+      (scalar_y <= 2)) {
     // Ok
   } else {
     KokkosKernels::Impl::throw_runtime_exception(
-         "KokkosBlas::Impl::Axpby_MV_Unrolled()"
-         ": scalar_x and/or scalar_y are out of range.");
+        "KokkosBlas::Impl::Axpby_MV_Unrolled()"
+        ": scalar_x and/or scalar_y are out of range.");
   }
-  
+
   const SizeType numRows = x.extent(0);
   Kokkos::RangePolicy<execution_space, SizeType> policy(space, 0, numRows);
 
@@ -1277,13 +1277,13 @@ void Axpby_MV_Generic(const execution_space& space, const AV& av, const XMV& x,
   static_assert(YMV::rank == 2,
                 "KokkosBlas::Impl::Axpby_MV_Generic()"
                 ": XMV and YMV must have rank 2.");
-  if ((-1 <= scalar_x) && (scalar_x <= 2) &&
-      (-1 <= scalar_y) && (scalar_y <= 2)) {
+  if ((-1 <= scalar_x) && (scalar_x <= 2) && (-1 <= scalar_y) &&
+      (scalar_y <= 2)) {
     // Ok
   } else {
     KokkosKernels::Impl::throw_runtime_exception(
-         "KokkosBlas::Impl::Axpby_MV_Generic()"
-         ": scalar_x and/or scalar_y are out of range.");
+        "KokkosBlas::Impl::Axpby_MV_Generic()"
+        ": scalar_x and/or scalar_y are out of range.");
   }
 
   const SizeType numRows = x.extent(0);
@@ -1405,13 +1405,13 @@ struct Axpby_MV_Invoke_Left {
     static_assert(YMV::rank == 2,
                   "KokkosBlas::Impl::Axpby_MV_Invoke_Left::run()"
                   ": X and Y must have rank 2.");
-    if ((-1 <= scalar_x) && (scalar_x <= 2) &&
-        (-1 <= scalar_y) && (scalar_y <= 2)) {
+    if ((-1 <= scalar_x) && (scalar_x <= 2) && (-1 <= scalar_y) &&
+        (scalar_y <= 2)) {
       // Ok
     } else {
       KokkosKernels::Impl::throw_runtime_exception(
-             "KokkosBlas::Impl::Axpby_MV_Invoke_Left::run()"
-             ": scalar_x and/or scalar_y are out of range.");
+          "KokkosBlas::Impl::Axpby_MV_Invoke_Left::run()"
+          ": scalar_x and/or scalar_y are out of range.");
     }
 
     const SizeType numCols = x.extent(1);
@@ -1497,16 +1497,15 @@ struct Axpby_MV_Invoke_Right {
     static_assert(YMV::rank == 2,
                   "KokkosBlas::Impl::Axpby_MV_Invoke_Right::run()"
                   ": X and Y must have rank 2.");
-    if ((-1 <= scalar_x) && (scalar_x <= 2) &&
-        (-1 <= scalar_y) && (scalar_y <= 2)) {
+    if ((-1 <= scalar_x) && (scalar_x <= 2) && (-1 <= scalar_y) &&
+        (scalar_y <= 2)) {
       // Ok
     } else {
       KokkosKernels::Impl::throw_runtime_exception(
-             "KokkosBlas::Impl::Axpby_MV_Invoke_Right::run()"
-             ": scalar_x and/or scalar_y are out of range.");
-
+          "KokkosBlas::Impl::Axpby_MV_Invoke_Right::run()"
+          ": scalar_x and/or scalar_y are out of range.");
     }
-    
+
     const SizeType numCols = x.extent(1);
     if (numCols == 1) {
       auto x_0 = Kokkos::subview(x, Kokkos::ALL(), 0);
