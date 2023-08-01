@@ -69,7 +69,9 @@ void axpby(const execution_space& exec_space, const AV& a, const XMV& X,
   // Perform compile time checks and run time checks.
   // **********************************************************************
   AxpbyTraits::performChecks(a, X, b, Y);
-  // AxpbyTraits::printInformation(std::cout, "axpby(), unif information");
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  AxpbyTraits::printInformation(std::cout, "axpby(), unif information");
+#endif
 
   // **********************************************************************
   // Call Impl::Axpby<...>::axpby(...)
