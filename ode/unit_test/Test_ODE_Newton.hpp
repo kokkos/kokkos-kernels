@@ -49,16 +49,24 @@ struct NewtonSolve_wrapper {
   void operator()(const int idx) const {
     // Take subviews to create the local problem
     auto local_x = Kokkos::subview(
-        x, Kokkos::pair(my_nls.neqs * idx, my_nls.neqs * (idx + 1)));
+        x, Kokkos::pair<int, int>(static_cast<int>(my_nls.neqs * idx),
+                                  static_cast<int>(my_nls.neqs * (idx + 1))));
     auto local_rhs = Kokkos::subview(
-        rhs, Kokkos::pair(my_nls.neqs * idx, my_nls.neqs * (idx + 1)));
+        rhs, Kokkos::pair<int, int>(static_cast<int>(my_nls.neqs * idx),
+                                    static_cast<int>(my_nls.neqs * (idx + 1))));
     auto local_update = Kokkos::subview(
-        update, Kokkos::pair(my_nls.neqs * idx, my_nls.neqs * (idx + 1)));
+        update,
+        Kokkos::pair<int, int>(static_cast<int>(my_nls.neqs * idx),
+                               static_cast<int>(my_nls.neqs * (idx + 1))));
     auto local_J = Kokkos::subview(
-        J, Kokkos::pair(my_nls.neqs * idx, my_nls.neqs * (idx + 1)),
+        J,
+        Kokkos::pair<int, int>(static_cast<int>(my_nls.neqs * idx),
+                               static_cast<int>(my_nls.neqs * (idx + 1))),
         Kokkos::ALL());
     auto local_tmp = Kokkos::subview(
-        tmp, Kokkos::pair(my_nls.neqs * idx, my_nls.neqs * (idx + 1)),
+        tmp,
+        Kokkos::pair<int, int>(static_cast<int>(my_nls.neqs * idx),
+                               static_cast<int>(my_nls.neqs * (idx + 1))),
         Kokkos::ALL());
 
     // Run Newton nonlinear solver
