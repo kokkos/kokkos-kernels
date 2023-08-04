@@ -20,6 +20,7 @@
 #include "KokkosKernels_AlwaysFalse.hpp"
 #include "KokkosKernels_Controls.hpp"
 #include "KokkosSparse_Utils_mkl.hpp"
+#include "KokkosSparse_Utils_cusparse.hpp"
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
 #include <mkl.h>
@@ -344,6 +345,7 @@ namespace Impl {
 
 template <class AMatrix, class XVector, class YVector>
 void spmv_block_impl_cusparse(
+    const Kokkos::Cuda& exec,
     const KokkosKernels::Experimental::Controls& controls, const char mode[],
     typename YVector::non_const_value_type const& alpha, const AMatrix& A,
     const XVector& x, typename YVector::non_const_value_type const& beta,
@@ -354,6 +356,8 @@ void spmv_block_impl_cusparse(
 
   /* initialize cusparse library */
   cusparseHandle_t cusparseHandle = controls.getCusparseHandle();
+  /* Set cuSPARSE to use the given stream until this function exits */
+  KokkosSparse::Impl::TemporarySetCusparseStream(cusparseHandle, exec);
 
   /* Set the operation mode */
   cusparseOperation_t myCusparseOperation;
@@ -456,6 +460,7 @@ template <
                                       typename YVector::array_layout>::value,
                      bool> = true>
 void spm_mv_block_impl_cusparse(
+    const Kokkos::Cuda& exec,
     const KokkosKernels::Experimental::Controls& controls, const char mode[],
     typename YVector::non_const_value_type const& alpha, const AMatrix& A,
     const XVector& x, typename YVector::non_const_value_type const& beta,
@@ -466,6 +471,8 @@ void spm_mv_block_impl_cusparse(
 
   /* initialize cusparse library */
   cusparseHandle_t cusparseHandle = controls.getCusparseHandle();
+  /* Set cuSPARSE to use the given stream until this function exits */
+  KokkosSparse::Impl::TemporarySetCusparseStream(cusparseHandle, exec);
 
   /* Set the operation mode */
   cusparseOperation_t myCusparseOperation;
@@ -576,7 +583,8 @@ void spm_mv_block_impl_cusparse(
                                                                                \
     using coefficient_type = typename YVector::non_const_value_type;           \
                                                                                \
-    static void spmv_bsrmatrix(const Controls& controls, const char mode[],    \
+    static void spmv_bsrmatrix(const Kokkos::Cuda& exec,                       \
+                               const Controls& controls, const char mode[],    \
                                const coefficient_type& alpha,                  \
                                const AMatrix& A, const XVector& x,             \
                                const coefficient_type& beta,                   \
@@ -584,7 +592,7 @@ void spm_mv_block_impl_cusparse(
       std::string label = "KokkosSparse::spmv[TPL_CUSPARSE,BSRMATRIX" +        \
                           Kokkos::ArithTraits<SCALAR>::name() + "]";           \
       Kokkos::Profiling::pushRegion(label);                                    \
-      spmv_block_impl_cusparse(controls, mode, alpha, A, x, beta, y);          \
+      spmv_block_impl_cusparse(exec, controls, mode, alpha, A, x, beta, y);    \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };
@@ -667,7 +675,8 @@ KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int, int,
                                                                                \
     using coefficient_type = typename YVector::non_const_value_type;           \
                                                                                \
-    static void spmv_mv_bsrmatrix(const Controls& controls, const char mode[], \
+    static void spmv_mv_bsrmatrix(const Kokkos::Cuda& exec,                    \
+                                  const Controls& controls, const char mode[], \
                                   const coefficient_type& alpha,               \
                                   const AMatrix& A, const XVector& x,          \
                                   const coefficient_type& beta,                \
@@ -675,7 +684,7 @@ KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int, int,
       std::string label = "KokkosSparse::spmv[TPL_CUSPARSE,BSRMATRIX" +        \
                           Kokkos::ArithTraits<SCALAR>::name() + "]";           \
       Kokkos::Profiling::pushRegion(label);                                    \
-      spm_mv_block_impl_cusparse(controls, mode, alpha, A, x, beta, y);        \
+      spm_mv_block_impl_cusparse(exec, controls, mode, alpha, A, x, beta, y);  \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };
@@ -731,6 +740,7 @@ namespace Impl {
 
 template <class AMatrix, class XVector, class YVector>
 void spmv_block_impl_rocsparse(
+    const Kokkos::HIP& exec,
     const KokkosKernels::Experimental::Controls& controls, const char mode[],
     typename YVector::non_const_value_type const& alpha, const AMatrix& A,
     const XVector& x, typename YVector::non_const_value_type const& beta,
@@ -920,7 +930,8 @@ void spmv_block_impl_rocsparse(
                                                                                \
     using coefficient_type = typename YVector::non_const_value_type;           \
                                                                                \
-    static void spmv_bsrmatrix(const Controls& controls, const char mode[],    \
+    static void spmv_bsrmatrix(const Kokkos::HIP& exec,                        \
+                               const Controls& controls, const char mode[],    \
                                const coefficient_type& alpha,                  \
                                const AMatrix& A, const XVector& x,             \
                                const coefficient_type& beta,                   \
@@ -928,7 +939,7 @@ void spmv_block_impl_rocsparse(
       std::string label = "KokkosSparse::spmv[TPL_ROCSPARSE,BSRMATRIX" +       \
                           Kokkos::ArithTraits<SCALAR>::name() + "]";           \
       Kokkos::Profiling::pushRegion(label);                                    \
-      spmv_block_impl_rocsparse(controls, mode, alpha, A, x, beta, y);         \
+      spmv_block_impl_rocsparse(exec, controls, mode, alpha, A, x, beta, y);   \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };

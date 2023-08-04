@@ -120,7 +120,8 @@ struct SPMV {
 
   typedef typename YVector::non_const_value_type coefficient_type;
 
-  static void spmv(const KokkosKernels::Experimental::Controls& controls,
+  static void spmv(const typename AD::execution_space& exec,
+                   const KokkosKernels::Experimental::Controls& controls,
                    const char mode[], const coefficient_type& alpha,
                    const AMatrix& A, const XVector& x,
                    const coefficient_type& beta, const YVector& y);
@@ -178,7 +179,8 @@ struct SPMV_MV {
   typedef Kokkos::View<YT, YL, YD, YM> YVector;
   typedef typename YVector::non_const_value_type coefficient_type;
 
-  static void spmv_mv(const KokkosKernels::Experimental::Controls& controls,
+  static void spmv_mv(const typename AD::execution_space& exec,
+                      const KokkosKernels::Experimental::Controls& controls,
                       const char mode[], const coefficient_type& alpha,
                       const AMatrix& A, const XVector& x,
                       const coefficient_type& beta, const YVector& y);
@@ -196,7 +198,8 @@ struct SPMV<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM, false,
   typedef Kokkos::View<YT, YL, YD, YM> YVector;
   typedef typename YVector::non_const_value_type coefficient_type;
 
-  static void spmv(const KokkosKernels::Experimental::Controls& controls,
+  static void spmv(const typename AD::execution_space& exec,
+                   const KokkosKernels::Experimental::Controls& controls,
                    const char mode[], const coefficient_type& alpha,
                    const AMatrix& A, const XVector& x,
                    const coefficient_type& beta, const YVector& y) {
@@ -204,23 +207,23 @@ struct SPMV<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM, false,
 
     if (alpha == KAT::zero()) {
       if (beta != KAT::one()) {
-        KokkosBlas::scal(y, beta, y);
+        KokkosBlas::scal(exec, y, beta, y);
       }
       return;
     }
 
     if (beta == KAT::zero()) {
-      spmv_beta<AMatrix, XVector, YVector, 0>(controls, mode, alpha, A, x, beta,
-                                              y);
+      spmv_beta<AMatrix, XVector, YVector, 0>(exec, controls, mode, alpha, A, x,
+                                              beta, y);
     } else if (beta == KAT::one()) {
-      spmv_beta<AMatrix, XVector, YVector, 1>(controls, mode, alpha, A, x, beta,
-                                              y);
+      spmv_beta<AMatrix, XVector, YVector, 1>(exec, controls, mode, alpha, A, x,
+                                              beta, y);
     } else if (beta == -KAT::one()) {
-      spmv_beta<AMatrix, XVector, YVector, -1>(controls, mode, alpha, A, x,
-                                               beta, y);
+      spmv_beta<AMatrix, XVector, YVector, -1>(exec, controls, mode, alpha, A,
+                                               x, beta, y);
     } else {
-      spmv_beta<AMatrix, XVector, YVector, 2>(controls, mode, alpha, A, x, beta,
-                                              y);
+      spmv_beta<AMatrix, XVector, YVector, 2>(exec, controls, mode, alpha, A, x,
+                                              beta, y);
     }
   }
 };
@@ -236,20 +239,25 @@ struct SPMV_MV<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM, false, false,
   typedef Kokkos::View<YT, YL, YD, YM> YVector;
   typedef typename YVector::non_const_value_type coefficient_type;
 
-  static void spmv_mv(const KokkosKernels::Experimental::Controls& /*controls*/,
+  static void spmv_mv(const typename AD::execution_space& exec,
+                      const KokkosKernels::Experimental::Controls& /*controls*/,
                       const char mode[], const coefficient_type& alpha,
                       const AMatrix& A, const XVector& x,
                       const coefficient_type& beta, const YVector& y) {
     typedef Kokkos::ArithTraits<coefficient_type> KAT;
 
     if (alpha == KAT::zero()) {
-      spmv_alpha_mv<AMatrix, XVector, YVector, 0>(mode, alpha, A, x, beta, y);
+      spmv_alpha_mv<AMatrix, XVector, YVector, 0>(exec, mode, alpha, A, x, beta,
+                                                  y);
     } else if (alpha == KAT::one()) {
-      spmv_alpha_mv<AMatrix, XVector, YVector, 1>(mode, alpha, A, x, beta, y);
+      spmv_alpha_mv<AMatrix, XVector, YVector, 1>(exec, mode, alpha, A, x, beta,
+                                                  y);
     } else if (alpha == -KAT::one()) {
-      spmv_alpha_mv<AMatrix, XVector, YVector, -1>(mode, alpha, A, x, beta, y);
+      spmv_alpha_mv<AMatrix, XVector, YVector, -1>(exec, mode, alpha, A, x,
+                                                   beta, y);
     } else {
-      spmv_alpha_mv<AMatrix, XVector, YVector, 2>(mode, alpha, A, x, beta, y);
+      spmv_alpha_mv<AMatrix, XVector, YVector, 2>(exec, mode, alpha, A, x, beta,
+                                                  y);
     }
   }
 };
@@ -263,7 +271,8 @@ struct SPMV_MV<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM, true, false,
   typedef Kokkos::View<YT, YL, YD, YM> YVector;
   typedef typename YVector::non_const_value_type coefficient_type;
 
-  static void spmv_mv(const KokkosKernels::Experimental::Controls& /*controls*/,
+  static void spmv_mv(const typename AD::execution_space& exec,
+                      const KokkosKernels::Experimental::Controls& /*controls*/,
                       const char mode[], const coefficient_type& alpha,
                       const AMatrix& A, const XVector& x,
                       const coefficient_type& beta, const YVector& y) {
@@ -276,7 +285,7 @@ struct SPMV_MV<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM, true, false,
     for (typename AMatrix::non_const_size_type j = 0; j < x.extent(1); ++j) {
       auto x_j = Kokkos::subview(x, Kokkos::ALL(), j);
       auto y_j = Kokkos::subview(y, Kokkos::ALL(), j);
-      impl_type::spmv(defaultControls, mode, alpha, A, x_j, beta, y_j);
+      impl_type::spmv(exec, defaultControls, mode, alpha, A, x_j, beta, y_j);
     }
   }
 };

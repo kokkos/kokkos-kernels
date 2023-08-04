@@ -108,6 +108,7 @@ struct SPMV_BSRMATRIX {
   typedef typename YVector::non_const_value_type YScalar;
 
   static void spmv_bsrmatrix(
+      const typename AD::execution_space &exec,
       const KokkosKernels::Experimental::Controls &controls, const char mode[],
       const YScalar &alpha, const AMatrix &A, const XVector &x,
       const YScalar &beta, const YVector &y);
@@ -129,6 +130,7 @@ struct SPMV_MV_BSRMATRIX {
   typedef typename YVector::non_const_value_type YScalar;
 
   static void spmv_mv_bsrmatrix(
+      const typename AD::execution_space &exec,
       const KokkosKernels::Experimental::Controls &controls, const char mode[],
       const YScalar &alpha, const AMatrix &A, const XVector &x,
       const YScalar &beta, const YVector &y);
@@ -152,6 +154,7 @@ struct SPMV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM, false,
   typedef typename YVector::non_const_value_type YScalar;
 
   static void spmv_bsrmatrix(
+      const typename AD::execution_space &exec,
       const KokkosKernels::Experimental::Controls &controls, const char mode[],
       const YScalar &alpha, const AMatrix &A, const XVector &X,
       const YScalar &beta, const YVector &Y) {
@@ -163,10 +166,10 @@ struct SPMV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM, false,
     // use V41 if requested
     if (controls.getParameter("algorithm") == ALG_V41) {
       if (modeIsNoTrans || modeIsConjugate) {
-        return Bsr::spMatVec_no_transpose(controls, alpha, A, X, beta, Y,
+        return Bsr::spMatVec_no_transpose(exec, controls, alpha, A, X, beta, Y,
                                           modeIsConjugate);
       } else if (modeIsTrans || modeIsConjugateTrans) {
-        return Bsr::spMatVec_transpose(controls, alpha, A, X, beta, Y,
+        return Bsr::spMatVec_transpose(exec, controls, alpha, A, X, beta, Y,
                                        modeIsConjugateTrans);
       }
     }
@@ -176,17 +179,17 @@ struct SPMV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM, false,
             typename YVector::execution_space>() ||
         controls.getParameter("algorithm") == ALG_V42) {
       if (modeIsNoTrans) {
-        ::KokkosSparse::Impl::apply_v42(alpha, A, X, beta, Y);
+        ::KokkosSparse::Impl::apply_v42(exec, alpha, A, X, beta, Y);
         return;
       }
     }
 
     // fall back to V41 all else fails
     if (modeIsNoTrans || modeIsConjugate) {
-      return Bsr::spMatVec_no_transpose(controls, alpha, A, X, beta, Y,
+      return Bsr::spMatVec_no_transpose(exec, controls, alpha, A, X, beta, Y,
                                         modeIsConjugate);
     } else if (modeIsTrans || modeIsConjugateTrans) {
-      return Bsr::spMatVec_transpose(controls, alpha, A, X, beta, Y,
+      return Bsr::spMatVec_transpose(exec, controls, alpha, A, X, beta, Y,
                                      modeIsConjugateTrans);
     }
 
@@ -222,6 +225,7 @@ struct SPMV_MV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
   };
 
   static void spmv_mv_bsrmatrix(
+      const typename AD::execution_space &exec,
       const KokkosKernels::Experimental::Controls &controls, const char mode[],
       const YScalar &alpha, const AMatrix &A, const XVector &X,
       const YScalar &beta, const YVector &Y) {
@@ -279,15 +283,15 @@ struct SPMV_MV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
           case Precision::Mixed: {
             BsrMatrixSpMVTensorCoreDispatcher<AMatrix, half, XVector, half,
                                               YVector, float, 16, 16,
-                                              16>::dispatch(alpha, A, X, beta,
-                                                            Y);
+                                              16>::dispatch(exec, alpha, A, X,
+                                                            beta, Y);
             return;
           }
           case Precision::Double: {
             BsrMatrixSpMVTensorCoreDispatcher<AMatrix, double, XVector, double,
                                               YVector, double, 8, 8,
-                                              4>::dispatch(alpha, A, X, beta,
-                                                           Y);
+                                              4>::dispatch(exec, alpha, A, X,
+                                                           beta, Y);
             return;
           }
           case Precision::Automatic:  // fallthrough
@@ -299,14 +303,14 @@ struct SPMV_MV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
             if (operandsHalfHalfFloat) {
               BsrMatrixSpMVTensorCoreDispatcher<AMatrix, half, XVector, half,
                                                 YVector, float, 16, 16,
-                                                16>::dispatch(alpha, A, X, beta,
-                                                              Y);
+                                                16>::dispatch(exec, alpha, A, X,
+                                                              beta, Y);
               return;
             } else {
               BsrMatrixSpMVTensorCoreDispatcher<AMatrix, double, XVector,
                                                 double, YVector, double, 8, 8,
-                                                4>::dispatch(alpha, A, X, beta,
-                                                             Y);
+                                                4>::dispatch(exec, alpha, A, X,
+                                                             beta, Y);
               return;
             }
           }
@@ -320,7 +324,8 @@ struct SPMV_MV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
       */
       if (Method::TensorCores == method) {
         BsrMatrixSpMVTensorCoreDispatcher<AMatrix, half, XVector, half, YVector,
-                                          float, 16, 16, 16>::dispatch(alpha, A,
+                                          float, 16, 16, 16>::dispatch(exec,
+                                                                       alpha, A,
                                                                        X, beta,
                                                                        Y);
         return;
@@ -336,11 +341,11 @@ struct SPMV_MV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
     // use V41 if requested
     if (controls.getParameter("algorithm") == ALG_V41) {
       if (modeIsNoTrans || modeIsConjugate) {
-        return Bsr::spMatMultiVec_no_transpose(controls, alpha, A, X, beta, Y,
-                                               modeIsConjugate);
+        return Bsr::spMatMultiVec_no_transpose(exec, controls, alpha, A, X,
+                                               beta, Y, modeIsConjugate);
       } else if (modeIsTrans || modeIsConjugateTrans) {
-        return Bsr::spMatMultiVec_transpose(controls, alpha, A, X, beta, Y,
-                                            modeIsConjugateTrans);
+        return Bsr::spMatMultiVec_transpose(exec, controls, alpha, A, X, beta,
+                                            Y, modeIsConjugateTrans);
       }
     }
 
@@ -349,17 +354,17 @@ struct SPMV_MV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
             typename YVector::execution_space>() ||
         controls.getParameter("algorithm") == ALG_V42) {
       if (modeIsNoTrans) {
-        ::KokkosSparse::Impl::apply_v42(alpha, A, X, beta, Y);
+        ::KokkosSparse::Impl::apply_v42(exec, alpha, A, X, beta, Y);
         return;
       }
     }
 
     // use V41 as the ultimate fallback
     if (modeIsNoTrans || modeIsConjugate) {
-      return Bsr::spMatMultiVec_no_transpose(controls, alpha, A, X, beta, Y,
-                                             modeIsConjugate);
+      return Bsr::spMatMultiVec_no_transpose(exec, controls, alpha, A, X, beta,
+                                             Y, modeIsConjugate);
     } else if (modeIsTrans || modeIsConjugateTrans) {
-      return Bsr::spMatMultiVec_transpose(controls, alpha, A, X, beta, Y,
+      return Bsr::spMatMultiVec_transpose(exec, controls, alpha, A, X, beta, Y,
                                           modeIsConjugateTrans);
     }
 
@@ -383,6 +388,7 @@ struct SPMV_MV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
   typedef typename YVector::non_const_value_type YScalar;
 
   static void spmv_mv_bsrmatrix(
+      const typename AD::execution_space &exec,
       const KokkosKernels::Experimental::Controls &controls, const char mode[],
       const YScalar &alpha, const AMatrix &A, const XVector &X,
       const YScalar &beta, const YVector &Y) {
@@ -395,7 +401,7 @@ struct SPMV_MV_BSRMATRIX<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
     for (typename AMatrix::non_const_size_type j = 0; j < X.extent(1); ++j) {
       const auto x_j = Kokkos::subview(X, Kokkos::ALL(), j);
       auto y_j       = Kokkos::subview(Y, Kokkos::ALL(), j);
-      impl_type::spmv_bsrmatrix(controls, mode, alpha, A, x_j, beta, y_j);
+      impl_type::spmv_bsrmatrix(exec, controls, mode, alpha, A, x_j, beta, y_j);
     }
   }
 };

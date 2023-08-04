@@ -43,9 +43,12 @@ struct RANK_TWO {};
 /// \brief Tag-dispatch for \c Kokkos sparse matrix-vector multiply on single
 /// vector
 ///
-///
+/// \tparam execution_space A Kokkos execution space. Must be able to access
+///   the memory spaces of A, x, and y.
 /// \tparam AMatrix  A KokkosSparse::CrsMatrix, or KokkosSparse::BsrMatrix
 ///
+/// \param exec [in] The execution space instance on which to run the
+///   kernel.
 /// \param controls [in] kokkos-kernels control structure.
 /// \param mode [in]
 /// \param alpha [in] Scalar multiplier for the matrix A.
@@ -56,23 +59,49 @@ struct RANK_TWO {};
 /// \param tag RANK_ONE dispatch
 ///
 #ifdef DOXY  // documentation version
-template <class AlphaType, class AMatrix, class XVector, class BetaType,
-          class YVector>
+template <class execution_space, class AlphaType, class AMatrix, class XVector,
+          class BetaType, class YVector>
 #else
-template <class AlphaType, class AMatrix, class XVector, class BetaType,
-          class YVector,
+template <class execution_space, class AlphaType, class AMatrix, class XVector,
+          class BetaType, class YVector,
           typename std::enable_if<
               KokkosSparse::is_crs_matrix<AMatrix>::value>::type* = nullptr>
 #endif
-void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
+void spmv(const execution_space& exec,
+          KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
           const BetaType& beta, const YVector& y,
           [[maybe_unused]] const RANK_ONE& tag) {
 
-  // Make sure that x and y have the same rank.
+  // Make sure that x and y are Views.
+  static_assert(Kokkos::is_view<XVector>::value,
+                "KokkosSparse::spmv: XVector must be a Kokkos::View.");
+  static_assert(Kokkos::is_view<YVector>::value,
+                "KokkosSparse::spmv: YVector must be a Kokkos::View.");
+  // Make sure execution_space matches that of the matrix
+  // BMK: this is currently required by unification layer but may change in the
+  // future
   static_assert(
-      static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
-      "KokkosSparse::spmv: Vector ranks do not match.");
+      std::is_same_v<execution_space, typename AMatrix::execution_space>,
+      "KokkosSparse::spmv: execution_space must match "
+      "AMatrix::execution_space");
+  // Make sure A, x, y are accessible to execution_space
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename AMatrix::memory_space>::accessible,
+      "KokkosBlas::spmv: AMatrix must be accessible from execution_space");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename XVector::memory_space>::accessible,
+      "KokkosBlas::spmv: XVector must be accessible from execution_space");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename YVector::memory_space>::accessible,
+      "KokkosBlas::spmv: YVector must be accessible from execution_space");
+
+  // Make sure that x and y have the same rank.
+  static_assert(XVector::rank == YVector::rank,
+                "KokkosSparse::spmv: Vector ranks do not match.");
   // Make sure that x (and therefore y) is rank 1.
   static_assert(static_cast<int>(XVector::rank) == 1,
                 "KokkosSparse::spmv: Both Vector inputs must have rank 1 "
@@ -136,9 +165,9 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
     // if y contains NaN but beta = 0, the result y should be filled with 0.
     // For example, this is useful for passing in uninitialized y and beta=0.
     if (beta == Kokkos::ArithTraits<BetaType>::zero())
-      Kokkos::deep_copy(y_i, Kokkos::ArithTraits<BetaType>::zero());
+      Kokkos::deep_copy(exec, y_i, Kokkos::ArithTraits<BetaType>::zero());
     else
-      KokkosBlas::scal(y_i, beta, y_i);
+      KokkosBlas::scal(exec, y_i, beta, y_i);
     return;
   }
 
@@ -148,18 +177,12 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
                      (controls.getParameter("algorithm") != "tpl");
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-  // cuSPARSE does not support the conjugate mode (C), and cuSPARSE 9 only
-  // supports the normal (N) mode.
-  if (std::is_same<typename AMatrix_Internal::memory_space,
-                   Kokkos::CudaSpace>::value ||
-      std::is_same<typename AMatrix_Internal::memory_space,
-                   Kokkos::CudaUVMSpace>::value) {
-#if (9000 <= CUDA_VERSION)
-    useFallback = useFallback || (mode[0] != NoTranspose[0]);
-#endif
-#if defined(CUSPARSE_VERSION) && (10300 <= CUSPARSE_VERSION)
+  // cuSPARSE does not support the conjugate mode (C)
+  if constexpr (std::is_same_v<typename AMatrix_Internal::memory_space,
+                               Kokkos::CudaSpace> ||
+                std::is_same_v<typename AMatrix_Internal::memory_space,
+                               Kokkos::CudaUVMSpace>) {
     useFallback = useFallback || (mode[0] == Conjugate[0]);
-#endif
   }
   // cuSPARSE 12 requires that the output (y) vector is 16-byte aligned for all
   // scalar types
@@ -209,7 +232,8 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
                typename YVector_Internal::value_type*,
                typename YVector_Internal::array_layout,
                typename YVector_Internal::device_type,
-               typename YVector_Internal::memory_traits, false>::spmv(controls,
+               typename YVector_Internal::memory_traits, false>::spmv(exec,
+                                                                      controls,
                                                                       mode,
                                                                       alpha,
                                                                       A_i, x_i,
@@ -231,28 +255,82 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
                typename YVector_Internal::value_type*,
                typename YVector_Internal::array_layout,
                typename YVector_Internal::device_type,
-               typename YVector_Internal::memory_traits>::spmv(controls, mode,
-                                                               alpha, A_i, x_i,
-                                                               beta, y_i);
+               typename YVector_Internal::memory_traits>::spmv(exec, controls,
+                                                               mode, alpha, A_i,
+                                                               x_i, beta, y_i);
   }
 }
 
-#ifdef DOXY  // hide SFINAE
+/// \brief Tag-dispatch for \c Kokkos sparse matrix-vector multiply on single
+/// vector
+///
+/// \tparam AMatrix  A KokkosSparse::CrsMatrix, or KokkosSparse::BsrMatrix
+///
+/// \param controls [in] kokkos-kernels control structure.
+/// \param mode [in]
+/// \param alpha [in] Scalar multiplier for the matrix A.
+/// \param A [in] The sparse matrix A.
+/// \param x [in] A vector.
+/// \param beta [in] Scalar multiplier for the multivector y.
+/// \param y [in/out] vector.
+/// \param tag RANK_ONE dispatch
+///
+#ifdef DOXY  // documentation version
 template <class AlphaType, class AMatrix, class XVector, class BetaType,
           class YVector>
 #else
 template <class AlphaType, class AMatrix, class XVector, class BetaType,
           class YVector,
-          typename std::enable_if<KokkosSparse::Experimental::is_bsr_matrix<
-              AMatrix>::value>::type* = nullptr>
+          typename std::enable_if<
+              KokkosSparse::is_crs_matrix<AMatrix>::value>::type* = nullptr>
 #endif
 void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
+          const BetaType& beta, const YVector& y, const RANK_ONE& tag) {
+  spmv(typename AMatrix::execution_space{}, controls, mode, alpha, A, x, beta,
+       y, tag);
+}
+
+#ifdef DOXY  // hide SFINAE
+template <class execution_space, class AlphaType, class AMatrix, class XVector,
+          class BetaType, class YVector>
+#else
+template <class execution_space, class AlphaType, class AMatrix, class XVector,
+          class BetaType, class YVector,
+          typename std::enable_if<KokkosSparse::Experimental::is_bsr_matrix<
+              AMatrix>::value>::type* = nullptr>
+#endif
+void spmv(const execution_space& exec,
+          KokkosKernels::Experimental::Controls controls, const char mode[],
+          const AlphaType& alpha, const AMatrix& A, const XVector& x,
           const BetaType& beta, const YVector& y, const RANK_ONE) {
-  // Make sure that x and y have the same rank.
+  // Make sure that x and y are Views.
+  static_assert(Kokkos::is_view<XVector>::value,
+                "KokkosSparse::spmv: XVector must be a Kokkos::View.");
+  static_assert(Kokkos::is_view<YVector>::value,
+                "KokkosSparse::spmv: YVector must be a Kokkos::View.");
+  // Make sure execution_space matches that of the matrix (currently required by
+  // unification layer)
   static_assert(
-      static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
-      "KokkosSparse::spmv: Vector ranks do not match.");
+      std::is_same_v<execution_space, typename AMatrix::execution_space>,
+      "KokkosSparse::spmv: execution_space must match "
+      "AMatrix::execution_space");
+  // Make sure A, x, y are accessible to execution_space
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename AMatrix::memory_space>::accessible,
+      "KokkosBlas::spmv: AMatrix must be accessible from execution_space");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename XVector::memory_space>::accessible,
+      "KokkosBlas::spmv: XVector must be accessible from execution_space");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename YVector::memory_space>::accessible,
+      "KokkosBlas::spmv: YVector must be accessible from execution_space");
+  // Make sure that x and y have the same rank.
+  static_assert(XVector::rank == YVector::rank,
+                "KokkosSparse::spmv: Vector ranks do not match.");
   // Make sure that x (and therefore y) is rank 1.
   static_assert(static_cast<int>(XVector::rank) == 1,
                 "KokkosSparse::spmv: Both Vector inputs must have rank 1 "
@@ -269,7 +347,8 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
         typename AMatrix::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>,
         typename AMatrix::size_type>
         Acrs("bsr_to_crs", A.numCols(), A.values, A.graph);
-    KokkosSparse::spmv(controls, mode, alpha, Acrs, x, beta, y, RANK_ONE());
+    KokkosSparse::spmv(exec, controls, mode, alpha, Acrs, x, beta, y,
+                       RANK_ONE());
     return;
   }
   // Check compatibility of dimensions at run time.
@@ -333,9 +412,9 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
     // if y contains NaN but beta = 0, the result y should be filled with 0.
     // For example, this is useful for passing in uninitialized y and beta=0.
     if (beta == Kokkos::ArithTraits<BetaType>::zero())
-      Kokkos::deep_copy(y_i, Kokkos::ArithTraits<BetaType>::zero());
+      Kokkos::deep_copy(exec, y_i, Kokkos::ArithTraits<BetaType>::zero());
     else
-      KokkosBlas::scal(y_i, beta, y_i);
+      KokkosBlas::scal(exec, y_i, beta, y_i);
     return;
   }
 
@@ -392,7 +471,8 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
         typename YVector_Internal::array_layout,
         typename YVector_Internal::device_type,
         typename YVector_Internal::memory_traits,
-        false>::spmv_bsrmatrix(controls, mode, alpha, A_i, x_i, beta, y_i);
+        false>::spmv_bsrmatrix(exec, controls, mode, alpha, A_i, x_i, beta,
+                               y_i);
     Kokkos::Profiling::popRegion();
   } else {
 #define __SPMV_TYPES__                               \
@@ -421,7 +501,8 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
                   __SPMV_TYPES__>::value;
 
     Experimental::Impl::SPMV_BSRMATRIX<__SPMV_TYPES__, tpl_spec_avail,
-                                       eti_spec_avail>::spmv_bsrmatrix(controls,
+                                       eti_spec_avail>::spmv_bsrmatrix(exec,
+                                                                       controls,
                                                                        mode,
                                                                        alpha,
                                                                        A_i, x_i,
@@ -432,10 +513,31 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
   }
 }
 
+#ifdef DOXY  // hide SFINAE
+template <class AlphaType, class AMatrix, class XVector, class BetaType,
+          class YVector>
+#else
+template <class AlphaType, class AMatrix, class XVector, class BetaType,
+          class YVector,
+          typename std::enable_if<KokkosSparse::Experimental::is_bsr_matrix<
+              AMatrix>::value>::type* = nullptr>
+#endif
+void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
+          const AlphaType& alpha, const AMatrix& A, const XVector& x,
+          const BetaType& beta, const YVector& y, const RANK_ONE tag) {
+  spmv(typename AMatrix::execution_space{}, controls, mode, alpha, A, x, beta,
+       y, tag);
+}
+
 template <class AlphaType, class AMatrix, class XVector, class BetaType,
           class YVector, class XLayout = typename XVector::array_layout>
 struct SPMV2D1D {
   static bool spmv2d1d(const char mode[], const AlphaType& alpha,
+                       const AMatrix& A, const XVector& x, const BetaType& beta,
+                       const YVector& y);
+
+  static bool spmv2d1d(const typename AMatrix::execution_space& exec,
+                       const char mode[], const AlphaType& alpha,
                        const AMatrix& A, const XVector& x, const BetaType& beta,
                        const YVector& y);
 };
@@ -448,10 +550,20 @@ struct SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector,
   static bool spmv2d1d(const char mode[], const AlphaType& alpha,
                        const AMatrix& A, const XVector& x, const BetaType& beta,
                        const YVector& y) {
-    spmv(mode, alpha, A, x, beta, y);
+    spmv(typename AMatrix::execution_space{}, mode, alpha, A, x, beta, y);
     return true;
   }
+  static bool spmv2d1d(const typename AMatrix::execution_space& exec,
+                       const char mode[], const AlphaType& alpha,
+                       const AMatrix& A, const XVector& x, const BetaType& beta,
+                       const YVector& y) {
+    spmv(exec, mode, alpha, A, x, beta, y);
+    return true;
+  }
+};
+
 #else
+
 template <class AlphaType, class AMatrix, class XVector, class BetaType,
           class YVector>
 struct SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector,
@@ -461,8 +573,15 @@ struct SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector,
                        const BetaType& /*beta*/, const YVector& /*y*/) {
     return false;
   }
-#endif
+
+  static bool spmv2d1d(const typename AMatrix::execution_space& /* exec */,
+                       const char /*mode*/[], const AlphaType& /*alpha*/,
+                       const AMatrix& /*A*/, const XVector& /*x*/,
+                       const BetaType& /*beta*/, const YVector& /*y*/) {
+    return false;
+  }
 };
+#endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || !defined(KOKKOSKERNELS_ETI_ONLY)
 template <class AlphaType, class AMatrix, class XVector, class BetaType,
@@ -472,10 +591,21 @@ struct SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector,
   static bool spmv2d1d(const char mode[], const AlphaType& alpha,
                        const AMatrix& A, const XVector& x, const BetaType& beta,
                        const YVector& y) {
-    spmv(mode, alpha, A, x, beta, y);
+    spmv(typename AMatrix::execution_space{}, mode, alpha, A, x, beta, y);
     return true;
   }
+
+  static bool spmv2d1d(const typename AMatrix::execution_space& exec,
+                       const char mode[], const AlphaType& alpha,
+                       const AMatrix& A, const XVector& x, const BetaType& beta,
+                       const YVector& y) {
+    spmv(exec, mode, alpha, A, x, beta, y);
+    return true;
+  }
+};
+
 #else
+
 template <class AlphaType, class AMatrix, class XVector, class BetaType,
           class YVector>
 struct SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector,
@@ -485,8 +615,15 @@ struct SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector,
                        const BetaType& /*beta*/, const YVector& /*y*/) {
     return false;
   }
-#endif
+
+  static bool spmv2d1d(const typename AMatrix::execution_space& /* exec */,
+                       const char /*mode*/[], const AlphaType& /*alpha*/,
+                       const AMatrix& /*A*/, const XVector& /*x*/,
+                       const BetaType& /*beta*/, const YVector& /*y*/) {
+    return false;
+  }
 };
+#endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || !defined(KOKKOSKERNELS_ETI_ONLY)
 template <class AlphaType, class AMatrix, class XVector, class BetaType,
@@ -496,10 +633,21 @@ struct SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector,
   static bool spmv2d1d(const char mode[], const AlphaType& alpha,
                        const AMatrix& A, const XVector& x, const BetaType& beta,
                        const YVector& y) {
-    spmv(mode, alpha, A, x, beta, y);
+    spmv(typename AMatrix::execution_space{}, mode, alpha, A, x, beta, y);
     return true;
   }
+
+  static bool spmv2d1d(const typename AMatrix::execution_space& exec,
+                       const char mode[], const AlphaType& alpha,
+                       const AMatrix& A, const XVector& x, const BetaType& beta,
+                       const YVector& y) {
+    spmv(exec, mode, alpha, A, x, beta, y);
+    return true;
+  }
+};
+
 #else
+
 template <class AlphaType, class AMatrix, class XVector, class BetaType,
           class YVector>
 struct SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector,
@@ -509,14 +657,25 @@ struct SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector,
                        const BetaType& /*beta*/, const YVector& /*y*/) {
     return false;
   }
-#endif
+
+  static bool spmv2d1d(const typename AMatrix::execution_space& /* exec */,
+                       const char /*mode*/[], const AlphaType& /*alpha*/,
+                       const AMatrix& /*A*/, const XVector& /*x*/,
+                       const BetaType& /*beta*/, const YVector& /*y*/) {
+    return false;
+  }
 };
+#endif
 
 /// \brief Tag-dispatch sparse matrix-vector multiply on multivectors
 ///
+/// \tparam execution_space A Kokkos execution space. Must be able to access
+///   the memory spaces of A, x, and y.
 /// \tparam AMatrix A KokkosSparse::CrsMatrix,
 /// KokkosSparse::Experimental::BsrMatrix
 ///
+/// \param exec [in] The execution space instance on which to run the
+///   kernel.
 /// \param controls [in] kokkos-kernels control structure.
 /// \param mode [in] \c "N" for no transpose
 /// \param alpha [in] Scalar multiplier for the matrix A.
@@ -527,23 +686,47 @@ struct SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector,
 /// \param tag RANK_TWO dispatch
 ///
 #ifdef DOXY
-template <class AlphaType, class AMatrix, class XVector, class BetaType,
-          class YVector>
+template <class execution_space, class AlphaType, class AMatrix, class XVector,
+          class BetaType, class YVector>
 #else
-template <class AlphaType, class AMatrix, class XVector, class BetaType,
-          class YVector,
+template <class execution_space, class AlphaType, class AMatrix, class XVector,
+          class BetaType, class YVector,
           typename std::enable_if<
               KokkosSparse::is_crs_matrix<AMatrix>::value>::type* = nullptr>
 #endif
-void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
+void spmv(const execution_space& exec,
+          KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
           const BetaType& beta, const YVector& y,
           [[maybe_unused]] const RANK_TWO& tag) {
-
-  // Make sure that x and y have the same rank.
+  // Make sure that x and y are Views.
+  static_assert(Kokkos::is_view<XVector>::value,
+                "KokkosSparse::spmv: XVector must be a Kokkos::View.");
+  static_assert(Kokkos::is_view<YVector>::value,
+                "KokkosSparse::spmv: YVector must be a Kokkos::View.");
+  // Make sure execution_space matches that of the matrix
+  // BMK: this is currently required by unification layer, but may change in the
+  // future
   static_assert(
-      static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
-      "KokkosSparse::spmv: Vector ranks do not match.");
+      std::is_same_v<execution_space, typename AMatrix::execution_space>,
+      "KokkosSparse::spmv: execution_space must match "
+      "AMatrix::execution_space");
+  // Make sure A, x, y are accessible to execution_space
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename AMatrix::memory_space>::accessible,
+      "KokkosBlas::spmv: AMatrix must be accessible from execution_space");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename XVector::memory_space>::accessible,
+      "KokkosBlas::spmv: XVector must be accessible from execution_space");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename YVector::memory_space>::accessible,
+      "KokkosBlas::spmv: YVector must be accessible from execution_space");
+  // Make sure that x and y have the same rank.
+  static_assert(XVector::rank == YVector::rank,
+                "KokkosSparse::spmv: Vector ranks do not match.");
   // Make sure that x (and therefore y) is rank 2.
   static_assert(static_cast<int>(XVector::rank) == 2,
                 "KokkosSparse::spmv: Both Vector inputs must have rank 2 "
@@ -607,7 +790,7 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
     using impl_type = SPMV2D1D<AlphaType, AMatrix_Internal, XVector_SubInternal,
                                BetaType, YVector_SubInternal,
                                typename XVector_SubInternal::array_layout>;
-    if (impl_type::spmv2d1d(mode, alpha, A, x_i, beta, y_i)) {
+    if (impl_type::spmv2d1d(exec, mode, alpha, A, x_i, beta, y_i)) {
       return;
     }
   }
@@ -652,7 +835,7 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
           typename YVector_Internal::device_type,
           typename YVector_Internal::memory_traits,
           std::is_integral<typename AMatrix_Internal::value_type>::value,
-          false>::spmv_mv(controls, mode, alpha, A_i, x_i, beta, y_i);
+          false>::spmv_mv(exec, controls, mode, alpha, A_i, x_i, beta, y_i);
     } else {
       return Impl::SPMV_MV<
           typename AMatrix_Internal::value_type,
@@ -667,25 +850,81 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
           typename YVector_Internal::value_type**,
           typename YVector_Internal::array_layout,
           typename YVector_Internal::device_type,
-          typename YVector_Internal::memory_traits>::spmv_mv(controls, mode,
-                                                             alpha, A_i, x_i,
-                                                             beta, y_i);
+          typename YVector_Internal::memory_traits>::spmv_mv(exec, controls,
+                                                             mode, alpha, A_i,
+                                                             x_i, beta, y_i);
     }
   }
 }
 
-#ifdef DOXY  // hide SFINAE
+/// \brief Tag-dispatch sparse matrix-vector multiply on multivectors
+///
+/// \tparam AMatrix A KokkosSparse::CrsMatrix,
+/// KokkosSparse::Experimental::BsrMatrix
+///
+/// \param controls [in] kokkos-kernels control structure.
+/// \param mode [in] \c "N" for no transpose
+/// \param alpha [in] Scalar multiplier for the matrix A.
+/// \param A [in] The sparse matrix A.
+/// \param x [in] A multivector (rank-2 Kokkos::View).
+/// \param beta [in] Scalar multiplier for the multivector y.
+/// \param y [in/out] multivector (exrank-2 Kokkos::View).
+/// \param tag RANK_TWO dispatch
+///
+#ifdef DOXY
 template <class AlphaType, class AMatrix, class XVector, class BetaType,
           class YVector>
 #else
 template <class AlphaType, class AMatrix, class XVector, class BetaType,
           class YVector,
-          typename std::enable_if<KokkosSparse::Experimental::is_bsr_matrix<
-              AMatrix>::value>::type* = nullptr>
+          typename std::enable_if<
+              KokkosSparse::is_crs_matrix<AMatrix>::value>::type* = nullptr>
 #endif
 void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
+          const BetaType& beta, const YVector& y, const RANK_TWO& tag) {
+  spmv(typename AMatrix::execution_space{}, controls, mode, alpha, A, x, beta,
+       y, tag);
+}
+
+#ifdef DOXY  // hide SFINAE
+template <class execution_space, class AlphaType, class AMatrix, class XVector,
+          class BetaType, class YVector>
+#else
+template <class execution_space, class AlphaType, class AMatrix, class XVector,
+          class BetaType, class YVector,
+          typename std::enable_if<KokkosSparse::Experimental::is_bsr_matrix<
+              AMatrix>::value>::type* = nullptr>
+#endif
+void spmv(const execution_space& exec,
+          KokkosKernels::Experimental::Controls controls, const char mode[],
+          const AlphaType& alpha, const AMatrix& A, const XVector& x,
           const BetaType& beta, const YVector& y, const RANK_TWO) {
+  // Make sure that x and y are Views.
+  static_assert(Kokkos::is_view<XVector>::value,
+                "KokkosSparse::spmv: XVector must be a Kokkos::View.");
+  static_assert(Kokkos::is_view<YVector>::value,
+                "KokkosSparse::spmv: YVector must be a Kokkos::View.");
+  // Make sure execution_space matches that of the matrix
+  // BMK: this is currently required by unification layer, but may change in the
+  // future
+  static_assert(
+      std::is_same_v<execution_space, typename AMatrix::execution_space>,
+      "KokkosSparse::spmv: execution_space must match "
+      "AMatrix::execution_space");
+  // Make sure A, x, y are accessible to execution_space
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename AMatrix::memory_space>::accessible,
+      "KokkosBlas::spmv: AMatrix must be accessible from execution_space");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename XVector::memory_space>::accessible,
+      "KokkosBlas::spmv: XVector must be accessible from execution_space");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename YVector::memory_space>::accessible,
+      "KokkosBlas::spmv: YVector must be accessible from execution_space");
   // Make sure that x and y have the same rank.
   static_assert(
       static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
@@ -706,7 +945,8 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
         typename AMatrix::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>,
         typename AMatrix::size_type>
         Acrs("bsr_to_crs", A.numCols(), A.values, A.graph);
-    KokkosSparse::spmv(controls, mode, alpha, Acrs, x, beta, y, RANK_TWO());
+    KokkosSparse::spmv(exec, controls, mode, alpha, Acrs, x, beta, y,
+                       RANK_TWO());
     return;
   }
   // Check compatibility of dimensions at run time.
@@ -769,9 +1009,9 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
     // if y contains NaN but beta = 0, the result y should be filled with 0.
     // For example, this is useful for passing in uninitialized y and beta=0.
     if (beta == Kokkos::ArithTraits<BetaType>::zero())
-      Kokkos::deep_copy(y_i, Kokkos::ArithTraits<BetaType>::zero());
+      Kokkos::deep_copy(exec, y_i, Kokkos::ArithTraits<BetaType>::zero());
     else
-      KokkosBlas::scal(y_i, beta, y_i);
+      KokkosBlas::scal(exec, y_i, beta, y_i);
     return;
   }
   //
@@ -793,7 +1033,7 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
     XVector_SubInternal x_0 = Kokkos::subview(x_i, Kokkos::ALL(), 0);
     YVector_SubInternal y_0 = Kokkos::subview(y_i, Kokkos::ALL(), 0);
 
-    return spmv(controls, mode, alpha, A_i, x_0, beta, y_0, RANK_ONE());
+    return spmv(exec, controls, mode, alpha, A_i, x_0, beta, y_0, RANK_ONE());
   }
   //
   // Whether to call KokkosKernel's native implementation, even if a TPL impl is
@@ -841,7 +1081,8 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
         typename YVector_Internal::device_type,
         typename YVector_Internal::memory_traits,
         std::is_integral<typename AMatrix_Internal::const_value_type>::value,
-        false>::spmv_mv_bsrmatrix(controls, mode, alpha, A_i, x_i, beta, y_i);
+        false>::spmv_mv_bsrmatrix(exec, controls, mode, alpha, A_i, x_i, beta,
+                                  y_i);
     Kokkos::Profiling::popRegion();
   } else {
     Experimental::Impl::SPMV_MV_BSRMATRIX<
@@ -859,8 +1100,24 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
         typename YVector_Internal::device_type,
         typename YVector_Internal::memory_traits,
         std::is_integral<typename AMatrix_Internal::const_value_type>::value>::
-        spmv_mv_bsrmatrix(controls, mode, alpha, A_i, x_i, beta, y_i);
+        spmv_mv_bsrmatrix(exec, controls, mode, alpha, A_i, x_i, beta, y_i);
   }
+}
+
+#ifdef DOXY  // hide SFINAE
+template <class AlphaType, class AMatrix, class XVector, class BetaType,
+          class YVector>
+#else
+template <class AlphaType, class AMatrix, class XVector, class BetaType,
+          class YVector,
+          typename std::enable_if<KokkosSparse::Experimental::is_bsr_matrix<
+              AMatrix>::value>::type* = nullptr>
+#endif
+void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
+          const AlphaType& alpha, const AMatrix& A, const XVector& x,
+          const BetaType& beta, const YVector& y, const RANK_TWO tag) {
+  spmv(typename AMatrix::execution_space{}, controls, mode, alpha, A, x, beta,
+       y, tag);
 }
 
 /// \brief Public interface to local sparse matrix-vector multiply.
@@ -888,9 +1145,13 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
 /// enabled for Kokkos::CrsMatrix and Kokkos::Experimental::BsrMatrix on a
 /// single vector, or for Kokkos::Experimental::BsrMatrix with a multivector.
 ///
+/// \tparam execution_space A Kokkos execution space. Must be able to access
+///   the memory spaces of A, x, and y.
 /// \tparam AMatrix KokkosSparse::CrsMatrix or
 /// KokkosSparse::Experimental::BsrMatrix
 ///
+/// \param exec [in] The execution space instance on which to run the
+///   kernel.
 /// \param controls [in] kokkos-kernels control structure
 /// \param mode [in] "N" for no transpose, "T" for transpose, or "C"
 ///   for conjugate transpose.
@@ -903,11 +1164,37 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
 ///   multivector (rank-2 Kokkos::View).  It must have the same number
 ///   of columns as x.
 ///
-template <class AlphaType, class AMatrix, class XVector, class BetaType,
-          class YVector>
-void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
+template <class execution_space, class AlphaType, class AMatrix, class XVector,
+          class BetaType, class YVector>
+void spmv(const execution_space& exec,
+          KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
           const BetaType& beta, const YVector& y) {
+  // Make sure that x and y are Views.
+  static_assert(Kokkos::is_view<XVector>::value,
+                "KokkosSparse::spmv: XVector must be a Kokkos::View.");
+  static_assert(Kokkos::is_view<YVector>::value,
+                "KokkosSparse::spmv: YVector must be a Kokkos::View.");
+  // Make sure execution_space matches that of the matrix
+  // BMK: this is currently required by unification layer but may change in the
+  // future
+  static_assert(
+      std::is_same_v<execution_space, typename AMatrix::execution_space>,
+      "KokkosSparse::spmv: execution_space must match "
+      "AMatrix::execution_space");
+  // Make sure A, x, y are accessible to execution_space
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename AMatrix::memory_space>::accessible,
+      "KokkosBlas::spmv: AMatrix must be accessible from execution_space");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename XVector::memory_space>::accessible,
+      "KokkosBlas::spmv: XVector must be accessible from execution_space");
+  static_assert(
+      Kokkos::SpaceAccessibility<execution_space,
+                                 typename YVector::memory_space>::accessible,
+      "KokkosBlas::spmv: YVector must be accessible from execution_space");
   // Make sure that both x and y have the same rank.
   static_assert(
       static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
@@ -955,22 +1242,71 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
     // if y contains NaN but beta = 0, the result y should be filled with 0.
     // For example, this is useful for passing in uninitialized y and beta=0.
     if (beta == Kokkos::ArithTraits<BetaType>::zero())
-      Kokkos::deep_copy(y, Kokkos::ArithTraits<BetaType>::zero());
+      Kokkos::deep_copy(exec, y, Kokkos::ArithTraits<BetaType>::zero());
     else
-      KokkosBlas::scal(y, beta, y);
+      KokkosBlas::scal(exec, y, beta, y);
     return;
   }
   //
   using RANK_SPECIALISE =
       typename std::conditional<static_cast<int>(XVector::rank) == 2, RANK_TWO,
                                 RANK_ONE>::type;
-  spmv(controls, mode, alpha, A, x, beta, y, RANK_SPECIALISE());
+  spmv(exec, controls, mode, alpha, A, x, beta, y, RANK_SPECIALISE());
+}
+
+/// \brief Public interface to local sparse matrix-vector multiply.
+///
+/// Compute y = beta*y + alpha*Op(A)*x, where x and y are either both
+/// rank 1 (single vectors) or rank 2 (multivectors) Kokkos::View
+/// instances, and Op(A) is determined
+/// by \c mode.  If beta == 0, ignore and overwrite the initial
+/// entries of y; if alpha == 0, ignore the entries of A and x.
+///
+/// If \c AMatrix is a KokkosSparse::Experimental::BsrMatrix, controls may have
+/// \c "algorithm" = \c "experimental_bsr_tc" to use Nvidia tensor cores on
+/// Volta or Ampere architectures. On Volta-architecture GPUs the only available
+/// precision is mixed-precision fp32 accumulator from fp16 inputs. On
+/// Ampere-architecture GPUs (cc >= 80), mixed precision is used when A is fp16,
+/// x is fp16, and y is fp32. Otherwise, double-precision is used. The caller
+/// may override this by setting the \c "tc_precision" = \c "mixed" or
+/// \c "double" as desired.
+///
+/// For mixed precision, performance will degrade for blockDim < 16.
+/// For double precision, for blockDim < 8.
+/// For such cases, consider an alternate SpMV algorithm.
+///
+/// May have \c "algorithm" set to \c "native" to bypass TPLs if they are
+/// enabled for Kokkos::CrsMatrix and Kokkos::Experimental::BsrMatrix on a
+/// single vector, or for Kokkos::Experimental::BsrMatrix with a multivector.
+///
+/// \tparam AMatrix KokkosSparse::CrsMatrix or
+/// KokkosSparse::Experimental::BsrMatrix
+///
+/// \param controls [in] kokkos-kernels control structure
+/// \param mode [in] "N" for no transpose, "T" for transpose, or "C"
+///   for conjugate transpose.
+/// \param alpha [in] Scalar multiplier for the matrix A.
+/// \param A [in] The sparse matrix A.
+/// \param x [in] Either a single vector (rank-1 Kokkos::View) or
+///   multivector (rank-2 Kokkos::View).
+/// \param beta [in] Scalar multiplier for the (multi)vector y.
+/// \param y [in/out] Either a single vector (rank-1 Kokkos::View) or
+///   multivector (rank-2 Kokkos::View).  It must have the same number
+///   of columns as x.
+///
+template <class AlphaType, class AMatrix, class XVector, class BetaType,
+          class YVector>
+void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
+          const AlphaType& alpha, const AMatrix& A, const XVector& x,
+          const BetaType& beta, const YVector& y) {
+  spmv(typename AMatrix::execution_space{}, controls, mode, alpha, A, x, beta,
+       y);
 }
 
 /// \brief Catch-all public interface to error on invalid Kokkos::Sparse spmv
 /// argument types
 ///
-/// This is a catch-all interfaceace that throws a compile-time error if \c
+/// This is a catch-all interface that throws a compile-time error if \c
 /// AMatrix is not a CrsMatrix, or BsrMatrix
 ///
 template <class AlphaType, class AMatrix, class XVector, class BetaType,
@@ -989,6 +1325,29 @@ void spmv(KokkosKernels::Experimental::Controls /*controls*/,
                 "SpMV: AMatrix must be CrsMatrix or BsrMatrix");
 }
 
+/// \brief Catch-all public interface to error on invalid Kokkos::Sparse spmv
+/// argument types
+///
+/// This is a catch-all interface that throws a compile-time error if \c
+/// AMatrix is not a CrsMatrix, or BsrMatrix
+///
+template <class execution_space, class AlphaType, class AMatrix, class XVector,
+          class BetaType, class YVector,
+          typename std::enable_if<
+              !KokkosSparse::Experimental::is_bsr_matrix<AMatrix>::value &&
+              !KokkosSparse::is_crs_matrix<AMatrix>::value>::type* = nullptr>
+void spmv(const execution_space& /* exec */,
+          KokkosKernels::Experimental::Controls /*controls*/,
+          const char[] /*mode*/, const AlphaType& /*alpha*/,
+          const AMatrix& /*A*/, const XVector& /*x*/, const BetaType& /*beta*/,
+          const YVector& /*y*/) {
+  // have to arrange this so that the compiler can't tell this is false until
+  // instantiation
+  static_assert(KokkosSparse::is_crs_matrix<AMatrix>::value ||
+                    KokkosSparse::Experimental::is_bsr_matrix<AMatrix>::value,
+                "SpMV: AMatrix must be CrsMatrix or BsrMatrix");
+}
+
 // Overload for backward compatibility and also just simpler
 // interface for users that are happy with the kernel default settings
 template <class AlphaType, class AMatrix, class XVector, class BetaType,
@@ -997,6 +1356,17 @@ void spmv(const char mode[], const AlphaType& alpha, const AMatrix& A,
           const XVector& x, const BetaType& beta, const YVector& y) {
   KokkosKernels::Experimental::Controls controls;
   spmv(controls, mode, alpha, A, x, beta, y);
+}
+
+// Overload for backward compatibility and also just simpler
+// interface for users that are happy with the kernel default settings
+template <class execution_space, class AlphaType, class AMatrix, class XVector,
+          class BetaType, class YVector>
+void spmv(const execution_space& exec, const char mode[],
+          const AlphaType& alpha, const AMatrix& A, const XVector& x,
+          const BetaType& beta, const YVector& y) {
+  KokkosKernels::Experimental::Controls controls;
+  spmv(exec, controls, mode, alpha, A, x, beta, y);
 }
 
 namespace Experimental {
@@ -1301,7 +1671,8 @@ void spmv_struct(const char mode[], const int stencil_type,
         typename YVector_Internal::array_layout,
         typename YVector_Internal::device_type,
         typename YVector_Internal::memory_traits>::
-        spmv_mv(KokkosKernels::Experimental::Controls(), mode, alpha, A_i, x_i,
+        spmv_mv(typename AMatrix_Internal::execution_space{},
+                KokkosKernels::Experimental::Controls(), mode, alpha, A_i, x_i,
                 beta, y_i);
   }
 }

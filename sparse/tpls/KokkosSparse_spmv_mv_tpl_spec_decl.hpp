@@ -89,7 +89,8 @@ cusparseDnMatDescr_t make_cusparse_dn_mat_descr_t(ViewType &view) {
 }
 
 template <class AMatrix, class XVector, class YVector>
-void spmv_mv_cusparse(const KokkosKernels::Experimental::Controls &controls,
+void spmv_mv_cusparse(const Kokkos::Cuda &exec,
+                      const KokkosKernels::Experimental::Controls &controls,
                       const char mode[],
                       typename YVector::non_const_value_type const &alpha,
                       const AMatrix &A, const XVector &x,
@@ -108,6 +109,8 @@ void spmv_mv_cusparse(const KokkosKernels::Experimental::Controls &controls,
 
   /* initialize cusparse library */
   cusparseHandle_t cusparseHandle = controls.getCusparseHandle();
+  /* Set cuSPARSE to use the given stream until this function exits */
+  TemporarySetCusparseStream(cusparseHandle, exec);
 
   /* Set the operation mode */
   cusparseOperation_t opA;
@@ -214,14 +217,14 @@ void spmv_mv_cusparse(const KokkosKernels::Experimental::Controls &controls,
     using coefficient_type = typename YVector::non_const_value_type;           \
                                                                                \
     using Controls = KokkosKernels::Experimental::Controls;                    \
-    static void spmv_mv(const Controls &controls, const char mode[],           \
-                        const coefficient_type &alpha, const AMatrix &A,       \
-                        const XVector &x, const coefficient_type &beta,        \
-                        const YVector &y) {                                    \
+    static void spmv_mv(const Kokkos::Cuda &exec, const Controls &controls,    \
+                        const char mode[], const coefficient_type &alpha,      \
+                        const AMatrix &A, const XVector &x,                    \
+                        const coefficient_type &beta, const YVector &y) {      \
       std::string label = "KokkosSparse::spmv[TPL_CUSPARSE," +                 \
                           Kokkos::ArithTraits<SCALAR>::name() + "]";           \
       Kokkos::Profiling::pushRegion(label);                                    \
-      spmv_mv_cusparse(controls, mode, alpha, A, x, beta, y);                  \
+      spmv_mv_cusparse(exec, controls, mode, alpha, A, x, beta, y);            \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };
