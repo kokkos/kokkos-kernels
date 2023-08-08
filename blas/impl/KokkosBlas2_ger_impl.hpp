@@ -92,7 +92,8 @@ void threadParallelGer(const ExecutionSpace& space, const char trans[],
                                                                A.extent(0));
     ThreadParallelGER<XViewType, YViewType, AViewType, IndexType> functor(
         (trans[0] == 'T') || (trans[0] == 't'), alpha, x, y, A);
-    Kokkos::parallel_for("KokkosBlas::ger[threadParallel]", rangePolicy, functor);
+    Kokkos::parallel_for("KokkosBlas::ger[threadParallel]", rangePolicy,
+                         functor);
   }
 }
 
@@ -184,7 +185,8 @@ template <class ExecutionSpace, class XViewType, class YViewType,
           class AViewType, class IndexType = typename AViewType::size_type>
 void teamParallelGer(const ExecutionSpace& space, const char trans[],
                      const typename AViewType::const_value_type& alpha,
-                     const XViewType& x, const YViewType& y, const AViewType& A) {
+                     const XViewType& x, const YViewType& y,
+                     const AViewType& A) {
   static_assert(std::is_integral<IndexType>::value,
                 "IndexType must be an integer");
 

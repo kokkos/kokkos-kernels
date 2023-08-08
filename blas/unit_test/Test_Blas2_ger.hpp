@@ -73,9 +73,10 @@ class GerTester {
   using _HostViewTypeX = typename _ViewTypeX::HostMirror;
   using _HostViewTypeY = typename _ViewTypeY::HostMirror;
   using _HostViewTypeA = typename _ViewTypeA::HostMirror;
-  using _ViewTypeExpected = Kokkos::View<ScalarA**, tLayoutA, Kokkos::HostSpace>;
+  using _ViewTypeExpected =
+      Kokkos::View<ScalarA**, tLayoutA, Kokkos::HostSpace>;
 
-  using _KAT_A = Kokkos::ArithTraits<ScalarA>;
+  using _KAT_A   = Kokkos::ArithTraits<ScalarA>;
   using _AuxType = typename _KAT_A::mag_type;
 
   void populateVariables(ScalarA& alpha, _HostViewTypeX& h_x,
@@ -118,29 +119,31 @@ class GerTester {
   typename std::enable_if<std::is_same<T, Kokkos::complex<float>>::value ||
                               std::is_same<T, Kokkos::complex<double>>::value,
                           void>::type
-  compareVanillaAgainstExpected(const T& alpha, const _ViewTypeExpected& h_vanilla,
-                         const _ViewTypeExpected& h_expected);
+  compareVanillaAgainstExpected(const T& alpha,
+                                const _ViewTypeExpected& h_vanilla,
+                                const _ViewTypeExpected& h_expected);
 
   template <class T>
   typename std::enable_if<!std::is_same<T, Kokkos::complex<float>>::value &&
                               !std::is_same<T, Kokkos::complex<double>>::value,
                           void>::type
-  compareVanillaAgainstExpected(const T& alpha, const _ViewTypeExpected& h_vanilla,
-                         const _ViewTypeExpected& h_expected);
+  compareVanillaAgainstExpected(const T& alpha,
+                                const _ViewTypeExpected& h_vanilla,
+                                const _ViewTypeExpected& h_expected);
 
   template <class T>
   typename std::enable_if<std::is_same<T, Kokkos::complex<float>>::value ||
                               std::is_same<T, Kokkos::complex<double>>::value,
                           void>::type
   compareKkGerAgainstExpected(const T& alpha, const _HostViewTypeA& h_A,
-                        const _ViewTypeExpected& h_expected);
+                              const _ViewTypeExpected& h_expected);
 
   template <class T>
   typename std::enable_if<!std::is_same<T, Kokkos::complex<float>>::value &&
                               !std::is_same<T, Kokkos::complex<double>>::value,
                           void>::type
   compareKkGerAgainstExpected(const T& alpha, const _HostViewTypeA& h_A,
-                        const _ViewTypeExpected& h_expected);
+                              const _ViewTypeExpected& h_expected);
 
   template <class T>
   T shrinkAngleToZeroTwoPiRange(const T input);
@@ -303,7 +306,8 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
     // ******************************************************************
     // Compare h_vanilla against h_expected
     // ******************************************************************
-    this->compareVanillaAgainstExpected(alpha, h_vanilla.d_view, h_expected.d_view);
+    this->compareVanillaAgainstExpected(alpha, h_vanilla.d_view,
+                                        h_expected.d_view);
   } else {
     // ******************************************************************
     // Copy h_vanilla to h_expected
@@ -703,10 +707,10 @@ template <class T>
 typename std::enable_if<std::is_same<T, Kokkos::complex<float>>::value ||
                             std::is_same<T, Kokkos::complex<double>>::value,
                         void>::type
-GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
-          Device>::compareVanillaAgainstExpected(const T& alpha,
-                                          const _ViewTypeExpected& h_vanilla,
-                                          const _ViewTypeExpected& h_expected) {
+GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::
+    compareVanillaAgainstExpected(const T& alpha,
+                                  const _ViewTypeExpected& h_vanilla,
+                                  const _ViewTypeExpected& h_expected) {
   int maxNumErrorsAllowed(static_cast<double>(_M) * static_cast<double>(_N) *
                           1.e-3);
 
@@ -917,10 +921,10 @@ template <class T>
 typename std::enable_if<!std::is_same<T, Kokkos::complex<float>>::value &&
                             !std::is_same<T, Kokkos::complex<double>>::value,
                         void>::type
-GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
-          Device>::compareVanillaAgainstExpected(const T& alpha,
-                                          const _ViewTypeExpected& h_vanilla,
-                                          const _ViewTypeExpected& h_expected) {
+GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::
+    compareVanillaAgainstExpected(const T& alpha,
+                                  const _ViewTypeExpected& h_vanilla,
+                                  const _ViewTypeExpected& h_expected) {
   int maxNumErrorsAllowed(static_cast<double>(_M) * static_cast<double>(_N) *
                           1.e-3);
 
@@ -1034,10 +1038,9 @@ template <class T>
 typename std::enable_if<std::is_same<T, Kokkos::complex<float>>::value ||
                             std::is_same<T, Kokkos::complex<double>>::value,
                         void>::type
-GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
-          Device>::compareKkGerAgainstExpected(const T& alpha,
-                                         const _HostViewTypeA& h_A,
-                                         const _ViewTypeExpected& h_expected) {
+GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::
+    compareKkGerAgainstExpected(const T& alpha, const _HostViewTypeA& h_A,
+                                const _ViewTypeExpected& h_expected) {
   int maxNumErrorsAllowed(static_cast<double>(_M) * static_cast<double>(_N) *
                           1.e-3);
 
@@ -1246,10 +1249,9 @@ template <class T>
 typename std::enable_if<!std::is_same<T, Kokkos::complex<float>>::value &&
                             !std::is_same<T, Kokkos::complex<double>>::value,
                         void>::type
-GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
-          Device>::compareKkGerAgainstExpected(const T& alpha,
-                                         const _HostViewTypeA& h_A,
-                                         const _ViewTypeExpected& h_expected) {
+GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::
+    compareKkGerAgainstExpected(const T& alpha, const _HostViewTypeA& h_A,
+                                const _ViewTypeExpected& h_expected) {
   int maxNumErrorsAllowed(static_cast<double>(_M) * static_cast<double>(_N) *
                           1.e-3);
 
