@@ -221,6 +221,7 @@ void SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::test(
     const int N, const int nonConstConstCombinations,
     const bool useAnalyticalResults, const bool useHermitianOption,
     const bool useUpOption) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
   std::cout << "Entering SyrTester::test()... - - - - - - - - - - - - - - - - "
                "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - "
                "- - - - - - - - - "
@@ -236,7 +237,7 @@ void SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::test(
             << ", useAnalyticalResults = " << useAnalyticalResults
             << ", useHermitianOption = " << useHermitianOption
             << ", useUpOption = " << useUpOption << std::endl;
-
+#endif
   // ********************************************************************
   // Step 1 of 7: declare main types and variables
   // ********************************************************************
@@ -286,9 +287,11 @@ void SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::test(
   // ********************************************************************
   view_stride_adapter<_ViewTypeExpected, true> h_vanilla(
       "vanilla = A + alpha * x * x^{t,h}", _M, _N);
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
       "In Test_Blas2_syr.hpp, computing vanilla A with alpha type = %s\n",
       typeid(alpha).name());
+#endif
   this->populateVanillaValues(alpha, x.h_view, A.h_view, h_vanilla.d_view);
 
   // ********************************************************************
@@ -348,10 +351,12 @@ void SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::test(
   EXPECT_ANY_THROW(KokkosBlas::syr("T", "", alpha, x.d_view, A.d_view))
       << "Failed test: kk syr should have thrown an exception for uplo ''";
 
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
   std::cout << "Leaving SyrTester::test() - - - - - - - - - - - - - - - - - - "
                "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - "
                "- - - - - - - "
             << std::endl;
+#endif
 }
 
 template <class ScalarX, class tLayoutX, class ScalarA, class tLayoutA,
@@ -453,6 +458,7 @@ void SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::populateVariables(
     Kokkos::deep_copy(A, h_A);
   }
 
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
   if (_N <= 2) {
     for (int i(0); i < _M; ++i) {
       for (int j(0); j < _N; ++j) {
@@ -461,6 +467,7 @@ void SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::populateVariables(
       }
     }
   }
+#endif
 }
 
 // Code for complex values
@@ -719,6 +726,7 @@ SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
     compareVanillaAgainstExpected(const T& alpha,
                                   const _ViewTypeExpected& h_vanilla,
                                   const _ViewTypeExpected& h_expected) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
   if (_N <= 2) {
     for (int i(0); i < _M; ++i) {
       for (int j(0); j < _N; ++j) {
@@ -728,7 +736,7 @@ SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
       }
     }
   }
-
+#endif
   int maxNumErrorsAllowed(static_cast<double>(_M) * static_cast<double>(_N) *
                           1.e-3);
 
@@ -772,6 +780,7 @@ SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
           }
         }
         if (errorHappened && (numErrorsRealAbs + numErrorsRealRel == 1)) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
           std::cout << "ERROR, i = " << i << ", j = " << j
                     << ": h_expected(i,j).real() = " << h_expected(i, j).real()
                     << ", h_vanilla(i,j).real() = " << h_vanilla(i, j).real()
@@ -779,6 +788,7 @@ SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
                        "h_vanilla(i,j).real()) = "
                     << diff << ", diffThreshold = " << diffThreshold
                     << std::endl;
+#endif
         }
 
         diff = _KAT_A::abs(h_expected(i, j).imag() - h_vanilla(i, j).imag());
@@ -804,6 +814,7 @@ SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
           }
         }
         if (errorHappened && (numErrorsImagAbs + numErrorsImagRel == 1)) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
           std::cout << "ERROR, i = " << i << ", j = " << j
                     << ": h_expected(i,j).imag() = " << h_expected(i, j).imag()
                     << ", h_vanilla(i,j).imag() = " << h_vanilla(i, j).imag()
@@ -811,6 +822,7 @@ SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
                        "h_vanilla(i,j).imag()) = "
                     << diff << ", diffThreshold = " << diffThreshold
                     << std::endl;
+#endif
         }
       }  // for j
     }    // for i
@@ -840,7 +852,9 @@ SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
 
       int numErrorsReal(numErrorsRealAbs + numErrorsRealRel);
       if (numErrorsReal > 0) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
         std::cout << "WARNING" << msg.str() << std::endl;
+#endif
       }
       EXPECT_LE(numErrorsReal, maxNumErrorsAllowed)
           << "Failed test" << msg.str();
@@ -870,7 +884,9 @@ SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
 
       int numErrorsImag(numErrorsImagAbs + numErrorsImagRel);
       if (numErrorsImag > 0) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
         std::cout << "WARNING" << msg.str() << std::endl;
+#endif
       }
       EXPECT_LE(numErrorsImag, maxNumErrorsAllowed)
           << "Failed test" << msg.str();
@@ -883,22 +899,26 @@ SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
       for (int j(0); j < _N; ++j) {
         if (h_expected(i, j).real() != h_vanilla(i, j).real()) {
           if (numErrorsReal == 0) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
             std::cout << "ERROR, i = " << i << ", j = " << j
                       << ": h_expected(i,j).real() = "
                       << h_expected(i, j).real()
                       << ", h_vanilla(i,j).real() = " << h_vanilla(i, j).real()
                       << std::endl;
+#endif
           }
           numErrorsReal++;
         }
 
         if (h_expected(i, j).imag() != h_vanilla(i, j).imag()) {
           if (numErrorsImag == 0) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
             std::cout << "ERROR, i = " << i << ", j = " << j
                       << ": h_expected(i,j).imag() = "
                       << h_expected(i, j).imag()
                       << ", h_vanilla(i,j).imag() = " << h_vanilla(i, j).imag()
                       << std::endl;
+#endif
           }
           numErrorsImag++;
         }
@@ -939,9 +959,11 @@ SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
   if (_N <= 2) {
     for (int i(0); i < _M; ++i) {
       for (int j(0); j < _N; ++j) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
         std::cout << "h_exp(" << i << "," << j << ")=" << h_expected(i, j)
                   << ", h_van(" << i << "," << j << ")=" << h_vanilla(i, j)
                   << std::endl;
+#endif
       }
     }
   }
@@ -984,12 +1006,14 @@ SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
           }
         }
         if (errorHappened && (numErrorsAbs + numErrorsRel == 1)) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
           std::cout << "ERROR, i = " << i << ", j = " << j
                     << ": h_expected(i,j) = " << h_expected(i, j)
                     << ", h_vanilla(i,j) = " << h_vanilla(i, j)
                     << ", _KAT_A::abs(h_expected(i,j) - h_vanilla(i,j)) = "
                     << diff << ", diffThreshold = " << diffThreshold
                     << std::endl;
+#endif
         }
       }  // for j
     }    // for i
@@ -1018,7 +1042,9 @@ SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
 
       int numErrors(numErrorsAbs + numErrorsRel);
       if (numErrors > 0) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
         std::cout << "WARNING" << msg.str() << std::endl;
+#endif
       }
       EXPECT_LE(numErrors, maxNumErrorsAllowed) << "Failed test" << msg.str();
     }
@@ -1029,9 +1055,11 @@ SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
       for (int j(0); j < _N; ++j) {
         if (h_expected(i, j) != h_vanilla(i, j)) {
           if (numErrors == 0) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
             std::cout << "ERROR, i = " << i << ", j = " << j
                       << ": h_expected(i,j) = " << h_expected(i, j)
                       << ", h_vanilla(i,j) = " << h_vanilla(i, j) << std::endl;
+#endif
           }
           numErrors++;
         }
@@ -1062,9 +1090,11 @@ SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
   if (_N <= 2) {
     for (int i(0); i < _M; ++i) {
       for (int j(0); j < _N; ++j) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
         std::cout << "h_exp(" << i << "," << j << ")=" << h_reference(i, j)
                   << ", h_A(" << i << "," << j << ")=" << h_A(i, j)
                   << std::endl;
+#endif
       }
     }
   }
@@ -1110,12 +1140,14 @@ SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
         }
       }
       if (errorHappened && (numErrorsRealAbs + numErrorsRealRel == 1)) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
         std::cout
             << "ERROR, i = " << i << ", j = " << j
             << ": h_reference(i,j).real() = " << h_reference(i, j).real()
             << ", h_A(i,j).real() = " << h_A(i, j).real()
             << ", _KAT_A::abs(h_reference(i,j).real() - h_A(i,j).real()) = "
             << diff << ", diffThreshold = " << diffThreshold << std::endl;
+#endif
       }
 
       diff          = _KAT_A::abs(h_reference(i, j).imag() - h_A(i, j).imag());
@@ -1141,16 +1173,19 @@ SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
         }
       }
       if (errorHappened && (numErrorsImagAbs + numErrorsImagRel == 1)) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
         std::cout
             << "ERROR, i = " << i << ", j = " << j
             << ": h_reference(i,j).imag() = " << h_reference(i, j).imag()
             << ", h_A(i,j).imag() = " << h_A(i, j).imag()
             << ", _KAT_A::abs(h_reference(i,j).imag() - h_A(i,j).imag()) = "
             << diff << ", diffThreshold = " << diffThreshold << std::endl;
+#endif
       }
     }  // for j
   }    // for i
 
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
   std::cout
       << "A is " << _M << " by " << _N << ", _A_is_lr = " << _A_is_lr
       << ", _A_is_ll = " << _A_is_ll
@@ -1206,7 +1241,7 @@ SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
               << ", h_A(710, 1065) = (" << h_A(710, 1065).real() << ", "
               << h_A(710, 1065).imag() << ")" << std::endl;
   }
-
+#endif
   {
     std::ostringstream msg;
     msg << ", A is " << _M << " by " << _N << ", _A_is_lr = " << _A_is_lr
@@ -1232,7 +1267,9 @@ SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
 
     int numErrorsReal(numErrorsRealAbs + numErrorsRealRel);
     if (numErrorsReal > 0) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
       std::cout << "WARNING" << msg.str() << std::endl;
+#endif
     }
     EXPECT_LE(numErrorsReal, maxNumErrorsAllowed) << "Failed test" << msg.str();
   }
@@ -1261,7 +1298,9 @@ SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
 
     int numErrorsImag(numErrorsImagAbs + numErrorsImagRel);
     if (numErrorsImag > 0) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
       std::cout << "WARNING" << msg.str() << std::endl;
+#endif
     }
     EXPECT_LE(numErrorsImag, maxNumErrorsAllowed) << "Failed test" << msg.str();
   }
@@ -1277,6 +1316,7 @@ typename std::enable_if<!std::is_same<T, Kokkos::complex<float>>::value &&
 SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
     compareKkSyrAgainstReference(const T& alpha, const _HostViewTypeA& h_A,
                                  const _ViewTypeExpected& h_reference) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
   if (_N <= 2) {
     for (int i(0); i < _M; ++i) {
       for (int j(0); j < _N; ++j) {
@@ -1286,7 +1326,7 @@ SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
       }
     }
   }
-
+#endif
   int maxNumErrorsAllowed(static_cast<double>(_M) * static_cast<double>(_N) *
                           1.e-3);
 
@@ -1323,14 +1363,17 @@ SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
         }
       }
       if (errorHappened && (numErrorsAbs + numErrorsRel == 1)) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
         std::cout << "ERROR, i = " << i << ", j = " << j
                   << ": h_reference(i,j) = " << h_reference(i, j)
                   << ", h_A(i,j) = " << h_A(i, j)
                   << ", _KAT_A::abs(h_reference(i,j) - h_A(i,j)) = " << diff
                   << ", diffThreshold = " << diffThreshold << std::endl;
+#endif
       }
     }  // for j
   }    // for i
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
   std::cout << "A is " << _M << " by " << _N << ", _A_is_lr = " << _A_is_lr
             << ", _A_is_ll = " << _A_is_ll
             << ", alpha type = " << typeid(alpha).name()
@@ -1349,6 +1392,7 @@ SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
             << (((_M > 0) && (_N > 0)) ? h_A(iForMaxErrorRel, jForMaxErrorRel)
                                        : 9.999e+99)
             << ", maxNumErrorsAllowed = " << maxNumErrorsAllowed << std::endl;
+#endif
   {
     std::ostringstream msg;
     msg << ", A is " << _M << " by " << _N << ", _A_is_lr = " << _A_is_lr
@@ -1371,7 +1415,9 @@ SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
 
     int numErrors(numErrorsAbs + numErrorsRel);
     if (numErrors > 0) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
       std::cout << "WARNING" << msg.str() << std::endl;
+#endif
     }
     EXPECT_LE(numErrors, maxNumErrorsAllowed) << "Failed test" << msg.str();
   }
@@ -1385,12 +1431,14 @@ void SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
                                        _ViewTypeA& A, const _HostViewTypeA& h_A,
                                        const _ViewTypeExpected& h_expected,
                                        const std::string& situation) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
   std::cout << "In Test_Blas2_syr, '" << situation << "', alpha = " << alpha
             << std::endl;
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
       "In Test_Blas2_syr.hpp, right before calling KokkosBlas::syr(): "
       "ViewTypeA = %s, _kkSyrShouldThrowException=%d\n",
       typeid(_ViewTypeA).name(), _kkSyrShouldThrowException);
+#endif
   std::string mode = _useHermitianOption ? "H" : "T";
   std::string uplo = _useUpOption ? "U" : "L";
   bool gotStdException(false);
@@ -1398,12 +1446,16 @@ void SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
   try {
     KokkosBlas::syr(mode.c_str(), uplo.c_str(), alpha, x, A);
   } catch (const std::exception& e) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
     std::cout << "In Test_Blas2_syr, '" << situation
               << "': caught exception, e.what() = " << e.what() << std::endl;
+#endif
     gotStdException = true;
   } catch (...) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
     std::cout << "In Test_Blas2_syr, '" << situation
               << "': caught unknown exception" << std::endl;
+#endif
     gotUnknownException = true;
   }
 
@@ -1436,25 +1488,31 @@ void SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
   // ********************************************************************
   // Call ger()
   // ********************************************************************
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
   std::cout << "In Test_Blas2_syr, '" << situation << "', alpha = " << alpha
             << std::endl;
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
       "In Test_Blas2_syr.hpp, right before calling KokkosBlas::ger(): "
       "ViewTypeA = %s, _kkGerShouldThrowException=%d\n",
       typeid(_ViewTypeA).name(), _kkGerShouldThrowException);
+#endif
   std::string mode = _useHermitianOption ? "H" : "T";
   bool gotStdException(false);
   bool gotUnknownException(false);
   try {
     KokkosBlas::ger(mode.c_str(), alpha, x, x, A_ger.d_view);
   } catch (const std::exception& e) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
     std::cout << "In Test_Blas2_syr, '" << situation
               << "', ger() call: caught exception, e.what() = " << e.what()
               << std::endl;
+#endif
     gotStdException = true;
   } catch (...) {
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
     std::cout << "In Test_Blas2_syr, '" << situation
               << "', ger() call: caught unknown exception" << std::endl;
+#endif
     gotUnknownException = true;
   }
 
@@ -1501,12 +1559,15 @@ void SyrTester<ScalarX, tLayoutX, ScalarA, tLayoutA, Device>::
 }  // namespace Test
 
 template <class ScalarX, class ScalarA, class Device>
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
 int test_syr(const std::string& caseName) {
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
       "+======================================================================="
       "===\n");
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("Starting %s ...\n", caseName.c_str());
-
+#else
+int test_syr(const std::string& /*caseName*/) {
+#endif
   bool xBool = std::is_same<ScalarX, float>::value ||
                std::is_same<ScalarX, double>::value ||
                std::is_same<ScalarX, Kokkos::complex<float>>::value ||
@@ -1520,12 +1581,13 @@ int test_syr(const std::string& caseName) {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&      \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
       "+-----------------------------------------------------------------------"
       "---\n");
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("Starting %s for LAYOUTLEFT ...\n",
                                 caseName.c_str());
-
+#endif
   if (true) {
     Test::SyrTester<ScalarX, Kokkos::LayoutLeft, ScalarA, Kokkos::LayoutLeft,
                     Device>
@@ -1554,22 +1616,25 @@ int test_syr(const std::string& caseName) {
     tester.test(2131, 0);
   }
 
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("Finished %s for LAYOUTLEFT\n",
                                 caseName.c_str());
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
       "+-----------------------------------------------------------------------"
       "---\n");
 #endif
+#endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&       \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
       "+-----------------------------------------------------------------------"
       "---\n");
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("Starting %s for LAYOUTRIGHT ...\n",
                                 caseName.c_str());
-
+#endif
   if (true) {
     Test::SyrTester<ScalarX, Kokkos::LayoutRight, ScalarA, Kokkos::LayoutRight,
                     Device>
@@ -1598,22 +1663,25 @@ int test_syr(const std::string& caseName) {
     tester.test(2131, 0);
   }
 
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("Finished %s for LAYOUTRIGHT\n",
                                 caseName.c_str());
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
       "+-----------------------------------------------------------------------"
       "---\n");
 #endif
+#endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
       "+-----------------------------------------------------------------------"
       "---\n");
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("Starting %s for LAYOUTSTRIDE ...\n",
                                 caseName.c_str());
-
+#endif
   if (true) {
     Test::SyrTester<ScalarX, Kokkos::LayoutStride, ScalarA,
                     Kokkos::LayoutStride, Device>
@@ -1642,21 +1710,24 @@ int test_syr(const std::string& caseName) {
     tester.test(2131, 0);
   }
 
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("Finished %s for LAYOUTSTRIDE\n",
                                 caseName.c_str());
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
       "+-----------------------------------------------------------------------"
       "---\n");
 #endif
+#endif
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) && \
     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
       "+-----------------------------------------------------------------------"
       "---\n");
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("Starting %s for MIXED LAYOUTS ...\n",
                                 caseName.c_str());
-
+#endif
   if (true) {
     Test::SyrTester<ScalarX, Kokkos::LayoutStride, ScalarA, Kokkos::LayoutRight,
                     Device>
@@ -1683,18 +1754,21 @@ int test_syr(const std::string& caseName) {
     tester.test(1024, 0);
   }
 
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("Finished %s for MIXED LAYOUTS\n",
                                 caseName.c_str());
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
       "+-----------------------------------------------------------------------"
       "---\n");
 #endif
+#endif
 
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("Finished %s\n", caseName.c_str());
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
       "+======================================================================="
       "===\n");
-
+#endif
   return 1;
 }
 
@@ -1752,9 +1826,9 @@ TEST_F(TestCategory, syr_int) {
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) && \
     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
-TEST_F(TestCategory, syr_double_int) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::syr_double_int");
-  test_syr<int, float, TestExecSpace>("test case syr_double_int");
+TEST_F(TestCategory, syr_int_float) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::syr_int_float");
+  test_syr<int, float, TestExecSpace>("test case syr_int_float");
   Kokkos::Profiling::popRegion();
 }
 #endif
