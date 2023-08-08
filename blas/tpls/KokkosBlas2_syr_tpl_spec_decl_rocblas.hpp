@@ -22,14 +22,15 @@
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS2_SYR_ROCBLAS_DETERMINE_ARGS(LAYOUT)                           \
-  bool A_is_ll          = std::is_same<Kokkos::LayoutLeft, LAYOUT>::value;       \
-  bool A_is_lr          = std::is_same<Kokkos::LayoutRight, LAYOUT>::value;      \
-  const int N           = static_cast<int>(A_is_lr ? A.extent(0) : A.extent(1)); \
-  constexpr int one     = 1;                                                     \
-  const int LDA         = A_is_lr ? A.stride(0) : A.stride(1);                   \
-  rocblas_fill fillMode = (*uplo == 'L' || *uplo == 'l') ? rocblas_fill_lower    \
-                                                         : rocblas_fill_upper;
+#define KOKKOSBLAS2_SYR_ROCBLAS_DETERMINE_ARGS(LAYOUT, uploChar)             \
+  bool A_is_ll      = std::is_same<Kokkos::LayoutLeft, LAYOUT>::value;       \
+  bool A_is_lr      = std::is_same<Kokkos::LayoutRight, LAYOUT>::value;      \
+  const int N       = static_cast<int>(A_is_lr ? A.extent(0) : A.extent(1)); \
+  constexpr int one = 1;                                                     \
+  const int LDA     = A_is_lr ? A.stride(0) : A.stride(1);                   \
+  rocblas_fill fillMode = (uploChar == 'L' || uploChar == 'l')               \
+                              ? rocblas_fill_lower                           \
+                              : rocblas_fill_upper;
 
 #define KOKKOSBLAS2_DSYR_ROCBLAS(LAYOUT, EXEC_SPACE, MEM_SPACE,             \
                                  ETI_SPEC_AVAIL)                            \
@@ -57,7 +58,7 @@ namespace Impl {
                     typename AViewType::const_value_type& alpha,            \
                     const XViewType& X, const AViewType& A) {               \
       Kokkos::Profiling::pushRegion("KokkosBlas::syr[TPL_ROCBLAS,double]"); \
-      KOKKOSBLAS2_SYR_ROCBLAS_DETERMINE_ARGS(LAYOUT);                       \
+      KOKKOSBLAS2_SYR_ROCBLAS_DETERMINE_ARGS(LAYOUT, uplo[0]);              \
       if (A_is_ll) {                                                        \
         KokkosBlas::Impl::RocBlasSingleton& s =                             \
             KokkosBlas::Impl::RocBlasSingleton::singleton();                \
@@ -103,7 +104,7 @@ namespace Impl {
                     typename AViewType::const_value_type& alpha,            \
                     const XViewType& X, const AViewType& A) {               \
       Kokkos::Profiling::pushRegion("KokkosBlas::syr[TPL_ROCBLAS,float]");  \
-      KOKKOSBLAS2_SYR_ROCBLAS_DETERMINE_ARGS(LAYOUT);                       \
+      KOKKOSBLAS2_SYR_ROCBLAS_DETERMINE_ARGS(LAYOUT, uplo[0]);              \
       if (A_is_ll) {                                                        \
         KokkosBlas::Impl::RocBlasSingleton& s =                             \
             KokkosBlas::Impl::RocBlasSingleton::singleton();                \
@@ -150,7 +151,7 @@ namespace Impl {
                     const XViewType& X, const AViewType& A) {                 \
       Kokkos::Profiling::pushRegion(                                          \
           "KokkosBlas::syr[TPL_ROCBLAS,complex<double>]");                    \
-      KOKKOSBLAS2_SYR_ROCBLAS_DETERMINE_ARGS(LAYOUT);                         \
+      KOKKOSBLAS2_SYR_ROCBLAS_DETERMINE_ARGS(LAYOUT, uplo[0]);                \
       bool justTranspose = (trans[0] == 'T') || (trans[0] == 't');            \
       if (justTranspose) {                                                    \
         if (A_is_ll) {                                                        \
@@ -223,7 +224,7 @@ namespace Impl {
                     const XViewType& X, const AViewType& A) {                 \
       Kokkos::Profiling::pushRegion(                                          \
           "KokkosBlas::syr[TPL_ROCBLAS,complex<float>]");                     \
-      KOKKOSBLAS2_SYR_ROCBLAS_DETERMINE_ARGS(LAYOUT);                         \
+      KOKKOSBLAS2_SYR_ROCBLAS_DETERMINE_ARGS(LAYOUT, uplo[0]);                \
       bool justTranspose = (trans[0] == 'T') || (trans[0] == 't');            \
       if (justTranspose) {                                                    \
         if (A_is_ll) {                                                        \
