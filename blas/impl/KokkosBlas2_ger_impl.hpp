@@ -69,7 +69,7 @@ struct ThreadParallelGER {
   AViewType A_;
 };
 
-// Thread parallel version of SYR.
+// Thread parallel version of GER.
 template <class ExecutionSpace, class XViewType, class YViewType,
           class AViewType, class IndexType = typename AViewType::size_type>
 void threadParallelGer(const ExecutionSpace& space, const char trans[],
@@ -180,7 +180,7 @@ struct TeamParallelGER {
   AViewType A_;
 };
 
-// Team parallel version of SYR.
+// Team parallel version of GER.
 template <class ExecutionSpace, class XViewType, class YViewType,
           class AViewType, class IndexType = typename AViewType::size_type>
 void teamParallelGer(const ExecutionSpace& space, const char trans[],
