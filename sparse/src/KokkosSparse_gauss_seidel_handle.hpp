@@ -652,7 +652,7 @@ class TwoStageGaussSeidelHandle
   /**
    * @brief Construct a new Two Stage Gauss Seidel Handle object
    *
-   * @param gsh The GaussSeidel handle.
+   * @param gs_handle The GaussSeidel handle.
    */
   TwoStageGaussSeidelHandle(GSHandle gs_handle)
       : GSHandle(gs_handle),
