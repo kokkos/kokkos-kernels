@@ -198,115 +198,6 @@ inline void spm_mv_block_impl_mkl(
 
 #endif
 
-#if (__INTEL_MKL__ == 2017)
-
-inline void spmv_block_impl_mkl(char mode, float alpha, float beta, MKL_INT m,
-                                MKL_INT n, MKL_INT b, const MKL_INT* Arowptrs,
-                                const MKL_INT* Aentries, const float* Avalues,
-                                const float* x, float* y) {
-  mkl_sbsrmv(&mode, &m, &n, &b, &alpha, "G**C", Avalues, Aentries, Arowptrs,
-             Arowptrs + 1, x, &beta, y);
-}
-
-inline void spmv_block_impl_mkl(char mode, double alpha, double beta, MKL_INT m,
-                                MKL_INT n, MKL_INT b, const MKL_INT* Arowptrs,
-                                const MKL_INT* Aentries, const double* Avalues,
-                                const double* x, double* y) {
-  mkl_dbsrmv(&mode, &m, &n, &b, &alpha, "G**C", Avalues, Aentries, Arowptrs,
-             Arowptrs + 1, x, &beta, y);
-}
-
-inline void spmv_block_impl_mkl(char mode, Kokkos::complex<float> alpha,
-                                Kokkos::complex<float> beta, MKL_INT m,
-                                MKL_INT n, MKL_INT b, const MKL_INT* Arowptrs,
-                                const MKL_INT* Aentries,
-                                const Kokkos::complex<float>* Avalues,
-                                const Kokkos::complex<float>* x,
-                                Kokkos::complex<float>* y) {
-  const MKL_Complex8* alpha_mkl = reinterpret_cast<const MKL_Complex8*>(&alpha);
-  const MKL_Complex8* beta_mkl  = reinterpret_cast<const MKL_Complex8*>(&beta);
-  const MKL_Complex8* Avalues_mkl =
-      reinterpret_cast<const MKL_Complex8*>(Avalues);
-  const MKL_Complex8* x_mkl = reinterpret_cast<const MKL_Complex8*>(x);
-  MKL_Complex8* y_mkl       = reinterpret_cast<MKL_Complex8*>(y);
-  mkl_cbsrmv(&mode, &m, &n, &b, alpha_mkl, "G**C", Avalues_mkl, Aentries,
-             Arowptrs, Arowptrs + 1, x_mkl, beta_mkl, y_mkl);
-}
-
-inline void spmv_block_impl_mkl(char mode, Kokkos::complex<double> alpha,
-                                Kokkos::complex<double> beta, MKL_INT m,
-                                MKL_INT n, MKL_INT b, const MKL_INT* Arowptrs,
-                                const MKL_INT* Aentries,
-                                const Kokkos::complex<double>* Avalues,
-                                const Kokkos::complex<double>* x,
-                                Kokkos::complex<double>* y) {
-  const MKL_Complex16* alpha_mkl =
-      reinterpret_cast<const MKL_Complex16*>(&alpha);
-  const MKL_Complex16* beta_mkl = reinterpret_cast<const MKL_Complex16*>(&beta);
-  const MKL_Complex16* Avalues_mkl =
-      reinterpret_cast<const MKL_Complex16*>(Avalues);
-  const MKL_Complex16* x_mkl = reinterpret_cast<const MKL_Complex16*>(x);
-  MKL_Complex16* y_mkl       = reinterpret_cast<MKL_Complex16*>(y);
-  mkl_zbsrmv(&mode, &m, &n, &b, alpha_mkl, "G**C", Avalues_mkl, Aentries,
-             Arowptrs, Arowptrs + 1, x_mkl, beta_mkl, y_mkl);
-}
-
-inline void spm_mv_block_impl_mkl(char mode, float alpha, float beta, MKL_INT m,
-                                  MKL_INT n, MKL_INT b, const MKL_INT* Arowptrs,
-                                  const MKL_INT* Aentries, const float* Avalues,
-                                  const float* x, MKL_INT colx, MKL_INT ldx,
-                                  float* y, MKL_INT ldy) {
-  mkl_sbsrmm(&mode, &m, &n, &colx, &b, &alpha, "G**C", Avalues, Aentries,
-             Arowptrs, Arowptrs + 1, x, &beta, y);
-}
-
-inline void spm_mv_block_impl_mkl(
-    char mode, double alpha, double beta, MKL_INT m, MKL_INT n, MKL_INT b,
-    const MKL_INT* Arowptrs, const MKL_INT* Aentries, const double* Avalues,
-    const double* x, MKL_INT colx, MKL_INT ldx, double* y, MKL_INT ldy) {
-  mkl_dbsrmm(&mode, &m, &n, &colx, &b, &alpha, "G**C", Avalues, Aentries,
-             Arowptrs, Arowptrs + 1, x, ldx, &beta, y, ldy);
-}
-
-inline void spm_mv_block_impl_mkl(char mode, Kokkos::complex<float> alpha,
-                                  Kokkos::complex<float> beta, MKL_INT m,
-                                  MKL_INT n, MKL_INT b, const MKL_INT* Arowptrs,
-                                  const MKL_INT* Aentries,
-                                  const Kokkos::complex<float>* Avalues,
-                                  const Kokkos::complex<float>* x, MKL_INT colx,
-                                  MKL_INT ldx, Kokkos::complex<float>* y,
-                                  MKL_INT ldy) {
-  const MKL_Complex8* alpha_mkl = reinterpret_cast<const MKL_Complex8*>(&alpha);
-  const MKL_Complex8* beta_mkl  = reinterpret_cast<const MKL_Complex8*>(&beta);
-  const MKL_Complex8* Avalues_mkl =
-      reinterpret_cast<const MKL_Complex8*>(Avalues);
-  const MKL_Complex8* x_mkl = reinterpret_cast<const MKL_Complex8*>(x);
-  MKL_Complex8* y_mkl       = reinterpret_cast<MKL_Complex8*>(y);
-  mkl_cbsrmv(&mode, &m, &n, &colx, &b, alpha_mkl, "G**C", Avalues_mkl, Aentries,
-             Arowptrs, Arowptrs + 1, x_mkl, ldx, beta_mkl, y_mkl, ldy);
-}
-
-inline void spm_mv_block_impl_mkl(char mode, Kokkos::complex<double> alpha,
-                                  Kokkos::complex<double> beta, MKL_INT m,
-                                  MKL_INT n, MKL_INT b, const MKL_INT* Arowptrs,
-                                  const MKL_INT* Aentries,
-                                  const Kokkos::complex<double>* Avalues,
-                                  const Kokkos::complex<double>* x,
-                                  MKL_INT colx, MKL_INT ldx,
-                                  Kokkos::complex<double>* y, MKL_INT ldy) {
-  const MKL_Complex16* alpha_mkl =
-      reinterpret_cast<const MKL_Complex16*>(&alpha);
-  const MKL_Complex16* beta_mkl = reinterpret_cast<const MKL_Complex16*>(&beta);
-  const MKL_Complex16* Avalues_mkl =
-      reinterpret_cast<const MKL_Complex16*>(Avalues);
-  const MKL_Complex16* x_mkl = reinterpret_cast<const MKL_Complex16*>(x);
-  MKL_Complex16* y_mkl       = reinterpret_cast<MKL_Complex16*>(y);
-  mkl_zbsrmv(&mode, &m, &n, &colx, &b, alpha_mkl, "G**C", Avalues_mkl, Aentries,
-             Arowptrs, Arowptrs + 1, x_mkl, ldx, beta_mkl, y_mkl, ldy);
-}
-
-#endif
-
 #define KOKKOSSPARSE_SPMV_MKL(SCALAR, EXECSPACE, COMPILE_LIBRARY)              \
   template <>                                                                  \
   struct SPMV_BSRMATRIX<                                                       \
@@ -914,7 +805,7 @@ void spmv_block_impl_rocsparse(
   */
   // KokkosSparse Bsr matrix blocks are layoutright (row-major)
   static_assert(
-      std::is_same_v<typename AMatrix::block_layout, Kokkos::LayoutRight>,
+      std::is_same_v<typename AMatrix::block_layout_type, Kokkos::LayoutRight>,
       "A blocks must be stored layout-right");
   rocsparse_direction dir = rocsparse_direction_row;
 

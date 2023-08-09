@@ -82,14 +82,6 @@ void gemv(const execution_space& space, const char trans[],
       Kokkos::SpaceAccessibility<execution_space,
                                  typename YViewType::memory_space>::accessible,
       "KokkosBlas::gemv: YViewType must be accessible from execution_space");
-  static_assert(
-      Kokkos::SpaceAccessibility<typename YViewType::memory_space,
-                                 typename AViewType::memory_space>::assignable,
-      "KokkosBlas::gemv: AViewType must be assignable to YViewType");
-  static_assert(
-      Kokkos::SpaceAccessibility<typename YViewType::memory_space,
-                                 typename XViewType::memory_space>::assignable,
-      "KokkosBlas::gemv: XViewType must be assignable to YViewType");
 
   // Check compatibility of dimensions at run time.
   if (trans[0] == 'N' || trans[0] == 'n') {
@@ -168,6 +160,15 @@ void gemv(const execution_space& space, const char trans[],
                                 std::is_same<typename AViewType::memory_space,
                                              Kokkos::HostSpace>::value);
 #endif
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
+#ifdef KOKKOS_ENABLE_SYCL
+  // oneMKL supports both row-major and column-major of A
+  useFallback =
+      useFallback || !std::is_same_v<typename AViewType::memory_space,
+                                     Kokkos::Experimental::SYCLDeviceUSMSpace>;
+#endif
+#endif
+
   if (useFallback) {
     const bool eti_spec_avail =
         KokkosBlas::Impl::gemv_eti_spec_avail<AVT, XVT, YVT>::value;

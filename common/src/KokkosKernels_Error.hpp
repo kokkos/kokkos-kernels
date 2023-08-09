@@ -18,6 +18,7 @@
 #define KOKKOSKERNELS_ERROR_HPP
 
 #include <stdexcept>
+#include <sstream>
 
 namespace KokkosKernels {
 namespace Impl {
