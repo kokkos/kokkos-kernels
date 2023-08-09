@@ -48,7 +48,7 @@ struct BsrMatrixSpMVTensorCoreFunctorParams {
 /// TEAMS_PER_BLOCK_M and TEAMS_PER_BLOCK_N) if non-zero, statically-known
 /// launch parameters to reduce the cost of divmod operations on the GPU. If 0,
 /// provided runtime values will be used instead.
-template <typename AMatrix,
+template <typename execution_space, typename AMatrix,
           typename AFragScalar,  // input matrix type and fragment scalar type
           typename XMatrix, typename XFragScalar, typename YMatrix,
           typename YFragScalar, unsigned FRAG_M, unsigned FRAG_N,
@@ -69,7 +69,6 @@ struct BsrMatrixSpMVTensorCoreFunctor {
       nvcuda::wmma::fragment<accumulator, FRAG_M, FRAG_N, FRAG_K, YFragScalar>;
 
   typedef typename AMatrix::device_type Device;
-  typedef typename AMatrix::execution_space execution_space;
   typedef Kokkos::TeamPolicy<execution_space> team_policy;
   typedef typename team_policy::member_type team_member;
   typedef typename AMatrix::value_type AScalar;
@@ -413,13 +412,12 @@ struct BsrMatrixSpMVTensorCoreFunctor {
 /// This is a struct instead of a function for template...using shorthand
 /// Discriminates between non-complex/on-GPU (supported) and otherwise
 /// (unsupported) scalar types, and throws a runtime error for unsupported types
-template <typename AMatrix,
+template <typename execution_space, typename AMatrix,
           typename AFragScalar,  // input matrix type and fragment scalar type
           typename XMatrix, typename XFragScalar, typename YMatrix,
           typename YFragScalar, unsigned FRAG_M, unsigned FRAG_N,
           unsigned FRAG_K>
 struct BsrMatrixSpMVTensorCoreDispatcher {
-  typedef typename AMatrix::execution_space execution_space;
   typedef typename AMatrix::value_type AScalar;
   typedef typename YMatrix::value_type YScalar;
   typedef typename XMatrix::value_type XScalar;
@@ -1455,9 +1453,8 @@ void spMatMultiVec_no_transpose(
 }
 
 /* ******************* */
-template <class AMatrix, class XVector, class YVector>
+template <class execution_space, class AMatrix, class XVector, class YVector>
 struct BSR_GEMM_Transpose_Functor {
-  typedef typename AMatrix::execution_space execution_space;
   typedef typename AMatrix::non_const_value_type value_type;
   typedef typename Kokkos::TeamPolicy<execution_space> team_policy;
   typedef typename team_policy::member_type team_member;
@@ -1634,12 +1631,12 @@ struct BSR_GEMM_Transpose_Functor {
 
 /// \brief  spMatMultiVec_transpose: version for CPU execution spaces
 /// (RangePolicy or trivial serial impl used)
-template <class AT, class AO, class AD, class AS, class AlphaType,
-          class XVector, class BetaType, class YVector,
+template <class execution_space, class AT, class AO, class AD, class AS,
+          class AlphaType, class XVector, class BetaType, class YVector,
           typename std::enable_if<!KokkosKernels::Impl::kk_is_gpu_exec_space<
               typename YVector::execution_space>()>::type * = nullptr>
 void spMatMultiVec_transpose(
-    const typename AD::execution_space &exec,
+    const execution_space &exec,
     const KokkosKernels::Experimental::Controls &controls,
     const AlphaType &alpha,
     const KokkosSparse::Experimental::BsrMatrix<
@@ -1658,7 +1655,6 @@ void spMatMultiVec_transpose(
   typedef KokkosSparse::Experimental::BsrMatrix<
       AT, AO, AD, Kokkos::MemoryTraits<Kokkos::Unmanaged>, AS>
       AMatrix_Internal;
-  typedef typename AMatrix_Internal::execution_space execution_space;
 
   bool use_dynamic_schedule = false;  // Forces the use of a dynamic schedule
   bool use_static_schedule  = false;  // Forces the use of a static schedule
@@ -1670,8 +1666,9 @@ void spMatMultiVec_transpose(
     }
   }
 
-  BSR_GEMM_Transpose_Functor<AMatrix_Internal, XVector, YVector> func(
-      alpha, A, x, y, useConjugate);
+  BSR_GEMM_Transpose_Functor<execution_space, AMatrix_Internal, XVector,
+                             YVector>
+      func(alpha, A, x, y, useConjugate);
   if (((A.nnz() > 10000000) || use_dynamic_schedule) && !use_static_schedule) {
     Kokkos::parallel_for(
         "KokkosSparse::bsr_spm_mv<Transpose,Dynamic>",
@@ -1690,12 +1687,12 @@ void spMatMultiVec_transpose(
 //
 // spMatMultiVec_transpose: version for GPU execution spaces (TeamPolicy used)
 //
-template <class AMatrix, class AlphaType, class XVector, class BetaType,
-          class YVector,
+template <class execution_space, class AMatrix, class AlphaType, class XVector,
+          class BetaType, class YVector,
           typename std::enable_if<KokkosKernels::Impl::kk_is_gpu_exec_space<
-              typename YVector::execution_space>()>::type * = nullptr>
+              execution_space>()>::type * = nullptr>
 void spMatMultiVec_transpose(
-    const typename AMatrix::execution_space &exec,
+    const execution_space &exec,
     const KokkosKernels::Experimental::Controls &controls,
     const AlphaType &alpha, const AMatrix &A, const XVector &x,
     const BetaType &beta, YVector &y, bool useConjugate) {
@@ -1707,8 +1704,6 @@ void spMatMultiVec_transpose(
     Kokkos::deep_copy(exec, y, Kokkos::ArithTraits<BetaType>::zero());
   else if (beta != Kokkos::ArithTraits<BetaType>::one())
     KokkosBlas::scal(exec, y, beta, y);
-
-  typedef typename AMatrix::execution_space execution_space;
 
   bool use_dynamic_schedule = false;  // Forces the use of a dynamic schedule
   bool use_static_schedule  = false;  // Forces the use of a static schedule
@@ -1749,8 +1744,8 @@ void spMatMultiVec_transpose(
     vector_length = std::stoi(controls.getParameter("vector length"));
   }
 
-  BSR_GEMM_Transpose_Functor<AMatrix, XVector, YVector> func(alpha, A, x, y,
-                                                             useConjugate);
+  BSR_GEMM_Transpose_Functor<execution_space, AMatrix, XVector, YVector> func(
+      alpha, A, x, y, useConjugate);
 
   if (((A.nnz() > 10000000) || use_dynamic_schedule) && !use_static_schedule) {
     Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>>

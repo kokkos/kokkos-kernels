@@ -29,14 +29,14 @@
 namespace KokkosSparse {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class AT, class AO, class AD, class AM, class AS, class XT, class XL,
-          class XD, class XM, class YT, class YL, class YD, class YM>
+template <class ES, class AT, class AO, class AD, class AM, class AS, class XT,
+          class XL, class XD, class XM, class YT, class YL, class YD, class YM>
 struct spmv_struct_eti_spec_avail {
   enum : bool { value = false };
 };
 
-template <class AT, class AO, class AD, class AM, class AS, class XT, class XL,
-          class XD, class XM, class YT, class YL, class YD, class YM,
+template <class ES, class AT, class AO, class AD, class AM, class AS, class XT,
+          class XL, class XD, class XM, class YT, class YL, class YD, class YM,
           const bool integerScalarType =
               std::is_integral<typename std::decay<AT>::type>::value>
 struct spmv_mv_struct_eti_spec_avail {
@@ -51,7 +51,7 @@ struct spmv_mv_struct_eti_spec_avail {
     MEM_SPACE_TYPE)                                                       \
   template <>                                                             \
   struct spmv_struct_eti_spec_avail<                                      \
-      const SCALAR_TYPE, const ORDINAL_TYPE,                              \
+      EXEC_SPACE_TYPE, const SCALAR_TYPE, const ORDINAL_TYPE,             \
       Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                    \
       Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET_TYPE,         \
       SCALAR_TYPE const*, LAYOUT_TYPE,                                    \
@@ -68,7 +68,7 @@ struct spmv_mv_struct_eti_spec_avail {
     MEM_SPACE_TYPE)                                                       \
   template <>                                                             \
   struct spmv_mv_struct_eti_spec_avail<                                   \
-      const SCALAR_TYPE, const ORDINAL_TYPE,                              \
+      EXEC_SPACE_TYPE, const SCALAR_TYPE, const ORDINAL_TYPE,             \
       Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                    \
       Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET_TYPE,         \
       SCALAR_TYPE const**, LAYOUT_TYPE,                                   \
@@ -105,12 +105,12 @@ namespace Impl {
 ///
 /// For the implementation of KokkosSparse::spmv_struct for multivectors (2-D
 /// Views), see the SPMV_STRUCT struct below.
-template <class AT, class AO, class AD, class AM, class AS, class XT, class XL,
-          class XD, class XM, class YT, class YL, class YD, class YM,
+template <class ES, class AT, class AO, class AD, class AM, class AS, class XT,
+          class XL, class XD, class XM, class YT, class YL, class YD, class YM,
           bool tpl_spec_avail = spmv_struct_tpl_spec_avail<
-              AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM>::value,
+              ES, AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM>::value,
           bool eti_spec_avail = spmv_struct_eti_spec_avail<
-              AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM>::value>
+              ES, AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM>::value>
 struct SPMV_STRUCT {
   typedef CrsMatrix<AT, AO, AD, AM, AS> AMatrix;
   typedef Kokkos::View<XT, XL, XD, XM> XVector;
@@ -119,7 +119,7 @@ struct SPMV_STRUCT {
   typedef typename YVector::non_const_value_type coefficient_type;
 
   static void spmv_struct(
-      const char mode[], const int stencil_type,
+      const ES& exec, const char mode[], const int stencil_type,
       const Kokkos::View<typename AMatrix::non_const_ordinal_type*,
                          Kokkos::HostSpace>& structure,
       const coefficient_type& alpha, const AMatrix& A, const XVector& x,
@@ -164,39 +164,40 @@ struct SPMV_STRUCT {
 /// matrix's entries have integer type.  Per Github Issue #700, we
 /// don't optimize as heavily for that case, in order to reduce build
 /// times and library sizes.
-template <class AT, class AO, class AD, class AM, class AS, class XT, class XL,
-          class XD, class XM, class YT, class YL, class YD, class YM,
+template <class ES, class AT, class AO, class AD, class AM, class AS, class XT,
+          class XL, class XD, class XM, class YT, class YL, class YD, class YM,
           const bool integerScalarType =
               std::is_integral<typename std::decay<AT>::type>::value,
           bool tpl_spec_avail = spmv_mv_struct_tpl_spec_avail<
-              AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM>::value,
+              ES, AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM>::value,
           bool eti_spec_avail = spmv_mv_struct_eti_spec_avail<
-              AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM>::value>
+              ES, AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM>::value>
 struct SPMV_MV_STRUCT {
   typedef CrsMatrix<AT, AO, AD, AM, AS> AMatrix;
   typedef Kokkos::View<XT, XL, XD, XM> XVector;
   typedef Kokkos::View<YT, YL, YD, YM> YVector;
   typedef typename YVector::non_const_value_type coefficient_type;
 
-  static void spmv_mv_struct(const char mode[], const coefficient_type& alpha,
-                             const AMatrix& A, const XVector& x,
-                             const coefficient_type& beta, const YVector& y);
+  static void spmv_mv_struct(const ES& exec, const char mode[],
+                             const coefficient_type& alpha, const AMatrix& A,
+                             const XVector& x, const coefficient_type& beta,
+                             const YVector& y);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 //! Full specialization of spmv for single vectors (1-D Views).
 // Unification layer
-template <class AT, class AO, class AD, class AM, class AS, class XT, class XL,
-          class XD, class XM, class YT, class YL, class YD, class YM>
-struct SPMV_STRUCT<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM, false,
-                   KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+template <class ES, class AT, class AO, class AD, class AM, class AS, class XT,
+          class XL, class XD, class XM, class YT, class YL, class YD, class YM>
+struct SPMV_STRUCT<ES, AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
+                   false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef CrsMatrix<AT, AO, AD, AM, AS> AMatrix;
   typedef Kokkos::View<XT, XL, XD, XM> XVector;
   typedef Kokkos::View<YT, YL, YD, YM> YVector;
   typedef typename YVector::non_const_value_type coefficient_type;
 
   static void spmv_struct(
-      const char mode[], const int stencil_type,
+      const ES& exec, const char mode[], const int stencil_type,
       const Kokkos::View<typename AMatrix::non_const_ordinal_type*,
                          Kokkos::HostSpace>& structure,
       const coefficient_type& alpha, const AMatrix& A, const XVector& x,
@@ -207,75 +208,77 @@ struct SPMV_STRUCT<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM, false,
 
     if (alpha == KAT::zero()) {
       if (beta != KAT::one()) {
-        KokkosBlas::scal(y, beta, y);
+        KokkosBlas::scal(exec, y, beta, y);
       }
       return;
     }
 
     if (beta == KAT::zero()) {
-      spmv_struct_beta<AMatrix, XVector, YVector, 0>(
-          mode, stencil_type, structure, alpha, A, x, beta, y);
+      spmv_struct_beta<ES, AMatrix, XVector, YVector, 0>(
+          exec, mode, stencil_type, structure, alpha, A, x, beta, y);
     } else if (beta == KAT::one()) {
-      spmv_struct_beta<AMatrix, XVector, YVector, 1>(
-          mode, stencil_type, structure, alpha, A, x, beta, y);
+      spmv_struct_beta<ES, AMatrix, XVector, YVector, 1>(
+          exec, mode, stencil_type, structure, alpha, A, x, beta, y);
     } else if (beta == -KAT::one()) {
-      spmv_struct_beta<AMatrix, XVector, YVector, -1>(
-          mode, stencil_type, structure, alpha, A, x, beta, y);
+      spmv_struct_beta<ES, AMatrix, XVector, YVector, -1>(
+          exec, mode, stencil_type, structure, alpha, A, x, beta, y);
     } else {
-      spmv_struct_beta<AMatrix, XVector, YVector, 2>(
-          mode, stencil_type, structure, alpha, A, x, beta, y);
+      spmv_struct_beta<ES, AMatrix, XVector, YVector, 2>(
+          exec, mode, stencil_type, structure, alpha, A, x, beta, y);
     }
   }
 };
 
 //! Full specialization of spmv_mv for single vectors (2-D Views).
 // Unification layer
-template <class AT, class AO, class AD, class AM, class AS, class XT, class XL,
-          class XD, class XM, class YT, class YL, class YD, class YM>
-struct SPMV_MV_STRUCT<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM, false,
-                      false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+template <class ES, class AT, class AO, class AD, class AM, class AS, class XT,
+          class XL, class XD, class XM, class YT, class YL, class YD, class YM>
+struct SPMV_MV_STRUCT<ES, AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
+                      false, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef CrsMatrix<AT, AO, AD, AM, AS> AMatrix;
   typedef Kokkos::View<XT, XL, XD, XM> XVector;
   typedef Kokkos::View<YT, YL, YD, YM> YVector;
   typedef typename YVector::non_const_value_type coefficient_type;
 
-  static void spmv_mv_struct(const char mode[], const coefficient_type& alpha,
-                             const AMatrix& A, const XVector& x,
-                             const coefficient_type& beta, const YVector& y) {
+  static void spmv_mv_struct(const ES& exec, const char mode[],
+                             const coefficient_type& alpha, const AMatrix& A,
+                             const XVector& x, const coefficient_type& beta,
+                             const YVector& y) {
     typedef Kokkos::ArithTraits<coefficient_type> KAT;
 
     if (alpha == KAT::zero()) {
-      spmv_alpha_mv_struct<AMatrix, XVector, YVector, 0>(mode, alpha, A, x,
-                                                         beta, y);
+      spmv_alpha_mv_struct<ES, AMatrix, XVector, YVector, 0>(exec, mode, alpha,
+                                                             A, x, beta, y);
     } else if (alpha == KAT::one()) {
-      spmv_alpha_mv_struct<AMatrix, XVector, YVector, 1>(mode, alpha, A, x,
-                                                         beta, y);
+      spmv_alpha_mv_struct<ES, AMatrix, XVector, YVector, 1>(exec, mode, alpha,
+                                                             A, x, beta, y);
     } else if (alpha == -KAT::one()) {
-      spmv_alpha_mv_struct<AMatrix, XVector, YVector, -1>(mode, alpha, A, x,
-                                                          beta, y);
+      spmv_alpha_mv_struct<ES, AMatrix, XVector, YVector, -1>(exec, mode, alpha,
+                                                              A, x, beta, y);
     } else {
-      spmv_alpha_mv_struct<AMatrix, XVector, YVector, 2>(mode, alpha, A, x,
-                                                         beta, y);
+      spmv_alpha_mv_struct<ES, AMatrix, XVector, YVector, 2>(exec, mode, alpha,
+                                                             A, x, beta, y);
     }
   }
 };
 
-template <class AT, class AO, class AD, class AM, class AS, class XT, class XL,
-          class XD, class XM, class YT, class YL, class YD, class YM>
-struct SPMV_MV_STRUCT<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM, true,
-                      false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+template <class ES, class AT, class AO, class AD, class AM, class AS, class XT,
+          class XL, class XD, class XM, class YT, class YL, class YD, class YM>
+struct SPMV_MV_STRUCT<ES, AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
+                      true, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef CrsMatrix<AT, AO, AD, AM, AS> AMatrix;
   typedef Kokkos::View<XT, XL, XD, XM> XVector;
   typedef Kokkos::View<YT, YL, YD, YM> YVector;
   typedef typename YVector::non_const_value_type coefficient_type;
 
-  static void spmv_mv_struct(const char mode[], const coefficient_type& alpha,
-                             const AMatrix& A, const XVector& x,
-                             const coefficient_type& beta, const YVector& y) {
+  static void spmv_mv_struct(const ES& exec, const char mode[],
+                             const coefficient_type& alpha, const AMatrix& A,
+                             const XVector& x, const coefficient_type& beta,
+                             const YVector& y) {
     static_assert(std::is_integral<AT>::value,
                   "This implementation is only for integer Scalar types.");
-    typedef SPMV_STRUCT<AT, AO, AD, AM, AS, typename XVector::value_type*, XL,
-                        XD, XM, typename YVector::value_type*, YL, YD, YM>
+    typedef SPMV_STRUCT<ES, AT, AO, AD, AM, AS, typename XVector::value_type*,
+                        XL, XD, XM, typename YVector::value_type*, YL, YD, YM>
         impl_type;
     for (typename AMatrix::non_const_size_type j = 0; j < x.extent(1); ++j) {
       auto x_j = Kokkos::subview(x, Kokkos::ALL(), j);
@@ -300,7 +303,7 @@ struct SPMV_MV_STRUCT<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM, true,
     SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, \
     MEM_SPACE_TYPE)                                                       \
   extern template struct SPMV_STRUCT<                                     \
-      const SCALAR_TYPE, const ORDINAL_TYPE,                              \
+      EXEC_SPACE_TYPE, const SCALAR_TYPE, const ORDINAL_TYPE,             \
       Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                    \
       Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET_TYPE,         \
       SCALAR_TYPE const*, LAYOUT_TYPE,                                    \
@@ -314,7 +317,7 @@ struct SPMV_MV_STRUCT<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM, true,
     SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, \
     MEM_SPACE_TYPE)                                                       \
   template struct SPMV_STRUCT<                                            \
-      const SCALAR_TYPE, const ORDINAL_TYPE,                              \
+      EXEC_SPACE_TYPE, const SCALAR_TYPE, const ORDINAL_TYPE,             \
       Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                    \
       Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET_TYPE,         \
       SCALAR_TYPE const*, LAYOUT_TYPE,                                    \
@@ -328,7 +331,7 @@ struct SPMV_MV_STRUCT<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM, true,
     SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE,     \
     MEM_SPACE_TYPE)                                                           \
   extern template struct SPMV_MV_STRUCT<                                      \
-      const SCALAR_TYPE, const ORDINAL_TYPE,                                  \
+      EXEC_SPACE_TYPE, const SCALAR_TYPE, const ORDINAL_TYPE,                 \
       Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                        \
       Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET_TYPE,             \
       SCALAR_TYPE const**, LAYOUT_TYPE,                                       \
@@ -344,7 +347,7 @@ struct SPMV_MV_STRUCT<AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM, true,
     SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE,     \
     MEM_SPACE_TYPE)                                                           \
   template struct SPMV_MV_STRUCT<                                             \
-      const SCALAR_TYPE, const ORDINAL_TYPE,                                  \
+      EXEC_SPACE_TYPE, const SCALAR_TYPE, const ORDINAL_TYPE,                 \
       Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                        \
       Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET_TYPE,             \
       SCALAR_TYPE const**, LAYOUT_TYPE,                                       \

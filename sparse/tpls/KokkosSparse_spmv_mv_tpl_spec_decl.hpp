@@ -198,7 +198,8 @@ void spmv_mv_cusparse(const Kokkos::Cuda &exec,
                                       COMPILE_LIBRARY)                         \
   template <>                                                                  \
   struct SPMV_MV<                                                              \
-      SCALAR const, ORDINAL const, Kokkos::Device<Kokkos::Cuda, SPACE>,        \
+      Kokkos::Cuda, SCALAR const, ORDINAL const,                               \
+      Kokkos::Device<Kokkos::Cuda, SPACE>,                                     \
       Kokkos::MemoryTraits<Kokkos::Unmanaged>, OFFSET const, SCALAR const **,  \
       XL, Kokkos::Device<Kokkos::Cuda, SPACE>,                                 \
       Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>,          \

@@ -21,8 +21,8 @@ namespace KokkosSparse {
 namespace Impl {
 
 // Specialization struct which defines whether a specialization exists
-template <class AT, class AO, class AD, class AM, class AS, class XT, class XL,
-          class XD, class XM, class YT, class YL, class YD, class YM,
+template <class ES, class AT, class AO, class AD, class AM, class AS, class XT,
+          class XL, class XD, class XM, class YT, class YL, class YD, class YM,
           const bool integerScalarType =
               std::is_integral<typename std::decay<AT>::type>::value>
 struct spmv_mv_tpl_spec_avail {
@@ -33,7 +33,8 @@ struct spmv_mv_tpl_spec_avail {
                                                      XL, YL, MEMSPACE)        \
   template <>                                                                 \
   struct spmv_mv_tpl_spec_avail<                                              \
-      const SCALAR, const ORDINAL, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,    \
+      Kokkos::Cuda, const SCALAR, const ORDINAL,                              \
+      Kokkos::Device<Kokkos::Cuda, MEMSPACE>,                                 \
       Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET, const SCALAR**,  \
       XL, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,                             \
       Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>,         \

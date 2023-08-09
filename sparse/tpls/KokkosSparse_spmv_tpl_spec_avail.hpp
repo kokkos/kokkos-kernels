@@ -24,8 +24,8 @@
 namespace KokkosSparse {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class AT, class AO, class AD, class AM, class AS, class XT, class XL,
-          class XD, class XM, class YT, class YL, class YD, class YM>
+template <class ES, class AT, class AO, class AD, class AM, class AS, class XT,
+          class XL, class XD, class XM, class YT, class YL, class YD, class YM>
 struct spmv_tpl_spec_avail {
   enum : bool { value = false };
 };
@@ -40,7 +40,8 @@ struct spmv_tpl_spec_avail {
                                                   YL, MEMSPACE)                \
   template <>                                                                  \
   struct spmv_tpl_spec_avail<                                                  \
-      const SCALAR, const ORDINAL, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,     \
+      Kokkos::Cuda, const SCALAR, const ORDINAL,                               \
+      Kokkos::Device<Kokkos::Cuda, MEMSPACE>,                                  \
       Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET, const SCALAR*,    \
       XL, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,                              \
       Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>, SCALAR*, \
@@ -184,7 +185,7 @@ KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(Kokkos::complex<double>, int64_t,
 #define KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_ROCSPARSE(SCALAR, LAYOUT)             \
   template <>                                                                  \
   struct spmv_tpl_spec_avail<                                                  \
-      const SCALAR, const rocsparse_int,                                       \
+      Kokkos::HIP, const SCALAR, const rocsparse_int,                          \
       Kokkos::Device<Kokkos::Experimental::HIP,                                \
                      Kokkos::Experimental::HIPSpace>,                          \
       Kokkos::MemoryTraits<Kokkos::Unmanaged>, const rocsparse_int,            \
@@ -218,7 +219,7 @@ KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_ROCSPARSE(Kokkos::complex<float>,
 #define KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_MKL(SCALAR, EXECSPACE)                \
   template <>                                                                  \
   struct spmv_tpl_spec_avail<                                                  \
-      const SCALAR, const MKL_INT,                                             \
+      EXECSPACE, const SCALAR, const MKL_INT,                                  \
       Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,                            \
       Kokkos::MemoryTraits<Kokkos::Unmanaged>, const MKL_INT, const SCALAR*,   \
       Kokkos::LayoutLeft, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,        \
@@ -246,7 +247,7 @@ KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_MKL(Kokkos::complex<double>, Kokkos::OpenMP)
 #define KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_ONEMKL(SCALAR, ORDINAL, MEMSPACE)     \
   template <>                                                                  \
   struct spmv_tpl_spec_avail<                                                  \
-      const SCALAR, const ORDINAL,                                             \
+      Kokkos::Experimental::SYCL, const SCALAR, const ORDINAL,                 \
       Kokkos::Device<Kokkos::Experimental::SYCL, MEMSPACE>,                    \
       Kokkos::MemoryTraits<Kokkos::Unmanaged>, const ORDINAL, const SCALAR*,   \
       Kokkos::LayoutLeft,                                                      \
