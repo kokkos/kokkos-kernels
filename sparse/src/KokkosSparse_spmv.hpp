@@ -516,6 +516,7 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
        y, tag);
 }
 
+namespace Impl {
 template <class AlphaType, class AMatrix, class XVector, class BetaType,
           class YVector, class XLayout = typename XVector::array_layout>
 struct SPMV2D1D {
@@ -661,6 +662,14 @@ struct SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector,
   }
 };
 #endif
+}  // namespace Impl
+
+template <class AlphaType, class AMatrix, class XVector, class BetaType,
+          class YVector, class XLayout = typename XVector::array_layout>
+using SPMV2D1D
+    [[deprecated("KokkosSparse::SPMV2D1D is not part of the public interface - "
+                 "use KokkosSparse::spmv instead")]] =
+        Impl::SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector>;
 
 /// \brief Tag-dispatch sparse matrix-vector multiply on multivectors
 ///
@@ -775,9 +784,10 @@ void spmv(const execution_space& exec,
     YVector_SubInternal y_i = Kokkos::subview(y, Kokkos::ALL(), 0);
 
     // spmv (mode, alpha, A, x_i, beta, y_i);
-    using impl_type = SPMV2D1D<AlphaType, AMatrix_Internal, XVector_SubInternal,
-                               BetaType, YVector_SubInternal,
-                               typename XVector_SubInternal::array_layout>;
+    using impl_type =
+        Impl::SPMV2D1D<AlphaType, AMatrix_Internal, XVector_SubInternal,
+                       BetaType, YVector_SubInternal,
+                       typename XVector_SubInternal::array_layout>;
     if (impl_type::spmv2d1d(exec, mode, alpha, A, x_i, beta, y_i)) {
       return;
     }
@@ -1463,6 +1473,7 @@ void spmv_struct(const char mode[], const int stencil_type,
               structure, alpha, A, x, beta, y, tag);
 }
 
+namespace Impl {
 template <class AlphaType, class AMatrix, class XVector, class BetaType,
           class YVector, class XLayout = typename XVector::array_layout>
 struct SPMV2D1D_STRUCT {
@@ -1646,6 +1657,14 @@ struct SPMV2D1D_STRUCT<AlphaType, AMatrix, XVector, BetaType, YVector,
   }
 };
 #endif
+}  // namespace Impl
+
+template <class AlphaType, class AMatrix, class XVector, class BetaType,
+          class YVector, class XLayout = typename XVector::array_layout>
+using SPMV2D1D_STRUCT
+    [[deprecated("KokkosSparse::SPMV2D1D_STRUCT is not part of the public "
+                 "interface - use KokkosSparse::spmv_struct instead")]] =
+        Impl::SPMV2D1D_STRUCT<AlphaType, AMatrix, XVector, BetaType, YVector>;
 
 template <class execution_space, class AlphaType, class AMatrix, class XVector,
           class BetaType, class YVector>
@@ -1728,9 +1747,9 @@ void spmv_struct(const execution_space& exec, const char mode[],
     YVector_SubInternal y_i = Kokkos::subview(y, Kokkos::ALL(), 0);
 
     // spmv_struct (mode, alpha, A, x_i, beta, y_i);
-    if (SPMV2D1D_STRUCT<AlphaType, AMatrix_Internal, XVector_SubInternal,
-                        BetaType, YVector_SubInternal,
-                        typename XVector_SubInternal::array_layout>::
+    if (Impl::SPMV2D1D_STRUCT<AlphaType, AMatrix_Internal, XVector_SubInternal,
+                              BetaType, YVector_SubInternal,
+                              typename XVector_SubInternal::array_layout>::
             spmv2d1d_struct(exec, mode, stencil_type, structure, alpha, A, x_i,
                             beta, y_i)) {
       return;
