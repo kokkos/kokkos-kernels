@@ -142,15 +142,17 @@ void run_gauss_seidel(
   kh.destroy_gs_handle();
 }
 
-template <typename Handle, typename crsMat_t, typename vec_t>
+template <typename ExecSpace, typename Handle, typename crsMat_t,
+          typename vec_t>
 void run_gauss_seidel_streams(
-    std::vector<Handle> &kh, std::vector<crsMat_t> &input_mat,
-    std::vector<vec_t> &x_vector, std::vector<vec_t> &y_vector,
-    bool is_symmetric_graph, typename crsMat_t::value_type omega,
+    std::vector<ExecSpace> &instances, std::vector<Handle> &kh,
+    std::vector<crsMat_t> &input_mat, std::vector<vec_t> &x_vector,
+    std::vector<vec_t> &y_vector, bool is_symmetric_graph,
+    typename crsMat_t::value_type omega,
     int apply_type,  // 0 for symmetric, 1 for forward, 2 for backward.
     int nstreams = 1) {
   for (int i = 0; i < nstreams; i++) {
-    gauss_seidel_symbolic(&kh[i], input_mat[i].numRows(),
+    gauss_seidel_symbolic(instances[i], &kh[i], input_mat[i].numRows(),
                           input_mat[i].numCols(), input_mat[i].graph.row_map,
                           input_mat[i].graph.entries, is_symmetric_graph);
     gauss_seidel_numeric(&kh[i], input_mat[i].numRows(), input_mat[i].numCols(),
@@ -797,8 +799,9 @@ void test_gauss_seidel_streams_rank1(
 
     for (int i = 0; i < nstreams; i++) Kokkos::deep_copy(x_vector_v[i], zero);
 
-    run_gauss_seidel_streams(kh_v, input_mat_v, x_vector_v, y_vector_v,
-                             symmetric, m_omega, apply_type, nstreams);
+    run_gauss_seidel_streams(instances, kh_v, input_mat_v, x_vector_v,
+                             y_vector_v, symmetric, m_omega, apply_type,
+                             nstreams);
     // double gs = timer1.seconds();
     // KokkosKernels::Impl::print_1Dview(x_vector);
   }

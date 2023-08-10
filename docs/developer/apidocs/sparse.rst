@@ -60,6 +60,7 @@ block_spgemm
 
 gauss_seidel
 ------------
+.. doxygenfunction:: gauss_seidel_symbolic(ExecSpaceIn &exec_space_in, KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows, typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map, lno_nnz_view_t_ entries, bool is_graph_symmetric)
 .. doxygenfunction:: gauss_seidel_symbolic(KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows, typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map, lno_nnz_view_t_ entries, bool is_graph_symmetric)
 .. doxygenfunction:: gauss_seidel_numeric(KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows, typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map, lno_nnz_view_t_ entries, scalar_nnz_view_t_ values, bool is_graph_symmetric)
 .. doxygenfunction:: gauss_seidel_numeric(KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows, typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map, lno_nnz_view_t_ entries, scalar_nnz_view_t_ values, scalar_nnz_view_t_ given_inverse_diagonal, bool is_graph_symmetric)

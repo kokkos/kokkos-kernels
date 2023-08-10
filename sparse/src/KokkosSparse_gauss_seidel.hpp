@@ -29,10 +29,13 @@ namespace Experimental {
 /// @brief Gauss-Seidel preconditioner setup (first phase, based on sparsity
 /// pattern only)
 ///
+/// @tparam ExecSpaceIn This kernels execution space type.
 /// @tparam KernelHandle A specialization of
 /// KokkosKernels::Experimental::KokkosKernelsHandle
 /// @tparam lno_row_view_t_ The matrix's rowmap type
 /// @tparam lno_nnz_view_t_ The matrix's entries type
+/// @param exec_space_in The execution space instance this kernel will be run
+/// on.
 /// @param handle KernelHandle instance
 /// @param num_rows Number of rows in the matrix
 /// @param num_cols Number of columns in the matrix
@@ -42,9 +45,9 @@ namespace Experimental {
 /// num_rows</tt> submatrix of A is structurally symmetric
 /// @pre   <tt>handle->create_gs_handle(...)</tt> has been called previously
 ///
-template <typename KernelHandle, typename lno_row_view_t_,
+template <typename ExecSpaceIn, typename KernelHandle, typename lno_row_view_t_,
           typename lno_nnz_view_t_>
-void gauss_seidel_symbolic(KernelHandle *handle,
+void gauss_seidel_symbolic(ExecSpaceIn &exec_space_in, KernelHandle *handle,
                            typename KernelHandle::const_nnz_lno_t num_rows,
                            typename KernelHandle::const_nnz_lno_t num_cols,
                            lno_row_view_t_ row_map, lno_nnz_view_t_ entries,
@@ -95,11 +98,41 @@ void gauss_seidel_symbolic(KernelHandle *handle,
   using namespace KokkosSparse::Impl;
 
   GAUSS_SEIDEL_SYMBOLIC<
-      const_handle_type, Internal_alno_row_view_t_,
-      Internal_alno_nnz_view_t_>::gauss_seidel_symbolic(&tmp_handle, num_rows,
+      ExecSpaceIn, const_handle_type, Internal_alno_row_view_t_,
+      Internal_alno_nnz_view_t_>::gauss_seidel_symbolic(exec_space_in,
+                                                        &tmp_handle, num_rows,
                                                         num_cols, const_a_r,
                                                         const_a_l,
                                                         is_graph_symmetric);
+}
+
+///
+/// @brief Gauss-Seidel preconditioner setup (first phase, based on sparsity
+/// pattern only)
+///
+/// @tparam KernelHandle A specialization of
+/// KokkosKernels::Experimental::KokkosKernelsHandle
+/// @tparam lno_row_view_t_ The matrix's rowmap type
+/// @tparam lno_nnz_view_t_ The matrix's entries type
+/// @param handle KernelHandle instance
+/// @param num_rows Number of rows in the matrix
+/// @param num_cols Number of columns in the matrix
+/// @param row_map The matrix's rowmap
+/// @param entries The matrix's entries
+/// @param is_graph_symmetric Whether the upper-left <tt>num_rows x
+/// num_rows</tt> submatrix of A is structurally symmetric
+/// @pre   <tt>handle->create_gs_handle(...)</tt> has been called previously
+///
+template <typename KernelHandle, typename lno_row_view_t_,
+          typename lno_nnz_view_t_>
+void gauss_seidel_symbolic(KernelHandle *handle,
+                           typename KernelHandle::const_nnz_lno_t num_rows,
+                           typename KernelHandle::const_nnz_lno_t num_cols,
+                           lno_row_view_t_ row_map, lno_nnz_view_t_ entries,
+                           bool is_graph_symmetric = true) {
+  auto my_exec_space = handle->get_gs_handle()->get_execution_space();
+  gauss_seidel_symbolic(my_exec_space, handle, num_rows, num_cols, row_map,
+                        entries, is_graph_symmetric);
 }
 
 ///

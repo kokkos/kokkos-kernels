@@ -148,6 +148,18 @@ class GaussSeidelHandle {
   bool is_symbolic_called() const { return this->called_symbolic; }
   bool is_numeric_called() const { return this->called_numeric; }
 
+  template <class ExecSpaceIn>
+  void set_execution_space(const ExecSpaceIn exec_space_in) {
+    static bool is_set = false;
+    if (!is_set) {
+      static_assert(std::is_same<ExecSpaceIn, HandleExecSpace>::value,
+                    "The type of exec_space_in should be the same as "
+                    "GaussSeidelHandle::HandleExecSpace");
+      this->execution_space = exec_space_in;
+    }
+    is_set = true;
+  }
+
   void set_algorithm_type(const GSAlgorithm sgs_algo) {
     this->algorithm_type  = sgs_algo;
     this->called_symbolic = false;
