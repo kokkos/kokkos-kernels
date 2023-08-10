@@ -805,24 +805,14 @@ void test_gauss_seidel_streams_rank1(
 
   // Check result
   for (int i = 0; i < nstreams; i++) {
-    KokkosBlas::axpby(one, solution_x_v[i], -one, x_vector_v[i]);
-    mag_t result_norm_res = KokkosBlas::nrm2(x_vector_v[i]);
+    KokkosBlas::axpby(instances[i], one, solution_x_v[i], -one, x_vector_v[i]);
+    mag_t result_norm_res = KokkosBlas::nrm2(instances[i], x_vector_v[i]);
     std::string info      = "on stream_idx: " + std::to_string(i);
     EXPECT_LT(result_norm_res, initial_norm_res_v[i]) << info;
     kh_v[i].destroy_gs_handle();
   }
 }
 
-#if 0
-    lno_t numRows,
-    size_type nnz,
-    lno_t bandwidth,
-    lno_t row_size_variance,
-    bool symmetric,
-    double omega,
-    KokkosGraph::ColoringAlgorithm coloringAlgo = KokkosGraph::COLORING_DEFAULT,
-    int nstreams = 1
-#endif
 #define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                                    \
   TEST_F(                                                                                              \
       TestCategory,                                                                                    \
