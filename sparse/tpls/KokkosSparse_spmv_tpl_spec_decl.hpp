@@ -606,6 +606,8 @@ inline void spmv_mkl(sparse_operation_t op, Kokkos::complex<double> alpha,
       beta_mkl, reinterpret_cast<MKL_Complex16*>(y)));
 }
 
+// Note: classic MKL runs on Serial/OpenMP but can't use our execution space
+// instances
 #define KOKKOSSPARSE_SPMV_MKL(SCALAR, EXECSPACE, COMPILE_LIBRARY)              \
   template <>                                                                  \
   struct SPMV<                                                                 \
@@ -628,15 +630,15 @@ inline void spmv_mkl(sparse_operation_t op, Kokkos::complex<double> alpha,
     using coefficient_type = typename YVector::non_const_value_type;           \
     using Controls         = KokkosKernels::Experimental::Controls;            \
                                                                                \
-    static void spmv(const EXECSPACE& exec, const Controls&,                   \
-                     const char mode[], const coefficient_type& alpha,         \
-                     const AMatrix& A, const XVector& x,                       \
-                     const coefficient_type& beta, const YVector& y) {         \
+    static void spmv(const EXECSPACE&, const Controls&, const char mode[],     \
+                     const coefficient_type& alpha, const AMatrix& A,          \
+                     const XVector& x, const coefficient_type& beta,           \
+                     const YVector& y) {                                       \
       std::string label = "KokkosSparse::spmv[TPL_MKL," +                      \
                           Kokkos::ArithTraits<SCALAR>::name() + "]";           \
       Kokkos::Profiling::pushRegion(label);                                    \
-      spmv_mkl(exec, mode_kk_to_mkl(mode[0]), alpha, beta, A.numRows(),        \
-               A.numCols(), A.graph.row_map.data(), A.graph.entries.data(),    \
+      spmv_mkl(mode_kk_to_mkl(mode[0]), alpha, beta, A.numRows(), A.numCols(), \
+               A.graph.row_map.data(), A.graph.entries.data(),                 \
                A.values.data(), x.data(), y.data());                           \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
@@ -754,7 +756,7 @@ struct spmv_onemkl_wrapper<true> {
 
 #define KOKKOSSPARSE_SPMV_ONEMKL(SCALAR, ORDINAL, MEMSPACE, COMPILE_LIBRARY)  \
   template <>                                                                 \
-  struct SPMV<SCALAR const, ORDINAL const, Kokkos::Experimental::SYCL,        \
+  struct SPMV<Kokkos::Experimental::SYCL, SCALAR const, ORDINAL const,        \
               Kokkos::Device<Kokkos::Experimental::SYCL, MEMSPACE>,           \
               Kokkos::MemoryTraits<Kokkos::Unmanaged>, ORDINAL const,         \
               SCALAR const*, Kokkos::LayoutLeft,                              \
