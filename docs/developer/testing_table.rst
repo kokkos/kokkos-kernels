@@ -14,6 +14,7 @@ The following is a description of abbreviations used throughout the testing tabl
 * REL: CMake release build type
 * DBG: CMake debug build type
 * BCHK: Kokkos core bounds checking
+* NOETI: No default ETI types included
 * UVM: Unified Memory (Cuda)
 
 The following is a description of column headings in the testing table.
@@ -107,7 +108,7 @@ The following is a description of column headings in the testing table.
       * int, `size_t`
       * LayoutLeft, LayoutRight
 
-    * * `PR_SKX_GNU1020_OPENMP_LEFT_REL`
+    * * `PR_SKX_GNU1020_OPENMP_LEFT_REL_NOETI`
       * Skx
       * GNU 10.2.0
       * OpenMP
