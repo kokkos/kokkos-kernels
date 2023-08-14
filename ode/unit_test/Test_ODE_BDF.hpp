@@ -162,15 +162,15 @@ struct BDFSolve_wrapper {
         rhs(rhs_),
         update(update_),
         y_vecs(y_vecs_),
-	kstack(kstack_),
+        kstack(kstack_),
         temp(temp_),
         jac(jac_) {}
 
   KOKKOS_FUNCTION
   void operator()(const int /*idx*/) const {
-    KokkosODE::Experimental::BDF<bdf_type>::Solve(my_ode, tstart, tend,
-                                                  num_steps, y_old, y_new, rhs,
-                                                  update, y_vecs, kstack, temp, jac);
+    KokkosODE::Experimental::BDF<bdf_type>::Solve(
+        my_ode, tstart, tend, num_steps, y_old, y_new, rhs, update, y_vecs,
+        kstack, temp, jac);
   }
 };
 
@@ -434,29 +434,35 @@ struct BDFSolve_parallel {
         rhs(rhs_),
         update(update_),
         y_vecs(y_vecs_),
-	kstack(kstack_),
+        kstack(kstack_),
         temp(temp_),
         jac(jac_) {}
 
   KOKKOS_FUNCTION
   void operator()(const int idx) const {
     auto local_y_old = Kokkos::subview(
-        y_old, Kokkos::pair<int, int>(my_ode.neqs * idx, my_ode.neqs * (idx + 1)));
+        y_old,
+        Kokkos::pair<int, int>(my_ode.neqs * idx, my_ode.neqs * (idx + 1)));
     auto local_y_new = Kokkos::subview(
-        y_new, Kokkos::pair<int, int>(my_ode.neqs * idx, my_ode.neqs * (idx + 1)));
+        y_new,
+        Kokkos::pair<int, int>(my_ode.neqs * idx, my_ode.neqs * (idx + 1)));
     auto local_rhs = Kokkos::subview(
-        rhs, Kokkos::pair<int, int>(my_ode.neqs * idx, my_ode.neqs * (idx + 1)));
+        rhs,
+        Kokkos::pair<int, int>(my_ode.neqs * idx, my_ode.neqs * (idx + 1)));
     auto local_update = Kokkos::subview(
-        update, Kokkos::pair<int, int>(my_ode.neqs * idx, my_ode.neqs * (idx + 1)));
+        update,
+        Kokkos::pair<int, int>(my_ode.neqs * idx, my_ode.neqs * (idx + 1)));
 
     auto local_y_vecs = Kokkos::subview(
-        y_vecs, Kokkos::pair<int, int>(my_ode.neqs * idx, my_ode.neqs * (idx + 1)),
+        y_vecs,
+        Kokkos::pair<int, int>(my_ode.neqs * idx, my_ode.neqs * (idx + 1)),
         Kokkos::ALL());
     auto local_kstack = Kokkos::subview(
         kstack, Kokkos::ALL(),
-	Kokkos::pair<int, int>(my_ode.neqs * idx, my_ode.neqs * (idx + 1)));
+        Kokkos::pair<int, int>(my_ode.neqs * idx, my_ode.neqs * (idx + 1)));
     auto local_temp = Kokkos::subview(
-        temp, Kokkos::pair<int, int>(my_ode.neqs * idx, my_ode.neqs * (idx + 1)),
+        temp,
+        Kokkos::pair<int, int>(my_ode.neqs * idx, my_ode.neqs * (idx + 1)),
         Kokkos::ALL());
     auto local_jac = Kokkos::subview(
         jac, Kokkos::pair<int, int>(my_ode.neqs * idx, my_ode.neqs * (idx + 1)),
@@ -487,7 +493,7 @@ void test_BDF_parallel() {
 
   // Test BDF5
   mv_type y_vecs("history vectors", mySys.neqs * num_solves, 5),
-    kstack("Startup RK vectors", 6, mySys.neqs * num_solves);
+      kstack("Startup RK vectors", 6, mySys.neqs * num_solves);
 
   Kokkos::deep_copy(y0, 10.0);
   Kokkos::deep_copy(y_vecs, 10.0);
