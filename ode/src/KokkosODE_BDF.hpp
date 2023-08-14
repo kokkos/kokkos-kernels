@@ -83,7 +83,7 @@ struct BDF {
       const ode_type& ode, const scalar_type t_start, const scalar_type t_end,
       const int num_steps, const vec_type& y0, const vec_type& y,
       const vec_type& rhs, const vec_type& update, const mv_type& y_vecs,
-      const mat_type& temp, const mat_type& jac) {
+      const mv_type& kstack, const mat_type& temp, const mat_type& jac) {
     const table_type table;
 
     const double dt = (t_end - t_start) / num_steps;
@@ -103,7 +103,7 @@ struct BDF {
     KokkosODE::Experimental::ODE_params params(table.order - 1);
     for (int stepIdx = 0; stepIdx < init_steps; ++stepIdx) {
       KokkosODE::Experimental::RungeKutta<RK_type::RKF45>::Solve(
-          ode, params, t, t + dt, y0, y, update, temp);
+          ode, params, t, t + dt, y0, y, update, kstack);
 
       for (int eqIdx = 0; eqIdx < ode.neqs; ++eqIdx) {
         y_vecs(eqIdx, stepIdx + 1) = y(eqIdx);
