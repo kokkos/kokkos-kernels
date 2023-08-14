@@ -300,8 +300,6 @@ template <class execution_space, class AlphaType, class AMatrix, class XVector,
           class BetaType, class YVector,
           typename std::enable_if<KokkosSparse::Experimental::is_bsr_matrix<
               AMatrix>::value>::type* = nullptr>
-template <class execution_space, class AlphaType, class AMatrix, class XVector,
-          class BetaType, class YVector>
 void spmv(const execution_space& exec,
           KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
@@ -509,8 +507,6 @@ void spmv(const execution_space& exec,
   }
 }
 
-template <class AlphaType, class AMatrix, class XVector, class BetaType,
-          class YVector>
 template <class AlphaType, class AMatrix, class XVector, class BetaType,
           class YVector,
           typename std::enable_if<KokkosSparse::Experimental::is_bsr_matrix<
