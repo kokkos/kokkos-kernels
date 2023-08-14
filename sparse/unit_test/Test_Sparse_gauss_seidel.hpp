@@ -778,7 +778,7 @@ void test_gauss_seidel_streams_rank1(
         Kokkos::view_alloc(Kokkos::WithoutInitializing, "X (correct)"), nv);
     solution_x_v[i] = solution_x_tmp;
     create_random_x_vector(solution_x_v[i]);
-    initial_norm_res_v[i] = KokkosBlas::nrm2(solution_x_v[i]);
+    initial_norm_res_v[i] = KokkosBlas::nrm2(instances[i], solution_x_v[i]);
     y_vector_v[i] = create_random_y_vector(input_mat_v[i], solution_x_v[i]);
     // GS_DEFAULT is GS_TEAM on CUDA and GS_PERMUTED on other spaces, and the
     // behavior of each algorithm _should be_ the same on every execution space,
