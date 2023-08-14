@@ -38,10 +38,10 @@ crs2coo
 
 spmv
 ----
-.. doxygenfunction:: KokkosSparse::spmv(KokkosKernels::Experimental::Controls controls, const char mode[], const AlphaType &alpha, const AMatrix &A, const XVector &x, const BetaType &beta, const YVector &y, const RANK_ONE)
-.. doxygenfunction:: KokkosSparse::spmv(KokkosKernels::Experimental::Controls controls, const char mode[], const AlphaType &alpha, const AMatrix &A, const XVector &x, const BetaType &beta, const YVector &y, const RANK_TWO)
-.. doxygenfunction:: KokkosSparse::spmv(const char mode[], const AlphaType &alpha, const AMatrix &A, const XVector &x, const BetaType &beta, const YVector &y)
-
+.. doxygenfunction:: KokkosSparse::spmv(KokkosKernels::Experimental::Controls controls, const char mode[], const AlphaType &alpha, const AMatrix &A, const XVector &x, const BetaType &beta, const YVector &y, const RANK_ONE& tag)
+.. doxygenfunction:: KokkosSparse::spmv(const execution_space& exec, KokkosKernels::Experimental::Controls controls, const char mode[], const AlphaType &alpha, const AMatrix &A, const XVector &x, const BetaType &beta, const YVector &y, const RANK_ONE& tag)
+.. doxygenfunction:: KokkosSparse::spmv(KokkosKernels::Experimental::Controls controls, const char mode[], const AlphaType &alpha, const AMatrix &A, const XVector &x, const BetaType &beta, const YVector &y, const RANK_TWO& tag)
+.. doxygenfunction:: KokkosSparse::spmv(const execution_space& exec, KokkosKernels::Experimental::Controls controls, const char mode[], const AlphaType &alpha, const AMatrix &A, const XVector &x, const BetaType &beta, const YVector &y, const RANK_TWO& tag)
 
 trsv
 ----
