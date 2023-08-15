@@ -92,7 +92,3 @@ IF (KOKKOS_ENABLE_THREADS)
   )
 ENDIF ()
 
-#KOKKOSKERNELS_ADD_EXECUTABLE(
-#  old_scalar_parameter
-#  SOURCES scalar_parameter.cpp       
-#  )
