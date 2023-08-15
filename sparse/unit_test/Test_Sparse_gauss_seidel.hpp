@@ -155,9 +155,10 @@ void run_gauss_seidel_streams(
     gauss_seidel_symbolic(instances[i], &kh[i], input_mat[i].numRows(),
                           input_mat[i].numCols(), input_mat[i].graph.row_map,
                           input_mat[i].graph.entries, is_symmetric_graph);
-    gauss_seidel_numeric(&kh[i], input_mat[i].numRows(), input_mat[i].numCols(),
-                         input_mat[i].graph.row_map, input_mat[i].graph.entries,
-                         input_mat[i].values, is_symmetric_graph);
+    gauss_seidel_numeric(instances[i], &kh[i], input_mat[i].numRows(),
+                         input_mat[i].numCols(), input_mat[i].graph.row_map,
+                         input_mat[i].graph.entries, input_mat[i].values,
+                         is_symmetric_graph);
   }
 
   const int apply_count = 2;

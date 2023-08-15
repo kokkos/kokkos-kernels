@@ -135,20 +135,23 @@ struct GAUSS_SEIDEL_SYMBOLIC {
 };
 
 template <
-    class KernelHandle, KokkosSparse::SparseMatrixFormat format,
-    class a_size_view_t_, class a_lno_view_t, class a_scalar_view_t,
+    class ExecSpaceIn, class KernelHandle,
+    KokkosSparse::SparseMatrixFormat format, class a_size_view_t_,
+    class a_lno_view_t, class a_scalar_view_t,
     bool tpl_spec_avail = gauss_seidel_numeric_tpl_spec_avail<
         KernelHandle, a_size_view_t_, a_lno_view_t, a_scalar_view_t>::value,
     bool eti_spec_avail = gauss_seidel_numeric_eti_spec_avail<
         KernelHandle, a_size_view_t_, a_lno_view_t, a_scalar_view_t>::value>
 struct GAUSS_SEIDEL_NUMERIC {
   static void gauss_seidel_numeric(
-      KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
+      ExecSpaceIn &exec_space_in, KernelHandle *handle,
+      typename KernelHandle::const_nnz_lno_t num_rows,
       typename KernelHandle::const_nnz_lno_t num_cols, a_size_view_t_ row_map,
       a_lno_view_t entries, a_scalar_view_t values, bool is_graph_symmetric);
 
   static void gauss_seidel_numeric(
-      KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
+      ExecSpaceIn &exec_space_in, KernelHandle *handle,
+      typename KernelHandle::const_nnz_lno_t num_rows,
       typename KernelHandle::const_nnz_lno_t num_cols, a_size_view_t_ row_map,
       a_lno_view_t entries, a_scalar_view_t values,
       a_scalar_view_t given_inverse_diagonal, bool is_graph_symmetric);
@@ -212,17 +215,20 @@ struct GAUSS_SEIDEL_SYMBOLIC<ExecSpaceIn, KernelHandle, a_size_view_t_,
   }
 };
 
-template <class KernelHandle, KokkosSparse::SparseMatrixFormat format,
-          class a_size_view_t_, class a_lno_view_t, class a_scalar_view_t>
-struct GAUSS_SEIDEL_NUMERIC<KernelHandle, format, a_size_view_t_, a_lno_view_t,
-                            a_scalar_view_t, false,
+template <class ExecSpaceIn, class KernelHandle,
+          KokkosSparse::SparseMatrixFormat format, class a_size_view_t_,
+          class a_lno_view_t, class a_scalar_view_t>
+struct GAUSS_SEIDEL_NUMERIC<ExecSpaceIn, KernelHandle, format, a_size_view_t_,
+                            a_lno_view_t, a_scalar_view_t, false,
                             KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   static void gauss_seidel_numeric(
-      KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
+      ExecSpaceIn &exec_space_in, KernelHandle *handle,
+      typename KernelHandle::const_nnz_lno_t num_rows,
       typename KernelHandle::const_nnz_lno_t num_cols, a_size_view_t_ row_map,
       a_lno_view_t entries, a_scalar_view_t values, bool is_graph_symmetric) {
     Kokkos::Profiling::pushRegion("KokkosSparse::Impl::gauss_seidel_numeric");
     auto gsHandle = handle->get_gs_handle();
+    gsHandle->set_execution_space(exec_space_in);
     if (gsHandle->get_algorithm_type() == GS_CLUSTER) {
       using SGS =
           typename Impl::ClusterGaussSeidel<KernelHandle, a_size_view_t_,
@@ -247,12 +253,14 @@ struct GAUSS_SEIDEL_NUMERIC<KernelHandle, format, a_size_view_t_, a_lno_view_t,
   }
 
   static void gauss_seidel_numeric(
-      KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
+      ExecSpaceIn &exec_space_in, KernelHandle *handle,
+      typename KernelHandle::const_nnz_lno_t num_rows,
       typename KernelHandle::const_nnz_lno_t num_cols, a_size_view_t_ row_map,
       a_lno_view_t entries, a_scalar_view_t values,
       a_scalar_view_t given_inverse_diagonal, bool is_graph_symmetric) {
     Kokkos::Profiling::pushRegion("KokkosSparse::Impl::gauss_seidel_numeric");
     auto gsHandle = handle->get_gs_handle();
+    gsHandle->set_execution_space(exec_space_in);
     if (gsHandle->get_algorithm_type() == GS_CLUSTER) {
       using SGS =
           typename Impl::ClusterGaussSeidel<KernelHandle, a_size_view_t_,
@@ -360,6 +368,7 @@ struct GAUSS_SEIDEL_APPLY<KernelHandle, format, a_size_view_t_, a_lno_view_t,
     SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, \
     MEM_SPACE_TYPE)                                                       \
   extern template struct GAUSS_SEIDEL_NUMERIC<                            \
+      EXEC_SPACE_TYPE,                                                    \
       KokkosKernels::Experimental::KokkosKernelsHandle<                   \
           const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,       \
           EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE>,               \
@@ -375,6 +384,7 @@ struct GAUSS_SEIDEL_APPLY<KernelHandle, format, a_size_view_t_, a_lno_view_t,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
       false, true>;                                                       \
   extern template struct GAUSS_SEIDEL_NUMERIC<                            \
+      EXEC_SPACE_TYPE,                                                    \
       KokkosKernels::Experimental::KokkosKernelsHandle<                   \
           const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,       \
           EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE>,               \
@@ -394,6 +404,7 @@ struct GAUSS_SEIDEL_APPLY<KernelHandle, format, a_size_view_t_, a_lno_view_t,
     SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, \
     MEM_SPACE_TYPE)                                                       \
   template struct GAUSS_SEIDEL_NUMERIC<                                   \
+      EXEC_SPACE_TYPE,                                                    \
       KokkosKernels::Experimental::KokkosKernelsHandle<                   \
           const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,       \
           EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE>,               \
@@ -409,6 +420,7 @@ struct GAUSS_SEIDEL_APPLY<KernelHandle, format, a_size_view_t_, a_lno_view_t,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
       false, true>;                                                       \
   template struct GAUSS_SEIDEL_NUMERIC<                                   \
+      EXEC_SPACE_TYPE,                                                    \
       KokkosKernels::Experimental::KokkosKernelsHandle<                   \
           const OFFSET_TYPE, const ORDINAL_TYPE, const SCALAR_TYPE,       \
           EXEC_SPACE_TYPE, MEM_SPACE_TYPE, MEM_SPACE_TYPE>,               \
