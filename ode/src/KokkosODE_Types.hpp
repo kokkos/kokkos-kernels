@@ -51,7 +51,11 @@ struct ODE_params {
         min_step_size(min_step_size_) {}
 };
 
-enum newton_solver_status { NLS_SUCCESS = 0, MAX_ITER = 1, LIN_SOLVE_FAIL = 2 };
+enum newton_solver_status : int {
+  NLS_SUCCESS    = 0,
+  MAX_ITER       = 1,
+  LIN_SOLVE_FAIL = 2
+};
 
 struct Newton_params {
   int max_iters;
