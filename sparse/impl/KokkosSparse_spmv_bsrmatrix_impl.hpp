@@ -423,9 +423,10 @@ struct BsrMatrixSpMVTensorCoreDispatcher {
   typedef typename XMatrix::value_type XScalar;
 
   template <unsigned X, unsigned Y, unsigned Z>
-  using Dyn = BsrMatrixSpMVTensorCoreFunctor<AMatrix, AFragScalar, XMatrix,
-                                             XFragScalar, YMatrix, YFragScalar,
-                                             FRAG_M, FRAG_N, FRAG_K, X, Y, Z>;
+  using Dyn =
+      BsrMatrixSpMVTensorCoreFunctor<execution_space, AMatrix, AFragScalar,
+                                     XMatrix, XFragScalar, YMatrix, YFragScalar,
+                                     FRAG_M, FRAG_N, FRAG_K, X, Y, Z>;
 
   // to be used when the various matrix types are supported
   static void tag_dispatch(std::true_type, const execution_space &exec,
