@@ -687,9 +687,11 @@ void create_reverse_map(
 
   typedef Kokkos::RangePolicy<MyExecSpace> range_policy_t;
   reverse_map_xadj =
-      reverse_array_type("Reverse Map Xadj", num_reverse_elements + 1);
+      reverse_array_type(Kokkos::view_alloc(my_exec_space, "Reverse Map Xadj"),
+                         num_reverse_elements + 1);
   reverse_map_adj = reverse_array_type(
-      Kokkos::view_alloc(Kokkos::WithoutInitializing, "REVERSE_ADJ"),
+      Kokkos::view_alloc(my_exec_space, Kokkos::WithoutInitializing,
+                         "REVERSE_ADJ"),
       num_forward_elements);
 
   if (num_reverse_elements < MINIMUM_TO_ATOMIC) {
@@ -703,7 +705,9 @@ void create_reverse_map(
     const reverse_lno_t tmp_reverse_size = (num_reverse_elements + 1)
                                            << multiply_shift_for_scale;
 
-    reverse_array_type tmp_color_xadj("TMP_REVERSE_XADJ", tmp_reverse_size + 1);
+    reverse_array_type tmp_color_xadj(
+        Kokkos::view_alloc(my_exec_space, "TMP_REVERSE_XADJ"),
+        tmp_reverse_size + 1);
 
     Reverse_Map_Scale_Init<forward_array_type, reverse_array_type> rmi(
         forward_map, tmp_color_xadj, multiply_shift_for_scale,
@@ -714,7 +718,7 @@ void create_reverse_map(
     my_exec_space.fence();
 
     inclusive_parallel_prefix_sum<reverse_array_type, MyExecSpace>(
-        tmp_reverse_size + 1, tmp_color_xadj);
+        my_exec_space, tmp_reverse_size + 1, tmp_color_xadj);
     my_exec_space.fence();
 
     Kokkos::parallel_for(
@@ -734,7 +738,8 @@ void create_reverse_map(
   // atomic implementation.
   {
     reverse_array_type tmp_color_xadj(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "TMP_REVERSE_XADJ"),
+        Kokkos::view_alloc(my_exec_space, Kokkos::WithoutInitializing,
+                           "TMP_REVERSE_XADJ"),
         num_reverse_elements + 1);
 
     Reverse_Map_Init<forward_array_type, reverse_array_type> rmi(
@@ -747,9 +752,8 @@ void create_reverse_map(
     // print_1Dview(reverse_map_xadj);
 
     inclusive_parallel_prefix_sum<reverse_array_type, MyExecSpace>(
-        num_reverse_elements + 1, reverse_map_xadj);
-    my_exec_space.fence();
-    Kokkos::deep_copy(tmp_color_xadj, reverse_map_xadj);
+        my_exec_space, num_reverse_elements + 1, reverse_map_xadj);
+    Kokkos::deep_copy(my_exec_space, tmp_color_xadj, reverse_map_xadj);
     my_exec_space.fence();
     Fill_Reverse_Map<forward_array_type, reverse_array_type> frm(
         forward_map, tmp_color_xadj, reverse_map_adj);
@@ -804,16 +808,28 @@ struct PermuteVector {
 
 template <typename value_array_type, typename out_value_array_type,
           typename idx_array_type, typename MyExecSpace>
+void permute_vector(MyExecSpace my_exec_space,
+                    typename idx_array_type::value_type num_elements,
+                    idx_array_type &old_to_new_index_map,
+                    value_array_type &old_vector,
+                    out_value_array_type &new_vector) {
+  using range_policy_t = Kokkos::RangePolicy<MyExecSpace>;
+
+  Kokkos::parallel_for(
+      "KokkosKernels::Common::PermuteVector",
+      range_policy_t(my_exec_space, 0, num_elements),
+      PermuteVector<value_array_type, out_value_array_type, idx_array_type>(
+          old_vector, new_vector, old_to_new_index_map));
+}
+
+template <typename value_array_type, typename out_value_array_type,
+          typename idx_array_type, typename MyExecSpace>
 void permute_vector(typename idx_array_type::value_type num_elements,
                     idx_array_type &old_to_new_index_map,
                     value_array_type &old_vector,
                     out_value_array_type &new_vector) {
-  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
-
-  Kokkos::parallel_for(
-      "KokkosKernels::Common::PermuteVector", my_exec_space(0, num_elements),
-      PermuteVector<value_array_type, out_value_array_type, idx_array_type>(
-          old_vector, new_vector, old_to_new_index_map));
+  permute_vector(MyExecSpace(), num_elements, old_to_new_index_map, old_vector,
+                 new_vector);
 }
 
 template <typename value_array_type, typename out_value_array_type,
@@ -849,17 +865,28 @@ struct PermuteBlockVector {
 
 template <typename value_array_type, typename out_value_array_type,
           typename idx_array_type, typename MyExecSpace>
+void permute_block_vector(MyExecSpace my_exec_space,
+                          typename idx_array_type::value_type num_elements,
+                          int block_size, idx_array_type &old_to_new_index_map,
+                          value_array_type &old_vector,
+                          out_value_array_type &new_vector) {
+  using range_policy_t = Kokkos::RangePolicy<MyExecSpace>;
+  Kokkos::parallel_for(
+      "KokkosKernels::Common::PermuteVector",
+      range_policy_t(my_exec_space, 0, num_elements),
+      PermuteBlockVector<value_array_type, out_value_array_type,
+                         idx_array_type>(block_size, old_vector, new_vector,
+                                         old_to_new_index_map));
+}
+
+template <typename value_array_type, typename out_value_array_type,
+          typename idx_array_type, typename MyExecSpace>
 void permute_block_vector(typename idx_array_type::value_type num_elements,
                           int block_size, idx_array_type &old_to_new_index_map,
                           value_array_type &old_vector,
                           out_value_array_type &new_vector) {
-  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
-
-  Kokkos::parallel_for(
-      "KokkosKernels::Common::PermuteVector", my_exec_space(0, num_elements),
-      PermuteBlockVector<value_array_type, out_value_array_type,
-                         idx_array_type>(block_size, old_vector, new_vector,
-                                         old_to_new_index_map));
+  permute_block_vector(MyExecSpace(), num_elements, block_size,
+                       old_to_new_index_map, old_vector, new_vector);
 }
 
 // TODO BMK: clean this up by removing 1st argument. It is unused but
@@ -1301,8 +1328,7 @@ void kk_view_reduce_max_row_size(const size_t num_rows,
                                  const size_type *rowmap_view_begins,
                                  const size_type *rowmap_view_ends,
                                  size_type &max_row_size) {
-  MyExecSpace my_exec_space;
-  return kk_view_reduce_max_row_size(my_exec_space, num_rows,
+  return kk_view_reduce_max_row_size(MyExecSpace(), num_rows,
                                      rowmap_view_begins, rowmap_view_ends,
                                      max_row_size);
 }

@@ -142,10 +142,6 @@ inline void kk_exclusive_parallel_prefix_sum(
   kk_exclusive_parallel_prefix_sum(MyExecSpace(), num_elements, arr, finalSum);
 }
 
-template <typename forward_array_type, typename MyExecSpace>
-void kk_inclusive_parallel_prefix_sum(MyExecSpace my_exec_space,
-                                      forward_array_type arr) {}
-
 ///
 /// \brief Function performs the inclusive parallel prefix sum. That is each
 ///        entry holds the sum until itself including itself.

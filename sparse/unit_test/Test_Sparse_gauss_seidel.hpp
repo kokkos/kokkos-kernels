@@ -166,31 +166,31 @@ void run_gauss_seidel_streams(
     switch (apply_type) {
       case 0:
         symmetric_gauss_seidel_apply(
-            &kh[i], input_mat[i].numRows(), input_mat[i].numCols(),
-            input_mat[i].graph.row_map, input_mat[i].graph.entries,
-            input_mat[i].values, x_vector[i], y_vector[i], false, true, omega,
-            apply_count);
+            instances[i], &kh[i], input_mat[i].numRows(),
+            input_mat[i].numCols(), input_mat[i].graph.row_map,
+            input_mat[i].graph.entries, input_mat[i].values, x_vector[i],
+            y_vector[i], false, true, omega, apply_count);
         break;
       case 1:
         forward_sweep_gauss_seidel_apply(
-            &kh[i], input_mat[i].numRows(), input_mat[i].numCols(),
-            input_mat[i].graph.row_map, input_mat[i].graph.entries,
-            input_mat[i].values, x_vector[i], y_vector[i], false, true, omega,
-            apply_count);
+            instances[i], &kh[i], input_mat[i].numRows(),
+            input_mat[i].numCols(), input_mat[i].graph.row_map,
+            input_mat[i].graph.entries, input_mat[i].values, x_vector[i],
+            y_vector[i], false, true, omega, apply_count);
         break;
       case 2:
         backward_sweep_gauss_seidel_apply(
-            &kh[i], input_mat[i].numRows(), input_mat[i].numCols(),
-            input_mat[i].graph.row_map, input_mat[i].graph.entries,
-            input_mat[i].values, x_vector[i], y_vector[i], false, true, omega,
-            apply_count);
+            instances[i], &kh[i], input_mat[i].numRows(),
+            input_mat[i].numCols(), input_mat[i].graph.row_map,
+            input_mat[i].graph.entries, input_mat[i].values, x_vector[i],
+            y_vector[i], false, true, omega, apply_count);
         break;
       default:
         symmetric_gauss_seidel_apply(
-            &kh[i], input_mat[i].numRows(), input_mat[i].numCols(),
-            input_mat[i].graph.row_map, input_mat[i].graph.entries,
-            input_mat[i].values, x_vector[i], y_vector[i], false, true, omega,
-            apply_count);
+            instances[i], &kh[i], input_mat[i].numRows(),
+            input_mat[i].numCols(), input_mat[i].graph.row_map,
+            input_mat[i].graph.entries, input_mat[i].values, x_vector[i],
+            y_vector[i], false, true, omega, apply_count);
         break;
     }
   }
@@ -779,7 +779,7 @@ void test_gauss_seidel_streams_rank1(
         Kokkos::view_alloc(Kokkos::WithoutInitializing, "X (correct)"), nv);
     solution_x_v[i] = solution_x_tmp;
     create_random_x_vector(solution_x_v[i]);
-    initial_norm_res_v[i] = KokkosBlas::nrm2(instances[i], solution_x_v[i]);
+    initial_norm_res_v[i] = KokkosBlas::nrm2(solution_x_v[i]);
     y_vector_v[i] = create_random_y_vector(input_mat_v[i], solution_x_v[i]);
     // GS_DEFAULT is GS_TEAM on CUDA and GS_PERMUTED on other spaces, and the
     // behavior of each algorithm _should be_ the same on every execution space,
@@ -798,23 +798,26 @@ void test_gauss_seidel_streams_rank1(
   for (int apply_type = 0; apply_type < apply_count; ++apply_type) {
     Kokkos::Timer timer1;
 
-    for (int i = 0; i < nstreams; i++) Kokkos::deep_copy(x_vector_v[i], zero);
+    for (int i = 0; i < nstreams; i++)
+      Kokkos::deep_copy(instances[i], x_vector_v[i], zero);
+    for (int i = 0; i < nstreams; i++) instances[i].fence();
 
     run_gauss_seidel_streams(instances, kh_v, input_mat_v, x_vector_v,
                              y_vector_v, symmetric, m_omega, apply_type,
                              nstreams);
     // double gs = timer1.seconds();
     // KokkosKernels::Impl::print_1Dview(x_vector);
+    for (int i = 0; i < nstreams; i++) {
+      instances[i].fence();  // Wait for apply to finish updating x_vector
+      KokkosBlas::axpby(instances[i], one, solution_x_v[i], -one,
+                        x_vector_v[i]);
+      mag_t result_norm_res = KokkosBlas::nrm2(instances[i], x_vector_v[i]);
+      std::string info      = "on stream_idx: " + std::to_string(i);
+      EXPECT_LT(result_norm_res, initial_norm_res_v[i]) << info;
+    }
   }
 
-  // Check result
-  for (int i = 0; i < nstreams; i++) {
-    KokkosBlas::axpby(instances[i], one, solution_x_v[i], -one, x_vector_v[i]);
-    mag_t result_norm_res = KokkosBlas::nrm2(instances[i], x_vector_v[i]);
-    std::string info      = "on stream_idx: " + std::to_string(i);
-    EXPECT_LT(result_norm_res, initial_norm_res_v[i]) << info;
-    kh_v[i].destroy_gs_handle();
-  }
+  for (int i = 0; i < nstreams; i++) kh_v[i].destroy_gs_handle();
 }
 
 #define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                                    \

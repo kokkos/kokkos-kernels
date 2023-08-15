@@ -505,8 +505,13 @@ void block_gauss_seidel_numeric(
   }
   gsHandle->set_block_size(block_size);
 
-  gauss_seidel_numeric<format>(exec_space_in, handle, num_rows, num_cols,
-                               row_map, entries, values, is_graph_symmetric);
+  gauss_seidel_numeric<ExecSpaceIn, format>(exec_space_in, handle, num_rows,
+                                            num_cols, row_map, entries, values,
+                                            is_graph_symmetric);
+
+  /*   gauss_seidel_numeric(my_exec_space, handle, num_rows, num_cols, row_map,
+                         entries, values, given_inverse_diagonal,
+                         is_graph_symmetric); */
 }
 
 ///
@@ -540,14 +545,16 @@ void block_gauss_seidel_numeric(
     lno_nnz_view_t_ entries, scalar_nnz_view_t_ values,
     bool is_graph_symmetric = true) {
   auto my_exec_space = handle->get_gs_handle()->get_execution_space();
-  gauss_seidel_numeric(my_exec_space, handle, num_rows, num_cols, row_map,
-                       entries, values, is_graph_symmetric);
+  block_gauss_seidel_numeric(my_exec_space, handle, num_rows, num_cols,
+                             block_size, row_map, entries, values,
+                             is_graph_symmetric);
 }
 
 ///
 /// @brief Apply symmetric (forward + backward) Gauss-Seidel preconditioner to
 /// system AX=Y
 ///
+/// @tparam ExecSpaceIn This kernels execution space type.
 /// @tparam format The matrix storage format, CRS or BSR
 /// @tparam KernelHandle A specialization of
 /// KokkosKernels::Experimental::KokkosKernelsHandle
@@ -558,6 +565,8 @@ void block_gauss_seidel_numeric(
 /// May be rank-1 or rank-2 View.
 /// @tparam y_scalar_view_t The type of the Y (right-hand side) vector. May be
 /// rank-1 or rank-2 View.
+/// @param exec_space_in The execution space instance this kernel will be run
+/// on.
 /// @param handle handle A KokkosKernelsHandle instance
 /// @param num_rows Number of rows in the matrix
 /// @param num_cols Number of columns in the matrix
@@ -574,13 +583,15 @@ void block_gauss_seidel_numeric(
 /// @pre   <tt>y_rhs_input_vec.extent(0) == num_rows</tt>
 /// @pre   <tt>x_lhs_output_vec.extent(1) == y_rhs_input_vec.extent(1)</tt>
 ///
-template <KokkosSparse::SparseMatrixFormat format =
+template <class ExecSpaceIn,
+          KokkosSparse::SparseMatrixFormat format =
               KokkosSparse::SparseMatrixFormat::CRS,
           typename KernelHandle, typename lno_row_view_t_,
           typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
           typename x_scalar_view_t, typename y_scalar_view_t>
 void symmetric_gauss_seidel_apply(
-    KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
+    ExecSpaceIn &exec_space_in, KernelHandle *handle,
+    typename KernelHandle::const_nnz_lno_t num_rows,
     typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map,
     lno_nnz_view_t_ entries, scalar_nnz_view_t_ values,
     x_scalar_view_t x_lhs_output_vec, y_scalar_view_t y_rhs_input_vec,
@@ -696,13 +707,63 @@ void symmetric_gauss_seidel_apply(
 
   using namespace KokkosSparse::Impl;
 
-  GAUSS_SEIDEL_APPLY<const_handle_type, format, Internal_alno_row_view_t_,
-                     Internal_alno_nnz_view_t_, Internal_ascalar_nnz_view_t_,
-                     Internal_xscalar_nnz_view_t_,
+  GAUSS_SEIDEL_APPLY<ExecSpaceIn, const_handle_type, format,
+                     Internal_alno_row_view_t_, Internal_alno_nnz_view_t_,
+                     Internal_ascalar_nnz_view_t_, Internal_xscalar_nnz_view_t_,
                      Internal_yscalar_nnz_view_t_>::
-      gauss_seidel_apply(&tmp_handle, num_rows, num_cols, const_a_r, const_a_l,
-                         const_a_v, nonconst_x_v, const_y_v, init_zero_x_vector,
-                         update_y_vector, omega, numIter, true, true);
+      gauss_seidel_apply(exec_space_in, &tmp_handle, num_rows, num_cols,
+                         const_a_r, const_a_l, const_a_v, nonconst_x_v,
+                         const_y_v, init_zero_x_vector, update_y_vector, omega,
+                         numIter, true, true);
+}
+
+///
+/// @brief Apply symmetric (forward + backward) Gauss-Seidel preconditioner to
+/// system AX=Y
+///
+/// @tparam format The matrix storage format, CRS or BSR
+/// @tparam KernelHandle A specialization of
+/// KokkosKernels::Experimental::KokkosKernelsHandle
+/// @tparam lno_row_view_t_ The matrix's rowmap type
+/// @tparam lno_nnz_view_t_ The matrix's entries type
+/// @tparam scalar_nnz_view_t_ The matrix's values type
+/// @tparam x_scalar_view_t The type of the X (left-hand side, unknown) vector.
+/// May be rank-1 or rank-2 View.
+/// @tparam y_scalar_view_t The type of the Y (right-hand side) vector. May be
+/// rank-1 or rank-2 View.
+/// @param handle handle A KokkosKernelsHandle instance
+/// @param num_rows Number of rows in the matrix
+/// @param num_cols Number of columns in the matrix
+/// @param row_map The matrix's rowmap
+/// @param entries The matrix's entries
+/// @param values The matrix's values
+/// @param x_lhs_output_vec The X (left-hand side, unknown) vector
+/// @param y_rhs_input_vec The Y (right-hand side) vector
+/// @param init_zero_x_vector Whether to zero out X before applying
+/// @param update_y_vector Whether Y has changed since the last call to apply
+/// @param omega The damping factor for successive over-relaxation
+/// @param numIter How many iterations to run (forward and backward counts as 1)
+/// @pre   <tt>x_lhs_output_vec.extent(0) == num_cols</tt>
+/// @pre   <tt>y_rhs_input_vec.extent(0) == num_rows</tt>
+/// @pre   <tt>x_lhs_output_vec.extent(1) == y_rhs_input_vec.extent(1)</tt>
+///
+template <KokkosSparse::SparseMatrixFormat format =
+              KokkosSparse::SparseMatrixFormat::CRS,
+          typename KernelHandle, typename lno_row_view_t_,
+          typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
+          typename x_scalar_view_t, typename y_scalar_view_t>
+void symmetric_gauss_seidel_apply(
+    KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
+    typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map,
+    lno_nnz_view_t_ entries, scalar_nnz_view_t_ values,
+    x_scalar_view_t x_lhs_output_vec, y_scalar_view_t y_rhs_input_vec,
+    bool init_zero_x_vector, bool update_y_vector,
+    typename KernelHandle::nnz_scalar_t omega, int numIter) {
+  auto my_exec_space = handle->get_gs_handle()->get_execution_space();
+  symmetric_gauss_seidel_apply(my_exec_space, handle, num_rows, num_cols,
+                               row_map, entries, values, x_lhs_output_vec,
+                               y_rhs_input_vec, init_zero_x_vector,
+                               update_y_vector, omega, numIter);
 }
 
 ///
@@ -785,6 +846,8 @@ void symmetric_block_gauss_seidel_apply(
 /// May be rank-1 or rank-2 View.
 /// @tparam y_scalar_view_t The type of the Y (right-hand side) vector. May be
 /// rank-1 or rank-2 View.
+/// @param exec_space_in The execution space instance this kernel will be run
+/// on.
 /// @param handle KernelHandle instance
 /// @param num_rows Number of rows in the matrix
 /// @param num_cols Number of columns in the matrix
@@ -801,13 +864,15 @@ void symmetric_block_gauss_seidel_apply(
 /// @pre   <tt>y_rhs_input_vec.extent(0) == num_rows</tt>
 /// @pre   <tt>x_lhs_output_vec.extent(1) == y_rhs_input_vec.extent(1)</tt>
 ///
-template <KokkosSparse::SparseMatrixFormat format =
+template <class ExecSpaceIn,
+          KokkosSparse::SparseMatrixFormat format =
               KokkosSparse::SparseMatrixFormat::CRS,
           class KernelHandle, typename lno_row_view_t_,
           typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
           typename x_scalar_view_t, typename y_scalar_view_t>
 void forward_sweep_gauss_seidel_apply(
-    KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
+    ExecSpaceIn &exec_space_in, KernelHandle *handle,
+    typename KernelHandle::const_nnz_lno_t num_rows,
     typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map,
     lno_nnz_view_t_ entries, scalar_nnz_view_t_ values,
     x_scalar_view_t x_lhs_output_vec, y_scalar_view_t y_rhs_input_vec,
@@ -925,13 +990,62 @@ void forward_sweep_gauss_seidel_apply(
 
   using namespace KokkosSparse::Impl;
 
-  GAUSS_SEIDEL_APPLY<const_handle_type, format, Internal_alno_row_view_t_,
-                     Internal_alno_nnz_view_t_, Internal_ascalar_nnz_view_t_,
-                     Internal_xscalar_nnz_view_t_,
+  GAUSS_SEIDEL_APPLY<ExecSpaceIn, const_handle_type, format,
+                     Internal_alno_row_view_t_, Internal_alno_nnz_view_t_,
+                     Internal_ascalar_nnz_view_t_, Internal_xscalar_nnz_view_t_,
                      Internal_yscalar_nnz_view_t_>::
-      gauss_seidel_apply(&tmp_handle, num_rows, num_cols, const_a_r, const_a_l,
-                         const_a_v, nonconst_x_v, const_y_v, init_zero_x_vector,
-                         update_y_vector, omega, numIter, true, false);
+      gauss_seidel_apply(exec_space_in, &tmp_handle, num_rows, num_cols,
+                         const_a_r, const_a_l, const_a_v, nonconst_x_v,
+                         const_y_v, init_zero_x_vector, update_y_vector, omega,
+                         numIter, true, false);
+}
+
+///
+/// @brief Apply forward Gauss-Seidel preconditioner to system AX=Y
+///
+/// @tparam format The matrix storage format, CRS or BSR
+/// @tparam KernelHandle A specialization of
+/// KokkosKernels::Experimental::KokkosKernelsHandle
+/// @tparam lno_row_view_t_ The matrix's rowmap type
+/// @tparam lno_nnz_view_t_ The matrix's entries type
+/// @tparam scalar_nnz_view_t_ The matrix's values type
+/// @tparam x_scalar_view_t The type of the X (left-hand side, unknown) vector.
+/// May be rank-1 or rank-2 View.
+/// @tparam y_scalar_view_t The type of the Y (right-hand side) vector. May be
+/// rank-1 or rank-2 View.
+/// @param handle KernelHandle instance
+/// @param num_rows Number of rows in the matrix
+/// @param num_cols Number of columns in the matrix
+/// @param row_map The matrix's rowmap
+/// @param entries The matrix's entries
+/// @param values The matrix's values
+/// @param x_lhs_output_vec The X (left-hand side, unknown) vector
+/// @param y_rhs_input_vec The Y (right-hand side) vector
+/// @param init_zero_x_vector Whether to zero out X before applying
+/// @param update_y_vector Whether Y has changed since the last call to apply
+/// @param omega The damping factor for successive over-relaxation
+/// @param numIter How many iterations to run
+/// @pre   <tt>x_lhs_output_vec.extent(0) == num_cols</tt>
+/// @pre   <tt>y_rhs_input_vec.extent(0) == num_rows</tt>
+/// @pre   <tt>x_lhs_output_vec.extent(1) == y_rhs_input_vec.extent(1)</tt>
+///
+template <KokkosSparse::SparseMatrixFormat format =
+              KokkosSparse::SparseMatrixFormat::CRS,
+          class KernelHandle, typename lno_row_view_t_,
+          typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
+          typename x_scalar_view_t, typename y_scalar_view_t>
+void forward_sweep_gauss_seidel_apply(
+    KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
+    typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map,
+    lno_nnz_view_t_ entries, scalar_nnz_view_t_ values,
+    x_scalar_view_t x_lhs_output_vec, y_scalar_view_t y_rhs_input_vec,
+    bool init_zero_x_vector, bool update_y_vector,
+    typename KernelHandle::nnz_scalar_t omega, int numIter) {
+  auto my_exec_space = handle->get_gs_handle()->get_execution_space();
+  forward_sweep_gauss_seidel_apply(my_exec_space, handle, num_rows, num_cols,
+                                   row_map, entries, values, x_lhs_output_vec,
+                                   y_rhs_input_vec, init_zero_x_vector,
+                                   update_y_vector, omega, numIter);
 }
 
 ///
@@ -1003,6 +1117,7 @@ void forward_sweep_block_gauss_seidel_apply(
 ///
 /// @brief Apply backward Gauss-Seidel preconditioner to system AX=Y
 ///
+/// @tparam ExecSpaceIn This kernels execution space type.
 /// @tparam format The matrix storage format, CRS or BSR
 /// @tparam KernelHandle A specialization of
 /// KokkosKernels::Experimental::KokkosKernelsHandle
@@ -1013,6 +1128,8 @@ void forward_sweep_block_gauss_seidel_apply(
 /// May be rank-1 or rank-2 View.
 /// @tparam y_scalar_view_t The type of the Y (right-hand side) vector. May be
 /// rank-1 or rank-2 View.
+/// @param exec_space_in The execution space instance this kernel will be run
+/// on.
 /// @param handle KernelHandle instance
 /// @param num_rows Number of rows in the matrix
 /// @param num_cols Number of columns in the matrix
@@ -1029,13 +1146,15 @@ void forward_sweep_block_gauss_seidel_apply(
 /// @pre   <tt>y_rhs_input_vec.extent(0) == num_rows</tt>
 /// @pre   <tt>x_lhs_output_vec.extent(1) == y_rhs_input_vec.extent(1)</tt>
 ///
-template <KokkosSparse::SparseMatrixFormat format =
+template <class ExecSpaceIn,
+          KokkosSparse::SparseMatrixFormat format =
               KokkosSparse::SparseMatrixFormat::CRS,
           class KernelHandle, typename lno_row_view_t_,
           typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
           typename x_scalar_view_t, typename y_scalar_view_t>
 void backward_sweep_gauss_seidel_apply(
-    KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
+    ExecSpaceIn &exec_space_in, KernelHandle *handle,
+    typename KernelHandle::const_nnz_lno_t num_rows,
     typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map,
     lno_nnz_view_t_ entries, scalar_nnz_view_t_ values,
     x_scalar_view_t x_lhs_output_vec, y_scalar_view_t y_rhs_input_vec,
@@ -1153,13 +1272,62 @@ void backward_sweep_gauss_seidel_apply(
 
   using namespace KokkosSparse::Impl;
 
-  GAUSS_SEIDEL_APPLY<const_handle_type, format, Internal_alno_row_view_t_,
-                     Internal_alno_nnz_view_t_, Internal_ascalar_nnz_view_t_,
-                     Internal_xscalar_nnz_view_t_,
+  GAUSS_SEIDEL_APPLY<ExecSpaceIn, const_handle_type, format,
+                     Internal_alno_row_view_t_, Internal_alno_nnz_view_t_,
+                     Internal_ascalar_nnz_view_t_, Internal_xscalar_nnz_view_t_,
                      Internal_yscalar_nnz_view_t_>::
-      gauss_seidel_apply(&tmp_handle, num_rows, num_cols, const_a_r, const_a_l,
-                         const_a_v, nonconst_x_v, const_y_v, init_zero_x_vector,
-                         update_y_vector, omega, numIter, false, true);
+      gauss_seidel_apply(exec_space_in, &tmp_handle, num_rows, num_cols,
+                         const_a_r, const_a_l, const_a_v, nonconst_x_v,
+                         const_y_v, init_zero_x_vector, update_y_vector, omega,
+                         numIter, false, true);
+}
+
+///
+/// @brief Apply backward Gauss-Seidel preconditioner to system AX=Y
+///
+/// @tparam format The matrix storage format, CRS or BSR
+/// @tparam KernelHandle A specialization of
+/// KokkosKernels::Experimental::KokkosKernelsHandle
+/// @tparam lno_row_view_t_ The matrix's rowmap type
+/// @tparam lno_nnz_view_t_ The matrix's entries type
+/// @tparam scalar_nnz_view_t_ The matrix's values type
+/// @tparam x_scalar_view_t The type of the X (left-hand side, unknown) vector.
+/// May be rank-1 or rank-2 View.
+/// @tparam y_scalar_view_t The type of the Y (right-hand side) vector. May be
+/// rank-1 or rank-2 View.
+/// @param handle KernelHandle instance
+/// @param num_rows Number of rows in the matrix
+/// @param num_cols Number of columns in the matrix
+/// @param row_map The matrix's rowmap
+/// @param entries The matrix's entries
+/// @param values The matrix's values
+/// @param x_lhs_output_vec The X (left-hand side, unknown) vector
+/// @param y_rhs_input_vec The Y (right-hand side) vector
+/// @param init_zero_x_vector Whether to zero out X before applying
+/// @param update_y_vector Whether Y has changed since the last call to apply
+/// @param omega The damping factor for successive over-relaxation
+/// @param numIter How many iterations to run
+/// @pre   <tt>x_lhs_output_vec.extent(0) == num_cols</tt>
+/// @pre   <tt>y_rhs_input_vec.extent(0) == num_rows</tt>
+/// @pre   <tt>x_lhs_output_vec.extent(1) == y_rhs_input_vec.extent(1)</tt>
+///
+template <KokkosSparse::SparseMatrixFormat format =
+              KokkosSparse::SparseMatrixFormat::CRS,
+          class KernelHandle, typename lno_row_view_t_,
+          typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
+          typename x_scalar_view_t, typename y_scalar_view_t>
+void backward_sweep_gauss_seidel_apply(
+    KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
+    typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map,
+    lno_nnz_view_t_ entries, scalar_nnz_view_t_ values,
+    x_scalar_view_t x_lhs_output_vec, y_scalar_view_t y_rhs_input_vec,
+    bool init_zero_x_vector, bool update_y_vector,
+    typename KernelHandle::nnz_scalar_t omega, int numIter) {
+  auto my_exec_space = handle->get_gs_handle()->get_execution_space();
+  backward_sweep_gauss_seidel_apply(my_exec_space, handle, num_rows, num_cols,
+                                    row_map, entries, values, x_lhs_output_vec,
+                                    y_rhs_input_vec, init_zero_x_vector,
+                                    update_y_vector, omega, numIter);
 }
 
 ///
