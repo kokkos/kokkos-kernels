@@ -58,7 +58,7 @@ enum newton_solver_status : int {
 };
 
 struct Newton_params {
-  int max_iters;
+  int max_iters, iters = 0;
   double abs_tol, rel_tol;
 
   // Constructor that sets basic solver parameters

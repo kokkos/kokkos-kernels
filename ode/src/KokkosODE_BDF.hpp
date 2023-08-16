@@ -126,7 +126,18 @@ struct BDF {
       }
       t += dt;
     }
-  }
+  } // Solve()
+
+  template <class ode_type, class mat_type, class vec_type, class scalar_type>
+  KOKKOS_FUNCTION static void SolveODE(
+      const ode_type& ode, const KokkosODE::Experimental::ODE_params& params,
+      const scalar_type t_start, const scalar_type t_end, const vec_type& y0,
+      const vec_type& y, const mat_type& buffer) {
+    const table_type table;
+
+    (void) ode, params, t_start, t_end, y0, y, buffer;
+
+  } // SolveODE
 };
 
 }  // namespace Experimental

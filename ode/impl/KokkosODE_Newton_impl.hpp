@@ -42,6 +42,7 @@ KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
   using norm_type = typename Kokkos::Details::InnerProductSpaceTraits<
       typename vec_type::non_const_value_type>::mag_type;
   sys.residual(y0, rhs);
+  std::cout << "rhs0= " << rhs(0) << std::endl;
   const norm_type norm0 = KokkosBlas::serial_nrm2(rhs);
   norm_type norm        = Kokkos::ArithTraits<norm_type>::zero();
 
@@ -60,6 +61,8 @@ KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
     // problem at each iteration: J*update=-rhs
     // with J=du/dx, rhs=f(u_n+update)-f(u_n)
     norm = KokkosBlas::serial_nrm2(rhs);
+
+    std::cout << "norm=" << norm << std::endl;
 
     if ((norm < (params.rel_tol * norm0)) ||
         (it > 0 ? KokkosBlas::serial_nrm2(update) < params.abs_tol : false)) {
@@ -87,6 +90,7 @@ KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
 
     // update solution // x = x + alpha*update
     KokkosBlas::serial_axpy(alpha, update, y0);
+    std::cout << "newton vector y= " << y0(0) << std::endl;
   }
   return newton_solver_status::MAX_ITER;
 }
