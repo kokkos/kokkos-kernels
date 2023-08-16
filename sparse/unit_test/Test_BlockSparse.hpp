@@ -21,4 +21,4 @@
 #include "Test_Sparse_bspgemm.hpp"
 #include "Test_Sparse_spmv_bsr.hpp"
 
-#endif // TEST_BLOCKSPARSE_HPP
+#endif  // TEST_BLOCKSPARSE_HPP
