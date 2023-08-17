@@ -303,7 +303,8 @@ template <class execution_space, class AlphaType, class AMatrix, class XVector,
 void spmv(const execution_space& exec,
           KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
-          const BetaType& beta, const YVector& y, const RANK_ONE& tag) {
+          const BetaType& beta, const YVector& y,
+          [[maybe_unused]] const RANK_ONE& tag) {
   // Make sure that x and y are Views.
   static_assert(Kokkos::is_view<XVector>::value,
                 "KokkosSparse::spmv: XVector must be a Kokkos::View.");
@@ -906,7 +907,8 @@ template <class execution_space, class AlphaType, class AMatrix, class XVector,
 void spmv(const execution_space& exec,
           KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
-          const BetaType& beta, const YVector& y, const RANK_TWO& tag) {
+          const BetaType& beta, const YVector& y,
+          [[maybe_unused]] const RANK_TWO& tag) {
   // Make sure that x and y are Views.
   static_assert(Kokkos::is_view<XVector>::value,
                 "KokkosSparse::spmv: XVector must be a Kokkos::View.");
@@ -1404,7 +1406,8 @@ void spmv_struct(const execution_space& exec, const char mode[],
                  const Kokkos::View<typename AMatrix::non_const_ordinal_type*,
                                     Kokkos::HostSpace>& structure,
                  const AlphaType& alpha, const AMatrix& A, const XVector& x,
-                 const BetaType& beta, const YVector& y, const RANK_ONE& tag) {
+                 const BetaType& beta, const YVector& y,
+                 [[maybe_unused]] const RANK_ONE& tag) {
   // Make sure that both x and y have the same rank.
   static_assert((int)XVector::rank == (int)YVector::rank,
                 "KokkosSparse::spmv_struct: Vector ranks do not match.");
@@ -1715,7 +1718,8 @@ void spmv_struct(const execution_space& exec, const char mode[],
                  const Kokkos::View<typename AMatrix::non_const_ordinal_type*,
                                     Kokkos::HostSpace>& structure,
                  const AlphaType& alpha, const AMatrix& A, const XVector& x,
-                 const BetaType& beta, const YVector& y, const RANK_TWO& tag) {
+                 const BetaType& beta, const YVector& y,
+                 [[maybe_unused]] const RANK_TWO& tag) {
   // Make sure A, x, y are accessible to execution_space
   static_assert(
       Kokkos::SpaceAccessibility<execution_space,
