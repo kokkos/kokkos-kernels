@@ -186,7 +186,7 @@ struct SerialDot<Trans::Transpose> {
 
     // Check compatibility of dimensions at run time.
     if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+      Kokkos::printf(
           "KokkosBatched::dot: Dimensions of X and Y do not match: X: %d x %d, "
           "Y: %d x %d\n",
           (int)X.extent(0), (int)X.extent(1), (int)Y.extent(0),
@@ -194,7 +194,7 @@ struct SerialDot<Trans::Transpose> {
       return 1;
     }
     if (X.extent(1) != dot.extent(0)) {
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+      Kokkos::printf(
           "KokkosBatched::dot: Second dimension of X and alpha do not match: "
           "X: "
           "%d x %d, dot: %d\n",
@@ -232,7 +232,7 @@ struct SerialDot<Trans::NoTranspose> {
 
     // Check compatibility of dimensions at run time.
     if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+      Kokkos::printf(
           "KokkosBatched::dot: Dimensions of X and Y do not match: X: %d x %d, "
           "Y: %d x %d\n",
           (int)X.extent(0), (int)X.extent(1), (int)Y.extent(0),
@@ -240,7 +240,7 @@ struct SerialDot<Trans::NoTranspose> {
       return 1;
     }
     if (X.extent(0) != dot.extent(0)) {
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+      Kokkos::printf(
           "KokkosBatched::dot: First dimension of X and alpha do not match: X: "
           "%d x %d, dot: %d\n",
           (int)X.extent(0), (int)X.extent(1), (int)dot.extent(0));
@@ -282,7 +282,7 @@ struct TeamDot<MemberType, Trans::Transpose> {
 
     // Check compatibility of dimensions at run time.
     if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+      Kokkos::printf(
           "KokkosBatched::dot: Dimensions of X and Y do not match: X: %d x %d, "
           "Y: %d x %d\n",
           (int)X.extent(0), (int)X.extent(1), (int)Y.extent(0),
@@ -290,7 +290,7 @@ struct TeamDot<MemberType, Trans::Transpose> {
       return 1;
     }
     if (X.extent(1) != dot.extent(0)) {
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+      Kokkos::printf(
           "KokkosBatched::dot: Second dimension of X and alpha do not match: "
           "X: "
           "%d x %d, dot: %d\n",
@@ -337,7 +337,7 @@ struct TeamDot<MemberType, Trans::NoTranspose> {
 
     // Check compatibility of dimensions at run time.
     if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+      Kokkos::printf(
           "KokkosBatched::dot: Dimensions of X and Y do not match: X: %d x %d, "
           "Y: %d x %d\n",
           (int)X.extent(0), (int)X.extent(1), (int)Y.extent(0),
@@ -345,7 +345,7 @@ struct TeamDot<MemberType, Trans::NoTranspose> {
       return 1;
     }
     if (X.extent(0) != dot.extent(0)) {
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+      Kokkos::printf(
           "KokkosBatched::dot: First dimension of X and alpha do not match: X: "
           "%d x %d, dot: %d\n",
           (int)X.extent(0), (int)X.extent(1), (int)dot.extent(0));
@@ -395,7 +395,7 @@ struct TeamVectorDot<MemberType, Trans::Transpose> {
 
     // Check compatibility of dimensions at run time.
     if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+      Kokkos::printf(
           "KokkosBatched::dot: Dimensions of X and Y do not match: X: %d x %d, "
           "Y: %d x %d\n",
           (int)X.extent(0), (int)X.extent(1), (int)Y.extent(0),
@@ -403,7 +403,7 @@ struct TeamVectorDot<MemberType, Trans::Transpose> {
       return 1;
     }
     if (X.extent(1) != dot.extent(0)) {
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+      Kokkos::printf(
           "KokkosBatched::dot: Second dimension of X and alpha do not match: "
           "X: "
           "%d x %d, dot: %d\n",
@@ -450,7 +450,7 @@ struct TeamVectorDot<MemberType, Trans::NoTranspose> {
 
     // Check compatibility of dimensions at run time.
     if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+      Kokkos::printf(
           "KokkosBatched::dot: Dimensions of X and Y do not match: X: %d x %d, "
           "Y: %d x %d\n",
           (int)X.extent(0), (int)X.extent(1), (int)Y.extent(0),
@@ -458,7 +458,7 @@ struct TeamVectorDot<MemberType, Trans::NoTranspose> {
       return 1;
     }
     if (X.extent(0) != dot.extent(0)) {
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+      Kokkos::printf(
           "KokkosBatched::dot: First dimension of X and alpha do not match: X: "
           "%d x %d, dot: %d\n",
           (int)X.extent(0), (int)X.extent(1), (int)dot.extent(0));

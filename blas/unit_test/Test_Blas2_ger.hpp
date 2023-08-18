@@ -292,7 +292,7 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
   view_stride_adapter<_ViewTypeExpected, true> h_vanilla(
       "vanilla = A + alpha * x * y^{t,h}", _M, _N);
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+  Kokkos::printf(
       "In Test_Blas2_ger.hpp, computing vanilla A with alpha type = %s\n",
       typeid(alpha).name());
 #endif
@@ -1357,7 +1357,7 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
                                        const _ViewTypeExpected& h_expected,
                                        const std::string& situation) {
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+  Kokkos::printf(
       "In Test_Blas2_ger.hpp, right before calling KokkosBlas::ger(): "
       "ViewTypeA = %s, _kkGerShouldThrowException=%d\n",
       typeid(_ViewTypeA).name(), _kkGerShouldThrowException);
@@ -1402,11 +1402,11 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
 template <class ScalarX, class ScalarY, class ScalarA, class Device>
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
 int test_ger(const std::string& caseName) {
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+  Kokkos::printf(
       "+======================================================================="
       "===\n");
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF("Starting %s, device = %s ...\n",
-                                caseName.c_str(), typeid(Device).name());
+  Kokkos::printf("Starting %s, device = %s ...\n", caseName.c_str(),
+                 typeid(Device).name());
 #else
 int test_ger(const std::string& /*caseName*/) {
 #endif
@@ -1428,11 +1428,10 @@ int test_ger(const std::string& /*caseName*/) {
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&      \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+  Kokkos::printf(
       "+-----------------------------------------------------------------------"
       "---\n");
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF("Starting %s for LAYOUTLEFT ...\n",
-                                caseName.c_str());
+  Kokkos::printf("Starting %s for LAYOUTLEFT ...\n", caseName.c_str());
 #endif
   if (true) {
     Test::GerTester<ScalarX, Kokkos::LayoutLeft, ScalarY, Kokkos::LayoutLeft,
@@ -1463,9 +1462,8 @@ int test_ger(const std::string& /*caseName*/) {
   }
 
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF("Finished %s for LAYOUTLEFT\n",
-                                caseName.c_str());
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+  Kokkos::printf("Finished %s for LAYOUTLEFT\n", caseName.c_str());
+  Kokkos::printf(
       "+-----------------------------------------------------------------------"
       "---\n");
 #endif
@@ -1475,11 +1473,10 @@ int test_ger(const std::string& /*caseName*/) {
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&       \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+  Kokkos::printf(
       "+-----------------------------------------------------------------------"
       "---\n");
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF("Starting %s for LAYOUTRIGHT ...\n",
-                                caseName.c_str());
+  Kokkos::printf("Starting %s for LAYOUTRIGHT ...\n", caseName.c_str());
 #endif
   if (true) {
     Test::GerTester<ScalarX, Kokkos::LayoutRight, ScalarY, Kokkos::LayoutRight,
@@ -1510,9 +1507,8 @@ int test_ger(const std::string& /*caseName*/) {
   }
 
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF("Finished %s for LAYOUTRIGHT\n",
-                                caseName.c_str());
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+  Kokkos::printf("Finished %s for LAYOUTRIGHT\n", caseName.c_str());
+  Kokkos::printf(
       "+-----------------------------------------------------------------------"
       "---\n");
 #endif
@@ -1521,11 +1517,10 @@ int test_ger(const std::string& /*caseName*/) {
 #if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+  Kokkos::printf(
       "+-----------------------------------------------------------------------"
       "---\n");
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF("Starting %s for LAYOUTSTRIDE ...\n",
-                                caseName.c_str());
+  Kokkos::printf("Starting %s for LAYOUTSTRIDE ...\n", caseName.c_str());
 #endif
   if (true) {
     Test::GerTester<ScalarX, Kokkos::LayoutStride, ScalarY,
@@ -1553,9 +1548,8 @@ int test_ger(const std::string& /*caseName*/) {
   }
 
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF("Finished %s for LAYOUTSTRIDE\n",
-                                caseName.c_str());
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+  Kokkos::printf("Finished %s for LAYOUTSTRIDE\n", caseName.c_str());
+  Kokkos::printf(
       "+-----------------------------------------------------------------------"
       "---\n");
 #endif
@@ -1564,11 +1558,10 @@ int test_ger(const std::string& /*caseName*/) {
 #if !defined(KOKKOSKERNELS_ETI_ONLY) && \
     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+  Kokkos::printf(
       "+-----------------------------------------------------------------------"
       "---\n");
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF("Starting %s for MIXED LAYOUTS ...\n",
-                                caseName.c_str());
+  Kokkos::printf("Starting %s for MIXED LAYOUTS ...\n", caseName.c_str());
 #endif
   if (true) {
     Test::GerTester<ScalarX, Kokkos::LayoutStride, ScalarY, Kokkos::LayoutLeft,
@@ -1591,17 +1584,16 @@ int test_ger(const std::string& /*caseName*/) {
   }
 
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF("Finished %s for MIXED LAYOUTS\n",
-                                caseName.c_str());
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+  Kokkos::printf("Finished %s for MIXED LAYOUTS\n", caseName.c_str());
+  Kokkos::printf(
       "+-----------------------------------------------------------------------"
       "---\n");
 #endif
 #endif
 
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF("Finished %s\n", caseName.c_str());
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+  Kokkos::printf("Finished %s\n", caseName.c_str());
+  Kokkos::printf(
       "+======================================================================="
       "===\n");
 #endif

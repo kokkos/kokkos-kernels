@@ -59,7 +59,7 @@ KOKKOS_INLINE_FUNCTION int SerialCopy<Trans::NoTranspose, 2>::invoke(
 
   // Check compatibility of dimensions at run time.
   if (A.extent(0) != B.extent(0) || A.extent(1) != B.extent(1)) {
-    KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+    Kokkos::printf(
         "KokkosBatched::copy: Dimensions of A and B do not match: A: %d x %d, "
         "B: %d x %d\n",
         (int)A.extent(0), (int)A.extent(1), (int)B.extent(0), (int)B.extent(1));
@@ -87,7 +87,7 @@ KOKKOS_INLINE_FUNCTION int SerialCopy<Trans::Transpose, 2>::invoke(
 
   // Check compatibility of dimensions at run time.
   if (A.extent(0) != B.extent(0) || A.extent(1) != B.extent(1)) {
-    KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+    Kokkos::printf(
         "KokkosBatched::copy: Dimensions of A and B do not match: A: %d x %d, "
         "B: %d x %d\n",
         (int)A.extent(0), (int)A.extent(1), (int)B.extent(0), (int)B.extent(1));
@@ -143,7 +143,7 @@ struct TeamCopy<MemberType, Trans::NoTranspose, 2> {
 
     // Check compatibility of dimensions at run time.
     if (A.extent(0) != B.extent(0) || A.extent(1) != B.extent(1)) {
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+      Kokkos::printf(
           "KokkosBatched::copy: Dimensions of A and B do not match: A: %d x "
           "%d, "
           "B: %d x %d\n",
@@ -181,7 +181,7 @@ struct TeamCopy<MemberType, Trans::Transpose, 2> {
 
     // Check compatibility of dimensions at run time.
     if (A.extent(0) != B.extent(0) || A.extent(1) != B.extent(1)) {
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+      Kokkos::printf(
           "KokkosBatched::copy: Dimensions of A and B do not match: A: %d x "
           "%d, "
           "B: %d x %d\n",
@@ -245,7 +245,7 @@ struct TeamVectorCopy<MemberType, Trans::NoTranspose, 2> {
 
     // Check compatibility of dimensions at run time.
     if (A.extent(0) != B.extent(0) || A.extent(1) != B.extent(1)) {
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+      Kokkos::printf(
           "KokkosBatched::copy: Dimensions of A and B do not match: A: %d x "
           "%d, "
           "B: %d x %d\n",
@@ -283,7 +283,7 @@ struct TeamVectorCopy<MemberType, Trans::Transpose, 2> {
 
     // Check compatibility of dimensions at run time.
     if (A.extent(0) != B.extent(0) || A.extent(1) != B.extent(1)) {
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+      Kokkos::printf(
           "KokkosBatched::copy: Dimensions of A and B do not match: A: %d x "
           "%d, "
           "B: %d x %d\n",

@@ -55,7 +55,7 @@ int KOKKOS_INLINE_FUNCTION team_spmv(
 
   // Check compatibility of dimensions at run time.
   if (values.extent(0) != colIndices.extent(0)) {
-    KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+    Kokkos::printf(
         "KokkosSparse::spmv: Dimensions of values and colIndices do not match: "
         "values: %d, colIndices: %d",
         (int)values.extent(0), (int)colIndices.extent(0));
@@ -63,7 +63,7 @@ int KOKKOS_INLINE_FUNCTION team_spmv(
   }
 
   if (x.extent(0) != y.extent(0) || (x.extent(0) + 1) != row_ptr.extent(0)) {
-    KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+    Kokkos::printf(
         "KokkosSparse::spmv: Dimensions of x, y, and row_ptr do not match: "
         "x: %d, y: %d, row_ptr: %d",
         (int)x.extent(0), (int)y.extent(0), (int)row_ptr.extent(0));
@@ -109,7 +109,7 @@ int KOKKOS_INLINE_FUNCTION team_vector_spmv(
 
   // Check compatibility of dimensions at run time.
   if (values.extent(0) != colIndices.extent(0)) {
-    KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+    Kokkos::printf(
         "KokkosSparse::spmv: Dimensions of values and colIndices do not match: "
         "values: %d, colIndices: %d",
         (int)values.extent(0), (int)colIndices.extent(0));
@@ -117,7 +117,7 @@ int KOKKOS_INLINE_FUNCTION team_vector_spmv(
   }
 
   if (x.extent(0) != y.extent(0) || (x.extent(0) + 1) != row_ptr.extent(0)) {
-    KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+    Kokkos::printf(
         "KokkosSparse::spmv: Dimensions of x, y, and row_ptr do not match: "
         "x: %d, y: %d, row_ptr: %d",
         (int)x.extent(0), (int)y.extent(0), (int)row_ptr.extent(0));

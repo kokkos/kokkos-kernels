@@ -384,7 +384,7 @@ struct SerialGesv<Gesv::StaticPivoting> {
     // Check compatibility of dimensions at run time.
 
     if (A.extent(0) != tmp.extent(0) || A.extent(1) + 4 != tmp.extent(1)) {
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+      Kokkos::printf(
           "KokkosBatched::gesv: dimensions of A and tmp do not match: A: "
           "%d x %d, tmp (note: its second dimension should be the second "
           "dimension of A + 4): %d x %d\n",
@@ -395,7 +395,7 @@ struct SerialGesv<Gesv::StaticPivoting> {
 
     if (A.extent(0) != X.extent(0) || A.extent(1) != X.extent(0) ||
         A.extent(0) != Y.extent(0)) {
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+      Kokkos::printf(
           "KokkosBatched::gesv: dimensions of A and X and Y do not match: A: "
           "%d x %d, X: %d, Y: %d\n",
           (int)A.extent(0), (int)A.extent(1), (int)X.extent(0),
@@ -414,7 +414,7 @@ struct SerialGesv<Gesv::StaticPivoting> {
 
     if (SerialStaticPivoting::invoke(A, PDAD, Y, PDY, D2, tmp_v_1, tmp_v_2) ==
         1) {
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+      Kokkos::printf(
           "KokkosBatched::gesv: the currently implemented static pivoting "
           "failed.\n");
       return 1;
@@ -458,7 +458,7 @@ struct SerialGesv<Gesv::NoPivoting> {
 
     if (A.extent(0) != X.extent(0) || A.extent(1) != X.extent(0) ||
         A.extent(0) != Y.extent(0)) {
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+      Kokkos::printf(
           "KokkosBatched::gesv: dimensions of A and X and Y do not match: A: "
           "%d x %d, X: %d, Y: %d\n",
           (int)A.extent(0), (int)A.extent(1), (int)X.extent(0),
@@ -509,7 +509,7 @@ struct TeamGesv<MemberType, Gesv::StaticPivoting> {
     // Check compatibility of dimensions at run time.
     if (A.extent(0) != X.extent(0) || A.extent(1) != X.extent(0) ||
         A.extent(0) != Y.extent(0)) {
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+      Kokkos::printf(
           "KokkosBatched::gesv: dimensions of A and X and Y do not match: A: "
           "%d x %d, X: %d, Y: %d\n",
           (int)A.extent(0), (int)A.extent(1), (int)X.extent(0),
@@ -532,7 +532,7 @@ struct TeamGesv<MemberType, Gesv::StaticPivoting> {
 
     if (TeamStaticPivoting<MemberType>::invoke(member, A, PDAD, Y, PDY, D2,
                                                tmp_v_1, tmp_v_2) == 1) {
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+      Kokkos::printf(
           "KokkosBatched::gesv: the currently implemented static pivoting "
           "failed.\n");
       return 1;
@@ -587,7 +587,7 @@ struct TeamGesv<MemberType, Gesv::NoPivoting> {
     // Check compatibility of dimensions at run time.
     if (A.extent(0) != X.extent(0) || A.extent(1) != X.extent(0) ||
         A.extent(0) != Y.extent(0)) {
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+      Kokkos::printf(
           "KokkosBatched::gesv: dimensions of A and X and Y do not match: A: "
           "%d x %d, X: %d, Y: %d\n",
           (int)A.extent(0), (int)A.extent(1), (int)X.extent(0),
@@ -645,7 +645,7 @@ struct TeamVectorGesv<MemberType, Gesv::StaticPivoting> {
     // Check compatibility of dimensions at run time.
     if (A.extent(0) != X.extent(0) || A.extent(1) != X.extent(0) ||
         A.extent(0) != Y.extent(0)) {
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+      Kokkos::printf(
           "KokkosBatched::gesv: dimensions of A and X and Y do not match: A: "
           "%d x %d, X: %d, Y: %d\n",
           (int)A.extent(0), (int)A.extent(1), (int)X.extent(0),
@@ -668,7 +668,7 @@ struct TeamVectorGesv<MemberType, Gesv::StaticPivoting> {
 
     if (TeamVectorStaticPivoting<MemberType>::invoke(
             member, A, PDAD, Y, PDY, D2, tmp_v_1, tmp_v_2) == 1) {
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+      Kokkos::printf(
           "KokkosBatched::gesv: the currently implemented static pivoting "
           "failed.\n");
       return 1;
@@ -724,7 +724,7 @@ struct TeamVectorGesv<MemberType, Gesv::NoPivoting> {
     // Check compatibility of dimensions at run time.
     if (A.extent(0) != X.extent(0) || A.extent(1) != X.extent(0) ||
         A.extent(0) != Y.extent(0)) {
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+      Kokkos::printf(
           "KokkosBatched::gesv: dimensions of A and X and Y do not match: A: "
           "%d x %d, X: %d, Y: %d\n",
           (int)A.extent(0), (int)A.extent(1), (int)X.extent(0),
