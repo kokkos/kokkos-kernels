@@ -104,7 +104,8 @@ class GaussSeidelHandle {
    * \brief Default constructor.
    */
   GaussSeidelHandle(GSAlgorithm gs)
-      : num_streams(1),
+      : execution_space(HandleExecSpace()),
+        num_streams(1),
         algorithm_type(gs),
         color_xadj(),
         color_adj(),

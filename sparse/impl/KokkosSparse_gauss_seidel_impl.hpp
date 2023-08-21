@@ -1091,8 +1091,8 @@ class PointGaussSeidel {
           size_type num_large_rows = 0;
           KokkosSparse::Impl::kk_reduce_numrows_larger_than_threshold<
               row_lno_persistent_work_view_t, MyExecSpace>(
-              brows, permuted_xadj, num_values_in_l1, num_large_rows,
-              my_exec_space);
+              my_exec_space, brows, permuted_xadj, num_values_in_l1,
+              num_large_rows);
           num_big_rows = KOKKOSKERNELS_MACRO_MIN(
               num_large_rows,
               (size_type)(my_exec_space.concurrency() / suggested_vector_size));
@@ -1463,7 +1463,6 @@ class PointGaussSeidel {
               my_exec_space, num_rows, old_to_new_map, given_inverse_diagonal,
               permuted_inverse_diagonal);
       }
-
       gsHandle->set_permuted_inverse_diagonal(permuted_inverse_diagonal);
       gsHandle->set_call_numeric(true);
     }
@@ -1530,24 +1529,25 @@ class PointGaussSeidel {
     scalar_persistent_work_view_t permuted_inverse_diagonal =
         gsHandle->get_permuted_inverse_diagonal();
 
-    color_t numColors = gsHandle->get_num_colors();
+    color_t numColors  = gsHandle->get_num_colors();
+    auto my_exec_space = gsHandle->get_execution_space();
 
     if (update_y_vector) {
       KokkosKernels::Impl::permute_block_vector<
           y_value_array_type, scalar_persistent_work_view2d_t,
           nnz_lno_persistent_work_view_t, MyExecSpace>(
-          num_rows, block_size, old_to_new_map, y_rhs_input_vec,
+          my_exec_space, num_rows, block_size, old_to_new_map, y_rhs_input_vec,
           Permuted_Yvector);
     }
     if (init_zero_x_vector) {
-      KokkosKernels::Impl::zero_vector<scalar_persistent_work_view2d_t,
-                                       MyExecSpace>(num_cols * block_size,
-                                                    Permuted_Xvector);
+      KokkosKernels::Impl::zero_vector<
+          MyExecSpace, scalar_persistent_work_view2d_t, MyExecSpace>(
+          my_exec_space, num_cols * block_size, Permuted_Xvector);
     } else {
       KokkosKernels::Impl::permute_block_vector<
           x_value_array_type, scalar_persistent_work_view2d_t,
           nnz_lno_persistent_work_view_t, MyExecSpace>(
-          num_cols, block_size, old_to_new_map, x_lhs_output_vec,
+          my_exec_space, num_cols, block_size, old_to_new_map, x_lhs_output_vec,
           Permuted_Xvector);
     }
 
@@ -1580,7 +1580,7 @@ class PointGaussSeidel {
     int suggested_team_size =
         this->handle->get_suggested_team_size(suggested_vector_size);
     nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(
-        suggested_team_size, MyExecSpace().concurrency(), brows);
+        suggested_team_size, my_exec_space.concurrency(), brows);
 
     // size_t shmem_size_to_use = this->handle->get_shmem_size();
     size_t l1_shmem_size       = gsHandle->get_level_1_mem();
@@ -1613,7 +1613,8 @@ class PointGaussSeidel {
     KokkosKernels::Impl::permute_block_vector<
         scalar_persistent_work_view2d_t, x_value_array_type,
         nnz_lno_persistent_work_view_t, MyExecSpace>(
-        num_cols, block_size, color_adj, Permuted_Xvector, x_lhs_output_vec);
+        my_exec_space, num_cols, block_size, color_adj, Permuted_Xvector,
+        x_lhs_output_vec);
 #if KOKKOSSPARSE_IMPL_PRINTDEBUG
     std::cout << "After X:";
     KokkosKernels::Impl::print_1Dview(Permuted_Xvector);
@@ -1631,7 +1632,8 @@ class PointGaussSeidel {
       nnz_scalar_t omega = Kokkos::ArithTraits<nnz_scalar_t>::one(),
       bool apply_forward = true, bool apply_backward = true,
       bool update_y_vector = true) {
-    auto gsHandle = get_gs_handle();
+    auto gsHandle      = get_gs_handle();
+    auto my_exec_space = gsHandle->get_execution_space();
 
     auto Permuted_Xvector = gsHandle->get_permuted_x_vector();
     auto Permuted_Yvector = gsHandle->get_permuted_y_vector();
@@ -1651,16 +1653,19 @@ class PointGaussSeidel {
       KokkosKernels::Impl::permute_vector<
           y_value_array_type, scalar_persistent_work_view2d_t,
           nnz_lno_persistent_work_view_t, MyExecSpace>(
-          num_rows, old_to_new_map, y_rhs_input_vec, Permuted_Yvector);
+          my_exec_space, num_rows, old_to_new_map, y_rhs_input_vec,
+          Permuted_Yvector);
     }
     if (init_zero_x_vector) {
-      KokkosKernels::Impl::zero_vector<scalar_persistent_work_view2d_t,
-                                       MyExecSpace>(num_cols, Permuted_Xvector);
+      KokkosKernels::Impl::zero_vector<
+          MyExecSpace, scalar_persistent_work_view2d_t, MyExecSpace>(
+          my_exec_space, num_cols, Permuted_Xvector);
     } else {
       KokkosKernels::Impl::permute_vector<
           x_value_array_type, scalar_persistent_work_view2d_t,
           nnz_lno_persistent_work_view_t, MyExecSpace>(
-          num_cols, old_to_new_map, x_lhs_output_vec, Permuted_Xvector);
+          my_exec_space, num_cols, old_to_new_map, x_lhs_output_vec,
+          Permuted_Xvector);
     }
 
 #if KOKKOSSPARSE_IMPL_PRINTDEBUG
@@ -1692,7 +1697,7 @@ class PointGaussSeidel {
     KokkosKernels::Impl::permute_vector<
         scalar_persistent_work_view2d_t, x_value_array_type,
         nnz_lno_persistent_work_view_t, MyExecSpace>(
-        num_cols, color_adj, Permuted_Xvector, x_lhs_output_vec);
+        my_exec_space, num_cols, color_adj, Permuted_Xvector, x_lhs_output_vec);
 #if KOKKOSSPARSE_IMPL_PRINTDEBUG
     Kokkos::fence();
     std::cout << "--point After X:";
@@ -1839,7 +1844,8 @@ class PointGaussSeidel {
               auto Ycol =
                   Kokkos::subview(gs._Yvector, Kokkos::ALL(), long_row_col);
               gs._long_row_col = long_row_col;
-              Kokkos::deep_copy(long_row_x, nnz_scalar_t());
+              Kokkos::deep_copy(my_exec_space, long_row_x, nnz_scalar_t());
+              my_exec_space.fence();
               Kokkos::parallel_for(
                   labelLong,
                   Kokkos::Experimental::require(
