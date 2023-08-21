@@ -283,7 +283,7 @@ struct SPMV_MV_STRUCT<ES, AT, AO, AD, AM, AS, XT, XL, XD, XM, YT, YL, YD, YM,
     for (typename AMatrix::non_const_size_type j = 0; j < x.extent(1); ++j) {
       auto x_j = Kokkos::subview(x, Kokkos::ALL(), j);
       auto y_j = Kokkos::subview(y, Kokkos::ALL(), j);
-      impl_type::spmv_struct(mode, alpha, A, x_j, beta, y_j);
+      impl_type::spmv_struct(exec, mode, alpha, A, x_j, beta, y_j);
     }
   }
 };
