@@ -2330,6 +2330,120 @@ void validateCrsMatrix(int m, int n, const Rowmap &rowmapIn,
   }
 }
 
+template <typename crsMat_t>
+void kk_extract_diagonal_blocks_crsmatrix_sequential(const crsMat_t &A,
+                                      std::vector<crsMat_t>& DiagBlk_v) {
+  using row_map_type = typename crsMat_t::row_map_type;
+  using entries_type = typename crsMat_t::index_type;
+  using values_type  = typename crsMat_t::values_type;
+  using row_map_hostmirror_type = typename row_map_type::HostMirror;
+  using entries_hostmirror_type = typename entries_type::HostMirror;
+  using values_hostmirror_type  = typename values_type::HostMirror;
+  using int_view1d_type = Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::HostSpace>;
+
+  using graph_t = typename crsMat_t::StaticCrsGraphType;
+  using out_row_map_type = typename graph_t::row_map_type::non_const_type;
+  using out_entries_type = typename graph_t::entries_type::non_const_type;
+  using out_values_type  = typename crsMat_t::values_type::non_const_type;
+  using out_row_map_hostmirror_type = typename out_row_map_type::HostMirror;
+  using out_entries_hostmirror_type = typename out_entries_type::HostMirror;
+  using out_values_hostmirror_type  = typename out_values_type::HostMirror;
+
+  row_map_type A_row_map = A.graph.row_map;
+  entries_type A_entries = A.graph.entries;
+  values_type  A_values  = A.values;
+
+  row_map_hostmirror_type A_row_map_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A_row_map);
+  entries_hostmirror_type A_entries_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A_entries);
+  values_hostmirror_type  A_values_h  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A_values);
+
+  int A_nrows  = static_cast<int>(A_row_map.extent(0))-1;
+  int n_blocks = static_cast<int>(DiagBlk_v.size());
+  
+  int rows_per_block = ((A_nrows%n_blocks)==0) ? (A_nrows/n_blocks) : (A_nrows/n_blocks+1);
+
+  std::vector<out_row_map_type> row_map_v(n_blocks);
+  std::vector<out_entries_type> entries_v(n_blocks);
+  std::vector<out_values_type>  values_v (n_blocks);
+  std::vector<out_row_map_hostmirror_type> row_map_h_v(n_blocks);
+  std::vector<out_entries_hostmirror_type> entries_h_v(n_blocks);
+  std::vector<out_values_hostmirror_type>  values_h_v (n_blocks);
+
+  int row_start = 0; // first row index of i-th diagonal block
+  int col_start = 0; // first col index of i-th diagonal block
+  int nrows, ncols;  // Nrows, Ncols of i-th diagonal block
+  for (int i = 0; i < n_blocks; i++) {
+    nrows = rows_per_block;
+    if ((row_start + rows_per_block) > A_nrows) {
+      nrows = A_nrows - row_start;
+    }
+    col_start = row_start;
+    ncols = nrows;
+
+    // Rowmap of i-th row-oriented sub-matrix
+    auto A_row_map_sub = Kokkos::subview(A_row_map_h, Kokkos::make_pair(row_start, row_start + nrows + 1));
+
+    // First round: count i-th non-zeros or size of entries_v[i]
+    int n_entries = 0;
+    int_view1d_type first("first", nrows); // first position per row
+    int_view1d_type last ("last",  nrows); // last position per row
+
+    for (int j = 0; j < nrows; j++) { // loop through each row
+      int k1 = static_cast<int>(A_row_map_sub(j));
+      int k2 = static_cast<int>(A_row_map_sub(j + 1));
+      int k;
+      // Assume column indices are sorted in ascending order
+      // Find the position of the start column in the row
+      for (k = k1; k < k2; k++) {
+        int col = static_cast<int>(A_entries_h(k));
+        if (col >= col_start) {
+          break;
+        }
+      }
+      first(j) = k;
+      // Find the position of the last column in the row
+      for (k = k2-1; k >= k1; k--) {
+        int col = static_cast<int>(A_entries_h(k));
+        if (col < col_start + ncols) {
+          break;
+        }
+      }
+      last(j) = k;
+      n_entries += (last(j) - first(j) + 1);
+    }
+
+    // Second round:
+    // - create row_map_v[i]
+    // - copy A_entries to entries_v[i] and update entries_v[i] with local column indices
+    // - copy A_values to values_v[i]
+    row_map_v[i] = out_row_map_type("row_map_v", nrows + 1);
+    entries_v[i] = out_entries_type("entries_v", n_entries);
+    values_v[i]  = out_values_type ("values_v",  n_entries);
+    row_map_h_v[i] = out_row_map_hostmirror_type("row_map_h_v", nrows + 1);
+    entries_h_v[i] = out_entries_hostmirror_type("entries_h_v", n_entries);
+    values_h_v[i]  = out_values_hostmirror_type ("values_h_v",  n_entries);
+    int first_ = 0;
+    for (int j = 0; j < nrows; j++) { // loop through each row
+      int nnz = last(j) - first(j) + 1;
+      row_map_h_v[i](j) = first_;
+      for (int k = 0; k < nnz; k++) {
+        entries_h_v[i](first_ + k) = A_entries_h(first(j) + k) - col_start;
+        values_h_v[i] (first_ + k) = A_values_h (first(j) + k);
+      }
+      first_ += nnz;
+    }
+    row_map_h_v[i](nrows) = n_entries; // last element
+
+    Kokkos::deep_copy(row_map_v[i], row_map_h_v[i]);
+    Kokkos::deep_copy(entries_v[i], entries_h_v[i]);
+    Kokkos::deep_copy(values_v[i], values_h_v[i]);
+
+    DiagBlk_v[i] = crsMat_t("CrsMatrix", nrows, ncols, n_entries, values_v[i], row_map_v[i], entries_v[i]);
+
+    row_start += nrows;
+  }
+}
+
 }  // namespace Impl
 
 using Impl::isCrsGraphSorted;
