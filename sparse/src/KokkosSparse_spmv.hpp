@@ -53,7 +53,7 @@ struct RANK_TWO {};
 /// to YVector::value_type. \tparam YVector Type of y, must be a rank-1
 /// Kokkos::View and its rank must match that of XVector
 ///
-/// \param exec [in] The execution space instance on which to run the
+/// \param space [in] The execution space instance on which to run the
 ///   kernel.
 /// \param controls [in] kokkos-kernels control structure.
 /// \param mode [in] Select A's operator mode: "N" for normal, "T" for
@@ -73,7 +73,7 @@ template <class ExecutionSpace, class AlphaType, class AMatrix, class XVector,
           typename std::enable_if<
               KokkosSparse::is_crs_matrix<AMatrix>::value>::type* = nullptr>
 #endif
-void spmv(const ExecutionSpace& exec,
+void spmv(const ExecutionSpace& space,
           KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
           const BetaType& beta, const YVector& y,
@@ -164,9 +164,9 @@ void spmv(const ExecutionSpace& exec,
     // if y contains NaN but beta = 0, the result y should be filled with 0.
     // For example, this is useful for passing in uninitialized y and beta=0.
     if (beta == Kokkos::ArithTraits<BetaType>::zero())
-      Kokkos::deep_copy(exec, y_i, Kokkos::ArithTraits<BetaType>::zero());
+      Kokkos::deep_copy(space, y_i, Kokkos::ArithTraits<BetaType>::zero());
     else
-      KokkosBlas::scal(exec, y_i, beta, y_i);
+      KokkosBlas::scal(space, y_i, beta, y_i);
     return;
   }
 
@@ -231,7 +231,7 @@ void spmv(const ExecutionSpace& exec,
                typename YVector_Internal::value_type*,
                typename YVector_Internal::array_layout,
                typename YVector_Internal::device_type,
-               typename YVector_Internal::memory_traits, false>::spmv(exec,
+               typename YVector_Internal::memory_traits, false>::spmv(space,
                                                                       controls,
                                                                       mode,
                                                                       alpha,
@@ -254,7 +254,7 @@ void spmv(const ExecutionSpace& exec,
                typename YVector_Internal::value_type*,
                typename YVector_Internal::array_layout,
                typename YVector_Internal::device_type,
-               typename YVector_Internal::memory_traits>::spmv(exec, controls,
+               typename YVector_Internal::memory_traits>::spmv(space, controls,
                                                                mode, alpha, A_i,
                                                                x_i, beta, y_i);
   }
@@ -300,7 +300,7 @@ template <class ExecutionSpace, class AlphaType, class AMatrix, class XVector,
           class BetaType, class YVector,
           typename std::enable_if<KokkosSparse::Experimental::is_bsr_matrix<
               AMatrix>::value>::type* = nullptr>
-void spmv(const ExecutionSpace& exec,
+void spmv(const ExecutionSpace& space,
           KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
           const BetaType& beta, const YVector& y,
@@ -342,7 +342,7 @@ void spmv(const ExecutionSpace& exec,
         typename AMatrix::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>,
         typename AMatrix::size_type>
         Acrs("bsr_to_crs", A.numCols(), A.values, A.graph);
-    KokkosSparse::spmv(exec, controls, mode, alpha, Acrs, x, beta, y,
+    KokkosSparse::spmv(space, controls, mode, alpha, Acrs, x, beta, y,
                        RANK_ONE());
     return;
   }
@@ -407,9 +407,9 @@ void spmv(const ExecutionSpace& exec,
     // if y contains NaN but beta = 0, the result y should be filled with 0.
     // For example, this is useful for passing in uninitialized y and beta=0.
     if (beta == Kokkos::ArithTraits<BetaType>::zero())
-      Kokkos::deep_copy(exec, y_i, Kokkos::ArithTraits<BetaType>::zero());
+      Kokkos::deep_copy(space, y_i, Kokkos::ArithTraits<BetaType>::zero());
     else
-      KokkosBlas::scal(exec, y_i, beta, y_i);
+      KokkosBlas::scal(space, y_i, beta, y_i);
     return;
   }
 
@@ -466,7 +466,7 @@ void spmv(const ExecutionSpace& exec,
         typename YVector_Internal::array_layout,
         typename YVector_Internal::device_type,
         typename YVector_Internal::memory_traits,
-        false>::spmv_bsrmatrix(exec, controls, mode, alpha, A_i, x_i, beta,
+        false>::spmv_bsrmatrix(space, controls, mode, alpha, A_i, x_i, beta,
                                y_i);
     Kokkos::Profiling::popRegion();
   } else {
@@ -496,7 +496,7 @@ void spmv(const ExecutionSpace& exec,
                   __SPMV_TYPES__>::value;
 
     Experimental::Impl::SPMV_BSRMATRIX<__SPMV_TYPES__, tpl_spec_avail,
-                                       eti_spec_avail>::spmv_bsrmatrix(exec,
+                                       eti_spec_avail>::spmv_bsrmatrix(space,
                                                                        controls,
                                                                        mode,
                                                                        alpha,
@@ -529,7 +529,7 @@ struct SPMV2D1D {
                        const YVector& y);
 
   template <typename ExecutionSpace>
-  static bool spmv2d1d(const ExecutionSpace& exec, const char mode[],
+  static bool spmv2d1d(const ExecutionSpace& space, const char mode[],
                        const AlphaType& alpha, const AMatrix& A,
                        const XVector& x, const BetaType& beta,
                        const YVector& y);
@@ -548,11 +548,11 @@ struct SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector,
   }
 
   template <typename ExecutionSpace>
-  static bool spmv2d1d(const ExecutionSpace& exec, const char mode[],
+  static bool spmv2d1d(const ExecutionSpace& space, const char mode[],
                        const AlphaType& alpha, const AMatrix& A,
                        const XVector& x, const BetaType& beta,
                        const YVector& y) {
-    spmv(exec, mode, alpha, A, x, beta, y);
+    spmv(space, mode, alpha, A, x, beta, y);
     return true;
   }
 };
@@ -570,7 +570,7 @@ struct SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector,
   }
 
   template <typename ExecutionSpace>
-  static bool spmv2d1d(const ExecutionSpace& /* exec */, const char /*mode*/[],
+  static bool spmv2d1d(const ExecutionSpace& /* space */, const char /*mode*/[],
                        const AlphaType& /*alpha*/, const AMatrix& /*A*/,
                        const XVector& /*x*/, const BetaType& /*beta*/,
                        const YVector& /*y*/) {
@@ -592,11 +592,11 @@ struct SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector,
   }
 
   template <typename ExecutionSpace>
-  static bool spmv2d1d(const ExecutionSpace& exec, const char mode[],
+  static bool spmv2d1d(const ExecutionSpace& space, const char mode[],
                        const AlphaType& alpha, const AMatrix& A,
                        const XVector& x, const BetaType& beta,
                        const YVector& y) {
-    spmv(exec, mode, alpha, A, x, beta, y);
+    spmv(space, mode, alpha, A, x, beta, y);
     return true;
   }
 };
@@ -614,7 +614,7 @@ struct SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector,
   }
 
   template <typename ExecutionSpace>
-  static bool spmv2d1d(const ExecutionSpace& /* exec */, const char /*mode*/[],
+  static bool spmv2d1d(const ExecutionSpace& /* space */, const char /*mode*/[],
                        const AlphaType& /*alpha*/, const AMatrix& /*A*/,
                        const XVector& /*x*/, const BetaType& /*beta*/,
                        const YVector& /*y*/) {
@@ -636,11 +636,11 @@ struct SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector,
   }
 
   template <typename ExecutionSpace>
-  static bool spmv2d1d(const ExecutionSpace& exec, const char mode[],
+  static bool spmv2d1d(const ExecutionSpace& space, const char mode[],
                        const AlphaType& alpha, const AMatrix& A,
                        const XVector& x, const BetaType& beta,
                        const YVector& y) {
-    spmv(exec, mode, alpha, A, x, beta, y);
+    spmv(space, mode, alpha, A, x, beta, y);
     return true;
   }
 };
@@ -658,7 +658,7 @@ struct SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector,
   }
 
   template <typename ExecutionSpace>
-  static bool spmv2d1d(const ExecutionSpace& /* exec */, const char /*mode*/[],
+  static bool spmv2d1d(const ExecutionSpace& /* space */, const char /*mode*/[],
                        const AlphaType& /*alpha*/, const AMatrix& /*A*/,
                        const XVector& /*x*/, const BetaType& /*beta*/,
                        const YVector& /*y*/) {
@@ -688,7 +688,7 @@ using SPMV2D1D
 /// to YVector::value_type. \tparam YVector Type of y, must be a rank-2
 /// Kokkos::View and its rank must match that of XVector
 ///
-/// \param exec [in] The execution space instance on which to run the
+/// \param space [in] The execution space instance on which to run the
 ///   kernel.
 /// \param controls [in] kokkos-kernels control structure.
 /// \param mode [in] Select A's operator mode: "N" for normal, "T" for
@@ -707,7 +707,7 @@ template <class ExecutionSpace, class AlphaType, class AMatrix, class XVector,
           typename std::enable_if<
               KokkosSparse::is_crs_matrix<AMatrix>::value>::type* = nullptr>
 #endif
-void spmv(const ExecutionSpace& exec,
+void spmv(const ExecutionSpace& space,
           KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
           const BetaType& beta, const YVector& y,
@@ -797,7 +797,7 @@ void spmv(const ExecutionSpace& exec,
         Impl::SPMV2D1D<AlphaType, AMatrix_Internal, XVector_SubInternal,
                        BetaType, YVector_SubInternal,
                        typename XVector_SubInternal::array_layout>;
-    if (impl_type::spmv2d1d(exec, mode, alpha, A, x_i, beta, y_i)) {
+    if (impl_type::spmv2d1d(space, mode, alpha, A, x_i, beta, y_i)) {
       return;
     }
   }
@@ -842,7 +842,7 @@ void spmv(const ExecutionSpace& exec,
           typename YVector_Internal::device_type,
           typename YVector_Internal::memory_traits,
           std::is_integral<typename AMatrix_Internal::value_type>::value,
-          false>::spmv_mv(exec, controls, mode, alpha, A_i, x_i, beta, y_i);
+          false>::spmv_mv(space, controls, mode, alpha, A_i, x_i, beta, y_i);
     } else {
       return Impl::SPMV_MV<
           ExecutionSpace, typename AMatrix_Internal::value_type,
@@ -857,7 +857,7 @@ void spmv(const ExecutionSpace& exec,
           typename YVector_Internal::value_type**,
           typename YVector_Internal::array_layout,
           typename YVector_Internal::device_type,
-          typename YVector_Internal::memory_traits>::spmv_mv(exec, controls,
+          typename YVector_Internal::memory_traits>::spmv_mv(space, controls,
                                                              mode, alpha, A_i,
                                                              x_i, beta, y_i);
     }
@@ -904,7 +904,7 @@ template <class ExecutionSpace, class AlphaType, class AMatrix, class XVector,
           class BetaType, class YVector,
           typename std::enable_if<KokkosSparse::Experimental::is_bsr_matrix<
               AMatrix>::value>::type* = nullptr>
-void spmv(const ExecutionSpace& exec,
+void spmv(const ExecutionSpace& space,
           KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
           const BetaType& beta, const YVector& y,
@@ -947,7 +947,7 @@ void spmv(const ExecutionSpace& exec,
         typename AMatrix::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>,
         typename AMatrix::size_type>
         Acrs("bsr_to_crs", A.numCols(), A.values, A.graph);
-    KokkosSparse::spmv(exec, controls, mode, alpha, Acrs, x, beta, y,
+    KokkosSparse::spmv(space, controls, mode, alpha, Acrs, x, beta, y,
                        RANK_TWO());
     return;
   }
@@ -1011,9 +1011,9 @@ void spmv(const ExecutionSpace& exec,
     // if y contains NaN but beta = 0, the result y should be filled with 0.
     // For example, this is useful for passing in uninitialized y and beta=0.
     if (beta == Kokkos::ArithTraits<BetaType>::zero())
-      Kokkos::deep_copy(exec, y_i, Kokkos::ArithTraits<BetaType>::zero());
+      Kokkos::deep_copy(space, y_i, Kokkos::ArithTraits<BetaType>::zero());
     else
-      KokkosBlas::scal(exec, y_i, beta, y_i);
+      KokkosBlas::scal(space, y_i, beta, y_i);
     return;
   }
   //
@@ -1035,7 +1035,7 @@ void spmv(const ExecutionSpace& exec,
     XVector_SubInternal x_0 = Kokkos::subview(x_i, Kokkos::ALL(), 0);
     YVector_SubInternal y_0 = Kokkos::subview(y_i, Kokkos::ALL(), 0);
 
-    return spmv(exec, controls, mode, alpha, A_i, x_0, beta, y_0, RANK_ONE());
+    return spmv(space, controls, mode, alpha, A_i, x_0, beta, y_0, RANK_ONE());
   }
   //
   // Whether to call KokkosKernel's native implementation, even if a TPL impl is
@@ -1083,7 +1083,7 @@ void spmv(const ExecutionSpace& exec,
         typename YVector_Internal::device_type,
         typename YVector_Internal::memory_traits,
         std::is_integral<typename AMatrix_Internal::const_value_type>::value,
-        false>::spmv_mv_bsrmatrix(exec, controls, mode, alpha, A_i, x_i, beta,
+        false>::spmv_mv_bsrmatrix(space, controls, mode, alpha, A_i, x_i, beta,
                                   y_i);
     Kokkos::Profiling::popRegion();
   } else {
@@ -1102,7 +1102,7 @@ void spmv(const ExecutionSpace& exec,
         typename YVector_Internal::device_type,
         typename YVector_Internal::memory_traits,
         std::is_integral<typename AMatrix_Internal::const_value_type>::value>::
-        spmv_mv_bsrmatrix(exec, controls, mode, alpha, A_i, x_i, beta, y_i);
+        spmv_mv_bsrmatrix(space, controls, mode, alpha, A_i, x_i, beta, y_i);
   }
 }
 
@@ -1152,7 +1152,7 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
 /// to YVector::value_type. \tparam YVector Type of y, must be a rank 1 or 2
 /// Kokkos::View and its rank must match that of XVector
 ///
-/// \param exec [in] The execution space instance on which to run the
+/// \param space [in] The execution space instance on which to run the
 ///   kernel.
 /// \param controls [in] kokkos-kernels control structure
 /// \param mode [in] Select A's operator mode: "N" for normal, "T" for
@@ -1166,7 +1166,7 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
 ///   of columns as x.
 template <class ExecutionSpace, class AlphaType, class AMatrix, class XVector,
           class BetaType, class YVector>
-void spmv(const ExecutionSpace& exec,
+void spmv(const ExecutionSpace& space,
           KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
           const BetaType& beta, const YVector& y) {
@@ -1235,16 +1235,16 @@ void spmv(const ExecutionSpace& exec,
     // if y contains NaN but beta = 0, the result y should be filled with 0.
     // For example, this is useful for passing in uninitialized y and beta=0.
     if (beta == Kokkos::ArithTraits<BetaType>::zero())
-      Kokkos::deep_copy(exec, y, Kokkos::ArithTraits<BetaType>::zero());
+      Kokkos::deep_copy(space, y, Kokkos::ArithTraits<BetaType>::zero());
     else
-      KokkosBlas::scal(exec, y, beta, y);
+      KokkosBlas::scal(space, y, beta, y);
     return;
   }
   //
   using RANK_SPECIALISE =
       typename std::conditional<static_cast<int>(XVector::rank) == 2, RANK_TWO,
                                 RANK_ONE>::type;
-  spmv(exec, controls, mode, alpha, A, x, beta, y, RANK_SPECIALISE());
+  spmv(space, controls, mode, alpha, A, x, beta, y, RANK_SPECIALISE());
 }
 
 /// \brief Public interface to local sparse matrix-vector multiply.
@@ -1329,7 +1329,7 @@ template <class ExecutionSpace, class AlphaType, class AMatrix, class XVector,
           typename std::enable_if<
               !KokkosSparse::Experimental::is_bsr_matrix<AMatrix>::value &&
               !KokkosSparse::is_crs_matrix<AMatrix>::value>::type* = nullptr>
-void spmv(const ExecutionSpace& /* exec */,
+void spmv(const ExecutionSpace& /* space */,
           KokkosKernels::Experimental::Controls /*controls*/,
           const char[] /*mode*/, const AlphaType& /*alpha*/,
           const AMatrix& /*A*/, const XVector& /*x*/, const BetaType& /*beta*/,
@@ -1380,7 +1380,7 @@ void spmv(const char mode[], const AlphaType& alpha, const AMatrix& A,
 /// to YVector::value_type. \tparam YVector Type of y, must be a rank-2
 /// Kokkos::View and its rank must match that of XVector
 ///
-/// \param exec [in] The execution space instance on which to run the
+/// \param space [in] The execution space instance on which to run the
 ///   kernel.
 /// \param mode [in] Select A's operator mode: "N" for normal, "T" for
 /// transpose, "C" for conjugate or "H" for conjugate transpose. \param alpha
@@ -1390,18 +1390,18 @@ void spmv(const char mode[], const AlphaType& alpha, const AMatrix& A,
 /// \param y [in/out] Result vector.
 template <class ExecutionSpace, class AlphaType, class AMatrix, class XVector,
           class BetaType, class YVector>
-void spmv(const ExecutionSpace& exec, const char mode[], const AlphaType& alpha,
+void spmv(const ExecutionSpace& space, const char mode[], const AlphaType& alpha,
           const AMatrix& A, const XVector& x, const BetaType& beta,
           const YVector& y) {
   KokkosKernels::Experimental::Controls controls;
-  spmv(exec, controls, mode, alpha, A, x, beta, y);
+  spmv(space, controls, mode, alpha, A, x, beta, y);
 }
 
 namespace Experimental {
 
 template <class ExecutionSpace, class AlphaType, class AMatrix, class XVector,
           class BetaType, class YVector>
-void spmv_struct(const ExecutionSpace& exec, const char mode[],
+void spmv_struct(const ExecutionSpace& space, const char mode[],
                  const int stencil_type,
                  const Kokkos::View<typename AMatrix::non_const_ordinal_type*,
                                     Kokkos::HostSpace>& structure,
@@ -1500,7 +1500,7 @@ void spmv_struct(const ExecutionSpace& exec, const char mode[],
       typename YVector_Internal::value_type*,
       typename YVector_Internal::array_layout,
       typename YVector_Internal::device_type,
-      typename YVector_Internal::memory_traits>::spmv_struct(exec, mode,
+      typename YVector_Internal::memory_traits>::spmv_struct(space, mode,
                                                              stencil_type,
                                                              structure, alpha,
                                                              A_i, x_i, beta,
@@ -1531,7 +1531,7 @@ struct SPMV2D1D_STRUCT {
 
   template <typename ExecutionSpace>
   static bool spmv2d1d_struct(
-      const ExecutionSpace& exec, const char mode[], const int stencil_type,
+      const ExecutionSpace& space, const char mode[], const int stencil_type,
       const Kokkos::View<typename AMatrix::non_const_ordinal_type*,
                          Kokkos::HostSpace>& structure,
       const AlphaType& alpha, const AMatrix& A, const XVector& x,
@@ -1556,12 +1556,12 @@ struct SPMV2D1D_STRUCT<AlphaType, AMatrix, XVector, BetaType, YVector,
 
   template <typename ExecutionSpace>
   static bool spmv2d1d_struct(
-      const ExecutionSpace& exec, const char mode[], const int stencil_type,
+      const ExecutionSpace& space, const char mode[], const int stencil_type,
       const Kokkos::View<typename AMatrix::non_const_ordinal_type*,
                          Kokkos::HostSpace>& structure,
       const AlphaType& alpha, const AMatrix& A, const XVector& x,
       const BetaType& beta, const YVector& y) {
-    spmv_struct(exec, mode, stencil_type, structure, alpha, A, x, beta, y,
+    spmv_struct(space, mode, stencil_type, structure, alpha, A, x, beta, y,
                 RANK_ONE());
     return true;
   }
@@ -1582,7 +1582,7 @@ struct SPMV2D1D_STRUCT<AlphaType, AMatrix, XVector, BetaType, YVector,
 
   template <typename ExecutionSpace>
   static bool spmv2d1d_struct(
-      const ExecutionSpace& /* exec*/, const char /*mode*/[],
+      const ExecutionSpace& /* space*/, const char /*mode*/[],
       const int /*stencil_type*/,
       const Kokkos::View<typename AMatrix::non_const_ordinal_type*,
                          Kokkos::HostSpace>& /*structure*/,
@@ -1611,12 +1611,12 @@ struct SPMV2D1D_STRUCT<AlphaType, AMatrix, XVector, BetaType, YVector,
 
   template <typename ExecutionSpace>
   static bool spmv2d1d_struct(
-      const ExecutionSpace& exec, const char mode[], const int stencil_type,
+      const ExecutionSpace& space, const char mode[], const int stencil_type,
       const Kokkos::View<typename AMatrix::non_const_ordinal_type*,
                          Kokkos::HostSpace>& structure,
       const AlphaType& alpha, const AMatrix& A, const XVector& x,
       const BetaType& beta, const YVector& y) {
-    spmv_struct(exec, mode, stencil_type, structure, alpha, A, x, beta, y,
+    spmv_struct(space, mode, stencil_type, structure, alpha, A, x, beta, y,
                 RANK_ONE());
     return true;
   }
@@ -1637,7 +1637,7 @@ struct SPMV2D1D_STRUCT<AlphaType, AMatrix, XVector, BetaType, YVector,
 
   template <typename ExecutionSpace>
   static bool spmv2d1d_struct(
-      const ExecutionSpace /*exec*/, const char /*mode*/[],
+      const ExecutionSpace /*space*/, const char /*mode*/[],
       const int /*stencil_type*/,
       const Kokkos::View<typename AMatrix::non_const_ordinal_type*,
                          Kokkos::HostSpace>& /*structure*/,
@@ -1666,12 +1666,12 @@ struct SPMV2D1D_STRUCT<AlphaType, AMatrix, XVector, BetaType, YVector,
 
   template <typename ExecutionSpace>
   static bool spmv2d1d_struct(
-      const ExecutionSpace& exec, const char mode[], const int stencil_type,
+      const ExecutionSpace& space, const char mode[], const int stencil_type,
       const Kokkos::View<typename AMatrix::non_const_ordinal_type*,
                          Kokkos::HostSpace>& structure,
       const AlphaType& alpha, const AMatrix& A, const XVector& x,
       const BetaType& beta, const YVector& y) {
-    spmv_struct(exec, mode, stencil_type, structure, alpha, A, x, beta, y,
+    spmv_struct(space, mode, stencil_type, structure, alpha, A, x, beta, y,
                 RANK_ONE());
     return true;
   }
@@ -1692,7 +1692,7 @@ struct SPMV2D1D_STRUCT<AlphaType, AMatrix, XVector, BetaType, YVector,
 
   template <typename ExecutionSpace>
   static bool spmv2d1d_struct(
-      const ExecutionSpace& /*exec*/, const char /*mode*/[],
+      const ExecutionSpace& /*space*/, const char /*mode*/[],
       const int /*stencil_type*/,
       const Kokkos::View<typename AMatrix::non_const_ordinal_type*,
                          Kokkos::HostSpace>& /*structure*/,
@@ -1713,7 +1713,7 @@ using SPMV2D1D_STRUCT
 
 template <class ExecutionSpace, class AlphaType, class AMatrix, class XVector,
           class BetaType, class YVector>
-void spmv_struct(const ExecutionSpace& exec, const char mode[],
+void spmv_struct(const ExecutionSpace& space, const char mode[],
                  const int stencil_type,
                  const Kokkos::View<typename AMatrix::non_const_ordinal_type*,
                                     Kokkos::HostSpace>& structure,
@@ -1796,7 +1796,7 @@ void spmv_struct(const ExecutionSpace& exec, const char mode[],
     if (Impl::SPMV2D1D_STRUCT<AlphaType, AMatrix_Internal, XVector_SubInternal,
                               BetaType, YVector_SubInternal,
                               typename XVector_SubInternal::array_layout>::
-            spmv2d1d_struct(exec, mode, stencil_type, structure, alpha, A, x_i,
+            spmv2d1d_struct(space, mode, stencil_type, structure, alpha, A, x_i,
                             beta, y_i)) {
       return;
     }
@@ -1833,7 +1833,7 @@ void spmv_struct(const ExecutionSpace& exec, const char mode[],
         typename YVector_Internal::array_layout,
         typename YVector_Internal::device_type,
         typename YVector_Internal::memory_traits>::
-        spmv_mv(exec, KokkosKernels::Experimental::Controls(), mode, alpha, A_i,
+        spmv_mv(space, KokkosKernels::Experimental::Controls(), mode, alpha, A_i,
                 x_i, beta, y_i);
   }
 }
@@ -1893,7 +1893,7 @@ void spmv_struct(const char mode[], const int stencil_type,
 /// by \c mode.  If beta == 0, ignore and overwrite the initial
 /// entries of y; if alpha == 0, ignore the entries of A and x.
 ///
-/// \param exec [in] The execution space instance on which to run the
+/// \param space [in] The execution space instance on which to run the
 ///   kernel.
 /// \param mode [in] "N" for no transpose, "T" for transpose, or "C"
 ///             for conjugate transpose.
@@ -1911,7 +1911,7 @@ void spmv_struct(const char mode[], const int stencil_type,
 ///   of columns as x.
 template <class ExecutionSpace, class AlphaType, class AMatrix, class XVector,
           class BetaType, class YVector>
-void spmv_struct(const ExecutionSpace& exec, const char mode[],
+void spmv_struct(const ExecutionSpace& space, const char mode[],
                  const int stencil_type,
                  const Kokkos::View<typename AMatrix::non_const_ordinal_type*,
                                     Kokkos::HostSpace>& structure,
@@ -1920,7 +1920,7 @@ void spmv_struct(const ExecutionSpace& exec, const char mode[],
   typedef
       typename std::conditional<XVector::rank == 2, RANK_TWO, RANK_ONE>::type
           RANK_SPECIALISE;
-  spmv_struct(exec, mode, stencil_type, structure, alpha, A, x, beta, y,
+  spmv_struct(space, mode, stencil_type, structure, alpha, A, x, beta, y,
               RANK_SPECIALISE());
 }
 
