@@ -55,7 +55,7 @@ struct spmv_mv_bsrmatrix_eti_spec_avail {
   template <>                                                              \
   struct spmv_bsrmatrix_eti_spec_avail<                                    \
       EXEC_SPACE_TYPE,                                                     \
-      KokkosSparse::Experimental::BsrMatrix<                               \
+      ::KokkosSparse::Experimental::BsrMatrix<                               \
           const SCALAR_TYPE, const ORDINAL_TYPE,                           \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                 \
           Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET_TYPE>,     \
@@ -75,7 +75,7 @@ struct spmv_mv_bsrmatrix_eti_spec_avail {
   template <>                                                              \
   struct spmv_mv_bsrmatrix_eti_spec_avail<                                 \
       EXEC_SPACE_TYPE,                                                     \
-      KokkosSparse::Experimental::BsrMatrix<                               \
+      ::KokkosSparse::Experimental::BsrMatrix<                               \
           const SCALAR_TYPE, const ORDINAL_TYPE,                           \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                 \
           Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET_TYPE>,     \
@@ -389,7 +389,7 @@ struct SPMV_MV_BSRMATRIX<ExecutionSpace, AMatrix, XVector, YVector, true, false,
     MEM_SPACE_TYPE)                                                        \
   extern template struct SPMV_BSRMATRIX<                                   \
       EXEC_SPACE_TYPE,                                                     \
-      KokkosSparse::Experimental::BsrMatrix<                               \
+      ::KokkosSparse::Experimental::BsrMatrix<                               \
           const SCALAR_TYPE, const ORDINAL_TYPE,                           \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                 \
           Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET_TYPE>,     \
@@ -407,7 +407,7 @@ struct SPMV_MV_BSRMATRIX<ExecutionSpace, AMatrix, XVector, YVector, true, false,
     MEM_SPACE_TYPE)                                                        \
   template struct SPMV_BSRMATRIX<                                          \
       EXEC_SPACE_TYPE,                                                     \
-      KokkosSparse::Experimental::BsrMatrix<                               \
+      ::KokkosSparse::Experimental::BsrMatrix<                               \
           const SCALAR_TYPE, const ORDINAL_TYPE,                           \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                 \
           Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET_TYPE>,     \
@@ -428,7 +428,7 @@ struct SPMV_MV_BSRMATRIX<ExecutionSpace, AMatrix, XVector, YVector, true, false,
     MEM_SPACE_TYPE)                                                        \
   extern template struct SPMV_MV_BSRMATRIX<                                \
       EXEC_SPACE_TYPE,                                                     \
-      KokkosSparse::Experimental::BsrMatrix<                               \
+      ::KokkosSparse::Experimental::BsrMatrix<                               \
           const SCALAR_TYPE, const ORDINAL_TYPE,                           \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                 \
           Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET_TYPE>,     \
@@ -446,7 +446,7 @@ struct SPMV_MV_BSRMATRIX<ExecutionSpace, AMatrix, XVector, YVector, true, false,
     MEM_SPACE_TYPE)                                                        \
   template struct SPMV_MV_BSRMATRIX<                                       \
       EXEC_SPACE_TYPE,                                                     \
-      KokkosSparse::Experimental::BsrMatrix<                               \
+      ::KokkosSparse::Experimental::BsrMatrix<                               \
           const SCALAR_TYPE, const ORDINAL_TYPE,                           \
           Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>,                 \
           Kokkos::MemoryTraits<Kokkos::Unmanaged>, const OFFSET_TYPE>,     \
