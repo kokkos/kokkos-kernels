@@ -520,7 +520,7 @@ void block_gauss_seidel_numeric(
 /// @tparam y_scalar_view_t The type of the Y (right-hand side) vector. May be
 /// rank-1 or rank-2 View.
 /// @param exec_space_in The execution space instance this kernel will be run
-/// on.
+/// on. NOTE: Currently only used for GS_DEFAULT.
 /// @param handle handle A KokkosKernelsHandle instance
 /// @param num_rows Number of rows in the matrix
 /// @param num_cols Number of columns in the matrix
@@ -801,7 +801,7 @@ void symmetric_block_gauss_seidel_apply(
 /// @tparam y_scalar_view_t The type of the Y (right-hand side) vector. May be
 /// rank-1 or rank-2 View.
 /// @param exec_space_in The execution space instance this kernel will be run
-/// on.
+/// on. NOTE: Currently only used for GS_DEFAULT.
 /// @param handle KernelHandle instance
 /// @param num_rows Number of rows in the matrix
 /// @param num_cols Number of columns in the matrix
@@ -1083,7 +1083,7 @@ void forward_sweep_block_gauss_seidel_apply(
 /// @tparam y_scalar_view_t The type of the Y (right-hand side) vector. May be
 /// rank-1 or rank-2 View.
 /// @param exec_space_in The execution space instance this kernel will be run
-/// on.
+/// on. NOTE: Currently only used for GS_DEFAULT.
 /// @param handle KernelHandle instance
 /// @param num_rows Number of rows in the matrix
 /// @param num_cols Number of columns in the matrix
