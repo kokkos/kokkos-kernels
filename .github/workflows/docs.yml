@@ -16,7 +16,7 @@ jobs:
       - name: Install Dependencies
         run: |
           brew install doxygen
-          python3 -m pip install sphinx
+          python3 -m pip install sphinx -v "sphinx==6.2.1"
           python3 -m pip install breathe
           python3 -m pip install sphinx-rtd-theme
           sphinx-build --version
