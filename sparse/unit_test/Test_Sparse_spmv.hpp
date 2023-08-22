@@ -1180,20 +1180,26 @@ void test_spmv_all_interfaces_light() {
                             num_errors);
     EXPECT_EQ(num_errors, 0);
   };
-  // Now run through the interfaces and check results each time
-  execution_space exec;
+  // Now run through the interfaces and check results each time.
+  auto space_partitions =
+      Kokkos::Experimental::partition_space(execution_space(), 1, 1);
+  // For versions taking an exec space instance, use the second partition out of
+  // 2 (since the first partition might just be the default instance)
+  execution_space space = space_partitions[1];
   KokkosKernels::Experimental::Controls controls;
   // All tagged versions
-  KokkosSparse::spmv(exec, controls, "N", 1.0, A, x, 0.0, y,
+  KokkosSparse::spmv(space, controls, "N", 1.0, A, x, 0.0, y,
                      KokkosSparse::RANK_ONE());
+  space.fence();
   verify();
   clear_y();
   KokkosSparse::spmv(controls, "N", 1.0, A, x, 0.0, y,
                      KokkosSparse::RANK_ONE());
   verify();
   clear_y();
-  KokkosSparse::spmv(exec, controls, "N", 1.0, A, x_mv, 0.0, y_mv,
+  KokkosSparse::spmv(space, controls, "N", 1.0, A, x_mv, 0.0, y_mv,
                      KokkosSparse::RANK_TWO());
+  space.fence();
   verify_mv();
   clear_y();
   KokkosSparse::spmv(controls, "N", 1.0, A, x_mv, 0.0, y_mv,
@@ -1201,11 +1207,13 @@ void test_spmv_all_interfaces_light() {
   verify_mv();
   clear_y();
   // Non-tagged versions
-  // exec and controls
-  spmv(exec, controls, "N", 1.0, A, x, 0.0, y);
+  // space and controls
+  spmv(space, controls, "N", 1.0, A, x, 0.0, y);
+  space.fence();
   verify();
   clear_y();
-  spmv(exec, controls, "N", 1.0, A, x_mv, 0.0, y_mv);
+  spmv(space, controls, "N", 1.0, A, x_mv, 0.0, y_mv);
+  space.fence();
   verify_mv();
   clear_y();
   // controls
@@ -1215,11 +1223,13 @@ void test_spmv_all_interfaces_light() {
   spmv(controls, "N", 1.0, A, x_mv, 0.0, y_mv);
   verify_mv();
   clear_y();
-  // exec
-  spmv(exec, "N", 1.0, A, x, 0.0, y);
+  // space
+  spmv(space, "N", 1.0, A, x, 0.0, y);
+  space.fence();
   verify();
   clear_y();
-  spmv(exec, "N", 1.0, A, x_mv, 0.0, y_mv);
+  spmv(space, "N", 1.0, A, x_mv, 0.0, y_mv);
+  space.fence();
   verify_mv();
   clear_y();
   // neither
