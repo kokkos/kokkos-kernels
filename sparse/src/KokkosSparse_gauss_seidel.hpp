@@ -29,13 +29,12 @@ namespace Experimental {
 /// @brief Gauss-Seidel preconditioner setup (first phase, based on sparsity
 /// pattern only)
 ///
-/// @tparam ExecSpaceIn This kernels execution space type.
+/// @tparam ExecutionSpace This kernels execution space type.
 /// @tparam KernelHandle A specialization of
 /// KokkosKernels::Experimental::KokkosKernelsHandle
 /// @tparam lno_row_view_t_ The matrix's rowmap type
 /// @tparam lno_nnz_view_t_ The matrix's entries type
-/// @param exec_space_in The execution space instance this kernel will be run
-/// on.
+/// @param space The execution space instance this kernel will be run on.
 /// @param handle KernelHandle instance
 /// @param num_rows Number of rows in the matrix
 /// @param num_cols Number of columns in the matrix
@@ -45,9 +44,9 @@ namespace Experimental {
 /// num_rows</tt> submatrix of A is structurally symmetric
 /// @pre   <tt>handle->create_gs_handle(...)</tt> has been called previously
 ///
-template <typename ExecSpaceIn, typename KernelHandle, typename lno_row_view_t_,
-          typename lno_nnz_view_t_>
-void gauss_seidel_symbolic(ExecSpaceIn &exec_space_in, KernelHandle *handle,
+template <typename ExecutionSpace, typename KernelHandle,
+          typename lno_row_view_t_, typename lno_nnz_view_t_>
+void gauss_seidel_symbolic(ExecutionSpace &space, KernelHandle *handle,
                            typename KernelHandle::const_nnz_lno_t num_rows,
                            typename KernelHandle::const_nnz_lno_t num_cols,
                            lno_row_view_t_ row_map, lno_nnz_view_t_ entries,
@@ -98,11 +97,10 @@ void gauss_seidel_symbolic(ExecSpaceIn &exec_space_in, KernelHandle *handle,
   using namespace KokkosSparse::Impl;
 
   GAUSS_SEIDEL_SYMBOLIC<
-      ExecSpaceIn, const_handle_type, Internal_alno_row_view_t_,
-      Internal_alno_nnz_view_t_>::gauss_seidel_symbolic(exec_space_in,
-                                                        &tmp_handle, num_rows,
-                                                        num_cols, const_a_r,
-                                                        const_a_l,
+      ExecutionSpace, const_handle_type, Internal_alno_row_view_t_,
+      Internal_alno_nnz_view_t_>::gauss_seidel_symbolic(space, &tmp_handle,
+                                                        num_rows, num_cols,
+                                                        const_a_r, const_a_l,
                                                         is_graph_symmetric);
 }
 
@@ -175,15 +173,14 @@ void block_gauss_seidel_symbolic(
 /// @brief Gauss-Seidel preconditioner setup (second phase, based on matrix's
 /// numeric values)
 ///
-/// @tparam ExecSpaceIn This kernels execution space type.
+/// @tparam ExecutionSpace This kernels execution space type.
 /// @tparam format The matrix storage format, CRS or BSR
 /// @tparam KernelHandle A specialization of
 /// KokkosKernels::Experimental::KokkosKernelsHandle
 /// @tparam lno_row_view_t_ The matrix's rowmap type
 /// @tparam lno_nnz_view_t_ The matrix's entries type
 /// @tparam scalar_nnz_view_t_ The matrix's values type
-/// @param exec_space_in The execution space instance this kernel will be run
-/// on.
+/// @param space The execution space instance this kernel will be run on.
 /// @param handle KernelHandle instance
 /// @param num_rows Number of rows in the matrix
 /// @param num_cols Number of columns in the matrix
@@ -193,12 +190,12 @@ void block_gauss_seidel_symbolic(
 /// @param is_graph_symmetric Whether the upper-left <tt>num_rows x
 /// num_rows</tt> submatrix of A is structurally symmetric
 ///
-template <class ExecSpaceIn,
+template <class ExecutionSpace,
           KokkosSparse::SparseMatrixFormat format =
               KokkosSparse::SparseMatrixFormat::CRS,
           typename KernelHandle, typename lno_row_view_t_,
           typename lno_nnz_view_t_, typename scalar_nnz_view_t_>
-void gauss_seidel_numeric(ExecSpaceIn &exec_space_in, KernelHandle *handle,
+void gauss_seidel_numeric(ExecutionSpace &space, KernelHandle *handle,
                           typename KernelHandle::const_nnz_lno_t num_rows,
                           typename KernelHandle::const_nnz_lno_t num_cols,
                           lno_row_view_t_ row_map, lno_nnz_view_t_ entries,
@@ -262,12 +259,12 @@ void gauss_seidel_numeric(ExecSpaceIn &exec_space_in, KernelHandle *handle,
   using namespace KokkosSparse::Impl;
 
   GAUSS_SEIDEL_NUMERIC<
-      ExecSpaceIn, const_handle_type, format, Internal_alno_row_view_t_,
+      ExecutionSpace, const_handle_type, format, Internal_alno_row_view_t_,
       Internal_alno_nnz_view_t_,
-      Internal_ascalar_nnz_view_t_>::gauss_seidel_numeric(exec_space_in,
-                                                          &tmp_handle, num_rows,
-                                                          num_cols, const_a_r,
-                                                          const_a_l, const_a_v,
+      Internal_ascalar_nnz_view_t_>::gauss_seidel_numeric(space, &tmp_handle,
+                                                          num_rows, num_cols,
+                                                          const_a_r, const_a_l,
+                                                          const_a_v,
                                                           is_graph_symmetric);
 }
 
@@ -316,7 +313,7 @@ void gauss_seidel_numeric(KernelHandle *handle,
 /// numeric values). This version accepts the matrix's inverse diagonal from the
 /// user.
 ///
-/// @tparam ExecSpaceIn This kernels execution space type.
+/// @tparam ExecutionSpace This kernels execution space type.
 /// @tparam format The matrix storage format, CRS or BSR
 /// @tparam KernelHandle A specialization of
 /// KokkosKernels::Experimental::KokkosKernelsHandle
@@ -324,8 +321,7 @@ void gauss_seidel_numeric(KernelHandle *handle,
 /// @tparam lno_nnz_view_t_ The matrix's entries type
 /// @tparam scalar_nnz_view_t_ The matrix's values type. The user-provided
 /// inverse diagonal must share this type.
-/// @param exec_space_in The execution space instance this kernel will be run
-/// on.
+/// @param space The execution space instance this kernel will be run on.
 /// @param handle KernelHandle instance
 /// @param num_rows Number of rows in the matrix
 /// @param num_cols Number of columns in the matrix
@@ -339,12 +335,12 @@ void gauss_seidel_numeric(KernelHandle *handle,
 /// the version of <tt>gauss_seidel_numeric</tt> that
 ///         doesn't take it as an argument. The inverse diagonal will be
 ///         computed internally.
-template <class ExecSpaceIn,
+template <class ExecutionSpace,
           KokkosSparse::SparseMatrixFormat format =
               KokkosSparse::SparseMatrixFormat::CRS,
           typename KernelHandle, typename lno_row_view_t_,
           typename lno_nnz_view_t_, typename scalar_nnz_view_t_>
-void gauss_seidel_numeric(ExecSpaceIn &exec_space_in, KernelHandle *handle,
+void gauss_seidel_numeric(ExecutionSpace &space, KernelHandle *handle,
                           typename KernelHandle::const_nnz_lno_t num_rows,
                           typename KernelHandle::const_nnz_lno_t num_cols,
                           lno_row_view_t_ row_map, lno_nnz_view_t_ entries,
@@ -411,13 +407,12 @@ void gauss_seidel_numeric(ExecSpaceIn &exec_space_in, KernelHandle *handle,
   using namespace KokkosSparse::Impl;
 
   GAUSS_SEIDEL_NUMERIC<
-      ExecSpaceIn, const_handle_type, format, Internal_alno_row_view_t_,
+      ExecutionSpace, const_handle_type, format, Internal_alno_row_view_t_,
       Internal_alno_nnz_view_t_,
-      Internal_ascalar_nnz_view_t_>::gauss_seidel_numeric(exec_space_in,
-                                                          &tmp_handle, num_rows,
-                                                          num_cols, const_a_r,
-                                                          const_a_l, const_a_v,
-                                                          const_a_d,
+      Internal_ascalar_nnz_view_t_>::gauss_seidel_numeric(space, &tmp_handle,
+                                                          num_rows, num_cols,
+                                                          const_a_r, const_a_l,
+                                                          const_a_v, const_a_d,
                                                           is_graph_symmetric);
 }
 
@@ -509,7 +504,7 @@ void block_gauss_seidel_numeric(
 /// @brief Apply symmetric (forward + backward) Gauss-Seidel preconditioner to
 /// system AX=Y
 ///
-/// @tparam ExecSpaceIn This kernels execution space type.
+/// @tparam ExecutionSpace This kernels execution space type.
 /// @tparam format The matrix storage format, CRS or BSR
 /// @tparam KernelHandle A specialization of
 /// KokkosKernels::Experimental::KokkosKernelsHandle
@@ -520,7 +515,7 @@ void block_gauss_seidel_numeric(
 /// May be rank-1 or rank-2 View.
 /// @tparam y_scalar_view_t The type of the Y (right-hand side) vector. May be
 /// rank-1 or rank-2 View.
-/// @param exec_space_in The execution space instance this kernel will be run
+/// @param space The execution space instance this kernel will be run
 /// on. NOTE: Currently only used for GS_DEFAULT.
 /// @param handle handle A KokkosKernelsHandle instance
 /// @param num_rows Number of rows in the matrix
@@ -538,14 +533,14 @@ void block_gauss_seidel_numeric(
 /// @pre   <tt>y_rhs_input_vec.extent(0) == num_rows</tt>
 /// @pre   <tt>x_lhs_output_vec.extent(1) == y_rhs_input_vec.extent(1)</tt>
 ///
-template <class ExecSpaceIn,
+template <class ExecutionSpace,
           KokkosSparse::SparseMatrixFormat format =
               KokkosSparse::SparseMatrixFormat::CRS,
           typename KernelHandle, typename lno_row_view_t_,
           typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
           typename x_scalar_view_t, typename y_scalar_view_t>
 void symmetric_gauss_seidel_apply(
-    ExecSpaceIn &exec_space_in, KernelHandle *handle,
+    ExecutionSpace &space, KernelHandle *handle,
     typename KernelHandle::const_nnz_lno_t num_rows,
     typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map,
     lno_nnz_view_t_ entries, scalar_nnz_view_t_ values,
@@ -662,14 +657,14 @@ void symmetric_gauss_seidel_apply(
 
   using namespace KokkosSparse::Impl;
 
-  GAUSS_SEIDEL_APPLY<ExecSpaceIn, const_handle_type, format,
+  GAUSS_SEIDEL_APPLY<ExecutionSpace, const_handle_type, format,
                      Internal_alno_row_view_t_, Internal_alno_nnz_view_t_,
                      Internal_ascalar_nnz_view_t_, Internal_xscalar_nnz_view_t_,
                      Internal_yscalar_nnz_view_t_>::
-      gauss_seidel_apply(exec_space_in, &tmp_handle, num_rows, num_cols,
-                         const_a_r, const_a_l, const_a_v, nonconst_x_v,
-                         const_y_v, init_zero_x_vector, update_y_vector, omega,
-                         numIter, true, true);
+      gauss_seidel_apply(space, &tmp_handle, num_rows, num_cols, const_a_r,
+                         const_a_l, const_a_v, nonconst_x_v, const_y_v,
+                         init_zero_x_vector, update_y_vector, omega, numIter,
+                         true, true);
 }
 
 ///
@@ -801,7 +796,7 @@ void symmetric_block_gauss_seidel_apply(
 /// May be rank-1 or rank-2 View.
 /// @tparam y_scalar_view_t The type of the Y (right-hand side) vector. May be
 /// rank-1 or rank-2 View.
-/// @param exec_space_in The execution space instance this kernel will be run
+/// @param space The execution space instance this kernel will be run
 /// on. NOTE: Currently only used for GS_DEFAULT.
 /// @param handle KernelHandle instance
 /// @param num_rows Number of rows in the matrix
@@ -819,14 +814,14 @@ void symmetric_block_gauss_seidel_apply(
 /// @pre   <tt>y_rhs_input_vec.extent(0) == num_rows</tt>
 /// @pre   <tt>x_lhs_output_vec.extent(1) == y_rhs_input_vec.extent(1)</tt>
 ///
-template <class ExecSpaceIn,
+template <class ExecutionSpace,
           KokkosSparse::SparseMatrixFormat format =
               KokkosSparse::SparseMatrixFormat::CRS,
           class KernelHandle, typename lno_row_view_t_,
           typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
           typename x_scalar_view_t, typename y_scalar_view_t>
 void forward_sweep_gauss_seidel_apply(
-    ExecSpaceIn &exec_space_in, KernelHandle *handle,
+    ExecutionSpace &space, KernelHandle *handle,
     typename KernelHandle::const_nnz_lno_t num_rows,
     typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map,
     lno_nnz_view_t_ entries, scalar_nnz_view_t_ values,
@@ -945,14 +940,14 @@ void forward_sweep_gauss_seidel_apply(
 
   using namespace KokkosSparse::Impl;
 
-  GAUSS_SEIDEL_APPLY<ExecSpaceIn, const_handle_type, format,
+  GAUSS_SEIDEL_APPLY<ExecutionSpace, const_handle_type, format,
                      Internal_alno_row_view_t_, Internal_alno_nnz_view_t_,
                      Internal_ascalar_nnz_view_t_, Internal_xscalar_nnz_view_t_,
                      Internal_yscalar_nnz_view_t_>::
-      gauss_seidel_apply(exec_space_in, &tmp_handle, num_rows, num_cols,
-                         const_a_r, const_a_l, const_a_v, nonconst_x_v,
-                         const_y_v, init_zero_x_vector, update_y_vector, omega,
-                         numIter, true, false);
+      gauss_seidel_apply(space, &tmp_handle, num_rows, num_cols, const_a_r,
+                         const_a_l, const_a_v, nonconst_x_v, const_y_v,
+                         init_zero_x_vector, update_y_vector, omega, numIter,
+                         true, false);
 }
 
 ///
@@ -1072,7 +1067,7 @@ void forward_sweep_block_gauss_seidel_apply(
 ///
 /// @brief Apply backward Gauss-Seidel preconditioner to system AX=Y
 ///
-/// @tparam ExecSpaceIn This kernels execution space type.
+/// @tparam ExecutionSpace This kernels execution space type.
 /// @tparam format The matrix storage format, CRS or BSR
 /// @tparam KernelHandle A specialization of
 /// KokkosKernels::Experimental::KokkosKernelsHandle
@@ -1083,7 +1078,7 @@ void forward_sweep_block_gauss_seidel_apply(
 /// May be rank-1 or rank-2 View.
 /// @tparam y_scalar_view_t The type of the Y (right-hand side) vector. May be
 /// rank-1 or rank-2 View.
-/// @param exec_space_in The execution space instance this kernel will be run
+/// @param space The execution space instance this kernel will be run
 /// on. NOTE: Currently only used for GS_DEFAULT.
 /// @param handle KernelHandle instance
 /// @param num_rows Number of rows in the matrix
@@ -1101,14 +1096,14 @@ void forward_sweep_block_gauss_seidel_apply(
 /// @pre   <tt>y_rhs_input_vec.extent(0) == num_rows</tt>
 /// @pre   <tt>x_lhs_output_vec.extent(1) == y_rhs_input_vec.extent(1)</tt>
 ///
-template <class ExecSpaceIn,
+template <class ExecutionSpace,
           KokkosSparse::SparseMatrixFormat format =
               KokkosSparse::SparseMatrixFormat::CRS,
           class KernelHandle, typename lno_row_view_t_,
           typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
           typename x_scalar_view_t, typename y_scalar_view_t>
 void backward_sweep_gauss_seidel_apply(
-    ExecSpaceIn &exec_space_in, KernelHandle *handle,
+    ExecutionSpace &space, KernelHandle *handle,
     typename KernelHandle::const_nnz_lno_t num_rows,
     typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map,
     lno_nnz_view_t_ entries, scalar_nnz_view_t_ values,
@@ -1227,14 +1222,14 @@ void backward_sweep_gauss_seidel_apply(
 
   using namespace KokkosSparse::Impl;
 
-  GAUSS_SEIDEL_APPLY<ExecSpaceIn, const_handle_type, format,
+  GAUSS_SEIDEL_APPLY<ExecutionSpace, const_handle_type, format,
                      Internal_alno_row_view_t_, Internal_alno_nnz_view_t_,
                      Internal_ascalar_nnz_view_t_, Internal_xscalar_nnz_view_t_,
                      Internal_yscalar_nnz_view_t_>::
-      gauss_seidel_apply(exec_space_in, &tmp_handle, num_rows, num_cols,
-                         const_a_r, const_a_l, const_a_v, nonconst_x_v,
-                         const_y_v, init_zero_x_vector, update_y_vector, omega,
-                         numIter, false, true);
+      gauss_seidel_apply(space, &tmp_handle, num_rows, num_cols, const_a_r,
+                         const_a_l, const_a_v, nonconst_x_v, const_y_v,
+                         init_zero_x_vector, update_y_vector, omega, numIter,
+                         false, true);
 }
 
 ///
