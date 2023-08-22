@@ -59,11 +59,7 @@ KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>, Kokkos::LayoutLeft,
 
 #endif
 
-// cuBLAS
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
-// double
-#define KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_CUBLAS(SCALAR, LAYOUT, EXECSPACE,       \
-                                              MEMSPACE)                        \
+#define KOKKOSBLAS1_DOT_TPL_SPEC(SCALAR, LAYOUT, EXECSPACE, MEMSPACE)          \
   template <>                                                                  \
   struct dot_tpl_spec_avail<                                                   \
       EXECSPACE,                                                               \
@@ -77,19 +73,27 @@ KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>, Kokkos::LayoutLeft,
     enum : bool { value = true };                                              \
   };
 
-KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_CUBLAS(double, Kokkos::LayoutLeft, Kokkos::Cuda,
-                                      Kokkos::CudaSpace)
-KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::LayoutLeft, Kokkos::Cuda,
-                                      Kokkos::CudaSpace)
-KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>,
-                                      Kokkos::LayoutLeft, Kokkos::Cuda,
-                                      Kokkos::CudaSpace)
-KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>,
-                                      Kokkos::LayoutLeft, Kokkos::Cuda,
-                                      Kokkos::CudaSpace)
+#define KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL(LAYOUT, EXECSPACE, MEMSPACE)   \
+  KOKKOSBLAS1_DOT_TPL_SPEC(float, LAYOUT, EXECSPACE, MEMSPACE)        \
+  KOKKOSBLAS1_DOT_TPL_SPEC(double, LAYOUT, EXECSPACE, MEMSPACE)       \
+  KOKKOSBLAS1_DOT_TPL_SPEC(Kokkos::complex<float>, LAYOUT, EXECSPACE, \
+                           MEMSPACE)                                  \
+  KOKKOSBLAS1_DOT_TPL_SPEC(Kokkos::complex<double>, LAYOUT, EXECSPACE, MEMSPACE)
 
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
+KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL(Kokkos::LayoutLeft, Kokkos::Cuda,
+                               Kokkos::CudaSpace)
 #endif
 
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
+KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL(Kokkos::LayoutLeft, Kokkos::HIP,
+                               Kokkos::HIPSpace)
+#endif
+
+#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) && defined(KOKKOS_ENABLE_SYCL)
+KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL(Kokkos::LayoutLeft, Kokkos::Experimental::SYCL,
+                               Kokkos::Experimental::SYCLDeviceUSMSpace)
+#endif
 }  // namespace Impl
 }  // namespace KokkosBlas
 #endif
