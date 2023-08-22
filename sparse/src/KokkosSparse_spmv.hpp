@@ -44,7 +44,7 @@ struct RANK_TWO {};
 /// vectors (RANK_ONE tag). Computes y := alpha*Op(A)*x + beta*y, where Op(A) is
 /// controlled by mode (see below).
 ///
-/// \tparam execution_space A Kokkos execution space. Must be able to access
+/// \tparam ExecutionSpace A Kokkos execution space. Must be able to access
 ///   the memory spaces of A, x, and y.
 /// \tparam AlphaType Type of coefficient alpha. Must be convertible to
 /// YVector::value_type. \tparam AMatrix A KokkosSparse::CrsMatrix, or
@@ -65,15 +65,15 @@ struct RANK_TWO {};
 /// \param tag RANK_ONE dispatch
 #ifdef DOXY  // documentation version - don't separately document SFINAE
              // specializations for BSR and CRS
-template <class execution_space, class AlphaType, class AMatrix, class XVector,
+template <class ExecutionSpace, class AlphaType, class AMatrix, class XVector,
           class BetaType, class YVector>
 #else
-template <class execution_space, class AlphaType, class AMatrix, class XVector,
+template <class ExecutionSpace, class AlphaType, class AMatrix, class XVector,
           class BetaType, class YVector,
           typename std::enable_if<
               KokkosSparse::is_crs_matrix<AMatrix>::value>::type* = nullptr>
 #endif
-void spmv(const execution_space& exec,
+void spmv(const ExecutionSpace& exec,
           KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
           const BetaType& beta, const YVector& y,
@@ -84,19 +84,19 @@ void spmv(const execution_space& exec,
                 "KokkosSparse::spmv: XVector must be a Kokkos::View.");
   static_assert(Kokkos::is_view<YVector>::value,
                 "KokkosSparse::spmv: YVector must be a Kokkos::View.");
-  // Make sure A, x, y are accessible to execution_space
+  // Make sure A, x, y are accessible to ExecutionSpace
   static_assert(
-      Kokkos::SpaceAccessibility<execution_space,
+      Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename AMatrix::memory_space>::accessible,
-      "KokkosBlas::spmv: AMatrix must be accessible from execution_space");
+      "KokkosBlas::spmv: AMatrix must be accessible from ExecutionSpace");
   static_assert(
-      Kokkos::SpaceAccessibility<execution_space,
+      Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename XVector::memory_space>::accessible,
-      "KokkosBlas::spmv: XVector must be accessible from execution_space");
+      "KokkosBlas::spmv: XVector must be accessible from ExecutionSpace");
   static_assert(
-      Kokkos::SpaceAccessibility<execution_space,
+      Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename YVector::memory_space>::accessible,
-      "KokkosBlas::spmv: YVector must be accessible from execution_space");
+      "KokkosBlas::spmv: YVector must be accessible from ExecutionSpace");
 
   // Make sure that x and y have the same rank.
   static_assert(XVector::rank == YVector::rank,
@@ -219,7 +219,7 @@ void spmv(const execution_space& exec,
             typename AMatrix_Internal::non_const_value_type>::name() +
         "]";
     Kokkos::Profiling::pushRegion(label);
-    Impl::SPMV<execution_space, typename AMatrix_Internal::value_type,
+    Impl::SPMV<ExecutionSpace, typename AMatrix_Internal::value_type,
                typename AMatrix_Internal::ordinal_type,
                typename AMatrix_Internal::device_type,
                typename AMatrix_Internal::memory_traits,
@@ -242,7 +242,7 @@ void spmv(const execution_space& exec,
   } else {
     // note: the cuSPARSE spmv wrapper defines a profiling region, so one is not
     // needed here.
-    Impl::SPMV<execution_space, typename AMatrix_Internal::value_type,
+    Impl::SPMV<ExecutionSpace, typename AMatrix_Internal::value_type,
                typename AMatrix_Internal::ordinal_type,
                typename AMatrix_Internal::device_type,
                typename AMatrix_Internal::memory_traits,
@@ -296,11 +296,11 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
 }
 
 #ifndef DOXY  // hide SFINAE specialization for BSR
-template <class execution_space, class AlphaType, class AMatrix, class XVector,
+template <class ExecutionSpace, class AlphaType, class AMatrix, class XVector,
           class BetaType, class YVector,
           typename std::enable_if<KokkosSparse::Experimental::is_bsr_matrix<
               AMatrix>::value>::type* = nullptr>
-void spmv(const execution_space& exec,
+void spmv(const ExecutionSpace& exec,
           KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
           const BetaType& beta, const YVector& y,
@@ -310,19 +310,19 @@ void spmv(const execution_space& exec,
                 "KokkosSparse::spmv: XVector must be a Kokkos::View.");
   static_assert(Kokkos::is_view<YVector>::value,
                 "KokkosSparse::spmv: YVector must be a Kokkos::View.");
-  // Make sure A, x, y are accessible to execution_space
+  // Make sure A, x, y are accessible to ExecutionSpace
   static_assert(
-      Kokkos::SpaceAccessibility<execution_space,
+      Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename AMatrix::memory_space>::accessible,
-      "KokkosBlas::spmv: AMatrix must be accessible from execution_space");
+      "KokkosBlas::spmv: AMatrix must be accessible from ExecutionSpace");
   static_assert(
-      Kokkos::SpaceAccessibility<execution_space,
+      Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename XVector::memory_space>::accessible,
-      "KokkosBlas::spmv: XVector must be accessible from execution_space");
+      "KokkosBlas::spmv: XVector must be accessible from ExecutionSpace");
   static_assert(
-      Kokkos::SpaceAccessibility<execution_space,
+      Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename YVector::memory_space>::accessible,
-      "KokkosBlas::spmv: YVector must be accessible from execution_space");
+      "KokkosBlas::spmv: YVector must be accessible from ExecutionSpace");
   // Make sure that x and y have the same rank.
   static_assert(XVector::rank == YVector::rank,
                 "KokkosSparse::spmv: Vector ranks do not match.");
@@ -453,7 +453,7 @@ void spmv(const execution_space& exec,
         "]";
     Kokkos::Profiling::pushRegion(label);
     Experimental::Impl::SPMV_BSRMATRIX<
-        execution_space, typename AMatrix_Internal::const_value_type,
+        ExecutionSpace, typename AMatrix_Internal::const_value_type,
         typename AMatrix_Internal::const_ordinal_type,
         typename AMatrix_Internal::device_type,
         typename AMatrix_Internal::memory_traits,
@@ -470,19 +470,19 @@ void spmv(const execution_space& exec,
                                y_i);
     Kokkos::Profiling::popRegion();
   } else {
-#define __SPMV_TYPES__                                          \
-  execution_space, typename AMatrix_Internal::const_value_type, \
-      typename AMatrix_Internal::const_ordinal_type,            \
-      typename AMatrix_Internal::device_type,                   \
-      typename AMatrix_Internal::memory_traits,                 \
-      typename AMatrix_Internal::const_size_type,               \
-      typename XVector_Internal::const_value_type*,             \
-      typename XVector_Internal::array_layout,                  \
-      typename XVector_Internal::device_type,                   \
-      typename XVector_Internal::memory_traits,                 \
-      typename YVector_Internal::value_type*,                   \
-      typename YVector_Internal::array_layout,                  \
-      typename YVector_Internal::device_type,                   \
+#define __SPMV_TYPES__                                         \
+  ExecutionSpace, typename AMatrix_Internal::const_value_type, \
+      typename AMatrix_Internal::const_ordinal_type,           \
+      typename AMatrix_Internal::device_type,                  \
+      typename AMatrix_Internal::memory_traits,                \
+      typename AMatrix_Internal::const_size_type,              \
+      typename XVector_Internal::const_value_type*,            \
+      typename XVector_Internal::array_layout,                 \
+      typename XVector_Internal::device_type,                  \
+      typename XVector_Internal::memory_traits,                \
+      typename YVector_Internal::value_type*,                  \
+      typename YVector_Internal::array_layout,                 \
+      typename YVector_Internal::device_type,                  \
       typename YVector_Internal::memory_traits
 
     constexpr bool tpl_spec_avail =
@@ -528,8 +528,8 @@ struct SPMV2D1D {
                        const AMatrix& A, const XVector& x, const BetaType& beta,
                        const YVector& y);
 
-  template <typename execution_space>
-  static bool spmv2d1d(const execution_space& exec, const char mode[],
+  template <typename ExecutionSpace>
+  static bool spmv2d1d(const ExecutionSpace& exec, const char mode[],
                        const AlphaType& alpha, const AMatrix& A,
                        const XVector& x, const BetaType& beta,
                        const YVector& y);
@@ -547,8 +547,8 @@ struct SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector,
     return true;
   }
 
-  template <typename execution_space>
-  static bool spmv2d1d(const execution_space& exec, const char mode[],
+  template <typename ExecutionSpace>
+  static bool spmv2d1d(const ExecutionSpace& exec, const char mode[],
                        const AlphaType& alpha, const AMatrix& A,
                        const XVector& x, const BetaType& beta,
                        const YVector& y) {
@@ -569,8 +569,8 @@ struct SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector,
     return false;
   }
 
-  template <typename execution_space>
-  static bool spmv2d1d(const execution_space& /* exec */, const char /*mode*/[],
+  template <typename ExecutionSpace>
+  static bool spmv2d1d(const ExecutionSpace& /* exec */, const char /*mode*/[],
                        const AlphaType& /*alpha*/, const AMatrix& /*A*/,
                        const XVector& /*x*/, const BetaType& /*beta*/,
                        const YVector& /*y*/) {
@@ -591,8 +591,8 @@ struct SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector,
     return true;
   }
 
-  template <typename execution_space>
-  static bool spmv2d1d(const execution_space& exec, const char mode[],
+  template <typename ExecutionSpace>
+  static bool spmv2d1d(const ExecutionSpace& exec, const char mode[],
                        const AlphaType& alpha, const AMatrix& A,
                        const XVector& x, const BetaType& beta,
                        const YVector& y) {
@@ -613,8 +613,8 @@ struct SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector,
     return false;
   }
 
-  template <typename execution_space>
-  static bool spmv2d1d(const execution_space& /* exec */, const char /*mode*/[],
+  template <typename ExecutionSpace>
+  static bool spmv2d1d(const ExecutionSpace& /* exec */, const char /*mode*/[],
                        const AlphaType& /*alpha*/, const AMatrix& /*A*/,
                        const XVector& /*x*/, const BetaType& /*beta*/,
                        const YVector& /*y*/) {
@@ -635,8 +635,8 @@ struct SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector,
     return true;
   }
 
-  template <typename execution_space>
-  static bool spmv2d1d(const execution_space& exec, const char mode[],
+  template <typename ExecutionSpace>
+  static bool spmv2d1d(const ExecutionSpace& exec, const char mode[],
                        const AlphaType& alpha, const AMatrix& A,
                        const XVector& x, const BetaType& beta,
                        const YVector& y) {
@@ -657,8 +657,8 @@ struct SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector,
     return false;
   }
 
-  template <typename execution_space>
-  static bool spmv2d1d(const execution_space& /* exec */, const char /*mode*/[],
+  template <typename ExecutionSpace>
+  static bool spmv2d1d(const ExecutionSpace& /* exec */, const char /*mode*/[],
                        const AlphaType& /*alpha*/, const AMatrix& /*A*/,
                        const XVector& /*x*/, const BetaType& /*beta*/,
                        const YVector& /*y*/) {
@@ -679,7 +679,7 @@ using SPMV2D1D
 /// (RANK_TWO tag). Computes y := alpha*Op(A)*x + beta*y, where Op(A) is
 /// controlled by mode (see below).
 ///
-/// \tparam execution_space A Kokkos execution space. Must be able to access
+/// \tparam ExecutionSpace A Kokkos execution space. Must be able to access
 ///   the memory spaces of A, x, and y.
 /// \tparam AlphaType Type of coefficient alpha. Must be convertible to
 /// YVector::value_type. \tparam AMatrix A KokkosSparse::CrsMatrix, or
@@ -699,15 +699,15 @@ using SPMV2D1D
 /// \param y [in/out] Result vector.
 /// \param tag RANK_TWO dispatch
 #ifdef DOXY  // documentation version
-template <class execution_space, class AlphaType, class AMatrix, class XVector,
+template <class ExecutionSpace, class AlphaType, class AMatrix, class XVector,
           class BetaType, class YVector>
 #else
-template <class execution_space, class AlphaType, class AMatrix, class XVector,
+template <class ExecutionSpace, class AlphaType, class AMatrix, class XVector,
           class BetaType, class YVector,
           typename std::enable_if<
               KokkosSparse::is_crs_matrix<AMatrix>::value>::type* = nullptr>
 #endif
-void spmv(const execution_space& exec,
+void spmv(const ExecutionSpace& exec,
           KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
           const BetaType& beta, const YVector& y,
@@ -717,19 +717,19 @@ void spmv(const execution_space& exec,
                 "KokkosSparse::spmv: XVector must be a Kokkos::View.");
   static_assert(Kokkos::is_view<YVector>::value,
                 "KokkosSparse::spmv: YVector must be a Kokkos::View.");
-  // Make sure A, x, y are accessible to execution_space
+  // Make sure A, x, y are accessible to ExecutionSpace
   static_assert(
-      Kokkos::SpaceAccessibility<execution_space,
+      Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename AMatrix::memory_space>::accessible,
-      "KokkosBlas::spmv: AMatrix must be accessible from execution_space");
+      "KokkosBlas::spmv: AMatrix must be accessible from ExecutionSpace");
   static_assert(
-      Kokkos::SpaceAccessibility<execution_space,
+      Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename XVector::memory_space>::accessible,
-      "KokkosBlas::spmv: XVector must be accessible from execution_space");
+      "KokkosBlas::spmv: XVector must be accessible from ExecutionSpace");
   static_assert(
-      Kokkos::SpaceAccessibility<execution_space,
+      Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename YVector::memory_space>::accessible,
-      "KokkosBlas::spmv: YVector must be accessible from execution_space");
+      "KokkosBlas::spmv: YVector must be accessible from ExecutionSpace");
   // Make sure that x and y have the same rank.
   static_assert(XVector::rank == YVector::rank,
                 "KokkosSparse::spmv: Vector ranks do not match.");
@@ -828,7 +828,7 @@ void spmv(const execution_space& exec,
 
     if (useNative) {
       return Impl::SPMV_MV<
-          execution_space, typename AMatrix_Internal::value_type,
+          ExecutionSpace, typename AMatrix_Internal::value_type,
           typename AMatrix_Internal::ordinal_type,
           typename AMatrix_Internal::device_type,
           typename AMatrix_Internal::memory_traits,
@@ -845,7 +845,7 @@ void spmv(const execution_space& exec,
           false>::spmv_mv(exec, controls, mode, alpha, A_i, x_i, beta, y_i);
     } else {
       return Impl::SPMV_MV<
-          execution_space, typename AMatrix_Internal::value_type,
+          ExecutionSpace, typename AMatrix_Internal::value_type,
           typename AMatrix_Internal::ordinal_type,
           typename AMatrix_Internal::device_type,
           typename AMatrix_Internal::memory_traits,
@@ -900,11 +900,11 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
 }
 
 #ifndef DOXY  // hide SFINAE
-template <class execution_space, class AlphaType, class AMatrix, class XVector,
+template <class ExecutionSpace, class AlphaType, class AMatrix, class XVector,
           class BetaType, class YVector,
           typename std::enable_if<KokkosSparse::Experimental::is_bsr_matrix<
               AMatrix>::value>::type* = nullptr>
-void spmv(const execution_space& exec,
+void spmv(const ExecutionSpace& exec,
           KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
           const BetaType& beta, const YVector& y,
@@ -914,19 +914,19 @@ void spmv(const execution_space& exec,
                 "KokkosSparse::spmv: XVector must be a Kokkos::View.");
   static_assert(Kokkos::is_view<YVector>::value,
                 "KokkosSparse::spmv: YVector must be a Kokkos::View.");
-  // Make sure A, x, y are accessible to execution_space
+  // Make sure A, x, y are accessible to ExecutionSpace
   static_assert(
-      Kokkos::SpaceAccessibility<execution_space,
+      Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename AMatrix::memory_space>::accessible,
-      "KokkosBlas::spmv: AMatrix must be accessible from execution_space");
+      "KokkosBlas::spmv: AMatrix must be accessible from ExecutionSpace");
   static_assert(
-      Kokkos::SpaceAccessibility<execution_space,
+      Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename XVector::memory_space>::accessible,
-      "KokkosBlas::spmv: XVector must be accessible from execution_space");
+      "KokkosBlas::spmv: XVector must be accessible from ExecutionSpace");
   static_assert(
-      Kokkos::SpaceAccessibility<execution_space,
+      Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename YVector::memory_space>::accessible,
-      "KokkosBlas::spmv: YVector must be accessible from execution_space");
+      "KokkosBlas::spmv: YVector must be accessible from ExecutionSpace");
   // Make sure that x and y have the same rank.
   static_assert(
       static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
@@ -1069,7 +1069,7 @@ void spmv(const execution_space& exec,
         "]";
     Kokkos::Profiling::pushRegion(label);
     Experimental::Impl::SPMV_MV_BSRMATRIX<
-        execution_space, typename AMatrix_Internal::const_value_type,
+        ExecutionSpace, typename AMatrix_Internal::const_value_type,
         typename AMatrix_Internal::const_ordinal_type,
         typename AMatrix_Internal::device_type,
         typename AMatrix_Internal::memory_traits,
@@ -1088,7 +1088,7 @@ void spmv(const execution_space& exec,
     Kokkos::Profiling::popRegion();
   } else {
     Experimental::Impl::SPMV_MV_BSRMATRIX<
-        execution_space, typename AMatrix_Internal::const_value_type,
+        ExecutionSpace, typename AMatrix_Internal::const_value_type,
         typename AMatrix_Internal::const_ordinal_type,
         typename AMatrix_Internal::device_type,
         typename AMatrix_Internal::memory_traits,
@@ -1143,7 +1143,7 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
 /// enabled for Kokkos::CrsMatrix and Kokkos::Experimental::BsrMatrix on a
 /// single vector, or for Kokkos::Experimental::BsrMatrix with a multivector.
 ///
-/// \tparam execution_space A Kokkos execution space. Must be able to access
+/// \tparam ExecutionSpace A Kokkos execution space. Must be able to access
 ///   the memory spaces of A, x, and y.
 /// \tparam AlphaType Type of coefficient alpha. Must be convertible to
 /// YVector::value_type. \tparam AMatrix A KokkosSparse::CrsMatrix, or
@@ -1164,9 +1164,9 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
 /// \param y [in/out] Either a single vector (rank-1 Kokkos::View) or
 ///   multivector (rank-2 Kokkos::View).  It must have the same number
 ///   of columns as x.
-template <class execution_space, class AlphaType, class AMatrix, class XVector,
+template <class ExecutionSpace, class AlphaType, class AMatrix, class XVector,
           class BetaType, class YVector>
-void spmv(const execution_space& exec,
+void spmv(const ExecutionSpace& exec,
           KokkosKernels::Experimental::Controls controls, const char mode[],
           const AlphaType& alpha, const AMatrix& A, const XVector& x,
           const BetaType& beta, const YVector& y) {
@@ -1175,19 +1175,19 @@ void spmv(const execution_space& exec,
                 "KokkosSparse::spmv: XVector must be a Kokkos::View.");
   static_assert(Kokkos::is_view<YVector>::value,
                 "KokkosSparse::spmv: YVector must be a Kokkos::View.");
-  // Make sure A, x, y are accessible to execution_space
+  // Make sure A, x, y are accessible to ExecutionSpace
   static_assert(
-      Kokkos::SpaceAccessibility<execution_space,
+      Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename AMatrix::memory_space>::accessible,
-      "KokkosBlas::spmv: AMatrix must be accessible from execution_space");
+      "KokkosBlas::spmv: AMatrix must be accessible from ExecutionSpace");
   static_assert(
-      Kokkos::SpaceAccessibility<execution_space,
+      Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename XVector::memory_space>::accessible,
-      "KokkosBlas::spmv: XVector must be accessible from execution_space");
+      "KokkosBlas::spmv: XVector must be accessible from ExecutionSpace");
   static_assert(
-      Kokkos::SpaceAccessibility<execution_space,
+      Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename YVector::memory_space>::accessible,
-      "KokkosBlas::spmv: YVector must be accessible from execution_space");
+      "KokkosBlas::spmv: YVector must be accessible from ExecutionSpace");
   // Make sure that both x and y have the same rank.
   static_assert(
       static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
@@ -1324,12 +1324,12 @@ void spmv(KokkosKernels::Experimental::Controls /*controls*/,
 /// This is a catch-all interface that throws a compile-time error if \c
 /// AMatrix is not a CrsMatrix, or BsrMatrix
 ///
-template <class execution_space, class AlphaType, class AMatrix, class XVector,
+template <class ExecutionSpace, class AlphaType, class AMatrix, class XVector,
           class BetaType, class YVector,
           typename std::enable_if<
               !KokkosSparse::Experimental::is_bsr_matrix<AMatrix>::value &&
               !KokkosSparse::is_crs_matrix<AMatrix>::value>::type* = nullptr>
-void spmv(const execution_space& /* exec */,
+void spmv(const ExecutionSpace& /* exec */,
           KokkosKernels::Experimental::Controls /*controls*/,
           const char[] /*mode*/, const AlphaType& /*alpha*/,
           const AMatrix& /*A*/, const XVector& /*x*/, const BetaType& /*beta*/,
@@ -1371,7 +1371,7 @@ void spmv(const char mode[], const AlphaType& alpha, const AMatrix& A,
 ///   Computes y := alpha*Op(A)*x + beta*y, where Op(A) is controlled by mode
 ///   (see below).
 ///
-/// \tparam execution_space A Kokkos execution space. Must be able to access
+/// \tparam ExecutionSpace A Kokkos execution space. Must be able to access
 ///   the memory spaces of A, x, and y.
 /// \tparam AlphaType Type of coefficient alpha. Must be convertible to
 /// YVector::value_type. \tparam AMatrix A KokkosSparse::CrsMatrix, or
@@ -1388,20 +1388,20 @@ void spmv(const char mode[], const AlphaType& alpha, const AMatrix& A,
 /// \param x [in] A vector to multiply on the left by A.
 /// \param beta [in] Scalar multiplier for the vector y.
 /// \param y [in/out] Result vector.
-template <class execution_space, class AlphaType, class AMatrix, class XVector,
+template <class ExecutionSpace, class AlphaType, class AMatrix, class XVector,
           class BetaType, class YVector>
-void spmv(const execution_space& exec, const char mode[],
-          const AlphaType& alpha, const AMatrix& A, const XVector& x,
-          const BetaType& beta, const YVector& y) {
+void spmv(const ExecutionSpace& exec, const char mode[], const AlphaType& alpha,
+          const AMatrix& A, const XVector& x, const BetaType& beta,
+          const YVector& y) {
   KokkosKernels::Experimental::Controls controls;
   spmv(exec, controls, mode, alpha, A, x, beta, y);
 }
 
 namespace Experimental {
 
-template <class execution_space, class AlphaType, class AMatrix, class XVector,
+template <class ExecutionSpace, class AlphaType, class AMatrix, class XVector,
           class BetaType, class YVector>
-void spmv_struct(const execution_space& exec, const char mode[],
+void spmv_struct(const ExecutionSpace& exec, const char mode[],
                  const int stencil_type,
                  const Kokkos::View<typename AMatrix::non_const_ordinal_type*,
                                     Kokkos::HostSpace>& structure,
@@ -1411,22 +1411,22 @@ void spmv_struct(const execution_space& exec, const char mode[],
   // Make sure that both x and y have the same rank.
   static_assert((int)XVector::rank == (int)YVector::rank,
                 "KokkosSparse::spmv_struct: Vector ranks do not match.");
-  // Make sure A, x, y are accessible to execution_space
+  // Make sure A, x, y are accessible to ExecutionSpace
   static_assert(
-      Kokkos::SpaceAccessibility<execution_space,
+      Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename AMatrix::memory_space>::accessible,
       "KokkosBlas::spmv_struct: AMatrix must be accessible from "
-      "execution_space");
+      "ExecutionSpace");
   static_assert(
-      Kokkos::SpaceAccessibility<execution_space,
+      Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename XVector::memory_space>::accessible,
       "KokkosBlas::spmv_struct: XVector must be accessible from "
-      "execution_space");
+      "ExecutionSpace");
   static_assert(
-      Kokkos::SpaceAccessibility<execution_space,
+      Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename YVector::memory_space>::accessible,
       "KokkosBlas::spmv_struct: YVector must be accessible from "
-      "execution_space");
+      "ExecutionSpace");
   // Make sure that x (and therefore y) is rank 1.
   static_assert(
       (int)XVector::rank == 1,
@@ -1488,7 +1488,7 @@ void spmv_struct(const execution_space& exec, const char mode[],
   YVector_Internal y_i = y;
 
   return KokkosSparse::Impl::SPMV_STRUCT<
-      execution_space, typename AMatrix_Internal::value_type,
+      ExecutionSpace, typename AMatrix_Internal::value_type,
       typename AMatrix_Internal::ordinal_type,
       typename AMatrix_Internal::device_type,
       typename AMatrix_Internal::memory_traits,
@@ -1529,9 +1529,9 @@ struct SPMV2D1D_STRUCT {
       const AlphaType& alpha, const AMatrix& A, const XVector& x,
       const BetaType& beta, const YVector& y);
 
-  template <typename execution_space>
+  template <typename ExecutionSpace>
   static bool spmv2d1d_struct(
-      const execution_space& exec, const char mode[], const int stencil_type,
+      const ExecutionSpace& exec, const char mode[], const int stencil_type,
       const Kokkos::View<typename AMatrix::non_const_ordinal_type*,
                          Kokkos::HostSpace>& structure,
       const AlphaType& alpha, const AMatrix& A, const XVector& x,
@@ -1554,9 +1554,9 @@ struct SPMV2D1D_STRUCT<AlphaType, AMatrix, XVector, BetaType, YVector,
     return true;
   }
 
-  template <typename execution_space>
+  template <typename ExecutionSpace>
   static bool spmv2d1d_struct(
-      const execution_space& exec, const char mode[], const int stencil_type,
+      const ExecutionSpace& exec, const char mode[], const int stencil_type,
       const Kokkos::View<typename AMatrix::non_const_ordinal_type*,
                          Kokkos::HostSpace>& structure,
       const AlphaType& alpha, const AMatrix& A, const XVector& x,
@@ -1580,9 +1580,9 @@ struct SPMV2D1D_STRUCT<AlphaType, AMatrix, XVector, BetaType, YVector,
     return false;
   }
 
-  template <typename execution_space>
+  template <typename ExecutionSpace>
   static bool spmv2d1d_struct(
-      const execution_space& /* exec*/, const char /*mode*/[],
+      const ExecutionSpace& /* exec*/, const char /*mode*/[],
       const int /*stencil_type*/,
       const Kokkos::View<typename AMatrix::non_const_ordinal_type*,
                          Kokkos::HostSpace>& /*structure*/,
@@ -1609,9 +1609,9 @@ struct SPMV2D1D_STRUCT<AlphaType, AMatrix, XVector, BetaType, YVector,
     return true;
   }
 
-  template <typename execution_space>
+  template <typename ExecutionSpace>
   static bool spmv2d1d_struct(
-      const execution_space& exec, const char mode[], const int stencil_type,
+      const ExecutionSpace& exec, const char mode[], const int stencil_type,
       const Kokkos::View<typename AMatrix::non_const_ordinal_type*,
                          Kokkos::HostSpace>& structure,
       const AlphaType& alpha, const AMatrix& A, const XVector& x,
@@ -1635,9 +1635,9 @@ struct SPMV2D1D_STRUCT<AlphaType, AMatrix, XVector, BetaType, YVector,
     return false;
   }
 
-  template <typename execution_space>
+  template <typename ExecutionSpace>
   static bool spmv2d1d_struct(
-      const execution_space /*exec*/, const char /*mode*/[],
+      const ExecutionSpace /*exec*/, const char /*mode*/[],
       const int /*stencil_type*/,
       const Kokkos::View<typename AMatrix::non_const_ordinal_type*,
                          Kokkos::HostSpace>& /*structure*/,
@@ -1664,9 +1664,9 @@ struct SPMV2D1D_STRUCT<AlphaType, AMatrix, XVector, BetaType, YVector,
     return true;
   }
 
-  template <typename execution_space>
+  template <typename ExecutionSpace>
   static bool spmv2d1d_struct(
-      const execution_space& exec, const char mode[], const int stencil_type,
+      const ExecutionSpace& exec, const char mode[], const int stencil_type,
       const Kokkos::View<typename AMatrix::non_const_ordinal_type*,
                          Kokkos::HostSpace>& structure,
       const AlphaType& alpha, const AMatrix& A, const XVector& x,
@@ -1690,9 +1690,9 @@ struct SPMV2D1D_STRUCT<AlphaType, AMatrix, XVector, BetaType, YVector,
     return false;
   }
 
-  template <typename execution_space>
+  template <typename ExecutionSpace>
   static bool spmv2d1d_struct(
-      const execution_space& /*exec*/, const char /*mode*/[],
+      const ExecutionSpace& /*exec*/, const char /*mode*/[],
       const int /*stencil_type*/,
       const Kokkos::View<typename AMatrix::non_const_ordinal_type*,
                          Kokkos::HostSpace>& /*structure*/,
@@ -1711,31 +1711,31 @@ using SPMV2D1D_STRUCT
                  "interface - use KokkosSparse::spmv_struct instead")]] =
         Impl::SPMV2D1D_STRUCT<AlphaType, AMatrix, XVector, BetaType, YVector>;
 
-template <class execution_space, class AlphaType, class AMatrix, class XVector,
+template <class ExecutionSpace, class AlphaType, class AMatrix, class XVector,
           class BetaType, class YVector>
-void spmv_struct(const execution_space& exec, const char mode[],
+void spmv_struct(const ExecutionSpace& exec, const char mode[],
                  const int stencil_type,
                  const Kokkos::View<typename AMatrix::non_const_ordinal_type*,
                                     Kokkos::HostSpace>& structure,
                  const AlphaType& alpha, const AMatrix& A, const XVector& x,
                  const BetaType& beta, const YVector& y,
                  [[maybe_unused]] const RANK_TWO& tag) {
-  // Make sure A, x, y are accessible to execution_space
+  // Make sure A, x, y are accessible to ExecutionSpace
   static_assert(
-      Kokkos::SpaceAccessibility<execution_space,
+      Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename AMatrix::memory_space>::accessible,
       "KokkosBlas::spmv_struct: AMatrix must be accessible from "
-      "execution_space");
+      "ExecutionSpace");
   static_assert(
-      Kokkos::SpaceAccessibility<execution_space,
+      Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename XVector::memory_space>::accessible,
       "KokkosBlas::spmv_struct: XVector must be accessible from "
-      "execution_space");
+      "ExecutionSpace");
   static_assert(
-      Kokkos::SpaceAccessibility<execution_space,
+      Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename YVector::memory_space>::accessible,
       "KokkosBlas::spmv_struct: YVector must be accessible from "
-      "execution_space");
+      "ExecutionSpace");
   // Make sure that both x and y have the same rank.
   static_assert(XVector::rank == YVector::rank,
                 "KokkosBlas::spmv: Vector ranks do not match.");
@@ -1820,7 +1820,7 @@ void spmv_struct(const execution_space& exec, const char mode[],
     YVector_Internal y_i = y;
 
     return KokkosSparse::Impl::SPMV_MV<
-        execution_space, typename AMatrix_Internal::value_type,
+        ExecutionSpace, typename AMatrix_Internal::value_type,
         typename AMatrix_Internal::ordinal_type,
         typename AMatrix_Internal::device_type,
         typename AMatrix_Internal::memory_traits,
@@ -1909,9 +1909,9 @@ void spmv_struct(const char mode[], const int stencil_type,
 /// \param y [in/out] Either a single vector (rank-1 Kokkos::View) or
 ///   multivector (rank-2 Kokkos::View).  It must have the same number
 ///   of columns as x.
-template <class execution_space, class AlphaType, class AMatrix, class XVector,
+template <class ExecutionSpace, class AlphaType, class AMatrix, class XVector,
           class BetaType, class YVector>
-void spmv_struct(const execution_space& exec, const char mode[],
+void spmv_struct(const ExecutionSpace& exec, const char mode[],
                  const int stencil_type,
                  const Kokkos::View<typename AMatrix::non_const_ordinal_type*,
                                     Kokkos::HostSpace>& structure,
