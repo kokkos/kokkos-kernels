@@ -306,8 +306,9 @@ void gauss_seidel_numeric(KernelHandle *handle,
                           scalar_nnz_view_t_ values,
                           bool is_graph_symmetric = true) {
   auto my_exec_space = handle->get_gs_handle()->get_execution_space();
-  gauss_seidel_numeric(my_exec_space, handle, num_rows, num_cols, row_map,
-                       entries, values, is_graph_symmetric);
+  gauss_seidel_numeric<decltype(my_exec_space), format>(
+      my_exec_space, handle, num_rows, num_cols, row_map, entries, values,
+      is_graph_symmetric);
 }
 
 ///
@@ -457,9 +458,9 @@ void gauss_seidel_numeric(KernelHandle *handle,
                           scalar_nnz_view_t_ given_inverse_diagonal,
                           bool is_graph_symmetric = true) {
   auto my_exec_space = handle->get_gs_handle()->get_execution_space();
-  gauss_seidel_numeric(my_exec_space, handle, num_rows, num_cols, row_map,
-                       entries, values, given_inverse_diagonal,
-                       is_graph_symmetric);
+  gauss_seidel_numeric<decltype(my_exec_space), format>(
+      my_exec_space, handle, num_rows, num_cols, row_map, entries, values,
+      given_inverse_diagonal, is_graph_symmetric);
 }
 
 ///
@@ -714,10 +715,10 @@ void symmetric_gauss_seidel_apply(
     bool init_zero_x_vector, bool update_y_vector,
     typename KernelHandle::nnz_scalar_t omega, int numIter) {
   auto my_exec_space = handle->get_gs_handle()->get_execution_space();
-  symmetric_gauss_seidel_apply(my_exec_space, handle, num_rows, num_cols,
-                               row_map, entries, values, x_lhs_output_vec,
-                               y_rhs_input_vec, init_zero_x_vector,
-                               update_y_vector, omega, numIter);
+  symmetric_gauss_seidel_apply<decltype(my_exec_space), format>(
+      my_exec_space, handle, num_rows, num_cols, row_map, entries, values,
+      x_lhs_output_vec, y_rhs_input_vec, init_zero_x_vector, update_y_vector,
+      omega, numIter);
 }
 
 ///
@@ -996,10 +997,10 @@ void forward_sweep_gauss_seidel_apply(
     bool init_zero_x_vector, bool update_y_vector,
     typename KernelHandle::nnz_scalar_t omega, int numIter) {
   auto my_exec_space = handle->get_gs_handle()->get_execution_space();
-  forward_sweep_gauss_seidel_apply(my_exec_space, handle, num_rows, num_cols,
-                                   row_map, entries, values, x_lhs_output_vec,
-                                   y_rhs_input_vec, init_zero_x_vector,
-                                   update_y_vector, omega, numIter);
+  forward_sweep_gauss_seidel_apply<decltype(my_exec_space), format>(
+      my_exec_space, handle, num_rows, num_cols, row_map, entries, values,
+      x_lhs_output_vec, y_rhs_input_vec, init_zero_x_vector, update_y_vector,
+      omega, numIter);
 }
 
 ///
@@ -1278,10 +1279,10 @@ void backward_sweep_gauss_seidel_apply(
     bool init_zero_x_vector, bool update_y_vector,
     typename KernelHandle::nnz_scalar_t omega, int numIter) {
   auto my_exec_space = handle->get_gs_handle()->get_execution_space();
-  backward_sweep_gauss_seidel_apply(my_exec_space, handle, num_rows, num_cols,
-                                    row_map, entries, values, x_lhs_output_vec,
-                                    y_rhs_input_vec, init_zero_x_vector,
-                                    update_y_vector, omega, numIter);
+  backward_sweep_gauss_seidel_apply<decltype(my_exec_space), format>(
+      my_exec_space, handle, num_rows, num_cols, row_map, entries, values,
+      x_lhs_output_vec, y_rhs_input_vec, init_zero_x_vector, update_y_vector,
+      omega, numIter);
 }
 
 ///
