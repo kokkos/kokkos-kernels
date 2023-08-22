@@ -156,6 +156,12 @@ class GaussSeidelHandle {
                     "The type of exec_space_in should be the same as "
                     "GaussSeidelHandle::HandleExecSpace");
       this->execution_space = exec_space_in;
+    } else {
+      if (exec_space_in != this->execution_space)
+        throw std::runtime_error(
+            "Gauss Seidel cannot be called on different execution spaces "
+            "without multiple handles. Please create a new handle via "
+            "create_gs_handle.\n");
     }
     is_set = true;
   }
