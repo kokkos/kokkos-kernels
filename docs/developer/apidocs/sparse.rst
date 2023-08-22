@@ -38,9 +38,9 @@ crs2coo
 
 spmv
 ----
-.. doxygenfunction:: KokkosSparse::spmv(const execution_space& exec, KokkosKernels::Experimental::Controls controls, const char mode[], const AlphaType &alpha, const AMatrix &A, const XVector &x, const BetaType &beta, const YVector &y)
+.. doxygenfunction:: KokkosSparse::spmv(const ExecutionSpace& space, KokkosKernels::Experimental::Controls controls, const char mode[], const AlphaType &alpha, const AMatrix &A, const XVector &x, const BetaType &beta, const YVector &y)
 .. doxygenfunction:: KokkosSparse::spmv(KokkosKernels::Experimental::Controls controls, const char mode[], const AlphaType &alpha, const AMatrix &A, const XVector &x, const BetaType &beta, const YVector &y)
-.. doxygenfunction:: KokkosSparse::spmv(const execution_space& exec, const char mode[], const AlphaType &alpha, const AMatrix &A, const XVector &x, const BetaType &beta, const YVector &y)
+.. doxygenfunction:: KokkosSparse::spmv(const ExecutionSpace& space, const char mode[], const AlphaType &alpha, const AMatrix &A, const XVector &x, const BetaType &beta, const YVector &y)
 .. doxygenfunction:: KokkosSparse::spmv(const char mode[], const AlphaType &alpha, const AMatrix &A, const XVector &x, const BetaType &beta, const YVector &y)
 
 trsv
