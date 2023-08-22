@@ -48,10 +48,10 @@ struct RANK_TWO {};
 ///   the memory spaces of A, x, and y.
 /// \tparam AlphaType Type of coefficient alpha. Must be convertible to
 /// YVector::value_type. \tparam AMatrix A KokkosSparse::CrsMatrix, or
-/// KokkosSparse::BsrMatrix \tparam XVector Type of x, must be a rank-1
-/// Kokkos::View \tparam BetaType Type of coefficient beta. Must be convertible
-/// to YVector::value_type. \tparam YVector Type of y, must be a rank-1
-/// Kokkos::View and its rank must match that of XVector
+/// KokkosSparse::Experimental::BsrMatrix \tparam XVector Type of x, must be a
+/// rank-1 Kokkos::View \tparam BetaType Type of coefficient beta. Must be
+/// convertible to YVector::value_type. \tparam YVector Type of y, must be a
+/// rank-1 Kokkos::View and its rank must match that of XVector
 ///
 /// \param space [in] The execution space instance on which to run the
 ///   kernel.
@@ -219,44 +219,16 @@ void spmv(const ExecutionSpace& space,
             typename AMatrix_Internal::non_const_value_type>::name() +
         "]";
     Kokkos::Profiling::pushRegion(label);
-    Impl::SPMV<ExecutionSpace, typename AMatrix_Internal::value_type,
-               typename AMatrix_Internal::ordinal_type,
-               typename AMatrix_Internal::device_type,
-               typename AMatrix_Internal::memory_traits,
-               typename AMatrix_Internal::size_type,
-               typename XVector_Internal::value_type*,
-               typename XVector_Internal::array_layout,
-               typename XVector_Internal::device_type,
-               typename XVector_Internal::memory_traits,
-               typename YVector_Internal::value_type*,
-               typename YVector_Internal::array_layout,
-               typename YVector_Internal::device_type,
-               typename YVector_Internal::memory_traits, false>::spmv(space,
-                                                                      controls,
-                                                                      mode,
-                                                                      alpha,
-                                                                      A_i, x_i,
-                                                                      beta,
-                                                                      y_i);
+    Impl::SPMV<ExecutionSpace, AMatrix_Internal, XVector_Internal,
+               YVector_Internal, false>::spmv(space, controls, mode, alpha, A_i,
+                                              x_i, beta, y_i);
     Kokkos::Profiling::popRegion();
   } else {
     // note: the cuSPARSE spmv wrapper defines a profiling region, so one is not
     // needed here.
-    Impl::SPMV<ExecutionSpace, typename AMatrix_Internal::value_type,
-               typename AMatrix_Internal::ordinal_type,
-               typename AMatrix_Internal::device_type,
-               typename AMatrix_Internal::memory_traits,
-               typename AMatrix_Internal::size_type,
-               typename XVector_Internal::value_type*,
-               typename XVector_Internal::array_layout,
-               typename XVector_Internal::device_type,
-               typename XVector_Internal::memory_traits,
-               typename YVector_Internal::value_type*,
-               typename YVector_Internal::array_layout,
-               typename YVector_Internal::device_type,
-               typename YVector_Internal::memory_traits>::spmv(space, controls,
-                                                               mode, alpha, A_i,
-                                                               x_i, beta, y_i);
+    Impl::SPMV<ExecutionSpace, AMatrix_Internal, XVector_Internal,
+               YVector_Internal>::spmv(space, controls, mode, alpha, A_i, x_i,
+                                       beta, y_i);
   }
 }
 
@@ -266,10 +238,10 @@ void spmv(const ExecutionSpace& space,
 ///
 /// \tparam AlphaType Type of coefficient alpha. Must be convertible to
 /// YVector::value_type. \tparam AMatrix A KokkosSparse::CrsMatrix, or
-/// KokkosSparse::BsrMatrix \tparam XVector Type of x, must be a rank-1
-/// Kokkos::View \tparam BetaType Type of coefficient beta. Must be convertible
-/// to YVector::value_type. \tparam YVector Type of y, must be a rank-1
-/// Kokkos::View and its rank must match that of XVector
+/// KokkosSparse::Experimental::BsrMatrix \tparam XVector Type of x, must be a
+/// rank-1 Kokkos::View \tparam BetaType Type of coefficient beta. Must be
+/// convertible to YVector::value_type. \tparam YVector Type of y, must be a
+/// rank-1 Kokkos::View and its rank must match that of XVector
 ///
 /// \param controls [in] kokkos-kernels control structure.
 /// \param mode [in] Select A's operator mode: "N" for normal, "T" for
@@ -452,59 +424,30 @@ void spmv(const ExecutionSpace& space,
             typename AMatrix_Internal::non_const_value_type>::name() +
         "]";
     Kokkos::Profiling::pushRegion(label);
-    Experimental::Impl::SPMV_BSRMATRIX<
-        ExecutionSpace, typename AMatrix_Internal::const_value_type,
-        typename AMatrix_Internal::const_ordinal_type,
-        typename AMatrix_Internal::device_type,
-        typename AMatrix_Internal::memory_traits,
-        typename AMatrix_Internal::const_size_type,
-        typename XVector_Internal::const_value_type*,
-        typename XVector_Internal::array_layout,
-        typename XVector_Internal::device_type,
-        typename XVector_Internal::memory_traits,
-        typename YVector_Internal::value_type*,
-        typename YVector_Internal::array_layout,
-        typename YVector_Internal::device_type,
-        typename YVector_Internal::memory_traits,
-        false>::spmv_bsrmatrix(space, controls, mode, alpha, A_i, x_i, beta,
-                               y_i);
+    Experimental::Impl::SPMV_BSRMATRIX<ExecutionSpace, AMatrix_Internal,
+                                       XVector_Internal, YVector_Internal,
+                                       false>::spmv_bsrmatrix(space, controls,
+                                                              mode, alpha, A_i,
+                                                              x_i, beta, y_i);
     Kokkos::Profiling::popRegion();
   } else {
-#define __SPMV_TYPES__                                         \
-  ExecutionSpace, typename AMatrix_Internal::const_value_type, \
-      typename AMatrix_Internal::const_ordinal_type,           \
-      typename AMatrix_Internal::device_type,                  \
-      typename AMatrix_Internal::memory_traits,                \
-      typename AMatrix_Internal::const_size_type,              \
-      typename XVector_Internal::const_value_type*,            \
-      typename XVector_Internal::array_layout,                 \
-      typename XVector_Internal::device_type,                  \
-      typename XVector_Internal::memory_traits,                \
-      typename YVector_Internal::value_type*,                  \
-      typename YVector_Internal::array_layout,                 \
-      typename YVector_Internal::device_type,                  \
-      typename YVector_Internal::memory_traits
-
     constexpr bool tpl_spec_avail =
         KokkosSparse::Experimental::Impl::spmv_bsrmatrix_tpl_spec_avail<
-            __SPMV_TYPES__>::value;
+            ExecutionSpace, AMatrix_Internal, XVector_Internal,
+            YVector_Internal>::value;
 
     constexpr bool eti_spec_avail =
         tpl_spec_avail
             ? KOKKOSKERNELS_IMPL_COMPILE_LIBRARY /* force FALSE in app/test */
             : KokkosSparse::Experimental::Impl::spmv_bsrmatrix_eti_spec_avail<
-                  __SPMV_TYPES__>::value;
+                  ExecutionSpace, AMatrix_Internal, XVector_Internal,
+                  YVector_Internal>::value;
 
-    Experimental::Impl::SPMV_BSRMATRIX<__SPMV_TYPES__, tpl_spec_avail,
-                                       eti_spec_avail>::spmv_bsrmatrix(space,
-                                                                       controls,
-                                                                       mode,
-                                                                       alpha,
-                                                                       A_i, x_i,
-                                                                       beta,
-                                                                       y_i);
-
-#undef __SPMV_TYPES__
+    Experimental::Impl::SPMV_BSRMATRIX<
+        ExecutionSpace, AMatrix_Internal, XVector_Internal, YVector_Internal,
+        tpl_spec_avail, eti_spec_avail>::spmv_bsrmatrix(space, controls, mode,
+                                                        alpha, A_i, x_i, beta,
+                                                        y_i);
   }
 }
 
@@ -683,10 +626,10 @@ using SPMV2D1D
 ///   the memory spaces of A, x, and y.
 /// \tparam AlphaType Type of coefficient alpha. Must be convertible to
 /// YVector::value_type. \tparam AMatrix A KokkosSparse::CrsMatrix, or
-/// KokkosSparse::BsrMatrix \tparam XVector Type of x, must be a rank-2
-/// Kokkos::View \tparam BetaType Type of coefficient beta. Must be convertible
-/// to YVector::value_type. \tparam YVector Type of y, must be a rank-2
-/// Kokkos::View and its rank must match that of XVector
+/// KokkosSparse::Experimental::BsrMatrix \tparam XVector Type of x, must be a
+/// rank-2 Kokkos::View \tparam BetaType Type of coefficient beta. Must be
+/// convertible to YVector::value_type. \tparam YVector Type of y, must be a
+/// rank-2 Kokkos::View and its rank must match that of XVector
 ///
 /// \param space [in] The execution space instance on which to run the
 ///   kernel.
@@ -828,38 +771,14 @@ void spmv(const ExecutionSpace& space,
 
     if (useNative) {
       return Impl::SPMV_MV<
-          ExecutionSpace, typename AMatrix_Internal::value_type,
-          typename AMatrix_Internal::ordinal_type,
-          typename AMatrix_Internal::device_type,
-          typename AMatrix_Internal::memory_traits,
-          typename AMatrix_Internal::size_type,
-          typename XVector_Internal::value_type**,
-          typename XVector_Internal::array_layout,
-          typename XVector_Internal::device_type,
-          typename XVector_Internal::memory_traits,
-          typename YVector_Internal::value_type**,
-          typename YVector_Internal::array_layout,
-          typename YVector_Internal::device_type,
-          typename YVector_Internal::memory_traits,
+          ExecutionSpace, AMatrix_Internal, XVector_Internal, YVector_Internal,
           std::is_integral<typename AMatrix_Internal::value_type>::value,
           false>::spmv_mv(space, controls, mode, alpha, A_i, x_i, beta, y_i);
     } else {
-      return Impl::SPMV_MV<
-          ExecutionSpace, typename AMatrix_Internal::value_type,
-          typename AMatrix_Internal::ordinal_type,
-          typename AMatrix_Internal::device_type,
-          typename AMatrix_Internal::memory_traits,
-          typename AMatrix_Internal::size_type,
-          typename XVector_Internal::value_type**,
-          typename XVector_Internal::array_layout,
-          typename XVector_Internal::device_type,
-          typename XVector_Internal::memory_traits,
-          typename YVector_Internal::value_type**,
-          typename YVector_Internal::array_layout,
-          typename YVector_Internal::device_type,
-          typename YVector_Internal::memory_traits>::spmv_mv(space, controls,
-                                                             mode, alpha, A_i,
-                                                             x_i, beta, y_i);
+      return Impl::SPMV_MV<ExecutionSpace, AMatrix_Internal, XVector_Internal,
+                           YVector_Internal>::spmv_mv(space, controls, mode,
+                                                      alpha, A_i, x_i, beta,
+                                                      y_i);
     }
   }
 }
@@ -870,10 +789,10 @@ void spmv(const ExecutionSpace& space,
 ///
 /// \tparam AlphaType Type of coefficient alpha. Must be convertible to
 /// YVector::value_type. \tparam AMatrix A KokkosSparse::CrsMatrix, or
-/// KokkosSparse::BsrMatrix \tparam XVector Type of x, must be a rank-2
-/// Kokkos::View \tparam BetaType Type of coefficient beta. Must be convertible
-/// to YVector::value_type. \tparam YVector Type of y, must be a rank-2
-/// Kokkos::View and its rank must match that of XVector
+/// KokkosSparse::Experimental::BsrMatrix \tparam XVector Type of x, must be a
+/// rank-2 Kokkos::View \tparam BetaType Type of coefficient beta. Must be
+/// convertible to YVector::value_type. \tparam YVector Type of y, must be a
+/// rank-2 Kokkos::View and its rank must match that of XVector
 ///
 /// \param controls [in] kokkos-kernels control structure.
 /// \param mode [in] Select A's operator mode: "N" for normal, "T" for
@@ -1069,38 +988,14 @@ void spmv(const ExecutionSpace& space,
         "]";
     Kokkos::Profiling::pushRegion(label);
     Experimental::Impl::SPMV_MV_BSRMATRIX<
-        ExecutionSpace, typename AMatrix_Internal::const_value_type,
-        typename AMatrix_Internal::const_ordinal_type,
-        typename AMatrix_Internal::device_type,
-        typename AMatrix_Internal::memory_traits,
-        typename AMatrix_Internal::const_size_type,
-        typename XVector_Internal::const_value_type**,
-        typename XVector_Internal::array_layout,
-        typename XVector_Internal::device_type,
-        typename XVector_Internal::memory_traits,
-        typename YVector_Internal::value_type**,
-        typename YVector_Internal::array_layout,
-        typename YVector_Internal::device_type,
-        typename YVector_Internal::memory_traits,
+        ExecutionSpace, AMatrix_Internal, XVector_Internal, YVector_Internal,
         std::is_integral<typename AMatrix_Internal::const_value_type>::value,
         false>::spmv_mv_bsrmatrix(space, controls, mode, alpha, A_i, x_i, beta,
                                   y_i);
     Kokkos::Profiling::popRegion();
   } else {
     Experimental::Impl::SPMV_MV_BSRMATRIX<
-        ExecutionSpace, typename AMatrix_Internal::const_value_type,
-        typename AMatrix_Internal::const_ordinal_type,
-        typename AMatrix_Internal::device_type,
-        typename AMatrix_Internal::memory_traits,
-        typename AMatrix_Internal::const_size_type,
-        typename XVector_Internal::const_value_type**,
-        typename XVector_Internal::array_layout,
-        typename XVector_Internal::device_type,
-        typename XVector_Internal::memory_traits,
-        typename YVector_Internal::value_type**,
-        typename YVector_Internal::array_layout,
-        typename YVector_Internal::device_type,
-        typename YVector_Internal::memory_traits,
+        ExecutionSpace, AMatrix_Internal, XVector_Internal, YVector_Internal,
         std::is_integral<typename AMatrix_Internal::const_value_type>::value>::
         spmv_mv_bsrmatrix(space, controls, mode, alpha, A_i, x_i, beta, y_i);
   }
@@ -1147,10 +1042,10 @@ void spmv(KokkosKernels::Experimental::Controls controls, const char mode[],
 ///   the memory spaces of A, x, and y.
 /// \tparam AlphaType Type of coefficient alpha. Must be convertible to
 /// YVector::value_type. \tparam AMatrix A KokkosSparse::CrsMatrix, or
-/// KokkosSparse::BsrMatrix \tparam XVector Type of x, must be a rank 1 or 2
-/// Kokkos::View \tparam BetaType Type of coefficient beta. Must be convertible
-/// to YVector::value_type. \tparam YVector Type of y, must be a rank 1 or 2
-/// Kokkos::View and its rank must match that of XVector
+/// KokkosSparse::Experimental::BsrMatrix \tparam XVector Type of x, must be a
+/// rank 1 or 2 Kokkos::View \tparam BetaType Type of coefficient beta. Must be
+/// convertible to YVector::value_type. \tparam YVector Type of y, must be a
+/// rank 1 or 2 Kokkos::View and its rank must match that of XVector
 ///
 /// \param space [in] The execution space instance on which to run the
 ///   kernel.
@@ -1348,10 +1243,10 @@ void spmv(const ExecutionSpace& /* space */,
 ///
 /// \tparam AlphaType Type of coefficient alpha. Must be convertible to
 /// YVector::value_type. \tparam AMatrix A KokkosSparse::CrsMatrix, or
-/// KokkosSparse::BsrMatrix \tparam XVector Type of x, must be a rank-2
-/// Kokkos::View \tparam BetaType Type of coefficient beta. Must be convertible
-/// to YVector::value_type. \tparam YVector Type of y, must be a rank-2
-/// Kokkos::View and its rank must match that of XVector
+/// KokkosSparse::Experimental::BsrMatrix \tparam XVector Type of x, must be a
+/// rank-2 Kokkos::View \tparam BetaType Type of coefficient beta. Must be
+/// convertible to YVector::value_type. \tparam YVector Type of y, must be a
+/// rank-2 Kokkos::View and its rank must match that of XVector
 ///
 /// \param mode [in] Select A's operator mode: "N" for normal, "T" for
 /// transpose, "C" for conjugate or "H" for conjugate transpose. \param alpha
@@ -1375,10 +1270,10 @@ void spmv(const char mode[], const AlphaType& alpha, const AMatrix& A,
 ///   the memory spaces of A, x, and y.
 /// \tparam AlphaType Type of coefficient alpha. Must be convertible to
 /// YVector::value_type. \tparam AMatrix A KokkosSparse::CrsMatrix, or
-/// KokkosSparse::BsrMatrix \tparam XVector Type of x, must be a rank-2
-/// Kokkos::View \tparam BetaType Type of coefficient beta. Must be convertible
-/// to YVector::value_type. \tparam YVector Type of y, must be a rank-2
-/// Kokkos::View and its rank must match that of XVector
+/// KokkosSparse::Experimental::BsrMatrix \tparam XVector Type of x, must be a
+/// rank-2 Kokkos::View \tparam BetaType Type of coefficient beta. Must be
+/// convertible to YVector::value_type. \tparam YVector Type of y, must be a
+/// rank-2 Kokkos::View and its rank must match that of XVector
 ///
 /// \param space [in] The execution space instance on which to run the
 ///   kernel.
@@ -1390,9 +1285,9 @@ void spmv(const char mode[], const AlphaType& alpha, const AMatrix& A,
 /// \param y [in/out] Result vector.
 template <class ExecutionSpace, class AlphaType, class AMatrix, class XVector,
           class BetaType, class YVector>
-void spmv(const ExecutionSpace& space, const char mode[], const AlphaType& alpha,
-          const AMatrix& A, const XVector& x, const BetaType& beta,
-          const YVector& y) {
+void spmv(const ExecutionSpace& space, const char mode[],
+          const AlphaType& alpha, const AMatrix& A, const XVector& x,
+          const BetaType& beta, const YVector& y) {
   KokkosKernels::Experimental::Controls controls;
   spmv(space, controls, mode, alpha, A, x, beta, y);
 }
@@ -1488,23 +1383,9 @@ void spmv_struct(const ExecutionSpace& space, const char mode[],
   YVector_Internal y_i = y;
 
   return KokkosSparse::Impl::SPMV_STRUCT<
-      ExecutionSpace, typename AMatrix_Internal::value_type,
-      typename AMatrix_Internal::ordinal_type,
-      typename AMatrix_Internal::device_type,
-      typename AMatrix_Internal::memory_traits,
-      typename AMatrix_Internal::size_type,
-      typename XVector_Internal::value_type*,
-      typename XVector_Internal::array_layout,
-      typename XVector_Internal::device_type,
-      typename XVector_Internal::memory_traits,
-      typename YVector_Internal::value_type*,
-      typename YVector_Internal::array_layout,
-      typename YVector_Internal::device_type,
-      typename YVector_Internal::memory_traits>::spmv_struct(space, mode,
-                                                             stencil_type,
-                                                             structure, alpha,
-                                                             A_i, x_i, beta,
-                                                             y_i);
+      ExecutionSpace, AMatrix_Internal, XVector_Internal,
+      YVector_Internal>::spmv_struct(space, mode, stencil_type, structure,
+                                     alpha, A_i, x_i, beta, y_i);
 }
 
 template <class AlphaType, class AMatrix, class XVector, class BetaType,
@@ -1820,21 +1701,10 @@ void spmv_struct(const ExecutionSpace& space, const char mode[],
     YVector_Internal y_i = y;
 
     return KokkosSparse::Impl::SPMV_MV<
-        ExecutionSpace, typename AMatrix_Internal::value_type,
-        typename AMatrix_Internal::ordinal_type,
-        typename AMatrix_Internal::device_type,
-        typename AMatrix_Internal::memory_traits,
-        typename AMatrix_Internal::size_type,
-        typename XVector_Internal::value_type**,
-        typename XVector_Internal::array_layout,
-        typename XVector_Internal::device_type,
-        typename XVector_Internal::memory_traits,
-        typename YVector_Internal::value_type**,
-        typename YVector_Internal::array_layout,
-        typename YVector_Internal::device_type,
-        typename YVector_Internal::memory_traits>::
-        spmv_mv(space, KokkosKernels::Experimental::Controls(), mode, alpha, A_i,
-                x_i, beta, y_i);
+        ExecutionSpace, AMatrix_Internal, XVector_Internal,
+        YVector_Internal>::spmv_mv(space,
+                                   KokkosKernels::Experimental::Controls(),
+                                   mode, alpha, A_i, x_i, beta, y_i);
   }
 }
 

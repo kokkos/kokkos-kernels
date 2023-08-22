@@ -185,8 +185,9 @@ struct BsrMatrixSpMVTensorCoreFunctor {
     typename BsrMatrixSpMVTensorCoreFunctor::team_policy policy(
         exec, league_size(), team_size());
     policy.set_scratch_size(0, Kokkos::PerTeam(team_scratch_size()));
-    Kokkos::parallel_for("KokkosSparse::BsrMatrixSpMVTensorCoreFunctor", policy,
-                         *this);
+    Kokkos::parallel_for(
+        "KokkosSparse::Experimental::BsrMatrixSpMVTensorCoreFunctor", policy,
+        *this);
   }
 
   /*
