@@ -1349,7 +1349,14 @@ class PointGaussSeidel {
     if (gsHandle->is_symbolic_called() == false) {
       this->initialize_symbolic();
     }
-    // else
+
+    // Check settings
+    if (gsHandle->get_block_size() > 1 &&
+        format != KokkosSparse::SparseMatrixFormat::BSR)
+      throw std::runtime_error(
+          "PointGaussSeidel block size > 1 but format is not "
+          "KokkosSparse::SparseMatrixFormat::BSR.\n");
+      // else
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
     Kokkos::Timer timer;
 #endif
@@ -1718,6 +1725,14 @@ class PointGaussSeidel {
     if (gsHandle->is_numeric_called() == false) {
       this->initialize_numeric();
     }
+
+    // Check settings
+    if (gsHandle->get_block_size() > 1 &&
+        format != KokkosSparse::SparseMatrixFormat::BSR)
+      throw std::runtime_error(
+          "PointGaussSeidel block size > 1 but format is not "
+          "KokkosSparse::SparseMatrixFormat::BSR.\n");
+
     // make sure x and y have been allocated with the correct dimensions
     nnz_lno_t block_size = gsHandle->get_block_size();
     gsHandle->allocate_x_y_vectors(this->num_rows * block_size,
