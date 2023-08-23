@@ -90,8 +90,21 @@ struct fSPMV {
     if (error > eps * max_val) {
       err++;
       KOKKOS_IMPL_DO_NOT_USE_PRINTF(
-          "expected_y(%d)=%f, y(%d)=%f err=%f, max_error=%f\n", i,
+          "expected_y(%d)=%f, y(%d)=%f err=%e, max_error=%e\n", i,
           AT::abs(expected_y(i)), i, AT::abs(y(i)), error, eps * max_val);
+    }
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const int i, const int j, value_type &err) const {
+    const mag_type error = AT::abs(expected_y(i, j) - y(i, j));
+
+    if (error > eps * max_val) {
+      err++;
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
+          "expected_y(%d,%d)=%f, y(%d,%d)=%f err=%e, max_error=%e\n", i, j,
+          AT::abs(expected_y(i, j)), i, j, AT::abs(y(i, j)), error,
+          eps * max_val);
     }
   }
 };
@@ -1112,6 +1125,123 @@ void test_github_issue_101() {
   }
 }
 
+template <class scalar_t, class lno_t, class size_type, class layout_t,
+          class DeviceType>
+void test_spmv_all_interfaces_light() {
+  // Using a small matrix, run through the various SpMV interfaces and
+  // make sure they produce the correct results.
+  using execution_space = typename DeviceType::execution_space;
+  using mag_t           = typename Kokkos::ArithTraits<scalar_t>::mag_type;
+  using crsMat_t = typename KokkosSparse::CrsMatrix<scalar_t, lno_t, DeviceType,
+                                                    void, size_type>;
+  Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
+  const lno_t m      = 111;
+  const lno_t n      = 99;
+  const mag_t maxVal = 10.0;
+  const mag_t eps    = 10.0 * Kokkos::ArithTraits<mag_t>::eps();
+  size_type nnz      = 600;
+  crsMat_t A         = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(
+      m, n, nnz, 2, lno_t(n * 0.7));
+  // note: A's values are in range [0, 50)
+  const mag_t maxError = (nnz / m) * 50.0 * maxVal;
+  using multivector_t  = Kokkos::View<scalar_t **, layout_t, DeviceType>;
+  using vector_t       = Kokkos::View<scalar_t *, layout_t, DeviceType>;
+  using range1D_t      = Kokkos::RangePolicy<execution_space>;
+  using range2D_t = Kokkos::MDRangePolicy<execution_space, Kokkos::Rank<2>>;
+  multivector_t x_mv("x_mv", n, 3);
+  vector_t x("x", n);
+  // Randomize x (it won't be modified after that)
+  Kokkos::fill_random(x_mv, rand_pool, randomUpperBound<scalar_t>(maxVal));
+  Kokkos::fill_random(x, rand_pool, randomUpperBound<scalar_t>(maxVal));
+  multivector_t y_mv("y_mv", m, 3);
+  vector_t y("y", m);
+  // Compute the correct y = Ax once
+  multivector_t ygold_mv("ygold_mv", m, 3);
+  vector_t ygold("ygold", m);
+  for (lno_t i = 0; i < 3; i++)
+    Test::sequential_spmv(A, Kokkos::subview(x_mv, Kokkos::ALL(), i),
+                          Kokkos::subview(ygold_mv, Kokkos::ALL(), i), 1.0,
+                          0.0);
+  Test::sequential_spmv(A, x, ygold, 1.0, 0.0);
+  auto clear_y = [&]() { Kokkos::deep_copy(y_mv, scalar_t(0)); };
+  auto verify  = [&]() {
+    int num_errors = 0;
+    Kokkos::parallel_reduce(
+        "KokkosSparse::Test::spmv", range1D_t(0, m),
+        Test::fSPMV<vector_t, vector_t>(ygold, y, eps, maxError), num_errors);
+    EXPECT_EQ(num_errors, 0);
+  };
+  auto verify_mv = [&]() {
+    int num_errors = 0;
+    Kokkos::parallel_reduce("KokkosSparse::Test::spmv",
+                            range2D_t({0, 0}, {m, 3}),
+                            Test::fSPMV<multivector_t, multivector_t>(
+                                ygold_mv, y_mv, eps, maxError),
+                            num_errors);
+    EXPECT_EQ(num_errors, 0);
+  };
+  // Now run through the interfaces and check results each time.
+  execution_space space;
+  std::vector<execution_space> space_partitions;
+  if (space.concurrency() > 1) {
+    space_partitions = Kokkos::Experimental::partition_space(space, 1, 1);
+    space            = space_partitions[1];
+  }
+  KokkosKernels::Experimental::Controls controls;
+  // All tagged versions
+  KokkosSparse::spmv(space, controls, "N", 1.0, A, x, 0.0, y,
+                     KokkosSparse::RANK_ONE());
+  space.fence();
+  verify();
+  clear_y();
+  KokkosSparse::spmv(controls, "N", 1.0, A, x, 0.0, y,
+                     KokkosSparse::RANK_ONE());
+  verify();
+  clear_y();
+  KokkosSparse::spmv(space, controls, "N", 1.0, A, x_mv, 0.0, y_mv,
+                     KokkosSparse::RANK_TWO());
+  space.fence();
+  verify_mv();
+  clear_y();
+  KokkosSparse::spmv(controls, "N", 1.0, A, x_mv, 0.0, y_mv,
+                     KokkosSparse::RANK_TWO());
+  verify_mv();
+  clear_y();
+  // Non-tagged versions
+  // space and controls
+  spmv(space, controls, "N", 1.0, A, x, 0.0, y);
+  space.fence();
+  verify();
+  clear_y();
+  spmv(space, controls, "N", 1.0, A, x_mv, 0.0, y_mv);
+  space.fence();
+  verify_mv();
+  clear_y();
+  // controls
+  spmv(controls, "N", 1.0, A, x, 0.0, y);
+  verify();
+  clear_y();
+  spmv(controls, "N", 1.0, A, x_mv, 0.0, y_mv);
+  verify_mv();
+  clear_y();
+  // space
+  spmv(space, "N", 1.0, A, x, 0.0, y);
+  space.fence();
+  verify();
+  clear_y();
+  spmv(space, "N", 1.0, A, x_mv, 0.0, y_mv);
+  space.fence();
+  verify_mv();
+  clear_y();
+  // neither
+  spmv("N", 1.0, A, x, 0.0, y);
+  verify();
+  clear_y();
+  spmv("N", 1.0, A, x_mv, 0.0, y_mv);
+  verify_mv();
+  clear_y();
+}
+
 #define EXECUTE_TEST_ISSUE_101(DEVICE)                                    \
   TEST_F(TestCategory, sparse##_##spmv_issue_101##_##OFFSET##_##DEVICE) { \
     test_github_issue_101<DEVICE>();                                      \
@@ -1134,6 +1264,14 @@ void test_github_issue_101() {
                                                           100, 5, false);      \
     test_spmv_controls<SCALAR, ORDINAL, OFFSET, DEVICE>(10000, 10000 * 20,     \
                                                         100, 5);               \
+  }
+
+#define EXECUTE_TEST_INTERFACES(SCALAR, ORDINAL, OFFSET, LAYOUT, DEVICE)              \
+  TEST_F(                                                                             \
+      TestCategory,                                                                   \
+      sparse_spmv_interfaces_##SCALAR##_##ORDINAL##_##OFFSET##_##LAYOUT##_##DEVICE) { \
+    test_spmv_all_interfaces_light<SCALAR, ORDINAL, OFFSET, Kokkos::LAYOUT,           \
+                                   DEVICE>();                                         \
   }
 
 #define EXECUTE_TEST_MV(SCALAR, ORDINAL, OFFSET, LAYOUT, DEVICE)                    \
@@ -1198,9 +1336,10 @@ EXECUTE_TEST_ISSUE_101(TestExecSpace)
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&      \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 
-#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)   \
-  EXECUTE_TEST_MV(SCALAR, ORDINAL, OFFSET, LayoutLeft, TestExecSpace) \
-  EXECUTE_TEST_MV_STRUCT(SCALAR, ORDINAL, OFFSET, LayoutLeft, TestExecSpace)
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)          \
+  EXECUTE_TEST_MV(SCALAR, ORDINAL, OFFSET, LayoutLeft, TestExecSpace)        \
+  EXECUTE_TEST_MV_STRUCT(SCALAR, ORDINAL, OFFSET, LayoutLeft, TestExecSpace) \
+  EXECUTE_TEST_INTERFACES(SCALAR, ORDINAL, OFFSET, LayoutLeft, TestExecSpace)
 
 #include <Test_Common_Test_All_Type_Combos.hpp>
 
@@ -1212,8 +1351,9 @@ EXECUTE_TEST_ISSUE_101(TestExecSpace)
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&       \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 
-#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
-  EXECUTE_TEST_MV(SCALAR, ORDINAL, OFFSET, LayoutRight, TestExecSpace)
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)    \
+  EXECUTE_TEST_MV(SCALAR, ORDINAL, OFFSET, LayoutRight, TestExecSpace) \
+  EXECUTE_TEST_INTERFACES(SCALAR, ORDINAL, OFFSET, LayoutRight, TestExecSpace)
 
 #include <Test_Common_Test_All_Type_Combos.hpp>
 

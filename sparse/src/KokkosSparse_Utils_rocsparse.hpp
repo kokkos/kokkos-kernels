@@ -178,6 +178,24 @@ struct kokkos_to_rocsparse_type<Kokkos::complex<double>> {
 #define KOKKOSSPARSE_IMPL_ROCM_VERSION \
   ROCM_VERSION_MAJOR * 10000 + ROCM_VERSION_MINOR * 100 + ROCM_VERSION_PATCH
 
+// Set the stream on the given rocSPARSE handle when this object
+// is constructed, and reset to the default stream when this object is
+// destructed.
+struct TemporarySetRocsparseStream {
+  TemporarySetRocsparseStream(rocsparse_handle handle_,
+                              const Kokkos::HIP& exec_)
+      : handle(handle_) {
+    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(
+        rocsparse_set_stream(handle, exec_.hip_stream()));
+  }
+
+  ~TemporarySetRocsparseStream() {
+    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_set_stream(handle, NULL));
+  }
+
+  rocsparse_handle handle;
+};
+
 }  // namespace Impl
 
 }  // namespace KokkosSparse
