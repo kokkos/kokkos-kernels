@@ -1181,11 +1181,12 @@ void test_spmv_all_interfaces_light() {
     EXPECT_EQ(num_errors, 0);
   };
   // Now run through the interfaces and check results each time.
-  auto space_partitions =
-      Kokkos::Experimental::partition_space(execution_space(), 1, 1);
-  // For versions taking an exec space instance, use the second partition out of
-  // 2 (since the first partition might just be the default instance)
-  execution_space space = space_partitions[1];
+  execution_space space;
+  std::vector<execution_space> space_partitions;
+  if (space.concurrency() > 1) {
+    space_partitions = Kokkos::Experimental::partition_space(space, 1, 1);
+    space            = space_partitions[1];
+  }
   KokkosKernels::Experimental::Controls controls;
   // All tagged versions
   KokkosSparse::spmv(space, controls, "N", 1.0, A, x, 0.0, y,
