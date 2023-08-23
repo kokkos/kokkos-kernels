@@ -740,6 +740,18 @@ void test_gauss_seidel_streams_rank1(
   lno_t numCols                         = numRows;
   typename crsMat_t::value_type m_omega = omega;
 
+#ifdef KOKKOS_ENABLE_OPENMP
+  if (std::is_same_v<execution_space, Kokkos::OpenMP>) {
+    int exec_concurrency = execution_space().concurrency();
+    if (exec_concurrency < nstreams) {
+      std::cerr << "TEST SKIPPED: Not enough concurrency to partition "
+                   "execution space. exec_concurrency: "
+                << exec_concurrency << std::endl;
+      return;
+    }
+  }
+#endif  // KOKKOS_ENABLE_OPENMP
+
   std::vector<execution_space> instances;
   if (nstreams == 1)
     instances = Kokkos::Experimental::partition_space(execution_space(), 1);
