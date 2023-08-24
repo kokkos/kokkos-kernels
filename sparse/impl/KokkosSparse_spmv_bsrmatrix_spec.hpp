@@ -366,10 +366,12 @@ struct SPMV_MV_BSRMATRIX<ExecutionSpace, AMatrix, XVector, YVector, true, false,
       const YScalar &beta, const YVector &Y) {
     static_assert(std::is_integral_v<typename AMatrix::non_const_value_type>,
                   "This implementation is only for integer Scalar types.");
-    typedef SPMV_BSRMATRIX<ExecutionSpace, AMatrix, XVector, YVector> impl_type;
     for (typename AMatrix::non_const_size_type j = 0; j < X.extent(1); ++j) {
       const auto x_j = Kokkos::subview(X, Kokkos::ALL(), j);
       auto y_j       = Kokkos::subview(Y, Kokkos::ALL(), j);
+      typedef SPMV_BSRMATRIX<ExecutionSpace, AMatrix, decltype(x_j),
+                             decltype(y_j)>
+          impl_type;
       impl_type::spmv_bsrmatrix(space, controls, mode, alpha, A, x_j, beta,
                                 y_j);
     }
