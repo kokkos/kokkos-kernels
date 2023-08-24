@@ -46,7 +46,7 @@ namespace Experimental {
 ///
 template <typename ExecutionSpace, typename KernelHandle,
           typename lno_row_view_t_, typename lno_nnz_view_t_>
-void gauss_seidel_symbolic(ExecutionSpace &space, KernelHandle *handle,
+void gauss_seidel_symbolic(const ExecutionSpace &space, KernelHandle *handle,
                            typename KernelHandle::const_nnz_lno_t num_rows,
                            typename KernelHandle::const_nnz_lno_t num_cols,
                            lno_row_view_t_ row_map, lno_nnz_view_t_ entries,
@@ -195,7 +195,7 @@ template <class ExecutionSpace,
               KokkosSparse::SparseMatrixFormat::CRS,
           typename KernelHandle, typename lno_row_view_t_,
           typename lno_nnz_view_t_, typename scalar_nnz_view_t_>
-void gauss_seidel_numeric(ExecutionSpace &space, KernelHandle *handle,
+void gauss_seidel_numeric(const ExecutionSpace &space, KernelHandle *handle,
                           typename KernelHandle::const_nnz_lno_t num_rows,
                           typename KernelHandle::const_nnz_lno_t num_cols,
                           lno_row_view_t_ row_map, lno_nnz_view_t_ entries,
@@ -340,7 +340,7 @@ template <class ExecutionSpace,
               KokkosSparse::SparseMatrixFormat::CRS,
           typename KernelHandle, typename lno_row_view_t_,
           typename lno_nnz_view_t_, typename scalar_nnz_view_t_>
-void gauss_seidel_numeric(ExecutionSpace &space, KernelHandle *handle,
+void gauss_seidel_numeric(const ExecutionSpace &space, KernelHandle *handle,
                           typename KernelHandle::const_nnz_lno_t num_rows,
                           typename KernelHandle::const_nnz_lno_t num_cols,
                           lno_row_view_t_ row_map, lno_nnz_view_t_ entries,
@@ -540,7 +540,7 @@ template <class ExecutionSpace,
           typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
           typename x_scalar_view_t, typename y_scalar_view_t>
 void symmetric_gauss_seidel_apply(
-    ExecutionSpace &space, KernelHandle *handle,
+    const ExecutionSpace &space, KernelHandle *handle,
     typename KernelHandle::const_nnz_lno_t num_rows,
     typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map,
     lno_nnz_view_t_ entries, scalar_nnz_view_t_ values,
@@ -821,7 +821,7 @@ template <class ExecutionSpace,
           typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
           typename x_scalar_view_t, typename y_scalar_view_t>
 void forward_sweep_gauss_seidel_apply(
-    ExecutionSpace &space, KernelHandle *handle,
+    const ExecutionSpace &space, KernelHandle *handle,
     typename KernelHandle::const_nnz_lno_t num_rows,
     typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map,
     lno_nnz_view_t_ entries, scalar_nnz_view_t_ values,
@@ -1103,7 +1103,7 @@ template <class ExecutionSpace,
           typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
           typename x_scalar_view_t, typename y_scalar_view_t>
 void backward_sweep_gauss_seidel_apply(
-    ExecutionSpace &space, KernelHandle *handle,
+    const ExecutionSpace &space, KernelHandle *handle,
     typename KernelHandle::const_nnz_lno_t num_rows,
     typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map,
     lno_nnz_view_t_ entries, scalar_nnz_view_t_ values,

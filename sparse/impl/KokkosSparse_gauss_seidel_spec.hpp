@@ -128,7 +128,7 @@ template <class ExecSpaceIn, class KernelHandle, class a_size_view_t_,
               KernelHandle, a_size_view_t_, a_lno_view_t>::value>
 struct GAUSS_SEIDEL_SYMBOLIC {
   static void gauss_seidel_symbolic(
-      ExecSpaceIn &exec_space_in, KernelHandle *handle,
+      const ExecSpaceIn &exec_space_in, KernelHandle *handle,
       typename KernelHandle::const_nnz_lno_t num_rows,
       typename KernelHandle::const_nnz_lno_t num_cols, a_size_view_t_ row_map,
       a_lno_view_t entries, bool is_graph_symmetric);
@@ -144,13 +144,13 @@ template <
         KernelHandle, a_size_view_t_, a_lno_view_t, a_scalar_view_t>::value>
 struct GAUSS_SEIDEL_NUMERIC {
   static void gauss_seidel_numeric(
-      ExecSpaceIn &exec_space_in, KernelHandle *handle,
+      const ExecSpaceIn &exec_space_in, KernelHandle *handle,
       typename KernelHandle::const_nnz_lno_t num_rows,
       typename KernelHandle::const_nnz_lno_t num_cols, a_size_view_t_ row_map,
       a_lno_view_t entries, a_scalar_view_t values, bool is_graph_symmetric);
 
   static void gauss_seidel_numeric(
-      ExecSpaceIn &exec_space_in, KernelHandle *handle,
+      const ExecSpaceIn &exec_space_in, KernelHandle *handle,
       typename KernelHandle::const_nnz_lno_t num_rows,
       typename KernelHandle::const_nnz_lno_t num_cols, a_size_view_t_ row_map,
       a_lno_view_t entries, a_scalar_view_t values,
@@ -169,7 +169,7 @@ template <class ExecSpaceIn, class KernelHandle,
               x_scalar_view_t, y_scalar_view_t>::value>
 struct GAUSS_SEIDEL_APPLY {
   static void gauss_seidel_apply(
-      ExecSpaceIn &exec_space_in, KernelHandle *handle,
+      const ExecSpaceIn &exec_space_in, KernelHandle *handle,
       typename KernelHandle::const_nnz_lno_t num_rows,
       typename KernelHandle::const_nnz_lno_t num_cols, a_size_view_t_ row_map,
       a_lno_view_t entries, a_scalar_view_t values,
@@ -187,7 +187,7 @@ struct GAUSS_SEIDEL_SYMBOLIC<ExecSpaceIn, KernelHandle, a_size_view_t_,
                              a_lno_view_t_, false,
                              KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   static void gauss_seidel_symbolic(
-      ExecSpaceIn &exec_space_in, KernelHandle *handle,
+      const ExecSpaceIn &exec_space_in, KernelHandle *handle,
       typename KernelHandle::const_nnz_lno_t num_rows,
       typename KernelHandle::const_nnz_lno_t num_cols, a_size_view_t_ row_map,
       a_lno_view_t_ entries, bool is_graph_symmetric) {
@@ -224,7 +224,7 @@ struct GAUSS_SEIDEL_NUMERIC<ExecSpaceIn, KernelHandle, format, a_size_view_t_,
                             a_lno_view_t, a_scalar_view_t, false,
                             KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   static void gauss_seidel_numeric(
-      ExecSpaceIn &exec_space_in, KernelHandle *handle,
+      const ExecSpaceIn &exec_space_in, KernelHandle *handle,
       typename KernelHandle::const_nnz_lno_t num_rows,
       typename KernelHandle::const_nnz_lno_t num_cols, a_size_view_t_ row_map,
       a_lno_view_t entries, a_scalar_view_t values, bool is_graph_symmetric) {
@@ -255,7 +255,7 @@ struct GAUSS_SEIDEL_NUMERIC<ExecSpaceIn, KernelHandle, format, a_size_view_t_,
   }
 
   static void gauss_seidel_numeric(
-      ExecSpaceIn &exec_space_in, KernelHandle *handle,
+      const ExecSpaceIn &exec_space_in, KernelHandle *handle,
       typename KernelHandle::const_nnz_lno_t num_rows,
       typename KernelHandle::const_nnz_lno_t num_cols, a_size_view_t_ row_map,
       a_lno_view_t entries, a_scalar_view_t values,
@@ -298,7 +298,7 @@ struct GAUSS_SEIDEL_APPLY<ExecSpaceIn, KernelHandle, format, a_size_view_t_,
                           y_scalar_view_t, false,
                           KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   static void gauss_seidel_apply(
-      ExecSpaceIn &exec_space_in, KernelHandle *handle,
+      const ExecSpaceIn &exec_space_in, KernelHandle *handle,
       typename KernelHandle::const_nnz_lno_t num_rows,
       typename KernelHandle::const_nnz_lno_t num_cols, a_size_view_t_ row_map,
       a_lno_view_t entries, a_scalar_view_t values,

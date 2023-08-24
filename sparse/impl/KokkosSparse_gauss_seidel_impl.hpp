@@ -1860,7 +1860,6 @@ class PointGaussSeidel {
                   Kokkos::subview(gs._Yvector, Kokkos::ALL(), long_row_col);
               gs._long_row_col = long_row_col;
               Kokkos::deep_copy(my_exec_space, long_row_x, nnz_scalar_t());
-              my_exec_space.fence();
               Kokkos::parallel_for(
                   labelLong,
                   Kokkos::Experimental::require(
@@ -1946,7 +1945,6 @@ class PointGaussSeidel {
                   Kokkos::subview(gs._Yvector, Kokkos::ALL(), long_row_col);
               gs._long_row_col = long_row_col;
               Kokkos::deep_copy(my_exec_space, long_row_x, nnz_scalar_t());
-              my_exec_space.fence();
               Kokkos::parallel_for(
                   labelLong,
                   Kokkos::Experimental::require(

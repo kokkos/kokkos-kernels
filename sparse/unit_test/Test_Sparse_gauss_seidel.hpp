@@ -808,24 +808,18 @@ void test_gauss_seidel_streams_rank1(
   int apply_count = 3;  // test symmetric, forward, backward
   //*** Point-coloring version ****
   for (int apply_type = 0; apply_type < apply_count; ++apply_type) {
-    Kokkos::Timer timer1;
-
     for (int i = 0; i < nstreams; i++)
       Kokkos::deep_copy(instances[i], x_vector_v[i], zero);
-    for (int i = 0; i < nstreams; i++) instances[i].fence();
 
     run_gauss_seidel_streams(instances, kh_v, input_mat_v, x_vector_v,
                              y_vector_v, symmetric, m_omega, apply_type,
                              nstreams);
-    // double gs = timer1.seconds();
-    // KokkosKernels::Impl::print_1Dview(x_vector);
     for (int i = 0; i < nstreams; i++) {
-      instances[i].fence();  // Wait for apply to finish updating x_vector
       KokkosBlas::axpby(instances[i], one, solution_x_v[i], -one,
                         x_vector_v[i]);
       mag_t result_norm_res = KokkosBlas::nrm2(instances[i], x_vector_v[i]);
-      std::string info      = "on stream_idx: " + std::to_string(i);
-      EXPECT_LT(result_norm_res, initial_norm_res_v[i]) << info;
+      EXPECT_LT(result_norm_res, initial_norm_res_v[i])
+          << "on stream_idx: " << i;
     }
   }
 

@@ -630,7 +630,7 @@ class KokkosKernelsHandle {
    */
   // clang-format on
   void create_gs_handle(
-      HandleExecSpace handle_exec_space, int num_streams,
+      const HandleExecSpace &handle_exec_space, int num_streams,
       KokkosSparse::GSAlgorithm gs_algorithm = KokkosSparse::GS_DEFAULT,
       KokkosGraph::ColoringAlgorithm coloring_algorithm =
           KokkosGraph::COLORING_DEFAULT) {
