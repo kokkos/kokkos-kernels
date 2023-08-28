@@ -38,15 +38,19 @@ jobs:
           - backend: "SERIAL"
             cmake_build_type: "RelWithDebInfo"
             debug_bounds_check: "ON"
+	          coverage: "OFF"
           - backend: "THREADS"
             cmake_build_type: "RelWithDebInfo"
             debug_bounds_check: "ON"
+	          coverage: "OFF"
           - backend: "SERIAL"
             cmake_build_type: "Debug"
             debug_bounds_check: "OFF"
+	          coverage: "ON"
           - backend: "SERIAL"
             cmake_build_type: "Release"
             debug_bounds_check: "ON"
+    	      coverage: "OFF"
 
     steps:
       - name: checkout_kokkos_kernels
@@ -91,18 +95,19 @@ jobs:
           -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} \
           -DCMAKE_CXX_FLAGS="-Wall -Wshadow -pedantic -Werror -Wsign-compare -Wtype-limits -Wignored-qualifiers -Wempty-body -Wuninitialized" \
           -DCMAKE_INSTALL_PREFIX=$PWD/../install \
-          -DKokkosKernels_ENABLE_TESTS=ON \
-          -DKokkosKernels_ENABLE_EXAMPLES:BOOL=ON \
-          -DKokkosKernels_INST_COMPLEX_DOUBLE=ON \
-          -DKokkosKernels_INST_DOUBLE=ON \
-          -DKokkosKernels_INST_COMPLEX_FLOAT=ON \
-          -DKokkosKernels_INST_FLOAT=ON \
-          -DKokkosKernels_INST_LAYOUTLEFT:BOOL=ON \
-          -DKokkosKernels_INST_LAYOUTRIGHT:BOOL=ON \
-          -DKokkosKernels_INST_OFFSET_INT=ON \
-          -DKokkosKernels_INST_OFFSET_SIZE_T=ON \
-          -DKokkosKernels_ENABLE_TPL_CUSPARSE=OFF \
-          -DKokkosKernels_ENABLE_TPL_CUBLAS=OFF \
+	        -DKokkosKernels_ENABLE_COVERAGE:BOOL=${{ matrix.coverage }} \
+          -DKokkosKernels_ENABLE_TESTS:BOOL=ON \
+          -DKokkosKernels_ENABLE_EXAMPLES:BOOL:BOOL=ON \
+          -DKokkosKernels_INST_COMPLEX_DOUBLE:BOOL=ON \
+          -DKokkosKernels_INST_DOUBLE:BOOL=ON \
+          -DKokkosKernels_INST_COMPLEX_FLOAT:BOOL=ON \
+          -DKokkosKernels_INST_FLOAT:BOOL=ON \
+          -DKokkosKernels_INST_LAYOUTLEFT:BOOL:BOOL=ON \
+          -DKokkosKernels_INST_LAYOUTRIGHT:BOOL:BOOL=ON \
+          -DKokkosKernels_INST_OFFSET_INT:BOOL=ON \
+          -DKokkosKernels_INST_OFFSET_SIZE_T:BOOL=ON \
+          -DKokkosKernels_ENABLE_TPL_CUSPARSE:BOOL=OFF \
+          -DKokkosKernels_ENABLE_TPL_CUBLAS:BOOL=OFF \
           ..
 
       - name: build_kokkos_kernels
@@ -112,3 +117,16 @@ jobs:
       - name: test
         working-directory: kokkos-kernels/build
         run: ctest -j2 --output-on-failure --timeout 3600
+          
+
+      - name: coverage
+        env:
+	        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        working-directory: kokkos-kernels/build
+        run: |
+          cd /usr/local/bin
+          curl -Os https://cli.codecov.io/macos/latest/codecov
+          chmod +x ./codecov
+          cd -
+          $PWD/../scripts/coverage.sh
+        
