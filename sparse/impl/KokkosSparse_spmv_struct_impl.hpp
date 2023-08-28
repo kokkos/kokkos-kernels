@@ -142,6 +142,7 @@ struct SPMV_Struct_Functor {
         beta(beta_),
         m_y(m_y_),
         stencil_type(stencil_type_),
+        numExterior(0),
         rows_per_team(rows_per_team_),
         rows_per_team_ext(rows_per_team_ext_) {
     static_assert(static_cast<int>(XVector::rank) == 1,
