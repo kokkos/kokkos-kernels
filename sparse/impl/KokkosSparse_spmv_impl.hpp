@@ -635,19 +635,19 @@ static void spmv_beta(const execution_space& exec,
                       const YVector& y) {
   if (mode[0] == NoTranspose[0]) {
     if (controls.getParameter("algorithm") == KOKKOSSPARSE_ALG_MERGE) {
-      SpmvMergeHierarchical<execution_space, AMatrix, XVector, YVector>::spmv(exec, mode, alpha, A, x,
-                                                             beta, y);
+      SpmvMergeHierarchical<execution_space, AMatrix, XVector, YVector>::spmv(
+          exec, mode, alpha, A, x, beta, y);
     } else {
-      spmv_beta_no_transpose<execution_space, XVector, YVector, dobeta, false>(
-          exec, controls, alpha, A, x, beta, y);
+      spmv_beta_no_transpose<execution_space, AMatrix, XVector, YVector, dobeta,
+                             false>(exec, controls, alpha, A, x, beta, y);
     }
   } else if (mode[0] == Conjugate[0]) {
     if (controls.getParameter("algorithm") == KOKKOSSPARSE_ALG_MERGE) {
-      SpmvMergeHierarchical<execution_space, AMatrix, XVector, YVector>::spmv(exec, mode, alpha, A, x,
-                                                             beta, y);
+      SpmvMergeHierarchical<execution_space, AMatrix, XVector, YVector>::spmv(
+          exec, mode, alpha, A, x, beta, y);
     } else {
-      spmv_beta_no_transpose<execution_space, AMatrix, XVector, YVector, dobeta, true>(
-          exec, controls, alpha, A, x, beta, y);
+      spmv_beta_no_transpose<execution_space, AMatrix, XVector, YVector, dobeta,
+                             true>(exec, controls, alpha, A, x, beta, y);
     }
   } else if (mode[0] == Transpose[0]) {
     spmv_beta_transpose<execution_space, AMatrix, XVector, YVector, dobeta,

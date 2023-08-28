@@ -33,10 +33,10 @@ namespace KokkosSparse::Impl {
   the team to determine which entries it will be responsible for
   The threads then atomically accumulate partial produces
 */
-template <class AMatrix, class XVector, class YVector>
+template <class ExecutionSpace, class AMatrix, class XVector, class YVector>
 struct SpmvMergeHierarchical {
   using device_type    = typename YVector::device_type;
-  using exec_space     = typename device_type::execution_space;
+  using exec_space     = ExecutionSpace;
   using y_value_type   = typename YVector::non_const_value_type;
   using x_value_type   = typename XVector::non_const_value_type;
   using A_value_type   = typename AMatrix::non_const_value_type;
@@ -301,8 +301,9 @@ struct SpmvMergeHierarchical {
     }
   };
 
-  static void spmv(const char mode[], const y_value_type& alpha,
-                   const AMatrix& A, const XVector& x, const y_value_type& beta,
+  static void spmv(const ExecutionSpace& space, const char mode[],
+                   const y_value_type& alpha, const AMatrix& A,
+                   const XVector& x, const y_value_type& beta,
                    const YVector& y) {
     static_assert(XVector::rank == 1, "");
     static_assert(YVector::rank == 1, "");
@@ -332,7 +333,7 @@ struct SpmvMergeHierarchical {
     const int leagueSize =
         (pathLength + pathLengthTeamChunk - 1) / pathLengthTeamChunk;
 
-    policy_type policy(exec_space(), leagueSize, teamSize);
+    policy_type policy(space, leagueSize, teamSize);
 
     /* Currently:
        On GPU, assume atomics are fast, so don't accumuate into scratch.
