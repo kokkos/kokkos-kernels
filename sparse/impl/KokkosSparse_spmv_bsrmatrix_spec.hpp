@@ -219,18 +219,13 @@ struct SPMV_MV_BSRMATRIX<ExecutionSpace, AMatrix, XVector, YVector, false,
 #if defined(KOKKOS_ARCH_AMPERE) || defined(KOKKOS_ARCH_VOLTA)
     Method method = Method::Fallback;
     {
-      typedef typename AMatrix::non_const_value_type AScalar;
-      typedef typename XVector::non_const_value_type XScalar;
       // try to use tensor cores if requested
       if (controls.getParameter("algorithm") == ALG_TC)
         method = Method::TensorCores;
-      // can't use tensor cores for complex
-      if (Kokkos::ArithTraits<YScalar>::is_complex) method = Method::Fallback;
-      if (Kokkos::ArithTraits<XScalar>::is_complex) method = Method::Fallback;
-      if (Kokkos::ArithTraits<AScalar>::is_complex) method = Method::Fallback;
-      // can't use tensor cores outside Nvidia GPU
-      if constexpr (!std::is_same_v<ExecutionSpace, Kokkos::Cuda>)
+      if (!KokkosSparse::Experimental::Impl::TensorCoresAvailable<
+              ExecutionSpace, AMatrix, XVector, YVector>::value) {
         method = Method::Fallback;
+      }
       // can't use tensor cores unless mode is no-transpose
       if (mode[0] != KokkosSparse::NoTranspose[0]) method = Method::Fallback;
 #if KOKKOS_HALF_T_IS_FLOAT
