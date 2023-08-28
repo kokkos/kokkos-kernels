@@ -216,7 +216,8 @@ struct SPMV_MV_BSRMATRIX<ExecutionSpace, AMatrix, XVector, YVector, false,
       const KokkosKernels::Experimental::Controls &controls, const char mode[],
       const YScalar &alpha, const AMatrix &A, const XVector &X,
       const YScalar &beta, const YVector &Y) {
-#if defined(KOKKOS_ARCH_AMPERE) || defined(KOKKOS_ARCH_VOLTA)
+#if defined(KOKKOS_ENABLE_CUDA) && \
+    (defined(KOKKOS_ARCH_AMPERE) || defined(KOKKOS_ARCH_VOLTA))
     Method method = Method::Fallback;
     {
       typedef typename AMatrix::non_const_value_type AScalar;
