@@ -652,14 +652,19 @@ class KokkosKernelsHandle {
    * 
    * @param gs_algorithm Specifies which algorithm to use:
    * 
-   *                     KokkosSpace::GS_DEFAULT  PointGaussSeidel
-   *                     KokkosSpace::GS_PERMUTED ??
-   *                     KokkosSpace::GS_TEAM     ??
-   *                     KokkosSpace::GS_CLUSTER  ??
-   *                     KokkosSpace::GS_TWOSTAGE ??
+   *                     KokkosSpace::GS_DEFAULT  PointGaussSeidel or BlockGaussSeidel, depending on matrix type.
+   *                     KokkosSpace::GS_PERMUTED Reorders rows/cols into colors to improve locality. Uses RangePolicy over rows.
+   *                     KokkosSpace::GS_TEAM     Uses TeamPolicy over batches of rows with ThreadVector within rows.
+   *                     KokkosSpace::GS_CLUSTER  Uses independent clusters of nodes in the graph. Within a cluster, x is updated sequentially.
+   *                                              For more information, see: https://arxiv.org/pdf/2204.02934.pdf.
+   *                     KokkosSpace::GS_TWOSTAGE Uses spmv to parallelize inner sweeps of x.
+   *                                              For more information, see: https://arxiv.org/pdf/2104.01196.pdf.
    * @param coloring_algorithm Specifies which coloring algorithm to color the graph with:
    * 
-   *                           KokkosGraph::COLORING_DEFAULT  ??
+   *                           KokkosGraph::COLORING_DEFAULT  Depends on execution space:
+   *                                                            COLORING_SERIAL on Kokkos::Serial;
+   *                                                            COLORING_EB on GPUs;
+   *                                                            COLORING_VBBIT on Kokkos::Sycl or elsewhere.
    *                           KokkosGraph::COLORING_SERIAL   Serial Greedy Coloring
    *                           KokkosGraph::COLORING_VB       Vertex Based Coloring
    *                           KokkosGraph::COLORING_VBBIT    Vertex Based Coloring with bit array
