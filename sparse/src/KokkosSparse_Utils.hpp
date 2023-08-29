@@ -2350,7 +2350,8 @@ void kk_extract_diagonal_blocks_crsmatrix_sequential(
 
   using ordinal_type = typename crsMat_t::non_const_ordinal_type;
   using size_type    = typename crsMat_t::non_const_size_type;
-  using offset_view1d_type = Kokkos::View<size_type *, Kokkos::LayoutLeft, Kokkos::HostSpace>;
+  using offset_view1d_type =
+      Kokkos::View<size_type *, Kokkos::LayoutLeft, Kokkos::HostSpace>;
 
   row_map_type A_row_map = A.graph.row_map;
   entries_type A_entries = A.graph.entries;
@@ -2369,33 +2370,35 @@ void kk_extract_diagonal_blocks_crsmatrix_sequential(
 
   if (A_nrows != A_ncols) {
     std::ostringstream os;
-    os << "The diagonal block extraction only works with square matrices -- matrix A: " << A_nrows << " x " << A_ncols;
+    os << "The diagonal block extraction only works with square matrices -- "
+          "matrix A: "
+       << A_nrows << " x " << A_ncols;
     throw std::runtime_error(os.str());
   }
 
   if (n_blocks == 1) {
     // One block case: simply shallow copy A to DiagBlk_v[0]
     DiagBlk_v[0] = crsMat_t(A);
-  }
-  else {
+  } else {
     // n_blocks > 1
     if (A_nrows == 0) {
       // Degenerate case: A is an empty matrix
       for (ordinal_type i = 0; i < n_blocks; i++) {
         DiagBlk_v[i] = crsMat_t();
       }
-    }
-    else {
+    } else {
       // A_nrows >= 1
-      ordinal_type rows_per_block = ((A_nrows % n_blocks) == 0) ? (A_nrows / n_blocks) : (A_nrows / n_blocks + 1);
-      
+      ordinal_type rows_per_block = ((A_nrows % n_blocks) == 0)
+                                        ? (A_nrows / n_blocks)
+                                        : (A_nrows / n_blocks + 1);
+
       std::vector<out_row_map_type> row_map_v(n_blocks);
       std::vector<out_entries_type> entries_v(n_blocks);
       std::vector<out_values_type> values_v(n_blocks);
       std::vector<out_row_map_hostmirror_type> row_map_h_v(n_blocks);
       std::vector<out_entries_hostmirror_type> entries_h_v(n_blocks);
       std::vector<out_values_hostmirror_type> values_h_v(n_blocks);
-      
+
       ordinal_type row_start = 0;  // first row index of i-th diagonal block
       ordinal_type col_start = 0;  // first col index of i-th diagonal block
       ordinal_type nrows, ncols;   // Nrows, Ncols of i-th diagonal block
@@ -2452,9 +2455,9 @@ void kk_extract_diagonal_blocks_crsmatrix_sequential(
         row_map_h_v[i] = out_row_map_hostmirror_type("row_map_h_v", nrows + 1);
         entries_h_v[i] = out_entries_hostmirror_type("entries_h_v", n_entries);
         values_h_v[i]  = out_values_hostmirror_type("values_h_v", n_entries);
-        size_type first_     = 0;
+        size_type first_ = 0;
         for (ordinal_type j = 0; j < nrows; j++) {  // loop through each row
-          size_type nnz = last(j) - first(j) + 1;
+          size_type nnz     = last(j) - first(j) + 1;
           row_map_h_v[i](j) = first_;
           for (size_type k = 0; k < nnz; k++) {
             entries_h_v[i](first_ + k) = A_entries_h(first(j) + k) - col_start;
@@ -2468,13 +2471,13 @@ void kk_extract_diagonal_blocks_crsmatrix_sequential(
         Kokkos::deep_copy(entries_v[i], entries_h_v[i]);
         Kokkos::deep_copy(values_v[i], values_h_v[i]);
 
-        DiagBlk_v[i] = crsMat_t("CrsMatrix", nrows, ncols, n_entries, values_v[i],
-                                row_map_v[i], entries_v[i]);
+        DiagBlk_v[i] = crsMat_t("CrsMatrix", nrows, ncols, n_entries,
+                                values_v[i], row_map_v[i], entries_v[i]);
 
         row_start += nrows;
-      } // for (ordinal_type i = 0; i < n_blocks; i++)
-    }   // A_nrows >= 1
-  }     // n_blocks > 1
+      }  // for (ordinal_type i = 0; i < n_blocks; i++)
+    }    // A_nrows >= 1
+  }      // n_blocks > 1
 }
 
 }  // namespace Impl
