@@ -2330,6 +2330,17 @@ void validateCrsMatrix(int m, int n, const Rowmap &rowmapIn,
   }
 }
 
+/**
+ * @brief Extract the diagonal blocks out of a crs matrix.
+ * This is a blocking function that runs on the host.
+ *
+ * @tparam crsMat_t The type of the CRS matrix
+ * @param A The CrsMatrix.
+ * @param DiagBlk_v [in/out] The location for extracting the diagonal blocks.
+ *
+ * Usage Example:
+ *    kk_extract_diagonal_blocks_crsmatrix_sequential(A_in, diagBlk_in_b);
+ */
 template <typename crsMat_t>
 void kk_extract_diagonal_blocks_crsmatrix_sequential(
     const crsMat_t &A, std::vector<crsMat_t> &DiagBlk_v) {
