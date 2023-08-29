@@ -2335,8 +2335,8 @@ void validateCrsMatrix(int m, int n, const Rowmap &rowmapIn,
  * This is a blocking function that runs on the host.
  *
  * @tparam crsMat_t The type of the CRS matrix
- * @param A The CrsMatrix.
- * @param DiagBlk_v [in/out] The location for extracting the diagonal blocks.
+ * @param A [in] The CrsMatrix.
+ * @param DiagBlk_v [out] The vector of extracted the CRS diagonal blocks.
  *
  * Usage Example:
  *    kk_extract_diagonal_blocks_crsmatrix_sequential(A_in, diagBlk_in_b);
