@@ -37,6 +37,40 @@ struct BsrMatrixSpMVTensorCoreFunctorParams {
   int leagueDim_y;
 };
 
+/*! \brief Can the tensor core impl be used in ExecutionSpace to operate on
+    AMatrix, XMatrix, and YMatrix?
+*/
+template <typename ExecutionSpace, typename AMatrix, typename XMatrix,
+          typename YMatrix>
+class TensorCoresAvailable {
+#if defined(KOKKOS_ENABLE_CUDA)
+  using AScalar = typename AMatrix::non_const_value_type;
+  using YScalar = typename YMatrix::non_const_value_type;
+  using XScalar = typename XMatrix::non_const_value_type;
+
+  using a_mem_space = typename AMatrix::memory_space;
+  using x_mem_space = typename XMatrix::memory_space;
+  using y_mem_space = typename YMatrix::memory_space;
+
+  template <typename T>
+  constexpr static bool is_scalar() {
+    return std::is_scalar_v<T> ||
+           std::is_same_v<std::remove_cv_t<T>, Kokkos::Experimental::half_t>;
+  }
+
+ public:
+  constexpr static inline bool value =
+      Kokkos::SpaceAccessibility<ExecutionSpace, a_mem_space>::accessible &&
+      Kokkos::SpaceAccessibility<ExecutionSpace, x_mem_space>::accessible &&
+      Kokkos::SpaceAccessibility<ExecutionSpace, y_mem_space>::accessible &&
+      is_scalar<AScalar>() && is_scalar<XScalar>() && is_scalar<YScalar>() &&
+      std::is_same_v<ExecutionSpace, Kokkos::Cuda>;
+#else
+ public:
+  constexpr static inline bool value = false;
+#endif
+};
+
 /// \brief Functor for the BsrMatrix SpMV multivector implementation utilizing
 /// tensor cores.
 ///
@@ -473,31 +507,13 @@ struct BsrMatrixSpMVTensorCoreDispatcher {
         "Tensor core SpMV is only supported for non-complex types in GPU "
         "execution spaces");
   }
-
-  /*true if none of T1, T2, or T3 are complex*/
-  template <typename T1, typename T2, typename T3>
-  struct none_complex {
-    const static bool value = !Kokkos::ArithTraits<T1>::is_complex &&
-                              !Kokkos::ArithTraits<T2>::is_complex &&
-                              !Kokkos::ArithTraits<T3>::is_complex;
-  };
-
-  /*true if T1::execution_space, T2, or T3 are all GPU exec space*/
-  template <typename T1, typename T2, typename T3>
-  struct all_gpu {
-    const static bool value = KokkosKernels::Impl::kk_is_gpu_exec_space<T1>() &&
-                              KokkosKernels::Impl::kk_is_gpu_exec_space<T2>() &&
-                              KokkosKernels::Impl::kk_is_gpu_exec_space<T3>();
-  };
-
   static void dispatch(const execution_space &exec, YScalar alpha, AMatrix a,
                        XMatrix x, YScalar beta, YMatrix y) {
     // tag will be false unless all conditions are met
-    using tag = std::integral_constant<
-        bool, none_complex<AScalar, XScalar, YScalar>::value &&
-                  all_gpu<typename AMatrix::execution_space,
-                          typename XMatrix::execution_space,
-                          typename YMatrix::execution_space>::value>;
+    using tag =
+        std::integral_constant<bool,
+                               TensorCoresAvailable<execution_space, AMatrix,
+                                                    XMatrix, YMatrix>::value>;
     tag_dispatch(tag{}, exec, alpha, a, x, beta, y);
   }
 };
