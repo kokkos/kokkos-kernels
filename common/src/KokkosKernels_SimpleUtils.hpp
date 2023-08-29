@@ -142,20 +142,36 @@ inline void kk_exclusive_parallel_prefix_sum(
   kk_exclusive_parallel_prefix_sum(MyExecSpace(), num_elements, arr, finalSum);
 }
 
-/***
- * \brief Function performs the inclusive parallel prefix sum. That is each
- * entry holds the sum until itself including itself. \param num_elements: size
- * of the array \param arr: the array for which the prefix sum will be
- * performed.
- */
+///
+/// \brief Function performs the inclusive parallel prefix sum. That is each
+///        entry holds the sum until itself including itself.
+/// \param my_exec_space: The execution space instance
+/// \param num_elements: size of the array
+/// \param arr: the array for which the prefix sum will be performed.
+///
+template <typename forward_array_type, typename MyExecSpace>
+void kk_inclusive_parallel_prefix_sum(
+    MyExecSpace my_exec_space,
+    typename forward_array_type::value_type num_elements,
+    forward_array_type arr) {
+  typedef Kokkos::RangePolicy<MyExecSpace> range_policy_t;
+  Kokkos::parallel_scan("KokkosKernels::Common::PrefixSum",
+                        range_policy_t(my_exec_space, 0, num_elements),
+                        InclusiveParallelPrefixSum<forward_array_type>(arr));
+}
+
+///
+/// \brief Function performs the inclusive parallel prefix sum. That is each
+///        entry holds the sum until itself including itself.
+/// \param num_elements: size of the array
+/// \param arr: the array for which the prefix sum will be performed.
+///
 template <typename forward_array_type, typename MyExecSpace>
 void kk_inclusive_parallel_prefix_sum(
     typename forward_array_type::value_type num_elements,
     forward_array_type arr) {
-  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
-  Kokkos::parallel_scan("KokkosKernels::Common::PrefixSum",
-                        my_exec_space(0, num_elements),
-                        InclusiveParallelPrefixSum<forward_array_type>(arr));
+  MyExecSpace my_exec_space;
+  return kk_inclusive_parallel_prefix_sum(my_exec_space, num_elements, arr);
 }
 
 template <typename view_t>

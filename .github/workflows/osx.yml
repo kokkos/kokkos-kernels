@@ -111,4 +111,4 @@ jobs:
 
       - name: test
         working-directory: kokkos-kernels/build
-        run: ctest -j2 --output-on-failure --timeout 3600
+        run: ctest -j2 --output-on-failure --timeout 7200

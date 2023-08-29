@@ -1885,15 +1885,25 @@ struct ReduceLargerRowCount {
 
 template <typename view_type, typename MyExecSpace>
 void kk_reduce_numrows_larger_than_threshold(
+    const MyExecSpace &my_exec_space, size_t num_elements,
+    view_type view_to_reduce, typename view_type::const_value_type threshold,
+    typename view_type::non_const_value_type &sum_reduction) {
+  typedef Kokkos::RangePolicy<MyExecSpace> range_policy_t;
+  Kokkos::parallel_reduce(
+      "KokkosKernels::Common::ReduceNumRowsLargerThanThreshold",
+      range_policy_t(my_exec_space, 0, num_elements),
+      ReduceLargerRowCount<view_type>(view_to_reduce, threshold),
+      sum_reduction);
+}
+
+template <typename view_type, typename MyExecSpace>
+void kk_reduce_numrows_larger_than_threshold(
     size_t num_elements, view_type view_to_reduce,
     typename view_type::const_value_type threshold,
     typename view_type::non_const_value_type &sum_reduction) {
-  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
-  Kokkos::parallel_reduce(
-      "KokkosKernels::Common::ReduceNumRowsLargerThanThreshold",
-      my_exec_space(0, num_elements),
-      ReduceLargerRowCount<view_type>(view_to_reduce, threshold),
-      sum_reduction);
+  MyExecSpace my_exec_space;
+  kk_reduce_numrows_larger_than_threshold(
+      my_exec_space, num_elements, view_to_reduce, threshold, sum_reduction);
 }
 
 // Note: "block" in member name means it's block internal - otherwise it

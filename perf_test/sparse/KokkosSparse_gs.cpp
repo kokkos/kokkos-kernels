@@ -220,21 +220,17 @@ void runGS(const GS_Parameters& params) {
       &kh, nrows, nrows, A.graph.row_map, A.graph.entries,
       params.graph_symmetric);
   double symbolicLaunchTime = timer.seconds();
-  std::cout << "\n*** Symbolic launch time: " << symbolicLaunchTime << '\n';
   timer.reset();
   Kokkos::fence();
   double symbolicComputeTime = timer.seconds();
-  std::cout << "\n*** Symbolic compute time: " << symbolicComputeTime << '\n';
   timer.reset();
   KokkosSparse::Experimental::gauss_seidel_numeric(
       &kh, nrows, nrows, A.graph.row_map, A.graph.entries, A.values,
       params.graph_symmetric);
   double numericLaunchTime = timer.seconds();
-  std::cout << "\n*** Numeric launch time: " << numericLaunchTime << '\n';
   timer.reset();
   Kokkos::fence();
   double numericComputeTime = timer.seconds();
-  std::cout << "\n*** Numeric compute time: " << numericComputeTime << '\n';
   timer.reset();
   // Last two parameters are damping factor (should be 1) and sweeps
   switch (params.direction) {
@@ -256,11 +252,9 @@ void runGS(const GS_Parameters& params) {
   }
 
   double applyLaunchTime = timer.seconds();
-  std::cout << "\n*** Apply launch time: " << applyLaunchTime << '\n';
   timer.reset();
   Kokkos::fence();
   double applyComputeTime = timer.seconds();
-  std::cout << "\n*** Apply compute time: " << applyComputeTime << '\n';
   timer.reset();
   kh.destroy_gs_handle();
   // Now, compute the 2-norm of residual
@@ -271,6 +265,12 @@ void runGS(const GS_Parameters& params) {
   KokkosSparse::spmv<scalar_t, crsMat_t, scalar_view_t, scalar_t,
                      scalar_view_t>("N", alpha, A, x, beta, res);
   double resnorm = KokkosBlas::nrm2(res);
+  std::cout << "\n*** Symbolic launch time: " << symbolicLaunchTime << '\n';
+  std::cout << "\n*** Symbolic compute time: " << symbolicComputeTime << '\n';
+  std::cout << "\n*** Numeric launch time: " << numericLaunchTime << '\n';
+  std::cout << "\n*** Numeric compute time: " << numericComputeTime << '\n';
+  std::cout << "\n*** Apply launch time: " << applyLaunchTime << '\n';
+  std::cout << "\n*** Apply compute time: " << applyComputeTime << '\n';
   // note: this still works if the solution diverges
   std::cout << "Relative res norm: " << resnorm / bnorm << '\n';
 }
