@@ -178,6 +178,7 @@ fi
 
 if [[ "$HOSTNAME" == fat* ]]; then # Caraway MI250 queues
   MACHINE=caraway
+  source /etc/profile.d/lmod.sh
 fi
 
 if [[ "$HOSTNAME" == lean* ]]; then # Caraway MI210 queues
