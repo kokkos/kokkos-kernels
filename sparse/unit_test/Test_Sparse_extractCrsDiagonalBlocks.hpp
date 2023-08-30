@@ -28,7 +28,6 @@ void run_test_extract_diagonal_blocks(int nrows, int nblocks) {
   using EntriesType_hm = typename EntriesType::HostMirror;
   using ValuesType_hm  = typename ValuesType::HostMirror;
   using crsMat_t       = CrsMatrix<scalar_t, lno_t, device, void, size_type>;
-  using AT             = Kokkos::ArithTraits<scalar_t>;
 
   crsMat_t A;
   std::vector<crsMat_t> DiagBlks(nblocks);
