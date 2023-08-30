@@ -2344,13 +2344,9 @@ void validateCrsMatrix(int m, int n, const Rowmap &rowmapIn,
 template <typename crsMat_t>
 void kk_extract_diagonal_blocks_crsmatrix_sequential(
     const crsMat_t &A, std::vector<crsMat_t> &DiagBlk_v) {
-  using row_map_type            = typename crsMat_t::row_map_type;
-  using entries_type            = typename crsMat_t::index_type;
-  using values_type             = typename crsMat_t::values_type;
-  using row_map_hostmirror_type = typename row_map_type::HostMirror;
-  using entries_hostmirror_type = typename entries_type::HostMirror;
-  using values_hostmirror_type  = typename values_type::HostMirror;
-
+  using row_map_type     = typename crsMat_t::row_map_type;
+  using entries_type     = typename crsMat_t::index_type;
+  using values_type      = typename crsMat_t::values_type;
   using graph_t          = typename crsMat_t::StaticCrsGraphType;
   using out_row_map_type = typename graph_t::row_map_type::non_const_type;
   using out_entries_type = typename graph_t::entries_type::non_const_type;
@@ -2368,14 +2364,14 @@ void kk_extract_diagonal_blocks_crsmatrix_sequential(
   entries_type A_entries = A.graph.entries;
   values_type A_values   = A.values;
 
-  row_map_hostmirror_type A_row_map_h =
+  auto A_row_map_h =
       Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A_row_map);
-  entries_hostmirror_type A_entries_h =
+  auto A_entries_h =
       Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A_entries);
-  values_hostmirror_type A_values_h =
+  auto A_values_h =
       Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A_values);
 
-  ordinal_type A_nrows  = static_cast<ordinal_type>(A_row_map.extent(0)) - 1;
+  ordinal_type A_nrows  = static_cast<ordinal_type>(A.numRows());
   ordinal_type A_ncols  = static_cast<ordinal_type>(A.numCols());
   ordinal_type n_blocks = static_cast<ordinal_type>(DiagBlk_v.size());
 
