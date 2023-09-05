@@ -136,8 +136,6 @@ void test_extract_diagonal_blocks() {
     Test::run_test_extract_diagonal_blocks<scalar_t, lno_t, size_type, device>(
         0, s);
     Test::run_test_extract_diagonal_blocks<scalar_t, lno_t, size_type, device>(
-        3, s);
-    Test::run_test_extract_diagonal_blocks<scalar_t, lno_t, size_type, device>(
         12, s);
     Test::run_test_extract_diagonal_blocks<scalar_t, lno_t, size_type, device>(
         123, s);

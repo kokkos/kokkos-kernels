@@ -2331,12 +2331,83 @@ void validateCrsMatrix(int m, int n, const Rowmap &rowmapIn,
 }
 
 /**
+ * @brief Count the non-zeros of a sub-block in a CRS matrix and find the first and last column indices at each row of the sub-block
+ * This is a host function used by the kk_extract_diagonal_blocks_crsmatrix_sequential()
+ */
+template <typename row_map_type,
+          typename entries_type,
+          typename ordinal_type,
+          typename size_type,
+          typename offset_view1d_type>
+void kk_find_nnz_first_last_indices_subblock_crsmatrix_sequential(const row_map_type &A_row_map,const entries_type &A_entries, const ordinal_type &blk_row_start, const ordinal_type &blk_col_start, const ordinal_type &blk_nrows, const ordinal_type &blk_ncols, size_type &blk_nnz, offset_view1d_type &first_indices, offset_view1d_type &last_indices) {
+  // Rowmap of i-th row-oriented sub-matrix
+  auto A_row_map_sub = Kokkos::subview(A_row_map, Kokkos::make_pair(blk_row_start, blk_row_start + blk_nrows + 1));
+
+  blk_nnz = 0;
+
+  for (ordinal_type j = 0; j < blk_nrows; j++) { // loop through each row
+    size_type k1 = A_row_map_sub(j);
+    size_type k2 = A_row_map_sub(j + 1);
+    size_type k;
+    // Assume column indices are sorted in ascending order
+    // Find the position of the start column in the row
+    for (k = k1; k < k2; k++) {
+      ordinal_type col = A_entries(k);
+      if (col >= blk_col_start) {
+        break;
+      }
+    }
+    first_indices(j) = k;
+    // Find the position of the last column in the row
+    for (k = k2 - 1; k >= k1; k--) {
+      ordinal_type col = A_entries(k);
+      if (col < blk_col_start + blk_ncols) {
+        break;
+      }
+    }
+    last_indices(j) = k;
+    blk_nnz += (last_indices(j) - first_indices(j) + 1);
+  }
+}
+
+/**
+ * @brief Extract a CRS sub-block from a CRS matrix
+ * This is a host function used by the kk_extract_diagonal_blocks_crsmatrix_sequential()
+ */
+template <typename entries_type,
+          typename values_type,
+          typename ordinal_type,
+          typename size_type,
+          typename offset_view1d_type,
+          typename out_row_map_type,
+          typename out_entries_type,
+          typename out_values_type>
+void kk_extract_subblock_crsmatrix_sequential(const entries_type &A_entries, const values_type &A_values, const ordinal_type &blk_col_start, const ordinal_type &blk_nrows, const size_type &blk_nnz, const offset_view1d_type &first_indices, const offset_view1d_type &last_indices, out_row_map_type &blk_row_map, out_entries_type &blk_entries, out_values_type &blk_values) {
+  // - create out_row_map
+  // - copy A_entries to out_entries and update out_entries with local column indices
+  // - copy A_values to out_values
+  size_type first_ = 0;
+  for (ordinal_type j = 0; j < blk_nrows; j++) {  // loop through each row
+    size_type nnz  = last_indices(j) - first_indices(j) + 1;
+    blk_row_map(j) = first_;
+    for (size_type k = 0; k < nnz; k++) {
+      blk_entries(first_ + k) = A_entries(first_indices(j) + k) - blk_col_start;
+      blk_values(first_ + k)  = A_values(first_indices(j) + k);
+    }
+    first_ += nnz;
+  }
+  blk_row_map(blk_nrows) = blk_nnz;  // last element
+}
+
+/**
  * @brief Extract the diagonal blocks out of a crs matrix.
  * This is a blocking function that runs on the host.
  *
- * @tparam crsMat_t The type of the CRS matrix
- * @param A [in] The CrsMatrix.
- * @param DiagBlk_v [out] The vector of extracted the CRS diagonal blocks.
+ * @tparam crsMat_t The type of the CRS matrix.
+ * @param A [in] The square CrsMatrix. It is expected that column indices are
+ * in ascending order
+ * @param DiagBlk_v [out] The vector of the extracted the CRS diagonal blocks
+ * (1 <= the number of diagonal blocks <= A_nrows)
  *
  * Usage Example:
  *    kk_extract_diagonal_blocks_crsmatrix_sequential(A_in, diagBlk_in_b);
@@ -2395,6 +2466,12 @@ void kk_extract_diagonal_blocks_crsmatrix_sequential(
       }
     } else {
       // A_nrows >= 1
+      if ((n_blocks < 1) || (A_nrows < n_blocks)) {
+        std::ostringstream os;
+        os << "The number of diagonal blocks (" << n_blocks << ") should be >=1 and <= the number of rows of the matrix A (" << A_nrows << ")";
+        throw std::runtime_error(os.str());
+      }
+
       ordinal_type rows_per_block = ((A_nrows % n_blocks) == 0)
                                         ? (A_nrows / n_blocks)
                                         : (A_nrows / n_blocks + 1);
@@ -2406,82 +2483,43 @@ void kk_extract_diagonal_blocks_crsmatrix_sequential(
       std::vector<out_entries_hostmirror_type> entries_h_v(n_blocks);
       std::vector<out_values_hostmirror_type> values_h_v(n_blocks);
 
-      ordinal_type row_start = 0;  // first row index of i-th diagonal block
-      ordinal_type col_start = 0;  // first col index of i-th diagonal block
-      ordinal_type nrows, ncols;   // Nrows, Ncols of i-th diagonal block
+      ordinal_type blk_row_start = 0; // first row index of i-th diagonal block
+      ordinal_type blk_col_start = 0; // first col index of i-th diagonal block
+      ordinal_type blk_nrows, blk_ncols; // Nrows, Ncols of i-th diagonal block
 
       for (ordinal_type i = 0; i < n_blocks; i++) {
-        nrows = rows_per_block;
-        if ((row_start + rows_per_block) > A_nrows) {
-          nrows = A_nrows - row_start;
+        blk_nrows = rows_per_block;
+        if ((blk_row_start + rows_per_block) > A_nrows) {
+          blk_nrows = A_nrows - blk_row_start;
         }
-        col_start = row_start;
-        ncols     = nrows;
+        blk_col_start = blk_row_start;
+        blk_ncols     = blk_nrows;
 
-        // Rowmap of i-th row-oriented sub-matrix
-        auto A_row_map_sub = Kokkos::subview(
-            A_row_map_h, Kokkos::make_pair(row_start, row_start + nrows + 1));
+        // First round: count i-th non-zeros or size of entries_v[i] and find the first and last column indices at each row
+        size_type blk_nnz = 0;
+        offset_view1d_type first("first", blk_nrows); // first position per row
+        offset_view1d_type last("last", blk_nrows);   // last position per row
 
-        // First round: count i-th non-zeros or size of entries_v[i]
-        size_type n_entries = 0;
-        offset_view1d_type first("first", nrows);  // first position per row
-        offset_view1d_type last("last", nrows);    // last position per row
+        kk_find_nnz_first_last_indices_subblock_crsmatrix_sequential(A_row_map_h, A_entries_h, blk_row_start, blk_col_start, blk_nrows, blk_ncols, blk_nnz, first, last);
 
-        for (ordinal_type j = 0; j < nrows; j++) {  // loop through each row
-          size_type k1 = A_row_map_sub(j);
-          size_type k2 = A_row_map_sub(j + 1);
-          size_type k;
-          // Assume column indices are sorted in ascending order
-          // Find the position of the start column in the row
-          for (k = k1; k < k2; k++) {
-            ordinal_type col = A_entries_h(k);
-            if (col >= col_start) {
-              break;
-            }
-          }
-          first(j) = k;
-          // Find the position of the last column in the row
-          for (k = k2 - 1; k >= k1; k--) {
-            ordinal_type col = A_entries_h(k);
-            if (col < col_start + ncols) {
-              break;
-            }
-          }
-          last(j) = k;
-          n_entries += (last(j) - first(j) + 1);
-        }
+        // Second round: extract
+        row_map_v[i]   = out_row_map_type("row_map_v", blk_nrows + 1);
+        entries_v[i]   = out_entries_type("entries_v", blk_nnz);
+        values_v[i]    = out_values_type("values_v", blk_nnz);
+        row_map_h_v[i] = out_row_map_hostmirror_type("row_map_h_v", blk_nrows + 1);
+        entries_h_v[i] = out_entries_hostmirror_type("entries_h_v", blk_nnz);
+        values_h_v[i]  = out_values_hostmirror_type("values_h_v", blk_nnz);
 
-        // Second round:
-        // - create row_map_v[i]
-        // - copy A_entries to entries_v[i] and update entries_v[i] with local
-        // column indices
-        // - copy A_values to values_v[i]
-        row_map_v[i]   = out_row_map_type("row_map_v", nrows + 1);
-        entries_v[i]   = out_entries_type("entries_v", n_entries);
-        values_v[i]    = out_values_type("values_v", n_entries);
-        row_map_h_v[i] = out_row_map_hostmirror_type("row_map_h_v", nrows + 1);
-        entries_h_v[i] = out_entries_hostmirror_type("entries_h_v", n_entries);
-        values_h_v[i]  = out_values_hostmirror_type("values_h_v", n_entries);
-        size_type first_ = 0;
-        for (ordinal_type j = 0; j < nrows; j++) {  // loop through each row
-          size_type nnz     = last(j) - first(j) + 1;
-          row_map_h_v[i](j) = first_;
-          for (size_type k = 0; k < nnz; k++) {
-            entries_h_v[i](first_ + k) = A_entries_h(first(j) + k) - col_start;
-            values_h_v[i](first_ + k)  = A_values_h(first(j) + k);
-          }
-          first_ += nnz;
-        }
-        row_map_h_v[i](nrows) = n_entries;  // last element
+        kk_extract_subblock_crsmatrix_sequential(A_entries_h, A_values_h, blk_col_start, blk_nrows, blk_nnz, first, last, row_map_h_v[i], entries_h_v[i], values_h_v[i]);
 
         Kokkos::deep_copy(row_map_v[i], row_map_h_v[i]);
         Kokkos::deep_copy(entries_v[i], entries_h_v[i]);
         Kokkos::deep_copy(values_v[i], values_h_v[i]);
 
-        DiagBlk_v[i] = crsMat_t("CrsMatrix", nrows, ncols, n_entries,
+        DiagBlk_v[i] = crsMat_t("CrsMatrix", blk_nrows, blk_ncols, blk_nnz,
                                 values_v[i], row_map_v[i], entries_v[i]);
 
-        row_start += nrows;
+        blk_row_start += blk_nrows;
       }  // for (ordinal_type i = 0; i < n_blocks; i++)
     }    // A_nrows >= 1
   }      // n_blocks > 1
