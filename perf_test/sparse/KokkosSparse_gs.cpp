@@ -338,16 +338,24 @@ void runGS(const GS_Parameters& params) {
             << '\n';
   std::cout << "\n*** Total Symbolic launch time: " << symbolicLaunchTimeTotal
             << '\n';
-  std::cout << "\n*** Total Symbolic compute time: " << symbolicComputeTimeTotal
+  std::cout << "*** Total Symbolic compute time: " << symbolicComputeTimeTotal
             << '\n';
   std::cout << "\n*** Total Numeric launch time: " << numericLaunchTimeTotal
             << '\n';
-  std::cout << "\n*** Total Numeric compute time: " << numericComputeTimeTotal
+  std::cout << "*** Total Numeric compute time: " << numericComputeTimeTotal
             << '\n';
   std::cout << "\n*** Total Apply launch time: " << applyLaunchTimeTotal
             << '\n';
-  std::cout << "\n*** Total Apply compute time: " << applyComputeTimeTotal
+  std::cout << "*** Total Apply compute time: " << applyComputeTimeTotal
             << '\n';
+  double launchTimeTotal =
+      symbolicLaunchTimeTotal + numericLaunchTimeTotal + applyLaunchTimeTotal;
+  std::cout << "\n*** Total launch time: " << launchTimeTotal << '\n';
+  double computeTimeTotal = symbolicComputeTimeTotal + numericComputeTimeTotal +
+                            applyComputeTimeTotal;
+  std::cout << "*** Total compute time: " << computeTimeTotal << '\n';
+  std::cout << "\n*** Total compute and launch time: "
+            << launchTimeTotal + computeTimeTotal << '\n';
 }
 
 int main(int argc, char** argv) {
