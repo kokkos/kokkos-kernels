@@ -255,7 +255,6 @@ void runGS(const GS_Parameters& params) {
       }
       Kokkos::deep_copy(instances[i], b[i], bhost);
     }
-    double bnorm = KokkosBlas::nrm2(instances[i], b[i]);
     // cluster size of 1 is standard multicolor GS
     if (params.algo == GS_DEFAULT) {
       kh[i].create_gs_handle(instances[i], params.nstreams);
@@ -284,7 +283,21 @@ void runGS(const GS_Parameters& params) {
     timer.reset();
     Kokkos::fence();
     double numericComputeTime = timer.seconds();
-    timer.reset();
+    std::cout << "\n***Stream ID: " << i << std::endl;
+    std::cout << "\n*** Symbolic launch time: " << symbolicLaunchTime << '\n';
+    std::cout << "\n*** Symbolic compute time: " << symbolicComputeTime << '\n';
+    std::cout << "\n*** Numeric launch time: " << numericLaunchTime << '\n';
+    std::cout << "\n*** Numeric compute time: " << numericComputeTime << '\n';
+    symbolicLaunchTimeTotal += symbolicLaunchTime;
+    symbolicComputeTimeTotal += symbolicComputeTime;
+    numericLaunchTimeTotal += numericLaunchTime;
+    numericComputeTimeTotal += numericComputeTime;
+  }
+
+  timer.reset();
+  for (int i = 0; i < params.nstreams; i++) {
+    auto blk_A     = DiagBlks[i];
+    auto blk_nrows = blk_A.numRows();
     // Last two parameters are damping factor (should be 1) and sweeps
     switch (params.direction) {
       case GS_SYMMETRIC:
@@ -306,37 +319,30 @@ void runGS(const GS_Parameters& params) {
             params.sweeps);
         break;
     }
+  }
+  applyLaunchTimeTotal = timer.seconds();
+  timer.reset();
+  Kokkos::fence();
+  applyComputeTimeTotal = timer.seconds();
+  timer.reset();
 
-    double applyLaunchTime = timer.seconds();
-    timer.reset();
-    Kokkos::fence();
-    double applyComputeTime = timer.seconds();
-    timer.reset();
+  for (int i = 0; i < params.nstreams; i++) {
+    auto blk_A     = DiagBlks[i];
+    auto blk_nrows = blk_A.numRows();
     kh[i].destroy_gs_handle();
     // Now, compute the 2-norm of residual
     scalar_view_t res("Ax-b", blk_nrows);
     Kokkos::deep_copy(instances[i], res, b[i]);
+    double bnorm   = KokkosBlas::nrm2(instances[i], b[i]);
     scalar_t alpha = Kokkos::reduction_identity<scalar_t>::prod();
     scalar_t beta  = -alpha;
     KokkosSparse::spmv<exec_space, scalar_t, crsMat_t, scalar_view_t, scalar_t,
                        scalar_view_t>(instances[i], "N", alpha, blk_A, x[i],
                                       beta, res);
     double resnorm = KokkosBlas::nrm2(instances[i], res);
-    std::cout << "\n***Stream ID: " << i << std::endl;
-    std::cout << "\n*** Symbolic launch time: " << symbolicLaunchTime << '\n';
-    std::cout << "\n*** Symbolic compute time: " << symbolicComputeTime << '\n';
-    std::cout << "\n*** Numeric launch time: " << numericLaunchTime << '\n';
-    std::cout << "\n*** Numeric compute time: " << numericComputeTime << '\n';
-    std::cout << "\n*** Apply launch time: " << applyLaunchTime << '\n';
-    std::cout << "\n*** Apply compute time: " << applyComputeTime << '\n';
     // note: this still works if the solution diverges
-    std::cout << "Relative res norm: " << resnorm / bnorm << '\n';
-    symbolicLaunchTimeTotal += symbolicLaunchTime;
-    symbolicComputeTimeTotal += symbolicComputeTime;
-    numericLaunchTimeTotal += numericLaunchTime;
-    numericComputeTimeTotal += numericComputeTime;
-    applyLaunchTimeTotal += applyLaunchTime;
-    applyComputeTimeTotal += applyComputeTime;
+    std::cout << "StreamID(" << i << "): Relative res norm: " << resnorm / bnorm
+              << '\n';
   }
   std::cout << "\n\n\n*** Total block extraction time: " << blockExtractionTime
             << '\n';
