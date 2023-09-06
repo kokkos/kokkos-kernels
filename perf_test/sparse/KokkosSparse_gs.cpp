@@ -233,7 +233,7 @@ void runGS(const GS_Parameters& params) {
     b[i] = scalar_view_t("b[" + std::to_string(i) + "]", blk_nrows);
     x[i] = scalar_view_t("x[" + std::to_string(i) + "]", blk_nrows);
     {
-      srand(54321);
+      srand(54321 + i);
       auto bhost = Kokkos::create_mirror_view(b[i]);
       for (lno_t row_id = 0; row_id < blk_nrows; row_id++) {
         bhost(row_id) = 10.0 * rand() / RAND_MAX - 5.0;
