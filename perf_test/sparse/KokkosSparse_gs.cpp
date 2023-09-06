@@ -205,24 +205,9 @@ void runGS(const GS_Parameters& params) {
     namespace KE = Kokkos::Experimental;
     auto ns      = params.nstreams;
     auto es      = exec_space();
-    if (ns == 1)
-      instances = KE::partition_space(es, 1);
-    else if (ns == 2)
-      instances = KE::partition_space(es, 1, 1);
-    else if (ns == 3)
-      instances = KE::partition_space(es, 1, 1, 1);
-    else if (ns == 4)
-      instances = KE::partition_space(es, 1, 1, 1, 1);
-    else if (ns == 5)
-      instances = KE::partition_space(es, 1, 1, 1, 1, 1);
-    else if (ns == 6)
-      instances = KE::partition_space(es, 1, 1, 1, 1, 1, 1);
-    else if (ns == 7)
-      instances = KE::partition_space(es, 1, 1, 1, 1, 1, 1, 1);
-    else if (ns == 8)
-      instances = KE::partition_space(es, 1, 1, 1, 1, 1, 1, 1, 1);
-    else
-      Kokkos::abort("--streams outside of [1, 8] is not supported.");
+    std::vector<int> weights(ns);
+    std::fill(weights.begin(), weights.end(), 1);
+    instances = KE::partition_space(es, weights);
   }
 
   double blockExtractionTime = 0, symbolicLaunchTimeTotal = 0,
