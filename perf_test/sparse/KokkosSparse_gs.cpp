@@ -221,6 +221,7 @@ void runGS(const GS_Parameters& params) {
   Kokkos::fence();
   blockExtractionTime = timer.seconds();
 
+  /////////////////// Handle creation ///////////////////
   for (int i = 0; i < params.nstreams; i++) {
     auto blk_A     = DiagBlks[i];
     auto blk_nrows = blk_A.numRows();
@@ -252,33 +253,37 @@ void runGS(const GS_Parameters& params) {
       if (params.algo == GS_TWOSTAGE)
         kh[i].set_gs_twostage(!params.classic, blk_nrows);
     }
-    timer.reset();
+  }
+
+  /////////////////// Symbolic /////////////////
+  timer.reset();
+  for (int i = 0; i < params.nstreams; i++) {
+    auto blk_A     = DiagBlks[i];
+    auto blk_nrows = blk_A.numRows();
     KokkosSparse::Experimental::gauss_seidel_symbolic(
         instances[i], &kh[i], blk_nrows, blk_nrows, blk_A.graph.row_map,
         blk_A.graph.entries, params.graph_symmetric);
-    double symbolicLaunchTime = timer.seconds();
-    timer.reset();
-    Kokkos::fence();
-    double symbolicComputeTime = timer.seconds();
-    timer.reset();
+  }
+  symbolicLaunchTimeTotal = timer.seconds();
+  timer.reset();
+  Kokkos::fence();
+  symbolicComputeTimeTotal = timer.seconds();
+
+  /////////////////// Numeric /////////////////
+  timer.reset();
+  for (int i = 0; i < params.nstreams; i++) {
+    auto blk_A     = DiagBlks[i];
+    auto blk_nrows = blk_A.numRows();
     KokkosSparse::Experimental::gauss_seidel_numeric(
         instances[i], &kh[i], blk_nrows, blk_nrows, blk_A.graph.row_map,
         blk_A.graph.entries, blk_A.values, params.graph_symmetric);
-    double numericLaunchTime = timer.seconds();
-    timer.reset();
-    Kokkos::fence();
-    double numericComputeTime = timer.seconds();
-    std::cout << "\n***Stream ID: " << i << std::endl;
-    std::cout << "\n*** Symbolic launch time: " << symbolicLaunchTime << '\n';
-    std::cout << "\n*** Symbolic compute time: " << symbolicComputeTime << '\n';
-    std::cout << "\n*** Numeric launch time: " << numericLaunchTime << '\n';
-    std::cout << "\n*** Numeric compute time: " << numericComputeTime << '\n';
-    symbolicLaunchTimeTotal += symbolicLaunchTime;
-    symbolicComputeTimeTotal += symbolicComputeTime;
-    numericLaunchTimeTotal += numericLaunchTime;
-    numericComputeTimeTotal += numericComputeTime;
   }
+  numericLaunchTimeTotal = timer.seconds();
+  timer.reset();
+  Kokkos::fence();
+  numericComputeTimeTotal = timer.seconds();
 
+  /////////////////// Apply /////////////////
   timer.reset();
   for (int i = 0; i < params.nstreams; i++) {
     auto blk_A     = DiagBlks[i];
@@ -329,7 +334,7 @@ void runGS(const GS_Parameters& params) {
     std::cout << "StreamID(" << i << "): Relative res norm: " << resnorm / bnorm
               << '\n';
   }
-  std::cout << "\n\n\n*** Total block extraction time: " << blockExtractionTime
+  std::cout << "\n*** Total block extraction time: " << blockExtractionTime
             << '\n';
   std::cout << "\n*** Total Symbolic launch time: " << symbolicLaunchTimeTotal
             << '\n';
