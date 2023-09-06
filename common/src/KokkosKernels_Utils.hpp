@@ -899,7 +899,6 @@ void zero_vector(ExecSpaceIn &exec_space_in,
   typedef typename value_array_type::non_const_value_type val_type;
   Kokkos::deep_copy(exec_space_in, vector,
                     Kokkos::ArithTraits<val_type>::zero());
-  exec_space_in.fence();
 }
 
 template <typename value_array_type, typename MyExecSpace>
