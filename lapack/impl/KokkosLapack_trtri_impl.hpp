@@ -14,11 +14,11 @@
 //
 //@HEADER
 
-#ifndef KOKKOSBLAS_TRTRI_IMPL_HPP_
-#define KOKKOSBLAS_TRTRI_IMPL_HPP_
+#ifndef KOKKOSLAPACK_TRTRI_IMPL_HPP_
+#define KOKKOSLAPACK_TRTRI_IMPL_HPP_
 
 /**
- * \file KokkosBlas_trtri_impl.hpp
+ * \file KokkosLapack_trtri_impl.hpp
  * \brief Implementation of triangular matrix inverse
  */
 
@@ -27,7 +27,7 @@
 #include "KokkosBatched_Trtri_Decl.hpp"
 #include "KokkosBatched_Trtri_Serial_Impl.hpp"
 
-namespace KokkosBlas {
+namespace KokkosLapack {
 namespace Impl {
 
 template <class RViewType, class AViewType>
@@ -65,5 +65,5 @@ void SerialTrtri_Invoke(const RViewType &R, const char uplo[],
   }
 }
 }  // namespace Impl
-}  // namespace KokkosBlas
-#endif  // KOKKOSBLAS_TRTRI_IMPL_HPP_
+}  // namespace KokkosLapack
+#endif  // KOKKOSLAPACK_TRTRI_IMPL_HPP_

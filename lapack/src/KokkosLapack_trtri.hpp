@@ -13,19 +13,19 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef KOKKOSBLAS_TRTRI_HPP_
-#define KOKKOSBLAS_TRTRI_HPP_
+#ifndef KOKKOSLAPACK_TRTRI_HPP_
+#define KOKKOSLAPACK_TRTRI_HPP_
 
-/// \file KokkosBlas_trtri.hpp
+/// \file KokkosLapack_trtri.hpp
 
 #include "KokkosKernels_Macros.hpp"
-#include "KokkosBlas_trtri_spec.hpp"
+#include "KokkosLapack_trtri_spec.hpp"
 #include "KokkosKernels_helpers.hpp"
 #include <sstream>
 #include <type_traits>
 #include "KokkosKernels_Error.hpp"
 
-namespace KokkosBlas {
+namespace KokkosLapack {
 
 /// \brief Find the inverse of the triangular matrix, A
 ///
@@ -62,14 +62,14 @@ int trtri(const char uplo[], const char diag[], const AViewType& A) {
 
   if (!valid_uplo) {
     std::ostringstream os;
-    os << "KokkosBlas::trtri: uplo = '" << uplo[0] << "'. "
+    os << "KokkosLapack::trtri: uplo = '" << uplo[0] << "'. "
        << "Valid values include 'U' or 'u' (A is upper triangular), "
           "'L' or 'l' (A is lower triangular).";
     KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
   if (!valid_diag) {
     std::ostringstream os;
-    os << "KokkosBlas::trtri: diag = '" << diag[0] << "'. "
+    os << "KokkosLapack::trtri: diag = '" << diag[0] << "'. "
        << "Valid values include 'U' or 'u' (the diagonal of A is assumed to be "
           "unit), "
           "'N' or 'n' (the diagonal of A is assumed to be non-unit).";
@@ -88,7 +88,7 @@ int trtri(const char uplo[], const char diag[], const AViewType& A) {
   // or B*A
   if (A_m != A_n) {
     std::ostringstream os;
-    os << "KokkosBlas::trtri: Dimensions of A do not match,"
+    os << "KokkosLapack::trtri: Dimensions of A do not match,"
        << " A: " << A.extent(0) << " x " << A.extent(1);
     KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
@@ -108,12 +108,12 @@ int trtri(const char uplo[], const char diag[], const AViewType& A) {
   int result;
   RViewInternalType R = RViewInternalType(&result);
 
-  KokkosBlas::Impl::TRTRI<RViewInternalType, AViewInternalType>::trtri(R, uplo,
+  KokkosLapack::Impl::TRTRI<RViewInternalType, AViewInternalType>::trtri(R, uplo,
                                                                        diag, A);
 
   return result;
 }
 
-}  // namespace KokkosBlas
+}  // namespace KokkosLapack
 
-#endif  // KOKKOS_BLASLAPACK_TRTRI_HPP_
+#endif  // KOKKOSLAPACK_TRTRI_HPP_

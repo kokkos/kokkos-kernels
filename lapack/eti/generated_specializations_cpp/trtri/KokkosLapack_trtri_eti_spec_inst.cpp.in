@@ -17,10 +17,10 @@
 
 #define KOKKOSKERNELS_IMPL_COMPILE_LIBRARY true
 #include "KokkosKernels_config.h"
-#include "KokkosBlas_trtri_spec.hpp"
+#include "KokkosLapack_trtri_spec.hpp"
 
-namespace KokkosBlas {
+namespace KokkosLapack {
 namespace Impl {
-@BLAS_TRTRI_ETI_INST_BLOCK@
+@LAPACK_TRTRI_ETI_INST_BLOCK@
   } //IMPL 
 } //Kokkos

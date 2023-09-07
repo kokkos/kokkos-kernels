@@ -14,13 +14,21 @@
 //
 //@HEADER
 
+#ifndef KOKKOSLAPACK_IMPL_GESV_HPP_
+#define KOKKOSLAPACK_IMPL_GESV_HPP_
 
-#define KOKKOSKERNELS_IMPL_COMPILE_LIBRARY true
-#include "KokkosKernels_config.h"
-#include "KokkosBlas_gesv_spec.hpp"
+/// \file KokkosLapack_gesv_impl.hpp
+/// \brief Implementation(s) of dense linear solve.
 
-namespace KokkosBlas {
+#include <KokkosKernels_config.h>
+#include <Kokkos_ArithTraits.hpp>
+
+namespace KokkosLapack {
 namespace Impl {
-@BLAS_GESV_ETI_INST_BLOCK@
-  } //IMPL 
-} //Kokkos
+
+// NOTE: Might add the implementation of KokkosLapack::gesv later
+
+}  // namespace Impl
+}  // namespace KokkosLapack
+
+#endif  // KOKKOSLAPACK_IMPL_GESV_HPP

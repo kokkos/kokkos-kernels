@@ -14,23 +14,23 @@
 //
 //@HEADER
 
-/// \file KokkosBlas_gesv.hpp
+/// \file KokkosLapack_gesv.hpp
 /// \brief Local dense linear solve
 ///
-/// This file provides KokkosBlas::gesv. This function performs a
+/// This file provides KokkosLapack::gesv. This function performs a
 /// local (no MPI) dense linear solve on a system of linear equations
 /// A * X = B where A is a general N-by-N matrix and X and B are N-by-NRHS
 /// matrices.
 
-#ifndef KOKKOSBLAS_GESV_HPP_
-#define KOKKOSBLAS_GESV_HPP_
+#ifndef KOKKOSLAPACK_GESV_HPP_
+#define KOKKOSLAPACK_GESV_HPP_
 
 #include <type_traits>
 
-#include "KokkosBlas_gesv_spec.hpp"
+#include "KokkosLapack_gesv_spec.hpp"
 #include "KokkosKernels_Error.hpp"
 
-namespace KokkosBlas {
+namespace KokkosLapack {
 
 /// \brief Solve the dense linear equation system A*X = B.
 ///
@@ -50,24 +50,24 @@ namespace KokkosBlas {
 ///
 template <class AMatrix, class BXMV, class IPIVV>
 void gesv(const AMatrix& A, const BXMV& B, const IPIVV& IPIV) {
-  // NOTE: Currently, KokkosBlas::gesv only supports for MAGMA TPL and BLAS TPL.
+  // NOTE: Currently, KokkosLapack::gesv only supports for MAGMA TPL and LAPACK TPL.
   //       MAGMA TPL should be enabled to call the MAGMA GPU interface for
-  //       device views BLAS TPL should be enabled to call the BLAS interface
+  //       device views LAPACK TPL should be enabled to call the LAPACK interface
   //       for host views
 
   static_assert(Kokkos::is_view<AMatrix>::value,
-                "KokkosBlas::gesv: A must be a Kokkos::View.");
+                "KokkosLapack::gesv: A must be a Kokkos::View.");
   static_assert(Kokkos::is_view<BXMV>::value,
-                "KokkosBlas::gesv: B must be a Kokkos::View.");
+                "KokkosLapack::gesv: B must be a Kokkos::View.");
   static_assert(Kokkos::is_view<IPIVV>::value,
-                "KokkosBlas::gesv: IPIV must be a Kokkos::View.");
+                "KokkosLapack::gesv: IPIV must be a Kokkos::View.");
   static_assert(static_cast<int>(AMatrix::rank) == 2,
-                "KokkosBlas::gesv: A must have rank 2.");
+                "KokkosLapack::gesv: A must have rank 2.");
   static_assert(
       static_cast<int>(BXMV::rank) == 1 || static_cast<int>(BXMV::rank) == 2,
-      "KokkosBlas::gesv: B must have either rank 1 or rank 2.");
+      "KokkosLapack::gesv: B must have either rank 1 or rank 2.");
   static_assert(static_cast<int>(IPIVV::rank) == 1,
-                "KokkosBlas::gesv: IPIV must have rank 1.");
+                "KokkosLapack::gesv: IPIV must have rank 1.");
 
   int64_t IPIV0 = IPIV.extent(0);
   int64_t A0    = A.extent(0);
@@ -79,7 +79,7 @@ void gesv(const AMatrix& A, const BXMV& B, const IPIVV& IPIV) {
       (IPIV0 == A1) || ((IPIV0 == 0) && (IPIV.data() == nullptr));
   if (!(valid_pivot)) {
     std::ostringstream os;
-    os << "KokkosBlas::gesv: IPIV: " << IPIV0 << ". "
+    os << "KokkosLapack::gesv: IPIV: " << IPIV0 << ". "
        << "Valid options include zero-extent 1-D view (no pivoting), or 1-D "
           "View with size of "
        << A0 << " (partial pivoting).";
@@ -88,22 +88,22 @@ void gesv(const AMatrix& A, const BXMV& B, const IPIVV& IPIV) {
 
   // Check for no pivoting case. Only MAGMA supports no pivoting interface
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA  // have MAGMA TPL
-#ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS   // and have BLAS TPL
+#ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK   // and have LAPACK TPL
   if ((!std::is_same<typename AMatrix::device_type::memory_space,
                      Kokkos::CudaSpace>::value) &&
       (IPIV0 == 0) && (IPIV.data() == nullptr)) {
     std::ostringstream os;
-    os << "KokkosBlas::gesv: IPIV: " << IPIV0 << ". "
-       << "BLAS TPL does not support no pivoting.";
+    os << "KokkosLapack::gesv: IPIV: " << IPIV0 << ". "
+       << "LAPACK TPL does not support no pivoting.";
     KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 #endif
 #else                                 // not have MAGMA TPL
-#ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS  // but have BLAS TPL
+#ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK  // but have LAPACK TPL
   if ((IPIV0 == 0) && (IPIV.data() == nullptr)) {
     std::ostringstream os;
-    os << "KokkosBlas::gesv: IPIV: " << IPIV0 << ". "
-       << "BLAS TPL does not support no pivoting.";
+    os << "KokkosLapack::gesv: IPIV: " << IPIV0 << ". "
+       << "LAPACK TPL does not support no pivoting.";
     KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 #endif
@@ -112,7 +112,7 @@ void gesv(const AMatrix& A, const BXMV& B, const IPIVV& IPIV) {
   // Check compatibility of dimensions at run time.
   if ((A0 < A1) || (A0 != B0)) {
     std::ostringstream os;
-    os << "KokkosBlas::gesv: Dimensions of A, and B do not match: "
+    os << "KokkosLapack::gesv: Dimensions of A, and B do not match: "
        << " A: " << A.extent(0) << " x " << A.extent(1) << " B: " << B.extent(0)
        << " x " << B.extent(1);
     KokkosKernels::Impl::throw_runtime_exception(os.str());
@@ -136,15 +136,15 @@ void gesv(const AMatrix& A, const BXMV& B, const IPIVV& IPIV) {
 
   if (BXMV::rank == 1) {
     auto B_i = BXMV_Internal(B.data(), B.extent(0), 1);
-    KokkosBlas::Impl::GESV<AMatrix_Internal, BXMV_Internal,
+    KokkosLapack::Impl::GESV<AMatrix_Internal, BXMV_Internal,
                            IPIVV_Internal>::gesv(A_i, B_i, IPIV_i);
   } else {  // BXMV::rank == 2
     auto B_i = BXMV_Internal(B.data(), B.extent(0), B.extent(1));
-    KokkosBlas::Impl::GESV<AMatrix_Internal, BXMV_Internal,
+    KokkosLapack::Impl::GESV<AMatrix_Internal, BXMV_Internal,
                            IPIVV_Internal>::gesv(A_i, B_i, IPIV_i);
   }
 }
 
-}  // namespace KokkosBlas
+}  // namespace KokkosLapack
 
-#endif  // KOKKOSBLAS_GESV_HPP_
+#endif  // KOKKOSLAPACK_GESV_HPP_

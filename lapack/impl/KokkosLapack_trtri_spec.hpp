@@ -13,17 +13,17 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef KOKKOSBLAS_TRTRI_SPEC_HPP_
-#define KOKKOSBLAS_TRTRI_SPEC_HPP_
+#ifndef KOKKOSLAPACK_TRTRI_SPEC_HPP_
+#define KOKKOSLAPACK_TRTRI_SPEC_HPP_
 
 #include "KokkosKernels_config.h"
 #include "Kokkos_Core.hpp"
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
-#include <KokkosBlas_trtri_impl.hpp>
+#include <KokkosLapack_trtri_impl.hpp>
 #endif
 
-namespace KokkosBlas {
+namespace KokkosLapack {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
 template <class RVIT, class AVIT>
@@ -31,13 +31,13 @@ struct trtri_eti_spec_avail {
   enum : bool { value = false };
 };
 }  // namespace Impl
-}  // namespace KokkosBlas
+}  // namespace KokkosLapack
 
 //
 // This Macros provides the ETI specialization of trtri, currently not
 // available.
 //
-#define KOKKOSBLAS_TRTRI_ETI_SPEC_AVAIL(SCALAR, LAYOUTA, EXEC_SPACE,         \
+#define KOKKOSLAPACK_TRTRI_ETI_SPEC_AVAIL(SCALAR, LAYOUTA, EXEC_SPACE,         \
                                         MEM_SPACE)                           \
   template <>                                                                \
   struct trtri_eti_spec_avail<                                               \
@@ -49,10 +49,10 @@ struct trtri_eti_spec_avail {
   };
 
 // Include the actual specialization declarations
-#include <KokkosBlas_trtri_tpl_spec_avail.hpp>
-#include <generated_specializations_hpp/KokkosBlas_trtri_eti_spec_avail.hpp>
+#include <KokkosLapack_trtri_tpl_spec_avail.hpp>
+#include <generated_specializations_hpp/KokkosLapack_trtri_eti_spec_avail.hpp>
 
-namespace KokkosBlas {
+namespace KokkosLapack {
 namespace Impl {
 
 //
@@ -77,8 +77,8 @@ struct TRTRI<RVIT, AVIT, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
     static_assert(static_cast<int>(AVIT::rank) == 2, "AVIT must have rank 2.");
 
     Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
-                                      ? "KokkosBlas::trtri[ETI]"
-                                      : "KokkosBlas::trtri[noETI]");
+                                      ? "KokkosLapack::trtri[ETI]"
+                                      : "KokkosLapack::trtri[noETI]");
 
     typename AVIT::HostMirror host_A = Kokkos::create_mirror_view(A);
     typename RVIT::HostMirror host_R = Kokkos::create_mirror_view(R);
@@ -97,7 +97,7 @@ struct TRTRI<RVIT, AVIT, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
         //! KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 
 }  // namespace Impl
-}  // namespace KokkosBlas
+}  // namespace KokkosLapack
 
 //
 // These Macros are only included when we are not compiling libkokkoskernels but
@@ -106,7 +106,7 @@ struct TRTRI<RVIT, AVIT, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 // "extern template" skips the implicit instatiation step ensuring that the
 // callers code uses this explicit instantiation definition of TRTRI.
 //
-#define KOKKOSBLAS_TRTRI_ETI_SPEC_DECL(SCALAR, LAYOUTA, EXEC_SPACE, MEM_SPACE) \
+#define KOKKOSLAPACK_TRTRI_ETI_SPEC_DECL(SCALAR, LAYOUTA, EXEC_SPACE, MEM_SPACE) \
   extern template struct TRTRI<                                                \
       Kokkos::View<int, Kokkos::LayoutRight, Kokkos::HostSpace,                \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
@@ -114,7 +114,7 @@ struct TRTRI<RVIT, AVIT, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
       false, true>;
 
-#define KOKKOSBLAS_TRTRI_ETI_SPEC_INST(SCALAR, LAYOUTA, EXEC_SPACE, MEM_SPACE) \
+#define KOKKOSLAPACK_TRTRI_ETI_SPEC_INST(SCALAR, LAYOUTA, EXEC_SPACE, MEM_SPACE) \
   template struct TRTRI<                                                       \
       Kokkos::View<int, Kokkos::LayoutRight, Kokkos::HostSpace,                \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
@@ -122,6 +122,6 @@ struct TRTRI<RVIT, AVIT, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
       false, true>;
 
-#include <KokkosBlas_trtri_tpl_spec_decl.hpp>
+#include <KokkosLapack_trtri_tpl_spec_decl.hpp>
 
-#endif  // KOKKOSBLAS_TRTRI_SPEC_HPP_
+#endif  // KOKKOSLAPACK_TRTRI_SPEC_HPP_

@@ -14,10 +14,10 @@
 //
 //@HEADER
 
-#ifndef KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_HPP_
-#define KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_HPP_
+#ifndef KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_HPP_
+#define KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_HPP_
 
-namespace KokkosBlas {
+namespace KokkosLapack {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
 template <class AMatrix, class BXMV>
@@ -25,10 +25,10 @@ struct gesv_tpl_spec_avail {
   enum : bool { value = false };
 };
 
-// Generic Host side BLAS (could be MKL or whatever)
-#ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
+// Generic Host side LAPACK (could be MKL or whatever)
+#ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK
 
-#define KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_BLAS(SCALAR, LAYOUT, MEMSPACE)     \
+#define KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_LAPACK(SCALAR, LAYOUT, MEMSPACE)     \
   template <class ExecSpace>                                              \
   struct gesv_tpl_spec_avail<                                             \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
@@ -38,30 +38,30 @@ struct gesv_tpl_spec_avail {
     enum : bool { value = true };                                         \
   };
 
-KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_BLAS(double, Kokkos::LayoutLeft,
+KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_LAPACK(double, Kokkos::LayoutLeft,
                                     Kokkos::HostSpace)
-KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_BLAS(float, Kokkos::LayoutLeft,
+KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_LAPACK(float, Kokkos::LayoutLeft,
                                     Kokkos::HostSpace)
-KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<double>, Kokkos::LayoutLeft,
+KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_LAPACK(Kokkos::complex<double>, Kokkos::LayoutLeft,
                                     Kokkos::HostSpace)
-KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>, Kokkos::LayoutLeft,
+KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_LAPACK(Kokkos::complex<float>, Kokkos::LayoutLeft,
                                     Kokkos::HostSpace)
 /*
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT)
- KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_BLAS( double, Kokkos::LayoutRight,
+ KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_LAPACK( double, Kokkos::LayoutRight,
 Kokkos::HostSpace) #endif
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT)
- KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_BLAS( float, Kokkos::LayoutRight,
+ KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_LAPACK( float, Kokkos::LayoutRight,
 Kokkos::HostSpace) #endif
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT)
- KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_BLAS( Kokkos::complex<double>,
+ KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_LAPACK( Kokkos::complex<double>,
 Kokkos::LayoutRight, Kokkos::HostSpace) #endif
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT)
- KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_BLAS( Kokkos::complex<float>,
+ KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_LAPACK( Kokkos::complex<float>,
 Kokkos::LayoutRight, Kokkos::HostSpace) #endif
 */
 #endif
@@ -69,7 +69,7 @@ Kokkos::LayoutRight, Kokkos::HostSpace) #endif
 // MAGMA
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
 
-#define KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_MAGMA(SCALAR, LAYOUT, MEMSPACE)    \
+#define KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_MAGMA(SCALAR, LAYOUT, MEMSPACE)    \
   template <class ExecSpace>                                              \
   struct gesv_tpl_spec_avail<                                             \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
@@ -79,36 +79,36 @@ Kokkos::LayoutRight, Kokkos::HostSpace) #endif
     enum : bool { value = true };                                         \
   };
 
-KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_MAGMA(double, Kokkos::LayoutLeft,
+KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_MAGMA(double, Kokkos::LayoutLeft,
                                      Kokkos::CudaSpace)
-KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_MAGMA(float, Kokkos::LayoutLeft,
+KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_MAGMA(float, Kokkos::LayoutLeft,
                                      Kokkos::CudaSpace)
-KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_MAGMA(Kokkos::complex<double>,
+KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_MAGMA(Kokkos::complex<double>,
                                      Kokkos::LayoutLeft, Kokkos::CudaSpace)
-KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_MAGMA(Kokkos::complex<float>, Kokkos::LayoutLeft,
+KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_MAGMA(Kokkos::complex<float>, Kokkos::LayoutLeft,
                                      Kokkos::CudaSpace)
 
 /*
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT)
- KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_MAGMA( double, Kokkos::LayoutRight,
+ KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_MAGMA( double, Kokkos::LayoutRight,
 Kokkos::CudaSpace) #endif
 #if defined (KOKKOSKERNELS_INST_FLOAT) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT)
- KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_MAGMA( float, Kokkos::LayoutRight,
+ KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_MAGMA( float, Kokkos::LayoutRight,
 Kokkos::CudaSpace) #endif
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT)
- KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_MAGMA(
+ KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_MAGMA(
 Kokkos::complex<double>,Kokkos::LayoutRight, Kokkos::CudaSpace) #endif
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT)
- KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_MAGMA( Kokkos::complex<float>,
+ KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_MAGMA( Kokkos::complex<float>,
 Kokkos::LayoutRight, Kokkos::CudaSpace) #endif
 */
 #endif
 
 }  // namespace Impl
-}  // namespace KokkosBlas
+}  // namespace KokkosLapack
 
 #endif
