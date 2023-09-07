@@ -109,6 +109,8 @@
 
 /* BLAS library */
 #cmakedefine KOKKOSKERNELS_ENABLE_TPL_BLAS
+/* LAPACK library */
+#cmakedefine KOKKOSKERNELS_ENABLE_TPL_LAPACK
 /* MKL library */
 #cmakedefine KOKKOSKERNELS_ENABLE_TPL_MKL
 /* CUSPARSE */

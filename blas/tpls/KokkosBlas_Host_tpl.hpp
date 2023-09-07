@@ -115,12 +115,6 @@ struct HostBlas {
                    const char diag, int m, int n, const T alpha, const T *a,
                    int lda,
                    /* */ T *b, int ldb);
-
-  static void gesv(int n, int rhs, T *a, int lda, int *ipiv, T *b, int ldb,
-                   int info);
-
-  static int trtri(const char uplo, const char diag, int n, const T *a,
-                   int lda);
 };
 }  // namespace Impl
 }  // namespace KokkosBlas
