@@ -30,7 +30,6 @@
 #include <vector>
 #include <string>
 #include <unordered_set>
-#include <thread>
 
 using std::cout;
 using std::string;
@@ -176,7 +175,6 @@ void runGS(const GS_Parameters& params) {
       crsMat_t;
   // typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
-  namespace KSE = KokkosSparse::Experimental;
   crsMat_t A;
   if (params.matrix_path)
     A = KokkosSparse::Impl::read_kokkos_crst_matrix<crsMat_t>(
@@ -262,9 +260,9 @@ void runGS(const GS_Parameters& params) {
   for (int i = 0; i < params.nstreams; i++) {
     auto blk_A     = DiagBlks[i];
     auto blk_nrows = blk_A.numRows();
-    KSE::gauss_seidel_symbolic(instances[i], &kh[i], blk_nrows, blk_nrows,
-                               blk_A.graph.row_map, blk_A.graph.entries,
-                               params.graph_symmetric);
+    KokkosSparse::Experimental::gauss_seidel_symbolic(
+        instances[i], &kh[i], blk_nrows, blk_nrows, blk_A.graph.row_map,
+        blk_A.graph.entries, params.graph_symmetric);
   }
   symbolicLaunchTimeTotal = timer.seconds();
   timer.reset();
@@ -276,46 +274,42 @@ void runGS(const GS_Parameters& params) {
   for (int i = 0; i < params.nstreams; i++) {
     auto blk_A     = DiagBlks[i];
     auto blk_nrows = blk_A.numRows();
-    KSE::gauss_seidel_numeric(instances[i], &kh[i], blk_nrows, blk_nrows,
-                              blk_A.graph.row_map, blk_A.graph.entries,
-                              blk_A.values, params.graph_symmetric);
+    KokkosSparse::Experimental::gauss_seidel_numeric(
+        instances[i], &kh[i], blk_nrows, blk_nrows, blk_A.graph.row_map,
+        blk_A.graph.entries, blk_A.values, params.graph_symmetric);
   }
   numericLaunchTimeTotal = timer.seconds();
   timer.reset();
   Kokkos::fence();
   numericComputeTimeTotal = timer.seconds();
 
-  /////////////////// Apply ///////////////
-  // NOTE: You cannot use capture by value in the 'apply' lambda since 'kh' has
-  // no copy constructor.
-  auto apply = [&](const int i) {
+  /////////////////// Apply /////////////////
+  timer.reset();
+  for (int i = 0; i < params.nstreams; i++) {
+    auto blk_A     = DiagBlks[i];
+    auto blk_nrows = blk_A.numRows();
     // Last two parameters are damping factor (should be 1) and sweeps
     switch (params.direction) {
       case GS_SYMMETRIC:
-        KSE::symmetric_gauss_seidel_apply(
-            instances[i], &kh[i], DiagBlks[i].numRows(), DiagBlks[i].numRows(),
-            DiagBlks[i].graph.row_map, DiagBlks[i].graph.entries,
-            DiagBlks[i].values, x[i], b[i], true, true, 1.0, params.sweeps);
+        KokkosSparse::Experimental::symmetric_gauss_seidel_apply(
+            instances[i], &kh[i], blk_nrows, blk_nrows, blk_A.graph.row_map,
+            blk_A.graph.entries, blk_A.values, x[i], b[i], true, true, 1.0,
+            params.sweeps);
         break;
       case GS_FORWARD:
-        KSE::forward_sweep_gauss_seidel_apply(
-            instances[i], &kh[i], DiagBlks[i].numRows(), DiagBlks[i].numRows(),
-            DiagBlks[i].graph.row_map, DiagBlks[i].graph.entries,
-            DiagBlks[i].values, x[i], b[i], true, true, 1.0, params.sweeps);
+        KokkosSparse::Experimental::forward_sweep_gauss_seidel_apply(
+            instances[i], &kh[i], blk_nrows, blk_nrows, blk_A.graph.row_map,
+            blk_A.graph.entries, blk_A.values, x[i], b[i], true, true, 1.0,
+            params.sweeps);
         break;
       case GS_BACKWARD:
-        KSE::backward_sweep_gauss_seidel_apply(
-            instances[i], &kh[i], DiagBlks[i].numRows(), DiagBlks[i].numRows(),
-            DiagBlks[i].graph.row_map, DiagBlks[i].graph.entries,
-            DiagBlks[i].values, x[i], b[i], true, true, 1.0, params.sweeps);
+        KokkosSparse::Experimental::backward_sweep_gauss_seidel_apply(
+            instances[i], &kh[i], blk_nrows, blk_nrows, blk_A.graph.row_map,
+            blk_A.graph.entries, blk_A.values, x[i], b[i], true, true, 1.0,
+            params.sweeps);
         break;
     }
-  };
-  std::vector<std::thread> apply_thread(params.nstreams);
-  timer.reset();
-  for (int i = 0; i < params.nstreams; i++)
-    apply_thread[i] = std::thread(apply, i);
-  for (int i = 0; i < params.nstreams; i++) apply_thread[i].join();
+  }
   applyLaunchTimeTotal = timer.seconds();
   timer.reset();
   Kokkos::fence();
@@ -332,7 +326,9 @@ void runGS(const GS_Parameters& params) {
     double bnorm   = KokkosBlas::nrm2(instances[i], b[i]);
     scalar_t alpha = Kokkos::reduction_identity<scalar_t>::prod();
     scalar_t beta  = -alpha;
-    KokkosSparse::spmv(instances[i], "N", alpha, blk_A, x[i], beta, res);
+    KokkosSparse::spmv<exec_space, scalar_t, crsMat_t, scalar_view_t, scalar_t,
+                       scalar_view_t>(instances[i], "N", alpha, blk_A, x[i],
+                                      beta, res);
     double resnorm = KokkosBlas::nrm2(instances[i], res);
     // note: this still works if the solution diverges
     std::cout << "StreamID(" << i << "): Relative res norm: " << resnorm / bnorm
