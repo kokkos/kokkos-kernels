@@ -29,13 +29,14 @@ extern "C" {
 /// Gesv
 ///
 
-void F77_LAPACK_MANGLE(sgesv, SGESV)(int*, int*, float*, int*, int*, float*, int*,
+// AquiEEP
+void F77_BLAS_MANGLE(sgesv, SGESV)(int*, int*, float*, int*, int*, float*, int*,
                                    int*);
-void F77_LAPACK_MANGLE(dgesv, DGESV)(int*, int*, double*, int*, int*, double*,
+void F77_BLAS_MANGLE(dgesv, DGESV)(int*, int*, double*, int*, int*, double*,
                                    int*, int*);
-void F77_LAPACK_MANGLE(cgesv, CGESV)(int*, int*, std::complex<float>*, int*, int*,
+void F77_BLAS_MANGLE(cgesv, CGESV)(int*, int*, std::complex<float>*, int*, int*,
                                    std::complex<float>*, int*, int*);
-void F77_LAPACK_MANGLE(zgesv, ZGESV)(int*, int*, std::complex<double>*, int*,
+void F77_BLAS_MANGLE(zgesv, ZGESV)(int*, int*, std::complex<double>*, int*,
                                    int*, std::complex<double>*, int*, int*);
 
 ///
@@ -49,25 +50,25 @@ void F77_LAPACK_MANGLE(zgesv, ZGESV)(int*, int*, std::complex<double>*, int*,
                       &diag, &n,
                       a, &lda, &info);
 */
-void F77_LAPACK_MANGLE(strtri, STRTRI)(const char*, const char*, int*,
+void F77_BLAS_MANGLE(strtri, STRTRI)(const char*, const char*, int*,
                                      const float*, int*, int*);
-void F77_LAPACK_MANGLE(dtrtri, DTRTRI)(const char*, const char*, int*,
+void F77_BLAS_MANGLE(dtrtri, DTRTRI)(const char*, const char*, int*,
                                      const double*, int*, int*);
-void F77_LAPACK_MANGLE(ctrtri, CTRTRI)(const char*, const char*, int*,
+void F77_BLAS_MANGLE(ctrtri, CTRTRI)(const char*, const char*, int*,
                                      const std::complex<float>*, int*, int*);
-void F77_LAPACK_MANGLE(ztrtri, ZTRTRI)(const char*, const char*, int*,
+void F77_BLAS_MANGLE(ztrtri, ZTRTRI)(const char*, const char*, int*,
                                      const std::complex<double>*, int*, int*);
 }
 
-#define F77_FUNC_SGESV F77_LAPACK_MANGLE(sgesv, SGESV)
-#define F77_FUNC_DGESV F77_LAPACK_MANGLE(dgesv, DGESV)
-#define F77_FUNC_CGESV F77_LAPACK_MANGLE(cgesv, CGESV)
-#define F77_FUNC_ZGESV F77_LAPACK_MANGLE(zgesv, ZGESV)
+#define F77_FUNC_SGESV F77_BLAS_MANGLE(sgesv, SGESV)
+#define F77_FUNC_DGESV F77_BLAS_MANGLE(dgesv, DGESV)
+#define F77_FUNC_CGESV F77_BLAS_MANGLE(cgesv, CGESV)
+#define F77_FUNC_ZGESV F77_BLAS_MANGLE(zgesv, ZGESV)
 
-#define F77_FUNC_STRTRI F77_LAPACK_MANGLE(strtri, STRTRI)
-#define F77_FUNC_DTRTRI F77_LAPACK_MANGLE(dtrtri, DTRTRI)
-#define F77_FUNC_CTRTRI F77_LAPACK_MANGLE(ctrtri, CTRTRI)
-#define F77_FUNC_ZTRTRI F77_LAPACK_MANGLE(ztrtri, ZTRTRI)
+#define F77_FUNC_STRTRI F77_BLAS_MANGLE(strtri, STRTRI)
+#define F77_FUNC_DTRTRI F77_BLAS_MANGLE(dtrtri, DTRTRI)
+#define F77_FUNC_CTRTRI F77_BLAS_MANGLE(ctrtri, CTRTRI)
+#define F77_FUNC_ZTRTRI F77_BLAS_MANGLE(ztrtri, ZTRTRI)
 
 namespace KokkosLapack {
 namespace Impl {

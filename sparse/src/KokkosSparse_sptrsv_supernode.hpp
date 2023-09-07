@@ -27,7 +27,7 @@
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
 
 #include "KokkosBlas3_trmm.hpp"
-#include "KokkosBlas_trtri.hpp"
+#include "KokkosLapack_trtri.hpp"
 
 #include "KokkosBatched_Trtri_Decl.hpp"
 #include "KokkosBatched_Trtri_Serial_Impl.hpp"
@@ -1472,12 +1472,12 @@ void invert_supernodal_columns(KernelHandle *kernelHandle, bool unit_diag,
         // call trtri on device
         auto dViewLjj =
             Kokkos::subview(dViewL, range_type(0, nscol), Kokkos::ALL());
-        KokkosBlas::trtri(&uplo_char, &diag_char, dViewLjj);
+        KokkosLapack::trtri(&uplo_char, &diag_char, dViewLjj);
       } else
 #endif
       {
         // call trtri on host
-        KokkosBlas::trtri(&uplo_char, &diag_char, Ljj);
+        KokkosLapack::trtri(&uplo_char, &diag_char, Ljj);
       }
 #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
       time1 += timer.seconds();

@@ -17,41 +17,41 @@ KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_C
 #####################
 IF (KOKKOS_ENABLE_CUDA)
   KOKKOSKERNELS_ADD_UNIT_TEST(
-    blas_cuda
+    lapack_cuda
     SOURCES
       ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-      backends/Test_Cuda_Blas.cpp
-    COMPONENTS blas
+      backends/Test_Cuda_Lapack.cpp
+    COMPONENTS lapack
   )
 ENDIF ()
 
 IF (KOKKOS_ENABLE_HIP)
   KOKKOSKERNELS_ADD_UNIT_TEST(
-    blas_hip
+    lapack_hip
     SOURCES
       ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-      backends/Test_HIP_Blas.cpp
-    COMPONENTS blas
+      backends/Test_HIP_Lapack.cpp
+    COMPONENTS lapack
   )
 ENDIF ()
 
 IF (KOKKOS_ENABLE_SYCL)
   KOKKOSKERNELS_ADD_UNIT_TEST(
-    blas_sycl
+    lapack_sycl
     SOURCES
       ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-      backends/Test_SYCL_Blas.cpp
-    COMPONENTS blas
+      backends/Test_SYCL_Lapack.cpp
+    COMPONENTS lapack
   )
 ENDIF ()
 
 IF (KOKKOS_ENABLE_OPENMPTARGET)
   # KOKKOSKERNELS_ADD_UNIT_TEST(
-  #   blas_openmptarget
+  #   lapack_openmptarget
   #   SOURCES
   #     ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-  #     backends/Test_OpenMPTarget_Blas.cpp
-  #   COMPONENTS blas
+  #     backends/Test_OpenMPTarget_Lapack.cpp
+  #   COMPONENTS lapack
   # )
 ENDIF ()
 
@@ -64,31 +64,31 @@ ENDIF ()
 #####################
 IF (KOKKOS_ENABLE_SERIAL)
   KOKKOSKERNELS_ADD_UNIT_TEST(
-    blas_serial
+    lapack_serial
     SOURCES
       ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-      backends/Test_Serial_Blas.cpp
-    COMPONENTS blas
+      backends/Test_Serial_Lapack.cpp
+    COMPONENTS lapack
   )
 ENDIF ()
 
 IF (KOKKOS_ENABLE_OPENMP)
   KOKKOSKERNELS_ADD_UNIT_TEST(
-    blas_openmp
+    lapack_openmp
     SOURCES
       ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-      backends/Test_OpenMP_Blas.cpp
-    COMPONENTS blas
+      backends/Test_OpenMP_Lapack.cpp
+    COMPONENTS lapack
   )
 ENDIF ()
 
 IF (KOKKOS_ENABLE_THREADS)
   KOKKOSKERNELS_ADD_UNIT_TEST(
-    blas_threads
+    lapack_threads
     SOURCES
       ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-      backends/Test_Threads_Blas.cpp
-    COMPONENTS blas
+      backends/Test_Threads_Lapack.cpp
+    COMPONENTS lapack
   )
 ENDIF ()
 
