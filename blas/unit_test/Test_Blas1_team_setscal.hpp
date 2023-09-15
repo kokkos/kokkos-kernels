@@ -36,6 +36,7 @@ struct NaiveTag {};
 template <typename DeviceType, typename ViewType, typename ScalarType,
           typename AlgoTagType, int TestID>
 struct Functor_TestBlasTeamMatUtil {
+  using execution_space = typename DeviceType::execution_space;
   ScalarType _alpha;
   ViewType _a;
 
@@ -97,8 +98,8 @@ struct Functor_TestBlasTeamMatUtil {
     Kokkos::Profiling::pushRegion(name.c_str());
 
     const int league_size = _a.extent(0);
-    Kokkos::TeamPolicy<DeviceType, AlgoTagType> policy(league_size,
-                                                       Kokkos::AUTO);
+    Kokkos::TeamPolicy<execution_space, AlgoTagType> policy(league_size,
+                                                            Kokkos::AUTO);
     Kokkos::parallel_for(name.c_str(), policy, *this);
     Kokkos::Profiling::popRegion();
 

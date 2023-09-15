@@ -406,13 +406,14 @@ void GenerateTestData(ViewT data) {
       });
 }
 
-template <typename Scalar, typename Layout, typename ExeSpace, int N = 3>
+template <typename Scalar, typename Layout, typename Device, int N = 3>
 void testIssue1786() {
-  using memory_space      = typename ExeSpace::memory_space;
+  using execution_space   = typename Device::execution_space;
+  using memory_space      = typename Device::memory_space;
   constexpr int num_tests = 4;
   Kokkos::View<Scalar * [3][3], Layout, memory_space> matrices("data",
                                                                num_tests);
-  GenerateTestData<ExeSpace>(matrices);
+  GenerateTestData<execution_space>(matrices);
   Kokkos::View<Scalar * [N][N], Layout, memory_space> Us("Us",
                                                          matrices.extent(0));
   Kokkos::View<Scalar * [N], Layout, memory_space> Ss("Ss", matrices.extent(0));
@@ -425,7 +426,7 @@ void testIssue1786() {
       "matrices_copy", matrices.extent(0));
   // make a copy of the input data to avoid overwriting it
   Kokkos::deep_copy(matrices_copy, matrices);
-  auto policy = Kokkos::RangePolicy<ExeSpace>(0, matrices.extent(0));
+  auto policy = Kokkos::RangePolicy<execution_space>(0, matrices.extent(0));
   Kokkos::parallel_for(
       "polar decomposition", policy, KOKKOS_LAMBDA(int i) {
         auto matrix_copy =

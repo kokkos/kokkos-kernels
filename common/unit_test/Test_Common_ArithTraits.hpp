@@ -119,7 +119,7 @@ struct HasTranscendentals<long double> {
 template <class ScalarType, class DeviceType>
 class ArithTraitsTesterBase {
  public:
-  typedef DeviceType execution_space;
+  typedef typename DeviceType::execution_space execution_space;
   typedef typename execution_space::size_type size_type;
   //! Type of the result of the reduction.
   typedef int value_type;
@@ -430,7 +430,7 @@ class ArithTraitsTesterTranscendentalBase<ScalarType, DeviceType, 0>
   typedef ArithTraitsTesterBase<ScalarType, DeviceType> base_type;
 
  public:
-  typedef DeviceType execution_space;
+  typedef typename DeviceType::execution_space execution_space;
   typedef typename execution_space::size_type size_type;
   //! Type of the result of the reduction.
   typedef int value_type;
@@ -509,7 +509,7 @@ class ArithTraitsTesterTranscendentalBase<ScalarType, DeviceType, 1>
   }
 
  public:
-  typedef DeviceType execution_space;
+  typedef typename DeviceType::execution_space execution_space;
   typedef typename execution_space::size_type size_type;
   //! Type of the result of the reduction.
   typedef int value_type;
@@ -993,7 +993,7 @@ class ArithTraitsTesterComplexBase<ScalarType, DeviceType, 0>
   typedef ArithTraitsTesterTranscendentalBase<ScalarType, DeviceType> base_type;
 
  public:
-  typedef DeviceType execution_space;
+  typedef typename DeviceType::execution_space execution_space;
   typedef typename execution_space::size_type size_type;
   //! Type of the result of the reduction.
   typedef int value_type;
@@ -1079,7 +1079,7 @@ class ArithTraitsTesterComplexBase<ScalarType, DeviceType, 1>
   typedef ArithTraitsTesterTranscendentalBase<ScalarType, DeviceType> base_type;
 
  public:
-  typedef DeviceType execution_space;
+  typedef typename DeviceType::execution_space execution_space;
   typedef typename execution_space::size_type size_type;
   //! Type of the result of the reduction.
   typedef int value_type;
@@ -1217,7 +1217,7 @@ class ArithTraitsTesterFloatingPointBase<ScalarType, DeviceType, 0>
       base_type;
 
  public:
-  typedef DeviceType execution_space;
+  typedef typename DeviceType::execution_space execution_space;
   typedef typename execution_space::size_type size_type;
   //! Type of the result of the reduction.
   typedef int value_type;
@@ -1336,7 +1336,7 @@ class ArithTraitsTesterFloatingPointBase<ScalarType, DeviceType, 1>
       base_type;
 
  public:
-  typedef DeviceType execution_space;
+  typedef typename DeviceType::execution_space execution_space;
   typedef typename execution_space::size_type size_type;
   //! Type of the result of the reduction.
   typedef int value_type;
@@ -1417,7 +1417,7 @@ template <class ScalarType, class DeviceType>
 class ArithTraitsTester
     : public ArithTraitsTesterFloatingPointBase<ScalarType, DeviceType> {
  public:
-  typedef DeviceType execution_space;
+  typedef typename DeviceType::execution_space execution_space;
   typedef typename execution_space::size_type size_type;
   //! Type of the result of the reduction.
   typedef int value_type;

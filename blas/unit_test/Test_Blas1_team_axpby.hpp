@@ -29,7 +29,8 @@
 namespace Test {
 template <class ViewTypeA, class ViewTypeB, class Device>
 void impl_test_team_axpby(int N) {
-  typedef Kokkos::TeamPolicy<Device> team_policy;
+  using execution_space = typename Device::execution_space;
+  typedef Kokkos::TeamPolicy<execution_space> team_policy;
   typedef typename team_policy::member_type team_member;
 
   // Launch M teams of the maximum number of threads per team
@@ -48,8 +49,7 @@ void impl_test_team_axpby(int N) {
   view_stride_adapter<ViewTypeB> y("Y", N);
   view_stride_adapter<ViewTypeB> org_y("Y", N);
 
-  Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
-      13718);
+  Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
 
   Kokkos::fill_random(x.d_view, rand_pool, ScalarA(10));
   Kokkos::fill_random(y.d_view, rand_pool, ScalarB(10));
@@ -116,7 +116,8 @@ void impl_test_team_axpby(int N) {
 
 template <class ViewTypeA, class ViewTypeB, class Device>
 void impl_test_team_axpby_mv(int N, int K) {
-  typedef Kokkos::TeamPolicy<Device> team_policy;
+  using execution_space = typename Device::execution_space;
+  typedef Kokkos::TeamPolicy<execution_space> team_policy;
   typedef typename team_policy::member_type team_member;
 
   // Launch K teams of the maximum number of threads per team
@@ -129,8 +130,7 @@ void impl_test_team_axpby_mv(int N, int K) {
   view_stride_adapter<ViewTypeB> y("Y", N, K);
   view_stride_adapter<ViewTypeB> org_y("Org_Y", N, K);
 
-  Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
-      13718);
+  Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
 
   Kokkos::fill_random(x.d_view, rand_pool, ScalarA(10));
   Kokkos::fill_random(y.d_view, rand_pool, ScalarB(10));

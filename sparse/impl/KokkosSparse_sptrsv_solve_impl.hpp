@@ -2915,7 +2915,7 @@ void lower_tri_solve(TriSolveHandle &thandle, const RowMapType row_map,
 
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
   using namespace KokkosSparse::Experimental;
-  using memory_space        = typename execution_space::memory_space;
+  using memory_space        = typename TriSolveHandle::memory_space;
   using integer_view_t      = typename TriSolveHandle::integer_view_t;
   using integer_view_host_t = typename TriSolveHandle::integer_view_host_t;
   using scalar_t            = typename ValuesType::non_const_value_type;
@@ -3289,7 +3289,7 @@ void upper_tri_solve(TriSolveHandle &thandle, const RowMapType row_map,
 
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
   using namespace KokkosSparse::Experimental;
-  using memory_space        = typename execution_space::memory_space;
+  using memory_space        = typename TriSolveHandle::memory_space;
   using integer_view_t      = typename TriSolveHandle::integer_view_t;
   using integer_view_host_t = typename TriSolveHandle::integer_view_host_t;
   using scalar_t            = typename ValuesType::non_const_value_type;
