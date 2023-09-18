@@ -564,35 +564,35 @@ void test_merge_matrix() {
 
 TEST_F(TestCategory, common_merge_matrix) {
   // clang-format off
-  Test_Sparse_MergeMatrix::test_merge_matrix<int32_t, int32_t, TestExecSpace>();
-  Test_Sparse_MergeMatrix::test_merge_matrix<int64_t, int32_t, TestExecSpace>();
-  Test_Sparse_MergeMatrix::test_merge_matrix<uint32_t, int32_t, TestExecSpace>();
+  Test_Sparse_MergeMatrix::test_merge_matrix<int32_t, int32_t, TestDevice>();
+  Test_Sparse_MergeMatrix::test_merge_matrix<int64_t, int32_t, TestDevice>();
+  Test_Sparse_MergeMatrix::test_merge_matrix<uint32_t, int32_t, TestDevice>();
 
-  Test_Sparse_MergeMatrix::test_merge_matrix<int32_t, int64_t, TestExecSpace>();
-  Test_Sparse_MergeMatrix::test_merge_matrix<int64_t, int64_t, TestExecSpace>();
-  Test_Sparse_MergeMatrix::test_merge_matrix<uint32_t, int64_t, TestExecSpace>();
+  Test_Sparse_MergeMatrix::test_merge_matrix<int32_t, int64_t, TestDevice>();
+  Test_Sparse_MergeMatrix::test_merge_matrix<int64_t, int64_t, TestDevice>();
+  Test_Sparse_MergeMatrix::test_merge_matrix<uint32_t, int64_t, TestDevice>();
 
-  Test_Sparse_MergeMatrix::test_merge_matrix<int32_t, uint32_t, TestExecSpace>();
-  Test_Sparse_MergeMatrix::test_merge_matrix<int64_t, uint32_t, TestExecSpace>();
-  Test_Sparse_MergeMatrix::test_merge_matrix<uint32_t, uint32_t, TestExecSpace>();
-  Test_Sparse_MergeMatrix::test_merge_matrix<uint64_t, uint32_t, TestExecSpace>();
+  Test_Sparse_MergeMatrix::test_merge_matrix<int32_t, uint32_t, TestDevice>();
+  Test_Sparse_MergeMatrix::test_merge_matrix<int64_t, uint32_t, TestDevice>();
+  Test_Sparse_MergeMatrix::test_merge_matrix<uint32_t, uint32_t, TestDevice>();
+  Test_Sparse_MergeMatrix::test_merge_matrix<uint64_t, uint32_t, TestDevice>();
 
-  Test_Sparse_MergeMatrix::test_merge_matrix<uint32_t, uint64_t, TestExecSpace>();
-  Test_Sparse_MergeMatrix::test_merge_matrix<uint64_t, uint64_t, TestExecSpace>();
+  Test_Sparse_MergeMatrix::test_merge_matrix<uint32_t, uint64_t, TestDevice>();
+  Test_Sparse_MergeMatrix::test_merge_matrix<uint64_t, uint64_t, TestDevice>();
 
-  Test_Sparse_MergeMatrix::test_merge_matrix<float, float, TestExecSpace>();
-  Test_Sparse_MergeMatrix::test_merge_matrix<float, double, TestExecSpace>();
-  Test_Sparse_MergeMatrix::test_merge_matrix<double, float, TestExecSpace>();
-  Test_Sparse_MergeMatrix::test_merge_matrix<double, double, TestExecSpace>();
+  Test_Sparse_MergeMatrix::test_merge_matrix<float, float, TestDevice>();
+  Test_Sparse_MergeMatrix::test_merge_matrix<float, double, TestDevice>();
+  Test_Sparse_MergeMatrix::test_merge_matrix<double, float, TestDevice>();
+  Test_Sparse_MergeMatrix::test_merge_matrix<double, double, TestDevice>();
 
   // test some select integer / float combos
-  Test_Sparse_MergeMatrix::test_merge_matrix<float, uint64_t, TestExecSpace>();
-  Test_Sparse_MergeMatrix::test_merge_matrix<int32_t, double, TestExecSpace>();
+  Test_Sparse_MergeMatrix::test_merge_matrix<float, uint64_t, TestDevice>();
+  Test_Sparse_MergeMatrix::test_merge_matrix<int32_t, double, TestDevice>();
 
   // no generally safe way to compare all possible values of these types
-  // Test_Sparse_MergeMatrix::test_merge_matrix<int64_t, uint64_t, TestExecSpace>();
-  // Test_Sparse_MergeMatrix::test_merge_matrix<int32_t, uint64_t, TestExecSpace>();
-  // Test_Sparse_MergeMatrix::test_merge_matrix<uint64_t, int32_t, TestExecSpace>();
+  // Test_Sparse_MergeMatrix::test_merge_matrix<int64_t, uint64_t, TestDevice>();
+  // Test_Sparse_MergeMatrix::test_merge_matrix<int32_t, uint64_t, TestDevice>();
+  // Test_Sparse_MergeMatrix::test_merge_matrix<uint64_t, int32_t, TestDevice>();
 
   // clang-format on
 }

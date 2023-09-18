@@ -194,19 +194,19 @@ int test_blas_team_matutil() {
 
 #if defined(KOKKOSKERNELS_INST_FLOAT)
 TEST_F(TestCategory, blas_scalar_team_set_float_float) {
-  test_blas_team_matutil<TestExecSpace, float, float, ::Test::BlasSet>();
+  test_blas_team_matutil<TestDevice, float, float, ::Test::BlasSet>();
 }
 TEST_F(TestCategory, blas_scalar_team_scale_float_float) {
-  test_blas_team_matutil<TestExecSpace, float, float, ::Test::BlasScale>();
+  test_blas_team_matutil<TestDevice, float, float, ::Test::BlasScale>();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
 TEST_F(TestCategory, blas_scalar_team_set_double_double) {
-  test_blas_team_matutil<TestExecSpace, double, double, ::Test::BlasSet>();
+  test_blas_team_matutil<TestDevice, double, double, ::Test::BlasSet>();
 }
 TEST_F(TestCategory, blas_scalar_team_scale_double_double) {
-  test_blas_team_matutil<TestExecSpace, double, double, ::Test::BlasScale>();
+  test_blas_team_matutil<TestDevice, double, double, ::Test::BlasScale>();
 }
 #endif
 
@@ -214,19 +214,19 @@ TEST_F(TestCategory, blas_scalar_team_scale_double_double) {
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
 TEST_F(TestCategory, blas_scalar_team_set_dcomplex_dcomplex) {
-  test_blas_team_matutil<TestExecSpace, Kokkos::complex<double>,
+  test_blas_team_matutil<TestDevice, Kokkos::complex<double>,
                          Kokkos::complex<double>, ::Test::BlasSet>();
 }
 TEST_F(TestCategory, blas_scalar_team_scale_dcomplex_dcomplex) {
-  test_blas_team_matutil<TestExecSpace, Kokkos::complex<double>,
+  test_blas_team_matutil<TestDevice, Kokkos::complex<double>,
                          Kokkos::complex<double>, ::Test::BlasScale>();
 }
 TEST_F(TestCategory, blas_scalar_team_set_dcomplex_double) {
-  test_blas_team_matutil<TestExecSpace, Kokkos::complex<double>, double,
+  test_blas_team_matutil<TestDevice, Kokkos::complex<double>, double,
                          ::Test::BlasSet>();
 }
 TEST_F(TestCategory, blas_scalar_team_scale_dcomplex_double) {
-  test_blas_team_matutil<TestExecSpace, Kokkos::complex<double>, double,
+  test_blas_team_matutil<TestDevice, Kokkos::complex<double>, double,
                          ::Test::BlasScale>();
 }
 #endif

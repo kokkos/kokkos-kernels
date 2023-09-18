@@ -130,31 +130,27 @@ int test_team_nrm2() {
 #if defined(KOKKOSKERNELS_INST_FLOAT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-TEST_F(TestCategory, team_nrm2_float) {
-  test_team_nrm2<float, TestExecSpace>();
-}
+TEST_F(TestCategory, team_nrm2_float) { test_team_nrm2<float, TestDevice>(); }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&  \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-TEST_F(TestCategory, team_nrm2_double) {
-  test_team_nrm2<double, TestExecSpace>();
-}
+TEST_F(TestCategory, team_nrm2_double) { test_team_nrm2<double, TestDevice>(); }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&          \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, team_nrm2_complex_double) {
-  test_team_nrm2<Kokkos::complex<double>, TestExecSpace>();
+  test_team_nrm2<Kokkos::complex<double>, TestDevice>();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_INT) ||   \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-TEST_F(TestCategory, team_nrm2_int) { test_team_nrm2<int, TestExecSpace>(); }
+TEST_F(TestCategory, team_nrm2_int) { test_team_nrm2<int, TestDevice>(); }
 #endif
 
 #endif  // Check for lambda availability in CUDA backend

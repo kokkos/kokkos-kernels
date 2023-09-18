@@ -508,8 +508,8 @@ TEST_F(TestCategory, common_serial_radix) {
   // 1st arg is #arrays, 2nd arg is max subarray size
   size_t numArrays = 100;
   for (size_t arrayMax = 0; arrayMax < 1000; arrayMax = 1 + 4 * arrayMax) {
-    testSerialRadixSort<TestExecSpace, char>(numArrays, arrayMax);
-    testSerialRadixSort<TestExecSpace, int>(numArrays, arrayMax);
+    testSerialRadixSort<TestDevice, char>(numArrays, arrayMax);
+    testSerialRadixSort<TestDevice, int>(numArrays, arrayMax);
   }
 }
 
@@ -518,10 +518,10 @@ TEST_F(TestCategory, common_serial_radix2) {
   // 1st arg is #arrays, 2nd arg is max subarray size
   size_t numArrays = 100;
   for (size_t arrayMax = 0; arrayMax < 1000; arrayMax = 1 + 4 * arrayMax) {
-    testSerialRadixSort2<TestExecSpace, char, int>(numArrays, arrayMax);
-    testSerialRadixSort2<TestExecSpace, int, double>(numArrays, arrayMax);
-    testSerialRadixSort2<TestExecSpace, int, Kokkos::complex<double>>(numArrays,
-                                                                      arrayMax);
+    testSerialRadixSort2<TestDevice, char, int>(numArrays, arrayMax);
+    testSerialRadixSort2<TestDevice, int, double>(numArrays, arrayMax);
+    testSerialRadixSort2<TestDevice, int, Kokkos::complex<double>>(numArrays,
+                                                                   arrayMax);
   }
 }
 
@@ -530,8 +530,8 @@ TEST_F(TestCategory, common_team_bitonic) {
   // 1st arg is #arrays, 2nd arg is max subarray size
   size_t numArrays = 20;
   for (size_t arrayMax = 0; arrayMax < 10000; arrayMax = 1 + 4 * arrayMax) {
-    testTeamBitonicSort<TestExecSpace, char>(numArrays, arrayMax);
-    testTeamBitonicSort<TestExecSpace, int>(numArrays, arrayMax);
+    testTeamBitonicSort<TestDevice, char>(numArrays, arrayMax);
+    testTeamBitonicSort<TestDevice, int>(numArrays, arrayMax);
   }
 }
 
@@ -540,27 +540,27 @@ TEST_F(TestCategory, common_team_bitonic2) {
   // 1st arg is #arrays, 2nd arg is max subarray size
   size_t numArrays = 20;
   for (size_t arrayMax = 0; arrayMax < 10000; arrayMax = 1 + 4 * arrayMax) {
-    testTeamBitonicSort2<TestExecSpace, char, int>(numArrays, arrayMax);
-    testTeamBitonicSort2<TestExecSpace, int, double>(numArrays, arrayMax);
-    testTeamBitonicSort2<TestExecSpace, int, Kokkos::complex<double>>(numArrays,
-                                                                      arrayMax);
+    testTeamBitonicSort2<TestDevice, char, int>(numArrays, arrayMax);
+    testTeamBitonicSort2<TestDevice, int, double>(numArrays, arrayMax);
+    testTeamBitonicSort2<TestDevice, int, Kokkos::complex<double>>(numArrays,
+                                                                   arrayMax);
   }
 }
 
 TEST_F(TestCategory, common_device_bitonic) {
   // Test device-level bitonic with some larger arrays
-  testBitonicSort<TestExecSpace, char>(243743);
-  testBitonicSort<TestExecSpace, char>(2157);
-  testBitonicSort<TestExecSpace, char>(424);
-  testBitonicSort<TestExecSpace, char>(5);
-  testBitonicSort<TestExecSpace, int>(92314);
-  testBitonicSort<TestExecSpace, int>(123);
-  testBitonicSort<TestExecSpace, double>(60234);
-  testBitonicSort<TestExecSpace, double>(53);
+  testBitonicSort<TestDevice, char>(243743);
+  testBitonicSort<TestDevice, char>(2157);
+  testBitonicSort<TestDevice, char>(424);
+  testBitonicSort<TestDevice, char>(5);
+  testBitonicSort<TestDevice, int>(92314);
+  testBitonicSort<TestDevice, int>(123);
+  testBitonicSort<TestDevice, double>(60234);
+  testBitonicSort<TestDevice, double>(53);
   // Test custom comparator: ">" instead of "<" to sort descending
-  testBitonicSortDescending<TestExecSpace>();
+  testBitonicSortDescending<TestDevice>();
   // Test custom comparator: lexicographic comparison of 3-element struct
-  testBitonicSortLexicographic<TestExecSpace>();
+  testBitonicSortLexicographic<TestDevice>();
 }
 
 #endif

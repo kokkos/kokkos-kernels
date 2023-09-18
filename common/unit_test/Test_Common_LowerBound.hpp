@@ -228,31 +228,31 @@ void test_lower_bound() {
 #if (defined(KOKKOSKERNELS_INST_ORDINAL_INT)) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&         \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(int, TestExecSpace)
+EXECUTE_TEST(int, TestDevice)
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T)) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&             \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(int64_t, TestExecSpace)
+EXECUTE_TEST(int64_t, TestDevice)
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_ORDINAL_INT)) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&         \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(size_t, TestExecSpace)
+EXECUTE_TEST(size_t, TestDevice)
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_FLOAT)) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&   \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(float, TestExecSpace)
+EXECUTE_TEST(float, TestDevice)
 #endif
 
 #if (defined(KOKKOSKERNELS_INST_DOUBLE)) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&    \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-EXECUTE_TEST(double, TestExecSpace)
+EXECUTE_TEST(double, TestDevice)
 #endif
 
 #undef EXECUTE_TEST

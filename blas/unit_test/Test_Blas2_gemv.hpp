@@ -240,11 +240,11 @@ int test_gemv(const char* mode) {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, gemv_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gemv_float");
-  test_gemv<float, float, float, TestExecSpace>("N");
+  test_gemv<float, float, float, TestDevice>("N");
   Kokkos::Profiling::popRegion();
 
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gemv_tran_float");
-  test_gemv<float, float, float, TestExecSpace>("T");
+  test_gemv<float, float, float, TestDevice>("T");
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -254,11 +254,11 @@ TEST_F(TestCategory, gemv_float) {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, gemv_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gemv_double");
-  test_gemv<double, double, double, TestExecSpace>("N");
+  test_gemv<double, double, double, TestDevice>("N");
   Kokkos::Profiling::popRegion();
 
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gemv_tran_double");
-  test_gemv<double, double, double, TestExecSpace>("T");
+  test_gemv<double, double, double, TestDevice>("T");
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -269,17 +269,17 @@ TEST_F(TestCategory, gemv_double) {
 TEST_F(TestCategory, gemv_complex_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gemv_complex_double");
   test_gemv<Kokkos::complex<double>, Kokkos::complex<double>,
-            Kokkos::complex<double>, TestExecSpace>("N");
+            Kokkos::complex<double>, TestDevice>("N");
   Kokkos::Profiling::popRegion();
 
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gemv_tran_complex_double");
   test_gemv<Kokkos::complex<double>, Kokkos::complex<double>,
-            Kokkos::complex<double>, TestExecSpace>("T");
+            Kokkos::complex<double>, TestDevice>("T");
   Kokkos::Profiling::popRegion();
 
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gemv_conj_complex_double");
   test_gemv<Kokkos::complex<double>, Kokkos::complex<double>,
-            Kokkos::complex<double>, TestExecSpace>("C");
+            Kokkos::complex<double>, TestDevice>("C");
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -289,11 +289,11 @@ TEST_F(TestCategory, gemv_complex_double) {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, gemv_int) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gemv_int");
-  test_gemv<int, int, int, TestExecSpace>("N");
+  test_gemv<int, int, int, TestDevice>("N");
   Kokkos::Profiling::popRegion();
 
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gemv_tran_int");
-  test_gemv<int, int, int, TestExecSpace>("T");
+  test_gemv<int, int, int, TestDevice>("T");
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -302,11 +302,11 @@ TEST_F(TestCategory, gemv_int) {
     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
 TEST_F(TestCategory, gemv_double_int) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gemv_double_int");
-  test_gemv<double, int, float, TestExecSpace>("N");
+  test_gemv<double, int, float, TestDevice>("N");
   Kokkos::Profiling::popRegion();
 
   // Kokkos::Profiling::pushRegion("KokkosBlas::Test::gemvt_double_int");
-  //  test_gemv<double,int,float,TestExecSpace> ("T");
+  //  test_gemv<double,int,float,TestDevice> ("T");
   // Kokkos::Profiling::popRegion();
 }
 #endif
