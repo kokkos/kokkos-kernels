@@ -39,9 +39,9 @@ using CudaUVMSpaceDevice = Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>;
 // Prefer <Cuda, CudaSpace> for any testing where only one exec space is used
 #if defined(KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) && \
     !defined(KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE)
-#define TestExecSpace CudaUVMSpaceDevice
+#define TestDevice CudaUVMSpaceDevice
 #else
-#define TestExecSpace CudaSpaceDevice
+#define TestDevice CudaSpaceDevice
 #endif
 
 #endif  // TEST_CUDA_HPP

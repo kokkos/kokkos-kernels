@@ -189,7 +189,7 @@ void test_chem() {
 }  // namespace Test
 
 int test_chem_models() {
-  Test::test_chem<TestExecSpace>();
+  Test::test_chem<TestDevice>();
 
   return 1;
 }

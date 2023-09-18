@@ -456,19 +456,19 @@ void testIssue1786() {
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
 TEST_F(TestCategory, batched_scalar_serial_svd_double) {
   // Test general SVD on a few different input sizes (full rank randomized)
-  testSVD<double, Kokkos::LayoutLeft, TestExecSpace>();
-  testSVD<double, Kokkos::LayoutRight, TestExecSpace>();
-  testIssue1786<double, Kokkos::LayoutLeft, TestExecSpace>();
-  testIssue1786<double, Kokkos::LayoutRight, TestExecSpace>();
+  testSVD<double, Kokkos::LayoutLeft, TestDevice>();
+  testSVD<double, Kokkos::LayoutRight, TestDevice>();
+  testIssue1786<double, Kokkos::LayoutLeft, TestDevice>();
+  testIssue1786<double, Kokkos::LayoutRight, TestDevice>();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_FLOAT)
 TEST_F(TestCategory, batched_scalar_serial_svd_float) {
   // Test general SVD on a few different input sizes (full rank randomized)
-  testSVD<float, Kokkos::LayoutLeft, TestExecSpace>();
-  testSVD<float, Kokkos::LayoutRight, TestExecSpace>();
-  testIssue1786<float, Kokkos::LayoutLeft, TestExecSpace>();
-  testIssue1786<float, Kokkos::LayoutRight, TestExecSpace>();
+  testSVD<float, Kokkos::LayoutLeft, TestDevice>();
+  testSVD<float, Kokkos::LayoutRight, TestDevice>();
+  testIssue1786<float, Kokkos::LayoutLeft, TestDevice>();
+  testIssue1786<float, Kokkos::LayoutRight, TestDevice>();
 }
 #endif

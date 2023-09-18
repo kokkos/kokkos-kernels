@@ -561,11 +561,11 @@ void test_adaptivity() {
 
 }  // namespace Test
 
-void test_RK() { Test::test_RK<TestExecSpace>(); }
+void test_RK() { Test::test_RK<TestDevice>(); }
 
-void test_RK_conv_rate() { Test::test_convergence_rate<TestExecSpace>(); }
+void test_RK_conv_rate() { Test::test_convergence_rate<TestDevice>(); }
 
-void test_RK_adaptivity() { Test::test_adaptivity<TestExecSpace>(); }
+void test_RK_adaptivity() { Test::test_adaptivity<TestDevice>(); }
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
 TEST_F(TestCategory, RKSolve_serial) { test_RK(); }

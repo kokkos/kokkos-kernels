@@ -506,14 +506,14 @@ TEST_F(TestCategory, common_sort_crsgraph) {
       // because the exec space type is determined from the graph.
       if (doStructInterface && howExecSpecified == SortCrsTest::ExplicitType)
         continue;
-      testSortCRS<TestExecSpace>(10, 10, 20, false, doStructInterface,
-                                 howExecSpecified);
-      testSortCRS<TestExecSpace>(100, 100, 2000, false, doStructInterface,
-                                 howExecSpecified);
-      testSortCRS<TestExecSpace>(1000, 1000, 30000, false, doStructInterface,
-                                 howExecSpecified);
+      testSortCRS<TestDevice>(10, 10, 20, false, doStructInterface,
+                              howExecSpecified);
+      testSortCRS<TestDevice>(100, 100, 2000, false, doStructInterface,
+                              howExecSpecified);
+      testSortCRS<TestDevice>(1000, 1000, 30000, false, doStructInterface,
+                              howExecSpecified);
     }
-    testSortCRSUnmanaged<TestExecSpace>(false, doStructInterface);
+    testSortCRSUnmanaged<TestDevice>(false, doStructInterface);
   }
 }
 
@@ -525,24 +525,24 @@ TEST_F(TestCategory, common_sort_crsmatrix) {
       // because the exec space type is determined from the matrix.
       if (doStructInterface && howExecSpecified == SortCrsTest::ExplicitType)
         continue;
-      testSortCRS<TestExecSpace>(10, 10, 20, true, doStructInterface,
-                                 howExecSpecified);
-      testSortCRS<TestExecSpace>(100, 100, 2000, true, doStructInterface,
-                                 howExecSpecified);
-      testSortCRS<TestExecSpace>(1000, 1000, 30000, true, doStructInterface,
-                                 howExecSpecified);
+      testSortCRS<TestDevice>(10, 10, 20, true, doStructInterface,
+                              howExecSpecified);
+      testSortCRS<TestDevice>(100, 100, 2000, true, doStructInterface,
+                              howExecSpecified);
+      testSortCRS<TestDevice>(1000, 1000, 30000, true, doStructInterface,
+                              howExecSpecified);
     }
-    testSortCRSUnmanaged<TestExecSpace>(true, doStructInterface);
+    testSortCRSUnmanaged<TestDevice>(true, doStructInterface);
   }
 }
 
 TEST_F(TestCategory, common_sort_crs_longrows) {
   // Matrix/graph with one very long row
   // Just test this once with graph, and once with matrix
-  testSortCRS<TestExecSpace>(1, 50000, 10000, false, false,
-                             SortCrsTest::ImplicitType);
-  testSortCRS<TestExecSpace>(1, 50000, 10000, true, false,
-                             SortCrsTest::ImplicitType);
+  testSortCRS<TestDevice>(1, 50000, 10000, false, false,
+                          SortCrsTest::ImplicitType);
+  testSortCRS<TestDevice>(1, 50000, 10000, true, false,
+                          SortCrsTest::ImplicitType);
 }
 
 TEST_F(TestCategory, common_sort_merge_crsmatrix) {
@@ -555,8 +555,8 @@ TEST_F(TestCategory, common_sort_merge_crsmatrix) {
               howExecSpecified == SortCrsTest::ExplicitType)
             continue;
           if (doStructInterface && inPlace) continue;
-          testSortAndMerge<TestExecSpace>(false, howExecSpecified,
-                                          doStructInterface, inPlace, testCase);
+          testSortAndMerge<TestDevice>(false, howExecSpecified,
+                                       doStructInterface, inPlace, testCase);
         }
       }
     }
@@ -573,8 +573,8 @@ TEST_F(TestCategory, common_sort_merge_crsgraph) {
               howExecSpecified == SortCrsTest::ExplicitType)
             continue;
           if (doStructInterface && inPlace) continue;
-          testSortAndMerge<TestExecSpace>(true, howExecSpecified,
-                                          doStructInterface, inPlace, testCase);
+          testSortAndMerge<TestDevice>(true, howExecSpecified,
+                                       doStructInterface, inPlace, testCase);
         }
       }
     }

@@ -1777,7 +1777,7 @@ int test_syr(const std::string& /*caseName*/) {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, syr_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::syr_float");
-  test_syr<float, float, TestExecSpace>("test case syr_float");
+  test_syr<float, float, TestDevice>("test case syr_float");
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -1787,7 +1787,7 @@ TEST_F(TestCategory, syr_float) {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, syr_complex_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::syr_complex_float");
-  test_syr<Kokkos::complex<float>, Kokkos::complex<float>, TestExecSpace>(
+  test_syr<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>(
       "test case syr_complex_float");
   Kokkos::Profiling::popRegion();
 }
@@ -1798,7 +1798,7 @@ TEST_F(TestCategory, syr_complex_float) {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, syr_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::syr_double");
-  test_syr<double, double, TestExecSpace>("test case syr_double");
+  test_syr<double, double, TestDevice>("test case syr_double");
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -1808,7 +1808,7 @@ TEST_F(TestCategory, syr_double) {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, syr_complex_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::syr_complex_double");
-  test_syr<Kokkos::complex<double>, Kokkos::complex<double>, TestExecSpace>(
+  test_syr<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(
       "test case syr_complex_double");
   Kokkos::Profiling::popRegion();
 }
@@ -1819,7 +1819,7 @@ TEST_F(TestCategory, syr_complex_double) {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, syr_int) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::syr_int");
-  test_syr<int, int, TestExecSpace>("test case syr_int");
+  test_syr<int, int, TestDevice>("test case syr_int");
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -1828,7 +1828,7 @@ TEST_F(TestCategory, syr_int) {
     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
 TEST_F(TestCategory, syr_int_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::syr_int_float");
-  test_syr<int, float, TestExecSpace>("test case syr_int_float");
+  test_syr<int, float, TestDevice>("test case syr_int_float");
   Kokkos::Profiling::popRegion();
 }
 #endif

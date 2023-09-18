@@ -744,8 +744,7 @@ void test_spm_mv() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
 
 #define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
-  EXECUTE_BSR_TIMES_MVEC_TEST(SCALAR, ORDINAL, OFFSET, LayoutLeft,  \
-                              TestExecSpace)
+  EXECUTE_BSR_TIMES_MVEC_TEST(SCALAR, ORDINAL, OFFSET, LayoutLeft, TestDevice)
 
 #include <Test_Common_Test_All_Type_Combos.hpp>
 
@@ -756,8 +755,7 @@ void test_spm_mv() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
 
 #define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
-  EXECUTE_BSR_TIMES_MVEC_TEST(SCALAR, ORDINAL, OFFSET, LayoutRight, \
-                              TestExecSpace)
+  EXECUTE_BSR_TIMES_MVEC_TEST(SCALAR, ORDINAL, OFFSET, LayoutRight, TestDevice)
 
 #include <Test_Common_Test_All_Type_Combos.hpp>
 

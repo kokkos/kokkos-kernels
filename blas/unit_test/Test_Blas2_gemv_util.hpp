@@ -23,8 +23,9 @@
 
 namespace Test {
 
-template <typename ValueType, int length = KokkosBatched::DefaultVectorLength<
-                                  ValueType, TestExecSpace>::value>
+template <typename ValueType,
+          int length =
+              KokkosBatched::DefaultVectorLength<ValueType, TestDevice>::value>
 using simd_vector =
     KokkosBatched::Vector<KokkosBatched::SIMD<ValueType>, length>;
 
@@ -320,7 +321,7 @@ struct GEMVTest {
                    SCALAR_COEF)                                         \
   using PREFIX##_##NAME##_gemv_test =                                   \
       ::Test::GEMVTest<::Test::FACTORY, SCALAR_A, SCALAR_X, SCALAR_Y,   \
-                       TestExecSpace, SCALAR_COEF>;                     \
+                       TestDevice, SCALAR_COEF>;                        \
   TEST_F(TestCategory, PREFIX##_gemv_nt_##NAME) {                       \
     PREFIX##_##NAME##_gemv_test::run("N");                              \
   }                                                                     \

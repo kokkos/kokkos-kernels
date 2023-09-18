@@ -242,12 +242,12 @@ TEST_F(TestCategory, sparse_coo2crs) {
       UINT32_MAX;
   std::srand(ticks);
 
-  doAllCoo2Crs<TestExecSpace>(0, 0);
+  doAllCoo2Crs<TestDevice>(0, 0);
 
   // Square cases
   for (size_t i = 1; i < 256; i *= 4) {
     size_t dim = (std::rand() % 511) + 1;
-    doAllCoo2Crs<TestExecSpace>(dim, dim);
+    doAllCoo2Crs<TestDevice>(dim, dim);
   }
 
   // Non-square cases
@@ -255,11 +255,11 @@ TEST_F(TestCategory, sparse_coo2crs) {
     size_t m = (std::rand() % 511) + 1;
     size_t n = (std::rand() % 511) + 1;
     while (n == m) n = (std::rand() % 511) + 1;
-    doAllCoo2Crs<TestExecSpace>(m, n);
+    doAllCoo2Crs<TestDevice>(m, n);
   }
 
-  RandCooMat<double, Kokkos::LayoutRight, TestExecSpace> cooMat(2, 2, 2 * 2, 10,
-                                                                10);
+  RandCooMat<double, Kokkos::LayoutRight, TestDevice> cooMat(2, 2, 2 * 2, 10,
+                                                             10);
   auto crsMatrix = KokkosSparse::coo2crs(2, 2, cooMat.get_row(),
                                          cooMat.get_col(), cooMat.get_data());
   auto cooMatrix = KokkosSparse::crs2coo(crsMatrix);
@@ -276,15 +276,15 @@ TEST_F(TestCategory, sparse_coo2crs_staticMatrix_edgeCases) {
   float staticData[16]{7.28411, 8.17991, 8.84304, 5.01788, 9.85646, 5.79404,
                        8.42014, 1.90238, 8.24195, 4.39955, 3.2637,  5.4546,
                        6.51895, 8.09302, 9.36294, 3.44206};
-  Kokkos::View<long long *, TestExecSpace> row("coo row", 16);
-  Kokkos::View<long long *, TestExecSpace> col("coo col", 16);
-  Kokkos::View<float *, TestExecSpace> data("coo data", 16);
+  Kokkos::View<long long *, TestDevice> row("coo row", 16);
+  Kokkos::View<long long *, TestDevice> col("coo col", 16);
+  Kokkos::View<float *, TestDevice> data("coo data", 16);
 
-  typename Kokkos::View<long long *, TestExecSpace>::HostMirror row_h =
+  typename Kokkos::View<long long *, TestDevice>::HostMirror row_h =
       Kokkos::create_mirror_view(row);
-  typename Kokkos::View<long long *, TestExecSpace>::HostMirror col_h =
+  typename Kokkos::View<long long *, TestDevice>::HostMirror col_h =
       Kokkos::create_mirror_view(col);
-  typename Kokkos::View<float *, TestExecSpace>::HostMirror data_h =
+  typename Kokkos::View<float *, TestDevice>::HostMirror data_h =
       Kokkos::create_mirror_view(data);
   for (int i = 0; i < 16; i++) {
     row_h(i)  = staticRow[i];

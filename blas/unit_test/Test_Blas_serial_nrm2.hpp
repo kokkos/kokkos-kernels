@@ -263,25 +263,25 @@ int test_blas_serial_nrm2() {
 
 #if defined(KOKKOSKERNELS_INST_FLOAT)
 TEST_F(TestCategory, serial_nrm2_float_float) {
-  test_blas_serial_nrm2<TestExecSpace, float>();
+  test_blas_serial_nrm2<TestDevice, float>();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
 TEST_F(TestCategory, serial_nrm2_double_double) {
-  test_blas_serial_nrm2<TestExecSpace, double>();
+  test_blas_serial_nrm2<TestDevice, double>();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)
 TEST_F(TestCategory, serial_nrm2_fcomplex_float) {
-  test_blas_serial_nrm2<TestExecSpace, Kokkos::complex<float> >();
+  test_blas_serial_nrm2<TestDevice, Kokkos::complex<float> >();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
 TEST_F(TestCategory, serial_nrm2_dcomplex_dcomplex) {
-  test_blas_serial_nrm2<TestExecSpace, Kokkos::complex<double> >();
+  test_blas_serial_nrm2<TestDevice, Kokkos::complex<double> >();
 }
 #endif
 

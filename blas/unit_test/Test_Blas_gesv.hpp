@@ -343,15 +343,15 @@ int test_gesv_mrhs(const char* mode) {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, gesv_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gesv_float");
-  test_gesv<float, TestExecSpace>("N");  // No pivoting
-  test_gesv<float, TestExecSpace>("Y");  // Partial pivoting
+  test_gesv<float, TestDevice>("N");  // No pivoting
+  test_gesv<float, TestDevice>("Y");  // Partial pivoting
   Kokkos::Profiling::popRegion();
 }
 
 TEST_F(TestCategory, gesv_mrhs_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gesv_mrhs_float");
-  test_gesv_mrhs<float, TestExecSpace>("N");  // No pivoting
-  test_gesv_mrhs<float, TestExecSpace>("Y");  // Partial pivoting
+  test_gesv_mrhs<float, TestDevice>("N");  // No pivoting
+  test_gesv_mrhs<float, TestDevice>("Y");  // Partial pivoting
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -361,15 +361,15 @@ TEST_F(TestCategory, gesv_mrhs_float) {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, gesv_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gesv_double");
-  test_gesv<double, TestExecSpace>("N");  // No pivoting
-  test_gesv<double, TestExecSpace>("Y");  // Partial pivoting
+  test_gesv<double, TestDevice>("N");  // No pivoting
+  test_gesv<double, TestDevice>("Y");  // Partial pivoting
   Kokkos::Profiling::popRegion();
 }
 
 TEST_F(TestCategory, gesv_mrhs_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gesv_mrhs_double");
-  test_gesv_mrhs<double, TestExecSpace>("N");  // No pivoting
-  test_gesv_mrhs<double, TestExecSpace>("Y");  // Partial pivoting
+  test_gesv_mrhs<double, TestDevice>("N");  // No pivoting
+  test_gesv_mrhs<double, TestDevice>("Y");  // Partial pivoting
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -379,16 +379,15 @@ TEST_F(TestCategory, gesv_mrhs_double) {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, gesv_complex_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gesv_complex_double");
-  test_gesv<Kokkos::complex<double>, TestExecSpace>("N");  // No pivoting
-  test_gesv<Kokkos::complex<double>, TestExecSpace>("Y");  // Partial pivoting
+  test_gesv<Kokkos::complex<double>, TestDevice>("N");  // No pivoting
+  test_gesv<Kokkos::complex<double>, TestDevice>("Y");  // Partial pivoting
   Kokkos::Profiling::popRegion();
 }
 
 TEST_F(TestCategory, gesv_mrhs_complex_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gesv_mrhs_complex_double");
-  test_gesv_mrhs<Kokkos::complex<double>, TestExecSpace>("N");  // No pivoting
-  test_gesv_mrhs<Kokkos::complex<double>, TestExecSpace>(
-      "Y");  // Partial pivoting
+  test_gesv_mrhs<Kokkos::complex<double>, TestDevice>("N");  // No pivoting
+  test_gesv_mrhs<Kokkos::complex<double>, TestDevice>("Y");  // Partial pivoting
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -398,16 +397,15 @@ TEST_F(TestCategory, gesv_mrhs_complex_double) {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, gesv_complex_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gesv_complex_float");
-  test_gesv<Kokkos::complex<float>, TestExecSpace>("N");  // No pivoting
-  test_gesv<Kokkos::complex<float>, TestExecSpace>("Y");  // Partial pivoting
+  test_gesv<Kokkos::complex<float>, TestDevice>("N");  // No pivoting
+  test_gesv<Kokkos::complex<float>, TestDevice>("Y");  // Partial pivoting
   Kokkos::Profiling::popRegion();
 }
 
 TEST_F(TestCategory, gesv_mrhs_complex_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gesv_mrhs_complex_float");
-  test_gesv_mrhs<Kokkos::complex<float>, TestExecSpace>("N");  // No pivoting
-  test_gesv_mrhs<Kokkos::complex<float>, TestExecSpace>(
-      "Y");  // Partial pivoting
+  test_gesv_mrhs<Kokkos::complex<float>, TestDevice>("N");  // No pivoting
+  test_gesv_mrhs<Kokkos::complex<float>, TestDevice>("Y");  // Partial pivoting
   Kokkos::Profiling::popRegion();
 }
 #endif

@@ -358,10 +358,10 @@ int test_team_scal_mv() {
     (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, team_scal_float) {
-  test_team_scal<float, float, TestExecSpace>();
+  test_team_scal<float, float, TestDevice>();
 }
 TEST_F(TestCategory, team_scal_mv_float) {
-  test_team_scal_mv<float, float, TestExecSpace>();
+  test_team_scal_mv<float, float, TestDevice>();
 }
 #endif
 
@@ -369,10 +369,10 @@ TEST_F(TestCategory, team_scal_mv_float) {
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&  \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, team_scal_double) {
-  test_team_scal<double, double, TestExecSpace>();
+  test_team_scal<double, double, TestDevice>();
 }
 TEST_F(TestCategory, team_scal_mv_double) {
-  test_team_scal_mv<double, double, TestExecSpace>();
+  test_team_scal_mv<double, double, TestDevice>();
 }
 #endif
 
@@ -381,32 +381,30 @@ TEST_F(TestCategory, team_scal_mv_double) {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, team_scal_complex_double) {
   test_team_scal<Kokkos::complex<double>, Kokkos::complex<double>,
-                 TestExecSpace>();
+                 TestDevice>();
 }
 TEST_F(TestCategory, team_scal_mv_complex_double) {
   test_team_scal_mv<Kokkos::complex<double>, Kokkos::complex<double>,
-                    TestExecSpace>();
+                    TestDevice>();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_INT) ||   \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-TEST_F(TestCategory, team_scal_int) {
-  test_team_scal<int, int, TestExecSpace>();
-}
+TEST_F(TestCategory, team_scal_int) { test_team_scal<int, int, TestDevice>(); }
 TEST_F(TestCategory, team_scal_mv_int) {
-  test_team_scal_mv<int, int, TestExecSpace>();
+  test_team_scal_mv<int, int, TestDevice>();
 }
 #endif
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) && \
     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
 TEST_F(TestCategory, team_scal_double_int) {
-  test_team_scal<double, int, TestExecSpace>();
+  test_team_scal<double, int, TestDevice>();
 }
 TEST_F(TestCategory, team_scal_double_mv_int) {
-  test_team_scal_mv<double, int, TestExecSpace>();
+  test_team_scal_mv<double, int, TestDevice>();
 }
 #endif
 

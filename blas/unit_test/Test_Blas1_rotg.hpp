@@ -63,7 +63,7 @@ int test_rotg() {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, rotg_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::rotg");
-  test_rotg<float, TestExecSpace>();
+  test_rotg<float, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -73,7 +73,7 @@ TEST_F(TestCategory, rotg_float) {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, rotg_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::rotg");
-  test_rotg<double, TestExecSpace>();
+  test_rotg<double, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -83,7 +83,7 @@ TEST_F(TestCategory, rotg_double) {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, rotg_complex_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::rotg");
-  test_rotg<Kokkos::complex<float>, TestExecSpace>();
+  test_rotg<Kokkos::complex<float>, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -93,7 +93,7 @@ TEST_F(TestCategory, rotg_complex_float) {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, rotg_complex_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::rotg");
-  test_rotg<Kokkos::complex<double>, TestExecSpace>();
+  test_rotg<Kokkos::complex<double>, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 #endif

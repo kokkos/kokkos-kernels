@@ -1703,6 +1703,6 @@ void test_ArithTraits() {
   success = runAllArithTraitsHostTests<device>(out, 0);
   EXPECT_TRUE(success);
 }
-TEST_F(TestCategory, common_ArithTraits) { test_ArithTraits<TestExecSpace>(); }
+TEST_F(TestCategory, common_ArithTraits) { test_ArithTraits<TestDevice>(); }
 
 #endif  // KOKKOS_ARITHTRAITSTEST_HPP

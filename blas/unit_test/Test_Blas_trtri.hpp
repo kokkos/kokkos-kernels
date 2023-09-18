@@ -363,10 +363,10 @@ int test_trtri(const char* mode) {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, trtri_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::trtri_float");
-  test_trtri<float, TestExecSpace>("UN");
-  test_trtri<float, TestExecSpace>("UU");
-  test_trtri<float, TestExecSpace>("LN");
-  test_trtri<float, TestExecSpace>("LU");
+  test_trtri<float, TestDevice>("UN");
+  test_trtri<float, TestDevice>("UU");
+  test_trtri<float, TestDevice>("LN");
+  test_trtri<float, TestDevice>("LU");
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -376,10 +376,10 @@ TEST_F(TestCategory, trtri_float) {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, trtri_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::trtri_double");
-  test_trtri<double, TestExecSpace>("UN");
-  test_trtri<double, TestExecSpace>("UU");
-  test_trtri<double, TestExecSpace>("LN");
-  test_trtri<double, TestExecSpace>("LU");
+  test_trtri<double, TestDevice>("UN");
+  test_trtri<double, TestDevice>("UU");
+  test_trtri<double, TestDevice>("LN");
+  test_trtri<double, TestDevice>("LU");
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -389,10 +389,10 @@ TEST_F(TestCategory, trtri_double) {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, trtri_complex_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::trtri_complex_double");
-  test_trtri<Kokkos::complex<double>, TestExecSpace>("UN");
-  test_trtri<Kokkos::complex<double>, TestExecSpace>("UU");
-  test_trtri<Kokkos::complex<double>, TestExecSpace>("LN");
-  test_trtri<Kokkos::complex<double>, TestExecSpace>("LU");
+  test_trtri<Kokkos::complex<double>, TestDevice>("UN");
+  test_trtri<Kokkos::complex<double>, TestDevice>("UU");
+  test_trtri<Kokkos::complex<double>, TestDevice>("LN");
+  test_trtri<Kokkos::complex<double>, TestDevice>("LU");
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -402,10 +402,10 @@ TEST_F(TestCategory, trtri_complex_double) {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, trtri_complex_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::trtri_complex_float");
-  test_trtri<Kokkos::complex<float>, TestExecSpace>("UN");
-  test_trtri<Kokkos::complex<float>, TestExecSpace>("UU");
-  test_trtri<Kokkos::complex<float>, TestExecSpace>("LN");
-  test_trtri<Kokkos::complex<float>, TestExecSpace>("LU");
+  test_trtri<Kokkos::complex<float>, TestDevice>("UN");
+  test_trtri<Kokkos::complex<float>, TestDevice>("UU");
+  test_trtri<Kokkos::complex<float>, TestDevice>("LN");
+  test_trtri<Kokkos::complex<float>, TestDevice>("LU");
   Kokkos::Profiling::popRegion();
 }
 #endif

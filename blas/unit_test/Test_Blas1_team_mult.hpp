@@ -366,10 +366,10 @@ int test_team_mult_mv() {
     (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, team_mult_float) {
-  test_team_mult<float, float, float, TestExecSpace>();
+  test_team_mult<float, float, float, TestDevice>();
 }
 TEST_F(TestCategory, team_mult_mv_float) {
-  test_team_mult_mv<float, float, float, TestExecSpace>();
+  test_team_mult_mv<float, float, float, TestDevice>();
 }
 #endif
 
@@ -377,10 +377,10 @@ TEST_F(TestCategory, team_mult_mv_float) {
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&  \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, team_mult_double) {
-  test_team_mult<double, double, double, TestExecSpace>();
+  test_team_mult<double, double, double, TestDevice>();
 }
 TEST_F(TestCategory, team_mult_mv_double) {
-  test_team_mult_mv<double, double, double, TestExecSpace>();
+  test_team_mult_mv<double, double, double, TestDevice>();
 }
 #endif
 
@@ -389,11 +389,11 @@ TEST_F(TestCategory, team_mult_mv_double) {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, team_mult_complex_double) {
   test_team_mult<Kokkos::complex<double>, Kokkos::complex<double>,
-                 Kokkos::complex<double>, TestExecSpace>();
+                 Kokkos::complex<double>, TestDevice>();
 }
 TEST_F(TestCategory, team_mult_mv_complex_double) {
   test_team_mult_mv<Kokkos::complex<double>, Kokkos::complex<double>,
-                    Kokkos::complex<double>, TestExecSpace>();
+                    Kokkos::complex<double>, TestDevice>();
 }
 #endif
 
@@ -401,20 +401,20 @@ TEST_F(TestCategory, team_mult_mv_complex_double) {
     (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, team_mult_int) {
-  test_team_mult<int, int, int, TestExecSpace>();
+  test_team_mult<int, int, int, TestDevice>();
 }
 TEST_F(TestCategory, team_mult_mv_int) {
-  test_team_mult_mv<int, int, int, TestExecSpace>();
+  test_team_mult_mv<int, int, int, TestDevice>();
 }
 #endif
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) && \
     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
 TEST_F(TestCategory, team_mult_double_int) {
-  test_team_mult<double, int, float, TestExecSpace>();
+  test_team_mult<double, int, float, TestDevice>();
 }
 TEST_F(TestCategory, team_mult_double_mv_int) {
-  test_team_mult_mv<double, int, float, TestExecSpace>();
+  test_team_mult_mv<double, int, float, TestDevice>();
 }
 #endif
 

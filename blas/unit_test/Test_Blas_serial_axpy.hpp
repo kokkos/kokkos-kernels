@@ -156,35 +156,35 @@ int test_blas_serial_axpy() {
 
 #if defined(KOKKOSKERNELS_INST_FLOAT)
 TEST_F(TestCategory, serial_axpy_float_float) {
-  test_blas_serial_axpy<TestExecSpace, float, float>();
+  test_blas_serial_axpy<TestDevice, float, float>();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
 TEST_F(TestCategory, serial_axpy_double_double) {
-  test_blas_serial_axpy<TestExecSpace, double, double>();
+  test_blas_serial_axpy<TestDevice, double, double>();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
 TEST_F(TestCategory, serial_axpy_dcomplex_dcomplex) {
-  test_blas_serial_axpy<TestExecSpace, Kokkos::complex<double>,
+  test_blas_serial_axpy<TestDevice, Kokkos::complex<double>,
                         Kokkos::complex<double> >();
 }
 
 TEST_F(TestCategory, serial_axpy_dcomplex_double) {
-  test_blas_serial_axpy<TestExecSpace, Kokkos::complex<double>, double>();
+  test_blas_serial_axpy<TestDevice, Kokkos::complex<double>, double>();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)
 TEST_F(TestCategory, serial_axpy_fcomplex_fcomplex) {
-  test_blas_serial_axpy<TestExecSpace, Kokkos::complex<float>,
+  test_blas_serial_axpy<TestDevice, Kokkos::complex<float>,
                         Kokkos::complex<double> >();
 }
 
 TEST_F(TestCategory, serial_axpy_fcomplex_float) {
-  test_blas_serial_axpy<TestExecSpace, Kokkos::complex<float>, float>();
+  test_blas_serial_axpy<TestDevice, Kokkos::complex<float>, float>();
 }
 #endif
 

@@ -525,29 +525,29 @@ void test_newton_on_device() {
 // No ETI is performed for these device routines
 // Just pick scalar types at will...
 TEST_F(TestCategory, Newton_status_float) {
-  ::Test::test_newton_status<TestExecSpace, float>();
+  ::Test::test_newton_status<TestDevice, float>();
 }
 TEST_F(TestCategory, Newton_status_double) {
-  ::Test::test_newton_status<TestExecSpace, double>();
+  ::Test::test_newton_status<TestDevice, double>();
 }
 
 TEST_F(TestCategory, Newton_simple_float) {
-  ::Test::test_simple_problems<TestExecSpace, float>();
+  ::Test::test_simple_problems<TestDevice, float>();
 }
 TEST_F(TestCategory, Newton_simple_double) {
-  ::Test::test_simple_problems<TestExecSpace, double>();
+  ::Test::test_simple_problems<TestDevice, double>();
 }
 
 TEST_F(TestCategory, Newton_system_float) {
-  ::Test::test_simple_systems<TestExecSpace, float>();
+  ::Test::test_simple_systems<TestDevice, float>();
 }
 TEST_F(TestCategory, Newton_system_double) {
-  ::Test::test_simple_systems<TestExecSpace, double>();
+  ::Test::test_simple_systems<TestDevice, double>();
 }
 
 TEST_F(TestCategory, Newton_parallel_float) {
-  ::Test::test_newton_on_device<TestExecSpace, float>();
+  ::Test::test_newton_on_device<TestDevice, float>();
 }
 TEST_F(TestCategory, Newton_parallel_double) {
-  ::Test::test_newton_on_device<TestExecSpace, double>();
+  ::Test::test_newton_on_device<TestDevice, double>();
 }
