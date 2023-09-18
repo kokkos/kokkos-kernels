@@ -174,11 +174,12 @@ void test_method(const std::string label, ode_type& my_ode,
 
 }  // test_method
 
-template <class execution_space>
+template <class Device>
 void test_RK() {
-  using RK_type  = KokkosODE::Experimental::RK_type;
-  using vec_type = Kokkos::View<double*, execution_space>;
-  using mv_type  = Kokkos::View<double**, execution_space>;
+  using execution_space = typename Device::execution_space;
+  using RK_type         = KokkosODE::Experimental::RK_type;
+  using vec_type        = Kokkos::View<double*, Device>;
+  using mv_type         = Kokkos::View<double**, Device>;
 
   duho my_oscillator(1, 1, 4);
   const int neqs = my_oscillator.neqs;
@@ -349,11 +350,12 @@ void test_rate(ode_type& my_ode, const scalar_type& tstart,
 
 }  // test_method
 
-template <class execution_space>
+template <class Device>
 void test_convergence_rate() {
-  using RK_type  = KokkosODE::Experimental::RK_type;
-  using vec_type = Kokkos::View<double*, execution_space>;
-  using mv_type  = Kokkos::View<double**, execution_space>;
+  using execution_space = typename Device::execution_space;
+  using RK_type         = KokkosODE::Experimental::RK_type;
+  using vec_type        = Kokkos::View<double*, Device>;
+  using mv_type         = Kokkos::View<double**, Device>;
 
   duho my_oscillator(1, 1, 4);
   const int neqs = my_oscillator.neqs;
@@ -463,11 +465,12 @@ void test_convergence_rate() {
   }
 }  // test_convergence_rate
 
-template <class execution_space>
+template <class Device>
 void test_adaptivity() {
-  using RK_type  = KokkosODE::Experimental::RK_type;
-  using vec_type = Kokkos::View<double*, execution_space>;
-  using mv_type  = Kokkos::View<double**, execution_space>;
+  using execution_space = typename Device::execution_space;
+  using RK_type         = KokkosODE::Experimental::RK_type;
+  using vec_type        = Kokkos::View<double*, Device>;
+  using mv_type         = Kokkos::View<double**, Device>;
 
   duho my_oscillator(1, 1, 4);
   const int neqs = my_oscillator.neqs;

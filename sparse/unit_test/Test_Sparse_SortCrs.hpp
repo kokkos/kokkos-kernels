@@ -41,15 +41,14 @@ enum : int {
 };
 }
 
-template <typename exec_space>
+template <typename device_t>
 void testSortCRS(default_lno_t numRows, default_lno_t numCols,
                  default_size_type nnz, bool doValues, bool doStructInterface,
                  int howExecSpecified) {
-  using scalar_t  = default_scalar;
-  using lno_t     = default_lno_t;
-  using size_type = default_size_type;
-  using mem_space = typename exec_space::memory_space;
-  using device_t  = Kokkos::Device<exec_space, mem_space>;
+  using scalar_t   = default_scalar;
+  using lno_t      = default_lno_t;
+  using size_type  = default_size_type;
+  using exec_space = typename device_t::execution_space;
   using crsMat_t =
       KokkosSparse::CrsMatrix<scalar_t, lno_t, device_t, void, size_type>;
   // Create a random matrix on device
@@ -160,14 +159,13 @@ void testSortCRS(default_lno_t numRows, default_lno_t numCols,
   }
 }
 
-template <typename exec_space>
+template <typename device_t>
 void testSortCRSUnmanaged(bool doValues, bool doStructInterface) {
   // This test is about bug #960.
-  using scalar_t  = default_scalar;
-  using lno_t     = default_lno_t;
-  using size_type = default_size_type;
-  using mem_space = typename exec_space::memory_space;
-  using device_t  = Kokkos::Device<exec_space, mem_space>;
+  using scalar_t   = default_scalar;
+  using lno_t      = default_lno_t;
+  using size_type  = default_size_type;
+  using exec_space = typename device_t::execution_space;
   using crsMat_t =
       KokkosSparse::CrsMatrix<scalar_t, lno_t, device_t,
                               Kokkos::MemoryTraits<Kokkos::Unmanaged>,
@@ -207,14 +205,13 @@ void testSortCRSUnmanaged(bool doValues, bool doStructInterface) {
   }
 }
 
-template <typename exec_space>
+template <typename device_t>
 void testSortAndMerge(bool justGraph, int howExecSpecified,
                       bool doStructInterface, bool inPlace, int testCase) {
-  using size_type = default_size_type;
-  using lno_t     = default_lno_t;
-  using scalar_t  = default_scalar;
-  using mem_space = typename exec_space::memory_space;
-  using device_t  = Kokkos::Device<exec_space, mem_space>;
+  using size_type  = default_size_type;
+  using lno_t      = default_lno_t;
+  using scalar_t   = default_scalar;
+  using exec_space = typename device_t::execution_space;
   using crsMat_t =
       KokkosSparse::CrsMatrix<scalar_t, lno_t, device_t, void, size_type>;
   using graph_t   = typename crsMat_t::staticcrsgraph_type;

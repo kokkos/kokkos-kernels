@@ -29,7 +29,8 @@
 namespace Test {
 template <class ViewTypeA, class ViewTypeB, class Device>
 void impl_test_team_scal(int N) {
-  typedef Kokkos::TeamPolicy<Device> team_policy;
+  using execution_space = typename Device::execution_space;
+  typedef Kokkos::TeamPolicy<execution_space> team_policy;
   typedef typename team_policy::member_type team_member;
 
   // Launch M teams of the maximum number of threads per team
@@ -49,8 +50,7 @@ void impl_test_team_scal(int N) {
   typename AT::mag_type zero = AT::abs(AT::zero());
   typename AT::mag_type one  = AT::abs(AT::one());
 
-  Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
-      13718);
+  Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
 
   Kokkos::fill_random(x.d_view, rand_pool, ScalarA(1));
 
@@ -122,7 +122,8 @@ void impl_test_team_scal(int N) {
 
 template <class ViewTypeA, class ViewTypeB, class Device>
 void impl_test_team_scal_mv(int N, int K) {
-  typedef Kokkos::TeamPolicy<Device> team_policy;
+  using execution_space = typename Device::execution_space;
+  typedef Kokkos::TeamPolicy<execution_space> team_policy;
   typedef typename team_policy::member_type team_member;
 
   // Launch K teams of the maximum number of threads per team
@@ -135,8 +136,7 @@ void impl_test_team_scal_mv(int N, int K) {
   view_stride_adapter<ViewTypeA> x("X", N, K);
   view_stride_adapter<ViewTypeB> y("Y", N, K);
 
-  Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(
-      13718);
+  Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
 
   Kokkos::fill_random(x.d_view, rand_pool, ScalarA(1));
   Kokkos::deep_copy(x.h_base, x.d_base);

@@ -81,7 +81,7 @@ void build_matrices(const int M, const int N, const int K,
                     const typename ViewTypeA::value_type alpha, ViewTypeA& A,
                     ViewTypeB& B, const typename ViewTypeA::value_type beta,
                     ViewTypeC& C, ViewTypeC& Cref) {
-  using execution_space = TestExecSpace;
+  using execution_space = typename TestExecSpace::execution_space;
   using ScalarA         = typename ViewTypeA::non_const_value_type;
   using ScalarB         = typename ViewTypeB::non_const_value_type;
   using ScalarC         = typename ViewTypeC::non_const_value_type;
@@ -257,15 +257,16 @@ void impl_test_gemm(const char* TA, const char* TB, int M, int N, int K,
   }
 }
 
-template <typename Scalar, typename Layout, typename execution_space>
+template <typename Scalar, typename Layout, typename Device>
 void impl_test_stream_gemm_psge2(const int M, const int N, const int K,
                                  const Scalar alpha, const Scalar beta) {
-  using ViewTypeA = Kokkos::View<Scalar**, Layout, TestExecSpace>;
-  using ViewTypeB = Kokkos::View<Scalar**, Layout, TestExecSpace>;
-  using ViewTypeC = Kokkos::View<Scalar**, Layout, TestExecSpace>;
-  using ScalarC   = typename ViewTypeC::value_type;
-  using APT       = Kokkos::ArithTraits<ScalarC>;
-  using mag_type  = typename APT::mag_type;
+  using execution_space = typename Device::execution_space;
+  using ViewTypeA       = Kokkos::View<Scalar**, Layout, Device>;
+  using ViewTypeB       = Kokkos::View<Scalar**, Layout, Device>;
+  using ViewTypeC       = Kokkos::View<Scalar**, Layout, Device>;
+  using ScalarC         = typename ViewTypeC::value_type;
+  using APT             = Kokkos::ArithTraits<ScalarC>;
+  using mag_type        = typename APT::mag_type;
 
   const char tA[]          = {"N"};
   const char tB[]          = {"N"};
@@ -336,6 +337,7 @@ void impl_test_stream_gemm_psge2(const int M, const int N, const int K,
 
 template <typename Scalar, typename Layout>
 void test_gemm() {
+  typedef typename TestExecSpace::execution_space execution_space;
   typedef Kokkos::View<Scalar**, Layout, TestExecSpace> view_type_a;
   typedef Kokkos::View<Scalar**, Layout, TestExecSpace> view_type_b;
   typedef Kokkos::View<Scalar**, Layout, TestExecSpace> view_type_c;
@@ -371,7 +373,7 @@ void test_gemm() {
       }
     }
   }
-  auto pool_size = TestExecSpace().concurrency();
+  auto pool_size = execution_space().concurrency();
   if (pool_size >= 2) {
     Test::impl_test_stream_gemm_psge2<Scalar, Layout, TestExecSpace>(
         53, 42, 17, 4.5,

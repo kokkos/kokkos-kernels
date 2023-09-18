@@ -239,7 +239,8 @@ struct GEMVTest {
   template <class AlgoTag, class ViewTypeA, class ViewTypeX, class ViewTypeY>
   static void run_views(const char trans, ViewTypeA A, ViewTypeX x,
                         ViewTypeY y) {
-    Kokkos::TeamPolicy<Device> teams(1, 1);  // just run on device
+    Kokkos::TeamPolicy<typename Device::execution_space> teams(
+        1, 1);  // just run on device
     fill_inputs(A, x, y);
     ScalarType alpha = 3;  // TODO: test also with zero alpha/beta ?
     ScalarType beta  = 5;
@@ -279,7 +280,8 @@ struct GEMVTest {
                                                  ViewTypeY, Device, ScalarType>;
 
     op_type gemv_op(trans, alpha, A, x, beta, y);
-    Kokkos::parallel_for(Kokkos::TeamPolicy<Device>(1, 1), gemv_op);
+    Kokkos::parallel_for(
+        Kokkos::TeamPolicy<typename Device::execution_space>(1, 1), gemv_op);
 
     const double eps = epsilon(ScalarY{});
     EXPECT_NEAR_KK_REL_1DVIEW(y, y_ref, eps);

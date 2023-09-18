@@ -87,7 +87,8 @@ struct Functor_TestBlasSerialMatUtil {
     std::string name =
         name_region + name_value_type + name_work_tag + name_test_id;
     Kokkos::Profiling::pushRegion(name.c_str());
-    Kokkos::RangePolicy<DeviceType, AlgoTagType> policy(0, _a.extent(0));
+    Kokkos::RangePolicy<typename DeviceType::execution_space, AlgoTagType>
+        policy(0, _a.extent(0));
     Kokkos::parallel_for(name.c_str(), policy, *this);
     Kokkos::Profiling::popRegion();
     return 0;

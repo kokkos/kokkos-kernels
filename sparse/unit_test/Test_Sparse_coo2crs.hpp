@@ -197,10 +197,10 @@ void check_crs_matrix(CrsType crsMat, RowType row, ColType col, DataType data,
   }
 }
 
-template <class ScalarType, class LayoutType, class ExeSpaceType>
+template <class ScalarType, class LayoutType, class Device>
 void doCoo2Crs(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
-  RandCooMat<ScalarType, LayoutType, ExeSpaceType> cooMat(m, n, m * n, min_val,
-                                                          max_val);
+  RandCooMat<ScalarType, LayoutType, Device> cooMat(m, n, m * n, min_val,
+                                                    max_val);
   auto randRow  = cooMat.get_row();
   auto randCol  = cooMat.get_col();
   auto randData = cooMat.get_data();

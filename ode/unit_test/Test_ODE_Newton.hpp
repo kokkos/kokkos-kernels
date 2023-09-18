@@ -75,17 +75,17 @@ struct NewtonSolve_wrapper {
   }
 };
 
-template <class system_type, class execution_space, class scalar_type>
+template <class system_type, class Device, class scalar_type>
 void run_newton_test(const system_type& mySys,
                      KokkosODE::Experimental::Newton_params& params,
                      const scalar_type* const initial_val,
                      const scalar_type* const solution) {
+  using execution_space      = typename Device::execution_space;
   using newton_solver_status = KokkosODE::Experimental::newton_solver_status;
-  using vec_type = typename Kokkos::View<scalar_type*, execution_space>;
-  using mat_type = typename Kokkos::View<scalar_type**, execution_space>;
+  using vec_type             = typename Kokkos::View<scalar_type*, Device>;
+  using mat_type             = typename Kokkos::View<scalar_type**, Device>;
 
-  Kokkos::View<newton_solver_status*, execution_space> status("Newton status",
-                                                              1);
+  Kokkos::View<newton_solver_status*, Device> status("Newton status", 1);
 
   vec_type x("solution vector", mySys.neqs),
       rhs("right hand side vector", mySys.neqs);
@@ -136,10 +136,10 @@ void run_newton_test(const system_type& mySys,
 // x^2 - x - 2 = 0
 // Solution: x = 2 or x = -1
 // Derivative 2*x - 1
-template <typename execution_space, typename scalar_type>
+template <typename Device, typename scalar_type>
 struct QuadraticEquation {
-  using vec_type = Kokkos::View<scalar_type*, execution_space>;
-  using mat_type = Kokkos::View<scalar_type**, execution_space>;
+  using vec_type = Kokkos::View<scalar_type*, Device>;
+  using mat_type = Kokkos::View<scalar_type**, Device>;
 
   static constexpr int neqs = 1;
 
@@ -198,11 +198,12 @@ struct LogarithmicEquation {
   }
 };
 
-template <typename execution_space, typename scalar_type>
+template <typename Device, typename scalar_type>
 void test_newton_status() {
+  using execution_space      = typename Device::execution_space;
   using newton_solver_status = KokkosODE::Experimental::newton_solver_status;
-  using vec_type = typename Kokkos::View<scalar_type*, execution_space>;
-  using mat_type = typename Kokkos::View<scalar_type**, execution_space>;
+  using vec_type             = typename Kokkos::View<scalar_type*, Device>;
+  using mat_type             = typename Kokkos::View<scalar_type**, Device>;
 
   double abs_tol, rel_tol;
   if (std::is_same_v<scalar_type, float>) {
@@ -220,7 +221,7 @@ void test_newton_status() {
   auto status_h = Kokkos::create_mirror_view(status);
 
   // Create the non-linear system and initialize data
-  QuadraticEquation<execution_space, scalar_type> my_system{};
+  QuadraticEquation<Device, scalar_type> my_system{};
 
   scalar_type initial_value[3] = {1.0, -0.5, 0.5};
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
@@ -259,8 +260,9 @@ void test_newton_status() {
   }
 }
 
-template <typename execution_space, typename scalar_type>
+template <typename Device, typename scalar_type>
 void test_simple_problems() {
+  using execution_space = typename Device::execution_space;
   double abs_tol, rel_tol;
   if (std::is_same_v<scalar_type, float>) {
     rel_tol = 10e-5;
@@ -280,11 +282,11 @@ void test_simple_problems() {
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
     std::cout << "\nStarting Quadratic Equation problem" << std::endl;
 #endif
-    using system_type = QuadraticEquation<execution_space, scalar_type>;
+    using system_type = QuadraticEquation<Device, scalar_type>;
     system_type mySys{};
     scalar_type initial_value[2] = {1.0, -0.5}, solution[2] = {2.0, -1.0};
     for (int idx = 0; idx < 2; ++idx) {
-      run_newton_test<system_type, execution_space, scalar_type>(
+      run_newton_test<system_type, Device, scalar_type>(
           mySys, params, &(initial_value[idx]), &(solution[idx]));
     }
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
@@ -300,8 +302,8 @@ void test_simple_problems() {
     using system_type = TrigonometricEquation<execution_space, scalar_type>;
     system_type mySys{};
     scalar_type initial_value[1] = {0.1}, solution[1] = {0.739085};
-    run_newton_test<system_type, execution_space, scalar_type>(
-        mySys, params, initial_value, solution);
+    run_newton_test<system_type, Device, scalar_type>(mySys, params,
+                                                      initial_value, solution);
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
     std::cout << "Finished Trigonometric Equation problem" << std::endl;
 #endif
@@ -317,8 +319,8 @@ void test_simple_problems() {
     scalar_type initial_value[1] = {static_cast<scalar_type>(0.5)},
                 solution[1]      = {static_cast<scalar_type>(1.0) /
                                static_cast<scalar_type>(7.0)};
-    run_newton_test<system_type, execution_space, scalar_type>(
-        mySys, params, initial_value, solution);
+    run_newton_test<system_type, Device, scalar_type>(mySys, params,
+                                                      initial_value, solution);
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
     std::cout << "Finished Logarithmic Equation problem" << std::endl;
 #endif
@@ -340,10 +342,10 @@ void test_simple_problems() {
 //
 // Solution:   x = 10.75/6     y = +/- sqrt(2.25 + 7.25/6)
 //               ~ 1.7916666     ~ +/- 0.8887803753
-template <typename execution_space, typename scalar_type>
+template <typename Device, typename scalar_type>
 struct CirclesIntersections {
-  using vec_type = Kokkos::View<scalar_type*, execution_space>;
-  using mat_type = Kokkos::View<scalar_type**, execution_space>;
+  using vec_type = Kokkos::View<scalar_type*, Device>;
+  using mat_type = Kokkos::View<scalar_type**, Device>;
 
   static constexpr int neqs = 2;
 
@@ -374,10 +376,10 @@ struct CirclesIntersections {
 //             x1~  0.5176380902   y1~  1.9318516525
 //             x2~ -0.5176380902   y2~ -1.9318516525
 //             x3~ -1.9318516525   y3~ -0.5176380902
-template <typename execution_space, typename scalar_type>
+template <typename Device, typename scalar_type>
 struct CircleHyperbolaIntersection {
-  using vec_type = Kokkos::View<scalar_type*, execution_space>;
-  using mat_type = Kokkos::View<scalar_type**, execution_space>;
+  using vec_type = Kokkos::View<scalar_type*, Device>;
+  using mat_type = Kokkos::View<scalar_type**, Device>;
 
   static constexpr int neqs = 2;
 
@@ -396,8 +398,9 @@ struct CircleHyperbolaIntersection {
   }
 };
 
-template <typename execution_space, typename scalar_type>
+template <typename Device, typename scalar_type>
 void test_simple_systems() {
+  using execution_space = typename Device::execution_space;
   double abs_tol, rel_tol;
   if (std::is_same_v<scalar_type, float>) {
     rel_tol = 10e-5;
@@ -419,8 +422,8 @@ void test_simple_systems() {
     system_type mySys{};
     scalar_type initial_values[2] = {1.5, 1.5};
     scalar_type solution[2]       = {10.75 / 6, 0.8887803753};
-    run_newton_test<system_type, execution_space, scalar_type>(
-        mySys, params, initial_values, solution);
+    run_newton_test<system_type, Device, scalar_type>(mySys, params,
+                                                      initial_values, solution);
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
     std::cout << "Finished Circles Intersetcion problem" << std::endl;
 #endif
@@ -432,8 +435,7 @@ void test_simple_systems() {
     std::cout << "\nStarting Circle/Hyperbola Intersetcion problem"
               << std::endl;
 #endif
-    using system_type =
-        CircleHyperbolaIntersection<execution_space, scalar_type>;
+    using system_type = CircleHyperbolaIntersection<Device, scalar_type>;
     system_type mySys{};
 
     scalar_type init_vals[2] = {0.0, 1.0};
@@ -443,8 +445,8 @@ void test_simple_systems() {
                 4 + Kokkos::sqrt(static_cast<scalar_type>(12.0)) / 2)),
         Kokkos::sqrt(static_cast<scalar_type>(
             (4 + Kokkos::sqrt(static_cast<scalar_type>(12.0))) / 2))};
-    run_newton_test<system_type, execution_space, scalar_type>(
-        mySys, params, init_vals, solutions);
+    run_newton_test<system_type, Device, scalar_type>(mySys, params, init_vals,
+                                                      solutions);
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
     std::cout << "Finished Circle/Hyperbola Intersetcion problem" << std::endl;
 #endif
@@ -457,12 +459,13 @@ void test_simple_systems() {
 // happen within a FE/FD code.            //
 ////////////////////////////////////////////
 
-template <class execution_space, class scalar_type>
+template <class Device, class scalar_type>
 void test_newton_on_device() {
-  using vec_type      = Kokkos::View<scalar_type*, execution_space>;
-  using mat_type      = Kokkos::View<scalar_type**, execution_space>;
-  using newton_params = KokkosODE::Experimental::Newton_params;
-  using system_type = CircleHyperbolaIntersection<execution_space, scalar_type>;
+  using execution_space      = typename Device::execution_space;
+  using vec_type             = Kokkos::View<scalar_type*, Device>;
+  using mat_type             = Kokkos::View<scalar_type**, Device>;
+  using newton_params        = KokkosODE::Experimental::Newton_params;
+  using system_type          = CircleHyperbolaIntersection<Device, scalar_type>;
   using newton_solver_status = KokkosODE::Experimental::newton_solver_status;
 
   double abs_tol, rel_tol;

@@ -1402,8 +1402,8 @@ void invert_supernodal_columns(KernelHandle *kernelHandle, bool unit_diag,
   // If we are running KokkosKernels::trmm on device,
   // then we need to allocate a workspace on device
   using trmm_execution_space = typename KernelHandle::HandleExecSpace;
-  using trmm_memory_space    = typename trmm_execution_space::memory_space;
-  using trmm_view_t          = Kokkos::View<scalar_t *, trmm_execution_space>;
+  using trmm_memory_space = typename KernelHandle::HandlePersistentMemorySpace;
+  using trmm_view_t       = Kokkos::View<scalar_t *, trmm_execution_space>;
 #if !defined(KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
   // use KokkosBlas::trmm only with CUBLAS (since deep-copy to host throws an
   // error)

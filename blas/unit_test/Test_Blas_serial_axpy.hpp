@@ -32,6 +32,7 @@ struct NaiveAxpyTag {};
 template <typename DeviceType, typename ViewType, typename ScalarType,
           typename AlgoTagType>
 struct Functor_TestBlasSerialAxpy {
+  using execution_space = typename DeviceType::execution_space;
   ScalarType _alpha;
   ViewType _x;
   ViewType _y;
@@ -71,7 +72,7 @@ struct Functor_TestBlasSerialAxpy {
     std::string name =
         name_region + name_value_type + name_work_tag + name_test_id;
     Kokkos::Profiling::pushRegion(name.c_str());
-    Kokkos::RangePolicy<DeviceType, AlgoTagType> policy(0, _x.extent(0));
+    Kokkos::RangePolicy<execution_space, AlgoTagType> policy(0, _x.extent(0));
     Kokkos::parallel_for(name.c_str(), policy, *this);
     Kokkos::Profiling::popRegion();
     return;

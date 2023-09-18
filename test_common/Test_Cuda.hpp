@@ -32,6 +32,16 @@ class Cuda : public ::testing::Test {
 };
 
 #define TestCategory Cuda
-#define TestExecSpace Kokkos::Cuda
+
+using CudaSpaceDevice    = Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>;
+using CudaUVMSpaceDevice = Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>;
+
+// Prefer <Cuda, CudaSpace> for any testing where only one exec space is used
+#if defined(KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE) && \
+    !defined(KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE)
+#define TestExecSpace CudaUVMSpaceDevice
+#else
+#define TestExecSpace CudaSpaceDevice
+#endif
 
 #endif  // TEST_CUDA_HPP

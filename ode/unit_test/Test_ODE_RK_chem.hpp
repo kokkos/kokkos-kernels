@@ -89,12 +89,13 @@ struct chem_model_2 {
   }
 };
 
-template <class execution_space>
+template <class Device>
 void test_chem() {
-  using vec_type    = Kokkos::View<double*, execution_space>;
-  using mv_type     = Kokkos::View<double**, execution_space>;
-  using RK_type     = KokkosODE::Experimental::RK_type;
-  using solver_type = KokkosODE::Experimental::RungeKutta<RK_type::RKCK>;
+  using execution_space = typename Device::execution_space;
+  using vec_type        = Kokkos::View<double*, Device>;
+  using mv_type         = Kokkos::View<double**, Device>;
+  using RK_type         = KokkosODE::Experimental::RK_type;
+  using solver_type     = KokkosODE::Experimental::RungeKutta<RK_type::RKCK>;
 
   {
     chem_model_1 chem_model;
