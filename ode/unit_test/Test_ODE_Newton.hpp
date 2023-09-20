@@ -158,10 +158,10 @@ struct QuadraticEquation {
 // f(x) = cos(x) - x = 0
 // Solution: 0.739085
 // f'(x) = -sin(x) - 1
-template <typename execution_space, typename scalar_type>
+template <typename Device, typename scalar_type>
 struct TrigonometricEquation {
-  using vec_type = Kokkos::View<scalar_type*, execution_space>;
-  using mat_type = Kokkos::View<scalar_type**, execution_space>;
+  using vec_type = Kokkos::View<scalar_type*, Device>;
+  using mat_type = Kokkos::View<scalar_type**, Device>;
 
   static constexpr int neqs = 1;
 
@@ -180,10 +180,10 @@ struct TrigonometricEquation {
 // f(x) = 7x - log(7x) - 1 = 0
 // Solution: 1/7 = 0.14285714285
 // f'(x) = 7 - (1 / x)
-template <typename execution_space, typename scalar_type>
+template <typename Device, typename scalar_type>
 struct LogarithmicEquation {
-  using vec_type = Kokkos::View<scalar_type*, execution_space>;
-  using mat_type = Kokkos::View<scalar_type**, execution_space>;
+  using vec_type = Kokkos::View<scalar_type*, Device>;
+  using mat_type = Kokkos::View<scalar_type**, Device>;
 
   static constexpr int neqs = 1;
 
@@ -216,8 +216,7 @@ void test_newton_status() {
     throw std::runtime_error("scalar_type is neither float, nor double!");
   }
   KokkosODE::Experimental::Newton_params params(50, abs_tol, rel_tol);
-  Kokkos::View<newton_solver_status*, execution_space> status(
-      "newton solver status", 1);
+  Kokkos::View<newton_solver_status*, Device> status("newton solver status", 1);
   auto status_h = Kokkos::create_mirror_view(status);
 
   // Create the non-linear system and initialize data
@@ -262,7 +261,6 @@ void test_newton_status() {
 
 template <typename Device, typename scalar_type>
 void test_simple_problems() {
-  using execution_space = typename Device::execution_space;
   double abs_tol, rel_tol;
   if (std::is_same_v<scalar_type, float>) {
     rel_tol = 10e-5;
@@ -299,7 +297,7 @@ void test_simple_problems() {
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
     std::cout << "\nStarting Trigonometric Equation problem" << std::endl;
 #endif
-    using system_type = TrigonometricEquation<execution_space, scalar_type>;
+    using system_type = TrigonometricEquation<Device, scalar_type>;
     system_type mySys{};
     scalar_type initial_value[1] = {0.1}, solution[1] = {0.739085};
     run_newton_test<system_type, Device, scalar_type>(mySys, params,
@@ -314,7 +312,7 @@ void test_simple_problems() {
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
     std::cout << "\nStarting Logarithmic Equation problem" << std::endl;
 #endif
-    using system_type = LogarithmicEquation<execution_space, scalar_type>;
+    using system_type = LogarithmicEquation<Device, scalar_type>;
     system_type mySys{};
     scalar_type initial_value[1] = {static_cast<scalar_type>(0.5)},
                 solution[1]      = {static_cast<scalar_type>(1.0) /
@@ -400,7 +398,6 @@ struct CircleHyperbolaIntersection {
 
 template <typename Device, typename scalar_type>
 void test_simple_systems() {
-  using execution_space = typename Device::execution_space;
   double abs_tol, rel_tol;
   if (std::is_same_v<scalar_type, float>) {
     rel_tol = 10e-5;
@@ -418,7 +415,7 @@ void test_simple_systems() {
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
     std::cout << "\nStarting Circles Intersetcion problem" << std::endl;
 #endif
-    using system_type = CirclesIntersections<execution_space, scalar_type>;
+    using system_type = CirclesIntersections<Device, scalar_type>;
     system_type mySys{};
     scalar_type initial_values[2] = {1.5, 1.5};
     scalar_type solution[2]       = {10.75 / 6, 0.8887803753};
