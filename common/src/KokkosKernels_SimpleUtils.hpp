@@ -84,7 +84,7 @@ struct InclusiveParallelPrefixSum {
  * \param num_elements: size of the array
  * \param arr: the array for which the prefix sum will be performed.
  */
-template <typename view_t, typename MyExecSpace>
+template <typename MyExecSpace, typename view_t>
 inline void kk_exclusive_parallel_prefix_sum(
     const MyExecSpace &exec, typename view_t::value_type num_elements,
     view_t arr) {
@@ -100,7 +100,7 @@ inline void kk_exclusive_parallel_prefix_sum(
  * \param num_elements: size of the array
  * \param arr: the array for which the prefix sum will be performed.
  */
-template <typename view_t, typename MyExecSpace>
+template <typename MyExecSpace, typename view_t>
 inline void kk_exclusive_parallel_prefix_sum(
     typename view_t::value_type num_elements, view_t arr) {
   kk_exclusive_parallel_prefix_sum(MyExecSpace(), num_elements, arr);
@@ -116,7 +116,7 @@ inline void kk_exclusive_parallel_prefix_sum(
  * \param finalSum: will be set to arr[num_elements - 1] after computing the
  * prefix sum.
  */
-template <typename view_t, typename MyExecSpace>
+template <typename MyExecSpace, typename view_t>
 inline void kk_exclusive_parallel_prefix_sum(
     const MyExecSpace &exec, typename view_t::value_type num_elements,
     view_t arr, typename view_t::non_const_value_type &finalSum) {
@@ -135,7 +135,7 @@ inline void kk_exclusive_parallel_prefix_sum(
  * \param finalSum: will be set to arr[num_elements - 1] after computing the
  * prefix sum.
  */
-template <typename view_t, typename MyExecSpace>
+template <typename MyExecSpace, typename view_t>
 inline void kk_exclusive_parallel_prefix_sum(
     typename view_t::value_type num_elements, view_t arr,
     typename view_t::non_const_value_type &finalSum) {
@@ -149,7 +149,7 @@ inline void kk_exclusive_parallel_prefix_sum(
 /// \param num_elements: size of the array
 /// \param arr: the array for which the prefix sum will be performed.
 ///
-template <typename forward_array_type, typename MyExecSpace>
+template <typename MyExecSpace, typename forward_array_type>
 void kk_inclusive_parallel_prefix_sum(
     MyExecSpace my_exec_space,
     typename forward_array_type::value_type num_elements,
@@ -166,7 +166,7 @@ void kk_inclusive_parallel_prefix_sum(
 /// \param num_elements: size of the array
 /// \param arr: the array for which the prefix sum will be performed.
 ///
-template <typename forward_array_type, typename MyExecSpace>
+template <typename MyExecSpace, typename forward_array_type>
 void kk_inclusive_parallel_prefix_sum(
     typename forward_array_type::value_type num_elements,
     forward_array_type arr) {

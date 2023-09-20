@@ -634,8 +634,7 @@ void sort_and_merge_matrix(const exec_space& exec,
   auto entries_orig = entries_in;
   auto values_orig  = values_in;
   // Prefix sum to get rowmap
-  KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<nc_rowmap_t,
-                                                        exec_space>(
+  KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<exec_space>(
       exec, numRows + 1, nc_rowmap_out);
   rowmap_out  = nc_rowmap_out;
   entries_out = entries_t(Kokkos::view_alloc(exec, Kokkos::WithoutInitializing,
@@ -761,8 +760,7 @@ void sort_and_merge_graph(const exec_space& exec,
   // In the case where the output rowmap is the same as the input, we could just
   // assign "rowmap_out = rowmap_in" except that would break const-correctness.
   // Can skip filling the entries, however.
-  KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<nc_rowmap_t,
-                                                        exec_space>(
+  KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<exec_space>(
       exec, numRows + 1, nc_rowmap_out);
   rowmap_out  = nc_rowmap_out;
   entries_out = entries_t(Kokkos::view_alloc(exec, Kokkos::WithoutInitializing,
