@@ -16,7 +16,7 @@
 
 /// \file Test_Sparse_SortCrs.hpp
 /// \brief Tests for sort_crs_matrix and sort_crs_graph in
-/// KokkosSparse_SortCrs.hpp
+/// KokkosSparse_CrsMatrix_traversal.hpp
 
 #ifndef TEST_SPARSE_CRSMATRIX_TRAVERSAL_HPP
 #define TEST_SPARSE_CRSMATRIX_TRAVERSAL_HPP
