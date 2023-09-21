@@ -121,14 +121,6 @@ int64_t crsmatrix_traversal_launch_parameters(int64_t numRows, int64_t nnz,
 
   rows_per_team = rows_per_thread * team_size;
 
-  if (rows_per_team < 0) {
-    int64_t nnz_per_team = 4096;
-    int64_t conc         = execution_space().concurrency();
-    while ((conc * nnz_per_team * 4 > nnz) && (nnz_per_team > 256))
-      nnz_per_team /= 2;
-    rows_per_team = (nnz_per_team + nnz_per_row - 1) / nnz_per_row;
-  }
-
   return rows_per_team;
 }
 
