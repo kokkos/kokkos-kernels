@@ -83,7 +83,8 @@ int64_t crsmatrix_traversal_launch_parameters(int64_t numRows, int64_t nnz,
 
   if (nnz_per_row < 1) nnz_per_row = 1;
 
-  int max_vector_length = Kokkos::TeamPolicy<execution_space>::vector_length_max();
+  int max_vector_length =
+      Kokkos::TeamPolicy<execution_space>::vector_length_max();
 
   if (vector_length < 1) {
     vector_length = 1;
