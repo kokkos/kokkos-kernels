@@ -34,7 +34,6 @@
 namespace KokkosSparse {
 namespace Experimental {
 
-
 /// \brief Public interface to sparse matrix traversal algorithm.
 ///
 /// Loop over the entries of the input matrix and apply the functor
@@ -54,9 +53,10 @@ namespace Experimental {
 template <class execution_space, class crsmatrix_type, class functor_type>
 void crsmatrix_traversal(const execution_space& space,
                          const crsmatrix_type& matrix, functor_type& functor) {
-
   // Check if a quick return can be performed
-  if(!matrix.nnz()) { return; }
+  if (!matrix.nnz()) {
+    return;
+  }
 
   // Choose between device and host implementation
   if constexpr (KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>()) {
