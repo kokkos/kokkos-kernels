@@ -83,15 +83,7 @@ int64_t crsmatrix_traversal_launch_parameters(int64_t numRows, int64_t nnz,
 
   if (nnz_per_row < 1) nnz_per_row = 1;
 
-  int max_vector_length = 1;
-#ifdef KOKKOS_ENABLE_CUDA
-  if (std::is_same<execution_space, Kokkos::Cuda>::value)
-    max_vector_length = 32;
-#endif
-#ifdef KOKKOS_ENABLE_HIP
-  if (std::is_same<execution_space, Kokkos::Experimental::HIP>::value)
-    max_vector_length = 64;
-#endif
+  int max_vector_length = Kokkos::TeamPolicy<execution_space>::vector_length_max();
 
   if (vector_length < 1) {
     vector_length = 1;
