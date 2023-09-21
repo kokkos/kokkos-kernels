@@ -72,7 +72,9 @@ struct OrdinalTraits<int> {
 
 template <>
 struct OrdinalTraits<unsigned int> {
-  static constexpr KOKKOS_INLINE_FUNCTION unsigned int invalid() { return UINT_MAX; }
+  static constexpr KOKKOS_INLINE_FUNCTION unsigned int invalid() {
+    return UINT_MAX;
+  }
 };
 
 template <>
@@ -82,7 +84,9 @@ struct OrdinalTraits<long> {
 
 template <>
 struct OrdinalTraits<unsigned long> {
-  static constexpr KOKKOS_INLINE_FUNCTION unsigned long invalid() { return ULONG_MAX; }
+  static constexpr KOKKOS_INLINE_FUNCTION unsigned long invalid() {
+    return ULONG_MAX;
+  }
 };
 
 template <>
