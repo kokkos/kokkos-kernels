@@ -56,6 +56,15 @@ void run_spmv(Ordinal numRows, Ordinal numCols, const char* filename, int loop,
   }
   numRows = A.numRows();
   numCols = A.numCols();
+
+  std::cout << "A is " << numRows << "x" << numCols << ", with " << A.nnz()
+            << " nonzeros\n";
+  std::cout << "SpMV mode " << mode << ", " << num_vecs
+            << " vectors, beta = " << beta << ", multivectors are ";
+  std::cout << (std::is_same_v<Layout, Kokkos::LayoutLeft> ? "LayoutLeft"
+                                                           : "LayoutRight");
+  std::cout << '\n';
+
   mv_type x("X", numCols, num_vecs);
   mv_type y("Y", numRows, num_vecs);
   h_mv_type h_x         = Kokkos::create_mirror_view(x);
@@ -179,9 +188,6 @@ int main(int argc, char** argv) {
   }
 
   Kokkos::initialize(argc, argv);
-
-  std::cout << size << " rows/cols, mode " << mode << ", " << num_vecs
-            << " vectors, beta = " << beta << ", layout " << layout << ": ";
 
   if (layout == 'L')
     run_spmv<Kokkos::LayoutLeft>(size, size, filename, loop, num_vecs, mode,
