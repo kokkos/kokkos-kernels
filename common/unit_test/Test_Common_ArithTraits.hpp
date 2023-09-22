@@ -35,17 +35,32 @@
 #include <typeinfo>  // typeid (T)
 #include <cstdio>
 
+#if KOKKOS_VERSION < 40199
 #define FAILURE()                                                            \
   {                                                                          \
     KOKKOS_IMPL_DO_NOT_USE_PRINTF("%s:%s:%d: Failure\n", __FILE__, __func__, \
                                   __LINE__);                                 \
     success = 0;                                                             \
   }
+#else
+#define FAILURE()							\
+  {									\
+    Kokkos::printf("%s:%s:%d: Failure\n", __FILE__, __func__,		\
+		   __LINE__);						\
+    success = 0;							\
+  }
+#endif
 
 #if 0
+#if KOKKOS_VERSION < 40199
 #define TRACE()                                                          \
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("%s:%s:%d: Trace\n", __FILE__, __func__, \
                                 __LINE__);
+#else
+#define TRACE()								\
+  Kokkos::printf("%s:%s:%d: Trace\n", __FILE__, __func__,		\
+		 __LINE__);
+#endif
 #else
 #define TRACE()
 #endif
@@ -181,7 +196,11 @@ class ArithTraitsTesterBase {
     // T, but we check for this int constant for compatibility with
     // std::numeric_limits.
     if (!AT::is_specialized) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF("! AT::is_specialized\n");
+#else
+      Kokkos::printf("! AT::is_specialized\n");
+#endif
       FAILURE();
     }
 
@@ -189,13 +208,23 @@ class ArithTraitsTesterBase {
     // function, just not to its class methods (which are not marked
     // as device functions).
     if (AT::is_integer != std::numeric_limits<ScalarType>::is_integer) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF(
           "AT::is_integer not same as numeric_limits\n");
+#else
+      Kokkos::printf(
+          "AT::is_integer not same as numeric_limits\n");
+#endif
       FAILURE();
     }
     if (AT::is_exact != std::numeric_limits<ScalarType>::is_exact) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF(
           "AT::is_exact not same as numeric_limits\n");
+#else
+      Kokkos::printf(
+          "AT::is_exact not same as numeric_limits\n");
+#endif
       FAILURE();
     }
 
@@ -204,34 +233,62 @@ class ArithTraitsTesterBase {
 
     // Test properties of the arithmetic and multiplicative identities.
     if (zero + zero != zero) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF("0 + 0 != 0\n");
+#else
+      Kokkos::printf("0 + 0 != 0\n");
+#endif
       FAILURE();
     }
     if (zero + one != one) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF("0 + 1 != 1\n");
+#else
+      Kokkos::printf("0 + 1 != 1\n");
+#endif
       FAILURE();
     }
     if (one - one != zero) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF("1 - 1 != 0\n");
+#else
+      Kokkos::printf("1 - 1 != 0\n");
+#endif
       FAILURE();
     }
     // This is technically 1 even of Z_2, since in that field, one
     // is its own inverse (so -one == one).
     if ((one + one) - one != one) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF("(1 + 1) - 1 != 1\n");
+#else
+      Kokkos::printf("(1 + 1) - 1 != 1\n");
+#endif
       FAILURE();
     }
 
     if (AT::abs(zero) != zero) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::abs(0) != 0\n");
+#else
+      Kokkos::printf("AT::abs(0) != 0\n");
+#endif
       FAILURE();
     }
     if (AT::abs(one) != one) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::abs(1) != 1\n");
+#else
+      Kokkos::printf("AT::abs(1) != 1\n");
+#endif
       FAILURE();
     }
     if (AT::is_signed && AT::abs(-one) != one) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::is_signed and AT::abs(-1) != 1\n");
+#else
+      Kokkos::printf("AT::is_signed and AT::abs(-1) != 1\n");
+#endif
       FAILURE();
     }
     // Need enable_if to test whether T can be compared using <=.
@@ -240,7 +297,11 @@ class ArithTraitsTesterBase {
     // These are very mild ordering properties.
     // They should work even for a set only containing zero.
     if (AT::abs(zero) > AT::abs(AT::max())) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::abs(0) > AT::abs (AT::max ())\n");
+#else
+      Kokkos::printf("AT::abs(0) > AT::abs (AT::max ())\n");
+#endif
       FAILURE();
     }
 
@@ -553,20 +614,36 @@ class ArithTraitsTesterTranscendentalBase<ScalarType, DeviceType, 1>
     if (!AT::is_complex) {
       result = AT::pow(two, three);
       if (!equal(result, eight)) {
+#if KOKKOS_VERSION < 40199
         KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::pow(2,3) != 8\n");
+#else
+        Kokkos::printf("AT::pow(2,3) != 8\n");
+#endif
         FAILURE();
       }
     }
     if (!equal(AT::pow(three, zero), one)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::pow(3,0) != 1\n");
+#else
+      Kokkos::printf("AT::pow(3,0) != 1\n");
+#endif
       FAILURE();
     }
     if (!equal(AT::pow(three, one), three)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::pow(3,1) != 3\n");
+#else
+      Kokkos::printf("AT::pow(3,1) != 3\n");
+#endif
       FAILURE();
     }
     if (!equal(AT::pow(three, two), nine)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::pow(3,2) != 9\n");
+#else
+      Kokkos::printf("AT::pow(3,2) != 9\n");
+#endif
       FAILURE();
     }
 
@@ -574,7 +651,11 @@ class ArithTraitsTesterTranscendentalBase<ScalarType, DeviceType, 1>
     if (!AT::is_complex) {
       result = AT::pow(three, three);
       if (!equal(result, twentySeven)) {
+#if KOKKOS_VERSION < 40199
         KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::pow(3,3) != 27\n");
+#else
+        Kokkos::printf("AT::pow(3,3) != 27\n");
+#endif
         FAILURE();
       }
     }
@@ -583,93 +664,170 @@ class ArithTraitsTesterTranscendentalBase<ScalarType, DeviceType, 1>
     if (AT::is_signed && !AT::is_complex) {
       result = AT::pow(-three, one);
       if (!equal(result, -three)) {
+#if KOKKOS_VERSION < 40199
         KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::pow(-3,1) != -3\n");
+#else
+        Kokkos::printf("AT::pow(-3,1) != -3\n");
+#endif
         FAILURE();
       }
       result = AT::pow(-three, two);
       if (!equal(result, nine)) {
+#if KOKKOS_VERSION < 40199
         KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::pow(-3,2) != 9\n");
+#else
+        Kokkos::printf("AT::pow(-3,2) != 9\n");
+#endif
         FAILURE();
       }
       result = AT::pow(-three, three);
       if (!equal(result, -twentySeven)) {
+#if KOKKOS_VERSION < 40199
         KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::pow(-3,3) != 27\n");
+#else
+        Kokkos::printf("AT::pow(-3,3) != 27\n");
+#endif
         FAILURE();
       }
     }
 
     if (!equal(AT::sqrt(zero), zero)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::sqrt(0) != 0\n");
+#else
+      Kokkos::printf("AT::sqrt(0) != 0\n");
+#endif
       FAILURE();
     }
     if (!equal(AT::sqrt(one), one)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::sqrt(1) != 1\n");
+#else
+      Kokkos::printf("AT::sqrt(1) != 1\n");
+#endif
       FAILURE();
     }
     if (!equal(AT::sqrt(thirtySix), six)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::sqrt(36) != 6\n");
+#else
+      Kokkos::printf("AT::sqrt(36) != 6\n");
+#endif
       FAILURE();
     }
     if (!equal(AT::sqrt(sixtyFour), eight)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::sqrt(64) != 8\n");
+#else
+      Kokkos::printf("AT::sqrt(64) != 8\n");
+#endif
       FAILURE();
     }
     if (AT::is_integer) {
       if (!equal(AT::sqrt(fortyTwo), six)) {
+#if KOKKOS_VERSION < 40199
         KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT:sqrt(42) != 6\n");
+#else
+        Kokkos::printf("AT:sqrt(42) != 6\n");
+#endif
         FAILURE();
       }
       if (!equal(AT::sqrt(oneTwentySeven), eleven)) {
+#if KOKKOS_VERSION < 40199
         KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::sqrt(127) != 11\n");
+#else
+        Kokkos::printf("AT::sqrt(127) != 11\n");
+#endif
         FAILURE();
       }
     }
 
     if (!equal(AT::cbrt(zero), zero)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::cbrt(0) != 0\n");
+#else
+      Kokkos::printf("AT::cbrt(0) != 0\n");
+#endif
       FAILURE();
     }
     if (!equal(AT::cbrt(one), one)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::cbrt(1) != 1\n");
+#else
+      Kokkos::printf("AT::cbrt(1) != 1\n");
+#endif
       FAILURE();
     }
     if (!equal(AT::cbrt(twentySeven), three)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::cbrt(27) != 3\n");
+#else
+      Kokkos::printf("AT::cbrt(27) != 3\n");
+#endif
       FAILURE();
     }
     if (!equal(AT::cbrt(sixtyFour), four)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::cbrt(64) != 4\n");
+#else
+      Kokkos::printf("AT::cbrt(64) != 4\n");
+#endif
       FAILURE();
     }
     if (AT::is_integer) {
       if (!equal(AT::cbrt(fortyTwo), three)) {
+#if KOKKOS_VERSION < 40199
         KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT:cbrt(42) != 3\n");
+#else
+        Kokkos::printf("AT:cbrt(42) != 3\n");
+#endif
         FAILURE();
       }
       if (!equal(AT::cbrt(oneTwentySeven), five)) {
+#if KOKKOS_VERSION < 40199
         KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::cbrt(127) != 5\n");
+#else
+        Kokkos::printf("AT::cbrt(127) != 5\n");
+#endif
         FAILURE();
       }
     }
 
     if (!equal(AT::exp(zero), one)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::cbrt(0) != 1\n");
+#else
+      Kokkos::printf("AT::cbrt(0) != 1\n");
+#endif
       FAILURE();
     }
     if (AT::is_complex) {
       const ScalarType val = two;  //(two.real(), two.real());
       if (!equal(AT::conj(AT::exp(val)), AT::exp(AT::conj(val)))) {
+#if KOKKOS_VERSION < 40199
         KOKKOS_IMPL_DO_NOT_USE_PRINTF(
             "AT::conj(exp(complex(2,2))) != AT::exp(conj(complex(2,2)))\n");
+#else
+        Kokkos::printf(
+            "AT::conj(exp(complex(2,2))) != AT::exp(conj(complex(2,2)))\n");
+#endif
         FAILURE();
       }
     }
     if (!equal(AT::log(one), zero)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::log(1) != 0\n");
+#else
+      Kokkos::printf("AT::log(1) != 0\n");
+#endif
       FAILURE();
     }
     if (!equal(AT::log10(one), zero)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::log10(1) != 0\n");
+#else
+      Kokkos::printf("AT::log10(1) != 0\n");
+#endif
       FAILURE();
     }
 
@@ -678,13 +836,23 @@ class ArithTraitsTesterTranscendentalBase<ScalarType, DeviceType, 1>
       const auto val_sin = AT::sin(val);
       const auto val_cos = AT::cos(val);
       if (!equal(val_sin * val_sin + val_cos * val_cos, one)) {
+#if KOKKOS_VERSION < 40199
         KOKKOS_IMPL_DO_NOT_USE_PRINTF(
             "AT(complex):: sin(val)*sin(val) + cos(val)*cos(val) != 1\n");
+#else
+        Kokkos::printf(
+            "AT(complex):: sin(val)*sin(val) + cos(val)*cos(val) != 1\n");
+#endif
         FAILURE();
       }
       if (!equal(val_sin / val_cos, AT::tan(val))) {
+#if KOKKOS_VERSION < 40199
         KOKKOS_IMPL_DO_NOT_USE_PRINTF(
             "AT(complex):: sin(val)/cos(val) != AT(real)::tan(val)\n");
+#else
+        Kokkos::printf(
+            "AT(complex):: sin(val)/cos(val) != AT(real)::tan(val)\n");
+#endif
         FAILURE();
       }
     } else {
@@ -692,27 +860,49 @@ class ArithTraitsTesterTranscendentalBase<ScalarType, DeviceType, 1>
       const auto val_sin = AT::sin(val);
       const auto val_cos = AT::cos(val);
       if (!equal(val_sin * val_sin + val_cos * val_cos, one)) {
+#if KOKKOS_VERSION < 40199
         KOKKOS_IMPL_DO_NOT_USE_PRINTF(
             "AT(real):: sin(val)*sin(val) + cos(a)*cos(a) != 1\n");
+#else
+        Kokkos::printf(
+            "AT(real):: sin(val)*sin(val) + cos(a)*cos(a) != 1\n");
+#endif
         FAILURE();
       }
       if (!equal(val_sin / val_cos, AT::tan(val))) {
+#if KOKKOS_VERSION < 40199
         KOKKOS_IMPL_DO_NOT_USE_PRINTF(
             "AT(real):: sin(val)/cos(val) != AT(real)::tan(val)\n");
+#else
+        Kokkos::printf(
+            "AT(real):: sin(val)/cos(val) != AT(real)::tan(val)\n");
+#endif
         FAILURE();
       }
     }
 
     if (!equal(AT::asin(AT::sin(one)), one)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::asin(sin(1)) != 1\n");
+#else
+      Kokkos::printf("AT::asin(sin(1)) != 1\n");
+#endif
       FAILURE();
     }
     if (!equal(AT::acos(AT::cos(one)), one)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::acos(cos(1)) != 1\n");
+#else
+      Kokkos::printf("AT::acos(cos(1)) != 1\n");
+#endif
       FAILURE();
     }
     if (!equal(AT::atan(AT::tan(one)), one)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::atan(tan(1)) != 1\n");
+#else
+      Kokkos::printf("AT::atan(tan(1)) != 1\n");
+#endif
       FAILURE();
     }
 
@@ -839,41 +1029,74 @@ class ArithTraitsTesterTranscendentalBase<ScalarType, DeviceType, 1>
     }
 
     if (!equal(AT::cbrt(zero), zero)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::cbrt(0) != 0\n");
+#else
+      Kokkos::printf("AT::cbrt(0) != 0\n");
+#endif
       FAILURE();
     }
     if (!equal(AT::cbrt(one), one)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::cbrt(1) != 1\n");
+#else
+      Kokkos::printf("AT::cbrt(1) != 1\n");
+#endif
       FAILURE();
     }
     if (!equal(AT::cbrt(twentySeven), three)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::cbrt(27) != 3\n");
+#else
+      Kokkos::printf("AT::cbrt(27) != 3\n");
+#endif
       FAILURE();
     }
     if (!equal(AT::cbrt(sixtyFour), four)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::cbrt(64) != 4\n");
+#else
+      Kokkos::printf("AT::cbrt(64) != 4\n");
+#endif
       FAILURE();
     }
     if (AT::is_integer) {
       if (!equal(AT::cbrt(fortyTwo), three)) {
+#if KOKKOS_VERSION < 40199
         KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT:cbrt(42) != 3\n");
+#else
+        Kokkos::printf("AT:cbrt(42) != 3\n");
+#endif
         FAILURE();
       }
       if (!equal(AT::cbrt(oneTwentySeven), five)) {
+#if KOKKOS_VERSION < 40199
         KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::cbrt(127) != 5\n");
+#else
+        Kokkos::printf("AT::cbrt(127) != 5\n");
+#endif
         FAILURE();
       }
     }
 
     if (!equal(AT::exp(zero), one)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::cbrt(0) != 1\n");
+#else
+      Kokkos::printf("AT::cbrt(0) != 1\n");
+#endif
       FAILURE();
     }
     if (AT::is_complex) {
       const ScalarType val = two;  //(two.real(), two.real());
       if (!equal(AT::conj(AT::exp(val)), AT::exp(AT::conj(val)))) {
+#if KOKKOS_VERSION < 40199
         KOKKOS_IMPL_DO_NOT_USE_PRINTF(
             "AT::conj(exp(complex(2,0))) != AT::exp(conj(complex(2,0)))\n");
+#else
+        Kokkos::printf(
+            "AT::conj(exp(complex(2,0))) != AT::exp(conj(complex(2,0)))\n");
+#endif
         FAILURE();
       }
     }
@@ -891,13 +1114,23 @@ class ArithTraitsTesterTranscendentalBase<ScalarType, DeviceType, 1>
       const auto val_sin   = AT::sin(val);
       const auto val_cos   = AT::cos(val);
       if (!equal(val_sin * val_sin + val_cos * val_cos, one)) {
+#if KOKKOS_VERSION < 40199
         KOKKOS_IMPL_DO_NOT_USE_PRINTF(
             "AT(complex):: sin(val)*sin(val) + cos(val)*cos(val) != 1\n");
+#else
+        Kokkos::printf(
+            "AT(complex):: sin(val)*sin(val) + cos(val)*cos(val) != 1\n");
+#endif
         FAILURE();
       }
       if (!equal(val_sin / val_cos, AT::tan(val))) {
+#if KOKKOS_VERSION < 40199
         KOKKOS_IMPL_DO_NOT_USE_PRINTF(
             "AT(complex):: sin(val)/cos(val) != AT(real)::tan(val)\n");
+#else
+        Kokkos::printf(
+            "AT(complex):: sin(val)/cos(val) != AT(real)::tan(val)\n");
+#endif
         FAILURE();
       }
     } else {
@@ -905,27 +1138,49 @@ class ArithTraitsTesterTranscendentalBase<ScalarType, DeviceType, 1>
       const auto val_sin   = AT::sin(val);
       const auto val_cos   = AT::cos(val);
       if (!equal(val_sin * val_sin + val_cos * val_cos, one)) {
+#if KOKKOS_VERSION < 40199
         KOKKOS_IMPL_DO_NOT_USE_PRINTF(
             "AT(real):: sin(val)*sin(val) + cos(a)*cos(a) != 1\n");
+#else
+        Kokkos::printf(
+            "AT(real):: sin(val)*sin(val) + cos(a)*cos(a) != 1\n");
+#endif
         FAILURE();
       }
       if (!equal(val_sin / val_cos, AT::tan(val))) {
+#if KOKKOS_VERSION < 40199
         KOKKOS_IMPL_DO_NOT_USE_PRINTF(
             "AT(real):: sin(val)/cos(val) != AT(real)::tan(val)\n");
+#else
+        Kokkos::printf(
+            "AT(real):: sin(val)/cos(val) != AT(real)::tan(val)\n");
+#endif
         FAILURE();
       }
     }
 
     if (!equal(AT::asin(AT::sin(three)), three)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::asin(sin(3)) != 3\n");
+#else
+      Kokkos::printf("AT::asin(sin(3)) != 3\n");
+#endif
       FAILURE();
     }
     if (!equal(AT::acos(AT::cos(three)), three)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::acos(cos(3)) != 3\n");
+#else
+      Kokkos::printf("AT::acos(cos(3)) != 3\n");
+#endif
       FAILURE();
     }
     if (!equal(AT::atan(AT::tan(three)), three)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::atan(tan(3)) != 3\n");
+#else
+      Kokkos::printf("AT::atan(tan(3)) != 3\n");
+#endif
       FAILURE();
     }
 
@@ -1017,10 +1272,17 @@ class ArithTraitsTesterComplexBase<ScalarType, DeviceType, 0>
 #else
     {
       if (AT::is_signed != std::numeric_limits<ScalarType>::is_signed) {
+#if KOKKOS_VERSION < 40199
         KOKKOS_IMPL_DO_NOT_USE_PRINTF(
             "AT::is_signed = 0x%x, std::numeric_limits<ScalarType>::is_signed "
             "= 0x%x\n",
             AT::is_signed, std::numeric_limits<ScalarType>::is_signed);
+#else
+        Kokkos::printf(
+            "AT::is_signed = 0x%x, std::numeric_limits<ScalarType>::is_signed "
+            "= 0x%x\n",
+            AT::is_signed, std::numeric_limits<ScalarType>::is_signed);
+#endif
         FAILURE();
       }
     }
@@ -1233,12 +1495,20 @@ class ArithTraitsTesterFloatingPointBase<ScalarType, DeviceType, 0>
     int success = 1;
 
     if (AT::is_exact) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF("AT::is_exact is 1\n");
+#else
+      Kokkos::printf("AT::is_exact is 1\n");
+#endif
       FAILURE();
     }
 
     if (!AT::isNan(AT::nan())) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF("NaN is not NaN\n");
+#else
+      Kokkos::printf("NaN is not NaN\n");
+#endif
       FAILURE();
     }
 
@@ -1246,19 +1516,35 @@ class ArithTraitsTesterFloatingPointBase<ScalarType, DeviceType, 0>
     const ScalarType one  = AT::one();
 
     if (AT::isInf(zero)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF("0 is Inf\n");
+#else
+      Kokkos::printf("0 is Inf\n");
+#endif
       FAILURE();
     }
     if (AT::isInf(one)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF("1 is Inf\n");
+#else
+      Kokkos::printf("1 is Inf\n");
+#endif
       FAILURE();
     }
     if (AT::isNan(zero)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF("0 is NaN\n");
+#else
+      Kokkos::printf("0 is NaN\n");
+#endif
       FAILURE();
     }
     if (AT::isNan(one)) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF("1 is NaN\n");
+#else
+      Kokkos::printf("1 is NaN\n");
+#endif
       FAILURE();
     }
 
@@ -1352,7 +1638,11 @@ class ArithTraitsTesterFloatingPointBase<ScalarType, DeviceType, 1>
     int success = 1;
 
     if (!AT::is_exact) {
+#if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF("! AT:is_exact\n");
+#else
+      Kokkos::printf("! AT:is_exact\n");
+#endif
       FAILURE();
     }
 
