@@ -73,6 +73,17 @@ void run_spmv(Ordinal numRows, Ordinal numCols, const char* filename, int loop,
   // Benchmark
   auto x0 = Kokkos::subview(x, Kokkos::ALL(), 0);
   auto y0 = Kokkos::subview(y, Kokkos::ALL(), 0);
+  // Do 5 warm up calls (not timed)
+  for (int i = 0; i < 5; i++) {
+    if (num_vecs == 1) {
+      // run the rank-1 version
+      KokkosSparse::spmv(&mode, 1.0, A, x0, beta, y0);
+    } else {
+      // rank-2
+      KokkosSparse::spmv(&mode, 1.0, A, x, beta, y);
+    }
+    Kokkos::DefaultExecutionSpace().fence();
+  }
   Kokkos::Timer timer;
   for (int i = 0; i < loop; i++) {
     if (num_vecs == 1) {
