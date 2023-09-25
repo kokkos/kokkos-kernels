@@ -43,11 +43,10 @@
     success = 0;                                                             \
   }
 #else
-#define FAILURE()							\
-  {									\
-    Kokkos::printf("%s:%s:%d: Failure\n", __FILE__, __func__,		\
-		   __LINE__);						\
-    success = 0;							\
+#define FAILURE()                                                        \
+  {                                                                      \
+    Kokkos::printf("%s:%s:%d: Failure\n", __FILE__, __func__, __LINE__); \
+    success = 0;                                                         \
   }
 #endif
 
@@ -57,9 +56,8 @@
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("%s:%s:%d: Trace\n", __FILE__, __func__, \
                                 __LINE__);
 #else
-#define TRACE()								\
-  Kokkos::printf("%s:%s:%d: Trace\n", __FILE__, __func__,		\
-		 __LINE__);
+#define TRACE() \
+  Kokkos::printf("%s:%s:%d: Trace\n", __FILE__, __func__, __LINE__);
 #endif
 #else
 #define TRACE()
@@ -212,8 +210,7 @@ class ArithTraitsTesterBase {
       KOKKOS_IMPL_DO_NOT_USE_PRINTF(
           "AT::is_integer not same as numeric_limits\n");
 #else
-      Kokkos::printf(
-          "AT::is_integer not same as numeric_limits\n");
+      Kokkos::printf("AT::is_integer not same as numeric_limits\n");
 #endif
       FAILURE();
     }
@@ -222,8 +219,7 @@ class ArithTraitsTesterBase {
       KOKKOS_IMPL_DO_NOT_USE_PRINTF(
           "AT::is_exact not same as numeric_limits\n");
 #else
-      Kokkos::printf(
-          "AT::is_exact not same as numeric_limits\n");
+      Kokkos::printf("AT::is_exact not same as numeric_limits\n");
 #endif
       FAILURE();
     }
@@ -864,8 +860,7 @@ class ArithTraitsTesterTranscendentalBase<ScalarType, DeviceType, 1>
         KOKKOS_IMPL_DO_NOT_USE_PRINTF(
             "AT(real):: sin(val)*sin(val) + cos(a)*cos(a) != 1\n");
 #else
-        Kokkos::printf(
-            "AT(real):: sin(val)*sin(val) + cos(a)*cos(a) != 1\n");
+        Kokkos::printf("AT(real):: sin(val)*sin(val) + cos(a)*cos(a) != 1\n");
 #endif
         FAILURE();
       }
@@ -874,8 +869,7 @@ class ArithTraitsTesterTranscendentalBase<ScalarType, DeviceType, 1>
         KOKKOS_IMPL_DO_NOT_USE_PRINTF(
             "AT(real):: sin(val)/cos(val) != AT(real)::tan(val)\n");
 #else
-        Kokkos::printf(
-            "AT(real):: sin(val)/cos(val) != AT(real)::tan(val)\n");
+        Kokkos::printf("AT(real):: sin(val)/cos(val) != AT(real)::tan(val)\n");
 #endif
         FAILURE();
       }
@@ -1142,8 +1136,7 @@ class ArithTraitsTesterTranscendentalBase<ScalarType, DeviceType, 1>
         KOKKOS_IMPL_DO_NOT_USE_PRINTF(
             "AT(real):: sin(val)*sin(val) + cos(a)*cos(a) != 1\n");
 #else
-        Kokkos::printf(
-            "AT(real):: sin(val)*sin(val) + cos(a)*cos(a) != 1\n");
+        Kokkos::printf("AT(real):: sin(val)*sin(val) + cos(a)*cos(a) != 1\n");
 #endif
         FAILURE();
       }
@@ -1152,8 +1145,7 @@ class ArithTraitsTesterTranscendentalBase<ScalarType, DeviceType, 1>
         KOKKOS_IMPL_DO_NOT_USE_PRINTF(
             "AT(real):: sin(val)/cos(val) != AT(real)::tan(val)\n");
 #else
-        Kokkos::printf(
-            "AT(real):: sin(val)/cos(val) != AT(real)::tan(val)\n");
+        Kokkos::printf("AT(real):: sin(val)/cos(val) != AT(real)::tan(val)\n");
 #endif
         FAILURE();
       }

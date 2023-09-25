@@ -1428,8 +1428,8 @@ int test_ger(const std::string& caseName) {
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("Starting %s, device = %s ...\n",
                                 caseName.c_str(), typeid(Device).name());
 #else
-  Kokkos::printf("Starting %s, device = %s ...\n",
-                                caseName.c_str(), typeid(Device).name());
+  Kokkos::printf("Starting %s, device = %s ...\n", caseName.c_str(),
+                 typeid(Device).name());
 #endif
 #else
 int test_ger(const std::string& /*caseName*/) {
@@ -1465,8 +1465,7 @@ int test_ger(const std::string& /*caseName*/) {
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("Starting %s for LAYOUTLEFT ...\n",
                                 caseName.c_str());
 #else
-  Kokkos::printf("Starting %s for LAYOUTLEFT ...\n",
-                                caseName.c_str());
+  Kokkos::printf("Starting %s for LAYOUTLEFT ...\n", caseName.c_str());
 #endif
 #endif
   if (true) {
@@ -1502,8 +1501,7 @@ int test_ger(const std::string& /*caseName*/) {
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("Finished %s for LAYOUTLEFT\n",
                                 caseName.c_str());
 #else
-  Kokkos::printf("Finished %s for LAYOUTLEFT\n",
-                                caseName.c_str());
+  Kokkos::printf("Finished %s for LAYOUTLEFT\n", caseName.c_str());
 #endif
 #if KOKKOS_VERSION < 40199
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
@@ -1534,8 +1532,7 @@ int test_ger(const std::string& /*caseName*/) {
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("Starting %s for LAYOUTRIGHT ...\n",
                                 caseName.c_str());
 #else
-  Kokkos::printf("Starting %s for LAYOUTRIGHT ...\n",
-                                caseName.c_str());
+  Kokkos::printf("Starting %s for LAYOUTRIGHT ...\n", caseName.c_str());
 #endif
 #endif
   if (true) {
@@ -1571,8 +1568,7 @@ int test_ger(const std::string& /*caseName*/) {
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("Finished %s for LAYOUTRIGHT\n",
                                 caseName.c_str());
 #else
-  Kokkos::printf("Finished %s for LAYOUTRIGHT\n",
-                                caseName.c_str());
+  Kokkos::printf("Finished %s for LAYOUTRIGHT\n", caseName.c_str());
 #endif
 #if KOKKOS_VERSION < 40199
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
@@ -1602,8 +1598,7 @@ int test_ger(const std::string& /*caseName*/) {
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("Starting %s for LAYOUTSTRIDE ...\n",
                                 caseName.c_str());
 #else
-  Kokkos::printf("Starting %s for LAYOUTSTRIDE ...\n",
-                                caseName.c_str());
+  Kokkos::printf("Starting %s for LAYOUTSTRIDE ...\n", caseName.c_str());
 #endif
 #endif
   if (true) {
@@ -1636,8 +1631,7 @@ int test_ger(const std::string& /*caseName*/) {
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("Finished %s for LAYOUTSTRIDE\n",
                                 caseName.c_str());
 #else
-  Kokkos::printf("Finished %s for LAYOUTSTRIDE\n",
-                                caseName.c_str());
+  Kokkos::printf("Finished %s for LAYOUTSTRIDE\n", caseName.c_str());
 #endif
 #if KOKKOS_VERSION < 40199
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
@@ -1667,8 +1661,7 @@ int test_ger(const std::string& /*caseName*/) {
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("Starting %s for MIXED LAYOUTS ...\n",
                                 caseName.c_str());
 #else
-  Kokkos::printf("Starting %s for MIXED LAYOUTS ...\n",
-                                caseName.c_str());
+  Kokkos::printf("Starting %s for MIXED LAYOUTS ...\n", caseName.c_str());
 #endif
 #endif
   if (true) {
@@ -1696,8 +1689,7 @@ int test_ger(const std::string& /*caseName*/) {
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("Finished %s for MIXED LAYOUTS\n",
                                 caseName.c_str());
 #else
-  Kokkos::printf("Finished %s for MIXED LAYOUTS\n",
-                                caseName.c_str());
+  Kokkos::printf("Finished %s for MIXED LAYOUTS\n", caseName.c_str());
 #endif
 #if KOKKOS_VERSION < 40199
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(

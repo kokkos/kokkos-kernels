@@ -115,7 +115,7 @@ class JacobiPrec {
           "magnitude and have been replaced by one, \n",
           (int)tooSmall);
 #else
-    Kokkos::printf(
+      Kokkos::printf(
           "KokkosBatched::JacobiPrec: %d entrie(s) has/have a too small "
           "magnitude and have been replaced by one, \n",
           (int)tooSmall);

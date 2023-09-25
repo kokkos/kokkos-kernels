@@ -48,9 +48,8 @@ struct ThreadLowerBoundFunctor {
                                       __FILE__, __LINE__, int(i),
                                       int(expected_), int(idx));
 #else
-        Kokkos::printf("%s:%d thread %d expected %d got %d\n",
-                                      __FILE__, __LINE__, int(i),
-                                      int(expected_), int(idx));
+        Kokkos::printf("%s:%d thread %d expected %d got %d\n", __FILE__,
+                       __LINE__, int(i), int(expected_), int(idx));
 #endif
         ++lerrCount;
       }
@@ -111,9 +110,8 @@ struct TeamLowerBoundFunctor {
                                     __FILE__, __LINE__, int(handle.team_rank()),
                                     int(expected_), int(idx));
 #else
-      Kokkos::printf("%s:%d thread %d expected %d got %d\n",
-                                    __FILE__, __LINE__, int(handle.team_rank()),
-                                    int(expected_), int(idx));
+      Kokkos::printf("%s:%d thread %d expected %d got %d\n", __FILE__, __LINE__,
+                     int(handle.team_rank()), int(expected_), int(idx));
 #endif
       ++lerrCount;
     }

@@ -94,9 +94,9 @@ struct fSPMV {
           "expected_y(%d)=%f, y(%d)=%f err=%e, max_error=%e\n", i,
           AT::abs(expected_y(i)), i, AT::abs(y(i)), error, eps * max_val);
 #else
-      Kokkos::printf(
-          "expected_y(%d)=%f, y(%d)=%f err=%e, max_error=%e\n", i,
-          AT::abs(expected_y(i)), i, AT::abs(y(i)), error, eps * max_val);
+      Kokkos::printf("expected_y(%d)=%f, y(%d)=%f err=%e, max_error=%e\n", i,
+                     AT::abs(expected_y(i)), i, AT::abs(y(i)), error,
+                     eps * max_val);
 #endif
     }
   }
@@ -113,10 +113,9 @@ struct fSPMV {
           AT::abs(expected_y(i, j)), i, j, AT::abs(y(i, j)), error,
           eps * max_val);
 #else
-      Kokkos::printf(
-          "expected_y(%d,%d)=%f, y(%d,%d)=%f err=%e, max_error=%e\n", i, j,
-          AT::abs(expected_y(i, j)), i, j, AT::abs(y(i, j)), error,
-          eps * max_val);
+      Kokkos::printf("expected_y(%d,%d)=%f, y(%d,%d)=%f err=%e, max_error=%e\n",
+                     i, j, AT::abs(expected_y(i, j)), i, j, AT::abs(y(i, j)),
+                     error, eps * max_val);
 #endif
     }
   }

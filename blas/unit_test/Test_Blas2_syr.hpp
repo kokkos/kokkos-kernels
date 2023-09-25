@@ -1619,8 +1619,7 @@ int test_syr(const std::string& /*caseName*/) {
   Kokkos::printf(
       "+-----------------------------------------------------------------------"
       "---\n");
-  Kokkos::printf("Starting %s for LAYOUTLEFT ...\n",
-                                caseName.c_str());
+  Kokkos::printf("Starting %s for LAYOUTLEFT ...\n", caseName.c_str());
 #endif
 #endif
   if (true) {
@@ -1659,8 +1658,7 @@ int test_syr(const std::string& /*caseName*/) {
       "+-----------------------------------------------------------------------"
       "---\n");
 #else
-  Kokkos::printf("Finished %s for LAYOUTLEFT\n",
-                                caseName.c_str());
+  Kokkos::printf("Finished %s for LAYOUTLEFT\n", caseName.c_str());
   Kokkos::printf(
       "+-----------------------------------------------------------------------"
       "---\n");
@@ -1682,8 +1680,7 @@ int test_syr(const std::string& /*caseName*/) {
   Kokkos::printf(
       "+-----------------------------------------------------------------------"
       "---\n");
-  Kokkos::printf("Starting %s for LAYOUTRIGHT ...\n",
-                                caseName.c_str());
+  Kokkos::printf("Starting %s for LAYOUTRIGHT ...\n", caseName.c_str());
 #endif
 #endif
   if (true) {
@@ -1722,8 +1719,7 @@ int test_syr(const std::string& /*caseName*/) {
       "+-----------------------------------------------------------------------"
       "---\n");
 #else
-  Kokkos::printf("Finished %s for LAYOUTRIGHT\n",
-                                caseName.c_str());
+  Kokkos::printf("Finished %s for LAYOUTRIGHT\n", caseName.c_str());
   Kokkos::printf(
       "+-----------------------------------------------------------------------"
       "---\n");
@@ -1745,8 +1741,7 @@ int test_syr(const std::string& /*caseName*/) {
   Kokkos::printf(
       "+-----------------------------------------------------------------------"
       "---\n");
-  Kokkos::printf("Starting %s for LAYOUTSTRIDE ...\n",
-                                caseName.c_str());
+  Kokkos::printf("Starting %s for LAYOUTSTRIDE ...\n", caseName.c_str());
 #endif
 #endif
   if (true) {
@@ -1785,8 +1780,7 @@ int test_syr(const std::string& /*caseName*/) {
       "+-----------------------------------------------------------------------"
       "---\n");
 #else
-  Kokkos::printf("Finished %s for LAYOUTSTRIDE\n",
-                                caseName.c_str());
+  Kokkos::printf("Finished %s for LAYOUTSTRIDE\n", caseName.c_str());
   Kokkos::printf(
       "+-----------------------------------------------------------------------"
       "---\n");
@@ -1807,8 +1801,7 @@ int test_syr(const std::string& /*caseName*/) {
   Kokkos::printf(
       "+-----------------------------------------------------------------------"
       "---\n");
-  Kokkos::printf("Starting %s for MIXED LAYOUTS ...\n",
-                                caseName.c_str());
+  Kokkos::printf("Starting %s for MIXED LAYOUTS ...\n", caseName.c_str());
 #endif
 #endif
   if (true) {
@@ -1845,8 +1838,7 @@ int test_syr(const std::string& /*caseName*/) {
       "+-----------------------------------------------------------------------"
       "---\n");
 #else
-  Kokkos::printf("Finished %s for MIXED LAYOUTS\n",
-                                caseName.c_str());
+  Kokkos::printf("Finished %s for MIXED LAYOUTS\n", caseName.c_str());
   Kokkos::printf(
       "+-----------------------------------------------------------------------"
       "---\n");
