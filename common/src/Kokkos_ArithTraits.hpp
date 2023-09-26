@@ -924,7 +924,7 @@ class ArithTraits<Kokkos::Experimental::half_t> {
   static constexpr bool is_integer     = false;
   static constexpr bool is_exact       = false;
   static constexpr bool is_complex     = false;
-  static constexpr bool has_infinity = true;
+  static constexpr bool has_infinity   = true;
 
 #if KOKKOS_VERSION < 40199
   static KOKKOS_FUNCTION val_type infinity() {
@@ -1100,7 +1100,7 @@ class ArithTraits<Kokkos::Experimental::bhalf_t> {
   static constexpr bool is_integer     = false;
   static constexpr bool is_exact       = false;
   static constexpr bool is_complex     = false;
-  static constexpr bool has_infinity = true;
+  static constexpr bool has_infinity   = true;
 
 #if KOKKOS_VERSION < 40199
   static KOKKOS_FUNCTION val_type infinity() {
@@ -1203,8 +1203,8 @@ class ArithTraits<Kokkos::Experimental::bhalf_t> {
 #endif
 
   // Backwards compatibility with Teuchos::ScalarTraits.
-  using magnitudeType = mag_type;
-  using bhalfPrecision  = Kokkos::Experimental::bhalf_t;
+  using magnitudeType  = mag_type;
+  using bhalfPrecision = Kokkos::Experimental::bhalf_t;
   // There is no type that has twice the precision as bhalf_t.
   // The closest type would be float.
   using doublePrecision = void;
