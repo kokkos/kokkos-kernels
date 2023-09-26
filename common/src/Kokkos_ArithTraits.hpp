@@ -25,7 +25,9 @@
 #include <Kokkos_MathematicalFunctions.hpp>
 #include <Kokkos_Complex.hpp>
 #include <Kokkos_Macros.hpp>
+#if KOKKOS_VERSION < 40199
 #include <KokkosKernels_Half.hpp>
+#endif
 
 #include <impl/Kokkos_QuadPrecisionMath.hpp>
 
@@ -197,8 +199,6 @@ KOKKOS_FORCEINLINE_FUNCTION IntType intPowUnsigned(const IntType x,
 namespace Kokkos {
 
 // Macro to automate the wrapping of Kokkos Mathematical Functions
-// in the ArithTraits struct for real floating point types, hopefully
-// this can be expanded to Kokkos::half_t and Kokkos::bhalf_t
 #define KOKKOSKERNELS_ARITHTRAITS_REAL_FP(FUNC_QUAL)                           \
   static FUNC_QUAL val_type zero() { return static_cast<val_type>(0); }        \
   static FUNC_QUAL val_type one() { return static_cast<val_type>(1); }         \
@@ -912,8 +912,6 @@ class ArithTraits {
   //@}
 };
 
-// Since Kokkos::Experimental::half_t falls back to float, only define
-// ArithTraits if half_t is a backend specialization
 #if defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
 template <>
 class ArithTraits<Kokkos::Experimental::half_t> {
@@ -926,8 +924,9 @@ class ArithTraits<Kokkos::Experimental::half_t> {
   static constexpr bool is_integer     = false;
   static constexpr bool is_exact       = false;
   static constexpr bool is_complex     = false;
-
   static constexpr bool has_infinity = true;
+
+#if KOKKOS_VERSION < 40199
   static KOKKOS_FUNCTION val_type infinity() {
     return Kokkos::Experimental::cast_to_half(
         Kokkos::Experimental::infinity<float>::value);
@@ -1028,16 +1027,21 @@ class ArithTraits<Kokkos::Experimental::half_t> {
   static KOKKOS_FUNCTION mag_type epsilon() {
     return Kokkos::Experimental::cast_to_half(KOKKOSKERNELS_IMPL_FP16_EPSILON);
   }
+#endif
+
   // Backwards compatibility with Teuchos::ScalarTraits.
-  using magnitudeType = mag_type;
-  // C++ doesn't have a standard "half-float" type.
-  using halfPrecision   = val_type;
-  using doublePrecision = double;
+  using magnitudeType   = mag_type;
+  using halfPrecision   = Kokkos::Experimental::half_t;
+  using doublePrecision = float;
+
+  static std::string name() { return "half_t"; }
 
   static constexpr bool isComplex            = false;
   static constexpr bool isOrdinal            = false;
   static constexpr bool isComparable         = true;
   static constexpr bool hasMachineParameters = true;
+
+#if KOKKOS_VERSION < 40199
   static KOKKOS_FUNCTION bool isnaninf(const val_type x) {
     return isNan(x) || isInf(x);
   }
@@ -1047,7 +1051,6 @@ class ArithTraits<Kokkos::Experimental::half_t> {
   static KOKKOS_FUNCTION val_type conjugate(const val_type x) {
     return conj(x);
   }
-  static std::string name() { return "half"; }
   static KOKKOS_FUNCTION val_type squareroot(const val_type x) {
     return sqrt(x);
   }
@@ -1077,8 +1080,11 @@ class ArithTraits<Kokkos::Experimental::half_t> {
   static KOKKOS_FUNCTION mag_type rmax() {
     return Kokkos::Experimental::cast_to_half(KOKKOSKERNELS_IMPL_FP16_MAX);
   }
+#else
+  KOKKOSKERNELS_ARITHTRAITS_REAL_FP(KOKKOS_FUNCTION)
+#endif
 };
-#endif  // KOKKOS_HALF_T_IS_FLOAT && KOKKOS_ENABLE_CUDA_HALF
+#endif  // #if defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
 
 // Since Kokkos::Experimental::bhalf_t falls back to float, only define
 // ArithTraits if bhalf_t is a backend specialization
@@ -1094,8 +1100,9 @@ class ArithTraits<Kokkos::Experimental::bhalf_t> {
   static constexpr bool is_integer     = false;
   static constexpr bool is_exact       = false;
   static constexpr bool is_complex     = false;
-
   static constexpr bool has_infinity = true;
+
+#if KOKKOS_VERSION < 40199
   static KOKKOS_FUNCTION val_type infinity() {
     return Kokkos::Experimental::cast_to_bhalf(
         Kokkos::Experimental::infinity<float>::value);
@@ -1193,16 +1200,23 @@ class ArithTraits<Kokkos::Experimental::bhalf_t> {
     // return ::pow(2, -KOKKOSKERNELS_IMPL_BF16_SIGNIFICAND_BITS);
     return Kokkos::Experimental::cast_to_bhalf(KOKKOSKERNELS_IMPL_BF16_EPSILON);
   }
+#endif
+
   // Backwards compatibility with Teuchos::ScalarTraits.
   using magnitudeType = mag_type;
-  // C++ doesn't have a standard "bhalf-float" type.
-  using bhalfPrecision  = val_type;
-  using doublePrecision = double;
+  using bhalfPrecision  = Kokkos::Experimental::bhalf_t;
+  // There is no type that has twice the precision as bhalf_t.
+  // The closest type would be float.
+  using doublePrecision = void;
 
   static constexpr bool isComplex            = false;
   static constexpr bool isOrdinal            = false;
   static constexpr bool isComparable         = true;
   static constexpr bool hasMachineParameters = true;
+
+  static std::string name() { return "bhalf_t"; }
+
+#if KOKKOS_VERSION < 40199
   static KOKKOS_FUNCTION bool isnaninf(const val_type x) {
     return isNan(x) || isInf(x);
   }
@@ -1212,7 +1226,6 @@ class ArithTraits<Kokkos::Experimental::bhalf_t> {
   static KOKKOS_FUNCTION val_type conjugate(const val_type x) {
     return conj(x);
   }
-  static std::string name() { return "bhalf"; }
   static KOKKOS_FUNCTION val_type squareroot(const val_type x) {
     return sqrt(x);
   }
@@ -1242,8 +1255,11 @@ class ArithTraits<Kokkos::Experimental::bhalf_t> {
   static KOKKOS_FUNCTION mag_type rmax() {
     return Kokkos::Experimental::cast_to_bhalf(KOKKOSKERNELS_IMPL_BF16_MAX);
   }
+#else
+  KOKKOSKERNELS_ARITHTRAITS_REAL_FP(KOKKOS_FUNCTION)
+#endif
 };
-#endif  // KOKKOS_BHALF_T_IS_FLOAT
+#endif  // #if defined(KOKKOS_BHALF_T_IS_FLOAT) && !KOKKOS_BHALF_T_IS_FLOAT
 
 template <>
 class ArithTraits<float> {
