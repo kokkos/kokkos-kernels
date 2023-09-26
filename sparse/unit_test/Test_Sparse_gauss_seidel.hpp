@@ -768,7 +768,7 @@ void test_gauss_seidel_streams_rank1(
   const scalar_t one  = Kokkos::ArithTraits<scalar_t>::one();
   const scalar_t zero = Kokkos::ArithTraits<scalar_t>::zero();
   // two-stage with SpTRSV supports only omega = one
-  const double omega_tsgs_classic = one;
+  auto omega_tsgs_classic = one;
 
   for (int i = 0; i < nstreams; i++) {
     input_mat_v[i] =
