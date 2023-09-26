@@ -604,6 +604,7 @@ class TwostageGaussSeidel {
                          column_view, rowmap_viewL, rowmap_viewUa),
           nnzL);
     }
+    // TODO: continue
     if (direction == GS_BACKWARD || direction == GS_SYMMETRIC) {
       using range_policy = Kokkos::RangePolicy<Tag_countNnzU, execution_space>;
       Kokkos::parallel_reduce(
@@ -772,6 +773,7 @@ class TwostageGaussSeidel {
                         rowmap_viewL, crsmatL.graph.entries);
         sptrsv_symbolic(my_exec_space, handle->get_gs_sptrsvU_handle(),
                         rowmap_viewU, crsmatU.graph.entries);
+	my_exec_space.fence(); // LBV: there use to be a Kokkos::fence() here, I think a space fence should be good enough?
       }
     }
   }
@@ -840,6 +842,9 @@ class TwostageGaussSeidel {
               << "TWO-STAGE GS::NUMERIC::INSERT LU TIME : " << tic << std::endl;
     timer.reset();
 #endif
+
+    my_exec_space.fence();  // Wait for non-default stream work to finish before
+                            // sptrsv, TODO: remove
     if (!(gsHandle->isTwoStage())) {
       using namespace KokkosSparse::Experimental;
       auto sptrsv_algo =
