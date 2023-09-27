@@ -712,7 +712,10 @@ class TwostageGaussSeidel {
       // extract local L & U structures (for computing (L+D)^{-1} or (D+U)^{-1})
       using range_policy = Kokkos::RangePolicy<Tag_entriesLU, execution_space>;
       Kokkos::parallel_for(
-          "entriesLU", range_policy(my_exec_space, 0, num_rows),
+          "entriesLU",
+          Kokkos::Experimental::require(
+              range_policy(my_exec_space, 0, num_rows),
+              Kokkos::Experimental::WorkItemProperty::HintLightWeight),
           TSGS_Functor_t(
               two_stage, compact_form, num_rows, rowmap_view, column_view,
               rowmap_viewL, column_viewL, rowmap_viewU, column_viewU,
@@ -821,7 +824,10 @@ class TwostageGaussSeidel {
     // extract local L, D & U matrices
     using range_policy = Kokkos::RangePolicy<Tag_valuesLU, execution_space>;
     Kokkos::parallel_for(
-        "valueLU", range_policy(my_exec_space, 0, num_rows),
+        "valueLU",
+        Kokkos::Experimental::require(
+            range_policy(my_exec_space, 0, num_rows),
+            Kokkos::Experimental::WorkItemProperty::HintLightWeight),
         TSGS_Functor_t(two_stage, compact_form, diagos_given, num_rows,
                        rowmap_view, column_view, values_view, d_invert_view,
                        rowmap_viewL, values_viewL, viewD, rowmap_viewU,
