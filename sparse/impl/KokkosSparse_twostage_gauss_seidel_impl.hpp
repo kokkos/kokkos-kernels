@@ -604,7 +604,6 @@ class TwostageGaussSeidel {
                          column_view, rowmap_viewL, rowmap_viewUa),
           nnzL);
     }
-    // TODO: continue
     if (direction == GS_BACKWARD || direction == GS_SYMMETRIC) {
       using range_policy = Kokkos::RangePolicy<Tag_countNnzU, execution_space>;
       Kokkos::parallel_reduce(
@@ -766,12 +765,10 @@ class TwostageGaussSeidel {
       if (sptrsv_algo !=
           SPTRSVAlgorithm::SPTRSV_CUSPARSE) {  // symbolic with CuSparse needs
                                                // values
-        sptrsv_symbolic(handle->get_gs_sptrsvL_handle(), rowmap_viewL,
-                        crsmatL.graph.entries);
-        sptrsv_symbolic(handle->get_gs_sptrsvU_handle(), rowmap_viewU,
-                        crsmatU.graph.entries);
-        Kokkos::fence();  // Ensure writes land before launching more work on
-                          // non-default streams, TODO: remove
+        sptrsv_symbolic(my_exec_space, handle->get_gs_sptrsvL_handle(),
+                        rowmap_viewL, crsmatL.graph.entries);
+        sptrsv_symbolic(my_exec_space, handle->get_gs_sptrsvU_handle(),
+                        rowmap_viewU, crsmatU.graph.entries);
       }
     }
   }
@@ -837,9 +834,6 @@ class TwostageGaussSeidel {
               << "TWO-STAGE GS::NUMERIC::INSERT LU TIME : " << tic << std::endl;
     timer.reset();
 #endif
-
-    my_exec_space.fence();  // Wait for non-default stream work to finish before
-                            // sptrsv, TODO: remove
     if (!(gsHandle->isTwoStage())) {
       using namespace KokkosSparse::Experimental;
       auto sptrsv_algo =
@@ -857,12 +851,10 @@ class TwostageGaussSeidel {
             rowmap_viewU, column_viewU, values_viewU);
 
         // now do symbolic
-        sptrsv_symbolic(handle->get_gs_sptrsvL_handle(), rowmap_viewL,
-                        crsmatL.graph.entries, values_viewL);
-        sptrsv_symbolic(handle->get_gs_sptrsvU_handle(), rowmap_viewU,
-                        crsmatU.graph.entries, values_viewU);
-        Kokkos::fence();  // Wait for sptrsv to finish before launching work on
-                          // a stream, TODO: remove
+        sptrsv_symbolic(my_exec_space, handle->get_gs_sptrsvL_handle(),
+                        rowmap_viewL, crsmatL.graph.entries, values_viewL);
+        sptrsv_symbolic(my_exec_space, handle->get_gs_sptrsvU_handle(),
+                        rowmap_viewU, crsmatU.graph.entries, values_viewU);
       }
     }
   }
@@ -1011,11 +1003,9 @@ class TwostageGaussSeidel {
                 Kokkos::subview(localZ, Kokkos::ALL(), range_type(j, j + 1));
             single_vector_view_t Rj(localRj.data(), num_rows);
             single_vector_view_t Zj(localZj.data(), num_rows);
-            my_exec_space
-                .fence();  // Wait for writes to R and Z to land, TODO: remove
-            sptrsv_solve(handle->get_gs_sptrsvL_handle(), crsmatL.graph.row_map,
-                         crsmatL.graph.entries, crsmatL.values, Rj, Zj);
-            Kokkos::fence();  // TODO: call sptrsv_solve on stream and remove
+            sptrsv_solve(my_exec_space, handle->get_gs_sptrsvL_handle(),
+                         crsmatL.graph.row_map, crsmatL.graph.entries,
+                         crsmatL.values, Rj, Zj);
           }
         } else {
           using namespace KokkosSparse::Experimental;
@@ -1028,11 +1018,9 @@ class TwostageGaussSeidel {
                 Kokkos::subview(localZ, Kokkos::ALL(), range_type(j, j + 1));
             single_vector_view_t Rj(localRj.data(), num_rows);
             single_vector_view_t Zj(localZj.data(), num_rows);
-            my_exec_space
-                .fence();  // Wait for writes to R and Z to land, TODO: remove
-            sptrsv_solve(handle->get_gs_sptrsvU_handle(), crsmatU.graph.row_map,
-                         crsmatU.graph.entries, crsmatU.values, Rj, Zj);
-            Kokkos::fence();  // TODO: call sptrsv_solve on stream and remove
+            sptrsv_solve(my_exec_space, handle->get_gs_sptrsvU_handle(),
+                         crsmatU.graph.row_map, crsmatU.graph.entries,
+                         crsmatU.values, Rj, Zj);
           }
         }
 
