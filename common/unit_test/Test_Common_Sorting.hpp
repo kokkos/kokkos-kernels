@@ -47,7 +47,7 @@ size_t generateRandomOffsets(OrdView randomCounts, OrdView randomOffsets,
   }
   Kokkos::deep_copy(randomCounts, countsHost);
   Kokkos::deep_copy(randomOffsets, randomCounts);
-  KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<OrdView, ExecSpace>(
+  KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<ExecSpace>(
       n, randomOffsets);
   return total;
 }

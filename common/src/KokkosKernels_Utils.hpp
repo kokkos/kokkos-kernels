@@ -459,8 +459,7 @@ void inclusive_parallel_prefix_sum(
     MyExecSpace my_exec_space,
     typename forward_array_type::value_type num_elements,
     forward_array_type arr) {
-  return kk_inclusive_parallel_prefix_sum<forward_array_type, MyExecSpace>(
-      my_exec_space, num_elements, arr);
+  return kk_inclusive_parallel_prefix_sum(my_exec_space, num_elements, arr);
 }
 
 template <typename forward_array_type, typename MyExecSpace>
@@ -475,8 +474,7 @@ template <typename forward_array_type, typename MyExecSpace>
 void exclusive_parallel_prefix_sum(
     typename forward_array_type::value_type num_elements,
     forward_array_type arr) {
-  kk_exclusive_parallel_prefix_sum<forward_array_type, MyExecSpace>(
-      num_elements, arr);
+  kk_exclusive_parallel_prefix_sum<MyExecSpace>(num_elements, arr);
 }
 
 template <typename array_type>
