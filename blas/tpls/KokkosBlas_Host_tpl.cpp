@@ -89,22 +89,30 @@ double F77_BLAS_MANGLE(ddot, DDOT)(const int* N, const double* x,
                                    const int* x_inc, const double* y,
                                    const int* y_inc);
 #if defined(KOKKOSKERNELS_TPL_BLAS_RETURN_COMPLEX)
-std::complex<float> F77_BLAS_MANGLE(cdotu, CDOTU)(const int* N,
-                                                  const std::complex<float>* x,
-                                                  const int* x_inc,
-                                                  const std::complex<float>* y,
-                                                  const int* y_inc);
-std::complex<double> F77_BLAS_MANGLE(zdotu, ZDOTU)(
-    const int* N, const std::complex<double>* x, const int* x_inc,
-    const std::complex<double>* y, const int* y_inc);
-std::complex<float> F77_BLAS_MANGLE(cdotc, CDOTC)(const int* N,
-                                                  const std::complex<float>* x,
-                                                  const int* x_inc,
-                                                  const std::complex<float>* y,
-                                                  const int* y_inc);
-std::complex<double> F77_BLAS_MANGLE(zdotc, ZDOTC)(
-    const int* N, const std::complex<double>* x, const int* x_inc,
-    const std::complex<double>* y, const int* y_inc);
+// clang-format off
+// use C complex types as return types instead of std::complex, otherwise compiler will complain
+// error: 'cdotu_' has C-linkage specified, but returns user-defined type 'std::complex' which is incompatible with C [-Werror,-Wreturn-type-c-linkage]"
+// clang-format on
+float _Complex F77_BLAS_MANGLE(cdotu, CDOTU)(const int* N,
+                                             const std::complex<float>* x,
+                                             const int* x_inc,
+                                             const std::complex<float>* y,
+                                             const int* y_inc);
+double _Complex F77_BLAS_MANGLE(zdotu, ZDOTU)(const int* N,
+                                              const std::complex<double>* x,
+                                              const int* x_inc,
+                                              const std::complex<double>* y,
+                                              const int* y_inc);
+float _Complex F77_BLAS_MANGLE(cdotc, CDOTC)(const int* N,
+                                             const std::complex<float>* x,
+                                             const int* x_inc,
+                                             const std::complex<float>* y,
+                                             const int* y_inc);
+double _Complex F77_BLAS_MANGLE(zdotc, ZDOTC)(const int* N,
+                                              const std::complex<double>* x,
+                                              const int* x_inc,
+                                              const std::complex<double>* y,
+                                              const int* y_inc);
 #else
 void F77_BLAS_MANGLE(cdotu,
                      CDOTU)(std::complex<float>* res, const int* N,
