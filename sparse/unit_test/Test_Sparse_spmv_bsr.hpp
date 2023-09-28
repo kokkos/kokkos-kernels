@@ -53,6 +53,29 @@
 using kokkos_complex_double = Kokkos::complex<double>;
 using kokkos_complex_float  = Kokkos::complex<float>;
 
+/* Poor-man's std::optional since CUDA 11.0 seems to have an ICE
+   https://github.com/kokkos/kokkos-kernels/issues/1943
+*/
+struct OptCtrls {
+  KokkosKernels::Experimental::Controls ctrls_;
+  bool present_;
+
+  OptCtrls() : present_(false) {}
+  OptCtrls(const KokkosKernels::Experimental::Controls &ctrls)
+      : present_(true), ctrls_(ctrls) {}
+
+  operator bool() const { return present_; }
+
+  constexpr const KokkosKernels::Experimental::Controls &operator*()
+      const &noexcept {
+    return ctrls_;
+  }
+  constexpr const KokkosKernels::Experimental::Controls *operator->() const
+      noexcept {
+    return &ctrls_;
+  }
+};
+
 namespace Test_Spmv_Bsr {
 
 /*! \brief Maximum value used to fill A */
@@ -151,10 +174,9 @@ Bsr bsr_random(const int blockSize, const int blockRows, const int blockCols) {
 template <typename Bsr, typename Crs, typename XVector, typename YVector,
           typename Alpha = typename Bsr::non_const_value_type,
           typename Beta  = typename Bsr::non_const_value_type>
-void test_spmv(
-    const std::optional<KokkosKernels::Experimental::Controls> &controls,
-    const char *mode, const Alpha &alpha, const Beta &beta, const Bsr &a,
-    const Crs &acrs, size_t maxNnzPerRow, const XVector &x, const YVector &y) {
+void test_spmv(const OptCtrls &controls, const char *mode, const Alpha &alpha,
+               const Beta &beta, const Bsr &a, const Crs &acrs,
+               size_t maxNnzPerRow, const XVector &x, const YVector &y) {
   using scalar_type  = typename Bsr::non_const_value_type;
   using ordinal_type = typename Bsr::non_const_ordinal_type;
   using KATS         = Kokkos::ArithTraits<scalar_type>;
@@ -369,21 +391,19 @@ void test_spmv_combos(const char *mode, const Bsr &a, const Crs &acrs,
 
   // cover a variety of controls
   using Ctrls                 = KokkosKernels::Experimental::Controls;
-  using OptCtrls              = std::optional<Ctrls>;
-  std::vector<OptCtrls> ctrls = {
-      std::nullopt,  // no controls
-      OptCtrls(std::in_place, Ctrls()),
-      OptCtrls(std::in_place, Ctrls({{"algorithm", "tpl"}})),
-      OptCtrls(std::in_place, Ctrls({{"algorithm", "v4.1"}}))};
+  std::vector<OptCtrls> ctrls = {OptCtrls(),         // no controls
+                                 OptCtrls(Ctrls()),  // empty controls
+                                 OptCtrls(Ctrls({{"algorithm", "tpl"}})),
+                                 OptCtrls(Ctrls({{"algorithm", "v4.1"}}))};
 
   if constexpr (KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>()) {
 #if defined(KOKKOS_ENABLE_CUDA)
     if constexpr (std::is_same_v<execution_space, Kokkos::Cuda>) {
 #if defined(KOKKOS_ARCH_AMPERE) || defined(KOKKOS_ARCH_VOLTA)
-      ctrls.push_back(Ctrls({{"algorithm", "experimental_tc"}}));
+      ctrls.push_back(OptCtrls(Ctrls({{"algorithm", "experimental_tc"}})));
 #if defined(KOKKOS_ARCH_AMPERE)
-      ctrls.push_back(Ctrls(
-          {{"algorithm", "experimental_tc"}, {"tc_precision", "double"}}));
+      ctrls.push_back(OptCtrls(Ctrls(
+          {{"algorithm", "experimental_tc"}, {"tc_precision", "double"}})));
 #endif  // AMPERE
 #endif  // AMPERE || VOLTA
     }
@@ -481,10 +501,9 @@ void test_spmv() {
 // it's for A.
 template <typename Bsr, typename Crs, typename XVector, typename YVector,
           typename Alpha, typename Beta>
-void test_spm_mv(
-    const std::optional<KokkosKernels::Experimental::Controls> &controls,
-    const char *mode, const Alpha &alpha, const Beta &beta, const Bsr &a,
-    const Crs &acrs, size_t maxNnzPerRow, const XVector &x, const YVector &y) {
+void test_spm_mv(const OptCtrls &controls, const char *mode, const Alpha &alpha,
+                 const Beta &beta, const Bsr &a, const Crs &acrs,
+                 size_t maxNnzPerRow, const XVector &x, const YVector &y) {
   using scalar_type  = typename Bsr::non_const_value_type;
   using ordinal_type = typename Bsr::non_const_ordinal_type;
   using KATS         = Kokkos::ArithTraits<scalar_type>;
@@ -607,21 +626,19 @@ void test_spm_mv_combos(const char *mode, const Bsr &a, const Crs &acrs,
 
   // cover a variety of controls
   using Ctrls                 = KokkosKernels::Experimental::Controls;
-  using OptCtrls              = std::optional<Ctrls>;
-  std::vector<OptCtrls> ctrls = {
-      std::nullopt,  // no controls
-      OptCtrls(std::in_place, Ctrls()),
-      OptCtrls(std::in_place, Ctrls({{"algorithm", "tpl"}})),
-      OptCtrls(std::in_place, Ctrls({{"algorithm", "v4.1"}}))};
+  std::vector<OptCtrls> ctrls = {OptCtrls(),         // no controls
+                                 OptCtrls(Ctrls()),  // empty controls
+                                 OptCtrls(Ctrls({{"algorithm", "tpl"}})),
+                                 OptCtrls(Ctrls({{"algorithm", "v4.1"}}))};
 
   if constexpr (KokkosKernels::Impl::kk_is_gpu_exec_space<execution_space>()) {
 #if defined(KOKKOS_ENABLE_CUDA)
     if constexpr (std::is_same_v<execution_space, Kokkos::Cuda>) {
 #if defined(KOKKOS_ARCH_AMPERE) || defined(KOKKOS_ARCH_VOLTA)
-      ctrls.push_back(Ctrls({{"algorithm", "experimental_tc"}}));
+      ctrls.push_back(OptCtrls(Ctrls({{"algorithm", "experimental_tc"}})));
 #if defined(KOKKOS_ARCH_AMPERE)
-      ctrls.push_back(Ctrls(
-          {{"algorithm", "experimental_tc"}, {"tc_precision", "double"}}));
+      ctrls.push_back(OptCtrls(Ctrls(
+          {{"algorithm", "experimental_tc"}, {"tc_precision", "double"}})));
 #endif  // AMPERE
 #endif  // AMPERE || VOLTA
     }
