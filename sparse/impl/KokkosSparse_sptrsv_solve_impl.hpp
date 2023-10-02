@@ -2913,7 +2913,8 @@ void lower_tri_solve(ExecutionSpace &space, TriSolveHandle &thandle,
 
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
   using namespace KokkosSparse::Experimental;
-  using memory_space        = typename TriSolveHandle::memory_space;
+  using memory_space        = typename ExecutionSpace::memory_space;
+  using device_t            = Kokkos::Device<ExecutionSpace, memory_space>;
   using integer_view_t      = typename TriSolveHandle::integer_view_t;
   using integer_view_host_t = typename TriSolveHandle::integer_view_host_t;
   using scalar_t            = typename ValuesType::non_const_value_type;
@@ -3075,7 +3076,7 @@ void lower_tri_solve(ExecutionSpace &space, TriSolveHandle &thandle,
           // NOTE: we currently supports only default_layout = LayoutLeft
           using team_policy_type = Kokkos::TeamPolicy<ExecutionSpace>;
           using supernode_view_type =
-              Kokkos::View<scalar_t **, default_layout, memory_space,
+              Kokkos::View<scalar_t **, default_layout, device_t,
                            Kokkos::MemoryUnmanaged>;
           if (diag_kernel_type_host(lvl) == 3) {
             // using device-level kernels (functor is called to scatter the
@@ -3148,7 +3149,7 @@ void lower_tri_solve(ExecutionSpace &space, TriSolveHandle &thandle,
                   char unit_diag = (unit_diagonal ? 'U' : 'N');
                   // NOTE: we currently supports only default_layout =
                   // LayoutLeft
-                  Kokkos::View<scalar_t **, default_layout, memory_space,
+                  Kokkos::View<scalar_t **, default_layout, device_t,
                                Kokkos::MemoryUnmanaged>
                       Xjj(Xj.data(), nscol, 1);
                   KokkosBlas::trsm(space, "L", "L", "N", &unit_diag, one, Ljj,
@@ -3311,6 +3312,7 @@ void upper_tri_solve(ExecutionSpace &space, TriSolveHandle &thandle,
   cudaProfilerStop();
 #endif
   using memory_space = typename ExecutionSpace::memory_space;
+  using device_t     = Kokkos::Device<ExecutionSpace, memory_space>;
   typedef typename TriSolveHandle::size_type size_type;
   typedef typename TriSolveHandle::nnz_lno_view_t NGBLType;
 
@@ -3527,7 +3529,7 @@ tstf); } // end elseif
 
               // create a view for the s-th supernocal block column
               // NOTE: we currently supports only default_layout = LayoutLeft
-              Kokkos::View<scalar_t **, default_layout, memory_space,
+              Kokkos::View<scalar_t **, default_layout, device_t,
                            Kokkos::MemoryUnmanaged>
                   viewU(&dataU[i1], nsrow, nscol);
 
@@ -3562,7 +3564,7 @@ tstf); } // end elseif
                 } else {
                   // NOTE: we currently supports only default_layout =
                   // LayoutLeft
-                  Kokkos::View<scalar_t **, default_layout, memory_space,
+                  Kokkos::View<scalar_t **, default_layout, device_t,
                                Kokkos::MemoryUnmanaged>
                       Xjj(Xj.data(), nscol, 1);
                   KokkosBlas::trsm(space, "L", "U", "N", "N", one, Ujj, Xjj);
@@ -3658,7 +3660,7 @@ tstf); } // end elseif
 
               // create a view for the s-th supernocal block column
               // NOTE: we currently supports only default_layout = LayoutLeft
-              Kokkos::View<scalar_t **, default_layout, memory_space,
+              Kokkos::View<scalar_t **, default_layout, device_t,
                            Kokkos::MemoryUnmanaged>
                   viewU(&dataU[i1], nsrow, nscol);
 
@@ -3695,7 +3697,7 @@ tstf); } // end elseif
                 KokkosBlas::gemv(space, "T", one, Ujj, Xj, zero, Y);
               } else {
                 // NOTE: we currently supports only default_layout = LayoutLeft
-                Kokkos::View<scalar_t **, default_layout, memory_space,
+                Kokkos::View<scalar_t **, default_layout, device_t,
                              Kokkos::MemoryUnmanaged>
                     Xjj(Xj.data(), nscol, 1);
                 KokkosBlas::trsm(space, "L", "L", "T", "N", one, Ujj, Xjj);

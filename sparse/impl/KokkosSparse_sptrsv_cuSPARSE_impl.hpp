@@ -159,11 +159,11 @@ void sptrsvcuSPARSE_symbolic(ExecutionSpace &space, KernelHandle *sptrsv_handle,
       std::is_same<memory_space, Kokkos::CudaUVMSpace>::value ||
       std::is_same<memory_space, Kokkos::CudaHostPinnedSpace>::value;
 
-  if (!is_cuda_space) {
+  if constexpr (!is_cuda_space) {
     throw std::runtime_error(
         "KokkosKernels sptrsvcuSPARSE_symbolic: MEMORY IS NOT ALLOCATED IN GPU "
         "DEVICE for CUSPARSE\n");
-  } else if (std::is_same<idx_type, int>::value) {
+  } else if constexpr (std::is_same<idx_type, int>::value) {
     bool is_lower = sptrsv_handle->is_lower_tri();
     sptrsv_handle->create_cuSPARSE_Handle(trans, is_lower);
 
@@ -277,6 +277,7 @@ void sptrsvcuSPARSE_symbolic(ExecutionSpace &space, KernelHandle *sptrsv_handle,
   }
 #endif
 #else
+  (void)space;
   (void)sptrsv_handle;
   (void)nrows;
   (void)row_map;
@@ -369,8 +370,10 @@ void sptrsvcuSPARSE_solve(ExecutionSpace &space, KernelHandle *sptrsv_handle,
     typename KernelHandle::SPTRSVcuSparseHandleType *h =
         sptrsv_handle->get_cuSparseHandle();
 
-    KOKKOS_CUSPARSE_SAFE_CALL(
-        cusparseSetStream(h->handle, space.cuda_stream()));
+    if constexpr (std::is_same_v<ExecutionSpace, Kokkos::Cuda>) {
+      KOKKOS_CUSPARSE_SAFE_CALL(
+          cusparseSetStream(h->handle, space.cuda_stream()));
+    }
 
     int nnz = entries.extent_int(0);
 
@@ -440,6 +443,7 @@ void sptrsvcuSPARSE_solve(ExecutionSpace &space, KernelHandle *sptrsv_handle,
   }
 #endif
 #else
+  (void)space;
   (void)sptrsv_handle;
   (void)nrows;
   (void)row_map;
