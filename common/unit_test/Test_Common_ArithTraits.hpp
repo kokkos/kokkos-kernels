@@ -413,9 +413,20 @@ class ArithTraitsTesterBase {
     }
 
     if (AT::has_infinity) {
-      if (!AT::isInf(AT::infinity())) {
-        out << "AT::isInf (inf) != true" << endl;
-        FAILURE();
+// Compiler intrinsic casts from inf of type half_t / bhalf_t to inf
+// of type float in CUDA, SYCL and HIP do not work yet.
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_SYCL) || \
+    defined(KOKKOS_ENABLE_HIP)
+      namespace KE = Kokkos::Experimental;
+      if constexpr (!std::is_same<ScalarType, KE::half_t>::value &&
+                    !std::is_same<ScalarType, KE::bhalf_t>::value) {
+#else
+      {
+#endif  // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_SYCL || KOKKOS_ENABLE_HIP
+        if (!AT::isInf(AT::infinity())) {
+          out << "AT::isInf (inf) != true" << endl;
+          FAILURE();
+        }
       }
     }
     if (!std::is_same<ScalarType, decltype(AT::infinity())>::value) {
@@ -1495,13 +1506,24 @@ class ArithTraitsTesterFloatingPointBase<ScalarType, DeviceType, 0>
       FAILURE();
     }
 
-    if (!AT::isNan(AT::nan())) {
-#if KOKKOS_VERSION < 40199
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF("NaN is not NaN\n");
+// Compiler intrinsic casts from nan of type half_t / bhalf_t to nan
+// of type float in CUDA, SYCL and HIP do not work yet.
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_SYCL) || \
+    defined(KOKKOS_ENABLE_HIP)
+    namespace KE = Kokkos::Experimental;
+    if constexpr (!std::is_same<ScalarType, KE::half_t>::value &&
+                  !std::is_same<ScalarType, KE::bhalf_t>::value) {
 #else
-      Kokkos::printf("NaN is not NaN\n");
+    {
+#endif  // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_SYCL || KOKKOS_ENABLE_HIP
+      if (!AT::isNan(AT::nan())) {
+#if KOKKOS_VERSION < 40199
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("NaN is not NaN\n");
+#else
+        Kokkos::printf("NaN is not NaN\n");
 #endif
-      FAILURE();
+        FAILURE();
+      }
     }
 
     const ScalarType zero = AT::zero();
