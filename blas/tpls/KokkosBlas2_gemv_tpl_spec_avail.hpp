@@ -20,7 +20,7 @@
 namespace KokkosBlas {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class AT, class XT, class YT>
+template <class ExecutionSpace, class AT, class XT, class YT>
 struct gemv_tpl_spec_avail {
   enum : bool { value = false };
 };
@@ -32,6 +32,7 @@ struct gemv_tpl_spec_avail {
                                              LAYOUTY, MEMSPACE)           \
   template <class ExecSpace>                                              \
   struct gemv_tpl_spec_avail<                                             \
+      ExecSpace,                                                          \
       Kokkos::View<const SCALAR**, LAYOUTA,                               \
                    Kokkos::Device<ExecSpace, MEMSPACE>,                   \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
@@ -78,6 +79,7 @@ KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>,
                                                LAYOUTY, MEMSPACE)         \
   template <class ExecSpace>                                              \
   struct gemv_tpl_spec_avail<                                             \
+      ExecSpace,                                                          \
       Kokkos::View<const SCALAR**, LAYOUTA,                               \
                    Kokkos::Device<ExecSpace, MEMSPACE>,                   \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,             \
@@ -126,8 +128,9 @@ KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>,
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
 
 #define KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ROCBLAS(SCALAR, LAYOUT)    \
-  template <>                                                      \
+  template <class ExecSpace>                                       \
   struct gemv_tpl_spec_avail<                                      \
+      ExecSpace,                                                   \
       Kokkos::View<const SCALAR**, LAYOUT,                         \
                    Kokkos::Device<Kokkos::Experimental::HIP,       \
                                   Kokkos::Experimental::HIPSpace>, \
@@ -164,8 +167,9 @@ KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<float>,
 #ifdef KOKKOS_ENABLE_SYCL
 
 #define KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ONEMKL(SCALAR, LAYOUT)               \
-  template <>                                                                \
+  template <class ExecSpace>                                                 \
   struct gemv_tpl_spec_avail<                                                \
+      ExecSpace,                                                             \
       Kokkos::View<const SCALAR**, LAYOUT,                                   \
                    Kokkos::Device<Kokkos::Experimental::SYCL,                \
                                   Kokkos::Experimental::SYCLDeviceUSMSpace>, \
