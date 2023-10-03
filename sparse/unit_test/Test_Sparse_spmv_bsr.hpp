@@ -57,8 +57,8 @@ using kokkos_complex_float  = Kokkos::complex<float>;
    https://github.com/kokkos/kokkos-kernels/issues/1943
 */
 struct OptCtrls {
-  KokkosKernels::Experimental::Controls ctrls_;
   bool present_;
+  KokkosKernels::Experimental::Controls ctrls_;
 
   OptCtrls() : present_(false) {}
   OptCtrls(const KokkosKernels::Experimental::Controls &ctrls)
