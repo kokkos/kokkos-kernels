@@ -591,6 +591,7 @@ void test_adaptive_BDF() {
   constexpr int num_steps = 512, max_newton_iters = 5;
   int order = 1, num_equal_steps = 0;
   double dt = (t_end - t_start) / num_steps;
+  double t  = t_start;
 
   vec_type y0("initial conditions", mySys.neqs), y_new("solution", mySys.neqs);
   vec_type rhs("rhs", mySys.neqs), update("update", mySys.neqs);
@@ -599,9 +600,6 @@ void test_adaptive_BDF() {
   // Initial condition
   Kokkos::deep_copy(y0, 0.5);
 
-  std::cout << "Initial conditions" << std::endl;
-  std::cout << "   y0=" << y0(0) << ", dt=" << dt << std::endl;
-
   // Initialize D
   auto D = Kokkos::subview(temp, Kokkos::ALL(), Kokkos::pair<int, int>(0, 8));
   D(0, 0) = y0(0);
@@ -609,18 +607,78 @@ void test_adaptive_BDF() {
   D(0, 1) = dt*rhs(0);
   Kokkos::deep_copy(rhs, 0);
 
+  std::cout << "**********************\n"
+	    << "        Step 1\n"
+	    << "**********************" << std::endl;
+
+  std::cout << "Initial conditions" << std::endl;
+  std::cout << "   y0=" << y0(0) << ", t=" << t << ", dt=" << dt << std::endl;
+
   std::cout << "Initial D: {" << D(0, 0) << ", " << D(0, 1) << ", " << D(0, 2) << ", " << D(0, 3)
 	    << ", " << D(0, 4) << ", " << D(0, 5) << ", " << D(0, 6) << ", " << D(0, 7) << "}" << std::endl;
 
 
-  KokkosODE::Impl::BDFStep(mySys, t_start, dt, t_end, order,
+  KokkosODE::Impl::BDFStep(mySys, t, dt, t_end, order,
 			   num_equal_steps, max_newton_iters, atol, rtol, 0.2,
 			   y0, y_new, rhs, update, temp, temp2);
 
-  std::cout << "dt: " << dt << std::endl;
-  std::cout << "y_new: " << y_new(0) << std::endl;
+  for(int eqIdx = 0; eqIdx < mySys.neqs; ++eqIdx) {
+    y0(eqIdx) = y_new(eqIdx);
+  }
+
+  std::cout << "**********************\n"
+	    << "        Step 2\n"
+	    << "**********************" << std::endl;
+
+  std::cout << "   y0=" << y0(0) << ", t=" << t << ", dt: " << dt << std::endl;
+
+  std::cout << "Initial D: {" << D(0, 0) << ", " << D(0, 1) << ", " << D(0, 2) << ", " << D(0, 3)
+	    << ", " << D(0, 4) << ", " << D(0, 5) << ", " << D(0, 6) << ", " << D(0, 7) << "}" << std::endl;
+
+  KokkosODE::Impl::BDFStep(mySys, t, dt, t_end, order,
+			   num_equal_steps, max_newton_iters, atol, rtol, 0.2,
+			   y0, y_new, rhs, update, temp, temp2);
+
+  for(int eqIdx = 0; eqIdx < mySys.neqs; ++eqIdx) {
+    y0(eqIdx) = y_new(eqIdx);
+  }
+
+  std::cout << "**********************\n"
+	    << "        Step 3\n"
+	    << "**********************" << std::endl;
+
+  std::cout << "   y0=" << y0(0) << ", t=" << t << ", dt: " << dt << std::endl;
+
+  std::cout << "Initial D: {" << D(0, 0) << ", " << D(0, 1) << ", " << D(0, 2) << ", " << D(0, 3)
+	    << ", " << D(0, 4) << ", " << D(0, 5) << ", " << D(0, 6) << ", " << D(0, 7) << "}" << std::endl;
+
+  KokkosODE::Impl::BDFStep(mySys, t, dt, t_end, order,
+			   num_equal_steps, max_newton_iters, atol, rtol, 0.2,
+			   y0, y_new, rhs, update, temp, temp2);
+
+  std::cout << "Final t: " << t << ", y=" << y_new(0) << std::endl;
 
 } // test_adaptive_BDF()
+
+template <class execution_space, class scalar_type>
+void test_adaptive_BDF_v2() {
+  using vec_type = Kokkos::View<scalar_type*, execution_space>;
+  using mat_type = Kokkos::View<scalar_type**, execution_space>;
+
+  std::cout << "\n\n\nBDF_v2 test starting\n" << std::endl;
+
+  Logistic mySys(1, 1);
+
+  constexpr double t_start = 0.0, t_end = 6.0; //, atol = 1.0e-6, rtol = 1.0e-4;
+  vec_type y0("initial conditions", mySys.neqs), y_new("solution", mySys.neqs);
+  Kokkos::deep_copy(y0, 0.5);
+
+  mat_type temp("buffer1", mySys.neqs, 21 + 2*mySys.neqs + 4), temp2("buffer2", 6, 7);
+
+  KokkosODE::Experimental::BDFSolve(mySys, t_start, t_end, 0.0117188,
+				    (t_end - t_start) / 10,
+				    y0, y_new, temp, temp2);
+}
 
 }  // namespace Test
 
@@ -641,4 +699,5 @@ TEST_F(TestCategory, BDF_Nordsieck) {
 }
 TEST_F(TestCategory, BDF_adaptive) {
   ::Test::test_adaptive_BDF<TestDevice, double>();
+  ::Test::test_adaptive_BDF_v2<TestDevice, double>();
 }

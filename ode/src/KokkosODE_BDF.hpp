@@ -127,18 +127,72 @@ struct BDF {
       t += dt;
     }
   } // Solve()
-
-  template <class ode_type, class mat_type, class vec_type, class scalar_type>
-  KOKKOS_FUNCTION static void SolveODE(
-      const ode_type& ode, const KokkosODE::Experimental::ODE_params& params,
-      const scalar_type t_start, const scalar_type t_end, const vec_type& y0,
-      const vec_type& y, const mat_type& buffer) {
-    const table_type table;
-
-    (void) ode, params, t_start, t_end, y0, y, buffer;
-
-  } // SolveODE
 };
+
+/// \brief BDF Solve integrates an ordinary differential equation
+/// using an order and time adaptive BDF method.
+///
+/// The integration starts with a BDF1 method and adaptively increases
+/// or decreases both dt and the order of integration based on error
+/// estimators. This function is marked as KOKKOS_FUNCTION so it can
+/// be called on host and device.
+///
+/// \tparam ode_type the type of the ode object to integrated
+/// \tparam mv_type a rank-2 view
+/// \tparam vec_type a rank-1 view
+///
+/// \param ode [in]: the ode to integrate
+/// \param t_start [in]: time at which the integration starts
+/// \param t_end [in]: time at which the integration stops
+/// \param initial_step [in]: initial value for dt
+/// \param max_step [in]: maximum value for dt
+/// \param y0 [in/out]: vector of initial conditions, set to the solution
+/// at the end of the integration
+/// \param y_new [out]: vector of solution at t_end
+/// \param temp [in]: vectors for temporary storage
+/// \param temp2 [in]: vectors for temporary storage
+template <class ode_type, class mat_type, class vec_type>
+KOKKOS_FUNCTION void BDFSolve(const ode_type& ode, const double t_start, const double t_end,
+			      const double initial_step, const double max_step,
+			      const vec_type& y0, const vec_type& y_new,
+			      mat_type& temp, mat_type& temp2) {
+
+  // This needs to go away and be pulled out of temp instead...
+  vec_type rhs("rhs", ode.neqs), update("update", ode.neqs);
+  (void) max_step;
+
+  int order = 1, num_equal_steps = 0;
+  constexpr double min_factor = 0.2;
+  double dt = initial_step;
+  double t  = t_start;
+
+  constexpr int max_newton_iters = 5;
+  double atol = 1.0e-6, rtol = 1.0e-4;
+
+  // Initialize D(:, 0) = y0 and D(:, 1) = dt*rhs
+  auto D = Kokkos::subview(temp, Kokkos::ALL(), Kokkos::pair<int, int>(0, 8));
+  ode.evaluate_function(0, 0, y0, rhs);
+  for(int eqIdx = 0; eqIdx < ode.neqs; ++eqIdx) {
+    D(eqIdx, 0) = y0(0);
+    D(eqIdx, 1) = dt*rhs(eqIdx);
+    rhs(eqIdx) = 0;
+  }
+
+  // Now we loop over the time interval [t_start, t_end]
+  // and solve our ODE.
+  while(t < t_end) {
+    KokkosODE::Impl::BDFStep(ode, t, dt, t_end, order,
+			     num_equal_steps, max_newton_iters, atol, rtol, min_factor,
+			     y0, y_new, rhs, update, temp, temp2);
+
+    for(int eqIdx = 0; eqIdx < ode.neqs; ++eqIdx) {
+      y0(eqIdx) = y_new(eqIdx);
+    }
+    std::cout << "At t=" << t << ", y=" << y_new(0)
+	      << ", next dt will be " << dt << ", order will be " << order << std::endl;
+  }
+
+} // BDFSolve
 
 }  // namespace Experimental
 }  // namespace KokkosODE
