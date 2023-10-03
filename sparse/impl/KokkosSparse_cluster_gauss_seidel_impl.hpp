@@ -528,6 +528,7 @@ class ClusterGaussSeidel {
     // symmetric and non-symmetric input cases.
     rowmap_t sym_xadj;
     colinds_t sym_adj;
+    // TODO: pass my_exec_space into KokkosGraph kernels
     if (!this->is_symmetric) {
       KokkosKernels::Impl::symmetrize_graph_symbolic_hashmap<
           in_rowmap_t, in_colinds_t, rowmap_t, colinds_t, MyExecSpace>(
@@ -735,7 +736,8 @@ class ClusterGaussSeidel {
   };
 
   void initialize_numeric() {
-    auto gsHandle = get_gs_handle();
+    auto gsHandle      = get_gs_handle();
+    auto my_exec_space = gsHandle->get_execution_space();
     if (!gsHandle->is_symbolic_called()) {
       this->initialize_symbolic();
     }
@@ -753,10 +755,11 @@ class ClusterGaussSeidel {
     scalar_persistent_work_view_t inverse_diagonal(
         Kokkos::view_alloc(Kokkos::WithoutInitializing, "Aii^-1"), num_rows);
     nnz_lno_t rows_per_team = this->handle->get_team_work_size(
-        suggested_team_size, MyExecSpace().concurrency(), num_rows);
+        suggested_team_size, my_exec_space.concurrency(), num_rows);
 
     if (have_diagonal_given) {
-      Kokkos::deep_copy(inverse_diagonal, this->given_inverse_diagonal);
+      Kokkos::deep_copy(my_exec_space, inverse_diagonal,
+                        this->given_inverse_diagonal);
     } else {
       // extract inverse diagonal from matrix
       Get_Matrix_Diagonals gmd(this->row_map, this->entries, this->values,
@@ -764,7 +767,8 @@ class ClusterGaussSeidel {
       if (gsHandle->use_teams()) {
         Kokkos::parallel_for(
             "KokkosSparse::GaussSeidel::team_get_matrix_diagonals",
-            team_policy_t((num_rows + rows_per_team - 1) / rows_per_team,
+            team_policy_t(my_exec_space,
+                          (num_rows + rows_per_team - 1) / rows_per_team,
                           suggested_team_size, suggested_vector_size),
             gmd);
       } else {
@@ -787,7 +791,8 @@ class ClusterGaussSeidel {
              nnz_scalar_t omega = Kokkos::ArithTraits<nnz_scalar_t>::one(),
              bool apply_forward = true, bool apply_backward = true,
              bool /*update_y_vector*/ = true) {
-    auto gsHandle = get_gs_handle();
+    auto gsHandle      = get_gs_handle();
+    auto my_exec_space = gsHandle->get_execution_space();
 
     size_type nnz                            = entries.extent(0);
     nnz_lno_persistent_work_view_t color_adj = gsHandle->get_color_adj();
@@ -796,6 +801,7 @@ class ClusterGaussSeidel {
 
     color_t numColors = gsHandle->get_num_colors();
 
+    // TODO: continue after twostage merges
     if (init_zero_x_vector) {
       KokkosKernels::Impl::zero_vector<x_value_array_type, MyExecSpace>(
           num_cols, x_lhs_output_vec);
