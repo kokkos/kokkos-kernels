@@ -47,3 +47,4 @@ concurrency:
         run: |
           hostname
           ls -lat
+          pwd
