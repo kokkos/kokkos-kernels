@@ -18,6 +18,7 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+jobs:
   skxci:
     # TODO: allow re-run via retest label if: ${{ github.event.label.name == 'AT: RETEST' }}
     name: skx-ci
