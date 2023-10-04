@@ -1,0 +1,49 @@
+name: github-SKX
+
+on:
+  pull_request:
+    paths-ignore:
+    - '**/*.rst'
+    - '**/*.md'
+    - '**/requirements.txt'
+    - '**/*.py'
+    - 'docs/**'
+    types: [ opened, reopened, synchronize ]
+
+permissions:
+  contents: none
+
+# Cancels any in progress 'workflow' associated with this PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+  skxci:
+    # TODO: allow re-run via retest label if: ${{ github.event.label.name == 'AT: RETEST' }}
+    name: skx-ci
+    runs-on: [skx]
+
+    strategy:
+      matrix:
+        include:
+          - backend: "SERIAL"
+            cmake_build_type: "RelWithDebInfo"
+            debug_bounds_check: "ON"
+
+    steps:
+      - name: checkout_kokkos_kernels
+        uses: actions/checkout@v3
+        with:
+          path: kokkos-kernels
+
+      - name: checkout_kokkos
+        uses: actions/checkout@v3
+        with:
+          repository: kokkos/kokkos
+          ref: ${{ github.base_ref }}
+          path: kokkos
+
+      - name: testing
+        run: |
+          hostname
+          ls -lat
