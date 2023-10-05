@@ -90,29 +90,38 @@ double F77_BLAS_MANGLE(ddot, DDOT)(const int* N, const double* x,
                                    const int* y_inc);
 #if defined(KOKKOSKERNELS_TPL_BLAS_RETURN_COMPLEX)
 // clang-format off
-// use C complex types as return types instead of std::complex, otherwise compiler will complain
+// For the return type, don't use std::complex, otherwise compiler will complain
 // error: 'cdotu_' has C-linkage specified, but returns user-defined type 'std::complex' which is incompatible with C [-Werror,-Wreturn-type-c-linkage]"
+// But with float _Complex, I got error: '_Complex' is a C99 extension [-Werror,-Wc99-extensions].
+// So I just use a C struct.
 // clang-format on
-float _Complex F77_BLAS_MANGLE(cdotu, CDOTU)(const int* N,
-                                             const std::complex<float>* x,
-                                             const int* x_inc,
-                                             const std::complex<float>* y,
-                                             const int* y_inc);
-double _Complex F77_BLAS_MANGLE(zdotu, ZDOTU)(const int* N,
-                                              const std::complex<double>* x,
-                                              const int* x_inc,
-                                              const std::complex<double>* y,
-                                              const int* y_inc);
-float _Complex F77_BLAS_MANGLE(cdotc, CDOTC)(const int* N,
-                                             const std::complex<float>* x,
-                                             const int* x_inc,
-                                             const std::complex<float>* y,
-                                             const int* y_inc);
-double _Complex F77_BLAS_MANGLE(zdotc, ZDOTC)(const int* N,
-                                              const std::complex<double>* x,
-                                              const int* x_inc,
-                                              const std::complex<double>* y,
-                                              const int* y_inc);
+typedef struct {
+  float vals[2];
+} _kk_float2;
+typedef struct {
+  double vals[2];
+} _kk_double2;
+
+_kk_float2 F77_BLAS_MANGLE(cdotu, CDOTU)(const int* N,
+                                         const std::complex<float>* x,
+                                         const int* x_inc,
+                                         const std::complex<float>* y,
+                                         const int* y_inc);
+_kk_double2 F77_BLAS_MANGLE(zdotu, ZDOTU)(const int* N,
+                                          const std::complex<double>* x,
+                                          const int* x_inc,
+                                          const std::complex<double>* y,
+                                          const int* y_inc);
+_kk_float2 F77_BLAS_MANGLE(cdotc, CDOTC)(const int* N,
+                                         const std::complex<float>* x,
+                                         const int* x_inc,
+                                         const std::complex<float>* y,
+                                         const int* y_inc);
+_kk_double2 F77_BLAS_MANGLE(zdotc, ZDOTC)(const int* N,
+                                          const std::complex<double>* x,
+                                          const int* x_inc,
+                                          const std::complex<double>* y,
+                                          const int* y_inc);
 #else
 void F77_BLAS_MANGLE(cdotu,
                      CDOTU)(std::complex<float>* res, const int* N,
@@ -803,7 +812,8 @@ std::complex<float> HostBlas<std::complex<float> >::dot(
     int n, const std::complex<float>* x, int x_inc,
     const std::complex<float>* y, int y_inc) {
 #if defined(KOKKOSKERNELS_TPL_BLAS_RETURN_COMPLEX)
-  return F77_FUNC_CDOTC(&n, x, &x_inc, y, &y_inc);
+  _kk_float2 res = F77_FUNC_CDOTC(&n, x, &x_inc, y, &y_inc);
+  return std::complex<float>(res.vals[0], res.vals[1]);
 #else
   std::complex<float> res;
   F77_FUNC_CDOTC(&res, &n, x, &x_inc, y, &y_inc);
@@ -975,7 +985,8 @@ std::complex<double> HostBlas<std::complex<double> >::dot(
     int n, const std::complex<double>* x, int x_inc,
     const std::complex<double>* y, int y_inc) {
 #if defined(KOKKOSKERNELS_TPL_BLAS_RETURN_COMPLEX)
-  return F77_FUNC_ZDOTC(&n, x, &x_inc, y, &y_inc);
+  _kk_double2 res = F77_FUNC_ZDOTC(&n, x, &x_inc, y, &y_inc);
+  return std::complex<double>(res.vals[0], res.vals[1]);
 #else
   std::complex<double> res;
   F77_FUNC_ZDOTC(&res, &n, x, &x_inc, y, &y_inc);
