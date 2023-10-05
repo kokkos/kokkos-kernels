@@ -105,11 +105,11 @@ struct LotkaVolterra {
 //
 // Equations: y0' = -0.04*y0 + 10e4*y1*y2
 //            y1' =  0.04*y0 - 10e4*y1*y2 - 3e7 * y1**2
-//            y2' = 3e-7 * y1**2
-struct StiffChemestry {
+//            y2' = 3e7 * y1**2
+struct StiffChemistry {
   static constexpr int neqs = 3;
 
-  StiffChemestry() {}
+  StiffChemistry() {}
 
   template <class vec_type1, class vec_type2>
   KOKKOS_FUNCTION void evaluate_function(const double /*t*/,
@@ -126,14 +126,14 @@ struct StiffChemestry {
                                          const double /*dt*/, const vec_type& y,
                                          const mat_type& jac) const {
     jac(0, 0) = -0.04;
-    jac(0, 1) = 1.e4 * y(2);
-    jac(0, 2) = 1.e4 * y(1);
-    jac(1, 0) = 0.04;
+    jac(0, 1) =  1.e4 * y(2);
+    jac(0, 2) =  1.e4 * y(1);
+    jac(1, 0) =  0.04;
     jac(1, 1) = -1.e4 * y(2) - 3.e7 * 2.0 * y(1);
     jac(1, 2) = -1.e4 * y(1);
-    jac(2, 0) = 0.00;
-    jac(2, 1) = 3.e7 * 2.0 * y(1);
-    jac(2, 2) = 0.0;
+    jac(2, 0) =  0.0;
+    jac(2, 1) =  3.e7 * 2.0 * y(1);
+    jac(2, 2) =  0.0;
   }
 };
 
@@ -377,12 +377,12 @@ void test_BDF_LotkaVolterra() {
 }
 
 template <class execution_space, class scalar_type>
-void test_BDF_StiffChemestry() {
+void test_BDF_StiffChemistry() {
   using vec_type = Kokkos::View<scalar_type*, execution_space>;
   using mv_type  = Kokkos::View<scalar_type**, execution_space>;
   using mat_type = Kokkos::View<scalar_type**, execution_space>;
 
-  StiffChemestry mySys{};
+  StiffChemistry mySys{};
 
   const scalar_type t_start = 0.0, t_end = 500.0;
   vec_type y0("initial conditions", mySys.neqs), y_new("solution", mySys.neqs);
@@ -402,9 +402,9 @@ void test_BDF_StiffChemestry() {
   Kokkos::deep_copy(y_vecs, 0.0);
 
   Kokkos::RangePolicy<execution_space> myPolicy(0, 1);
-  BDFSolve_wrapper<StiffChemestry, KokkosODE::Experimental::BDF_type::BDF5,
+  BDFSolve_wrapper<StiffChemistry, KokkosODE::Experimental::BDF_type::BDF5,
                    vec_type, mv_type, mat_type, scalar_type>
-      solve_wrapper(mySys, t_start, t_end, 200000, y0, y_new, rhs, update,
+      solve_wrapper(mySys, t_start, t_end, 110000, y0, y_new, rhs, update,
                     y_vecs, kstack, temp, jac);
   Kokkos::parallel_for(myPolicy, solve_wrapper);
 }
@@ -539,7 +539,7 @@ void update_D(const int order, const scalar_type factor, const mat_type& coeffs,
 
 template <class execution_space, class scalar_type>
 void test_Nordsieck() {
-  StiffChemestry mySys{};
+  StiffChemistry mySys{};
 
   Kokkos::View<scalar_type**, execution_space> R("coeffs", 6, 6), U("coeffs", 6, 6);
   Kokkos::View<scalar_type**, execution_space> D("D", 8, mySys.neqs), tempD("tmp", 8, mySys.neqs);
@@ -664,20 +664,63 @@ template <class execution_space, class scalar_type>
 void test_adaptive_BDF_v2() {
   using vec_type = Kokkos::View<scalar_type*, execution_space>;
   using mat_type = Kokkos::View<scalar_type**, execution_space>;
+  using KAT      = Kokkos::ArithTraits<scalar_type>;
 
   std::cout << "\n\n\nBDF_v2 test starting\n" << std::endl;
 
   Logistic mySys(1, 1);
 
-  constexpr double t_start = 0.0, t_end = 6.0; //, atol = 1.0e-6, rtol = 1.0e-4;
+  const scalar_type t_start = KAT::zero(), t_end = 6 * KAT::one(); //, atol = 1.0e-6, rtol = 1.0e-4;
   vec_type y0("initial conditions", mySys.neqs), y_new("solution", mySys.neqs);
   Kokkos::deep_copy(y0, 0.5);
 
   mat_type temp("buffer1", mySys.neqs, 21 + 2*mySys.neqs + 4), temp2("buffer2", 6, 7);
 
+  {
+    scalar_type dt = KAT::zero();
+    vec_type f0("initial value f", mySys.neqs);
+    mySys.evaluate_function(t_start, KAT::zero(), y0, f0);
+    KokkosODE::Impl::initial_step_size(mySys, 1, t_start, 1e-6, 1e-4, y0, f0, temp, dt);
+
+    std::cout << "Initial Step Size: dt=" << dt << std::endl;
+  }
+
   KokkosODE::Experimental::BDFSolve(mySys, t_start, t_end, 0.0117188,
 				    (t_end - t_start) / 10,
 				    y0, y_new, temp, temp2);
+}
+
+template <class execution_space, class scalar_type>
+void test_BDF_adaptive_stiff() {
+  using vec_type = Kokkos::View<scalar_type*, execution_space>;
+  using mat_type = Kokkos::View<scalar_type**, execution_space>;
+  using KAT      = Kokkos::ArithTraits<scalar_type>;
+
+  StiffChemistry mySys{};
+
+  const scalar_type t_start = KAT::zero(), t_end = 500*KAT::one();
+  scalar_type dt = KAT::zero();
+  vec_type y0("initial conditions", mySys.neqs), y_new("solution", mySys.neqs);
+  auto y0_h = Kokkos::create_mirror_view(y0);
+  y0_h(0) = KAT::one();
+  y0_h(1) = KAT::zero();
+  y0_h(2) = KAT::zero();
+  Kokkos::deep_copy(y0, y0_h);
+
+  mat_type temp("buffer1", mySys.neqs, 21 + 2*mySys.neqs + 4), temp2("buffer2", 6, 7);
+
+  {
+    vec_type f0("initial value f", mySys.neqs);
+    mySys.evaluate_function(t_start, KAT::zero(), y0, f0);
+    KokkosODE::Impl::initial_step_size(mySys, 1, t_start, 1e-6, 1e-4, y0, f0, temp, dt);
+    Kokkos::deep_copy(temp, KAT::zero()); // zeroing out temp to avoid surprises down the road...
+  }
+  std::cout << "Initial Step Size: dt=" << dt << std::endl;
+
+  KokkosODE::Experimental::BDFSolve(mySys, t_start, t_end, dt,
+				    (t_end - t_start) / 10,
+				    y0, y_new, temp, temp2);
+
 }
 
 }  // namespace Test
@@ -688,8 +731,8 @@ TEST_F(TestCategory, BDF_Logistic_serial) {
 TEST_F(TestCategory, BDF_LotkaVolterra_serial) {
   ::Test::test_BDF_LotkaVolterra<TestDevice, double>();
 }
-TEST_F(TestCategory, BDF_StiffChemestry_serial) {
-  ::Test::test_BDF_StiffChemestry<TestDevice, double>();
+TEST_F(TestCategory, BDF_StiffChemistry_serial) {
+  ::Test::test_BDF_StiffChemistry<TestDevice, double>();
 }
 TEST_F(TestCategory, BDF_parallel_serial) {
   ::Test::test_BDF_parallel<TestDevice, double>();
@@ -700,4 +743,7 @@ TEST_F(TestCategory, BDF_Nordsieck) {
 TEST_F(TestCategory, BDF_adaptive) {
   ::Test::test_adaptive_BDF<TestDevice, double>();
   ::Test::test_adaptive_BDF_v2<TestDevice, double>();
+}
+TEST_F(TestCategory, BDF_StiffChemistry_adaptive) {
+  ::Test::test_BDF_adaptive_stiff<TestDevice, double>();
 }

@@ -211,35 +211,79 @@ template <class mat_type, class scalar_type>
 KOKKOS_FUNCTION void update_D(const int order, const scalar_type factor,
 			      const mat_type& coeffs,
 			      const mat_type& tempD, const mat_type& D) {
-  // std::cout << "Extract subviews from D and tempD" << std::endl;
-  // std::cout << "D: {" << D(0, 0) << ", " << D(0, 1) << ", " << D(0, 2) << ", " << D(0, 3) << ", " << D(0, 4) << "}" << std::endl;
+
   auto subD     = Kokkos::subview(D,     Kokkos::ALL(), Kokkos::pair<int, int>(0, order + 1));
   auto subTempD = Kokkos::subview(tempD, Kokkos::ALL(), Kokkos::pair<int, int>(0, order + 1));
 
-  // std::cout << "subD: { " << subD(0, 0);
-  // for(int orderIdx = 1; orderIdx < order + 1; ++orderIdx) {
-  //   std::cout << ", " << subD(0, orderIdx);
-  // }
-  // std::cout << " }"<< std::endl;
-  // std::cout << "subD shape: (" << subD.extent(0) << ", " << subD.extent(1) << ")" << std::endl;
-
   compute_coeffs(order, factor, coeffs);
   auto R = Kokkos::subview(coeffs, Kokkos::pair<int, int>(0, order + 1), Kokkos::pair<int, int>(0, order + 1));
-  // std::cout << "R: " << R(0, 0) << ", " << R(0, 1) << ", " << R(1, 0) << ", " << R(1, 1) << std::endl;
-  // std::cout << "R shape: (" << R.extent(0) << ", " << R.extent(1) << ")" << std::endl;
   KokkosBatched::SerialGemm<KokkosBatched::Trans::NoTranspose,
 			    KokkosBatched::Trans::NoTranspose,
 			    KokkosBatched::Algo::Gemm::Blocked>::invoke(1.0, subD, R, 0.0, subTempD);
-  // std::cout << "subTempD: " << subTempD(0, 0) << ", " << subTempD(0, 1) << std::endl;
 
   compute_coeffs(order, 1.0, coeffs);
   auto U = Kokkos::subview(coeffs, Kokkos::pair<int, int>(0, order + 1), Kokkos::pair<int, int>(0, order + 1));
-  // std::cout << "U: " << R(0, 0) << ", " << R(0, 1) << ", " << R(1, 0) << ", " << R(1, 1) << std::endl;
   KokkosBatched::SerialGemm<KokkosBatched::Trans::NoTranspose,
 			    KokkosBatched::Trans::NoTranspose,
 			    KokkosBatched::Algo::Gemm::Blocked>::invoke(1.0, subTempD, U, 0.0, subD);
-  // std::cout << "subTempD: " << subD(0, 0) << ", " << subD(0, 1) << std::endl;
 }
+
+template <class ode_type, class mat_type, class vec_type, class scalar_type>
+KOKKOS_FUNCTION void initial_step_size(const ode_type ode, const int order, const scalar_type t0,
+				       const scalar_type atol, const scalar_type rtol,
+				       const vec_type& y0, const vec_type& f0,
+				       const mat_type& temp, scalar_type& dt_ini) {
+  using KAT = Kokkos::ArithTraits<scalar_type>;
+
+  std::cout << "Estimating initial step size" << std::endl;
+
+  // Extract subviews to store intermediate data
+  auto scale = Kokkos::subview(temp, Kokkos::ALL(), 0); // Scaling coefficients for error calculation
+  auto y1    = Kokkos::subview(temp, Kokkos::ALL(), 1); // Scaling coefficients for error calculation
+  auto f1    = Kokkos::subview(temp, Kokkos::ALL(), 2); // Scaling coefficients for error calculation
+
+  std::cout << "scale: rank=" << scale.rank() << ", extent(0)=" << scale.extent(0) << std::endl;
+
+  // Compute norms for y0 and f0
+  double n0 = KAT::zero(), n1 = KAT::zero(), dt0;
+  for(int eqIdx = 0; eqIdx < ode.neqs; ++eqIdx) {
+    scale(eqIdx) = atol + rtol * Kokkos::abs(y0(eqIdx));
+    n0 += Kokkos::pow(y0(eqIdx) / scale(eqIdx), 2);
+    n1 += Kokkos::pow(f0(eqIdx) / scale(eqIdx), 2);
+  }
+  n0 = Kokkos::sqrt(n0);
+  n1 = Kokkos::sqrt(n1);
+
+  // Select dt0
+  if((n0 < 1e-5) || (n1 < 1e-5)) {
+    dt0 = 1e-6;
+  } else {
+    dt0 = 0.01 * n0 / n1;
+  }
+
+  // Estimate y at t0 + dt0
+  for(int eqIdx = 0; eqIdx < ode.neqs; ++eqIdx) {
+    y1(eqIdx) = y0(eqIdx) + dt0 * f0(eqIdx);
+  }
+
+  // Compute f at t0+dt0 and y1,
+  // then compute the norm of f(t0+dt0, y1) - f(t0, y0)
+  scalar_type n2 = KAT::zero();
+  ode.evaluate_function(t0 + dt0, dt0, y1, f1);
+  for(int eqIdx = 0; eqIdx < ode.neqs; ++eqIdx) {
+    n2 += Kokkos::pow((f1(eqIdx) - f0(eqIdx)) / scale(eqIdx), 2);
+  }
+  n2 = Kokkos::sqrt(n2) / dt0;
+
+  // Finally select initial time step dt_ini
+  if((n1 <= 1e-15) && (n2 <= 1e-15)) {
+    dt_ini = Kokkos::max(1e-6, dt0 * 1e-3);
+  } else {
+    dt_ini = Kokkos::pow(0.01 / Kokkos::max(n1, n2), KAT::one() / (order + 1));
+  }
+
+  dt_ini = Kokkos::min(100 * dt0, dt_ini);
+} // initial_step_size
 
 template <class ode_type, class vec_type,
           class mat_type, class scalar_type>
@@ -284,10 +328,6 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt,
 				   Kokkos::pair<int, int>(offset, offset + ode.neqs + 4)); // Buffer space for gesv calculation
   offset += ode.neqs + 4;
 
-  // std::cout << "update.span_is_contiguous()? " << update.span_is_contiguous() << std::endl;
-
-  // std::cout << "Extract subview from temp2" << std::endl;
-  // std::cout << "  temp2: (" << temp2.extent(0) << ", " << temp2.extent(1) << ")" << std::endl;
   auto coeffs = Kokkos::subview(temp2, Kokkos::ALL(), Kokkos::pair<int, int>(0, 6));
   auto gamma  = Kokkos::subview(temp2, Kokkos::ALL(), 6);
   gamma(0) = 0.0; gamma(1) = 1.0; gamma(2) = 1.5; gamma(3) = 1.83333333; gamma(4) = 2.08333333; gamma(5) = 2.28333333;
@@ -313,9 +353,6 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt,
     y_new(eqIdx) = y_old(eqIdx);
   }
 
-  // std::cout << "Hello 1" << std::endl;
-  // std::cout << "dt=" << dt << std::endl;
-
   double t_new = 0;
   bool step_accepted = false;
   int count = 0;
@@ -329,8 +366,6 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt,
       num_equal_steps = 0;
     }
     dt = t_new - t;
-
-    // std::cout << "Hello 2" << std::endl;
 
     for(int eqIdx = 0; eqIdx < sys.neqs; ++eqIdx) {
       y_predict(eqIdx) = 0;
@@ -346,13 +381,8 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt,
     auto subGamma = Kokkos::subview(gamma, Kokkos::pair<int, int>(1, order + 1));
     KokkosBlas::Experimental::serial_gemv('N', 1.0 / alpha[order], subD, subGamma, 0.0, psi);
 
-    // std::cout << "Hello 3" << std::endl;
-    // std::cout << "dt=" << dt << std::endl;
-
     sys.c = dt / alpha[order];
     sys.jacobian(y_new, jac);
-    // std::cout << "c=" << sys.c << ", psi=" << psi(0) << ", y_predict=" << y_predict(0) << std::endl;
-    // std::cout << "jac: " << jac(0, 0) << std::endl;
     Kokkos::deep_copy(y_new, y_predict);
     Kokkos::deep_copy(update, 0);
     KokkosODE::Experimental::newton_solver_status newton_status = 
@@ -363,7 +393,6 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt,
       update(eqIdx) = y_new(eqIdx) - y_predict(eqIdx);
     }
 
-    // std::cout << "\n******** Newton Status: " << (newton_status == KokkosODE::Experimental::newton_solver_status::NLS_SUCCESS ? "converged" : "not converged") << " ********\n" << std::endl;
     if(newton_status == KokkosODE::Experimental::newton_solver_status::MAX_ITER) {
       dt = 0.5*dt;
       update_D(order, 0.5, coeffs, tempD, D);
@@ -391,40 +420,30 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt,
       }
     }
 
-    // std::cout << "Hello 5" << std::endl;
     ++count;
     if(count == 5) {step_accepted = true;}
   } // while(!step_accepted)
-
-  // std::cout << "d=" << d(0) << std::endl;
-  // std::cout << "update=" << update(0) << std::endl;
 
   // Now that our time step has been
   // accepted we update all our states
   // and see if we can adapt the order
   // or the time step before going to
   // the next step.
-  ++num_equal_steps; // std::cout << "num equal steps: " << num_equal_steps << std::endl;
+  ++num_equal_steps;
   t = t_new;
   for(int eqIdx = 0; eqIdx < sys.neqs; ++eqIdx) {
     D(eqIdx, order + 2) = update(eqIdx) - D(eqIdx, order + 1);
     D(eqIdx, order + 1) = update(eqIdx);
     for(int orderIdx = order; 0 <= orderIdx; --orderIdx) {
-      // std::cout << "updating D(:, " << orderIdx << ")" << std::endl;
       D(eqIdx, orderIdx) += D(eqIdx, orderIdx + 1);
     }
   }
-  // std::cout << "D: {" << D(0, 0) << ", " << D(0, 1) << ", " << D(0, 2) << ", " << D(0, 3) << ", " << D(0, 4) << "}" << std::endl;
-
-  // std::cout << "Hello 6" << std::endl;
 
   // Not enough steps at constant dt
   // have been succesfull so we do not
   // attempt order adaptation.
   double error_low = 0, error_high = 0;
   if(num_equal_steps < order + 1) { return; }
-
-  // std::cout << "Hello 7" << std::endl;
 
   if(1 < order) {
     for(int eqIdx = 0; eqIdx < sys.neqs; ++eqIdx) {
@@ -444,8 +463,6 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt,
     error_high = Kokkos::ArithTraits<double>::max();
   }
 
-  // std::cout << "Hello 8" << std::endl;
-
   double factor_low, factor_mid, factor_high, factor;
   factor_low  = Kokkos::pow(error_low,  -1.0 / order);
   factor_mid  = Kokkos::pow(error_norm, -1.0 / (order + 1));
@@ -462,14 +479,8 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt,
   }
   factor = Kokkos::fmin(10, safety*factor);
   dt *= factor;
-  // std::cout << "D: {" << D(0, 0) << ", " << D(0, 1) << ", " << D(0, 2) << ", " << D(0, 3) << ", " << D(0, 4) << "}" << std::endl;
-  // std::cout << "new order= " << order << ", factor= " << factor << std::endl;
   update_D(order, factor, coeffs, tempD, D);
   num_equal_steps = 0;
-
-  // std::cout << "Hello 9" << std::endl;
-  // std::cout << "factor=" << factor << std::endl;
-  // std::cout << "dt=" << dt << std::endl;
 
 }  // BDFStep
 
