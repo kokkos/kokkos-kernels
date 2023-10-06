@@ -124,9 +124,13 @@ ELSE()
   # Regular build, not install testing
   # Do all the regular option processing
   IF (NOT KOKKOSKERNELS_HAS_TRILINOS AND NOT KOKKOSKERNELS_HAS_PARENT)
-   # This is a standalone build
-   FIND_PACKAGE(Kokkos REQUIRED)
-   MESSAGE(STATUS "Found Kokkos version ${Kokkos_VERSION} at ${Kokkos_DIR}")
+    # This is a standalone build
+    FIND_PACKAGE(Kokkos REQUIRED)
+    IF((${Kokkos_VERSION} VERSION_EQUAL "4.0.1") OR (${Kokkos_VERSION} VERSION_EQUAL "4.1.00") OR (${Kokkos_VERSION} VERSION_EQUAL "4.1.99"))
+      MESSAGE(STATUS "Found Kokkos version ${Kokkos_VERSION} at ${Kokkos_DIR}")
+    ELSE()
+      MESSAGE(FATAL_ERROR "Kokkos Kernels ${KokkosKernels_VERSION} requires Kokkos 4.0.1, 4.1.00 or develop (4.1.99)")
+    ENDIF()
   ENDIF()
 
   INCLUDE(cmake/kokkos_backends.cmake)
