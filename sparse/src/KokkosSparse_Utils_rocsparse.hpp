@@ -18,6 +18,7 @@
 #define _KOKKOSKERNELS_SPARSEUTILS_ROCSPARSE_HPP
 
 #include <type_traits>
+#include <sstream>
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
 #include <rocm_version.h>
@@ -101,8 +102,9 @@ inline rocsparse_operation mode_kk_to_rocsparse(const char kk_mode[]) {
       myRocsparseOperation = rocsparse_operation_conjugate_transpose;
       break;
     default: {
-      std::cerr << "Mode " << kk_mode[0] << " invalid for rocSPARSE SpMV.\n";
-      throw std::invalid_argument("Invalid mode");
+      std::ostringstream out;
+      out << "Mode " << kk_mode[0] << " invalid for rocSPARSE SpMV.\n";
+      throw std::invalid_argument(out.str());
     }
   }
   return myRocsparseOperation;

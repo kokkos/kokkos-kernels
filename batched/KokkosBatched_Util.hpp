@@ -31,6 +31,7 @@
 #include <ctime>
 
 #include <complex>
+#include <iostream>
 
 #include "Kokkos_Complex.hpp"
 
