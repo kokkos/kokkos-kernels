@@ -2919,8 +2919,7 @@ void lower_tri_solve(TriSolveHandle &thandle, const RowMapType row_map,
   using integer_view_host_t = typename TriSolveHandle::integer_view_host_t;
   using scalar_t            = typename ValuesType::non_const_value_type;
   using range_type          = Kokkos::pair<int, int>;
-  using row_map_host_view_t =
-      Kokkos::View<size_type *, Kokkos::HostSpace> row_map_host;
+  using row_map_host_view_t = Kokkos::View<size_type *, Kokkos::HostSpace>;
 
   row_map_host_view_t row_map_host;
 
@@ -3304,8 +3303,7 @@ void upper_tri_solve(TriSolveHandle &thandle, const RowMapType row_map,
   using integer_view_host_t = typename TriSolveHandle::integer_view_host_t;
   using scalar_t            = typename ValuesType::non_const_value_type;
   using range_type          = Kokkos::pair<int, int>;
-  using row_map_host_view_t =
-      Kokkos::View<size_type *, Kokkos::HostSpace> row_map_host;
+  using row_map_host_view_t = Kokkos::View<size_type *, Kokkos::HostSpace>;
 
   row_map_host_view_t row_map_host;
 
