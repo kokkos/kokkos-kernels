@@ -145,9 +145,9 @@ class MergeMatrixDiagonal {
   KOKKOS_INLINE_FUNCTION
   bool operator()(const size_type di) const {
     position_type pos = diag_to_a_b(di);
-    if (size_t(pos.ai) >= a_.size()) {
+    if (size_type(pos.ai) >= a_.size()) {
       return true;  // on the +a side out of matrix bounds is 1
-    } else if (size_t(pos.bi) >= b_.size()) {
+    } else if (size_type(pos.bi) >= b_.size()) {
       return false;  // on the +b side out of matrix bounds is 0
     } else {
       return KokkosKernels::Impl::safe_gt(a_(pos.ai), b_(pos.bi));
