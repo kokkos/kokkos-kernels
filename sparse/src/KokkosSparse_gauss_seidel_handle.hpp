@@ -104,6 +104,7 @@ class GaussSeidelHandle {
 
   bool called_symbolic;
   bool called_numeric;
+  bool execution_space_is_set;
 
   int suggested_vector_size;
   int suggested_team_size;
@@ -121,6 +122,7 @@ class GaussSeidelHandle {
         numColors(0),
         called_symbolic(false),
         called_numeric(false),
+        execution_space_is_set(false),
         suggested_vector_size(0),
         suggested_team_size(0) {}
 
@@ -134,6 +136,7 @@ class GaussSeidelHandle {
         numColors(0),
         called_symbolic(false),
         called_numeric(false),
+        execution_space_is_set(false),
         suggested_vector_size(0),
         suggested_team_size(0) {}
 
@@ -159,8 +162,7 @@ class GaussSeidelHandle {
 
   template <class ExecSpaceIn>
   void set_execution_space(const ExecSpaceIn exec_space_in) {
-    static bool is_set = false;
-    if (!is_set) {
+    if (!execution_space_is_set) {
       static_assert(std::is_same<ExecSpaceIn, HandleExecSpace>::value,
                     "The type of exec_space_in should be the same as "
                     "GaussSeidelHandle::HandleExecSpace");
@@ -172,7 +174,6 @@ class GaussSeidelHandle {
             "without multiple handles. Please create a new handle via "
             "create_gs_handle.\n");
     }
-    is_set = true;
   }
 
   void set_algorithm_type(const GSAlgorithm sgs_algo) {
@@ -496,7 +497,7 @@ class ClusterGaussSeidelHandle
   typedef GaussSeidelHandle<size_type_, lno_t_, scalar_t_, ExecutionSpace,
                             TemporaryMemorySpace, PersistentMemorySpace>
       GSHandle;
-  typedef ExecutionSpace HandleExecSpace;
+  using HandleExecSpace = typename GSHandle::HandleExecSpace;
   typedef TemporaryMemorySpace HandleTempMemorySpace;
   typedef PersistentMemorySpace HandlePersistentMemorySpace;
 
@@ -553,15 +554,12 @@ class ClusterGaussSeidelHandle
   nnz_lno_persistent_work_view_t vert_clusters;
 
  public:
-  /**
-   * \brief Default constructor.
-   */
-
-  // Constructor for cluster-coloring based GS and SGS
-  ClusterGaussSeidelHandle(ClusteringAlgorithm cluster_algo_,
+  // Constructors for cluster-coloring based GS and SGS
+  ClusterGaussSeidelHandle(GSHandle gs_handle,
+                           ClusteringAlgorithm cluster_algo_,
                            nnz_lno_t cluster_size_,
                            KokkosGraph::ColoringAlgorithm coloring_algo_)
-      : GSHandle(GS_CLUSTER),
+      : GSHandle(gs_handle),
         cluster_algo(cluster_algo_),
         cluster_size(cluster_size_),
         coloring_algo(coloring_algo_),
@@ -569,6 +567,23 @@ class ClusterGaussSeidelHandle
         cluster_xadj(),
         cluster_adj(),
         vert_clusters() {}
+
+  /**
+   * \brief Default constructor.
+   */
+  ClusterGaussSeidelHandle(ClusteringAlgorithm cluster_algo_,
+                           nnz_lno_t cluster_size_,
+                           KokkosGraph::ColoringAlgorithm coloring_algo_)
+      : ClusterGaussSeidelHandle(GSHandle(GS_CLUSTER), cluster_algo_,
+                                 cluster_size_, coloring_algo_) {}
+
+  ClusterGaussSeidelHandle(HandleExecSpace handle_exec_space, int n_streams,
+                           ClusteringAlgorithm cluster_algo_,
+                           nnz_lno_t cluster_size_,
+                           KokkosGraph::ColoringAlgorithm coloring_algo_)
+      : ClusterGaussSeidelHandle(
+            GSHandle(handle_exec_space, n_streams, GS_CLUSTER), cluster_algo_,
+            cluster_size_, coloring_algo_) {}
 
   void set_cluster_size(nnz_lno_t cs) { this->cluster_size = cs; }
   nnz_lno_t get_cluster_size() const { return this->cluster_size; }

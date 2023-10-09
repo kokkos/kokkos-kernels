@@ -605,7 +605,8 @@ class KokkosKernelsHandle {
   // clang-format off
   /**
    * @brief Create a gauss seidel handle object
-   *
+   * @note: Caller is responsible for freeing this via destroy_gs_handle()
+   * 
    * @param handle_exec_space The execution space instance to execute kernels on.
    * @param num_streams The number of streams to allocate memory for.
    * @param gs_algorithm Specifies which algorithm to use:
@@ -654,7 +655,8 @@ class KokkosKernelsHandle {
   // clang-format off
   /**
    * @brief Create a gauss seidel handle object
-   *
+   * @note: Caller is responsible for freeing this via destroy_gs_handle()
+   * 
    * @param gs_algorithm Specifies which algorithm to use:
    *
    *                     KokkosSpace::GS_DEFAULT  PointGaussSeidel or BlockGaussSeidel, depending on matrix type.
@@ -749,7 +751,9 @@ class KokkosKernelsHandle {
   // clang-format off
   /**
    * @brief Create a gs handle object
-   *
+   * @note: Caller is responsible for freeing this via destroy_gs_handle()
+   * 
+   * @param handle_exec_space The execution space instance to execute kernels on.
    * @param clusterAlgo Specifies which clustering algorithm to use:
    *
    *                    KokkosSparse::CLUSTER_DEFAULT           ??
@@ -774,15 +778,60 @@ class KokkosKernelsHandle {
    *                                                           backwards compatibility for SPGEMM and other use cases)
    */
   // clang-format on
-  void create_gs_handle(KokkosSparse::ClusteringAlgorithm clusterAlgo,
+  void create_gs_handle(const HandleExecSpace &handle_exec_space,
+                        KokkosSparse::ClusteringAlgorithm clusterAlgo,
                         nnz_lno_t hint_verts_per_cluster,
                         KokkosGraph::ColoringAlgorithm coloring_algorithm =
                             KokkosGraph::COLORING_DEFAULT) {
     this->destroy_gs_handle();
     this->is_owner_of_the_gs_handle = true;
     this->gsHandle                  = new ClusterGaussSeidelHandleType(
-        clusterAlgo, hint_verts_per_cluster, coloring_algorithm);
+        handle_exec_space, clusterAlgo, hint_verts_per_cluster,
+        coloring_algorithm);
   }
+
+  /**
+   * @brief Create a gs handle object
+   * @note: Caller is responsible for freeing this via destroy_gs_handle()
+   *
+   * @param clusterAlgo Specifies which clustering algorithm to use:
+   *
+   *                    KokkosSparse::ClusteringAlgorithm::CLUSTER_DEFAULT ??
+   *                    KokkosSparse::ClusteringAlgorithm::CLUSTER_MIS2 ??
+   *                    KokkosSparse::ClusteringAlgorithm::CLUSTER_BALLOON ??
+   *                    KokkosSparse::ClusteringAlgorithm::NUM_CLUSTERING_ALGORITHMS
+   * ??
+   * @param hint_verts_per_cluster Hint how many verticies to use per cluster
+   * @param coloring_algorithm Specifies which coloring algorithm to color the
+   * graph with:
+   *
+   *                           KokkosGraph::COLORING_DEFAULT  Depends on
+   * execution space: COLORING_SERIAL on Kokkos::Serial; COLORING_EB on GPUs;
+   *                                                            COLORING_VBBIT
+   * on Kokkos::Sycl or elsewhere. KokkosGraph::COLORING_SERIAL   Serial Greedy
+   * Coloring KokkosGraph::COLORING_VB       Vertex Based Coloring
+   *                           KokkosGraph::COLORING_VBBIT    Vertex Based
+   * Coloring with bit array KokkosGraph::COLORING_VBCS     Vertex Based Color
+   * Set KokkosGraph::COLORING_VBD      Vertex Based Deterministic Coloring
+   *                           KokkosGraph::COLORING_VBDBIT   Vertex Based
+   * Deterministic Coloring with bit array KokkosGraph::COLORING_EB       Edge
+   * Based Coloring KokkosGraph::COLORING_SERIAL2  Serial Distance-2 Graph
+   * Coloring (kept here for backwards compatibility for SPGEMM and other use
+   * cases)
+   */
+  // clang-format on
+  void create_gs_handle(KokkosSparse::ClusteringAlgorithm clusterAlgo,
+                        nnz_lno_t hint_verts_per_cluster,
+                        KokkosGraph::ColoringAlgorithm coloring_algorithm =
+                            KokkosGraph::COLORING_DEFAULT) {
+    HandleExecSpace handle_exec_space;
+    create_gs_handle(handle_exec_space, clusterAlgo, hint_verts_per_cluster,
+                     coloring_algorithm);
+  }
+
+  /**
+   * Free the dynamically allocated gs handle allocation.
+   */
   void destroy_gs_handle() {
     if (is_owner_of_the_gs_handle && this->gsHandle != NULL) {
       delete this->gsHandle;
