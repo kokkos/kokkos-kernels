@@ -73,9 +73,10 @@ struct SpmvMergeHierarchical {
 
   template <bool NONZEROS_USE_SCRATCH, bool ROWENDS_USE_SCRATCH,
             bool Y_USE_SCRATCH, bool CONJ>
-  struct Functor {
-    Functor(const y_value_type& _alpha, const AMatrix& _A, const XVector& _x,
-            const YVector& _y, const A_size_type pathLengthThreadChunk)
+  struct SpmvMergeImplFunctor {
+    SpmvMergeImplFunctor(const y_value_type& _alpha, const AMatrix& _A,
+                         const XVector& _x, const YVector& _y,
+                         const A_size_type pathLengthThreadChunk)
         : alpha(_alpha),
           A(_A),
           x(_x),
@@ -299,7 +300,7 @@ struct SpmvMergeHierarchical {
       }
       return val;
     }
-  };
+  };  // struct SpmvMergeImplFunctor
 
   static void spmv(const ExecutionSpace& space, const char mode[],
                    const y_value_type& alpha, const AMatrix& A,
@@ -343,8 +344,8 @@ struct SpmvMergeHierarchical {
     */
     if (KokkosSparse::NoTranspose[0] == mode[0]) {
       constexpr bool CONJ = false;
-      using GpuOp         = Functor<true, true, false, CONJ>;
-      using CpuOp         = Functor<false, false, false, CONJ>;
+      using GpuOp         = SpmvMergeImplFunctor<true, true, false, CONJ>;
+      using CpuOp         = SpmvMergeImplFunctor<false, false, false, CONJ>;
       using Op            = typename std::conditional<
           KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>(), GpuOp,
           CpuOp>::type;
@@ -352,8 +353,8 @@ struct SpmvMergeHierarchical {
       Kokkos::parallel_for("SpmvMergeHierarchical::spmv", policy, op);
     } else if (KokkosSparse::Conjugate[0] == mode[0]) {
       constexpr bool CONJ = true;
-      using GpuOp         = Functor<true, true, false, CONJ>;
-      using CpuOp         = Functor<false, false, false, CONJ>;
+      using GpuOp         = SpmvMergeImplFunctor<true, true, false, CONJ>;
+      using CpuOp         = SpmvMergeImplFunctor<false, false, false, CONJ>;
       using Op            = typename std::conditional<
           KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>(), GpuOp,
           CpuOp>::type;
