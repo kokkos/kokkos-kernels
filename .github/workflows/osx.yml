@@ -103,6 +103,7 @@ jobs:
           -DKokkosKernels_INST_OFFSET_SIZE_T=ON \
           -DKokkosKernels_ENABLE_TPL_CUSPARSE=OFF \
           -DKokkosKernels_ENABLE_TPL_CUBLAS=OFF \
+          -DKokkosKernels_ENABLE_TPL_CUSOLVER=OFF \
           ..
 
       - name: build_kokkos_kernels

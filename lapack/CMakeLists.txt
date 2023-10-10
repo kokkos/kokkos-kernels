@@ -8,11 +8,11 @@ LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/lapack/tpls)
 KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/lapack)
 KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/lapack)
 
-#######################
-#                     #
+#########################
+#                       #
 # Logic for LAPACK TPLs #
-#                     #
-#######################
+#                       #
+#########################
 
 #Include LAPACK, Lapack host wrapper
 IF (KOKKOSKERNELS_ENABLE_TPL_LAPACK OR KOKKOSKERNELS_ENABLE_TPL_MKL OR KOKKOSKERNELS_ENABLE_TPL_ARMPL)
@@ -28,14 +28,14 @@ IF (KOKKOSKERNELS_ENABLE_TPL_LAPACK OR KOKKOSKERNELS_ENABLE_TPL_MKL OR KOKKOSKER
 ENDIF()
 
 # Include cuda lapack TPL source file
-IF (KOKKOSKERNELS_ENABLE_TPL_CULAPACK)
+IF (KOKKOSKERNELS_ENABLE_TPL_CUSOLVER)
   LIST(APPEND SOURCES
    lapack/tpls/KokkosLapack_Cuda_tpl.cpp
   )
 ENDIF()
 
 # Include rocm lapack TPL source file
-IF (KOKKOSKERNELS_ENABLE_TPL_ROCLAPACK)
+IF (KOKKOSKERNELS_ENABLE_TPL_ROCSOLVER)
   LIST(APPEND SOURCES
    lapack/tpls/KokkosLapack_Rocm_tpl.cpp
   )

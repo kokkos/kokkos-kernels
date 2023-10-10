@@ -16,6 +16,7 @@
 #ifndef __KOKKOSBATCHED_HOSTLEVEL_GEMM_SERIAL_IMPL_HPP__
 #define __KOKKOSBATCHED_HOSTLEVEL_GEMM_SERIAL_IMPL_HPP__
 #include "KokkosBatched_Gemm_Decl.hpp"
+#include <iostream>
 
 namespace KokkosBatched {
 namespace Impl {
