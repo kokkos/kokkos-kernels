@@ -17,6 +17,8 @@
 #ifndef KOKKOSPARSE_SPMV_TPL_SPEC_DECL_HPP_
 #define KOKKOSPARSE_SPMV_TPL_SPEC_DECL_HPP_
 
+#include <sstream>
+
 #include "KokkosKernels_Controls.hpp"
 
 // cuSPARSE
@@ -52,8 +54,9 @@ void spmv_cusparse(const Kokkos::Cuda& exec,
       myCusparseOperation = CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE;
       break;
     default: {
-      std::cerr << "Mode " << mode << " invalid for cuSPARSE SpMV.\n";
-      throw std::invalid_argument("Invalid mode");
+      std::ostringstream out;
+      out << "Mode " << mode << " invalid for cuSPARSE SpMV.\n";
+      throw std::invalid_argument(out.str());
     }
   }
   // cuSPARSE doesn't directly support mode H with real values, but this is
