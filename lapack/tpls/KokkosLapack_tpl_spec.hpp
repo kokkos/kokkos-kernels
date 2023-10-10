@@ -17,56 +17,57 @@
 #ifndef KOKKOSLAPACK_TPL_SPEC_HPP_
 #define KOKKOSLAPACK_TPL_SPEC_HPP_
 
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CULAPACK
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSOLVER
 #include "cuda_runtime.h"
-#include "culapack_v2.h"
+//#include "cublas_v2.h"
+#include "cusolverDn.h"
 
 namespace KokkosLapack {
 namespace Impl {
 
 struct CudaLapackSingleton {
-  culapackHandle_t handle;
+  cusolverDnHandle_t handle;
 
   CudaLapackSingleton();
 
   static CudaLapackSingleton& singleton();
 };
 
-inline void culapack_internal_error_throw(culapackStatus_t culapackState,
+inline void cusolver_internal_error_throw(cusolverStatus_t cusolverState,
                                         const char* name, const char* file,
                                         const int line) {
   std::ostringstream out;
-  // out << name << " error( " << culapackGetStatusName(culapackState)
-  //     << "): " << culapackGetStatusString(culapackState);
+  // out << name << " error( " << cusolverGetStatusName(cusolverState)
+  //     << "): " << cusolverGetStatusString(cusolverState);
   out << name << " error( ";
-  switch (culapackState) {
-    case CULAPACK_STATUS_NOT_INITIALIZED:
-      out << "CULAPACK_STATUS_NOT_INITIALIZED): the library was not initialized.";
+  switch (cusolverState) {
+    case CUSOLVER_STATUS_NOT_INITIALIZED:
+      out << "CUSOLVER_STATUS_NOT_INITIALIZED): the library was not initialized.";
       break;
-    case CULAPACK_STATUS_ALLOC_FAILED:
-      out << "CULAPACK_STATUS_ALLOC_FAILED): the resource allocation failed.";
+    case CUSOLVER_STATUS_ALLOC_FAILED:
+      out << "CUSOLVER_STATUS_ALLOC_FAILED): the resource allocation failed.";
       break;
-    case CULAPACK_STATUS_INVALID_VALUE:
-      out << "CULAPACK_STATUS_INVALID_VALUE): an invalid numerical value was "
+    case CUSOLVER_STATUS_INVALID_VALUE:
+      out << "CUSOLVER_STATUS_INVALID_VALUE): an invalid numerical value was "
              "used as an argument.";
       break;
-    case CULAPACK_STATUS_ARCH_MISMATCH:
-      out << "CULAPACK_STATUS_ARCH_MISMATCH): an absent device architectural "
+    case CUSOLVER_STATUS_ARCH_MISMATCH:
+      out << "CUSOLVER_STATUS_ARCH_MISMATCH): an absent device architectural "
              "feature is required.";
       break;
-    case CULAPACK_STATUS_MAPPING_ERROR:
-      out << "CULAPACK_STATUS_MAPPING_ERROR): an access to GPU memory space "
+    case CUSOLVER_STATUS_MAPPING_ERROR:
+      out << "CUSOLVER_STATUS_MAPPING_ERROR): an access to GPU memory space "
              "failed.";
       break;
-    case CULAPACK_STATUS_EXECUTION_FAILED:
-      out << "CULAPACK_STATUS_EXECUTION_FAILED): the GPU program failed to "
+    case CUSOLVER_STATUS_EXECUTION_FAILED:
+      out << "CUSOLVER_STATUS_EXECUTION_FAILED): the GPU program failed to "
              "execute.";
       break;
-    case CULAPACK_STATUS_INTERNAL_ERROR:
-      out << "CULAPACK_STATUS_INTERNAL_ERROR): an internal operation failed.";
+    case CUSOLVER_STATUS_INTERNAL_ERROR:
+      out << "CUSOLVER_STATUS_INTERNAL_ERROR): an internal operation failed.";
       break;
-    case CULAPACK_STATUS_NOT_SUPPORTED:
-      out << "CULAPACK_STATUS_NOT_SUPPORTED): the feature required is not "
+    case CUSOLVER_STATUS_NOT_SUPPORTED:
+      out << "CUSOLVER_STATUS_NOT_SUPPORTED): the feature required is not "
              "supported.";
       break;
     default: out << "unrecognized error code): this is bad!"; break;
@@ -77,101 +78,101 @@ inline void culapack_internal_error_throw(culapackStatus_t culapackState,
   throw std::runtime_error(out.str());
 }
 
-inline void culapack_internal_safe_call(culapackStatus_t culapackState,
+inline void cusolver_internal_safe_call(cusolverStatus_t cusolverState,
                                       const char* name,
                                       const char* file = nullptr,
                                       const int line   = 0) {
-  if (CULAPACK_STATUS_SUCCESS != culapackState) {
-    culapack_internal_error_throw(culapackState, name, file, line);
+  if (CUSOLVER_STATUS_SUCCESS != cusolverState) {
+    cusolver_internal_error_throw(cusolverState, name, file, line);
   }
 }
 
-// The macro below defines the interface for the safe culapack calls.
+// The macro below defines the interface for the safe cusolver calls.
 // The functions themselves are protected by impl namespace and this
 // is not meant to be used by external application or libraries.
-#define KOKKOS_CULAPACK_SAFE_CALL_IMPL(call) \
-  KokkosLapack::Impl::culapack_internal_safe_call(call, #call, __FILE__, __LINE__)
+#define KOKKOS_CUSOLVER_SAFE_CALL_IMPL(call) \
+  KokkosLapack::Impl::cusolver_internal_safe_call(call, #call, __FILE__, __LINE__)
 
-/// \brief This function converts KK transpose mode to cuLAPACK transpose mode
-inline culapackOperation_t trans_mode_kk_to_culapack(const char kkMode[]) {
-  culapackOperation_t trans;
+/// \brief This function converts KK transpose mode to cusolver transpose mode
+inline cublasOperation_t trans_mode_kk_to_cusolver(const char kkMode[]) {
+  cublasOperation_t trans;
   if ((kkMode[0] == 'N') || (kkMode[0] == 'n'))
-    trans = CULAPACK_OP_N;
+    trans = CUBLAS_OP_N;
   else if ((kkMode[0] == 'T') || (kkMode[0] == 't'))
-    trans = CULAPACK_OP_T;
+    trans = CUBLAS_OP_T;
   else
-    trans = CULAPACK_OP_C;
+    trans = CUBLAS_OP_C;
   return trans;
 }
 
 }  // namespace Impl
 }  // namespace KokkosLapack
-#endif  // KOKKOSKERNELS_ENABLE_TPL_CULAPACK
+#endif  // KOKKOSKERNELS_ENABLE_TPL_CUSOLVER
 
-#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCLAPACK
-#include <roclapack/roclapack.h>
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSOLVER
+#include <rocsolver/rocsolver.h>
 
 namespace KokkosLapack {
 namespace Impl {
 
-struct RocLapackSingleton {
-  roclapack_handle handle;
+struct RocsolverSingleton {
+  rocsolver_handle handle;
 
-  RocLapackSingleton();
+  RocsolverSingleton();
 
-  static RocLapackSingleton& singleton();
+  static RocsolverSingleton& singleton();
 };
 
-inline void roclapack_internal_error_throw(roclapack_status roclapackState,
+inline void rocsolver_internal_error_throw(rocsolver_status rocsolverState,
                                          const char* name, const char* file,
                                          const int line) {
   std::ostringstream out;
   out << name << " error( ";
-  switch (roclapackState) {
-    case roclapack_status_invalid_handle:
-      out << "roclapack_status_invalid_handle): handle not initialized, invalid "
+  switch (rocsolverState) {
+    case rocsolver_status_invalid_handle:
+      out << "rocsolver_status_invalid_handle): handle not initialized, invalid "
              "or null.";
       break;
-    case roclapack_status_not_implemented:
-      out << "roclapack_status_not_implemented): function is not implemented.";
+    case rocsolver_status_not_implemented:
+      out << "rocsolver_status_not_implemented): function is not implemented.";
       break;
-    case roclapack_status_invalid_pointer:
-      out << "roclapack_status_invalid_pointer): invalid pointer argument.";
+    case rocsolver_status_invalid_pointer:
+      out << "rocsolver_status_invalid_pointer): invalid pointer argument.";
       break;
-    case roclapack_status_invalid_size:
-      out << "roclapack_status_invalid_size): invalid size argument.";
+    case rocsolver_status_invalid_size:
+      out << "rocsolver_status_invalid_size): invalid size argument.";
       break;
-    case roclapack_status_memory_error:
-      out << "roclapack_status_memory_error): failed internal memory allocation, "
+    case rocsolver_status_memory_error:
+      out << "rocsolver_status_memory_error): failed internal memory allocation, "
              "copy or dealloc.";
       break;
-    case roclapack_status_internal_error:
-      out << "roclapack_status_internal_error): other internal library failure.";
+    case rocsolver_status_internal_error:
+      out << "rocsolver_status_internal_error): other internal library failure.";
       break;
-    case roclapack_status_perf_degraded:
-      out << "roclapack_status_perf_degraded): performance degraded due to low "
+    case rocsolver_status_perf_degraded:
+      out << "rocsolver_status_perf_degraded): performance degraded due to low "
              "device memory.";
       break;
-    case roclapack_status_size_query_mismatch:
+    case rocsolver_status_size_query_mismatch:
       out << "unmatched start/stop size query): .";
       break;
-    case roclapack_status_size_increased:
-      out << "roclapack_status_size_increased): queried device memory size "
+    case rocsolver_status_size_increased:
+      out << "rocsolver_status_size_increased): queried device memory size "
              "increased.";
       break;
-    case roclapack_status_size_unchanged:
-      out << "roclapack_status_size_unchanged): queried device memory size "
+    case rocsolver_status_size_unchanged:
+      out << "rocsolver_status_size_unchanged): queried device memory size "
              "unchanged.";
       break;
-    case roclapack_status_invalid_value:
-      out << "roclapack_status_invalid_value): passed argument not valid.";
+    case rocsolver_status_invalid_value:
+      out << "rocsolver_status_invalid_value): passed argument not valid.";
       break;
-    case roclapack_status_continue:
-      out << "roclapack_status_continue): nothing preventing function to "
+    case rocsolver_status_continue:
+      out << "rocsolver_status_continue): nothing preventing function to "
              "proceed.";
       break;
-    case roclapack_status_check_numerics_fail:
-      out << "roclapack_status_check_numerics_fail): will be set if the "
+    case rocsolver_status_check_numerics_fail:
+      out << "rocsolver_status_check_numerics_fail): will be set if the "
              "vector/matrix has a NaN or an Infinity.";
       break;
     default: out << "unrecognized error code): this is bad!"; break;
@@ -182,37 +183,37 @@ inline void roclapack_internal_error_throw(roclapack_status roclapackState,
   throw std::runtime_error(out.str());
 }
 
-inline void roclapack_internal_safe_call(roclapack_status roclapackState,
+inline void rocsolver_internal_safe_call(rocsolver_status rocsolverState,
                                        const char* name,
                                        const char* file = nullptr,
                                        const int line   = 0) {
-  if (roclapack_status_success != roclapackState) {
-    roclapack_internal_error_throw(roclapackState, name, file, line);
+  if (rocsolver_status_success != rocsolverState) {
+    rocsolver_internal_error_throw(rocsolverState, name, file, line);
   }
 }
 
-// The macro below defines the interface for the safe roclapack calls.
+// The macro below defines the interface for the safe rocsolver calls.
 // The functions themselves are protected by impl namespace and this
 // is not meant to be used by external application or libraries.
-#define KOKKOS_ROCLAPACK_SAFE_CALL_IMPL(call) \
-  KokkosLapack::Impl::roclapack_internal_safe_call(call, #call, __FILE__, __LINE__)
+#define KOKKOS_ROCSOLVER_SAFE_CALL_IMPL(call) \
+  KokkosLapack::Impl::rocsolver_internal_safe_call(call, #call, __FILE__, __LINE__)
 
-/// \brief This function converts KK transpose mode to rocLAPACK transpose mode
-inline roclapack_operation trans_mode_kk_to_roclapack(const char kkMode[]) {
-  roclapack_operation trans;
+/// \brief This function converts KK transpose mode to rocsolver transpose mode
+inline rocsolver_operation trans_mode_kk_to_rocsolver(const char kkMode[]) {
+  rocsolver_operation trans;
   if ((kkMode[0] == 'N') || (kkMode[0] == 'n'))
-    trans = roclapack_operation_none;
+    trans = rocsolver_operation_none;
   else if ((kkMode[0] == 'T') || (kkMode[0] == 't'))
-    trans = roclapack_operation_transpose;
+    trans = rocsolver_operation_transpose;
   else
-    trans = roclapack_operation_conjugate_transpose;
+    trans = rocsolver_operation_conjugate_transpose;
   return trans;
 }
 
 }  // namespace Impl
 }  // namespace KokkosLapack
 
-#endif  // KOKKOSKERNELS_ENABLE_TPL_ROCLAPACK
+#endif  // KOKKOSKERNELS_ENABLE_TPL_ROCSOLVER
 
 // If LAPACK TPL is enabled, it is preferred over magma's LAPACK
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
