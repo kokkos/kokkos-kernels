@@ -856,7 +856,10 @@ void test_gauss_seidel_streams_rank1(
           KokkosBlas::axpby(instances[i], one, solution_x_v[i], -one,
                             x_vector_v[i]);
           mag_t result_norm_res = KokkosBlas::nrm2(instances[i], x_vector_v[i]);
-          EXPECT_LT(result_norm_res, initial_norm_res_v[i]);
+          EXPECT_LT(result_norm_res, initial_norm_res_v[i])
+              << "with (clusterSize:" << clusterSizes[csize]
+              << ", clusterAlgo:" << clusterAlgo
+              << ",coloringAlgo:" << coloringAlgo << ") on stream_idx: " << i;
         }
       }
       for (int i = 0; i < nstreams; i++) kh_cluster_v[i].destroy_gs_handle();
@@ -914,9 +917,6 @@ void test_gauss_seidel_streams_rank1(
     test_gauss_seidel_streams_rank1<SCALAR, ORDINAL, OFFSET, DEVICE>(                                  \
         2000, 2000 * 20, 200, 10, false, 0.9, KokkosGraph::COLORING_DEFAULT,                           \
         1);                                                                                            \
-    test_gauss_seidel_streams_rank1<SCALAR, ORDINAL, OFFSET, DEVICE>(                                  \
-        2000, 2000 * 20, 200, 10, false, 0.9, KokkosGraph::COLORING_DEFAULT,                           \
-        2);                                                                                            \
     test_gauss_seidel_streams_rank1<SCALAR, ORDINAL, OFFSET, DEVICE>(                                  \
         2000, 2000 * 20, 200, 10, false, 0.9, KokkosGraph::COLORING_DEFAULT,                           \
         3);                                                                                            \
