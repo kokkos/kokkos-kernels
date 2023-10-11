@@ -17,6 +17,8 @@
 #ifndef KOKKOSPARSE_SPMV_MV_TPL_SPEC_DECL_HPP_
 #define KOKKOSPARSE_SPMV_MV_TPL_SPEC_DECL_HPP_
 
+#include <sstream>
+
 #include "KokkosKernels_Controls.hpp"
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
@@ -119,8 +121,9 @@ void spmv_mv_cusparse(const Kokkos::Cuda &exec,
     case 'T': opA = CUSPARSE_OPERATION_TRANSPOSE; break;
     case 'H': opA = CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE; break;
     default: {
-      std::cerr << "Mode " << mode << " invalid for cuSPARSE SpMV MV.\n";
-      throw std::invalid_argument("Invalid mode");
+      std::ostringstream out;
+      out << "Mode " << mode << " invalid for cuSPARSE SpMV MV.\n";
+      throw std::invalid_argument(out.str());
     }
   }
 
