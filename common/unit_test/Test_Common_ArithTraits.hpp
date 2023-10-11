@@ -1545,24 +1545,25 @@ class ArithTraitsTesterFloatingPointBase<ScalarType, DeviceType, 0>
 #endif
       FAILURE();
     }
-#if defined(KOKKOS_ENABLE_SYCL) || defined(KOKKOS_ENABLE_HIP) // FIXME_SYCL, FIXME_HIP
-    if constexpr(!std::is_same_v<ScalarType, Kokkos::Experimental::half_t>) {
-    if (AT::isNan(zero)) {
+#if defined(KOKKOS_ENABLE_SYCL) || \
+    defined(KOKKOS_ENABLE_HIP)  // FIXME_SYCL, FIXME_HIP
+    if constexpr (!std::is_same_v<ScalarType, Kokkos::Experimental::half_t>) {
+      if (AT::isNan(zero)) {
 #if KOKKOS_VERSION < 40199
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF("0 is NaN\n");
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("0 is NaN\n");
 #else
-      Kokkos::printf("0 is NaN\n");
+        Kokkos::printf("0 is NaN\n");
 #endif
-      FAILURE();
-    }
-    if (AT::isNan(one)) {
+        FAILURE();
+      }
+      if (AT::isNan(one)) {
 #if KOKKOS_VERSION < 40199
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF("1 is NaN\n");
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("1 is NaN\n");
 #else
-      Kokkos::printf("1 is NaN\n");
+        Kokkos::printf("1 is NaN\n");
 #endif
-      FAILURE();
-    }
+        FAILURE();
+      }
     }
 #else
     if (AT::isNan(zero)) {
@@ -1608,11 +1609,11 @@ class ArithTraitsTesterFloatingPointBase<ScalarType, DeviceType, 0>
     // success = success && AT::isInf (AT::inf ());
 #if defined(KOKKOS_ENABLE_SYCL) || defined(KOKKOS_ENABLE_HIP)
     if constexpr (!std::is_same_v<ScalarType, Kokkos::Experimental::half_t>) {
-	if (!AT::isNan(AT::nan())) {
-	  out << "isNan or nan failed" << endl;
-	  FAILURE();
-	}
+      if (!AT::isNan(AT::nan())) {
+        out << "isNan or nan failed" << endl;
+        FAILURE();
       }
+    }
 #else
     if (!AT::isNan(AT::nan())) {
       out << "isNan or nan failed" << endl;
@@ -1634,14 +1635,14 @@ class ArithTraitsTesterFloatingPointBase<ScalarType, DeviceType, 0>
     }
 #if defined(KOKKOS_ENABLE_SYCL) || defined(KOKKOS_ENABLE_HIP)
     if constexpr (!std::is_same_v<ScalarType, Kokkos::Experimental::half_t>) {
-    if (AT::isNan(zero)) {
-      out << "isNan(zero) is 1" << endl;
-      FAILURE();
-    }
-    if (AT::isNan(one)) {
-      out << "isNan(one) is 1" << endl;
-      FAILURE();
-    }
+      if (AT::isNan(zero)) {
+        out << "isNan(zero) is 1" << endl;
+        FAILURE();
+      }
+      if (AT::isNan(one)) {
+        out << "isNan(one) is 1" << endl;
+        FAILURE();
+      }
     }
 #else
     if (AT::isNan(zero)) {
