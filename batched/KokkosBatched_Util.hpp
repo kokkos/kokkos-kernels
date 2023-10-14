@@ -21,7 +21,6 @@
 // no experimental name space guard for trilinos
 #define __KOKKOSBATCHED_PROMOTION__ 1
 
-#include <iostream>
 #include <iomanip>
 #include <random>
 #include <string>
