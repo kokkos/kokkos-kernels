@@ -20,7 +20,6 @@
 #include <sstream>
 
 #include "KokkosKernels_Controls.hpp"
-#include <iostream>
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 
