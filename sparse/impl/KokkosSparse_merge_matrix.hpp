@@ -20,13 +20,23 @@
 #include <type_traits>
 
 #include "KokkosKernels_Iota.hpp"
+#include "KokkosKernels_LowerBound.hpp"
+#include "KokkosKernels_Predicates.hpp"
 #include "KokkosKernels_SafeCompare.hpp"
 
-/// \file KokkosSparse_MergeMatrix.hpp
+/// \file KokkosSparse_merge_matrix.hpp
 
-namespace KokkosSparse {
-namespace Experimental {
-namespace Impl {
+namespace KokkosSparse::Impl {
+
+// a joint index into a and b
+template <typename AIndex, typename BIndex>
+struct MergeMatrixPosition {
+  using a_index_type = AIndex;
+  using b_index_type = BIndex;
+
+  AIndex ai;
+  BIndex bi;
+};
 
 /*! \class MergeMatrixDiagonal
     \brief a view into the entries of the Merge Matrix along a diagonal
@@ -88,14 +98,7 @@ class MergeMatrixDiagonal {
   using a_value_type = typename AView::non_const_value_type;
   using b_value_type = typename BViewLike::non_const_value_type;
 
-  /*! \struct MatrixPosition
-   *  \brief indices into the a_ and b_ views.
-   */
-  struct MatrixPosition {
-    a_index_type ai;
-    b_index_type bi;
-  };
-  using position_type = MatrixPosition;
+  using position_type = MergeMatrixPosition<a_index_type, b_index_type>;
 
   // implement bare minimum parts of the view interface
   enum { rank = 1 };
@@ -145,9 +148,10 @@ class MergeMatrixDiagonal {
   KOKKOS_INLINE_FUNCTION
   bool operator()(const size_type di) const {
     position_type pos = diag_to_a_b(di);
-    if (pos.ai >= a_.size()) {
+
+    if (pos.ai >= typename position_type::a_index_type(a_.size())) {
       return true;  // on the +a side out of matrix bounds is 1
-    } else if (pos.bi >= b_.size()) {
+    } else if (pos.bi >= typename position_type::b_index_type(b_.size())) {
       return false;  // on the +b side out of matrix bounds is 0
     } else {
       return KokkosKernels::Impl::safe_gt(a_(pos.ai), b_(pos.bi));
@@ -161,9 +165,9 @@ class MergeMatrixDiagonal {
    */
   KOKKOS_INLINE_FUNCTION
   size_type size() const noexcept {
-    if (d_ <= a_.size() && d_ <= b_.size()) {
+    if (d_ <= size_type(a_.size()) && d_ <= size_type(b_.size())) {
       return d_;
-    } else if (d_ > a_.size() && d_ > b_.size()) {
+    } else if (d_ > size_type(a_.size()) && d_ > size_type(b_.size())) {
       // TODO: this returns nonsense if d_ happens to be outside the merge
       // matrix
       return a_.size() + b_.size() - d_;
@@ -182,8 +186,8 @@ class MergeMatrixDiagonal {
   KOKKOS_INLINE_FUNCTION
   position_type diag_to_a_b(const size_type &di) const noexcept {
     position_type res;
-    res.ai = d_ < a_.size() ? (d_ - 1) - di : a_.size() - 1 - di;
-    res.bi = d_ < a_.size() ? di : d_ + di - a_.size();
+    res.ai = d_ < size_type(a_.size()) ? (d_ - 1) - di : a_.size() - 1 - di;
+    res.bi = d_ < size_type(a_.size()) ? di : d_ + di - a_.size();
     return res;
   }
 
@@ -192,8 +196,106 @@ class MergeMatrixDiagonal {
   size_type d_;  ///< diagonal
 };
 
-}  // namespace Impl
-}  // namespace Experimental
-}  // namespace KokkosSparse
+/*! \brief Return the first index on diagonal \code diag
+           in the merge matrix of \code a and \code b that is not 1
+This is effectively a lower-bound search on the merge matrix diagonal
+where the predicate is "equals 1"
+*/
+template <typename AView, typename BViewLike>
+KOKKOS_INLINE_FUNCTION
+    typename MergeMatrixDiagonal<AView, BViewLike>::position_type
+    diagonal_search(
+        const AView &a, const BViewLike &b,
+        typename MergeMatrixDiagonal<AView, BViewLike>::size_type diag) {
+  // unmanaged view types for a and b
+  using um_a_view =
+      Kokkos::View<typename AView::value_type *, typename AView::device_type,
+                   Kokkos::MemoryUnmanaged>;
+  using um_b_view =
+      Kokkos::View<typename BViewLike::value_type *,
+                   typename BViewLike::device_type, Kokkos::MemoryUnmanaged>;
+
+  um_a_view ua(a.data(), a.size());
+
+  // if BViewLike is an Iota, pass it on directly to MMD,
+  // otherwise, create an unmanaged view of B
+  using b_type =
+      typename std::conditional<KokkosKernels::Impl::is_iota<BViewLike>::value,
+                                BViewLike, um_b_view>::type;
+
+  using MMD = MergeMatrixDiagonal<um_a_view, b_type>;
+  MMD mmd;
+  if constexpr (KokkosKernels::Impl::is_iota<BViewLike>::value) {
+    mmd = MMD(ua, b, diag);
+  } else {
+    b_type ub(b.data(), b.size());
+    mmd = MMD(ua, ub, diag);
+  }
+
+  // returns index of the first element that does not satisfy pred(element,
+  // value) our input view is the merge matrix entry along the diagonal, and we
+  // want the first one that is not true. so our predicate just tells us if the
+  // merge matrix diagonal entry is equal to true or not
+  const typename MMD::size_type idx = KokkosKernels::lower_bound_thread(
+      mmd, true, KokkosKernels::Equal<bool>());
+  return mmd.position(idx);
+}
+
+template <typename TeamMember, typename AView, typename BViewLike>
+KOKKOS_INLINE_FUNCTION
+    typename MergeMatrixDiagonal<AView, BViewLike>::position_type
+    diagonal_search(
+        const TeamMember &handle, const AView &a, const BViewLike &b,
+        typename MergeMatrixDiagonal<AView, BViewLike>::size_type diag) {
+  // unmanaged view types for a and b
+  using um_a_view =
+      Kokkos::View<typename AView::value_type *, typename AView::device_type,
+                   Kokkos::MemoryUnmanaged>;
+  using um_b_view =
+      Kokkos::View<typename BViewLike::value_type *,
+                   typename BViewLike::device_type, Kokkos::MemoryUnmanaged>;
+
+  um_a_view ua(a.data(), a.size());
+
+  // if BViewLike is an Iota, pass it on directly to MMD,
+  // otherwise, create an unmanaged view of B
+  using b_type =
+      typename std::conditional<KokkosKernels::Impl::is_iota<BViewLike>::value,
+                                BViewLike, um_b_view>::type;
+
+  using MMD = MergeMatrixDiagonal<um_a_view, b_type>;
+  MMD mmd;
+  if constexpr (KokkosKernels::Impl::is_iota<BViewLike>::value) {
+    mmd = MMD(ua, b, diag);
+  } else {
+    b_type ub(b.data(), b.size());
+    mmd = MMD(ua, ub, diag);
+  }
+
+  // returns index of the first element that does not satisfy pred(element,
+  // value) our input view is the merge matrix entry along the diagonal, and we
+  // want the first one that is not true. so our predicate just tells us if the
+  // merge matrix diagonal entry is equal to true or not
+  const typename MMD::size_type idx = KokkosKernels::lower_bound_team(
+      handle, mmd, true, KokkosKernels::Equal<bool>());
+  return mmd.position(idx);
+}
+
+/*! \brief
+
+    \return A MergeMatrixDiagonal::position_type
+ */
+template <typename View>
+KOKKOS_INLINE_FUNCTION auto diagonal_search(
+    const View &a, typename View::non_const_value_type totalWork,
+    typename View::size_type diag) {
+  using value_type = typename View::non_const_value_type;
+  using size_type  = typename View::size_type;
+
+  KokkosKernels::Impl::Iota<value_type, size_type> iota(totalWork);
+  return diagonal_search(a, iota, diag);
+}
+
+}  // namespace KokkosSparse::Impl
 
 #endif  // KOKKOSSPARSE_MERGEMATRIX_HPP

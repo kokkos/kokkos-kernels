@@ -125,7 +125,7 @@ template <typename crsMat_t, typename x_vector_type, typename y_vector_type>
 void sequential_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
                      typename y_vector_type::non_const_value_type alpha,
                      typename y_vector_type::non_const_value_type beta,
-                     char mode = 'N') {
+                     const std::string &mode = "N") {
   using graph_t          = typename crsMat_t::StaticCrsGraphType;
   using size_type_view_t = typename graph_t::row_map_type;
   using lno_view_t       = typename graph_t::entries_type;
@@ -135,8 +135,6 @@ void sequential_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
   using lno_t     = typename lno_view_t::non_const_value_type;
   using scalar_t  = typename scalar_view_t::non_const_value_type;
   using KAT       = Kokkos::ArithTraits<scalar_t>;
-
-  mode = toupper(mode);
 
   typename scalar_view_t::HostMirror h_values =
       Kokkos::create_mirror_view(input_mat.values);
@@ -168,13 +166,13 @@ void sequential_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
     for (size_type j = h_rowmap(row); j < h_rowmap(row + 1); ++j) {
       lno_t col    = h_entries(j);
       scalar_t val = h_values(j);
-      if (mode == 'N')
+      if (mode == "N")
         h_y(row) += alpha * val * h_x(col);
-      else if (mode == 'C')
+      else if (mode == "C")
         h_y(row) += alpha * KAT::conj(val) * h_x(col);
-      else if (mode == 'T')
+      else if (mode == "T")
         h_y(col) += alpha * val * h_x(row);
-      else if (mode == 'H')
+      else if (mode == "H")
         h_y(col) += alpha * KAT::conj(val) * h_x(row);
     }
   }
@@ -184,12 +182,14 @@ void sequential_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
 
 template <typename crsMat_t, typename x_vector_type, typename y_vector_type>
 void check_spmv(
-    const Controls &controls, crsMat_t input_mat, x_vector_type x,
-    y_vector_type y, typename y_vector_type::non_const_value_type alpha,
-    typename y_vector_type::non_const_value_type beta, char mode,
+    const KokkosKernels::Experimental::Controls &controls, crsMat_t input_mat,
+    x_vector_type x, y_vector_type y,
+    typename y_vector_type::non_const_value_type alpha,
+    typename y_vector_type::non_const_value_type beta, const std::string &mode,
     typename Kokkos::ArithTraits<typename crsMat_t::value_type>::mag_type
         max_val) {
-  // typedef typename crsMat_t::StaticCrsGraphType graph_t;
+  EXPECT_TRUE(mode.size() == 1);
+
   using ExecSpace        = typename crsMat_t::execution_space;
   using my_exec_space    = Kokkos::RangePolicy<ExecSpace>;
   using y_value_type     = typename y_vector_type::non_const_value_type;
@@ -198,7 +198,7 @@ void check_spmv(
 
   const y_value_mag_type eps =
       10 * Kokkos::ArithTraits<y_value_mag_type>::eps();
-  bool transposed = (mode == 'T') || (mode == 'H');
+  bool transposed = (mode == "T") || (mode == "H");
   y_vector_type expected_y(
       "expected", transposed ? input_mat.numCols() : input_mat.numRows());
   Kokkos::deep_copy(expected_y, y);
@@ -208,7 +208,7 @@ void check_spmv(
   bool threw = false;
   std::string msg;
   try {
-    KokkosSparse::spmv(controls, &mode, alpha, input_mat, x, beta, y);
+    KokkosSparse::spmv(controls, mode.data(), alpha, input_mat, x, beta, y);
     Kokkos::fence();
   } catch (std::exception &e) {
     threw = true;
@@ -234,9 +234,12 @@ void check_spmv_mv(
     crsMat_t input_mat, x_vector_type x, y_vector_type y,
     y_vector_type expected_y,
     typename y_vector_type::non_const_value_type alpha,
-    typename y_vector_type::non_const_value_type beta, int numMV, char mode,
+    typename y_vector_type::non_const_value_type beta, int numMV,
+    const std::string &mode,
     typename Kokkos::ArithTraits<typename crsMat_t::value_type>::mag_type
         max_val) {
+  EXPECT_TRUE(mode.size() == 1);
+
   using ExecSpace        = typename crsMat_t::execution_space;
   using my_exec_space    = Kokkos::RangePolicy<ExecSpace>;
   using y_value_type     = typename y_vector_type::non_const_value_type;
@@ -256,7 +259,7 @@ void check_spmv_mv(
   bool threw = false;
   std::string msg;
   try {
-    KokkosSparse::spmv(&mode, alpha, input_mat, x, beta, y);
+    KokkosSparse::spmv(mode.data(), alpha, input_mat, x, beta, y);
     Kokkos::fence();
   } catch (std::exception &e) {
     threw = true;
@@ -449,8 +452,9 @@ Kokkos::complex<float> randomUpperBound<Kokkos::complex<float>>(int mag) {
 
 template <typename scalar_t, typename lno_t, typename size_type,
           typename Device>
-void test_spmv(const Controls &controls, lno_t numRows, size_type nnz,
-               lno_t bandwidth, lno_t row_size_variance, bool heavy) {
+void test_spmv(const KokkosKernels::Experimental::Controls &controls,
+               lno_t numRows, size_type nnz, lno_t bandwidth,
+               lno_t row_size_variance, bool heavy) {
   using crsMat_t = typename KokkosSparse::CrsMatrix<scalar_t, lno_t, Device,
                                                     void, size_type>;
   using scalar_view_t = typename crsMat_t::values_type::non_const_type;
@@ -491,12 +495,12 @@ void test_spmv(const Controls &controls, lno_t numRows, size_type nnz,
   Kokkos::fill_random(input_mat.values, rand_pool,
                       randomUpperBound<scalar_t>(max_val));
 
-  std::vector<char> nonTransModes   = {'N'};
-  std::vector<char> transModes      = {'T'};
-  std::vector<double> testAlphaBeta = {0.0, 1.0};
+  std::vector<const char *> nonTransModes = {"N"};
+  std::vector<const char *> transModes    = {"T"};
+  std::vector<double> testAlphaBeta       = {0.0, 1.0};
   if (heavy) {
-    nonTransModes.push_back('C');
-    transModes.push_back('H');
+    nonTransModes.push_back("C");
+    transModes.push_back("H");
     testAlphaBeta.push_back(-1.0);
     testAlphaBeta.push_back(2.5);
   }
@@ -528,14 +532,20 @@ template <typename scalar_t, typename lno_t, typename size_type,
 void test_spmv_algorithms(lno_t numRows, size_type nnz, lno_t bandwidth,
                           lno_t row_size_variance, bool heavy) {
   {
-    Controls controls;
+    KokkosKernels::Experimental::Controls controls;
     test_spmv<scalar_t, lno_t, size_type, Device>(
         controls, numRows, nnz, bandwidth, row_size_variance, heavy);
   }
 
   {
-    Controls controls;
+    KokkosKernels::Experimental::Controls controls;
     controls.setParameter("algorithm", "native");
+    test_spmv<scalar_t, lno_t, size_type, Device>(
+        controls, numRows, nnz, bandwidth, row_size_variance, heavy);
+  }
+  {
+    KokkosKernels::Experimental::Controls controls;
+    controls.setParameter("algorithm", "merge");
     test_spmv<scalar_t, lno_t, size_type, Device>(
         controls, numRows, nnz, bandwidth, row_size_variance, heavy);
   }
@@ -588,12 +598,12 @@ void test_spmv_mv(lno_t numRows, size_type nnz, lno_t bandwidth,
   Kokkos::deep_copy(b_y_copy, b_y);
   Kokkos::deep_copy(b_yt_copy, b_yt);
 
-  std::vector<char> nonTransModes   = {'N'};
-  std::vector<char> transModes      = {'T'};
-  std::vector<double> testAlphaBeta = {0.0, 1.0};
+  std::vector<const char *> nonTransModes = {"N"};
+  std::vector<const char *> transModes    = {"T"};
+  std::vector<double> testAlphaBeta       = {0.0, 1.0};
   if (heavy) {
-    nonTransModes.push_back('C');
-    transModes.push_back('H');
+    nonTransModes.push_back("C");
+    transModes.push_back("H");
     testAlphaBeta.push_back(-1.0);
     testAlphaBeta.push_back(2.5);
   }
@@ -662,18 +672,18 @@ void test_spmv_mv_heavy(lno_t numRows, size_type nnz, lno_t bandwidth,
 
     Kokkos::deep_copy(b_y_copy, b_y);
 
-    Test::check_spmv_mv(input_mat, b_x, b_y, b_y_copy, 1.0, 0.0, nv, 'N',
+    Test::check_spmv_mv(input_mat, b_x, b_y, b_y_copy, 1.0, 0.0, nv, "N",
                         max_nnz_per_row * max_val * max_x);
-    Test::check_spmv_mv(input_mat, b_x, b_y, b_y_copy, 0.0, 1.0, nv, 'N',
+    Test::check_spmv_mv(input_mat, b_x, b_y, b_y_copy, 0.0, 1.0, nv, "N",
                         max_y);
-    Test::check_spmv_mv(input_mat, b_x, b_y, b_y_copy, 1.0, 1.0, nv, 'N',
+    Test::check_spmv_mv(input_mat, b_x, b_y, b_y_copy, 1.0, 1.0, nv, "N",
                         max_y + max_nnz_per_row * max_val * max_x);
-    Test::check_spmv_mv(input_mat, b_x, b_y, b_y_copy, 1.0, 0.0, nv, 'T',
+    Test::check_spmv_mv(input_mat, b_x, b_y, b_y_copy, 1.0, 0.0, nv, "T",
                         max_nnz_per_row * max_val * max_x);
-    Test::check_spmv_mv(input_mat, b_x, b_y, b_y_copy, 0.0, 1.0, nv, 'T',
+    Test::check_spmv_mv(input_mat, b_x, b_y, b_y_copy, 0.0, 1.0, nv, "T",
                         max_y);
     // Testing all modes together, since matrix is square
-    std::vector<char> modes           = {'N', 'C', 'T', 'H'};
+    std::vector<const char *> modes   = {"N", "C", "T", "H"};
     std::vector<double> testAlphaBeta = {0.0, 1.0, -1.0, 2.5};
     for (auto mode : modes) {
       for (double alpha : testAlphaBeta) {
@@ -944,7 +954,8 @@ void test_spmv_mv_struct_1D(lno_t nx, int numMV) {
 template <typename scalar_t, typename lno_t, typename size_type, class Device>
 void test_spmv_controls(lno_t numRows, size_type nnz, lno_t bandwidth,
                         lno_t row_size_variance,
-                        const Controls &controls = Controls()) {
+                        const KokkosKernels::Experimental::Controls &controls =
+                            KokkosKernels::Experimental::Controls()) {
   using crsMat_t = typename KokkosSparse::CrsMatrix<scalar_t, lno_t, Device,
                                                     void, size_type>;
   using scalar_view_t = typename crsMat_t::values_type::non_const_type;
@@ -987,7 +998,7 @@ void test_spmv_controls(lno_t numRows, size_type nnz, lno_t bandwidth,
 template <typename scalar_t, typename lno_t, typename size_type, class Device>
 void test_spmv_native(lno_t numRows, size_type nnz, lno_t bandwidth,
                       lno_t row_size_variance) {
-  Controls controls;
+  KokkosKernels::Experimental::Controls controls;
   controls.setParameter("algorithm", "native");
   test_spmv_controls(numRows, nnz, bandwidth, row_size_variance, controls);
 }  // test_spmv_native

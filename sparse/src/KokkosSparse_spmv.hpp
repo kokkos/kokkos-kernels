@@ -98,13 +98,23 @@ void spmv(const ExecutionSpace& space,
                                  typename YVector::memory_space>::accessible,
       "KokkosBlas::spmv: YVector must be accessible from ExecutionSpace");
 
-  // Make sure that x and y have the same rank.
-  static_assert(XVector::rank == YVector::rank,
+// Make sure that x and y have the same rank.
+// Make sure that x (and therefore y) is rank 1.
+#if (KOKKOS_VERSION >= 40100)
+  static_assert(XVector::rank() == YVector::rank(),
                 "KokkosSparse::spmv: Vector ranks do not match.");
-  // Make sure that x (and therefore y) is rank 1.
+
+  static_assert(XVector::rank() == 1,
+                "KokkosSparse::spmv: Both Vector inputs must have rank 1 "
+                "in order to call this specialization of spmv.");
+#else
+  static_assert(
+      static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
+      "KokkosSparse::spmv: Vector ranks do not match.");
   static_assert(static_cast<int>(XVector::rank) == 1,
                 "KokkosSparse::spmv: Both Vector inputs must have rank 1 "
                 "in order to call this specialization of spmv.");
+#endif
   // Make sure that y is non-const.
   static_assert(std::is_same<typename YVector::value_type,
                              typename YVector::non_const_value_type>::value,
@@ -296,8 +306,14 @@ void spmv(const ExecutionSpace& space,
                                  typename YVector::memory_space>::accessible,
       "KokkosBlas::spmv: YVector must be accessible from ExecutionSpace");
   // Make sure that x and y have the same rank.
-  static_assert(XVector::rank == YVector::rank,
+#if (KOKKOS_VERSION >= 40100)
+  static_assert(XVector::rank() == YVector::rank(),
                 "KokkosSparse::spmv: Vector ranks do not match.");
+#else
+  static_assert(
+      static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
+      "KokkosSparse::spmv: Vector ranks do not match.");
+#endif
   // Make sure that x (and therefore y) is rank 1.
   static_assert(static_cast<int>(XVector::rank) == 1,
                 "KokkosSparse::spmv: Both Vector inputs must have rank 1 "
@@ -673,9 +689,15 @@ void spmv(const ExecutionSpace& space,
       Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename YVector::memory_space>::accessible,
       "KokkosBlas::spmv: YVector must be accessible from ExecutionSpace");
-  // Make sure that x and y have the same rank.
-  static_assert(XVector::rank == YVector::rank,
+// Make sure that x and y have the same rank.
+#if (KOKKOS_VERSION >= 40100)
+  static_assert(XVector::rank() == YVector::rank(),
                 "KokkosSparse::spmv: Vector ranks do not match.");
+#else
+  static_assert(
+      static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
+      "KokkosSparse::spmv: Vector ranks do not match.");
+#endif
   // Make sure that x (and therefore y) is rank 2.
   static_assert(static_cast<int>(XVector::rank) == 2,
                 "KokkosSparse::spmv: Both Vector inputs must have rank 2 "

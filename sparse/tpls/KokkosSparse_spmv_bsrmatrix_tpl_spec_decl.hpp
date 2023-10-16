@@ -819,6 +819,8 @@ void spmv_block_impl_rocsparse(
                 "A entries must be contiguous");
 
   rocsparse_handle handle = controls.getRocsparseHandle();
+  // resets handle stream to NULL when out of scope
+  KokkosSparse::Impl::TemporarySetRocsparseStream tsrs(handle, exec);
 
   // set the mode
   rocsparse_operation trans;
