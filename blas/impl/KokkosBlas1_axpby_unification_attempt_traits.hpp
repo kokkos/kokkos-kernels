@@ -154,8 +154,7 @@ struct AxpbyUnificationAttemptTraits {
   // ********************************************************************
   using AtInputScalarTypeX = typename XMV::value_type;
 
-  using AtInputScalarTypeX_nonConst =
-      typename std::remove_const<AtInputScalarTypeX>::type;
+  using AtInputScalarTypeX_nonConst = typename XMV::non_const_value_type;
 
   // ********************************************************************
   // Declare 'AtInputScalarTypeB_nonConst'
@@ -183,8 +182,7 @@ struct AxpbyUnificationAttemptTraits {
   // ********************************************************************
   using AtInputScalarTypeY = typename YMV::value_type;
 
-  using AtInputScalarTypeY_nonConst =
-      typename std::remove_const<AtInputScalarTypeY>::type;
+  using AtInputScalarTypeY_nonConst = typename YMV::non_const_value_type;
 
   // ********************************************************************
   // Declare 'InternalLayoutX' and 'InternalLayoutY'
@@ -395,15 +393,11 @@ struct AxpbyUnificationAttemptTraits {
         ": one must have either both X and Y as rank 1, or both X and Y as "
         "rank 2");
 
-    if constexpr (Kokkos::ArithTraits<
-                      AtInputScalarTypeY_nonConst>::is_complex == false) {
+    if constexpr (!Kokkos::ArithTraits<AtInputScalarTypeY_nonConst>::is_complex) {
       static_assert(
-          (Kokkos::ArithTraits<AtInputScalarTypeA_nonConst>::is_complex ==
-           false) &&
-              (Kokkos::ArithTraits<AtInputScalarTypeX_nonConst>::is_complex ==
-               false) &&
-              (Kokkos::ArithTraits<AtInputScalarTypeB_nonConst>::is_complex ==
-               false),
+          (!Kokkos::ArithTraits<AtInputScalarTypeA_nonConst>::is_complex) &&
+          (!Kokkos::ArithTraits<AtInputScalarTypeX_nonConst>::is_complex) &&
+          (!Kokkos::ArithTraits<AtInputScalarTypeB_nonConst>::is_complex),
           "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
           ": if Y is not complex, then A, X and B cannot be complex");
     }
@@ -442,9 +436,7 @@ struct AxpbyUnificationAttemptTraits {
         ": XMV must be accessible from tExecSpace");
 
     if constexpr (xyRank1Case) {
-      if (X.extent(0) == Y.extent(0)) {
-        // Ok
-      } else {
+      if (X.extent(0) != Y.extent(0)) {
         std::ostringstream msg;
         msg << "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks("
                ")"
@@ -454,9 +446,7 @@ struct AxpbyUnificationAttemptTraits {
         KokkosKernels::Impl::throw_runtime_exception(msg.str());
       }
     } else {
-      if ((X.extent(0) == Y.extent(0)) && (X.extent(1) == Y.extent(1))) {
-        // Ok
-      } else {
+      if ((X.extent(0) != Y.extent(0)) || (X.extent(1) != Y.extent(1))) {
         std::ostringstream msg;
         msg << "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks("
                ")"
@@ -483,9 +473,7 @@ struct AxpbyUnificationAttemptTraits {
 
     if constexpr (a_is_r1d || a_is_r1s) {
       if constexpr (xyRank1Case) {
-        if (a.extent(0) == 1) {
-          // Ok
-        } else {
+        if (a.extent(0) != 1) {
           std::ostringstream msg;
           msg << "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::"
                  "performChecks()"
@@ -525,9 +513,7 @@ struct AxpbyUnificationAttemptTraits {
 
     if constexpr (b_is_r1d || b_is_r1s) {
       if constexpr (xyRank1Case) {
-        if (b.extent(0) == 1) {
-          // Ok
-        } else {
+        if (b.extent(0) != 1) {
           std::ostringstream msg;
           msg << "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::"
                  "performChecks()"
