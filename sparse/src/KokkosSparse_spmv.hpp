@@ -203,7 +203,7 @@ void spmv(const ExecutionSpace& space,
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
   if (std::is_same<typename AMatrix_Internal::memory_space,
-                   Kokkos::Experimental::HIPSpace>::value) {
+                   Kokkos::HIPSpace>::value) {
     useFallback = useFallback || (mode[0] != NoTranspose[0]);
   }
 #endif

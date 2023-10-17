@@ -132,16 +132,16 @@ KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>,
   struct gemv_tpl_spec_avail<                                      \
       ExecSpace,                                                   \
       Kokkos::View<const SCALAR**, LAYOUT,                         \
-                   Kokkos::Device<Kokkos::Experimental::HIP,       \
-                                  Kokkos::Experimental::HIPSpace>, \
+                   Kokkos::Device<Kokkos::HIP,       \
+                                  Kokkos::HIPSpace>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,      \
       Kokkos::View<const SCALAR*, LAYOUT,                          \
-                   Kokkos::Device<Kokkos::Experimental::HIP,       \
-                                  Kokkos::Experimental::HIPSpace>, \
+                   Kokkos::Device<Kokkos::HIP,       \
+                                  Kokkos::HIPSpace>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,      \
       Kokkos::View<SCALAR*, LAYOUT,                                \
-                   Kokkos::Device<Kokkos::Experimental::HIP,       \
-                                  Kokkos::Experimental::HIPSpace>, \
+                   Kokkos::Device<Kokkos::HIP,       \
+                                  Kokkos::HIPSpace>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {   \
     enum : bool { value = true };                                  \
   };

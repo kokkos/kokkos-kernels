@@ -205,7 +205,7 @@ int64_t spmv_launch_parameters(int64_t numRows, int64_t nnz,
     max_vector_length = 32;
 #endif
 #ifdef KOKKOS_ENABLE_HIP
-  if (std::is_same<execution_space, Kokkos::Experimental::HIP>::value)
+  if (std::is_same<execution_space, Kokkos::HIP>::value)
     max_vector_length = 64;
 #endif
 
@@ -594,7 +594,7 @@ static void spmv_beta_transpose(const execution_space& exec,
     max_vector_length = 32;
 #endif
 #ifdef KOKKOS_ENABLE_HIP
-  if (std::is_same<execution_space, Kokkos::Experimental::HIP>::value)
+  if (std::is_same<execution_space, Kokkos::HIP>::value)
     max_vector_length = 64;
 #endif
   while ((vector_length * 2 * 3 <= NNZPerRow) &&

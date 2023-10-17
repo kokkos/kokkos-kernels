@@ -151,7 +151,7 @@ void gemv(const ExecutionSpace& space, const char trans[],
                       std::is_same<typename AViewType::array_layout,
                                    Kokkos::LayoutRight>::value &&
                       std::is_same<typename AViewType::memory_space,
-                                   Kokkos::Experimental::HIPSpace>::value);
+                                   Kokkos::HIPSpace>::value);
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
   useFallback = useFallback || (tolower(*trans) == 'c' &&

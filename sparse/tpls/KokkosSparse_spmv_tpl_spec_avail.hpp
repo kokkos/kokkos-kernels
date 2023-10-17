@@ -188,18 +188,18 @@ KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(Kokkos::complex<double>, int64_t,
   struct spmv_tpl_spec_avail<                                                 \
       Kokkos::HIP,                                                            \
       KokkosSparse::CrsMatrix<const SCALAR, const rocsparse_int,              \
-                              Kokkos::Device<Kokkos::Experimental::HIP,       \
-                                             Kokkos::Experimental::HIPSpace>, \
+                              Kokkos::Device<Kokkos::HIP,       \
+                                             Kokkos::HIPSpace>, \
                               Kokkos::MemoryTraits<Kokkos::Unmanaged>,        \
                               const rocsparse_int>,                           \
       Kokkos::View<                                                           \
           const SCALAR*, LAYOUT,                                              \
-          Kokkos::Device<Kokkos::Experimental::HIP,                           \
-                         Kokkos::Experimental::HIPSpace>,                     \
+          Kokkos::Device<Kokkos::HIP,                           \
+                         Kokkos::HIPSpace>,                     \
           Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>,    \
       Kokkos::View<SCALAR*, LAYOUT,                                           \
-                   Kokkos::Device<Kokkos::Experimental::HIP,                  \
-                                  Kokkos::Experimental::HIPSpace>,            \
+                   Kokkos::Device<Kokkos::HIP,                  \
+                                  Kokkos::HIPSpace>,            \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {                \
     enum : bool { value = true };                                             \
   };

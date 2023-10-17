@@ -367,7 +367,7 @@ int main(int argc, char **argv) {
 #endif
 #if defined(KOKKOS_ENABLE_HIP)
     if (cmdline[CMD_USE_HIP])
-      run_pcg<Kokkos::Experimental::HIP>(cmdline, mtx_file);
+      run_pcg<Kokkos::HIP>(cmdline, mtx_file);
 #endif
   }
   Kokkos::finalize();

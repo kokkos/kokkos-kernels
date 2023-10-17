@@ -2734,8 +2734,8 @@ struct ReturnRangePolicyType<Kokkos::Cuda> {
 #endif
 #ifdef KOKKOS_ENABLE_HIP
 template <>
-struct ReturnRangePolicyType<Kokkos::Experimental::HIP> {
-  using PolicyType = Kokkos::RangePolicy<Kokkos::Experimental::HIP>;
+struct ReturnRangePolicyType<Kokkos::HIP> {
+  using PolicyType = Kokkos::RangePolicy<Kokkos::HIP>;
 
   static inline PolicyType get_policy(int nt, int ts) {
     return PolicyType(nt, ts);

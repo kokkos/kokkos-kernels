@@ -62,7 +62,7 @@ using default_scalar = double;
 #if defined(KOKKOS_ENABLE_CUDA)
 using default_device = Kokkos::Cuda;
 #elif defined(KOKKOS_ENABLE_HIP)
-using default_device    = Kokkos::Experimental::HIP;
+using default_device    = Kokkos::HIP;
 #elif defined(KOKKOS_ENABLE_OPENMPTARGET)
 using default_device    = Kokkos::Experimental::OpenMPTarget;
 #elif defined(KOKKOS_ENABLE_OPENMP)

@@ -49,7 +49,7 @@ struct impl_gemm_choose_copy_layout<Kokkos::Cuda, LayoutA, LayoutAScratch> {
 
 #ifdef KOKKOS_ENABLE_HIP
 template <class LayoutA, class LayoutAScratch>
-struct impl_gemm_choose_copy_layout<Kokkos::Experimental::HIP, LayoutA,
+struct impl_gemm_choose_copy_layout<Kokkos::HIP, LayoutA,
                                     LayoutAScratch> {
   using type = LayoutA;
 };

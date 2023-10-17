@@ -49,14 +49,14 @@
 #cmakedefine KOKKOSKERNELS_INST_EXECSPACE_CUDA
 #cmakedefine KOKKOSKERNELS_INST_MEMSPACE_CUDASPACE
 #cmakedefine KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE
-/* Whether to build kernels for execution space Kokkos::Experimental::HIP */
+/* Whether to build kernels for execution space Kokkos::HIP */
 #cmakedefine KOKKOSKERNELS_INST_EXECSPACE_HIP
 #cmakedefine KOKKOSKERNELS_INST_MEMSPACE_HIPSPACE
 /* Whether to build kernels for execution space Kokkos::Experimental::SYCL */
 #cmakedefine KOKKOSKERNELS_INST_EXECSPACE_SYCL
 #cmakedefine KOKKOSKERNELS_INST_MEMSPACE_SYCLSPACE
 #cmakedefine KOKKOSKERNELS_INST_MEMSPACE_SYCLSHAREDSPACE
-/* Whether to build kernels for execution space Kokkos::Experimental::HIP */
+/* Whether to build kernels for execution space Kokkos::Experimental::OpenMPTarget */
 #cmakedefine KOKKOSKERNELS_INST_EXECSPACE_OPENMPTARGET
 #cmakedefine KOKKOSKERNELS_INST_MEMSPACE_OPENMPTARGETSPACE
 /* Whether to build kernels for execution space Kokkos::OpenMP */

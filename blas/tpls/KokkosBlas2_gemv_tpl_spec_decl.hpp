@@ -553,26 +553,26 @@ namespace Impl {
   struct GEMV<                                                                 \
       ExecSpace,                                                               \
       Kokkos::View<const double**, LAYOUT,                                     \
-                   Kokkos::Device<Kokkos::Experimental::HIP, MEM_SPACE>,       \
+                   Kokkos::Device<Kokkos::HIP, MEM_SPACE>,       \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
       Kokkos::View<const double*, LAYOUT,                                      \
-                   Kokkos::Device<Kokkos::Experimental::HIP, MEM_SPACE>,       \
+                   Kokkos::Device<Kokkos::HIP, MEM_SPACE>,       \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
       Kokkos::View<double*, LAYOUT,                                            \
-                   Kokkos::Device<Kokkos::Experimental::HIP, MEM_SPACE>,       \
+                   Kokkos::Device<Kokkos::HIP, MEM_SPACE>,       \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
       true, ETI_SPEC_AVAIL> {                                                  \
     typedef double SCALAR;                                                     \
     typedef Kokkos::View<const SCALAR**, LAYOUT,                               \
-                         Kokkos::Device<Kokkos::Experimental::HIP, MEM_SPACE>, \
+                         Kokkos::Device<Kokkos::HIP, MEM_SPACE>, \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
         AViewType;                                                             \
     typedef Kokkos::View<const SCALAR*, LAYOUT,                                \
-                         Kokkos::Device<Kokkos::Experimental::HIP, MEM_SPACE>, \
+                         Kokkos::Device<Kokkos::HIP, MEM_SPACE>, \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
         XViewType;                                                             \
     typedef Kokkos::View<SCALAR*, LAYOUT,                                      \
-                         Kokkos::Device<Kokkos::Experimental::HIP, MEM_SPACE>, \
+                         Kokkos::Device<Kokkos::HIP, MEM_SPACE>, \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
         YViewType;                                                             \
                                                                                \
@@ -600,26 +600,26 @@ namespace Impl {
   struct GEMV<                                                                 \
       ExecSpace,                                                               \
       Kokkos::View<const float**, LAYOUT,                                      \
-                   Kokkos::Device<Kokkos::Experimental::HIP, MEM_SPACE>,       \
+                   Kokkos::Device<Kokkos::HIP, MEM_SPACE>,       \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
       Kokkos::View<const float*, LAYOUT,                                       \
-                   Kokkos::Device<Kokkos::Experimental::HIP, MEM_SPACE>,       \
+                   Kokkos::Device<Kokkos::HIP, MEM_SPACE>,       \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
       Kokkos::View<float*, LAYOUT,                                             \
-                   Kokkos::Device<Kokkos::Experimental::HIP, MEM_SPACE>,       \
+                   Kokkos::Device<Kokkos::HIP, MEM_SPACE>,       \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
       true, ETI_SPEC_AVAIL> {                                                  \
     typedef float SCALAR;                                                      \
     typedef Kokkos::View<const SCALAR**, LAYOUT,                               \
-                         Kokkos::Device<Kokkos::Experimental::HIP, MEM_SPACE>, \
+                         Kokkos::Device<Kokkos::HIP, MEM_SPACE>, \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
         AViewType;                                                             \
     typedef Kokkos::View<const SCALAR*, LAYOUT,                                \
-                         Kokkos::Device<Kokkos::Experimental::HIP, MEM_SPACE>, \
+                         Kokkos::Device<Kokkos::HIP, MEM_SPACE>, \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
         XViewType;                                                             \
     typedef Kokkos::View<SCALAR*, LAYOUT,                                      \
-                         Kokkos::Device<Kokkos::Experimental::HIP, MEM_SPACE>, \
+                         Kokkos::Device<Kokkos::HIP, MEM_SPACE>, \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
         YViewType;                                                             \
                                                                                \
@@ -647,26 +647,26 @@ namespace Impl {
   struct GEMV<                                                                 \
       ExecSpace,                                                               \
       Kokkos::View<const Kokkos::complex<double>**, LAYOUT,                    \
-                   Kokkos::Device<Kokkos::Experimental::HIP, MEM_SPACE>,       \
+                   Kokkos::Device<Kokkos::HIP, MEM_SPACE>,       \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
       Kokkos::View<const Kokkos::complex<double>*, LAYOUT,                     \
-                   Kokkos::Device<Kokkos::Experimental::HIP, MEM_SPACE>,       \
+                   Kokkos::Device<Kokkos::HIP, MEM_SPACE>,       \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
       Kokkos::View<Kokkos::complex<double>*, LAYOUT,                           \
-                   Kokkos::Device<Kokkos::Experimental::HIP, MEM_SPACE>,       \
+                   Kokkos::Device<Kokkos::HIP, MEM_SPACE>,       \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
       true, ETI_SPEC_AVAIL> {                                                  \
     typedef Kokkos::complex<double> SCALAR;                                    \
     typedef Kokkos::View<const SCALAR**, LAYOUT,                               \
-                         Kokkos::Device<Kokkos::Experimental::HIP, MEM_SPACE>, \
+                         Kokkos::Device<Kokkos::HIP, MEM_SPACE>, \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
         AViewType;                                                             \
     typedef Kokkos::View<const SCALAR*, LAYOUT,                                \
-                         Kokkos::Device<Kokkos::Experimental::HIP, MEM_SPACE>, \
+                         Kokkos::Device<Kokkos::HIP, MEM_SPACE>, \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
         XViewType;                                                             \
     typedef Kokkos::View<SCALAR*, LAYOUT,                                      \
-                         Kokkos::Device<Kokkos::Experimental::HIP, MEM_SPACE>, \
+                         Kokkos::Device<Kokkos::HIP, MEM_SPACE>, \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
         YViewType;                                                             \
                                                                                \
@@ -699,26 +699,26 @@ namespace Impl {
   struct GEMV<                                                                 \
       ExecSpace,                                                               \
       Kokkos::View<const Kokkos::complex<float>**, LAYOUT,                     \
-                   Kokkos::Device<Kokkos::Experimental::HIP, MEM_SPACE>,       \
+                   Kokkos::Device<Kokkos::HIP, MEM_SPACE>,       \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
       Kokkos::View<const Kokkos::complex<float>*, LAYOUT,                      \
-                   Kokkos::Device<Kokkos::Experimental::HIP, MEM_SPACE>,       \
+                   Kokkos::Device<Kokkos::HIP, MEM_SPACE>,       \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
       Kokkos::View<Kokkos::complex<float>*, LAYOUT,                            \
-                   Kokkos::Device<Kokkos::Experimental::HIP, MEM_SPACE>,       \
+                   Kokkos::Device<Kokkos::HIP, MEM_SPACE>,       \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
       true, ETI_SPEC_AVAIL> {                                                  \
     typedef Kokkos::complex<float> SCALAR;                                     \
     typedef Kokkos::View<const SCALAR**, LAYOUT,                               \
-                         Kokkos::Device<Kokkos::Experimental::HIP, MEM_SPACE>, \
+                         Kokkos::Device<Kokkos::HIP, MEM_SPACE>, \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
         AViewType;                                                             \
     typedef Kokkos::View<const SCALAR*, LAYOUT,                                \
-                         Kokkos::Device<Kokkos::Experimental::HIP, MEM_SPACE>, \
+                         Kokkos::Device<Kokkos::HIP, MEM_SPACE>, \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
         XViewType;                                                             \
     typedef Kokkos::View<SCALAR*, LAYOUT,                                      \
-                         Kokkos::Device<Kokkos::Experimental::HIP, MEM_SPACE>, \
+                         Kokkos::Device<Kokkos::HIP, MEM_SPACE>, \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
         YViewType;                                                             \
                                                                                \
@@ -746,40 +746,40 @@ namespace Impl {
     }                                                                          \
   };
 
-KOKKOSBLAS2_DGEMV_ROCBLAS(Kokkos::LayoutLeft, Kokkos::Experimental::HIPSpace,
+KOKKOSBLAS2_DGEMV_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIPSpace,
                           true)
-KOKKOSBLAS2_DGEMV_ROCBLAS(Kokkos::LayoutLeft, Kokkos::Experimental::HIPSpace,
+KOKKOSBLAS2_DGEMV_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIPSpace,
                           false)
-KOKKOSBLAS2_DGEMV_ROCBLAS(Kokkos::LayoutRight, Kokkos::Experimental::HIPSpace,
+KOKKOSBLAS2_DGEMV_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIPSpace,
                           true)
-KOKKOSBLAS2_DGEMV_ROCBLAS(Kokkos::LayoutRight, Kokkos::Experimental::HIPSpace,
-                          false)
-
-KOKKOSBLAS2_SGEMV_ROCBLAS(Kokkos::LayoutLeft, Kokkos::Experimental::HIPSpace,
-                          true)
-KOKKOSBLAS2_SGEMV_ROCBLAS(Kokkos::LayoutLeft, Kokkos::Experimental::HIPSpace,
-                          false)
-KOKKOSBLAS2_SGEMV_ROCBLAS(Kokkos::LayoutRight, Kokkos::Experimental::HIPSpace,
-                          true)
-KOKKOSBLAS2_SGEMV_ROCBLAS(Kokkos::LayoutRight, Kokkos::Experimental::HIPSpace,
+KOKKOSBLAS2_DGEMV_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIPSpace,
                           false)
 
-KOKKOSBLAS2_ZGEMV_ROCBLAS(Kokkos::LayoutLeft, Kokkos::Experimental::HIPSpace,
+KOKKOSBLAS2_SGEMV_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIPSpace,
                           true)
-KOKKOSBLAS2_ZGEMV_ROCBLAS(Kokkos::LayoutLeft, Kokkos::Experimental::HIPSpace,
+KOKKOSBLAS2_SGEMV_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIPSpace,
                           false)
-KOKKOSBLAS2_ZGEMV_ROCBLAS(Kokkos::LayoutRight, Kokkos::Experimental::HIPSpace,
+KOKKOSBLAS2_SGEMV_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIPSpace,
                           true)
-KOKKOSBLAS2_ZGEMV_ROCBLAS(Kokkos::LayoutRight, Kokkos::Experimental::HIPSpace,
+KOKKOSBLAS2_SGEMV_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIPSpace,
                           false)
 
-KOKKOSBLAS2_CGEMV_ROCBLAS(Kokkos::LayoutLeft, Kokkos::Experimental::HIPSpace,
+KOKKOSBLAS2_ZGEMV_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIPSpace,
                           true)
-KOKKOSBLAS2_CGEMV_ROCBLAS(Kokkos::LayoutLeft, Kokkos::Experimental::HIPSpace,
+KOKKOSBLAS2_ZGEMV_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIPSpace,
                           false)
-KOKKOSBLAS2_CGEMV_ROCBLAS(Kokkos::LayoutRight, Kokkos::Experimental::HIPSpace,
+KOKKOSBLAS2_ZGEMV_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIPSpace,
                           true)
-KOKKOSBLAS2_CGEMV_ROCBLAS(Kokkos::LayoutRight, Kokkos::Experimental::HIPSpace,
+KOKKOSBLAS2_ZGEMV_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIPSpace,
+                          false)
+
+KOKKOSBLAS2_CGEMV_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIPSpace,
+                          true)
+KOKKOSBLAS2_CGEMV_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIPSpace,
+                          false)
+KOKKOSBLAS2_CGEMV_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIPSpace,
+                          true)
+KOKKOSBLAS2_CGEMV_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIPSpace,
                           false)
 
 }  // namespace Impl
