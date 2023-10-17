@@ -2126,12 +2126,12 @@ int test_axpby_mv_unification() {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, axpby_unification_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::axpby_unification_float");
-  test_axpby_unification<float, float, float, float, TestExecSpace>();
+  test_axpby_unification<float, float, float, float, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 TEST_F(TestCategory, axpby_mv_unification_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::axpby_mv_unification_float");
-  test_axpby_mv_unification<float, float, float, float, TestExecSpace>();
+  test_axpby_mv_unification<float, float, float, float, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -2141,12 +2141,12 @@ TEST_F(TestCategory, axpby_mv_unification_float) {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, axpby_unification_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::axpby_unification_double");
-  test_axpby_unification<double, double, double, double, TestExecSpace>();
+  test_axpby_unification<double, double, double, double, TestDevice>();
 }
 TEST_F(TestCategory, axpby_mv_unification_double) {
   Kokkos::Profiling::pushRegion(
       "KokkosBlas::Test::axpby_mv_unification_double");
-  test_axpby_mv_unification<double, double, double, double, TestExecSpace>();
+  test_axpby_mv_unification<double, double, double, double, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -2159,7 +2159,7 @@ TEST_F(TestCategory, axpby_unification_complex_double) {
       "KokkosBlas::Test::axpby_unification_complex_double");
   test_axpby_unification<Kokkos::complex<double>, Kokkos::complex<double>,
                          Kokkos::complex<double>, Kokkos::complex<double>,
-                         TestExecSpace>();
+                         TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 TEST_F(TestCategory, axpby_mv_unification_complex_double) {
@@ -2167,7 +2167,7 @@ TEST_F(TestCategory, axpby_mv_unification_complex_double) {
       "KokkosBlas::Test::axpby_mv_unification_complex_double");
   test_axpby_mv_unification<Kokkos::complex<double>, Kokkos::complex<double>,
                             Kokkos::complex<double>, Kokkos::complex<double>,
-                            TestExecSpace>();
+                            TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -2177,12 +2177,12 @@ TEST_F(TestCategory, axpby_mv_unification_complex_double) {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, axpby_unification_int) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::axpby_unification_int");
-  test_axpby_unification<int, int, int, int, TestExecSpace>();
+  test_axpby_unification<int, int, int, int, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 TEST_F(TestCategory, axpby_mv_unification_int) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::axpby_mv_unification_int");
-  test_axpby_mv_unification<int, int, int, int, TestExecSpace>();
+  test_axpby_mv_unification<int, int, int, int, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -2192,13 +2192,13 @@ TEST_F(TestCategory, axpby_mv_unification_int) {
 TEST_F(TestCategory, axpby_unification_double_int) {
   Kokkos::Profiling::pushRegion(
       "KokkosBlas::Test::axpby_unification_double_int");
-  test_axpby_unification<double, double, int, int, TestExecSpace>();
+  test_axpby_unification<double, double, int, int, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 TEST_F(TestCategory, axpby_double_mv_unification_int) {
   Kokkos::Profiling::pushRegion(
       "KokkosBlas::Test::axpby_mv_unification_double_int");
-  test_axpby_mv_unification<double, double, int, int, TestExecSpace>();
+  test_axpby_mv_unification<double, double, int, int, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
 #endif
