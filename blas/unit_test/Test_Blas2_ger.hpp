@@ -195,8 +195,12 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
       // large enough to require 'relTol' to value 5.0e-3. The same
       // calculations show no discrepancies for calculations with double.
       // ****************************************************************
-      _absTol(std::is_same<_AuxType, float>::value ? 1.0e-6 : (std::is_same<_AuxType, double>::value ? 1.0e-9 : 0)),
-      _relTol(std::is_same<_AuxType, float>::value ? 5.0e-3 : (std::is_same<_AuxType, double>::value ? 1.0e-6 : 0)),
+      _absTol(std::is_same<_AuxType, float>::value
+                  ? 1.0e-6
+                  : (std::is_same<_AuxType, double>::value ? 1.0e-9 : 0)),
+      _relTol(std::is_same<_AuxType, float>::value
+                  ? 5.0e-3
+                  : (std::is_same<_AuxType, double>::value ? 1.0e-6 : 0)),
       _M(-1),
       _N(-1),
       _useAnalyticalResults(false),

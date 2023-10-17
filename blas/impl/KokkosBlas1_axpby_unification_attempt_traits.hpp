@@ -393,11 +393,12 @@ struct AxpbyUnificationAttemptTraits {
         ": one must have either both X and Y as rank 1, or both X and Y as "
         "rank 2");
 
-    if constexpr (!Kokkos::ArithTraits<AtInputScalarTypeY_nonConst>::is_complex) {
+    if constexpr (!Kokkos::ArithTraits<
+                      AtInputScalarTypeY_nonConst>::is_complex) {
       static_assert(
           (!Kokkos::ArithTraits<AtInputScalarTypeA_nonConst>::is_complex) &&
-          (!Kokkos::ArithTraits<AtInputScalarTypeX_nonConst>::is_complex) &&
-          (!Kokkos::ArithTraits<AtInputScalarTypeB_nonConst>::is_complex),
+              (!Kokkos::ArithTraits<AtInputScalarTypeX_nonConst>::is_complex) &&
+              (!Kokkos::ArithTraits<AtInputScalarTypeB_nonConst>::is_complex),
           "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
           ": if Y is not complex, then A, X and B cannot be complex");
     }
