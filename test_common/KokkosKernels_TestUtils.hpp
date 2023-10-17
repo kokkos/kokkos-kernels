@@ -411,6 +411,7 @@ class epsilon {
   constexpr static double value = std::numeric_limits<T>::epsilon();
 };
 
+#if KOKKOS_VERSION < 40199
 // explicit epsilon specializations
 #if defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
 template <>
@@ -428,6 +429,7 @@ class epsilon<Kokkos::Experimental::bhalf_t> {
   constexpr static double value = 0.0078125F;
 };
 #endif  // KOKKOS_HALF_T_IS_FLOAT
+#endif  // KOKKOS_VERSION < 40199
 
 using KokkosKernels::Impl::getRandomBounds;
 

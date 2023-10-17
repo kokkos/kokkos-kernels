@@ -413,9 +413,20 @@ class ArithTraitsTesterBase {
     }
 
     if (AT::has_infinity) {
-      if (!AT::isInf(AT::infinity())) {
-        out << "AT::isInf (inf) != true" << endl;
-        FAILURE();
+// Compiler intrinsic casts from inf of type half_t / bhalf_t to inf
+// of type float in CUDA, SYCL and HIP do not work yet.
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_SYCL) || \
+    defined(KOKKOS_ENABLE_HIP)
+      namespace KE = Kokkos::Experimental;
+      if constexpr (!std::is_same<ScalarType, KE::half_t>::value &&
+                    !std::is_same<ScalarType, KE::bhalf_t>::value) {
+#else
+      {
+#endif  // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_SYCL || KOKKOS_ENABLE_HIP
+        if (!AT::isInf(AT::infinity())) {
+          out << "AT::isInf (inf) != true" << endl;
+          FAILURE();
+        }
       }
     }
     if (!std::is_same<ScalarType, decltype(AT::infinity())>::value) {
@@ -1495,13 +1506,24 @@ class ArithTraitsTesterFloatingPointBase<ScalarType, DeviceType, 0>
       FAILURE();
     }
 
-    if (!AT::isNan(AT::nan())) {
-#if KOKKOS_VERSION < 40199
-      KOKKOS_IMPL_DO_NOT_USE_PRINTF("NaN is not NaN\n");
+// Compiler intrinsic casts from nan of type half_t / bhalf_t to nan
+// of type float in CUDA, SYCL and HIP do not work yet.
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_SYCL) || \
+    defined(KOKKOS_ENABLE_HIP)
+    namespace KE = Kokkos::Experimental;
+    if constexpr (!std::is_same<ScalarType, KE::half_t>::value &&
+                  !std::is_same<ScalarType, KE::bhalf_t>::value) {
 #else
-      Kokkos::printf("NaN is not NaN\n");
+    {
+#endif  // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_SYCL || KOKKOS_ENABLE_HIP
+      if (!AT::isNan(AT::nan())) {
+#if KOKKOS_VERSION < 40199
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("NaN is not NaN\n");
+#else
+        Kokkos::printf("NaN is not NaN\n");
 #endif
-      FAILURE();
+        FAILURE();
+      }
     }
 
     const ScalarType zero = AT::zero();
@@ -1523,6 +1545,27 @@ class ArithTraitsTesterFloatingPointBase<ScalarType, DeviceType, 0>
 #endif
       FAILURE();
     }
+#if defined(KOKKOS_ENABLE_SYCL) || \
+    defined(KOKKOS_ENABLE_HIP)  // FIXME_SYCL, FIXME_HIP
+    if constexpr (!std::is_same_v<ScalarType, Kokkos::Experimental::half_t>) {
+      if (AT::isNan(zero)) {
+#if KOKKOS_VERSION < 40199
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("0 is NaN\n");
+#else
+        Kokkos::printf("0 is NaN\n");
+#endif
+        FAILURE();
+      }
+      if (AT::isNan(one)) {
+#if KOKKOS_VERSION < 40199
+        KOKKOS_IMPL_DO_NOT_USE_PRINTF("1 is NaN\n");
+#else
+        Kokkos::printf("1 is NaN\n");
+#endif
+        FAILURE();
+      }
+    }
+#else
     if (AT::isNan(zero)) {
 #if KOKKOS_VERSION < 40199
       KOKKOS_IMPL_DO_NOT_USE_PRINTF("0 is NaN\n");
@@ -1539,6 +1582,7 @@ class ArithTraitsTesterFloatingPointBase<ScalarType, DeviceType, 0>
 #endif
       FAILURE();
     }
+#endif
 
     // Call the base class' implementation.  Every subclass'
     // implementation of operator() must do this, in order to include
@@ -1563,10 +1607,19 @@ class ArithTraitsTesterFloatingPointBase<ScalarType, DeviceType, 0>
 
     // if (std::numeric_limits<ScalarType>::is_iec559) {
     // success = success && AT::isInf (AT::inf ());
+#if defined(KOKKOS_ENABLE_SYCL) || defined(KOKKOS_ENABLE_HIP)
+    if constexpr (!std::is_same_v<ScalarType, Kokkos::Experimental::half_t>) {
+      if (!AT::isNan(AT::nan())) {
+        out << "isNan or nan failed" << endl;
+        FAILURE();
+      }
+    }
+#else
     if (!AT::isNan(AT::nan())) {
       out << "isNan or nan failed" << endl;
       FAILURE();
     }
+#endif
     //}
 
     const ScalarType zero = AT::zero();
@@ -1580,6 +1633,18 @@ class ArithTraitsTesterFloatingPointBase<ScalarType, DeviceType, 0>
       out << "isInf(one) is 1" << endl;
       FAILURE();
     }
+#if defined(KOKKOS_ENABLE_SYCL) || defined(KOKKOS_ENABLE_HIP)
+    if constexpr (!std::is_same_v<ScalarType, Kokkos::Experimental::half_t>) {
+      if (AT::isNan(zero)) {
+        out << "isNan(zero) is 1" << endl;
+        FAILURE();
+      }
+      if (AT::isNan(one)) {
+        out << "isNan(one) is 1" << endl;
+        FAILURE();
+      }
+    }
+#else
     if (AT::isNan(zero)) {
       out << "isNan(zero) is 1" << endl;
       FAILURE();
@@ -1588,6 +1653,7 @@ class ArithTraitsTesterFloatingPointBase<ScalarType, DeviceType, 0>
       out << "isNan(one) is 1" << endl;
       FAILURE();
     }
+#endif
 
     // Call the base class' implementation.  Every subclass'
     // implementation of testHostImpl() should (must) do this, in
