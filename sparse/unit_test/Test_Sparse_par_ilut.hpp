@@ -180,6 +180,7 @@ void run_test_par_ilut() {
 
   auto par_ilut_handle = kh.get_par_ilut_handle();
   par_ilut_handle->set_async_update(false);
+  par_ilut_handle->set_fill_in_limit(0.75);
 
   // Allocate L and U CRS views as outputs
   RowMapType L_row_map("L_row_map", nrows + 1);
