@@ -18,6 +18,7 @@
 #define KOKKOSBLAS2_SYR2_HPP_
 
 #include <KokkosBlas2_syr2_spec.hpp>
+#include <sstream>
 
 namespace KokkosBlas {
 
@@ -81,15 +82,6 @@ void syr2(const ExecutionSpace& space, const char trans[], const char uplo[],
           const typename AViewType::const_value_type& alpha, const XViewType& x,
           const YViewType& y, const AViewType& A) {
   static_assert(
-      Kokkos::SpaceAccessibility<typename AViewType::memory_space,
-                                 typename XViewType::memory_space>::assignable,
-      "AViewType memory space must be assignable from XViewType");
-  static_assert(
-      Kokkos::SpaceAccessibility<typename AViewType::memory_space,
-                                 typename YViewType::memory_space>::assignable,
-      "AViewType memory space must be assignable from YViewType");
-
-  static_assert(
       Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename AViewType::memory_space>::accessible,
       "AViewType memory space must be accessible from ExecutionSpace");
@@ -109,11 +101,11 @@ void syr2(const ExecutionSpace& space, const char trans[], const char uplo[],
   static_assert(Kokkos::is_view<YViewType>::value,
                 "YViewType must be a Kokkos::View.");
 
-  static_assert(static_cast<int>(AViewType::rank) == 2,
+  static_assert(static_cast<int>(AViewType::rank()) == 2,
                 "AViewType must have rank 2.");
-  static_assert(static_cast<int>(XViewType::rank) == 1,
+  static_assert(static_cast<int>(XViewType::rank()) == 1,
                 "XViewType must have rank 1.");
-  static_assert(static_cast<int>(YViewType::rank) == 1,
+  static_assert(static_cast<int>(YViewType::rank()) == 1,
                 "YViewType must have rank 1.");
 
   // Check compatibility of dimensions at run time.

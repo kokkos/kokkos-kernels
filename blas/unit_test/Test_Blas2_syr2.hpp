@@ -302,9 +302,8 @@ void Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
   view_stride_adapter<_ViewTypeExpected, true> h_vanilla(
       "vanilla = A + alpha * x * x^{t,h}", _M, _N);
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF(
-      "In Test_Blas2_syr2.hpp, computing vanilla A with alpha type = %s\n",
-      typeid(alpha).name());
+  std::cout << "In Test_Blas2_syr2.hpp, computing vanilla A with alpha type = "
+            << typeid(alpha).name() << std::endl;
 #endif
   this->populateVanillaValues(alpha, x.h_view, y.h_view, A.h_view,
                               h_vanilla.d_view);
@@ -1526,10 +1525,10 @@ void Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
   std::cout << "In Test_Blas2_syr2, '" << situation << "', alpha = " << alpha
             << std::endl;
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF(
-      "In Test_Blas2_syr2.hpp, right before calling KokkosBlas::syr2(): "
-      "ViewTypeA = %s, _kkSyr2ShouldThrowException=%d\n",
-      typeid(_ViewTypeA).name(), _kkSyr2ShouldThrowException);
+  std::cout << "In Test_Blas2_syr2.hpp, right before calling KokkosBlas::syr2()"
+            << ": ViewTypeA = " << typeid(_ViewTypeA).name()
+            << ", _kkSyr2ShouldThrowException = " << _kkSyr2ShouldThrowException
+            << std::endl;
 #endif
   std::string mode = _useHermitianOption ? "H" : "T";
   std::string uplo = _useUpOption ? "U" : "L";
@@ -1537,6 +1536,7 @@ void Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
   bool gotUnknownException(false);
   try {
     KokkosBlas::syr2(mode.c_str(), uplo.c_str(), alpha, x, y, A);
+    Kokkos::fence();
   } catch (const std::exception& e) {
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
     std::cout << "In Test_Blas2_syr2, '" << situation
@@ -1584,16 +1584,17 @@ void Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
   std::cout << "In Test_Blas2_syr2, '" << situation << "', alpha = " << alpha
             << std::endl;
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF(
-      "In Test_Blas2_syr2.hpp, right before calling KokkosBlas::ger(): "
-      "ViewTypeA = %s, _kkGerShouldThrowException=%d\n",
-      typeid(_ViewTypeA).name(), _kkGerShouldThrowException);
+  std::cout << "In Test_Blas2_syr2.hpp, right before calling KokkosBlas::ger()"
+            << ": ViewTypeA = " << typeid(_ViewTypeA).name()
+            << ", _kkGerShouldThrowException = " << _kkGerShouldThrowException
+            << std::endl;
 #endif
   std::string mode = _useHermitianOption ? "H" : "T";
   bool gotStdException(false);
   bool gotUnknownException(false);
   try {
     KokkosBlas::ger(mode.c_str(), alpha, x, y, A_ger.d_view);
+    Kokkos::fence();
   } catch (const std::exception& e) {
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
     std::cout << "In Test_Blas2_syr2, '" << situation
@@ -1621,8 +1622,7 @@ void Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
   // Call ger() again
   // ********************************************************************
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF(
-      "In Test_Blas2_syr2.hpp, right before calling KokkosBlas::ger() again");
+  std::cout << "In Test_Blas2_syr2.hpp, right before calling KokkosBlas::ger() again";
 #endif
   try {
     if (_useHermitianOption) {
@@ -1630,6 +1630,7 @@ void Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
     } else {
       KokkosBlas::ger(mode.c_str(), alpha, y, x, A_ger.d_view);
     }
+    Kokkos::fence();
   } catch (const std::exception& e) {
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
     std::cout << "In Test_Blas2_syr2, '" << situation
@@ -1690,10 +1691,9 @@ void Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
 template <class ScalarX, class ScalarY, class ScalarA, class Device>
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
 int test_syr2(const std::string& caseName) {
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF(
-      "+======================================================================="
-      "===\n");
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF("Starting %s ...\n", caseName.c_str());
+  std::cout << "+======================================================================="
+            << "===" << std::endl;
+  std::cout << "Starting " << caseName << "..." << std::endl;
 #else
 int test_syr2(const std::string& /*caseName*/) {
 #endif
@@ -1715,11 +1715,9 @@ int test_syr2(const std::string& /*caseName*/) {
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&      \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF(
-      "+-----------------------------------------------------------------------"
-      "---\n");
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF("Starting %s for LAYOUTLEFT ...\n",
-                                caseName.c_str());
+  std::cout << "+-----------------------------------------------------------------------"
+            << "---" << std::endl;
+  std::cout << "Starting " << caseName << " for LAYOUTLEFT ..." << std::endl;
 #endif
   if (true) {
     Test::Syr2Tester<ScalarX, Kokkos::LayoutLeft, ScalarY, Kokkos::LayoutLeft,
@@ -1750,11 +1748,9 @@ int test_syr2(const std::string& /*caseName*/) {
   }
 
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF("Finished %s for LAYOUTLEFT\n",
-                                caseName.c_str());
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF(
-      "+-----------------------------------------------------------------------"
-      "---\n");
+  std::cout << "Finished " << caseName << " for LAYOUTLEFT" << std::endl;
+  std::cout << "+-----------------------------------------------------------------------"
+            << "---" << std::endl;
 #endif
 #endif
 
@@ -1762,11 +1758,9 @@ int test_syr2(const std::string& /*caseName*/) {
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&       \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF(
-      "+-----------------------------------------------------------------------"
-      "---\n");
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF("Starting %s for LAYOUTRIGHT ...\n",
-                                caseName.c_str());
+  std::cout << "+-----------------------------------------------------------------------"
+            << "---" << std::endl;
+  std::cout << "Starting " << caseName << " for LAYOUTRIGHT ..." << std::endl;
 #endif
   if (true) {
     Test::Syr2Tester<ScalarX, Kokkos::LayoutRight, ScalarY, Kokkos::LayoutRight,
@@ -1797,11 +1791,9 @@ int test_syr2(const std::string& /*caseName*/) {
   }
 
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF("Finished %s for LAYOUTRIGHT\n",
-                                caseName.c_str());
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF(
-      "+-----------------------------------------------------------------------"
-      "---\n");
+  std::cout << "Finished " << caseName << " for LAYOUTRIGHT" << std::endl;
+  std::cout << "+-----------------------------------------------------------------------"
+            << "---" << std::endl;
 #endif
 #endif
 
@@ -1809,11 +1801,9 @@ int test_syr2(const std::string& /*caseName*/) {
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF(
-      "+-----------------------------------------------------------------------"
-      "---\n");
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF("Starting %s for LAYOUTSTRIDE ...\n",
-                                caseName.c_str());
+  std::cout << "+-----------------------------------------------------------------------"
+            << "---" << std::endl;
+  std::cout << "Starting " << caseName << " for LAYOUTSTRIDE ..." << std::endl;
 #endif
   if (true) {
     Test::Syr2Tester<ScalarX, Kokkos::LayoutStride, ScalarY,
@@ -1845,22 +1835,18 @@ int test_syr2(const std::string& /*caseName*/) {
   }
 
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF("Finished %s for LAYOUTSTRIDE\n",
-                                caseName.c_str());
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF(
-      "+-----------------------------------------------------------------------"
-      "---\n");
+  std::cout << "Finished " << caseName << " for LAYOUTSTRIDE" << std::endl;
+  std::cout << "+-----------------------------------------------------------------------"
+            << "---" << std::endl;
 #endif
 #endif
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) && \
     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF(
-      "+-----------------------------------------------------------------------"
-      "---\n");
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF("Starting %s for MIXED LAYOUTS ...\n",
-                                caseName.c_str());
+  std::cout << "+-----------------------------------------------------------------------"
+            << "---" << std::endl;
+  std::cout << "Starting " << caseName << " for MIXED LAYOUTS ..." << std::endl;
 #endif
   if (true) {
     Test::Syr2Tester<ScalarX, Kokkos::LayoutStride, ScalarY, Kokkos::LayoutLeft,
@@ -1889,19 +1875,16 @@ int test_syr2(const std::string& /*caseName*/) {
   }
 
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF("Finished %s for MIXED LAYOUTS\n",
-                                caseName.c_str());
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF(
-      "+-----------------------------------------------------------------------"
-      "---\n");
+  std::cout << "Finished " << caseName << " for MIXED LAYOUTS" << std::endl;
+  std::cout << "+-----------------------------------------------------------------------"
+            << "---" << std::endl;
 #endif
 #endif
 
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF("Finished %s\n", caseName.c_str());
-  KOKKOS_IMPL_DO_NOT_USE_PRINTF(
-      "+======================================================================="
-      "===\n");
+  std::cout << "Finished " << caseName << std::endl;
+  std::cout << "+======================================================================="
+            << "===" << std::endl;
 #endif
   return 1;
 }
@@ -1911,7 +1894,7 @@ int test_syr2(const std::string& /*caseName*/) {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, syr2_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::syr2_float");
-  test_syr2<float, float, float, TestExecSpace>("test case syr2_float");
+  test_syr2<float, float, float, TestDevice>("test case syr2_float");
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -1922,7 +1905,7 @@ TEST_F(TestCategory, syr2_float) {
 TEST_F(TestCategory, syr2_complex_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::syr2_complex_float");
   test_syr2<Kokkos::complex<float>, Kokkos::complex<float>,
-            Kokkos::complex<float>, TestExecSpace>(
+            Kokkos::complex<float>, TestDevice>(
       "test case syr2_complex_float");
   Kokkos::Profiling::popRegion();
 }
@@ -1933,7 +1916,7 @@ TEST_F(TestCategory, syr2_complex_float) {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, syr2_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::syr2_double");
-  test_syr2<double, double, double, TestExecSpace>("test case syr2_double");
+  test_syr2<double, double, double, TestDevice>("test case syr2_double");
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -1944,7 +1927,7 @@ TEST_F(TestCategory, syr2_double) {
 TEST_F(TestCategory, syr2_complex_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::syr2_complex_double");
   test_syr2<Kokkos::complex<double>, Kokkos::complex<double>,
-            Kokkos::complex<double>, TestExecSpace>(
+            Kokkos::complex<double>, TestDevice>(
       "test case syr2_complex_double");
   Kokkos::Profiling::popRegion();
 }
@@ -1955,7 +1938,7 @@ TEST_F(TestCategory, syr2_complex_double) {
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, syr2_int) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::syr2_int");
-  test_syr2<int, int, int, TestExecSpace>("test case syr2_int");
+  test_syr2<int, int, int, TestDevice>("test case syr2_int");
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -1964,7 +1947,7 @@ TEST_F(TestCategory, syr2_int) {
     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
 TEST_F(TestCategory, syr2_int_float_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::syr2_int_float_double");
-  test_syr2<int, float, double, TestExecSpace>("test case syr2_mixed_types");
+  test_syr2<int, float, double, TestDevice>("test case syr2_mixed_types");
   Kokkos::Profiling::popRegion();
 }
 #endif
