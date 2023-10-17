@@ -183,25 +183,22 @@ KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_CUSPARSE(Kokkos::complex<double>, int64_t,
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE)
 
-#define KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_ROCSPARSE(SCALAR, LAYOUT)            \
-  template <>                                                                 \
-  struct spmv_tpl_spec_avail<                                                 \
-      Kokkos::HIP,                                                            \
-      KokkosSparse::CrsMatrix<const SCALAR, const rocsparse_int,              \
-                              Kokkos::Device<Kokkos::HIP,       \
-                                             Kokkos::HIPSpace>, \
-                              Kokkos::MemoryTraits<Kokkos::Unmanaged>,        \
-                              const rocsparse_int>,                           \
-      Kokkos::View<                                                           \
-          const SCALAR*, LAYOUT,                                              \
-          Kokkos::Device<Kokkos::HIP,                           \
-                         Kokkos::HIPSpace>,                     \
-          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>,    \
-      Kokkos::View<SCALAR*, LAYOUT,                                           \
-                   Kokkos::Device<Kokkos::HIP,                  \
-                                  Kokkos::HIPSpace>,            \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {                \
-    enum : bool { value = true };                                             \
+#define KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_ROCSPARSE(SCALAR, LAYOUT)           \
+  template <>                                                                \
+  struct spmv_tpl_spec_avail<                                                \
+      Kokkos::HIP,                                                           \
+      KokkosSparse::CrsMatrix<const SCALAR, const rocsparse_int,             \
+                              Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>, \
+                              Kokkos::MemoryTraits<Kokkos::Unmanaged>,       \
+                              const rocsparse_int>,                          \
+      Kokkos::View<                                                          \
+          const SCALAR*, LAYOUT,                                             \
+          Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,                     \
+          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>,   \
+      Kokkos::View<SCALAR*, LAYOUT,                                          \
+                   Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,            \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {               \
+    enum : bool { value = true };                                            \
   };
 
 KOKKOSSPARSE_SPMV_TPL_SPEC_AVAIL_ROCSPARSE(double, Kokkos::LayoutLeft)

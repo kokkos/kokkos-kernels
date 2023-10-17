@@ -166,8 +166,7 @@ struct SolveModeAndAlgo<Kokkos::Cuda> : SolveModeAndAlgoDeviceImpl {};
 
 #if defined(KOKKOS_ENABLE_HIP)
 template <>
-struct SolveModeAndAlgo<Kokkos::HIP>
-    : SolveModeAndAlgoDeviceImpl {};
+struct SolveModeAndAlgo<Kokkos::HIP> : SolveModeAndAlgoDeviceImpl {};
 #endif
 
 int main(int argc, char *argv[]) {

@@ -98,8 +98,7 @@ constexpr KOKKOS_INLINE_FUNCTION bool kk_is_gpu_exec_space<Kokkos::Cuda>() {
 
 #ifdef KOKKOS_ENABLE_HIP
 template <>
-constexpr KOKKOS_INLINE_FUNCTION bool
-kk_is_gpu_exec_space<Kokkos::HIP>() {
+constexpr KOKKOS_INLINE_FUNCTION bool kk_is_gpu_exec_space<Kokkos::HIP>() {
   return true;
 }
 #endif
@@ -208,17 +207,17 @@ inline void kk_get_free_total_memory<Kokkos::CudaHostPinnedSpace>(
 
 #ifdef KOKKOS_ENABLE_HIP
 template <>
-inline void kk_get_free_total_memory<Kokkos::HIPSpace>(
-    size_t& free_mem, size_t& total_mem, int n_streams) {
+inline void kk_get_free_total_memory<Kokkos::HIPSpace>(size_t& free_mem,
+                                                       size_t& total_mem,
+                                                       int n_streams) {
   KOKKOSKERNELS_IMPL_HIP_SAFE_CALL(hipMemGetInfo(&free_mem, &total_mem));
   free_mem /= n_streams;
   total_mem /= n_streams;
 }
 template <>
-inline void kk_get_free_total_memory<Kokkos::HIPSpace>(
-    size_t& free_mem, size_t& total_mem) {
-  kk_get_free_total_memory<Kokkos::HIPSpace>(free_mem, total_mem,
-                                                           1);
+inline void kk_get_free_total_memory<Kokkos::HIPSpace>(size_t& free_mem,
+                                                       size_t& total_mem) {
+  kk_get_free_total_memory<Kokkos::HIPSpace>(free_mem, total_mem, 1);
 }
 #endif
 

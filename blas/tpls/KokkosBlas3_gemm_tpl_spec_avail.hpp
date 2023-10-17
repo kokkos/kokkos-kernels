@@ -168,22 +168,18 @@ KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_ROCBLAS(double, Kokkos::LayoutLeft,
 KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_ROCBLAS(float, Kokkos::LayoutLeft,
                                         Kokkos::HIPSpace)
 KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<double>,
-                                        Kokkos::LayoutLeft,
-                                        Kokkos::HIPSpace)
+                                        Kokkos::LayoutLeft, Kokkos::HIPSpace)
 KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<float>,
-                                        Kokkos::LayoutLeft,
-                                        Kokkos::HIPSpace)
+                                        Kokkos::LayoutLeft, Kokkos::HIPSpace)
 
 KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_ROCBLAS(double, Kokkos::LayoutRight,
                                         Kokkos::HIPSpace)
 KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_ROCBLAS(float, Kokkos::LayoutRight,
                                         Kokkos::HIPSpace)
 KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<double>,
-                                        Kokkos::LayoutRight,
-                                        Kokkos::HIPSpace)
+                                        Kokkos::LayoutRight, Kokkos::HIPSpace)
 KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<float>,
-                                        Kokkos::LayoutRight,
-                                        Kokkos::HIPSpace)
+                                        Kokkos::LayoutRight, Kokkos::HIPSpace)
 
 #endif
 }  // namespace Impl
