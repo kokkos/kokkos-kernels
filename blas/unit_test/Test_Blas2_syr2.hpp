@@ -1622,7 +1622,8 @@ void Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
   // Call ger() again
   // ********************************************************************
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
-  std::cout << "In Test_Blas2_syr2.hpp, right before calling KokkosBlas::ger() again";
+  std::cout
+      << "In Test_Blas2_syr2.hpp, right before calling KokkosBlas::ger() again";
 #endif
   try {
     if (_useHermitianOption) {
@@ -1691,8 +1692,9 @@ void Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
 template <class ScalarX, class ScalarY, class ScalarA, class Device>
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
 int test_syr2(const std::string& caseName) {
-  std::cout << "+======================================================================="
-            << "===" << std::endl;
+  std::cout << "+=============================================================="
+               "============"
+            << std::endl;
   std::cout << "Starting " << caseName << "..." << std::endl;
 #else
 int test_syr2(const std::string& /*caseName*/) {
@@ -1715,8 +1717,9 @@ int test_syr2(const std::string& /*caseName*/) {
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&      \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
-  std::cout << "+-----------------------------------------------------------------------"
-            << "---" << std::endl;
+  std::cout << "+--------------------------------------------------------------"
+               "------------"
+            << std::endl;
   std::cout << "Starting " << caseName << " for LAYOUTLEFT ..." << std::endl;
 #endif
   if (true) {
@@ -1749,8 +1752,9 @@ int test_syr2(const std::string& /*caseName*/) {
 
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
   std::cout << "Finished " << caseName << " for LAYOUTLEFT" << std::endl;
-  std::cout << "+-----------------------------------------------------------------------"
-            << "---" << std::endl;
+  std::cout << "+--------------------------------------------------------------"
+               "------------"
+            << std::endl;
 #endif
 #endif
 
@@ -1758,8 +1762,9 @@ int test_syr2(const std::string& /*caseName*/) {
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&       \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
-  std::cout << "+-----------------------------------------------------------------------"
-            << "---" << std::endl;
+  std::cout << "+--------------------------------------------------------------"
+               "------------"
+            << std::endl;
   std::cout << "Starting " << caseName << " for LAYOUTRIGHT ..." << std::endl;
 #endif
   if (true) {
@@ -1792,8 +1797,9 @@ int test_syr2(const std::string& /*caseName*/) {
 
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
   std::cout << "Finished " << caseName << " for LAYOUTRIGHT" << std::endl;
-  std::cout << "+-----------------------------------------------------------------------"
-            << "---" << std::endl;
+  std::cout << "+--------------------------------------------------------------"
+               "------------"
+            << std::endl;
 #endif
 #endif
 
@@ -1801,8 +1807,9 @@ int test_syr2(const std::string& /*caseName*/) {
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
-  std::cout << "+-----------------------------------------------------------------------"
-            << "---" << std::endl;
+  std::cout << "+--------------------------------------------------------------"
+               "------------"
+            << std::endl;
   std::cout << "Starting " << caseName << " for LAYOUTSTRIDE ..." << std::endl;
 #endif
   if (true) {
@@ -1836,16 +1843,18 @@ int test_syr2(const std::string& /*caseName*/) {
 
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
   std::cout << "Finished " << caseName << " for LAYOUTSTRIDE" << std::endl;
-  std::cout << "+-----------------------------------------------------------------------"
-            << "---" << std::endl;
+  std::cout << "+--------------------------------------------------------------"
+               "------------"
+            << std::endl;
 #endif
 #endif
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) && \
     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
-  std::cout << "+-----------------------------------------------------------------------"
-            << "---" << std::endl;
+  std::cout << "+--------------------------------------------------------------"
+               "------------"
+            << std::endl;
   std::cout << "Starting " << caseName << " for MIXED LAYOUTS ..." << std::endl;
 #endif
   if (true) {
@@ -1876,15 +1885,17 @@ int test_syr2(const std::string& /*caseName*/) {
 
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
   std::cout << "Finished " << caseName << " for MIXED LAYOUTS" << std::endl;
-  std::cout << "+-----------------------------------------------------------------------"
-            << "---" << std::endl;
+  std::cout << "+--------------------------------------------------------------"
+               "------------"
+            << std::endl;
 #endif
 #endif
 
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
   std::cout << "Finished " << caseName << std::endl;
-  std::cout << "+======================================================================="
-            << "===" << std::endl;
+  std::cout << "+=============================================================="
+               "============"
+            << std::endl;
 #endif
   return 1;
 }
@@ -1905,8 +1916,7 @@ TEST_F(TestCategory, syr2_float) {
 TEST_F(TestCategory, syr2_complex_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::syr2_complex_float");
   test_syr2<Kokkos::complex<float>, Kokkos::complex<float>,
-            Kokkos::complex<float>, TestDevice>(
-      "test case syr2_complex_float");
+            Kokkos::complex<float>, TestDevice>("test case syr2_complex_float");
   Kokkos::Profiling::popRegion();
 }
 #endif
