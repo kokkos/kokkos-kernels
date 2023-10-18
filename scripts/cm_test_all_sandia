@@ -731,7 +731,6 @@ elif [ "$MACHINE" = "vega90a_caraway" ]; then
     ARCH_FLAG="--arch=VEGA90A"
   fi
 elif [ "$MACHINE" = "blake" ]; then
-  MODULE_ENVIRONMENT="source /etc/profile.d/modules.sh"
   eval "$MODULE_ENVIRONMENT"
   SKIP_HWLOC=True
   export SLURM_TASKS_PER_NODE=32
