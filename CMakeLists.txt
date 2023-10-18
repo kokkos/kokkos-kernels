@@ -126,10 +126,10 @@ ELSE()
   IF (NOT KOKKOSKERNELS_HAS_TRILINOS AND NOT KOKKOSKERNELS_HAS_PARENT)
     # This is a standalone build
     FIND_PACKAGE(Kokkos REQUIRED)
-    IF((${Kokkos_VERSION} VERSION_EQUAL "4.0.1") OR (${Kokkos_VERSION} VERSION_EQUAL "4.1.00") OR (${Kokkos_VERSION} VERSION_EQUAL "4.1.99"))
+    IF((${Kokkos_VERSION} VERSION_EQUAL "4.0.1") OR (${Kokkos_VERSION} VERSION_EQUAL "4.1.00") OR (${Kokkos_VERSION} VERSION_EQUAL "4.1.99") OR (${Kokkos_VERSION} VERSION_EQUAL "4.2.99"))
       MESSAGE(STATUS "Found Kokkos version ${Kokkos_VERSION} at ${Kokkos_DIR}")
     ELSE()
-      MESSAGE(FATAL_ERROR "Kokkos Kernels ${KokkosKernels_VERSION} requires Kokkos 4.0.1, 4.1.00 or develop (4.1.99)")
+      MESSAGE(FATAL_ERROR "Kokkos Kernels ${KokkosKernels_VERSION} requires Kokkos 4.0.1, 4.1.00, 4.1.99 or develop (4.2.99)")
     ENDIF()
   ENDIF()
 
