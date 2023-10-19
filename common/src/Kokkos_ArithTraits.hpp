@@ -1337,7 +1337,11 @@ class ArithTraits<Kokkos::Experimental::bhalf_t> {
     return Kokkos::Experimental::cast_to_bhalf(KOKKOSKERNELS_IMPL_BF16_MAX);
   }
 #else
+#if defined(KOKKOS_ENABLE_SYCL) || defined(KOKKOS_ENABLE_HIP)
+  KOKKOSKERNELS_ARITHTRAITS_HALF_FP(KOKKOS_FUNCTION)
+#else
   KOKKOSKERNELS_ARITHTRAITS_REAL_FP(KOKKOS_FUNCTION)
+#endif
 #endif
 };
 #endif  // #if defined(KOKKOS_BHALF_T_IS_FLOAT) && !KOKKOS_BHALF_T_IS_FLOAT
