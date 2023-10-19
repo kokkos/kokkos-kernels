@@ -66,7 +66,7 @@ KOKKOS_FORCEINLINE_FUNCTION ExecSpaceType kk_get_exec_space_type() {
 #endif
 
 #if defined(KOKKOS_ENABLE_HIP)
-  if (std::is_same<Kokkos::Experimental::HIP, ExecutionSpace>::value) {
+  if (std::is_same<Kokkos::HIP, ExecutionSpace>::value) {
     exec_space = Exec_HIP;
   }
 #endif
@@ -98,8 +98,7 @@ constexpr KOKKOS_INLINE_FUNCTION bool kk_is_gpu_exec_space<Kokkos::Cuda>() {
 
 #ifdef KOKKOS_ENABLE_HIP
 template <>
-constexpr KOKKOS_INLINE_FUNCTION bool
-kk_is_gpu_exec_space<Kokkos::Experimental::HIP>() {
+constexpr KOKKOS_INLINE_FUNCTION bool kk_is_gpu_exec_space<Kokkos::HIP>() {
   return true;
 }
 #endif
@@ -208,17 +207,17 @@ inline void kk_get_free_total_memory<Kokkos::CudaHostPinnedSpace>(
 
 #ifdef KOKKOS_ENABLE_HIP
 template <>
-inline void kk_get_free_total_memory<Kokkos::Experimental::HIPSpace>(
-    size_t& free_mem, size_t& total_mem, int n_streams) {
+inline void kk_get_free_total_memory<Kokkos::HIPSpace>(size_t& free_mem,
+                                                       size_t& total_mem,
+                                                       int n_streams) {
   KOKKOSKERNELS_IMPL_HIP_SAFE_CALL(hipMemGetInfo(&free_mem, &total_mem));
   free_mem /= n_streams;
   total_mem /= n_streams;
 }
 template <>
-inline void kk_get_free_total_memory<Kokkos::Experimental::HIPSpace>(
-    size_t& free_mem, size_t& total_mem) {
-  kk_get_free_total_memory<Kokkos::Experimental::HIPSpace>(free_mem, total_mem,
-                                                           1);
+inline void kk_get_free_total_memory<Kokkos::HIPSpace>(size_t& free_mem,
+                                                       size_t& total_mem) {
+  kk_get_free_total_memory<Kokkos::HIPSpace>(free_mem, total_mem, 1);
 }
 #endif
 
@@ -405,13 +404,13 @@ struct SpaceInstance<Kokkos::Cuda> {
 
 #ifdef KOKKOS_ENABLE_HIP
 template <>
-struct SpaceInstance<Kokkos::Experimental::HIP> {
-  static Kokkos::Experimental::HIP create() {
+struct SpaceInstance<Kokkos::HIP> {
+  static Kokkos::HIP create() {
     hipStream_t stream;
     KOKKOSKERNELS_IMPL_HIP_SAFE_CALL(hipStreamCreate(&stream));
-    return Kokkos::Experimental::HIP(stream);
+    return Kokkos::HIP(stream);
   }
-  static void destroy(Kokkos::Experimental::HIP& space) {
+  static void destroy(Kokkos::HIP& space) {
     hipStream_t stream = space.hip_stream();
     KOKKOSKERNELS_IMPL_HIP_SAFE_CALL(hipStreamDestroy(stream));
   }
