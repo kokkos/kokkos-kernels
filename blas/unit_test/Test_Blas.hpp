@@ -24,6 +24,7 @@
 #include "Test_Blas1_asum.hpp"
 #include "Test_Blas1_axpby.hpp"
 #include "Test_Blas1_axpy.hpp"
+#include "Test_Blas1_axpby_unification.hpp"
 #include "Test_Blas1_dot.hpp"
 #include "Test_Blas1_iamax.hpp"
 #include "Test_Blas1_mult.hpp"
