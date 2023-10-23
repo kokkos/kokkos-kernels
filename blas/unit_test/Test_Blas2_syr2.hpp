@@ -70,18 +70,17 @@ class Syr2Tester {
             const bool useUpOption          = false);
 
  private:
-  typedef Kokkos::View<ScalarX*, tLayoutX, Device> _ViewTypeX;
-  typedef Kokkos::View<ScalarY*, tLayoutY, Device> _ViewTypeY;
-  typedef Kokkos::View<ScalarA**, tLayoutA, Device> _ViewTypeA;
+  using _ViewTypeX = Kokkos::View<ScalarX*, tLayoutX, Device>;
+  using _ViewTypeY = Kokkos::View<ScalarY*, tLayoutY, Device>;
+  using _ViewTypeA = Kokkos::View<ScalarA**, tLayoutA, Device>;
 
-  typedef typename _ViewTypeX::HostMirror _HostViewTypeX;
-  typedef typename _ViewTypeY::HostMirror _HostViewTypeY;
-  typedef typename _ViewTypeA::HostMirror _HostViewTypeA;
-  typedef Kokkos::View<ScalarA**, tLayoutA, Kokkos::HostSpace>
-      _ViewTypeExpected;
+  using _HostViewTypeX    = typename _ViewTypeX::HostMirror;
+  using _HostViewTypeY    = typename _ViewTypeY::HostMirror;
+  using _HostViewTypeA    = typename _ViewTypeA::HostMirror;
+  using _ViewTypeExpected = Kokkos::View<ScalarA**, tLayoutA, Kokkos::HostSpace>;
 
-  typedef Kokkos::ArithTraits<ScalarA> _KAT_A;
-  typedef typename _KAT_A::mag_type _AuxType;
+  using _KAT_A   = Kokkos::ArithTraits<ScalarA>;
+  using _AuxType = typename _KAT_A::mag_type;
 
   void populateVariables(ScalarA& alpha, _HostViewTypeX& h_x,
                          _HostViewTypeY& h_y, _HostViewTypeA& h_A,
@@ -1661,6 +1660,7 @@ void Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
   view_stride_adapter<_ViewTypeExpected, true> h_ger_reference(
       "h_ger_reference", _M, _N);
   Kokkos::deep_copy(h_ger_reference.d_base, A_ger.d_base);
+  Kokkos::deep_copy(h_ger_reference.h_base, h_ger_reference.d_base);
 
   std::string uplo = _useUpOption ? "U" : "L";
   for (int i = 0; i < _M; ++i) {
@@ -1669,22 +1669,22 @@ void Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
           ((_useUpOption == false) && (i >= j))) {
         // Keep h_ger_reference as already computed
       } else {
-        h_ger_reference.d_view(i, j) = org_A.h_view(i, j);
+        h_ger_reference.h_view(i, j) = org_A.h_view(i, j);
       }
     }
   }
   if (_useHermitianOption && _A_is_complex) {
     for (int i(0); i < _N; ++i) {
-      h_ger_reference.d_view(i, i) =
-          0.5 * (h_ger_reference.d_view(i, i) +
-                 _KAT_A::conj(h_ger_reference.d_view(i, i)));
+      h_ger_reference.h_view(i, i) =
+          0.5 * (h_ger_reference.h_view(i, i) +
+                 _KAT_A::conj(h_ger_reference.h_view(i, i)));
     }
   }
 
   // ********************************************************************
   // Compare
   // ********************************************************************
-  this->compareKkSyr2AgainstReference(alpha, h_A_syr2, h_ger_reference.d_view);
+  this->compareKkSyr2AgainstReference(alpha, h_A_syr2, h_ger_reference.h_view);
 }
 
 }  // namespace Test
