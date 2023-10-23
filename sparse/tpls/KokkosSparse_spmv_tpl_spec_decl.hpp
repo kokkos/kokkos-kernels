@@ -65,6 +65,8 @@ void spmv_cusparse(const Kokkos::Cuda& exec,
       !Kokkos::ArithTraits<value_type>::isComplex)
     myCusparseOperation = CUSPARSE_OPERATION_TRANSPOSE;
 
+// Hopefully this corresponds to CUDA reelase 10.1, which is the first to
+// include the "generic" API
 #if defined(CUSPARSE_VERSION) && (10300 <= CUSPARSE_VERSION)
 
   using entry_type = typename AMatrix::non_const_ordinal_type;
@@ -105,7 +107,7 @@ void spmv_cusparse(const Kokkos::Cuda& exec,
 
   size_t bufferSize = 0;
   void* dBuffer     = NULL;
-#if CUSPARSE_VERSION >= 11301
+#if CUSPARSE_VERSION >= 11400
   cusparseSpMVAlg_t alg = CUSPARSE_SPMV_ALG_DEFAULT;
 #else
   cusparseSpMVAlg_t alg = CUSPARSE_MV_ALG_DEFAULT;
@@ -113,13 +115,13 @@ void spmv_cusparse(const Kokkos::Cuda& exec,
   if (controls.isParameter("algorithm")) {
     const std::string algName = controls.getParameter("algorithm");
     if (algName == "default")
-#if CUSPARSE_VERSION >= 11301
+#if CUSPARSE_VERSION >= 11400
       alg = CUSPARSE_SPMV_ALG_DEFAULT;
 #else
       alg = CUSPARSE_MV_ALG_DEFAULT;
 #endif
     else if (algName == "merge")
-#if CUSPARSE_VERSION >= 11301
+#if CUSPARSE_VERSION >= 11400
       alg = CUSPARSE_SPMV_CSR_ALG2;
 #else
       alg = CUSPARSE_CSRMV_ALG2;
