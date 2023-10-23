@@ -17,6 +17,10 @@
 #ifndef KOKKOSBLAS1_AXPBY_HPP_
 #define KOKKOSBLAS1_AXPBY_HPP_
 
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#include <iostream>
+#endif
+
 #include <KokkosBlas1_axpby_spec.hpp>
 #include <KokkosBlas_serial_axpy.hpp>
 #include <KokkosKernels_helpers.hpp>
