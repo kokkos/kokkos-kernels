@@ -29,7 +29,6 @@ extern "C" {
 /// Gesv
 ///
 
-// AquiEEP
 void F77_BLAS_MANGLE(sgesv, SGESV)(int*, int*, float*, int*, int*, float*, int*,
                                    int*);
 void F77_BLAS_MANGLE(dgesv, DGESV)(int*, int*, double*, int*, int*, double*,
