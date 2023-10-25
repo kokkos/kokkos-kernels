@@ -177,10 +177,8 @@ get_kernels_tpls_list() {
   KOKKOSKERNELS_USER_TPL_PATH_CMD=
   KOKKOSKERNELS_USER_TPL_LIBNAME_CMD=
   CUBLAS_DEFAULT=OFF
-  CUSOLVER_DEFAULT=OFF
   CUSPARSE_DEFAULT=OFF
   ROCBLAS_DEFAULT=OFF
-  ROCSOLVER_DEFAULT=OFF
   ROCSPARSE_DEFAULT=OFF
   PARSE_TPLS_LIST=$(echo $KOKKOSKERNELS_TPLS | tr "," "\n")
   for TPLS_ in $PARSE_TPLS_LIST
@@ -190,17 +188,11 @@ get_kernels_tpls_list() {
     if [ "$UC_TPLS" == "CUBLAS" ]; then
       CUBLAS_DEFAULT=ON
     fi
-    if [ "$UC_TPLS" == "CUSOLVER" ]; then
-      CUSOLVER_DEFAULT=ON
-    fi
     if [ "$UC_TPLS" == "CUSPARSE" ]; then
       CUSPARSE_DEFAULT=ON
     fi
     if [ "$UC_TPLS" == "ROCBLAS" ]; then
       ROCBLAS_DEFAULT=ON
-    fi
-    if [ "$UC_TPLS" == "ROCSOLVER" ]; then
-      ROCSOLVER_DEFAULT=ON
     fi
     if [ "$UC_TPLS" == "ROCSPARSE" ]; then
       ROCSPARSE_DEFAULT=ON
@@ -229,17 +221,11 @@ get_kernels_tpls_list() {
   if [ "$CUBLAS_DEFAULT" == "OFF" ]; then
     KOKKOSKERNELS_TPLS_CMD="-DKokkosKernels_ENABLE_TPL_CUBLAS=OFF ${KOKKOSKERNELS_TPLS_CMD}"
   fi
-  if [ "$CUSOLVER_DEFAULT" == "OFF" ]; then
-    KOKKOSKERNELS_TPLS_CMD="-DKokkosKernels_ENABLE_TPL_CUSOLVER=OFF ${KOKKOSKERNELS_TPLS_CMD}"
-  fi
   if [ "$CUSPARSE_DEFAULT" == "OFF" ]; then
     KOKKOSKERNELS_TPLS_CMD="-DKokkosKernels_ENABLE_TPL_CUSPARSE=OFF ${KOKKOSKERNELS_TPLS_CMD}"
   fi
   if [ "$ROCBLAS_DEFAULT" == "OFF" ]; then
     KOKKOSKERNELS_TPLS_CMD="-DKokkosKernels_ENABLE_TPL_ROCBLAS=OFF ${KOKKOSKERNELS_TPLS_CMD}"
-  fi
-  if [ "$ROCSOLVER_DEFAULT" == "OFF" ]; then
-    KOKKOSKERNELS_TPLS_CMD="-DKokkosKernels_ENABLE_TPL_ROCSOLVER=OFF ${KOKKOSKERNELS_TPLS_CMD}"
   fi
   if [ "$ROCSPARSE_DEFAULT" == "OFF" ]; then
     KOKKOSKERNELS_TPLS_CMD="-DKokkosKernels_ENABLE_TPL_ROCSPARSE=OFF ${KOKKOSKERNELS_TPLS_CMD}"
@@ -359,7 +345,7 @@ display_help_text() {
       echo "--with-tpls=[TPLS]:           Set tpls to be instantiated (Proper support requies that appropriate compiler and device must be enabled)."
       echo "                              This may require providing paths and the library name if using custom installs not on a default path"
       echo "                              that CMake searches"
-      echo "                                Options: blas, mkl, cublas, cusolver, cusparse, magma, armpl, rocblas, rocsolver, rocsparse"
+      echo "                                Options: blas, mkl, cublas, cusparse, magma, armpl, rocblas, rocsparse"
       echo "--user-blas-path=[PATH]:      Set path to location of user-specified BLAS library."
       echo "--user-blas-lib=[LIB]:        Library name of desired BLAS install."
       echo "                                Example: For the typical \"libblas.a\" provide \"blas\""
