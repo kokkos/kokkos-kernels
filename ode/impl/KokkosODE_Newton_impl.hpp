@@ -30,17 +30,17 @@
 namespace KokkosODE {
 namespace Impl {
 
-template <class system_type, class mat_type, class vec_type>
+template <class system_type, class mat_type, class ini_vec_type, class rhs_vec_type, class update_type>
 KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
     system_type& sys, const KokkosODE::Experimental::Newton_params& params,
-    mat_type& J, mat_type& tmp, vec_type& y0, vec_type& rhs, vec_type& update) {
+    mat_type& J, mat_type& tmp, ini_vec_type& y0, rhs_vec_type& rhs, update_type& update) {
   using newton_solver_status = KokkosODE::Experimental::newton_solver_status;
-  using value_type           = typename vec_type::non_const_value_type;
+  using value_type           = typename ini_vec_type::non_const_value_type;
 
   // Define the type returned by nrm2 to store
   // the norm of the residual.
   using norm_type = typename Kokkos::Details::InnerProductSpaceTraits<
-      typename vec_type::non_const_value_type>::mag_type;
+      typename ini_vec_type::non_const_value_type>::mag_type;
   sys.residual(y0, rhs);
   // std::cout << "y0=" << y0(0) << std::endl;
   // std::cout << "rhs0= " << rhs(0) << std::endl;

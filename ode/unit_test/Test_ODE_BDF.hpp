@@ -174,8 +174,9 @@ struct BDFSolve_wrapper {
   }
 };
 
-template <class execution_space, class scalar_type>
+template <class device_type, class scalar_type>
 void test_BDF_Logistic() {
+  using execution_space = typename device_type::execution_space;
   using vec_type = Kokkos::View<scalar_type*, execution_space>;
   using mv_type  = Kokkos::View<scalar_type**, execution_space>;
   using mat_type = Kokkos::View<scalar_type**, execution_space>;
@@ -347,8 +348,9 @@ void test_BDF_Logistic() {
 
 }  // test_BDF_Logistic
 
-template <class execution_space, class scalar_type>
+template <class device_type, class scalar_type>
 void test_BDF_LotkaVolterra() {
+  using execution_space = typename device_type::execution_space;
   using vec_type = Kokkos::View<scalar_type*, execution_space>;
   using mv_type  = Kokkos::View<scalar_type**, execution_space>;
   using mat_type = Kokkos::View<scalar_type**, execution_space>;
@@ -376,8 +378,9 @@ void test_BDF_LotkaVolterra() {
   Kokkos::parallel_for(myPolicy, solve_wrapper);
 }
 
-template <class execution_space, class scalar_type>
+template <class device_type, class scalar_type>
 void test_BDF_StiffChemistry() {
+  using execution_space = typename device_type::execution_space;
   using vec_type = Kokkos::View<scalar_type*, execution_space>;
   using mv_type  = Kokkos::View<scalar_type**, execution_space>;
   using mat_type = Kokkos::View<scalar_type**, execution_space>;
@@ -474,8 +477,9 @@ struct BDFSolve_parallel {
   }
 };
 
-template <class execution_space, class scalar_type>
+template <class device_type, class scalar_type>
 void test_BDF_parallel() {
+  using execution_space = typename device_type::execution_space;
   using vec_type = Kokkos::View<scalar_type*, execution_space>;
   using mv_type  = Kokkos::View<scalar_type**, execution_space>;
   using mat_type = Kokkos::View<scalar_type**, execution_space>;
@@ -537,8 +541,9 @@ void update_D(const int order, const scalar_type factor, const mat_type& coeffs,
 			    KokkosBatched::Algo::Gemm::Blocked>::invoke(1.0, U, subTempD, 0.0, subD);
 }
 
-template <class execution_space, class scalar_type>
+template <class device_type, class scalar_type>
 void test_Nordsieck() {
+  using execution_space = typename device_type::execution_space;
   StiffChemistry mySys{};
 
   Kokkos::View<scalar_type**, execution_space> R("coeffs", 6, 6), U("coeffs", 6, 6);
@@ -580,8 +585,9 @@ void test_Nordsieck() {
   std::cout << "  { " << D(1, 0) << ", " << D(1, 1) << ", " << D(1, 2) << " }" << std::endl;
 }
 
-template <class execution_space, class scalar_type>
+template <class device_type, class scalar_type>
 void test_adaptive_BDF() {
+  using execution_space = typename device_type::execution_space;
   using vec_type = Kokkos::View<scalar_type*, execution_space>;
   using mat_type = Kokkos::View<scalar_type**, execution_space>;
 
@@ -595,13 +601,13 @@ void test_adaptive_BDF() {
 
   vec_type y0("initial conditions", mySys.neqs), y_new("solution", mySys.neqs);
   vec_type rhs("rhs", mySys.neqs), update("update", mySys.neqs);
-  mat_type temp("buffer1", mySys.neqs, 21 + 2*mySys.neqs + 4), temp2("buffer2", 6, 7);
+  mat_type temp("buffer1", mySys.neqs, 23 + 2*mySys.neqs + 4), temp2("buffer2", 6, 7);
 
   // Initial condition
   Kokkos::deep_copy(y0, 0.5);
 
   // Initialize D
-  auto D = Kokkos::subview(temp, Kokkos::ALL(), Kokkos::pair<int, int>(0, 8));
+  auto D = Kokkos::subview(temp, Kokkos::ALL(), Kokkos::pair<int, int>(2, 10));
   D(0, 0) = y0(0);
   mySys.evaluate_function(0, 0, y0, rhs);
   D(0, 1) = dt*rhs(0);
@@ -674,7 +680,7 @@ void test_adaptive_BDF_v2() {
   vec_type y0("initial conditions", mySys.neqs), y_new("solution", mySys.neqs);
   Kokkos::deep_copy(y0, 0.5);
 
-  mat_type temp("buffer1", mySys.neqs, 21 + 2*mySys.neqs + 4), temp2("buffer2", 6, 7);
+  mat_type temp("buffer1", mySys.neqs, 23 + 2*mySys.neqs + 4), temp2("buffer2", 6, 7);
 
   {
     scalar_type dt = KAT::zero();
@@ -707,7 +713,7 @@ void test_BDF_adaptive_stiff() {
   y0_h(2) = KAT::zero();
   Kokkos::deep_copy(y0, y0_h);
 
-  mat_type temp("buffer1", mySys.neqs, 21 + 2*mySys.neqs + 4), temp2("buffer2", 6, 7);
+  mat_type temp("buffer1", mySys.neqs, 23 + 2*mySys.neqs + 4), temp2("buffer2", 6, 7);
 
   {
     vec_type f0("initial value f", mySys.neqs);

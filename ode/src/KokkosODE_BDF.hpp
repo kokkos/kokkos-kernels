@@ -41,36 +41,50 @@ enum BDF_type : int {
 template <BDF_type T>
 struct BDF_coeff_helper {
   using table_type = void;
+
+  BDF_coeff_helper() = default;
 };
 
 template <>
 struct BDF_coeff_helper<BDF_type::BDF1> {
   using table_type = KokkosODE::Impl::BDF_table<1>;
+
+  BDF_coeff_helper() = default;
 };
 
 template <>
 struct BDF_coeff_helper<BDF_type::BDF2> {
   using table_type = KokkosODE::Impl::BDF_table<2>;
+
+  BDF_coeff_helper() = default;
 };
 
 template <>
 struct BDF_coeff_helper<BDF_type::BDF3> {
   using table_type = KokkosODE::Impl::BDF_table<3>;
+
+  BDF_coeff_helper() = default;
 };
 
 template <>
 struct BDF_coeff_helper<BDF_type::BDF4> {
   using table_type = KokkosODE::Impl::BDF_table<4>;
+
+  BDF_coeff_helper() = default;
 };
 
 template <>
 struct BDF_coeff_helper<BDF_type::BDF5> {
   using table_type = KokkosODE::Impl::BDF_table<5>;
+
+  BDF_coeff_helper() = default;
 };
 
 template <>
 struct BDF_coeff_helper<BDF_type::BDF6> {
   using table_type = KokkosODE::Impl::BDF_table<6>;
+
+  BDF_coeff_helper() = default;
 };
 
 template <BDF_type T>
@@ -84,7 +98,7 @@ struct BDF {
       const int num_steps, const vec_type& y0, const vec_type& y,
       const vec_type& rhs, const vec_type& update, const mv_type& y_vecs,
       const mv_type& kstack, const mat_type& temp, const mat_type& jac) {
-    const table_type table;
+    const table_type table{};
 
     const double dt = (t_end - t_start) / num_steps;
     double t        = t_start;
@@ -159,7 +173,9 @@ KOKKOS_FUNCTION void BDFSolve(const ode_type& ode, const scalar_type t_start, co
   using KAT = Kokkos::ArithTraits<scalar_type>;
 
   // This needs to go away and be pulled out of temp instead...
-  vec_type rhs("rhs", ode.neqs), update("update", ode.neqs);
+  auto rhs    = Kokkos::subview(temp, Kokkos::ALL(), 0);
+  auto update = Kokkos::subview(temp, Kokkos::ALL(), 1);
+  // vec_type rhs("rhs", ode.neqs), update("update", ode.neqs);
   (void) max_step;
 
   int order = 1, num_equal_steps = 0;

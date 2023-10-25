@@ -141,8 +141,8 @@ struct BDF_system_wrapper2 {
         t(t_),
         dt(dt_) {}
 
-  template <class vec_type>
-  KOKKOS_FUNCTION void residual(const vec_type& y, const vec_type& f) const {
+  template <class YVectorType, class FVectorType>
+  KOKKOS_FUNCTION void residual(const YVectorType& y, const FVectorType& f) const {
     // f = f(t+dt, y)
     mySys.evaluate_function(t, dt, y, f);
 
@@ -228,21 +228,21 @@ KOKKOS_FUNCTION void update_D(const int order, const scalar_type factor,
 			    KokkosBatched::Algo::Gemm::Blocked>::invoke(1.0, subTempD, U, 0.0, subD);
 }
 
-template <class ode_type, class mat_type, class vec_type, class scalar_type>
+  template <class ode_type, class mat_type, class vec_type, class res_type, class scalar_type>
 KOKKOS_FUNCTION void initial_step_size(const ode_type ode, const int order, const scalar_type t0,
 				       const scalar_type atol, const scalar_type rtol,
-				       const vec_type& y0, const vec_type& f0,
+				       const vec_type& y0, const res_type& f0,
 				       const mat_type& temp, scalar_type& dt_ini) {
   using KAT = Kokkos::ArithTraits<scalar_type>;
 
-  std::cout << "Estimating initial step size" << std::endl;
+  Kokkos::printf("Estimating initial step size\n");
 
   // Extract subviews to store intermediate data
   auto scale = Kokkos::subview(temp, Kokkos::ALL(), 0); // Scaling coefficients for error calculation
   auto y1    = Kokkos::subview(temp, Kokkos::ALL(), 1); // Scaling coefficients for error calculation
   auto f1    = Kokkos::subview(temp, Kokkos::ALL(), 2); // Scaling coefficients for error calculation
 
-  std::cout << "scale: rank=" << scale.rank() << ", extent(0)=" << scale.extent(0) << std::endl;
+  Kokkos::printf("scale: rank=%d, extent(0)=%d\n", (int)scale.rank(), scale.extent_int(0));
 
   // Compute norms for y0 and f0
   double n0 = KAT::zero(), n1 = KAT::zero(), dt0;
@@ -285,7 +285,7 @@ KOKKOS_FUNCTION void initial_step_size(const ode_type ode, const int order, cons
   dt_ini = Kokkos::min(100 * dt0, dt_ini);
 } // initial_step_size
 
-template <class ode_type, class vec_type,
+  template <class ode_type, class vec_type, class res_type,
           class mat_type, class scalar_type>
 KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt,
 			     scalar_type t_end, int& order, int& num_equal_steps,
@@ -293,7 +293,7 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt,
 			     const scalar_type atol, const scalar_type rtol,
 			     const scalar_type min_factor,
                              const vec_type& y_old, const vec_type& y_new,
-                             const vec_type& rhs, const vec_type& update,
+                             const res_type& rhs, const res_type& update,
                              const mat_type& temp, const mat_type& temp2) {
   using newton_params = KokkosODE::Experimental::Newton_params;
 
@@ -312,14 +312,13 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt,
   // const int numRows = temp.extent_int(0); const int numCols = temp.extent_int(1);
   // std::cout << "numRows: " << numRows << ", numCols: " << numCols << std::endl;
   // std::cout << "Extract subview from temp" << std::endl;
-  int offset = 0;
+  int offset = 2;
   auto D         = Kokkos::subview(temp, Kokkos::ALL(), Kokkos::pair<int, int>(offset, offset + 8)); // y and its derivatives
   offset += 8;
   auto tempD     = Kokkos::subview(temp, Kokkos::ALL(), Kokkos::pair<int, int>(offset, offset + 8));
   offset += 8;
   auto scale     = Kokkos::subview(temp, Kokkos::ALL(), offset + 1); ++offset; // Scaling coefficients for error calculation
   auto y_predict = Kokkos::subview(temp, Kokkos::ALL(), offset + 1); ++offset; // Initial guess for y_{n+1}
-  // auto d         = Kokkos::subview(temp, Kokkos::ALL(), offset + 1); ++offset; // Newton update: y_{n+1}^i - y_n
   auto psi       = Kokkos::subview(temp, Kokkos::ALL(), offset + 1); ++offset; // Higher order terms contribution to rhs
   auto error     = Kokkos::subview(temp, Kokkos::ALL(), offset + 1); ++offset; // Error estimate
   auto jac       = Kokkos::subview(temp, Kokkos::ALL(), Kokkos::pair<int, int>(offset, offset + ode.neqs)); // Jacobian matrix
@@ -383,8 +382,8 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt,
 
     sys.c = dt / alpha[order];
     sys.jacobian(y_new, jac);
-    Kokkos::deep_copy(y_new, y_predict);
-    Kokkos::deep_copy(update, 0);
+    Kokkos::Experimental::local_deep_copy(y_new, y_predict);
+    Kokkos::Experimental::local_deep_copy(update, 0);
     KokkosODE::Experimental::newton_solver_status newton_status = 
       KokkosODE::Experimental::Newton::Solve(sys, param, jac, tmp_gesv, y_new, rhs,
 					     update);
