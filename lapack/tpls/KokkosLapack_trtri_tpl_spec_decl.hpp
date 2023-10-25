@@ -18,7 +18,7 @@
 #define KOKKOSLAPACK_TRTRI_TPL_SPEC_DECL_HPP_
 
 #include "KokkosLapack_Host_tpl.hpp"  // trtri prototype
-#include "KokkosLapack_tpl_spec.hpp"
+//#include "KokkosLapack_tpl_spec.hpp"
 
 namespace KokkosLapack {
 namespace Impl {
@@ -135,7 +135,9 @@ namespace Impl {
 // Explicitly define the TRTRI class for all permutations listed below
 
 // Handle type and space permutations
-#define KOKKOSLAPACK_DTRTRI_LAPACK(LAYOUTA, ETI_SPEC_AVAIL)                   \
+#ifdef KOKKOS_ENABLE_CUDA
+
+#define KOKKOSLAPACK_DTRTRI_LAPACK(LAYOUTA, ETI_SPEC_AVAIL)		      \
   KOKKOSLAPACK_TRTRI_LAPACK_HOST(double, double, LAYOUTA, Kokkos::HostSpace,  \
                                  ETI_SPEC_AVAIL)                              \
   KOKKOSLAPACK_TRTRI_LAPACK_MAGMA(double, magmaDouble_ptr, magma_dtrtri_gpu,  \
@@ -173,6 +175,27 @@ namespace Impl {
   KOKKOSLAPACK_TRTRI_LAPACK_MAGMA(                                            \
       Kokkos::complex<float>, magmaFloatComplex_ptr, magma_ctrtri_gpu,        \
       LAYOUTA, Kokkos::CudaUVMSpace, ETI_SPEC_AVAIL)
+
+#else
+
+#define KOKKOSLAPACK_DTRTRI_LAPACK(LAYOUTA, ETI_SPEC_AVAIL)		      \
+  KOKKOSLAPACK_TRTRI_LAPACK_HOST(double, double, LAYOUTA, Kokkos::HostSpace,  \
+                                 ETI_SPEC_AVAIL)
+
+#define KOKKOSLAPACK_STRTRI_LAPACK(LAYOUTA, ETI_SPEC_AVAIL)                   \
+  KOKKOSLAPACK_TRTRI_LAPACK_HOST(float, float, LAYOUTA, Kokkos::HostSpace,    \
+                                 ETI_SPEC_AVAIL)
+
+#define KOKKOSLAPACK_ZTRTRI_LAPACK(LAYOUTA, ETI_SPEC_AVAIL)                   \
+  KOKKOSLAPACK_TRTRI_LAPACK_HOST(Kokkos::complex<double>,                     \
+                                 std::complex<double>, LAYOUTA,               \
+                                 Kokkos::HostSpace, ETI_SPEC_AVAIL)
+
+#define KOKKOSLAPACK_CTRTRI_LAPACK(LAYOUTA, ETI_SPEC_AVAIL)                   \
+  KOKKOSLAPACK_TRTRI_LAPACK_HOST(Kokkos::complex<float>, std::complex<float>, \
+                                 LAYOUTA, Kokkos::HostSpace, ETI_SPEC_AVAIL)
+
+#endif
 
 // Handle layout permutations
 KOKKOSLAPACK_DTRTRI_LAPACK(Kokkos::LayoutLeft, true)
