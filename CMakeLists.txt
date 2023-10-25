@@ -54,6 +54,14 @@ KOKKOSKERNELS_PACKAGE()
 
 IF (NOT KOKKOSKERNELS_HAS_TRILINOS)
   SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/")
+  # TODO The KOKKOSKERNELS_ENABLE_TARGET_NAMESPACE_CHANGE will be defaulted to ON during the 4.3 release cycle and
+  #   removed after release 4.3 after the Kokkos:: namespace is changed to KokkosKernels::
+  KOKKOSKERNELS_ADD_OPTION(
+         "ENABLE_TARGET_NAMESPACE_CHANGE"
+          OFF
+          BOOL
+          "Whether to build KokkosKernels as a TPL - this is a TEMPORARY option added for a deprecation cycle to configure with the KokkosKernels:: namespace. Default: OFF"
+  )
   KOKKOSKERNELS_ADD_OPTION(
           "ENABLE_EXAMPLES"
           OFF

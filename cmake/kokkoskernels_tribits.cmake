@@ -30,9 +30,23 @@ MACRO(KOKKOSKERNELS_PACKAGE_POSTPROCESS)
       "${KokkosKernels_BINARY_DIR}/KokkosKernelsConfigVersion.cmake"
       DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/KokkosKernels)
 
-    INSTALL(EXPORT KokkosKernelsTargets
-            DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/KokkosKernels
-            NAMESPACE Kokkos::)
+    # TODO The KOKKOSKERNELS_ENABLE_TARGET_NAMESPACE_CHANGE will be removed after release 4.3 after the
+    #   Kokkos:: namespace is changed to KokkosKernels::
+    IF (KOKKOSKERNELS_ENABLE_TARGET_NAMESPACE_CHANGE)
+      INSTALL(EXPORT KokkosKernelsTargets
+              DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/KokkosKernels
+              NAMESPACE KokkosKernels::)
+    ELSE()
+      IF(CMAKE_VERSION VERSION_GREATER "3.16")
+        # DEPRECATION was new in CMake version 3.17
+        MESSAGE(DEPRECATION "Use of the the Kokkos:: namespace for the Kokkos Kernels target is deprecated and will be changed to KokkosKernels:: in the 4.3 release cycle")
+      ELSE()
+        MESSAGE(WARNING "Use of the the Kokkos:: namespace for the Kokkos Kernels target is deprecated and will be changed to KokkosKernels:: in the 4.3 release cycle")
+      ENDIF()
+      INSTALL(EXPORT KokkosKernelsTargets
+              DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/KokkosKernels
+              NAMESPACE Kokkos::)
+    ENDIF()
   ENDIF()
 ENDMACRO(KOKKOSKERNELS_PACKAGE_POSTPROCESS)
 
