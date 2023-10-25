@@ -137,7 +137,7 @@ namespace Impl {
 // Handle type and space permutations
 #ifdef KOKKOS_ENABLE_CUDA
 
-#define KOKKOSLAPACK_DTRTRI_LAPACK(LAYOUTA, ETI_SPEC_AVAIL)		      \
+#define KOKKOSLAPACK_DTRTRI_LAPACK(LAYOUTA, ETI_SPEC_AVAIL)                   \
   KOKKOSLAPACK_TRTRI_LAPACK_HOST(double, double, LAYOUTA, Kokkos::HostSpace,  \
                                  ETI_SPEC_AVAIL)                              \
   KOKKOSLAPACK_TRTRI_LAPACK_MAGMA(double, magmaDouble_ptr, magma_dtrtri_gpu,  \
@@ -178,17 +178,17 @@ namespace Impl {
 
 #else
 
-#define KOKKOSLAPACK_DTRTRI_LAPACK(LAYOUTA, ETI_SPEC_AVAIL)		      \
-  KOKKOSLAPACK_TRTRI_LAPACK_HOST(double, double, LAYOUTA, Kokkos::HostSpace,  \
+#define KOKKOSLAPACK_DTRTRI_LAPACK(LAYOUTA, ETI_SPEC_AVAIL)                  \
+  KOKKOSLAPACK_TRTRI_LAPACK_HOST(double, double, LAYOUTA, Kokkos::HostSpace, \
                                  ETI_SPEC_AVAIL)
 
-#define KOKKOSLAPACK_STRTRI_LAPACK(LAYOUTA, ETI_SPEC_AVAIL)                   \
-  KOKKOSLAPACK_TRTRI_LAPACK_HOST(float, float, LAYOUTA, Kokkos::HostSpace,    \
+#define KOKKOSLAPACK_STRTRI_LAPACK(LAYOUTA, ETI_SPEC_AVAIL)                \
+  KOKKOSLAPACK_TRTRI_LAPACK_HOST(float, float, LAYOUTA, Kokkos::HostSpace, \
                                  ETI_SPEC_AVAIL)
 
-#define KOKKOSLAPACK_ZTRTRI_LAPACK(LAYOUTA, ETI_SPEC_AVAIL)                   \
-  KOKKOSLAPACK_TRTRI_LAPACK_HOST(Kokkos::complex<double>,                     \
-                                 std::complex<double>, LAYOUTA,               \
+#define KOKKOSLAPACK_ZTRTRI_LAPACK(LAYOUTA, ETI_SPEC_AVAIL)     \
+  KOKKOSLAPACK_TRTRI_LAPACK_HOST(Kokkos::complex<double>,       \
+                                 std::complex<double>, LAYOUTA, \
                                  Kokkos::HostSpace, ETI_SPEC_AVAIL)
 
 #define KOKKOSLAPACK_CTRTRI_LAPACK(LAYOUTA, ETI_SPEC_AVAIL)                   \
