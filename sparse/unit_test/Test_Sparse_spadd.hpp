@@ -135,9 +135,10 @@ void test_spadd(lno_t numRows, lno_t numCols, size_type minNNZ,
   // initialized
   Kokkos::deep_copy(c_row_map, (size_type)5);
   auto addHandle = handle.get_spadd_handle();
-  KokkosSparse::Experimental::spadd_symbolic(&handle, A.graph.row_map,
-                                             A.graph.entries, B.graph.row_map,
-                                             B.graph.entries, c_row_map);
+  typename Device::execution_space exec{};
+  KokkosSparse::Experimental::spadd_symbolic(
+      exec, &handle, numRows, numCols, A.graph.row_map, A.graph.entries,
+      B.graph.row_map, B.graph.entries, c_row_map);
   size_type c_nnz = addHandle->get_c_nnz();
   // Fill values, entries with incorrect incorret
   values_type c_values(
@@ -146,9 +147,9 @@ void test_spadd(lno_t numRows, lno_t numCols, size_type minNNZ,
   entries_type c_entries("C entries", c_nnz);
   Kokkos::deep_copy(c_entries, (lno_t)5);
   KokkosSparse::Experimental::spadd_numeric(
-      &handle, A.graph.row_map, A.graph.entries, A.values, KAT::one(),
-      B.graph.row_map, B.graph.entries, B.values, KAT::one(), c_row_map,
-      c_entries, c_values);
+      exec, &handle, numRows, numCols, A.graph.row_map, A.graph.entries,
+      A.values, KAT::one(), B.graph.row_map, B.graph.entries, B.values,
+      KAT::one(), c_row_map, c_entries, c_values);
   // done with handle
   // create C using CRS arrays
   crsMat_t C("C", numRows, numCols, c_nnz, c_values, c_row_map, c_entries);

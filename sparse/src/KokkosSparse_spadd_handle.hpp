@@ -32,6 +32,42 @@ class SPADDHandle {
   typedef typename lno_row_view_t_::non_const_value_type size_type;
   typedef ExecutionSpace execution_space;
 
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+  struct SpaddCusparseData {
+    size_t nbytes;
+    void* workspace;
+    cusparseMatDescr_t descrA, descrB, descrC;
+
+    SpaddCusparseData()
+        : nbytes(0),
+          workspace(nullptr),
+          descrA(nullptr),
+          descrB(nullptr),
+          descrC(nullptr) {}
+
+    ~SpaddCusparseData() {
+      Kokkos::kokkos_free<MemorySpace>(workspace);
+      cusparseDestroyMatDescr(descrA);
+      cusparseDestroyMatDescr(descrB);
+      cusparseDestroyMatDescr(descrC);
+    }
+  };
+#endif
+
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+  struct SpaddRocsparseData {
+    rocsparse_mat_descr descrA, descrB, descrC;
+
+    SpaddRocsparseData() : descrA(nullptr), descrB(nullptr), descrC(nullptr) {}
+
+    ~SpaddRocsparseData() {
+      rocsparse_destroy_mat_descr(descrA);
+      rocsparse_destroy_mat_descr(descrB);
+      rocsparse_destroy_mat_descr(descrC);
+    }
+  };
+#endif
+
  private:
   // if both are true, the input matrices are strict CRS
   bool input_sorted;  // column indices in a row are sorted
@@ -77,6 +113,14 @@ class SPADDHandle {
   void set_sort_option(int option) { this->sort_option = option; }
 
   int get_sort_option() { return this->sort_option; }
+
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+  SpaddCusparseData cusparseData;
+#endif
+
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+  SpaddRocsparseData rocsparseData;
+#endif
 
   /**
    * \brief Default constructor.
