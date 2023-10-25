@@ -34,15 +34,16 @@ struct CudaLapackSingleton {
 };
 
 inline void cusolver_internal_error_throw(cusolverStatus_t cusolverState,
-                                        const char* name, const char* file,
-                                        const int line) {
+                                          const char* name, const char* file,
+                                          const int line) {
   std::ostringstream out;
   // out << name << " error( " << cusolverGetStatusName(cusolverState)
   //     << "): " << cusolverGetStatusString(cusolverState);
   out << name << " error( ";
   switch (cusolverState) {
     case CUSOLVER_STATUS_NOT_INITIALIZED:
-      out << "CUSOLVER_STATUS_NOT_INITIALIZED): the library was not initialized.";
+      out << "CUSOLVER_STATUS_NOT_INITIALIZED): the library was not "
+             "initialized.";
       break;
     case CUSOLVER_STATUS_ALLOC_FAILED:
       out << "CUSOLVER_STATUS_ALLOC_FAILED): the resource allocation failed.";
@@ -79,9 +80,9 @@ inline void cusolver_internal_error_throw(cusolverStatus_t cusolverState,
 }
 
 inline void cusolver_internal_safe_call(cusolverStatus_t cusolverState,
-                                      const char* name,
-                                      const char* file = nullptr,
-                                      const int line   = 0) {
+                                        const char* name,
+                                        const char* file = nullptr,
+                                        const int line   = 0) {
   if (CUSOLVER_STATUS_SUCCESS != cusolverState) {
     cusolver_internal_error_throw(cusolverState, name, file, line);
   }
@@ -90,8 +91,9 @@ inline void cusolver_internal_safe_call(cusolverStatus_t cusolverState,
 // The macro below defines the interface for the safe cusolver calls.
 // The functions themselves are protected by impl namespace and this
 // is not meant to be used by external application or libraries.
-#define KOKKOS_CUSOLVER_SAFE_CALL_IMPL(call) \
-  KokkosLapack::Impl::cusolver_internal_safe_call(call, #call, __FILE__, __LINE__)
+#define KOKKOS_CUSOLVER_SAFE_CALL_IMPL(call)                             \
+  KokkosLapack::Impl::cusolver_internal_safe_call(call, #call, __FILE__, \
+                                                  __LINE__)
 
 /// \brief This function converts KK transpose mode to cusolver transpose mode
 inline cublasOperation_t trans_mode_kk_to_cusolver(const char kkMode[]) {
@@ -124,13 +126,14 @@ struct RocsolverSingleton {
 };
 
 inline void rocsolver_internal_error_throw(rocsolver_status rocsolverState,
-                                         const char* name, const char* file,
-                                         const int line) {
+                                           const char* name, const char* file,
+                                           const int line) {
   std::ostringstream out;
   out << name << " error( ";
   switch (rocsolverState) {
     case rocsolver_status_invalid_handle:
-      out << "rocsolver_status_invalid_handle): handle not initialized, invalid "
+      out << "rocsolver_status_invalid_handle): handle not initialized, "
+             "invalid "
              "or null.";
       break;
     case rocsolver_status_not_implemented:
@@ -143,11 +146,13 @@ inline void rocsolver_internal_error_throw(rocsolver_status rocsolverState,
       out << "rocsolver_status_invalid_size): invalid size argument.";
       break;
     case rocsolver_status_memory_error:
-      out << "rocsolver_status_memory_error): failed internal memory allocation, "
+      out << "rocsolver_status_memory_error): failed internal memory "
+             "allocation, "
              "copy or dealloc.";
       break;
     case rocsolver_status_internal_error:
-      out << "rocsolver_status_internal_error): other internal library failure.";
+      out << "rocsolver_status_internal_error): other internal library "
+             "failure.";
       break;
     case rocsolver_status_perf_degraded:
       out << "rocsolver_status_perf_degraded): performance degraded due to low "
@@ -184,9 +189,9 @@ inline void rocsolver_internal_error_throw(rocsolver_status rocsolverState,
 }
 
 inline void rocsolver_internal_safe_call(rocsolver_status rocsolverState,
-                                       const char* name,
-                                       const char* file = nullptr,
-                                       const int line   = 0) {
+                                         const char* name,
+                                         const char* file = nullptr,
+                                         const int line   = 0) {
   if (rocsolver_status_success != rocsolverState) {
     rocsolver_internal_error_throw(rocsolverState, name, file, line);
   }
@@ -195,8 +200,9 @@ inline void rocsolver_internal_safe_call(rocsolver_status rocsolverState,
 // The macro below defines the interface for the safe rocsolver calls.
 // The functions themselves are protected by impl namespace and this
 // is not meant to be used by external application or libraries.
-#define KOKKOS_ROCSOLVER_SAFE_CALL_IMPL(call) \
-  KokkosLapack::Impl::rocsolver_internal_safe_call(call, #call, __FILE__, __LINE__)
+#define KOKKOS_ROCSOLVER_SAFE_CALL_IMPL(call)                             \
+  KokkosLapack::Impl::rocsolver_internal_safe_call(call, #call, __FILE__, \
+                                                   __LINE__)
 
 /// \brief This function converts KK transpose mode to rocsolver transpose mode
 inline rocsolver_operation trans_mode_kk_to_rocsolver(const char kkMode[]) {

@@ -108,8 +108,8 @@ int trtri(const char uplo[], const char diag[], const AViewType& A) {
   int result;
   RViewInternalType R = RViewInternalType(&result);
 
-  KokkosLapack::Impl::TRTRI<RViewInternalType, AViewInternalType>::trtri(R, uplo,
-                                                                       diag, A);
+  KokkosLapack::Impl::TRTRI<RViewInternalType, AViewInternalType>::trtri(
+      R, uplo, diag, A);
 
   return result;
 }

@@ -47,7 +47,7 @@ namespace KokkosBlas {
 ///
 template <class AMatrix, class BXMV, class IPIVV>
 [[deprecated]] void gesv(const AMatrix& A, const BXMV& B, const IPIVV& IPIV) {
-  KokkosLapack::gesv(A,B,IPIV);
+  KokkosLapack::gesv(A, B, IPIV);
 }
 
 }  // namespace KokkosBlas

@@ -37,8 +37,8 @@ struct trtri_eti_spec_avail {
 // This Macros provides the ETI specialization of trtri, currently not
 // available.
 //
-#define KOKKOSLAPACK_TRTRI_ETI_SPEC_AVAIL(SCALAR, LAYOUTA, EXEC_SPACE,         \
-                                        MEM_SPACE)                           \
+#define KOKKOSLAPACK_TRTRI_ETI_SPEC_AVAIL(SCALAR, LAYOUTA, EXEC_SPACE,       \
+                                          MEM_SPACE)                         \
   template <>                                                                \
   struct trtri_eti_spec_avail<                                               \
       Kokkos::View<int, Kokkos::LayoutRight, Kokkos::HostSpace,              \
@@ -106,20 +106,22 @@ struct TRTRI<RVIT, AVIT, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 // "extern template" skips the implicit instatiation step ensuring that the
 // callers code uses this explicit instantiation definition of TRTRI.
 //
-#define KOKKOSLAPACK_TRTRI_ETI_SPEC_DECL(SCALAR, LAYOUTA, EXEC_SPACE, MEM_SPACE) \
-  extern template struct TRTRI<                                                \
-      Kokkos::View<int, Kokkos::LayoutRight, Kokkos::HostSpace,                \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      Kokkos::View<SCALAR**, LAYOUTA, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,   \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
+#define KOKKOSLAPACK_TRTRI_ETI_SPEC_DECL(SCALAR, LAYOUTA, EXEC_SPACE,        \
+                                         MEM_SPACE)                          \
+  extern template struct TRTRI<                                              \
+      Kokkos::View<int, Kokkos::LayoutRight, Kokkos::HostSpace,              \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
+      Kokkos::View<SCALAR**, LAYOUTA, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
       false, true>;
 
-#define KOKKOSLAPACK_TRTRI_ETI_SPEC_INST(SCALAR, LAYOUTA, EXEC_SPACE, MEM_SPACE) \
-  template struct TRTRI<                                                       \
-      Kokkos::View<int, Kokkos::LayoutRight, Kokkos::HostSpace,                \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
-      Kokkos::View<SCALAR**, LAYOUTA, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,   \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
+#define KOKKOSLAPACK_TRTRI_ETI_SPEC_INST(SCALAR, LAYOUTA, EXEC_SPACE,        \
+                                         MEM_SPACE)                          \
+  template struct TRTRI<                                                     \
+      Kokkos::View<int, Kokkos::LayoutRight, Kokkos::HostSpace,              \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
+      Kokkos::View<SCALAR**, LAYOUTA, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
       false, true>;
 
 #include <KokkosLapack_trtri_tpl_spec_decl.hpp>

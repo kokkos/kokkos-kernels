@@ -28,7 +28,7 @@ struct gesv_tpl_spec_avail {
 // Generic Host side LAPACK (could be MKL or whatever)
 #ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK
 
-#define KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_LAPACK(SCALAR, LAYOUT, MEMSPACE)     \
+#define KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_LAPACK(SCALAR, LAYOUT, MEMSPACE) \
   template <class ExecSpace>                                              \
   struct gesv_tpl_spec_avail<                                             \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
@@ -39,13 +39,13 @@ struct gesv_tpl_spec_avail {
   };
 
 KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_LAPACK(double, Kokkos::LayoutLeft,
-                                    Kokkos::HostSpace)
+                                        Kokkos::HostSpace)
 KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_LAPACK(float, Kokkos::LayoutLeft,
-                                    Kokkos::HostSpace)
-KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_LAPACK(Kokkos::complex<double>, Kokkos::LayoutLeft,
-                                    Kokkos::HostSpace)
-KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_LAPACK(Kokkos::complex<float>, Kokkos::LayoutLeft,
-                                    Kokkos::HostSpace)
+                                        Kokkos::HostSpace)
+KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_LAPACK(Kokkos::complex<double>,
+                                        Kokkos::LayoutLeft, Kokkos::HostSpace)
+KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_LAPACK(Kokkos::complex<float>,
+                                        Kokkos::LayoutLeft, Kokkos::HostSpace)
 /*
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT)
@@ -69,7 +69,7 @@ Kokkos::LayoutRight, Kokkos::HostSpace) #endif
 // MAGMA
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
 
-#define KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_MAGMA(SCALAR, LAYOUT, MEMSPACE)    \
+#define KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_MAGMA(SCALAR, LAYOUT, MEMSPACE)  \
   template <class ExecSpace>                                              \
   struct gesv_tpl_spec_avail<                                             \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
@@ -80,13 +80,13 @@ Kokkos::LayoutRight, Kokkos::HostSpace) #endif
   };
 
 KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_MAGMA(double, Kokkos::LayoutLeft,
-                                     Kokkos::CudaSpace)
+                                       Kokkos::CudaSpace)
 KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_MAGMA(float, Kokkos::LayoutLeft,
-                                     Kokkos::CudaSpace)
+                                       Kokkos::CudaSpace)
 KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_MAGMA(Kokkos::complex<double>,
-                                     Kokkos::LayoutLeft, Kokkos::CudaSpace)
-KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_MAGMA(Kokkos::complex<float>, Kokkos::LayoutLeft,
-                                     Kokkos::CudaSpace)
+                                       Kokkos::LayoutLeft, Kokkos::CudaSpace)
+KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_MAGMA(Kokkos::complex<float>,
+                                       Kokkos::LayoutLeft, Kokkos::CudaSpace)
 
 /*
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \

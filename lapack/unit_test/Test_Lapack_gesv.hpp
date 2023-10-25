@@ -16,10 +16,11 @@
 
 // only enable this test where KokkosLapack supports gesv:
 // CUDA+MAGMA and HOST+LAPACK
-#if (defined(TEST_CUDA_LAPACK_CPP) &&                                           \
-     defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA)) ||                              \
-    (defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK) &&                                \
-     (defined(TEST_OPENMP_LAPACK_CPP) || defined(TEST_OPENMPTARGET_LAPACK_CPP) || \
+#if (defined(TEST_CUDA_LAPACK_CPP) &&            \
+     defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA)) || \
+    (defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK) && \
+     (defined(TEST_OPENMP_LAPACK_CPP) ||         \
+      defined(TEST_OPENMPTARGET_LAPACK_CPP) ||   \
       defined(TEST_SERIAL_LAPACK_CPP) || defined(TEST_THREADS_LAPACK_CPP)))
 
 #include <gtest/gtest.h>
@@ -96,8 +97,8 @@ void impl_test_gesv(const char* mode, const char* padding, int N) {
     // and no-tpl case
     bool nopivot_runtime_err = false;
     bool notpl_runtime_err   = false;
-#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA  // have MAGMA TPL
-#ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK   // and have LAPACK TPL
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA   // have MAGMA TPL
+#ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK  // and have LAPACK TPL
     nopivot_runtime_err = (!std::is_same<typename Device::memory_space,
                                          Kokkos::CudaSpace>::value) &&
                           (ipiv.extent(0) == 0) && (ipiv.data() == nullptr);
@@ -105,7 +106,7 @@ void impl_test_gesv(const char* mode, const char* padding, int N) {
 #else
     notpl_runtime_err = true;
 #endif
-#else                                 // not have MAGMA TPL
+#else                                   // not have MAGMA TPL
 #ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK  // but have LAPACK TPL
     nopivot_runtime_err = (ipiv.extent(0) == 0) && (ipiv.data() == nullptr);
     notpl_runtime_err   = false;
@@ -201,8 +202,8 @@ void impl_test_gesv_mrhs(const char* mode, const char* padding, int N,
     // and no-tpl case
     bool nopivot_runtime_err = false;
     bool notpl_runtime_err   = false;
-#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA  // have MAGMA TPL
-#ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK   // and have LAPACK TPL
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA   // have MAGMA TPL
+#ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK  // and have LAPACK TPL
     nopivot_runtime_err = (!std::is_same<typename Device::memory_space,
                                          Kokkos::CudaSpace>::value) &&
                           (ipiv.extent(0) == 0) && (ipiv.data() == nullptr);
@@ -210,7 +211,7 @@ void impl_test_gesv_mrhs(const char* mode, const char* padding, int N,
 #else
     notpl_runtime_err = true;
 #endif
-#else                                 // not have MAGMA TPL
+#else                                   // not have MAGMA TPL
 #ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK  // but have LAPACK TPL
     nopivot_runtime_err = (ipiv.extent(0) == 0) && (ipiv.data() == nullptr);
     notpl_runtime_err   = false;
@@ -387,8 +388,7 @@ TEST_F(TestCategory, gesv_complex_double) {
 TEST_F(TestCategory, gesv_mrhs_complex_double) {
   Kokkos::Profiling::pushRegion("KokkosLapack::Test::gesv_mrhs_complex_double");
   test_gesv_mrhs<Kokkos::complex<double>, TestDevice>("N");  // No pivoting
-  test_gesv_mrhs<Kokkos::complex<double>, TestDevice>(
-      "Y");  // Partial pivoting
+  test_gesv_mrhs<Kokkos::complex<double>, TestDevice>("Y");  // Partial pivoting
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -406,8 +406,7 @@ TEST_F(TestCategory, gesv_complex_float) {
 TEST_F(TestCategory, gesv_mrhs_complex_float) {
   Kokkos::Profiling::pushRegion("KokkosLapack::Test::gesv_mrhs_complex_float");
   test_gesv_mrhs<Kokkos::complex<float>, TestDevice>("N");  // No pivoting
-  test_gesv_mrhs<Kokkos::complex<float>, TestDevice>(
-      "Y");  // Partial pivoting
+  test_gesv_mrhs<Kokkos::complex<float>, TestDevice>("Y");  // Partial pivoting
   Kokkos::Profiling::popRegion();
 }
 #endif

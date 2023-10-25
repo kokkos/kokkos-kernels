@@ -50,10 +50,11 @@ namespace KokkosLapack {
 ///
 template <class AMatrix, class BXMV, class IPIVV>
 void gesv(const AMatrix& A, const BXMV& B, const IPIVV& IPIV) {
-  // NOTE: Currently, KokkosLapack::gesv only supports for MAGMA TPL and LAPACK TPL.
+  // NOTE: Currently, KokkosLapack::gesv only supports for MAGMA TPL and LAPACK
+  // TPL.
   //       MAGMA TPL should be enabled to call the MAGMA GPU interface for
-  //       device views LAPACK TPL should be enabled to call the LAPACK interface
-  //       for host views
+  //       device views LAPACK TPL should be enabled to call the LAPACK
+  //       interface for host views
 
   static_assert(Kokkos::is_view<AMatrix>::value,
                 "KokkosLapack::gesv: A must be a Kokkos::View.");
@@ -87,8 +88,8 @@ void gesv(const AMatrix& A, const BXMV& B, const IPIVV& IPIV) {
   }
 
   // Check for no pivoting case. Only MAGMA supports no pivoting interface
-#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA  // have MAGMA TPL
-#ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK   // and have LAPACK TPL
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA   // have MAGMA TPL
+#ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK  // and have LAPACK TPL
   if ((!std::is_same<typename AMatrix::device_type::memory_space,
                      Kokkos::CudaSpace>::value) &&
       (IPIV0 == 0) && (IPIV.data() == nullptr)) {
@@ -98,7 +99,7 @@ void gesv(const AMatrix& A, const BXMV& B, const IPIVV& IPIV) {
     KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 #endif
-#else                                 // not have MAGMA TPL
+#else                                   // not have MAGMA TPL
 #ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK  // but have LAPACK TPL
   if ((IPIV0 == 0) && (IPIV.data() == nullptr)) {
     std::ostringstream os;
@@ -137,11 +138,11 @@ void gesv(const AMatrix& A, const BXMV& B, const IPIVV& IPIV) {
   if (BXMV::rank == 1) {
     auto B_i = BXMV_Internal(B.data(), B.extent(0), 1);
     KokkosLapack::Impl::GESV<AMatrix_Internal, BXMV_Internal,
-                           IPIVV_Internal>::gesv(A_i, B_i, IPIV_i);
+                             IPIVV_Internal>::gesv(A_i, B_i, IPIV_i);
   } else {  // BXMV::rank == 2
     auto B_i = BXMV_Internal(B.data(), B.extent(0), B.extent(1));
     KokkosLapack::Impl::GESV<AMatrix_Internal, BXMV_Internal,
-                           IPIVV_Internal>::gesv(A_i, B_i, IPIV_i);
+                             IPIVV_Internal>::gesv(A_i, B_i, IPIV_i);
   }
 }
 

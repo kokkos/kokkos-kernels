@@ -411,7 +411,6 @@ void F77_BLAS_MANGLE(ztrsm, ZTRSM)(const char*, const char*, const char*,
                                    const std::complex<double>*,
                                    const std::complex<double>*, int*,
                                    /* */ std::complex<double>*, int*);
-
 }
 
 void F77_BLAS_MANGLE(sscal, SSCAL)(const int* N, const float* alpha,

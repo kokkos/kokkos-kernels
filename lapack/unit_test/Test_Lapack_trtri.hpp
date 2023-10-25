@@ -118,8 +118,8 @@ int impl_test_trtri(int bad_diag_idx, const char* uplo, const char* diag,
 
   // const int As0 = A.stride(0), As1 = A.stride(1);
   // const int Ae0 = A.extent(0), Ae1 = A.extent(1);
-  // printf("KokkosLapack::trtri test for %c %c, M %d, N %d, eps %g, ViewType: %s,
-  // A.stride(0): %d, A.stride(1): %d, A.extent(0): %d, A.extent(1): %d
+  // printf("KokkosLapack::trtri test for %c %c, M %d, N %d, eps %g, ViewType:
+  // %s, A.stride(0): %d, A.stride(1): %d, A.extent(0): %d, A.extent(1): %d
   // START\n", uplo[0],diag[0],M,N,eps,typeid(ViewTypeA).name(), As0, As1, Ae0,
   // Ae1); fflush(stdout);
 

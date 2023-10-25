@@ -79,12 +79,12 @@ namespace Impl {
 
 template <>
 void HostLapack<float>::gesv(int n, int rhs, float* a, int lda, int* ipiv,
-                           float* b, int ldb, int info) {
+                             float* b, int ldb, int info) {
   F77_FUNC_SGESV(&n, &rhs, a, &lda, ipiv, b, &ldb, &info);
 }
 template <>
 int HostLapack<float>::trtri(const char uplo, const char diag, int n,
-                           const float* a, int lda) {
+                             const float* a, int lda) {
   int info = 0;
   F77_FUNC_STRTRI(&uplo, &diag, &n, a, &lda, &info);
   return info;
@@ -96,12 +96,12 @@ int HostLapack<float>::trtri(const char uplo, const char diag, int n,
 
 template <>
 void HostLapack<double>::gesv(int n, int rhs, double* a, int lda, int* ipiv,
-                            double* b, int ldb, int info) {
+                              double* b, int ldb, int info) {
   F77_FUNC_DGESV(&n, &rhs, a, &lda, ipiv, b, &ldb, &info);
 }
 template <>
 int HostLapack<double>::trtri(const char uplo, const char diag, int n,
-                            const double* a, int lda) {
+                              const double* a, int lda) {
   int info = 0;
   F77_FUNC_DTRTRI(&uplo, &diag, &n, a, &lda, &info);
   return info;
@@ -113,15 +113,15 @@ int HostLapack<double>::trtri(const char uplo, const char diag, int n,
 
 template <>
 void HostLapack<std::complex<float> >::gesv(int n, int rhs,
-                                          std::complex<float>* a, int lda,
-                                          int* ipiv, std::complex<float>* b,
-                                          int ldb, int info) {
+                                            std::complex<float>* a, int lda,
+                                            int* ipiv, std::complex<float>* b,
+                                            int ldb, int info) {
   F77_FUNC_CGESV(&n, &rhs, a, &lda, ipiv, b, &ldb, &info);
 }
 template <>
 int HostLapack<std::complex<float> >::trtri(const char uplo, const char diag,
-                                          int n, const std::complex<float>* a,
-                                          int lda) {
+                                            int n, const std::complex<float>* a,
+                                            int lda) {
   int info = 0;
   F77_FUNC_CTRTRI(&uplo, &diag, &n, a, &lda, &info);
   return info;
@@ -133,15 +133,16 @@ int HostLapack<std::complex<float> >::trtri(const char uplo, const char diag,
 
 template <>
 void HostLapack<std::complex<double> >::gesv(int n, int rhs,
-                                           std::complex<double>* a, int lda,
-                                           int* ipiv, std::complex<double>* b,
-                                           int ldb, int info) {
+                                             std::complex<double>* a, int lda,
+                                             int* ipiv, std::complex<double>* b,
+                                             int ldb, int info) {
   F77_FUNC_ZGESV(&n, &rhs, a, &lda, ipiv, b, &ldb, &info);
 }
 template <>
 int HostLapack<std::complex<double> >::trtri(const char uplo, const char diag,
-                                           int n, const std::complex<double>* a,
-                                           int lda) {
+                                             int n,
+                                             const std::complex<double>* a,
+                                             int lda) {
   int info = 0;
   F77_FUNC_ZTRTRI(&uplo, &diag, &n, a, &lda, &info);
   return info;

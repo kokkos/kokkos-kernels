@@ -27,7 +27,7 @@ struct trtri_tpl_spec_avail {
 };
 
 // Generic Host side LAPACK (could be MKL or whatever)
-#define KOKKOSLAPACK_TRTRI_TPL_SPEC_AVAIL(SCALAR, LAYOUTA, MEMSPACE)         \
+#define KOKKOSLAPACK_TRTRI_TPL_SPEC_AVAIL(SCALAR, LAYOUTA, MEMSPACE)       \
   template <class ExecSpace>                                               \
   struct trtri_tpl_spec_avail<                                             \
       Kokkos::View<int, Kokkos::LayoutRight, Kokkos::HostSpace,            \
@@ -52,54 +52,58 @@ struct trtri_tpl_spec_avail {
 #endif  // KOKKOSKERNELS_ENABLE_TPL_MAGMA
 
 KOKKOSLAPACK_TRTRI_TPL_SPEC_AVAIL_LAPACK(double, Kokkos::LayoutLeft,
-                                     Kokkos::HostSpace)
+                                         Kokkos::HostSpace)
 KOKKOSLAPACK_TRTRI_TPL_SPEC_AVAIL_MAGMA(double, Kokkos::LayoutLeft,
-                                      Kokkos::CudaSpace)
+                                        Kokkos::CudaSpace)
 KOKKOSLAPACK_TRTRI_TPL_SPEC_AVAIL_MAGMA(double, Kokkos::LayoutLeft,
-                                      Kokkos::CudaUVMSpace)
+                                        Kokkos::CudaUVMSpace)
 KOKKOSLAPACK_TRTRI_TPL_SPEC_AVAIL_LAPACK(float, Kokkos::LayoutLeft,
-                                     Kokkos::HostSpace)
+                                         Kokkos::HostSpace)
 KOKKOSLAPACK_TRTRI_TPL_SPEC_AVAIL_MAGMA(float, Kokkos::LayoutLeft,
-                                      Kokkos::CudaSpace)
+                                        Kokkos::CudaSpace)
 KOKKOSLAPACK_TRTRI_TPL_SPEC_AVAIL_MAGMA(float, Kokkos::LayoutLeft,
-                                      Kokkos::CudaUVMSpace)
+                                        Kokkos::CudaUVMSpace)
 KOKKOSLAPACK_TRTRI_TPL_SPEC_AVAIL_LAPACK(Kokkos::complex<double>,
-                                     Kokkos::LayoutLeft, Kokkos::HostSpace)
+                                         Kokkos::LayoutLeft, Kokkos::HostSpace)
 KOKKOSLAPACK_TRTRI_TPL_SPEC_AVAIL_MAGMA(Kokkos::complex<double>,
-                                      Kokkos::LayoutLeft, Kokkos::CudaSpace)
+                                        Kokkos::LayoutLeft, Kokkos::CudaSpace)
 KOKKOSLAPACK_TRTRI_TPL_SPEC_AVAIL_MAGMA(Kokkos::complex<double>,
-                                      Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
-KOKKOSLAPACK_TRTRI_TPL_SPEC_AVAIL_LAPACK(Kokkos::complex<float>, Kokkos::LayoutLeft,
-                                     Kokkos::HostSpace)
+                                        Kokkos::LayoutLeft,
+                                        Kokkos::CudaUVMSpace)
+KOKKOSLAPACK_TRTRI_TPL_SPEC_AVAIL_LAPACK(Kokkos::complex<float>,
+                                         Kokkos::LayoutLeft, Kokkos::HostSpace)
 KOKKOSLAPACK_TRTRI_TPL_SPEC_AVAIL_MAGMA(Kokkos::complex<float>,
-                                      Kokkos::LayoutLeft, Kokkos::CudaSpace)
+                                        Kokkos::LayoutLeft, Kokkos::CudaSpace)
 KOKKOSLAPACK_TRTRI_TPL_SPEC_AVAIL_MAGMA(Kokkos::complex<float>,
-                                      Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
+                                        Kokkos::LayoutLeft,
+                                        Kokkos::CudaUVMSpace)
 
 KOKKOSLAPACK_TRTRI_TPL_SPEC_AVAIL_LAPACK(double, Kokkos::LayoutRight,
-                                     Kokkos::HostSpace)
+                                         Kokkos::HostSpace)
 KOKKOSLAPACK_TRTRI_TPL_SPEC_AVAIL_MAGMA(double, Kokkos::LayoutRight,
-                                      Kokkos::CudaSpace)
+                                        Kokkos::CudaSpace)
 KOKKOSLAPACK_TRTRI_TPL_SPEC_AVAIL_MAGMA(double, Kokkos::LayoutRight,
-                                      Kokkos::CudaUVMSpace)
+                                        Kokkos::CudaUVMSpace)
 KOKKOSLAPACK_TRTRI_TPL_SPEC_AVAIL_LAPACK(float, Kokkos::LayoutRight,
-                                     Kokkos::HostSpace)
+                                         Kokkos::HostSpace)
 KOKKOSLAPACK_TRTRI_TPL_SPEC_AVAIL_MAGMA(float, Kokkos::LayoutRight,
-                                      Kokkos::CudaSpace)
+                                        Kokkos::CudaSpace)
 KOKKOSLAPACK_TRTRI_TPL_SPEC_AVAIL_MAGMA(float, Kokkos::LayoutRight,
-                                      Kokkos::CudaUVMSpace)
+                                        Kokkos::CudaUVMSpace)
 KOKKOSLAPACK_TRTRI_TPL_SPEC_AVAIL_LAPACK(Kokkos::complex<double>,
-                                     Kokkos::LayoutRight, Kokkos::HostSpace)
+                                         Kokkos::LayoutRight, Kokkos::HostSpace)
 KOKKOSLAPACK_TRTRI_TPL_SPEC_AVAIL_MAGMA(Kokkos::complex<double>,
-                                      Kokkos::LayoutRight, Kokkos::CudaSpace)
+                                        Kokkos::LayoutRight, Kokkos::CudaSpace)
 KOKKOSLAPACK_TRTRI_TPL_SPEC_AVAIL_MAGMA(Kokkos::complex<double>,
-                                      Kokkos::LayoutRight, Kokkos::CudaUVMSpace)
+                                        Kokkos::LayoutRight,
+                                        Kokkos::CudaUVMSpace)
 KOKKOSLAPACK_TRTRI_TPL_SPEC_AVAIL_LAPACK(Kokkos::complex<float>,
-                                     Kokkos::LayoutRight, Kokkos::HostSpace)
+                                         Kokkos::LayoutRight, Kokkos::HostSpace)
 KOKKOSLAPACK_TRTRI_TPL_SPEC_AVAIL_MAGMA(Kokkos::complex<float>,
-                                      Kokkos::LayoutRight, Kokkos::CudaSpace)
+                                        Kokkos::LayoutRight, Kokkos::CudaSpace)
 KOKKOSLAPACK_TRTRI_TPL_SPEC_AVAIL_MAGMA(Kokkos::complex<float>,
-                                      Kokkos::LayoutRight, Kokkos::CudaUVMSpace)
+                                        Kokkos::LayoutRight,
+                                        Kokkos::CudaUVMSpace)
 
 }  // namespace Impl
 }  // namespace KokkosLapack
