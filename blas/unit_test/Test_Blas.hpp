@@ -16,9 +16,6 @@
 #ifndef TEST_BLAS_HPP
 #define TEST_BLAS_HPP
 
-#include "Test_Blas_gesv.hpp"
-#include "Test_Blas_trtri.hpp"
-
 // Blas 1
 #include "Test_Blas1_abs.hpp"
 #include "Test_Blas1_asum.hpp"

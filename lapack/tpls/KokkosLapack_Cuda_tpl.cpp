@@ -13,14 +13,6 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-
-
-#define KOKKOSKERNELS_IMPL_COMPILE_LIBRARY true
-#include "KokkosKernels_config.h"
-#include "KokkosBlas_gesv_spec.hpp"
-
-namespace KokkosBlas {
-namespace Impl {
-@BLAS_GESV_ETI_INST_BLOCK@
-  } //IMPL 
-} //Kokkos
+#include <Kokkos_Core.hpp>
+#include <KokkosKernels_config.h>
+#include <KokkosLapack_Cuda_tpl.hpp>

@@ -13,14 +13,10 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
+#ifndef TEST_OPENMP_LAPACK_CPP
+#define TEST_OPENMP_LAPACK_CPP
 
+#include <Test_OpenMP.hpp>
+#include <Test_Lapack.hpp>
 
-#define KOKKOSKERNELS_IMPL_COMPILE_LIBRARY true
-#include "KokkosKernels_config.h"
-#include "KokkosBlas_trtri_spec.hpp"
-
-namespace KokkosBlas {
-namespace Impl {
-@BLAS_TRTRI_ETI_INST_BLOCK@
-  } //IMPL 
-} //Kokkos
+#endif  // TEST_OPENMP_LAPACK_CPP

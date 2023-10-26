@@ -13,12 +13,10 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
+#ifndef TEST_LAPACK_HPP
+#define TEST_LAPACK_HPP
 
-#ifndef KOKKOSBLAS_GESV_ETI_SPEC_AVAIL_HPP_
-#define KOKKOSBLAS_GESV_ETI_SPEC_AVAIL_HPP_
-namespace KokkosBlas {
-namespace Impl {
-@BLAS_GESV_ETI_AVAIL_BLOCK@
-  } //IMPL 
-} //Kokkos
-#endif
+#include "Test_Lapack_gesv.hpp"
+#include "Test_Lapack_trtri.hpp"
+
+#endif  // TEST_LAPACK_HPP
