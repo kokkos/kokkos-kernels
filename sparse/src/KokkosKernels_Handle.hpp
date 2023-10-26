@@ -754,6 +754,7 @@ class KokkosKernelsHandle {
    * @note: Caller is responsible for freeing this via destroy_gs_handle()
    * 
    * @param handle_exec_space The execution space instance to execute kernels on.
+   * @param num_streams The number of streams to allocate memory for.
    * @param clusterAlgo Specifies which clustering algorithm to use:
    *
    *                    KokkosSparse::CLUSTER_DEFAULT           ??
@@ -779,6 +780,7 @@ class KokkosKernelsHandle {
    */
   // clang-format on
   void create_gs_handle(const HandleExecSpace &handle_exec_space,
+                        int num_streams,
                         KokkosSparse::ClusteringAlgorithm clusterAlgo,
                         nnz_lno_t hint_verts_per_cluster,
                         KokkosGraph::ColoringAlgorithm coloring_algorithm =
@@ -786,7 +788,7 @@ class KokkosKernelsHandle {
     this->destroy_gs_handle();
     this->is_owner_of_the_gs_handle = true;
     this->gsHandle                  = new ClusterGaussSeidelHandleType(
-        handle_exec_space, clusterAlgo, hint_verts_per_cluster,
+        handle_exec_space, num_streams, clusterAlgo, hint_verts_per_cluster,
         coloring_algorithm);
   }
 
@@ -825,7 +827,7 @@ class KokkosKernelsHandle {
                         KokkosGraph::ColoringAlgorithm coloring_algorithm =
                             KokkosGraph::COLORING_DEFAULT) {
     HandleExecSpace handle_exec_space;
-    create_gs_handle(handle_exec_space, clusterAlgo, hint_verts_per_cluster,
+    create_gs_handle(handle_exec_space, 1, clusterAlgo, hint_verts_per_cluster,
                      coloring_algorithm);
   }
 
