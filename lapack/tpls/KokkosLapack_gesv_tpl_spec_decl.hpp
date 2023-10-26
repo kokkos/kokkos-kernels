@@ -14,21 +14,21 @@
 //
 //@HEADER
 
-#ifndef KOKKOSBLAS_GESV_TPL_SPEC_DECL_HPP_
-#define KOKKOSBLAS_GESV_TPL_SPEC_DECL_HPP_
+#ifndef KOKKOSLAPACK_GESV_TPL_SPEC_DECL_HPP_
+#define KOKKOSLAPACK_GESV_TPL_SPEC_DECL_HPP_
 
-namespace KokkosBlas {
+namespace KokkosLapack {
 namespace Impl {
 template <class AViewType, class BViewType, class PViewType>
 inline void gesv_print_specialization() {
 #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
-  printf("KokkosBlas::gesv<> TPL MAGMA specialization for < %s , %s, %s >\n",
+  printf("KokkosLapack::gesv<> TPL MAGMA specialization for < %s , %s, %s >\n",
          typeid(AViewType).name(), typeid(BViewType).name(),
          typeid(PViewType).name());
 #else
-#ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
-  printf("KokkosBlas::gesv<> TPL Blas specialization for < %s , %s, %s >\n",
+#ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK
+  printf("KokkosLapack::gesv<> TPL Lapack specialization for < %s , %s, %s >\n",
          typeid(AViewType).name(), typeid(BViewType).name(),
          typeid(PViewType).name());
 #endif
@@ -36,16 +36,16 @@ inline void gesv_print_specialization() {
 #endif
 }
 }  // namespace Impl
-}  // namespace KokkosBlas
+}  // namespace KokkosLapack
 
-// Generic Host side BLAS (could be MKL or whatever)
-#ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
-#include <KokkosBlas_Host_tpl.hpp>
+// Generic Host side LAPACK (could be MKL or whatever)
+#ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK
+#include <KokkosLapack_Host_tpl.hpp>
 
-namespace KokkosBlas {
+namespace KokkosLapack {
 namespace Impl {
 
-#define KOKKOSBLAS_DGESV_BLAS(LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)              \
+#define KOKKOSLAPACK_DGESV_LAPACK(LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)          \
   template <class ExecSpace>                                                  \
   struct GESV<                                                                \
       Kokkos::View<double**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>,    \
@@ -74,7 +74,7 @@ namespace Impl {
                                                                               \
     static void gesv(const AViewType& A, const BViewType& B,                  \
                      const PViewType& IPIV) {                                 \
-      Kokkos::Profiling::pushRegion("KokkosBlas::gesv[TPL_BLAS,double]");     \
+      Kokkos::Profiling::pushRegion("KokkosLapack::gesv[TPL_LAPACK,double]"); \
       gesv_print_specialization<AViewType, BViewType, PViewType>();           \
       const bool with_pivot =                                                 \
           !((IPIV.extent(0) == 0) && (IPIV.data() == nullptr));               \
@@ -89,65 +89,65 @@ namespace Impl {
       int info = 0;                                                           \
                                                                               \
       if (with_pivot) {                                                       \
-        HostBlas<double>::gesv(N, NRHS, A.data(), LDA, IPIV.data(), B.data(), \
-                               LDB, info);                                    \
+        HostLapack<double>::gesv(N, NRHS, A.data(), LDA, IPIV.data(),         \
+                                 B.data(), LDB, info);                        \
       }                                                                       \
       Kokkos::Profiling::popRegion();                                         \
     }                                                                         \
   };
 
-#define KOKKOSBLAS_SGESV_BLAS(LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)              \
-  template <class ExecSpace>                                                  \
-  struct GESV<                                                                \
-      Kokkos::View<float**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>,     \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
-      Kokkos::View<float**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>,     \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
-      Kokkos::View<int*, LAYOUT,                                              \
-                   Kokkos::Device<Kokkos::DefaultHostExecutionSpace,          \
-                                  Kokkos::HostSpace>,                         \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                 \
-      true, ETI_SPEC_AVAIL> {                                                 \
-    typedef float SCALAR;                                                     \
-    typedef Kokkos::View<SCALAR**, LAYOUT,                                    \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,                \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >            \
-        AViewType;                                                            \
-    typedef Kokkos::View<SCALAR**, LAYOUT,                                    \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,                \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >            \
-        BViewType;                                                            \
-    typedef Kokkos::View<                                                     \
-        int*, LAYOUT,                                                         \
-        Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>, \
-        Kokkos::MemoryTraits<Kokkos::Unmanaged> >                             \
-        PViewType;                                                            \
-                                                                              \
-    static void gesv(const AViewType& A, const BViewType& B,                  \
-                     const PViewType& IPIV) {                                 \
-      Kokkos::Profiling::pushRegion("KokkosBlas::gesv[TPL_BLAS,float]");      \
-      gesv_print_specialization<AViewType, BViewType, PViewType>();           \
-      const bool with_pivot =                                                 \
-          !((IPIV.extent(0) == 0) && (IPIV.data() == nullptr));               \
-                                                                              \
-      const int N    = static_cast<int>(A.extent(1));                         \
-      const int AST  = static_cast<int>(A.stride(1));                         \
-      const int LDA  = (AST == 0) ? 1 : AST;                                  \
-      const int BST  = static_cast<int>(B.stride(1));                         \
-      const int LDB  = (BST == 0) ? 1 : BST;                                  \
-      const int NRHS = static_cast<int>(B.extent(1));                         \
-                                                                              \
-      int info = 0;                                                           \
-                                                                              \
-      if (with_pivot) {                                                       \
-        HostBlas<float>::gesv(N, NRHS, A.data(), LDA, IPIV.data(), B.data(),  \
-                              LDB, info);                                     \
-      }                                                                       \
-      Kokkos::Profiling::popRegion();                                         \
-    }                                                                         \
+#define KOKKOSLAPACK_SGESV_LAPACK(LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)           \
+  template <class ExecSpace>                                                   \
+  struct GESV<                                                                 \
+      Kokkos::View<float**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>,      \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
+      Kokkos::View<float**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>,      \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
+      Kokkos::View<int*, LAYOUT,                                               \
+                   Kokkos::Device<Kokkos::DefaultHostExecutionSpace,           \
+                                  Kokkos::HostSpace>,                          \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                  \
+      true, ETI_SPEC_AVAIL> {                                                  \
+    typedef float SCALAR;                                                      \
+    typedef Kokkos::View<SCALAR**, LAYOUT,                                     \
+                         Kokkos::Device<ExecSpace, MEM_SPACE>,                 \
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
+        AViewType;                                                             \
+    typedef Kokkos::View<SCALAR**, LAYOUT,                                     \
+                         Kokkos::Device<ExecSpace, MEM_SPACE>,                 \
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
+        BViewType;                                                             \
+    typedef Kokkos::View<                                                      \
+        int*, LAYOUT,                                                          \
+        Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>,  \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged> >                              \
+        PViewType;                                                             \
+                                                                               \
+    static void gesv(const AViewType& A, const BViewType& B,                   \
+                     const PViewType& IPIV) {                                  \
+      Kokkos::Profiling::pushRegion("KokkosLapack::gesv[TPL_LAPACK,float]");   \
+      gesv_print_specialization<AViewType, BViewType, PViewType>();            \
+      const bool with_pivot =                                                  \
+          !((IPIV.extent(0) == 0) && (IPIV.data() == nullptr));                \
+                                                                               \
+      const int N    = static_cast<int>(A.extent(1));                          \
+      const int AST  = static_cast<int>(A.stride(1));                          \
+      const int LDA  = (AST == 0) ? 1 : AST;                                   \
+      const int BST  = static_cast<int>(B.stride(1));                          \
+      const int LDB  = (BST == 0) ? 1 : BST;                                   \
+      const int NRHS = static_cast<int>(B.extent(1));                          \
+                                                                               \
+      int info = 0;                                                            \
+                                                                               \
+      if (with_pivot) {                                                        \
+        HostLapack<float>::gesv(N, NRHS, A.data(), LDA, IPIV.data(), B.data(), \
+                                LDB, info);                                    \
+      }                                                                        \
+      Kokkos::Profiling::popRegion();                                          \
+    }                                                                          \
   };
 
-#define KOKKOSBLAS_ZGESV_BLAS(LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)              \
+#define KOKKOSLAPACK_ZGESV_LAPACK(LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)          \
   template <class ExecSpace>                                                  \
   struct GESV<Kokkos::View<Kokkos::complex<double>**, LAYOUT,                 \
                            Kokkos::Device<ExecSpace, MEM_SPACE>,              \
@@ -178,7 +178,7 @@ namespace Impl {
     static void gesv(const AViewType& A, const BViewType& B,                  \
                      const PViewType& IPIV) {                                 \
       Kokkos::Profiling::pushRegion(                                          \
-          "KokkosBlas::gesv[TPL_BLAS,complex<double>]");                      \
+          "KokkosLapack::gesv[TPL_LAPACK,complex<double>]");                  \
       gesv_print_specialization<AViewType, BViewType, PViewType>();           \
       const bool with_pivot =                                                 \
           !((IPIV.extent(0) == 0) && (IPIV.data() == nullptr));               \
@@ -193,7 +193,7 @@ namespace Impl {
       int info = 0;                                                           \
                                                                               \
       if (with_pivot) {                                                       \
-        HostBlas<std::complex<double> >::gesv(                                \
+        HostLapack<std::complex<double> >::gesv(                              \
             N, NRHS, reinterpret_cast<std::complex<double>*>(A.data()), LDA,  \
             IPIV.data(), reinterpret_cast<std::complex<double>*>(B.data()),   \
             LDB, info);                                                       \
@@ -202,7 +202,7 @@ namespace Impl {
     }                                                                         \
   };
 
-#define KOKKOSBLAS_CGESV_BLAS(LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)              \
+#define KOKKOSLAPACK_CGESV_LAPACK(LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)          \
   template <class ExecSpace>                                                  \
   struct GESV<Kokkos::View<Kokkos::complex<float>**, LAYOUT,                  \
                            Kokkos::Device<ExecSpace, MEM_SPACE>,              \
@@ -233,7 +233,7 @@ namespace Impl {
     static void gesv(const AViewType& A, const BViewType& B,                  \
                      const PViewType& IPIV) {                                 \
       Kokkos::Profiling::pushRegion(                                          \
-          "KokkosBlas::gesv[TPL_BLAS,complex<float>]");                       \
+          "KokkosLapack::gesv[TPL_LAPACK,complex<float>]");                   \
       gesv_print_specialization<AViewType, BViewType, PViewType>();           \
       const bool with_pivot =                                                 \
           !((IPIV.extent(0) == 0) && (IPIV.data() == nullptr));               \
@@ -248,7 +248,7 @@ namespace Impl {
       int info = 0;                                                           \
                                                                               \
       if (with_pivot) {                                                       \
-        HostBlas<std::complex<float> >::gesv(                                 \
+        HostLapack<std::complex<float> >::gesv(                               \
             N, NRHS, reinterpret_cast<std::complex<float>*>(A.data()), LDA,   \
             IPIV.data(), reinterpret_cast<std::complex<float>*>(B.data()),    \
             LDB, info);                                                       \
@@ -257,30 +257,30 @@ namespace Impl {
     }                                                                         \
   };
 
-KOKKOSBLAS_DGESV_BLAS(Kokkos::LayoutLeft, Kokkos::HostSpace, true)
-KOKKOSBLAS_DGESV_BLAS(Kokkos::LayoutLeft, Kokkos::HostSpace, false)
+KOKKOSLAPACK_DGESV_LAPACK(Kokkos::LayoutLeft, Kokkos::HostSpace, true)
+KOKKOSLAPACK_DGESV_LAPACK(Kokkos::LayoutLeft, Kokkos::HostSpace, false)
 
-KOKKOSBLAS_SGESV_BLAS(Kokkos::LayoutLeft, Kokkos::HostSpace, true)
-KOKKOSBLAS_SGESV_BLAS(Kokkos::LayoutLeft, Kokkos::HostSpace, false)
+KOKKOSLAPACK_SGESV_LAPACK(Kokkos::LayoutLeft, Kokkos::HostSpace, true)
+KOKKOSLAPACK_SGESV_LAPACK(Kokkos::LayoutLeft, Kokkos::HostSpace, false)
 
-KOKKOSBLAS_ZGESV_BLAS(Kokkos::LayoutLeft, Kokkos::HostSpace, true)
-KOKKOSBLAS_ZGESV_BLAS(Kokkos::LayoutLeft, Kokkos::HostSpace, false)
+KOKKOSLAPACK_ZGESV_LAPACK(Kokkos::LayoutLeft, Kokkos::HostSpace, true)
+KOKKOSLAPACK_ZGESV_LAPACK(Kokkos::LayoutLeft, Kokkos::HostSpace, false)
 
-KOKKOSBLAS_CGESV_BLAS(Kokkos::LayoutLeft, Kokkos::HostSpace, true)
-KOKKOSBLAS_CGESV_BLAS(Kokkos::LayoutLeft, Kokkos::HostSpace, false)
+KOKKOSLAPACK_CGESV_LAPACK(Kokkos::LayoutLeft, Kokkos::HostSpace, true)
+KOKKOSLAPACK_CGESV_LAPACK(Kokkos::LayoutLeft, Kokkos::HostSpace, false)
 
 }  // namespace Impl
-}  // namespace KokkosBlas
-#endif  // KOKKOSKERNELS_ENABLE_TPL_BLAS
+}  // namespace KokkosLapack
+#endif  // KOKKOSKERNELS_ENABLE_TPL_LAPACK
 
 // MAGMA
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
-#include <KokkosBlas_tpl_spec.hpp>
+#include <KokkosLapack_tpl_spec.hpp>
 
-namespace KokkosBlas {
+namespace KokkosLapack {
 namespace Impl {
 
-#define KOKKOSBLAS_DGESV_MAGMA(LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)             \
+#define KOKKOSLAPACK_DGESV_MAGMA(LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)           \
   template <class ExecSpace>                                                  \
   struct GESV<                                                                \
       Kokkos::View<double**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>,    \
@@ -309,7 +309,7 @@ namespace Impl {
                                                                               \
     static void gesv(const AViewType& A, const BViewType& B,                  \
                      const PViewType& IPIV) {                                 \
-      Kokkos::Profiling::pushRegion("KokkosBlas::gesv[TPL_MAGMA,double]");    \
+      Kokkos::Profiling::pushRegion("KokkosLapack::gesv[TPL_MAGMA,double]");  \
       gesv_print_specialization<AViewType, BViewType, PViewType>();           \
       const bool with_pivot =                                                 \
           !((IPIV.extent(0) == 0) && (IPIV.data() == nullptr));               \
@@ -321,8 +321,8 @@ namespace Impl {
       magma_int_t LDB  = (BST == 0) ? 1 : BST;                                \
       magma_int_t NRHS = static_cast<magma_int_t>(B.extent(1));               \
                                                                               \
-      KokkosBlas::Impl::MagmaSingleton& s =                                   \
-          KokkosBlas::Impl::MagmaSingleton::singleton();                      \
+      KokkosLapack::Impl::MagmaSingleton& s =                                 \
+          KokkosLapack::Impl::MagmaSingleton::singleton();                    \
       magma_int_t info = 0;                                                   \
                                                                               \
       if (with_pivot) {                                                       \
@@ -339,7 +339,7 @@ namespace Impl {
     }                                                                         \
   };
 
-#define KOKKOSBLAS_SGESV_MAGMA(LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)             \
+#define KOKKOSLAPACK_SGESV_MAGMA(LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)           \
   template <class ExecSpace>                                                  \
   struct GESV<                                                                \
       Kokkos::View<float**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>,     \
@@ -368,7 +368,7 @@ namespace Impl {
                                                                               \
     static void gesv(const AViewType& A, const BViewType& B,                  \
                      const PViewType& IPIV) {                                 \
-      Kokkos::Profiling::pushRegion("KokkosBlas::gesv[TPL_MAGMA,float]");     \
+      Kokkos::Profiling::pushRegion("KokkosLapack::gesv[TPL_MAGMA,float]");   \
       gesv_print_specialization<AViewType, BViewType, PViewType>();           \
       const bool with_pivot =                                                 \
           !((IPIV.extent(0) == 0) && (IPIV.data() == nullptr));               \
@@ -380,8 +380,8 @@ namespace Impl {
       magma_int_t LDB  = (BST == 0) ? 1 : BST;                                \
       magma_int_t NRHS = static_cast<magma_int_t>(B.extent(1));               \
                                                                               \
-      KokkosBlas::Impl::MagmaSingleton& s =                                   \
-          KokkosBlas::Impl::MagmaSingleton::singleton();                      \
+      KokkosLapack::Impl::MagmaSingleton& s =                                 \
+          KokkosLapack::Impl::MagmaSingleton::singleton();                    \
       magma_int_t info = 0;                                                   \
                                                                               \
       if (with_pivot) {                                                       \
@@ -398,7 +398,7 @@ namespace Impl {
     }                                                                         \
   };
 
-#define KOKKOSBLAS_ZGESV_MAGMA(LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)             \
+#define KOKKOSLAPACK_ZGESV_MAGMA(LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)           \
   template <class ExecSpace>                                                  \
   struct GESV<Kokkos::View<Kokkos::complex<double>**, LAYOUT,                 \
                            Kokkos::Device<ExecSpace, MEM_SPACE>,              \
@@ -429,7 +429,7 @@ namespace Impl {
     static void gesv(const AViewType& A, const BViewType& B,                  \
                      const PViewType& IPIV) {                                 \
       Kokkos::Profiling::pushRegion(                                          \
-          "KokkosBlas::gesv[TPL_MAGMA,complex<double>]");                     \
+          "KokkosLapack::gesv[TPL_MAGMA,complex<double>]");                   \
       gesv_print_specialization<AViewType, BViewType, PViewType>();           \
       const bool with_pivot =                                                 \
           !((IPIV.extent(0) == 0) && (IPIV.data() == nullptr));               \
@@ -441,8 +441,8 @@ namespace Impl {
       magma_int_t LDB  = (BST == 0) ? 1 : BST;                                \
       magma_int_t NRHS = static_cast<magma_int_t>(B.extent(1));               \
                                                                               \
-      KokkosBlas::Impl::MagmaSingleton& s =                                   \
-          KokkosBlas::Impl::MagmaSingleton::singleton();                      \
+      KokkosLapack::Impl::MagmaSingleton& s =                                 \
+          KokkosLapack::Impl::MagmaSingleton::singleton();                    \
       magma_int_t info = 0;                                                   \
                                                                               \
       if (with_pivot) {                                                       \
@@ -459,7 +459,7 @@ namespace Impl {
     }                                                                         \
   };
 
-#define KOKKOSBLAS_CGESV_MAGMA(LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)             \
+#define KOKKOSLAPACK_CGESV_MAGMA(LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)           \
   template <class ExecSpace>                                                  \
   struct GESV<Kokkos::View<Kokkos::complex<float>**, LAYOUT,                  \
                            Kokkos::Device<ExecSpace, MEM_SPACE>,              \
@@ -490,7 +490,7 @@ namespace Impl {
     static void gesv(const AViewType& A, const BViewType& B,                  \
                      const PViewType& IPIV) {                                 \
       Kokkos::Profiling::pushRegion(                                          \
-          "KokkosBlas::gesv[TPL_MAGMA,complex<float>]");                      \
+          "KokkosLapack::gesv[TPL_MAGMA,complex<float>]");                    \
       gesv_print_specialization<AViewType, BViewType, PViewType>();           \
       const bool with_pivot =                                                 \
           !((IPIV.extent(0) == 0) && (IPIV.data() == nullptr));               \
@@ -502,8 +502,8 @@ namespace Impl {
       magma_int_t LDB  = (BST == 0) ? 1 : BST;                                \
       magma_int_t NRHS = static_cast<magma_int_t>(B.extent(1));               \
                                                                               \
-      KokkosBlas::Impl::MagmaSingleton& s =                                   \
-          KokkosBlas::Impl::MagmaSingleton::singleton();                      \
+      KokkosLapack::Impl::MagmaSingleton& s =                                 \
+          KokkosLapack::Impl::MagmaSingleton::singleton();                    \
       magma_int_t info = 0;                                                   \
                                                                               \
       if (with_pivot) {                                                       \
@@ -520,20 +520,20 @@ namespace Impl {
     }                                                                         \
   };
 
-KOKKOSBLAS_DGESV_MAGMA(Kokkos::LayoutLeft, Kokkos::CudaSpace, true)
-KOKKOSBLAS_DGESV_MAGMA(Kokkos::LayoutLeft, Kokkos::CudaSpace, false)
+KOKKOSLAPACK_DGESV_MAGMA(Kokkos::LayoutLeft, Kokkos::CudaSpace, true)
+KOKKOSLAPACK_DGESV_MAGMA(Kokkos::LayoutLeft, Kokkos::CudaSpace, false)
 
-KOKKOSBLAS_SGESV_MAGMA(Kokkos::LayoutLeft, Kokkos::CudaSpace, true)
-KOKKOSBLAS_SGESV_MAGMA(Kokkos::LayoutLeft, Kokkos::CudaSpace, false)
+KOKKOSLAPACK_SGESV_MAGMA(Kokkos::LayoutLeft, Kokkos::CudaSpace, true)
+KOKKOSLAPACK_SGESV_MAGMA(Kokkos::LayoutLeft, Kokkos::CudaSpace, false)
 
-KOKKOSBLAS_ZGESV_MAGMA(Kokkos::LayoutLeft, Kokkos::CudaSpace, true)
-KOKKOSBLAS_ZGESV_MAGMA(Kokkos::LayoutLeft, Kokkos::CudaSpace, false)
+KOKKOSLAPACK_ZGESV_MAGMA(Kokkos::LayoutLeft, Kokkos::CudaSpace, true)
+KOKKOSLAPACK_ZGESV_MAGMA(Kokkos::LayoutLeft, Kokkos::CudaSpace, false)
 
-KOKKOSBLAS_CGESV_MAGMA(Kokkos::LayoutLeft, Kokkos::CudaSpace, true)
-KOKKOSBLAS_CGESV_MAGMA(Kokkos::LayoutLeft, Kokkos::CudaSpace, false)
+KOKKOSLAPACK_CGESV_MAGMA(Kokkos::LayoutLeft, Kokkos::CudaSpace, true)
+KOKKOSLAPACK_CGESV_MAGMA(Kokkos::LayoutLeft, Kokkos::CudaSpace, false)
 
 }  // namespace Impl
-}  // namespace KokkosBlas
+}  // namespace KokkosLapack
 #endif  // KOKKOSKERNELS_ENABLE_TPL_MAGMA
 
 #endif

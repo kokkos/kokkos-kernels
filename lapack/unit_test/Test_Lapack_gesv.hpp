@@ -14,19 +14,20 @@
 //
 //@HEADER
 
-// only enable this test where KokkosBlas supports gesv:
-// CUDA+MAGMA and HOST+BLAS
-#if (defined(TEST_CUDA_BLAS_CPP) &&                                           \
-     defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA)) ||                              \
-    (defined(KOKKOSKERNELS_ENABLE_TPL_BLAS) &&                                \
-     (defined(TEST_OPENMP_BLAS_CPP) || defined(TEST_OPENMPTARGET_BLAS_CPP) || \
-      defined(TEST_SERIAL_BLAS_CPP) || defined(TEST_THREADS_BLAS_CPP)))
+// only enable this test where KokkosLapack supports gesv:
+// CUDA+MAGMA and HOST+LAPACK
+#if (defined(TEST_CUDA_LAPACK_CPP) &&            \
+     defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA)) || \
+    (defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK) && \
+     (defined(TEST_OPENMP_LAPACK_CPP) ||         \
+      defined(TEST_OPENMPTARGET_LAPACK_CPP) ||   \
+      defined(TEST_SERIAL_LAPACK_CPP) || defined(TEST_THREADS_LAPACK_CPP)))
 
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
 
-#include <KokkosBlas_gesv.hpp>
+#include <KokkosLapack_gesv.hpp>
 #include <KokkosBlas2_gemv.hpp>
 #include <KokkosBlas3_gemm.hpp>
 #include <KokkosKernels_TestUtils.hpp>
@@ -89,15 +90,15 @@ void impl_test_gesv(const char* mode, const char* padding, int N) {
 
   // Solve.
   try {
-    KokkosBlas::gesv(A, B, ipiv);
+    KokkosLapack::gesv(A, B, ipiv);
   } catch (const std::runtime_error& error) {
     // Check for expected runtime errors due to:
     // no-pivoting case (note: only MAGMA supports no-pivoting interface)
     // and no-tpl case
     bool nopivot_runtime_err = false;
     bool notpl_runtime_err   = false;
-#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA  // have MAGMA TPL
-#ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS   // and have BLAS TPL
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA   // have MAGMA TPL
+#ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK  // and have LAPACK TPL
     nopivot_runtime_err = (!std::is_same<typename Device::memory_space,
                                          Kokkos::CudaSpace>::value) &&
                           (ipiv.extent(0) == 0) && (ipiv.data() == nullptr);
@@ -105,8 +106,8 @@ void impl_test_gesv(const char* mode, const char* padding, int N) {
 #else
     notpl_runtime_err = true;
 #endif
-#else                                 // not have MAGMA TPL
-#ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS  // but have BLAS TPL
+#else                                   // not have MAGMA TPL
+#ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK  // but have LAPACK TPL
     nopivot_runtime_err = (ipiv.extent(0) == 0) && (ipiv.data() == nullptr);
     notpl_runtime_err   = false;
 #else
@@ -194,15 +195,15 @@ void impl_test_gesv_mrhs(const char* mode, const char* padding, int N,
 
   // Solve.
   try {
-    KokkosBlas::gesv(A, B, ipiv);
+    KokkosLapack::gesv(A, B, ipiv);
   } catch (const std::runtime_error& error) {
     // Check for expected runtime errors due to:
     // no-pivoting case (note: only MAGMA supports no-pivoting interface)
     // and no-tpl case
     bool nopivot_runtime_err = false;
     bool notpl_runtime_err   = false;
-#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA  // have MAGMA TPL
-#ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS   // and have BLAS TPL
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA   // have MAGMA TPL
+#ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK  // and have LAPACK TPL
     nopivot_runtime_err = (!std::is_same<typename Device::memory_space,
                                          Kokkos::CudaSpace>::value) &&
                           (ipiv.extent(0) == 0) && (ipiv.data() == nullptr);
@@ -210,8 +211,8 @@ void impl_test_gesv_mrhs(const char* mode, const char* padding, int N,
 #else
     notpl_runtime_err = true;
 #endif
-#else                                 // not have MAGMA TPL
-#ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS  // but have BLAS TPL
+#else                                   // not have MAGMA TPL
+#ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK  // but have LAPACK TPL
     nopivot_runtime_err = (ipiv.extent(0) == 0) && (ipiv.data() == nullptr);
     notpl_runtime_err   = false;
 #else
@@ -342,14 +343,14 @@ int test_gesv_mrhs(const char* mode) {
     (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, gesv_float) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::gesv_float");
+  Kokkos::Profiling::pushRegion("KokkosLapack::Test::gesv_float");
   test_gesv<float, TestDevice>("N");  // No pivoting
   test_gesv<float, TestDevice>("Y");  // Partial pivoting
   Kokkos::Profiling::popRegion();
 }
 
 TEST_F(TestCategory, gesv_mrhs_float) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::gesv_mrhs_float");
+  Kokkos::Profiling::pushRegion("KokkosLapack::Test::gesv_mrhs_float");
   test_gesv_mrhs<float, TestDevice>("N");  // No pivoting
   test_gesv_mrhs<float, TestDevice>("Y");  // Partial pivoting
   Kokkos::Profiling::popRegion();
@@ -360,14 +361,14 @@ TEST_F(TestCategory, gesv_mrhs_float) {
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&  \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, gesv_double) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::gesv_double");
+  Kokkos::Profiling::pushRegion("KokkosLapack::Test::gesv_double");
   test_gesv<double, TestDevice>("N");  // No pivoting
   test_gesv<double, TestDevice>("Y");  // Partial pivoting
   Kokkos::Profiling::popRegion();
 }
 
 TEST_F(TestCategory, gesv_mrhs_double) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::gesv_mrhs_double");
+  Kokkos::Profiling::pushRegion("KokkosLapack::Test::gesv_mrhs_double");
   test_gesv_mrhs<double, TestDevice>("N");  // No pivoting
   test_gesv_mrhs<double, TestDevice>("Y");  // Partial pivoting
   Kokkos::Profiling::popRegion();
@@ -378,14 +379,14 @@ TEST_F(TestCategory, gesv_mrhs_double) {
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&          \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, gesv_complex_double) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::gesv_complex_double");
+  Kokkos::Profiling::pushRegion("KokkosLapack::Test::gesv_complex_double");
   test_gesv<Kokkos::complex<double>, TestDevice>("N");  // No pivoting
   test_gesv<Kokkos::complex<double>, TestDevice>("Y");  // Partial pivoting
   Kokkos::Profiling::popRegion();
 }
 
 TEST_F(TestCategory, gesv_mrhs_complex_double) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::gesv_mrhs_complex_double");
+  Kokkos::Profiling::pushRegion("KokkosLapack::Test::gesv_mrhs_complex_double");
   test_gesv_mrhs<Kokkos::complex<double>, TestDevice>("N");  // No pivoting
   test_gesv_mrhs<Kokkos::complex<double>, TestDevice>("Y");  // Partial pivoting
   Kokkos::Profiling::popRegion();
@@ -396,18 +397,18 @@ TEST_F(TestCategory, gesv_mrhs_complex_double) {
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&         \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, gesv_complex_float) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::gesv_complex_float");
+  Kokkos::Profiling::pushRegion("KokkosLapack::Test::gesv_complex_float");
   test_gesv<Kokkos::complex<float>, TestDevice>("N");  // No pivoting
   test_gesv<Kokkos::complex<float>, TestDevice>("Y");  // Partial pivoting
   Kokkos::Profiling::popRegion();
 }
 
 TEST_F(TestCategory, gesv_mrhs_complex_float) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::gesv_mrhs_complex_float");
+  Kokkos::Profiling::pushRegion("KokkosLapack::Test::gesv_mrhs_complex_float");
   test_gesv_mrhs<Kokkos::complex<float>, TestDevice>("N");  // No pivoting
   test_gesv_mrhs<Kokkos::complex<float>, TestDevice>("Y");  // Partial pivoting
   Kokkos::Profiling::popRegion();
 }
 #endif
 
-#endif  // CUDA+MAGMA or BLAS+HOST
+#endif  // CUDA+MAGMA or LAPACK+HOST

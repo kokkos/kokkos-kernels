@@ -16,7 +16,7 @@
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
-#include <KokkosBlas_trtri.hpp>
+#include <KokkosLapack_trtri.hpp>
 #include <KokkosKernels_TestUtils.hpp>
 
 #include <chrono>
@@ -118,8 +118,8 @@ int impl_test_trtri(int bad_diag_idx, const char* uplo, const char* diag,
 
   // const int As0 = A.stride(0), As1 = A.stride(1);
   // const int Ae0 = A.extent(0), Ae1 = A.extent(1);
-  // printf("KokkosBlas::trtri test for %c %c, M %d, N %d, eps %g, ViewType: %s,
-  // A.stride(0): %d, A.stride(1): %d, A.extent(0): %d, A.extent(1): %d
+  // printf("KokkosLapack::trtri test for %c %c, M %d, N %d, eps %g, ViewType:
+  // %s, A.stride(0): %d, A.stride(1): %d, A.extent(0): %d, A.extent(1): %d
   // START\n", uplo[0],diag[0],M,N,eps,typeid(ViewTypeA).name(), As0, As1, Ae0,
   // Ae1); fflush(stdout);
 
@@ -141,7 +141,7 @@ int impl_test_trtri(int bad_diag_idx, const char* uplo, const char* diag,
         host_A(bad_diag_idx - 1, bad_diag_idx - 1) = ScalarA(0);
       Kokkos::deep_copy(A, host_A);
     }
-    return KokkosBlas::trtri(uplo, diag, A);
+    return KokkosLapack::trtri(uplo, diag, A);
   }
 
   // If M is greater than 100 and A is an unit triangluar matrix, make A the
@@ -158,13 +158,13 @@ int impl_test_trtri(int bad_diag_idx, const char* uplo, const char* diag,
     using functor_type = UnitDiagTRTRI<ViewTypeA, execution_space>;
     functor_type udtrtri(A);
     // Initialize As diag with 1s
-    Kokkos::parallel_for("KokkosBlas::Test::UnitDiagTRTRI",
+    Kokkos::parallel_for("KokkosLapack::Test::UnitDiagTRTRI",
                          Kokkos::RangePolicy<execution_space>(0, M), udtrtri);
   } else {  //(diag[0]=='N')||(diag[0]=='n')
     using functor_type = NonUnitDiagTRTRI<ViewTypeA, execution_space>;
     functor_type nudtrtri(A);
     // Initialize As diag with A(i,i)+10
-    Kokkos::parallel_for("KokkosBlas::Test::NonUnitDiagTRTRI",
+    Kokkos::parallel_for("KokkosLapack::Test::NonUnitDiagTRTRI",
                          Kokkos::RangePolicy<execution_space>(0, M), nudtrtri);
   }
   Kokkos::fence();
@@ -195,11 +195,11 @@ int impl_test_trtri(int bad_diag_idx, const char* uplo, const char* diag,
 #endif
 
   // A = A^-1
-  ret = KokkosBlas::trtri(uplo, diag, A);
+  ret = KokkosLapack::trtri(uplo, diag, A);
   Kokkos::fence();
 
   if (ret) {
-    printf("KokkosBlas::trtri(%c, %c, %s) returned %d\n", uplo[0], diag[0],
+    printf("KokkosLapack::trtri(%c, %c, %s) returned %d\n", uplo[0], diag[0],
            typeid(ViewTypeA).name(), ret);
     return ret;
   }
@@ -229,7 +229,7 @@ int impl_test_trtri(int bad_diag_idx, const char* uplo, const char* diag,
   vgemm.alpha = ScalarA(1);
   vgemm.beta  = beta;
   Kokkos::parallel_for(
-      "KokkosBlas::Test::VanillaGEMM",
+      "KokkosLapack::Test::VanillaGEMM",
       Kokkos::TeamPolicy<execution_space>(
           M, Kokkos::AUTO,
           KokkosKernels::Impl::kk_get_max_vector_size<execution_space>()),
@@ -362,7 +362,7 @@ int test_trtri(const char* mode) {
     (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, trtri_float) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trtri_float");
+  Kokkos::Profiling::pushRegion("KokkosLapack::Test::trtri_float");
   test_trtri<float, TestDevice>("UN");
   test_trtri<float, TestDevice>("UU");
   test_trtri<float, TestDevice>("LN");
@@ -375,7 +375,7 @@ TEST_F(TestCategory, trtri_float) {
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&  \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, trtri_double) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trtri_double");
+  Kokkos::Profiling::pushRegion("KokkosLapack::Test::trtri_double");
   test_trtri<double, TestDevice>("UN");
   test_trtri<double, TestDevice>("UU");
   test_trtri<double, TestDevice>("LN");
@@ -388,7 +388,7 @@ TEST_F(TestCategory, trtri_double) {
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&          \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, trtri_complex_double) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trtri_complex_double");
+  Kokkos::Profiling::pushRegion("KokkosLapack::Test::trtri_complex_double");
   test_trtri<Kokkos::complex<double>, TestDevice>("UN");
   test_trtri<Kokkos::complex<double>, TestDevice>("UU");
   test_trtri<Kokkos::complex<double>, TestDevice>("LN");
@@ -401,7 +401,7 @@ TEST_F(TestCategory, trtri_complex_double) {
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&         \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, trtri_complex_float) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trtri_complex_float");
+  Kokkos::Profiling::pushRegion("KokkosLapack::Test::trtri_complex_float");
   test_trtri<Kokkos::complex<float>, TestDevice>("UN");
   test_trtri<Kokkos::complex<float>, TestDevice>("UU");
   test_trtri<Kokkos::complex<float>, TestDevice>("LN");
