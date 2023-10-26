@@ -839,7 +839,7 @@ void test_gauss_seidel_streams_rank1(
       for (int i = 0; i < nstreams; i++) {
         kh_cluster_v[i] =
             KernelHandle();  // Initialize KokkosKernelsHandle defaults.
-        kh_cluster_v[i].create_gs_handle(instances[i], clusterAlgo,
+        kh_cluster_v[i].create_gs_handle(instances[i], nstreams, clusterAlgo,
                                          clusterSizes[csize], coloringAlgo);
       }
 
