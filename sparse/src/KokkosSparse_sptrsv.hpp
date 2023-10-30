@@ -220,6 +220,8 @@ void sptrsv_symbolic(ExecutionSpace &space, KernelHandle *handle,
   auto sptrsv_handle = handle->get_sptrsv_handle();
   if (sptrsv_handle->get_algorithm() ==
       KokkosSparse::Experimental::SPTRSVAlgorithm::SPTRSV_CUSPARSE) {
+
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
     RowMap_Internal rowmap_i   = rowmap;
     Entries_Internal entries_i = entries;
     Values_Internal values_i   = values;
@@ -233,6 +235,9 @@ void sptrsv_symbolic(ExecutionSpace &space, KernelHandle *handle,
         Values_Internal>(space, sh, nrows, rowmap_i, entries_i, values_i,
                          false);
 
+#else // We better go to the native implementation
+    KokkosSparse::Experimental::sptrsv_symbolic(space, handle, rowmap, entries);
+#endif
   } else {
     KokkosSparse::Experimental::sptrsv_symbolic(space, handle, rowmap, entries);
   }
@@ -392,6 +397,7 @@ void sptrsv_solve(ExecutionSpace &space, KernelHandle *handle,
   auto sptrsv_handle = handle->get_sptrsv_handle();
   if (sptrsv_handle->get_algorithm() ==
       KokkosSparse::Experimental::SPTRSVAlgorithm::SPTRSV_CUSPARSE) {
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
     typedef typename KernelHandle::SPTRSVHandleType sptrsvHandleType;
     sptrsvHandleType *sh = handle->get_sptrsv_handle();
     auto nrows           = sh->get_nrows();
@@ -400,7 +406,13 @@ void sptrsv_solve(ExecutionSpace &space, KernelHandle *handle,
         ExecutionSpace, sptrsvHandleType, RowMap_Internal, Entries_Internal,
         Values_Internal, BType_Internal, XType_Internal>(
         space, sh, nrows, rowmap_i, entries_i, values_i, b_i, x_i, false);
-
+#else
+    KokkosSparse::Impl::SPTRSV_SOLVE<
+        ExecutionSpace, const_handle_type, RowMap_Internal, Entries_Internal,
+        Values_Internal, BType_Internal,
+        XType_Internal>::sptrsv_solve(space, &tmp_handle, rowmap_i, entries_i,
+                                      values_i, b_i, x_i);
+#endif
   } else {
     KokkosSparse::Impl::SPTRSV_SOLVE<
         ExecutionSpace, const_handle_type, RowMap_Internal, Entries_Internal,
@@ -748,13 +760,21 @@ void sptrsv_solve_streams(const std::vector<ExecutionSpace> &execspace_v,
 
   if (handle_v[0]->get_sptrsv_handle()->get_algorithm() ==
       KokkosSparse::Experimental::SPTRSVAlgorithm::SPTRSV_CUSPARSE) {
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
     // NOTE: assume all streams use the same SPTRSV_CUSPARSE algo.
     KokkosSparse::Impl::sptrsvcuSPARSE_solve_streams<
         ExecutionSpace, const_handle_type, RowMap_Internal, Entries_Internal,
         Values_Internal, BType_Internal, XType_Internal>(
         execspace_v, handle_i_v, rowmap_i_v, entries_i_v, values_i_v, b_i_v,
         x_i_v, false);
-
+#else
+    KokkosSparse::Impl::SPTRSV_SOLVE<
+        ExecutionSpace, const_handle_type, RowMap_Internal, Entries_Internal,
+        Values_Internal, BType_Internal,
+        XType_Internal>::sptrsv_solve_streams(execspace_v, handle_i_v,
+                                              rowmap_i_v, entries_i_v,
+                                              values_i_v, b_i_v, x_i_v);
+#endif
   } else {
     KokkosSparse::Impl::SPTRSV_SOLVE<
         ExecutionSpace, const_handle_type, RowMap_Internal, Entries_Internal,
