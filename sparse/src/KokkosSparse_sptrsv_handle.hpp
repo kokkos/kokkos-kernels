@@ -478,12 +478,16 @@ class SPTRSVHandle {
 
     // Check a few prerequisites before allowing users
     // to run with the cusparse implementation of sptrsv.
-    if(algm == SPTRSVAlgorithm::SPTRSV_CUSPARSE) {
+    if (algm == SPTRSVAlgorithm::SPTRSV_CUSPARSE) {
 #if !defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
-      throw(std::runtime_error("sptrsv handle: SPTRSV_CUSPARSE requested but cuSPARSE TPL not enabled."));
+      throw(
+          std::runtime_error("sptrsv handle: SPTRSV_CUSPARSE requested but "
+                             "cuSPARSE TPL not enabled."));
 #else
-      if(!std::is_same_v<HandleExecSpace, Kokkos::CUDA>) {
-	throw(std::runtime_error("sptrsv handle: SPTRSV_CUSPARSE requested but HandleExecSpace is not Kokkos::CUDA."));
+      if (!std::is_same_v<HandleExecSpace, Kokkos::CUDA>) {
+        throw(
+            std::runtime_error("sptrsv handle: SPTRSV_CUSPARSE requested but "
+                               "HandleExecSpace is not Kokkos::CUDA."));
       }
 #endif
     }

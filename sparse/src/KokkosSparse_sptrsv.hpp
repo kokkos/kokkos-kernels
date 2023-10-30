@@ -196,28 +196,27 @@ void sptrsv_symbolic(ExecutionSpace &space, KernelHandle *handle,
   auto sptrsv_handle = handle->get_sptrsv_handle();
   if (sptrsv_handle->get_algorithm() ==
       KokkosSparse::Experimental::SPTRSVAlgorithm::SPTRSV_CUSPARSE) {
-
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
     using RowMap_Internal = Kokkos::View<
-      typename lno_row_view_t_::const_value_type *,
-      typename KokkosKernels::Impl::GetUnifiedLayout<
-          lno_row_view_t_>::array_layout,
-      typename lno_row_view_t_::device_type,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
+        typename lno_row_view_t_::const_value_type *,
+        typename KokkosKernels::Impl::GetUnifiedLayout<
+            lno_row_view_t_>::array_layout,
+        typename lno_row_view_t_::device_type,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
     using Entries_Internal = Kokkos::View<
-      typename lno_nnz_view_t_::const_value_type *,
-      typename KokkosKernels::Impl::GetUnifiedLayout<
-          lno_nnz_view_t_>::array_layout,
-      typename lno_nnz_view_t_::device_type,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
+        typename lno_nnz_view_t_::const_value_type *,
+        typename KokkosKernels::Impl::GetUnifiedLayout<
+            lno_nnz_view_t_>::array_layout,
+        typename lno_nnz_view_t_::device_type,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
     using Values_Internal = Kokkos::View<
-      typename scalar_nnz_view_t_::const_value_type *,
-      typename KokkosKernels::Impl::GetUnifiedLayout<
-          scalar_nnz_view_t_>::array_layout,
-      typename scalar_nnz_view_t_::device_type,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
+        typename scalar_nnz_view_t_::const_value_type *,
+        typename KokkosKernels::Impl::GetUnifiedLayout<
+            scalar_nnz_view_t_>::array_layout,
+        typename scalar_nnz_view_t_::device_type,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
     RowMap_Internal rowmap_i   = rowmap;
     Entries_Internal entries_i = entries;
@@ -232,12 +231,12 @@ void sptrsv_symbolic(ExecutionSpace &space, KernelHandle *handle,
         Values_Internal>(space, sh, nrows, rowmap_i, entries_i, values_i,
                          false);
 
-#else // We better go to the native implementation
-    (void) values;
+#else  // We better go to the native implementation
+    (void)values;
     KokkosSparse::Experimental::sptrsv_symbolic(space, handle, rowmap, entries);
 #endif
   } else {
-    (void) values;
+    (void)values;
     KokkosSparse::Experimental::sptrsv_symbolic(space, handle, rowmap, entries);
   }
 #ifdef KK_TRISOLVE_TIMERS
