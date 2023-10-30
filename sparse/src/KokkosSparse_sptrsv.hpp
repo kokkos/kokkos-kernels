@@ -190,30 +190,6 @@ void sptrsv_symbolic(ExecutionSpace &space, KernelHandle *handle,
       const_handle_type;
   const_handle_type tmp_handle(*handle);
 
-  typedef Kokkos::View<
-      typename lno_row_view_t_::const_value_type *,
-      typename KokkosKernels::Impl::GetUnifiedLayout<
-          lno_row_view_t_>::array_layout,
-      typename lno_row_view_t_::device_type,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >
-      RowMap_Internal;
-
-  typedef Kokkos::View<
-      typename lno_nnz_view_t_::const_value_type *,
-      typename KokkosKernels::Impl::GetUnifiedLayout<
-          lno_nnz_view_t_>::array_layout,
-      typename lno_nnz_view_t_::device_type,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >
-      Entries_Internal;
-
-  typedef Kokkos::View<
-      typename scalar_nnz_view_t_::const_value_type *,
-      typename KokkosKernels::Impl::GetUnifiedLayout<
-          scalar_nnz_view_t_>::array_layout,
-      typename scalar_nnz_view_t_::device_type,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >
-      Values_Internal;
-
 #ifdef KK_TRISOLVE_TIMERS
   Kokkos::Timer timer_sptrsv;
 #endif
@@ -222,6 +198,27 @@ void sptrsv_symbolic(ExecutionSpace &space, KernelHandle *handle,
       KokkosSparse::Experimental::SPTRSVAlgorithm::SPTRSV_CUSPARSE) {
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+    using RowMap_Internal = Kokkos::View<
+      typename lno_row_view_t_::const_value_type *,
+      typename KokkosKernels::Impl::GetUnifiedLayout<
+          lno_row_view_t_>::array_layout,
+      typename lno_row_view_t_::device_type,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
+
+    using Entries_Internal = Kokkos::View<
+      typename lno_nnz_view_t_::const_value_type *,
+      typename KokkosKernels::Impl::GetUnifiedLayout<
+          lno_nnz_view_t_>::array_layout,
+      typename lno_nnz_view_t_::device_type,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
+
+    using Values_Internal = Kokkos::View<
+      typename scalar_nnz_view_t_::const_value_type *,
+      typename KokkosKernels::Impl::GetUnifiedLayout<
+          scalar_nnz_view_t_>::array_layout,
+      typename scalar_nnz_view_t_::device_type,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
+
     RowMap_Internal rowmap_i   = rowmap;
     Entries_Internal entries_i = entries;
     Values_Internal values_i   = values;
@@ -236,9 +233,11 @@ void sptrsv_symbolic(ExecutionSpace &space, KernelHandle *handle,
                          false);
 
 #else // We better go to the native implementation
+    (void) values;
     KokkosSparse::Experimental::sptrsv_symbolic(space, handle, rowmap, entries);
 #endif
   } else {
+    (void) values;
     KokkosSparse::Experimental::sptrsv_symbolic(space, handle, rowmap, entries);
   }
 #ifdef KK_TRISOLVE_TIMERS
