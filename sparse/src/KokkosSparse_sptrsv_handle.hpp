@@ -484,7 +484,7 @@ class SPTRSVHandle {
           std::runtime_error("sptrsv handle: SPTRSV_CUSPARSE requested but "
                              "cuSPARSE TPL not enabled."));
 #else
-      if (!std::is_same_v<HandleExecSpace, Kokkos::CUDA>) {
+      if (!std::is_same_v<HandleExecSpace, Kokkos::Cuda>) {
         throw(
             std::runtime_error("sptrsv handle: SPTRSV_CUSPARSE requested but "
                                "HandleExecSpace is not Kokkos::CUDA."));
