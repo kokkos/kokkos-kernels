@@ -161,8 +161,9 @@ void sptrsv_symbolic(ExecutionSpace &space, KernelHandle *handle,
   typedef typename KernelHandle::nnz_lno_t ordinal_type;
   typedef typename KernelHandle::nnz_scalar_t scalar_type;
 
-  static_assert(std::is_same_v<ExecutionSpace, typename KernelHandle::HandleExecSpace>,
-		"sptrsv_symbolic: ExecutionSpace and HandleExecSpace need to match!");
+  static_assert(
+      std::is_same_v<ExecutionSpace, typename KernelHandle::HandleExecSpace>,
+      "sptrsv_symbolic: ExecutionSpace and HandleExecSpace need to match!");
 
   static_assert(KOKKOSKERNELS_SPTRSV_SAME_TYPE(
                     typename lno_row_view_t_::non_const_value_type, size_type),
@@ -201,42 +202,43 @@ void sptrsv_symbolic(ExecutionSpace &space, KernelHandle *handle,
       KokkosSparse::Experimental::SPTRSVAlgorithm::SPTRSV_CUSPARSE) {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
     if constexpr (std::is_same_v<ExecutionSpace, Kokkos::Cuda>) {
-    using RowMap_Internal = Kokkos::View<
-        typename lno_row_view_t_::const_value_type *,
-        typename KokkosKernels::Impl::GetUnifiedLayout<
-            lno_row_view_t_>::array_layout,
-        typename lno_row_view_t_::device_type,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
+      using RowMap_Internal = Kokkos::View<
+          typename lno_row_view_t_::const_value_type *,
+          typename KokkosKernels::Impl::GetUnifiedLayout<
+              lno_row_view_t_>::array_layout,
+          typename lno_row_view_t_::device_type,
+          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
-    using Entries_Internal = Kokkos::View<
-        typename lno_nnz_view_t_::const_value_type *,
-        typename KokkosKernels::Impl::GetUnifiedLayout<
-            lno_nnz_view_t_>::array_layout,
-        typename lno_nnz_view_t_::device_type,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
+      using Entries_Internal = Kokkos::View<
+          typename lno_nnz_view_t_::const_value_type *,
+          typename KokkosKernels::Impl::GetUnifiedLayout<
+              lno_nnz_view_t_>::array_layout,
+          typename lno_nnz_view_t_::device_type,
+          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
-    using Values_Internal = Kokkos::View<
-        typename scalar_nnz_view_t_::const_value_type *,
-        typename KokkosKernels::Impl::GetUnifiedLayout<
-            scalar_nnz_view_t_>::array_layout,
-        typename scalar_nnz_view_t_::device_type,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
+      using Values_Internal = Kokkos::View<
+          typename scalar_nnz_view_t_::const_value_type *,
+          typename KokkosKernels::Impl::GetUnifiedLayout<
+              scalar_nnz_view_t_>::array_layout,
+          typename scalar_nnz_view_t_::device_type,
+          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
-    RowMap_Internal rowmap_i   = rowmap;
-    Entries_Internal entries_i = entries;
-    Values_Internal values_i   = values;
+      RowMap_Internal rowmap_i   = rowmap;
+      Entries_Internal entries_i = entries;
+      Values_Internal values_i   = values;
 
-    typedef typename KernelHandle::SPTRSVHandleType sptrsvHandleType;
-    sptrsvHandleType *sh = handle->get_sptrsv_handle();
-    auto nrows           = sh->get_nrows();
+      typedef typename KernelHandle::SPTRSVHandleType sptrsvHandleType;
+      sptrsvHandleType *sh = handle->get_sptrsv_handle();
+      auto nrows           = sh->get_nrows();
 
-    KokkosSparse::Impl::sptrsvcuSPARSE_symbolic<
-        ExecutionSpace, sptrsvHandleType, RowMap_Internal, Entries_Internal,
-        Values_Internal>(space, sh, nrows, rowmap_i, entries_i, values_i,
-                         false);
+      KokkosSparse::Impl::sptrsvcuSPARSE_symbolic<
+          ExecutionSpace, sptrsvHandleType, RowMap_Internal, Entries_Internal,
+          Values_Internal>(space, sh, nrows, rowmap_i, entries_i, values_i,
+                           false);
     } else {
       (void)values;
-      KokkosSparse::Experimental::sptrsv_symbolic(space, handle, rowmap, entries);
+      KokkosSparse::Experimental::sptrsv_symbolic(space, handle, rowmap,
+                                                  entries);
     }
 
 #else  // We better go to the native implementation
@@ -304,8 +306,9 @@ void sptrsv_solve(ExecutionSpace &space, KernelHandle *handle,
   typedef typename KernelHandle::nnz_lno_t ordinal_type;
   typedef typename KernelHandle::nnz_scalar_t scalar_type;
 
-  static_assert(std::is_same_v<ExecutionSpace, typename KernelHandle::HandleExecSpace>,
-		"sptrsv solve: ExecutionSpace and HandleExecSpace need to match");
+  static_assert(
+      std::is_same_v<ExecutionSpace, typename KernelHandle::HandleExecSpace>,
+      "sptrsv solve: ExecutionSpace and HandleExecSpace need to match");
 
   static_assert(KOKKOSKERNELS_SPTRSV_SAME_TYPE(
                     typename lno_row_view_t_::non_const_value_type, size_type),
@@ -417,13 +420,13 @@ void sptrsv_solve(ExecutionSpace &space, KernelHandle *handle,
           ExecutionSpace, sptrsvHandleType, RowMap_Internal, Entries_Internal,
           Values_Internal, BType_Internal, XType_Internal>(
           space, sh, nrows, rowmap_i, entries_i, values_i, b_i, x_i, false);
-      } else {
+    } else {
       KokkosSparse::Impl::SPTRSV_SOLVE<
           ExecutionSpace, const_handle_type, RowMap_Internal, Entries_Internal,
           Values_Internal, BType_Internal,
           XType_Internal>::sptrsv_solve(space, &tmp_handle, rowmap_i, entries_i,
                                         values_i, b_i, x_i);
-      }
+    }
 #else
     KokkosSparse::Impl::SPTRSV_SOLVE<
         ExecutionSpace, const_handle_type, RowMap_Internal, Entries_Internal,
