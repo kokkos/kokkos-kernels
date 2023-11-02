@@ -89,8 +89,10 @@ KOKKOSBLAS1_NRM2_TPL_SPEC_AVAIL(Kokkos::LayoutLeft, Kokkos::HIP,
 #endif
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) && defined(KOKKOS_ENABLE_SYCL)
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ONEMKL_SYCL_COMPONENTS
 KOKKOSBLAS1_NRM2_TPL_SPEC_AVAIL(Kokkos::LayoutLeft, Kokkos::Experimental::SYCL,
                                 Kokkos::Experimental::SYCLDeviceUSMSpace)
+#endif
 #endif
 
 }  // namespace Impl
