@@ -163,6 +163,8 @@ KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<float>,
 
 #ifdef KOKKOS_ENABLE_SYCL
 
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ONEMKL_SYCL_COMPONENTS
+
 #define KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ONEMKL(SCALAR, LAYOUT)               \
   template <class ExecSpace>                                                 \
   struct gemv_tpl_spec_avail<                                                \
@@ -195,6 +197,8 @@ KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ONEMKL(Kokkos::complex<double>,
                                        Kokkos::LayoutRight)
 KOKKOSBLAS2_GEMV_TPL_SPEC_AVAIL_ONEMKL(Kokkos::complex<float>,
                                        Kokkos::LayoutRight)
+
+#endif
 
 #endif
 

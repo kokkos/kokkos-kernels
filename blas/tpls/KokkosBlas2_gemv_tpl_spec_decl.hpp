@@ -768,6 +768,7 @@ KOKKOSBLAS2_CGEMV_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIPSpace, false)
 
 // ONEMKL
 #if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) && defined(KOKKOS_ENABLE_SYCL)
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ONEMKL_SYCL_COMPONENTS
 #include <mkl.h>
 #include <oneapi/mkl/blas.hpp>
 #include <KokkosBlas_tpl_spec.hpp>
@@ -867,6 +868,7 @@ KOKKOSBLAS2_GEMV_ONEMKL(Kokkos::complex<double>, Kokkos::LayoutRight,
                         Kokkos::Experimental::SYCLDeviceUSMSpace, true)
 }  // namespace Impl
 }  // namespace KokkosBlas
+#endif
 #endif
 
 #endif
