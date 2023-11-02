@@ -120,6 +120,21 @@ IF(KOKKOS_ENABLE_SYCL)
   IF( Trilinos_ENABLE_COMPLEX_DOUBLE AND ((NOT DEFINED CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS) OR (NOT CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS)) )
     MESSAGE( WARNING "The CMake option CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS is either undefined or OFF.  Please set CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS:BOOL=ON when building with SYCL and complex double	 enabled.")
   ENDIF()
+
+  # Temporary option for Trilinos to enable OneMKL with SYCL backend
+  # Added as part of issue https://github.com/kokkos/kokkos-kernels/issues/2023
+  IF (KOKKOSKERNELS_HAS_TRILINOS)
+    SET(KOKKOSKERNELS_ENABLE_TPL_ONEMKL_SYCL_COMPONENTS_DEFAULT OFF)
+  ELSE()
+    SET(KOKKOSKERNELS_ENABLE_TPL_ONEMKL_SYCL_COMPONENTS_DEFAULT ON)
+  ENDIF()
+
+ KOKKOSKERNELS_ADD_OPTION(
+   ENABLE_TPL_ONEMKL_SYCL_COMPONENTS
+   ${KOKKOSKERNELS_ENABLE_TPL_ONEMKL_SYCL_COMPONENTS_DEFAULT}
+   BOOL
+   "Whether to enable OneMKL TPL options for gemv and nrm2 with SYCL backend. Default: OFF with Trilinos if SYCL backend is enabled, ON otherwise."
+   )
 ENDIF()
 
 IF(KOKKOS_ENABLE_OPENMPTARGET)

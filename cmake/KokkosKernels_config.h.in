@@ -154,6 +154,12 @@
 #endif
 
 /*
+ * Temp option to enable/disable tpl specializations of some routines
+ * with onemkl when sycl backend is enabled
+ */
+#cmakedefine KOKKOSKERNELS_ENABLE_TPL_ONEMKL_SYCL_COMPONENTS
+
+/*
  * "Optimization level" for computational kernels in this subpackage.
  * The higher the level, the more code variants get generated, and
  * thus the longer the compile times.  However, more code variants
