@@ -1685,7 +1685,7 @@ void Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
   // ********************************************************************
   // Compare
   // ********************************************************************
-  this->compareKkSyr2AgainstReference(alpha, h_A_syr2, h_ger_reference.d_view);
+  this->compareKkSyr2AgainstReference(alpha, h_A_syr2, h_ger_reference.h_view);
 }
 
 }  // namespace Test
