@@ -52,10 +52,18 @@ KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_BLAS(double, Kokkos::LayoutLeft,
                                     Kokkos::HostSpace)
 KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_BLAS(float, Kokkos::LayoutLeft,
                                     Kokkos::HostSpace)
+
+// TODO: we met difficuties in FindTPLMKL.cmake to set the BLAS library properly
+// such that the test in CheckHostBlasReturnComplex.cmake could not be
+// compiled and run to give a correct answer on KK_BLAS_RESULT_AS_POINTER_ARG.
+// This resulted in segfault in dot() with MKL and complex.
+// So we just temporarily disable it until FindTPLMKL.cmake is fixed.
+#if !defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
 KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<double>, Kokkos::LayoutLeft,
                                     Kokkos::HostSpace)
 KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>, Kokkos::LayoutLeft,
                                     Kokkos::HostSpace)
+#endif
 
 #endif
 
