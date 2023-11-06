@@ -364,7 +364,9 @@ KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_ROCBLAS_EXT(false)
 
 #endif
 
-#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) && defined(KOKKOS_ENABLE_SYCL)
+#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) &&                \
+    !defined(KOKKOSKERNELS_ENABLE_TPL_MKL_SYCL_OVERRIDE) && \
+    defined(KOKKOS_ENABLE_SYCL)
 #include <mkl.h>
 #include <oneapi/mkl/blas.hpp>
 #include <KokkosBlas_tpl_spec.hpp>
@@ -437,6 +439,6 @@ KOKKOSBLAS1_NRM2_TPL_SPEC_DECL_ONEMKL_EXT(false)
 }  // namespace Impl
 }  // namespace KokkosBlas
 
-#endif
+#endif  // KOKKOSKERNELS_ENABLE_TPL_MKL && KOKKOS_ENABLE_SYCL
 
 #endif
