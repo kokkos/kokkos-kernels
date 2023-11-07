@@ -15,7 +15,7 @@
 #### Sparse updates
 - Extract diagonal blocks from a CRS matrix into separate CRS matrices [\#1947](https://github.com/kokkos/kokkos-kernels/pull/1947)
 - Adding exec space instance to spmv [\#1932](https://github.com/kokkos/kokkos-kernels/pull/1932)
-- add merge-based SpMV [\#1911](https://github.com/kokkos/kokkos-kernels/pull/1911)
+- Add merge-based SpMV [\#1911](https://github.com/kokkos/kokkos-kernels/pull/1911)
 - Stream support for Gauss-Seidel: Symbolic, Numeric, Apply (PSGS and Team_PSGS) [\#1906](https://github.com/kokkos/kokkos-kernels/pull/1906)
 - Add a MergeMatrixDiagonal abstraction to KokkosSparse [\#1780](https://github.com/kokkos/kokkos-kernels/pull/1780)
 
@@ -42,7 +42,7 @@
 - ODE: adding adaptivity test for RK methods [\#1896](https://github.com/kokkos/kokkos-kernels/pull/1896)
 
 #### Common utilities
-- Common: remove half and bhalf implementations [\#1981](https://github.com/kokkos/kokkos-kernels/pull/1981)
+- Common: remove half and bhalf implementations (now in Kokkos Core) [\#1981](https://github.com/kokkos/kokkos-kernels/pull/1981)
 - KokkosKernels: switching from printf macro to function [\#1977](https://github.com/kokkos/kokkos-kernels/pull/1977)
 - OrdinalTraits: constexpr functions [\#1976](https://github.com/kokkos/kokkos-kernels/pull/1976)
 - Parallel prefix sum can infer view type [\#1974](https://github.com/kokkos/kokkos-kernels/pull/1974)
@@ -61,9 +61,8 @@
 ### Documentation and Testing:
 - Update create_gs_handle docs [\#1958](https://github.com/kokkos/kokkos-kernels/pull/1958)
 - docs: Add testing table [\#1876](https://github.com/kokkos/kokkos-kernels/pull/1876)
-- docs: Improve formatting [\#1938](https://github.com/kokkos/kokkos-kernels/pull/1938)
-- docs: Note which build has eti disabled [\#1934](https://github.com/kokkos/kokkos-kernels/pull/1934)
-- set GENERATE_HTML = YES in Doxyfile [\#1921](https://github.com/kokkos/kokkos-kernels/pull/1921)
+- docs: Note which builds have ETI disabled [\#1934](https://github.com/kokkos/kokkos-kernels/pull/1934)
+- Generate HTML docs [\#1921](https://github.com/kokkos/kokkos-kernels/pull/1921)
 - github/workflows: Pin sphinx version [\#1948](https://github.com/kokkos/kokkos-kernels/pull/1948)
 - github/workflows/docs.yml: Use up-to-date doxygen version [\#1941](https://github.com/kokkos/kokkos-kernels/pull/1941)
 
@@ -89,21 +88,19 @@
 - clean-up implementations for move of HIP outside of experimental [#1999](https://github.com/kokkos/kokkos-kernels/pull/1999)
 
 ### Bug Fixes:
-- Another upstream iostream removal fix [\#1995](https://github.com/kokkos/kokkos-kernels/pull/1995)
-- upstream iostream removal fix [\#1991](https://github.com/kokkos/kokkos-kernels/pull/1991)
+- upstream iostream removal fix [\#1991](https://github.com/kokkos/kokkos-kernels/pull/1991), [\#1995](https://github.com/kokkos/kokkos-kernels/pull/1995)
 - Test and fix gemv stream interface [\#1987](https://github.com/kokkos/kokkos-kernels/pull/1987)
-- Test_Sparse_spmv_bsr.hpp: replace std::optional with custom struct [\#1983](https://github.com/kokkos/kokkos-kernels/pull/1983)
-- small typo [\#1975](https://github.com/kokkos/kokkos-kernels/pull/1975)
-- Fix #1972 [\#1973](https://github.com/kokkos/kokkos-kernels/pull/1973)
+- Test_Sparse_spmv_bsr.hpp: Workaround cuda 11.2 compiler error [\#1983](https://github.com/kokkos/kokkos-kernels/pull/1983)
+- Fix improper use of execution space instances in ODE tests. Better handling of CudaUVMSpaces during build. [\#1973](https://github.com/kokkos/kokkos-kernels/pull/1973)
 - Don't assume the default memory space is used [\#1969](https://github.com/kokkos/kokkos-kernels/pull/1969)
 - MDF: set default verbosity explicitly to avoid valgrind warnings [\#1968](https://github.com/kokkos/kokkos-kernels/pull/1968)
 - Fix sort_and_merge functions for in-place case [\#1966](https://github.com/kokkos/kokkos-kernels/pull/1966)
 - SPMV_Struct_Functor: initialize numExterior to 0 [\#1957](https://github.com/kokkos/kokkos-kernels/pull/1957)
-- Fix #1951 [\#1953](https://github.com/kokkos/kokkos-kernels/pull/1953)
-- Ensure CUDA is enabled [\#1955](https://github.com/kokkos/kokkos-kernels/pull/1955)
+- Use rank-1 impl types when rank-2 vector is dynamically rank 1 [\#1953](https://github.com/kokkos/kokkos-kernels/pull/1953)
+- BsrMatrix: Check if CUDA is enabled before checking architecture [\#1955](https://github.com/kokkos/kokkos-kernels/pull/1955)
 - Avoid enum without fixed underlying type to fix SYCL [\#1940](https://github.com/kokkos/kokkos-kernels/pull/1940)
 - Fix SpAdd perf test when offset/ordinal is not int [\#1928](https://github.com/kokkos/kokkos-kernels/pull/1928)
-- Fix #1891 [\#1927](https://github.com/kokkos/kokkos-kernels/pull/1927)
+- Add KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS definition for architectures with independent thread scheduling [\#1927](https://github.com/kokkos/kokkos-kernels/pull/1927)
 - Fix cm_generate_makefile --boundscheck [\#1926](https://github.com/kokkos/kokkos-kernels/pull/1926)
 - Bsr compatibility [\#1925](https://github.com/kokkos/kokkos-kernels/pull/1925)
 - BLAS: fix assignable check in gemv and gemm [\#1914](https://github.com/kokkos/kokkos-kernels/pull/1914)
