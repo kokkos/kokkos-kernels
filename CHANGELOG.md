@@ -5,9 +5,12 @@
 
 ### New Features
 
-#### LAPACK updates
-
+#### BLAS updates
 - Implement BLAS2 syr() and her() functionalities under kokkos-kernels syr() [\#1837](https://github.com/kokkos/kokkos-kernels/pull/1837)
+
+#### LAPACK
+- New component added for the implementation of LAPACK algorithms and to support associated TPLs [1985](https://github.com/kokkos/kokkos-kernels/pull/1985)
+- Fix some issue with unit-test definition for SYCL backend in the new LAPACK component [2024](https://github.com/kokkos/kokkos-kernels/pull/2024)
 
 #### Sparse updates
 - Extract diagonal blocks from a CRS matrix into separate CRS matrices [\#1947](https://github.com/kokkos/kokkos-kernels/pull/1947)
@@ -19,22 +22,20 @@
 #### ODE updates
 - Newton solver [\#1924](https://github.com/kokkos/kokkos-kernels/pull/1924)
 
-#### Misc updates
-
 ### Enhancements:
 
-#### Batched
-- Disallow BsrMatrix tensor-core SpMV on non-scalar types [\#1937](https://github.com/kokkos/kokkos-kernels/pull/1937)
-- remove triplicate sanity checks in BsrMatrix [\#1923](https://github.com/kokkos/kokkos-kernels/pull/1923)
-- remove duplicate BSR SpMV tests [\#1922](https://github.com/kokkos/kokkos-kernels/pull/1922)
-
 #### Sparse
+- MDF performance improvements exposing more parallelism in the implementation
+  - MDF: convert remaining count functor to hierarchical parallelism [\#1894](https://github.com/kokkos/kokkos-kernels/pull/1894)
+  - MDF: move most expensive kernels over to hierarchical parallelism [\#1893](https://github.com/kokkos/kokkos-kernels/pull/1893)
+- Improvements to the Block Crs Matrix-Vector multiplication algorithm
+  - Improve BSR matrix SpMV Performance [\#1740](https://github.com/kokkos/kokkos-kernels/pull/1740)
+  - Disallow BsrMatrix tensor-core SpMV on non-scalar types [\#1937](https://github.com/kokkos/kokkos-kernels/pull/1937)
+  - remove triplicate sanity checks in BsrMatrix [\#1923](https://github.com/kokkos/kokkos-kernels/pull/1923)
+  - remove duplicate BSR SpMV tests [\#1922](https://github.com/kokkos/kokkos-kernels/pull/1922)
 - Only deep_copy from device to host if supernodal sptrsv algorithms are used [\#1993](https://github.com/kokkos/kokkos-kernels/pull/1993)
 - Improve KokkosSparse_kk_spmv [\#1979](https://github.com/kokkos/kokkos-kernels/pull/1979)
 - sparse/impl: Make PSGS non-blocking [\#1917](https://github.com/kokkos/kokkos-kernels/pull/1917)
-- MDF: convert remaining count functor to hierarchical parallelism [\#1894](https://github.com/kokkos/kokkos-kernels/pull/1894)
-- MDF: move most expensive kernels over to hierarchical parallelism [\#1893](https://github.com/kokkos/kokkos-kernels/pull/1893)
-- Improve BSR matrix SpMV Performance [\#1740](https://github.com/kokkos/kokkos-kernels/pull/1740)
 
 #### ODE
 - ODE: changing layout of temp mem in RK algorithms [\#1908](https://github.com/kokkos/kokkos-kernels/pull/1908)
@@ -59,18 +60,19 @@
 
 ### Documentation and Testing:
 - Update create_gs_handle docs [\#1958](https://github.com/kokkos/kokkos-kernels/pull/1958)
-- github/workflows: Pin sphinx version [\#1948](https://github.com/kokkos/kokkos-kernels/pull/1948)
-- Unit-Test: adding specific test for block sparse functions [\#1944](https://github.com/kokkos/kokkos-kernels/pull/1944)
-- github/workflows/docs.yml: Use up-to-date doxygen version [\#1941](https://github.com/kokkos/kokkos-kernels/pull/1941)
-- Update SYCL docker image to Cuda 11.7.1 [\#1939](https://github.com/kokkos/kokkos-kernels/pull/1939)
+- docs: Add testing table [\#1876](https://github.com/kokkos/kokkos-kernels/pull/1876)
 - docs: Improve formatting [\#1938](https://github.com/kokkos/kokkos-kernels/pull/1938)
 - docs: Note which build has eti disabled [\#1934](https://github.com/kokkos/kokkos-kernels/pull/1934)
+- set GENERATE_HTML = YES in Doxyfile [\#1921](https://github.com/kokkos/kokkos-kernels/pull/1921)
+- github/workflows: Pin sphinx version [\#1948](https://github.com/kokkos/kokkos-kernels/pull/1948)
+- github/workflows/docs.yml: Use up-to-date doxygen version [\#1941](https://github.com/kokkos/kokkos-kernels/pull/1941)
+
+- Unit-Test: adding specific test for block sparse functions [\#1944](https://github.com/kokkos/kokkos-kernels/pull/1944)
+- Update SYCL docker image to Cuda 11.7.1 [\#1939](https://github.com/kokkos/kokkos-kernels/pull/1939)
 - Remove printouts from the unit tests of ger() and syr() [\#1933](https://github.com/kokkos/kokkos-kernels/pull/1933)
 - update testing scripts [\#1960](https://github.com/kokkos/kokkos-kernels/pull/1960)
 - Speed up BSR spmv tests [\#1945](https://github.com/kokkos/kokkos-kernels/pull/1945)
 - Test_ODE_Newton: Add template parameters for Kokkos::pair [\#1929](https://github.com/kokkos/kokkos-kernels/pull/1929)
-- set GENERATE_HTML = YES in Doxyfile [\#1921](https://github.com/kokkos/kokkos-kernels/pull/1921)
-- docs: Add testing table [\#1876](https://github.com/kokkos/kokkos-kernels/pull/1876)
 
 ### Benchmarks:
 - perf_test/sparse: Update GS perf_test for streams [\#1963](https://github.com/kokkos/kokkos-kernels/pull/1963)
@@ -84,6 +86,7 @@
 - iostream clean-up in benchmarks [\#2004](https://github.com/kokkos/kokkos-kernels/pull/2004)
 - Rename TestExecSpace to TestDevice [\#1970](https://github.com/kokkos/kokkos-kernels/pull/1970)
 - remove Intel 2017 code (no longer supported) [\#1920](https://github.com/kokkos/kokkos-kernels/pull/1920)
+- clean-up implementations for move of HIP outside of experimental [#1999](https://github.com/kokkos/kokkos-kernels/pull/1999)
 
 ### Bug Fixes:
 - Another upstream iostream removal fix [\#1995](https://github.com/kokkos/kokkos-kernels/pull/1995)
