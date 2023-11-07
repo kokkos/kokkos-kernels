@@ -163,7 +163,7 @@ class Syr2Tester {
   void callKkGerAndCompareKkSyr2AgainstIt(
       const ScalarA& alpha, TX& x, TY& y,
       view_stride_adapter<_ViewTypeA, false>& org_A,
-      const _ViewTypeExpected& h_A_syr2, const std::string& situation);
+      const _HostViewTypeA& h_A_syr2, const std::string& situation);
 
   const bool _A_is_complex;
   const bool _A_is_lr;
@@ -1574,7 +1574,7 @@ void Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
     callKkGerAndCompareKkSyr2AgainstIt(
         const ScalarA& alpha, TX& x, TY& y,
         view_stride_adapter<_ViewTypeA, false>& org_A,
-        const _ViewTypeExpected& h_A_syr2, const std::string& situation) {
+        const _HostViewTypeA& h_A_syr2, const std::string& situation) {
   view_stride_adapter<_ViewTypeA, false> A_ger("A_ger", _M, _N);
   Kokkos::deep_copy(A_ger.d_base, org_A.d_base);
 
