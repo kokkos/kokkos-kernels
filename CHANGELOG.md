@@ -35,6 +35,8 @@
   - remove duplicate BSR SpMV tests [\#1922](https://github.com/kokkos/kokkos-kernels/pull/1922)
 - Only deep_copy from device to host if supernodal sptrsv algorithms are used [\#1993](https://github.com/kokkos/kokkos-kernels/pull/1993)
 - Improve KokkosSparse_kk_spmv [\#1979](https://github.com/kokkos/kokkos-kernels/pull/1979)
+  - Add 5 warm-up calls to get accurate, consistent timing
+  - Print out the matrix dimensions correctly when loading from disk
 - sparse/impl: Make PSGS non-blocking [\#1917](https://github.com/kokkos/kokkos-kernels/pull/1917)
 
 #### ODE
