@@ -9,8 +9,8 @@
 - Implement BLAS2 syr() and her() functionalities under kokkos-kernels syr() [\#1837](https://github.com/kokkos/kokkos-kernels/pull/1837)
 
 #### LAPACK
-- New component added for the implementation of LAPACK algorithms and to support associated TPLs [1985](https://github.com/kokkos/kokkos-kernels/pull/1985)
-- Fix some issue with unit-test definition for SYCL backend in the new LAPACK component [2024](https://github.com/kokkos/kokkos-kernels/pull/2024)
+- New component added for the implementation of LAPACK algorithms and to support associated TPLs [\#1985](https://github.com/kokkos/kokkos-kernels/pull/1985)
+- Fix some issue with unit-test definition for SYCL backend in the new LAPACK component [\#2024](https://github.com/kokkos/kokkos-kernels/pull/2024)
 
 #### Sparse updates
 - Extract diagonal blocks from a CRS matrix into separate CRS matrices [\#1947](https://github.com/kokkos/kokkos-kernels/pull/1947)
@@ -74,6 +74,7 @@
 - update testing scripts [\#1960](https://github.com/kokkos/kokkos-kernels/pull/1960)
 - Speed up BSR spmv tests [\#1945](https://github.com/kokkos/kokkos-kernels/pull/1945)
 - Test_ODE_Newton: Add template parameters for Kokkos::pair [\#1929](https://github.com/kokkos/kokkos-kernels/pull/1929)
+- par_ilut: Update documentation for fill_in_limit [\#2001](https://github.com/kokkos/kokkos-kernels/pull/2001)
 
 ### Benchmarks:
 - perf_test/sparse: Update GS perf_test for streams [\#1963](https://github.com/kokkos/kokkos-kernels/pull/1963)
@@ -117,6 +118,7 @@
 - Fix for rocblas builds [\#1871](https://github.com/kokkos/kokkos-kernels/pull/1871)
 - Correcting 'syr test' bug causing compilation errors with Trilinos [\#1870](https://github.com/kokkos/kokkos-kernels/pull/1870)
 - Workaround for spiluk and sptrsv stream tests with OMP_NUM_THREADS of 1, 2, 3 [\#1864](https://github.com/kokkos/kokkos-kernels/pull/1864)
+- bhalf_t fix for isnan function [\#2007](https://github.com/kokkos/kokkos-kernels/pull/2007)
 
 
 ## [4.1.00](https://github.com/kokkos/kokkos-kernels/tree/4.1.00) (2023-06-16)
