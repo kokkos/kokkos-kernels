@@ -11,15 +11,16 @@ permissions:
 
 jobs:
   docs-check:
-    runs-on: ubuntu-latest
+    runs-on: [macos-latest]
     steps:
       - name: Install Dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install --no-install-recommends doxygen-latex
-          pip install sphinx
-          pip install breathe
-          pip install sphinx-rtd-theme
+          brew install doxygen
+          python3 -m pip install sphinx -v "sphinx==6.2.1"
+          python3 -m pip install breathe
+          python3 -m pip install sphinx-rtd-theme
+          sphinx-build --version
+          doxygen --version
 
       - name: checkout_kokkos_kernels
         uses: actions/checkout@v3
