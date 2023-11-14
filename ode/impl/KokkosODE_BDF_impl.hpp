@@ -235,14 +235,14 @@ KOKKOS_FUNCTION void initial_step_size(const ode_type ode, const int order, cons
 				       const mat_type& temp, scalar_type& dt_ini) {
   using KAT = Kokkos::ArithTraits<scalar_type>;
 
-  Kokkos::printf("Estimating initial step size\n");
+  // Kokkos::printf("Estimating initial step size\n");
 
   // Extract subviews to store intermediate data
   auto scale = Kokkos::subview(temp, Kokkos::ALL(), 0); // Scaling coefficients for error calculation
   auto y1    = Kokkos::subview(temp, Kokkos::ALL(), 1); // Scaling coefficients for error calculation
   auto f1    = Kokkos::subview(temp, Kokkos::ALL(), 2); // Scaling coefficients for error calculation
 
-  Kokkos::printf("scale: rank=%d, extent(0)=%d\n", (int)scale.rank(), scale.extent_int(0));
+  // Kokkos::printf("scale: rank=%d, extent(0)=%d\n", (int)scale.rank(), scale.extent_int(0));
 
   // Compute norms for y0 and f0
   double n0 = KAT::zero(), n1 = KAT::zero(), dt0;

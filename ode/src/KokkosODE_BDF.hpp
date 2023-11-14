@@ -198,7 +198,7 @@ KOKKOS_FUNCTION void BDFSolve(const ode_type& ode, const scalar_type t_start, co
   }
 
   // Initialize D(:, 0) = y0 and D(:, 1) = dt*rhs
-  auto D = Kokkos::subview(temp, Kokkos::ALL(), Kokkos::pair<int, int>(0, 8));
+  auto D = Kokkos::subview(temp, Kokkos::ALL(), Kokkos::pair<int, int>(2, 10));
   for(int eqIdx = 0; eqIdx < ode.neqs; ++eqIdx) {
     D(eqIdx, 0) = y0(eqIdx);
     D(eqIdx, 1) = dt*rhs(eqIdx);
@@ -215,8 +215,8 @@ KOKKOS_FUNCTION void BDFSolve(const ode_type& ode, const scalar_type t_start, co
     for(int eqIdx = 0; eqIdx < ode.neqs; ++eqIdx) {
       y0(eqIdx) = y_new(eqIdx);
     }
-    Kokkos::printf("At t=%f, y={%f, %f, %f}, next dt will be %f, order will be %d\n",
-		   t, y_new(0), y_new(1), y_new(2), dt, order);
+    std::cout << "At t=" << t << ", y={" << y_new(0) << ", " << y_new(1) << ", " << y_new(2)
+	      << "}, next dt will be " << dt << ", order will be " << order << std::endl;
   }
 
 } // BDFSolve
