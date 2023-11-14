@@ -174,29 +174,6 @@ struct BDFSolve_wrapper {
   }
 };
 
-template <class ode_type, class mat_type, class vec_type, class scalar_type>
-struct BDF_Solve_wrapper {
-
-  const ode_type my_ode;
-  const scalar_type t_start, t_end, dt, max_step;
-  const vec_type y0, y_new;
-  const mat_type temp, temp2;
-
-  BDF_Solve_wrapper(const ode_type& my_ode_, const scalar_type& t_start_,
-		    const scalar_type& t_end_, const scalar_type& dt_,
-		    const scalar_type& max_step_, const vec_type& y0_,
-		    const vec_type& y_new_, const mat_type& temp_,
-		    const mat_type& temp2_)
-    : my_ode(my_ode_), t_start(t_start_), t_end(t_end_), dt(dt_),
-      max_step(max_step_), y0(y0_), y_new(y_new_), temp(temp_),
-      temp2(temp2_) {}
-
-  KOKKOS_FUNCTION void operator()(const int) const {
-    KokkosODE::Experimental::BDFSolve(my_ode, t_start, t_end, dt,
-				      max_step, y0, y_new, temp, temp2);
-  }
-};
-
 template <class device_type, class scalar_type>
 void test_BDF_Logistic() {
   using execution_space = typename device_type::execution_space;
@@ -537,8 +514,6 @@ void test_BDF_parallel() {
 
 template <class mat_type, class scalar_type>
 void compute_coeffs(const int order, const scalar_type factor, const mat_type& coeffs) {
-  std::cout << "compute_coeffs" << std::endl;
-
   coeffs(0, 0) = 1.0;
   for(int colIdx = 0; colIdx < order; ++colIdx) {
     coeffs(0, colIdx + 1) = 1.0;
@@ -555,14 +530,12 @@ void update_D(const int order, const scalar_type factor, const mat_type& coeffs,
 
   compute_coeffs(order, factor, coeffs);
   auto R = Kokkos::subview(coeffs, Kokkos::pair<int, int>(0, order + 1), Kokkos::pair<int, int>(0, order + 1));
-  std::cout << "SerialGemm" << std::endl; 
   KokkosBatched::SerialGemm<KokkosBatched::Trans::Transpose,
 			    KokkosBatched::Trans::NoTranspose,
 			    KokkosBatched::Algo::Gemm::Blocked>::invoke(1.0, R, subD, 0.0, subTempD);
 
   compute_coeffs(order, 1.0, coeffs);
   auto U = Kokkos::subview(coeffs, Kokkos::pair<int, int>(0, order + 1), Kokkos::pair<int, int>(0, order + 1));
-  std::cout << "SerialGemm" << std::endl; 
   KokkosBatched::SerialGemm<KokkosBatched::Trans::Transpose,
 			    KokkosBatched::Trans::NoTranspose,
 			    KokkosBatched::Algo::Gemm::Blocked>::invoke(1.0, U, subTempD, 0.0, subD);
@@ -570,7 +543,7 @@ void update_D(const int order, const scalar_type factor, const mat_type& coeffs,
 
 template <class device_type, class scalar_type>
 void test_Nordsieck() {
-  using execution_space = Kokkos::HostSpace;
+  using execution_space = typename device_type::execution_space;
   StiffChemistry mySys{};
 
   Kokkos::View<scalar_type**, execution_space> R("coeffs", 6, 6), U("coeffs", 6, 6);
@@ -585,7 +558,6 @@ void test_Nordsieck() {
   auto y0 = Kokkos::subview(D, 0, Kokkos::ALL());
   auto f  = Kokkos::subview(D, 1, Kokkos::ALL());
   y0(0) = 1.0;
-
   mySys.evaluate_function(0, 0, y0, f);
   for(int eqIdx = 0; eqIdx < mySys.neqs; ++eqIdx) {
     f(eqIdx) *= dt;
@@ -594,15 +566,13 @@ void test_Nordsieck() {
   compute_coeffs(order, factor, R);
   compute_coeffs(order, 1.0, U);
 
-  {
-    std::cout << "R: " << std::endl;
-    for(int i = 0; i < order + 1; ++i) {
-      std::cout << "{ ";
-      for(int j =  0; j < order + 1; ++j) {
-	std::cout << R(i,j) << ", ";
-      }
-      std::cout << "}" << std::endl;
+  std::cout << "R: " << std::endl;
+  for(int i = 0; i < order + 1; ++i) {
+    std::cout << "{ ";
+    for(int j =  0; j < order + 1; ++j) {
+      std::cout << R(i,j) << ", ";
     }
+    std::cout << "}" << std::endl;
   }
 
   std::cout << "D before update:" << std::endl;
@@ -726,9 +696,8 @@ void test_adaptive_BDF_v2() {
 				    y0, y_new, temp, temp2);
 }
 
-template <class Device, class scalar_type>
+template <class execution_space, class scalar_type>
 void test_BDF_adaptive_stiff() {
-  using execution_space = typename Device::execution_space;
   using vec_type = Kokkos::View<scalar_type*, execution_space>;
   using mat_type = Kokkos::View<scalar_type**, execution_space>;
   using KAT      = Kokkos::ArithTraits<scalar_type>;
@@ -738,8 +707,6 @@ void test_BDF_adaptive_stiff() {
   const scalar_type t_start = KAT::zero(), t_end = 500*KAT::one();
   scalar_type dt = KAT::zero();
   vec_type y0("initial conditions", mySys.neqs), y_new("solution", mySys.neqs);
-
-  // Set initial conditions
   auto y0_h = Kokkos::create_mirror_view(y0);
   y0_h(0) = KAT::one();
   y0_h(1) = KAT::zero();
@@ -749,27 +716,17 @@ void test_BDF_adaptive_stiff() {
   mat_type temp("buffer1", mySys.neqs, 23 + 2*mySys.neqs + 4), temp2("buffer2", 6, 7);
 
   {
-    auto temp_h = Kokkos::create_mirror_view(temp);
-    Kokkos::deep_copy(temp_h, temp);
     vec_type f0("initial value f", mySys.neqs);
-    auto f0_h = Kokkos::create_mirror_view(f0);
-
-    mySys.evaluate_function(t_start, KAT::zero(), y0_h, f0_h);
-    KokkosODE::Impl::initial_step_size(mySys, 1, t_start, 1e-6, 1e-4, y0_h, f0_h, temp_h, dt);
+    mySys.evaluate_function(t_start, KAT::zero(), y0, f0);
+    KokkosODE::Impl::initial_step_size(mySys, 1, t_start, 1e-6, 1e-4, y0, f0, temp, dt);
+    Kokkos::deep_copy(temp, KAT::zero()); // zeroing out temp to avoid surprises down the road...
   }
   std::cout << "Initial Step Size: dt=" << dt << std::endl;
 
-  Kokkos::RangePolicy<execution_space> policy(0, 1);
-  BDF_Solve_wrapper bdf_wrapper(mySys, t_start, t_end, dt,
-				(t_end - t_start) / 10,
-				y0, y_new, temp, temp2);
+  KokkosODE::Experimental::BDFSolve(mySys, t_start, t_end, dt,
+				    (t_end - t_start) / 10,
+				    y0, y_new, temp, temp2);
 
-  Kokkos::parallel_for(policy, bdf_wrapper);
-
-  auto y_new_h = Kokkos::create_mirror_view(y_new);
-  Kokkos::deep_copy(y_new_h, y_new);
-  std::cout << "Stiff Chemistry solution at t=500: {" << y_new_h(0)
-	    << ", " << y_new_h(1) << ", " << y_new_h(2) << "}" << std::endl;
 }
 
 }  // namespace Test
@@ -789,10 +746,10 @@ TEST_F(TestCategory, BDF_parallel_serial) {
 TEST_F(TestCategory, BDF_Nordsieck) {
   ::Test::test_Nordsieck<TestDevice, double>();
 }
-// TEST_F(TestCategory, BDF_adaptive) {
-//   ::Test::test_adaptive_BDF<TestDevice, double>();
-//   ::Test::test_adaptive_BDF_v2<TestDevice, double>();
-// }
+TEST_F(TestCategory, BDF_adaptive) {
+  ::Test::test_adaptive_BDF<TestDevice, double>();
+  ::Test::test_adaptive_BDF_v2<TestDevice, double>();
+}
 TEST_F(TestCategory, BDF_StiffChemistry_adaptive) {
   ::Test::test_BDF_adaptive_stiff<TestDevice, double>();
 }

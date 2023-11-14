@@ -172,8 +172,6 @@ KOKKOS_FUNCTION void BDFSolve(const ode_type& ode, const scalar_type t_start, co
 			      mat_type& temp, mat_type& temp2) {
   using KAT = Kokkos::ArithTraits<scalar_type>;
 
-  Kokkos::printf("y0 = {%f, %f, %f}\n", y0(0), y0(1), y0(2));
-
   // This needs to go away and be pulled out of temp instead...
   auto rhs    = Kokkos::subview(temp, Kokkos::ALL(), 0);
   auto update = Kokkos::subview(temp, Kokkos::ALL(), 1);
