@@ -75,10 +75,15 @@ KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_MAGMA(Kokkos::complex<double>,
                                        Kokkos::LayoutLeft, Kokkos::CudaSpace)
 KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_MAGMA(Kokkos::complex<float>,
                                        Kokkos::LayoutLeft, Kokkos::CudaSpace)
-
 #endif
+}  // namespace Impl
+}  // namespace KokkosLapack
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSOLVER
+#include <rocsolver/rocsolver.h>
+
+namespace KokkosLapack {
+namespace Impl {
 
 #define KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_ROCSOLVER(SCALAR, LAYOUT, MEMSPACE) \
   template <>                                                                \
@@ -88,7 +93,8 @@ KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_MAGMA(Kokkos::complex<float>,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEMSPACE>,  \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
-      Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEMSPACE>,      \
+      Kokkos::View<rocblas_int*, LAYOUT,                                     \
+                   Kokkos::Device<Kokkos::HIP, MEMSPACE>,                    \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {             \
     enum : bool { value = true };                                            \
   };
@@ -102,9 +108,8 @@ KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_ROCSOLVER(Kokkos::complex<double>,
 KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_ROCSOLVER(Kokkos::complex<float>,
                                            Kokkos::LayoutLeft, Kokkos::HIPSpace)
 
-#endif
-
 }  // namespace Impl
 }  // namespace KokkosLapack
+#endif  // KOKKOSKERNELS_ENABLE_TPL_ROCSOLVER
 
 #endif

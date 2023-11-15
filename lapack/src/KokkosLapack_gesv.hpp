@@ -65,9 +65,17 @@ void gesv(const ExecutionSpace& space, const AMatrix& A, const BXMV& B,
   static_assert(
       Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename BXMV::memory_space>::accessible);
+#if defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA)
+  if constexpr (!std::is_same_v<ExecutionSpace, Kokkos::Cuda>) {
+    static_assert(
+        Kokkos::SpaceAccessibility<ExecutionSpace,
+                                   typename IPIVV::memory_space>::accessible);
+  }
+#else
   static_assert(
       Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename IPIVV::memory_space>::accessible);
+#endif
   static_assert(Kokkos::is_view<AMatrix>::value,
                 "KokkosLapack::gesv: A must be a Kokkos::View.");
   static_assert(Kokkos::is_view<BXMV>::value,
