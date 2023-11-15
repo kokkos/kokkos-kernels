@@ -34,13 +34,6 @@ IF (KOKKOSKERNELS_ENABLE_TPL_CUSOLVER)
   )
 ENDIF()
 
-# Include rocm lapack TPL source file
-IF (KOKKOSKERNELS_ENABLE_TPL_ROCSOLVER)
-  LIST(APPEND SOURCES
-   lapack/tpls/KokkosLapack_Rocm_tpl.cpp
-  )
-ENDIF()
-
 ##################
 #                #
 # ETI generation #
