@@ -79,6 +79,37 @@ KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_MAGMA(Kokkos::complex<float>,
 }  // namespace Impl
 }  // namespace KokkosLapack
 
+// CUSOLVER
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSOLVER
+namespace KokkosLapack {
+namespace Impl {
+
+#define KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_CUSOLVER(SCALAR, LAYOUT, MEMSPACE)  \
+  template <>                                                                \
+  struct gesv_tpl_spec_avail<                                                \
+      Kokkos::Cuda,                                                          \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
+      Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,     \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {             \
+    enum : bool { value = true };                                            \
+  };
+
+KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_CUSOLVER(double, Kokkos::LayoutLeft,
+                                          Kokkos::CudaSpace)
+KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_CUSOLVER(float, Kokkos::LayoutLeft,
+                                          Kokkos::CudaSpace)
+KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_CUSOLVER(Kokkos::complex<double>,
+                                          Kokkos::LayoutLeft, Kokkos::CudaSpace)
+KOKKOSLAPACK_GESV_TPL_SPEC_AVAIL_CUSOLVER(Kokkos::complex<float>,
+                                          Kokkos::LayoutLeft, Kokkos::CudaSpace)
+
+}  // namespace Impl
+}  // namespace KokkosLapack
+#endif  // CUSOLVER
+
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSOLVER
 #include <rocsolver/rocsolver.h>
 
