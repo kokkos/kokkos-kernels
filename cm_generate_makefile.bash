@@ -178,6 +178,7 @@ get_kernels_tpls_list() {
   KOKKOSKERNELS_USER_TPL_LIBNAME_CMD=
   CUBLAS_DEFAULT=OFF
   CUSPARSE_DEFAULT=OFF
+  CUSOLVER_DEFAULT=OFF
   ROCBLAS_DEFAULT=OFF
   ROCSPARSE_DEFAULT=OFF
   PARSE_TPLS_LIST=$(echo $KOKKOSKERNELS_TPLS | tr "," "\n")
@@ -190,6 +191,9 @@ get_kernels_tpls_list() {
     fi
     if [ "$UC_TPLS" == "CUSPARSE" ]; then
       CUSPARSE_DEFAULT=ON
+    fi
+    if [ "$UC_TPLS" == "CUSOLVER" ]; then
+      CUSOLVER_DEFAULT=ON
     fi
     if [ "$UC_TPLS" == "ROCBLAS" ]; then
       ROCBLAS_DEFAULT=ON
@@ -223,6 +227,9 @@ get_kernels_tpls_list() {
   fi
   if [ "$CUSPARSE_DEFAULT" == "OFF" ]; then
     KOKKOSKERNELS_TPLS_CMD="-DKokkosKernels_ENABLE_TPL_CUSPARSE=OFF ${KOKKOSKERNELS_TPLS_CMD}"
+  fi
+  if [ "$CUSOLVER_DEFAULT" == "OFF" ]; then
+    KOKKOSKERNELS_TPLS_CMD="-DKokkosKernels_ENABLE_TPL_CUSOLVER=OFF ${KOKKOSKERNELS_TPLS_CMD}"
   fi
   if [ "$ROCBLAS_DEFAULT" == "OFF" ]; then
     KOKKOSKERNELS_TPLS_CMD="-DKokkosKernels_ENABLE_TPL_ROCBLAS=OFF ${KOKKOSKERNELS_TPLS_CMD}"
