@@ -129,8 +129,15 @@ struct Axpby_MV_Functor {
 #ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
-          for (size_type k = 0; k < numCols; ++k) {
-            m_y(i, k) = m_b(0) * m_y(i, k);
+          if (m_b(0) == Kokkos::ArithTraits<typename BV::non_const_value_type>::zero()) {
+            for (size_type k = 0; k < numCols; ++k) {
+              m_y(i, k) = Kokkos::ArithTraits<typename BV::non_const_value_type>::zero();
+            }
+          }
+          else {
+            for (size_type k = 0; k < numCols; ++k) {
+              m_y(i, k) = m_b(0) * m_y(i, k);
+            }
           }
         } else {
 #ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
@@ -187,8 +194,15 @@ struct Axpby_MV_Functor {
 #ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
-          for (size_type k = 0; k < numCols; ++k) {
-            m_y(i, k) = -m_x(i, k) + m_b(0) * m_y(i, k);
+          if (m_b(0) == Kokkos::ArithTraits<typename BV::non_const_value_type>::zero()) {
+            for (size_type k = 0; k < numCols; ++k) {
+              m_y(i, k) = -m_x(i, k);
+            }
+          }
+          else {
+            for (size_type k = 0; k < numCols; ++k) {
+              m_y(i, k) = -m_x(i, k) + m_b(0) * m_y(i, k);
+            }
           }
         } else {
 #ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
@@ -245,8 +259,15 @@ struct Axpby_MV_Functor {
 #ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
-          for (size_type k = 0; k < numCols; ++k) {
-            m_y(i, k) = m_x(i, k) + m_b(0) * m_y(i, k);
+          if (m_b(0) == Kokkos::ArithTraits<typename BV::non_const_value_type>::zero()) {
+            for (size_type k = 0; k < numCols; ++k) {
+              m_y(i, k) = m_x(i, k);
+            }
+          }
+          else {
+            for (size_type k = 0; k < numCols; ++k) {
+              m_y(i, k) = m_x(i, k) + m_b(0) * m_y(i, k);
+            }
           }
         } else {
 #ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
@@ -340,8 +361,15 @@ struct Axpby_MV_Functor {
 #ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
-            for (size_type k = 0; k < numCols; ++k) {
-              m_y(i, k) = m_a(0) * m_x(i, k) + m_b(0) * m_y(i, k);
+            if (m_b(0) == Kokkos::ArithTraits<typename BV::non_const_value_type>::zero()) {
+              for (size_type k = 0; k < numCols; ++k) {
+                m_y(i, k) = m_a(0) * m_x(i, k);
+              }
+            }
+            else {
+              for (size_type k = 0; k < numCols; ++k) {
+                m_y(i, k) = m_a(0) * m_x(i, k) + m_b(0) * m_y(i, k);
+              }
             }
           } else {
 #ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
@@ -362,8 +390,15 @@ struct Axpby_MV_Functor {
 #ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
-            for (size_type k = 0; k < numCols; ++k) {
-              m_y(i, k) = m_a(k) * m_x(i, k) + m_b(0) * m_y(i, k);
+            if (m_b(0) == Kokkos::ArithTraits<typename BV::non_const_value_type>::zero()) {
+              for (size_type k = 0; k < numCols; ++k) {
+                m_y(i, k) = m_a(k) * m_x(i, k);
+              }
+            }
+            else {
+              for (size_type k = 0; k < numCols; ++k) {
+                m_y(i, k) = m_a(k) * m_x(i, k) + m_b(0) * m_y(i, k);
+              }
             }
           } else {
 #ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
@@ -718,8 +753,15 @@ struct Axpby_MV_Unroll_Functor {
 #ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
-          for (int k = 0; k < UNROLL; ++k) {
-            m_y(i, k) = m_b(0) * m_y(i, k);
+          if (m_b(0) == Kokkos::ArithTraits<typename BV::non_const_value_type>::zero()) {
+            for (int k = 0; k < UNROLL; ++k) {
+              m_y(i, k) = Kokkos::ArithTraits<typename BV::non_const_value_type>::zero();
+            }
+          }
+          else {
+            for (int k = 0; k < UNROLL; ++k) {
+              m_y(i, k) = m_b(0) * m_y(i, k);
+            }
           }
         } else {
 #ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
@@ -761,8 +803,15 @@ struct Axpby_MV_Unroll_Functor {
 #ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
-          for (int k = 0; k < UNROLL; ++k) {
-            m_y(i, k) = -m_x(i, k) + m_b(0) * m_y(i, k);
+          if (m_b(0) == Kokkos::ArithTraits<typename BV::non_const_value_type>::zero()) {
+            for (int k = 0; k < UNROLL; ++k) {
+              m_y(i, k) = -m_x(i, k);
+            }
+          }
+          else {
+            for (int k = 0; k < UNROLL; ++k) {
+              m_y(i, k) = -m_x(i, k) + m_b(0) * m_y(i, k);
+            }
           }
         } else {
 #ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
@@ -804,8 +853,15 @@ struct Axpby_MV_Unroll_Functor {
 #ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
-          for (int k = 0; k < UNROLL; ++k) {
-            m_y(i, k) = m_x(i, k) + m_b(0) * m_y(i, k);
+          if (m_b(0) == Kokkos::ArithTraits<typename BV::non_const_value_type>::zero()) {
+            for (int k = 0; k < UNROLL; ++k) {
+              m_y(i, k) = m_x(i, k);
+            }
+          }
+          else {
+            for (int k = 0; k < UNROLL; ++k) {
+              m_y(i, k) = m_x(i, k) + m_b(0) * m_y(i, k);
+            }
           }
         } else {
 #ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
@@ -875,8 +931,15 @@ struct Axpby_MV_Unroll_Functor {
 #ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
-            for (int k = 0; k < UNROLL; ++k) {
-              m_y(i, k) = m_a(0) * m_x(i, k) + m_b(0) * m_y(i, k);
+            if (m_b(0) == Kokkos::ArithTraits<typename BV::non_const_value_type>::zero()) {
+              for (int k = 0; k < UNROLL; ++k) {
+                m_y(i, k) = m_a(0) * m_x(i, k);
+              }
+            }
+            else {
+              for (int k = 0; k < UNROLL; ++k) {
+                m_y(i, k) = m_a(0) * m_x(i, k) + m_b(0) * m_y(i, k);
+              }
             }
           } else {
 #ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
@@ -891,8 +954,15 @@ struct Axpby_MV_Unroll_Functor {
 #ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
-            for (int k = 0; k < UNROLL; ++k) {
-              m_y(i, k) = m_a(k) * m_x(i, k) + m_b(0) * m_y(i, k);
+            if (m_b(0) == Kokkos::ArithTraits<typename BV::non_const_value_type>::zero()) {
+              for (int k = 0; k < UNROLL; ++k) {
+                m_y(i, k) = m_a(k) * m_x(i, k);
+              }
+            }
+            else {
+              for (int k = 0; k < UNROLL; ++k) {
+                m_y(i, k) = m_a(k) * m_x(i, k) + m_b(0) * m_y(i, k);
+              }
             }
           } else {
 #ifdef KOKKOS_ENABLE_PRAGMA_UNROLL

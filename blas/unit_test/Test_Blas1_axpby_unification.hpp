@@ -394,7 +394,7 @@ void impl_test_axpby_mv_unification_compare(
           (void)valueA;  // Avoid "set but not used" error
           int a_k(a.h_view.extent(0) == 1 ? 0 : k);
           vanillaValue = static_cast<ScalarTypeY>(a.h_view(a_k) * x.h_view(i, k));
-#if 1
+#if 0
           ScalarTypeY tmp = static_cast<ScalarTypeY>(a.h_view(a_k) * x.h_view(i, k) + valueB * org_y.h_view(i, k));
           std::cout << "i = "                    << i
                     << ", k = "                  << k
@@ -410,7 +410,7 @@ void impl_test_axpby_mv_unification_compare(
 #endif
         } else {
           vanillaValue = static_cast<ScalarTypeY>(valueA * x.h_view(i, k));
-#if 1
+#if 0
           ScalarTypeY tmp = static_cast<ScalarTypeY>(valueA * x.h_view(i, k) + valueB * org_y.h_view(i, k));
           std::cout << "i = "                    << i
                     << ", k = "                  << k
@@ -1048,7 +1048,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 01/36: Ascalar + Bscalar
   // ************************************************************
-  std::cout << "Starting case 01/36" << std::endl;
+  // std::cout << "Starting case 01/36" << std::endl;
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -1078,7 +1078,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 02/36: Ascalar + Br0
   // ************************************************************
-  std::cout << "Starting case 02/36" << std::endl;
+  // std::cout << "Starting case 02/36" << std::endl;
   if constexpr (std::is_same_v<tLayoutB, Kokkos::LayoutStride>) {
     // Avoid the test, due to compilation errors
   } else {
@@ -1112,7 +1112,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 03/36: Ascalar + Br1s_1
   // ************************************************************
-  std::cout << "Starting case 03/36" << std::endl;
+  // std::cout << "Starting case 03/36" << std::endl;
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -1142,7 +1142,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 04/36: Ascalar + Br1s_k
   // ************************************************************
-  std::cout << "Starting case 04/36" << std::endl;
+  // std::cout << "Starting case 04/36" << std::endl;
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -1176,7 +1176,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 05/36: Ascalar + Br1d,1
   // ************************************************************
-  std::cout << "Starting case 05/36" << std::endl;
+  // std::cout << "Starting case 05/36" << std::endl;
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -1206,7 +1206,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 06/36: Ascalar + Br1d,k
   // ************************************************************
-  std::cout << "Starting case 06/36" << std::endl;
+  // std::cout << "Starting case 06/36" << std::endl;
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -1240,7 +1240,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 07/36: Ar0 + Bscalar
   // ************************************************************w
-  std::cout << "Starting case 07/36" << std::endl;
+  // std::cout << "Starting case 07/36" << std::endl;
   if constexpr (std::is_same_v<tLayoutA, Kokkos::LayoutStride>) {
     // Avoid the test, due to compilation errors
   } else {
@@ -1274,7 +1274,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 08/36: Ar0 + Br0
   // ************************************************************
-  std::cout << "Starting case 08/36" << std::endl;
+  // std::cout << "Starting case 08/36" << std::endl;
   if constexpr ((std::is_same_v<tLayoutA, Kokkos::LayoutStride>) ||
                 (std::is_same_v<tLayoutB, Kokkos::LayoutStride>)) {
     // Avoid the test, due to compilation errors
@@ -1309,7 +1309,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 09/36: Ar0 + Br1s_1
   // ************************************************************
-  std::cout << "Starting case 09/36" << std::endl;
+  // std::cout << "Starting case 09/36" << std::endl;
   if constexpr (std::is_same_v<tLayoutA, Kokkos::LayoutStride>) {
     // Avoid the test, due to compilation errors
   } else {
@@ -1345,7 +1345,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 10/36: Ar0 + Br1s_k
   // ************************************************************
-  std::cout << "Starting case 10/36" << std::endl;
+  // std::cout << "Starting case 10/36" << std::endl;
   if constexpr (std::is_same_v<tLayoutA, Kokkos::LayoutStride>) {
     // Avoid the test, due to compilation errors
   } else {
@@ -1384,7 +1384,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 11/36: Ar0 + Br1d,1
   // ************************************************************
-  std::cout << "Starting case 11/36" << std::endl;
+  // std::cout << "Starting case 11/36" << std::endl;
   if constexpr (std::is_same_v<tLayoutA, Kokkos::LayoutStride>) {
     // Avoid the test, due to compilation errors
   } else {
@@ -1418,7 +1418,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 12/36: Ar0 + Br1d,k
   // ************************************************************
-  std::cout << "Starting case 12/36" << std::endl;
+  // std::cout << "Starting case 12/36" << std::endl;
   if constexpr (std::is_same_v<tLayoutA, Kokkos::LayoutStride>) {
     // Avoid the test, due to compilation errors
   } else {
@@ -1456,7 +1456,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 13/36: Ar1s_1 + Bscalar
   // ************************************************************w
-  std::cout << "Starting case 13/36" << std::endl;
+  // std::cout << "Starting case 13/36" << std::endl;
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -1488,7 +1488,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 14/36: Ar1s_1 + Br0
   // ************************************************************
-  std::cout << "Starting case 14/36" << std::endl;
+  // std::cout << "Starting case 14/36" << std::endl;
   if constexpr (std::is_same_v<tLayoutB, Kokkos::LayoutStride>) {
     // Avoid the test, due to compilation errors
   } else {
@@ -1524,7 +1524,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 15/36: Ar1s_1 + Br1s_1
   // ************************************************************
-  std::cout << "Starting case 15/36" << std::endl;
+  // std::cout << "Starting case 15/36" << std::endl;
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -1556,7 +1556,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 16/36: Ar1s_1 + Br1s_k
   // ************************************************************
-  std::cout << "Starting case 16/36" << std::endl;
+  // std::cout << "Starting case 16/36" << std::endl;
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -1591,7 +1591,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 17/36: Ar1s_1 + Br1d,1
   // ************************************************************
-  std::cout << "Starting case 17/36" << std::endl;
+  // std::cout << "Starting case 17/36" << std::endl;
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -1623,7 +1623,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 18/36: Ar1s_1 + Br1d,k
   // ************************************************************
-  std::cout << "Starting case 18/36" << std::endl;
+  // std::cout << "Starting case 18/36" << std::endl;
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -1658,7 +1658,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 19/36: Ar1s_k + Bscalar
   // ************************************************************
-  std::cout << "Starting case 19/36" << std::endl;
+  // std::cout << "Starting case 19/36" << std::endl;
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -1700,7 +1700,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 20/36: Ar1s_k + Br0
   // ************************************************************
-  std::cout << "Starting case 20/36" << std::endl;
+  // std::cout << "Starting case 20/36" << std::endl;
   if constexpr (std::is_same_v<tLayoutB, Kokkos::LayoutStride>) {
     // Avoid the test, due to compilation errors
   } else {
@@ -1746,7 +1746,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 21/36: Ar1s_k + Br1s_1
   // ************************************************************
-  std::cout << "Starting case 21/36" << std::endl;
+  // std::cout << "Starting case 21/36" << std::endl;
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -1788,7 +1788,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 22/36: Ar1s_k + Br1s_k
   // ************************************************************
-  std::cout << "Starting case 22/36" << std::endl;
+  // std::cout << "Starting case 22/36" << std::endl;
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -1834,7 +1834,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 23/36: Ar1s_k + Br1d,1
   // ************************************************************
-  std::cout << "Starting case 23/36" << std::endl;
+  // std::cout << "Starting case 23/36" << std::endl;
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -1876,7 +1876,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 24/36: Ar1s_k + Br1d,k
   // ************************************************************
-  std::cout << "Starting case 24/36" << std::endl;
+  // std::cout << "Starting case 24/36" << std::endl;
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -1923,7 +1923,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 25/36: Ar1d,1 + Bscalar
   // ************************************************************w
-  std::cout << "Starting case 25/36" << std::endl;
+  // std::cout << "Starting case 25/36" << std::endl;
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -1955,7 +1955,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 26/36: Ar1d,1 + Br0
   // ************************************************************
-  std::cout << "Starting case 26/36" << std::endl;
+  // std::cout << "Starting case 26/36" << std::endl;
   if constexpr (std::is_same_v<tLayoutB, Kokkos::LayoutStride>) {
     // Avoid the test, due to compilation errors
   } else {
@@ -1991,7 +1991,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 27/36: Ar1d,1 + Br1s_1
   // ************************************************************
-  std::cout << "Starting case 27/36" << std::endl;
+  // std::cout << "Starting case 27/36" << std::endl;
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -2023,7 +2023,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 28/36: Ar1d,1 + Br1s_k
   // ************************************************************
-  std::cout << "Starting case 28/36" << std::endl;
+  // std::cout << "Starting case 28/36" << std::endl;
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -2058,7 +2058,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 29/36: Ar1d,1 + Br1d,1
   // ************************************************************
-  std::cout << "Starting case 29/36" << std::endl;
+  // std::cout << "Starting case 29/36" << std::endl;
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -2090,7 +2090,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 30/36: Ar1d,1 + Br1d,k
   // ************************************************************
-  std::cout << "Starting case 30/36" << std::endl;
+  // std::cout << "Starting case 30/36" << std::endl;
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -2125,7 +2125,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 31/36: Ar1d,k + Bscalar
   // ************************************************************w
-  std::cout << "Starting case 31/36" << std::endl;
+  // std::cout << "Starting case 31/36" << std::endl;
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -2167,7 +2167,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 32/36: Ar1d,k + Br0
   // ************************************************************
-  std::cout << "Starting case 32/36" << std::endl;
+  // std::cout << "Starting case 32/36" << std::endl;
   if constexpr (std::is_same_v<tLayoutB, Kokkos::LayoutStride>) {
     // Avoid the test, due to compilation errors
   } else {
@@ -2213,7 +2213,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 33/36: Ar1d,k + Br1s_1
   // ************************************************************
-  std::cout << "Starting case 33/36" << std::endl;
+  // std::cout << "Starting case 33/36" << std::endl;
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -2255,7 +2255,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 34/36: Ar1d,k + Br1s_k
   // ************************************************************
-  std::cout << "Starting case 34/36" << std::endl;
+  // std::cout << "Starting case 34/36" << std::endl;
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -2302,7 +2302,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 35/36: Ar1d,k + Br1d,1
   // ************************************************************
-  std::cout << "Starting case 35/36" << std::endl;
+  // std::cout << "Starting case 35/36" << std::endl;
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -2344,7 +2344,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 36/36: Ar1d,k + Br1d,k
   // ************************************************************
-  std::cout << "Starting case 36/36" << std::endl;
+  // std::cout << "Starting case 36/36" << std::endl;
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
