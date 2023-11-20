@@ -29,6 +29,8 @@
 #include "KokkosSparse_crs_to_bsr_impl.hpp"
 #include "KokkosSparse_bsr_to_crs_impl.hpp"
 
+#include "Test_vector_fixtures.hpp"
+
 #include <gtest/gtest.h>
 
 using namespace KokkosSparse;
@@ -127,6 +129,9 @@ void run_test_spiluk() {
   Kokkos::deep_copy(row_map, hrow_map);
   Kokkos::deep_copy(entries, hentries);
   Kokkos::deep_copy(values, hvalues);
+
+  auto temp = decompress_matrix(row_map, entries, values);
+  print_matrix(temp);
 
   typedef KokkosKernels::Experimental::KokkosKernelsHandle<
       size_type, lno_t, scalar_t, typename device::execution_space,
