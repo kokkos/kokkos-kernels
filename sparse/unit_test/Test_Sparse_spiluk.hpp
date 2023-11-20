@@ -26,6 +26,8 @@
 #include "KokkosBlas1_nrm2.hpp"
 #include "KokkosSparse_spmv.hpp"
 #include "KokkosSparse_spiluk.hpp"
+#include "KokkosSparse_crs_to_bsr_impl.hpp"
+#include "KokkosSparse_bsr_to_crs_impl.hpp"
 
 #include <gtest/gtest.h>
 
@@ -475,10 +477,16 @@ void run_test_spiluk_streams(int test_algo, int nstreams) {
 template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
 void run_test_spiluk_blocks() {
-  typedef Kokkos::View<size_type *, device> RowMapType;
-  typedef Kokkos::View<lno_t *, device> EntriesType;
-  typedef Kokkos::View<scalar_t *, device> ValuesType;
-  typedef Kokkos::ArithTraits<scalar_t> AT;
+  using RowMapType = Kokkos::View<size_type *, device>;
+  using EntriesType = Kokkos::View<lno_t *, device>;
+  using ValuesType = Kokkos::View<scalar_t *, device> ;
+  using AT = Kokkos::ArithTraits<scalar_t>;
+  using Crs = CrsMatrix<scalar_t, lno_t, device, void, size_type>;
+  using Bsr = BsrMatrix<scalar_t, lno_t, device, void, size_type>;
+  using Graph = typename Crs::staticcrsgraph_type;
+  using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<
+    size_type, lno_t, scalar_t, typename device::execution_space,
+    typename device::memory_space, typename device::memory_space>;
 
   const size_type nrows = 9;
   const size_type nnz   = 21;
@@ -555,12 +563,16 @@ void run_test_spiluk_blocks() {
   Kokkos::deep_copy(entries, hentries);
   Kokkos::deep_copy(values, hvalues);
 
-  typedef KokkosKernels::Experimental::KokkosKernelsHandle<
-      size_type, lno_t, scalar_t, typename device::execution_space,
-      typename device::memory_space, typename device::memory_space>
-      KernelHandle;
+  // Convert to BSR
+  Crs crs("crs for block spiluk test", nrows, nrows, values.extent(0), values, row_map, entries);
+  auto bsr = KokkosSparse::Impl::expand_crs_to_bsr<Bsr>(crs, block_size);
 
   KernelHandle kh;
+
+  // Pull out views from BSR
+  auto brow_map = bsr.graph.row_map;
+  auto bentries = bsr.graph.entries;
+  auto bvalues  = bsr.values;
 
   // SPILUKAlgorithm::SEQLVLSCHD_RP
   {
@@ -596,11 +608,10 @@ void run_test_spiluk_blocks() {
     Kokkos::fence();
 
     // Checking
-    typedef CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
-    crsMat_t A("A_Mtx", nrows, nrows, nnz, values, row_map, entries);
-    crsMat_t L("L_Mtx", nrows, nrows, spiluk_handle->get_nnzL(), L_values,
+    Crs A("A_Mtx", nrows, nrows, nnz, values, row_map, entries);
+    Crs L("L_Mtx", nrows, nrows, spiluk_handle->get_nnzL(), L_values,
                L_row_map, L_entries);
-    crsMat_t U("U_Mtx", nrows, nrows, spiluk_handle->get_nnzU(), U_values,
+    Crs U("U_Mtx", nrows, nrows, spiluk_handle->get_nnzU(), U_values,
                U_row_map, U_entries);
 
     // Create a reference view e set to all 1's
@@ -660,11 +671,10 @@ void run_test_spiluk_blocks() {
     Kokkos::fence();
 
     // Checking
-    typedef CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
-    crsMat_t A("A_Mtx", nrows, nrows, nnz, values, row_map, entries);
-    crsMat_t L("L_Mtx", nrows, nrows, spiluk_handle->get_nnzL(), L_values,
+    Crs A("A_Mtx", nrows, nrows, nnz, values, row_map, entries);
+    Crs L("L_Mtx", nrows, nrows, spiluk_handle->get_nnzL(), L_values,
                L_row_map, L_entries);
-    crsMat_t U("U_Mtx", nrows, nrows, spiluk_handle->get_nnzU(), U_values,
+    Crs U("U_Mtx", nrows, nrows, spiluk_handle->get_nnzU(), U_values,
                U_row_map, U_entries);
 
     // Create a reference view e set to all 1's
@@ -697,6 +707,7 @@ template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
 void test_spiluk() {
   Test::run_test_spiluk<scalar_t, lno_t, size_type, device>();
+  Test::run_test_spiluk_blocks<scalar_t, lno_t, size_type, device>();
 }
 
 template <typename scalar_t, typename lno_t, typename size_type,

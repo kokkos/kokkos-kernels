@@ -522,7 +522,18 @@ void spiluk_numeric(KernelHandle* handle,
   UEntries_Internal U_entries_i = U_entries;
   UValues_Internal U_values_i   = U_values;
 
-  KokkosSparse::Impl::SPILUK_NUMERIC<
+  if (handle->get_spiluk_handle()->get_block_size() > 1) {
+    KokkosSparse::Impl::SPILUK_NUMERIC<
+      typename AValuesType::execution_space, const_handle_type,
+      ARowMap_Internal, AEntries_Internal, AValues_Internal, LRowMap_Internal,
+      LEntries_Internal, LValues_Internal, URowMap_Internal, UEntries_Internal,
+      UValues_Internal>::spiluk_numeric_block(&tmp_handle, fill_lev, A_rowmap_i,
+                                              A_entries_i, A_values_i, L_rowmap_i,
+                                              L_entries_i, L_values_i, U_rowmap_i,
+                                              U_entries_i, U_values_i);
+  }
+  else {
+    KokkosSparse::Impl::SPILUK_NUMERIC<
       typename AValuesType::execution_space, const_handle_type,
       ARowMap_Internal, AEntries_Internal, AValues_Internal, LRowMap_Internal,
       LEntries_Internal, LValues_Internal, URowMap_Internal, UEntries_Internal,
@@ -530,6 +541,7 @@ void spiluk_numeric(KernelHandle* handle,
                                         A_entries_i, A_values_i, L_rowmap_i,
                                         L_entries_i, L_values_i, U_rowmap_i,
                                         U_entries_i, U_values_i);
+  }
 
 }  // spiluk_numeric
 
