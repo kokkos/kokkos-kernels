@@ -95,6 +95,7 @@ class SPILUKHandle {
   size_type nlevels;
   size_type nnzL;
   size_type nnzU;
+  size_type block_size;
   size_type level_maxrows;  // max. number of rows among levels
   size_type
       level_maxrowsperchunk;  // max.number of rows among chunks among levels
@@ -109,6 +110,7 @@ class SPILUKHandle {
  public:
   SPILUKHandle(SPILUKAlgorithm choice, const size_type nrows_,
                const size_type nnzL_, const size_type nnzU_,
+               const size_type block_size_,
                bool symbolic_complete_ = false)
       : level_list(),
         level_idx(),
@@ -121,6 +123,7 @@ class SPILUKHandle {
         nlevels(0),
         nnzL(nnzL_),
         nnzU(nnzU_),
+        block_size(block_size_),
         level_maxrows(0),
         level_maxrowsperchunk(0),
         symbolic_complete(symbolic_complete_),
@@ -129,11 +132,12 @@ class SPILUKHandle {
         vector_size(-1) {}
 
   void reset_handle(const size_type nrows_, const size_type nnzL_,
-                    const size_type nnzU_) {
+                    const size_type nnzU_, const size_type block_size_) {
     set_nrows(nrows_);
     set_num_levels(0);
     set_nnzL(nnzL_);
     set_nnzU(nnzU_);
+    set_block_size(block_size_);
     set_level_maxrows(0);
     set_level_maxrowsperchunk(0);
     level_list          = nnz_row_view_t("level_list", nrows_),
@@ -204,6 +208,12 @@ class SPILUKHandle {
 
   KOKKOS_INLINE_FUNCTION
   void set_nnzU(const size_type nnzU_) { this->nnzU = nnzU_; }
+
+  KOKKOS_INLINE_FUNCTION
+  size_type get_block_size() const { return block_size; }
+
+  KOKKOS_INLINE_FUNCTION
+  void set_block_size(const size_type block_size_) { this->block_size = block_size_; }
 
   KOKKOS_INLINE_FUNCTION
   size_type get_level_maxrows() const { return level_maxrows; }
