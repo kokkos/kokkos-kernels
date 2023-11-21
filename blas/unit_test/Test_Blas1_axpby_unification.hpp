@@ -1043,7 +1043,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // in which the result is computed.
   using MagnitudeB         = typename Kokkos::ArithTraits<tScalarB>::mag_type;
   MagnitudeB const eps     = Kokkos::ArithTraits<tScalarB>::epsilon();
-  MagnitudeB const max_val = 20;
+  MagnitudeB const max_val = 40;
   MagnitudeB const max_error =
       static_cast<MagnitudeB>(
           Kokkos::ArithTraits<tScalarA>::abs(valuesA[valuesA.size() - 1]) +
