@@ -50,7 +50,7 @@ namespace Impl {
       Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
       1, true,                                                                 \
-      nrm1_tpl_spec_avail<                                                     \
+      nrm1_eti_spec_avail<                                                     \
           EXECSPACE,                                                           \
           Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT, \
                        Kokkos::HostSpace,                                      \
@@ -82,7 +82,7 @@ namespace Impl {
         }                                                                      \
       } else {                                                                 \
         Nrm1<EXECSPACE, RV, XV, 1, false,                                      \
-             nrm1_tpl_spec_avail<EXECSPACE, RV, XV>::value>::nrm1(space, R,    \
+             nrm1_eti_spec_avail<EXECSPACE, RV, XV>::value>::nrm1(space, R,    \
                                                                   X);          \
       }                                                                        \
       Kokkos::Profiling::popRegion();                                          \
@@ -167,7 +167,7 @@ void cublasAsumWrapper(const ExecutionSpace& space, RViewType& R,
       Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
       1, true,                                                                 \
-      nrm1_tpl_spec_avail<                                                     \
+      nrm1_eti_spec_avail<                                                     \
           EXECSPACE,                                                           \
           Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT, \
                        Kokkos::HostSpace,                                      \
@@ -192,7 +192,7 @@ void cublasAsumWrapper(const ExecutionSpace& space, RViewType& R,
         cublasAsumWrapper(space, R, X);                                        \
       } else {                                                                 \
         Nrm1<execution_space, RV, XV, 1, false,                                \
-             nrm1_tpl_spec_avail<EXECSPACE, RV, XV>::value>::nrm1(space, R,    \
+             nrm1_eti_spec_avail<EXECSPACE, RV, XV>::value>::nrm1(space, R,    \
                                                                   X);          \
       }                                                                        \
       Kokkos::Profiling::popRegion();                                          \
@@ -278,7 +278,7 @@ void rocblasAsumWrapper(const ExecutionSpace& space, RViewType& R,
       Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
       1, true,                                                                 \
-      nrm1_tpl_spec_avail<                                                     \
+      nrm1_eti_spec_avail<                                                     \
           ExecSpace,                                                           \
           Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT, \
                        Kokkos::HostSpace,                                      \
@@ -302,7 +302,7 @@ void rocblasAsumWrapper(const ExecutionSpace& space, RViewType& R,
         rocblasAsumWrapper(space, R, X);                                       \
       } else {                                                                 \
         Nrm1<ExecSpace, RV, XV, 1, false,                                      \
-             nrm1_tpl_spec_avail<ExecSpace, RV, XV>::value>::nrm1(space, R,    \
+             nrm1_eti_spec_avail<ExecSpace, RV, XV>::value>::nrm1(space, R,    \
                                                                   X);          \
       }                                                                        \
       Kokkos::Profiling::popRegion();                                          \
@@ -388,7 +388,7 @@ void onemklAsumWrapper(const ExecutionSpace& space, RViewType& R,
       Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
       1, true,                                                                 \
-      nrm1_tpl_spec_avail<                                                     \
+      nrm1_eti_spec_avail<                                                     \
           EXECSPACE,                                                           \
           Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT, \
                        Kokkos::HostSpace,                                      \
@@ -413,7 +413,7 @@ void onemklAsumWrapper(const ExecutionSpace& space, RViewType& R,
         onemklAsumWrapper(space, R, X);                                        \
       } else {                                                                 \
         Nrm1<execution_space, RV, XV, 1, false,                                \
-             nrm1_tpl_spec_avail<EXECSPACE, RV, XV>::value>::nrm1(space, R,    \
+             nrm1_eti_spec_avail<EXECSPACE, RV, XV>::value>::nrm1(space, R,    \
                                                                   X);          \
       }                                                                        \
       Kokkos::Profiling::popRegion();                                          \
