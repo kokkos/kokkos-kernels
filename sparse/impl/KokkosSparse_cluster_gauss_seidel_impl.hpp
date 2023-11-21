@@ -555,22 +555,22 @@ class ClusterGaussSeidel {
     }
     nnz_view_t vertClusters;
     auto clusterAlgo = gsHandle->get_clustering_algo();
-    if (clusterAlgo == CLUSTER_DEFAULT) clusterAlgo = CLUSTER_MIS2;
+    if (clusterAlgo == ClusteringAlgorithm::CLUSTER_DEFAULT) clusterAlgo = ClusteringAlgorithm::CLUSTER_MIS2;
     switch (clusterAlgo) {
-      case CLUSTER_MIS2: {
+      case ClusteringAlgorithm::CLUSTER_MIS2: {
         vertClusters =
             KokkosGraph::graph_mis2_aggregate<MyExecSpace, raw_rowmap_t,
                                               raw_colinds_t, nnz_view_t>(
                 raw_sym_xadj, raw_sym_adj, numClusters);
         break;
       }
-      case CLUSTER_BALLOON: {
+      case ClusteringAlgorithm::CLUSTER_BALLOON: {
         BalloonClustering<HandleType, raw_rowmap_t, raw_colinds_t> balloon(
             num_rows, raw_sym_xadj, raw_sym_adj);
         vertClusters = balloon.run(clusterSize);
         break;
       }
-      case CLUSTER_DEFAULT: {
+      case ClusteringAlgorithm::CLUSTER_DEFAULT: {
         throw std::logic_error(
             "Logic to choose default clustering algorithm is incorrect");
       }

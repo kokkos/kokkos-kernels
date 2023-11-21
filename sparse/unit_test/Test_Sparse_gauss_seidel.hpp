@@ -100,13 +100,13 @@ void run_gauss_seidel(
 
 template <typename crsMat_t, typename vec_t>
 void run_gauss_seidel(
-    crsMat_t input_mat, GSAlgorithm gs_algorithm, vec_t x_vector,
-    vec_t y_vector, bool is_symmetric_graph,
-    int apply_type   = 0,  // 0 for symmetric, 1 for forward, 2 for backward.
-    int cluster_size = 1,
-    bool classic =
+    crsMat_t input_mat, GSAlgorithm gs_algorithm, vec_t x_vector, // Aqui 1-3
+    vec_t y_vector, bool is_symmetric_graph, // Aqui 4-5
+    int apply_type   = 0,  // 0 for symmetric, 1 for forward, 2 for backward. // Aqui 6
+    int cluster_size = 1, // Aqui 7
+    bool classic =  // Aqui 8
         false,  // only with two-stage, true for sptrsv instead of richardson
-    ClusteringAlgorithm clusterAlgo = CLUSTER_DEFAULT,
+    ClusteringAlgorithm clusterAlgo = ClusteringAlgorithm::CLUSTER_DEFAULT,
     KokkosGraph::ColoringAlgorithm coloringAlgo =
         KokkosGraph::COLORING_DEFAULT) {
   using size_type = typename crsMat_t::size_type;
@@ -246,8 +246,8 @@ void test_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth,
   }
   //*** Cluster-coloring version ****
   int clusterSizes[3]                              = {2, 5, 34};
-  std::vector<ClusteringAlgorithm> clusteringAlgos = {CLUSTER_MIS2,
-                                                      CLUSTER_BALLOON};
+  std::vector<ClusteringAlgorithm> clusteringAlgos = {ClusteringAlgorithm::CLUSTER_MIS2,
+                                                      ClusteringAlgorithm::CLUSTER_BALLOON};
   for (int csize = 0; csize < 3; csize++) {
     for (auto clusterAlgo : clusteringAlgos) {
       for (int apply_type = 0; apply_type < apply_count; ++apply_type) {
@@ -350,13 +350,13 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth,
   //*** Cluster-coloring version ****
   int clusterSizes[3] = {2, 5, 34};
   for (int csize = 0; csize < 3; csize++) {
-    for (int algo = 0; algo < (int)NUM_CLUSTERING_ALGORITHMS; algo++) {
+    for (int algo = 0; algo < (int)ClusteringAlgorithm::NUM_CLUSTERING_ALGORITHMS; algo++) {
       for (int apply_type = 0; apply_type < apply_count; ++apply_type) {
         Kokkos::Timer timer1;
         // Zero out X before solving
         Kokkos::deep_copy(x_vector, zero);
-        run_gauss_seidel(input_mat, GS_CLUSTER, x_vector, y_vector, symmetric,
-                         apply_type, clusterSizes[csize],
+        run_gauss_seidel(input_mat, GS_CLUSTER, x_vector, y_vector, symmetric, // Aqui
+                         apply_type, clusterSizes[csize], false,
                          (ClusteringAlgorithm)algo);
         Kokkos::deep_copy(x_host, x_vector);
         for (lno_t i = 0; i < numVecs; i++) {
@@ -553,7 +553,7 @@ void test_gauss_seidel_empty() {
     for (const int rowmapLen : {0, 1, 5}) {
       KernelHandle kh;
       if (doingCluster)
-        kh.create_gs_handle(CLUSTER_DEFAULT, 10);
+        kh.create_gs_handle(ClusteringAlgorithm::CLUSTER_DEFAULT, 10);
       else
         kh.create_gs_handle(GS_DEFAULT);
       const auto nRows = KOKKOSKERNELS_MACRO_MAX(0, rowmapLen - 1);
