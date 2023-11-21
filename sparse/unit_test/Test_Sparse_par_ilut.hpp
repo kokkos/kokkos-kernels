@@ -71,9 +71,9 @@ void run_test_par_ilut() {
                                           {0.2, -0.5, -9.,  0.}};
 
   // Allocate device CRS views for A
-  RowMapType row_map("row_map");
-  EntriesType entries("entries");
-  ValuesType values("values");
+  RowMapType row_map("row_map", 0);
+  EntriesType entries("entries", 0);
+  ValuesType values("values", 0);
 
   compress_matrix(row_map, entries, values, A);
 

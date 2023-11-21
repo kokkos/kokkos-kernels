@@ -64,7 +64,7 @@ void compress_matrix(
   for (size_type row_idx = 0; row_idx < nrows; ++row_idx) {
     for (size_type col_idx = 0; col_idx < nrows; ++col_idx) {
       if (fixture[row_idx][col_idx] != ZERO) {
-        hentries(curr_nnz) = col_idx
+        hentries(curr_nnz) = col_idx;
         hvalues(curr_nnz)  = fixture[row_idx][col_idx];
         ++curr_nnz;
       }
@@ -116,7 +116,7 @@ std::vector<std::vector<scalar_t>> decompress_matrix(
 
 template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
-std::vector<std::vector<typename View3::non_const_value_type>> decompress_matrix(
+std::vector<std::vector<scalar_t>> decompress_matrix(
   Kokkos::View<size_type*, device>& row_map,
   Kokkos::View<lno_t*, device>& entries,
   Kokkos::View<scalar_t*, device>& values,
