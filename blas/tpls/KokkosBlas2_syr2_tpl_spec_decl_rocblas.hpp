@@ -163,7 +163,7 @@ namespace Impl {
         YViewType;                                                             \
     typedef Kokkos::View<SCALAR**, LAYOUT,                                     \
                          Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >                 \ 
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >             \
         AViewType;                                                             \
                                                                                \
     static void syr2(const typename AViewType::execution_space& space,         \

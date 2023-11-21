@@ -108,6 +108,7 @@ inline void print_enabled_tpls(std::ostream& os) {
 #endif
   print_cublas_version_if_enabled(os);
   print_cusparse_version_if_enabled(os);
+  print_cusolver_version_if_enabled(os);
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
   os << "  "
      << "KOKKOSKERNELS_ENABLE_TPL_ROCBLAS: yes\n";

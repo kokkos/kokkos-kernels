@@ -135,11 +135,11 @@ void impl_test_gesv(const char* mode, const char* padding, int N) {
   for (int i = 0; i < N; i++) {
     if (ats::abs(h_B(i) - h_X0(i)) > eps) {
       test_flag = false;
-      printf(
-          "    Error %d, pivot %c, padding %c: result( %.15lf ) !="
-          "solution( %.15lf ) at (%d), error=%.15e, eps=%.15e\n",
-          N, mode[0], padding[0], ats::abs(h_B(i)), ats::abs(h_X0(i)), int(i),
-          ats::abs(h_B(i) - h_X0(i)), eps);
+      // printf(
+      //     "    Error %d, pivot %c, padding %c: result( %.15lf ) !="
+      //     "solution( %.15lf ) at (%d), error=%.15e, eps=%.15e\n",
+      //     N, mode[0], padding[0], ats::abs(h_B(i)), ats::abs(h_X0(i)),
+      //     int(i), ats::abs(h_B(i) - h_X0(i)), eps);
       // break;
     }
   }
