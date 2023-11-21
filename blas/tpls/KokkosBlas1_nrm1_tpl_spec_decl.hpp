@@ -39,26 +39,34 @@ inline void nrm1_print_specialization() {
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_BLAS(SCALAR, LAYOUT, MEMSPACE,          \
-                                            ETI_SPEC_AVAIL)                    \
-  template <class ExecSpace>                                                   \
+#define KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_BLAS(SCALAR, LAYOUT, EXECSPACE,         \
+                                            MEMSPACE)                          \
+  template <>                                                                  \
   struct Nrm1<                                                                 \
-      ExecSpace,                                                               \
+      EXECSPACE,                                                               \
       Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT,     \
                    Kokkos::HostSpace,                                          \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
-      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
-      1, true, ETI_SPEC_AVAIL> {                                               \
+      1, true,                                                                 \
+      nrm1_tpl_spec_avail<                                                     \
+          EXECSPACE,                                                           \
+          Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT, \
+                       Kokkos::HostSpace,                                      \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>,               \
+          Kokkos::View<const SCALAR*, LAYOUT,                                  \
+                       Kokkos::Device<EXECSPACE, MEMSPACE>,                    \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {     \
     using mag_type  = typename Kokkos::ArithTraits<SCALAR>::mag_type;          \
     using RV        = Kokkos::View<mag_type, LAYOUT, Kokkos::HostSpace,        \
                             Kokkos::MemoryTraits<Kokkos::Unmanaged>>;   \
     using XV        = Kokkos::View<const SCALAR*, LAYOUT,                      \
-                            Kokkos::Device<ExecSpace, MEMSPACE>,        \
+                            Kokkos::Device<EXECSPACE, MEMSPACE>,        \
                             Kokkos::MemoryTraits<Kokkos::Unmanaged>>;   \
     using size_type = typename XV::size_type;                                  \
                                                                                \
-    static void nrm1(const ExecSpace& space, RV& R, const XV& X) {             \
+    static void nrm1(const EXECSPACE& space, RV& R, const XV& X) {             \
       Kokkos::Profiling::pushRegion("KokkosBlas::nrm1[TPL_BLAS," #SCALAR "]"); \
       const size_type numElems = X.extent(0);                                  \
       if (numElems < static_cast<size_type>(INT_MAX)) {                        \
@@ -73,31 +81,35 @@ namespace Impl {
           R() = HostBlas<SCALAR>::asum(N, X.data(), one);                      \
         }                                                                      \
       } else {                                                                 \
-        Nrm1<ExecSpace, RV, XV, 1, false, ETI_SPEC_AVAIL>::nrm1(space, R, X);  \
+        Nrm1<EXECSPACE, RV, XV, 1, false,                                      \
+             nrm1_tpl_spec_avail<EXECSPACE, RV, XV>::value>::nrm1(space, R,    \
+                                                                  X);          \
       }                                                                        \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };
 
-KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_BLAS(float, Kokkos::LayoutLeft,
-                                    Kokkos::HostSpace, true)
-KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_BLAS(float, Kokkos::LayoutLeft,
-                                    Kokkos::HostSpace, false)
-
-KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_BLAS(double, Kokkos::LayoutLeft,
-                                    Kokkos::HostSpace, true)
-KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_BLAS(double, Kokkos::LayoutLeft,
-                                    Kokkos::HostSpace, false)
-
+#if defined(KOKKOS_ENABLE_SERIAL)
+KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_BLAS(float, Kokkos::LayoutLeft, Kokkos::Serial,
+                                    Kokkos::HostSpace)
+KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_BLAS(double, Kokkos::LayoutLeft, Kokkos::Serial,
+                                    Kokkos::HostSpace)
 KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_BLAS(Kokkos::complex<float>, Kokkos::LayoutLeft,
-                                    Kokkos::HostSpace, true)
-KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_BLAS(Kokkos::complex<float>, Kokkos::LayoutLeft,
-                                    Kokkos::HostSpace, false)
+                                    Kokkos::Serial, Kokkos::HostSpace)
+KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_BLAS(Kokkos::complex<double>, Kokkos::LayoutLeft,
+                                    Kokkos::Serial, Kokkos::HostSpace)
+#endif
 
+#if defined(KOKKOS_ENABLE_OPENMP)
+KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_BLAS(float, Kokkos::LayoutLeft, Kokkos::OpenMP,
+                                    Kokkos::HostSpace)
+KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_BLAS(double, Kokkos::LayoutLeft, Kokkos::OpenMP,
+                                    Kokkos::HostSpace)
+KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_BLAS(Kokkos::complex<float>, Kokkos::LayoutLeft,
+                                    Kokkos::OpenMP, Kokkos::HostSpace)
 KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_BLAS(Kokkos::complex<double>, Kokkos::LayoutLeft,
-                                    Kokkos::HostSpace, true)
-KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_BLAS(Kokkos::complex<double>, Kokkos::LayoutLeft,
-                                    Kokkos::HostSpace, false)
+                                    Kokkos::OpenMP, Kokkos::HostSpace)
+#endif
 
 }  // namespace Impl
 }  // namespace KokkosBlas
@@ -145,7 +157,7 @@ void cublasAsumWrapper(const ExecutionSpace& space, RViewType& R,
 }
 
 #define KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_CUBLAS(SCALAR, LAYOUT, EXECSPACE,       \
-                                              MEMSPACE, ETI_SPEC_AVAIL)        \
+                                              MEMSPACE)                        \
   template <>                                                                  \
   struct Nrm1<                                                                 \
       EXECSPACE,                                                               \
@@ -154,7 +166,15 @@ void cublasAsumWrapper(const ExecutionSpace& space, RViewType& R,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
       Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
-      1, true, ETI_SPEC_AVAIL> {                                               \
+      1, true,                                                                 \
+      nrm1_tpl_spec_avail<                                                     \
+          EXECSPACE,                                                           \
+          Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT, \
+                       Kokkos::HostSpace,                                      \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>,               \
+          Kokkos::View<const SCALAR*, LAYOUT,                                  \
+                       Kokkos::Device<EXECSPACE, MEMSPACE>,                    \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {     \
     using execution_space = EXECSPACE;                                         \
     using RV = Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type,    \
                             LAYOUT, Kokkos::HostSpace,                         \
@@ -171,36 +191,37 @@ void cublasAsumWrapper(const ExecutionSpace& space, RViewType& R,
       if (numElems < static_cast<size_type>(INT_MAX)) {                        \
         cublasAsumWrapper(space, R, X);                                        \
       } else {                                                                 \
-        Nrm1<execution_space, RV, XV, 1, false, ETI_SPEC_AVAIL>::nrm1(space,   \
-                                                                      R, X);   \
+        Nrm1<execution_space, RV, XV, 1, false,                                \
+             nrm1_tpl_spec_avail<EXECSPACE, RV, XV>::value>::nrm1(space, R,    \
+                                                                  X);          \
       }                                                                        \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };
 
 KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_CUBLAS(float, Kokkos::LayoutLeft, Kokkos::Cuda,
-                                      Kokkos::CudaSpace, true)
+                                      Kokkos::CudaSpace)
+KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_CUBLAS(double, Kokkos::LayoutLeft, Kokkos::Cuda,
+                                      Kokkos::CudaSpace)
+KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_CUBLAS(Kokkos::complex<float>,
+                                      Kokkos::LayoutLeft, Kokkos::Cuda,
+                                      Kokkos::CudaSpace)
+KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_CUBLAS(Kokkos::complex<double>,
+                                      Kokkos::LayoutLeft, Kokkos::Cuda,
+                                      Kokkos::CudaSpace)
+
+#if defined(KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE)
 KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_CUBLAS(float, Kokkos::LayoutLeft, Kokkos::Cuda,
-                                      Kokkos::CudaSpace, false)
-
+                                      Kokkos::CudaUVMSpace)
 KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_CUBLAS(double, Kokkos::LayoutLeft, Kokkos::Cuda,
-                                      Kokkos::CudaSpace, true)
-KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_CUBLAS(double, Kokkos::LayoutLeft, Kokkos::Cuda,
-                                      Kokkos::CudaSpace, false)
-
+                                      Kokkos::CudaUVMSpace)
 KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_CUBLAS(Kokkos::complex<float>,
                                       Kokkos::LayoutLeft, Kokkos::Cuda,
-                                      Kokkos::CudaSpace, true)
-KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_CUBLAS(Kokkos::complex<float>,
-                                      Kokkos::LayoutLeft, Kokkos::Cuda,
-                                      Kokkos::CudaSpace, false)
-
+                                      Kokkos::CudaUVMSpace)
 KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_CUBLAS(Kokkos::complex<double>,
                                       Kokkos::LayoutLeft, Kokkos::Cuda,
-                                      Kokkos::CudaSpace, true)
-KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_CUBLAS(Kokkos::complex<double>,
-                                      Kokkos::LayoutLeft, Kokkos::Cuda,
-                                      Kokkos::CudaSpace, false)
+                                      Kokkos::CudaUVMSpace)
+#endif
 
 }  // namespace Impl
 }  // namespace KokkosBlas
@@ -247,8 +268,7 @@ void rocblasAsumWrapper(const ExecutionSpace& space, RViewType& R,
   KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));
 }
 
-#define KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_ROCBLAS(SCALAR, LAYOUT, MEMSPACE,       \
-                                               ETI_SPEC_AVAIL)                 \
+#define KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_ROCBLAS(SCALAR, LAYOUT, MEMSPACE)       \
   template <class ExecSpace>                                                   \
   struct Nrm1<                                                                 \
       ExecSpace,                                                               \
@@ -257,7 +277,15 @@ void rocblasAsumWrapper(const ExecutionSpace& space, RViewType& R,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
       Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
-      1, true, ETI_SPEC_AVAIL> {                                               \
+      1, true,                                                                 \
+      nrm1_tpl_spec_avail<                                                     \
+          ExecSpace,                                                           \
+          Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT, \
+                       Kokkos::HostSpace,                                      \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>,               \
+          Kokkos::View<const SCALAR*, LAYOUT,                                  \
+                       Kokkos::Device<ExecSpace, MEMSPACE>,                    \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {     \
     using RV = Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type,    \
                             LAYOUT, Kokkos::HostSpace,                         \
                             Kokkos::MemoryTraits<Kokkos::Unmanaged>>;          \
@@ -273,35 +301,22 @@ void rocblasAsumWrapper(const ExecutionSpace& space, RViewType& R,
       if (numElems < static_cast<size_type>(INT_MAX)) {                        \
         rocblasAsumWrapper(space, R, X);                                       \
       } else {                                                                 \
-        Nrm1<ExecSpace, RV, XV, 1, false, ETI_SPEC_AVAIL>::nrm1(space, R, X);  \
+        Nrm1<ExecSpace, RV, XV, 1, false,                                      \
+             nrm1_tpl_spec_avail<ExecSpace, RV, XV>::value>::nrm1(space, R,    \
+                                                                  X);          \
       }                                                                        \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };
 
 KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_ROCBLAS(float, Kokkos::LayoutLeft,
-                                       Kokkos::HIPSpace, true)
-KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_ROCBLAS(float, Kokkos::LayoutLeft,
-                                       Kokkos::HIPSpace, false)
-
+                                       Kokkos::HIPSpace)
 KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_ROCBLAS(double, Kokkos::LayoutLeft,
-                                       Kokkos::HIPSpace, true)
-KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_ROCBLAS(double, Kokkos::LayoutLeft,
-                                       Kokkos::HIPSpace, false)
-
+                                       Kokkos::HIPSpace)
 KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_ROCBLAS(Kokkos::complex<float>,
-                                       Kokkos::LayoutLeft, Kokkos::HIPSpace,
-                                       true)
-KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_ROCBLAS(Kokkos::complex<float>,
-                                       Kokkos::LayoutLeft, Kokkos::HIPSpace,
-                                       false)
-
+                                       Kokkos::LayoutLeft, Kokkos::HIPSpace)
 KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_ROCBLAS(Kokkos::complex<double>,
-                                       Kokkos::LayoutLeft, Kokkos::HIPSpace,
-                                       true)
-KOKKOSBLAS1_NRM1_TPL_SPEC_DECL_ROCBLAS(Kokkos::complex<double>,
-                                       Kokkos::LayoutLeft, Kokkos::HIPSpace,
-                                       false)
+                                       Kokkos::LayoutLeft, Kokkos::HIPSpace)
 
 }  // namespace Impl
 }  // namespace KokkosBlas
@@ -327,8 +342,7 @@ void onemklAsumWrapper(const ExecutionSpace& space, RViewType& R,
   using KAT_X    = Kokkos::ArithTraits<XScalar>;
   using layout_t = typename XViewType::array_layout;
 
-  const std::int64_t N   = static_cast<std::int64_t>(X.extent(0));
-  const std::int64_t one = Kokkos::ArithTraits<std::int64_t>::one();
+  const std::int64_t N = static_cast<std::int64_t>(X.extent(0));
 
   // Create temp view on device to store the result
   Kokkos::View<typename Kokkos::ArithTraits<XScalar>::mag_type,
@@ -373,7 +387,15 @@ void onemklAsumWrapper(const ExecutionSpace& space, RViewType& R,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
       Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
-      1, true, ETI_SPEC_AVAIL> {                                               \
+      1, true,                                                                 \
+      nrm1_tpl_spec_avail<                                                     \
+          EXECSPACE,                                                           \
+          Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT, \
+                       Kokkos::HostSpace,                                      \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>,               \
+          Kokkos::View<const SCALAR*, LAYOUT,                                  \
+                       Kokkos::Device<EXECSPACE, MEMSPACE>,                    \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {     \
     using execution_space = EXECSPACE;                                         \
     using RV = Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type,    \
                             LAYOUT, Kokkos::HostSpace,                         \
@@ -390,33 +412,37 @@ void onemklAsumWrapper(const ExecutionSpace& space, RViewType& R,
       if (numElems < static_cast<size_type>(INT_MAX)) {                        \
         onemklAsumWrapper(space, R, X);                                        \
       } else {                                                                 \
-        Nrm1<execution_space, RV, XV, 1, false, ETI_SPEC_AVAIL>::nrm1(space,   \
-                                                                      R, X);   \
+        Nrm1<execution_space, RV, XV, 1, false,                                \
+             nrm1_tpl_spec_avail<EXECSPACE, RV, XV>::value>::nrm1(space, R,    \
+                                                                  X);          \
       }                                                                        \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };
 
 KOKKOSBLAS1_NRM1_ONEMKL(float, Kokkos::LayoutLeft, Kokkos::Experimental::SYCL,
-                        Kokkos::Experimental::SYCLDeviceUSMSpace, true)
-KOKKOSBLAS1_NRM1_ONEMKL(float, Kokkos::LayoutRight, Kokkos::Experimental::SYCL,
-                        Kokkos::Experimental::SYCLDeviceUSMSpace, true)
+                        Kokkos::Experimental::SYCLDeviceUSMSpace)
 KOKKOSBLAS1_NRM1_ONEMKL(double, Kokkos::LayoutLeft, Kokkos::Experimental::SYCL,
-                        Kokkos::Experimental::SYCLDeviceUSMSpace, true)
-KOKKOSBLAS1_NRM1_ONEMKL(double, Kokkos::LayoutRight, Kokkos::Experimental::SYCL,
-                        Kokkos::Experimental::SYCLDeviceUSMSpace, true)
+                        Kokkos::Experimental::SYCLDeviceUSMSpace)
 KOKKOSBLAS1_NRM1_ONEMKL(Kokkos::complex<float>, Kokkos::LayoutLeft,
                         Kokkos::Experimental::SYCL,
-                        Kokkos::Experimental::SYCLDeviceUSMSpace, true)
-KOKKOSBLAS1_NRM1_ONEMKL(Kokkos::complex<float>, Kokkos::LayoutRight,
-                        Kokkos::Experimental::SYCL,
-                        Kokkos::Experimental::SYCLDeviceUSMSpace, true)
+                        Kokkos::Experimental::SYCLDeviceUSMSpace)
 KOKKOSBLAS1_NRM1_ONEMKL(Kokkos::complex<double>, Kokkos::LayoutLeft,
                         Kokkos::Experimental::SYCL,
-                        Kokkos::Experimental::SYCLDeviceUSMSpace, true)
-KOKKOSBLAS1_NRM1_ONEMKL(Kokkos::complex<double>, Kokkos::LayoutRight,
+                        Kokkos::Experimental::SYCLDeviceUSMSpace)
+
+#if defined(KOKKOSKERNELS_INST_MEMSPACE_SYCLSHAREDSPACE)
+KOKKOSBLAS1_NRM1_ONEMKL(float, Kokkos::LayoutLeft, Kokkos::Experimental::SYCL,
+                        Kokkos::Experimental::SYCLSharedUSMSpace)
+KOKKOSBLAS1_NRM1_ONEMKL(double, Kokkos::LayoutLeft, Kokkos::Experimental::SYCL,
+                        Kokkos::Experimental::SYCLSharedUSMSpace)
+KOKKOSBLAS1_NRM1_ONEMKL(Kokkos::complex<float>, Kokkos::LayoutLeft,
                         Kokkos::Experimental::SYCL,
-                        Kokkos::Experimental::SYCLDeviceUSMSpace, true)
+                        Kokkos::Experimental::SYCLSharedUSMSpace)
+KOKKOSBLAS1_NRM1_ONEMKL(Kokkos::complex<double>, Kokkos::LayoutLeft,
+                        Kokkos::Experimental::SYCL,
+                        Kokkos::Experimental::SYCLSharedUSMSpace)
+#endif
 
 }  // namespace Impl
 }  // namespace KokkosBlas
