@@ -45,6 +45,9 @@ class SPILUKHandle {
   typedef ExecutionSpace execution_space;
   typedef HandlePersistentMemorySpace memory_space;
 
+  using TeamPolicy  = Kokkos::TeamPolicy<execution_space>;
+  using RangePolicy = Kokkos::RangePolicy<execution_space>;
+
   typedef typename std::remove_const<size_type_>::type size_type;
   typedef const size_type const_size_type;
 
@@ -59,6 +62,9 @@ class SPILUKHandle {
 
   typedef typename Kokkos::View<nnz_lno_t *, HandlePersistentMemorySpace>
       nnz_lno_view_t;
+
+  using nnz_value_view_t =
+      typename Kokkos::View<nnz_scalar_t *, HandlePersistentMemorySpace>;
 
   typedef typename Kokkos::View<size_type *, Kokkos::HostSpace>
       nnz_row_view_host_t;

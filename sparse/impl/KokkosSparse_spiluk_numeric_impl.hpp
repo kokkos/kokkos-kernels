@@ -32,13 +32,30 @@ namespace Experimental {
 
 // struct UnsortedTag {};
 
+template <class IlukHandle>
+struct IlukWrap {
+
+//
+// Useful types
+//
+using execution_space         = typename IlukHandle::execution_space;
+using lno_t                   = typename IlukHandle::nnz_lno_t;
+using size_type               = typename IlukHandle::size_type;
+using scalar_t                = typename IlukHandle::nnz_scalar_t;
+using HandleDeviceRowMapType  = typename IlukHandle::nnz_row_view_t;
+using HandleDeviceValueType   = typename IlukHandle::nnz_value_view_t;
+using WorkViewType            = typename IlukHandle::work_view_t;
+using LevelHostViewType       = typename IlukHandle::nnz_lno_view_host_t;
+using LevelViewType           = typename IlukHandle::nnz_lno_view_t;
+using karith                  = typename Kokkos::ArithTraits<scalar_t>;
+using policy_type             = typename IlukHandle::TeamPolicy;
+using member_type             = typename policy_type::member_type;
+using range_policy            = typename IlukHandle::RangePolicy;
+
 template <class ARowMapType, class AEntriesType, class AValuesType,
           class LRowMapType, class LEntriesType, class LValuesType,
-          class URowMapType, class UEntriesType, class UValuesType,
-          class LevelViewType, class WorkViewType, class nnz_lno_t>
+          class URowMapType, class UEntriesType, class UValuesType>
 struct ILUKLvlSchedRPNumericFunctor {
-  using lno_t    = typename AEntriesType::non_const_value_type;
-  using scalar_t = typename AValuesType::non_const_value_type;
   ARowMapType A_row_map;
   AEntriesType A_entries;
   AValuesType A_values;
@@ -50,7 +67,7 @@ struct ILUKLvlSchedRPNumericFunctor {
   UValuesType U_values;
   LevelViewType level_idx;
   WorkViewType iw;
-  nnz_lno_t lev_start;
+  lno_t lev_start;
 
   ILUKLvlSchedRPNumericFunctor(
       const ARowMapType &A_row_map_, const AEntriesType &A_entries_,
@@ -58,7 +75,7 @@ struct ILUKLvlSchedRPNumericFunctor {
       const LEntriesType &L_entries_, LValuesType &L_values_,
       const URowMapType &U_row_map_, const UEntriesType &U_entries_,
       UValuesType &U_values_, const LevelViewType &level_idx_,
-      WorkViewType &iw_, const nnz_lno_t &lev_start_)
+      WorkViewType &iw_, const lno_t &lev_start_)
       : A_row_map(A_row_map_),
         A_entries(A_entries_),
         A_values(A_values_),
@@ -169,16 +186,8 @@ struct ILUKLvlSchedRPNumericFunctor {
 
 template <class ARowMapType, class AEntriesType, class AValuesType,
           class LRowMapType, class LEntriesType, class LValuesType,
-          class URowMapType, class UEntriesType, class UValuesType,
-          class LevelViewType, class WorkViewType, class nnz_lno_t>
-struct ILUKLvlSchedTP1NumericFunctor {
-  using execution_space = typename ARowMapType::execution_space;
-  using policy_type     = Kokkos::TeamPolicy<execution_space>;
-  using member_type     = typename policy_type::member_type;
-  using size_type       = typename ARowMapType::non_const_value_type;
-  using lno_t           = typename AEntriesType::non_const_value_type;
-  using scalar_t        = typename AValuesType::non_const_value_type;
-
+          class URowMapType, class UEntriesType, class UValuesType>
+struct ILUKLvlSchedRPNumericFunctorBlock {
   ARowMapType A_row_map;
   AEntriesType A_entries;
   AValuesType A_values;
@@ -190,7 +199,141 @@ struct ILUKLvlSchedTP1NumericFunctor {
   UValuesType U_values;
   LevelViewType level_idx;
   WorkViewType iw;
-  nnz_lno_t lev_start;
+  lno_t lev_start;
+  size_type block_size;
+
+  ILUKLvlSchedRPNumericFunctorBlock(
+      const ARowMapType &A_row_map_, const AEntriesType &A_entries_,
+      const AValuesType &A_values_, const LRowMapType &L_row_map_,
+      const LEntriesType &L_entries_, LValuesType &L_values_,
+      const URowMapType &U_row_map_, const UEntriesType &U_entries_,
+      UValuesType &U_values_, const LevelViewType &level_idx_,
+      WorkViewType &iw_, const lno_t &lev_start_, const size_type block_size_)
+      : A_row_map(A_row_map_),
+        A_entries(A_entries_),
+        A_values(A_values_),
+        L_row_map(L_row_map_),
+        L_entries(L_entries_),
+        L_values(L_values_),
+        U_row_map(U_row_map_),
+        U_entries(U_entries_),
+        U_values(U_values_),
+        level_idx(level_idx_),
+        iw(iw_),
+        lev_start(lev_start_),
+        block_size(block_size_) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const lno_t i) const {
+    auto rowid = level_idx(i);
+    auto tid   = i - lev_start;
+    auto k1    = L_row_map(rowid);
+    auto k2    = L_row_map(rowid + 1);
+#ifdef KEEP_DIAG
+    for (auto k = k1; k < k2 - 1; ++k) {
+#else
+    for (auto k = k1; k < k2; ++k) {
+#endif
+      auto col     = L_entries(k);
+      L_values(k)  = 0.0;
+      iw(tid, col) = k;
+    }
+#ifdef KEEP_DIAG
+    L_values(k2 - 1) = scalar_t(1.0);
+#endif
+
+    k1 = U_row_map(rowid);
+    k2 = U_row_map(rowid + 1);
+    for (auto k = k1; k < k2; ++k) {
+      auto col     = U_entries(k);
+      U_values(k)  = 0.0;
+      iw(tid, col) = k;
+    }
+
+    // Unpack the ith row of A
+    k1 = A_row_map(rowid);
+    k2 = A_row_map(rowid + 1);
+    for (auto k = k1; k < k2; ++k) {
+      auto col  = A_entries(k);
+      auto ipos = iw(tid, col);
+      if (col < rowid)
+        L_values(ipos) = A_values(k);
+      else
+        U_values(ipos) = A_values(k);
+    }
+
+    // Eliminate prev rows
+    k1 = L_row_map(rowid);
+    k2 = L_row_map(rowid + 1);
+#ifdef KEEP_DIAG
+    for (auto k = k1; k < k2 - 1; ++k) {
+#else
+    for (auto k = k1; k < k2; ++k) {
+#endif
+      auto prev_row = L_entries(k);
+#ifdef KEEP_DIAG
+      auto fact = L_values(k) / U_values(U_row_map(prev_row));
+#else
+      auto fact = L_values(k) * U_values(U_row_map(prev_row));
+#endif
+      L_values(k) = fact;
+      for (auto kk = U_row_map(prev_row) + 1; kk < U_row_map(prev_row + 1);
+           ++kk) {
+        auto col  = U_entries(kk);
+        auto ipos = iw(tid, col);
+        if (ipos == -1) continue;
+        auto lxu = -U_values(kk) * fact;
+        if (col < rowid)
+          L_values(ipos) += lxu;
+        else
+          U_values(ipos) += lxu;
+      }  // end for kk
+    }    // end for k
+
+#ifdef KEEP_DIAG
+    if (U_values(iw(tid, rowid)) == 0.0) {
+      U_values(iw(tid, rowid)) = 1e6;
+    }
+#else
+    if (U_values(iw(tid, rowid)) == 0.0) {
+      U_values(iw(tid, rowid)) = 1e6;
+    } else {
+      U_values(iw(tid, rowid)) = 1.0 / U_values(iw(tid, rowid));
+    }
+#endif
+
+    // Reset
+    k1 = L_row_map(rowid);
+    k2 = L_row_map(rowid + 1);
+#ifdef KEEP_DIAG
+    for (auto k = k1; k < k2 - 1; ++k)
+#else
+    for (auto k = k1; k < k2; ++k)
+#endif
+      iw(tid, L_entries(k)) = -1;
+
+    k1 = U_row_map(rowid);
+    k2 = U_row_map(rowid + 1);
+    for (auto k = k1; k < k2; ++k) iw(tid, U_entries(k)) = -1;
+  }
+};
+
+template <class ARowMapType, class AEntriesType, class AValuesType,
+          class LRowMapType, class LEntriesType, class LValuesType,
+          class URowMapType, class UEntriesType, class UValuesType>
+struct ILUKLvlSchedTP1NumericFunctor {
+  ARowMapType A_row_map;
+  AEntriesType A_entries;
+  AValuesType A_values;
+  LRowMapType L_row_map;
+  LEntriesType L_entries;
+  LValuesType L_values;
+  URowMapType U_row_map;
+  UEntriesType U_entries;
+  UValuesType U_values;
+  LevelViewType level_idx;
+  WorkViewType iw;
+  lno_t lev_start;
 
   ILUKLvlSchedTP1NumericFunctor(
       const ARowMapType &A_row_map_, const AEntriesType &A_entries_,
@@ -198,7 +341,7 @@ struct ILUKLvlSchedTP1NumericFunctor {
       const LEntriesType &L_entries_, LValuesType &L_values_,
       const URowMapType &U_row_map_, const UEntriesType &U_entries_,
       UValuesType &U_values_, const LevelViewType &level_idx_,
-      WorkViewType &iw_, const nnz_lno_t &lev_start_)
+      WorkViewType &iw_, const lno_t &lev_start_)
       : A_row_map(A_row_map_),
         A_entries(A_entries_),
         A_values(A_values_),
@@ -214,25 +357,25 @@ struct ILUKLvlSchedTP1NumericFunctor {
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const member_type &team) const {
-    nnz_lno_t my_team = static_cast<nnz_lno_t>(team.league_rank());
-    nnz_lno_t rowid =
-        static_cast<nnz_lno_t>(level_idx(my_team + lev_start));  // map to rowid
+    lno_t my_team = static_cast<lno_t>(team.league_rank());
+    lno_t rowid =
+        static_cast<lno_t>(level_idx(my_team + lev_start));  // map to rowid
 
     size_type k1 = static_cast<size_type>(L_row_map(rowid));
     size_type k2 = static_cast<size_type>(L_row_map(rowid + 1));
 #ifdef KEEP_DIAG
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2 - 1),
                          [&](const size_type k) {
-                           nnz_lno_t col = static_cast<nnz_lno_t>(L_entries(k));
+                           lno_t col = static_cast<lno_t>(L_entries(k));
                            L_values(k)   = 0.0;
-                           iw(my_team, col) = static_cast<nnz_lno_t>(k);
+                           iw(my_team, col) = static_cast<lno_t>(k);
                          });
 #else
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2),
                          [&](const size_type k) {
-                           nnz_lno_t col = static_cast<nnz_lno_t>(L_entries(k));
+                           lno_t col = static_cast<lno_t>(L_entries(k));
                            L_values(k)   = 0.0;
-                           iw(my_team, col) = static_cast<nnz_lno_t>(k);
+                           iw(my_team, col) = static_cast<lno_t>(k);
                          });
 #endif
 
@@ -248,9 +391,9 @@ struct ILUKLvlSchedTP1NumericFunctor {
     k2 = static_cast<size_type>(U_row_map(rowid + 1));
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2),
                          [&](const size_type k) {
-                           nnz_lno_t col = static_cast<nnz_lno_t>(U_entries(k));
+                           lno_t col = static_cast<lno_t>(U_entries(k));
                            U_values(k)   = 0.0;
-                           iw(my_team, col) = static_cast<nnz_lno_t>(k);
+                           iw(my_team, col) = static_cast<lno_t>(k);
                          });
 
     team.team_barrier();
@@ -260,8 +403,8 @@ struct ILUKLvlSchedTP1NumericFunctor {
     k2 = static_cast<size_type>(A_row_map(rowid + 1));
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2),
                          [&](const size_type k) {
-                           nnz_lno_t col = static_cast<nnz_lno_t>(A_entries(k));
-                           nnz_lno_t ipos = iw(my_team, col);
+                           lno_t col = static_cast<lno_t>(A_entries(k));
+                           lno_t ipos = iw(my_team, col);
                            if (col < rowid)
                              L_values(ipos) = A_values(k);
                            else
@@ -279,7 +422,7 @@ struct ILUKLvlSchedTP1NumericFunctor {
     for (size_type k = k1; k < k2; k++)
 #endif
     {
-      nnz_lno_t prev_row = L_entries(k);
+      lno_t prev_row = L_entries(k);
 
       scalar_t fact = scalar_t(0.0);
       Kokkos::single(
@@ -298,8 +441,8 @@ struct ILUKLvlSchedTP1NumericFunctor {
           Kokkos::TeamThreadRange(team, U_row_map(prev_row) + 1,
                                   U_row_map(prev_row + 1)),
           [&](const size_type kk) {
-            nnz_lno_t col  = static_cast<nnz_lno_t>(U_entries(kk));
-            nnz_lno_t ipos = iw(my_team, col);
+            lno_t col  = static_cast<lno_t>(U_entries(kk));
+            lno_t ipos = iw(my_team, col);
             auto lxu       = -U_values(kk) * fact;
             if (ipos != -1) {
               if (col < rowid)
@@ -314,7 +457,7 @@ struct ILUKLvlSchedTP1NumericFunctor {
 
     // if (my_thread == 0) {
     Kokkos::single(Kokkos::PerTeam(team), [&]() {
-      nnz_lno_t ipos = iw(my_team, rowid);
+      lno_t ipos = iw(my_team, rowid);
 #ifdef KEEP_DIAG
       if (U_values(ipos) == 0.0) {
         U_values(ipos) = 1e6;
@@ -337,13 +480,13 @@ struct ILUKLvlSchedTP1NumericFunctor {
 #ifdef KEEP_DIAG
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2 - 1),
                          [&](const size_type k) {
-                           nnz_lno_t col = static_cast<nnz_lno_t>(L_entries(k));
+                           lno_t col = static_cast<lno_t>(L_entries(k));
                            iw(my_team, col) = -1;
                          });
 #else
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2),
                          [&](const size_type k) {
-                           nnz_lno_t col = static_cast<nnz_lno_t>(L_entries(k));
+                           lno_t col = static_cast<lno_t>(L_entries(k));
                            iw(my_team, col) = -1;
                          });
 #endif
@@ -352,33 +495,27 @@ struct ILUKLvlSchedTP1NumericFunctor {
     k2 = static_cast<size_type>(U_row_map(rowid + 1));
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2),
                          [&](const size_type k) {
-                           nnz_lno_t col = static_cast<nnz_lno_t>(U_entries(k));
+                           lno_t col = static_cast<lno_t>(U_entries(k));
                            iw(my_team, col) = -1;
                          });
   }
 };
 
-template <class IlukHandle, class ARowMapType, class AEntriesType,
+template <class ARowMapType, class AEntriesType,
           class AValuesType, class LRowMapType, class LEntriesType,
           class LValuesType, class URowMapType, class UEntriesType,
           class UValuesType>
-void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
+static void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
                   const AEntriesType &A_entries, const AValuesType &A_values,
                   const LRowMapType &L_row_map, const LEntriesType &L_entries,
                   LValuesType &L_values, const URowMapType &U_row_map,
                   const UEntriesType &U_entries, UValuesType &U_values) {
-  using execution_space         = typename IlukHandle::execution_space;
-  using size_type               = typename IlukHandle::size_type;
-  using nnz_lno_t               = typename IlukHandle::nnz_lno_t;
-  using HandleDeviceEntriesType = typename IlukHandle::nnz_lno_view_t;
-  using WorkViewType            = typename IlukHandle::work_view_t;
-  using LevelHostViewType       = typename IlukHandle::nnz_lno_view_host_t;
 
   size_type nlevels = thandle.get_num_levels();
   int team_size     = thandle.get_team_size();
 
-  LevelHostViewType level_ptr_h     = thandle.get_host_level_ptr();
-  HandleDeviceEntriesType level_idx = thandle.get_level_idx();
+  LevelHostViewType level_ptr_h = thandle.get_host_level_ptr();
+  LevelViewType     level_idx   = thandle.get_level_idx();
 
   LevelHostViewType level_nchunks_h, level_nrowsperchunk_h;
   WorkViewType iw;
@@ -394,8 +531,8 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
   // Main loop must be performed sequential. Question: Try out Cuda's graph
   // stuff to reduce kernel launch overhead
   for (size_type lvl = 0; lvl < nlevels; ++lvl) {
-    nnz_lno_t lev_start = level_ptr_h(lvl);
-    nnz_lno_t lev_end   = level_ptr_h(lvl + 1);
+    lno_t lev_start = level_ptr_h(lvl);
+    lno_t lev_end   = level_ptr_h(lvl + 1);
 
     if ((lev_end - lev_start) != 0) {
       if (thandle.get_algorithm() ==
@@ -406,15 +543,15 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
             ILUKLvlSchedRPNumericFunctor<
                 ARowMapType, AEntriesType, AValuesType, LRowMapType,
                 LEntriesType, LValuesType, URowMapType, UEntriesType,
-                UValuesType, HandleDeviceEntriesType, WorkViewType, nnz_lno_t>(
+                UValuesType>(
                 A_row_map, A_entries, A_values, L_row_map, L_entries, L_values,
                 U_row_map, U_entries, U_values, level_idx, iw, lev_start));
       } else if (thandle.get_algorithm() ==
                  KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1) {
         using policy_type = Kokkos::TeamPolicy<execution_space>;
 
-        nnz_lno_t lvl_rowid_start = 0;
-        nnz_lno_t lvl_nrows_chunk;
+        lno_t lvl_rowid_start = 0;
+        lno_t lvl_nrows_chunk;
         for (int chunkid = 0; chunkid < level_nchunks_h(lvl); chunkid++) {
           if ((lvl_rowid_start + level_nrowsperchunk_h(lvl)) >
               (lev_end - lev_start))
@@ -424,8 +561,7 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
 
           ILUKLvlSchedTP1NumericFunctor<
               ARowMapType, AEntriesType, AValuesType, LRowMapType, LEntriesType,
-              LValuesType, URowMapType, UEntriesType, UValuesType,
-              HandleDeviceEntriesType, WorkViewType, nnz_lno_t>
+              LValuesType, URowMapType, UEntriesType, UValuesType>
               tstf(A_row_map, A_entries, A_values, L_row_map, L_entries,
                    L_values, U_row_map, U_entries, U_values, level_idx, iw,
                    lev_start + lvl_rowid_start);
@@ -489,27 +625,21 @@ void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
 
 }  // end iluk_numeric
 
-template <class IlukHandle, class ARowMapType, class AEntriesType,
+template <class ARowMapType, class AEntriesType,
           class AValuesType, class LRowMapType, class LEntriesType,
           class LValuesType, class URowMapType, class UEntriesType,
           class UValuesType>
-void iluk_numeric_block(IlukHandle &thandle, const ARowMapType &A_row_map,
+static void iluk_numeric_block(IlukHandle &thandle, const ARowMapType &A_row_map,
                   const AEntriesType &A_entries, const AValuesType &A_values,
                   const LRowMapType &L_row_map, const LEntriesType &L_entries,
                   LValuesType &L_values, const URowMapType &U_row_map,
-                  const UEntriesType &U_entries, UValuesType &U_values) {
-  using execution_space         = typename IlukHandle::execution_space;
-  using size_type               = typename IlukHandle::size_type;
-  using nnz_lno_t               = typename IlukHandle::nnz_lno_t;
-  using HandleDeviceEntriesType = typename IlukHandle::nnz_lno_view_t;
-  using WorkViewType            = typename IlukHandle::work_view_t;
-  using LevelHostViewType       = typename IlukHandle::nnz_lno_view_host_t;
+                  const UEntriesType &U_entries, UValuesType &U_values)
+{
+  const size_type nlevels = thandle.get_num_levels();
+  const int team_size     = thandle.get_team_size();
 
-  size_type nlevels = thandle.get_num_levels();
-  int team_size     = thandle.get_team_size();
-
-  LevelHostViewType level_ptr_h     = thandle.get_host_level_ptr();
-  HandleDeviceEntriesType level_idx = thandle.get_level_idx();
+  LevelHostViewType level_ptr_h = thandle.get_host_level_ptr();
+  LevelViewType     level_idx   = thandle.get_level_idx();
 
   LevelHostViewType level_nchunks_h, level_nrowsperchunk_h;
   WorkViewType iw;
@@ -524,8 +654,8 @@ void iluk_numeric_block(IlukHandle &thandle, const ARowMapType &A_row_map,
   // Main loop must be performed sequential. Question: Try out Cuda's graph
   // stuff to reduce kernel launch overhead
   for (size_type lvl = 0; lvl < nlevels; ++lvl) {
-    nnz_lno_t lev_start = level_ptr_h(lvl);
-    nnz_lno_t lev_end   = level_ptr_h(lvl + 1);
+    lno_t lev_start = level_ptr_h(lvl);
+    lno_t lev_end   = level_ptr_h(lvl + 1);
 
     if ((lev_end - lev_start) != 0) {
       if (thandle.get_algorithm() ==
@@ -536,15 +666,15 @@ void iluk_numeric_block(IlukHandle &thandle, const ARowMapType &A_row_map,
             ILUKLvlSchedRPNumericFunctor<
                 ARowMapType, AEntriesType, AValuesType, LRowMapType,
                 LEntriesType, LValuesType, URowMapType, UEntriesType,
-                UValuesType, HandleDeviceEntriesType, WorkViewType, nnz_lno_t>(
+                UValuesType>(
                 A_row_map, A_entries, A_values, L_row_map, L_entries, L_values,
                 U_row_map, U_entries, U_values, level_idx, iw, lev_start));
       } else if (thandle.get_algorithm() ==
                  KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1) {
         using policy_type = Kokkos::TeamPolicy<execution_space>;
 
-        nnz_lno_t lvl_rowid_start = 0;
-        nnz_lno_t lvl_nrows_chunk;
+        lno_t lvl_rowid_start = 0;
+        lno_t lvl_nrows_chunk;
         for (int chunkid = 0; chunkid < level_nchunks_h(lvl); chunkid++) {
           if ((lvl_rowid_start + level_nrowsperchunk_h(lvl)) >
               (lev_end - lev_start))
@@ -554,8 +684,7 @@ void iluk_numeric_block(IlukHandle &thandle, const ARowMapType &A_row_map,
 
           ILUKLvlSchedTP1NumericFunctor<
               ARowMapType, AEntriesType, AValuesType, LRowMapType, LEntriesType,
-              LValuesType, URowMapType, UEntriesType, UValuesType,
-              HandleDeviceEntriesType, WorkViewType, nnz_lno_t>
+              LValuesType, URowMapType, UEntriesType, UValuesType>
               tstf(A_row_map, A_entries, A_values, L_row_map, L_entries,
                    L_values, U_row_map, U_entries, U_values, level_idx, iw,
                    lev_start + lvl_rowid_start);
@@ -619,11 +748,11 @@ void iluk_numeric_block(IlukHandle &thandle, const ARowMapType &A_row_map,
 
 }  // end iluk_numeric_block
 
-template <class ExecutionSpace, class IlukHandle, class ARowMapType,
+template <class ExecutionSpace, class ARowMapType,
           class AEntriesType, class AValuesType, class LRowMapType,
           class LEntriesType, class LValuesType, class URowMapType,
           class UEntriesType, class UValuesType>
-void iluk_numeric_streams(const std::vector<ExecutionSpace> &execspace_v,
+static void iluk_numeric_streams(const std::vector<ExecutionSpace> &execspace_v,
                           const std::vector<IlukHandle *> &thandle_v,
                           const std::vector<ARowMapType> &A_row_map_v,
                           const std::vector<AEntriesType> &A_entries_v,
@@ -634,19 +763,13 @@ void iluk_numeric_streams(const std::vector<ExecutionSpace> &execspace_v,
                           const std::vector<URowMapType> &U_row_map_v,
                           const std::vector<UEntriesType> &U_entries_v,
                           std::vector<UValuesType> &U_values_v) {
-  using size_type               = typename IlukHandle::size_type;
-  using nnz_lno_t               = typename IlukHandle::nnz_lno_t;
-  using HandleDeviceEntriesType = typename IlukHandle::nnz_lno_view_t;
-  using WorkViewType            = typename IlukHandle::work_view_t;
-  using LevelHostViewType       = typename IlukHandle::nnz_lno_view_host_t;
-
   // Create vectors for handles' data in streams
   int nstreams = execspace_v.size();
   std::vector<size_type> nlevels_v(nstreams);
   std::vector<LevelHostViewType> lvl_ptr_h_v(nstreams);
-  std::vector<HandleDeviceEntriesType> lvl_idx_v(nstreams);  // device views
-  std::vector<nnz_lno_t> lvl_start_v(nstreams);
-  std::vector<nnz_lno_t> lvl_end_v(nstreams);
+  std::vector<LevelViewType> lvl_idx_v(nstreams);  // device views
+  std::vector<lno_t> lvl_start_v(nstreams);
+  std::vector<lno_t> lvl_end_v(nstreams);
   std::vector<WorkViewType> iw_v(nstreams);  // device views
   std::vector<bool> stream_have_level_v(nstreams);
 
@@ -687,8 +810,7 @@ void iluk_numeric_streams(const std::vector<ExecutionSpace> &execspace_v,
         if (stream_have_level_v[i]) {
           ILUKLvlSchedRPNumericFunctor<
               ARowMapType, AEntriesType, AValuesType, LRowMapType, LEntriesType,
-              LValuesType, URowMapType, UEntriesType, UValuesType,
-              HandleDeviceEntriesType, WorkViewType, nnz_lno_t>
+              LValuesType, URowMapType, UEntriesType, UValuesType>
               tstf(A_row_map_v[i], A_entries_v[i], A_values_v[i],
                    L_row_map_v[i], L_entries_v[i], L_values_v[i],
                    U_row_map_v[i], U_entries_v[i], U_values_v[i], lvl_idx_v[i],
@@ -708,7 +830,7 @@ void iluk_numeric_streams(const std::vector<ExecutionSpace> &execspace_v,
 
     std::vector<LevelHostViewType> lvl_nchunks_h_v(nstreams);
     std::vector<LevelHostViewType> lvl_nrowsperchunk_h_v(nstreams);
-    std::vector<nnz_lno_t> lvl_rowid_start_v(nstreams);
+    std::vector<lno_t> lvl_rowid_start_v(nstreams);
     std::vector<int> team_size_v(nstreams);
 
     for (int i = 0; i < nstreams; i++) {
@@ -720,7 +842,7 @@ void iluk_numeric_streams(const std::vector<ExecutionSpace> &execspace_v,
     // Main loop must be performed sequential
     for (size_type lvl = 0; lvl < nlevels_max; lvl++) {
       // Initial work across streams at each level
-      nnz_lno_t lvl_nchunks_max = 0;
+      lno_t lvl_nchunks_max = 0;
       for (int i = 0; i < nstreams; i++) {
         // Only do this if this stream has this level
         if (lvl < nlevels_v[i]) {
@@ -746,7 +868,7 @@ void iluk_numeric_streams(const std::vector<ExecutionSpace> &execspace_v,
             // Launch only if stream i-th has this chunk
             if (chunkid < lvl_nchunks_h_v[i](lvl)) {
               // 1.a. Specify number of rows (i.e. number of teams) to launch
-              nnz_lno_t lvl_nrows_chunk = 0;
+              lno_t lvl_nrows_chunk = 0;
               if ((lvl_rowid_start_v[i] + lvl_nrowsperchunk_h_v[i](lvl)) >
                   (lvl_end_v[i] - lvl_start_v[i]))
                 lvl_nrows_chunk =
@@ -758,7 +880,7 @@ void iluk_numeric_streams(const std::vector<ExecutionSpace> &execspace_v,
               ILUKLvlSchedTP1NumericFunctor<
                   ARowMapType, AEntriesType, AValuesType, LRowMapType,
                   LEntriesType, LValuesType, URowMapType, UEntriesType,
-                  UValuesType, HandleDeviceEntriesType, WorkViewType, nnz_lno_t>
+                  UValuesType>
                   tstf(A_row_map_v[i], A_entries_v[i], A_values_v[i],
                        L_row_map_v[i], L_entries_v[i], L_values_v[i],
                        U_row_map_v[i], U_entries_v[i], U_values_v[i],
@@ -786,6 +908,8 @@ void iluk_numeric_streams(const std::vector<ExecutionSpace> &execspace_v,
   }            // end SEQLVLSCHD_TP1
 
 }  // end iluk_numeric_streams
+
+}; // IlukWrap
 
 }  // namespace Experimental
 }  // namespace Impl
