@@ -418,6 +418,9 @@ struct SpilukTest
     KernelHandle kh;
 
     // Pull out views from BSR
+    Kokkos::resize(brow_map, bsr.graph.row_map.extent(0));
+    Kokkos::resize(bentries, bsr.graph.entries.extent(0));
+    Kokkos::resize(bvalues,  bsr.values.extent(0));
     Kokkos::deep_copy(brow_map, bsr.graph.row_map);
     Kokkos::deep_copy(bentries, bsr.graph.entries);
     Kokkos::deep_copy(bvalues, bsr.values);

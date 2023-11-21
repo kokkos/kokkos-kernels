@@ -514,8 +514,7 @@ void iluk_numeric_block(IlukHandle &thandle, const ARowMapType &A_row_map,
   LevelHostViewType level_nchunks_h, level_nrowsperchunk_h;
   WorkViewType iw;
 
-  //{
-  if (thandle.get_algorithm() ==
+   if (thandle.get_algorithm() ==
       KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1) {
     level_nchunks_h       = thandle.get_level_nchunks();
     level_nrowsperchunk_h = thandle.get_level_nrowsperchunk();
