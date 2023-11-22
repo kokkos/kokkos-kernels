@@ -100,11 +100,11 @@ void run_gauss_seidel(
 
 template <typename crsMat_t, typename vec_t>
 void run_gauss_seidel(
-    crsMat_t input_mat, GSAlgorithm gs_algorithm, vec_t x_vector, // Aqui 1-3
-    vec_t y_vector, bool is_symmetric_graph, // Aqui 4-5
-    int apply_type   = 0,  // 0 for symmetric, 1 for forward, 2 for backward. // Aqui 6
-    int cluster_size = 1, // Aqui 7
-    bool classic =  // Aqui 8
+    crsMat_t input_mat, GSAlgorithm gs_algorithm, vec_t x_vector,
+    vec_t y_vector, bool is_symmetric_graph,
+    int apply_type   = 0,  // 0 for symmetric, 1 for forward, 2 for backward.
+    int cluster_size = 1,
+    bool classic =
         false,  // only with two-stage, true for sptrsv instead of richardson
     ClusteringAlgorithm clusterAlgo = ClusteringAlgorithm::CLUSTER_DEFAULT,
     KokkosGraph::ColoringAlgorithm coloringAlgo =
@@ -355,7 +355,7 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth,
         Kokkos::Timer timer1;
         // Zero out X before solving
         Kokkos::deep_copy(x_vector, zero);
-        run_gauss_seidel(input_mat, GS_CLUSTER, x_vector, y_vector, symmetric, // Aqui
+        run_gauss_seidel(input_mat, GS_CLUSTER, x_vector, y_vector, symmetric,
                          apply_type, clusterSizes[csize], false,
                          (ClusteringAlgorithm)algo);
         Kokkos::deep_copy(x_host, x_vector);
