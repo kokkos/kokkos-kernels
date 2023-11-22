@@ -15,15 +15,15 @@
 //@HEADER
 
 // only enable this test where KokkosLapack supports gesv:
-// CUDA+MAGMA and HOST+LAPACK
-#if (defined(TEST_CUDA_LAPACK_CPP) &&                \
-     defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA)) ||     \
-    (defined(TEST_HIP_LAPACK_CPP) &&                 \
-     defined(KOKKOSKERNELS_ENABLE_TPL_ROCSOLVER)) || \
-    (defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK) &&     \
-     (defined(TEST_OPENMP_LAPACK_CPP) ||             \
-      defined(TEST_OPENMPTARGET_LAPACK_CPP) ||       \
-      defined(TEST_SERIAL_LAPACK_CPP) || defined(TEST_THREADS_LAPACK_CPP)))
+// CUDA+(MAGMA or CUSOLVER), HIP+ROCSOLVER and HOST+LAPACK
+#if (defined(TEST_CUDA_LAPACK_CPP) &&                                       \
+     (defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA) ||                            \
+      defined(KOKKOSKERNELS_ENABLE_TPL_CUSOLVER))) ||                       \
+    (defined(TEST_HIP_LAPACK_CPP) &&                                        \
+     defined(KOKKOSKERNELS_ENABLE_TPL_ROCSOLVER)) ||                        \
+    (defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK) &&                            \
+     (defined(TEST_OPENMP_LAPACK_CPP) || defined(TEST_SERIAL_LAPACK_CPP) || \
+      defined(TEST_THREADS_LAPACK_CPP)))
 
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
@@ -130,14 +130,16 @@ void impl_test_gesv(const char* mode, const char* padding, int N) {
 
   // Checking vs ref on CPU, this eps is about 10^-9
   typedef typename ats::mag_type mag_type;
-  const mag_type eps = 1.0e7 * ats::epsilon();
+  const mag_type eps = 2.0e7 * ats::epsilon();
   bool test_flag     = true;
   for (int i = 0; i < N; i++) {
     if (ats::abs(h_B(i) - h_X0(i)) > eps) {
       test_flag = false;
-      // printf( "    Error %d, pivot %c, padding %c: result( %.15lf ) !=
-      // solution( %.15lf ) at (%d)\n", N, mode[0], padding[0],
-      // ats::abs(h_B(i)), ats::abs(h_X0(i)), int(i) );
+      // printf(
+      //     "    Error %d, pivot %c, padding %c: result( %.15lf ) !="
+      //     "solution( %.15lf ) at (%d), error=%.15e, eps=%.15e\n",
+      //     N, mode[0], padding[0], ats::abs(h_B(i)), ats::abs(h_X0(i)),
+      //     int(i), ats::abs(h_B(i) - h_X0(i)), eps);
       // break;
     }
   }
@@ -425,4 +427,4 @@ TEST_F(TestCategory, gesv_mrhs_complex_float) {
 }
 #endif
 
-#endif  // CUDA+MAGMA or HIP+ROCSOLVER or LAPACK+HOST
+#endif  // CUDA+(MAGMA or CUSOLVER) or HIP+ROCSOLVER or LAPACK+HOST

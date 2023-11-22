@@ -90,7 +90,7 @@ struct GESV<ExecutionSpace, AMatrix, BXMV, IPIVV, false,
     // NOTE: Might add the implementation of KokkosLapack::gesv later
     throw std::runtime_error(
         "No fallback implementation of GESV (general LU factorization & solve) "
-        "exists. Enable LAPACK and/or MAGMA TPL.");
+        "exists. Enable LAPACK, CUSOLVER, ROCSOLVER or MAGMA TPL.");
   }
 };
 

@@ -17,7 +17,7 @@
 #define KOKKOSLAPACK_CUDA_TPL_HPP_
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSOLVER)
-#include <KokkosLapack_tpl_spec.hpp>
+#include "KokkosLapack_cusolver.hpp"
 
 namespace KokkosLapack {
 namespace Impl {

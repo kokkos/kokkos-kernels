@@ -76,28 +76,37 @@ void lapackGesvWrapper(const AViewType& A, const BViewType& B,
   }
 }
 
-#define KOKKOSLAPACK_GESV_LAPACK(SCALAR, LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)    \
-  template <class ExecSpace>                                                   \
+#define KOKKOSLAPACK_GESV_LAPACK(SCALAR, LAYOUT, EXECSPACE, MEM_SPACE)         \
+  template <>                                                                  \
   struct GESV<                                                                 \
-      ExecSpace,                                                               \
-      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>,     \
+      EXECSPACE,                                                               \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>,     \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
-      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>,     \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>,     \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
-      Kokkos::View<int*, LAYOUT, Kokkos::Device<ExecSpace, Kokkos::HostSpace>, \
+      Kokkos::View<int*, LAYOUT, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
-      true, ETI_SPEC_AVAIL> {                                                  \
+      true,                                                                    \
+      gesv_eti_spec_avail<                                                     \
+          EXECSPACE,                                                           \
+          Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>, \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>,               \
+          Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>, \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>,               \
+          Kokkos::View<int*, LAYOUT,                                           \
+                       Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,           \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {     \
     using AViewType =                                                          \
-        Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>,   \
+        Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>,   \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                 \
     using BViewType =                                                          \
-        Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>,   \
+        Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>,   \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                 \
     using PViewType =                                                          \
-        Kokkos::View<int*, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>,       \
+        Kokkos::View<int*, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>,       \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                 \
                                                                                \
-    static void gesv(const ExecSpace& /* space */, const AViewType& A,         \
+    static void gesv(const EXECSPACE& /* space */, const AViewType& A,         \
                      const BViewType& B, const PViewType& IPIV) {              \
       Kokkos::Profiling::pushRegion("KokkosLapack::gesv[TPL_LAPACK," #SCALAR   \
                                     "]");                                      \
@@ -107,21 +116,27 @@ void lapackGesvWrapper(const AViewType& A, const BViewType& B,
     }                                                                          \
   };
 
-KOKKOSLAPACK_GESV_LAPACK(float, Kokkos::LayoutLeft, Kokkos::HostSpace, true)
-KOKKOSLAPACK_GESV_LAPACK(float, Kokkos::LayoutLeft, Kokkos::HostSpace, false)
-
-KOKKOSLAPACK_GESV_LAPACK(double, Kokkos::LayoutLeft, Kokkos::HostSpace, true)
-KOKKOSLAPACK_GESV_LAPACK(double, Kokkos::LayoutLeft, Kokkos::HostSpace, false)
-
+#if defined(KOKKOS_ENABLE_SERIAL)
+KOKKOSLAPACK_GESV_LAPACK(float, Kokkos::LayoutLeft, Kokkos::Serial,
+                         Kokkos::HostSpace)
+KOKKOSLAPACK_GESV_LAPACK(double, Kokkos::LayoutLeft, Kokkos::Serial,
+                         Kokkos::HostSpace)
 KOKKOSLAPACK_GESV_LAPACK(Kokkos::complex<float>, Kokkos::LayoutLeft,
-                         Kokkos::HostSpace, true)
-KOKKOSLAPACK_GESV_LAPACK(Kokkos::complex<float>, Kokkos::LayoutLeft,
-                         Kokkos::HostSpace, false)
+                         Kokkos::Serial, Kokkos::HostSpace)
+KOKKOSLAPACK_GESV_LAPACK(Kokkos::complex<double>, Kokkos::LayoutLeft,
+                         Kokkos::Serial, Kokkos::HostSpace)
+#endif
 
+#if defined(KOKKOS_ENABLE_OPENMP)
+KOKKOSLAPACK_GESV_LAPACK(float, Kokkos::LayoutLeft, Kokkos::OpenMP,
+                         Kokkos::HostSpace)
+KOKKOSLAPACK_GESV_LAPACK(double, Kokkos::LayoutLeft, Kokkos::OpenMP,
+                         Kokkos::HostSpace)
+KOKKOSLAPACK_GESV_LAPACK(Kokkos::complex<float>, Kokkos::LayoutLeft,
+                         Kokkos::OpenMP, Kokkos::HostSpace)
 KOKKOSLAPACK_GESV_LAPACK(Kokkos::complex<double>, Kokkos::LayoutLeft,
-                         Kokkos::HostSpace, true)
-KOKKOSLAPACK_GESV_LAPACK(Kokkos::complex<double>, Kokkos::LayoutLeft,
-                         Kokkos::HostSpace, false)
+                         Kokkos::OpenMP, Kokkos::HostSpace)
+#endif
 
 }  // namespace Impl
 }  // namespace KokkosLapack
@@ -390,6 +405,161 @@ KOKKOSLAPACK_CGESV_MAGMA(Kokkos::LayoutLeft, Kokkos::CudaSpace, false)
 }  // namespace KokkosLapack
 #endif  // KOKKOSKERNELS_ENABLE_TPL_MAGMA
 
+// CUSOLVER
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSOLVER
+#include "KokkosLapack_cusolver.hpp"
+
+namespace KokkosLapack {
+namespace Impl {
+
+template <class ExecutionSpace, class IPIVViewType, class AViewType,
+          class BViewType>
+void cusolverGesvWrapper(const ExecutionSpace& space, const IPIVViewType& IPIV,
+                         const AViewType& A, const BViewType& B) {
+  using memory_space = typename AViewType::memory_space;
+  using Scalar       = typename BViewType::non_const_value_type;
+  using ALayout_t    = typename AViewType::array_layout;
+  using BLayout_t    = typename BViewType::array_layout;
+
+  const int m   = A.extent_int(0);
+  const int n   = A.extent_int(1);
+  const int lda = std::is_same_v<ALayout_t, Kokkos::LayoutRight> ? A.stride(0)
+                                                                 : A.stride(1);
+
+  (void)B;
+
+  const int nrhs = B.extent_int(1);
+  const int ldb  = std::is_same_v<BLayout_t, Kokkos::LayoutRight> ? B.stride(0)
+                                                                 : B.stride(1);
+  int lwork = 0;
+  Kokkos::View<int, memory_space> info("getrf info");
+
+  CudaLapackSingleton& s = CudaLapackSingleton::singleton();
+  KOKKOS_CUSOLVER_SAFE_CALL_IMPL(
+      cusolverDnSetStream(s.handle, space.cuda_stream()));
+  if constexpr (std::is_same_v<Scalar, float>) {
+    KOKKOS_CUSOLVER_SAFE_CALL_IMPL(
+        cusolverDnSgetrf_bufferSize(s.handle, m, n, A.data(), lda, &lwork));
+    Kokkos::View<float*, memory_space> Workspace("getrf workspace", lwork);
+
+    KOKKOS_CUSOLVER_SAFE_CALL_IMPL(cusolverDnSgetrf(s.handle, m, n, A.data(),
+                                                    lda, Workspace.data(),
+                                                    IPIV.data(), info.data()));
+
+    KOKKOS_CUSOLVER_SAFE_CALL_IMPL(
+        cusolverDnSgetrs(s.handle, CUBLAS_OP_N, m, nrhs, A.data(), lda,
+                         IPIV.data(), B.data(), ldb, info.data()));
+  }
+  if constexpr (std::is_same_v<Scalar, double>) {
+    KOKKOS_CUSOLVER_SAFE_CALL_IMPL(
+        cusolverDnDgetrf_bufferSize(s.handle, m, n, A.data(), lda, &lwork));
+    Kokkos::View<double*, memory_space> Workspace("getrf workspace", lwork);
+
+    KOKKOS_CUSOLVER_SAFE_CALL_IMPL(cusolverDnDgetrf(s.handle, m, n, A.data(),
+                                                    lda, Workspace.data(),
+                                                    IPIV.data(), info.data()));
+
+    KOKKOS_CUSOLVER_SAFE_CALL_IMPL(
+        cusolverDnDgetrs(s.handle, CUBLAS_OP_N, m, nrhs, A.data(), lda,
+                         IPIV.data(), B.data(), ldb, info.data()));
+  }
+  if constexpr (std::is_same_v<Scalar, Kokkos::complex<float>>) {
+    KOKKOS_CUSOLVER_SAFE_CALL_IMPL(cusolverDnCgetrf_bufferSize(
+        s.handle, m, n, reinterpret_cast<cuComplex*>(A.data()), lda, &lwork));
+    Kokkos::View<cuComplex*, memory_space> Workspace("getrf workspace", lwork);
+
+    KOKKOS_CUSOLVER_SAFE_CALL_IMPL(
+        cusolverDnCgetrf(s.handle, m, n, reinterpret_cast<cuComplex*>(A.data()),
+                         lda, reinterpret_cast<cuComplex*>(Workspace.data()),
+                         IPIV.data(), info.data()));
+
+    KOKKOS_CUSOLVER_SAFE_CALL_IMPL(cusolverDnCgetrs(
+        s.handle, CUBLAS_OP_N, m, nrhs, reinterpret_cast<cuComplex*>(A.data()),
+        lda, IPIV.data(), reinterpret_cast<cuComplex*>(B.data()), ldb,
+        info.data()));
+  }
+  if constexpr (std::is_same_v<Scalar, Kokkos::complex<double>>) {
+    KOKKOS_CUSOLVER_SAFE_CALL_IMPL(cusolverDnZgetrf_bufferSize(
+        s.handle, m, n, reinterpret_cast<cuDoubleComplex*>(A.data()), lda,
+        &lwork));
+    Kokkos::View<cuDoubleComplex*, memory_space> Workspace("getrf workspace",
+                                                           lwork);
+
+    KOKKOS_CUSOLVER_SAFE_CALL_IMPL(cusolverDnZgetrf(
+        s.handle, m, n, reinterpret_cast<cuDoubleComplex*>(A.data()), lda,
+        reinterpret_cast<cuDoubleComplex*>(Workspace.data()), IPIV.data(),
+        info.data()));
+
+    KOKKOS_CUSOLVER_SAFE_CALL_IMPL(cusolverDnZgetrs(
+        s.handle, CUBLAS_OP_N, m, nrhs,
+        reinterpret_cast<cuDoubleComplex*>(A.data()), lda, IPIV.data(),
+        reinterpret_cast<cuDoubleComplex*>(B.data()), ldb, info.data()));
+  }
+  KOKKOS_CUSOLVER_SAFE_CALL_IMPL(cusolverDnSetStream(s.handle, NULL));
+}
+
+#define KOKKOSLAPACK_GESV_CUSOLVER(SCALAR, LAYOUT, MEM_SPACE)                  \
+  template <>                                                                  \
+  struct GESV<                                                                 \
+      Kokkos::Cuda,                                                            \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,  \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,  \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
+      Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,      \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
+      true,                                                                    \
+      gesv_eti_spec_avail<                                                     \
+          Kokkos::Cuda,                                                        \
+          Kokkos::View<SCALAR**, LAYOUT,                                       \
+                       Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>,               \
+          Kokkos::View<SCALAR**, LAYOUT,                                       \
+                       Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>,               \
+          Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,  \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {     \
+    using AViewType = Kokkos::View<SCALAR**, LAYOUT,                           \
+                                   Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,    \
+                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;   \
+    using BViewType = Kokkos::View<SCALAR**, LAYOUT,                           \
+                                   Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,    \
+                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;   \
+    using PViewType =                                                          \
+        Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,    \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                 \
+                                                                               \
+    static void gesv(const Kokkos::Cuda& space, const AViewType& A,            \
+                     const BViewType& B, const PViewType& IPIV) {              \
+      Kokkos::Profiling::pushRegion("KokkosLapack::gesv[TPL_CUSOLVER," #SCALAR \
+                                    "]");                                      \
+      gesv_print_specialization<AViewType, BViewType, PViewType>();            \
+                                                                               \
+      cusolverGesvWrapper(space, IPIV, A, B);                                  \
+      Kokkos::Profiling::popRegion();                                          \
+    }                                                                          \
+  };
+
+KOKKOSLAPACK_GESV_CUSOLVER(float, Kokkos::LayoutLeft, Kokkos::CudaSpace)
+KOKKOSLAPACK_GESV_CUSOLVER(double, Kokkos::LayoutLeft, Kokkos::CudaSpace)
+KOKKOSLAPACK_GESV_CUSOLVER(Kokkos::complex<float>, Kokkos::LayoutLeft,
+                           Kokkos::CudaSpace)
+KOKKOSLAPACK_GESV_CUSOLVER(Kokkos::complex<double>, Kokkos::LayoutLeft,
+                           Kokkos::CudaSpace)
+
+#if defined(KOKKOSKERNELS_INST_MEMSPACE_CUDAUVMSPACE)
+KOKKOSLAPACK_GESV_CUSOLVER(float, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
+KOKKOSLAPACK_GESV_CUSOLVER(double, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
+KOKKOSLAPACK_GESV_CUSOLVER(Kokkos::complex<float>, Kokkos::LayoutLeft,
+                           Kokkos::CudaUVMSpace)
+KOKKOSLAPACK_GESV_CUSOLVER(Kokkos::complex<double>, Kokkos::LayoutLeft,
+                           Kokkos::CudaUVMSpace)
+#endif
+
+}  // namespace Impl
+}  // namespace KokkosLapack
+#endif  // KOKKOSKERNELS_ENABLE_TPL_CUSOLVER
+
 // ROCSOLVER
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSOLVER
 #include <KokkosBlas_tpl_spec.hpp>
@@ -445,28 +615,40 @@ void rocsolverGesvWrapper(const ExecutionSpace& space, const IPIVViewType& IPIV,
   KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));
 }
 
-#define KOKKOSLAPACK_GESV_ROCSOLVER(SCALAR, LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL) \
-  template <class ExecSpace>                                                   \
+#define KOKKOSLAPACK_GESV_ROCSOLVER(SCALAR, LAYOUT, MEM_SPACE)                 \
+  template <>                                                                  \
   struct GESV<                                                                 \
-      ExecSpace,                                                               \
-      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>,     \
+      Kokkos::HIP,                                                             \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,   \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
-      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>,     \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,   \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
-      Kokkos::View<rocblas_int*, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>, \
+      Kokkos::View<rocblas_int*, LAYOUT,                                       \
+                   Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                     \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
-      true, ETI_SPEC_AVAIL> {                                                  \
+      true,                                                                    \
+      gesv_eti_spec_avail<                                                     \
+          Kokkos::HIP,                                                         \
+          Kokkos::View<SCALAR**, LAYOUT,                                       \
+                       Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                 \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>,               \
+          Kokkos::View<SCALAR**, LAYOUT,                                       \
+                       Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                 \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>,               \
+          Kokkos::View<rocblas_int*, LAYOUT,                                   \
+                       Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                 \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {     \
     using AViewType =                                                          \
-        Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>,   \
+        Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>, \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                 \
     using BViewType =                                                          \
-        Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>,   \
+        Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>, \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                 \
     using PViewType = Kokkos::View<rocblas_int*, LAYOUT,                       \
-                                   Kokkos::Device<ExecSpace, MEM_SPACE>,       \
+                                   Kokkos::Device<Kokkos::HIP, MEM_SPACE>,     \
                                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>;   \
                                                                                \
-    static void gesv(const ExecSpace& space, const AViewType& A,               \
+    static void gesv(const Kokkos::HIP& space, const AViewType& A,             \
                      const BViewType& B, const PViewType& IPIV) {              \
       Kokkos::Profiling::pushRegion(                                           \
           "KokkosLapack::gesv[TPL_ROCSOLVER," #SCALAR "]");                    \
@@ -477,21 +659,12 @@ void rocsolverGesvWrapper(const ExecutionSpace& space, const IPIVViewType& IPIV,
     }                                                                          \
   };
 
-KOKKOSLAPACK_GESV_ROCSOLVER(float, Kokkos::LayoutLeft, Kokkos::HIPSpace, true)
-KOKKOSLAPACK_GESV_ROCSOLVER(float, Kokkos::LayoutLeft, Kokkos::HIPSpace, false)
-
-KOKKOSLAPACK_GESV_ROCSOLVER(double, Kokkos::LayoutLeft, Kokkos::HIPSpace, true)
-KOKKOSLAPACK_GESV_ROCSOLVER(double, Kokkos::LayoutLeft, Kokkos::HIPSpace, false)
-
+KOKKOSLAPACK_GESV_ROCSOLVER(float, Kokkos::LayoutLeft, Kokkos::HIPSpace)
+KOKKOSLAPACK_GESV_ROCSOLVER(double, Kokkos::LayoutLeft, Kokkos::HIPSpace)
 KOKKOSLAPACK_GESV_ROCSOLVER(Kokkos::complex<float>, Kokkos::LayoutLeft,
-                            Kokkos::HIPSpace, true)
-KOKKOSLAPACK_GESV_ROCSOLVER(Kokkos::complex<float>, Kokkos::LayoutLeft,
-                            Kokkos::HIPSpace, false)
-
+                            Kokkos::HIPSpace)
 KOKKOSLAPACK_GESV_ROCSOLVER(Kokkos::complex<double>, Kokkos::LayoutLeft,
-                            Kokkos::HIPSpace, true)
-KOKKOSLAPACK_GESV_ROCSOLVER(Kokkos::complex<double>, Kokkos::LayoutLeft,
-                            Kokkos::HIPSpace, false)
+                            Kokkos::HIPSpace)
 
 }  // namespace Impl
 }  // namespace KokkosLapack

@@ -91,7 +91,7 @@ print_help() {
   echo "--with-tpls=TPLS: set KOKKOSKERNELS_ENABLE_TPLS"
   echo "    Provide a comma-separated list of TPLs"
   echo "    Valid items:"
-  echo "      blas, mkl, cublas, cusparse, magma, armpl, rocblas, rocsparse, rocsolver"
+  echo "      blas, mkl, cublas, cusparse, cusolver, magma, armpl, rocblas, rocsparse, rocsolver"
   echo ""
 
   echo "ARGS: list of expressions matching compilers to test"
@@ -1083,7 +1083,7 @@ setup_env() {
   if [[ "${SPOT_CHECK_TPLS}" = "True" ]]; then
     # device tpls
     if [[ "$compiler" == cuda* ]]; then
-      NEW_TPL_LIST="cublas,cusparse,"
+      NEW_TPL_LIST="cublas,cusparse,cusolver,"
       export KOKKOS_CUDA_OPTIONS="${KOKKOS_CUDA_OPTIONS},enable_lambda"
     fi
     if [[ "$compiler" == rocm* ]]; then
