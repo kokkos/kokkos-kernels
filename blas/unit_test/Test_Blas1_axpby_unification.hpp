@@ -359,8 +359,7 @@ void impl_test_axpby_mv_unification_compare(
             if (b.h_view(b_k) == Kokkos::ArithTraits<tScalarB>::zero()) {
               vanillaValue =
                   static_cast<ScalarTypeY>(a.h_view(a_k) * x.h_view(i, k));
-            }
-            else {
+            } else {
               vanillaValue =
                   static_cast<ScalarTypeY>(a.h_view(a_k) * x.h_view(i, k) +
                                            b.h_view(b_k) * org_y.h_view(i, k));
@@ -368,10 +367,9 @@ void impl_test_axpby_mv_unification_compare(
           } else {
             int a_k(a.h_view.extent(0) == 1 ? 0 : k);
             if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
-              vanillaValue = static_cast<ScalarTypeY>(
-                  a.h_view(a_k) * x.h_view(i, k));
-            }
-            else {
+              vanillaValue =
+                  static_cast<ScalarTypeY>(a.h_view(a_k) * x.h_view(i, k));
+            } else {
               vanillaValue = static_cast<ScalarTypeY>(
                   a.h_view(a_k) * x.h_view(i, k) + valueB * org_y.h_view(i, k));
             }
@@ -383,17 +381,13 @@ void impl_test_axpby_mv_unification_compare(
             if (b.h_view(b_k) == Kokkos::ArithTraits<tScalarB>::zero()) {
               vanillaValue = static_cast<ScalarTypeY>(
                   valueA * x.h_view(i, k) + b.h_view(b_k) * org_y.h_view(i, k));
-            }
-            else {
-              vanillaValue = static_cast<ScalarTypeY>(
-                  valueA * x.h_view(i, k));
+            } else {
+              vanillaValue = static_cast<ScalarTypeY>(valueA * x.h_view(i, k));
             }
           } else {
             if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
-              vanillaValue = static_cast<ScalarTypeY>(
-                  valueA * x.h_view(i, k));
-            }
-            else {
+              vanillaValue = static_cast<ScalarTypeY>(valueA * x.h_view(i, k));
+            } else {
               vanillaValue = static_cast<ScalarTypeY>(
                   valueA * x.h_view(i, k) + valueB * org_y.h_view(i, k));
             }
