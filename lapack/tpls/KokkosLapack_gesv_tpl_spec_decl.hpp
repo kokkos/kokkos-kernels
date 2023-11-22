@@ -138,23 +138,35 @@ KOKKOSLAPACK_GESV_LAPACK(Kokkos::complex<double>, Kokkos::LayoutLeft,
                          Kokkos::OpenMP, Kokkos::HostSpace)
 #endif
 
+#if defined(KOKKOS_ENABLE_THREADS)
+KOKKOSLAPACK_GESV_LAPACK(float, Kokkos::LayoutLeft, Kokkos::Threads,
+                         Kokkos::HostSpace)
+KOKKOSLAPACK_GESV_LAPACK(double, Kokkos::LayoutLeft, Kokkos::Threads,
+                         Kokkos::HostSpace)
+KOKKOSLAPACK_GESV_LAPACK(Kokkos::complex<float>, Kokkos::LayoutLeft,
+                         Kokkos::Threads, Kokkos::HostSpace)
+KOKKOSLAPACK_GESV_LAPACK(Kokkos::complex<double>, Kokkos::LayoutLeft,
+                         Kokkos::Threads, Kokkos::HostSpace)
+#endif
+
 }  // namespace Impl
 }  // namespace KokkosLapack
 #endif  // KOKKOSKERNELS_ENABLE_TPL_LAPACK
 
 // MAGMA
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
-#include <KokkosLapack_tpl_spec.hpp>
+#include <KokkosLapack_Cuda_tpl.hpp>
 
 namespace KokkosLapack {
 namespace Impl {
 
 #define KOKKOSLAPACK_DGESV_MAGMA(LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)           \
-  template <class ExecSpace>                                                  \
+  template <>                                                                 \
   struct GESV<                                                                \
-      Kokkos::View<double**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>,    \
+      Kokkos::Cuda,                                                           \
+      Kokkos::View<double**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
-      Kokkos::View<double**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>,    \
+      Kokkos::View<double**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>, \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
       Kokkos::View<magma_int_t*, LAYOUT,                                      \
                    Kokkos::Device<Kokkos::DefaultHostExecutionSpace,          \
@@ -163,11 +175,11 @@ namespace Impl {
       true, ETI_SPEC_AVAIL> {                                                 \
     typedef double SCALAR;                                                    \
     typedef Kokkos::View<SCALAR**, LAYOUT,                                    \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,                \
+                         Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,             \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged>>             \
         AViewType;                                                            \
     typedef Kokkos::View<SCALAR**, LAYOUT,                                    \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,                \
+                         Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,             \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged>>             \
         BViewType;                                                            \
     typedef Kokkos::View<                                                     \
@@ -176,8 +188,8 @@ namespace Impl {
         Kokkos::MemoryTraits<Kokkos::Unmanaged>>                              \
         PViewType;                                                            \
                                                                               \
-    static void gesv(const AViewType& A, const BViewType& B,                  \
-                     const PViewType& IPIV) {                                 \
+    static void gesv(const Kokkos::Cuda& /*space*/, const AViewType& A,       \
+                     const BViewType& B, const PViewType& IPIV) {             \
       Kokkos::Profiling::pushRegion("KokkosLapack::gesv[TPL_MAGMA,double]");  \
       gesv_print_specialization<AViewType, BViewType, PViewType>();           \
       const bool with_pivot =                                                 \
@@ -209,11 +221,12 @@ namespace Impl {
   };
 
 #define KOKKOSLAPACK_SGESV_MAGMA(LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)           \
-  template <class ExecSpace>                                                  \
+  template <>                                                                 \
   struct GESV<                                                                \
-      Kokkos::View<float**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>,     \
+      Kokkos::Cuda,                                                           \
+      Kokkos::View<float**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,  \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
-      Kokkos::View<float**, LAYOUT, Kokkos::Device<ExecSpace, MEM_SPACE>,     \
+      Kokkos::View<float**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,  \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
       Kokkos::View<magma_int_t*, LAYOUT,                                      \
                    Kokkos::Device<Kokkos::DefaultHostExecutionSpace,          \
@@ -222,11 +235,11 @@ namespace Impl {
       true, ETI_SPEC_AVAIL> {                                                 \
     typedef float SCALAR;                                                     \
     typedef Kokkos::View<SCALAR**, LAYOUT,                                    \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,                \
+                         Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,             \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged>>             \
         AViewType;                                                            \
     typedef Kokkos::View<SCALAR**, LAYOUT,                                    \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,                \
+                         Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,             \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged>>             \
         BViewType;                                                            \
     typedef Kokkos::View<                                                     \
@@ -235,8 +248,8 @@ namespace Impl {
         Kokkos::MemoryTraits<Kokkos::Unmanaged>>                              \
         PViewType;                                                            \
                                                                               \
-    static void gesv(const AViewType& A, const BViewType& B,                  \
-                     const PViewType& IPIV) {                                 \
+    static void gesv(const Kokkos::Cuda& /*space*/, const AViewType& A,       \
+                     const BViewType& B, const PViewType& IPIV) {             \
       Kokkos::Profiling::pushRegion("KokkosLapack::gesv[TPL_MAGMA,float]");   \
       gesv_print_specialization<AViewType, BViewType, PViewType>();           \
       const bool with_pivot =                                                 \
@@ -268,12 +281,13 @@ namespace Impl {
   };
 
 #define KOKKOSLAPACK_ZGESV_MAGMA(LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)           \
-  template <class ExecSpace>                                                  \
-  struct GESV<Kokkos::View<Kokkos::complex<double>**, LAYOUT,                 \
-                           Kokkos::Device<ExecSpace, MEM_SPACE>,              \
+  template <>                                                                 \
+  struct GESV<Kokkos::Cuda,                                                   \
+              Kokkos::View<Kokkos::complex<double>**, LAYOUT,                 \
+                           Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,           \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged>>,          \
               Kokkos::View<Kokkos::complex<double>**, LAYOUT,                 \
-                           Kokkos::Device<ExecSpace, MEM_SPACE>,              \
+                           Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,           \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged>>,          \
               Kokkos::View<magma_int_t*, LAYOUT,                              \
                            Kokkos::Device<Kokkos::DefaultHostExecutionSpace,  \
@@ -282,11 +296,11 @@ namespace Impl {
               true, ETI_SPEC_AVAIL> {                                         \
     typedef Kokkos::complex<double> SCALAR;                                   \
     typedef Kokkos::View<SCALAR**, LAYOUT,                                    \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,                \
+                         Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,             \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged>>             \
         AViewType;                                                            \
     typedef Kokkos::View<SCALAR**, LAYOUT,                                    \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,                \
+                         Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,             \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged>>             \
         BViewType;                                                            \
     typedef Kokkos::View<                                                     \
@@ -295,8 +309,8 @@ namespace Impl {
         Kokkos::MemoryTraits<Kokkos::Unmanaged>>                              \
         PViewType;                                                            \
                                                                               \
-    static void gesv(const AViewType& A, const BViewType& B,                  \
-                     const PViewType& IPIV) {                                 \
+    static void gesv(const Kokkos::Cuda& /*space*/, const AViewType& A,       \
+                     const BViewType& B, const PViewType& IPIV) {             \
       Kokkos::Profiling::pushRegion(                                          \
           "KokkosLapack::gesv[TPL_MAGMA,complex<double>]");                   \
       gesv_print_specialization<AViewType, BViewType, PViewType>();           \
@@ -329,12 +343,13 @@ namespace Impl {
   };
 
 #define KOKKOSLAPACK_CGESV_MAGMA(LAYOUT, MEM_SPACE, ETI_SPEC_AVAIL)           \
-  template <class ExecSpace>                                                  \
-  struct GESV<Kokkos::View<Kokkos::complex<float>**, LAYOUT,                  \
-                           Kokkos::Device<ExecSpace, MEM_SPACE>,              \
+  template <>                                                                 \
+  struct GESV<Kokkos::Cuda,                                                   \
+              Kokkos::View<Kokkos::complex<float>**, LAYOUT,                  \
+                           Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,           \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged>>,          \
               Kokkos::View<Kokkos::complex<float>**, LAYOUT,                  \
-                           Kokkos::Device<ExecSpace, MEM_SPACE>,              \
+                           Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,           \
                            Kokkos::MemoryTraits<Kokkos::Unmanaged>>,          \
               Kokkos::View<magma_int_t*, LAYOUT,                              \
                            Kokkos::Device<Kokkos::DefaultHostExecutionSpace,  \
@@ -343,11 +358,11 @@ namespace Impl {
               true, ETI_SPEC_AVAIL> {                                         \
     typedef Kokkos::complex<float> SCALAR;                                    \
     typedef Kokkos::View<SCALAR**, LAYOUT,                                    \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,                \
+                         Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,             \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged>>             \
         AViewType;                                                            \
     typedef Kokkos::View<SCALAR**, LAYOUT,                                    \
-                         Kokkos::Device<ExecSpace, MEM_SPACE>,                \
+                         Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,             \
                          Kokkos::MemoryTraits<Kokkos::Unmanaged>>             \
         BViewType;                                                            \
     typedef Kokkos::View<                                                     \
@@ -356,8 +371,8 @@ namespace Impl {
         Kokkos::MemoryTraits<Kokkos::Unmanaged>>                              \
         PViewType;                                                            \
                                                                               \
-    static void gesv(const AViewType& A, const BViewType& B,                  \
-                     const PViewType& IPIV) {                                 \
+    static void gesv(const Kokkos::Cuda& /*space*/, const AViewType& A,       \
+                     const BViewType& B, const PViewType& IPIV) {             \
       Kokkos::Profiling::pushRegion(                                          \
           "KokkosLapack::gesv[TPL_MAGMA,complex<float>]");                    \
       gesv_print_specialization<AViewType, BViewType, PViewType>();           \

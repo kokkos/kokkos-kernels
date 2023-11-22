@@ -268,6 +268,13 @@ int test_gesv(const char* mode) {
   using view_type_a_ll = Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device>;
   using view_type_b_ll = Kokkos::View<Scalar*, Kokkos::LayoutLeft, Device>;
 
+#if (defined(TEST_CUDA_LAPACK_CPP) &&                                       \
+     defined(KOKKOSKERNELS_ENABLE_TPL_CUSOLVER)) ||                         \
+    (defined(TEST_HIP_LAPACK_CPP) &&                                        \
+     defined(KOKKOSKERNELS_ENABLE_TPL_ROCSOLVER)) ||                        \
+    (defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK) &&                            \
+     (defined(TEST_OPENMP_LAPACK_CPP) || defined(TEST_SERIAL_LAPACK_CPP) || \
+      defined(TEST_THREADS_LAPACK_CPP)))
   Test::impl_test_gesv<view_type_a_ll, view_type_b_ll, Device, false>(
       &mode[0], "N", 2);  // no padding
   Test::impl_test_gesv<view_type_a_ll, view_type_b_ll, Device, false>(
@@ -279,7 +286,7 @@ int test_gesv(const char* mode) {
   Test::impl_test_gesv<view_type_a_ll, view_type_b_ll, Device, false>(
       &mode[0], "N", 1024);  // no padding
 
-#if defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA) && defined(KOKKOS_ENABLE_CUDA)
+#elif defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA) && defined(KOKKOS_ENABLE_CUDA)
   if constexpr (std::is_same_v<Kokkos::Cuda,
                                typename Device::execution_space>) {
     Test::impl_test_gesv<view_type_a_ll, view_type_b_ll, Device, true>(
@@ -316,6 +323,13 @@ int test_gesv_mrhs(const char* mode) {
   using view_type_a_ll = Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device>;
   using view_type_b_ll = Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device>;
 
+#if (defined(TEST_CUDA_LAPACK_CPP) &&                                       \
+     defined(KOKKOSKERNELS_ENABLE_TPL_CUSOLVER)) ||                         \
+    (defined(TEST_HIP_LAPACK_CPP) &&                                        \
+     defined(KOKKOSKERNELS_ENABLE_TPL_ROCSOLVER)) ||                        \
+    (defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK) &&                            \
+     (defined(TEST_OPENMP_LAPACK_CPP) || defined(TEST_SERIAL_LAPACK_CPP) || \
+      defined(TEST_THREADS_LAPACK_CPP)))
   Test::impl_test_gesv_mrhs<view_type_a_ll, view_type_b_ll, Device, false>(
       &mode[0], "N", 2, 5);  // no padding
   Test::impl_test_gesv_mrhs<view_type_a_ll, view_type_b_ll, Device, false>(
@@ -328,7 +342,7 @@ int test_gesv_mrhs(const char* mode) {
       &mode[0], "N", 1024, 5);  // no padding
 
 // When appropriate run MAGMA specific tests
-#if defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA) && defined(KOKKOS_ENABLE_CUDA)
+#elif defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA) && defined(KOKKOS_ENABLE_CUDA)
   if constexpr (std::is_same_v<Kokkos::Cuda,
                                typename Device::execution_space>) {
     Test::impl_test_gesv_mrhs<view_type_a_ll, view_type_b_ll, Device, true>(
