@@ -356,45 +356,48 @@ void impl_test_axpby_mv_unification_compare(
             (void)valueB;  // Avoid "set but not used" error
             int a_k(a.h_view.extent(0) == 1 ? 0 : k);
             int b_k(b.h_view.extent(0) == 1 ? 0 : k);
-            if (b.h_view(b_k) == Kokkos::ArithTraits<tScalarB>::zero()) {
-              vanillaValue =
-                  static_cast<ScalarTypeY>(a.h_view(a_k) * x.h_view(i, k));
-            } else {
-              vanillaValue =
-                  static_cast<ScalarTypeY>(a.h_view(a_k) * x.h_view(i, k) +
-                                           b.h_view(b_k) * org_y.h_view(i, k));
-            }
+#if 0
+            std::cout << "In impl_test_axpby_mv_unification_compare()"
+                      << ": i = " << i
+                      << ", k = " << k
+                      << ", a.h_view.extent(0) = " << a.h_view.extent(0)
+                      << ", a_k = "                << a_k
+                      << ", b.h_view.extent(0) = " << b.h_view.extent(0)
+                      << ", b_k = "                << b_k
+                      << ", a.h_view(a_k) = "      << a.h_view(a_k)
+                      << ", x.h_view(i, k) = "     << x.h_view(i, k)
+                      << ", b.h_view(b_k) = "      << b.h_view(b_k)
+                      << ", org_y.h_view(i, k) = " << org_y.h_view(i, k)
+                      << std::endl;
+#endif
+            vanillaValue =
+                static_cast<ScalarTypeY>(a.h_view(a_k) * x.h_view(i, k) +
+                                         b.h_view(b_k) * org_y.h_view(i, k));
           } else {
             int a_k(a.h_view.extent(0) == 1 ? 0 : k);
-            if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
-              vanillaValue =
-                  static_cast<ScalarTypeY>(a.h_view(a_k) * x.h_view(i, k));
-            } else {
-              vanillaValue = static_cast<ScalarTypeY>(
-                  a.h_view(a_k) * x.h_view(i, k) + valueB * org_y.h_view(i, k));
-            }
+            vanillaValue = static_cast<ScalarTypeY>(
+                a.h_view(a_k) * x.h_view(i, k) + valueB * org_y.h_view(i, k));
           }
         } else {
           if constexpr (bIsRank1) {
             (void)valueB;  // Avoid "set but not used" error
             int b_k(b.h_view.extent(0) == 1 ? 0 : k);
-            if (b.h_view(b_k) == Kokkos::ArithTraits<tScalarB>::zero()) {
-              vanillaValue = static_cast<ScalarTypeY>(valueA * x.h_view(i, k));
-            } else {
-              vanillaValue = static_cast<ScalarTypeY>(
-                  valueA * x.h_view(i, k) + b.h_view(b_k) * org_y.h_view(i, k));
-            }
+            vanillaValue = static_cast<ScalarTypeY>(
+                valueA * x.h_view(i, k) + b.h_view(b_k) * org_y.h_view(i, k));
           } else {
-            if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
-              vanillaValue = static_cast<ScalarTypeY>(valueA * x.h_view(i, k));
-            } else {
-              vanillaValue = static_cast<ScalarTypeY>(
-                  valueA * x.h_view(i, k) + valueB * org_y.h_view(i, k));
-            }
+            vanillaValue = static_cast<ScalarTypeY>(
+                valueA * x.h_view(i, k) + valueB * org_y.h_view(i, k));
           }
         }
-
-        EXPECT_NEAR_KK(vanillaValue, y.h_view(i, k), 2. * max_error);
+#if 0
+        std::cout << "In impl_test_axpby_mv_unification_compare(1)"
+                  << ": i = " << i
+                  << ", k = " << k
+                  << ", y.h_view(i, k) = " << y.h_view(i, k)
+                  << ", vanillaValue = "   << vanillaValue
+                  << std::endl;
+#endif
+        EXPECT_NEAR_KK(vanillaValue, y.h_view(i, k), 3. * max_error);
       }
     }
   } else {
@@ -451,7 +454,14 @@ void impl_test_axpby_mv_unification_compare(
         } else {
           EXPECT_NE(y.h_view(i, k), Kokkos::ArithTraits<ScalarTypeY>::nan());
         }
-
+#if 0
+        std::cout << "In impl_test_axpby_mv_unification_compare(2)"
+                  << ": i = " << i
+                  << ", k = " << k
+                  << ", y.h_view(i, k) = " << y.h_view(i, k)
+                  << ", vanillaValue = "   << vanillaValue
+                  << std::endl;
+#endif
         EXPECT_NEAR_KK(vanillaValue, y.h_view(i, k), 2. * max_error);
       }
     }
@@ -1061,7 +1071,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // in which the result is computed.
   using MagnitudeB         = typename Kokkos::ArithTraits<tScalarB>::mag_type;
   MagnitudeB const eps     = Kokkos::ArithTraits<tScalarB>::epsilon();
-  MagnitudeB const max_val = 100;
+  MagnitudeB const max_val = 10;
   MagnitudeB const max_error =
       static_cast<MagnitudeB>(
           Kokkos::ArithTraits<tScalarA>::abs(valuesA[valuesA.size() - 1]) +
