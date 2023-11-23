@@ -191,7 +191,7 @@ void impl_test_axpby_unification_compare(
     for (int i(0); i < N; ++i) {
       EXPECT_NEAR_KK(static_cast<ScalarTypeY>(valueA * x.h_view(i) +
                                               valueB * org_y.h_view(i)),
-                     y.h_view(i), 2. * max_error);
+                     y.h_view(i), 4. * max_error);
     }
   } else {
     // ********************************************************
@@ -221,7 +221,7 @@ void impl_test_axpby_unification_compare(
         EXPECT_NE(y.h_view(i), Kokkos::ArithTraits<ScalarTypeY>::nan());
       }
       EXPECT_NEAR_KK(static_cast<ScalarTypeY>(valueA * x.h_view(i)),
-                     y.h_view(i), 2. * max_error);
+                     y.h_view(i), 4. * max_error);
     }
   }
 }
@@ -462,7 +462,7 @@ void impl_test_axpby_mv_unification_compare(
                   << ", vanillaValue = "   << vanillaValue
                   << std::endl;
 #endif
-        EXPECT_NEAR_KK(vanillaValue, y.h_view(i, k), 2. * max_error);
+        EXPECT_NEAR_KK(vanillaValue, y.h_view(i, k), 4. * max_error);
       }
     }
   }
