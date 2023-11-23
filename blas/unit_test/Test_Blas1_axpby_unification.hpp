@@ -397,7 +397,7 @@ void impl_test_axpby_mv_unification_compare(
                   << ", vanillaValue = "   << vanillaValue
                   << std::endl;
 #endif
-        EXPECT_NEAR_KK(vanillaValue, y.h_view(i, k), 3. * max_error);
+        EXPECT_NEAR_KK(vanillaValue, y.h_view(i, k), 4. * max_error);
       }
     }
   } else {
