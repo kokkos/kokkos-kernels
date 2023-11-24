@@ -848,7 +848,7 @@ static void iluk_numeric_block(IlukHandle &thandle, const ARowMapType &A_row_map
                   const UEntriesType &U_entries, UValuesType &U_values)
 {
   const size_type nlevels    = thandle.get_num_levels();
-  std::cout << "JGF iluk_numeric with nlevels: " << nlevels << std::endl;
+  std::cout << "JGF iluk_numeric_block with nlevels: " << nlevels << std::endl;
   const int team_size        = thandle.get_team_size();
   const size_type block_size = thandle.get_block_size();
 

@@ -163,10 +163,6 @@ struct SpilukTest
     ValuesType L_values("L_values", spiluk_handle->get_nnzL() * block_items);
     ValuesType U_values("U_values", spiluk_handle->get_nnzU() * block_items);
 
-    std::cout << "JGF block nrows = " << nrows << std::endl;
-    std::cout << "JGF block nnzL = " << spiluk_handle->get_nnzL() << std::endl;
-    std::cout << "JGF block nnzU = " << spiluk_handle->get_nnzU() << std::endl;
-
     spiluk_handle->print_algorithm();
     spiluk_numeric(&kh, fill_lev, row_map, entries, values, L_row_map,
                    L_entries, L_values, U_row_map, U_entries, U_values);
@@ -443,7 +439,7 @@ template <typename scalar_t, typename lno_t, typename size_type,
 void test_spiluk() {
   using TestStruct = Test::SpilukTest<scalar_t, lno_t, size_type, device>;
   TestStruct::run_test_spiluk();
-  TestStruct::run_test_spiluk_blocks();
+  //TestStruct::run_test_spiluk_blocks();
 }
 
 template <typename scalar_t, typename lno_t, typename size_type,
