@@ -132,8 +132,6 @@ struct ILUKLvlSchedRPNumericFunctor {
     auto k1    = L_row_map(rowid);
     auto k2    = L_row_map(rowid + 1);
 
-    //if (i != 0) return;
-
     std::cout << "      JGF Block 1" << std::endl;
 #ifdef KEEP_DIAG
     for (auto k = k1; k < k2 - 1; ++k) {
@@ -202,8 +200,6 @@ struct ILUKLvlSchedRPNumericFunctor {
         }
       }  // end for kk
     }    // end for k
-
-    return;
 
     std::cout << "      JGF Block 5" << std::endl;
 #ifdef KEEP_DIAG
@@ -328,8 +324,6 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
     auto tid   = lvl - lev_start;
     auto k1    = L_row_map(rowid);
     auto k2    = L_row_map(rowid + 1);
-
-    //if (lvl != 0) return;
 
     std::cout << "      JGF Block 1" << std::endl;
     for (auto k = k1; k < k2; ++k) {
@@ -496,8 +490,6 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
         }
       }  // end for kk
     }    // end for k
-
-    return;
 
     std::cout << "      JGF Block 5" << std::endl;
 #ifdef KEEP_DIAG

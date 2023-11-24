@@ -171,18 +171,18 @@ struct SpilukTest
 
     // Checking
     Bsr A("A_Mtx", nrows, nrows, nnz, values, row_map, entries, block_size);
-    Bsr L("L_Mtx", nrows, nrows, spiluk_handle->get_nnzL(), L_values,
+    Bsr L("L_Mtx", nrows, nrows, L_values.extent(0), L_values,
           L_row_map, L_entries, block_size);
-    Bsr U("U_Mtx", nrows, nrows, spiluk_handle->get_nnzU(), U_values,
+    Bsr U("U_Mtx", nrows, nrows, U_values.extent(0), U_values,
           U_row_map, U_entries, block_size);
 
     // Create a reference view e set to all 1's
-    ValuesType e_one("e_one", nrows);
+    ValuesType e_one("e_one", nrows * block_size);
     Kokkos::deep_copy(e_one, 1.0);
 
     // Create two views for spmv results
-    ValuesType bb("bb", nrows);
-    ValuesType bb_tmp("bb_tmp", nrows);
+    ValuesType bb("bb", nrows * block_size);
+    ValuesType bb_tmp("bb_tmp", nrows * block_size);
 
     // Compute norm2(L*U*e_one - A*e_one)/norm2(A*e_one)
     KokkosSparse::spmv("N", ONE, A, e_one, ZERO, bb);
@@ -194,6 +194,7 @@ struct SpilukTest
 
     typename AT::mag_type diff_nrm = KokkosBlas::nrm2(bb);
 
+    std::cout << "JGF diff_nrm: " << diff_nrm << std::endl;
     EXPECT_TRUE((diff_nrm / bb_nrm) < 1e-4);
 
     kh.destroy_spiluk_handle();
@@ -439,7 +440,7 @@ template <typename scalar_t, typename lno_t, typename size_type,
 void test_spiluk() {
   using TestStruct = Test::SpilukTest<scalar_t, lno_t, size_type, device>;
   TestStruct::run_test_spiluk();
-  //TestStruct::run_test_spiluk_blocks();
+  TestStruct::run_test_spiluk_blocks();
 }
 
 template <typename scalar_t, typename lno_t, typename size_type,
