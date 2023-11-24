@@ -207,8 +207,12 @@ Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
       // large enough to require 'relTol' to value 5.0e-3. The same
       // calculations show no discrepancies for calculations with double.
       // ****************************************************************
-      _absTol(std::is_same<_AuxType, float>::value ? 1.0e-6 : 1.0e-9),
-      _relTol(std::is_same<_AuxType, float>::value ? 5.0e-3 : 1.0e-6),
+      _absTol(std::is_same<_AuxType, float>::value
+                  ? 1.0e-6
+                  : (std::is_same<_AuxType, double>::value ? 1.0e-9 : 0)),
+      _relTol(std::is_same<_AuxType, float>::value
+                  ? 5.0e-3
+                  : (std::is_same<_AuxType, double>::value ? 1.0e-6 : 0)),
       _M(-1),
       _N(-1),
       _useAnalyticalResults(false),
@@ -610,7 +614,7 @@ Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
                                              _HostViewTypeY& h_y,
                                              _HostViewTypeA& h_A,
                                              _ViewTypeExpected& h_expected) {
-  alpha = 1.1;
+  alpha = std::is_same<_AuxType, int>::value ? 1 : 1.1;
 
   for (int i = 0; i < _M; ++i) {
     _AuxType auxI = this->shrinkAngleToZeroTwoPiRange(static_cast<_AuxType>(i));

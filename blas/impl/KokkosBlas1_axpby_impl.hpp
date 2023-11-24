@@ -123,7 +123,13 @@ struct Axpby_Functor {
       } else if constexpr (scalar_y == 1) {
         // Nothing to do: m_y(i) = m_y(i);
       } else if constexpr (scalar_y == 2) {
-        m_y(i) = m_b(0) * m_y(i);
+        if (m_b(0) ==
+            Kokkos::ArithTraits<typename BV::non_const_value_type>::zero()) {
+          m_y(i) =
+              Kokkos::ArithTraits<typename YV::non_const_value_type>::zero();
+        } else {
+          m_y(i) = m_b(0) * m_y(i);
+        }
       }
     }
     // **************************************************************
@@ -137,7 +143,12 @@ struct Axpby_Functor {
       } else if constexpr (scalar_y == 1) {
         m_y(i) = -m_x(i) + m_y(i);
       } else if constexpr (scalar_y == 2) {
-        m_y(i) = -m_x(i) + m_b(0) * m_y(i);
+        if (m_b(0) ==
+            Kokkos::ArithTraits<typename BV::non_const_value_type>::zero()) {
+          m_y(i) = -m_x(i);
+        } else {
+          m_y(i) = -m_x(i) + m_b(0) * m_y(i);
+        }
       }
     }
     // **************************************************************
@@ -151,7 +162,12 @@ struct Axpby_Functor {
       } else if constexpr (scalar_y == 1) {
         m_y(i) = m_x(i) + m_y(i);
       } else if constexpr (scalar_y == 2) {
-        m_y(i) = m_x(i) + m_b(0) * m_y(i);
+        if (m_b(0) ==
+            Kokkos::ArithTraits<typename BV::non_const_value_type>::zero()) {
+          m_y(i) = m_x(i);
+        } else {
+          m_y(i) = m_x(i) + m_b(0) * m_y(i);
+        }
       }
     }
     // **************************************************************
@@ -165,7 +181,12 @@ struct Axpby_Functor {
       } else if constexpr (scalar_y == 1) {
         m_y(i) = m_a(0) * m_x(i) + m_y(i);
       } else if constexpr (scalar_y == 2) {
-        m_y(i) = m_a(0) * m_x(i) + m_b(0) * m_y(i);
+        if (m_b(0) ==
+            Kokkos::ArithTraits<typename BV::non_const_value_type>::zero()) {
+          m_y(i) = m_a(0) * m_x(i);
+        } else {
+          m_y(i) = m_a(0) * m_x(i) + m_b(0) * m_y(i);
+        }
       }
     }
   }
