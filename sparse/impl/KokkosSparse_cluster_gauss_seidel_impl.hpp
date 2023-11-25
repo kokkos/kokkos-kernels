@@ -555,7 +555,8 @@ class ClusterGaussSeidel {
     }
     nnz_view_t vertClusters;
     auto clusterAlgo = gsHandle->get_clustering_algo();
-    if (clusterAlgo == ClusteringAlgorithm::CLUSTER_DEFAULT) clusterAlgo = ClusteringAlgorithm::CLUSTER_MIS2;
+    if (clusterAlgo == ClusteringAlgorithm::CLUSTER_DEFAULT)
+      clusterAlgo = ClusteringAlgorithm::CLUSTER_MIS2;
     switch (clusterAlgo) {
       case ClusteringAlgorithm::CLUSTER_MIS2: {
         vertClusters =

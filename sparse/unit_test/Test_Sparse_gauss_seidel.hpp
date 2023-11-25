@@ -246,8 +246,8 @@ void test_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth,
   }
   //*** Cluster-coloring version ****
   int clusterSizes[3]                              = {2, 5, 34};
-  std::vector<ClusteringAlgorithm> clusteringAlgos = {ClusteringAlgorithm::CLUSTER_MIS2,
-                                                      ClusteringAlgorithm::CLUSTER_BALLOON};
+  std::vector<ClusteringAlgorithm> clusteringAlgos = {
+      ClusteringAlgorithm::CLUSTER_MIS2, ClusteringAlgorithm::CLUSTER_BALLOON};
   for (int csize = 0; csize < 3; csize++) {
     for (auto clusterAlgo : clusteringAlgos) {
       for (int apply_type = 0; apply_type < apply_count; ++apply_type) {
@@ -350,7 +350,8 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth,
   //*** Cluster-coloring version ****
   int clusterSizes[3] = {2, 5, 34};
   for (int csize = 0; csize < 3; csize++) {
-    for (int algo = 0; algo < (int)ClusteringAlgorithm::NUM_CLUSTERING_ALGORITHMS; algo++) {
+    for (int algo = 0;
+         algo < (int)ClusteringAlgorithm::NUM_CLUSTERING_ALGORITHMS; algo++) {
       for (int apply_type = 0; apply_type < apply_count; ++apply_type) {
         Kokkos::Timer timer1;
         // Zero out X before solving
