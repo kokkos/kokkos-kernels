@@ -59,7 +59,7 @@ struct GS_Parameters {
   // Point:
   int longRowThreshold = 0;
   // Cluster:
-  ClusteringAlgorithm coarse_algo = CLUSTER_DEFAULT;
+  ClusteringAlgorithm coarse_algo = ClusteringAlgorithm::CLUSTER_DEFAULT;
   int cluster_size                = 10;
   // Two stage:
   bool classic = false;
@@ -455,9 +455,9 @@ int main(int argc, char** argv) {
     else if (!strcmp(argv[i], "--coarse-algo")) {
       const char* algo = getNextArg(i, argc, argv);
       if (!strcmp(algo, "balloon"))
-        params.coarse_algo = CLUSTER_BALLOON;
+        params.coarse_algo = ClusteringAlgorithm::CLUSTER_BALLOON;
       else if (!strcmp(algo, "mis2"))
-        params.coarse_algo = CLUSTER_MIS2;
+        params.coarse_algo = ClusteringAlgorithm::CLUSTER_MIS2;
       else {
         std::cout << "Error: invalid coarsening algorithm. Options are balloon "
                      "and mis2.\n";
