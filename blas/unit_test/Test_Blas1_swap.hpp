@@ -6,7 +6,7 @@ namespace Impl {
 template <class ScalarType, class DeviceType>
 void test_swap(int const vector_length) {
   using execution_space = typename DeviceType::execution_space;
-  using memory_space    = typename DeviceType::execution_space;
+  using memory_space    = typename DeviceType::memory_space;
   using vector_type     = Kokkos::View<ScalarType*, memory_space>;
   using scalar_type     = typename vector_type::non_const_value_type;
   using mag_type        = typename Kokkos::ArithTraits<scalar_type>::mag_type;
