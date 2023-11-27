@@ -36,10 +36,15 @@ enum struct ClusteringAlgorithm {
   NUM_CLUSTERING_ALGORITHMS
 };
 
+static constexpr ClusteringAlgorithm CLUSTER_DEFAULT  = ClusteringAlgorithm::CLUSTER_DEFAULT;
+static constexpr ClusteringAlgorithm CLUSTER_MIS2  = ClusteringAlgorithm::CLUSTER_MIS2;
+static constexpr ClusteringAlgorithm CLUSTER_BALLOON  = ClusteringAlgorithm::CLUSTER_BALLOON;
+static constexpr ClusteringAlgorithm NUM_CLUSTERING_ALGORITHMS  = ClusteringAlgorithm::NUM_CLUSTERING_ALGORITHMS;
+
 inline const char *getClusterAlgoName(ClusteringAlgorithm ca) {
   switch (ca) {
-    case ClusteringAlgorithm::CLUSTER_BALLOON: return "Balloon";
-    case ClusteringAlgorithm::CLUSTER_MIS2: return "MIS(2)";
+    case CLUSTER_BALLOON: return "Balloon";
+    case CLUSTER_MIS2: return "MIS(2)";
     default:;
   }
   return "INVALID CLUSTERING ALGORITHM";

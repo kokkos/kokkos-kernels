@@ -83,7 +83,7 @@ void run_experiment(crsMat_t crsmat, int clusterSize, bool useSequential) {
   if (clusterSize == 1)
     kh.create_gs_handle();
   else
-    kh.create_gs_handle(KokkosSparse::ClusteringAlgorithm::CLUSTER_BALLOON,
+    kh.create_gs_handle(KokkosSparse::CLUSTER_BALLOON,
                         clusterSize);
   Kokkos::Timer timer1;
   KokkosKernels::Experimental::Example::pcgsolve(

@@ -106,7 +106,7 @@ void run_gauss_seidel(
     int cluster_size = 1,
     bool classic =
         false,  // only with two-stage, true for sptrsv instead of richardson
-    ClusteringAlgorithm clusterAlgo = ClusteringAlgorithm::CLUSTER_DEFAULT,
+    ClusteringAlgorithm clusterAlgo = CLUSTER_DEFAULT,
     KokkosGraph::ColoringAlgorithm coloringAlgo =
         KokkosGraph::COLORING_DEFAULT) {
   using size_type = typename crsMat_t::size_type;
@@ -247,7 +247,7 @@ void test_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth,
   //*** Cluster-coloring version ****
   int clusterSizes[3]                              = {2, 5, 34};
   std::vector<ClusteringAlgorithm> clusteringAlgos = {
-      ClusteringAlgorithm::CLUSTER_MIS2, ClusteringAlgorithm::CLUSTER_BALLOON};
+      CLUSTER_MIS2, CLUSTER_BALLOON};
   for (int csize = 0; csize < 3; csize++) {
     for (auto clusterAlgo : clusteringAlgos) {
       for (int apply_type = 0; apply_type < apply_count; ++apply_type) {
@@ -351,7 +351,7 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth,
   int clusterSizes[3] = {2, 5, 34};
   for (int csize = 0; csize < 3; csize++) {
     for (int algo = 0;
-         algo < (int)ClusteringAlgorithm::NUM_CLUSTERING_ALGORITHMS; algo++) {
+         algo < (int)NUM_CLUSTERING_ALGORITHMS; algo++) {
       for (int apply_type = 0; apply_type < apply_count; ++apply_type) {
         Kokkos::Timer timer1;
         // Zero out X before solving
@@ -554,7 +554,7 @@ void test_gauss_seidel_empty() {
     for (const int rowmapLen : {0, 1, 5}) {
       KernelHandle kh;
       if (doingCluster)
-        kh.create_gs_handle(ClusteringAlgorithm::CLUSTER_DEFAULT, 10);
+        kh.create_gs_handle(CLUSTER_DEFAULT, 10);
       else
         kh.create_gs_handle(GS_DEFAULT);
       const auto nRows = KOKKOSKERNELS_MACRO_MAX(0, rowmapLen - 1);
