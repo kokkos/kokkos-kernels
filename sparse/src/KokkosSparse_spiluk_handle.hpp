@@ -193,7 +193,7 @@ class SPILUKHandle {
 
   void alloc_iw(const size_type nrows_, const size_type ncols_) {
     iw = work_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "iw"),
-                     nrows_, ncols_);
+                     nrows_, ncols_ * block_size * block_size);
     Kokkos::deep_copy(iw, nnz_lno_t(-1));
   }
 

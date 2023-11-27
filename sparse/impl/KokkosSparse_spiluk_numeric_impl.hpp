@@ -52,6 +52,103 @@ using policy_type             = typename IlukHandle::TeamPolicy;
 using member_type             = typename policy_type::member_type;
 using range_policy            = typename IlukHandle::RangePolicy;
 
+static void print_matrix(const std::vector<std::vector<scalar_t>>& matrix) {
+  for (const auto& row : matrix) {
+    for (const auto& item : row) {
+      std::printf("%.2f ", item);
+    }
+    std::cout << std::endl;
+  }
+}
+
+static void print_iw(const WorkViewType& iw) {
+  std::cout << "      IW:" << std::endl;
+  for (auto i = 0; i < iw.extent(0); ++i) {
+    for (auto j = 0; j < iw.extent(1); ++j) {
+      std::cout << iw(i, j) << " ";
+    }
+    std::cout << std::endl;
+  }
+}
+
+template <class RowMapType, class EntriesType, class ValuesType>
+static std::vector<std::vector<scalar_t>> decompress_matrix(
+  const RowMapType& row_map,
+  const EntriesType& entries,
+  const ValuesType& values)
+{
+  const scalar_t ZERO = scalar_t(0);
+
+  const size_type nrows = row_map.size() - 1;
+  std::vector<std::vector<scalar_t>> result;
+  result.resize(nrows);
+  for (auto& row : result) {
+    row.resize(nrows, ZERO);
+  }
+
+  auto hrow_map = Kokkos::create_mirror_view(row_map);
+  auto hentries = Kokkos::create_mirror_view(entries);
+  auto hvalues  = Kokkos::create_mirror_view(values);
+  Kokkos::deep_copy(hrow_map, row_map);
+  Kokkos::deep_copy(hentries, entries);
+  Kokkos::deep_copy(hvalues, values);
+
+  for (size_type row_idx = 0; row_idx < nrows; ++row_idx) {
+    const size_type row_nnz_begin = hrow_map(row_idx);
+    const size_type row_nnz_end   = hrow_map(row_idx + 1);
+    for (size_type row_nnz = row_nnz_begin; row_nnz < row_nnz_end; ++row_nnz) {
+      const lno_t col_idx      = hentries(row_nnz);
+      const scalar_t value     = hvalues(row_nnz);
+      result[row_idx][col_idx] = value;
+    }
+  }
+
+  return result;
+}
+
+template <class RowMapType, class EntriesType, class ValuesType>
+static std::vector<std::vector<scalar_t>> decompress_matrix(
+  const RowMapType& row_map,
+  const EntriesType& entries,
+  const ValuesType& values,
+  const int block_size)
+{
+  const scalar_t ZERO = scalar_t(0);
+
+  const size_type nbrows   = row_map.extent(0) - 1;
+  const size_type nrows    = nbrows * block_size;
+  const size_type block_items = block_size * block_size;
+  std::vector<std::vector<scalar_t>> result;
+  result.resize(nrows);
+  for (auto& row : result) {
+    row.resize(nrows, ZERO);
+  }
+
+  auto hrow_map = Kokkos::create_mirror_view(row_map);
+  auto hentries = Kokkos::create_mirror_view(entries);
+  auto hvalues  = Kokkos::create_mirror_view(values);
+  Kokkos::deep_copy(hrow_map, row_map);
+  Kokkos::deep_copy(hentries, entries);
+  Kokkos::deep_copy(hvalues, values);
+
+  for (size_type row_idx = 0; row_idx < nbrows; ++row_idx) {
+    const size_type row_nnz_begin = hrow_map(row_idx);
+    const size_type row_nnz_end   = hrow_map(row_idx + 1);
+    for (size_type row_nnz = row_nnz_begin; row_nnz < row_nnz_end; ++row_nnz) {
+      const lno_t col_idx = hentries(row_nnz);
+      for (size_type i = 0; i < block_size; ++i) {
+        const size_type unc_row_idx = row_idx*block_size + i;
+        for (size_type j = 0; j < block_size; ++j) {
+          const size_type unc_col_idx = col_idx*block_size + j;
+          result[unc_row_idx][unc_col_idx] = hvalues(row_nnz*block_items + i*block_size + j);
+        }
+      }
+    }
+  }
+
+  return result;
+}
+
 template <class ARowMapType, class AEntriesType, class AValuesType,
           class LRowMapType, class LEntriesType, class LValuesType,
           class URowMapType, class UEntriesType, class UValuesType>
@@ -145,6 +242,7 @@ struct ILUKLvlSchedRPNumericFunctor {
 #ifdef KEEP_DIAG
     verbose_lset(k2 - 1, scalar_t(1.0));
 #endif
+    print_iw(iw);
 
     std::cout << "      JGF Block 2" << std::endl;
     k1 = U_row_map(rowid);
@@ -154,6 +252,7 @@ struct ILUKLvlSchedRPNumericFunctor {
       verbose_uset(k, 0.0);
       iw(tid, col) = k;
     }
+    print_iw(iw);
 
     // Unpack the ith row of A
     std::cout << "      JGF Block 3" << std::endl;
@@ -172,6 +271,11 @@ struct ILUKLvlSchedRPNumericFunctor {
 
     // Eliminate prev rows
     std::cout << "      JGF Block 4" << std::endl;
+    std::cout << "      L:" << std::endl;
+    print_matrix(decompress_matrix(L_row_map, L_entries, L_values));
+    std::cout << "      U:" << std::endl;
+    print_matrix(decompress_matrix(U_row_map, U_entries, U_values));
+    print_iw(iw);
     k1 = L_row_map(rowid);
     k2 = L_row_map(rowid + 1);
 #ifdef KEEP_DIAG
@@ -180,16 +284,20 @@ struct ILUKLvlSchedRPNumericFunctor {
     for (auto k = k1; k < k2; ++k) {
 #endif
       auto prev_row = L_entries(k);
+      std::cout << "        JGF Processing L[" << rowid << "][" << prev_row << "]" << std::endl;
 #ifdef KEEP_DIAG
       auto fact = L_values(k) / U_values(U_row_map(prev_row));
 #else
       auto fact = L_values(k) * U_values(U_row_map(prev_row));
 #endif
       verbose_lset(k, fact);
+      std::cout << "        JGF Block 4 trouble spot" << std::endl;
       for (auto kk = U_row_map(prev_row) + 1; kk < U_row_map(prev_row + 1);
            ++kk) {
         auto col  = U_entries(kk);
         auto ipos = iw(tid, col);
+        std::cout << "          JGF Processing U[" << prev_row << "][" << col << "]" << std::endl;
+        std::cout << "          JGF rowid=" << rowid <<", prev_row=" << prev_row << ", kk=" << kk << ", col=" << col << ", ipos=" << ipos << std::endl;
         if (ipos == -1) continue;
         auto lxu = -U_values(kk) * fact;
         if (col < rowid) {
@@ -199,7 +307,15 @@ struct ILUKLvlSchedRPNumericFunctor {
           verbose_uset(ipos, U_values(ipos) + lxu);
         }
       }  // end for kk
+      std::cout << "        JGF Block 4 trouble end" << std::endl;
     }    // end for k
+
+    std::cout << "      L:" << std::endl;
+    print_matrix(decompress_matrix(L_row_map, L_entries, L_values));
+    std::cout << "      U:" << std::endl;
+    print_matrix(decompress_matrix(U_row_map, U_entries, U_values));
+
+    return;
 
     std::cout << "      JGF Block 5" << std::endl;
 #ifdef KEEP_DIAG
@@ -325,6 +441,7 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
     auto k1    = L_row_map(rowid);
     auto k2    = L_row_map(rowid + 1);
 
+    // Set row rowid of L to zero except for diagonal, store nnz entries in iw(tid, col)
     std::cout << "      JGF Block 1" << std::endl;
     for (auto k = k1; k < k2; ++k) {
       auto col     = L_entries(k);
@@ -352,7 +469,9 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
       }
       iw(tid, col) = k; // Not sure if this will work for both settings of KEEP_DIAG
     }
+    print_iw(iw);
 
+    // Set row rowid of U to zero, store nnz entries in iw(tid, col)
     std::cout << "      JGF Block 2" << std::endl;
     k1 = U_row_map(rowid);
     k2 = U_row_map(rowid + 1);
@@ -378,8 +497,10 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
       }
       iw(tid, col) = k;
     }
+    print_iw(iw);
 
     // Unpack the ith row of A
+    // For row rowid of A, put values into L and U based on iw(tid, col)
     std::cout << "      JGF Block 3" << std::endl;
     k1 = A_row_map(rowid);
     k2 = A_row_map(rowid + 1);
@@ -392,37 +513,54 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
 
       if (col < rowid) {
         for (size_type itr = 0; itr < block_items; ++itr) {
-          verbose_lset(ipos_offset + itr, A_values(k_offset + itr));
+          if (A_values(k_offset + itr) != 0.0) {
+            verbose_lset(ipos_offset + itr, A_values(k_offset + itr));
+          }
         }
       }
       else if (col == rowid) {
         for (size_type i = 0; i < block_size; ++i) {
           for (size_type j = 0; j < block_size; ++j) {
             const size_type block_offset = block_size*i + j;
-            if (i > j) {
-              // lower
-              verbose_lset(ipos_offset + block_offset, A_values(k_offset + block_offset));
-            }
-            else {
-              // upper
-              verbose_uset(ipos_offset + block_offset, A_values(k_offset + block_offset));
+            if (A_values(k_offset + block_offset) != 0.0) {
+              if (i > j) {
+                // lower
+                verbose_lset(ipos_offset + block_offset, A_values(k_offset + block_offset));
+              }
+              else {
+                // upper
+                verbose_uset(ipos_offset + block_offset, A_values(k_offset + block_offset));
+              }
             }
           }
         }
       }
       else {
         for (size_type itr = 0; itr < block_items; ++itr) {
-          verbose_uset(ipos_offset + itr, A_values(k_offset + itr));
+          if (A_values(k_offset + itr) != 0.0) {
+            verbose_uset(ipos_offset + itr, A_values(k_offset + itr));
+          }
         }
       }
     }
 
     // Eliminate prev rows
+    // Iterate over rowid row of L
+    //   Divide by the colth diagonal of U
+    //   Iterate over the colth row of U, excluding diag
+    //     Lookup the ipos
+    //     Adjust L/U(row, ipos)
     std::cout << "      JGF Block 4" << std::endl;
+    std::cout << "      L:" << std::endl;
+    print_matrix(decompress_matrix(L_row_map, L_entries, L_values, block_size));
+    std::cout << "      U:" << std::endl;
+    print_matrix(decompress_matrix(U_row_map, U_entries, U_values, block_size));
+    print_iw(iw);
     k1 = L_row_map(rowid);
     k2 = L_row_map(rowid + 1);
     for (auto k = k1; k < k2; ++k) {
       auto prev_row = L_entries(k);
+      std::cout << "        JGF Processing L[" << rowid << "][" << prev_row << "]" << std::endl;
       auto prev_urow_begin = U_row_map(prev_row);
       auto prev_urow_end   = U_row_map(prev_row+1);
       const size_type koffset  = k * block_items;
@@ -456,9 +594,12 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
         }
       }
 
+      std::cout << "        JGF Block 4 trouble spot" << std::endl;
       for (auto kk = prev_urow_begin; kk < prev_urow_end; ++kk) {
         auto col  = U_entries(kk);
         auto ipos = iw(tid, col);
+        std::cout << "          JGF Processing U[" << prev_row << "][" << col << "]" << std::endl;
+        std::cout << "          JGF rowid=" << rowid << ", prev_row=" << prev_row << ", kk=" << kk << ", col=" << col << ", ipos=" << ipos << std::endl;
         if (ipos == -1) continue;
 
         const size_type kk_offset = kk * block_items;
@@ -467,8 +608,9 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
         for (size_type i = 0; i < block_size; ++i) {
           for (size_type j = 0; j < block_size; ++j) {
             const size_type block_offset  = block_size*i + j;
+            const size_type block_offsetT  = block_size*j + i;
             const auto fact = L_values(koffset + block_offset);
-            auto lxu = -U_values(kk_offset + block_offset) * fact;
+            auto lxu = -U_values(kk_offset + block_offsetT) * fact;
             if (col < rowid) {
               verbose_lset(ipos_offset + block_offset, L_values(ipos_offset + block_offset) + lxu);
             }
@@ -489,7 +631,15 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
           }
         }
       }  // end for kk
+      std::cout << "        JGF Block 4 trouble end" << std::endl;
     }    // end for k
+
+    std::cout << "      L:" << std::endl;
+    print_matrix(decompress_matrix(L_row_map, L_entries, L_values, block_size));
+    std::cout << "      U:" << std::endl;
+    print_matrix(decompress_matrix(U_row_map, U_entries, U_values, block_size));
+
+    return;
 
     std::cout << "      JGF Block 5" << std::endl;
 #ifdef KEEP_DIAG

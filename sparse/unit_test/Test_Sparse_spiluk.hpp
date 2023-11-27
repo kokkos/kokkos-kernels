@@ -48,6 +48,33 @@ using kokkos_complex_float  = Kokkos::complex<float>;
 
 namespace Test {
 
+template <typename scalar_t>
+std::vector<std::vector<scalar_t>> get_9x9_fixture()
+{
+  std::vector<std::vector<scalar_t>> A = {
+    {10.00, 0.00, 0.30, 0.00, 0.00, 0.60, 0.00, 0.00, 0.00},
+    {0.00, 11.00, 0.00, 0.00, 0.00, 0.00, 0.70, 0.00, 0.00},
+    {0.00, 0.00, 12.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00},
+    {5.00, 0.00, 0.00, 13.00, 1.00, 0.00, 0.00, 0.00, 0.00},
+    {4.00, 0.00, 0.00, 0.00, 14.00, 0.00, 0.00, 0.00, 0.00},
+    {0.00, 3.00, 0.00, 0.00, 0.00, 15.00, 0.00, 0.00, 0.00},
+    {0.00, 0.00, 7.00, 0.00, 0.00, 0.00, 16.00, 0.00, 0.00},
+    {0.00, 0.00, 0.00, 6.00, 5.00, 0.00, 0.00, 17.00, 0.00},
+    {0.00, 0.00, 0.00, 2.00, 2.50, 0.00, 0.00, 0.00, 18.00}};
+  return A;
+}
+
+template <typename scalar_t>
+std::vector<std::vector<scalar_t>> get_4x4_fixture()
+{
+  std::vector<std::vector<scalar_t>> A = {
+    {10.00, 1.00, 0.00, 0.00},
+    {0.00, 11.00, 0.00, 0.00},
+    {0.00, 2.00, 12.00, 0.00},
+    {5.00, 0.00, 0.00, 13.00}};
+  return A;
+}
+
 template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
 struct SpilukTest
@@ -202,16 +229,7 @@ struct SpilukTest
 
   static void run_test_spiluk()
   {
-    std::vector<std::vector<scalar_t>> A = {
-      {10.00, 0.00, 0.30, 0.00, 0.00, 0.60, 0.00, 0.00, 0.00},
-      {0.00, 11.00, 0.00, 0.00, 0.00, 0.00, 0.70, 0.00, 0.00},
-      {0.00, 0.00, 12.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00},
-      {5.00, 0.00, 0.00, 13.00, 1.00, 0.00, 0.00, 0.00, 0.00},
-      {4.00, 0.00, 0.00, 0.00, 14.00, 0.00, 0.00, 0.00, 0.00},
-      {0.00, 3.00, 0.00, 0.00, 0.00, 15.00, 0.00, 0.00, 0.00},
-      {0.00, 0.00, 7.00, 0.00, 0.00, 0.00, 16.00, 0.00, 0.00},
-      {0.00, 0.00, 0.00, 6.00, 5.00, 0.00, 0.00, 17.00, 0.00},
-      {0.00, 0.00, 0.00, 2.00, 2.50, 0.00, 0.00, 0.00, 18.00}};
+    std::vector<std::vector<scalar_t>> A = get_4x4_fixture<scalar_t>();
 
     RowMapType row_map("row_map", 0);
     EntriesType entries("entries", 0);
@@ -270,16 +288,7 @@ struct SpilukTest
     std::vector<EntriesType> U_entries_v(nstreams);
     std::vector<ValuesType> U_values_v(nstreams);
 
-    std::vector<std::vector<scalar_t>> A = {
-      {10.00, 0.00, 0.30, 0.00, 0.00, 0.60, 0.00, 0.00, 0.00},
-      {0.00, 11.00, 0.00, 0.00, 0.00, 0.00, 0.70, 0.00, 0.00},
-      {0.00, 0.00, 12.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00},
-      {5.00, 0.00, 0.00, 13.00, 1.00, 0.00, 0.00, 0.00, 0.00},
-      {4.00, 0.00, 0.00, 0.00, 14.00, 0.00, 0.00, 0.00, 0.00},
-      {0.00, 3.00, 0.00, 0.00, 0.00, 15.00, 0.00, 0.00, 0.00},
-      {0.00, 0.00, 7.00, 0.00, 0.00, 0.00, 16.00, 0.00, 0.00},
-      {0.00, 0.00, 0.00, 6.00, 5.00, 0.00, 0.00, 17.00, 0.00},
-      {0.00, 0.00, 0.00, 2.00, 2.50, 0.00, 0.00, 0.00, 18.00}};
+    std::vector<std::vector<scalar_t>> A = get_9x9_fixture<scalar_t>();
 
     RowMapType row_map("row_map", 0);
     EntriesType entries("entries", 0);
@@ -389,16 +398,7 @@ struct SpilukTest
 
   static void run_test_spiluk_blocks()
   {
-    std::vector<std::vector<scalar_t>> A = {
-      {10.00, 0.00, 0.30, 0.00, 0.00, 0.60, 0.00, 0.00, 0.00},
-      {0.00, 11.00, 0.00, 0.00, 0.00, 0.00, 0.70, 0.00, 0.00},
-      {0.00, 0.00, 12.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00},
-      {5.00, 0.00, 0.00, 13.00, 1.00, 0.00, 0.00, 0.00, 0.00},
-      {4.00, 0.00, 0.00, 0.00, 14.00, 0.00, 0.00, 0.00, 0.00},
-      {0.00, 3.00, 0.00, 0.00, 0.00, 15.00, 0.00, 0.00, 0.00},
-      {0.00, 0.00, 7.00, 0.00, 0.00, 0.00, 16.00, 0.00, 0.00},
-      {0.00, 0.00, 0.00, 6.00, 5.00, 0.00, 0.00, 17.00, 0.00},
-      {0.00, 0.00, 0.00, 2.00, 2.50, 0.00, 0.00, 0.00, 18.00}};
+    std::vector<std::vector<scalar_t>> A = get_4x4_fixture<scalar_t>();
 
     RowMapType row_map("row_map", 0), brow_map("brow_map", 0);
     EntriesType entries("entries", 0), bentries("bentries", 0);
@@ -409,7 +409,7 @@ struct SpilukTest
     const size_type nrows = A.size();
     const size_type nnz   = values.extent(0);
     const lno_t fill_lev  = 2;
-    const size_type block_size = 3;
+    const size_type block_size = 2;
 
     // Convert to BSR
     Crs crs("crs for block spiluk test", nrows, nrows, values.extent(0), values, row_map, entries);
