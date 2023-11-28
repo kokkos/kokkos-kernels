@@ -162,14 +162,14 @@ namespace Impl {
 
 template <class ExecSpace, class AViewType, class BViewType, class IPIVViewType>
 void magmaGesvWrapper(const ExecSpace& space, const AViewType& A,
-		      const BViewType& B, const IPIVViewType& IPIV) {
+                      const BViewType& B, const IPIVViewType& IPIV) {
   using scalar_type = typename AViewType::non_const_value_type;
 
-  Kokkos::Profiling::pushRegion("KokkosLapack::gesv[TPL_MAGMA," + Kokkos::ArithTraits<scalar_type>::name() + "]");
+  Kokkos::Profiling::pushRegion("KokkosLapack::gesv[TPL_MAGMA," +
+                                Kokkos::ArithTraits<scalar_type>::name() + "]");
   gesv_print_specialization<AViewType, BViewType, IPIVViewType>();
 
-  const bool with_pivot =
-    !((IPIV.extent(0) == 0) && (IPIV.data() == nullptr));
+  const bool with_pivot = !((IPIV.extent(0) == 0) && (IPIV.data() == nullptr));
 
   magma_int_t N    = static_cast<magma_int_t>(A.extent(1));
   magma_int_t AST  = static_cast<magma_int_t>(A.stride(1));
@@ -179,32 +179,31 @@ void magmaGesvWrapper(const ExecSpace& space, const AViewType& A,
   magma_int_t NRHS = static_cast<magma_int_t>(B.extent(1));
 
   KokkosLapack::Impl::MagmaSingleton& s =
-    KokkosLapack::Impl::MagmaSingleton::singleton();
+      KokkosLapack::Impl::MagmaSingleton::singleton();
   magma_int_t info = 0;
 
   space.fence();
   if constexpr (std::is_same_v<scalar_type, float>) {
     if (with_pivot) {
-      magma_sgesv_gpu(N, NRHS, reinterpret_cast<magmaFloat_ptr>(A.data()),
-                      LDA, IPIV.data(),
-                      reinterpret_cast<magmaFloat_ptr>(B.data()), LDB,
-                      &info);
+      magma_sgesv_gpu(N, NRHS, reinterpret_cast<magmaFloat_ptr>(A.data()), LDA,
+                      IPIV.data(), reinterpret_cast<magmaFloat_ptr>(B.data()),
+                      LDB, &info);
     } else {
-      magma_sgesv_nopiv_gpu(
-          N, NRHS, reinterpret_cast<magmaFloat_ptr>(A.data()), LDA,
-          reinterpret_cast<magmaFloat_ptr>(B.data()), LDB, &info);
+      magma_sgesv_nopiv_gpu(N, NRHS, reinterpret_cast<magmaFloat_ptr>(A.data()),
+                            LDA, reinterpret_cast<magmaFloat_ptr>(B.data()),
+                            LDB, &info);
     }
   }
 
   if constexpr (std::is_same_v<scalar_type, double>) {
     if (with_pivot) {
-      magma_dgesv_gpu(N, NRHS, reinterpret_cast<magmaDouble_ptr>(A.data()),
-		      LDA, IPIV.data(),
-		      reinterpret_cast<magmaDouble_ptr>(B.data()), LDB,
-		      &info);
+      magma_dgesv_gpu(N, NRHS, reinterpret_cast<magmaDouble_ptr>(A.data()), LDA,
+                      IPIV.data(), reinterpret_cast<magmaDouble_ptr>(B.data()),
+                      LDB, &info);
     } else {
-      magma_dgesv_nopiv_gpu(N, NRHS, reinterpret_cast<magmaDouble_ptr>(A.data()), LDA,
-			    reinterpret_cast<magmaDouble_ptr>(B.data()), LDB, &info);
+      magma_dgesv_nopiv_gpu(
+          N, NRHS, reinterpret_cast<magmaDouble_ptr>(A.data()), LDA,
+          reinterpret_cast<magmaDouble_ptr>(B.data()), LDB, &info);
     }
   }
 
@@ -212,8 +211,8 @@ void magmaGesvWrapper(const ExecSpace& space, const AViewType& A,
     if (with_pivot) {
       magma_cgesv_gpu(
           N, NRHS, reinterpret_cast<magmaFloatComplex_ptr>(A.data()), LDA,
-          IPIV.data(), reinterpret_cast<magmaFloatComplex_ptr>(B.data()),
-          LDB, &info);
+          IPIV.data(), reinterpret_cast<magmaFloatComplex_ptr>(B.data()), LDB,
+          &info);
     } else {
       magma_cgesv_nopiv_gpu(
           N, NRHS, reinterpret_cast<magmaFloatComplex_ptr>(A.data()), LDA,
@@ -225,8 +224,8 @@ void magmaGesvWrapper(const ExecSpace& space, const AViewType& A,
     if (with_pivot) {
       magma_zgesv_gpu(
           N, NRHS, reinterpret_cast<magmaDoubleComplex_ptr>(A.data()), LDA,
-          IPIV.data(), reinterpret_cast<magmaDoubleComplex_ptr>(B.data()),
-          LDB, &info);
+          IPIV.data(), reinterpret_cast<magmaDoubleComplex_ptr>(B.data()), LDB,
+          &info);
     } else {
       magma_zgesv_nopiv_gpu(
           N, NRHS, reinterpret_cast<magmaDoubleComplex_ptr>(A.data()), LDA,
@@ -237,47 +236,54 @@ void magmaGesvWrapper(const ExecSpace& space, const AViewType& A,
   Kokkos::Profiling::popRegion();
 }
 
-#define KOKKOSLAPACK_GESV_MAGMA(SCALAR, LAYOUT, MEM_SPACE) \
-  template <>                                                  \
-  struct GESV<Kokkos::Cuda,						\
-	      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>, \
-			   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,	\
-	      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>, \
-			   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,	\
-	      Kokkos::View<magma_int_t*, LAYOUT,			\
-			   Kokkos::Device<Kokkos::DefaultHostExecutionSpace, \
-					  Kokkos::HostSpace>,		\
-			   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,	\
-	      true,							\
-	      gesv_eti_spec_avail<Kokkos::Cuda,				\
-				  Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>, \
-					       Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-				  Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>, \
-					       Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-				  Kokkos::View<magma_int_t*, LAYOUT,	\
-					       Kokkos::Device<Kokkos::DefaultHostExecutionSpace, \
-							      Kokkos::HostSpace>, \
-					       Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> { \
-    using AViewType = Kokkos::View<SCALAR**, LAYOUT,			\
-				   Kokkos::Device<Kokkos::Cuda, MEM_SPACE>, \
-				   Kokkos::MemoryTraits<Kokkos::Unmanaged>>; \
-    using BViewType = Kokkos::View<SCALAR**, LAYOUT,			\
-				   Kokkos::Device<Kokkos::Cuda, MEM_SPACE>, \
-				   Kokkos::MemoryTraits<Kokkos::Unmanaged>>; \
-    using PViewType = Kokkos::View<magma_int_t*, LAYOUT,		\
-				   Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>, \
-				   Kokkos::MemoryTraits<Kokkos::Unmanaged>>; \
+#define KOKKOSLAPACK_GESV_MAGMA(SCALAR, LAYOUT, MEM_SPACE)                    \
+  template <>                                                                 \
+  struct GESV<                                                                \
+      Kokkos::Cuda,                                                           \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
+      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
+      Kokkos::View<magma_int_t*, LAYOUT,                                      \
+                   Kokkos::Device<Kokkos::DefaultHostExecutionSpace,          \
+                                  Kokkos::HostSpace>,                         \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                  \
+      true,                                                                   \
+      gesv_eti_spec_avail<                                                    \
+          Kokkos::Cuda,                                                       \
+          Kokkos::View<SCALAR**, LAYOUT,                                      \
+                       Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,               \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>,              \
+          Kokkos::View<SCALAR**, LAYOUT,                                      \
+                       Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,               \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>,              \
+          Kokkos::View<magma_int_t*, LAYOUT,                                  \
+                       Kokkos::Device<Kokkos::DefaultHostExecutionSpace,      \
+                                      Kokkos::HostSpace>,                     \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {    \
+    using AViewType = Kokkos::View<SCALAR**, LAYOUT,                          \
+                                   Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,   \
+                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;  \
+    using BViewType = Kokkos::View<SCALAR**, LAYOUT,                          \
+                                   Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,   \
+                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;  \
+    using PViewType = Kokkos::View<                                           \
+        magma_int_t*, LAYOUT,                                                 \
+        Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>, \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                             \
                                                                               \
-    static void gesv(const Kokkos::Cuda& space, const AViewType& A,	\
-		     const BViewType& B, const PViewType& IPIV) {             \
-      magmaGesvWrapper(space, A, B, IPIV);				\
+    static void gesv(const Kokkos::Cuda& space, const AViewType& A,           \
+                     const BViewType& B, const PViewType& IPIV) {             \
+      magmaGesvWrapper(space, A, B, IPIV);                                    \
     }                                                                         \
   };
 
 KOKKOSLAPACK_GESV_MAGMA(float, Kokkos::LayoutLeft, Kokkos::CudaSpace)
 KOKKOSLAPACK_GESV_MAGMA(double, Kokkos::LayoutLeft, Kokkos::CudaSpace)
-KOKKOSLAPACK_GESV_MAGMA(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::CudaSpace)
-KOKKOSLAPACK_GESV_MAGMA(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::CudaSpace)
+KOKKOSLAPACK_GESV_MAGMA(Kokkos::complex<float>, Kokkos::LayoutLeft,
+                        Kokkos::CudaSpace)
+KOKKOSLAPACK_GESV_MAGMA(Kokkos::complex<double>, Kokkos::LayoutLeft,
+                        Kokkos::CudaSpace)
 
 }  // namespace Impl
 }  // namespace KokkosLapack
