@@ -61,13 +61,27 @@ static void print_matrix(const std::vector<std::vector<scalar_t>>& matrix) {
   }
 }
 
-static void print_iw(const WorkViewType& iw) {
+static void print_iw(const WorkViewType& iw, const size_type block_size=1) {
   std::cout << "      IW:" << std::endl;
   for (auto i = 0; i < iw.extent(0); ++i) {
-    for (auto j = 0; j < iw.extent(1); ++j) {
-      std::cout << iw(i, j) << " ";
+    if (block_size == 1) {
+      for (auto j = 0; j < iw.extent(1); ++j) {
+        std::cout << iw(i, j) << " ";
+      }
+      std::cout << std::endl;
     }
-    std::cout << std::endl;
+    else {
+      const auto block_items = block_size * block_size;
+      const auto num_blocks = iw.extent(1) / block_items;
+      for (size_type block_row = 0; block_row < block_size; ++block_row) {
+        for (size_type b = 0; b < num_blocks; ++b) {
+          for (size_type block_col = 0; block_col < block_size; ++block_col) {
+            std::cout << iw(i, b * block_items + block_row * block_size + block_col) << " ";
+          }
+        }
+        std::cout << std::endl;
+      }
+    }
   }
 }
 
@@ -220,14 +234,20 @@ struct ILUKLvlSchedRPNumericFunctor {
     }
   }
 
+  void verbose_iwset(const size_type tid, const size_type col, const lno_t value) const
+  {
+    std::cout << "        JGF Setting iw[" << tid << "][" << col << "] = " << value << std::endl;
+    iw(tid, col) = value;
+  }
+
   KOKKOS_INLINE_FUNCTION
   void operator()(const lno_t i) const {
-    std::cout << "    JGF level ptr: " << i << std::endl;
-
     auto rowid = level_idx(i);
     auto tid   = i - lev_start;
     auto k1    = L_row_map(rowid);
     auto k2    = L_row_map(rowid + 1);
+
+    std::cout << "    JGF level ptr: " << i << ", tid: " << tid << ", rowid: " << rowid << std::endl;
 
     std::cout << "      JGF Block 1" << std::endl;
 #ifdef KEEP_DIAG
@@ -237,7 +257,7 @@ struct ILUKLvlSchedRPNumericFunctor {
 #endif
       auto col     = L_entries(k);
       verbose_lset(k, 0.0);
-      iw(tid, col) = k;
+      verbose_iwset(tid, col, k);
     }
 #ifdef KEEP_DIAG
     verbose_lset(k2 - 1, scalar_t(1.0));
@@ -250,7 +270,7 @@ struct ILUKLvlSchedRPNumericFunctor {
     for (auto k = k1; k < k2; ++k) {
       auto col     = U_entries(k);
       verbose_uset(k, 0.0);
-      iw(tid, col) = k;
+      verbose_iwset(tid, col, k);
     }
     print_iw(iw);
 
@@ -432,8 +452,14 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
   }
 
   KOKKOS_INLINE_FUNCTION
+  void verbose_iwset(const size_type tid, const size_type offset, const lno_t value) const
+  {
+    std::cout << "        JGF Setting iw[" << tid << "][" << offset << "] = " << value << std::endl;
+    iw(tid, offset) = value;
+  }
+
+  KOKKOS_INLINE_FUNCTION
   void operator()(const lno_t lvl) const {
-    std::cout << "    JGF level ptr: " << lvl << std::endl;
     const auto block_items = block_size * block_size;
 
     auto rowid = level_idx(lvl);
@@ -441,11 +467,14 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
     auto k1    = L_row_map(rowid);
     auto k2    = L_row_map(rowid + 1);
 
+    std::cout << "    JGF level ptr: " << lvl << ", tid: " << tid << ", rowid: " << rowid << std::endl;
+
     // Set row rowid of L to zero except for diagonal, store nnz entries in iw(tid, col)
     std::cout << "      JGF Block 1" << std::endl;
     for (auto k = k1; k < k2; ++k) {
       auto col     = L_entries(k);
       const size_type offset = k * block_items;
+      const size_type col_offset = col * block_items;
       if (col == rowid) {
         // diag block
         for (size_type i = 0; i < block_size; ++i) {
@@ -456,20 +485,23 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
               verbose_lset(offset + block_offset, scalar_t(1.0));
             }
 #endif
-            if (i > j) {
+            if (i > j && A_values(offset + block_offset) != 0.0) {
               verbose_lset(offset + block_offset, 0.0);
+              verbose_iwset(tid, col_offset + block_offset, offset + block_offset);
             }
           }
         }
       }
       else {
         for (size_type itr = 0; itr < block_items; ++itr) {
-          verbose_lset(offset + itr, 0.0);
+          if (A_values(offset + itr) != 0.0) {
+            verbose_lset(offset + itr, 0.0);
+            verbose_iwset(tid, col_offset + itr, offset + itr);
+          }
         }
       }
-      iw(tid, col) = k; // Not sure if this will work for both settings of KEEP_DIAG
     }
-    print_iw(iw);
+    print_iw(iw, block_size);
 
     // Set row rowid of U to zero, store nnz entries in iw(tid, col)
     std::cout << "      JGF Block 2" << std::endl;
@@ -478,13 +510,15 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
     for (auto k = k1; k < k2; ++k) {
       auto col     = U_entries(k);
       const size_type offset = k * block_items;
+      const size_type col_offset = col * block_items;
       if (col == rowid) {
         // diag block
         for (size_type i = 0; i < block_size; ++i) {
           for (size_type j = 0; j < block_size; ++j) {
             const size_type block_offset = block_size*i + j;
-            if (i < j) {
+            if (i <= j && A_values(offset + block_offset) != 0.0) {
               verbose_uset(offset + block_offset, 0.0);
+              verbose_iwset(tid, col_offset + block_offset, offset + block_offset);
             }
           }
         }
@@ -492,12 +526,14 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
       else {
         // Just wipe the entire block all the time?
         for (size_type itr = 0; itr < block_items; ++itr) {
-          verbose_uset(offset + itr, 0.0);
+          if (A_values(offset + itr) != 0.0) {
+            verbose_uset(offset + itr, 0.0);
+            verbose_iwset(tid, col_offset + itr, offset + itr);
+          }
         }
       }
-      iw(tid, col) = k;
     }
-    print_iw(iw);
+    print_iw(iw, block_size);
 
     // Unpack the ith row of A
     // For row rowid of A, put values into L and U based on iw(tid, col)
@@ -506,15 +542,13 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
     k2 = A_row_map(rowid + 1);
     for (auto k = k1; k < k2; ++k) {
       auto col  = A_entries(k);
-      auto ipos = iw(tid, col);
-
-      const size_type k_offset    = k * block_items;
-      const size_type ipos_offset = ipos * block_items;
+      const size_type k_offset   = k * block_items;
+      const size_type col_offset = col * block_items;
 
       if (col < rowid) {
         for (size_type itr = 0; itr < block_items; ++itr) {
           if (A_values(k_offset + itr) != 0.0) {
-            verbose_lset(ipos_offset + itr, A_values(k_offset + itr));
+            verbose_lset(iw(tid, col_offset + itr), A_values(k_offset + itr));
           }
         }
       }
@@ -523,13 +557,14 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
           for (size_type j = 0; j < block_size; ++j) {
             const size_type block_offset = block_size*i + j;
             if (A_values(k_offset + block_offset) != 0.0) {
+              const size_type ipos_offset = iw(tid, col_offset + block_offset);
               if (i > j) {
                 // lower
-                verbose_lset(ipos_offset + block_offset, A_values(k_offset + block_offset));
+                verbose_lset(ipos_offset, A_values(k_offset + block_offset));
               }
               else {
                 // upper
-                verbose_uset(ipos_offset + block_offset, A_values(k_offset + block_offset));
+                verbose_uset(ipos_offset, A_values(k_offset + block_offset));
               }
             }
           }
@@ -538,7 +573,7 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
       else {
         for (size_type itr = 0; itr < block_items; ++itr) {
           if (A_values(k_offset + itr) != 0.0) {
-            verbose_uset(ipos_offset + itr, A_values(k_offset + itr));
+            verbose_uset(iw(tid, col_offset + itr), A_values(k_offset + itr));
           }
         }
       }
@@ -555,7 +590,7 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
     print_matrix(decompress_matrix(L_row_map, L_entries, L_values, block_size));
     std::cout << "      U:" << std::endl;
     print_matrix(decompress_matrix(U_row_map, U_entries, U_values, block_size));
-    print_iw(iw);
+    print_iw(iw, block_size);
     k1 = L_row_map(rowid);
     k2 = L_row_map(rowid + 1);
     for (auto k = k1; k < k2; ++k) {
@@ -597,36 +632,36 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
       std::cout << "        JGF Block 4 trouble spot" << std::endl;
       for (auto kk = prev_urow_begin; kk < prev_urow_end; ++kk) {
         auto col  = U_entries(kk);
-        auto ipos = iw(tid, col);
         std::cout << "          JGF Processing U[" << prev_row << "][" << col << "]" << std::endl;
-        std::cout << "          JGF rowid=" << rowid << ", prev_row=" << prev_row << ", kk=" << kk << ", col=" << col << ", ipos=" << ipos << std::endl;
-        if (ipos == -1) continue;
+        std::cout << "          JGF rowid=" << rowid << ", prev_row=" << prev_row << ", kk=" << kk << ", col=" << col << std::endl;
 
         const size_type kk_offset = kk * block_items;
-        const size_type ipos_offset = ipos * block_items;
+        const size_type col_offset = col * block_items;
 
         for (size_type i = 0; i < block_size; ++i) {
           for (size_type j = 0; j < block_size; ++j) {
             const size_type block_offset  = block_size*i + j;
+            const size_type ipos_offset = iw(tid, col_offset + block_offset);
+            if (ipos_offset == -1) continue;
             const size_type block_offsetT  = block_size*j + i;
             const auto fact = L_values(koffset + block_offset);
-            auto lxu = -U_values(kk_offset + block_offsetT) * fact;
+            auto lxu = -U_values(kk_offset + block_offset) * fact;
             if (col < rowid) {
-              verbose_lset(ipos_offset + block_offset, L_values(ipos_offset + block_offset) + lxu);
+              verbose_lset(ipos_offset, L_values(ipos_offset) + lxu);
             }
             else if (col == rowid) {
-              // diag block
+              // diag block, skip diagonal
               if (i > j) {
                 // lower
-                verbose_lset(ipos_offset + block_offset, L_values(ipos_offset + block_offset) + lxu);
+                verbose_lset(ipos_offset, L_values(ipos_offset) + lxu);
               }
               else if (i < j) {
                 // upper
-                verbose_uset(ipos_offset + block_offset, U_values(ipos_offset + block_offset) + lxu);
+                verbose_uset(ipos_offset, U_values(ipos_offset) + lxu);
               }
             }
             else {
-              verbose_uset(ipos_offset + block_offset, U_values(ipos_offset + block_offset) + lxu);
+              verbose_uset(ipos_offset, U_values(ipos_offset) + lxu);
             }
           }
         }

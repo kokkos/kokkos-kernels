@@ -192,6 +192,7 @@ class SPILUKHandle {
   work_view_t get_iw() const { return iw; }
 
   void alloc_iw(const size_type nrows_, const size_type ncols_) {
+    std::cout << "JGF ALLOCATING a work_view of (" << nrows_ << ", " << ncols_ * block_size * block_size << ")" << std::endl;
     iw = work_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "iw"),
                      nrows_, ncols_ * block_size * block_size);
     Kokkos::deep_copy(iw, nnz_lno_t(-1));
