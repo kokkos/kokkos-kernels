@@ -447,17 +447,16 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
   KOKKOS_INLINE_FUNCTION
   void verbose_lset_block(const size_type block, const BlockType& rhs) const
   {
-    Kokkos::deep_copy(get_l_block(block), rhs);
-    // const size_type nrows = L_row_map.extent(0) - 1;
-    // for (size_type row = 0; row < nrows; ++row) {
-    //   const auto row_begin = L_row_map(row);
-    //   const auto row_end   = L_row_map(row+1);
-    //   if (block >= row_begin && block < row_end) {
-    //     const auto col = L_entries(block);
-    //     std::cout << "        JGF Setting L_values[" << row << "][" << col << "] = " << value << std::endl;
-    //     KokkosBlas::SerialSet::invoke(value, get_l_block(block));
-    //   }
-    // }
+    const size_type nrows = L_row_map.extent(0) - 1;
+    for (size_type row = 0; row < nrows; ++row) {
+      const auto row_begin = L_row_map(row);
+      const auto row_end   = L_row_map(row+1);
+      if (block >= row_begin && block < row_end) {
+        const auto col = L_entries(block);
+        std::cout << "        JGF Setting block L_values[" << row << "][" << col << "]" << std::endl;
+        Kokkos::deep_copy(get_l_block(block), rhs);
+      }
+    }
   }
 
 
@@ -480,7 +479,16 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
   KOKKOS_INLINE_FUNCTION
   void verbose_uset_block(const size_type block, const BlockType& rhs) const
   {
-    Kokkos::deep_copy(get_u_block(block), rhs);
+    const size_type nrows = U_row_map.extent(0) - 1;
+    for (size_type row = 0; row < nrows; ++row) {
+      const auto row_begin = U_row_map(row);
+      const auto row_end   = U_row_map(row+1);
+      if (block >= row_begin && block < row_end) {
+        const auto col = U_entries(block);
+        std::cout << "        JGF Setting block U_values[" << row << "][" << col << "]" << std::endl;
+        Kokkos::deep_copy(get_u_block(block), rhs);
+      }
+    }
   }
 
   KOKKOS_INLINE_FUNCTION
