@@ -112,6 +112,7 @@ void run_ode_chem(benchmark::State& state, const bdf_input_parameters& inputs) {
 
   StiffChemistry mySys{};
 
+  const bool verbose = inputs.verbose;
   const int num_odes = inputs.num_odes;
   const int neqs     = mySys.neqs;
 
@@ -130,6 +131,10 @@ void run_ode_chem(benchmark::State& state, const bdf_input_parameters& inputs) {
   Kokkos::deep_copy(y0, y0_h);
 
   mat_type temp("buffer1", neqs, 23 + 2*neqs + 4, num_odes), temp2("buffer2", 6, 7, num_odes);
+
+  if(verbose) {
+    std::cout << "Number of problems solved in parallel: " << num_odes << std::endl;
+  }
 
   Kokkos::RangePolicy<execution_space> policy(0, num_odes);
   BDF_Solve_wrapper bdf_wrapper(mySys, t_start, t_end, dt,
@@ -182,9 +187,7 @@ int parse_inputs(bdf_input_parameters& params, int argc, char** argv) {
 }  // parse_inputs
 
 template <class execution_space>
-void run_benchmark_wrapper(benchmark::State& state, int argc, char** argv) {
-  bdf_input_parameters params(state.range(0), 1, false);
-  parse_inputs(params, argc, argv);
+void run_benchmark_wrapper(benchmark::State& state, bdf_input_parameters params) {
   run_ode_chem<execution_space>(state, params);
 }
 
@@ -199,22 +202,24 @@ int main(int argc, char** argv) {
     perf_test::parse_common_options(argc, argv, common_params);
 
     std::string bench_name = "KokkosODE_BDF_Stiff_Chem";
+    bdf_input_parameters params(1000, 1, false);
+    parse_inputs(params, argc, argv);
 
     if (0 < common_params.repeat) {
       benchmark::RegisterBenchmark(
 				   bench_name.c_str(),
-				   run_benchmark_wrapper<Kokkos::DefaultExecutionSpace>, argc, argv)
+				   run_benchmark_wrapper<Kokkos::DefaultExecutionSpace>, params)
         ->UseRealTime()
         ->ArgNames({"n"})
-        ->Args({1000})
+        ->Args({params.num_odes})
         ->Iterations(common_params.repeat);
     } else {
       benchmark::RegisterBenchmark(
 				   bench_name.c_str(),
-				   run_benchmark_wrapper<Kokkos::DefaultExecutionSpace>, argc, argv)
+				   run_benchmark_wrapper<Kokkos::DefaultExecutionSpace>, params)
         ->UseRealTime()
         ->ArgNames({"n"})
-        ->Args({1000});
+        ->Args({params.num_odes});
     }
 
     benchmark::RunSpecifiedBenchmarks();
