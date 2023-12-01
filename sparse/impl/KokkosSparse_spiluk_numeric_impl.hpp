@@ -25,6 +25,9 @@
 #include <KokkosSparse_spiluk_handle.hpp>
 #include "KokkosBatched_SetIdentity_Decl.hpp"
 #include "KokkosBatched_SetIdentity_Impl.hpp"
+#include "KokkosBatched_Trsm_Decl.hpp"
+#include "KokkosBatched_Axpy_Decl.hpp"
+#include "KokkosBatched_Gemm_Decl.hpp"
 #include "KokkosBlas1_set.hpp"
 
 //#define NUMERIC_OUTPUT_INFO
@@ -582,14 +585,19 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
 #endif
       auto prev_row = L_entries(k);
       std::cout << "        JGF Processing L[" << rowid << "][" << prev_row << "]" << std::endl;
+      auto fact = get_l_block(k);
 #ifdef KEEP_DIAG
-      // This should be a trsm
-      auto fact = L_values(k) / U_values(U_row_map(prev_row));
+      //auto fact = L_values(k) / U_values(U_row_map(prev_row));
+      KokkosBatched::SerialTrsm<KokkosBatched::Side::Right,
+                                KokkosBatched::Uplo::Upper,
+                                KokkosBatched::Trans::Transpose,
+                                KokkosBatched::Diag::NonUnit,
+                                KokkosBatched::Algo::Trsm::Unblocked>::
+        invoke(1.0, get_u_block(U_row_map(prev_row)), fact);
 #else
       // This should be a gemm
       auto fact = L_values(k) * U_values(U_row_map(prev_row));
 #endif
-      verbose_lset(k, fact);
       std::cout << "        JGF Block 4 trouble spot" << std::endl;
       for (auto kk = U_row_map(prev_row) + 1; kk < U_row_map(prev_row + 1);
            ++kk) {
@@ -600,9 +608,11 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
         if (ipos == -1) continue;
         auto lxu = -U_values(kk) * fact;
         if (col < rowid) {
+          KokkosBatched::SerialAxpy::invoke(alpha, x, y);
           verbose_lset(ipos, L_values(ipos) + lxu);
         }
         else {
+          KokkosBatched::SerialAxpy::invoke(alpha, x, y);
           verbose_uset(ipos, U_values(ipos) + lxu);
         }
       }  // end for kk
