@@ -442,13 +442,15 @@ void spmv_rocsparse(const Kokkos::HIP& exec,
   }
 
 #if KOKKOSSPARSE_IMPL_ROCM_VERSION >= 60000
-  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_spmv(
-      handle, myRocsparseOperation, &alpha, Aspmat, vecX, &beta, vecY,
-      compute_type, alg, rocsparse_spmv_stage_buffer_size, &buffer_size, tmp_buffer));
+  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(
+      rocsparse_spmv(handle, myRocsparseOperation, &alpha, Aspmat, vecX, &beta,
+                     vecY, compute_type, alg, rocsparse_spmv_stage_buffer_size,
+                     &buffer_size, tmp_buffer));
   KOKKOS_IMPL_HIP_SAFE_CALL(hipMalloc(&tmp_buffer, buffer_size));
-  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_spmv(
-      handle, myRocsparseOperation, &alpha, Aspmat, vecX, &beta, vecY,
-      compute_type, alg, rocsparse_spmv_stage_compute, &buffer_size, tmp_buffer));
+  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(
+      rocsparse_spmv(handle, myRocsparseOperation, &alpha, Aspmat, vecX, &beta,
+                     vecY, compute_type, alg, rocsparse_spmv_stage_compute,
+                     &buffer_size, tmp_buffer));
 #elif KOKKOSSPARSE_IMPL_ROCM_VERSION >= 50400
   KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_spmv_ex(
       handle, myRocsparseOperation, &alpha, Aspmat, vecX, &beta, vecY,
