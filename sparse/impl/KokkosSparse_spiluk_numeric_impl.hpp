@@ -26,8 +26,10 @@
 #include "KokkosBatched_SetIdentity_Decl.hpp"
 #include "KokkosBatched_SetIdentity_Impl.hpp"
 #include "KokkosBatched_Trsm_Decl.hpp"
-#include "KokkosBatched_Axpy_Decl.hpp"
+#include "KokkosBatched_Trsm_Serial_Impl.hpp"
+#include "KokkosBatched_Axpy.hpp"
 #include "KokkosBatched_Gemm_Decl.hpp"
+#include "KokkosBatched_Gemm_Serial_Impl.hpp"
 #include "KokkosBlas1_set.hpp"
 
 //#define NUMERIC_OUTPUT_INFO
@@ -45,6 +47,7 @@ struct IlukWrap {
 // Useful types
 //
 using execution_space         = typename IlukHandle::execution_space;
+using memory_space            = typename IlukHandle::memory_space;
 using lno_t                   = typename IlukHandle::nnz_lno_t;
 using size_type               = typename IlukHandle::size_type;
 using scalar_t                = typename IlukHandle::nnz_scalar_t;
@@ -57,6 +60,8 @@ using karith                  = typename Kokkos::ArithTraits<scalar_t>;
 using policy_type             = typename IlukHandle::TeamPolicy;
 using member_type             = typename policy_type::member_type;
 using range_policy            = typename IlukHandle::RangePolicy;
+using sview_2d                = typename Kokkos::View<scalar_t**, memory_space>;
+using sview_1d                = typename Kokkos::View<scalar_t*, memory_space>;
 
 static void print_matrix(const std::vector<std::vector<scalar_t>>& matrix) {
   for (const auto& row : matrix) {
@@ -341,8 +346,6 @@ struct ILUKLvlSchedRPNumericFunctor {
     std::cout << "      U:" << std::endl;
     print_matrix(decompress_matrix(U_row_map, U_entries, U_values));
 
-    return;
-
     std::cout << "      JGF Block 5" << std::endl;
 #ifdef KEEP_DIAG
     if (U_values(iw(tid, rowid)) == 0.0) {
@@ -390,6 +393,8 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
   lno_t lev_start;
   size_type block_size;
   size_type block_items;
+  sview_2d temp_dense_block;
+  sview_1d ones;
 
   using LValuesUnmanaged2DBlockType = Kokkos::View<
     typename LValuesType::value_type**,
@@ -429,7 +434,11 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
         iw(iw_),
         lev_start(lev_start_),
         block_size(block_size_),
-        block_items(block_size * block_size) {}
+        block_items(block_size * block_size),
+        temp_dense_block("temp_dense_block", block_size, block_size),
+        ones("ones", block_size) {
+    Kokkos::deep_copy(ones, 1.0);
+  }
 
   KOKKOS_INLINE_FUNCTION
   void verbose_lset(const size_type block, const scalar_t& value) const
@@ -586,14 +595,14 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
       auto prev_row = L_entries(k);
       std::cout << "        JGF Processing L[" << rowid << "][" << prev_row << "]" << std::endl;
       auto fact = get_l_block(k);
+      auto u_diag = get_u_block(U_row_map(prev_row));
 #ifdef KEEP_DIAG
-      //auto fact = L_values(k) / U_values(U_row_map(prev_row));
       KokkosBatched::SerialTrsm<KokkosBatched::Side::Right,
                                 KokkosBatched::Uplo::Upper,
-                                KokkosBatched::Trans::Transpose,
+                                KokkosBatched::Trans::Transpose, // not 100% on this
                                 KokkosBatched::Diag::NonUnit,
-                                KokkosBatched::Algo::Trsm::Unblocked>::
-        invoke(1.0, get_u_block(U_row_map(prev_row)), fact);
+                                KokkosBatched::Algo::Trsm::Unblocked>:: // not 100% on this
+        invoke<scalar_t>(1.0, u_diag, fact);
 #else
       // This should be a gemm
       auto fact = L_values(k) * U_values(U_row_map(prev_row));
@@ -606,14 +615,16 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
         std::cout << "          JGF Processing U[" << prev_row << "][" << col << "]" << std::endl;
         std::cout << "          JGF rowid=" << rowid <<", prev_row=" << prev_row << ", kk=" << kk << ", col=" << col << ", ipos=" << ipos << std::endl;
         if (ipos == -1) continue;
-        auto lxu = -U_values(kk) * fact;
+
+        KokkosBatched::SerialGemm<KokkosBatched::Trans::NoTranspose,
+                                  KokkosBatched::Trans::NoTranspose,
+                                  KokkosBatched::Algo::Gemm::Unblocked>::
+          invoke(-1.0, get_u_block(kk), fact, 0.0, temp_dense_block);
         if (col < rowid) {
-          KokkosBatched::SerialAxpy::invoke(alpha, x, y);
-          verbose_lset(ipos, L_values(ipos) + lxu);
+          KokkosBatched::SerialAxpy::invoke(ones, temp_dense_block, get_l_block(ipos));
         }
         else {
-          KokkosBatched::SerialAxpy::invoke(alpha, x, y);
-          verbose_uset(ipos, U_values(ipos) + lxu);
+          KokkosBatched::SerialAxpy::invoke(ones, temp_dense_block, get_u_block(ipos));
         }
       }  // end for kk
       std::cout << "        JGF Block 4 trouble end" << std::endl;
@@ -623,8 +634,6 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
     print_matrix(decompress_matrix(L_row_map, L_entries, L_values, block_size));
     std::cout << "      U:" << std::endl;
     print_matrix(decompress_matrix(U_row_map, U_entries, U_values, block_size));
-
-    return;
 
     std::cout << "      JGF Block 5" << std::endl;
 #ifdef KEEP_DIAG
