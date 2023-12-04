@@ -464,7 +464,7 @@ struct SpilukTest
     const size_type bnnz   = values.extent(0);
 
     run_and_check_spiluk_block(kh, brow_map, bentries, bvalues, SPILUKAlgorithm::SEQLVLSCHD_RP, bnrows, bnnz, fill_lev, block_size);
-    run_and_check_spiluk_block(kh, brow_map, bentries, bvalues, SPILUKAlgorithm::SEQLVLSCHD_TP1, nrows, nnz, fill_lev, block_size);
+    run_and_check_spiluk_block(kh, brow_map, bentries, bvalues, SPILUKAlgorithm::SEQLVLSCHD_TP1, bnrows, bnnz, fill_lev, block_size);
   }
 };
 
