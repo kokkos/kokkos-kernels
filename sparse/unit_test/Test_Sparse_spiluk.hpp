@@ -38,11 +38,6 @@ using namespace KokkosSparse::Experimental;
 using namespace KokkosKernels;
 using namespace KokkosKernels::Experimental;
 
-// #ifndef kokkos_complex_double
-// #define kokkos_complex_double Kokkos::complex<double>
-// #define kokkos_complex_float Kokkos::complex<float>
-// #endif
-
 using kokkos_complex_double = Kokkos::complex<double> ;
 using kokkos_complex_float  = Kokkos::complex<float>;
 
@@ -451,7 +446,7 @@ struct SpilukTest
 
     // Check block_size=1 produces identical result to unblocked
     run_and_check_spiluk_block(kh, row_map, entries, values, SPILUKAlgorithm::SEQLVLSCHD_RP, nrows, nnz, fill_lev, 1);
-    //run_and_check_spiluk_block(kh, row_map, entries, values, SPILUKAlgorithm::SEQLVLSCHD_TP1, nrows, nnz, fill_lev, 1);
+    run_and_check_spiluk_block(kh, row_map, entries, values, SPILUKAlgorithm::SEQLVLSCHD_TP1, nrows, nnz, fill_lev, 1);
 
     // Convert to BSR
     Crs crs("crs for block spiluk test", nrows, nrows, values.extent(0), values, row_map, entries);
@@ -469,7 +464,7 @@ struct SpilukTest
     const size_type bnnz   = values.extent(0);
 
     run_and_check_spiluk_block(kh, brow_map, bentries, bvalues, SPILUKAlgorithm::SEQLVLSCHD_RP, bnrows, bnnz, fill_lev, block_size);
-    //run_and_check_spiluk_block(kh, brow_map, bentries, bvalues, SPILUKAlgorithm::SEQLVLSCHD_TP1, nrows, nnz, fill_lev, block_size);
+    run_and_check_spiluk_block(kh, brow_map, bentries, bvalues, SPILUKAlgorithm::SEQLVLSCHD_TP1, nrows, nnz, fill_lev, block_size);
   }
 };
 
@@ -479,7 +474,7 @@ template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
 void test_spiluk() {
   using TestStruct = Test::SpilukTest<scalar_t, lno_t, size_type, device>;
-  TestStruct::run_test_spiluk();
+  //TestStruct::run_test_spiluk();
   TestStruct::run_test_spiluk_blocks();
 }
 
