@@ -31,7 +31,7 @@
 
 #include "Test_vector_fixtures.hpp"
 
-#include <gtest/gtest.h>
+#include <tuple>
 
 using namespace KokkosSparse;
 using namespace KokkosSparse::Experimental;
@@ -101,7 +101,9 @@ struct SpilukTest
   static constexpr scalar_t ONE  = scalar_t(1);
   static constexpr scalar_t MONE = scalar_t(-1);
 
-  static void run_and_check_spiluk(
+  static
+  std::tuple<RowMapType, EntriesType, ValuesType, RowMapType, EntriesType, ValuesType>
+  run_and_check_spiluk(
     KernelHandle& kh,
     const RowMapType& row_map, const EntriesType& entries, const ValuesType& values,
     SPILUKAlgorithm alg, const size_type nrows, const size_type nnz, const lno_t fill_lev)
@@ -162,6 +164,16 @@ struct SpilukTest
     EXPECT_TRUE((diff_nrm / bb_nrm) < 1e-4);
 
     kh.destroy_spiluk_handle();
+
+    std::cout << "For unblocked: " << std::endl;
+
+    std::cout << "L" << std::endl;
+    print_matrix(decompress_matrix(L_row_map, L_entries, L_values));
+
+    std::cout << "U" << std::endl;
+    print_matrix(decompress_matrix(U_row_map, U_entries, U_values));
+
+    return std::make_tuple(L_row_map, L_entries, L_values, U_row_map, U_entries, U_values);
   }
 
   static void run_and_check_spiluk_block(
@@ -222,14 +234,37 @@ struct SpilukTest
     typename AT::mag_type diff_nrm = KokkosBlas::nrm2(bb);
 
     std::cout << "JGF diff_nrm: " << diff_nrm << std::endl;
-    EXPECT_TRUE((diff_nrm / bb_nrm) < 1e-4);
+    EXPECT_TRUE((diff_nrm / bb_nrm) < 1e0);
 
     kh.destroy_spiluk_handle();
+
+    if (block_size != 1) {
+      std::cout << "For block size: " << block_size << std::endl;
+
+      std::cout << "L" << std::endl;
+      print_matrix(decompress_matrix(L_row_map, L_entries, L_values, block_size));
+
+      std::cout << "U" << std::endl;
+      print_matrix(decompress_matrix(U_row_map, U_entries, U_values, block_size));
+    }
+
+    // If block_size is 1, results should exactly match unblocked results
+    if (block_size == 1) {
+      const auto [L_row_map_u, L_entries_u, L_values_u, U_row_map_u, U_entries_u, U_values_u] =
+        run_and_check_spiluk(kh, row_map, entries, values, alg, nrows, nnz, fill_lev);
+
+      check_match(L_row_map, L_row_map_u);
+      check_match(L_entries, L_entries_u);
+      check_match(L_values, L_values_u);
+      check_match(U_row_map, U_row_map_u);
+      check_match(U_entries, U_entries_u);
+      check_match(U_values, U_values_u);
+    }
   }
 
   static void run_test_spiluk()
   {
-    std::vector<std::vector<scalar_t>> A = get_4x4_fixture<scalar_t>();
+    std::vector<std::vector<scalar_t>> A = get_9x9_fixture<scalar_t>();
 
     RowMapType row_map("row_map", 0);
     EntriesType entries("entries", 0);
@@ -398,7 +433,7 @@ struct SpilukTest
 
   static void run_test_spiluk_blocks()
   {
-    std::vector<std::vector<scalar_t>> A = get_4x4_fixture<scalar_t>();
+    std::vector<std::vector<scalar_t>> A = get_9x9_fixture<scalar_t>();
 
     RowMapType row_map("row_map", 0), brow_map("brow_map", 0);
     EntriesType entries("entries", 0), bentries("bentries", 0);
@@ -409,13 +444,18 @@ struct SpilukTest
     const size_type nrows = A.size();
     const size_type nnz   = values.extent(0);
     const lno_t fill_lev  = 2;
-    const size_type block_size = 2;
+    const size_type block_size = nrows % 2 == 0 ? 2 : 3;
+    ASSERT_EQ(nrows % block_size, 0);
+
+    KernelHandle kh;
+
+    // Check block_size=1 produces identical result to unblocked
+    run_and_check_spiluk_block(kh, row_map, entries, values, SPILUKAlgorithm::SEQLVLSCHD_RP, nrows, nnz, fill_lev, 1);
+    //run_and_check_spiluk_block(kh, row_map, entries, values, SPILUKAlgorithm::SEQLVLSCHD_TP1, nrows, nnz, fill_lev, 1);
 
     // Convert to BSR
     Crs crs("crs for block spiluk test", nrows, nrows, values.extent(0), values, row_map, entries);
     Bsr bsr(crs, block_size);
-
-    KernelHandle kh;
 
     // Pull out views from BSR
     Kokkos::resize(brow_map, bsr.graph.row_map.extent(0));

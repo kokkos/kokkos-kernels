@@ -27,14 +27,16 @@
 
 namespace Test {
 
-template <typename scalar_t, typename lno_t, typename size_type,
-          typename device>
+template <typename RowMapT, typename EntriesT, typename ValuesT>
 void compress_matrix(
-    Kokkos::View<size_type*, device>& row_map,
-    Kokkos::View<lno_t*, device>& entries,
-    Kokkos::View<scalar_t*, device>& values,
-    const std::vector<std::vector<scalar_t>>& fixture)
+  RowMapT& row_map,
+  EntriesT& entries,
+  ValuesT& values,
+  const std::vector<std::vector<typename ValuesT::non_const_value_type>>& fixture)
 {
+  using size_type = typename RowMapT::non_const_value_type;
+  using scalar_t  = typename ValuesT::non_const_value_type;
+
   const scalar_t ZERO = scalar_t(0);
 
   const size_type nrows = fixture.size();
@@ -78,13 +80,15 @@ void compress_matrix(
   Kokkos::deep_copy(values, hvalues);
 }
 
-template <typename scalar_t, typename lno_t, typename size_type,
-          typename device>
-std::vector<std::vector<scalar_t>> decompress_matrix(
-    Kokkos::View<size_type*, device>& row_map,
-    Kokkos::View<lno_t*, device>& entries,
-    Kokkos::View<scalar_t*, device>& values)
+template <typename RowMapT, typename EntriesT, typename ValuesT>
+std::vector<std::vector<typename ValuesT::non_const_value_type>> decompress_matrix(
+  const RowMapT& row_map,
+  const EntriesT& entries,
+  const ValuesT& values)
 {
+  using size_type = typename RowMapT::non_const_value_type;
+  using scalar_t  = typename ValuesT::non_const_value_type;
+
   const scalar_t ZERO = scalar_t(0);
 
   const size_type nrows = row_map.size() - 1;
@@ -105,7 +109,7 @@ std::vector<std::vector<scalar_t>> decompress_matrix(
     const size_type row_nnz_begin = hrow_map(row_idx);
     const size_type row_nnz_end   = hrow_map(row_idx + 1);
     for (size_type row_nnz = row_nnz_begin; row_nnz < row_nnz_end; ++row_nnz) {
-      const lno_t col_idx      = hentries(row_nnz);
+      const auto col_idx      = hentries(row_nnz);
       const scalar_t value     = hvalues(row_nnz);
       result[row_idx][col_idx] = value;
     }
@@ -114,14 +118,16 @@ std::vector<std::vector<scalar_t>> decompress_matrix(
   return result;
 }
 
-template <typename scalar_t, typename lno_t, typename size_type,
-          typename device>
-std::vector<std::vector<scalar_t>> decompress_matrix(
-  Kokkos::View<size_type*, device>& row_map,
-  Kokkos::View<lno_t*, device>& entries,
-  Kokkos::View<scalar_t*, device>& values,
+template <typename RowMapT, typename EntriesT, typename ValuesT>
+std::vector<std::vector<typename ValuesT::non_const_value_type>> decompress_matrix(
+  const RowMapT& row_map,
+  const EntriesT& entries,
+  const ValuesT& values,
   const int block_size)
 {
+  using size_type = typename RowMapT::non_const_value_type;
+  using scalar_t  = typename ValuesT::non_const_value_type;
+
   const scalar_t ZERO = scalar_t(0);
 
   const size_type nbrows   = row_map.extent(0) - 1;
@@ -144,7 +150,7 @@ std::vector<std::vector<scalar_t>> decompress_matrix(
     const size_type row_nnz_begin = hrow_map(row_idx);
     const size_type row_nnz_end   = hrow_map(row_idx + 1);
     for (size_type row_nnz = row_nnz_begin; row_nnz < row_nnz_end; ++row_nnz) {
-      const lno_t col_idx = hentries(row_nnz);
+      const auto col_idx = hentries(row_nnz);
       for (size_type i = 0; i < block_size; ++i) {
         const size_type unc_row_idx = row_idx*block_size + i;
         for (size_type j = 0; j < block_size; ++j) {
@@ -158,14 +164,16 @@ std::vector<std::vector<scalar_t>> decompress_matrix(
   return result;
 }
 
+template <typename RowMapT, typename EntriesT, typename ValuesT>
+void check_matrix(
+  const std::string& name,
+  const RowMapT& row_map,
+  const EntriesT& entries,
+  const ValuesT& values,
+  const std::vector<std::vector<typename ValuesT::non_const_value_type>>& expected)
+{
+  using size_type = typename RowMapT::non_const_value_type;
 
-template <typename scalar_t, typename lno_t, typename size_type,
-          typename device>
-void check_matrix(const std::string& name,
-                  Kokkos::View<size_type*, device>& row_map,
-                  Kokkos::View<lno_t*, device>& entries,
-                  Kokkos::View<scalar_t*, device>& values,
-                  const std::vector<std::vector<scalar_t>>& expected) {
   const auto decompressed_mtx = decompress_matrix(row_map, entries, values);
 
   const size_type nrows = row_map.size() - 1;
@@ -186,6 +194,21 @@ void print_matrix(const std::vector<std::vector<scalar_t>>& matrix) {
       std::printf("%.2f ", item);
     }
     std::cout << std::endl;
+  }
+}
+
+template <typename ViewT>
+void check_match(const ViewT& lhs, const ViewT& rhs)
+{
+  auto hlhs = Kokkos::create_mirror_view(lhs);
+  auto hrhs = Kokkos::create_mirror_view(rhs);
+  Kokkos::deep_copy(hlhs, lhs);
+  Kokkos::deep_copy(hrhs, rhs);
+
+  ASSERT_EQ(lhs.extent(0), rhs.extent(0));
+
+  for (size_t i = 0; i < lhs.extent(0); ++i) {
+    EXPECT_EQ(hlhs(i), hrhs(i));
   }
 }
 

@@ -190,6 +190,7 @@ struct ILUKLvlSchedRPNumericFunctor {
   LevelViewType level_idx;
   WorkViewType iw;
   lno_t lev_start;
+  bool verbose;
 
   ILUKLvlSchedRPNumericFunctor(
       const ARowMapType &A_row_map_, const AEntriesType &A_entries_,
@@ -209,7 +210,8 @@ struct ILUKLvlSchedRPNumericFunctor {
         U_values(U_values_),
         level_idx(level_idx_),
         iw(iw_),
-        lev_start(lev_start_) {}
+        lev_start(lev_start_),
+        verbose(false) {}
 
   KOKKOS_INLINE_FUNCTION
   void verbose_lset(const size_type nnz, const scalar_t& value) const
@@ -221,7 +223,8 @@ struct ILUKLvlSchedRPNumericFunctor {
       if (nnz >= row_begin && nnz < row_end) {
         const auto col = L_entries(nnz);
         if (L_values(nnz) != value) {
-          std::cout << "        JGF Setting L_values[" << row << "][" << col << "] = " << value << std::endl;
+          if (verbose)
+            std::cout << "        JGF Setting L_values[" << row << "][" << col << "] = " << value << std::endl;
           L_values(nnz) = value;
         }
       }
@@ -238,7 +241,8 @@ struct ILUKLvlSchedRPNumericFunctor {
       if (nnz >= row_begin && nnz < row_end) {
         const auto col = U_entries(nnz);
         if (U_values(nnz) != value) {
-          std::cout << "        JGF Setting U_values[" << row << "][" << col << "] = " << value << std::endl;
+          if (verbose)
+            std::cout << "        JGF Setting U_values[" << row << "][" << col << "] = " << value << std::endl;
           U_values(nnz) = value;
         }
       }
@@ -247,7 +251,8 @@ struct ILUKLvlSchedRPNumericFunctor {
 
   void verbose_iwset(const size_type tid, const size_type col, const lno_t value) const
   {
-    std::cout << "        JGF Setting iw[" << tid << "][" << col << "] = " << value << std::endl;
+    if (verbose)
+      std::cout << "        JGF Setting iw[" << tid << "][" << col << "] = " << value << std::endl;
     iw(tid, col) = value;
   }
 
@@ -258,9 +263,11 @@ struct ILUKLvlSchedRPNumericFunctor {
     auto k1    = L_row_map(rowid);
     auto k2    = L_row_map(rowid + 1);
 
-    std::cout << "    JGF level ptr: " << i << ", tid: " << tid << ", rowid: " << rowid << std::endl;
+    if (verbose)
+      std::cout << "    JGF level ptr: " << i << ", tid: " << tid << ", rowid: " << rowid << std::endl;
 
-    std::cout << "      JGF Block 1" << std::endl;
+    if (verbose)
+      std::cout << "      JGF Block 1" << std::endl;
 #ifdef KEEP_DIAG
     for (auto k = k1; k < k2 - 1; ++k) {
 #else
@@ -273,9 +280,12 @@ struct ILUKLvlSchedRPNumericFunctor {
 #ifdef KEEP_DIAG
     verbose_lset(k2 - 1, scalar_t(1.0));
 #endif
-    print_iw(iw);
 
-    std::cout << "      JGF Block 2" << std::endl;
+    if (verbose) {
+      print_iw(iw);
+
+      std::cout << "      JGF Block 2" << std::endl;
+    }
     k1 = U_row_map(rowid);
     k2 = U_row_map(rowid + 1);
     for (auto k = k1; k < k2; ++k) {
@@ -283,10 +293,13 @@ struct ILUKLvlSchedRPNumericFunctor {
       verbose_uset(k, 0.0);
       verbose_iwset(tid, col, k);
     }
-    print_iw(iw);
 
     // Unpack the ith row of A
-    std::cout << "      JGF Block 3" << std::endl;
+    if (verbose) {
+      print_iw(iw);
+
+      std::cout << "      JGF Block 3" << std::endl;
+    }
     k1 = A_row_map(rowid);
     k2 = A_row_map(rowid + 1);
     for (auto k = k1; k < k2; ++k) {
@@ -301,12 +314,14 @@ struct ILUKLvlSchedRPNumericFunctor {
     }
 
     // Eliminate prev rows
-    std::cout << "      JGF Block 4" << std::endl;
-    std::cout << "      L:" << std::endl;
-    print_matrix(decompress_matrix(L_row_map, L_entries, L_values));
-    std::cout << "      U:" << std::endl;
-    print_matrix(decompress_matrix(U_row_map, U_entries, U_values));
-    print_iw(iw);
+    if (verbose) {
+      std::cout << "      JGF Block 4" << std::endl;
+      std::cout << "      L:" << std::endl;
+      print_matrix(decompress_matrix(L_row_map, L_entries, L_values));
+      std::cout << "      U:" << std::endl;
+      print_matrix(decompress_matrix(U_row_map, U_entries, U_values));
+      print_iw(iw);
+    }
     k1 = L_row_map(rowid);
     k2 = L_row_map(rowid + 1);
 #ifdef KEEP_DIAG
@@ -315,20 +330,24 @@ struct ILUKLvlSchedRPNumericFunctor {
     for (auto k = k1; k < k2; ++k) {
 #endif
       auto prev_row = L_entries(k);
-      std::cout << "        JGF Processing L[" << rowid << "][" << prev_row << "]" << std::endl;
+      if (verbose)
+        std::cout << "        JGF Processing L[" << rowid << "][" << prev_row << "]" << std::endl;
 #ifdef KEEP_DIAG
       auto fact = L_values(k) / U_values(U_row_map(prev_row));
 #else
       auto fact = L_values(k) * U_values(U_row_map(prev_row));
 #endif
       verbose_lset(k, fact);
-      std::cout << "        JGF Block 4 trouble spot" << std::endl;
+      if (verbose)
+        std::cout << "        JGF Block 4 trouble spot" << std::endl;
       for (auto kk = U_row_map(prev_row) + 1; kk < U_row_map(prev_row + 1);
            ++kk) {
         auto col  = U_entries(kk);
         auto ipos = iw(tid, col);
-        std::cout << "          JGF Processing U[" << prev_row << "][" << col << "]" << std::endl;
-        std::cout << "          JGF rowid=" << rowid <<", prev_row=" << prev_row << ", kk=" << kk << ", col=" << col << ", ipos=" << ipos << std::endl;
+        if (verbose) {
+          std::cout << "          JGF Processing U[" << prev_row << "][" << col << "]" << std::endl;
+          std::cout << "          JGF rowid=" << rowid <<", prev_row=" << prev_row << ", kk=" << kk << ", col=" << col << ", ipos=" << ipos << std::endl;
+        }
         if (ipos == -1) continue;
         auto lxu = -U_values(kk) * fact;
         if (col < rowid) {
@@ -338,15 +357,18 @@ struct ILUKLvlSchedRPNumericFunctor {
           verbose_uset(ipos, U_values(ipos) + lxu);
         }
       }  // end for kk
-      std::cout << "        JGF Block 4 trouble end" << std::endl;
+      if (verbose)
+        std::cout << "        JGF Block 4 trouble end" << std::endl;
     }    // end for k
 
-    std::cout << "      L:" << std::endl;
-    print_matrix(decompress_matrix(L_row_map, L_entries, L_values));
-    std::cout << "      U:" << std::endl;
-    print_matrix(decompress_matrix(U_row_map, U_entries, U_values));
+    if (verbose) {
+      std::cout << "      L:" << std::endl;
+      print_matrix(decompress_matrix(L_row_map, L_entries, L_values));
+      std::cout << "      U:" << std::endl;
+      print_matrix(decompress_matrix(U_row_map, U_entries, U_values));
 
-    std::cout << "      JGF Block 5" << std::endl;
+      std::cout << "      JGF Block 5" << std::endl;
+    }
 #ifdef KEEP_DIAG
     if (U_values(iw(tid, rowid)) == 0.0) {
       verbose_uset(iw(tid, rowid), 1e6);
@@ -395,6 +417,7 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
   size_type block_items;
   sview_2d temp_dense_block;
   sview_1d ones;
+  bool verbose;
 
   using LValuesUnmanaged2DBlockType = Kokkos::View<
     typename LValuesType::value_type**,
@@ -436,7 +459,9 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
         block_size(block_size_),
         block_items(block_size * block_size),
         temp_dense_block("temp_dense_block", block_size, block_size),
-        ones("ones", block_size) {
+        ones("ones", block_size),
+        verbose(false)
+  {
     Kokkos::deep_copy(ones, 1.0);
   }
 
@@ -449,7 +474,8 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
       const auto row_end   = L_row_map(row+1);
       if (block >= row_begin && block < row_end) {
         const auto col = L_entries(block);
-        std::cout << "        JGF Setting L_values[" << row << "][" << col << "] = " << value << std::endl;
+        if (verbose)
+          std::cout << "        JGF Setting L_values[" << row << "][" << col << "] = " << value << std::endl;
         KokkosBlas::SerialSet::invoke(value, get_l_block(block));
       }
     }
@@ -465,7 +491,8 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
       const auto row_end   = L_row_map(row+1);
       if (block >= row_begin && block < row_end) {
         const auto col = L_entries(block);
-        std::cout << "        JGF Setting block L_values[" << row << "][" << col << "]" << std::endl;
+        if (verbose)
+          std::cout << "        JGF Setting block L_values[" << row << "][" << col << "]" << std::endl;
         Kokkos::deep_copy(get_l_block(block), rhs);
       }
     }
@@ -481,7 +508,8 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
       const auto row_end   = U_row_map(row+1);
       if (block >= row_begin && block < row_end) {
         const auto col = U_entries(block);
-        std::cout << "        JGF Setting U_values[" << row << "][" << col << "] = " << value << std::endl;
+        if (verbose)
+          std::cout << "        JGF Setting U_values[" << row << "][" << col << "] = " << value << std::endl;
         KokkosBlas::SerialSet::invoke(value, get_u_block(block));
       }
     }
@@ -504,9 +532,24 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
   }
 
   KOKKOS_INLINE_FUNCTION
+  bool ublock_all_eq(const size_type block, const scalar_t& value) const
+  {
+    auto u_block = get_u_block(block);
+    for (size_type i = 0; i < block_size; ++i) {
+      for (size_type j = 0; j < block_size; ++j) {
+        if (u_block(i, j) != value) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  KOKKOS_INLINE_FUNCTION
   void verbose_iwset(const size_type tid, const size_type offset, const lno_t value) const
   {
-    std::cout << "        JGF Setting iw[" << tid << "][" << offset << "] = " << value << std::endl;
+    if (verbose)
+      std::cout << "        JGF Setting iw[" << tid << "][" << offset << "] = " << value << std::endl;
     iw(tid, offset) = value;
   }
 
@@ -536,9 +579,15 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
     auto k1    = L_row_map(rowid);
     auto k2    = L_row_map(rowid + 1);
 
-    std::cout << "    JGF level ptr: " << lvl << ", tid: " << tid << ", rowid: " << rowid << std::endl;
+    if (verbose) {
+      std::cout << "    JGF level ptr: " << lvl << ", tid: " << tid << ", rowid: " << rowid << std::endl;
 
-    std::cout << "      JGF Block 1" << std::endl;
+      std::cout << "      JGF Block 1" << std::endl;
+      std::cout << "      L:" << std::endl;
+      print_matrix(decompress_matrix(L_row_map, L_entries, L_values, block_size));
+      std::cout << "      U:" << std::endl;
+      print_matrix(decompress_matrix(U_row_map, U_entries, U_values, block_size));
+    }
 #ifdef KEEP_DIAG
     for (auto k = k1; k < k2 - 1; ++k) {
 #else
@@ -551,9 +600,16 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
 #ifdef KEEP_DIAG
     KokkosBatched::SerialSetIdentity::invoke(get_l_block(k2 -1));
 #endif
-    print_iw(iw);
 
-    std::cout << "      JGF Block 2" << std::endl;
+    if (verbose) {
+      print_iw(iw);
+
+      std::cout << "      JGF Block 2" << std::endl;
+      std::cout << "      L:" << std::endl;
+      print_matrix(decompress_matrix(L_row_map, L_entries, L_values, block_size));
+      std::cout << "      U:" << std::endl;
+      print_matrix(decompress_matrix(U_row_map, U_entries, U_values, block_size));
+    }
     k1 = U_row_map(rowid);
     k2 = U_row_map(rowid + 1);
     for (auto k = k1; k < k2; ++k) {
@@ -561,10 +617,17 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
       verbose_uset(k, 0.0);
       verbose_iwset(tid, col, k);
     }
-    print_iw(iw);
 
     // Unpack the ith row of A
-    std::cout << "      JGF Block 3" << std::endl;
+    if (verbose) {
+      print_iw(iw);
+
+      std::cout << "      JGF Block 3" << std::endl;
+      std::cout << "      L:" << std::endl;
+      print_matrix(decompress_matrix(L_row_map, L_entries, L_values, block_size));
+      std::cout << "      U:" << std::endl;
+      print_matrix(decompress_matrix(U_row_map, U_entries, U_values, block_size));
+    }
     k1 = A_row_map(rowid);
     k2 = A_row_map(rowid + 1);
     for (auto k = k1; k < k2; ++k) {
@@ -579,12 +642,14 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
     }
 
     // Eliminate prev rows
-    std::cout << "      JGF Block 4" << std::endl;
-    std::cout << "      L:" << std::endl;
-    print_matrix(decompress_matrix(L_row_map, L_entries, L_values, block_size));
-    std::cout << "      U:" << std::endl;
-    print_matrix(decompress_matrix(U_row_map, U_entries, U_values, block_size));
-    print_iw(iw);
+    if (verbose) {
+      std::cout << "      JGF Block 4" << std::endl;
+      std::cout << "      L:" << std::endl;
+      print_matrix(decompress_matrix(L_row_map, L_entries, L_values, block_size));
+      std::cout << "      U:" << std::endl;
+      print_matrix(decompress_matrix(U_row_map, U_entries, U_values, block_size));
+      print_iw(iw);
+    }
     k1 = L_row_map(rowid);
     k2 = L_row_map(rowid + 1);
 #ifdef KEEP_DIAG
@@ -593,7 +658,8 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
     for (auto k = k1; k < k2; ++k) {
 #endif
       auto prev_row = L_entries(k);
-      std::cout << "        JGF Processing L[" << rowid << "][" << prev_row << "]" << std::endl;
+      if (verbose)
+        std::cout << "        JGF Processing L[" << rowid << "][" << prev_row << "]" << std::endl;
       auto fact = get_l_block(k);
       auto u_diag = get_u_block(U_row_map(prev_row));
 #ifdef KEEP_DIAG
@@ -607,13 +673,16 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
       // This should be a gemm
       auto fact = L_values(k) * U_values(U_row_map(prev_row));
 #endif
-      std::cout << "        JGF Block 4 trouble spot" << std::endl;
+      if (verbose)
+        std::cout << "        JGF Block 4 trouble spot" << std::endl;
       for (auto kk = U_row_map(prev_row) + 1; kk < U_row_map(prev_row + 1);
            ++kk) {
         auto col  = U_entries(kk);
         auto ipos = iw(tid, col);
-        std::cout << "          JGF Processing U[" << prev_row << "][" << col << "]" << std::endl;
-        std::cout << "          JGF rowid=" << rowid <<", prev_row=" << prev_row << ", kk=" << kk << ", col=" << col << ", ipos=" << ipos << std::endl;
+        if (verbose) {
+          std::cout << "          JGF Processing U[" << prev_row << "][" << col << "]" << std::endl;
+          std::cout << "          JGF rowid=" << rowid <<", prev_row=" << prev_row << ", kk=" << kk << ", col=" << col << ", ipos=" << ipos << std::endl;
+        }
         if (ipos == -1) continue;
 
         KokkosBatched::SerialGemm<KokkosBatched::Trans::NoTranspose,
@@ -627,24 +696,29 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
           KokkosBatched::SerialAxpy::invoke(ones, temp_dense_block, get_u_block(ipos));
         }
       }  // end for kk
-      std::cout << "        JGF Block 4 trouble end" << std::endl;
+      if (verbose)
+        std::cout << "        JGF Block 4 trouble end" << std::endl;
     }    // end for k
 
-    std::cout << "      L:" << std::endl;
-    print_matrix(decompress_matrix(L_row_map, L_entries, L_values, block_size));
-    std::cout << "      U:" << std::endl;
-    print_matrix(decompress_matrix(U_row_map, U_entries, U_values, block_size));
+    if (verbose) {
+      std::cout << "      L:" << std::endl;
+      print_matrix(decompress_matrix(L_row_map, L_entries, L_values, block_size));
+      std::cout << "      U:" << std::endl;
+      print_matrix(decompress_matrix(U_row_map, U_entries, U_values, block_size));
 
-    std::cout << "      JGF Block 5" << std::endl;
+      std::cout << "      JGF Block 5" << std::endl;
+    }
+    const auto diag_ipos = iw(tid, rowid);
 #ifdef KEEP_DIAG
-    if (U_values(iw(tid, rowid)) == 0.0) {
-      verbose_uset(iw(tid, rowid), 1e6);
+    if (ublock_all_eq(diag_ipos, 0.0)) {
+      verbose_uset(diag_ipos, 1e6);
     }
 #else
-    if (U_values(iw(tid, rowid)) == 0.0) {
-      verbose_uset(iw(tid, rowid), 1e6);
+    if (ublock_all_eq(diag_ipos, 0.0)) {
+      verbose_uset(diag_ipos, 1e6);
     } else {
-      verbose_uset(iw(tid, rowid), 1.0 / U_values(iw(tid, rowid)));
+      assert(false);
+      //verbose_uset(diag_ipos, 1.0 / U_values(diag_ipos));
     }
 #endif
 
@@ -857,8 +931,11 @@ static void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
                   LValuesType &L_values, const URowMapType &U_row_map,
                   const UEntriesType &U_entries, UValuesType &U_values) {
 
+  bool verbose = false;
+
   size_type nlevels = thandle.get_num_levels();
-  std::cout << "JGF iluk_numeric with nlevels: " << nlevels << std::endl;
+  if (verbose)
+    std::cout << "JGF iluk_numeric with nlevels: " << nlevels << std::endl;
   int team_size     = thandle.get_team_size();
 
   LevelHostViewType level_ptr_h = thandle.get_host_level_ptr();
@@ -878,7 +955,8 @@ static void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
   // Main loop must be performed sequential. Question: Try out Cuda's graph
   // stuff to reduce kernel launch overhead
   for (size_type lvl = 0; lvl < nlevels; ++lvl) {
-    std::cout << "  JGF starting level: " << lvl << std::endl;
+    if (verbose)
+      std::cout << "  JGF starting level: " << lvl << std::endl;
     lno_t lev_start = level_ptr_h(lvl);
     lno_t lev_end   = level_ptr_h(lvl + 1);
 
@@ -983,8 +1061,10 @@ static void iluk_numeric_block(IlukHandle &thandle, const ARowMapType &A_row_map
                   LValuesType &L_values, const URowMapType &U_row_map,
                   const UEntriesType &U_entries, UValuesType &U_values)
 {
+  bool verbose = false;
   const size_type nlevels    = thandle.get_num_levels();
-  std::cout << "JGF iluk_numeric_block with nlevels: " << nlevels << std::endl;
+  if (verbose)
+    std::cout << "JGF iluk_numeric_block with nlevels: " << nlevels << std::endl;
   const int team_size        = thandle.get_team_size();
   const size_type block_size = thandle.get_block_size();
 
@@ -1004,7 +1084,8 @@ static void iluk_numeric_block(IlukHandle &thandle, const ARowMapType &A_row_map
   // Main loop must be performed sequential. Question: Try out Cuda's graph
   // stuff to reduce kernel launch overhead
   for (size_type lvl = 0; lvl < nlevels; ++lvl) {
-    std::cout << "  JGF starting level: " << lvl << std::endl;
+    if (verbose)
+      std::cout << "  JGF starting level: " << lvl << std::endl;
     lno_t lev_start = level_ptr_h(lvl);
     lno_t lev_end   = level_ptr_h(lvl + 1);
 
