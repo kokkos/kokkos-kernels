@@ -63,11 +63,112 @@ using range_policy            = typename IlukHandle::RangePolicy;
 using sview_2d                = typename Kokkos::View<scalar_t**, memory_space>;
 using sview_1d                = typename Kokkos::View<scalar_t*, memory_space>;
 
+// Default version does not support blocks
 template <class ARowMapType, class AEntriesType, class AValuesType,
           class LRowMapType, class LEntriesType, class LValuesType,
           class URowMapType, class UEntriesType, class UValuesType,
           bool BlockEnabled>
 struct Common
+{
+  ARowMapType A_row_map;
+  AEntriesType A_entries;
+  AValuesType A_values;
+  LRowMapType L_row_map;
+  LEntriesType L_entries;
+  LValuesType L_values;
+  URowMapType U_row_map;
+  UEntriesType U_entries;
+  UValuesType U_values;
+  LevelViewType level_idx;
+  WorkViewType iw;
+  lno_t lev_start;
+
+  Common(
+      const ARowMapType &A_row_map_, const AEntriesType &A_entries_,
+      const AValuesType &A_values_, const LRowMapType &L_row_map_,
+      const LEntriesType &L_entries_, LValuesType &L_values_,
+      const URowMapType &U_row_map_, const UEntriesType &U_entries_,
+      UValuesType &U_values_, const LevelViewType &level_idx_,
+      WorkViewType &iw_, const lno_t &lev_start_, const size_type& ) :
+    A_row_map(A_row_map_),
+    A_entries(A_entries_),
+    A_values(A_values_),
+    L_row_map(L_row_map_),
+    L_entries(L_entries_),
+    L_values(L_values_),
+    U_row_map(U_row_map_),
+    U_entries(U_entries_),
+    U_values(U_values_),
+    level_idx(level_idx_),
+    iw(iw_),
+    lev_start(lev_start_) {}
+
+  // lset
+  KOKKOS_INLINE_FUNCTION
+  void lset(const size_type nnz, const scalar_t& value) const
+  { L_values(nnz) = value; }
+
+  // uset
+  KOKKOS_INLINE_FUNCTION
+  void uset(const size_type nnz, const scalar_t& value) const
+  { U_values(nnz) = value; }
+
+  // lset_id
+  KOKKOS_INLINE_FUNCTION
+  void lset_id(const size_type nnz) const
+  { U_values(nnz) = scalar_t(1.0); }
+
+  KOKKOS_INLINE_FUNCTION
+  void lset_id(const member_type&, const size_type nnz) const
+  { U_values(nnz) = scalar_t(1.0); }
+
+  // divide. lhs /= rhs
+  KOKKOS_INLINE_FUNCTION
+  void divide(scalar_t& lhs, const scalar_t& rhs) const
+  { lhs /= rhs; }
+
+  KOKKOS_INLINE_FUNCTION
+  void divide(const member_type&, scalar_t& lhs, const scalar_t& rhs) const
+  { lhs /= rhs; }
+
+  // add. lhs += rhs
+  KOKKOS_INLINE_FUNCTION
+  void add(scalar_t& lhs, const scalar_t& rhs) const
+  { lhs += rhs; }
+
+  // multiply: return (alpha * lhs) * rhs
+  KOKKOS_INLINE_FUNCTION
+  scalar_t multiply(const scalar_t& alpha, const scalar_t& lhs, const scalar_t& rhs) const
+  { return alpha * lhs * rhs; }
+
+  // lget
+  KOKKOS_INLINE_FUNCTION
+  scalar_t& lget(const size_type nnz) const
+  { return L_values(nnz); }
+
+  // uget
+  KOKKOS_INLINE_FUNCTION
+  scalar_t& uget(const size_type nnz) const
+  { return U_values(nnz); }
+
+  // aget
+  KOKKOS_INLINE_FUNCTION
+  scalar_t aget(const size_type nnz) const
+  { return A_values(nnz); }
+
+  // uequal
+  KOKKOS_INLINE_FUNCTION
+  bool uequal(const size_type nnz, const scalar_t& value) const
+  { return U_values(nnz) == value; }
+};
+
+// Partial specialization for block support
+template <class ARowMapType, class AEntriesType, class AValuesType,
+          class LRowMapType, class LEntriesType, class LValuesType,
+          class URowMapType, class UEntriesType, class UValuesType>
+struct Common<ARowMapType, AEntriesType, AValuesType,
+              LRowMapType, LEntriesType, LValuesType,
+              URowMapType, UEntriesType, UValuesType, true>
 {
   ARowMapType A_row_map;
   AEntriesType A_entries;
@@ -132,65 +233,35 @@ struct Common
   }
 
   // lset
-
-  template <bool Blocked>
   KOKKOS_INLINE_FUNCTION
-  void lset_impl(const size_type nnz, const scalar_t& value) const
-  { L_values(nnz) = value; }
-
-  template <>
-  KOKKOS_INLINE_FUNCTION
-  void lset_impl<true>(const size_type block, const scalar_t& value) const
-  { KokkosBlas::SerialSet::invoke(value, getl(block)); }
-
-  KOKKOS_INLINE_FUNCTION
-  void lset(const size_type nnz, const scalar_t& value) const
-  { lset_impl<BlockEnabled>(nnz, value); }
+  void lset(const size_type block, const scalar_t& value) const
+  { KokkosBlas::SerialSet::invoke(value, lget(block)); }
 
   KOKKOS_INLINE_FUNCTION
   void lset(const size_type block, const AValuesUnmanaged2DBlockType& rhs) const
-  { Kokkos::deep_copy(getl(block), rhs); }
+  { Kokkos::deep_copy(lget(block), rhs); }
 
   // uset
-#if 0
-  template <bool Blocked>
   KOKKOS_INLINE_FUNCTION
-  void uset_impl(const size_type nnz, const scalar_t& value) const
-  { U_values(nnz) = value; }
-
-  template <>
-  KOKKOS_INLINE_FUNCTION
-  void uset_impl<true>(const size_type block, const scalar_t& value) const
-  { KokkosBlas::SerialSet::invoke(value, getu(block)); }
-
-  KOKKOS_INLINE_FUNCTION
-  void uset(const size_type nnz, const scalar_t& value) const
-  { uset_impl<BlockEnabled>(nnz, value); }
+  void uset(const size_type block, const scalar_t& value) const
+  { KokkosBlas::SerialSet::invoke(value, uget(block)); }
 
   KOKKOS_INLINE_FUNCTION
   void uset(const size_type block, const AValuesUnmanaged2DBlockType& rhs) const
-  { Kokkos::deep_copy(getu(block), rhs); }
+  { Kokkos::deep_copy(uget(block), rhs); }
 
   // lset_id
-
-  template<bool Blocked>
   KOKKOS_INLINE_FUNCTION
-  void lset_id_impl(const size_type nnz) const
-  { U_values(nnz) = scalar_t(1.0); }
-
-  template<>
-  KOKKOS_INLINE_FUNCTION
-  void lset_id_impl<true>(const size_type nnz) const
-  { KokkosBatched::SerialSetIdentity::invoke(get_l_block(nnz)); }
+  void lset_id(const size_type block) const
+  { KokkosBatched::SerialSetIdentity::invoke(lget(block)); }
 
   KOKKOS_INLINE_FUNCTION
-  void lset_id(const size_type nnz) const
-  { lset_id_impl<BlockEnabled>(nnz); }
+  void lset_id(const member_type& team, const size_type block) const
+  { KokkosBatched::TeamSetIdentity<member_type>::invoke(team, lget(block)); }
 
   // divide. lhs /= rhs
-
   KOKKOS_INLINE_FUNCTION
-  void divide(const LValuesUnmanaged2DBlockType& lhs, const UValuesUnmanaged2DBlockType& rhs) const
+  void divide(LValuesUnmanaged2DBlockType lhs, const UValuesUnmanaged2DBlockType& rhs) const
   {
     KokkosBatched::SerialTrsm<KokkosBatched::Side::Right,
                               KokkosBatched::Uplo::Upper,
@@ -201,14 +272,29 @@ struct Common
   }
 
   KOKKOS_INLINE_FUNCTION
-  void divide(scalar_t& lhs, const scalar_t& rhs) const
+  void divide(const member_type& team, LValuesUnmanaged2DBlockType lhs, const UValuesUnmanaged2DBlockType& rhs) const
   {
-    lhs /= rhs;
+    KokkosBatched::TeamTrsm<member_type,
+                            KokkosBatched::Side::Right,
+                            KokkosBatched::Uplo::Upper,
+                            KokkosBatched::Trans::Transpose, // not 100% on this
+                            KokkosBatched::Diag::NonUnit,
+                            KokkosBatched::Algo::Trsm::Unblocked>:: // not 100% on this
+      invoke(team, 1.0, rhs, lhs);
+  }
+
+
+  // add. lhs += rhs
+  template <typename Lview, typename Rview>
+  KOKKOS_INLINE_FUNCTION
+  void add(Lview lhs, const Rview& rhs) const
+  {
+    KokkosBatched::SerialAxpy::invoke(ones, rhs, lhs);
   }
 
   // multiply: return (alpha * lhs) * rhs
   KOKKOS_INLINE_FUNCTION
-  sview2d multiply(const scalar_t& alpha, const UValuesUnmanaged2DBlockType& lhs, const LValuesUnmanaged2DBlockType& rhs) const
+  sview_2d multiply(const scalar_t& alpha, const UValuesUnmanaged2DBlockType& lhs, const LValuesUnmanaged2DBlockType& rhs) const
   {
     KokkosBatched::SerialGemm<KokkosBatched::Trans::NoTranspose,
                               KokkosBatched::Trans::NoTranspose,
@@ -217,94 +303,41 @@ struct Common
     return temp_dense_block;
   }
 
+  // lget
   KOKKOS_INLINE_FUNCTION
-  scalar_t multiply(const scalar_t& alpha, const scalar_t& lhs, const scalar_t& rhs) const
-  { return alpha * lhs * rhs; }
-
-  // getl
-
-  template <bool Block>
-  struct getl_rt
-  { using type = scalar_t; };
-
-  template <>
-  struct getl_rt<>
-  { using type = LValuesUnmanaged2DBlockType; }
-
-  template <bool Block>
-  KOKKOS_INLINE_FUNCTION
-  getl_rt<Block>::type getl_impl(const size_type nnz) const
-  { return L_values(nnz); }
-
-  template <>
-  KOKKOS_INLINE_FUNCTION
-  getl_rt<Block>::type getl_impl<true>(const size_type nnz) const
+  LValuesUnmanaged2DBlockType lget(const size_type block) const
   {
     return LValuesUnmanaged2DBlockType(L_values.data() + (block * block_items), block_size, block_size);
   }
 
+  // uget
   KOKKOS_INLINE_FUNCTION
-  getl_rt<BlockEnabled>::type getl(const size_type nnz) const
-  {
-    return getl_impl<BlockEnabled>(nnz);
-  }
-
-  // getu
-
-  template <bool Block>
-  struct getu_rt
-  { using type = scalar_t; };
-
-  template <>
-  struct getu_rt<>
-  { using type = UValuesUnmanaged2DBlockType; }
-
-  template <bool Block>
-  KOKKOS_INLINE_FUNCTION
-  getu_rt<Block>::type getu_impl(const size_type nnz) const
-  { return U_values(nnz); }
-
-  template <>
-  KOKKOS_INLINE_FUNCTION
-  getu_rt<Block>::type getu_impl<true>(const size_type nnz) const
+  UValuesUnmanaged2DBlockType uget(const size_type block) const
   {
     return UValuesUnmanaged2DBlockType(U_values.data() + (block * block_items), block_size, block_size);
   }
 
+  // aget
   KOKKOS_INLINE_FUNCTION
-  getu_rt<BlockEnabled>::type getu(const size_type nnz) const
-  {
-    return getu_impl<BlockEnabled>(nnz);
-  }
-
-  // geta
-
-  template <bool Block>
-  struct geta_rt
-  { using type = scalar_t; };
-
-  template <>
-  struct geta_rt<>
-  { using type = AValuesUnmanaged2DBlockType; }
-
-  template <bool Block>
-  KOKKOS_INLINE_FUNCTION
-  geta_rt<Block>::type geta_impl(const size_type nnz) const
-  { return A_values(nnz); }
-
-  template <>
-  KOKKOS_INLINE_FUNCTION
-  geta_rt<Block>::type geta_impl<true>(const size_type nnz) const
+  AValuesUnmanaged2DBlockType aget(const size_type block) const
   {
     return AValuesUnmanaged2DBlockType(A_values.data() + (block * block_items), block_size, block_size);
   }
 
+  // uequal
   KOKKOS_INLINE_FUNCTION
-  geta_rt<BlockEnabled>::type geta(const size_type nnz) const
+  bool uequal(const size_type block, const scalar_t& value) const
   {
-    return geta_impl<BlockEnabled>(nnz);
+    auto u_block = uget(block);
+    for (size_type i = 0; i < block_size; ++i) {
+      for (size_type j = 0; j < block_size; ++j) {
+        if (u_block(i, j) != value) {
+          return false;
+        }
+      }
+    }
+    return true;
   }
-#endif
 
 };
 
@@ -330,32 +363,39 @@ struct ILUKLvlSchedRPNumericFunctor :
          U_row_map_, U_entries_, U_values_, level_idx_, iw_, lev_start_, block_size_)
   {}
 
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FUNCTION
   void operator()(const lno_t i) const {
-    auto rowid = Base::level_idx(i);
-    auto tid   = i - Base::lev_start;
-    auto k1    = Base::L_row_map(rowid);
-    auto k2    = Base::L_row_map(rowid + 1);
+    // Grab items from parent to make code more readable
+    auto A_row_map = Base::A_row_map;
+    auto A_entries = Base::A_row_map;
+    auto L_row_map = Base::L_row_map;
+    auto L_entries = Base::L_entries;
+    auto U_row_map = Base::U_row_map;
+    auto U_entries = Base::U_entries;
+    auto level_idx = Base::level_idx;
+    auto lev_start = Base::lev_start;
+    auto iw        = Base::iw;
 
+    auto rowid = level_idx(i);
+    auto tid   = i - lev_start;
+    auto k1    = L_row_map(rowid);
 #ifdef KEEP_DIAG
-    for (auto k = k1; k < k2 - 1; ++k) {
+    auto k2    = L_row_map(rowid + 1) - 1;
+    Base::lset_id(k2);
 #else
-    for (auto k = k1; k < k2; ++k) {
+    auto k2    = L_row_map(rowid + 1);
 #endif
+    for (auto k = k1; k < k2; ++k) {
       auto col = Base::L_entries(k);
       Base::lset(k, 0.0);
       Base::iw(tid, col) = k;
     }
-#if 0
-#ifdef KEEP_DIAG
-    lset_id(k2 - 1);
-#endif
 
     k1 = U_row_map(rowid);
     k2 = U_row_map(rowid + 1);
     for (auto k = k1; k < k2; ++k) {
       auto col     = U_entries(k);
-      uset(k, 0.0);
+      Base::uset(k, 0.0);
       iw(tid, col) = k;
     }
 
@@ -365,50 +405,49 @@ struct ILUKLvlSchedRPNumericFunctor :
       auto col  = A_entries(k);
       auto ipos = iw(tid, col);
       if (col < rowid) {
-        lset(ipos, geta(k));
+        Base::lset(ipos, Base::aget(k));
       }
       else {
-        uset(ipos, geta(k));
+        Base::uset(ipos, Base::aget(k));
       }
     }
 
     // Eliminate prev rows
     k1 = L_row_map(rowid);
+#ifdef KEEP_DIAG
+    k2 = L_row_map(rowid + 1) - 1;
+#else
     k2 = L_row_map(rowid + 1);
-#ifdef KEEP_DIAG
-    for (auto k = k1; k < k2 - 1; ++k) {
-#else
+#endif
     for (auto k = k1; k < k2; ++k) {
-#endif
       auto prev_row = L_entries(k);
-      auto fact     = getl(k);
-      auto u_diag   = getu(U_row_map(prev_row));
+      auto u_diag   = Base::uget(U_row_map(prev_row));
 #ifdef KEEP_DIAG
-      divide(fact, u_diag);
+      Base::divide(Base::lget(k), u_diag);
 #else
-      fact = multiply(1.0, fact, u_diag);
+      fact = Base::multiply(1.0, fact, u_diag);
 #endif
+      auto fact = Base::lget(k);
       for (auto kk = U_row_map(prev_row) + 1; kk < U_row_map(prev_row + 1);
            ++kk) {
         auto col  = U_entries(kk);
         auto ipos = iw(tid, col);
         if (ipos == -1) continue;
-        auto lxu = multiply(-1.0, getu(kk), fact);
+        auto lxu = Base::multiply(-1.0, Base::uget(kk), fact);
         if (col < rowid) {
-          add(getl(ipos), lxu);
+          Base::add(Base::lget(ipos), lxu);
         }
         else {
-          add(getu(ipos), lxu);
+          Base::add(Base::uget(ipos), lxu);
         }
       }  // end for kk
     }    // end for k
 
     const auto ipos = iw(tid, rowid);
-#ifdef KEEP_DIAG
-    if (uequal(ipos, 0.0)) {
-      uset(ipos, 1e6);
+    if (Base::uequal(ipos, 0.0)) {
+      Base::uset(ipos, 1e6);
     }
-#else
+#ifndef KEEP_DIAG
     else {
       assert(false);
       //verbose_uset(iw(tid, rowid), 1.0 / U_values(iw(tid, rowid)));
@@ -417,299 +456,12 @@ struct ILUKLvlSchedRPNumericFunctor :
 
     // Reset
     k1 = L_row_map(rowid);
-    k2 = L_row_map(rowid + 1);
 #ifdef KEEP_DIAG
-    for (auto k = k1; k < k2 - 1; ++k)
+    k2 = L_row_map(rowid + 1) - 1;
 #else
+    k2 = L_row_map(rowid + 1);
+#endif
     for (auto k = k1; k < k2; ++k)
-#endif
-      iw(tid, L_entries(k)) = -1;
-
-    k1 = U_row_map(rowid);
-    k2 = U_row_map(rowid + 1);
-    for (auto k = k1; k < k2; ++k) iw(tid, U_entries(k)) = -1;
-#endif
-  }
-};
-
-template <class ARowMapType, class AEntriesType, class AValuesType,
-          class LRowMapType, class LEntriesType, class LValuesType,
-          class URowMapType, class UEntriesType, class UValuesType>
-struct ILUKLvlSchedRPNumericFunctorBlock {
-  ARowMapType A_row_map;
-  AEntriesType A_entries;
-  AValuesType A_values;
-  LRowMapType L_row_map;
-  LEntriesType L_entries;
-  LValuesType L_values;
-  URowMapType U_row_map;
-  UEntriesType U_entries;
-  UValuesType U_values;
-  LevelViewType level_idx;
-  WorkViewType iw;
-  lno_t lev_start;
-  size_type block_size;
-  size_type block_items;
-  sview_2d temp_dense_block;
-  sview_1d ones;
-  bool verbose;
-
-  using LValuesUnmanaged2DBlockType = Kokkos::View<
-    typename LValuesType::value_type**,
-    typename KokkosKernels::Impl::GetUnifiedLayout<LValuesType>::array_layout,
-    typename LValuesType::device_type,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
-
-  using UValuesUnmanaged2DBlockType = Kokkos::View<
-    typename UValuesType::value_type**,
-    typename KokkosKernels::Impl::GetUnifiedLayout<UValuesType>::array_layout,
-    typename UValuesType::device_type,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
-
-  using AValuesUnmanaged2DBlockType = Kokkos::View<
-    typename AValuesType::value_type**,
-    typename KokkosKernels::Impl::GetUnifiedLayout<AValuesType>::array_layout,
-    typename AValuesType::device_type,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
-
-  ILUKLvlSchedRPNumericFunctorBlock(
-      const ARowMapType &A_row_map_, const AEntriesType &A_entries_,
-      const AValuesType &A_values_, const LRowMapType &L_row_map_,
-      const LEntriesType &L_entries_, LValuesType &L_values_,
-      const URowMapType &U_row_map_, const UEntriesType &U_entries_,
-      UValuesType &U_values_, const LevelViewType &level_idx_,
-      WorkViewType &iw_, const lno_t &lev_start_, const size_type& block_size_)
-      : A_row_map(A_row_map_),
-        A_entries(A_entries_),
-        A_values(A_values_),
-        L_row_map(L_row_map_),
-        L_entries(L_entries_),
-        L_values(L_values_),
-        U_row_map(U_row_map_),
-        U_entries(U_entries_),
-        U_values(U_values_),
-        level_idx(level_idx_),
-        iw(iw_),
-        lev_start(lev_start_),
-        block_size(block_size_),
-        block_items(block_size * block_size),
-        temp_dense_block("temp_dense_block", block_size, block_size), // this will have races unless Serial
-        ones("ones", block_size),
-        verbose(false)
-  {
-    Kokkos::deep_copy(ones, 1.0);
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  void verbose_lset(const size_type block, const scalar_t& value) const
-  {
-    const size_type nrows = L_row_map.extent(0) - 1;
-    for (size_type row = 0; row < nrows; ++row) {
-      const auto row_begin = L_row_map(row);
-      const auto row_end   = L_row_map(row+1);
-      if (block >= row_begin && block < row_end) {
-        const auto col = L_entries(block);
-        if (verbose)
-          std::cout << "        JGF Setting L_values[" << row << "][" << col << "] = " << value << std::endl;
-        KokkosBlas::SerialSet::invoke(value, get_l_block(block));
-      }
-    }
-  }
-
-  template <typename BlockType>
-  KOKKOS_INLINE_FUNCTION
-  void verbose_lset_block(const size_type block, const BlockType& rhs) const
-  {
-    const size_type nrows = L_row_map.extent(0) - 1;
-    for (size_type row = 0; row < nrows; ++row) {
-      const auto row_begin = L_row_map(row);
-      const auto row_end   = L_row_map(row+1);
-      if (block >= row_begin && block < row_end) {
-        const auto col = L_entries(block);
-        if (verbose)
-          std::cout << "        JGF Setting block L_values[" << row << "][" << col << "]" << std::endl;
-        Kokkos::deep_copy(get_l_block(block), rhs);
-      }
-    }
-  }
-
-
-  KOKKOS_INLINE_FUNCTION
-  void verbose_uset(const size_type block, const scalar_t& value) const
-  {
-    const size_type nrows = U_row_map.extent(0) - 1;
-    for (size_type row = 0; row < nrows; ++row) {
-      const auto row_begin = U_row_map(row);
-      const auto row_end   = U_row_map(row+1);
-      if (block >= row_begin && block < row_end) {
-        const auto col = U_entries(block);
-        if (verbose)
-          std::cout << "        JGF Setting U_values[" << row << "][" << col << "] = " << value << std::endl;
-        KokkosBlas::SerialSet::invoke(value, get_u_block(block));
-      }
-    }
-  }
-
-  template <typename BlockType>
-  KOKKOS_INLINE_FUNCTION
-  void verbose_uset_block(const size_type block, const BlockType& rhs) const
-  {
-    const size_type nrows = U_row_map.extent(0) - 1;
-    for (size_type row = 0; row < nrows; ++row) {
-      const auto row_begin = U_row_map(row);
-      const auto row_end   = U_row_map(row+1);
-      if (block >= row_begin && block < row_end) {
-        const auto col = U_entries(block);
-        std::cout << "        JGF Setting block U_values[" << row << "][" << col << "]" << std::endl;
-        Kokkos::deep_copy(get_u_block(block), rhs);
-      }
-    }
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  bool ublock_all_eq(const size_type block, const scalar_t& value) const
-  {
-    auto u_block = get_u_block(block);
-    for (size_type i = 0; i < block_size; ++i) {
-      for (size_type j = 0; j < block_size; ++j) {
-        if (u_block(i, j) != value) {
-          return false;
-        }
-      }
-    }
-    return true;
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  void verbose_iwset(const size_type tid, const size_type offset, const lno_t value) const
-  {
-    if (verbose)
-      std::cout << "        JGF Setting iw[" << tid << "][" << offset << "] = " << value << std::endl;
-    iw(tid, offset) = value;
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  LValuesUnmanaged2DBlockType get_l_block(const size_type block) const
-  {
-    return LValuesUnmanaged2DBlockType(L_values.data() + (block * block_items), block_size, block_size);
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  UValuesUnmanaged2DBlockType get_u_block(const size_type block) const
-  {
-    return UValuesUnmanaged2DBlockType(U_values.data() + (block * block_items), block_size, block_size);
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  AValuesUnmanaged2DBlockType get_a_block(const size_type block) const
-  {
-    return AValuesUnmanaged2DBlockType(A_values.data() + (block * block_items), block_size, block_size);
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()(const lno_t lvl) const {
-    auto rowid = level_idx(lvl);
-    auto tid   = lvl - lev_start;
-    auto k1    = L_row_map(rowid);
-    auto k2    = L_row_map(rowid + 1);
-
-#ifdef KEEP_DIAG
-    for (auto k = k1; k < k2 - 1; ++k) {
-#else
-    for (auto k = k1; k < k2; ++k) {
-#endif
-      auto col     = L_entries(k);
-      verbose_lset(k, 0.0);
-      verbose_iwset(tid, col, k);
-    }
-#ifdef KEEP_DIAG
-    KokkosBatched::SerialSetIdentity::invoke(get_l_block(k2 -1));
-#endif
-
-    k1 = U_row_map(rowid);
-    k2 = U_row_map(rowid + 1);
-    for (auto k = k1; k < k2; ++k) {
-      auto col     = U_entries(k);
-      verbose_uset(k, 0.0);
-      verbose_iwset(tid, col, k);
-    }
-
-    // Unpack the ith row of A
-    k1 = A_row_map(rowid);
-    k2 = A_row_map(rowid + 1);
-    for (auto k = k1; k < k2; ++k) {
-      auto col  = A_entries(k);
-      auto ipos = iw(tid, col);
-      if (col < rowid) {
-        verbose_lset_block(ipos, get_a_block(k));
-      }
-      else {
-        verbose_uset_block(ipos, get_a_block(k));
-      }
-    }
-
-    // Eliminate prev rows
-    k1 = L_row_map(rowid);
-    k2 = L_row_map(rowid + 1);
-#ifdef KEEP_DIAG
-    for (auto k = k1; k < k2 - 1; ++k) {
-#else
-    for (auto k = k1; k < k2; ++k) {
-#endif
-      auto prev_row = L_entries(k);
-      if (verbose)
-        std::cout << "        JGF Processing L[" << rowid << "][" << prev_row << "]" << std::endl;
-      auto fact = get_l_block(k);
-      auto u_diag = get_u_block(U_row_map(prev_row));
-#ifdef KEEP_DIAG
-      KokkosBatched::SerialTrsm<KokkosBatched::Side::Right,
-                                KokkosBatched::Uplo::Upper,
-                                KokkosBatched::Trans::Transpose, // not 100% on this
-                                KokkosBatched::Diag::NonUnit,
-                                KokkosBatched::Algo::Trsm::Unblocked>:: // not 100% on this
-        invoke<scalar_t>(1.0, u_diag, fact);
-#else
-      // This should be a gemm
-      auto fact = L_values(k) * U_values(U_row_map(prev_row));
-#endif
-      for (auto kk = U_row_map(prev_row) + 1; kk < U_row_map(prev_row + 1);
-           ++kk) {
-        auto col  = U_entries(kk);
-        auto ipos = iw(tid, col);
-        if (ipos == -1) continue;
-
-        KokkosBatched::SerialGemm<KokkosBatched::Trans::NoTranspose,
-                                  KokkosBatched::Trans::NoTranspose,
-                                  KokkosBatched::Algo::Gemm::Unblocked>::
-          invoke(-1.0, get_u_block(kk), fact, 0.0, temp_dense_block);
-        if (col < rowid) {
-          KokkosBatched::SerialAxpy::invoke(ones, temp_dense_block, get_l_block(ipos));
-        }
-        else {
-          KokkosBatched::SerialAxpy::invoke(ones, temp_dense_block, get_u_block(ipos));
-        }
-      }  // end for kk
-    }    // end for k
-
-    const auto diag_ipos = iw(tid, rowid);
-    if (ublock_all_eq(diag_ipos, 0.0)) {
-      verbose_uset(diag_ipos, 1e6);
-    }
-#ifndef KEEP_DIAG
-    else {
-      assert(false);
-      //verbose_uset(diag_ipos, 1.0 / U_values(diag_ipos));
-    }
-#endif
-
-    // Reset
-    k1 = L_row_map(rowid);
-    k2 = L_row_map(rowid + 1);
-#ifdef KEEP_DIAG
-    for (auto k = k1; k < k2 - 1; ++k)
-#else
-    for (auto k = k1; k < k2; ++k)
-#endif
       iw(tid, L_entries(k)) = -1;
 
     k1 = U_row_map(rowid);
@@ -720,20 +472,14 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
 
 template <class ARowMapType, class AEntriesType, class AValuesType,
           class LRowMapType, class LEntriesType, class LValuesType,
-          class URowMapType, class UEntriesType, class UValuesType>
-struct ILUKLvlSchedTP1NumericFunctor {
-  ARowMapType A_row_map;
-  AEntriesType A_entries;
-  AValuesType A_values;
-  LRowMapType L_row_map;
-  LEntriesType L_entries;
-  LValuesType L_values;
-  URowMapType U_row_map;
-  UEntriesType U_entries;
-  UValuesType U_values;
-  LevelViewType level_idx;
-  WorkViewType iw;
-  lno_t lev_start;
+          class URowMapType, class UEntriesType, class UValuesType,
+          bool BlockEnabled>
+struct ILUKLvlSchedTP1NumericFunctor :
+    public Common<ARowMapType, AEntriesType, AValuesType, LRowMapType, LEntriesType, LValuesType,
+                  URowMapType, UEntriesType, UValuesType, BlockEnabled>
+{
+  using Base = Common<ARowMapType, AEntriesType, AValuesType, LRowMapType, LEntriesType, LValuesType,
+                      URowMapType, UEntriesType, UValuesType, BlockEnabled>;
 
   ILUKLvlSchedTP1NumericFunctor(
       const ARowMapType &A_row_map_, const AEntriesType &A_entries_,
@@ -741,49 +487,41 @@ struct ILUKLvlSchedTP1NumericFunctor {
       const LEntriesType &L_entries_, LValuesType &L_values_,
       const URowMapType &U_row_map_, const UEntriesType &U_entries_,
       UValuesType &U_values_, const LevelViewType &level_idx_,
-      WorkViewType &iw_, const lno_t &lev_start_)
-      : A_row_map(A_row_map_),
-        A_entries(A_entries_),
-        A_values(A_values_),
-        L_row_map(L_row_map_),
-        L_entries(L_entries_),
-        L_values(L_values_),
-        U_row_map(U_row_map_),
-        U_entries(U_entries_),
-        U_values(U_values_),
-        level_idx(level_idx_),
-        iw(iw_),
-        lev_start(lev_start_) {}
+        WorkViewType &iw_, const lno_t &lev_start_, const size_type& block_size_ = 0) :
+    Base(A_row_map_, A_entries_, A_values_, L_row_map_, L_entries_, L_values_,
+      U_row_map_, U_entries_, U_values_, level_idx_, iw_, lev_start_, block_size_)
+  {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const member_type &team) const {
+    // Grab items from parent to make code more readable
+    auto A_row_map = Base::A_row_map;
+    auto A_entries = Base::A_row_map;
+    auto L_row_map = Base::L_row_map;
+    auto L_entries = Base::L_entries;
+    auto U_row_map = Base::U_row_map;
+    auto U_entries = Base::U_entries;
+    auto level_idx = Base::level_idx;
+    auto lev_start = Base::lev_start;
+    auto iw        = Base::iw;
+
     lno_t my_team = static_cast<lno_t>(team.league_rank());
     lno_t rowid =
         static_cast<lno_t>(level_idx(my_team + lev_start));  // map to rowid
 
     size_type k1 = static_cast<size_type>(L_row_map(rowid));
-    size_type k2 = static_cast<size_type>(L_row_map(rowid + 1));
 #ifdef KEEP_DIAG
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2 - 1),
-                         [&](const size_type k) {
-                           lno_t col = static_cast<lno_t>(L_entries(k));
-                           L_values(k)   = 0.0;
-                           iw(my_team, col) = static_cast<lno_t>(k);
-                         });
+    size_type k2 = static_cast<size_type>(L_row_map(rowid + 1)) - 1;
+    Base::lset_id(team, k2);
 #else
+    size_type k2 = static_cast<size_type>(L_row_map(rowid + 1));
+#endif
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2),
                          [&](const size_type k) {
                            lno_t col = static_cast<lno_t>(L_entries(k));
-                           L_values(k)   = 0.0;
+                           Base::lset(k, 0.0);
                            iw(my_team, col) = static_cast<lno_t>(k);
                          });
-#endif
-
-#ifdef KEEP_DIAG
-    // if (my_thread == 0) L_values(k2 - 1) = scalar_t(1.0);
-    Kokkos::single(Kokkos::PerTeam(team),
-                   [&]() { L_values(k2 - 1) = scalar_t(1.0); });
-#endif
 
     team.team_barrier();
 
@@ -792,7 +530,7 @@ struct ILUKLvlSchedTP1NumericFunctor {
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2),
                          [&](const size_type k) {
                            lno_t col = static_cast<lno_t>(U_entries(k));
-                           U_values(k)   = 0.0;
+                           Base::uset(k, 0.0);
                            iw(my_team, col) = static_cast<lno_t>(k);
                          });
 
@@ -806,71 +544,60 @@ struct ILUKLvlSchedTP1NumericFunctor {
                            lno_t col = static_cast<lno_t>(A_entries(k));
                            lno_t ipos = iw(my_team, col);
                            if (col < rowid)
-                             L_values(ipos) = A_values(k);
+                             Base::lset(ipos, Base::aget(k));
                            else
-                             U_values(ipos) = A_values(k);
+                             Base::uset(ipos, Base::aget(k));
                          });
 
     team.team_barrier();
 
     // Eliminate prev rows
     k1 = static_cast<size_type>(L_row_map(rowid));
+#ifdef KEEP_DIAG
+    k2 = static_cast<size_type>(L_row_map(rowid + 1)) - 1;
+#else
     k2 = static_cast<size_type>(L_row_map(rowid + 1));
-#ifdef KEEP_DIAG
-    for (size_type k = k1; k < k2 - 1; k++)
-#else
-    for (size_type k = k1; k < k2; k++)
 #endif
-    {
-      lno_t prev_row = L_entries(k);
-
-      scalar_t fact = scalar_t(0.0);
-      Kokkos::single(
-          Kokkos::PerTeam(team),
-          [&](scalar_t &tmp_fact) {
+    for (size_type k = k1; k < k2; k++) {
+      auto prev_row = L_entries(k);
+      auto udiag   = Base::uget(U_row_map(prev_row));
 #ifdef KEEP_DIAG
-            tmp_fact = L_values(k) / U_values(U_row_map(prev_row));
+      Base::divide(team, Base::lget(k), udiag);
 #else
-            tmp_fact = L_values(k) * U_values(U_row_map(prev_row));
+      fact = Base::multiply(team, 1.0, fact, udiag);
 #endif
-            L_values(k) = tmp_fact;
-          },
-          fact);
-
+      auto fact = Base::lget(k);
       Kokkos::parallel_for(
-          Kokkos::TeamThreadRange(team, U_row_map(prev_row) + 1,
-                                  U_row_map(prev_row + 1)),
-          [&](const size_type kk) {
+        Kokkos::TeamThreadRange(team, U_row_map(prev_row) + 1, U_row_map(prev_row + 1)),
+                                [&](const size_type kk) {
             lno_t col  = static_cast<lno_t>(U_entries(kk));
             lno_t ipos = iw(my_team, col);
-            auto lxu       = -U_values(kk) * fact;
             if (ipos != -1) {
-              if (col < rowid)
-                L_values(ipos) += lxu;
-              else
-                U_values(ipos) += lxu;
+              auto lxu   = Base::multiply(-1.0, Base::uget(kk), fact);
+              if (col < rowid) {
+                Base::add(Base::lget(ipos), lxu);
+              }
+              else {
+                Base::add(Base::uget(ipos), lxu);
+              }
             }
           });  // end for kk
 
       team.team_barrier();
     }  // end for k
 
-    // if (my_thread == 0) {
     Kokkos::single(Kokkos::PerTeam(team), [&]() {
       lno_t ipos = iw(my_team, rowid);
-#ifdef KEEP_DIAG
-      if (U_values(ipos) == 0.0) {
-        U_values(ipos) = 1e6;
+      if (Base::uequal(ipos, 0.0)) {
+        Base::uset(ipos, 1e6);
       }
-#else
-      if (U_values(ipos) == 0.0) {
-        U_values(ipos) = 1e6;
-      } else {
-        U_values(ipos) = 1.0 / U_values(ipos);
+#ifndef KEEP_DIAG
+      else {
+        //U_values(ipos) = 1.0 / U_values(ipos);
+        assert(false);
       }
 #endif
     });
-    //}
 
     team.team_barrier();
 
@@ -1294,19 +1021,36 @@ static void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
           else
             lvl_nrows_chunk = level_nrowsperchunk_h(lvl);
 
-          ILUKLvlSchedTP1NumericFunctor<
+          if (thandle.block_enabled()) {
+            ILUKLvlSchedTP1NumericFunctor<
               ARowMapType, AEntriesType, AValuesType, LRowMapType, LEntriesType,
-              LValuesType, URowMapType, UEntriesType, UValuesType>
+              LValuesType, URowMapType, UEntriesType, UValuesType, true>
+              tstf(A_row_map, A_entries, A_values, L_row_map, L_entries,
+                   L_values, U_row_map, U_entries, U_values, level_idx, iw,
+                   lev_start + lvl_rowid_start, block_size);
+
+            if (team_size == -1)
+              Kokkos::parallel_for(
+                "parfor_tp1", policy_type(lvl_nrows_chunk, Kokkos::AUTO), tstf);
+            else
+              Kokkos::parallel_for("parfor_tp1",
+                                   policy_type(lvl_nrows_chunk, team_size), tstf);
+          }
+          else {
+            ILUKLvlSchedTP1NumericFunctor<
+              ARowMapType, AEntriesType, AValuesType, LRowMapType, LEntriesType,
+              LValuesType, URowMapType, UEntriesType, UValuesType, false>
               tstf(A_row_map, A_entries, A_values, L_row_map, L_entries,
                    L_values, U_row_map, U_entries, U_values, level_idx, iw,
                    lev_start + lvl_rowid_start);
 
-          if (team_size == -1)
-            Kokkos::parallel_for(
+            if (team_size == -1)
+              Kokkos::parallel_for(
                 "parfor_tp1", policy_type(lvl_nrows_chunk, Kokkos::AUTO), tstf);
-          else
-            Kokkos::parallel_for("parfor_tp1",
-                                 policy_type(lvl_nrows_chunk, team_size), tstf);
+            else
+              Kokkos::parallel_for("parfor_tp1",
+                                   policy_type(lvl_nrows_chunk, team_size), tstf);
+          }
           Kokkos::fence();
           lvl_rowid_start += lvl_nrows_chunk;
         }
@@ -1492,7 +1236,7 @@ static void iluk_numeric_streams(const std::vector<ExecutionSpace> &execspace_v,
               ILUKLvlSchedTP1NumericFunctor<
                   ARowMapType, AEntriesType, AValuesType, LRowMapType,
                   LEntriesType, LValuesType, URowMapType, UEntriesType,
-                  UValuesType>
+                  UValuesType, false>
                   tstf(A_row_map_v[i], A_entries_v[i], A_values_v[i],
                        L_row_map_v[i], L_entries_v[i], L_values_v[i],
                        U_row_map_v[i], U_entries_v[i], U_values_v[i],
