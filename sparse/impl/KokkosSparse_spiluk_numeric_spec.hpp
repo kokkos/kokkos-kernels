@@ -120,13 +120,6 @@ struct SPILUK_NUMERIC {
       const AValuesType &A_values, LRowMapType &L_row_map,
       LEntriesType &L_entries, LValuesType &L_values, URowMapType &U_row_map,
       UEntriesType &U_entries, UValuesType &U_values);
-  static void spiluk_numeric_block(
-      KernelHandle *handle,
-      const typename KernelHandle::const_nnz_lno_t &fill_lev,
-      const ARowMapType &A_row_map, const AEntriesType &A_entries,
-      const AValuesType &A_values, LRowMapType &L_row_map,
-      LEntriesType &L_entries, LValuesType &L_values, URowMapType &U_row_map,
-      UEntriesType &U_entries, UValuesType &U_values);
   static void spiluk_numeric_streams(
       const std::vector<ExecutionSpace> &execspace_v,
       std::vector<KernelHandle> &handle_v,
@@ -168,21 +161,6 @@ struct SPILUK_NUMERIC<ExecutionSpace, KernelHandle, ARowMapType, AEntriesType,
     Iluk::iluk_numeric(*spiluk_handle, A_row_map, A_entries, A_values,
                        L_row_map, L_entries, L_values, U_row_map,
                        U_entries, U_values);
-  }
-
-  static void spiluk_numeric_block(
-      KernelHandle *handle,
-      const typename KernelHandle::const_nnz_lno_t & /*fill_lev*/,
-      const ARowMapType &A_row_map, const AEntriesType &A_entries,
-      const AValuesType &A_values, LRowMapType &L_row_map,
-      LEntriesType &L_entries, LValuesType &L_values, URowMapType &U_row_map,
-      UEntriesType &U_entries, UValuesType &U_values) {
-    // Call specific algorithm type
-    auto spiluk_handle = handle->get_spiluk_handle();
-
-    Iluk::iluk_numeric_block(*spiluk_handle, A_row_map, A_entries, A_values,
-                             L_row_map, L_entries, L_values, U_row_map,
-                             U_entries, U_values);
   }
 
   static void spiluk_numeric_streams(

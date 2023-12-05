@@ -947,7 +947,7 @@ class KokkosKernelsHandle {
 
   SPILUKHandleType *get_spiluk_handle() { return this->spilukHandle; }
   void create_spiluk_handle(KokkosSparse::Experimental::SPILUKAlgorithm algm,
-                            size_type nrows, size_type nnzL, size_type nnzU, size_type block_size = 1) {
+                            size_type nrows, size_type nnzL, size_type nnzU, size_type block_size = 0) {
     this->destroy_spiluk_handle();
     this->is_owner_of_the_spiluk_handle = true;
     this->spilukHandle = new SPILUKHandleType(algm, nrows, nnzL, nnzU, block_size);

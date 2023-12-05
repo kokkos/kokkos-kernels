@@ -116,7 +116,7 @@ class SPILUKHandle {
  public:
   SPILUKHandle(SPILUKAlgorithm choice, const size_type nrows_,
                const size_type nnzL_, const size_type nnzU_,
-               const size_type block_size_,
+               const size_type block_size_ = 0,
                bool symbolic_complete_ = false)
       : level_list(),
         level_idx(),
@@ -239,6 +239,8 @@ class SPILUKHandle {
   }
 
   bool is_symbolic_complete() const { return symbolic_complete; }
+
+  bool block_enabled() const { return block_size > 0; }
 
   size_type get_num_levels() const { return nlevels; }
   void set_num_levels(size_type nlevels_) { this->nlevels = nlevels_; }

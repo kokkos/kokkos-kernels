@@ -63,121 +63,12 @@ using range_policy            = typename IlukHandle::RangePolicy;
 using sview_2d                = typename Kokkos::View<scalar_t**, memory_space>;
 using sview_1d                = typename Kokkos::View<scalar_t*, memory_space>;
 
-static void print_matrix(const std::vector<std::vector<scalar_t>>& matrix) {
-  for (const auto& row : matrix) {
-    for (const auto& item : row) {
-      std::printf("%.2f ", item);
-    }
-    std::cout << std::endl;
-  }
-}
-
-static void print_iw(const WorkViewType& iw, const size_type block_size=1) {
-  std::cout << "      IW:" << std::endl;
-  for (auto i = 0; i < iw.extent(0); ++i) {
-    if (block_size == 1) {
-      for (auto j = 0; j < iw.extent(1); ++j) {
-        std::cout << iw(i, j) << " ";
-      }
-      std::cout << std::endl;
-    }
-    else {
-      const auto block_items = block_size * block_size;
-      const auto num_blocks = iw.extent(1) / block_items;
-      for (size_type block_row = 0; block_row < block_size; ++block_row) {
-        for (size_type b = 0; b < num_blocks; ++b) {
-          for (size_type block_col = 0; block_col < block_size; ++block_col) {
-            std::cout << iw(i, b * block_items + block_row * block_size + block_col) << " ";
-          }
-        }
-        std::cout << std::endl;
-      }
-    }
-  }
-}
-
-template <class RowMapType, class EntriesType, class ValuesType>
-static std::vector<std::vector<scalar_t>> decompress_matrix(
-  const RowMapType& row_map,
-  const EntriesType& entries,
-  const ValuesType& values)
-{
-  const scalar_t ZERO = scalar_t(0);
-
-  const size_type nrows = row_map.size() - 1;
-  std::vector<std::vector<scalar_t>> result;
-  result.resize(nrows);
-  for (auto& row : result) {
-    row.resize(nrows, ZERO);
-  }
-
-  auto hrow_map = Kokkos::create_mirror_view(row_map);
-  auto hentries = Kokkos::create_mirror_view(entries);
-  auto hvalues  = Kokkos::create_mirror_view(values);
-  Kokkos::deep_copy(hrow_map, row_map);
-  Kokkos::deep_copy(hentries, entries);
-  Kokkos::deep_copy(hvalues, values);
-
-  for (size_type row_idx = 0; row_idx < nrows; ++row_idx) {
-    const size_type row_nnz_begin = hrow_map(row_idx);
-    const size_type row_nnz_end   = hrow_map(row_idx + 1);
-    for (size_type row_nnz = row_nnz_begin; row_nnz < row_nnz_end; ++row_nnz) {
-      const lno_t col_idx      = hentries(row_nnz);
-      const scalar_t value     = hvalues(row_nnz);
-      result[row_idx][col_idx] = value;
-    }
-  }
-
-  return result;
-}
-
-template <class RowMapType, class EntriesType, class ValuesType>
-static std::vector<std::vector<scalar_t>> decompress_matrix(
-  const RowMapType& row_map,
-  const EntriesType& entries,
-  const ValuesType& values,
-  const int block_size)
-{
-  const scalar_t ZERO = scalar_t(0);
-
-  const size_type nbrows   = row_map.extent(0) - 1;
-  const size_type nrows    = nbrows * block_size;
-  const size_type block_items = block_size * block_size;
-  std::vector<std::vector<scalar_t>> result;
-  result.resize(nrows);
-  for (auto& row : result) {
-    row.resize(nrows, ZERO);
-  }
-
-  auto hrow_map = Kokkos::create_mirror_view(row_map);
-  auto hentries = Kokkos::create_mirror_view(entries);
-  auto hvalues  = Kokkos::create_mirror_view(values);
-  Kokkos::deep_copy(hrow_map, row_map);
-  Kokkos::deep_copy(hentries, entries);
-  Kokkos::deep_copy(hvalues, values);
-
-  for (size_type row_idx = 0; row_idx < nbrows; ++row_idx) {
-    const size_type row_nnz_begin = hrow_map(row_idx);
-    const size_type row_nnz_end   = hrow_map(row_idx + 1);
-    for (size_type row_nnz = row_nnz_begin; row_nnz < row_nnz_end; ++row_nnz) {
-      const lno_t col_idx = hentries(row_nnz);
-      for (size_type i = 0; i < block_size; ++i) {
-        const size_type unc_row_idx = row_idx*block_size + i;
-        for (size_type j = 0; j < block_size; ++j) {
-          const size_type unc_col_idx = col_idx*block_size + j;
-          result[unc_row_idx][unc_col_idx] = hvalues(row_nnz*block_items + i*block_size + j);
-        }
-      }
-    }
-  }
-
-  return result;
-}
-
 template <class ARowMapType, class AEntriesType, class AValuesType,
           class LRowMapType, class LEntriesType, class LValuesType,
-          class URowMapType, class UEntriesType, class UValuesType>
-struct ILUKLvlSchedRPNumericFunctor {
+          class URowMapType, class UEntriesType, class UValuesType,
+          bool BlockEnabled>
+struct Common
+{
   ARowMapType A_row_map;
   AEntriesType A_entries;
   AValuesType A_values;
@@ -190,7 +81,243 @@ struct ILUKLvlSchedRPNumericFunctor {
   LevelViewType level_idx;
   WorkViewType iw;
   lno_t lev_start;
-  bool verbose;
+  size_type block_size;
+  size_type block_items;
+  sview_2d temp_dense_block;
+  sview_1d ones;
+
+  using LValuesUnmanaged2DBlockType = Kokkos::View<
+    typename LValuesType::value_type**,
+    typename KokkosKernels::Impl::GetUnifiedLayout<LValuesType>::array_layout,
+    typename LValuesType::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
+
+  using UValuesUnmanaged2DBlockType = Kokkos::View<
+    typename UValuesType::value_type**,
+    typename KokkosKernels::Impl::GetUnifiedLayout<UValuesType>::array_layout,
+    typename UValuesType::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
+
+  using AValuesUnmanaged2DBlockType = Kokkos::View<
+    typename AValuesType::value_type**,
+    typename KokkosKernels::Impl::GetUnifiedLayout<AValuesType>::array_layout,
+    typename AValuesType::device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
+
+  Common(
+      const ARowMapType &A_row_map_, const AEntriesType &A_entries_,
+      const AValuesType &A_values_, const LRowMapType &L_row_map_,
+      const LEntriesType &L_entries_, LValuesType &L_values_,
+      const URowMapType &U_row_map_, const UEntriesType &U_entries_,
+      UValuesType &U_values_, const LevelViewType &level_idx_,
+      WorkViewType &iw_, const lno_t &lev_start_, const size_type& block_size_) :
+    A_row_map(A_row_map_),
+    A_entries(A_entries_),
+    A_values(A_values_),
+    L_row_map(L_row_map_),
+    L_entries(L_entries_),
+    L_values(L_values_),
+    U_row_map(U_row_map_),
+    U_entries(U_entries_),
+    U_values(U_values_),
+    level_idx(level_idx_),
+    iw(iw_),
+    lev_start(lev_start_),
+    block_size(block_size_),
+    block_items(block_size * block_size),
+    temp_dense_block("temp_dense_block", block_size, block_size), // this will have races unless Serial
+    ones("ones", block_size)
+  {
+    Kokkos::deep_copy(ones, 1.0);
+  }
+
+  // lset
+
+  template <bool Blocked>
+  KOKKOS_INLINE_FUNCTION
+  void lset_impl(const size_type nnz, const scalar_t& value) const
+  { L_values(nnz) = value; }
+
+  template <>
+  KOKKOS_INLINE_FUNCTION
+  void lset_impl<true>(const size_type block, const scalar_t& value) const
+  { KokkosBlas::SerialSet::invoke(value, getl(block)); }
+
+  KOKKOS_INLINE_FUNCTION
+  void lset(const size_type nnz, const scalar_t& value) const
+  { lset_impl<BlockEnabled>(nnz, value); }
+
+  KOKKOS_INLINE_FUNCTION
+  void lset(const size_type block, const AValuesUnmanaged2DBlockType& rhs) const
+  { Kokkos::deep_copy(getl(block), rhs); }
+
+  // uset
+#if 0
+  template <bool Blocked>
+  KOKKOS_INLINE_FUNCTION
+  void uset_impl(const size_type nnz, const scalar_t& value) const
+  { U_values(nnz) = value; }
+
+  template <>
+  KOKKOS_INLINE_FUNCTION
+  void uset_impl<true>(const size_type block, const scalar_t& value) const
+  { KokkosBlas::SerialSet::invoke(value, getu(block)); }
+
+  KOKKOS_INLINE_FUNCTION
+  void uset(const size_type nnz, const scalar_t& value) const
+  { uset_impl<BlockEnabled>(nnz, value); }
+
+  KOKKOS_INLINE_FUNCTION
+  void uset(const size_type block, const AValuesUnmanaged2DBlockType& rhs) const
+  { Kokkos::deep_copy(getu(block), rhs); }
+
+  // lset_id
+
+  template<bool Blocked>
+  KOKKOS_INLINE_FUNCTION
+  void lset_id_impl(const size_type nnz) const
+  { U_values(nnz) = scalar_t(1.0); }
+
+  template<>
+  KOKKOS_INLINE_FUNCTION
+  void lset_id_impl<true>(const size_type nnz) const
+  { KokkosBatched::SerialSetIdentity::invoke(get_l_block(nnz)); }
+
+  KOKKOS_INLINE_FUNCTION
+  void lset_id(const size_type nnz) const
+  { lset_id_impl<BlockEnabled>(nnz); }
+
+  // divide. lhs /= rhs
+
+  KOKKOS_INLINE_FUNCTION
+  void divide(const LValuesUnmanaged2DBlockType& lhs, const UValuesUnmanaged2DBlockType& rhs) const
+  {
+    KokkosBatched::SerialTrsm<KokkosBatched::Side::Right,
+                              KokkosBatched::Uplo::Upper,
+                              KokkosBatched::Trans::Transpose, // not 100% on this
+                              KokkosBatched::Diag::NonUnit,
+                              KokkosBatched::Algo::Trsm::Unblocked>:: // not 100% on this
+      invoke<scalar_t>(1.0, rhs, lhs);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void divide(scalar_t& lhs, const scalar_t& rhs) const
+  {
+    lhs /= rhs;
+  }
+
+  // multiply: return (alpha * lhs) * rhs
+  KOKKOS_INLINE_FUNCTION
+  sview2d multiply(const scalar_t& alpha, const UValuesUnmanaged2DBlockType& lhs, const LValuesUnmanaged2DBlockType& rhs) const
+  {
+    KokkosBatched::SerialGemm<KokkosBatched::Trans::NoTranspose,
+                              KokkosBatched::Trans::NoTranspose,
+                              KokkosBatched::Algo::Gemm::Unblocked>::
+      invoke(alpha, lhs, rhs, 0.0, temp_dense_block);
+    return temp_dense_block;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  scalar_t multiply(const scalar_t& alpha, const scalar_t& lhs, const scalar_t& rhs) const
+  { return alpha * lhs * rhs; }
+
+  // getl
+
+  template <bool Block>
+  struct getl_rt
+  { using type = scalar_t; };
+
+  template <>
+  struct getl_rt<>
+  { using type = LValuesUnmanaged2DBlockType; }
+
+  template <bool Block>
+  KOKKOS_INLINE_FUNCTION
+  getl_rt<Block>::type getl_impl(const size_type nnz) const
+  { return L_values(nnz); }
+
+  template <>
+  KOKKOS_INLINE_FUNCTION
+  getl_rt<Block>::type getl_impl<true>(const size_type nnz) const
+  {
+    return LValuesUnmanaged2DBlockType(L_values.data() + (block * block_items), block_size, block_size);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  getl_rt<BlockEnabled>::type getl(const size_type nnz) const
+  {
+    return getl_impl<BlockEnabled>(nnz);
+  }
+
+  // getu
+
+  template <bool Block>
+  struct getu_rt
+  { using type = scalar_t; };
+
+  template <>
+  struct getu_rt<>
+  { using type = UValuesUnmanaged2DBlockType; }
+
+  template <bool Block>
+  KOKKOS_INLINE_FUNCTION
+  getu_rt<Block>::type getu_impl(const size_type nnz) const
+  { return U_values(nnz); }
+
+  template <>
+  KOKKOS_INLINE_FUNCTION
+  getu_rt<Block>::type getu_impl<true>(const size_type nnz) const
+  {
+    return UValuesUnmanaged2DBlockType(U_values.data() + (block * block_items), block_size, block_size);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  getu_rt<BlockEnabled>::type getu(const size_type nnz) const
+  {
+    return getu_impl<BlockEnabled>(nnz);
+  }
+
+  // geta
+
+  template <bool Block>
+  struct geta_rt
+  { using type = scalar_t; };
+
+  template <>
+  struct geta_rt<>
+  { using type = AValuesUnmanaged2DBlockType; }
+
+  template <bool Block>
+  KOKKOS_INLINE_FUNCTION
+  geta_rt<Block>::type geta_impl(const size_type nnz) const
+  { return A_values(nnz); }
+
+  template <>
+  KOKKOS_INLINE_FUNCTION
+  geta_rt<Block>::type geta_impl<true>(const size_type nnz) const
+  {
+    return AValuesUnmanaged2DBlockType(A_values.data() + (block * block_items), block_size, block_size);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  geta_rt<BlockEnabled>::type geta(const size_type nnz) const
+  {
+    return geta_impl<BlockEnabled>(nnz);
+  }
+#endif
+
+};
+
+template <class ARowMapType, class AEntriesType, class AValuesType,
+          class LRowMapType, class LEntriesType, class LValuesType,
+          class URowMapType, class UEntriesType, class UValuesType,
+          bool BlockEnabled>
+struct ILUKLvlSchedRPNumericFunctor :
+    public Common<ARowMapType, AEntriesType, AValuesType, LRowMapType, LEntriesType, LValuesType,
+                  URowMapType, UEntriesType, UValuesType, BlockEnabled>
+{
+  using Base = Common<ARowMapType, AEntriesType, AValuesType, LRowMapType, LEntriesType, LValuesType,
+                      URowMapType, UEntriesType, UValuesType, BlockEnabled>;
 
   ILUKLvlSchedRPNumericFunctor(
       const ARowMapType &A_row_map_, const AEntriesType &A_entries_,
@@ -198,130 +325,54 @@ struct ILUKLvlSchedRPNumericFunctor {
       const LEntriesType &L_entries_, LValuesType &L_values_,
       const URowMapType &U_row_map_, const UEntriesType &U_entries_,
       UValuesType &U_values_, const LevelViewType &level_idx_,
-      WorkViewType &iw_, const lno_t &lev_start_)
-      : A_row_map(A_row_map_),
-        A_entries(A_entries_),
-        A_values(A_values_),
-        L_row_map(L_row_map_),
-        L_entries(L_entries_),
-        L_values(L_values_),
-        U_row_map(U_row_map_),
-        U_entries(U_entries_),
-        U_values(U_values_),
-        level_idx(level_idx_),
-        iw(iw_),
-        lev_start(lev_start_),
-        verbose(false) {}
-
-  KOKKOS_INLINE_FUNCTION
-  void verbose_lset(const size_type nnz, const scalar_t& value) const
-  {
-    const size_type nrows = L_row_map.extent(0) - 1;
-    for (size_type row = 0; row < nrows; ++row) {
-      const auto row_begin = L_row_map(row);
-      const auto row_end   = L_row_map(row+1);
-      if (nnz >= row_begin && nnz < row_end) {
-        const auto col = L_entries(nnz);
-        if (L_values(nnz) != value) {
-          if (verbose)
-            std::cout << "        JGF Setting L_values[" << row << "][" << col << "] = " << value << std::endl;
-          L_values(nnz) = value;
-        }
-      }
-    }
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  void verbose_uset(const size_type nnz, const scalar_t& value) const
-  {
-    const size_type nrows = U_row_map.extent(0) - 1;
-    for (size_type row = 0; row < nrows; ++row) {
-      const auto row_begin = U_row_map(row);
-      const auto row_end   = U_row_map(row+1);
-      if (nnz >= row_begin && nnz < row_end) {
-        const auto col = U_entries(nnz);
-        if (U_values(nnz) != value) {
-          if (verbose)
-            std::cout << "        JGF Setting U_values[" << row << "][" << col << "] = " << value << std::endl;
-          U_values(nnz) = value;
-        }
-      }
-    }
-  }
-
-  void verbose_iwset(const size_type tid, const size_type col, const lno_t value) const
-  {
-    if (verbose)
-      std::cout << "        JGF Setting iw[" << tid << "][" << col << "] = " << value << std::endl;
-    iw(tid, col) = value;
-  }
+      WorkViewType &iw_, const lno_t &lev_start_, const size_type& block_size_ = 0) :
+    Base(A_row_map_, A_entries_, A_values_, L_row_map_, L_entries_, L_values_,
+         U_row_map_, U_entries_, U_values_, level_idx_, iw_, lev_start_, block_size_)
+  {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const lno_t i) const {
-    auto rowid = level_idx(i);
-    auto tid   = i - lev_start;
-    auto k1    = L_row_map(rowid);
-    auto k2    = L_row_map(rowid + 1);
+    auto rowid = Base::level_idx(i);
+    auto tid   = i - Base::lev_start;
+    auto k1    = Base::L_row_map(rowid);
+    auto k2    = Base::L_row_map(rowid + 1);
 
-    if (verbose)
-      std::cout << "    JGF level ptr: " << i << ", tid: " << tid << ", rowid: " << rowid << std::endl;
-
-    if (verbose)
-      std::cout << "      JGF Block 1" << std::endl;
 #ifdef KEEP_DIAG
     for (auto k = k1; k < k2 - 1; ++k) {
 #else
     for (auto k = k1; k < k2; ++k) {
 #endif
-      auto col     = L_entries(k);
-      verbose_lset(k, 0.0);
-      verbose_iwset(tid, col, k);
+      auto col = Base::L_entries(k);
+      Base::lset(k, 0.0);
+      Base::iw(tid, col) = k;
     }
+#if 0
 #ifdef KEEP_DIAG
-    verbose_lset(k2 - 1, scalar_t(1.0));
+    lset_id(k2 - 1);
 #endif
 
-    if (verbose) {
-      print_iw(iw);
-
-      std::cout << "      JGF Block 2" << std::endl;
-    }
     k1 = U_row_map(rowid);
     k2 = U_row_map(rowid + 1);
     for (auto k = k1; k < k2; ++k) {
       auto col     = U_entries(k);
-      verbose_uset(k, 0.0);
-      verbose_iwset(tid, col, k);
+      uset(k, 0.0);
+      iw(tid, col) = k;
     }
 
-    // Unpack the ith row of A
-    if (verbose) {
-      print_iw(iw);
-
-      std::cout << "      JGF Block 3" << std::endl;
-    }
     k1 = A_row_map(rowid);
     k2 = A_row_map(rowid + 1);
     for (auto k = k1; k < k2; ++k) {
       auto col  = A_entries(k);
       auto ipos = iw(tid, col);
       if (col < rowid) {
-        verbose_lset(ipos, A_values(k));
+        lset(ipos, geta(k));
       }
       else {
-        verbose_uset(ipos, A_values(k));
+        uset(ipos, geta(k));
       }
     }
 
     // Eliminate prev rows
-    if (verbose) {
-      std::cout << "      JGF Block 4" << std::endl;
-      std::cout << "      L:" << std::endl;
-      print_matrix(decompress_matrix(L_row_map, L_entries, L_values));
-      std::cout << "      U:" << std::endl;
-      print_matrix(decompress_matrix(U_row_map, U_entries, U_values));
-      print_iw(iw);
-    }
     k1 = L_row_map(rowid);
     k2 = L_row_map(rowid + 1);
 #ifdef KEEP_DIAG
@@ -330,54 +381,37 @@ struct ILUKLvlSchedRPNumericFunctor {
     for (auto k = k1; k < k2; ++k) {
 #endif
       auto prev_row = L_entries(k);
-      if (verbose)
-        std::cout << "        JGF Processing L[" << rowid << "][" << prev_row << "]" << std::endl;
+      auto fact     = getl(k);
+      auto u_diag   = getu(U_row_map(prev_row));
 #ifdef KEEP_DIAG
-      auto fact = L_values(k) / U_values(U_row_map(prev_row));
+      divide(fact, u_diag);
 #else
-      auto fact = L_values(k) * U_values(U_row_map(prev_row));
+      fact = multiply(1.0, fact, u_diag);
 #endif
-      verbose_lset(k, fact);
-      if (verbose)
-        std::cout << "        JGF Block 4 trouble spot" << std::endl;
       for (auto kk = U_row_map(prev_row) + 1; kk < U_row_map(prev_row + 1);
            ++kk) {
         auto col  = U_entries(kk);
         auto ipos = iw(tid, col);
-        if (verbose) {
-          std::cout << "          JGF Processing U[" << prev_row << "][" << col << "]" << std::endl;
-          std::cout << "          JGF rowid=" << rowid <<", prev_row=" << prev_row << ", kk=" << kk << ", col=" << col << ", ipos=" << ipos << std::endl;
-        }
         if (ipos == -1) continue;
-        auto lxu = -U_values(kk) * fact;
+        auto lxu = multiply(-1.0, getu(kk), fact);
         if (col < rowid) {
-          verbose_lset(ipos, L_values(ipos) + lxu);
+          add(getl(ipos), lxu);
         }
         else {
-          verbose_uset(ipos, U_values(ipos) + lxu);
+          add(getu(ipos), lxu);
         }
       }  // end for kk
-      if (verbose)
-        std::cout << "        JGF Block 4 trouble end" << std::endl;
     }    // end for k
 
-    if (verbose) {
-      std::cout << "      L:" << std::endl;
-      print_matrix(decompress_matrix(L_row_map, L_entries, L_values));
-      std::cout << "      U:" << std::endl;
-      print_matrix(decompress_matrix(U_row_map, U_entries, U_values));
-
-      std::cout << "      JGF Block 5" << std::endl;
-    }
+    const auto ipos = iw(tid, rowid);
 #ifdef KEEP_DIAG
-    if (U_values(iw(tid, rowid)) == 0.0) {
-      verbose_uset(iw(tid, rowid), 1e6);
+    if (uequal(ipos, 0.0)) {
+      uset(ipos, 1e6);
     }
 #else
-    if (U_values(iw(tid, rowid)) == 0.0) {
-      verbose_uset(iw(tid, rowid), 1e6);
-    } else {
-      verbose_uset(iw(tid, rowid), 1.0 / U_values(iw(tid, rowid)));
+    else {
+      assert(false);
+      //verbose_uset(iw(tid, rowid), 1.0 / U_values(iw(tid, rowid)));
     }
 #endif
 
@@ -394,6 +428,7 @@ struct ILUKLvlSchedRPNumericFunctor {
     k1 = U_row_map(rowid);
     k2 = U_row_map(rowid + 1);
     for (auto k = k1; k < k2; ++k) iw(tid, U_entries(k)) = -1;
+#endif
   }
 };
 
@@ -578,15 +613,6 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
     auto k1    = L_row_map(rowid);
     auto k2    = L_row_map(rowid + 1);
 
-    if (verbose) {
-      std::cout << "    JGF level ptr: " << lvl << ", tid: " << tid << ", rowid: " << rowid << std::endl;
-
-      std::cout << "      JGF Block 1" << std::endl;
-      std::cout << "      L:" << std::endl;
-      print_matrix(decompress_matrix(L_row_map, L_entries, L_values, block_size));
-      std::cout << "      U:" << std::endl;
-      print_matrix(decompress_matrix(U_row_map, U_entries, U_values, block_size));
-    }
 #ifdef KEEP_DIAG
     for (auto k = k1; k < k2 - 1; ++k) {
 #else
@@ -600,15 +626,6 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
     KokkosBatched::SerialSetIdentity::invoke(get_l_block(k2 -1));
 #endif
 
-    if (verbose) {
-      print_iw(iw);
-
-      std::cout << "      JGF Block 2" << std::endl;
-      std::cout << "      L:" << std::endl;
-      print_matrix(decompress_matrix(L_row_map, L_entries, L_values, block_size));
-      std::cout << "      U:" << std::endl;
-      print_matrix(decompress_matrix(U_row_map, U_entries, U_values, block_size));
-    }
     k1 = U_row_map(rowid);
     k2 = U_row_map(rowid + 1);
     for (auto k = k1; k < k2; ++k) {
@@ -618,15 +635,6 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
     }
 
     // Unpack the ith row of A
-    if (verbose) {
-      print_iw(iw);
-
-      std::cout << "      JGF Block 3" << std::endl;
-      std::cout << "      L:" << std::endl;
-      print_matrix(decompress_matrix(L_row_map, L_entries, L_values, block_size));
-      std::cout << "      U:" << std::endl;
-      print_matrix(decompress_matrix(U_row_map, U_entries, U_values, block_size));
-    }
     k1 = A_row_map(rowid);
     k2 = A_row_map(rowid + 1);
     for (auto k = k1; k < k2; ++k) {
@@ -641,14 +649,6 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
     }
 
     // Eliminate prev rows
-    if (verbose) {
-      std::cout << "      JGF Block 4" << std::endl;
-      std::cout << "      L:" << std::endl;
-      print_matrix(decompress_matrix(L_row_map, L_entries, L_values, block_size));
-      std::cout << "      U:" << std::endl;
-      print_matrix(decompress_matrix(U_row_map, U_entries, U_values, block_size));
-      print_iw(iw);
-    }
     k1 = L_row_map(rowid);
     k2 = L_row_map(rowid + 1);
 #ifdef KEEP_DIAG
@@ -672,16 +672,10 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
       // This should be a gemm
       auto fact = L_values(k) * U_values(U_row_map(prev_row));
 #endif
-      if (verbose)
-        std::cout << "        JGF Block 4 trouble spot" << std::endl;
       for (auto kk = U_row_map(prev_row) + 1; kk < U_row_map(prev_row + 1);
            ++kk) {
         auto col  = U_entries(kk);
         auto ipos = iw(tid, col);
-        if (verbose) {
-          std::cout << "          JGF Processing U[" << prev_row << "][" << col << "]" << std::endl;
-          std::cout << "          JGF rowid=" << rowid <<", prev_row=" << prev_row << ", kk=" << kk << ", col=" << col << ", ipos=" << ipos << std::endl;
-        }
         if (ipos == -1) continue;
 
         KokkosBatched::SerialGemm<KokkosBatched::Trans::NoTranspose,
@@ -695,18 +689,8 @@ struct ILUKLvlSchedRPNumericFunctorBlock {
           KokkosBatched::SerialAxpy::invoke(ones, temp_dense_block, get_u_block(ipos));
         }
       }  // end for kk
-      if (verbose)
-        std::cout << "        JGF Block 4 trouble end" << std::endl;
     }    // end for k
 
-    if (verbose) {
-      std::cout << "      L:" << std::endl;
-      print_matrix(decompress_matrix(L_row_map, L_entries, L_values, block_size));
-      std::cout << "      U:" << std::endl;
-      print_matrix(decompress_matrix(U_row_map, U_entries, U_values, block_size));
-
-      std::cout << "      JGF Block 5" << std::endl;
-    }
     const auto diag_ipos = iw(tid, rowid);
     if (ublock_all_eq(diag_ipos, 0.0)) {
       verbose_uset(diag_ipos, 1e6);
@@ -1247,6 +1231,7 @@ static void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
   if (verbose)
     std::cout << "JGF iluk_numeric with nlevels: " << nlevels << std::endl;
   int team_size     = thandle.get_team_size();
+  const auto block_size = thandle.get_block_size();
 
   LevelHostViewType level_ptr_h = thandle.get_host_level_ptr();
   LevelViewType     level_idx   = thandle.get_level_idx();
@@ -1273,15 +1258,29 @@ static void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
     if ((lev_end - lev_start) != 0) {
       if (thandle.get_algorithm() ==
           KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_RP) {
-        Kokkos::parallel_for(
+
+        if (thandle.block_enabled()) {
+          Kokkos::parallel_for(
             "parfor_fixed_lvl",
             Kokkos::RangePolicy<execution_space>(lev_start, lev_end),
             ILUKLvlSchedRPNumericFunctor<
                 ARowMapType, AEntriesType, AValuesType, LRowMapType,
                 LEntriesType, LValuesType, URowMapType, UEntriesType,
-                UValuesType>(
+                UValuesType, true>(
+                A_row_map, A_entries, A_values, L_row_map, L_entries, L_values,
+                U_row_map, U_entries, U_values, level_idx, iw, lev_start, block_size));
+        }
+        else {
+          Kokkos::parallel_for(
+            "parfor_fixed_lvl",
+            Kokkos::RangePolicy<execution_space>(lev_start, lev_end),
+            ILUKLvlSchedRPNumericFunctor<
+                ARowMapType, AEntriesType, AValuesType, LRowMapType,
+                LEntriesType, LValuesType, URowMapType, UEntriesType,
+                UValuesType, false>(
                 A_row_map, A_entries, A_values, L_row_map, L_entries, L_values,
                 U_row_map, U_entries, U_values, level_idx, iw, lev_start));
+        }
       } else if (thandle.get_algorithm() ==
                  KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1) {
         using policy_type = Kokkos::TeamPolicy<execution_space>;
@@ -1361,135 +1360,6 @@ static void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
 
 }  // end iluk_numeric
 
-template <class ARowMapType, class AEntriesType,
-          class AValuesType, class LRowMapType, class LEntriesType,
-          class LValuesType, class URowMapType, class UEntriesType,
-          class UValuesType>
-static void iluk_numeric_block(IlukHandle &thandle, const ARowMapType &A_row_map,
-                  const AEntriesType &A_entries, const AValuesType &A_values,
-                  const LRowMapType &L_row_map, const LEntriesType &L_entries,
-                  LValuesType &L_values, const URowMapType &U_row_map,
-                  const UEntriesType &U_entries, UValuesType &U_values)
-{
-  bool verbose = false;
-  const size_type nlevels    = thandle.get_num_levels();
-  if (verbose)
-    std::cout << "JGF iluk_numeric_block with nlevels: " << nlevels << std::endl;
-  const int team_size        = thandle.get_team_size();
-  const size_type block_size = thandle.get_block_size();
-
-  LevelHostViewType level_ptr_h = thandle.get_host_level_ptr();
-  LevelViewType     level_idx   = thandle.get_level_idx();
-
-  LevelHostViewType level_nchunks_h, level_nrowsperchunk_h;
-  WorkViewType iw;
-
-   if (thandle.get_algorithm() ==
-      KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1) {
-    level_nchunks_h       = thandle.get_level_nchunks();
-    level_nrowsperchunk_h = thandle.get_level_nrowsperchunk();
-  }
-  iw = thandle.get_iw();
-
-  // Main loop must be performed sequential. Question: Try out Cuda's graph
-  // stuff to reduce kernel launch overhead
-  for (size_type lvl = 0; lvl < nlevels; ++lvl) {
-    if (verbose)
-      std::cout << "  JGF starting level: " << lvl << std::endl;
-    lno_t lev_start = level_ptr_h(lvl);
-    lno_t lev_end   = level_ptr_h(lvl + 1);
-
-    if ((lev_end - lev_start) != 0) {
-      if (thandle.get_algorithm() ==
-          KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_RP) {
-        Kokkos::parallel_for(
-            "parfor_fixed_lvl",
-            Kokkos::RangePolicy<execution_space>(lev_start, lev_end),
-            ILUKLvlSchedRPNumericFunctorBlock<
-                ARowMapType, AEntriesType, AValuesType, LRowMapType,
-                LEntriesType, LValuesType, URowMapType, UEntriesType,
-                UValuesType>(
-                A_row_map, A_entries, A_values, L_row_map, L_entries, L_values,
-                U_row_map, U_entries, U_values, level_idx, iw, lev_start, block_size));
-      } else if (thandle.get_algorithm() ==
-                 KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1) {
-        using policy_type = Kokkos::TeamPolicy<execution_space>;
-
-        lno_t lvl_rowid_start = 0;
-        lno_t lvl_nrows_chunk;
-        for (int chunkid = 0; chunkid < level_nchunks_h(lvl); chunkid++) {
-          if ((lvl_rowid_start + level_nrowsperchunk_h(lvl)) >
-              (lev_end - lev_start))
-            lvl_nrows_chunk = (lev_end - lev_start) - lvl_rowid_start;
-          else
-            lvl_nrows_chunk = level_nrowsperchunk_h(lvl);
-
-          ILUKLvlSchedTP1NumericFunctorBlock<
-              ARowMapType, AEntriesType, AValuesType, LRowMapType, LEntriesType,
-              LValuesType, URowMapType, UEntriesType, UValuesType>
-              tstf(A_row_map, A_entries, A_values, L_row_map, L_entries,
-                   L_values, U_row_map, U_entries, U_values, level_idx, iw,
-                   lev_start + lvl_rowid_start, block_size);
-
-          if (team_size == -1)
-            Kokkos::parallel_for(
-                "parfor_tp1", policy_type(lvl_nrows_chunk, Kokkos::AUTO), tstf);
-          else
-            Kokkos::parallel_for("parfor_tp1",
-                                 policy_type(lvl_nrows_chunk, team_size), tstf);
-          Kokkos::fence();
-          lvl_rowid_start += lvl_nrows_chunk;
-        }
-      }
-    }  // end if
-  }    // end for lvl
-  //}
-
-// Output check
-#ifdef NUMERIC_OUTPUT_INFO
-  std::cout << "  iluk_numeric result: " << std::endl;
-
-  std::cout << "  nnzL: " << thandle.get_nnzL() << std::endl;
-  std::cout << "  L_row_map = ";
-  for (size_type i = 0; i < thandle.get_nrows() + 1; ++i) {
-    std::cout << L_row_map(i) << " ";
-  }
-  std::cout << std::endl;
-
-  std::cout << "  L_entries = ";
-  for (size_type i = 0; i < thandle.get_nnzL(); ++i) {
-    std::cout << L_entries(i) << " ";
-  }
-  std::cout << std::endl;
-
-  std::cout << "  L_values = ";
-  for (size_type i = 0; i < thandle.get_nnzL(); ++i) {
-    std::cout << L_values(i) << " ";
-  }
-  std::cout << std::endl;
-
-  std::cout << "  nnzU: " << thandle.get_nnzU() << std::endl;
-  std::cout << "  U_row_map = ";
-  for (size_type i = 0; i < thandle.get_nrows() + 1; ++i) {
-    std::cout << U_row_map(i) << " ";
-  }
-  std::cout << std::endl;
-
-  std::cout << "  U_entries = ";
-  for (size_type i = 0; i < thandle.get_nnzU(); ++i) {
-    std::cout << U_entries(i) << " ";
-  }
-  std::cout << std::endl;
-
-  std::cout << "  U_values = ";
-  for (size_type i = 0; i < thandle.get_nnzU(); ++i) {
-    std::cout << U_values(i) << " ";
-  }
-  std::cout << std::endl;
-#endif
-
-}  // end iluk_numeric_block
-
 template <class ExecutionSpace, class ARowMapType,
           class AEntriesType, class AValuesType, class LRowMapType,
           class LEntriesType, class LValuesType, class URowMapType,
@@ -1552,7 +1422,7 @@ static void iluk_numeric_streams(const std::vector<ExecutionSpace> &execspace_v,
         if (stream_have_level_v[i]) {
           ILUKLvlSchedRPNumericFunctor<
               ARowMapType, AEntriesType, AValuesType, LRowMapType, LEntriesType,
-              LValuesType, URowMapType, UEntriesType, UValuesType>
+              LValuesType, URowMapType, UEntriesType, UValuesType, false>
               tstf(A_row_map_v[i], A_entries_v[i], A_values_v[i],
                    L_row_map_v[i], L_entries_v[i], L_values_v[i],
                    U_row_map_v[i], U_entries_v[i], U_values_v[i], lvl_idx_v[i],
