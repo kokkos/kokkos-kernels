@@ -125,7 +125,6 @@ struct SpilukTest
     Kokkos::resize(U_entries, spiluk_handle->get_nnzU());
     Kokkos::resize(U_values, spiluk_handle->get_nnzU());
 
-    spiluk_handle->print_algorithm();
     spiluk_numeric(&kh, fill_lev, row_map, entries, values, L_row_map,
                    L_entries, L_values, U_row_map, U_entries, U_values);
 
@@ -160,6 +159,7 @@ struct SpilukTest
 
     kh.destroy_spiluk_handle();
 
+    spiluk_handle->print_algorithm();
     std::cout << "For unblocked: " << std::endl;
 
     std::cout << "L" << std::endl;
@@ -247,6 +247,7 @@ struct SpilukTest
     kh.destroy_spiluk_handle();
 
     if (block_size != 1) {
+      spiluk_handle->print_algorithm();
       std::cout << "For block size: " << block_size << std::endl;
 
       std::cout << "L" << std::endl;
@@ -374,8 +375,6 @@ struct SpilukTest
       kh_ptr_v[i] = &kh_v[i];
 
       auto spiluk_handle = kh_v[i].get_spiluk_handle();
-      std::cout << "  Stream " << i << ": ";
-      spiluk_handle->print_algorithm();
 
       // Allocate L and U as outputs
       L_row_map_v[i] = RowMapType("L_row_map", nrows + 1);
