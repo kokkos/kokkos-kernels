@@ -168,6 +168,19 @@ struct SpilukTest
     std::cout << "U" << std::endl;
     print_matrix(decompress_matrix(U_row_map, U_entries, U_values));
 
+    // For team policy alg, check results against range policy
+    if (alg == SPILUKAlgorithm::SEQLVLSCHD_TP1) {
+      const auto [L_row_map_rp, L_entries_rp, L_values_rp, U_row_map_rp, U_entries_rp, U_values_rp] =
+        run_and_check_spiluk(kh, row_map, entries, values, SPILUKAlgorithm::SEQLVLSCHD_RP, nrows, nnz, fill_lev);
+
+      check_match(L_row_map, L_row_map_rp);
+      check_match(L_entries, L_entries_rp);
+      check_match(L_values, L_values_rp);
+      check_match(U_row_map, U_row_map_rp);
+      check_match(U_entries, U_entries_rp);
+      check_match(U_values, U_values_rp);
+    }
+
     return std::make_tuple(L_row_map, L_entries, L_values, U_row_map, U_entries, U_values);
   }
 
@@ -274,7 +287,7 @@ struct SpilukTest
     KernelHandle kh;
 
     run_and_check_spiluk(kh, row_map, entries, values, SPILUKAlgorithm::SEQLVLSCHD_RP, nrows, nnz, fill_lev);
-    //run_and_check_spiluk(kh, row_map, entries, values, SPILUKAlgorithm::SEQLVLSCHD_TP1, nrows, nnz, fill_lev);
+    run_and_check_spiluk(kh, row_map, entries, values, SPILUKAlgorithm::SEQLVLSCHD_TP1, nrows, nnz, fill_lev);
   }
 
   static void run_test_spiluk_streams(int test_algo, int nstreams)
@@ -475,37 +488,22 @@ template <typename scalar_t, typename lno_t, typename size_type,
 void test_spiluk() {
   using TestStruct = Test::SpilukTest<scalar_t, lno_t, size_type, device>;
   TestStruct::run_test_spiluk();
-  //TestStruct::run_test_spiluk_blocks();
+  TestStruct::run_test_spiluk_blocks();
 }
 
 template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
 void test_spiluk_streams() {
-  // using TestStruct = Test::SpilukTest<scalar_t, lno_t, size_type, device>;
+  using TestStruct = Test::SpilukTest<scalar_t, lno_t, size_type, device>;
 
-  // std::cout << "SPILUKAlgorithm::SEQLVLSCHD_RP: 1 stream" << std::endl;
-  // TestStruct::run_test_spiluk_streams(0, 1);
-
-  // std::cout << "SPILUKAlgorithm::SEQLVLSCHD_RP: 2 streams" << std::endl;
-  // TestStruct::run_test_spiluk_streams(0, 2);
-
-  // std::cout << "SPILUKAlgorithm::SEQLVLSCHD_RP: 3 streams" << std::endl;
-  // TestStruct::run_test_spiluk_streams(0, 3);
-
-  // std::cout << "SPILUKAlgorithm::SEQLVLSCHD_RP: 4 streams" << std::endl;
-  // TestStruct::run_test_spiluk_streams(0, 4);
-
-  // std::cout << "SPILUKAlgorithm::SEQLVLSCHD_TP1: 1 stream" << std::endl;
-  // TestStruct::run_test_spiluk_streams(1, 1);
-
-  // std::cout << "SPILUKAlgorithm::SEQLVLSCHD_TP1: 2 streams" << std::endl;
-  // TestStruct::run_test_spiluk_streams(1, 2);
-
-  // std::cout << "SPILUKAlgorithm::SEQLVLSCHD_TP1: 3 streams" << std::endl;
-  // TestStruct::run_test_spiluk_streams(1, 3);
-
-  // std::cout << "SPILUKAlgorithm::SEQLVLSCHD_TP1: 4 streams" << std::endl;
-  // TestStruct::run_test_spiluk_streams(1, 4);
+  TestStruct::run_test_spiluk_streams(0, 1);
+  TestStruct::run_test_spiluk_streams(0, 2);
+  TestStruct::run_test_spiluk_streams(0, 3);
+  TestStruct::run_test_spiluk_streams(0, 4);
+  TestStruct::run_test_spiluk_streams(1, 1);
+  TestStruct::run_test_spiluk_streams(1, 2);
+  TestStruct::run_test_spiluk_streams(1, 3);
+  TestStruct::run_test_spiluk_streams(1, 4);
 }
 
 #define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)        \

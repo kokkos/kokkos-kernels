@@ -400,7 +400,7 @@ struct ILUKLvlSchedRPNumericFunctor :
   void operator()(const lno_t i) const {
     // Grab items from parent to make code more readable
     auto A_row_map = Base::A_row_map;
-    auto A_entries = Base::A_row_map;
+    auto A_entries = Base::A_entries;
     auto L_row_map = Base::L_row_map;
     auto L_entries = Base::L_entries;
     auto U_row_map = Base::U_row_map;
@@ -529,7 +529,7 @@ struct ILUKLvlSchedTP1NumericFunctor :
   void operator()(const member_type &team) const {
     // Grab items from parent to make code more readable
     auto A_row_map = Base::A_row_map;
-    auto A_entries = Base::A_row_map;
+    auto A_entries = Base::A_entries;
     auto L_row_map = Base::L_row_map;
     auto L_entries = Base::L_entries;
     auto U_row_map = Base::U_row_map;
