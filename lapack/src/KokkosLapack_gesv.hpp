@@ -40,6 +40,8 @@ namespace KokkosLapack {
 /// 1-D or 2-D Kokkos::View.
 /// \tparam IPIVV Output pivot indices, as a 1-D Kokkos::View
 ///
+/// \param space [in] execution space instance used to specified how to execute
+///   the gesv kernels.
 /// \param A [in,out] On entry, the N-by-N matrix to be solved. On exit, the
 /// factors L and U from
 ///   the factorization A = P*L*U; the unit diagonal elements of L are not
@@ -164,6 +166,29 @@ void gesv(const ExecutionSpace& space, const AMatrix& A, const BXMV& B,
     KokkosLapack::Impl::GESV<ExecutionSpace, AMatrix_Internal, BXMV_Internal,
                              IPIVV_Internal>::gesv(space, A_i, B_i, IPIV_i);
   }
+}
+
+/// \brief Solve the dense linear equation system A*X = B.
+///
+/// \tparam AMatrix Input matrix/Output LU, as a 2-D Kokkos::View.
+/// \tparam BXMV Input (right-hand side)/Output (solution) (multi)vector, as a
+/// 1-D or 2-D Kokkos::View.
+/// \tparam IPIVV Output pivot indices, as a 1-D Kokkos::View
+///
+/// \param A [in,out] On entry, the N-by-N matrix to be solved. On exit, the
+/// factors L and U from
+///   the factorization A = P*L*U; the unit diagonal elements of L are not
+///   stored.
+/// \param B [in,out] On entry, the right hand side (multi)vector B. On exit,
+/// the solution (multi)vector X.
+/// \param IPIV [out] On exit, the pivot indices (for partial pivoting).
+/// If the View extents are zero and its data pointer is NULL, pivoting is not
+/// used.
+///
+template <class AMatrix, class BXMV, class IPIVV>
+void gesv(const AMatrix& A, const BXMV& B, const IPIVV& IPIV) {
+  typename AMatrix::execution_space space{};
+  gesv(space, A, B, IPIV);
 }
 
 }  // namespace KokkosLapack
