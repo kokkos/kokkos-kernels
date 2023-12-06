@@ -777,17 +777,6 @@ KOKKOSBLAS2_CGEMV_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIPSpace, false)
 namespace KokkosBlas {
 namespace Impl {
 
-inline oneapi::mkl::transpose mode_kk_to_onemkl(char mode_kk) {
-  switch (toupper(mode_kk)) {
-    case 'N': return oneapi::mkl::transpose::nontrans;
-    case 'T': return oneapi::mkl::transpose::trans;
-    case 'C': return oneapi::mkl::transpose::conjtrans;
-    default:;
-  }
-  throw std::invalid_argument(
-      "Invalid mode for oneMKL (should be one of N, T, C)");
-}
-
 template <typename T, bool is_complex = false>
 struct kokkos_to_std_type_map {
   using type = T;
@@ -829,7 +818,7 @@ struct kokkos_to_std_type_map<T, true> {
       bool row_major       = std::is_same<Kokkos::LayoutRight, LAYOUT>::value; \
       const std::int64_t M = A.extent(0);                                      \
       const std::int64_t N = A.extent(1);                                      \
-      oneapi::mkl::transpose trans = mode_kk_to_onemkl(kk_trans[0]);           \
+      oneapi::mkl::transpose trans = trans_mode_kk_to_onemkl(kk_trans[0]);     \
       const std::int64_t LDA       = row_major ? A.stride(0) : A.stride(1);    \
       std::string label            = "KokkosBlas::gemv[TPL_ONEMKL," +          \
                           Kokkos::ArithTraits<SCALAR>::name() + "]";           \

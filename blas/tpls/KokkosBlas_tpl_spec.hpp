@@ -231,4 +231,27 @@ struct MagmaSingleton {
 }  // namespace KokkosBlas
 #endif  // KOKKOSKERNELS_ENABLE_TPL_MAGMA
 
+#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
+#include <oneapi/mkl/types.hpp>
+
+namespace KokkosBlas {
+namespace Impl {
+
+/// \brief This function converts KK transpose mode to MKL transpose mode
+inline oneapi::mkl::transpose trans_mode_kk_to_onemkl(char mode_kk) {
+  switch (toupper(mode_kk)) {
+    case 'N': return oneapi::mkl::transpose::nontrans;
+    case 'T': return oneapi::mkl::transpose::trans;
+    case 'C': return oneapi::mkl::transpose::conjtrans;
+    default:;
+  }
+  throw std::invalid_argument(
+      "Invalid mode for oneMKL (should be one of N, T, C)");
+}
+
+}  // namespace Impl
+}  // namespace KokkosBlas
+
+#endif  // KOKKOSKERNELS_ENABLE_TPL_MKL
+
 #endif  // KOKKOSBLAS_TPL_SPEC_HPP_
