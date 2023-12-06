@@ -747,10 +747,10 @@ class KokkosKernelsHandle {
    * 
    * @param clusterAlgo Specifies which clustering algorithm to use:
    * 
-   *                    KokkosSparse::ClusteringAlgorithm::CLUSTER_DEFAULT           ??
-   *                    KokkosSparse::ClusteringAlgorithm::CLUSTER_MIS2              ??
-   *                    KokkosSparse::ClusteringAlgorithm::CLUSTER_BALLOON           ??
-   *                    KokkosSparse::ClusteringAlgorithm::NUM_CLUSTERING_ALGORITHMS ??
+   *                    KokkosSparse::CLUSTER_DEFAULT           ??
+   *                    KokkosSparse::CLUSTER_MIS2              ??
+   *                    KokkosSparse::CLUSTER_BALLOON           ??
+   *                    KokkosSparse::NUM_CLUSTERING_ALGORITHMS ??
    * @param hint_verts_per_cluster Hint how many verticies to use per cluster
    * @param coloring_algorithm Specifies which coloring algorithm to color the graph with:
    * 

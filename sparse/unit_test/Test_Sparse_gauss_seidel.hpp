@@ -356,7 +356,7 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth,
         // Zero out X before solving
         Kokkos::deep_copy(x_vector, zero);
         run_gauss_seidel(input_mat, GS_CLUSTER, x_vector, y_vector, symmetric,
-                         apply_type, clusterSizes[csize],
+                         apply_type, clusterSizes[csize], false,
                          (ClusteringAlgorithm)algo);
         Kokkos::deep_copy(x_host, x_vector);
         for (lno_t i = 0; i < numVecs; i++) {
