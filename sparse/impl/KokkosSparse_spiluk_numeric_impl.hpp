@@ -62,6 +62,24 @@ using range_policy            = typename IlukHandle::RangePolicy;
 using sview_2d                = typename Kokkos::View<scalar_t**, memory_space>;
 using sview_1d                = typename Kokkos::View<scalar_t*, memory_space>;
 
+static policy_type get_policy(size_type nrows, int team_size)
+{
+  if (team_size == -1) {
+    return policy_type(nrows, Kokkos::AUTO);
+  } else {
+    return policy_type(nrows, team_size);
+  }
+}
+
+static policy_type get_policy(execution_space exe_space, size_type nrows, int team_size)
+{
+  if (team_size == -1) {
+    return policy_type(exe_space, nrows, Kokkos::AUTO);
+  } else {
+    return policy_type(exe_space, nrows, team_size);
+  }
+}
+
 /**
  * Common base class for SPILUK functors. Default version does not support blocks
  */
@@ -244,6 +262,7 @@ struct Common<ARowMapType, AEntriesType, AValuesType,
     ones("ones", block_size)
   {
     Kokkos::deep_copy(ones, 1.0);
+    KK_REQUIRE_MSG(block_size > 0, "Tried to use block_size=0 with the blocked Common?");
   }
 
   // lset
@@ -501,7 +520,7 @@ struct ILUKLvlSchedTP1NumericFunctor :
       const LEntriesType &L_entries_, LValuesType &L_values_,
       const URowMapType &U_row_map_, const UEntriesType &U_entries_,
       UValuesType &U_values_, const LevelViewType &level_idx_,
-        WorkViewType &iw_, const lno_t &lev_start_, const size_type& block_size_ = 0) :
+      WorkViewType &iw_, const lno_t &lev_start_, const size_type& block_size_ = 0) :
     Base(A_row_map_, A_entries_, A_values_, L_row_map_, L_entries_, L_values_,
       U_row_map_, U_entries_, U_values_, level_idx_, iw_, lev_start_, block_size_)
   {}
@@ -638,6 +657,21 @@ struct ILUKLvlSchedTP1NumericFunctor :
   }
 };
 
+#define FunctorTypeMacro(Functor, BlockEnabled) \
+  Functor<ARowMapType, AEntriesType, AValuesType, LRowMapType, \
+          LEntriesType, LValuesType, URowMapType, UEntriesType, \
+          UValuesType, BlockEnabled>
+
+#define KernelLaunchMacro(arow, aent, aval, lrow, lent, lval, urow, uent, uval, polc, name, lidx, iwv, lstrt, ftf, ftb, be, bs) \
+    if (be) { \
+      ftb functor(arow, aent, aval, lrow, lent, lval, urow, uent, uval, lidx, iwv, lstrt, bs); \
+      Kokkos::parallel_for(name, polc, functor); \
+    } \
+    else { \
+      ftf functor(arow, aent, aval, lrow, lent, lval, urow, uent, uval, lidx, iwv, lstrt); \
+      Kokkos::parallel_for(name, polc, functor); \
+    }
+
 template <class ARowMapType, class AEntriesType,
           class AValuesType, class LRowMapType, class LEntriesType,
           class LValuesType, class URowMapType, class UEntriesType,
@@ -648,11 +682,12 @@ static void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
                   LValuesType &L_values, const URowMapType &U_row_map,
                   const UEntriesType &U_entries, UValuesType &U_values) {
 
-  bool verbose = false;
+  using RPF = FunctorTypeMacro(ILUKLvlSchedRPNumericFunctor, false);
+  using RPB = FunctorTypeMacro(ILUKLvlSchedRPNumericFunctor, true);
+  using TPF = FunctorTypeMacro(ILUKLvlSchedTP1NumericFunctor, false);
+  using TPB = FunctorTypeMacro(ILUKLvlSchedTP1NumericFunctor, true);
 
   size_type nlevels = thandle.get_num_levels();
-  if (verbose)
-    std::cout << "JGF iluk_numeric with nlevels: " << nlevels << std::endl;
   int team_size     = thandle.get_team_size();
   const auto block_size = thandle.get_block_size();
 
@@ -662,7 +697,7 @@ static void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
   LevelHostViewType level_nchunks_h, level_nrowsperchunk_h;
   WorkViewType iw;
 
-  //{
+
   if (thandle.get_algorithm() ==
       KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1) {
     level_nchunks_h       = thandle.get_level_nchunks();
@@ -673,8 +708,6 @@ static void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
   // Main loop must be performed sequential. Question: Try out Cuda's graph
   // stuff to reduce kernel launch overhead
   for (size_type lvl = 0; lvl < nlevels; ++lvl) {
-    if (verbose)
-      std::cout << "  JGF starting level: " << lvl << std::endl;
     lno_t lev_start = level_ptr_h(lvl);
     lno_t lev_end   = level_ptr_h(lvl + 1);
 
@@ -682,31 +715,12 @@ static void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
       if (thandle.get_algorithm() ==
           KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_RP) {
 
-        if (thandle.block_enabled()) {
-          Kokkos::parallel_for(
-            "parfor_fixed_lvl",
-            Kokkos::RangePolicy<execution_space>(lev_start, lev_end),
-            ILUKLvlSchedRPNumericFunctor<
-                ARowMapType, AEntriesType, AValuesType, LRowMapType,
-                LEntriesType, LValuesType, URowMapType, UEntriesType,
-                UValuesType, true>(
-                A_row_map, A_entries, A_values, L_row_map, L_entries, L_values,
-                U_row_map, U_entries, U_values, level_idx, iw, lev_start, block_size));
-        }
-        else {
-          Kokkos::parallel_for(
-            "parfor_fixed_lvl",
-            Kokkos::RangePolicy<execution_space>(lev_start, lev_end),
-            ILUKLvlSchedRPNumericFunctor<
-                ARowMapType, AEntriesType, AValuesType, LRowMapType,
-                LEntriesType, LValuesType, URowMapType, UEntriesType,
-                UValuesType, false>(
-                A_row_map, A_entries, A_values, L_row_map, L_entries, L_values,
-                U_row_map, U_entries, U_values, level_idx, iw, lev_start));
-        }
+        range_policy rpolicy(lev_start, lev_end);
+        KernelLaunchMacro(A_row_map, A_entries, A_values, L_row_map, L_entries, L_values,
+                          U_row_map, U_entries, U_values, rpolicy, "parfor_fixed_lvl", level_idx, iw,
+                          lev_start, RPF, RPB, thandle.block_enabled(), block_size);
       } else if (thandle.get_algorithm() ==
                  KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1) {
-        using policy_type = Kokkos::TeamPolicy<execution_space>;
 
         lno_t lvl_rowid_start = 0;
         lno_t lvl_nrows_chunk;
@@ -717,36 +731,10 @@ static void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
           else
             lvl_nrows_chunk = level_nrowsperchunk_h(lvl);
 
-          if (thandle.block_enabled()) {
-            ILUKLvlSchedTP1NumericFunctor<
-              ARowMapType, AEntriesType, AValuesType, LRowMapType, LEntriesType,
-              LValuesType, URowMapType, UEntriesType, UValuesType, true>
-              tstf(A_row_map, A_entries, A_values, L_row_map, L_entries,
-                   L_values, U_row_map, U_entries, U_values, level_idx, iw,
-                   lev_start + lvl_rowid_start, block_size);
-
-            if (team_size == -1)
-              Kokkos::parallel_for(
-                "parfor_tp1", policy_type(lvl_nrows_chunk, Kokkos::AUTO), tstf);
-            else
-              Kokkos::parallel_for("parfor_tp1",
-                                   policy_type(lvl_nrows_chunk, team_size), tstf);
-          }
-          else {
-            ILUKLvlSchedTP1NumericFunctor<
-              ARowMapType, AEntriesType, AValuesType, LRowMapType, LEntriesType,
-              LValuesType, URowMapType, UEntriesType, UValuesType, false>
-              tstf(A_row_map, A_entries, A_values, L_row_map, L_entries,
-                   L_values, U_row_map, U_entries, U_values, level_idx, iw,
-                   lev_start + lvl_rowid_start);
-
-            if (team_size == -1)
-              Kokkos::parallel_for(
-                "parfor_tp1", policy_type(lvl_nrows_chunk, Kokkos::AUTO), tstf);
-            else
-              Kokkos::parallel_for("parfor_tp1",
-                                   policy_type(lvl_nrows_chunk, team_size), tstf);
-          }
+          policy_type tpolicy = get_policy(lvl_nrows_chunk, team_size);
+          KernelLaunchMacro(A_row_map, A_entries, A_values, L_row_map, L_entries, L_values,
+                            U_row_map, U_entries, U_values, tpolicy, "parfor_tp1", level_idx, iw,
+                            lev_start + lvl_rowid_start, TPF, TPB, thandle.block_enabled(), block_size);
           Kokkos::fence();
           lvl_rowid_start += lvl_nrows_chunk;
         }
@@ -814,7 +802,13 @@ static void iluk_numeric_streams(const std::vector<ExecutionSpace> &execspace_v,
                           std::vector<LValuesType> &L_values_v,
                           const std::vector<URowMapType> &U_row_map_v,
                           const std::vector<UEntriesType> &U_entries_v,
-                          std::vector<UValuesType> &U_values_v) {
+                          std::vector<UValuesType> &U_values_v)
+{
+  using RPF = FunctorTypeMacro(ILUKLvlSchedRPNumericFunctor, false);
+  using RPB = FunctorTypeMacro(ILUKLvlSchedRPNumericFunctor, true);
+  using TPF = FunctorTypeMacro(ILUKLvlSchedTP1NumericFunctor, false);
+  using TPB = FunctorTypeMacro(ILUKLvlSchedTP1NumericFunctor, true);
+
   // Create vectors for handles' data in streams
   int nstreams = execspace_v.size();
   std::vector<size_type> nlevels_v(nstreams);
@@ -824,6 +818,8 @@ static void iluk_numeric_streams(const std::vector<ExecutionSpace> &execspace_v,
   std::vector<lno_t> lvl_end_v(nstreams);
   std::vector<WorkViewType> iw_v(nstreams);  // device views
   std::vector<bool> stream_have_level_v(nstreams);
+  std::vector<bool> block_enabled_v(nstreams);
+  std::vector<size_type> block_size_v(nstreams);
 
   // Retrieve data from handles and find max. number of levels among streams
   size_type nlevels_max = 0;
@@ -832,6 +828,8 @@ static void iluk_numeric_streams(const std::vector<ExecutionSpace> &execspace_v,
     lvl_ptr_h_v[i]         = thandle_v[i]->get_host_level_ptr();
     lvl_idx_v[i]           = thandle_v[i]->get_level_idx();
     iw_v[i]                = thandle_v[i]->get_iw();
+    block_enabled_v[i]     = thandle_v[i]->block_enabled();
+    block_size_v[i]        = thandle_v[i]->get_block_size();
     stream_have_level_v[i] = true;
     if (nlevels_max < nlevels_v[i]) nlevels_max = nlevels_v[i];
   }
@@ -860,26 +858,19 @@ static void iluk_numeric_streams(const std::vector<ExecutionSpace> &execspace_v,
       for (int i = 0; i < nstreams; i++) {
         // Launch only if stream i-th has this level
         if (stream_have_level_v[i]) {
-          ILUKLvlSchedRPNumericFunctor<
-              ARowMapType, AEntriesType, AValuesType, LRowMapType, LEntriesType,
-              LValuesType, URowMapType, UEntriesType, UValuesType, false>
-              tstf(A_row_map_v[i], A_entries_v[i], A_values_v[i],
-                   L_row_map_v[i], L_entries_v[i], L_values_v[i],
-                   U_row_map_v[i], U_entries_v[i], U_values_v[i], lvl_idx_v[i],
-                   iw_v[i], lvl_start_v[i]);
-          Kokkos::parallel_for(
-              "parfor_rp",
-              Kokkos::RangePolicy<ExecutionSpace>(execspace_v[i],
-                                                  lvl_start_v[i], lvl_end_v[i]),
-              tstf);
+          range_policy rpolicy(execspace_v[i], lvl_start_v[i], lvl_end_v[i]);
+          KernelLaunchMacro(
+              A_row_map_v[i], A_entries_v[i], A_values_v[i],
+              L_row_map_v[i], L_entries_v[i], L_values_v[i],
+              U_row_map_v[i], U_entries_v[i], U_values_v[i],
+              rpolicy, "parfor_rp", lvl_idx_v[i], iw_v[i], lvl_start_v[i],
+              RPF, RPB, block_enabled_v[i], block_size_v[i]);
         }  // end if (stream_have_level_v[i])
       }    // end for streams
     }      // end for lvl
   }        // end SEQLVLSCHD_RP
   else if (thandle_v[0]->get_algorithm() ==
            KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1) {
-    using policy_type = Kokkos::TeamPolicy<ExecutionSpace>;
-
     std::vector<LevelHostViewType> lvl_nchunks_h_v(nstreams);
     std::vector<LevelHostViewType> lvl_nrowsperchunk_h_v(nstreams);
     std::vector<lno_t> lvl_rowid_start_v(nstreams);
@@ -929,27 +920,13 @@ static void iluk_numeric_streams(const std::vector<ExecutionSpace> &execspace_v,
                 lvl_nrows_chunk = lvl_nrowsperchunk_h_v[i](lvl);
 
               // 1.b. Create functor for stream i-th and launch
-              ILUKLvlSchedTP1NumericFunctor<
-                  ARowMapType, AEntriesType, AValuesType, LRowMapType,
-                  LEntriesType, LValuesType, URowMapType, UEntriesType,
-                  UValuesType, false>
-                  tstf(A_row_map_v[i], A_entries_v[i], A_values_v[i],
-                       L_row_map_v[i], L_entries_v[i], L_values_v[i],
-                       U_row_map_v[i], U_entries_v[i], U_values_v[i],
-                       lvl_idx_v[i], iw_v[i],
-                       lvl_start_v[i] + lvl_rowid_start_v[i]);
-              if (team_size_v[i] == -1)
-                Kokkos::parallel_for(
-                    "parfor_tp1",
-                    policy_type(execspace_v[i], lvl_nrows_chunk, Kokkos::AUTO),
-                    tstf);
-              else
-                Kokkos::parallel_for(
-                    "parfor_tp1",
-                    policy_type(execspace_v[i], lvl_nrows_chunk,
-                                team_size_v[i]),
-                    tstf);
-
+              policy_type tpolicy = get_policy(execspace_v[i], lvl_nrows_chunk, team_size_v[i]);
+              KernelLaunchMacro(
+                A_row_map_v[i], A_entries_v[i], A_values_v[i],
+                L_row_map_v[i], L_entries_v[i], L_values_v[i],
+                U_row_map_v[i], U_entries_v[i], U_values_v[i],
+                tpolicy, "parfor_tp1", lvl_idx_v[i], iw_v[i], lvl_start_v[i] + lvl_rowid_start_v[i],
+                TPF, TPB, block_enabled_v[i], block_size_v[i]);
               // 1.c. Ready to move to next chunk
               lvl_rowid_start_v[i] += lvl_nrows_chunk;
             }  // end if (chunkid < lvl_nchunks_h_v[i](lvl))
@@ -966,5 +943,8 @@ static void iluk_numeric_streams(const std::vector<ExecutionSpace> &execspace_v,
 }  // namespace Experimental
 }  // namespace Impl
 }  // namespace KokkosSparse
+
+#undef FunctorTypeMacro
+#undef KernelLaunchMacro
 
 #endif
