@@ -21,7 +21,11 @@
 #include <sstream>
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+#if __has_include(<rocm-core/rocm_version.h>)
 #include <rocm-core/rocm_version.h>
+#else
+#include <rocm_version.h>
+#endif
 #include <rocsparse/rocsparse.h>
 
 namespace KokkosSparse {
