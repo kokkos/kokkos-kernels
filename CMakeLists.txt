@@ -427,7 +427,7 @@ ELSE()
   IF (KOKKOSKERNELS_ALL_COMPONENTS_ENABLED)
     IF (KokkosKernels_ENABLE_PERFTESTS)
       MESSAGE(STATUS "Enabling perf tests.")
-      KOKKOSKERNELS_ADD_TEST_DIRECTORIES(perf_test)
+      add_subdirectory(perf_test) # doesn't require KokkosKernels_ENABLE_TESTS=ON
     ENDIF ()
     IF (KokkosKernels_ENABLE_EXAMPLES)
       MESSAGE(STATUS "Enabling examples.")
