@@ -474,8 +474,8 @@ template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
 void test_spiluk() {
   using TestStruct = Test::SpilukTest<scalar_t, lno_t, size_type, device>;
-  //TestStruct::run_test_spiluk();
-  TestStruct::run_test_spiluk_blocks();
+  TestStruct::run_test_spiluk();
+  //TestStruct::run_test_spiluk_blocks();
 }
 
 template <typename scalar_t, typename lno_t, typename size_type,
