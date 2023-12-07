@@ -162,6 +162,7 @@ struct Common
     KK_REQUIRE_MSG(block_size_ == 0, "Tried to use blocks with the unblocked Common?");
   }
 
+  KOKKOS_INLINE_FUNCTION
   void init_scratch() const {} // unblocked doesn't need scratch
 
   // lset
@@ -306,9 +307,10 @@ struct Common<ARowMapType, AEntriesType, AValuesType,
     KK_REQUIRE_MSG(block_size <= 10, "Max supported block size is 10");
   }
 
+  KOKKOS_INLINE_FUNCTION
   void init_scratch() const {}
   // {
-  //   temp_dense_block = sview_2d_scratch(
+  //   temp_dense_block = sview_2d_scratch(...);
   // }
 
   // lset
@@ -318,7 +320,14 @@ struct Common<ARowMapType, AEntriesType, AValuesType,
 
   KOKKOS_INLINE_FUNCTION
   void lset(const size_type block, const AValuesUnmanaged2DBlockType& rhs) const
-  { Kokkos::deep_copy(lget(block), rhs); }
+  {
+    auto lblock = lget(block);
+    for (size_type i = 0; i < block_size; ++i) {
+      for (size_type j = 0; j < block_size; ++j) {
+        lblock(i, j) = rhs(i, j);
+      }
+    }
+  }
 
   // uset
   KOKKOS_INLINE_FUNCTION
@@ -327,7 +336,14 @@ struct Common<ARowMapType, AEntriesType, AValuesType,
 
   KOKKOS_INLINE_FUNCTION
   void uset(const size_type block, const AValuesUnmanaged2DBlockType& rhs) const
-  { Kokkos::deep_copy(uget(block), rhs); }
+  {
+    auto ublock = uget(block);
+    for (size_type i = 0; i < block_size; ++i) {
+      for (size_type j = 0; j < block_size; ++j) {
+        ublock(i, j) = rhs(i, j);
+      }
+    }
+  }
 
   // lset_id
   KOKKOS_INLINE_FUNCTION
@@ -379,7 +395,7 @@ struct Common<ARowMapType, AEntriesType, AValuesType,
     KokkosBatched::SerialGemm<KokkosBatched::Trans::NoTranspose,
                               KokkosBatched::Trans::NoTranspose,
                               KokkosBatched::Algo::Gemm::Unblocked>::
-      invoke(alpha, lhs, rhs, 0.0, result);
+      invoke<scalar_t, LValuesUnmanaged2DBlockType, UValuesUnmanaged2DBlockType, LValuesUnmanaged2DBlockType>(alpha, lhs, rhs, 0.0, result);
     return result;
   }
 
