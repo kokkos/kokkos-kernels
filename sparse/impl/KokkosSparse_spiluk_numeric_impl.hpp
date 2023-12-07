@@ -56,28 +56,65 @@ using WorkViewType            = typename IlukHandle::work_view_t;
 using LevelHostViewType       = typename IlukHandle::nnz_lno_view_host_t;
 using LevelViewType           = typename IlukHandle::nnz_lno_view_t;
 using karith                  = typename Kokkos::ArithTraits<scalar_t>;
-using policy_type             = typename IlukHandle::TeamPolicy;
-using member_type             = typename policy_type::member_type;
+using team_policy             = typename IlukHandle::TeamPolicy;
+using member_type             = typename team_policy::member_type;
 using range_policy            = typename IlukHandle::RangePolicy;
-using sview_2d                = typename Kokkos::View<scalar_t**, memory_space>;
+using sview_2d_scratch        = typename Kokkos::View<scalar_t**, typename execution_space::scratch_memory_space>;
+//using sview_2d_scratch        = typename Kokkos::View<scalar_t**, memory_space>;
 using sview_1d                = typename Kokkos::View<scalar_t*, memory_space>;
 
-static policy_type get_policy(size_type nrows, int team_size)
+static team_policy get_team_policy(const size_type nrows, const int team_size, const bool block_enabled, const size_type block_size)
 {
+  team_policy rv;
   if (team_size == -1) {
-    return policy_type(nrows, Kokkos::AUTO);
+    rv = team_policy(nrows, Kokkos::AUTO);
   } else {
-    return policy_type(nrows, team_size);
+    rv = team_policy(nrows, team_size);
   }
+
+  if (block_enabled) {
+    const auto bytes = block_size * block_size * sizeof(scalar_t);
+    rv.set_scratch_size(0 /*level*/, Kokkos::PerThread(bytes));
+  }
+  return rv;
 }
 
-static policy_type get_policy(execution_space exe_space, size_type nrows, int team_size)
+static team_policy get_team_policy(execution_space exe_space, const size_type nrows, const int team_size, const bool block_enabled, const size_type block_size)
 {
+  team_policy rv;
   if (team_size == -1) {
-    return policy_type(exe_space, nrows, Kokkos::AUTO);
+    rv = team_policy(exe_space, nrows, Kokkos::AUTO);
   } else {
-    return policy_type(exe_space, nrows, team_size);
+    rv = team_policy(exe_space, nrows, team_size);
   }
+
+  if (block_enabled) {
+    const auto bytes = block_size * block_size * sizeof(scalar_t);
+    rv.set_scratch_size(0 /*level*/, Kokkos::PerThread(bytes));
+  }
+  return rv;
+}
+
+static range_policy get_range_policy(const lno_t start, const lno_t end, const bool block_enabled, const size_type block_size)
+{
+  range_policy rv(start, end);
+
+  if (block_enabled) {
+    const auto bytes = block_size * block_size * sizeof(scalar_t);
+    //rv.set_scratch_size(0 /*level*/, Kokkos::PerThread(bytes));
+  }
+  return rv;
+}
+
+static range_policy get_range_policy(execution_space exe_space, const lno_t start, const lno_t end, const bool block_enabled, const size_type block_size)
+{
+  range_policy rv(exe_space, start, end);
+
+  if (block_enabled) {
+    const auto bytes = block_size * block_size * sizeof(scalar_t);
+    //rv.set_scratch_size(0 /*level*/, Kokkos::PerThread(bytes));
+  }
+  return rv;
 }
 
 /**
@@ -125,6 +162,8 @@ struct Common
     KK_REQUIRE_MSG(block_size_ == 0, "Tried to use blocks with the unblocked Common?");
   }
 
+  void init_scratch() const {} // unblocked doesn't need scratch
+
   // lset
   KOKKOS_INLINE_FUNCTION
   void lset(const size_type nnz, const scalar_t& value) const
@@ -170,7 +209,7 @@ struct Common
 
   // multiply: return (alpha * lhs) * rhs
   KOKKOS_INLINE_FUNCTION
-  scalar_t multiply(const scalar_t& alpha, const scalar_t& lhs, const scalar_t& rhs) const
+  scalar_t multiply(const scalar_t& alpha, const scalar_t& lhs, const scalar_t& rhs, scalar_t*) const
   { return alpha * lhs * rhs; }
 
   // lget
@@ -216,7 +255,7 @@ struct Common<ARowMapType, AEntriesType, AValuesType,
   lno_t lev_start;
   size_type block_size;
   size_type block_items;
-  sview_2d temp_dense_block;
+  sview_2d_scratch temp_dense_block;
   sview_1d ones;
 
   using LValuesUnmanaged2DBlockType = Kokkos::View<
@@ -258,12 +297,19 @@ struct Common<ARowMapType, AEntriesType, AValuesType,
     lev_start(lev_start_),
     block_size(block_size_),
     block_items(block_size * block_size),
-    temp_dense_block("temp_dense_block", block_size, block_size), // this will have races unless Serial
+    temp_dense_block(),
+    //temp_dense_block("temp_dense_block", block_size, block_size), // this will have races unless Serial
     ones("ones", block_size)
   {
     Kokkos::deep_copy(ones, 1.0);
     KK_REQUIRE_MSG(block_size > 0, "Tried to use block_size=0 with the blocked Common?");
+    KK_REQUIRE_MSG(block_size <= 10, "Max supported block size is 10");
   }
+
+  void init_scratch() const {}
+  // {
+  //   temp_dense_block = sview_2d_scratch(
+  // }
 
   // lset
   KOKKOS_INLINE_FUNCTION
@@ -327,13 +373,14 @@ struct Common<ARowMapType, AEntriesType, AValuesType,
 
   // multiply: return (alpha * lhs) * rhs
   KOKKOS_INLINE_FUNCTION
-  sview_2d multiply(const scalar_t& alpha, const UValuesUnmanaged2DBlockType& lhs, const LValuesUnmanaged2DBlockType& rhs) const
+  LValuesUnmanaged2DBlockType multiply(const scalar_t& alpha, const UValuesUnmanaged2DBlockType& lhs, const LValuesUnmanaged2DBlockType& rhs, scalar_t* buff) const
   {
+    LValuesUnmanaged2DBlockType result(&buff[0], block_size, block_size);
     KokkosBatched::SerialGemm<KokkosBatched::Trans::NoTranspose,
                               KokkosBatched::Trans::NoTranspose,
                               KokkosBatched::Algo::Gemm::Unblocked>::
-      invoke(alpha, lhs, rhs, 0.0, temp_dense_block);
-    return temp_dense_block;
+      invoke(alpha, lhs, rhs, 0.0, result);
+    return result;
   }
 
   // lget
@@ -409,6 +456,9 @@ struct ILUKLvlSchedRPNumericFunctor :
     auto lev_start = Base::lev_start;
     auto iw        = Base::iw;
 
+    Base::init_scratch();
+    scalar_t buff[100]; // 10*10
+
     const auto rowid = level_idx(i);
     const auto tid   = i - lev_start;
     auto k1    = L_row_map(rowid);
@@ -466,7 +516,7 @@ struct ILUKLvlSchedRPNumericFunctor :
         const auto col  = U_entries(kk);
         const auto ipos = iw(tid, col);
         if (ipos == -1) continue;
-        const auto lxu = Base::multiply(-1.0, Base::uget(kk), fact);
+        const auto lxu = Base::multiply(-1.0, Base::uget(kk), fact, &buff[0]);
         if (col < rowid) {
           Base::add(Base::lget(ipos), lxu);
         }
@@ -538,6 +588,8 @@ struct ILUKLvlSchedTP1NumericFunctor :
     auto lev_start = Base::lev_start;
     auto iw        = Base::iw;
 
+    Base::init_scratch();
+
     const auto my_team = team.league_rank();
     const auto rowid   = level_idx(my_team + lev_start);  // map to rowid
     size_type k1 = L_row_map(rowid);
@@ -606,7 +658,8 @@ struct ILUKLvlSchedTP1NumericFunctor :
         const auto col  = U_entries(kk);
         const auto ipos = iw(my_team, col);
         if (ipos != -1) {
-          auto lxu = Base::multiply(-1.0, Base::uget(kk), fact);
+          scalar_t buff[100]; // 10*10
+          auto lxu = Base::multiply(-1.0, Base::uget(kk), fact, &buff[0]);
           if (col < rowid) {
             Base::add(Base::lget(ipos), lxu);
           }
@@ -715,7 +768,7 @@ static void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
       if (thandle.get_algorithm() ==
           KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_RP) {
 
-        range_policy rpolicy(lev_start, lev_end);
+        range_policy rpolicy = get_range_policy(lev_start, lev_end, thandle.block_enabled(), block_size);
         KernelLaunchMacro(A_row_map, A_entries, A_values, L_row_map, L_entries, L_values,
                           U_row_map, U_entries, U_values, rpolicy, "parfor_fixed_lvl", level_idx, iw,
                           lev_start, RPF, RPB, thandle.block_enabled(), block_size);
@@ -731,7 +784,7 @@ static void iluk_numeric(IlukHandle &thandle, const ARowMapType &A_row_map,
           else
             lvl_nrows_chunk = level_nrowsperchunk_h(lvl);
 
-          policy_type tpolicy = get_policy(lvl_nrows_chunk, team_size);
+          team_policy tpolicy = get_team_policy(lvl_nrows_chunk, team_size, thandle.block_enabled(), block_size);
           KernelLaunchMacro(A_row_map, A_entries, A_values, L_row_map, L_entries, L_values,
                             U_row_map, U_entries, U_values, tpolicy, "parfor_tp1", level_idx, iw,
                             lev_start + lvl_rowid_start, TPF, TPB, thandle.block_enabled(), block_size);
@@ -858,7 +911,7 @@ static void iluk_numeric_streams(const std::vector<ExecutionSpace> &execspace_v,
       for (int i = 0; i < nstreams; i++) {
         // Launch only if stream i-th has this level
         if (stream_have_level_v[i]) {
-          range_policy rpolicy(execspace_v[i], lvl_start_v[i], lvl_end_v[i]);
+          range_policy rpolicy = get_range_policy(execspace_v[i], lvl_start_v[i], lvl_end_v[i], block_enabled_v[i], block_size_v[i]);
           KernelLaunchMacro(
               A_row_map_v[i], A_entries_v[i], A_values_v[i],
               L_row_map_v[i], L_entries_v[i], L_values_v[i],
@@ -920,7 +973,7 @@ static void iluk_numeric_streams(const std::vector<ExecutionSpace> &execspace_v,
                 lvl_nrows_chunk = lvl_nrowsperchunk_h_v[i](lvl);
 
               // 1.b. Create functor for stream i-th and launch
-              policy_type tpolicy = get_policy(execspace_v[i], lvl_nrows_chunk, team_size_v[i]);
+              team_policy tpolicy = get_team_policy(execspace_v[i], lvl_nrows_chunk, team_size_v[i], block_enabled_v[i], block_size_v[i]);
               KernelLaunchMacro(
                 A_row_map_v[i], A_entries_v[i], A_values_v[i],
                 L_row_map_v[i], L_entries_v[i], L_values_v[i],

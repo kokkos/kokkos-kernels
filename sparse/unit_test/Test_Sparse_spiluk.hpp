@@ -159,15 +159,6 @@ struct SpilukTest
 
     kh.destroy_spiluk_handle();
 
-    spiluk_handle->print_algorithm();
-    std::cout << "For unblocked: " << std::endl;
-
-    std::cout << "L" << std::endl;
-    print_matrix(decompress_matrix(L_row_map, L_entries, L_values));
-
-    std::cout << "U" << std::endl;
-    print_matrix(decompress_matrix(U_row_map, U_entries, U_values));
-
     // For team policy alg, check results against range policy
     if (alg == SPILUKAlgorithm::SEQLVLSCHD_TP1) {
       const auto [L_row_map_rp, L_entries_rp, L_values_rp, U_row_map_rp, U_entries_rp, U_values_rp] =
@@ -210,7 +201,6 @@ struct SpilukTest
     ValuesType L_values("L_values", spiluk_handle->get_nnzL() * block_items);
     ValuesType U_values("U_values", spiluk_handle->get_nnzU() * block_items);
 
-    spiluk_handle->print_algorithm();
     spiluk_numeric(&kh, fill_lev, row_map, entries, values, L_row_map,
                    L_entries, L_values, U_row_map, U_entries, U_values);
 
@@ -240,22 +230,9 @@ struct SpilukTest
     KokkosSparse::spmv("N", ONE, L, bb_tmp, MONE, bb);
 
     typename AT::mag_type diff_nrm = KokkosBlas::nrm2(bb);
-
-    std::cout << "JGF diff_nrm: " << diff_nrm << std::endl;
     EXPECT_TRUE((diff_nrm / bb_nrm) < 1e0);
 
     kh.destroy_spiluk_handle();
-
-    if (block_size != 1) {
-      spiluk_handle->print_algorithm();
-      std::cout << "For block size: " << block_size << std::endl;
-
-      std::cout << "L" << std::endl;
-      print_matrix(decompress_matrix(L_row_map, L_entries, L_values, block_size));
-
-      std::cout << "U" << std::endl;
-      print_matrix(decompress_matrix(U_row_map, U_entries, U_values, block_size));
-    }
 
     // If block_size is 1, results should exactly match unblocked results
     if (block_size == 1) {
