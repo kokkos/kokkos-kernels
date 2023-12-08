@@ -132,6 +132,7 @@ void run_spmv(benchmark::State& state, const spmv_parameters& inputs) {
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
   Kokkos::fill_random(x, rand_pool, 10);
   Kokkos::fill_random(y, rand_pool, 10);
+  Kokkos::fence();
 
   // Run the actual experiments
   for (auto _ : state) {
