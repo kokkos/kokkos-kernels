@@ -96,8 +96,9 @@ struct BDF {
   KOKKOS_FUNCTION static void Solve(
       const ode_type& ode, const scalar_type t_start, const scalar_type t_end,
       const int num_steps, const vec_type& y0, const vec_type& y,
-      const vec_type& rhs, const vec_type& update, const mv_type& y_vecs,
-      const mv_type& kstack, const mat_type& temp, const mat_type& jac) {
+      const vec_type& rhs, const vec_type& update, const vec_type& scale,
+      const mv_type& y_vecs, const mv_type& kstack, const mat_type& temp,
+      const mat_type& jac) {
     const table_type table{};
 
     const double dt = (t_end - t_start) / num_steps;
@@ -127,8 +128,8 @@ struct BDF {
     }
 
     for (int stepIdx = init_steps; stepIdx < num_steps; ++stepIdx) {
-      KokkosODE::Impl::BDFStep(ode, table, t, dt, y0, y, rhs, update, y_vecs,
-                               temp, jac);
+      KokkosODE::Impl::BDFStep(ode, table, t, dt, y0, y, rhs, update, scale,
+                               y_vecs, temp, jac);
 
       // Update history
       for (int eqIdx = 0; eqIdx < ode.neqs; ++eqIdx) {
@@ -189,7 +190,7 @@ KOKKOS_FUNCTION void BDFSolve(const ode_type& ode, const scalar_type t_start, co
   scalar_type dt = initial_step;
   scalar_type t  = t_start;
 
-  constexpr int max_newton_iters = 4;
+  constexpr int max_newton_iters = 10;
   scalar_type atol = 1.0e-6, rtol = 1.0e-3;
 
   // Compute rhs = f(t_start, y0)

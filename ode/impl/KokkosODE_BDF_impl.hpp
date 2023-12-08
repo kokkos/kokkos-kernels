@@ -177,8 +177,8 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, const table_type& table,
                              scalar_type t, scalar_type dt,
                              const vec_type& y_old, const vec_type& y_new,
                              const vec_type& rhs, const vec_type& update,
-                             const mv_type& y_vecs, const mat_type& temp,
-                             const mat_type& jac) {
+                             const vec_type& scale, const mv_type& y_vecs,
+                             const mat_type& temp, const mat_type& jac) {
   using newton_params = KokkosODE::Experimental::Newton_params;
 
   BDF_system_wrapper sys(ode, table, t, dt, y_vecs);
@@ -192,7 +192,7 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, const table_type& table,
   // solver the nonlinear problem
   {
     KokkosODE::Experimental::Newton::Solve(sys, param, jac, temp, y_new, rhs,
-                                           update);
+                                           update, scale);
   }
 
 }  // BDFStep
@@ -386,7 +386,7 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt,
     Kokkos::Experimental::local_deep_copy(update, 0);
     KokkosODE::Experimental::newton_solver_status newton_status = 
       KokkosODE::Experimental::Newton::Solve(sys, param, jac, tmp_gesv, y_new, rhs,
-					     update);
+					     update, scale);
 
     for(int eqIdx = 0; eqIdx < sys.neqs; ++eqIdx) {
       update(eqIdx) = y_new(eqIdx) - y_predict(eqIdx);
@@ -397,7 +397,6 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt,
       update_D(order, 0.5, coeffs, tempD, D);
       num_equal_steps = 0;
 
-      std::cout << "Hit Newton MAX ITER, halve time step" << std::endl;
     } else {
       // Estimate the solution error
       safety = 0.9*(2*max_newton_iters + 1) / (2*max_newton_iters + param.iters);
@@ -408,9 +407,6 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt,
 	error_norm += error(eqIdx)*error(eqIdx);
       }
       error_norm = Kokkos::sqrt(error_norm) / Kokkos::sqrt(sys.neqs);
-
-      std::cout << "error_norm > 1, factor="
-		<< Kokkos::max(min_factor, safety*Kokkos::pow(error_norm, -1.0 / (order + 1))) << std::endl;
 
       // Check error norm and adapt step size or accept step
       if(error_norm > 1) {
@@ -463,9 +459,6 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt,
     error_high = Kokkos::ArithTraits<double>::max();
   }
 
-  std::cout << "error_norms: {" << error_low << ", "
-	    << error_norm << ", " << error_high << "}" << std::endl;
-
   double factor_low, factor_mid, factor_high, factor;
   factor_low  = Kokkos::pow(error_low,  -1.0 / order);
   factor_mid  = Kokkos::pow(error_norm, -1.0 / (order + 1));
@@ -482,12 +475,9 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt,
     delta_order = 0;
     factor = factor_mid;
   }
+  order += delta_order;
   factor = Kokkos::fmin(10, safety*factor);
   dt *= factor;
-
-  std::cout << "factors: {" << factor_low << ", " << factor_mid
-	    << ", " << factor_high << "}, selecting: " << delta_order
-	    << ", " << factor << std::endl;
 
   update_D(order, factor, coeffs, tempD, D);
   num_equal_steps = 0;

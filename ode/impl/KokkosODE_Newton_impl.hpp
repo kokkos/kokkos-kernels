@@ -30,10 +30,10 @@
 namespace KokkosODE {
 namespace Impl {
 
-template <class system_type, class mat_type, class ini_vec_type, class rhs_vec_type, class update_type>
+  template <class system_type, class mat_type, class ini_vec_type, class rhs_vec_type, class update_type, class scale_type>
 KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
     system_type& sys, const KokkosODE::Experimental::Newton_params& params,
-    mat_type& J, mat_type& tmp, ini_vec_type& y0, rhs_vec_type& rhs, update_type& update) {
+    mat_type& J, mat_type& tmp, ini_vec_type& y0, rhs_vec_type& rhs, update_type& update, const scale_type& scale) {
   using newton_solver_status = KokkosODE::Experimental::newton_solver_status;
   using value_type           = typename ini_vec_type::non_const_value_type;
 
@@ -42,10 +42,14 @@ KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
   using norm_type = typename Kokkos::Details::InnerProductSpaceTraits<
       typename ini_vec_type::non_const_value_type>::mag_type;
   sys.residual(y0, rhs);
-  // std::cout << "y0=" << y0(0) << std::endl;
-  // std::cout << "rhs0= " << rhs(0) << std::endl;
   const norm_type norm0 = KokkosBlas::serial_nrm2(rhs);
   norm_type norm        = Kokkos::ArithTraits<norm_type>::zero();
+  norm_type norm_old    = Kokkos::ArithTraits<norm_type>::zero();
+  norm_type norm_new    = Kokkos::ArithTraits<norm_type>::zero();
+  norm_type rate        = Kokkos::ArithTraits<norm_type>::zero();
+
+  const norm_type tol = Kokkos::max(10 * Kokkos::ArithTraits<norm_type>::eps() / params.rel_tol,
+				    Kokkos::min(0.03, Kokkos::sqrt(params.rel_tol)));
 
   // LBV - 07/24/2023: for now assume that we take
   // a full Newton step. Eventually this value can
@@ -61,14 +65,6 @@ KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
     // Solve the following linearized
     // problem at each iteration: J*update=-rhs
     // with J=du/dx, rhs=f(u_n+update)-f(u_n)
-    norm = KokkosBlas::serial_nrm2(rhs);
-
-    // std::cout << "norm=" << norm << std::endl;
-
-    if ((norm < (params.rel_tol * norm0)) ||
-        (it > 0 ? KokkosBlas::serial_nrm2(update) < params.abs_tol : false)) {
-      return newton_solver_status::NLS_SUCCESS;
-    }
 
     // compute LHS
     sys.jacobian(y0, J);
@@ -78,6 +74,24 @@ KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
         KokkosBatched::SerialGesv<KokkosBatched::Gesv::StaticPivoting>::invoke(
             J, update, rhs, tmp);
     KokkosBlas::SerialScale::invoke(-1, update);
+
+    // update solution // x = x + alpha*update
+    KokkosBlas::serial_axpy(alpha, update, y0);
+    norm = KokkosBlas::serial_nrm2(rhs);
+
+    // Compute rms norm of the scaled update
+    for(int idx = 0; idx < sys.neqs; ++idx) {
+      norm_new = (update(idx) * update(idx)) / (scale(idx) * scale(idx));
+    }
+    norm_new = Kokkos::sqrt(norm_new / sys.neqs);
+    if((it > 0) && norm_old > Kokkos::ArithTraits<norm_type>::zero()) {
+      rate = norm_new / norm_old;
+      if((rate >= 1) || Kokkos::pow(rate, params.max_iters - it) / (1 - rate) * norm_new > tol) {
+	return newton_solver_status::NLS_DIVERGENCE;
+      } else if((norm_new == 0) || ((rate / (1 - rate)) * norm_new < tol)) {
+	return newton_solver_status::NLS_SUCCESS;
+      }
+    }
 
     if (linSolverStat == 1) {
 #if KOKKOS_VERSION < 40199
@@ -89,10 +103,14 @@ KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
       return newton_solver_status::LIN_SOLVE_FAIL;
     }
 
-    // update solution // x = x + alpha*update
-    KokkosBlas::serial_axpy(alpha, update, y0);
-    // std::cout << "newton vector y= " << y0(0) << std::endl;
+    if ((norm < (params.rel_tol * norm0)) ||
+        (it > 0 ? KokkosBlas::serial_nrm2(update) < params.abs_tol : false)) {
+      return newton_solver_status::NLS_SUCCESS;
+    }
+
+    norm_old = norm_new;
   }
+  std::cout << "Final norm: " << norm << ", acceptance citeria: " << params.rel_tol * norm0 << std::endl;
   return newton_solver_status::MAX_ITER;
 }
 
