@@ -65,9 +65,10 @@ struct IlukWrap {
   // memory_space>;
   using sview_1d = typename Kokkos::View<scalar_t *, memory_space>;
 
-  static team_policy get_team_policy(const size_type nrows, const int team_size) {
-                                     // const bool block_enabled,
-                                     // const size_type block_size) {
+  static team_policy get_team_policy(const size_type nrows,
+                                     const int team_size) {
+    // const bool block_enabled,
+    // const size_type block_size) {
     team_policy rv;
     if (team_size == -1) {
       rv = team_policy(nrows, Kokkos::AUTO);
@@ -83,9 +84,10 @@ struct IlukWrap {
   }
 
   static team_policy get_team_policy(execution_space exe_space,
-                                     const size_type nrows, const int team_size) {
-                                     // const bool block_enabled,
-                                     // const size_type block_size) {
+                                     const size_type nrows,
+                                     const int team_size) {
+    // const bool block_enabled,
+    // const size_type block_size) {
     team_policy rv;
     if (team_size == -1) {
       rv = team_policy(exe_space, nrows, Kokkos::AUTO);
@@ -101,8 +103,8 @@ struct IlukWrap {
   }
 
   static range_policy get_range_policy(const lno_t start, const lno_t end) {
-                                       // const bool block_enabled,
-                                       // const size_type block_size) {
+    // const bool block_enabled,
+    // const size_type block_size) {
     range_policy rv(start, end);
 
     // if (block_enabled) {
@@ -114,8 +116,8 @@ struct IlukWrap {
 
   static range_policy get_range_policy(execution_space exe_space,
                                        const lno_t start, const lno_t end) {
-                                       // const bool block_enabled,
-                                       // const size_type block_size) {
+    // const bool block_enabled,
+    // const size_type block_size) {
     range_policy rv(exe_space, start, end);
 
     // if (block_enabled) {
@@ -525,8 +527,8 @@ struct IlukWrap {
         fact = Base::multiply(1.0, fact, u_diag);
 #endif
         auto fact = Base::lget(k);
-        for (auto kk = Base::U_row_map(prev_row) + 1; kk < Base::U_row_map(prev_row + 1);
-             ++kk) {
+        for (auto kk = Base::U_row_map(prev_row) + 1;
+             kk < Base::U_row_map(prev_row + 1); ++kk) {
           const auto col  = Base::U_entries(kk);
           const auto ipos = Base::iw(tid, col);
           if (ipos == -1) continue;
@@ -594,8 +596,9 @@ struct IlukWrap {
       Base::init_scratch();
 
       const auto my_team = team.league_rank();
-      const auto rowid   = Base::level_idx(my_team + Base::lev_start);  // map to rowid
-      size_type k1       = Base::L_row_map(rowid);
+      const auto rowid =
+          Base::level_idx(my_team + Base::lev_start);  // map to rowid
+      size_type k1 = Base::L_row_map(rowid);
 #ifdef KEEP_DIAG
       size_type k2 = Base::L_row_map(rowid + 1) - 1;
       Base::lset_id(team, k2);
@@ -698,7 +701,7 @@ struct IlukWrap {
 #endif
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2),
                            [&](const size_type k) {
-                             const auto col   = Base::L_entries(k);
+                             const auto col         = Base::L_entries(k);
                              Base::iw(my_team, col) = -1;
                            });
 
@@ -706,7 +709,7 @@ struct IlukWrap {
       k2 = Base::U_row_map(rowid + 1);
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2),
                            [&](const size_type k) {
-                             const auto col   = Base::U_entries(k);
+                             const auto col         = Base::U_entries(k);
                              Base::iw(my_team, col) = -1;
                            });
     }
@@ -789,8 +792,7 @@ struct IlukWrap {
             else
               lvl_nrows_chunk = level_nrowsperchunk_h(lvl);
 
-            team_policy tpolicy =
-                get_team_policy(lvl_nrows_chunk, team_size);
+            team_policy tpolicy = get_team_policy(lvl_nrows_chunk, team_size);
             KernelLaunchMacro(A_row_map, A_entries, A_values, L_row_map,
                               L_entries, L_values, U_row_map, U_entries,
                               U_values, tpolicy, "parfor_tp1", level_idx, iw,
@@ -802,7 +804,7 @@ struct IlukWrap {
         }
       }  // end if
     }    // end for lvl
-    //}
+         //}
 
 // Output check
 #ifdef NUMERIC_OUTPUT_INFO
