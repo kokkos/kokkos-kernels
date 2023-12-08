@@ -310,15 +310,15 @@ struct SpilukTest {
     std::vector<EntriesType> U_entries_v(nstreams);
     std::vector<ValuesType> U_values_v(nstreams);
 
-    std::vector<std::vector<scalar_t>> A = get_9x9_fixture<scalar_t>();
+    std::vector<std::vector<scalar_t>> Afix = get_9x9_fixture<scalar_t>();
 
     RowMapType row_map("row_map", 0);
     EntriesType entries("entries", 0);
     ValuesType values("values", 0);
 
-    compress_matrix(row_map, entries, values, A);
+    compress_matrix(row_map, entries, values, Afix);
 
-    const size_type nrows = A.size();
+    const size_type nrows = Afix.size();
     const size_type nnz   = values.extent(0);
 
     RowMapType_hostmirror hrow_map("hrow_map", nrows + 1);

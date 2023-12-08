@@ -78,7 +78,6 @@ void run_test_par_ilut() {
   compress_matrix(row_map, entries, values, A);
 
   const size_type nrows = A.size();
-  const size_type nnz   = values.extent(0);
 
   // Make kernel handle
   KernelHandle kh;

@@ -65,9 +65,9 @@ struct IlukWrap {
   // memory_space>;
   using sview_1d = typename Kokkos::View<scalar_t *, memory_space>;
 
-  static team_policy get_team_policy(const size_type nrows, const int team_size,
-                                     const bool block_enabled,
-                                     const size_type block_size) {
+  static team_policy get_team_policy(const size_type nrows, const int team_size) {
+                                     // const bool block_enabled,
+                                     // const size_type block_size) {
     team_policy rv;
     if (team_size == -1) {
       rv = team_policy(nrows, Kokkos::AUTO);
@@ -83,9 +83,9 @@ struct IlukWrap {
   }
 
   static team_policy get_team_policy(execution_space exe_space,
-                                     const size_type nrows, const int team_size,
-                                     const bool block_enabled,
-                                     const size_type block_size) {
+                                     const size_type nrows, const int team_size) {
+                                     // const bool block_enabled,
+                                     // const size_type block_size) {
     team_policy rv;
     if (team_size == -1) {
       rv = team_policy(exe_space, nrows, Kokkos::AUTO);
@@ -100,9 +100,9 @@ struct IlukWrap {
     return rv;
   }
 
-  static range_policy get_range_policy(const lno_t start, const lno_t end,
-                                       const bool block_enabled,
-                                       const size_type block_size) {
+  static range_policy get_range_policy(const lno_t start, const lno_t end) {
+                                       // const bool block_enabled,
+                                       // const size_type block_size) {
     range_policy rv(start, end);
 
     // if (block_enabled) {
@@ -113,9 +113,9 @@ struct IlukWrap {
   }
 
   static range_policy get_range_policy(execution_space exe_space,
-                                       const lno_t start, const lno_t end,
-                                       const bool block_enabled,
-                                       const size_type block_size) {
+                                       const lno_t start, const lno_t end) {
+                                       // const bool block_enabled,
+                                       // const size_type block_size) {
     range_policy rv(exe_space, start, end);
 
     // if (block_enabled) {
@@ -471,48 +471,37 @@ struct IlukWrap {
 
     KOKKOS_FUNCTION
     void operator()(const lno_t i) const {
-      // Grab items from parent to make code more readable
-      auto A_row_map = Base::A_row_map;
-      auto A_entries = Base::A_entries;
-      auto L_row_map = Base::L_row_map;
-      auto L_entries = Base::L_entries;
-      auto U_row_map = Base::U_row_map;
-      auto U_entries = Base::U_entries;
-      auto level_idx = Base::level_idx;
-      auto lev_start = Base::lev_start;
-      auto iw        = Base::iw;
-
       Base::init_scratch();
       scalar_t buff[100];  // 10*10
 
-      const auto rowid = level_idx(i);
-      const auto tid   = i - lev_start;
-      auto k1          = L_row_map(rowid);
+      const auto rowid = Base::level_idx(i);
+      const auto tid   = i - Base::lev_start;
+      auto k1          = Base::L_row_map(rowid);
 #ifdef KEEP_DIAG
-      auto k2 = L_row_map(rowid + 1) - 1;
+      auto k2 = Base::L_row_map(rowid + 1) - 1;
       Base::lset_id(k2);
 #else
-      auto k2 = L_row_map(rowid + 1);
+      auto k2 = Base::L_row_map(rowid + 1);
 #endif
       for (auto k = k1; k < k2; ++k) {
-        const auto col = L_entries(k);
+        const auto col = Base::L_entries(k);
         Base::lset(k, 0.0);
-        iw(tid, col) = k;
+        Base::iw(tid, col) = k;
       }
 
-      k1 = U_row_map(rowid);
-      k2 = U_row_map(rowid + 1);
+      k1 = Base::U_row_map(rowid);
+      k2 = Base::U_row_map(rowid + 1);
       for (auto k = k1; k < k2; ++k) {
-        const auto col = U_entries(k);
+        const auto col = Base::U_entries(k);
         Base::uset(k, 0.0);
-        iw(tid, col) = k;
+        Base::iw(tid, col) = k;
       }
 
-      k1 = A_row_map(rowid);
-      k2 = A_row_map(rowid + 1);
+      k1 = Base::A_row_map(rowid);
+      k2 = Base::A_row_map(rowid + 1);
       for (auto k = k1; k < k2; ++k) {
-        const auto col  = A_entries(k);
-        const auto ipos = iw(tid, col);
+        const auto col  = Base::A_entries(k);
+        const auto ipos = Base::iw(tid, col);
         if (col < rowid) {
           Base::lset(ipos, Base::aget(k));
         } else {
@@ -521,25 +510,25 @@ struct IlukWrap {
       }
 
       // Eliminate prev rows
-      k1 = L_row_map(rowid);
+      k1 = Base::L_row_map(rowid);
 #ifdef KEEP_DIAG
-      k2 = L_row_map(rowid + 1) - 1;
+      k2 = Base::L_row_map(rowid + 1) - 1;
 #else
-      k2      = L_row_map(rowid + 1);
+      k2      = Base::L_row_map(rowid + 1);
 #endif
       for (auto k = k1; k < k2; ++k) {
-        const auto prev_row = L_entries(k);
-        const auto u_diag   = Base::uget(U_row_map(prev_row));
+        const auto prev_row = Base::L_entries(k);
+        const auto u_diag   = Base::uget(Base::U_row_map(prev_row));
 #ifdef KEEP_DIAG
         Base::divide(Base::lget(k), u_diag);
 #else
         fact = Base::multiply(1.0, fact, u_diag);
 #endif
         auto fact = Base::lget(k);
-        for (auto kk = U_row_map(prev_row) + 1; kk < U_row_map(prev_row + 1);
+        for (auto kk = Base::U_row_map(prev_row) + 1; kk < Base::U_row_map(prev_row + 1);
              ++kk) {
-          const auto col  = U_entries(kk);
-          const auto ipos = iw(tid, col);
+          const auto col  = Base::U_entries(kk);
+          const auto ipos = Base::iw(tid, col);
           if (ipos == -1) continue;
           const auto lxu = Base::multiply(-1.0, Base::uget(kk), fact, &buff[0]);
           if (col < rowid) {
@@ -550,7 +539,7 @@ struct IlukWrap {
         }  // end for kk
       }    // end for k
 
-      const auto ipos = iw(tid, rowid);
+      const auto ipos = Base::iw(tid, rowid);
       if (Base::uequal(ipos, 0.0)) {
         Base::uset(ipos, 1e6);
       }
@@ -562,17 +551,17 @@ struct IlukWrap {
 #endif
 
       // Reset
-      k1 = L_row_map(rowid);
+      k1 = Base::L_row_map(rowid);
 #ifdef KEEP_DIAG
-      k2 = L_row_map(rowid + 1) - 1;
+      k2 = Base::L_row_map(rowid + 1) - 1;
 #else
-      k2           = L_row_map(rowid + 1);
+      k2           = Base::L_row_map(rowid + 1);
 #endif
-      for (auto k = k1; k < k2; ++k) iw(tid, L_entries(k)) = -1;
+      for (auto k = k1; k < k2; ++k) Base::iw(tid, Base::L_entries(k)) = -1;
 
-      k1 = U_row_map(rowid);
-      k2 = U_row_map(rowid + 1);
-      for (auto k = k1; k < k2; ++k) iw(tid, U_entries(k)) = -1;
+      k1 = Base::U_row_map(rowid);
+      k2 = Base::U_row_map(rowid + 1);
+      for (auto k = k1; k < k2; ++k) Base::iw(tid, Base::U_entries(k)) = -1;
     }
   };
 
@@ -602,55 +591,44 @@ struct IlukWrap {
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const member_type &team) const {
-      // Grab items from parent to make code more readable
-      auto A_row_map = Base::A_row_map;
-      auto A_entries = Base::A_entries;
-      auto L_row_map = Base::L_row_map;
-      auto L_entries = Base::L_entries;
-      auto U_row_map = Base::U_row_map;
-      auto U_entries = Base::U_entries;
-      auto level_idx = Base::level_idx;
-      auto lev_start = Base::lev_start;
-      auto iw        = Base::iw;
-
       Base::init_scratch();
 
       const auto my_team = team.league_rank();
-      const auto rowid   = level_idx(my_team + lev_start);  // map to rowid
-      size_type k1       = L_row_map(rowid);
+      const auto rowid   = Base::level_idx(my_team + Base::lev_start);  // map to rowid
+      size_type k1       = Base::L_row_map(rowid);
 #ifdef KEEP_DIAG
-      size_type k2 = L_row_map(rowid + 1) - 1;
+      size_type k2 = Base::L_row_map(rowid + 1) - 1;
       Base::lset_id(team, k2);
 #else
-      size_type k2 = L_row_map(rowid + 1);
+      size_type k2 = Base::L_row_map(rowid + 1);
 #endif
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2),
                            [&](const size_type k) {
-                             const auto col = L_entries(k);
+                             const auto col = Base::L_entries(k);
                              Base::lset(k, 0.0);
-                             iw(my_team, col) = k;
+                             Base::iw(my_team, col) = k;
                            });
 
       team.team_barrier();
 
-      k1 = U_row_map(rowid);
-      k2 = U_row_map(rowid + 1);
+      k1 = Base::U_row_map(rowid);
+      k2 = Base::U_row_map(rowid + 1);
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2),
                            [&](const size_type k) {
-                             const auto col = U_entries(k);
+                             const auto col = Base::U_entries(k);
                              Base::uset(k, 0.0);
-                             iw(my_team, col) = k;
+                             Base::iw(my_team, col) = k;
                            });
 
       team.team_barrier();
 
       // Unpack the ith row of A
-      k1 = A_row_map(rowid);
-      k2 = A_row_map(rowid + 1);
+      k1 = Base::A_row_map(rowid);
+      k2 = Base::A_row_map(rowid + 1);
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2),
                            [&](const size_type k) {
-                             const auto col  = A_entries(k);
-                             const auto ipos = iw(my_team, col);
+                             const auto col  = Base::A_entries(k);
+                             const auto ipos = Base::iw(my_team, col);
                              if (col < rowid) {
                                Base::lset(ipos, Base::aget(k));
                              } else {
@@ -661,15 +639,15 @@ struct IlukWrap {
       team.team_barrier();
 
       // Eliminate prev rows
-      k1 = L_row_map(rowid);
+      k1 = Base::L_row_map(rowid);
 #ifdef KEEP_DIAG
-      k2 = L_row_map(rowid + 1) - 1;
+      k2 = Base::L_row_map(rowid + 1) - 1;
 #else
-      k2           = L_row_map(rowid + 1);
+      k2           = Base::L_row_map(rowid + 1);
 #endif
       for (auto k = k1; k < k2; k++) {
-        const auto prev_row = L_entries(k);
-        const auto udiag    = Base::uget(U_row_map(prev_row));
+        const auto prev_row = Base::L_entries(k);
+        const auto udiag    = Base::uget(Base::U_row_map(prev_row));
 #ifdef KEEP_DIAG
         Base::divide(team, Base::lget(k), udiag);
 #else
@@ -677,11 +655,11 @@ struct IlukWrap {
 #endif
         auto fact = Base::lget(k);
         Kokkos::parallel_for(
-            Kokkos::TeamThreadRange(team, U_row_map(prev_row) + 1,
-                                    U_row_map(prev_row + 1)),
+            Kokkos::TeamThreadRange(team, Base::U_row_map(prev_row) + 1,
+                                    Base::U_row_map(prev_row + 1)),
             [&](const size_type kk) {
-              const auto col  = U_entries(kk);
-              const auto ipos = iw(my_team, col);
+              const auto col  = Base::U_entries(kk);
+              const auto ipos = Base::iw(my_team, col);
               if (ipos != -1) {
                 scalar_t buff[100];  // 10*10
                 auto lxu = Base::multiply(-1.0, Base::uget(kk), fact, &buff[0]);
@@ -697,7 +675,7 @@ struct IlukWrap {
       }  // end for k
 
       Kokkos::single(Kokkos::PerTeam(team), [&]() {
-        const auto ipos = iw(my_team, rowid);
+        const auto ipos = Base::iw(my_team, rowid);
         if (Base::uequal(ipos, 0.0)) {
           Base::uset(ipos, 1e6);
         }
@@ -712,24 +690,24 @@ struct IlukWrap {
       team.team_barrier();
 
       // Reset
-      k1 = L_row_map(rowid);
+      k1 = Base::L_row_map(rowid);
 #ifdef KEEP_DIAG
-      k2 = L_row_map(rowid + 1) - 1;
+      k2 = Base::L_row_map(rowid + 1) - 1;
 #else
-      k2 = L_row_map(rowid + 1);
+      k2 = Base::L_row_map(rowid + 1);
 #endif
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2),
                            [&](const size_type k) {
-                             const auto col   = L_entries(k);
-                             iw(my_team, col) = -1;
+                             const auto col   = Base::L_entries(k);
+                             Base::iw(my_team, col) = -1;
                            });
 
-      k1 = U_row_map(rowid);
-      k2 = U_row_map(rowid + 1);
+      k1 = Base::U_row_map(rowid);
+      k2 = Base::U_row_map(rowid + 1);
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2),
                            [&](const size_type k) {
-                             const auto col   = U_entries(k);
-                             iw(my_team, col) = -1;
+                             const auto col   = Base::U_entries(k);
+                             Base::iw(my_team, col) = -1;
                            });
     }
   };
@@ -793,8 +771,7 @@ struct IlukWrap {
       if ((lev_end - lev_start) != 0) {
         if (thandle.get_algorithm() ==
             KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_RP) {
-          range_policy rpolicy = get_range_policy(
-              lev_start, lev_end, thandle.block_enabled(), block_size);
+          range_policy rpolicy = get_range_policy(lev_start, lev_end);
           KernelLaunchMacro(A_row_map, A_entries, A_values, L_row_map,
                             L_entries, L_values, U_row_map, U_entries, U_values,
                             rpolicy, "parfor_fixed_lvl", level_idx, iw,
@@ -813,8 +790,7 @@ struct IlukWrap {
               lvl_nrows_chunk = level_nrowsperchunk_h(lvl);
 
             team_policy tpolicy =
-                get_team_policy(lvl_nrows_chunk, team_size,
-                                thandle.block_enabled(), block_size);
+                get_team_policy(lvl_nrows_chunk, team_size);
             KernelLaunchMacro(A_row_map, A_entries, A_values, L_row_map,
                               L_entries, L_values, U_row_map, U_entries,
                               U_values, tpolicy, "parfor_tp1", level_idx, iw,
@@ -944,8 +920,7 @@ struct IlukWrap {
           // Launch only if stream i-th has this level
           if (stream_have_level_v[i]) {
             range_policy rpolicy =
-                get_range_policy(execspace_v[i], lvl_start_v[i], lvl_end_v[i],
-                                 block_enabled_v[i], block_size_v[i]);
+                get_range_policy(execspace_v[i], lvl_start_v[i], lvl_end_v[i]);
             KernelLaunchMacro(
                 A_row_map_v[i], A_entries_v[i], A_values_v[i], L_row_map_v[i],
                 L_entries_v[i], L_values_v[i], U_row_map_v[i], U_entries_v[i],
@@ -1007,8 +982,7 @@ struct IlukWrap {
 
                 // 1.b. Create functor for stream i-th and launch
                 team_policy tpolicy = get_team_policy(
-                    execspace_v[i], lvl_nrows_chunk, team_size_v[i],
-                    block_enabled_v[i], block_size_v[i]);
+                    execspace_v[i], lvl_nrows_chunk, team_size_v[i]);
                 KernelLaunchMacro(A_row_map_v[i], A_entries_v[i], A_values_v[i],
                                   L_row_map_v[i], L_entries_v[i], L_values_v[i],
                                   U_row_map_v[i], U_entries_v[i], U_values_v[i],
