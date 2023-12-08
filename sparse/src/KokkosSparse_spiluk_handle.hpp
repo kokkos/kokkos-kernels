@@ -116,8 +116,7 @@ class SPILUKHandle {
  public:
   SPILUKHandle(SPILUKAlgorithm choice, const size_type nrows_,
                const size_type nnzL_, const size_type nnzU_,
-               const size_type block_size_ = 0,
-               bool symbolic_complete_ = false)
+               const size_type block_size_ = 0, bool symbolic_complete_ = false)
       : level_list(),
         level_idx(),
         level_ptr(),
@@ -219,7 +218,9 @@ class SPILUKHandle {
   size_type get_block_size() const { return block_size; }
 
   KOKKOS_INLINE_FUNCTION
-  void set_block_size(const size_type block_size_) { this->block_size = block_size_; }
+  void set_block_size(const size_type block_size_) {
+    this->block_size = block_size_;
+  }
 
   KOKKOS_INLINE_FUNCTION
   size_type get_level_maxrows() const { return level_maxrows; }

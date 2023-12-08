@@ -65,10 +65,10 @@ void run_test_par_ilut() {
       typename device::memory_space, typename device::memory_space>;
 
   // Simple test fixture A
-  std::vector<std::vector<scalar_t>> A = {{1.,   6.,   4.,  7.},
-                                          {2.,  -5.,   0.,  8.},
-                                          {0.5, -3.,   6.,  0.},
-                                          {0.2, -0.5, -9.,  0.}};
+  std::vector<std::vector<scalar_t>> A = {{1., 6., 4., 7.},
+                                          {2., -5., 0., 8.},
+                                          {0.5, -3., 6., 0.},
+                                          {0.2, -0.5, -9., 0.}};
 
   // Allocate device CRS views for A
   RowMapType row_map("row_map", 0);

@@ -100,8 +100,8 @@ struct TeamTrsm<MemberType, Side::Right, Uplo::Upper, Trans::NoTranspose,
 };
 
 template <typename MemberType, typename ArgDiag>
-struct TeamTrsm<MemberType, Side::Right, Uplo::Upper, Trans::Transpose,
-                ArgDiag, Algo::Trsm::Unblocked> {
+struct TeamTrsm<MemberType, Side::Right, Uplo::Upper, Trans::Transpose, ArgDiag,
+                Algo::Trsm::Unblocked> {
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
                                            const ScalarType alpha,
@@ -115,8 +115,8 @@ struct TeamTrsm<MemberType, Side::Right, Uplo::Upper, Trans::Transpose,
 };
 
 template <typename MemberType, typename ArgDiag>
-struct TeamTrsm<MemberType, Side::Right, Uplo::Upper, Trans::Transpose,
-                ArgDiag, Algo::Trsm::Blocked> {
+struct TeamTrsm<MemberType, Side::Right, Uplo::Upper, Trans::Transpose, ArgDiag,
+                Algo::Trsm::Blocked> {
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
                                            const ScalarType alpha,

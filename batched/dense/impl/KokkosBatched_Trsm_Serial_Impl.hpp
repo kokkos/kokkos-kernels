@@ -202,7 +202,6 @@ struct SerialTrsm<Side::Right, Uplo::Upper, Trans::Transpose, ArgDiag,
   }
 };
 
-
 ///
 /// L/U/NT
 ///

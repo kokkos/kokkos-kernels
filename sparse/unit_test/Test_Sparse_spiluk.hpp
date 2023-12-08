@@ -38,46 +38,42 @@ using namespace KokkosSparse::Experimental;
 using namespace KokkosKernels;
 using namespace KokkosKernels::Experimental;
 
-using kokkos_complex_double = Kokkos::complex<double> ;
+using kokkos_complex_double = Kokkos::complex<double>;
 using kokkos_complex_float  = Kokkos::complex<float>;
 
 namespace Test {
 
 template <typename scalar_t>
-std::vector<std::vector<scalar_t>> get_9x9_fixture()
-{
+std::vector<std::vector<scalar_t>> get_9x9_fixture() {
   std::vector<std::vector<scalar_t>> A = {
-    {10.00, 0.00, 0.30, 0.00, 0.00, 0.60, 0.00, 0.00, 0.00},
-    {0.00, 11.00, 0.00, 0.00, 0.00, 0.00, 0.70, 0.00, 0.00},
-    {0.00, 0.00, 12.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00},
-    {5.00, 0.00, 0.00, 13.00, 1.00, 0.00, 0.00, 0.00, 0.00},
-    {4.00, 0.00, 0.00, 0.00, 14.00, 0.00, 0.00, 0.00, 0.00},
-    {0.00, 3.00, 0.00, 0.00, 0.00, 15.00, 0.00, 0.00, 0.00},
-    {0.00, 0.00, 7.00, 0.00, 0.00, 0.00, 16.00, 0.00, 0.00},
-    {0.00, 0.00, 0.00, 6.00, 5.00, 0.00, 0.00, 17.00, 0.00},
-    {0.00, 0.00, 0.00, 2.00, 2.50, 0.00, 0.00, 0.00, 18.00}};
+      {10.00, 0.00, 0.30, 0.00, 0.00, 0.60, 0.00, 0.00, 0.00},
+      {0.00, 11.00, 0.00, 0.00, 0.00, 0.00, 0.70, 0.00, 0.00},
+      {0.00, 0.00, 12.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00},
+      {5.00, 0.00, 0.00, 13.00, 1.00, 0.00, 0.00, 0.00, 0.00},
+      {4.00, 0.00, 0.00, 0.00, 14.00, 0.00, 0.00, 0.00, 0.00},
+      {0.00, 3.00, 0.00, 0.00, 0.00, 15.00, 0.00, 0.00, 0.00},
+      {0.00, 0.00, 7.00, 0.00, 0.00, 0.00, 16.00, 0.00, 0.00},
+      {0.00, 0.00, 0.00, 6.00, 5.00, 0.00, 0.00, 17.00, 0.00},
+      {0.00, 0.00, 0.00, 2.00, 2.50, 0.00, 0.00, 0.00, 18.00}};
   return A;
 }
 
 template <typename scalar_t>
-std::vector<std::vector<scalar_t>> get_4x4_fixture()
-{
-  std::vector<std::vector<scalar_t>> A = {
-    {10.00, 1.00, 0.00, 0.00},
-    {0.00, 11.00, 0.00, 0.00},
-    {0.00, 2.00, 12.00, 0.00},
-    {5.00, 0.00, 0.00, 13.00}};
+std::vector<std::vector<scalar_t>> get_4x4_fixture() {
+  std::vector<std::vector<scalar_t>> A = {{10.00, 1.00, 0.00, 0.00},
+                                          {0.00, 11.00, 0.00, 0.00},
+                                          {0.00, 2.00, 12.00, 0.00},
+                                          {5.00, 0.00, 0.00, 13.00}};
   return A;
 }
 
 template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
-struct SpilukTest
-{
-  using RowMapType   = Kokkos::View<size_type *, device>;
-  using EntriesType  = Kokkos::View<lno_t *, device>;
-  using ValuesType   = Kokkos::View<scalar_t *, device>;
-  using AT           = Kokkos::ArithTraits<scalar_t>;
+struct SpilukTest {
+  using RowMapType  = Kokkos::View<size_type*, device>;
+  using EntriesType = Kokkos::View<lno_t*, device>;
+  using ValuesType  = Kokkos::View<scalar_t*, device>;
+  using AT          = Kokkos::ArithTraits<scalar_t>;
 
   using RowMapType_hostmirror  = typename RowMapType::HostMirror;
   using EntriesType_hostmirror = typename EntriesType::HostMirror;
@@ -86,8 +82,8 @@ struct SpilukTest
   using memory_space           = typename device::memory_space;
 
   using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<
-    size_type, lno_t, scalar_t, typename device::execution_space,
-    typename device::memory_space, typename device::memory_space>;
+      size_type, lno_t, scalar_t, typename device::execution_space,
+      typename device::memory_space, typename device::memory_space>;
 
   using Crs = CrsMatrix<scalar_t, lno_t, device, void, size_type>;
   using Bsr = BsrMatrix<scalar_t, lno_t, device, void, size_type>;
@@ -96,13 +92,12 @@ struct SpilukTest
   static constexpr scalar_t ONE  = scalar_t(1);
   static constexpr scalar_t MONE = scalar_t(-1);
 
-  static
-  std::tuple<RowMapType, EntriesType, ValuesType, RowMapType, EntriesType, ValuesType>
-  run_and_check_spiluk(
-    KernelHandle& kh,
-    const RowMapType& row_map, const EntriesType& entries, const ValuesType& values,
-    SPILUKAlgorithm alg, const size_type nrows, const size_type nnz, const lno_t fill_lev)
-  {
+  static std::tuple<RowMapType, EntriesType, ValuesType, RowMapType,
+                    EntriesType, ValuesType>
+  run_and_check_spiluk(KernelHandle& kh, const RowMapType& row_map,
+                       const EntriesType& entries, const ValuesType& values,
+                       SPILUKAlgorithm alg, const size_type nrows,
+                       const size_type nnz, const lno_t fill_lev) {
     kh.create_spiluk_handle(alg, nrows, 4 * nrows, 4 * nrows);
 
     auto spiluk_handle = kh.get_spiluk_handle();
@@ -132,10 +127,10 @@ struct SpilukTest
 
     // Checking
     Crs A("A_Mtx", nrows, nrows, nnz, values, row_map, entries);
-    Crs L("L_Mtx", nrows, nrows, spiluk_handle->get_nnzL(), L_values,
-          L_row_map, L_entries);
-    Crs U("U_Mtx", nrows, nrows, spiluk_handle->get_nnzU(), U_values,
-          U_row_map, U_entries);
+    Crs L("L_Mtx", nrows, nrows, spiluk_handle->get_nnzL(), L_values, L_row_map,
+          L_entries);
+    Crs U("U_Mtx", nrows, nrows, spiluk_handle->get_nnzU(), U_values, U_row_map,
+          U_entries);
 
     // Create a reference view e set to all 1's
     ValuesType e_one("e_one", nrows);
@@ -161,8 +156,11 @@ struct SpilukTest
 
     // For team policy alg, check results against range policy
     if (alg == SPILUKAlgorithm::SEQLVLSCHD_TP1) {
-      const auto [L_row_map_rp, L_entries_rp, L_values_rp, U_row_map_rp, U_entries_rp, U_values_rp] =
-        run_and_check_spiluk(kh, row_map, entries, values, SPILUKAlgorithm::SEQLVLSCHD_RP, nrows, nnz, fill_lev);
+      const auto [L_row_map_rp, L_entries_rp, L_values_rp, U_row_map_rp,
+                  U_entries_rp, U_values_rp] =
+          run_and_check_spiluk(kh, row_map, entries, values,
+                               SPILUKAlgorithm::SEQLVLSCHD_RP, nrows, nnz,
+                               fill_lev);
 
       check_match(L_row_map, L_row_map_rp);
       check_match(L_entries, L_entries_rp);
@@ -172,14 +170,14 @@ struct SpilukTest
       check_match(U_values, U_values_rp);
     }
 
-    return std::make_tuple(L_row_map, L_entries, L_values, U_row_map, U_entries, U_values);
+    return std::make_tuple(L_row_map, L_entries, L_values, U_row_map, U_entries,
+                           U_values);
   }
 
   static void run_and_check_spiluk_block(
-    KernelHandle& kh,
-    const RowMapType& row_map, const EntriesType& entries, const ValuesType& values,
-    SPILUKAlgorithm alg, const size_type nrows, const size_type nnz, const lno_t fill_lev, const size_type block_size)
-  {
+      KernelHandle& kh, const RowMapType& row_map, const EntriesType& entries,
+      const ValuesType& values, SPILUKAlgorithm alg, const size_type nrows,
+      const size_type nnz, const lno_t fill_lev, const size_type block_size) {
     const size_type block_items = block_size * block_size;
     kh.create_spiluk_handle(alg, nrows, 4 * nrows, 4 * nrows, block_size);
 
@@ -208,10 +206,10 @@ struct SpilukTest
 
     // Checking
     Bsr A("A_Mtx", nrows, nrows, nnz, values, row_map, entries, block_size);
-    Bsr L("L_Mtx", nrows, nrows, L_values.extent(0), L_values,
-          L_row_map, L_entries, block_size);
-    Bsr U("U_Mtx", nrows, nrows, U_values.extent(0), U_values,
-          U_row_map, U_entries, block_size);
+    Bsr L("L_Mtx", nrows, nrows, L_values.extent(0), L_values, L_row_map,
+          L_entries, block_size);
+    Bsr U("U_Mtx", nrows, nrows, U_values.extent(0), U_values, U_row_map,
+          U_entries, block_size);
 
     // Create a reference view e set to all 1's
     ValuesType e_one("e_one", nrows * block_size);
@@ -236,8 +234,10 @@ struct SpilukTest
 
     // If block_size is 1, results should exactly match unblocked results
     if (block_size == 1) {
-      const auto [L_row_map_u, L_entries_u, L_values_u, U_row_map_u, U_entries_u, U_values_u] =
-        run_and_check_spiluk(kh, row_map, entries, values, alg, nrows, nnz, fill_lev);
+      const auto [L_row_map_u, L_entries_u, L_values_u, U_row_map_u,
+                  U_entries_u, U_values_u] =
+          run_and_check_spiluk(kh, row_map, entries, values, alg, nrows, nnz,
+                               fill_lev);
 
       check_match(L_row_map, L_row_map_u);
       check_match(L_entries, L_entries_u);
@@ -248,8 +248,7 @@ struct SpilukTest
     }
   }
 
-  static void run_test_spiluk()
-  {
+  static void run_test_spiluk() {
     std::vector<std::vector<scalar_t>> A = get_9x9_fixture<scalar_t>();
 
     RowMapType row_map("row_map", 0);
@@ -264,12 +263,13 @@ struct SpilukTest
 
     KernelHandle kh;
 
-    run_and_check_spiluk(kh, row_map, entries, values, SPILUKAlgorithm::SEQLVLSCHD_RP, nrows, nnz, fill_lev);
-    run_and_check_spiluk(kh, row_map, entries, values, SPILUKAlgorithm::SEQLVLSCHD_TP1, nrows, nnz, fill_lev);
+    run_and_check_spiluk(kh, row_map, entries, values,
+                         SPILUKAlgorithm::SEQLVLSCHD_RP, nrows, nnz, fill_lev);
+    run_and_check_spiluk(kh, row_map, entries, values,
+                         SPILUKAlgorithm::SEQLVLSCHD_TP1, nrows, nnz, fill_lev);
   }
 
-  static void run_test_spiluk_streams(int test_algo, int nstreams)
-  {
+  static void run_test_spiluk_streams(int test_algo, int nstreams) {
     // Workaround for OpenMP: skip tests if concurrency < nstreams because of
     // not enough resource to partition
     bool run_streams_test = true;
@@ -289,16 +289,17 @@ struct SpilukTest
     if (nstreams == 1)
       instances = Kokkos::Experimental::partition_space(execution_space(), 1);
     else if (nstreams == 2)
-      instances = Kokkos::Experimental::partition_space(execution_space(), 1, 1);
+      instances =
+          Kokkos::Experimental::partition_space(execution_space(), 1, 1);
     else if (nstreams == 3)
       instances =
-        Kokkos::Experimental::partition_space(execution_space(), 1, 1, 1);
+          Kokkos::Experimental::partition_space(execution_space(), 1, 1, 1);
     else
       instances =
-        Kokkos::Experimental::partition_space(execution_space(), 1, 1, 1, 1);
+          Kokkos::Experimental::partition_space(execution_space(), 1, 1, 1, 1);
 
     std::vector<KernelHandle> kh_v(nstreams);
-    std::vector<KernelHandle *> kh_ptr_v(nstreams);
+    std::vector<KernelHandle*> kh_ptr_v(nstreams);
     std::vector<RowMapType> A_row_map_v(nstreams);
     std::vector<EntriesType> A_entries_v(nstreams);
     std::vector<ValuesType> A_values_v(nstreams);
@@ -415,8 +416,7 @@ struct SpilukTest
     }
   }
 
-  static void run_test_spiluk_blocks()
-  {
+  static void run_test_spiluk_blocks() {
     std::vector<std::vector<scalar_t>> A = get_9x9_fixture<scalar_t>();
 
     RowMapType row_map("row_map", 0), brow_map("brow_map", 0);
@@ -425,26 +425,31 @@ struct SpilukTest
 
     compress_matrix(row_map, entries, values, A);
 
-    const size_type nrows = A.size();
-    const size_type nnz   = values.extent(0);
-    const lno_t fill_lev  = 2;
+    const size_type nrows      = A.size();
+    const size_type nnz        = values.extent(0);
+    const lno_t fill_lev       = 2;
     const size_type block_size = nrows % 2 == 0 ? 2 : 3;
     ASSERT_EQ(nrows % block_size, 0);
 
     KernelHandle kh;
 
     // Check block_size=1 produces identical result to unblocked
-    run_and_check_spiluk_block(kh, row_map, entries, values, SPILUKAlgorithm::SEQLVLSCHD_RP, nrows, nnz, fill_lev, 1);
-    run_and_check_spiluk_block(kh, row_map, entries, values, SPILUKAlgorithm::SEQLVLSCHD_TP1, nrows, nnz, fill_lev, 1);
+    run_and_check_spiluk_block(kh, row_map, entries, values,
+                               SPILUKAlgorithm::SEQLVLSCHD_RP, nrows, nnz,
+                               fill_lev, 1);
+    run_and_check_spiluk_block(kh, row_map, entries, values,
+                               SPILUKAlgorithm::SEQLVLSCHD_TP1, nrows, nnz,
+                               fill_lev, 1);
 
     // Convert to BSR
-    Crs crs("crs for block spiluk test", nrows, nrows, values.extent(0), values, row_map, entries);
+    Crs crs("crs for block spiluk test", nrows, nrows, values.extent(0), values,
+            row_map, entries);
     Bsr bsr(crs, block_size);
 
     // Pull out views from BSR
     Kokkos::resize(brow_map, bsr.graph.row_map.extent(0));
     Kokkos::resize(bentries, bsr.graph.entries.extent(0));
-    Kokkos::resize(bvalues,  bsr.values.extent(0));
+    Kokkos::resize(bvalues, bsr.values.extent(0));
     Kokkos::deep_copy(brow_map, bsr.graph.row_map);
     Kokkos::deep_copy(bentries, bsr.graph.entries);
     Kokkos::deep_copy(bvalues, bsr.values);
@@ -452,8 +457,12 @@ struct SpilukTest
     const size_type bnrows = brow_map.extent(0) - 1;
     const size_type bnnz   = values.extent(0);
 
-    run_and_check_spiluk_block(kh, brow_map, bentries, bvalues, SPILUKAlgorithm::SEQLVLSCHD_RP, bnrows, bnnz, fill_lev, block_size);
-    run_and_check_spiluk_block(kh, brow_map, bentries, bvalues, SPILUKAlgorithm::SEQLVLSCHD_TP1, bnrows, bnnz, fill_lev, block_size);
+    run_and_check_spiluk_block(kh, brow_map, bentries, bvalues,
+                               SPILUKAlgorithm::SEQLVLSCHD_RP, bnrows, bnnz,
+                               fill_lev, block_size);
+    run_and_check_spiluk_block(kh, brow_map, bentries, bvalues,
+                               SPILUKAlgorithm::SEQLVLSCHD_TP1, bnrows, bnnz,
+                               fill_lev, block_size);
   }
 };
 

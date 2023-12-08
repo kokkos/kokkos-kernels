@@ -145,7 +145,6 @@ struct SPILUK_NUMERIC<ExecutionSpace, KernelHandle, ARowMapType, AEntriesType,
                       AValuesType, LRowMapType, LEntriesType, LValuesType,
                       URowMapType, UEntriesType, UValuesType, false,
                       KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
-
   using Iluk = Experimental::IlukWrap<typename KernelHandle::SPILUKHandleType>;
 
   static void spiluk_numeric(
@@ -159,8 +158,8 @@ struct SPILUK_NUMERIC<ExecutionSpace, KernelHandle, ARowMapType, AEntriesType,
     auto spiluk_handle = handle->get_spiluk_handle();
 
     Iluk::iluk_numeric(*spiluk_handle, A_row_map, A_entries, A_values,
-                       L_row_map, L_entries, L_values, U_row_map,
-                       U_entries, U_values);
+                       L_row_map, L_entries, L_values, U_row_map, U_entries,
+                       U_values);
   }
 
   static void spiluk_numeric_streams(
@@ -181,10 +180,10 @@ struct SPILUK_NUMERIC<ExecutionSpace, KernelHandle, ARowMapType, AEntriesType,
       spiluk_handle_v[i] = handle_v[i].get_spiluk_handle();
     }
 
-    Iluk::iluk_numeric_streams(execspace_v, spiluk_handle_v,
-                               A_row_map_v, A_entries_v, A_values_v,
-                               L_row_map_v, L_entries_v, L_values_v,
-                               U_row_map_v, U_entries_v, U_values_v);
+    Iluk::iluk_numeric_streams(execspace_v, spiluk_handle_v, A_row_map_v,
+                               A_entries_v, A_values_v, L_row_map_v,
+                               L_entries_v, L_values_v, U_row_map_v,
+                               U_entries_v, U_values_v);
   }
 };
 

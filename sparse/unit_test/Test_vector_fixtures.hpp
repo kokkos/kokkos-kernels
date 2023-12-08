@@ -29,11 +29,9 @@ namespace Test {
 
 template <typename RowMapT, typename EntriesT, typename ValuesT>
 void compress_matrix(
-  RowMapT& row_map,
-  EntriesT& entries,
-  ValuesT& values,
-  const std::vector<std::vector<typename ValuesT::non_const_value_type>>& fixture)
-{
+    RowMapT& row_map, EntriesT& entries, ValuesT& values,
+    const std::vector<std::vector<typename ValuesT::non_const_value_type>>&
+        fixture) {
   using size_type = typename RowMapT::non_const_value_type;
   using scalar_t  = typename ValuesT::non_const_value_type;
 
@@ -81,11 +79,9 @@ void compress_matrix(
 }
 
 template <typename RowMapT, typename EntriesT, typename ValuesT>
-std::vector<std::vector<typename ValuesT::non_const_value_type>> decompress_matrix(
-  const RowMapT& row_map,
-  const EntriesT& entries,
-  const ValuesT& values)
-{
+std::vector<std::vector<typename ValuesT::non_const_value_type>>
+decompress_matrix(const RowMapT& row_map, const EntriesT& entries,
+                  const ValuesT& values) {
   using size_type = typename RowMapT::non_const_value_type;
   using scalar_t  = typename ValuesT::non_const_value_type;
 
@@ -109,7 +105,7 @@ std::vector<std::vector<typename ValuesT::non_const_value_type>> decompress_matr
     const size_type row_nnz_begin = hrow_map(row_idx);
     const size_type row_nnz_end   = hrow_map(row_idx + 1);
     for (size_type row_nnz = row_nnz_begin; row_nnz < row_nnz_end; ++row_nnz) {
-      const auto col_idx      = hentries(row_nnz);
+      const auto col_idx       = hentries(row_nnz);
       const scalar_t value     = hvalues(row_nnz);
       result[row_idx][col_idx] = value;
     }
@@ -119,19 +115,16 @@ std::vector<std::vector<typename ValuesT::non_const_value_type>> decompress_matr
 }
 
 template <typename RowMapT, typename EntriesT, typename ValuesT>
-std::vector<std::vector<typename ValuesT::non_const_value_type>> decompress_matrix(
-  const RowMapT& row_map,
-  const EntriesT& entries,
-  const ValuesT& values,
-  const int block_size)
-{
+std::vector<std::vector<typename ValuesT::non_const_value_type>>
+decompress_matrix(const RowMapT& row_map, const EntriesT& entries,
+                  const ValuesT& values, const int block_size) {
   using size_type = typename RowMapT::non_const_value_type;
   using scalar_t  = typename ValuesT::non_const_value_type;
 
   const scalar_t ZERO = scalar_t(0);
 
-  const size_type nbrows   = row_map.extent(0) - 1;
-  const size_type nrows    = nbrows * block_size;
+  const size_type nbrows      = row_map.extent(0) - 1;
+  const size_type nrows       = nbrows * block_size;
   const size_type block_items = block_size * block_size;
   std::vector<std::vector<scalar_t>> result;
   result.resize(nrows);
@@ -152,10 +145,11 @@ std::vector<std::vector<typename ValuesT::non_const_value_type>> decompress_matr
     for (size_type row_nnz = row_nnz_begin; row_nnz < row_nnz_end; ++row_nnz) {
       const auto col_idx = hentries(row_nnz);
       for (size_type i = 0; i < block_size; ++i) {
-        const size_type unc_row_idx = row_idx*block_size + i;
+        const size_type unc_row_idx = row_idx * block_size + i;
         for (size_type j = 0; j < block_size; ++j) {
-          const size_type unc_col_idx = col_idx*block_size + j;
-          result[unc_row_idx][unc_col_idx] = hvalues(row_nnz*block_items + i*block_size + j);
+          const size_type unc_col_idx = col_idx * block_size + j;
+          result[unc_row_idx][unc_col_idx] =
+              hvalues(row_nnz * block_items + i * block_size + j);
         }
       }
     }
@@ -166,12 +160,10 @@ std::vector<std::vector<typename ValuesT::non_const_value_type>> decompress_matr
 
 template <typename RowMapT, typename EntriesT, typename ValuesT>
 void check_matrix(
-  const std::string& name,
-  const RowMapT& row_map,
-  const EntriesT& entries,
-  const ValuesT& values,
-  const std::vector<std::vector<typename ValuesT::non_const_value_type>>& expected)
-{
+    const std::string& name, const RowMapT& row_map, const EntriesT& entries,
+    const ValuesT& values,
+    const std::vector<std::vector<typename ValuesT::non_const_value_type>>&
+        expected) {
   using size_type = typename RowMapT::non_const_value_type;
 
   const auto decompressed_mtx = decompress_matrix(row_map, entries, values);
@@ -198,8 +190,7 @@ void print_matrix(const std::vector<std::vector<scalar_t>>& matrix) {
 }
 
 template <typename ViewT>
-void check_match(const ViewT& lhs, const ViewT& rhs)
-{
+void check_match(const ViewT& lhs, const ViewT& rhs) {
   auto hlhs = Kokkos::create_mirror_view(lhs);
   auto hrhs = Kokkos::create_mirror_view(rhs);
   Kokkos::deep_copy(hlhs, lhs);
@@ -212,6 +203,6 @@ void check_match(const ViewT& lhs, const ViewT& rhs)
   }
 }
 
-} // namespace Test
+}  // namespace Test
 
 #endif  // _TEST_VECTOR_FIXTURES_HPP
