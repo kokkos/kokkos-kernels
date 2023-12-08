@@ -54,7 +54,8 @@ struct ODE_params {
 enum newton_solver_status : int {
   NLS_SUCCESS    = 0,
   MAX_ITER       = 1,
-  LIN_SOLVE_FAIL = 2
+  LIN_SOLVE_FAIL = 2,
+  NLS_DIVERGENCE = 3,
 };
 
 struct Newton_params {

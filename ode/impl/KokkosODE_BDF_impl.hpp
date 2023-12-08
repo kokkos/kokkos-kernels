@@ -128,6 +128,7 @@ struct BDF_system_wrapper2 {
   const subview_type psi;
   const d_vec_type d;
 
+  bool compute_jac = true;
   double t, dt, c = 0;
 
   KOKKOS_FUNCTION
@@ -156,14 +157,16 @@ struct BDF_system_wrapper2 {
 
   template <class vec_type, class mat_type>
   KOKKOS_FUNCTION void jacobian(const vec_type& y, const mat_type& jac) const {
-    mySys.evaluate_jacobian(t, dt, y, jac);
+    if (compute_jac) {
+      mySys.evaluate_jacobian(t, dt, y, jac);
 
-    // J = I - dt*(dy/dy)
-    for (int rowIdx = 0; rowIdx < neqs; ++rowIdx) {
-      for (int colIdx = 0; colIdx < neqs; ++colIdx) {
-        jac(rowIdx, colIdx) = -dt * jac(rowIdx, colIdx);
+      // J = I - dt*(dy/dy)
+      for (int rowIdx = 0; rowIdx < neqs; ++rowIdx) {
+	for (int colIdx = 0; colIdx < neqs; ++colIdx) {
+	  jac(rowIdx, colIdx) = -dt * jac(rowIdx, colIdx);
+	}
+	jac(rowIdx, rowIdx) += 1.0;
       }
-      jac(rowIdx, rowIdx) += 1.0;
     }
   }
 };
@@ -235,14 +238,10 @@ KOKKOS_FUNCTION void initial_step_size(const ode_type ode, const int order, cons
 				       const mat_type& temp, scalar_type& dt_ini) {
   using KAT = Kokkos::ArithTraits<scalar_type>;
 
-  // Kokkos::printf("Estimating initial step size\n");
-
   // Extract subviews to store intermediate data
   auto scale = Kokkos::subview(temp, Kokkos::ALL(), 0); // Scaling coefficients for error calculation
   auto y1    = Kokkos::subview(temp, Kokkos::ALL(), 1); // Scaling coefficients for error calculation
   auto f1    = Kokkos::subview(temp, Kokkos::ALL(), 2); // Scaling coefficients for error calculation
-
-  // Kokkos::printf("scale: rank=%d, extent(0)=%d\n", (int)scale.rank(), scale.extent_int(0));
 
   // Compute norms for y0 and f0
   double n0 = KAT::zero(), n1 = KAT::zero(), dt0;
@@ -251,8 +250,8 @@ KOKKOS_FUNCTION void initial_step_size(const ode_type ode, const int order, cons
     n0 += Kokkos::pow(y0(eqIdx) / scale(eqIdx), 2);
     n1 += Kokkos::pow(f0(eqIdx) / scale(eqIdx), 2);
   }
-  n0 = Kokkos::sqrt(n0);
-  n1 = Kokkos::sqrt(n1);
+  n0 = Kokkos::sqrt(n0) / Kokkos::sqrt(ode.neqs);
+  n1 = Kokkos::sqrt(n1) / Kokkos::sqrt(ode.neqs);
 
   // Select dt0
   if((n0 < 1e-5) || (n1 < 1e-5)) {
@@ -273,7 +272,7 @@ KOKKOS_FUNCTION void initial_step_size(const ode_type ode, const int order, cons
   for(int eqIdx = 0; eqIdx < ode.neqs; ++eqIdx) {
     n2 += Kokkos::pow((f1(eqIdx) - f0(eqIdx)) / scale(eqIdx), 2);
   }
-  n2 = Kokkos::sqrt(n2) / dt0;
+  n2 = Kokkos::sqrt(n2) / (dt0 * Kokkos::sqrt(ode.neqs));
 
   // Finally select initial time step dt_ini
   if((n1 <= 1e-15) && (n2 <= 1e-15)) {
@@ -332,7 +331,7 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt,
   gamma(0) = 0.0; gamma(1) = 1.0; gamma(2) = 1.5; gamma(3) = 1.83333333; gamma(4) = 2.08333333; gamma(5) = 2.28333333;
 
   BDF_system_wrapper2 sys(ode, psi, update, t, dt);
-  const newton_params param(max_newton_iters, atol, rtol);
+  const newton_params param(max_newton_iters, atol, Kokkos::max(10*Kokkos::ArithTraits<scalar_type>::eps() / rtol, Kokkos::min(0.03, Kokkos::sqrt(rtol))));
 
   scalar_type max_step = Kokkos::ArithTraits<scalar_type>::max();
   scalar_type min_step = Kokkos::ArithTraits<scalar_type>::min();
@@ -354,7 +353,6 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt,
 
   double t_new = 0;
   bool step_accepted = false;
-  int count = 0;
   while (!step_accepted) {
     if(dt < min_step) {return ;}
     t_new = t + dt;
@@ -380,8 +378,10 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt,
     auto subGamma = Kokkos::subview(gamma, Kokkos::pair<int, int>(1, order + 1));
     KokkosBlas::Experimental::serial_gemv('N', 1.0 / alpha[order], subD, subGamma, 0.0, psi);
 
+    sys.compute_jac = true;
     sys.c = dt / alpha[order];
     sys.jacobian(y_new, jac);
+    sys.compute_jac = true;
     Kokkos::Experimental::local_deep_copy(y_new, y_predict);
     Kokkos::Experimental::local_deep_copy(update, 0);
     KokkosODE::Experimental::newton_solver_status newton_status = 
@@ -397,6 +397,7 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt,
       update_D(order, 0.5, coeffs, tempD, D);
       num_equal_steps = 0;
 
+      std::cout << "Hit Newton MAX ITER, halve time step" << std::endl;
     } else {
       // Estimate the solution error
       safety = 0.9*(2*max_newton_iters + 1) / (2*max_newton_iters + param.iters);
@@ -406,7 +407,10 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt,
 	error(eqIdx) = error_const[order]*update(eqIdx) / scale(eqIdx);
 	error_norm += error(eqIdx)*error(eqIdx);
       }
-      error_norm = Kokkos::sqrt(error_norm);
+      error_norm = Kokkos::sqrt(error_norm) / Kokkos::sqrt(sys.neqs);
+
+      std::cout << "error_norm > 1, factor="
+		<< Kokkos::max(min_factor, safety*Kokkos::pow(error_norm, -1.0 / (order + 1))) << std::endl;
 
       // Check error norm and adapt step size or accept step
       if(error_norm > 1) {
@@ -418,9 +422,6 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt,
 	step_accepted = true;
       }
     }
-
-    ++count;
-    if(count == 5) {step_accepted = true;}
   } // while(!step_accepted)
 
   // Now that our time step has been
@@ -448,7 +449,7 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt,
     for(int eqIdx = 0; eqIdx < sys.neqs; ++eqIdx) {
       error_low += Kokkos::pow(error_const[order - 1] * D(eqIdx, order) / scale(eqIdx), 2);
     }
-    error_low = Kokkos::sqrt(error_low);
+    error_low = Kokkos::sqrt(error_low) / Kokkos::sqrt(sys.neqs);
   } else {
     error_low = Kokkos::ArithTraits<double>::max();
   }
@@ -457,27 +458,37 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt,
     for(int eqIdx = 0; eqIdx < sys.neqs; ++eqIdx) {
       error_high += Kokkos::pow(error_const[order + 1] * D(eqIdx, order + 2) / scale(eqIdx), 2);
     }
-    error_high = Kokkos::sqrt(error_high);
+    error_high = Kokkos::sqrt(error_high) / Kokkos::sqrt(sys.neqs);
   } else {
     error_high = Kokkos::ArithTraits<double>::max();
   }
+
+  std::cout << "error_norms: {" << error_low << ", "
+	    << error_norm << ", " << error_high << "}" << std::endl;
 
   double factor_low, factor_mid, factor_high, factor;
   factor_low  = Kokkos::pow(error_low,  -1.0 / order);
   factor_mid  = Kokkos::pow(error_norm, -1.0 / (order + 1));
   factor_high = Kokkos::pow(error_high, -1.0 / (order + 2));
 
+  int delta_order = 0;
   if((factor_mid < factor_low) && (factor_high < factor_low)) {
-    --order;
+    delta_order = -1;
     factor = factor_low;
   } else if((factor_low < factor_high) && (factor_mid < factor_high)) {
-    ++order;
+    delta_order = 1;
     factor = factor_high;
   } else {
+    delta_order = 0;
     factor = factor_mid;
   }
   factor = Kokkos::fmin(10, safety*factor);
   dt *= factor;
+
+  std::cout << "factors: {" << factor_low << ", " << factor_mid
+	    << ", " << factor_high << "}, selecting: " << delta_order
+	    << ", " << factor << std::endl;
+
   update_D(order, factor, coeffs, tempD, D);
   num_equal_steps = 0;
 

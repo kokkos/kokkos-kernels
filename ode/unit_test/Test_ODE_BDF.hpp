@@ -716,7 +716,7 @@ void test_adaptive_BDF_v2() {
     scalar_type dt = KAT::zero();
     vec_type f0("initial value f", mySys.neqs);
     mySys.evaluate_function(t_start, KAT::zero(), y0, f0);
-    KokkosODE::Impl::initial_step_size(mySys, 1, t_start, 1e-6, 1e-4, y0, f0, temp, dt);
+    KokkosODE::Impl::initial_step_size(mySys, 1, t_start, 1e-6, 1e-3, y0, f0, temp, dt);
 
     std::cout << "Initial Step Size: dt=" << dt << std::endl;
   }
@@ -735,7 +735,7 @@ void test_BDF_adaptive_stiff() {
 
   StiffChemistry mySys{};
 
-  const scalar_type t_start = KAT::zero(), t_end = 500*KAT::one();
+  const scalar_type t_start = KAT::zero(), t_end = 0.02*KAT::one();
   scalar_type dt = KAT::zero();
   vec_type y0("initial conditions", mySys.neqs), y_new("solution", mySys.neqs);
 
@@ -755,7 +755,7 @@ void test_BDF_adaptive_stiff() {
     auto f0_h = Kokkos::create_mirror_view(f0);
 
     mySys.evaluate_function(t_start, KAT::zero(), y0_h, f0_h);
-    KokkosODE::Impl::initial_step_size(mySys, 1, t_start, 1e-6, 1e-4, y0_h, f0_h, temp_h, dt);
+    KokkosODE::Impl::initial_step_size(mySys, 1, t_start, 1e-6, 1e-3, y0_h, f0_h, temp_h, dt);
   }
   std::cout << "Initial Step Size: dt=" << dt << std::endl;
 

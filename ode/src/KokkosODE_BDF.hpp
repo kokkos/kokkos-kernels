@@ -189,8 +189,8 @@ KOKKOS_FUNCTION void BDFSolve(const ode_type& ode, const scalar_type t_start, co
   scalar_type dt = initial_step;
   scalar_type t  = t_start;
 
-  constexpr int max_newton_iters = 5;
-  scalar_type atol = 1.0e-6, rtol = 1.0e-4;
+  constexpr int max_newton_iters = 4;
+  scalar_type atol = 1.0e-6, rtol = 1.0e-3;
 
   // Compute rhs = f(t_start, y0)
   ode.evaluate_function(t_start, 0, y0, rhs);
@@ -219,13 +219,13 @@ KOKKOS_FUNCTION void BDFSolve(const ode_type& ode, const scalar_type t_start, co
     for(int eqIdx = 0; eqIdx < ode.neqs; ++eqIdx) {
       y0(eqIdx) = y_new(eqIdx);
     }
-// #if KOKKOS_VERSION < 40199
-//     KOKKOS_IMPL_DO_NOT_USE_PRINTF("At t=%f, y={%f, %f, %f}, next dt will be %f, order will be %d\n",
-// 				  t, y_new(0), y_new(1), y_new(2), dt, order);
-// #else
-//     Kokkos::printf("At t=%f, y={%f, %f, %f}, next dt will be %f, order will be %d\n",
-// 		   t, y_new(0), y_new(1), y_new(2), dt, order);
-// #endif
+#if KOKKOS_VERSION < 40199
+    KOKKOS_IMPL_DO_NOT_USE_PRINTF("At t=%f, y={%8.6e, %8.6e, %8.6e}, next dt will be %f, order will be %d\n",
+				  t, y_new(0), y_new(1), y_new(2), dt, order);
+#else
+    Kokkos::printf("At t=%f, y={%8.6e, %8.6e, %8.6e}, next dt will be %f, order will be %d\n",
+		   t, y_new(0), y_new(1), y_new(2), dt, order);
+#endif
   }
 // #if KOKKOS_VERSION < 40199
 //     KOKKOS_IMPL_DO_NOT_USE_PRINTF("At t=%f, y={%f, %f, %f}\n",
