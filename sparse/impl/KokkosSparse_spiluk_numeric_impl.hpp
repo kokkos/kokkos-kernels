@@ -72,10 +72,10 @@ static team_policy get_team_policy(const size_type nrows, const int team_size, c
     rv = team_policy(nrows, team_size);
   }
 
-  if (block_enabled) {
-    const auto bytes = block_size * block_size * sizeof(scalar_t);
-    rv.set_scratch_size(0 /*level*/, Kokkos::PerThread(bytes));
-  }
+  // if (block_enabled) {
+  //   const auto bytes = block_size * block_size * sizeof(scalar_t);
+  //   rv.set_scratch_size(0 /*level*/, Kokkos::PerThread(bytes));
+  // }
   return rv;
 }
 
@@ -88,10 +88,10 @@ static team_policy get_team_policy(execution_space exe_space, const size_type nr
     rv = team_policy(exe_space, nrows, team_size);
   }
 
-  if (block_enabled) {
-    const auto bytes = block_size * block_size * sizeof(scalar_t);
-    rv.set_scratch_size(0 /*level*/, Kokkos::PerThread(bytes));
-  }
+  // if (block_enabled) {
+  //   const auto bytes = block_size * block_size * sizeof(scalar_t);
+  //   rv.set_scratch_size(0 /*level*/, Kokkos::PerThread(bytes));
+  // }
   return rv;
 }
 
@@ -99,10 +99,10 @@ static range_policy get_range_policy(const lno_t start, const lno_t end, const b
 {
   range_policy rv(start, end);
 
-  if (block_enabled) {
-    const auto bytes = block_size * block_size * sizeof(scalar_t);
-    //rv.set_scratch_size(0 /*level*/, Kokkos::PerThread(bytes));
-  }
+  // if (block_enabled) {
+  //   const auto bytes = block_size * block_size * sizeof(scalar_t);
+  //   rv.set_scratch_size(0 /*level*/, Kokkos::PerThread(bytes));
+  // }
   return rv;
 }
 
@@ -110,10 +110,10 @@ static range_policy get_range_policy(execution_space exe_space, const lno_t star
 {
   range_policy rv(exe_space, start, end);
 
-  if (block_enabled) {
-    const auto bytes = block_size * block_size * sizeof(scalar_t);
-    //rv.set_scratch_size(0 /*level*/, Kokkos::PerThread(bytes));
-  }
+  // if (block_enabled) {
+  //   const auto bytes = block_size * block_size * sizeof(scalar_t);
+  //   //rv.set_scratch_size(0 /*level*/, Kokkos::PerThread(bytes));
+  // }
   return rv;
 }
 
