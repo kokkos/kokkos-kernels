@@ -239,9 +239,9 @@ KOKKOS_FUNCTION void initial_step_size(const ode_type ode, const int order, cons
   using KAT = Kokkos::ArithTraits<scalar_type>;
 
   // Extract subviews to store intermediate data
-  auto scale = Kokkos::subview(temp, Kokkos::ALL(), 0); // Scaling coefficients for error calculation
-  auto y1    = Kokkos::subview(temp, Kokkos::ALL(), 1); // Scaling coefficients for error calculation
-  auto f1    = Kokkos::subview(temp, Kokkos::ALL(), 2); // Scaling coefficients for error calculation
+  auto scale = Kokkos::subview(temp, Kokkos::ALL(), 1);
+  auto y1    = Kokkos::subview(temp, Kokkos::ALL(), 2);
+  auto f1    = Kokkos::subview(temp, Kokkos::ALL(), 3);
 
   // Compute norms for y0 and f0
   double n0 = KAT::zero(), n1 = KAT::zero(), dt0;
@@ -282,6 +282,13 @@ KOKKOS_FUNCTION void initial_step_size(const ode_type ode, const int order, cons
   }
 
   dt_ini = Kokkos::min(100 * dt0, dt_ini);
+
+  // Zero out temp variables just to be safe...
+  for(int eqIdx = 0; eqIdx < ode.neqs; ++eqIdx) {
+    scale(eqIdx) = 0;
+    y1(eqIdx) = 0;
+    f1(eqIdx) = 0;
+  }
 } // initial_step_size
 
   template <class ode_type, class vec_type, class res_type,

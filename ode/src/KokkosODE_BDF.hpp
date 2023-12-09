@@ -173,12 +173,6 @@ KOKKOS_FUNCTION void BDFSolve(const ode_type& ode, const scalar_type t_start, co
 			      mat_type& temp, mat_type& temp2) {
   using KAT = Kokkos::ArithTraits<scalar_type>;
 
-// #if KOKKOS_VERSION < 40199
-//   KOKKOS_IMPL_DO_NOT_USE_PRINTF("y0 = {%f, %f, %f}\n", y0(0), y0(1), y0(2));
-// #else
-//   Kokkos::printf("y0 = {%f, %f, %f}\n", y0(0), y0(1), y0(2));
-// #endif
-
   // This needs to go away and be pulled out of temp instead...
   auto rhs    = Kokkos::subview(temp, Kokkos::ALL(), 0);
   auto update = Kokkos::subview(temp, Kokkos::ALL(), 1);
@@ -220,22 +214,7 @@ KOKKOS_FUNCTION void BDFSolve(const ode_type& ode, const scalar_type t_start, co
     for(int eqIdx = 0; eqIdx < ode.neqs; ++eqIdx) {
       y0(eqIdx) = y_new(eqIdx);
     }
-#if KOKKOS_VERSION < 40199
-    KOKKOS_IMPL_DO_NOT_USE_PRINTF("At t=%f, y={%8.6e, %8.6e, %8.6e}, next dt will be %f, order will be %d\n",
-				  t, y_new(0), y_new(1), y_new(2), dt, order);
-#else
-    Kokkos::printf("At t=%f, y={%8.6e, %8.6e, %8.6e}, next dt will be %f, order will be %d\n",
-		   t, y_new(0), y_new(1), y_new(2), dt, order);
-#endif
   }
-// #if KOKKOS_VERSION < 40199
-//     KOKKOS_IMPL_DO_NOT_USE_PRINTF("At t=%f, y={%f, %f, %f}\n",
-// 				  t, y_new(0), y_new(1), y_new(2));
-// #else
-//     Kokkos::printf("At t=%f, y={%f, %f, %f}\n",
-// 		   t, y_new(0), y_new(1), y_new(2));
-// #endif
-
 } // BDFSolve
 
 }  // namespace Experimental

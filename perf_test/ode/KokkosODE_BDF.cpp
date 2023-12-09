@@ -151,6 +151,19 @@ void run_ode_chem(benchmark::State& state, const bdf_input_parameters& inputs) {
   double run_time = time.seconds();
   std::cout << "Run time: " << run_time << std::endl;
 
+  Kokkos::deep_copy(y0_h, y0);
+  double error;
+  for(int odeIdx = 0; odeIdx < num_odes; ++odeIdx) {
+    error = 0;
+    error += Kokkos::abs(y0_h(0, odeIdx) - 0.4193639) / 0.4193639;
+    error += Kokkos::abs(y0_h(1, odeIdx) - 0.000002843646) / 0.000002843646;
+    error += Kokkos::abs(y0_h(2, odeIdx) - 0.5806333) / 0.5806333;
+    error = error / 3;
+
+    if(error > 1e-6) {
+      std::cout << "Large error in problem " << odeIdx << ": " << error << std::endl;
+    }
+  }
 }
 
 void print_options() {

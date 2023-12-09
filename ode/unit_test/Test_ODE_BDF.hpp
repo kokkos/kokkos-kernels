@@ -764,17 +764,6 @@ void test_BDF_adaptive_stiff() {
 
   mat_type temp("buffer1", mySys.neqs, 23 + 2*mySys.neqs + 4), temp2("buffer2", 6, 7);
 
-  {
-    auto temp_h = Kokkos::create_mirror_view(temp);
-    Kokkos::deep_copy(temp_h, temp);
-    vec_type f0("initial value f", mySys.neqs);
-    auto f0_h = Kokkos::create_mirror_view(f0);
-
-    mySys.evaluate_function(t_start, KAT::zero(), y0_h, f0_h);
-    KokkosODE::Impl::initial_step_size(mySys, 1, t_start, 1e-6, 1e-3, y0_h, f0_h, temp_h, dt);
-  }
-  std::cout << "Initial Step Size: dt=" << dt << std::endl;
-
   Kokkos::RangePolicy<execution_space> policy(0, 1);
   BDF_Solve_wrapper bdf_wrapper(mySys, t_start, t_end, dt,
 				(t_end - t_start) / 10,
