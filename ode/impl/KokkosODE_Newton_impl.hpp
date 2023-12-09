@@ -110,7 +110,6 @@ KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
 
     norm_old = norm_new;
   }
-  std::cout << "Final norm: " << norm << ", acceptance citeria: " << params.rel_tol * norm0 << std::endl;
   return newton_solver_status::MAX_ITER;
 }
 
