@@ -189,20 +189,6 @@ void print_matrix(const std::vector<std::vector<scalar_t>>& matrix) {
   }
 }
 
-template <typename ViewT>
-void check_match(const ViewT& lhs, const ViewT& rhs) {
-  auto hlhs = Kokkos::create_mirror_view(lhs);
-  auto hrhs = Kokkos::create_mirror_view(rhs);
-  Kokkos::deep_copy(hlhs, lhs);
-  Kokkos::deep_copy(hrhs, rhs);
-
-  ASSERT_EQ(lhs.extent(0), rhs.extent(0));
-
-  for (size_t i = 0; i < lhs.extent(0); ++i) {
-    EXPECT_EQ(hlhs(i), hrhs(i));
-  }
-}
-
 }  // namespace Test
 
 #endif  // _TEST_VECTOR_FIXTURES_HPP

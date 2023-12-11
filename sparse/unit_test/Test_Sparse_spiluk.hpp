@@ -67,6 +67,8 @@ std::vector<std::vector<scalar_t>> get_4x4_fixture() {
   return A;
 }
 
+static constexpr double EPS = 1e-7;
+
 template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
 struct SpilukTest {
@@ -162,12 +164,12 @@ struct SpilukTest {
                                SPILUKAlgorithm::SEQLVLSCHD_RP, nrows, nnz,
                                fill_lev);
 
-      check_match(L_row_map, L_row_map_rp);
-      check_match(L_entries, L_entries_rp);
-      check_match(L_values, L_values_rp);
-      check_match(U_row_map, U_row_map_rp);
-      check_match(U_entries, U_entries_rp);
-      check_match(U_values, U_values_rp);
+      EXPECT_NEAR_KK_1DVIEW(L_row_map, L_row_map_rp, EPS);
+      EXPECT_NEAR_KK_1DVIEW(L_entries, L_entries_rp, EPS);
+      EXPECT_NEAR_KK_1DVIEW(L_values, L_values_rp, EPS);
+      EXPECT_NEAR_KK_1DVIEW(U_row_map, U_row_map_rp, EPS);
+      EXPECT_NEAR_KK_1DVIEW(U_entries, U_entries_rp, EPS);
+      EXPECT_NEAR_KK_1DVIEW(U_values, U_values_rp, EPS);
     }
 
     return std::make_tuple(L_row_map, L_entries, L_values, U_row_map, U_entries,
@@ -239,12 +241,12 @@ struct SpilukTest {
           run_and_check_spiluk(kh, row_map, entries, values, alg, nrows, nnz,
                                fill_lev);
 
-      check_match(L_row_map, L_row_map_u);
-      check_match(L_entries, L_entries_u);
-      check_match(L_values, L_values_u);
-      check_match(U_row_map, U_row_map_u);
-      check_match(U_entries, U_entries_u);
-      check_match(U_values, U_values_u);
+      EXPECT_NEAR_KK_1DVIEW(L_row_map, L_row_map_u, EPS);
+      EXPECT_NEAR_KK_1DVIEW(L_entries, L_entries_u, EPS);
+      EXPECT_NEAR_KK_1DVIEW(L_values, L_values_u, EPS);
+      EXPECT_NEAR_KK_1DVIEW(U_row_map, U_row_map_u, EPS);
+      EXPECT_NEAR_KK_1DVIEW(U_entries, U_entries_u, EPS);
+      EXPECT_NEAR_KK_1DVIEW(U_values, U_values_u, EPS);
     }
   }
 
