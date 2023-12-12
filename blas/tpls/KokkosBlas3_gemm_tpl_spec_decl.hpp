@@ -604,7 +604,6 @@ TPL_SCALAR_TYPE is the type MKL accents for SCALAR_TYPE
   KOKKOSBLAS3_XGEMM_MKL(Kokkos::complex<float>, std::complex<float>, LAYOUT, \
                         MEM_SPACE, ETI_SPEC_AVAIL)
 
-
 #if KOKKOSKERNELS_IMPL_MKL_VERSION >= 202300
 // ETI_SPEC_AVAIL is both false and true here, because we want to use
 // MKL regardless of whether ETI is available.
@@ -643,7 +642,7 @@ KOKKOSBLAS3_CGEMM_MKL(Kokkos::LayoutRight,
                       Kokkos::Experimental::SYCLDeviceUSMSpace, true)
 KOKKOSBLAS3_CGEMM_MKL(Kokkos::LayoutRight,
                       Kokkos::Experimental::SYCLDeviceUSMSpace, false)
-#endif // KOKKOSKERNELS_IMPL_MKL_VERSION >= 202300
+#endif  // KOKKOSKERNELS_IMPL_MKL_VERSION >= 202300
 }  // namespace KokkosBlas::Impl
 #endif  // KOKKOSKERNELS_ENABLE_TPL_MKL && KOKKOS_ENABLE_SYCL
 

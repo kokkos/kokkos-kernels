@@ -222,7 +222,7 @@ KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_MKL(Kokkos::complex<double>,
                                     Kokkos::Experimental::SYCLDeviceUSMSpace)
 KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_MKL(Kokkos::complex<float>, Kokkos::LayoutRight,
                                     Kokkos::Experimental::SYCLDeviceUSMSpace)
-#endif // KOKKOSKERNELS_IMPL_MKL_VERSION >= 202300
+#endif  // KOKKOSKERNELS_IMPL_MKL_VERSION >= 202300
 
 #endif
 
