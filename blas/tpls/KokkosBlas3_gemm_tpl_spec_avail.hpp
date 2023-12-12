@@ -185,6 +185,8 @@ KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<float>,
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) && defined(KOKKOS_ENABLE_SYCL)
 
+#include <KokkosBlas_MKL_tpl.hpp>
+
 #define KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_MKL(SCALAR, LAYOUT, MEMSPACE)    \
   template <>                                                            \
   struct gemm_tpl_spec_avail<                                            \
@@ -201,6 +203,7 @@ KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<float>,
     enum : bool { value = true };                                        \
   };
 
+#if KOKKOSKERNELS_IMPL_MKL_VERSION >= 202300
 KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_MKL(double, Kokkos::LayoutLeft,
                                     Kokkos::Experimental::SYCLDeviceUSMSpace)
 KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_MKL(float, Kokkos::LayoutLeft,
@@ -219,6 +222,7 @@ KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_MKL(Kokkos::complex<double>,
                                     Kokkos::Experimental::SYCLDeviceUSMSpace)
 KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_MKL(Kokkos::complex<float>, Kokkos::LayoutRight,
                                     Kokkos::Experimental::SYCLDeviceUSMSpace)
+#endif // KOKKOSKERNELS_IMPL_MKL_VERSION >= 202300
 
 #endif
 
