@@ -736,11 +736,9 @@ struct spmv_onemkl_wrapper<false> {
         const_cast<ordinal_type*>(A.graph.row_map.data()),
         const_cast<ordinal_type*>(A.graph.entries.data()),
         const_cast<scalar_type*>(A.values.data()));
-    auto ev_opt = oneapi::mkl::sparse::optimize_gemv(
-        exec.sycl_queue(), mkl_mode, handle, {ev_set});
     auto ev_gemv =
         oneapi::mkl::sparse::gemv(exec.sycl_queue(), mkl_mode, alpha, handle,
-                                  x.data(), beta, y.data(), {ev_opt});
+                                  x.data(), beta, y.data(), {ev_set});
     // MKL 2023.2 and up make this release okay async even though it takes a
     // pointer to a stack variable
 #if INTEL_MKL_VERSION >= 20230200
@@ -776,13 +774,11 @@ struct spmv_onemkl_wrapper<true> {
         const_cast<ordinal_type*>(A.graph.entries.data()),
         reinterpret_cast<std::complex<mag_type>*>(
             const_cast<scalar_type*>(A.values.data())));
-    auto ev_opt = oneapi::mkl::sparse::optimize_gemv(
-        exec.sycl_queue(), mkl_mode, handle, {ev_set});
     auto ev_gemv = oneapi::mkl::sparse::gemv(
         exec.sycl_queue(), mkl_mode, alpha, handle,
         reinterpret_cast<std::complex<mag_type>*>(
             const_cast<scalar_type*>(x.data())),
-        beta, reinterpret_cast<std::complex<mag_type>*>(y.data()), {ev_opt});
+        beta, reinterpret_cast<std::complex<mag_type>*>(y.data()), {ev_set});
     // MKL 2023.2 and up make this release okay async even though it takes a
     // pointer to a stack variable
 #if INTEL_MKL_VERSION >= 20230200
