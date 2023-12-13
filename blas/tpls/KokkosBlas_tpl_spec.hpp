@@ -231,7 +231,8 @@ struct MagmaSingleton {
 }  // namespace KokkosBlas
 #endif  // KOKKOSKERNELS_ENABLE_TPL_MAGMA
 
-#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
+#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) && defined(KOKKOS_ENABLE_SYCL)
+#include <sstream>
 #include <oneapi/mkl/types.hpp>
 
 namespace KokkosBlas {
@@ -245,13 +246,14 @@ inline oneapi::mkl::transpose trans_mode_kk_to_onemkl(char mode_kk) {
     case 'C': return oneapi::mkl::transpose::conjtrans;
     default:;
   }
-  throw std::invalid_argument(
-      "Invalid mode for oneMKL (should be one of N, T, C)");
+  std::stringstream ss;
+  ss << "Invalid mode \"" << mode_kk << "\" for oneMKL (should be one of N, T, C)";
+  throw std::invalid_argument(ss.str());
 }
 
 }  // namespace Impl
 }  // namespace KokkosBlas
 
-#endif  // KOKKOSKERNELS_ENABLE_TPL_MKL
+#endif  // KOKKOSKERNELS_ENABLE_TPL_MKL && KOKKOS_ENABLE_SYCL
 
 #endif  // KOKKOSBLAS_TPL_SPEC_HPP_
