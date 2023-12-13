@@ -247,7 +247,8 @@ inline oneapi::mkl::transpose trans_mode_kk_to_onemkl(char mode_kk) {
     default:;
   }
   std::stringstream ss;
-  ss << "Invalid mode \"" << mode_kk << "\" for oneMKL (should be one of N, T, C)";
+  ss << "Invalid mode \"" << mode_kk
+     << "\" for oneMKL (should be one of N, T, C)";
   throw std::invalid_argument(ss.str());
 }
 
