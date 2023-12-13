@@ -185,8 +185,6 @@ KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<float>,
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) && defined(KOKKOS_ENABLE_SYCL)
 
-#include <KokkosBlas_MKL_tpl.hpp>
-
 #define KOKKOSBLAS3_GEMM_TPL_SPEC_AVAIL_MKL(SCALAR, LAYOUT, MEMSPACE)    \
   template <>                                                            \
   struct gemm_tpl_spec_avail<                                            \

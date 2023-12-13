@@ -502,7 +502,6 @@ KOKKOSBLAS3_CGEMM_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIPSpace, false)
 #endif  // KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) && defined(KOKKOS_ENABLE_SYCL)
-#include <KokkosBlas_MKL_tpl.hpp>
 #include <KokkosBlas_tpl_spec.hpp>
 #include <oneapi/mkl/blas.hpp>
 
