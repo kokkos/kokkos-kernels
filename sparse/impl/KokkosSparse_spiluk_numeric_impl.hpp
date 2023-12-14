@@ -206,7 +206,7 @@ struct IlukWrap {
     KOKKOS_INLINE_FUNCTION
     void divide(const member_type &team, scalar_t &lhs,
                 const scalar_t &rhs) const {
-      Kokkos::single(Kokkos::PerTeam(team), [&]() { lhs /= rhs; });
+      Kokkos::single(Kokkos::PerTeam(team), [&](scalar_t& tmp) { tmp = lhs / rhs; lhs = tmp; }, lhs);
     }
 
     // add. lhs += rhs
@@ -516,7 +516,7 @@ struct IlukWrap {
 #ifdef KEEP_DIAG
       k2 = Base::L_row_map(rowid + 1) - 1;
 #else
-      k2      = Base::L_row_map(rowid + 1);
+      k2 = Base::L_row_map(rowid + 1);
 #endif
       for (auto k = k1; k < k2; ++k) {
         const auto prev_row = Base::L_entries(k);
@@ -646,7 +646,7 @@ struct IlukWrap {
 #ifdef KEEP_DIAG
       k2 = Base::L_row_map(rowid + 1) - 1;
 #else
-      k2           = Base::L_row_map(rowid + 1);
+      k2 = Base::L_row_map(rowid + 1);
 #endif
       for (auto k = k1; k < k2; k++) {
         const auto prev_row = Base::L_entries(k);

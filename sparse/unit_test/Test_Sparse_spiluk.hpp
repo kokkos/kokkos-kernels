@@ -152,7 +152,7 @@ struct SpilukTest {
 
     typename AT::mag_type diff_nrm = KokkosBlas::nrm2(bb);
 
-    EXPECT_TRUE((diff_nrm / bb_nrm) < 1e-4);
+    EXPECT_LT(diff_nrm / bb_nrm, 1e-4);
 
     kh.destroy_spiluk_handle();
 
@@ -230,7 +230,7 @@ struct SpilukTest {
     KokkosSparse::spmv("N", ONE, L, bb_tmp, MONE, bb);
 
     typename AT::mag_type diff_nrm = KokkosBlas::nrm2(bb);
-    EXPECT_TRUE((diff_nrm / bb_nrm) < 1e0);
+    EXPECT_LT(diff_nrm / bb_nrm, 1e0);
 
     kh.destroy_spiluk_handle();
 
@@ -266,7 +266,7 @@ struct SpilukTest {
     KernelHandle kh;
 
     run_and_check_spiluk(kh, row_map, entries, values,
-                         SPILUKAlgorithm::SEQLVLSCHD_RP, nrows, nnz, fill_lev);
+                        SPILUKAlgorithm::SEQLVLSCHD_RP, nrows, nnz, fill_lev);
     run_and_check_spiluk(kh, row_map, entries, values,
                          SPILUKAlgorithm::SEQLVLSCHD_TP1, nrows, nnz, fill_lev);
   }
@@ -412,7 +412,7 @@ struct SpilukTest {
 
       typename AT::mag_type diff_nrm = KokkosBlas::nrm2(bb);
 
-      EXPECT_TRUE((diff_nrm / bb_nrm) < 1e-4);
+      EXPECT_LT(diff_nrm / bb_nrm, 1e-4);
 
       kh_v[i].destroy_spiluk_handle();
     }
