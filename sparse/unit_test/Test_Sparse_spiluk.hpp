@@ -266,7 +266,7 @@ struct SpilukTest {
     KernelHandle kh;
 
     run_and_check_spiluk(kh, row_map, entries, values,
-                        SPILUKAlgorithm::SEQLVLSCHD_RP, nrows, nnz, fill_lev);
+                         SPILUKAlgorithm::SEQLVLSCHD_RP, nrows, nnz, fill_lev);
     run_and_check_spiluk(kh, row_map, entries, values,
                          SPILUKAlgorithm::SEQLVLSCHD_TP1, nrows, nnz, fill_lev);
   }
