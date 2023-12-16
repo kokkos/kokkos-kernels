@@ -79,10 +79,11 @@ class GerTester {
   using _KAT_A   = Kokkos::ArithTraits<ScalarA>;
   using _AuxType = typename _KAT_A::mag_type;
 
-  void populateVariables(ScalarA& alpha, _HostViewTypeX& h_x,
-                         _HostViewTypeY& h_y, _HostViewTypeA& h_A,
-                         _ViewTypeExpected& h_expected, _ViewTypeX& x,
-                         _ViewTypeY& y, _ViewTypeA& A,
+  void populateVariables(ScalarA& alpha, view_stride_adapter<_ViewTypeX, false>/*_HostViewTypeX& h_x*/& x,
+                         view_stride_adapter<_ViewTypeY, false>& y, view_stride_adapter<_ViewTypeA, false>& A,
+                         /*_HostViewTypeY& h_y, _HostViewTypeA& h_A,*/
+                         _ViewTypeExpected& h_expected, /*_ViewTypeX& x,*/
+                         /*_ViewTypeY& y, _ViewTypeA& A,*/
                          bool& expectedResultIsKnown);
 
   template <class T>
@@ -150,8 +151,9 @@ class GerTester {
 
   template <class TX, class TY>
   void callKkGerAndCompareAgainstExpected(const ScalarA& alpha, TX& x, TY& y,
-                                          _ViewTypeA& A,
-                                          const _HostViewTypeA& h_A,
+                                          view_stride_adapter<_ViewTypeA, false>& A,
+                                          /*_ViewTypeA& A,*/
+                                          /*const _HostViewTypeA& h_A,*/
                                           const _ViewTypeExpected& h_expected,
                                           const std::string& situation);
 
@@ -286,8 +288,8 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
   // ********************************************************************
   // Step 2 of 9: populate alpha, h_x, h_y, h_A, h_expected, x, y, A
   // ********************************************************************
-  this->populateVariables(alpha, x.h_view, y.h_view, A.h_view,
-                          h_expected.d_view, x.d_view, y.d_view, A.d_view,
+  this->populateVariables(alpha, x/*.h_view*/, y/*.h_view*/, A/*.h_view*/,
+                          h_expected.d_view, /*x.d_view, y.d_view, A.d_view,*/
                           expectedResultIsKnown);
 
   // ********************************************************************
@@ -333,7 +335,7 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
 
   if (test_x_y) {
     this->callKkGerAndCompareAgainstExpected(
-        alpha, x.d_view, y.d_view, A.d_view, A.h_view, h_expected.d_view,
+        alpha, x.d_view, y.d_view, /*A.d_view, A.h_view*/A, h_expected.d_view,
         "non const {x,y}");
   }
 
@@ -344,7 +346,7 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
     Kokkos::deep_copy(A.d_base, org_A.d_base);
 
     this->callKkGerAndCompareAgainstExpected(alpha, x.d_view_const, y.d_view,
-                                             A.d_view, A.h_view,
+                                             /*A.d_view, A.h_view*/A,
                                              h_expected.d_view, "const x");
   }
 
@@ -355,7 +357,7 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
     Kokkos::deep_copy(A.d_base, org_A.d_base);
 
     this->callKkGerAndCompareAgainstExpected(alpha, x.d_view, y.d_view_const,
-                                             A.d_view, A.h_view,
+                                             /*A.d_view, A.h_view*/A,
                                              h_expected.d_view, "const y");
   }
 
@@ -366,7 +368,7 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
     Kokkos::deep_copy(A.d_base, org_A.d_base);
 
     this->callKkGerAndCompareAgainstExpected(alpha, x.d_view_const,
-                                             y.d_view_const, A.d_view, A.h_view,
+                                             y.d_view_const, /*A.d_view, A.h_view*/A,
                                              h_expected.d_view, "const {x,y}");
   }
 
@@ -389,51 +391,53 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
 template <class ScalarX, class tLayoutX, class ScalarY, class tLayoutY,
           class ScalarA, class tLayoutA, class Device>
 void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
-               Device>::populateVariables(ScalarA& alpha, _HostViewTypeX& h_x,
-                                          _HostViewTypeY& h_y,
-                                          _HostViewTypeA& h_A,
+               Device>::populateVariables(ScalarA& alpha, view_stride_adapter<_ViewTypeX, false>/*_HostViewTypeX& h_x*/& x,
+                                          view_stride_adapter<_ViewTypeY, false>& y,
+                                          view_stride_adapter<_ViewTypeA, false>& A,
+                                          /*_HostViewTypeY& h_y,*/
+                                          /*_HostViewTypeA& h_A,*/
                                           _ViewTypeExpected& h_expected,
-                                          _ViewTypeX& x, _ViewTypeY& y,
-                                          _ViewTypeA& A,
+                                          /*_ViewTypeX& x, _ViewTypeY& y,
+                                          _ViewTypeA& A,*/
                                           bool& expectedResultIsKnown) {
   expectedResultIsKnown = false;
 
   if (_useAnalyticalResults) {
-    this->populateAnalyticalValues(alpha, h_x, h_y, h_A, h_expected);
-    Kokkos::deep_copy(x, h_x);
-    Kokkos::deep_copy(y, h_y);
-    Kokkos::deep_copy(A, h_A);
+    this->populateAnalyticalValues(alpha, /*h_x*/x.h_view, /*h_y*/y.h_view, /*h_A*/A.h_view, h_expected);
+    Kokkos::deep_copy(/*x, h_x*/x.d_view,x.h_view);
+    Kokkos::deep_copy(/*y, h_y*/y.d_view,y.h_view);
+    Kokkos::deep_copy(/*A, h_A*/A.d_view,A.h_view);
 
     expectedResultIsKnown = true;
   } else if ((_M == 1) && (_N == 1)) {
     alpha = 3;
 
-    h_x[0] = 2;
+    /*h_x*/x.h_view[0] = 2;
 
-    h_y[0] = 3;
+    /*h_y*/y.h_view[0] = 3;
 
-    h_A(0, 0) = 7;
+    /*h_A*/A.h_view(0, 0) = 7;
 
-    Kokkos::deep_copy(x, h_x);
-    Kokkos::deep_copy(y, h_y);
-    Kokkos::deep_copy(A, h_A);
+    Kokkos::deep_copy(/*x, h_x*/x.d_view,x.h_view);
+    Kokkos::deep_copy(/*y, h_y*/y.d_view,y.h_view);
+    Kokkos::deep_copy(/*A, h_A*/A.d_view,A.h_view);
 
     h_expected(0, 0)      = 25;
     expectedResultIsKnown = true;
   } else if ((_M == 1) && (_N == 2)) {
     alpha = 3;
 
-    h_x[0] = 2;
+    /*h_x*/x.h_view[0] = 2;
 
-    h_y[0] = 3;
-    h_y[1] = 4;
+    /*h_y*/y.h_view[0] = 3;
+    /*h_y*/y.h_view[1] = 4;
 
-    h_A(0, 0) = 7;
-    h_A(0, 1) = -6;
+    /*h_A*/A.h_view(0, 0) = 7;
+    /*h_A*/A.h_view(0, 1) = -6;
 
-    Kokkos::deep_copy(x, h_x);
-    Kokkos::deep_copy(y, h_y);
-    Kokkos::deep_copy(A, h_A);
+    Kokkos::deep_copy(/*x, h_x*/x.d_view,x.h_view);
+    Kokkos::deep_copy(/*y, h_y*/y.d_view,y.h_view);
+    Kokkos::deep_copy(/*A, h_A*/A.d_view,A.h_view);
 
     h_expected(0, 0)      = 25;
     h_expected(0, 1)      = 18;
@@ -441,20 +445,20 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
   } else if ((_M == 2) && (_N == 2)) {
     alpha = 3;
 
-    h_x[0] = 2;
-    h_x[1] = 9;
+    /*h_x*/x.h_view[0] = 2;
+    /*h_x*/x.h_view[1] = 9;
 
-    h_y[0] = -3;
-    h_y[1] = 7;
+    /*h_y*/y.h_view[0] = -3;
+    /*h_y*/y.h_view[1] = 7;
 
-    h_A(0, 0) = 17;
-    h_A(0, 1) = -43;
-    h_A(1, 0) = 29;
-    h_A(1, 1) = 101;
+    /*h_A*/A.h_view(0, 0) = 17;
+    /*h_A*/A.h_view(0, 1) = -43;
+    /*h_A*/A.h_view(1, 0) = 29;
+    /*h_A*/A.h_view(1, 1) = 101;
 
-    Kokkos::deep_copy(x, h_x);
-    Kokkos::deep_copy(y, h_y);
-    Kokkos::deep_copy(A, h_A);
+    Kokkos::deep_copy(/*x, h_x*/x.d_view,x.h_view);
+    Kokkos::deep_copy(/*y, h_y*/y.d_view,y.h_view);
+    Kokkos::deep_copy(/*A, h_A*/A.d_view,A.h_view);
 
     h_expected(0, 0)      = -1;
     h_expected(0, 1)      = -1;
@@ -470,24 +474,24 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
     {
       ScalarX randStart, randEnd;
       Test::getRandomBounds(1.0, randStart, randEnd);
-      Kokkos::fill_random(x, rand_pool, randStart, randEnd);
+      Kokkos::fill_random(x.d_view, rand_pool, randStart, randEnd);
     }
 
     {
       ScalarY randStart, randEnd;
       Test::getRandomBounds(1.0, randStart, randEnd);
-      Kokkos::fill_random(y, rand_pool, randStart, randEnd);
+      Kokkos::fill_random(y.d_view, rand_pool, randStart, randEnd);
     }
 
     {
       ScalarA randStart, randEnd;
       Test::getRandomBounds(1.0, randStart, randEnd);
-      Kokkos::fill_random(A, rand_pool, randStart, randEnd);
+      Kokkos::fill_random(A.d_view, rand_pool, randStart, randEnd);
     }
 
-    Kokkos::deep_copy(h_x, x);
-    Kokkos::deep_copy(h_y, y);
-    Kokkos::deep_copy(h_A, A);
+    Kokkos::deep_copy(/*h_x, x*/x.h_view,x.d_view);
+    Kokkos::deep_copy(/*h_y, y*/y.h_view,y.d_view);
+    Kokkos::deep_copy(/*h_A, A*/A.h_view,A.d_view);
   }
 }
 
@@ -1363,7 +1367,8 @@ template <class TX, class TY>
 void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
                Device>::
     callKkGerAndCompareAgainstExpected(const ScalarA& alpha, TX& x, TY& y,
-                                       _ViewTypeA& A, const _HostViewTypeA& h_A,
+                                       view_stride_adapter<_ViewTypeA, false>& A,
+                                       /*_ViewTypeA& A, const _HostViewTypeA& h_A,*/
                                        const _ViewTypeExpected& h_expected,
                                        const std::string& situation) {
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
@@ -1383,7 +1388,7 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
   bool gotStdException(false);
   bool gotUnknownException(false);
   try {
-    KokkosBlas::ger(mode.c_str(), alpha, x, y, A);
+    KokkosBlas::ger(mode.c_str(), alpha, x, y, /*A*/A.d_view);
   } catch (const std::exception& e) {
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
     std::cout << "In Test_Blas2_ger, '" << situation
@@ -1408,9 +1413,9 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
       << "have thrown a std::exception";
 
   if ((gotStdException == false) && (gotUnknownException == false)) {
-    Kokkos::deep_copy(h_A, A);
+    Kokkos::deep_copy(/*h_A, A*/A.h_view, A.d_view);
 
-    this->compareKkGerAgainstExpected(alpha, h_A, h_expected);
+    this->compareKkGerAgainstExpected(alpha, /*h_A*/A.h_view, h_expected);
   }
 }
 
