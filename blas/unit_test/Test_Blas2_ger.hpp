@@ -404,9 +404,9 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
 
   if (_useAnalyticalResults) {
     this->populateAnalyticalValues(alpha, /*h_x*/x.h_view, /*h_y*/y.h_view, /*h_A*/A.h_view, h_expected);
-    Kokkos::deep_copy(/*x, h_x*/x.d_view,x.h_view);
-    Kokkos::deep_copy(/*y, h_y*/y.d_view,y.h_view);
-    Kokkos::deep_copy(/*A, h_A*/A.d_view,A.h_view);
+    Kokkos::deep_copy(/*x, h_x*/x.d_base,x.h_base);
+    Kokkos::deep_copy(/*y, h_y*/y.d_base,y.h_base);
+    Kokkos::deep_copy(/*A, h_A*/A.d_base,A.h_base);
 
     expectedResultIsKnown = true;
   } else if ((_M == 1) && (_N == 1)) {
@@ -418,9 +418,9 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
 
     /*h_A*/A.h_view(0, 0) = 7;
 
-    Kokkos::deep_copy(/*x, h_x*/x.d_view,x.h_view);
-    Kokkos::deep_copy(/*y, h_y*/y.d_view,y.h_view);
-    Kokkos::deep_copy(/*A, h_A*/A.d_view,A.h_view);
+    Kokkos::deep_copy(/*x, h_x*/x.d_base,x.h_base);
+    Kokkos::deep_copy(/*y, h_y*/y.d_base,y.h_base);
+    Kokkos::deep_copy(/*A, h_A*/A.d_base,A.h_base);
 
     h_expected(0, 0)      = 25;
     expectedResultIsKnown = true;
@@ -435,9 +435,9 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
     /*h_A*/A.h_view(0, 0) = 7;
     /*h_A*/A.h_view(0, 1) = -6;
 
-    Kokkos::deep_copy(/*x, h_x*/x.d_view,x.h_view);
-    Kokkos::deep_copy(/*y, h_y*/y.d_view,y.h_view);
-    Kokkos::deep_copy(/*A, h_A*/A.d_view,A.h_view);
+    Kokkos::deep_copy(/*x, h_x*/x.d_base,x.h_base);
+    Kokkos::deep_copy(/*y, h_y*/y.d_base,y.h_base);
+    Kokkos::deep_copy(/*A, h_A*/A.d_base,A.h_base);
 
     h_expected(0, 0)      = 25;
     h_expected(0, 1)      = 18;
@@ -456,9 +456,9 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
     /*h_A*/A.h_view(1, 0) = 29;
     /*h_A*/A.h_view(1, 1) = 101;
 
-    Kokkos::deep_copy(/*x, h_x*/x.d_view,x.h_view);
-    Kokkos::deep_copy(/*y, h_y*/y.d_view,y.h_view);
-    Kokkos::deep_copy(/*A, h_A*/A.d_view,A.h_view);
+    Kokkos::deep_copy(/*x, h_x*/x.d_base,x.h_base);
+    Kokkos::deep_copy(/*y, h_y*/y.d_base,y.h_base);
+    Kokkos::deep_copy(/*A, h_A*/A.d_base,A.h_base);
 
     h_expected(0, 0)      = -1;
     h_expected(0, 1)      = -1;
@@ -489,9 +489,9 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
       Kokkos::fill_random(A.d_view, rand_pool, randStart, randEnd);
     }
 
-    Kokkos::deep_copy(/*h_x, x*/x.h_view,x.d_view);
-    Kokkos::deep_copy(/*h_y, y*/y.h_view,y.d_view);
-    Kokkos::deep_copy(/*h_A, A*/A.h_view,A.d_view);
+    Kokkos::deep_copy(/*h_x, x*/x.h_base,x.d_base);
+    Kokkos::deep_copy(/*h_y, y*/y.h_base,y.d_base);
+    Kokkos::deep_copy(/*h_A, A*/A.h_base,A.d_base);
   }
 }
 
@@ -1413,7 +1413,7 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
       << "have thrown a std::exception";
 
   if ((gotStdException == false) && (gotUnknownException == false)) {
-    Kokkos::deep_copy(/*h_A, A*/A.h_view, A.d_view);
+    Kokkos::deep_copy(/*h_A, A*/A.h_base, A.d_base);
 
     this->compareKkGerAgainstExpected(alpha, /*h_A*/A.h_view, h_expected);
   }
