@@ -184,8 +184,8 @@ namespace Impl {
               reinterpret_cast<std::complex<double>*>(A.data()), LDA);       \
         } else {                                                             \
           /* blasgerc() + ~A_ll => call kokkos-kernels' implementation */    \
-          GER<EXEC_SPACE, XViewType, YViewType, AViewType, false, ETI_SPEC_AVAIL>::ger( \
-            space, trans, alpha, X, Y, A);                                   \
+          GER<EXEC_SPACE, XViewType, YViewType, AViewType, false,            \
+              ETI_SPEC_AVAIL>::ger(space, trans, alpha, X, Y, A);            \
         }                                                                    \
       }                                                                      \
       Kokkos::Profiling::popRegion();                                        \
@@ -254,8 +254,8 @@ namespace Impl {
               reinterpret_cast<std::complex<float>*>(A.data()), LDA);        \
         } else {                                                             \
           /* blasgerc() + ~A_ll => call kokkos-kernels' implementation */    \
-          GER<EXEC_SPACE, XViewType, YViewType, AViewType, false, ETI_SPEC_AVAIL>::ger( \
-            space, trans, alpha, X, Y, A);                                   \
+          GER<EXEC_SPACE, XViewType, YViewType, AViewType, false,            \
+              ETI_SPEC_AVAIL>::ger(space, trans, alpha, X, Y, A);            \
         }                                                                    \
       }                                                                      \
       Kokkos::Profiling::popRegion();                                        \

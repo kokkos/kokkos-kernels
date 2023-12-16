@@ -200,8 +200,8 @@ namespace Impl {
               reinterpret_cast<rocblas_double_complex*>(A.data()), LDA));     \
         } else {                                                              \
           /* rocblas_zgerc() + ~A_ll => call k-kernels' implementation */     \
-          GER<EXEC_SPACE, XViewType, YViewType, AViewType, false, ETI_SPEC_AVAIL>::ger( \
-            space, trans, alpha, X, Y, A);                                    \
+          GER<EXEC_SPACE, XViewType, YViewType, AViewType, false,             \
+              ETI_SPEC_AVAIL>::ger(space, trans, alpha, X, Y, A);             \
         }                                                                     \
       }                                                                       \
       KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));      \
@@ -275,8 +275,8 @@ namespace Impl {
               reinterpret_cast<rocblas_float_complex*>(A.data()), LDA));     \
         } else {                                                             \
           /* rocblas_cgerc() + ~A_ll => call k-kernels' implementation */    \
-          GER<EXEC_SPACE, XViewType, YViewType, AViewType, false, ETI_SPEC_AVAIL>::ger( \
-            space, trans, alpha, X, Y, A);                                   \
+          GER<EXEC_SPACE, XViewType, YViewType, AViewType, false,            \
+              ETI_SPEC_AVAIL>::ger(space, trans, alpha, X, Y, A);            \
         }                                                                    \
       }                                                                      \
       KOKKOS_ROCBLAS_SAFE_CALL_IMPL(rocblas_set_stream(s.handle, NULL));     \

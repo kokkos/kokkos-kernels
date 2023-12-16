@@ -197,8 +197,8 @@ namespace Impl {
               reinterpret_cast<cuDoubleComplex*>(A.data()), LDA));             \
         } else {                                                               \
           /* cublasZgerc() + ~A_ll => call kokkos-kernels' implementation */   \
-          GER<EXEC_SPACE, XViewType, YViewType, AViewType, false, ETI_SPEC_AVAIL>::ger( \
-            space, trans, alpha, X, Y, A);                                     \
+          GER<EXEC_SPACE, XViewType, YViewType, AViewType, false,              \
+              ETI_SPEC_AVAIL>::ger(space, trans, alpha, X, Y, A);              \
         }                                                                      \
       }                                                                        \
       KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(s.handle, NULL));           \
@@ -268,8 +268,8 @@ namespace Impl {
               reinterpret_cast<cuComplex*>(A.data()), LDA));                   \
         } else {                                                               \
           /* cublasCgerc() + ~A_ll => call kokkos-kernels' implementation */   \
-          GER<EXEC_SPACE, XViewType, YViewType, AViewType, false, ETI_SPEC_AVAIL>::ger( \
-            space, trans, alpha, X, Y, A);                                     \
+          GER<EXEC_SPACE, XViewType, YViewType, AViewType, false,              \
+              ETI_SPEC_AVAIL>::ger(space, trans, alpha, X, Y, A);              \
         }                                                                      \
       }                                                                        \
       KOKKOS_CUBLAS_SAFE_CALL_IMPL(cublasSetStream(s.handle, NULL));           \
