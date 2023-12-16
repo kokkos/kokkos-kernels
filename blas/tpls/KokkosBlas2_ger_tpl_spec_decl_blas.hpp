@@ -149,8 +149,7 @@ namespace Impl {
                          Kokkos::MemoryTraits<Kokkos::Unmanaged>>            \
         AViewType;                                                           \
                                                                              \
-    static void ger(const EXEC_SPACE& /* space */                            \
-                    ,                                                        \
+    static void ger(const EXEC_SPACE& space,                                 \
                     const char trans[],                                      \
                     typename AViewType::const_value_type& alpha,             \
                     const XViewType& X, const YViewType& Y,                  \
@@ -219,8 +218,7 @@ namespace Impl {
                          Kokkos::MemoryTraits<Kokkos::Unmanaged>>            \
         AViewType;                                                           \
                                                                              \
-    static void ger(const EXEC_SPACE& /* space */                            \
-                    ,                                                        \
+    static void ger(const EXEC_SPACE&,                                       \
                     const char trans[],                                      \
                     typename AViewType::const_value_type& alpha,             \
                     const XViewType& X, const YViewType& Y,                  \
