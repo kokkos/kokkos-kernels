@@ -224,7 +224,7 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
                              const int nonConstConstCombinations,
                              const bool useAnalyticalResults,
                              const bool useHermitianOption) {
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if 1 // def HAVE_KOKKOSKERNELS_DEBUG
   std::cout << "Entering GerTester::test()... - - - - - - - - - - - - - - - - "
                "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - "
                "- - - - - - - - - "
@@ -297,7 +297,7 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
   // ********************************************************************
   view_stride_adapter<_ViewTypeExpected, true> h_vanilla(
       "vanilla = A + alpha * x * y^{t,h}", _M, _N);
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if 1 // def HAVE_KOKKOSKERNELS_DEBUG
 #if KOKKOS_VERSION < 40199
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
       "In Test_Blas2_ger.hpp, computing vanilla A with alpha type = %s\n",
@@ -380,7 +380,7 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
   EXPECT_ANY_THROW(KokkosBlas::ger("", alpha, x.d_view, y.d_view, A.d_view))
       << "Failed test: kk ger should have thrown an exception for mode ''";
 
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if 1 // def HAVE_KOKKOSKERNELS_DEBUG
   std::cout << "Leaving GerTester::test() - - - - - - - - - - - - - - - - - - "
                "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - "
                "- - - - - - - "
@@ -768,7 +768,7 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::
           }
         }
         if (errorHappened && (numErrorsRealAbs + numErrorsRealRel == 1)) {
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if 1 // def HAVE_KOKKOSKERNELS_DEBUG
           std::cout << "ERROR, i = " << i << ", j = " << j
                     << ": h_expected(i,j).real() = " << h_expected(i, j).real()
                     << ", h_vanilla(i,j).real() = " << h_vanilla(i, j).real()
@@ -802,7 +802,7 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::
           }
         }
         if (errorHappened && (numErrorsImagAbs + numErrorsImagRel == 1)) {
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if 1 // def HAVE_KOKKOSKERNELS_DEBUG
           std::cout << "ERROR, i = " << i << ", j = " << j
                     << ": h_expected(i,j).imag() = " << h_expected(i, j).imag()
                     << ", h_vanilla(i,j).imag() = " << h_vanilla(i, j).imag()
@@ -838,7 +838,7 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::
 
       int numErrorsReal(numErrorsRealAbs + numErrorsRealRel);
       if (numErrorsReal > 0) {
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if 1 // def HAVE_KOKKOSKERNELS_DEBUG
         std::cout << "WARNING" << msg.str() << std::endl;
 #endif
       }
@@ -869,7 +869,7 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::
 
       int numErrorsImag(numErrorsImagAbs + numErrorsImagRel);
       if (numErrorsImag > 0) {
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if 1 // def HAVE_KOKKOSKERNELS_DEBUG
         std::cout << "WARNING" << msg.str() << std::endl;
 #endif
       }
@@ -884,7 +884,7 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::
       for (int j(0); j < _N; ++j) {
         if (h_expected(i, j).real() != h_vanilla(i, j).real()) {
           if (numErrorsReal == 0) {
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if 1 // def HAVE_KOKKOSKERNELS_DEBUG
             std::cout << "ERROR, i = " << i << ", j = " << j
                       << ": h_expected(i,j).real() = "
                       << h_expected(i, j).real()
@@ -897,7 +897,7 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::
 
         if (h_expected(i, j).imag() != h_vanilla(i, j).imag()) {
           if (numErrorsImag == 0) {
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if 1 // def HAVE_KOKKOSKERNELS_DEBUG
             std::cout << "ERROR, i = " << i << ", j = " << j
                       << ": h_expected(i,j).imag() = "
                       << h_expected(i, j).imag()
@@ -977,7 +977,7 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::
           }
         }
         if (errorHappened && (numErrorsAbs + numErrorsRel == 1)) {
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if 1 // def HAVE_KOKKOSKERNELS_DEBUG
           std::cout << "ERROR, i = " << i << ", j = " << j
                     << ": h_expected(i,j) = " << h_expected(i, j)
                     << ", h_vanilla(i,j) = " << h_vanilla(i, j)
@@ -1011,7 +1011,7 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::
 
       int numErrors(numErrorsAbs + numErrorsRel);
       if (numErrors > 0) {
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if 1 // def HAVE_KOKKOSKERNELS_DEBUG
         std::cout << "WARNING" << msg.str() << std::endl;
 #endif
       }
@@ -1024,7 +1024,7 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::
       for (int j(0); j < _N; ++j) {
         if (h_expected(i, j) != h_vanilla(i, j)) {
           if (numErrors == 0) {
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if 1 // def HAVE_KOKKOSKERNELS_DEBUG
             std::cout << "ERROR, i = " << i << ", j = " << j
                       << ": h_expected(i,j) = " << h_expected(i, j)
                       << ", h_vanilla(i,j) = " << h_vanilla(i, j) << std::endl;
@@ -1096,7 +1096,7 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::
         }
       }
       if (errorHappened && (numErrorsRealAbs + numErrorsRealRel == 1)) {
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if 1 // def HAVE_KOKKOSKERNELS_DEBUG
         std::cout
             << "ERROR, i = " << i << ", j = " << j
             << ": h_expected(i,j).real() = " << h_expected(i, j).real()
@@ -1129,7 +1129,7 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::
         }
       }
       if (errorHappened && (numErrorsImagAbs + numErrorsImagRel == 1)) {
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if 1 // def HAVE_KOKKOSKERNELS_DEBUG
         std::cout
             << "ERROR, i = " << i << ", j = " << j
             << ": h_expected(i,j).imag() = " << h_expected(i, j).imag()
@@ -1140,7 +1140,7 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::
       }
     }  // for j
   }    // for i
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if 1 // def HAVE_KOKKOSKERNELS_DEBUG
   std::cout
       << "A is " << _M << " by " << _N << ", _A_is_lr = " << _A_is_lr
       << ", _A_is_ll = " << _A_is_ll
@@ -1218,7 +1218,7 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::
 
     int numErrorsReal(numErrorsRealAbs + numErrorsRealRel);
     if (numErrorsReal > 0) {
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if 1 // def HAVE_KOKKOSKERNELS_DEBUG
       std::cout << "WARNING" << msg.str() << std::endl;
 #endif
     }
@@ -1248,7 +1248,7 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::
 
     int numErrorsImag(numErrorsImagAbs + numErrorsImagRel);
     if (numErrorsImag > 0) {
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if 1 // def HAVE_KOKKOSKERNELS_DEBUG
       std::cout << "WARNING" << msg.str() << std::endl;
 #endif
     }
@@ -1302,7 +1302,7 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::
         }
       }
       if (errorHappened && (numErrorsAbs + numErrorsRel == 1)) {
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if 1 // def HAVE_KOKKOSKERNELS_DEBUG
         std::cout << "ERROR, i = " << i << ", j = " << j
                   << ": h_expected(i,j) = " << h_expected(i, j)
                   << ", h_A(i,j) = " << h_A(i, j)
@@ -1312,7 +1312,7 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::
       }
     }  // for j
   }    // for i
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if 1 // def HAVE_KOKKOSKERNELS_DEBUG
   std::cout << "A is " << _M << " by " << _N << ", _A_is_lr = " << _A_is_lr
             << ", _A_is_ll = " << _A_is_ll
             << ", alpha type = " << typeid(alpha).name()
@@ -1353,7 +1353,7 @@ GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::
 
     int numErrors(numErrorsAbs + numErrorsRel);
     if (numErrors > 0) {
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if 1 // def HAVE_KOKKOSKERNELS_DEBUG
       std::cout << "WARNING" << msg.str() << std::endl;
 #endif
     }
@@ -1371,7 +1371,7 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
                                        /*_ViewTypeA& A, const _HostViewTypeA& h_A,*/
                                        const _ViewTypeExpected& h_expected,
                                        const std::string& situation) {
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if 1 // def HAVE_KOKKOSKERNELS_DEBUG
 #if KOKKOS_VERSION < 40199
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
       "In Test_Blas2_ger.hpp, right before calling KokkosBlas::ger(): "
@@ -1390,13 +1390,13 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
   try {
     KokkosBlas::ger(mode.c_str(), alpha, x, y, /*A*/A.d_view);
   } catch (const std::exception& e) {
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if 1 // def HAVE_KOKKOSKERNELS_DEBUG
     std::cout << "In Test_Blas2_ger, '" << situation
               << "': caught exception, e.what() = " << e.what() << std::endl;
 #endif
     gotStdException = true;
   } catch (...) {
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if 1 // def HAVE_KOKKOSKERNELS_DEBUG
     std::cout << "In Test_Blas2_ger, '" << situation
               << "': caught unknown exception" << std::endl;
 #endif
@@ -1422,7 +1422,7 @@ void GerTester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
 }  // namespace Test
 
 template <class ScalarX, class ScalarY, class ScalarA, class Device>
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if 1 // def HAVE_KOKKOSKERNELS_DEBUG
 int test_ger(const std::string& caseName) {
 #if KOKKOS_VERSION < 40199
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
@@ -1460,7 +1460,7 @@ int test_ger(const std::string& /*caseName*/) {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&      \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if 1 // def HAVE_KOKKOSKERNELS_DEBUG
 #if KOKKOS_VERSION < 40199
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
       "+-----------------------------------------------------------------------"
@@ -1505,7 +1505,7 @@ int test_ger(const std::string& /*caseName*/) {
     }
   }
 
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if 1 // def HAVE_KOKKOSKERNELS_DEBUG
 #if KOKKOS_VERSION < 40199
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("Finished %s for LAYOUTLEFT\n",
                                 caseName.c_str());
@@ -1527,7 +1527,7 @@ int test_ger(const std::string& /*caseName*/) {
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&       \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if 1 // def HAVE_KOKKOSKERNELS_DEBUG
 #if KOKKOS_VERSION < 40199
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
       "+-----------------------------------------------------------------------"
@@ -1572,7 +1572,7 @@ int test_ger(const std::string& /*caseName*/) {
     }
   }
 
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if 1 // def HAVE_KOKKOSKERNELS_DEBUG
 #if KOKKOS_VERSION < 40199
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("Finished %s for LAYOUTRIGHT\n",
                                 caseName.c_str());
@@ -1593,7 +1593,7 @@ int test_ger(const std::string& /*caseName*/) {
 
 #if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if 1 // def HAVE_KOKKOSKERNELS_DEBUG
 #if KOKKOS_VERSION < 40199
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
       "+-----------------------------------------------------------------------"
@@ -1635,7 +1635,7 @@ int test_ger(const std::string& /*caseName*/) {
     }
   }
 
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if 1 // def HAVE_KOKKOSKERNELS_DEBUG
 #if KOKKOS_VERSION < 40199
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("Finished %s for LAYOUTSTRIDE\n",
                                 caseName.c_str());
@@ -1656,7 +1656,7 @@ int test_ger(const std::string& /*caseName*/) {
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) && \
     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if 1 // def HAVE_KOKKOSKERNELS_DEBUG
 #if KOKKOS_VERSION < 40199
   KOKKOS_IMPL_DO_NOT_USE_PRINTF(
       "+-----------------------------------------------------------------------"
@@ -1693,7 +1693,7 @@ int test_ger(const std::string& /*caseName*/) {
     tester.test(1024, 1024, 0);
   }
 
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if 1 // def HAVE_KOKKOSKERNELS_DEBUG
 #if KOKKOS_VERSION < 40199
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("Finished %s for MIXED LAYOUTS\n",
                                 caseName.c_str());
@@ -1712,7 +1712,7 @@ int test_ger(const std::string& /*caseName*/) {
 #endif
 #endif
 
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+#if 1 // def HAVE_KOKKOSKERNELS_DEBUG
 #if KOKKOS_VERSION < 40199
   KOKKOS_IMPL_DO_NOT_USE_PRINTF("Finished %s\n", caseName.c_str());
 #else
