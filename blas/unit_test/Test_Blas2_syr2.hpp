@@ -502,7 +502,7 @@ void Syr2Tester<
   if (_N <= 2) {
     for (int i(0); i < _M; ++i) {
       for (int j(0); j < _N; ++j) {
-        std::cout << "h_origA(" << i << "," << j << ")=" << A.h_view(i, j)
+        std::cout << "h_origA(" << i << "," << j << ") = " << A.h_view(i, j)
                   << std::endl;
       }
     }
@@ -825,8 +825,8 @@ Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::
   if (_N <= 2) {
     for (int i(0); i < _M; ++i) {
       for (int j(0); j < _N; ++j) {
-        std::cout << "h_exp(" << i << "," << j << ")=" << h_expected(i, j)
-                  << ", h_van(" << i << "," << j << ")=" << h_vanilla(i, j)
+        std::cout << "h_exp(" << i << "," << j << ") = " << h_expected(i, j)
+                  << ", h_van(" << i << "," << j << ") = " << h_vanilla(i, j)
                   << std::endl;
       }
     }
@@ -1054,8 +1054,8 @@ Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::
   if (_N <= 2) {
     for (int i(0); i < _M; ++i) {
       for (int j(0); j < _N; ++j) {
-        std::cout << "h_exp(" << i << "," << j << ")=" << h_expected(i, j)
-                  << ", h_van(" << i << "," << j << ")=" << h_vanilla(i, j)
+        std::cout << "h_exp(" << i << "," << j << ") = " << h_expected(i, j)
+                  << ", h_van(" << i << "," << j << ") = " << h_vanilla(i, j)
                   << std::endl;
       }
     }
@@ -1184,8 +1184,8 @@ Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::
   if (_N <= 2) {
     for (int i(0); i < _M; ++i) {
       for (int j(0); j < _N; ++j) {
-        std::cout << "h_exp(" << i << "," << j << ")=" << h_reference(i, j)
-                  << ", h_A(" << i << "," << j << ")=" << h_A(i, j)
+        std::cout << "h_exp(" << i << "," << j << ") = " << h_reference(i, j)
+                  << ", h_A(" << i << "," << j << ") = " << h_A(i, j)
                   << std::endl;
       }
     }
@@ -1411,8 +1411,8 @@ Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::
   if (_N <= 2) {
     for (int i(0); i < _M; ++i) {
       for (int j(0); j < _N; ++j) {
-        std::cout << "h_exp(" << i << "," << j << ")=" << h_reference(i, j)
-                  << ", h_A(" << i << "," << j << ")=" << h_A(i, j)
+        std::cout << "h_exp(" << i << "," << j << ") = " << h_reference(i, j)
+                  << ", h_A(" << i << "," << j << ") = " << h_A(i, j)
                   << std::endl;
       }
     }
