@@ -27,8 +27,8 @@
 //
 // Choices (01)-(03) are selected in the routines TEST_F() at the very
 // bottom of the file, when calling:
-// - either test_axpby_unificationr<...>(),
-// - or test_axpby_mv_unificationr<...>().
+// - either test_axpby_unification<...>(),
+// - or test_axpby_mv_unification<...>().
 //
 // Choices (04)-(05) are selected in routines:
 // - test_axpby_unification<...>(), when calling
@@ -99,7 +99,7 @@ void impl_test_axpby_unification_compare(
     Kokkos::fill_random(x.d_view, rand_pool, randStart, randEnd);
   }
   std::cout << "kdc a-001" << std::endl;
-  Kokkos::deep_copy(x.h_view, x.d_view);
+  Kokkos::deep_copy(x.h_base, x.d_base); // Aqui
 
   {
     ScalarTypeY randStart, randEnd;
@@ -113,7 +113,7 @@ void impl_test_axpby_unification_compare(
   }
   tY org_y("Org_Y", N);
   std::cout << "kdc a-003" << std::endl;
-  Kokkos::deep_copy(org_y.h_view, y.d_view);
+  Kokkos::deep_copy(org_y.h_base, y.d_base); // Aqui
 
   tScalarA valueA(Kokkos::ArithTraits<tScalarA>::zero());
   tScalarB valueB(Kokkos::ArithTraits<tScalarB>::zero());
@@ -136,7 +136,7 @@ void impl_test_axpby_unification_compare(
       KokkosBlas::axpby(a, x.d_view, b, y.d_view);
     } else {
       std::cout << "kdc a-005" << std::endl;
-      Kokkos::deep_copy(b.h_view, b.d_view);
+      Kokkos::deep_copy(b.h_base, b.d_base); // Aqui
       valueB = b.h_view(0);
       KokkosBlas::axpby(a, x.d_view, b.d_view, y.d_view);
     }
@@ -166,13 +166,13 @@ void impl_test_axpby_unification_compare(
       KokkosBlas::axpby(a, x.d_view, b, y.d_view);
     } else {
       std::cout << "kdc a-008" << std::endl;
-      Kokkos::deep_copy(b.h_view, b.d_view);
+      Kokkos::deep_copy(b.h_base, b.d_base); // Aqui
       valueB = b.h_view(0);
       KokkosBlas::axpby(a, x.d_view, b.d_view, y.d_view);
     }
   } else {
     std::cout << "kdc a-008" << std::endl;
-    Kokkos::deep_copy(a.h_view, a.d_view);
+    Kokkos::deep_copy(a.h_base, a.d_base); // Aqui
     valueA = a.h_view(0);
     if constexpr (std::is_same_v<tB, tScalarB>) {
       valueB = b;
@@ -190,14 +190,14 @@ void impl_test_axpby_unification_compare(
       KokkosBlas::axpby(a.d_view, x.d_view, b, y.d_view);
     } else {
       std::cout << "kdc a-010" << std::endl;
-      Kokkos::deep_copy(b.h_view, b.d_view);
+      Kokkos::deep_copy(b.h_base, b.d_base); // Aqui
       valueB = b.h_view(0);
       KokkosBlas::axpby(a.d_view, x.d_view, b.d_view, y.d_view);
     }
   }
 
   std::cout << "kdc a-011" << std::endl;
-  Kokkos::deep_copy(y.h_view, y.d_view);
+  Kokkos::deep_copy(y.h_base, y.d_base); // Aqui
 
   if (testWithNanY == false) {
     for (int i(0); i < N; ++i) {
@@ -238,6 +238,7 @@ void impl_test_axpby_unification_compare(
   }
 }
 
+#if 1 // Aqui
 template <class tScalarA, class tA, class tX, class tScalarB, class tB,
           class tY, class Device>
 void impl_test_axpby_mv_unification_compare(
@@ -261,7 +262,7 @@ void impl_test_axpby_mv_unification_compare(
     Kokkos::fill_random(x.d_view, rand_pool, randStart, randEnd);
   }
   std::cout << "kdc b-001" << std::endl;
-  Kokkos::deep_copy(x.h_view, x.d_view);
+  Kokkos::deep_copy(x.h_base, x.d_base); // Aqui
 
   {
     ScalarTypeY randStart, randEnd;
@@ -275,14 +276,14 @@ void impl_test_axpby_mv_unification_compare(
   }
   tY org_y("Org_Y", N, K);
   std::cout << "kdc b-003" << std::endl;
-  Kokkos::deep_copy(org_y.h_view, y.d_view);
+  Kokkos::deep_copy(org_y.h_base, y.d_base); // Aqui
 
   // Cannot use "if constexpr (isRank1<tA>()) {" because rank-1 variables
   // are passed to current routine with view_stride_adapter<...>
   bool constexpr aIsRank1 = !std::is_same_v<tA, tScalarA> && !isRank0<tA>();
   if constexpr (aIsRank1) {
     std::cout << "kdc b-004" << std::endl;
-    Kokkos::deep_copy(a.h_view, a.d_view);
+    Kokkos::deep_copy(a.h_base, a.d_base); // Aqui
   }
 
   // Cannot use "if constexpr (isRank1<tB>()) {" because rank-1 variables
@@ -290,7 +291,7 @@ void impl_test_axpby_mv_unification_compare(
   bool constexpr bIsRank1 = !std::is_same_v<tB, tScalarB> && !isRank0<tB>();
   if constexpr (bIsRank1) {
     std::cout << "kdc b-005" << std::endl;
-    Kokkos::deep_copy(b.h_view, b.d_view);
+    Kokkos::deep_copy(b.h_base, b.d_base); // Aqui
   }
 
   tScalarA valueA(Kokkos::ArithTraits<tScalarA>::zero());
@@ -366,7 +367,7 @@ void impl_test_axpby_mv_unification_compare(
   }
 
   std::cout << "kdc b-010" << std::endl;
-  Kokkos::deep_copy(y.h_view, y.d_view);
+  Kokkos::deep_copy(y.h_base, y.d_base); // Aqui
 
   if (testWithNanY == false) {
     for (int i(0); i < N; ++i) {
@@ -489,6 +490,7 @@ void impl_test_axpby_mv_unification_compare(
     }
   }
 }
+#endif // Aqui
 
 template <class tScalarA, class tLayoutA, class tScalarX, class tLayoutX,
           class tScalarB, class tLayoutB, class tScalarY, class tLayoutY,
@@ -1081,6 +1083,7 @@ void impl_test_axpby_unification(int const N) {
   }
 }
 
+#if 1 // Aqui
 template <class tScalarA, class tLayoutA, class tScalarX, class tLayoutX,
           class tScalarB, class tLayoutB, class tScalarY, class tLayoutY,
           class Device>
@@ -1238,10 +1241,10 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
         a = valueA;
         if constexpr (std::is_same_v<tLayoutB, Kokkos::LayoutStride>) {
           for (int k(0); k < K; ++k) {
-            b.h_view[k] = valueB + k;
+            b.h_view[k] = valueB + k; // Aqui
           }
           std::cout << "kdc mvu-003" << std::endl;
-          Kokkos::deep_copy(b.d_view, b.h_view);
+          Kokkos::deep_copy(b.d_base, b.h_base); // Aqui
         } else {
           for (int k(0); k < K; ++k) {
             b.h_base[k] = valueB + k;
@@ -1305,10 +1308,10 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
         a = valueA;
         if constexpr (std::is_same_v<tLayoutB, Kokkos::LayoutStride>) {
           for (int k(0); k < K; ++k) {
-            b.h_view[k] = valueB + k;
+            b.h_view[k] = valueB + k; // Aqui
           }
           std::cout << "kdc mvu-006" << std::endl;
-          Kokkos::deep_copy(b.d_view, b.h_view);
+          Kokkos::deep_copy(b.d_base, b.h_base); // Aqui
         } else {
           for (int k(0); k < K; ++k) {
             b.h_base[k] = valueB + k;
@@ -1455,10 +1458,10 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
           Kokkos::deep_copy(a, valueA);
           if constexpr (std::is_same_v<tLayoutB, Kokkos::LayoutStride>) {
             for (int k(0); k < K; ++k) {
-              b.h_view[k] = valueB + k;
+              b.h_view[k] = valueB + k; // Aqui
             }
             std::cout << "kdc mvu-014" << std::endl;
-            Kokkos::deep_copy(b.d_view, b.h_view);
+            Kokkos::deep_copy(b.d_base, b.h_base); // Aqui
           } else {
             for (int k(0); k < K; ++k) {
               b.h_base[k] = valueB + k;
@@ -1534,10 +1537,10 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
           Kokkos::deep_copy(a, valueA);
           if constexpr (std::is_same_v<tLayoutB, Kokkos::LayoutStride>) {
             for (int k(0); k < K; ++k) {
-              b.h_view[k] = valueB + k;
+              b.h_view[k] = valueB + k; // Aqui
             }
             std::cout << "kdc mvu-019" << std::endl;
-            Kokkos::deep_copy(b.d_view, b.h_view);
+            Kokkos::deep_copy(b.d_base, b.h_base); // Aqui
           } else {
             for (int k(0); k < K; ++k) {
               b.h_base[k] = valueB + k;
@@ -1678,10 +1681,10 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
         Kokkos::deep_copy(a.d_base, valueA);
         if constexpr (std::is_same_v<tLayoutB, Kokkos::LayoutStride>) {
           for (int k(0); k < K; ++k) {
-            b.h_view[k] = valueB + k;
+            b.h_view[k] = valueB + k; // Aqui
           }
           std::cout << "kdc mvu-027" << std::endl;
-          Kokkos::deep_copy(b.d_view, b.h_view);
+          Kokkos::deep_copy(b.d_base, b.h_base); // Aqui
         } else {
           for (int k(0); k < K; ++k) {
             b.h_base[k] = valueB + k;
@@ -1750,10 +1753,10 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
         Kokkos::deep_copy(a.d_base, valueA);
         if constexpr (std::is_same_v<tLayoutB, Kokkos::LayoutStride>) {
           for (int k(0); k < K; ++k) {
-            b.h_view[k] = valueB + k;
+            b.h_view[k] = valueB + k; // Aqui
           }
           std::cout << "kdc mvu-032" << std::endl;
-          Kokkos::deep_copy(b.d_view, b.h_view);
+          Kokkos::deep_copy(b.d_base, b.h_base); // Aqui
         } else {
           for (int k(0); k < K; ++k) {
             b.h_base[k] = valueB + k;
@@ -1786,10 +1789,10 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
 
         if constexpr (std::is_same_v<tLayoutA, Kokkos::LayoutStride>) {
           for (int k(0); k < K; ++k) {
-            a.h_view[k] = valueA + k;
+            a.h_view[k] = valueA + k; // Aqui
           }
           std::cout << "kdc mvu-034" << std::endl;
-          Kokkos::deep_copy(a.d_view, a.h_view);
+          Kokkos::deep_copy(a.d_base, a.h_base); // Aqui
         } else {
           for (int k(0); k < K; ++k) {
             a.h_base[k] = valueA + k;
@@ -1833,10 +1836,10 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
 
           if constexpr (std::is_same_v<tLayoutA, Kokkos::LayoutStride>) {
             for (int k(0); k < K; ++k) {
-              a.h_view[k] = valueA + k;
+              a.h_view[k] = valueA + k; // Aqui
             }
             std::cout << "kdc mvu-036" << std::endl;
-            Kokkos::deep_copy(a.d_view, a.h_view);
+            Kokkos::deep_copy(a.d_base, a.h_base); // Aqui
           } else {
             for (int k(0); k < K; ++k) {
               a.h_base[k] = valueA + k;
@@ -1879,10 +1882,10 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
 
         if constexpr (std::is_same_v<tLayoutA, Kokkos::LayoutStride>) {
           for (int k(0); k < K; ++k) {
-            a.h_view[k] = valueA + k;
+            a.h_view[k] = valueA + k; // Aqui
           }
           std::cout << "kdc mvu-039" << std::endl;
-          Kokkos::deep_copy(a.d_view, a.h_view);
+          Kokkos::deep_copy(a.d_base, a.h_base); // Aqui
         } else {
           for (int k(0); k < K; ++k) {
             a.h_base[k] = valueA + k;
@@ -1925,10 +1928,10 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
 
         if constexpr (std::is_same_v<tLayoutA, Kokkos::LayoutStride>) {
           for (int k(0); k < K; ++k) {
-            a.h_view[k] = valueA + k;
+            a.h_view[k] = valueA + k; // Aqui
           }
           std::cout << "kdc mvu-042" << std::endl;
-          Kokkos::deep_copy(a.d_view, a.h_view);
+          Kokkos::deep_copy(a.d_base, a.h_base); // Aqui
         } else {
           for (int k(0); k < K; ++k) {
             a.h_base[k] = valueA + k;
@@ -1939,10 +1942,10 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
 
         if constexpr (std::is_same_v<tLayoutB, Kokkos::LayoutStride>) {
           for (int k(0); k < K; ++k) {
-            b.h_view[k] = valueB + k;
+            b.h_view[k] = valueB + k; // Aqui
           }
           std::cout << "kdc mvu-044" << std::endl;
-          Kokkos::deep_copy(b.d_view, b.h_view);
+          Kokkos::deep_copy(b.d_base, b.h_base); // Aqui
         } else {
           for (int k(0); k < K; ++k) {
             b.h_base[k] = valueB + k;
@@ -1975,10 +1978,10 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
 
         if constexpr (std::is_same_v<tLayoutA, Kokkos::LayoutStride>) {
           for (int k(0); k < K; ++k) {
-            a.h_view[k] = valueA + k;
+            a.h_view[k] = valueA + k; // Aqui
           }
           std::cout << "kdc mvu-046" << std::endl;
-          Kokkos::deep_copy(a.d_view, a.h_view);
+          Kokkos::deep_copy(a.d_base, a.h_base); // Aqui
         } else {
           for (int k(0); k < K; ++k) {
             a.h_base[k] = valueA + k;
@@ -2020,10 +2023,10 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
 
         if constexpr (std::is_same_v<tLayoutA, Kokkos::LayoutStride>) {
           for (int k(0); k < K; ++k) {
-            a.h_view[k] = valueA + k;
+            a.h_view[k] = valueA + k; // Aqui
           }
           std::cout << "kdc mvu-049" << std::endl;
-          Kokkos::deep_copy(a.d_view, a.h_view);
+          Kokkos::deep_copy(a.d_base, a.h_base); // Aqui
         } else {
           for (int k(0); k < K; ++k) {
             a.h_base[k] = valueA + k;
@@ -2034,10 +2037,10 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
 
         if constexpr (std::is_same_v<tLayoutB, Kokkos::LayoutStride>) {
           for (int k(0); k < K; ++k) {
-            b.h_view[k] = valueB + k;
+            b.h_view[k] = valueB + k; // Aqui
           }
           std::cout << "kdc mvu-051" << std::endl;
-          Kokkos::deep_copy(b.d_view, b.h_view);
+          Kokkos::deep_copy(b.d_base, b.h_base); // Aqui
         } else {
           for (int k(0); k < K; ++k) {
             b.h_base[k] = valueB + k;
@@ -2179,10 +2182,10 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
         Kokkos::deep_copy(a.d_base, valueA);
         if constexpr (std::is_same_v<tLayoutB, Kokkos::LayoutStride>) {
           for (int k(0); k < K; ++k) {
-            b.h_view[k] = valueB + k;
+            b.h_view[k] = valueB + k; // Aqui
           }
           std::cout << "kdc mvu-059" << std::endl;
-          Kokkos::deep_copy(b.d_view, b.h_view);
+          Kokkos::deep_copy(b.d_base, b.h_base); // Aqui
         } else {
           for (int k(0); k < K; ++k) {
             b.h_base[k] = valueB + k;
@@ -2251,10 +2254,10 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
         Kokkos::deep_copy(a.d_base, valueA);
         if constexpr (std::is_same_v<tLayoutB, Kokkos::LayoutStride>) {
           for (int k(0); k < K; ++k) {
-            b.h_view[k] = valueB + k;
+            b.h_view[k] = valueB + k; // Aqui
           }
           std::cout << "kdc mvu-064" << std::endl;
-          Kokkos::deep_copy(b.d_view, b.h_view);
+          Kokkos::deep_copy(b.d_base, b.h_base); // Aqui
         } else {
           for (int k(0); k < K; ++k) {
             b.h_base[k] = valueB + k;
@@ -2287,10 +2290,10 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
 
         if constexpr (std::is_same_v<tLayoutA, Kokkos::LayoutStride>) {
           for (int k(0); k < K; ++k) {
-            a.h_view[k] = valueA + k;
+            a.h_view[k] = valueA + k; // Aqui
           }
           std::cout << "kdc mvu-066" << std::endl;
-          Kokkos::deep_copy(a.d_view, a.h_view);
+          Kokkos::deep_copy(a.d_base, a.h_base); // Aqui
         } else {
           for (int k(0); k < K; ++k) {
             a.h_base[k] = valueA + k;
@@ -2334,10 +2337,10 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
 
           if constexpr (std::is_same_v<tLayoutA, Kokkos::LayoutStride>) {
             for (int k(0); k < K; ++k) {
-              a.h_view[k] = valueA + k;
+              a.h_view[k] = valueA + k; // Aqui
             }
             std::cout << "kdc mvu-068" << std::endl;
-            Kokkos::deep_copy(a.d_view, a.h_view);
+            Kokkos::deep_copy(a.d_base, a.h_base); // Aqui
           } else {
             for (int k(0); k < K; ++k) {
               a.h_base[k] = valueA + k;
@@ -2380,10 +2383,10 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
 
         if constexpr (std::is_same_v<tLayoutA, Kokkos::LayoutStride>) {
           for (int k(0); k < K; ++k) {
-            a.h_view[k] = valueA + k;
+            a.h_view[k] = valueA + k; // Aqui
           }
           std::cout << "kdc mvu-071" << std::endl;
-          Kokkos::deep_copy(a.d_view, a.h_view);
+          Kokkos::deep_copy(a.d_base, a.h_base); // Aqui
         } else {
           for (int k(0); k < K; ++k) {
             a.h_base[k] = valueA + k;
@@ -2426,10 +2429,10 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
 
         if constexpr (std::is_same_v<tLayoutA, Kokkos::LayoutStride>) {
           for (int k(0); k < K; ++k) {
-            a.h_view[k] = valueA + k;
+            a.h_view[k] = valueA + k; // Aqui
           }
           std::cout << "kdc mvu-074" << std::endl;
-          Kokkos::deep_copy(a.d_view, a.h_view);
+          Kokkos::deep_copy(a.d_base, a.h_base); // Aqui
         } else {
           for (int k(0); k < K; ++k) {
             a.h_base[k] = valueA + k;
@@ -2440,10 +2443,10 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
 
         if constexpr (std::is_same_v<tLayoutB, Kokkos::LayoutStride>) {
           for (int k(0); k < K; ++k) {
-            b.h_view[k] = valueB + k;
+            b.h_view[k] = valueB + k; // Aqui
           }
           std::cout << "kdc mvu-076" << std::endl;
-          Kokkos::deep_copy(b.d_view, b.h_view);
+          Kokkos::deep_copy(b.d_base, b.h_base); // Aqui
         } else {
           for (int k(0); k < K; ++k) {
             b.h_base[k] = valueB + k;
@@ -2477,10 +2480,10 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
 
         if constexpr (std::is_same_v<tLayoutA, Kokkos::LayoutStride>) {
           for (int k(0); k < K; ++k) {
-            a.h_view[k] = valueA + k;
+            a.h_view[k] = valueA + k; // Aqui
           }
           std::cout << "kdc mvu-078" << std::endl;
-          Kokkos::deep_copy(a.d_view, a.h_view);
+          Kokkos::deep_copy(a.d_base, a.h_base); // Aqui
         } else {
           for (int k(0); k < K; ++k) {
             a.h_base[k] = valueA + k;
@@ -2522,10 +2525,10 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
 
         if constexpr (std::is_same_v<tLayoutA, Kokkos::LayoutStride>) {
           for (int k(0); k < K; ++k) {
-            a.h_view[k] = valueA + k;
+            a.h_view[k] = valueA + k; // Aqui
           }
           std::cout << "kdc mvu-081" << std::endl;
-          Kokkos::deep_copy(a.d_view, a.h_view);
+          Kokkos::deep_copy(a.d_base, a.h_base); // Aqui
         } else {
           for (int k(0); k < K; ++k) {
             a.h_base[k] = valueA + k;
@@ -2536,10 +2539,10 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
 
         if constexpr (std::is_same_v<tLayoutB, Kokkos::LayoutStride>) {
           for (int k(0); k < K; ++k) {
-            b.h_view[k] = valueB + k;
+            b.h_view[k] = valueB + k; // Aqui
           }
           std::cout << "kdc mvu-083" << std::endl;
-          Kokkos::deep_copy(b.d_view, b.h_view);
+          Kokkos::deep_copy(b.d_base, b.h_base); // Aqui
         } else {
           for (int k(0); k < K; ++k) {
             b.h_base[k] = valueB + k;
@@ -2560,15 +2563,18 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // std::cout << "Leaving impl_test_axpby_mv_unification()" << std::endl;
   // std::cout << "=========================================" << std::endl;
 }
+#endif // Aqui
 
 }  // namespace Test
 
 template <class tScalarA, class tScalarX, class tScalarB, class tScalarY,
           class Device>
 int test_axpby_unification() {
+#if 1 // Aqui
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&      \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  std::cout << "Calling impl_test_axpby_unif(), L-LLL" << std::endl;
   Test::impl_test_axpby_unification<
       tScalarA, Kokkos::LayoutLeft, tScalarX, Kokkos::LayoutLeft, tScalarB,
       Kokkos::LayoutLeft, tScalarY, Kokkos::LayoutLeft, Device>(14);
@@ -2577,13 +2583,16 @@ int test_axpby_unification() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&       \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  std::cout << "Calling impl_test_axpby_unif(), L-RRR" << std::endl;
   Test::impl_test_axpby_unification<
       tScalarA, Kokkos::LayoutRight, tScalarX, Kokkos::LayoutRight, tScalarB,
       Kokkos::LayoutRight, tScalarY, Kokkos::LayoutRight, Device>(14);
 #endif
+#endif // Aqui
 
 #if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+  std::cout << "Calling impl_test_axpby_unif(), L-SSS" << std::endl;
   Test::impl_test_axpby_unification<
       tScalarA, Kokkos::LayoutStride, tScalarX, Kokkos::LayoutStride, tScalarB,
       Kokkos::LayoutStride, tScalarY, Kokkos::LayoutStride, Device>(14);
@@ -2591,18 +2600,22 @@ int test_axpby_unification() {
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) && \
     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
+  std::cout << "Calling impl_test_axpby_unif(), L-SLL" << std::endl;
   Test::impl_test_axpby_unification<
       tScalarA, Kokkos::LayoutStride, tScalarX, Kokkos::LayoutStride, tScalarB,
       Kokkos::LayoutLeft, tScalarY, Kokkos::LayoutLeft, Device>(14);
 
+  std::cout << "Calling impl_test_axpby_unif(), L-LSS" << std::endl;
   Test::impl_test_axpby_unification<
       tScalarA, Kokkos::LayoutLeft, tScalarX, Kokkos::LayoutLeft, tScalarB,
       Kokkos::LayoutStride, tScalarY, Kokkos::LayoutStride, Device>(14);
 
+  std::cout << "Calling impl_test_axpby_unif(), L-SRS" << std::endl;
   Test::impl_test_axpby_unification<
       tScalarA, Kokkos::LayoutLeft, tScalarX, Kokkos::LayoutStride, tScalarB,
       Kokkos::LayoutRight, tScalarY, Kokkos::LayoutStride, Device>(14);
 
+  std::cout << "Calling impl_test_axpby_unif(), L-LSR" << std::endl;
   Test::impl_test_axpby_unification<
       tScalarA, Kokkos::LayoutStride, tScalarX, Kokkos::LayoutLeft, tScalarB,
       Kokkos::LayoutStride, tScalarY, Kokkos::LayoutRight, Device>(14);
@@ -2610,6 +2623,7 @@ int test_axpby_unification() {
   return 1;
 }
 
+#if 1 // Aqui
 template <class tScalarA, class tScalarX, class tScalarB, class tScalarY,
           class Device>
 int test_axpby_mv_unification() {
@@ -2662,6 +2676,7 @@ int test_axpby_mv_unification() {
 #endif
   return 1;
 }
+#endif // Aqui
 
 #if defined(KOKKOSKERNELS_INST_FLOAT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && \
@@ -2671,11 +2686,13 @@ TEST_F(TestCategory, axpby_unification_float) {
   test_axpby_unification<float, float, float, float, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
+#if 1 // Aqui
 TEST_F(TestCategory, axpby_mv_unification_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::axpby_mv_unification_float");
   test_axpby_mv_unification<float, float, float, float, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
+#endif
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE) || \
@@ -2685,12 +2702,14 @@ TEST_F(TestCategory, axpby_unification_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::axpby_unification_double");
   test_axpby_unification<double, double, double, double, TestDevice>();
 }
+#if 1 // Aqui
 TEST_F(TestCategory, axpby_mv_unification_double) {
   Kokkos::Profiling::pushRegion(
       "KokkosBlas::Test::axpby_mv_unification_double");
   test_axpby_mv_unification<double, double, double, double, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
+#endif
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || \
@@ -2704,6 +2723,7 @@ TEST_F(TestCategory, axpby_unification_complex_double) {
                          TestDevice>();
   Kokkos::Profiling::popRegion();
 }
+#if 1 // Aqui
 TEST_F(TestCategory, axpby_mv_unification_complex_double) {
   Kokkos::Profiling::pushRegion(
       "KokkosBlas::Test::axpby_mv_unification_complex_double");
@@ -2712,6 +2732,7 @@ TEST_F(TestCategory, axpby_mv_unification_complex_double) {
                             TestDevice>();
   Kokkos::Profiling::popRegion();
 }
+#endif
 #endif
 
 #if defined(KOKKOSKERNELS_INST_INT) ||   \
@@ -2722,11 +2743,13 @@ TEST_F(TestCategory, axpby_unification_int) {
   test_axpby_unification<int, int, int, int, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
+#if 1 // Aqui
 TEST_F(TestCategory, axpby_mv_unification_int) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::axpby_mv_unification_int");
   test_axpby_mv_unification<int, int, int, int, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
+#endif
 #endif
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) && \
@@ -2737,10 +2760,12 @@ TEST_F(TestCategory, axpby_unification_double_int) {
   test_axpby_unification<double, double, int, int, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
+#if 1 // Aqui
 TEST_F(TestCategory, axpby_double_mv_unification_int) {
   Kokkos::Profiling::pushRegion(
       "KokkosBlas::Test::axpby_mv_unification_double_int");
   test_axpby_mv_unification<double, double, int, int, TestDevice>();
   Kokkos::Profiling::popRegion();
 }
+#endif
 #endif
