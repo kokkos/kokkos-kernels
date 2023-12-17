@@ -515,7 +515,9 @@ void impl_test_axpby_unification(int const N) {
   // ************************************************************
   // Case 01/16: Ascalar + Bscalar
   // ************************************************************
-  // std::cout << "Starting case 01/16" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 01/16" << std::endl;
+#endif
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
