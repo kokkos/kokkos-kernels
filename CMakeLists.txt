@@ -156,8 +156,15 @@ ELSE()
   KOKKOSKERNELS_ADD_OPTION_AND_DEFINE(
     LINALG_OPT_LEVEL
     KOKKOSLINALG_OPT_LEVEL
-    "Optimization level for KokkosKernels computational kernels: a nonnegative integer.  Higher levels result in better performance that is more uniform for corner cases, but increase build time and library size.  The default value is 1, which should give performance within ten percent of optimal on most platforms, for most problems. Default: 1"
+    "DEPRECATED. Optimization level for KokkosKernels computational kernels: a nonnegative integer.  Higher levels result in better performance that is more uniform for corner cases, but increase build time and library size.  The default value is 1, which should give performance within ten percent of optimal on most platforms, for most problems. Default: 1"
     "1")
+
+  if (KokkosKernels_LINALG_OPT_LEVEL AND NOT KokkosKernels_LINALG_OPT_LEVEL STREQUAL "1")
+   message(WARNING "KokkosKernels_LINALG_OPT_LEVEL is deprecated!")
+ endif()
+  if(KokkosKernels_KOKKOSLINALG_OPT_LEVEL AND NOT KokkosKernels_KOKKOSLINALG_OPT_LEVEL STREQUAL "1")
+    message(WARNING "KokkosKernels_KOKKOSLINALG_OPT_LEVEL is deprecated!")
+  endif()
 
   # Enable experimental features of KokkosKernels if set at configure
   # time. Default is no.
