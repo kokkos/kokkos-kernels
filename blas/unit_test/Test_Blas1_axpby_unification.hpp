@@ -27,8 +27,8 @@
 //
 // Choices (01)-(03) are selected in the routines TEST_F() at the very
 // bottom of the file, when calling:
-// - either test_axpby_unificationr<...>(),
-// - or test_axpby_mv_unificationr<...>().
+// - either test_axpby_unification<...>(),
+// - or test_axpby_mv_unification<...>().
 //
 // Choices (04)-(05) are selected in routines:
 // - test_axpby_unification<...>(), when calling
@@ -98,7 +98,7 @@ void impl_test_axpby_unification_compare(
     Test::getRandomBounds(max_val, randStart, randEnd);
     Kokkos::fill_random(x.d_view, rand_pool, randStart, randEnd);
   }
-  Kokkos::deep_copy(x.h_view, x.d_view);
+  Kokkos::deep_copy(x.h_base, x.d_base);
 
   {
     ScalarTypeY randStart, randEnd;
@@ -110,7 +110,7 @@ void impl_test_axpby_unification_compare(
     }
   }
   tY org_y("Org_Y", N);
-  Kokkos::deep_copy(org_y.h_view, y.d_view);
+  Kokkos::deep_copy(org_y.h_base, y.d_base);
 
   tScalarA valueA(Kokkos::ArithTraits<tScalarA>::zero());
   tScalarB valueB(Kokkos::ArithTraits<tScalarB>::zero());
@@ -131,7 +131,7 @@ void impl_test_axpby_unification_compare(
       }
       KokkosBlas::axpby(a, x.d_view, b, y.d_view);
     } else {
-      Kokkos::deep_copy(b.h_view, b.d_view);
+      Kokkos::deep_copy(b.h_base, b.d_base);
       valueB = b.h_view(0);
       KokkosBlas::axpby(a, x.d_view, b.d_view, y.d_view);
     }
@@ -158,12 +158,12 @@ void impl_test_axpby_unification_compare(
       }
       KokkosBlas::axpby(a, x.d_view, b, y.d_view);
     } else {
-      Kokkos::deep_copy(b.h_view, b.d_view);
+      Kokkos::deep_copy(b.h_base, b.d_base);
       valueB = b.h_view(0);
       KokkosBlas::axpby(a, x.d_view, b.d_view, y.d_view);
     }
   } else {
-    Kokkos::deep_copy(a.h_view, a.d_view);
+    Kokkos::deep_copy(a.h_base, a.d_base);
     valueA = a.h_view(0);
     if constexpr (std::is_same_v<tB, tScalarB>) {
       valueB = b;
@@ -179,13 +179,13 @@ void impl_test_axpby_unification_compare(
       }
       KokkosBlas::axpby(a.d_view, x.d_view, b, y.d_view);
     } else {
-      Kokkos::deep_copy(b.h_view, b.d_view);
+      Kokkos::deep_copy(b.h_base, b.d_base);
       valueB = b.h_view(0);
       KokkosBlas::axpby(a.d_view, x.d_view, b.d_view, y.d_view);
     }
   }
 
-  Kokkos::deep_copy(y.h_view, y.d_view);
+  Kokkos::deep_copy(y.h_base, y.d_base);
 
   if (testWithNanY == false) {
     for (int i(0); i < N; ++i) {
@@ -248,7 +248,7 @@ void impl_test_axpby_mv_unification_compare(
     Test::getRandomBounds(max_val, randStart, randEnd);
     Kokkos::fill_random(x.d_view, rand_pool, randStart, randEnd);
   }
-  Kokkos::deep_copy(x.h_view, x.d_view);
+  Kokkos::deep_copy(x.h_base, x.d_base);
 
   {
     ScalarTypeY randStart, randEnd;
@@ -260,20 +260,20 @@ void impl_test_axpby_mv_unification_compare(
     }
   }
   tY org_y("Org_Y", N, K);
-  Kokkos::deep_copy(org_y.h_view, y.d_view);
+  Kokkos::deep_copy(org_y.h_base, y.d_base);
 
   // Cannot use "if constexpr (isRank1<tA>()) {" because rank-1 variables
   // are passed to current routine with view_stride_adapter<...>
   bool constexpr aIsRank1 = !std::is_same_v<tA, tScalarA> && !isRank0<tA>();
   if constexpr (aIsRank1) {
-    Kokkos::deep_copy(a.h_view, a.d_view);
+    Kokkos::deep_copy(a.h_base, a.d_base);
   }
 
   // Cannot use "if constexpr (isRank1<tB>()) {" because rank-1 variables
   // are passed to current routine with view_stride_adapter<...>
   bool constexpr bIsRank1 = !std::is_same_v<tB, tScalarB> && !isRank0<tB>();
   if constexpr (bIsRank1) {
-    Kokkos::deep_copy(b.h_view, b.d_view);
+    Kokkos::deep_copy(b.h_base, b.d_base);
   }
 
   tScalarA valueA(Kokkos::ArithTraits<tScalarA>::zero());
@@ -344,7 +344,7 @@ void impl_test_axpby_mv_unification_compare(
     }
   }
 
-  Kokkos::deep_copy(y.h_view, y.d_view);
+  Kokkos::deep_copy(y.h_base, y.d_base);
 
   if (testWithNanY == false) {
     for (int i(0); i < N; ++i) {
@@ -503,7 +503,9 @@ void impl_test_axpby_unification(int const N) {
   // ************************************************************
   // Case 01/16: Ascalar + Bscalar
   // ************************************************************
-  // std::cout << "Starting case 01/16" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 01/16" << std::endl;
+#endif
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -533,7 +535,9 @@ void impl_test_axpby_unification(int const N) {
   // ************************************************************
   // Case 02/16: Ascalar + Br0
   // ************************************************************
-  // std::cout << "Starting case 02/16" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 02/16" << std::endl;
+#endif
   if constexpr (std::is_same_v<tLayoutB, Kokkos::LayoutStride>) {
     // Avoid the test, due to compilation errors
     // ViewTypeBr0 b;
@@ -570,7 +574,9 @@ void impl_test_axpby_unification(int const N) {
   // ************************************************************
   // Case 03/16: Ascalar + Br1s_1
   // ************************************************************
-  // std::cout << "Starting case 03/16" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 03/16" << std::endl;
+#endif
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -601,7 +607,9 @@ void impl_test_axpby_unification(int const N) {
   // ************************************************************
   // Case 04/16: Ascalar + Br1d
   // ************************************************************
-  // std::cout << "Starting case 04/16" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 04/16" << std::endl;
+#endif
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -631,7 +639,9 @@ void impl_test_axpby_unification(int const N) {
   // ************************************************************
   // Case 05/16: Ar0 + Bscalar
   // ************************************************************
-  // std::cout << "Starting case 05/16" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 05/16" << std::endl;
+#endif
   if constexpr (std::is_same_v<tLayoutA, Kokkos::LayoutStride>) {
     // Avoid the test, due to compilation errors
   } else {
@@ -665,7 +675,9 @@ void impl_test_axpby_unification(int const N) {
   // ************************************************************
   // Case 06/16: Ar0 + Br0
   // ************************************************************
-  // std::cout << "Starting case 06/16" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 06/16" << std::endl;
+#endif
   if constexpr ((std::is_same_v<tLayoutA, Kokkos::LayoutStride>) ||
                 (std::is_same_v<tLayoutB, Kokkos::LayoutStride>)) {
     // Avoid the test, due to compilation errors
@@ -700,7 +712,9 @@ void impl_test_axpby_unification(int const N) {
   // ************************************************************
   // Case 07/16: Ar0 + Br1s_1
   // ************************************************************
-  // std::cout << "Starting case 07/16" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 07/16" << std::endl;
+#endif
   if constexpr (std::is_same_v<tLayoutA, Kokkos::LayoutStride>) {
     // Avoid the test, due to compilation errors
   } else {
@@ -736,7 +750,9 @@ void impl_test_axpby_unification(int const N) {
   // ************************************************************
   // Case 08/16: Ar0 + Br1d
   // ************************************************************
-  // std::cout << "Starting case 08/16" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 08/16" << std::endl;
+#endif
   if constexpr (std::is_same_v<tLayoutA, Kokkos::LayoutStride>) {
     // Avoid the test, due to compilation errors
   } else {
@@ -771,7 +787,9 @@ void impl_test_axpby_unification(int const N) {
   // ************************************************************
   // Case 09/16: Ar1s_1 + Bscalar
   // ************************************************************
-  // std::cout << "Starting case 09/16" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 09/16" << std::endl;
+#endif
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -803,7 +821,9 @@ void impl_test_axpby_unification(int const N) {
   // ************************************************************
   // Case 10/16: Ar1s_1 + Br0
   // ************************************************************
-  // std::cout << "Starting case 10/16" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 10/16" << std::endl;
+#endif
   if constexpr (std::is_same_v<tLayoutB, Kokkos::LayoutStride>) {
     // Avoid the test, due to compilation errors
   } else {
@@ -839,7 +859,9 @@ void impl_test_axpby_unification(int const N) {
   // ************************************************************
   // Case 11/16: Ar1s_1 + Br1s_1
   // ************************************************************
-  // std::cout << "Starting case 11/16" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 11/16" << std::endl;
+#endif
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -872,7 +894,9 @@ void impl_test_axpby_unification(int const N) {
   // ************************************************************
   // Case 12/16: Ar1s_1 + Br1d
   // ************************************************************
-  // std::cout << "Starting case 12/16" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 12/16" << std::endl;
+#endif
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -904,7 +928,9 @@ void impl_test_axpby_unification(int const N) {
   // ************************************************************
   // Case 13/16: Ar1d + Bscalar
   // ************************************************************
-  // std::cout << "Starting case 13/16" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 13/16" << std::endl;
+#endif
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -936,7 +962,9 @@ void impl_test_axpby_unification(int const N) {
   // ************************************************************
   // Case 14/16: Ar1d + Br0
   // ************************************************************
-  // std::cout << "Starting case 14/16" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 14/16" << std::endl;
+#endif
   if constexpr (std::is_same_v<tLayoutB, Kokkos::LayoutStride>) {
     // Avoid the test, due to compilation errors
   } else {
@@ -972,7 +1000,9 @@ void impl_test_axpby_unification(int const N) {
   // ************************************************************
   // Case 15/16: Ar1d + Br1s_1
   // ************************************************************
-  // std::cout << "Starting case 15/16" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 15/16" << std::endl;
+#endif
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -1005,7 +1035,9 @@ void impl_test_axpby_unification(int const N) {
   // ************************************************************
   // Case 16/16: Ar1d + Br1d
   // ************************************************************
-  // std::cout << "Starting case 16/16" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 16/16" << std::endl;
+#endif
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -1081,7 +1113,9 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 01/36: Ascalar + Bscalar
   // ************************************************************
-  // std::cout << "Starting case 01/36" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 01/36" << std::endl;
+#endif
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -1111,7 +1145,9 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 02/36: Ascalar + Br0
   // ************************************************************
-  // std::cout << "Starting case 02/36" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 02/36" << std::endl;
+#endif
   if constexpr (std::is_same_v<tLayoutB, Kokkos::LayoutStride>) {
     // Avoid the test, due to compilation errors
   } else {
@@ -1145,7 +1181,9 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 03/36: Ascalar + Br1s_1
   // ************************************************************
-  // std::cout << "Starting case 03/36" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 03/36" << std::endl;
+#endif
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -1176,7 +1214,9 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 04/36: Ascalar + Br1s_k
   // ************************************************************
-  // std::cout << "Starting case 04/36" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 04/36" << std::endl;
+#endif
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -1192,7 +1232,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
           for (int k(0); k < K; ++k) {
             b.h_view[k] = valueB + k;
           }
-          Kokkos::deep_copy(b.d_view, b.h_view);
+          Kokkos::deep_copy(b.d_base, b.h_base);
         } else {
           for (int k(0); k < K; ++k) {
             b.h_base[k] = valueB + k;
@@ -1210,7 +1250,9 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 05/36: Ascalar + Br1d,1
   // ************************************************************
-  // std::cout << "Starting case 05/36" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 05/36" << std::endl;
+#endif
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -1240,7 +1282,9 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 06/36: Ascalar + Br1d,k
   // ************************************************************
-  // std::cout << "Starting case 06/36" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 06/36" << std::endl;
+#endif
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -1256,7 +1300,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
           for (int k(0); k < K; ++k) {
             b.h_view[k] = valueB + k;
           }
-          Kokkos::deep_copy(b.d_view, b.h_view);
+          Kokkos::deep_copy(b.d_base, b.h_base);
         } else {
           for (int k(0); k < K; ++k) {
             b.h_base[k] = valueB + k;
@@ -1274,7 +1318,9 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 07/36: Ar0 + Bscalar
   // ************************************************************w
-  // std::cout << "Starting case 07/36" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 07/36" << std::endl;
+#endif
   if constexpr (std::is_same_v<tLayoutA, Kokkos::LayoutStride>) {
     // Avoid the test, due to compilation errors
   } else {
@@ -1308,7 +1354,9 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 08/36: Ar0 + Br0
   // ************************************************************
-  // std::cout << "Starting case 08/36" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 08/36" << std::endl;
+#endif
   if constexpr ((std::is_same_v<tLayoutA, Kokkos::LayoutStride>) ||
                 (std::is_same_v<tLayoutB, Kokkos::LayoutStride>)) {
     // Avoid the test, due to compilation errors
@@ -1343,7 +1391,9 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 09/36: Ar0 + Br1s_1
   // ************************************************************
-  // std::cout << "Starting case 09/36" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 09/36" << std::endl;
+#endif
   if constexpr (std::is_same_v<tLayoutA, Kokkos::LayoutStride>) {
     // Avoid the test, due to compilation errors
   } else {
@@ -1379,7 +1429,9 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 10/36: Ar0 + Br1s_k
   // ************************************************************
-  // std::cout << "Starting case 10/36" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 10/36" << std::endl;
+#endif
   if constexpr (std::is_same_v<tLayoutA, Kokkos::LayoutStride>) {
     // Avoid the test, due to compilation errors
   } else {
@@ -1398,7 +1450,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
             for (int k(0); k < K; ++k) {
               b.h_view[k] = valueB + k;
             }
-            Kokkos::deep_copy(b.d_view, b.h_view);
+            Kokkos::deep_copy(b.d_base, b.h_base);
           } else {
             for (int k(0); k < K; ++k) {
               b.h_base[k] = valueB + k;
@@ -1418,7 +1470,9 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 11/36: Ar0 + Br1d,1
   // ************************************************************
-  // std::cout << "Starting case 11/36" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 11/36" << std::endl;
+#endif
   if constexpr (std::is_same_v<tLayoutA, Kokkos::LayoutStride>) {
     // Avoid the test, due to compilation errors
   } else {
@@ -1453,7 +1507,9 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 12/36: Ar0 + Br1d,k
   // ************************************************************
-  // std::cout << "Starting case 12/36" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 12/36" << std::endl;
+#endif
   if constexpr (std::is_same_v<tLayoutA, Kokkos::LayoutStride>) {
     // Avoid the test, due to compilation errors
   } else {
@@ -1472,7 +1528,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
             for (int k(0); k < K; ++k) {
               b.h_view[k] = valueB + k;
             }
-            Kokkos::deep_copy(b.d_view, b.h_view);
+            Kokkos::deep_copy(b.d_base, b.h_base);
           } else {
             for (int k(0); k < K; ++k) {
               b.h_base[k] = valueB + k;
@@ -1491,7 +1547,9 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 13/36: Ar1s_1 + Bscalar
   // ************************************************************w
-  // std::cout << "Starting case 13/36" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 13/36" << std::endl;
+#endif
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -1523,7 +1581,9 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 14/36: Ar1s_1 + Br0
   // ************************************************************
-  // std::cout << "Starting case 14/36" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 14/36" << std::endl;
+#endif
   if constexpr (std::is_same_v<tLayoutB, Kokkos::LayoutStride>) {
     // Avoid the test, due to compilation errors
   } else {
@@ -1559,7 +1619,9 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 15/36: Ar1s_1 + Br1s_1
   // ************************************************************
-  // std::cout << "Starting case 15/36" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 15/36" << std::endl;
+#endif
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -1592,7 +1654,9 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 16/36: Ar1s_1 + Br1s_k
   // ************************************************************
-  // std::cout << "Starting case 16/36" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 16/36" << std::endl;
+#endif
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -1608,7 +1672,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
           for (int k(0); k < K; ++k) {
             b.h_view[k] = valueB + k;
           }
-          Kokkos::deep_copy(b.d_view, b.h_view);
+          Kokkos::deep_copy(b.d_base, b.h_base);
         } else {
           for (int k(0); k < K; ++k) {
             b.h_base[k] = valueB + k;
@@ -1627,7 +1691,9 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 17/36: Ar1s_1 + Br1d,1
   // ************************************************************
-  // std::cout << "Starting case 17/36" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 17/36" << std::endl;
+#endif
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -1659,7 +1725,9 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 18/36: Ar1s_1 + Br1d,k
   // ************************************************************
-  // std::cout << "Starting case 18/36" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 18/36" << std::endl;
+#endif
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -1675,7 +1743,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
           for (int k(0); k < K; ++k) {
             b.h_view[k] = valueB + k;
           }
-          Kokkos::deep_copy(b.d_view, b.h_view);
+          Kokkos::deep_copy(b.d_base, b.h_base);
         } else {
           for (int k(0); k < K; ++k) {
             b.h_base[k] = valueB + k;
@@ -1694,7 +1762,9 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 19/36: Ar1s_k + Bscalar
   // ************************************************************
-  // std::cout << "Starting case 19/36" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 19/36" << std::endl;
+#endif
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -1709,7 +1779,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
           for (int k(0); k < K; ++k) {
             a.h_view[k] = valueA + k;
           }
-          Kokkos::deep_copy(a.d_view, a.h_view);
+          Kokkos::deep_copy(a.d_base, a.h_base);
         } else {
           for (int k(0); k < K; ++k) {
             a.h_base[k] = valueA + k;
@@ -1736,7 +1806,9 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 20/36: Ar1s_k + Br0
   // ************************************************************
-  // std::cout << "Starting case 20/36" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 20/36" << std::endl;
+#endif
   if constexpr (std::is_same_v<tLayoutB, Kokkos::LayoutStride>) {
     // Avoid the test, due to compilation errors
   } else {
@@ -1754,7 +1826,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
             for (int k(0); k < K; ++k) {
               a.h_view[k] = valueA + k;
             }
-            Kokkos::deep_copy(a.d_view, a.h_view);
+            Kokkos::deep_copy(a.d_base, a.h_base);
           } else {
             for (int k(0); k < K; ++k) {
               a.h_base[k] = valueA + k;
@@ -1782,7 +1854,9 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 21/36: Ar1s_k + Br1s_1
   // ************************************************************
-  // std::cout << "Starting case 21/36" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 21/36" << std::endl;
+#endif
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -1797,7 +1871,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
           for (int k(0); k < K; ++k) {
             a.h_view[k] = valueA + k;
           }
-          Kokkos::deep_copy(a.d_view, a.h_view);
+          Kokkos::deep_copy(a.d_base, a.h_base);
         } else {
           for (int k(0); k < K; ++k) {
             a.h_base[k] = valueA + k;
@@ -1825,7 +1899,9 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 22/36: Ar1s_k + Br1s_k
   // ************************************************************
-  // std::cout << "Starting case 22/36" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 22/36" << std::endl;
+#endif
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -1840,7 +1916,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
           for (int k(0); k < K; ++k) {
             a.h_view[k] = valueA + k;
           }
-          Kokkos::deep_copy(a.d_view, a.h_view);
+          Kokkos::deep_copy(a.d_base, a.h_base);
         } else {
           for (int k(0); k < K; ++k) {
             a.h_base[k] = valueA + k;
@@ -1852,7 +1928,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
           for (int k(0); k < K; ++k) {
             b.h_view[k] = valueB + k;
           }
-          Kokkos::deep_copy(b.d_view, b.h_view);
+          Kokkos::deep_copy(b.d_base, b.h_base);
         } else {
           for (int k(0); k < K; ++k) {
             b.h_base[k] = valueB + k;
@@ -1871,7 +1947,9 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 23/36: Ar1s_k + Br1d,1
   // ************************************************************
-  // std::cout << "Starting case 23/36" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 23/36" << std::endl;
+#endif
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -1886,7 +1964,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
           for (int k(0); k < K; ++k) {
             a.h_view[k] = valueA + k;
           }
-          Kokkos::deep_copy(a.d_view, a.h_view);
+          Kokkos::deep_copy(a.d_base, a.h_base);
         } else {
           for (int k(0); k < K; ++k) {
             a.h_base[k] = valueA + k;
@@ -1913,7 +1991,9 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 24/36: Ar1s_k + Br1d,k
   // ************************************************************
-  // std::cout << "Starting case 24/36" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 24/36" << std::endl;
+#endif
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -1928,7 +2008,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
           for (int k(0); k < K; ++k) {
             a.h_view[k] = valueA + k;
           }
-          Kokkos::deep_copy(a.d_view, a.h_view);
+          Kokkos::deep_copy(a.d_base, a.h_base);
         } else {
           for (int k(0); k < K; ++k) {
             a.h_base[k] = valueA + k;
@@ -1940,7 +2020,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
           for (int k(0); k < K; ++k) {
             b.h_view[k] = valueB + k;
           }
-          Kokkos::deep_copy(b.d_view, b.h_view);
+          Kokkos::deep_copy(b.d_base, b.h_base);
         } else {
           for (int k(0); k < K; ++k) {
             b.h_base[k] = valueB + k;
@@ -1960,7 +2040,9 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 25/36: Ar1d,1 + Bscalar
   // ************************************************************w
-  // std::cout << "Starting case 25/36" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 25/36" << std::endl;
+#endif
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -1992,7 +2074,9 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 26/36: Ar1d,1 + Br0
   // ************************************************************
-  // std::cout << "Starting case 26/36" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 26/36" << std::endl;
+#endif
   if constexpr (std::is_same_v<tLayoutB, Kokkos::LayoutStride>) {
     // Avoid the test, due to compilation errors
   } else {
@@ -2028,7 +2112,9 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 27/36: Ar1d,1 + Br1s_1
   // ************************************************************
-  // std::cout << "Starting case 27/36" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 27/36" << std::endl;
+#endif
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -2061,7 +2147,9 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 28/36: Ar1d,1 + Br1s_k
   // ************************************************************
-  // std::cout << "Starting case 28/36" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 28/36" << std::endl;
+#endif
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -2077,7 +2165,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
           for (int k(0); k < K; ++k) {
             b.h_view[k] = valueB + k;
           }
-          Kokkos::deep_copy(b.d_view, b.h_view);
+          Kokkos::deep_copy(b.d_base, b.h_base);
         } else {
           for (int k(0); k < K; ++k) {
             b.h_base[k] = valueB + k;
@@ -2096,7 +2184,9 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 29/36: Ar1d,1 + Br1d,1
   // ************************************************************
-  // std::cout << "Starting case 29/36" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 29/36" << std::endl;
+#endif
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -2128,7 +2218,9 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 30/36: Ar1d,1 + Br1d,k
   // ************************************************************
-  // std::cout << "Starting case 30/36" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 30/36" << std::endl;
+#endif
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -2144,7 +2236,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
           for (int k(0); k < K; ++k) {
             b.h_view[k] = valueB + k;
           }
-          Kokkos::deep_copy(b.d_view, b.h_view);
+          Kokkos::deep_copy(b.d_base, b.h_base);
         } else {
           for (int k(0); k < K; ++k) {
             b.h_base[k] = valueB + k;
@@ -2163,7 +2255,9 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 31/36: Ar1d,k + Bscalar
   // ************************************************************w
-  // std::cout << "Starting case 31/36" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 31/36" << std::endl;
+#endif
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -2178,7 +2272,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
           for (int k(0); k < K; ++k) {
             a.h_view[k] = valueA + k;
           }
-          Kokkos::deep_copy(a.d_view, a.h_view);
+          Kokkos::deep_copy(a.d_base, a.h_base);
         } else {
           for (int k(0); k < K; ++k) {
             a.h_base[k] = valueA + k;
@@ -2205,7 +2299,9 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 32/36: Ar1d,k + Br0
   // ************************************************************
-  // std::cout << "Starting case 32/36" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 32/36" << std::endl;
+#endif
   if constexpr (std::is_same_v<tLayoutB, Kokkos::LayoutStride>) {
     // Avoid the test, due to compilation errors
   } else {
@@ -2223,7 +2319,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
             for (int k(0); k < K; ++k) {
               a.h_view[k] = valueA + k;
             }
-            Kokkos::deep_copy(a.d_view, a.h_view);
+            Kokkos::deep_copy(a.d_base, a.h_base);
           } else {
             for (int k(0); k < K; ++k) {
               a.h_base[k] = valueA + k;
@@ -2251,7 +2347,9 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 33/36: Ar1d,k + Br1s_1
   // ************************************************************
-  // std::cout << "Starting case 33/36" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 33/36" << std::endl;
+#endif
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -2266,7 +2364,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
           for (int k(0); k < K; ++k) {
             a.h_view[k] = valueA + k;
           }
-          Kokkos::deep_copy(a.d_view, a.h_view);
+          Kokkos::deep_copy(a.d_base, a.h_base);
         } else {
           for (int k(0); k < K; ++k) {
             a.h_base[k] = valueA + k;
@@ -2294,7 +2392,9 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 34/36: Ar1d,k + Br1s_k
   // ************************************************************
-  // std::cout << "Starting case 34/36" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 34/36" << std::endl;
+#endif
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -2309,7 +2409,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
           for (int k(0); k < K; ++k) {
             a.h_view[k] = valueA + k;
           }
-          Kokkos::deep_copy(a.d_view, a.h_view);
+          Kokkos::deep_copy(a.d_base, a.h_base);
         } else {
           for (int k(0); k < K; ++k) {
             a.h_base[k] = valueA + k;
@@ -2321,7 +2421,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
           for (int k(0); k < K; ++k) {
             b.h_view[k] = valueB + k;
           }
-          Kokkos::deep_copy(b.d_view, b.h_view);
+          Kokkos::deep_copy(b.d_base, b.h_base);
         } else {
           for (int k(0); k < K; ++k) {
             b.h_base[k] = valueB + k;
@@ -2341,7 +2441,9 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 35/36: Ar1d,k + Br1d,1
   // ************************************************************
-  // std::cout << "Starting case 35/36" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 35/36" << std::endl;
+#endif
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -2356,7 +2458,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
           for (int k(0); k < K; ++k) {
             a.h_view[k] = valueA + k;
           }
-          Kokkos::deep_copy(a.d_view, a.h_view);
+          Kokkos::deep_copy(a.d_base, a.h_base);
         } else {
           for (int k(0); k < K; ++k) {
             a.h_base[k] = valueA + k;
@@ -2383,7 +2485,9 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
   // ************************************************************
   // Case 36/36: Ar1d,k + Br1d,k
   // ************************************************************
-  // std::cout << "Starting case 36/36" << std::endl;
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Starting case 36/36" << std::endl;
+#endif
   for (size_t i(0); i < valuesA.size(); ++i) {
     tScalarA const valueA(valuesA[i]);
     for (size_t j(0); j < valuesB.size(); ++j) {
@@ -2398,7 +2502,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
           for (int k(0); k < K; ++k) {
             a.h_view[k] = valueA + k;
           }
-          Kokkos::deep_copy(a.d_view, a.h_view);
+          Kokkos::deep_copy(a.d_base, a.h_base);
         } else {
           for (int k(0); k < K; ++k) {
             a.h_base[k] = valueA + k;
@@ -2410,7 +2514,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
           for (int k(0); k < K; ++k) {
             b.h_view[k] = valueB + k;
           }
-          Kokkos::deep_copy(b.d_view, b.h_view);
+          Kokkos::deep_copy(b.d_base, b.h_base);
         } else {
           for (int k(0); k < K; ++k) {
             b.h_base[k] = valueB + k;
@@ -2439,6 +2543,9 @@ int test_axpby_unification() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&      \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Calling impl_test_axpby_unif(), L-LLL" << std::endl;
+#endif
   Test::impl_test_axpby_unification<
       tScalarA, Kokkos::LayoutLeft, tScalarX, Kokkos::LayoutLeft, tScalarB,
       Kokkos::LayoutLeft, tScalarY, Kokkos::LayoutLeft, Device>(14);
@@ -2447,6 +2554,9 @@ int test_axpby_unification() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) &&       \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Calling impl_test_axpby_unif(), L-RRR" << std::endl;
+#endif
   Test::impl_test_axpby_unification<
       tScalarA, Kokkos::LayoutRight, tScalarX, Kokkos::LayoutRight, tScalarB,
       Kokkos::LayoutRight, tScalarY, Kokkos::LayoutRight, Device>(14);
@@ -2454,6 +2564,9 @@ int test_axpby_unification() {
 
 #if (!defined(KOKKOSKERNELS_ETI_ONLY) && \
      !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Calling impl_test_axpby_unif(), L-SSS" << std::endl;
+#endif
   Test::impl_test_axpby_unification<
       tScalarA, Kokkos::LayoutStride, tScalarX, Kokkos::LayoutStride, tScalarB,
       Kokkos::LayoutStride, tScalarY, Kokkos::LayoutStride, Device>(14);
@@ -2461,18 +2574,30 @@ int test_axpby_unification() {
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) && \
     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Calling impl_test_axpby_unif(), L-SLL" << std::endl;
+#endif
   Test::impl_test_axpby_unification<
       tScalarA, Kokkos::LayoutStride, tScalarX, Kokkos::LayoutStride, tScalarB,
       Kokkos::LayoutLeft, tScalarY, Kokkos::LayoutLeft, Device>(14);
 
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Calling impl_test_axpby_unif(), L-LSS" << std::endl;
+#endif
   Test::impl_test_axpby_unification<
       tScalarA, Kokkos::LayoutLeft, tScalarX, Kokkos::LayoutLeft, tScalarB,
       Kokkos::LayoutStride, tScalarY, Kokkos::LayoutStride, Device>(14);
 
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Calling impl_test_axpby_unif(), L-SRS" << std::endl;
+#endif
   Test::impl_test_axpby_unification<
       tScalarA, Kokkos::LayoutLeft, tScalarX, Kokkos::LayoutStride, tScalarB,
       Kokkos::LayoutRight, tScalarY, Kokkos::LayoutStride, Device>(14);
 
+#ifdef HAVE_KOKKOSKERNELS_DEBUG
+  std::cout << "Calling impl_test_axpby_unif(), L-LSR" << std::endl;
+#endif
   Test::impl_test_axpby_unification<
       tScalarA, Kokkos::LayoutStride, tScalarX, Kokkos::LayoutLeft, tScalarB,
       Kokkos::LayoutStride, tScalarY, Kokkos::LayoutRight, Device>(14);

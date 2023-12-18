@@ -83,10 +83,11 @@ class Syr2Tester {
   using _KAT_A   = Kokkos::ArithTraits<ScalarA>;
   using _AuxType = typename _KAT_A::mag_type;
 
-  void populateVariables(ScalarA& alpha, _HostViewTypeX& h_x,
-                         _HostViewTypeY& h_y, _HostViewTypeA& h_A,
-                         _ViewTypeExpected& h_expected, _ViewTypeX& x,
-                         _ViewTypeY& y, _ViewTypeA& A,
+  void populateVariables(ScalarA& alpha,
+                         view_stride_adapter<_ViewTypeX, false>& x,
+                         view_stride_adapter<_ViewTypeY, false>& y,
+                         view_stride_adapter<_ViewTypeA, false>& A,
+                         _ViewTypeExpected& h_expected,
                          bool& expectedResultIsKnown);
 
   template <class T>
@@ -153,11 +154,10 @@ class Syr2Tester {
   T shrinkAngleToZeroTwoPiRange(const T input);
 
   template <class TX, class TY>
-  void callKkSyr2AndCompareAgainstExpected(const ScalarA& alpha, TX& x, TY& y,
-                                           _ViewTypeA& A,
-                                           const _HostViewTypeA& h_A,
-                                           const _ViewTypeExpected& h_expected,
-                                           const std::string& situation);
+  void callKkSyr2AndCompareAgainstExpected(
+      const ScalarA& alpha, TX& x, TY& y,
+      view_stride_adapter<_ViewTypeA, false>& A,
+      const _ViewTypeExpected& h_expected, const std::string& situation);
 
   template <class TX, class TY>
   void callKkGerAndCompareKkSyr2AgainstIt(
@@ -296,8 +296,7 @@ void Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
   // ********************************************************************
   // Step 2 of 7: populate alpha, h_x, h_A, h_expected, x, A
   // ********************************************************************
-  this->populateVariables(alpha, x.h_view, y.h_view, A.h_view,
-                          h_expected.d_view, x.d_view, y.d_view, A.d_view,
+  this->populateVariables(alpha, x, y, A, h_expected.d_view,
                           expectedResultIsKnown);
 
   // ********************************************************************
@@ -336,8 +335,7 @@ void Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
   Kokkos::deep_copy(org_A.h_view, A.h_view);
 
   if (test_x) {
-    this->callKkSyr2AndCompareAgainstExpected(alpha, x.d_view, y.d_view,
-                                              A.d_view, A.h_view,
+    this->callKkSyr2AndCompareAgainstExpected(alpha, x.d_view, y.d_view, A,
                                               h_expected.d_view, "non const x");
 
     if ((_useAnalyticalResults == false) &&  // Just to save run time
@@ -354,8 +352,7 @@ void Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
     Kokkos::deep_copy(A.d_base, org_A.d_base);
 
     this->callKkSyr2AndCompareAgainstExpected(
-        alpha, x.d_view_const, y.d_view_const, A.d_view, A.h_view,
-        h_expected.d_view, "const x");
+        alpha, x.d_view_const, y.d_view_const, A, h_expected.d_view, "const x");
   }
 
   // ********************************************************************
@@ -384,55 +381,56 @@ void Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
 
 template <class ScalarX, class tLayoutX, class ScalarY, class tLayoutY,
           class ScalarA, class tLayoutA, class Device>
-void Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
-                Device>::populateVariables(ScalarA& alpha, _HostViewTypeX& h_x,
-                                           _HostViewTypeY& h_y,
-                                           _HostViewTypeA& h_A,
-                                           _ViewTypeExpected& h_expected,
-                                           _ViewTypeX& x, _ViewTypeY& y,
-                                           _ViewTypeA& A,
-                                           bool& expectedResultIsKnown) {
+void Syr2Tester<
+    ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
+    Device>::populateVariables(ScalarA& alpha,
+                               view_stride_adapter<_ViewTypeX, false>& x,
+                               view_stride_adapter<_ViewTypeY, false>& y,
+                               view_stride_adapter<_ViewTypeA, false>& A,
+                               _ViewTypeExpected& h_expected,
+                               bool& expectedResultIsKnown) {
   expectedResultIsKnown = false;
 
   if (_useAnalyticalResults) {
-    this->populateAnalyticalValues(alpha, h_x, h_y, h_A, h_expected);
-    Kokkos::deep_copy(x, h_x);
-    Kokkos::deep_copy(y, h_y);
-    Kokkos::deep_copy(A, h_A);
+    this->populateAnalyticalValues(alpha, x.h_view, y.h_view, A.h_view,
+                                   h_expected);
+    Kokkos::deep_copy(x.d_base, x.h_base);
+    Kokkos::deep_copy(y.d_base, y.h_base);
+    Kokkos::deep_copy(A.d_base, A.h_base);
 
     expectedResultIsKnown = true;
   } else if (_N == 1) {
     alpha = 3;
 
-    h_x[0] = 2;
+    x.h_view[0] = 2;
 
-    h_y[0] = 4;
+    y.h_view[0] = 4;
 
-    h_A(0, 0) = 7;
+    A.h_view(0, 0) = 7;
 
-    Kokkos::deep_copy(x, h_x);
-    Kokkos::deep_copy(y, h_y);
-    Kokkos::deep_copy(A, h_A);
+    Kokkos::deep_copy(x.d_base, x.h_base);
+    Kokkos::deep_copy(y.d_base, y.h_base);
+    Kokkos::deep_copy(A.d_base, A.h_base);
 
     h_expected(0, 0)      = 55;
     expectedResultIsKnown = true;
   } else if (_N == 2) {
     alpha = 3;
 
-    h_x[0] = -2;
-    h_x[1] = 9;
+    x.h_view[0] = -2;
+    x.h_view[1] = 9;
 
-    h_y[0] = 5;
-    h_y[1] = -4;
+    y.h_view[0] = 5;
+    y.h_view[1] = -4;
 
-    h_A(0, 0) = 17;
-    h_A(0, 1) = -43;
-    h_A(1, 0) = -43;
-    h_A(1, 1) = 101;
+    A.h_view(0, 0) = 17;
+    A.h_view(0, 1) = -43;
+    A.h_view(1, 0) = -43;
+    A.h_view(1, 1) = 101;
 
-    Kokkos::deep_copy(x, h_x);
-    Kokkos::deep_copy(y, h_y);
-    Kokkos::deep_copy(A, h_A);
+    Kokkos::deep_copy(x.d_base, x.h_base);
+    Kokkos::deep_copy(y.d_base, y.h_base);
+    Kokkos::deep_copy(A.d_base, A.h_base);
 
     if (_useUpOption) {
       h_expected(0, 0) = -43;
@@ -455,24 +453,24 @@ void Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
     {
       ScalarX randStart, randEnd;
       Test::getRandomBounds(1.0, randStart, randEnd);
-      Kokkos::fill_random(x, rand_pool, randStart, randEnd);
+      Kokkos::fill_random(x.d_view, rand_pool, randStart, randEnd);
     }
 
     {
       ScalarY randStart, randEnd;
       Test::getRandomBounds(1.0, randStart, randEnd);
-      Kokkos::fill_random(y, rand_pool, randStart, randEnd);
+      Kokkos::fill_random(y.d_view, rand_pool, randStart, randEnd);
     }
 
     {
       ScalarA randStart, randEnd;
       Test::getRandomBounds(1.0, randStart, randEnd);
-      Kokkos::fill_random(A, rand_pool, randStart, randEnd);
+      Kokkos::fill_random(A.d_view, rand_pool, randStart, randEnd);
     }
 
-    Kokkos::deep_copy(h_x, x);
-    Kokkos::deep_copy(h_y, y);
-    Kokkos::deep_copy(h_A, A);
+    Kokkos::deep_copy(x.h_base, x.d_base);
+    Kokkos::deep_copy(y.h_base, y.d_base);
+    Kokkos::deep_copy(A.h_base, A.d_base);
 
     if (_useHermitianOption && _A_is_complex) {
       // ****************************************************************
@@ -480,12 +478,12 @@ void Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
       // ****************************************************************
       for (int i(0); i < _N; ++i) {
         for (int j(i + 1); j < _N; ++j) {
-          h_A(i, j) = _KAT_A::conj(h_A(j, i));
+          A.h_view(i, j) = _KAT_A::conj(A.h_view(j, i));
         }
       }
 
       for (int i(0); i < _N; ++i) {
-        h_A(i, i) = 0.5 * (h_A(i, i) + _KAT_A::conj(h_A(i, i)));
+        A.h_view(i, i) = 0.5 * (A.h_view(i, i) + _KAT_A::conj(A.h_view(i, i)));
       }
     } else {
       // ****************************************************************
@@ -493,18 +491,18 @@ void Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
       // ****************************************************************
       for (int i(0); i < _N; ++i) {
         for (int j(i + 1); j < _N; ++j) {
-          h_A(i, j) = h_A(j, i);
+          A.h_view(i, j) = A.h_view(j, i);
         }
       }
     }
-    Kokkos::deep_copy(A, h_A);
+    Kokkos::deep_copy(A.d_base, A.h_base);
   }
 
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
   if (_N <= 2) {
     for (int i(0); i < _M; ++i) {
       for (int j(0); j < _N; ++j) {
-        std::cout << "h_origA(" << i << "," << j << ")=" << h_A(i, j)
+        std::cout << "h_origA(" << i << "," << j << ") = " << A.h_view(i, j)
                   << std::endl;
       }
     }
@@ -827,8 +825,8 @@ Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::
   if (_N <= 2) {
     for (int i(0); i < _M; ++i) {
       for (int j(0); j < _N; ++j) {
-        std::cout << "h_exp(" << i << "," << j << ")=" << h_expected(i, j)
-                  << ", h_van(" << i << "," << j << ")=" << h_vanilla(i, j)
+        std::cout << "h_exp(" << i << "," << j << ") = " << h_expected(i, j)
+                  << ", h_van(" << i << "," << j << ") = " << h_vanilla(i, j)
                   << std::endl;
       }
     }
@@ -1056,8 +1054,8 @@ Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::
   if (_N <= 2) {
     for (int i(0); i < _M; ++i) {
       for (int j(0); j < _N; ++j) {
-        std::cout << "h_exp(" << i << "," << j << ")=" << h_expected(i, j)
-                  << ", h_van(" << i << "," << j << ")=" << h_vanilla(i, j)
+        std::cout << "h_exp(" << i << "," << j << ") = " << h_expected(i, j)
+                  << ", h_van(" << i << "," << j << ") = " << h_vanilla(i, j)
                   << std::endl;
       }
     }
@@ -1186,8 +1184,8 @@ Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::
   if (_N <= 2) {
     for (int i(0); i < _M; ++i) {
       for (int j(0); j < _N; ++j) {
-        std::cout << "h_exp(" << i << "," << j << ")=" << h_reference(i, j)
-                  << ", h_A(" << i << "," << j << ")=" << h_A(i, j)
+        std::cout << "h_exp(" << i << "," << j << ") = " << h_reference(i, j)
+                  << ", h_A(" << i << "," << j << ") = " << h_A(i, j)
                   << std::endl;
       }
     }
@@ -1413,8 +1411,8 @@ Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>::
   if (_N <= 2) {
     for (int i(0); i < _M; ++i) {
       for (int j(0); j < _N; ++j) {
-        std::cout << "h_exp(" << i << "," << j << ")=" << h_reference(i, j)
-                  << ", h_A(" << i << "," << j << ")=" << h_A(i, j)
+        std::cout << "h_exp(" << i << "," << j << ") = " << h_reference(i, j)
+                  << ", h_A(" << i << "," << j << ") = " << h_A(i, j)
                   << std::endl;
       }
     }
@@ -1521,11 +1519,10 @@ template <class ScalarX, class tLayoutX, class ScalarY, class tLayoutY,
 template <class TX, class TY>
 void Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
                 Device>::
-    callKkSyr2AndCompareAgainstExpected(const ScalarA& alpha, TX& x, TY& y,
-                                        _ViewTypeA& A,
-                                        const _HostViewTypeA& h_A,
-                                        const _ViewTypeExpected& h_expected,
-                                        const std::string& situation) {
+    callKkSyr2AndCompareAgainstExpected(
+        const ScalarA& alpha, TX& x, TY& y,
+        view_stride_adapter<_ViewTypeA, false>& A,
+        const _ViewTypeExpected& h_expected, const std::string& situation) {
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
   std::cout << "In Test_Blas2_syr2, '" << situation << "', alpha = " << alpha
             << std::endl;
@@ -1539,7 +1536,7 @@ void Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
   bool gotStdException(false);
   bool gotUnknownException(false);
   try {
-    KokkosBlas::syr2(mode.c_str(), uplo.c_str(), alpha, x, y, A);
+    KokkosBlas::syr2(mode.c_str(), uplo.c_str(), alpha, x, y, A.d_view);
     Kokkos::fence();
   } catch (const std::exception& e) {
 #ifdef HAVE_KOKKOSKERNELS_DEBUG
@@ -1565,8 +1562,8 @@ void Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA,
       << "have thrown a std::exception";
 
   if ((gotStdException == false) && (gotUnknownException == false)) {
-    Kokkos::deep_copy(h_A, A);
-    this->compareKkSyr2AgainstReference(alpha, h_A, h_expected);
+    Kokkos::deep_copy(A.h_base, A.d_base);
+    this->compareKkSyr2AgainstReference(alpha, A.h_view, h_expected);
   }
 }
 
