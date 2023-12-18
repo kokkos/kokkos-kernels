@@ -98,9 +98,6 @@ void impl_test_axpby_unification_compare(
     Test::getRandomBounds(max_val, randStart, randEnd);
     Kokkos::fill_random(x.d_view, rand_pool, randStart, randEnd);
   }
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
-  std::cout << "kdc a-001" << std::endl;
-#endif
   Kokkos::deep_copy(x.h_base, x.d_base);
 
   {
@@ -188,9 +185,6 @@ void impl_test_axpby_unification_compare(
     }
   }
 
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
-  std::cout << "kdc a-011" << std::endl;
-#endif
   Kokkos::deep_copy(y.h_base, y.d_base);
 
   if (testWithNanY == false) {
@@ -254,9 +248,6 @@ void impl_test_axpby_mv_unification_compare(
     Test::getRandomBounds(max_val, randStart, randEnd);
     Kokkos::fill_random(x.d_view, rand_pool, randStart, randEnd);
   }
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
-  std::cout << "kdc b-001" << std::endl;
-#endif
   Kokkos::deep_copy(x.h_base, x.d_base);
 
   {
@@ -353,9 +344,6 @@ void impl_test_axpby_mv_unification_compare(
     }
   }
 
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
-  std::cout << "kdc b-010" << std::endl;
-#endif
   Kokkos::deep_copy(y.h_base, y.d_base);
 
   if (testWithNanY == false) {
@@ -567,9 +555,6 @@ void impl_test_axpby_unification(int const N) {
           view_stride_adapter<ViewTypeY> y("Y", N);
 
           a = valueA;
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
-          std::cout << "kdc u-001" << std::endl;
-#endif
           Kokkos::deep_copy(b, valueB);
           impl_test_axpby_unification_compare<
               tScalarA, tScalarA, view_stride_adapter<ViewTypeX>, tScalarB,
@@ -1064,9 +1049,6 @@ void impl_test_axpby_unification(int const N) {
         view_stride_adapter<ViewTypeY> y("Y", N);
 
         Kokkos::deep_copy(a.d_base, valueA);
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
-        std::cout << "kdc u-024" << std::endl;
-#endif
         Kokkos::deep_copy(b.d_base, valueB);
         impl_test_axpby_unification_compare<
             tScalarA, view_stride_adapter<ViewTypeAr1d>,
@@ -1180,9 +1162,6 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
           view_stride_adapter<ViewTypeY> y("Y", N, K);
 
           a = valueA;
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
-          std::cout << "kdc mvu-001" << std::endl;
-#endif
           Kokkos::deep_copy(b, valueB);
           impl_test_axpby_mv_unification_compare<
               tScalarA, tScalarA, view_stride_adapter<ViewTypeX>, tScalarB,
@@ -2540,9 +2519,6 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
           for (int k(0); k < K; ++k) {
             b.h_base[k] = valueB + k;
           }
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
-          std::cout << "kdc mvu-084" << std::endl;
-#endif
           Kokkos::deep_copy(b.d_base, b.h_base);
         }
 
