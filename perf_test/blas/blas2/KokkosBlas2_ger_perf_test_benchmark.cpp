@@ -17,7 +17,7 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
 
-#include "KokkosBlas2_gemv.hpp" // Aqui
+#include <blas/KokkosBlas2_ger.hpp>
 
 #include "KokkosKernels_TestUtils.hpp"
 #include "KokkosKernels_perf_test_utilities.hpp"
@@ -26,9 +26,11 @@
 #include <benchmark/benchmark.h>
 
 struct blas2_ger_params : public perf_test::CommonInputParams {
-  int m           = 5000;
-  int n           = 5000;
-  bool layoutLeft = true;
+  int         m          = 5000;
+  int         n          = 5000;
+  bool        layoutLeft = true;
+  std::string scalarType = "double";
+  std::string yMode      = "transpose";
 
   static blas2_ger_params get_params(int& argc, char** argv) {
     blas2_ger_params params;
@@ -46,7 +48,33 @@ struct blas2_ger_params : public perf_test::CommonInputParams {
         else if (0 == Test::string_compare_no_case(layout, "right"))
           params.layoutLeft = false;
         else {
-          std::cerr << "Invalid layout: must be 'left' or 'right'.\n";
+          std::cerr << "Invalid '--layout': must be 'left' or 'right'.\n";
+          exit(1);
+        }
+        ++i;
+      } else if (std::string scalarType;
+                 perf_test::check_arg_str(i, argc, argv, "--scalarType", scalarType)) {
+        if ((0 == Test::string_compare_no_case(scalarType, "int32"         )) ||
+            (0 == Test::string_compare_no_case(scalarType, "int64"         )) ||
+            (0 == Test::string_compare_no_case(scalarType, "float"         )) ||
+            (0 == Test::string_compare_no_case(scalarType, "double"        )) ||
+            (0 == Test::string_compare_no_case(scalarType, "complex_float" )) ||
+            (0 == Test::string_compare_no_case(scalarType, "complex_double"))) {
+          params.scalarType = scalarType;
+        }
+        else {
+          std::cerr << "Invalid '--scalarType': must be 'int32' or 'int64' or 'float' or 'double' or 'complex_float' or 'complex_double'.\n";
+          exit(1);
+        }
+        ++i;
+      } else if (std::string yMode;
+                 perf_test::check_arg_str(i, argc, argv, "--yMode", yMode)) {
+        if ((0 == Test::string_compare_no_case(yMode, "transpose")) ||
+            (0 == Test::string_compare_no_case(yMode, "Hermitian"))) {
+          params.yMode = yMode;
+        }
+        else {
+          std::cerr << "Invalid '--yMode': must be 'transpose' or 'Hermitian'.\n";
           exit(1);
         }
         ++i;
@@ -65,65 +93,68 @@ struct blas2_ger_params : public perf_test::CommonInputParams {
     std::cerr << perf_test::list_common_options();
 
     std::cerr
-        << "\t[Optional] --m      :: number of rows to generate (default 5000)"
+        << "\t[Optional] --m :: number of rows to generate (default 5000)"
         << std::endl;
     std::cerr
-        << "\t[Optional] --n      :: number of cols to generate (default 5000)"
+        << "\t[Optional] --n :: number of cols to generate (default 5000)"
         << std::endl;
     std::cerr << "\t[Optional] --layout :: matrix layout ('left' or 'right', "
                  "default 'left')"
               << std::endl;
+    std::cerr << "\t[Optional] --scalarType :: scalar type ('int32' or 'int64'"
+                 " or 'float' or 'double' or 'complex_float' or 'complex_double'"
+                 ", default 'double')"
+              << std::endl;
+    std::cerr << "\t[Optional] --yMode :: y mode ('transpose' or 'Hermitian'"
+                 ", default 'transpose')"
+              << std::endl;
   }
 };
 
-template <typename Scalar, typename Layout, typename ExecSpace>
+template <typename tScalar, typename tLayout, typename tExecSpace>
 static void KokkosBlas2_GER(benchmark::State& state) {
   const auto m = state.range(0);
   const auto n = state.range(1);
+  const auto yIsTranspose = state.range(2);
 
-  // Declare type aliases
-  using MemSpace = typename ExecSpace::memory_space;
-  using Device   = Kokkos::Device<ExecSpace, MemSpace>;
+  std::cout << "Entering KokkosBlas2_GER()"
+            << ": m = "            << m
+            << ", n = "            << n
+            << ", yIsTranspose = " << yIsTranspose
+    //<< ", state.repeat = " << state.repeat
+            << std::endl;
 
-  // Create a View containing a 2D matrix; allocate KokkosView with template
-  // args of Scalar**, a layout, and
-  Kokkos::View<Scalar**, Layout, Device> A(
-      Kokkos::view_alloc(Kokkos::WithoutInitializing, "A"), m, n);
-  // Create Views containing 1D matrix; allocate (without) matrix "x" of size n
-  Kokkos::View<Scalar*, Device> x(
-      Kokkos::view_alloc(Kokkos::WithoutInitializing, "x"), n);
-  // Create Views containing 1D matrix; allocate (without) matrix "y" of size m
-  Kokkos::View<Scalar*, Device> y(
-      Kokkos::view_alloc(Kokkos::WithoutInitializing, "y"), m);
+  using MemSpace = typename tExecSpace::memory_space;
+  using Device   = Kokkos::Device<tExecSpace, MemSpace>;
 
-  // Declaring variable pool w/ a number seed;
-  // a parallel random number generator, so you
-  // won't get the same number with a given seed each time
-  Kokkos::Random_XorShift64_Pool<ExecSpace> pool(123);
+  Kokkos::View<tScalar**, tLayout, Device> A(Kokkos::view_alloc(Kokkos::WithoutInitializing, "A"), m, n);
+  Kokkos::View<tScalar*, Device>           x(Kokkos::view_alloc(Kokkos::WithoutInitializing, "x"), m);
+  Kokkos::View<tScalar*, Device>           y(Kokkos::view_alloc(Kokkos::WithoutInitializing, "y"), n);
 
-  // Fill 2D Matrix "A" and 1D matrix (i.e., a vector) "x" with random values;
-  // Here, 10 is the max value of the random generator between 1 and 10
-  // (uniform )
+  Kokkos::Random_XorShift64_Pool<tExecSpace> pool(123);
+
+  // Fill 'A', 'x', and 'y' with samples from an uniform random variable with range [1,10)
   Kokkos::fill_random(A, pool, 10.0);
   Kokkos::fill_random(x, pool, 10.0);
+  Kokkos::fill_random(y, pool, 10.0);
 
   // Do a warm-up run
-  KokkosBlas::gemv("N", 1.0, A, x, 0.0, y);
+  KokkosBlas::ger((yIsTranspose ? 't' : 'H'), 2.5, x, y, A);
   Kokkos::fence();
   double total_time = 0.0;
 
   for (auto _ : state) {
     // Start timing
     Kokkos::Timer timer;
-    KokkosBlas::gemv("N", 1.0, A, x, 0.0, y);
-    ExecSpace().fence();
+    KokkosBlas::ger((yIsTranspose ? 't' : 'H'), 2.5, x, y, A);
+    tExecSpace().fence();
 
     double time = timer.seconds();
     total_time += time;
     state.SetIterationTime(time);
   }
 
-  state.counters[ExecSpace::name()] = 1;
+  state.counters[tExecSpace::name()] = 1;
   state.counters["Avg GER time (s):"] =
       benchmark::Counter(total_time, benchmark::Counter::kAvgIterations);
   size_t flopsPerRun                 = (size_t)2 * m * n;
@@ -131,23 +162,35 @@ static void KokkosBlas2_GER(benchmark::State& state) {
       flopsPerRun, benchmark::Counter::kIsIterationInvariantRate);
 }
 
-template <typename ExecSpace>
+template <typename tExecSpace>
 void run(const blas2_ger_params& params) {
-  using Scalar = double;
-
   const auto name      = "KokkosBlas2_GER";
   const auto arg_names = std::vector<std::string>{
-      "m", "n", params.layoutLeft ? "LayoutLeft" : "LayoutRight"};
-  const auto args = std::vector<int64_t>{params.m, params.n, 1};
+      "m", "n", "yMode", params.layoutLeft ? "LayoutLeft" : "LayoutRight"};
+  const auto args = std::vector<int64_t>{params.m, params.n, (params.yMode == "transpose"), 1};
 
   if (params.layoutLeft) {
-    KokkosKernelsBenchmark::register_benchmark(
-        name, KokkosBlas2_GER<Scalar, Kokkos::LayoutLeft, ExecSpace>,
-        arg_names, args, params.repeat);
+    if (params.scalarType == "int32") {
+      KokkosKernelsBenchmark::register_benchmark(
+          name, KokkosBlas2_GER<std::int32_t, Kokkos::LayoutLeft, tExecSpace>,
+          arg_names, args, params.repeat);
+    }
+    else {
+      KokkosKernelsBenchmark::register_benchmark(
+          name, KokkosBlas2_GER<double, Kokkos::LayoutLeft, tExecSpace>,
+          arg_names, args, params.repeat);
+    }
   } else {
-    KokkosKernelsBenchmark::register_benchmark(
-        name, KokkosBlas2_GER<Scalar, Kokkos::LayoutRight, ExecSpace>,
-        arg_names, args, params.repeat);
+    if (params.scalarType == "int32") {
+      KokkosKernelsBenchmark::register_benchmark(
+          name, KokkosBlas2_GER<std::int32_t, Kokkos::LayoutRight, tExecSpace>,
+          arg_names, args, params.repeat);
+    }
+    else {
+      KokkosKernelsBenchmark::register_benchmark(
+          name, KokkosBlas2_GER<double, Kokkos::LayoutRight, tExecSpace>,
+          arg_names, args, params.repeat);
+    }
   }
 }
 
@@ -205,8 +248,8 @@ int main(int argc, char** argv) {
   }
 
   // use serial if no backend is specified
-  if (!params.use_cuda and !params.use_hip and !params.use_openmp and
-      !params.use_sycl and !params.use_threads) {
+  if (!params.use_cuda && !params.use_hip && !params.use_openmp &&
+      !params.use_sycl && !params.use_threads) {
 #if defined(KOKKOS_ENABLE_SERIAL)
     run<Kokkos::Serial>(params);
 #else
