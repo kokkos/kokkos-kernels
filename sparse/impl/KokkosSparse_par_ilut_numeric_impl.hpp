@@ -588,7 +588,7 @@ struct IlutWrap {
           count);
 
       Kokkos::single(Kokkos::PerTeam(team),
-                     [=]() { O_row_map(row_idx) = count; });
+                     [&]() { O_row_map(row_idx) = count; });
     }
 
     float_t threshold;
