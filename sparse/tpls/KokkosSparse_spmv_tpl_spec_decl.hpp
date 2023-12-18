@@ -733,9 +733,16 @@ struct spmv_onemkl_wrapper<false> {
     auto ev_gemv =
         oneapi::mkl::sparse::gemv(exec.sycl_queue(), mkl_mode, alpha, handle,
                                   x.data(), beta, y.data(), {ev_opt});
+    // MKL 2023.2 and up make this release okay async even though it takes a
+    // pointer to a stack variable
+#if INTEL_MKL_VERSION >= 20230200
+    oneapi::mkl::sparse::release_matrix_handle(exec.sycl_queue(), &handle,
+                                               {ev_gemv});
+#else
     auto ev_release = oneapi::mkl::sparse::release_matrix_handle(
         exec.sycl_queue(), &handle, {ev_gemv});
     ev_release.wait();
+#endif
   }
 };
 
@@ -768,9 +775,16 @@ struct spmv_onemkl_wrapper<true> {
         reinterpret_cast<std::complex<mag_type>*>(
             const_cast<scalar_type*>(x.data())),
         beta, reinterpret_cast<std::complex<mag_type>*>(y.data()), {ev_opt});
+    // MKL 2023.2 and up make this release okay async even though it takes a
+    // pointer to a stack variable
+#if INTEL_MKL_VERSION >= 20230200
+    oneapi::mkl::sparse::release_matrix_handle(exec.sycl_queue(), &handle,
+                                               {ev_gemv});
+#else
     auto ev_release = oneapi::mkl::sparse::release_matrix_handle(
         exec.sycl_queue(), &handle, {ev_gemv});
     ev_release.wait();
+#endif
   }
 };
 
