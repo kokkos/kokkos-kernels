@@ -183,7 +183,68 @@ SPGEMM_NUMERIC_AVAIL_MKL_E(Kokkos::Serial)
 #ifdef KOKKOS_ENABLE_OPENMP
 SPGEMM_NUMERIC_AVAIL_MKL_E(Kokkos::OpenMP)
 #endif
-#endif
+
+#if defined(KOKKOS_ENABLE_SYCL)
+#define SPGEMM_NUMERIC_AVAIL_MKL_SYCL(SCALAR, ORDINAL)			     \
+  template <>                                                                \
+  struct spgemm_numeric_tpl_spec_avail<                                      \
+      KokkosKernels::Experimental::KokkosKernelsHandle<                      \
+          const ORDINAL, const ORDINAL, const SCALAR,                        \ 
+          Kokkos::Experimental::SYCL,					     \
+          Kokkos::Experimental::SYCLDeviceUSMSpace,			     \
+          Kokkos::Experimental::SYCLDeviceUSMSpace>,                         \
+      Kokkos::View<const ORDINAL *, default_layout,                          \
+                   Kokkos::Device<Kokkos::Experimental::SYCL,		     \
+				  Kokkos::Experimental::SYCLDeviceUSMSpace>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
+      Kokkos::View<const ORDINAL *, default_layout,                          \
+                   Kokkos::Device<Kokkos::Experimental::SYCL,		     \
+				  Kokkos::Experimental::SYCLDeviceUSMSpace>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
+      Kokkos::View<const SCALAR *, default_layout,                           \
+                   Kokkos::Device<Kokkos::Experimental::SYCL,		     \
+				  Kokkos::Experimental::SYCLDeviceUSMSpace>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
+      Kokkos::View<const ORDINAL *, default_layout,                          \
+                   Kokkos::Device<Kokkos::Experimental::SYCL,		     \
+				  Kokkos::Experimental::SYCLDeviceUSMSpace>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
+      Kokkos::View<const ORDINAL *, default_layout,                          \
+                   Kokkos::Device<Kokkos::Experimental::SYCL,		     \
+				  Kokkos::Experimental::SYCLDeviceUSMSpace>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
+      Kokkos::View<const SCALAR *, default_layout,                           \
+                   Kokkos::Device<Kokkos::Experimental::SYCL,		     \
+				  Kokkos::Experimental::SYCLDeviceUSMSpace>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
+      Kokkos::View<const ORDINAL *, default_layout,                          \
+                   Kokkos::Device<Kokkos::Experimental::SYCL,		     \
+				  Kokkos::Experimental::SYCLDeviceUSMSpace>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
+      Kokkos::View<ORDINAL *, default_layout,                                \
+                   Kokkos::Device<Kokkos::Experimental::SYCL,		     \
+				  Kokkos::Experimental::SYCLDeviceUSMSpace>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
+      Kokkos::View<SCALAR *, default_layout,                                 \
+                   Kokkos::Device<Kokkos::Experimental::SYCL,		     \
+				  Kokkos::Experimental::SYCLDeviceUSMSpace>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> > > {             \
+    enum : bool { value = true };                                            \
+  };
+
+SPGEMM_NUMERIC_AVAIL_MKL_SYCL(float, std::int32_t)
+SPGEMM_NUMERIC_AVAIL_MKL_SYCL(double, std::int32_t)
+SPGEMM_NUMERIC_AVAIL_MKL_SYCL(Kokkos::complex<float>, std::int32_t)
+SPGEMM_NUMERIC_AVAIL_MKL_SYCL(Kokkos::complex<double>, std::int32_t)
+
+SPGEMM_NUMERIC_AVAIL_MKL_SYCL(float, std::int64_t)
+SPGEMM_NUMERIC_AVAIL_MKL_SYCL(double, std::int64_t)
+SPGEMM_NUMERIC_AVAIL_MKL_SYCL(Kokkos::complex<float>, std::int64_t)
+SPGEMM_NUMERIC_AVAIL_MKL_SYCL(Kokkos::complex<double>, std::int64_t)
+
+#endif  // KOKKOS_ENABLE_SYCL
+
+#endif  // KOKKOSKERNELS_ENABLE_TPL_MKL
 
 }  // namespace Impl
 }  // namespace KokkosSparse
