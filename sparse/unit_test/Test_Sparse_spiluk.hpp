@@ -90,9 +90,70 @@ struct SpilukTest {
   using Crs = CrsMatrix<scalar_t, lno_t, device, void, size_type>;
   using Bsr = BsrMatrix<scalar_t, lno_t, device, void, size_type>;
 
-  static constexpr scalar_t ZERO = scalar_t(0);
-  static constexpr scalar_t ONE  = scalar_t(1);
-  static constexpr scalar_t MONE = scalar_t(-1);
+  template <typename AType, typename LType, typename UType>
+  static typename AT::mag_type check_result_impl(
+    const AType& A, const LType& L, const UType& U, const size_type nrows, const size_type block_size = 1)
+  {
+    const scalar_t ZERO = scalar_t(0);
+    const scalar_t ONE  = scalar_t(1);
+    const scalar_t MONE = scalar_t(-1);
+
+    // Create a reference view e set to all 1's
+    ValuesType e_one("e_one", nrows * block_size);
+    Kokkos::deep_copy(e_one, ONE);
+
+    // Create two views for spmv results
+    ValuesType bb("bb", nrows * block_size);
+    ValuesType bb_tmp("bb_tmp", nrows * block_size);
+
+    // Compute norm2(L*U*e_one - A*e_one)/norm2(A*e_one)
+    KokkosSparse::spmv("N", ONE, A, e_one, ZERO, bb);
+
+    typename AT::mag_type bb_nrm = KokkosBlas::nrm2(bb);
+
+    KokkosSparse::spmv("N", ONE, U, e_one, ZERO, bb_tmp);
+    KokkosSparse::spmv("N", ONE, L, bb_tmp, MONE, bb);
+
+    typename AT::mag_type diff_nrm = KokkosBlas::nrm2(bb);
+
+    return diff_nrm / bb_nrm;
+  }
+
+  static void check_result(
+    const RowMapType& row_map, const EntriesType& entries, const ValuesType& values,
+    const RowMapType& L_row_map, const EntriesType& L_entries, const ValuesType& L_values,
+    const RowMapType& U_row_map, const EntriesType& U_entries, const ValuesType& U_values)
+  {
+    // Checking
+    const auto nrows = row_map.extent(0) - 1;
+    Crs A("A_Mtx", nrows, nrows, values.extent(0), values, row_map, entries);
+    Crs L("L_Mtx", nrows, nrows, L_values.extent(0), L_values, L_row_map,
+          L_entries);
+    Crs U("U_Mtx", nrows, nrows, U_values.extent(0), U_values, U_row_map,
+          U_entries);
+
+    const auto result = check_result_impl(A, L, U, nrows);
+
+    EXPECT_LT(result, 1e-4);
+  }
+
+  static void check_result_block(
+    const RowMapType& row_map, const EntriesType& entries, const ValuesType& values,
+    const RowMapType& L_row_map, const EntriesType& L_entries, const ValuesType& L_values,
+    const RowMapType& U_row_map, const EntriesType& U_entries, const ValuesType& U_values, const size_type block_size)
+  {
+    // Checking
+    const auto nrows = row_map.extent(0) - 1;
+    Bsr A("A_Mtx", nrows, nrows, values.extent(0), values, row_map, entries, block_size);
+    Bsr L("L_Mtx", nrows, nrows, L_values.extent(0), L_values, L_row_map,
+          L_entries, block_size);
+    Bsr U("U_Mtx", nrows, nrows, U_values.extent(0), U_values, U_row_map,
+          U_entries, block_size);
+
+    const auto result = check_result_impl(A, L, U, nrows, block_size);
+
+    EXPECT_LT(result, 1e0);
+  }
 
   static std::tuple<RowMapType, EntriesType, ValuesType, RowMapType,
                     EntriesType, ValuesType>
@@ -107,10 +168,8 @@ struct SpilukTest {
     // Allocate L and U as outputs
     RowMapType L_row_map("L_row_map", nrows + 1);
     EntriesType L_entries("L_entries", spiluk_handle->get_nnzL());
-    ValuesType L_values("L_values", spiluk_handle->get_nnzL());
     RowMapType U_row_map("U_row_map", nrows + 1);
     EntriesType U_entries("U_entries", spiluk_handle->get_nnzU());
-    ValuesType U_values("U_values", spiluk_handle->get_nnzU());
 
     spiluk_symbolic(&kh, fill_lev, row_map, entries, L_row_map, L_entries,
                     U_row_map, U_entries);
@@ -118,41 +177,18 @@ struct SpilukTest {
     Kokkos::fence();
 
     Kokkos::resize(L_entries, spiluk_handle->get_nnzL());
-    Kokkos::resize(L_values, spiluk_handle->get_nnzL());
     Kokkos::resize(U_entries, spiluk_handle->get_nnzU());
-    Kokkos::resize(U_values, spiluk_handle->get_nnzU());
+    ValuesType L_values("L_values", spiluk_handle->get_nnzL());
+    ValuesType U_values("U_values", spiluk_handle->get_nnzU());
 
     spiluk_numeric(&kh, fill_lev, row_map, entries, values, L_row_map,
                    L_entries, L_values, U_row_map, U_entries, U_values);
 
     Kokkos::fence();
 
-    // Checking
-    Crs A("A_Mtx", nrows, nrows, nnz, values, row_map, entries);
-    Crs L("L_Mtx", nrows, nrows, spiluk_handle->get_nnzL(), L_values, L_row_map,
-          L_entries);
-    Crs U("U_Mtx", nrows, nrows, spiluk_handle->get_nnzU(), U_values, U_row_map,
-          U_entries);
-
-    // Create a reference view e set to all 1's
-    ValuesType e_one("e_one", nrows);
-    Kokkos::deep_copy(e_one, 1.0);
-
-    // Create two views for spmv results
-    ValuesType bb("bb", nrows);
-    ValuesType bb_tmp("bb_tmp", nrows);
-
-    // Compute norm2(L*U*e_one - A*e_one)/norm2(A*e_one)
-    KokkosSparse::spmv("N", ONE, A, e_one, ZERO, bb);
-
-    typename AT::mag_type bb_nrm = KokkosBlas::nrm2(bb);
-
-    KokkosSparse::spmv("N", ONE, U, e_one, ZERO, bb_tmp);
-    KokkosSparse::spmv("N", ONE, L, bb_tmp, MONE, bb);
-
-    typename AT::mag_type diff_nrm = KokkosBlas::nrm2(bb);
-
-    EXPECT_LT(diff_nrm / bb_nrm, 1e-4);
+    check_result(row_map, entries, values,
+                 L_row_map, L_entries, L_values,
+                 U_row_map, U_entries, U_values);
 
     kh.destroy_spiluk_handle();
 
@@ -206,31 +242,9 @@ struct SpilukTest {
 
     Kokkos::fence();
 
-    // Checking
-    Bsr A("A_Mtx", nrows, nrows, nnz, values, row_map, entries, block_size);
-    Bsr L("L_Mtx", nrows, nrows, L_values.extent(0), L_values, L_row_map,
-          L_entries, block_size);
-    Bsr U("U_Mtx", nrows, nrows, U_values.extent(0), U_values, U_row_map,
-          U_entries, block_size);
-
-    // Create a reference view e set to all 1's
-    ValuesType e_one("e_one", nrows * block_size);
-    Kokkos::deep_copy(e_one, 1.0);
-
-    // Create two views for spmv results
-    ValuesType bb("bb", nrows * block_size);
-    ValuesType bb_tmp("bb_tmp", nrows * block_size);
-
-    // Compute norm2(L*U*e_one - A*e_one)/norm2(A*e_one)
-    KokkosSparse::spmv("N", ONE, A, e_one, ZERO, bb);
-
-    typename AT::mag_type bb_nrm = KokkosBlas::nrm2(bb);
-
-    KokkosSparse::spmv("N", ONE, U, e_one, ZERO, bb_tmp);
-    KokkosSparse::spmv("N", ONE, L, bb_tmp, MONE, bb);
-
-    typename AT::mag_type diff_nrm = KokkosBlas::nrm2(bb);
-    EXPECT_LT(diff_nrm / bb_nrm, 1e0);
+    check_result_block(row_map, entries, values,
+                       L_row_map, L_entries, L_values,
+                       U_row_map, U_entries, U_values, block_size);
 
     kh.destroy_spiluk_handle();
 
@@ -387,32 +401,10 @@ struct SpilukTest {
     // Checking
     for (int i = 0; i < nstreams; i++) {
       auto spiluk_handle = kh_v[i].get_spiluk_handle();
-      Crs A("A_Mtx", nrows, nrows, nnz, A_values_v[i], A_row_map_v[i],
-            A_entries_v[i]);
-      Crs L("L_Mtx", nrows, nrows, spiluk_handle->get_nnzL(), L_values_v[i],
-            L_row_map_v[i], L_entries_v[i]);
-      Crs U("U_Mtx", nrows, nrows, spiluk_handle->get_nnzU(), U_values_v[i],
-            U_row_map_v[i], U_entries_v[i]);
 
-      // Create a reference view e set to all 1's
-      ValuesType e_one("e_one", nrows);
-      Kokkos::deep_copy(e_one, 1.0);
-
-      // Create two views for spmv results
-      ValuesType bb("bb", nrows);
-      ValuesType bb_tmp("bb_tmp", nrows);
-
-      // Compute norm2(L*U*e_one - A*e_one)/norm2(A*e_one)
-      KokkosSparse::spmv("N", ONE, A, e_one, ZERO, bb);
-
-      typename AT::mag_type bb_nrm = KokkosBlas::nrm2(bb);
-
-      KokkosSparse::spmv("N", ONE, U, e_one, ZERO, bb_tmp);
-      KokkosSparse::spmv("N", ONE, L, bb_tmp, MONE, bb);
-
-      typename AT::mag_type diff_nrm = KokkosBlas::nrm2(bb);
-
-      EXPECT_LT(diff_nrm / bb_nrm, 1e-4);
+      check_result(A_row_map_v[i], A_entries_v[i], A_values_v[i],
+                   L_row_map_v[i], L_entries_v[i], L_values_v[i],
+                   U_row_map_v[i], U_entries_v[i], U_values_v[i]);
 
       kh_v[i].destroy_spiluk_handle();
     }
