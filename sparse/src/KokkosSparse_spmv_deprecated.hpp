@@ -14,31 +14,13 @@
 //
 //@HEADER
 
-#include <Kokkos_Core.hpp>
+/// \file
+/// \brief Deprecated interfaces for the Kokkos sparse-matrix-vector multiply
+///
 
-#ifndef KOKKOSSPARSE_SPMV_HPP_
-#define KOKKOSSPARSE_SPMV_HPP_
+#ifndef KOKKOSSPARSE_SPMV_DEPRECATED_HPP_
+#define KOKKOSSPARSE_SPMV_DEPRECATED_HPP_
 
-namespace KokkosSparse {
 
-enum SPMVAlgorithm {
-  SPMV_DEFAULT,
-  SPMV_FAST_SETUP,
-  SPMV_NATIVE,
-  SPMV_MERGE_PATH
-}
-
-template <class AMatrix, class XVector, class YVector>
-class SPMVHandle
-{
-  SPMVHandle(SPMVAlgorithm algo_ = SPMV_DEFAULT)
-    : algo(algo_)
-  {}
-
-  SPMVAlgorithm algo;
-
-};
-
-}
 
 #endif

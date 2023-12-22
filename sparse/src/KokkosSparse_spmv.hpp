@@ -88,15 +88,15 @@ void spmv(const ExecutionSpace& space,
   static_assert(
       Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename AMatrix::memory_space>::accessible,
-      "KokkosBlas::spmv: AMatrix must be accessible from ExecutionSpace");
+      "KokkosSparse::spmv: AMatrix must be accessible from ExecutionSpace");
   static_assert(
       Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename XVector::memory_space>::accessible,
-      "KokkosBlas::spmv: XVector must be accessible from ExecutionSpace");
+      "KokkosSparse::spmv: XVector must be accessible from ExecutionSpace");
   static_assert(
       Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename YVector::memory_space>::accessible,
-      "KokkosBlas::spmv: YVector must be accessible from ExecutionSpace");
+      "KokkosSparse::spmv: YVector must be accessible from ExecutionSpace");
 
 // Make sure that x and y have the same rank.
 // Make sure that x (and therefore y) is rank 1.
@@ -296,15 +296,15 @@ void spmv(const ExecutionSpace& space,
   static_assert(
       Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename AMatrix::memory_space>::accessible,
-      "KokkosBlas::spmv: AMatrix must be accessible from ExecutionSpace");
+      "KokkosSparse::spmv: AMatrix must be accessible from ExecutionSpace");
   static_assert(
       Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename XVector::memory_space>::accessible,
-      "KokkosBlas::spmv: XVector must be accessible from ExecutionSpace");
+      "KokkosSparse::spmv: XVector must be accessible from ExecutionSpace");
   static_assert(
       Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename YVector::memory_space>::accessible,
-      "KokkosBlas::spmv: YVector must be accessible from ExecutionSpace");
+      "KokkosSparse::spmv: YVector must be accessible from ExecutionSpace");
   // Make sure that x and y have the same rank.
 #if (KOKKOS_VERSION >= 40100)
   static_assert(XVector::rank() == YVector::rank(),
@@ -680,15 +680,15 @@ void spmv(const ExecutionSpace& space,
   static_assert(
       Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename AMatrix::memory_space>::accessible,
-      "KokkosBlas::spmv: AMatrix must be accessible from ExecutionSpace");
+      "KokkosSparse::spmv: AMatrix must be accessible from ExecutionSpace");
   static_assert(
       Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename XVector::memory_space>::accessible,
-      "KokkosBlas::spmv: XVector must be accessible from ExecutionSpace");
+      "KokkosSparse::spmv: XVector must be accessible from ExecutionSpace");
   static_assert(
       Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename YVector::memory_space>::accessible,
-      "KokkosBlas::spmv: YVector must be accessible from ExecutionSpace");
+      "KokkosSparse::spmv: YVector must be accessible from ExecutionSpace");
 // Make sure that x and y have the same rank.
 #if (KOKKOS_VERSION >= 40100)
   static_assert(XVector::rank() == YVector::rank(),
@@ -713,7 +713,7 @@ void spmv(const ExecutionSpace& space,
         (static_cast<size_t>(A.numCols()) > static_cast<size_t>(x.extent(0))) ||
         (static_cast<size_t>(A.numRows()) > static_cast<size_t>(y.extent(0)))) {
       std::ostringstream os;
-      os << "KokkosBlas::spmv: Dimensions do not match: "
+      os << "KokkosSparse::spmv: Dimensions do not match: "
          << ", A: " << A.numRows() << " x " << A.numCols()
          << ", x: " << x.extent(0) << " x " << x.extent(1)
          << ", y: " << y.extent(0) << " x " << y.extent(1);
@@ -724,7 +724,7 @@ void spmv(const ExecutionSpace& space,
         (static_cast<size_t>(A.numCols()) > static_cast<size_t>(y.extent(0))) ||
         (static_cast<size_t>(A.numRows()) > static_cast<size_t>(x.extent(0)))) {
       std::ostringstream os;
-      os << "KokkosBlas::spmv: Dimensions do not match (transpose): "
+      os << "KokkosSparse::spmv: Dimensions do not match (transpose): "
          << ", A: " << A.numRows() << " x " << A.numCols()
          << ", x: " << x.extent(0) << " x " << x.extent(1)
          << ", y: " << y.extent(0) << " x " << y.extent(1);
@@ -859,15 +859,15 @@ void spmv(const ExecutionSpace& space,
   static_assert(
       Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename AMatrix::memory_space>::accessible,
-      "KokkosBlas::spmv: AMatrix must be accessible from ExecutionSpace");
+      "KokkosSparse::spmv: AMatrix must be accessible from ExecutionSpace");
   static_assert(
       Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename XVector::memory_space>::accessible,
-      "KokkosBlas::spmv: XVector must be accessible from ExecutionSpace");
+      "KokkosSparse::spmv: XVector must be accessible from ExecutionSpace");
   static_assert(
       Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename YVector::memory_space>::accessible,
-      "KokkosBlas::spmv: YVector must be accessible from ExecutionSpace");
+      "KokkosSparse::spmv: YVector must be accessible from ExecutionSpace");
   // Make sure that x and y have the same rank.
   static_assert(
       static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
@@ -1096,15 +1096,15 @@ void spmv(const ExecutionSpace& space,
   static_assert(
       Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename AMatrix::memory_space>::accessible,
-      "KokkosBlas::spmv: AMatrix must be accessible from ExecutionSpace");
+      "KokkosSparse::spmv: AMatrix must be accessible from ExecutionSpace");
   static_assert(
       Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename XVector::memory_space>::accessible,
-      "KokkosBlas::spmv: XVector must be accessible from ExecutionSpace");
+      "KokkosSparse::spmv: XVector must be accessible from ExecutionSpace");
   static_assert(
       Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename YVector::memory_space>::accessible,
-      "KokkosBlas::spmv: YVector must be accessible from ExecutionSpace");
+      "KokkosSparse::spmv: YVector must be accessible from ExecutionSpace");
   // Make sure that both x and y have the same rank.
   static_assert(
       static_cast<int>(XVector::rank) == static_cast<int>(YVector::rank),
@@ -1332,17 +1332,17 @@ void spmv_struct(const ExecutionSpace& space, const char mode[],
   static_assert(
       Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename AMatrix::memory_space>::accessible,
-      "KokkosBlas::spmv_struct: AMatrix must be accessible from "
+      "KokkosSparse::spmv_struct: AMatrix must be accessible from "
       "ExecutionSpace");
   static_assert(
       Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename XVector::memory_space>::accessible,
-      "KokkosBlas::spmv_struct: XVector must be accessible from "
+      "KokkosSparse::spmv_struct: XVector must be accessible from "
       "ExecutionSpace");
   static_assert(
       Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename YVector::memory_space>::accessible,
-      "KokkosBlas::spmv_struct: YVector must be accessible from "
+      "KokkosSparse::spmv_struct: YVector must be accessible from "
       "ExecutionSpace");
   // Make sure that x (and therefore y) is rank 1.
   static_assert(
@@ -1627,25 +1627,25 @@ void spmv_struct(const ExecutionSpace& space, const char mode[],
   static_assert(
       Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename AMatrix::memory_space>::accessible,
-      "KokkosBlas::spmv_struct: AMatrix must be accessible from "
+      "KokkosSparse::spmv_struct: AMatrix must be accessible from "
       "ExecutionSpace");
   static_assert(
       Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename XVector::memory_space>::accessible,
-      "KokkosBlas::spmv_struct: XVector must be accessible from "
+      "KokkosSparse::spmv_struct: XVector must be accessible from "
       "ExecutionSpace");
   static_assert(
       Kokkos::SpaceAccessibility<ExecutionSpace,
                                  typename YVector::memory_space>::accessible,
-      "KokkosBlas::spmv_struct: YVector must be accessible from "
+      "KokkosSparse::spmv_struct: YVector must be accessible from "
       "ExecutionSpace");
   // Make sure that both x and y have the same rank.
   static_assert(XVector::rank == YVector::rank,
-                "KokkosBlas::spmv: Vector ranks do not match.");
+                "KokkosSparse::spmv: Vector ranks do not match.");
   // Make sure that y is non-const.
   static_assert(std::is_same<typename YVector::value_type,
                              typename YVector::non_const_value_type>::value,
-                "KokkosBlas::spmv: Output Vector must be non-const.");
+                "KokkosSparse::spmv: Output Vector must be non-const.");
 
   // Check compatibility of dimensions at run time.
   if ((mode[0] == NoTranspose[0]) || (mode[0] == Conjugate[0])) {
@@ -1653,7 +1653,7 @@ void spmv_struct(const ExecutionSpace& space, const char mode[],
         (static_cast<size_t>(A.numCols()) > static_cast<size_t>(x.extent(0))) ||
         (static_cast<size_t>(A.numRows()) > static_cast<size_t>(y.extent(0)))) {
       std::ostringstream os;
-      os << "KokkosBlas::spmv: Dimensions do not match: "
+      os << "KokkosSparse::spmv: Dimensions do not match: "
          << ", A: " << A.numRows() << " x " << A.numCols()
          << ", x: " << x.extent(0) << " x " << x.extent(1)
          << ", y: " << y.extent(0) << " x " << y.extent(1);
@@ -1664,7 +1664,7 @@ void spmv_struct(const ExecutionSpace& space, const char mode[],
         (static_cast<size_t>(A.numCols()) > static_cast<size_t>(y.extent(0))) ||
         (static_cast<size_t>(A.numRows()) > static_cast<size_t>(x.extent(0)))) {
       std::ostringstream os;
-      os << "KokkosBlas::spmv: Dimensions do not match (transpose): "
+      os << "KokkosSparse::spmv: Dimensions do not match (transpose): "
          << ", A: " << A.numRows() << " x " << A.numCols()
          << ", x: " << x.extent(0) << " x " << x.extent(1)
          << ", y: " << y.extent(0) << " x " << y.extent(1);
@@ -1818,5 +1818,8 @@ void spmv_struct(const ExecutionSpace& space, const char mode[],
 
 }  // namespace Experimental
 }  // namespace KokkosSparse
+
+// Pull in all the deprecated versions of spmv
+#include "KokkosSparse_spmv_deprecated.hpp"
 
 #endif
