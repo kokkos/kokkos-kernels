@@ -92,8 +92,8 @@ struct SpilukTest {
 
   template <typename AType, typename LType, typename UType>
   static typename AT::mag_type check_result_impl(
-    const AType& A, const LType& L, const UType& U, const size_type nrows, const size_type block_size = 1)
-  {
+      const AType& A, const LType& L, const UType& U, const size_type nrows,
+      const size_type block_size = 1) {
     const scalar_t ZERO = scalar_t(0);
     const scalar_t ONE  = scalar_t(1);
     const scalar_t MONE = scalar_t(-1);
@@ -119,11 +119,14 @@ struct SpilukTest {
     return diff_nrm / bb_nrm;
   }
 
-  static void check_result(
-    const RowMapType& row_map, const EntriesType& entries, const ValuesType& values,
-    const RowMapType& L_row_map, const EntriesType& L_entries, const ValuesType& L_values,
-    const RowMapType& U_row_map, const EntriesType& U_entries, const ValuesType& U_values)
-  {
+  static void check_result(const RowMapType& row_map,
+                           const EntriesType& entries, const ValuesType& values,
+                           const RowMapType& L_row_map,
+                           const EntriesType& L_entries,
+                           const ValuesType& L_values,
+                           const RowMapType& U_row_map,
+                           const EntriesType& U_entries,
+                           const ValuesType& U_values) {
     // Checking
     const auto nrows = row_map.extent(0) - 1;
     Crs A("A_Mtx", nrows, nrows, values.extent(0), values, row_map, entries);
@@ -138,13 +141,15 @@ struct SpilukTest {
   }
 
   static void check_result_block(
-    const RowMapType& row_map, const EntriesType& entries, const ValuesType& values,
-    const RowMapType& L_row_map, const EntriesType& L_entries, const ValuesType& L_values,
-    const RowMapType& U_row_map, const EntriesType& U_entries, const ValuesType& U_values, const size_type block_size)
-  {
+      const RowMapType& row_map, const EntriesType& entries,
+      const ValuesType& values, const RowMapType& L_row_map,
+      const EntriesType& L_entries, const ValuesType& L_values,
+      const RowMapType& U_row_map, const EntriesType& U_entries,
+      const ValuesType& U_values, const size_type block_size) {
     // Checking
     const auto nrows = row_map.extent(0) - 1;
-    Bsr A("A_Mtx", nrows, nrows, values.extent(0), values, row_map, entries, block_size);
+    Bsr A("A_Mtx", nrows, nrows, values.extent(0), values, row_map, entries,
+          block_size);
     Bsr L("L_Mtx", nrows, nrows, L_values.extent(0), L_values, L_row_map,
           L_entries, block_size);
     Bsr U("U_Mtx", nrows, nrows, U_values.extent(0), U_values, U_row_map,
@@ -186,8 +191,7 @@ struct SpilukTest {
 
     Kokkos::fence();
 
-    check_result(row_map, entries, values,
-                 L_row_map, L_entries, L_values,
+    check_result(row_map, entries, values, L_row_map, L_entries, L_values,
                  U_row_map, U_entries, U_values);
 
     kh.destroy_spiluk_handle();
@@ -242,8 +246,7 @@ struct SpilukTest {
 
     Kokkos::fence();
 
-    check_result_block(row_map, entries, values,
-                       L_row_map, L_entries, L_values,
+    check_result_block(row_map, entries, values, L_row_map, L_entries, L_values,
                        U_row_map, U_entries, U_values, block_size);
 
     kh.destroy_spiluk_handle();
