@@ -120,14 +120,13 @@ static void KokkosBlas2_GER(benchmark::State& state) {
   const auto yIsTranspose = state.range(2);
   tScalar a(0.);
 
-  std::cout << "Entering KokkosBlas2_GER()"
-            << ": m = "            << m
-            << ", n = "            << n
-            << ", yIsTranspose = " << yIsTranspose
-            << ", tScalar = "      << typeid(tScalar).name()
-            << ", tLayout = "      << typeid(tLayout).name()
-    //<< ", state.repeat = " << state.repeat
-            << std::endl;
+  //std::cout << "Entering KokkosBlas2_GER()"
+  //          << ": m = "            << m
+  //          << ", n = "            << n
+  //          << ", yIsTranspose = " << yIsTranspose
+  //          << ", tScalar = "      << typeid(tScalar).name()
+  //          << ", tLayout = "      << typeid(tLayout).name()
+  //          << std::endl;
 
   using MemSpace = typename tExecSpace::memory_space;
   using Device   = Kokkos::Device<tExecSpace, MemSpace>;
@@ -158,10 +157,10 @@ static void KokkosBlas2_GER(benchmark::State& state) {
     a = tScalar(2.5,3.6);
   }
 
-  std::cout << "In KokkosBlas2_GER()"
-            << ": yMode = " << yMode
-            << ", a = "     << a
-            << std::endl;
+  //std::cout << "In KokkosBlas2_GER()"
+  //          << ": yMode = " << yMode
+  //          << ", a = "     << a
+  //          << std::endl;
 
   // Do a warm-up run
   KokkosBlas::ger(&yMode, a, x, y, A);
@@ -186,7 +185,7 @@ static void KokkosBlas2_GER(benchmark::State& state) {
   state.counters["Avg GER FLOP/s:"] = benchmark::Counter(
       flopsPerRun, benchmark::Counter::kIsIterationInvariantRate);
 
-  std::cout << "Leaving KokkosBlas2_GER()" << std::endl;
+  //std::cout << "Leaving KokkosBlas2_GER()" << std::endl;
 }
 
 template <typename tExecSpace>
@@ -269,13 +268,13 @@ int main(int argc, char** argv) {
 
   const auto params = blas2_ger_params::get_params(argc, argv);
 
-  std::cout << "In main(): params.repeat = " << params.repeat << std::endl;
+  //std::cout << "In main(): params.repeat = " << params.repeat << std::endl;
 
   if (params.use_threads) {
 #if defined(KOKKOS_ENABLE_THREADS)
     run<Kokkos::Threads>(params);
 #else
-    std::cout << "ERROR:  PThreads requested, but not available.\n";
+    std::cout << "ERROR: PThreads requested, but not available.\n";
     return 1;
 #endif
   }
