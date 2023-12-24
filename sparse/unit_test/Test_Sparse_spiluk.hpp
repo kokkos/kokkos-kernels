@@ -403,8 +403,6 @@ struct SpilukTest {
 
     // Checking
     for (int i = 0; i < nstreams; i++) {
-      auto spiluk_handle = kh_v[i].get_spiluk_handle();
-
       check_result(A_row_map_v[i], A_entries_v[i], A_values_v[i],
                    L_row_map_v[i], L_entries_v[i], L_values_v[i],
                    U_row_map_v[i], U_entries_v[i], U_values_v[i]);
