@@ -28,9 +28,9 @@
 #include <benchmark/benchmark.h>
 
 struct blas2_ger_params : public perf_test::CommonInputParams {
-  int         m          = 5000;
-  int         n          = 5000;
-  bool        layoutLeft = true;
+  int m                  = 5000;
+  int n                  = 5000;
+  bool layoutLeft        = true;
   std::string scalarType = "double";
   std::string yMode      = "transpose";
 
@@ -54,18 +54,19 @@ struct blas2_ger_params : public perf_test::CommonInputParams {
           exit(1);
         }
         ++i;
-      } else if (std::string scalarType;
-                 perf_test::check_arg_str(i, argc, argv, "--scalarType", scalarType)) {
-        if ((0 == Test::string_compare_no_case(scalarType, "int32"         )) ||
-            (0 == Test::string_compare_no_case(scalarType, "int64"         )) ||
-            (0 == Test::string_compare_no_case(scalarType, "float"         )) ||
-            (0 == Test::string_compare_no_case(scalarType, "double"        )) ||
-            (0 == Test::string_compare_no_case(scalarType, "complex_float" )) ||
+      } else if (std::string scalarType; perf_test::check_arg_str(
+                     i, argc, argv, "--scalarType", scalarType)) {
+        if ((0 == Test::string_compare_no_case(scalarType, "int32")) ||
+            (0 == Test::string_compare_no_case(scalarType, "int64")) ||
+            (0 == Test::string_compare_no_case(scalarType, "float")) ||
+            (0 == Test::string_compare_no_case(scalarType, "double")) ||
+            (0 == Test::string_compare_no_case(scalarType, "complex_float")) ||
             (0 == Test::string_compare_no_case(scalarType, "complex_double"))) {
           params.scalarType = scalarType;
-        }
-        else {
-          std::cerr << "Invalid '--scalarType': must be 'int32' or 'int64' or 'float' or 'double' or 'complex_float' or 'complex_double'.\n";
+        } else {
+          std::cerr << "Invalid '--scalarType': must be 'int32' or 'int64' or "
+                       "'float' or 'double' or 'complex_float' or "
+                       "'complex_double'.\n";
           exit(1);
         }
         ++i;
@@ -74,9 +75,9 @@ struct blas2_ger_params : public perf_test::CommonInputParams {
         if ((0 == Test::string_compare_no_case(yMode, "transpose")) ||
             (0 == Test::string_compare_no_case(yMode, "Hermitian"))) {
           params.yMode = yMode;
-        }
-        else {
-          std::cerr << "Invalid '--yMode': must be 'transpose' or 'Hermitian'.\n";
+        } else {
+          std::cerr
+              << "Invalid '--yMode': must be 'transpose' or 'Hermitian'.\n";
           exit(1);
         }
         ++i;
@@ -94,19 +95,18 @@ struct blas2_ger_params : public perf_test::CommonInputParams {
     std::cerr << "Options\n" << std::endl;
     std::cerr << perf_test::list_common_options();
 
-    std::cerr
-        << "\t[Optional] --m :: number of rows to generate (default 5000)"
-        << std::endl;
-    std::cerr
-        << "\t[Optional] --n :: number of cols to generate (default 5000)"
-        << std::endl;
+    std::cerr << "\t[Optional] --m :: number of rows to generate (default 5000)"
+              << std::endl;
+    std::cerr << "\t[Optional] --n :: number of cols to generate (default 5000)"
+              << std::endl;
     std::cerr << "\t[Optional] --layout :: matrix layout ('left' or 'right', "
                  "default 'left')"
               << std::endl;
-    std::cerr << "\t[Optional] --scalarType :: scalar type ('int32' or 'int64'"
-                 " or 'float' or 'double' or 'complex_float' or 'complex_double'"
-                 ", default 'double')"
-              << std::endl;
+    std::cerr
+        << "\t[Optional] --scalarType :: scalar type ('int32' or 'int64'"
+           " or 'float' or 'double' or 'complex_float' or 'complex_double'"
+           ", default 'double')"
+        << std::endl;
     std::cerr << "\t[Optional] --yMode :: y mode ('transpose' or 'Hermitian'"
                  ", default 'transpose')"
               << std::endl;
@@ -115,12 +115,12 @@ struct blas2_ger_params : public perf_test::CommonInputParams {
 
 template <typename tScalar, typename tLayout, typename tExecSpace>
 static void KokkosBlas2_GER(benchmark::State& state) {
-  const auto m = state.range(0);
-  const auto n = state.range(1);
+  const auto m            = state.range(0);
+  const auto n            = state.range(1);
   const auto yIsTranspose = state.range(2);
   tScalar a(0.);
 
-  //std::cout << "Entering KokkosBlas2_GER()"
+  // std::cout << "Entering KokkosBlas2_GER()"
   //          << ": m = "            << m
   //          << ", n = "            << n
   //          << ", yIsTranspose = " << yIsTranspose
@@ -131,13 +131,17 @@ static void KokkosBlas2_GER(benchmark::State& state) {
   using MemSpace = typename tExecSpace::memory_space;
   using Device   = Kokkos::Device<tExecSpace, MemSpace>;
 
-  Kokkos::View<tScalar**, tLayout, Device> A(Kokkos::view_alloc(Kokkos::WithoutInitializing, "A"), m, n);
-  Kokkos::View<tScalar*, Device>           x(Kokkos::view_alloc(Kokkos::WithoutInitializing, "x"), m);
-  Kokkos::View<tScalar*, Device>           y(Kokkos::view_alloc(Kokkos::WithoutInitializing, "y"), n);
+  Kokkos::View<tScalar**, tLayout, Device> A(
+      Kokkos::view_alloc(Kokkos::WithoutInitializing, "A"), m, n);
+  Kokkos::View<tScalar*, Device> x(
+      Kokkos::view_alloc(Kokkos::WithoutInitializing, "x"), m);
+  Kokkos::View<tScalar*, Device> y(
+      Kokkos::view_alloc(Kokkos::WithoutInitializing, "y"), n);
 
   Kokkos::Random_XorShift64_Pool<tExecSpace> pool(123);
 
-  // Fill 'A', 'x', and 'y' with samples from an uniform random variable with range [1,10)
+  // Fill 'A', 'x', and 'y' with samples from an uniform random variable with
+  // range [1,10)
   Kokkos::fill_random(A, pool, 10.0);
   Kokkos::fill_random(x, pool, 10.0);
   Kokkos::fill_random(y, pool, 10.0);
@@ -145,19 +149,17 @@ static void KokkosBlas2_GER(benchmark::State& state) {
   char yMode('t');
   if (!yIsTranspose) yMode = 'H';
 
-  if constexpr (std::is_same_v<tScalar,std::int32_t> ||
-                std::is_same_v<tScalar,std::int64_t>) {
+  if constexpr (std::is_same_v<tScalar, std::int32_t> ||
+                std::is_same_v<tScalar, std::int64_t>) {
     a = 3;
-  }
-  else if constexpr (std::is_same_v<tScalar,float> ||
-                     std::is_same_v<tScalar,double>) {
+  } else if constexpr (std::is_same_v<tScalar, float> ||
+                       std::is_same_v<tScalar, double>) {
     a = 2.5;
-  }
-  else {
-    a = tScalar(2.5,3.6);
+  } else {
+    a = tScalar(2.5, 3.6);
   }
 
-  //std::cout << "In KokkosBlas2_GER()"
+  // std::cout << "In KokkosBlas2_GER()"
   //          << ": yMode = " << yMode
   //          << ", a = "     << a
   //          << std::endl;
@@ -181,11 +183,11 @@ static void KokkosBlas2_GER(benchmark::State& state) {
   state.counters[tExecSpace::name()] = 1;
   state.counters["Avg GER time (s):"] =
       benchmark::Counter(total_time, benchmark::Counter::kAvgIterations);
-  size_t flopsPerRun                 = (size_t)2 * m * n;
+  size_t flopsPerRun                = (size_t)2 * m * n;
   state.counters["Avg GER FLOP/s:"] = benchmark::Counter(
       flopsPerRun, benchmark::Counter::kIsIterationInvariantRate);
 
-  //std::cout << "Leaving KokkosBlas2_GER()" << std::endl;
+  // std::cout << "Leaving KokkosBlas2_GER()" << std::endl;
 }
 
 template <typename tExecSpace>
@@ -193,37 +195,37 @@ void run(const blas2_ger_params& params) {
   const auto name      = "KokkosBlas2_GER";
   const auto arg_names = std::vector<std::string>{
       "m", "n", "yMode", params.layoutLeft ? "LayoutLeft" : "LayoutRight"};
-  const auto args = std::vector<int64_t>{params.m, params.n, (params.yMode == "transpose"), 1};
+  const auto args = std::vector<int64_t>{params.m, params.n,
+                                         (params.yMode == "transpose"), 1};
 
   if (params.layoutLeft) {
     if (params.scalarType == "int32") {
       KokkosKernelsBenchmark::register_benchmark(
           name, KokkosBlas2_GER<std::int32_t, Kokkos::LayoutLeft, tExecSpace>,
           arg_names, args, params.repeat);
-    }
-    else if (params.scalarType == "int64") {
+    } else if (params.scalarType == "int64") {
       KokkosKernelsBenchmark::register_benchmark(
           name, KokkosBlas2_GER<std::int64_t, Kokkos::LayoutLeft, tExecSpace>,
           arg_names, args, params.repeat);
-    }
-    else if (params.scalarType == "float") {
+    } else if (params.scalarType == "float") {
       KokkosKernelsBenchmark::register_benchmark(
           name, KokkosBlas2_GER<float, Kokkos::LayoutLeft, tExecSpace>,
           arg_names, args, params.repeat);
-    }
-    else if (params.scalarType == "double") {
+    } else if (params.scalarType == "double") {
       KokkosKernelsBenchmark::register_benchmark(
           name, KokkosBlas2_GER<double, Kokkos::LayoutLeft, tExecSpace>,
           arg_names, args, params.repeat);
-    }
-    else if (params.scalarType == "complex_float") {
+    } else if (params.scalarType == "complex_float") {
       KokkosKernelsBenchmark::register_benchmark(
-          name, KokkosBlas2_GER<Kokkos::complex<float>, Kokkos::LayoutLeft, tExecSpace>,
+          name,
+          KokkosBlas2_GER<Kokkos::complex<float>, Kokkos::LayoutLeft,
+                          tExecSpace>,
           arg_names, args, params.repeat);
-    }
-    else {
+    } else {
       KokkosKernelsBenchmark::register_benchmark(
-          name, KokkosBlas2_GER<Kokkos::complex<double>, Kokkos::LayoutLeft, tExecSpace>,
+          name,
+          KokkosBlas2_GER<Kokkos::complex<double>, Kokkos::LayoutLeft,
+                          tExecSpace>,
           arg_names, args, params.repeat);
     }
   } else {
@@ -231,30 +233,29 @@ void run(const blas2_ger_params& params) {
       KokkosKernelsBenchmark::register_benchmark(
           name, KokkosBlas2_GER<std::int32_t, Kokkos::LayoutRight, tExecSpace>,
           arg_names, args, params.repeat);
-    }
-    else if (params.scalarType == "int64") {
+    } else if (params.scalarType == "int64") {
       KokkosKernelsBenchmark::register_benchmark(
           name, KokkosBlas2_GER<std::int64_t, Kokkos::LayoutRight, tExecSpace>,
           arg_names, args, params.repeat);
-    }
-    else if (params.scalarType == "float") {
+    } else if (params.scalarType == "float") {
       KokkosKernelsBenchmark::register_benchmark(
           name, KokkosBlas2_GER<float, Kokkos::LayoutRight, tExecSpace>,
           arg_names, args, params.repeat);
-    }
-    else if (params.scalarType == "double") {
+    } else if (params.scalarType == "double") {
       KokkosKernelsBenchmark::register_benchmark(
           name, KokkosBlas2_GER<double, Kokkos::LayoutRight, tExecSpace>,
           arg_names, args, params.repeat);
-    }
-    else if (params.scalarType == "complex_float") {
+    } else if (params.scalarType == "complex_float") {
       KokkosKernelsBenchmark::register_benchmark(
-          name, KokkosBlas2_GER<Kokkos::complex<float>, Kokkos::LayoutRight, tExecSpace>,
+          name,
+          KokkosBlas2_GER<Kokkos::complex<float>, Kokkos::LayoutRight,
+                          tExecSpace>,
           arg_names, args, params.repeat);
-    }
-    else {
+    } else {
       KokkosKernelsBenchmark::register_benchmark(
-          name, KokkosBlas2_GER<Kokkos::complex<double>, Kokkos::LayoutRight, tExecSpace>,
+          name,
+          KokkosBlas2_GER<Kokkos::complex<double>, Kokkos::LayoutRight,
+                          tExecSpace>,
           arg_names, args, params.repeat);
     }
   }
@@ -268,7 +269,7 @@ int main(int argc, char** argv) {
 
   const auto params = blas2_ger_params::get_params(argc, argv);
 
-  //std::cout << "In main(): params.repeat = " << params.repeat << std::endl;
+  // std::cout << "In main(): params.repeat = " << params.repeat << std::endl;
 
   if (params.use_threads) {
 #if defined(KOKKOS_ENABLE_THREADS)
