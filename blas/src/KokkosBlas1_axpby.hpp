@@ -84,9 +84,11 @@ void axpby(const execution_space& exec_space, const AV& a, const XMV& X,
   InternalTypeY internal_Y = Y;
 
   if constexpr (AxpbyTraits::internalTypesAB_bothScalars) {
-    if constexpr (AxpbyTraits::a_is_scalar && AxpbyTraits::b_is_scalar && AxpbyTraits::onDevice) { // Aqui
-      // Special case: 'a' and 'b' are kept as scalar, eventually changing precision to match the precisions of 'X' and 'Y'
-      std::cout << "Passing in axpby special case" << std::endl;
+    if constexpr (AxpbyTraits::a_is_scalar && AxpbyTraits::b_is_scalar && AxpbyTraits::onDevice) {
+      // ******************************************************************
+      // In this special case, 'a' and 'b' are kept as scalar, evantually
+      // changing precision to match the precisions of 'X' and 'Y'
+      // ******************************************************************
       InternalTypeA internal_a(a);
       InternalTypeA internal_b(b);
 
