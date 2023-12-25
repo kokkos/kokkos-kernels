@@ -104,12 +104,17 @@ struct AxpbyUnificationAttemptTraits {
   // - variable names begin with lower case letters
   // - type names begin with upper case letters
   // ********************************************************************
- private:
+ public:
   static constexpr bool onDevice =
       KokkosKernels::Impl::kk_is_gpu_exec_space<tExecSpace>();
+
+ private:
   static constexpr bool onHost = !onDevice;
 
+ public:
   static constexpr bool a_is_scalar = !Kokkos::is_view_v<AV>;
+
+ private:
   static constexpr bool a_is_r0     = Tr0_val<AV>();
   static constexpr bool a_is_r1s    = Tr1s_val<AV>();
   static constexpr bool a_is_r1d    = Tr1d_val<AV>();
@@ -117,7 +122,10 @@ struct AxpbyUnificationAttemptTraits {
   static constexpr bool x_is_r1 = Kokkos::is_view_v<XMV> && (XMV::rank == 1);
   static constexpr bool x_is_r2 = Kokkos::is_view_v<XMV> && (XMV::rank == 2);
 
+ public:
   static constexpr bool b_is_scalar = !Kokkos::is_view_v<BV>;
+
+ private:
   static constexpr bool b_is_r0     = Tr0_val<BV>();
   static constexpr bool b_is_r1s    = Tr1s_val<BV>();
   static constexpr bool b_is_r1d    = Tr1d_val<BV>();
@@ -220,10 +228,12 @@ struct AxpbyUnificationAttemptTraits {
                                    // 'AtInputScalarTypeA_nonConst'
       >;
 
-  using InternalTypeA_onDevice =
+  using InternalTypeA_onDevice = std::conditional_t<
+      a_is_scalar && b_is_scalar && onDevice, // Aqui
+      InternalScalarTypeA,
       Kokkos::View<const InternalScalarTypeA*, InternalLayoutA,
                    typename XMV::device_type,
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>>;
 
   using InternalTypeA_onHost = std::conditional_t<
       (a_is_r1d || a_is_r1s) && xyRank2Case && onHost,
@@ -276,13 +286,15 @@ struct AxpbyUnificationAttemptTraits {
                                    // 'AtInputScalarTypeB_nonConst'
       >;
 
-  using InternalTypeB_onDevice =
+  using InternalTypeB_onDevice = std::conditional_t<
+      a_is_scalar && b_is_scalar && onDevice, // Aqui
+      InternalScalarTypeB,
       Kokkos::View<const InternalScalarTypeB*, InternalLayoutB,
                    typename YMV::device_type,
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>>;
 
   using InternalTypeB_onHost = std::conditional_t<
-      ((b_is_r1d || b_is_r1s) && xyRank2Case && onHost),
+      (b_is_r1d || b_is_r1s) && xyRank2Case && onHost,
       Kokkos::View<const InternalScalarTypeB*, InternalLayoutB,
                    typename YMV::device_type,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,
@@ -614,7 +626,7 @@ struct AxpbyUnificationAttemptTraits {
       }
     } else {
       if constexpr (xyRank1Case) {
-        constexpr bool internalTypeA_isOk = internalTypeA_is_r1d;
+        constexpr bool internalTypeA_isOk = internalTypeA_is_r1d || (a_is_scalar && b_is_scalar && internalTypeA_is_scalar); // Aqui
         static_assert(
             internalTypeA_isOk,
             "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
@@ -630,7 +642,7 @@ struct AxpbyUnificationAttemptTraits {
             "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
             ", onDevice, xyRank1Case: InternalTypeX is wrong");
 
-        constexpr bool internalTypeB_isOk = internalTypeB_is_r1d;
+        constexpr bool internalTypeB_isOk = internalTypeB_is_r1d || (a_is_scalar && b_is_scalar && internalTypeA_is_scalar); // Aqui
         static_assert(
             internalTypeB_isOk,
             "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
@@ -646,7 +658,7 @@ struct AxpbyUnificationAttemptTraits {
             "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
             ", onDevice, xyRank1Case: InternalTypeY is wrong");
       } else {
-        constexpr bool internalTypeA_isOk = internalTypeA_is_r1d;
+        constexpr bool internalTypeA_isOk = internalTypeA_is_r1d || (a_is_scalar && b_is_scalar && internalTypeA_is_scalar); // Aqui
         static_assert(
             internalTypeA_isOk,
             "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
@@ -662,7 +674,7 @@ struct AxpbyUnificationAttemptTraits {
             "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
             ", onDevice, xyRank2Case: InternalTypeX is wrong");
 
-        constexpr bool internalTypeB_isOk = internalTypeB_is_r1d;
+        constexpr bool internalTypeB_isOk = internalTypeB_is_r1d || (a_is_scalar && b_is_scalar && internalTypeB_is_scalar); // Aqui
         static_assert(
             internalTypeB_isOk,
             "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
@@ -712,7 +724,7 @@ struct AxpbyUnificationAttemptTraits {
       // - [InternalTypeA / B] = [view<S_a*,1 / m>, view<S_b*,1 / m>]
       // ****************************************************************
       static_assert(
-          internalTypesAB_bothViews,
+          internalTypesAB_bothViews || (a_is_scalar && b_is_scalar && internalTypesAB_bothScalars), // Aqui
           "KokkosBlas::Impl::AxpbyUnificationAttemptTraits::performChecks()"
           ", onDevice, invalid combination of types");
     }

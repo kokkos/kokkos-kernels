@@ -17,9 +17,9 @@
 #ifndef KOKKOSBLAS1_AXPBY_HPP_
 #define KOKKOSBLAS1_AXPBY_HPP_
 
-#ifdef HAVE_KOKKOSKERNELS_DEBUG
+//#ifdef HAVE_KOKKOSKERNELS_DEBUG
 #include <iostream>
-#endif
+//#endif
 
 #include <KokkosBlas1_axpby_spec.hpp>
 #include <KokkosBlas_serial_axpy.hpp>
@@ -84,14 +84,26 @@ void axpby(const execution_space& exec_space, const AV& a, const XMV& X,
   InternalTypeY internal_Y = Y;
 
   if constexpr (AxpbyTraits::internalTypesAB_bothScalars) {
-    InternalTypeA internal_a(Impl::getScalarValueFromVariableAtHost<
-                             AV, Impl::typeRank<AV>()>::getValue(a));
-    InternalTypeB internal_b(Impl::getScalarValueFromVariableAtHost<
-                             BV, Impl::typeRank<BV>()>::getValue(b));
+    if constexpr (AxpbyTraits::a_is_scalar && AxpbyTraits::b_is_scalar && AxpbyTraits::onDevice) { // Aqui
+      // Special case: 'a' and 'b' are kept as scalar, eventually changing precision to match the precisions of 'X' and 'Y'
+      std::cout << "Passing in axpby special case" << std::endl;
+      InternalTypeA internal_a(a);
+      InternalTypeA internal_b(b);
 
-    Impl::Axpby<execution_space, InternalTypeA, InternalTypeX, InternalTypeB,
-                InternalTypeY>::axpby(exec_space, internal_a, internal_X,
-                                      internal_b, internal_Y);
+      Impl::Axpby<execution_space, InternalTypeA, InternalTypeX, InternalTypeB,
+                  InternalTypeY>::axpby(exec_space, internal_a, internal_X,
+                                        internal_b, internal_Y);
+    }
+    else {
+      InternalTypeA internal_a(Impl::getScalarValueFromVariableAtHost<
+                               AV, Impl::typeRank<AV>()>::getValue(a));
+      InternalTypeB internal_b(Impl::getScalarValueFromVariableAtHost<
+                               BV, Impl::typeRank<BV>()>::getValue(b));
+
+      Impl::Axpby<execution_space, InternalTypeA, InternalTypeX, InternalTypeB,
+                  InternalTypeY>::axpby(exec_space, internal_a, internal_X,
+                                        internal_b, internal_Y);
+    }
   } else if constexpr (AxpbyTraits::internalTypesAB_bothViews) {
     constexpr bool internalLayoutA_isStride(
         std::is_same_v<typename InternalTypeA::array_layout,
