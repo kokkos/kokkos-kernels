@@ -84,14 +84,41 @@ void axpby(const execution_space& exec_space, const AV& a, const XMV& X,
   InternalTypeY internal_Y = Y;
 
   if constexpr (AxpbyTraits::internalTypesAB_bothScalars) {
-    InternalTypeA internal_a(Impl::getScalarValueFromVariableAtHost<
-                             AV, Impl::typeRank<AV>()>::getValue(a));
-    InternalTypeB internal_b(Impl::getScalarValueFromVariableAtHost<
-                             BV, Impl::typeRank<BV>()>::getValue(b));
+    // ********************************************************************
+    // The unification logic applies the following general rules:
+    // 1) In a 'onHost' case, it makes the internal types for 'a' and 'b'
+    //    to be both scalars (hence the name 'internalTypesAB_bothScalars')
+    // 2) In a 'onDevice' case, it makes the internal types for 'a' and 'b'
+    //    to be Kokkos views. For performance reasons in Trilinos, the only
+    //    exception for this rule is when the input types for both 'a' and
+    //    'b' are already scalars, in which case the internal types for 'a'
+    //    and 'b' become scalars as well, eventually changing precision in
+    //    order to match the precisions of 'X' and 'Y'.
+    // ********************************************************************
+    if constexpr (AxpbyTraits::a_is_scalar && AxpbyTraits::b_is_scalar &&
+                  AxpbyTraits::onDevice) {
+      // ******************************************************************
+      // We are in the exception situation for rule 2
+      // ******************************************************************
+      InternalTypeA internal_a(a);
+      InternalTypeA internal_b(b);
 
-    Impl::Axpby<execution_space, InternalTypeA, InternalTypeX, InternalTypeB,
-                InternalTypeY>::axpby(exec_space, internal_a, internal_X,
-                                      internal_b, internal_Y);
+      Impl::Axpby<execution_space, InternalTypeA, InternalTypeX, InternalTypeB,
+                  InternalTypeY>::axpby(exec_space, internal_a, internal_X,
+                                        internal_b, internal_Y);
+    } else {
+      // ******************************************************************
+      // We are in rule 1, that is, we are in a 'onHost' case now
+      // ******************************************************************
+      InternalTypeA internal_a(Impl::getScalarValueFromVariableAtHost<
+                               AV, Impl::typeRank<AV>()>::getValue(a));
+      InternalTypeB internal_b(Impl::getScalarValueFromVariableAtHost<
+                               BV, Impl::typeRank<BV>()>::getValue(b));
+
+      Impl::Axpby<execution_space, InternalTypeA, InternalTypeX, InternalTypeB,
+                  InternalTypeY>::axpby(exec_space, internal_a, internal_X,
+                                        internal_b, internal_Y);
+    }
   } else if constexpr (AxpbyTraits::internalTypesAB_bothViews) {
     constexpr bool internalLayoutA_isStride(
         std::is_same_v<typename InternalTypeA::array_layout,
