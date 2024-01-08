@@ -664,8 +664,6 @@ struct LowerTriLvlSchedTP2SolverFunctor {
 // Helper functors for Lower-triangular solve with SpMV
 template <class TriSolveHandle, class LHSType, class NGBLType>
 struct SparseTriSupernodalSpMVFunctor {
-  // using execution_space = typename LHSType::execution_space;
-  // using memory_space = typename execution_space::memory_space;
   using execution_space = typename TriSolveHandle::HandleExecSpace;
   using memory_space    = typename TriSolveHandle::HandleTempMemorySpace;
 
@@ -2913,7 +2911,7 @@ void lower_tri_solve(ExecutionSpace &space, TriSolveHandle &thandle,
 
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
   using namespace KokkosSparse::Experimental;
-  using memory_space        = typename ExecutionSpace::memory_space;
+  using memory_space        = typename TriSolveHandle::HandleTempMemorySpace;
   using device_t            = Kokkos::Device<ExecutionSpace, memory_space>;
   using integer_view_t      = typename TriSolveHandle::integer_view_t;
   using integer_view_host_t = typename TriSolveHandle::integer_view_host_t;
@@ -3311,7 +3309,7 @@ void upper_tri_solve(ExecutionSpace &space, TriSolveHandle &thandle,
 #if defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOSPSTRSV_SOLVE_IMPL_PROFILE)
   cudaProfilerStop();
 #endif
-  using memory_space = typename ExecutionSpace::memory_space;
+  using memory_space = typename TriSolveHandle::HandleTempMemorySpace;
   using device_t     = Kokkos::Device<ExecutionSpace, memory_space>;
   typedef typename TriSolveHandle::size_type size_type;
   typedef typename TriSolveHandle::nnz_lno_view_t NGBLType;
