@@ -117,7 +117,7 @@ struct IlukWrap {
     lno_t lev_start;
 
     // unblocked does not require any buffer
-    static constexpr size_type BUFF_SIZE = 0;
+    static constexpr size_type BUFF_SIZE = 1;
 
     Common(const ARowMapType &A_row_map_, const AEntriesType &A_entries_,
            const AValuesType &A_values_, const LRowMapType &L_row_map_,
