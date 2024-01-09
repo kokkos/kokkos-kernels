@@ -23,7 +23,6 @@
 #define _SPILUKHANDLE_HPP
 
 //#define EXPAND_FACT 3
-#define KEEP_DIAG
 
 namespace KokkosSparse {
 namespace Experimental {
@@ -38,51 +37,43 @@ template <class size_type_, class lno_t_, class scalar_t_, class ExecutionSpace,
           class TemporaryMemorySpace, class PersistentMemorySpace>
 class SPILUKHandle {
  public:
-  typedef ExecutionSpace HandleExecSpace;
-  typedef TemporaryMemorySpace HandleTempMemorySpace;
-  typedef PersistentMemorySpace HandlePersistentMemorySpace;
+  using HandleExecSpace = ExecutionSpace;
+  using HandleTempMemorySpace = TemporaryMemorySpace;
+  using HandlePersistentMemorySpace = PersistentMemorySpace;
 
-  typedef ExecutionSpace execution_space;
-  typedef HandlePersistentMemorySpace memory_space;
+  using execution_space = ExecutionSpace;
+  using memory_space = HandlePersistentMemorySpace;
 
   using TeamPolicy  = Kokkos::TeamPolicy<execution_space>;
   using RangePolicy = Kokkos::RangePolicy<execution_space>;
 
-  typedef typename std::remove_const<size_type_>::type size_type;
-  typedef const size_type const_size_type;
+  using size_type = typename std::remove_const<size_type_>::type;
+  using const_size_type = const size_type;
 
-  typedef typename std::remove_const<lno_t_>::type nnz_lno_t;
-  typedef const nnz_lno_t const_nnz_lno_t;
+  using nnz_lno_t = typename std::remove_const<lno_t_>::type;
+  using const_nnz_lno_t = const nnz_lno_t;
 
-  typedef typename std::remove_const<scalar_t_>::type nnz_scalar_t;
-  typedef const nnz_scalar_t const_nnz_scalar_t;
+  using nnz_scalar_t = typename std::remove_const<scalar_t_>::type;
+  using const_nnz_scalar_t = const nnz_scalar_t;
 
-  typedef typename Kokkos::View<size_type *, HandlePersistentMemorySpace>
-      nnz_row_view_t;
+  using nnz_row_view_t = Kokkos::View<size_type *, HandlePersistentMemorySpace>;
 
-  typedef typename Kokkos::View<nnz_lno_t *, HandlePersistentMemorySpace>
-      nnz_lno_view_t;
+  using nnz_lno_view_t = Kokkos::View<nnz_lno_t *, HandlePersistentMemorySpace>;
 
-  using nnz_value_view_t =
-      typename Kokkos::View<nnz_scalar_t *, HandlePersistentMemorySpace>;
+  using nnz_value_view_t = typename Kokkos::View<nnz_scalar_t *, HandlePersistentMemorySpace>;
 
-  typedef typename Kokkos::View<size_type *, Kokkos::HostSpace>
-      nnz_row_view_host_t;
+  using nnz_row_view_host_t = typename Kokkos::View<size_type *, Kokkos::HostSpace>;
 
-  typedef typename Kokkos::View<nnz_lno_t *, Kokkos::HostSpace>
-      nnz_lno_view_host_t;
+  using nnz_lno_view_host_t = typename Kokkos::View<nnz_lno_t *, Kokkos::HostSpace>;
 
-  typedef typename std::make_signed<
-      typename nnz_row_view_t::non_const_value_type>::type signed_integral_t;
-  typedef Kokkos::View<signed_integral_t *,
-                       typename nnz_row_view_t::array_layout,
-                       typename nnz_row_view_t::device_type,
-                       typename nnz_row_view_t::memory_traits>
-      signed_nnz_lno_view_t;
+  using signed_integral_t = typename std::make_signed<typename nnz_row_view_t::non_const_value_type>::type;
+  using signed_nnz_lno_view_t = Kokkos::View<signed_integral_t *,
+                                             typename nnz_row_view_t::array_layout,
+                                             typename nnz_row_view_t::device_type,
+                                             typename nnz_row_view_t::memory_traits>;
 
-  typedef Kokkos::View<nnz_lno_t **, Kokkos::LayoutRight,
-                       HandlePersistentMemorySpace>
-      work_view_t;
+  using work_view_t = Kokkos::View<nnz_lno_t **, Kokkos::LayoutRight,
+                                   HandlePersistentMemorySpace>;
 
  private:
   nnz_row_view_t level_list;  // level IDs which the rows belong to
@@ -240,7 +231,7 @@ class SPILUKHandle {
 
   bool is_symbolic_complete() const { return symbolic_complete; }
 
-  bool block_enabled() const { return block_size > 0; }
+  bool is_block_enabled() const { return block_size > 0; }
 
   size_type get_num_levels() const { return nlevels; }
   void set_num_levels(size_type nlevels_) { this->nlevels = nlevels_; }

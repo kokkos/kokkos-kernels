@@ -394,11 +394,7 @@ void iluk_symbolic(IlukHandle& thandle,
       U_row_map(i + 1) = cntU;
 
       // Copy L part
-#ifdef KEEP_DIAG
       if (cntL + lenl + 1 > static_cast<size_type>(L_entries_d.extent(0))) {
-#else
-      if (cntL + lenl > static_cast<size_type>(L_entries_d.extent(0))) {
-#endif
         // size_type newsize = (size_type) (L_entries_d.extent(0)*EXPAND_FACT);
         // Kokkos::resize(L_entries, newsize);
         // Kokkos::resize(L_entries_d, newsize);
@@ -412,11 +408,9 @@ void iluk_symbolic(IlukHandle& thandle,
         L_entries(cntL) = h_iL(k);
         cntL++;
       }
-#ifdef KEEP_DIAG
       // L diag entry
       L_entries(cntL) = i;
       cntL++;
-#endif
       L_row_map(i + 1) = cntL;
     }  // End main loop i
 
