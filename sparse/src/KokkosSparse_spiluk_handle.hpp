@@ -37,40 +37,44 @@ template <class size_type_, class lno_t_, class scalar_t_, class ExecutionSpace,
           class TemporaryMemorySpace, class PersistentMemorySpace>
 class SPILUKHandle {
  public:
-  using HandleExecSpace = ExecutionSpace;
-  using HandleTempMemorySpace = TemporaryMemorySpace;
+  using HandleExecSpace             = ExecutionSpace;
+  using HandleTempMemorySpace       = TemporaryMemorySpace;
   using HandlePersistentMemorySpace = PersistentMemorySpace;
 
   using execution_space = ExecutionSpace;
-  using memory_space = HandlePersistentMemorySpace;
+  using memory_space    = HandlePersistentMemorySpace;
 
   using TeamPolicy  = Kokkos::TeamPolicy<execution_space>;
   using RangePolicy = Kokkos::RangePolicy<execution_space>;
 
-  using size_type = typename std::remove_const<size_type_>::type;
+  using size_type       = typename std::remove_const<size_type_>::type;
   using const_size_type = const size_type;
 
-  using nnz_lno_t = typename std::remove_const<lno_t_>::type;
+  using nnz_lno_t       = typename std::remove_const<lno_t_>::type;
   using const_nnz_lno_t = const nnz_lno_t;
 
-  using nnz_scalar_t = typename std::remove_const<scalar_t_>::type;
+  using nnz_scalar_t       = typename std::remove_const<scalar_t_>::type;
   using const_nnz_scalar_t = const nnz_scalar_t;
 
   using nnz_row_view_t = Kokkos::View<size_type *, HandlePersistentMemorySpace>;
 
   using nnz_lno_view_t = Kokkos::View<nnz_lno_t *, HandlePersistentMemorySpace>;
 
-  using nnz_value_view_t = typename Kokkos::View<nnz_scalar_t *, HandlePersistentMemorySpace>;
+  using nnz_value_view_t =
+      typename Kokkos::View<nnz_scalar_t *, HandlePersistentMemorySpace>;
 
-  using nnz_row_view_host_t = typename Kokkos::View<size_type *, Kokkos::HostSpace>;
+  using nnz_row_view_host_t =
+      typename Kokkos::View<size_type *, Kokkos::HostSpace>;
 
-  using nnz_lno_view_host_t = typename Kokkos::View<nnz_lno_t *, Kokkos::HostSpace>;
+  using nnz_lno_view_host_t =
+      typename Kokkos::View<nnz_lno_t *, Kokkos::HostSpace>;
 
-  using signed_integral_t = typename std::make_signed<typename nnz_row_view_t::non_const_value_type>::type;
-  using signed_nnz_lno_view_t = Kokkos::View<signed_integral_t *,
-                                             typename nnz_row_view_t::array_layout,
-                                             typename nnz_row_view_t::device_type,
-                                             typename nnz_row_view_t::memory_traits>;
+  using signed_integral_t = typename std::make_signed<
+      typename nnz_row_view_t::non_const_value_type>::type;
+  using signed_nnz_lno_view_t =
+      Kokkos::View<signed_integral_t *, typename nnz_row_view_t::array_layout,
+                   typename nnz_row_view_t::device_type,
+                   typename nnz_row_view_t::memory_traits>;
 
   using work_view_t = Kokkos::View<nnz_lno_t **, Kokkos::LayoutRight,
                                    HandlePersistentMemorySpace>;

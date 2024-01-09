@@ -200,8 +200,7 @@ struct SpilukTest {
       const auto [L_row_map_rp, L_entries_rp, L_values_rp, U_row_map_rp,
                   U_entries_rp, U_values_rp] =
           run_and_check_spiluk(kh, row_map, entries, values,
-                               SPILUKAlgorithm::SEQLVLSCHD_RP,
-                               fill_lev);
+                               SPILUKAlgorithm::SEQLVLSCHD_RP, fill_lev);
 
       EXPECT_NEAR_KK_1DVIEW(L_row_map, L_row_map_rp, EPS);
       EXPECT_NEAR_KK_1DVIEW(L_entries, L_entries_rp, EPS);
@@ -220,7 +219,7 @@ struct SpilukTest {
       const ValuesType& values, SPILUKAlgorithm alg, const lno_t fill_lev,
       const size_type block_size) {
     const size_type block_items = block_size * block_size;
-    const size_type nrows = row_map.extent(0) - 1;
+    const size_type nrows       = row_map.extent(0) - 1;
     kh.create_spiluk_handle(alg, nrows, 4 * nrows, 4 * nrows, block_size);
 
     auto spiluk_handle = kh.get_spiluk_handle();
@@ -255,8 +254,7 @@ struct SpilukTest {
     if (block_size == 1) {
       const auto [L_row_map_u, L_entries_u, L_values_u, U_row_map_u,
                   U_entries_u, U_values_u] =
-          run_and_check_spiluk(kh, row_map, entries, values, alg,
-                               fill_lev);
+          run_and_check_spiluk(kh, row_map, entries, values, alg, fill_lev);
 
       EXPECT_NEAR_KK_1DVIEW(L_row_map, L_row_map_u, EPS);
       EXPECT_NEAR_KK_1DVIEW(L_entries, L_entries_u, EPS);
@@ -276,7 +274,7 @@ struct SpilukTest {
 
     compress_matrix(row_map, entries, values, A);
 
-    const lno_t fill_lev  = 2;
+    const lno_t fill_lev = 2;
 
     KernelHandle kh;
 
@@ -304,7 +302,7 @@ struct SpilukTest {
 
     std::vector<int> weights(nstreams, 1);
     std::vector<execution_space> instances =
-      Kokkos::Experimental::partition_space(execution_space(), weights);
+        Kokkos::Experimental::partition_space(execution_space(), weights);
 
     std::vector<KernelHandle> kh_v(nstreams);
     std::vector<KernelHandle*> kh_ptr_v(nstreams);
@@ -372,8 +370,8 @@ struct SpilukTest {
 
       Kokkos::resize(L_entries_v[i], spiluk_handle->get_nnzL());
       Kokkos::resize(U_entries_v[i], spiluk_handle->get_nnzU());
-      L_values_v[i]  = ValuesType("L_values", spiluk_handle->get_nnzL());
-      U_values_v[i]  = ValuesType("U_values", spiluk_handle->get_nnzU());
+      L_values_v[i] = ValuesType("L_values", spiluk_handle->get_nnzL());
+      U_values_v[i] = ValuesType("U_values", spiluk_handle->get_nnzU());
     }  // Done handle creation and spiluk_symbolic on all streams
 
     // Numeric phase
@@ -393,7 +391,8 @@ struct SpilukTest {
     }
   }
 
-  static void run_test_spiluk_streams_blocks(SPILUKAlgorithm test_algo, int nstreams) {
+  static void run_test_spiluk_streams_blocks(SPILUKAlgorithm test_algo,
+                                             int nstreams) {
     // Workaround for OpenMP: skip tests if concurrency < nstreams because of
     // not enough resource to partition
     bool run_streams_test = true;
@@ -411,7 +410,7 @@ struct SpilukTest {
 
     std::vector<int> weights(nstreams, 1);
     std::vector<execution_space> instances =
-      Kokkos::Experimental::partition_space(execution_space(), weights);
+        Kokkos::Experimental::partition_space(execution_space(), weights);
 
     std::vector<KernelHandle> kh_v(nstreams);
     std::vector<KernelHandle*> kh_ptr_v(nstreams);
@@ -478,7 +477,8 @@ struct SpilukTest {
 
       // Create handle
       kh_v[i] = KernelHandle();
-      kh_v[i].create_spiluk_handle(test_algo, bnrows, 4 * bnrows, 4 * bnrows, block_size);
+      kh_v[i].create_spiluk_handle(test_algo, bnrows, 4 * bnrows, 4 * bnrows,
+                                   block_size);
       kh_ptr_v[i] = &kh_v[i];
 
       auto spiluk_handle = kh_v[i].get_spiluk_handle();
@@ -498,8 +498,10 @@ struct SpilukTest {
 
       Kokkos::resize(L_entries_v[i], spiluk_handle->get_nnzL());
       Kokkos::resize(U_entries_v[i], spiluk_handle->get_nnzU());
-      L_values_v[i]  = ValuesType("L_values", spiluk_handle->get_nnzL() * block_items);
-      U_values_v[i]  = ValuesType("U_values", spiluk_handle->get_nnzU() * block_items);
+      L_values_v[i] =
+          ValuesType("L_values", spiluk_handle->get_nnzL() * block_items);
+      U_values_v[i] =
+          ValuesType("U_values", spiluk_handle->get_nnzU() * block_items);
     }  // Done handle creation and spiluk_symbolic on all streams
 
     // Numeric phase
@@ -513,7 +515,8 @@ struct SpilukTest {
     for (int i = 0; i < nstreams; i++) {
       check_result_block(A_row_map_v[i], A_entries_v[i], A_values_v[i],
                          L_row_map_v[i], L_entries_v[i], L_values_v[i],
-                         U_row_map_v[i], U_entries_v[i], U_values_v[i], block_size);
+                         U_row_map_v[i], U_entries_v[i], U_values_v[i],
+                         block_size);
 
       kh_v[i].destroy_spiluk_handle();
     }
@@ -538,15 +541,13 @@ struct SpilukTest {
 
     // Check block_size=1 produces identical result to unblocked
     run_and_check_spiluk_block(kh, row_map, entries, values,
-                               SPILUKAlgorithm::SEQLVLSCHD_RP,
-                               fill_lev, 1);
+                               SPILUKAlgorithm::SEQLVLSCHD_RP, fill_lev, 1);
     run_and_check_spiluk_block(kh, row_map, entries, values,
-                               SPILUKAlgorithm::SEQLVLSCHD_TP1,
-                               fill_lev, 1);
+                               SPILUKAlgorithm::SEQLVLSCHD_TP1, fill_lev, 1);
 
     // Convert to BSR
-    Crs crs("crs for block spiluk test", nrows, nrows, nnz, values,
-            row_map, entries);
+    Crs crs("crs for block spiluk test", nrows, nrows, nnz, values, row_map,
+            entries);
     Bsr bsr(crs, block_size);
 
     // Pull out views from BSR
@@ -558,11 +559,11 @@ struct SpilukTest {
     Kokkos::deep_copy(bvalues, bsr.values);
 
     run_and_check_spiluk_block(kh, brow_map, bentries, bvalues,
-                               SPILUKAlgorithm::SEQLVLSCHD_RP,
-                               fill_lev, block_size);
+                               SPILUKAlgorithm::SEQLVLSCHD_RP, fill_lev,
+                               block_size);
     run_and_check_spiluk_block(kh, brow_map, bentries, bvalues,
-                               SPILUKAlgorithm::SEQLVLSCHD_TP1,
-                               fill_lev, block_size);
+                               SPILUKAlgorithm::SEQLVLSCHD_TP1, fill_lev,
+                               block_size);
   }
 };
 
@@ -594,10 +595,14 @@ void test_spiluk_streams() {
   TestStruct::run_test_spiluk_streams_blocks(SPILUKAlgorithm::SEQLVLSCHD_RP, 2);
   TestStruct::run_test_spiluk_streams_blocks(SPILUKAlgorithm::SEQLVLSCHD_RP, 3);
   TestStruct::run_test_spiluk_streams_blocks(SPILUKAlgorithm::SEQLVLSCHD_RP, 4);
-  TestStruct::run_test_spiluk_streams_blocks(SPILUKAlgorithm::SEQLVLSCHD_TP1, 1);
-  TestStruct::run_test_spiluk_streams_blocks(SPILUKAlgorithm::SEQLVLSCHD_TP1, 2);
-  TestStruct::run_test_spiluk_streams_blocks(SPILUKAlgorithm::SEQLVLSCHD_TP1, 3);
-  TestStruct::run_test_spiluk_streams_blocks(SPILUKAlgorithm::SEQLVLSCHD_TP1, 4);
+  TestStruct::run_test_spiluk_streams_blocks(SPILUKAlgorithm::SEQLVLSCHD_TP1,
+                                             1);
+  TestStruct::run_test_spiluk_streams_blocks(SPILUKAlgorithm::SEQLVLSCHD_TP1,
+                                             2);
+  TestStruct::run_test_spiluk_streams_blocks(SPILUKAlgorithm::SEQLVLSCHD_TP1,
+                                             3);
+  TestStruct::run_test_spiluk_streams_blocks(SPILUKAlgorithm::SEQLVLSCHD_TP1,
+                                             4);
 }
 
 #define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)        \

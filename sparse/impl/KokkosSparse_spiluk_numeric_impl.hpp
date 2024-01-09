@@ -58,7 +58,7 @@ struct IlukWrap {
   using team_policy            = typename IlukHandle::TeamPolicy;
   using member_type            = typename team_policy::member_type;
   using range_policy           = typename IlukHandle::RangePolicy;
-  using sview_1d               = typename Kokkos::View<scalar_t *, memory_space>;
+  using sview_1d = typename Kokkos::View<scalar_t *, memory_space>;
 
   static team_policy get_team_policy(const size_type nrows,
                                      const int team_size) {
@@ -340,8 +340,7 @@ struct IlukWrap {
     }
 
     KOKKOS_INLINE_FUNCTION
-    void divide(const member_type &team,
-                const LValuesUnmanaged2DBlockType &lhs,
+    void divide(const member_type &team, const LValuesUnmanaged2DBlockType &lhs,
                 const UValuesUnmanaged2DBlockType &rhs) const {
       KokkosBatched::TeamTrsm<
           member_type, KokkosBatched::Side::Right, KokkosBatched::Uplo::Upper,
@@ -440,7 +439,7 @@ struct IlukWrap {
       const auto rowid = Base::level_idx(i);
       const auto tid   = i - Base::lev_start;
       auto k1          = Base::L_row_map(rowid);
-      auto k2 = Base::L_row_map(rowid + 1) - 1;
+      auto k2          = Base::L_row_map(rowid + 1) - 1;
       Base::lset_id(k2);
       for (auto k = k1; k < k2; ++k) {
         const auto col = Base::L_entries(k);
@@ -806,7 +805,7 @@ struct IlukWrap {
       lvl_ptr_h_v[i]         = thandle_v[i]->get_host_level_ptr();
       lvl_idx_v[i]           = thandle_v[i]->get_level_idx();
       iw_v[i]                = thandle_v[i]->get_iw();
-      is_block_enabled_v[i]     = thandle_v[i]->is_block_enabled();
+      is_block_enabled_v[i]  = thandle_v[i]->is_block_enabled();
       block_size_v[i]        = thandle_v[i]->get_block_size();
       stream_have_level_v[i] = true;
       if (nlevels_max < nlevels_v[i]) nlevels_max = nlevels_v[i];
@@ -838,11 +837,12 @@ struct IlukWrap {
           if (stream_have_level_v[i]) {
             range_policy rpolicy =
                 get_range_policy(execspace_v[i], lvl_start_v[i], lvl_end_v[i]);
-            KernelLaunchMacro(
-                A_row_map_v[i], A_entries_v[i], A_values_v[i], L_row_map_v[i],
-                L_entries_v[i], L_values_v[i], U_row_map_v[i], U_entries_v[i],
-                U_values_v[i], rpolicy, "parfor_rp", lvl_idx_v[i], iw_v[i],
-                lvl_start_v[i], RPF, RPB, is_block_enabled_v[i], block_size_v[i]);
+            KernelLaunchMacro(A_row_map_v[i], A_entries_v[i], A_values_v[i],
+                              L_row_map_v[i], L_entries_v[i], L_values_v[i],
+                              U_row_map_v[i], U_entries_v[i], U_values_v[i],
+                              rpolicy, "parfor_rp", lvl_idx_v[i], iw_v[i],
+                              lvl_start_v[i], RPF, RPB, is_block_enabled_v[i],
+                              block_size_v[i]);
           }  // end if (stream_have_level_v[i])
         }    // end for streams
       }      // end for lvl
