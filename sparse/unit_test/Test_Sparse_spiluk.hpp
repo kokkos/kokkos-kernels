@@ -156,8 +156,6 @@ struct SpilukTest {
           U_entries, block_size);
 
     const auto result = check_result_impl(A, L, U, nrows, block_size);
-    std::cout << "For block_size=" << block_size << ", result=" << result << std::endl;
-
     EXPECT_LT(result, 1e0);
   }
 
