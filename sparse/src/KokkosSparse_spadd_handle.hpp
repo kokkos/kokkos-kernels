@@ -33,7 +33,9 @@ class SPADDHandle {
   typedef ExecutionSpace execution_space;
 
  private:
-  bool input_sorted;
+  // if both are true, the input matrices are strict CRS
+  bool input_sorted;  // column indices in a row are sorted
+  bool input_merged;  // column indices in a row are unique (i.e., merged)
 
   size_type result_nnz_size;
 
@@ -79,8 +81,9 @@ class SPADDHandle {
   /**
    * \brief Default constructor.
    */
-  SPADDHandle(bool input_is_sorted)
+  SPADDHandle(bool input_is_sorted, bool input_is_merged = false)
       : input_sorted(input_is_sorted),
+        input_merged(input_is_merged),
         result_nnz_size(0),
         called_symbolic(false),
         called_numeric(false) {}
@@ -95,6 +98,8 @@ class SPADDHandle {
   void set_call_numeric(bool call = true) { this->called_numeric = call; }
 
   bool is_input_sorted() { return input_sorted; }
+  bool is_input_merged() { return input_merged; }
+  bool is_input_strict_crs() { return input_sorted && input_merged; }
 };
 
 }  // namespace KokkosSparse

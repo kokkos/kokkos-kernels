@@ -32,7 +32,11 @@
 typedef Kokkos::complex<double> kokkos_complex_double;
 typedef Kokkos::complex<float> kokkos_complex_float;
 
-// Create a random square matrix for testing mat-mat addition kernels
+// Create a random nrows by ncols matrix for testing mat-mat addition kernels.
+// minNNZ, maxNNZ: min and max number of nonzeros in any row.
+// maxNNZ > ncols will result in duplicated entries in a row, otherwise entries
+// in a row are unique.
+// sortRows: whether to sort columns in a row
 template <typename crsMat_t, typename ordinal_type>
 crsMat_t randomMatrix(ordinal_type nrows, ordinal_type ncols,
                       ordinal_type minNNZ, ordinal_type maxNNZ, bool sortRows) {
@@ -117,7 +121,9 @@ void test_spadd(lno_t numRows, lno_t numCols, size_type minNNZ,
   srand((numRows << 1) ^ numCols);
 
   KernelHandle handle;
-  handle.create_spadd_handle(sortRows);
+  // If maxNNZ <= numCols, the generated A, B have unique column indices in each
+  // row
+  handle.create_spadd_handle(sortRows, static_cast<lno_t>(maxNNZ) <= numCols);
   crsMat_t A =
       randomMatrix<crsMat_t, lno_t>(numRows, numCols, minNNZ, maxNNZ, sortRows);
   crsMat_t B =
