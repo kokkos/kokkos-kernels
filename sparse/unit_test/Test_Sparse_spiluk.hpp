@@ -433,7 +433,6 @@ struct SpilukTest {
     compress_matrix(row_map, entries, values, Afix);
 
     const size_type nrows       = Afix.size();
-    const size_type nnz         = values.extent(0);
     const size_type block_size  = nrows % 2 == 0 ? 2 : 3;
     const size_type block_items = block_size * block_size;
     ASSERT_EQ(nrows % block_size, 0);
