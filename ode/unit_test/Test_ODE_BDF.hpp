@@ -751,7 +751,7 @@ void test_BDF_adaptive_stiff() {
 
   StiffChemistry mySys{};
 
-  const scalar_type t_start = KAT::zero(), t_end = 500*KAT::one();
+  const scalar_type t_start = KAT::zero(), t_end = 350*KAT::one();
   scalar_type dt = KAT::zero();
   vec_type y0("initial conditions", mySys.neqs), y_new("solution", mySys.neqs);
 

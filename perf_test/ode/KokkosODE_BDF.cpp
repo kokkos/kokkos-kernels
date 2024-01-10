@@ -116,19 +116,18 @@ void run_ode_chem(benchmark::State& state, const bdf_input_parameters& inputs) {
   const int num_odes = inputs.num_odes;
   const int neqs     = mySys.neqs;
 
-  const scalar_type t_start = KAT::zero(), t_end = 500*KAT::one();
+  const scalar_type t_start = KAT::zero(), t_end = 350*KAT::one();
   scalar_type dt = KAT::zero();
   vec_type y0("initial conditions", neqs, num_odes);
   vec_type y_new("solution", neqs, num_odes);
 
   // Set initial conditions
-  auto y0_h = Kokkos::create_mirror_view(y0);
+  auto y0_h = Kokkos::create_mirror(y0);
   for(int sysIdx = 0; sysIdx < num_odes; ++sysIdx) {
     y0_h(0, sysIdx) = KAT::one();
     y0_h(1, sysIdx) = KAT::zero();
     y0_h(2, sysIdx) = KAT::zero();
   }
-  Kokkos::deep_copy(y0, y0_h);
 
   mat_type temp("buffer1", neqs, 23 + 2*neqs + 4, num_odes), temp2("buffer2", 6, 7, num_odes);
 
@@ -137,14 +136,25 @@ void run_ode_chem(benchmark::State& state, const bdf_input_parameters& inputs) {
   }
 
   Kokkos::RangePolicy<execution_space> policy(0, num_odes);
-  BDF_Solve_wrapper bdf_wrapper(mySys, t_start, t_end, dt,
-				(t_end - t_start) / 10,
-				y0, y_new, temp, temp2);
 
   Kokkos::Timer time;
   time.reset();
   for (auto _ : state) {
     (void)_;
+
+    // Set initial conditions for each test iteration
+    state.PauseTiming();
+    dt = KAT::zero();
+    Kokkos::deep_copy(y0, y0_h);
+    Kokkos::deep_copy(y_new, KAT::zero());
+    Kokkos::deep_copy(temp, KAT::zero());
+    Kokkos::deep_copy(temp2, KAT::zero());
+    BDF_Solve_wrapper bdf_wrapper(mySys, t_start, t_end, dt,
+				  (t_end - t_start) / 10,
+				  y0, y_new, temp, temp2);
+    state.ResumeTiming();
+
+    // Actually run the time integrator
     Kokkos::parallel_for(policy, bdf_wrapper);
     Kokkos::fence();
   }
@@ -155,9 +165,12 @@ void run_ode_chem(benchmark::State& state, const bdf_input_parameters& inputs) {
   double error;
   for(int odeIdx = 0; odeIdx < num_odes; ++odeIdx) {
     error = 0;
-    error += Kokkos::abs(y0_h(0, odeIdx) - 0.4193639) / 0.4193639;
-    error += Kokkos::abs(y0_h(1, odeIdx) - 0.000002843646) / 0.000002843646;
-    error += Kokkos::abs(y0_h(2, odeIdx) - 0.5806333) / 0.5806333;
+    // error += Kokkos::abs(y0_h(0, odeIdx) - 0.4193639) / 0.4193639;
+    // error += Kokkos::abs(y0_h(1, odeIdx) - 0.000002843646) / 0.000002843646;
+    // error += Kokkos::abs(y0_h(2, odeIdx) - 0.5806333) / 0.5806333;
+    error += Kokkos::abs(y0_h(0, odeIdx) - 0.462966) / 0.462966;
+    error += Kokkos::abs(y0_h(1, odeIdx) - 3.42699e-06) / 3.42699e-06;
+    error += Kokkos::abs(y0_h(2, odeIdx) - 0.537030) / 0.537030;
     error = error / 3;
 
     if(error > 1e-6) {

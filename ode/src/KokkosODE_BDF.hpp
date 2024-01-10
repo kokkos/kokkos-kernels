@@ -214,6 +214,7 @@ KOKKOS_FUNCTION void BDFSolve(const ode_type& ode, const scalar_type t_start, co
     for(int eqIdx = 0; eqIdx < ode.neqs; ++eqIdx) {
       y0(eqIdx) = y_new(eqIdx);
     }
+    // printf("t=%f, dt=%f, y={%f, %f, %f}\n", t, dt, y0(0), y0(1), y0(2));
   }
 } // BDFSolve
 
