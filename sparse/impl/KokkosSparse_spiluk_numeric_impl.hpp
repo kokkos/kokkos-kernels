@@ -107,6 +107,8 @@ struct IlukWrap {
     WorkViewType iw;
     lno_t lev_start;
 
+    using reftype = scalar_t&;
+
     Common(const ARowMapType &A_row_map_, const AEntriesType &A_entries_,
            const AValuesType &A_values_, const LRowMapType &L_row_map_,
            const LEntriesType &L_entries_, LValuesType &L_values_,
@@ -237,6 +239,8 @@ struct IlukWrap {
             AValuesType>::array_layout,
         typename AValuesType::device_type,
         Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
+
+    using reftype = LValuesUnmanaged2DBlockType;
 
     Common(const ARowMapType &A_row_map_, const AEntriesType &A_entries_,
            const AValuesType &A_values_, const LRowMapType &L_row_map_,
@@ -472,7 +476,7 @@ struct IlukWrap {
               const auto col  = Base::U_entries(kk);
               const auto ipos = Base::iw(my_team, col);
               if (ipos != -1) {
-                auto C = col < rowid ? Base::lget(ipos) : Base::uget(ipos);
+                typename Base::reftype C = col < rowid ? Base::lget(ipos) : Base::uget(ipos);
                 Base::gemm(Base::uget(kk), fact, C);
               }
             });  // end for kk
