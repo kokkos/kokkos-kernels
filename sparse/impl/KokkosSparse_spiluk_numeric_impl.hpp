@@ -565,7 +565,7 @@ struct IlukWrap {
                             L_entries, L_values, U_row_map, U_entries, U_values,
                             tpolicy, "parfor_tp1", level_idx, iw,
                             lev_start + lvl_rowid_start, TPF, TPB,
-                            thandle.is_block_enabled(), block_size);
+                            block_enabled, block_size);
           Kokkos::fence();
           lvl_rowid_start += lvl_nrows_chunk;
         }
