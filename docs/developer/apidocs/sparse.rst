@@ -60,9 +60,11 @@ block_spgemm
 
 gauss_seidel
 ------------
-.. doxygenfunction:: create_gs_handle(KokkosSparse::GSAlgorithm gs_algorithm, KokkosGraph::ColoringAlgorithm coloring_algorithm)
 .. doxygenfunction:: create_gs_handle(const HandleExecSpace&, int, KokkosSparse::GSAlgorithm gs_algorithm, KokkosGraph::ColoringAlgorithm coloring_algorithm)
+.. doxygenfunction:: create_gs_handle(KokkosSparse::GSAlgorithm gs_algorithm, KokkosGraph::ColoringAlgorithm coloring_algorithm)
+.. doxygenfunction:: create_gs_handle(const HandleExecSpace&, int, KokkosSparse::ClusteringAlgorithm, nnz_lno_t, KokkosGraph::ColoringAlgorithm)
 .. doxygenfunction:: create_gs_handle(KokkosSparse::ClusteringAlgorithm, nnz_lno_t, KokkosGraph::ColoringAlgorithm)
+.. doxygenfunction:: destroy_gs_handle()
 .. doxygenfunction:: gauss_seidel_symbolic(const ExecutionSpace &space, KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows, typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map, lno_nnz_view_t_ entries, bool is_graph_symmetric)
 .. doxygenfunction:: gauss_seidel_symbolic(KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows, typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map, lno_nnz_view_t_ entries, bool is_graph_symmetric)
 .. doxygenfunction:: gauss_seidel_numeric(const ExecutionSpace &space, KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows, typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map, lno_nnz_view_t_ entries, scalar_nnz_view_t_ values, bool is_graph_symmetric)

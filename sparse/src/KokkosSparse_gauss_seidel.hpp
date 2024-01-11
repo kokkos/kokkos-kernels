@@ -29,13 +29,13 @@ namespace Experimental {
 /// @brief Gauss-Seidel preconditioner setup (first phase, based on sparsity
 /// pattern only)
 ///
-/// @tparam ExecutionSpace This kernels execution space type.
+/// @tparam ExecutionSpace This kernels execution space type
 /// @tparam KernelHandle A specialization of
 /// KokkosKernels::Experimental::KokkosKernelsHandle
 /// @tparam lno_row_view_t_ The matrix's rowmap type
 /// @tparam lno_nnz_view_t_ The matrix's entries type
-/// @param space The execution space instance this kernel will be run on.
-/// @param handle KernelHandle instance
+/// @param space The execution space instance this kernel will be run on
+/// @param handle A KokkosKernelsHandle instance
 /// @param num_rows Number of rows in the matrix
 /// @param num_cols Number of columns in the matrix
 /// @param row_map The matrix's rowmap
@@ -112,7 +112,7 @@ void gauss_seidel_symbolic(const ExecutionSpace &space, KernelHandle *handle,
 /// KokkosKernels::Experimental::KokkosKernelsHandle
 /// @tparam lno_row_view_t_ The matrix's rowmap type
 /// @tparam lno_nnz_view_t_ The matrix's entries type
-/// @param handle KernelHandle instance
+/// @param handle A KokkosKernelsHandle instance
 /// @param num_rows Number of rows in the matrix
 /// @param num_cols Number of columns in the matrix
 /// @param row_map The matrix's rowmap
@@ -141,7 +141,7 @@ void gauss_seidel_symbolic(KernelHandle *handle,
 /// KokkosKernels::Experimental::KokkosKernelsHandle
 /// @tparam lno_row_view_t_ The matrix's rowmap type
 /// @tparam lno_nnz_view_t_ The matrix's entries type
-/// @param handle KernelHandle instance
+/// @param handle A KokkosKernelsHandle instance
 /// @param num_rows Number of rows in the matrix
 /// @param num_cols Number of columns in the matrix
 /// @param block_size The number of degrees of freedom per block
@@ -173,15 +173,15 @@ void block_gauss_seidel_symbolic(
 /// @brief Gauss-Seidel preconditioner setup (second phase, based on matrix's
 /// numeric values)
 ///
-/// @tparam ExecutionSpace This kernels execution space type.
+/// @tparam ExecutionSpace This kernels execution space type
 /// @tparam format The matrix storage format, CRS or BSR
 /// @tparam KernelHandle A specialization of
 /// KokkosKernels::Experimental::KokkosKernelsHandle
 /// @tparam lno_row_view_t_ The matrix's rowmap type
 /// @tparam lno_nnz_view_t_ The matrix's entries type
 /// @tparam scalar_nnz_view_t_ The matrix's values type
-/// @param space The execution space instance this kernel will be run on.
-/// @param handle KernelHandle instance
+/// @param space The execution space instance this kernel will be run on
+/// @param handle A KokkosKernelsHandle instance
 /// @param num_rows Number of rows in the matrix
 /// @param num_cols Number of columns in the matrix
 /// @param row_map The matrix's rowmap
@@ -279,8 +279,8 @@ void gauss_seidel_numeric(const ExecutionSpace &space, KernelHandle *handle,
 /// @tparam lno_row_view_t_ The matrix's rowmap type
 /// @tparam lno_nnz_view_t_ The matrix's entries type
 /// @tparam scalar_nnz_view_t_ The matrix's values type. The user-provided
-/// inverse diagonal must share this type.
-/// @param handle KernelHandle instance
+/// inverse diagonal must share this type
+/// @param handle A KokkosKernelsHandle instance
 /// @param num_rows Number of rows in the matrix
 /// @param num_cols Number of columns in the matrix
 /// @param row_map The matrix's rowmap
@@ -313,16 +313,16 @@ void gauss_seidel_numeric(KernelHandle *handle,
 /// numeric values). This version accepts the matrix's inverse diagonal from the
 /// user.
 ///
-/// @tparam ExecutionSpace This kernels execution space type.
+/// @tparam ExecutionSpace This kernels execution space type
 /// @tparam format The matrix storage format, CRS or BSR
 /// @tparam KernelHandle A specialization of
 /// KokkosKernels::Experimental::KokkosKernelsHandle
 /// @tparam lno_row_view_t_ The matrix's rowmap type
 /// @tparam lno_nnz_view_t_ The matrix's entries type
 /// @tparam scalar_nnz_view_t_ The matrix's values type. The user-provided
-/// inverse diagonal must share this type.
-/// @param space The execution space instance this kernel will be run on.
-/// @param handle KernelHandle instance
+/// inverse diagonal must share this type
+/// @param space The execution space instance this kernel will be run on
+/// @param handle A KokkosKernelsHandle instance
 /// @param num_rows Number of rows in the matrix
 /// @param num_cols Number of columns in the matrix
 /// @param row_map The matrix's rowmap
@@ -427,8 +427,8 @@ void gauss_seidel_numeric(const ExecutionSpace &space, KernelHandle *handle,
 /// @tparam lno_row_view_t_ The matrix's rowmap type
 /// @tparam lno_nnz_view_t_ The matrix's entries type
 /// @tparam scalar_nnz_view_t_ The matrix's values type. The user-provided
-/// inverse diagonal must share this type.
-/// @param handle KernelHandle instance
+/// inverse diagonal must share this type
+/// @param handle A KokkosKernelsHandle instance
 /// @param num_rows Number of rows in the matrix
 /// @param num_cols Number of columns in the matrix
 /// @param row_map The matrix's rowmap
@@ -468,7 +468,7 @@ void gauss_seidel_numeric(KernelHandle *handle,
 /// @tparam lno_row_view_t_ The matrix's rowmap type
 /// @tparam lno_nnz_view_t_ The matrix's entries type
 /// @tparam scalar_nnz_view_t_ The matrix's values type
-/// @param handle handle A KokkosKernelsHandle instance
+/// @param handle A KokkosKernelsHandle instance
 /// @param num_rows Number of rows in the matrix
 /// @param num_cols Number of columns in the matrix
 /// @param block_size The number of degrees of freedom per block
@@ -504,7 +504,7 @@ void block_gauss_seidel_numeric(
 /// @brief Apply symmetric (forward + backward) Gauss-Seidel preconditioner to
 /// system AX=Y
 ///
-/// @tparam ExecutionSpace This kernels execution space type.
+/// @tparam ExecutionSpace This kernels execution space type
 /// @tparam format The matrix storage format, CRS or BSR
 /// @tparam KernelHandle A specialization of
 /// KokkosKernels::Experimental::KokkosKernelsHandle
@@ -512,12 +512,12 @@ void block_gauss_seidel_numeric(
 /// @tparam lno_nnz_view_t_ The matrix's entries type
 /// @tparam scalar_nnz_view_t_ The matrix's values type
 /// @tparam x_scalar_view_t The type of the X (left-hand side, unknown) vector.
-/// May be rank-1 or rank-2 View.
+/// May be rank-1 or rank-2 View
 /// @tparam y_scalar_view_t The type of the Y (right-hand side) vector. May be
-/// rank-1 or rank-2 View.
+/// rank-1 or rank-2 View
 /// @param space The execution space instance this kernel will be run
-/// on. NOTE: Currently only used for GS_DEFAULT.
-/// @param handle handle A KokkosKernelsHandle instance
+/// on. NOTE: Currently only used for GS_DEFAULT and GS_TWOSTAGE
+/// @param handle A KokkosKernelsHandle instance
 /// @param num_rows Number of rows in the matrix
 /// @param num_cols Number of columns in the matrix
 /// @param row_map The matrix's rowmap
@@ -680,8 +680,8 @@ void symmetric_gauss_seidel_apply(
 /// @tparam x_scalar_view_t The type of the X (left-hand side, unknown) vector.
 /// May be rank-1 or rank-2 View.
 /// @tparam y_scalar_view_t The type of the Y (right-hand side) vector. May be
-/// rank-1 or rank-2 View.
-/// @param handle handle A KokkosKernelsHandle instance
+/// rank-1 or rank-2 View
+/// @param handle A KokkosKernelsHandle instance
 /// @param num_rows Number of rows in the matrix
 /// @param num_cols Number of columns in the matrix
 /// @param row_map The matrix's rowmap
@@ -727,10 +727,10 @@ void symmetric_gauss_seidel_apply(
 /// @tparam lno_nnz_view_t_ The matrix's entries type
 /// @tparam scalar_nnz_view_t_ The matrix's values type
 /// @tparam x_scalar_view_t The type of the X (left-hand side, unknown) vector.
-/// May be rank-1 or rank-2 View.
+/// May be rank-1 or rank-2 View
 /// @tparam y_scalar_view_t The type of the Y (right-hand side) vector. May be
-/// rank-1 or rank-2 View.
-/// @param handle handle A KokkosKernelsHandle instance.
+/// rank-1 or rank-2 View
+/// @param handle A KokkosKernelsHandle instance
 /// @param num_rows Number of rows in the matrix
 /// @param num_cols Number of columns in the matrix
 /// @param block_size The number of degrees of freedom per block
@@ -793,12 +793,12 @@ void symmetric_block_gauss_seidel_apply(
 /// @tparam lno_nnz_view_t_ The matrix's entries type
 /// @tparam scalar_nnz_view_t_ The matrix's values type
 /// @tparam x_scalar_view_t The type of the X (left-hand side, unknown) vector.
-/// May be rank-1 or rank-2 View.
+/// May be rank-1 or rank-2 View
 /// @tparam y_scalar_view_t The type of the Y (right-hand side) vector. May be
-/// rank-1 or rank-2 View.
+/// rank-1 or rank-2 View
 /// @param space The execution space instance this kernel will be run
-/// on. NOTE: Currently only used for GS_DEFAULT.
-/// @param handle KernelHandle instance
+/// on. NOTE: Currently only used for GS_DEFAULT and GS_TWOSTAGE
+/// @param handle A KokkosKernelsHandle instance
 /// @param num_rows Number of rows in the matrix
 /// @param num_cols Number of columns in the matrix
 /// @param row_map The matrix's rowmap
@@ -960,10 +960,10 @@ void forward_sweep_gauss_seidel_apply(
 /// @tparam lno_nnz_view_t_ The matrix's entries type
 /// @tparam scalar_nnz_view_t_ The matrix's values type
 /// @tparam x_scalar_view_t The type of the X (left-hand side, unknown) vector.
-/// May be rank-1 or rank-2 View.
+/// May be rank-1 or rank-2 View
 /// @tparam y_scalar_view_t The type of the Y (right-hand side) vector. May be
-/// rank-1 or rank-2 View.
-/// @param handle KernelHandle instance
+/// rank-1 or rank-2 View
+/// @param handle A KokkosKernelsHandle instance
 /// @param num_rows Number of rows in the matrix
 /// @param num_cols Number of columns in the matrix
 /// @param row_map The matrix's rowmap
@@ -1008,10 +1008,10 @@ void forward_sweep_gauss_seidel_apply(
 /// @tparam lno_nnz_view_t_ The matrix's entries type
 /// @tparam scalar_nnz_view_t_ The matrix's values type
 /// @tparam x_scalar_view_t The type of the X (left-hand side, unknown) vector.
-/// May be rank-1 or rank-2 View.
+/// May be rank-1 or rank-2 View
 /// @tparam y_scalar_view_t The type of the Y (right-hand side) vector. May be
-/// rank-1 or rank-2 View.
-/// @param handle KernelHandle instance
+/// rank-1 or rank-2 View
+/// @param handle A KokkosKernelsHandle instance
 /// @param num_rows Number of rows in the matrix
 /// @param num_cols Number of columns in the matrix
 /// @param block_size The number of degrees of freedom per block
@@ -1067,7 +1067,7 @@ void forward_sweep_block_gauss_seidel_apply(
 ///
 /// @brief Apply backward Gauss-Seidel preconditioner to system AX=Y
 ///
-/// @tparam ExecutionSpace This kernels execution space type.
+/// @tparam ExecutionSpace This kernels execution space type
 /// @tparam format The matrix storage format, CRS or BSR
 /// @tparam KernelHandle A specialization of
 /// KokkosKernels::Experimental::KokkosKernelsHandle
@@ -1075,12 +1075,12 @@ void forward_sweep_block_gauss_seidel_apply(
 /// @tparam lno_nnz_view_t_ The matrix's entries type
 /// @tparam scalar_nnz_view_t_ The matrix's values type
 /// @tparam x_scalar_view_t The type of the X (left-hand side, unknown) vector.
-/// May be rank-1 or rank-2 View.
+/// May be rank-1 or rank-2 View
 /// @tparam y_scalar_view_t The type of the Y (right-hand side) vector. May be
-/// rank-1 or rank-2 View.
+/// rank-1 or rank-2 View
 /// @param space The execution space instance this kernel will be run
-/// on. NOTE: Currently only used for GS_DEFAULT.
-/// @param handle KernelHandle instance
+/// on. NOTE: Currently only used for GS_DEFAULT and GS_TWOSTAGE
+/// @param handle A KokkosKernelsHandle instance
 /// @param num_rows Number of rows in the matrix
 /// @param num_cols Number of columns in the matrix
 /// @param row_map The matrix's rowmap
@@ -1242,10 +1242,10 @@ void backward_sweep_gauss_seidel_apply(
 /// @tparam lno_nnz_view_t_ The matrix's entries type
 /// @tparam scalar_nnz_view_t_ The matrix's values type
 /// @tparam x_scalar_view_t The type of the X (left-hand side, unknown) vector.
-/// May be rank-1 or rank-2 View.
+/// May be rank-1 or rank-2 View
 /// @tparam y_scalar_view_t The type of the Y (right-hand side) vector. May be
-/// rank-1 or rank-2 View.
-/// @param handle KernelHandle instance
+/// rank-1 or rank-2 View
+/// @param handle A KokkosKernelsHandle instance
 /// @param num_rows Number of rows in the matrix
 /// @param num_cols Number of columns in the matrix
 /// @param row_map The matrix's rowmap
@@ -1290,10 +1290,10 @@ void backward_sweep_gauss_seidel_apply(
 /// @tparam lno_nnz_view_t_ The matrix's entries type
 /// @tparam scalar_nnz_view_t_ The matrix's values type
 /// @tparam x_scalar_view_t The type of the X (left-hand side, unknown) vector.
-/// May be rank-1 or rank-2 View.
+/// May be rank-1 or rank-2 View
 /// @tparam y_scalar_view_t The type of the Y (right-hand side) vector. May be
-/// rank-1 or rank-2 View.
-/// @param handle KernelHandle instance
+/// rank-1 or rank-2 View
+/// @param handle A KokkosKernelsHandle instance
 /// @param num_rows Number of rows in the matrix
 /// @param num_cols Number of columns in the matrix
 /// @param block_size The number of degrees of freedom per block
