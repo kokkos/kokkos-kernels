@@ -58,7 +58,7 @@ struct IlukWrap {
   using team_policy            = typename IlukHandle::TeamPolicy;
   using member_type            = typename team_policy::member_type;
   using range_policy           = typename IlukHandle::RangePolicy;
-  using sview_1d               = typename Kokkos::View<scalar_t *, memory_space>;
+  using sview_1d = typename Kokkos::View<scalar_t *, memory_space>;
 
   static team_policy get_team_policy(const size_type nrows,
                                      const int team_size) {
@@ -107,7 +107,7 @@ struct IlukWrap {
     WorkViewType iw;
     lno_t lev_start;
 
-    using reftype = scalar_t&;
+    using reftype = scalar_t &;
 
     Common(const ARowMapType &A_row_map_, const AEntriesType &A_entries_,
            const AValuesType &A_values_, const LRowMapType &L_row_map_,
@@ -174,7 +174,7 @@ struct IlukWrap {
     // gemm, alpha is hardcoded to -1, beta hardcoded to 1
     KOKKOS_INLINE_FUNCTION
     void gemm(const scalar_t &A, const scalar_t &B, scalar_t &C) const {
-      C += -1*A*B;
+      C += -1 * A * B;
     }
 
     // lget
@@ -345,16 +345,15 @@ struct IlukWrap {
 
     // gemm, alpha is hardcoded to -1, beta hardcoded to 1
     template <typename CView>
-    KOKKOS_INLINE_FUNCTION
-    void gemm(const UValuesUnmanaged2DBlockType &A,
-              const LValuesUnmanaged2DBlockType &B,
-              CView& C) const {
+    KOKKOS_INLINE_FUNCTION void gemm(const UValuesUnmanaged2DBlockType &A,
+                                     const LValuesUnmanaged2DBlockType &B,
+                                     CView &C) const {
       KokkosBatched::SerialGemm<KokkosBatched::Trans::NoTranspose,
                                 KokkosBatched::Trans::NoTranspose,
                                 KokkosBatched::Algo::Gemm::Unblocked>::
-        invoke<scalar_t, LValuesUnmanaged2DBlockType,
-               UValuesUnmanaged2DBlockType, LValuesUnmanaged2DBlockType>(
-                 -1.0, A, B, 1.0, C);
+          invoke<scalar_t, LValuesUnmanaged2DBlockType,
+                 UValuesUnmanaged2DBlockType, LValuesUnmanaged2DBlockType>(
+              -1.0, A, B, 1.0, C);
     }
 
     // lget
@@ -427,10 +426,10 @@ struct IlukWrap {
       Base::lset_id(team, k2);
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2),
                            [&](const size_type k) {
-        const auto col = Base::L_entries(k);
-        Base::lset(k, 0.0);
-        Base::iw(my_team, col) = k;
-      });
+                             const auto col = Base::L_entries(k);
+                             Base::lset(k, 0.0);
+                             Base::iw(my_team, col) = k;
+                           });
 
       team.team_barrier();
 
@@ -438,10 +437,10 @@ struct IlukWrap {
       k2 = Base::U_row_map(rowid + 1);
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2),
                            [&](const size_type k) {
-        const auto col = Base::U_entries(k);
-        Base::uset(k, 0.0);
-        Base::iw(my_team, col) = k;
-      });
+                             const auto col = Base::U_entries(k);
+                             Base::uset(k, 0.0);
+                             Base::iw(my_team, col) = k;
+                           });
 
       team.team_barrier();
 
@@ -450,14 +449,14 @@ struct IlukWrap {
       k2 = Base::A_row_map(rowid + 1);
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2),
                            [&](const size_type k) {
-        const auto col  = Base::A_entries(k);
-        const auto ipos = Base::iw(my_team, col);
-        if (col < rowid) {
-          Base::lset(ipos, Base::aget(k));
-        } else {
-          Base::uset(ipos, Base::aget(k));
-        }
-      });
+                             const auto col  = Base::A_entries(k);
+                             const auto ipos = Base::iw(my_team, col);
+                             if (col < rowid) {
+                               Base::lset(ipos, Base::aget(k));
+                             } else {
+                               Base::uset(ipos, Base::aget(k));
+                             }
+                           });
 
       team.team_barrier();
 
@@ -476,7 +475,8 @@ struct IlukWrap {
               const auto col  = Base::U_entries(kk);
               const auto ipos = Base::iw(my_team, col);
               if (ipos != -1) {
-                typename Base::reftype C = col < rowid ? Base::lget(ipos) : Base::uget(ipos);
+                typename Base::reftype C =
+                    col < rowid ? Base::lget(ipos) : Base::uget(ipos);
                 Base::gemm(Base::uget(kk), fact, C);
               }
             });  // end for kk
@@ -498,17 +498,17 @@ struct IlukWrap {
       k2 = Base::L_row_map(rowid + 1) - 1;
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2),
                            [&](const size_type k) {
-        const auto col = Base::L_entries(k);
-        Base::iw(my_team, col) = -1;
-      });
+                             const auto col         = Base::L_entries(k);
+                             Base::iw(my_team, col) = -1;
+                           });
 
       k1 = Base::U_row_map(rowid);
       k2 = Base::U_row_map(rowid + 1);
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2),
                            [&](const size_type k) {
-        const auto col         = Base::U_entries(k);
-        Base::iw(my_team, col) = -1;
-      });
+                             const auto col         = Base::U_entries(k);
+                             Base::iw(my_team, col) = -1;
+                           });
     }
   };
 
@@ -556,7 +556,7 @@ struct IlukWrap {
 
     level_nchunks_h       = thandle.get_level_nchunks();
     level_nrowsperchunk_h = thandle.get_level_nrowsperchunk();
-    iw = thandle.get_iw();
+    iw                    = thandle.get_iw();
 
     // Main loop must be performed sequential. Question: Try out Cuda's graph
     // stuff to reduce kernel launch overhead
@@ -574,11 +574,10 @@ struct IlukWrap {
           else
             lvl_nrows_chunk = level_nrowsperchunk_h(lvl);
 
-          team_policy tpolicy =
-            get_team_policy(lvl_nrows_chunk, team_size);
+          team_policy tpolicy = get_team_policy(lvl_nrows_chunk, team_size);
           KernelLaunchMacro(A_row_map, A_entries, A_values, L_row_map,
-                            L_entries, L_values, U_row_map, U_entries,
-                            U_values, tpolicy, "parfor_tp1", level_idx, iw,
+                            L_entries, L_values, U_row_map, U_entries, U_values,
+                            tpolicy, "parfor_tp1", level_idx, iw,
                             lev_start + lvl_rowid_start, TPF, TPB,
                             thandle.is_block_enabled(), block_size);
           Kokkos::fence();
@@ -720,19 +719,19 @@ struct IlukWrap {
               if ((lvl_rowid_start_v[i] + lvl_nrowsperchunk_h_v[i](lvl)) >
                   (lvl_end_v[i] - lvl_start_v[i]))
                 lvl_nrows_chunk =
-                  (lvl_end_v[i] - lvl_start_v[i]) - lvl_rowid_start_v[i];
+                    (lvl_end_v[i] - lvl_start_v[i]) - lvl_rowid_start_v[i];
               else
                 lvl_nrows_chunk = lvl_nrowsperchunk_h_v[i](lvl);
 
               // 1.b. Create functor for stream i-th and launch
               team_policy tpolicy = get_team_policy(
-                execspace_v[i], lvl_nrows_chunk, team_size_v[i]);
+                  execspace_v[i], lvl_nrows_chunk, team_size_v[i]);
               KernelLaunchMacro(A_row_map_v[i], A_entries_v[i], A_values_v[i],
                                 L_row_map_v[i], L_entries_v[i], L_values_v[i],
                                 U_row_map_v[i], U_entries_v[i], U_values_v[i],
                                 tpolicy, "parfor_tp1", lvl_idx_v[i], iw_v[i],
-                                lvl_start_v[i] + lvl_rowid_start_v[i], TPF,
-                                TPB, is_block_enabled_v[i], block_size_v[i]);
+                                lvl_start_v[i] + lvl_rowid_start_v[i], TPF, TPB,
+                                is_block_enabled_v[i], block_size_v[i]);
               // 1.c. Ready to move to next chunk
               lvl_rowid_start_v[i] += lvl_nrows_chunk;
             }  // end if (chunkid < lvl_nchunks_h_v[i](lvl))
@@ -740,7 +739,7 @@ struct IlukWrap {
         }      // end for streams
       }        // end for chunkid
     }          // end for lvl
-  }  // end iluk_numeric_streams
+  }            // end iluk_numeric_streams
 
 };  // IlukWrap
 

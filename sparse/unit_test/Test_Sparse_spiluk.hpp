@@ -120,8 +120,7 @@ struct SpilukTest {
   }
 
   static void check_result(const RowMapType& row_map,
-                           const EntriesType& entries,
-                           const ValuesType& values,
+                           const EntriesType& entries, const ValuesType& values,
                            const RowMapType& L_row_map,
                            const EntriesType& L_entries,
                            const ValuesType& L_values,
@@ -270,14 +269,14 @@ struct SpilukTest {
   }
 
   static void run_test_spiluk_scale() {
-
     // Create a diagonally dominant sparse matrix to test:
     constexpr auto nrows         = 5000;
     constexpr auto diagDominance = 2;
 
     size_type nnz = 10 * nrows;
-    auto A = KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<
-      Crs>(nrows, nrows, nnz, 0, lno_t(0.01 * nrows), diagDominance);
+    auto A =
+        KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<Crs>(
+            nrows, nrows, nnz, 0, lno_t(0.01 * nrows), diagDominance);
 
     // Pull out views from CRS
     RowMapType row_map("row_map", A.graph.row_map.extent(0));
@@ -296,7 +295,6 @@ struct SpilukTest {
   }
 
   static void run_test_spiluk_scale_blocks() {
-
     // Create a diagonally dominant sparse matrix to test:
     constexpr auto nrows         = 5000;
     constexpr auto diagDominance = 2;
@@ -308,8 +306,9 @@ struct SpilukTest {
     const size_type block_size = 10;
 
     size_type nnz = 10 * nrows;
-    auto A = KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<
-      Crs>(nrows, nrows, nnz, 0, lno_t(0.01 * nrows), diagDominance);
+    auto A =
+        KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<Crs>(
+            nrows, nrows, nnz, 0, lno_t(0.01 * nrows), diagDominance);
 
     // Pull out views from CRS
     Bsr bsr(A, block_size);
@@ -327,7 +326,8 @@ struct SpilukTest {
     KernelHandle kh;
 
     run_and_check_spiluk_block(kh, brow_map, bentries, bvalues,
-                               SPILUKAlgorithm::SEQLVLSCHD_TP1, fill_lev, block_size);
+                               SPILUKAlgorithm::SEQLVLSCHD_TP1, fill_lev,
+                               block_size);
   }
 
   static void run_test_spiluk_streams(SPILUKAlgorithm test_algo, int nstreams) {
