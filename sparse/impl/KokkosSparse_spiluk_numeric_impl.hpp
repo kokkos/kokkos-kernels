@@ -158,9 +158,6 @@ struct IlukWrap {
 
     // divide. lhs /= rhs
     KOKKOS_INLINE_FUNCTION
-    void divide(scalar_t &lhs, const scalar_t &rhs) const { lhs /= rhs; }
-
-    KOKKOS_INLINE_FUNCTION
     void divide(const member_type &team, scalar_t &lhs,
                 const scalar_t &rhs) const {
       Kokkos::single(Kokkos::PerTeam(team), [&]() { lhs /= rhs; });
@@ -315,17 +312,6 @@ struct IlukWrap {
     }
 
     // divide. lhs /= rhs
-    KOKKOS_INLINE_FUNCTION
-    void divide(const LValuesUnmanaged2DBlockType &lhs,
-                const UValuesUnmanaged2DBlockType &rhs) const {
-      KokkosBatched::SerialTrsm<
-          KokkosBatched::Side::Right, KokkosBatched::Uplo::Upper,
-          KokkosBatched::Trans::NoTranspose,  // not 100% on this
-          KokkosBatched::Diag::NonUnit,
-          KokkosBatched::Algo::Trsm::Unblocked>::  // not 100% on this
-          invoke<scalar_t>(1.0, rhs, lhs);
-    }
-
     KOKKOS_INLINE_FUNCTION
     void divide(const member_type &team, const LValuesUnmanaged2DBlockType &lhs,
                 const UValuesUnmanaged2DBlockType &rhs) const {
