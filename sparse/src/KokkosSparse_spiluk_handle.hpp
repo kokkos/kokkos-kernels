@@ -132,14 +132,14 @@ class SPILUKHandle {
         vector_size(-1) {}
 
   void reset_handle(const size_type nrows_, const size_type nnzL_,
-                    const size_type nnzU_, const size_type block_size_ = -1) {
+                    const size_type nnzU_, const size_type block_size_ = Kokkos::ArithTraits<size_type>::max()) {
     set_nrows(nrows_);
     set_num_levels(0);
     set_nnzL(nnzL_);
     set_nnzU(nnzU_);
     // user likely does not want to reset block size to 0, so set default
     // to -1
-    if (block_size_ != static_cast<size_type>(-1)) {
+    if (block_size_ != Kokkos::ArithTraits<size_type>::max()) {
       set_block_size(block_size_);
     }
     set_level_maxrows(0);
