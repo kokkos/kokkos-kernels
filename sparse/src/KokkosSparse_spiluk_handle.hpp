@@ -139,7 +139,7 @@ class SPILUKHandle {
     set_nnzL(nnzL_);
     set_nnzU(nnzU_);
     // user likely does not want to reset block size to 0, so set default
-    // to -1
+    // to size_type::max
     if (block_size_ != Kokkos::ArithTraits<size_type>::max()) {
       set_block_size(block_size_);
     }
