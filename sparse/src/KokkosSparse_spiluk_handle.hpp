@@ -131,8 +131,9 @@ class SPILUKHandle {
         team_size(-1),
         vector_size(-1) {}
 
-  void reset_handle(const size_type nrows_, const size_type nnzL_,
-                    const size_type nnzU_, const size_type block_size_ = Kokkos::ArithTraits<size_type>::max()) {
+  void reset_handle(
+      const size_type nrows_, const size_type nnzL_, const size_type nnzU_,
+      const size_type block_size_ = Kokkos::ArithTraits<size_type>::max()) {
     set_nrows(nrows_);
     set_num_levels(0);
     set_nnzL(nnzL_);
