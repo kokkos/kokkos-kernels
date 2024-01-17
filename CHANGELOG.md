@@ -1,5 +1,13 @@
 # Change Log
 
+## [4.2.01](https://github.com/kokkos/kokkos-kernels/tree/4.2.01) (2024-01-17)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.2.00...4.2.01)
+
+### Bug Fixes:
+
+- LAPACK: magma tpl fixes [\#2044](https://github.com/kokkos/kokkos-kernels/pull/2044)
+- BLAS: fix bug in TPL layer of `KokkosBlas::swap` [\#2052](https://github.com/kokkos/kokkos-kernels/pull/2052)
+
 ## [4.2.00](https://github.com/kokkos/kokkos-kernels/tree/4.2.00) (2023-11-06)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.1.00...4.2.00)
 
