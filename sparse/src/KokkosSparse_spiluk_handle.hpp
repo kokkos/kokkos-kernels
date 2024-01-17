@@ -131,22 +131,28 @@ class SPILUKHandle {
         team_size(-1),
         vector_size(-1) {}
 
-  void reset_handle(const size_type nrows_, const size_type nnzL_,
-                    const size_type nnzU_, const size_type block_size_) {
+  void reset_handle(
+      const size_type nrows_, const size_type nnzL_, const size_type nnzU_,
+      const size_type block_size_ = Kokkos::ArithTraits<size_type>::max()) {
     set_nrows(nrows_);
     set_num_levels(0);
     set_nnzL(nnzL_);
     set_nnzU(nnzU_);
-    set_block_size(block_size_);
+    // user likely does not want to reset block size to 0, so set default
+    // to size_type::max
+    if (block_size_ != Kokkos::ArithTraits<size_type>::max()) {
+      set_block_size(block_size_);
+    }
     set_level_maxrows(0);
     set_level_maxrowsperchunk(0);
-    level_list          = nnz_row_view_t("level_list", nrows_),
-    level_idx           = nnz_lno_view_t("level_idx", nrows_),
-    level_ptr           = nnz_lno_view_t("level_ptr", nrows_ + 1),
-    hlevel_ptr          = nnz_lno_view_host_t("hlevel_ptr", nrows_ + 1),
-    level_nchunks       = nnz_lno_view_host_t(),
-    level_nrowsperchunk = nnz_lno_view_host_t(), reset_symbolic_complete(),
+    level_list          = nnz_row_view_t("level_list", nrows_);
+    level_idx           = nnz_lno_view_t("level_idx", nrows_);
+    level_ptr           = nnz_lno_view_t("level_ptr", nrows_ + 1);
+    hlevel_ptr          = nnz_lno_view_host_t("hlevel_ptr", nrows_ + 1);
+    level_nchunks       = nnz_lno_view_host_t();
+    level_nrowsperchunk = nnz_lno_view_host_t();
     iw                  = work_view_t();
+    reset_symbolic_complete();
   }
 
   virtual ~SPILUKHandle(){};
