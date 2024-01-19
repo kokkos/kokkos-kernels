@@ -106,6 +106,12 @@ void spadd_symbolic(
   }
 }
 
+// one without an execution space arg
+template <typename KernelHandle, typename... Args>
+void spadd_symbolic(KernelHandle *handle, Args... args) {
+  spadd_symbolic(typename KernelHandle::HandleExecSpace{}, handle, args...);
+}
+
 template <typename ExecSpace, typename KernelHandle, typename alno_row_view_t_,
           typename alno_nnz_view_t_, typename ascalar_t_,
           typename ascalar_nnz_view_t_, typename blno_row_view_t_,
@@ -219,6 +225,12 @@ void spadd_numeric(const ExecSpace &exec, KernelHandle *handle,
                       Internal_c_entries(c_entries.data(), c_entries.extent(0)),
                       Internal_c_values(c_values.data(), c_values.extent(0)));
   }
+}
+
+// one without an execution space arg
+template <typename KernelHandle, typename... Args>
+void spadd_numeric(KernelHandle *handle, Args... args) {
+  spadd_numeric(typename KernelHandle::HandleExecSpace{}, handle, args...);
 }
 }  // namespace Experimental
 
