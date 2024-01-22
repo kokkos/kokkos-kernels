@@ -41,6 +41,9 @@ using namespace KokkosKernels::Experimental;
 using kokkos_complex_double = Kokkos::complex<double>;
 using kokkos_complex_float  = Kokkos::complex<float>;
 
+// Comment this out to do focussed debugging
+#define TEST_SPILUK_FULL_CHECKS
+
 namespace Test {
 
 template <typename scalar_t>
@@ -82,6 +85,7 @@ struct SpilukTest {
   using ValuesType_hostmirror  = typename ValuesType::HostMirror;
   using execution_space        = typename device::execution_space;
   using memory_space           = typename device::memory_space;
+  using range_policy           = Kokkos::RangePolicy<execution_space>;
 
   using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<
       size_type, lno_t, scalar_t, typename device::execution_space,
@@ -119,6 +123,47 @@ struct SpilukTest {
     return diff_nrm / bb_nrm;
   }
 
+  static bool is_triangular(const RowMapType& drow_map, const EntriesType& dentries, const ValuesType& dvalues, bool check_lower, const size_type block_size = 1)
+  {
+    const auto nrows = row_map.extent(0) - 1;
+    const auto block_items = block_size * block_size;
+
+    auto row_map = Kokkos::create_mirror_view(drow_map);
+    auto entries = Kokkos::create_mirror_view(dentries);
+    auto values  = Kokkos::create_mirror_view(dvalues);
+    Kokkos::deep_copy(row_map, drow_map);
+    Kokkos::deep_copy(entries, dentries);
+    Kokkos::deep_copy(values, dvalues);
+
+    for (size_type row = 0; row < nrows; ++row) {
+      const auto row_nnz_begin = row_map(row);
+      const auto row_nnz_end   = row_map(row+1);
+      for (size_type nnz = row_nnz_begin; nnz < row_nnz_end; ++nnz) {
+        const auto col = entries(nnz);
+        if (col > row && check_lower) {
+          return false;
+        }
+        else if (col < row && !check_lower) {
+          return false;
+        }
+        else if (col == row && block_size > 1) {
+          // Check diagonal block
+          scalar_t* block = values.data() + nnz * block_items;
+          for (size_type i = 0; i < block_size; ++i) {
+            for (size_type j = 0; j < block_size; ++j) {
+              if ( (j > i && check_lower && block[i*block_size + j] != 0.0 ) ||
+                   (j < i && !check_lower && block[i*block_size + j] != 0.0) ) {
+                std::cout << "Bad block entry is: " << block[i*block_size + j] << std::endl;
+                return false;
+              }
+            }
+          }
+        }
+      }
+    }
+    return true;
+  }
+
   static void check_result(const RowMapType& row_map,
                            const EntriesType& entries, const ValuesType& values,
                            const RowMapType& L_row_map,
@@ -135,7 +180,15 @@ struct SpilukTest {
     Crs U("U_Mtx", nrows, nrows, U_values.extent(0), U_values, U_row_map,
           U_entries);
 
+    EXPECT_TRUE(is_triangular(L_row_map, L_entries, L_values, true));
+    EXPECT_TRUE(is_triangular(U_row_map, U_entries, U_values, false));
+
     const auto result = check_result_impl(A, L, U, nrows);
+    // std::cout << "For nrows=" << nrows << ", unblocked had residual: " << result << std::endl;
+    // std::cout << "L" << std::endl;
+    // print_matrix(decompress_matrix(L_row_map, L_entries, L_values));
+    // std::cout << "U" << std::endl;
+    // print_matrix(decompress_matrix(U_row_map, U_entries, U_values));
 
     EXPECT_LT(result, 1e-4);
   }
@@ -155,20 +208,31 @@ struct SpilukTest {
     Bsr U("U_Mtx", nrows, nrows, U_values.extent(0), U_values, U_row_map,
           U_entries, block_size);
 
-    const auto result = check_result_impl(A, L, U, nrows, block_size);
+    EXPECT_TRUE(is_triangular(L_row_map, L_entries, L_values, true, block_size));
+    EXPECT_TRUE(is_triangular(U_row_map, U_entries, U_values, false, block_size));
 
-    EXPECT_LT(result, 1e0);
+    const auto result = check_result_impl(A, L, U, nrows, block_size);
+    // std::cout << "For nrows=" << nrows << ", block_size=" << block_size << " had residual: " << result << std::endl;
+    // std::cout << "L" << std::endl;
+    // print_matrix(decompress_matrix(L_row_map, L_entries, L_values, block_size));
+    // std::cout << "U" << std::endl;
+    // print_matrix(decompress_matrix(U_row_map, U_entries, U_values, block_size));
+
+    EXPECT_LT(result, 1e-2);
   }
 
   static std::tuple<RowMapType, EntriesType, ValuesType, RowMapType,
                     EntriesType, ValuesType>
   run_and_check_spiluk(KernelHandle& kh, const RowMapType& row_map,
                        const EntriesType& entries, const ValuesType& values,
-                       SPILUKAlgorithm alg, const lno_t fill_lev) {
+                       SPILUKAlgorithm alg, const lno_t fill_lev, const int team_size = -1) {
     const size_type nrows = row_map.extent(0) - 1;
-    kh.create_spiluk_handle(alg, nrows, 20 * nrows, 20 * nrows);
+    kh.create_spiluk_handle(alg, nrows, 40 * nrows, 40 * nrows);
 
     auto spiluk_handle = kh.get_spiluk_handle();
+    if (team_size != -1) {
+      spiluk_handle->set_team_size(team_size);
+    }
 
     // Allocate L and U as outputs
     RowMapType L_row_map("L_row_map", nrows + 1);
@@ -196,19 +260,40 @@ struct SpilukTest {
 
     kh.destroy_spiluk_handle();
 
+#ifdef TEST_SPILUK_FULL_CHECKS
+    // Check that team size = 1 produces same result
+    if (team_size != 1) {
+      const auto [L_row_map_ts1, L_entries_ts1, L_values_ts1, U_row_map_ts1,
+                  U_entries_ts1, U_values_ts1] =
+          run_and_check_spiluk(kh, row_map, entries, values, alg, fill_lev, 1);
+
+      EXPECT_NEAR_KK_1DVIEW(L_row_map, L_row_map_ts1, EPS);
+      EXPECT_NEAR_KK_1DVIEW(L_entries, L_entries_ts1, EPS);
+      EXPECT_NEAR_KK_1DVIEW(L_values, L_values_ts1, EPS);
+      EXPECT_NEAR_KK_1DVIEW(U_row_map, U_row_map_ts1, EPS);
+      EXPECT_NEAR_KK_1DVIEW(U_entries, U_entries_ts1, EPS);
+      EXPECT_NEAR_KK_1DVIEW(U_values, U_values_ts1, EPS);
+    }
+#endif
+
     return std::make_tuple(L_row_map, L_entries, L_values, U_row_map, U_entries,
                            U_values);
   }
 
-  static void run_and_check_spiluk_block(
+  static std::tuple<RowMapType, EntriesType, ValuesType, RowMapType,
+                    EntriesType, ValuesType>
+  run_and_check_spiluk_block(
       KernelHandle& kh, const RowMapType& row_map, const EntriesType& entries,
       const ValuesType& values, SPILUKAlgorithm alg, const lno_t fill_lev,
-      const size_type block_size) {
+      const size_type block_size, const int team_size = -1) {
     const size_type block_items = block_size * block_size;
     const size_type nrows       = row_map.extent(0) - 1;
-    kh.create_spiluk_handle(alg, nrows, 20 * nrows, 20 * nrows, block_size);
+    kh.create_spiluk_handle(alg, nrows, 40 * nrows, 40 * nrows, block_size);
 
     auto spiluk_handle = kh.get_spiluk_handle();
+    if (team_size != -1) {
+      spiluk_handle->set_team_size(team_size);
+    }
 
     // Allocate L and U as outputs
     RowMapType L_row_map("L_row_map", nrows + 1);
@@ -236,11 +321,12 @@ struct SpilukTest {
 
     kh.destroy_spiluk_handle();
 
+#ifdef TEST_SPILUK_FULL_CHECKS
     // If block_size is 1, results should exactly match unblocked results
     if (block_size == 1) {
       const auto [L_row_map_u, L_entries_u, L_values_u, U_row_map_u,
                   U_entries_u, U_values_u] =
-          run_and_check_spiluk(kh, row_map, entries, values, alg, fill_lev);
+          run_and_check_spiluk(kh, row_map, entries, values, alg, fill_lev, team_size);
 
       EXPECT_NEAR_KK_1DVIEW(L_row_map, L_row_map_u, EPS);
       EXPECT_NEAR_KK_1DVIEW(L_entries, L_entries_u, EPS);
@@ -249,6 +335,24 @@ struct SpilukTest {
       EXPECT_NEAR_KK_1DVIEW(U_entries, U_entries_u, EPS);
       EXPECT_NEAR_KK_1DVIEW(U_values, U_values_u, EPS);
     }
+
+    // Check that team size = 1 produces same result
+    if (team_size != 1) {
+      const auto [L_row_map_ts1, L_entries_ts1, L_values_ts1, U_row_map_ts1,
+                  U_entries_ts1, U_values_ts1] =
+          run_and_check_spiluk_block(kh, row_map, entries, values, alg, fill_lev, block_size, 1);
+
+      EXPECT_NEAR_KK_1DVIEW(L_row_map, L_row_map_ts1, EPS);
+      EXPECT_NEAR_KK_1DVIEW(L_entries, L_entries_ts1, EPS);
+      EXPECT_NEAR_KK_1DVIEW(L_values, L_values_ts1, EPS);
+      EXPECT_NEAR_KK_1DVIEW(U_row_map, U_row_map_ts1, EPS);
+      EXPECT_NEAR_KK_1DVIEW(U_entries, U_entries_ts1, EPS);
+      EXPECT_NEAR_KK_1DVIEW(U_values, U_values_ts1, EPS);
+    }
+#endif
+
+    return std::make_tuple(L_row_map, L_entries, L_values, U_row_map, U_entries,
+                           U_values);
   }
 
   static void run_test_spiluk() {
@@ -266,6 +370,47 @@ struct SpilukTest {
 
     run_and_check_spiluk(kh, row_map, entries, values,
                          SPILUKAlgorithm::SEQLVLSCHD_TP1, fill_lev);
+  }
+
+  static void run_test_spiluk_blocks() {
+    std::vector<std::vector<scalar_t>> A = get_9x9_fixture<scalar_t>();
+
+    RowMapType row_map, brow_map;
+    EntriesType entries, bentries;
+    ValuesType values, bvalues;
+
+    compress_matrix(row_map, entries, values, A);
+
+    const size_type nrows      = A.size();
+    const size_type nnz        = values.extent(0);
+    const lno_t fill_lev       = 2;
+    const size_type block_size = nrows % 2 == 0 ? 2 : 3;
+    ASSERT_EQ(nrows % block_size, 0);
+
+    KernelHandle kh;
+
+#ifdef TEST_SPILUK_FULL_CHECKS
+    // Check block_size=1 produces identical result to unblocked
+    run_and_check_spiluk_block(kh, row_map, entries, values,
+                               SPILUKAlgorithm::SEQLVLSCHD_TP1, fill_lev, 1);
+#endif
+
+    // Convert to BSR
+    Crs crs("crs for block spiluk test", nrows, nrows, nnz, values, row_map,
+            entries);
+    Bsr bsr(crs, block_size);
+
+    // Pull out views from BSR
+    Kokkos::resize(brow_map, bsr.graph.row_map.extent(0));
+    Kokkos::resize(bentries, bsr.graph.entries.extent(0));
+    Kokkos::resize(bvalues, bsr.values.extent(0));
+    Kokkos::deep_copy(brow_map, bsr.graph.row_map);
+    Kokkos::deep_copy(bentries, bsr.graph.entries);
+    Kokkos::deep_copy(bvalues, bsr.values);
+
+    run_and_check_spiluk_block(kh, brow_map, bentries, bvalues,
+                               SPILUKAlgorithm::SEQLVLSCHD_TP1, fill_lev,
+                               block_size);
   }
 
   static void run_test_spiluk_scale() {
@@ -565,45 +710,6 @@ struct SpilukTest {
 
       kh_v[i].destroy_spiluk_handle();
     }
-  }
-
-  static void run_test_spiluk_blocks() {
-    std::vector<std::vector<scalar_t>> A = get_9x9_fixture<scalar_t>();
-
-    RowMapType row_map, brow_map;
-    EntriesType entries, bentries;
-    ValuesType values, bvalues;
-
-    compress_matrix(row_map, entries, values, A);
-
-    const size_type nrows      = A.size();
-    const size_type nnz        = values.extent(0);
-    const lno_t fill_lev       = 2;
-    const size_type block_size = nrows % 2 == 0 ? 2 : 3;
-    ASSERT_EQ(nrows % block_size, 0);
-
-    KernelHandle kh;
-
-    // Check block_size=1 produces identical result to unblocked
-    // run_and_check_spiluk_block(kh, row_map, entries, values,
-    //                            SPILUKAlgorithm::SEQLVLSCHD_TP1, fill_lev, 1);
-
-    // Convert to BSR
-    Crs crs("crs for block spiluk test", nrows, nrows, nnz, values, row_map,
-            entries);
-    Bsr bsr(crs, block_size);
-
-    // Pull out views from BSR
-    Kokkos::resize(brow_map, bsr.graph.row_map.extent(0));
-    Kokkos::resize(bentries, bsr.graph.entries.extent(0));
-    Kokkos::resize(bvalues, bsr.values.extent(0));
-    Kokkos::deep_copy(brow_map, bsr.graph.row_map);
-    Kokkos::deep_copy(bentries, bsr.graph.entries);
-    Kokkos::deep_copy(bvalues, bsr.values);
-
-    run_and_check_spiluk_block(kh, brow_map, bentries, bvalues,
-                               SPILUKAlgorithm::SEQLVLSCHD_TP1, fill_lev,
-                               block_size);
   }
 };
 
