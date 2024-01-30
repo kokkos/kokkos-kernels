@@ -183,7 +183,7 @@ template <typename scalar_t>
 void print_matrix(const std::vector<std::vector<scalar_t>>& matrix) {
   for (const auto& row : matrix) {
     for (const auto& item : row) {
-      std::printf("%.2f ", item);
+      std::printf("%.5f ", item);
     }
     std::cout << std::endl;
   }
