@@ -59,7 +59,6 @@ struct IlukWrap {
   using team_policy            = typename IlukHandle::TeamPolicy;
   using member_type            = typename team_policy::member_type;
   using range_policy           = typename IlukHandle::RangePolicy;
-  using sview_1d = typename Kokkos::View<scalar_t *, memory_space>;
 
   static team_policy get_team_policy(const size_type nrows,
                                      const int team_size) {
@@ -162,10 +161,6 @@ struct IlukWrap {
       team.team_barrier();
     }
 
-    // add. lhs += rhs
-    KOKKOS_INLINE_FUNCTION
-    void add(scalar_t &lhs, const scalar_t &rhs) const { lhs += rhs; }
-
     // gemm, alpha is hardcoded to -1, beta hardcoded to 1
     KOKKOS_INLINE_FUNCTION
     void gemm(const scalar_t &A, const scalar_t &B, scalar_t &C) const {
@@ -218,7 +213,6 @@ struct IlukWrap {
     lno_t lev_start;
     size_type block_size;
     size_type block_items;
-    sview_1d ones;
 
     // BSR data is in LayoutRight!
     using Layout = Kokkos::LayoutRight;
@@ -263,9 +257,7 @@ struct IlukWrap {
           iw(iw_),
           lev_start(lev_start_),
           block_size(block_size_),
-          block_items(block_size * block_size),
-          ones("ones", block_size) {
-      Kokkos::deep_copy(ones, 1.0);
+          block_items(block_size * block_size) {
       KK_REQUIRE_MSG(block_size > 0,
                      "Tried to use block_size=0 with the blocked Common?");
     }
@@ -320,12 +312,6 @@ struct IlukWrap {
           KokkosBatched::Diag::NonUnit,
           KokkosBatched::Algo::Trsm::Unblocked>::  // not 100% on this
           invoke(team, 1.0, rhs, lhs);
-    }
-
-    // add. lhs += rhs
-    template <typename Lview, typename Rview>
-    KOKKOS_INLINE_FUNCTION void add(Lview lhs, const Rview &rhs) const {
-      KokkosBatched::SerialAxpy::invoke(ones, rhs, lhs);
     }
 
     // gemm, alpha is hardcoded to -1, beta hardcoded to 1
@@ -467,13 +453,13 @@ struct IlukWrap {
           if (col < rowid) {
             Base::lset(ipos, Base::aget(k));
 #ifdef SPILUK_VERBOSE
-            std::cout << "    JGF Setting L[" << rowid << "][" << col << "] = " << std::endl;
+            std::cout << "    JGF Setting L[" << rowid << "][" << col << "] = A[" << rowid << "][" << col << "] => " << std::endl;
             Base::print(Base::lget(ipos));
 #endif
           } else {
             Base::uset(ipos, Base::aget(k));
 #ifdef SPILUK_VERBOSE
-            std::cout << "    JGF Setting U[" << rowid << "][" << col << "] = " << std::endl;
+            std::cout << "    JGF Setting U[" << rowid << "][" << col << "] = A[" << rowid << "][" << col << "] => " << std::endl;
             Base::print(Base::uget(ipos));
 #endif
           }
@@ -490,10 +476,10 @@ struct IlukWrap {
       for (auto k = k1; k < k2; k++) {
         const auto prev_row = Base::L_entries(k);
         const auto udiag    = Base::uget(Base::U_row_map(prev_row));
+        Base::divide(team, Base::lget(k), udiag);
         auto fact = Base::lget(k);
-        Base::divide(team, fact, udiag);
 #ifdef SPILUK_VERBOSE
-        std::cout << "    JGF Setting divide L[" << rowid << "][" << prev_row << "] /= U[" << prev_row << "][" << prev_row << "]" << std::endl;
+        std::cout << "    JGF Setting divide L[" << rowid << "][" << prev_row << "] /= U[" << prev_row << "][" << prev_row << "] =" << std::endl;
         Base::print(fact);
 #endif
         Kokkos::parallel_for(
@@ -507,7 +493,9 @@ struct IlukWrap {
                 col < rowid ? Base::lget(ipos) : Base::uget(ipos);
               Base::gemm(fact, Base::uget(kk), C);
 #ifdef SPILUK_VERBOSE
-              std::cout << "    JGF Setting Gemm " << (col < rowid ? "L" : "U") << "[" << rowid << "][" << col << "] =" << std::endl;
+              const auto icol =
+                col < rowid ? Base::L_entries(ipos) : Base::U_entries(ipos);
+              std::cout << "    JGF Setting Gemm " << (col < rowid ? "L" : "U") << "[" << rowid << "][" << icol << "] -= fact * U[" << prev_row << "][" << col << "] =" << std::endl;
               Base::print(C);
 #endif
             }

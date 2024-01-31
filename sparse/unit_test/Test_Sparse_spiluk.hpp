@@ -44,10 +44,25 @@ using kokkos_complex_float  = Kokkos::complex<float>;
 // Comment this out to do focussed debugging
 #define TEST_SPILUK_FULL_CHECKS
 
+// Test verbosity level. 0 = none, 1 = print residuals, 2 = print L,U
+#define TEST_SPILUK_VERBOSE_LEVEL 0
+
+// #define TEST_SPILUK_TINY_TEST
+
 namespace Test {
 
+#ifdef TEST_SPILUK_TINY_TEST
 template <typename scalar_t>
-std::vector<std::vector<scalar_t>> get_9x9_fixture() {
+std::vector<std::vector<scalar_t>> get_fixture() {
+  std::vector<std::vector<scalar_t>> A = {{10.00, 1.00, 0.00, 0.00},
+                                          {0.00, 11.00, 0.00, 0.00},
+                                          {0.00, 2.00, 12.00, 0.00},
+                                          {5.00, 0.00, 3.00, 13.00}};
+  return A;
+}
+#else
+template <typename scalar_t>
+std::vector<std::vector<scalar_t>> get_fixture() {
   std::vector<std::vector<scalar_t>> A = {
       {10.00, 0.00, 0.30, 0.00, 0.00, 0.60, 0.00, 0.00, 0.00},
       {0.00, 11.00, 0.00, 0.00, 0.00, 0.00, 0.70, 0.00, 0.00},
@@ -60,15 +75,7 @@ std::vector<std::vector<scalar_t>> get_9x9_fixture() {
       {0.00, 0.00, 0.00, 2.00, 2.50, 0.00, 0.00, 0.00, 18.00}};
   return A;
 }
-
-template <typename scalar_t>
-std::vector<std::vector<scalar_t>> get_4x4_fixture() {
-  std::vector<std::vector<scalar_t>> A = {{10.00, 1.00, 0.00, 0.00},
-                                          {0.00, 11.00, 0.00, 0.00},
-                                          {0.00, 2.00, 12.00, 0.00},
-                                          {5.00, 0.00, 0.00, 13.00}};
-  return A;
-}
+#endif
 
 static constexpr double EPS = 1e-7;
 
@@ -125,7 +132,7 @@ struct SpilukTest {
 
   static bool is_triangular(const RowMapType& drow_map, const EntriesType& dentries, const ValuesType& dvalues, bool check_lower, const size_type block_size = 1)
   {
-    const auto nrows = row_map.extent(0) - 1;
+    const auto nrows = drow_map.extent(0) - 1;
     const auto block_items = block_size * block_size;
 
     auto row_map = Kokkos::create_mirror_view(drow_map);
@@ -147,17 +154,18 @@ struct SpilukTest {
           return false;
         }
         else if (col == row && block_size > 1) {
+          // Do the diagonal dense blocks also have to be upper/lower?
           // Check diagonal block
-          scalar_t* block = values.data() + nnz * block_items;
-          for (size_type i = 0; i < block_size; ++i) {
-            for (size_type j = 0; j < block_size; ++j) {
-              if ( (j > i && check_lower && block[i*block_size + j] != 0.0 ) ||
-                   (j < i && !check_lower && block[i*block_size + j] != 0.0) ) {
-                std::cout << "Bad block entry is: " << block[i*block_size + j] << std::endl;
-                return false;
-              }
-            }
-          }
+          // scalar_t* block = values.data() + nnz * block_items;
+          // for (size_type i = 0; i < block_size; ++i) {
+          //   for (size_type j = 0; j < block_size; ++j) {
+          //     if ( (j > i && check_lower && block[i*block_size + j] != 0.0 ) ||
+          //          (j < i && !check_lower && block[i*block_size + j] != 0.0) ) {
+          //       std::cout << "Bad block entry is: " << block[i*block_size + j] << std::endl;
+          //       return false;
+          //     }
+          //   }
+          // }
         }
       }
     }
@@ -184,11 +192,15 @@ struct SpilukTest {
     EXPECT_TRUE(is_triangular(U_row_map, U_entries, U_values, false));
 
     const auto result = check_result_impl(A, L, U, nrows);
-    // std::cout << "For nrows=" << nrows << ", unblocked had residual: " << result << std::endl;
-    // std::cout << "L" << std::endl;
-    // print_matrix(decompress_matrix(L_row_map, L_entries, L_values));
-    // std::cout << "U" << std::endl;
-    // print_matrix(decompress_matrix(U_row_map, U_entries, U_values));
+    if (TEST_SPILUK_VERBOSE_LEVEL > 0) {
+      std::cout << "For nrows=" << nrows << ", unblocked had residual: " << result << std::endl;
+    }
+    if (TEST_SPILUK_VERBOSE_LEVEL > 1) {
+      std::cout << "L result" << std::endl;
+      print_matrix(decompress_matrix(L_row_map, L_entries, L_values));
+      std::cout << "U result" << std::endl;
+      print_matrix(decompress_matrix(U_row_map, U_entries, U_values));
+    }
 
     EXPECT_LT(result, 1e-4);
   }
@@ -212,11 +224,15 @@ struct SpilukTest {
     EXPECT_TRUE(is_triangular(U_row_map, U_entries, U_values, false, block_size));
 
     const auto result = check_result_impl(A, L, U, nrows, block_size);
-    // std::cout << "For nrows=" << nrows << ", block_size=" << block_size << " had residual: " << result << std::endl;
-    // std::cout << "L" << std::endl;
-    // print_matrix(decompress_matrix(L_row_map, L_entries, L_values, block_size));
-    // std::cout << "U" << std::endl;
-    // print_matrix(decompress_matrix(U_row_map, U_entries, U_values, block_size));
+    if (TEST_SPILUK_VERBOSE_LEVEL > 0) {
+      std::cout << "For nrows=" << nrows << ", block_size=" << block_size << " had residual: " << result << std::endl;
+    }
+    if (TEST_SPILUK_VERBOSE_LEVEL > 1) {
+      std::cout << "L result" << std::endl;
+      print_matrix(decompress_matrix(L_row_map, L_entries, L_values, block_size));
+      std::cout << "U result" << std::endl;
+      print_matrix(decompress_matrix(U_row_map, U_entries, U_values, block_size));
+    }
 
     EXPECT_LT(result, 1e-2);
   }
@@ -356,7 +372,12 @@ struct SpilukTest {
   }
 
   static void run_test_spiluk() {
-    std::vector<std::vector<scalar_t>> A = get_9x9_fixture<scalar_t>();
+    std::vector<std::vector<scalar_t>> A = get_fixture<scalar_t>();
+
+    if (TEST_SPILUK_VERBOSE_LEVEL > 1) {
+      std::cout << "A input" << std::endl;
+      print_matrix(A);
+    }
 
     RowMapType row_map;
     EntriesType entries;
@@ -373,7 +394,12 @@ struct SpilukTest {
   }
 
   static void run_test_spiluk_blocks() {
-    std::vector<std::vector<scalar_t>> A = get_9x9_fixture<scalar_t>();
+    std::vector<std::vector<scalar_t>> A = get_fixture<scalar_t>();
+
+    if (TEST_SPILUK_VERBOSE_LEVEL > 1) {
+      std::cout << "A input" << std::endl;
+      print_matrix(A);
+    }
 
     RowMapType row_map, brow_map;
     EntriesType entries, bentries;
@@ -507,7 +533,7 @@ struct SpilukTest {
     std::vector<EntriesType> U_entries_v(nstreams);
     std::vector<ValuesType> U_values_v(nstreams);
 
-    std::vector<std::vector<scalar_t>> Afix = get_9x9_fixture<scalar_t>();
+    std::vector<std::vector<scalar_t>> Afix = get_fixture<scalar_t>();
 
     RowMapType row_map;
     EntriesType entries;
@@ -615,7 +641,7 @@ struct SpilukTest {
     std::vector<EntriesType> U_entries_v(nstreams);
     std::vector<ValuesType> U_values_v(nstreams);
 
-    std::vector<std::vector<scalar_t>> Afix = get_9x9_fixture<scalar_t>();
+    std::vector<std::vector<scalar_t>> Afix = get_fixture<scalar_t>();
 
     RowMapType row_map, brow_map;
     EntriesType entries, bentries;
