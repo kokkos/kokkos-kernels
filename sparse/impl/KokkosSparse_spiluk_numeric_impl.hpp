@@ -34,7 +34,7 @@
 #include "KokkosBlas1_set.hpp"
 
 //#define NUMERIC_OUTPUT_INFO
-//#define SPILUK_VERBOSE
+#define SPILUK_VERBOSE
 
 namespace KokkosSparse {
 namespace Impl {
@@ -373,11 +373,6 @@ struct IlukWrap {
         }
         std::cout << std::endl;
       }
-      // std::cout << "      Raw: ";
-      // for (size_type i = 0; i < block_size * block_size; ++i) {
-      //   std::cout << item.data()[i] << " ";
-      // }
-      // std::cout << std::endl;
     }
   };
 
@@ -479,7 +474,7 @@ struct IlukWrap {
         Base::divide(team, Base::lget(k), udiag);
         auto fact = Base::lget(k);
 #ifdef SPILUK_VERBOSE
-        std::cout << "    JGF Setting divide L[" << rowid << "][" << prev_row << "] /= U[" << prev_row << "][" << prev_row << "] =" << std::endl;
+        std::cout << "    JGF doing divide, fact = L[" << rowid << "][" << prev_row << "] /= U[" << prev_row << "][" << prev_row << "] =" << std::endl;
         Base::print(fact);
 #endif
         Kokkos::parallel_for(
@@ -489,13 +484,14 @@ struct IlukWrap {
             const auto col  = Base::U_entries(kk);
             const auto ipos = Base::iw(my_team, col);
             if (ipos != -1) {
+              const bool do_l = (col < rowid); //|| (col == 2 && rowid == 2 && prev_row == 1);
               typename Base::reftype C =
-                col < rowid ? Base::lget(ipos) : Base::uget(ipos);
+                do_l ? Base::lget(ipos) : Base::uget(ipos);
               Base::gemm(fact, Base::uget(kk), C);
 #ifdef SPILUK_VERBOSE
               const auto icol =
-                col < rowid ? Base::L_entries(ipos) : Base::U_entries(ipos);
-              std::cout << "    JGF Setting Gemm " << (col < rowid ? "L" : "U") << "[" << rowid << "][" << icol << "] -= fact * U[" << prev_row << "][" << col << "] =" << std::endl;
+                do_l ? Base::L_entries(ipos) : Base::U_entries(ipos);
+              std::cout << "    JGF doing gemm, " << (do_l ? "L" : "U") << "[" << rowid << "][" << icol << "] -= fact * U[" << prev_row << "][" << col << "] =" << std::endl;
               Base::print(C);
 #endif
             }
