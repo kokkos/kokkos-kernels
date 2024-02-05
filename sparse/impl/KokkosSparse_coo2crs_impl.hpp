@@ -198,10 +198,10 @@ class Coo2Crs {
 
     auto shallow_copy_to_device = [](UmapType *dst, UmapType const *src,
                                      std::size_t cnt) {
-      std::size_t n = cnt / sizeof(UmapType);
+      std::size_t nn = cnt / sizeof(UmapType);
       Kokkos::deep_copy(
-          Kokkos::View<UmapType *, UmapMemorySpace>(dst, n),
-          Kokkos::View<UmapType const *, Kokkos::HostSpace>(src, n));
+          Kokkos::View<UmapType *, UmapMemorySpace>(dst, nn),
+          Kokkos::View<UmapType const *, Kokkos::HostSpace>(src, nn));
     };
 
     UmapType **umap_ptrs = new UmapType *[m_nrows];
