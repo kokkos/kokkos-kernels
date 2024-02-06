@@ -196,8 +196,13 @@ class Coo2Crs {
         reinterpret_cast<UmapType *>(Kokkos::kokkos_malloc<UmapMemorySpace>(
             "m_umaps", m_nrows * sizeof(UmapType)));
 
-    using shallow_copy_to_device =
-        Kokkos::Impl::DeepCopy<UmapMemorySpace, typename Kokkos::HostSpace>;
+    auto shallow_copy_to_device = [](UmapType *dst, UmapType const *src,
+                                     std::size_t cnt) {
+      std::size_t nn = cnt / sizeof(UmapType);
+      Kokkos::deep_copy(
+          Kokkos::View<UmapType *, UmapMemorySpace>(dst, nn),
+          Kokkos::View<UmapType const *, Kokkos::HostSpace>(src, nn));
+    };
 
     UmapType **umap_ptrs = new UmapType *[m_nrows];
     // TODO: use host-level parallel_for with tag rowmapRp1
