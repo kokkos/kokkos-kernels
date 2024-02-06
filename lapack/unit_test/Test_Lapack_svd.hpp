@@ -477,7 +477,8 @@ int impl_test_svd(const int m, const int n) {
   std::cout << "Running impl_test_svd with sizes: " << m << "x" << n
             << std::endl;
 
-  const mag_type tol = 1000 * KAT_S::eps();
+  const mag_type max_val = 10;
+  const mag_type tol     = 1000 * max_val * KAT_S::eps();
 
   AMatrix A("A", m, n), U("U", m, m), Vt("Vt", n, n), Aref("A ref", m, n);
   vector_type S("S", Kokkos::min(m, n));
@@ -488,11 +489,23 @@ int impl_test_svd(const int m, const int n) {
 
   // Initialize A with random numbers
   scalar_type randStart = 0, randEnd = 0;
-  Test::getRandomBounds(10.0, randStart, randEnd);
+  Test::getRandomBounds(max_val, randStart, randEnd);
   Kokkos::fill_random(A, rand_pool, randStart, randEnd);
   Kokkos::deep_copy(Aref, A);
 
+  // Working around CUSOLVER constraint for m >= n
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSOLVER)
+  if constexpr (std::is_same_v<typename Device::execution_space,
+                               Kokkos::Cuda>) {
+    if (m >= n) {
+      KokkosLapack::svd("A", "A", A, S, U, Vt);
+    }
+  } else {
+    KokkosLapack::svd("A", "A", A, S, U, Vt);
+  }
+#else
   KokkosLapack::svd("A", "A", A, S, U, Vt);
+#endif
 
   check_unitary_orthogonal_matrix(U, tol);
   check_unitary_orthogonal_matrix(Vt, tol);
