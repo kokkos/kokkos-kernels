@@ -32,7 +32,7 @@ namespace Impl {
 #if (__INTEL_MKL__ > 2017)
 // MKL 2018 and above: use new interface: sparse_matrix_t and mkl_sparse_?_mv()
 
-using KokkosSparse::Impl::mode_kk_to_mkl;
+using ::KokkosSparse::Impl::mode_kk_to_mkl;
 
 inline matrix_descr getDescription() {
   matrix_descr A_descr;
