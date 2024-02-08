@@ -27,17 +27,23 @@
 
 namespace Test {
 
-template <typename RowMapT, typename EntriesT, typename ValuesT>
+template <typename scalar_t>
+scalar_t KEEP_ZERO() {
+  return scalar_t(-9999.0);
+}
+
+template <bool CSC = false, typename MapT, typename EntriesT, typename ValuesT>
 void compress_matrix(
-    RowMapT& row_map, EntriesT& entries, ValuesT& values,
+    MapT& map, EntriesT& entries, ValuesT& values,
     const std::vector<std::vector<typename ValuesT::non_const_value_type>>&
         fixture) {
-  using size_type = typename RowMapT::non_const_value_type;
+  using size_type = typename MapT::non_const_value_type;
   using scalar_t  = typename ValuesT::non_const_value_type;
 
   const scalar_t ZERO = scalar_t(0);
 
   const size_type nrows = fixture.size();
+  const size_type ncols = fixture[0].size();
 
   // Count fixture nnz's
   size_type nnz = 0;
@@ -50,35 +56,40 @@ void compress_matrix(
   }
 
   // Allocate device CRS views
-  Kokkos::resize(row_map, nrows + 1);
+  Kokkos::resize(map, (CSC ? ncols : nrows) + 1);
   Kokkos::resize(entries, nnz);
   Kokkos::resize(values, nnz);
 
   // Create host mirror views for CRS
-  auto hrow_map = Kokkos::create_mirror_view(row_map);
+  auto hmap     = Kokkos::create_mirror_view(map);
   auto hentries = Kokkos::create_mirror_view(entries);
   auto hvalues  = Kokkos::create_mirror_view(values);
 
   // Compress into CRS (host views)
   size_type curr_nnz = 0;
-  for (size_type row_idx = 0; row_idx < nrows; ++row_idx) {
-    for (size_type col_idx = 0; col_idx < nrows; ++col_idx) {
-      if (fixture[row_idx][col_idx] != ZERO) {
-        hentries(curr_nnz) = col_idx;
-        hvalues(curr_nnz)  = fixture[row_idx][col_idx];
+  for (size_type outer_idx = 0; outer_idx < (CSC ? ncols : nrows);
+       ++outer_idx) {
+    for (size_type inner_idx = 0; inner_idx < (CSC ? nrows : ncols);
+         ++inner_idx) {
+      const auto val =
+          fixture[CSC ? inner_idx : outer_idx][CSC ? outer_idx : inner_idx];
+      if (val != ZERO) {
+        hentries(curr_nnz) = inner_idx;
+        hvalues(curr_nnz)  = val == KEEP_ZERO<scalar_t>() ? ZERO : val;
         ++curr_nnz;
       }
-      hrow_map(row_idx + 1) = curr_nnz;
+      hmap(outer_idx + 1) = curr_nnz;
     }
   }
 
   // Copy host CRS views to device CRS views
-  Kokkos::deep_copy(row_map, hrow_map);
+  Kokkos::deep_copy(map, hmap);
   Kokkos::deep_copy(entries, hentries);
   Kokkos::deep_copy(values, hvalues);
 }
 
-template <typename RowMapT, typename EntriesT, typename ValuesT>
+template <bool CSC = false, typename RowMapT, typename EntriesT,
+          typename ValuesT>
 std::vector<std::vector<typename ValuesT::non_const_value_type>>
 decompress_matrix(const RowMapT& row_map, const EntriesT& entries,
                   const ValuesT& values) {
@@ -105,9 +116,13 @@ decompress_matrix(const RowMapT& row_map, const EntriesT& entries,
     const size_type row_nnz_begin = hrow_map(row_idx);
     const size_type row_nnz_end   = hrow_map(row_idx + 1);
     for (size_type row_nnz = row_nnz_begin; row_nnz < row_nnz_end; ++row_nnz) {
-      const auto col_idx       = hentries(row_nnz);
-      const scalar_t value     = hvalues(row_nnz);
-      result[row_idx][col_idx] = value;
+      const auto col_idx   = hentries(row_nnz);
+      const scalar_t value = hvalues(row_nnz);
+      if (CSC) {
+        result[col_idx][row_idx] = value;
+      } else {
+        result[row_idx][col_idx] = value;
+      }
     }
   }
 
