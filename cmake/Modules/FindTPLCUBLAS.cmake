@@ -1,5 +1,5 @@
 if(CUBLAS_LIBRARIES AND CUBLAS_LIBRARY_DIRS AND CUBLAS_INCLUDE_DIRS)
-  kokkoskernels_find_imported(CUBLAS INTERFACE 
+  kokkoskernels_find_imported(CUBLAS INTERFACE
     LIBRARIES ${CUBLAS_LIBRARIES}
     LIBRARY_PATHS ${CUBLAS_LIBRARY_DIRS}
     HEADER_PATHS ${CUBLAS_INCLUDE_DIRS}
@@ -8,19 +8,23 @@ elseif(CUBLAS_LIBRARIES AND CUBLAS_LIBRARY_DIRS)
   kokkoskernels_find_imported(CUBLAS INTERFACE
     LIBRARIES ${CUBLAS_LIBRARIES}
     LIBRARY_PATHS ${CUBLAS_LIBRARY_DIRS}
+    HEADER cublas.h
   )
 elseif(CUBLAS_LIBRARIES)
-  kokkoskernels_find_imported(CUBLAS INTERFACE 
+  kokkoskernels_find_imported(CUBLAS INTERFACE
     LIBRARIES ${CUBLAS_LIBRARIES}
+    HEADER cublas.h
   )
 elseif(CUBLAS_LIBRARY_DIRS)
-  kokkoskernels_find_imported(CUBLAS INTERFACE 
-    LIBRARIES cublas 
+  kokkoskernels_find_imported(CUBLAS INTERFACE
+    LIBRARIES cublas
     LIBRARY_PATHS ${CUBLAS_LIBRARY_DIRS}
+    HEADER cublas.h
   )
 elseif(CUBLAS_ROOT OR KokkosKernels_CUBLAS_ROOT) # nothing specific provided, just ROOT
-  kokkoskernels_find_imported(CUBLAS INTERFACE 
-    LIBRARIES cublas 
+  kokkoskernels_find_imported(CUBLAS INTERFACE
+    LIBRARIES cublas
+    HEADER cublas.h
   )
 else() # backwards-compatible way
   FIND_PACKAGE(CUDA)
