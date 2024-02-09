@@ -103,7 +103,7 @@ struct GmresTest {
     constexpr auto m             = 15;
     constexpr auto tol           = TolMeta<float_t>::value;
     constexpr auto diagDominance = 1;
-    constexpr bool verbose       = true;
+    constexpr bool verbose       = false;
     constexpr auto block_size    = UseBlocks ? 10 : 1;
 
     auto A = get_A<Crs, sp_matrix_type>(n, diagDominance, block_size);
