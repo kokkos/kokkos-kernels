@@ -34,7 +34,6 @@
 #include "KokkosBlas1_set.hpp"
 
 //#define NUMERIC_OUTPUT_INFO
-#define SPILUK_VERBOSE
 
 namespace KokkosSparse {
 namespace Impl {
@@ -405,9 +404,6 @@ struct IlukWrap {
       const auto my_team = team.league_rank();
       const auto rowid =
           Base::level_idx(my_team + Base::lev_start);  // map to rowid
-#ifdef SPILUK_VERBOSE
-      std::cout << "JGF Processing rowid=" << rowid << std::endl;
-#endif
 
       // Set active entries in L to zero, store active cols in iw
       // Set L diagonal for this row to identity
@@ -436,9 +432,6 @@ struct IlukWrap {
       team.team_barrier();
 
       // Unpack the rowid-th row of A, copy into L,U
-#ifdef SPILUK_VERBOSE
-      std::cout << "  JGF Unpacking A" << std::endl;
-#endif
       k1 = Base::A_row_map(rowid);
       k2 = Base::A_row_map(rowid + 1);
       Kokkos::parallel_for(
@@ -447,25 +440,14 @@ struct IlukWrap {
           const auto ipos = Base::iw(my_team, col);
           if (col < rowid) {
             Base::lset(ipos, Base::aget(k));
-#ifdef SPILUK_VERBOSE
-            std::cout << "    JGF Setting L[" << rowid << "][" << col << "] = A[" << rowid << "][" << col << "] => " << std::endl;
-            Base::print(Base::lget(ipos));
-#endif
           } else {
             Base::uset(ipos, Base::aget(k));
-#ifdef SPILUK_VERBOSE
-            std::cout << "    JGF Setting U[" << rowid << "][" << col << "] = A[" << rowid << "][" << col << "] => " << std::endl;
-            Base::print(Base::uget(ipos));
-#endif
           }
         });
 
       team.team_barrier();
 
       // Eliminate prev rows
-#ifdef SPILUK_VERBOSE
-      std::cout << "  JGF Eliminating previous rows" << std::endl;
-#endif
       k1 = Base::L_row_map(rowid);
       k2 = Base::L_row_map(rowid + 1) - 1;
       for (auto k = k1; k < k2; k++) {
@@ -473,10 +455,6 @@ struct IlukWrap {
         const auto udiag    = Base::uget(Base::U_row_map(prev_row));
         Base::divide(team, Base::lget(k), udiag);
         auto fact = Base::lget(k);
-#ifdef SPILUK_VERBOSE
-        std::cout << "    JGF doing divide, fact = L[" << rowid << "][" << prev_row << "] /= U[" << prev_row << "][" << prev_row << "] =" << std::endl;
-        Base::print(fact);
-#endif
         Kokkos::parallel_for(
           Kokkos::TeamThreadRange(team, Base::U_row_map(prev_row) + 1,
                                   Base::U_row_map(prev_row + 1)),
@@ -484,16 +462,9 @@ struct IlukWrap {
             const auto col  = Base::U_entries(kk);
             const auto ipos = Base::iw(my_team, col);
             if (ipos != -1) {
-              const bool do_l = (col < rowid); //|| (col == 2 && rowid == 2 && prev_row == 1);
               typename Base::reftype C =
-                do_l ? Base::lget(ipos) : Base::uget(ipos);
+                col < rowid ? Base::lget(ipos) : Base::uget(ipos);
               Base::gemm(fact, Base::uget(kk), C);
-#ifdef SPILUK_VERBOSE
-              const auto icol =
-                do_l ? Base::L_entries(ipos) : Base::U_entries(ipos);
-              std::cout << "    JGF doing gemm, " << (do_l ? "L" : "U") << "[" << rowid << "][" << icol << "] -= fact * U[" << prev_row << "][" << col << "] =" << std::endl;
-              Base::print(C);
-#endif
             }
           });  // end for kk
 

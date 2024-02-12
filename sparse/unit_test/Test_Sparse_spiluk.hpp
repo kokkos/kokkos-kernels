@@ -28,6 +28,7 @@
 #include "KokkosSparse_spiluk.hpp"
 #include "KokkosSparse_crs_to_bsr_impl.hpp"
 #include "KokkosSparse_bsr_to_crs_impl.hpp"
+#include "KokkosSparse_LUPrec.hpp"
 
 #include "Test_vector_fixtures.hpp"
 
@@ -43,10 +44,10 @@ using kokkos_complex_double = Kokkos::complex<double>;
 using kokkos_complex_float  = Kokkos::complex<float>;
 
 // Comment this out to do focussed debugging
-// #define TEST_SPILUK_FULL_CHECKS
+#define TEST_SPILUK_FULL_CHECKS
 
 // Test verbosity level. 0 = none, 1 = print residuals, 2 = print L,U
-#define TEST_SPILUK_VERBOSE_LEVEL 2
+#define TEST_SPILUK_VERBOSE_LEVEL 0
 
 // #define TEST_SPILUK_TINY_TEST
 
@@ -131,17 +132,14 @@ struct SpilukTest {
     return diff_nrm / bb_nrm;
   }
 
-  static bool is_triangular(const RowMapType& drow_map, const EntriesType& dentries, const ValuesType& dvalues, bool check_lower, const size_type block_size = 1)
+  static bool is_triangular(const RowMapType& drow_map, const EntriesType& dentries, bool check_lower)
   {
     const auto nrows = drow_map.extent(0) - 1;
-    const auto block_items = block_size * block_size;
 
     auto row_map = Kokkos::create_mirror_view(drow_map);
     auto entries = Kokkos::create_mirror_view(dentries);
-    auto values  = Kokkos::create_mirror_view(dvalues);
     Kokkos::deep_copy(row_map, drow_map);
     Kokkos::deep_copy(entries, dentries);
-    Kokkos::deep_copy(values, dvalues);
 
     for (size_type row = 0; row < nrows; ++row) {
       const auto row_nnz_begin = row_map(row);
@@ -154,57 +152,9 @@ struct SpilukTest {
         else if (col < row && !check_lower) {
           return false;
         }
-        else if (col == row && block_size > 1) {
-          // Do the diagonal dense blocks also have to be upper/lower?
-          // Check diagonal block
-          // scalar_t* block = values.data() + nnz * block_items;
-          // for (size_type i = 0; i < block_size; ++i) {
-          //   for (size_type j = 0; j < block_size; ++j) {
-          //     if ( (j > i && check_lower && block[i*block_size + j] != 0.0 ) ||
-          //          (j < i && !check_lower && block[i*block_size + j] != 0.0) ) {
-          //       std::cout << "Bad block entry is: " << block[i*block_size + j] << std::endl;
-          //       return false;
-          //     }
-          //   }
-          // }
-        }
       }
     }
     return true;
-  }
-
-  static void populate_bsr(const ValuesType& dvalues, const size_type block_size)
-  {
-    using RPDF = std::uniform_real_distribution<scalar_t>;
-
-    const size_type block_items = block_size * block_size;
-    const size_type num_blocks  = dvalues.extent(0) / block_items;
-    const scalar_t ZERO = scalar_t(0);
-    std::mt19937_64 engine;
-
-    auto values  = Kokkos::create_mirror_view(dvalues);
-    Kokkos::deep_copy(values, dvalues);
-
-    for (size_type block = 0; block < num_blocks; ++block) {
-      scalar_t min = std::numeric_limits<scalar_t>::max();
-      scalar_t max = std::numeric_limits<scalar_t>::min();
-      // Get the range of values in this block
-      for (size_type block_item = 0; block_item < block_items; ++block_item) {
-        const scalar_t val = values(block * block_items + block_item);
-        if (val < min) min = val;
-        if (val > max) max = val;
-      }
-      // Set the zeros to a random value in this range
-      RPDF val_gen(min, max);
-      for (size_type block_item = 0; block_item < block_items; ++block_item) {
-        scalar_t& val = values(block * block_items + block_item);
-        if (val == ZERO) {
-          val = val_gen(engine);
-        }
-      }
-    }
-
-    Kokkos::deep_copy(dvalues, values);
   }
 
   static void check_result(const RowMapType& row_map,
@@ -214,7 +164,8 @@ struct SpilukTest {
                            const ValuesType& L_values,
                            const RowMapType& U_row_map,
                            const EntriesType& U_entries,
-                           const ValuesType& U_values) {
+                           const ValuesType& U_values,
+                           const lno_t fill_lev) {
     // Checking
     const auto nrows = row_map.extent(0) - 1;
     Crs A("A_Mtx", nrows, nrows, values.extent(0), values, row_map, entries);
@@ -223,12 +174,12 @@ struct SpilukTest {
     Crs U("U_Mtx", nrows, nrows, U_values.extent(0), U_values, U_row_map,
           U_entries);
 
-    EXPECT_TRUE(is_triangular(L_row_map, L_entries, L_values, true));
-    EXPECT_TRUE(is_triangular(U_row_map, U_entries, U_values, false));
+    EXPECT_TRUE(is_triangular(L_row_map, L_entries, true));
+    EXPECT_TRUE(is_triangular(U_row_map, U_entries, false));
 
     const auto result = check_result_impl(A, L, U, nrows);
     if (TEST_SPILUK_VERBOSE_LEVEL > 0) {
-      std::cout << "For nrows=" << nrows << ", unblocked had residual: " << result << std::endl;
+      std::cout << "For nrows=" << nrows << ", fill_level=" << fill_lev << ", unblocked had residual: " << result << std::endl;
     }
     if (TEST_SPILUK_VERBOSE_LEVEL > 1) {
       std::cout << "L result" << std::endl;
@@ -237,7 +188,9 @@ struct SpilukTest {
       print_matrix(decompress_matrix(U_row_map, U_entries, U_values));
     }
 
-    EXPECT_LT(result, 1e-4);
+    if (fill_lev > 1) {
+      EXPECT_LT(result, 1e-4);
+    }
   }
 
   static void check_result_block(
@@ -245,7 +198,7 @@ struct SpilukTest {
       const ValuesType& values, const RowMapType& L_row_map,
       const EntriesType& L_entries, const ValuesType& L_values,
       const RowMapType& U_row_map, const EntriesType& U_entries,
-      const ValuesType& U_values, const size_type block_size) {
+      const ValuesType& U_values, const lno_t fill_lev, const size_type block_size) {
     // Checking
     const auto nrows = row_map.extent(0) - 1;
     Bsr A("A_Mtx", nrows, nrows, values.extent(0), values, row_map, entries,
@@ -255,12 +208,12 @@ struct SpilukTest {
     Bsr U("U_Mtx", nrows, nrows, U_values.extent(0), U_values, U_row_map,
           U_entries, block_size);
 
-    EXPECT_TRUE(is_triangular(L_row_map, L_entries, L_values, true, block_size));
-    EXPECT_TRUE(is_triangular(U_row_map, U_entries, U_values, false, block_size));
+    EXPECT_TRUE(is_triangular(L_row_map, L_entries, true));
+    EXPECT_TRUE(is_triangular(U_row_map, U_entries, false));
 
     const auto result = check_result_impl(A, L, U, nrows, block_size);
     if (TEST_SPILUK_VERBOSE_LEVEL > 0) {
-      std::cout << "For nrows=" << nrows << ", block_size=" << block_size << " had residual: " << result << std::endl;
+      std::cout << "For nrows=" << nrows << ", fill_level=" << fill_lev << ", block_size=" << block_size << " had residual: " << result << std::endl;
     }
     if (TEST_SPILUK_VERBOSE_LEVEL > 1) {
       std::cout << "L result" << std::endl;
@@ -269,7 +222,9 @@ struct SpilukTest {
       print_matrix(decompress_matrix(U_row_map, U_entries, U_values, block_size));
     }
 
-    EXPECT_LT(result, 1e-2);
+    if (fill_lev > 1) {
+      EXPECT_LT(result, 1e-2);
+    }
   }
 
   static std::tuple<RowMapType, EntriesType, ValuesType, RowMapType,
@@ -306,11 +261,8 @@ struct SpilukTest {
 
     Kokkos::fence();
 
-    if (TEST_SPILUK_VERBOSE_LEVEL > 0) {
-      std::cout << "For fill_level=" << fill_lev << ", ";
-    }
     check_result(row_map, entries, values, L_row_map, L_entries, L_values,
-                 U_row_map, U_entries, U_values);
+                 U_row_map, U_entries, U_values, fill_lev);
 
     kh.destroy_spiluk_handle();
 
@@ -370,11 +322,8 @@ struct SpilukTest {
 
     Kokkos::fence();
 
-    if (TEST_SPILUK_VERBOSE_LEVEL > 0) {
-      std::cout << "For fill_level=" << fill_lev << ", ";
-    }
     check_result_block(row_map, entries, values, L_row_map, L_entries, L_values,
-                       U_row_map, U_entries, U_values, block_size);
+                       U_row_map, U_entries, U_values, fill_lev, block_size);
 
     kh.destroy_spiluk_handle();
 
@@ -490,6 +439,8 @@ struct SpilukTest {
         KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<Crs>(
             nrows, nrows, nnz, 0, lno_t(0.01 * nrows), diagDominance);
 
+    KokkosSparse::sort_crs_matrix(A);
+
     // Pull out views from CRS
     RowMapType row_map("row_map", A.graph.row_map.extent(0));
     EntriesType entries("entries", A.graph.entries.extent(0));
@@ -498,7 +449,7 @@ struct SpilukTest {
     Kokkos::deep_copy(entries, A.graph.entries);
     Kokkos::deep_copy(values, A.values);
 
-    for (lno_t fill_lev = 2; fill_lev < 3; ++fill_lev) {
+    for (lno_t fill_lev = 0; fill_lev < 4; ++fill_lev) {
 
       KernelHandle kh;
 
@@ -523,11 +474,13 @@ struct SpilukTest {
       KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<Crs>(
         nrows, nrows, nnz, 0, lno_t(0.01 * nrows), diagDominance);
 
-    std::vector<size_type> block_sizes = {/*1, 2, 4,*/ 10};
+    KokkosSparse::sort_crs_matrix(A);
+
+    std::vector<size_type> block_sizes = {1, 2, 4, 10};
 
     for (auto block_size : block_sizes) {
 
-      // Pull out views from CRS
+      // Convert to BSR
       Bsr bsr(A, block_size);
 
       // Pull out views from BSR
@@ -538,25 +491,9 @@ struct SpilukTest {
       Kokkos::deep_copy(bentries, bsr.graph.entries);
       Kokkos::deep_copy(bvalues, bsr.values);
 
-      // Fully fill / populate the dense blocks of the BSR?
-      populate_bsr(bvalues, block_size);
-      Kokkos::deep_copy(bsr.values, bvalues);
-
-      for (lno_t fill_lev = 2; fill_lev < 3; ++fill_lev) {
+      for (lno_t fill_lev = 0; fill_lev < 4; ++fill_lev) {
 
         KernelHandle kh;
-
-        // auto crs = KokkosSparse::Impl::bsr_to_crs<Crs>(bsr);
-
-        // RowMapType row_map("row_map", crs.graph.row_map.extent(0));
-        // EntriesType entries("entries", crs.graph.entries.extent(0));
-        // ValuesType values("values", crs.values.extent(0));
-        // Kokkos::deep_copy(row_map, crs.graph.row_map);
-        // Kokkos::deep_copy(entries, crs.graph.entries);
-        // Kokkos::deep_copy(values, crs.values);
-
-        // run_and_check_spiluk(kh, row_map, entries, values,
-        //                      SPILUKAlgorithm::SEQLVLSCHD_TP1, fill_lev);
 
         run_and_check_spiluk_block(kh, brow_map, bentries, bvalues,
                                    SPILUKAlgorithm::SEQLVLSCHD_TP1, fill_lev,
@@ -666,7 +603,8 @@ struct SpilukTest {
     for (int i = 0; i < nstreams; i++) {
       check_result(A_row_map_v[i], A_entries_v[i], A_values_v[i],
                    L_row_map_v[i], L_entries_v[i], L_values_v[i],
-                   U_row_map_v[i], U_entries_v[i], U_values_v[i]);
+                   U_row_map_v[i], U_entries_v[i], U_values_v[i],
+                   fill_lev);
 
       kh_v[i].destroy_spiluk_handle();
     }
@@ -796,11 +734,131 @@ struct SpilukTest {
       check_result_block(A_row_map_v[i], A_entries_v[i], A_values_v[i],
                          L_row_map_v[i], L_entries_v[i], L_values_v[i],
                          U_row_map_v[i], U_entries_v[i], U_values_v[i],
-                         block_size);
+                         fill_lev, block_size);
 
       kh_v[i].destroy_spiluk_handle();
     }
   }
+
+  static void run_test_spiluk_precond_blocks()
+  {
+    // Test using par_ilut as a preconditioner
+    // Does (LU)^inv Ax = (LU)^inv b converge faster than solving Ax=b?
+
+    // Create a diagonally dominant sparse matrix to test:
+    //  par_ilut settings max_iters, res_delta_stop, fill_in_limit, and
+    //  async_update are all left as defaults
+    constexpr auto nrows         = 5000;
+    constexpr auto m             = 15;
+    constexpr auto diagDominance = 2;
+    constexpr auto tol           = 1e-5;
+    constexpr auto fill_lev      = 2;
+    constexpr bool verbose       = false;
+
+    RowMapType brow_map;
+    EntriesType bentries;
+    ValuesType bvalues;
+
+    size_type nnz = 10 * nrows;
+    auto A_unblocked = KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<Crs>(
+      nrows, nrows, nnz, 0, lno_t(0.01 * nrows), diagDominance);
+
+    KokkosSparse::sort_crs_matrix(A_unblocked);
+
+    std::vector<size_type> block_sizes = {/*1, 2, 4,*/ 10};
+
+    for (auto block_size : block_sizes) {
+
+      // Convert to BSR
+      Bsr A(A_unblocked, block_size);
+
+      // Pull out views from BSR
+      Kokkos::resize(brow_map, A.graph.row_map.extent(0));
+      Kokkos::resize(bentries, A.graph.entries.extent(0));
+      Kokkos::resize(bvalues, A.values.extent(0));
+      Kokkos::deep_copy(brow_map, A.graph.row_map);
+      Kokkos::deep_copy(bentries, A.graph.entries);
+      Kokkos::deep_copy(bvalues, A.values);
+
+      // Make kernel handles
+      KernelHandle kh;
+      kh.create_gmres_handle(m, tol);
+      auto gmres_handle = kh.get_gmres_handle();
+      gmres_handle->set_verbose(verbose);
+      using GMRESHandle =
+        typename std::remove_reference<decltype(*gmres_handle)>::type;
+
+      const auto [L_row_map, L_entries, L_values, U_row_map,
+                  U_entries, U_values] =
+        run_and_check_spiluk_block(kh, brow_map, bentries, bvalues,
+                                   SPILUKAlgorithm::SEQLVLSCHD_TP1, fill_lev,
+                                   block_size);
+
+
+      // Create BSRs
+      const auto bnrows = L_row_map.extent(0) - 1;
+      Bsr L("L_Mtx", bnrows, bnrows, L_values.extent(0), L_values, L_row_map,
+            L_entries, block_size);
+      Bsr U("U_Mtx", bnrows, bnrows, U_values.extent(0), U_values, U_row_map,
+            U_entries, block_size);
+
+      // Set initial vectors:
+      ValuesType X("X", nrows);    // Solution and initial guess
+      ValuesType Wj("Wj", nrows);  // For checking residuals at end.
+      ValuesType B(Kokkos::view_alloc(Kokkos::WithoutInitializing, "B"),
+                   nrows);  // right-hand side vec
+      // Make rhs ones so that results are repeatable:
+      Kokkos::deep_copy(B, 1.0);
+
+      int num_iters_plain(0), num_iters_precond(0);
+
+      // Solve Ax = b
+      {
+        gmres(&kh, A, B, X);
+
+        // Double check residuals at end of solve:
+        float_t nrmB = KokkosBlas::nrm2(B);
+        KokkosSparse::spmv("N", 1.0, A, X, 0.0, Wj);  // wj = Ax
+        KokkosBlas::axpy(-1.0, Wj, B);                // b = b-Ax.
+        float_t endRes = KokkosBlas::nrm2(B) / nrmB;
+
+        const auto conv_flag = gmres_handle->get_conv_flag_val();
+        num_iters_plain      = gmres_handle->get_num_iters();
+
+        EXPECT_GT(num_iters_plain, 0);
+        EXPECT_LT(endRes, gmres_handle->get_tol());
+        EXPECT_EQ(conv_flag, GMRESHandle::Flag::Conv);
+      }
+
+      // Solve Ax = b with LU preconditioner.
+      {
+        gmres_handle->reset_handle(m, tol);
+        gmres_handle->set_verbose(verbose);
+
+        // Make precond
+        KokkosSparse::Experimental::LUPrec<Bsr, KernelHandle> myPrec(L, U);
+
+        // reset X for next gmres call
+        Kokkos::deep_copy(X, 0.0);
+
+        gmres(&kh, A, B, X, &myPrec);
+
+        // Double check residuals at end of solve:
+        float_t nrmB = KokkosBlas::nrm2(B);
+        KokkosSparse::spmv("N", 1.0, A, X, 0.0, Wj);  // wj = Ax
+        KokkosBlas::axpy(-1.0, Wj, B);                // b = b-Ax.
+        float_t endRes = KokkosBlas::nrm2(B) / nrmB;
+
+        const auto conv_flag = gmres_handle->get_conv_flag_val();
+        num_iters_precond    = gmres_handle->get_num_iters();
+
+        EXPECT_LT(endRes, gmres_handle->get_tol());
+        EXPECT_EQ(conv_flag, GMRESHandle::Flag::Conv);
+        EXPECT_LT(num_iters_precond, num_iters_plain);
+      }
+    }
+  }
+
 };
 
 }  // namespace Test
@@ -809,10 +867,11 @@ template <typename scalar_t, typename lno_t, typename size_type,
           typename device>
 void test_spiluk() {
   using TestStruct = Test::SpilukTest<scalar_t, lno_t, size_type, device>;
-  // TestStruct::run_test_spiluk();
+  TestStruct::run_test_spiluk();
   TestStruct::run_test_spiluk_blocks();
-  // TestStruct::run_test_spiluk_scale();
-  // TestStruct::run_test_spiluk_scale_blocks();
+  TestStruct::run_test_spiluk_scale();
+  TestStruct::run_test_spiluk_scale_blocks();
+  TestStruct::run_test_spiluk_precond_blocks();
 }
 
 template <typename scalar_t, typename lno_t, typename size_type,
@@ -820,19 +879,19 @@ template <typename scalar_t, typename lno_t, typename size_type,
 void test_spiluk_streams() {
   using TestStruct = Test::SpilukTest<scalar_t, lno_t, size_type, device>;
 
-  // TestStruct::run_test_spiluk_streams(SPILUKAlgorithm::SEQLVLSCHD_TP1, 1);
-  // TestStruct::run_test_spiluk_streams(SPILUKAlgorithm::SEQLVLSCHD_TP1, 2);
-  // TestStruct::run_test_spiluk_streams(SPILUKAlgorithm::SEQLVLSCHD_TP1, 3);
-  // TestStruct::run_test_spiluk_streams(SPILUKAlgorithm::SEQLVLSCHD_TP1, 4);
+  TestStruct::run_test_spiluk_streams(SPILUKAlgorithm::SEQLVLSCHD_TP1, 1);
+  TestStruct::run_test_spiluk_streams(SPILUKAlgorithm::SEQLVLSCHD_TP1, 2);
+  TestStruct::run_test_spiluk_streams(SPILUKAlgorithm::SEQLVLSCHD_TP1, 3);
+  TestStruct::run_test_spiluk_streams(SPILUKAlgorithm::SEQLVLSCHD_TP1, 4);
 
-  // TestStruct::run_test_spiluk_streams_blocks(SPILUKAlgorithm::SEQLVLSCHD_TP1,
-  //                                            1);
-  // TestStruct::run_test_spiluk_streams_blocks(SPILUKAlgorithm::SEQLVLSCHD_TP1,
-  //                                            2);
-  // TestStruct::run_test_spiluk_streams_blocks(SPILUKAlgorithm::SEQLVLSCHD_TP1,
-  //                                            3);
-  // TestStruct::run_test_spiluk_streams_blocks(SPILUKAlgorithm::SEQLVLSCHD_TP1,
-  //                                            4);
+  TestStruct::run_test_spiluk_streams_blocks(SPILUKAlgorithm::SEQLVLSCHD_TP1,
+                                             1);
+  TestStruct::run_test_spiluk_streams_blocks(SPILUKAlgorithm::SEQLVLSCHD_TP1,
+                                             2);
+  TestStruct::run_test_spiluk_streams_blocks(SPILUKAlgorithm::SEQLVLSCHD_TP1,
+                                             3);
+  TestStruct::run_test_spiluk_streams_blocks(SPILUKAlgorithm::SEQLVLSCHD_TP1,
+                                             4);
 }
 
 #define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)        \
