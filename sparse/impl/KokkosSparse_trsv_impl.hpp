@@ -153,9 +153,7 @@ struct TrsvWrap {
     template <bool IsLower, bool Transpose = false>
     void divide(RangeMultiVectorType X, const Block& A, const lno_t r,
                 const lno_t j) {
-      constexpr bool expect_lower =
-          (IsLower && !Transpose) || (!IsLower && Transpose);
-      assert(is_triangular(A, expect_lower));
+      assert(is_triangular(A, (IsLower && !Transpose) || (!IsLower && Transpose)));
 
       Vector x(&m_vec_data1[0], m_block_size);
       for (lno_t b = 0; b < m_block_size; ++b) {
@@ -193,7 +191,7 @@ struct TrsvWrap {
     typename CrsMatrixType::index_type ind   = A.graph.entries;
     typename CrsMatrixType::values_type val  = A.values;
 
-    assert(block_size == 1);
+    KK_REQUIRE_MSG(block_size == 1, "BSRs not support for this function yet");
 
     Kokkos::deep_copy(X, Y);
 
@@ -263,7 +261,7 @@ struct TrsvWrap {
     typename CrsMatrixType::index_type ind   = A.graph.entries;
     typename CrsMatrixType::values_type val  = A.values;
 
-    assert(block_size == 1);
+    KK_REQUIRE_MSG(block_size == 1, "BSRs not support for this function yet");
 
     Kokkos::deep_copy(X, Y);
 
@@ -381,7 +379,7 @@ struct TrsvWrap {
     typename CrsMatrixType::index_type ind   = A.graph.entries;
     typename CrsMatrixType::values_type val  = A.values;
 
-    assert(block_size == 1);
+    KK_REQUIRE_MSG(block_size == 1, "BSRs not support for this function yet");
 
     Kokkos::deep_copy(X, Y);
 
@@ -434,7 +432,7 @@ struct TrsvWrap {
 
     Kokkos::deep_copy(X, Y);
 
-    assert(block_size == 1);
+    KK_REQUIRE_MSG(block_size == 1, "BSRs not support for this function yet");
 
     // If lno_t is unsigned and numCols is 0, the loop
     // below will have entirely the wrong number of iterations.
@@ -491,7 +489,7 @@ struct TrsvWrap {
     typename CrsMatrixType::index_type ind   = A.graph.entries;
     typename CrsMatrixType::values_type val  = A.values;
 
-    assert(block_size == 1);
+    KK_REQUIRE_MSG(block_size == 1, "BSRs not support for this function yet");
 
     Kokkos::deep_copy(X, Y);
 
@@ -520,7 +518,7 @@ struct TrsvWrap {
     typename CrsMatrixType::index_type ind   = A.graph.entries;
     typename CrsMatrixType::values_type val  = A.values;
 
-    assert(block_size == 1);
+    KK_REQUIRE_MSG(block_size == 1, "BSRs not support for this function yet");
 
     Kokkos::deep_copy(X, Y);
 
@@ -572,7 +570,7 @@ struct TrsvWrap {
     typename CrsMatrixType::index_type ind   = A.graph.entries;
     typename CrsMatrixType::values_type val  = A.values;
 
-    assert(block_size == 1);
+    KK_REQUIRE_MSG(block_size == 1, "BSRs not support for this function yet");
 
     Kokkos::deep_copy(X, Y);
 
@@ -630,7 +628,7 @@ struct TrsvWrap {
     typename CrsMatrixType::index_type ind   = A.graph.entries;
     typename CrsMatrixType::values_type val  = A.values;
 
-    assert(block_size == 1);
+    KK_REQUIRE_MSG(block_size == 1, "BSRs not support for this function yet");
 
     Kokkos::deep_copy(X, Y);
 
@@ -667,7 +665,7 @@ struct TrsvWrap {
     typename CrsMatrixType::index_type ind   = A.graph.entries;
     typename CrsMatrixType::values_type val  = A.values;
 
-    assert(block_size == 1);
+    KK_REQUIRE_MSG(block_size == 1, "BSRs not support for this function yet");
 
     Kokkos::deep_copy(X, Y);
 
@@ -696,7 +694,7 @@ struct TrsvWrap {
     typename CrsMatrixType::index_type ind   = A.graph.entries;
     typename CrsMatrixType::values_type val  = A.values;
 
-    assert(block_size == 1);
+    KK_REQUIRE_MSG(block_size == 1, "BSRs not support for this function yet");
 
     Kokkos::deep_copy(X, Y);
 
