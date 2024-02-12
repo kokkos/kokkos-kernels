@@ -79,13 +79,12 @@ struct TrsvWrap {
         scalar_t**, Layout, typename CrsMatrixType::device_type,
         Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
-    using Block = Kokkos::View<
-        scalar_t**, Layout, typename CrsMatrixType::device_type,
-        Kokkos::MemoryTraits<Kokkos::RandomAccess> >;
+    using Block =
+        Kokkos::View<scalar_t**, Layout, typename CrsMatrixType::device_type,
+                     Kokkos::MemoryTraits<Kokkos::RandomAccess> >;
 
-    using Vector = Kokkos::View<
-        scalar_t*, typename CrsMatrixType::device_type,
-        Kokkos::MemoryTraits<Kokkos::RandomAccess> >;
+    using Vector = Kokkos::View<scalar_t*, typename CrsMatrixType::device_type,
+                                Kokkos::MemoryTraits<Kokkos::RandomAccess> >;
 
     using UVector = Kokkos::View<
         scalar_t*, typename CrsMatrixType::device_type,
@@ -95,8 +94,8 @@ struct TrsvWrap {
     lno_t m_block_items;
     Vector m_ones;
     Block m_data;
-    Block m_tmp; // Needed for SerialGesv
-    UBlock m_utmp; // Needed for SerialGesv
+    Block m_tmp;    // Needed for SerialGesv
+    UBlock m_utmp;  // Needed for SerialGesv
     Vector m_vec_data1;
     Vector m_vec_data2;
 
@@ -154,8 +153,8 @@ struct TrsvWrap {
         x(b) = X(r * m_block_size + b, j);
       }
 
-      // If StaticPivoting is used, there are compiler errors related to comparing
-      // complex and non-complex.
+      // If StaticPivoting is used, there are compiler errors related to
+      // comparing complex and non-complex.
       using Algo = KokkosBatched::Gesv::NoPivoting;
 
       KokkosBatched::SerialGesv<Algo>::invoke(A, x, x, m_utmp);
