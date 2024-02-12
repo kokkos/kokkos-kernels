@@ -134,7 +134,7 @@ struct SpilukTest {
 
   static bool is_triangular(const RowMapType& drow_map, const EntriesType& dentries, bool check_lower)
   {
-    const auto nrows = drow_map.extent(0) - 1;
+    const size_type nrows = drow_map.extent(0) - 1;
 
     auto row_map = Kokkos::create_mirror_view(drow_map);
     auto entries = Kokkos::create_mirror_view(dentries);
@@ -142,10 +142,10 @@ struct SpilukTest {
     Kokkos::deep_copy(entries, dentries);
 
     for (size_type row = 0; row < nrows; ++row) {
-      const auto row_nnz_begin = row_map(row);
-      const auto row_nnz_end   = row_map(row+1);
+      const size_type row_nnz_begin = row_map(row);
+      const size_type row_nnz_end   = row_map(row+1);
       for (size_type nnz = row_nnz_begin; nnz < row_nnz_end; ++nnz) {
-        const auto col = entries(nnz);
+        const size_type col = entries(nnz);
         if (col > row && check_lower) {
           return false;
         }
