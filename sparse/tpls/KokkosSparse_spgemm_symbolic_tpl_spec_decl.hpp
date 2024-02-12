@@ -688,7 +688,69 @@ SPGEMM_SYMBOLIC_DECL_MKL_E(Kokkos::Serial)
 #ifdef KOKKOS_ENABLE_OPENMP
 SPGEMM_SYMBOLIC_DECL_MKL_E(Kokkos::OpenMP)
 #endif
-#endif
+
+#if defined(KOKKOS_ENABLE_SYCL)
+#define SPGEMM_SYMBOLIC_DECL_MKL_SYCL(SCALAR, ORDINAL, TPL_AVAIL)	       \
+  template <>                                                                  \
+  struct SPGEMM_SYMBOLIC<                                                      \
+      KokkosKernels::Experimental::KokkosKernelsHandle<                        \
+          const ORDINAL, const ORDINAL, const SCALAR, Kokkos::Experimental::SYCL, Kokkos::Experimental::SYCLDeviceUSMSpace, \
+          Kokkos::Experimental::SYCLDeviceUSMSpace>,                                                  \
+      Kokkos::View<const ORDINAL *, default_layout,                            \
+                   Kokkos::Device<Kokkos::Experimental::SYCL, Kokkos::Experimental::SYCLDeviceUSMSpace>,                    \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
+      Kokkos::View<const ORDINAL *, default_layout,                            \
+                   Kokkos::Device<Kokkos::Experimental::SYCL, Kokkos::Experimental::SYCLDeviceUSMSpace>,                    \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
+      Kokkos::View<const ORDINAL *, default_layout,                            \
+                   Kokkos::Device<Kokkos::Experimental::SYCL, Kokkos::Experimental::SYCLDeviceUSMSpace>,                    \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
+      Kokkos::View<const ORDINAL *, default_layout,                            \
+                   Kokkos::Device<Kokkos::Experimental::SYCL, Kokkos::Experimental::SYCLDeviceUSMSpace>,                    \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
+      Kokkos::View<ORDINAL *, default_layout,                                  \
+                   Kokkos::Device<Kokkos::Experimental::SYCL, Kokkos::Experimental::SYCLDeviceUSMSpace>,                    \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
+      true, TPL_AVAIL> {                                                       \
+    using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<     \
+        const ORDINAL, const ORDINAL, const SCALAR, Kokkos::Experimental::SYCL, Kokkos::Experimental::SYCLDeviceUSMSpace,   \
+        Kokkos::Experimental::SYCLDeviceUSMSpace>;                                                    \
+    using c_int_view_t =                                                       \
+        Kokkos::View<const ORDINAL *, default_layout,                          \
+                     Kokkos::Device<Kokkos::Experimental::SYCL, Kokkos::Experimental::SYCLDeviceUSMSpace>,                  \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                 \
+    using int_view_t = Kokkos::View<ORDINAL *, default_layout,                 \
+                                    Kokkos::Device<Kokkos::Experimental::SYCL, Kokkos::Experimental::SYCLDeviceUSMSpace>,   \
+                                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>;  \
+    static void spgemm_symbolic(KernelHandle *handle,                          \
+                                typename KernelHandle::nnz_lno_t m,            \
+                                typename KernelHandle::nnz_lno_t n,            \
+                                typename KernelHandle::nnz_lno_t k,            \
+                                c_int_view_t row_mapA, c_int_view_t entriesA,  \
+                                bool, c_int_view_t row_mapB,                   \
+                                c_int_view_t entriesB, bool,                   \
+                                int_view_t row_mapC, bool) {                   \
+      std::string label = "KokkosSparse::spgemm_symbolic[TPL_MKL," +           \
+                          Kokkos::ArithTraits<SCALAR>::name() + "]";           \
+      Kokkos::Profiling::pushRegion(label);                                    \
+      spgemm_symbolic_mkl(handle->get_spgemm_handle(), m, n, k, row_mapA,      \
+                          entriesA, row_mapB, entriesB, row_mapC);             \
+      Kokkos::Profiling::popRegion();                                          \
+    }                                                                          \
+  };
+
+SPGEMM_SYMBOLIC_DECL_MKL_SYCL(float, std::int32_t)
+SPGEMM_SYMBOLIC_DECL_MKL_SYCL(double, std::int32_t)
+SPGEMM_SYMBOLIC_DECL_MKL_SYCL(Kokkos::complex<float>, std::int32_t)
+SPGEMM_SYMBOLIC_DECL_MKL_SYCL(Kokkos::complex<double>, std::int32_t)
+
+SPGEMM_SYMBOLIC_DECL_MKL_SYCL(float, std::int64_t)
+SPGEMM_SYMBOLIC_DECL_MKL_SYCL(double, std::int64_t)
+SPGEMM_SYMBOLIC_DECL_MKL_SYCL(Kokkos::complex<float>, std::int64_t)
+SPGEMM_SYMBOLIC_DECL_MKL_SYCL(Kokkos::complex<double>, std::int64_t)
+#endif  // KOKKOS_ENABLE_SYCL
+
+#endif  // KOKKOSKERNELS_ENABLE_TPL_MKL
 
 }  // namespace Impl
 }  // namespace KokkosSparse
