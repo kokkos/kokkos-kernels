@@ -31,7 +31,7 @@ namespace Impl {
 
 template <class AMatrix, class XVector, class YVector>
 void spmv_cusparse(const Kokkos::Cuda& exec,
-                   const KokkosKernels::Experimental::Controls& controls,
+                   KokkosSparse::SPMVHandle<Kokkos::Cuda, AMatrix>* handle,
                    const char mode[],
                    typename YVector::non_const_value_type const& alpha,
                    const AMatrix& A, const XVector& x,
@@ -41,7 +41,8 @@ void spmv_cusparse(const Kokkos::Cuda& exec,
   using value_type  = typename AMatrix::non_const_value_type;
 
   /* initialize cusparse library */
-  cusparseHandle_t cusparseHandle = controls.getCusparseHandle();
+  cusparseHandle_t cusparseHandle =
+      KokkosKernels::Impl::CusparseSingleton::singleton().cusparseHandle;
   /* Set cuSPARSE to use the given stream until this function exits */
   TemporarySetCusparseStream(cusparseHandle, exec);
 
@@ -70,11 +71,6 @@ void spmv_cusparse(const Kokkos::Cuda& exec,
 #if defined(CUSPARSE_VERSION) && (10300 <= CUSPARSE_VERSION)
 
   using entry_type = typename AMatrix::non_const_ordinal_type;
-  /* Check that cusparse can handle the types of the input Kokkos::CrsMatrix */
-  const cusparseIndexType_t myCusparseOffsetType =
-      cusparse_index_type_t_from<offset_type>();
-  const cusparseIndexType_t myCusparseEntryType =
-      cusparse_index_type_t_from<entry_type>();
 
   cudaDataType myCudaDataType;
   if (std::is_same<value_type, float>::value)
@@ -90,13 +86,11 @@ void spmv_cusparse(const Kokkos::Cuda& exec,
         "Scalar (data) type of CrsMatrix isn't supported by cuSPARSE, yet TPL "
         "layer says it is");
 
-  /* create matrix */
-  cusparseSpMatDescr_t A_cusparse;
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateCsr(
-      &A_cusparse, A.numRows(), A.numCols(), A.nnz(),
-      (void*)A.graph.row_map.data(), (void*)A.graph.entries.data(),
-      (void*)A.values.data(), myCusparseOffsetType, myCusparseEntryType,
-      CUSPARSE_INDEX_BASE_ZERO, myCudaDataType));
+  /* Check that cusparse can handle the types of the input Kokkos::CrsMatrix */
+  const cusparseIndexType_t myCusparseOffsetType =
+      cusparse_index_type_t_from<offset_type>();
+  const cusparseIndexType_t myCusparseEntryType =
+      cusparse_index_type_t_from<entry_type>();
 
   /* create lhs and rhs */
   cusparseDnVecDescr_t vecX, vecY;
@@ -105,59 +99,80 @@ void spmv_cusparse(const Kokkos::Cuda& exec,
   KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateDnVec(
       &vecY, y.extent_int(0), (void*)y.data(), myCudaDataType));
 
-  size_t bufferSize = 0;
-  void* dBuffer     = NULL;
+  KokkosSparse::Impl::CuSparse_SpMV_Data* subhandle;
+
+  if (handle->is_set_up) {
+    subhandle =
+        dynamic_cast<KokkosSparse::Impl::CuSparse_SpMV_Data*>(handle->tpl);
+    if (!subhandle)
+      throw std::runtime_error(
+          "KokkosSparse::spmv: subhandle is not set up for cusparse");
+  } else {
+    subhandle   = new KokkosSparse::Impl::CuSparse_SpMV_Data(exec);
+    handle->tpl = subhandle;
+
+    // select cusparse algo
 #if CUSPARSE_VERSION >= 11400
-  cusparseSpMVAlg_t alg = CUSPARSE_SPMV_ALG_DEFAULT;
+    subhandle->algo = (handle->algo == KokkosSparse::SPMV_MERGE_PATH)
+                          ? CUSPARSE_SPMV_CSR_ALG2
+                          : CUSPARSE_SPMV_ALG_DEFAULT;
 #else
-  cusparseSpMVAlg_t alg = CUSPARSE_MV_ALG_DEFAULT;
+    subhandle->algo = (handle->algo == KokkosSparse::SPMV_MERGE_PATH)
+                          ? CUSPARSE_CSRMV_ALG2
+                          : CUSPARSE_MV_ALG_DEFAULT;
 #endif
-  if (controls.isParameter("algorithm")) {
-    const std::string algName = controls.getParameter("algorithm");
-    if (algName == "default")
-#if CUSPARSE_VERSION >= 11400
-      alg = CUSPARSE_SPMV_ALG_DEFAULT;
-#else
-      alg = CUSPARSE_MV_ALG_DEFAULT;
-#endif
-    else if (algName == "merge")
-#if CUSPARSE_VERSION >= 11400
-      alg = CUSPARSE_SPMV_CSR_ALG2;
-#else
-      alg = CUSPARSE_CSRMV_ALG2;
-#endif
+
+    /* create matrix */
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateCsr(
+        &subhandle->mat, A.numRows(), A.numCols(), A.nnz(),
+        (void*)A.graph.row_map.data(), (void*)A.graph.entries.data(),
+        (void*)A.values.data(), myCusparseOffsetType, myCusparseEntryType,
+        CUSPARSE_INDEX_BASE_ZERO, myCudaDataType));
+
+    /* size and allocate buffer */
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpMV_bufferSize(
+        cusparseHandle, myCusparseOperation, &alpha, subhandle->mat, vecX,
+        &beta, vecY, myCudaDataType, subhandle->algo, &subhandle->bufferSize));
+    KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMallocAsync(
+        &subhandle->buffer, subhandle->bufferSize, exec.cuda_stream()));
   }
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpMV_bufferSize(
-      cusparseHandle, myCusparseOperation, &alpha, A_cusparse, vecX, &beta,
-      vecY, myCudaDataType, alg, &bufferSize));
-  KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc(&dBuffer, bufferSize));
 
   /* perform SpMV */
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpMV(cusparseHandle, myCusparseOperation,
-                                         &alpha, A_cusparse, vecX, &beta, vecY,
-                                         myCudaDataType, alg, dBuffer));
+  KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpMV(
+      cusparseHandle, myCusparseOperation, &alpha, subhandle->mat, vecX, &beta,
+      vecY, myCudaDataType, subhandle->algo, subhandle->buffer));
 
-  KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(dBuffer));
   KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecX));
   KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecY));
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(A_cusparse));
 
 #elif (9000 <= CUDA_VERSION)
 
-  /* create and set the matrix descriptor */
-  cusparseMatDescr_t descrA = 0;
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&descrA));
-  KOKKOS_CUSPARSE_SAFE_CALL(
-      cusparseSetMatType(descrA, CUSPARSE_MATRIX_TYPE_GENERAL));
-  KOKKOS_CUSPARSE_SAFE_CALL(
-      cusparseSetMatIndexBase(descrA, CUSPARSE_INDEX_BASE_ZERO));
+  KokkosSparse::Impl::CuSparse_SpMV_Data* subhandle;
+
+  if (handle->is_set_up) {
+    subhandle =
+        dynamic_cast<KokkosSparse::Impl::CuSparse_SpMV_Data*>(handle->tpl);
+    if (!subhandle)
+      throw std::runtime_error(
+          "KokkosSparse::spmv: subhandle is not set up for cusparse");
+  } else {
+    /* create and set the subhandle and matrix descriptor */
+    subhandle   = new KokkosSparse::Impl::CuSparse_SpMV_Data(exec);
+    handle->tpl = subhandle;
+    cusparseMatDescr_t descrA = 0;
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&subhandle->mat));
+    KOKKOS_CUSPARSE_SAFE_CALL(
+        cusparseSetMatType(subhandle->mat, CUSPARSE_MATRIX_TYPE_GENERAL));
+    KOKKOS_CUSPARSE_SAFE_CALL(
+        cusparseSetMatIndexBase(subhandle->mat, CUSPARSE_INDEX_BASE_ZERO));
+  }
 
   /* perform the actual SpMV operation */
   if (std::is_same<int, offset_type>::value) {
     if (std::is_same<value_type, float>::value) {
       KOKKOS_CUSPARSE_SAFE_CALL(cusparseScsrmv(
           cusparseHandle, myCusparseOperation, A.numRows(), A.numCols(),
-          A.nnz(), reinterpret_cast<float const*>(&alpha), descrA,
+          A.nnz(), reinterpret_cast<float const*>(&alpha), subhandle->mat,
           reinterpret_cast<float const*>(A.values.data()),
           A.graph.row_map.data(), A.graph.entries.data(),
           reinterpret_cast<float const*>(x.data()),
@@ -167,7 +182,7 @@ void spmv_cusparse(const Kokkos::Cuda& exec,
     } else if (std::is_same<value_type, double>::value) {
       KOKKOS_CUSPARSE_SAFE_CALL(cusparseDcsrmv(
           cusparseHandle, myCusparseOperation, A.numRows(), A.numCols(),
-          A.nnz(), reinterpret_cast<double const*>(&alpha), descrA,
+          A.nnz(), reinterpret_cast<double const*>(&alpha), subhandle->mat,
           reinterpret_cast<double const*>(A.values.data()),
           A.graph.row_map.data(), A.graph.entries.data(),
           reinterpret_cast<double const*>(x.data()),
@@ -176,7 +191,7 @@ void spmv_cusparse(const Kokkos::Cuda& exec,
     } else if (std::is_same<value_type, Kokkos::complex<float>>::value) {
       KOKKOS_CUSPARSE_SAFE_CALL(cusparseCcsrmv(
           cusparseHandle, myCusparseOperation, A.numRows(), A.numCols(),
-          A.nnz(), reinterpret_cast<cuComplex const*>(&alpha), descrA,
+          A.nnz(), reinterpret_cast<cuComplex const*>(&alpha), subhandle->mat,
           reinterpret_cast<cuComplex const*>(A.values.data()),
           A.graph.row_map.data(), A.graph.entries.data(),
           reinterpret_cast<cuComplex const*>(x.data()),
@@ -185,7 +200,8 @@ void spmv_cusparse(const Kokkos::Cuda& exec,
     } else if (std::is_same<value_type, Kokkos::complex<double>>::value) {
       KOKKOS_CUSPARSE_SAFE_CALL(cusparseZcsrmv(
           cusparseHandle, myCusparseOperation, A.numRows(), A.numCols(),
-          A.nnz(), reinterpret_cast<cuDoubleComplex const*>(&alpha), descrA,
+          A.nnz(), reinterpret_cast<cuDoubleComplex const*>(&alpha),
+          subhandle->mat,
           reinterpret_cast<cuDoubleComplex const*>(A.values.data()),
           A.graph.row_map.data(), A.graph.entries.data(),
           reinterpret_cast<cuDoubleComplex const*>(x.data()),
@@ -201,8 +217,6 @@ void spmv_cusparse(const Kokkos::Cuda& exec,
         "With cuSPARSE pre-10.0, offset type must be int. Something wrong with "
         "TPL avail logic.");
   }
-
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyMatDescr(descrA));
 #endif  // CUDA_VERSION
 }
 
@@ -244,10 +258,6 @@ void spmv_cusparse(const Kokkos::Cuda& exec,
       Kokkos::Profiling::popRegion();                                       \
     }                                                                       \
   };
-
-// BMK: cuSPARSE that comes with CUDA 9 does not support tranpose or conjugate
-// transpose modes. No version of cuSPARSE supports mode C (conjugate, non
-// transpose). In those cases, fall back to KokkosKernels native spmv.
 
 #if (9000 <= CUDA_VERSION)
 KOKKOSSPARSE_SPMV_CUSPARSE(double, int, int, Kokkos::LayoutLeft,
@@ -366,7 +376,7 @@ namespace Impl {
 
 template <class AMatrix, class XVector, class YVector>
 void spmv_rocsparse(const Kokkos::HIP& exec,
-                    const KokkosKernels::Experimental::Controls& controls,
+                    KokkosSparse::SpMVHandle<Kokkos::HIP, AMatrix>* handle,
                     const char mode[],
                     typename YVector::non_const_value_type const& alpha,
                     const AMatrix& A, const XVector& x,
@@ -377,9 +387,10 @@ void spmv_rocsparse(const Kokkos::HIP& exec,
   using value_type  = typename AMatrix::non_const_value_type;
 
   /* initialize rocsparse library */
-  rocsparse_handle handle = controls.getRocsparseHandle();
+  rocsparse_handle rocsparseHandle =
+      KokkosKernels::Impl::RocsparseSingleton::singleton().rocsparseHandle;
   /* Set rocsparse to use the given stream until this function exits */
-  TemporarySetRocsparseStream(handle, exec);
+  TemporarySetRocsparseStream(rocsparseHandle, exec);
 
   /* Set the operation mode */
   rocsparse_operation myRocsparseOperation = mode_kk_to_rocsparse(mode);
@@ -390,24 +401,6 @@ void spmv_rocsparse(const Kokkos::HIP& exec,
 
   /* Set the scalar type */
   rocsparse_datatype compute_type = rocsparse_compute_type<value_type>();
-
-  /* Create the rocsparse mat and csr descr */
-  rocsparse_mat_descr Amat;
-  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_mat_descr(&Amat));
-  rocsparse_spmat_descr Aspmat;
-  // We need to do some casting to void*
-  // Note that row_map is always a const view so const_cast is necessary,
-  // however entries and values may not be const so we need to check first.
-  void* csr_row_ptr =
-      static_cast<void*>(const_cast<offset_type*>(A.graph.row_map.data()));
-  void* csr_col_ind =
-      static_cast<void*>(const_cast<entry_type*>(A.graph.entries.data()));
-  void* csr_val = static_cast<void*>(const_cast<value_type*>(A.values.data()));
-
-  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_csr_descr(
-      &Aspmat, A.numRows(), A.numCols(), A.nnz(), csr_row_ptr, csr_col_ind,
-      csr_val, offset_index_type, entry_index_type, rocsparse_index_base_zero,
-      compute_type));
 
   /* Create rocsparse dense vectors for X and Y */
   rocsparse_dnvec_descr vecX, vecY;
@@ -422,58 +415,88 @@ void spmv_rocsparse(const Kokkos::HIP& exec,
       &vecY, y.extent_int(0), y_data,
       rocsparse_compute_type<typename YVector::non_const_value_type>()));
 
-  /* Actually perform the SpMV operation, first size buffer, then compute result
-   */
-  size_t buffer_size     = 0;
-  void* tmp_buffer       = nullptr;
   rocsparse_spmv_alg alg = rocsparse_spmv_alg_default;
-  // Note, Dec 6th 2021 - lbv:
-  // rocSPARSE offers two diffrent algorithms for spmv
-  // 1. ocsparse_spmv_alg_csr_adaptive
-  // 2. rocsparse_spmv_alg_csr_stream
-  // it is unclear which one is the default algorithm
-  // or what both algorithms are intended for?
-  if (controls.isParameter("algorithm")) {
-    const std::string algName = controls.getParameter("algorithm");
-    if (algName == "default")
-      alg = rocsparse_spmv_alg_default;
-    else if (algName == "merge")
-      alg = rocsparse_spmv_alg_csr_stream;
-  }
+
+  KokkosSparse::Impl::RocSparse_SpMV_Data* subhandle;
+  if (handle->is_set_up) {
+    subhandle =
+        dynamic_cast<KokkosSparse::Impl::RocSparse_SpMV_Data*>(handle->tpl);
+    if (!subhandle)
+      throw std::runtime_error(
+          "KokkosSparse::spmv: subhandle is not set up for rocsparse");
+  } else {
+    subhandle   = new KokkosSparse::Impl::CuSparse_SpMV_Data(exec);
+    handle->tpl = subhandle;
+    /* Create the rocsparse csr descr */
+    // We need to do some casting to void*
+    // Note that row_map is always a const view so const_cast is necessary,
+    // however entries and values may not be const so we need to check first.
+    void* csr_row_ptr =
+        static_cast<void*>(const_cast<offset_type*>(A.graph.row_map.data()));
+    void* csr_col_ind =
+        static_cast<void*>(const_cast<entry_type*>(A.graph.entries.data()));
+    void* csr_val =
+        static_cast<void*>(const_cast<value_type*>(A.values.data()));
+
+    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_create_csr_descr(
+        &subhandle->mat, A.numRows(), A.numCols(), A.nnz(), csr_row_ptr,
+        csr_col_ind, csr_val, offset_index_type, entry_index_type,
+        rocsparse_index_base_zero, compute_type));
+
+    /* Size and allocate buffer, and analyze the matrix */
 
 #if KOKKOSSPARSE_IMPL_ROCM_VERSION >= 60000
-  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(
-      rocsparse_spmv(handle, myRocsparseOperation, &alpha, Aspmat, vecX, &beta,
-                     vecY, compute_type, alg, rocsparse_spmv_stage_buffer_size,
-                     &buffer_size, tmp_buffer));
-  KOKKOS_IMPL_HIP_SAFE_CALL(hipMalloc(&tmp_buffer, buffer_size));
-  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(
-      rocsparse_spmv(handle, myRocsparseOperation, &alpha, Aspmat, vecX, &beta,
-                     vecY, compute_type, alg, rocsparse_spmv_stage_compute,
-                     &buffer_size, tmp_buffer));
+    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_spmv(
+        rocsparseHandle, myRocsparseOperation, &alpha, subhandle->mat, vecX,
+        &beta, vecY, compute_type, alg, rocsparse_spmv_stage_buffer_size,
+        &subhandle->bufferSize, nullptr));
+    KOKKOS_IMPL_HIP_SAFE_CALL(
+        hipMalloc(&subhandle->buffer, subhandle->bufferSize));
+    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_spmv(
+        rocsparseHandle, myRocsparseOperation, &alpha, subhandle->mat, vecX,
+        &beta, vecY, compute_type, alg, rocsparse_spmv_stage_preprocess,
+        &subhandle->bufferSize, subhandle->buffer));
+#elif KOKKOSSPARSE_IMPL_ROCM_VERSION >= 50400
+    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_spmv_ex(
+        rocsparseHandle, myRocsparseOperation, &alpha, subhandle->mat, vecX,
+        &beta, vecY, compute_type, alg, rocsparse_spmv_stage_auto,
+        &subhandle->bufferSize, nullptr));
+    KOKKOS_IMPL_HIP_SAFE_CALL(
+        hipMalloc(&subhandle->buffer, subhandle->bufferSize));
+    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_spmv_ex(
+        rocsparseHandle, myRocsparseOperation, &alpha, subhandle->mat, vecX,
+        &beta, vecY, compute_type, alg, rocsparse_spmv_stage_preprocess,
+        &subhandle->bufferSize, subhandle->buffer));
+#else
+    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_spmv(
+        rocsparseHandle, myRocsparseOperation, &alpha, subhandle->mat, vecX,
+        &beta, vecY, compute_type, alg, &subhandle->bufferSize, nullptr));
+    KOKKOS_IMPL_HIP_SAFE_CALL(
+        hipMalloc(&subhandle->buffer, subhandle->bufferSize));
+#endif
+  }
+
+  /* Perform the actual computation */
+
+#if KOKKOSSPARSE_IMPL_ROCM_VERSION >= 60000
+  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_spmv(
+      rocsparseHandle, myRocsparseOperation, &alpha, subhandle->mat, vecX,
+      &beta, vecY, compute_type, alg, rocsparse_spmv_stage_compute,
+      &subhandle->bufferSize, subhandle->buffer));
 #elif KOKKOSSPARSE_IMPL_ROCM_VERSION >= 50400
   KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_spmv_ex(
-      handle, myRocsparseOperation, &alpha, Aspmat, vecX, &beta, vecY,
-      compute_type, alg, rocsparse_spmv_stage_auto, &buffer_size, tmp_buffer));
-  KOKKOS_IMPL_HIP_SAFE_CALL(hipMalloc(&tmp_buffer, buffer_size));
-  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_spmv_ex(
-      handle, myRocsparseOperation, &alpha, Aspmat, vecX, &beta, vecY,
-      compute_type, alg, rocsparse_spmv_stage_auto, &buffer_size, tmp_buffer));
+      rocsparseHandle, myRocsparseOperation, &alpha, subhandle->mat, vecX,
+      &beta, vecY, compute_type, alg, rocsparse_spmv_stage_compute,
+      &subhandle->bufferSize, subhandle->buffer));
 #else
   KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(
-      rocsparse_spmv(handle, myRocsparseOperation, &alpha, Aspmat, vecX, &beta,
-                     vecY, compute_type, alg, &buffer_size, tmp_buffer));
-  KOKKOS_IMPL_HIP_SAFE_CALL(hipMalloc(&tmp_buffer, buffer_size));
-  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(
-      rocsparse_spmv(handle, myRocsparseOperation, &alpha, Aspmat, vecX, &beta,
-                     vecY, compute_type, alg, &buffer_size, tmp_buffer));
+      rocsparse_spmv(rocsparseHandle, myRocsparseOperation, &alpha,
+                     subhandle->mat, vecX, &beta, vecY, compute_type, alg,
+                     &subhandle->bufferSize, subhandle->buffer));
 #endif
-  KOKKOS_IMPL_HIP_SAFE_CALL(hipFree(tmp_buffer));
 
   KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_destroy_dnvec_descr(vecY));
   KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_destroy_dnvec_descr(vecX));
-  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_destroy_spmat_descr(Aspmat));
-  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_destroy_mat_descr(Amat));
 }
 
 #define KOKKOSSPARSE_SPMV_ROCSPARSE(SCALAR, LAYOUT, COMPILE_LIBRARY)          \
@@ -549,6 +572,9 @@ namespace Impl {
 
 #if (__INTEL_MKL__ > 2017)
 // MKL 2018 and above: use new interface: sparse_matrix_t and mkl_sparse_?_mv()
+
+template <typename ExecutionSpace, typename Scalar, typename Handle>
+void spmv_mkl(Handle* handle, sparse_operation_t op, Scalar alpha, Scalar beta, 
 
 inline void spmv_mkl(sparse_operation_t op, float alpha, float beta, MKL_INT m,
                      MKL_INT n, const MKL_INT* Arowptrs,
@@ -739,8 +765,8 @@ struct spmv_onemkl_wrapper<false> {
     auto ev_gemv =
         oneapi::mkl::sparse::gemv(exec.sycl_queue(), mkl_mode, alpha, handle,
                                   x.data(), beta, y.data(), {ev_set});
-    // MKL 2023.2 and up make this release okay async even though it takes a
-    // pointer to a stack variable
+// MKL 2023.2 and up make this release okay async even though it takes a
+// pointer to a stack variable
 #if INTEL_MKL_VERSION >= 20230200
     oneapi::mkl::sparse::release_matrix_handle(exec.sycl_queue(), &handle,
                                                {ev_gemv});
@@ -749,7 +775,7 @@ struct spmv_onemkl_wrapper<false> {
         exec.sycl_queue(), &handle, {ev_gemv});
     ev_release.wait();
 #endif
-  }
+}
 };
 
 template <>
