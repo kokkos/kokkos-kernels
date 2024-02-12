@@ -153,7 +153,8 @@ struct TrsvWrap {
     template <bool IsLower, bool Transpose = false>
     void divide(RangeMultiVectorType X, const Block& A, const lno_t r,
                 const lno_t j) {
-      assert(is_triangular(A, (IsLower && !Transpose) || (!IsLower && Transpose)));
+      assert(
+          is_triangular(A, (IsLower && !Transpose) || (!IsLower && Transpose)));
 
       Vector x(&m_vec_data1[0], m_block_size);
       for (lno_t b = 0; b < m_block_size; ++b) {
