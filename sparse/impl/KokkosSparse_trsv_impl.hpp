@@ -25,7 +25,7 @@
 #include "KokkosBatched_Axpy.hpp"
 #include "KokkosBatched_Gemm_Decl.hpp"
 #include "KokkosBatched_Gemm_Serial_Impl.hpp"
-#include "KokkosBatched_Trsv_Decl.hpp"
+#include "KokkosBatched_Gesv.hpp"
 #include "KokkosBlas2_gemv.hpp"
 #include "KokkosBlas1_set.hpp"
 
@@ -43,24 +43,6 @@ struct TrsvWrap {
   using device_t = typename CrsMatrixType::device_type;
   using sview_1d = typename Kokkos::View<scalar_t*, device_t>;
   using STS      = Kokkos::ArithTraits<scalar_t>;
-
-  template <typename DenseMatrix>
-  static bool is_triangular(const DenseMatrix& A, bool check_lower) {
-    const auto nrows = A.extent(0);
-
-    for (size_t row = 0; row < nrows; ++row) {
-      for (size_t col = 0; col < nrows; ++col) {
-        if (A(row, col) != 0.0) {
-          if (col > row && check_lower) {
-            return false;
-          } else if (col < row && !check_lower) {
-            return false;
-          }
-        }
-      }
-    }
-    return true;
-  }
 
   struct CommonUnblocked {
     CommonUnblocked(const lno_t block_size) {
@@ -93,51 +75,65 @@ struct TrsvWrap {
     // BSR data is in LayoutRight!
     using Layout = Kokkos::LayoutRight;
 
-    using Block = Kokkos::View<
+    using UBlock = Kokkos::View<
         scalar_t**, Layout, typename CrsMatrixType::device_type,
         Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
+    using Block = Kokkos::View<
+        scalar_t**, Layout, typename CrsMatrixType::device_type,
+        Kokkos::MemoryTraits<Kokkos::RandomAccess> >;
+
     using Vector = Kokkos::View<
+        scalar_t*, typename CrsMatrixType::device_type,
+        Kokkos::MemoryTraits<Kokkos::RandomAccess> >;
+
+    using UVector = Kokkos::View<
         scalar_t*, typename CrsMatrixType::device_type,
         Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
     lno_t m_block_size;
     lno_t m_block_items;
-    sview_1d m_ones;
-    scalar_t m_data[128];
-    scalar_t m_vec_data1[12];
-    scalar_t m_vec_data2[12];
+    Vector m_ones;
+    Block m_data;
+    Block m_tmp; // Needed for SerialGesv
+    UBlock m_utmp; // Needed for SerialGesv
+    Vector m_vec_data1;
+    Vector m_vec_data2;
 
     CommonBlocked(const lno_t block_size)
         : m_block_size(block_size),
           m_block_items(block_size * block_size),
-          m_ones("ones", block_size) {
+          m_ones("ones", block_size),
+          m_data("m_data", block_size, block_size),
+          m_tmp("m_tmp", block_size, block_size + 4),
+          m_utmp(m_tmp.data(), block_size, block_size + 4),
+          m_vec_data1("m_vec_data1", block_size),
+          m_vec_data2("m_vec_data2", block_size) {
       Kokkos::deep_copy(m_ones, 1.0);
-      assert(m_block_items < 128);
     }
 
-    Block zero() {
-      Block block(&m_data[0], m_block_size, m_block_size);
+    UBlock zero() {
+      UBlock block(m_data.data(), m_block_size, m_block_size);
       KokkosBlas::SerialSet::invoke(STS::zero(), block);
       return block;
     }
 
     template <typename ValuesView>
-    Block get(const ValuesView& vals, const offset_type i) {
+    UBlock get(const ValuesView& vals, const offset_type i) {
       scalar_t* data = const_cast<scalar_t*>(vals.data());
-      Block rv(data + (i * m_block_items), m_block_size, m_block_size);
+      UBlock rv(data + (i * m_block_items), m_block_size, m_block_size);
       return rv;
     }
 
-    void pluseq(Block& lhs, const Block& rhs) {
+    void pluseq(UBlock& lhs, const UBlock& rhs) {
       KokkosBatched::SerialAxpy::invoke(m_ones, rhs, lhs);
     }
 
-    void gemv(RangeMultiVectorType X, const Block& A, const lno_t r,
+    void gemv(RangeMultiVectorType X, const UBlock& A, const lno_t r,
               const lno_t c, const lno_t j, const char transpose = 'N') {
       // Create and populate x and y
-      Vector x(&m_vec_data1[0], m_block_size);
-      Vector y(&m_vec_data2[0], m_block_size);
+      UVector x(m_vec_data1.data(), m_block_size);
+      UVector y(m_vec_data2.data(), m_block_size);
       for (lno_t b = 0; b < m_block_size; ++b) {
         x(b) = X(c * m_block_size + b, j);
         y(b) = X(r * m_block_size + b, j);
@@ -151,25 +147,18 @@ struct TrsvWrap {
     }
 
     template <bool IsLower, bool Transpose = false>
-    void divide(RangeMultiVectorType X, const Block& A, const lno_t r,
+    void divide(RangeMultiVectorType X, const UBlock& A, const lno_t r,
                 const lno_t j) {
-      assert(
-          is_triangular(A, (IsLower && !Transpose) || (!IsLower && Transpose)));
-
-      Vector x(&m_vec_data1[0], m_block_size);
+      UVector x(m_vec_data1.data(), m_block_size);
       for (lno_t b = 0; b < m_block_size; ++b) {
         x(b) = X(r * m_block_size + b, j);
       }
 
-      using Uplo = std::conditional_t<IsLower, KokkosBatched::Uplo::Lower,
-                                      KokkosBatched::Uplo::Upper>;
-      using Trans =
-          std::conditional_t<Transpose, KokkosBatched::Trans::Transpose,
-                             KokkosBatched::Trans::NoTranspose>;
+      // If StaticPivoting is used, there are compiler errors related to comparing
+      // complex and non-complex.
+      using Algo = KokkosBatched::Gesv::NoPivoting;
 
-      KokkosBatched::SerialTrsv<
-          Uplo, Trans, KokkosBatched::Diag::NonUnit,
-          KokkosBatched::Algo::Trsv::Unblocked>::invoke(1.0, A, x);
+      KokkosBatched::SerialGesv<Algo>::invoke(A, x, x, m_utmp);
 
       for (lno_t b = 0; b < m_block_size; ++b) {
         X(r * m_block_size + b, j) = x(b);
