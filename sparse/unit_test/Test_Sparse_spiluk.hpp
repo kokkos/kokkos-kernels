@@ -755,6 +755,13 @@ struct SpilukTest {
     constexpr auto fill_lev      = 2;
     constexpr bool verbose       = false;
 
+    // Skip test if not on host. trsv only works on host
+    static constexpr bool is_host = std::is_same<
+      execution_space, typename Kokkos::DefaultHostExecutionSpace>::value;
+    if (!is_host) {
+      return;
+    }
+
     RowMapType brow_map;
     EntriesType bentries;
     ValuesType bvalues;
@@ -835,7 +842,7 @@ struct SpilukTest {
         gmres_handle->reset_handle(m, tol);
         gmres_handle->set_verbose(verbose);
 
-        // Make precond
+        // Make precond.
         KokkosSparse::Experimental::LUPrec<Bsr, KernelHandle> myPrec(L, U);
 
         // reset X for next gmres call
