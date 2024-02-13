@@ -117,7 +117,8 @@ decompress_matrix(const RowMapT& row_map, const EntriesT& entries,
 template <typename RowMapT, typename EntriesT, typename ValuesT>
 std::vector<std::vector<typename ValuesT::non_const_value_type>>
 decompress_matrix(const RowMapT& row_map, const EntriesT& entries,
-                  const ValuesT& values, typename RowMapT::const_value_type block_size) {
+                  const ValuesT& values,
+                  typename RowMapT::const_value_type block_size) {
   using size_type = typename RowMapT::non_const_value_type;
   using scalar_t  = typename ValuesT::non_const_value_type;
 

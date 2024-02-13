@@ -186,9 +186,7 @@ struct IlukWrap {
 
     // print
     KOKKOS_INLINE_FUNCTION
-    void print(const scalar_t &item) const {
-      std::cout << item << std::endl;
-    }
+    void print(const scalar_t &item) const { std::cout << item << std::endl; }
   };
 
   // Partial specialization for block support
@@ -217,20 +215,17 @@ struct IlukWrap {
     using Layout = Kokkos::LayoutRight;
 
     using LValuesUnmanaged2DBlockType = Kokkos::View<
-        typename LValuesType::value_type **,
-        Layout,
+        typename LValuesType::value_type **, Layout,
         typename LValuesType::device_type,
         Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
     using UValuesUnmanaged2DBlockType = Kokkos::View<
-        typename UValuesType::value_type **,
-        Layout,
+        typename UValuesType::value_type **, Layout,
         typename UValuesType::device_type,
         Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
     using AValuesUnmanaged2DBlockType = Kokkos::View<
-        typename AValuesType::value_type **,
-        Layout,
+        typename AValuesType::value_type **, Layout,
         typename AValuesType::device_type,
         Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
@@ -368,7 +363,7 @@ struct IlukWrap {
       for (size_type i = 0; i < block_size; ++i) {
         std::cout << "      ";
         for (size_type j = 0; j < block_size; ++j) {
-          std::cout << item(i, j) <<  " ";
+          std::cout << item(i, j) << " ";
         }
         std::cout << std::endl;
       }
@@ -410,40 +405,40 @@ struct IlukWrap {
       size_type k1 = Base::L_row_map(rowid);
       size_type k2 = Base::L_row_map(rowid + 1) - 1;
       Base::lset_id(team, k2);
-      Kokkos::parallel_for(
-        Kokkos::TeamThreadRange(team, k1, k2), [&](const size_type k) {
-          const auto col = Base::L_entries(k);
-          Base::lset(k, 0.0);
-          Base::iw(my_team, col) = k;
-        });
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2),
+                           [&](const size_type k) {
+                             const auto col = Base::L_entries(k);
+                             Base::lset(k, 0.0);
+                             Base::iw(my_team, col) = k;
+                           });
 
       team.team_barrier();
 
       // Set active entries in U to zero, store active cols in iw
       k1 = Base::U_row_map(rowid);
       k2 = Base::U_row_map(rowid + 1);
-      Kokkos::parallel_for(
-        Kokkos::TeamThreadRange(team, k1, k2), [&](const size_type k) {
-          const auto col = Base::U_entries(k);
-          Base::uset(k, 0.0);
-          Base::iw(my_team, col) = k;
-        });
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2),
+                           [&](const size_type k) {
+                             const auto col = Base::U_entries(k);
+                             Base::uset(k, 0.0);
+                             Base::iw(my_team, col) = k;
+                           });
 
       team.team_barrier();
 
       // Unpack the rowid-th row of A, copy into L,U
       k1 = Base::A_row_map(rowid);
       k2 = Base::A_row_map(rowid + 1);
-      Kokkos::parallel_for(
-        Kokkos::TeamThreadRange(team, k1, k2), [&](const size_type k) {
-          const auto col  = Base::A_entries(k);
-          const auto ipos = Base::iw(my_team, col);
-          if (col < rowid) {
-            Base::lset(ipos, Base::aget(k));
-          } else {
-            Base::uset(ipos, Base::aget(k));
-          }
-        });
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2),
+                           [&](const size_type k) {
+                             const auto col  = Base::A_entries(k);
+                             const auto ipos = Base::iw(my_team, col);
+                             if (col < rowid) {
+                               Base::lset(ipos, Base::aget(k));
+                             } else {
+                               Base::uset(ipos, Base::aget(k));
+                             }
+                           });
 
       team.team_barrier();
 
@@ -456,17 +451,17 @@ struct IlukWrap {
         Base::divide(team, Base::lget(k), udiag);
         auto fact = Base::lget(k);
         Kokkos::parallel_for(
-          Kokkos::TeamThreadRange(team, Base::U_row_map(prev_row) + 1,
-                                  Base::U_row_map(prev_row + 1)),
-          [&](const size_type kk) {
-            const auto col  = Base::U_entries(kk);
-            const auto ipos = Base::iw(my_team, col);
-            if (ipos != -1) {
-              typename Base::reftype C =
-                col < rowid ? Base::lget(ipos) : Base::uget(ipos);
-              Base::gemm(fact, Base::uget(kk), C);
-            }
-          });  // end for kk
+            Kokkos::TeamThreadRange(team, Base::U_row_map(prev_row) + 1,
+                                    Base::U_row_map(prev_row + 1)),
+            [&](const size_type kk) {
+              const auto col  = Base::U_entries(kk);
+              const auto ipos = Base::iw(my_team, col);
+              if (ipos != -1) {
+                typename Base::reftype C =
+                    col < rowid ? Base::lget(ipos) : Base::uget(ipos);
+                Base::gemm(fact, Base::uget(kk), C);
+              }
+            });  // end for kk
 
         team.team_barrier();
       }  // end for k
@@ -483,19 +478,19 @@ struct IlukWrap {
       // Reset
       k1 = Base::L_row_map(rowid);
       k2 = Base::L_row_map(rowid + 1) - 1;
-      Kokkos::parallel_for(
-        Kokkos::TeamThreadRange(team, k1, k2), [&](const size_type k) {
-          const auto col         = Base::L_entries(k);
-          Base::iw(my_team, col) = -1;
-        });
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2),
+                           [&](const size_type k) {
+                             const auto col         = Base::L_entries(k);
+                             Base::iw(my_team, col) = -1;
+                           });
 
       k1 = Base::U_row_map(rowid);
       k2 = Base::U_row_map(rowid + 1);
-      Kokkos::parallel_for(
-        Kokkos::TeamThreadRange(team, k1, k2), [&](const size_type k) {
-          const auto col         = Base::U_entries(k);
-          Base::iw(my_team, col) = -1;
-        });
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2),
+                           [&](const size_type k) {
+                             const auto col         = Base::U_entries(k);
+                             Base::iw(my_team, col) = -1;
+                           });
     }
   };
 

@@ -48,7 +48,7 @@ class LUPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
   using MEMSP      = typename CRS::memory_space;
   using DEVC       = typename Kokkos::Device<EXSP, MEMSP>;
   using karith     = typename Kokkos::ArithTraits<ScalarType>;
-  using View1d  = typename Kokkos::View<ScalarType *, DEVC>;
+  using View1d     = typename Kokkos::View<ScalarType *, DEVC>;
 
  private:
   // trsm takes host views
@@ -82,12 +82,13 @@ class LUPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
     _khU.destroy_sptrsv_handle();
   }
 
-  template <typename Matrix, typename std::enable_if<is_crs_matrix<Matrix>::value>::type* = nullptr>
-  void apply_impl(
-    const Kokkos::View<const ScalarType *, DEVC> &X,
-    const Kokkos::View<ScalarType *, DEVC> &Y,
-    const char transM[] = "N", ScalarType alpha = karith::one(),
-    ScalarType beta = karith::zero()) const {
+  template <
+      typename Matrix,
+      typename std::enable_if<is_crs_matrix<Matrix>::value>::type * = nullptr>
+  void apply_impl(const Kokkos::View<const ScalarType *, DEVC> &X,
+                  const Kokkos::View<ScalarType *, DEVC> &Y,
+                  const char transM[] = "N", ScalarType alpha = karith::one(),
+                  ScalarType beta = karith::zero()) const {
     // tmp = trsv(L, x); //Apply L^inv to x
     // y = trsv(U, tmp); //Apply U^inv to tmp
 
@@ -104,12 +105,13 @@ class LUPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
     KokkosBlas::axpby(alpha, _tmp2, beta, Y);
   }
 
-  template <typename Matrix, typename std::enable_if<is_bsr_matrix<Matrix>::value>::type* = nullptr>
-  void apply_impl(
-      const Kokkos::View<const ScalarType *, DEVC> &X,
-      const Kokkos::View<ScalarType *, DEVC> &Y,
-      const char transM[] = "N", ScalarType alpha = karith::one(),
-      ScalarType beta = karith::zero()) const {
+  template <
+      typename Matrix,
+      typename std::enable_if<is_bsr_matrix<Matrix>::value>::type * = nullptr>
+  void apply_impl(const Kokkos::View<const ScalarType *, DEVC> &X,
+                  const Kokkos::View<ScalarType *, DEVC> &Y,
+                  const char transM[] = "N", ScalarType alpha = karith::one(),
+                  ScalarType beta = karith::zero()) const {
     // tmp = trsv(L, x); //Apply L^inv to x
     // y = trsv(U, tmp); //Apply U^inv to tmp
 
@@ -123,15 +125,16 @@ class LUPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
 #endif
 
     // trsv is implemented for MV so we need to convert our views
-    using UView2d = typename Kokkos::View<ScalarType **, Layout, DEVC,
-                                          Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
-    using UView2dc = typename Kokkos::View<const ScalarType **, Layout, DEVC,
-                                           Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
+    using UView2d = typename Kokkos::View<
+        ScalarType **, Layout, DEVC,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
+    using UView2dc = typename Kokkos::View<
+        const ScalarType **, Layout, DEVC,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
     UView2dc X2d(X.data(), X.extent(0), 1);
-    UView2d
-      Y2d(Y.data(), Y.extent(0), 1),
-      tmp2d(_tmp.data(), _tmp.extent(0), 1),
-      tmp22d(_tmp2.data(), _tmp2.extent(0), 1);
+    UView2d Y2d(Y.data(), Y.extent(0), 1),
+        tmp2d(_tmp.data(), _tmp.extent(0), 1),
+        tmp22d(_tmp2.data(), _tmp2.extent(0), 1);
 
     KokkosSparse::trsv("L", "N", "N", _L, X2d, tmp2d);
     KokkosSparse::trsv("U", "N", "N", _U, tmp2d, tmp22d);
@@ -150,11 +153,11 @@ class LUPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
   /////
   ///// It takes L and U and the stores U^inv L^inv X in Y
   //
-  virtual void apply(
-      const Kokkos::View<const ScalarType *, DEVC> &X,
-      const Kokkos::View<ScalarType *, DEVC> &Y,
-      const char transM[] = "N", ScalarType alpha = karith::one(),
-      ScalarType beta = karith::zero()) const {
+  virtual void apply(const Kokkos::View<const ScalarType *, DEVC> &X,
+                     const Kokkos::View<ScalarType *, DEVC> &Y,
+                     const char transM[] = "N",
+                     ScalarType alpha    = karith::one(),
+                     ScalarType beta     = karith::zero()) const {
     apply_impl<CRS>(X, Y, transM, alpha, beta);
   }
   //@}
