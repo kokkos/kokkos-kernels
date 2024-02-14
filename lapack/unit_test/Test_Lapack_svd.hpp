@@ -474,9 +474,6 @@ int impl_test_svd(const int m, const int n) {
   using vector_type =
       Kokkos::View<mag_type*, typename AMatrix::array_layout, Device>;
 
-  std::cout << "Running impl_test_svd with sizes: " << m << "x" << n
-            << std::endl;
-
   const mag_type max_val = 10;
   const mag_type tol     = 1000 * max_val * KAT_S::eps();
 
@@ -499,6 +496,8 @@ int impl_test_svd(const int m, const int n) {
                                Kokkos::Cuda>) {
     if (m >= n) {
       KokkosLapack::svd("A", "A", A, S, U, Vt);
+    } else {
+      return 0;
     }
   } else {
     KokkosLapack::svd("A", "A", A, S, U, Vt);
