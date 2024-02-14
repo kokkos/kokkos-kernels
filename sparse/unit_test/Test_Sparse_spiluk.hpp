@@ -81,17 +81,15 @@ std::vector<std::vector<scalar_t>> get_fixture() {
 #endif
 
 template <
-  typename MatrixType,
-  typename CRS,
-  typename std::enable_if<is_crs_matrix<MatrixType>::value>::type* = nullptr>
-MatrixType get_A(CRS A_unblocked, const size_t ) {
+    typename MatrixType, typename CRS,
+    typename std::enable_if<is_crs_matrix<MatrixType>::value>::type* = nullptr>
+MatrixType get_A(CRS A_unblocked, const size_t) {
   return A_unblocked;
 }
 
 template <
-  typename MatrixType,
-  typename CRS,
-  typename std::enable_if<is_bsr_matrix<MatrixType>::value>::type* = nullptr>
+    typename MatrixType, typename CRS,
+    typename std::enable_if<is_bsr_matrix<MatrixType>::value>::type* = nullptr>
 MatrixType get_A(CRS A_unblocked, const size_t block_size) {
   // Convert to BSR
   MatrixType A(A_unblocked, block_size);
@@ -100,21 +98,28 @@ MatrixType get_A(CRS A_unblocked, const size_t block_size) {
 }
 
 template <
-  typename MatrixType, typename RowMapType, typename EntriesType, typename ValuesType,
-  typename std::enable_if<is_crs_matrix<MatrixType>::value>::type* = nullptr>
-MatrixType make_matrix(const char* name, const RowMapType& row_map, const EntriesType& entries, const ValuesType& values, const size_t) {
+    typename MatrixType, typename RowMapType, typename EntriesType,
+    typename ValuesType,
+    typename std::enable_if<is_crs_matrix<MatrixType>::value>::type* = nullptr>
+MatrixType make_matrix(const char* name, const RowMapType& row_map,
+                       const EntriesType& entries, const ValuesType& values,
+                       const size_t) {
   const auto nrows = row_map.extent(0) - 1;
-  return MatrixType(name, nrows, nrows, values.extent(0), values, row_map, entries);
+  return MatrixType(name, nrows, nrows, values.extent(0), values, row_map,
+                    entries);
 }
 
 template <
-  typename MatrixType, typename RowMapType, typename EntriesType, typename ValuesType,
-  typename std::enable_if<is_bsr_matrix<MatrixType>::value>::type* = nullptr>
-MatrixType make_matrix(const char* name, const RowMapType& row_map, const EntriesType& entries, const ValuesType& values, const size_t block_size) {
+    typename MatrixType, typename RowMapType, typename EntriesType,
+    typename ValuesType,
+    typename std::enable_if<is_bsr_matrix<MatrixType>::value>::type* = nullptr>
+MatrixType make_matrix(const char* name, const RowMapType& row_map,
+                       const EntriesType& entries, const ValuesType& values,
+                       const size_t block_size) {
   const auto nrows = row_map.extent(0) - 1;
-  return MatrixType(name, nrows, nrows, values.extent(0), values, row_map, entries, block_size);
+  return MatrixType(name, nrows, nrows, values.extent(0), values, row_map,
+                    entries, block_size);
 }
-
 
 static constexpr double EPS = 1e-7;
 
@@ -194,22 +199,27 @@ struct SpilukTest {
   }
 
   template <bool UseBlocks>
-  static void check_result(
-      const RowMapType& row_map, const EntriesType& entries,
-      const ValuesType& values, const RowMapType& L_row_map,
-      const EntriesType& L_entries, const ValuesType& L_values,
-      const RowMapType& U_row_map, const EntriesType& U_entries,
-      const ValuesType& U_values, const lno_t fill_lev, const size_type block_size = 1) {
-
+  static void check_result(const RowMapType& row_map,
+                           const EntriesType& entries, const ValuesType& values,
+                           const RowMapType& L_row_map,
+                           const EntriesType& L_entries,
+                           const ValuesType& L_values,
+                           const RowMapType& U_row_map,
+                           const EntriesType& U_entries,
+                           const ValuesType& U_values, const lno_t fill_lev,
+                           const size_type block_size = 1) {
     using sp_matrix_type = std::conditional_t<UseBlocks, Bsr, Crs>;
 
     KK_REQUIRE(UseBlocks || (block_size == 1));
 
     // Checking
     const auto nrows = row_map.extent(0) - 1;
-    auto A = make_matrix<sp_matrix_type>("A_Mtx", row_map, entries, values, block_size);
-    auto L = make_matrix<sp_matrix_type>("L_Mtx", L_row_map, L_entries, L_values, block_size);
-    auto U = make_matrix<sp_matrix_type>("U_Mtx", U_row_map, U_entries, U_values, block_size);
+    auto A = make_matrix<sp_matrix_type>("A_Mtx", row_map, entries, values,
+                                         block_size);
+    auto L = make_matrix<sp_matrix_type>("L_Mtx", L_row_map, L_entries,
+                                         L_values, block_size);
+    auto U = make_matrix<sp_matrix_type>("U_Mtx", U_row_map, U_entries,
+                                         U_values, block_size);
 
     EXPECT_TRUE(is_triangular(L_row_map, L_entries, true));
     EXPECT_TRUE(is_triangular(U_row_map, U_entries, false));
@@ -219,8 +229,7 @@ struct SpilukTest {
       std::cout << "For nrows=" << nrows << ", fill_level=" << fill_lev;
       if (UseBlocks) {
         std::cout << ", block_size=" << block_size;
-      }
-      else {
+      } else {
         std::cout << ", unblocked";
       }
       std::cout << " had residual: " << result << std::endl;
@@ -237,26 +246,25 @@ struct SpilukTest {
     if (fill_lev > 1) {
       if (UseBlocks) {
         EXPECT_LT(result, 1e-2);
-      }
-      else {
+      } else {
         EXPECT_LT(result, 1e-4);
       }
     }
   }
 
-  template <bool UseBlocks, int TeamSize=-1>
+  template <bool UseBlocks, int TeamSize = -1>
   static std::tuple<RowMapType, EntriesType, ValuesType, RowMapType,
                     EntriesType, ValuesType>
-  run_and_check_spiluk(
-      KernelHandle& kh, const RowMapType& row_map, const EntriesType& entries,
-      const ValuesType& values, SPILUKAlgorithm alg, const lno_t fill_lev,
-      const size_type block_size = 1)
-  {
+  run_and_check_spiluk(KernelHandle& kh, const RowMapType& row_map,
+                       const EntriesType& entries, const ValuesType& values,
+                       SPILUKAlgorithm alg, const lno_t fill_lev,
+                       const size_type block_size = 1) {
     KK_REQUIRE(UseBlocks || (block_size == 1));
 
     const size_type block_items = block_size * block_size;
     const size_type nrows       = row_map.extent(0) - 1;
-    kh.create_spiluk_handle(alg, nrows, 40 * nrows, 40 * nrows, !UseBlocks ? 0 : block_size);
+    kh.create_spiluk_handle(alg, nrows, 40 * nrows, 40 * nrows,
+                            !UseBlocks ? 0 : block_size);
 
     auto spiluk_handle = kh.get_spiluk_handle();
     if (TeamSize != -1) {
@@ -284,8 +292,9 @@ struct SpilukTest {
 
     Kokkos::fence();
 
-    check_result<UseBlocks>(row_map, entries, values, L_row_map, L_entries, L_values,
-                            U_row_map, U_entries, U_values, fill_lev, block_size);
+    check_result<UseBlocks>(row_map, entries, values, L_row_map, L_entries,
+                            L_values, U_row_map, U_entries, U_values, fill_lev,
+                            block_size);
 
     kh.destroy_spiluk_handle();
 
@@ -294,7 +303,8 @@ struct SpilukTest {
     if (block_size == 1 && UseBlocks) {
       const auto [L_row_map_u, L_entries_u, L_values_u, U_row_map_u,
                   U_entries_u, U_values_u] =
-        run_and_check_spiluk<false, TeamSize>(kh, row_map, entries, values, alg, fill_lev);
+          run_and_check_spiluk<false, TeamSize>(kh, row_map, entries, values,
+                                                alg, fill_lev);
 
       EXPECT_NEAR_KK_1DVIEW(L_row_map, L_row_map_u, EPS);
       EXPECT_NEAR_KK_1DVIEW(L_entries, L_entries_u, EPS);
@@ -308,7 +318,8 @@ struct SpilukTest {
     if (TeamSize != 1) {
       const auto [L_row_map_ts1, L_entries_ts1, L_values_ts1, U_row_map_ts1,
                   U_entries_ts1, U_values_ts1] =
-        run_and_check_spiluk<UseBlocks, 1>(kh, row_map, entries, values, alg, fill_lev, block_size);
+          run_and_check_spiluk<UseBlocks, 1>(kh, row_map, entries, values, alg,
+                                             fill_lev, block_size);
 
       EXPECT_NEAR_KK_1DVIEW(L_row_map, L_row_map_ts1, EPS);
       EXPECT_NEAR_KK_1DVIEW(L_entries, L_entries_ts1, EPS);
@@ -373,7 +384,6 @@ struct SpilukTest {
     std::vector<size_type> block_sizes = {1, block_size};
 
     for (auto block_size_itr : block_sizes) {
-
       Bsr bsr(crs, block_size_itr);
 
       // Pull out views from BSR
@@ -699,8 +709,7 @@ struct SpilukTest {
   }
 
   template <bool UseBlocks>
-  static void run_test_spiluk_precond()
-  {
+  static void run_test_spiluk_precond() {
     // Test using par_ilut as a preconditioner
     // Does (LU)^inv Ax = (LU)^inv b converge faster than solving Ax=b?
 
@@ -717,8 +726,9 @@ struct SpilukTest {
 
     if (UseBlocks) {
       // Skip test if not on host. block trsv only works on host
-      static constexpr bool is_host = std::is_same<
-        execution_space, typename Kokkos::DefaultHostExecutionSpace>::value;
+      static constexpr bool is_host =
+          std::is_same<execution_space,
+                       typename Kokkos::DefaultHostExecutionSpace>::value;
       if (!is_host) {
         return;
       }
@@ -735,9 +745,10 @@ struct SpilukTest {
 
     KokkosSparse::sort_crs_matrix(A_unblocked);
 
-    std::vector<size_type> block_sizes_blocked = {1, 2, 4, 10};
+    std::vector<size_type> block_sizes_blocked   = {1, 2, 4, 10};
     std::vector<size_type> block_sizes_unblocked = {1};
-    std::vector<size_type> block_sizes = UseBlocks ? block_sizes_blocked : block_sizes_unblocked;
+    std::vector<size_type> block_sizes =
+        UseBlocks ? block_sizes_blocked : block_sizes_unblocked;
 
     for (auto block_size : block_sizes) {
       // Convert to BSR if block enabled
@@ -757,19 +768,20 @@ struct SpilukTest {
       auto gmres_handle = kh.get_gmres_handle();
       gmres_handle->set_verbose(verbose);
       using GMRESHandle =
-        typename std::remove_reference<decltype(*gmres_handle)>::type;
+          typename std::remove_reference<decltype(*gmres_handle)>::type;
 
       for (lno_t fill_lev = 0; fill_lev < 4; ++fill_lev) {
-
-        const auto [L_row_map, L_entries, L_values, U_row_map,
-                    U_entries, U_values] =
-          run_and_check_spiluk<UseBlocks>(kh, brow_map, bentries, bvalues,
-                                          SPILUKAlgorithm::SEQLVLSCHD_TP1, fill_lev,
-                                          block_size);
+        const auto [L_row_map, L_entries, L_values, U_row_map, U_entries,
+                    U_values] =
+            run_and_check_spiluk<UseBlocks>(kh, brow_map, bentries, bvalues,
+                                            SPILUKAlgorithm::SEQLVLSCHD_TP1,
+                                            fill_lev, block_size);
 
         // Create L, U
-        auto L = make_matrix<sp_matrix_type>("L_Mtx", L_row_map, L_entries, L_values, block_size);
-        auto U = make_matrix<sp_matrix_type>("U_Mtx", U_row_map, U_entries, U_values, block_size);
+        auto L = make_matrix<sp_matrix_type>("L_Mtx", L_row_map, L_entries,
+                                             L_values, block_size);
+        auto U = make_matrix<sp_matrix_type>("U_Mtx", U_row_map, U_entries,
+                                             U_values, block_size);
 
         // Set initial vectors:
         ValuesType X("X", nrows);    // Solution and initial guess
@@ -799,7 +811,9 @@ struct SpilukTest {
           EXPECT_EQ(conv_flag, GMRESHandle::Flag::Conv);
 
           if (TEST_SPILUK_VERBOSE_LEVEL > 0) {
-            std::cout << "Without LUPrec, with block_size=" << block_size << ", converged in " << num_iters_plain << " steps with endres=" << endRes << std::endl;
+            std::cout << "Without LUPrec, with block_size=" << block_size
+                      << ", converged in " << num_iters_plain
+                      << " steps with endres=" << endRes << std::endl;
           }
         }
 
@@ -809,7 +823,8 @@ struct SpilukTest {
           gmres_handle->set_verbose(verbose);
 
           // Make precond.
-          KokkosSparse::Experimental::LUPrec<sp_matrix_type, KernelHandle> myPrec(L, U);
+          KokkosSparse::Experimental::LUPrec<sp_matrix_type, KernelHandle>
+              myPrec(L, U);
 
           // reset X for next gmres call
           Kokkos::deep_copy(X, 0.0);
@@ -830,7 +845,10 @@ struct SpilukTest {
           EXPECT_LT(num_iters_precond, num_iters_plain);
 
           if (TEST_SPILUK_VERBOSE_LEVEL > 0) {
-            std::cout << "With LUPrec, with block_size=" << block_size << ", and fill_level=" << fill_lev << ", converged in " << num_iters_precond << " steps with endres=" << endRes << std::endl;
+            std::cout << "With LUPrec, with block_size=" << block_size
+                      << ", and fill_level=" << fill_lev << ", converged in "
+                      << num_iters_precond << " steps with endres=" << endRes
+                      << std::endl;
           }
         }
       }
