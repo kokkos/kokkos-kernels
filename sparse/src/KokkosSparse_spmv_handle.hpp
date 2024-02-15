@@ -25,16 +25,19 @@
 
 namespace KokkosSparse {
 
+/// SPMVAlgorithm values can be used to select different algorithms/methods for performing
+/// SpMV computations.
 enum SPMVAlgorithm {
-  SPMV_DEFAULT,
-  SPMV_FAST_SETUP,
-  SPMV_NATIVE,
-  SPMV_MERGE_PATH
+  SPMV_DEFAULT,     /// Default algorithm: best overall performance for repeated applications of SpMV.
+  SPMV_FAST_SETUP,  /// Best performance in the non-reuse case, where the handle is only used once.
+  SPMV_NATIVE,      /// Use the best KokkosKernels implementation, even if a TPL implementation is available.
+  SPMV_MERGE_PATH   /// Use the load-balancing merge path algorithm.
 }
 
 namespace Impl {
-  // Execution spaces do not support operator== in public interface.
-  // So this is a conservative check for whether e1 and e2 are known to be the
+  // Execution spaces do not support operator== in public interface, even though
+  // in practice the major async/GPU spaces do have the feature.
+  // This is a conservative check for whether e1 and e2 are known to be the
   // same. If it cannot be determined, assume they are different.
   template <typename ExecutionSpace>
   inline bool exec_spaces_same(const ExecutionSpace& e1,
@@ -87,17 +90,37 @@ namespace Impl {
     virtual ~TPL_SpMV_Data() {}
     ExecutionSpace exec;
   };
+
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 #if defined(CUSPARSE_VERSION) && (10300 <= CUSPARSE_VERSION)
   // Data used by cuSPARSE >=10.3
-  struct CuSparse_SpMV_Data : public TPL_SpMV_Data<Kokkos::Cuda> {
-    CuSparse_SpMV_Data(const Kokkos::Cuda& exec) : TPL_SpMV_Data(exec) {}
-    ~CuSparse_SpMV_Data() {
+  struct CuSparse_Csr_SpMV_Data : public TPL_SpMV_Data<Kokkos::Cuda> {
+    CuSparse_Csr_SpMV_Data (const Kokkos::Cuda& exec) : TPL_SpMV_Data(exec) {}
+    ~CuSparse_Csr_SpMV_Data () {
       KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFreeAsync(buffer, exec.cuda_stream()));
       KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(mat));
     }
 
+    // Algo for single vector case (SpMV)
     cusparseSpMVAlg_t algo;
+    // Algo for multiple vector case (SpMM)
+    cusparseSpMMAlg_t algo;
+    cusparseSpMatDescr_t mat;
+    size_t bufferSize = 0;
+    void* buffer      = nullptr;
+  };
+
+  struct CuSparse_Csr_SpMV_Data : public TPL_SpMV_Data<Kokkos::Cuda> {
+    CuSparse_Csr_SpMV_Data (const Kokkos::Cuda& exec) : TPL_SpMV_Data(exec) {}
+    ~CuSparse_Csr_SpMV_Data () {
+      KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFreeAsync(buffer, exec.cuda_stream()));
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(mat));
+    }
+
+    // Algo for single vector case (SpMV)
+    cusparseSpMVAlg_t algo;
+    // Algo for multiple vector case (SpMM)
+    cusparseSpMMAlg_t algo;
     cusparseSpMatDescr_t mat;
     size_t bufferSize = 0;
     void* buffer      = nullptr;
@@ -174,7 +197,23 @@ namespace Impl {
 #endif
 #endif
 
-  template <class ExecutionSpace, class AMatrix>
+  // Note: the X and Y vector types are only used to check that spmv is called with x,y of matching types.
+  // They are not actually used by the internal handle so they are not included as template parameters.
+  template <class ExecutionSpace, class AMatrix, typename = typename std::enable_if_t<KokkosSparse::is_crs_matrix_v<AMatrix>>>
+  struct SPMVHandleImpl {
+    SPMVHandleImpl(SPMVAlgorithm algo_) : algo(algo_) {}
+    ~SPMVHandleImpl() {
+      if (tpl) delete tpl;
+    }
+    void set_exec_space(const ExecutionSpace& exec) {
+      if (tpl) tpl->set_exec_space(exec);
+    }
+    bool is_set_up;
+    SPMVAlgorithm algo;
+    TPL_SpMV_Data<ExecutionSpace>* tpl;
+  };
+
+  template <class ExecutionSpace, class AMatrix, typename = typename std::enable_if_t<KokkosSparse::is_bsr_matrix_v<AMatrix>>>
   struct SPMVHandleImpl {
     SPMVHandleImpl(SPMVAlgorithm algo_) : algo(algo_) {}
     ~SPMVHandleImpl() {
@@ -191,14 +230,22 @@ namespace Impl {
 
 /// \class SPMVHandle
 /// \brief Opaque handle type for KokkosSparse::spmv. It passes the choice of
-/// algorithm to the spmv
-///    implementation, and also may store internal data which can be used to
+///    algorithm to the spmv implementation, and also may store internal data which can be used to
 ///    speed up the spmv computation.
 /// \tparam ExecutionSpace The space on which KokkosSparse::spmv will be run.
 /// \tparam AMatrix A specialization of KokkosSparse::CrsMatrix or
 /// KokkosSparse::BsrMatrix.
 ///
-/// \warning All calls to spmv with a given instance of SPMVHandle must use the
+/// SPMVHandle's internal resources are lazily allocated and initialized by the first
+/// spmv call.
+///
+/// SPMVHandle automatically cleans up all allocated resources when it is destructed.
+/// No fencing by the user is required between the final spmv and cleanup.
+///
+/// A SPMVHandle instance can be used in any number of calls, with any execution space
+/// instance and any X/Y vectors (with matching types) each call.
+///
+/// \warning However, all calls to spmv with a given instance of SPMVHandle must use the
 /// same matrix.
 
 template <class ExecutionSpace, class AMatrix, class XVector, class YVector>
@@ -211,6 +258,8 @@ class SPMVHandle : public Impl::SPMVHandleImpl<ExecutionSpace, AMatrix> {
                 "BsrMatrix.");
 
  public:
+  /// \brief Create a new SPMVHandle using the given algorithm.
+  ///        Depending on the TPLs 
   SPMVHandle(SPMVAlgorithm algo_ = SPMV_DEFAULT)
       : Impl::SPMVHandleImpl(algo_) {}
 
