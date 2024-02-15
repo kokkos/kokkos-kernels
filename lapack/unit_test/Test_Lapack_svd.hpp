@@ -529,8 +529,10 @@ int test_svd() {
       Kokkos::View<ScalarA**, Kokkos::LayoutLeft, Device>;
 
   ret = Test::impl_analytic_2x2_svd<view_type_a_layout_left, Device>();
+  EXPECT_EQ(ret, 0);
 
   ret = Test::impl_analytic_2x3_svd<view_type_a_layout_left, Device>();
+  EXPECT_EQ(ret, 0);
 
   ret = Test::impl_test_svd<view_type_a_layout_left, Device>(0, 0);
   EXPECT_EQ(ret, 0);
@@ -558,8 +560,10 @@ int test_svd() {
       Kokkos::View<ScalarA**, Kokkos::LayoutRight, Device>;
 
   ret = Test::impl_analytic_2x2_svd<view_type_a_layout_right, Device>();
+  EXPECT_EQ(ret, 0);
 
   ret = Test::impl_analytic_2x3_svd<view_type_a_layout_right, Device>();
+  EXPECT_EQ(ret, 0);
 
   ret = Test::impl_test_svd<view_type_a_layout_right, Device>(0, 0);
   EXPECT_EQ(ret, 0);

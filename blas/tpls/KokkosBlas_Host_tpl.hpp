@@ -25,9 +25,18 @@
 #include "Kokkos_ArithTraits.hpp"
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_BLAS)
+#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
+#include "mkl_types.h"
+#endif
 
 namespace KokkosBlas {
 namespace Impl {
+
+#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
+using KK_INT = MKL_INT;
+#else
+using KK_INT = int;
+#endif
 
 template <typename T>
 struct HostBlas {
@@ -97,10 +106,10 @@ struct HostBlas {
                    const T *a, int lda,
                    /* */ T *b, int ldb);
 
-  static void gemm(const char transa, const char transb, int m, int n, int k,
-                   const T alpha, const T *a, int lda, const T *b, int ldb,
-                   const T beta,
-                   /* */ T *c, int ldc);
+  static void gemm(const char transa, const char transb, KK_INT m, KK_INT n,
+                   KK_INT k, const T alpha, const T *a, KK_INT lda, const T *b,
+                   KK_INT ldb, const T beta,
+                   /* */ T *c, KK_INT ldc);
 
   static void herk(const char transa, const char transb, int n, int k,
                    const T alpha, const T *a, int lda, const T beta,
