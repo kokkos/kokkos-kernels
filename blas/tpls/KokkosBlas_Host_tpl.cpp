@@ -22,6 +22,8 @@
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_BLAS)
 
+using KokkosBlas::Impl::KK_INT;
+
 /// Fortran headers
 extern "C" {
 
@@ -339,26 +341,27 @@ void F77_BLAS_MANGLE(ztrsv, ZTRSV)(const char*, const char*, const char*, int*,
 /// Gemm
 ///
 
-void F77_BLAS_MANGLE(sgemm, SGEMM)(const char*, const char*, int*, int*, int*,
-                                   const float*, const float*, int*,
-                                   const float*, int*, const float*,
-                                   /* */ float*, int*);
-void F77_BLAS_MANGLE(dgemm, DGEMM)(const char*, const char*, int*, int*, int*,
-                                   const double*, const double*, int*,
-                                   const double*, int*, const double*,
-                                   /* */ double*, int*);
-void F77_BLAS_MANGLE(cgemm, CGEMM)(const char*, const char*, int*, int*, int*,
+void F77_BLAS_MANGLE(sgemm, SGEMM)(const char*, const char*, KK_INT*, KK_INT*,
+                                   KK_INT*, const float*, const float*, KK_INT*,
+                                   const float*, KK_INT*, const float*,
+                                   /* */ float*, KK_INT*);
+void F77_BLAS_MANGLE(dgemm, DGEMM)(const char*, const char*, KK_INT*, KK_INT*,
+                                   KK_INT*, const double*, const double*,
+                                   KK_INT*, const double*, KK_INT*,
+                                   const double*,
+                                   /* */ double*, KK_INT*);
+void F77_BLAS_MANGLE(cgemm, CGEMM)(const char*, const char*, KK_INT*, KK_INT*,
+                                   KK_INT*, const std::complex<float>*,
+                                   const std::complex<float>*, KK_INT*,
+                                   const std::complex<float>*, KK_INT*,
                                    const std::complex<float>*,
-                                   const std::complex<float>*, int*,
-                                   const std::complex<float>*, int*,
-                                   const std::complex<float>*,
-                                   /* */ std::complex<float>*, int*);
-void F77_BLAS_MANGLE(zgemm, ZGEMM)(const char*, const char*, int*, int*, int*,
+                                   /* */ std::complex<float>*, KK_INT*);
+void F77_BLAS_MANGLE(zgemm, ZGEMM)(const char*, const char*, KK_INT*, KK_INT*,
+                                   KK_INT*, const std::complex<double>*,
+                                   const std::complex<double>*, KK_INT*,
+                                   const std::complex<double>*, KK_INT*,
                                    const std::complex<double>*,
-                                   const std::complex<double>*, int*,
-                                   const std::complex<double>*, int*,
-                                   const std::complex<double>*,
-                                   /* */ std::complex<double>*, int*);
+                                   /* */ std::complex<double>*, KK_INT*);
 
 ///
 /// Herk
@@ -632,10 +635,11 @@ void HostBlas<float>::trsv(const char uplo, const char transa, const char diag,
   F77_FUNC_STRSV(&uplo, &transa, &diag, &m, a, &lda, b, &ldb);
 }
 template <>
-void HostBlas<float>::gemm(const char transa, const char transb, int m, int n,
-                           int k, const float alpha, const float* a, int lda,
-                           const float* b, int ldb, const float beta,
-                           /* */ float* c, int ldc) {
+void HostBlas<float>::gemm(const char transa, const char transb, KK_INT m,
+                           KK_INT n, KK_INT k, const float alpha,
+                           const float* a, KK_INT lda, const float* b,
+                           KK_INT ldb, const float beta,
+                           /* */ float* c, KK_INT ldc) {
   F77_FUNC_SGEMM(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta,
                  c, &ldc);
 }
@@ -750,10 +754,11 @@ void HostBlas<double>::trsv(const char uplo, const char transa, const char diag,
   F77_FUNC_DTRSV(&uplo, &transa, &diag, &m, a, &lda, b, &ldb);
 }
 template <>
-void HostBlas<double>::gemm(const char transa, const char transb, int m, int n,
-                            int k, const double alpha, const double* a, int lda,
-                            const double* b, int ldb, const double beta,
-                            /* */ double* c, int ldc) {
+void HostBlas<double>::gemm(const char transa, const char transb, KK_INT m,
+                            KK_INT n, KK_INT k, const double alpha,
+                            const double* a, KK_INT lda, const double* b,
+                            KK_INT ldb, const double beta,
+                            /* */ double* c, KK_INT ldc) {
   F77_FUNC_DGEMM(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta,
                  c, &ldc);
 }
@@ -906,10 +911,10 @@ void HostBlas<std::complex<float> >::trsv(const char uplo, const char transa,
 }
 template <>
 void HostBlas<std::complex<float> >::gemm(
-    const char transa, const char transb, int m, int n, int k,
-    const std::complex<float> alpha, const std::complex<float>* a, int lda,
-    const std::complex<float>* b, int ldb, const std::complex<float> beta,
-    /* */ std::complex<float>* c, int ldc) {
+    const char transa, const char transb, KK_INT m, KK_INT n, KK_INT k,
+    const std::complex<float> alpha, const std::complex<float>* a, KK_INT lda,
+    const std::complex<float>* b, KK_INT ldb, const std::complex<float> beta,
+    /* */ std::complex<float>* c, KK_INT ldc) {
   F77_FUNC_CGEMM(&transa, &transb, &m, &n, &k, &alpha,
                  (const std::complex<float>*)a, &lda,
                  (const std::complex<float>*)b, &ldb, &beta,
@@ -1081,10 +1086,10 @@ void HostBlas<std::complex<double> >::trsv(const char uplo, const char transa,
 
 template <>
 void HostBlas<std::complex<double> >::gemm(
-    const char transa, const char transb, int m, int n, int k,
-    const std::complex<double> alpha, const std::complex<double>* a, int lda,
-    const std::complex<double>* b, int ldb, const std::complex<double> beta,
-    /* */ std::complex<double>* c, int ldc) {
+    const char transa, const char transb, KK_INT m, KK_INT n, KK_INT k,
+    const std::complex<double> alpha, const std::complex<double>* a, KK_INT lda,
+    const std::complex<double>* b, KK_INT ldb, const std::complex<double> beta,
+    /* */ std::complex<double>* c, KK_INT ldc) {
   F77_FUNC_ZGEMM(&transa, &transb, &m, &n, &k, &alpha,
                  (const std::complex<double>*)a, &lda,
                  (const std::complex<double>*)b, &ldb, &beta,
