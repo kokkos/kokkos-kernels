@@ -149,15 +149,16 @@ struct TrsvWrap {
     void divide(RangeMultiVectorType X, const UBlock& A, const lno_t r,
                 const lno_t j) {
       UVector x(m_vec_data1.data(), m_block_size);
+      UVector y(m_vec_data2.data(), m_block_size);
       for (lno_t b = 0; b < m_block_size; ++b) {
-        x(b) = X(r * m_block_size + b, j);
+        y(b) = X(r * m_block_size + b, j);
       }
 
-      // If StaticPivoting is used, there are compiler errors related to
+      // if StaticPivoting is used, there are compiler errors related to
       // comparing complex and non-complex.
       using Algo = KokkosBatched::Gesv::NoPivoting;
 
-      KokkosBatched::SerialGesv<Algo>::invoke(A, x, x, m_utmp);
+      KokkosBatched::SerialGesv<Algo>::invoke(A, x, y, m_utmp);
 
       for (lno_t b = 0; b < m_block_size; ++b) {
         X(r * m_block_size + b, j) = x(b);
