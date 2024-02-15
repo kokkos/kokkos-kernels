@@ -63,7 +63,7 @@ struct SptrsvTest {
 
   using crs_graph_t = typename Crs::StaticCrsGraphType;
 
-  using RangePolicy = Kokkos::RangePolicy<execution_space>;
+  using range_policy_t = Kokkos::RangePolicy<execution_space>;
 
   static std::vector<std::vector<scalar_t>> get_5x5_ut_ones_fixture() {
     std::vector<std::vector<scalar_t>> A = {{1.00, 0.00, 1.00, 0.00, 0.00},
@@ -156,7 +156,7 @@ struct SptrsvTest {
       std::cout << "LTRI Solve TEAMPOLICY! Time: " << timer.seconds() << std::endl;
 
       scalar_t sum = 0.0;
-      Kokkos::parallel_reduce(RangePolicy(0, lhs.extent(0)), KOKKOS_LAMBDA ( const lno_t i, scalar_t &tsum ) {
+      Kokkos::parallel_reduce(range_policy_t(0, lhs.extent(0)), KOKKOS_LAMBDA ( const lno_t i, scalar_t &tsum ) {
           tsum += lhs(i);
         }, sum);
       if ( sum != lhs.extent(0) ) {
@@ -176,7 +176,7 @@ struct SptrsvTest {
       std::cout << "LTRI Solve SEQLVLSCHD_RP Time: " << timer.seconds() << std::endl;
 
       sum = 0.0;
-      Kokkos::parallel_reduce(RangePolicy(0, lhs.extent(0)), KOKKOS_LAMBDA ( const lno_t i, scalar_t &tsum ) {
+      Kokkos::parallel_reduce(range_policy_t(0, lhs.extent(0)), KOKKOS_LAMBDA ( const lno_t i, scalar_t &tsum ) {
           tsum += lhs(i);
         }, sum);
       if ( sum != lhs.extent(0) ) {
@@ -196,7 +196,7 @@ struct SptrsvTest {
       std::cout << "LTRI Solve SEQLVLSCHED_TP2 Time: " << timer.seconds() << std::endl;
 
       sum = 0.0;
-      Kokkos::parallel_reduce(RangePolicy(0, lhs.extent(0)), KOKKOS_LAMBDA ( const lno_t i, scalar_t &tsum ) {
+      Kokkos::parallel_reduce(range_policy_t(0, lhs.extent(0)), KOKKOS_LAMBDA ( const lno_t i, scalar_t &tsum ) {
           tsum += lhs(i);
         }, sum);
       if ( sum != lhs.extent(0) ) {
@@ -261,7 +261,7 @@ struct SptrsvTest {
       std::cout << "UTRI Solve SEQLVLSCHD_TP1 Time: " << timer.seconds() << std::endl;
 
       scalar_t sum = 0.0;
-      Kokkos::parallel_reduce(RangePolicy(0, lhs.extent(0)), KOKKOS_LAMBDA ( const lno_t i, scalar_t &tsum ) {
+      Kokkos::parallel_reduce(range_policy_t(0, lhs.extent(0)), KOKKOS_LAMBDA ( const lno_t i, scalar_t &tsum ) {
           tsum += lhs(i);
         }, sum);
       if ( sum != lhs.extent(0) ) {
@@ -281,7 +281,7 @@ struct SptrsvTest {
       std::cout << "UTRI Solve SEQLVLSCHD_RP Time: " << timer.seconds() << std::endl;
 
       sum = 0.0;
-      Kokkos::parallel_reduce(RangePolicy(0, lhs.extent(0)), KOKKOS_LAMBDA ( const lno_t i, scalar_t &tsum ) {
+      Kokkos::parallel_reduce(range_policy_t(0, lhs.extent(0)), KOKKOS_LAMBDA ( const lno_t i, scalar_t &tsum ) {
           tsum += lhs(i);
         }, sum);
       if ( sum != lhs.extent(0) ) {
@@ -301,7 +301,7 @@ struct SptrsvTest {
       std::cout << "UTRI Solve SEQLVLSCHED_TP2 Time: " << timer.seconds() << std::endl;
 
       sum = 0.0;
-      Kokkos::parallel_reduce(RangePolicy(0, lhs.extent(0)), KOKKOS_LAMBDA ( const lno_t i, scalar_t &tsum ) {
+      Kokkos::parallel_reduce(range_policy_t(0, lhs.extent(0)), KOKKOS_LAMBDA ( const lno_t i, scalar_t &tsum ) {
           tsum += lhs(i);
         }, sum);
       if ( sum != lhs.extent(0) ) {
@@ -394,13 +394,9 @@ struct SptrsvTest {
         Kokkos::fence();
 
         scalar_t sum = 0.0;
-        Kokkos::parallel_reduce(RangePolicy(0, lhs.extent(0)),
+        Kokkos::parallel_reduce(range_policy_t(0, lhs.extent(0)),
                                 ReductionCheck(lhs), sum);
-        if (sum != lhs.extent(0)) {
-          std::cout << "Upper Tri Solve FAILURE" << std::endl;
-          kh.get_sptrsv_handle()->print_algorithm();
-        }
-        EXPECT_TRUE(sum == scalar_t(lhs.extent(0)));
+        EXPECT_EQ(sum, lhs.extent(0));
 
         Kokkos::deep_copy(lhs, ZERO);
         kh.get_sptrsv_handle()->set_algorithm(SPTRSVAlgorithm::SEQLVLSCHD_RP);
@@ -408,13 +404,9 @@ struct SptrsvTest {
         Kokkos::fence();
 
         sum = 0.0;
-        Kokkos::parallel_reduce(RangePolicy(0, lhs.extent(0)),
+        Kokkos::parallel_reduce(range_policy_t(0, lhs.extent(0)),
                                 ReductionCheck(lhs), sum);
-        if (sum != lhs.extent(0)) {
-          std::cout << "Upper Tri Solve FAILURE" << std::endl;
-          kh.get_sptrsv_handle()->print_algorithm();
-        }
-        EXPECT_TRUE(sum == scalar_t(lhs.extent(0)));
+        EXPECT_EQ(sum, lhs.extent(0));
 
         // FIXME Issues with various integral type combos - algorithm currently
         // unavailable and commented out until fixed
@@ -425,12 +417,9 @@ struct SptrsvTest {
           Kokkos::fence();
 
           sum = 0.0;
-          Kokkos::parallel_reduce(RangePolicy(0, lhs.extent(0)),
-          ReductionCheck(lhs), sum); if ( sum != lhs.extent(0) ) { std::cout <<
-          "Upper Tri Solve FAILURE" << std::endl;
-          kh.get_sptrsv_handle()->print_algorithm();
-          }
-          EXPECT_TRUE( sum == scalar_t(lhs.extent(0)) );
+          Kokkos::parallel_reduce(range_policy_t(0, lhs.extent(0)),
+          ReductionCheck(lhs), sum);
+          EXPECT_EQ(sum, lhs.extent(0) );
         */
 
         kh.destroy_sptrsv_handle();
@@ -452,13 +441,9 @@ struct SptrsvTest {
         Kokkos::fence();
 
         scalar_t sum = 0.0;
-        Kokkos::parallel_reduce(RangePolicy(0, lhs.extent(0)),
+        Kokkos::parallel_reduce(range_policy_t(0, lhs.extent(0)),
                                 ReductionCheck(lhs), sum);
-        if (sum != lhs.extent(0)) {
-          std::cout << "Upper Tri Solve FAILURE" << std::endl;
-          kh.get_sptrsv_handle()->print_algorithm();
-        }
-        EXPECT_TRUE(sum == scalar_t(lhs.extent(0)));
+        EXPECT_EQ(sum, lhs.extent(0));
 
         kh.destroy_sptrsv_handle();
       }
@@ -480,13 +465,9 @@ struct SptrsvTest {
         Kokkos::fence();
 
         scalar_t sum = 0.0;
-        Kokkos::parallel_reduce(RangePolicy(0, lhs.extent(0)),
+        Kokkos::parallel_reduce(range_policy_t(0, lhs.extent(0)),
                                 ReductionCheck(lhs), sum);
-        if (sum != lhs.extent(0)) {
-          std::cout << "Upper Tri Solve FAILURE" << std::endl;
-          kh.get_sptrsv_handle()->print_algorithm();
-        }
-        EXPECT_TRUE(sum == scalar_t(lhs.extent(0)));
+        EXPECT_EQ(sum, lhs.extent(0));
 
         kh.destroy_sptrsv_handle();
       }
@@ -637,13 +618,9 @@ struct SptrsvTest {
         Kokkos::fence();
 
         scalar_t sum = 0.0;
-        Kokkos::parallel_reduce(RangePolicy(0, lhs.extent(0)),
+        Kokkos::parallel_reduce(range_policy_t(0, lhs.extent(0)),
                                 ReductionCheck(lhs), sum);
-        if (sum != lhs.extent(0)) {
-          std::cout << "Lower Tri Solve FAILURE" << std::endl;
-          kh.get_sptrsv_handle()->print_algorithm();
-        }
-        EXPECT_TRUE(sum == scalar_t(lhs.extent(0)));
+        EXPECT_EQ(sum, lhs.extent(0));
 
         Kokkos::deep_copy(lhs, ZERO);
         kh.get_sptrsv_handle()->set_algorithm(SPTRSVAlgorithm::SEQLVLSCHD_RP);
@@ -651,13 +628,9 @@ struct SptrsvTest {
         Kokkos::fence();
 
         sum = 0.0;
-        Kokkos::parallel_reduce(RangePolicy(0, lhs.extent(0)),
+        Kokkos::parallel_reduce(range_policy_t(0, lhs.extent(0)),
                                 ReductionCheck(lhs), sum);
-        if (sum != lhs.extent(0)) {
-          std::cout << "Lower Tri Solve FAILURE" << std::endl;
-          kh.get_sptrsv_handle()->print_algorithm();
-        }
-        EXPECT_TRUE(sum == scalar_t(lhs.extent(0)));
+        EXPECT_EQ(sum, lhs.extent(0));
 
         // FIXME Issues with various integral type combos - algorithm currently
         // unavailable and commented out until fixed
@@ -668,12 +641,9 @@ struct SptrsvTest {
           Kokkos::fence();
 
           sum = 0.0;
-          Kokkos::parallel_reduce( RangePolicy(0, lhs.extent(0)),
-          ReductionCheck(lhs), sum); if ( sum != lhs.extent(0) ) { std::cout <<
-          "Lower Tri Solve FAILURE" << std::endl;
-          kh.get_sptrsv_handle()->print_algorithm();
-          }
-          EXPECT_TRUE( sum == scalar_t(lhs.extent(0)) );
+          Kokkos::parallel_reduce( range_policy_t(0, lhs.extent(0)),
+          ReductionCheck(lhs), sum);
+          EXPECT_EQ( sum, lhs.extent(0) );
         */
 
         kh.destroy_sptrsv_handle();
@@ -695,13 +665,9 @@ struct SptrsvTest {
         Kokkos::fence();
 
         scalar_t sum = 0.0;
-        Kokkos::parallel_reduce(RangePolicy(0, lhs.extent(0)),
+        Kokkos::parallel_reduce(range_policy_t(0, lhs.extent(0)),
                                 ReductionCheck(lhs), sum);
-        if (sum != lhs.extent(0)) {
-          std::cout << "Lower Tri Solve FAILURE" << std::endl;
-          kh.get_sptrsv_handle()->print_algorithm();
-        }
-        EXPECT_TRUE(sum == scalar_t(lhs.extent(0)));
+        EXPECT_EQ(sum, lhs.extent(0));
 
         kh.destroy_sptrsv_handle();
       }
@@ -723,13 +689,9 @@ struct SptrsvTest {
         Kokkos::fence();
 
         scalar_t sum = 0.0;
-        Kokkos::parallel_reduce(RangePolicy(0, lhs.extent(0)),
+        Kokkos::parallel_reduce(range_policy_t(0, lhs.extent(0)),
                                 ReductionCheck(lhs), sum);
-        if (sum != lhs.extent(0)) {
-          std::cout << "Lower Tri Solve FAILURE" << std::endl;
-          kh.get_sptrsv_handle()->print_algorithm();
-        }
-        EXPECT_TRUE(sum == scalar_t(lhs.extent(0)));
+        EXPECT_EQ(sum, lhs.extent(0));
 
         kh.destroy_sptrsv_handle();
       }
@@ -810,17 +772,10 @@ struct SptrsvTest {
 
         // > check
         scalar_t sum = 0.0;
-        Kokkos::parallel_reduce(RangePolicy(0, X.extent(0)), ReductionCheck(X),
-                                sum);
-        if (sum != lhs.extent(0)) {
-          std::cout << "Supernode Tri Solve FAILURE : " << sum << " vs."
-                    << lhs.extent(0) << std::endl;
-          khL.get_sptrsv_handle()->print_algorithm();
-        } else {
-          std::cout << "Supernode Tri Solve SUCCESS" << std::endl;
-          khL.get_sptrsv_handle()->print_algorithm();
-        }
-        EXPECT_TRUE(sum == scalar_t(X.extent(0)));
+        Kokkos::parallel_reduce(range_policy_t(0, X.extent(0)),
+                                ReductionCheck(X), sum);
+        EXPECT_EQ(sum, lhs.extent(0));
+        EXPECT_EQ(sum, X.extent(0));
 
         khL.destroy_sptrsv_handle();
         khU.destroy_sptrsv_handle();
@@ -878,17 +833,10 @@ struct SptrsvTest {
 
         // > check
         scalar_t sum = 0.0;
-        Kokkos::parallel_reduce(RangePolicy(0, X.extent(0)), ReductionCheck(X),
-                                sum);
-        if (sum != lhs.extent(0)) {
-          std::cout << "Supernode Tri Solve FAILURE : " << sum << " vs."
-                    << lhs.extent(0) << std::endl;
-          khLd.get_sptrsv_handle()->print_algorithm();
-        } else {
-          std::cout << "Supernode Tri Solve SUCCESS" << std::endl;
-          khLd.get_sptrsv_handle()->print_algorithm();
-        }
-        EXPECT_TRUE(sum == scalar_t(X.extent(0)));
+        Kokkos::parallel_reduce(range_policy_t(0, X.extent(0)),
+                                ReductionCheck(X), sum);
+        EXPECT_EQ(sum, lhs.extent(0));
+        EXPECT_EQ(sum, X.extent(0));
 
         khLd.destroy_sptrsv_handle();
         khUd.destroy_sptrsv_handle();
@@ -919,18 +867,8 @@ struct SptrsvTest {
     const size_type nrows = 5;
     const size_type nnz   = 10;
 
-    std::vector<execution_space> instances;
-    if (nstreams == 1)
-      instances = Kokkos::Experimental::partition_space(execution_space(), 1);
-    else if (nstreams == 2)
-      instances =
-          Kokkos::Experimental::partition_space(execution_space(), 1, 1);
-    else if (nstreams == 3)
-      instances =
-          Kokkos::Experimental::partition_space(execution_space(), 1, 1, 1);
-    else  // (nstreams == 4)
-      instances =
-          Kokkos::Experimental::partition_space(execution_space(), 1, 1, 1, 1);
+    auto instances = Kokkos::Experimental::partition_space(
+        execution_space(), std::vector<int>(nstreams, 1));
 
     std::vector<KernelHandle> kh_v(nstreams);
     std::vector<KernelHandle *> kh_ptr_v(nstreams);
@@ -1007,13 +945,9 @@ struct SptrsvTest {
       // Checking
       for (int i = 0; i < nstreams; i++) {
         scalar_t sum = 0.0;
-        Kokkos::parallel_reduce(RangePolicy(0, lhs_v[i].extent(0)),
+        Kokkos::parallel_reduce(range_policy_t(0, lhs_v[i].extent(0)),
                                 ReductionCheck(lhs_v[i]), sum);
-        if (sum != lhs_v[i].extent(0)) {
-          std::cout << "Upper Tri Solve FAILURE on stream " << i << std::endl;
-          kh_v[i].get_sptrsv_handle()->print_algorithm();
-        }
-        EXPECT_TRUE(sum == scalar_t(lhs_v[i].extent(0)));
+        EXPECT_EQ(sum, lhs_v[i].extent(0));
 
         kh_v[i].destroy_sptrsv_handle();
       }
@@ -1082,13 +1016,9 @@ struct SptrsvTest {
       // Checking
       for (int i = 0; i < nstreams; i++) {
         scalar_t sum = 0.0;
-        Kokkos::parallel_reduce(RangePolicy(0, lhs_v[i].extent(0)),
+        Kokkos::parallel_reduce(range_policy_t(0, lhs_v[i].extent(0)),
                                 ReductionCheck(lhs_v[i]), sum);
-        if (sum != lhs_v[i].extent(0)) {
-          std::cout << "Lower Tri Solve FAILURE on stream " << i << std::endl;
-          kh_v[i].get_sptrsv_handle()->print_algorithm();
-        }
-        EXPECT_TRUE(sum == scalar_t(lhs_v[i].extent(0)));
+        EXPECT_EQ(sum, lhs_v[i].extent(0));
 
         kh_v[i].destroy_sptrsv_handle();
       }
@@ -1103,7 +1033,6 @@ template <typename scalar_t, typename lno_t, typename size_type,
 void test_sptrsv() {
   using TestStruct = Test::SptrsvTest<scalar_t, lno_t, size_type, device>;
   TestStruct::run_test_sptrsv();
-  //  Test::run_test_sptrsv_mtx<scalar_t, lno_t, size_type, device>();
 }
 
 template <typename scalar_t, typename lno_t, typename size_type,
@@ -1111,43 +1040,21 @@ template <typename scalar_t, typename lno_t, typename size_type,
 void test_sptrsv_streams() {
   using TestStruct = Test::SptrsvTest<scalar_t, lno_t, size_type, device>;
 
-  std::cout << "SPTRSVAlgorithm::SEQLVLSCHD_RP: 1 stream" << std::endl;
   TestStruct::run_test_sptrsv_streams(0, 1);
-
-  std::cout << "SPTRSVAlgorithm::SEQLVLSCHD_RP: 2 streams" << std::endl;
   TestStruct::run_test_sptrsv_streams(0, 2);
-
-  std::cout << "SPTRSVAlgorithm::SEQLVLSCHD_RP: 3 streams" << std::endl;
   TestStruct::run_test_sptrsv_streams(0, 3);
-
-  std::cout << "SPTRSVAlgorithm::SEQLVLSCHD_RP: 4 streams" << std::endl;
   TestStruct::run_test_sptrsv_streams(0, 4);
-
-  std::cout << "SPTRSVAlgorithm::SEQLVLSCHD_TP1: 1 stream" << std::endl;
   TestStruct::run_test_sptrsv_streams(1, 1);
-
-  std::cout << "SPTRSVAlgorithm::SEQLVLSCHD_TP1: 2 streams" << std::endl;
   TestStruct::run_test_sptrsv_streams(1, 2);
-
-  std::cout << "SPTRSVAlgorithm::SEQLVLSCHD_TP1: 3 streams" << std::endl;
   TestStruct::run_test_sptrsv_streams(1, 3);
-
-  std::cout << "SPTRSVAlgorithm::SEQLVLSCHD_TP1: 4 streams" << std::endl;
   TestStruct::run_test_sptrsv_streams(1, 4);
 
 #if defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
   if (std::is_same<lno_t, int>::value &&
       std::is_same<typename device::execution_space, Kokkos::Cuda>::value) {
-    std::cout << "SPTRSVAlgorithm::SPTRSV_CUSPARSE: 1 stream" << std::endl;
     TestStruct::run_test_sptrsv_streams(2, 1);
-
-    std::cout << "SPTRSVAlgorithm::SPTRSV_CUSPARSE: 2 streams" << std::endl;
     TestStruct::run_test_sptrsv_streams(2, 2);
-
-    std::cout << "SPTRSVAlgorithm::SPTRSV_CUSPARSE: 3 streams" << std::endl;
     TestStruct::run_test_sptrsv_streams(2, 3);
-
-    std::cout << "SPTRSVAlgorithm::SPTRSV_CUSPARSE: 4 streams" << std::endl;
     TestStruct::run_test_sptrsv_streams(2, 4);
   }
 #endif

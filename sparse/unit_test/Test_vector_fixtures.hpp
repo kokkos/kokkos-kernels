@@ -67,12 +67,14 @@ void compress_matrix(
 
   // Compress into CRS (host views)
   size_type curr_nnz = 0;
-  for (size_type outer_idx = 0; outer_idx < (CSC ? ncols : nrows);
-       ++outer_idx) {
-    for (size_type inner_idx = 0; inner_idx < (CSC ? nrows : ncols);
-         ++inner_idx) {
-      const auto val =
-          fixture[CSC ? inner_idx : outer_idx][CSC ? outer_idx : inner_idx];
+
+  const size_type num_outer = (CSC ? ncols : nrows);
+  const size_type num_inner = (CSC ? nrows : ncols);
+  for (size_type outer_idx = 0; outer_idx < num_outer; ++outer_idx) {
+    for (size_type inner_idx = 0; inner_idx < num_inner; ++inner_idx) {
+      const size_type row = CSC ? inner_idx : outer_idx;
+      const size_type col = CSC ? outer_idx : inner_idx;
+      const auto val      = fixture[row][col];
       if (val != ZERO) {
         hentries(curr_nnz) = inner_idx;
         hvalues(curr_nnz)  = val == KEEP_ZERO<scalar_t>() ? ZERO : val;
