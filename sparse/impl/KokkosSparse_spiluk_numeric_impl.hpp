@@ -162,7 +162,8 @@ struct IlukWrap {
 
     // multiply_subtract. C -= A * B
     KOKKOS_INLINE_FUNCTION
-    void multiply_subtract(const scalar_t &A, const scalar_t &B, scalar_t &C) const {
+    void multiply_subtract(const scalar_t &A, const scalar_t &B,
+                           scalar_t &C) const {
       C -= A * B;
     }
 
@@ -263,8 +264,7 @@ struct IlukWrap {
     }
 
     KOKKOS_INLINE_FUNCTION
-    void lset(const size_type block,
-              const ABlock &rhs) const {
+    void lset(const size_type block, const ABlock &rhs) const {
       auto lblock = lget(block);
       for (size_type i = 0; i < block_size; ++i) {
         for (size_type j = 0; j < block_size; ++j) {
@@ -280,8 +280,7 @@ struct IlukWrap {
     }
 
     KOKKOS_INLINE_FUNCTION
-    void uset(const size_type block,
-              const ABlock &rhs) const {
+    void uset(const size_type block, const ABlock &rhs) const {
       auto ublock = uget(block);
       for (size_type i = 0; i < block_size; ++i) {
         for (size_type j = 0; j < block_size; ++j) {
@@ -314,33 +313,32 @@ struct IlukWrap {
                                                   const LBlock &B,
                                                   CView &C) const {
       // Use gemm. alpha is hardcoded to -1, beta hardcoded to 1
-      KokkosBatched::SerialGemm<KokkosBatched::Trans::NoTranspose,
-                                KokkosBatched::Trans::NoTranspose,
-                                KokkosBatched::Algo::Gemm::Unblocked>::
-          invoke<scalar_t, LBlock,
-                 UBlock, LBlock>(
-              -1.0, A, B, 1.0, C);
+      KokkosBatched::SerialGemm<
+          KokkosBatched::Trans::NoTranspose, KokkosBatched::Trans::NoTranspose,
+          KokkosBatched::Algo::Gemm::Unblocked>::invoke<scalar_t, LBlock,
+                                                        UBlock, LBlock>(
+          -1.0, A, B, 1.0, C);
     }
 
     // lget
     KOKKOS_INLINE_FUNCTION
     LBlock lget(const size_type block) const {
-      return LBlock(
-          L_values.data() + (block * block_items), block_size, block_size);
+      return LBlock(L_values.data() + (block * block_items), block_size,
+                    block_size);
     }
 
     // uget
     KOKKOS_INLINE_FUNCTION
     UBlock uget(const size_type block) const {
-      return UBlock(
-          U_values.data() + (block * block_items), block_size, block_size);
+      return UBlock(U_values.data() + (block * block_items), block_size,
+                    block_size);
     }
 
     // aget
     KOKKOS_INLINE_FUNCTION
     ABlock aget(const size_type block) const {
-      return ABlock(
-          A_values.data() + (block * block_items), block_size, block_size);
+      return ABlock(A_values.data() + (block * block_items), block_size,
+                    block_size);
     }
 
     // uequal
