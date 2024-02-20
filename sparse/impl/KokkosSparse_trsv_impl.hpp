@@ -44,6 +44,17 @@ struct TrsvWrap {
   using sview_1d = typename Kokkos::View<scalar_t*, device_t>;
   using STS      = Kokkos::ArithTraits<scalar_t>;
 
+  static inline void manual_copy(RangeMultiVectorType X,
+                                 DomainMultiVectorType Y) {
+    auto numRows = X.extent(0);
+    auto numVecs = X.extent(1);
+    for (decltype(numRows) i = 0; i < numRows; ++i) {
+      for (decltype(numVecs) j = 0; j < numVecs; ++j) {
+        X(i, j) = Y(i, j);
+      }
+    }
+  }
+
   struct CommonUnblocked {
     CommonUnblocked(const lno_t block_size) {
       KK_REQUIRE_MSG(block_size == 1,
@@ -183,7 +194,7 @@ struct TrsvWrap {
 
     KK_REQUIRE_MSG(block_size == 1, "BSRs not support for this function yet");
 
-    Kokkos::deep_copy(X, Y);
+    manual_copy(X, Y);
 
     for (lno_t r = 0; r < numRows; ++r) {
       const offset_type beg = ptr(r);
@@ -210,7 +221,7 @@ struct TrsvWrap {
 
     CommonOps co(block_size);
 
-    Kokkos::deep_copy(X, Y);
+    manual_copy(X, Y);
 
     for (lno_t r = 0; r < numRows; ++r) {
       auto A_rr             = co.zero();
@@ -253,7 +264,7 @@ struct TrsvWrap {
 
     KK_REQUIRE_MSG(block_size == 1, "BSRs not support for this function yet");
 
-    Kokkos::deep_copy(X, Y);
+    manual_copy(X, Y);
 
     // If lno_t is unsigned and numRows is 0, the loop
     // below will have entirely the wrong number of iterations.
@@ -303,7 +314,7 @@ struct TrsvWrap {
 
     CommonOps co(block_size);
 
-    Kokkos::deep_copy(X, Y);
+    manual_copy(X, Y);
 
     // If lno_t is unsigned and numRows is 0, the loop
     // below will have entirely the wrong number of iterations.
@@ -371,7 +382,7 @@ struct TrsvWrap {
 
     KK_REQUIRE_MSG(block_size == 1, "BSRs not support for this function yet");
 
-    Kokkos::deep_copy(X, Y);
+    manual_copy(X, Y);
 
     // If lno_t is unsigned and numCols is 0, the loop
     // below will have entirely the wrong number of iterations.
@@ -420,7 +431,7 @@ struct TrsvWrap {
     typename CrsMatrixType::index_type ind   = A.graph.entries;
     typename CrsMatrixType::values_type val  = A.values;
 
-    Kokkos::deep_copy(X, Y);
+    manual_copy(X, Y);
 
     KK_REQUIRE_MSG(block_size == 1, "BSRs not support for this function yet");
 
@@ -481,7 +492,7 @@ struct TrsvWrap {
 
     KK_REQUIRE_MSG(block_size == 1, "BSRs not support for this function yet");
 
-    Kokkos::deep_copy(X, Y);
+    manual_copy(X, Y);
 
     for (lno_t c = 0; c < numCols; ++c) {
       const offset_type beg = ptr(c);
@@ -510,7 +521,7 @@ struct TrsvWrap {
 
     KK_REQUIRE_MSG(block_size == 1, "BSRs not support for this function yet");
 
-    Kokkos::deep_copy(X, Y);
+    manual_copy(X, Y);
 
     // If lno_t is unsigned and numCols is 0, the loop
     // below will have entirely the wrong number of iterations.
@@ -562,7 +573,7 @@ struct TrsvWrap {
 
     KK_REQUIRE_MSG(block_size == 1, "BSRs not support for this function yet");
 
-    Kokkos::deep_copy(X, Y);
+    manual_copy(X, Y);
 
     // If lno_t is unsigned and numCols is 0, the loop
     // below will have entirely the wrong number of iterations.
@@ -620,7 +631,7 @@ struct TrsvWrap {
 
     KK_REQUIRE_MSG(block_size == 1, "BSRs not support for this function yet");
 
-    Kokkos::deep_copy(X, Y);
+    manual_copy(X, Y);
 
     for (lno_t c = 0; c < numCols; ++c) {
       const offset_type beg = ptr(c);
@@ -657,7 +668,7 @@ struct TrsvWrap {
 
     KK_REQUIRE_MSG(block_size == 1, "BSRs not support for this function yet");
 
-    Kokkos::deep_copy(X, Y);
+    manual_copy(X, Y);
 
     for (lno_t c = 0; c < numCols; ++c) {
       const offset_type beg = ptr(c);
@@ -686,7 +697,7 @@ struct TrsvWrap {
 
     KK_REQUIRE_MSG(block_size == 1, "BSRs not support for this function yet");
 
-    Kokkos::deep_copy(X, Y);
+    manual_copy(X, Y);
 
     for (lno_t c = 0; c < numCols; ++c) {
       const offset_type beg = ptr(c);
