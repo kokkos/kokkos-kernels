@@ -160,10 +160,10 @@ struct IlukWrap {
       team.team_barrier();
     }
 
-    // gemm, alpha is hardcoded to -1, beta hardcoded to 1
+    // multiply_subtract. C -= A * B
     KOKKOS_INLINE_FUNCTION
-    void gemm(const scalar_t &A, const scalar_t &B, scalar_t &C) const {
-      C += -1 * A * B;
+    void multiply_subtract(const scalar_t &A, const scalar_t &B, scalar_t &C) const {
+      C -= A * B;
     }
 
     // lget
@@ -214,22 +214,22 @@ struct IlukWrap {
     // BSR data is in LayoutRight!
     using Layout = Kokkos::LayoutRight;
 
-    using LValuesUnmanaged2DBlockType = Kokkos::View<
+    using LBlock = Kokkos::View<
         typename LValuesType::value_type **, Layout,
         typename LValuesType::device_type,
         Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
-    using UValuesUnmanaged2DBlockType = Kokkos::View<
+    using UBlock = Kokkos::View<
         typename UValuesType::value_type **, Layout,
         typename UValuesType::device_type,
         Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
-    using AValuesUnmanaged2DBlockType = Kokkos::View<
+    using ABlock = Kokkos::View<
         typename AValuesType::value_type **, Layout,
         typename AValuesType::device_type,
         Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
 
-    using reftype = LValuesUnmanaged2DBlockType;
+    using reftype = LBlock;
 
     Common(const ARowMapType &A_row_map_, const AEntriesType &A_entries_,
            const AValuesType &A_values_, const LRowMapType &L_row_map_,
@@ -264,7 +264,7 @@ struct IlukWrap {
 
     KOKKOS_INLINE_FUNCTION
     void lset(const size_type block,
-              const AValuesUnmanaged2DBlockType &rhs) const {
+              const ABlock &rhs) const {
       auto lblock = lget(block);
       for (size_type i = 0; i < block_size; ++i) {
         for (size_type j = 0; j < block_size; ++j) {
@@ -281,7 +281,7 @@ struct IlukWrap {
 
     KOKKOS_INLINE_FUNCTION
     void uset(const size_type block,
-              const AValuesUnmanaged2DBlockType &rhs) const {
+              const ABlock &rhs) const {
       auto ublock = uget(block);
       for (size_type i = 0; i < block_size; ++i) {
         for (size_type j = 0; j < block_size; ++j) {
@@ -298,8 +298,8 @@ struct IlukWrap {
 
     // divide. lhs /= rhs
     KOKKOS_INLINE_FUNCTION
-    void divide(const member_type &team, const LValuesUnmanaged2DBlockType &lhs,
-                const UValuesUnmanaged2DBlockType &rhs) const {
+    void divide(const member_type &team, const LBlock &lhs,
+                const UBlock &rhs) const {
       KokkosBatched::TeamTrsm<
           member_type, KokkosBatched::Side::Right, KokkosBatched::Uplo::Upper,
           KokkosBatched::Trans::NoTranspose,  // not 100% on this
@@ -308,38 +308,38 @@ struct IlukWrap {
           invoke(team, 1.0, rhs, lhs);
     }
 
-    // gemm, alpha is hardcoded to -1, beta hardcoded to 1
-    // C += -1 * A * B;
+    // multiply_subtract. C -= A * B
     template <typename CView>
-    KOKKOS_INLINE_FUNCTION void gemm(const UValuesUnmanaged2DBlockType &A,
-                                     const LValuesUnmanaged2DBlockType &B,
-                                     CView &C) const {
+    KOKKOS_INLINE_FUNCTION void multiply_subtract(const UBlock &A,
+                                                  const LBlock &B,
+                                                  CView &C) const {
+      // Use gemm. alpha is hardcoded to -1, beta hardcoded to 1
       KokkosBatched::SerialGemm<KokkosBatched::Trans::NoTranspose,
                                 KokkosBatched::Trans::NoTranspose,
                                 KokkosBatched::Algo::Gemm::Unblocked>::
-          invoke<scalar_t, LValuesUnmanaged2DBlockType,
-                 UValuesUnmanaged2DBlockType, LValuesUnmanaged2DBlockType>(
+          invoke<scalar_t, LBlock,
+                 UBlock, LBlock>(
               -1.0, A, B, 1.0, C);
     }
 
     // lget
     KOKKOS_INLINE_FUNCTION
-    LValuesUnmanaged2DBlockType lget(const size_type block) const {
-      return LValuesUnmanaged2DBlockType(
+    LBlock lget(const size_type block) const {
+      return LBlock(
           L_values.data() + (block * block_items), block_size, block_size);
     }
 
     // uget
     KOKKOS_INLINE_FUNCTION
-    UValuesUnmanaged2DBlockType uget(const size_type block) const {
-      return UValuesUnmanaged2DBlockType(
+    UBlock uget(const size_type block) const {
+      return UBlock(
           U_values.data() + (block * block_items), block_size, block_size);
     }
 
     // aget
     KOKKOS_INLINE_FUNCTION
-    AValuesUnmanaged2DBlockType aget(const size_type block) const {
-      return AValuesUnmanaged2DBlockType(
+    ABlock aget(const size_type block) const {
+      return ABlock(
           A_values.data() + (block * block_items), block_size, block_size);
     }
 
@@ -359,7 +359,7 @@ struct IlukWrap {
 
     // print
     KOKKOS_INLINE_FUNCTION
-    void print(const LValuesUnmanaged2DBlockType &item) const {
+    void print(const LBlock &item) const {
       for (size_type i = 0; i < block_size; ++i) {
         std::cout << "      ";
         for (size_type j = 0; j < block_size; ++j) {
@@ -459,7 +459,7 @@ struct IlukWrap {
               if (ipos != -1) {
                 typename Base::reftype C =
                     col < rowid ? Base::lget(ipos) : Base::uget(ipos);
-                Base::gemm(fact, Base::uget(kk), C);
+                Base::multiply_subtract(fact, Base::uget(kk), C);
               }
             });  // end for kk
 

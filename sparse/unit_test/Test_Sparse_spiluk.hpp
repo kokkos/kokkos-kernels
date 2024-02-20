@@ -710,12 +710,10 @@ struct SpilukTest {
 
   template <bool UseBlocks>
   static void run_test_spiluk_precond() {
-    // Test using par_ilut as a preconditioner
+    // Test using spiluk as a preconditioner
     // Does (LU)^inv Ax = (LU)^inv b converge faster than solving Ax=b?
 
     // Create a diagonally dominant sparse matrix to test:
-    //  par_ilut settings max_iters, res_delta_stop, fill_in_limit, and
-    //  async_update are all left as defaults
     using sp_matrix_type = std::conditional_t<UseBlocks, Bsr, Crs>;
 
     constexpr auto nrows         = 5000;

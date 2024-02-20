@@ -46,9 +46,9 @@ class LUPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
   using ScalarType = typename std::remove_const<typename CRS::value_type>::type;
   using EXSP       = typename CRS::execution_space;
   using MEMSP      = typename CRS::memory_space;
-  using DEVC       = typename Kokkos::Device<EXSP, MEMSP>;
+  using DEVICE     = typename Kokkos::Device<EXSP, MEMSP>;
   using karith     = typename Kokkos::ArithTraits<ScalarType>;
-  using View1d     = typename Kokkos::View<ScalarType *, DEVC>;
+  using View1d     = typename Kokkos::View<ScalarType *, DEVICE>;
 
  private:
   // trsm takes host views
@@ -85,8 +85,8 @@ class LUPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
   template <
       typename Matrix,
       typename std::enable_if<is_crs_matrix<Matrix>::value>::type * = nullptr>
-  void apply_impl(const Kokkos::View<const ScalarType *, DEVC> &X,
-                  const Kokkos::View<ScalarType *, DEVC> &Y,
+  void apply_impl(const Kokkos::View<const ScalarType *, DEVICE> &X,
+                  const Kokkos::View<ScalarType *, DEVICE> &Y,
                   const char transM[] = "N", ScalarType alpha = karith::one(),
                   ScalarType beta = karith::zero()) const {
     // tmp = trsv(L, x); //Apply L^inv to x
@@ -108,8 +108,8 @@ class LUPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
   template <
       typename Matrix,
       typename std::enable_if<is_bsr_matrix<Matrix>::value>::type * = nullptr>
-  void apply_impl(const Kokkos::View<const ScalarType *, DEVC> &X,
-                  const Kokkos::View<ScalarType *, DEVC> &Y,
+  void apply_impl(const Kokkos::View<const ScalarType *, DEVICE> &X,
+                  const Kokkos::View<ScalarType *, DEVICE> &Y,
                   const char transM[] = "N", ScalarType alpha = karith::one(),
                   ScalarType beta = karith::zero()) const {
     // tmp = trsv(L, x); //Apply L^inv to x
@@ -126,10 +126,10 @@ class LUPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
 
     // trsv is implemented for MV so we need to convert our views
     using UView2d = typename Kokkos::View<
-        ScalarType **, Layout, DEVC,
+        ScalarType **, Layout, DEVICE,
         Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
     using UView2dc = typename Kokkos::View<
-        const ScalarType **, Layout, DEVC,
+        const ScalarType **, Layout, DEVICE,
         Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess> >;
     UView2dc X2d(X.data(), X.extent(0), 1);
     UView2d Y2d(Y.data(), Y.extent(0), 1),
@@ -153,8 +153,8 @@ class LUPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
   /////
   ///// It takes L and U and the stores U^inv L^inv X in Y
   //
-  virtual void apply(const Kokkos::View<const ScalarType *, DEVC> &X,
-                     const Kokkos::View<ScalarType *, DEVC> &Y,
+  virtual void apply(const Kokkos::View<const ScalarType *, DEVICE> &X,
+                     const Kokkos::View<ScalarType *, DEVICE> &Y,
                      const char transM[] = "N",
                      ScalarType alpha    = karith::one(),
                      ScalarType beta     = karith::zero()) const {
