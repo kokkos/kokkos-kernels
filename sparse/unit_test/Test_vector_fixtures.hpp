@@ -117,7 +117,8 @@ decompress_matrix(const RowMapT& row_map, const EntriesT& entries,
 template <typename RowMapT, typename EntriesT, typename ValuesT>
 std::vector<std::vector<typename ValuesT::non_const_value_type>>
 decompress_matrix(const RowMapT& row_map, const EntriesT& entries,
-                  const ValuesT& values, const int block_size) {
+                  const ValuesT& values,
+                  typename RowMapT::const_value_type block_size) {
   using size_type = typename RowMapT::non_const_value_type;
   using scalar_t  = typename ValuesT::non_const_value_type;
 
@@ -183,7 +184,7 @@ template <typename scalar_t>
 void print_matrix(const std::vector<std::vector<scalar_t>>& matrix) {
   for (const auto& row : matrix) {
     for (const auto& item : row) {
-      std::printf("%.2f ", item);
+      std::printf("%.5f ", item);
     }
     std::cout << std::endl;
   }

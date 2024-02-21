@@ -29,7 +29,6 @@ namespace Experimental {
 
 // TP2 algorithm has issues with some offset-ordinal combo to be addressed
 enum class SPILUKAlgorithm {
-  SEQLVLSCHD_RP,
   SEQLVLSCHD_TP1 /*, SEQLVLSCHED_TP2*/
 };
 
@@ -256,9 +255,6 @@ class SPILUKHandle {
   int get_vector_size() const { return this->vector_size; }
 
   void print_algorithm() {
-    if (algm == SPILUKAlgorithm::SEQLVLSCHD_RP)
-      std::cout << "SEQLVLSCHD_RP" << std::endl;
-
     if (algm == SPILUKAlgorithm::SEQLVLSCHD_TP1)
       std::cout << "SEQLVLSCHD_TP1" << std::endl;
 
@@ -268,19 +264,6 @@ class SPILUKHandle {
     int-int ordinal-offset pair" << std::endl;
     }
     */
-  }
-
-  inline SPILUKAlgorithm StringToSPILUKAlgorithm(std::string &name) {
-    if (name == "SPILUK_DEFAULT")
-      return SPILUKAlgorithm::SEQLVLSCHD_RP;
-    else if (name == "SPILUK_RANGEPOLICY")
-      return SPILUKAlgorithm::SEQLVLSCHD_RP;
-    else if (name == "SPILUK_TEAMPOLICY1")
-      return SPILUKAlgorithm::SEQLVLSCHD_TP1;
-    /*else if(name=="SPILUK_TEAMPOLICY2")    return
-     * SPILUKAlgorithm::SEQLVLSCHED_TP2;*/
-    else
-      throw std::runtime_error("Invalid SPILUKAlgorithm name");
   }
 };
 
