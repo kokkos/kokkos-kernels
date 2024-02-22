@@ -752,17 +752,8 @@ void test_gauss_seidel_streams_rank1(
   }
 #endif  // KOKKOS_ENABLE_OPENMP
 
-  std::vector<execution_space> instances;
-  if (nstreams == 1)
-    instances = Kokkos::Experimental::partition_space(execution_space(), 1);
-  else if (nstreams == 2)
-    instances = Kokkos::Experimental::partition_space(execution_space(), 1, 1);
-  else if (nstreams == 3)
-    instances =
-        Kokkos::Experimental::partition_space(execution_space(), 1, 1, 1);
-  else
-    instances =
-        Kokkos::Experimental::partition_space(execution_space(), 1, 1, 1, 1);
+  auto instances = Kokkos::Experimental::partition_space(
+      execution_space(), std::vector<int>(nstreams, 1));
 
   std::vector<KernelHandle> kh_v(nstreams);
   std::vector<crsMat_t> input_mat_v(nstreams);

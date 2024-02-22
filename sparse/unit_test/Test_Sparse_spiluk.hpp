@@ -139,8 +139,7 @@ struct SpilukTest {
   using range_policy           = Kokkos::RangePolicy<execution_space>;
 
   using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<
-      size_type, lno_t, scalar_t, typename device::execution_space,
-      typename device::memory_space, typename device::memory_space>;
+      size_type, lno_t, scalar_t, execution_space, memory_space, memory_space>;
 
   using Crs = CrsMatrix<scalar_t, lno_t, device, void, size_type>;
   using Bsr = BsrMatrix<scalar_t, lno_t, device, void, size_type>;
