@@ -237,7 +237,7 @@ struct SerialSVDInternal {
                                              int Bs0, int Bs1, value_type* U,
                                              int Us0, int Us1, value_type* Vt,
                                              int Vts0, int Vts1,
-                                             value_type* sigma, int ss) {
+                                             value_type* sigma, int ss, const value_type& tol) {
     using KAT            = Kokkos::ArithTraits<value_type>;
     const value_type eps = Kokkos::ArithTraits<value_type>::epsilon();
     int p                = 0;
@@ -246,7 +246,8 @@ struct SerialSVDInternal {
       // Zero out tiny superdiagonal entries
       for (int i = 0; i < n - 1; i++) {
         if (fabs(SVDIND(B, i, i + 1)) <
-            eps * (fabs(SVDIND(B, i, i)) + fabs(SVDIND(B, i + 1, i + 1)))) {
+            eps * (fabs(SVDIND(B, i, i)) + fabs(SVDIND(B, i + 1, i + 1))) ||
+            fabs(SVDIND(B, i, i + 1)) < tol) {
           SVDIND(B, i, i + 1) = KAT::zero();
         }
       }
@@ -345,7 +346,7 @@ struct SerialSVDInternal {
                                            int As1, value_type* U, int Us0,
                                            int Us1, value_type* Vt, int Vts0,
                                            int Vts1, value_type* sigma, int ss,
-                                           value_type* work) {
+                                           value_type* work, value_type tol = Kokkos::ArithTraits<value_type>::zero()) {
     // First, if m < n, need to instead compute (V, s, U^T) = A^T.
     // This just means swapping U & Vt, and implicitly transposing A, U and Vt.
     if (m < n) {
@@ -370,7 +371,7 @@ struct SerialSVDInternal {
       return 0;
     }
     bidiagonalize(m, n, A, As0, As1, U, Us0, Us1, Vt, Vts0, Vts1, work);
-    bidiSVD(m, n, A, As0, As1, U, Us0, Us1, Vt, Vts0, Vts1, sigma, ss);
+    bidiSVD(m, n, A, As0, As1, U, Us0, Us1, Vt, Vts0, Vts1, sigma, ss, tol);
     postprocessSVD(m, n, U, Us0, Us1, Vt, Vts0, Vts1, sigma, ss);
     return 0;
   }
