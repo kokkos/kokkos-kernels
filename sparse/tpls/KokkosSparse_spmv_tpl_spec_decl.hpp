@@ -29,9 +29,9 @@
 namespace KokkosSparse {
 namespace Impl {
 
-template <class AMatrix, class XVector, class YVector>
+template <class Handle, class AMatrix, class XVector, class YVector>
 void spmv_cusparse(const Kokkos::Cuda& exec,
-                   KokkosSparse::SPMVHandle<Kokkos::Cuda, AMatrix>* handle,
+                   Handle* handle,
                    const char mode[],
                    typename YVector::non_const_value_type const& alpha,
                    const AMatrix& A, const XVector& x,
@@ -99,16 +99,16 @@ void spmv_cusparse(const Kokkos::Cuda& exec,
   KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateDnVec(
       &vecY, y.extent_int(0), (void*)y.data(), myCudaDataType));
 
-  KokkosSparse::Impl::CuSparse_SpMV_Data* subhandle;
+  KokkosSparse::Impl::CuSparse10_SpMV_Data* subhandle;
 
   if (handle->is_set_up) {
     subhandle =
-        dynamic_cast<KokkosSparse::Impl::CuSparse_SpMV_Data*>(handle->tpl);
+        dynamic_cast<KokkosSparse::Impl::CuSparse10_SpMV_Data*>(handle->tpl);
     if (!subhandle)
       throw std::runtime_error(
           "KokkosSparse::spmv: subhandle is not set up for cusparse");
   } else {
-    subhandle   = new KokkosSparse::Impl::CuSparse_SpMV_Data(exec);
+    subhandle   = new KokkosSparse::Impl::CuSparse10_SpMV_Data(exec);
     handle->tpl = subhandle;
 
     // select cusparse algo
@@ -135,6 +135,7 @@ void spmv_cusparse(const Kokkos::Cuda& exec,
         &beta, vecY, myCudaDataType, subhandle->algo, &subhandle->bufferSize));
     KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMallocAsync(
         &subhandle->buffer, subhandle->bufferSize, exec.cuda_stream()));
+    handle->is_set_up = true;
   }
 
   /* perform SpMV */
@@ -147,17 +148,17 @@ void spmv_cusparse(const Kokkos::Cuda& exec,
 
 #elif (9000 <= CUDA_VERSION)
 
-  KokkosSparse::Impl::CuSparse_SpMV_Data* subhandle;
+  KokkosSparse::Impl::CuSparse9_SpMV_Data* subhandle;
 
   if (handle->is_set_up) {
     subhandle =
-        dynamic_cast<KokkosSparse::Impl::CuSparse_SpMV_Data*>(handle->tpl);
+        dynamic_cast<KokkosSparse::Impl::CuSparse9_SpMV_Data*>(handle->tpl);
     if (!subhandle)
       throw std::runtime_error(
           "KokkosSparse::spmv: subhandle is not set up for cusparse");
   } else {
     /* create and set the subhandle and matrix descriptor */
-    subhandle   = new KokkosSparse::Impl::CuSparse_SpMV_Data(exec);
+    subhandle   = new KokkosSparse::Impl::CuSparse9_SpMV_Data(exec);
     handle->tpl = subhandle;
     cusparseMatDescr_t descrA = 0;
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&subhandle->mat));
@@ -165,11 +166,14 @@ void spmv_cusparse(const Kokkos::Cuda& exec,
         cusparseSetMatType(subhandle->mat, CUSPARSE_MATRIX_TYPE_GENERAL));
     KOKKOS_CUSPARSE_SAFE_CALL(
         cusparseSetMatIndexBase(subhandle->mat, CUSPARSE_INDEX_BASE_ZERO));
+    handle->is_set_up = true;
   }
 
   /* perform the actual SpMV operation */
-  if (std::is_same<int, offset_type>::value) {
-    if (std::is_same<value_type, float>::value) {
+    static_assert(std::is_same_v<int, offset_type>,
+        "With cuSPARSE pre-10.0, offset type must be int. Something wrong with "
+        "TPL avail logic.");
+    if constexpr (std::is_same_v<value_type, float>) {
       KOKKOS_CUSPARSE_SAFE_CALL(cusparseScsrmv(
           cusparseHandle, myCusparseOperation, A.numRows(), A.numCols(),
           A.nnz(), reinterpret_cast<float const*>(&alpha), subhandle->mat,
@@ -179,7 +183,7 @@ void spmv_cusparse(const Kokkos::Cuda& exec,
           reinterpret_cast<float const*>(&beta),
           reinterpret_cast<float*>(y.data())));
 
-    } else if (std::is_same<value_type, double>::value) {
+    } else if constexpr(std::is_same_v<value_type, double>) {
       KOKKOS_CUSPARSE_SAFE_CALL(cusparseDcsrmv(
           cusparseHandle, myCusparseOperation, A.numRows(), A.numCols(),
           A.nnz(), reinterpret_cast<double const*>(&alpha), subhandle->mat,
@@ -188,7 +192,7 @@ void spmv_cusparse(const Kokkos::Cuda& exec,
           reinterpret_cast<double const*>(x.data()),
           reinterpret_cast<double const*>(&beta),
           reinterpret_cast<double*>(y.data())));
-    } else if (std::is_same<value_type, Kokkos::complex<float>>::value) {
+    } else if constexpr(std::is_same_v<value_type, Kokkos::complex<float>>) {
       KOKKOS_CUSPARSE_SAFE_CALL(cusparseCcsrmv(
           cusparseHandle, myCusparseOperation, A.numRows(), A.numCols(),
           A.nnz(), reinterpret_cast<cuComplex const*>(&alpha), subhandle->mat,
@@ -197,7 +201,7 @@ void spmv_cusparse(const Kokkos::Cuda& exec,
           reinterpret_cast<cuComplex const*>(x.data()),
           reinterpret_cast<cuComplex const*>(&beta),
           reinterpret_cast<cuComplex*>(y.data())));
-    } else if (std::is_same<value_type, Kokkos::complex<double>>::value) {
+    } else if constexpr(std::is_same_v<value_type, Kokkos::complex<double>>) {
       KOKKOS_CUSPARSE_SAFE_CALL(cusparseZcsrmv(
           cusparseHandle, myCusparseOperation, A.numRows(), A.numCols(),
           A.nnz(), reinterpret_cast<cuDoubleComplex const*>(&alpha),
@@ -208,15 +212,10 @@ void spmv_cusparse(const Kokkos::Cuda& exec,
           reinterpret_cast<cuDoubleComplex const*>(&beta),
           reinterpret_cast<cuDoubleComplex*>(y.data())));
     } else {
-      throw std::logic_error(
+      static_assert(false,
           "Trying to call cusparse SpMV with a scalar type not float/double, "
           "nor complex of either!");
     }
-  } else {
-    throw std::logic_error(
-        "With cuSPARSE pre-10.0, offset type must be int. Something wrong with "
-        "TPL avail logic.");
-  }
 #endif  // CUDA_VERSION
 }
 
@@ -417,15 +416,15 @@ void spmv_rocsparse(const Kokkos::HIP& exec,
 
   rocsparse_spmv_alg alg = rocsparse_spmv_alg_default;
 
-  KokkosSparse::Impl::RocSparse_SpMV_Data* subhandle;
+  KokkosSparse::Impl::RocSparse_CRS_SpMV_Data* subhandle;
   if (handle->is_set_up) {
     subhandle =
-        dynamic_cast<KokkosSparse::Impl::RocSparse_SpMV_Data*>(handle->tpl);
+        dynamic_cast<KokkosSparse::Impl::RocSparse_CRS_SpMV_Data*>(handle->tpl);
     if (!subhandle)
       throw std::runtime_error(
-          "KokkosSparse::spmv: subhandle is not set up for rocsparse");
+          "KokkosSparse::spmv: subhandle is not set up for rocsparse CRS");
   } else {
-    subhandle   = new KokkosSparse::Impl::CuSparse_SpMV_Data(exec);
+    subhandle   = new KokkosSparse::Impl::RocSparse_CRS_SpMV_Data(exec);
     handle->tpl = subhandle;
     /* Create the rocsparse csr descr */
     // We need to do some casting to void*
@@ -474,6 +473,7 @@ void spmv_rocsparse(const Kokkos::HIP& exec,
     KOKKOS_IMPL_HIP_SAFE_CALL(
         hipMalloc(&subhandle->buffer, subhandle->bufferSize));
 #endif
+    handle->is_set_up = true;
   }
 
   /* Perform the actual computation */

@@ -172,13 +172,6 @@ struct SPMV<ExecutionSpace, AMatrix, XVector, YVector, false,
                    const coefficient_type& beta, const YVector& y) {
     typedef Kokkos::ArithTraits<coefficient_type> KAT;
 
-    if (alpha == KAT::zero()) {
-      if (beta != KAT::one()) {
-        KokkosBlas::scal(space, y, beta, y);
-      }
-      return;
-    }
-
     if (beta == KAT::zero()) {
       spmv_beta<ExecutionSpace, AMatrix, XVector, YVector, 0>(
           space, controls, mode, alpha, A, x, beta, y);
@@ -207,20 +200,31 @@ struct SPMV_MV<ExecutionSpace, AMatrix, XVector, YVector, false, false,
                       const char mode[], const coefficient_type& alpha,
                       const AMatrix& A, const XVector& x,
                       const coefficient_type& beta, const YVector& y) {
-    typedef Kokkos::ArithTraits<coefficient_type> KAT;
+    // Intercept special case: if x/y have only 1 column, use the non-MV impl
+    // To keep handle usage consistent, do not use a TPL even if one is available
+    if(x.extent(0) == size_t(1))
+    {
+      auto xsub = Kokkos::subview(x, Kokkos::ALL(), j);
+      auto ysub = Kokkos::subview(y, Kokkos::ALL(), j);
+      SPMV<ExecutionSpace, AMatrix, decltype(xsub), decltype(ysub),false>::spmv(space, defaultControls, mode, alpha, A, x_j, beta, y_j);
+    }
+    else
+    {
+      typedef Kokkos::ArithTraits<coefficient_type> KAT;
 
-    if (alpha == KAT::zero()) {
-      spmv_alpha_mv<ExecutionSpace, AMatrix, XVector, YVector, 0>(
-          space, mode, alpha, A, x, beta, y);
-    } else if (alpha == KAT::one()) {
-      spmv_alpha_mv<ExecutionSpace, AMatrix, XVector, YVector, 1>(
-          space, mode, alpha, A, x, beta, y);
-    } else if (alpha == -KAT::one()) {
-      spmv_alpha_mv<ExecutionSpace, AMatrix, XVector, YVector, -1>(
-          space, mode, alpha, A, x, beta, y);
-    } else {
-      spmv_alpha_mv<ExecutionSpace, AMatrix, XVector, YVector, 2>(
-          space, mode, alpha, A, x, beta, y);
+      if (alpha == KAT::zero()) {
+        spmv_alpha_mv<ExecutionSpace, AMatrix, XVector, YVector, 0>(
+            space, mode, alpha, A, x, beta, y);
+      } else if (alpha == KAT::one()) {
+        spmv_alpha_mv<ExecutionSpace, AMatrix, XVector, YVector, 1>(
+            space, mode, alpha, A, x, beta, y);
+      } else if (alpha == -KAT::one()) {
+        spmv_alpha_mv<ExecutionSpace, AMatrix, XVector, YVector, -1>(
+            space, mode, alpha, A, x, beta, y);
+      } else {
+        spmv_alpha_mv<ExecutionSpace, AMatrix, XVector, YVector, 2>(
+            space, mode, alpha, A, x, beta, y);
+      }
     }
   }
 };

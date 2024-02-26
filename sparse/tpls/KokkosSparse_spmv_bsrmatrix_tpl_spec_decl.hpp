@@ -343,7 +343,6 @@ KOKKOSSPARSE_SPMV_MV_MKL(Kokkos::complex<double>, Kokkos::OpenMP,
 // cuSPARSE
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 #include "cusparse.h"
-#include "KokkosSparse_Utils_cusparse.hpp"
 
 //
 // From  https://docs.nvidia.com/cuda/cusparse/index.html#bsrmv
@@ -352,6 +351,10 @@ KOKKOSSPARSE_SPMV_MV_MKL(Kokkos::complex<double>, Kokkos::OpenMP,
 // - Only CUSPARSE_OPERATION_NON_TRANSPOSE is supported
 // - Only CUSPARSE_MATRIX_TYPE_GENERAL is supported.
 //
+#if (9000 <= CUDA_VERSION)
+
+#include "KokkosSparse_Utils_cusparse.hpp"
+
 namespace KokkosSparse {
 namespace Experimental {
 namespace Impl {
@@ -382,8 +385,6 @@ void spmv_block_impl_cusparse(
     }
   }
 
-#if (9000 <= CUDA_VERSION)
-
   /* create and set the matrix descriptor */
   cusparseMatDescr_t descrA = 0;
   KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&descrA));
@@ -394,58 +395,52 @@ void spmv_block_impl_cusparse(
   cusparseDirection_t dirA = CUSPARSE_DIRECTION_ROW;
 
   /* perform the actual SpMV operation */
-  if ((std::is_same<int, offset_type>::value) &&
-      (std::is_same<int, entry_type>::value)) {
-    if (std::is_same<value_type, float>::value) {
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseSbsrmv(
-          cusparseHandle, dirA, myCusparseOperation, A.numRows(), A.numCols(),
-          A.nnz(), reinterpret_cast<float const*>(&alpha), descrA,
-          reinterpret_cast<float const*>(A.values.data()),
-          A.graph.row_map.data(), A.graph.entries.data(), A.blockDim(),
-          reinterpret_cast<float const*>(x.data()),
-          reinterpret_cast<float const*>(&beta),
-          reinterpret_cast<float*>(y.data())));
-    } else if (std::is_same<value_type, double>::value) {
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDbsrmv(
-          cusparseHandle, dirA, myCusparseOperation, A.numRows(), A.numCols(),
-          A.nnz(), reinterpret_cast<double const*>(&alpha), descrA,
-          reinterpret_cast<double const*>(A.values.data()),
-          A.graph.row_map.data(), A.graph.entries.data(), A.blockDim(),
-          reinterpret_cast<double const*>(x.data()),
-          reinterpret_cast<double const*>(&beta),
-          reinterpret_cast<double*>(y.data())));
-    } else if (std::is_same<value_type, Kokkos::complex<float>>::value) {
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseCbsrmv(
-          cusparseHandle, dirA, myCusparseOperation, A.numRows(), A.numCols(),
-          A.nnz(), reinterpret_cast<cuComplex const*>(&alpha), descrA,
-          reinterpret_cast<cuComplex const*>(A.values.data()),
-          A.graph.row_map.data(), A.graph.entries.data(), A.blockDim(),
-          reinterpret_cast<cuComplex const*>(x.data()),
-          reinterpret_cast<cuComplex const*>(&beta),
-          reinterpret_cast<cuComplex*>(y.data())));
-    } else if (std::is_same<value_type, Kokkos::complex<double>>::value) {
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseZbsrmv(
-          cusparseHandle, dirA, myCusparseOperation, A.numRows(), A.numCols(),
-          A.nnz(), reinterpret_cast<cuDoubleComplex const*>(&alpha), descrA,
-          reinterpret_cast<cuDoubleComplex const*>(A.values.data()),
-          A.graph.row_map.data(), A.graph.entries.data(), A.blockDim(),
-          reinterpret_cast<cuDoubleComplex const*>(x.data()),
-          reinterpret_cast<cuDoubleComplex const*>(&beta),
-          reinterpret_cast<cuDoubleComplex*>(y.data())));
-    } else {
-      throw std::logic_error(
-          "Trying to call cusparse[*]bsrmv with a scalar type not "
-          "float/double, "
-          "nor complex of either!");
-    }
-  } else {
-    throw std::logic_error(
-        "With cuSPARSE pre-10.0, offset and entry types must be int. "
+  static_assert(std::is_same_v<int, offset_type> && std::is_same_v<int, entry_type>,
+        "With cuSPARSE non-generic API, offset and entry types must both be int. "
         "Something wrong with TPL avail logic.");
+  if constexpr(std::is_same_v<value_type, float>) {
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSbsrmv(
+        cusparseHandle, dirA, myCusparseOperation, A.numRows(), A.numCols(),
+        A.nnz(), reinterpret_cast<float const*>(&alpha), descrA,
+        reinterpret_cast<float const*>(A.values.data()),
+        A.graph.row_map.data(), A.graph.entries.data(), A.blockDim(),
+        reinterpret_cast<float const*>(x.data()),
+        reinterpret_cast<float const*>(&beta),
+        reinterpret_cast<float*>(y.data())));
+  } else if constexpr(std::is_same_v<value_type, double>) {
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseDbsrmv(
+        cusparseHandle, dirA, myCusparseOperation, A.numRows(), A.numCols(),
+        A.nnz(), reinterpret_cast<double const*>(&alpha), descrA,
+        reinterpret_cast<double const*>(A.values.data()),
+        A.graph.row_map.data(), A.graph.entries.data(), A.blockDim(),
+        reinterpret_cast<double const*>(x.data()),
+        reinterpret_cast<double const*>(&beta),
+        reinterpret_cast<double*>(y.data())));
+  } else if constexpr(std::is_same_v<value_type, Kokkos::complex<float>>) {
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCbsrmv(
+        cusparseHandle, dirA, myCusparseOperation, A.numRows(), A.numCols(),
+        A.nnz(), reinterpret_cast<cuComplex const*>(&alpha), descrA,
+        reinterpret_cast<cuComplex const*>(A.values.data()),
+        A.graph.row_map.data(), A.graph.entries.data(), A.blockDim(),
+        reinterpret_cast<cuComplex const*>(x.data()),
+        reinterpret_cast<cuComplex const*>(&beta),
+        reinterpret_cast<cuComplex*>(y.data())));
+  } else if constexpr(std::is_same_v<value_type, Kokkos::complex<double>>) {
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseZbsrmv(
+        cusparseHandle, dirA, myCusparseOperation, A.numRows(), A.numCols(),
+        A.nnz(), reinterpret_cast<cuDoubleComplex const*>(&alpha), descrA,
+        reinterpret_cast<cuDoubleComplex const*>(A.values.data()),
+        A.graph.row_map.data(), A.graph.entries.data(), A.blockDim(),
+        reinterpret_cast<cuDoubleComplex const*>(x.data()),
+        reinterpret_cast<cuDoubleComplex const*>(&beta),
+        reinterpret_cast<cuDoubleComplex*>(y.data())));
+  } else {
+    static_assert(false,
+        "Trying to call cusparse[*]bsrmv with a scalar type not "
+        "float/double, nor complex of either!");
   }
 
   KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyMatDescr(descrA));
-#endif  // (9000 <= CUDA_VERSION)
 }
 
 // Reference
@@ -463,15 +458,8 @@ void spmv_block_impl_cusparse(
 //   ->       C = t(t(B)) * t(A) + C
 //   ->       C = B * t(A) + C
 //   This is impossible in cuSparse without explicitly transposing A,
-//   so we just do not support LayoutRight in cuSparse TPL now
-//
-template <
-    class AMatrix, class XVector, class YVector,
-    std::enable_if_t<std::is_same<Kokkos::LayoutLeft,
-                                  typename XVector::array_layout>::value &&
-                         std::is_same<Kokkos::LayoutLeft,
-                                      typename YVector::array_layout>::value,
-                     bool> = true>
+//   so we just do not support LayoutRight in cuSparse TPL now (this is statically asserted here)
+template <class AMatrix, class XVector, class YVector>
 void spm_mv_block_impl_cusparse(
     const Kokkos::Cuda& exec,
     const KokkosKernels::Experimental::Controls& controls, const char mode[],
@@ -499,11 +487,12 @@ void spm_mv_block_impl_cusparse(
 
   int colx = static_cast<int>(x.extent(1));
 
-  // ldx and ldy should be the leading dimension of X,Y respectively
-  const int ldx = static_cast<int>(x.extent(0));
-  const int ldy = static_cast<int>(y.extent(0));
+  // ldx and ldy should be the leading dimension (stride between columns) of X,Y respectively
+  const int ldx = static_cast<int>(x.stride(1));
+  const int ldy = static_cast<int>(y.stride(1));
 
-#if (9000 <= CUDA_VERSION)
+  static_assert(std::is_same_v<typename XVector::array_layout, Kokkos::LayoutLeft> && std::is_same_v<typename YVector::array_layout, Kokkos::LayoutLeft>
+        "cuSPARSE requires both X and Y to be LayoutLeft.");
 
   /* create and set the matrix descriptor */
   cusparseMatDescr_t descrA = 0;
@@ -515,62 +504,57 @@ void spm_mv_block_impl_cusparse(
   cusparseDirection_t dirA = CUSPARSE_DIRECTION_ROW;
 
   /* perform the actual SpMV operation */
-  if ((std::is_same<int, offset_type>::value) &&
-      (std::is_same<int, entry_type>::value)) {
-    if (std::is_same<value_type, float>::value) {
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseSbsrmm(
-          cusparseHandle, dirA, myCusparseOperation,
-          CUSPARSE_OPERATION_NON_TRANSPOSE, A.numRows(), colx, A.numCols(),
-          A.nnz(), reinterpret_cast<float const*>(&alpha), descrA,
-          reinterpret_cast<float const*>(A.values.data()),
-          A.graph.row_map.data(), A.graph.entries.data(), A.blockDim(),
-          reinterpret_cast<float const*>(x.data()), ldx,
-          reinterpret_cast<float const*>(&beta),
-          reinterpret_cast<float*>(y.data()), ldy));
-    } else if (std::is_same<value_type, double>::value) {
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDbsrmm(
-          cusparseHandle, dirA, myCusparseOperation,
-          CUSPARSE_OPERATION_NON_TRANSPOSE, A.numRows(), colx, A.numCols(),
-          A.nnz(), reinterpret_cast<double const*>(&alpha), descrA,
-          reinterpret_cast<double const*>(A.values.data()),
-          A.graph.row_map.data(), A.graph.entries.data(), A.blockDim(),
-          reinterpret_cast<double const*>(x.data()), ldx,
-          reinterpret_cast<double const*>(&beta),
-          reinterpret_cast<double*>(y.data()), ldy));
-    } else if (std::is_same<value_type, Kokkos::complex<float>>::value) {
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseCbsrmm(
-          cusparseHandle, dirA, myCusparseOperation,
-          CUSPARSE_OPERATION_NON_TRANSPOSE, A.numRows(), colx, A.numCols(),
-          A.nnz(), reinterpret_cast<cuComplex const*>(&alpha), descrA,
-          reinterpret_cast<cuComplex const*>(A.values.data()),
-          A.graph.row_map.data(), A.graph.entries.data(), A.blockDim(),
-          reinterpret_cast<cuComplex const*>(x.data()), ldx,
-          reinterpret_cast<cuComplex const*>(&beta),
-          reinterpret_cast<cuComplex*>(y.data()), ldy));
-    } else if (std::is_same<value_type, Kokkos::complex<double>>::value) {
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseZbsrmm(
-          cusparseHandle, dirA, myCusparseOperation,
-          CUSPARSE_OPERATION_NON_TRANSPOSE, A.numRows(), colx, A.numCols(),
-          A.nnz(), reinterpret_cast<cuDoubleComplex const*>(&alpha), descrA,
-          reinterpret_cast<cuDoubleComplex const*>(A.values.data()),
-          A.graph.row_map.data(), A.graph.entries.data(), A.blockDim(),
-          reinterpret_cast<cuDoubleComplex const*>(x.data()), ldx,
-          reinterpret_cast<cuDoubleComplex const*>(&beta),
-          reinterpret_cast<cuDoubleComplex*>(y.data()), ldy));
-    } else {
-      throw std::logic_error(
-          "Trying to call cusparse[*]bsrmm with a scalar type not "
-          "float/double, "
-          "nor complex of either!");
-    }
-  } else {
-    throw std::logic_error(
-        "With cuSPARSE pre-10.0, offset and entry types must be int. "
+  static_assert(std::is_same_v<int, offset_type> && std::is_same_v<int, entry_type>,
+        "With cuSPARSE non-generic API, offset and entry types must both be int. "
         "Something wrong with TPL avail logic.");
+  if constexpr(std::is_same<value_type, float>::value) {
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSbsrmm(
+        cusparseHandle, dirA, myCusparseOperation,
+        CUSPARSE_OPERATION_NON_TRANSPOSE, A.numRows(), colx, A.numCols(),
+        A.nnz(), reinterpret_cast<float const*>(&alpha), descrA,
+        reinterpret_cast<float const*>(A.values.data()),
+        A.graph.row_map.data(), A.graph.entries.data(), A.blockDim(),
+        reinterpret_cast<float const*>(x.data()), ldx,
+        reinterpret_cast<float const*>(&beta),
+        reinterpret_cast<float*>(y.data()), ldy));
+  } else if constexpr(std::is_same<value_type, double>::value) {
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseDbsrmm(
+        cusparseHandle, dirA, myCusparseOperation,
+        CUSPARSE_OPERATION_NON_TRANSPOSE, A.numRows(), colx, A.numCols(),
+        A.nnz(), reinterpret_cast<double const*>(&alpha), descrA,
+        reinterpret_cast<double const*>(A.values.data()),
+        A.graph.row_map.data(), A.graph.entries.data(), A.blockDim(),
+        reinterpret_cast<double const*>(x.data()), ldx,
+        reinterpret_cast<double const*>(&beta),
+        reinterpret_cast<double*>(y.data()), ldy));
+  } else if constexpr(std::is_same<value_type, Kokkos::complex<float>>) {
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCbsrmm(
+        cusparseHandle, dirA, myCusparseOperation,
+        CUSPARSE_OPERATION_NON_TRANSPOSE, A.numRows(), colx, A.numCols(),
+        A.nnz(), reinterpret_cast<cuComplex const*>(&alpha), descrA,
+        reinterpret_cast<cuComplex const*>(A.values.data()),
+        A.graph.row_map.data(), A.graph.entries.data(), A.blockDim(),
+        reinterpret_cast<cuComplex const*>(x.data()), ldx,
+        reinterpret_cast<cuComplex const*>(&beta),
+        reinterpret_cast<cuComplex*>(y.data()), ldy));
+  } else if constexpr(std::is_same_v<value_type, Kokkos::complex<double>>) {
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseZbsrmm(
+        cusparseHandle, dirA, myCusparseOperation,
+        CUSPARSE_OPERATION_NON_TRANSPOSE, A.numRows(), colx, A.numCols(),
+        A.nnz(), reinterpret_cast<cuDoubleComplex const*>(&alpha), descrA,
+        reinterpret_cast<cuDoubleComplex const*>(A.values.data()),
+        A.graph.row_map.data(), A.graph.entries.data(), A.blockDim(),
+        reinterpret_cast<cuDoubleComplex const*>(x.data()), ldx,
+        reinterpret_cast<cuDoubleComplex const*>(&beta),
+        reinterpret_cast<cuDoubleComplex*>(y.data()), ldy));
+  }
+  else {
+    static_assert(false,
+        "Trying to call cusparse[*]bsrmm with a scalar type not "
+        "float/double, nor complex of either!");
   }
 
   KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyMatDescr(descrA));
-#endif  // (9000 <= CUDA_VERSION)
 }
 
 #define KOKKOSSPARSE_SPMV_CUSPARSE(SCALAR, ORDINAL, OFFSET, LAYOUT, SPACE,     \
@@ -615,7 +599,6 @@ void spm_mv_block_impl_cusparse(
     }                                                                          \
   };
 
-#if (9000 <= CUDA_VERSION)
 KOKKOSSPARSE_SPMV_CUSPARSE(double, int, int, Kokkos::LayoutLeft,
                            Kokkos::CudaSpace,
                            KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
@@ -664,7 +647,6 @@ KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int, int, Kokkos::LayoutLeft,
 KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int, int,
                            Kokkos::LayoutRight, Kokkos::CudaUVMSpace,
                            KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
-#endif  // (9000 <= CUDA_VERSION)
 
 #undef KOKKOSSPARSE_SPMV_CUSPARSE
 
@@ -714,7 +696,6 @@ KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int, int,
     }                                                                          \
   };
 
-#if (9000 <= CUDA_VERSION)
 KOKKOSSPARSE_SPMV_MV_CUSPARSE(double, int, int, Kokkos::CudaSpace, true)
 KOKKOSSPARSE_SPMV_MV_CUSPARSE(double, int, int, Kokkos::CudaSpace, false)
 KOKKOSSPARSE_SPMV_MV_CUSPARSE(float, int, int, Kokkos::CudaSpace, true)
@@ -740,13 +721,12 @@ KOKKOSSPARSE_SPMV_MV_CUSPARSE(Kokkos::complex<float>, int, int,
 KOKKOSSPARSE_SPMV_MV_CUSPARSE(Kokkos::complex<float>, int, int,
                               Kokkos::CudaUVMSpace, false)
 
-#endif  // (9000 <= CUDA_VERSION)
-
 #undef KOKKOSSPARSE_SPMV_MV_CUSPARSE
 
 }  // namespace Impl
 }  // namespace Experimental
 }  // namespace KokkosSparse
+#endif  // (9000 <= CUDA_VERSION)
 
 #endif  // KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 
