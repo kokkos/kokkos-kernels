@@ -793,7 +793,6 @@ inline void spmv_onemkl(const execution_space& exec, Handle* handle, oneapi::mkl
     using YVector = Kokkos::View<SCALAR*, Kokkos::LayoutLeft, device_type,   \
                                  Kokkos::MemoryTraits<Kokkos::Unmanaged>>;   \
     using coefficient_type = typename YVector::non_const_value_type;         \
-    using Controls         = KokkosKernels::Experimental::Controls;          \
                                                                              \
     static void spmv(const execution_space& exec, Handle* handle,         \
                      const char mode[], const coefficient_type& alpha,       \

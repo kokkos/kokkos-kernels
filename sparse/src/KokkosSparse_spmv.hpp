@@ -393,6 +393,77 @@ void spmv(const ExecutionSpace& space,
 ///   Computes y := alpha*Op(A)*x + beta*y, where Op(A) is controlled by mode
 ///   (see below).
 ///
+/// \tparam ExecutionSpace A Kokkos execution space. Must be able to access
+///   the memory spaces of A, x, and y.
+/// \tparam AlphaType Type of coefficient alpha. Must be convertible to
+///   YVector::value_type.
+/// \tparam AMatrix A KokkosSparse::CrsMatrix, or KokkosSparse::Experimental::BsrMatrix
+/// \tparam XVector Type of x, must be a rank-1 or rank-2 Kokkos::View
+/// \tparam BetaType Type of coefficient beta. Must be convertible to YVector::value_type.
+/// \tparam YVector Type of y, must be a Kokkos::View and its rank must match that of XVector
+///
+/// \param space [in] The execution space instance on which to run the kernel.
+/// \param mode [in] Select A's operator mode: "N" for normal, "T" for
+///   transpose, "C" for conjugate or "H" for conjugate transpose.
+/// \param alpha [in] Scalar multiplier for the matrix A.
+/// \param A [in] The sparse matrix A.
+/// \param x [in] A vector to multiply on the left by A.
+/// \param beta [in] Scalar multiplier for the vector y.
+/// \param y [in/out] Result vector.
+// clang-format on
+template <class ExecutionSpace, class AlphaType, class AMatrix, class XVector,
+          class BetaType, class YVector, typename = std::enable_if_t<Kokkos::is_execution_space<ExecutionSpace>::value>>
+void spmv(const ExecutionSpace& space, const char mode[],
+          const AlphaType& alpha, const AMatrix& A, const XVector& x,
+          const BetaType& beta, const YVector& y) {
+  SPMVAlgorithm algo = SPMV_FAST_SETUP;
+  // Without handle reuse, native is overall faster than rocSPARSE
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+  if constexpr(std::is_same_v<typename AMatrix::execution_space, Kokkos::HIP>)
+    algo = SPMV_NATIVE;
+#endif
+  SPMVHandle<typename AMatrix::execution_space, AMatrix, XVector, YVector> handle(algo);
+  spmv(space, &handle, mode, alpha, A, x, beta, y);
+}
+
+// clang-format off
+/// \brief Kokkos sparse matrix-vector multiply.
+///   Computes y := alpha*Op(A)*x + beta*y, where Op(A) is controlled by mode
+///   (see below).
+///
+/// \tparam Handle Specialization of KokkosSparse::SPMVHandle
+/// \tparam AlphaType Type of coefficient alpha. Must be convertible to
+///   YVector::value_type.
+/// \tparam AMatrix A KokkosSparse::CrsMatrix, or
+///   KokkosSparse::Experimental::BsrMatrix. Must be identical to Handle::AMatrixType.
+/// \tparam XVector Type of x. Must be a rank-1 or 2 Kokkos::View and be identical to Handle::XVectorType.
+/// \tparam BetaType Type of coefficient beta. Must be convertible to YVector::value_type.
+/// \tparam YVector Type of y. Must have the same rank as XVector and be identical to Handle::YVectorType.
+///
+/// \param handle [in/out] a pointer to a KokkosSparse::SPMVHandle. On the first call to spmv with
+///   a given handle instance, the handle's internal data will be initialized automatically.
+///   On all later calls to spmv, this internal data will be reused.
+/// \param mode [in] Select A's operator mode: "N" for normal, "T" for
+///   transpose, "C" for conjugate or "H" for conjugate transpose.
+/// \param alpha [in] Scalar multiplier for the matrix A.
+/// \param A [in] The sparse matrix A.
+/// \param x [in] A vector to multiply on the left by A.
+/// \param beta [in] Scalar multiplier for the vector y.
+/// \param y [in/out] Result vector.
+// clang-format on
+template <class Handle, class AlphaType, class AMatrix, class XVector,
+          class BetaType, class YVector, typename = std::enable_if_t<!Kokkos::is_execution_space<Handle>::value>>
+void spmv(Handle* handle, const char mode[],
+          const AlphaType& alpha, const AMatrix& A, const XVector& x,
+          const BetaType& beta, const YVector& y) {
+  spmv(typename Handle::ExecutionSpaceType(), handle, mode, alpha, A, x, beta, y);
+}
+
+// clang-format off
+/// \brief Kokkos sparse matrix-vector multiply.
+///   Computes y := alpha*Op(A)*x + beta*y, where Op(A) is controlled by mode
+///   (see below).
+///
 /// \tparam AlphaType Type of coefficient alpha. Must be convertible to YVector::value_type.
 /// \tparam AMatrix A KokkosSparse::CrsMatrix, or KokkosSparse::Experimental::BsrMatrix
 /// \tparam XVector Type of x, must be a rank-1 or rank-2 Kokkos::View
@@ -421,43 +492,6 @@ void spmv(const char mode[], const AlphaType& alpha, const AMatrix& A,
   spmv(typename AMatrix::execution_space(), &handle, mode, alpha, A, x, beta, y);
 }
 
-// clang-format off
-/// \brief Kokkos sparse matrix-vector multiply.
-///   Computes y := alpha*Op(A)*x + beta*y, where Op(A) is controlled by mode
-///   (see below).
-///
-/// \tparam ExecutionSpace A Kokkos execution space. Must be able to access
-///   the memory spaces of A, x, and y.
-/// \tparam AlphaType Type of coefficient alpha. Must be convertible to
-///   YVector::value_type.
-/// \tparam AMatrix A KokkosSparse::CrsMatrix, or KokkosSparse::Experimental::BsrMatrix
-/// \tparam XVector Type of x, must be a rank-1 or rank-2 Kokkos::View
-/// \tparam BetaType Type of coefficient beta. Must be convertible to YVector::value_type.
-/// \tparam YVector Type of y, must be a Kokkos::View and its rank must match that of XVector
-///
-/// \param space [in] The execution space instance on which to run the kernel.
-/// \param mode [in] Select A's operator mode: "N" for normal, "T" for
-///   transpose, "C" for conjugate or "H" for conjugate transpose.
-/// \param alpha [in] Scalar multiplier for the matrix A.
-/// \param A [in] The sparse matrix A.
-/// \param x [in] A vector to multiply on the left by A.
-/// \param beta [in] Scalar multiplier for the vector y.
-/// \param y [in/out] Result vector.
-// clang-format on
-template <class ExecutionSpace, class AlphaType, class AMatrix, class XVector,
-          class BetaType, class YVector>
-void spmv(const ExecutionSpace& space, const char mode[],
-          const AlphaType& alpha, const AMatrix& A, const XVector& x,
-          const BetaType& beta, const YVector& y) {
-  SPMVAlgorithm algo = SPMV_FAST_SETUP;
-  // Without handle reuse, native is overall faster than rocSPARSE
-#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
-  if constexpr(std::is_same_v<typename AMatrix::execution_space, Kokkos::HIP>)
-    algo = SPMV_NATIVE;
-#endif
-  SPMVHandle<typename AMatrix::execution_space, AMatrix, XVector, YVector> handle(algo);
-  spmv(space, &handle, mode, alpha, A, x, beta, y);
-}
 
 namespace Experimental {
 

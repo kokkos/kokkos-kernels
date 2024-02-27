@@ -173,15 +173,16 @@ namespace Impl {
   struct RocSparse_BSR_SpMV_Data : public TPL_SpMV_Data<Kokkos::HIP> {
     RocSparse_BSR_SpMV_Data(const Kokkos::HIP& exec) : TPL_SpMV_Data(exec) {}
     ~RocSparse_BSR_SpMV_Data() {
-      // note: hipFree includes an implicit device synchronize
-      KOKKOS_IMPL_HIP_SAFE_CALL(hipFree(buffer));
-      KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_destroy_spmat_descr(spmat));
+      KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_destroy_mat_descr(descr));
+#if (KOKKOSSPARSE_IMPL_ROCM_VERSION >= 50400
+      KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(rocsparse_destroy_mat_info(info));
+#endif
     }
 
    rocsparse_mat_descr mat;
+#if (KOKKOSSPARSE_IMPL_ROCM_VERSION >= 50400
     rocsparse_mat_info info;
-    size_t bufferSize = 0;
-    void* buffer      = nullptr;
+#endif
   };
 #endif
 
