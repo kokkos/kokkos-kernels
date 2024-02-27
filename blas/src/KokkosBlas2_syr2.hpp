@@ -17,6 +17,8 @@
 #ifndef KOKKOSBLAS2_SYR2_HPP_
 #define KOKKOSBLAS2_SYR2_HPP_
 
+#include "KokkosKernels_helpers.hpp"
+
 #include <KokkosBlas2_syr2_spec.hpp>
 #include <sstream>
 
