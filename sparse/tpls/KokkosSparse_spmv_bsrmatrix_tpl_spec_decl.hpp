@@ -18,191 +18,173 @@
 #define KOKKOSSPARSE_SPMV_BSRMATRIX_TPL_SPEC_DECL_HPP
 
 #include "KokkosKernels_AlwaysFalse.hpp"
-#include "KokkosKernels_Controls.hpp"
 #include "KokkosSparse_Utils_mkl.hpp"
 #include "KokkosSparse_Utils_cusparse.hpp"
 
-#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
+#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) && (__INTEL_MKL__ > 2017)
 #include <mkl.h>
 
 namespace KokkosSparse {
 namespace Experimental {
 namespace Impl {
 
-#if (__INTEL_MKL__ > 2017)
 // MKL 2018 and above: use new interface: sparse_matrix_t and mkl_sparse_?_mv()
 
 using KokkosSparse::Impl::mode_kk_to_mkl;
 
-inline matrix_descr getDescription() {
-  matrix_descr A_descr;
-  A_descr.type = SPARSE_MATRIX_TYPE_GENERAL;
-  A_descr.mode = SPARSE_FILL_MODE_FULL;
-  A_descr.diag = SPARSE_DIAG_NON_UNIT;
-  return A_descr;
+// Note: Scalar here is the Kokkos type, not the MKL type
+template<typename Scalar, typename Handle>
+inline void spmv_bsr_mkl(Handle* handle, sparse_operation_t op, Scalar alpha, Scalar beta, MKL_INT m,
+                     MKL_INT n, MKL_INT b, const MKL_INT* Arowptrs,
+                     const MKL_INT* Aentries, const Scalar* Avalues,
+                     const Scalar* x, Scalar* y) {
+  using MKLScalar = typename KokkosToMKLScalar<Scalar>::type;
+  MKL_SpMV_Data* subhandle;
+  const MKLScalar* x_mkl = reinterpret_cast<const MKLScalar*>(x);
+  MKLScalar* y_mkl = reinterpret_cast<MKLScalar*>(y);
+  if (handle->is_set_up) {
+    subhandle =
+        dynamic_cast<MKL_SpMV_Data*>(handle->tpl);
+    if (!subhandle)
+      throw std::runtime_error(
+          "KokkosSparse::spmv: subhandle is not set up for MKL BSR");
+  } else {
+    subhandle   = new MKL_SpMV_Data(exec);
+    handle->tpl = subhandle;
+    subhandle->descr.type = SPARSE_MATRIX_TYPE_GENERAL;
+    subhandle->descr.mode = SPARSE_FILL_MODE_FULL;
+    subhandle->descr.diag = SPARSE_DIAG_NON_UNIT;
+    // Note: the create_csr routine requires non-const values even though they're not actually modified
+    MKLScalar* Avalues_mkl = reinterpret_cast<MKLScalar*>(const_cast<Scalar*>(Avalues));
+    if constexpr(std::is_same_v<Scalar, float>)
+    {
+      KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_s_create_bsr(
+            &subhandle->mat, SPARSE_INDEX_BASE_ZERO, m, n, b, const_cast<MKL_INT*>(Arowptrs),
+            const_cast<MKL_INT*>(Arowptrs + 1), const_cast<MKL_INT*>(Aentries), Avalues_mkl));
+    }
+    else if constexpr(std::is_same_v<Scalar, double>)
+    {
+      KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_d_create_bsr(
+            &subhandle->mat, SPARSE_INDEX_BASE_ZERO, m, n, b, const_cast<MKL_INT*>(Arowptrs),
+            const_cast<MKL_INT*>(Arowptrs + 1), const_cast<MKL_INT*>(Aentries), Avalues_mkl));
+    }
+    else if constexpr(std::is_same_v<Scalar, Kokkos::complex<float>>)
+    {
+      KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_c_create_bsr(
+            &subhandle->mat, SPARSE_INDEX_BASE_ZERO, m, n, b, const_cast<MKL_INT*>(Arowptrs),
+            const_cast<MKL_INT*>(Arowptrs + 1), const_cast<MKL_INT*>(Aentries), Avalues_mkl));
+    }
+    else if constexpr(std::is_same_v<Scalar, Kokkos::complex<double>>)
+    {
+      KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_z_create_bsr(
+            &subhandle->mat, SPARSE_INDEX_BASE_ZERO, m, n, b, const_cast<MKL_INT*>(Arowptrs),
+            const_cast<MKL_INT*>(Arowptrs + 1), const_cast<MKL_INT*>(Aentries),Avalues_mkl));
+    }
+    handle->is_set_up = true;
+  }
+  MKLScalar alpha_mkl = KokkosToMKLScalar<Scalar>(alpha);
+  MKLScalar beta_mkl = KokkosToMKLScalar<Scalar>(beta);
+  if constexpr(std::is_same_v<Scalar, float>)
+  {
+    KOKKOSKERNELS_MKL_SAFE_CALL(
+        mkl_sparse_s_mv(op, alpha_mkl, subhandle->mat, subhandle->descr, x_mkl, beta_mkl, y_mkl));
+  }
+  else if constexpr(std::is_same_v<Scalar, double>)
+  {
+    KOKKOSKERNELS_MKL_SAFE_CALL(
+        mkl_sparse_d_mv(op, alpha_mkl, subhandle->mat, subhandle->descr, x_mkl, beta_mkl, y_mkl));
+  }
+  else if constexpr(std::is_same_v<Scalar, Kokkos::complex<float>>)
+  {
+    KOKKOSKERNELS_MKL_SAFE_CALL(
+        mkl_sparse_c_mv(op, alpha_mkl, subhandle->mat, subhandle->descr, x_mkl, beta_mkl, y_mkl));
+  }
+  else if constexpr(std::is_same_v<Scalar, Kokkos::complex<double>>)
+  {
+    KOKKOSKERNELS_MKL_SAFE_CALL(
+        mkl_sparse_z_mv(op, alpha_mkl, subhandle->mat, subhandle->descr, x_mkl, beta_mkl, y_mkl));
+  }
 }
 
-inline void spmv_block_impl_mkl(sparse_operation_t op, float alpha, float beta,
-                                MKL_INT m, MKL_INT n, MKL_INT b,
-                                const MKL_INT* Arowptrs,
-                                const MKL_INT* Aentries, const float* Avalues,
-                                const float* x, float* y) {
-  sparse_matrix_t A_mkl;
-  KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_s_create_bsr(
-      &A_mkl, SPARSE_INDEX_BASE_ZERO, SPARSE_LAYOUT_ROW_MAJOR, m, n, b,
-      const_cast<MKL_INT*>(Arowptrs), const_cast<MKL_INT*>(Arowptrs + 1),
-      const_cast<MKL_INT*>(Aentries), const_cast<float*>(Avalues)));
-
-  matrix_descr A_descr = getDescription();
-  KOKKOSKERNELS_MKL_SAFE_CALL(
-      mkl_sparse_s_mv(op, alpha, A_mkl, A_descr, x, beta, y));
+// Note: Scalar here is the Kokkos type, not the MKL type
+template<typename Scalar, typename Handle>
+inline void spmv_mv_bsr_mkl(Handle* handle, sparse_operation_t op, Scalar alpha, Scalar beta, MKL_INT m,
+                     MKL_INT n, MKL_INT b, const MKL_INT* Arowptrs,
+                     const MKL_INT* Aentries, const Scalar* Avalues,
+                     const Scalar* x, MKL_INT colx, MKL_INT ldx, Scalar* y, MKL_INT ldy) {
+  using MKLScalar = typename KokkosToMKLScalar<Scalar>::type;
+  MKL_SpMV_Data* subhandle;
+  const MKLScalar* x_mkl = reinterpret_cast<const MKLScalar*>(x);
+  MKLScalar* y_mkl = reinterpret_cast<MKLScalar*>(y);
+  if (handle->is_set_up) {
+    subhandle =
+        dynamic_cast<MKL_SpMV_Data*>(handle->tpl);
+    if (!subhandle)
+      throw std::runtime_error(
+          "KokkosSparse::spmv: subhandle is not set up for MKL BSR");
+  } else {
+    subhandle   = new MKL_SpMV_Data(exec);
+    handle->tpl = subhandle;
+    subhandle->descr.type = SPARSE_MATRIX_TYPE_GENERAL;
+    subhandle->descr.mode = SPARSE_FILL_MODE_FULL;
+    subhandle->descr.diag = SPARSE_DIAG_NON_UNIT;
+    // Note: the create_csr routine requires non-const values even though they're not actually modified
+    MKLScalar* Avalues_mkl = reinterpret_cast<MKLScalar*>(const_cast<Scalar*>(Avalues));
+    if constexpr(std::is_same_v<Scalar, float>)
+    {
+      KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_s_create_bsr(
+            &subhandle->mat, SPARSE_INDEX_BASE_ZERO, m, n, b, const_cast<MKL_INT*>(Arowptrs),
+            const_cast<MKL_INT*>(Arowptrs + 1), const_cast<MKL_INT*>(Aentries), Avalues_mkl));
+    }
+    else if constexpr(std::is_same_v<Scalar, double>)
+    {
+      KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_d_create_bsr(
+            &subhandle->mat, SPARSE_INDEX_BASE_ZERO, m, n, b, const_cast<MKL_INT*>(Arowptrs),
+            const_cast<MKL_INT*>(Arowptrs + 1), const_cast<MKL_INT*>(Aentries), Avalues_mkl));
+    }
+    else if constexpr(std::is_same_v<Scalar, Kokkos::complex<float>>)
+    {
+      KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_c_create_bsr(
+            &subhandle->mat, SPARSE_INDEX_BASE_ZERO, m, n, b, const_cast<MKL_INT*>(Arowptrs),
+            const_cast<MKL_INT*>(Arowptrs + 1), const_cast<MKL_INT*>(Aentries), Avalues_mkl));
+    }
+    else if constexpr(std::is_same_v<Scalar, Kokkos::complex<double>>)
+    {
+      KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_z_create_bsr(
+            &subhandle->mat, SPARSE_INDEX_BASE_ZERO, m, n, b, const_cast<MKL_INT*>(Arowptrs),
+            const_cast<MKL_INT*>(Arowptrs + 1), const_cast<MKL_INT*>(Aentries),Avalues_mkl));
+    }
+    handle->is_set_up = true;
+  }
+  MKLScalar alpha_mkl = KokkosToMKLScalar<Scalar>(alpha);
+  MKLScalar beta_mkl = KokkosToMKLScalar<Scalar>(beta);
+  if constexpr(std::is_same_v<Scalar, float>)
+  {
+    KOKKOSKERNELS_MKL_SAFE_CALL(
+        mkl_sparse_s_mm(op, alpha_mkl, subhandle->mat, subhandle->descr, SPARSE_LAYOUT_ROW_MAJOR, x_mkl, colx, ldx, beta_mkl, y_mkl, ldy));
+  }
+  else if constexpr(std::is_same_v<Scalar, double>)
+  {
+    KOKKOSKERNELS_MKL_SAFE_CALL(
+        mkl_sparse_d_mm(op, alpha_mkl, subhandle->mat, subhandle->descr, SPARSE_LAYOUT_ROW_MAJOR, x_mkl, colx, ldx, beta_mkl, y_mkl, ldy));
+  }
+  else if constexpr(std::is_same_v<Scalar, Kokkos::complex<float>>)
+  {
+    KOKKOSKERNELS_MKL_SAFE_CALL(
+        mkl_sparse_c_mm(op, alpha_mkl, subhandle->mat, subhandle->descr, SPARSE_LAYOUT_ROW_MAJOR, x_mkl, colx, ldx, beta_mkl, y_mkl, ldy));
+  }
+  else if constexpr(std::is_same_v<Scalar, Kokkos::complex<double>>)
+  {
+    KOKKOSKERNELS_MKL_SAFE_CALL(
+        mkl_sparse_z_mm(op, alpha_mkl, subhandle->mat, subhandle->descr, SPARSE_LAYOUT_ROW_MAJOR, x_mkl, colx, ldx, beta_mkl, y_mkl, ldy));
+  }
 }
-
-inline void spmv_block_impl_mkl(sparse_operation_t op, double alpha,
-                                double beta, MKL_INT m, MKL_INT n, MKL_INT b,
-                                const MKL_INT* Arowptrs,
-                                const MKL_INT* Aentries, const double* Avalues,
-                                const double* x, double* y) {
-  sparse_matrix_t A_mkl;
-  KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_d_create_bsr(
-      &A_mkl, SPARSE_INDEX_BASE_ZERO, SPARSE_LAYOUT_ROW_MAJOR, m, n, b,
-      const_cast<MKL_INT*>(Arowptrs), const_cast<MKL_INT*>(Arowptrs + 1),
-      const_cast<MKL_INT*>(Aentries), const_cast<double*>(Avalues)));
-
-  matrix_descr A_descr = getDescription();
-  KOKKOSKERNELS_MKL_SAFE_CALL(
-      mkl_sparse_d_mv(op, alpha, A_mkl, A_descr, x, beta, y));
-}
-
-inline void spmv_block_impl_mkl(sparse_operation_t op,
-                                Kokkos::complex<float> alpha,
-                                Kokkos::complex<float> beta, MKL_INT m,
-                                MKL_INT n, MKL_INT b, const MKL_INT* Arowptrs,
-                                const MKL_INT* Aentries,
-                                const Kokkos::complex<float>* Avalues,
-                                const Kokkos::complex<float>* x,
-                                Kokkos::complex<float>* y) {
-  sparse_matrix_t A_mkl;
-  KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_c_create_bsr(
-      &A_mkl, SPARSE_INDEX_BASE_ZERO, SPARSE_LAYOUT_ROW_MAJOR, m, n, b,
-      const_cast<MKL_INT*>(Arowptrs), const_cast<MKL_INT*>(Arowptrs + 1),
-      const_cast<MKL_INT*>(Aentries), (MKL_Complex8*)Avalues));
-
-  MKL_Complex8 alpha_mkl{alpha.real(), alpha.imag()};
-  MKL_Complex8 beta_mkl{beta.real(), beta.imag()};
-  matrix_descr A_descr = getDescription();
-  KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_c_mv(
-      op, alpha_mkl, A_mkl, A_descr, reinterpret_cast<const MKL_Complex8*>(x),
-      beta_mkl, reinterpret_cast<MKL_Complex8*>(y)));
-}
-
-inline void spmv_block_impl_mkl(sparse_operation_t op,
-                                Kokkos::complex<double> alpha,
-                                Kokkos::complex<double> beta, MKL_INT m,
-                                MKL_INT n, MKL_INT b, const MKL_INT* Arowptrs,
-                                const MKL_INT* Aentries,
-                                const Kokkos::complex<double>* Avalues,
-                                const Kokkos::complex<double>* x,
-                                Kokkos::complex<double>* y) {
-  sparse_matrix_t A_mkl;
-  KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_z_create_bsr(
-      &A_mkl, SPARSE_INDEX_BASE_ZERO, SPARSE_LAYOUT_ROW_MAJOR, m, n, b,
-      const_cast<MKL_INT*>(Arowptrs), const_cast<MKL_INT*>(Arowptrs + 1),
-      const_cast<MKL_INT*>(Aentries), (MKL_Complex16*)Avalues));
-
-  matrix_descr A_descr = getDescription();
-  MKL_Complex16 alpha_mkl{alpha.real(), alpha.imag()};
-  MKL_Complex16 beta_mkl{beta.real(), beta.imag()};
-  KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_z_mv(
-      op, alpha_mkl, A_mkl, A_descr, reinterpret_cast<const MKL_Complex16*>(x),
-      beta_mkl, reinterpret_cast<MKL_Complex16*>(y)));
-}
-
-inline void spm_mv_block_impl_mkl(sparse_operation_t op, float alpha,
-                                  float beta, MKL_INT m, MKL_INT n, MKL_INT b,
-                                  const MKL_INT* Arowptrs,
-                                  const MKL_INT* Aentries, const float* Avalues,
-                                  const float* x, MKL_INT colx, MKL_INT ldx,
-                                  float* y, MKL_INT ldy) {
-  sparse_matrix_t A_mkl;
-  KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_s_create_bsr(
-      &A_mkl, SPARSE_INDEX_BASE_ZERO, SPARSE_LAYOUT_ROW_MAJOR, m, n, b,
-      const_cast<MKL_INT*>(Arowptrs), const_cast<MKL_INT*>(Arowptrs + 1),
-      const_cast<MKL_INT*>(Aentries), const_cast<float*>(Avalues)));
-
-  matrix_descr A_descr = getDescription();
-  KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_s_mm(op, alpha, A_mkl, A_descr,
-                                              SPARSE_LAYOUT_ROW_MAJOR, x, colx,
-                                              ldx, beta, y, ldy));
-}
-
-inline void spm_mv_block_impl_mkl(sparse_operation_t op, double alpha,
-                                  double beta, MKL_INT m, MKL_INT n, MKL_INT b,
-                                  const MKL_INT* Arowptrs,
-                                  const MKL_INT* Aentries,
-                                  const double* Avalues, const double* x,
-                                  MKL_INT colx, MKL_INT ldx, double* y,
-                                  MKL_INT ldy) {
-  sparse_matrix_t A_mkl;
-  KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_d_create_bsr(
-      &A_mkl, SPARSE_INDEX_BASE_ZERO, SPARSE_LAYOUT_ROW_MAJOR, m, n, b,
-      const_cast<MKL_INT*>(Arowptrs), const_cast<MKL_INT*>(Arowptrs + 1),
-      const_cast<MKL_INT*>(Aentries), const_cast<double*>(Avalues)));
-
-  matrix_descr A_descr = getDescription();
-  KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_d_mm(op, alpha, A_mkl, A_descr,
-                                              SPARSE_LAYOUT_ROW_MAJOR, x, colx,
-                                              ldx, beta, y, ldy));
-}
-
-inline void spm_mv_block_impl_mkl(
-    sparse_operation_t op, Kokkos::complex<float> alpha,
-    Kokkos::complex<float> beta, MKL_INT m, MKL_INT n, MKL_INT b,
-    const MKL_INT* Arowptrs, const MKL_INT* Aentries,
-    const Kokkos::complex<float>* Avalues, const Kokkos::complex<float>* x,
-    MKL_INT colx, MKL_INT ldx, Kokkos::complex<float>* y, MKL_INT ldy) {
-  sparse_matrix_t A_mkl;
-  KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_c_create_bsr(
-      &A_mkl, SPARSE_INDEX_BASE_ZERO, SPARSE_LAYOUT_ROW_MAJOR, m, n, b,
-      const_cast<MKL_INT*>(Arowptrs), const_cast<MKL_INT*>(Arowptrs + 1),
-      const_cast<MKL_INT*>(Aentries), (MKL_Complex8*)Avalues));
-
-  MKL_Complex8 alpha_mkl{alpha.real(), alpha.imag()};
-  MKL_Complex8 beta_mkl{beta.real(), beta.imag()};
-  matrix_descr A_descr = getDescription();
-  KOKKOSKERNELS_MKL_SAFE_CALL(
-      mkl_sparse_c_mm(op, alpha_mkl, A_mkl, A_descr, SPARSE_LAYOUT_ROW_MAJOR,
-                      reinterpret_cast<const MKL_Complex8*>(x), colx, ldx,
-                      beta_mkl, reinterpret_cast<MKL_Complex8*>(y), ldy));
-}
-
-inline void spm_mv_block_impl_mkl(
-    sparse_operation_t op, Kokkos::complex<double> alpha,
-    Kokkos::complex<double> beta, MKL_INT m, MKL_INT n, MKL_INT b,
-    const MKL_INT* Arowptrs, const MKL_INT* Aentries,
-    const Kokkos::complex<double>* Avalues, const Kokkos::complex<double>* x,
-    MKL_INT colx, MKL_INT ldx, Kokkos::complex<double>* y, MKL_INT ldy) {
-  sparse_matrix_t A_mkl;
-  KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_z_create_bsr(
-      &A_mkl, SPARSE_INDEX_BASE_ZERO, SPARSE_LAYOUT_ROW_MAJOR, m, n, b,
-      const_cast<MKL_INT*>(Arowptrs), const_cast<MKL_INT*>(Arowptrs + 1),
-      const_cast<MKL_INT*>(Aentries), (MKL_Complex16*)Avalues));
-
-  matrix_descr A_descr = getDescription();
-  MKL_Complex16 alpha_mkl{alpha.real(), alpha.imag()};
-  MKL_Complex16 beta_mkl{beta.real(), beta.imag()};
-  KOKKOSKERNELS_MKL_SAFE_CALL(
-      mkl_sparse_z_mm(op, alpha_mkl, A_mkl, A_descr, SPARSE_LAYOUT_ROW_MAJOR,
-                      reinterpret_cast<const MKL_Complex16*>(x), colx, ldx,
-                      beta_mkl, reinterpret_cast<MKL_Complex16*>(y), ldy));
-}
-
-#endif
 
 #define KOKKOSSPARSE_SPMV_MKL(SCALAR, EXECSPACE, COMPILE_LIBRARY)            \
   template <>                                                                \
   struct SPMV_BSRMATRIX<                                                     \
       EXECSPACE,                                                             \
+      KokkosSparse::Impl::SPMVHandleImpl<EXECSPACE, Kokkos::HostSpace, SCALAR, MKL_INT, MKL_INT>, \
       ::KokkosSparse::Experimental::BsrMatrix<                               \
           SCALAR const, MKL_INT const,                                       \
           Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,                      \
@@ -216,6 +198,7 @@ inline void spm_mv_block_impl_mkl(
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                 \
       true, COMPILE_LIBRARY> {                                               \
     using device_type = Kokkos::Device<EXECSPACE, Kokkos::HostSpace>;        \
+    using Handle = KokkosSparse::Impl::SPMVHandleImpl<EXECSPACE, Kokkos::HostSpace, SCALAR, MKL_INT, MKL_INT>; \
     using AMatrix     = ::KokkosSparse::Experimental::BsrMatrix<             \
         SCALAR const, MKL_INT const, device_type,                        \
         Kokkos::MemoryTraits<Kokkos::Unmanaged>, MKL_INT const>;         \
@@ -228,13 +211,13 @@ inline void spm_mv_block_impl_mkl(
                                                                              \
     static void spmv_bsrmatrix(                                              \
         const EXECSPACE&,                                                    \
-        const KokkosKernels::Experimental::Controls& /*controls*/,           \
+        Handle* handle, \
         const char mode[], const coefficient_type& alpha, const AMatrix& A,  \
         const XVector& X, const coefficient_type& beta, const YVector& Y) {  \
       std::string label = "KokkosSparse::spmv[TPL_MKL,BSRMATRIX" +           \
                           Kokkos::ArithTraits<SCALAR>::name() + "]";         \
       Kokkos::Profiling::pushRegion(label);                                  \
-      spmv_block_impl_mkl(mode_kk_to_mkl(mode[0]), alpha, beta, A.numRows(), \
+      spmv_bsr_mkl(handle, mode_kk_to_mkl(mode[0]), alpha, beta, A.numRows(), \
                           A.numCols(), A.blockDim(), A.graph.row_map.data(), \
                           A.graph.entries.data(), A.values.data(), X.data(), \
                           Y.data());                                         \
@@ -268,6 +251,7 @@ KOKKOSSPARSE_SPMV_MKL(Kokkos::complex<double>, Kokkos::OpenMP,
   template <>                                                                  \
   struct SPMV_MV_BSRMATRIX<                                                    \
       EXECSPACE,                                                               \
+      KokkosSparse::Impl::SPMVHandleImpl<EXECSPACE, Kokkos::HostSpace, SCALAR, MKL_INT, MKL_INT>, \
       ::KokkosSparse::Experimental::BsrMatrix<                                 \
           SCALAR const, MKL_INT const,                                         \
           Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,                        \
@@ -281,6 +265,7 @@ KOKKOSSPARSE_SPMV_MKL(Kokkos::complex<double>, Kokkos::OpenMP,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
       true, true, COMPILE_LIBRARY> {                                           \
     using device_type = Kokkos::Device<EXECSPACE, Kokkos::HostSpace>;          \
+    using Handle = KokkosSparse::Impl::SPMVHandleImpl<EXECSPACE, Kokkos::HostSpace, SCALAR, MKL_INT, MKL_INT>; \
     using AMatrix     = ::KokkosSparse::Experimental::BsrMatrix<               \
         SCALAR const, MKL_INT const, device_type,                          \
         Kokkos::MemoryTraits<Kokkos::Unmanaged>, MKL_INT const>;           \
@@ -293,7 +278,7 @@ KOKKOSSPARSE_SPMV_MKL(Kokkos::complex<double>, Kokkos::OpenMP,
                                                                                \
     static void spmv_mv_bsrmatrix(                                             \
         const EXECSPACE&,                                                      \
-        const KokkosKernels::Experimental::Controls& /*controls*/,             \
+        Handle* handle, \
         const char mode[], const coefficient_type& alpha, const AMatrix& A,    \
         const XVector& X, const coefficient_type& beta, const YVector& Y) {    \
       std::string label = "KokkosSparse::spmv[TPL_MKL,BSRMATRIX" +             \
@@ -302,7 +287,7 @@ KOKKOSSPARSE_SPMV_MKL(Kokkos::complex<double>, Kokkos::OpenMP,
       MKL_INT colx = static_cast<MKL_INT>(X.extent(1));                        \
       MKL_INT ldx  = static_cast<MKL_INT>(X.stride_1());                       \
       MKL_INT ldy  = static_cast<MKL_INT>(Y.stride_1());                       \
-      spm_mv_block_impl_mkl(mode_kk_to_mkl(mode[0]), alpha, beta, A.numRows(), \
+      spmv_mv_bsr_mkl(handle, mode_kk_to_mkl(mode[0]), alpha, beta, A.numRows(), \
                             A.numCols(), A.blockDim(), A.graph.row_map.data(), \
                             A.graph.entries.data(), A.values.data(), X.data(), \
                             colx, ldx, Y.data(), ldy);                         \
@@ -338,7 +323,7 @@ KOKKOSSPARSE_SPMV_MV_MKL(Kokkos::complex<double>, Kokkos::OpenMP,
 }  // namespace Experimental
 }  // namespace KokkosSparse
 
-#endif  // KOKKOSKERNELS_ENABLE_TPL_MKL
+#endif // defined(KOKKOSKERNELS_ENABLE_TPL_MKL) && (__INTEL_MKL__ > 2017)
 
 // cuSPARSE
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
@@ -359,10 +344,11 @@ namespace KokkosSparse {
 namespace Experimental {
 namespace Impl {
 
-template <class AMatrix, class XVector, class YVector>
+template <class Handle, class AMatrix, class XVector, class YVector>
 void spmv_block_impl_cusparse(
     const Kokkos::Cuda& exec,
-    const KokkosKernels::Experimental::Controls& controls, const char mode[],
+    Handle* handle,
+    const char mode[],
     typename YVector::non_const_value_type const& alpha, const AMatrix& A,
     const XVector& x, typename YVector::non_const_value_type const& beta,
     const YVector& y) {
@@ -385,13 +371,27 @@ void spmv_block_impl_cusparse(
     }
   }
 
-  /* create and set the matrix descriptor */
-  cusparseMatDescr_t descrA = 0;
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&descrA));
-  KOKKOS_CUSPARSE_SAFE_CALL(
-      cusparseSetMatType(descrA, CUSPARSE_MATRIX_TYPE_GENERAL));
-  KOKKOS_CUSPARSE_SAFE_CALL(
-      cusparseSetMatIndexBase(descrA, CUSPARSE_INDEX_BASE_ZERO));
+  KokkosSparse::Impl::CuSparse9_SpMV_Data* subhandle;
+
+  if (handle->is_set_up) {
+    subhandle =
+        dynamic_cast<KokkosSparse::Impl::CuSparse9_SpMV_Data*>(handle->tpl);
+    if (!subhandle)
+      throw std::runtime_error(
+          "KokkosSparse::spmv: subhandle is not set up for cusparse");
+  } else {
+    /* create and set the subhandle and matrix descriptor */
+    subhandle   = new KokkosSparse::Impl::CuSparse9_SpMV_Data(exec);
+    handle->tpl = subhandle;
+    cusparseMatDescr_t descrA = 0;
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&subhandle->mat));
+    KOKKOS_CUSPARSE_SAFE_CALL(
+        cusparseSetMatType(subhandle->mat, CUSPARSE_MATRIX_TYPE_GENERAL));
+    KOKKOS_CUSPARSE_SAFE_CALL(
+        cusparseSetMatIndexBase(subhandle->mat, CUSPARSE_INDEX_BASE_ZERO));
+    handle->is_set_up = true;
+  }
+
   cusparseDirection_t dirA = CUSPARSE_DIRECTION_ROW;
 
   /* perform the actual SpMV operation */
@@ -401,7 +401,7 @@ void spmv_block_impl_cusparse(
   if constexpr(std::is_same_v<value_type, float>) {
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseSbsrmv(
         cusparseHandle, dirA, myCusparseOperation, A.numRows(), A.numCols(),
-        A.nnz(), reinterpret_cast<float const*>(&alpha), descrA,
+        A.nnz(), reinterpret_cast<float const*>(&alpha), subhandle->mat,
         reinterpret_cast<float const*>(A.values.data()),
         A.graph.row_map.data(), A.graph.entries.data(), A.blockDim(),
         reinterpret_cast<float const*>(x.data()),
@@ -410,7 +410,7 @@ void spmv_block_impl_cusparse(
   } else if constexpr(std::is_same_v<value_type, double>) {
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseDbsrmv(
         cusparseHandle, dirA, myCusparseOperation, A.numRows(), A.numCols(),
-        A.nnz(), reinterpret_cast<double const*>(&alpha), descrA,
+        A.nnz(), reinterpret_cast<double const*>(&alpha), subhandle->mat,
         reinterpret_cast<double const*>(A.values.data()),
         A.graph.row_map.data(), A.graph.entries.data(), A.blockDim(),
         reinterpret_cast<double const*>(x.data()),
@@ -419,7 +419,7 @@ void spmv_block_impl_cusparse(
   } else if constexpr(std::is_same_v<value_type, Kokkos::complex<float>>) {
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseCbsrmv(
         cusparseHandle, dirA, myCusparseOperation, A.numRows(), A.numCols(),
-        A.nnz(), reinterpret_cast<cuComplex const*>(&alpha), descrA,
+        A.nnz(), reinterpret_cast<cuComplex const*>(&alpha), subhandle->mat,
         reinterpret_cast<cuComplex const*>(A.values.data()),
         A.graph.row_map.data(), A.graph.entries.data(), A.blockDim(),
         reinterpret_cast<cuComplex const*>(x.data()),
@@ -428,7 +428,7 @@ void spmv_block_impl_cusparse(
   } else if constexpr(std::is_same_v<value_type, Kokkos::complex<double>>) {
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseZbsrmv(
         cusparseHandle, dirA, myCusparseOperation, A.numRows(), A.numCols(),
-        A.nnz(), reinterpret_cast<cuDoubleComplex const*>(&alpha), descrA,
+        A.nnz(), reinterpret_cast<cuDoubleComplex const*>(&alpha), subhandle->mat,
         reinterpret_cast<cuDoubleComplex const*>(A.values.data()),
         A.graph.row_map.data(), A.graph.entries.data(), A.blockDim(),
         reinterpret_cast<cuDoubleComplex const*>(x.data()),
@@ -439,8 +439,6 @@ void spmv_block_impl_cusparse(
         "Trying to call cusparse[*]bsrmv with a scalar type not "
         "float/double, nor complex of either!");
   }
-
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyMatDescr(descrA));
 }
 
 // Reference
@@ -459,10 +457,10 @@ void spmv_block_impl_cusparse(
 //   ->       C = B * t(A) + C
 //   This is impossible in cuSparse without explicitly transposing A,
 //   so we just do not support LayoutRight in cuSparse TPL now (this is statically asserted here)
-template <class AMatrix, class XVector, class YVector>
+template <class Handle, class AMatrix, class XVector, class YVector>
 void spm_mv_block_impl_cusparse(
     const Kokkos::Cuda& exec,
-    const KokkosKernels::Experimental::Controls& controls, const char mode[],
+    Handle* handle, const char mode[],
     typename YVector::non_const_value_type const& alpha, const AMatrix& A,
     const XVector& x, typename YVector::non_const_value_type const& beta,
     const YVector& y) {
@@ -494,13 +492,26 @@ void spm_mv_block_impl_cusparse(
   static_assert(std::is_same_v<typename XVector::array_layout, Kokkos::LayoutLeft> && std::is_same_v<typename YVector::array_layout, Kokkos::LayoutLeft>
         "cuSPARSE requires both X and Y to be LayoutLeft.");
 
-  /* create and set the matrix descriptor */
-  cusparseMatDescr_t descrA = 0;
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&descrA));
-  KOKKOS_CUSPARSE_SAFE_CALL(
-      cusparseSetMatType(descrA, CUSPARSE_MATRIX_TYPE_GENERAL));
-  KOKKOS_CUSPARSE_SAFE_CALL(
-      cusparseSetMatIndexBase(descrA, CUSPARSE_INDEX_BASE_ZERO));
+  KokkosSparse::Impl::CuSparse9_SpMV_Data* subhandle;
+
+  if (handle->is_set_up) {
+    subhandle =
+        dynamic_cast<KokkosSparse::Impl::CuSparse9_SpMV_Data*>(handle->tpl);
+    if (!subhandle)
+      throw std::runtime_error(
+          "KokkosSparse::spmv: subhandle is not set up for cusparse");
+  } else {
+    /* create and set the subhandle and matrix descriptor */
+    subhandle   = new KokkosSparse::Impl::CuSparse9_SpMV_Data(exec);
+    handle->tpl = subhandle;
+    cusparseMatDescr_t descrA = 0;
+    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&subhandle->mat));
+    KOKKOS_CUSPARSE_SAFE_CALL(
+        cusparseSetMatType(subhandle->mat, CUSPARSE_MATRIX_TYPE_GENERAL));
+    KOKKOS_CUSPARSE_SAFE_CALL(
+        cusparseSetMatIndexBase(subhandle->mat, CUSPARSE_INDEX_BASE_ZERO));
+    handle->is_set_up = true;
+  }
   cusparseDirection_t dirA = CUSPARSE_DIRECTION_ROW;
 
   /* perform the actual SpMV operation */
@@ -511,7 +522,7 @@ void spm_mv_block_impl_cusparse(
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseSbsrmm(
         cusparseHandle, dirA, myCusparseOperation,
         CUSPARSE_OPERATION_NON_TRANSPOSE, A.numRows(), colx, A.numCols(),
-        A.nnz(), reinterpret_cast<float const*>(&alpha), descrA,
+        A.nnz(), reinterpret_cast<float const*>(&alpha), subhandle->mat,
         reinterpret_cast<float const*>(A.values.data()),
         A.graph.row_map.data(), A.graph.entries.data(), A.blockDim(),
         reinterpret_cast<float const*>(x.data()), ldx,
@@ -521,7 +532,7 @@ void spm_mv_block_impl_cusparse(
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseDbsrmm(
         cusparseHandle, dirA, myCusparseOperation,
         CUSPARSE_OPERATION_NON_TRANSPOSE, A.numRows(), colx, A.numCols(),
-        A.nnz(), reinterpret_cast<double const*>(&alpha), descrA,
+        A.nnz(), reinterpret_cast<double const*>(&alpha), subhandle->mat,
         reinterpret_cast<double const*>(A.values.data()),
         A.graph.row_map.data(), A.graph.entries.data(), A.blockDim(),
         reinterpret_cast<double const*>(x.data()), ldx,
@@ -531,7 +542,7 @@ void spm_mv_block_impl_cusparse(
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseCbsrmm(
         cusparseHandle, dirA, myCusparseOperation,
         CUSPARSE_OPERATION_NON_TRANSPOSE, A.numRows(), colx, A.numCols(),
-        A.nnz(), reinterpret_cast<cuComplex const*>(&alpha), descrA,
+        A.nnz(), reinterpret_cast<cuComplex const*>(&alpha), subhandle->mat,
         reinterpret_cast<cuComplex const*>(A.values.data()),
         A.graph.row_map.data(), A.graph.entries.data(), A.blockDim(),
         reinterpret_cast<cuComplex const*>(x.data()), ldx,
@@ -541,7 +552,7 @@ void spm_mv_block_impl_cusparse(
     KOKKOS_CUSPARSE_SAFE_CALL(cusparseZbsrmm(
         cusparseHandle, dirA, myCusparseOperation,
         CUSPARSE_OPERATION_NON_TRANSPOSE, A.numRows(), colx, A.numCols(),
-        A.nnz(), reinterpret_cast<cuDoubleComplex const*>(&alpha), descrA,
+        A.nnz(), reinterpret_cast<cuDoubleComplex const*>(&alpha), subhandle->mat,
         reinterpret_cast<cuDoubleComplex const*>(A.values.data()),
         A.graph.row_map.data(), A.graph.entries.data(), A.blockDim(),
         reinterpret_cast<cuDoubleComplex const*>(x.data()), ldx,
@@ -562,6 +573,7 @@ void spm_mv_block_impl_cusparse(
   template <>                                                                  \
   struct SPMV_BSRMATRIX<                                                       \
       Kokkos::Cuda,                                                            \
+      KokkosSparse::Impl::SPMVHandleImpl<Kokkos::Cuda, SPACE, SCALAR, OFFSET, ORDINAL>, \
       ::KokkosSparse::Experimental::BsrMatrix<                                 \
           SCALAR const, ORDINAL const, Kokkos::Device<Kokkos::Cuda, SPACE>,    \
           Kokkos::MemoryTraits<Kokkos::Unmanaged>, OFFSET const>,              \
@@ -573,6 +585,7 @@ void spm_mv_block_impl_cusparse(
       true, COMPILE_LIBRARY> {                                                 \
     using device_type       = Kokkos::Device<Kokkos::Cuda, SPACE>;             \
     using memory_trait_type = Kokkos::MemoryTraits<Kokkos::Unmanaged>;         \
+    using Handle = KokkosSparse::Impl::SPMVHandleImpl<Kokkos::Cuda, SPACE, SCALAR, OFFSET, ORDINAL>; \
     using AMatrix           = ::KokkosSparse::Experimental::BsrMatrix<         \
         SCALAR const, ORDINAL const, device_type, memory_trait_type, \
         OFFSET const>;                                               \
@@ -586,7 +599,7 @@ void spm_mv_block_impl_cusparse(
     using coefficient_type = typename YVector::non_const_value_type;           \
                                                                                \
     static void spmv_bsrmatrix(const Kokkos::Cuda& exec,                       \
-                               const Controls& controls, const char mode[],    \
+                               Handle* handle, const char mode[],    \
                                const coefficient_type& alpha,                  \
                                const AMatrix& A, const XVector& x,             \
                                const coefficient_type& beta,                   \
@@ -594,7 +607,7 @@ void spm_mv_block_impl_cusparse(
       std::string label = "KokkosSparse::spmv[TPL_CUSPARSE,BSRMATRIX" +        \
                           Kokkos::ArithTraits<SCALAR>::name() + "]";           \
       Kokkos::Profiling::pushRegion(label);                                    \
-      spmv_block_impl_cusparse(exec, controls, mode, alpha, A, x, beta, y);    \
+      spmv_block_impl_cusparse(exec, handle, mode, alpha, A, x, beta, y);    \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };
@@ -657,6 +670,7 @@ KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int, int,
   template <>                                                                  \
   struct SPMV_MV_BSRMATRIX<                                                    \
       Kokkos::Cuda,                                                            \
+      KokkosSparse::Impl::SPMVHandleImpl<Kokkos::Cuda, SPACE, SCALAR, OFFSET, ORDINAL>, \
       ::KokkosSparse::Experimental::BsrMatrix<                                 \
           SCALAR const, ORDINAL const, Kokkos::Device<Kokkos::Cuda, SPACE>,    \
           Kokkos::MemoryTraits<Kokkos::Unmanaged>, OFFSET const>,              \
@@ -670,6 +684,7 @@ KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int, int,
       false, true, ETI_AVAIL> {                                                \
     using device_type       = Kokkos::Device<Kokkos::Cuda, SPACE>;             \
     using memory_trait_type = Kokkos::MemoryTraits<Kokkos::Unmanaged>;         \
+    using Handle = KokkosSparse::Impl::SPMVHandleImpl<Kokkos::Cuda, SPACE, SCALAR, OFFSET, ORDINAL>;  \
     using AMatrix           = ::KokkosSparse::Experimental::BsrMatrix<         \
         SCALAR const, ORDINAL const, device_type, memory_trait_type, \
         OFFSET const>;                                               \
@@ -683,7 +698,7 @@ KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int, int,
     using coefficient_type = typename YVector::non_const_value_type;           \
                                                                                \
     static void spmv_mv_bsrmatrix(const Kokkos::Cuda& exec,                    \
-                                  const Controls& controls, const char mode[], \
+                                  Handle* handle, const char mode[], \
                                   const coefficient_type& alpha,               \
                                   const AMatrix& A, const XVector& x,          \
                                   const coefficient_type& beta,                \
@@ -691,7 +706,7 @@ KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int, int,
       std::string label = "KokkosSparse::spmv[TPL_CUSPARSE,BSRMATRIX" +        \
                           Kokkos::ArithTraits<SCALAR>::name() + "]";           \
       Kokkos::Profiling::pushRegion(label);                                    \
-      spm_mv_block_impl_cusparse(exec, controls, mode, alpha, A, x, beta, y);  \
+      spm_mv_block_impl_cusparse(exec, handle, mode, alpha, A, x, beta, y);  \
       Kokkos::Profiling::popRegion();                                          \
     }                                                                          \
   };
@@ -743,10 +758,10 @@ namespace KokkosSparse {
 namespace Experimental {
 namespace Impl {
 
-template <class AMatrix, class XVector, class YVector>
+template <class Handle, class AMatrix, class XVector, class YVector>
 void spmv_block_impl_rocsparse(
     const Kokkos::HIP& exec,
-    const KokkosKernels::Experimental::Controls& controls, const char mode[],
+    Handle* handle, const char mode[],
     typename YVector::non_const_value_type const& alpha, const AMatrix& A,
     const XVector& x, typename YVector::non_const_value_type const& beta,
     const YVector& y) {

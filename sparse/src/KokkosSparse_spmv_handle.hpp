@@ -31,10 +31,44 @@ enum SPMVAlgorithm {
   SPMV_DEFAULT,     /// Default algorithm: best overall performance for repeated applications of SpMV.
   SPMV_FAST_SETUP,  /// Best performance in the non-reuse case, where the handle is only used once.
   SPMV_NATIVE,      /// Use the best KokkosKernels implementation, even if a TPL implementation is available.
-  SPMV_MERGE_PATH,  /// Use load-balancing merge path algorithm.
+  SPMV_MERGE_PATH,  /// Use load-balancing merge path algorithm (for CrsMatrix only)
   SPMV_BSR_V41,     /// Use experimental version 4.1 algorithm (for BsrMatrix only)
   SPMV_BSR_V42,     /// Use experimental version 4.2 algorithm (for BsrMatrix only)
-  SPMV_BSR_TC,      /// Use experimental tensor core algorithm (for BsrMatrix only)
+  SPMV_BSR_TC       /// Use experimental tensor core algorithm (for BsrMatrix only)
+}
+
+/// Get the name of a SPMVAlgorithm enum constant
+inline const char* get_spmv_algorithm_name(SPMVAlgorithm a)
+{
+  switch(a)
+  {
+    case SPMV_DEFAULT: return "SPMV_DEFAULT";
+    case SPMV_FAST_SETUP:  return "SPMV_FAST_SETUP";
+    case SPMV_NATIVE:return "SPMV_NATIVE";
+    case SPMV_MERGE_PATH: return "SPMV_MERGE_PATH";
+    case SPMV_BSR_V41:   return "SPMV_BSR_V41";
+    case SPMV_BSR_V42:return "SPMV_BSR_V42";
+    case SPMV_BSR_TC   :return "SPMV_BSR_TC";
+  }
+  throw std::invalid_argument("SPMVHandle::get_algorithm_name: unknown algorithm");
+  return "<Unknown>";
+}
+
+/// Return true if the given algorithm is always a native (KokkosKernels) implementation,
+/// and false if it may be implemented by a TPL.
+inline bool is_spmv_algorithm_native(SPMVAlgorithm a)
+{
+  switch(a)
+  {
+    case SPMV_NATIVE:
+    case SPMV_MERGE_PATH:
+    case SPMV_BSR_V41:
+    case SPMV_BSR_V42:
+    case SPMV_BSR_TC:
+      return true;
+    default:
+      return false;
+  }
 }
 
 namespace Impl {
@@ -105,10 +139,6 @@ namespace Impl {
       KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(mat));
     }
 
-    // Algo for single vector case (SpMV)
-    cusparseSpMVAlg_t algo;
-    // Algo for multiple vector case (SpMM)
-    cusparseSpMMAlg_t algo;
     cusparseSpMatDescr_t mat;
     size_t bufferSize = 0;
     void* buffer      = nullptr;
@@ -200,10 +230,13 @@ namespace Impl {
 #endif
 #endif
 
-  // IsBSR false: A is a CrsMatrix
-  // IsBSR true: A is a BsrMatrix
-  template <bool IsBSR, class ExecutionSpace, class MemorySpace, class Scalar, class Offset, class Ordinal>
+  template <class ExecutionSpace, class MemorySpace, class Scalar, class Offset, class Ordinal>
   struct SPMVHandleImpl {
+    // Do not allow const qualifier on Scalar, Ordinal, Offset (otherwise this type won't match the ETI'd type).
+    // Users should not use SPMVHandleImpl directly and SPMVHandle explicitly removes const, so this should never happen in practice.
+    static_assert(!std::is_const_v<Scalar>, "SPMVHandleImpl: Scalar must not be a const type");
+    static_assert(!std::is_const_v<Offset>, "SPMVHandleImpl: Offset must not be a const type");
+    static_assert(!std::is_const_v<Ordinal>, "SPMVHandleImpl: Ordinal must not be a const type");
     SPMVHandleImpl(SPMVAlgorithm algo_) : algo(algo_) {}
     ~SPMVHandleImpl() {
       if (tpl) delete tpl;
@@ -211,9 +244,16 @@ namespace Impl {
     void set_exec_space(const ExecutionSpace& exec) {
       if (tpl) tpl->set_exec_space(exec);
     }
-    bool is_set_up;
-    SPMVAlgorithm algo;
+    bool is_set_up = false;
+    SPMVAlgorithm algo = SPMV_DEFAULT;
     TPL_SpMV_Data<ExecutionSpace>* tpl;
+    // Expert tuning parameters for native SpMV
+    // TODO: expose public interface to set these. Currently they can be set directly.
+    int team_size = -1;
+    int vector_length - 1;
+    int64_t rows_per_thread -1;
+    bool force_static_schedule = false;
+    bool force_dynamic_schedule = false;
   };
 }
 
@@ -238,7 +278,7 @@ namespace Impl {
 /// same matrix.
 
 template <class ExecutionSpace, class AMatrix, class XVector, class YVector>
-class SPMVHandle : public Impl::SPMVHandleImpl<is_bsr_matrix_v<AMatrix>, ExecutionSpace, typename AMatrix::memory_space, typename AMatrix::non_const_value_type, typename AMatrix::non_const_size_type, typename AMatrix::non_const_ordinal_type>
+class SPMVHandle : public Impl::SPMVHandleImpl<ExecutionSpace, typename AMatrix::memory_space, typename AMatrix::non_const_value_type, typename AMatrix::non_const_size_type, typename AMatrix::non_const_ordinal_type>
 {
   // Check all template parameters for compatibility with each other
   // NOTE: we do not require that ExecutionSpace matches AMatrix::execution_space.
@@ -272,10 +312,31 @@ class SPMVHandle : public Impl::SPMVHandleImpl<is_bsr_matrix_v<AMatrix>, Executi
 
  public:
   /// \brief Create a new SPMVHandle using the given algorithm.
-  ///        Depending on the TPLs 
   SPMVHandle(SPMVAlgorithm algo_ = SPMV_DEFAULT)
-      : Impl::SPMVHandleImpl(algo_) {}
+      : Impl::SPMVHandleImpl(algo_)
+  {
+    //Validate the choice of algorithm based on A's type
+    if constexpr(is_crs_matrix_v<AMatrixType>)
+    {
+      switch(get_algorithm())
+      {
+        case SPMV_BSR_V41:
+        case SPMV_BSR_V42:
+        case SPMV_BSR_TC:
+          throw std::invalid_argument(std::string("SPMVHandle: algorithm ") + get_spmv_algorithm_name(get_algorithm()) + " cannot be used if A is a CrsMatrix");
+      }
+    }
+    else
+    {
+      switch(get_algorithm())
+      {
+        case SPMV_MERGE_PATH:
+          throw std::invalid_argument(std::string("SPMVHandle: algorithm ") + get_spmv_algorithm_name(get_algorithm()) + " cannot be used if A is a BsrMatrix");
+      }
+    }
+  }
 
+  /// Get the SPMVAlgorithm used by this handle
   SPMVAlgorithm get_algorithm() const {return this->algo}
 
   // Note: these typedef names cannot shadow template parameters

@@ -249,13 +249,13 @@ int64_t spmv_launch_parameters(int64_t numRows, int64_t nnz,
 
 // spmv_beta_no_transpose: version for CPU execution spaces (RangePolicy or
 // trivial serial impl used)
-template <class execution_space, class AMatrix, class XVector, class YVector,
+template <class execution_space, class Handle, class AMatrix, class XVector, class YVector,
           int dobeta, bool conjugate,
           typename std::enable_if<!KokkosKernels::Impl::kk_is_gpu_exec_space<
               execution_space>()>::type* = nullptr>
 static void spmv_beta_no_transpose(
     const execution_space& exec,
-    const KokkosKernels::Experimental::Controls& controls,
+    Handle* handle,
     typename YVector::const_value_type& alpha, const AMatrix& A,
     const XVector& x, typename YVector::const_value_type& beta,
     const YVector& y) {
@@ -363,15 +363,8 @@ static void spmv_beta_no_transpose(
   }
 #endif
 
-  bool use_dynamic_schedule = false;  // Forces the use of a dynamic schedule
-  bool use_static_schedule  = false;  // Forces the use of a static schedule
-  if (controls.isParameter("schedule")) {
-    if (controls.getParameter("schedule") == "dynamic") {
-      use_dynamic_schedule = true;
-    } else if (controls.getParameter("schedule") == "static") {
-      use_static_schedule = true;
-    }
-  }
+  bool use_dynamic_schedule = handle->force_dynamic_schedule;
+  bool use_static_schedule  = handle->force_static_schedule;
   SPMV_Functor<execution_space, AMatrix, XVector, YVector, dobeta, conjugate>
       func(alpha, A, x, beta, y, 1);
   if (((A.nnz() > 10000000) || use_dynamic_schedule) && !use_static_schedule)
@@ -389,13 +382,13 @@ static void spmv_beta_no_transpose(
 }
 
 // spmv_beta_no_transpose: version for GPU execution spaces (TeamPolicy used)
-template <class execution_space, class AMatrix, class XVector, class YVector,
+template <class execution_space, class Handle, class AMatrix, class XVector, class YVector,
           int dobeta, bool conjugate,
           typename std::enable_if<KokkosKernels::Impl::kk_is_gpu_exec_space<
               execution_space>()>::type* = nullptr>
 static void spmv_beta_no_transpose(
     const execution_space& exec,
-    const KokkosKernels::Experimental::Controls& controls,
+    Handle* handle,
     typename YVector::const_value_type& alpha, const AMatrix& A,
     const XVector& x, typename YVector::const_value_type& beta,
     const YVector& y) {
@@ -405,31 +398,11 @@ static void spmv_beta_no_transpose(
     return;
   }
 
-  bool use_dynamic_schedule = false;  // Forces the use of a dynamic schedule
-  bool use_static_schedule  = false;  // Forces the use of a static schedule
-  if (controls.isParameter("schedule")) {
-    if (controls.getParameter("schedule") == "dynamic") {
-      use_dynamic_schedule = true;
-    } else if (controls.getParameter("schedule") == "static") {
-      use_static_schedule = true;
-    }
-  }
-  int team_size           = -1;
-  int vector_length       = -1;
-  int64_t rows_per_thread = -1;
-
-  // Note on 03/24/20, lbv: We can use the controls
-  // here to allow the user to pass in some tunning
-  // parameters.
-  if (controls.isParameter("team size")) {
-    team_size = std::stoi(controls.getParameter("team size"));
-  }
-  if (controls.isParameter("vector length")) {
-    vector_length = std::stoi(controls.getParameter("vector length"));
-  }
-  if (controls.isParameter("rows per thread")) {
-    rows_per_thread = std::stoll(controls.getParameter("rows per thread"));
-  }
+  bool use_dynamic_schedule = handle->force_dynamic_schedule;
+  bool use_static_schedule  = handle->force_static_schedule;
+  int team_size           = handle->team_size;
+  int vector_length       = handle->vector_length;
+  int64_t rows_per_thread = handle->rows_per_thread;
 
   int64_t rows_per_team = spmv_launch_parameters<execution_space>(
       A.numRows(), A.nnz(), rows_per_thread, team_size, vector_length);
@@ -622,30 +595,30 @@ static void spmv_beta_transpose(const execution_space& exec,
                        op);
 }
 
-template <class execution_space, class AMatrix, class XVector, class YVector,
+template <class execution_space, class Handle, class AMatrix, class XVector, class YVector,
           int dobeta>
 static void spmv_beta(const execution_space& exec,
-                      const KokkosKernels::Experimental::Controls& controls,
+                      Handle* handle,
                       const char mode[],
                       typename YVector::const_value_type& alpha,
                       const AMatrix& A, const XVector& x,
                       typename YVector::const_value_type& beta,
                       const YVector& y) {
   if (mode[0] == NoTranspose[0]) {
-    if (controls.getParameter("algorithm") == KOKKOSSPARSE_ALG_NATIVE_MERGE) {
+    if (handle->get_algorithm() == SPMV_MERGE_PATH) {
       SpmvMergeHierarchical<execution_space, AMatrix, XVector, YVector>::spmv(
           exec, mode, alpha, A, x, beta, y);
     } else {
       spmv_beta_no_transpose<execution_space, AMatrix, XVector, YVector, dobeta,
-                             false>(exec, controls, alpha, A, x, beta, y);
+                             false>(exec, handle, alpha, A, x, beta, y);
     }
   } else if (mode[0] == Conjugate[0]) {
-    if (controls.getParameter("algorithm") == KOKKOSSPARSE_ALG_NATIVE_MERGE) {
+    if (handle->get_algorithm() == SPMV_MERGE_PATH) {
       SpmvMergeHierarchical<execution_space, AMatrix, XVector, YVector>::spmv(
           exec, mode, alpha, A, x, beta, y);
     } else {
       spmv_beta_no_transpose<execution_space, AMatrix, XVector, YVector, dobeta,
-                             true>(exec, controls, alpha, A, x, beta, y);
+                             true>(exec, handle, alpha, A, x, beta, y);
     }
   } else if (mode[0] == Transpose[0]) {
     spmv_beta_transpose<execution_space, AMatrix, XVector, YVector, dobeta,

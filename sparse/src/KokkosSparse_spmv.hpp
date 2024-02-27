@@ -199,8 +199,8 @@ void spmv(const ExecutionSpace& space,
     XVector_Internal x_i = x;
     YVector_Internal y_i = y;
 
-    bool useNative = handle->get_algorithm() == SPMV_NATIVE; 
-
+    bool useNative = is_spmv_algorithm_native(handle->get_algorithm());
+    
     // Now call the proper implementation depending on isBSR and the rank of X/Y
     if constexpr(!isBSR)
     {
