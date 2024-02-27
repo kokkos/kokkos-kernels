@@ -285,12 +285,8 @@ namespace Kokkos {
 
 // Macro to automate the wrapping of Kokkos Mathematical Functions
 #define KOKKOSKERNELS_ARITHTRAITS_HALF_FP(FUNC_QUAL)                           \
-  static FUNC_QUAL val_type zero() {                                           \
-    return static_cast<val_type>(0);                                           \
-  }                                                                            \
-  static FUNC_QUAL val_type one() {                                            \
-    return static_cast<val_type>(1);                                           \
-  }                                                                            \
+  static FUNC_QUAL val_type zero() { return static_cast<val_type>(0); }        \
+  static FUNC_QUAL val_type one() { return static_cast<val_type>(1); }         \
   static FUNC_QUAL val_type min() {                                            \
     return Kokkos::Experimental::finite_min<val_type>::value;                  \
   }                                                                            \
